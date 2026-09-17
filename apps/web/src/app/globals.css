@@ -1,0 +1,138 @@
+@import "tailwindcss";
+/* Kept from shadcn init: animation utilities (animate-in/out, fade/zoom) used
+   by shadcn/ui components. Not part of spec §5 — see deviation report. */
+@import "tw-animate-css";
+/* Kept from shadcn init: custom data-* variants + utilities the shadcn
+   (radix-nova) components are generated against. No variables, no conflicts
+   with the token system below. Not part of spec §5 — see deviation report. */
+@import "shadcn/tailwind.css";
+
+/* Makes shadcn/ui `dark:` variants work on BOTH dark themes.
+   Without this, all shadcn components break on theme switch. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *,
+  [data-theme="dark-blue"], [data-theme="dark-blue"] *));
+
+/* ---- Theme: dark-blue (DEFAULT) ---- */
+:root,
+[data-theme="dark-blue"] {
+  --background: #0B1220;
+  --surface: #121B2E;
+  --surface-raised: #1A2640;
+  --border: #243352;
+  --text-primary: #E6EBF5;
+  --text-muted: #8794AD;
+  --accent: #6E7BFF;
+  --accent-hover: #8590FF;
+  --profit: #34D399;
+  --loss: #F87171;
+  --warning: #FBBF24;
+  --ring: #6E7BFF;
+  --radius: 12px;
+  /* authorized addition: destructive-foreground (shadcn needs it) */
+  --destructive-foreground: #0B1220;
+}
+
+/* ---- Theme: dark ---- */
+[data-theme="dark"] {
+  --background: #09090B;
+  --surface: #131316;
+  --surface-raised: #1B1B20;
+  --border: #27272E;
+  --text-primary: #FAFAFA;
+  --text-muted: #A1A1AA;
+  --accent: #6E7BFF;
+  --accent-hover: #8590FF;
+  --profit: #34D399;
+  --loss: #F87171;
+  --warning: #FBBF24;
+  --ring: #6E7BFF;
+  --radius: 12px;
+  /* authorized addition: destructive-foreground (shadcn needs it) */
+  --destructive-foreground: #0B1220;
+}
+
+/* ---- Theme: light ---- */
+[data-theme="light"] {
+  --background: #F6F8FC;
+  --surface: #FFFFFF;
+  --surface-raised: #F0F3F9;
+  --border: #E2E7F0;
+  --text-primary: #101828;
+  --text-muted: #5A6474;
+  --accent: #5A4FD8;
+  --accent-hover: #4C42BF;
+  --profit: #0C9B6C;
+  --loss: #DC2F44;
+  --warning: #B45309;
+  --ring: #5A4FD8;
+  --radius: 12px;
+  /* authorized addition: destructive-foreground (shadcn needs it) */
+  --destructive-foreground: #FFFFFF;
+}
+
+/* ---- Tailwind v4 token mapping ---- */
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-border: var(--border);
+  --color-foreground: var(--text-primary);
+  --color-muted: var(--surface-raised);
+  --color-muted-foreground: var(--text-muted);
+  --color-accent: var(--accent);
+  --color-profit: var(--profit);
+  --color-loss: var(--loss);
+  --color-warning: var(--warning);
+  --color-primary: var(--accent);
+  --color-destructive: var(--loss);
+  --color-ring: var(--ring);
+
+  /* authorized additions: foreground pairs required by shadcn/ui components */
+  --color-primary-foreground: #FFFFFF;
+  --color-destructive-foreground: var(--destructive-foreground);
+
+  /* shadcn/ui compatibility aliases */
+  --color-card: var(--surface);
+  --color-card-foreground: var(--text-primary);
+  --color-popover: var(--surface);
+  --color-popover-foreground: var(--text-primary);
+  --color-secondary: var(--surface-raised);
+  --color-secondary-foreground: var(--text-primary);
+  --color-accent-foreground: var(--text-primary);
+  --color-input: var(--border);
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-space-grotesk), var(--font-inter), sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+  body {
+    background-color: var(--background);
+    color: var(--text-primary);
+  }
+}
+
+/* ---- Theme swatch dots (ThemeToggle) ----
+   Hard rule §9: zero hardcoded hex outside globals.css — the per-theme preview
+   dots therefore live HERE as classes, consumed by theme-toggle.tsx. */
+.theme-dot-dark-blue {
+  background-color: #0B1220;
+  box-shadow: inset 0 0 0 1px #243352;
+}
+.theme-dot-dark {
+  background-color: #09090B;
+  box-shadow: inset 0 0 0 1px #27272E;
+}
+.theme-dot-light {
+  background-color: #F6F8FC;
+  box-shadow: inset 0 0 0 1px #E2E7F0;
+}
