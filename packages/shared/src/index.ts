@@ -18,6 +18,7 @@ export * from "./schemas/dailyJournal";
 export * from "./schemas/dailyStat";
 export * from "./schemas/mistake";
 export * from "./schemas/tag";
+export * from "./schemas/api";
 
 // ── Pure utils ───────────────────────────────────────────────────────────────
 export * from "./utils/money";

@@ -125,19 +125,6 @@ export const BOTTOM_NAV_ITEMS: BottomNavItem[] = [
   { href: "/analytics", label: "Stats", icon: ChartColumn },
 ];
 
-/** Static, cosmetic account switcher entries (wired for real in a later phase). */
-export type Account = {
-  id: string;
-  name: string;
-  kind: "LIVE" | "PROP" | null;
-};
-
-export const ACCOUNTS: Account[] = [
-  { id: "deriv-live", name: "Deriv Live", kind: "LIVE" },
-  { id: "ftmo-challenge", name: "FTMO Challenge", kind: "PROP" },
-  { id: "demo", name: "Demo", kind: null },
-];
-
 /** Resolves the current page title from the pathname. */
 export function getPageTitle(pathname: string): string {
   const match = SIDEBAR_ITEMS.find((item) => item.href === pathname);

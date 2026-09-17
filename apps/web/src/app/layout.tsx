@@ -1,6 +1,8 @@
 import { Inter, Space_Grotesk, JetBrains_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/layout/theme-provider";
+import { QueryProvider } from "@/components/providers/query-provider";
+import { MockProvider } from "@/components/providers/mock-provider";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
@@ -17,7 +19,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         className={`${inter.variable} ${grotesk.variable} ${mono.variable} font-sans antialiased`}
       >
         <ThemeProvider>
-          {children}
+          <QueryProvider>
+            <MockProvider>{children}</MockProvider>
+          </QueryProvider>
           <Toaster position="top-center" />
         </ThemeProvider>
       </body>

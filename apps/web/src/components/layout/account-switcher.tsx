@@ -3,6 +3,8 @@
 import * as React from "react";
 import { Check, ChevronDown, Wallet } from "lucide-react";
 
+import { useAccounts } from "@/lib/api/queries";
+import type { Account } from "@cosmoz/shared";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -12,19 +14,24 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ACCOUNTS } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
 
+const kindLabel = (type: Account["type"]): string =>
+  type === "PROP_FIRM" ? "PROP" : type;
+
 /**
- * Account switcher — static/cosmetic for now (Phase 1).
- * Selection is local state only; real account switching arrives later.
+ * Account switcher — fed by the accounts API (useAccounts).
+ * Selection is local state only; real account-scoped data arrives later.
  */
 export function AccountSwitcher() {
-  const [selectedId, setSelectedId] = React.useState<string>(
-    ACCOUNTS[0]?.id ?? "",
-  );
+  const { data, isLoading } = useAccounts();
+  const accounts = data?.accounts ?? [];
+  const [selectedId, setSelectedId] = React.useState<string | null>(null);
+
   const selected =
-    ACCOUNTS.find((account) => account.id === selectedId) ?? ACCOUNTS[0];
+    accounts.find((account) => account.id === selectedId) ??
+    accounts.find((account) => account.isDefault) ??
+    accounts[0];
 
   return (
     <DropdownMenu>
@@ -34,10 +41,11 @@ export function AccountSwitcher() {
           size="sm"
           className="gap-1.5"
           aria-label="Switch account"
+          disabled={isLoading && accounts.length === 0}
         >
           <Wallet className="size-4 text-muted-foreground" aria-hidden="true" />
           <span className="hidden max-w-36 truncate sm:inline">
-            {selected?.name}
+            {isLoading && accounts.length === 0 ? "…" : (selected?.name ?? "No account")}
           </span>
           <ChevronDown
             className="size-3.5 text-muted-foreground"
@@ -48,7 +56,7 @@ export function AccountSwitcher() {
       <DropdownMenuContent align="end" className="min-w-52">
         <DropdownMenuLabel>Accounts</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        {ACCOUNTS.map((account) => {
+        {accounts.map((account) => {
           const isSelected = account.id === selected?.id;
           return (
             <DropdownMenuItem
@@ -66,14 +74,15 @@ export function AccountSwitcher() {
                 <Check className="size-4" />
               </span>
               <span className="flex-1 truncate">{account.name}</span>
-              {account.kind ? (
-                <span className="rounded-sm bg-muted px-1 py-0.5 font-mono text-[10px] leading-none tracking-wide text-muted-foreground">
-                  {account.kind}
-                </span>
-              ) : null}
+              <span className="rounded-sm bg-muted px-1 py-0.5 font-mono text-[10px] leading-none tracking-wide text-muted-foreground">
+                {kindLabel(account.type)}
+              </span>
             </DropdownMenuItem>
           );
         })}
+        {accounts.length === 0 ? (
+          <DropdownMenuItem disabled>No accounts yet</DropdownMenuItem>
+        ) : null}
       </DropdownMenuContent>
     </DropdownMenu>
   );
