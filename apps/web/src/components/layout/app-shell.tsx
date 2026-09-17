@@ -1,0 +1,126 @@
+"use client";
+
+import * as React from "react";
+import { toast } from "sonner";
+import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { SidebarBrand, SidebarNav } from "@/components/layout/sidebar";
+import { BottomNav } from "@/components/layout/bottom-nav";
+import { Topbar } from "@/components/layout/topbar";
+import {
+  isSidebarCollapsed,
+  setSidebarCollapsed,
+  subscribeSidebar,
+  toggleSidebarCollapsed,
+} from "@/lib/utils/sidebar";
+
+const newTradePlaceholder = () =>
+  toast.info("Trade entry arrives in a later phase.");
+
+/**
+ * Application shell: fixed desktop sidebar (240px <-> 72px, persisted),
+ * sticky topbar, mobile sheet navigation and the mobile bottom nav + FAB.
+ * Server pages are rendered through `children`, so they stay Server Components.
+ */
+export function AppShell({ children }: { children: React.ReactNode }) {
+  const collapsed = React.useSyncExternalStore(
+    subscribeSidebar,
+    isSidebarCollapsed,
+    // Server + hydration snapshot: expanded.
+    () => false,
+  );
+  const [sheetOpen, setSheetOpen] = React.useState(false);
+
+  const closeSheet = React.useCallback(() => setSheetOpen(false), []);
+
+  return (
+    <div className="min-h-screen bg-background text-foreground">
+      {/* Desktop sidebar */}
+      <aside
+        className={`fixed inset-y-0 left-0 z-40 hidden flex-col border-r border-border bg-surface transition-[width] duration-200 ease-in-out lg:flex ${
+          collapsed ? "w-[72px]" : "w-[240px]"
+        }`}
+      >
+        <SidebarBrand collapsed={collapsed} />
+
+        <div className="flex-1 overflow-y-auto">
+          <SidebarNav collapsed={collapsed} onNewTrade={newTradePlaceholder} />
+        </div>
+
+        <div className="border-t border-border p-2">
+          <Button
+            variant="ghost"
+            onClick={toggleSidebarCollapsed}
+            aria-expanded={!collapsed}
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            className={`w-full ${
+              collapsed
+                ? "justify-center px-0"
+                : "justify-start gap-2 px-2.5 text-muted-foreground"
+            }`}
+          >
+            {collapsed ? (
+              <PanelLeftOpen className="size-4" aria-hidden="true" />
+            ) : (
+              <PanelLeftClose className="size-4" aria-hidden="true" />
+            )}
+            {!collapsed && <span className="truncate text-sm">Collapse</span>}
+          </Button>
+        </div>
+      </aside>
+
+      {/* Main column */}
+      <div
+        className={`flex min-h-screen flex-col transition-[padding] duration-200 ease-in-out ${
+          collapsed ? "lg:pl-[72px]" : "lg:pl-[240px]"
+        }`}
+      >
+        <Topbar onMenuClick={() => setSheetOpen(true)} />
+        <main className="flex-1 px-4 py-6 pb-[calc(5.5rem+env(safe-area-inset-bottom))] sm:px-6 lg:px-8 lg:pb-8">
+          {children}
+        </main>
+      </div>
+
+      {/* Mobile bottom navigation + FAB */}
+      <BottomNav />
+
+      {/* Mobile navigation sheet */}
+      <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+        <SheetContent
+          side="left"
+          showCloseButton={false}
+          className="w-[264px] gap-0 bg-surface p-0 sm:max-w-[264px]"
+        >
+          <SheetHeader className="p-0">
+            <SheetTitle asChild>
+              <div>
+                <SidebarBrand collapsed={false} />
+              </div>
+            </SheetTitle>
+            <SheetDescription className="sr-only">
+              Cosmoz main navigation
+            </SheetDescription>
+          </SheetHeader>
+          <div className="flex-1 overflow-y-auto pb-[calc(1rem+env(safe-area-inset-bottom))]">
+            <SidebarNav
+              collapsed={false}
+              onNavigate={closeSheet}
+              onNewTrade={() => {
+                closeSheet();
+                newTradePlaceholder();
+              }}
+            />
+          </div>
+        </SheetContent>
+      </Sheet>
+    </div>
+  );
+}

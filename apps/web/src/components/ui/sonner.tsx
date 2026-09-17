@@ -7,9 +7,15 @@ import { CircleCheckIcon, InfoIcon, TriangleAlertIcon, OctagonXIcon, Loader2Icon
 const Toaster = ({ ...props }: ToasterProps) => {
   const { theme = "system" } = useTheme()
 
+  // Cosmoz has TWO dark themes (dark-blue, dark); sonner only knows light/dark.
+  // Toast colors are already bound to Cosmoz tokens via the style vars below,
+  // this mapping only keeps the sonner `theme` prop value valid.
+  const sonnerTheme: ToasterProps["theme"] =
+    theme === "light" ? "light" : theme === "system" ? "system" : "dark"
+
   return (
     <Sonner
-      theme={theme as ToasterProps["theme"]}
+      theme={sonnerTheme}
       className="toaster group"
       icons={{
         success: (
