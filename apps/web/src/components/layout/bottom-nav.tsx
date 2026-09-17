@@ -3,16 +3,16 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Plus } from "lucide-react";
-import { toast } from "sonner";
 
 import { BOTTOM_NAV_ITEMS } from "@/lib/navigation";
+import { openTradeModal } from "@/lib/hooks/use-trade-modal";
 import { cn } from "@/lib/utils";
 
 function NewTradeFab() {
   return (
     <button
       type="button"
-      onClick={() => toast.info("Trade entry arrives in a later phase.")}
+      onClick={() => openTradeModal()}
       aria-label="New Trade"
       title="New Trade"
       className="grid size-12 -translate-y-4 place-items-center rounded-full border border-border bg-accent text-accent-foreground hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"

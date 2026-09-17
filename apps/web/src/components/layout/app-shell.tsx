@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { toast } from "sonner";
 import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -15,15 +14,16 @@ import {
 import { SidebarBrand, SidebarNav } from "@/components/layout/sidebar";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { Topbar } from "@/components/layout/topbar";
+import { TradeModalHost } from "@/components/trades/trade-modal-host";
+import { openTradeModal } from "@/lib/hooks/use-trade-modal";
 import {
   isSidebarCollapsed,
-  setSidebarCollapsed,
   subscribeSidebar,
   toggleSidebarCollapsed,
 } from "@/lib/utils/sidebar";
 
-const newTradePlaceholder = () =>
-  toast.info("Trade entry arrives in a later phase.");
+/** Entry point #2 and #3 (spec §3): sidebar button + mobile sheet nav. */
+const openNewTrade = () => openTradeModal();
 
 /**
  * Application shell: fixed desktop sidebar (240px <-> 72px, persisted),
@@ -52,7 +52,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <SidebarBrand collapsed={collapsed} />
 
         <div className="flex-1 overflow-y-auto">
-          <SidebarNav collapsed={collapsed} onNewTrade={newTradePlaceholder} />
+          <SidebarNav collapsed={collapsed} onNewTrade={openNewTrade} />
         </div>
 
         <div className="border-t border-border p-2">
@@ -92,6 +92,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {/* Mobile bottom navigation + FAB */}
       <BottomNav />
 
+      {/* Global capture modal + "?" shortcuts overlay (N / ? hotkeys) */}
+      <TradeModalHost />
+
       {/* Mobile navigation sheet */}
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
         <SheetContent
@@ -115,7 +118,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               onNavigate={closeSheet}
               onNewTrade={() => {
                 closeSheet();
-                newTradePlaceholder();
+                openNewTrade();
               }}
             />
           </div>

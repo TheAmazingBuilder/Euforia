@@ -4,6 +4,7 @@ import type {
   Broker,
   Currency,
   MistakeCategory,
+  TagCategory,
 } from "@cosmoz/shared";
 
 /**
@@ -260,3 +261,26 @@ export const MISTAKE_DEFS: readonly MistakeDef[] = [
     detectionHint: null,
   },
 ];
+
+export interface TagDef {
+  name: string;
+  category: TagCategory;
+}
+
+/**
+ * Seed tag catalog for the capture form ("Add details" chips). Tags are
+ * user-owned per data-model.md "Domaine 4"; these are the seeded starter set.
+ */
+export const TAG_DEFS: readonly TagDef[] = [
+  { name: "A+ context", category: "SETUP" },
+  { name: "HTF aligned", category: "SETUP" },
+  { name: "News window", category: "CONTEXT" },
+  { name: "London open", category: "CONTEXT" },
+  { name: "NY open", category: "CONTEXT" },
+  { name: "Overtraded", category: "MISTAKE" },
+  { name: "Chased entry", category: "MISTAKE" },
+  { name: "Revenge", category: "EMOTION" },
+  { name: "FOMO", category: "EMOTION" },
+  { name: "Scalp", category: "CUSTOM" },
+];
+

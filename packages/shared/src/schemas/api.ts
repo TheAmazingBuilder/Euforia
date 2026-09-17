@@ -21,6 +21,7 @@ import { skippedTradeSchema } from "./skippedTrade";
 import { instrumentSchema } from "./instrument";
 import { strategySchema } from "./strategy";
 import { accountSchema } from "./account";
+import { tagSchema } from "./tag";
 
 /**
  * API read models & endpoint payloads — the contract implemented by the
@@ -85,6 +86,13 @@ export const accountsResponseSchema = z.object({
 });
 
 export type AccountsResponse = z.infer<typeof accountsResponseSchema>;
+
+/** GET /tags — the user's (and seeded system) tag catalog for the capture form. */
+export const tagsResponseSchema = z.object({
+  tags: z.array(tagSchema),
+});
+
+export type TagsResponse = z.infer<typeof tagsResponseSchema>;
 
 export const alertsResponseSchema = z.object({
   alerts: z.array(alertSchema),

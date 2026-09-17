@@ -3,6 +3,7 @@ export const queryKeys = {
   accounts: ["accounts"] as const,
   instruments: (q: string) => ["instruments", q] as const,
   strategies: ["strategies"] as const,
+  tags: ["tags"] as const,
   rulesStatus: (accountId: string | null) => ["rules-status", accountId] as const,
   rulesStatusRoot: ["rules-status"] as const,
   trades: (params: { status?: string; graded?: string; accountId?: string }) =>

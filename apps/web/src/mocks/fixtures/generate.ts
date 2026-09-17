@@ -9,6 +9,7 @@ import {
   ruleSchema,
   skippedTradeSchema,
   strategySchema,
+  tagSchema,
   toDecimalString,
   toTradingDateKey,
   tradeEventSchema,
@@ -25,6 +26,7 @@ import {
   type Rule,
   type SkippedTrade,
   type Strategy,
+  type Tag,
   type Trade,
   type TradeEvent,
   type TradeMistake,
@@ -35,6 +37,7 @@ import {
   INSTRUMENT_DEFS,
   MISTAKE_DEFS,
   STRATEGY_DEFS,
+  TAG_DEFS,
   type InstrumentDef,
 } from "./catalog";
 import { chance, float, int, mulberry32, pick, uuid, weightedIndex, type Rng } from "./random";
@@ -76,6 +79,7 @@ export interface FixtureData {
   strategies: Strategy[];
   mistakes: Mistake[];
   rules: Rule[];
+  tags: Tag[];
   trades: Trade[];
   tradeEvents: TradeEvent[];
   tradeMistakes: TradeMistake[];
@@ -258,6 +262,15 @@ export function buildFixtureData(): FixtureData {
       createdAt: new Date(nowDayStart.getTime() - 95 * DAY_MS).toISOString(),
     },
   ];
+
+  const tags: Tag[] = TAG_DEFS.map((def) => ({
+    id: uuid(rng),
+    userId,
+    name: def.name,
+    category: def.category,
+    color: null,
+    parentId: null,
+  }));
 
   // ── Day plan: spread exactly 50 closed trades across the 90 days ──
   const dayPlan = new Map<number, number>();
@@ -603,8 +616,6 @@ export function buildFixtureData(): FixtureData {
   }
 
   // ── Open trades (2) ──
-  const boomDef = INSTRUMENT_DEFS.find((d) => d.symbol === "BOOM500")!;
-  const eurDef = INSTRUMENT_DEFS.find((d) => d.symbol === "EURUSD")!;
   const buildOpenTrade = (
     symbol: string,
     direction: Direction,
@@ -865,6 +876,7 @@ export function buildFixtureData(): FixtureData {
     strategies,
     mistakes,
     rules,
+    tags,
     trades,
     tradeEvents,
     tradeMistakes,
@@ -908,6 +920,7 @@ function validateFixtures(data: FixtureData): void {
   check("strategies", strategySchema, data.strategies);
   check("mistakes", mistakeSchema, data.mistakes);
   check("rules", ruleSchema, data.rules);
+  check("tags", tagSchema, data.tags);
   check("trades", tradeSchema, data.trades);
   check("tradeEvents", tradeEventSchema, data.tradeEvents);
   check("tradeMistakes", tradeMistakeSchema, data.tradeMistakes);

@@ -1,15 +1,14 @@
-import { API_BASE } from "./urls";
-
 /**
  * Canonical API endpoint paths — imported by the hooks AND the MSW handlers,
  * so the mocked backend can never drift from the client's URL building.
- * Paths are relative to {@link API_BASE}.
+ * Paths are relative to the API base (lib/api/urls.ts).
  */
 export const apiPaths = {
   instruments: "/instruments",
   rulesStatus: "/rules/status",
   strategies: "/strategies",
   accounts: "/accounts",
+  tags: "/tags",
   trades: "/trades",
   trade: (tradeId: string) => `/trades/${tradeId}`,
   tradeClose: (tradeId: string) => `/trades/${tradeId}/close`,

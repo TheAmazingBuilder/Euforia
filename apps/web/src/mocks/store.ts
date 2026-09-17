@@ -17,13 +17,13 @@ import {
   type PsychologyUpdateInput,
   type RevealPayload,
   type ReviewResponse,
-  type Rule,
   type RulesStatusResponse,
   type SettleSkippedTradeInput,
   type SkippedTrade,
   type SkippedTradesResponse,
   type StatsOverviewResponse,
   type Strategy,
+  type TagsResponse,
   type Trade,
   type TradeDecisionInput,
   type TradesListResponse,
@@ -88,6 +88,7 @@ export function createMockStore() {
   const listAccounts = (): Account[] => data.accounts;
   const listInstruments = (): Instrument[] => data.instruments;
   const listStrategies = (): Strategy[] => data.strategies;
+  const listTags = (): TagsResponse => ({ tags: [...data.tags] });
   const listSkippedTrades = (): SkippedTradesResponse => ({
     skippedTrades: [...data.skippedTrades].sort((a, b) => b.seenAt.localeCompare(a.seenAt)),
   });
@@ -629,6 +630,7 @@ export function createMockStore() {
     listAccounts,
     listInstruments,
     listStrategies,
+    listTags,
     listAlerts,
     listSkippedTrades,
     createTrade,

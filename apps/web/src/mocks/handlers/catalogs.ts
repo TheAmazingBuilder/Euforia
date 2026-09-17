@@ -43,4 +43,14 @@ export const catalogHandlers = [
       return toErrorResponse(error);
     }
   }),
+
+  // GET /tags — tag catalog for the capture form ("Add details" chips)
+  http.get(endpoint(apiPaths.tags), async () => {
+    await latency();
+    try {
+      return HttpResponse.json(mockStore.listTags());
+    } catch (error) {
+      return toErrorResponse(error);
+    }
+  }),
 ];

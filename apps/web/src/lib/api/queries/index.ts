@@ -1,4 +1,11 @@
-export { useAccounts, useInstruments, useStrategies } from "./catalogs";
+export {
+  useAccounts,
+  useCurrentBalance,
+  useInstruments,
+  useStrategies,
+  useTags,
+  type AccountBalance,
+} from "./catalogs";
 export { useRulesStatus, useAlerts } from "./discipline";
 export {
   useCloseTrade,
