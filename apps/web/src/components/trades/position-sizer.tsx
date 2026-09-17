@@ -1,6 +1,6 @@
 "use client";
 
-import { computeRiskAmount, suggestPositionSize } from "@cosmoz/shared";
+import { computeRiskAmount, suggestPositionSize, toDecimalString } from "@cosmoz/shared";
 
 import type { TradeSizeModeValue } from "@/lib/utils/trade-draft";
 import { formatPercent } from "@cosmoz/shared";
@@ -89,7 +89,7 @@ export function deriveSizer(
     suggestedQuantity: null,
     riskAmount,
     riskPct: Number.isFinite(riskPct) ? riskPct : null,
-    stopPips: Number.isFinite(distance) && pip > 0 ? String(distance / pip) : null,
+    stopPips: Number.isFinite(distance) && pip > 0 ? toDecimalString(distance / pip) : null,
   };
 }
 
