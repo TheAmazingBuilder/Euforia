@@ -11,7 +11,6 @@ import {
   type Grade,
   type Instrument,
   type RevealPayload,
-  type Strategy,
   type Trade,
 } from "@cosmoz/shared";
 
@@ -77,21 +76,19 @@ export function Reveal({ reveal, currency, decision }: RevealProps) {
   const strategy = strategiesData?.strategies.find((item) => item.id === trade?.strategyId);
 
   const rValue = parseDecimal(reveal.rMultiple) ?? 0;
-  const pnlValue = parseDecimal(reveal.pnlNet) ?? 0;
   const win = rValue >= 0;
 
   // Animation guard: ≤ 500 ms per spec, skippable (any key / click), and
-  // disable-able from the preferences toggle right on this screen.
+  // disable-able from the preferences toggle right on this screen. The
+  // initial state already matches the preference (client-only render); the
+  // effect only owns the auto-stop timer.
   const [animated, setAnimated] = React.useState(animationEnabled);
   React.useEffect(() => {
-    if (!animationEnabled) {
-      setAnimated(false);
-      return;
-    }
-    setAnimated(true);
+    if (!animationEnabled) return;
     const timer = window.setTimeout(() => setAnimated(false), 500);
     return () => window.clearTimeout(timer);
   }, [animationEnabled]);
+  const playing = animated && animationEnabled;
 
   // Skippable: any key or click ends the animation immediately.
   React.useEffect(() => {
@@ -137,7 +134,7 @@ export function Reveal({ reveal, currency, decision }: RevealProps) {
   const coaching = COACHING_COPY[reveal.coachingKey] ?? COACHING_COPY.loss_ab!;
   const durationText =
     trade !== null ? formatDuration(trade.entryAt, trade.exitAt ?? trade.entryAt) : "—";
-  const animClass = (enabled: boolean) => (animated && enabled ? "animate-reveal-fade-up" : "");
+  const animClass = (enabled: boolean) => (playing && enabled ? "animate-reveal-fade-up" : "");
 
   return (
     <div className="space-y-5" data-testid="reveal">

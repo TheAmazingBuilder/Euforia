@@ -124,6 +124,13 @@ export function createMockStore() {
     return { alerts, unreadCount };
   }
 
+  function markAlertRead(alertId: string): Alert {
+    const alert = data.alerts.find((a) => a.id === alertId);
+    if (!alert) throw new MockError(404, "Alert not found");
+    if (alert.readAt === null) alert.readAt = nowIso();
+    return alert;
+  }
+
   // ── Trade creation & closing ─────────────────────────────────────────────
 
   function resolveSize(
@@ -648,11 +655,15 @@ export function createMockStore() {
       : null;
 
     const byDay = new Map<string, { pnl: number; count: number }>();
+    const byDayTrades = new Map<string, Trade[]>();
     for (const trade of closed) {
       const entry = byDay.get(trade.tradingDate) ?? { pnl: 0, count: 0 };
       entry.pnl += Number(trade.pnlNet) ?? 0;
       entry.count += 1;
       byDay.set(trade.tradingDate, entry);
+      const list = byDayTrades.get(trade.tradingDate) ?? [];
+      list.push(trade);
+      byDayTrades.set(trade.tradingDate, list);
     }
     const days = [...byDay.entries()].sort(([a], [b]) => a.localeCompare(b));
     let equity = Number(mainAccount.startingBalance);
@@ -664,6 +675,127 @@ export function createMockStore() {
       dailyPnl.push({ date, pnlNet: toDecimalString(round2(entry.pnl)), tradesCount: entry.count });
     }
 
+    // ── Peak & max drawdown (server-computed display chips) ──────────────────
+    let runningPeak = Number(mainAccount.startingBalance);
+    let maxDdPct = 0;
+    for (const point of equityCurve) {
+      const eq = Number(point.equity);
+      if (eq > runningPeak) runningPeak = eq;
+      if (runningPeak > 0) {
+        const ddPct = ((eq - runningPeak) / runningPeak) * 100;
+        if (ddPct < maxDdPct) maxDdPct = ddPct;
+      }
+    }
+    const equityPeak = Math.max(runningPeak, Number(mainAccount.startingBalance));
+
+    // ── Deltas vs the previous comparable period (last 14 trading days vs the
+    // 14 before that) — all aggregates stay server-side, decimal strings out ─
+    const shiftDateKey = (offsetDays: number): string => {
+      const shifted = new Date();
+      shifted.setUTCDate(shifted.getUTCDate() + offsetDays);
+      return toTradingDateKey(shifted.toISOString(), USER_TZ);
+    };
+    const currentStart = shiftDateKey(-13);
+    const prevStart = shiftDateKey(-27);
+
+    const aggregate = (trades: Trade[]) => {
+      const count = trades.length;
+      const winCount = trades.filter((t) => (Number(t.pnlNet) ?? 0) > 0).length;
+      const gp = trades
+        .filter((t) => (Number(t.pnlNet) ?? 0) > 0)
+        .reduce((sum, t) => sum + (Number(t.pnlNet) ?? 0), 0);
+      const gl = Math.abs(
+        trades
+          .filter((t) => (Number(t.pnlNet) ?? 0) < 0)
+          .reduce((sum, t) => sum + (Number(t.pnlNet) ?? 0), 0),
+      );
+      return {
+        netPnl: trades.reduce((sum, t) => sum + (Number(t.pnlNet) ?? 0), 0),
+        winRate: count > 0 ? (winCount / count) * 100 : null,
+        profitFactor: gl > 0 ? gp / gl : null,
+        expectancy: count > 0 ? trades.reduce((sum, t) => sum + (Number(t.rMultiple) ?? 0), 0) / count : null,
+        hasData: count > 0,
+      };
+    };
+    const cur = aggregate(closed.filter((t) => t.tradingDate >= currentStart));
+    const prev = aggregate(
+      closed.filter((t) => t.tradingDate >= prevStart && t.tradingDate < currentStart),
+    );
+    const avgDiscipline = (from: string, to: string): number | null => {
+      const rows = data.dailyStats.filter(
+        (s) => s.date >= from && s.date <= to && s.disciplineScore !== null,
+      );
+      if (rows.length === 0) return null;
+      return rows.reduce((sum, s) => sum + Number(s.disciplineScore), 0) / rows.length;
+    };
+    const curDisc = avgDiscipline(currentStart, shiftDateKey(0));
+    const prevDisc = avgDiscipline(prevStart, currentStart);
+
+    const rawDelta = (current: number | null, previous: number | null): StatsOverviewResponse["deltas"]["winRate"] => {
+      if (current === null || previous === null) return { value: null, direction: "FLAT" };
+      const diff = round2(current - previous);
+      return {
+        value: toDecimalString(diff),
+        direction: diff > 0 ? "UP" : diff < 0 ? "DOWN" : "FLAT",
+      };
+    };
+    const netPnlDelta: StatsOverviewResponse["deltas"]["netPnl"] =
+      !cur.hasData || !prev.hasData || prev.netPnl === 0
+        ? { value: null, direction: cur.netPnl > prev.netPnl && cur.hasData ? "UP" : "FLAT" }
+        : rawDelta(cur.netPnl, prev.netPnl);
+
+    // ── Per-KPI sparklines over the last 14 active days (rolling aggregates) ─
+    const sparklines: StatsOverviewResponse["sparklines"] = {
+      netPnl: [],
+      winRate: [],
+      profitFactor: [],
+      expectancy: [],
+      disciplineScore: [],
+    };
+    let cumPnl = 0;
+    let cumWins = 0;
+    let cumCount = 0;
+    let cumR = 0;
+    let cumGp = 0;
+    let cumGl = 0;
+    let cumDiscSum = 0;
+    let cumDiscDays = 0;
+    let lastPf: number | null = null;
+    let lastDisc: number | null = null;
+    for (const [date, entry] of days.slice(-14)) {
+      const dayList = byDayTrades.get(date) ?? [];
+      cumPnl += entry.pnl;
+      cumCount += dayList.length;
+      cumWins += dayList.filter((t) => (Number(t.pnlNet) ?? 0) > 0).length;
+      cumR += dayList.reduce((sum, t) => sum + (Number(t.rMultiple) ?? 0), 0);
+      cumGp += dayList
+        .filter((t) => (Number(t.pnlNet) ?? 0) > 0)
+        .reduce((sum, t) => sum + (Number(t.pnlNet) ?? 0), 0);
+      cumGl += Math.abs(
+        dayList
+          .filter((t) => (Number(t.pnlNet) ?? 0) < 0)
+          .reduce((sum, t) => sum + (Number(t.pnlNet) ?? 0), 0),
+      );
+      const disc = data.dailyStats.find((s) => s.date === date)?.disciplineScore ?? null;
+      if (disc !== null) {
+        cumDiscSum += Number(disc);
+        cumDiscDays += 1;
+        lastDisc = cumDiscSum / cumDiscDays;
+      }
+      if (cumGl > 0) lastPf = cumGp / cumGl;
+      sparklines.netPnl.push(toDecimalString(round2(cumPnl)));
+      sparklines.winRate.push(toDecimalString(round2(cumCount > 0 ? (cumWins / cumCount) * 100 : 0)));
+      sparklines.profitFactor.push(toDecimalString(round2(lastPf ?? 0)));
+      sparklines.expectancy.push(toDecimalString(round2(cumCount > 0 ? cumR / cumCount : 0)));
+      sparklines.disciplineScore.push(toDecimalString(round2(lastDisc ?? 0)));
+    }
+
+    // ── Discipline Saved — settled would-have-lost ghost trades ─────────────
+    const savedGhosts = data.skippedTrades.filter(
+      (g) => g.outcomeGuess === "WOULD_HAVE_LOST" && g.hypotheticalR !== null,
+    );
+    const rSaved = savedGhosts.reduce((sum, g) => sum + Math.abs(Number(g.hypotheticalR)), 0);
+
     return {
       currency: mainAccount.currency,
       netPnl: toDecimalString(round2(netPnl)),
@@ -673,6 +805,20 @@ export function createMockStore() {
       disciplineScore: disciplineScore === null ? null : toDecimalString(disciplineScore),
       equityCurve,
       dailyPnl,
+      equityPeak: toDecimalString(round2(equityPeak)),
+      maxDrawdownPct: toDecimalString(round2(maxDdPct)),
+      deltas: {
+        netPnl: netPnlDelta,
+        winRate: rawDelta(cur.winRate, prev.winRate),
+        profitFactor: rawDelta(cur.profitFactor, prev.profitFactor),
+        expectancy: rawDelta(cur.expectancy, prev.expectancy),
+        disciplineScore: rawDelta(curDisc, prevDisc),
+      },
+      sparklines,
+      disciplineSaved: {
+        rSaved: toDecimalString(round2(rSaved)),
+        settledCount: savedGhosts.length,
+      },
     };
   }
 
@@ -684,6 +830,7 @@ export function createMockStore() {
     listStrategies,
     listTags,
     listAlerts,
+    markAlertRead,
     listSkippedTrades,
     createTrade,
     closeTrade,

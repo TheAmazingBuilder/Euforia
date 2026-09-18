@@ -226,6 +226,13 @@ export const reviewUpdateResponseSchema = z.object({
 
 export type ReviewUpdateResponse = z.infer<typeof reviewUpdateResponseSchema>;
 
+/** PATCH /alerts/:id/read — inbox read state; returns the updated alert. */
+export const markAlertReadResponseSchema = z.object({
+  alert: alertSchema,
+});
+
+export type MarkAlertReadResponse = z.infer<typeof markAlertReadResponseSchema>;
+
 // ── Tags (inline creation, Act 3 / capture "Add details") ────────────────────
 
 /** POST /tags — inline tag creation (reflect screen + capture details). */
@@ -286,6 +293,47 @@ export const dailyPnlPointSchema = z.object({
 
 export type DailyPnlPoint = z.infer<typeof dailyPnlPointSchema>;
 
+/**
+ * KPI change vs the previous comparable period — computed SERVER-SIDE so the
+ * client never derives aggregates (same rule as the KPIs themselves).
+ */
+export const kpiDeltaSchema = z.object({
+  /**
+   * Signed delta in the KPI's own unit (net P&L → %, win rate → percentage
+   * points, profit factor → ratio units, expectancy → R, discipline → points).
+   * null when the previous period has no baseline to compare against.
+   */
+  value: decimalStringSchema.nullable(),
+  direction: z.enum(["UP", "DOWN", "FLAT"]),
+});
+
+export type KpiDelta = z.infer<typeof kpiDeltaSchema>;
+
+/**
+ * Per-KPI sparkline series over the recent window (chronological, oldest
+ * first). Server-computed rolling aggregates, decimal strings.
+ */
+export const kpiSparklinesSchema = z.object({
+  netPnl: z.array(decimalStringSchema),
+  winRate: z.array(decimalStringSchema),
+  profitFactor: z.array(decimalStringSchema),
+  expectancy: z.array(decimalStringSchema),
+  disciplineScore: z.array(decimalStringSchema),
+});
+
+export type KpiSparklines = z.infer<typeof kpiSparklinesSchema>;
+
+/**
+ * Discipline Saved — Σ|R| preserved by SETTLED would-have-lost ghost trades
+ * (data-model.md "Domaine 5") plus how many such ghosts were settled.
+ */
+export const disciplineSavedSchema = z.object({
+  rSaved: decimalStringSchema,
+  settledCount: z.number().int().min(0),
+});
+
+export type DisciplineSaved = z.infer<typeof disciplineSavedSchema>;
+
 export const statsOverviewResponseSchema = z.object({
   currency: currencySchema,
   netPnl: decimalStringSchema,
@@ -299,6 +347,20 @@ export const statsOverviewResponseSchema = z.object({
   disciplineScore: decimalStringSchema.nullable(),
   equityCurve: z.array(equityPointSchema),
   dailyPnl: z.array(dailyPnlPointSchema),
+  /** Highest equity ever reached (starting balance included). */
+  equityPeak: decimalStringSchema,
+  /** Worst peak-to-trough decline in % (≤ 0). */
+  maxDrawdownPct: decimalStringSchema,
+  deltas: z.object({
+    netPnl: kpiDeltaSchema,
+    winRate: kpiDeltaSchema,
+    profitFactor: kpiDeltaSchema,
+    expectancy: kpiDeltaSchema,
+    disciplineScore: kpiDeltaSchema,
+  }),
+  sparklines: kpiSparklinesSchema,
+  /** Σ|R| saved by settled would-have-lost ghost trades + their count. */
+  disciplineSaved: disciplineSavedSchema,
 });
 
 export type StatsOverviewResponse = z.infer<typeof statsOverviewResponseSchema>;

@@ -13,7 +13,6 @@ import {
   closeJudgmentFlow,
   gateSubmitted,
   useJudgmentFlow,
-  type GateDecision,
   type JudgmentStage,
 } from "@/lib/hooks/use-judgment-flow";
 import { useCurrentBalance } from "@/lib/api/queries";
@@ -46,13 +45,19 @@ export function JudgmentFlowModal() {
   const isDesktop = useIsDesktop();
   const balanceInfo = useCurrentBalance();
 
-  /** The reveal payload arrives with the decision response and lives here. */
-  const [reveal, setReveal] = React.useState<RevealPayload | null>(null);
-
-  // Drop the cached payload whenever the flow closes or a new gate opens.
-  React.useEffect(() => {
-    if (!flow.open || flow.stage === "gate") setReveal(null);
-  }, [flow.open, flow.stage]);
+  /**
+   * The reveal payload arrives with the decision response. Kept keyed by the
+   * trade it was graded for — a cached payload can never leak into another
+   * trade's flow, and a re-opened gate (stage reset) renders the gate, so the
+   * former clear-on-close effect is unnecessary.
+   */
+  const [graded, setGraded] = React.useState<{ tradeId: string; payload: RevealPayload } | null>(
+    null,
+  );
+  const reveal =
+    graded !== null && flow.tradeId !== null && graded.tradeId === flow.tradeId
+      ? graded.payload
+      : null;
 
   if (!flow.open || isDesktop === null || flow.tradeId === null) return null;
 
@@ -63,7 +68,7 @@ export function JudgmentFlowModal() {
       <JudgmentGate
         tradeId={flow.tradeId}
         onGraded={(payload, decision) => {
-          setReveal(payload);
+          setGraded({ tradeId: flow.tradeId!, payload });
           gateSubmitted(flow.tradeId!, decision);
         }}
       />

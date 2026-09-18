@@ -2,7 +2,7 @@ import { http, HttpResponse } from "msw";
 
 import { apiPaths } from "@/lib/api/endpoints";
 import { mockStore } from "@/mocks/store";
-import { endpoint, latency, toErrorResponse } from "./utils";
+import { endpoint, latency, pathParam, toErrorResponse } from "./utils";
 
 /** Discipline domain — daily aggregate banner + alerts inbox. */
 export const disciplineHandlers = [
@@ -23,6 +23,16 @@ export const disciplineHandlers = [
     await latency();
     try {
       return HttpResponse.json(mockStore.listAlerts());
+    } catch (error) {
+      return toErrorResponse(error);
+    }
+  }),
+
+  // PATCH /alerts/:id/read — mark an alert as read (inbox row action)
+  http.patch(endpoint(apiPaths.alertRead(":alertId")), async ({ params }) => {
+    await latency();
+    try {
+      return HttpResponse.json(mockStore.markAlertRead(pathParam(params, "alertId")));
     } catch (error) {
       return toErrorResponse(error);
     }

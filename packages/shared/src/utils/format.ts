@@ -58,6 +58,24 @@ export function formatDuration(
 }
 
 /**
+ * Format a plain number (ratio, score, points…) with fixed decimals,
+ * e.g. formatNumber("2.84") → "2,84" (fr-FR grouping applies).
+ * Invalid input → placeholder.
+ */
+export function formatNumber(
+  value: string | number | null | undefined,
+  digits = 2,
+  locale: string = DEFAULT_FORMAT_LOCALE,
+): string {
+  const parsed = parseDecimal(value);
+  if (parsed === null) return MONEY_PLACEHOLDER;
+  return new Intl.NumberFormat(locale, {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  }).format(parsed);
+}
+
+/**
  * Format a ratio as a percentage with `digits` decimals.
  * CONVENTION: input is a RATIO — formatPercent("0.554") → "55,4 %",
  * formatPercent(0.08) → "8,0 %". Multiply by 100 yourself if your source

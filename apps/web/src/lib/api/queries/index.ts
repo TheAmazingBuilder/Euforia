@@ -7,7 +7,7 @@ export {
   useTags,
   type AccountBalance,
 } from "./catalogs";
-export { useRulesStatus, useAlerts } from "./discipline";
+export { useMarkAlertRead, useRulesStatus, useAlerts } from "./discipline";
 export {
   useCloseTrade,
   useCreateTrade,

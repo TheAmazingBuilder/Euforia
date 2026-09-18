@@ -104,7 +104,12 @@ export function JudgmentGate({ tradeId, onGraded }: JudgmentGateProps) {
       },
     );
   };
-  submitRef.current = submit;
+
+  // Keep the hotkey handler's ref pointed at the latest submit — assigned
+  // post-commit (effects), never during render.
+  React.useEffect(() => {
+    submitRef.current = submit;
+  });
 
   return (
     <div className="space-y-5" data-testid="judgment-gate">

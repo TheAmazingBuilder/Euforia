@@ -81,6 +81,27 @@ export function formatSignedMoney(
 }
 
 /**
+ * Format a decimal-as-string amount as a COMPACT currency string for dense
+ * surfaces (calendar cells, axes): formatMoneyCompact("1840", "USD") →
+ * "1,8 k $US" (fr-FR compact notation). Invalid input → placeholder.
+ */
+export function formatMoneyCompact(
+  amount: string | number | null | undefined,
+  currency: Currency,
+  options: FormatMoneyOptions = {},
+): string {
+  const value = parseDecimal(amount);
+  if (value === null) return MONEY_PLACEHOLDER;
+  const formatter = new Intl.NumberFormat(options.locale ?? DEFAULT_FORMAT_LOCALE, {
+    style: "currency",
+    currency,
+    notation: "compact",
+    maximumFractionDigits: 1,
+  });
+  return formatter.format(value);
+}
+
+/**
  * Render a float produced by shared display math back to a canonical decimal
  * string (max 8 decimals, matching numeric(18,8)), stripping trailing zeros.
  * Float artifacts like 0.30000000000000004 become "0.3".

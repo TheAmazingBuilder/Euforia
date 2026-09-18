@@ -21,5 +21,6 @@ export const apiPaths = {
   skippedTrades: "/skipped-trades",
   skippedTradeSettle: (skippedId: string) => `/skipped-trades/${skippedId}/settle`,
   alerts: "/alerts",
+  alertRead: (alertId: string) => `/alerts/${alertId}/read`,
   statsOverview: "/stats/overview",
 } as const;

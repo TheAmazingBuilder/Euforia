@@ -1,5 +1,9 @@
-import { useQuery } from "@tanstack/react-query";
-import type { AlertsResponse, RulesStatusResponse } from "@cosmoz/shared";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type {
+  AlertsResponse,
+  MarkAlertReadResponse,
+  RulesStatusResponse,
+} from "@cosmoz/shared";
 
 import { apiRequest } from "@/lib/api/client";
 import { apiPaths } from "@/lib/api/endpoints";
@@ -21,5 +25,17 @@ export function useAlerts() {
   return useQuery({
     queryKey: queryKeys.alerts,
     queryFn: () => apiRequest<AlertsResponse>(apiPaths.alerts),
+  });
+}
+
+/** PATCH /alerts/:id/read — dashboard inbox "mark as read" row action. */
+export function useMarkAlertRead() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (alertId: string) =>
+      apiRequest<MarkAlertReadResponse>(apiPaths.alertRead(alertId), { method: "PATCH" }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.alerts });
+    },
   });
 }

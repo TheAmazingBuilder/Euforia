@@ -65,7 +65,7 @@ export function Reflect({ tradeId }: ReflectProps) {
   const pricePlaceholder = digits > 2 ? "1.08xxx" : "98xx.xx";
 
   // ── Local field state — hydrated from the review payload when it arrives.
-  const [hydrated, setHydrated] = React.useState(false);
+  const [hydratedFor, setHydratedFor] = React.useState<string | null>(null);
   const [mfePrice, setMfePrice] = React.useState("");
   const [maePrice, setMaePrice] = React.useState("");
   const [lesson, setLesson] = React.useState("");
@@ -75,15 +75,16 @@ export function Reflect({ tradeId }: ReflectProps) {
   const [screenshots, setScreenshots] = React.useState<DraftScreenshot[]>([]);
   const [savedNote, setSavedNote] = React.useState<"idle" | "saving" | "saved">("idle");
 
-  React.useEffect(() => {
-    if (data === undefined || hydrated) return;
-    setHydrated(true);
+  // Adjust-state-on-props pattern (react.dev/learn/you-might-not-need-an-effect):
+  // seed the fields once per trade, during render, not from an effect.
+  if (data !== undefined && hydratedFor !== data.trade.id) {
+    setHydratedFor(data.trade.id);
     setMfePrice(data.trade.mfePrice ?? "");
     setMaePrice(data.trade.maePrice ?? "");
     setLesson(data.trade.lessons ?? "");
     setSelectedTagIds(data.tagIds);
     setEmotion(data.trade.emotionAfter);
-  }, [data, hydrated]);
+  }
 
   const tags: Tag[] = tagsData?.tags ?? [];
   const mistakes = data?.detectedMistakes ?? [];

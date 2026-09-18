@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { PagePlaceholder } from "@/components/shared/page-placeholder";
+import { DashboardView } from "@/components/dashboard/dashboard-view";
 import { getNavItem } from "@/lib/navigation";
 
 const nav = getNavItem("/");
@@ -10,11 +10,5 @@ export const metadata: Metadata = {
 };
 
 export default function DashboardPage() {
-  return (
-    <PagePlaceholder
-      title={nav.label}
-      description={nav.description}
-      comingSoon={nav.comingSoon}
-    />
-  );
+  return <DashboardView title={nav.label} description={nav.description} />;
 }
