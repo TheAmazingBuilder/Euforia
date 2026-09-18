@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { Bell, GraduationCap, Menu } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { toast } from "sonner";
@@ -8,6 +9,7 @@ import { useAlerts, useTrades } from "@/lib/api/queries";
 import { Button } from "@/components/ui/button";
 import { AccountSwitcher } from "@/components/layout/account-switcher";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
+import { ToGradeQueue } from "@/components/trades/to-grade-queue";
 import { getPageTitle } from "@/lib/navigation";
 
 type TopbarProps = {
@@ -21,6 +23,7 @@ type TopbarProps = {
 export function Topbar({ onMenuClick }: TopbarProps) {
   const pathname = usePathname();
   const title = getPageTitle(pathname);
+  const [queueOpen, setQueueOpen] = React.useState(false);
 
   // Live data (mocked in dev): "to grade" queue + unread alerts.
   const { data: toGradeData } = useTrades({ graded: "false" });
@@ -49,9 +52,10 @@ export function Topbar({ onMenuClick }: TopbarProps) {
         {toGradeCount > 0 ? (
           <button
             type="button"
-            onClick={() => toast.info("The grade queue arrives in a later phase.")}
+            onClick={() => setQueueOpen(true)}
             aria-label={`${toGradeCount} trades to grade`}
             title={`${toGradeCount} trade${toGradeCount === 1 ? "" : "s"} to grade`}
+            data-testid="to-grade-badge"
             className="mr-1 flex items-center gap-1.5 rounded-full border border-border bg-surface px-2.5 py-1 text-xs font-medium text-muted transition-colors hover:border-accent hover:text-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
           >
             <GraduationCap className="size-3.5" aria-hidden="true" />
@@ -83,6 +87,9 @@ export function Topbar({ onMenuClick }: TopbarProps) {
 
         <ThemeToggle />
       </div>
+
+      {/* Ungraded trades — grading opens the same Gate → Reveal flow */}
+      <ToGradeQueue open={queueOpen} onOpenChange={setQueueOpen} />
     </header>
   );
 }

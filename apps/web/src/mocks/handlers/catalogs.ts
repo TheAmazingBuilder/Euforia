@@ -1,8 +1,9 @@
 import { http, HttpResponse } from "msw";
+import { createTagInputSchema } from "@cosmoz/shared";
 
 import { apiPaths } from "@/lib/api/endpoints";
 import { mockStore } from "@/mocks/store";
-import { endpoint, latency, toErrorResponse } from "./utils";
+import { endpoint, latency, parseBody, readJson, toErrorResponse } from "./utils";
 
 /** Catalog domains — instruments (with ?q= search), strategies, accounts. */
 export const catalogHandlers = [
@@ -49,6 +50,17 @@ export const catalogHandlers = [
     await latency();
     try {
       return HttpResponse.json(mockStore.listTags());
+    } catch (error) {
+      return toErrorResponse(error);
+    }
+  }),
+
+  // POST /tags — inline tag creation (reflect screen)
+  http.post(endpoint(apiPaths.tags), async ({ request }) => {
+    await latency();
+    try {
+      const input = parseBody(createTagInputSchema, await readJson(request));
+      return HttpResponse.json(mockStore.createTag(input), { status: 201 });
     } catch (error) {
       return toErrorResponse(error);
     }

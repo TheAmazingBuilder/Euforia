@@ -3,7 +3,6 @@
 import * as React from "react";
 import { toast } from "sonner";
 import {
-  Check,
   ChevronDown,
   ChevronRight,
   TriangleAlert,
@@ -65,13 +64,14 @@ import {
 } from "@/lib/utils/trade-draft";
 import type { TradeContextSeed } from "@/lib/hooks/use-trade-modal";
 import { closeTradeModal } from "@/lib/hooks/use-trade-modal";
+import { openGate } from "@/lib/hooks/use-judgment-flow";
 
 /**
  * ACT 1 — Capture (trade-entry-ux.md §4). One adaptive form, numbers first:
  * instrument → direction → prices/times → plan → sizer → strategy → emotion.
- * Draft autosave on every change (§11); amber non-blocking validations;
- * the P&L reveal is NOT this phase — a closed submit lands on a neutral
- * "Saved — grade pending" state (the hard API contract withholds P&L).
+ * Draft autosave on every change (§11); amber non-blocking validations.
+ * A closed submit hands over to ACT 2 — the Judgment Gate opens immediately
+ * (the create response carries { id, awaitingDecision: true }, never P&L).
  */
 
 const DRAFT_DEBOUNCE_MS = 400;
@@ -184,7 +184,6 @@ export function TradeForm({ seed }: TradeFormProps) {
   );
   const [planOpen, setPlanOpen] = React.useState(true);
   const [detailsOpen, setDetailsOpen] = React.useState(false);
-  const [saved, setSaved] = React.useState(false);
   const [directionTouched, setDirectionTouched] = React.useState(hydration.seeded);
   const dirtyRef = React.useRef(false);
 
@@ -211,13 +210,13 @@ export function TradeForm({ seed }: TradeFormProps) {
   // The EFFECTIVE direction is persisted — the last-trade preselect is
   // derived until the user touches the control, but must survive reloads.
   React.useEffect(() => {
-    if (!dirtyRef.current || saved) return;
+    if (!dirtyRef.current) return;
     const timer = window.setTimeout(() => {
       saveTradeDraft({ ...values, direction });
       setDraftBadge("saved");
     }, DRAFT_DEBOUNCE_MS);
     return () => window.clearTimeout(timer);
-  }, [values, saved, direction]);
+  }, [values, direction]);
 
   // ── Derived: instrument specs, sizer, calculations ──────────────────────
   const instrument =
@@ -372,29 +371,6 @@ export function TradeForm({ seed }: TradeFormProps) {
   };
 
   // ── Submit flows ────────────────────────────────────────────────────────
-  const startFastLoop = React.useCallback(() => {
-    // §7: same instrument, strategy, direction, emotion — only prices change;
-    // default entry time = previous trade's exit time. Uses the EFFECTIVE
-    // direction (last-trade preselect included), not the raw field state.
-    setValues((previous) => ({
-      ...freshValues(),
-      instrumentId: previous.instrumentId,
-      direction,
-      strategyId: previous.strategyId,
-      outOfPlaybook: previous.outOfPlaybook,
-      emotionBefore: previous.emotionBefore,
-      sizeMode: previous.sizeMode,
-      riskPercent: previous.riskPercent,
-      entryAtLocal: previous.exitAtLocal,
-    }));
-    setScreenshots([]);
-    setDirectionTouched(true);
-    setSaved(false);
-    setDraftBadge("hidden");
-    setPlanOpen(true);
-    setDetailsOpen(false);
-  }, [direction]);
-
   const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!canSubmit) return;
@@ -405,8 +381,9 @@ export function TradeForm({ seed }: TradeFormProps) {
         clearTradeDraft();
         if ("awaitingDecision" in response) {
           // Hard contract (§13): closed → { id, awaitingDecision: true }, NO P&L.
-          // Neutral pending state only — the gate/reveal is the next phase.
-          setSaved(true);
+          // ACT 2 starts immediately: the Judgment Gate opens over the app.
+          closeTradeModal();
+          openGate(response.id);
         } else {
           toast.success("Trade saved — journaled as OPEN", {
             description: `${instrument?.symbol ?? ""} ${direction} @ ${entry}`,
@@ -422,22 +399,8 @@ export function TradeForm({ seed }: TradeFormProps) {
     });
   };
 
-  // ── N = new trade while the saved panel shows (fast loop from keyboard) ─
-  React.useEffect(() => {
-    if (!saved) return;
-    const onKeyDown = (event: KeyboardEvent) => {
-      if ((event.key === "n" || event.key === "N") && !event.metaKey && !event.ctrlKey && !event.altKey) {
-        event.preventDefault();
-        startFastLoop();
-      }
-    };
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
-  }, [saved, startFastLoop]);
-
   // ── B/S direction hotkeys while capturing (not while typing) ────────────
   React.useEffect(() => {
-    if (saved) return;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.metaKey || event.ctrlKey || event.altKey) return;
       const target = event.target as HTMLElement | null;
@@ -456,38 +419,10 @@ export function TradeForm({ seed }: TradeFormProps) {
     };
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [saved, patchDirection]);
+  }, [patchDirection]);
 
   const inputClasses =
     "h-10 w-full rounded-md border border-border bg-background px-3 font-mono text-sm tabular-nums outline-none transition-colors placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring";
-
-  // ── Saved panel (closed submit) — neutral, NO P&L anywhere ──────────────
-  if (saved) {
-    return (
-      <div className="flex flex-col items-center gap-4 px-6 py-12 text-center" data-testid="saved-pending">
-        <span className="grid size-12 place-items-center rounded-full border border-border bg-surface">
-          <Check className="size-6 text-accent" aria-hidden="true" />
-        </span>
-        <div className="space-y-1">
-          <h2 className="font-heading text-lg font-semibold text-foreground">Saved — grade pending</h2>
-          <p className="max-w-sm text-sm text-muted-foreground">
-            The trade is in your <span className="font-medium text-foreground">to-grade</span> queue.
-            You&apos;ll grade the decision before any result is revealed.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button type="button" onClick={startFastLoop}>
-            New trade
-            <kbd className="ml-1.5 rounded-sm bg-accent-foreground/10 px-1 font-mono text-[10px]">N</kbd>
-          </Button>
-          <Button type="button" variant="outline" onClick={closeTradeModal}>
-            Done
-            <kbd className="ml-1.5 rounded-sm bg-muted px-1 font-mono text-[10px]">Esc</kbd>
-          </Button>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <form onSubmit={onSubmit} className="space-y-4" noValidate>

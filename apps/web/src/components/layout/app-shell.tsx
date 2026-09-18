@@ -15,6 +15,7 @@ import { SidebarBrand, SidebarNav } from "@/components/layout/sidebar";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { Topbar } from "@/components/layout/topbar";
 import { TradeModalHost } from "@/components/trades/trade-modal-host";
+import { JudgmentFlowModal } from "@/components/trades/judgment-flow-modal";
 import { openTradeModal } from "@/lib/hooks/use-trade-modal";
 import {
   isSidebarCollapsed,
@@ -94,6 +95,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* Global capture modal + "?" shortcuts overlay (N / ? hotkeys) */}
       <TradeModalHost />
+
+      {/* Acts 2 & 3 — the Gate → Reveal → Reflect flow (opens after a save
+          or from the to-grade queue) */}
+      <JudgmentFlowModal />
 
       {/* Mobile navigation sheet */}
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>

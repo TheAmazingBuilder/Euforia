@@ -8,6 +8,7 @@ import {
   type AlertsResponse,
   type CloseTradeInput,
   type CreateSkippedTradeInput,
+  type CreateTagInput,
   type CreateTradeInput,
   type CreateTradeResponse,
   type DailyStat,
@@ -17,12 +18,15 @@ import {
   type PsychologyUpdateInput,
   type RevealPayload,
   type ReviewResponse,
+  type ReviewUpdateInput,
+  type ReviewUpdateResponse,
   type RulesStatusResponse,
   type SettleSkippedTradeInput,
   type SkippedTrade,
   type SkippedTradesResponse,
   type StatsOverviewResponse,
   type Strategy,
+  type Tag,
   type TagsResponse,
   type Trade,
   type TradeDecisionInput,
@@ -52,10 +56,10 @@ const round2 = (value: number): number => Number(value.toFixed(2));
 
 export function createMockStore() {
   const data: FixtureData = buildFixtureData();
-  /** Trade ids whose P&L is computed but still withheld (gate not passed). */
-  const awaitingDecision = new Set<string>();
   /** Alerts generated while handling a given trade's mutations (V1 response channel). */
   const alertsByTrade = new Map<string, Alert[]>();
+  /** Trade ↔ tag join rows (tradeId → tagIds), Act 3 review. */
+  const tradeTags = new Map<string, Set<string>>();
   const user = data.user;
   const mainAccount = data.accounts.find((a) => a.isDefault) ?? data.accounts[0]!;
 
@@ -89,6 +93,27 @@ export function createMockStore() {
   const listInstruments = (): Instrument[] => data.instruments;
   const listStrategies = (): Strategy[] => data.strategies;
   const listTags = (): TagsResponse => ({ tags: [...data.tags] });
+
+  /** POST /tags — inline tag creation (Act 3 reflect, capture details). */
+  function createTag(input: CreateTagInput): Tag {
+    const name = input.name.trim();
+    if (name === "") throw new MockError(422, "Tag name is required");
+    const category = input.category ?? "CUSTOM";
+    const exists = data.tags.some(
+      (tag) => tag.userId === user.id && tag.name.toLowerCase() === name.toLowerCase() && tag.category === category,
+    );
+    if (exists) throw new MockError(409, "Tag already exists");
+    const tag: Tag = {
+      id: crypto.randomUUID(),
+      userId: user.id,
+      name,
+      category,
+      color: null,
+      parentId: null,
+    };
+    data.tags.push(tag);
+    return tag;
+  }
   const listSkippedTrades = (): SkippedTradesResponse => ({
     skippedTrades: [...data.skippedTrades].sort((a, b) => b.seenAt.localeCompare(a.seenAt)),
   });
@@ -330,7 +355,6 @@ export function createMockStore() {
 
     if (input.variant === "open") return trade;
     // HARD CONTRACT (trade-entry-ux.md §13): no P&L fields in this response.
-    awaitingDecision.add(trade.id);
     return { id: trade.id, awaitingDecision: true };
   }
 
@@ -365,7 +389,6 @@ export function createMockStore() {
     evaluateDiscipline(trade);
     refreshDailyStat(trade.tradingDate);
 
-    awaitingDecision.add(trade.id);
     return { id: trade.id, awaitingDecision: true };
   }
 
@@ -375,19 +398,26 @@ export function createMockStore() {
     const trade = data.trades.find((t) => t.id === tradeId);
     if (!trade) throw new MockError(404, "Trade not found");
     if (trade.status !== "CLOSED") throw new MockError(409, "Trade is not closed");
-    if (!awaitingDecision.has(tradeId)) throw new MockError(409, "Decision already submitted or not awaited");
+    // Gradeable = closed and not yet graded (same definition as the "to grade"
+    // queue). Derived from state, NOT from the in-session awaitingDecision set,
+    // so "grade later from the queue" survives reloads (§5 graceful degradation).
+    if (trade.decisionGrade !== null) {
+      throw new MockError(409, "Decision already submitted");
+    }
 
     trade.decisionGrade = input.grade;
     trade.followedPlan = input.followedPlan;
     trade.updatedAt = nowIso();
-    awaitingDecision.delete(tradeId);
     refreshDailyStat(trade.tradingDate);
 
     const win = (Number(trade.rMultiple) ?? 0) >= 0;
     const bucket = input.grade === "A" || input.grade === "B" ? "ab" : "df";
-    const savedRToday = data.skippedTrades
-      .filter((g) => g.outcomeGuess === "WOULD_HAVE_LOST" && toTradingDateKey(g.seenAt, USER_TZ) === todayKey())
-      .reduce((sum, g) => sum + Math.abs(Number(g.hypotheticalR ?? "0")), 0);
+    const avoidedToday = data.skippedTrades.filter(
+      (g) =>
+        g.outcomeGuess === "WOULD_HAVE_LOST" &&
+        toTradingDateKey(g.seenAt, USER_TZ) === todayKey(),
+    );
+    const savedRToday = avoidedToday.reduce((sum, g) => sum + Math.abs(Number(g.hypotheticalR ?? "0")), 0);
 
     return {
       tradeId: trade.id,
@@ -415,6 +445,7 @@ export function createMockStore() {
         title: a.title,
         message: a.message,
       })),
+      savedSetupsToday: avoidedToday.length,
       savedRToday: toDecimalString(round2(savedRToday)),
     };
   }
@@ -437,7 +468,28 @@ export function createMockStore() {
           note: m.note,
         };
       });
-    return { trade, detectedMistakes };
+    const tagIds = [...(tradeTags.get(tradeId) ?? [])];
+    return { trade, detectedMistakes, tagIds };
+  }
+
+  // ── Act 3 review persistence (PATCH /trades/:id/review) ──────────────────
+
+  function updateReview(tradeId: string, input: ReviewUpdateInput): ReviewUpdateResponse {
+    const trade = data.trades.find((t) => t.id === tradeId);
+    if (!trade) throw new MockError(404, "Trade not found");
+
+    if (input.mfePrice !== undefined) trade.mfePrice = input.mfePrice;
+    if (input.maePrice !== undefined) trade.maePrice = input.maePrice;
+    if (input.lesson !== undefined) trade.lessons = input.lesson;
+    if (input.tagIds !== undefined) {
+      tradeTags.set(tradeId, new Set(input.tagIds));
+    }
+    // MFE/MAE price → R conversions are recomputed SERVER-side (§13).
+    if (input.mfePrice !== undefined || input.maePrice !== undefined) {
+      applyResults(trade);
+    }
+    trade.updatedAt = nowIso();
+    return { trade };
   }
 
   function resolveMistake(tradeId: string, tradeMistakeId: string, confirmed: boolean) {
@@ -637,6 +689,8 @@ export function createMockStore() {
     closeTrade,
     decide,
     getReview,
+    updateReview,
+    createTag,
     resolveMistake,
     updatePlan,
     updatePsychology,

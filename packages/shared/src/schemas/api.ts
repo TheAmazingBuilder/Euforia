@@ -6,6 +6,7 @@ import {
   outcomeSchema,
   ruleTypeSchema,
   severitySchema,
+  tagCategorySchema,
   tradeStatusSchema,
 } from "../enums";
 import {
@@ -186,9 +187,54 @@ export type ReviewMistake = z.infer<typeof reviewMistakeSchema>;
 export const reviewResponseSchema = z.object({
   trade: tradeSchema,
   detectedMistakes: z.array(reviewMistakeSchema),
+  /** Current trade ↔ tag join ids (reflect screen preselects these). */
+  tagIds: z.array(uuidSchema),
 });
 
 export type ReviewResponse = z.infer<typeof reviewResponseSchema>;
+
+/**
+ * PATCH /trades/:id/review — Act 3 persistence for the fields with no
+ * dedicated endpoint. MFE/MAE are USER-OBSERVED PRICES (inputs), never
+ * computed R — the server recomputes mfeR/maeR from the prices (§13).
+ * All fields optional; at least one required.
+ */
+export const reviewUpdateInputSchema = z
+  .object({
+    mfePrice: positiveDecimalStringSchema.optional(),
+    maePrice: positiveDecimalStringSchema.optional(),
+    /** The lesson — stored on Trade.lessons. */
+    lesson: z.string().max(5000).optional(),
+    /** Full replacement set of tag ids (TradeTag join rows). */
+    tagIds: z.array(uuidSchema).optional(),
+  })
+  .refine(
+    (value) =>
+      value.mfePrice !== undefined ||
+      value.maePrice !== undefined ||
+      value.lesson !== undefined ||
+      value.tagIds !== undefined,
+    { message: "Provide at least one review field" },
+  );
+
+export type ReviewUpdateInput = z.infer<typeof reviewUpdateInputSchema>;
+
+export const reviewUpdateResponseSchema = z.object({
+  /** Updated trade — MFE/MAE-derived R recomputed server-side. */
+  trade: tradeSchema,
+});
+
+export type ReviewUpdateResponse = z.infer<typeof reviewUpdateResponseSchema>;
+
+// ── Tags (inline creation, Act 3 / capture "Add details") ────────────────────
+
+/** POST /tags — inline tag creation (reflect screen + capture details). */
+export const createTagInputSchema = z.object({
+  name: z.string().min(1).max(40),
+  category: tagCategorySchema.optional(),
+});
+
+export type CreateTagInput = z.infer<typeof createTagInputSchema>;
 
 /** PATCH /trades/:id/mistakes/:mistakeId */
 export const resolveMistakeInputSchema = z.object({

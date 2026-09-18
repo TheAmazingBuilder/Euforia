@@ -10,6 +10,8 @@ import type {
   ResolveMistakeInput,
   ResolveMistakeResponse,
   ReviewResponse,
+  ReviewUpdateInput,
+  ReviewUpdateResponse,
   Trade,
   TradeDecisionInput,
   TradesListResponse,
@@ -109,6 +111,22 @@ export function useResolveMistake() {
       }),
     onSuccess: async (_data, variables) => {
       await queryClient.invalidateQueries({ queryKey: queryKeys.review(variables.tradeId) });
+    },
+  });
+}
+
+/** PATCH /trades/:id/review — Act 3 persistence (MFE/MAE prices, lesson, tags). */
+export function useUpdateReview() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ tradeId, input }: { tradeId: string; input: ReviewUpdateInput }) =>
+      apiRequest<ReviewUpdateResponse>(apiPaths.tradeReview(tradeId), {
+        method: "PATCH",
+        body: input,
+      }),
+    onSuccess: async (_data, variables) => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.review(variables.tradeId) });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.tradesRoot });
     },
   });
 }

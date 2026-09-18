@@ -1,10 +1,12 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toDecimalString } from "@cosmoz/shared";
 import type {
   AccountsResponse,
+  CreateTagInput,
   Currency,
   InstrumentsResponse,
   StrategiesResponse,
+  Tag,
   TagsResponse,
 } from "@cosmoz/shared";
 
@@ -41,6 +43,18 @@ export function useTags() {
   return useQuery({
     queryKey: queryKeys.tags,
     queryFn: () => apiRequest<TagsResponse>(apiPaths.tags),
+  });
+}
+
+/** POST /tags — inline tag creation (reflect screen); refreshes the catalog. */
+export function useCreateTag() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: CreateTagInput) =>
+      apiRequest<Tag>(apiPaths.tags, { method: "POST", body: input }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.tags });
+    },
   });
 }
 

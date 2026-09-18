@@ -356,6 +356,8 @@ export const revealPayloadSchema = z.object({
   coachingKey: z.string().min(1),
   detectedMistakes: z.array(detectedMistakeSummarySchema),
   triggeredAlerts: z.array(triggeredAlertSummarySchema),
+  /** Ghost setups avoided and settled as "would have lost" today (server-counted). */
+  savedSetupsToday: z.number().int().nonnegative(),
   /** Discipline Saved accumulated today (null when stats are not yet computed). */
   savedRToday: decimalStringSchema.nullable(),
 });

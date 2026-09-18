@@ -5,6 +5,7 @@ import {
   ChartColumn,
   House,
   LayoutDashboard,
+  List,
   NotebookPen,
   Settings,
   ShieldCheck,
@@ -70,6 +71,15 @@ export const SIDEBAR_ITEMS: NavItem[] = [
       "A monthly calendar will map daily P&L, discipline states and trading activity over time.",
   },
   {
+    href: "/trades",
+    label: "Trades",
+    icon: List,
+    description:
+      "The complete trade log: every execution with its result and decision grade, side by side.",
+    comingSoon:
+      "Filters, CSV import and per-trade detail views will build on this table.",
+  },
+  {
     href: "/journal",
     label: "Journal",
     icon: NotebookPen,
@@ -120,7 +130,7 @@ export type BottomNavItem = {
 
 export const BOTTOM_NAV_ITEMS: BottomNavItem[] = [
   { href: "/", label: "Home", icon: House },
-  { href: "/journal", label: "Trades", icon: NotebookPen },
+  { href: "/trades", label: "Trades", icon: List },
   { href: "/playbook", label: "Playbook", icon: BookOpen },
   { href: "/analytics", label: "Stats", icon: ChartColumn },
 ];

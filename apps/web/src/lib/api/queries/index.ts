@@ -1,5 +1,6 @@
 export {
   useAccounts,
+  useCreateTag,
   useCurrentBalance,
   useInstruments,
   useStrategies,
@@ -16,6 +17,7 @@ export {
   useTrades,
   useUpdatePlan,
   useUpdatePsychology,
+  useUpdateReview,
   type TradesParams,
 } from "./trades";
 export { useCreateSkippedTrade, useSettleSkippedTrade, useSkippedTrades } from "./skippedTrades";

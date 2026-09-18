@@ -5,6 +5,7 @@ import {
   planUpdateInputSchema,
   psychologyUpdateInputSchema,
   resolveMistakeInputSchema,
+  reviewUpdateInputSchema,
   tradeDecisionInputSchema,
   tradesListQuerySchema,
 } from "@cosmoz/shared";
@@ -75,6 +76,17 @@ export const tradeHandlers = [
     await latency();
     try {
       return HttpResponse.json(mockStore.getReview(pathParam(params, "tradeId")));
+    } catch (error) {
+      return toErrorResponse(error);
+    }
+  }),
+
+  // PATCH /trades/:id/review — Act 3 persistence (MFE/MAE prices, lesson, tags)
+  http.patch(endpoint(apiPaths.tradeReview(":tradeId")), async ({ request, params }) => {
+    await latency();
+    try {
+      const input = parseBody(reviewUpdateInputSchema, await readJson(request));
+      return HttpResponse.json(mockStore.updateReview(pathParam(params, "tradeId"), input));
     } catch (error) {
       return toErrorResponse(error);
     }

@@ -3,6 +3,8 @@ packages:
   - "packages/*"
 
 allowBuilds:
-  msw: set this to true or false
+  # msw's postinstall only installs its CLI helper — not needed at runtime
+  # (msw is consumed as a library by the browser worker).
+  msw: false
   sharp: false
   unrs-resolver: true
