@@ -15,10 +15,12 @@ export {
   useResolveMistake,
   useReview,
   useTrades,
+  useUpdateNotes,
   useUpdatePlan,
   useUpdatePsychology,
   useUpdateReview,
   type TradesParams,
 } from "./trades";
 export { useCreateSkippedTrade, useSettleSkippedTrade, useSkippedTrades } from "./skippedTrades";
+export { useSessionTimeline } from "./session";
 export { useStatsOverview } from "./stats";

@@ -173,6 +173,61 @@ export const psychologyUpdateInputSchema = z
 
 export type PsychologyUpdateInput = z.infer<typeof psychologyUpdateInputSchema>;
 
+/** PATCH /trades/:id/notes — the session card's note icon quick-save. */
+export const notesUpdateInputSchema = z.object({
+  notes: z.string().max(2000),
+});
+
+export type NotesUpdateInput = z.infer<typeof notesUpdateInputSchema>;
+
+export const notesUpdateResponseSchema = z.object({
+  trade: tradeSchema,
+});
+
+export type NotesUpdateResponse = z.infer<typeof notesUpdateResponseSchema>;
+
+// ── Session Live (GET /session/timeline, trade-entry-ux.md §9) ────────────
+
+/**
+ * One row of today's session event timeline — computed SERVER-SIDE from
+ * trades, server-forged TradeEvents and alerts; the client never assembles
+ * it (the trading date comes from the API, never computed client-side).
+ */
+export const sessionEventSchema = z.object({
+  id: uuidSchema,
+  at: isoDateTimeSchema,
+  kind: z.enum(["ENTRY", "EXIT", "SL_MODIFIED", "TP_MODIFIED", "ALERT"]),
+  /** Short headline, e.g. "BOOM500 · BUY opened". */
+  label: z.string().min(1),
+  /** Optional mono detail, e.g. "0.42 lots @ 4,182.55". */
+  detail: z.string().nullable(),
+  /** Only ALERT rows carry the source alert's severity. */
+  severity: severitySchema.nullable(),
+});
+
+export type SessionEvent = z.infer<typeof sessionEventSchema>;
+
+/** A logged emotion for the compact mood strip (1-tap psychology taps). */
+export const sessionMoodSchema = z.object({
+  at: isoDateTimeSchema,
+  emotion: emotionSchema,
+  /** BEFORE = at entry; AFTER = in-trade / exit quick-log. */
+  phase: z.enum(["BEFORE", "AFTER"]),
+  tradeId: uuidSchema.nullable(),
+});
+
+export type SessionMood = z.infer<typeof sessionMoodSchema>;
+
+export const sessionTimelineResponseSchema = z.object({
+  /** Server-computed trading date — the client never derives "today". */
+  date: dateKeySchema,
+  /** Chronological (oldest first). */
+  events: z.array(sessionEventSchema),
+  moods: z.array(sessionMoodSchema),
+});
+
+export type SessionTimelineResponse = z.infer<typeof sessionTimelineResponseSchema>;
+
 // ── Review (Act 3) ───────────────────────────────────────────────────────────
 
 /** Detected mistake with its join id (needed for PATCH confirm/dismiss). */
@@ -334,6 +389,29 @@ export const disciplineSavedSchema = z.object({
 
 export type DisciplineSaved = z.infer<typeof disciplineSavedSchema>;
 
+/**
+ * Hesitation Cost — Σ R missed by SETTLED would-have-won ghost trades (the
+ * mirror of Discipline Saved in the Regret Registry) plus their count.
+ */
+export const hesitationCostSchema = z.object({
+  rCost: decimalStringSchema,
+  settledCount: z.number().int().min(0),
+});
+
+export type HesitationCost = z.infer<typeof hesitationCostSchema>;
+
+/**
+ * Daily fear-vs-discipline skip counts over the last 30 days,
+ * zero-filled — feeds the Regret Registry trend sparkline.
+ */
+export const ghostTrendPointSchema = z.object({
+  date: dateKeySchema,
+  fear: z.number().int().min(0),
+  discipline: z.number().int().min(0),
+});
+
+export type GhostTrendPoint = z.infer<typeof ghostTrendPointSchema>;
+
 export const statsOverviewResponseSchema = z.object({
   currency: currencySchema,
   netPnl: decimalStringSchema,
@@ -361,6 +439,10 @@ export const statsOverviewResponseSchema = z.object({
   sparklines: kpiSparklinesSchema,
   /** Σ|R| saved by settled would-have-lost ghost trades + their count. */
   disciplineSaved: disciplineSavedSchema,
+  /** Σ R missed by settled would-have-won ghost trades (Regret Registry). */
+  hesitationCost: hesitationCostSchema,
+  /** Last 30 days of fear-vs-discipline skip counts, zero-filled. */
+  ghostTrend: z.array(ghostTrendPointSchema),
 });
 
 export type StatsOverviewResponse = z.infer<typeof statsOverviewResponseSchema>;

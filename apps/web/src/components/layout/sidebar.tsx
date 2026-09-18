@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Plus } from "lucide-react";
+import { EyeOff, Plus } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { openGhostModal } from "@/lib/hooks/use-ghost-modal";
 import {
   SIDEBAR_FIRST_ITEM,
   SIDEBAR_REST_ITEMS,
@@ -84,6 +85,22 @@ export function SidebarNav({
       >
         <Plus className="size-4 shrink-0" aria-hidden="true" />
         {!collapsed && <span className="truncate">New Trade</span>}
+      </button>
+
+      {/* Ghost capture (spec §3, entry point #3) — deliberately discreet */}
+      <button
+        type="button"
+        onClick={openGhostModal}
+        title="Setup seen, not taken (G)"
+        aria-label="Setup seen, not taken"
+        className={cn(
+          linkBase,
+          "text-muted-foreground/80 hover:bg-muted hover:text-foreground",
+          collapsed ? "size-8 justify-center px-0" : "w-full px-2.5",
+        )}
+      >
+        <EyeOff className="size-3.5 shrink-0" aria-hidden="true" />
+        {!collapsed && <span className="truncate text-xs">Setup seen, not taken</span>}
       </button>
 
       {SIDEBAR_REST_ITEMS.map(renderItem)}

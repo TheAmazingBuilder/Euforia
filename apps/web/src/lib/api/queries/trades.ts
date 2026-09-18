@@ -3,6 +3,8 @@ import type {
   CloseTradeInput,
   CreateTradeInput,
   CreateTradeResponse,
+  NotesUpdateInput,
+  NotesUpdateResponse,
   PlanUpdateInput,
   PlanUpdateResponse,
   PsychologyUpdateInput,
@@ -97,6 +99,13 @@ export function useUpdatePlan() {
 export function useUpdatePsychology() {
   return useTradeMutation(({ tradeId, input }: { tradeId: string; input: PsychologyUpdateInput }) =>
     apiRequest<Trade>(apiPaths.tradePsychology(tradeId), { method: "PATCH", body: input }),
+  );
+}
+
+/** PATCH /trades/:id/notes — session note icon quick-save. */
+export function useUpdateNotes() {
+  return useTradeMutation(({ tradeId, input }: { tradeId: string; input: NotesUpdateInput }) =>
+    apiRequest<NotesUpdateResponse>(apiPaths.tradeNotes(tradeId), { method: "PATCH", body: input }),
   );
 }
 

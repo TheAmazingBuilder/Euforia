@@ -2,6 +2,7 @@ import { http, HttpResponse } from "msw";
 import {
   closeTradeInputSchema,
   createTradeInputSchema,
+  notesUpdateInputSchema,
   planUpdateInputSchema,
   psychologyUpdateInputSchema,
   resolveMistakeInputSchema,
@@ -122,6 +123,17 @@ export const tradeHandlers = [
     try {
       const input = parseBody(psychologyUpdateInputSchema, await readJson(request));
       return HttpResponse.json(mockStore.updatePsychology(pathParam(params, "tradeId"), input));
+    } catch (error) {
+      return toErrorResponse(error);
+    }
+  }),
+
+  // PATCH /trades/:id/notes — session note icon quick-save
+  http.patch(endpoint(apiPaths.tradeNotes(":tradeId")), async ({ request, params }) => {
+    await latency();
+    try {
+      const input = parseBody(notesUpdateInputSchema, await readJson(request));
+      return HttpResponse.json(mockStore.updateNotes(pathParam(params, "tradeId"), input));
     } catch (error) {
       return toErrorResponse(error);
     }

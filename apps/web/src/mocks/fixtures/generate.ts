@@ -201,6 +201,7 @@ export function buildFixtureData(): FixtureData {
     isActive: true,
   }));
   const instrumentBySymbol = new Map(instruments.map((i) => [i.symbol, i]));
+  const instrumentById = new Map(instruments.map((i) => [i.id, i]));
   const defBySymbol = new Map(INSTRUMENT_DEFS.map((d) => [d.symbol, d]));
 
   const strategies: Strategy[] = STRATEGY_DEFS.map((def, index) => ({
@@ -694,7 +695,7 @@ export function buildFixtureData(): FixtureData {
     { offset: 3, reason: "FEAR", outcome: "WOULD_HAVE_WON", r: 0.7, dir: "BUY", notes: "Hesitated at the retest." },
     { offset: 1, reason: "OUT_OF_PLAYBOOK", outcome: null, r: null, dir: "SELL", notes: null },
     { offset: 0, reason: "FEAR", outcome: null, r: null, dir: "BUY", notes: null },
-    { offset: 0, reason: "MISSED_EXECUTION", outcome: null, r: null, dir: null, notes: null },
+    { offset: 1, reason: "MISSED_EXECUTION", outcome: null, r: null, dir: null, notes: null },
   ] as const;
 
   const skippedTrades: SkippedTrade[] = ghostSpecs.map((spec) => {
@@ -715,7 +716,33 @@ export function buildFixtureData(): FixtureData {
     };
   });
 
-  // ── Alerts (6: severity WARN ×2, ALERT ×2, type DISCIPLINE_WIN ×2) ──
+  // ── Alerts (6 + settlement reminders) ──
+  // Pending ghost trades older than 1 day trigger a soft "how did it play
+  // out?" reminder (trade-entry-ux.md §8) — SYSTEM/NOTIFY, unread, feeding
+  // both the alerts feed and the Session Live settlement queue.
+  const settlementReminders: Alert[] = skippedTrades
+    .filter((ghost) => ghost.outcomeGuess === null)
+    .filter((ghost) => toTradingDateKey(ghost.seenAt, USER_TZ) < dateKeyForOffset(0, nowDayStart.getTime()))
+    .map((ghost) => {
+      const symbol = instrumentById.get(ghost.instrumentId)?.symbol ?? "the setup";
+      const weekday = new Date(ghost.seenAt).toLocaleDateString("en-US", { weekday: "long" });
+      return {
+        id: uuid(rng),
+        userId,
+        type: "SYSTEM" as const,
+        severity: "NOTIFY" as const,
+        title: "Ghost check-in",
+        message: `Your ${weekday} ${symbol} — how did it play out? Two taps to settle it (would have won / lost).`,
+        payload: { skippedTradeId: ghost.id },
+        tradeId: null,
+        readAt: null,
+        dismissedAt: null,
+        createdAt: new Date(
+          Math.min(Date.now(), dayStartMs(0, nowDayStart.getTime()) + 9 * 3_600_000),
+        ).toISOString(),
+      };
+    });
+
   const findTradeOnDay = (offset: number, wantLoss: boolean): Trade | undefined => {
     const key = dateKeyForOffset(offset, nowDayStart.getTime());
     return trades.find(
@@ -729,6 +756,7 @@ export function buildFixtureData(): FixtureData {
   const todayLastTrade = todayTrades[todayTrades.length - 1] ?? null;
 
   const alerts: Alert[] = [
+    ...settlementReminders,
     {
       id: uuid(rng),
       userId,

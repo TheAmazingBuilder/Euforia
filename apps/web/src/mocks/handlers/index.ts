@@ -1,6 +1,7 @@
 import { catalogHandlers } from "./catalogs";
 import { disciplineHandlers } from "./discipline";
 import { ghostHandlers } from "./ghosts";
+import { sessionHandlers } from "./session";
 import { statsHandlers } from "./stats";
 import { tradeHandlers } from "./trades";
 
@@ -11,4 +12,5 @@ export const handlers = [
   ...disciplineHandlers,
   ...ghostHandlers,
   ...statsHandlers,
+  ...sessionHandlers,
 ];

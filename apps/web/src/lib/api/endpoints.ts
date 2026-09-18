@@ -18,6 +18,8 @@ export const apiPaths = {
     `/trades/${tradeId}/mistakes/${mistakeId}`,
   tradePlan: (tradeId: string) => `/trades/${tradeId}/plan`,
   tradePsychology: (tradeId: string) => `/trades/${tradeId}/psychology`,
+  tradeNotes: (tradeId: string) => `/trades/${tradeId}/notes`,
+  sessionTimeline: "/session/timeline",
   skippedTrades: "/skipped-trades",
   skippedTradeSettle: (skippedId: string) => `/skipped-trades/${skippedId}/settle`,
   alerts: "/alerts",

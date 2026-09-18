@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Plus } from "lucide-react";
+import { EyeOff, Plus } from "lucide-react";
 
 import { BOTTOM_NAV_ITEMS } from "@/lib/navigation";
+import { openGhostModal } from "@/lib/hooks/use-ghost-modal";
 import { openTradeModal } from "@/lib/hooks/use-trade-modal";
 import { cn } from "@/lib/utils";
 
@@ -18,6 +19,21 @@ function NewTradeFab() {
       className="grid size-12 -translate-y-4 place-items-center rounded-full border border-border bg-accent text-accent-foreground hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
       <Plus className="size-5" aria-hidden="true" />
+    </button>
+  );
+}
+
+/** Ghost capture (spec §10: dedicated button near the bottom bar). */
+function GhostFab() {
+  return (
+    <button
+      type="button"
+      onClick={() => openGhostModal()}
+      aria-label="Setup seen, not taken"
+      title="Setup seen, not taken"
+      className="grid size-10 -translate-y-3 place-items-center rounded-full border border-border bg-surface-raised text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    >
+      <EyeOff className="size-4" aria-hidden="true" />
     </button>
   );
 }
@@ -57,7 +73,8 @@ export function BottomNav() {
     >
       <div className="mx-auto flex h-16 max-w-md items-stretch justify-around px-2">
         <div className="flex flex-1 items-stretch gap-1">{left.map(renderItem)}</div>
-        <div className="flex w-16 items-start justify-center">
+        <div className="flex w-24 items-start justify-center gap-1.5">
+          <GhostFab />
           <NewTradeFab />
         </div>
         <div className="flex flex-1 items-stretch gap-1">{right.map(renderItem)}</div>

@@ -13,6 +13,7 @@ import {
   type CreateTradeResponse,
   type DailyStat,
   type Instrument,
+  type NotesUpdateInput,
   type PlanUpdateInput,
   type PlanUpdateResponse,
   type PsychologyUpdateInput,
@@ -21,6 +22,7 @@ import {
   type ReviewUpdateInput,
   type ReviewUpdateResponse,
   type RulesStatusResponse,
+  type SessionTimelineResponse,
   type SettleSkippedTradeInput,
   type SkippedTrade,
   type SkippedTradesResponse,
@@ -796,6 +798,27 @@ export function createMockStore() {
     );
     const rSaved = savedGhosts.reduce((sum, g) => sum + Math.abs(Number(g.hypotheticalR)), 0);
 
+    // ── Hesitation Cost — settled would-have-won ghost trades (mirror) ──────
+    const hesitantGhosts = data.skippedTrades.filter(
+      (g) => g.outcomeGuess === "WOULD_HAVE_WON" && g.hypotheticalR !== null,
+    );
+    const rCost = hesitantGhosts.reduce((sum, g) => sum + Math.abs(Number(g.hypotheticalR)), 0);
+
+    // ── Ghost trend — fear vs discipline skip counts, last 30 days ─────────
+    const trendDays = 30;
+    const ghostTrend: StatsOverviewResponse["ghostTrend"] = [];
+    for (let offset = trendDays - 1; offset >= 0; offset -= 1) {
+      const date = shiftDateKey(-offset);
+      const dayGhosts = data.skippedTrades.filter(
+        (g) => toTradingDateKey(g.seenAt, USER_TZ) === date,
+      );
+      ghostTrend.push({
+        date,
+        fear: dayGhosts.filter((g) => g.reason === "FEAR").length,
+        discipline: dayGhosts.filter((g) => g.reason === "DISCIPLINE").length,
+      });
+    }
+
     return {
       currency: mainAccount.currency,
       netPnl: toDecimalString(round2(netPnl)),
@@ -819,7 +842,115 @@ export function createMockStore() {
         rSaved: toDecimalString(round2(rSaved)),
         settledCount: savedGhosts.length,
       },
+      hesitationCost: {
+        rCost: toDecimalString(round2(rCost)),
+        settledCount: hesitantGhosts.length,
+      },
+      ghostTrend,
     };
+  }
+
+  // ── Session Live (trade-entry-ux.md §9) ──────────────────────────────────
+
+  /**
+   * GET /session/timeline — today's events (entries, exits, SL/TP
+   * modifications, alerts) + logged emotions, all assembled SERVER-SIDE for
+   * the server's trading date. The client never derives "today".
+   */
+  function sessionTimeline(): SessionTimelineResponse {
+    const today = todayKey();
+    const symbolOf = (tradeId: string): string => {
+      const trade = data.trades.find((t) => t.id === tradeId);
+      return trade ? (instrumentById.get(trade.instrumentId)?.symbol ?? "?") : "?";
+    };
+
+    const events: SessionTimelineResponse["events"] = [];
+
+    for (const trade of data.trades) {
+      if (trade.tradingDate !== today) continue;
+      const symbol = instrumentById.get(trade.instrumentId)?.symbol ?? "?";
+      events.push({
+        id: `entry-${trade.id}`,
+        at: trade.entryAt,
+        kind: "ENTRY",
+        label: `${symbol} · ${trade.direction} opened`,
+        detail: `${trade.quantity} @ ${trade.entryPrice}`,
+        severity: null,
+      });
+      if (trade.status === "CLOSED" && trade.exitAt !== null) {
+        events.push({
+          id: `exit-${trade.id}`,
+          at: trade.exitAt,
+          kind: "EXIT",
+          label: `${symbol} · ${trade.direction} closed`,
+          detail: trade.exitReason !== null ? `Exit ${trade.exitReason}` : null,
+          severity: null,
+        });
+      }
+    }
+
+    for (const event of data.tradeEvents) {
+      if (toTradingDateKey(event.createdAt, USER_TZ) !== today) continue;
+      if (event.type !== "SL_MODIFIED" && event.type !== "TP_MODIFIED") continue;
+      const payload = event.payload as { from?: string; to?: string } | null;
+      const from = typeof payload?.from === "string" ? payload.from : "?";
+      const to = typeof payload?.to === "string" ? payload.to : "?";
+      events.push({
+        id: event.id,
+        at: event.createdAt,
+        kind: event.type,
+        label: `${symbolOf(event.tradeId)} · ${event.type === "SL_MODIFIED" ? "stop" : "target"} modified`,
+        detail: `${from} → ${to}`,
+        severity: null,
+      });
+    }
+
+    for (const alert of data.alerts) {
+      if (toTradingDateKey(alert.createdAt, USER_TZ) !== today) continue;
+      events.push({
+        id: `alert-${alert.id}`,
+        at: alert.createdAt,
+        kind: "ALERT",
+        label: alert.title,
+        detail: alert.message,
+        severity: alert.severity,
+      });
+    }
+
+    events.sort((a, b) => a.at.localeCompare(b.at));
+
+    const moods: SessionTimelineResponse["moods"] = [];
+    for (const trade of data.trades) {
+      // Entry emotion: belongs to the trade's own trading day.
+      if (trade.tradingDate === today && trade.emotionBefore !== null) {
+        moods.push({
+          at: trade.entryAt,
+          emotion: trade.emotionBefore,
+          phase: "BEFORE",
+          tradeId: trade.id,
+        });
+      }
+      // Exit / in-trade emotion: the TAP's day is what matters — an in-trade
+      // quick-log on a trade opened yesterday is still today's event.
+      if (trade.emotionAfter !== null) {
+        const at = trade.status === "OPEN" ? trade.updatedAt : (trade.exitAt ?? trade.updatedAt);
+        if (trade.status === "OPEN" ? toTradingDateKey(at, USER_TZ) === today : trade.tradingDate === today) {
+          moods.push({ at, emotion: trade.emotionAfter, phase: "AFTER", tradeId: trade.id });
+        }
+      }
+    }
+    moods.sort((a, b) => a.at.localeCompare(b.at));
+
+    return { date: today, events, moods };
+  }
+
+  /** PATCH /trades/:id/notes — session note icon quick-save. */
+  function updateNotes(tradeId: string, input: NotesUpdateInput): Trade {
+    const trade = data.trades.find((t) => t.id === tradeId);
+    if (!trade) throw new MockError(404, "Trade not found");
+    trade.notes = input.notes;
+    trade.updatedAt = nowIso();
+    return trade;
   }
 
   return {
@@ -845,6 +976,8 @@ export function createMockStore() {
     settleSkippedTrade,
     rulesStatus,
     statsOverview,
+    sessionTimeline,
+    updateNotes,
   };
 }
 

@@ -37,14 +37,16 @@ export const EMOTION_OPTIONS: readonly Emotion[] = [
 export interface EmotionPickerProps {
   value: Emotion | null;
   onChange: (emotion: Emotion | null) => void;
+  /** Accessible group label (context-dependent: entry vs in-trade). */
+  ariaLabel?: string;
 }
 
-export function EmotionPicker({ value, onChange }: EmotionPickerProps) {
+export function EmotionPicker({ value, onChange, ariaLabel = "Emotion before entry" }: EmotionPickerProps) {
   return (
     <div
       className="flex flex-wrap gap-1.5"
       role="radiogroup"
-      aria-label="Emotion before entry"
+      aria-label={ariaLabel}
     >
       {EMOTION_OPTIONS.map((emotion) => {
         const selected = emotion === value;

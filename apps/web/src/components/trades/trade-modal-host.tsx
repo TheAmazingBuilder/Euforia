@@ -2,21 +2,26 @@
 
 import * as React from "react";
 
+import { GhostModal } from "@/components/trades/ghost-modal";
 import { TradeModal } from "@/components/trades/trade-modal";
 import { ShortcutsOverlay } from "@/components/trades/shortcuts-overlay";
+import { openGhostModal, useGhostModalState } from "@/lib/hooks/use-ghost-modal";
 import { openTradeModal, useTradeModalState } from "@/lib/hooks/use-trade-modal";
 
 /**
- * Mounts the capture modal + the "?" shortcuts overlay and owns the global
- * hotkeys (custom listener — no library, per phase brief):
+ * Mounts the capture modal, the ghost modal ("Setup seen, not taken") and the
+ * "?" shortcuts overlay, and owns the global hotkeys (custom listener — no
+ * library, per phase brief):
  * - N opens the trade modal from anywhere (except while typing). While the
  *   modal is already open, N is left to the form (fast loop after a save);
  *   mid-capture it must NOT wipe the form.
+ * - G opens the ghost-capture modal (spec §3, entry point #3).
  * - ? toggles the shortcuts overlay.
  * - Esc is handled by the Dialog/Sheet primitives (draft is always saved).
  */
 export function TradeModalHost() {
   const { open, seed } = useTradeModalState();
+  const ghost = useGhostModalState();
   const [shortcutsOpen, setShortcutsOpen] = React.useState(false);
 
   React.useEffect(() => {
@@ -38,15 +43,21 @@ export function TradeModalHost() {
       if ((event.key === "n" || event.key === "N") && !typing && !open) {
         event.preventDefault();
         openTradeModal();
+        return;
+      }
+      if ((event.key === "g" || event.key === "G") && !typing && !ghost.open) {
+        event.preventDefault();
+        openGhostModal();
       }
     };
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [open]);
+  }, [open, ghost.open]);
 
   return (
     <>
       <TradeModal open={open} seed={seed} />
+      <GhostModal open={ghost.open} />
       <ShortcutsOverlay open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
     </>
   );
