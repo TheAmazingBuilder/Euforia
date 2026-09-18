@@ -3,10 +3,12 @@ import {
   currencySchema,
   directionSchema,
   emotionSchema,
+  gradeSchema,
   mistakeCategorySchema,
   outcomeSchema,
   ruleTypeSchema,
   severitySchema,
+  strategyGradeSchema,
   tagCategorySchema,
   tradeStatusSchema,
 } from "../enums";
@@ -565,3 +567,152 @@ export const statsOverviewResponseSchema = z.object({
 });
 
 export type StatsOverviewResponse = z.infer<typeof statsOverviewResponseSchema>;
+
+// ── Analytics suite (GET /stats/analytics) ───────────────────────────────────
+
+/**
+ * One grouped aggregate row used across the analytics suite (hour buckets,
+ * weekdays, sessions, emotions). Aggregates are computed SERVER-SIDE; every
+ * rate ships with its `trades` count — statistical honesty is a product
+ * principle, never render a rate without its n.
+ */
+export const analyticsBucketSchema = z.object({
+  /** Stable grouping key ("13", "MON", "ASIA", "FOMO"…). */
+  key: z.string().min(1),
+  /** Ready-to-render display label. */
+  label: z.string().min(1),
+  trades: z.number().int().min(0),
+  wins: z.number().int().min(0),
+  /** Average R per trade; null when the bucket is empty. */
+  avgR: decimalStringSchema.nullable(),
+  /** Win ratio 0–1; null when the bucket is empty. */
+  winRate: decimalStringSchema.nullable(),
+});
+
+export type AnalyticsBucket = z.infer<typeof analyticsBucketSchema>;
+
+/** Weekday (rows) × UTC hour bucket (columns) cell of the Overview heatmap. */
+export const heatmapCellSchema = z.object({
+  /** 0 = Sunday … 6 = Saturday (derived from the API tradingDate). */
+  weekday: z.number().int().min(0).max(6),
+  /** Index into ANALYTICS_HOUR_BUCKETS. */
+  hourBucket: z.number().int().min(0).max(5),
+  trades: z.number().int().min(0),
+  wins: z.number().int().min(0),
+  /** Average R per trade; null when the cell is empty. */
+  avgR: decimalStringSchema.nullable(),
+});
+
+export type HeatmapCell = z.infer<typeof heatmapCellSchema>;
+
+/** One cell of the decision-grade × outcome matrix. */
+export const gradeOutcomeCellSchema = z.object({
+  count: z.number().int().min(0),
+  avgR: decimalStringSchema,
+});
+
+export type GradeOutcomeCell = z.infer<typeof gradeOutcomeCellSchema>;
+
+/**
+ * The poker-logic proof: a decision grade assigned BEFORE the reveal must
+ * not predict the outcome better than chance — if it does, the grader saw
+ * the result (hindsight bias). Rows ordered A → F.
+ */
+export const gradeOutcomeRowSchema = z.object({
+  grade: gradeSchema,
+  win: gradeOutcomeCellSchema.nullable(),
+  loss: gradeOutcomeCellSchema.nullable(),
+});
+
+export type GradeOutcomeRow = z.infer<typeof gradeOutcomeRowSchema>;
+
+/**
+ * Tilt timeline point — one chronological closed trade with its committed
+ * risk and the loss streak that preceded it. `isSpike` flags the classic
+ * pattern: a bigger-than-previous risk right after ≥ 2 consecutive losses.
+ */
+export const tiltPointSchema = z.object({
+  tradeId: uuidSchema,
+  date: dateKeySchema,
+  riskAmount: decimalStringSchema,
+  rMultiple: decimalStringSchema,
+  /** Consecutive losses immediately before this trade. */
+  priorLossStreak: z.number().int().min(0),
+  isSpike: z.boolean(),
+});
+
+export type TiltPoint = z.infer<typeof tiltPointSchema>;
+
+/** Sleep-vs-P&L scatter point (from the nightly DailyStat materialization). */
+export const sleepPointSchema = z.object({
+  date: dateKeySchema,
+  sleepHours: decimalStringSchema,
+  pnlNet: decimalStringSchema,
+  tradesCount: z.number().int().min(0),
+});
+
+export type SleepPoint = z.infer<typeof sleepPointSchema>;
+
+/** Per-strategy closed-trade R values (chronological) for the small multiples. */
+export const strategyDistributionSchema = z.object({
+  strategyId: uuidSchema,
+  name: z.string().min(1),
+  grade: strategyGradeSchema.nullable(),
+  color: z.string().nullable(),
+  rValues: z.array(decimalStringSchema),
+});
+
+export type StrategyDistribution = z.infer<typeof strategyDistributionSchema>;
+
+/**
+ * Summary cards band of the Overview tab. Complements /stats/overview with
+ * the analytics-only ratios; all values are server-computed decimal strings.
+ */
+export const analyticsCardsSchema = z.object({
+  winRate: decimalStringSchema,
+  profitFactor: decimalStringSchema.nullable(),
+  /** Average R per closed trade. */
+  expectancy: decimalStringSchema,
+  /** Realized R:R — average winning R ÷ average losing R. */
+  payoffRatio: decimalStringSchema.nullable(),
+  /** Worst peak-to-trough decline of the cumulative-R curve (≤ 0). */
+  maxDrawdownR: decimalStringSchema,
+  /** Closed trades to climb back to the prior peak; null = not recovered yet. */
+  recoveryTrades: z.number().int().min(0).nullable(),
+  /** Calendar days from trough back to the prior peak; null = not recovered. */
+  recoveryDays: z.number().int().min(0).nullable(),
+  /** Total closed trades in the sample (the global n). */
+  sampleTrades: z.number().int().min(0),
+});
+
+export type AnalyticsCards = z.infer<typeof analyticsCardsSchema>;
+
+/**
+ * GET /stats/analytics — one response feeding the whole analytics suite:
+ * summary cards, heatmap, time buckets, psychology correlations, all-time
+ * mistake ledger and per-strategy R distributions. The client renders; it
+ * never re-derives these aggregates.
+ */
+export const analyticsResponseSchema = z.object({
+  currency: currencySchema,
+  cards: analyticsCardsSchema,
+  heatmap: z.array(heatmapCellSchema),
+  /** Average R per UTC hour bucket (see ANALYTICS_HOUR_BUCKETS). */
+  hourBuckets: z.array(analyticsBucketSchema),
+  /** Average R per weekday, Monday first. */
+  weekdayBuckets: z.array(analyticsBucketSchema),
+  /** Average R per trading session (Asia / London / New York). */
+  sessionBuckets: z.array(analyticsBucketSchema),
+  /** Average R per pre-trade emotion, worst first. */
+  emotionBuckets: z.array(analyticsBucketSchema),
+  gradeMatrix: z.array(gradeOutcomeRowSchema),
+  /** Chronological closed trades for the tilt timeline. */
+  tilt: z.array(tiltPointSchema),
+  /** Days with a known sleep duration, chronological. */
+  sleepScatter: z.array(sleepPointSchema),
+  /** All-time mistake ledger (same shape as the 30-day /mistakes/ledger). */
+  mistakes: z.array(mistakeLedgerEntrySchema),
+  strategyDistributions: z.array(strategyDistributionSchema),
+});
+
+export type AnalyticsResponse = z.infer<typeof analyticsResponseSchema>;

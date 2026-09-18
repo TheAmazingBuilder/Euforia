@@ -2,18 +2,33 @@
 
 import * as React from "react";
 import * as echarts from "echarts/core";
-import { LineChart } from "echarts/charts";
+import { BarChart, HeatmapChart, LineChart, ScatterChart } from "echarts/charts";
 import {
   GridComponent,
   MarkAreaComponent,
+  MarkLineComponent,
   TooltipComponent,
+  VisualMapComponent,
 } from "echarts/components";
 import { CanvasRenderer } from "echarts/renderers";
 import { useTheme } from "next-themes";
 import type { EChartsCoreOption } from "echarts/core";
 
-// Tree-shaken registration — only what the dashboard consumes today.
-echarts.use([LineChart, GridComponent, TooltipComponent, MarkAreaComponent, CanvasRenderer]);
+// Tree-shaken registration — line (equity/sparklines), bar (time buckets,
+// histograms), scatter (sleep/tilt) and heatmap (Overview grid) + the
+// components those series consume.
+echarts.use([
+  LineChart,
+  BarChart,
+  ScatterChart,
+  HeatmapChart,
+  GridComponent,
+  TooltipComponent,
+  MarkAreaComponent,
+  MarkLineComponent,
+  VisualMapComponent,
+  CanvasRenderer,
+]);
 
 interface EChartProps {
   option: EChartsCoreOption;

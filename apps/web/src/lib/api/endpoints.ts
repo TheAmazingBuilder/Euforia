@@ -27,6 +27,7 @@ export const apiPaths = {
   alerts: "/alerts",
   alertRead: (alertId: string) => `/alerts/${alertId}/read`,
   statsOverview: "/stats/overview",
+  statsAnalytics: "/stats/analytics",
   rules: "/rules",
   rule: (ruleId: string) => `/rules/${ruleId}`,
   violations: "/violations",

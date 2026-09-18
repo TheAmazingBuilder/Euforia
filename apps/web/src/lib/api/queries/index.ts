@@ -41,4 +41,4 @@ export {
   useUpdateStrategy,
 } from "./playbook";
 export { useSessionTimeline } from "./session";
-export { useStatsOverview } from "./stats";
+export { useAnalytics, useStatsOverview } from "./stats";

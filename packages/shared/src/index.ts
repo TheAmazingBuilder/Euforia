@@ -1,7 +1,14 @@
 export { COSMOZ_VERSION } from "./version";
 
 // ── Constants ────────────────────────────────────────────────────────────────
-export { PLAYBOOK_COLOR_PALETTE, toMonthKey } from "./constants";
+export {
+  PLAYBOOK_COLOR_PALETTE,
+  toMonthKey,
+  ANALYTICS_HOUR_BUCKETS,
+  ANALYTIC_SESSIONS,
+  ANALYTICS_WEEKDAYS,
+  EMOTION_LABELS,
+} from "./constants";
 
 // ── Enums (zod schemas + inferred TS types) ─────────────────────────────────
 export * from "./enums";

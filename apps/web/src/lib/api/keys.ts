@@ -17,6 +17,7 @@ export const queryKeys = {
   review: (tradeId: string) => ["review", tradeId] as const,
   alerts: ["alerts"] as const,
   statsOverview: ["stats-overview"] as const,
+  statsAnalytics: ["stats-analytics"] as const,
   skippedTrades: ["skipped-trades"] as const,
   sessionTimeline: ["session-timeline"] as const,
 } as const;

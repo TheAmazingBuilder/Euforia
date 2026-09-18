@@ -1,4 +1,8 @@
 import {
+  ANALYTIC_SESSIONS,
+  ANALYTICS_HOUR_BUCKETS,
+  ANALYTICS_WEEKDAYS,
+  EMOTION_LABELS,
   computeRiskAmount,
   pnlForExit,
   toDecimalString,
@@ -7,6 +11,8 @@ import {
   type AcknowledgeViolationInput,
   type Alert,
   type AlertsResponse,
+  type AnalyticsBucket,
+  type AnalyticsResponse,
   type CloseTradeInput,
   type CreateRuleInput,
   type CreateSkippedTradeInput,
@@ -16,6 +22,10 @@ import {
   type CreateTradeResponse,
   type DailyStat,
   type DisciplineScoreResponse,
+  type Emotion,
+  type GradeOutcomeCell,
+  type GradeOutcomeRow,
+  type HeatmapCell,
   type Instrument,
   type MistakeLedgerResponse,
   type NotesUpdateInput,
@@ -35,12 +45,15 @@ import {
   type SettleSkippedTradeInput,
   type SkippedTrade,
   type SkippedTradesResponse,
+  type SleepPoint,
   type StatsOverviewResponse,
   type StrategiesStatsResponse,
   type Strategy,
+  type StrategyDistribution,
   type StrategyStat,
   type Tag,
   type TagsResponse,
+  type TiltPoint,
   type Trade,
   type TradeDecisionInput,
   type TradesListResponse,
@@ -1137,8 +1150,7 @@ export function createMockStore() {
   }
 
   /** GET /mistakes/ledger — per-mistake frequency + R cost over the window. */
-  function mistakesLedger(): MistakeLedgerResponse {
-    const since = windowStart();
+  function mistakesLedger(since: string = windowStart()): MistakeLedgerResponse {
     const entries: MistakeLedgerResponse["entries"] = [];
     for (const mistake of data.mistakes) {
       const windowRows = data.tradeMistakes
@@ -1165,6 +1177,219 @@ export function createMockStore() {
     // Most expensive first — cost dominates, then frequency.
     entries.sort((a, b) => Math.abs(Number(b.rCost)) - Math.abs(Number(a.rCost)) || b.count - a.count);
     return { windowStart: since, entries };
+  }
+
+  // ── Analytics suite (Phase 9, GET /stats/analytics) ──────────────────────
+
+  /** Group closed trades into an AnalyticsBucket (server-side aggregate). */
+  function bucketOf(key: string, label: string, group: Trade[]): AnalyticsBucket {
+    const count = group.length;
+    const wins = group.filter((t) => (Number(t.pnlNet) ?? 0) > 0).length;
+    const avgR = count > 0 ? group.reduce((sum, t) => sum + (Number(t.rMultiple) ?? 0), 0) / count : null;
+    return {
+      key,
+      label,
+      trades: count,
+      wins,
+      avgR: avgR === null ? null : toDecimalString(round2(avgR)),
+      winRate: count > 0 ? toDecimalString(round2(wins / count)) : null,
+    };
+  }
+
+  /**
+   * GET /stats/analytics — every aggregate the analytics suite renders,
+   * computed here so the client only formats (same contract as
+   * /stats/overview). Each rate ships with its n.
+   */
+  function analytics(): AnalyticsResponse {
+    const closed = [...closedTrades()].sort(
+      (a, b) => (a.tradingDate + a.exitAt).localeCompare(b.tradingDate + b.exitAt),
+    );
+
+    // ── Cards ──────────────────────────────────────────────────────────────
+    const wins = closed.filter((t) => (Number(t.pnlNet) ?? 0) > 0);
+    const losses = closed.filter((t) => (Number(t.pnlNet) ?? 0) < 0);
+    const grossProfit = wins.reduce((sum, t) => sum + (Number(t.pnlNet) ?? 0), 0);
+    const grossLoss = Math.abs(losses.reduce((sum, t) => sum + (Number(t.pnlNet) ?? 0), 0));
+    const winRate = closed.length > 0 ? wins.length / closed.length : 0;
+    const expectancy = closed.length > 0
+      ? closed.reduce((sum, t) => sum + (Number(t.rMultiple) ?? 0), 0) / closed.length
+      : 0;
+    const avgWinR = wins.length > 0 ? wins.reduce((sum, t) => sum + (Number(t.rMultiple) ?? 0), 0) / wins.length : null;
+    const avgLossR = losses.length > 0
+      ? Math.abs(losses.reduce((sum, t) => sum + (Number(t.rMultiple) ?? 0), 0) / losses.length)
+      : null;
+    const payoffRatio = avgWinR !== null && avgLossR !== null && avgLossR > 0 ? avgWinR / avgLossR : null;
+
+    // Cumulative-R curve → max drawdown (R units) + recovery stats.
+    let cumR = 0;
+    let peakR = 0;
+    let maxDrawdownR = 0;
+    let troughIndex = -1;
+    const cumulative: number[] = [];
+    closed.forEach((trade, index) => {
+      cumR += Number(trade.rMultiple) ?? 0;
+      cumulative.push(cumR);
+      if (cumR > peakR) peakR = cumR;
+      const drawdown = cumR - peakR;
+      if (drawdown < maxDrawdownR) {
+        maxDrawdownR = drawdown;
+        troughIndex = index;
+      }
+    });
+    let recoveryTrades: number | null = null;
+    let recoveryDays: number | null = null;
+    if (troughIndex >= 0) {
+      const recoveryIndex = cumulative.findIndex((value, index) => index > troughIndex && value >= peakR);
+      if (recoveryIndex > troughIndex) {
+        recoveryTrades = recoveryIndex - troughIndex;
+        const from = new Date(`${closed[troughIndex]!.tradingDate}T00:00:00Z`).getTime();
+        const to = new Date(`${closed[recoveryIndex]!.tradingDate}T00:00:00Z`).getTime();
+        recoveryDays = Math.max(0, Math.round((to - from) / 86_400_000));
+      }
+    }
+
+    // ── Heatmap + time buckets (UTC hours; weekday from the API tradingDate) ─
+    const weekdayOf = (trade: Trade): number =>
+      new Date(`${trade.tradingDate}T00:00:00Z`).getUTCDay();
+    const hourBucketOf = (trade: Trade): number => {
+      const hour = new Date(trade.entryAt).getUTCHours();
+      const index = ANALYTICS_HOUR_BUCKETS.findIndex((bucket) => hour >= bucket.from && hour < bucket.to);
+      return index === -1 ? ANALYTICS_HOUR_BUCKETS.length - 1 : index;
+    };
+
+    const heatmap: HeatmapCell[] = [];
+    for (const weekday of ANALYTICS_WEEKDAYS) {
+      for (let bucket = 0; bucket < ANALYTICS_HOUR_BUCKETS.length; bucket += 1) {
+        const cell = closed.filter((t) => weekdayOf(t) === weekday.index && hourBucketOf(t) === bucket);
+        heatmap.push({
+          weekday: weekday.index,
+          hourBucket: bucket,
+          trades: cell.length,
+          wins: cell.filter((t) => (Number(t.pnlNet) ?? 0) > 0).length,
+          avgR: cell.length === 0
+            ? null
+            : toDecimalString(round2(cell.reduce((sum, t) => sum + (Number(t.rMultiple) ?? 0), 0) / cell.length)),
+        });
+      }
+    }
+
+    const hourBuckets: AnalyticsBucket[] = ANALYTICS_HOUR_BUCKETS.map((bucket, index) =>
+      bucketOf(String(index), bucket.label, closed.filter((t) => hourBucketOf(t) === index)),
+    );
+
+    const weekdayBuckets: AnalyticsBucket[] = ANALYTICS_WEEKDAYS.map((weekday) =>
+      bucketOf(
+        String(weekday.index),
+        weekday.label,
+        closed.filter((t) => weekdayOf(t) === weekday.index),
+      ),
+    );
+
+    const sessionBuckets: AnalyticsBucket[] = ANALYTIC_SESSIONS.map((session) => {
+      const hourSet = new Set(session.hours);
+      return bucketOf(
+        session.key,
+        session.label,
+        closed.filter((t) => hourSet.has(new Date(t.entryAt).getUTCHours())),
+      );
+    });
+
+    // ── Emotions (worst average R first — friction surfaces on top) ────────
+    const emotionBuckets = [...new Set(closed.map((t) => t.emotionBefore).filter((e): e is Emotion => e !== null))]
+      .map((emotion) => bucketOf(emotion, EMOTION_LABELS[emotion], closed.filter((t) => t.emotionBefore === emotion)))
+      .sort((a, b) => Number(a.avgR ?? 0) - Number(b.avgR ?? 0));
+
+    // ── Decision grade × outcome matrix (A → F) ────────────────────────────
+    const gradeMatrix: GradeOutcomeRow[] = (["A", "B", "C", "D", "F"] as const).map((grade) => {
+      const graded = closed.filter((t) => t.decisionGrade === grade);
+      const cell = (group: Trade[]): GradeOutcomeCell | null => {
+        if (group.length === 0) return null;
+        return {
+          count: group.length,
+          avgR: toDecimalString(round2(group.reduce((sum, t) => sum + (Number(t.rMultiple) ?? 0), 0) / group.length)),
+        };
+      };
+      return {
+        grade,
+        win: cell(graded.filter((t) => (Number(t.pnlNet) ?? 0) > 0)),
+        loss: cell(graded.filter((t) => (Number(t.pnlNet) ?? 0) < 0)),
+      };
+    });
+
+    // ── Tilt timeline (loss streaks followed by size spikes) ───────────────
+    const tilt: TiltPoint[] = [];
+    let lossStreak = 0;
+    let previousRisk: number | null = null;
+    for (const trade of closed) {
+      const risk = Number(trade.riskAmount ?? "0");
+      const r = Number(trade.rMultiple) ?? 0;
+      const isSpike =
+        lossStreak >= 2 && previousRisk !== null && previousRisk > 0 && risk > previousRisk * 1.2;
+      tilt.push({
+        tradeId: trade.id,
+        date: trade.tradingDate,
+        riskAmount: trade.riskAmount ?? "0",
+        rMultiple: trade.rMultiple ?? "0",
+        priorLossStreak: lossStreak,
+        isSpike,
+      });
+      lossStreak = r < 0 ? lossStreak + 1 : 0;
+      previousRisk = risk > 0 ? risk : previousRisk;
+    }
+
+    // ── Sleep scatter (nightly DailyStat rows with a known duration) ───────
+    const sleepScatter: SleepPoint[] = data.dailyStats
+      .filter((s) => s.sleepHours !== null)
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .map((s) => ({
+        date: s.date,
+        sleepHours: s.sleepHours ?? "0",
+        pnlNet: s.pnlNet,
+        tradesCount: s.tradesCount,
+      }));
+
+    // ── All-time mistake ledger + per-strategy R distributions ─────────────
+    const mistakes = mistakesLedger("0000-01-01").entries;
+    const strategyDistributions: StrategyDistribution[] = [];
+    for (const strategy of data.strategies) {
+      const rValues = closed
+        .filter((t) => t.strategyId === strategy.id)
+        .sort((a, b) => (a.tradingDate + a.exitAt).localeCompare(b.tradingDate + b.exitAt))
+        .map((t) => t.rMultiple ?? "0");
+      if (rValues.length === 0) continue;
+      strategyDistributions.push({
+        strategyId: strategy.id,
+        name: strategy.name,
+        grade: strategy.grade,
+        color: strategy.color,
+        rValues,
+      });
+    }
+
+    return {
+      currency: mainAccount.currency,
+      cards: {
+        winRate: toDecimalString(round2(winRate)),
+        profitFactor: grossLoss > 0 ? toDecimalString(round2(grossProfit / grossLoss)) : null,
+        expectancy: toDecimalString(round2(expectancy)),
+        payoffRatio: payoffRatio === null ? null : toDecimalString(round2(payoffRatio)),
+        maxDrawdownR: toDecimalString(round2(maxDrawdownR)),
+        recoveryTrades,
+        recoveryDays,
+        sampleTrades: closed.length,
+      },
+      heatmap,
+      hourBuckets,
+      weekdayBuckets,
+      sessionBuckets,
+      emotionBuckets,
+      gradeMatrix,
+      tilt,
+      sleepScatter,
+      mistakes,
+      strategyDistributions,
+    };
   }
 
   // ── Session Live (trade-entry-ux.md §9) ──────────────────────────────────
@@ -1297,6 +1522,7 @@ export function createMockStore() {
     settleSkippedTrade,
     rulesStatus,
     statsOverview,
+    analytics,
     listRules,
     createRule,
     updateRule,
