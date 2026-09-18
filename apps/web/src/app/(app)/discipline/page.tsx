@@ -1,20 +1,16 @@
 import type { Metadata } from "next";
 
-import { PagePlaceholder } from "@/components/shared/page-placeholder";
+import { DisciplineView } from "@/components/discipline/discipline-view";
 import { getNavItem } from "@/lib/navigation";
 
 const nav = getNavItem("/discipline");
 
 export const metadata: Metadata = {
   title: nav.label,
+  description:
+    "The Cosmoz Discipline Score, your rule engine with violation history and the Mistake Ledger.",
 };
 
 export default function DisciplinePage() {
-  return (
-    <PagePlaceholder
-      title={nav.label}
-      description={nav.description}
-      comingSoon={nav.comingSoon}
-    />
-  );
+  return <DisciplineView />;
 }

@@ -7,6 +7,7 @@ import {
   instrumentSchema,
   mistakeSchema,
   ruleSchema,
+  ruleViolationSchema,
   skippedTradeSchema,
   strategySchema,
   tagSchema,
@@ -30,6 +31,7 @@ import {
   type Trade,
   type TradeEvent,
   type TradeMistake,
+  type RuleViolation,
 } from "@cosmoz/shared";
 
 import {
@@ -79,6 +81,7 @@ export interface FixtureData {
   strategies: Strategy[];
   mistakes: Mistake[];
   rules: Rule[];
+  ruleViolations: RuleViolation[];
   tags: Tag[];
   trades: Trade[];
   tradeEvents: TradeEvent[];
@@ -331,7 +334,7 @@ export function buildFixtureData(): FixtureData {
     instrumentPool[j] = a;
   }
 
-  const oversizeSlots = new Set([5, 18, 36, 47]);
+  const oversizeSlots = new Set([5, 18, 33, 40, 44, 47]);
   const noStopSlots = new Set([9, 41]);
 
   const trades: Trade[] = [];
@@ -543,7 +546,7 @@ export function buildFixtureData(): FixtureData {
   };
 
   const takenIdx = new Set<number>();
-  const movedTargets = pickNear(lossIdx, [12, 22, 33, 44], takenIdx);
+  const movedTargets = pickNear(lossIdx, [12, 22, 33, 40, 44, 47], takenIdx);
   const trailedTargets = pickNear(winIdx, [8, 26], takenIdx);
   const affected = new Map<number, boolean>();
   for (const i of movedTargets) affected.set(i, true);
@@ -597,6 +600,31 @@ export function buildFixtureData(): FixtureData {
   // Rebuild the balance cursor chronologically after exit rewrites.
   balance = Number(mainAccount.startingBalance);
   for (const trade of trades) balance += Number(trade.pnlNet);
+
+  // ── Journaling traces (feeds the discipline score's journaling component).
+  // The journal lives in daily_journal (V2 screen); in V1 the written trace
+  // on a trade is its lesson / note, so a subset of older closed trades
+  // carries one. Deterministic; recent trades stay unwritten (today's
+  // reflections are not written yet).
+  const LESSON_POOL: readonly string[] = [
+    "Waited for the confirmation candle instead of anticipating — keep this.",
+    "Size felt right, but I checked the news window after entry. Checklist next time.",
+    "Trailed too late; the plan said breakeven at +1R.",
+    "Clean execution of the playbook entry. Nothing to fix.",
+    "Hesitated 10 minutes before pulling the trigger — setup was valid.",
+    "Stopped out on the retest wick. Entry was fine, stop was tight.",
+  ];
+  for (const trade of trades) {
+    if (trade.status !== "CLOSED") continue;
+    const isRecent = Date.parse(trade.exitAt ?? trade.entryAt) > Date.now() - 5 * DAY_MS;
+    if (isRecent) continue;
+    if (chance(rng, 0.7)) {
+      trade.lessons = pick(rng, LESSON_POOL);
+    }
+    if (chance(rng, 0.4)) {
+      trade.notes = "Session context: " + pick(rng, ["London open", "NY open", "quiet Asia range", "post-news drift"]);
+    }
+  }
 
   // Cut-winner-early auto-detections on the widest MFE-vs-exit gaps.
   const earlyExits = trades
@@ -925,6 +953,98 @@ export function buildFixtureData(): FixtureData {
     };
   });
 
+  // ── Rule violations: faithful replay of the discipline engine ──────────
+  // Same predicates as MockStore.evaluateDiscipline, applied to the seeded
+  // history so the violation log always agrees with the trade list. One row
+  // per (trading day, rule) — the first breach of the day. Older rows are
+  // mostly acknowledged; the recent ones stay pending for the UI.
+  const ruleViolations: RuleViolation[] = [];
+  {
+    const chronological = [...trades].sort((a, b) => a.entryAt.localeCompare(b.entryAt));
+    const firedPerDay = new Set<string>(); // `${tradingDate}:${ruleId}`
+    const sevenDaysAgo = Date.now() - 7 * DAY_MS;
+    let runningBalance = Number(mainAccount.startingBalance);
+    let closedCursor = 0;
+    const closedByExit = chronological
+      .filter((t) => t.status === "CLOSED" && t.exitAt !== null)
+      .sort((a, b) => (a.exitAt ?? "").localeCompare(b.exitAt ?? ""));
+
+    for (const trade of chronological) {
+      while (closedCursor < closedByExit.length) {
+        const candidate = closedByExit[closedCursor]!;
+        if ((candidate.exitAt ?? "") > trade.entryAt) break;
+        runningBalance += Number(candidate.pnlNet) ?? 0;
+        closedCursor += 1;
+      }
+
+      for (const rule of rules) {
+        if (!rule.isActive) continue;
+        const params = rule.params as { limit?: number };
+        const limit = typeof params.limit === "number" ? params.limit : null;
+        if (limit === null) continue;
+
+        const dedupeKey = `${trade.tradingDate}:${rule.id}`;
+        if (firedPerDay.has(dedupeKey)) continue;
+
+        let context: { [key: string]: number } | null = null;
+        if (rule.type === "MAX_TRADES_PER_DAY") {
+          const tradesToday = chronological.filter(
+            (t) => t.tradingDate === trade.tradingDate && t.status !== "CANCELLED" && t.entryAt <= trade.entryAt,
+          ).length;
+          if (tradesToday >= limit) context = { tradesToday, limit };
+        } else if (rule.type === "MAX_LOSSES_PER_DAY") {
+          const lossesToday = chronological.filter(
+            (t) =>
+              t.tradingDate === trade.tradingDate &&
+              t.status === "CLOSED" &&
+              t.exitAt !== null &&
+              t.exitAt <= trade.entryAt &&
+              (Number(t.pnlNet) ?? 0) < 0,
+          ).length;
+          if (lossesToday >= limit) context = { lossesToday, limit };
+        } else if (rule.type === "MAX_RISK_PCT_PER_TRADE") {
+          const riskPct = runningBalance > 0
+            ? roundDigits(((Number(trade.riskAmount) ?? 0) / runningBalance) * 100, 2)
+            : 0;
+          if (riskPct > limit) context = { riskPct, limit };
+        }
+        if (context === null) continue;
+
+        firedPerDay.add(dedupeKey);
+        const occurredMs = Date.parse(trade.entryAt);
+        const isOld = occurredMs < sevenDaysAgo;
+        const acknowledge = isOld && firedPerDay.size % 5 !== 0;
+        ruleViolations.push({
+          id: uuid(rng),
+          ruleId: rule.id,
+          userId,
+          tradeId: trade.id,
+          occurredAt: trade.entryAt,
+          context,
+          acknowledgedAt: acknowledge ? new Date(occurredMs + 26 * 3_600_000).toISOString() : null,
+          userNote: acknowledge && firedPerDay.size % 3 === 0 ? "Seen — slipping on process that day." : null,
+        });
+      }
+    }
+  }
+
+  // Keep the three most recent violations pending so the acknowledge flow
+  // always has material; anything else older than 7 days is acknowledged.
+  const recentPending = [...ruleViolations]
+    .sort((a, b) => b.occurredAt.localeCompare(a.occurredAt))
+    .slice(0, 3);
+  for (const violation of ruleViolations) {
+    const keepPending = recentPending.includes(violation);
+    if (keepPending) {
+      violation.acknowledgedAt = null;
+      violation.userNote = null;
+    } else if (violation.acknowledgedAt === null) {
+      violation.acknowledgedAt = new Date(
+        Math.min(Date.now(), Date.parse(violation.occurredAt) + 26 * 3_600_000),
+      ).toISOString();
+    }
+  }
+
   const data: FixtureData = {
     user,
     accounts,
@@ -932,6 +1052,7 @@ export function buildFixtureData(): FixtureData {
     strategies,
     mistakes,
     rules,
+    ruleViolations,
     tags,
     trades,
     tradeEvents,
@@ -976,6 +1097,7 @@ function validateFixtures(data: FixtureData): void {
   check("strategies", strategySchema, data.strategies);
   check("mistakes", mistakeSchema, data.mistakes);
   check("rules", ruleSchema, data.rules);
+  check("ruleViolations", ruleViolationSchema, data.ruleViolations);
   check("tags", tagSchema, data.tags);
   check("trades", tradeSchema, data.trades);
   check("tradeEvents", tradeEventSchema, data.tradeEvents);

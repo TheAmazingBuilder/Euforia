@@ -3,6 +3,7 @@ import {
   currencySchema,
   directionSchema,
   emotionSchema,
+  mistakeCategorySchema,
   outcomeSchema,
   ruleTypeSchema,
   severitySchema,
@@ -22,6 +23,7 @@ import { skippedTradeSchema } from "./skippedTrade";
 import { instrumentSchema } from "./instrument";
 import { strategySchema } from "./strategy";
 import { accountSchema } from "./account";
+import { ruleSchema, ruleViolationViewSchema } from "./rule";
 import { tagSchema } from "./tag";
 
 /**
@@ -330,6 +332,123 @@ export const settleSkippedTradeInputSchema = z.object({
 });
 
 export type SettleSkippedTradeInput = z.infer<typeof settleSkippedTradeInputSchema>;
+
+// ── Playbook (GET /strategies/stats) ─────────────────────────────────────────
+
+/**
+ * Per-strategy aggregates computed SERVER-SIDE from the closed trades
+ * (the client never derives aggregates — same rule as /stats/overview).
+ */
+export const strategyStatSchema = z.object({
+  strategyId: uuidSchema,
+  /** Closed trades attributed to this strategy (all-time). */
+  trades: z.number().int().min(0),
+  /** Ratio 0–1 (render via formatPercent). */
+  winRate: decimalStringSchema,
+  /** Average R per closed trade = expectancy. */
+  avgR: decimalStringSchema,
+  /** Cumulative-R equity sparkline, chronological, decimal strings. */
+  sparkline: z.array(decimalStringSchema),
+  /**
+   * Average R over the strategy's LAST 20 closed trades — the decay
+   * detector window. null when the strategy has no closed trades.
+   */
+  last20Expectancy: decimalStringSchema.nullable(),
+});
+
+export type StrategyStat = z.infer<typeof strategyStatSchema>;
+
+export const strategiesStatsResponseSchema = z.object({
+  stats: z.array(strategyStatSchema),
+  /**
+   * The underperforming strategy the coach banner calls out — COMPUTED
+   * (most negative last-20 expectancy among strategies with enough
+   * sample), never a hardcoded name. null = nobody is underperforming.
+   */
+  underperforming: z
+    .object({
+      strategyId: uuidSchema,
+      name: z.string().min(1),
+      last20Expectancy: decimalStringSchema,
+      sampleSize: z.number().int().min(0),
+    })
+    .nullable(),
+});
+
+export type StrategiesStatsResponse = z.infer<typeof strategiesStatsResponseSchema>;
+
+// ── Discipline screen (rules / violations / score / mistakes) ────────────────
+
+export const rulesResponseSchema = z.object({
+  rules: z.array(ruleSchema),
+});
+
+export type RulesResponse = z.infer<typeof rulesResponseSchema>;
+
+/** GET /violations — the log, newest first, with the rolling-window aggregate. */
+export const violationsResponseSchema = z.object({
+  violations: z.array(ruleViolationViewSchema),
+  /** Start of the aggregate window (30 days back), `YYYY-MM-DD`. */
+  windowStart: dateKeySchema,
+  /** Violations that occurred inside the window. */
+  windowCount: z.number().int().min(0),
+});
+
+export type ViolationsResponse = z.infer<typeof violationsResponseSchema>;
+
+export const acknowledgeViolationResponseSchema = z.object({
+  violation: ruleViolationViewSchema,
+});
+
+export type AcknowledgeViolationResponse = z.infer<typeof acknowledgeViolationResponseSchema>;
+
+/**
+ * GET /discipline/score — the Cosmoz Discipline Score (indexCosmoz):
+ * process composite, deliberately decoupled from P&L. Components cover the
+ * rolling 30-day window and are computed server-side.
+ */
+export const disciplineScoreResponseSchema = z.object({
+  /** Start of the aggregation window (30 days back), `YYYY-MM-DD`. */
+  windowStart: dateKeySchema,
+  /** Average Cosmoz Index across scored days (null when no data yet). */
+  score: decimalStringSchema.nullable(),
+  /** % of graded trades in the window that followed the plan (null = none graded). */
+  planAdherencePct: decimalStringSchema.nullable(),
+  /** % of the window's graded trades with a completed checklist snapshot. */
+  checklistCompletionPct: decimalStringSchema,
+  /** RULE_VIOLATION events inside the window (from the violation table). */
+  violationsCount: z.number().int().min(0),
+  /** % of the window's trading days with at least one written reflection. */
+  journalingConsistencyPct: decimalStringSchema,
+});
+
+export type DisciplineScoreResponse = z.infer<typeof disciplineScoreResponseSchema>;
+
+/** GET /mistakes/ledger — per-mistake frequency + R cost over the window. */
+export const mistakeLedgerEntrySchema = z.object({
+  mistakeId: uuidSchema,
+  key: z.string().min(1),
+  label: z.string().min(1),
+  category: mistakeCategorySchema,
+  /** Catalog severity 1–5. */
+  severity: z.number().int().min(1).max(5),
+  /** Occurrences inside the window (rows in trade_mistakes). */
+  count: z.number().int().min(0),
+  /** Σ R over the trades carrying this mistake (cost ≤ 0 ideally). */
+  rCost: decimalStringSchema,
+  lastSeenAt: isoDateTimeSchema.nullable(),
+});
+
+export type MistakeLedgerEntry = z.infer<typeof mistakeLedgerEntrySchema>;
+
+export const mistakeLedgerResponseSchema = z.object({
+  /** Start of the aggregation window (30 days back), `YYYY-MM-DD`. */
+  windowStart: dateKeySchema,
+  /** Sorted by |rCost| descending — the most expensive mistakes first. */
+  entries: z.array(mistakeLedgerEntrySchema),
+});
+
+export type MistakeLedgerResponse = z.infer<typeof mistakeLedgerResponseSchema>;
 
 // ── Analytics overview (GET /stats/overview) ─────────────────────────────────
 

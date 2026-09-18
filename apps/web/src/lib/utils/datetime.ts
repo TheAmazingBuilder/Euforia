@@ -30,3 +30,14 @@ export function localInputToISO(local: string): string | null {
 export function nowLocalInput(): string {
   return isoToLocalInput(new Date().toISOString());
 }
+
+/**
+ * Calendar date key (YYYY-MM-DD) → short display ("Sep 5"). Anchored at
+ * midday UTC so no timezone can shift the key to another day (same trick
+ * as the session view's weekday formatting).
+ */
+export function formatDateKeyShort(dateKey: string): string {
+  const date = new Date(`${dateKey}T12:00:00Z`);
+  if (Number.isNaN(date.getTime())) return dateKey;
+  return new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", timeZone: "UTC" }).format(date);
+}

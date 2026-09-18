@@ -17,6 +17,24 @@ export class ApiError extends Error {
   }
 }
 
+/**
+ * User-facing message from a thrown error — prefers the server's
+ * `error` field (e.g. "This strategy has trades attached — pause or
+ * retire it instead.") over the generic transport message.
+ */
+export function apiErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof ApiError) {
+    const body = error.body;
+    if (body !== null && typeof body === "object" && "error" in body) {
+      const message = (body as { error?: unknown }).error;
+      if (typeof message === "string" && message !== "") return message;
+    }
+    return error.message;
+  }
+  if (error instanceof Error && error.message !== "") return error.message;
+  return fallback;
+}
+
 export interface ApiRequestOptions {
   method?: "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
   query?: ApiQuery;

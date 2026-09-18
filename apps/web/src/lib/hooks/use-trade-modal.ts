@@ -11,7 +11,9 @@ import type { Direction, Emotion } from "@cosmoz/shared";
 
 /** Fast-loop prefill captured at submit time (spec §7). */
 export interface TradeContextSeed {
-  instrumentId: string;
+  /** null when the entry point doesn't know the instrument yet — the
+   * playbook's "Trade this setup" leaves the choice to the user. */
+  instrumentId: string | null;
   direction: Direction;
   /** null = out of playbook. */
   strategyId: string | null;

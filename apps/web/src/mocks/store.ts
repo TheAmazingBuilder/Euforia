@@ -4,15 +4,20 @@ import {
   toDecimalString,
   toTradingDateKey,
   type Account,
+  type AcknowledgeViolationInput,
   type Alert,
   type AlertsResponse,
   type CloseTradeInput,
+  type CreateRuleInput,
   type CreateSkippedTradeInput,
+  type CreateStrategyInput,
   type CreateTagInput,
   type CreateTradeInput,
   type CreateTradeResponse,
   type DailyStat,
+  type DisciplineScoreResponse,
   type Instrument,
+  type MistakeLedgerResponse,
   type NotesUpdateInput,
   type PlanUpdateInput,
   type PlanUpdateResponse,
@@ -21,13 +26,19 @@ import {
   type ReviewResponse,
   type ReviewUpdateInput,
   type ReviewUpdateResponse,
+  type Rule,
+  type RulesResponse,
   type RulesStatusResponse,
+  type RuleViolation,
+  type RuleViolationView,
   type SessionTimelineResponse,
   type SettleSkippedTradeInput,
   type SkippedTrade,
   type SkippedTradesResponse,
   type StatsOverviewResponse,
+  type StrategiesStatsResponse,
   type Strategy,
+  type StrategyStat,
   type Tag,
   type TagsResponse,
   type Trade,
@@ -35,6 +46,9 @@ import {
   type TradesListResponse,
   type TradeMistake,
   type TradeEvent,
+  type UpdateRuleInput,
+  type UpdateStrategyInput,
+  type ViolationsResponse,
 } from "@cosmoz/shared";
 
 import { buildFixtureData, USER_TZ, type FixtureData } from "./fixtures";
@@ -70,6 +84,14 @@ export function createMockStore() {
 
   const nowIso = (): string => new Date().toISOString();
   const todayKey = (): string => toTradingDateKey(nowIso(), USER_TZ);
+  /** Calendar day key `offset` days before today (Toronto trading day). */
+  const dateKeyOffset = (offset: number): string => {
+    const shifted = new Date();
+    shifted.setUTCDate(shifted.getUTCDate() + offset);
+    return toTradingDateKey(shifted.toISOString(), USER_TZ);
+  };
+  /** Rolling aggregation window used by the discipline screens (30 days). */
+  const windowStart = (): string => dateKeyOffset(-29);
 
   const closedTrades = (): Trade[] => data.trades.filter((t) => t.status === "CLOSED");
   const currentBalance = (): number =>
@@ -226,6 +248,26 @@ export function createMockStore() {
         (a) => a.tradeId === trade.id && (a.payload as { ruleId?: string } | null)?.ruleId === rule.id,
       );
       if (alreadyAlerted) continue;
+
+      // rule_violations row — the durable record the discipline screen's log
+      // reads (alerts stay the V1 response channel). Context freezes values
+      // at time T (data-model.md "Domaine 7").
+      const violation: RuleViolation = {
+        id: crypto.randomUUID(),
+        ruleId: rule.id,
+        userId: trade.userId,
+        tradeId: trade.id,
+        occurredAt: nowIso(),
+        context:
+          rule.type === "MAX_RISK_PCT_PER_TRADE"
+            ? { riskPct: current, limit }
+            : rule.type === "MAX_LOSSES_PER_DAY"
+              ? { lossesToday: current, limit }
+              : { tradesToday: current, limit },
+        acknowledgedAt: null,
+        userNote: null,
+      };
+      data.ruleViolations.push(violation);
 
       const alert: Alert = {
         id: crypto.randomUUID(),
@@ -850,6 +892,281 @@ export function createMockStore() {
     };
   }
 
+  // ── Playbook CRUD (Phase 8) ──────────────────────────────────────────────
+
+  function createStrategy(input: CreateStrategyInput): Strategy {
+    const strategy: Strategy = {
+      id: crypto.randomUUID(),
+      userId: user.id,
+      name: input.name.trim(),
+      description: input.description ?? null,
+      entryRules: input.entryRules ?? null,
+      exitRules: input.exitRules ?? null,
+      riskRules: input.riskRules ?? null,
+      grade: input.grade ?? null,
+      status: input.status ?? "ACTIVE",
+      color: input.color ?? null,
+      createdAt: nowIso(),
+    };
+    data.strategies.push(strategy);
+    return strategy;
+  }
+
+  function updateStrategy(strategyId: string, input: UpdateStrategyInput): Strategy {
+    const strategy = data.strategies.find((s) => s.id === strategyId);
+    if (!strategy) throw new MockError(404, "Strategy not found");
+    if (input.name !== undefined) {
+      const name = input.name.trim();
+      if (name === "") throw new MockError(422, "Strategy name cannot be empty");
+      strategy.name = name;
+    }
+    if (input.description !== undefined) strategy.description = input.description;
+    if (input.entryRules !== undefined) strategy.entryRules = input.entryRules;
+    if (input.exitRules !== undefined) strategy.exitRules = input.exitRules;
+    if (input.riskRules !== undefined) strategy.riskRules = input.riskRules;
+    if (input.grade !== undefined) strategy.grade = input.grade;
+    if (input.status !== undefined) strategy.status = input.status;
+    if (input.color !== undefined) strategy.color = input.color;
+    return strategy;
+  }
+
+  function deleteStrategy(strategyId: string): { ok: true } {
+    const index = data.strategies.findIndex((s) => s.id === strategyId);
+    if (index === -1) throw new MockError(404, "Strategy not found");
+    // FK-RESTRICT semantics: a strategy with history is paused, never erased —
+    // the playbook evolves but the journal stays true (data-model.md V2 note).
+    const used = data.trades.some((t) => t.strategyId === strategyId);
+    if (used) {
+      throw new MockError(409, "This strategy has trades attached — pause or retire it instead.");
+    }
+    data.strategies.splice(index, 1);
+    return { ok: true };
+  }
+
+  /**
+   * GET /strategies/stats — per-strategy aggregates computed from the CLOSED
+   * trades, server-side (same contract as /stats/overview). The decay
+   * detector window is the LAST 20 closed trades of each strategy.
+   */
+  function strategyStats(): StrategiesStatsResponse {
+    const closed = closedTrades();
+    const stats: StrategyStat[] = [];
+    const candidates: { strategyId: string; name: string; last20Expectancy: number; sampleSize: number }[] = [];
+
+    for (const strategy of data.strategies) {
+      const own = closed
+        .filter((t) => t.strategyId === strategy.id)
+        .sort((a, b) => (a.tradingDate + a.exitAt).localeCompare(b.tradingDate + b.exitAt));
+      if (own.length === 0) continue;
+
+      const count = own.length;
+      const wins = own.filter((t) => (Number(t.pnlNet) ?? 0) > 0).length;
+      const sumR = own.reduce((sum, t) => sum + (Number(t.rMultiple) ?? 0), 0);
+      const winRate = wins / count;
+      const avgR = sumR / count;
+
+      let cumR = 0;
+      const sparkline = own.map((t) => {
+        cumR += Number(t.rMultiple) ?? 0;
+        return toDecimalString(round2(cumR));
+      });
+
+      const last = own.slice(-20);
+      const last20Expectancy = last.reduce((sum, t) => sum + (Number(t.rMultiple) ?? 0), 0) / last.length;
+
+      stats.push({
+        strategyId: strategy.id,
+        trades: count,
+        winRate: toDecimalString(round2(winRate)),
+        avgR: toDecimalString(round2(avgR)),
+        sparkline,
+        last20Expectancy: toDecimalString(round2(last20Expectancy)),
+      });
+      if (last.length >= 5 && last20Expectancy < 0) {
+        candidates.push({
+          strategyId: strategy.id,
+          name: strategy.name,
+          last20Expectancy,
+          sampleSize: last.length,
+        });
+      }
+    }
+
+    // The coach banner calls out the WORST negative last-20 expectancy —
+    // computed from the data, never a hardcoded name.
+    const worst = candidates.sort((a, b) => a.last20Expectancy - b.last20Expectancy)[0] ?? null;
+    return {
+      stats,
+      underperforming:
+        worst === null
+          ? null
+          : {
+              strategyId: worst.strategyId,
+              name: worst.name,
+              last20Expectancy: toDecimalString(round2(worst.last20Expectancy)),
+              sampleSize: worst.sampleSize,
+            },
+    };
+  }
+
+  // ── Discipline screen (Phase 8): rules CRUD, violations, score, ledger ───
+
+  function listRules(): RulesResponse {
+    return { rules: [...data.rules].sort((a, b) => a.createdAt.localeCompare(b.createdAt)) };
+  }
+
+  function createRule(input: CreateRuleInput): Rule {
+    const rule: Rule = {
+      id: crypto.randomUUID(),
+      userId: user.id,
+      type: input.type,
+      params: input.params,
+      severity: input.severity,
+      accountId: input.accountId ?? null,
+      isActive: input.isActive ?? true,
+      createdAt: nowIso(),
+    };
+    data.rules.push(rule);
+    return rule;
+  }
+
+  function updateRule(ruleId: string, input: UpdateRuleInput): Rule {
+    const rule = data.rules.find((r) => r.id === ruleId);
+    if (!rule) throw new MockError(404, "Rule not found");
+    if (input.params !== undefined) rule.params = input.params;
+    if (input.severity !== undefined) rule.severity = input.severity;
+    if (input.isActive !== undefined) rule.isActive = input.isActive;
+    return rule;
+  }
+
+  function deleteRule(ruleId: string): { ok: true } {
+    const index = data.rules.findIndex((r) => r.id === ruleId);
+    if (index === -1) throw new MockError(404, "Rule not found");
+    data.rules.splice(index, 1);
+    // Orphaned violations keep their frozen context but drop out of the
+    // joined view (same behavior as an API join on a deleted rule).
+    return { ok: true };
+  }
+
+  const violationToView = (violation: RuleViolation): RuleViolationView | null => {
+    const rule = data.rules.find((r) => r.id === violation.ruleId);
+    if (!rule) return null;
+    return {
+      ...violation,
+      ruleType: rule.type,
+      ruleSeverity: rule.severity,
+    };
+  };
+
+  function listViolations(): ViolationsResponse {
+    const since = windowStart();
+    const views = [...data.ruleViolations]
+      .sort((a, b) => b.occurredAt.localeCompare(a.occurredAt))
+      .map(violationToView)
+      .filter((v): v is RuleViolationView => v !== null);
+    const windowCount = views.filter((v) => toTradingDateKey(v.occurredAt, USER_TZ) >= since).length;
+    return { violations: views, windowStart: since, windowCount };
+  }
+
+  function acknowledgeViolation(
+    violationId: string,
+    input: AcknowledgeViolationInput,
+  ): { violation: RuleViolationView } {
+    const violation = data.ruleViolations.find((v) => v.id === violationId);
+    if (!violation) throw new MockError(404, "Violation not found");
+    if (violation.acknowledgedAt === null) violation.acknowledgedAt = nowIso();
+    if (input.note !== undefined) violation.userNote = input.note;
+    const view = violationToView(violation);
+    if (view === null) throw new MockError(404, "Rule for this violation no longer exists");
+    return { violation: view };
+  }
+
+  /**
+   * GET /discipline/score — the Cosmoz Discipline Score with its current
+   * month component breakdown (data-model.md "Tier-1 feature wiring"):
+   * process only, deliberately decoupled from P&L.
+   */
+  function disciplineScore(): DisciplineScoreResponse {
+    const since = windowStart();
+    const windowTrades = data.trades.filter(
+      (t) => t.tradingDate >= since && t.tradingDate <= todayKey() && t.status !== "CANCELLED",
+    );
+    const windowClosed = windowTrades.filter((t) => t.status === "CLOSED");
+    const graded = windowClosed.filter((t) => t.decisionGrade !== null);
+
+    const planAdherencePct = graded.length > 0
+      ? (graded.filter((t) => t.followedPlan === true).length / graded.length) * 100
+      : null;
+    // Checklist completion: the graded trade's snapshot has every item true.
+    const checklistComplete = graded.filter((t) => {
+      const snap = t.checklistSnap;
+      return snap !== null && typeof snap === "object" && !Array.isArray(snap) &&
+        Object.values(snap).every((value) => value === true);
+    }).length;
+    const checklistCompletionPct = graded.length > 0 ? (checklistComplete / graded.length) * 100 : 0;
+
+    const violationsCount = data.ruleViolations.filter((v) =>
+      toTradingDateKey(v.occurredAt, USER_TZ) >= since,
+    ).length;
+
+    // Journaling consistency: % of the window's trading days with at least
+    // one written reflection (lesson or note) — V1 trace of daily_journal.
+    const tradingDays = new Set(windowClosed.map((t) => t.tradingDate));
+    const journaledDays = new Set(
+      windowClosed
+        .filter((t) => (t.lessons !== null && t.lessons.trim() !== "") || (t.notes !== null && t.notes.trim() !== ""))
+        .map((t) => t.tradingDate),
+    );
+    const journalingConsistencyPct = tradingDays.size > 0
+      ? ([...tradingDays].filter((day) => journaledDays.has(day)).length / tradingDays.size) * 100
+      : 0;
+
+    const scored = data.dailyStats.filter((s) => s.disciplineScore !== null);
+    const score = scored.length > 0
+      ? scored.reduce((sum, s) => sum + Number(s.disciplineScore), 0) / scored.length
+      : null;
+
+    return {
+      windowStart: since,
+      score: score === null ? null : toDecimalString(round2(score)),
+      planAdherencePct: planAdherencePct === null ? null : toDecimalString(round2(planAdherencePct)),
+      checklistCompletionPct: toDecimalString(round2(checklistCompletionPct)),
+      violationsCount,
+      journalingConsistencyPct: toDecimalString(round2(journalingConsistencyPct)),
+    };
+  }
+
+  /** GET /mistakes/ledger — per-mistake frequency + R cost over the window. */
+  function mistakesLedger(): MistakeLedgerResponse {
+    const since = windowStart();
+    const entries: MistakeLedgerResponse["entries"] = [];
+    for (const mistake of data.mistakes) {
+      const windowRows = data.tradeMistakes
+        .filter((m) => m.mistakeId === mistake.id)
+        .map((m) => ({ row: m, trade: data.trades.find((t) => t.id === m.tradeId) }))
+        .filter((x): x is { row: typeof x.row; trade: Trade } => x.trade !== undefined && x.trade.tradingDate >= since);
+      if (windowRows.length === 0) continue;
+      const rCost = windowRows.reduce((sum, x) => sum + (Number(x.trade.rMultiple) ?? 0), 0);
+      const lastSeenAt = windowRows.reduce<string | null>(
+        (latest, x) => (latest === null || x.row.createdAt > latest ? x.row.createdAt : latest),
+        null,
+      );
+      entries.push({
+        mistakeId: mistake.id,
+        key: mistake.key,
+        label: mistake.label,
+        category: mistake.category,
+        severity: mistake.severity,
+        count: windowRows.length,
+        rCost: toDecimalString(round2(rCost)),
+        lastSeenAt,
+      });
+    }
+    // Most expensive first — cost dominates, then frequency.
+    entries.sort((a, b) => Math.abs(Number(b.rCost)) - Math.abs(Number(a.rCost)) || b.count - a.count);
+    return { windowStart: since, entries };
+  }
+
   // ── Session Live (trade-entry-ux.md §9) ──────────────────────────────────
 
   /**
@@ -959,6 +1276,10 @@ export function createMockStore() {
     listAccounts,
     listInstruments,
     listStrategies,
+    createStrategy,
+    updateStrategy,
+    deleteStrategy,
+    strategyStats,
     listTags,
     listAlerts,
     markAlertRead,
@@ -976,6 +1297,14 @@ export function createMockStore() {
     settleSkippedTrade,
     rulesStatus,
     statsOverview,
+    listRules,
+    createRule,
+    updateRule,
+    deleteRule,
+    listViolations,
+    acknowledgeViolation,
+    disciplineScore,
+    mistakesLedger,
     sessionTimeline,
     updateNotes,
   };
