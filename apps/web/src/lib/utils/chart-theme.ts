@@ -41,6 +41,6 @@ export function getChartTheme(): ChartTheme {
     loss: getThemeToken("--loss"),
     warning: getThemeToken("--warning"),
     monoFont: `${bodyVar("--font-jetbrains-mono")}, monospace`,
-    headingFont: `${bodyVar("--font-space-grotesk")}, sans-serif`,
+    headingFont: `${bodyVar("--font-schibsted")}, sans-serif`,
   };
 }

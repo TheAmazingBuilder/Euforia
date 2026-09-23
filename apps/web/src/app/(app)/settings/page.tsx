@@ -16,14 +16,14 @@ export const metadata: Metadata = {
 export default function SettingsPage() {
   return (
     <div className="flex flex-col gap-6">
-      {/* Functional now — data ownership is part of Priorité 3 */}
-      <BackupCard />
-
       <PagePlaceholder
         title={nav.label}
         description={nav.description}
         comingSoon={nav.comingSoon}
       />
+
+      {/* Functional now — data ownership is part of Priorité 3 */}
+      <BackupCard />
       {/* Shell-level stub: the only way to reach the auth screens for now */}
       <div className="mx-auto flex w-full max-w-3xl justify-end">
         <Button variant="outline" asChild>

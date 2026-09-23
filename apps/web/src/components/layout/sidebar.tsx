@@ -35,7 +35,9 @@ export function SidebarNav({
     "flex h-8 items-center gap-2 rounded-md text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring";
   const linkExpanded = "px-2.5";
   const linkIdle = "text-muted-foreground hover:bg-muted hover:text-foreground";
-  const linkActive = "bg-accent/10 text-accent";
+  // Active = inverted ink block (the record's "selected row"); the cobalt
+  // accent stays reserved for the primary action and interactive marks.
+  const linkActive = "bg-foreground text-background";
 
   const renderItem = (
     item: (typeof SIDEBAR_REST_ITEMS)[number],

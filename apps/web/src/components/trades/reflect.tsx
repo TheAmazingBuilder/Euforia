@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Check, Plus, X } from "lucide-react";
+import { Check, CircleSmall, Plus, TriangleAlert, X } from "lucide-react";
 import type { Emotion, Instrument, ReviewResponse, Tag, Trade } from "@cosmoz/shared";
 
 import { Button } from "@/components/ui/button";
@@ -158,8 +158,12 @@ export function Reflect({ tradeId }: ReflectProps) {
                 className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-surface px-3 py-2"
                 data-testid={`mistake-${mistake.id}`}
               >
-                <span className="text-sm text-foreground">
-                  {mistake.detectedBy === "AUTO" ? "⚠ " : "• "}
+                <span className="inline-flex items-center gap-1.5 text-sm text-foreground">
+                  {mistake.detectedBy === "AUTO" ? (
+                    <TriangleAlert className="size-3.5 shrink-0 text-warning" aria-hidden="true" />
+                  ) : (
+                    <CircleSmall className="size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
+                  )}
                   {mistake.label}
                 </span>
                 <span className="flex items-center gap-1.5">

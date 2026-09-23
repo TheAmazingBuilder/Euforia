@@ -1,4 +1,4 @@
-import { Inter, Space_Grotesk, JetBrains_Mono } from "next/font/google";
+import { Inter, Schibsted_Grotesk, JetBrains_Mono } from "next/font/google";
 import type { Metadata, Viewport } from "next";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/layout/theme-provider";
@@ -8,9 +8,9 @@ import { ServiceWorkerRegister } from "@/components/providers/sw-register";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
-const grotesk = Space_Grotesk({
+const grotesk = Schibsted_Grotesk({
   subsets: ["latin"],
-  variable: "--font-space-grotesk",
+  variable: "--font-schibsted",
 });
 const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jetbrains-mono" });
 
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0D1424",
+  themeColor: "#0E1116", // authorized exception: metadata-only (never rendered by components); mirrors --background
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

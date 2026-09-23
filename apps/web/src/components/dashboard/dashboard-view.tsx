@@ -90,10 +90,10 @@ function EmptyDashboard() {
     <Card className="mx-auto max-w-xl bg-surface">
       <CardContent className="flex flex-col items-center py-14 text-center">
         <ConstellationGlyph />
-        <h2 className="mt-6 font-heading text-xl font-semibold">Your constellation awaits</h2>
+        <h2 className="mt-6 font-heading text-xl font-semibold">Your record starts here</h2>
         <p className="mt-2 max-w-sm text-sm leading-relaxed text-muted-foreground">
-          Every trade you log becomes a star on your equity sky — and every decision gets
-          graded by your coach. Capture your first execution to light it up.
+          Every trade you log becomes an entry in your book of record — and every decision
+          gets graded by your coach. Capture your first execution to open the ledger.
         </p>
         <Button className="mt-6" onClick={() => openTradeModal()}>
           <Plus className="size-4" aria-hidden="true" />
@@ -191,8 +191,8 @@ function DashboardContent({ overview, rulesStatus, alerts }: DashboardContentPro
               Equity trajectory
             </CardTitle>
             <CardDescription>
-              Each star is a trading day — the constellation of your decisions, drawdown
-              zones shaded in loss red.
+              Each star is a trading day — the plotted line of your decisions, drawdown
+              zones shaded in loss ink.
             </CardDescription>
           </CardHeader>
           <CardContent>

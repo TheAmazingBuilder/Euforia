@@ -132,7 +132,7 @@ export function RHeatmap({ cells, className }: RHeatmapProps) {
           type: "heatmap",
           data,
           label: { show: true },
-          emphasis: { itemStyle: { shadowBlur: 8, shadowColor: withAlpha(t.accent, 0.45) } },
+          emphasis: { itemStyle: { borderColor: t.accent, borderWidth: 1.5 } },
         },
       ],
     };

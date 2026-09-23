@@ -12,10 +12,10 @@ import { getChartTheme } from "@/lib/utils/chart-theme";
 import { withAlpha } from "@/lib/utils/color";
 
 /**
- * The Cosmoz signature visual: the equity curve as a constellation — a thin
- * luminous line, data points as small glowing stars, a soft gradient sky
- * under the curve and translucent loss-red drawdown zones. Subtle, premium,
- * never kitsch (design-tokens.md §1).
+ * The Cosmoz signature visual: the equity curve as a plotted record — a thin
+ * ink line on ruled chart paper, trading days marked with the four-point star
+ * motif of the Cosmoz mark, a faint fill under the curve and translucent
+ * loss-ink drawdown zones. Quiet, exact, never kitsch (design-tokens.md §1).
  */
 
 /** Four-point sparkle — the same motif as the Cosmoz constellation logo. */
@@ -101,7 +101,7 @@ export function EquityConstellation({ points, currency }: EquityConstellationPro
           formatter: (value: number) => compactNumber.format(value),
         },
         splitLine: {
-          lineStyle: { color: t.border, type: "dashed", opacity: 0.55 },
+          lineStyle: { color: t.border, type: "solid", opacity: 0.45 },
         },
       },
       tooltip: {
@@ -147,21 +147,17 @@ export function EquityConstellation({ points, currency }: EquityConstellationPro
           lineStyle: {
             color: t.accent,
             width: 1.5,
-            shadowBlur: 7,
-            shadowColor: withAlpha(t.accent, 0.5),
           },
           itemStyle: {
             color: t.surfaceRaised,
             borderColor: t.accent,
             borderWidth: 1.2,
-            shadowBlur: 9,
-            shadowColor: withAlpha(t.accent, 0.85),
           },
           emphasis: { scale: 1.7 },
           areaStyle: {
             color: new graphic.LinearGradient(0, 0, 0, 1, [
-              { offset: 0, color: withAlpha(t.accent, 0.28) },
-              { offset: 1, color: withAlpha(t.accent, 0.02) },
+              { offset: 0, color: withAlpha(t.accent, 0.09) },
+              { offset: 1, color: withAlpha(t.accent, 0.01) },
             ]),
           },
           markArea: {

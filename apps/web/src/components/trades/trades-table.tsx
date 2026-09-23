@@ -20,12 +20,14 @@ import { openGate } from "@/lib/hooks/use-judgment-flow";
  * status. Ungraded rows carry an inline "grade" action into the same Gate.
  */
 
+// Ledger grade marks: bordered ink text, no tinted fills. A/B carry ink,
+// C recedes, D/F take the warning ink — outcomes stay quiet in the record.
 const GRADE_COLORS: Record<string, string> = {
-  A: "border-accent/50 bg-accent/10 text-accent",
-  B: "border-accent/50 bg-accent/10 text-accent",
-  C: "border-border bg-surface text-muted-foreground",
-  D: "border-warning/50 bg-warning/10 text-warning",
-  F: "border-warning/60 bg-warning/15 text-warning",
+  A: "border-foreground/40 text-foreground",
+  B: "border-foreground/30 text-foreground/90",
+  C: "border-border text-muted-foreground",
+  D: "border-warning/50 text-warning",
+  F: "border-warning/60 text-warning",
 };
 
 export function TradesTable() {
@@ -99,20 +101,13 @@ export function TradesTable() {
                       </span>
                     </td>
                     <td
-                      className={cn(
-                        "whitespace-nowrap px-3 py-2.5 text-right font-mono tabular-nums",
-                        trade.rMultiple === null
-                          ? "text-muted-foreground"
-                          : win
-                            ? "text-profit"
-                            : "text-loss",
-                      )}
+                      className="whitespace-nowrap px-3 py-2.5 text-right font-mono tabular-nums text-foreground"
                     >
                       {trade.rMultiple === null ? "—" : formatR(trade.rMultiple)}
                     </td>
                     <td
                       className={cn(
-                        "whitespace-nowrap px-3 py-2.5 text-right font-mono tabular-nums",
+                        "whitespace-nowrap px-3 py-2.5 text-right font-mono font-medium tabular-nums",
                         trade.pnlNet === null
                           ? "text-muted-foreground"
                           : win
@@ -126,8 +121,8 @@ export function TradesTable() {
                       {trade.decisionGrade !== null ? (
                         <span
                           className={cn(
-                            "inline-block rounded-sm border px-1.5 py-0.5 font-heading text-xs font-bold",
-                            GRADE_COLORS[trade.decisionGrade] ?? "border-border bg-surface text-muted-foreground",
+                            "inline-block min-w-6 rounded-sm border px-1 py-0.5 text-center font-heading text-xs font-bold",
+                            GRADE_COLORS[trade.decisionGrade] ?? "border-border text-muted-foreground",
                           )}
                         >
                           {trade.decisionGrade}
@@ -146,16 +141,13 @@ export function TradesTable() {
                       )}
                     </td>
                     <td className="px-3 py-2.5">
-                      <span
-                        className={cn(
-                          "inline-block rounded-sm border px-1.5 py-0.5 font-mono text-[10px] uppercase",
-                          trade.status === "OPEN"
-                            ? "border-accent/50 bg-accent/10 text-accent"
-                            : "border-border bg-surface text-muted-foreground",
-                        )}
-                      >
-                        {trade.status}
-                      </span>
+                      {trade.status === "OPEN" ? (
+                        <span className="stamp stamp-accent">Open</span>
+                      ) : (
+                        <span className="font-mono text-[11px] uppercase tracking-wide text-muted-foreground/70">
+                          Closed
+                        </span>
+                      )}
                     </td>
                   </tr>
                 );

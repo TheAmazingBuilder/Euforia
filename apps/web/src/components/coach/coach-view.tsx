@@ -110,11 +110,8 @@ export function CoachView() {
 
   return (
     <div className="flex h-[calc(100dvh-14.5rem)] min-h-96 flex-col lg:h-[calc(100dvh-11rem)]">
-      {/* Page header */}
-      <div className="mb-4 flex items-center gap-3">
-        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-accent/10">
-          <Sparkles className="size-5 text-accent" aria-hidden="true" />
-        </span>
+      {/* Page header — the heading carries its own weight (no icon tile) */}
+      <div className="mb-4">
         <div className="min-w-0">
           <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground">
             Coach

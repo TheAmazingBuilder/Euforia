@@ -12,60 +12,71 @@
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *,
   [data-theme="dark-blue"], [data-theme="dark-blue"] *));
 
-/* ---- Theme: dark-blue (DEFAULT) ---- */
+/* ============================================================
+   COSMOZ — "Le Registre" design world (2026 refonte)
+   Three expressions of the same ink-and-paper record:
+   - dark-blue → "Encre" (default): ink night, cool cast
+   - dark      → "Carbone": neutral carbon
+   - light     → "Papier": ledger paper (flagship expression)
+   Discipline: hairline ruling over card soup; ONE cobalt accent
+   for interaction; semantic inks (emerald/carmine/ochre) used
+   sparingly. No glow, no glass, no gradient text.
+   ============================================================ */
+
+/* ---- Theme: dark-blue / "Encre" (DEFAULT) ---- */
 :root,
 [data-theme="dark-blue"] {
-  --background: #0B1220;
-  --surface: #121B2E;
-  --surface-raised: #1A2640;
-  --border: #243352;
-  --text-primary: #E6EBF5;
-  --text-muted: #8794AD;
-  --accent: #6E7BFF;
-  --accent-hover: #8590FF;
-  --profit: #34D399;
-  --loss: #F87171;
-  --warning: #FBBF24;
-  --ring: #6E7BFF;
-  --radius: 12px;
+  --background: #0E1116;
+  --surface: #141920;
+  --surface-raised: #1A2029;
+  --border: #262E3A;
+  --text-primary: #E9ECEF;
+  --text-muted: #99A2AD;
+  --accent: #4E6EE0;
+  --accent-hover: #6280EA;
+  --profit: #3EBE8C;
+  --loss: #E05B5B;
+  --warning: #D9A03F;
+  --ring: #4E6EE0;
+  --radius: 8px;
   /* authorized addition: destructive-foreground (shadcn needs it) */
-  --destructive-foreground: #0B1220;
+  --destructive-foreground: #0E1116;
 }
 
-/* ---- Theme: dark ---- */
+/* ---- Theme: dark / "Carbone" ---- */
 [data-theme="dark"] {
-  --background: #09090B;
+  --background: #0B0B0D;
   --surface: #131316;
-  --surface-raised: #1B1B20;
-  --border: #27272E;
-  --text-primary: #FAFAFA;
-  --text-muted: #A1A1AA;
-  --accent: #6E7BFF;
-  --accent-hover: #8590FF;
-  --profit: #34D399;
-  --loss: #F87171;
-  --warning: #FBBF24;
-  --ring: #6E7BFF;
-  --radius: 12px;
+  --surface-raised: #191A1E;
+  --border: #28292E;
+  --text-primary: #EDEDEF;
+  --text-muted: #9BA0A8;
+  --accent: #5578E6;
+  --accent-hover: #6B8AEC;
+  --profit: #41C393;
+  --loss: #E26363;
+  --warning: #DCA748;
+  --ring: #5578E6;
+  --radius: 8px;
   /* authorized addition: destructive-foreground (shadcn needs it) */
-  --destructive-foreground: #0B1220;
+  --destructive-foreground: #0B0B0D;
 }
 
-/* ---- Theme: light ---- */
+/* ---- Theme: light / "Papier" ---- */
 [data-theme="light"] {
-  --background: #F6F8FC;
-  --surface: #FFFFFF;
-  --surface-raised: #F0F3F9;
-  --border: #E2E7F0;
-  --text-primary: #101828;
-  --text-muted: #5A6474;
-  --accent: #5A4FD8;
-  --accent-hover: #4C42BF;
-  --profit: #0C9B6C;
-  --loss: #DC2F44;
-  --warning: #B45309;
-  --ring: #5A4FD8;
-  --radius: 12px;
+  --background: #F5F4F0;
+  --surface: #FDFCF9;
+  --surface-raised: #EEEDE7;
+  --border: #D9D6CD;
+  --text-primary: #1B1C1E;
+  --text-muted: #5F646C;
+  --accent: #2E4FC4;
+  --accent-hover: #2744AF;
+  --profit: #12805C;
+  --loss: #C03E3E;
+  --warning: #8F6418;
+  --ring: #2E4FC4;
+  --radius: 8px;
   /* authorized addition: destructive-foreground (shadcn needs it) */
   --destructive-foreground: #FFFFFF;
 }
@@ -102,22 +113,56 @@
   --color-input: var(--border);
 
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  --font-heading: var(--font-space-grotesk), var(--font-inter), sans-serif;
+  --font-heading: var(--font-schibsted), var(--font-inter), sans-serif;
   --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
 
+  /* Radius scale — records are crisper than consumer apps:
+     sm 4 / md 6 / lg 8 / xl 10 */
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --radius-xl: calc(var(--radius) + 2px);
 }
 
 @layer base {
   * {
     border-color: var(--border);
   }
+  html {
+    color-scheme: light dark;
+  }
   body {
     background-color: var(--background);
     color: var(--text-primary);
+    caret-color: var(--accent);
+  }
+  /* Selection, caret, focus — the browser surfaces the craft-floor
+     warns about: themed from the palette, not left default. */
+  ::selection {
+    background-color: color-mix(in srgb, var(--accent) 30%, transparent);
+    color: var(--text-primary);
+  }
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  /* Thin, token-colored scrollbars */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background-color: var(--border);
+    border-radius: 999px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
   }
 }
 
@@ -125,20 +170,105 @@
    Hard rule §9: zero hardcoded hex outside globals.css — the per-theme preview
    dots therefore live HERE as classes, consumed by theme-toggle.tsx. */
 .theme-dot-dark-blue {
-  background-color: #0B1220;
-  box-shadow: inset 0 0 0 1px #243352;
+  background-color: #0E1116;
+  box-shadow: inset 0 0 0 1px #262E3A;
 }
 .theme-dot-dark {
-  background-color: #09090B;
-  box-shadow: inset 0 0 0 1px #27272E;
+  background-color: #0B0B0D;
+  box-shadow: inset 0 0 0 1px #28292E;
 }
 .theme-dot-light {
-  background-color: #F6F8FC;
-  box-shadow: inset 0 0 0 1px #E2E7F0;
+  background-color: #F5F4F0;
+  box-shadow: inset 0 0 0 1px #D9D6CD;
 }
 
-/* ---- Reveal star animation (trade-entry-ux.md §5: ≤ 500 ms, skippable) ----
-   Colors stay token-driven: the star itself inherits currentColor / accent. */
+/* ---- Ledger primitives ------------------------------------ */
+
+/* Rubber-stamp marks for outcomes — bordered uppercase mono ink,
+   NOT pills. Rotation is applied inline (±2deg) for the hand-struck feel. */
+.stamp {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.125rem 0.5rem;
+  border: 1.5px solid currentColor;
+  border-radius: calc(var(--radius) - 4px);
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 1.4;
+  opacity: 0.92;
+}
+.stamp-win { color: var(--profit); }
+.stamp-loss { color: var(--loss); }
+.stamp-warn { color: var(--warning); }
+.stamp-ink { color: var(--text-muted); }
+.stamp-accent { color: var(--accent); }
+
+/* Stat strip: ONE ruled band instead of a row of identical cards.
+   Cells divide by hairlines; headers are ledger annotations. */
+.stat-strip {
+  display: grid;
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) + 2px);
+  overflow: hidden;
+}
+.stat-cell {
+  padding: 1rem 1.25rem 1.125rem;
+  min-width: 0;
+}
+@media (min-width: 640px) {
+  .stat-strip { grid-auto-flow: column; grid-auto-columns: 1fr; }
+  .stat-cell + .stat-cell { border-left: 1px solid var(--border); }
+}
+@media (max-width: 639px) {
+  .stat-strip { grid-template-columns: repeat(2, 1fr); }
+  .stat-cell { border-top: 1px solid var(--border); }
+  .stat-cell:nth-child(-n + 2) { border-top: 0; }
+  .stat-cell:nth-child(odd) { border-left: 0; }
+}
+
+/* Ledger annotation label — small mono tag used inside cells,
+   never as a decorative kicker above standalone headings. */
+.ledger-label {
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* Graph-paper ruling for chart panels — the plotter grid that carries
+   the equity line. Token-driven alpha hairlines, 24px pitch. */
+.chart-paper {
+  background-image:
+    linear-gradient(
+      to right,
+      color-mix(in srgb, var(--border) 55%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--border) 55%, transparent) 1px,
+      transparent 1px
+    );
+  background-size: 24px 24px;
+  background-position: center;
+}
+
+/* Double rule under totals — the accounting signature. */
+.rule-double {
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 3px 0 -2px var(--border);
+}
+
+/* ---- Reveal animations ("paper laid on a desk") ----
+   One authored entrance per page: fade + 8px rise, exponential
+   ease-out. Stagger children 40ms; ≤ 500 ms, skippable. */
 @keyframes reveal-star-in {
   from {
     opacity: 0;
@@ -156,7 +286,7 @@
 @keyframes reveal-fade-up {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
@@ -164,8 +294,32 @@
   }
 }
 .animate-reveal-star {
-  animation: reveal-star-in 450ms ease-out both;
+  animation: reveal-star-in 450ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 .animate-reveal-fade-up {
-  animation: reveal-fade-up 450ms ease-out both;
+  animation: reveal-fade-up 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.reveal-stagger > * {
+  animation: reveal-fade-up 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.reveal-stagger > *:nth-child(1) { animation-delay: 0ms; }
+.reveal-stagger > *:nth-child(2) { animation-delay: 40ms; }
+.reveal-stagger > *:nth-child(3) { animation-delay: 80ms; }
+.reveal-stagger > *:nth-child(4) { animation-delay: 120ms; }
+.reveal-stagger > *:nth-child(5) { animation-delay: 160ms; }
+.reveal-stagger > *:nth-child(6) { animation-delay: 200ms; }
+.reveal-stagger > *:nth-child(7) { animation-delay: 240ms; }
+.reveal-stagger > *:nth-child(8) { animation-delay: 280ms; }
+.reveal-stagger > *:nth-child(n + 9) { animation-delay: 320ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-reveal-star,
+  .animate-reveal-fade-up,
+  .reveal-stagger > * {
+    animation: none;
+  }
+  * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
 }

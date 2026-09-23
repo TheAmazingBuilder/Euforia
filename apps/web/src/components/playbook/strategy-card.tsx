@@ -9,10 +9,11 @@ import { getThemeToken } from "@/lib/utils/theme";
 import { cn } from "@/lib/utils";
 
 /**
- * Playbook strategy card (Phase 8): colored left edge, grade badge (A+ in
- * accent, others muted), status dot, mono stats row (trades, win rate,
- * avg R, expectancy — server-computed) and a tiny cumulative-R equity
- * sparkline. Clicking opens the detail dialog with the full rules.
+ * Playbook strategy card (Phase 8): grade badge (A+ in accent, others muted),
+ * status dot, mono stats row (trades, win rate, avg R, expectancy —
+ * server-computed) and a tiny cumulative-R equity sparkline. The strategy
+ * color lives ONLY in the data sparkline, never as a decorative edge.
+ * Clicking opens the detail dialog with the full rules.
  */
 
 export const GRADE_LABELS: Record<StrategyGrade, string> = {
@@ -79,16 +80,11 @@ export function StrategyCard({ strategy, stat, onOpen }: StrategyCardProps) {
         strategy.status !== "ACTIVE" && "opacity-90",
       )}
     >
-      <span
-        aria-hidden="true"
-        className="absolute inset-y-0 left-0 w-1"
-        style={{ backgroundColor: edgeColor }}
-      />
       <button
         type="button"
         onClick={() => onOpen(strategy)}
         aria-haspopup="dialog"
-        className="flex w-full flex-col gap-3 p-4 pl-5 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="flex w-full flex-col gap-3 p-4 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         <div className="flex items-center gap-2">
           <GradeBadge grade={strategy.grade} />

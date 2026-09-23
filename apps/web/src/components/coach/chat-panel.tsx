@@ -236,11 +236,9 @@ export function ChatPanel({ context, snapshotSummary }: ChatPanelProps) {
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-border bg-surface">
-      {/* Header — identity + data badge */}
-      <div className="flex items-center gap-3 border-b border-border px-4 py-3">
-        <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-accent/10">
-          <Sparkles className="size-4 text-accent" aria-hidden="true" />
-        </span>
+      {/* Header — identity + data badge (inline mark, no icon tile) */}
+      <div className="flex items-center gap-2.5 border-b border-border px-4 py-3">
+        <Sparkles className="size-4 shrink-0 text-accent" aria-hidden="true" />
         <div className="min-w-0 flex-1">
           <p className="truncate font-heading text-sm font-semibold text-foreground">Your coach</p>
           <p className="truncate font-mono text-[11px] tabular-nums text-muted-foreground">
@@ -272,9 +270,7 @@ export function ChatPanel({ context, snapshotSummary }: ChatPanelProps) {
       >
         {empty ? (
           <div className="flex h-full flex-col items-center justify-center gap-4 px-2 text-center">
-            <span className="grid size-12 place-items-center rounded-2xl bg-accent/10">
-              <Sparkles className="size-5 text-accent" aria-hidden="true" />
-            </span>
+            <Sparkles className="size-6 text-muted-foreground/50" aria-hidden="true" />
             <div>
               <p className="font-heading text-base font-semibold text-foreground">
                 Talk about your trading, not the market
@@ -291,7 +287,7 @@ export function ChatPanel({ context, snapshotSummary }: ChatPanelProps) {
                   type="button"
                   disabled={context === null}
                   onClick={() => void send([], suggestion)}
-                  className="rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:border-accent/40 hover:text-accent disabled:cursor-not-allowed disabled:opacity-50"
+                  className="rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:border-accent/40 hover:text-accent disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {suggestion}
                 </button>

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { ArrowDownRight, ArrowUpRight, PencilLine, Smile, StickyNote, X } from "lucide-react";
+import { ArrowDownRight, ArrowRight, ArrowUpRight, PencilLine, Smile, StickyNote, TriangleAlert, X } from "lucide-react";
 import { toast } from "sonner";
 import type { Emotion, ExitReason, Instrument, Trade } from "@cosmoz/shared";
 import { formatPrice } from "@cosmoz/shared";
@@ -242,13 +242,13 @@ function ModifyStopEditor({
         <span className="font-mono line-through tabular-nums">
           {currentStop !== null ? formatPrice(currentStop, digits) : "—"}
         </span>
-        <span aria-hidden="true">→</span>
+        <ArrowRight className="size-3 shrink-0 text-muted-foreground" aria-hidden="true" />
         <span className={cn("font-mono tabular-nums", widened ? "text-warning" : "text-foreground")}>
           {valid ? formatPrice(value, digits) : "…"}
         </span>
         {widened ? (
           <span className="inline-flex items-center gap-1 rounded border border-warning/50 bg-warning/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-warning">
-            <span aria-hidden="true">⚠</span> Stop widened — risk increases
+            <TriangleAlert className="size-3" aria-hidden="true" /> Stop widened — risk increases
           </span>
         ) : null}
       </div>
