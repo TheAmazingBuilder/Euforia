@@ -28,6 +28,8 @@ export * from "./schemas/dailyJournal";
 export * from "./schemas/dailyStat";
 export * from "./schemas/mistake";
 export * from "./schemas/tag";
+export * from "./schemas/eco-event";
+export * from "./schemas/backup";
 export * from "./schemas/api";
 
 // ── Pure utils ───────────────────────────────────────────────────────────────

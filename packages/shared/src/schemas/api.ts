@@ -27,6 +27,7 @@ import { strategySchema } from "./strategy";
 import { accountSchema } from "./account";
 import { ruleSchema, ruleViolationViewSchema } from "./rule";
 import { tagSchema } from "./tag";
+import { ecoEventSchema } from "./eco-event";
 
 /**
  * API read models & endpoint payloads — the contract implemented by the
@@ -105,6 +106,24 @@ export const alertsResponseSchema = z.object({
 });
 
 export type AlertsResponse = z.infer<typeof alertsResponseSchema>;
+
+/** GET /eco-events — economic calendar window (±weeks around today). */
+export const ecoEventsResponseSchema = z.object({
+  events: z.array(ecoEventSchema),
+});
+
+export type EcoEventsResponse = z.infer<typeof ecoEventsResponseSchema>;
+
+/** POST /import/backup — result counts after merging a backup payload. */
+export const importBackupResponseSchema = z.object({
+  imported: z.object({
+    trades: z.number().int().min(0),
+    strategies: z.number().int().min(0),
+    tags: z.number().int().min(0),
+  }),
+});
+
+export type ImportBackupResponse = z.infer<typeof importBackupResponseSchema>;
 
 export const skippedTradesResponseSchema = z.object({
   skippedTrades: z.array(skippedTradeSchema),

@@ -16,6 +16,7 @@ export const queryKeys = {
   tradesRoot: ["trades"] as const,
   review: (tradeId: string) => ["review", tradeId] as const,
   alerts: ["alerts"] as const,
+  ecoEvents: ["eco-events"] as const,
   statsOverview: ["stats-overview"] as const,
   statsAnalytics: ["stats-analytics"] as const,
   skippedTrades: ["skipped-trades"] as const,

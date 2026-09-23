@@ -11,6 +11,7 @@ import {
   type AcknowledgeViolationInput,
   type Alert,
   type AlertsResponse,
+  type EcoEventsResponse,
   type AnalyticsBucket,
   type AnalyticsResponse,
   type CloseTradeInput,
@@ -53,6 +54,8 @@ import {
   type StrategyStat,
   type Tag,
   type TagsResponse,
+  type BackupPayload,
+  type ImportBackupResponse,
   type TiltPoint,
   type Trade,
   type TradeDecisionInput,
@@ -166,6 +169,52 @@ export function createMockStore() {
     if (!alert) throw new MockError(404, "Alert not found");
     if (alert.readAt === null) alert.readAt = nowIso();
     return alert;
+  }
+
+  /** GET /eco-events — economic calendar, chronological. */
+  function listEcoEvents(): EcoEventsResponse {
+    return { events: [...data.ecoEvents] };
+  }
+
+  /** GET /export/backup — full authored-data snapshot (feature 12). */
+  function exportBackup(): BackupPayload {
+    return {
+      app: "cosmoz",
+      schemaVersion: 1,
+      exportedAt: nowIso(),
+      trades: [...data.trades],
+      strategies: [...data.strategies],
+      tags: [...data.tags],
+    };
+  }
+
+  /** POST /import/backup — replace trades, merge strategies + tags by id. */
+  function importBackup(payload: BackupPayload): ImportBackupResponse {
+    data.trades = [...payload.trades];
+
+    let strategiesAdded = 0;
+    for (const strategy of payload.strategies) {
+      if (!data.strategies.some((existing) => existing.id === strategy.id)) {
+        data.strategies.push(strategy);
+        strategiesAdded += 1;
+      }
+    }
+
+    let tagsAdded = 0;
+    for (const tag of payload.tags) {
+      if (!data.tags.some((existing) => existing.id === tag.id)) {
+        data.tags.push(tag);
+        tagsAdded += 1;
+      }
+    }
+
+    return {
+      imported: {
+        trades: payload.trades.length,
+        strategies: strategiesAdded,
+        tags: tagsAdded,
+      },
+    };
   }
 
   // ── Trade creation & closing ─────────────────────────────────────────────
@@ -1507,6 +1556,9 @@ export function createMockStore() {
     strategyStats,
     listTags,
     listAlerts,
+    listEcoEvents,
+    exportBackup,
+    importBackup,
     markAlertRead,
     listSkippedTrades,
     createTrade,

@@ -32,6 +32,7 @@ import {
   type TradeEvent,
   type TradeMistake,
   type RuleViolation,
+  type EcoEvent,
 } from "@cosmoz/shared";
 
 import {
@@ -43,6 +44,7 @@ import {
   type InstrumentDef,
 } from "./catalog";
 import { chance, float, int, mulberry32, pick, uuid, weightedIndex, type Rng } from "./random";
+import { buildEcoEvents } from "./eco-events";
 
 /**
  * SEEDED, DETERMINISTIC fixture generator (Phase 3).
@@ -89,6 +91,7 @@ export interface FixtureData {
   alerts: Alert[];
   skippedTrades: SkippedTrade[];
   dailyStats: DailyStat[];
+  ecoEvents: EcoEvent[];
 }
 
 // ── Small helpers ────────────────────────────────────────────────────────────
@@ -1060,6 +1063,7 @@ export function buildFixtureData(): FixtureData {
     alerts,
     skippedTrades,
     dailyStats,
+    ecoEvents: buildEcoEvents(nowMs),
   };
 
   if (process.env.NODE_ENV !== "production") {

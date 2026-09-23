@@ -3,6 +3,7 @@ import type {
   AcknowledgeViolationInput,
   AcknowledgeViolationResponse,
   AlertsResponse,
+  EcoEventsResponse,
   CreateRuleInput,
   DisciplineScoreResponse,
   MarkAlertReadResponse,
@@ -34,6 +35,14 @@ export function useAlerts() {
   return useQuery({
     queryKey: queryKeys.alerts,
     queryFn: () => apiRequest<AlertsResponse>(apiPaths.alerts),
+  });
+}
+
+/** GET /eco-events — economic calendar (Priorité 3, feature 10). */
+export function useEcoEvents() {
+  return useQuery({
+    queryKey: queryKeys.ecoEvents,
+    queryFn: () => apiRequest<EcoEventsResponse>(apiPaths.ecoEvents),
   });
 }
 

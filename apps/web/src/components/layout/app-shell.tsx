@@ -14,6 +14,7 @@ import {
 import { SidebarBrand, SidebarNav } from "@/components/layout/sidebar";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { Topbar } from "@/components/layout/topbar";
+import { CommandPalette } from "@/components/layout/command-palette";
 import { TradeModalHost } from "@/components/trades/trade-modal-host";
 import { JudgmentFlowModal } from "@/components/trades/judgment-flow-modal";
 import { openTradeModal } from "@/lib/hooks/use-trade-modal";
@@ -92,6 +93,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* Mobile bottom navigation + FAB */}
       <BottomNav />
+
+      {/* Command palette — ⌘K / Ctrl+K, topbar search button */}
+      <CommandPalette />
 
       {/* Global capture modal + "?" shortcuts overlay (N / ? hotkeys) */}
       <TradeModalHost />

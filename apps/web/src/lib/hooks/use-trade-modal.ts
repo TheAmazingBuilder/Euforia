@@ -30,7 +30,11 @@ export interface TradeModalState {
   seed: TradeContextSeed | null;
 }
 
-let state: TradeModalState = { open: false, seed: null };
+/** Frozen closed snapshot — stable reference for the server snapshot so
+ * hydration can never loop (a fresh object per call would re-render forever). */
+const CLOSED_SNAPSHOT: TradeModalState = Object.freeze({ open: false, seed: null });
+
+let state: TradeModalState = CLOSED_SNAPSHOT;
 const listeners = new Set<() => void>();
 
 function emit(): void {
@@ -49,7 +53,7 @@ export function openTradeModal(seed: TradeContextSeed | null = null): void {
 
 /** Close the capture modal and drop any unconsumed seed. */
 export function closeTradeModal(): void {
-  setState({ open: false, seed: null });
+  setState(CLOSED_SNAPSHOT);
 }
 
 function subscribe(listener: () => void): () => void {
@@ -62,7 +66,7 @@ export function useTradeModalState(): TradeModalState {
   return useSyncExternalStore(
     subscribe,
     () => state,
-    // Server + hydration snapshot: closed.
-    (): TradeModalState => ({ open: false, seed: null }),
+    // Server + hydration snapshot: closed (stable reference — see above).
+    () => CLOSED_SNAPSHOT,
   );
 }

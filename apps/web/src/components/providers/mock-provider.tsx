@@ -15,7 +15,14 @@ let workerStartPromise: Promise<void> | null = null;
 
 function startWorkerOnce(): Promise<void> {
   workerStartPromise ??= import("@/mocks/browser")
-    .then(({ worker }) => worker.start({ onUnhandledRequest: "bypass" }))
+    .then(({ worker, SW_URL }) =>
+      // The composed /sw.js hosts both the mock layer and the PWA offline
+      // fallback — one registration at scope "/" (see public/sw.js).
+      worker.start({
+        serviceWorker: { url: SW_URL },
+        onUnhandledRequest: "bypass",
+      }),
+    )
     .then(() => undefined);
   return workerStartPromise;
 }

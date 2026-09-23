@@ -7,6 +7,11 @@ import { TradeModal } from "@/components/trades/trade-modal";
 import { ShortcutsOverlay } from "@/components/trades/shortcuts-overlay";
 import { openGhostModal, useGhostModalState } from "@/lib/hooks/use-ghost-modal";
 import { openTradeModal, useTradeModalState } from "@/lib/hooks/use-trade-modal";
+import {
+  closeShortcutsOverlay,
+  toggleShortcutsOverlay,
+  useShortcutsOverlayState,
+} from "@/lib/hooks/use-shortcuts-overlay";
 
 /**
  * Mounts the capture modal, the ghost modal ("Setup seen, not taken") and the
@@ -16,13 +21,14 @@ import { openTradeModal, useTradeModalState } from "@/lib/hooks/use-trade-modal"
  *   modal is already open, N is left to the form (fast loop after a save);
  *   mid-capture it must NOT wipe the form.
  * - G opens the ghost-capture modal (spec §3, entry point #3).
- * - ? toggles the shortcuts overlay.
+ * - ? toggles the shortcuts overlay (shared store — also fired from the
+ *   command palette so both entry points stay in sync).
  * - Esc is handled by the Dialog/Sheet primitives (draft is always saved).
  */
 export function TradeModalHost() {
   const { open, seed } = useTradeModalState();
   const ghost = useGhostModalState();
-  const [shortcutsOpen, setShortcutsOpen] = React.useState(false);
+  const shortcuts = useShortcutsOverlayState();
 
   React.useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -37,7 +43,7 @@ export function TradeModalHost() {
 
       if (event.key === "?" && !typing) {
         event.preventDefault();
-        setShortcutsOpen((previous) => !previous);
+        toggleShortcutsOverlay();
         return;
       }
       if ((event.key === "n" || event.key === "N") && !typing && !open) {
@@ -58,7 +64,9 @@ export function TradeModalHost() {
     <>
       <TradeModal open={open} seed={seed} />
       <GhostModal open={ghost.open} />
-      <ShortcutsOverlay open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
+      <ShortcutsOverlay open={shortcuts.open} onOpenChange={(next) => {
+        if (!next) closeShortcutsOverlay();
+      }} />
     </>
   );
 }

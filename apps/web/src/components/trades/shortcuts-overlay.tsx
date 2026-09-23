@@ -14,6 +14,7 @@ import {
  */
 
 const SHORTCUTS: readonly { keys: string; action: string }[] = [
+  { keys: "⌘K", action: "Command palette — search everything" },
   { keys: "N", action: "New trade — from anywhere" },
   { keys: "B / S", action: "Direction Buy / Sell (while capturing, outside inputs)" },
   { keys: "← / →", action: "Direction on the segmented control" },

@@ -246,3 +246,9 @@ export type InsightKind = z.infer<typeof insightKindSchema>;
 
 export const feedbackSchema = z.enum(["HELPFUL", "NOT_HELPFUL"]);
 export type Feedback = z.infer<typeof feedbackSchema>;
+
+// ── Economic calendar ────────────────────────────────────────────────────────
+
+/** Market-moving impact tiers (ForexFactory-style 3-bar scale). */
+export const impactSchema = z.enum(["HIGH", "MEDIUM", "LOW"]);
+export type Impact = z.infer<typeof impactSchema>;

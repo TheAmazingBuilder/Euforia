@@ -1,20 +1,13 @@
 import type { Metadata } from "next";
 
-import { PagePlaceholder } from "@/components/shared/page-placeholder";
-import { getNavItem } from "@/lib/navigation";
-
-const nav = getNavItem("/calendar");
+import { EcoCalendarView } from "@/components/calendar/eco-calendar";
 
 export const metadata: Metadata = {
-  title: nav.label,
+  title: "Calendar",
+  description:
+    "The economic calendar: macro releases with impact tiers, beat/miss values and the day's high-impact risk windows.",
 };
 
 export default function CalendarPage() {
-  return (
-    <PagePlaceholder
-      title={nav.label}
-      description={nav.description}
-      comingSoon={nav.comingSoon}
-    />
-  );
+  return <EcoCalendarView />;
 }

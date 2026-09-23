@@ -4,6 +4,7 @@ import { LogOut } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { PagePlaceholder } from "@/components/shared/page-placeholder";
+import { BackupCard } from "@/components/settings/backup-card";
 import { getNavItem } from "@/lib/navigation";
 
 const nav = getNavItem("/settings");
@@ -15,6 +16,9 @@ export const metadata: Metadata = {
 export default function SettingsPage() {
   return (
     <div className="flex flex-col gap-6">
+      {/* Functional now — data ownership is part of Priorité 3 */}
+      <BackupCard />
+
       <PagePlaceholder
         title={nav.label}
         description={nav.description}
