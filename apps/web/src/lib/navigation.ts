@@ -9,6 +9,7 @@ import {
   NotebookPen,
   Settings,
   ShieldCheck,
+  Sparkles,
   Target,
   type LucideIcon,
 } from "lucide-react";
@@ -96,6 +97,15 @@ export const SIDEBAR_ITEMS: NavItem[] = [
       "The coach that watches your rules: limits, streaks, violations and mindset.",
     comingSoon:
       "Your discipline score, daily limits, rule-violation feed and ghost-trade settlements will live here.",
+  },
+  {
+    href: "/coach",
+    label: "Coach",
+    icon: Sparkles,
+    description:
+      "Talk with your AI coach about your own data: patterns, leaks and one fix at a time.",
+    comingSoon:
+      "A conversational coach grounded in your journal will answer with your real numbers.",
   },
   {
     href: "/goals",

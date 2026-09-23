@@ -29,6 +29,7 @@ export const apiPaths = {
   ecoEvents: "/eco-events",
   exportBackup: "/export/backup",
   importBackup: "/import/backup",
+  coachChat: "/coach/chat",
   statsOverview: "/stats/overview",
   statsAnalytics: "/stats/analytics",
   rules: "/rules",

@@ -40,8 +40,8 @@ const BASE = "http://localhost:3000";
   const count = await items.count();
   check("Alerts listed", count > 0, `${count} items`);
 
-  // 4. Unread dot count before
-  const badgeBefore = await bell.locator("span").nth(1).textContent().catch(() => null);
+  // 4. Unread dot count before (badge is the absolutely-positioned span)
+  const badgeBefore = await bell.locator("span.absolute").textContent().catch(() => null);
   check("Unread badge shows count", badgeBefore !== null, `badge=${badgeBefore}`);
 
   // 5. Click first item → marks read (badge decrements or disappears)

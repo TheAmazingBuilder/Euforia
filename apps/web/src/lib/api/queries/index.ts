@@ -44,3 +44,4 @@ export {
 export { useSessionTimeline } from "./session";
 export { useAnalytics, useStatsOverview } from "./stats";
 export { useImportBackup } from "./backup";
+export { sendCoachMessage } from "./coach";

@@ -152,9 +152,13 @@ function ActualValue({ event }: { event: EcoEvent }) {
 function useNow(): number | null {
   const [now, setNow] = React.useState<number | null>(null);
   React.useEffect(() => {
-    setNow(Date.now());
+    // Deferred first tick — no synchronous setState inside the effect.
+    const initial = window.setTimeout(() => setNow(Date.now()), 0);
     const timer = window.setInterval(() => setNow(Date.now()), 30_000);
-    return () => window.clearInterval(timer);
+    return () => {
+      window.clearTimeout(initial);
+      window.clearInterval(timer);
+    };
   }, []);
   return now;
 }
@@ -163,7 +167,7 @@ export function EcoCalendarView() {
   const { data, isLoading, isError } = useEcoEvents();
   const now = useNow();
 
-  const events = data?.events ?? [];
+  const events = React.useMemo(() => data?.events ?? [], [data]);
   const todayKey = React.useMemo(
     () => dayKey(new Date().toISOString()),
     [], // stable per mount — the calendar is a day-scoped screen

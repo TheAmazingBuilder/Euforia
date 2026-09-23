@@ -160,27 +160,28 @@ export function CommandPalette() {
     [grouped],
   );
 
-  // Reset query + selection whenever the palette opens.
+  // Derived clamp — keeps the selection in bounds when the list shrinks,
+  // without a setState-in-effect pass.
+  const activeClamped = Math.min(activeIndex, Math.max(flat.length - 1, 0));
+
+  // Reset query + selection whenever the palette opens. Deferred to a
+  // timeout so the reset runs after the dialog mounts (no cascading render,
+  // and radix autofocus has already settled).
   React.useEffect(() => {
-    if (open) {
+    if (!open) return;
+    const timer = window.setTimeout(() => {
       setQuery("");
       setActiveIndex(0);
-      // Focus after the dialog mounts (radix autofocus also targets content).
-      const timer = window.setTimeout(() => inputRef.current?.focus(), 0);
-      return () => window.clearTimeout(timer);
-    }
+      inputRef.current?.focus();
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [open]);
-
-  // Keep selection in bounds when the filtered list shrinks.
-  React.useEffect(() => {
-    setActiveIndex((previous) => Math.min(previous, Math.max(flat.length - 1, 0)));
-  }, [flat.length]);
 
   // Scroll the active item into view.
   React.useEffect(() => {
     const node = listRef.current?.querySelector<HTMLElement>('[data-active="true"]');
     node?.scrollIntoView({ block: "nearest" });
-  }, [activeIndex]);
+  }, [activeClamped]);
 
   // ── Global hotkey: ⌘K / Ctrl+K (works while typing — convention) ────────
   React.useEffect(() => {
@@ -204,15 +205,15 @@ export function CommandPalette() {
   const onInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === "ArrowDown") {
       event.preventDefault();
-      setActiveIndex((previous) => (flat.length === 0 ? 0 : (previous + 1) % flat.length));
+      setActiveIndex(flat.length === 0 ? 0 : (activeClamped + 1) % flat.length);
     } else if (event.key === "ArrowUp") {
       event.preventDefault();
       setActiveIndex(
-        (previous) => (flat.length === 0 ? 0 : (previous - 1 + flat.length) % flat.length),
+        flat.length === 0 ? 0 : (activeClamped - 1 + flat.length) % flat.length,
       );
     } else if (event.key === "Enter") {
       event.preventDefault();
-      const item = flat[activeIndex];
+      const item = flat[activeClamped];
       if (item) runItem(item);
     }
   };
@@ -279,7 +280,7 @@ export function CommandPalette() {
                   {section.items.map((item) => {
                     renderIndex += 1;
                     const index = renderIndex;
-                    const active = index === activeIndex;
+                    const active = index === activeClamped;
                     return (
                       <li key={item.id} role="option" aria-selected={active}>
                         <button
