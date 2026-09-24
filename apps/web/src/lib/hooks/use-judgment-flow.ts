@@ -27,12 +27,15 @@ export interface JudgmentFlowState {
   decision: GateDecision | null;
 }
 
-let state: JudgmentFlowState = {
+/** Frozen closed snapshot — stable reference for the server snapshot. */
+const CLOSED_SNAPSHOT: JudgmentFlowState = Object.freeze({
   open: false,
   stage: "gate",
   tradeId: null,
   decision: null,
-};
+});
+
+let state: JudgmentFlowState = CLOSED_SNAPSHOT;
 const listeners = new Set<() => void>();
 
 function emit(): void {
@@ -61,7 +64,7 @@ export function revealFinished(): void {
 
 /** Close the whole flow (Finish / Esc / skip-later). */
 export function closeJudgmentFlow(): void {
-  setState({ open: false, stage: "gate", tradeId: null, decision: null });
+  setState(CLOSED_SNAPSHOT);
 }
 
 function subscribe(listener: () => void): () => void {
@@ -74,7 +77,7 @@ export function useJudgmentFlow(): JudgmentFlowState {
   return useSyncExternalStore(
     subscribe,
     () => state,
-    // Server + hydration snapshot: closed.
-    (): JudgmentFlowState => ({ open: false, stage: "gate", tradeId: null, decision: null }),
+    // Server + hydration snapshot: closed (stable reference — cached).
+    () => CLOSED_SNAPSHOT,
   );
 }

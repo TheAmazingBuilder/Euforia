@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { EyeOff, Plus } from "lucide-react";
+import { EyeOff } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { openGhostModal } from "@/lib/hooks/use-ghost-modal";
@@ -15,19 +15,17 @@ type SidebarNavProps = {
   collapsed: boolean;
   /** Called after a navigation link is activated (used to close the mobile sheet). */
   onNavigate?: () => void;
-  /** Extra callback for the placeholder New Trade action. */
-  onNewTrade?: () => void;
 };
 
 /**
  * Shared navigation list used by the desktop sidebar AND the mobile sheet.
- * Desktop order: Dashboard, [New Trade accent button], then the other pages.
+ * Capture entry points: the Trades module header (desktop), the mobile FAB
+ * and the N hotkey — the sidebar itself stays pure navigation.
  * Active item: accent text on a subtle accent-tinted background.
  */
 export function SidebarNav({
   collapsed,
   onNavigate,
-  onNewTrade,
 }: SidebarNavProps) {
   const pathname = usePathname();
 
@@ -72,22 +70,6 @@ export function SidebarNav({
       className={cn("flex flex-col gap-1 p-2", collapsed && "items-center")}
     >
       {first ? renderItem(first) : null}
-
-      {/* New Trade — distinct accent action (trade entry arrives in a later phase) */}
-      <button
-        type="button"
-        onClick={onNewTrade}
-        title="New Trade"
-        aria-label="New Trade"
-        className={cn(
-          linkBase,
-          "bg-accent text-accent-foreground hover:bg-accent-hover",
-          collapsed ? "size-8 justify-center p-0" : "w-full px-2.5",
-        )}
-      >
-        <Plus className="size-4 shrink-0" aria-hidden="true" />
-        {!collapsed && <span className="truncate">New Trade</span>}
-      </button>
 
       {/* Ghost capture (spec §3, entry point #3) — deliberately discreet */}
       <button

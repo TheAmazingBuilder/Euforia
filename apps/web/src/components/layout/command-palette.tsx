@@ -5,10 +5,14 @@ import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import {
   ArrowRight,
+  ArrowDownRight,
+  ArrowUpRight,
+  BookOpen,
   CircleHelp,
   Droplet,
   Ghost,
   Moon,
+  NotebookPen,
   Plus,
   Search,
   Sun,
@@ -18,6 +22,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { SIDEBAR_ITEMS } from "@/lib/navigation";
+import { useInstruments, useStrategies, useTrades } from "@/lib/api/queries";
 import { openGhostModal } from "@/lib/hooks/use-ghost-modal";
 import { openTradeModal } from "@/lib/hooks/use-trade-modal";
 import { openShortcutsOverlay } from "@/lib/hooks/use-shortcuts-overlay";
@@ -28,10 +33,18 @@ import {
 } from "@/lib/hooks/use-command-palette";
 
 /**
- * Command palette (⌘K / Ctrl+K) — search across navigation, quick actions
- * and themes. Custom filtering + listbox (no cmdk dependency): the same
- * no-library approach as the capture hotkeys, with full a11y semantics.
+ * Command palette (⌘K / Ctrl+K) — GLOBAL search across navigation, quick
+ * actions, themes AND the journal's own data: trades (symbol + notes),
+ * strategies and a deep-link into the filtered trade log. Custom filtering +
+ * listbox (no cmdk dependency), full a11y semantics.
  */
+
+type PaletteGroup =
+  | "Actions"
+  | "Trades"
+  | "Strategies"
+  | "Navigate"
+  | "Theme";
 
 type PaletteItem = {
   id: string;
@@ -39,11 +52,12 @@ type PaletteItem = {
   hint?: string;
   keywords: string;
   icon: LucideIcon;
-  group: "Actions" | "Navigate" | "Theme";
+  iconClass?: string;
+  group: PaletteGroup;
   run: () => void;
 };
 
-const GROUP_ORDER: PaletteItem["group"][] = ["Actions", "Navigate", "Theme"];
+const GROUP_ORDER: PaletteGroup[] = ["Actions", "Trades", "Strategies", "Navigate", "Theme"];
 
 /** Lowercase substring match across label + keywords (AND over tokens). */
 function matchItem(item: PaletteItem, query: string): boolean {
@@ -63,6 +77,79 @@ export function CommandPalette() {
   const [activeIndex, setActiveIndex] = React.useState(0);
   const inputRef = React.useRef<HTMLInputElement>(null);
   const listRef = React.useRef<HTMLDivElement>(null);
+
+  // Data search is live while the palette is open (react-query dedupes with
+  // the rest of the app — the trade log and playbook share this cache).
+  const { data: tradesData } = useTrades();
+  const { data: strategiesData } = useStrategies();
+  const { data: instrumentsData } = useInstruments();
+  const instrumentSymbol = React.useMemo(() => {
+    const map = new Map<string, string>();
+    for (const instrument of instrumentsData?.instruments ?? []) {
+      map.set(instrument.id, instrument.symbol);
+    }
+    return map;
+  }, [instrumentsData]);
+
+  // ── Data results: trades (symbol + notes) + strategies, from the query ──
+  const dataItems = React.useMemo<PaletteItem[]>(() => {
+    const q = query.trim().toLowerCase();
+    if (q.length < 2) return [];
+
+    const deepLink: PaletteItem = {
+      id: `search-notes-${q}`,
+      label: `Search notes & trades for “${query.trim()}”`,
+      keywords: "search notes trades filter",
+      icon: NotebookPen,
+      group: "Trades",
+      run: () => router.push(`/trades?q=${encodeURIComponent(query.trim())}`),
+    };
+
+    return [deepLink];
+  }, [query, router]);
+
+  // Extra registry of journal-data matches, only meaningful when open.
+  const journalItems = React.useMemo<PaletteItem[]>(() => {
+    const q = query.trim().toLowerCase();
+    if (q.length < 2 || !open) return [];
+
+    const tradeItems: PaletteItem[] = (tradesData?.trades ?? [])
+      .filter((trade) => {
+        const symbol = (instrumentSymbol.get(trade.instrumentId) ?? "").toLowerCase();
+        const notes = (trade.notes ?? "").toLowerCase();
+        return symbol.includes(q) || notes.includes(q);
+      })
+      .slice(0, 5)
+      .map((trade) => ({
+        id: `trade-${trade.id}`,
+        label:
+          trade.notes && trade.notes.toLowerCase().includes(q)
+            ? trade.notes
+            : instrumentSymbol.get(trade.instrumentId) ?? "Trade",
+        hint: trade.direction,
+        keywords: `trade ${trade.status}`,
+        icon: trade.direction === "SELL" ? ArrowDownRight : ArrowUpRight,
+        iconClass: trade.direction === "SELL" ? "text-loss" : "text-profit",
+        group: "Trades" as const,
+        run: () => router.push(`/trades?trade=${trade.id}`),
+      }));
+
+    const strategyItems: PaletteItem[] = (strategiesData?.strategies ?? [])
+      .filter((strategy) =>
+        `${strategy.name} ${strategy.description ?? ""}`.toLowerCase().includes(q),
+      )
+      .slice(0, 3)
+      .map((strategy) => ({
+        id: `strategy-${strategy.id}`,
+        label: strategy.name,
+        keywords: `strategy playbook ${strategy.description ?? ""}`,
+        icon: BookOpen,
+        group: "Strategies" as const,
+        run: () => router.push("/playbook"),
+      }));
+
+    return [...strategyItems, ...tradeItems];
+  }, [query, open, tradesData, strategiesData, instrumentSymbol, router]);
 
   // ── Item registry ────────────────────────────────────────────────────────
   const items = React.useMemo<PaletteItem[]>(() => {
@@ -137,8 +224,8 @@ export function CommandPalette() {
 
   // ── Filtering ────────────────────────────────────────────────────────────
   const filtered = React.useMemo(
-    () => items.filter((item) => matchItem(item, query.trim())),
-    [items, query],
+    () => [...items.filter((item) => matchItem(item, query.trim())), ...journalItems, ...dataItems],
+    [items, journalItems, dataItems, query],
   );
 
   // Group preserving canonical order.
@@ -299,6 +386,7 @@ export function CommandPalette() {
                             className={cn(
                               "size-4 shrink-0",
                               active ? "text-accent" : "text-muted-foreground",
+                              item.iconClass,
                             )}
                             aria-hidden="true"
                           />

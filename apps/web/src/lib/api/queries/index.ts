@@ -22,16 +22,21 @@ export {
   useViolations,
 } from "./discipline";
 export {
+  useAddScreenshot,
   useCloseTrade,
   useCreateTrade,
   useDecision,
+  useDeleteScreenshot,
+  useDeleteTrade,
   useResolveMistake,
   useReview,
+  useScreenshots,
   useTrades,
   useUpdateNotes,
   useUpdatePlan,
   useUpdatePsychology,
   useUpdateReview,
+  useUpdateTrade,
   type TradesParams,
 } from "./trades";
 export { useCreateSkippedTrade, useSettleSkippedTrade, useSkippedTrades } from "./skippedTrades";
@@ -44,4 +49,5 @@ export {
 export { useSessionTimeline } from "./session";
 export { useAnalytics, useStatsOverview } from "./stats";
 export { useImportBackup } from "./backup";
+export { useProfile, useUpdateProfile } from "./profile";
 export { sendCoachMessage } from "./coach";

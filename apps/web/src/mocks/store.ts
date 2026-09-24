@@ -22,6 +22,8 @@ import {
   type CreateTradeInput,
   type CreateTradeResponse,
   type DailyStat,
+  type DeleteScreenshotResponse,
+  type DeleteTradeResponse,
   type DisciplineScoreResponse,
   type Emotion,
   type GradeOutcomeCell,
@@ -32,6 +34,8 @@ import {
   type NotesUpdateInput,
   type PlanUpdateInput,
   type PlanUpdateResponse,
+  type Profile,
+  type ProfileUpdateInput,
   type PsychologyUpdateInput,
   type RevealPayload,
   type ReviewResponse,
@@ -59,11 +63,16 @@ import {
   type TiltPoint,
   type Trade,
   type TradeDecisionInput,
+  type TradeScreenshot,
+  type TradeScreenshotsResponse,
+  type AddScreenshotInput,
   type TradesListResponse,
   type TradeMistake,
   type TradeEvent,
   type UpdateRuleInput,
   type UpdateStrategyInput,
+  type UpdateTradeInput,
+  type UpdateTradeResponse,
   type ViolationsResponse,
 } from "@cosmoz/shared";
 
@@ -92,6 +101,8 @@ export function createMockStore() {
   const alertsByTrade = new Map<string, Alert[]>();
   /** Trade ↔ tag join rows (tradeId → tagIds), Act 3 review. */
   const tradeTags = new Map<string, Set<string>>();
+  /** Trade screenshots (module gallery) — data URLs held in memory. */
+  const screenshotsByTrade = new Map<string, TradeScreenshot[]>();
   const user = data.user;
   const mainAccount = data.accounts.find((a) => a.isDefault) ?? data.accounts[0]!;
 
@@ -116,7 +127,7 @@ export function createMockStore() {
   // ── Lists ────────────────────────────────────────────────────────────────
 
   function listTrades(query: { status?: string; graded?: string; accountId?: string }): TradesListResponse {
-    let trades = [...data.trades];
+    let trades = data.trades.filter((t) => t.deletedAt === null);
     if (query.status) trades = trades.filter((t) => t.status === query.status);
     if (query.graded === "true") {
       trades = trades.filter((t) => t.decisionGrade !== null);
@@ -126,7 +137,11 @@ export function createMockStore() {
     }
     if (query.accountId) trades = trades.filter((t) => t.accountId === query.accountId);
     trades.sort((a, b) => (b.exitAt ?? b.entryAt).localeCompare(a.exitAt ?? a.entryAt));
-    return { trades, total: trades.length };
+    // Tag join projection — lets the trade module render tag chips directly.
+    return {
+      trades: trades.map((t) => ({ ...t, tagIds: [...(tradeTags.get(t.id) ?? [])] })),
+      total: trades.length,
+    };
   }
 
   const listAccounts = (): Account[] => data.accounts;
@@ -794,15 +809,15 @@ export function createMockStore() {
     }
     const equityPeak = Math.max(runningPeak, Number(mainAccount.startingBalance));
 
-    // ── Deltas vs the previous comparable period (last 14 trading days vs the
-    // 14 before that) — all aggregates stay server-side, decimal strings out ─
+    // ── Deltas WEEK VS WEEK (last 7 trading days vs the 7 before that) —
+    // all aggregates stay server-side, decimal strings out ──────────────────
     const shiftDateKey = (offsetDays: number): string => {
       const shifted = new Date();
       shifted.setUTCDate(shifted.getUTCDate() + offsetDays);
       return toTradingDateKey(shifted.toISOString(), USER_TZ);
     };
-    const currentStart = shiftDateKey(-13);
-    const prevStart = shiftDateKey(-27);
+    const currentStart = shiftDateKey(-6);
+    const prevStart = shiftDateKey(-13);
 
     const aggregate = (trades: Trade[]) => {
       const count = trades.length;
@@ -850,7 +865,9 @@ export function createMockStore() {
         ? { value: null, direction: cur.netPnl > prev.netPnl && cur.hasData ? "UP" : "FLAT" }
         : rawDelta(cur.netPnl, prev.netPnl);
 
-    // ── Per-KPI sparklines over the last 14 active days (rolling aggregates) ─
+    // ── Per-KPI sparklines — WEEKLY buckets (last 8 weeks, Monday-anchored).
+    // The strips compare week vs week, so the trend line draws one point per
+    // week rather than a rolling day window.
     const sparklines: StatsOverviewResponse["sparklines"] = {
       netPnl: [],
       winRate: [],
@@ -858,42 +875,46 @@ export function createMockStore() {
       expectancy: [],
       disciplineScore: [],
     };
-    let cumPnl = 0;
-    let cumWins = 0;
-    let cumCount = 0;
-    let cumR = 0;
-    let cumGp = 0;
-    let cumGl = 0;
-    let cumDiscSum = 0;
-    let cumDiscDays = 0;
-    let lastPf: number | null = null;
-    let lastDisc: number | null = null;
-    for (const [date, entry] of days.slice(-14)) {
-      const dayList = byDayTrades.get(date) ?? [];
-      cumPnl += entry.pnl;
-      cumCount += dayList.length;
-      cumWins += dayList.filter((t) => (Number(t.pnlNet) ?? 0) > 0).length;
-      cumR += dayList.reduce((sum, t) => sum + (Number(t.rMultiple) ?? 0), 0);
-      cumGp += dayList
-        .filter((t) => (Number(t.pnlNet) ?? 0) > 0)
-        .reduce((sum, t) => sum + (Number(t.pnlNet) ?? 0), 0);
-      cumGl += Math.abs(
-        dayList
-          .filter((t) => (Number(t.pnlNet) ?? 0) < 0)
-          .reduce((sum, t) => sum + (Number(t.pnlNet) ?? 0), 0),
+    const WEEKS_SHOWN = 8;
+    const weekStartKey = (dateKey: string): string => {
+      const date = new Date(`${dateKey}T00:00:00Z`);
+      const weekday = date.getUTCDay(); // 0 = Sunday
+      const backToMonday = (weekday + 6) % 7;
+      date.setUTCDate(date.getUTCDate() - backToMonday);
+      return date.toISOString().slice(0, 10);
+    };
+    const weekBuckets = new Map<string, Trade[]>();
+    for (const trade of closed) {
+      const key = weekStartKey(trade.tradingDate);
+      const bucket = weekBuckets.get(key) ?? [];
+      bucket.push(trade);
+      weekBuckets.set(key, bucket);
+    }
+    const sortedWeekKeys = [...weekBuckets.keys()].sort();
+    // Only the weeks that have data, capped to the last 8 — the oldest first.
+    const shownWeeks = sortedWeekKeys.slice(-WEEKS_SHOWN);
+    for (const weekKey of shownWeeks) {
+      const weekTrades = weekBuckets.get(weekKey) ?? [];
+      const wins = weekTrades.filter((t) => (Number(t.pnlNet) ?? 0) > 0);
+      const gp = wins.reduce((sum, t) => sum + (Number(t.pnlNet) ?? 0), 0);
+      const gl = Math.abs(
+        weekTrades.filter((t) => (Number(t.pnlNet) ?? 0) < 0).reduce((sum, t) => sum + (Number(t.pnlNet) ?? 0), 0),
       );
-      const disc = data.dailyStats.find((s) => s.date === date)?.disciplineScore ?? null;
-      if (disc !== null) {
-        cumDiscSum += Number(disc);
-        cumDiscDays += 1;
-        lastDisc = cumDiscSum / cumDiscDays;
-      }
-      if (cumGl > 0) lastPf = cumGp / cumGl;
-      sparklines.netPnl.push(toDecimalString(round2(cumPnl)));
-      sparklines.winRate.push(toDecimalString(round2(cumCount > 0 ? (cumWins / cumCount) * 100 : 0)));
-      sparklines.profitFactor.push(toDecimalString(round2(lastPf ?? 0)));
-      sparklines.expectancy.push(toDecimalString(round2(cumCount > 0 ? cumR / cumCount : 0)));
-      sparklines.disciplineScore.push(toDecimalString(round2(lastDisc ?? 0)));
+      const weekDays = weekTrades.map((t) => t.tradingDate);
+      const discScores = data.dailyStats
+        .filter((s) => weekDays.includes(s.date) && s.disciplineScore !== null)
+        .map((s) => Number(s.disciplineScore));
+      sparklines.netPnl.push(toDecimalString(round2(weekTrades.reduce((sum, t) => sum + (Number(t.pnlNet) ?? 0), 0))));
+      sparklines.winRate.push(
+        toDecimalString(round2(weekTrades.length > 0 ? (wins.length / weekTrades.length) * 100 : 0)),
+      );
+      sparklines.profitFactor.push(toDecimalString(round2(gl > 0 ? gp / gl : 0)));
+      sparklines.expectancy.push(
+        toDecimalString(round2(weekTrades.length > 0 ? weekTrades.reduce((sum, t) => sum + (Number(t.rMultiple) ?? 0), 0) / weekTrades.length : 0)),
+      );
+      sparklines.disciplineScore.push(
+        toDecimalString(round2(discScores.length > 0 ? discScores.reduce((sum, v) => sum + v, 0) / discScores.length : 0)),
+      );
     }
 
     // ── Discipline Saved — settled would-have-lost ghost trades ─────────────
@@ -941,6 +962,7 @@ export function createMockStore() {
         expectancy: rawDelta(cur.expectancy, prev.expectancy),
         disciplineScore: rawDelta(curDisc, prevDisc),
       },
+      deltaWindowDays: 7,
       sparklines,
       disciplineSaved: {
         rSaved: toDecimalString(round2(rSaved)),
@@ -1544,6 +1566,121 @@ export function createMockStore() {
     return trade;
   }
 
+  // ── Trade module: edit / delete / screenshots / profile ──────────────────
+
+  /**
+   * PATCH /trades/:id — journal correction. Closed trades get their results
+   * recomputed server-side (§15); daily stats refresh for both the old and
+   * the new trading date when the entry moved across days.
+   */
+  function updateTrade(tradeId: string, input: UpdateTradeInput): UpdateTradeResponse {
+    const trade = data.trades.find((t) => t.id === tradeId && t.deletedAt === null);
+    if (!trade) throw new MockError(404, "Trade not found");
+
+    const previousDate = trade.tradingDate;
+    if (input.instrumentId !== undefined) trade.instrumentId = input.instrumentId;
+    if (input.direction !== undefined) trade.direction = input.direction;
+    if (input.quantity !== undefined) trade.quantity = input.quantity;
+    if (input.initialStop !== undefined) trade.initialStop = input.initialStop;
+    if (input.initialTP !== undefined) trade.initialTP = input.initialTP;
+    if (input.strategyId !== undefined) trade.strategyId = input.strategyId;
+    if (input.fees !== undefined) trade.fees = input.fees;
+    if (input.swap !== undefined) trade.swap = input.swap;
+    if (input.entryPrice !== undefined) trade.entryPrice = input.entryPrice;
+    if (input.entryAt !== undefined) {
+      trade.entryAt = input.entryAt;
+      trade.tradingDate = toTradingDateKey(input.entryAt, USER_TZ);
+    }
+    if (input.exitPrice !== undefined || input.exitAt !== undefined || input.exitReason !== undefined) {
+      if (trade.status !== "CLOSED") throw new MockError(409, "Trade is not closed — close it first");
+      if (input.exitPrice !== undefined) trade.exitPrice = input.exitPrice;
+      if (input.exitAt !== undefined) trade.exitAt = input.exitAt;
+      if (input.exitReason !== undefined) trade.exitReason = input.exitReason;
+      if (trade.exitAt !== null && trade.exitAt < trade.entryAt) {
+        throw new MockError(422, "exitAt must be after entryAt");
+      }
+    }
+
+    // Risk amount follows the edited stop / quantity (server-side recompute).
+    if (trade.initialStop !== null) {
+      const instrument = instrumentById.get(trade.instrumentId);
+      const contractSize = Number(instrument?.contractSize ?? "1");
+      const perUnitRisk = Math.abs(Number(trade.entryPrice) - Number(trade.initialStop)) * Number(trade.quantity) * contractSize;
+      trade.riskAmount = toDecimalString(round2(perUnitRisk));
+    }
+    if (trade.status === "CLOSED") applyResults(trade);
+    trade.updatedAt = nowIso();
+
+    if (trade.tradingDate !== previousDate) {
+      refreshDailyStat(previousDate);
+      refreshDailyStat(trade.tradingDate);
+    } else {
+      refreshDailyStat(trade.tradingDate);
+    }
+    return { trade };
+  }
+
+  /** DELETE /trades/:id — soft delete; aggregates refresh immediately. */
+  function deleteTrade(tradeId: string): DeleteTradeResponse {
+    const trade = data.trades.find((t) => t.id === tradeId && t.deletedAt === null);
+    if (!trade) throw new MockError(404, "Trade not found");
+    trade.deletedAt = nowIso();
+    trade.updatedAt = trade.deletedAt;
+    refreshDailyStat(trade.tradingDate);
+    return { id: tradeId, deleted: true };
+  }
+
+  // ── Screenshots (module gallery) ───────────────────────────────────────────
+
+  function listScreenshots(tradeId: string): TradeScreenshotsResponse {
+    return { screenshots: [...(screenshotsByTrade.get(tradeId) ?? [])] };
+  }
+
+  function addScreenshot(tradeId: string, input: AddScreenshotInput): TradeScreenshot {
+    const trade = data.trades.find((t) => t.id === tradeId && t.deletedAt === null);
+    if (!trade) throw new MockError(404, "Trade not found");
+    const screenshot: TradeScreenshot = {
+      id: crypto.randomUUID(),
+      tradeId,
+      kind: input.kind,
+      storageKey: input.dataUrl,
+      caption: input.caption ?? null,
+      annotations: null,
+      createdAt: nowIso(),
+    };
+    const bucket = screenshotsByTrade.get(tradeId) ?? [];
+    bucket.push(screenshot);
+    screenshotsByTrade.set(tradeId, bucket);
+    return screenshot;
+  }
+
+  function deleteScreenshot(tradeId: string, screenshotId: string): DeleteScreenshotResponse {
+    const bucket = screenshotsByTrade.get(tradeId) ?? [];
+    const index = bucket.findIndex((s) => s.id === screenshotId);
+    if (index === -1) throw new MockError(404, "Screenshot not found");
+    bucket.splice(index, 1);
+    return { id: screenshotId, deleted: true };
+  }
+
+  // ── Profile (GET/PATCH /me) ────────────────────────────────────────────────
+
+  function getProfile(): Profile {
+    return {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      timezone: user.timezone,
+      baseCurrency: user.baseCurrency,
+    };
+  }
+
+  function updateProfile(input: ProfileUpdateInput): Profile {
+    if (input.name !== undefined) user.name = input.name;
+    if (input.email !== undefined) user.email = input.email;
+    if (input.timezone !== undefined) user.timezone = input.timezone;
+    return getProfile();
+  }
+
   return {
     get data() { return data; },
     listTrades,
@@ -1585,6 +1722,13 @@ export function createMockStore() {
     mistakesLedger,
     sessionTimeline,
     updateNotes,
+    updateTrade,
+    deleteTrade,
+    listScreenshots,
+    addScreenshot,
+    deleteScreenshot,
+    getProfile,
+    updateProfile,
   };
 }
 

@@ -149,9 +149,24 @@ export const BOTTOM_NAV_ITEMS: BottomNavItem[] = [
 export function getPageTitle(pathname: string): string {
   const match = SIDEBAR_ITEMS.find((item) => item.href === pathname);
   if (match) return match.label;
+  if (pathname === "/profile") return "Profile";
   if (pathname === "/login") return "Sign in";
   if (pathname === "/register") return "Create account";
   return "Cosmoz";
+}
+
+/**
+ * Breadcrumb trail for the topbar: the app root first, then the active page.
+ * Unknown paths collapse to a single "Cosmoz" crumb (no dead ends).
+ */
+export function getBreadcrumb(pathname: string): { href: string; label: string }[] {
+  const crumbs: { href: string; label: string }[] = [
+    { href: "/", label: "Cosmoz" },
+  ];
+  if (pathname !== "/") {
+    crumbs.push({ href: pathname, label: getPageTitle(pathname) });
+  }
+  return crumbs;
 }
 
 /** Single source of truth for a screen's copy — throws on unknown href. */

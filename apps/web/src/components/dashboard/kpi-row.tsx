@@ -96,7 +96,9 @@ function KpiCell({
 }
 
 /** Top KPI band — one ruled strip (the record's totals row), not five cards.
- * All aggregates come from GET /stats/overview (server-computed). */
+ * All aggregates come from GET /stats/overview (server-computed). Deltas
+ * compare THIS WEEK vs LAST WEEK (server window) and the sparklines draw
+ * one point per weekly bucket. */
 export function KpiRow({ overview }: { overview: StatsOverviewResponse }) {
   const { resolvedTheme } = useTheme();
   // resolvedTheme is an intentional dependency even though the tokens are
@@ -105,10 +107,11 @@ export function KpiRow({ overview }: { overview: StatsOverviewResponse }) {
   const theme = React.useMemo<ChartTheme>(() => getChartTheme(), [resolvedTheme]);
 
   return (
-    <section
-      aria-label="Key performance indicators"
-      className="stat-strip reveal-stagger grid-cols-2 max-sm:grid"
-    >
+    <>
+      <section
+        aria-label="Key performance indicators"
+        className="stat-strip reveal-stagger grid-cols-2 max-sm:grid"
+      >
       <KpiCell
         label="Net P&L"
         value={formatSignedMoney(overview.netPnl, overview.currency)}
@@ -158,6 +161,13 @@ export function KpiRow({ overview }: { overview: StatsOverviewResponse }) {
         formatDelta={(value) => `${signedFormat(value, 1)} pts`}
         className="max-sm:col-span-2"
       />
-    </section>
+      </section>
+      <p
+        data-testid="kpi-window-note"
+        className="-mt-2 text-[11px] text-muted-foreground sm:text-right"
+      >
+        Arrows: this week vs last week ({overview.deltaWindowDays}-day window) · sparklines: weekly buckets
+      </p>
+    </>
   );
 }

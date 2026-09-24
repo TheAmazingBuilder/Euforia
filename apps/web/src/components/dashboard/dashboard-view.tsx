@@ -10,11 +10,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AlertsFeed } from "@/components/dashboard/alerts-feed";
+import { BestWorstCard } from "@/components/dashboard/best-worst-card";
 import { CalendarHeatmap } from "@/components/dashboard/calendar-heatmap";
 import { CoachInsights } from "@/components/dashboard/coach-insights";
 import { DisciplineSavedCard } from "@/components/dashboard/discipline-saved-card";
 import { EquityConstellation } from "@/components/dashboard/equity-constellation";
 import { KpiRow } from "@/components/dashboard/kpi-row";
+import { OpenPositionsCard } from "@/components/dashboard/open-positions-card";
+import { CumulativePnlCard, DailyPnlCard } from "@/components/dashboard/pnl-charts";
 import { RiskBudgetCard } from "@/components/dashboard/risk-budget-card";
 import { useAlerts, useRulesStatus, useStatsOverview } from "@/lib/api/queries";
 import { openTradeModal } from "@/lib/hooks/use-trade-modal";
@@ -184,6 +187,15 @@ function DashboardContent({ overview, rulesStatus, alerts }: DashboardContentPro
     <>
       <KpiRow overview={overview} />
 
+      {/* P&L band — period chips live in the URL (?range=7|30|90).
+          Suspense: useSearchParams inside the chips needs a boundary. */}
+      <React.Suspense fallback={<Skeleton className="h-72 rounded-xl" />}>
+        <div className="grid gap-3 sm:gap-4 lg:grid-cols-2">
+          <CumulativePnlCard overview={overview} />
+          <DailyPnlCard overview={overview} />
+        </div>
+      </React.Suspense>
+
       <div className="grid gap-3 sm:gap-4 lg:grid-cols-5">
         <Card className="bg-surface lg:col-span-3">
           <CardHeader>
@@ -208,6 +220,7 @@ function DashboardContent({ overview, rulesStatus, alerts }: DashboardContentPro
         </Card>
 
         <div className="space-y-3 sm:space-y-4 lg:col-span-2">
+          <OpenPositionsCard />
           <RiskBudgetCard status={rulesStatus} />
           <CoachInsights insights={insights} />
         </div>
@@ -216,12 +229,14 @@ function DashboardContent({ overview, rulesStatus, alerts }: DashboardContentPro
       <CalendarHeatmap dailyPnl={overview.dailyPnl} currency={overview.currency} />
 
       <div className="grid gap-3 sm:gap-4 lg:grid-cols-2">
-        <AlertsFeed alerts={alerts.alerts} unreadCount={alerts.unreadCount} />
+        <BestWorstCard />
         <DisciplineSavedCard
           rSaved={overview.disciplineSaved.rSaved}
           settledCount={overview.disciplineSaved.settledCount}
         />
       </div>
+
+      <AlertsFeed alerts={alerts.alerts} unreadCount={alerts.unreadCount} />
     </>
   );
 }

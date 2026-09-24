@@ -3,11 +3,13 @@ import {
   currencySchema,
   directionSchema,
   emotionSchema,
+  exitReasonSchema,
   gradeSchema,
   mistakeCategorySchema,
   outcomeSchema,
   ruleTypeSchema,
   severitySchema,
+  shotKindSchema,
   strategyGradeSchema,
   tagCategorySchema,
   tradeStatusSchema,
@@ -16,10 +18,16 @@ import {
   dateKeySchema,
   decimalStringSchema,
   isoDateTimeSchema,
+  nonNegativeDecimalStringSchema,
   positiveDecimalStringSchema,
   uuidSchema,
 } from "./primitives";
-import { tradeSchema, tradeEventSchema, detectedMistakeSummarySchema } from "./trade";
+import {
+  tradeSchema,
+  tradeEventSchema,
+  tradeScreenshotSchema,
+  detectedMistakeSummarySchema,
+} from "./trade";
 import { alertSchema } from "./alert";
 import { skippedTradeSchema } from "./skippedTrade";
 import { instrumentSchema } from "./instrument";
@@ -68,8 +76,19 @@ export const tradesListQuerySchema = z.object({
 
 export type TradesListQuery = z.infer<typeof tradesListQuerySchema>;
 
+/**
+ * One row of the trade log. Identical to the Trade entity plus the tag join
+ * projection (optional) so the trade module can render tag chips without a
+ * review request per row.
+ */
+export const tradesListRowSchema = tradeSchema.extend({
+  tagIds: z.array(uuidSchema).optional(),
+});
+
+export type TradesListRow = z.infer<typeof tradesListRowSchema>;
+
 export const tradesListResponseSchema = z.object({
-  trades: z.array(tradeSchema),
+  trades: z.array(tradesListRowSchema),
   total: z.number().int().min(0),
 });
 
@@ -576,6 +595,8 @@ export const statsOverviewResponseSchema = z.object({
     expectancy: kpiDeltaSchema,
     disciplineScore: kpiDeltaSchema,
   }),
+  /** Size of the delta comparison window in days (7 = week vs week). */
+  deltaWindowDays: z.number().int().min(1),
   sparklines: kpiSparklinesSchema,
   /** Σ|R| saved by settled would-have-lost ghost trades + their count. */
   disciplineSaved: disciplineSavedSchema,
@@ -735,3 +756,99 @@ export const analyticsResponseSchema = z.object({
 });
 
 export type AnalyticsResponse = z.infer<typeof analyticsResponseSchema>;
+
+// ── Trade module: edit, delete, screenshots ─────────────────────────────────
+
+/**
+ * PATCH /trades/:id — journal correction from the trade module. All fields
+ * optional (partial update); for CLOSED trades the server recomputes
+ * pnlGross / pnlNet / rMultiple from the edited legs (§15: results are
+ * always server-computed, never trusted from the client).
+ */
+export const updateTradeInputSchema = z
+  .object({
+    instrumentId: uuidSchema.optional(),
+    direction: directionSchema.optional(),
+    entryPrice: positiveDecimalStringSchema.optional(),
+    entryAt: isoDateTimeSchema.optional(),
+    quantity: positiveDecimalStringSchema.optional(),
+    initialStop: positiveDecimalStringSchema.nullable().optional(),
+    initialTP: positiveDecimalStringSchema.nullable().optional(),
+    /** null = detach from the playbook. */
+    strategyId: uuidSchema.nullable().optional(),
+    fees: nonNegativeDecimalStringSchema.optional(),
+    swap: decimalStringSchema.optional(),
+    /** Closed trades only — correcting the recorded exit. */
+    exitPrice: positiveDecimalStringSchema.optional(),
+    exitAt: isoDateTimeSchema.optional(),
+    exitReason: exitReasonSchema.optional(),
+  })
+  .refine(
+    (value) => Object.values(value).some((field) => field !== undefined),
+    { message: "Provide at least one field to update" },
+  );
+
+export type UpdateTradeInput = z.infer<typeof updateTradeInputSchema>;
+
+/** PATCH /trades/:id response — the corrected trade projection. */
+export const updateTradeResponseSchema = z.object({
+  trade: tradeSchema,
+});
+
+export type UpdateTradeResponse = z.infer<typeof updateTradeResponseSchema>;
+
+/** DELETE /trades/:id — soft delete (undo window is a later concern). */
+export const deleteTradeResponseSchema = z.object({
+  id: uuidSchema,
+  deleted: z.literal(true),
+});
+
+export type DeleteTradeResponse = z.infer<typeof deleteTradeResponseSchema>;
+
+// ── Trade screenshots (module gallery) ──────────────────────────────────────
+
+/** GET /trades/:id/screenshots — chart evidence for the detail drawer. */
+export const tradeScreenshotsResponseSchema = z.object({
+  screenshots: z.array(tradeScreenshotSchema),
+});
+
+export type TradeScreenshotsResponse = z.infer<typeof tradeScreenshotsResponseSchema>;
+
+/** POST /trades/:id/screenshots — upload (data URL stored by the mock API). */
+export const addScreenshotInputSchema = z.object({
+  kind: shotKindSchema,
+  /** Data URL — real deployments swap this for object-storage keys. */
+  dataUrl: z.string().min(1).max(8_000_000),
+  caption: z.string().max(300).optional(),
+});
+
+export type AddScreenshotInput = z.infer<typeof addScreenshotInputSchema>;
+
+/** DELETE /trades/:id/screenshots/:screenshotId. */
+export const deleteScreenshotResponseSchema = z.object({
+  id: uuidSchema,
+  deleted: z.literal(true),
+});
+
+export type DeleteScreenshotResponse = z.infer<typeof deleteScreenshotResponseSchema>;
+
+// ── Profile (GET/PATCH /me) ─────────────────────────────────────────────────
+
+export const profileSchema = z.object({
+  id: uuidSchema,
+  email: z.string().email(),
+  name: z.string().min(1).max(80),
+  /** IANA timezone — drives the trading-day keys server-side. */
+  timezone: z.string().min(1),
+  baseCurrency: currencySchema,
+});
+
+export type Profile = z.infer<typeof profileSchema>;
+
+export const profileUpdateInputSchema = z.object({
+  name: z.string().min(1).max(80).optional(),
+  email: z.string().email().optional(),
+  timezone: z.string().min(1).optional(),
+});
+
+export type ProfileUpdateInput = z.infer<typeof profileUpdateInputSchema>;

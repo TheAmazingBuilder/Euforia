@@ -4,6 +4,7 @@
  * Paths are relative to the API base (lib/api/urls.ts).
  */
 export const apiPaths = {
+  me: "/me",
   instruments: "/instruments",
   rulesStatus: "/rules/status",
   strategies: "/strategies",
@@ -21,6 +22,9 @@ export const apiPaths = {
   tradePlan: (tradeId: string) => `/trades/${tradeId}/plan`,
   tradePsychology: (tradeId: string) => `/trades/${tradeId}/psychology`,
   tradeNotes: (tradeId: string) => `/trades/${tradeId}/notes`,
+  tradeScreenshots: (tradeId: string) => `/trades/${tradeId}/screenshots`,
+  tradeScreenshot: (tradeId: string, screenshotId: string) =>
+    `/trades/${tradeId}/screenshots/${screenshotId}`,
   sessionTimeline: "/session/timeline",
   skippedTrades: "/skipped-trades",
   skippedTradeSettle: (skippedId: string) => `/skipped-trades/${skippedId}/settle`,

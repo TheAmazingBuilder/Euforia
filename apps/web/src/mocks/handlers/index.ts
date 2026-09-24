@@ -3,6 +3,7 @@ import { disciplineHandlers } from "./discipline";
 import { ecoHandlers } from "./eco";
 import { ghostHandlers } from "./ghosts";
 import { playbookHandlers } from "./playbook";
+import { profileHandlers } from "./profile";
 import { sessionHandlers } from "./session";
 import { statsHandlers } from "./stats";
 import { tradeHandlers } from "./trades";
@@ -19,4 +20,5 @@ export const handlers = [
   ...sessionHandlers,
   ...ecoHandlers,
   ...backupHandlers,
+  ...profileHandlers,
 ];

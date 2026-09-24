@@ -1,5 +1,6 @@
 import { http, HttpResponse } from "msw";
 import {
+  addScreenshotInputSchema,
   closeTradeInputSchema,
   createTradeInputSchema,
   notesUpdateInputSchema,
@@ -9,6 +10,7 @@ import {
   reviewUpdateInputSchema,
   tradeDecisionInputSchema,
   tradesListQuerySchema,
+  updateTradeInputSchema,
 } from "@cosmoz/shared";
 
 import { apiPaths } from "@/lib/api/endpoints";
@@ -138,4 +140,65 @@ export const tradeHandlers = [
       return toErrorResponse(error);
     }
   }),
+
+  // ── Trade module: edit / delete / screenshots ─────────────────────────────
+
+  // PATCH /trades/:id — journal correction (server recomputes closed results)
+  http.patch(endpoint(apiPaths.trade(":tradeId")), async ({ request, params }) => {
+    await latency();
+    try {
+      const input = parseBody(updateTradeInputSchema, await readJson(request));
+      return HttpResponse.json(mockStore.updateTrade(pathParam(params, "tradeId"), input));
+    } catch (error) {
+      return toErrorResponse(error);
+    }
+  }),
+
+  // DELETE /trades/:id — soft delete
+  http.delete(endpoint(apiPaths.trade(":tradeId")), async ({ params }) => {
+    await latency();
+    try {
+      return HttpResponse.json(mockStore.deleteTrade(pathParam(params, "tradeId")));
+    } catch (error) {
+      return toErrorResponse(error);
+    }
+  }),
+
+  // GET /trades/:id/screenshots — gallery for the detail drawer
+  http.get(endpoint(apiPaths.tradeScreenshots(":tradeId")), async ({ params }) => {
+    await latency();
+    try {
+      return HttpResponse.json(mockStore.listScreenshots(pathParam(params, "tradeId")));
+    } catch (error) {
+      return toErrorResponse(error);
+    }
+  }),
+
+  // POST /trades/:id/screenshots — upload (data URL)
+  http.post(endpoint(apiPaths.tradeScreenshots(":tradeId")), async ({ request, params }) => {
+    await latency();
+    try {
+      const input = parseBody(addScreenshotInputSchema, await readJson(request));
+      return HttpResponse.json(mockStore.addScreenshot(pathParam(params, "tradeId"), input), {
+        status: 201,
+      });
+    } catch (error) {
+      return toErrorResponse(error);
+    }
+  }),
+
+  // DELETE /trades/:id/screenshots/:screenshotId
+  http.delete(
+    endpoint(apiPaths.tradeScreenshot(":tradeId", ":screenshotId")),
+    async ({ params }) => {
+      await latency();
+      try {
+        return HttpResponse.json(
+          mockStore.deleteScreenshot(pathParam(params, "tradeId"), pathParam(params, "screenshotId")),
+        );
+      } catch (error) {
+        return toErrorResponse(error);
+      }
+    },
+  ),
 ];

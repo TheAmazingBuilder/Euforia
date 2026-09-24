@@ -13,7 +13,10 @@ interface GhostModalState {
   open: boolean;
 }
 
-let state: GhostModalState = { open: false };
+/** Frozen closed snapshot — stable reference for the server snapshot. */
+const CLOSED_SNAPSHOT: GhostModalState = Object.freeze({ open: false });
+
+let state: GhostModalState = CLOSED_SNAPSHOT;
 const listeners = new Set<() => void>();
 
 function emit(): void {
@@ -32,7 +35,7 @@ export function openGhostModal(): void {
 
 /** Close the ghost-capture modal. */
 export function closeGhostModal(): void {
-  setState({ open: false });
+  setState(CLOSED_SNAPSHOT);
 }
 
 function subscribe(listener: () => void): () => void {
@@ -45,7 +48,7 @@ export function useGhostModalState(): GhostModalState {
   return useSyncExternalStore(
     subscribe,
     () => state,
-    // Server + hydration snapshot: closed.
-    (): GhostModalState => ({ open: false }),
+    // Server + hydration snapshot: closed (stable reference — cached).
+    () => CLOSED_SNAPSHOT,
   );
 }

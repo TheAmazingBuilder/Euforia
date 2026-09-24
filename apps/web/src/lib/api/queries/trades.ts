@@ -1,8 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
+  AddScreenshotInput,
   CloseTradeInput,
   CreateTradeInput,
   CreateTradeResponse,
+  DeleteScreenshotResponse,
+  DeleteTradeResponse,
   NotesUpdateInput,
   NotesUpdateResponse,
   PlanUpdateInput,
@@ -16,7 +19,11 @@ import type {
   ReviewUpdateResponse,
   Trade,
   TradeDecisionInput,
+  TradeScreenshot,
+  TradeScreenshotsResponse,
   TradesListResponse,
+  UpdateTradeInput,
+  UpdateTradeResponse,
 } from "@cosmoz/shared";
 
 import { apiRequest } from "@/lib/api/client";
@@ -136,6 +143,60 @@ export function useUpdateReview() {
     onSuccess: async (_data, variables) => {
       await queryClient.invalidateQueries({ queryKey: queryKeys.review(variables.tradeId) });
       await queryClient.invalidateQueries({ queryKey: queryKeys.tradesRoot });
+    },
+  });
+}
+
+// ── Trade module: edit / delete / screenshots ────────────────────────────────
+
+/** PATCH /trades/:id — journal correction; results recomputed server-side. */
+export function useUpdateTrade() {
+  return useTradeMutation(({ tradeId, input }: { tradeId: string; input: UpdateTradeInput }) =>
+    apiRequest<UpdateTradeResponse>(apiPaths.trade(tradeId), { method: "PATCH", body: input }),
+  );
+}
+
+/** DELETE /trades/:id — soft delete with full aggregate invalidation. */
+export function useDeleteTrade() {
+  return useTradeMutation((tradeId: string) =>
+    apiRequest<DeleteTradeResponse>(apiPaths.trade(tradeId), { method: "DELETE" }),
+  );
+}
+
+/** GET /trades/:id/screenshots — gallery for the detail drawer. */
+export function useScreenshots(tradeId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.screenshots(tradeId ?? "none"),
+    queryFn: () => apiRequest<TradeScreenshotsResponse>(apiPaths.tradeScreenshots(tradeId!)),
+    enabled: tradeId !== null,
+  });
+}
+
+/** POST /trades/:id/screenshots — upload one chart evidence. */
+export function useAddScreenshot() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ tradeId, input }: { tradeId: string; input: AddScreenshotInput }) =>
+      apiRequest<TradeScreenshot>(apiPaths.tradeScreenshots(tradeId), {
+        method: "POST",
+        body: input,
+      }),
+    onSuccess: async (_data, variables) => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.screenshots(variables.tradeId) });
+    },
+  });
+}
+
+/** DELETE /trades/:id/screenshots/:screenshotId. */
+export function useDeleteScreenshot() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ tradeId, screenshotId }: { tradeId: string; screenshotId: string }) =>
+      apiRequest<DeleteScreenshotResponse>(apiPaths.tradeScreenshot(tradeId, screenshotId), {
+        method: "DELETE",
+      }),
+    onSuccess: async (_data, variables) => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.screenshots(variables.tradeId) });
     },
   });
 }

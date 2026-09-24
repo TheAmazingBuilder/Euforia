@@ -17,15 +17,11 @@ import { Topbar } from "@/components/layout/topbar";
 import { CommandPalette } from "@/components/layout/command-palette";
 import { TradeModalHost } from "@/components/trades/trade-modal-host";
 import { JudgmentFlowModal } from "@/components/trades/judgment-flow-modal";
-import { openTradeModal } from "@/lib/hooks/use-trade-modal";
 import {
   isSidebarCollapsed,
   subscribeSidebar,
   toggleSidebarCollapsed,
 } from "@/lib/utils/sidebar";
-
-/** Entry point #2 and #3 (spec §3): sidebar button + mobile sheet nav. */
-const openNewTrade = () => openTradeModal();
 
 /**
  * Application shell: fixed desktop sidebar (240px <-> 72px, persisted),
@@ -54,7 +50,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <SidebarBrand collapsed={collapsed} />
 
         <div className="flex-1 overflow-y-auto">
-          <SidebarNav collapsed={collapsed} onNewTrade={openNewTrade} />
+          <SidebarNav collapsed={collapsed} />
         </div>
 
         <div className="border-t border-border p-2">
@@ -122,14 +118,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </SheetDescription>
           </SheetHeader>
           <div className="flex-1 overflow-y-auto pb-[calc(1rem+env(safe-area-inset-bottom))]">
-            <SidebarNav
-              collapsed={false}
-              onNavigate={closeSheet}
-              onNewTrade={() => {
-                closeSheet();
-                openNewTrade();
-              }}
-            />
+            <SidebarNav collapsed={false} onNavigate={closeSheet} />
           </div>
         </SheetContent>
       </Sheet>
