@@ -57,17 +57,27 @@ export function Sparkline({ points, color, className, ariaLabel }: SparklineProp
       role="img"
       aria-label={ariaLabel}
     >
-      <polygon points={area} fill={withAlpha(color, 0.13)} />
+      <polygon points={area} fill={withAlpha(color, 0.22)} />
+      <polygon points={area} fill={withAlpha(color, 0.08)} transform="translate(0 1.5)" />
       <polyline
         points={line}
         fill="none"
         stroke={color}
-        strokeWidth={1.5}
+        strokeWidth={2}
         strokeLinecap="round"
         strokeLinejoin="round"
         vectorEffect="non-scaling-stroke"
       />
-      <circle cx={last[0]} cy={last[1]} r={2} fill={color} />
+      {/* End-point halo: a soft glow disc behind the current-value dot. */}
+      <circle cx={last[0]} cy={last[1]} r={5} fill={withAlpha(color, 0.22)} />
+      <circle
+        cx={last[0]}
+        cy={last[1]}
+        r={2.4}
+        fill={color}
+        stroke={withAlpha(color, 0.35)}
+        strokeWidth={1}
+      />
     </svg>
   );
 }

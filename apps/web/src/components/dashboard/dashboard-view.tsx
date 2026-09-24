@@ -67,10 +67,14 @@ function ConstellationGlyph() {
 function DashboardSkeleton() {
   return (
     <div className="space-y-4 sm:space-y-6" aria-busy="true" aria-label="Loading dashboard">
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-5">
-        {Array.from({ length: 5 }, (_, index) => (
-          <Skeleton key={index} className="h-[122px] rounded-xl" />
-        ))}
+      {/* Mirrors the KPI band: two heroes (span 6) + four KPIs (span 3). */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-12 sm:gap-4">
+        <Skeleton className="h-[164px] rounded-xl max-sm:col-span-2 sm:col-span-6" />
+        <Skeleton className="h-[164px] rounded-xl max-sm:col-span-2 sm:col-span-6" />
+        <Skeleton className="h-[150px] rounded-xl sm:col-span-3" />
+        <Skeleton className="h-[150px] rounded-xl sm:col-span-3" />
+        <Skeleton className="h-[150px] rounded-xl sm:col-span-3" />
+        <Skeleton className="h-[150px] rounded-xl sm:col-span-3" />
       </div>
       <div className="grid gap-3 sm:gap-4 lg:grid-cols-5">
         <Skeleton className="h-[430px] rounded-xl lg:col-span-3" />

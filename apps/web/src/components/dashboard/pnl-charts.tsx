@@ -5,6 +5,7 @@ import { useTheme } from "next-themes";
 import type { StatsOverviewResponse } from "@cosmoz/shared";
 import { formatMoneyCompact, formatSignedMoney } from "@cosmoz/shared";
 import type { EChartsCoreOption } from "echarts/core";
+import { graphic } from "echarts/core";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { EChart } from "@/components/charts/echart";
@@ -123,17 +124,41 @@ export function CumulativePnlCard({ overview }: { overview: StatsOverviewRespons
           data: series,
           smooth: 0.25,
           symbol: "none",
-          lineStyle: { color: theme.accent, width: 2 },
+          lineStyle: {
+            color: theme.accent,
+            width: 2.5,
+            shadowColor: withAlpha(theme.accent, 0.45),
+            shadowBlur: 10,
+            shadowOffsetY: 5,
+          },
           areaStyle: {
             color: {
               type: "linear",
               x: 0, y: 0, x2: 0, y2: 1,
               colorStops: [
-                { offset: 0, color: withAlpha(theme.accent, 0.28) },
-                { offset: 1, color: withAlpha(theme.accent, 0.02) },
+                { offset: 0, color: withAlpha(theme.accent, 0.42) },
+                { offset: 0.55, color: withAlpha(theme.accent, 0.14) },
+                { offset: 1, color: withAlpha(theme.accent, 0.03) },
               ],
             },
           },
+          markPoint:
+            last !== undefined
+              ? {
+                  silent: true,
+                  symbol: "circle",
+                  symbolSize: 8,
+                  itemStyle: {
+                    color: theme.accent,
+                    borderColor: theme.surfaceRaised,
+                    borderWidth: 2,
+                    shadowColor: withAlpha(theme.accent, 0.55),
+                    shadowBlur: 9,
+                  },
+                  label: { show: false },
+                  data: [{ coord: [last.date, last.value] }],
+                }
+              : undefined,
           markLine:
             min < 0
               ? {
@@ -148,11 +173,11 @@ export function CumulativePnlCard({ overview }: { overview: StatsOverviewRespons
             show: last !== undefined,
             precision: 0,
             formatter: () => formatSignedMoney(last?.raw ?? 0, overview.currency, { digits: 0 }),
-            color: theme.accent,
+            color: (last?.raw ?? 0) >= 0 ? theme.profit : theme.loss,
             fontFamily: theme.monoFont,
             fontSize: 11,
             fontWeight: "bold",
-            offset: [4, 0],
+            offset: [6, 0],
           },
         },
       ],
@@ -197,7 +222,7 @@ export function DailyPnlCard({ overview }: { overview: StatsOverviewResponse }) 
     const pad = Math.max((max - min) * 0.1, 1);
 
     return {
-      grid: { left: 8, right: 8, top: 14, bottom: 8, containLabel: true },
+      grid: { left: 8, right: 34, top: 14, bottom: 8, containLabel: true },
       tooltip: {
         trigger: "axis",
         axisPointer: { type: "shadow", shadowStyle: { color: withAlpha(theme.textPrimary, 0.06) } },
@@ -240,11 +265,53 @@ export function DailyPnlCard({ overview }: { overview: StatsOverviewResponse }) 
         {
           id: "daily-pnl",
           type: "bar",
-          data: values.map((value) => ({
-            value,
-            itemStyle: { color: value >= 0 ? theme.profit : theme.loss, borderRadius: 2 },
-          })),
-          barMaxWidth: 18,
+          data: values.map((value) => {
+            const positive = value >= 0;
+            const color = positive ? theme.profit : theme.loss;
+            // Vertical gradient — saturated at the bar's extremity, fading
+            // toward the zero line (direction-aware for losses).
+            return {
+              value,
+              itemStyle: {
+                color: positive
+                  ? new graphic.LinearGradient(0, 0, 0, 1, [
+                      { offset: 0, color },
+                      { offset: 1, color: withAlpha(color, 0.42) },
+                    ])
+                  : new graphic.LinearGradient(0, 1, 0, 0, [
+                      { offset: 0, color },
+                      { offset: 1, color: withAlpha(color, 0.42) },
+                    ]),
+                borderRadius: 3,
+              },
+            };
+          }),
+          barMaxWidth: 22,
+          markLine:
+            values.length > 1
+              ? {
+                  silent: true,
+                  symbol: "none",
+                  lineStyle: { color: theme.warning, type: "dashed", width: 1.2 },
+                  label: {
+                    show: true,
+                    position: "end",
+                    formatter: "avg",
+                    color: theme.warning,
+                    fontFamily: theme.monoFont,
+                    fontSize: 9,
+                    fontWeight: 600,
+                  },
+                  data: [
+                    {
+                      yAxis:
+                        Math.round(
+                          (values.reduce((sum, value) => sum + value, 0) / values.length) * 100,
+                        ) / 100,
+                    },
+                  ],
+                }
+              : undefined,
         },
       ],
     };

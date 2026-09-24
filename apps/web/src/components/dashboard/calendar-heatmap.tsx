@@ -168,13 +168,13 @@ export function CalendarHeatmap({ dailyPnl, currency }: CalendarHeatmapProps) {
                         ? {
                             backgroundColor: withAlpha(
                               (parseDecimal(point.pnlNet) ?? 0) >= 0 ? theme.profit : theme.loss,
-                              0.07 +
-                                0.23 *
+                              0.1 +
+                                0.38 *
                                   (Math.abs(parseDecimal(point.pnlNet) ?? 0) / maxAbsPnl),
                             ),
                             borderColor: withAlpha(
                               (parseDecimal(point.pnlNet) ?? 0) >= 0 ? theme.profit : theme.loss,
-                              0.35,
+                              0.55,
                             ),
                           }
                         : undefined

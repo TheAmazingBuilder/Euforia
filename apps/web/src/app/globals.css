@@ -207,28 +207,41 @@
 .stamp-ink { color: var(--text-muted); }
 .stamp-accent { color: var(--accent); }
 
-/* Stat strip: ONE ruled band instead of a row of identical cards.
-   Cells divide by hairlines; headers are ledger annotations. */
+/* Stat band: ONE ruled band on a 12-column ledger grid —
+   row 1 = two hero cells (span 6 each), row 2 = four KPI cells
+   (span 3 each). Cells divide by hairlines; headers are ledger
+   annotations; paddings are generous so nothing ever feels cramped. */
 .stat-strip {
   display: grid;
   background-color: var(--surface);
   border: 1px solid var(--border);
   border-radius: calc(var(--radius) + 2px);
   overflow: hidden;
+  grid-template-columns: repeat(2, 1fr);
 }
 .stat-cell {
-  padding: 1rem 1.25rem 1.125rem;
+  padding: 1.25rem 1.5rem 1.25rem;
   min-width: 0;
 }
-@media (min-width: 640px) {
-  .stat-strip { grid-auto-flow: column; grid-auto-columns: 1fr; }
-  .stat-cell + .stat-cell { border-left: 1px solid var(--border); }
+/* Hero cells: increased breathing room for the headline metrics. */
+.stat-cell.stat-hero {
+  padding: 1.625rem 1.75rem 1.5rem;
 }
 @media (max-width: 639px) {
   .stat-strip { grid-template-columns: repeat(2, 1fr); }
-  .stat-cell { border-top: 1px solid var(--border); }
-  .stat-cell:nth-child(-n + 2) { border-top: 0; }
-  .stat-cell:nth-child(odd) { border-left: 0; }
+  .stat-hero { grid-column: 1 / -1; }
+  .stat-hero + .stat-hero { border-top: 1px solid var(--border); }
+  .stat-kpi { border-top: 1px solid var(--border); }
+  .stat-kpi:nth-child(odd) { border-left: 0; }
+  .stat-kpi:nth-child(even) { border-left: 1px solid var(--border); }
+}
+@media (min-width: 640px) {
+  .stat-strip { grid-template-columns: repeat(12, 1fr); }
+  .stat-hero { grid-column: span 6; }
+  .stat-kpi { grid-column: span 3; }
+  .stat-hero + .stat-hero,
+  .stat-kpi + .stat-kpi { border-left: 1px solid var(--border); }
+  .stat-kpi { border-top: 1px solid var(--border); }
 }
 
 /* Ledger annotation label — small mono tag used inside cells,

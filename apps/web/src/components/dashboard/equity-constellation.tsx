@@ -143,26 +143,46 @@ export function EquityConstellation({ points, currency }: EquityConstellationPro
           data: yData,
           showSymbol: true,
           symbol: STAR_SYMBOL,
-          symbolSize: 8,
+          symbolSize: 9,
           lineStyle: {
             color: t.accent,
-            width: 1.5,
+            width: 2,
+            shadowColor: withAlpha(t.accent, 0.4),
+            shadowBlur: 8,
+            shadowOffsetY: 3,
           },
           itemStyle: {
             color: t.surfaceRaised,
             borderColor: t.accent,
-            borderWidth: 1.2,
+            borderWidth: 1.5,
           },
           emphasis: { scale: 1.7 },
           areaStyle: {
             color: new graphic.LinearGradient(0, 0, 0, 1, [
-              { offset: 0, color: withAlpha(t.accent, 0.09) },
-              { offset: 1, color: withAlpha(t.accent, 0.01) },
+              { offset: 0, color: withAlpha(t.accent, 0.17) },
+              { offset: 1, color: withAlpha(t.accent, 0.02) },
             ]),
+          },
+          markPoint: {
+            silent: true,
+            symbol: "circle",
+            symbolSize: 9,
+            itemStyle: {
+              color: t.accent,
+              borderColor: t.surfaceRaised,
+              borderWidth: 2,
+              shadowColor: withAlpha(t.accent, 0.6),
+              shadowBlur: 10,
+            },
+            label: { show: false },
+            data:
+              xData.length > 0
+                ? [{ coord: [xData[xData.length - 1]!, yData[yData.length - 1]!] }]
+                : [],
           },
           markArea: {
             silent: true,
-            itemStyle: { color: withAlpha(t.loss, 0.1) },
+            itemStyle: { color: withAlpha(t.loss, 0.14) },
             data: markAreas,
           },
         },
