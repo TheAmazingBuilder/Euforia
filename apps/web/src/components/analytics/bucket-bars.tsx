@@ -47,7 +47,6 @@ export function BucketBars({ buckets, ariaLabel, height = 260, showN = true, cla
 
     const data: BarDatum[] = buckets.map((bucket) => {
       const avgR = bucket.avgR === null ? null : Number(bucket.avgR);
-      const lowN = bucket.trades > 0 && bucket.trades < LOW_SAMPLE_N;
       return {
         value: avgR,
         itemStyle: {

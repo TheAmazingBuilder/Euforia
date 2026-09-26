@@ -1,98 +1,102 @@
 /**
- * Cosmoz market service — simulated real-time price feed (socket.io).
+ * Cosmoz market service — Market Data Hub for the Session Live (V1).
  *
- * The trading journal needs a live "last price" for open positions
- * (unrealized P&L). No broker feed exists in this environment, so this
- * service random-walks the fixture catalog around the same base prices
- * the mock backend uses, and broadcasts ticks every second.
+ * Provider architecture (mission §34): sources implement the single
+ * MarketDataProvider contract and stay responsible for their transport.
+ *   - BinanceProvider  → REAL crypto prices (Binance public market data)
+ *   - SimulatedProvider → labeled SIM walk for forex/synthetic catalog symbols
  *
- * Transport contract (sandbox gateway):
+ * Transport contract (unchanged, sandbox gateway compatible):
  *   - socket.io clients connect with  io("/?XTransformPort=3003")
- *   - REST snapshot polling fallback: GET /prices?XTransformPort=3003
+ *   - REST snapshot:  GET /prices?XTransformPort=3003
+ *   - Candle feed:    GET /candles?XTransformPort=3003&symbol=&interval=&limit=
+ *   - Health:         GET /health
  *
  * Run: bun run dev  (bun --hot index.ts, port 3003)
  */
 import { createServer } from "node:http";
 import { Server } from "socket.io";
 
-// ── Instrument catalog (mirrors mocks/fixtures/catalog.ts anchors) ──────────
-interface SymbolDef {
-  symbol: string;
-  basePrice: number;
-  digits: number;
-  /** Per-tick volatility as a fraction of price (random-walk step). */
-  vol: number;
-}
+import { BinanceProvider } from "./providers/binance";
+import { SimulatedProvider } from "./providers/simulated";
+import { isInterval, type MarketDataProvider, type Tick } from "./providers/types";
 
-const SYMBOLS: SymbolDef[] = [
-  { symbol: "EURUSD", basePrice: 1.0865, digits: 5, vol: 0.00025 },
-  { symbol: "GBPUSD", basePrice: 1.2705, digits: 5, vol: 0.0003 },
-  { symbol: "XAUUSD", basePrice: 2385.0, digits: 2, vol: 0.0008 },
-  { symbol: "BTCUSDT", basePrice: 61240.0, digits: 2, vol: 0.0012 },
-  { symbol: "BOOM500", basePrice: 9820.0, digits: 2, vol: 0.001 },
-  { symbol: "CRASH500", basePrice: 8340.0, digits: 2, vol: 0.001 },
-  { symbol: "VOL75(1s)", basePrice: 128400.0, digits: 2, vol: 0.0014 },
-];
-
-interface Quote {
-  symbol: string;
-  price: number;
-  /** Price ~24h ago (for change % display). */
-  prevClose: number;
-  ts: number;
-}
-
-/** Start every walk slightly off the anchor so sessions differ. */
-const quotes = new Map<string, Quote>(
-  SYMBOLS.map((def) => [
-    def.symbol,
-    {
-      symbol: def.symbol,
-      price: round(def.basePrice * (1 + (Math.random() - 0.5) * def.vol * 40), def.digits),
-      prevClose: def.basePrice,
-      ts: Date.now(),
-    },
-  ]),
-);
-
-function round(value: number, digits: number): number {
-  const factor = 10 ** digits;
-  return Math.round(value * factor) / factor;
-}
-
-function tick(): void {
-  for (const def of SYMBOLS) {
-    const quote = quotes.get(def.symbol)!;
-    // Mean-reverting random walk: step + gentle pull back to the anchor.
-    const drift = (def.basePrice - quote.price) * 0.002;
-    const step = quote.price * def.vol * (Math.random() * 2 - 1) + drift;
-    quote.price = round(Math.max(quote.price + step, def.basePrice * 0.5), def.digits);
-    quote.ts = Date.now();
-  }
-}
-
-const TICK_MS = 1000;
 const PORT = Number(process.env.PORT ?? 3003);
+const BROADCAST_MS = 750;
 
-// ── One node:http server (Bun-compatible) serving REST + socket.io ─────────
-const httpServer = createServer((req, res) => {
+// ── Providers (order = routing priority) ─────────────────────────────────────
+const providers: MarketDataProvider[] = [new BinanceProvider(), new SimulatedProvider()];
+
+interface Quote extends Tick {}
+/** Latest quote per internal symbol — the REST/WS snapshot. */
+const quotes = new Map<string, Quote>();
+/** Symbols whose quote changed since the last broadcast (dirty flush). */
+const dirty = new Set<string>();
+
+function routeTick(tick: Tick): void {
+  quotes.set(tick.symbol, tick);
+  dirty.add(tick.symbol);
+}
+
+for (const provider of providers) {
+  void provider.start(routeTick);
+}
+
+// ── HTTP: REST snapshot + candles + health ──────────────────────────────────
+function json(res: import("node:http").ServerResponse, code: number, body: unknown): void {
+  res.writeHead(code, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" });
+  res.end(JSON.stringify(body));
+}
+
+const httpServer = createServer(async (req, res) => {
   const url = new URL(req.url ?? "/", `http://localhost:${PORT}`);
+
   if (url.pathname === "/prices") {
     const symbol = url.searchParams.get("symbol");
     const list = [...quotes.values()].filter((quote) => !symbol || quote.symbol === symbol);
-    res.writeHead(200, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" });
-    res.end(JSON.stringify({ quotes: list, ts: Date.now() }));
+    json(res, 200, { quotes: list, ts: Date.now() });
     return;
   }
+
+  if (url.pathname === "/candles") {
+    const symbol = url.searchParams.get("symbol");
+    const interval = url.searchParams.get("interval") ?? "5m";
+    const limit = Math.min(Number(url.searchParams.get("limit") ?? 300) || 300, 500);
+    if (!symbol || !isInterval(interval)) {
+      json(res, 400, { error: "symbol and interval (1m|5m|15m|30m|1H|4H|1D) are required" });
+      return;
+    }
+    const provider = providers.find((candidate) => candidate.handles(symbol));
+    if (!provider) {
+      json(res, 404, { error: `no market data provider for ${symbol}` });
+      return;
+    }
+    try {
+      const candles = await provider.candles(symbol, interval, limit);
+      json(res, 200, { symbol, interval, source: provider.source, candles });
+    } catch (error) {
+      // Structured, secret-free error (mission §27) — the client renders
+      // "market data unavailable" and retries.
+      console.error(`[market-service] candles ${symbol} ${interval} failed:`, error instanceof Error ? error.message : error);
+      json(res, 502, { error: "market data provider unavailable" });
+    }
+    return;
+  }
+
   if (url.pathname === "/health") {
-    res.writeHead(200, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ ok: true }));
+    json(res, 200, {
+      ok: true,
+      providers: providers.map((provider) => ({ id: provider.id, source: provider.source, status: provider.status() })),
+      symbols: [...quotes.keys()],
+    });
     return;
   }
+
   res.writeHead(404);
   res.end("Not found");
 });
 
+// ── Socket.io: same "prices" contract as V0, now source-labeled ─────────────
 const io = new Server(httpServer, {
   cors: { origin: "*", methods: ["GET", "POST"] },
 });
@@ -104,10 +108,11 @@ io.on("connection", (socket) => {
 });
 
 setInterval(() => {
-  tick();
+  if (dirty.size === 0) return;
+  dirty.clear();
   io.emit("prices", [...quotes.values()]);
-}, TICK_MS);
+}, BROADCAST_MS);
 
 httpServer.listen(PORT);
 
-console.log(`[market-service] listening on :${PORT} — REST /prices, WS path /socket.io/`);
+console.log(`[market-service] listening on :${PORT} — REST /prices /candles, WS path /socket.io/`);

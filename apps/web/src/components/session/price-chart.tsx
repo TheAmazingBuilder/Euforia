@@ -1,0 +1,364 @@
+"use client";
+
+import * as React from "react";
+import type { EChartsCoreOption, EChartsType } from "echarts/core";
+import { useQueryClient } from "@tanstack/react-query";
+import { useTheme } from "next-themes";
+import { RefreshCcw } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { createChartInstance } from "@/components/charts/echart";
+import { formatPrice } from "@cosmoz/shared";
+import type { Candle, CandlesResponse, Instrument, MarketInterval, Trade } from "@cosmoz/shared";
+import { getChartTheme, type ChartTheme } from "@/lib/utils/chart-theme";
+import { STALE_MS, type LiveQuote } from "@/lib/realtime/market";
+import { useNowMs } from "@/lib/realtime/use-now";
+
+/**
+ * Session Live price chart — candlestick datafeed over the market service
+ * (mission §6, §8). TradingView Advanced Charts is a licensed library that
+ * is not part of this repository, and the free widget cannot consume a
+ * custom datafeed or draw position overlays, so the chart is ECharts (the
+ * project's chart stack) behind the same shape of contract: REST history
+ * (useCandles) + live tick merge into the last bucket.
+ *
+ * Overlays are INFORMATIONAL ONLY (mission §8): journal open trades on the
+ * selected symbol draw Entry/SL/TP as anchored lines — there is no way to
+ * drag or edit anything from here, and nothing ever writes to a broker.
+ *
+ * NOTE: this file never imports echarts at runtime — chart creation goes
+ * through components/charts/echart.tsx (createChartInstance) so the whole
+ * app shares ONE echarts/zrender instance with the canvas renderer already
+ * registered. Two runtime copies would throw "Renderer 'undefined'".
+ */
+
+const INTERVAL_MS: Record<MarketInterval, number> = {
+  "1m": 60_000,
+  "5m": 300_000,
+  "15m": 900_000,
+  "30m": 1_800_000,
+  "1H": 3_600_000,
+  "4H": 14_400_000,
+  "1D": 86_400_000,
+};
+
+function bucketLabel(t: number, interval: MarketInterval): string {
+  const date = new Date(t);
+  if (interval === "1D") {
+    return new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", timeZone: "UTC" }).format(date);
+  }
+  return new Intl.DateTimeFormat(undefined, { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "UTC" }).format(date);
+}
+
+function bucketTooltipTitle(t: number, interval: MarketInterval): string {
+  const date = new Date(t);
+  const options: Intl.DateTimeFormatOptions =
+    interval === "1D"
+      ? { weekday: "short", year: "numeric", month: "short", day: "numeric", timeZone: "UTC" }
+      : { weekday: "short", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "UTC" };
+  return `${new Intl.DateTimeFormat(undefined, options).format(date)} UTC`;
+}
+
+interface OverlayLine {
+  value: number;
+  color: string;
+  label: string;
+  dashed: boolean;
+}
+
+function overlayLines(trades: Trade[], theme: ReturnType<typeof getChartTheme>): OverlayLine[] {
+  const lines: OverlayLine[] = [];
+  for (const trade of trades) {
+    const tag = trades.length > 1 ? ` #${trade.id.slice(0, 4)}` : "";
+    lines.push({ value: Number(trade.entryPrice), color: theme.accent, label: `Entry${tag}`, dashed: false });
+    const stop = trade.finalStop ?? trade.initialStop;
+    if (stop !== null) lines.push({ value: Number(stop), color: theme.loss, label: `SL${tag}`, dashed: true });
+    if (trade.initialTP !== null) lines.push({ value: Number(trade.initialTP), color: theme.profit, label: `TP${tag}`, dashed: true });
+  }
+  return lines;
+}
+
+/** Merge the live tick into the history: update/append the last bucket. */
+function mergeTick(
+  candles: Candle[],
+  quote: LiveQuote | null,
+  interval: MarketInterval,
+  stale: boolean,
+): Candle[] {
+  if (!quote || stale || candles.length === 0) return candles;
+  const bucket = Math.floor(quote.ts / INTERVAL_MS[interval]) * INTERVAL_MS[interval];
+  const last = candles[candles.length - 1];
+  if (bucket === last.t) {
+    const merged: Candle = {
+      t: last.t,
+      o: last.o,
+      h: Math.max(last.h, quote.price),
+      l: Math.min(last.l, quote.price),
+      c: quote.price,
+      v: last.v,
+    };
+    return [...candles.slice(0, -1), merged];
+  }
+  if (bucket > last.t) {
+    return [
+      ...candles.slice(-(300 - 1)),
+      { t: bucket, o: quote.price, h: quote.price, l: quote.price, c: quote.price, v: 0 },
+    ];
+  }
+  return candles;
+}
+
+interface PriceChartProps {
+  symbol: string;
+  interval: MarketInterval;
+  instrument: Instrument | null;
+  data: CandlesResponse | undefined;
+  isLoading: boolean;
+  isError: boolean;
+  quote: LiveQuote | null;
+  overlayTrades: Trade[];
+  heightClass?: string;
+}
+
+export function PriceChart({
+  symbol,
+  interval,
+  instrument,
+  data,
+  isLoading,
+  isError,
+  quote,
+  overlayTrades,
+  heightClass = "h-[320px] sm:h-[420px]",
+}: PriceChartProps) {
+  const containerRef = React.useRef<HTMLDivElement | null>(null);
+  const chartRef = React.useRef<EChartsType | null>(null);
+  const { resolvedTheme } = useTheme();
+  const queryClient = useQueryClient();
+
+  const digits = instrument?.digits ?? 5;
+  const nowMs = useNowMs();
+  // Frozen feed → do not keep stamping the last price onto the chart (§17).
+  const stale = quote !== null && nowMs !== null && nowMs - quote.ts > STALE_MS;
+
+  // resolvedTheme is an intentional dependency even though tokens are read
+  // from the DOM: the memo re-runs on theme switch (design-tokens.md §8).
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const theme = React.useMemo<ChartTheme>(() => getChartTheme(), [resolvedTheme]);
+  const merged = React.useMemo(
+    () => mergeTick(data?.candles ?? [], quote, interval, stale),
+    [data, quote, interval, stale],
+  );
+  // Tooltip formatters fire long after render — they read the LATEST merged
+  // candles through this ref (the structural option never rebuilds on ticks,
+  // so a direct closure would go stale).
+  const mergedRef = React.useRef(merged);
+  React.useEffect(() => {
+    mergedRef.current = merged;
+  }, [merged]);
+
+  const view = React.useMemo(() => {
+    const labels = merged.map((candle) => bucketLabel(candle.t, interval));
+    // ECharts candlestick item = [open, close, lowest, highest].
+    const ohlc = merged.map((candle) => [candle.o, candle.c, candle.l, candle.h] as const);
+    return { labels, ohlc, times: merged.map((candle) => candle.t), volumes: merged.map((candle) => candle.v) };
+  }, [merged, interval]);
+
+  // ── Structural option (axes, zoom, tooltip, theme) ───────────────────────
+  const baseOption = React.useMemo<EChartsCoreOption>(() => {
+    const intraday = interval !== "1D";
+    return {
+      backgroundColor: "transparent",
+      animationDuration: 300,
+      animationDurationUpdate: 120,
+      grid: { left: 8, right: 64, top: 16, bottom: intraday ? 40 : 40, containLabel: true },
+      tooltip: {
+        trigger: "axis",
+        axisPointer: {
+          type: "cross",
+          lineStyle: { color: theme.border, width: 1 },
+          crossStyle: { color: theme.border, width: 1 },
+          label: {
+            backgroundColor: theme.surfaceRaised,
+            color: theme.textMuted,
+            fontFamily: theme.monoFont,
+            fontSize: 10,
+            borderWidth: 1,
+            borderColor: theme.border,
+          },
+        },
+        backgroundColor: theme.surfaceRaised,
+        borderColor: theme.border,
+        borderWidth: 1,
+        textStyle: { color: theme.textPrimary, fontFamily: theme.monoFont, fontSize: 11 },
+        formatter: (params: unknown) => {
+          const list = params as Array<{ dataIndex: number }>;
+          const index = list[0]?.dataIndex ?? 0;
+          const candle = mergedRef.current[index];
+          if (!candle) return "";
+          const change = candle.c - candle.o;
+          const changeColor = change >= 0 ? theme.profit : theme.loss;
+          const sign = change >= 0 ? "+" : "−";
+          return [
+            `<span style="color:${theme.textMuted}">${bucketTooltipTitle(candle.t, interval)}</span>`,
+            `O ${formatPrice(candle.o, digits)}  H ${formatPrice(candle.h, digits)}`,
+            `L ${formatPrice(candle.l, digits)}  C ${formatPrice(candle.c, digits)}`,
+            `<span style="color:${changeColor}">${sign}${formatPrice(Math.abs(change), digits)}</span>  <span style="color:${theme.textMuted}">V ${candle.v.toFixed(2)}</span>`,
+          ].join("<br/>");
+        },
+      },
+      xAxis: {
+        type: "category",
+        // Data arrives through the data option (merge mode) — see below.
+        data: [],
+        boundary: true,
+        axisLine: { lineStyle: { color: theme.border } },
+        axisTick: { show: false },
+        axisLabel: { color: theme.textMuted, fontFamily: theme.monoFont, fontSize: 10, margin: 10 },
+        splitLine: { show: false },
+      },
+      yAxis: {
+        type: "value",
+        scale: true,
+        position: "right",
+        axisLine: { show: false },
+        axisTick: { show: false },
+        axisLabel: { color: theme.textMuted, fontFamily: theme.monoFont, fontSize: 10, formatter: (value: number) => formatPrice(value, digits) },
+        splitLine: { lineStyle: { color: theme.border, width: 1, opacity: 0.6 } },
+      },
+      dataZoom: [
+        { type: "inside", start: 0, end: 100, zoomOnMouseWheel: true, preventDefaultMouseMove: false },
+        {
+          type: "slider",
+          height: 18,
+          bottom: 6,
+          borderColor: theme.border,
+          backgroundColor: theme.surface,
+          fillerColor: `${theme.accent}22`,
+          handleStyle: { color: theme.surfaceRaised, borderColor: theme.accent },
+          moveHandleStyle: { color: theme.accent },
+          textStyle: { color: theme.textMuted, fontFamily: theme.monoFont, fontSize: 9 },
+          dataBackground: { lineStyle: { color: theme.border }, areaStyle: { color: `${theme.border}55` } },
+          selectedDataBackground: { lineStyle: { color: theme.accent }, areaStyle: { color: `${theme.accent}33` } },
+        },
+      ],
+      series: [
+        {
+          name: symbol,
+          type: "candlestick",
+          data: [],
+          itemStyle: {
+            color: theme.profit,
+            color0: theme.loss,
+            borderColor: theme.profit,
+            borderColor0: theme.loss,
+            borderWidth: 1,
+          },
+        },
+      ],
+    };
+    // `merged` is read inside the tooltip formatter through a ref, so the
+    // structural option never rebuilds (and never resets zoom) on ticks.
+  }, [theme, interval, symbol, digits]);
+
+  // ── Data option (labels + candles + overlays) — merge keeps zoom/pan ─────
+  const dataOption = React.useMemo<EChartsCoreOption>(() => {
+    const lines = overlayLines(overlayTrades, theme);
+    const markLineData: Array<Record<string, unknown>> = lines.map((line) => ({
+      yAxis: line.value,
+      lineStyle: { color: line.color, type: line.dashed ? "dashed" : "solid", width: 1, opacity: 0.9 },
+      label: {
+        formatter: `${line.label} ${formatPrice(line.value, digits)}`,
+        position: "insideEndTop",
+        color: line.color,
+        fontFamily: theme.monoFont,
+        fontSize: 9,
+      },
+      symbol: "none",
+      emphasis: { disabled: true },
+      // Informational only — no click/edit path exists.
+      silent: true,
+    }));
+    if (quote && !stale) {
+      markLineData.push({
+        yAxis: quote.price,
+        lineStyle: { color: theme.accent, type: "dashed", width: 1, opacity: 0.55 },
+        label: {
+          formatter: formatPrice(quote.price, digits),
+          position: "insideEndBottom",
+          color: theme.accent,
+          fontFamily: theme.monoFont,
+          fontSize: 9,
+        },
+        symbol: "none",
+        emphasis: { disabled: true },
+        silent: true,
+      });
+    }
+    return {
+      xAxis: { data: view.labels },
+      series: [
+        {
+          data: view.ohlc,
+          markLine: { animation: false, symbol: "none", silent: true, data: markLineData },
+        },
+      ],
+    };
+  }, [view, overlayTrades, quote, stale, theme, digits]);
+
+  // ── Canvas lifecycle (init / theme re-init / dispose) ────────────────────
+  React.useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const chart = createChartInstance(container);
+    chartRef.current = chart;
+    const observer = new ResizeObserver(() => chart.resize());
+    observer.observe(container);
+    return () => {
+      observer.disconnect();
+      chart.dispose();
+      chartRef.current = null;
+    };
+  }, [resolvedTheme]);
+
+  // Structural rebuild — safe to reset zoom (symbol/interval/theme change).
+  React.useEffect(() => {
+    chartRef.current?.setOption(baseOption, { notMerge: true });
+  }, [baseOption]);
+
+  // Data update — merge mode preserves the user's zoom & pan.
+  React.useEffect(() => {
+    chartRef.current?.setOption(dataOption);
+  }, [dataOption]);
+
+  if (isError) {
+    return (
+      <div className={`flex flex-col items-center justify-center rounded-xl border border-border bg-surface ${heightClass}`}>
+        <p className="font-heading text-base font-semibold text-foreground">Market data unavailable</p>
+        <p className="mt-1 max-w-xs text-center text-sm text-muted-foreground">
+          The candle feed could not be reached. Your positions and account are unaffected.
+        </p>
+        <Button variant="outline" size="sm" className="mt-4" onClick={() => void queryClient.refetchQueries({ queryKey: ["candles"] })}>
+          <RefreshCcw className="size-3.5" aria-hidden="true" />
+          Retry
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className={`relative rounded-xl border border-border bg-surface ${heightClass}`}
+      data-testid="price-chart"
+      data-symbol={symbol}
+      data-interval={interval}
+    >
+      {isLoading && merged.length === 0 ? (
+        <div className="absolute inset-0 flex items-center justify-center" aria-live="polite">
+          <p className="text-sm text-muted-foreground">Loading market data…</p>
+        </div>
+      ) : null}
+      <div ref={containerRef} role="img" aria-label={`${symbol} ${interval} candlestick chart with journal position overlays`} className="size-full" />
+    </div>
+  );
+}

@@ -22,16 +22,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { EmotionPicker } from "@/components/trades/emotion-picker";
 import { useCloseTrade, useUpdateNotes, useUpdatePlan, useUpdatePsychology } from "@/lib/api/queries";
+import { unrealizedPnl, type LiveQuote } from "@/lib/realtime/market";
+import { useNowMs } from "@/lib/realtime/use-now";
 import { localInputToISO, nowLocalInput } from "@/lib/utils/datetime";
 import { openGate } from "@/lib/hooks/use-judgment-flow";
 import { cn } from "@/lib/utils";
 
 /**
  * Open-trade card (spec §9): instrument + direction badge, live-ticking open
- * duration, entry, initial SL/TP, potential R:R, and the in-session actions —
- * [Close] (→ POST close → the Judgment Gate), [Modify SL] (inline editor with
- * a "stop widened" warning when risk increases), 1-tap emotion quick-log and
- * the note icon. V1 honesty: no live prices, so no floating P&L either.
+ * duration, entry, current price, initial SL/TP, potential R:R and the
+ * unrealized P&L marked to the session's live feed (Session Live V1). The
+ * in-session actions stay journal-side — [Close] (→ POST close → the
+ * Judgment Gate), [Modify SL] (inline editor with a "stop widened" warning
+ * when risk increases), 1-tap emotion quick-log and the note icon. None of
+ * them talk to a broker: the feed is read-only (mission §21).
  */
 
 /** Live-ticking open duration "01h 42m 22s" — a 1 Hz interval, starting one tick after mount. */
@@ -371,13 +375,29 @@ function EmotionQuickLog({ trade }: { trade: Trade }) {
 export function OpenTradeCard({
   trade,
   instrument,
+  quote,
 }: {
   trade: Trade;
   instrument: Instrument | null;
+  quote: LiveQuote | null;
 }) {
   const [closeOpen, setCloseOpen] = React.useState(false);
   const [editingStop, setEditingStop] = React.useState(false);
   const digits = instrument?.digits ?? 5;
+  const contractSize = instrument?.contractSize ?? "1";
+  // A frozen quote must not keep valuing the position as if the market moved
+  // (stale-data protection, mission §17). Time gating via useNowMs — no
+  // impure reads during render.
+  const nowMs = useNowMs();
+  const price =
+    quote !== null && nowMs !== null && nowMs - quote.ts <= 10_000 ? quote.price : null;
+  const pnl = unrealizedPnl({
+    entryPrice: trade.entryPrice,
+    quantity: trade.quantity,
+    contractSize,
+    direction: trade.direction,
+    lastPrice: price,
+  });
 
   return (
     <div className="rounded-xl border border-border bg-surface">
@@ -392,8 +412,20 @@ export function OpenTradeCard({
         </span>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 px-4 py-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 px-4 py-3 sm:grid-cols-3">
         <Metric label="Entry">{formatPrice(trade.entryPrice, digits)}</Metric>
+        <Metric label="Current">
+          {price !== null ? formatPrice(price, digits) : "—"}
+        </Metric>
+        <Metric label="Unrealized P&L">
+          <span
+            className={cn(
+              pnl === null ? "text-muted-foreground" : pnl >= 0 ? "text-profit" : "text-loss",
+            )}
+          >
+            {pnl === null ? "—" : `${pnl >= 0 ? "+" : "-"}${formatPrice(Math.abs(pnl), 2)}`}
+          </span>
+        </Metric>
         <Metric label="Initial SL">
           {trade.initialStop !== null ? formatPrice(trade.initialStop, digits) : "—"}
         </Metric>

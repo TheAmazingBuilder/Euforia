@@ -50,4 +50,5 @@ export { useSessionTimeline } from "./session";
 export { useAnalytics, useStatsOverview } from "./stats";
 export { useImportBackup } from "./backup";
 export { useProfile, useUpdateProfile } from "./profile";
+export { useBrokerSession } from "./broker";
 export { sendCoachMessage } from "./coach";

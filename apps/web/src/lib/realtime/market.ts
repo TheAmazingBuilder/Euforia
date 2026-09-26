@@ -1,7 +1,10 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { io, type Socket } from "socket.io-client";
+
+import type { CandlesResponse, MarketInterval, QuoteSource } from "@cosmoz/shared";
 
 /**
  * Live market prices — client store for the socket.io market service.
@@ -10,7 +13,13 @@ import { io, type Socket } from "socket.io-client";
  * so the connection URL is RELATIVE ("/?XTransformPort=3003") — never a
  * host:port. If the socket cannot connect (e.g. blocked upgrade), the store
  * degrades gracefully to HTTP snapshot polling on the same service, so the
- * unrealized P&L stays live either way.
+ * unrealized P&L stays live either way. Locally (no gateway) the Next.js
+ * rewrites proxy the same paths to the market service.
+ *
+ * Feed state machine (mission §16/§17): `phase` reflects the DATA path —
+ * live (a transport delivers), reconnecting (retrying after a loss),
+ * offline (nothing works), connecting (initial). Staleness is computed by
+ * consumers from `lastTickAt` — a frozen feed must read STALE, never live.
  */
 
 export interface LiveQuote {
@@ -18,14 +27,32 @@ export interface LiveQuote {
   price: number;
   prevClose: number;
   ts: number;
+  /** Feed origin — the UI labels simulated data honestly ("SIM" badge). */
+  source: QuoteSource;
+}
+
+export type FeedPhase = "connecting" | "live" | "reconnecting" | "offline";
+export type FeedTransport = "socket" | "polling" | "none";
+
+export interface PriceSnapshot {
+  quotes: ReadonlyMap<string, LiveQuote>;
+  connected: boolean;
+  source: "idle" | "socket" | "polling";
+  phase: FeedPhase;
+  transport: FeedTransport;
+  /** Server ts of the newest quote seen (epoch ms) — staleness input. */
+  lastTickAt: number;
 }
 
 const MARKET_PORT = 3003;
 const WS_URL = `/?XTransformPort=${MARKET_PORT}`;
 const SNAPSHOT_URL = `/prices?XTransformPort=${MARKET_PORT}`;
+const CANDLES_URL = `/candles?XTransformPort=${MARKET_PORT}`;
 const POLL_MS = 2000;
 /** Give the websocket this long before falling back to polling. */
 const CONNECT_GRACE_MS = 3500;
+/** A feed older than this renders STALE even when a transport is up. */
+export const STALE_MS = 8_000;
 
 type Listener = () => void;
 
@@ -35,17 +62,15 @@ const EMPTY_SNAPSHOT: PriceSnapshot = Object.freeze({
   quotes: EMPTY,
   connected: false,
   source: "idle" as const,
+  phase: "connecting" as const,
+  transport: "none" as const,
+  lastTickAt: 0,
 });
-
-export interface PriceSnapshot {
-  quotes: ReadonlyMap<string, LiveQuote>;
-  connected: boolean;
-  source: "idle" | "socket" | "polling";
-}
 
 let snapshot: PriceSnapshot = EMPTY_SNAPSHOT;
 const listeners = new Set<Listener>();
 let started = false;
+let gotData = false;
 let socket: Socket | null = null;
 let pollTimer: number | null = null;
 let graceTimer: number | null = null;
@@ -54,11 +79,24 @@ function emit(): void {
   for (const listener of listeners) listener();
 }
 
-function setQuotes(quotes: LiveQuote[], source: PriceSnapshot["source"], connected: boolean): void {
+function patch(next: Partial<PriceSnapshot>): void {
+  snapshot = Object.freeze({ ...snapshot, ...next });
+  emit();
+}
+
+function setQuotes(
+  quotes: LiveQuote[],
+  source: PriceSnapshot["source"],
+  transport: FeedTransport,
+): void {
+  gotData = true;
   snapshot = Object.freeze({
     quotes: new Map(quotes.map((quote) => [quote.symbol, quote])),
-    connected,
+    connected: true,
     source,
+    phase: "live",
+    transport,
+    lastTickAt: Date.now(),
   });
   emit();
 }
@@ -66,16 +104,19 @@ function setQuotes(quotes: LiveQuote[], source: PriceSnapshot["source"], connect
 async function pollOnce(): Promise<void> {
   try {
     const response = await fetch(SNAPSHOT_URL);
-    if (!response.ok) return;
+    if (!response.ok) throw new Error(String(response.status));
     const body = (await response.json()) as { quotes?: LiveQuote[] };
-    if (Array.isArray(body.quotes)) {
-      // A successful snapshot IS a live feed — the source just differs.
-      setQuotes(body.quotes, socket?.connected ? "socket" : "polling", true);
-    }
+    if (!Array.isArray(body.quotes)) throw new Error("malformed snapshot");
+    // A successful snapshot IS a live feed — the transport just differs.
+    setQuotes(body.quotes, socket?.connected ? "socket" : "polling", socket?.connected ? "socket" : "polling");
   } catch {
     // Service unreachable — keep the last snapshot; the UI shows the stale mark.
-    snapshot = { ...snapshot, connected: false, source: socket?.connected ? "socket" : "idle" };
-    emit();
+    patch({
+      connected: false,
+      source: socket?.connected ? "socket" : "idle",
+      phase: gotData ? "reconnecting" : "offline",
+      transport: socket?.connected ? "socket" : "none",
+    });
   }
 }
 
@@ -110,13 +151,13 @@ function start(): void {
       window.clearTimeout(graceTimer);
       graceTimer = null;
     }
-    setQuotes(quotes, "socket", true);
+    setQuotes(quotes, "socket", "socket");
   });
 
   socket.on("disconnect", () => {
+    // Socket lost — polling carries the data while socket.io retries.
     startPolling();
-    snapshot = { ...snapshot, connected: false, source: "polling" };
-    emit();
+    patch({ phase: "reconnecting", connected: false, transport: "polling", source: "polling" });
   });
   socket.on("connect_error", () => {
     startPolling();
@@ -148,6 +189,16 @@ export function useLiveQuote(symbol: string | null | undefined): LiveQuote | nul
   return symbol ? quotes.get(symbol) ?? null : null;
 }
 
+/**
+ * Feed connection state (§16) + the raw inputs (§17) consumers need to
+ * render STALE honestly: `ageMs` recomputes on each store emission, and the
+ * caller can add a 1s local ticker for "N seconds ago" copy.
+ */
+export function useFeedStatus(): { phase: FeedPhase; transport: FeedTransport; lastTickAt: number } {
+  const { phase, transport, lastTickAt } = useLiveQuotes();
+  return { phase, transport, lastTickAt };
+}
+
 /** Unrealized P&L in account currency for an open position. */
 export function unrealizedPnl(params: {
   entryPrice: string;
@@ -164,4 +215,30 @@ export function unrealizedPnl(params: {
   if (!Number.isFinite(entry) || !Number.isFinite(qty) || !Number.isFinite(size)) return null;
   const sign = direction === "BUY" ? 1 : -1;
   return (lastPrice - entry) * qty * size * sign;
+}
+
+// ── Candle datafeed (chart history; ticks merge client-side) ────────────────
+
+const CANDLE_LIMIT = 300;
+
+/**
+ * Chart history for one symbol + timeframe. Served by the market service
+ * (gateway/rewrite proxy — NOT the /api MSW surface). Refetches quietly so
+ * the window follows "now"; between refetches the live tick stream merges
+ * into the last bucket (see PriceChart).
+ */
+export function useCandles(symbol: string, interval: MarketInterval) {
+  return useQuery({
+    queryKey: ["candles", symbol, interval],
+    queryFn: async (): Promise<CandlesResponse> => {
+      const url = `${CANDLES_URL}&symbol=${encodeURIComponent(symbol)}&interval=${interval}&limit=${CANDLE_LIMIT}`;
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`candles ${response.status}`);
+      return (await response.json()) as CandlesResponse;
+    },
+    staleTime: 30_000,
+    refetchInterval: 60_000,
+    placeholderData: keepPreviousData,
+    retry: 2,
+  });
 }

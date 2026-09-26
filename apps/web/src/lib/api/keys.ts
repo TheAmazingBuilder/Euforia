@@ -23,6 +23,7 @@ export const queryKeys = {
   statsAnalytics: ["stats-analytics"] as const,
   skippedTrades: ["skipped-trades"] as const,
   sessionTimeline: ["session-timeline"] as const,
+  brokerSession: ["broker-session"] as const,
 } as const;
 
 /**

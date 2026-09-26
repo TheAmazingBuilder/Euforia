@@ -9,12 +9,16 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DisciplineBanner } from "@/components/trades/discipline-banner";
+import { BrokerPanel } from "@/components/session/broker-panel";
 import { EventTimeline } from "@/components/session/event-timeline";
 import { GhostSettlementNotifier } from "@/components/session/ghost-settlement-notifier";
 import { GhostSettlements } from "@/components/session/ghost-settlements";
 import { MoodStrip } from "@/components/session/mood-strip";
 import { OpenTradeCard } from "@/components/session/open-trade-card";
+import { PriceChart } from "@/components/session/price-chart";
 import { RegretRegistry } from "@/components/session/regret-registry";
+import { SessionToolbar } from "@/components/session/session-toolbar";
+import { SymbolPositions } from "@/components/session/symbol-positions";
 import {
   useAlerts,
   useInstruments,
@@ -23,16 +27,18 @@ import {
   useStatsOverview,
   useTrades,
 } from "@/lib/api/queries";
-import type { Alert, Instrument } from "@cosmoz/shared";
+import { useCandles, useFeedStatus, useLiveQuotes, useLiveQuote } from "@/lib/realtime/market";
+import type { Alert, Instrument, MarketInterval } from "@cosmoz/shared";
 
 /**
- * Session Live (Phase 7 — trade-entry-ux.md §9): live discipline banner,
- * open-trade cards with in-session actions, today's event timeline, mood
- * strip, ghost settlements and the Regret Registry. The trading date comes
- * from the API (GET /session/timeline) — never computed client-side. Which
- * ghosts are due for settlement is ALSO a server decision: the settlement
- * reminders seeded by the discipline engine (SYSTEM alerts carrying a
- * skippedTradeId payload) drive the queue.
+ * Session Live — V1 real-time monitoring station (mission §22):
+ *   1. Market: real prices (Binance for crypto) or labeled SIM feed,
+ *      candlestick chart with timeframe + symbol switching;
+ *   2. Journal positions marked to the live feed (read-only P&L);
+ *   3. Real trading account monitoring, read-only (provider contract ready,
+ *      honest NOT_CONFIGURED state until a broker is linked in Phase 2);
+ *   4. The existing journaling flow — open-trade cards, timeline, mood,
+ *      ghost check-ins, Regret Registry — unchanged below the station.
  */
 
 function reminderIdOf(alert: Alert): string | null {
@@ -44,13 +50,10 @@ function reminderIdOf(alert: Alert): string | null {
 function SessionSkeleton() {
   return (
     <div className="space-y-4 sm:space-y-6" aria-busy="true" aria-label="Loading session">
-      <div className="space-y-3">
-        <Skeleton className="h-9 w-72 rounded-md" />
-        <Skeleton className="h-9 w-full rounded-md" />
-      </div>
+      <Skeleton className="h-[120px] rounded-xl" />
       <div className="grid gap-3 sm:gap-4 lg:grid-cols-3">
         <div className="space-y-3 lg:col-span-2">
-          <Skeleton className="h-[210px] rounded-xl" />
+          <Skeleton className="h-[420px] rounded-xl" />
           <Skeleton className="h-[210px] rounded-xl" />
         </div>
         <div className="space-y-3">
@@ -110,6 +113,12 @@ function weekdayOf(dateKey: string): string {
   }).format(date);
 }
 
+/** Initial symbol: follow an open position, else showcase the real feed. */
+function pickDefaultSymbol(trades: Array<{ symbol?: string }>, instruments: Instrument[]): string | null {
+  if (trades.length > 0) return trades[0].symbol ?? null;
+  return instruments.find((item) => item.symbol === "BTCUSDT")?.symbol ?? instruments[0]?.symbol ?? null;
+}
+
 export function SessionView() {
   const timeline = useSessionTimeline();
   const openTrades = useTrades({ status: "OPEN" });
@@ -119,7 +128,41 @@ export function SessionView() {
   const { data: instrumentsData } = useInstruments();
   const queryClient = useQueryClient();
 
-  const instruments: Instrument[] = instrumentsData?.instruments ?? [];
+  const instruments = React.useMemo(() => instrumentsData?.instruments ?? [], [instrumentsData]);
+  const trades = React.useMemo(() => openTrades.data?.trades ?? [], [openTrades.data]);
+
+  // ── Station state ────────────────────────────────────────────────────────
+  // The user's selection wins; the default derives from the data (first open
+  // position, else the real-feed showcase symbol) — no state-sync effects.
+  const [userSymbol, setUserSymbol] = React.useState<string | null>(null);
+  const [interval, setIntervalState] = React.useState<MarketInterval>("5m");
+
+  const autoSymbol = React.useMemo(
+    () =>
+      pickDefaultSymbol(
+        trades.map((trade) => ({
+          symbol: instruments.find((item) => item.id === trade.instrumentId)?.symbol,
+        })),
+        instruments,
+      ),
+    [trades, instruments],
+  );
+  const symbol = userSymbol ?? autoSymbol;
+
+  const instrument = React.useMemo(
+    () => instruments.find((item) => item.symbol === symbol) ?? null,
+    [instruments, symbol],
+  );
+  const quote = useLiveQuote(symbol);
+  const { phase } = useFeedStatus();
+  const candles = useCandles(symbol ?? "", interval);
+  const { quotes } = useLiveQuotes();
+
+  // Journal open trades for the station: overlay + symbol panel.
+  const symbolTrades = React.useMemo(
+    () => trades.filter((trade) => instruments.find((item) => item.id === trade.instrumentId)?.symbol === symbol),
+    [trades, instruments, symbol],
+  );
 
   const isLoading = timeline.isLoading || openTrades.isLoading;
   const isError = timeline.isError || openTrades.isError;
@@ -128,7 +171,6 @@ export function SessionView() {
     void queryClient.refetchQueries({ type: "active" });
   }, [queryClient]);
 
-  const trades = openTrades.data?.trades ?? [];
   // The settlement queue = pending ghosts the server has reminded us about.
   const pendingGhosts = React.useMemo(() => {
     const reminders = new Set((alerts.data?.alerts ?? []).map(reminderIdOf).filter((id): id is string => id !== null));
@@ -142,16 +184,11 @@ export function SessionView() {
       <GhostSettlementNotifier ghosts={pendingGhosts} />
 
       <header className="space-y-3">
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-          <h1 className="font-heading text-2xl font-bold tracking-tight sm:text-3xl">Session Live</h1>
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/40 bg-accent/10 px-2.5 py-1 text-xs font-medium text-accent">
-            <span className="size-1.5 animate-pulse rounded-full bg-accent" aria-hidden="true" />
-            Live logging active
-          </span>
-        </div>
-        <p className="text-sm text-muted-foreground">
+        <h1 className="font-heading text-2xl font-bold tracking-tight sm:text-3xl">Session Live</h1>
+        <p className="max-w-3xl text-sm text-muted-foreground">
           {timeline.data ? weekdayOf(timeline.data.date) : "Today"}
-          {" · "}No live prices in V1 — log exits manually; the coach watches your process, not the tape.
+          {" · "}Real-time market monitoring and read-only account watching. Your journal positions are marked to the
+          live feed; broker execution arrives in Phase 2 — nothing here can place or modify an order.
         </p>
         <DisciplineBanner />
       </header>
@@ -161,74 +198,106 @@ export function SessionView() {
       ) : isError ? (
         <ErrorSession onRetry={retry} />
       ) : (
-        <div className="grid gap-3 sm:gap-4 lg:grid-cols-3">
-          <div className="space-y-3 sm:space-y-4 lg:col-span-2">
-            <section aria-label="Open positions" className="space-y-3">
-              <div className="flex items-center gap-2">
-                <h2 className="font-heading text-base font-semibold text-foreground">Open positions</h2>
-                <span className="rounded-full border border-accent/40 bg-accent/10 px-2 py-0.5 font-mono text-xs tabular-nums text-accent">
-                  {trades.length}
-                </span>
-              </div>
-              {trades.length === 0 ? (
-                <EmptyOpenTrades />
-              ) : (
-                trades.map((trade) => (
-                  <OpenTradeCard
-                    key={trade.id}
-                    trade={trade}
-                    instrument={instruments.find((item) => item.id === trade.instrumentId) ?? null}
-                  />
-                ))
-              )}
-            </section>
+        <div className="space-y-3 sm:space-y-4">
+          {/* ── Monitoring station ──────────────────────────────────────── */}
+          <SessionToolbar
+            instruments={instruments}
+            symbol={symbol ?? ""}
+            onSymbolChange={setUserSymbol}
+            interval={interval}
+            onIntervalChange={setIntervalState}
+            quote={quote}
+            phase={phase}
+          />
 
-            {overview.data ? (
-              <RegretRegistry
-                disciplineSavedR={overview.data.disciplineSaved.rSaved}
-                disciplineSavedCount={overview.data.disciplineSaved.settledCount}
-                hesitationCostR={overview.data.hesitationCost.rCost}
-                hesitationCostCount={overview.data.hesitationCost.settledCount}
-                trend={overview.data.ghostTrend}
+          <div className="grid gap-3 sm:gap-4 lg:grid-cols-3">
+            <div className="lg:col-span-2">
+              <PriceChart
+                symbol={symbol ?? "—"}
+                interval={interval}
+                instrument={instrument}
+                data={candles.data}
+                isLoading={candles.isLoading}
+                isError={candles.isError}
+                quote={quote}
+                overlayTrades={symbolTrades}
               />
-            ) : null}
+            </div>
+            <div className="space-y-3 sm:space-y-4">
+              <BrokerPanel />
+              <SymbolPositions trades={symbolTrades} instrument={instrument} quote={quote} />
+            </div>
           </div>
 
-          <aside className="space-y-3 sm:space-y-4" aria-label="Session sidebar">
-            {pendingGhosts.length > 0 ? (
-              <section id="ghost-settlements" className="rounded-xl border border-warning/40 bg-surface">
+          {/* ── Journaling flow (existing, unchanged contract) ──────────── */}
+          <div className="grid gap-3 sm:gap-4 lg:grid-cols-3">
+            <div className="space-y-3 sm:space-y-4 lg:col-span-2">
+              <section aria-label="Open positions" className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <h2 className="font-heading text-base font-semibold text-foreground">Open positions</h2>
+                  <span className="rounded-full border border-accent/40 bg-accent/10 px-2 py-0.5 font-mono text-xs tabular-nums text-accent">
+                    {trades.length}
+                  </span>
+                </div>
+                {trades.length === 0 ? (
+                  <EmptyOpenTrades />
+                ) : (
+                  trades.map((trade) => {
+                    const tradeInstrument = instruments.find((item) => item.id === trade.instrumentId) ?? null;
+                    return (
+                      <OpenTradeCard key={trade.id} trade={trade} instrument={tradeInstrument} quote={quotes.get(tradeInstrument?.symbol ?? "") ?? null} />
+                    );
+                  })
+                )}
+              </section>
+
+              {overview.data ? (
+                <RegretRegistry
+                  disciplineSavedR={overview.data.disciplineSaved.rSaved}
+                  disciplineSavedCount={overview.data.disciplineSaved.settledCount}
+                  hesitationCostR={overview.data.hesitationCost.rCost}
+                  hesitationCostCount={overview.data.hesitationCost.settledCount}
+                  trend={overview.data.ghostTrend}
+                />
+              ) : null}
+            </div>
+
+            <aside className="space-y-3 sm:space-y-4" aria-label="Session sidebar">
+              {pendingGhosts.length > 0 ? (
+                <section id="ghost-settlements" className="rounded-xl border border-warning/40 bg-surface">
+                  <header className="border-b border-border px-4 py-3">
+                    <h2 className="font-heading text-base font-semibold text-foreground">Ghost check-in</h2>
+                    <p className="text-xs text-muted-foreground">
+                      Setups seen, not taken — how did they play out? Two taps each.
+                    </p>
+                  </header>
+                  <div className="p-4">
+                    <GhostSettlements ghosts={pendingGhosts} />
+                  </div>
+                </section>
+              ) : null}
+
+              <section className="rounded-xl border border-border bg-surface">
                 <header className="border-b border-border px-4 py-3">
-                  <h2 className="font-heading text-base font-semibold text-foreground">Ghost check-in</h2>
-                  <p className="text-xs text-muted-foreground">
-                    Setups seen, not taken — how did they play out? Two taps each.
-                  </p>
+                  <h2 className="font-heading text-base font-semibold text-foreground">Today&apos;s timeline</h2>
+                  <p className="text-xs text-muted-foreground">Entries, exits, stop changes and coach alerts.</p>
                 </header>
                 <div className="p-4">
-                  <GhostSettlements ghosts={pendingGhosts} />
+                  {timeline.data ? <EventTimeline events={timeline.data.events} /> : null}
                 </div>
               </section>
-            ) : null}
 
-            <section className="rounded-xl border border-border bg-surface">
-              <header className="border-b border-border px-4 py-3">
-                <h2 className="font-heading text-base font-semibold text-foreground">Today&apos;s timeline</h2>
-                <p className="text-xs text-muted-foreground">Entries, exits, stop changes and coach alerts.</p>
-              </header>
-              <div className="p-4">
-                {timeline.data ? <EventTimeline events={timeline.data.events} /> : null}
-              </div>
-            </section>
-
-            <section className="rounded-xl border border-border bg-surface">
-              <header className="border-b border-border px-4 py-3">
-                <h2 className="font-heading text-base font-semibold text-foreground">Mood strip</h2>
-                <p className="text-xs text-muted-foreground">Today&apos;s logged feelings — your live tilt biomarker.</p>
-              </header>
-              <div className="p-4">
-                {timeline.data ? <MoodStrip moods={timeline.data.moods} /> : null}
-              </div>
-            </section>
-          </aside>
+              <section className="rounded-xl border border-border bg-surface">
+                <header className="border-b border-border px-4 py-3">
+                  <h2 className="font-heading text-base font-semibold text-foreground">Mood strip</h2>
+                  <p className="text-xs text-muted-foreground">Today&apos;s logged feelings — your live tilt biomarker.</p>
+                </header>
+                <div className="p-4">
+                  {timeline.data ? <MoodStrip moods={timeline.data.moods} /> : null}
+                </div>
+              </section>
+            </aside>
+          </div>
         </div>
       )}
     </div>

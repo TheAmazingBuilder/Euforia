@@ -42,4 +42,5 @@ export const apiPaths = {
   violationAcknowledge: (violationId: string) => `/violations/${violationId}/acknowledge`,
   disciplineScore: "/discipline/score",
   mistakesLedger: "/mistakes/ledger",
+  brokerSession: "/broker/session",
 } as const;

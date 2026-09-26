@@ -32,6 +32,8 @@ export * from "./schemas/eco-event";
 export * from "./schemas/backup";
 export * from "./schemas/coach";
 export * from "./schemas/api";
+export * from "./schemas/market";
+export * from "./schemas/broker";
 
 // ── Pure utils ───────────────────────────────────────────────────────────────
 export * from "./utils/money";

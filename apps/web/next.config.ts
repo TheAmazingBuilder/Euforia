@@ -13,6 +13,7 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return [
       { source: "/prices", destination: `${MARKET_SERVICE}/prices` },
+      { source: "/candles", destination: `${MARKET_SERVICE}/candles` },
       { source: "/health", destination: `${MARKET_SERVICE}/health` },
       { source: "/socket.io/:path*", destination: `${MARKET_SERVICE}/socket.io/:path*` },
     ];

@@ -2,8 +2,11 @@
 
 import * as React from "react";
 import * as echarts from "echarts/core";
-import { BarChart, HeatmapChart, LineChart, ScatterChart } from "echarts/charts";
+import { BarChart, CandlestickChart, HeatmapChart, LineChart, ScatterChart } from "echarts/charts";
 import {
+  DataZoomComponent,
+  DataZoomInsideComponent,
+  DataZoomSliderComponent,
   GridComponent,
   MarkAreaComponent,
   MarkLineComponent,
@@ -15,20 +18,36 @@ import { useTheme } from "next-themes";
 import type { EChartsCoreOption } from "echarts/core";
 
 // Tree-shaken registration — line (equity/sparklines), bar (time buckets,
-// histograms), scatter (sleep/tilt) and heatmap (Overview grid) + the
-// components those series consume.
+// histograms), scatter (sleep/tilt), heatmap (Overview grid) and candlestick
+// (Session Live price chart) + the components those series consume.
 echarts.use([
   LineChart,
   BarChart,
   ScatterChart,
   HeatmapChart,
+  CandlestickChart,
   GridComponent,
   TooltipComponent,
   MarkAreaComponent,
   MarkLineComponent,
   VisualMapComponent,
+  DataZoomComponent,
+  DataZoomInsideComponent,
+  DataZoomSliderComponent,
   CanvasRenderer,
 ]);
+
+/**
+ * Factory for chart instances OUTSIDE the React bridge (Session Live price
+ * chart manages its own lifecycle: merge-mode setOption per tick keeps the
+ * user's zoom, which the bridge's notMerge:true would reset). All runtime
+ * echarts usage in the app stays funneled through THIS module — one shared
+ * echarts/zrender instance with every needed piece registered above;
+ * a second runtime copy would throw "Renderer 'undefined' is not imported".
+ */
+export function createChartInstance(container: HTMLElement): echarts.ECharts {
+  return echarts.init(container);
+}
 
 interface EChartProps {
   option: EChartsCoreOption;
