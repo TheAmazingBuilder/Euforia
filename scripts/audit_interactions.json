@@ -1,0 +1,49 @@
+{
+  "trades_row_opens_detail": {
+    "rows": 10,
+    "dialog_visible": true
+  },
+  "notifications_panel": {
+    "opens": true
+  },
+  "dashboard_trade_click": {
+    "rows": 0,
+    "opens_drawer": false
+  },
+  "session_chart": {
+    "canvas_count": 1
+  },
+  "session_feed_badges": [
+    "Session Live",
+    "Session Live",
+    "live",
+    "Deriv Live",
+    "Session Live"
+  ],
+  "coach_reply": {
+    "has_response": true,
+    "excerpt": "\nGrounded in 52 trades · 3 strategies · as of Sep 28\n\nClear\nHow many trades did I take this week?\n\n02:28 AM\n\nLooking at your journal data, you took 5 trades in the week ending September 28, 2026:\n\n- 3 on September 28 (2 EURUSD, 1 BOOM500)\n- 1 on September 27 (1 EURUSD)\n- 1 on September 26 (1 XAUUSD)\n\nYour discipline score is 73.07. Focus on following your plan consistently.\n\n02:28 AM\n\nAsk your coa"
+  },
+  "analytics_state": {
+    "text": "Analytics\n\nTurn your trade history into patterns, edges and honest statistics.\n\nComing in a later phase\nExpect the constellation equity curve, win/loss heatmaps and breakdowns by setup, session and account.\nThe navigatio"
+  },
+  "journal_content_chars": 325,
+  "journal_coming_soon": false,
+  "discipline_content_chars": 1295,
+  "discipline_coming_soon": false,
+  "goals_content_chars": 355,
+  "goals_coming_soon": false,
+  "playbook_content_chars": 843,
+  "playbook_coming_soon": false,
+  "calendar_content_chars": 458,
+  "calendar_coming_soon": false,
+  "settings_content_chars": 465,
+  "settings_coming_soon": false,
+  "console_errors_during_interactions": [
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 400 (Bad Request)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  ],
+  "console_errors_count": 4
+}
