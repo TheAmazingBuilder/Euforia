@@ -134,6 +134,10 @@ export const strategyStatusSchema = z.enum([
 ]);
 export type StrategyStatus = z.infer<typeof strategyStatusSchema>;
 
+/** How the strategy is executed (Playbook market profile §7). */
+export const tradingStyleSchema = z.enum(["SCALPING", "INTRADAY", "SWING", "POSITION"]);
+export type TradingStyle = z.infer<typeof tradingStyleSchema>;
+
 export const tagCategorySchema = z.enum([
   "SETUP",
   "CONTEXT",

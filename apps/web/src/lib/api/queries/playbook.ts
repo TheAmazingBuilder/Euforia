@@ -1,8 +1,23 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
+  ChecklistTemplate,
+  CreateChecklistInput,
+  CreatePlaybookRuleInput,
+  CreateSetupInput,
   CreateStrategyInput,
+  ChecklistsResponse,
+  InstantiateTemplateInput,
+  PlaybookOverviewResponse,
+  PlaybookRule,
+  PlaybookRulesResponse,
+  PlaybookTemplatesResponse,
+  Setup,
+  SetupsResponse,
   Strategy,
   StrategiesStatsResponse,
+  UpdateChecklistInput,
+  UpdatePlaybookRuleInput,
+  UpdateSetupInput,
   UpdateStrategyInput,
 } from "@cosmoz/shared";
 
@@ -10,7 +25,19 @@ import { apiRequest } from "@/lib/api/client";
 import { apiPaths } from "@/lib/api/endpoints";
 import { queryKeys } from "@/lib/api/keys";
 
-/** Playbook domain hooks — strategy CRUD + server-computed per-strategy stats. */
+/**
+ * Professional Playbook hooks — strategies + setups + checklists + operating
+ * rules + template library + the ONE aggregate overview. Strategy mutations
+ * invalidate the module keys AND the analytics suite (per-strategy rows read
+ * trades through the strategy link).
+ */
+
+export function usePlaybookOverview() {
+  return useQuery({
+    queryKey: queryKeys.playbookOverview,
+    queryFn: () => apiRequest<PlaybookOverviewResponse>(apiPaths.playbookOverview),
+  });
+}
 
 export function useStrategiesStats() {
   return useQuery({
@@ -19,11 +46,53 @@ export function useStrategiesStats() {
   });
 }
 
+export function useSetups() {
+  return useQuery({
+    queryKey: queryKeys.setups,
+    queryFn: () => apiRequest<SetupsResponse>(apiPaths.setups),
+  });
+}
+
+export function useChecklists() {
+  return useQuery({
+    queryKey: queryKeys.checklists,
+    queryFn: () => apiRequest<ChecklistsResponse>(apiPaths.checklists),
+  });
+}
+
+export function usePlaybookRules() {
+  return useQuery({
+    queryKey: queryKeys.playbookRules,
+    queryFn: () => apiRequest<PlaybookRulesResponse>(apiPaths.playbookRules),
+  });
+}
+
+export function usePlaybookTemplates() {
+  return useQuery({
+    queryKey: queryKeys.playbookTemplates,
+    queryFn: () => apiRequest<PlaybookTemplatesResponse>(apiPaths.playbookTemplates),
+  });
+}
+
 function useStrategyInvalidation() {
   const queryClient = useQueryClient();
   return async () => {
     await queryClient.invalidateQueries({ queryKey: queryKeys.strategies });
     await queryClient.invalidateQueries({ queryKey: queryKeys.strategiesStats });
+    await queryClient.invalidateQueries({ queryKey: queryKeys.playbookOverview });
+    await queryClient.invalidateQueries({ queryKey: queryKeys.analyticsSuiteRoot });
+  };
+}
+
+/** Invalidate every playbook child collection — cheap, always correct. */
+function usePlaybookInvalidation() {
+  const queryClient = useQueryClient();
+  return async () => {
+    await queryClient.invalidateQueries({ queryKey: queryKeys.setups });
+    await queryClient.invalidateQueries({ queryKey: queryKeys.checklists });
+    await queryClient.invalidateQueries({ queryKey: queryKeys.playbookRules });
+    await queryClient.invalidateQueries({ queryKey: queryKeys.playbookOverview });
+    await queryClient.invalidateQueries({ queryKey: queryKeys.strategies });
   };
 }
 
@@ -53,6 +122,113 @@ export function useDeleteStrategy() {
   return useMutation({
     mutationFn: (strategyId: string) =>
       apiRequest<{ ok: true }>(apiPaths.strategy(strategyId), { method: "DELETE" }),
+    onSuccess: () => invalidate(),
+  });
+}
+
+/** POST /strategies/:id/duplicate — fresh DRAFT copy incl. setups/checklists. */
+export function useDuplicateStrategy() {
+  const invalidate = useStrategyInvalidation();
+  return useMutation({
+    mutationFn: (strategyId: string) =>
+      apiRequest<Strategy>(apiPaths.strategyDuplicate(strategyId), { method: "POST" }),
+    onSuccess: () => invalidate(),
+  });
+}
+
+/** POST /playbook/templates/instantiate — DRAFT from a starting-point template. */
+export function useInstantiateTemplate() {
+  const invalidate = useStrategyInvalidation();
+  return useMutation({
+    mutationFn: (input: InstantiateTemplateInput) =>
+      apiRequest<Strategy>(apiPaths.playbookTemplateInstantiate, { method: "POST", body: input }),
+    onSuccess: () => invalidate(),
+  });
+}
+
+// ── Setups ───────────────────────────────────────────────────────────────────
+
+export function useCreateSetup() {
+  const invalidate = usePlaybookInvalidation();
+  return useMutation({
+    mutationFn: (input: CreateSetupInput) =>
+      apiRequest<Setup>(apiPaths.setups, { method: "POST", body: input }),
+    onSuccess: () => invalidate(),
+  });
+}
+
+export function useUpdateSetup() {
+  const invalidate = usePlaybookInvalidation();
+  return useMutation({
+    mutationFn: ({ setupId, input }: { setupId: string; input: UpdateSetupInput }) =>
+      apiRequest<Setup>(apiPaths.setup(setupId), { method: "PATCH", body: input }),
+    onSuccess: () => invalidate(),
+  });
+}
+
+export function useDeleteSetup() {
+  const invalidate = usePlaybookInvalidation();
+  return useMutation({
+    mutationFn: (setupId: string) =>
+      apiRequest<{ ok: true }>(apiPaths.setup(setupId), { method: "DELETE" }),
+    onSuccess: () => invalidate(),
+  });
+}
+
+// ── Checklist templates ──────────────────────────────────────────────────
+
+export function useCreateChecklist() {
+  const invalidate = usePlaybookInvalidation();
+  return useMutation({
+    mutationFn: (input: CreateChecklistInput) =>
+      apiRequest<ChecklistTemplate>(apiPaths.checklists, { method: "POST", body: input }),
+    onSuccess: () => invalidate(),
+  });
+}
+
+export function useUpdateChecklist() {
+  const invalidate = usePlaybookInvalidation();
+  return useMutation({
+    mutationFn: ({ checklistId, input }: { checklistId: string; input: UpdateChecklistInput }) =>
+      apiRequest<ChecklistTemplate>(apiPaths.checklist(checklistId), { method: "PATCH", body: input }),
+    onSuccess: () => invalidate(),
+  });
+}
+
+export function useDeleteChecklist() {
+  const invalidate = usePlaybookInvalidation();
+  return useMutation({
+    mutationFn: (checklistId: string) =>
+      apiRequest<{ ok: true }>(apiPaths.checklist(checklistId), { method: "DELETE" }),
+    onSuccess: () => invalidate(),
+  });
+}
+
+// ── Operating rules ──────────────────────────────────────────────────────
+
+export function useCreatePlaybookRule() {
+  const invalidate = usePlaybookInvalidation();
+  return useMutation({
+    mutationFn: (input: CreatePlaybookRuleInput) =>
+      apiRequest<PlaybookRule>(apiPaths.playbookRules, { method: "POST", body: input }),
+    onSuccess: () => invalidate(),
+  });
+}
+
+export function useUpdatePlaybookRule() {
+  const invalidate = usePlaybookInvalidation();
+  return useMutation({
+    mutationFn: ({ ruleId, input }: { ruleId: string; input: UpdatePlaybookRuleInput }) =>
+      apiRequest<PlaybookRule>(apiPaths.playbookRule(ruleId), { method: "PATCH", body: input }),
+    onSuccess: () => invalidate(),
+  });
+}
+
+export function useDeletePlaybookRule() {
+  const invalidate = usePlaybookInvalidation();
+  return useMutation({
+    mutationFn: (ruleId: string) =>
+      apiRequest<{ ok: true }>(apiPaths.playbookRule(ruleId), { method: "DELETE" }),
     onSuccess: () => invalidate(),
   });
 }

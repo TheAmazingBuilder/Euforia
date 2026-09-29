@@ -29,6 +29,13 @@ export const queryKeys = {
   integrations: ["integrations"] as const,
   security: ["security"] as const,
   monitoring: ["monitoring"] as const,
+  // Professional Playbook module
+  playbookOverview: ["playbook-overview"] as const,
+  playbookTemplates: ["playbook-templates"] as const,
+  playbookRules: ["playbook-rules"] as const,
+  setups: ["setups"] as const,
+  checklists: ["checklists"] as const,
+  analyticsSuiteRoot: ["analytics-suite"] as const,
 } as const;
 
 /**

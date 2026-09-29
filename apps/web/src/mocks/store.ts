@@ -82,6 +82,23 @@ import {
   type PreferenceDomain,
   type DeactivateAccountResponse,
   type RequestAccountDeletionResponse,
+  // Professional Playbook module
+  type ChecklistTemplate,
+  type ChecklistsResponse,
+  type CreateChecklistInput,
+  type CreatePlaybookRuleInput,
+  type CreateSetupInput,
+  type InstantiateTemplateInput,
+  type PlaybookOverviewResponse,
+  type PlaybookRule,
+  type PlaybookRulesResponse,
+  type PlaybookTemplatesResponse,
+  type Setup,
+  type SetupsResponse,
+  type StrategyVersionSnapshot,
+  type UpdateChecklistInput,
+  type UpdatePlaybookRuleInput,
+  type UpdateSetupInput,
   DEFAULT_USER_PREFERENCES,
   tradingPreferencesSchema,
   riskPreferencesSchema,
@@ -96,6 +113,7 @@ import {
 import { buildFixtureData, USER_TZ, type FixtureData } from "./fixtures";
 import { mulberry32 } from "./fixtures/random";
 import { integrationEngine } from "./integration-engine";
+import { buildPlaybookSeed, playbookTemplateCards, templateToCreateInput } from "./playbook-seed";
 
 /** Per-domain validation schemas — one source of truth, used by the handler. */
 const PREFERENCE_DOMAIN_SCHEMAS = {
@@ -154,6 +172,14 @@ export function createMockStore() {
   const screenshotsByTrade = new Map<string, TradeScreenshot[]>();
   const user = data.user;
   const mainAccount = data.accounts.find((a) => a.isDefault) ?? data.accounts[0]!;
+
+  // ── Professional Playbook state (seeded once, same lifecycle as fixtures) ─
+  const playbookSeed = buildPlaybookSeed(user.id, data.strategies);
+  const setups: Setup[] = playbookSeed.setups;
+  const checklists: ChecklistTemplate[] = playbookSeed.checklists;
+  const playbookRules: PlaybookRule[] = playbookSeed.rules;
+  /** Historical strategy definitions (§17) — appended, never rewritten. */
+  const strategyVersions: StrategyVersionSnapshot[] = [];
 
   /**
    * User preferences (Settings module) — seeded from the safe shared
@@ -500,12 +526,31 @@ export function createMockStore() {
     const initialStop = input.initialStop ?? null;
     const { quantity, riskAmount } = resolveSize(input, entryPrice, initialStop);
 
+    // Playbook link integrity (§21): the setup must belong to the strategy,
+    // and the strategy definition version is FROZEN at entry (§17).
+    let setupId: string | null = null;
+    let strategyVersion: number | null = null;
+    if (input.strategyId !== undefined) {
+      const strategy = data.strategies.find((s) => s.id === input.strategyId);
+      if (!strategy) throw new MockError(422, "Unknown strategy for this trade");
+      strategyVersion = strategy.version ?? 1;
+      if (input.setupId !== undefined) {
+        const setup = setups.find((s) => s.id === input.setupId);
+        if (!setup || setup.strategyId !== input.strategyId) {
+          throw new MockError(422, "Setup does not belong to the selected strategy");
+        }
+        setupId = setup.id;
+      }
+    }
+
     const trade: Trade = {
       id: crypto.randomUUID(),
       userId: user.id,
       accountId: input.accountId,
       instrumentId: input.instrumentId,
       strategyId: input.strategyId ?? null,
+      setupId,
+      strategyVersion,
       status: input.variant === "open" ? "OPEN" : "CLOSED",
       direction: input.direction,
       entryPrice: input.entryPrice,
@@ -1064,10 +1109,34 @@ export function createMockStore() {
       status: input.status ?? "ACTIVE",
       color: input.color ?? null,
       createdAt: nowIso(),
+      // Professional Playbook extensions (§6–§15)
+      version: 1,
+      tags: input.tags ?? [],
+      detailedDescription: input.detailedDescription ?? null,
+      marketProfile: input.marketProfile ?? null,
+      marketConditions: input.marketConditions ?? [],
+      entryConditions: input.entryConditions ?? [],
+      confirmations: input.confirmations ?? [],
+      invalidations: input.invalidations ?? [],
+      risk: input.risk ?? null,
+      tradeManagement: input.tradeManagement ?? [],
+      exitPlan: input.exitPlan ?? [],
+      updatedAt: nowIso(),
     };
     data.strategies.push(strategy);
     return strategy;
   }
+
+  /**
+   * Definition fields whose change creates a NEW version (§17). Status, color
+   * and grade are lifecycle/presentation — they mutate in place without
+   * rewriting the definition a trade was executed under.
+   */
+  const STRATEGY_DEFINITION_FIELDS = [
+    "description", "entryRules", "exitRules", "riskRules", "detailedDescription",
+    "marketProfile", "marketConditions", "entryConditions", "confirmations",
+    "invalidations", "risk", "tradeManagement", "exitPlan",
+  ] as const;
 
   function updateStrategy(strategyId: string, input: UpdateStrategyInput): Strategy {
     const strategy = data.strategies.find((s) => s.id === strategyId);
@@ -1077,6 +1146,25 @@ export function createMockStore() {
       if (name === "") throw new MockError(422, "Strategy name cannot be empty");
       strategy.name = name;
     }
+
+    // Versioning (§17): freeze the CURRENT definition BEFORE any content
+    // mutation — a trade executed under v1 must stay explainable as v1.
+    const touchesDefinition = STRATEGY_DEFINITION_FIELDS.some(
+      (field) => input[field] !== undefined,
+    );
+    if (touchesDefinition) {
+      const priorVersion = strategy.version ?? 1;
+      strategyVersions.push({
+        id: crypto.randomUUID(),
+        strategyId: strategy.id,
+        version: priorVersion,
+        snapshot: structuredClone(strategy),
+        reason: "Edited in the Playbook",
+        createdAt: nowIso(),
+      });
+      strategy.version = priorVersion + 1;
+    }
+
     if (input.description !== undefined) strategy.description = input.description;
     if (input.entryRules !== undefined) strategy.entryRules = input.entryRules;
     if (input.exitRules !== undefined) strategy.exitRules = input.exitRules;
@@ -1084,7 +1172,70 @@ export function createMockStore() {
     if (input.grade !== undefined) strategy.grade = input.grade;
     if (input.status !== undefined) strategy.status = input.status;
     if (input.color !== undefined) strategy.color = input.color;
+    if (input.tags !== undefined) strategy.tags = input.tags;
+    if (input.detailedDescription !== undefined) strategy.detailedDescription = input.detailedDescription;
+    if (input.marketProfile !== undefined) strategy.marketProfile = input.marketProfile;
+    if (input.marketConditions !== undefined) strategy.marketConditions = input.marketConditions;
+    if (input.entryConditions !== undefined) strategy.entryConditions = input.entryConditions;
+    if (input.confirmations !== undefined) strategy.confirmations = input.confirmations;
+    if (input.invalidations !== undefined) strategy.invalidations = input.invalidations;
+    if (input.risk !== undefined) strategy.risk = input.risk;
+    if (input.tradeManagement !== undefined) strategy.tradeManagement = input.tradeManagement;
+    if (input.exitPlan !== undefined) strategy.exitPlan = input.exitPlan;
+    strategy.updatedAt = nowIso();
     return strategy;
+  }
+
+  /**
+   * POST /strategies/:id/duplicate (§5 quick action) — a fresh DRAFT copy:
+   * definition blocks deep-copied, grade reset (the copy is unproven),
+   * setups and scoped checklists duplicated; history does NOT follow.
+   */
+  function duplicateStrategy(strategyId: string): Strategy {
+    const source = data.strategies.find((s) => s.id === strategyId);
+    if (!source) throw new MockError(404, "Strategy not found");
+    const copy = createStrategy({
+      ...structuredClone({
+        description: source.description,
+        entryRules: source.entryRules,
+        exitRules: source.exitRules,
+        riskRules: source.riskRules,
+        color: source.color,
+        tags: source.tags ?? [],
+        detailedDescription: source.detailedDescription,
+        marketProfile: source.marketProfile,
+        marketConditions: source.marketConditions ?? [],
+        entryConditions: source.entryConditions ?? [],
+        confirmations: source.confirmations ?? [],
+        invalidations: source.invalidations ?? [],
+        risk: source.risk,
+        tradeManagement: source.tradeManagement ?? [],
+        exitPlan: source.exitPlan ?? [],
+      }),
+      name: `${source.name} (copy)`.slice(0, 80),
+      status: "DRAFT",
+      grade: null,
+    });
+    for (const setup of setups.filter((s) => s.strategyId === source.id)) {
+      setups.push({
+        ...structuredClone(setup),
+        id: crypto.randomUUID(),
+        strategyId: copy.id,
+        createdAt: nowIso(),
+        updatedAt: nowIso(),
+      });
+    }
+    for (const checklist of checklists.filter((c) => c.strategyId === source.id)) {
+      checklists.push({
+        ...structuredClone(checklist),
+        id: crypto.randomUUID(),
+        strategyId: copy.id,
+        name: checklist.name,
+        createdAt: nowIso(),
+        updatedAt: nowIso(),
+      });
+    }
+    return copy;
   }
 
   function deleteStrategy(strategyId: string): { ok: true } {
@@ -1096,8 +1247,314 @@ export function createMockStore() {
     if (used) {
       throw new MockError(409, "This strategy has trades attached — pause or retire it instead.");
     }
+    // The playbook children of a deleted strategy have no reason to dangle.
+    for (let i = setups.length - 1; i >= 0; i -= 1) {
+      if (setups[i]!.strategyId === strategyId) setups.splice(i, 1);
+    }
+    for (let i = checklists.length - 1; i >= 0; i -= 1) {
+      if (checklists[i]!.strategyId === strategyId) checklists.splice(i, 1);
+    }
     data.strategies.splice(index, 1);
     return { ok: true };
+  }
+
+  // ── Professional Playbook: setups / checklists / rules / overview ────────
+
+  function requireStrategy(strategyId: string): Strategy {
+    const strategy = data.strategies.find((s) => s.id === strategyId);
+    if (!strategy) throw new MockError(422, "Unknown strategy for this playbook item");
+    return strategy;
+  }
+
+  function listSetups(): SetupsResponse {
+    return { setups: [...setups].sort((a, b) => a.name.localeCompare(b.name)) };
+  }
+
+  function createSetup(input: CreateSetupInput): Setup {
+    requireStrategy(input.strategyId);
+    const now = nowIso();
+    const setup: Setup = {
+      id: crypto.randomUUID(),
+      userId: user.id,
+      strategyId: input.strategyId,
+      name: input.name.trim(),
+      status: input.status ?? "ACTIVE",
+      description: input.description ?? null,
+      context: input.context ?? null,
+      marketCondition: input.marketCondition ?? null,
+      trigger: input.trigger ?? null,
+      confirmation: input.confirmation ?? null,
+      entryModel: input.entryModel ?? null,
+      stopModel: input.stopModel ?? null,
+      targetModel: input.targetModel ?? null,
+      invalidation: input.invalidation ?? null,
+      notes: input.notes ?? null,
+      tags: input.tags ?? [],
+      createdAt: now,
+      updatedAt: now,
+    };
+    setups.push(setup);
+    return setup;
+  }
+
+  function updateSetup(setupId: string, input: UpdateSetupInput): Setup {
+    const setup = setups.find((s) => s.id === setupId);
+    if (!setup) throw new MockError(404, "Setup not found");
+    if (input.strategyId !== undefined) requireStrategy(input.strategyId);
+    if (input.name !== undefined) {
+      const name = input.name.trim();
+      if (name === "") throw new MockError(422, "Setup name cannot be empty");
+      setup.name = name;
+    }
+    if (input.strategyId !== undefined) setup.strategyId = input.strategyId;
+    if (input.status !== undefined) setup.status = input.status;
+    if (input.description !== undefined) setup.description = input.description;
+    if (input.context !== undefined) setup.context = input.context;
+    if (input.marketCondition !== undefined) setup.marketCondition = input.marketCondition;
+    if (input.trigger !== undefined) setup.trigger = input.trigger;
+    if (input.confirmation !== undefined) setup.confirmation = input.confirmation;
+    if (input.entryModel !== undefined) setup.entryModel = input.entryModel;
+    if (input.stopModel !== undefined) setup.stopModel = input.stopModel;
+    if (input.targetModel !== undefined) setup.targetModel = input.targetModel;
+    if (input.invalidation !== undefined) setup.invalidation = input.invalidation;
+    if (input.notes !== undefined) setup.notes = input.notes;
+    if (input.tags !== undefined) setup.tags = input.tags;
+    setup.updatedAt = nowIso();
+    return setup;
+  }
+
+  function deleteSetup(setupId: string): { ok: true } {
+    const index = setups.findIndex((s) => s.id === setupId);
+    if (index === -1) throw new MockError(404, "Setup not found");
+    const used = data.trades.some((t) => t.setupId === setupId);
+    if (used) throw new MockError(409, "This setup has trades attached — pause it instead.");
+    setups.splice(index, 1);
+    return { ok: true };
+  }
+
+  function listChecklists(): ChecklistsResponse {
+    return { checklists: [...checklists].sort((a, b) => a.name.localeCompare(b.name)) };
+  }
+
+  function createChecklist(input: CreateChecklistInput): ChecklistTemplate {
+    if (input.strategyId !== null && input.strategyId !== undefined) {
+      requireStrategy(input.strategyId);
+    }
+    const now = nowIso();
+    const checklist: ChecklistTemplate = {
+      id: crypto.randomUUID(),
+      userId: user.id,
+      strategyId: input.strategyId ?? null,
+      name: input.name.trim(),
+      items: structuredClone(input.items),
+      createdAt: now,
+      updatedAt: now,
+    };
+    checklists.push(checklist);
+    return checklist;
+  }
+
+  function updateChecklist(checklistId: string, input: UpdateChecklistInput): ChecklistTemplate {
+    const checklist = checklists.find((c) => c.id === checklistId);
+    if (!checklist) throw new MockError(404, "Checklist not found");
+    if (input.strategyId !== undefined && input.strategyId !== null) {
+      requireStrategy(input.strategyId);
+    }
+    if (input.strategyId !== undefined) checklist.strategyId = input.strategyId;
+    if (input.name !== undefined) {
+      const name = input.name.trim();
+      if (name === "") throw new MockError(422, "Checklist name cannot be empty");
+      checklist.name = name;
+    }
+    if (input.items !== undefined) checklist.items = structuredClone(input.items);
+    checklist.updatedAt = nowIso();
+    return checklist;
+  }
+
+  function deleteChecklist(checklistId: string): { ok: true } {
+    const index = checklists.findIndex((c) => c.id === checklistId);
+    if (index === -1) throw new MockError(404, "Checklist not found");
+    checklists.splice(index, 1);
+    return { ok: true };
+  }
+
+  function listPlaybookRules(): PlaybookRulesResponse {
+    return { rules: [...playbookRules].sort((a, b) => a.title.localeCompare(b.title)) };
+  }
+
+  function createPlaybookRule(input: CreatePlaybookRuleInput): PlaybookRule {
+    if (input.scope === "STRATEGY") {
+      if (!input.strategyId) throw new MockError(422, "A strategy-scoped rule needs a strategy");
+      requireStrategy(input.strategyId);
+    }
+    const now = nowIso();
+    const rule: PlaybookRule = {
+      id: crypto.randomUUID(),
+      userId: user.id,
+      title: input.title.trim(),
+      detail: input.detail,
+      category: input.category,
+      scope: input.scope,
+      strategyId: input.scope === "STRATEGY" ? input.strategyId ?? null : null,
+      evaluatable: input.evaluatable ?? false,
+      evaluationHint: input.evaluationHint ?? null,
+      active: input.active ?? true,
+      createdAt: now,
+      updatedAt: now,
+    };
+    playbookRules.push(rule);
+    return rule;
+  }
+
+  function updatePlaybookRule(ruleId: string, input: UpdatePlaybookRuleInput): PlaybookRule {
+    const rule = playbookRules.find((r) => r.id === ruleId);
+    if (!rule) throw new MockError(404, "Playbook rule not found");
+    if (input.strategyId !== undefined && input.strategyId !== null) {
+      requireStrategy(input.strategyId);
+    }
+    if (input.title !== undefined) {
+      const title = input.title.trim();
+      if (title === "") throw new MockError(422, "Rule title cannot be empty");
+      rule.title = title;
+    }
+    if (input.detail !== undefined) rule.detail = input.detail;
+    if (input.category !== undefined) rule.category = input.category;
+    if (input.scope !== undefined) rule.scope = input.scope;
+    if (input.strategyId !== undefined) rule.strategyId = input.strategyId;
+    if (input.evaluatable !== undefined) rule.evaluatable = input.evaluatable;
+    if (input.evaluationHint !== undefined) rule.evaluationHint = input.evaluationHint;
+    if (input.active !== undefined) rule.active = input.active;
+    rule.updatedAt = nowIso();
+    return rule;
+  }
+
+  function deletePlaybookRule(ruleId: string): { ok: true } {
+    const index = playbookRules.findIndex((r) => r.id === ruleId);
+    if (index === -1) throw new MockError(404, "Playbook rule not found");
+    playbookRules.splice(index, 1);
+    return { ok: true };
+  }
+
+  /** GET /playbook/templates — the starting-point library (§18). */
+  function listPlaybookTemplates(): PlaybookTemplatesResponse {
+    return { templates: playbookTemplateCards() };
+  }
+
+  /** POST /playbook/templates/instantiate — creates a DRAFT from a template. */
+  function instantiatePlaybookTemplate(input: InstantiateTemplateInput): Strategy {
+    const payload = templateToCreateInput(input.key, input.name);
+    if (!payload) throw new MockError(404, "Unknown playbook template");
+    return createStrategy({ ...payload, status: "DRAFT" });
+  }
+
+  /**
+   * GET /playbook/overview — ONE aggregate for the module (§5): counts,
+   * recency, performance summary and §20 completeness health. All computed
+   * from the stored trades/strategies — never invented client-side.
+   */
+  function playbookOverview(): PlaybookOverviewResponse {
+    const live = data.trades.filter((t) => t.deletedAt === null);
+    const closed = live.filter((t) => t.status === "CLOSED");
+    const playbookClosed = closed.filter((t) => t.strategyId !== null);
+
+    const byStatus = (status: Strategy["status"]) =>
+      data.strategies.filter((s) => s.status === status).length;
+
+    // Rule adherence (§5): followedPlan among closed playbook trades that
+    // have an answer — missing answers never silently count as "followed".
+    const graded = playbookClosed.filter((t) => t.followedPlan !== null);
+    const followedPct =
+      graded.length > 0
+        ? (graded.filter((t) => t.followedPlan === true).length / graded.length) * 100
+        : null;
+
+    const netPnl = playbookClosed.reduce((sum, t) => sum + (Number(t.pnlNet) ?? 0), 0);
+    const wins = playbookClosed.filter((t) => (Number(t.pnlNet) ?? 0) > 0).length;
+    const sumR = playbookClosed.reduce((sum, t) => sum + (Number(t.rMultiple) ?? 0), 0);
+
+    const recentlyUpdated = [...data.strategies]
+      .sort((a, b) => (b.updatedAt ?? b.createdAt).localeCompare(a.updatedAt ?? a.createdAt))
+      .slice(0, 5)
+      .map((s) => ({
+        strategyId: s.id,
+        name: s.name,
+        status: s.status,
+        color: s.color,
+        version: s.version ?? 1,
+        updatedAt: s.updatedAt ?? s.createdAt,
+      }));
+
+    const usage = new Map<string, { lastTradeAt: string; tradesCount: number }>();
+    for (const trade of live) {
+      if (trade.strategyId === null) continue;
+      const current = usage.get(trade.strategyId);
+      usage.set(trade.strategyId, {
+        lastTradeAt:
+          current && current.lastTradeAt > trade.entryAt ? current.lastTradeAt : trade.entryAt,
+        tradesCount: (current?.tradesCount ?? 0) + 1,
+      });
+    }
+    const recentlyUsed = [...usage.entries()]
+      .sort(([, a], [, b]) => b.lastTradeAt.localeCompare(a.lastTradeAt))
+      .slice(0, 5)
+      .map(([strategyId, info]) => {
+        const strategy = data.strategies.find((s) => s.id === strategyId);
+        return {
+          strategyId,
+          name: strategy?.name ?? "Unknown strategy",
+          color: strategy?.color ?? null,
+          lastTradeAt: info.lastTradeAt,
+          tradesCount: info.tradesCount,
+        };
+      });
+
+    // §20 completeness health — factual flags, no profitability judgment.
+    const hasGlobalChecklist = checklists.some((c) => c.strategyId === null);
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 86_400_000).toISOString();
+    const health = data.strategies.map((s) => {
+      const flags: PlaybookOverviewResponse["health"][number]["flags"] = [];
+      if (s.status === "DRAFT") flags.push("DRAFT");
+      if (s.status === "RETIRED") flags.push("ARCHIVED");
+      const lastUse = usage.get(s.id)?.lastTradeAt;
+      if (lastUse === undefined || lastUse < thirtyDaysAgo) flags.push("NO_RECENT_TRADES");
+      const risk = s.risk;
+      const riskMissing =
+        risk === null || risk === undefined
+          ? true
+          : Object.values(risk).every((value) => value === null);
+      if (riskMissing) flags.push("MISSING_RISK");
+      if ((s.entryConditions?.length ?? 0) === 0 && s.entryRules === null) {
+        flags.push("MISSING_ENTRY_CONDITIONS");
+      }
+      if ((s.invalidations?.length ?? 0) === 0) flags.push("MISSING_INVALIDATION");
+      const hasOwnChecklist = checklists.some((c) => c.strategyId === s.id);
+      if (!hasOwnChecklist && !hasGlobalChecklist) flags.push("MISSING_CHECKLIST");
+      return { strategyId: s.id, flags };
+    });
+
+    return {
+      counts: {
+        totalStrategies: data.strategies.length,
+        active: byStatus("ACTIVE"),
+        draft: byStatus("DRAFT"),
+        paused: byStatus("PAUSED"),
+        archived: byStatus("RETIRED"),
+        totalSetups: setups.length,
+        totalRules: playbookRules.length,
+        totalChecklists: checklists.length,
+      },
+      recentlyUpdated,
+      recentlyUsed,
+      performanceSummary: {
+        netPnl: toDecimalString(round2(netPnl)),
+        trades: playbookClosed.length,
+        winRate: playbookClosed.length > 0 ? round2((wins / playbookClosed.length) * 100) : null,
+        expectancyR: playbookClosed.length > 0 ? toDecimalString(round2(sumR / playbookClosed.length)) : null,
+        followedPlanPct: followedPct === null ? null : round2(followedPct),
+      },
+      health,
+      meta: { generatedAt: nowIso() },
+    };
   }
 
   /**
@@ -2762,7 +3219,23 @@ export function createMockStore() {
     createStrategy,
     updateStrategy,
     deleteStrategy,
+    duplicateStrategy,
     strategyStats,
+    listSetups,
+    createSetup,
+    updateSetup,
+    deleteSetup,
+    listChecklists,
+    createChecklist,
+    updateChecklist,
+    deleteChecklist,
+    listPlaybookRules,
+    createPlaybookRule,
+    updatePlaybookRule,
+    deletePlaybookRule,
+    listPlaybookTemplates,
+    instantiatePlaybookTemplate,
+    playbookOverview,
     listTags,
     listAlerts,
     listEcoEvents,

@@ -82,6 +82,10 @@ export const tradeSchema = z.object({
   instrumentId: uuidSchema,
   /** null = trade outside the playbook (valuable to track!). */
   strategyId: uuidSchema.nullable(),
+  /** Optional setup refinement within the strategy (Playbook §9/§21). */
+  setupId: uuidSchema.nullable().optional(),
+  /** Strategy definition version frozen at entry (Playbook §17/§21). */
+  strategyVersion: z.number().int().min(1).nullable().optional(),
 
   status: tradeStatusSchema,
   direction: directionSchema,
@@ -186,6 +190,8 @@ const captureBaseFields = {
   confidence: z.number().int().min(1).max(5).optional(),
   // ── playbook link: exactly ONE of the two (refined below) ──
   strategyId: uuidSchema.optional(),
+  /** Optional setup within the linked strategy. */
+  setupId: uuidSchema.optional(),
   /** Explicit "this is NOT a playbook trade" flag → strategyId stored null. */
   outOfPlaybook: z.boolean().optional(),
   /** Broker-side id → import idempotence. */

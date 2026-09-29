@@ -69,4 +69,15 @@ export const apiPaths = {
   monitoringOverview: "/monitoring/overview",
   monitoringThresholds: "/monitoring/thresholds",
   monitoringJobRun: (jobId: string) => `/monitoring/jobs/${jobId}/run`,
+  // Professional Playbook module
+  playbookOverview: "/playbook/overview",
+  playbookTemplates: "/playbook/templates",
+  playbookTemplateInstantiate: "/playbook/templates/instantiate",
+  playbookRules: "/playbook/rules",
+  playbookRule: (ruleId: string) => `/playbook/rules/${ruleId}`,
+  strategyDuplicate: (strategyId: string) => `/strategies/${strategyId}/duplicate`,
+  setups: "/setups",
+  setup: (setupId: string) => `/setups/${setupId}`,
+  checklists: "/checklists",
+  checklist: (checklistId: string) => `/checklists/${checklistId}`,
 } as const;

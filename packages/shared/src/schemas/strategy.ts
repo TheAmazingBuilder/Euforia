@@ -1,6 +1,15 @@
 import { z } from "zod";
 import { strategyGradeSchema, strategyStatusSchema } from "../enums";
 import { isoDateTimeSchema, uuidSchema } from "./primitives";
+import {
+  confirmationSchema,
+  entryConditionSchema,
+  exitRuleSchema,
+  managementRuleSchema,
+  marketConditionSchema,
+  marketProfileSchema,
+  strategyRiskSchema,
+} from "./playbook";
 
 /**
  * Strategy (playbook entry) — data-model.md "Domaine 4".
@@ -21,6 +30,21 @@ export const strategySchema = z.object({
   /** UI color hint (CSS color string owned by the client). */
   color: z.string().nullable(),
   createdAt: isoDateTimeSchema,
+  // ── Professional Playbook extensions (schemas/playbook.ts) — nullish so
+  // pre-Playbook fixtures and stored snapshots stay valid. ──
+  /** Bumped on every content mutation; trades freeze it at entry (§17). */
+  version: z.number().int().min(1).nullish(),
+  tags: z.array(z.string().max(24)).nullish(),
+  detailedDescription: z.string().max(8000).nullish(),
+  marketProfile: marketProfileSchema.nullish(),
+  marketConditions: z.array(marketConditionSchema).nullish(),
+  entryConditions: z.array(entryConditionSchema).nullish(),
+  confirmations: z.array(confirmationSchema).nullish(),
+  invalidations: z.array(z.string().max(400)).nullish(),
+  risk: strategyRiskSchema.nullish(),
+  tradeManagement: z.array(managementRuleSchema).nullish(),
+  exitPlan: z.array(exitRuleSchema).nullish(),
+  updatedAt: isoDateTimeSchema.nullish(),
 });
 
 export type Strategy = z.infer<typeof strategySchema>;
@@ -38,6 +62,17 @@ export const createStrategyInputSchema = z.object({
   status: strategyStatusSchema.optional(),
   /** Preset palette value (see PLAYBOOK_COLOR_PALETTE) or null. */
   color: z.string().max(20).nullable().optional(),
+  // ── structured Playbook blocks — replaced wholesale ──
+  tags: z.array(z.string().max(24)).optional(),
+  detailedDescription: z.string().max(8000).nullable().optional(),
+  marketProfile: marketProfileSchema.nullable().optional(),
+  marketConditions: z.array(marketConditionSchema).optional(),
+  entryConditions: z.array(entryConditionSchema).optional(),
+  confirmations: z.array(confirmationSchema).optional(),
+  invalidations: z.array(z.string().max(400)).optional(),
+  risk: strategyRiskSchema.nullable().optional(),
+  tradeManagement: z.array(managementRuleSchema).optional(),
+  exitPlan: z.array(exitRuleSchema).optional(),
 });
 
 export type CreateStrategyInput = z.infer<typeof createStrategyInputSchema>;
@@ -54,7 +89,17 @@ export const updateStrategyInputSchema = createStrategyInputSchema
       value.riskRules !== undefined ||
       value.grade !== undefined ||
       value.status !== undefined ||
-      value.color !== undefined,
+      value.color !== undefined ||
+      value.tags !== undefined ||
+      value.detailedDescription !== undefined ||
+      value.marketProfile !== undefined ||
+      value.marketConditions !== undefined ||
+      value.entryConditions !== undefined ||
+      value.confirmations !== undefined ||
+      value.invalidations !== undefined ||
+      value.risk !== undefined ||
+      value.tradeManagement !== undefined ||
+      value.exitPlan !== undefined,
     { message: "Provide at least one strategy field" },
   );
 

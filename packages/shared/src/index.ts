@@ -38,6 +38,7 @@ export * from "./schemas/settings";
 export * from "./schemas/integration";
 export * from "./schemas/security";
 export * from "./schemas/monitoring";
+export * from "./schemas/playbook";
 
 // ── Pure utils ───────────────────────────────────────────────────────────────
 export * from "./utils/money";
