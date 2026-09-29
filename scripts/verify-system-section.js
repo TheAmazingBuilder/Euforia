@@ -50,11 +50,15 @@ const BASE = "http://localhost:3000";
   ok("Integrations — 4 providers", (await page.locator("text=Binance").count()) > 0 && (await page.locator("text=cTrader Open API").count()) > 0);
   await page.screenshot({ path: "scripts/shots/system-integrations.png" });
 
-  // 5. Security page
+  // 5. Security page — Security Center (9 tabs, protection checklist)
   await page.goto(BASE + "/security", { waitUntil: "networkidle" });
   await page.waitForTimeout(900);
   ok("Security — h1", (await page.locator("h1").innerText().catch(() => "")).trim() === "Security");
-  ok("Security — sessions + vault", (await page.locator("text=Active sessions").count()) > 0 && (await page.locator("text=Credentials vault").count()) > 0);
+  ok(
+    "Security — centre de protection (onglets + checklist)",
+    (await page.locator('[data-testid="security-tablist"] [role="tab"]').count()) === 9 &&
+      (await page.locator('[data-testid^="protection-"]').count()) === 7,
+  );
   await page.screenshot({ path: "scripts/shots/system-security.png" });
 
   // 6. Settings deep-link from SYSTEM section still works
