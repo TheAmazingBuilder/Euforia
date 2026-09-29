@@ -59,3 +59,11 @@ export {
 } from "./preferences";
 export { useBrokerSession } from "./broker";
 export { sendCoachMessage } from "./coach";
+export {
+  useConnectIntegration,
+  useDisconnectIntegration,
+  useIntegrationsOverview,
+  useSimulateWebhook,
+  useSyncIntegration,
+  useTestIntegration,
+} from "./integrations";

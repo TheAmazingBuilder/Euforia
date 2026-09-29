@@ -35,6 +35,7 @@ export * from "./schemas/api";
 export * from "./schemas/market";
 export * from "./schemas/broker";
 export * from "./schemas/settings";
+export * from "./schemas/integration";
 
 // ── Pure utils ───────────────────────────────────────────────────────────────
 export * from "./utils/money";
@@ -42,3 +43,4 @@ export * from "./utils/risk";
 export * from "./utils/format";
 export * from "./utils/dates";
 export * from "./utils/rules";
+export * from "./utils/integrations";

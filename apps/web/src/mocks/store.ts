@@ -90,6 +90,7 @@ import {
 } from "@cosmoz/shared";
 
 import { buildFixtureData, USER_TZ, type FixtureData } from "./fixtures";
+import { integrationEngine } from "./integration-engine";
 
 /** Per-domain validation schemas — one source of truth, used by the handler. */
 const PREFERENCE_DOMAIN_SCHEMAS = {
@@ -234,9 +235,10 @@ export function createMockStore() {
     return alert;
   }
 
-  /** GET /eco-events — economic calendar, chronological. */
+  /** GET /eco-events — economic calendar, chronological. Fed by the
+   *  Integration Hub's economic provider pipeline (§9/§22), not hardcoded. */
   function listEcoEvents(): EcoEventsResponse {
-    return { events: [...data.ecoEvents] };
+    return integrationEngine.listEcoEventsForCalendar();
   }
 
   /** GET /export/backup — full authored-data snapshot (feature 12). */

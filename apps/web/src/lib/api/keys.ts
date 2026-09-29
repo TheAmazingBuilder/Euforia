@@ -25,6 +25,7 @@ export const queryKeys = {
   skippedTrades: ["skipped-trades"] as const,
   sessionTimeline: ["session-timeline"] as const,
   brokerSession: ["broker-session"] as const,
+  integrations: ["integrations"] as const,
 } as const;
 
 /**

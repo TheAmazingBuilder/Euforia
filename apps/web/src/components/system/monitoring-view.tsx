@@ -10,7 +10,7 @@ import {
   Wifi,
   type LucideIcon,
 } from "lucide-react";
-import { COSMOZ_VERSION } from "@cosmoz/shared";
+import { COSMOZ_VERSION, statusSeverity } from "@cosmoz/shared";
 
 import { Badge } from "@/components/ui/badge";
 import {
@@ -20,7 +20,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { useIntegrationsOverview } from "@/lib/api/queries";
 import { useNowMs } from "@/lib/realtime/use-now";
+import { isSyncStale } from "@cosmoz/shared";
 
 /**
  * /monitoring — system health for the platform surfaces. Data-side services
@@ -174,6 +176,70 @@ export function MonitoringView() {
           </CardDescription>
         </CardHeader>
       </Card>
+
+      <IntegrationHealthStrip nowMs={nowMs} />
     </div>
+  );
+}
+
+/** §23 — integrations expose health; Monitoring detects stale providers. */
+function IntegrationHealthStrip({ nowMs }: { nowMs: number | null }) {
+  const { data: overview } = useIntegrationsOverview();
+  if (overview === undefined) return null;
+
+  const rows = [...overview.providers].sort(
+    (a, b) => statusSeverity(a.status) - statusSeverity(b.status),
+  );
+
+  return (
+    <Card className="border-border bg-surface" data-testid="monitoring-integrations">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 font-heading text-base font-semibold">
+          <ServerCog className="size-4 text-accent" aria-hidden="true" />
+          Integrations health
+        </CardTitle>
+        <CardDescription>
+          Every integration reports status, latency and last successful sync —
+          stale providers (15 min TTL) are flagged here.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="grid gap-1.5">
+        {rows.map((provider) => {
+          const stale =
+            nowMs !== null &&
+            provider.status !== "DISCONNECTED" &&
+            isSyncStale(provider.sync.lastSuccessAt, nowMs);
+          return (
+            <div
+              key={provider.id}
+              className="flex flex-wrap items-center justify-between gap-2 text-xs"
+            >
+              <span className="font-medium">{provider.name}</span>
+              <span className="flex items-center gap-2">
+                {stale && (
+                  <Badge variant="outline" className="text-[10px]">
+                    stale
+                  </Badge>
+                )}
+                <span className="font-mono tabular-nums text-muted-foreground">
+                  {provider.latencyMs === null ? "—" : `${provider.latencyMs} ms`}
+                </span>
+                <Badge
+                  variant={
+                    provider.status === "CONNECTED"
+                      ? "default"
+                      : provider.status === "DISCONNECTED"
+                        ? "outline"
+                        : "secondary"
+                  }
+                >
+                  {provider.status === "AUTH_REQUIRED" ? "auth" : provider.status.toLowerCase()}
+                </Badge>
+              </span>
+            </div>
+          );
+        })}
+      </CardContent>
+    </Card>
   );
 }

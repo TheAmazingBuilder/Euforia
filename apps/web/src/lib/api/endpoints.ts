@@ -48,4 +48,11 @@ export const apiPaths = {
   disciplineScore: "/discipline/score",
   mistakesLedger: "/mistakes/ledger",
   brokerSession: "/broker/session",
+  integrationsOverview: "/integrations/overview",
+  integrationConnect: (providerId: string) => `/integrations/providers/${providerId}/connect`,
+  integrationDisconnect: (providerId: string) => `/integrations/providers/${providerId}/disconnect`,
+  integrationTest: (providerId: string) => `/integrations/providers/${providerId}/test`,
+  integrationSync: (providerId: string) => `/integrations/providers/${providerId}/sync`,
+  integrationWebhookSimulate: (endpointId: string) =>
+    `/integrations/webhooks/${endpointId}/simulate`,
 } as const;
