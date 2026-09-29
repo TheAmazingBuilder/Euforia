@@ -67,3 +67,15 @@ export {
   useSyncIntegration,
   useTestIntegration,
 } from "./integrations";
+export {
+  useChangePassword,
+  useConfirmTwoFactor,
+  useCreateApiKey,
+  useDisableTwoFactor,
+  useEnableTwoFactor,
+  useReauth,
+  useRegenerateRecoveryCodes,
+  useRevokeApiKey,
+  useRevokeSessions,
+  useSecurityOverview,
+} from "./security";

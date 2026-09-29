@@ -142,9 +142,9 @@ export const SIDEBAR_ITEMS: NavItem[] = [
     label: "Security",
     icon: LockKeyhole,
     description:
-      "Sessions, password and the credentials vault that keeps your broker keys safe.",
+      "Protection center: 2FA, sessions, API keys, connected accounts and the audit trail.",
     comingSoon:
-      "Session management, 2FA and the encrypted credentials vault will live here.",
+      "Passkeys, IP allow-lists and exportable audit reports will land here later.",
   },
   {
     href: "/settings",

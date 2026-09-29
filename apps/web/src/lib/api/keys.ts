@@ -26,6 +26,7 @@ export const queryKeys = {
   sessionTimeline: ["session-timeline"] as const,
   brokerSession: ["broker-session"] as const,
   integrations: ["integrations"] as const,
+  security: ["security"] as const,
 } as const;
 
 /**

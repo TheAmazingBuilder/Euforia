@@ -4,6 +4,7 @@ import { preferencesHandlers } from "./preferences";
 import { disciplineHandlers } from "./discipline";
 import { ecoHandlers } from "./eco";
 import { integrationHandlers } from "./integrations";
+import { securityHandlers } from "./security";
 import { ghostHandlers } from "./ghosts";
 import { playbookHandlers } from "./playbook";
 import { profileHandlers } from "./profile";
@@ -27,4 +28,5 @@ export const handlers = [
   ...preferencesHandlers,
   ...brokerHandlers,
   ...integrationHandlers,
+  ...securityHandlers,
 ];

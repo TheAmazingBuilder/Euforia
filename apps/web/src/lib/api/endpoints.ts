@@ -55,4 +55,14 @@ export const apiPaths = {
   integrationSync: (providerId: string) => `/integrations/providers/${providerId}/sync`,
   integrationWebhookSimulate: (endpointId: string) =>
     `/integrations/webhooks/${endpointId}/simulate`,
+  securityOverview: "/security/overview",
+  securityReauth: "/security/reauth",
+  securityPassword: "/security/password",
+  securityTwoFactorEnable: "/security/2fa/enable",
+  securityTwoFactorConfirm: "/security/2fa/confirm",
+  securityTwoFactorDisable: "/security/2fa/disable",
+  securityTwoFactorRecovery: "/security/2fa/recovery/regenerate",
+  securityApiKeys: "/security/api-keys",
+  securityApiKeyRevoke: (keyId: string) => `/security/api-keys/${keyId}/revoke`,
+  securitySessionRevoke: "/security/sessions/revoke",
 } as const;
