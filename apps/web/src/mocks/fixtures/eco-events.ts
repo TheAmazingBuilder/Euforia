@@ -5,8 +5,9 @@ import { mulberry32, uuid, type Rng } from "./random";
 /**
  * Economic-calendar fixtures — deterministic per UTC day (same seed rule as
  * buildFixtureData), anchored to the current day: a rolling window of
- * [-7 .. +13] days so the calendar always shows released history and a
- * forward agenda. Realistic macro releases on their usual Toronto-time
+ * [-92 .. +13] days: the released-history span now covers the full 90-day
+ * trade fixture window so the Analytics economic-event context can classify
+ * the whole journal (the calendar itself filters client-side per day). Realistic macro releases on their usual Toronto-time
  * slots: US data 8:30/10:00 ET, FOMC 14:00 ET, ECB 8:15 CET.
  */
 
@@ -81,7 +82,7 @@ export function buildEcoEvents(nowMs: number): EcoEvent[] {
 
   const events: EcoEvent[] = [];
 
-  for (let dayOffset = -7; dayOffset <= 13; dayOffset += 1) {
+  for (let dayOffset = -92; dayOffset <= 13; dayOffset += 1) {
     const day = new Date(nowMs + dayOffset * 86_400_000);
     const pool = POOLS[day.getUTCDay()];
     if (pool === undefined) continue; // weekends: no scheduled macro data

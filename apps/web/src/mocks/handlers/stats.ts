@@ -1,4 +1,5 @@
 import { http, HttpResponse } from "msw";
+import { analyticsFiltersSchema } from "@cosmoz/shared";
 
 import { apiPaths } from "@/lib/api/endpoints";
 import { mockStore } from "@/mocks/store";
@@ -23,6 +24,27 @@ export const statsHandlers = [
     await latency();
     try {
       return HttpResponse.json(mockStore.analytics());
+    } catch (error) {
+      return toErrorResponse(error);
+    }
+  }),
+
+  // GET /stats/analytics-suite — the Analytics MODULE dataset: the global
+  // filter system's single source of truth (MASTER PROMPT §5). Zod-parsed
+  // query params; unknown params are ignored, invalid values → 422.
+  http.get(endpoint(apiPaths.statsAnalyticsSuite), async ({ request }) => {
+    await latency();
+    try {
+      const url = new URL(request.url);
+      const raw = Object.fromEntries(
+        [...url.searchParams.entries()].filter(([key]) => key !== "sims"),
+      );
+      const cleaned = Object.fromEntries(
+        Object.entries(raw).filter(([, value]) => value !== "" && value !== "all"),
+      );
+      const filters = analyticsFiltersSchema.parse(cleaned);
+      const sims = Number(url.searchParams.get("sims") ?? "400");
+      return HttpResponse.json(mockStore.analyticsSuite(filters, Number.isFinite(sims) ? sims : 400));
     } catch (error) {
       return toErrorResponse(error);
     }

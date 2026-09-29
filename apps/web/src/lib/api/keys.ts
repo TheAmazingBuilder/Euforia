@@ -22,6 +22,7 @@ export const queryKeys = {
   ecoEvents: ["eco-events"] as const,
   statsOverview: ["stats-overview"] as const,
   statsAnalytics: ["stats-analytics"] as const,
+  analyticsSuite: (filters: string) => ["analytics-suite", filters] as const,
   skippedTrades: ["skipped-trades"] as const,
   sessionTimeline: ["session-timeline"] as const,
   brokerSession: ["broker-session"] as const,

@@ -41,6 +41,7 @@ export const apiPaths = {
   coachChat: "/coach/chat",
   statsOverview: "/stats/overview",
   statsAnalytics: "/stats/analytics",
+  statsAnalyticsSuite: "/stats/analytics-suite",
   rules: "/rules",
   rule: (ruleId: string) => `/rules/${ruleId}`,
   violations: "/violations",

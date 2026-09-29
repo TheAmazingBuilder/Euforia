@@ -1,5 +1,6 @@
 import { z } from "zod";
 import {
+  assetClassSchema,
   currencySchema,
   directionSchema,
   emotionSchema,
@@ -861,3 +862,407 @@ export const profileUpdateInputSchema = z.object({
 });
 
 export type ProfileUpdateInput = z.infer<typeof profileUpdateInputSchema>;
+
+// ── Analytics Suite (GET /stats/analytics-suite) ────────────────────────────
+// Professional Analytics module — ONE endpoint = ONE dataset definition so
+// every tab of the module renders the exact same filtered trade set (MASTER
+// PROMPT §5). All aggregates are computed SERVER-SIDE on CLOSED trades only;
+// open positions never leak into performance statistics (§38).
+
+/** Named date presets resolved SERVER-SIDE against the trading-day clock. */
+export const analyticsPeriodSchema = z.enum([
+  "TODAY",
+  "YESTERDAY",
+  "THIS_WEEK",
+  "LAST_WEEK",
+  "THIS_MONTH",
+  "LAST_MONTH",
+  "THIS_QUARTER",
+  "THIS_YEAR",
+  "LAST_30",
+  "LAST_90",
+  "YTD",
+  "ALL",
+  "CUSTOM",
+]);
+export type AnalyticsPeriod = z.infer<typeof analyticsPeriodSchema>;
+
+/** Global filter query — every field optional; absent = unfiltered. */
+export const analyticsFiltersSchema = z.object({
+  period: analyticsPeriodSchema.default("ALL"),
+  /** Required when period = CUSTOM (trading-date keys, inclusive). */
+  customFrom: dateKeySchema.optional(),
+  customTo: dateKeySchema.optional(),
+  accountId: uuidSchema.optional(),
+  instrumentId: uuidSchema.optional(),
+  assetClass: assetClassSchema.optional(),
+  /** "none" = out-of-playbook trades (strategyId null). */
+  strategyId: uuidSchema.or(z.literal("none")).optional(),
+  direction: directionSchema.optional(),
+  /** Session key from ANALYTIC_SESSIONS (derived from the entry hour, UTC). */
+  session: z.enum(["ASIA", "LONDON", "NEW_YORK"]).optional(),
+  emotion: emotionSchema.optional(),
+  exitReason: exitReasonSchema.optional(),
+  tagId: uuidSchema.optional(),
+});
+export type AnalyticsFilters = z.infer<typeof analyticsFiltersSchema>;
+
+/** Dataset descriptor — the "WHAT DATASET AM I LOOKING AT?" line (§5). */
+export const analyticsDatasetMetaSchema = z.object({
+  resolvedFrom: dateKeySchema,
+  resolvedTo: dateKeySchema,
+  /** Human-readable filter echo, ready to render (server is the truth). */
+  descriptor: z.string().min(1),
+  closedTrades: z.number().int().min(0),
+  openTradesExcluded: z.number().int().min(0),
+  /** Non-fatal dataset observations (multi-currency, tiny sample…). */
+  warnings: z.array(z.string()),
+  /** Money aggregates are only meaningful within one currency. */
+  singleCurrency: z.boolean(),
+});
+export type AnalyticsDatasetMeta = z.infer<typeof analyticsDatasetMetaSchema>;
+
+/**
+ * Summary band (§6/§8). Every ratio can be null when the sample cannot
+ * support it — the client renders "—" with the n, never a fake zero.
+ * `sharpeNote`/`sortinoNote` carry the exact methodology (§8: never present a
+ * Sharpe without explaining how it was computed).
+ */
+export const analyticsSummarySchema = z.object({
+  netPnl: decimalStringSchema.nullable(),
+  grossProfit: decimalStringSchema.nullable(),
+  grossLoss: decimalStringSchema.nullable(),
+  /** Ratios 0–1. */
+  winRate: decimalStringSchema.nullable(),
+  lossRate: decimalStringSchema.nullable(),
+  profitFactor: decimalStringSchema.nullable(),
+  /** Expectancy: per-trade mean of R (primary) and mean money P&L. */
+  expectancyR: decimalStringSchema,
+  expectancyMoney: decimalStringSchema.nullable(),
+  avgR: decimalStringSchema.nullable(),
+  medianR: decimalStringSchema.nullable(),
+  bestR: decimalStringSchema.nullable(),
+  worstR: decimalStringSchema.nullable(),
+  avgWinMoney: decimalStringSchema.nullable(),
+  avgLossMoney: decimalStringSchema.nullable(),
+  avgWinR: decimalStringSchema.nullable(),
+  avgLossR: decimalStringSchema.nullable(),
+  payoffRatio: decimalStringSchema.nullable(),
+  maxDrawdownR: decimalStringSchema,
+  maxDrawdownPct: decimalStringSchema.nullable(),
+  recoveryFactor: decimalStringSchema.nullable(),
+  /** Annualization: √252 over daily R sums, risk-free = 0 (see notes). */
+  sharpe: decimalStringSchema.nullable(),
+  sortino: decimalStringSchema.nullable(),
+  /** System Quality Number — mean(R) ÷ std(R) × √n, on the filtered set. */
+  sqn: decimalStringSchema.nullable(),
+  trades: z.number().int().min(0),
+  winningTrades: z.number().int().min(0),
+  losingTrades: z.number().int().min(0),
+  breakevenTrades: z.number().int().min(0),
+  /** Mean holding time in minutes (null when exits are missing). */
+  avgDurationMin: z.number().int().nullable(),
+  sharpeNote: z.string(),
+  sortinoNote: z.string(),
+});
+export type AnalyticsSummary = z.infer<typeof analyticsSummarySchema>;
+
+/** Equity/balance point with the running drawdown for the overlay (§7/§11). */
+export const analyticsEquityPointSchema = z.object({
+  date: dateKeySchema,
+  equity: decimalStringSchema,
+  /** Peak-to-now decline in % at this point (≤ 0). */
+  drawdownPct: decimalStringSchema,
+});
+export type AnalyticsEquityPoint = z.infer<typeof analyticsEquityPointSchema>;
+
+/** Per-trade cumulative-R sequence (chronological) for the R curve + rolling. */
+export const analyticsRPointSchema = z.object({
+  index: z.number().int().min(0),
+  date: dateKeySchema,
+  symbol: z.string(),
+  r: decimalStringSchema,
+  cumR: decimalStringSchema,
+});
+export type AnalyticsRPoint = z.infer<typeof analyticsRPointSchema>;
+
+/** Rolling window point (§7 rolling metrics). */
+export const analyticsRollingPointSchema = z.object({
+  index: z.number().int().min(0),
+  winRate: decimalStringSchema.nullable(),
+  avgR: decimalStringSchema.nullable(),
+});
+export type AnalyticsRollingPoint = z.infer<typeof analyticsRollingPointSchema>;
+
+/** Daily P&L row over the filtered window (zero-filled days with activity). */
+export const analyticsDailyPointSchema = z.object({
+  date: dateKeySchema,
+  pnl: decimalStringSchema.nullable(),
+  r: decimalStringSchema,
+  trades: z.number().int().min(0),
+  wins: z.number().int().min(0),
+});
+export type AnalyticsDailyPoint = z.infer<typeof analyticsDailyPointSchema>;
+
+/** Histogram bin (P&L, R, duration…) — ready to render. */
+export const analyticsHistogramBinSchema = z.object({
+  label: z.string().min(1),
+  count: z.number().int().min(0),
+  /** Bin center for charts (null = non-numeric bucket). */
+  center: decimalStringSchema.nullable(),
+});
+export type AnalyticsHistogramBin = z.infer<typeof analyticsHistogramBinSchema>;
+
+/**
+ * Drawdown period (§11): Peak → Start → Bottom → Recovery with the trades
+ * that dug the hole (drill-down §33). `recovered*` stay null while the
+ * equity is still under the period peak — no invented recovery dates.
+ */
+export const analyticsDrawdownPeriodSchema = z.object({
+  id: z.string().min(1),
+  peakDate: dateKeySchema,
+  bottomDate: dateKeySchema,
+  recoveredDate: dateKeySchema.nullable(),
+  peakEquity: decimalStringSchema,
+  bottomEquity: decimalStringSchema,
+  drawdownMoney: decimalStringSchema.nullable(),
+  drawdownR: decimalStringSchema,
+  durationDays: z.number().int().min(0),
+  recoveryDays: z.number().int().min(0).nullable(),
+  recoveryTrades: z.number().int().min(0).nullable(),
+  trades: z.array(
+    z.object({
+      id: uuidSchema,
+      date: dateKeySchema,
+      symbol: z.string(),
+      r: decimalStringSchema,
+    }),
+  ),
+});
+export type AnalyticsDrawdownPeriod = z.infer<typeof analyticsDrawdownPeriodSchema>;
+
+/** Risk exposure block (§10) — planned-vs-actual when the data allows it. */
+export const analyticsRiskSchema = z.object({
+  tradesWithRisk: z.number().int().min(0),
+  avgRiskMoney: decimalStringSchema.nullable(),
+  maxRiskMoney: decimalStringSchema.nullable(),
+  minRiskMoney: decimalStringSchema.nullable(),
+  /** Std of per-trade risk ÷ mean, in % — how consistent the sizing is. */
+  riskDeviationPct: decimalStringSchema.nullable(),
+  /** Daily / weekly / monthly risk budgets actually consumed (Σ risk/day). */
+  maxDailyRisk: decimalStringSchema.nullable(),
+  maxConcurrentPositions: z.number().int().min(0),
+  /** plannedRR vs realized R on trades that carried a plan. */
+  plannedVsRealized: z.array(
+    z.object({
+      bucket: z.string().min(1),
+      trades: z.number().int().min(0),
+      avgRealizedR: decimalStringSchema.nullable(),
+    }),
+  ),
+});
+export type AnalyticsRisk = z.infer<typeof analyticsRiskSchema>;
+
+/** Per-strategy factual rows (§12) — NO overall ranking verdict. */
+export const analyticsStrategyRowSchema = z.object({
+  strategyId: z.string().nullable(),
+  name: z.string().min(1),
+  trades: z.number().int().min(0),
+  winRate: decimalStringSchema.nullable(),
+  profitFactor: decimalStringSchema.nullable(),
+  expectancyR: decimalStringSchema.nullable(),
+  netPnl: decimalStringSchema.nullable(),
+  avgWinR: decimalStringSchema.nullable(),
+  avgLossR: decimalStringSchema.nullable(),
+  maxDrawdownR: decimalStringSchema,
+  avgDurationMin: z.number().int().nullable(),
+  followedPlanPct: decimalStringSchema.nullable(),
+});
+export type AnalyticsStrategyRow = z.infer<typeof analyticsStrategyRowSchema>;
+
+/** Per-symbol / asset-class rows (§13). */
+export const analyticsSymbolRowSchema = z.object({
+  instrumentId: uuidSchema,
+  symbol: z.string().min(1),
+  assetClass: z.string().min(1),
+  trades: z.number().int().min(0),
+  winRate: decimalStringSchema.nullable(),
+  profitFactor: decimalStringSchema.nullable(),
+  netPnl: decimalStringSchema.nullable(),
+  avgR: decimalStringSchema.nullable(),
+});
+export type AnalyticsSymbolRow = z.infer<typeof analyticsSymbolRowSchema>;
+
+/** Direction comparison (§15). */
+export const analyticsDirectionRowSchema = z.object({
+  direction: directionSchema,
+  trades: z.number().int().min(0),
+  winRate: decimalStringSchema.nullable(),
+  profitFactor: decimalStringSchema.nullable(),
+  netPnl: decimalStringSchema.nullable(),
+  expectancyR: decimalStringSchema.nullable(),
+  avgDurationMin: z.number().int().nullable(),
+});
+export type AnalyticsDirectionRow = z.infer<typeof analyticsDirectionRowSchema>;
+
+/** Psychology block (§19) — correlation wording lives in the UI, not here. */
+export const analyticsPsychologySchema = z.object({
+  emotionsBefore: z.array(analyticsBucketSchema),
+  emotionsAfter: z.array(analyticsBucketSchema),
+  confidenceBands: z.array(
+    z.object({
+      band: z.string().min(1),
+      trades: z.number().int().min(0),
+      winRate: decimalStringSchema.nullable(),
+      avgR: decimalStringSchema.nullable(),
+    }),
+  ),
+  tilt: z.array(tiltPointSchema),
+});
+export type AnalyticsPsychology = z.infer<typeof analyticsPsychologySchema>;
+
+/** Trade-quality block (§16–§18): plan adherence + MAE/MFE where present. */
+export const analyticsQualitySchema = z.object({
+  planFollowed: z.object({
+    followed: z.number().int().min(0),
+    violated: z.number().int().min(0),
+    unknown: z.number().int().min(0),
+  }),
+  /** MAE/MFE need intratrade excursions; absent → available=false (§34). */
+  excursionAvailable: z.boolean(),
+  mfe: z.object({
+    avgR: decimalStringSchema.nullable(),
+    medianR: decimalStringSchema.nullable(),
+    /** avg |realized R| ÷ avg MFE R — exit efficiency, 0–1+. */
+    capturePct: decimalStringSchema.nullable(),
+  }),
+  mae: z.object({
+    avgR: decimalStringSchema.nullable(),
+    medianR: decimalStringSchema.nullable(),
+  }),
+  /** Scatter: MFE vs realized + MAE vs realized (per trade). */
+  scatter: z.array(
+    z.object({
+      id: uuidSchema,
+      symbol: z.string(),
+      mfeR: decimalStringSchema.nullable(),
+      maeR: decimalStringSchema.nullable(),
+      realizedR: decimalStringSchema,
+    }),
+  ),
+  mfeHistogram: z.array(analyticsHistogramBinSchema),
+  maeHistogram: z.array(analyticsHistogramBinSchema),
+});
+export type AnalyticsQuality = z.infer<typeof analyticsQualitySchema>;
+
+/** Mistakes & rules block (§20) — ledger recomputed on the FILTERED set. */
+export const analyticsMistakesSchema = z.object({
+  entries: z.array(mistakeLedgerEntrySchema),
+  violatingTrades: z.number().int().min(0),
+  totalR: decimalStringSchema,
+});
+export type AnalyticsMistakes = z.infer<typeof analyticsMistakesSchema>;
+
+/** Economic-event context (§21) — only where calendar coverage exists. */
+export const analyticsEventsSchema = z.object({
+  /** Calendar data only covers its rolling window — honesty first (§34). */
+  calendarCoverage: z.object({
+    from: dateKeySchema.nullable(),
+    to: dateKeySchema.nullable(),
+    classifiedTrades: z.number().int().min(0),
+    unclassifiedTrades: z.number().int().min(0),
+  }),
+  phases: z.array(analyticsBucketSchema),
+  byImpact: z.array(analyticsBucketSchema),
+});
+export type AnalyticsEvents = z.infer<typeof analyticsEventsSchema>;
+
+/** Advanced statistics block (§24) with the full distribution profile. */
+export const analyticsAdvancedSchema = z.object({
+  r: z.object({
+    mean: decimalStringSchema.nullable(),
+    median: decimalStringSchema.nullable(),
+    stddev: decimalStringSchema.nullable(),
+    variance: decimalStringSchema.nullable(),
+    skewness: decimalStringSchema.nullable(),
+    kurtosis: decimalStringSchema.nullable(),
+    p05: decimalStringSchema.nullable(),
+    p25: decimalStringSchema.nullable(),
+    p75: decimalStringSchema.nullable(),
+    p95: decimalStringSchema.nullable(),
+  }),
+  /** Consecutive win/loss streak profile. */
+  streaks: z.object({
+    longestWin: z.number().int().min(0),
+    longestLoss: z.number().int().min(0),
+    avgWin: decimalStringSchema.nullable(),
+    avgLoss: decimalStringSchema.nullable(),
+  }),
+});
+export type AnalyticsAdvanced = z.infer<typeof analyticsAdvancedSchema>;
+
+/** Monte Carlo (§25) — SIMULATION, never a prediction; methodology noted. */
+export const analyticsMonteCarloSchema = z.object({
+  simulations: z.number().int().min(1),
+  tradesPerRun: z.number().int().min(0),
+  /** Percentile bands of the cumulative-R path, per trade index. */
+  bands: z.array(
+    z.object({
+      index: z.number().int().min(0),
+      p05: decimalStringSchema,
+      p25: decimalStringSchema,
+      p50: decimalStringSchema,
+      p75: decimalStringSchema,
+      p95: decimalStringSchema,
+    }),
+  ),
+  finalR: z.object({ p05: decimalStringSchema, p50: decimalStringSchema, p95: decimalStringSchema }),
+  maxDrawdownR: z.object({ p50: decimalStringSchema, p95: decimalStringSchema, worst: decimalStringSchema }),
+  methodology: z.string(),
+});
+export type AnalyticsMonteCarlo = z.infer<typeof analyticsMonteCarloSchema>;
+
+/** Report rollups (§26) — daily / weekly / monthly aggregates. */
+export const analyticsReportRowSchema = z.object({
+  key: z.string().min(1),
+  trades: z.number().int().min(0),
+  netPnl: decimalStringSchema.nullable(),
+  r: decimalStringSchema,
+  winRate: decimalStringSchema.nullable(),
+});
+export type AnalyticsReportRow = z.infer<typeof analyticsReportRowSchema>;
+
+export const analyticsSuiteResponseSchema = z.object({
+  meta: analyticsDatasetMetaSchema,
+  currency: currencySchema,
+  summary: analyticsSummarySchema,
+  equity: z.array(analyticsEquityPointSchema),
+  cumulativeR: z.array(analyticsRPointSchema),
+  rolling: z.array(analyticsRollingPointSchema),
+  dailyPnl: z.array(analyticsDailyPointSchema),
+  rHistogram: z.array(analyticsHistogramBinSchema),
+  pnlHistogram: z.array(analyticsHistogramBinSchema),
+  durationHistogram: z.array(analyticsHistogramBinSchema),
+  drawdowns: z.array(analyticsDrawdownPeriodSchema),
+  risk: analyticsRiskSchema,
+  strategies: z.array(analyticsStrategyRowSchema),
+  symbols: z.array(analyticsSymbolRowSchema),
+  assetClasses: z.array(analyticsSymbolRowSchema),
+  directions: z.array(analyticsDirectionRowSchema),
+  sessions: z.array(analyticsBucketSchema),
+  hours: z.array(analyticsBucketSchema),
+  weekdays: z.array(analyticsBucketSchema),
+  heatmap: z.array(heatmapCellSchema),
+  psychology: analyticsPsychologySchema,
+  quality: analyticsQualitySchema,
+  mistakes: analyticsMistakesSchema,
+  events: analyticsEventsSchema,
+  advanced: analyticsAdvancedSchema,
+  monteCarlo: analyticsMonteCarloSchema,
+  reports: z.object({
+    daily: z.array(analyticsReportRowSchema),
+    weekly: z.array(analyticsReportRowSchema),
+    monthly: z.array(analyticsReportRowSchema),
+  }),
+});
+export type AnalyticsSuiteResponse = z.infer<typeof analyticsSuiteResponseSchema>;
