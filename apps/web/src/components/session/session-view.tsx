@@ -16,6 +16,7 @@ import { GhostSettlements } from "@/components/session/ghost-settlements";
 import { MoodStrip } from "@/components/session/mood-strip";
 import { OpenTradeCard } from "@/components/session/open-trade-card";
 import { PriceChart } from "@/components/session/price-chart";
+import { PriceAlertToaster } from "@/components/session/price-alert-toaster";
 import { RegretRegistry } from "@/components/session/regret-registry";
 import { SessionToolbar } from "@/components/session/session-toolbar";
 import { SymbolPositions } from "@/components/session/symbol-positions";
@@ -51,14 +52,11 @@ function SessionSkeleton() {
   return (
     <div className="space-y-4 sm:space-y-6" aria-busy="true" aria-label="Loading session">
       <Skeleton className="h-[120px] rounded-xl" />
-      <div className="grid gap-3 sm:gap-4 lg:grid-cols-3">
-        <div className="space-y-3 lg:col-span-2">
-          <Skeleton className="h-[420px] rounded-xl" />
-          <Skeleton className="h-[210px] rounded-xl" />
-        </div>
-        <div className="space-y-3">
+      <div className="space-y-3 sm:space-y-4">
+        <Skeleton className="h-[420px] rounded-xl sm:h-[440px] xl:h-[520px]" />
+        <div className="grid gap-3 sm:gap-4 lg:grid-cols-2">
           <Skeleton className="h-[280px] rounded-xl" />
-          <Skeleton className="h-[180px] rounded-xl" />
+          <Skeleton className="h-[280px] rounded-xl" />
         </div>
       </div>
     </div>
@@ -182,6 +180,8 @@ export function SessionView() {
   return (
     <div className="mx-auto w-full max-w-7xl space-y-4 sm:space-y-6">
       <GhostSettlementNotifier ghosts={pendingGhosts} />
+      {/* Live-feed level events (TP/SL touched) — toasts, invisible UI */}
+      <PriceAlertToaster trades={trades} instruments={instruments} quotes={quotes} />
 
       <header className="space-y-3">
         <h1 className="font-heading text-2xl font-bold tracking-tight sm:text-3xl">Session Live</h1>
@@ -210,23 +210,23 @@ export function SessionView() {
             phase={phase}
           />
 
-          <div className="grid gap-3 sm:gap-4 lg:grid-cols-3">
-            <div className="lg:col-span-2">
-              <PriceChart
-                symbol={symbol ?? "—"}
-                interval={interval}
-                instrument={instrument}
-                data={candles.data}
-                isLoading={candles.isLoading}
-                isError={candles.isError}
-                quote={quote}
-                overlayTrades={symbolTrades}
-              />
-            </div>
-            <div className="space-y-3 sm:space-y-4">
-              <BrokerPanel />
-              <SymbolPositions trades={symbolTrades} instrument={instrument} quote={quote} />
-            </div>
+          {/* ── Chart row: the chart spans the FULL container width ─────── */}
+          <PriceChart
+            symbol={symbol ?? "—"}
+            interval={interval}
+            instrument={instrument}
+            data={candles.data}
+            isLoading={candles.isLoading}
+            isError={candles.isError}
+            quote={quote}
+            overlayTrades={symbolTrades}
+            heightClass="h-[320px] sm:h-[440px] xl:h-[540px]"
+          />
+
+          {/* ── Station side panels — account + symbol positions ────────── */}
+          <div className="grid gap-3 sm:gap-4 lg:grid-cols-2">
+            <BrokerPanel />
+            <SymbolPositions trades={symbolTrades} instrument={instrument} quote={quote} />
           </div>
 
           {/* ── Journaling flow (existing, unchanged contract) ──────────── */}

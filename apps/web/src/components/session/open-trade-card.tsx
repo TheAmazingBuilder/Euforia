@@ -232,7 +232,9 @@ function ModifyStopEditor({
       });
       toast.success(
         widened ? "Stop widened — logged as a behavioral event" : "Stop updated",
-        { description: "The server recorded this modification in the trade event log." },
+        {
+          description: `${formatPrice(Number(currentStop), digits)} → ${formatPrice(Number(value), digits)} — recorded in the trade event log.`,
+        },
       );
       onDone();
     } catch {
