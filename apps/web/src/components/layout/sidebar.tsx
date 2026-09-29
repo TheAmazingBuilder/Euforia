@@ -8,7 +8,9 @@ import { cn } from "@/lib/utils";
 import { openGhostModal } from "@/lib/hooks/use-ghost-modal";
 import {
   SIDEBAR_FIRST_ITEM,
-  SIDEBAR_REST_ITEMS,
+  NAV_SECTIONS,
+  getNavItem,
+  type NavItem,
 } from "@/lib/navigation";
 
 type SidebarNavProps = {
@@ -37,9 +39,7 @@ export function SidebarNav({
   // accent stays reserved for the primary action and interactive marks.
   const linkActive = "bg-foreground text-background";
 
-  const renderItem = (
-    item: (typeof SIDEBAR_REST_ITEMS)[number],
-  ) => {
+  const renderItem = (item: NavItem) => {
     const Icon = item.icon;
     const active = pathname === item.href;
     return (
@@ -87,7 +87,22 @@ export function SidebarNav({
         {!collapsed && <span className="truncate text-xs">Setup seen, not taken</span>}
       </button>
 
-      {SIDEBAR_REST_ITEMS.map(renderItem)}
+      {/* Sectioned navigation — grouped, with the SYSTEM section last. */}
+      {NAV_SECTIONS.map((section) => (
+        <div key={section.title} className="flex flex-col gap-1">
+          {collapsed ? (
+            <div
+              aria-hidden="true"
+              className="my-2 h-px w-6 self-center bg-border"
+            />
+          ) : (
+            <div className="px-2.5 pb-1 pt-4 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">
+              {section.title}
+            </div>
+          )}
+          {section.hrefs.map(getNavItem).map(renderItem)}
+        </div>
+      ))}
     </nav>
   );
 }

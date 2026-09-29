@@ -3,9 +3,12 @@ import {
   BookOpen,
   CalendarDays,
   ChartColumn,
+  Cable,
+  HeartPulse,
   House,
   LayoutDashboard,
   List,
+  LockKeyhole,
   NotebookPen,
   Settings,
   ShieldCheck,
@@ -117,6 +120,33 @@ export const SIDEBAR_ITEMS: NavItem[] = [
       "Goal setting and progress tracking will compare your targets with your real trading behavior.",
   },
   {
+    href: "/monitoring",
+    label: "Monitoring",
+    icon: HeartPulse,
+    description:
+      "System health at a glance: market feed, API status and offline readiness.",
+    comingSoon:
+      "Live service dashboards, latency history and incident notes will live here.",
+  },
+  {
+    href: "/integrations",
+    label: "Integrations",
+    icon: Cable,
+    description:
+      "Connect your brokers and data providers — Deriv, MT5, cTrader, Binance.",
+    comingSoon:
+      "Broker adapters will plug into this hub with scoped, read-only connections.",
+  },
+  {
+    href: "/security",
+    label: "Security",
+    icon: LockKeyhole,
+    description:
+      "Sessions, password and the credentials vault that keeps your broker keys safe.",
+    comingSoon:
+      "Session management, 2FA and the encrypted credentials vault will live here.",
+  },
+  {
     href: "/settings",
     label: "Settings",
     icon: Settings,
@@ -130,6 +160,32 @@ export const SIDEBAR_ITEMS: NavItem[] = [
 /** Desktop sidebar order: Dashboard first, then the New Trade action, then the rest. */
 export const SIDEBAR_FIRST_ITEM = SIDEBAR_ITEMS[0];
 export const SIDEBAR_REST_ITEMS = SIDEBAR_ITEMS.slice(1);
+
+/**
+ * Sidebar SECTIONS — the navigation is grouped, with the SYSTEM section
+ * regrouping the platform surfaces (Monitoring, Settings, Integrations,
+ * Security) apart from the trading/journal surfaces.
+ */
+export type NavSection = {
+  title: string;
+  /** Hrefs in display order — resolved against SIDEBAR_ITEMS. */
+  hrefs: string[];
+};
+
+export const NAV_SECTIONS: NavSection[] = [
+  { title: "Trading", hrefs: ["/session", "/playbook", "/calendar"] },
+  { title: "Journal", hrefs: ["/trades", "/journal", "/discipline"] },
+  { title: "Insights", hrefs: ["/analytics", "/coach", "/goals"] },
+  {
+    title: "System",
+    hrefs: ["/monitoring", "/settings", "/integrations", "/security"],
+  },
+];
+
+/** Flat, ordered list of every sectioned href (after the Dashboard entry). */
+export const SECTIONED_HREFS: string[] = NAV_SECTIONS.flatMap(
+  (section) => section.hrefs,
+);
 
 /** Bottom navigation bar (mobile only): Home, Trades, [+ FAB], Playbook, Stats. */
 export type BottomNavItem = {
