@@ -85,12 +85,12 @@ export const SIDEBAR_ITEMS: NavItem[] = [
   },
   {
     href: "/journal",
-    label: "Journal",
+    label: "Trade Review",
     icon: NotebookPen,
     description:
-      "Every trade, every note, every lesson: your searchable trading log.",
+      "Review every executed trade: plan vs. actual, rule adherence and the lesson you keep.",
     comingSoon:
-      "The trade log will list sessions and trades with filters, notes and post-trade grading.",
+      "The trade review workflow will grade execution against the playbook and capture lessons.",
   },
   {
     href: "/discipline",
@@ -174,7 +174,7 @@ export type NavSection = {
 
 export const NAV_SECTIONS: NavSection[] = [
   { title: "Trading", hrefs: ["/session", "/playbook", "/calendar"] },
-  { title: "Journal", hrefs: ["/trades", "/journal", "/discipline"] },
+  { title: "Trade Review", hrefs: ["/trades", "/journal", "/discipline"] },
   { title: "Insights", hrefs: ["/analytics", "/coach", "/goals"] },
   {
     title: "System",
