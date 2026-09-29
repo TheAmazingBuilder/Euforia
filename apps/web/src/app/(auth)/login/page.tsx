@@ -9,6 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { CosmozLogo } from "@/components/layout/cosmoz-logo";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
@@ -21,9 +22,7 @@ export default function LoginPage() {
   return (
     <Card className="w-full max-w-sm border-border bg-surface">
       <CardHeader className="items-start gap-3">
-        <span className="grid size-9 place-items-center rounded-md bg-accent font-heading text-base font-bold text-accent-foreground">
-          C
-        </span>
+        <CosmozLogo className="size-9" />
         <div className="space-y-1.5">
           <CardTitle className="font-heading text-xl font-semibold">
             Sign in to Cosmoz

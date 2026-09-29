@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { EyeOff } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { CosmozLogo } from "@/components/layout/cosmoz-logo";
 import { openGhostModal } from "@/lib/hooks/use-ghost-modal";
 import {
   SIDEBAR_FIRST_ITEM,
@@ -118,9 +119,7 @@ export function SidebarBrand({ collapsed }: { collapsed: boolean }) {
       )}
       aria-label="Cosmoz — Dashboard"
     >
-      <span className="grid size-7 shrink-0 place-items-center rounded-md bg-accent font-heading text-sm font-bold text-accent-foreground">
-        C
-      </span>
+      <CosmozLogo className="size-7" />
       {!collapsed && (
         <span className="font-heading text-lg font-semibold tracking-tight text-foreground">
           Cosmoz
