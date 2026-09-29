@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 
-import { MonitoringView } from "@/components/system/monitoring-view";
+import { MonitoringView } from "@/components/monitoring/monitoring-view";
 
 export const metadata: Metadata = {
   title: "Monitoring",
   description:
-    "System health: market feed, API layer, offline shell and session store status.",
+    "Professional observability center: system health, market data freshness, broker connections, WebSockets, API, jobs and audit events.",
 };
 
 export default function MonitoringPage() {

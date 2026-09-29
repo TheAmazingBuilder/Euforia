@@ -79,3 +79,8 @@ export {
   useRevokeSessions,
   useSecurityOverview,
 } from "./security";
+export {
+  useMonitoringOverview,
+  useRunMonitoringJob,
+  useUpdateMonitoringThresholds,
+} from "./monitoring";

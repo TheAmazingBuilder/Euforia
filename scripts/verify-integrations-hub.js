@@ -168,10 +168,16 @@ const ok = (name, cond) => results.push(`${cond ? "PASS" : "FAIL"} — ${name}`)
   const tradeRowsAfter = await page.locator("[data-testid^='trade-row-'], tbody tr").count();
   ok(`no trades created by tests (${tradeRowsBefore} → ${tradeRowsAfter})`, tradeRowsBefore === tradeRowsAfter);
 
-  // ── 14. Monitoring exposes integration health (§23) ──────────────────────
+  // ── 14. Monitoring exposes integration health (§13, onglet Integrations) ─
   await page.goto(BASE + "/monitoring", { waitUntil: "networkidle" });
   await page.waitForTimeout(1400);
-  ok("monitoring shows integrations health", await page.getByTestId("monitoring-integrations").isVisible());
+  await page.getByTestId("monitoring-tab-integrations").click();
+  await page.waitForTimeout(900);
+  const monitoringIntegrationsText = await page.getByTestId("monitoring-integrations-health").innerText();
+  ok(
+    "monitoring shows integrations health",
+    /Deriv/i.test(monitoringIntegrationsText) && /last successful sync/i.test(monitoringIntegrationsText),
+  );
 
   // ── 15. Calendar still works off the pipeline (§22) ───────────────────────
   await page.goto(BASE + "/calendar", { waitUntil: "networkidle" });

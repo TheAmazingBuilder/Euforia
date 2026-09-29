@@ -65,4 +65,7 @@ export const apiPaths = {
   securityApiKeys: "/security/api-keys",
   securityApiKeyRevoke: (keyId: string) => `/security/api-keys/${keyId}/revoke`,
   securitySessionRevoke: "/security/sessions/revoke",
+  monitoringOverview: "/monitoring/overview",
+  monitoringThresholds: "/monitoring/thresholds",
+  monitoringJobRun: (jobId: string) => `/monitoring/jobs/${jobId}/run`,
 } as const;

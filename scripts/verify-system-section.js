@@ -39,7 +39,12 @@ const BASE = "http://localhost:3000";
   await page.goto(BASE + "/monitoring", { waitUntil: "networkidle" });
   await page.waitForTimeout(900);
   ok("Monitoring — h1", (await page.locator("h1").innerText().catch(() => "")).trim() === "Monitoring");
-  ok("Monitoring — 4 services", (await page.locator("text=Market Service").count()) > 0 && (await page.locator("text=Session Store").count()) > 0);
+  ok(
+    "Monitoring — status board (nouveau contrat)",
+    (await page.locator('[data-testid="monitoring-status-board"]').count()) > 0 &&
+      (await page.locator('[data-testid="status-row-api"]').count()) > 0 &&
+      (await page.locator('[data-testid="status-row-market-data"]').count()) > 0,
+  );
   await page.screenshot({ path: "scripts/shots/system-monitoring.png" });
 
   // 4. Integrations page

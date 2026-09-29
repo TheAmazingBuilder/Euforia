@@ -75,6 +75,32 @@ let socket: Socket | null = null;
 let pollTimer: number | null = null;
 let graceTimer: number | null = null;
 
+/**
+ * Connection telemetry observed by this client (Monitoring MASTER PROMPT §8).
+ * Real counters from the running feed — reconnects, drops, last message,
+ * polling RTT — read by the Monitoring view; never synthesized.
+ */
+export interface MarketTelemetry {
+  reconnectAttempts: number;
+  droppedConnections: number;
+  messagesReceived: number;
+  lastMessageAt: number | null;
+  lastPollRttMs: number | null;
+}
+
+const telemetry: MarketTelemetry = {
+  reconnectAttempts: 0,
+  droppedConnections: 0,
+  messagesReceived: 0,
+  lastMessageAt: null,
+  lastPollRttMs: null,
+};
+
+/** Read-side copy of the client-observed connection telemetry. */
+export function getMarketTelemetry(): MarketTelemetry {
+  return { ...telemetry };
+}
+
 function emit(): void {
   for (const listener of listeners) listener();
 }
@@ -90,6 +116,8 @@ function setQuotes(
   transport: FeedTransport,
 ): void {
   gotData = true;
+  telemetry.messagesReceived += 1;
+  telemetry.lastMessageAt = Date.now();
   snapshot = Object.freeze({
     quotes: new Map(quotes.map((quote) => [quote.symbol, quote])),
     connected: true,
@@ -102,11 +130,13 @@ function setQuotes(
 }
 
 async function pollOnce(): Promise<void> {
+  const pollStartedAt = Date.now();
   try {
     const response = await fetch(SNAPSHOT_URL);
     if (!response.ok) throw new Error(String(response.status));
     const body = (await response.json()) as { quotes?: LiveQuote[] };
     if (!Array.isArray(body.quotes)) throw new Error("malformed snapshot");
+    telemetry.lastPollRttMs = Date.now() - pollStartedAt;
     // A successful snapshot IS a live feed — the transport just differs.
     setQuotes(body.quotes, socket?.connected ? "socket" : "polling", socket?.connected ? "socket" : "polling");
   } catch {
@@ -156,11 +186,16 @@ function start(): void {
 
   socket.on("disconnect", () => {
     // Socket lost — polling carries the data while socket.io retries.
+    telemetry.droppedConnections += 1;
     startPolling();
     patch({ phase: "reconnecting", connected: false, transport: "polling", source: "polling" });
   });
   socket.on("connect_error", () => {
+    telemetry.reconnectAttempts += 1;
     startPolling();
+  });
+  socket.io.on("reconnect_attempt", () => {
+    telemetry.reconnectAttempts += 1;
   });
 
   // Grace period: if the socket never connects, degrade to polling quietly.
