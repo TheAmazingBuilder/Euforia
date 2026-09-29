@@ -5,6 +5,11 @@
  */
 export const apiPaths = {
   me: "/me",
+  preferences: "/me/preferences",
+  preferenceDomain: (domain: string) => `/me/preferences/${domain}` as const,
+  preferencesReset: "/me/preferences/reset",
+  accountDeactivate: "/me/deactivate",
+  accountDelete: "/me/delete",
   instruments: "/instruments",
   rulesStatus: "/rules/status",
   strategies: "/strategies",

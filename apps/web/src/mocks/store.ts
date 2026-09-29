@@ -74,9 +74,34 @@ import {
   type UpdateTradeInput,
   type UpdateTradeResponse,
   type ViolationsResponse,
+  type UserPreferences,
+  type PreferenceDomain,
+  type DeactivateAccountResponse,
+  type RequestAccountDeletionResponse,
+  DEFAULT_USER_PREFERENCES,
+  tradingPreferencesSchema,
+  riskPreferencesSchema,
+  journalPreferencesSchema,
+  notificationPreferencesSchema,
+  appearancePreferencesSchema,
+  academyPreferencesSchema,
+  privacyPreferencesSchema,
+  localizationPreferencesSchema,
 } from "@cosmoz/shared";
 
 import { buildFixtureData, USER_TZ, type FixtureData } from "./fixtures";
+
+/** Per-domain validation schemas — one source of truth, used by the handler. */
+const PREFERENCE_DOMAIN_SCHEMAS = {
+  trading: tradingPreferencesSchema,
+  risk: riskPreferencesSchema,
+  journal: journalPreferencesSchema,
+  notifications: notificationPreferencesSchema,
+  appearance: appearancePreferencesSchema,
+  academy: academyPreferencesSchema,
+  privacy: privacyPreferencesSchema,
+  localization: localizationPreferencesSchema,
+} as const;
 
 /**
  * In-memory mock backend. Initialized from the seeded fixtures; every
@@ -105,6 +130,29 @@ export function createMockStore() {
   const screenshotsByTrade = new Map<string, TradeScreenshot[]>();
   const user = data.user;
   const mainAccount = data.accounts.find((a) => a.isDefault) ?? data.accounts[0]!;
+
+  /**
+   * User preferences (Settings module) — seeded from the safe shared
+   * defaults, with the seeded instruments/account resolved into the
+   * trading domain so the trade form opens pre-filled with real ids.
+   */
+  const preferences: UserPreferences = (() => {
+    const forexDefault = data.instruments.find((i) => i.assetClass === "FOREX") ?? data.instruments[0]!;
+    return structuredClone({
+      userId: user.id,
+      ...DEFAULT_USER_PREFERENCES,
+      trading: {
+        ...DEFAULT_USER_PREFERENCES.trading,
+        defaultAccountId: mainAccount.id,
+        defaultInstrumentId: forexDefault.id,
+      },
+      localization: {
+        ...DEFAULT_USER_PREFERENCES.localization,
+        timezone: user.timezone,
+      },
+      updatedAt: new Date().toISOString(),
+    });
+  })();
 
   const instrumentById = new Map<string, Instrument>(data.instruments.map((i) => [i.id, i]));
   const mistakeById = new Map(data.mistakes.map((m) => [m.id, m]));
@@ -1671,14 +1719,65 @@ export function createMockStore() {
       name: user.name,
       timezone: user.timezone,
       baseCurrency: user.baseCurrency,
+      username: user.username,
+      bio: user.bio,
+      avatarUrl: user.avatarUrl,
     };
   }
 
   function updateProfile(input: ProfileUpdateInput): Profile {
     if (input.name !== undefined) user.name = input.name;
     if (input.email !== undefined) user.email = input.email;
-    if (input.timezone !== undefined) user.timezone = input.timezone;
+    if (input.timezone !== undefined) {
+      user.timezone = input.timezone;
+      // Timezone has one source of truth (the profile) — keep the
+      // Localization mirror in sync so the two screens never disagree.
+      preferences.localization.timezone = input.timezone;
+    }
+    if (input.username !== undefined) user.username = input.username;
+    if (input.bio !== undefined) user.bio = input.bio;
+    if (input.avatarUrl !== undefined) user.avatarUrl = input.avatarUrl;
     return getProfile();
+  }
+
+  // ── Preferences (Settings module — GET/PATCH/reset per domain) ───────────
+
+  function getPreferences(): UserPreferences {
+    return structuredClone(preferences);
+  }
+
+  function updatePreferencesDomain(
+    domain: PreferenceDomain,
+    input: Record<string, unknown>,
+  ): UserPreferences {
+    // Server-side validation — the same zod schema the real NestJS API runs.
+    const schema = PREFERENCE_DOMAIN_SCHEMAS[domain];
+    const parsed = schema.parse(input);
+    // TS limitation: union-keyed write needs the widened record view.
+    const writable = preferences as Record<PreferenceDomain, UserPreferences[PreferenceDomain]>;
+    writable[domain] = structuredClone(parsed);
+    if (domain === "localization") {
+      user.timezone = preferences.localization.timezone;
+    }
+    preferences.updatedAt = nowIso();
+    return getPreferences();
+  }
+
+  function resetPreferencesDomain(domain: PreferenceDomain): UserPreferences {
+    const writable = preferences as Record<PreferenceDomain, UserPreferences[PreferenceDomain]>;
+    writable[domain] = structuredClone(DEFAULT_USER_PREFERENCES[domain]);
+    if (domain === "localization") user.timezone = preferences.localization.timezone;
+    preferences.updatedAt = nowIso();
+    return getPreferences();
+  }
+
+  function deactivateAccount(): DeactivateAccountResponse {
+    return { status: "DEACTIVATED", deactivatedAt: nowIso() };
+  }
+
+  function requestAccountDeletion(): RequestAccountDeletionResponse {
+    const scheduled = new Date(Date.now() + 14 * 86_400_000);
+    return { status: "SCHEDULED", scheduledFor: scheduled.toISOString() };
   }
 
   return {
@@ -1729,6 +1828,11 @@ export function createMockStore() {
     deleteScreenshot,
     getProfile,
     updateProfile,
+    getPreferences,
+    updatePreferencesDomain,
+    resetPreferencesDomain,
+    deactivateAccount,
+    requestAccountDeletion,
   };
 }
 

@@ -1,38 +1,17 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { LogOut } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
-import { PagePlaceholder } from "@/components/shared/page-placeholder";
-import { BackupCard } from "@/components/settings/backup-card";
-import { getNavItem } from "@/lib/navigation";
-
-const nav = getNavItem("/settings");
+import { SettingsView } from "@/components/settings/settings-view";
 
 export const metadata: Metadata = {
-  title: nav.label,
+  title: "Settings",
+  description:
+    "Preferences center — profile, trading defaults, risk limits, journal rules, notifications, appearance, privacy and localization.",
 };
 
+/**
+ * Settings — the full preferences module (10 categories). Server Component
+ * shell; the interactive center is a client view fed by /me/preferences.
+ */
 export default function SettingsPage() {
-  return (
-    <div className="flex flex-col gap-6">
-      <PagePlaceholder
-        title={nav.label}
-        description={nav.description}
-        comingSoon={nav.comingSoon}
-      />
-
-      {/* Functional now — data ownership is part of Priorité 3 */}
-      <BackupCard />
-      {/* Shell-level stub: the only way to reach the auth screens for now */}
-      <div className="mx-auto flex w-full max-w-3xl justify-end">
-        <Button variant="outline" asChild>
-          <Link href="/login">
-            <LogOut className="size-4" aria-hidden="true" />
-            Sign out
-          </Link>
-        </Button>
-      </div>
-    </div>
-  );
+  return <SettingsView />;
 }

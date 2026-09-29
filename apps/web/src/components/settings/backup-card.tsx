@@ -13,14 +13,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { apiRequest } from "@/lib/api/client";
-import { apiPaths } from "@/lib/api/endpoints";
 import { useImportBackup } from "@/lib/api/queries";
+import { exportBackupWithToasts } from "@/lib/utils/backup-export";
 
 /**
  * Data & backup card (Priorité 3, feature 12) — export the user's authored
  * data as a plain JSON file, re-import it later. Validation happens twice:
  * client-side (zod, instant feedback) and server-side (same schema).
+ * Export goes through the shared helper (also used by the Account tab).
  */
 export function BackupCard() {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -29,31 +29,8 @@ export function BackupCard() {
 
   const onExport = async () => {
     setExporting(true);
-    try {
-      const payload = await apiRequest<unknown>(apiPaths.exportBackup);
-      const parsed = backupPayloadSchema.parse(payload);
-      const blob = new Blob([JSON.stringify(parsed, null, 2)], {
-        type: "application/json",
-      });
-      const url = URL.createObjectURL(blob);
-      const anchor = document.createElement("a");
-      const dateStamp = new Date().toISOString().slice(0, 10);
-      anchor.href = url;
-      anchor.download = `cosmoz-backup-${dateStamp}.json`;
-      document.body.appendChild(anchor);
-      anchor.click();
-      anchor.remove();
-      URL.revokeObjectURL(url);
-      toast.success("Backup exported", {
-        description: `${parsed.trades.length} trades, ${parsed.strategies.length} strategies, ${parsed.tags.length} tags.`,
-      });
-    } catch {
-      toast.error("Export failed", {
-        description: "The backup could not be generated — please retry.",
-      });
-    } finally {
-      setExporting(false);
-    }
+    await exportBackupWithToasts();
+    setExporting(false);
   };
 
   const onImportFile = async (file: File) => {

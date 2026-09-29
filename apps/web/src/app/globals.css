@@ -336,3 +336,22 @@
     animation-duration: 0.01ms !important;
   }
 }
+
+/* ── Compact density (Settings → Appearance) ──────────────────────────────
+   Applied app-wide via [data-density="compact"] on <html>. Overrides the
+   card spacing variable at higher specificity than the utility default so
+   every Card-based screen tightens consistently; the page shell follows
+   with reduced vertical rhythm. Comfortable = no attribute = untouched. */
+[data-density="compact"] [data-slot="card"] {
+  --card-spacing: --spacing(3);
+}
+[data-density="compact"] main {
+  padding-top: 1.25rem;
+  padding-bottom: 1.25rem;
+}
+@media (min-width: 1024px) {
+  [data-density="compact"] main {
+    padding-top: 1.5rem;
+    padding-bottom: 2rem;
+  }
+}

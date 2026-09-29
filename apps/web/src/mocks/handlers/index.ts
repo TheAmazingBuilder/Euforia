@@ -1,5 +1,6 @@
 import { brokerHandlers } from "./broker";
 import { catalogHandlers } from "./catalogs";
+import { preferencesHandlers } from "./preferences";
 import { disciplineHandlers } from "./discipline";
 import { ecoHandlers } from "./eco";
 import { ghostHandlers } from "./ghosts";
@@ -22,5 +23,6 @@ export const handlers = [
   ...ecoHandlers,
   ...backupHandlers,
   ...profileHandlers,
+  ...preferencesHandlers,
   ...brokerHandlers,
 ];

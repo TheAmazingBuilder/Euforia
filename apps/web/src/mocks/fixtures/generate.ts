@@ -74,6 +74,10 @@ export interface FixtureUser {
   baseCurrency: "USD";
   timezone: string;
   theme: "DARK_BLUE";
+  /** Settings module — profile extras (nullable until the user sets them). */
+  username: string | null;
+  bio: string | null;
+  avatarUrl: string | null;
 }
 
 export interface FixtureData {
@@ -179,6 +183,9 @@ export function buildFixtureData(): FixtureData {
     baseCurrency: "USD",
     timezone: USER_TZ,
     theme: "DARK_BLUE",
+    username: "dev_trader",
+    bio: "Forex & synthetic indices. Journaling the process, one trade at a time.",
+    avatarUrl: null,
   };
 
   const accounts: Account[] = ACCOUNT_DEFS.map((def) => ({

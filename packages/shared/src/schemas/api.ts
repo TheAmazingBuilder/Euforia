@@ -841,6 +841,12 @@ export const profileSchema = z.object({
   /** IANA timezone — drives the trading-day keys server-side. */
   timezone: z.string().min(1),
   baseCurrency: currencySchema,
+  /** Public handle — unique server-side, optional, `@`-less. */
+  username: z.string().min(3).max(30).regex(/^[a-zA-Z0-9_-]+$/, "Letters, digits, _ and - only").nullable(),
+  /** Short free-form bio (≤ 280 chars), shown on the profile. */
+  bio: z.string().max(280).nullable(),
+  /** Avatar image — data URL in V1 mocks, CDN URL with the real API. */
+  avatarUrl: z.string().max(600_000).nullable(),
 });
 
 export type Profile = z.infer<typeof profileSchema>;
@@ -849,6 +855,9 @@ export const profileUpdateInputSchema = z.object({
   name: z.string().min(1).max(80).optional(),
   email: z.string().email().optional(),
   timezone: z.string().min(1).optional(),
+  username: z.string().min(3).max(30).regex(/^[a-zA-Z0-9_-]+$/, "Letters, digits, _ and - only").nullable().optional(),
+  bio: z.string().max(280).nullable().optional(),
+  avatarUrl: z.string().max(600_000).nullable().optional(),
 });
 
 export type ProfileUpdateInput = z.infer<typeof profileUpdateInputSchema>;

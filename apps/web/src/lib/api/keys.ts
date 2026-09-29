@@ -8,6 +8,7 @@ export const queryKeys = {
   rulesStatus: (accountId: string | null) => ["rules-status", accountId] as const,
   rulesStatusRoot: ["rules-status"] as const,
   profile: ["profile"] as const,
+  preferences: ["preferences"] as const,
   screenshots: (tradeId: string) => ["screenshots", tradeId] as const,
   rules: ["rules"] as const,
   violations: ["violations"] as const,

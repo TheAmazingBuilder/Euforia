@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { AppShell } from "@/components/layout/app-shell";
+import { DensitySync } from "@/components/settings/density-sync";
 
 export const metadata: Metadata = {
   title: {
@@ -15,5 +16,11 @@ export default function AppLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <AppShell>{children}</AppShell>;
+  return (
+    <AppShell>
+      {/* Applies the saved density preference app-wide (Settings → Appearance). */}
+      <DensitySync />
+      {children}
+    </AppShell>
+  );
 }

@@ -19,12 +19,14 @@ function initialsOf(name: string): string {
 }
 
 /**
- * User avatar — the one-tap route to /profile (direct editing). The gradient
- * disc + initials doubles as the identity anchor of the topbar.
+ * User avatar — the one-tap route to /profile (direct editing). Shows the
+ * uploaded image when the profile has one (Settings → Profile), otherwise
+ * the deterministic gradient disc + initials.
  */
 export function UserAvatar({ className }: { className?: string }) {
   const { data } = useProfile();
   const name = data?.name ?? "Cosmoz Trader";
+  const avatarUrl = data?.avatarUrl ?? null;
 
   return (
     <Link
@@ -33,12 +35,17 @@ export function UserAvatar({ className }: { className?: string }) {
       aria-label={`Profile — ${name}`}
       title="Your profile"
       className={cn(
-        "grid size-8 shrink-0 place-items-center rounded-full font-heading text-[11px] font-bold text-white shadow-sm ring-1 ring-border transition-transform hover:scale-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+        "grid size-8 shrink-0 place-items-center overflow-hidden rounded-full font-heading text-[11px] font-bold text-white shadow-sm ring-1 ring-border transition-transform hover:scale-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
         className,
       )}
-      style={{ backgroundImage: gradientFor(data?.id ?? name) }}
+      style={avatarUrl ? undefined : { backgroundImage: gradientFor(data?.id ?? name) }}
     >
-      {initialsOf(name)}
+      {avatarUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element -- data URL from the profile, no optimization pipeline in V1
+        <img src={avatarUrl} alt="" className="size-full object-cover" />
+      ) : (
+        initialsOf(name)
+      )}
     </Link>
   );
 }

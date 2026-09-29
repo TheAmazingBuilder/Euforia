@@ -34,6 +34,7 @@ export * from "./schemas/coach";
 export * from "./schemas/api";
 export * from "./schemas/market";
 export * from "./schemas/broker";
+export * from "./schemas/settings";
 
 // ── Pure utils ───────────────────────────────────────────────────────────────
 export * from "./utils/money";
