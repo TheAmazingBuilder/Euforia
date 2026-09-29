@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { EyeOff } from "lucide-react";
+import { EyeOff, LogOut } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { CosmozLogo } from "@/components/layout/cosmoz-logo";
@@ -104,6 +104,29 @@ export function SidebarNav({
           {section.hrefs.map(getNavItem).map(renderItem)}
         </div>
       ))}
+
+      {/* Sign-out — discreet, inside the nav below the SYSTEM section.
+          Destructive on hover (the only red affordance of the rail). */}
+      {collapsed ? (
+        <div aria-hidden="true" className="my-2 h-px w-6 self-center bg-border" />
+      ) : (
+        <div className="mt-2 h-px bg-border" aria-hidden="true" />
+      )}
+      <Link
+        href="/login"
+        onClick={onNavigate}
+        data-testid="sidebar-logout"
+        aria-label="Log out"
+        title="Log out"
+        className={cn(
+          linkBase,
+          "text-muted-foreground/70 transition-colors hover:bg-destructive/10 hover:text-destructive",
+          collapsed ? "justify-center px-0" : linkExpanded,
+        )}
+      >
+        <LogOut className="size-4 shrink-0" aria-hidden="true" />
+        {!collapsed && <span className="truncate">Log out</span>}
+      </Link>
     </nav>
   );
 }

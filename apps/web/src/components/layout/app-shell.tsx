@@ -1,10 +1,8 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
-import { LogOut, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -74,23 +72,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             )}
             {!collapsed && <span className="truncate text-sm">Collapse</span>}
           </Button>
-
-          {/* Discreet sign-out — sits below the collapse toggle */}
-          <Link
-            href="/login"
-            data-testid="sidebar-logout"
-            aria-label="Log out"
-            title="Log out"
-            className={cn(
-              "flex h-8 w-full items-center rounded-md text-xs outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring",
-              collapsed
-                ? "justify-center px-0 text-muted-foreground/70"
-                : "gap-2 px-2.5 text-muted-foreground/70",
-            )}
-          >
-            <LogOut className="size-3.5 shrink-0" aria-hidden="true" />
-            {!collapsed && <span className="truncate">Log out</span>}
-          </Link>
         </div>
       </aside>
 
@@ -138,18 +119,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </SheetHeader>
           <div className="flex-1 overflow-y-auto pb-[calc(1rem+env(safe-area-inset-bottom))]">
             <SidebarNav collapsed={false} onNavigate={closeSheet} />
-          </div>
-          <div className="border-t border-border p-2">
-            <Link
-              href="/login"
-              data-testid="sidebar-logout-mobile"
-              aria-label="Log out"
-              className="flex h-8 w-full items-center gap-2 rounded-md px-2.5 text-xs text-muted-foreground/70 outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-              onClick={closeSheet}
-            >
-              <LogOut className="size-3.5 shrink-0" aria-hidden="true" />
-              <span className="truncate">Log out</span>
-            </Link>
           </div>
         </SheetContent>
       </Sheet>
