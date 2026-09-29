@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="cosmozGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8B96FF" />
+      <stop offset="100%" stop-color="#4F5BEE" />
+    </linearGradient>
+    <filter id="cosmozGlow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="3" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+  <!-- Cosmoz deep-space tile -->
+  <rect width="100" height="100" rx="22" fill="#0D1424"/>
+  <!-- Constellation orbit rings -->
+  <circle cx="50" cy="50" r="38" fill="none" stroke="#243352" stroke-width="1.5" stroke-dasharray="3 3"/>
+  <circle cx="50" cy="50" r="24" fill="none" stroke="#6E7BFF" stroke-opacity="0.3" stroke-width="1.5"/>
+  <!-- Star connections -->
+  <path d="M50 14 L78 38 L68 76 L32 76 L22 38 Z" stroke="url(#cosmozGrad)" stroke-width="2" stroke-linejoin="round" fill="url(#cosmozGrad)" fill-opacity="0.06"/>
+  <line x1="50" y1="50" x2="50" y2="14" stroke="#8B96FF" stroke-width="1.5"/>
+  <line x1="50" y1="50" x2="78" y2="38" stroke="#8B96FF" stroke-width="1.5"/>
+  <line x1="50" y1="50" x2="68" y2="76" stroke="#8B96FF" stroke-width="1.5"/>
+  <line x1="50" y1="50" x2="32" y2="76" stroke="#8B96FF" stroke-width="1.5"/>
+  <line x1="50" y1="50" x2="22" y2="38" stroke="#8B96FF" stroke-width="1.5"/>
+  <!-- Nodes / Stars -->
+  <circle cx="50" cy="14" r="4.5" fill="#FFFFFF" filter="url(#cosmozGlow)"/>
+  <circle cx="78" cy="38" r="3.5" fill="#6E7BFF"/>
+  <circle cx="68" cy="76" r="4" fill="#34D399"/>
+  <circle cx="32" cy="76" r="3.5" fill="#6E7BFF"/>
+  <circle cx="22" cy="38" r="4" fill="#8B96FF"/>
+  <!-- Core Star -->
+  <circle cx="50" cy="50" r="6" fill="url(#cosmozGrad)" filter="url(#cosmozGlow)"/>
+  <circle cx="50" cy="50" r="2.5" fill="#FFFFFF"/>
+</svg>
