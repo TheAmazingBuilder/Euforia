@@ -24,6 +24,7 @@ const BASE = "http://localhost:3000";
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
 
   const errors = [];
+  page.on("dialog", (dialog) => dialog.accept().catch(() => {})); // confirm dialogs: always accept
   page.on("response", (res) => {
     if (res.status() >= 400) errors.push(`${res.status()} ${res.url()}`);
   });
@@ -157,8 +158,12 @@ const BASE = "http://localhost:3000";
   await page.waitForTimeout(1000);
   check("Prefs saved with goals muted", await toastFor("Notification preferences saved").first().isVisible());
 
-  await page.goto(`${BASE}/journal?tab=goals`, { waitUntil: "networkidle", timeout: 60000 });
-  await page.waitForTimeout(1200);
+  // SPA navigation only — a full page load would reseed the mock store and
+  // silently restore the default (enabled) preferences.
+  await page.locator('aside a[href="/journal"]').click();
+  await page.waitForTimeout(1400);
+  await page.locator('[data-testid="tab-goals"]').click();
+  await page.waitForTimeout(800);
   await page.locator('[data-testid="goal-create"]').click();
   await page.locator('[data-testid="goal-form-dialog"]').waitFor({ state: "visible" });
   await page.locator('[data-testid="goal-title-input"]').fill("Verify mute — silenced R");
@@ -182,21 +187,23 @@ const BASE = "http://localhost:3000";
   await page.keyboard.press("Escape");
 
   // ── 7. Cleanup — re-enable prefs, delete verify goals ─────────────────────
-  await page.goto(`${BASE}/settings#notifications`, { waitUntil: "networkidle", timeout: 60000 });
-  await page.waitForTimeout(1000);
+  await page.locator('aside a[href="/settings"]').click();
+  await page.waitForTimeout(1400);
+  await page.locator('[data-testid="settings-nav-notifications"]').click();
+  await page.waitForTimeout(600);
   await page.locator('[data-testid="settings-notifications-goals-enabled"]').click();
   await page.locator('[data-testid="settings-notifications-save"]').click();
   await page.waitForTimeout(900);
 
-  await page.goto(`${BASE}/journal?tab=goals`, { waitUntil: "networkidle", timeout: 60000 });
-  await page.waitForTimeout(1200);
+  await page.locator('aside a[href="/journal"]').click();
+  await page.waitForTimeout(1400);
+  await page.locator('[data-testid="tab-goals"]').click();
+  await page.waitForTimeout(800);
   for (const title of ["Verify guard", "Verify ace", "Verify mute"]) {
-    page.once("dialog", (dialog) => dialog.accept());
     const card = page.locator('[data-testid="goal-card"]', { hasText: title });
-    if ((await card.count()) > 0) {
-      await card.locator('button[aria-label="Delete goal"]').click();
-      await page.waitForTimeout(900);
-    }
+    if ((await card.count()) === 0) continue;
+    await card.locator('button[aria-label="Delete goal"]').click();
+    await page.waitForTimeout(1000);
   }
   check(
     "Verify goals cleaned up",
