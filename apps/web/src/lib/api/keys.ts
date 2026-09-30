@@ -54,6 +54,24 @@ export const queryKeys = {
   reviewLessons: ["review-lessons"] as const,
   goals: ["goals"] as const,
   goalsRoot: ["goals"] as const,
+  // Academy module (learning platform)
+  academyCatalog: ["academy-catalog"] as const,
+  academyOverview: ["academy-overview"] as const,
+  academyProgress: ["academy-progress"] as const,
+  academyCourse: (courseId: string) => ["academy-course", courseId] as const,
+  academyLesson: (lessonId: string) => ["academy-lesson", lessonId] as const,
+  academyQuiz: (quizId: string) => ["academy-quiz", quizId] as const,
+  academyGlossary: (q: string) => ["academy-glossary", q] as const,
+  academySearch: (q: string) => ["academy-search", q] as const,
+  academyBookmarks: ["academy-bookmarks"] as const,
+  academyPatternDrill: ["academy-pattern-drill"] as const,
+  /** Mutations that touch learning state refresh these aggregates (array of key arrays). */
+  academyAggregates: [
+    ["academy-catalog"],
+    ["academy-overview"],
+    ["academy-progress"],
+    ["academy-bookmarks"],
+  ] as const,
 } as const;
 
 /**

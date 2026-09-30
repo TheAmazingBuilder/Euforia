@@ -101,4 +101,18 @@ export const apiPaths = {
   reviewLessons: "/reviews/lessons",
   goals: "/goals",
   goal: (goalId: string) => `/goals/${goalId}`,
+  // Academy module (learning platform)
+  academyCatalog: "/academy/catalog",
+  academyOverview: "/academy/overview",
+  academyProgress: "/academy/progress",
+  academyCourse: (courseId: string) => `/academy/courses/${courseId}`,
+  academyLesson: (lessonId: string) => `/academy/lessons/${lessonId}`,
+  academyLessonComplete: (lessonId: string) => `/academy/lessons/${lessonId}/complete`,
+  academyQuiz: (quizId: string) => `/academy/quizzes/${quizId}`,
+  academyQuizSubmit: (quizId: string) => `/academy/quizzes/${quizId}/attempts`,
+  academyGlossary: "/academy/glossary",
+  academySearch: "/academy/search",
+  academyBookmarks: "/academy/bookmarks",
+  academyPracticeLog: "/academy/practice/log",
+  academyPatternDrill: "/academy/practice/pattern-drill",
 } as const;

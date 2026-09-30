@@ -4,6 +4,7 @@ import {
   CalendarDays,
   ChartColumn,
   Cable,
+  GraduationCap,
   HeartPulse,
   House,
   LayoutDashboard,
@@ -25,7 +26,7 @@ export type NavItem = {
   comingSoon: string;
 };
 
-/** Main sidebar navigation, in the order defined by the Phase 1 brief. */
+/** Main sidebar navigation — grouped by NAV_SECTIONS below. */
 export const SIDEBAR_ITEMS: NavItem[] = [
   {
     href: "/",
@@ -44,6 +45,24 @@ export const SIDEBAR_ITEMS: NavItem[] = [
       "Run a structured trading session in real time, one decision at a time.",
     comingSoon:
       "The live session runner will arrive here: trade entry, judgment gates and the post-decision reveal.",
+  },
+  {
+    href: "/trades",
+    label: "Trades",
+    icon: List,
+    description:
+      "The complete trade log: every execution with its result and decision grade, side by side.",
+    comingSoon:
+      "Filters, CSV import and per-trade detail views will build on this table.",
+  },
+  {
+    href: "/journal",
+    label: "Trade Review",
+    icon: NotebookPen,
+    description:
+      "Review every executed trade and hold your goals against reality: plan vs. actual, execution grades and the lesson you keep.",
+    comingSoon:
+      "The trade review workflow will grade execution against the playbook and capture lessons.",
   },
   {
     href: "/playbook",
@@ -73,24 +92,6 @@ export const SIDEBAR_ITEMS: NavItem[] = [
       "A monthly calendar will map daily P&L, discipline states and trading activity over time.",
   },
   {
-    href: "/trades",
-    label: "Trades",
-    icon: List,
-    description:
-      "The complete trade log: every execution with its result and decision grade, side by side.",
-    comingSoon:
-      "Filters, CSV import and per-trade detail views will build on this table.",
-  },
-  {
-    href: "/journal",
-    label: "Trade Review",
-    icon: NotebookPen,
-    description:
-      "Review every executed trade and hold your goals against reality: plan vs. actual, execution grades and the lesson you keep.",
-    comingSoon:
-      "The trade review workflow will grade execution against the playbook and capture lessons.",
-  },
-  {
     href: "/discipline",
     label: "Discipline",
     icon: ShieldCheck,
@@ -98,6 +99,15 @@ export const SIDEBAR_ITEMS: NavItem[] = [
       "The coach that watches your rules: limits, streaks, violations and mindset.",
     comingSoon:
       "Your discipline score, daily limits, rule-violation feed and ghost-trade settlements will live here.",
+  },
+  {
+    href: "/academy",
+    label: "Academy",
+    icon: GraduationCap,
+    description:
+      "The learning hub: structured courses, drills, quizzes and a searchable glossary — from market fundamentals to advanced execution.",
+    comingSoon:
+      "The Academy curriculum will grow with practice drills, pattern labs and coaching recommendations from your own journal.",
   },
   {
     href: "/monitoring",
@@ -153,10 +163,19 @@ export type NavSection = {
 };
 
 export const NAV_SECTIONS: NavSection[] = [
-  { title: "Trading", hrefs: ["/session", "/playbook", "/calendar"] },
-  { title: "Trade Review", hrefs: ["/trades", "/journal", "/discipline"] },
+  {
+    title: "Trading",
+    hrefs: ["/session", "/trades", "/journal", "/playbook"],
+  },
   // Goals lives inside Trade Review (/journal?tab=goals) — /goals redirects there.
-  { title: "Insights", hrefs: ["/analytics"] },
+  {
+    title: "Insights",
+    hrefs: ["/analytics", "/calendar", "/discipline"],
+  },
+  {
+    title: "Academy",
+    hrefs: ["/academy"],
+  },
   {
     title: "System",
     hrefs: ["/monitoring", "/settings", "/integrations", "/security"],

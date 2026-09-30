@@ -1,0 +1,334 @@
+"use client";
+
+import * as React from "react";
+import Link from "next/link";
+import { ArrowRight, BookmarkCheck, BookOpen, CircleCheck, Dumbbell, Library, PlayCircle, Sparkles, Trophy } from "lucide-react";
+
+import type { AcademyOverviewResponse } from "@cosmoz/shared";
+
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { AcademySectionTitle, CategoryIcon, ProgressBar } from "@/components/academy/academy-shared";
+import {
+  useAcademyBookmarks,
+  useAcademyCatalog,
+  useAcademyOverview,
+} from "@/lib/api/queries";
+
+/**
+ * Academy Overview — the learning dashboard: where you left off, the numbers
+ * that matter, recommendations, recent activity, bookmarks and the category
+ * map. All copy in plain probabilistic language; no gamified P&L nonsense.
+ */
+
+export function AcademyOverviewPanel({
+  onOpenCourse,
+  onOpenLesson,
+  onGoPractice,
+  onGoGlossary,
+}: {
+  onOpenCourse: (courseId: string) => void;
+  onOpenLesson: (lessonId: string) => void;
+  onGoPractice: () => void;
+  onGoGlossary: () => void;
+}) {
+  const { data: overview } = useAcademyOverview();
+  const { data: bookmarks } = useAcademyBookmarks();
+
+  if (!overview) return <OverviewSkeleton />;
+
+  return (
+    <div className="space-y-6" data-testid="academy-overview">
+      <ContinueLearning data={overview} onOpenLesson={onOpenLesson} onOpenCourse={onOpenCourse} />
+
+      {/* Stat band — one ruled strip, ledger style */}
+      <section aria-label="Your progress">
+        <AcademySectionTitle className="mb-2">Your progress</AcademySectionTitle>
+        <div className="stat-strip" data-testid="academy-stats">
+          <div className="stat-cell stat-hero">
+            <p className="ledger-label">Overall progress</p>
+            <div className="mt-3">
+              <ProgressBar percent={overview.progress.overall.percent} testid="academy-progress-overall" label="Overall progress" />
+            </div>
+            <p className="mt-2 text-xs text-muted-foreground">
+              <span className="font-mono tabular-nums">{overview.progress.overall.completedLessons}</span> of{" "}
+              <span className="font-mono tabular-nums">{overview.progress.overall.lessonCount}</span> lessons across{" "}
+              <span className="font-mono tabular-nums">{overview.progress.courseCount}</span> courses
+            </p>
+          </div>
+          <div className="stat-cell stat-hero">
+            <p className="ledger-label">Learning streak</p>
+            <p className="mt-2 flex items-baseline gap-1.5 font-mono text-3xl font-semibold tabular-nums">
+              {overview.progress.streak.currentDays}
+              <span className="text-sm font-normal text-muted-foreground">days</span>
+            </p>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Longest <span className="font-mono tabular-nums">{overview.progress.streak.longestDays}</span> ·{" "}
+              {overview.progress.streak.activeToday ? "Active today — the loop continues." : "No activity yet today."}
+            </p>
+          </div>
+          <div className="stat-cell stat-kpi">
+            <p className="ledger-label">Courses completed</p>
+            <p className="mt-1.5 font-mono text-xl font-semibold tabular-nums" data-testid="academy-stat-courses">
+              {overview.progress.coursesCompleted}
+            </p>
+          </div>
+          <div className="stat-cell stat-kpi">
+            <p className="ledger-label">Lessons completed</p>
+            <p className="mt-1.5 font-mono text-xl font-semibold tabular-nums" data-testid="academy-stat-lessons">
+              {overview.progress.overall.completedLessons}
+            </p>
+          </div>
+          <div className="stat-cell stat-kpi">
+            <p className="ledger-label">Quiz average</p>
+            <p className="mt-1.5 font-mono text-xl font-semibold tabular-nums" data-testid="academy-stat-quiz">
+              {overview.progress.quizAverage !== null ? `${overview.progress.quizAverage}%` : "—"}
+            </p>
+          </div>
+          <div className="stat-cell stat-kpi">
+            <p className="ledger-label">Drill accuracy</p>
+            <p className="mt-1.5 font-mono text-xl font-semibold tabular-nums" data-testid="academy-stat-practice">
+              {overview.progress.practiceAttempts > 0
+                ? `${Math.round((overview.progress.practiceCorrect / overview.progress.practiceAttempts) * 100)}%`
+                : "—"}
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        {/* Recommendations */}
+        <section aria-label="Recommended for you">
+          <AcademySectionTitle className="mb-2">Recommended for you</AcademySectionTitle>
+          <ul className="divide-y divide-border rounded-lg border border-border bg-surface" data-testid="academy-recommendations">
+            {overview.recommendations.map((rec) => (
+              <li key={rec.courseId}>
+                <button
+                  type="button"
+                  onClick={() => onOpenCourse(rec.courseId)}
+                  className="group flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-muted"
+                >
+                  <span className="min-w-0">
+                    <span className="flex items-center gap-2 text-sm font-medium text-foreground">
+                      <Sparkles className="size-3.5 shrink-0 text-accent" aria-hidden="true" />
+                      <span className="truncate">{rec.title}</span>
+                    </span>
+                    <span className="mt-0.5 block truncate text-xs text-muted-foreground">{rec.reason}</span>
+                  </span>
+                  <ArrowRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+                </button>
+              </li>
+            ))}
+            {overview.recommendations.length === 0 ? (
+              <li className="px-4 py-3 text-sm text-muted-foreground">
+                Every course completed — the curriculum salutes you. Revisit drills to stay sharp.
+              </li>
+            ) : null}
+          </ul>
+        </section>
+
+        {/* Recent activity */}
+        <section aria-label="Recently completed">
+          <AcademySectionTitle className="mb-2">Recently completed</AcademySectionTitle>
+          {overview.recent.length === 0 ? (
+            <div className="rounded-lg border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
+              Nothing yet — finish your first lesson and it will land here.
+            </div>
+          ) : (
+            <ul className="divide-y divide-border rounded-lg border border-border bg-surface" data-testid="academy-recent">
+              {overview.recent.map((item) => (
+                <li key={item.lessonId}>
+                  <button
+                    type="button"
+                    onClick={() => onOpenLesson(item.lessonId)}
+                    className="flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left transition-colors hover:bg-muted"
+                  >
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm text-foreground">{item.lessonTitle}</span>
+                      <span className="block truncate text-xs text-muted-foreground">{item.courseTitle}</span>
+                    </span>
+                    <CircleCheck className="size-4 shrink-0 text-profit" aria-hidden="true" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        {/* Bookmarks */}
+        <section aria-label="My bookmarks">
+          <AcademySectionTitle className="mb-2">My bookmarks</AcademySectionTitle>
+          {bookmarks && bookmarks.bookmarks.length > 0 ? (
+            <ul className="divide-y divide-border rounded-lg border border-border bg-surface" data-testid="academy-bookmarks">
+              {bookmarks.bookmarks.slice(0, 6).map((mark) => (
+                <li key={mark.id}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (mark.kind === "LESSON") onOpenLesson(mark.refId);
+                      else onGoGlossary();
+                    }}
+                    className="flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left transition-colors hover:bg-muted"
+                  >
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm text-foreground">{mark.title}</span>
+                      <span className="block truncate text-xs text-muted-foreground">{mark.subtitle}</span>
+                    </span>
+                    <BookmarkCheck className="size-4 shrink-0 text-accent" aria-hidden="true" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div className="rounded-lg border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
+              Bookmark lessons and glossary terms with the star button — they will wait here.
+            </div>
+          )}
+        </section>
+
+        {/* Quick destinations */}
+        <section aria-label="Practice and glossary">
+          <AcademySectionTitle className="mb-2">Keep the loop turning</AcademySectionTitle>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <button
+              type="button"
+              onClick={onGoPractice}
+              className="flex items-center gap-3 rounded-lg border border-border bg-surface px-4 py-3.5 text-left transition-colors hover:bg-muted"
+            >
+              <Dumbbell className="size-5 shrink-0 text-accent" aria-hidden="true" />
+              <span>
+                <span className="block text-sm font-medium">Practice drills</span>
+                <span className="block text-xs text-muted-foreground">Pattern identification & the candle lab</span>
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={onGoGlossary}
+              className="flex items-center gap-3 rounded-lg border border-border bg-surface px-4 py-3.5 text-left transition-colors hover:bg-muted"
+            >
+              <Library className="size-5 shrink-0 text-accent" aria-hidden="true" />
+              <span>
+                <span className="block text-sm font-medium">Glossary</span>
+                <span className="block text-xs text-muted-foreground">Searchable trading vocabulary</span>
+              </span>
+            </button>
+          </div>
+        </section>
+      </div>
+
+      <CategoryMap onOpenCourse={onOpenCourse} />
+    </div>
+  );
+}
+
+function ContinueLearning({
+  data,
+  onOpenLesson,
+  onOpenCourse,
+}: {
+  data: AcademyOverviewResponse;
+  onOpenLesson: (lessonId: string) => void;
+  onOpenCourse: (courseId: string) => void;
+}) {
+  const item = data.continueLearning;
+  return (
+    <section aria-label="Continue learning" data-testid="academy-continue">
+      <AcademySectionTitle className="mb-2">Continue learning</AcademySectionTitle>
+      {item ? (
+        <div className="flex flex-col gap-4 rounded-lg border border-border bg-surface px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <PlayCircle className="size-4 shrink-0 text-accent" aria-hidden="true" />
+              <p className="truncate font-heading text-base font-semibold text-foreground">{item.courseTitle}</p>
+            </div>
+            <p className="mt-1 truncate text-sm text-muted-foreground">
+              {item.lessonTitle} · lesson <span className="font-mono tabular-nums">{item.lessonOrder}</span>/
+              <span className="font-mono tabular-nums">{item.lessonCount}</span>
+            </p>
+            <div className="mt-2.5 max-w-md">
+              <ProgressBar percent={item.percent} label={`${item.courseTitle} progress`} />
+            </div>
+          </div>
+          <div className="flex shrink-0 gap-2">
+            <Button size="sm" className="gap-1.5" onClick={() => item.nextLessonId && onOpenLesson(item.nextLessonId)} data-testid="academy-continue-btn">
+              <PlayCircle className="size-3.5" aria-hidden="true" />
+              Continue lesson
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => onOpenCourse(item.courseId)}>
+              Course
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="rounded-lg border border-dashed border-border px-5 py-6 text-center">
+          <p className="text-sm text-muted-foreground">The curriculum is complete. Nothing left to continue — respect.</p>
+          <Button size="sm" variant="outline" className="mt-3 gap-1.5" asChild>
+            <Link href="/academy?tab=practice">
+              <Trophy className="size-3.5" aria-hidden="true" />
+              Keep drills sharp
+            </Link>
+          </Button>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function CategoryMap({ onOpenCourse }: { onOpenCourse: (courseId: string) => void }) {
+  const { data: catalog } = useAcademyCatalog();
+  const categories = catalog?.categories ?? [];
+  return (
+    <section aria-label="Explore categories">
+      <AcademySectionTitle className="mb-2">Explore categories</AcademySectionTitle>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {categories.map((category) => {
+          const courses = (catalog?.courses ?? []).filter((course) => course.categoryId === category.id);
+          const done = courses.filter((course) => course.completed).length;
+          const lessons = courses.reduce((sum, course) => sum + course.lessonCount, 0);
+          const completed = courses.reduce((sum, course) => sum + course.completedLessons, 0);
+          return (
+            <button
+              key={category.id}
+              type="button"
+              onClick={() => courses[0] && onOpenCourse(courses[0].id)}
+              className="group rounded-lg border border-border bg-surface px-4 py-3.5 text-left transition-colors hover:bg-muted"
+              data-testid={`academy-category-${category.id}`}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="flex items-center gap-2 text-sm font-medium text-foreground">
+                  <CategoryIcon icon={category.icon} className="text-accent" />
+                  <span className="truncate">{category.name}</span>
+                </span>
+                <BookOpen className="size-3.5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+              </div>
+              <p className="mt-1.5 line-clamp-2 text-xs leading-relaxed text-muted-foreground">{category.description}</p>
+              <p className="mt-2 font-mono text-[11px] tabular-nums text-muted-foreground">
+                {courses.length} courses · {completed}/{lessons} lessons
+                {done === courses.length && courses.length > 0 ? " · done" : ""}
+              </p>
+            </button>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function OverviewSkeleton() {
+  return (
+    <div className="space-y-6">
+      <Skeleton className="h-28 rounded-lg" />
+      <div className="stat-strip">
+        <Skeleton className="stat-cell stat-hero m-0 h-32 rounded-none" />
+        <Skeleton className="stat-cell stat-hero m-0 h-32 rounded-none" />
+      </div>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {Array.from({ length: 6 }).map((_, index) => (
+          <Skeleton key={index} className="h-24 rounded-lg" />
+        ))}
+      </div>
+    </div>
+  );
+}

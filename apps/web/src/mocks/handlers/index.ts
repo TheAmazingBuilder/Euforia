@@ -14,6 +14,7 @@ import { statsHandlers } from "./stats";
 import { tradeHandlers } from "./trades";
 import { backupHandlers } from "./backup";
 import { tradeReviewHandlers } from "./tradeReview";
+import { academyHandlers } from "./academy";
 
 /** Full §12 endpoint matrix, one file per domain. */
 export const handlers = [
@@ -33,4 +34,5 @@ export const handlers = [
   ...integrationHandlers,
   ...monitoringHandlers,
   ...securityHandlers,
+  ...academyHandlers,
 ];

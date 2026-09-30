@@ -131,3 +131,19 @@ export {
   useUpdateGoal,
   useUpsertReview,
 } from "./tradeReview";
+export {
+  useAcademyBookmarks,
+  useAcademyCatalog,
+  useAcademyCourse,
+  useAcademyGlossary,
+  useAcademyLesson,
+  useAcademyOverview,
+  useAcademyPatternDrill,
+  useAcademyProgress,
+  useAcademyQuiz,
+  useAcademySearch,
+  useCompleteLesson,
+  useLogPractice,
+  useSubmitQuiz,
+  useToggleBookmark,
+} from "./academy";
