@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { BookmarkPlus, RotateCcw, SlidersHorizontal, X } from "lucide-react";
+import { BookmarkPlus, RotateCcw, SlidersHorizontal, Trash2, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -19,6 +19,9 @@ import type {
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useCreateTradeView, useDeleteTradeView, useTradeViews } from "@/lib/api/queries/trades";
+import { apiErrorMessage } from "@/lib/api/client";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 /**
@@ -26,6 +29,10 @@ import { cn } from "@/lib/utils";
  * drives EVERY tab through ONE server endpoint — a chart can never silently
  * use a different dataset. The resolved dataset is echoed back by the server
  * ("WHAT DATASET AM I LOOKING AT?") and rendered verbatim below the controls.
+ *
+ * Presets live in the UNIFIED preset library (GET /trade-views, scope
+ * ANALYTICS) — the same store the Trades ledger saves its views in, so a
+ * named preset is managed in one place across modules.
  */
 
 export const PERIOD_OPTIONS: readonly { value: Filters["period"]; label: string }[] = [
@@ -65,23 +72,12 @@ const EXIT_REASONS = [
   "TP", "SL", "MANUAL", "TRAILING", "PARTIAL", "MARGIN",
 ] as const;
 
-const PRESET_STORE_KEY = "cosmoz.analytics.presets";
-
-interface StoredPreset {
-  name: string;
-  filters: Partial<Filters>;
-  savedAt: string;
-}
-
-function loadPresets(): StoredPreset[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = window.localStorage.getItem(PRESET_STORE_KEY);
-    return raw === null ? [] : (JSON.parse(raw) as StoredPreset[]);
-  } catch {
-    return [];
-  }
-}
+/** Severity styling for the server-detected anomaly chips. */
+const ANOMALY_TONE: Record<string, string> = {
+  INFO: "border-border bg-surface-raised text-muted-foreground",
+  WARN: "border-warning/40 bg-warning/10 text-warning",
+  ALERT: "border-loss/40 bg-loss/10 text-loss",
+};
 
 interface FilterBarProps {
   filters: Filters;
@@ -93,29 +89,58 @@ interface FilterBarProps {
 }
 
 export function FilterBar({ filters, catalogs, meta, isLoading, onChange, onReset }: FilterBarProps) {
-  const [presets, setPresets] = React.useState<StoredPreset[]>([]);
+  // Unified preset library (server-persisted) — this module manages the
+  // ANALYTICS scope; the Trades ledger manages the TRADES scope of the
+  // SAME store, so a preset is saved once and managed in one place.
+  const { data: viewsData } = useTradeViews();
+  const createView = useCreateTradeView();
+  const deleteView = useDeleteTradeView();
+  const presets = React.useMemo(
+    () => (viewsData?.views ?? []).filter((view) => view.scope === "ANALYTICS"),
+    [viewsData],
+  );
+  const tradesPresetCount = React.useMemo(
+    () => (viewsData?.views ?? []).filter((view) => view.scope === "TRADES").length,
+    [viewsData],
+  );
+
   const [saveName, setSaveName] = React.useState("");
   const [saveOpen, setSaveOpen] = React.useState(false);
+  const [manageOpen, setManageOpen] = React.useState(false);
   const [showAdvanced, setShowAdvanced] = React.useState(false);
-
-  // Hydration-safe localStorage read: hydrate AFTER paint (async) so the SSR
-  // markup and the first client render agree.
-  React.useEffect(() => {
-    const timer = window.setTimeout(() => setPresets(loadPresets()), 0);
-    return () => window.clearTimeout(timer);
-  }, []);
 
   const savePreset = () => {
     const name = saveName.trim();
     if (name.length === 0) return;
-    const next: StoredPreset[] = [
-      ...presets.filter((preset) => preset.name !== name),
-      { name, filters: { ...filters }, savedAt: new Date().toISOString() },
-    ].slice(-6);
-    setPresets(next);
-    window.localStorage.setItem(PRESET_STORE_KEY, JSON.stringify(next));
-    setSaveName("");
-    setSaveOpen(false);
+    createView.mutate(
+      {
+        name,
+        scope: "ANALYTICS",
+        analyticsFilters: { ...filters },
+        filters: {
+          q: "", status: "CLOSED", direction: "all", instrumentId: "", strategyId: "",
+          outcome: "all", tagId: "", from: "", to: "",
+        },
+        columns: ["date"],
+        sortKey: "date",
+        sortDir: "desc",
+      },
+      {
+        onSuccess: () => {
+          toast.success(`Preset “${name}” saved`, {
+            description: "Stored in the unified preset library (shared with Trades).",
+          });
+          setSaveName("");
+          setSaveOpen(false);
+        },
+        onError: (error) => toast.error(apiErrorMessage(error, "Could not save the preset")),
+      },
+    );
+  };
+
+  const applyPreset = (analyticsFilters: Filters | null) => {
+    if (analyticsFilters === null) return;
+    onChange({ ...analyticsFilters, period: analyticsFilters.period ?? "ALL" });
   };
 
   const activeCount = React.useMemo(
@@ -146,17 +171,17 @@ export function FilterBar({ filters, catalogs, meta, isLoading, onChange, onRese
             {presets.length > 0 && (
               <Select
                 value=""
-                onValueChange={(name) => {
-                  const preset = presets.find((p) => p.name === name);
-                  if (preset) onChange(preset.filters);
+                onValueChange={(id) => {
+                  const preset = presets.find((p) => p.id === id);
+                  if (preset) applyPreset(preset.analyticsFilters as Filters | null);
                 }}
               >
-                <SelectTrigger className="h-8 w-36 text-xs" aria-label="Saved filter presets">
-                  <SelectValue placeholder="Saved presets" />
+                <SelectTrigger className="h-8 w-40 text-xs" aria-label="Saved filter presets" data-testid="analytics-preset-select">
+                  <SelectValue placeholder={`Presets (${presets.length})`} />
                 </SelectTrigger>
                 <SelectContent>
                   {presets.map((preset) => (
-                    <SelectItem key={preset.name} value={preset.name}>
+                    <SelectItem key={preset.id} value={preset.id}>
                       {preset.name}
                     </SelectItem>
                   ))}
@@ -200,6 +225,55 @@ export function FilterBar({ filters, catalogs, meta, isLoading, onChange, onRese
                 </div>
               )}
             </div>
+
+            {/* Unified library manager — rename lives server-side; delete here. */}
+            {presets.length > 0 && (
+              <div className="relative flex items-center">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 gap-1.5 px-2 text-xs text-muted-foreground"
+                  onClick={() => setManageOpen((open) => !open)}
+                  aria-expanded={manageOpen}
+                  data-testid="analytics-preset-manage"
+                >
+                  Manage
+                </Button>
+                {manageOpen && (
+                  <div className="absolute right-0 top-9 z-30 w-64 rounded-lg border border-border bg-surface-raised p-2 shadow-lg">
+                    <p className="px-1 pb-1.5 text-[10px] uppercase tracking-wider text-muted-foreground">
+                      Unified preset library
+                    </p>
+                    <ul className="max-h-48 space-y-0.5 overflow-y-auto">
+                      {presets.map((preset) => (
+                        <li key={preset.id} className="flex items-center gap-1.5 rounded px-1 py-1 hover:bg-muted/50">
+                          <span className="min-w-0 flex-1 truncate text-xs">{preset.name}</span>
+                          <button
+                            type="button"
+                            aria-label={`Delete preset ${preset.name}`}
+                            data-testid={`analytics-preset-delete-${preset.name}`}
+                            className="rounded-sm p-1 text-muted-foreground transition-colors hover:text-loss"
+                            disabled={deleteView.isPending}
+                            onClick={() =>
+                              deleteView.mutate(preset.id, {
+                                onSuccess: () => toast.success(`Preset “${preset.name}” deleted`),
+                                onError: (error) => toast.error(apiErrorMessage(error, "Could not delete the preset")),
+                              })
+                            }
+                          >
+                            <Trash2 className="size-3.5" aria-hidden="true" />
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="border-t border-border px-1 pt-1.5 text-[10px] text-muted-foreground">
+                      Shared with Trades · {tradesPresetCount} ledger view{tradesPresetCount === 1 ? "" : "s"}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
 
             <Button
               type="button"
@@ -481,6 +555,28 @@ export function FilterBar({ filters, catalogs, meta, isLoading, onChange, onRese
                 ⚠ {warning}
               </span>
             ))}
+            {/* Server-detected anomalies — measured facts, rendered verbatim. */}
+            {meta.anomalies.length > 0 && (
+              <div className="flex w-full flex-col gap-1 pt-0.5" data-testid="analytics-anomalies">
+                {meta.anomalies.map((anomaly) => (
+                  <div
+                    key={anomaly.code}
+                    className={cn(
+                      "flex flex-wrap items-center gap-1.5 rounded border px-2 py-1",
+                      ANOMALY_TONE[anomaly.severity] ?? ANOMALY_TONE.INFO,
+                    )}
+                  >
+                    <span className="font-mono text-[10px] font-semibold uppercase tracking-wider">
+                      {anomaly.code}
+                    </span>
+                    <span className="min-w-0 flex-1">{anomaly.message}</span>
+                    {anomaly.hint !== null && (
+                      <span className="text-[10px] italic opacity-80">{anomaly.hint}</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </CardContent>

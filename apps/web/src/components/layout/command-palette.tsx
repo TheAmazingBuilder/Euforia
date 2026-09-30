@@ -22,6 +22,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { SIDEBAR_ITEMS } from "@/lib/navigation";
+import { SETTINGS_FINDER_META } from "@/components/settings/settings-view";
 import { useInstruments, useStrategies, useTrades } from "@/lib/api/queries";
 import { openGhostModal } from "@/lib/hooks/use-ghost-modal";
 import { openTradeModal } from "@/lib/hooks/use-trade-modal";
@@ -44,6 +45,7 @@ type PaletteGroup =
   | "Trades"
   | "Strategies"
   | "Navigate"
+  | "Settings"
   | "Theme";
 
 type PaletteItem = {
@@ -57,7 +59,7 @@ type PaletteItem = {
   run: () => void;
 };
 
-const GROUP_ORDER: PaletteGroup[] = ["Actions", "Trades", "Strategies", "Navigate", "Theme"];
+const GROUP_ORDER: PaletteGroup[] = ["Actions", "Trades", "Strategies", "Navigate", "Settings", "Theme"];
 
 /** Lowercase substring match across label + keywords (AND over tokens). */
 function matchItem(item: PaletteItem, query: string): boolean {
@@ -192,6 +194,17 @@ export function CommandPalette() {
       run: () => router.push(nav.href),
     }));
 
+    // Settings finder (module upgrade) — every settings card is reachable
+    // with one keystroke; entries carry the card's own search keywords.
+    const settingsItems: PaletteItem[] = SETTINGS_FINDER_META.map((category) => ({
+      id: `settings-${category.id}`,
+      label: `Settings — ${category.label}`,
+      keywords: `settings preferences ${category.description} ${category.keywords}`,
+      icon: category.icon,
+      group: "Settings" as const,
+      run: () => router.push(`/settings#${category.id}`),
+    }));
+
     const themes: PaletteItem[] = [
       {
         id: "theme-dark-blue",
@@ -219,7 +232,7 @@ export function CommandPalette() {
       },
     ];
 
-    return [...actions, ...navItems, ...themes];
+    return [...actions, ...navItems, ...settingsItems, ...themes];
   }, [router, setTheme]);
 
   // ── Filtering ────────────────────────────────────────────────────────────

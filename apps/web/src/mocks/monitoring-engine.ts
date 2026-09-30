@@ -159,6 +159,9 @@ const JOB_DEFS: JobDef[] = [
 export class MonitoringEngine {
   readonly startedAtMs: number;
 
+  /** Inbox sink — invoked once per NEW raised alert (module upgrade). */
+  onAlertRaised: ((alert: { ruleId: AlertRuleId; severity: RaisedAlert["severity"]; message: string }) => void) | null = null;
+
   private thresholds: MonitoringThresholds;
   private events: SystemEvent[] = [];
   private jobs: JobRun[] = [];
@@ -264,7 +267,23 @@ export class MonitoringEngine {
     if (input.rules) {
       for (const rule of input.rules) {
         const current = this.thresholds.rules.find((candidate) => candidate.id === rule.id);
-        if (current) current.enabled = rule.enabled;
+        if (!current) continue;
+        if (rule.enabled !== undefined) current.enabled = rule.enabled;
+        if (rule.thresholdValue !== undefined) {
+          current.thresholdValue = rule.thresholdValue;
+          // The label is the human contract — it travels with the knob.
+          if (current.thresholdValue !== null) {
+            if (current.id === "API_DEGRADED") {
+              current.thresholdLabel = `error rate > ${current.thresholdValue} % (min 10 requests)`;
+            } else if (current.id === "API_LATENCY") {
+              current.thresholdLabel = `p95 latency > ${current.thresholdValue} ms`;
+            } else if (current.id === "QUEUE_BACKLOG") {
+              current.thresholdLabel = `queued runs > ${current.thresholdValue}`;
+            } else if (current.id === "JOB_FAILURES") {
+              current.thresholdLabel = `${current.thresholdValue} consecutive job failures`;
+            }
+          }
+        }
       }
     }
     this.logEvent({
@@ -278,6 +297,12 @@ export class MonitoringEngine {
 
   private ruleEnabled(ruleId: AlertRuleId): boolean {
     return this.thresholds.rules.find((rule) => rule.id === ruleId)?.enabled ?? false;
+  }
+
+  /** Numeric knob of a rule — null/undefined falls back to the default. */
+  private ruleValue(ruleId: AlertRuleId, fallback: number): number {
+    const value = this.thresholds.rules.find((rule) => rule.id === ruleId)?.thresholdValue;
+    return typeof value === "number" && Number.isFinite(value) ? value : fallback;
   }
 
   private raise(ruleId: AlertRuleId, severity: RaisedAlert["severity"], message: string, nowMs: number): void {
@@ -298,6 +323,9 @@ export class MonitoringEngine {
       occurrences: 1,
       resolvedAt: null,
     });
+    // First raise of this episode → notify the in-app inbox (module upgrade:
+    // monitoring alerts reach the user, not just the Monitoring board).
+    this.onAlertRaised?.({ ruleId, severity, message });
   }
 
   private resolve(ruleId: AlertRuleId): void {
@@ -802,17 +830,19 @@ export class MonitoringEngine {
     const overview = integrationEngine.overview();
     const failedJobs = this.jobStatuses(nowMs).filter((job) => job.failureCount >= 2);
 
-    // API degraded (§14) — real error rate from observed requests.
+    // API degraded (§14) — real error rate from observed requests, knob configurable.
     if (this.ruleEnabled("API_DEGRADED")) {
-      if (api.totalRequests >= 10 && api.errorRatePct >= 10) {
-        this.raise("API_DEGRADED", "WARNING", `API error rate ${api.errorRatePct} % over ${api.totalRequests} requests`, nowMs);
+      const errorRateThreshold = this.ruleValue("API_DEGRADED", 10);
+      if (api.totalRequests >= 10 && api.errorRatePct >= errorRateThreshold) {
+        this.raise("API_DEGRADED", "WARNING", `API error rate ${api.errorRatePct} % over ${api.totalRequests} requests (threshold ${errorRateThreshold} %)`, nowMs);
       } else {
         this.resolve("API_DEGRADED");
       }
     }
     if (this.ruleEnabled("API_LATENCY")) {
-      if (api.totalRequests >= 10 && api.p95Ms > 1_500) {
-        this.raise("API_LATENCY", "WARNING", `API p95 latency ${api.p95Ms} ms`, nowMs);
+      const p95Threshold = this.ruleValue("API_LATENCY", 1_500);
+      if (api.totalRequests >= 10 && api.p95Ms > p95Threshold) {
+        this.raise("API_LATENCY", "WARNING", `API p95 latency ${api.p95Ms} ms (threshold ${p95Threshold} ms)`, nowMs);
       } else {
         this.resolve("API_LATENCY");
       }

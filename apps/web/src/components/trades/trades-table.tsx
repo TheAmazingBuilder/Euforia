@@ -357,11 +357,15 @@ function TradesModule() {
     });
   };
 
-  // ── Saved views (named filters + columns + sort) ─────────────────────────
+  // ── Saved views (named filters + columns + sort) — TRADES scope of the
+  // unified preset library (ANALYTICS presets live in the same store) ────────
   const { data: viewsData } = useTradeViews();
   const createView = useCreateTradeView();
   const deleteView = useDeleteTradeView();
-  const views = React.useMemo(() => viewsData?.views ?? [], [viewsData]);
+  const views = React.useMemo(
+    () => (viewsData?.views ?? []).filter((view) => view.scope === "TRADES"),
+    [viewsData],
+  );
 
   const currentFilters = React.useMemo<SavedTradeViewFilters>(
     () => ({
@@ -1023,6 +1027,7 @@ function TradesModule() {
               <span className="rounded-full border border-border px-2 py-0.5 text-[10px] text-muted-foreground">
                 {filterCount({
                   id: "", name: "", createdAt: "", sortKey: state.sortKey, sortDir: state.sortDir,
+                  scope: "TRADES", analyticsFilters: null,
                   columns: [], filters: currentFilters,
                 })} filter(s)
               </span>

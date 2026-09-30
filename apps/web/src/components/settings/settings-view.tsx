@@ -20,6 +20,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { DEFAULT_USER_PREFERENCES, type PreferenceDomain } from "@cosmoz/shared";
+import { usePreferences } from "@/lib/api/queries";
 import { ProfileCard } from "@/components/settings/cards/profile-card";
 import { TradingCard } from "@/components/settings/cards/trading-card";
 import { RiskCard } from "@/components/settings/cards/risk-card";
@@ -155,6 +157,15 @@ const CATEGORIES: CategoryMeta[] = [
   },
 ];
 
+/** Metadata for the GLOBAL ⌘K palette's Settings group (no React nodes). */
+export const SETTINGS_FINDER_META = CATEGORIES.map((category) => ({
+  id: category.id,
+  label: category.label,
+  description: category.description,
+  icon: category.icon,
+  keywords: category.keywords.join(" "),
+}));
+
 function readInitialCategory(): string {
   if (typeof window === "undefined") return CATEGORIES[0]!.id;
   const hash = window.location.hash.replace("#", "");
@@ -163,9 +174,43 @@ function readInitialCategory(): string {
     : CATEGORIES[0]!.id;
 }
 
+/** Key-order-stable stringify — safe deep comparison for the modified badge. */
+function stableStringify(value: unknown): string {
+  if (value === null || typeof value !== "object") return JSON.stringify(value) ?? "null";
+  if (Array.isArray(value)) return `[${value.map(stableStringify).join(",")}]`;
+  const entries = Object.entries(value as Record<string, unknown>).sort(([a], [b]) => a.localeCompare(b));
+  return `{${entries.map(([key, val]) => `${JSON.stringify(key)}:${stableStringify(val)}`).join(",")}}`;
+}
+
+/**
+ * Modified badges (module upgrade) — a domain lights up when its CURRENT
+ * value differs from the shared safe defaults (server document vs the
+ * shared DEFAULT_USER_PREFERENCES, deep-compared key-order-stable).
+ */
+function useModifiedDomains(): Set<string> {
+  const { data: prefs } = usePreferences();
+  return React.useMemo(() => {
+    const modified = new Set<string>();
+    if (prefs === undefined) return modified;
+    const domainKeys: PreferenceDomain[] = [
+      "trading", "risk", "journal", "notifications", "appearance",
+      "dashboard", "academy", "privacy", "localization",
+    ];
+    for (const domain of domainKeys) {
+      const current = prefs[domain];
+      const fallback = DEFAULT_USER_PREFERENCES[domain];
+      if (fallback === undefined || stableStringify(current) !== stableStringify(fallback)) {
+        modified.add(domain);
+      }
+    }
+    return modified;
+  }, [prefs]);
+}
+
 export function SettingsView() {
   const [active, setActive] = React.useState<string>(readInitialCategory);
   const [query, setQuery] = React.useState("");
+  const modifiedDomains = useModifiedDomains();
 
   // Deep links stay live — back/forward and manual hash edits work.
   React.useEffect(() => {
@@ -212,7 +257,8 @@ export function SettingsView() {
         </p>
       </header>
 
-      {/* Search — filters categories by label, description and keywords. */}
+      {/* Search — filters categories by label, description and keywords.
+          ⌘K opens the GLOBAL palette, which now carries a Settings group. */}
       <div className="relative">
         <Search
           className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
@@ -224,9 +270,16 @@ export function SettingsView() {
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Search settings — try “risk”, “timezone”, “push”…"
           aria-label="Search settings"
-          className="pl-9"
+          className="pl-9 pr-14"
           data-testid="settings-search"
         />
+        <kbd
+          className="pointer-events-none absolute right-3 top-1/2 hidden -translate-y-1/2 rounded border border-border bg-surface-raised px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground sm:block"
+          aria-hidden="true"
+          data-testid="settings-search-kbd"
+        >
+          ⌘K
+        </kbd>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[220px_minmax(0,1fr)]">
@@ -254,6 +307,15 @@ export function SettingsView() {
                   <span className="whitespace-nowrap font-medium lg:whitespace-normal">
                     {category.label}
                   </span>
+                  {modifiedDomains.has(category.id) && (
+                    <span
+                      className="ml-auto shrink-0 rounded-full bg-accent/15 px-1.5 py-0.5 font-mono text-[9px] font-semibold uppercase tracking-wide text-accent"
+                      title="This section differs from the default values"
+                      data-testid={`settings-modified-${category.id}`}
+                    >
+                      mod.
+                    </span>
+                  )}
                 </button>
               );
             })}

@@ -903,6 +903,50 @@ export const deleteTradeResponseSchema = z.object({
 
 export type DeleteTradeResponse = z.infer<typeof deleteTradeResponseSchema>;
 
+// ── Analytics Suite (GET /stats/analytics-suite) ────────────────────────────
+// Professional Analytics module — ONE endpoint = ONE dataset definition so
+// every tab of the module renders the exact same filtered trade set (MASTER
+// PROMPT §5). All aggregates are computed SERVER-SIDE on CLOSED trades only;
+// open positions never leak into performance statistics (§38).
+
+/** Named date presets resolved SERVER-SIDE against the trading-day clock. */
+export const analyticsPeriodSchema = z.enum([
+  "TODAY",
+  "YESTERDAY",
+  "THIS_WEEK",
+  "LAST_WEEK",
+  "THIS_MONTH",
+  "LAST_MONTH",
+  "THIS_QUARTER",
+  "THIS_YEAR",
+  "LAST_30",
+  "LAST_90",
+  "YTD",
+  "ALL",
+  "CUSTOM",
+]);
+export type AnalyticsPeriod = z.infer<typeof analyticsPeriodSchema>;
+
+/** Global filter query — every field optional; absent = unfiltered. */
+export const analyticsFiltersSchema = z.object({
+  period: analyticsPeriodSchema.default("ALL"),
+  /** Required when period = CUSTOM (trading-date keys, inclusive). */
+  customFrom: dateKeySchema.optional(),
+  customTo: dateKeySchema.optional(),
+  accountId: uuidSchema.optional(),
+  instrumentId: uuidSchema.optional(),
+  assetClass: assetClassSchema.optional(),
+  /** "none" = out-of-playbook trades (strategyId null). */
+  strategyId: uuidSchema.or(z.literal("none")).optional(),
+  direction: directionSchema.optional(),
+  /** Session key from ANALYTIC_SESSIONS (derived from the entry hour, UTC). */
+  session: z.enum(["ASIA", "LONDON", "NEW_YORK"]).optional(),
+  emotion: emotionSchema.optional(),
+  exitReason: exitReasonSchema.optional(),
+  tagId: uuidSchema.optional(),
+});
+export type AnalyticsFilters = z.infer<typeof analyticsFiltersSchema>;
+
 // ── Trade module upgrades: saved views / bulk ops / CSV import / session series ─
 
 /** Visible ledger columns — the checkbox + actions columns are structural, never saved. */
@@ -930,11 +974,27 @@ export const savedTradeViewFiltersSchema = z.object({
 
 export type SavedTradeViewFilters = z.infer<typeof savedTradeViewFiltersSchema>;
 
+/**
+ * Unified preset library scope (module upgrade): the SAME /trade-views store
+ * holds ledger views (TRADES) and analytics filter presets (ANALYTICS) so
+ * both modules share one named-preset library.
+ */
+export const savedViewScopeSchema = z.enum(["TRADES", "ANALYTICS"]);
+export type SavedViewScope = z.infer<typeof savedViewScopeSchema>;
+
+/** Filter half of an ANALYTICS-scope view — a partial analytics filter bag. */
+export const analyticsViewFiltersSchema = analyticsFiltersSchema.partial();
+export type AnalyticsViewFilters = z.infer<typeof analyticsViewFiltersSchema>;
+
 /** GET /trade-views row — a named, reusable (filters + columns + sort) snapshot. */
 export const savedTradeViewSchema = z.object({
   id: uuidSchema,
   name: z.string().min(1).max(60),
+  /** Which module the preset targets (default TRADES for back-compat). */
+  scope: savedViewScopeSchema.default("TRADES"),
   filters: savedTradeViewFiltersSchema,
+  /** ANALYTICS-scope presets carry the analytics filter bag instead. */
+  analyticsFilters: analyticsViewFiltersSchema.nullable().default(null),
   columns: z.array(tradeColumnKeySchema).min(1),
   sortKey: z.enum(["date", "r", "pnl"]),
   sortDir: z.enum(["asc", "desc"]),
@@ -952,7 +1012,9 @@ export type SavedTradeViewsResponse = z.infer<typeof savedTradeViewsResponseSche
 /** POST /trade-views — snapshot the CURRENT table state under a name. */
 export const createSavedTradeViewInputSchema = z.object({
   name: z.string().trim().min(1).max(60),
+  scope: savedViewScopeSchema.optional(),
   filters: savedTradeViewFiltersSchema,
+  analyticsFilters: analyticsViewFiltersSchema.optional(),
   columns: z.array(tradeColumnKeySchema).min(1),
   sortKey: z.enum(["date", "r", "pnl"]),
   sortDir: z.enum(["asc", "desc"]),
@@ -1140,49 +1202,31 @@ export const profileUpdateInputSchema = z.object({
 
 export type ProfileUpdateInput = z.infer<typeof profileUpdateInputSchema>;
 
-// ── Analytics Suite (GET /stats/analytics-suite) ────────────────────────────
-// Professional Analytics module — ONE endpoint = ONE dataset definition so
-// every tab of the module renders the exact same filtered trade set (MASTER
-// PROMPT §5). All aggregates are computed SERVER-SIDE on CLOSED trades only;
-// open positions never leak into performance statistics (§38).
 
-/** Named date presets resolved SERVER-SIDE against the trading-day clock. */
-export const analyticsPeriodSchema = z.enum([
-  "TODAY",
-  "YESTERDAY",
-  "THIS_WEEK",
-  "LAST_WEEK",
-  "THIS_MONTH",
-  "LAST_MONTH",
-  "THIS_QUARTER",
-  "THIS_YEAR",
-  "LAST_30",
-  "LAST_90",
-  "YTD",
-  "ALL",
-  "CUSTOM",
+/**
+ * Server-detected behavioral anomaly in the filtered dataset. The engine
+ * raises FACTS (measured, thresholded) — never a verdict; the client renders
+ * them next to the dataset warnings with the drill-down they hint at.
+ */
+export const analyticsAnomalyCodeSchema = z.enum([
+  /** A tiny tail of trades carries an outsized share of the losses. */
+  "TAIL_LOSS",
+  /** Unusually busy days whose average daily R is negative. */
+  "OVERTRADING",
+  /** Long consecutive losing run in the chronological sequence. */
+  "LOSS_STREAK",
 ]);
-export type AnalyticsPeriod = z.infer<typeof analyticsPeriodSchema>;
+export type AnalyticsAnomalyCode = z.infer<typeof analyticsAnomalyCodeSchema>;
 
-/** Global filter query — every field optional; absent = unfiltered. */
-export const analyticsFiltersSchema = z.object({
-  period: analyticsPeriodSchema.default("ALL"),
-  /** Required when period = CUSTOM (trading-date keys, inclusive). */
-  customFrom: dateKeySchema.optional(),
-  customTo: dateKeySchema.optional(),
-  accountId: uuidSchema.optional(),
-  instrumentId: uuidSchema.optional(),
-  assetClass: assetClassSchema.optional(),
-  /** "none" = out-of-playbook trades (strategyId null). */
-  strategyId: uuidSchema.or(z.literal("none")).optional(),
-  direction: directionSchema.optional(),
-  /** Session key from ANALYTIC_SESSIONS (derived from the entry hour, UTC). */
-  session: z.enum(["ASIA", "LONDON", "NEW_YORK"]).optional(),
-  emotion: emotionSchema.optional(),
-  exitReason: exitReasonSchema.optional(),
-  tagId: uuidSchema.optional(),
+export const analyticsAnomalySchema = z.object({
+  code: analyticsAnomalyCodeSchema,
+  severity: z.enum(["INFO", "WARN", "ALERT"]),
+  /** Measured fact, ready to render (numbers included by the server). */
+  message: z.string().min(1),
+  /** Optional next-step hint ("filter to…", "open the Mistakes tab"). */
+  hint: z.string().nullable(),
 });
-export type AnalyticsFilters = z.infer<typeof analyticsFiltersSchema>;
+export type AnalyticsAnomaly = z.infer<typeof analyticsAnomalySchema>;
 
 /** Dataset descriptor — the "WHAT DATASET AM I LOOKING AT?" line (§5). */
 export const analyticsDatasetMetaSchema = z.object({
@@ -1194,6 +1238,8 @@ export const analyticsDatasetMetaSchema = z.object({
   openTradesExcluded: z.number().int().min(0),
   /** Non-fatal dataset observations (multi-currency, tiny sample…). */
   warnings: z.array(z.string()),
+  /** Server-detected behavioral anomalies (tail loss, overtrading…). */
+  anomalies: z.array(analyticsAnomalySchema),
   /** Money aggregates are only meaningful within one currency. */
   singleCurrency: z.boolean(),
 });
@@ -1543,3 +1589,84 @@ export const analyticsSuiteResponseSchema = z.object({
   }),
 });
 export type AnalyticsSuiteResponse = z.infer<typeof analyticsSuiteResponseSchema>;
+
+// ── Calendar module upgrades: trading overlay / day-offs & blockers / semester ─
+
+/** Why a calendar day is marked non-trading. */
+export const calendarBlockKindSchema = z.enum(["OFF", "NEWS"]);
+export type CalendarBlockKind = z.infer<typeof calendarBlockKindSchema>;
+
+/** One planned non-trading day (holiday) or news-blocked trading pause. */
+export const calendarBlockSchema = z.object({
+  date: dateKeySchema,
+  kind: calendarBlockKindSchema,
+  note: z.string().max(120),
+  createdAt: isoDateTimeSchema,
+});
+export type CalendarBlock = z.infer<typeof calendarBlockSchema>;
+
+export const calendarBlocksResponseSchema = z.object({
+  blocks: z.array(calendarBlockSchema),
+});
+export type CalendarBlocksResponse = z.infer<typeof calendarBlocksResponseSchema>;
+
+export const upsertCalendarBlockInputSchema = z.object({
+  date: dateKeySchema,
+  kind: calendarBlockKindSchema,
+  note: z.string().max(120).optional(),
+});
+export type UpsertCalendarBlockInput = z.infer<typeof upsertCalendarBlockInputSchema>;
+
+export const calendarBlockMutationResponseSchema = z.object({
+  block: calendarBlockSchema.nullable(),
+  deleted: z.boolean().optional(),
+});
+export type CalendarBlockMutationResponse = z.infer<typeof calendarBlockMutationResponseSchema>;
+
+/** POST /calendar-blocks/import-eco — server scans HIGH-impact events ahead. */
+export const importEcoBlockersResponseSchema = z.object({
+  imported: z.number().int().min(0),
+  dates: z.array(dateKeySchema),
+  message: z.string().min(1),
+});
+export type ImportEcoBlockersResponse = z.infer<typeof importEcoBlockersResponseSchema>;
+
+/** One day row of the trading calendar overlay (server-computed). */
+export const calendarDayRowSchema = z.object({
+  date: dateKeySchema,
+  tradesCount: z.number().int().min(0),
+  pnlNet: decimalStringSchema,
+  rEarned: decimalStringSchema,
+  disciplineScore: decimalStringSchema.nullable(),
+  violationsCount: z.number().int().min(0),
+  /** HIGH-impact eco events that day — the news blockers. */
+  ecoHighCount: z.number().int().min(0),
+  ecoCount: z.number().int().min(0),
+  block: calendarBlockSchema.nullable(),
+  /** Planned day off — the server excludes the row from every aggregate. */
+  excludedFromStats: z.boolean(),
+});
+export type CalendarDayRow = z.infer<typeof calendarDayRowSchema>;
+
+/** Aggregates over a date range — day-off days excluded SERVER-SIDE. */
+export const calendarRangeSummarySchema = z.object({
+  from: dateKeySchema,
+  to: dateKeySchema,
+  tradingDays: z.number().int().min(0),
+  daysOff: z.number().int().min(0),
+  blockedDays: z.number().int().min(0),
+  totalPnl: decimalStringSchema.nullable(),
+  totalR: decimalStringSchema,
+  disciplineAvg: decimalStringSchema.nullable(),
+  violationsTotal: z.number().int().min(0),
+});
+export type CalendarRangeSummary = z.infer<typeof calendarRangeSummarySchema>;
+
+export const calendarViewResponseSchema = z.object({
+  days: z.array(calendarDayRowSchema),
+  summary: calendarRangeSummarySchema,
+  /** The account's daily loss limit in % — the "objectif du jour" guard line. */
+  dailyLossLimitPct: z.number(),
+  currency: currencySchema,
+});
+export type CalendarViewResponse = z.infer<typeof calendarViewResponseSchema>;

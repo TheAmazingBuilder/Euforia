@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { toast } from "sonner";
-import { HeartPulse } from "lucide-react";
+import { Globe, HeartPulse } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type {
   AlertRule,
@@ -15,6 +15,7 @@ import { COSMOZ_VERSION, classifyFreshness } from "@cosmoz/shared";
 
 import { cn } from "@/lib/utils";
 import { apiErrorMessage } from "@/lib/api/client";
+import { Button } from "@/components/ui/button";
 import {
   useMonitoringOverview,
   useRunMonitoringJob,
@@ -23,6 +24,7 @@ import {
 import { useNowMs } from "@/lib/realtime/use-now";
 import { getMarketTelemetry, useLiveQuotes } from "@/lib/realtime/market";
 import { useMarketServiceHealth } from "@/lib/realtime/market-health";
+import { PublicStatusDialog } from "@/components/monitoring/public-status-dialog";
 import {
   BrokersPanel,
   OverviewPanel,
@@ -191,6 +193,7 @@ export function MonitoringView() {
   const updateThresholds = useUpdateMonitoringThresholds();
   const runJob = useRunMonitoringJob();
   const [runningJobId, setRunningJobId] = React.useState<string | null>(null);
+  const [statusPageOpen, setStatusPageOpen] = React.useState(false);
 
   const onToggleRule = (rule: AlertRule, enabled: boolean) => {
     updateThresholds.mutate(
@@ -199,6 +202,17 @@ export function MonitoringView() {
         onSuccess: () =>
           toast.success(`${rule.id} ${enabled ? "enabled" : "disabled"} — evaluated on every overview read`),
         onError: (mutationError) => toast.error(apiErrorMessage(mutationError, "Could not update the rule")),
+      },
+    );
+  };
+
+  // Custom numeric knob (p95 ms, error-rate %, backlog…) — applied in one PATCH.
+  const onThresholdChange = (rule: AlertRule, value: number) => {
+    updateThresholds.mutate(
+      { rules: [{ id: rule.id, thresholdValue: value }] },
+      {
+        onSuccess: () => toast.success(`${rule.id} threshold set to ${value} — live from the next read`),
+        onError: (mutationError) => toast.error(apiErrorMessage(mutationError, "Could not update the threshold")),
       },
     );
   };
@@ -270,6 +284,19 @@ export function MonitoringView() {
         </span>
       </div>
 
+      <div className="flex items-center gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-7 gap-1.5 text-xs"
+          onClick={() => setStatusPageOpen(true)}
+          data-testid="public-status-open"
+        >
+          <Globe className="size-3.5" aria-hidden="true" />
+          Public status page (demo)
+        </Button>
+      </div>
+
       <div
         role="tablist"
         aria-label="Monitoring sections"
@@ -319,8 +346,15 @@ export function MonitoringView() {
       {activeTab === "notifications" && <NotificationsPanel notifications={data.notifications} />}
       {activeTab === "integrations" && <IntegrationsHealthPanel integrations={data.integrations} />}
       {activeTab === "events" && (
-        <EventsPanel data={data} onToggleRule={onToggleRule} toggling={updateThresholds.isPending} />
+        <EventsPanel
+          data={data}
+          onToggleRule={onToggleRule}
+          onThresholdChange={onThresholdChange}
+          toggling={updateThresholds.isPending}
+        />
       )}
+
+      <PublicStatusDialog open={statusPageOpen} onOpenChange={setStatusPageOpen} data={data} nowMs={nowMs} />
     </div>
     </NowClockContext.Provider>
   );

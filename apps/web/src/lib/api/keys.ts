@@ -25,6 +25,9 @@ export const queryKeys = {
   reviewRoot: ["review"] as const,
   alerts: ["alerts"] as const,
   ecoEvents: ["eco-events"] as const,
+  // Calendar module upgrades
+  calendarView: (from: string, to: string) => ["calendar-view", from, to] as const,
+  calendarBlocks: ["calendar-blocks"] as const,
   statsOverview: ["stats-overview"] as const,
   statsAnalytics: ["stats-analytics"] as const,
   analyticsSuite: (filters: string) => ["analytics-suite", filters] as const,

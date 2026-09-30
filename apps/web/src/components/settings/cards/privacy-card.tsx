@@ -15,6 +15,7 @@ import {
   useDomainDraft,
 } from "@/components/settings/settings-primitives";
 import { BackupCard } from "@/components/settings/backup-card";
+import { PreferencesBackupCard } from "@/components/settings/preferences-backup-card";
 import {
   usePreferences,
   useResetPreferencesDomain,
@@ -151,6 +152,9 @@ export function PrivacyCard() {
 
       {/* Data ownership — the existing export/import flow (Priorité 3). */}
       <BackupCard />
+
+      {/* Preferences profile (module upgrade) — settings-only JSON backup. */}
+      <PreferencesBackupCard />
 
       <p className="flex items-start gap-2 text-xs leading-relaxed text-muted-foreground">
         <ShieldCheck className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />

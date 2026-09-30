@@ -30,6 +30,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import {
   EvidenceNote,
   FreshnessBadge,
@@ -282,6 +283,12 @@ export function MarketDataPanel({
     providers: { id: string; source: string; status: Record<string, unknown> }[];
   } | null;
 }) {
+  // Granular per-symbol degradation (module upgrade) — name the affected
+  // symbols explicitly instead of a single feed-level verdict.
+  const degraded = feed.symbols.filter((symbol) => symbol.freshness === "STALE" || symbol.freshness === "DELAYED");
+  const staleSymbols = feed.symbols.filter((symbol) => symbol.freshness === "STALE");
+  const liveCount = feed.symbols.filter((symbol) => symbol.freshness === "LIVE").length;
+
   return (
     <div className="space-y-4" data-testid="monitoring-market">
       <PanelCard
@@ -300,6 +307,27 @@ export function MarketDataPanel({
             thresholds: LIVE ≤ {(feed.thresholds.liveMaxMs / 1_000).toFixed(0)}s · STALE &gt; {(feed.thresholds.delayedMaxMs / 1_000).toFixed(0)}s
           </Badge>
         </div>
+        {feed.symbols.length > 0 && (
+          <div
+            className={cn(
+              "rounded-lg border px-3 py-2 text-xs",
+              degraded.length === 0 ? "border-border bg-surface-raised text-muted-foreground" : "border-warning/40 bg-warning/10 text-warning",
+            )}
+            data-testid="market-symbol-degradation"
+          >
+            <p className="font-semibold">
+              {liveCount}/{feed.symbols.length} symbols LIVE
+              {staleSymbols.length > 0 ? ` · ${staleSymbols.length} STALE` : degraded.length > 0 ? ` · ${degraded.length - staleSymbols.length} DELAYED` : ""}
+            </p>
+            {degraded.length > 0 ? (
+              <p className="mt-0.5 leading-relaxed">
+                Degraded: {degraded.map((symbol) => `${symbol.symbol} (${symbol.freshness.toLowerCase()}, last tick ${ageLabel(symbol.ageMs)} ago)`).join(" · ")}. All other symbols unaffected — per-symbol degradation, not a feed outage.
+              </p>
+            ) : (
+              <p className="mt-0.5">Every subscribed symbol is inside the LIVE window.</p>
+            )}
+          </div>
+        )}
         <EvidenceNote>
           Freshness classes are computed per tick from the thresholds configured for this data source (§17) — stale data is never presented as live.
         </EvidenceNote>

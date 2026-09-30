@@ -250,6 +250,20 @@ export const notificationPreferencesSchema = z.object({
   economic: z.object({ enabled: z.boolean(), events: economicEventsSchema }),
   system: z.object({ enabled: z.boolean(), events: systemEventsSchema }),
   reports: z.object({ enabled: z.boolean(), events: reportsEventsSchema }),
+  /**
+   * Quiet hours (module upgrade) — OUT-OF-BAND channels only (push/email).
+   * In-app is never silenced: the inbox is the system of record. "HH:MM"
+   * 24h keys; a window crossing midnight is supported by the engine.
+   */
+  quietHours: z.object({
+    enabled: z.boolean(),
+    /** Inclusive start, "HH:MM" in the user's timezone. */
+    from: z.string().regex(/^\d{2}:\d{2}$/, "HH:MM"),
+    /** Exclusive end, "HH:MM". */
+    to: z.string().regex(/^\d{2}:\d{2}$/, "HH:MM"),
+    /** Which channels are muted inside the window. */
+    channels: z.object({ push: z.boolean(), email: z.boolean() }),
+  }),
 });
 
 export type NotificationPreferences = z.infer<typeof notificationPreferencesSchema>;
@@ -575,6 +589,12 @@ export const DEFAULT_USER_PREFERENCES: UserPreferencesDefaults = {
         WEEKLY_SUMMARY: { inApp: false, email: true, push: false },
         MONTHLY_SUMMARY: { inApp: false, email: true, push: false },
       },
+    },
+    quietHours: {
+      enabled: false,
+      from: "22:00",
+      to: "07:00",
+      channels: { push: true, email: true },
     },
   },
   appearance: {

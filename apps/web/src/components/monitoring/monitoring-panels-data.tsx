@@ -7,6 +7,7 @@ import {
   ArrowUpRight,
   BellRing,
   Database,
+  Download,
   FileClock,
   ListChecks,
   PlugZap,
@@ -22,6 +23,7 @@ import { cn } from "@/lib/utils";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import {
   EvidenceNote,
@@ -406,44 +408,103 @@ export function IntegrationsHealthPanel({ integrations }: { integrations: Overvi
 export function EventsPanel({
   data,
   onToggleRule,
+  onThresholdChange,
   toggling,
 }: {
   data: Overview;
   onToggleRule: (rule: AlertRule, enabled: boolean) => void;
+  onThresholdChange: (rule: AlertRule, value: number) => void;
   toggling: boolean;
 }) {
   const nowMs = useNowClock();
+
+  // Local draft of the numeric knobs — applied per row on “Apply”.
+  const [knobs, setKnobs] = React.useState<Record<string, string>>({});
+  const knobValue = (rule: AlertRule): string =>
+    knobs[rule.id] ?? (rule.thresholdValue === null ? "" : String(rule.thresholdValue));
+
+  /** Export the FULL event ledger (system + integration) as CSV. */
+  const exportLedgerCsv = () => {
+    const escape = (value: string): string => `"${value.replaceAll("\"", "\"\"")}"`;
+    const rows: string[] = [
+      "at,log,source,type,level,message",
+      ...data.events.map((event) =>
+        [event.at, "system", event.source, event.type, event.level, event.message].map((cell) => escape(String(cell))).join(","),
+      ),
+      ...data.integrationEvents.map((event) =>
+        [event.occurredAt, "integration", event.providerName, event.type, "INFO", event.message].map((cell) => escape(String(cell))).join(","),
+      ),
+    ];
+    const blob = new Blob([rows.join("\n")], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `cosmoz-event-ledger-${new Date().toISOString().slice(0, 10)}.csv`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="space-y-4" data-testid="monitoring-events">
-      {/* Alert rules — configurable (§14) */}
+      {/* Alert rules — configurable (§14): toggles AND numeric knobs */}
       <PanelCard
         icon={Settings2}
         title="Alert rules"
-        description="Toggle the conditions Monitoring watches — persisted in the engine, evaluated against live telemetry."
+        description="Toggle the conditions Monitoring watches and tune their thresholds — persisted in the engine, evaluated against live telemetry."
       >
         <div className="grid gap-1.5" data-testid="monitoring-alert-rules">
-          {data.thresholds.rules.map((rule) => (
-            <div
-              key={rule.id}
-              className="flex items-center justify-between gap-3 rounded-lg border border-border/60 px-3 py-2"
-              data-testid={`rule-row-${rule.id}`}
-            >
-              <div className="min-w-0">
-                <p className="font-mono text-xs font-medium">{rule.id}</p>
-                <p className="truncate text-xs text-muted-foreground">{rule.thresholdLabel}</p>
+          {data.thresholds.rules.map((rule) => {
+            const hasKnob = rule.thresholdValue !== null;
+            const parsed = Number(knobValue(rule));
+            const changed = hasKnob && Number.isFinite(parsed) && parsed !== rule.thresholdValue;
+            return (
+              <div
+                key={rule.id}
+                className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border/60 px-3 py-2"
+                data-testid={`rule-row-${rule.id}`}
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="font-mono text-xs font-medium">{rule.id}</p>
+                  <p className="truncate text-xs text-muted-foreground">{rule.thresholdLabel}</p>
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
+                  {hasKnob && (
+                    <span className="flex items-center gap-1">
+                      <Input
+                        type="number"
+                        value={knobValue(rule)}
+                        onChange={(event) => setKnobs((previous) => ({ ...previous, [rule.id]: event.target.value }))}
+                        className="h-7 w-24 font-mono text-xs tabular-nums"
+                        aria-label={`Threshold value for ${rule.id}`}
+                        data-testid={`rule-input-${rule.id}`}
+                      />
+                      {changed && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 px-2 text-[11px]"
+                          disabled={toggling}
+                          onClick={() => onThresholdChange(rule, parsed)}
+                          data-testid={`rule-apply-${rule.id}`}
+                        >
+                          Apply
+                        </Button>
+                      )}
+                    </span>
+                  )}
+                  <Switch
+                    checked={rule.enabled}
+                    disabled={toggling}
+                    onCheckedChange={(checked) => onToggleRule(rule, checked)}
+                    aria-label={`Toggle rule ${rule.id}`}
+                  />
+                </div>
               </div>
-              <Switch
-                checked={rule.enabled}
-                disabled={toggling}
-                onCheckedChange={(checked) => onToggleRule(rule, checked)}
-                aria-label={`Toggle rule ${rule.id}`}
-              />
-            </div>
-          ))}
+            );
+          })}
         </div>
         <EvidenceNote>
-          Freshness thresholds: LIVE ≤ {(data.thresholds.freshness.liveMaxMs / 1_000).toFixed(0)} s · STALE &gt;{" "}
-          {(data.thresholds.freshness.delayedMaxMs / 1_000).toFixed(0)} s (§17 — tuned per data source).
+          Threshold changes are CONFIG_CHANGE events in the ledger; raising a rule notifies the in-app inbox once per episode.
         </EvidenceNote>
       </PanelCard>
 
@@ -525,12 +586,24 @@ export function EventsPanel({
         )}
       </PanelCard>
 
-      {/* System event log (§15) — append-only */}
+      {/* System event log (§15) — append-only, exportable */}
       <PanelCard
         icon={ScrollText}
         title="System events"
         description="Append-only — connection changes, failures, recoveries and config changes. Distinct from the Security audit log."
         testId="monitoring-system-events"
+        action={
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 gap-1.5 px-2 text-[11px]"
+            onClick={exportLedgerCsv}
+            data-testid="monitoring-export-ledger"
+          >
+            <Download className="size-3" aria-hidden="true" />
+            Export ledger (CSV)
+          </Button>
+        }
       >
         {data.events.length === 0 ? (
           <p className="text-sm text-muted-foreground">No system event yet in this session.</p>

@@ -76,6 +76,8 @@ const MAX_LOGINS_RETURNED = 15;
 const MINUTE_MS = 60 * 1000;
 const HOUR_MS = 60 * MINUTE_MS;
 const DAY_MS = 24 * HOUR_MS;
+/** Inbox reminder threshold — 2FA off for more than a week is actionable. */
+const TWO_FACTOR_REMINDER_AFTER_DAYS = 7;
 
 const nowIso = (): string => new Date().toISOString();
 
@@ -128,6 +130,8 @@ class SecurityEngine {
     pending: false,
     method: null,
     enabledAt: null,
+    // Seeded 10 days back so the >7-day inbox reminder is live in the demo.
+    disabledAt: daysAgoIso(10),
     lastVerifiedAt: null,
     recoveryCodesRemaining: 0,
   };
@@ -416,6 +420,36 @@ class SecurityEngine {
         securityEventsDays: EVENTS_RETENTION_DAYS,
         loginHistoryDays: LOGIN_RETENTION_DAYS,
       },
+      securityScore: this.securityScore(protection),
+    };
+  }
+
+  /** Checklist score derived from the SAME hard facts (module upgrade). */
+  private securityScore(protection: SecurityOverviewResponse["protection"]): SecurityOverviewResponse["securityScore"] {
+    const total = protection.length;
+    const passed = protection.filter((check) => check.pass).length;
+    const score = total === 0 ? 0 : Math.round((passed / total) * 100);
+    const rating = score >= 85 ? "STRONG" : score >= 60 ? "FAIR" : "WEAK";
+    return { score, passed, total, rating };
+  }
+
+  /**
+   * 2FA-off reminder state (module upgrade): while 2FA stays disabled for
+   * more than 7 days, the inbox pushes a proactive reminder — dismissed with
+   * the alert, re-raised only after the state changes (engine-owned truth).
+   */
+  twoFactorReminder(): { active: boolean; days: number; message: string } {
+    if (this.twoFactor.enabled || this.twoFactor.disabledAt === null) {
+      return { active: false, days: 0, message: "" };
+    }
+    const days = Math.floor((Date.now() - new Date(this.twoFactor.disabledAt).getTime()) / DAY_MS);
+    if (days <= TWO_FACTOR_REMINDER_AFTER_DAYS) {
+      return { active: false, days, message: "" };
+    }
+    return {
+      active: true,
+      days,
+      message: `Two-factor authentication has been OFF for ${days} days. An authenticator app adds a second barrier in front of your journal — enable it from Security → Two-factor.`,
     };
   }
 
@@ -554,6 +588,7 @@ class SecurityEngine {
       pending: false,
       method: "AUTHENTICATOR_APP",
       enabledAt: nowIso(),
+      disabledAt: null,
       lastVerifiedAt: nowIso(),
       recoveryCodesRemaining: RECOVERY_CODE_COUNT,
     };
@@ -578,6 +613,7 @@ class SecurityEngine {
       pending: false,
       method: null,
       enabledAt: null,
+      disabledAt: nowIso(),
       lastVerifiedAt: null,
       recoveryCodesRemaining: 0,
     };

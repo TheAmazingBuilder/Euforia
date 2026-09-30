@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useSearchParams } from "next/navigation";
 import { BellRing, CalendarDays, Pencil, Plus, Target, Trash2, TrendingDown, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
 import type { GoalWithProgress } from "@cosmoz/shared";
@@ -38,6 +39,19 @@ import { GoalFormDialog } from "@/components/trade-review/goal-form-dialog";
 
 export function GoalsPanel() {
   const goalsQuery = useGoals();
+  const searchParams = useSearchParams();
+
+  // Deep-link from a GOAL_STATUS inbox alert: /journal?tab=goals&goal=<id>
+  // highlights the card and scrolls it into view.
+  const highlightedGoalId = searchParams.get("goal");
+  const highlightRef = React.useRef<HTMLDivElement | null>(null);
+  React.useEffect(() => {
+    if (highlightedGoalId === null) return;
+    const timer = window.setTimeout(() => {
+      highlightRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 150);
+    return () => window.clearTimeout(timer);
+  }, [highlightedGoalId, goalsQuery.data]);
   const deleteGoal = useDeleteGoal();
 
   const [formOpen, setFormOpen] = React.useState(false);
@@ -121,11 +135,15 @@ export function GoalsPanel() {
             return (
               <Card
                 key={goal.id}
-                className="relative overflow-hidden"
+                className={cn(
+                  "relative overflow-hidden",
+                  goal.id === highlightedGoalId && "ring-2 ring-accent ring-offset-2 ring-offset-background",
+                )}
                 data-testid="goal-card"
                 data-metric={goal.metric}
                 data-status={progress.status}
               >
+                {goal.id === highlightedGoalId && <div ref={highlightRef} aria-hidden="true" />}
                 {/* The colorful signature — a gradient spine per goal color */}
                 <span
                   className={cn("absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r", GOAL_GRADIENTS[goal.color])}

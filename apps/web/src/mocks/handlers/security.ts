@@ -16,7 +16,14 @@ import {
 
 import { apiPaths } from "@/lib/api/endpoints";
 import { securityEngine } from "@/mocks/security-engine";
+import { mockStore } from "@/mocks/store";
 import { endpoint, latency, parseBody, pathParam, toErrorResponse } from "./utils";
+
+/**
+ * Module upgrade — the 2FA-off inbox reminder. The engine owns the truth;
+ * the store's inbox evaluates the injected check on every read.
+ */
+mockStore.registerSecurityReminderCheck(() => securityEngine.twoFactorReminder());
 
 /**
  * Security endpoints (MASTER PROMPT §5–§19). Inputs are Zod-validated, engine

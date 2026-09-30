@@ -115,14 +115,44 @@ export function OverviewPanel({
         <CardHeader>
           <CardTitle className="flex items-center gap-2 font-heading text-base font-semibold">
             <ShieldCheck className="size-4 text-accent" aria-hidden="true" />
-            Account protection
+            Security checklist
           </CardTitle>
           <CardDescription>
-            Every check below is a hard fact about the account, evaluated with
-            the stated methodology — no composite score.
+            Every check is a hard fact about the account, evaluated with the stated methodology.
+            The score is derived from those same checks — real state, never vibes.
           </CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-2 sm:grid-cols-2">
+        {/* Real-state score banner (module upgrade) */}
+        <div className="px-6" data-testid="security-score-banner">
+          <div
+            className={cn(
+              "flex flex-wrap items-center gap-3 rounded-lg border px-4 py-3",
+              overview.securityScore.rating === "STRONG"
+                ? "border-accent/40 bg-accent/10"
+                : overview.securityScore.rating === "FAIR"
+                  ? "border-warning/40 bg-warning/10"
+                  : "border-destructive/40 bg-destructive/10",
+            )}
+          >
+            <p className="font-mono text-3xl font-bold tabular-nums">{overview.securityScore.score}</p>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold">{overview.securityScore.rating} — {overview.securityScore.passed}/{overview.securityScore.total} checks pass</p>
+              <p className="text-xs text-muted-foreground">
+                Fix the ACTION items below to raise the score — it recomputes from the live engine state on every read.
+              </p>
+            </div>
+            <div className="h-2 w-28 overflow-hidden rounded-full bg-muted">
+              <span
+                className={cn(
+                  "block h-full rounded-full",
+                  overview.securityScore.rating === "STRONG" ? "bg-accent" : overview.securityScore.rating === "FAIR" ? "bg-warning" : "bg-destructive",
+                )}
+                style={{ width: `${overview.securityScore.score}%` }}
+              />
+            </div>
+          </div>
+        </div>
+        <CardContent className="mt-3 grid gap-2 sm:grid-cols-2">
           {overview.protection.map((check) => (
             <div
               key={check.id}
@@ -839,7 +869,35 @@ function ConnectedAccountRow({ account }: { account: ConnectedAccount }) {
 
 // ── §10 Security events (append-only) ────────────────────────────────────────
 
-function EventRow({ event, compact }: { event: SecurityEvent; compact?: boolean }) {
+function EventRow({ event, compact, detailed = false }: { event: SecurityEvent; compact?: boolean; detailed?: boolean }) {
+  if (detailed) {
+    // Readable WHO / WHAT / WHEN layout for the audit-history panel.
+    return (
+      <div
+        className="grid gap-1 rounded-lg border border-border bg-background/60 px-3 py-2 sm:grid-cols-[86px_1fr_auto] sm:items-start"
+        data-testid={`event-${event.type}`}
+      >
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Who</span>
+        <span className="text-sm font-medium">{event.actor}</span>
+        <span aria-hidden="true" className="hidden sm:block" />
+
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">What</span>
+        <span className="min-w-0">
+          <EventBadge type={event.type} />
+          <span className="ml-2 text-xs text-muted-foreground">{event.context}</span>
+        </span>
+        <span aria-hidden="true" className="hidden sm:block" />
+
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">When</span>
+        <span className="font-mono text-xs tabular-nums text-muted-foreground">
+          {event.at.slice(0, 10)} · {event.at.slice(11, 19)} UTC
+        </span>
+        <span className="justify-self-end sm:justify-self-auto">
+          <EventOutcomeIcon outcome={event.outcome} />
+        </span>
+      </div>
+    );
+  }
   return (
     <div
       className={cn(
@@ -873,11 +931,12 @@ export function EventsPanel({ overview }: { overview: Overview }) {
       <CardHeader>
         <CardTitle className="flex items-center gap-2 font-heading text-base font-semibold">
           <ScrollText className="size-4 text-accent" aria-hidden="true" />
-          Security events
+          Sensitive changes history
         </CardTitle>
         <CardDescription>
-          Append-only audit trail — events cannot be edited or deleted from the
-          app. Retention:{" "}
+          Append-only audit trail of every sensitive change, readable as WHO (actor) · WHAT
+          (type + context) · WHEN (full UTC timestamp). Events cannot be edited or deleted from
+          the app. Retention:{" "}
           <span className="font-mono tabular-nums">
             {overview.retention.securityEventsDays} days
           </span>
@@ -886,7 +945,7 @@ export function EventsPanel({ overview }: { overview: Overview }) {
       </CardHeader>
       <CardContent className="grid max-h-[32rem] gap-1.5 overflow-y-auto">
         {overview.events.map((event) => (
-          <EventRow key={event.id} event={event} />
+          <EventRow key={event.id} event={event} detailed />
         ))}
       </CardContent>
     </Card>

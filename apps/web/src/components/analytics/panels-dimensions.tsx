@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/card";
 import { BucketBars, LOW_SAMPLE_N } from "@/components/analytics/bucket-bars";
 import { RHeatmap } from "@/components/analytics/r-heatmap";
+import { AbComparator } from "@/components/analytics/ab-comparator";
 import { MethodNote } from "@/components/analytics/metric-card";
 import { cn } from "@/lib/utils";
 
@@ -123,6 +124,8 @@ export function StrategyTab({ suite, onDrillToStrategy }: RowClickProps & { suit
           </div>
         </CardContent>
       </Card>
+
+      <AbComparator suite={suite} />
     </div>
   );
 }

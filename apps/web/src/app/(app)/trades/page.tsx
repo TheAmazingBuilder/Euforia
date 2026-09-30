@@ -1,3 +1,5 @@
+import { Suspense } from "react";
+
 import type { Metadata } from "next";
 
 import { TradesTable } from "@/components/trades/trades-table";
@@ -10,5 +12,9 @@ export const metadata: Metadata = {
 };
 
 export default function TradesPage() {
-  return <TradesTable />;
+  return (
+    <Suspense fallback={<> <div className="mx-auto h-40 w-full max-w-5xl animate-pulse rounded-xl bg-muted" /> </>}>
+      <TradesTable />
+    </Suspense>
+  );
 }

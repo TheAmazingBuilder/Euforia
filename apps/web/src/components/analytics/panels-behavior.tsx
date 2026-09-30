@@ -3,7 +3,7 @@
 import * as React from "react";
 import type { AnalyticsSuiteResponse } from "@cosmoz/shared";
 import { formatMoney, formatNumber, formatPercent, formatR, formatSignedMoney } from "@cosmoz/shared";
-import { CalendarClock, Download, Gauge, Sigma, Timer } from "lucide-react";
+import { CalendarClock, Download, FileDown, Gauge, Sigma, Timer } from "lucide-react";
 
 import {
   Card,
@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/card";
 import { MetricCard, MethodNote } from "@/components/analytics/metric-card";
 import { ExcursionScatter, HistogramChart, MonteCarloChart } from "@/components/analytics/panels-charts";
+import { QuarterlyReportDialog } from "@/components/analytics/quarterly-report-dialog";
 import { cn } from "@/lib/utils";
 
 /**
@@ -466,6 +467,7 @@ export function ReportsTab({ suite }: { suite: Suite }) {
   const currency = suite.currency;
   const [range, setRange] = React.useState<"daily" | "weekly" | "monthly">("monthly");
   const rows = suite.reports[range];
+  const [reportOpen, setReportOpen] = React.useState(false);
 
   return (
     <div className="space-y-4" data-testid="analytics-tab-reports">
@@ -495,6 +497,15 @@ export function ReportsTab({ suite }: { suite: Suite }) {
                 </button>
               ))}
             </div>
+            <button
+              type="button"
+              onClick={() => setReportOpen(true)}
+              className="flex h-8 items-center gap-1.5 rounded-md border border-border px-2.5 text-[11px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              data-testid="quarterly-report-open"
+            >
+              <FileDown className="size-3.5" aria-hidden="true" />
+              Quarterly PDF
+            </button>
             <button
               type="button"
               onClick={() => exportCsv(suite)}
@@ -560,6 +571,8 @@ export function ReportsTab({ suite }: { suite: Suite }) {
           </div>
         </CardContent>
       </Card>
+
+      <QuarterlyReportDialog open={reportOpen} onOpenChange={setReportOpen} suite={suite} />
     </div>
   );
 }

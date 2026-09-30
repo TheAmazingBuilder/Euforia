@@ -16,6 +16,10 @@ import {
   type CreateSavedTradeViewInput,
   type CreateSavedTradeViewResponse,
   type DeleteSavedTradeViewResponse,
+  type CalendarBlock,
+  type CalendarViewResponse,
+  type ImportEcoBlockersResponse,
+  type UpsertCalendarBlockInput,
   type EcoEventsResponse,
   type AnalyticsBucket,
   type AnalyticsResponse,
@@ -283,6 +287,8 @@ export function createMockStore() {
     {
       id: crypto.randomUUID(),
       name: "Open positions",
+      scope: "TRADES",
+      analyticsFilters: null,
       filters: {
         q: "", status: "OPEN", direction: "all", instrumentId: "", strategyId: "",
         outcome: "all", tagId: "", from: "", to: "",
@@ -295,6 +301,8 @@ export function createMockStore() {
     {
       id: crypto.randomUUID(),
       name: "Losses — last 30d",
+      scope: "TRADES",
+      analyticsFilters: null,
       filters: {
         q: "", status: "CLOSED", direction: "all", instrumentId: "", strategyId: "",
         outcome: "loss", tagId: "", from: dateKeyOffset(-29), to: "",
@@ -302,6 +310,22 @@ export function createMockStore() {
       columns: ["date", "instrument", "side", "strategy", "r", "pnl", "grade", "tags"],
       sortKey: "pnl",
       sortDir: "asc",
+      createdAt: nowIso(),
+    },
+    {
+      // ANALYTICS-scope preset in the SAME unified library — Analytics reads
+      // and writes this store, Trades keeps seeing only the TRADES scope.
+      id: crypto.randomUUID(),
+      name: "Revenge review — last 90d",
+      scope: "ANALYTICS",
+      analyticsFilters: { period: "LAST_90", emotion: "REVENGE" },
+      filters: {
+        q: "", status: "CLOSED", direction: "all", instrumentId: "", strategyId: "",
+        outcome: "all", tagId: "", from: "", to: "",
+      },
+      columns: ["date"],
+      sortKey: "date",
+      sortDir: "desc",
       createdAt: nowIso(),
     },
   ];
@@ -427,9 +451,62 @@ export function createMockStore() {
     syncGoalAlerts();
     // Weekly discipline report — Monday-send mechanics, idempotent per week.
     syncWeeklyDisciplineReport();
+    // Security reminder bridge (2FA off > 7 days) — engine-injected check.
+    syncSecurityReminders();
     const alerts = [...data.alerts].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
     const unreadCount = alerts.filter((a) => a.readAt === null && a.dismissedAt === null).length;
     return { alerts, unreadCount };
+  }
+
+  /**
+   * Security engine → inbox bridge (module upgrade). The engine owns the
+   * 2FA truth; the store owns the inbox. The check is registered at handler
+   * init and re-evaluated on every inbox read: a >7-day 2FA-off state raises
+   * ONE proactive reminder (deduped while live, dismissed when resolved).
+   */
+  let securityReminderCheck: (() => { active: boolean; days: number; message: string }) | null = null;
+
+  function registerSecurityReminderCheck(fn: () => { active: boolean; days: number; message: string }): void {
+    securityReminderCheck = fn;
+  }
+
+  function syncSecurityReminders(): void {
+    if (securityReminderCheck === null) return;
+    const reminder = securityReminderCheck();
+    const liveReminders = data.alerts.filter(
+      (a) =>
+        a.type === "SYSTEM" &&
+        a.dismissedAt === null &&
+        a.payload !== null &&
+        typeof a.payload === "object" &&
+        (a.payload as Record<string, unknown>).kind === "TWO_FACTOR_OFF",
+    );
+    if (reminder.active) {
+      if (liveReminders.length === 0) {
+        data.alerts.push({
+          id: crypto.randomUUID(),
+          userId: user.id,
+          type: "SYSTEM",
+          severity: "WARN",
+          title: "Security reminder — two-factor is off",
+          message: reminder.message,
+          payload: { kind: "TWO_FACTOR_OFF", days: reminder.days },
+          tradeId: null,
+          readAt: null,
+          dismissedAt: null,
+          createdAt: nowIso(),
+        });
+      } else {
+        // Keep the message/days fresh on the live reminder.
+        for (const reminderAlert of liveReminders) {
+          reminderAlert.message = reminder.message;
+        }
+      }
+    } else if (liveReminders.length > 0) {
+      for (const reminderAlert of liveReminders) {
+        reminderAlert.dismissedAt = nowIso();
+      }
+    }
   }
 
   function markAlertRead(alertId: string): Alert {
@@ -439,10 +516,174 @@ export function createMockStore() {
     return alert;
   }
 
+  /**
+   * Monitoring → inbox bridge (module upgrade): a NEW raised monitoring rule
+   * reaches the user's bell as a SYSTEM alert. Deduped per rule while the
+   * previous notification is still unread, so a flapping rule cannot flood
+   * the inbox; the Monitoring board remains the detailed view.
+   */
+  function pushMonitoringAlert(input: { ruleId: string; severity: "INFO" | "WARNING" | "CRITICAL"; message: string }): void {
+    const stillUnread = data.alerts.find(
+      (a) =>
+        a.type === "SYSTEM" &&
+        a.readAt === null &&
+        a.dismissedAt === null &&
+        a.payload !== null &&
+        typeof a.payload === "object" &&
+        (a.payload as Record<string, unknown>).ruleId === input.ruleId,
+    );
+    if (stillUnread) return;
+    data.alerts.push({
+      id: crypto.randomUUID(),
+      userId: user.id,
+      type: "SYSTEM",
+      severity: input.severity === "CRITICAL" ? "ALERT" : input.severity === "WARNING" ? "WARN" : "NOTIFY",
+      title: `Monitoring — ${input.ruleId}`,
+      message: input.message,
+      payload: { ruleId: input.ruleId },
+      tradeId: null,
+      readAt: null,
+      dismissedAt: null,
+      createdAt: nowIso(),
+    });
+  }
+
   /** GET /eco-events — economic calendar, chronological. Fed by the
    *  Integration Hub's economic provider pipeline (§9/§22), not hardcoded. */
   function listEcoEvents(): EcoEventsResponse {
     return integrationEngine.listEcoEventsForCalendar();
+  }
+
+  // ── Calendar module: trading overlay, day-offs, eco blockers, semester ────
+
+  /** One entry per marked date — the trading-calendar block store. */
+  const calendarBlocks = new Map<string, CalendarBlock>();
+  // Seed: one planned day off in the recent past so the exclusion mechanics
+  // are visible without any setup (editors remove it with one click).
+  calendarBlocks.set(dateKeyOffset(-11), {
+    date: dateKeyOffset(-11),
+    kind: "OFF",
+    note: "Planned day off — long weekend",
+    createdAt: nowIso(),
+  });
+
+  function listCalendarBlocks(): { blocks: CalendarBlock[] } {
+    return {
+      blocks: [...calendarBlocks.values()]
+        .map((block) => ({ ...block }))
+        .sort((a, b) => a.date.localeCompare(b.date)),
+    };
+  }
+
+  function upsertCalendarBlock(input: UpsertCalendarBlockInput): { block: CalendarBlock } {
+    const block: CalendarBlock = {
+      date: input.date,
+      kind: input.kind,
+      note: input.note ?? (input.kind === "OFF" ? "Planned day off" : "High-impact news"),
+      createdAt: nowIso(),
+    };
+    calendarBlocks.set(input.date, block);
+    return { block };
+  }
+
+  function deleteCalendarBlock(date: string): { block: CalendarBlock | null; deleted: boolean } {
+    const existing = calendarBlocks.get(date) ?? null;
+    calendarBlocks.delete(date);
+    return { block: existing, deleted: true };
+  }
+
+  /** Import news blockers: HIGH-impact eco events ahead become NEWS blocks. */
+  function importEcoBlockers(): ImportEcoBlockersResponse {
+    const today = dateKeyOffset(0);
+    const horizon = dateKeyOffset(13); // two trading weeks ahead
+    const dates = [
+      ...new Set(
+        data.ecoEvents
+          .filter((event) => event.impact === "HIGH")
+          .map((event) => event.scheduledAt.slice(0, 10))
+          .filter((date) => date >= today && date <= horizon),
+      ),
+    ].sort();
+    let imported = 0;
+    for (const date of dates) {
+      if (calendarBlocks.has(date)) continue;
+      calendarBlocks.set(date, {
+        date,
+        kind: "NEWS",
+        note: "High-impact releases (imported from the eco calendar)",
+        createdAt: nowIso(),
+      });
+      imported += 1;
+    }
+    return {
+      imported,
+      dates,
+      message:
+        imported === 0
+          ? "Nothing to import — the next two weeks are already marked or clear."
+          : `${imported} high-impact day${imported === 1 ? "" : "s"} imported as news blockers over the next two weeks.`,
+    };
+  }
+
+  /**
+   * GET /calendar-view?from&to — the trading-calendar overlay. Every row is
+   * server-computed from dailyStats + eco events + blocks; days marked OFF
+   * are EXCLUDED from the aggregates (planned rest is not trading data).
+   */
+  function calendarView(from: string, to: string): CalendarViewResponse {
+    const statByDate = new Map(data.dailyStats.map((stat) => [stat.date, stat]));
+    const ecoByDate = new Map<string, { total: number; high: number }>();
+    for (const event of data.ecoEvents) {
+      const key = event.scheduledAt.slice(0, 10);
+      const bucket = ecoByDate.get(key) ?? { total: 0, high: 0 };
+      bucket.total += 1;
+      if (event.impact === "HIGH") bucket.high += 1;
+      ecoByDate.set(key, bucket);
+    }
+
+    const days: CalendarViewResponse["days"] = [];
+    for (let key = from; key <= to; key = shiftDayKey(key)) {
+      const stat = statByDate.get(key);
+      const block = calendarBlocks.get(key) ?? null;
+      days.push({
+        date: key,
+        tradesCount: stat?.tradesCount ?? 0,
+        pnlNet: stat?.pnlNet ?? "0",
+        rEarned: stat?.rEarned ?? "0",
+        disciplineScore: stat?.disciplineScore ?? null,
+        violationsCount: stat?.violationsCount ?? 0,
+        ecoHighCount: ecoByDate.get(key)?.high ?? 0,
+        ecoCount: ecoByDate.get(key)?.total ?? 0,
+        block: block ? { ...block } : null,
+        excludedFromStats: block?.kind === "OFF",
+      });
+      if (days.length > 400) break; // window cap (semester = ~190 days)
+    }
+
+    const counted = days.filter((day) => !day.excludedFromStats);
+    const scored = counted.filter((day) => day.disciplineScore !== null);
+    const totalPnl = counted.reduce((sum, day) => sum + (Number(day.pnlNet) ?? 0), 0);
+    const totalR = counted.reduce((sum, day) => sum + (Number(day.rEarned) ?? 0), 0);
+
+    return {
+      days,
+      summary: {
+        from,
+        to,
+        tradingDays: counted.filter((day) => day.tradesCount > 0).length,
+        daysOff: days.length - counted.length,
+        blockedDays: counted.filter((day) => day.block?.kind === "NEWS").length,
+        totalPnl: toDecimalString(round2(totalPnl)),
+        totalR: toDecimalString(round2(totalR)),
+        disciplineAvg:
+          scored.length === 0
+            ? null
+            : toDecimalString(round2(scored.reduce((sum, day) => sum + Number(day.disciplineScore!), 0) / scored.length)),
+        violationsTotal: counted.reduce((sum, day) => sum + day.violationsCount, 0),
+      },
+      dailyLossLimitPct: preferences.risk.dailyLossLimitPct,
+      currency: mainAccount.currency,
+    };
   }
 
   /** GET /export/backup — full authored-data snapshot (feature 12). */
@@ -3193,6 +3434,70 @@ export function createMockStore() {
       monthlyGroups.set(monthKey, [...(monthlyGroups.get(monthKey) ?? []), trade]);
     }
 
+    // ── Server-detected anomalies (measured facts, never verdicts) ──────────
+    // The engine raises thresholded observations on the FILTERED dataset;
+    // the client renders them next to the dataset warnings.
+    const anomalies: AnalyticsSuiteResponse["meta"]["anomalies"] = [];
+    if (closed.length >= 10) {
+      // TAIL_LOSS — the worst 5 % of losing trades vs the total loss mass (R).
+      const lossR = closed.map(rOf).filter((r) => r < 0).sort((a, b) => a - b);
+      const totalLossAbs = lossR.reduce((sum, r) => sum + Math.abs(r), 0);
+      if (lossR.length >= 5 && totalLossAbs > 0) {
+        const tailCount = Math.max(1, Math.round(lossR.length * 0.05));
+        const tailAbs = lossR.slice(0, tailCount).reduce((sum, r) => sum + Math.abs(r), 0);
+        const share = (tailAbs / totalLossAbs) * 100;
+        if (share >= 40) {
+          anomalies.push({
+            code: "TAIL_LOSS",
+            severity: share >= 55 ? "ALERT" : "WARN",
+            message: `Tail loss: the ${tailCount} worst trades carry ${share.toFixed(0)} % of the total loss mass (${lossR.length} losers, Σ −${totalLossAbs.toFixed(1)} R).`,
+            hint: "Open the Risk tab to see the drawdown those trades dug.",
+          });
+        }
+      }
+
+      // OVERTRADING — unusually busy days whose average daily R underperforms.
+      const dayCounts = [...dailyGroups.values()].map((group) => group.length).sort((a, b) => a - b);
+      if (dayCounts.length >= 8) {
+        const medianCount = dayCounts[Math.floor(dayCounts.length / 2)]!;
+        const busyThreshold = Math.max(3, medianCount * 2);
+        const busyDays = [...dailyGroups.entries()].filter(([, group]) => group.length >= busyThreshold);
+        const normalDays = [...dailyGroups.entries()].filter(([, group]) => group.length < busyThreshold);
+        if (busyDays.length >= 1 && busyDays.length <= dayCounts.length * 0.3 && normalDays.length >= 2) {
+          const avgRBusy = mean(busyDays.flatMap(([, group]) => group.map(rOf)));
+          const avgRNormal = mean(normalDays.flatMap(([, group]) => group.map(rOf)));
+          if (avgRBusy !== null && avgRNormal !== null && avgRBusy < 0 && avgRBusy < avgRNormal) {
+            anomalies.push({
+              code: "OVERTRADING",
+              severity: "WARN",
+              message: `Overtrading: ${busyDays.length} unusually busy days (≥ ${busyThreshold} trades vs median ${medianCount}) average ${avgRBusy.toFixed(2)} R, vs ${avgRNormal.toFixed(2)} R on normal days.`,
+              hint: "Filter a busy day in the Time tab to inspect the sequence.",
+            });
+          }
+        }
+      }
+
+      // LOSS_STREAK — longest consecutive losing run in chronological order.
+      let streak = 0;
+      let worstStreak = 0;
+      for (const trade of closed) {
+        if (pnlOf(trade) < 0) {
+          streak += 1;
+          worstStreak = Math.max(worstStreak, streak);
+        } else {
+          streak = 0;
+        }
+      }
+      if (worstStreak >= 5) {
+        anomalies.push({
+          code: "LOSS_STREAK",
+          severity: worstStreak >= 8 ? "ALERT" : "INFO",
+          message: `Loss streak: ${worstStreak} consecutive losing trades in the chronological sequence.`,
+          hint: "Check the Psychology tab for the emotional state around the run.",
+        });
+      }
+    }
+
     return {
       meta: {
         resolvedFrom: from === "0000-01-01" ? (closed[0]?.tradingDate ?? from) : from,
@@ -3201,6 +3506,7 @@ export function createMockStore() {
         closedTrades: closed.length,
         openTradesExcluded,
         warnings,
+        anomalies,
         singleCurrency,
       },
       currency: mainAccount.currency,
@@ -3526,10 +3832,16 @@ export function createMockStore() {
     if (savedTradeViews.some((view) => view.name.toLowerCase() === name.toLowerCase())) {
       throw new MockError(409, "A view with this name already exists");
     }
+    const scope = input.scope ?? "TRADES";
     const view: SavedTradeView = {
       id: crypto.randomUUID(),
       name,
+      scope,
       filters: { ...input.filters },
+      analyticsFilters:
+        scope === "ANALYTICS" && input.analyticsFilters
+          ? { ...input.analyticsFilters }
+          : null,
       columns: [...input.columns],
       sortKey: input.sortKey,
       sortDir: input.sortDir,
@@ -4597,7 +4909,14 @@ export function createMockStore() {
     deleteGoal,
     listTags,
     listAlerts,
+    registerSecurityReminderCheck,
     listEcoEvents,
+    listCalendarBlocks,
+    upsertCalendarBlock,
+    deleteCalendarBlock,
+    importEcoBlockers,
+    calendarView,
+    pushMonitoringAlert,
     exportBackup,
     importBackup,
     markAlertRead,

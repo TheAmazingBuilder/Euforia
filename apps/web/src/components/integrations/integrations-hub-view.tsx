@@ -6,6 +6,7 @@ import {
   AlertTriangle,
   Check,
   Database,
+  HeartPulse,
   KeyRound,
   PlugZap,
   RefreshCw,
@@ -95,6 +96,9 @@ export function IntegrationsHubView() {
   const [connectId, setConnectId] = React.useState<string | null>(null);
   const [disconnectId, setDisconnectId] = React.useState<string | null>(null);
   const [vaultRef, setVaultRef] = React.useState("");
+  // Session-scoped health-check results (module upgrade) — "test now" leaves
+  // visible evidence on the card, not just a toast.
+  const [lastTest, setLastTest] = React.useState<Record<string, { ok: boolean; summary: string; at: string }>>({});
 
   const connect = useConnectIntegration();
   const disconnect = useDisconnectIntegration();
@@ -157,13 +161,40 @@ export function IntegrationsHubView() {
       onSuccess: (result) => {
         if (result.ok) {
           toast.success(`${provider.name}: connection test passed (auth, permissions, connectivity)`);
+          setLastTest((previous) => ({
+            ...previous,
+            [provider.id]: { ok: true, summary: "auth · permissions · connectivity · provider response — all passed", at: new Date().toISOString() },
+          }));
         } else {
           const failed = result.checks.filter((check) => !check.ok).map((check) => check.detail);
           toast.error(`${provider.name}: test failed — ${failed.join(" · ")}`);
+          setLastTest((previous) => ({
+            ...previous,
+            [provider.id]: { ok: false, summary: failed.join(" · "), at: new Date().toISOString() },
+          }));
         }
       },
       onError: (error) => toast.error(apiErrorMessage(error, "Connection test failed")),
     });
+  };
+
+  /** One-click reconnect (module upgrade) — clean simulated OAuth: the
+   * vault ref is derived from the provider id, no dialog, full pipeline
+   * (pair → credential test → status) re-runs server-side. */
+  const onReconnect = (provider: Provider) => {
+    connect.mutate(
+      { providerId: provider.id, input: { vaultRef: `vault://${provider.id}/api-key` } },
+      {
+        onSuccess: (result) => {
+          toast.success(
+            result.status === "AUTH_REQUIRED"
+              ? `${result.name} re-paired — but the credential still fails the test. Rotate the key in the provider console.`
+              : `${result.name} reconnected — ${result.status.toLowerCase()}`,
+          );
+        },
+        onError: (error) => toast.error(apiErrorMessage(error, "Reconnect failed")),
+      },
+    );
   };
 
   const onSync = (provider: Provider) => {
@@ -235,6 +266,8 @@ export function IntegrationsHubView() {
           overview={overview}
           onTest={onTest}
           onSync={onSync}
+          onReconnect={onReconnect}
+          lastTest={lastTest}
           onConnect={(provider) => {
             setVaultRef(`vault://${provider.id}/api-key`);
             setConnectId(provider.id);
@@ -249,6 +282,8 @@ export function IntegrationsHubView() {
           providers={overview.providers.filter((provider) => provider.kind === "BROKER")}
           onTest={onTest}
           onSync={onSync}
+          onReconnect={onReconnect}
+          lastTest={lastTest}
           onConnect={(provider) => {
             setVaultRef(`vault://${provider.id}/api-key`);
             setConnectId(provider.id);
@@ -262,6 +297,8 @@ export function IntegrationsHubView() {
           providers={overview.providers.filter((provider) => provider.kind === "EXCHANGE")}
           onTest={onTest}
           onSync={onSync}
+          onReconnect={onReconnect}
+          lastTest={lastTest}
           onConnect={(provider) => {
             setVaultRef(`vault://${provider.id}/api-key`);
             setConnectId(provider.id);
@@ -276,6 +313,8 @@ export function IntegrationsHubView() {
           overview={overview}
           onTest={onTest}
           onSync={onSync}
+          onReconnect={onReconnect}
+          lastTest={lastTest}
           onConnect={(provider) => {
             setVaultRef(`vault://${provider.id}/api-key`);
             setConnectId(provider.id);
@@ -289,6 +328,8 @@ export function IntegrationsHubView() {
           overview={overview}
           onTest={onTest}
           onSync={onSync}
+          onReconnect={onReconnect}
+          lastTest={lastTest}
           onConnect={(provider) => {
             setVaultRef(`vault://${provider.id}/api-key`);
             setConnectId(provider.id);
@@ -303,6 +344,8 @@ export function IntegrationsHubView() {
           providers={overview.providers.filter((provider) => provider.kind === "CHARTING")}
           onTest={onTest}
           onSync={onSync}
+          onReconnect={onReconnect}
+          lastTest={lastTest}
           onConnect={(provider) => {
             setVaultRef(`vault://${provider.id}/api-key`);
             setConnectId(provider.id);
@@ -317,6 +360,8 @@ export function IntegrationsHubView() {
           providers={overview.providers.filter((provider) => provider.kind === "NOTIFICATION")}
           onTest={onTest}
           onSync={onSync}
+          onReconnect={onReconnect}
+          lastTest={lastTest}
           onConnect={(provider) => {
             setVaultRef(`vault://${provider.id}/api-key`);
             setConnectId(provider.id);
@@ -336,6 +381,8 @@ export function IntegrationsHubView() {
           onDisconnect={(provider) => setDisconnectId(provider.id)}
           onTest={onTest}
           onSync={onSync}
+          onReconnect={onReconnect}
+          lastTest={lastTest}
           busy={connect.isPending || disconnect.isPending || test.isPending || sync.isPending}
           simulating={simulateWebhook.isPending}
           onSimulate={(mode) => {
@@ -464,6 +511,8 @@ function ProviderCard({
   onSync,
   onConnect,
   onDisconnect,
+  onReconnect,
+  lastTest,
   busy,
 }: {
   provider: Provider;
@@ -471,9 +520,13 @@ function ProviderCard({
   onSync: (provider: Provider) => void;
   onConnect: (provider: Provider) => void;
   onDisconnect: (provider: Provider) => void;
+  onReconnect: (provider: Provider) => void;
+  lastTest: Record<string, { ok: boolean; summary: string; at: string }>;
   busy: boolean;
 }) {
   const licenseBlocked = !provider.licensing.verified && provider.status === "DISCONNECTED";
+  const needsAuth = provider.status === "ERROR" || provider.status === "AUTH_REQUIRED";
+  const testResult = lastTest[provider.id];
   return (
     <Card className="border-border bg-surface" data-testid={`provider-card-${provider.id}`}>
       <CardHeader className="flex-row items-start justify-between space-y-0">
@@ -525,9 +578,36 @@ function ProviderCard({
           </div>
         )}
 
+        {testResult !== undefined && (
+          <div
+            className={cn(
+              "flex items-start gap-2 rounded-lg border px-3 py-2 text-xs",
+              testResult.ok ? "border-border bg-background/60 text-muted-foreground" : "border-destructive/40 bg-destructive/5 text-destructive",
+            )}
+            data-testid={`provider-lasttest-${provider.id}`}
+          >
+            <HeartPulse className={cn("mt-0.5 size-3.5 shrink-0", testResult.ok ? "text-profit" : "text-destructive")} aria-hidden="true" />
+            <span>
+              <span className="font-medium text-foreground">Last health check {testResult.at.slice(11, 19)} UTC:</span>{" "}
+              {testResult.summary}
+            </span>
+          </div>
+        )}
+
         <div className="flex flex-wrap gap-2">
           {provider.status !== "DISCONNECTED" ? (
             <>
+              {needsAuth && (
+                <Button
+                  size="sm"
+                  onClick={() => onReconnect(provider)}
+                  disabled={busy}
+                  data-testid={`provider-reconnect-${provider.id}`}
+                >
+                  <PlugZap className="size-3.5" aria-hidden="true" />
+                  Reconnect (1-click)
+                </Button>
+              )}
               <Button
                 variant="outline"
                 size="sm"
@@ -535,7 +615,7 @@ function ProviderCard({
                 disabled={busy}
                 data-testid={`provider-test-${provider.id}`}
               >
-                Test connection
+                Test now
               </Button>
               <Button
                 variant="outline"
@@ -580,6 +660,8 @@ type ProviderActions = {
   onSync: (provider: Provider) => void;
   onConnect: (provider: Provider) => void;
   onDisconnect: (provider: Provider) => void;
+  onReconnect: (provider: Provider) => void;
+  lastTest: Record<string, { ok: boolean; summary: string; at: string }>;
   busy: boolean;
 };
 
@@ -700,6 +782,53 @@ function OverviewPanel({
                   >
                     <Unplug className="size-3.5" aria-hidden="true" />
                   </Button>
+                )}
+              </div>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      {/* Sync journal (module upgrade) — last import + rejected lines per provider */}
+      <Card className="border-border bg-surface" data-testid="sync-journal">
+        <CardHeader>
+          <CardTitle className="font-heading text-base font-semibold">Sync journal</CardTitle>
+          <CardDescription>
+            Last import per provider — records processed, records REJECTED and the retry posture.
+            Rejected lines never enter your journal silently.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-2">
+          {overview.providers.map((provider) => (
+            <div
+              key={provider.id}
+              className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-background/60 px-3 py-2.5"
+              data-testid={`sync-journal-${provider.id}`}
+            >
+              <div className="min-w-0">
+                <p className="flex items-center gap-2 text-sm font-medium">
+                  {provider.name}
+                  <KindChip kind={provider.kind} />
+                </p>
+                <p className="font-mono text-xs tabular-nums text-muted-foreground">
+                  last import: {utc(provider.sync.lastSuccessAt)}
+                  {provider.sync.lastAttemptedAt !== null &&
+                    provider.sync.lastAttemptedAt !== provider.sync.lastSuccessAt &&
+                    ` · last attempt ${utc(provider.sync.lastAttemptedAt)} (failed)`}
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 font-mono text-xs tabular-nums">
+                <span className="text-muted-foreground">
+                  {provider.sync.recordsProcessed.toLocaleString("en-US")} processed
+                </span>
+                <span className={provider.sync.recordsFailed > 0 ? "text-destructive" : "text-muted-foreground"}>
+                  {provider.sync.recordsFailed.toLocaleString("en-US")} rejected
+                </span>
+                {provider.sync.retryCount > 0 && (
+                  <span className="text-amber-500">{provider.sync.retryCount} retries</span>
+                )}
+                {provider.sync.nextRetryAt !== null && (
+                  <span className="text-muted-foreground">next retry {utc(provider.sync.nextRetryAt)}</span>
                 )}
               </div>
             </div>
@@ -1100,6 +1229,8 @@ function ExternalPanel({
   onDisconnect,
   onTest,
   onSync,
+  onReconnect,
+  lastTest,
   busy,
   simulating,
   onSimulate,
@@ -1109,9 +1240,10 @@ function ExternalPanel({
   onSimulate: (mode: "valid" | "bad-signature" | "stale-timestamp" | "replay") => void;
 }) {
   const externals = overview.providers.filter((provider) => provider.kind === "EXTERNAL");
+  const [showOutgoingDocs, setShowOutgoingDocs] = React.useState(false);
   return (
     <div className="flex flex-col gap-4">
-      <ProviderGridPanel providers={externals} {...{ onConnect, onDisconnect, onTest, onSync, busy }} />
+      <ProviderGridPanel providers={externals} {...{ onConnect, onDisconnect, onTest, onSync, onReconnect, lastTest, busy }} />
 
       {overview.webhooks.map((hook) => (
         <Card key={hook.id} className="border-border bg-surface" data-testid={`webhook-${hook.id}`}>
@@ -1192,6 +1324,78 @@ function ExternalPanel({
           </CardContent>
         </Card>
       ))}
+
+      {/* Outgoing webhooks (module upgrade) — documented contract with a
+          sample JSON payload Cosmoz DELIVERS to customer endpoints. */}
+      <Card className="border-border bg-surface" data-testid="outgoing-webhooks">
+        <CardHeader className="flex-row items-start justify-between space-y-0">
+          <div className="space-y-1.5">
+            <CardTitle className="flex items-center gap-2 font-heading text-base font-semibold">
+              <Webhook className="size-4 text-accent" aria-hidden="true" />
+              Outgoing webhooks
+            </CardTitle>
+            <CardDescription>
+              Cosmoz POSTs journal events to your endpoints — HMAC-SHA256 signed, retried with
+              backoff. The sample payload below documents the contract.
+            </CardDescription>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowOutgoingDocs((open) => !open)}
+            aria-expanded={showOutgoingDocs}
+            data-testid="outgoing-webhooks-toggle"
+          >
+            {showOutgoingDocs ? "Hide documentation" : "View documentation"}
+          </Button>
+        </CardHeader>
+        {showOutgoingDocs && (
+          <CardContent className="space-y-3">
+            <div className="grid gap-2 sm:grid-cols-3">
+              {(
+                [
+                  { event: "trade.closed", description: "A trade reached a terminal state" },
+                  { event: "goal.at_risk", description: "A goal slipped behind its pace" },
+                  { event: "sync.failed", description: "A provider sync failed permanently" },
+                ] as const
+              ).map((item) => (
+                <div key={item.event} className="rounded-lg border border-border bg-background/60 px-3 py-2">
+                  <p className="font-mono text-xs font-semibold">{item.event}</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">{item.description}</p>
+                </div>
+              ))}
+            </div>
+            <pre
+              className="overflow-x-auto rounded-lg border border-border bg-background p-3 font-mono text-[11px] leading-relaxed text-muted-foreground"
+              data-testid="outgoing-webhooks-sample"
+            >
+              {`POST <your-endpoint-url>
+Content-Type: application/json
+X-Cosmoz-Event: trade.closed
+X-Cosmoz-Signature: sha256=<hmac-of-body-with-endpoint-secret>
+X-Cosmoz-Delivery: <unique-uuid>
+
+{
+  "event": "trade.closed",
+  "occurredAt": "2026-10-01T14:32:11Z",
+  "data": {
+    "tradeId": "9f1d2a34-1111-4c2e-9b7f-0d6f5f3a1e02",
+    "symbol": "EURUSD",
+    "direction": "BUY",
+    "pnlNet": "152.40",
+    "rMultiple": "1.8"
+  }
+}`}
+            </pre>
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              Verification: recompute the HMAC over the raw body with your endpoint secret
+              (vault-stored, masked in this UI). Deliveries retry 5× with exponential backoff;
+              duplicates carry the same <span className="font-mono">X-Cosmoz-Delivery</span> id —
+              dedupe on it. Respond 2xx within 10 s to acknowledge.
+            </p>
+          </CardContent>
+        )}
+      </Card>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   Award,
@@ -8,8 +9,11 @@ import {
   BellOff,
   Brain,
   CheckCheck,
+  ChevronDown,
   Gauge,
+  History,
   Info,
+  Layers,
   ShieldAlert,
   Target,
   TrendingDown,
@@ -24,9 +28,10 @@ import { cn } from "@/lib/utils";
 
 /**
  * Notification center — the topbar bell opens a popover inbox fed by the
- * discipline engine (GET /alerts). Clicking an unread alert marks it read;
- * "Mark all read" sweeps the rest. Same severity palette as the dashboard
- * feed (discipline colors, not P&L colors).
+ * discipline engine (GET /alerts). Module upgrades: alerts GROUP BY TYPE
+ * with counters (noise control), an ARCHIVE tab (read + dismissed history,
+ * beyond the 20 active rows) and goal alerts DEEP-LINK to the Goals tab
+ * filtered on the goal. Same severity palette as the dashboard feed.
  */
 
 /** Alert type → icon (discipline semantics, not P&L). */
@@ -39,6 +44,18 @@ const TYPE_ICON: Record<Alert["type"], LucideIcon> = {
   DISCIPLINE_WIN: Award,
   GOAL_STATUS: Target,
   SYSTEM: Info,
+};
+
+/** Alert type → short human label for the grouped view. */
+const TYPE_LABEL: Record<Alert["type"], string> = {
+  RULE_VIOLATION: "Rule violations",
+  TILT_WARNING: "Tilt warnings",
+  RISK_BUDGET: "Risk budget",
+  STRATEGY_DECAY: "Strategy decay",
+  STREAK: "Streaks",
+  DISCIPLINE_WIN: "Discipline wins",
+  GOAL_STATUS: "Goals",
+  SYSTEM: "System",
 };
 
 /** Severity → dot color (dashboard feed parity). */
@@ -60,10 +77,105 @@ function relativeTime(iso: string, now: number): string {
   return `${Math.floor(hours / 24)}d`;
 }
 
+/** Machine-readable goal link from a GOAL_STATUS payload (defensive). */
+function goalIdOf(alert: Alert): string | null {
+  if (alert.type !== "GOAL_STATUS" || alert.payload === null) return null;
+  if (typeof alert.payload === "object" && "goalId" in alert.payload) {
+    const value = (alert.payload as Record<string, unknown>).goalId;
+    return typeof value === "string" ? value : null;
+  }
+  return null;
+}
+
+interface AlertRowProps {
+  alert: Alert;
+  now: number;
+  onRead: (id: string) => void;
+  onOpen: (alert: Alert) => void;
+  readPending: boolean;
+}
+
+function AlertRow({ alert, now, onRead, onOpen, readPending }: AlertRowProps) {
+  const isUnread = alert.readAt === null;
+  const Icon = TYPE_ICON[alert.type];
+  const goalId = goalIdOf(alert);
+  return (
+    <button
+      type="button"
+      data-testid="notification-item"
+      onClick={() => {
+        if (isUnread && !readPending) onRead(alert.id);
+        onOpen(alert);
+      }}
+      disabled={readPending}
+      aria-label={
+        isUnread ? `Mark "${alert.title}" as read` : alert.title
+      }
+      className={cn(
+        "flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-surface focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring",
+        isUnread && "bg-accent/[0.04]",
+      )}
+    >
+      <span className="relative mt-0.5 shrink-0">
+        <span
+          className={cn(
+            "grid size-7 place-items-center rounded-lg border border-border bg-surface",
+            isUnread ? "text-accent" : "text-muted-foreground",
+          )}
+        >
+          <Icon className="size-3.5" aria-hidden="true" />
+        </span>
+        <span
+          aria-hidden="true"
+          className={cn(
+            "absolute -right-0.5 -bottom-0.5 size-2 rounded-full ring-2 ring-popover",
+            SEVERITY_DOT[alert.severity],
+          )}
+        />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="flex items-baseline gap-2">
+          <span
+            className={cn(
+              "min-w-0 flex-1 truncate text-sm",
+              isUnread ? "font-semibold text-foreground" : "font-medium text-muted-foreground",
+            )}
+          >
+            {alert.title}
+          </span>
+          <time
+            dateTime={alert.createdAt}
+            className="shrink-0 font-mono text-[10px] tabular-nums text-muted-foreground"
+          >
+            {relativeTime(alert.createdAt, now)}
+          </time>
+        </span>
+        <span className="mt-0.5 line-clamp-2 block text-xs leading-relaxed text-muted-foreground">
+          {alert.message}
+        </span>
+        {goalId !== null && (
+          <span className="mt-1 inline-flex items-center gap-1 text-[10px] font-medium text-accent">
+            <Target className="size-3" aria-hidden="true" />
+            Open in Goals
+          </span>
+        )}
+      </span>
+      {isUnread ? (
+        <span aria-hidden="true" className="mt-2 size-1.5 shrink-0 rounded-full bg-accent" />
+      ) : null}
+    </button>
+  );
+}
+
+type InboxMode = "active" | "grouped" | "history";
+
 export function NotificationCenter() {
+  const router = useRouter();
   const { data } = useAlerts();
   const markRead = useMarkAlertRead();
   const [open, setOpen] = React.useState(false);
+  const [mode, setMode] = React.useState<InboxMode>("active");
+  const [collapsed, setCollapsed] = React.useState<Set<Alert["type"]>>(new Set());
 
   // Goal-status toasts — GOAL_STATUS alerts arriving MID-SESSION surface as a
   // toast (warning for slipping, success for back-on-track / achieved). The
@@ -96,15 +208,52 @@ export function NotificationCenter() {
     return () => window.clearInterval(timer);
   }, [open]);
 
-  const alerts = React.useMemo(
-    () => (data?.alerts ?? []).filter((alert) => alert.dismissedAt === null),
-    [data],
+  const alerts = React.useMemo(() => data?.alerts ?? [], [data]);
+  const live = React.useMemo(
+    () => alerts.filter((alert) => alert.dismissedAt === null),
+    [alerts],
   );
-  const unread = alerts.filter((alert) => alert.readAt === null);
+  const archived = React.useMemo(
+    () =>
+      alerts
+        .filter((alert) => alert.dismissedAt !== null || alert.readAt !== null)
+        .sort((a, b) => (b.dismissedAt ?? b.readAt ?? b.createdAt).localeCompare(a.dismissedAt ?? a.readAt ?? a.createdAt)),
+    [alerts],
+  );
+  const unread = live.filter((alert) => alert.readAt === null);
   const unreadCount = data?.unreadCount ?? 0;
+
+  // Grouped view — live alerts bucketed by type, newest first, with counts.
+  const grouped = React.useMemo(() => {
+    const buckets = new Map<Alert["type"], Alert[]>();
+    for (const alert of live) {
+      buckets.set(alert.type, [...(buckets.get(alert.type) ?? []), alert]);
+    }
+    return [...buckets.entries()].sort(
+      (a, b) => (b[1][0]?.createdAt ?? "").localeCompare(a[1][0]?.createdAt ?? ""),
+    );
+  }, [live]);
 
   const markAllRead = () => {
     for (const alert of unread) markRead.mutate(alert.id);
+  };
+
+  const toggleType = (type: Alert["type"]) => {
+    setCollapsed((previous) => {
+      const next = new Set(previous);
+      if (next.has(type)) next.delete(type);
+      else next.add(type);
+      return next;
+    });
+  };
+
+  /** Deep-link: goal alerts open the Goals tab filtered on the goal. */
+  const openAlert = (alert: Alert) => {
+    const goalId = goalIdOf(alert);
+    if (goalId !== null) {
+      setOpen(false);
+      router.push(`/journal?tab=goals&goal=${goalId}`);
+    }
   };
 
   return (
@@ -158,92 +307,134 @@ export function NotificationCenter() {
           </Button>
         </div>
 
-        {/* List */}
-        {alerts.length === 0 ? (
-          <div className="flex flex-col items-center gap-2 px-6 py-10 text-center">
-            <BellOff className="size-6 text-muted-foreground" aria-hidden="true" />
-            <p className="text-sm font-medium text-foreground">All caught up</p>
-            <p className="text-xs text-muted-foreground">
-              Discipline alerts and coach warnings land here.
-            </p>
-          </div>
-        ) : (
-          <ul className="max-h-[min(24rem,55dvh)] divide-y divide-border overflow-y-auto overscroll-contain">
-            {alerts.slice(0, 20).map((alert) => {
-              const isUnread = alert.readAt === null;
-              const Icon = TYPE_ICON[alert.type];
-              return (
+        {/* Mode tabs — active feed / grouped by type / archived history */}
+        <div className="flex items-center gap-1 border-b border-border px-3 py-1.5" role="tablist" aria-label="Inbox views">
+          {(
+            [
+              { id: "active", label: "Active", icon: Bell, count: live.length },
+              { id: "grouped", label: "By type", icon: Layers, count: grouped.length },
+              { id: "history", label: "Archive", icon: History, count: archived.length },
+            ] as const
+          ).map(({ id, label, icon: Icon, count }) => (
+            <button
+              key={id}
+              type="button"
+              role="tab"
+              aria-selected={mode === id}
+              onClick={() => setMode(id)}
+              data-testid={`inbox-mode-${id}`}
+              className={cn(
+                "flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium transition-colors",
+                mode === id ? "bg-accent/10 text-accent" : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <Icon className="size-3" aria-hidden="true" />
+              {label}
+              <span className="font-mono text-[10px] tabular-nums opacity-70">{count}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Active feed — chronological, capped at 20 rows */}
+        {mode === "active" ? (
+          live.length === 0 ? (
+            <EmptyInbox />
+          ) : (
+            <ul className="max-h-[min(24rem,55dvh)] divide-y divide-border overflow-y-auto overscroll-contain">
+              {live.slice(0, 20).map((alert) => (
                 <li key={alert.id}>
-                  <button
-                    type="button"
-                    data-testid="notification-item"
-                    onClick={() => {
-                      if (isUnread) markRead.mutate(alert.id);
-                    }}
-                    disabled={markRead.isPending}
-                    aria-label={
-                      isUnread
-                        ? `Mark "${alert.title}" as read`
-                        : alert.title
-                    }
-                    className={cn(
-                      "flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-surface focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring",
-                      isUnread && "bg-accent/[0.04]",
-                    )}
-                  >
-                    <span className="relative mt-0.5 shrink-0">
-                      <span
-                        className={cn(
-                          "grid size-7 place-items-center rounded-lg border border-border bg-surface",
-                          isUnread ? "text-accent" : "text-muted-foreground",
-                        )}
-                      >
-                        <Icon className="size-3.5" aria-hidden="true" />
-                      </span>
-                      <span
-                        aria-hidden="true"
-                        className={cn(
-                          "absolute -right-0.5 -bottom-0.5 size-2 rounded-full ring-2 ring-popover",
-                          SEVERITY_DOT[alert.severity],
-                        )}
-                      />
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="flex items-baseline gap-2">
-                        <span
-                          className={cn(
-                            "min-w-0 flex-1 truncate text-sm",
-                            isUnread
-                              ? "font-semibold text-foreground"
-                              : "font-medium text-muted-foreground",
-                          )}
-                        >
-                          {alert.title}
-                        </span>
-                        <time
-                          dateTime={alert.createdAt}
-                          className="shrink-0 font-mono text-[10px] tabular-nums text-muted-foreground"
-                        >
-                          {relativeTime(alert.createdAt, now)}
-                        </time>
-                      </span>
-                      <span className="mt-0.5 line-clamp-2 block text-xs leading-relaxed text-muted-foreground">
-                        {alert.message}
-                      </span>
-                    </span>
-                    {isUnread ? (
-                      <span
-                        aria-hidden="true"
-                        className="mt-2 size-1.5 shrink-0 rounded-full bg-accent"
-                      />
-                    ) : null}
-                  </button>
+                  <AlertRow alert={alert} now={now} onRead={(id) => markRead.mutate(id)} onOpen={openAlert} readPending={markRead.isPending} />
                 </li>
-              );
-            })}
-          </ul>
-        )}
+              ))}
+            </ul>
+          )
+        ) : null}
+
+        {/* Grouped by type — collapsible buckets with counters */}
+        {mode === "grouped" ? (
+          live.length === 0 ? (
+            <EmptyInbox />
+          ) : (
+            <div className="max-h-[min(24rem,55dvh)] overflow-y-auto overscroll-contain" data-testid="inbox-grouped">
+              {grouped.map(([type, bucket]) => {
+                const Icon = TYPE_ICON[type];
+                const isCollapsed = collapsed.has(type);
+                const bucketUnread = bucket.filter((alert) => alert.readAt === null).length;
+                return (
+                  <div key={type} className="border-b border-border last:border-0">
+                    <button
+                      type="button"
+                      onClick={() => toggleType(type)}
+                      aria-expanded={!isCollapsed}
+                      data-testid={`inbox-group-${type}`}
+                      className="flex w-full items-center gap-2 px-4 py-2.5 text-left transition-colors hover:bg-surface"
+                    >
+                      <Icon className="size-3.5 text-muted-foreground" aria-hidden="true" />
+                      <span className="flex-1 text-xs font-semibold text-foreground">{TYPE_LABEL[type]}</span>
+                      {bucketUnread > 0 && (
+                        <span className="rounded-full bg-accent/15 px-1.5 py-0.5 font-mono text-[10px] font-semibold tabular-nums text-accent">
+                          {bucketUnread} new
+                        </span>
+                      )}
+                      <span className="rounded-full border border-border px-1.5 py-0.5 font-mono text-[10px] tabular-nums text-muted-foreground">
+                        {bucket.length}
+                      </span>
+                      <ChevronDown className={cn("size-3.5 text-muted-foreground transition-transform", isCollapsed && "-rotate-90")} aria-hidden="true" />
+                    </button>
+                    {!isCollapsed && (
+                      <ul className="divide-y divide-border border-t border-border/60">
+                        {bucket.slice(0, 5).map((alert) => (
+                          <li key={alert.id}>
+                            <AlertRow alert={alert} now={now} onRead={(id) => markRead.mutate(id)} onOpen={openAlert} readPending={markRead.isPending} />
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    {!isCollapsed && bucket.length > 5 && (
+                      <p className="px-4 py-1.5 text-[10px] text-muted-foreground">
+                        + {bucket.length - 5} older in this group
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )
+        ) : null}
+
+        {/* Archive — read + dismissed, beyond the 20 active rows */}
+        {mode === "history" ? (
+          archived.length === 0 ? (
+            <div className="flex flex-col items-center gap-2 px-6 py-10 text-center">
+              <History className="size-6 text-muted-foreground" aria-hidden="true" />
+              <p className="text-sm font-medium text-foreground">Nothing archived yet</p>
+              <p className="text-xs text-muted-foreground">
+                Read and dismissed alerts stay here, searchable in the full history.
+              </p>
+            </div>
+          ) : (
+            <ul className="max-h-[min(24rem,55dvh)] divide-y divide-border overflow-y-auto overscroll-contain" data-testid="inbox-history">
+              {archived.map((alert) => (
+                <li key={alert.id}>
+                  <AlertRow alert={alert} now={now} onRead={(id) => markRead.mutate(id)} onOpen={openAlert} readPending={markRead.isPending} />
+                </li>
+              ))}
+            </ul>
+          )
+        ) : null}
       </PopoverContent>
     </Popover>
+  );
+}
+
+function EmptyInbox() {
+  return (
+    <div className="flex flex-col items-center gap-2 px-6 py-10 text-center">
+      <BellOff className="size-6 text-muted-foreground" aria-hidden="true" />
+      <p className="text-sm font-medium text-foreground">All caught up</p>
+      <p className="text-xs text-muted-foreground">
+        Discipline alerts and coach warnings land here.
+      </p>
+    </div>
   );
 }

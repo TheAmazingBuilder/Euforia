@@ -9,7 +9,15 @@ import { monitoringThresholdsUpdateInputSchema } from "@cosmoz/shared";
 
 import { apiPaths } from "@/lib/api/endpoints";
 import { monitoringEngine } from "@/mocks/monitoring-engine";
+import { mockStore } from "@/mocks/store";
 import { endpoint, latency, parseBody, pathParam, readJson, toErrorResponse } from "./utils";
+
+/**
+ * Module upgrade — monitoring alerts reach the USER's inbox, not just the
+ * board: a newly raised rule pushes a SYSTEM alert into the store (deduped
+ * while unread). Wired once at handler-module init.
+ */
+monitoringEngine.onAlertRaised = (alert) => mockStore.pushMonitoringAlert(alert);
 
 /**
  * Monitoring endpoints (MASTER PROMPT §3, §14). The overview is a single

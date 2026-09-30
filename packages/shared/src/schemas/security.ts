@@ -92,6 +92,8 @@ export const twoFactorStateSchema = z.object({
   pending: z.boolean(),
   method: z.enum(["AUTHENTICATOR_APP"]).nullable(),
   enabledAt: isoDateTimeSchema.nullable(),
+  /** When 2FA was last turned OFF — fuels the >7-day inbox reminder. */
+  disabledAt: isoDateTimeSchema.nullable(),
   lastVerifiedAt: isoDateTimeSchema.nullable(),
   recoveryCodesRemaining: z.number().int().nonnegative(),
 });
@@ -203,6 +205,15 @@ export const securityRetentionSchema = z.object({
   loginHistoryDays: z.number().int().positive(),
 });
 
+export const securityScoreSchema = z.object({
+  /** 0–100 — share of protection checks passing (real state, server-computed). */
+  score: z.number().min(0).max(100),
+  passed: z.number().int().nonnegative(),
+  total: z.number().int().nonnegative(),
+  rating: z.enum(["STRONG", "FAIR", "WEAK"]),
+});
+export type SecurityScore = z.infer<typeof securityScoreSchema>;
+
 export const securityOverviewResponseSchema = z.object({
   auth: securityAuthStateSchema,
   twoFactor: twoFactorStateSchema,
@@ -212,6 +223,8 @@ export const securityOverviewResponseSchema = z.object({
   events: z.array(securityEventSchema),
   logins: z.array(loginRecordSchema),
   protection: z.array(protectionCheckSchema),
+  /** Checklist score derived from the SAME checks — real state, not vibes. */
+  securityScore: securityScoreSchema,
   rateLimits: z.array(rateLimitRuleSchema),
   retention: securityRetentionSchema,
 });

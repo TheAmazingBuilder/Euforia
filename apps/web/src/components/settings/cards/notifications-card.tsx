@@ -2,10 +2,11 @@
 
 import * as React from "react";
 import { toast } from "sonner";
-import { BellRing, Target } from "lucide-react";
+import { BellRing, BellOff, Target } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { NotificationChannels, NotificationPreferences } from "@cosmoz/shared";
 
+import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import {
   ConfirmDialog,
@@ -274,6 +275,108 @@ export function NotificationsCard() {
             </section>
           );
         })}
+
+        {/* Quiet hours — out-of-band channels only; the inbox is never muted. */}
+        <section
+          className="grid grid-cols-1 gap-3 rounded-xl border border-border p-4"
+          data-testid="settings-notifications-quiet-hours"
+          aria-label="Quiet hours"
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <span className="flex items-center gap-1.5 text-sm font-semibold">
+                <BellOff className="size-4 text-muted-foreground" aria-hidden="true" />
+                Quiet hours
+              </span>
+              <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
+                Silence push and email inside a daily window. In-app alerts are never silenced —
+                the inbox stays the system of record. A window crossing midnight (22:00 → 07:00) is
+                supported.
+              </p>
+            </div>
+            <Switch
+              checked={draft.quietHours.enabled}
+              onCheckedChange={(checked) =>
+                setDraft((previous) =>
+                  previous ? { ...previous, quietHours: { ...previous.quietHours, enabled: checked } } : previous,
+                )
+              }
+              aria-label="Quiet hours enabled"
+              data-testid="settings-notifications-quiet-hours-enabled"
+              className="shrink-0"
+            />
+          </div>
+          <div
+            className={draft.quietHours.enabled ? "grid gap-3 sm:grid-cols-2" : "grid gap-3 sm:grid-cols-2 opacity-50"}
+            aria-disabled={!draft.quietHours.enabled}
+          >
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground" htmlFor="quiet-hours-from">
+                From (HH:MM)
+              </label>
+              <Input
+                id="quiet-hours-from"
+                type="time"
+                value={draft.quietHours.from}
+                disabled={!draft.quietHours.enabled}
+                onChange={(event) =>
+                  setDraft((previous) =>
+                    previous ? { ...previous, quietHours: { ...previous.quietHours, from: event.target.value } } : previous,
+                  )
+                }
+                className="h-8 w-full font-mono text-xs"
+                data-testid="settings-notifications-quiet-hours-from"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground" htmlFor="quiet-hours-to">
+                To (HH:MM)
+              </label>
+              <Input
+                id="quiet-hours-to"
+                type="time"
+                value={draft.quietHours.to}
+                disabled={!draft.quietHours.enabled}
+                onChange={(event) =>
+                  setDraft((previous) =>
+                    previous ? { ...previous, quietHours: { ...previous.quietHours, to: event.target.value } } : previous,
+                  )
+                }
+                className="h-8 w-full font-mono text-xs"
+                data-testid="settings-notifications-quiet-hours-to"
+              />
+            </div>
+            <div className="flex items-center justify-between gap-3 sm:col-span-2">
+              <span className="text-sm">Muted channels inside the window</span>
+              <span className="flex shrink-0 items-center gap-4">
+                {(
+                  [
+                    { key: "push", label: "Push" },
+                    { key: "email", label: "Email" },
+                  ] as const
+                ).map((channel) => (
+                  <label key={channel.key} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    {channel.label}
+                    <Switch
+                      size="sm"
+                      checked={draft.quietHours.channels[channel.key]}
+                      disabled={!draft.quietHours.enabled}
+                      onCheckedChange={(checked) =>
+                        setDraft((previous) =>
+                          previous
+                            ? { ...previous, quietHours: { ...previous.quietHours, channels: { ...previous.quietHours.channels, [channel.key]: checked } } }
+                            : previous,
+                        )
+                      }
+                      aria-label={`Quiet hours — mute ${channel.label}`}
+                      data-testid={`settings-notifications-quiet-hours-${channel.key}`}
+                    />
+                  </label>
+                ))}
+              </span>
+            </div>
+          </div>
+        </section>
       </div>
 
       <ConfirmDialog

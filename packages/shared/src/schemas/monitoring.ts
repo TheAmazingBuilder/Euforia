@@ -436,7 +436,14 @@ export type MonitoringOverviewResponse = z.infer<typeof monitoringOverviewRespon
 export const monitoringThresholdsUpdateInputSchema = z.object({
   freshness: freshnessThresholdsSchema.partial().optional(),
   rules: z
-    .array(z.object({ id: alertRuleIdSchema, enabled: z.boolean() }))
+    .array(
+      z.object({
+        id: alertRuleIdSchema,
+        enabled: z.boolean().optional(),
+        /** Custom numeric knob (p95 ms, error-rate %…) — null clears it. */
+        thresholdValue: z.number().nullable().optional(),
+      }),
+    )
     .optional(),
 });
 export type MonitoringThresholdsUpdateInput = z.infer<

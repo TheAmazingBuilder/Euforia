@@ -15,6 +15,7 @@ import {
   SettingsSelect,
   useDomainDraft,
 } from "@/components/settings/settings-primitives";
+import { ThemePreviewMiniTradeCard } from "@/components/settings/theme-preview-card";
 import {
   usePreferences,
   useResetPreferencesDomain,
@@ -109,6 +110,10 @@ export function AppearanceCard() {
           testid="settings-appearance-theme"
           ariaLabel="Theme"
         />
+        {/* Live preview — a miniature trade card in the CURRENT theme. */}
+        <div className="mt-3 max-w-72">
+          <ThemePreviewMiniTradeCard />
+        </div>
       </SettingsRow>
 
       <SettingsRow

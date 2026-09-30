@@ -78,6 +78,13 @@ export {
   useDeleteSessionNote,
 } from "./session";
 export { useAnalytics, useStatsOverview } from "./stats";
+export {
+  useCalendarBlocks,
+  useCalendarView,
+  useDeleteCalendarBlock,
+  useImportEcoBlockers,
+  useUpsertCalendarBlock,
+} from "./calendar";
 export { useImportBackup } from "./backup";
 export { useProfile, useUpdateProfile } from "./profile";
 export {
