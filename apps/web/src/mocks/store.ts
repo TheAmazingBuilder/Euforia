@@ -123,6 +123,7 @@ import {
   journalPreferencesSchema,
   notificationPreferencesSchema,
   appearancePreferencesSchema,
+  dashboardPreferencesSchema,
   academyPreferencesSchema,
   privacyPreferencesSchema,
   localizationPreferencesSchema,
@@ -141,6 +142,7 @@ const PREFERENCE_DOMAIN_SCHEMAS = {
   journal: journalPreferencesSchema,
   notifications: notificationPreferencesSchema,
   appearance: appearancePreferencesSchema,
+  dashboard: dashboardPreferencesSchema,
   academy: academyPreferencesSchema,
   privacy: privacyPreferencesSchema,
   localization: localizationPreferencesSchema,
@@ -1088,6 +1090,42 @@ export function createMockStore() {
       });
     }
 
+    // ── Weekly comparison bands (this week vs previous week) — the SAME
+    // rolling 7-day windows as the deltas above, zero-filled so both
+    // mini-sparkline strips always draw 7 columns. Server-computed.
+    const weekBands = (fromOffset: number): StatsOverviewResponse["weeklyCompare"]["thisWeek"]["days"] =>
+      Array.from({ length: 7 }, (_, i) => {
+        const date = shiftDateKey(fromOffset + i);
+        const found = dailyPnl.find((point) => point.date === date);
+        return {
+          date,
+          pnlNet: found?.pnlNet ?? toDecimalString(0),
+          tradesCount: found?.tradesCount ?? 0,
+        };
+      });
+    const curCount = closed.filter((t) => t.tradingDate >= currentStart).length;
+    const prevCount = closed.filter(
+      (t) => t.tradingDate >= prevStart && t.tradingDate < currentStart,
+    ).length;
+    const weeklyCompare: StatsOverviewResponse["weeklyCompare"] = {
+      thisWeek: {
+        days: weekBands(-6),
+        totalPnl: toDecimalString(round2(cur.netPnl)),
+        winRate: cur.winRate === null ? null : toDecimalString(round2(cur.winRate)),
+        tradesCount: curCount,
+      },
+      prevWeek: {
+        days: weekBands(-13),
+        totalPnl: toDecimalString(round2(prev.netPnl)),
+        winRate: prev.winRate === null ? null : toDecimalString(round2(prev.winRate)),
+        tradesCount: prevCount,
+      },
+      deltaPnlPct:
+        !cur.hasData || !prev.hasData || prev.netPnl === 0
+          ? null
+          : toDecimalString(round2(((cur.netPnl - prev.netPnl) / Math.abs(prev.netPnl)) * 100)),
+    };
+
     return {
       currency: mainAccount.currency,
       netPnl: toDecimalString(round2(netPnl)),
@@ -1117,6 +1155,7 @@ export function createMockStore() {
         settledCount: hesitantGhosts.length,
       },
       ghostTrend,
+      weeklyCompare,
     };
   }
 

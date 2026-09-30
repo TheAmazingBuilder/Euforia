@@ -360,3 +360,24 @@
     padding-bottom: 2rem;
   }
 }
+
+/* ── Dashboard compact density (same stored preference, scoped tighter) ───
+   The dashboard is the densest screen, so COMPACT goes one notch further
+   HERE — but only here: scoped to [data-page="dashboard"] so every other
+   screen keeps the global compact rhythm above. Descriptions fold away,
+   card padding shrinks, the KPI band tightens. COMFORTABLE = untouched. */
+[data-density="compact"] [data-page="dashboard"] [data-slot="card"] {
+  --card-spacing: calc(var(--spacing) * 2.5);
+}
+[data-density="compact"] [data-page="dashboard"] [data-slot="card-description"] {
+  display: none;
+}
+[data-density="compact"] [data-page="dashboard"] .stat-cell {
+  padding: 0.875rem 1rem 0.875rem;
+}
+[data-density="compact"] [data-page="dashboard"] .stat-cell.stat-hero {
+  padding: 1.125rem 1.25rem 1rem;
+}
+/* While dragging a widget the section dims (opacity class in JSX); the
+   grip communicates the affordance via cursor — nothing else changes, so
+   edit mode never redesigns the dashboard. */

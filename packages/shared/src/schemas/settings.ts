@@ -278,6 +278,35 @@ export type AppearancePreferences = z.infer<typeof appearancePreferencesSchema>;
 export const appearancePreferencesInputSchema = appearancePreferencesSchema;
 export type AppearancePreferencesInput = z.infer<typeof appearancePreferencesInputSchema>;
 
+// ── Dashboard preferences (personalized widget layout) ─────────────────────
+
+/**
+ * Reorderable dashboard sections. Keys map 1:1 to the widget registry in
+ * the dashboard view; the order is edited inline (drag or move buttons)
+ * and persisted server-side via PATCH /me/preferences/dashboard.
+ * Forward-compatible: the client merges a saved order with the canonical
+ * registry, so widgets added later appear without a migration.
+ */
+export const dashboardWidgetKeySchema = z.enum([
+  "PNL_BAND",
+  "EQUITY_ROW",
+  "GOALS_PACE",
+  "WEEK_COMPARE",
+  "HEATMAP",
+  "BEST_WORST",
+  "ALERTS",
+]);
+export type DashboardWidgetKey = z.infer<typeof dashboardWidgetKeySchema>;
+
+export const dashboardPreferencesSchema = z.object({
+  /** Widget ids in display order; unknown/missing ids are merged client-side. */
+  widgetOrder: z.array(dashboardWidgetKeySchema),
+});
+
+export type DashboardPreferences = z.infer<typeof dashboardPreferencesSchema>;
+export const dashboardPreferencesInputSchema = dashboardPreferencesSchema;
+export type DashboardPreferencesInput = z.infer<typeof dashboardPreferencesInputSchema>;
+
 // ── Academy preferences (module provisioned — arrives in a later phase) ─────
 
 export const academyDifficultySchema = z.enum(["BEGINNER", "INTERMEDIATE", "ADVANCED"]);
@@ -374,6 +403,7 @@ export const userPreferencesSchema = z.object({
   journal: journalPreferencesSchema,
   notifications: notificationPreferencesSchema,
   appearance: appearancePreferencesSchema,
+  dashboard: dashboardPreferencesSchema,
   academy: academyPreferencesSchema,
   privacy: privacyPreferencesSchema,
   localization: localizationPreferencesSchema,
@@ -389,6 +419,7 @@ export const preferenceDomainSchema = z.enum([
   "journal",
   "notifications",
   "appearance",
+  "dashboard",
   "academy",
   "privacy",
   "localization",
@@ -538,6 +569,17 @@ export const DEFAULT_USER_PREFERENCES: UserPreferencesDefaults = {
     density: "COMFORTABLE",
     defaultDashboardLayout: "COACH_FIRST",
     pnlDisplay: "CURRENCY",
+  },
+  dashboard: {
+    widgetOrder: [
+      "PNL_BAND",
+      "EQUITY_ROW",
+      "GOALS_PACE",
+      "WEEK_COMPARE",
+      "HEATMAP",
+      "BEST_WORST",
+      "ALERTS",
+    ],
   },
   academy: {
     enabled: true,

@@ -572,6 +572,32 @@ export const ghostTrendPointSchema = z.object({
 
 export type GhostTrendPoint = z.infer<typeof ghostTrendPointSchema>;
 
+// ── Weekly comparison bands (this week vs previous week) ──────────────────
+
+/** One zero-filled calendar day inside a week-compare strip. */
+export const weekCompareDaySchema = z.object({
+  date: dateKeySchema,
+  pnlNet: decimalStringSchema,
+  tradesCount: z.number().int().min(0),
+});
+
+export type WeekCompareDay = z.infer<typeof weekCompareDaySchema>;
+
+/**
+ * One side of the week-vs-week comparison — the SAME rolling 7-day window
+ * as the KPI deltas, zero-filled so both strips always draw 7 bands.
+ * Computed SERVER-SIDE (aggregation principle); the client only renders.
+ */
+export const weekCompareSideSchema = z.object({
+  days: z.array(weekCompareDaySchema).length(7),
+  totalPnl: decimalStringSchema,
+  /** null when the week has no closed trades yet. */
+  winRate: decimalStringSchema.nullable(),
+  tradesCount: z.number().int().min(0),
+});
+
+export type WeekCompareSide = z.infer<typeof weekCompareSideSchema>;
+
 export const statsOverviewResponseSchema = z.object({
   currency: currencySchema,
   netPnl: decimalStringSchema,
@@ -605,6 +631,13 @@ export const statsOverviewResponseSchema = z.object({
   hesitationCost: hesitationCostSchema,
   /** Last 30 days of fear-vs-discipline skip counts, zero-filled. */
   ghostTrend: z.array(ghostTrendPointSchema),
+  /** This week vs last week — 7 zero-filled day bands per week (server-computed). */
+  weeklyCompare: z.object({
+    thisWeek: weekCompareSideSchema,
+    prevWeek: weekCompareSideSchema,
+    /** Signed % change of totalPnl (null when no previous-week baseline). */
+    deltaPnlPct: decimalStringSchema.nullable(),
+  }),
 });
 
 export type StatsOverviewResponse = z.infer<typeof statsOverviewResponseSchema>;
