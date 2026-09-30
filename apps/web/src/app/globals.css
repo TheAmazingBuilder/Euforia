@@ -381,3 +381,35 @@
 /* While dragging a widget the section dims (opacity class in JSX); the
    grip communicates the affordance via cursor — nothing else changes, so
    edit mode never redesigns the dashboard. */
+
+/* ── Monthly review journal print sheet (ONE page, scoped) ─────────────
+   The rules activate ONLY while the body carries `printing-review`, i.e.
+   when a print was started from the monthly report dialog. A normal page
+   print is never hijacked. Everything outside .print-sheet is hidden
+   (visibility keeps layout so ECharts canvases etc. don't reflow), the
+   sheet is lifted to the top-left corner at full width. */
+@media print {
+  body.printing-review * {
+    visibility: hidden !important;
+  }
+  body.printing-review .print-sheet,
+  body.printing-review .print-sheet * {
+    visibility: visible !important;
+  }
+  body.printing-review .print-sheet {
+    position: absolute !important;
+    inset: 0 auto auto 0;
+    width: 100% !important;
+    max-width: 100% !important;
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 18mm 14mm !important;
+    box-shadow: none !important;
+  }
+  body.printing-review .print-sheet .no-print {
+    display: none !important;
+  }
+  @page {
+    margin: 8mm;
+  }
+}

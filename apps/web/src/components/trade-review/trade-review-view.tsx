@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
-import { Flame, GraduationCap, LayoutDashboard, NotebookPen, Target } from "lucide-react";
+import { FileDown, Flame, GraduationCap, LayoutDashboard, NotebookPen, Snowflake, Target } from "lucide-react";
 import type { TradeReviewOverviewResponse } from "@cosmoz/shared";
 
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +15,7 @@ import { OverviewPanel } from "@/components/trade-review/overview-panel";
 import { GoalsPanel } from "@/components/trade-review/goals-panel";
 import { ReviewsPanel } from "@/components/trade-review/reviews-panel";
 import { LessonsPanel } from "@/components/trade-review/lessons-panel";
+import { MonthlyReportDialog } from "@/components/trade-review/monthly-report-dialog";
 import { useReviewOverview } from "@/lib/api/queries";
 
 /**
@@ -54,6 +55,9 @@ export function TradeReviewView() {
 
   const overview: TradeReviewOverviewResponse | undefined = overviewQuery.data;
 
+  // Monthly journal export (one-page printable report).
+  const [reportOpen, setReportOpen] = React.useState(false);
+
   const retry = React.useCallback(() => {
     void queryClient.refetchQueries({ type: "active" });
   }, [queryClient]);
@@ -89,12 +93,37 @@ export function TradeReviewView() {
             </p>
           </div>
           <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={() => setReportOpen(true)}
+              data-testid="review-export-month"
+            >
+              <FileDown className="size-3.5" aria-hidden="true" />
+              Export month
+            </Button>
             {overview && (
               <>
-                <Badge variant="outline" className="gap-1.5 border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-amber-500" data-testid="header-streak">
+                <Badge
+                  variant="outline"
+                  className="gap-1.5 border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-amber-500"
+                  title={
+                    overview.streak.frozenDays > 0
+                      ? `Includes ${overview.streak.frozenDays} frozen grace day${overview.streak.frozenDays === 1 ? "" : "s"} — one per week, honestly reported.`
+                      : "Consecutive review days — one grace day per week is forgiven, honestly reported."
+                  }
+                  data-testid="header-streak"
+                >
                   <Flame className="size-3.5" aria-hidden="true" />
                   <span className="font-mono font-semibold">{overview.stats.reviewStreakDays}d</span>
                   streak
+                  {overview.streak.frozenDays > 0 ? (
+                    <span className="inline-flex items-center gap-0.5 text-cyan-400" data-testid="header-streak-frozen">
+                      <Snowflake className="size-3" aria-hidden="true" />
+                      {overview.streak.frozenDays}
+                    </span>
+                  ) : null}
                 </Badge>
                 <Badge variant="outline" className="gap-1.5 border-violet-500/30 bg-violet-500/10 px-2.5 py-1 text-violet-400" data-testid="header-pending">
                   <NotebookPen className="size-3.5" aria-hidden="true" />
@@ -148,6 +177,8 @@ export function TradeReviewView() {
           </TabsContent>
         </Tabs>
       )}
+
+      <MonthlyReportDialog open={reportOpen} onOpenChange={setReportOpen} />
     </div>
   );
 }

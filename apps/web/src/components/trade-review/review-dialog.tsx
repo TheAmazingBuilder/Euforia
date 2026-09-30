@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { CheckCircle2, NotebookPen, Sparkles, XCircle } from "lucide-react";
+import { CheckCircle2, History, NotebookPen, Sparkles, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import type { Grade, PlaybookMatch, ReviewRow } from "@cosmoz/shared";
 import { formatR } from "@cosmoz/shared";
@@ -19,7 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { useUpsertReview } from "@/lib/api/queries";
+import { useReviewOverview, useUpsertReview } from "@/lib/api/queries";
 import { cn } from "@/lib/utils";
 import { GRADE_STYLES, PLAYBOOK_MATCH_META } from "@/components/trade-review/trade-review-shared";
 
@@ -41,6 +41,10 @@ interface ReviewDialogProps {
 
 export function ReviewDialog({ row, open, onOpenChange }: ReviewDialogProps) {
   const upsert = useUpsertReview();
+  // The overview is already cached by the module — the recurring-lesson
+  // template comes from it (shared query key, no extra round-trip).
+  const { data: overviewData } = useReviewOverview();
+  const lastImprovementNote = overviewData?.lastImprovementNote ?? null;
 
   const [executionGrade, setExecutionGrade] = React.useState<Grade>("B");
   const [playbookMatch, setPlaybookMatch] = React.useState<PlaybookMatch>("MATCHED");
@@ -293,6 +297,18 @@ export function ReviewDialog({ row, open, onOpenChange }: ReviewDialogProps) {
               className="mt-2"
               data-testid="review-improvement-input"
             />
+            {/* Recurring-lesson template: start from the last commitment. */}
+            {improvementNote.trim() === "" && lastImprovementNote !== null ? (
+              <button
+                type="button"
+                onClick={() => setImprovementNote(lastImprovementNote)}
+                className="mt-1.5 inline-flex max-w-full items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-left text-[11px] text-amber-600 transition-colors hover:bg-amber-500/20 dark:text-amber-400"
+                data-testid="review-reuse-note"
+              >
+                <History className="size-3 shrink-0" aria-hidden="true" />
+                <span className="truncate">Reuse from your last review — “{lastImprovementNote}”</span>
+              </button>
+            ) : null}
           </div>
         </div>
 

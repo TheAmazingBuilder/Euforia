@@ -4173,19 +4173,66 @@ export function createMockStore() {
       return values.length > 0 ? round1(values.reduce((s, v) => s + v, 0) / values.length) : null;
     };
 
-    // Review streak — consecutive trading days with ≥1 review, ending today
-    // (or yesterday if today has none yet; the day is not over).
+    // Review streak with an HONEST freeze: one grace day per calendar week
+    // (Mon–Sun). The chain walks back from today (or yesterday); a single
+    // missed day is forgiven — counted as FROZEN, never as reviewed — only
+    // when the chain stays continuous around it and that calendar week has
+    // not already consumed its grace day. Numbers reported separately.
     const reviewDays = new Set(reviews.map((r) => toTradingDateKey(r.reviewedAt, USER_TZ)));
+    const mondayOf = (dayKey: string): string => {
+      const offset = (new Date(`${dayKey}T00:00:00Z`).getUTCDay() + 6) % 7;
+      return shiftDayKey2(dayKey, -offset);
+    };
     let streakStart = todayKey();
     if (!reviewDays.has(streakStart)) streakStart = dateKeyOffset(-1);
-    let reviewStreakDays = 0;
+    let currentDays = 0;
+    let frozenDays = 0;
+    const frozenWeeks = new Set<string>();
     if (reviewDays.has(streakStart)) {
       let cursor = streakStart;
-      while (reviewDays.has(cursor)) {
-        reviewStreakDays += 1;
-        cursor = shiftDayKey2(cursor, -1);
+      while (true) {
+        if (reviewDays.has(cursor)) {
+          currentDays += 1;
+          cursor = shiftDayKey2(cursor, -1);
+          continue;
+        }
+        const previousDay = shiftDayKey2(cursor, -1);
+        if (reviewDays.has(previousDay)) {
+          const weekKey = mondayOf(cursor);
+          if (!frozenWeeks.has(weekKey)) {
+            frozenWeeks.add(weekKey);
+            frozenDays += 1;
+            cursor = previousDay;
+            continue;
+          }
+        }
+        break;
       }
     }
+    // Best pure run across the whole history (no freeze credit).
+    const sortedReviewDays = [...reviewDays].sort();
+    let longestStreak = 0;
+    let run = 0;
+    let previousDay2: string | null = null;
+    for (const day of sortedReviewDays) {
+      run = previousDay2 !== null && shiftDayKey2(previousDay2, 1) === day ? run + 1 : 1;
+      longestStreak = Math.max(longestStreak, run);
+      previousDay2 = day;
+    }
+    const reviewStreak = {
+      currentDays,
+      frozenDays,
+      effectiveDays: currentDays + frozenDays,
+      freezesUsedThisWeek: frozenWeeks.has(mondayOf(todayKey())) ? 1 : 0,
+      gracePerWeek: 1 as const,
+      longestStreak,
+    };
+
+    // Recurring-lesson template source — the most recent next-time note.
+    const lastImprovementNote =
+      reviews
+        .filter((r) => r.improvementNote !== null && r.improvementNote.trim() !== "")
+        .sort((a, b) => b.reviewedAt.localeCompare(a.reviewedAt))[0]?.improvementNote ?? null;
 
     const gradePoints: Record<string, number> = { A: 5, B: 4, C: 3, D: 2, F: 1 };
     const weeklyGradeTrend: TradeReviewOverviewResponse["weeklyGradeTrend"] = [];
@@ -4236,7 +4283,7 @@ export function createMockStore() {
         avgExitQuality: meanQuality((r) => r.exitQuality),
         avgRiskManagement: meanQuality((r) => r.riskManagement),
         lessonsCaptured: lessons.length,
-        reviewStreakDays,
+        reviewStreakDays: reviewStreak.effectiveDays,
         followedPlanPct: followedKnown.length > 0 ? round1((followedCount / followedKnown.length) * 100) : null,
         offPlaybookCount: reviews.filter((r) => r.playbookMatch === "OFF_PLAYBOOK").length,
       },
@@ -4244,6 +4291,8 @@ export function createMockStore() {
       weeklyGradeTrend,
       recentLessons: lessons.slice(0, 6),
       pendingQueuePreview: pendingRows,
+      streak: reviewStreak,
+      lastImprovementNote,
       meta: { generatedAt: nowIso() },
     };
   }

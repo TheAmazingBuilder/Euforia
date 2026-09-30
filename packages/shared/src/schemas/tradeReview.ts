@@ -259,6 +259,27 @@ export const gradeDistributionSchema = z.object({
 });
 export type GradeDistribution = z.infer<typeof gradeDistributionSchema>;
 
+/**
+ * Review streak with an HONEST freeze: one grace day per calendar week
+ * (Mon–Sun). A missed day is forgiven — counted as frozen, never as reviewed
+ * — only if the chain stays continuous around it, and only once per week.
+ * The numbers are reported separately so the gamification never lies.
+ */
+export const reviewStreakSchema = z.object({
+  /** Days with at least one review in the current chain. */
+  currentDays: z.number().int().min(0),
+  /** Grace days consumed by the current chain. */
+  frozenDays: z.number().int().min(0),
+  /** What the badge shows: currentDays + frozenDays. */
+  effectiveDays: z.number().int().min(0),
+  /** Grace days used inside the current calendar week (0 or 1). */
+  freezesUsedThisWeek: z.number().int().min(0).max(1),
+  gracePerWeek: z.literal(1),
+  /** Best pure run (no freeze) across the whole history. */
+  longestStreak: z.number().int().min(0),
+});
+export type ReviewStreak = z.infer<typeof reviewStreakSchema>;
+
 export const tradeReviewOverviewResponseSchema = z.object({
   stats: z.object({
     closedTrades: z.number().int().min(0),
@@ -270,7 +291,7 @@ export const tradeReviewOverviewResponseSchema = z.object({
     avgExitQuality: z.number().min(1).max(5).nullable(),
     avgRiskManagement: z.number().min(1).max(5).nullable(),
     lessonsCaptured: z.number().int().min(0),
-    /** Consecutive days ending today (or yesterday) with ≥1 review. */
+    /** Effective streak (frozen grace days included) — badge value. */
     reviewStreakDays: z.number().int().min(0),
     followedPlanPct: z.number().min(0).max(100).nullable(),
     offPlaybookCount: z.number().int().min(0),
@@ -293,6 +314,10 @@ export const tradeReviewOverviewResponseSchema = z.object({
   ),
   recentLessons: z.array(lessonEntrySchema).max(6),
   pendingQueuePreview: z.array(reviewRowSchema).max(5),
+  /** Freeze-aware streak breakdown — the honest gamification ledger. */
+  streak: reviewStreakSchema,
+  /** Latest "next time I will…" note — the recurring-lesson template source. */
+  lastImprovementNote: z.string().nullable(),
   meta: z.object({ generatedAt: isoDateTimeSchema }),
 });
 export type TradeReviewOverviewResponse = z.infer<typeof tradeReviewOverviewResponseSchema>;

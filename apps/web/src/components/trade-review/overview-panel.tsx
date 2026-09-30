@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { GradeBadge, GRADE_BAR, GRADE_STYLES } from "@/components/trade-review/trade-review-shared";
+import { Snowflake } from "lucide-react";
 
 /**
  * Trade Review overview — the module's cockpit. Review rate, streak, lessons
@@ -68,7 +69,7 @@ function KpiTile({
 
 export function OverviewPanel({ overview, onGoTo }: OverviewPanelProps) {
   if (!overview) return null;
-  const { stats, goalsSummary, weeklyGradeTrend, recentLessons, pendingQueuePreview } = overview;
+  const { stats, streak, goalsSummary, weeklyGradeTrend, recentLessons, pendingQueuePreview } = overview;
 
   const gradeTotal = GRADE_ORDER.reduce((sum, grade) => sum + stats.gradeDistribution[grade], 0);
 
@@ -88,7 +89,13 @@ export function OverviewPanel({ overview, onGoTo }: OverviewPanelProps) {
           icon={Flame}
           label="Review streak"
           value={stats.reviewStreakDays > 0 ? `${stats.reviewStreakDays}d` : "0d"}
-          sub={stats.reviewStreakDays > 0 ? "Keep the chain alive" : "Review one trade today"}
+          sub={
+            streak.frozenDays > 0
+              ? `incl. ${streak.frozenDays} frozen grace day${streak.frozenDays === 1 ? "" : "s"}`
+              : stats.reviewStreakDays > 0
+                ? "Grace day available this week"
+                : "Review one trade today"
+          }
           gradient="from-amber-500 to-orange-500"
           testid="kpi-streak"
         />
@@ -109,6 +116,16 @@ export function OverviewPanel({ overview, onGoTo }: OverviewPanelProps) {
           testid="kpi-goals"
         />
       </div>
+
+      {streak.frozenDays > 0 ? (
+        <p
+          className="flex items-center gap-1.5 rounded-lg border border-cyan-500/20 bg-cyan-500/5 px-3 py-2 text-[11px] text-cyan-500 dark:text-cyan-400"
+          data-testid="streak-freeze-note"
+        >
+          <Snowflake className="size-3 shrink-0" aria-hidden="true" />
+          Honest streak: {streak.currentDays} reviewed + {streak.frozenDays} frozen (one grace day per week) — best pure run {streak.longestStreak}d.
+        </p>
+      ) : null}
 
       <div className="grid gap-4 lg:grid-cols-2">
         {/* ── Grade distribution ── */}
