@@ -9,7 +9,7 @@ import {
   marketConditionSchema,
   marketProfileSchema,
   strategyRiskSchema,
-} from "./playbook";
+} from "./playbook-blocks";
 
 /**
  * Strategy (playbook entry) — data-model.md "Domaine 4".

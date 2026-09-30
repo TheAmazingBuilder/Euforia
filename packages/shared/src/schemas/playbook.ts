@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { strategyStatusSchema, tradingStyleSchema } from "../enums";
+import { currencySchema, strategyStatusSchema, tradingStyleSchema } from "../enums";
 import { decimalStringSchema, isoDateTimeSchema, uuidSchema } from "./primitives";
 import { strategySchema } from "./strategy";
 import {
@@ -234,6 +234,7 @@ export const playbookOverviewResponseSchema = z.object({
   ),
   performanceSummary: z.object({
     netPnl: decimalStringSchema,
+    currency: currencySchema,
     trades: z.number().int().min(0),
     winRate: z.number().min(0).max(100).nullable(),
     expectancyR: decimalStringSchema.nullable(),

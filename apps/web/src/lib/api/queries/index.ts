@@ -41,9 +41,25 @@ export {
 } from "./trades";
 export { useCreateSkippedTrade, useSettleSkippedTrade, useSkippedTrades } from "./skippedTrades";
 export {
+  useChecklists,
+  useCreateChecklist,
+  useCreatePlaybookRule,
+  useCreateSetup,
   useCreateStrategy,
+  useDeleteChecklist,
+  useDeletePlaybookRule,
+  useDeleteSetup,
   useDeleteStrategy,
+  useDuplicateStrategy,
+  useInstantiateTemplate,
+  usePlaybookOverview,
+  usePlaybookRules,
+  usePlaybookTemplates,
+  useSetups,
   useStrategiesStats,
+  useUpdateChecklist,
+  useUpdatePlaybookRule,
+  useUpdateSetup,
   useUpdateStrategy,
 } from "./playbook";
 export { useSessionTimeline } from "./session";

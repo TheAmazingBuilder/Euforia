@@ -19,7 +19,7 @@ const BASE = "http://localhost:3000";
   // 1. Sidebar sections render on dashboard
   await page.goto(BASE + "/", { waitUntil: "networkidle" });
   await page.waitForTimeout(1500);
-  for (const title of ["Trading", "Journal", "Insights", "System"]) {
+  for (const title of ["Trading", "Trade Review", "Insights", "System"]) {
     ok(`section « ${title} » visible`, await page.locator(`text=${title}`).first().isVisible().catch(() => false));
   }
   await page.screenshot({ path: "scripts/shots/system-sidebar-dashboard.png" });

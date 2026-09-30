@@ -63,11 +63,15 @@ function PriceLine({ label, value }: { label: string; value: string }) {
 
 export function PriceAlertToaster({ trades, instruments, quotes }: PriceAlertToasterProps) {
   // Latest data in refs: the effect reads them per quote emission without
-  // re-subscribing to anything else.
+  // re-subscribing to anything else. Synced in an effect (never during render)
+  // that runs after every render — declared BEFORE the quote effect so the
+  // quote effect always reads up-to-date props.
   const tradesRef = React.useRef(trades);
-  tradesRef.current = trades;
   const instrumentsRef = React.useRef(instruments);
-  instrumentsRef.current = instruments;
+  React.useEffect(() => {
+    tradesRef.current = trades;
+    instrumentsRef.current = instruments;
+  });
 
   // Per-trade state: armed baseline price (null = not armed yet) and the
   // last time each (trade, level) event fired — a re-cross is a REAL event

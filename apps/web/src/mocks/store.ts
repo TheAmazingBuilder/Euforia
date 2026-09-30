@@ -1547,6 +1547,7 @@ export function createMockStore() {
       recentlyUsed,
       performanceSummary: {
         netPnl: toDecimalString(round2(netPnl)),
+        currency: mainAccount.currency,
         trades: playbookClosed.length,
         winRate: playbookClosed.length > 0 ? round2((wins / playbookClosed.length) * 100) : null,
         expectancyR: playbookClosed.length > 0 ? toDecimalString(round2(sumR / playbookClosed.length)) : null,
