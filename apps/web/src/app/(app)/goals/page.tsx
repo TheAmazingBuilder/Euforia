@@ -1,20 +1,15 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 
-import { PagePlaceholder } from "@/components/shared/page-placeholder";
-import { getNavItem } from "@/lib/navigation";
-
-const nav = getNavItem("/goals");
-
+/**
+ * Goals fused into the Trade Review module — this route stays alive only to
+ * redirect stale deep-links to the Goals tab.
+ */
 export const metadata: Metadata = {
-  title: nav.label,
+  title: "Goals",
+  description: "Redirected — goal setting and progress tracking now live inside Trade Review.",
 };
 
 export default function GoalsPage() {
-  return (
-    <PagePlaceholder
-      title={nav.label}
-      description={nav.description}
-      comingSoon={nav.comingSoon}
-    />
-  );
+  redirect("/journal?tab=goals");
 }

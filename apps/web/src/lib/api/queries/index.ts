@@ -99,3 +99,14 @@ export {
   useRunMonitoringJob,
   useUpdateMonitoringThresholds,
 } from "./monitoring";
+export {
+  useCreateGoal,
+  useDeleteGoal,
+  useDeleteReview,
+  useGoals,
+  useReviewLessons,
+  useReviewOverview,
+  useReviews,
+  useUpdateGoal,
+  useUpsertReview,
+} from "./tradeReview";

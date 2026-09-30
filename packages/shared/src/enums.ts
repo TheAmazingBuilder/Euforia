@@ -217,28 +217,9 @@ export const periodSchema = z.enum([
 ]);
 export type Period = z.infer<typeof periodSchema>;
 
-export const goalMetricSchema = z.enum([
-  "R_EARNED",
-  "PNL_NET",
-  "DISCIPLINE_SCORE",
-  "FOLLOW_PLAN_PCT",
-  "TRADES_COUNT",
-  "MISTAKES_COUNT",
-  "WIN_RATE",
-  "MAX_DRAWDOWN",
-]);
-export type GoalMetric = z.infer<typeof goalMetricSchema>;
-
-export const goalDirectionSchema = z.enum(["MINIMIZE", "MAXIMIZE"]);
-export type GoalDirection = z.infer<typeof goalDirectionSchema>;
-
-export const goalStatusSchema = z.enum([
-  "ACTIVE",
-  "ACHIEVED",
-  "MISSED",
-  "ARCHIVED",
-]);
-export type GoalStatus = z.infer<typeof goalStatusSchema>;
+// NOTE: the Goal enums live in schemas/tradeReview.ts (computed progress,
+// server-derived direction/unit) — the placeholder versions that used to sit
+// here were dead code and are superseded by that contract.
 
 export const insightKindSchema = z.enum([
   "WEEKLY_SUMMARY",

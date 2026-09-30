@@ -13,12 +13,14 @@ import { sessionHandlers } from "./session";
 import { statsHandlers } from "./stats";
 import { tradeHandlers } from "./trades";
 import { backupHandlers } from "./backup";
+import { tradeReviewHandlers } from "./tradeReview";
 
 /** Full §12 endpoint matrix, one file per domain. */
 export const handlers = [
   ...catalogHandlers,
   ...playbookHandlers,
   ...tradeHandlers,
+  ...tradeReviewHandlers,
   ...disciplineHandlers,
   ...ghostHandlers,
   ...statsHandlers,

@@ -12,7 +12,6 @@ import {
   NotebookPen,
   Settings,
   ShieldCheck,
-  Target,
   type LucideIcon,
 } from "lucide-react";
 
@@ -87,7 +86,7 @@ export const SIDEBAR_ITEMS: NavItem[] = [
     label: "Trade Review",
     icon: NotebookPen,
     description:
-      "Review every executed trade: plan vs. actual, rule adherence and the lesson you keep.",
+      "Review every executed trade and hold your goals against reality: plan vs. actual, execution grades and the lesson you keep.",
     comingSoon:
       "The trade review workflow will grade execution against the playbook and capture lessons.",
   },
@@ -99,15 +98,6 @@ export const SIDEBAR_ITEMS: NavItem[] = [
       "The coach that watches your rules: limits, streaks, violations and mindset.",
     comingSoon:
       "Your discipline score, daily limits, rule-violation feed and ghost-trade settlements will live here.",
-  },
-  {
-    href: "/goals",
-    label: "Goals",
-    icon: Target,
-    description:
-      "Set targets for consistency, risk and growth, and track how you actually behave against them.",
-    comingSoon:
-      "Goal setting and progress tracking will compare your targets with your real trading behavior.",
   },
   {
     href: "/monitoring",
@@ -165,7 +155,8 @@ export type NavSection = {
 export const NAV_SECTIONS: NavSection[] = [
   { title: "Trading", hrefs: ["/session", "/playbook", "/calendar"] },
   { title: "Trade Review", hrefs: ["/trades", "/journal", "/discipline"] },
-  { title: "Insights", hrefs: ["/analytics", "/goals"] },
+  // Goals lives inside Trade Review (/journal?tab=goals) — /goals redirects there.
+  { title: "Insights", hrefs: ["/analytics"] },
   {
     title: "System",
     hrefs: ["/monitoring", "/settings", "/integrations", "/security"],

@@ -98,6 +98,24 @@ import {
   type StrategyVersionSnapshot,
   type UpdateChecklistInput,
   type UpdatePlaybookRuleInput,
+  // Trade Review module (fusion with Goal)
+  type CreateGoalInput,
+  type Goal,
+  type GoalDirection,
+  type GoalMetric,
+  type GoalPeriod,
+  type GoalStatus,
+  type GoalUnit,
+  type GoalWithProgress,
+  type GoalsResponse,
+  type LessonEntry,
+  type LessonsResponse,
+  type ReviewRow,
+  type ReviewsResponse,
+  type TradeReview,
+  type TradeReviewOverviewResponse,
+  type UpdateGoalInput,
+  type UpsertReviewInput,
   type UpdateSetupInput,
   DEFAULT_USER_PREFERENCES,
   tradingPreferencesSchema,
@@ -114,6 +132,7 @@ import { buildFixtureData, USER_TZ, type FixtureData } from "./fixtures";
 import { mulberry32 } from "./fixtures/random";
 import { integrationEngine } from "./integration-engine";
 import { buildPlaybookSeed, playbookTemplateCards, templateToCreateInput } from "./playbook-seed";
+import { buildGoalSeed, buildReviewSeed } from "./review-seed";
 
 /** Per-domain validation schemas — one source of truth, used by the handler. */
 const PREFERENCE_DOMAIN_SCHEMAS = {
@@ -180,6 +199,10 @@ export function createMockStore() {
   const playbookRules: PlaybookRule[] = playbookSeed.rules;
   /** Historical strategy definitions (§17) — appended, never rewritten. */
   const strategyVersions: StrategyVersionSnapshot[] = [];
+
+  // ── Trade Review state (goals + per-trade reviews, same store lifecycle) ──
+  const goals: Goal[] = buildGoalSeed(user.id);
+  const reviews: TradeReview[] = buildReviewSeed(user.id, data.trades);
 
   /**
    * User preferences (Settings module) — seeded from the safe shared
@@ -3211,6 +3234,518 @@ export function createMockStore() {
     return { status: "SCHEDULED", scheduledFor: scheduled.toISOString() };
   }
 
+  // ── Trade Review module (fusion with Goal) ────────────────────────────────
+  // Goals: targets set by the trader; progress is COMPUTED here from real
+  // trading behavior over a resolved calendar period — never self-entered.
+  // Reviews: one post-trade review per trade (upsert), distinct from the
+  // pre-reveal decisionGrade frozen on the trade.
+
+  const METRIC_SHAPE: Record<
+    GoalMetric,
+    { direction: GoalDirection; unit: GoalUnit }
+  > = {
+    WIN_RATE: { direction: "HIGHER_IS_BETTER", unit: "PERCENT" },
+    R_EARNED: { direction: "HIGHER_IS_BETTER", unit: "R" },
+    AVG_R: { direction: "HIGHER_IS_BETTER", unit: "R" },
+    PROFIT_TARGET: { direction: "HIGHER_IS_BETTER", unit: "MONEY" },
+    DISCIPLINE_SCORE: { direction: "HIGHER_IS_BETTER", unit: "SCORE" },
+    FOLLOWED_PLAN_PCT: { direction: "HIGHER_IS_BETTER", unit: "PERCENT" },
+    MAX_TRADES_PER_DAY: { direction: "LOWER_IS_BETTER", unit: "COUNT" },
+    MAX_DAILY_LOSS_R: { direction: "HIGHER_IS_BETTER", unit: "R" },
+  };
+
+  interface ResolvedPeriod {
+    from: string;
+    to: string;
+    daysElapsed: number;
+    daysTotal: number;
+  }
+
+  /** Calendar window for `period` containing the reference day (YYYY-MM-DD). */
+  function resolvePeriodFor(period: GoalPeriod, refDay: string): { from: string; to: string } {
+    const [y, m] = refDay.split("-").map(Number) as [number, number];
+    const utc = (year: number, month: number, day: number): string =>
+      new Date(Date.UTC(year, month - 1, day)).toISOString().slice(0, 10);
+
+    if (period === "WEEK") {
+      const weekday = new Date(`${refDay}T00:00:00Z`).getUTCDay();
+      const mondayOffset = (weekday + 6) % 7;
+      const from = shiftDayKey2(refDay, -mondayOffset);
+      return { from, to: shiftDayKey2(from, 6) };
+    }
+    if (period === "MONTH") {
+      return { from: utc(y, m, 1), to: utc(y, m, new Date(Date.UTC(y, m, 0)).getUTCDate()) };
+    }
+    const qStart = Math.floor((m - 1) / 3) * 3 + 1;
+    const qEndMonth = qStart + 2;
+    return {
+      from: utc(y, qStart, 1),
+      to: utc(y, qEndMonth, new Date(Date.UTC(y, qEndMonth, 0)).getUTCDate()),
+    };
+  }
+
+  /** Calendar period containing today (Toronto trading-day clock). */
+  function resolvePeriod(period: GoalPeriod): ResolvedPeriod {
+    const { from, to } = resolvePeriodFor(period, todayKey());
+    const daysTotal = dayDiff(from, to) + 1;
+    const daysElapsed = Math.min(daysTotal, Math.max(0, dayDiff(from, todayKey()) + 1));
+    return { from, to, daysElapsed, daysTotal };
+  }
+
+  /** Next N calendar days from a YYYY-MM-DD key (UTC arithmetic, like shiftDayKey). */
+  function shiftDayKey2(key: string, days: number): string {
+    const date = new Date(`${key}T00:00:00Z`);
+    date.setUTCDate(date.getUTCDate() + days);
+    return date.toISOString().slice(0, 10);
+  }
+
+  /** The true previous calendar window (week/month/quarter before). */
+  function previousWindow(period: ResolvedPeriod): { from: string; to: string } {
+    return resolvePeriodFor(currentPeriodOf(period), shiftDayKey2(period.from, -1));
+  }
+
+  /** Which GoalPeriod a resolved window came from — recovered from length.
+   *  Simpler and exact: previousWindow is called right after resolvePeriod,
+   *  so we thread the GoalPeriod through instead. */
+  function currentPeriodOf(period: ResolvedPeriod): GoalPeriod {
+    return period.daysTotal <= 7 ? "WEEK" : period.daysTotal <= 31 ? "MONTH" : "QUARTER";
+  }
+
+  function computeMetricActual(
+    metric: GoalMetric,
+    from: string,
+    to: string,
+  ): { actual: number | null; sampleSize: number } {
+    const trades = closedTrades().filter((t) => t.tradingDate >= from && t.tradingDate <= to);
+    const stats = data.dailyStats.filter((s) => s.date >= from && s.date <= to && s.disciplineScore !== null);
+
+    const sumR = trades.reduce((sum, t) => sum + (Number(t.rMultiple) ?? 0), 0);
+    const perDayR = new Map<string, number>();
+    for (const trade of trades) {
+      perDayR.set(trade.tradingDate, (perDayR.get(trade.tradingDate) ?? 0) + (Number(trade.rMultiple) ?? 0));
+    }
+
+    switch (metric) {
+      case "WIN_RATE": {
+        const wins = trades.filter((t) => (Number(t.pnlNet) ?? 0) > 0).length;
+        return { actual: trades.length > 0 ? round1((wins / trades.length) * 100) : null, sampleSize: trades.length };
+      }
+      case "R_EARNED":
+        return { actual: trades.length > 0 ? round2(sumR) : null, sampleSize: trades.length };
+      case "AVG_R":
+        return { actual: trades.length > 0 ? round2(sumR / trades.length) : null, sampleSize: trades.length };
+      case "PROFIT_TARGET": {
+        const net = trades.reduce((sum, t) => sum + (Number(t.pnlNet) ?? 0), 0);
+        return { actual: trades.length > 0 ? round2(net) : null, sampleSize: trades.length };
+      }
+      case "DISCIPLINE_SCORE":
+        return {
+          actual: stats.length > 0 ? round1(stats.reduce((sum, s) => sum + Number(s.disciplineScore), 0) / stats.length) : null,
+          sampleSize: stats.length,
+        };
+      case "FOLLOWED_PLAN_PCT": {
+        const known = trades.filter((t) => t.followedPlan !== null);
+        const followed = known.filter((t) => t.followedPlan === true).length;
+        return { actual: known.length > 0 ? round1((followed / known.length) * 100) : null, sampleSize: known.length };
+      }
+      case "MAX_TRADES_PER_DAY": {
+        const perDay = new Map<string, number>();
+        for (const trade of trades) perDay.set(trade.tradingDate, (perDay.get(trade.tradingDate) ?? 0) + 1);
+        const worst = Math.max(0, ...perDay.values());
+        return { actual: trades.length > 0 ? worst : null, sampleSize: trades.length };
+      }
+      case "MAX_DAILY_LOSS_R": {
+        const worst = Math.min(0, ...perDayR.values());
+        return { actual: trades.length > 0 ? round2(worst) : null, sampleSize: trades.length };
+      }
+    }
+  }
+
+  function goalProgressFor(goal: Goal): GoalWithProgress {
+    const shape = METRIC_SHAPE[goal.metric];
+    const period = resolvePeriod(goal.period);
+    const current = computeMetricActual(goal.metric, period.from, period.to);
+    const prevWindow = previousWindow(period);
+    const previous = computeMetricActual(goal.metric, prevWindow.from, prevWindow.to).actual;
+
+    const timePct = Math.min(1, Math.max(0, period.daysElapsed) / period.daysTotal);
+    let progressPct: number | null = null;
+    let status: GoalStatus = "PENDING";
+
+    if (current.actual !== null) {
+      const actual = current.actual;
+      if (shape.direction === "LOWER_IS_BETTER") {
+        // A limit to respect ("max 3 trades/day") — maintained, not "achieved early".
+        if (actual <= goal.target) {
+          progressPct = 100;
+          status = "ON_TRACK";
+        } else {
+          progressPct = Math.max(0, Math.min(100, round1((goal.target / actual) * 100)));
+          status = "BEHIND";
+        }
+      } else if (goal.target < 0) {
+        // A floor to respect ("worst day no worse than −2R").
+        if (actual >= goal.target) {
+          progressPct = 100;
+          status = "ON_TRACK";
+        } else {
+          const depth = Math.abs(((goal.target - actual) / Math.abs(goal.target)) * 100);
+          progressPct = Math.max(0, Math.min(100, round1(100 - depth)));
+          status = "BEHIND";
+        }
+      } else {
+        // A growth target — pace it against elapsed time.
+        progressPct = Math.max(0, Math.min(100, round1((actual / goal.target) * 100)));
+        if (actual >= goal.target) {
+          status = "ACHIEVED";
+        } else {
+          const expected = timePct * 100;
+          const ratio = expected > 0 ? progressPct / expected : progressPct > 0 ? 2 : 0;
+          if (progressPct === 0 && timePct <= 0.15) status = "ON_TRACK";
+          else if (ratio >= 0.9) status = "ON_TRACK";
+          else if (ratio >= 0.55) status = "AT_RISK";
+          else status = "BEHIND";
+        }
+      }
+    }
+
+    const fmt = (value: number): string => {
+      if (shape.unit === "PERCENT") return `${round1(value)}%`;
+      if (shape.unit === "R") return `${round2(value)}R`;
+      if (shape.unit === "MONEY") return `$${Math.round(value).toLocaleString("en-US")}`;
+      if (shape.unit === "COUNT") return `${Math.round(value)}`;
+      return `${round1(value)}`;
+    };
+    const targetWord = shape.direction === "LOWER_IS_BETTER"
+      ? "max"
+      : goal.metric === "MAX_DAILY_LOSS_R"
+        ? "floor"
+        : "target";
+    const detail = current.actual === null
+      ? `No data yet this ${goal.period.toLowerCase()} — the sample is empty`
+      : `${fmt(current.actual)} vs ${fmt(goal.target)} ${targetWord}`;
+
+    return {
+      goal,
+      progress: {
+        goalId: goal.id,
+        metric: goal.metric,
+        direction: shape.direction,
+        unit: shape.unit,
+        currency: shape.unit === "MONEY" ? mainAccount.currency : null,
+        actual: current.actual,
+        previous,
+        progressPct,
+        status,
+        periodStart: period.from,
+        periodEnd: period.to,
+        daysElapsed: Math.min(period.daysElapsed, period.daysTotal),
+        daysTotal: period.daysTotal,
+        sampleSize: current.sampleSize,
+        detail,
+      },
+    };
+  }
+
+  function listGoals(): GoalsResponse {
+    return { goals: goals.map(goalProgressFor) };
+  }
+
+  function createGoal(input: CreateGoalInput): GoalWithProgress {
+    const now = nowIso();
+    const goal: Goal = {
+      id: crypto.randomUUID(),
+      userId: user.id,
+      title: input.title,
+      metric: input.metric,
+      target: input.target,
+      period: input.period,
+      color: input.color,
+      active: input.active ?? true,
+      createdAt: now,
+      updatedAt: now,
+    };
+    goals.push(goal);
+    return goalProgressFor(goal);
+  }
+
+  function updateGoal(goalId: string, input: UpdateGoalInput): GoalWithProgress {
+    const goal = goals.find((g) => g.id === goalId);
+    if (!goal) throw new MockError(404, "Goal not found");
+    if (input.title !== undefined) goal.title = input.title;
+    if (input.metric !== undefined) goal.metric = input.metric;
+    if (input.target !== undefined) goal.target = input.target;
+    if (input.period !== undefined) goal.period = input.period;
+    if (input.color !== undefined) goal.color = input.color;
+    if (input.active !== undefined) goal.active = input.active;
+    goal.updatedAt = nowIso();
+    return goalProgressFor(goal);
+  }
+
+  function deleteGoal(goalId: string): { ok: true } {
+    const index = goals.findIndex((g) => g.id === goalId);
+    if (index === -1) throw new MockError(404, "Goal not found");
+    goals.splice(index, 1);
+    return { ok: true };
+  }
+
+  function strategyNameFor(strategyId: string | null): string | null {
+    if (strategyId === null) return null;
+    return data.strategies.find((s) => s.id === strategyId)?.name ?? null;
+  }
+
+  function reviewRowForReview(review: TradeReview): ReviewRow {
+    const trade = data.trades.find((t) => t.id === review.tradeId);
+    if (!trade) throw new MockError(500, "Review references a missing trade");
+    return {
+      tradeId: review.tradeId,
+      symbol: instrumentById.get(trade.instrumentId)?.symbol ?? "—",
+      direction: trade.direction,
+      tradingDate: trade.tradingDate,
+      reviewStatus: "REVIEWED",
+      decisionGrade: trade.decisionGrade,
+      executionGrade: review.executionGrade,
+      playbookMatch: review.playbookMatch,
+      followedPlan: review.followedPlan,
+      entryQuality: review.entryQuality,
+      exitQuality: review.exitQuality,
+      riskManagement: review.riskManagement,
+      rMultiple: trade.rMultiple === null ? null : Number(trade.rMultiple),
+      pnlNet: trade.pnlNet === null ? null : Number(trade.pnlNet),
+      currency: mainAccount.currency,
+      strategyName: strategyNameFor(trade.strategyId),
+      setupName: trade.setupId ? (setups.find((s) => s.id === trade.setupId)?.name ?? null) : null,
+      lesson: review.lessons,
+      improvementNote: review.improvementNote,
+      checklistResults: review.checklistResults,
+      reviewedAt: review.reviewedAt,
+    };
+  }
+
+  function pendingRowForTrade(trade: Trade): ReviewRow {
+    return {
+      tradeId: trade.id,
+      symbol: instrumentById.get(trade.instrumentId)?.symbol ?? "—",
+      direction: trade.direction,
+      tradingDate: trade.tradingDate,
+      reviewStatus: "PENDING",
+      decisionGrade: trade.decisionGrade,
+      executionGrade: null,
+      playbookMatch: null,
+      followedPlan: trade.followedPlan,
+      entryQuality: null,
+      exitQuality: null,
+      riskManagement: null,
+      rMultiple: trade.rMultiple === null ? null : Number(trade.rMultiple),
+      pnlNet: trade.pnlNet === null ? null : Number(trade.pnlNet),
+      currency: mainAccount.currency,
+      strategyName: strategyNameFor(trade.strategyId),
+      setupName: trade.setupId ? (setups.find((s) => s.id === trade.setupId)?.name ?? null) : null,
+      lesson: trade.lessons,
+      improvementNote: null,
+      // The frozen checklist (if any) seeds the review workflow's pass/fail list.
+      checklistResults:
+        trade.checklistSnap && typeof trade.checklistSnap === "object" && !Array.isArray(trade.checklistSnap)
+          ? Object.entries(trade.checklistSnap as Record<string, boolean>).map(([label, passed]) => ({
+              label,
+              passed: Boolean(passed),
+            }))
+          : null,
+      reviewedAt: null,
+    };
+  }
+
+  function listReviews(): ReviewsResponse {
+    const reviewedTradeIds = new Set(reviews.map((r) => r.tradeId));
+    const rows: ReviewRow[] = [
+      ...reviews.map(reviewRowForReview),
+      ...closedTrades()
+        .filter((t) => !reviewedTradeIds.has(t.id))
+        .map(pendingRowForTrade),
+    ];
+    rows.sort((a, b) => b.tradingDate.localeCompare(a.tradingDate));
+    return { reviews: rows, meta: { generatedAt: nowIso() } };
+  }
+
+  function upsertReview(input: UpsertReviewInput): ReviewRow {
+    const trade = data.trades.find((t) => t.id === input.tradeId && t.deletedAt === null);
+    if (!trade) throw new MockError(404, "Trade not found");
+    if (trade.status !== "CLOSED") {
+      throw new MockError(422, "Only closed trades can be reviewed");
+    }
+
+    const existing = reviews.find((r) => r.tradeId === input.tradeId);
+    const now = nowIso();
+    if (existing) {
+      existing.executionGrade = input.executionGrade;
+      existing.followedPlan = input.followedPlan;
+      existing.playbookMatch = input.playbookMatch;
+      existing.checklistResults = input.checklistResults ?? existing.checklistResults;
+      existing.entryQuality = input.entryQuality ?? existing.entryQuality;
+      existing.exitQuality = input.exitQuality ?? existing.exitQuality;
+      existing.riskManagement = input.riskManagement ?? existing.riskManagement;
+      existing.lessons = input.lessons;
+      existing.improvementNote = input.improvementNote ?? existing.improvementNote;
+      existing.updatedAt = now;
+    } else {
+      reviews.push({
+        id: crypto.randomUUID(),
+        userId: user.id,
+        tradeId: input.tradeId,
+        executionGrade: input.executionGrade,
+        followedPlan: input.followedPlan,
+        playbookMatch: input.playbookMatch,
+        checklistResults: input.checklistResults ?? null,
+        entryQuality: input.entryQuality ?? null,
+        exitQuality: input.exitQuality ?? null,
+        riskManagement: input.riskManagement ?? null,
+        lessons: input.lessons,
+        improvementNote: input.improvementNote ?? null,
+        reviewedAt: now,
+        updatedAt: now,
+      });
+    }
+
+    // Keep the trade's own written trace in sync so Analytics stays coherent.
+    trade.lessons = input.lessons;
+    trade.followedPlan = input.followedPlan;
+    trade.updatedAt = now;
+
+    return reviewRowForReview(reviews.find((r) => r.tradeId === input.tradeId)!);
+  }
+
+  function deleteReview(tradeId: string): { ok: true } {
+    const index = reviews.findIndex((r) => r.tradeId === tradeId);
+    if (index === -1) throw new MockError(404, "Review not found");
+    reviews.splice(index, 1);
+    return { ok: true };
+  }
+
+  function listLessons(): LessonsResponse {
+    const reviewedTradeIds = new Set(reviews.map((r) => r.tradeId));
+    const entries: LessonEntry[] = [];
+
+    for (const review of reviews) {
+      const trade = data.trades.find((t) => t.id === review.tradeId);
+      if (!trade) continue;
+      entries.push({
+        id: review.id,
+        source: "REVIEW",
+        tradeId: review.tradeId,
+        date: trade.tradingDate,
+        text: review.lessons,
+        symbol: instrumentById.get(trade.instrumentId)?.symbol ?? null,
+        executionGrade: review.executionGrade,
+        rMultiple: trade.rMultiple === null ? null : Number(trade.rMultiple),
+        strategyName: strategyNameFor(trade.strategyId),
+      });
+    }
+    for (const trade of closedTrades()) {
+      if (trade.lessons === null || reviewedTradeIds.has(trade.id)) continue;
+      entries.push({
+        id: `note-${trade.id}`,
+        source: "TRADE_NOTE",
+        tradeId: trade.id,
+        date: trade.tradingDate,
+        text: trade.lessons,
+        symbol: instrumentById.get(trade.instrumentId)?.symbol ?? null,
+        executionGrade: trade.decisionGrade,
+        rMultiple: trade.rMultiple === null ? null : Number(trade.rMultiple),
+        strategyName: strategyNameFor(trade.strategyId),
+      });
+    }
+
+    entries.sort((a, b) => b.date.localeCompare(a.date));
+    return { lessons: entries };
+  }
+
+  function reviewOverview(): TradeReviewOverviewResponse {
+    const closed = closedTrades();
+    const reviewedCount = reviews.length;
+    const pending = closed.length - reviewedCount;
+
+    const distribution = { A: 0, B: 0, C: 0, D: 0, F: 0 };
+    for (const review of reviews) distribution[review.executionGrade] += 1;
+
+    const meanQuality = (pick: (r: TradeReview) => number | null): number | null => {
+      const values = reviews.map(pick).filter((v): v is number => v !== null);
+      return values.length > 0 ? round1(values.reduce((s, v) => s + v, 0) / values.length) : null;
+    };
+
+    // Review streak — consecutive trading days with ≥1 review, ending today
+    // (or yesterday if today has none yet; the day is not over).
+    const reviewDays = new Set(reviews.map((r) => toTradingDateKey(r.reviewedAt, USER_TZ)));
+    let streakStart = todayKey();
+    if (!reviewDays.has(streakStart)) streakStart = dateKeyOffset(-1);
+    let reviewStreakDays = 0;
+    if (reviewDays.has(streakStart)) {
+      let cursor = streakStart;
+      while (reviewDays.has(cursor)) {
+        reviewStreakDays += 1;
+        cursor = shiftDayKey2(cursor, -1);
+      }
+    }
+
+    const gradePoints: Record<string, number> = { A: 5, B: 4, C: 3, D: 2, F: 1 };
+    const weeklyGradeTrend: TradeReviewOverviewResponse["weeklyGradeTrend"] = [];
+    const currentMondayOffset = (new Date(`${todayKey()}T00:00:00Z`).getUTCDay() + 6) % 7;
+    const currentWeekStart = shiftDayKey2(todayKey(), -currentMondayOffset);
+    for (let weekOffset = 7; weekOffset >= 0; weekOffset -= 1) {
+      const weekStart = shiftDayKey2(currentWeekStart, -weekOffset * 7);
+      const weekEnd = shiftDayKey2(weekStart, 6);
+      const weekReviews = reviews.filter((r) => {
+        const day = toTradingDateKey(r.reviewedAt, USER_TZ);
+        return day >= weekStart && day <= weekEnd;
+      });
+      if (weekReviews.length === 0) continue;
+      weeklyGradeTrend.push({
+        weekStart,
+        avgPoints: round2(weekReviews.reduce((sum, r) => sum + gradePoints[r.executionGrade]!, 0) / weekReviews.length),
+        reviews: weekReviews.length,
+      });
+    }
+
+    const progressRows = goals.filter((g) => g.active).map(goalProgressFor);
+    const progressValues = progressRows.map((row) => row.progress.progressPct).filter((v): v is number => v !== null);
+    const goalsSummary = {
+      total: progressRows.length,
+      achieved: progressRows.filter((row) => row.progress.status === "ACHIEVED").length,
+      onTrack: progressRows.filter((row) => row.progress.status === "ON_TRACK").length,
+      atRisk: progressRows.filter((row) => row.progress.status === "AT_RISK").length,
+      behind: progressRows.filter((row) => row.progress.status === "BEHIND").length,
+      avgProgressPct: progressValues.length > 0 ? round1(progressValues.reduce((s, v) => s + v, 0) / progressValues.length) : null,
+    };
+
+    const followedKnown = reviews.filter((r) => typeof r.followedPlan === "boolean");
+    const followedCount = followedKnown.filter((r) => r.followedPlan === true).length;
+    const lessons = listLessons().lessons;
+    const pendingRows = listReviews().reviews
+      .filter((row) => row.reviewStatus === "PENDING")
+      .slice(0, 5);
+
+    return {
+      stats: {
+        closedTrades: closed.length,
+        reviewedTrades: reviewedCount,
+        pendingReviews: Math.max(0, pending),
+        reviewRatePct: closed.length > 0 ? round1((reviewedCount / closed.length) * 100) : 0,
+        gradeDistribution: distribution,
+        avgEntryQuality: meanQuality((r) => r.entryQuality),
+        avgExitQuality: meanQuality((r) => r.exitQuality),
+        avgRiskManagement: meanQuality((r) => r.riskManagement),
+        lessonsCaptured: lessons.length,
+        reviewStreakDays,
+        followedPlanPct: followedKnown.length > 0 ? round1((followedCount / followedKnown.length) * 100) : null,
+        offPlaybookCount: reviews.filter((r) => r.playbookMatch === "OFF_PLAYBOOK").length,
+      },
+      goalsSummary,
+      weeklyGradeTrend,
+      recentLessons: lessons.slice(0, 6),
+      pendingQueuePreview: pendingRows,
+      meta: { generatedAt: nowIso() },
+    };
+  }
+
   return {
     get data() { return data; },
     listTrades,
@@ -3237,6 +3772,16 @@ export function createMockStore() {
     listPlaybookTemplates,
     instantiatePlaybookTemplate,
     playbookOverview,
+    // Trade Review module (fusion with Goal)
+    reviewOverview,
+    listReviews,
+    upsertReview,
+    deleteReview,
+    listLessons,
+    listGoals,
+    createGoal,
+    updateGoal,
+    deleteGoal,
     listTags,
     listAlerts,
     listEcoEvents,

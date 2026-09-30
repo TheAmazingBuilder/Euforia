@@ -79,4 +79,11 @@ export const apiPaths = {
   setup: (setupId: string) => `/setups/${setupId}`,
   checklists: "/checklists",
   checklist: (checklistId: string) => `/checklists/${checklistId}`,
+  // Trade Review module (fusion with Goal)
+  reviewWorkspaceOverview: "/reviews/overview",
+  reviewWorkspace: "/reviews",
+  reviewWorkspaceEntry: (tradeId: string) => `/reviews/${tradeId}`,
+  reviewLessons: "/reviews/lessons",
+  goals: "/goals",
+  goal: (goalId: string) => `/goals/${goalId}`,
 } as const;

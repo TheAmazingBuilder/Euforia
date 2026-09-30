@@ -36,6 +36,13 @@ export const queryKeys = {
   setups: ["setups"] as const,
   checklists: ["checklists"] as const,
   analyticsSuiteRoot: ["analytics-suite"] as const,
+  // Trade Review module (fusion with Goal)
+  reviewWorkspaceOverview: ["review-workspace-overview"] as const,
+  reviewWorkspace: ["review-workspace"] as const,
+  reviewWorkspaceRoot: ["review-workspace"] as const,
+  reviewLessons: ["review-lessons"] as const,
+  goals: ["goals"] as const,
+  goalsRoot: ["goals"] as const,
 } as const;
 
 /**
