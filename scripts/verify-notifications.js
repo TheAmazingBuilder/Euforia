@@ -44,15 +44,29 @@ const BASE = "http://localhost:3000";
   const badgeBefore = await bell.locator("span.absolute").textContent().catch(() => null);
   check("Unread badge shows count", badgeBefore !== null, `badge=${badgeBefore}`);
 
-  // 5. Click first item → marks read (badge decrements or disappears)
+  // 5. Click first item → marks read (badge decrements, or stays at the
+  //    « 9+ » cap when enough unread remain — the network call is the truth).
   const firstItem = items.first();
+  const readResponse = page.waitForResponse(
+    (resp) => resp.url().includes("/read") && resp.request().method() === "PATCH",
+    { timeout: 10_000 },
+  );
   await firstItem.click();
+  const readResp = await readResponse;
   await page.waitForTimeout(800);
   const badgeAfter = await bell
     .locator("span.absolute")
     .textContent()
     .catch(() => null);
-  check("Click marks item read (badge updates)", badgeBefore !== badgeAfter, `before=${badgeBefore} after=${badgeAfter}`);
+  const badgeOk =
+    badgeBefore !== badgeAfter ||
+    (badgeBefore ?? "").includes("+") ||
+    (badgeAfter ?? "").includes("+");
+  check(
+    "Click marks item read (badge updates or capped)",
+    readResp.ok() && badgeOk,
+    `before=${badgeBefore} after=${badgeAfter} post=${readResp.status()}`,
+  );
   await page.screenshot({ path: "scripts/shots/notifications-after-read.png" });
 
   // 6. Mark all read
