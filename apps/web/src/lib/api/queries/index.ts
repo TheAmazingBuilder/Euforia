@@ -74,7 +74,6 @@ export {
   useUpdatePreferencesDomain,
 } from "./preferences";
 export { useBrokerSession } from "./broker";
-export { sendCoachMessage } from "./coach";
 export {
   useConnectIntegration,
   useDisconnectIntegration,

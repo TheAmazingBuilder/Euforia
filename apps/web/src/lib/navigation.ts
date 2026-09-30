@@ -12,7 +12,6 @@ import {
   NotebookPen,
   Settings,
   ShieldCheck,
-  Sparkles,
   Target,
   type LucideIcon,
 } from "lucide-react";
@@ -102,15 +101,6 @@ export const SIDEBAR_ITEMS: NavItem[] = [
       "Your discipline score, daily limits, rule-violation feed and ghost-trade settlements will live here.",
   },
   {
-    href: "/coach",
-    label: "Coach",
-    icon: Sparkles,
-    description:
-      "Talk with your AI coach about your own data: patterns, leaks and one fix at a time.",
-    comingSoon:
-      "A conversational coach grounded in your journal will answer with your real numbers.",
-  },
-  {
     href: "/goals",
     label: "Goals",
     icon: Target,
@@ -175,7 +165,7 @@ export type NavSection = {
 export const NAV_SECTIONS: NavSection[] = [
   { title: "Trading", hrefs: ["/session", "/playbook", "/calendar"] },
   { title: "Trade Review", hrefs: ["/trades", "/journal", "/discipline"] },
-  { title: "Insights", hrefs: ["/analytics", "/coach", "/goals"] },
+  { title: "Insights", hrefs: ["/analytics", "/goals"] },
   {
     title: "System",
     hrefs: ["/monitoring", "/settings", "/integrations", "/security"],
