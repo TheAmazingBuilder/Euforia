@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { toast } from "sonner";
-import { BellRing } from "lucide-react";
+import { BellRing, Target } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { NotificationChannels, NotificationPreferences } from "@cosmoz/shared";
 
@@ -21,7 +21,7 @@ import {
 import { apiErrorMessage } from "@/lib/api/client";
 
 /**
- * Notification preferences — the fine-grained matrix: 6 categories ×
+ * Notification preferences — the fine-grained matrix: 7 categories ×
  * concrete events × 3 delivery channels. The in-app channel feeds the
  * existing alert inbox; email/push activate when the delivery service
  * ships (preferences are stored now, honored by the real API later).
@@ -85,6 +85,17 @@ const CATEGORY_META: CategoryMeta[] = [
     ],
   },
   {
+    key: "goals",
+    label: "Goals",
+    description: "Target pacing against real behavior — at-risk alerts, recoveries, achievements.",
+    icon: Target,
+    events: [
+      { key: "GOAL_AT_RISK", label: "Goal slipping (at risk)" },
+      { key: "GOAL_RECOVERED", label: "Goal back on track" },
+      { key: "GOAL_ACHIEVED", label: "Goal achieved" },
+    ],
+  },
+  {
     key: "economic",
     label: "Economic calendar",
     description: "High-impact events around your session.",
@@ -136,7 +147,7 @@ export function NotificationsCard() {
   ) =>
     setDraft((previous) => {
       if (!previous) return previous;
-      // All six categories share the { enabled, events } envelope; only the
+      // All seven categories share the { enabled, events } envelope; only the
       // event key sets differ, and edits never move events across
       // categories — the envelope-level cast is therefore sound.
       const current = previous[category] as NotificationCategoryEnvelope;

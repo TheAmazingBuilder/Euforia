@@ -35,6 +35,9 @@ export function useAlerts() {
   return useQuery({
     queryKey: queryKeys.alerts,
     queryFn: () => apiRequest<AlertsResponse>(apiPaths.alerts),
+    // Notification inbox — gentle background refresh so goal-status and
+    // discipline alerts reach the bell without requiring a navigation.
+    refetchInterval: 60_000,
   });
 }
 

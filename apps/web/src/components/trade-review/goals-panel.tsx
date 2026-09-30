@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { CalendarDays, Pencil, Plus, Target, Trash2, TrendingDown, TrendingUp } from "lucide-react";
+import { BellRing, CalendarDays, Pencil, Plus, Target, Trash2, TrendingDown, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
 import type { GoalWithProgress } from "@cosmoz/shared";
 
@@ -71,6 +71,14 @@ export function GoalsPanel() {
           <p className="text-sm text-muted-foreground">
             Targets are yours; the actual numbers are computed from your closed trades and daily stats — you cannot
             cheat the progress bar.
+          </p>
+          <p
+            className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground"
+            data-testid="goals-alerts-hint"
+          >
+            <BellRing className="size-3 text-accent" aria-hidden="true" />
+            A goal that slips to “At risk” raises an alert in your notification inbox — tune it in Settings →
+            Notifications → Goals.
           </p>
         </div>
         <Button onClick={openCreate} data-testid="goal-create">

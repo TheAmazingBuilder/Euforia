@@ -174,12 +174,13 @@ export type JournalPreferences = z.infer<typeof journalPreferencesSchema>;
 export const journalPreferencesInputSchema = journalPreferencesSchema;
 export type JournalPreferencesInput = z.infer<typeof journalPreferencesInputSchema>;
 
-// ── Notification preferences (6 categories × events × channels) ─────────────
+// ── Notification preferences (7 categories × events × channels) ─────────────
 
 export const notificationCategoryKeySchema = z.enum([
   "TRADING",
   "RISK",
   "STRATEGY",
+  "GOALS",
   "ECONOMIC",
   "SYSTEM",
   "REPORTS",
@@ -205,6 +206,13 @@ const strategyEventsSchema = z.object({
   RULE_VIOLATION: notificationChannelsSchema,
 });
 
+/** Goals → notification bridge: pacing alerts, recoveries, achievements. */
+const goalsEventsSchema = z.object({
+  GOAL_AT_RISK: notificationChannelsSchema,
+  GOAL_RECOVERED: notificationChannelsSchema,
+  GOAL_ACHIEVED: notificationChannelsSchema,
+});
+
 const economicEventsSchema = z.object({
   HIGH_IMPACT_EVENT: notificationChannelsSchema,
   EVENT_APPROACHING: notificationChannelsSchema,
@@ -227,6 +235,7 @@ export const notificationPreferencesSchema = z.object({
   trading: z.object({ enabled: z.boolean(), events: tradingEventsSchema }),
   risk: z.object({ enabled: z.boolean(), events: riskEventsSchema }),
   strategy: z.object({ enabled: z.boolean(), events: strategyEventsSchema }),
+  goals: z.object({ enabled: z.boolean(), events: goalsEventsSchema }),
   economic: z.object({ enabled: z.boolean(), events: economicEventsSchema }),
   system: z.object({ enabled: z.boolean(), events: systemEventsSchema }),
   reports: z.object({ enabled: z.boolean(), events: reportsEventsSchema }),
@@ -505,6 +514,14 @@ export const DEFAULT_USER_PREFERENCES: UserPreferencesDefaults = {
         BROKER_DISCONNECTED: { inApp: true, email: true, push: true },
         MARKET_DATA_STALE: { inApp: true, email: false, push: false },
         INTEGRATION_FAILURE: { inApp: true, email: true, push: false },
+      },
+    },
+    goals: {
+      enabled: true,
+      events: {
+        GOAL_AT_RISK: { inApp: true, email: false, push: true },
+        GOAL_RECOVERED: { inApp: true, email: false, push: false },
+        GOAL_ACHIEVED: { inApp: true, email: false, push: true },
       },
     },
     reports: {

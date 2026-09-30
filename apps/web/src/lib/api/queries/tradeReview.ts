@@ -96,6 +96,9 @@ function useGoalInvalidation() {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: queryKeys.goalsRoot }),
       queryClient.invalidateQueries({ queryKey: queryKeys.reviewWorkspaceRoot }),
+      // Goal CRUD moves goal statuses → the goal→inbox bridge may raise or
+      // resolve GOAL_STATUS alerts; the bell must not go stale.
+      queryClient.invalidateQueries({ queryKey: queryKeys.alerts }),
     ]);
   }, [queryClient]);
 }

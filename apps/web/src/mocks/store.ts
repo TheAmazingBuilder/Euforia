@@ -295,6 +295,9 @@ export function createMockStore() {
   });
 
   function listAlerts(): AlertsResponse {
+    // Goal → inbox bridge runs on every read: the topbar bell stays truthful
+    // even when the Goals tab was never opened this session.
+    syncGoalAlerts();
     const alerts = [...data.alerts].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
     const unreadCount = alerts.filter((a) => a.readAt === null && a.dismissedAt === null).length;
     return { alerts, unreadCount };
@@ -3448,6 +3451,7 @@ export function createMockStore() {
   }
 
   function listGoals(): GoalsResponse {
+    syncGoalAlerts();
     return { goals: goals.map(goalProgressFor) };
   }
 
@@ -3487,6 +3491,128 @@ export function createMockStore() {
     if (index === -1) throw new MockError(404, "Goal not found");
     goals.splice(index, 1);
     return { ok: true };
+  }
+
+  // ── Goal → notification bridge ─────────────────────────────────────────────
+  //
+  // Goals are COMPUTED (never stored), so goal alerts are synced onto read
+  // paths (listAlerts / listGoals / overview). Semantics per active goal with
+  // data in the resolved period:
+  //  - AT_RISK / BEHIND → ONE live "slipping" alert per goal per period,
+  //    updated IN PLACE as the status tightens (no duplicates);
+  //  - ACHIEVED → a one-time positive alert (deduped per goal + period);
+  //  - ON_TRACK after a slipping episode → the risk alert is resolved and a
+  //    one-time "back on track" notice lands.
+  // Creation is gated by the Goals notification category (in-app channel per
+  // event); resolving an obsolete risk alert is bookkeeping, not delivery,
+  // so it happens regardless of preferences.
+
+  type GoalAlertPayload = { goalId: string; kind: "AT_RISK" | "ACHIEVED"; periodStart: string };
+
+  function findGoalAlert(goalId: string, kind: GoalAlertPayload["kind"], periodStart: string): Alert | undefined {
+    return data.alerts.find((a) => {
+      if (a.type !== "GOAL_STATUS" || a.dismissedAt !== null) return false;
+      const payload = a.payload as Partial<GoalAlertPayload> | null;
+      return payload?.goalId === goalId && payload?.kind === kind && payload?.periodStart === periodStart;
+    });
+  }
+
+  function syncGoalAlerts(): void {
+    const goalPrefs = preferences.notifications.goals;
+    for (const goal of goals) {
+      if (!goal.active) continue;
+      const { progress: p } = goalProgressFor(goal);
+      // Period moved (goal edited) — retire risk alerts pinned to older windows.
+      for (const stale of data.alerts) {
+        if (stale.type !== "GOAL_STATUS" || stale.dismissedAt !== null) continue;
+        const stalePayload = stale.payload as Partial<GoalAlertPayload> | null;
+        if (
+          stalePayload?.goalId === goal.id &&
+          stalePayload?.kind === "AT_RISK" &&
+          stalePayload?.periodStart !== p.periodStart
+        ) {
+          stale.dismissedAt = nowIso();
+        }
+      }
+      // PENDING = no data yet — never nag about an empty sample.
+      if (p.actual === null || p.status === "PENDING") continue;
+
+      const daysLeft = Math.max(0, p.daysTotal - p.daysElapsed);
+      const dayWord = daysLeft === 1 ? "day" : "days";
+      const pacing =
+        p.progressPct === null
+          ? ""
+          : ` Pacing at ${Math.round(p.progressPct)}% with ${daysLeft} ${dayWord} left in the ${goal.period.toLowerCase()}.`;
+
+      const slipping = p.status === "AT_RISK" || p.status === "BEHIND";
+      const slipAlert = findGoalAlert(goal.id, "AT_RISK", p.periodStart);
+
+      if (slipping) {
+        const severity = p.status === "BEHIND" ? "ALERT" : "WARN";
+        const title = p.status === "BEHIND" ? `Goal off pace — ${goal.title}` : `Goal at risk — ${goal.title}`;
+        const message = `${p.detail}.${pacing}`;
+        if (slipAlert) {
+          // Same episode, status moved — rewrite the live alert in place.
+          slipAlert.severity = severity;
+          slipAlert.title = title;
+          slipAlert.message = message;
+          continue;
+        }
+        if (!goalPrefs.enabled || !goalPrefs.events.GOAL_AT_RISK.inApp) continue;
+        data.alerts.push({
+          id: crypto.randomUUID(),
+          userId: goal.userId,
+          type: "GOAL_STATUS",
+          severity,
+          title,
+          message,
+          payload: { goalId: goal.id, kind: "AT_RISK", periodStart: p.periodStart, status: p.status, progressPct: p.progressPct },
+          tradeId: null,
+          readAt: null,
+          dismissedAt: null,
+          createdAt: nowIso(),
+        });
+        continue;
+      }
+
+      // Not slipping anymore — retire the live risk alert (if any).
+      if (slipAlert) slipAlert.dismissedAt = nowIso();
+      if (p.status === "ON_TRACK" && slipAlert && goalPrefs.enabled && goalPrefs.events.GOAL_RECOVERED.inApp) {
+        data.alerts.push({
+          id: crypto.randomUUID(),
+          userId: goal.userId,
+          type: "GOAL_STATUS",
+          severity: "NOTIFY",
+          title: `Goal back on track — ${goal.title}`,
+          message: `${p.detail}.${pacing}`,
+          payload: { goalId: goal.id, kind: "ACHIEVED", periodStart: p.periodStart },
+          tradeId: null,
+          readAt: null,
+          dismissedAt: null,
+          createdAt: nowIso(),
+        });
+      }
+      if (
+        p.status === "ACHIEVED" &&
+        goalPrefs.enabled &&
+        goalPrefs.events.GOAL_ACHIEVED.inApp &&
+        !findGoalAlert(goal.id, "ACHIEVED", p.periodStart)
+      ) {
+        data.alerts.push({
+          id: crypto.randomUUID(),
+          userId: goal.userId,
+          type: "GOAL_STATUS",
+          severity: "NOTIFY",
+          title: `Goal achieved — ${goal.title}`,
+          message: `${p.detail}. Target reached with ${daysLeft} ${dayWord} left in the ${goal.period.toLowerCase()}.`,
+          payload: { goalId: goal.id, kind: "ACHIEVED", periodStart: p.periodStart },
+          tradeId: null,
+          readAt: null,
+          dismissedAt: null,
+          createdAt: nowIso(),
+        });
+      }
+    }
   }
 
   function strategyNameFor(strategyId: string | null): string | null {
@@ -3705,6 +3831,7 @@ export function createMockStore() {
       });
     }
 
+    syncGoalAlerts();
     const progressRows = goals.filter((g) => g.active).map(goalProgressFor);
     const progressValues = progressRows.map((row) => row.progress.progressPct).filter((v): v is number => v !== null);
     const goalsSummary = {

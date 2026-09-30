@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { toast } from "sonner";
 import {
   Award,
   Bell,
@@ -10,6 +11,7 @@ import {
   Gauge,
   Info,
   ShieldAlert,
+  Target,
   TrendingDown,
   type LucideIcon,
 } from "lucide-react";
@@ -35,6 +37,7 @@ const TYPE_ICON: Record<Alert["type"], LucideIcon> = {
   STRATEGY_DECAY: TrendingDown,
   STREAK: Bell,
   DISCIPLINE_WIN: Award,
+  GOAL_STATUS: Target,
   SYSTEM: Info,
 };
 
@@ -61,6 +64,29 @@ export function NotificationCenter() {
   const { data } = useAlerts();
   const markRead = useMarkAlertRead();
   const [open, setOpen] = React.useState(false);
+
+  // Goal-status toasts — GOAL_STATUS alerts arriving MID-SESSION surface as a
+  // toast (warning for slipping, success for back-on-track / achieved). The
+  // first snapshot only ARMS the baseline: landing on an already-slipping
+  // goal never floods the screen, the state is already in the inbox
+  // (same mechanics as the Session Live price-event toaster).
+  const seenGoalAlertIdsRef = React.useRef<Set<string> | null>(null);
+  React.useEffect(() => {
+    const goalAlerts = (data?.alerts ?? []).filter(
+      (alert) => alert.type === "GOAL_STATUS" && alert.dismissedAt === null,
+    );
+    if (seenGoalAlertIdsRef.current === null) {
+      seenGoalAlertIdsRef.current = new Set(goalAlerts.map((alert) => alert.id));
+      return;
+    }
+    for (const alert of goalAlerts) {
+      if (seenGoalAlertIdsRef.current.has(alert.id)) continue;
+      seenGoalAlertIdsRef.current.add(alert.id);
+      const options = { description: alert.message, duration: 10_000 } as const;
+      if (alert.severity === "NOTIFY") toast.success(alert.title, options);
+      else toast.warning(alert.title, options);
+    }
+  }, [data]);
 
   // Ticking clock for relative times — re-render once a minute while open.
   const [now, setNow] = React.useState(() => Date.now());

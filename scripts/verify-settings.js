@@ -110,7 +110,11 @@ const BASE = "http://localhost:3000";
   await page.locator('[data-testid="settings-nav-notifications"]').click();
   await page.waitForTimeout(600);
   const matrixCount = await page.locator('[data-testid^="settings-notifications-"][data-testid$="-enabled"]').count();
-  check("6 notification categories rendered", matrixCount === 6, `count=${matrixCount}`);
+  check("7 notification categories rendered", matrixCount === 7, `count=${matrixCount}`);
+  check(
+    "Goals category rendered in the matrix",
+    await page.locator('[data-testid="settings-notifications-goals"]').isVisible(),
+  );
   const emailToggle = page.locator('[data-testid="settings-notifications-trading-TRADE_OPENED-email"]');
   const before = await emailToggle.getAttribute("data-state");
   await emailToggle.click();
