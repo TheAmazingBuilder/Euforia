@@ -119,6 +119,27 @@ export const playbookHandlers = [
       return toErrorResponse(error);
     }
   }),
+
+  // GET /setups/insights — light 90d backtest + market heuristics per setup.
+  // Registered BEFORE /setups/:id-style paths; /setups/insights is exact anyway.
+  http.get(endpoint(apiPaths.setupInsights), async () => {
+    await latency();
+    try {
+      return HttpResponse.json(mockStore.setupInsights());
+    } catch (error) {
+      return toErrorResponse(error);
+    }
+  }),
+
+  // GET /strategies/:id/versions — history for the visual diff.
+  http.get(endpoint(apiPaths.strategyVersions(":strategyId")), async ({ params }) => {
+    await latency();
+    try {
+      return HttpResponse.json(mockStore.listStrategyVersions(pathParam(params, "strategyId")));
+    } catch (error) {
+      return toErrorResponse(error);
+    }
+  }),
   http.post(endpoint(apiPaths.setups), async ({ request }) => {
     await latency();
     try {

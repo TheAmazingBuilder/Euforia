@@ -108,6 +108,10 @@ import {
   type PlaybookTemplatesResponse,
   type Setup,
   type SetupsResponse,
+  type SessionBucket,
+  type SetupInsight,
+  type SetupInsightsResponse,
+  type StrategyVersionsResponse,
   type StrategyVersionSnapshot,
   type UpdateChecklistInput,
   type UpdatePlaybookRuleInput,
@@ -214,6 +218,18 @@ export function createMockStore() {
   const playbookRules: PlaybookRule[] = playbookSeed.rules;
   /** Historical strategy definitions (§17) — appended, never rewritten. */
   const strategyVersions: StrategyVersionSnapshot[] = [];
+
+  // Link closed trades to a concrete setup of their strategy (deterministic
+  // hash pick, ~80% coverage): the playbook's per-setup backtest needs REAL
+  // links, and the unlinked 20% stays honestly "setup not specified".
+  for (const trade of data.trades) {
+    if (trade.status !== "CLOSED" || trade.deletedAt !== null || trade.strategyId === null) continue;
+    const own = setups.filter((s) => s.strategyId === trade.strategyId);
+    if (own.length === 0) continue;
+    const hash = [...trade.id].reduce((acc, ch) => (acc * 31 + ch.charCodeAt(0)) >>> 0, 5);
+    if (hash % 5 === 0) continue;
+    trade.setupId = own[hash % own.length]!.id;
+  }
 
   // ── Trade Review state (goals + per-trade reviews, same store lifecycle) ──
   const goals: Goal[] = buildGoalSeed(user.id);
@@ -1558,6 +1574,135 @@ export function createMockStore() {
    * recency, performance summary and §20 completeness health. All computed
    * from the stored trades/strategies — never invented client-side.
    */
+  // ── Playbook upgrades: live compliance / setup insights / version history ─
+
+  const COMPLIANCE_WINDOW = 20;
+
+  /**
+   * Live compliance — playbookMatch DECLARED AT REVIEW TIME over the last N
+   * closed trades. The score counts MATCHED only; unreviewed trades are
+   * reported separately, never silently judged.
+   */
+  function playbookCompliance() {
+    const recent = closedTrades()
+      .sort((a, b) => (b.exitAt ?? b.entryAt).localeCompare(a.exitAt ?? a.entryAt))
+      .slice(0, COMPLIANCE_WINDOW);
+    const reviewByTrade = new Map(reviews.map((review) => [review.tradeId, review]));
+    let matched = 0;
+    let partial = 0;
+    let offPlaybook = 0;
+    let reviewed = 0;
+    let unreviewed = 0;
+    for (const trade of recent) {
+      const match = reviewByTrade.get(trade.id)?.playbookMatch ?? null;
+      if (match === "MATCHED") {
+        matched += 1;
+        reviewed += 1;
+      } else if (match === "PARTIAL") {
+        partial += 1;
+        reviewed += 1;
+      } else if (match === "OFF_PLAYBOOK") {
+        offPlaybook += 1;
+        reviewed += 1;
+      } else {
+        unreviewed += 1;
+      }
+    }
+    return {
+      windowSize: COMPLIANCE_WINDOW,
+      reviewed,
+      matched,
+      partial,
+      offPlaybook,
+      unreviewed,
+      scorePct: reviewed > 0 ? round1((matched / reviewed) * 100) : null,
+    };
+  }
+
+  /** Entry-hour session buckets (UTC): the market heuristic for setups. */
+  const SESSION_BUCKETS: SessionBucket[] = ["ASIA", "LONDON", "OVERLAP", "NEW_YORK", "LATE"];
+  function sessionOf(iso: string): SessionBucket {
+    const hour = new Date(iso).getUTCHours();
+    if (hour < 7) return "ASIA";
+    if (hour < 12) return "LONDON";
+    if (hour < 16) return "OVERLAP";
+    if (hour < 21) return "NEW_YORK";
+    return "LATE";
+  }
+
+  /**
+   * Light 90d backtest per setup — REALIZED performance of the trades
+   * executed under it (Trade.setupId), plus market heuristics: the
+   * instrument with the best summed R and the dominant entry session.
+   * n < 5 flags the sample; nothing here is a simulation claim.
+   */
+  function setupInsights(): SetupInsightsResponse {
+    const cutoff = Date.now() - 90 * 86_400_000;
+    const insights: SetupInsight[] = setups.map((setup) => {
+      const own = closedTrades().filter(
+        (trade) => trade.setupId === setup.id && Date.parse(trade.exitAt ?? trade.entryAt) >= cutoff,
+      );
+      const wins = own.filter((trade) => (Number(trade.pnlNet) ?? 0) > 0).length;
+      const rSum = own.reduce((sum, trade) => sum + (Number(trade.rMultiple) ?? 0), 0);
+
+      const rByInstrument = new Map<string, number>();
+      const sessionCount = new Map<SessionBucket, number>();
+      for (const trade of own) {
+        const r = Number(trade.rMultiple) ?? 0;
+        rByInstrument.set(trade.instrumentId, (rByInstrument.get(trade.instrumentId) ?? 0) + r);
+        const bucket = sessionOf(trade.entryAt);
+        sessionCount.set(bucket, (sessionCount.get(bucket) ?? 0) + 1);
+      }
+      let topInstrumentId: string | null = null;
+      let bestR = -Infinity;
+      for (const [instrumentId, instrumentR] of rByInstrument) {
+        if (instrumentR > bestR) {
+          bestR = instrumentR;
+          topInstrumentId = instrumentId;
+        }
+      }
+      let topSession: SessionBucket | null = null;
+      let bestCount = 0;
+      for (const bucket of SESSION_BUCKETS) {
+        const count = sessionCount.get(bucket) ?? 0;
+        if (count > bestCount) {
+          bestCount = count;
+          topSession = bucket;
+        }
+      }
+
+      return {
+        setupId: setup.id,
+        strategyId: setup.strategyId,
+        windowDays: 90 as const,
+        trades: own.length,
+        wins,
+        winRatePct: own.length > 0 ? round1((wins / own.length) * 100) : null,
+        totalR: own.length > 0 ? round2(rSum) : null,
+        expectancyR: own.length > 0 ? round2(rSum / own.length) : null,
+        topInstrument: topInstrumentId !== null ? (instrumentById.get(topInstrumentId)?.symbol ?? null) : null,
+        topInstrumentId,
+        topSession,
+        smallSample: own.length < 5,
+      };
+    });
+    return { insights };
+  }
+
+  /** GET /strategies/:id/versions — history for the visual diff. */
+  function listStrategyVersions(strategyId: string): StrategyVersionsResponse {
+    const strategy = data.strategies.find((s) => s.id === strategyId);
+    if (!strategy) throw new MockError(404, "Strategy not found");
+    return {
+      strategyId,
+      currentVersion: strategy.version ?? 1,
+      versions: strategyVersions
+        .filter((snapshot) => snapshot.strategyId === strategyId)
+        .sort((a, b) => b.version - a.version)
+        .map((snapshot) => ({ ...snapshot, snapshot: structuredClone(snapshot.snapshot) })),
+    };
+  }
+
   function playbookOverview(): PlaybookOverviewResponse {
     const live = data.trades.filter((t) => t.deletedAt === null);
     const closed = live.filter((t) => t.status === "CLOSED");
@@ -1651,6 +1796,7 @@ export function createMockStore() {
       },
       recentlyUpdated,
       recentlyUsed,
+      compliance: playbookCompliance(),
       performanceSummary: {
         netPnl: toDecimalString(round2(netPnl)),
         currency: mainAccount.currency,
@@ -4323,6 +4469,8 @@ export function createMockStore() {
     listPlaybookTemplates,
     instantiatePlaybookTemplate,
     playbookOverview,
+    setupInsights,
+    listStrategyVersions,
     // Trade Review module (fusion with Goal)
     reviewOverview,
     listReviews,

@@ -1,9 +1,10 @@
 "use client";
 
 import * as React from "react";
-import { ChevronDown, ChevronUp, Pencil, Plus, Trash2 } from "lucide-react";
+import Link from "next/link";
+import { ChevronDown, ChevronUp, Filter, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import type { Setup, Strategy } from "@cosmoz/shared";
+import type { Setup, SetupInsight, Strategy } from "@cosmoz/shared";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -16,7 +17,7 @@ import {
   STATUS_LABELS,
 } from "@/components/playbook/playbook-labels";
 import { apiErrorMessage } from "@/lib/api/client";
-import { useDeleteSetup, useSetups } from "@/lib/api/queries";
+import { useDeleteSetup, useSetups, useSetupInsights } from "@/lib/api/queries";
 import { cn } from "@/lib/utils";
 
 /**
@@ -32,11 +33,21 @@ export function SetupsPanel({
   onOpenDetail: (strategy: Strategy) => void;
 }) {
   const setupsQuery = useSetups();
+  const insightsQuery = useSetupInsights();
   const [formOpen, setFormOpen] = React.useState(false);
   const [editTarget, setEditTarget] = React.useState<Setup | null>(null);
   const [expanded, setExpanded] = React.useState<string | null>(null);
 
   const setups = React.useMemo(() => setupsQuery.data?.setups ?? [], [setupsQuery.data]);
+  const insights = React.useMemo(
+    () => insightsQuery.data?.insights ?? [],
+    [insightsQuery.data],
+  );
+  const insightOf = React.useMemo(() => {
+    const map = new Map<string, SetupInsight>();
+    for (const insight of insights) map.set(insight.setupId, insight);
+    return map;
+  }, [insights]);
 
   const grouped = React.useMemo(() => {
     const groups: Array<{ strategy: Strategy; setups: Setup[] }> = [];
@@ -107,6 +118,7 @@ export function SetupsPanel({
                   <SetupRow
                     key={setup.id}
                     setup={setup}
+                    insight={insightOf.get(setup.id) ?? null}
                     expanded={expanded === setup.id}
                     onToggle={() => setExpanded(expanded === setup.id ? null : setup.id)}
                     onEdit={() => {
@@ -134,11 +146,13 @@ export function SetupsPanel({
 
 function SetupRow({
   setup,
+  insight,
   expanded,
   onToggle,
   onEdit,
 }: {
   setup: Setup;
+  insight: SetupInsight | null;
   expanded: boolean;
   onToggle: () => void;
   onEdit: () => void;
@@ -236,6 +250,90 @@ function SetupRow({
             <div className={cn("rounded-md border border-loss/30 bg-loss/5 px-3 py-2")}>
               <p className="text-[11px] font-semibold uppercase tracking-wide text-loss">Invalidation</p>
               <p className="mt-0.5 text-sm text-foreground">{setup.invalidation}</p>
+            </div>
+          ) : null}
+
+          {/* Light 90d backtest + market heuristics (setupInsights endpoint) */}
+          {insight ? (
+            <div className="rounded-lg border border-border bg-background/40 px-3 py-2.5" data-testid="setup-insight">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-[11px] font-semibold tracking-wider uppercase text-muted-foreground">
+                  90-day track record
+                </p>
+                {insight.smallSample ? (
+                  <Badge
+                    variant="outline"
+                    className="border-warning/40 px-1.5 py-0 text-[10px] text-warning"
+                    data-testid="setup-insight-sample"
+                  >
+                    small sample — n = {insight.trades}
+                  </Badge>
+                ) : (
+                  <Badge
+                    variant="outline"
+                    className="border-border px-1.5 py-0 font-mono text-[10px] text-muted-foreground"
+                    data-testid="setup-insight-sample"
+                  >
+                    n = {insight.trades}
+                  </Badge>
+                )}
+                {insight.topInstrumentId !== null ? (
+                  <Link
+                    href={`/trades?inst=${insight.topInstrumentId}&strat=${insight.strategyId}`}
+                    className="ml-auto inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[11px] text-accent hover:border-accent/50"
+                    data-testid="setup-insight-filter"
+                  >
+                    <Filter className="size-3" aria-hidden="true" />
+                    Filter ledger: {insight.topInstrument}
+                  </Link>
+                ) : null}
+              </div>
+              {insight.trades === 0 ? (
+                <p className="mt-1.5 text-xs italic text-muted-foreground">
+                  No trade linked to this setup in the last 90 days — link one from the capture
+                  form or the imports.
+                </p>
+              ) : (
+                <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 sm:grid-cols-4">
+                  <div>
+                    <dt className="text-[10px] uppercase tracking-wide text-muted-foreground">Win rate</dt>
+                    <dd className="font-mono text-sm font-semibold tabular-nums">
+                      {insight.winRatePct === null ? "—" : `${insight.winRatePct.toFixed(0)}%`}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-[10px] uppercase tracking-wide text-muted-foreground">Total R</dt>
+                    <dd
+                      className={cn(
+                        "font-mono text-sm font-semibold tabular-nums",
+                        (insight.totalR ?? 0) >= 0 ? "text-profit" : "text-loss",
+                      )}
+                    >
+                      {insight.totalR === null ? "—" : `${insight.totalR > 0 ? "+" : ""}${insight.totalR.toFixed(1)}R`}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-[10px] uppercase tracking-wide text-muted-foreground">Expectancy</dt>
+                    <dd
+                      className={cn(
+                        "font-mono text-sm font-semibold tabular-nums",
+                        (insight.expectancyR ?? 0) >= 0 ? "text-profit" : "text-loss",
+                      )}
+                    >
+                      {insight.expectancyR === null ? "—" : `${insight.expectancyR > 0 ? "+" : ""}${insight.expectancyR.toFixed(2)}R`}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-[10px] uppercase tracking-wide text-muted-foreground">Best window</dt>
+                    <dd className="text-sm text-foreground">
+                      {insight.topInstrument ?? "—"}
+                      {insight.topSession ? (
+                        <span className="ml-1 font-mono text-[10px] text-muted-foreground">{insight.topSession}</span>
+                      ) : null}
+                    </dd>
+                  </div>
+                </dl>
+              )}
             </div>
           ) : null}
           {setup.context ? (

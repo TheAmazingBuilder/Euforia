@@ -85,6 +85,8 @@ export const apiPaths = {
   strategyDuplicate: (strategyId: string) => `/strategies/${strategyId}/duplicate`,
   setups: "/setups",
   setup: (setupId: string) => `/setups/${setupId}`,
+  setupInsights: "/setups/insights",
+  strategyVersions: (strategyId: string) => `/strategies/${strategyId}/versions`,
   checklists: "/checklists",
   checklist: (checklistId: string) => `/checklists/${checklistId}`,
   // Trade Review module (fusion with Goal)

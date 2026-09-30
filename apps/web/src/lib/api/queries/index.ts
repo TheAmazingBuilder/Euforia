@@ -62,6 +62,8 @@ export {
   usePlaybookRules,
   usePlaybookTemplates,
   useSetups,
+  useSetupInsights,
+  useStrategyVersions,
   useStrategiesStats,
   useUpdateChecklist,
   useUpdatePlaybookRule,

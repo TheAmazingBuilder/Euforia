@@ -13,7 +13,9 @@ import type {
   PlaybookTemplatesResponse,
   Setup,
   SetupsResponse,
+  SetupInsightsResponse,
   Strategy,
+  StrategyVersionsResponse,
   StrategiesStatsResponse,
   UpdateChecklistInput,
   UpdatePlaybookRuleInput,
@@ -50,6 +52,23 @@ export function useSetups() {
   return useQuery({
     queryKey: queryKeys.setups,
     queryFn: () => apiRequest<SetupsResponse>(apiPaths.setups),
+  });
+}
+
+/** GET /setups/insights — light 90d backtest + market heuristics per setup. */
+export function useSetupInsights() {
+  return useQuery({
+    queryKey: queryKeys.setupInsights,
+    queryFn: () => apiRequest<SetupInsightsResponse>(apiPaths.setupInsights),
+  });
+}
+
+/** GET /strategies/:id/versions — history for the visual diff. */
+export function useStrategyVersions(strategyId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.strategyVersions(strategyId ?? "none"),
+    queryFn: () => apiRequest<StrategyVersionsResponse>(apiPaths.strategyVersions(strategyId!)),
+    enabled: strategyId !== null,
   });
 }
 

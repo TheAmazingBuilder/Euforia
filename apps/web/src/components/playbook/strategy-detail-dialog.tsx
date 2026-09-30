@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Pencil, Play, Trash2 } from "lucide-react";
+import { History, Pencil, Play, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -17,6 +17,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Markdown } from "@/components/playbook/markdown";
 import { GradeBadge } from "@/components/playbook/strategy-card";
+import { StrategyVersionsDialog } from "@/components/playbook/strategy-versions-dialog";
 import { formatPercent, formatR, type Strategy, type StrategyStat } from "@cosmoz/shared";
 import { apiErrorMessage } from "@/lib/api/client";
 
@@ -52,6 +53,7 @@ function RuleSection({ title, source }: { title: string; source: string | null }
 export function StrategyDetailDialog({ strategy, stat, onOpenChange, onEdit }: StrategyDetailDialogProps) {
   const deleteStrategy = useDeleteStrategy();
   const router = useRouter();
+  const [versionsOpen, setVersionsOpen] = React.useState(false);
 
   if (strategy === null) return null;
 
@@ -144,6 +146,15 @@ export function StrategyDetailDialog({ strategy, stat, onOpenChange, onEdit }: S
             Delete
           </Button>
           <div className="flex gap-2">
+            <Button
+              variant="outline"
+              className="gap-1.5"
+              onClick={() => setVersionsOpen(true)}
+              data-testid="strategy-versions-open"
+            >
+              <History className="size-3.5" aria-hidden="true" />
+              Version history
+            </Button>
             <Button variant="outline" onClick={() => onEdit(strategy)}>
               <Pencil className="size-4" aria-hidden="true" />
               Edit
@@ -154,6 +165,12 @@ export function StrategyDetailDialog({ strategy, stat, onOpenChange, onEdit }: S
             </Button>
           </div>
         </DialogFooter>
+
+        <StrategyVersionsDialog
+          strategy={strategy}
+          open={versionsOpen}
+          onOpenChange={setVersionsOpen}
+        />
       </DialogContent>
     </Dialog>
   );

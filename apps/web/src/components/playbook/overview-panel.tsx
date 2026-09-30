@@ -15,6 +15,7 @@ import {
   STATUS_LABELS,
 } from "@/components/playbook/playbook-labels";
 import { formatSignedMoney } from "@cosmoz/shared";
+import { cn } from "@/lib/utils";
 
 /**
  * Playbook Overview (§5): counts, recency, performance + adherence summary
@@ -47,7 +48,7 @@ export function OverviewPanel({
     );
   }
 
-  const { counts, performanceSummary, recentlyUpdated, recentlyUsed, health } = overview;
+  const { counts, compliance, performanceSummary, recentlyUpdated, recentlyUsed, health } = overview;
   const strategiesWithFlags = health.filter((entry) => entry.flags.length > 0);
   // Flags that describe completeness debt (draft/archived status is a choice,
   // not debt — surface it separately and quieter).
@@ -93,6 +94,81 @@ export function OverviewPanel({
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
+        {/* ── Live compliance — % of recent trades matched to the playbook ──── */}
+        <Card className="bg-surface" data-testid="compliance-card">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center justify-between font-heading text-base font-semibold">
+              Live compliance
+              <Badge variant="outline" className="border-border px-1.5 py-0 font-mono text-[10px] text-muted-foreground">
+                last {compliance.windowSize} closed
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {compliance.reviewed === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                Nothing reviewed in the window yet — review your trades and the score appears
+                (matched trades only, no partial credit).
+              </p>
+            ) : (
+              <>
+                <div className="flex items-end gap-3">
+                  <span
+                    className={cn(
+                      "font-mono text-4xl font-bold leading-none tabular-nums",
+                      compliance.scorePct !== null && compliance.scorePct >= 80
+                        ? "text-profit"
+                        : compliance.scorePct !== null && compliance.scorePct >= 50
+                          ? "text-warning"
+                          : "text-loss",
+                    )}
+                    data-testid="compliance-score"
+                  >
+                    {compliance.scorePct === null ? "—" : `${compliance.scorePct.toFixed(0)}%`}
+                  </span>
+                  <span className="pb-1 text-xs text-muted-foreground">
+                    {compliance.matched} of {compliance.reviewed} reviewed trades matched the
+                    declared setup
+                  </span>
+                </div>
+                <div className="flex h-2.5 w-full overflow-hidden rounded-full bg-muted" data-testid="compliance-bar">
+                  {[
+                    { count: compliance.matched, className: "bg-profit" },
+                    { count: compliance.partial, className: "bg-warning" },
+                    { count: compliance.offPlaybook, className: "bg-loss" },
+                  ].map((segment, index) =>
+                    segment.count === 0 ? null : (
+                      <span
+                        key={index}
+                        className={cn("h-full", segment.className)}
+                        style={{ width: `${(segment.count / compliance.reviewed) * 100}%` }}
+                      />
+                    ),
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-muted-foreground">
+                  <span className="inline-flex items-center gap-1">
+                    <span className="size-2 rounded-full bg-profit" aria-hidden="true" /> Matched {compliance.matched}
+                  </span>
+                  <span className="inline-flex items-center gap-1">
+                    <span className="size-2 rounded-full bg-warning" aria-hidden="true" /> Partial {compliance.partial}
+                  </span>
+                  <span className="inline-flex items-center gap-1">
+                    <span className="size-2 rounded-full bg-loss" aria-hidden="true" /> Off playbook {compliance.offPlaybook}
+                  </span>
+                  {compliance.unreviewed > 0 ? (
+                    <span className="italic">{compliance.unreviewed} not reviewed yet — not judged</span>
+                  ) : null}
+                </div>
+              </>
+            )}
+            <p className="border-t border-border pt-2 text-[11px] leading-relaxed text-muted-foreground">
+              Declared at review time (Playbook match) — the score counts MATCHED only; a half
+              followed plan is not followed.
+            </p>
+          </CardContent>
+        </Card>
+
         {/* ── Performance summary (§5, §19 feeds from here) ─────────────────── */}
         <Card className="bg-surface">
           <CardHeader className="pb-2">

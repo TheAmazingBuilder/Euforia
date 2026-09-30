@@ -39,6 +39,8 @@ export const queryKeys = {
   playbookTemplates: ["playbook-templates"] as const,
   playbookRules: ["playbook-rules"] as const,
   setups: ["setups"] as const,
+  setupInsights: ["setup-insights"] as const,
+  strategyVersions: (strategyId: string) => ["strategy-versions", strategyId] as const,
   checklists: ["checklists"] as const,
   analyticsSuiteRoot: ["analytics-suite"] as const,
   // Trade Review module (fusion with Goal)

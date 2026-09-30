@@ -116,7 +116,7 @@ export function PlaybookView() {
           <div className="overflow-x-auto pb-0.5">
             <TabsList className="h-auto w-max flex-wrap gap-1">
               {TABS.map((tab) => (
-                <TabsTrigger key={tab.id} value={tab.id} className="text-xs sm:text-sm">
+                <TabsTrigger key={tab.id} value={tab.id} className="text-xs sm:text-sm" data-testid={`tab-${tab.id}`}>
                   {tab.label}
                 </TabsTrigger>
               ))}
