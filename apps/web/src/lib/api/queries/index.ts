@@ -13,6 +13,7 @@ export {
   useCreateRule,
   useDeleteRule,
   useDisciplineScore,
+  useEmotionMatrix,
   useEcoEvents,
   useMarkAlertRead,
   useMistakesLedger,

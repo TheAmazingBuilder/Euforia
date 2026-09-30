@@ -13,8 +13,11 @@ import { RuleCard } from "@/components/discipline/rule-card";
 import { RuleFormDialog } from "@/components/discipline/rule-form-dialog";
 import { ScoreGauge } from "@/components/discipline/score-gauge";
 import { ViolationTable } from "@/components/discipline/violation-table";
+import { ViolationPareto } from "@/components/discipline/violation-pareto";
+import { EmotionMatrix } from "@/components/discipline/emotion-matrix";
 import {
   useDisciplineScore,
+  useEmotionMatrix,
   useMistakesLedger,
   useRules,
   useViolations,
@@ -66,6 +69,7 @@ export function DisciplineView() {
   const rulesQuery = useRules();
   const violationsQuery = useViolations();
   const ledgerQuery = useMistakesLedger();
+  const emotionQuery = useEmotionMatrix();
   const queryClient = useQueryClient();
 
   const [formOpen, setFormOpen] = React.useState(false);
@@ -203,6 +207,19 @@ export function DisciplineView() {
               <ViolationTable violations={violations} />
             </div>
           </section>
+
+          <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
+            <ViolationPareto violations={violations} />
+            {emotionQuery.data ? (
+              <EmotionMatrix matrix={emotionQuery.data} />
+            ) : (
+              <Card className="bg-surface" aria-busy="true">
+                <CardContent className="py-10">
+                  <Skeleton className="mx-auto h-40 w-full max-w-sm" />
+                </CardContent>
+              </Card>
+            )}
+          </div>
         </div>
       )}
 

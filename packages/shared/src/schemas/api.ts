@@ -170,6 +170,8 @@ export const rulesStatusResponseSchema = z.object({
   accountId: uuidSchema.nullable(),
   tradesToday: z.number().int().min(0),
   lossesToday: z.number().int().min(0),
+  /** Rule breaches TODAY (all rules) — feeds the capture guardrail. */
+  violationsToday: z.number().int().min(0),
   /** % of the daily risk budget already consumed (0–100+). */
   riskBudgetSpentPct: decimalStringSchema,
   limits: z.array(ruleStatusLimitSchema),
@@ -494,6 +496,38 @@ export const disciplineScoreResponseSchema = z.object({
 });
 
 export type DisciplineScoreResponse = z.infer<typeof disciplineScoreResponseSchema>;
+
+// ── Emotion → outcome matrix (Discipline module heatmap) ────────────────────
+
+/** One emotion row — how the trades entered under this feeling turned out. */
+export const emotionResultRowSchema = z.object({
+  emotion: emotionSchema,
+  trades: z.number().int().min(0),
+  wins: z.number().int().min(0),
+  losses: z.number().int().min(0),
+  winRatePct: z.number().min(0).max(100).nullable(),
+  avgR: z.number().nullable(),
+  totalR: z.number().nullable(),
+});
+
+export type EmotionResultRow = z.infer<typeof emotionResultRowSchema>;
+
+/**
+ * GET /discipline/emotion-matrix — the emotion → outcome heatmap over the
+ * same 30-day window as the discipline score. Correlational reading only:
+ * emotions never CAUSE outcomes, the grid just makes the pattern visible.
+ * Trades without a logged emotion are counted as excluded, never dropped
+ * silently.
+ */
+export const disciplineEmotionMatrixResponseSchema = z.object({
+  windowStart: dateKeySchema,
+  rows: z.array(emotionResultRowSchema),
+  /** Closed trades in the window with no emotion logged. */
+  excluded: z.number().int().min(0),
+  meta: z.object({ generatedAt: isoDateTimeSchema }),
+});
+
+export type DisciplineEmotionMatrixResponse = z.infer<typeof disciplineEmotionMatrixResponseSchema>;
 
 /** GET /mistakes/ledger — per-mistake frequency + R cost over the window. */
 export const mistakeLedgerEntrySchema = z.object({

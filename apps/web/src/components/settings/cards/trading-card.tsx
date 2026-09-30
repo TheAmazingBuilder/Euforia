@@ -238,6 +238,27 @@ export function TradingCard() {
         />
       </div>
 
+      {/* Guardrail — soft-lock the capture form after N violations today */}
+      <SettingsRow
+        label="Capture guardrail"
+        htmlFor="settings-trading-softlock"
+        hint="Soft-locks the capture form after N rule violations today — an acknowledgment step, never a hard block."
+        stacked
+      >
+        <SettingsSelect
+          value={draft.softLockAfterViolations === null ? "" : String(draft.softLockAfterViolations)}
+          onChange={(value) => patch({ softLockAfterViolations: value === "" ? null : Number(value) })}
+          options={[
+            { value: "", label: "Off" },
+            ...[1, 2, 3, 4, 5, 6, 8, 10].map((count) => ({
+              value: String(count),
+              label: `After ${count} violation${count === 1 ? "" : "s"} today`,
+            })),
+          ]}
+          testid="settings-trading-softlock"
+        />
+      </SettingsRow>
+
       <ConfirmDialog
         open={resetOpen}
         onOpenChange={setResetOpen}

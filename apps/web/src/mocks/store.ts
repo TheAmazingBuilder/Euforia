@@ -39,6 +39,8 @@ import {
   type DeleteScreenshotResponse,
   type DeleteTradeResponse,
   type DisciplineScoreResponse,
+  type DisciplineEmotionMatrixResponse,
+  type EmotionResultRow,
   type Emotion,
   type GradeOutcomeCell,
   type GradeOutcomeRow,
@@ -353,10 +355,78 @@ export function createMockStore() {
     skippedTrades: [...data.skippedTrades].sort((a, b) => b.seenAt.localeCompare(a.seenAt)),
   });
 
+  /**
+   * Weekly discipline report — pushed to the inbox on the FIRST alerts read
+   * after a new calendar week starts (the « Monday send »), one per week
+   * (idempotent via payload.weekStart). Reports the PREVIOUS week's facts:
+   * trades, violations, plan adherence, R, biggest leak.
+   */
+  function syncWeeklyDisciplineReport(): void {
+    const today = todayKey();
+    const mondayOffset = (new Date(`${today}T00:00:00Z`).getUTCDay() + 6) % 7;
+    const weekStart = shiftDayKey2(today, -mondayOffset);
+    const kindOf = (payload: unknown): string | null =>
+      payload !== null && typeof payload === "object" && (payload as { kind?: unknown }).kind === "WEEKLY_DISCIPLINE_REPORT"
+        ? ((payload as { weekStart?: unknown }).weekStart as string | undefined ?? null)
+        : null;
+    if (data.alerts.some((a) => kindOf(a.payload) === weekStart)) return;
+
+    const prevWeekStart = shiftDayKey2(weekStart, -7);
+    const prevWeekEnd = shiftDayKey2(weekStart, -1);
+    const weekTrades = closedTrades().filter(
+      (t) => t.tradingDate >= prevWeekStart && t.tradingDate <= prevWeekEnd,
+    );
+    const weekViolations = data.ruleViolations.filter((v) => {
+      const day = toTradingDateKey(v.occurredAt, USER_TZ);
+      return day >= prevWeekStart && day <= prevWeekEnd;
+    });
+    const rSum = weekTrades.reduce((sum, t) => sum + (Number(t.rMultiple) ?? 0), 0);
+    const followedKnown = weekTrades.filter((t) => t.followedPlan !== null);
+    const followedCount = followedKnown.filter((t) => t.followedPlan === true).length;
+
+    const typeCount = new Map<string, number>();
+    for (const violation of weekViolations) {
+      const rule = data.rules.find((r) => r.id === violation.ruleId);
+      const type = rule?.type ?? "OTHER";
+      typeCount.set(type, (typeCount.get(type) ?? 0) + 1);
+    }
+    let leakType: string | null = null;
+    let leakCount = 0;
+    for (const [type, count] of typeCount) {
+      if (count > leakCount) {
+        leakCount = count;
+        leakType = type;
+      }
+    }
+
+    data.alerts.push({
+      id: crypto.randomUUID(),
+      userId: user.id,
+      type: "SYSTEM",
+      severity: "NOTIFY",
+      title: `Discipline weekly report — week of ${prevWeekStart}`,
+      message:
+        `Last week (${prevWeekStart} → ${prevWeekEnd}): ${weekTrades.length} trade${weekTrades.length === 1 ? "" : "s"}, ` +
+        `${weekViolations.length} rule violation${weekViolations.length === 1 ? "" : "s"}, ` +
+        `${followedKnown.length > 0 ? Math.round((followedCount / followedKnown.length) * 100) : 0}% plan followed, ` +
+        `${rSum >= 0 ? "+" : ""}${rSum.toFixed(1)}R.` +
+        (leakType !== null
+          ? ` Biggest leak: ${leakType.replaceAll("_", " ").toLowerCase()} (${leakCount}×).`
+          : " No rule breached — keep the bar."),
+      payload: { kind: "WEEKLY_DISCIPLINE_REPORT", weekStart },
+      tradeId: null,
+      readAt: null,
+      dismissedAt: null,
+      createdAt: nowIso(),
+    });
+  }
+
   function listAlerts(): AlertsResponse {
     // Goal → inbox bridge runs on every read: the topbar bell stays truthful
     // even when the Goals tab was never opened this session.
     syncGoalAlerts();
+    // Weekly discipline report — Monday-send mechanics, idempotent per week.
+    syncWeeklyDisciplineReport();
     const alerts = [...data.alerts].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
     const unreadCount = alerts.filter((a) => a.readAt === null && a.dismissedAt === null).length;
     return { alerts, unreadCount };
@@ -951,11 +1021,17 @@ export function createMockStore() {
         return { ruleId: r.id, type: r.type, severity: r.severity, limit: toDecimalString(limit), current: toDecimalString(round2(current)) };
       });
 
+    // Guardrail input — rule breaches that happened TODAY (any rule).
+    const violationsToday = data.ruleViolations.filter(
+      (violation) => toTradingDateKey(violation.occurredAt, USER_TZ) === today,
+    ).length;
+
     return {
       date: today,
       accountId,
       tradesToday,
       lossesToday,
+      violationsToday,
       riskBudgetSpentPct: toDecimalString(riskBudgetSpentPct),
       limits,
     };
@@ -2031,6 +2107,44 @@ export function createMockStore() {
     // Most expensive first — cost dominates, then frequency.
     entries.sort((a, b) => Math.abs(Number(b.rCost)) - Math.abs(Number(a.rCost)) || b.count - a.count);
     return { windowStart: since, entries };
+  }
+
+  /**
+   * GET /discipline/emotion-matrix — emotion → outcome grid over the same
+   * 30-day window as the discipline score. Correlational by design: the
+   * grid makes the pattern visible, it never claims causation. Trades
+   * without a logged emotion are counted as `excluded`.
+   */
+  function disciplineEmotionMatrix(): DisciplineEmotionMatrixResponse {
+    const since = windowStart();
+    const windowClosed = data.trades.filter(
+      (t) => t.tradingDate >= since && t.tradingDate <= todayKey() && t.status === "CLOSED" && t.deletedAt === null,
+    );
+    const withEmotion = windowClosed.filter((t) => t.emotionBefore !== null);
+    const rows: EmotionResultRow[] = [...new Set(withEmotion.map((t) => t.emotionBefore!))]
+      .map((emotion) => {
+        const group = withEmotion.filter((t) => t.emotionBefore === emotion);
+        const wins = group.filter((t) => (Number(t.pnlNet) ?? 0) > 0).length;
+        const losses = group.length - wins;
+        const rSum = group.reduce((sum, t) => sum + (Number(t.rMultiple) ?? 0), 0);
+        return {
+          emotion,
+          trades: group.length,
+          wins,
+          losses,
+          winRatePct: group.length > 0 ? round1((wins / group.length) * 100) : null,
+          avgR: group.length > 0 ? round2(rSum / group.length) : null,
+          totalR: group.length > 0 ? round2(rSum) : null,
+        };
+      })
+      // Busiest emotions first — the heatmap reads top-down.
+      .sort((a, b) => b.trades - a.trades);
+    return {
+      windowStart: since,
+      rows,
+      excluded: windowClosed.length - withEmotion.length,
+      meta: { generatedAt: nowIso() },
+    };
   }
 
   // ── Analytics suite (Phase 9, GET /stats/analytics) ──────────────────────
@@ -4510,6 +4624,7 @@ export function createMockStore() {
     listViolations,
     acknowledgeViolation,
     disciplineScore,
+    disciplineEmotionMatrix,
     mistakesLedger,
     sessionTimeline,
     listSessionNotes,

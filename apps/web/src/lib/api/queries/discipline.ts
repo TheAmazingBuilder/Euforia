@@ -6,6 +6,7 @@ import type {
   EcoEventsResponse,
   CreateRuleInput,
   DisciplineScoreResponse,
+  DisciplineEmotionMatrixResponse,
   MarkAlertReadResponse,
   MistakeLedgerResponse,
   Rule,
@@ -81,6 +82,14 @@ export function useDisciplineScore() {
   return useQuery({
     queryKey: queryKeys.disciplineScore,
     queryFn: () => apiRequest<DisciplineScoreResponse>(apiPaths.disciplineScore),
+  });
+}
+
+/** GET /discipline/emotion-matrix — emotion → outcome heatmap rows. */
+export function useEmotionMatrix() {
+  return useQuery({
+    queryKey: queryKeys.emotionMatrix,
+    queryFn: () => apiRequest<DisciplineEmotionMatrixResponse>(apiPaths.disciplineEmotionMatrix),
   });
 }
 

@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import {
   ChevronDown,
   ChevronRight,
+  ShieldAlert,
   TriangleAlert,
 } from "lucide-react";
 import {
@@ -335,6 +336,15 @@ export function TradeForm({ seed }: TradeFormProps) {
   const lockViolated =
     riskRuleSeverity === "LOCK" && warnings.some((warning) => warning.id === "risk-over-limit");
 
+  // ── Guardrail (preference): soft-lock after N violations today ──────────
+  // A deliberate two-step acknowledgment — the trader CAN capture anyway,
+  // but never by accident. The lock re-arms whenever the form remounts.
+  const guardrailLimit = prefsData?.trading.softLockAfterViolations ?? null;
+  const violationsToday = rulesStatus.data?.violationsToday ?? 0;
+  const guardrailActive = guardrailLimit !== null && violationsToday >= guardrailLimit;
+  const [guardrailAcked, setGuardrailAcked] = React.useState(false);
+  const guardrailLocked = guardrailActive && !guardrailAcked;
+
   // ── Submit gating (minimal required set — everything else optional) ─────
   const entryAtISO = localInputToISO(values.entryAtLocal);
   const exitAtISO = localInputToISO(values.exitAtLocal);
@@ -354,7 +364,8 @@ export function TradeForm({ seed }: TradeFormProps) {
     missing.push("size");
   }
   if (!values.outOfPlaybook && values.strategyId === null) missing.push("strategy (or out of playbook)");
-  const canSubmit = missing.length === 0 && !createTrade.isPending;
+  const canSubmit =
+    missing.length === 0 && !createTrade.isPending && !guardrailLocked;
 
   // ── Payload (§13: the client NEVER sends P&L — server computes) ─────────
   const buildPayload = (): CreateTradeInput | null => {
@@ -757,6 +768,34 @@ export function TradeForm({ seed }: TradeFormProps) {
         ) : null}
       </section>
 
+      {/* Guardrail banner — soft-lock after N violations today (preference) */}
+      {guardrailActive ? (
+        <div
+          className="flex flex-wrap items-center gap-2 rounded-md border border-loss/40 bg-loss/10 px-3 py-2 text-xs text-loss"
+          data-testid="trade-form-guardrail"
+        >
+          <ShieldAlert className="size-3.5 shrink-0" aria-hidden="true" />
+          <span>
+            Guardrail — {violationsToday} rule violation{violationsToday === 1 ? "" : "s"} today
+            (limit {guardrailLimit}). Capture is soft-locked.
+          </span>
+          {guardrailLocked ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="ml-auto h-6 gap-1 border-loss/50 px-2 text-[11px] text-loss hover:bg-loss/10"
+              onClick={() => setGuardrailAcked(true)}
+              data-testid="trade-form-guardrail-confirm"
+            >
+              Capture anyway
+            </Button>
+          ) : (
+            <span className="ml-auto font-mono text-[10px]">acknowledged — proceed carefully</span>
+          )}
+        </div>
+      ) : null}
+
       {/* Amber warnings — non-blocking, auto-dismiss on fix */}
       {warnings.length > 0 ? (
         <ul className="space-y-1" aria-label="Warnings">
@@ -780,7 +819,7 @@ export function TradeForm({ seed }: TradeFormProps) {
           disabled={!canSubmit}
           className={cn(
             "flex-1 sm:flex-none",
-            lockViolated &&
+            (lockViolated || guardrailLocked) &&
               "border border-warning/60 bg-warning/10 text-warning hover:bg-warning/20 hover:text-warning",
           )}
         >

@@ -54,6 +54,7 @@ export const apiPaths = {
   violations: "/violations",
   violationAcknowledge: (violationId: string) => `/violations/${violationId}/acknowledge`,
   disciplineScore: "/discipline/score",
+  disciplineEmotionMatrix: "/discipline/emotion-matrix",
   mistakesLedger: "/mistakes/ledger",
   brokerSession: "/broker/session",
   integrationsOverview: "/integrations/overview",

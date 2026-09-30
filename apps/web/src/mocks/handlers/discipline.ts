@@ -102,6 +102,16 @@ export const disciplineHandlers = [
     }
   }),
 
+  // GET /discipline/emotion-matrix — emotion → outcome heatmap rows
+  http.get(endpoint(apiPaths.disciplineEmotionMatrix), async () => {
+    await latency();
+    try {
+      return HttpResponse.json(mockStore.disciplineEmotionMatrix());
+    } catch (error) {
+      return toErrorResponse(error);
+    }
+  }),
+
   // GET /mistakes/ledger — per-mistake frequency + R cost this month
   http.get(endpoint(apiPaths.mistakesLedger), async () => {
     await latency();

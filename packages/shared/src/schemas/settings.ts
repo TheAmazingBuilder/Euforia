@@ -95,6 +95,12 @@ export const tradingPreferencesSchema = z.object({
    * runs past it, Cosmoz raises a « max duration » alert. null = no cap.
    */
   sessionMaxDurationMin: z.number().int().min(15).max(600).nullable(),
+  /**
+   * Guardrail — soft-lock the capture form after N rule violations TODAY.
+   * The lock is a deliberate two-step acknowledgment, never a hard block.
+   * null = guardrail off.
+   */
+  softLockAfterViolations: z.number().int().min(1).max(20).nullable(),
 });
 
 export type TradingPreferences = z.infer<typeof tradingPreferencesSchema>;
@@ -485,6 +491,7 @@ export const DEFAULT_USER_PREFERENCES: UserPreferencesDefaults = {
     rrDisplay: "RATIO",
     chart: { style: "CANDLES", showVolume: false, showGrid: true },
     sessionMaxDurationMin: null,
+    softLockAfterViolations: null,
   },
   risk: {
     defaultRiskPerTradePct: 1,

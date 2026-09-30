@@ -13,6 +13,7 @@ export const queryKeys = {
   rules: ["rules"] as const,
   violations: ["violations"] as const,
   disciplineScore: ["discipline-score"] as const,
+  emotionMatrix: ["emotion-matrix"] as const,
   mistakesLedger: ["mistakes-ledger"] as const,
   trades: (params: { status?: string; graded?: string; accountId?: string }) =>
     ["trades", params] as const,
