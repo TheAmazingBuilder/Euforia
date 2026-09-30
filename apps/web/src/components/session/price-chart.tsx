@@ -12,6 +12,7 @@ import { formatPrice } from "@cosmoz/shared";
 import type { Candle, CandlesResponse, Instrument, MarketInterval, Trade } from "@cosmoz/shared";
 import { getChartTheme, type ChartTheme } from "@/lib/utils/chart-theme";
 import { STALE_MS, type LiveQuote } from "@/lib/realtime/market";
+import { usePreferences } from "@/lib/api/queries";
 import { useNowMs } from "@/lib/realtime/use-now";
 
 /**
@@ -78,6 +79,9 @@ function overlayLines(trades: Trade[], theme: ReturnType<typeof getChartTheme>):
   return lines;
 }
 
+/** Safe defaults before the preferences document loads (schema-safe fallback). */
+const DEFAULT_CHART_PREFS = { style: "CANDLES", showVolume: false, showGrid: true } as const;
+
 /** Merge the live tick into the history: update/append the last bucket. */
 function mergeTick(
   candles: Candle[],
@@ -136,6 +140,11 @@ export function PriceChart({
   const { resolvedTheme } = useTheme();
   const queryClient = useQueryClient();
 
+  // Chart display preferences (Settings → Trading → Charts). Defaults apply
+  // while the preferences document loads — the chart never blocks on it.
+  const { data: prefs } = usePreferences();
+  const chartPrefs = prefs?.trading?.chart ?? DEFAULT_CHART_PREFS;
+
   const digits = instrument?.digits ?? 5;
   const nowMs = useNowMs();
   // Frozen feed → do not keep stamping the last price onto the chart (§17).
@@ -164,14 +173,80 @@ export function PriceChart({
     return { labels, ohlc, times: merged.map((candle) => candle.t), volumes: merged.map((candle) => candle.v) };
   }, [merged, interval]);
 
-  // ── Structural option (axes, zoom, tooltip, theme) ───────────────────────
+  // ── Structural option (axes, panes, zoom, tooltip, theme, chart prefs) ───
   const baseOption = React.useMemo<EChartsCoreOption>(() => {
-    const intraday = interval !== "1D";
+    // Fixed left/right for BOTH panes so the volume bars align exactly with
+    // the price plot area (containLabel would offset each grid differently).
+    const AXIS_AREA = 40; // bottom space for x labels + zoom slider
+    const VOLUME_HEIGHT = 40;
+    const VOLUME_GAP = 14;
+    const grid = chartPrefs.showVolume
+      ? [
+          { left: 62, right: 64, top: 16, bottom: AXIS_AREA + VOLUME_HEIGHT + VOLUME_GAP },
+          // height + bottom only — a third constraint (top) conflicts in ECharts
+          // and would drag the pane to the top of the canvas.
+          { left: 62, right: 64, height: VOLUME_HEIGHT, bottom: AXIS_AREA },
+        ]
+      : [{ left: 62, right: 64, top: 16, bottom: AXIS_AREA }];
+
+    // Main series — candlestick, or close-line/area for the other styles.
+    const mainSeries: Record<string, unknown> =
+      chartPrefs.style === "CANDLES"
+        ? {
+            name: symbol,
+            type: "candlestick",
+            data: [],
+            itemStyle: {
+              color: theme.profit,
+              color0: theme.loss,
+              borderColor: theme.profit,
+              borderColor0: theme.loss,
+              borderWidth: 1,
+            },
+          }
+        : {
+            name: symbol,
+            type: "line",
+            data: [],
+            showSymbol: false,
+            lineStyle: { width: 2, color: theme.accent },
+            ...(chartPrefs.style === "AREA"
+              ? {
+                  areaStyle: {
+                    color: {
+                      type: "linear",
+                      x: 0,
+                      y: 0,
+                      x2: 0,
+                      y2: 1,
+                      colorStops: [
+                        { offset: 0, color: `${theme.accent}59` },
+                        { offset: 1, color: `${theme.accent}00` },
+                      ],
+                    },
+                  },
+                }
+              : {}),
+          };
+
+    const series: Record<string, unknown>[] = [mainSeries];
+    if (chartPrefs.showVolume) {
+      series.push({
+        name: "Volume",
+        type: "bar",
+        xAxisIndex: 1,
+        yAxisIndex: 1,
+        data: [],
+        barWidth: "60%",
+        large: true,
+      });
+    }
+
     return {
       backgroundColor: "transparent",
       animationDuration: 300,
       animationDurationUpdate: 120,
-      grid: { left: 8, right: 64, top: 16, bottom: intraday ? 40 : 40, containLabel: true },
+      grid,
       tooltip: {
         trigger: "axis",
         axisPointer: {
@@ -207,29 +282,74 @@ export function PriceChart({
           ].join("<br/>");
         },
       },
-      xAxis: {
-        type: "category",
-        // Data arrives through the data option (merge mode) — see below.
-        data: [],
-        boundary: true,
-        axisLine: { lineStyle: { color: theme.border } },
-        axisTick: { show: false },
-        axisLabel: { color: theme.textMuted, fontFamily: theme.monoFont, fontSize: 10, margin: 10 },
-        splitLine: { show: false },
-      },
-      yAxis: {
-        type: "value",
-        scale: true,
-        position: "right",
-        axisLine: { show: false },
-        axisTick: { show: false },
-        axisLabel: { color: theme.textMuted, fontFamily: theme.monoFont, fontSize: 10, formatter: (value: number) => formatPrice(value, digits) },
-        splitLine: { lineStyle: { color: theme.border, width: 1, opacity: 0.6 } },
-      },
+      xAxis: [
+        {
+          type: "category",
+          // Data arrives through the data option (merge mode) — see below.
+          data: [],
+          boundary: true,
+          axisLine: { lineStyle: { color: theme.border } },
+          axisTick: { show: false },
+          axisLabel: { color: theme.textMuted, fontFamily: theme.monoFont, fontSize: 10, margin: 10 },
+          splitLine: { show: false },
+        },
+        ...(chartPrefs.showVolume
+          ? [
+              {
+                type: "category",
+                gridIndex: 1,
+                data: [],
+                boundary: true,
+                axisLine: { show: false },
+                axisTick: { show: false },
+                axisLabel: { show: false },
+                splitLine: { show: false },
+              },
+            ]
+          : []),
+      ],
+      yAxis: [
+        {
+          type: "value",
+          scale: true,
+          position: "right",
+          axisLine: { show: false },
+          axisTick: { show: false },
+          axisLabel: { color: theme.textMuted, fontFamily: theme.monoFont, fontSize: 10, formatter: (value: number) => formatPrice(value, digits) },
+          // Settings → Trading → "Show grid" — the price/time grid lines.
+          splitLine: {
+            show: chartPrefs.showGrid,
+            lineStyle: { color: theme.border, width: 1, opacity: 0.6 },
+          },
+        },
+        ...(chartPrefs.showVolume
+          ? [
+              {
+                type: "value",
+                gridIndex: 1,
+                position: "right",
+                // Bars sit low like a sparkline strip, never fight the price.
+                max: (extent: { max: number }) => Math.ceil((extent.max ?? 1) * 4) || 1,
+                axisLine: { show: false },
+                axisTick: { show: false },
+                axisLabel: { show: false },
+                splitLine: { show: false },
+              },
+            ]
+          : []),
+      ],
       dataZoom: [
-        { type: "inside", start: 0, end: 100, zoomOnMouseWheel: true, preventDefaultMouseMove: false },
+        {
+          type: "inside",
+          xAxisIndex: chartPrefs.showVolume ? [0, 1] : 0,
+          start: 0,
+          end: 100,
+          zoomOnMouseWheel: true,
+          preventDefaultMouseMove: false,
+        },
         {
           type: "slider",
+          xAxisIndex: chartPrefs.showVolume ? [0, 1] : 0,
           height: 18,
           bottom: 6,
           borderColor: theme.border,
@@ -242,24 +362,12 @@ export function PriceChart({
           selectedDataBackground: { lineStyle: { color: theme.accent }, areaStyle: { color: `${theme.accent}33` } },
         },
       ],
-      series: [
-        {
-          name: symbol,
-          type: "candlestick",
-          data: [],
-          itemStyle: {
-            color: theme.profit,
-            color0: theme.loss,
-            borderColor: theme.profit,
-            borderColor0: theme.loss,
-            borderWidth: 1,
-          },
-        },
-      ],
+      series,
     };
     // `merged` is read inside the tooltip formatter through a ref, so the
     // structural option never rebuilds (and never resets zoom) on ticks.
-  }, [theme, interval, symbol, digits]);
+    // Chart-pref changes ARE structural (series type / panes / grid lines).
+  }, [theme, interval, symbol, digits, chartPrefs]);
 
   // ── Data option (labels + candles + overlays) — merge keeps zoom/pan ─────
   const dataOption = React.useMemo<EChartsCoreOption>(() => {
@@ -295,16 +403,36 @@ export function PriceChart({
         silent: true,
       });
     }
+    // Style decides the payload shape: OHLC tuples for candles, closes for
+    // line/area. markLine overlays work on either series type.
+    const mainData =
+      chartPrefs.style === "CANDLES" ? view.ohlc : merged.map((candle) => candle.c);
+    const series: Array<Record<string, unknown>> = [
+      {
+        data: mainData,
+        markLine: { animation: false, symbol: "none", silent: true, data: markLineData },
+      },
+    ];
+    if (chartPrefs.showVolume) {
+      // Per-candle color: profit tone on up buckets, loss tone on down ones.
+      series.push({
+        data: merged.map((candle) => ({
+          value: candle.v,
+          itemStyle: {
+            color:
+              candle.c >= candle.o ? `${theme.profit}8C` : `${theme.loss}8C`,
+          },
+        })),
+      });
+    }
     return {
-      xAxis: { data: view.labels },
-      series: [
-        {
-          data: view.ohlc,
-          markLine: { animation: false, symbol: "none", silent: true, data: markLineData },
-        },
-      ],
+      xAxis:
+        chartPrefs.showVolume
+          ? [{ data: view.labels }, { data: view.labels }]
+          : { data: view.labels },
+      series,
     };
-  }, [view, overlayTrades, quote, stale, theme, digits]);
+  }, [view, merged, overlayTrades, quote, stale, theme, digits, chartPrefs]);
 
   // ── Canvas lifecycle (init / theme re-init / dispose) ────────────────────
   React.useEffect(() => {
@@ -352,13 +480,21 @@ export function PriceChart({
       data-testid="price-chart"
       data-symbol={symbol}
       data-interval={interval}
+      data-chart-style={chartPrefs.style}
+      data-show-volume={chartPrefs.showVolume ? "true" : "false"}
+      data-show-grid={chartPrefs.showGrid ? "true" : "false"}
     >
       {isLoading && merged.length === 0 ? (
         <div className="absolute inset-0 flex items-center justify-center" aria-live="polite">
           <p className="text-sm text-muted-foreground">Loading market data…</p>
         </div>
       ) : null}
-      <div ref={containerRef} role="img" aria-label={`${symbol} ${interval} candlestick chart with journal position overlays`} className="size-full" />
+      <div
+        ref={containerRef}
+        role="img"
+        aria-label={`${symbol} ${interval} ${chartPrefs.style.toLowerCase()} chart with journal position overlays`}
+        className="size-full"
+      />
     </div>
   );
 }
