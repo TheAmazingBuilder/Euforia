@@ -1,11 +1,18 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
   AddScreenshotInput,
+  BulkTradesInput,
+  BulkTradesResponse,
   CloseTradeInput,
+  CreateSavedTradeViewInput,
+  CreateSavedTradeViewResponse,
   CreateTradeInput,
   CreateTradeResponse,
+  DeleteSavedTradeViewResponse,
   DeleteScreenshotResponse,
   DeleteTradeResponse,
+  ImportTradesInput,
+  ImportTradesResponse,
   NotesUpdateInput,
   NotesUpdateResponse,
   PlanUpdateInput,
@@ -17,10 +24,12 @@ import type {
   ReviewResponse,
   ReviewUpdateInput,
   ReviewUpdateResponse,
+  SavedTradeViewsResponse,
   Trade,
   TradeDecisionInput,
   TradeScreenshot,
   TradeScreenshotsResponse,
+  TradeSessionSeriesResponse,
   TradesListResponse,
   UpdateTradeInput,
   UpdateTradeResponse,
@@ -198,5 +207,80 @@ export function useDeleteScreenshot() {
     onSuccess: async (_data, variables) => {
       await queryClient.invalidateQueries({ queryKey: queryKeys.screenshots(variables.tradeId) });
     },
+  });
+}
+
+// ── Trade module upgrades: saved views / bulk ops / CSV import / session series ─
+
+/** GET /trade-views — named (filters + columns) presets. */
+export function useTradeViews() {
+  return useQuery({
+    queryKey: queryKeys.tradeViews,
+    queryFn: () => apiRequest<SavedTradeViewsResponse>(apiPaths.tradeViews),
+  });
+}
+
+/** POST /trade-views — snapshot the current table state. */
+export function useCreateTradeView() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: CreateSavedTradeViewInput) =>
+      apiRequest<CreateSavedTradeViewResponse>(apiPaths.tradeViews, { method: "POST", body: input }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.tradeViews });
+    },
+  });
+}
+
+/** DELETE /trade-views/:id. */
+export function useDeleteTradeView() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (viewId: string) =>
+      apiRequest<DeleteSavedTradeViewResponse>(apiPaths.tradeView(viewId), { method: "DELETE" }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.tradeViews });
+    },
+  });
+}
+
+/** POST /trades/bulk — tag / grade / delete multiple trades in one round-trip. */
+export function useBulkTrades() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: BulkTradesInput) =>
+      apiRequest<BulkTradesResponse>(apiPaths.tradesBulk, { method: "POST", body: input }),
+    onSuccess: async () => {
+      await Promise.all([
+        ...tradeMutationInvalidations.map((key) => queryClient.invalidateQueries({ queryKey: key })),
+        // Bulk TAG touches the review join (drawer tag chips) — refresh both.
+        queryClient.invalidateQueries({ queryKey: queryKeys.reviewRoot }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.analyticsSuiteRoot }),
+      ]);
+    },
+  });
+}
+
+/** POST /trades/import — create trades from mapped CSV rows (idempotent). */
+export function useImportTrades() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: ImportTradesInput) =>
+      apiRequest<ImportTradesResponse>(apiPaths.tradesImport, { method: "POST", body: input }),
+    onSuccess: async () => {
+      await Promise.all([
+        ...tradeMutationInvalidations.map((key) => queryClient.invalidateQueries({ queryKey: key })),
+        queryClient.invalidateQueries({ queryKey: queryKeys.analyticsSuiteRoot }),
+      ]);
+    },
+  });
+}
+
+/** GET /trades/:id/session-series — price path + recorded levels (drawer chart). */
+export function useTradeSessionSeries(tradeId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.sessionSeries(tradeId ?? "none"),
+    queryFn: () => apiRequest<TradeSessionSeriesResponse>(apiPaths.tradeSessionSeries(tradeId!)),
+    enabled: tradeId !== null,
   });
 }

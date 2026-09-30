@@ -869,6 +869,186 @@ export const deleteTradeResponseSchema = z.object({
 
 export type DeleteTradeResponse = z.infer<typeof deleteTradeResponseSchema>;
 
+// ── Trade module upgrades: saved views / bulk ops / CSV import / session series ─
+
+/** Visible ledger columns — the checkbox + actions columns are structural, never saved. */
+export const tradeColumnKeySchema = z.enum([
+  "date", "instrument", "side", "strategy", "duration", "r", "pnl", "grade", "tags", "status",
+]);
+
+export type TradeColumnKey = z.infer<typeof tradeColumnKeySchema>;
+
+/**
+ * Filter half of a saved view — mirrors the trades URL param bag ("" = unset,
+ * "all" = untouched), so applying a view is a pure URL patch.
+ */
+export const savedTradeViewFiltersSchema = z.object({
+  q: z.string().max(120),
+  status: z.union([z.literal("all"), tradeStatusSchema]),
+  direction: z.union([z.literal("all"), directionSchema]),
+  instrumentId: z.union([z.literal(""), uuidSchema]),
+  strategyId: z.union([z.literal(""), z.literal("none"), uuidSchema]),
+  outcome: z.enum(["all", "win", "loss"]),
+  tagId: z.union([z.literal(""), uuidSchema]),
+  from: z.union([z.literal(""), dateKeySchema]),
+  to: z.union([z.literal(""), dateKeySchema]),
+});
+
+export type SavedTradeViewFilters = z.infer<typeof savedTradeViewFiltersSchema>;
+
+/** GET /trade-views row — a named, reusable (filters + columns + sort) snapshot. */
+export const savedTradeViewSchema = z.object({
+  id: uuidSchema,
+  name: z.string().min(1).max(60),
+  filters: savedTradeViewFiltersSchema,
+  columns: z.array(tradeColumnKeySchema).min(1),
+  sortKey: z.enum(["date", "r", "pnl"]),
+  sortDir: z.enum(["asc", "desc"]),
+  createdAt: isoDateTimeSchema,
+});
+
+export type SavedTradeView = z.infer<typeof savedTradeViewSchema>;
+
+export const savedTradeViewsResponseSchema = z.object({
+  views: z.array(savedTradeViewSchema),
+});
+
+export type SavedTradeViewsResponse = z.infer<typeof savedTradeViewsResponseSchema>;
+
+/** POST /trade-views — snapshot the CURRENT table state under a name. */
+export const createSavedTradeViewInputSchema = z.object({
+  name: z.string().trim().min(1).max(60),
+  filters: savedTradeViewFiltersSchema,
+  columns: z.array(tradeColumnKeySchema).min(1),
+  sortKey: z.enum(["date", "r", "pnl"]),
+  sortDir: z.enum(["asc", "desc"]),
+});
+
+export type CreateSavedTradeViewInput = z.infer<typeof createSavedTradeViewInputSchema>;
+
+export const createSavedTradeViewResponseSchema = z.object({
+  view: savedTradeViewSchema,
+});
+
+export type CreateSavedTradeViewResponse = z.infer<typeof createSavedTradeViewResponseSchema>;
+
+export const deleteSavedTradeViewResponseSchema = z.object({
+  id: uuidSchema,
+  deleted: z.literal(true),
+});
+
+export type DeleteSavedTradeViewResponse = z.infer<typeof deleteSavedTradeViewResponseSchema>;
+
+// ── Bulk operations (POST /trades/bulk) ─────────────────────────────────────
+
+/**
+ * One endpoint, one round-trip for multi-select actions. The server skips
+ * what it cannot honor (grading an OPEN trade) and reports both counts —
+ * honest feedback instead of silent success.
+ */
+export const bulkTradesInputSchema = z.discriminatedUnion("op", [
+  z.object({
+    op: z.literal("TAG"),
+    tradeIds: z.array(uuidSchema).min(1).max(200),
+    tagId: uuidSchema,
+    mode: z.enum(["add", "remove"]),
+  }),
+  z.object({
+    op: z.literal("GRADE"),
+    tradeIds: z.array(uuidSchema).min(1).max(200),
+    grade: gradeSchema,
+  }),
+  z.object({
+    op: z.literal("DELETE"),
+    tradeIds: z.array(uuidSchema).min(1).max(200),
+  }),
+]);
+
+export type BulkTradesInput = z.infer<typeof bulkTradesInputSchema>;
+
+export const bulkTradesResponseSchema = z.object({
+  op: z.enum(["TAG", "GRADE", "DELETE"]),
+  /** Rows actually changed. */
+  affected: z.number().int().min(0),
+  /** Rows present but skipped (wrong status, already gone…). */
+  skipped: z.number().int().min(0),
+});
+
+export type BulkTradesResponse = z.infer<typeof bulkTradesResponseSchema>;
+
+// ── CSV import (POST /trades/import) ────────────────────────────────────────
+
+/** One normalized row AFTER client-side column mapping — the server never parses raw CSV. */
+export const importedTradeRowSchema = z.object({
+  symbol: z.string().trim().min(1).max(30),
+  side: directionSchema,
+  entryAt: isoDateTimeSchema,
+  entryPrice: positiveDecimalStringSchema,
+  exitAt: isoDateTimeSchema.optional(),
+  exitPrice: positiveDecimalStringSchema.optional(),
+  quantity: positiveDecimalStringSchema.optional(),
+  fees: nonNegativeDecimalStringSchema.optional(),
+  /** Reference P&L from the broker file — informational; results are recomputed. */
+  pnl: decimalStringSchema.optional(),
+  notes: z.string().max(2000).optional(),
+});
+
+export type ImportedTradeRow = z.infer<typeof importedTradeRowSchema>;
+
+export const importTradesInputSchema = z.object({
+  /** Broker label (idempotence salt + audit): "MT5", "TradingView", … */
+  broker: z.string().trim().min(1).max(40),
+  /** Optional playbook assignment for the whole batch; null = out of playbook. */
+  strategyId: uuidSchema.nullable().optional(),
+  rows: z.array(importedTradeRowSchema).min(1).max(500),
+});
+
+export type ImportTradesInput = z.infer<typeof importTradesInputSchema>;
+
+export const importTradesResponseSchema = z.object({
+  imported: z.number().int().min(0),
+  /** Rows whose broker ref already exists — import is idempotent per ref. */
+  skippedDuplicates: z.number().int().min(0),
+  /** Symbols with no matching instrument — listed so the user can fix the mapping. */
+  unknownSymbols: z.array(z.string()),
+  tradeIds: z.array(uuidSchema),
+});
+
+export type ImportTradesResponse = z.infer<typeof importTradesResponseSchema>;
+
+// ── Per-trade session price series (GET /trades/:id/session-series) ─────────
+
+/** One price observation around the trade window. */
+export const tradeSessionPointSchema = z.object({
+  t: isoDateTimeSchema,
+  price: decimalStringSchema,
+});
+
+export type TradeSessionPoint = z.infer<typeof tradeSessionPointSchema>;
+
+/**
+ * Price series covering a window around the trade (pre-entry → post-exit),
+ * with the recorded plan/reality levels attached so the client renders the
+ * projection in ONE request. Indices point into `points`.
+ */
+export const tradeSessionSeriesResponseSchema = z.object({
+  symbol: z.string(),
+  digits: z.number().int().min(0).max(10),
+  direction: directionSchema,
+  from: isoDateTimeSchema,
+  to: isoDateTimeSchema,
+  points: z.array(tradeSessionPointSchema).min(2),
+  entryIndex: z.number().int().min(0),
+  /** null = still open — no recorded exit yet. */
+  exitIndex: z.number().int().min(0).nullable(),
+  entryPrice: decimalStringSchema,
+  exitPrice: decimalStringSchema.nullable(),
+  initialStop: decimalStringSchema.nullable(),
+  initialTP: decimalStringSchema.nullable(),
+});
+
+export type TradeSessionSeriesResponse = z.infer<typeof tradeSessionSeriesResponseSchema>;
+
 // ── Trade screenshots (module gallery) ──────────────────────────────────────
 
 /** GET /trades/:id/screenshots — chart evidence for the detail drawer. */

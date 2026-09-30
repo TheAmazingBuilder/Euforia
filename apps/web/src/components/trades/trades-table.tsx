@@ -9,25 +9,39 @@ import {
   ArrowDown,
   ArrowUp,
   ArrowUpRight,
+  Award,
+  Bookmark,
+  BookmarkPlus,
+  ChevronDown,
+  Columns3,
   Download,
   Loader2,
   MoreHorizontal,
   Pencil,
   Plus,
+  Tag,
   Trash2,
+  Upload,
 } from "lucide-react";
-import type { Currency, Trade } from "@cosmoz/shared";
+import type { Currency, Grade, SavedTradeView, SavedTradeViewFilters, Trade, TradeColumnKey } from "@cosmoz/shared";
 import { formatR, formatSignedMoney } from "@cosmoz/shared";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   TradesFilters,
@@ -35,9 +49,21 @@ import {
   useTradesUrlState,
   type SortKey,
 } from "@/components/trades/trades-filters";
+import { CsvImportDialog } from "@/components/trades/csv-import-dialog";
 import { TradeDetailDrawer } from "@/components/trades/trade-detail-drawer";
 import { TradeEditDialog } from "@/components/trades/trade-edit-dialog";
-import { useDeleteTrade, useInstruments, useStrategies, useTags, useTrades } from "@/lib/api/queries";
+import {
+  useBulkTrades,
+  useCreateTradeView,
+  useDeleteTrade,
+  useDeleteTradeView,
+  useInstruments,
+  useStrategies,
+  useTags,
+  useTrades,
+  useTradeViews,
+} from "@/lib/api/queries";
+import { apiErrorMessage } from "@/lib/api/client";
 import { openTradeModal } from "@/lib/hooks/use-trade-modal";
 import { cn } from "@/lib/utils";
 
@@ -49,6 +75,8 @@ const GRADE_COLORS: Record<string, string> = {
   D: "border-warning/50 text-warning",
   F: "border-warning/60 text-warning",
 };
+
+const GRADES: Grade[] = ["A", "B", "C", "D", "F"];
 
 /** Compact duration from two ISO stamps ("2h 15m", "3d 4h", "18m"). */
 function formatDuration(fromIso: string, toIso: string): string {
@@ -79,11 +107,53 @@ function CSVCell(value: string | number | null): string {
     : raw;
 }
 
+// ── Ledger column registry (saved views persist the visible subset) ─────────
+
+interface LedgerColumn {
+  key: TradeColumnKey;
+  label: string;
+  /** Extra <th> classes (alignment). */
+  headerClass?: string;
+  cellClass: string;
+}
+
+const LEDGER_COLUMNS: LedgerColumn[] = [
+  { key: "date", label: "Date", cellClass: "whitespace-nowrap px-3 py-2.5 font-mono text-xs tabular-nums text-muted-foreground" },
+  { key: "instrument", label: "Instrument", cellClass: "whitespace-nowrap px-3 py-2.5 font-medium text-foreground" },
+  { key: "side", label: "Side", cellClass: "px-3 py-2.5" },
+  { key: "strategy", label: "Strategy", cellClass: "max-w-36 truncate px-3 py-2.5 text-muted-foreground" },
+  { key: "duration", label: "Duration", cellClass: "whitespace-nowrap px-3 py-2.5 font-mono text-xs tabular-nums text-muted-foreground" },
+  { key: "r", label: "R", headerClass: "text-right", cellClass: "whitespace-nowrap px-3 py-2.5 text-right font-mono tabular-nums text-foreground" },
+  { key: "pnl", label: "P&L", headerClass: "text-right", cellClass: "whitespace-nowrap px-3 py-2.5 text-right font-mono font-medium tabular-nums" },
+  { key: "grade", label: "Grade", cellClass: "px-3 py-2.5" },
+  { key: "tags", label: "Tags", cellClass: "px-3 py-2.5" },
+  { key: "status", label: "Status", cellClass: "px-3 py-2.5" },
+];
+
+const ALL_COLUMN_KEYS = LEDGER_COLUMNS.map((column) => column.key);
+
+/** Number of non-default filters a saved view captures (for the menu subtitle). */
+function filterCount(view: SavedTradeView): number {
+  const filters = view.filters;
+  return [
+    filters.q !== "",
+    filters.status !== "all",
+    filters.direction !== "all",
+    filters.instrumentId !== "",
+    filters.strategyId !== "",
+    filters.outcome !== "all",
+    filters.tagId !== "",
+    filters.from !== "",
+    filters.to !== "",
+  ].filter(Boolean).length;
+}
+
 /**
  * THE TRADE MODULE (/trades):
- * header + accent capture button, URL-persisted filters, sortable ledger
- * table (tags, duration, grades), bulk select with delete, pagination,
- * row detail drawer (notes / tags / screenshots / close) and edit dialog.
+ * header + capture/import actions, saved (filters + columns) views, URL-
+ * persisted filters, sortable ledger table with toggleable columns, bulk
+ * select (tag / grade / delete), pagination, row detail drawer (notes /
+ * tags / screenshots / session projection chart / close) and edit dialog.
  */
 export function TradesTable() {
   return (
@@ -195,10 +265,11 @@ function TradesModule() {
     [sorted, safePage, state.pageSize],
   );
 
-  // ── Selection ────────────────────────────────────────────────────────────
+  // ── Selection + bulk operations (one round-trip per action) ──────────────
   const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
   const selectedOnPage = pageRows.filter((trade) => selectedIds.has(trade.id));
   const allOnPageSelected = pageRows.length > 0 && selectedOnPage.length === pageRows.length;
+  const bulk = useBulkTrades();
 
   const toggleAll = () => {
     setSelectedIds((previous) => {
@@ -222,12 +293,143 @@ function TradesModule() {
   };
 
   const bulkDelete = () => {
-    const ids = [...selectedIds];
-    if (ids.length === 0) return;
-    for (const id of ids) deleteTrade.mutate(id);
-    setSelectedIds(new Set());
-    toast.success(`${ids.length} trade${ids.length === 1 ? "" : "s"} deleted`);
+    if (selectedIds.size === 0) return;
+    bulk.mutate(
+      { op: "DELETE", tradeIds: [...selectedIds] },
+      {
+        onSuccess: (result) => {
+          setSelectedIds(new Set());
+          toast.success(`${result.affected} trade${result.affected === 1 ? "" : "s"} deleted`);
+        },
+        onError: (error) => toast.error(apiErrorMessage(error, "Bulk delete failed")),
+      },
+    );
   };
+
+  const bulkTag = (tagId: string, mode: "add" | "remove") => {
+    const tagName = tagNameOf(tagId) ?? "tag";
+    bulk.mutate(
+      { op: "TAG", tradeIds: [...selectedIds], tagId, mode },
+      {
+        onSuccess: (result) =>
+          toast.success(
+            `${result.affected} trade${result.affected === 1 ? "" : "s"} ${mode === "add" ? "tagged" : "untagged"} “${tagName}”`,
+            { description: result.skipped > 0 ? `${result.skipped} skipped (already ${mode === "add" ? "tagged" : "untagged"})` : undefined },
+          ),
+        onError: (error) => toast.error(apiErrorMessage(error, "Bulk tag failed")),
+      },
+    );
+  };
+
+  const bulkGrade = (grade: Grade) => {
+    bulk.mutate(
+      { op: "GRADE", tradeIds: [...selectedIds], grade },
+      {
+        onSuccess: (result) =>
+          toast.success(`Graded ${result.affected} trade${result.affected === 1 ? "" : "s"} ${grade}`, {
+            description:
+              result.skipped > 0
+                ? `${result.skipped} skipped (open trades cannot be graded)`
+                : undefined,
+          }),
+        onError: (error) => toast.error(apiErrorMessage(error, "Bulk grade failed")),
+      },
+    );
+  };
+
+  // ── Column visibility (saved views persist the subset) ───────────────────
+  const [visibleColumns, setVisibleColumns] = React.useState<Set<TradeColumnKey>>(
+    () => new Set(ALL_COLUMN_KEYS),
+  );
+  const visibleOrder = React.useMemo(
+    () => ALL_COLUMN_KEYS.filter((key) => visibleColumns.has(key)),
+    [visibleColumns],
+  );
+  const toggleColumn = (key: TradeColumnKey) => {
+    setVisibleColumns((previous) => {
+      const next = new Set(previous);
+      if (next.has(key)) {
+        if (next.size > 1) next.delete(key); // the ledger never renders bare
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
+  };
+
+  // ── Saved views (named filters + columns + sort) ─────────────────────────
+  const { data: viewsData } = useTradeViews();
+  const createView = useCreateTradeView();
+  const deleteView = useDeleteTradeView();
+  const views = React.useMemo(() => viewsData?.views ?? [], [viewsData]);
+
+  const currentFilters = React.useMemo<SavedTradeViewFilters>(
+    () => ({
+      q: state.q,
+      status: state.status,
+      direction: state.direction,
+      instrumentId: state.instrumentId,
+      strategyId: state.strategyId,
+      outcome: state.outcome,
+      tagId: state.tagId,
+      from: state.from,
+      to: state.to,
+    }),
+    [state.q, state.status, state.direction, state.instrumentId, state.strategyId, state.outcome, state.tagId, state.from, state.to],
+  );
+
+  const activeView = React.useMemo(
+    () =>
+      views.find(
+        (view) =>
+          view.sortKey === state.sortKey &&
+          view.sortDir === state.sortDir &&
+          JSON.stringify(view.columns) === JSON.stringify(visibleOrder) &&
+          JSON.stringify(view.filters) === JSON.stringify(currentFilters),
+      ) ?? null,
+    [views, state.sortKey, state.sortDir, visibleOrder, currentFilters],
+  );
+
+  const applyView = (view: SavedTradeView) => {
+    patch({
+      q: view.filters.q,
+      status: view.filters.status === "all" ? "" : view.filters.status,
+      dir: view.filters.direction === "all" ? "" : view.filters.direction,
+      inst: view.filters.instrumentId,
+      strat: view.filters.strategyId,
+      out: view.filters.outcome === "all" ? "" : view.filters.outcome,
+      tag: view.filters.tagId,
+      from: view.filters.from,
+      to: view.filters.to,
+      sort: view.sortKey === "date" ? "" : view.sortKey,
+      dirn: view.sortDir === "desc" ? "" : view.sortDir,
+    });
+    setVisibleColumns(new Set(view.columns));
+  };
+
+  const [viewDialogOpen, setViewDialogOpen] = React.useState(false);
+  const [viewName, setViewName] = React.useState("");
+
+  const onSaveView = () => {
+    const name = viewName.trim();
+    if (name === "") return;
+    createView.mutate(
+      { name, filters: currentFilters, columns: visibleOrder, sortKey: state.sortKey, sortDir: state.sortDir },
+      {
+        onSuccess: (result) => {
+          toast.success(`View “${result.view.name}” saved`, {
+            description: "Filters, columns and sort restore in one click.",
+          });
+          setViewDialogOpen(false);
+          setViewName("");
+        },
+        onError: (error) => toast.error(apiErrorMessage(error, "Could not save the view")),
+      },
+    );
+  };
+
+  // ── CSV import ─────────────────────────────────────────────────────────────
+  const [importOpen, setImportOpen] = React.useState(false);
 
   // ── Detail + edit ────────────────────────────────────────────────────────
   const [detailId, setDetailId] = React.useState<string | null>(null);
@@ -290,7 +492,7 @@ function TradesModule() {
 
   return (
     <div className="space-y-4">
-      {/* Header — identity + primary capture action */}
+      {/* Header — identity + capture / import / views actions */}
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div className="space-y-1">
           <h1 className="font-heading text-2xl font-semibold tracking-tight text-foreground">
@@ -300,7 +502,85 @@ function TradesModule() {
             The complete trade log — filter, correct, annotate. Every execution with its result and grade.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          {/* Saved views — named filters + columns + sort */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className={cn("gap-1.5", activeView !== null && "border-accent/50 text-accent")}
+                data-testid="trades-views-trigger"
+              >
+                <Bookmark className="size-3.5" aria-hidden="true" />
+                {activeView !== null ? activeView.name : "Views"}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="min-w-64">
+              <DropdownMenuItem
+                onClick={() => setViewDialogOpen(true)}
+                className="gap-2"
+                data-testid="trades-view-save"
+              >
+                <BookmarkPlus className="size-3.5 text-accent" aria-hidden="true" />
+                Save current view…
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              {views.length === 0 ? (
+                <p className="px-2 py-1.5 text-xs text-muted-foreground">
+                  No saved views yet — set filters, then save.
+                </p>
+              ) : (
+                views.map((view) => (
+                  <DropdownMenuItem
+                    key={view.id}
+                    className="items-center gap-2"
+                    onClick={() => applyView(view)}
+                    data-testid={`trades-view-item-${view.name.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}`}
+                  >
+                    <Bookmark className="size-3.5 shrink-0 text-accent" aria-hidden="true" />
+                    <span className="min-w-0 flex-1 truncate">{view.name}</span>
+                    <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
+                      {filterCount(view)}f · {view.columns.length}c
+                    </span>
+                    <button
+                      type="button"
+                      aria-label={`Delete view ${view.name}`}
+                      className="grid size-5 shrink-0 place-items-center rounded-sm text-muted-foreground hover:bg-destructive/10 hover:text-loss"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        deleteView.mutate(view.id, {
+                          onSuccess: () => toast.success(`View “${view.name}” deleted`),
+                        });
+                      }}
+                      data-testid={`trades-view-delete-${view.name.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}`}
+                    >
+                      <Trash2 className="size-3" aria-hidden="true" />
+                    </button>
+                  </DropdownMenuItem>
+                ))
+              )}
+              <DropdownMenuSeparator />
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger className="gap-2">
+                  <Columns3 className="size-3.5" aria-hidden="true" />
+                  Columns
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent data-testid="trades-columns-menu">
+                  {LEDGER_COLUMNS.map((column) => (
+                    <DropdownMenuCheckboxItem
+                      key={column.key}
+                      checked={visibleColumns.has(column.key)}
+                      onCheckedChange={() => toggleColumn(column.key)}
+                      onSelect={(event) => event.preventDefault()}
+                    >
+                      {column.label}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button
             variant="outline"
             size="sm"
@@ -311,6 +591,16 @@ function TradesModule() {
           >
             <Download className="size-3.5" aria-hidden="true" />
             Export CSV
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5"
+            onClick={() => setImportOpen(true)}
+            data-testid="trades-import-open"
+          >
+            <Upload className="size-3.5" aria-hidden="true" />
+            Import CSV
           </Button>
           <Button
             size="sm"
@@ -326,24 +616,92 @@ function TradesModule() {
 
       <TradesFilters state={state} patch={patch} />
 
-      {/* Bulk bar */}
+      {/* Bulk bar — tag / grade / delete in one round-trip */}
       {selectedIds.size > 0 ? (
         <div
           data-testid="trades-bulk-bar"
-          className="flex items-center gap-3 rounded-lg border border-accent/40 bg-accent/5 px-3 py-2"
+          className="flex flex-wrap items-center gap-2.5 rounded-lg border border-accent/40 bg-accent/5 px-3 py-2"
         >
           <span className="font-mono text-sm font-semibold tabular-nums text-accent">
             {selectedIds.size} selected
           </span>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-1.5" data-testid="trades-bulk-tag">
+                <Tag className="size-3.5" aria-hidden="true" />
+                Tag
+                <ChevronDown className="size-3 opacity-60" aria-hidden="true" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="min-w-44">
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>Add tag</DropdownMenuSubTrigger>
+                <DropdownMenuSubContent className="max-h-64 overflow-y-auto">
+                  {tags.map((tag) => (
+                    <DropdownMenuItem
+                      key={tag.id}
+                      onClick={() => bulkTag(tag.id, "add")}
+                      data-testid={`trades-bulk-tag-${tag.name.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}`}
+                    >
+                      {tag.name}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>Remove tag</DropdownMenuSubTrigger>
+                <DropdownMenuSubContent className="max-h-64 overflow-y-auto">
+                  {tags.map((tag) => (
+                    <DropdownMenuItem key={tag.id} onClick={() => bulkTag(tag.id, "remove")}>
+                      {tag.name}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-1.5" data-testid="trades-bulk-grade">
+                <Award className="size-3.5" aria-hidden="true" />
+                Grade
+                <ChevronDown className="size-3 opacity-60" aria-hidden="true" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="min-w-48">
+              {GRADES.map((grade) => (
+                <DropdownMenuItem
+                  key={grade}
+                  className="gap-2.5"
+                  onClick={() => bulkGrade(grade)}
+                  data-testid={`trades-bulk-grade-${grade}`}
+                >
+                  <span
+                    className={cn(
+                      "inline-block min-w-6 rounded-sm border px-1 py-0.5 text-center font-heading text-xs font-bold",
+                      GRADE_COLORS[grade],
+                    )}
+                  >
+                    {grade}
+                  </span>
+                  Grade {grade}
+                </DropdownMenuItem>
+              ))}
+              <DropdownMenuSeparator />
+              <p className="px-2 py-1 text-[10px] leading-relaxed text-muted-foreground">
+                Applies to closed trades — open rows are skipped and reported.
+              </p>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button
             variant="destructive"
             size="sm"
             className="gap-1.5"
             onClick={bulkDelete}
-            disabled={deleteTrade.isPending}
+            disabled={bulk.isPending}
             data-testid="trades-bulk-delete"
           >
-            {deleteTrade.isPending ? (
+            {bulk.isPending ? (
               <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
             ) : (
               <Trash2 className="size-3.5" aria-hidden="true" />
@@ -378,57 +736,45 @@ function TradesModule() {
                   data-testid="trades-select-all"
                 />
               </th>
-              <th scope="col" className="px-3 py-2.5 font-medium">
-                <button
-                  type="button"
-                  onClick={() =>
-                    patch({ sort: "date", dirn: state.sortKey === "date" && state.sortDir === "desc" ? "asc" : "desc" })
-                  }
-                  className="group flex items-center gap-1 outline-none hover:text-foreground"
-                >
-                  Date <SortIcon column="date" state={state} />
-                </button>
-              </th>
-              <th scope="col" className="px-3 py-2.5 font-medium">Instrument</th>
-              <th scope="col" className="px-3 py-2.5 font-medium">Side</th>
-              <th scope="col" className="px-3 py-2.5 font-medium">Strategy</th>
-              <th scope="col" className="px-3 py-2.5 font-medium">Duration</th>
-              <th scope="col" className="px-3 py-2.5 text-right font-medium">
-                <button
-                  type="button"
-                  onClick={() =>
-                    patch({ sort: "r", dirn: state.sortKey === "r" && state.sortDir === "desc" ? "asc" : "desc" })
-                  }
-                  className="group ml-auto flex items-center gap-1 outline-none hover:text-foreground"
-                >
-                  R <SortIcon column="r" state={state} />
-                </button>
-              </th>
-              <th scope="col" className="px-3 py-2.5 text-right font-medium">
-                <button
-                  type="button"
-                  onClick={() =>
-                    patch({ sort: "pnl", dirn: state.sortKey === "pnl" && state.sortDir === "desc" ? "asc" : "desc" })
-                  }
-                  className="group ml-auto flex items-center gap-1 outline-none hover:text-foreground"
-                >
-                  P&amp;L <SortIcon column="pnl" state={state} />
-                </button>
-              </th>
-              <th scope="col" className="px-3 py-2.5 font-medium">Grade</th>
-              <th scope="col" className="px-3 py-2.5 font-medium">Tags</th>
-              <th scope="col" className="px-3 py-2.5 font-medium">Status</th>
-              <th scope="col" className="w-10 px-2 py-2.5"><span className="sr-only">Actions</span></th>
+              {visibleOrder.map((key) => {
+                const column = LEDGER_COLUMNS.find((candidate) => candidate.key === key)!;
+                const sortable = key === "date" || key === "r" || key === "pnl";
+                const alignClass = column.headerClass ?? "";
+                return (
+                  <th key={key} scope="col" className={cn("px-3 py-2.5 font-medium", alignClass)}>
+                    {sortable ? (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          patch({
+                            sort: key === "date" ? "" : key,
+                            dirn: state.sortKey === key && state.sortDir === "desc" ? "asc" : "desc",
+                          })
+                        }
+                        className={cn(
+                          "group flex items-center gap-1 outline-none hover:text-foreground",
+                          (key === "r" || key === "pnl") && "ml-auto",
+                        )}
+                      >
+                        {column.label} <SortIcon column={key as SortKey} state={state} />
+                      </button>
+                    ) : (
+                      column.label
+                    )}
+                  </th>
+                );
+              })}
+              <th scope="col" className="relative w-10 px-2 py-2.5"><span className="sr-only">Actions</span></th>
             </tr>
           </thead>
           <tbody>
             {isLoading ? (
               <tr>
-                <td colSpan={12} className="px-3 py-10 text-center text-muted-foreground">Loading…</td>
+                <td colSpan={visibleOrder.length + 2} className="px-3 py-10 text-center text-muted-foreground">Loading…</td>
               </tr>
             ) : pageRows.length === 0 ? (
               <tr>
-                <td colSpan={12} className="px-3 py-10 text-center text-muted-foreground" data-testid="trades-empty">
+                <td colSpan={visibleOrder.length + 2} className="px-3 py-10 text-center text-muted-foreground" data-testid="trades-empty">
                   {trades.length === 0 ? (
                     <>
                       No trades yet — press{" "}
@@ -455,6 +801,79 @@ function TradesModule() {
                 const tradeTags = (trade.tagIds ?? [])
                   .map(tagNameOf)
                   .filter((name): name is string => name !== null);
+                const cells: Record<TradeColumnKey, React.ReactNode> = {
+                  date: trade.tradingDate,
+                  instrument: symbolOf(trade.instrumentId),
+                  side: (
+                    <span
+                      className={cn(
+                        "inline-flex items-center gap-1 font-mono text-xs font-semibold",
+                        trade.direction === "SELL" ? "text-loss" : "text-profit",
+                      )}
+                    >
+                      {trade.direction === "SELL" ? (
+                        <ArrowDownRight className="size-3.5" aria-hidden="true" />
+                      ) : (
+                        <ArrowUpRight className="size-3.5" aria-hidden="true" />
+                      )}
+                      {trade.direction}
+                    </span>
+                  ),
+                  strategy: strategyNameOf(trade.strategyId) ?? (
+                    <span className="italic opacity-70">Out of playbook</span>
+                  ),
+                  duration,
+                  r: trade.rMultiple === null ? "—" : formatR(trade.rMultiple),
+                  pnl: (
+                    <span
+                      className={cn(
+                        trade.pnlNet === null ? "text-muted-foreground" : win ? "text-profit" : "text-loss",
+                      )}
+                    >
+                      {trade.pnlNet === null
+                        ? "—"
+                        : formatSignedMoney(trade.pnlNet, currency, { digits: 2 })}
+                    </span>
+                  ),
+                  grade:
+                    trade.decisionGrade !== null ? (
+                      <span
+                        className={cn(
+                          "inline-block min-w-6 rounded-sm border px-1 py-0.5 text-center font-heading text-xs font-bold",
+                          GRADE_COLORS[trade.decisionGrade] ?? "border-border text-muted-foreground",
+                        )}
+                      >
+                        {trade.decisionGrade}
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    ),
+                  tags: (
+                    <div className="flex max-w-32 flex-wrap gap-1">
+                      {tradeTags.slice(0, 2).map((name) => (
+                        <span
+                          key={name}
+                          className="rounded-full border border-border px-1.5 py-0.5 text-[10px] text-muted-foreground"
+                        >
+                          {name}
+                        </span>
+                      ))}
+                      {tradeTags.length > 2 ? (
+                        <span className="font-mono text-[10px] text-muted-foreground">
+                          +{tradeTags.length - 2}
+                        </span>
+                      ) : null}
+                    </div>
+                  ),
+                  status:
+                    trade.status === "OPEN" ? (
+                      <span className="stamp stamp-accent">Open</span>
+                    ) : (
+                      <span className="font-mono text-[11px] uppercase tracking-wide text-muted-foreground/70">
+                        Closed
+                      </span>
+                    ),
+                };
                 return (
                   <tr
                     key={trade.id}
@@ -470,88 +889,14 @@ function TradesModule() {
                         data-testid={`trades-row-checkbox-${trade.id}`}
                       />
                     </td>
-                    <td className="whitespace-nowrap px-3 py-2.5 font-mono text-xs tabular-nums text-muted-foreground">
-                      {trade.tradingDate}
-                    </td>
-                    <td className="whitespace-nowrap px-3 py-2.5 font-medium text-foreground">
-                      {symbolOf(trade.instrumentId)}
-                    </td>
-                    <td className="px-3 py-2.5">
-                      <span
-                        className={cn(
-                          "inline-flex items-center gap-1 font-mono text-xs font-semibold",
-                          trade.direction === "SELL" ? "text-loss" : "text-profit",
-                        )}
+                    {visibleOrder.map((key) => (
+                      <td
+                        key={key}
+                        className={LEDGER_COLUMNS.find((candidate) => candidate.key === key)!.cellClass}
                       >
-                        {trade.direction === "SELL" ? (
-                          <ArrowDownRight className="size-3.5" aria-hidden="true" />
-                        ) : (
-                          <ArrowUpRight className="size-3.5" aria-hidden="true" />
-                        )}
-                        {trade.direction}
-                      </span>
-                    </td>
-                    <td className="max-w-36 truncate px-3 py-2.5 text-muted-foreground">
-                      {strategyNameOf(trade.strategyId) ?? (
-                        <span className="italic opacity-70">Out of playbook</span>
-                      )}
-                    </td>
-                    <td className="whitespace-nowrap px-3 py-2.5 font-mono text-xs tabular-nums text-muted-foreground">
-                      {duration}
-                    </td>
-                    <td className="whitespace-nowrap px-3 py-2.5 text-right font-mono tabular-nums text-foreground">
-                      {trade.rMultiple === null ? "—" : formatR(trade.rMultiple)}
-                    </td>
-                    <td
-                      className={cn(
-                        "whitespace-nowrap px-3 py-2.5 text-right font-mono font-medium tabular-nums",
-                        trade.pnlNet === null ? "text-muted-foreground" : win ? "text-profit" : "text-loss",
-                      )}
-                    >
-                      {trade.pnlNet === null
-                        ? "—"
-                        : formatSignedMoney(trade.pnlNet, currency, { digits: 2 })}
-                    </td>
-                    <td className="px-3 py-2.5">
-                      {trade.decisionGrade !== null ? (
-                        <span
-                          className={cn(
-                            "inline-block min-w-6 rounded-sm border px-1 py-0.5 text-center font-heading text-xs font-bold",
-                            GRADE_COLORS[trade.decisionGrade] ?? "border-border text-muted-foreground",
-                          )}
-                        >
-                          {trade.decisionGrade}
-                        </span>
-                      ) : (
-                        <span className="text-muted-foreground">—</span>
-                      )}
-                    </td>
-                    <td className="px-3 py-2.5">
-                      <div className="flex max-w-32 flex-wrap gap-1">
-                        {tradeTags.slice(0, 2).map((name) => (
-                          <span
-                            key={name}
-                            className="rounded-full border border-border px-1.5 py-0.5 text-[10px] text-muted-foreground"
-                          >
-                            {name}
-                          </span>
-                        ))}
-                        {tradeTags.length > 2 ? (
-                          <span className="font-mono text-[10px] text-muted-foreground">
-                            +{tradeTags.length - 2}
-                          </span>
-                        ) : null}
-                      </div>
-                    </td>
-                    <td className="px-3 py-2.5">
-                      {trade.status === "OPEN" ? (
-                        <span className="stamp stamp-accent">Open</span>
-                      ) : (
-                        <span className="font-mono text-[11px] uppercase tracking-wide text-muted-foreground/70">
-                          Closed
-                        </span>
-                      )}
-                    </td>
+                        {cells[key]}
+                      </td>
+                    ))}
                     <td className="px-2 py-2.5" onClick={(event) => event.stopPropagation()}>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -652,6 +997,66 @@ function TradesModule() {
           </div>
         </div>
       </div>
+
+      {/* Save view dialog — snapshots current filters + columns + sort */}
+      <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
+        <DialogContent className="sm:max-w-md" data-testid="trades-view-dialog">
+          <DialogHeader>
+            <DialogTitle className="font-heading">Save current view</DialogTitle>
+            <DialogDescription>
+              Captures the active filters, the visible columns and the sort — reusable from any session.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="trade-view-name">View name</Label>
+              <Input
+                id="trade-view-name"
+                value={viewName}
+                onChange={(event) => setViewName(event.target.value)}
+                placeholder="e.g. Losses — EURUSD only"
+                autoFocus
+                data-testid="trades-view-name-input"
+              />
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              <span className="rounded-full border border-border px-2 py-0.5 text-[10px] text-muted-foreground">
+                {filterCount({
+                  id: "", name: "", createdAt: "", sortKey: state.sortKey, sortDir: state.sortDir,
+                  columns: [], filters: currentFilters,
+                })} filter(s)
+              </span>
+              <span className="rounded-full border border-border px-2 py-0.5 text-[10px] text-muted-foreground">
+                {visibleOrder.length} column(s)
+              </span>
+              <span className="rounded-full border border-border px-2 py-0.5 text-[10px] text-muted-foreground">
+                sort: {state.sortKey} {state.sortDir}
+              </span>
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="ghost" onClick={() => setViewDialogOpen(false)} data-testid="trades-view-save-cancel">
+              Cancel
+            </Button>
+            <Button
+              onClick={onSaveView}
+              disabled={viewName.trim() === "" || createView.isPending}
+              className="bg-accent text-accent-foreground hover:bg-accent-hover"
+              data-testid="trades-view-save-confirm"
+            >
+              {createView.isPending ? (
+                <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+              ) : (
+                <BookmarkPlus className="size-4" aria-hidden="true" />
+              )}
+              Save view
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* CSV import (column mapping) */}
+      <CsvImportDialog open={importOpen} onOpenChange={setImportOpen} />
 
       {/* Detail drawer + edit dialog (module overlays) */}
       <TradeDetailDrawer

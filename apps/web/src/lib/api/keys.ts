@@ -17,7 +17,11 @@ export const queryKeys = {
   trades: (params: { status?: string; graded?: string; accountId?: string }) =>
     ["trades", params] as const,
   tradesRoot: ["trades"] as const,
+  // Trade module upgrades
+  tradeViews: ["trade-views"] as const,
+  sessionSeries: (tradeId: string) => ["session-series", tradeId] as const,
   review: (tradeId: string) => ["review", tradeId] as const,
+  reviewRoot: ["review"] as const,
   alerts: ["alerts"] as const,
   ecoEvents: ["eco-events"] as const,
   statsOverview: ["stats-overview"] as const,

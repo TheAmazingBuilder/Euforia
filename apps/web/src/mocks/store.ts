@@ -11,6 +11,11 @@ import {
   type AcknowledgeViolationInput,
   type Alert,
   type AlertsResponse,
+  type BulkTradesInput,
+  type BulkTradesResponse,
+  type CreateSavedTradeViewInput,
+  type CreateSavedTradeViewResponse,
+  type DeleteSavedTradeViewResponse,
   type EcoEventsResponse,
   type AnalyticsBucket,
   type AnalyticsResponse,
@@ -25,6 +30,11 @@ import {
   type CreateTagInput,
   type CreateTradeInput,
   type CreateTradeResponse,
+  type ImportTradesInput,
+  type ImportTradesResponse,
+  type SavedTradeView,
+  type SavedTradeViewsResponse,
+  type TradeSessionSeriesResponse,
   type DailyStat,
   type DeleteScreenshotResponse,
   type DeleteTradeResponse,
@@ -249,6 +259,34 @@ export function createMockStore() {
   const closedTrades = (): Trade[] => data.trades.filter((t) => t.status === "CLOSED");
   const currentBalance = (): number =>
     Number(mainAccount.startingBalance) + closedTrades().reduce((sum, t) => sum + (Number(t.pnlNet) ?? 0), 0);
+
+  // ── Saved trade views (named filter + column presets, module) ──────────────
+  const savedTradeViews: SavedTradeView[] = [
+    {
+      id: crypto.randomUUID(),
+      name: "Open positions",
+      filters: {
+        q: "", status: "OPEN", direction: "all", instrumentId: "", strategyId: "",
+        outcome: "all", tagId: "", from: "", to: "",
+      },
+      columns: ["date", "instrument", "side", "strategy", "r", "pnl", "status"],
+      sortKey: "date",
+      sortDir: "desc",
+      createdAt: nowIso(),
+    },
+    {
+      id: crypto.randomUUID(),
+      name: "Losses — last 30d",
+      filters: {
+        q: "", status: "CLOSED", direction: "all", instrumentId: "", strategyId: "",
+        outcome: "loss", tagId: "", from: dateKeyOffset(-29), to: "",
+      },
+      columns: ["date", "instrument", "side", "strategy", "r", "pnl", "grade", "tags"],
+      sortKey: "pnl",
+      sortDir: "asc",
+      createdAt: nowIso(),
+    },
+  ];
 
   // ── Lists ────────────────────────────────────────────────────────────────
 
@@ -3210,6 +3248,268 @@ export function createMockStore() {
     return { id: tradeId, deleted: true };
   }
 
+  // ── Saved views (module: named filter + column presets) ────────────────────
+
+  function listTradeViews(): SavedTradeViewsResponse {
+    return {
+      views: savedTradeViews.map((view) => ({
+        ...view,
+        filters: { ...view.filters },
+        columns: [...view.columns],
+      })),
+    };
+  }
+
+  function createTradeView(input: CreateSavedTradeViewInput): CreateSavedTradeViewResponse {
+    const name = input.name.trim();
+    if (name === "") throw new MockError(422, "View name is required");
+    if (savedTradeViews.some((view) => view.name.toLowerCase() === name.toLowerCase())) {
+      throw new MockError(409, "A view with this name already exists");
+    }
+    const view: SavedTradeView = {
+      id: crypto.randomUUID(),
+      name,
+      filters: { ...input.filters },
+      columns: [...input.columns],
+      sortKey: input.sortKey,
+      sortDir: input.sortDir,
+      createdAt: nowIso(),
+    };
+    savedTradeViews.push(view);
+    return { view };
+  }
+
+  function deleteTradeView(viewId: string): DeleteSavedTradeViewResponse {
+    const index = savedTradeViews.findIndex((view) => view.id === viewId);
+    if (index === -1) throw new MockError(404, "View not found");
+    savedTradeViews.splice(index, 1);
+    return { id: viewId, deleted: true };
+  }
+
+  // ── Bulk operations (multi-select actions, one round-trip) ─────────────────
+
+  function bulkTrades(input: BulkTradesInput): BulkTradesResponse {
+    const ids = [...new Set(input.tradeIds)];
+    const targets = ids
+      .map((id) => data.trades.find((t) => t.id === id && t.deletedAt === null))
+      .filter((t): t is Trade => t !== undefined);
+    const skipped = ids.length - targets.length;
+
+    if (input.op === "DELETE") {
+      for (const trade of targets) {
+        trade.deletedAt = nowIso();
+        trade.updatedAt = trade.deletedAt;
+      }
+      for (const date of new Set(targets.map((t) => t.tradingDate))) refreshDailyStat(date);
+      return { op: input.op, affected: targets.length, skipped };
+    }
+
+    if (input.op === "GRADE") {
+      let affected = 0;
+      for (const trade of targets) {
+        // The decision gate applies to CLOSED trades only — OPEN rows are
+        // reported as skipped, never silently mixed in.
+        if (trade.status !== "CLOSED") continue;
+        trade.decisionGrade = input.grade;
+        trade.updatedAt = nowIso();
+        affected += 1;
+      }
+      for (const date of new Set(targets.map((t) => t.tradingDate))) refreshDailyStat(date);
+      return { op: input.op, affected, skipped: skipped + (targets.length - affected) };
+    }
+
+    // TAG — add/remove against the trade↔tag join.
+    let tagged = 0;
+    for (const trade of targets) {
+      const bucket = tradeTags.get(trade.id) ?? new Set<string>();
+      if (input.mode === "add") {
+        if (bucket.has(input.tagId)) continue;
+        bucket.add(input.tagId);
+      } else {
+        if (!bucket.has(input.tagId)) continue;
+        bucket.delete(input.tagId);
+      }
+      tradeTags.set(trade.id, bucket);
+      trade.updatedAt = nowIso();
+      tagged += 1;
+    }
+    return { op: input.op, affected: tagged, skipped };
+  }
+
+  // ── CSV import (rows already normalized client-side) ───────────────────────
+
+  function importTrades(input: ImportTradesInput): ImportTradesResponse {
+    const batchId = crypto.randomUUID();
+    const unknownSymbols = new Set<string>();
+    const tradeIds: string[] = [];
+    let skippedDuplicates = 0;
+    const touchedDates = new Set<string>();
+
+    for (const row of input.rows) {
+      const instrument = data.instruments.find(
+        (candidate) => candidate.symbol.toUpperCase() === row.symbol.toUpperCase(),
+      );
+      if (instrument === undefined) {
+        unknownSymbols.add(row.symbol);
+        continue;
+      }
+      // Broker ref → idempotent re-imports (same file twice = zero duplicates).
+      const externalRef = `${input.broker}:${row.symbol.toUpperCase()}:${row.side}:${row.entryAt}:${row.entryPrice}`;
+      if (data.trades.some((t) => t.externalRef === externalRef && t.deletedAt === null)) {
+        skippedDuplicates += 1;
+        continue;
+      }
+
+      const isClosed = row.exitAt !== undefined && row.exitPrice !== undefined;
+      const strategy = input.strategyId !== undefined && input.strategyId !== null
+        ? data.strategies.find((s) => s.id === input.strategyId)
+        : undefined;
+      if (input.strategyId !== undefined && input.strategyId !== null && strategy === undefined) {
+        throw new MockError(422, "Unknown strategy for this import");
+      }
+      const trade: Trade = {
+        id: crypto.randomUUID(),
+        userId: user.id,
+        accountId: mainAccount.id,
+        instrumentId: instrument.id,
+        strategyId: strategy?.id ?? null,
+        setupId: null,
+        strategyVersion: strategy !== undefined ? (strategy.version ?? 1) : null,
+        status: isClosed ? "CLOSED" : "OPEN",
+        direction: row.side,
+        entryPrice: row.entryPrice,
+        entryAt: row.entryAt,
+        quantity: row.quantity ?? "1",
+        initialStop: null,
+        initialTP: null,
+        plannedRR: null,
+        riskAmount: null,
+        finalStop: null,
+        exitPrice: isClosed ? row.exitPrice! : null,
+        exitAt: isClosed ? row.exitAt! : null,
+        exitReason: isClosed ? "MANUAL" : null,
+        fees: row.fees ?? "0",
+        swap: "0",
+        pnlGross: null,
+        pnlNet: null,
+        rMultiple: null,
+        mfePrice: null,
+        maePrice: null,
+        mfeR: null,
+        maeR: null,
+        emotionBefore: null,
+        emotionAfter: null,
+        confidence: null,
+        decisionGrade: null,
+        followedPlan: null,
+        checklistSnap: null,
+        notes: row.notes ?? `Imported from ${input.broker}`,
+        lessons: null,
+        tradingDate: toTradingDateKey(row.entryAt, USER_TZ),
+        externalRef,
+        importBatchId: batchId,
+        createdAt: nowIso(),
+        updatedAt: nowIso(),
+        deletedAt: null,
+      };
+      if (isClosed) applyResults(trade);
+      data.trades.push(trade);
+      evaluateDiscipline(trade);
+      touchedDates.add(trade.tradingDate);
+      tradeIds.push(trade.id);
+    }
+
+    for (const date of touchedDates) refreshDailyStat(date);
+    return {
+      imported: tradeIds.length,
+      skippedDuplicates,
+      unknownSymbols: [...unknownSymbols],
+      tradeIds,
+    };
+  }
+
+  // ── Per-trade session price series (projection chart) ──────────────────────
+
+  /**
+   * Price path around the trade window (pre-entry → post-exit), anchored on
+   * the RECORDED journal values: entry at the entry bucket, exit at the exit
+   * bucket, MFE/MAE touched inside the trade. The walk itself is a
+   * deterministic per-trade random path (seeded by trade id) — in production
+   * this endpoint serves real broker price history; the overlays are always
+   * the trade's actual recorded levels.
+   */
+  function getTradeSessionSeries(tradeId: string): TradeSessionSeriesResponse {
+    const trade = data.trades.find((t) => t.id === tradeId && t.deletedAt === null);
+    if (!trade) throw new MockError(404, "Trade not found");
+    const instrument = instrumentById.get(trade.instrumentId);
+    const digits = instrument?.digits ?? 2;
+    const pip = Number(instrument?.pipSize ?? "0.0001") || 0.0001;
+
+    const entryMs = Date.parse(trade.entryAt);
+    const exitMs = trade.exitAt !== null ? Date.parse(trade.exitAt) : entryMs + 45 * 60_000;
+    const stepMs = 5 * 60_000;
+    const fromMs = entryMs - 60 * 60_000;
+    const toMs = exitMs + 30 * 60_000;
+    const count = Math.max(8, Math.round((toMs - fromMs) / stepMs) + 1);
+    const clampIndex = (index: number) => Math.min(count - 1, Math.max(0, index));
+
+    const entryPrice = Number(trade.entryPrice);
+    const exitPrice = trade.exitAt !== null ? Number(trade.exitPrice ?? trade.entryPrice) : null;
+    const entryIndex = clampIndex(Math.round((entryMs - fromMs) / stepMs));
+    const exitIndex = trade.exitAt !== null ? clampIndex(Math.round((exitMs - fromMs) / stepMs)) : null;
+
+    const seed = [...trade.id].reduce((acc, ch) => (acc * 31 + ch.charCodeAt(0)) >>> 0, 7);
+    const rand = mulberry32(seed);
+    const amplitude = pip * 30;
+    const walk: number[] = [];
+    let current = entryPrice - amplitude;
+    for (let i = 0; i < count; i += 1) {
+      current += (rand() - 0.5) * amplitude;
+      walk.push(current);
+    }
+
+    const anchors: Array<[number, number]> = [[entryIndex, entryPrice]];
+    if (exitIndex !== null && exitPrice !== null) anchors.push([exitIndex, exitPrice]);
+    const mfe = trade.mfePrice !== null ? Number(trade.mfePrice) : null;
+    const mae = trade.maePrice !== null ? Number(trade.maePrice) : null;
+    const midIndex = exitIndex !== null ? Math.round((entryIndex + exitIndex) / 2) : entryIndex + 4;
+    if (mfe !== null && mfe !== entryPrice) anchors.push([clampIndex(midIndex + 2), mfe]);
+    if (mae !== null && mae !== entryPrice) anchors.push([clampIndex(midIndex - 2), mae]);
+    for (let i = 0; i < count; i += 1) {
+      let bestWeight = 0;
+      let weightSum = 0;
+      let valueSum = 0;
+      for (const [index, value] of anchors) {
+        const distance = i - index;
+        const weight = 1 / (1 + distance * distance * 0.2);
+        weightSum += weight;
+        valueSum += weight * value;
+        if (weight > bestWeight) bestWeight = weight;
+      }
+      const pull = Math.min(1, bestWeight * 1.6);
+      walk[i] = walk[i] * (1 - pull) + (valueSum / weightSum) * pull;
+    }
+
+    const points = walk.map((price, index) => ({
+      t: new Date(fromMs + index * stepMs).toISOString(),
+      price: toDecimalString(Number(price.toFixed(digits))),
+    }));
+    return {
+      symbol: instrument?.symbol ?? "—",
+      digits,
+      direction: trade.direction,
+      from: points[0]!.t,
+      to: points[points.length - 1]!.t,
+      points,
+      entryIndex,
+      exitIndex,
+      entryPrice: trade.entryPrice,
+      exitPrice: trade.exitPrice,
+      initialStop: trade.initialStop,
+      initialTP: trade.initialTP,
+    };
+  }
+
   // ── Screenshots (module gallery) ───────────────────────────────────────────
 
   function listScreenshots(tradeId: string): TradeScreenshotsResponse {
@@ -4021,6 +4321,13 @@ export function createMockStore() {
     updateNotes,
     updateTrade,
     deleteTrade,
+    // Trade module upgrades
+    listTradeViews,
+    createTradeView,
+    deleteTradeView,
+    bulkTrades,
+    importTrades,
+    getTradeSessionSeries,
     listScreenshots,
     addScreenshot,
     deleteScreenshot,

@@ -30,6 +30,12 @@ export const apiPaths = {
   tradeScreenshots: (tradeId: string) => `/trades/${tradeId}/screenshots`,
   tradeScreenshot: (tradeId: string, screenshotId: string) =>
     `/trades/${tradeId}/screenshots/${screenshotId}`,
+  // Trade module upgrades
+  tradeViews: "/trade-views",
+  tradeView: (viewId: string) => `/trade-views/${viewId}`,
+  tradesBulk: "/trades/bulk",
+  tradesImport: "/trades/import",
+  tradeSessionSeries: (tradeId: string) => `/trades/${tradeId}/session-series`,
   sessionTimeline: "/session/timeline",
   sessionNotes: "/session/notes",
   sessionNote: (noteId: string) => `/session/notes/${noteId}`,

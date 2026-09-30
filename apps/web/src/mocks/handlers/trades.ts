@@ -1,8 +1,11 @@
 import { http, HttpResponse } from "msw";
 import {
   addScreenshotInputSchema,
+  bulkTradesInputSchema,
   closeTradeInputSchema,
+  createSavedTradeViewInputSchema,
   createTradeInputSchema,
+  importTradesInputSchema,
   notesUpdateInputSchema,
   planUpdateInputSchema,
   psychologyUpdateInputSchema,
@@ -159,6 +162,71 @@ export const tradeHandlers = [
     await latency();
     try {
       return HttpResponse.json(mockStore.deleteTrade(pathParam(params, "tradeId")));
+    } catch (error) {
+      return toErrorResponse(error);
+    }
+  }),
+
+  // ── Trade module upgrades: views / bulk / import / session series ─────────
+
+  // GET /trade-views — saved (filters + columns) presets
+  http.get(endpoint(apiPaths.tradeViews), async () => {
+    await latency();
+    try {
+      return HttpResponse.json(mockStore.listTradeViews());
+    } catch (error) {
+      return toErrorResponse(error);
+    }
+  }),
+
+  // POST /trade-views — snapshot the current table state
+  http.post(endpoint(apiPaths.tradeViews), async ({ request }) => {
+    await latency();
+    try {
+      const input = parseBody(createSavedTradeViewInputSchema, await readJson(request));
+      return HttpResponse.json(mockStore.createTradeView(input), { status: 201 });
+    } catch (error) {
+      return toErrorResponse(error);
+    }
+  }),
+
+  // DELETE /trade-views/:id
+  http.delete(endpoint(apiPaths.tradeView(":viewId")), async ({ params }) => {
+    await latency();
+    try {
+      return HttpResponse.json(mockStore.deleteTradeView(pathParam(params, "viewId")));
+    } catch (error) {
+      return toErrorResponse(error);
+    }
+  }),
+
+  // POST /trades/bulk — tag / grade / delete multiple trades in one call
+  http.post(endpoint(apiPaths.tradesBulk), async ({ request }) => {
+    await latency();
+    try {
+      const input = parseBody(bulkTradesInputSchema, await readJson(request));
+      return HttpResponse.json(mockStore.bulkTrades(input));
+    } catch (error) {
+      return toErrorResponse(error);
+    }
+  }),
+
+  // POST /trades/import — normalized rows from the CSV mapping dialog
+  http.post(endpoint(apiPaths.tradesImport), async ({ request }) => {
+    await latency();
+    try {
+      const input = parseBody(importTradesInputSchema, await readJson(request));
+      return HttpResponse.json(mockStore.importTrades(input), { status: 201 });
+    } catch (error) {
+      return toErrorResponse(error);
+    }
+  }),
+
+  // GET /trades/:id/session-series — price path + recorded levels for the projection chart
+  http.get(endpoint(apiPaths.tradeSessionSeries(":tradeId")), async ({ params }) => {
+    await latency();
+    try {
+      return HttpResponse.json(mockStore.getTradeSessionSeries(pathParam(params, "tradeId")));
     } catch (error) {
       return toErrorResponse(error);
     }
