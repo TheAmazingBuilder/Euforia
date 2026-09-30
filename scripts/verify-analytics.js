@@ -58,10 +58,9 @@ const ok = (label, cond) => {
   const brandHasSvg = await page.locator("aside a[data-slot?] svg, aside a svg").first().isVisible().catch(() => false);
   const logoSvg = await page.locator("aside a[aria-label='Cosmoz — Dashboard'] svg").first();
   ok("Sidebar brand renders an SVG mark", brandHasSvg || (await logoSvg.isVisible().catch(() => false)));
-  // Logo: the user-approved CONSTELLATION artwork (star pentagon + spokes),
-  // restored at the user's request after the triangle iteration.
-  const constellationShape = await logoSvg.locator("path[d^='M50 14']").count().catch(() => 0);
-  ok("Brand mark is the constellation artwork (star pentagon path)", constellationShape >= 1);
+  // Logo: the ORBITAL COMET artwork (orbit arc ending in a comet head).
+  const cometShape = await logoSvg.locator("path[d^='M 74.43 43.11']").count().catch(() => 0);
+  ok("Brand mark is the orbital-comet artwork (orbit arc path)", cometShape >= 1);
 
   const nav = page.locator("aside nav[aria-label='Main navigation']");
   const logout = nav.locator("[data-testid='sidebar-logout']");
