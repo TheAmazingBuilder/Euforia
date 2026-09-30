@@ -34,6 +34,10 @@ const BASE = "http://localhost:3000";
     last = idx;
   }
   ok("SYSTEM = Monitoring → Settings → Integrations → Security (ordre)", ordered);
+  ok(
+    "Coach tab removed (aucun lien /coach)",
+    (await page.locator('a[href="/coach"]').count()) === 0,
+  );
 
   // 3. Monitoring page
   await page.goto(BASE + "/monitoring", { waitUntil: "networkidle" });

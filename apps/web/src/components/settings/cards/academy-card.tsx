@@ -129,6 +129,13 @@ export function AcademyCard() {
           testid="settings-academy-progress"
         />
         <ToggleRow
+          label="Learning notifications"
+          hint="Tell me in-app when new lessons or drills land."
+          checked={draft.newContentNotifications}
+          onChange={(checked) => patch({ newContentNotifications: checked })}
+          testid="settings-academy-new-content"
+        />
+        <ToggleRow
           label="Autoplay lessons"
           hint="Start the next lesson video automatically."
           checked={draft.autoplayLessons}

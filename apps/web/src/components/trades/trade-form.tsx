@@ -48,6 +48,7 @@ import {
   useCreateTrade,
   useCurrentBalance,
   useInstruments,
+  usePreferences,
   useRulesStatus,
   useStrategies,
   useTags,
@@ -154,6 +155,7 @@ export function TradeForm({ seed }: TradeFormProps) {
   const rulesStatus = useRulesStatus(null);
   const balanceInfo = useCurrentBalance();
   const createTrade = useCreateTrade();
+  const { data: prefsData } = usePreferences();
 
   const instruments: Instrument[] = instrumentsData?.instruments ?? [];
   const strategies: Strategy[] = strategiesData?.strategies ?? [];
@@ -192,11 +194,35 @@ export function TradeForm({ seed }: TradeFormProps) {
     setValues((previous) => ({ ...previous, ...changes }));
   }, []);
 
-  // ── Direction preselect from the last trade (until touched) — derived ──
+  // ── Direction preselect (until touched) — derived ──────────────────────
+  // Preference default (Settings → Trading) leads, then the last trade, then
+  // BUY. A stated default is an explicit user act — it outranks continuity.
   const lastTrade = tradesData?.trades[0] ?? null;
+  const defaultDirection = prefsData?.trading.defaultDirection ?? null;
   const direction: Direction = directionTouched
     ? values.direction
-    : (lastTrade?.direction ?? values.direction);
+    : (defaultDirection ?? lastTrade?.direction ?? values.direction);
+
+  // ── Instrument preselect (§16 Settings → Trades) — fresh opens only ────
+  // One-shot render-time adjustment (no setState-in-effect): seeds the saved
+  // default symbol, else the first instrument of the default market. Never
+  // overrides a seed, a restored draft, or a user choice.
+  const [instrumentSeeded, setInstrumentSeeded] = React.useState(hydration.seeded);
+  const defaultInstrumentId = prefsData?.trading.defaultInstrumentId ?? null;
+  const defaultAssetClass = prefsData?.trading.defaultAssetClass ?? null;
+  if (!instrumentSeeded && prefsData !== undefined) {
+    const wanted =
+      instruments.find((item) => item.id === defaultInstrumentId) ??
+      (defaultAssetClass
+        ? instruments.find((item) => item.assetClass === defaultAssetClass)
+        : undefined);
+    if (wanted) {
+      setInstrumentSeeded(true);
+      setValues((previous) =>
+        previous.instrumentId === null ? { ...previous, instrumentId: wanted.id } : previous,
+      );
+    }
+  }
 
   const patchDirection = React.useCallback(
     (next: Direction) => {

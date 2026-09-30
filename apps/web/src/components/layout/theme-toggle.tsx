@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useTheme } from "next-themes";
-import { Check, Droplet, Moon, Sun } from "lucide-react";
+import { Check, Droplet, Monitor, Moon, Sun } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -35,6 +35,12 @@ const THEME_OPTIONS = [
     dotClass: "theme-dot-light",
     Icon: Sun,
   },
+  {
+    value: "system",
+    label: "System",
+    dotClass: "theme-dot-system",
+    Icon: Monitor,
+  },
 ] as const;
 
 const emptySubscribe = () => () => {};
@@ -44,7 +50,7 @@ const emptySubscribe = () => () => {};
  * remembered). The dropdown chevron still exposes all three Cosmoz themes.
  */
 export function ThemeToggle() {
-  const { theme, setTheme } = useTheme();
+  const { theme, resolvedTheme, setTheme } = useTheme();
   // Hydration guard without setState-in-effect (react-hooks/set-state-in-effect):
   // false during SSR + hydration render, true once hydrated on the client.
   const mounted = React.useSyncExternalStore(
@@ -58,7 +64,10 @@ export function ThemeToggle() {
       THEME_OPTIONS[0])
     : undefined;
   const ActiveIcon = active?.Icon ?? Moon;
-  const isLight = mounted && theme === "light";
+  // "system" counts as light when the OS resolves to light — the one-click
+  // toggle always flips the VISIBLE appearance.
+  const isLight =
+    mounted && (theme === "light" || (theme === "system" && resolvedTheme === "light"));
   const toggleTheme = () => {
     setTheme(isLight ? DARK_THEMES[0] : "light");
   };

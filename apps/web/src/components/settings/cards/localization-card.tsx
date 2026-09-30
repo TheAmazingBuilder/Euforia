@@ -77,7 +77,7 @@ function previewFor(localization: UserPreferences["localization"]): {
 
   const numberLocale =
     localization.decimalSeparator === "DOT" ? "en-US" : localization.decimalSeparator === "COMMA" ? "fr-FR" : locale;
-  const number = new Intl.NumberFormat(numberLocale, { minimumFractionDigits: 2 }).format(1234.5);
+  const number = formatNumberSample(localization.numberFormat, numberLocale, localization.decimalSeparator);
   const money = new Intl.NumberFormat(numberLocale, {
     style: "currency",
     currency: "USD",
@@ -85,6 +85,46 @@ function previewFor(localization: UserPreferences["localization"]): {
   }).format(1234.5);
 
   return { date: `${date} · ${time}`, number, money };
+}
+
+/**
+ * Renders 1234.5 through the digit-grouping preference (§12). Built from
+ * Intl parts so the decimal separator preference keeps applying: the
+ * grouping symbol is swapped AFTER the locale formats the sample.
+ * Conflict rule: when the decimal separator is a comma, "1,234.50" grouping
+ * would be ambiguous — the sample falls back to space grouping instead.
+ */
+function formatNumberSample(
+  numberFormat: UserPreferences["localization"]["numberFormat"],
+  numberLocale: string,
+  decimalSeparator: UserPreferences["localization"]["decimalSeparator"],
+): string {
+  const base = new Intl.NumberFormat(numberLocale, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+  const decimalIsComma =
+    decimalSeparator === "COMMA" ||
+    (decimalSeparator === "LOCALE" && !base.formatToParts(1234.5).some((p) => p.type === "decimal" && p.value === "."));
+
+  if (numberFormat === "COMMA" && !decimalIsComma) {
+    // Force the "1,234.50" look regardless of the locale default.
+    return new Intl.NumberFormat("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(1234.5);
+  }
+
+  return base
+    .formatToParts(1234.5)
+    .map((part) => {
+      if (part.type !== "group") return part.value;
+      if (numberFormat === "NONE") return "";
+      // SPACE — and the COMMA-on-comma-decimal conflict fallback.
+      if (numberFormat === "SPACE" || (numberFormat === "COMMA" && decimalIsComma)) return "\u202F";
+      return part.value; // LOCALE (and COMMA when the locale already groups with commas)
+    })
+    .join("");
 }
 
 export function LocalizationCard() {
@@ -211,7 +251,7 @@ export function LocalizationCard() {
         </SettingsRow>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2">
         <SettingsRow label="Decimal separator" htmlFor="settings-localization-decimal">
           <SettingsSelect
             value={draft.decimalSeparator}
@@ -224,6 +264,21 @@ export function LocalizationCard() {
               { value: "DOT", label: "Dot — 1,234.50" },
             ]}
             testid="settings-localization-decimal"
+          />
+        </SettingsRow>
+        <SettingsRow label="Number format" htmlFor="settings-localization-number">
+          <SettingsSelect
+            value={draft.numberFormat}
+            onChange={(value) =>
+              patch({ numberFormat: value as UserPreferences["localization"]["numberFormat"] })
+            }
+            options={[
+              { value: "LOCALE", label: "Language default" },
+              { value: "COMMA", label: "1,234.50" },
+              { value: "SPACE", label: "1\u202F234.50" },
+              { value: "NONE", label: "1234.50" },
+            ]}
+            testid="settings-localization-number"
           />
         </SettingsRow>
         <SettingsRow label="Currency display" htmlFor="settings-localization-currency">

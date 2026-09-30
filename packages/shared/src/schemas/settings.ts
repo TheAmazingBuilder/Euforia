@@ -240,11 +240,12 @@ export type NotificationPreferencesInput = z.infer<typeof notificationPreference
 
 /**
  * Theme is stored SCREAMING_SNAKE (API convention) and mapped to the
- * next-themes keys ("dark-blue" | "dark" | "light") in the client. The
- * runtime source of truth stays next-themes; this mirror enables multi-device
- * sync when the real API ships.
+ * next-themes keys ("dark-blue" | "dark" | "light" | "system") in the
+ * client. SYSTEM follows the OS preference (next-themes resolvedTheme).
+ * The runtime source of truth stays next-themes; this mirror enables
+ * multi-device sync when the real API ships.
  */
-export const appearanceThemeSchema = z.enum(["DARK_BLUE", "DARK", "LIGHT"]);
+export const appearanceThemeSchema = z.enum(["DARK_BLUE", "DARK", "LIGHT", "SYSTEM"]);
 export type AppearanceTheme = z.infer<typeof appearanceThemeSchema>;
 
 export const densitySchema = z.enum(["COMFORTABLE", "COMPACT"]);
@@ -278,6 +279,8 @@ export const academyPreferencesSchema = z.object({
   difficulty: academyDifficultySchema,
   showProgressOnDashboard: z.boolean(),
   autoplayLessons: z.boolean(),
+  /** Learning notifications — in-app alerts when new lessons/drills land. */
+  newContentNotifications: z.boolean(),
   weeklyReminder: reminderFrequencySchema,
   /** Weekly learning goal in minutes (0–600). */
   weeklyGoalMinutes: z.number().int().min(0).max(600),
@@ -320,6 +323,13 @@ export type TimeFormat = z.infer<typeof timeFormatSchema>;
 export const decimalSeparatorSchema = z.enum(["LOCALE", "COMMA", "DOT"]);
 export type DecimalSeparator = z.infer<typeof decimalSeparatorSchema>;
 
+/**
+ * Digit-grouping style for numbers (§12): LOCALE follows the language,
+ * SPACE renders 1 234.50, COMMA renders 1,234.50, NONE renders 1234.50.
+ */
+export const numberFormatSchema = z.enum(["LOCALE", "SPACE", "COMMA", "NONE"]);
+export type NumberFormat = z.infer<typeof numberFormatSchema>;
+
 export const currencyDisplaySchema = z.enum(["CODE", "SYMBOL"]);
 export type CurrencyDisplay = z.infer<typeof currencyDisplaySchema>;
 
@@ -337,6 +347,7 @@ export const localizationPreferencesSchema = z.object({
   dateFormat: dateFormatSchema,
   timeFormat: timeFormatSchema,
   decimalSeparator: decimalSeparatorSchema,
+  numberFormat: numberFormatSchema,
   currencyDisplay: currencyDisplaySchema,
   weekStart: weekStartSchema,
 });
@@ -516,6 +527,7 @@ export const DEFAULT_USER_PREFERENCES: UserPreferencesDefaults = {
     difficulty: "INTERMEDIATE",
     showProgressOnDashboard: true,
     autoplayLessons: false,
+    newContentNotifications: true,
     weeklyReminder: "WEEKLY",
     weeklyGoalMinutes: 60,
   },
@@ -533,6 +545,7 @@ export const DEFAULT_USER_PREFERENCES: UserPreferencesDefaults = {
     dateFormat: "ISO",
     timeFormat: "H24",
     decimalSeparator: "LOCALE",
+    numberFormat: "LOCALE",
     currencyDisplay: "CODE",
     weekStart: "MONDAY",
   },

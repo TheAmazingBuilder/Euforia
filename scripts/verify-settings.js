@@ -2,8 +2,8 @@
  * Verify — Settings module (MASTER PROMPT).
  * Probes: category rail + deep links, search, per-card save, reset with
  * confirm, risk validation (max ≥ default), Rules Engine apply, notification
- * matrix toggles, appearance theme/density, localization preview + timezone
- * via /me, account danger zone with typed DELETE confirmation, mobile 390px.
+ * matrix toggles, appearance theme/density (incl. System §9), localization preview
+ * + number format §12, academy learning notifications §10, timezone via /me,
  */
 const { chromium } = require("playwright");
 
@@ -132,6 +132,20 @@ const BASE = "http://localhost:3000";
   await page.locator('[data-testid="settings-appearance-theme-DARK_BLUE"]').click();
   await page.waitForTimeout(400);
 
+  // §9 — System theme: follows the OS (resolves to a concrete data-theme).
+  const themeOptions = await page.locator('[data-testid^="settings-appearance-theme-"]').count();
+  check("Theme control offers Light/Dark/Dark blue/System", themeOptions === 4, `options=${themeOptions}`);
+  await page.locator('[data-testid="settings-appearance-theme-SYSTEM"]').click();
+  await page.waitForTimeout(400);
+  const systemTheme = await page.locator("html").getAttribute("data-theme");
+  check(
+    "System theme resolves to OS preference",
+    systemTheme === "light" || systemTheme === "dark" || systemTheme === "dark-blue",
+    `data-theme=${systemTheme}`,
+  );
+  await page.locator('[data-testid="settings-appearance-theme-DARK_BLUE"]').click();
+  await page.waitForTimeout(400);
+
   // ── 8. Localization: timezone writes through /me ─────────────────────────
   await page.locator('[data-testid="settings-nav-localization"]').click();
   await page.waitForTimeout(600);
@@ -150,6 +164,42 @@ const BASE = "http://localhost:3000";
   await page.waitForTimeout(400);
   await page.locator('[data-testid="settings-localization-timezone"]').selectOption("America/Toronto");
   await page.waitForTimeout(700);
+
+  // §12 — Number format: grouping styles render through the live preview.
+  const preview = page.locator("[data-testid=\"settings-localization-preview\"]");
+  await page.locator('[data-testid="settings-localization-number"]').selectOption("NONE");
+  await page.waitForTimeout(300);
+  const nonePreview = await preview.textContent();
+  check("Number format NONE strips grouping", nonePreview.includes("1234.50"), nonePreview.slice(0, 60));
+  await page.locator('[data-testid="settings-localization-number"]').selectOption("COMMA");
+  await page.waitForTimeout(300);
+  const commaPreview = await preview.textContent();
+  check("Number format COMMA groups 1,234.50", commaPreview.includes("1,234.50"), commaPreview.slice(0, 60));
+  await page.locator('[data-testid="settings-localization-number"]').selectOption("LOCALE");
+  await page.waitForTimeout(300);
+
+  // §10 — Academy: learning notifications toggle persists.
+  await page.locator('[data-testid="settings-nav-academy"]').click();
+  await page.waitForTimeout(600);
+  const newContent = page.locator("[data-testid=\"settings-academy-new-content-switch\"]");
+  const contentBefore = await newContent.getAttribute("data-state");
+  await newContent.click();
+  await page.waitForTimeout(300);
+  check(
+    "Learning notifications toggle flips",
+    (await newContent.getAttribute("data-state")) !== contentBefore,
+    `${contentBefore}→${await newContent.getAttribute("data-state")}`,
+  );
+  await page.locator('[data-testid="settings-academy-save"]').click();
+  await page.waitForTimeout(900);
+  await page.locator("[data-testid=\"settings-academy-reset\"]").click();
+  await page.waitForTimeout(400);
+  await page.locator("[data-testid=\"settings-academy-reset-confirm\"]").click();
+  await page.waitForTimeout(900);
+  check(
+    "Academy reset restores defaults",
+    (await page.locator("[data-testid=\"settings-academy-new-content-switch\"]").getAttribute("data-state")) === contentBefore,
+  );
 
   // ── 9. Account: typed DELETE confirmation ────────────────────────────────
   await page.locator('[data-testid="settings-nav-account"]').click();

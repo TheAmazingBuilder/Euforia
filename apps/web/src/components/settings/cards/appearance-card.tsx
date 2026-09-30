@@ -31,11 +31,17 @@ import { apiErrorMessage } from "@/lib/api/client";
  */
 
 /** API SCREAMING_SNAKE ↔ next-themes kebab keys. */
-const THEME_TO_NEXT = { DARK_BLUE: "dark-blue", DARK: "dark", LIGHT: "light" } as const;
+const THEME_TO_NEXT = {
+  DARK_BLUE: "dark-blue",
+  DARK: "dark",
+  LIGHT: "light",
+  SYSTEM: "system",
+} as const;
 const NEXT_TO_THEME: Record<string, UserPreferences["appearance"]["theme"]> = {
   "dark-blue": "DARK_BLUE",
   dark: "DARK",
   light: "LIGHT",
+  system: "SYSTEM",
 };
 
 export function AppearanceCard() {
@@ -98,6 +104,7 @@ export function AppearanceCard() {
             { value: "DARK_BLUE", label: "Dark blue", hint: "Default night ocean" },
             { value: "DARK", label: "Dark", hint: "Pure black" },
             { value: "LIGHT", label: "Light", hint: "Daylight paper" },
+            { value: "SYSTEM", label: "System", hint: "Follows your OS" },
           ]}
           testid="settings-appearance-theme"
           ariaLabel="Theme"
