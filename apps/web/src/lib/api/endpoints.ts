@@ -31,6 +31,8 @@ export const apiPaths = {
   tradeScreenshot: (tradeId: string, screenshotId: string) =>
     `/trades/${tradeId}/screenshots/${screenshotId}`,
   sessionTimeline: "/session/timeline",
+  sessionNotes: "/session/notes",
+  sessionNote: (noteId: string) => `/session/notes/${noteId}`,
   skippedTrades: "/skipped-trades",
   skippedTradeSettle: (skippedId: string) => `/skipped-trades/${skippedId}/settle`,
   alerts: "/alerts",

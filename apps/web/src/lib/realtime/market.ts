@@ -265,6 +265,9 @@ const CANDLE_LIMIT = 300;
 export function useCandles(symbol: string, interval: MarketInterval) {
   return useQuery({
     queryKey: ["candles", symbol, interval],
+    // The station boots before instruments resolve — an empty symbol would
+    // be a guaranteed 400 from the market service, so the query waits.
+    enabled: symbol.length > 0,
     queryFn: async (): Promise<CandlesResponse> => {
       const url = `${CANDLES_URL}&symbol=${encodeURIComponent(symbol)}&interval=${interval}&limit=${CANDLE_LIMIT}`;
       const response = await fetch(url);

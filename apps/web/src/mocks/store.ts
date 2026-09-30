@@ -51,6 +51,9 @@ import {
   type RuleViolation,
   type RuleViolationView,
   type SessionTimelineResponse,
+  type SessionNote,
+  type SessionNotesResponse,
+  type CreateSessionNoteInput,
   type SettleSkippedTradeInput,
   type SkippedTrade,
   type SkippedTradesResponse,
@@ -3101,6 +3104,39 @@ export function createMockStore() {
     return { date: today, events, moods };
   }
 
+  // ── Session logbook — timestamped in-session notes ────────────────────
+  // Flat list per trading day; the date is SERVER-resolved (same trading
+  // day key as the timeline) so a note logged at 23:59 UTC-5 belongs to
+  // the right session. Notes live in memory like every other mutation.
+  const sessionNotes: SessionNote[] = [];
+
+  function listSessionNotes(): SessionNotesResponse {
+    const today = todayKey();
+    return {
+      notes: sessionNotes
+        .filter((note) => note.date === today)
+        .sort((a, b) => a.at.localeCompare(b.at)),
+    };
+  }
+
+  function addSessionNote(input: CreateSessionNoteInput): SessionNote {
+    const note: SessionNote = {
+      id: crypto.randomUUID(),
+      date: todayKey(),
+      at: nowIso(),
+      text: input.text.trim(),
+    };
+    sessionNotes.push(note);
+    return note;
+  }
+
+  function deleteSessionNote(noteId: string): { ok: boolean } {
+    const index = sessionNotes.findIndex((note) => note.id === noteId);
+    if (index < 0) throw new MockError(404, "Note not found");
+    sessionNotes.splice(index, 1);
+    return { ok: true };
+  }
+
   /** PATCH /trades/:id/notes — session note icon quick-save. */
   function updateNotes(tradeId: string, input: NotesUpdateInput): Trade {
     const trade = data.trades.find((t) => t.id === tradeId);
@@ -3979,6 +4015,9 @@ export function createMockStore() {
     disciplineScore,
     mistakesLedger,
     sessionTimeline,
+    listSessionNotes,
+    addSessionNote,
+    deleteSessionNote,
     updateNotes,
     updateTrade,
     deleteTrade,

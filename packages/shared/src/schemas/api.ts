@@ -271,6 +271,36 @@ export const sessionTimelineResponseSchema = z.object({
 
 export type SessionTimelineResponse = z.infer<typeof sessionTimelineResponseSchema>;
 
+// ── Session logbook (timestamped in-session notes) ────────────────────────
+
+/**
+ * One timestamped note logged DURING the trading session — the running
+ * commentary the trader leaves for the post-market review (levels watched,
+ * why an entry was taken, hesitation moments). One flat list per trading
+ * day, server-stamped, reviewable next to the timeline.
+ */
+export const sessionNoteSchema = z.object({
+  id: uuidSchema,
+  /** Server-resolved trading date the note belongs to. */
+  date: dateKeySchema,
+  /** Wall-clock timestamp when the note was logged. */
+  at: isoDateTimeSchema,
+  text: z.string().min(1).max(2000),
+});
+
+export type SessionNote = z.infer<typeof sessionNoteSchema>;
+
+export const sessionNotesResponseSchema = z.object({
+  /** Chronological (oldest first). */
+  notes: z.array(sessionNoteSchema),
+});
+export type SessionNotesResponse = z.infer<typeof sessionNotesResponseSchema>;
+
+export const createSessionNoteInputSchema = z.object({
+  text: z.string().trim().min(1, "Note is empty").max(2000),
+});
+export type CreateSessionNoteInput = z.infer<typeof createSessionNoteInputSchema>;
+
 // ── Review (Act 3) ───────────────────────────────────────────────────────────
 
 /** Detected mistake with its join id (needed for PATCH confirm/dismiss). */

@@ -4,7 +4,7 @@ import * as React from "react";
 import type { EChartsCoreOption, EChartsType } from "echarts/core";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTheme } from "next-themes";
-import { RefreshCcw } from "lucide-react";
+import { History, Pause, Play, RefreshCcw, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { createChartInstance } from "@/components/charts/echart";
@@ -12,8 +12,10 @@ import { formatPrice } from "@cosmoz/shared";
 import type { Candle, CandlesResponse, Instrument, MarketInterval, Trade } from "@cosmoz/shared";
 import { getChartTheme, type ChartTheme } from "@/lib/utils/chart-theme";
 import { STALE_MS, type LiveQuote } from "@/lib/realtime/market";
+import { KeyLevelsMinimap } from "@/components/session/key-levels-minimap";
 import { usePreferences } from "@/lib/api/queries";
 import { useNowMs } from "@/lib/realtime/use-now";
+import { cn } from "@/lib/utils";
 
 /**
  * Session Live price chart — candlestick datafeed over the market service
@@ -158,20 +160,58 @@ export function PriceChart({
     () => mergeTick(data?.candles ?? [], quote, interval, stale),
     [data, quote, interval, stale],
   );
-  // Tooltip formatters fire long after render — they read the LATEST merged
-  // candles through this ref (the structural option never rebuilds on ticks,
-  // so a direct closure would go stale).
-  const mergedRef = React.useRef(merged);
+
+  // ── Replay (scrubber) — step through the loaded window bucket by bucket.
+  // While active the chart renders ONLY candles up to the scrub index and
+  // the live-price mark line is suppressed: reviewing a sequence must not
+  // leak the future. The merge keeps running underneath (honest window).
+  const [replayOn, setReplayOn] = React.useState(false);
+  const [replayIndex, setReplayIndex] = React.useState(0);
+  const [replayPlaying, setReplayPlaying] = React.useState(false);
+
+  const displayed = React.useMemo(
+    () => (replayOn ? merged.slice(0, Math.min(replayIndex + 1, merged.length)) : merged),
+    [replayOn, merged, replayIndex],
+  );
+
+  // Play: advance one bucket per tick until the end, then hold.
   React.useEffect(() => {
-    mergedRef.current = merged;
-  }, [merged]);
+    if (!replayOn || !replayPlaying) return;
+    const id = window.setInterval(() => {
+      setReplayIndex((index) => {
+        if (index >= merged.length - 1) {
+          setReplayPlaying(false);
+          return index;
+        }
+        return index + 1;
+      });
+    }, 150);
+    return () => window.clearInterval(id);
+  }, [replayOn, replayPlaying, merged.length]);
+
+  const toggleReplay = React.useCallback(() => {
+    setReplayOn((on) => {
+      if (!on) {
+        setReplayIndex(0);
+        setReplayPlaying(false);
+      }
+      return !on;
+    });
+  }, []);
+  // Tooltip formatters fire long after render — they read the LATEST
+  // displayed candles through this ref (the structural option never rebuilds
+  // on ticks, so a direct closure would go stale).
+  const mergedRef = React.useRef(displayed);
+  React.useEffect(() => {
+    mergedRef.current = displayed;
+  }, [displayed]);
 
   const view = React.useMemo(() => {
-    const labels = merged.map((candle) => bucketLabel(candle.t, interval));
+    const labels = displayed.map((candle) => bucketLabel(candle.t, interval));
     // ECharts candlestick item = [open, close, lowest, highest].
-    const ohlc = merged.map((candle) => [candle.o, candle.c, candle.l, candle.h] as const);
-    return { labels, ohlc, times: merged.map((candle) => candle.t), volumes: merged.map((candle) => candle.v) };
-  }, [merged, interval]);
+    const ohlc = displayed.map((candle) => [candle.o, candle.c, candle.l, candle.h] as const);
+    return { labels, ohlc, times: displayed.map((candle) => candle.t), volumes: displayed.map((candle) => candle.v) };
+  }, [displayed, interval]);
 
   // ── Structural option (axes, panes, zoom, tooltip, theme, chart prefs) ───
   const baseOption = React.useMemo<EChartsCoreOption>(() => {
@@ -387,7 +427,7 @@ export function PriceChart({
       // Informational only — no click/edit path exists.
       silent: true,
     }));
-    if (quote && !stale) {
+    if (quote && !stale && !replayOn) {
       markLineData.push({
         yAxis: quote.price,
         lineStyle: { color: theme.accent, type: "dashed", width: 1, opacity: 0.55 },
@@ -406,7 +446,7 @@ export function PriceChart({
     // Style decides the payload shape: OHLC tuples for candles, closes for
     // line/area. markLine overlays work on either series type.
     const mainData =
-      chartPrefs.style === "CANDLES" ? view.ohlc : merged.map((candle) => candle.c);
+      chartPrefs.style === "CANDLES" ? view.ohlc : displayed.map((candle) => candle.c);
     const series: Array<Record<string, unknown>> = [
       {
         data: mainData,
@@ -416,7 +456,7 @@ export function PriceChart({
     if (chartPrefs.showVolume) {
       // Per-candle color: profit tone on up buckets, loss tone on down ones.
       series.push({
-        data: merged.map((candle) => ({
+        data: displayed.map((candle) => ({
           value: candle.v,
           itemStyle: {
             color:
@@ -432,7 +472,7 @@ export function PriceChart({
           : { data: view.labels },
       series,
     };
-  }, [view, merged, overlayTrades, quote, stale, theme, digits, chartPrefs]);
+  }, [view, displayed, overlayTrades, quote, stale, theme, digits, chartPrefs, replayOn]);
 
   // ── Canvas lifecycle (init / theme re-init / dispose) ────────────────────
   React.useEffect(() => {
@@ -475,26 +515,100 @@ export function PriceChart({
   }
 
   return (
-    <div
-      className={`relative rounded-xl border border-border bg-surface ${heightClass}`}
-      data-testid="price-chart"
-      data-symbol={symbol}
-      data-interval={interval}
-      data-chart-style={chartPrefs.style}
-      data-show-volume={chartPrefs.showVolume ? "true" : "false"}
-      data-show-grid={chartPrefs.showGrid ? "true" : "false"}
-    >
-      {isLoading && merged.length === 0 ? (
-        <div className="absolute inset-0 flex items-center justify-center" aria-live="polite">
-          <p className="text-sm text-muted-foreground">Loading market data…</p>
+    <div>
+      <div
+        className={`relative rounded-xl border border-border bg-surface ${heightClass}`}
+        data-testid="price-chart"
+        data-symbol={symbol}
+        data-interval={interval}
+        data-chart-style={chartPrefs.style}
+        data-show-volume={chartPrefs.showVolume ? "true" : "false"}
+        data-show-grid={chartPrefs.showGrid ? "true" : "false"}
+        data-replay={replayOn ? "true" : "false"}
+        data-replay-index={replayOn ? replayIndex : undefined}
+      >
+        {isLoading && displayed.length === 0 ? (
+          <div className="absolute inset-0 flex items-center justify-center" aria-live="polite">
+            <p className="text-sm text-muted-foreground">Loading market data…</p>
+          </div>
+        ) : null}
+
+        {/* Key-levels minimap — journal entries / SL / TP vs the live mark */}
+        <KeyLevelsMinimap trades={overlayTrades} quote={replayOn ? null : quote} candles={displayed} digits={digits} />
+
+        {/* Replay toggle — always available once candles exist */}
+        {displayed.length > 0 ? (
+          <button
+            type="button"
+            onClick={toggleReplay}
+            aria-label={replayOn ? "Exit price replay" : "Replay the price curve"}
+            aria-pressed={replayOn}
+            data-testid="session-replay-toggle"
+            className={cn(
+              "absolute top-3 left-3 z-10 inline-flex h-7 items-center gap-1.5 rounded-lg border px-2.5 text-xs font-medium backdrop-blur transition-colors",
+              replayOn
+                ? "border-accent/50 bg-accent/15 text-accent"
+                : "border-border bg-background/85 text-muted-foreground hover:text-foreground",
+            )}
+          >
+            <History className="size-3.5" aria-hidden="true" />
+            Replay
+          </button>
+        ) : null}
+
+        <div
+          ref={containerRef}
+          role="img"
+          aria-label={`${symbol} ${interval} ${chartPrefs.style.toLowerCase()} chart with journal position overlays`}
+          className="size-full"
+        />
+      </div>
+
+      {/* Replay scrubber — a footer bar, only while replay is active */}
+      {replayOn && displayed.length > 0 ? (
+        <div
+          className="mt-2 flex items-center gap-3 rounded-xl border border-border bg-surface px-3 py-2"
+          data-testid="session-replay-bar"
+        >
+          <button
+            type="button"
+            onClick={() => setReplayPlaying((playing) => !playing)}
+            aria-label={replayPlaying ? "Pause replay" : "Play replay"}
+            data-testid="session-replay-play"
+            className="inline-flex size-7 shrink-0 items-center justify-center rounded-full border border-accent/40 bg-accent/10 text-accent transition-colors hover:bg-accent/20"
+          >
+            {replayPlaying ? <Pause className="size-3.5" aria-hidden="true" /> : <Play className="size-3.5" aria-hidden="true" />}
+          </button>
+          <input
+            type="range"
+            min={0}
+            max={Math.max(merged.length - 1, 0)}
+            step={1}
+            value={replayIndex}
+            onChange={(event) => {
+              setReplayPlaying(false);
+              setReplayIndex(Number(event.target.value));
+            }}
+            aria-label="Replay position"
+            data-testid="session-replay-scrubber"
+            className="h-1.5 min-w-0 flex-1 cursor-pointer accent-[var(--accent)]"
+          />
+          <span className="shrink-0 font-mono text-[11px] tabular-nums text-muted-foreground" data-testid="session-replay-time">
+            {bucketLabel(displayed[displayed.length - 1]?.t ?? 0, interval)}
+            <span className="mx-1 text-border">·</span>
+            {replayIndex + 1}/{merged.length}
+          </span>
+          <button
+            type="button"
+            onClick={toggleReplay}
+            aria-label="Close replay"
+            data-testid="session-replay-close"
+            className="shrink-0 rounded p-1 text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <X className="size-4" aria-hidden="true" />
+          </button>
         </div>
       ) : null}
-      <div
-        ref={containerRef}
-        role="img"
-        aria-label={`${symbol} ${interval} ${chartPrefs.style.toLowerCase()} chart with journal position overlays`}
-        className="size-full"
-      />
     </div>
   );
 }

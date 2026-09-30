@@ -62,7 +62,12 @@ export {
   useUpdateSetup,
   useUpdateStrategy,
 } from "./playbook";
-export { useSessionTimeline } from "./session";
+export {
+  useSessionTimeline,
+  useSessionNotes,
+  useCreateSessionNote,
+  useDeleteSessionNote,
+} from "./session";
 export { useAnalytics, useStatsOverview } from "./stats";
 export { useImportBackup } from "./backup";
 export { useProfile, useUpdateProfile } from "./profile";

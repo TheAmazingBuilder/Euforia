@@ -18,6 +18,7 @@ import { OpenTradeCard } from "@/components/session/open-trade-card";
 import { PriceChart } from "@/components/session/price-chart";
 import { PriceAlertToaster } from "@/components/session/price-alert-toaster";
 import { RegretRegistry } from "@/components/session/regret-registry";
+import { SessionLogbook } from "@/components/session/session-logbook";
 import { SessionToolbar } from "@/components/session/session-toolbar";
 import { SymbolPositions } from "@/components/session/symbol-positions";
 import {
@@ -263,6 +264,8 @@ export function SessionView() {
             </div>
 
             <aside className="space-y-3 sm:space-y-4" aria-label="Session sidebar">
+              <SessionLogbook />
+
               {pendingGhosts.length > 0 ? (
                 <section id="ghost-settlements" className="rounded-xl border border-warning/40 bg-surface">
                   <header className="border-b border-border px-4 py-3">

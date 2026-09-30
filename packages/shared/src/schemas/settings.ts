@@ -90,6 +90,11 @@ export const tradingPreferencesSchema = z.object({
     showVolume: z.boolean(),
     showGrid: z.boolean(),
   }),
+  /**
+   * Session Live duration cap in minutes (15–600) — when the session timer
+   * runs past it, Cosmoz raises a « max duration » alert. null = no cap.
+   */
+  sessionMaxDurationMin: z.number().int().min(15).max(600).nullable(),
 });
 
 export type TradingPreferences = z.infer<typeof tradingPreferencesSchema>;
@@ -479,6 +484,7 @@ export const DEFAULT_USER_PREFERENCES: UserPreferencesDefaults = {
     defaultPositionType: "MARKET",
     rrDisplay: "RATIO",
     chart: { style: "CANDLES", showVolume: false, showGrid: true },
+    sessionMaxDurationMin: null,
   },
   risk: {
     defaultRiskPerTradePct: 1,

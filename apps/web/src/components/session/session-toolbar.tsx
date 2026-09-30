@@ -7,6 +7,7 @@ import { formatPrice } from "@cosmoz/shared";
 import type { Instrument, MarketInterval } from "@cosmoz/shared";
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SessionTimer } from "@/components/session/session-timer";
 import { STALE_MS, type FeedPhase, type LiveQuote } from "@/lib/realtime/market";
 import { useNowMs } from "@/lib/realtime/use-now";
 import { cn } from "@/lib/utils";
@@ -204,6 +205,9 @@ export function SessionToolbar({
             ) : null}
           </div>
         </div>
+
+        {/* Session timer + configurable duration cap */}
+        <SessionTimer />
 
         {/* Feed state */}
         <FeedBadge quote={quote} phase={phase} />
