@@ -171,6 +171,43 @@ export type AcademyLessonResponse = {
   quizId: string | null;
   prevLessonId: string | null;
   nextLessonId: string | null;
+  /** Mid-lesson comprehension checkpoint for long lessons (answers stay server-side). */
+  checkpoint: AcademyQuizQuestionPublic | null;
+  /** Saved personal note for this lesson, null before the first save. */
+  note: AcademyLessonNote | null;
+};
+
+// ── Lesson notes (personal, per lesson) ─────────────────────────────────────
+
+export type AcademyLessonNote = {
+  lessonId: string;
+  text: string;
+  updatedAt: string;
+};
+
+export type AcademyNoteInput = z.infer<typeof academyNoteInputSchema>;
+export const academyNoteInputSchema = z.object({
+  text: z.string().max(4000),
+});
+
+export type AcademyNoteResponse = {
+  note: AcademyLessonNote;
+};
+
+// ── Inline checkpoint (mid-lesson quick check, graded server-side) ──────────
+
+export type AcademyCheckpointInput = z.infer<typeof academyCheckpointInputSchema>;
+export const academyCheckpointInputSchema = z.object({
+  questionId: z.string().min(1),
+  value: z.union([z.number(), z.boolean(), z.null()]).optional(),
+});
+
+export type AcademyCheckpointResult = {
+  questionId: string;
+  correct: boolean;
+  /** MC/SCENARIO: correct option index. TF: the boolean. NUMERIC: the value. */
+  answer: number | boolean;
+  explanation: string;
 };
 
 export type AcademyLessonCompleteInput = z.infer<typeof academyLessonCompleteInputSchema>;
@@ -240,11 +277,25 @@ export type AcademyRecommendation = {
 
 export type AcademyOverviewResponse = {
   continueLearning: AcademyContinueLearning;
+  /** The unfinished lesson the user last had open (null → nothing to resume).
+   *  Distinct from continueLearning, which points at the curriculum's next-up. */
+  resume: AcademyResume;
   progress: AcademyProgressResponse;
   recommendations: AcademyRecommendation[];
   /** Recent completions, newest first (max 6). */
   recent: { lessonId: string; lessonTitle: string; courseTitle: string; at: string }[];
 };
+
+export type AcademyResume = {
+  lessonId: string;
+  lessonTitle: string;
+  courseId: string;
+  courseTitle: string;
+  categoryId: string;
+  /** Course completion percent at the time of the last view. */
+  coursePercent: number;
+  viewedAt: string;
+} | null;
 
 // ── Glossary ─────────────────────────────────────────────────────────────────
 
@@ -305,7 +356,7 @@ export type AcademySearchResponse = {
 
 export type AcademyPracticeLogInput = z.infer<typeof academyPracticeLogInputSchema>;
 export const academyPracticeLogInputSchema = z.object({
-  drill: z.enum(["PATTERN_ID", "CANDLE_LAB", "STRUCTURE"]),
+  drill: z.enum(["PATTERN_ID", "CANDLE_LAB", "STRUCTURE", "CHECKPOINT"]),
   correct: z.boolean(),
 });
 

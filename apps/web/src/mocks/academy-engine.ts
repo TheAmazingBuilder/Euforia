@@ -5,10 +5,15 @@ import type {
   AcademyBookmarksResponse,
   AcademyCatalogResponse,
   AcademyCategoryProgress,
+  AcademyCheckpointInput,
+  AcademyCheckpointResult,
   AcademyCourseDetailResponse,
   AcademyGlossaryResponse,
   AcademyLessonCompleteResponse,
+  AcademyLessonNote,
   AcademyLessonResponse,
+  AcademyNoteInput,
+  AcademyNoteResponse,
   AcademyOverviewResponse,
   AcademyPatternDrill,
   AcademyPracticeLogInput,
@@ -19,6 +24,7 @@ import type {
   AcademyQuizResultResponse,
   AcademyQuizSubmitInput,
   AcademyRecommendation,
+  AcademyResume,
   AcademySearchResponse,
   AcademyStreak,
 } from "@cosmoz/shared";
@@ -57,6 +63,10 @@ type AcademyState = {
   activityDates: Set<string>;
   /** lessonId of the most recent completion — drives Continue Learning. */
   lastActivityLessonId: string | null;
+  /** lessonId → last time the user opened the lesson (Resume Reading). */
+  viewedLessons: Map<string, string>;
+  /** lessonId → personal note. */
+  notes: Map<string, AcademyLessonNote>;
 };
 
 const state: AcademyState = {
@@ -68,6 +78,8 @@ const state: AcademyState = {
   practiceCorrect: 0,
   activityDates: new Set(),
   lastActivityLessonId: null,
+  viewedLessons: new Map(),
+  notes: new Map(),
 };
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -213,6 +225,9 @@ export function academyLesson(lessonId: string): AcademyLessonResponse | null {
     const index = course.lessons.findIndex((lsn) => lsn.id === lessonId);
     if (index === -1) continue;
     const lesson = course.lessons[index];
+    // Opening a lesson counts as learning activity and drives Resume Reading.
+    state.viewedLessons.set(lesson.id, new Date().toISOString());
+    touchActivity();
     return {
       id: lesson.id,
       courseId: course.id,
@@ -229,9 +244,85 @@ export function academyLesson(lessonId: string): AcademyLessonResponse | null {
       quizId: course.quiz?.id ?? null,
       prevLessonId: course.lessons[index - 1]?.id ?? null,
       nextLessonId: course.lessons[index + 1]?.id ?? null,
+      checkpoint: checkpointFor(course, lesson),
+      note: state.notes.get(lesson.id) ?? null,
     };
   }
   return null;
+}
+
+/** Stable string hash — deterministic checkpoint picks per lesson + day. */
+function hashString(input: string): number {
+  let hash = 0;
+  for (let i = 0; i < input.length; i += 1) {
+    hash = (hash * 31 + input.charCodeAt(i)) | 0;
+  }
+  return Math.abs(hash);
+}
+
+/**
+ * Mid-lesson checkpoint — long lessons (≥ 6 blocks) in quiz-bearing courses
+ * get ONE question from the course bank, picked deterministically from
+ * lessonId + UTC day (rotates daily; same pick for serving and grading).
+ * Answers never leave the engine.
+ */
+function checkpointFor(course: AuthoredCourseLike, lesson: AuthoredCourseLike["lessons"][number]): AcademyQuizQuestionPublic | null {
+  if (!course.quiz || lesson.blocks.length < 6) return null;
+  const day = utcDate(new Date());
+  const index = hashString(`${lesson.id}:${day}`) % course.quiz.questions.length;
+  return stripQuestion(course.quiz.questions[index]);
+}
+
+export function gradeCheckpoint(lessonId: string, input: AcademyCheckpointInput): AcademyCheckpointResult | null {
+  for (const course of COURSES) {
+    const lesson = course.lessons.find((lsn) => lsn.id === lessonId);
+    if (!lesson) continue;
+    if (!course.quiz || lesson.blocks.length < 6) return null;
+    const day = utcDate(new Date());
+    const question = course.quiz.questions[hashString(`${lesson.id}:${day}`) % course.quiz.questions.length];
+    if (question.id !== input.questionId) return null;
+
+    let correct = false;
+    let answer: number | boolean = 0;
+    if (question.kind === "NUMERIC") {
+      const value = typeof input.value === "number" ? input.value : Number.NaN;
+      const tolerance = (question.tolerance ?? 0.02) * Math.abs(question.value ?? 0);
+      correct = Number.isFinite(value) && Math.abs(value - (question.value ?? 0)) <= Math.max(tolerance, 1e-9);
+      answer = question.value ?? 0;
+    } else if (question.kind === "TF") {
+      correct = typeof input.value === "boolean" && input.value === question.answer;
+      answer = question.answer === true;
+    } else {
+      correct = typeof input.value === "number" && input.value === question.answer;
+      answer = typeof question.answer === "number" ? question.answer : 0;
+    }
+
+    // Checkpoints feed the same practice ledger as drills (honest aggregate).
+    state.practiceAttempts += 1;
+    if (correct) state.practiceCorrect += 1;
+    touchActivity();
+
+    return { questionId: question.id, correct, answer, explanation: question.explanation };
+  }
+  return null;
+}
+
+// ── Lesson notes ────────────────────────────────────────────────────────────
+
+export function saveLessonNote(lessonId: string, input: AcademyNoteInput): AcademyNoteResponse | null {
+  const lesson = COURSES.flatMap((crs) => crs.lessons).find((lsn) => lsn.id === lessonId);
+  if (!lesson) return null;
+  const trimmed = input.text.trim();
+  let note: AcademyLessonNote;
+  if (trimmed === "") {
+    state.notes.delete(lessonId);
+    note = { lessonId, text: "", updatedAt: new Date().toISOString() };
+  } else {
+    note = { lessonId, text: trimmed, updatedAt: new Date().toISOString() };
+    state.notes.set(lessonId, note);
+    touchActivity();
+  }
+  return { note };
 }
 
 export function completeLesson(lessonId: string): AcademyLessonCompleteResponse | null {
@@ -454,6 +545,29 @@ function recommendations(): AcademyRecommendation[] {
   return picks.slice(0, 3);
 }
 
+/** The unfinished lesson the user last had open — distinct from the
+ *  curriculum's next-up pointer (continueLearning). null → nothing to resume. */
+function resumeLearning(): AcademyResume {
+  const viewed = [...state.viewedLessons.entries()]
+    .sort((a, b) => b[1].localeCompare(a[1]))
+    .find(([lessonId]) => !state.completedLessons.has(lessonId));
+  if (!viewed) return null;
+  const [lessonId, viewedAt] = viewed;
+  const course = COURSES.find((crs) => crs.lessons.some((lsn) => lsn.id === lessonId));
+  const lesson = course?.lessons.find((lsn) => lsn.id === lessonId);
+  if (!course || !lesson) return null;
+  const done = course.lessons.filter((lsn) => state.completedLessons.has(lsn.id)).length;
+  return {
+    lessonId,
+    lessonTitle: lesson.title,
+    courseId: course.id,
+    courseTitle: course.title,
+    categoryId: course.categoryId,
+    coursePercent: course.lessons.length === 0 ? 0 : Math.round((done / course.lessons.length) * 100),
+    viewedAt,
+  };
+}
+
 export function academyOverview(): AcademyOverviewResponse {
   const recent = [...state.completedLessons.entries()]
     .sort((a, b) => b[1].localeCompare(a[1]))
@@ -471,6 +585,7 @@ export function academyOverview(): AcademyOverviewResponse {
 
   return {
     continueLearning: continueLearning(),
+    resume: resumeLearning(),
     progress: academyProgress(),
     recommendations: recommendations(),
     recent,

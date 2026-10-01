@@ -31,7 +31,7 @@ export function LessonBlocks({ blocks }: { blocks: AcademyBlock[] }) {
   );
 }
 
-function LessonBlock({ block }: { block: AcademyBlock }) {
+export function LessonBlock({ block }: { block: AcademyBlock }) {
   switch (block.kind) {
     case "text":
       return <p className="max-w-3xl text-sm leading-relaxed text-foreground/90">{block.body}</p>;

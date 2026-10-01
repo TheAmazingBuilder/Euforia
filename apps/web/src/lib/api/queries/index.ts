@@ -144,6 +144,8 @@ export {
   useAcademySearch,
   useCompleteLesson,
   useLogPractice,
+  useSaveLessonNote,
+  useSubmitCheckpoint,
   useSubmitQuiz,
   useToggleBookmark,
 } from "./academy";

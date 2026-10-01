@@ -1,11 +1,15 @@
 import { http, HttpResponse } from "msw";
 import type {
   AcademyBookmarkToggleInput,
+  AcademyCheckpointInput,
+  AcademyNoteInput,
   AcademyPracticeLogInput,
   AcademyQuizSubmitInput,
 } from "@cosmoz/shared";
 import {
   academyBookmarkToggleInputSchema,
+  academyCheckpointInputSchema,
+  academyNoteInputSchema,
   academyPracticeLogInputSchema,
   academyQuizSubmitInputSchema,
 } from "@cosmoz/shared";
@@ -22,8 +26,10 @@ import {
   academyQuiz,
   academySearch,
   completeLesson,
+  gradeCheckpoint,
   logPractice,
   patternDrill,
+  saveLessonNote,
   submitQuiz,
   toggleBookmark,
 } from "@/mocks/academy-engine";
@@ -99,6 +105,42 @@ export const academyHandlers = [
     await latency();
     try {
       const result = completeLesson(pathParam(params, "lessonId"));
+      if (!result) {
+        return HttpResponse.json({ error: "Lesson not found" }, { status: 404 });
+      }
+      return HttpResponse.json(result);
+    } catch (error) {
+      return toErrorResponse(error);
+    }
+  }),
+
+  /** POST /academy/lessons/:lessonId/checkpoint — grade the inline checkpoint. */
+  http.post(endpoint(apiPaths.academyCheckpoint(":lessonId")), async ({ request, params }) => {
+    await latency();
+    try {
+      const input = parseBody<AcademyCheckpointInput>(
+        academyCheckpointInputSchema,
+        await request.json().catch(() => null),
+      );
+      const result = gradeCheckpoint(pathParam(params, "lessonId"), input);
+      if (!result) {
+        return HttpResponse.json({ error: "No checkpoint for this lesson today" }, { status: 404 });
+      }
+      return HttpResponse.json(result);
+    } catch (error) {
+      return toErrorResponse(error);
+    }
+  }),
+
+  /** PUT /academy/lessons/:lessonId/notes — save the personal lesson note. */
+  http.put(endpoint(apiPaths.academyLessonNote(":lessonId")), async ({ request, params }) => {
+    await latency();
+    try {
+      const input = parseBody<AcademyNoteInput>(
+        academyNoteInputSchema,
+        await request.json().catch(() => null),
+      );
+      const result = saveLessonNote(pathParam(params, "lessonId"), input);
       if (!result) {
         return HttpResponse.json({ error: "Lesson not found" }, { status: 404 });
       }

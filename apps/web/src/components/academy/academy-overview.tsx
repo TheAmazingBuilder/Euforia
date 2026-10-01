@@ -340,6 +340,28 @@ function ContinueLearning({
           </Button>
         </div>
       )}
+      {/* Resume reading — the unfinished lesson you last had open, when it
+          differs from the curriculum's next-up pointer (no duplicate rows). */}
+      {data.resume && item && data.resume.lessonId !== item.lessonId ? (
+        <div
+          className="mt-2 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-surface px-4 py-3"
+          data-testid="academy-resume"
+        >
+          <div className="min-w-0">
+            <p className="ledger-label">Pick up where you left off</p>
+            <p className="mt-0.5 truncate text-sm font-medium text-foreground">
+              {data.resume.lessonTitle}
+              <span className="text-muted-foreground">
+                {" "}· {data.resume.courseTitle} · {data.resume.coursePercent}%
+              </span>
+            </p>
+          </div>
+          <Button size="sm" variant="outline" className="gap-1.5" onClick={() => onOpenLesson(data.resume!.lessonId)} data-testid="academy-resume-btn">
+            <BookOpen className="size-3.5" aria-hidden="true" />
+            Resume
+          </Button>
+        </div>
+      ) : null}
     </section>
   );
 }

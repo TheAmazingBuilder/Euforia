@@ -108,6 +108,8 @@ export const apiPaths = {
   academyCourse: (courseId: string) => `/academy/courses/${courseId}`,
   academyLesson: (lessonId: string) => `/academy/lessons/${lessonId}`,
   academyLessonComplete: (lessonId: string) => `/academy/lessons/${lessonId}/complete`,
+  academyCheckpoint: (lessonId: string) => `/academy/lessons/${lessonId}/checkpoint`,
+  academyLessonNote: (lessonId: string) => `/academy/lessons/${lessonId}/notes`,
   academyQuiz: (quizId: string) => `/academy/quizzes/${quizId}`,
   academyQuizSubmit: (quizId: string) => `/academy/quizzes/${quizId}/attempts`,
   academyGlossary: "/academy/glossary",

@@ -7,10 +7,14 @@ import type {
   AcademyBookmarkToggleResponse,
   AcademyBookmarksResponse,
   AcademyCatalogResponse,
+  AcademyCheckpointInput,
+  AcademyCheckpointResult,
   AcademyCourseDetailResponse,
   AcademyGlossaryResponse,
   AcademyLessonCompleteResponse,
   AcademyLessonResponse,
+  AcademyNoteInput,
+  AcademyNoteResponse,
   AcademyOverviewResponse,
   AcademyPatternDrill,
   AcademyPracticeLogInput,
@@ -178,5 +182,34 @@ export function useLogPractice() {
       apiRequest<AcademyPracticeLogResponse>(apiPaths.academyPracticeLog, { method: "POST", body: input }),
     onSuccess: () => invalidate(),
     // Practice logging is fire-and-forget by design — no toasts on failure.
+  });
+}
+
+export function useSubmitCheckpoint(lessonId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: AcademyCheckpointInput) =>
+      apiRequest<AcademyCheckpointResult>(apiPaths.academyCheckpoint(lessonId), { method: "POST", body: input }),
+    // The result renders inline; aggregates refresh quietly (practice counters).
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.academyProgress });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.academyOverview });
+    },
+    onError: (error) => toast.error(apiErrorMessage(error, "Could not grade the checkpoint")),
+  });
+}
+
+export function useSaveLessonNote(lessonId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: AcademyNoteInput) =>
+      apiRequest<AcademyNoteResponse>(apiPaths.academyLessonNote(lessonId), { method: "PUT", body: input }),
+    onSuccess: () => {
+      // The lesson payload carries the note — refresh it so revisits show the
+      // saved text even from cache-first mounts.
+      void queryClient.invalidateQueries({ queryKey: queryKeys.academyLesson(lessonId) });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.academyOverview });
+    },
+    onError: (error) => toast.error(apiErrorMessage(error, "Could not save the note")),
   });
 }
