@@ -7,7 +7,7 @@ import { useTheme } from "next-themes";
 import { History, Pause, Play, RefreshCcw, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { createChartInstance } from "@/components/charts/echart";
+import { bindChartGroup, createChartInstance } from "@/components/charts/echart";
 import { formatPrice } from "@cosmoz/shared";
 import type {
   BrokerPosition,
@@ -128,6 +128,12 @@ interface AnalysisChartProps {
   onDrawingCreate: (drawing: DrawingObject) => void;
   onToolDone: () => void;
   heightClass?: string;
+  /**
+   * ECharts connect group — when set (multi-chart layouts), crosshair +
+   * zoom actions mirror across every chart bound to the same group.
+   * Null/undefined keeps the chart independent (single-chart default).
+   */
+  syncGroup?: string | null;
 }
 
 interface PlacedPoint {
@@ -156,6 +162,7 @@ export function AnalysisChart({
   onDrawingCreate,
   onToolDone,
   heightClass = "h-[320px] sm:h-[440px]",
+  syncGroup = null,
 }: AnalysisChartProps) {
   const containerRef = React.useRef<HTMLDivElement | null>(null);
   const chartRef = React.useRef<EChartsType | null>(null);
@@ -814,6 +821,14 @@ export function AnalysisChart({
     };
   }, [resolvedTheme]);
 
+  // Multi-chart sync — rebound after every (re)creation (theme switch makes
+  // a fresh instance) and whenever the group assignment changes.
+  React.useEffect(() => {
+    const chart = chartRef.current;
+    if (chart === null) return;
+    bindChartGroup(chart, syncGroup);
+  }, [syncGroup, resolvedTheme]);
+
   React.useEffect(() => {
     chartRef.current?.setOption(baseOption, { notMerge: true });
   }, [baseOption]);
@@ -870,6 +885,7 @@ export function AnalysisChart({
         data-tool={tool ?? "cursor"}
         data-indicators={visibleComputed.length}
         data-drawings={drawings.length}
+        data-sync-group={syncGroup ?? undefined}
       >
         {isLoading && displayed.length === 0 ? (
           <div className="absolute inset-0 flex items-center justify-center" aria-live="polite">

@@ -51,6 +51,21 @@ export function createChartInstance(container: HTMLElement): echarts.ECharts {
   return echarts.init(container);
 }
 
+/**
+ * Group binding for multi-chart synchronization (Session Live multi-chart):
+ * charts sharing a group mirror tooltip/crosshair + dataZoom actions.
+ * Passing null detaches the chart (single-chart layouts stay independent —
+ * syncing a lone chart would only add action overhead).
+ */
+export function bindChartGroup(chart: echarts.ECharts, group: string | null): void {
+  if (group !== null && group !== "") {
+    chart.group = group;
+    echarts.connect(group);
+  } else {
+    chart.group = "";
+  }
+}
+
 interface EChartProps {
   option: EChartsCoreOption;
   className?: string;

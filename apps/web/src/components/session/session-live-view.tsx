@@ -12,6 +12,15 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { DisciplineBanner } from "@/components/trades/discipline-banner";
 import { AnalysisChart } from "@/components/session/analysis-chart";
 import { BrokerPanel } from "@/components/session/broker-panel";
+import {
+  ChartGrid,
+  ChartGridToolbar,
+  chartSyncGroupFor,
+  loadMultiChart,
+  persistMultiChart,
+  type MultiChartLayout,
+  type MultiChartState,
+} from "@/components/session/chart-grid";
 import { ContextTabs } from "@/components/session/context-tabs";
 import { DrawingToolbar, IndicatorsPopover } from "@/components/session/chart-tool-rail";
 import { EventTimeline } from "@/components/session/event-timeline";
@@ -193,7 +202,12 @@ interface WorkspaceProps {
   quote: LiveQuote | null;
   /** Journal open trades on this symbol — chart overlays + positions panel. */
   symbolTrades: Trade[];
+  /** ALL open journal trades — observation panes filter per their own symbol. */
+  openTrades: Trade[];
   brokerPositions: BrokerPosition[];
+  /** ALL real broker positions — observation panes filter per their own symbol. */
+  allBrokerPositions: BrokerPosition[];
+  instruments: Instrument[];
   levels: KeyLevel[];
   levelsLoading: boolean;
   activeSession: TradingSession | null;
@@ -201,6 +215,8 @@ interface WorkspaceProps {
   latestAnalysisNote: string | null;
   analyses: SavedAnalysis[];
   analysesLoading: boolean;
+  multi: MultiChartState;
+  onMultiChange: (updater: (current: MultiChartState) => MultiChartState) => void;
 }
 
 function Workspace(props: WorkspaceProps) {
@@ -224,6 +240,33 @@ function Workspace(props: WorkspaceProps) {
     persistChartState(symbol, { interval, indicators, drawings });
   }, [symbol, interval, indicators, drawings]);
 
+  // Observation-pane suggestions: slots the user left empty (and not
+  // dismissed) follow the catalog order, skipping the master symbol —
+  // derived at render, user choices always win.
+  const effectiveMulti = React.useMemo<MultiChartState>(() => {
+    const taken = new Set([symbol]);
+    const picks: string[] = [];
+    for (const item of props.instruments) {
+      if (taken.has(item.symbol)) continue;
+      taken.add(item.symbol);
+      picks.push(item.symbol);
+      if (picks.length === 3) break;
+    }
+    return {
+      ...props.multi,
+      aux: props.multi.aux.map((pane, index) =>
+        pane.symbol === "" && !pane.dismissed ? { ...pane, symbol: picks[index] ?? "" } : pane,
+      ),
+    };
+  }, [props.multi, props.instruments, symbol]);
+
+  const applyIntervalToAll = (next: MarketInterval) => {
+    setIntervalState(next);
+    if (props.multi.timeframeSync) {
+      props.onMultiChange((current) => ({ ...current, aux: current.aux.map((pane) => ({ ...pane, interval: next })) }));
+    }
+  };
+
   const onRestoreAnalysis = (analysis: SavedAnalysis) => {
     setIndicators(analysis.indicators);
     setDrawings(analysis.drawings);
@@ -246,7 +289,8 @@ function Workspace(props: WorkspaceProps) {
                   type="button"
                   aria-pressed={interval === item}
                   data-testid={`tf-${item}`}
-                  onClick={() => setIntervalState(item)}
+                  title={props.multi.timeframeSync ? `Applies to every chart (timeframe sync on) — ${item}` : item}
+                  onClick={() => applyIntervalToAll(item)}
                   className={cn(
                     "min-w-[38px] rounded-md border px-1.5 py-1 font-mono text-xs font-semibold transition-colors",
                     interval === item
@@ -277,26 +321,64 @@ function Workspace(props: WorkspaceProps) {
           </section>
         </aside>
 
-        {/* Center — the analysis chart */}
-        <div data-testid="session-chart-area">
-          <AnalysisChart
-            symbol={symbol}
-            interval={interval}
-            instrument={instrument}
-            data={candles.data}
-            isLoading={candles.isLoading}
-            isError={candles.isError}
-            quote={quote}
-            overlayTrades={props.symbolTrades}
-            brokerPositions={props.brokerPositions}
-            levels={props.levels}
-            levelsVisible={levelsVisible}
+        {/* Center — the analysis charts (master + synchronized observation panes) */}
+        <div data-testid="session-chart-area" className="min-w-0 space-y-2">
+          <ChartGridToolbar
+            layout={effectiveMulti.layout}
+            crosshairSync={effectiveMulti.crosshairSync}
+            timeframeSync={effectiveMulti.timeframeSync}
+            onLayoutChange={(layout: MultiChartLayout) => props.onMultiChange((current) => ({ ...current, layout }))}
+            onCrosshairSyncChange={(value) => props.onMultiChange((current) => ({ ...current, crosshairSync: value }))}
+            onTimeframeSyncChange={(value) => props.onMultiChange((current) => ({ ...current, timeframeSync: value }))}
+          />
+          <ChartGrid
+            master={
+              <AnalysisChart
+                symbol={symbol}
+                interval={interval}
+                instrument={instrument}
+                data={candles.data}
+                isLoading={candles.isLoading}
+                isError={candles.isError}
+                quote={quote}
+                overlayTrades={props.symbolTrades}
+                brokerPositions={props.brokerPositions}
+                levels={props.levels}
+                levelsVisible={levelsVisible}
+                indicators={indicators}
+                drawings={drawings}
+                tool={tool}
+                onDrawingCreate={(drawing) => setDrawings((current) => [...current, drawing])}
+                onToolDone={() => setTool(null)}
+                syncGroup={chartSyncGroupFor(effectiveMulti)}
+                heightClass={
+                  effectiveMulti.layout > 1 ? "h-[300px] sm:h-[380px] xl:h-[430px]" : "h-[360px] sm:h-[460px] xl:h-[560px]"
+                }
+              />
+            }
+            multi={effectiveMulti}
+            instruments={props.instruments}
+            trades={props.openTrades}
+            brokerPositions={props.allBrokerPositions}
             indicators={indicators}
-            drawings={drawings}
-            tool={tool}
-            onDrawingCreate={(drawing) => setDrawings((current) => [...current, drawing])}
-            onToolDone={() => setTool(null)}
-            heightClass="h-[360px] sm:h-[460px] xl:h-[560px]"
+            onAuxSymbolChange={(slot, auxSymbol) =>
+              props.onMultiChange((current) => ({
+                ...current,
+                aux: current.aux.map((pane, index) => (index === slot ? { ...pane, symbol: auxSymbol, dismissed: false } : pane)),
+              }))
+            }
+            onAuxIntervalChange={(slot, auxInterval) =>
+              props.onMultiChange((current) => ({
+                ...current,
+                aux: current.aux.map((pane, index) => (index === slot ? { ...pane, interval: auxInterval } : pane)),
+              }))
+            }
+            onAuxRemove={(slot) =>
+              props.onMultiChange((current) => ({
+                ...current,
+                aux: current.aux.map((pane, index) => (index === slot ? { ...pane, symbol: "", dismissed: true } : pane)),
+              }))
+            }
           />
         </div>
 
@@ -414,6 +496,13 @@ export function SessionLiveView() {
   const [endTarget, setEndTarget] = React.useState<TradingSession | null>(null);
   const [historyOpen, setHistoryOpen] = React.useState(false);
 
+  // Multi-chart workspace state (layout + sync toggles + observation panes).
+  // Persisted through a write-only effect — never re-enters render logic.
+  const [multi, setMulti] = React.useState<MultiChartState>(loadMultiChart);
+  React.useEffect(() => {
+    persistMultiChart(multi);
+  }, [multi]);
+
   const isLoading = timeline.isLoading || openTrades.isLoading || sessionState.isLoading;
   const isError = timeline.isError || openTrades.isError;
 
@@ -500,7 +589,10 @@ export function SessionLiveView() {
               instrument={instrument}
               quote={quote}
               symbolTrades={symbolTrades}
+              openTrades={trades}
               brokerPositions={brokerPositionsOnSymbol}
+              allBrokerPositions={brokerData?.positions ?? []}
+              instruments={instruments}
               levels={levels}
               levelsLoading={levelsLoading}
               activeSession={activeSession}
@@ -508,6 +600,8 @@ export function SessionLiveView() {
               latestAnalysisNote={latestAnalysisNote}
               analyses={analyses}
               analysesLoading={analysesLoading}
+              multi={multi}
+              onMultiChange={setMulti}
             />
           ) : null}
 

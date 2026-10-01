@@ -45,9 +45,14 @@ interface SymbolPickerProps {
   instruments: Instrument[];
   value: string;
   onChange: (symbol: string) => void;
+  /**
+   * Compact trigger (multi-chart pane headers): tighter button that keeps
+   * the full popover experience — same favorites/recents store.
+   */
+  compact?: boolean;
 }
 
-export function SymbolPicker({ instruments, value, onChange }: SymbolPickerProps) {
+export function SymbolPicker({ instruments, value, onChange, compact = false }: SymbolPickerProps) {
   const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState("");
   const [store, setStore] = React.useState(loadStore);
@@ -142,13 +147,16 @@ export function SymbolPicker({ instruments, value, onChange }: SymbolPickerProps
           aria-expanded={open}
           aria-label="Select symbol"
           data-testid="symbol-picker-trigger"
-          className="w-full justify-between font-mono font-semibold"
+          className={cn(
+            "justify-between font-mono font-semibold",
+            compact ? "h-7 w-auto gap-1 px-2 text-xs" : "w-full",
+          )}
         >
           <span className="truncate">{selected ? selected.symbol : "Symbol"}</span>
           <ChevronsUpDown className="size-3.5 shrink-0 opacity-50" aria-hidden="true" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-[280px] p-2">
+      <PopoverContent align={compact ? "end" : "start"} className="w-[280px] p-2">
         <div className="relative">
           <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
           <input
