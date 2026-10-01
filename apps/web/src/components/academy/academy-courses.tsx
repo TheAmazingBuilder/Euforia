@@ -9,7 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AcademySectionTitle, CategoryIcon, LevelBadge, ProgressBar } from "@/components/academy/academy-shared";
+import { AcademySectionTitle, CategoryIcon, LevelBadge, ProgressBar, hueOf, tint } from "@/components/academy/academy-shared";
+import { CourseArt } from "@/components/academy/academy-illustrations";
 import { LessonReader } from "@/components/academy/academy-lesson";
 import { CourseQuiz } from "@/components/academy/academy-lesson";
 import {
@@ -184,61 +185,87 @@ function CatalogGrid({
 
   return (
     <div className="space-y-6">
-      {grouped.map(({ category: cat, courses: catCourses }) => (
-        <section key={cat.id} aria-label={cat.name}>
-          <div className="mb-2 flex items-center gap-2">
-            <CategoryIcon icon={cat.icon} className="text-accent" />
-            <h3 className="font-heading text-base font-semibold text-foreground">{cat.name}</h3>
-            <LevelBadge level={cat.level} />
-          </div>
-          <p className="mb-3 max-w-3xl text-xs leading-relaxed text-muted-foreground">{cat.description}</p>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            {catCourses.map((course) => (
-              <CourseCard key={course.id} course={course} onOpen={() => onOpenCourse(course.id)} />
-            ))}
-          </div>
-          <p className="sr-only">{categoryById.get(cat.id)?.name}</p>
-        </section>
-      ))}
+      {grouped.map(({ category: cat, courses: catCourses }) => {
+        const hue = hueOf(cat.id);
+        return (
+          <section key={cat.id} aria-label={cat.name}>
+            <div className="mb-2 flex items-center gap-2.5">
+              <span
+                aria-hidden="true"
+                className="inline-flex size-8 shrink-0 items-center justify-center rounded-md border"
+                style={{ color: hue, backgroundColor: tint(hue, 12), borderColor: tint(hue, 28) }}
+              >
+                <CategoryIcon icon={cat.icon} className="size-4" />
+              </span>
+              <h3 className="font-heading text-base font-semibold text-foreground">{cat.name}</h3>
+              <LevelBadge level={cat.level} />
+            </div>
+            <p className="mb-3 max-w-3xl text-xs leading-relaxed text-muted-foreground">{cat.description}</p>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {catCourses.map((course) => (
+                <CourseCard key={course.id} course={course} onOpen={() => onOpenCourse(course.id)} />
+              ))}
+            </div>
+            <p className="sr-only">{categoryById.get(cat.id)?.name}</p>
+          </section>
+        );
+      })}
     </div>
   );
 }
 
 function CourseCard({ course, onOpen }: { course: AcademyCourseCard; onOpen: () => void }) {
+  const hue = hueOf(course.categoryId);
   return (
     <button
       type="button"
       onClick={onOpen}
-      className="flex h-full flex-col rounded-lg border border-border bg-surface px-4 py-3.5 text-left transition-colors hover:bg-muted"
+      className="group flex h-full flex-col overflow-hidden rounded-lg border border-border bg-surface text-left transition-colors hover:bg-muted"
       data-testid={`academy-course-card-${course.id}`}
     >
-      <div className="flex items-start justify-between gap-2">
-        <h4 className="font-heading text-sm font-semibold leading-snug text-foreground">{course.title}</h4>
+      {/* Concept vignette — the chart the course teaches, in the track hue */}
+      <span className="relative block">
+        <CourseArt courseId={course.id} categoryId={course.categoryId} className="aspect-[32/13] w-full" />
+        <span
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-px"
+          style={{ background: tint(hue, 45) }}
+          aria-hidden="true"
+        />
         {course.completed ? (
-          <CircleCheck className="size-4 shrink-0 text-profit" aria-label="Completed" />
-        ) : (
-          <LevelBadge level={course.level} />
-        )}
-      </div>
-      <p className="mt-1.5 line-clamp-2 flex-1 text-xs leading-relaxed text-muted-foreground">{course.description}</p>
-      <div className="mt-3">
-        {course.completedLessons > 0 || course.completed ? (
-          <ProgressBar percent={course.progress} label={`${course.title} progress`} testid={`academy-course-progress-${course.id}`} />
+          <span
+            className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-sm border px-1.5 py-0.5 font-mono text-[9px] font-semibold uppercase tracking-wider"
+            style={{ color: "var(--profit)", backgroundColor: tint("var(--profit)", 14), borderColor: tint("var(--profit)", 40) }}
+          >
+            <CircleCheck className="size-3" aria-hidden="true" />
+            Done
+          </span>
         ) : null}
-      </div>
-      <p className="mt-2 flex items-center gap-2 font-mono text-[11px] tabular-nums text-muted-foreground">
-        <span>
-          {course.completedLessons}/{course.lessonCount} lessons
+      </span>
+      <span className="flex flex-1 flex-col px-4 pb-3.5 pt-3">
+        <span className="flex items-start justify-between gap-2">
+          <h4 className="font-heading text-sm font-semibold leading-snug text-foreground">{course.title}</h4>
+          {course.completed ? null : <LevelBadge level={course.level} />}
         </span>
-        <span aria-hidden="true">·</span>
-        <span>~{course.estimatedMinutes} min</span>
-        {course.quizId ? (
-          <>
-            <span aria-hidden="true">·</span>
-            <span>{course.quizBestScore !== null ? `quiz ${Math.round((course.quizBestScore / course.lessonCount) * 100)}%` : "quiz"}</span>
-          </>
-        ) : null}
-      </p>
+        <span className="mt-1.5 line-clamp-2 flex-1 text-xs leading-relaxed text-muted-foreground">{course.description}</span>
+        <span className="mt-3 block">
+          {course.completedLessons > 0 || course.completed ? (
+            <ProgressBar percent={course.progress} hue={hue} label={`${course.title} progress`} testid={`academy-course-progress-${course.id}`} />
+          ) : null}
+        </span>
+        <span className="mt-2 flex items-center gap-2 font-mono text-[11px] tabular-nums text-muted-foreground">
+          <span>
+            {course.completedLessons}/{course.lessonCount} lessons
+          </span>
+          <span aria-hidden="true">·</span>
+          <span>~{course.estimatedMinutes} min</span>
+          {course.quizId ? (
+            <>
+              <span aria-hidden="true">·</span>
+              <span>{course.quizBestScore !== null ? `quiz ${Math.round((course.quizBestScore / course.lessonCount) * 100)}%` : "quiz"}</span>
+            </>
+          ) : null}
+        </span>
+      </span>
     </button>
   );
 }
@@ -367,6 +394,7 @@ function CourseDetail({
   }
 
   const { course, lessons, objectives } = data;
+  const hue = hueOf(data.category.id);
 
   return (
     <div className="space-y-5" data-testid="academy-course-detail">
@@ -380,32 +408,46 @@ function CourseDetail({
       </button>
 
       <header className="rounded-lg border bg-surface px-5 py-4" data-testid="academy-course-header">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <CategoryIcon icon={data.category.icon} className="text-accent" />
+        <div className="flex flex-col gap-4 md:flex-row md:items-start">
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <span
+                aria-hidden="true"
+                className="inline-flex size-7 shrink-0 items-center justify-center rounded-md border"
+                style={{ color: hue, backgroundColor: tint(hue, 12), borderColor: tint(hue, 28) }}
+              >
+                <CategoryIcon icon={data.category.icon} />
+              </span>
               <p className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">{data.category.name}</p>
               <LevelBadge level={course.level} />
               {course.completed ? <Badge variant="outline" className="gap-1 border-profit/40 text-profit"><CircleCheck className="size-3" /> Completed</Badge> : null}
             </div>
             <h2 className="mt-1.5 font-heading text-xl font-bold tracking-tight sm:text-2xl">{course.title}</h2>
             <p className="mt-1 max-w-3xl text-sm leading-relaxed text-muted-foreground">{course.description}</p>
+            <div className="mt-3 max-w-md">
+              <ProgressBar percent={course.progress} hue={hue} label={`${course.title} progress`} />
+            </div>
+            <p className="mt-2 font-mono text-xs tabular-nums text-muted-foreground">
+              {course.completedLessons}/{course.lessonCount} lessons · ~{course.estimatedMinutes} min
+            </p>
           </div>
-          <p className="font-mono text-xs tabular-nums text-muted-foreground">
-            {course.completedLessons}/{course.lessonCount} lessons · ~{course.estimatedMinutes} min
-          </p>
-        </div>
-        <div className="mt-3 max-w-md">
-          <ProgressBar percent={course.progress} label={`${course.title} progress`} />
+          {/* Concept vignette at its natural 32:15 ratio — nothing cropped */}
+          <span className="hidden shrink-0 md:block">
+            <CourseArt
+              courseId={course.id}
+              categoryId={data.category.id}
+              className="aspect-[32/15] w-72 rounded-md border border-border"
+            />
+          </span>
         </div>
       </header>
 
-      <section aria-label="Course objectives" className="rounded-lg border border-accent/30 bg-accent/5 px-4 py-3.5">
-        <p className="ledger-label text-accent">After this course, you will be able to</p>
+      <section aria-label="Course objectives" className="rounded-lg border px-4 py-3.5" style={{ borderColor: tint(hue, 32), backgroundColor: tint(hue, 6) }}>
+        <p className="ledger-label" style={{ color: hue }}>After this course, you will be able to</p>
         <ul className="mt-2 grid grid-cols-1 gap-1 text-sm leading-relaxed sm:grid-cols-2">
           {objectives.map((objective, index) => (
             <li key={index} className="flex gap-2">
-              <CircleCheck className="mt-0.5 size-3.5 shrink-0 text-accent" aria-hidden="true" />
+              <CircleCheck className="mt-0.5 size-3.5 shrink-0" style={{ color: hue }} aria-hidden="true" />
               <span>{objective}</span>
             </li>
           ))}

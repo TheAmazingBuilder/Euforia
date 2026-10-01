@@ -2,13 +2,33 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { ArrowRight, BookmarkCheck, BookOpen, CircleCheck, Dumbbell, Library, PlayCircle, Sparkles, Trophy } from "lucide-react";
+import {
+  ArrowRight,
+  BookmarkCheck,
+  BookOpen,
+  CircleCheck,
+  Dumbbell,
+  Flame,
+  Library,
+  PlayCircle,
+  Sparkles,
+  Trophy,
+} from "lucide-react";
 
 import type { AcademyOverviewResponse } from "@cosmoz/shared";
 
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AcademySectionTitle, CategoryIcon, ProgressBar } from "@/components/academy/academy-shared";
+import {
+  AcademySectionTitle,
+  CategoryIcon,
+  HueChip,
+  ProgressBar,
+  ProgressRing,
+  hueOf,
+  tint,
+} from "@/components/academy/academy-shared";
+import { CATEGORY_FLAGSHIP, CourseArt } from "@/components/academy/academy-illustrations";
 import {
   useAcademyBookmarks,
   useAcademyCatalog,
@@ -18,7 +38,9 @@ import {
 /**
  * Academy Overview — the learning dashboard: where you left off, the numbers
  * that matter, recommendations, recent activity, bookmarks and the category
- * map. All copy in plain probabilistic language; no gamified P&L nonsense.
+ * map. Every track carries its identity hue; each category card opens with
+ * the chart vignette of what it teaches. Copy stays in plain probabilistic
+ * language; no gamified P&L nonsense.
  */
 
 export function AcademyOverviewPanel({
@@ -41,23 +63,37 @@ export function AcademyOverviewPanel({
     <div className="space-y-6" data-testid="academy-overview">
       <ContinueLearning data={overview} onOpenLesson={onOpenLesson} onOpenCourse={onOpenCourse} />
 
-      {/* Stat band — one ruled strip, ledger style */}
+      {/* Stat band — one ruled strip, ledger style, hue-tinted identity chips */}
       <section aria-label="Your progress">
         <AcademySectionTitle className="mb-2">Your progress</AcademySectionTitle>
         <div className="stat-strip" data-testid="academy-stats">
           <div className="stat-cell stat-hero">
             <p className="ledger-label">Overall progress</p>
-            <div className="mt-3">
-              <ProgressBar percent={overview.progress.overall.percent} testid="academy-progress-overall" label="Overall progress" />
+            <div className="mt-3 flex items-center gap-5">
+              <div className="min-w-0 flex-1">
+                <ProgressBar percent={overview.progress.overall.percent} testid="academy-progress-overall" label="Overall progress" />
+                <p className="mt-2 text-xs text-muted-foreground">
+                  <span className="font-mono tabular-nums">{overview.progress.overall.completedLessons}</span> of{" "}
+                  <span className="font-mono tabular-nums">{overview.progress.overall.lessonCount}</span> lessons across{" "}
+                  <span className="font-mono tabular-nums">{overview.progress.courseCount}</span> courses
+                </p>
+              </div>
+              <ProgressRing
+                percent={overview.progress.overall.percent}
+                size={76}
+                strokeWidth={7}
+                testid="academy-ring-overall"
+                className="hidden sm:inline-flex"
+              >
+                <span className="font-mono text-sm font-semibold tabular-nums">{overview.progress.overall.percent}%</span>
+              </ProgressRing>
             </div>
-            <p className="mt-2 text-xs text-muted-foreground">
-              <span className="font-mono tabular-nums">{overview.progress.overall.completedLessons}</span> of{" "}
-              <span className="font-mono tabular-nums">{overview.progress.overall.lessonCount}</span> lessons across{" "}
-              <span className="font-mono tabular-nums">{overview.progress.courseCount}</span> courses
-            </p>
           </div>
           <div className="stat-cell stat-hero">
-            <p className="ledger-label">Learning streak</p>
+            <div className="flex items-start justify-between gap-3">
+              <p className="ledger-label">Learning streak</p>
+              <HueChip hue="var(--warning)" icon={Flame} />
+            </div>
             <p className="mt-2 flex items-baseline gap-1.5 font-mono text-3xl font-semibold tabular-nums">
               {overview.progress.streak.currentDays}
               <span className="text-sm font-normal text-muted-foreground">days</span>
@@ -68,25 +104,37 @@ export function AcademyOverviewPanel({
             </p>
           </div>
           <div className="stat-cell stat-kpi">
-            <p className="ledger-label">Courses completed</p>
+            <div className="flex items-start justify-between gap-2">
+              <p className="ledger-label">Courses completed</p>
+              <HueChip hue="var(--cat-ta)" icon={BookOpen} />
+            </div>
             <p className="mt-1.5 font-mono text-xl font-semibold tabular-nums" data-testid="academy-stat-courses">
               {overview.progress.coursesCompleted}
             </p>
           </div>
           <div className="stat-cell stat-kpi">
-            <p className="ledger-label">Lessons completed</p>
+            <div className="flex items-start justify-between gap-2">
+              <p className="ledger-label">Lessons completed</p>
+              <HueChip hue="var(--profit)" icon={CircleCheck} />
+            </div>
             <p className="mt-1.5 font-mono text-xl font-semibold tabular-nums" data-testid="academy-stat-lessons">
               {overview.progress.overall.completedLessons}
             </p>
           </div>
           <div className="stat-cell stat-kpi">
-            <p className="ledger-label">Quiz average</p>
+            <div className="flex items-start justify-between gap-2">
+              <p className="ledger-label">Quiz average</p>
+              <HueChip hue="var(--cat-pa)" icon={Trophy} />
+            </div>
             <p className="mt-1.5 font-mono text-xl font-semibold tabular-nums" data-testid="academy-stat-quiz">
               {overview.progress.quizAverage !== null ? `${overview.progress.quizAverage}%` : "—"}
             </p>
           </div>
           <div className="stat-cell stat-kpi">
-            <p className="ledger-label">Drill accuracy</p>
+            <div className="flex items-start justify-between gap-2">
+              <p className="ledger-label">Drill accuracy</p>
+              <HueChip hue="var(--cat-patterns)" icon={Dumbbell} />
+            </div>
             <p className="mt-1.5 font-mono text-xl font-semibold tabular-nums" data-testid="academy-stat-practice">
               {overview.progress.practiceAttempts > 0
                 ? `${Math.round((overview.progress.practiceCorrect / overview.progress.practiceAttempts) * 100)}%`
@@ -101,24 +149,25 @@ export function AcademyOverviewPanel({
         <section aria-label="Recommended for you">
           <AcademySectionTitle className="mb-2">Recommended for you</AcademySectionTitle>
           <ul className="divide-y divide-border rounded-lg border border-border bg-surface" data-testid="academy-recommendations">
-            {overview.recommendations.map((rec) => (
-              <li key={rec.courseId}>
-                <button
-                  type="button"
-                  onClick={() => onOpenCourse(rec.courseId)}
-                  className="group flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-muted"
-                >
-                  <span className="min-w-0">
-                    <span className="flex items-center gap-2 text-sm font-medium text-foreground">
-                      <Sparkles className="size-3.5 shrink-0 text-accent" aria-hidden="true" />
-                      <span className="truncate">{rec.title}</span>
+            {overview.recommendations.map((rec) => {
+              const hue = hueOf(rec.categoryId);
+              return (
+                <li key={rec.courseId}>
+                  <button
+                    type="button"
+                    onClick={() => onOpenCourse(rec.courseId)}
+                    className="group flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-muted"
+                  >
+                    <HueChip hue={hue} icon={Sparkles} />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-medium text-foreground">{rec.title}</span>
+                      <span className="mt-0.5 block truncate text-xs text-muted-foreground">{rec.reason}</span>
                     </span>
-                    <span className="mt-0.5 block truncate text-xs text-muted-foreground">{rec.reason}</span>
-                  </span>
-                  <ArrowRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
-                </button>
-              </li>
-            ))}
+                    <ArrowRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+                  </button>
+                </li>
+              );
+            })}
             {overview.recommendations.length === 0 ? (
               <li className="px-4 py-3 text-sm text-muted-foreground">
                 Every course completed — the curriculum salutes you. Revisit drills to stay sharp.
@@ -159,7 +208,17 @@ export function AcademyOverviewPanel({
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Bookmarks */}
         <section aria-label="My bookmarks">
-          <AcademySectionTitle className="mb-2">My bookmarks</AcademySectionTitle>
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <AcademySectionTitle>My bookmarks</AcademySectionTitle>
+            {bookmarks && bookmarks.bookmarks.length > 0 ? (
+              <Link
+                href="/academy?tab=bookmarks"
+                className="text-xs font-medium text-accent transition-colors hover:text-accent-hover"
+              >
+                View all
+              </Link>
+            ) : null}
+          </div>
           {bookmarks && bookmarks.bookmarks.length > 0 ? (
             <ul className="divide-y divide-border rounded-lg border border-border bg-surface" data-testid="academy-bookmarks">
               {bookmarks.bookmarks.slice(0, 6).map((mark) => (
@@ -197,7 +256,7 @@ export function AcademyOverviewPanel({
               onClick={onGoPractice}
               className="flex items-center gap-3 rounded-lg border border-border bg-surface px-4 py-3.5 text-left transition-colors hover:bg-muted"
             >
-              <Dumbbell className="size-5 shrink-0 text-accent" aria-hidden="true" />
+              <HueChip hue="var(--cat-patterns)" icon={Dumbbell} />
               <span>
                 <span className="block text-sm font-medium">Practice drills</span>
                 <span className="block text-xs text-muted-foreground">Pattern identification & the candle lab</span>
@@ -208,7 +267,7 @@ export function AcademyOverviewPanel({
               onClick={onGoGlossary}
               className="flex items-center gap-3 rounded-lg border border-border bg-surface px-4 py-3.5 text-left transition-colors hover:bg-muted"
             >
-              <Library className="size-5 shrink-0 text-accent" aria-hidden="true" />
+              <HueChip hue="var(--cat-fund)" icon={Library} />
               <span>
                 <span className="block text-sm font-medium">Glossary</span>
                 <span className="block text-xs text-muted-foreground">Searchable trading vocabulary</span>
@@ -233,14 +292,18 @@ function ContinueLearning({
   onOpenCourse: (courseId: string) => void;
 }) {
   const item = data.continueLearning;
+  const hue = item ? hueOf(item.categoryId) : "var(--accent)";
   return (
     <section aria-label="Continue learning" data-testid="academy-continue">
       <AcademySectionTitle className="mb-2">Continue learning</AcademySectionTitle>
       {item ? (
-        <div className="flex flex-col gap-4 rounded-lg border border-border bg-surface px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+        <div
+          className="flex flex-col gap-4 rounded-lg border border-border bg-surface px-5 py-4 sm:flex-row sm:items-center"
+          style={{ backgroundColor: tint(hue, 4) }}
+        >
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <PlayCircle className="size-4 shrink-0 text-accent" aria-hidden="true" />
+              <PlayCircle className="size-4 shrink-0" style={{ color: hue }} aria-hidden="true" />
               <p className="truncate font-heading text-base font-semibold text-foreground">{item.courseTitle}</p>
             </div>
             <p className="mt-1 truncate text-sm text-muted-foreground">
@@ -248,9 +311,14 @@ function ContinueLearning({
               <span className="font-mono tabular-nums">{item.lessonCount}</span>
             </p>
             <div className="mt-2.5 max-w-md">
-              <ProgressBar percent={item.percent} label={`${item.courseTitle} progress`} />
+              <ProgressBar percent={item.percent} hue={hue} label={`${item.courseTitle} progress`} />
             </div>
           </div>
+          <CourseArt
+            courseId={item.courseId}
+            categoryId={item.categoryId}
+            className="h-[74px] w-40 shrink-0 rounded-md border border-border"
+          />
           <div className="flex shrink-0 gap-2">
             <Button size="sm" className="gap-1.5" onClick={() => item.nextLessonId && onOpenLesson(item.nextLessonId)} data-testid="academy-continue-btn">
               <PlayCircle className="size-3.5" aria-hidden="true" />
@@ -288,26 +356,46 @@ function CategoryMap({ onOpenCourse }: { onOpenCourse: (courseId: string) => voi
           const done = courses.filter((course) => course.completed).length;
           const lessons = courses.reduce((sum, course) => sum + course.lessonCount, 0);
           const completed = courses.reduce((sum, course) => sum + course.completedLessons, 0);
+          const hue = hueOf(category.id);
+          const flagship = CATEGORY_FLAGSHIP[category.id];
           return (
             <button
               key={category.id}
               type="button"
               onClick={() => courses[0] && onOpenCourse(courses[0].id)}
-              className="group rounded-lg border border-border bg-surface px-4 py-3.5 text-left transition-colors hover:bg-muted"
+              className="group flex h-full flex-col overflow-hidden rounded-lg border border-border bg-surface text-left transition-colors hover:bg-muted"
               data-testid={`academy-category-${category.id}`}
             >
-              <div className="flex items-center justify-between gap-2">
-                <span className="flex items-center gap-2 text-sm font-medium text-foreground">
-                  <CategoryIcon icon={category.icon} className="text-accent" />
-                  <span className="truncate">{category.name}</span>
+              {flagship ? (
+                <span className="relative block">
+                  <CourseArt courseId={flagship} categoryId={category.id} className="aspect-[32/13] w-full" />
+                  <span
+                    className="pointer-events-none absolute inset-x-0 bottom-0 h-px"
+                    style={{ background: tint(hue, 45) }}
+                    aria-hidden="true"
+                  />
                 </span>
-                <BookOpen className="size-3.5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
-              </div>
-              <p className="mt-1.5 line-clamp-2 text-xs leading-relaxed text-muted-foreground">{category.description}</p>
-              <p className="mt-2 font-mono text-[11px] tabular-nums text-muted-foreground">
-                {courses.length} courses · {completed}/{lessons} lessons
-                {done === courses.length && courses.length > 0 ? " · done" : ""}
-              </p>
+              ) : null}
+              <span className="flex flex-1 flex-col px-4 pb-3.5 pt-3">
+                <span className="flex items-center justify-between gap-2">
+                  <span className="flex min-w-0 items-center gap-2">
+                    <span
+                      aria-hidden="true"
+                      className="inline-flex size-7 shrink-0 items-center justify-center rounded-md border"
+                      style={{ color: hue, backgroundColor: tint(hue, 12), borderColor: tint(hue, 28) }}
+                    >
+                      <CategoryIcon icon={category.icon} />
+                    </span>
+                    <span className="truncate text-sm font-medium text-foreground">{category.name}</span>
+                  </span>
+                  <BookOpen className="size-3.5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+                </span>
+                <span className="mt-1.5 line-clamp-2 text-xs leading-relaxed text-muted-foreground">{category.description}</span>
+                <span className="mt-auto pt-2 font-mono text-[11px] tabular-nums text-muted-foreground">
+                  {courses.length} courses · {completed}/{lessons} lessons
+                  {done === courses.length && courses.length > 0 ? " · done" : ""}
+                </span>
+              </span>
             </button>
           );
         })}

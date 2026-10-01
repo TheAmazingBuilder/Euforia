@@ -1,13 +1,14 @@
 "use client";
 
 import * as React from "react";
-import { Bookmark, BookmarkCheck, Library, Search, X } from "lucide-react";
+import { Bookmark, BookmarkCheck, Search, X } from "lucide-react";
 
 import type { AcademyGlossaryTerm } from "@cosmoz/shared";
 
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { HueLetter, hueOf, tint } from "@/components/academy/academy-shared";
 import { useAcademyGlossary, useAcademySearch, useToggleBookmark } from "@/lib/api/queries";
 
 /**
@@ -63,7 +64,8 @@ export function AcademyGlossaryPanel({ initialTerm }: { initialTerm: string | nu
       </div>
 
       <p className="text-xs text-muted-foreground">
-        <span className="font-mono tabular-nums">{data?.total ?? "…"}</span> terms · layered definitions: simple first, professional second.
+        <span className="font-mono tabular-nums">{data?.total ?? "…"}</span> terms · layered definitions: simple first, professional second. The
+        letter tile carries the track color the term belongs to.
       </p>
 
       {linkedTerm ? (
@@ -110,6 +112,7 @@ function GlossaryEntry({
   const toggleBookmark = useToggleBookmark();
   const [bookmarked, setBookmarked] = React.useState(false);
   const isOpen = defaultOpen || open || expanded;
+  const hue = hueOf(term.categoryId);
 
   return (
     <div className={cn("px-4 py-3", isOpen && "bg-surface-raised/40")}>
@@ -120,13 +123,15 @@ function GlossaryEntry({
             setExpanded((prev) => !prev);
             onToggle?.();
           }}
-          className="flex min-w-0 flex-1 items-center gap-2 text-left"
+          className="flex min-w-0 flex-1 items-center gap-2.5 text-left"
           aria-expanded={isOpen}
           data-testid={`academy-glossary-term-${term.id}`}
         >
-          <Library className={cn("size-3.5 shrink-0", isOpen ? "text-accent" : "text-muted-foreground")} aria-hidden="true" />
-          <span className="truncate text-sm font-medium text-foreground">{term.term}</span>
-          {!isOpen ? <span className="truncate text-xs text-muted-foreground">{term.simple}</span> : null}
+          <HueLetter letter={term.term} hue={hue} />
+          <span className="min-w-0">
+            <span className="block truncate text-sm font-medium text-foreground">{term.term}</span>
+            {!isOpen ? <span className="truncate text-xs text-muted-foreground">{term.simple}</span> : null}
+          </span>
         </button>
         <button
           type="button"
@@ -155,7 +160,12 @@ function GlossaryEntry({
           {term.example ? (
             <div>
               <dt className="ledger-label">Example</dt>
-              <dd className="mt-0.5 font-mono text-xs tabular-nums text-foreground/85">{term.example}</dd>
+              <dd
+                className="mt-1 rounded-md border px-2.5 py-1.5 font-mono text-xs tabular-nums text-foreground/85"
+                style={{ borderColor: tint(hue, 25), backgroundColor: tint(hue, 6) }}
+              >
+                {term.example}
+              </dd>
             </div>
           ) : null}
           {term.related.length > 0 ? (

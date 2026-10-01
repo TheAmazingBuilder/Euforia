@@ -41,6 +41,21 @@
   --radius: 8px;
   /* authorized addition: destructive-foreground (shadcn needs it) */
   --destructive-foreground: #0E1116;
+  /* authorized addition (2026-10): Academy category hues — 12 teaching tracks
+     each own an identity ink. Bright set for dark themes. Consumed ONLY through
+     var()/color-mix in .tsx; charts and illustrations read these directly. */
+  --cat-fund: #E2B04A;        /* Trading Fundamentals — amber   */
+  --cat-risk: #E0655F;        /* Risk Management — carmine      */
+  --cat-ta: #4FA3E8;          /* Technical Analysis — sky       */
+  --cat-pa: #A57BE8;          /* Price Action — violet          */
+  --cat-candles: #E88B4F;     /* Candlestick Patterns — ember   */
+  --cat-patterns: #45C4D8;    /* Chart Patterns — cyan          */
+  --cat-indicators: #46C79A;  /* Indicators — emerald           */
+  --cat-strategies: #D967AC;  /* Trading Strategies — magenta   */
+  --cat-mgmt: #3ECFB4;        /* Trade Management — teal        */
+  --cat-psy: #E879A8;         /* Trading Psychology — rose      */
+  --cat-structure: #7D8CEB;   /* Market Structure — indigo      */
+  --cat-advanced: #B9CC4F;    /* Advanced Trading — lime        */
 }
 
 /* ---- Theme: dark / "Carbone" ---- */
@@ -60,6 +75,7 @@
   --radius: 8px;
   /* authorized addition: destructive-foreground (shadcn needs it) */
   --destructive-foreground: #0B0B0D;
+  /* Academy category hues — same bright set as dark-blue (declared on :root). */
 }
 
 /* ---- Theme: light / "Papier" ---- */
@@ -79,6 +95,19 @@
   --radius: 8px;
   /* authorized addition: destructive-foreground (shadcn needs it) */
   --destructive-foreground: #FFFFFF;
+  /* Academy category hues — deepened for paper contrast (light theme). */
+  --cat-fund: #96660F;        /* amber → bronze   */
+  --cat-risk: #B84040;        /* carmine → deeper */
+  --cat-ta: #1F6FB2;          /* sky → lapis      */
+  --cat-pa: #6C44B8;          /* violet → plum    */
+  --cat-candles: #B25A22;     /* ember → sienna   */
+  --cat-patterns: #0E8FA3;    /* cyan → petrol    */
+  --cat-indicators: #0F8A62;  /* emerald → pine   */
+  --cat-strategies: #A83A7C;  /* magenta → wine   */
+  --cat-mgmt: #0F9480;        /* teal → deep teal */
+  --cat-psy: #B84A78;         /* rose → mulberry  */
+  --cat-structure: #4A5BD0;   /* indigo → deeper  */
+  --cat-advanced: #64750F;    /* lime → olive     */
 }
 
 /* ---- Tailwind v4 token mapping ---- */
@@ -94,6 +123,21 @@
   --color-profit: var(--profit);
   --color-loss: var(--loss);
   --color-warning: var(--warning);
+
+  /* Academy category hues (identity inks per teaching track) */
+  --color-cat-fund: var(--cat-fund);
+  --color-cat-risk: var(--cat-risk);
+  --color-cat-ta: var(--cat-ta);
+  --color-cat-pa: var(--cat-pa);
+  --color-cat-candles: var(--cat-candles);
+  --color-cat-patterns: var(--cat-patterns);
+  --color-cat-indicators: var(--cat-indicators);
+  --color-cat-strategies: var(--cat-strategies);
+  --color-cat-mgmt: var(--cat-mgmt);
+  --color-cat-psy: var(--cat-psy);
+  --color-cat-structure: var(--cat-structure);
+  --color-cat-advanced: var(--cat-advanced);
+
   --color-primary: var(--accent);
   --color-destructive: var(--loss);
   --color-ring: var(--ring);
