@@ -190,17 +190,24 @@ export class BinanceProvider implements MarketDataProvider {
 
   // ── Candles ──────────────────────────────────────────────────────────────
 
-  async candles(symbol: string, interval: Interval, limit: number): Promise<Candle[]> {
+  async candles(symbol: string, interval: Interval, limit: number, from?: number, to?: number): Promise<Candle[]> {
     const remote = SYMBOL_MAP.get(symbol);
     if (!remote) return [];
-    const cacheKey = `${symbol}|${interval}|${limit}`;
+    const ranged = from !== undefined || to !== undefined;
+    const cacheKey = `${symbol}|${interval}|${limit}|${from ?? ""}|${to ?? ""}`;
     const hit = this.klineCache.get(cacheKey);
     if (hit !== undefined && Date.now() - hit.at < this.KLINE_TTL_MS) return hit.candles;
 
-    const response = await fetch(
-      `${REST_BASE}/klines?symbol=${remote}&interval=${INTERVAL_MAP[interval]}&limit=${Math.min(limit, 500)}`,
-      { signal: AbortSignal.timeout(8_000) },
-    );
+    // Ranged klines (session replay): Binance serves historical windows
+    // natively — startTime/endTime with the standard 1000-row ceiling.
+    const params = new URLSearchParams({
+      symbol: remote,
+      interval: INTERVAL_MAP[interval],
+      limit: String(Math.min(limit, ranged ? 1000 : 500)),
+    });
+    if (from !== undefined) params.set("startTime", String(Math.max(from, 0)));
+    if (to !== undefined) params.set("endTime", String(Math.max(to, 0)));
+    const response = await fetch(`${REST_BASE}/klines?${params.toString()}`, { signal: AbortSignal.timeout(8_000) });
     if (!response.ok) throw new Error(`binance klines ${response.status}`);
     const rows = (await response.json()) as unknown;
     if (!Array.isArray(rows)) throw new Error("binance klines: unexpected payload");

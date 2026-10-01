@@ -61,8 +61,15 @@ const httpServer = createServer(async (req, res) => {
   if (url.pathname === "/candles") {
     const symbol = url.searchParams.get("symbol");
     const interval = url.searchParams.get("interval") ?? "5m";
-    const limit = Math.min(Number(url.searchParams.get("limit") ?? 300) || 300, 500);
-    if (!symbol || !isInterval(interval)) {
+    const fromParam = url.searchParams.get("from");
+    const toParam = url.searchParams.get("to");
+    const ranged = fromParam !== null || toParam !== null;
+    // Ranged requests (session replay) may pull up to 1000 buckets; the
+    // plain chart datafeed keeps its 500 ceiling.
+    const limit = Math.min(Number(url.searchParams.get("limit") ?? 300) || 300, ranged ? 1000 : 500);
+    const from = fromParam !== null ? Number(fromParam) : undefined;
+    const to = toParam !== null ? Number(toParam) : undefined;
+    if (!symbol || !isInterval(interval) || (ranged && (from === undefined || Number.isNaN(from)) && (to === undefined || Number.isNaN(to)))) {
       json(res, 400, { error: "symbol and interval (1m|5m|15m|30m|1H|4H|1D) are required" });
       return;
     }
@@ -72,7 +79,7 @@ const httpServer = createServer(async (req, res) => {
       return;
     }
     try {
-      const candles = await provider.candles(symbol, interval, limit);
+      const candles = await provider.candles(symbol, interval, limit, from, to);
       json(res, 200, { symbol, interval, source: provider.source, candles });
     } catch (error) {
       // Structured, secret-free error (mission §27) — the client renders

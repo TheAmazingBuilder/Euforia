@@ -36,8 +36,13 @@ export interface MarketDataProvider {
   stop(): void;
   /** Observability for /health (mission §28) — no secrets. */
   status(): Record<string, unknown>;
-  /** Candle history for the chart datafeed. */
-  candles(symbol: string, interval: string, limit: number): Promise<Candle[]>;
+  /**
+   * Candle history for the chart datafeed. When `from`/`to` (epoch ms) are
+   * given the provider serves that window (session replay) — bounded by
+   * `limit`; providers that cannot honor historical windows return what
+   * they honestly retain, never fabricated "real" data.
+   */
+  candles(symbol: string, interval: string, limit: number, from?: number, to?: number): Promise<Candle[]>;
 }
 
 /** Intervals the Session Live exposes (1H/4H/1D = internal convention). */

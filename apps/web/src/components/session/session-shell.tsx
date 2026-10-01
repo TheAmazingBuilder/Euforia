@@ -586,9 +586,11 @@ interface SessionHistoryDrawerProps {
   strategyNameOf: (strategyId: string | null) => string | null;
   /** Real trades for client-side honest metrics (window-scoped). */
   trades: Array<{ entryAt: string; exitAt: string | null; pnlNet: string | null; pnlGross: string | null }>;
+  /** Open the documentation replay for a completed session (increment ②). */
+  onReplay?: (session: TradingSession) => void;
 }
 
-export function SessionHistoryDrawer({ open, onOpenChange, history, strategyNameOf, trades }: SessionHistoryDrawerProps) {
+export function SessionHistoryDrawer({ open, onOpenChange, history, strategyNameOf, trades, onReplay }: SessionHistoryDrawerProps) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-[420px] overflow-y-auto sm:max-w-[420px]" data-testid="session-history-drawer">
@@ -662,6 +664,14 @@ export function SessionHistoryDrawer({ open, onOpenChange, history, strategyName
                         <CalendarClock className="mr-1 inline size-3" aria-hidden="true" />
                         {session.sessionObjective}
                       </p>
+                    ) : null}
+                    {session.endedAt !== null && onReplay !== undefined ? (
+                      <div className="mt-2.5">
+                        <Button variant="outline" size="sm" data-testid="history-replay" onClick={() => onReplay(session)}>
+                          <Play className="size-3.5" aria-hidden="true" />
+                          Replay session
+                        </Button>
+                      </div>
                     ) : null}
                     {session.events.length > 0 ? (
                       <div className="mt-2 space-y-1">

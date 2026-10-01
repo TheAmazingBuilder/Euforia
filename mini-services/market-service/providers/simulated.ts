@@ -136,13 +136,21 @@ export class SimulatedProvider implements MarketDataProvider {
 
   // ── Candle history ───────────────────────────────────────────────────────
 
-  async candles(symbol: string, interval: Interval, limit: number): Promise<Candle[]> {
+  async candles(symbol: string, interval: Interval, limit: number, from?: number, to?: number): Promise<Candle[]> {
     const def = SYMBOLS.find((item) => item.symbol === symbol);
     if (!def) return [];
     const key = `${symbol}|${interval}`;
     const existing = this.series.get(key);
     if (existing !== undefined) {
       existing.lastTouch = Date.now();
+      if (from !== undefined || to !== undefined) {
+        const windowed = this.windowOf(existing.candles, interval, from, to);
+        if (windowed.length > 0) return windowed.slice(-limit);
+        // The requested window sits outside the retained series (SIM memory
+        // is ~600 buckets): materialize a window-anchored walk so session
+        // replay works for clearly-labeled simulated markets too.
+        return this.materializeWindow(def, interval, limit, from, to);
+      }
       return existing.candles.slice(-limit);
     }
 
@@ -170,6 +178,60 @@ export class SimulatedProvider implements MarketDataProvider {
       price = close;
     }
     this.series.set(key, series);
+    if (from !== undefined || to !== undefined) {
+      const windowed = this.windowOf(series.candles, interval, from, to);
+      if (windowed.length > 0) return windowed.slice(-limit);
+      return this.materializeWindow(def, interval, limit, from, to);
+    }
     return series.candles.slice(-limit);
+  }
+
+  /** Filter a series to [from, to] (either bound optional), bucket-open basis. */
+  private windowOf(candles: Candle[], interval: Interval, from?: number, to?: number): Candle[] {
+    const bucketMs = INTERVAL_MS[interval];
+    return candles.filter((candle) => {
+      if (from !== undefined && candle.t + bucketMs <= from) return false;
+      return !(to !== undefined && candle.t > to);
+    });
+  }
+
+  /**
+   * Window-anchored SIM walk for historical windows the lazy series never
+   * retained. Stays a clearly-labeled simulation (source:"sim" everywhere) —
+   * it exists so the replay UX is exercisable, never to impersonate a market.
+   */
+  private materializeWindow(def: SymbolDef, interval: Interval, limit: number, from?: number, to?: number): Candle[] {
+    const bucketMs = INTERVAL_MS[interval];
+    const end = Math.min(to ?? Date.now(), Date.now());
+    const start = Math.max(from ?? end - limit * bucketMs, end - 1000 * bucketMs);
+    const firstBucket = Math.ceil(start / bucketMs) * bucketMs;
+    const lastBucket = Math.floor(end / bucketMs) * bucketMs;
+    if (lastBucket < firstBucket) return [];
+    const count = Math.min(Math.floor((lastBucket - firstBucket) / bucketMs) + 1, Math.min(limit, 1000));
+    const firstIndex = Math.floor((lastBucket - firstBucket) / bucketMs) + 1 - count;
+    let price = round(def.basePrice * (1 + (Math.random() - 0.5) * def.vol * 40), def.digits);
+    const candles: Candle[] = [];
+    for (let index = 0; index < firstIndex + count; index += 1) {
+      const t = firstBucket + index * bucketMs;
+      const open = price;
+      const drift = (def.basePrice - price) * 0.002;
+      const step = price * def.vol * (Math.random() * 2 - 1) + drift;
+      const close = round(Math.max(price + step, def.basePrice * 0.5), def.digits);
+      const spread = price * def.vol * Math.sqrt(bucketMs / TICK_MS);
+      const high = round(Math.max(open, close) + Math.random() * spread, def.digits);
+      const low = round(Math.min(open, close) - Math.random() * spread, def.digits);
+      if (index >= firstIndex) {
+        candles.push({
+          t,
+          o: open,
+          h: Math.max(high, open, close),
+          l: Math.min(low, open, close),
+          c: close,
+          v: Number((Math.random() * 100).toFixed(2)),
+        });
+      }
+      price = close;
+    }
+    return candles;
   }
 }

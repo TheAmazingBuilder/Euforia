@@ -38,6 +38,7 @@ import {
   StartSessionDialog,
 } from "@/components/session/session-shell";
 import { SessionLogbook } from "@/components/session/session-logbook";
+import { SessionReplayDialog } from "@/components/session/session-replay";
 import { SessionTimer } from "@/components/session/session-timer";
 import { SymbolPicker } from "@/components/session/symbol-picker";
 import { SymbolPositions } from "@/components/session/symbol-positions";
@@ -57,6 +58,7 @@ import {
 import { useBrokerSession } from "@/lib/api/queries";
 import { useCandles, useFeedStatus, useLiveQuote, useLiveQuotes } from "@/lib/realtime/market";
 import { atrNow } from "@/lib/utils/indicators";
+import { loadPersistedChartState, persistChartState } from "@/lib/utils/chart-state";
 import type {
   BrokerPosition,
   DrawingKind,
@@ -102,37 +104,9 @@ import { cn } from "@/lib/utils";
 
 const TIMEFRAMES: readonly MarketInterval[] = ["1m", "5m", "15m", "30m", "1H", "4H", "1D"];
 
-const STORE_KEY = "cosmoz.session-live.chart.v1";
-
-interface PersistedChartState {
-  interval?: MarketInterval;
-  indicators?: IndicatorConfig[];
-  drawings?: DrawingObject[];
-}
-
-function loadPersisted(symbol: string): PersistedChartState {
-  if (typeof window === "undefined") return {};
-  try {
-    const raw = window.localStorage.getItem(STORE_KEY);
-    if (raw === null) return {};
-    const parsed = JSON.parse(raw) as Record<string, PersistedChartState>;
-    return parsed[symbol] ?? {};
-  } catch {
-    return {};
-  }
-}
-
-function persistChartState(symbol: string, state: PersistedChartState): void {
-  if (typeof window === "undefined") return;
-  try {
-    const raw = window.localStorage.getItem(STORE_KEY);
-    const all = raw !== null ? (JSON.parse(raw) as Record<string, PersistedChartState>) : {};
-    all[symbol] = state;
-    window.localStorage.setItem(STORE_KEY, JSON.stringify(all));
-  } catch {
-    // Non-fatal: persistence is a convenience, never a source of truth.
-  }
-}
+// Per-symbol chart persistence lives in lib/utils/chart-state.ts — shared
+// with the session replay so a replayed session opens with the trader's
+// own indicator template.
 
 function SessionSkeleton() {
   return (
@@ -225,7 +199,7 @@ function Workspace(props: WorkspaceProps) {
 
   // Per-symbol chart state — seeds once at mount (this component is keyed by
   // symbol), persists via a write-only effect.
-  const seeded = loadPersisted(symbol);
+  const seeded = loadPersistedChartState(symbol);
   const [interval, setIntervalState] = React.useState<MarketInterval>(seeded.interval ?? "5m");
   const [indicators, setIndicators] = React.useState<IndicatorConfig[]>(seeded.indicators ?? []);
   const [drawings, setDrawings] = React.useState<DrawingObject[]>(seeded.drawings ?? []);
@@ -495,6 +469,7 @@ export function SessionLiveView() {
   // before its summary can render.
   const [endTarget, setEndTarget] = React.useState<TradingSession | null>(null);
   const [historyOpen, setHistoryOpen] = React.useState(false);
+  const [replaySession, setReplaySession] = React.useState<TradingSession | null>(null);
 
   // Multi-chart workspace state (layout + sync toggles + observation panes).
   // Persisted through a write-only effect — never re-enters render logic.
@@ -726,6 +701,10 @@ export function SessionLiveView() {
         onOpenChange={setHistoryOpen}
         history={history}
         strategyNameOf={strategyNameOf}
+        onReplay={(session) => {
+          setHistoryOpen(false);
+          setReplaySession(session);
+        }}
         trades={(allTrades.data?.trades ?? []).map((trade) => ({
           entryAt: trade.entryAt,
           exitAt: trade.exitAt,
@@ -733,6 +712,19 @@ export function SessionLiveView() {
           pnlGross: trade.pnlGross,
         }))}
       />
+      {replaySession !== null ? (
+        <SessionReplayDialog
+          key={replaySession.id}
+          open
+          onOpenChange={(value) => {
+            if (!value) setReplaySession(null);
+          }}
+          session={replaySession}
+          strategyName={strategyNameOf(replaySession.strategyId)}
+          instruments={instruments}
+          trades={allTrades.data?.trades ?? []}
+        />
+      ) : null}
     </div>
   );
 }

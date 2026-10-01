@@ -280,3 +280,24 @@ export function useCandles(symbol: string, interval: MarketInterval) {
     retry: 2,
   });
 }
+
+/**
+ * Candle history for a FIXED past window (epoch ms bounds) — session replay.
+ * Static history: no refetchInterval, generous staleTime. The market service
+ * forwards from/to to the provider (Binance native windows; SIM materializes
+ * its labeled walk).
+ */
+export function useCandlesRange(symbol: string, interval: MarketInterval, from: number, to: number, enabled: boolean) {
+  return useQuery({
+    queryKey: ["candles-range", symbol, interval, from, to],
+    enabled: enabled && symbol.length > 0 && to > from,
+    queryFn: async (): Promise<CandlesResponse> => {
+      const url = `${CANDLES_URL}&symbol=${encodeURIComponent(symbol)}&interval=${interval}&limit=1000&from=${Math.floor(from)}&to=${Math.ceil(to)}`;
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`candles-range ${response.status}`);
+      return (await response.json()) as CandlesResponse;
+    },
+    staleTime: 5 * 60_000,
+    retry: 2,
+  });
+}
