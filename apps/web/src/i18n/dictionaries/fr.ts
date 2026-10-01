@@ -2,6 +2,9 @@ import type { Dictionary } from "@/i18n/dictionaries/en";
 import { sessionDict as sessionFr } from "@/i18n/dictionaries/fr/session";
 import { tradesDict as tradesFr } from "@/i18n/dictionaries/fr/trades";
 import { nofyDict as nofyFr } from "@/i18n/dictionaries/fr/nofy";
+import { analyticsDict as analyticsFr } from "@/i18n/dictionaries/fr/analytics";
+import { playbookDict as playbookFr } from "@/i18n/dictionaries/fr/playbook";
+import { academyDict as academyFr } from "@/i18n/dictionaries/fr/academy";
 
 /**
  * FR language pack — must satisfy `Dictionary` (typeof en), so a missing or
@@ -288,4 +291,10 @@ export const fr: Dictionary = {
   trades: tradesFr,
 
   nofy: nofyFr,
+
+  analytics: analyticsFr,
+
+  playbook: playbookFr,
+
+  academy: academyFr,
 };

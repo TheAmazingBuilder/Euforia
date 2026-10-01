@@ -3,6 +3,9 @@ import { authCopy } from "@/components/auth/auth-copy";
 import { sessionDict } from "@/i18n/dictionaries/en/session";
 import { tradesDict } from "@/i18n/dictionaries/en/trades";
 import { nofyDict } from "@/i18n/dictionaries/en/nofy";
+import { analyticsDict } from "@/i18n/dictionaries/en/analytics";
+import { playbookDict } from "@/i18n/dictionaries/en/playbook";
+import { academyDict } from "@/i18n/dictionaries/en/academy";
 
 /**
  * EN dictionary — the CANONICAL language pack and the type source for every
@@ -103,6 +106,12 @@ const en = {
   trades: tradesDict,
 
   nofy: nofyDict,
+
+  analytics: analyticsDict,
+
+  playbook: playbookDict,
+
+  academy: academyDict,
 } as const;
 
 /**
