@@ -1,7 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { ArrowLeft, ArrowRight, CircleCheck, Search, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, CircleCheck, Coins, FlaskConical, GraduationCap, Search, ShieldAlert, CandlestickChart, X } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 import type { AcademyCourseCard, AcademyLevel } from "@cosmoz/shared";
 
@@ -28,6 +29,24 @@ import {
 
 const LEVELS: (AcademyLevel | "ALL")[] = ["ALL", "BEGINNER", "INTERMEDIATE", "ADVANCED"];
 const STATUS = ["ALL", "IN_PROGRESS", "COMPLETED", "NOT_STARTED"] as const;
+const DURATIONS = ["ALL", "SHORT", "MEDIUM", "LONG"] as const;
+const SORTS = ["curriculum", "shortest", "longest", "progress"] as const;
+
+type SortId = (typeof SORTS)[number];
+
+const SORT_LABELS: Record<SortId, string> = {
+  curriculum: "Curriculum order",
+  shortest: "Shortest first",
+  longest: "Longest first",
+  progress: "Most progress",
+};
+
+const DURATION_LABELS: Record<(typeof DURATIONS)[number], string> = {
+  ALL: "Any length",
+  SHORT: "Under 60 min",
+  MEDIUM: "60–120 min",
+  LONG: "120+ min",
+};
 
 export function AcademyCoursesPanel({
   courseId,
@@ -47,6 +66,8 @@ export function AcademyCoursesPanel({
   const [category, setCategory] = React.useState<string>("ALL");
   const [level, setLevel] = React.useState<AcademyLevel | "ALL">("ALL");
   const [status, setStatus] = React.useState<(typeof STATUS)[number]>("ALL");
+  const [duration, setDuration] = React.useState<(typeof DURATIONS)[number]>("ALL");
+  const [sort, setSort] = React.useState<SortId>("curriculum");
 
   // Debounce the server search (300ms) — catalog filtering stays client-side.
   React.useEffect(() => {
@@ -88,33 +109,179 @@ export function AcademyCoursesPanel({
         </div>
 
         {query === "" ? (
-          <div className="flex flex-wrap items-center gap-1.5" data-testid="academy-filters">
-            <FilterChip active={category === "ALL"} onClick={() => setCategory("ALL")}>
-              All categories
-            </FilterChip>
-            <FilterChip active={level === "ALL"} onClick={() => setLevel("ALL")}>
-              All levels
-            </FilterChip>
-            {LEVELS.filter((l) => l !== "ALL").map((l) => (
-              <FilterChip key={l} active={level === l} onClick={() => setLevel(level === l ? "ALL" : l)}>
-                {l === "BEGINNER" ? "Beginner" : l === "INTERMEDIATE" ? "Intermediate" : "Advanced"}
+          <>
+            <CategoryFilter category={category} onPick={setCategory} />
+            <div className="flex flex-wrap items-center gap-1.5" data-testid="academy-filters">
+              <FilterChip active={level === "ALL"} onClick={() => setLevel("ALL")}>
+                All levels
               </FilterChip>
-            ))}
-            <span aria-hidden="true" className="mx-1 h-4 w-px bg-border" />
-            {STATUS.map((s) => (
-              <FilterChip key={s} active={status === s} onClick={() => setStatus(s)}>
-                {s === "ALL" ? "Any status" : s === "IN_PROGRESS" ? "In progress" : s === "COMPLETED" ? "Completed" : "Not started"}
-              </FilterChip>
-            ))}
-          </div>
+              {LEVELS.filter((l) => l !== "ALL").map((l) => (
+                <FilterChip key={l} active={level === l} onClick={() => setLevel(level === l ? "ALL" : l)}>
+                  {l === "BEGINNER" ? "Beginner" : l === "INTERMEDIATE" ? "Intermediate" : "Advanced"}
+                </FilterChip>
+              ))}
+              <span aria-hidden="true" className="mx-1 h-4 w-px bg-border" />
+              {STATUS.map((s) => (
+                <FilterChip key={s} active={status === s} onClick={() => setStatus(s)}>
+                  {s === "ALL" ? "Any status" : s === "IN_PROGRESS" ? "In progress" : s === "COMPLETED" ? "Completed" : "Not started"}
+                </FilterChip>
+              ))}
+              <span aria-hidden="true" className="mx-1 h-4 w-px bg-border" />
+              {DURATIONS.map((d) => (
+                <FilterChip key={d} active={duration === d} onClick={() => setDuration(d)}>
+                  {DURATION_LABELS[d]}
+                </FilterChip>
+              ))}
+              <span aria-hidden="true" className="mx-1 h-4 w-px bg-border" />
+              <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                Sort
+                <select
+                  value={sort}
+                  onChange={(event) => setSort(event.target.value as SortId)}
+                  className="rounded-md border border-border bg-surface px-2 py-1 text-xs text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  aria-label="Sort courses"
+                  data-testid="academy-sort"
+                >
+                  {SORTS.map((s) => (
+                    <option key={s} value={s}>
+                      {SORT_LABELS[s]}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+          </>
         ) : null}
       </div>
 
       {query !== "" ? (
         <SearchResults query={query} onOpenCourse={onOpenCourse} onOpenLesson={onOpenLesson} />
       ) : (
-        <CatalogGrid category={category} level={level} status={status} onOpenCourse={onOpenCourse} />
+        <>
+          <LearningPaths onOpenCourse={onOpenCourse} />
+          <CatalogGrid category={category} level={level} status={status} duration={duration} sort={sort} onOpenCourse={onOpenCourse} />
+        </>
       )}
+    </div>
+  );
+}
+
+// ── Learning paths — guided cross-track sequences ──────────────────────────
+
+const PATH_ICONS: Record<string, LucideIcon> = {
+  Coins,
+  ShieldAlert,
+  CandlestickChart,
+  FlaskConical,
+};
+
+function LearningPaths({ onOpenCourse }: { onOpenCourse: (courseId: string) => void }) {
+  const { data: catalog } = useAcademyCatalog();
+  const [openPath, setOpenPath] = React.useState<string | null>(null);
+  const paths = catalog?.paths ?? [];
+  if (paths.length === 0) return null;
+
+  return (
+    <section aria-label="Learning paths" data-testid="academy-paths">
+      <AcademySectionTitle className="mb-2">Learning paths</AcademySectionTitle>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {paths.map((path) => {
+          const Icon = PATH_ICONS[path.icon] ?? GraduationCap;
+          const open = openPath === path.id;
+          return (
+            <div
+              key={path.id}
+              className="flex flex-col rounded-lg border border-border bg-surface transition-colors"
+              data-testid={`academy-path-${path.id}`}
+            >
+              <button
+                type="button"
+                onClick={() => setOpenPath((prev) => (prev === path.id ? null : path.id))}
+                className="flex flex-1 flex-col px-4 pb-3 pt-3.5 text-left"
+                aria-expanded={open}
+              >
+                <span className="flex items-center justify-between gap-2">
+                  <span
+                    aria-hidden="true"
+                    className="inline-flex size-8 shrink-0 items-center justify-center rounded-md border border-accent/30 bg-accent/10 text-accent"
+                  >
+                    <Icon className="size-4" />
+                  </span>
+                  <span className="font-mono text-[11px] tabular-nums text-muted-foreground">
+                    {path.completedCourses}/{path.courses.length} courses
+                  </span>
+                </span>
+                <span className="mt-2.5 block font-heading text-sm font-semibold text-foreground">{path.title}</span>
+                <span className="mt-1 line-clamp-2 flex-1 text-xs leading-relaxed text-muted-foreground">{path.description}</span>
+                <span className="mt-3 block">
+                  <ProgressBar percent={path.percent} label={`${path.title} progress`} testid={`academy-path-progress-${path.id}`} />
+                </span>
+              </button>
+              {open ? (
+                <ol className="mt-1 divide-y divide-border border-t border-border">
+                  {path.courses.map((course, index) => (
+                    <li key={course.id}>
+                      <button
+                        type="button"
+                        onClick={() => onOpenCourse(course.id)}
+                        className="flex w-full items-center gap-2.5 px-4 py-2 text-left transition-colors hover:bg-muted"
+                      >
+                        <span
+                          className={
+                            course.completed
+                              ? "flex size-5 shrink-0 items-center justify-center rounded-full bg-profit/15 text-profit"
+                              : "flex size-5 shrink-0 items-center justify-center rounded-full border border-border font-mono text-[10px] tabular-nums text-muted-foreground"
+                          }
+                        >
+                          {course.completed ? <CircleCheck className="size-3" aria-hidden="true" /> : index + 1}
+                        </span>
+                        <span className="min-w-0 flex-1 truncate text-xs font-medium text-foreground">{course.title}</span>
+                        <ArrowRight className="size-3 shrink-0 text-muted-foreground" aria-hidden="true" />
+                      </button>
+                    </li>
+                  ))}
+                </ol>
+              ) : null}
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+// ── Category filter chips (hue-dotted) ────────────────────────────────────
+
+function CategoryFilter({ category, onPick }: { category: string; onPick: (id: string) => void }) {
+  const { data: catalog } = useAcademyCatalog();
+  const categories = catalog?.categories ?? [];
+  if (categories.length === 0) return null;
+  return (
+    <div className="flex flex-wrap items-center gap-1.5" data-testid="academy-category-filter">
+      <FilterChip active={category === "ALL"} onClick={() => onPick("ALL")}>
+        All categories
+      </FilterChip>
+      {categories.map((cat) => {
+        const hue = hueOf(cat.id);
+        return (
+          <button
+            key={cat.id}
+            type="button"
+            onClick={() => onPick(category === cat.id ? "ALL" : cat.id)}
+            aria-pressed={category === cat.id}
+            className={
+              category === cat.id
+                ? "inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium text-background"
+                : "inline-flex items-center gap-1.5 rounded-md border border-border bg-surface px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+            }
+            style={category === cat.id ? { backgroundColor: hue } : undefined}
+            data-testid={`academy-category-chip-${cat.id}`}
+          >
+            <span aria-hidden="true" className="size-1.5 rounded-full" style={{ backgroundColor: category === cat.id ? "var(--background)" : hue }} />
+            {cat.name}
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -142,11 +309,15 @@ function CatalogGrid({
   category,
   level,
   status,
+  duration,
+  sort,
   onOpenCourse,
 }: {
   category: string;
   level: AcademyLevel | "ALL";
   status: (typeof STATUS)[number];
+  duration: (typeof DURATIONS)[number];
+  sort: SortId;
   onOpenCourse: (courseId: string) => void;
 }) {
   const { data: catalog, isLoading } = useAcademyCatalog();
@@ -167,8 +338,19 @@ function CatalogGrid({
     if (status === "COMPLETED" && !course.completed) return false;
     if (status === "IN_PROGRESS" && (course.completed || course.completedLessons === 0)) return false;
     if (status === "NOT_STARTED" && course.completedLessons > 0) return false;
+    if (duration === "SHORT" && course.estimatedMinutes >= 60) return false;
+    if (duration === "MEDIUM" && (course.estimatedMinutes < 60 || course.estimatedMinutes > 120)) return false;
+    if (duration === "LONG" && course.estimatedMinutes < 120) return false;
     return true;
   });
+
+  // Sort within each category group (curriculum order = server order).
+  const sortCourses = (list: AcademyCourseCard[]) => {
+    if (sort === "shortest") return [...list].sort((a, b) => a.estimatedMinutes - b.estimatedMinutes);
+    if (sort === "longest") return [...list].sort((a, b) => b.estimatedMinutes - a.estimatedMinutes);
+    if (sort === "progress") return [...list].sort((a, b) => b.progress - a.progress);
+    return list;
+  };
 
   const grouped = catalog.categories
     .filter((cat) => category === "ALL" || cat.id === category)
@@ -202,7 +384,7 @@ function CatalogGrid({
             </div>
             <p className="mb-3 max-w-3xl text-xs leading-relaxed text-muted-foreground">{cat.description}</p>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-              {catCourses.map((course) => (
+              {sortCourses(catCourses).map((course) => (
                 <CourseCard key={course.id} course={course} onOpen={() => onOpenCourse(course.id)} />
               ))}
             </div>

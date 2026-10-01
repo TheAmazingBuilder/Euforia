@@ -45,7 +45,7 @@ import type {
   AcademyZoneDrill,
 } from "@cosmoz/shared";
 
-import { CATEGORIES, COURSES, LEVEL_ORDER } from "./academy/catalog";
+import { CATEGORIES, COURSES, LEVEL_ORDER, PATHS } from "./academy/catalog";
 import { GLOSSARY_TERMS } from "./academy/glossary";
 import { PATTERN_EXEMPLARS } from "./academy/patterns";
 import { SCENARIOS } from "./academy/scenarios";
@@ -228,6 +228,22 @@ export function academyCatalog(): AcademyCatalogResponse {
       order: index,
     })),
     courses: sortedCourses().map(courseCard),
+    paths: PATHS.map((path) => {
+      const courses = path.courseIds
+        .map((courseId) => COURSES.find((crs) => crs.id === courseId))
+        .filter((crs): crs is AuthoredCourseLike => Boolean(crs))
+        .map(courseCard);
+      const completedCourses = courses.filter((card) => card.completed).length;
+      return {
+        id: path.id,
+        title: path.title,
+        description: path.description,
+        icon: path.icon,
+        courses,
+        completedCourses,
+        percent: courses.length === 0 ? 0 : Math.round((completedCourses / courses.length) * 100),
+      };
+    }),
   };
 }
 

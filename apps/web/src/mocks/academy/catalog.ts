@@ -43,3 +43,38 @@ export const COURSES: AuthoredCourse[] = [
 
 /** Learning levels → a simple progression across the whole Academy. */
 export const LEVEL_ORDER: Record<string, number> = { BEGINNER: 1, INTERMEDIATE: 2, ADVANCED: 3 };
+
+/**
+ * Learning paths — guided cross-track sequences in pedagogical order.
+ * Progress derives from the member courses' completion (engine-side join).
+ */
+export const PATHS: { id: string; title: string; description: string; icon: string; courseIds: string[] }[] = [
+  {
+    id: "path-foundations",
+    title: "From zero to first trade",
+    description: "The vocabulary, the account mechanics, the risk math and your first charts — in the order that compounds.",
+    icon: "Coins",
+    courseIds: ["crs-fund-markets", "crs-fund-account", "crs-risk-fundamentals", "crs-ta-charts", "crs-candles-single"],
+  },
+  {
+    id: "path-risk-discipline",
+    title: "Risk & the disciplined mind",
+    description: "Position sizing, drawdown survival, the psychology of losses and managing what happens after entry.",
+    icon: "ShieldAlert",
+    courseIds: ["crs-risk-fundamentals", "crs-risk-advanced", "crs-psychology", "crs-trademgmt"],
+  },
+  {
+    id: "path-price-reader",
+    title: "Read price like a professional",
+    description: "Charts, candle behavior, structure, and the formations that matter — pattern plus context, never pattern alone.",
+    icon: "CandlestickChart",
+    courseIds: ["crs-ta-charts", "crs-pa-behavior", "crs-candles-single", "crs-candles-multi", "crs-structure-reading", "crs-chartpatterns-reversal"],
+  },
+  {
+    id: "path-system-builder",
+    title: "Build & validate a system",
+    description: "Indicators as filters, the 13-field strategy template, and the statistics to know whether it actually works.",
+    icon: "FlaskConical",
+    courseIds: ["crs-indicators-trend-momentum", "crs-strategies-core", "crs-strategies-styles", "crs-advanced-systematic", "crs-advanced-execution"],
+  },
+];

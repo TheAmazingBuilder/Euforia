@@ -132,6 +132,21 @@ export type AcademyCourseCard = {
 export type AcademyCatalogResponse = {
   categories: AcademyCategorySummary[];
   courses: AcademyCourseCard[];
+  /** Guided cross-track sequences with live progress. */
+  paths: AcademyPathCard[];
+};
+
+export type AcademyPathCard = {
+  id: string;
+  title: string;
+  description: string;
+  /** Icon key resolved by the client registry. */
+  icon: string;
+  /** Member courses in pedagogical order. */
+  courses: AcademyCourseCard[];
+  completedCourses: number;
+  /** Percent of member courses fully completed. */
+  percent: number;
 };
 
 export type AcademyLessonCard = {

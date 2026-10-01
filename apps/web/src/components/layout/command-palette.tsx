@@ -11,6 +11,8 @@ import {
   CircleHelp,
   Droplet,
   Ghost,
+  GraduationCap,
+  Library,
   Moon,
   NotebookPen,
   Plus,
@@ -23,7 +25,7 @@ import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { SIDEBAR_ITEMS } from "@/lib/navigation";
 import { SETTINGS_FINDER_META } from "@/components/settings/settings-view";
-import { useInstruments, useStrategies, useTrades } from "@/lib/api/queries";
+import { useAcademySearch, useInstruments, useStrategies, useTrades } from "@/lib/api/queries";
 import { openGhostModal } from "@/lib/hooks/use-ghost-modal";
 import { openTradeModal } from "@/lib/hooks/use-trade-modal";
 import { openShortcutsOverlay } from "@/lib/hooks/use-shortcuts-overlay";
@@ -44,6 +46,7 @@ type PaletteGroup =
   | "Actions"
   | "Trades"
   | "Strategies"
+  | "Academy"
   | "Navigate"
   | "Settings"
   | "Theme";
@@ -59,7 +62,7 @@ type PaletteItem = {
   run: () => void;
 };
 
-const GROUP_ORDER: PaletteGroup[] = ["Actions", "Trades", "Strategies", "Navigate", "Settings", "Theme"];
+const GROUP_ORDER: PaletteGroup[] = ["Actions", "Trades", "Strategies", "Academy", "Navigate", "Settings", "Theme"];
 
 /** Lowercase substring match across label + keywords (AND over tokens). */
 function matchItem(item: PaletteItem, query: string): boolean {
@@ -153,6 +156,50 @@ export function CommandPalette() {
     return [...strategyItems, ...tradeItems];
   }, [query, open, tradesData, strategiesData, instrumentSymbol, router]);
 
+  // ── Academy results: live search across courses/lessons/glossary ────────
+  const [academyQuery, setAcademyQuery] = React.useState("");
+  React.useEffect(() => {
+    const timer = window.setTimeout(() => setAcademyQuery(query.trim()), 250);
+    return () => window.clearTimeout(timer);
+  }, [query]);
+  const { data: academyData } = useAcademySearch(academyQuery);
+
+  const academyItems = React.useMemo<PaletteItem[]>(() => {
+    if (!open || academyQuery.length < 2 || !academyData) return [];
+
+    const courseItems: PaletteItem[] = academyData.courses.slice(0, 3).map((course) => ({
+      id: `academy-course-${course.id}`,
+      label: course.title,
+      hint: "course",
+      keywords: `academy course learn ${course.description}`,
+      icon: BookOpen,
+      group: "Academy" as const,
+      run: () => router.push(`/academy?tab=courses&course=${course.id}`),
+    }));
+
+    const lessonItems: PaletteItem[] = academyData.lessons.slice(0, 4).map((lesson) => ({
+      id: `academy-lesson-${lesson.id}`,
+      label: lesson.title,
+      hint: "lesson",
+      keywords: `academy lesson ${lesson.courseTitle}`,
+      icon: GraduationCap,
+      group: "Academy" as const,
+      run: () => router.push(`/academy?tab=courses&course=${lesson.courseId}&lesson=${lesson.id}`),
+    }));
+
+    const termItems: PaletteItem[] = academyData.glossary.slice(0, 4).map((term) => ({
+      id: `academy-term-${term.id}`,
+      label: term.term,
+      hint: "term",
+      keywords: `academy glossary definition ${term.simple}`,
+      icon: Library,
+      group: "Academy" as const,
+      run: () => router.push(`/academy?tab=glossary&term=${term.id}`),
+    }));
+
+    return [...courseItems, ...lessonItems, ...termItems];
+  }, [open, academyQuery, academyData, router]);
+
   // ── Item registry ────────────────────────────────────────────────────────
   const items = React.useMemo<PaletteItem[]>(() => {
     const actions: PaletteItem[] = [
@@ -205,6 +252,33 @@ export function CommandPalette() {
       run: () => router.push(`/settings#${category.id}`),
     }));
 
+    const academyTabs: PaletteItem[] = [
+      {
+        id: "academy-tab-courses",
+        label: "Academy — Courses",
+        keywords: "academy courses curriculum learn study lessons",
+        icon: BookOpen,
+        group: "Academy" as const,
+        run: () => router.push("/academy?tab=courses"),
+      },
+      {
+        id: "academy-tab-practice",
+        label: "Academy — Practice",
+        keywords: "academy practice drills flashcards scenarios quiz training",
+        icon: GraduationCap,
+        group: "Academy" as const,
+        run: () => router.push("/academy?tab=practice"),
+      },
+      {
+        id: "academy-tab-glossary",
+        label: "Academy — Glossary",
+        keywords: "academy glossary terms definitions vocabulary",
+        icon: Library,
+        group: "Academy" as const,
+        run: () => router.push("/academy?tab=glossary"),
+      },
+    ];
+
     const themes: PaletteItem[] = [
       {
         id: "theme-dark-blue",
@@ -232,13 +306,13 @@ export function CommandPalette() {
       },
     ];
 
-    return [...actions, ...navItems, ...settingsItems, ...themes];
+    return [...actions, ...navItems, ...academyTabs, ...settingsItems, ...themes];
   }, [router, setTheme]);
 
   // ── Filtering ────────────────────────────────────────────────────────────
   const filtered = React.useMemo(
-    () => [...items.filter((item) => matchItem(item, query.trim())), ...journalItems, ...dataItems],
-    [items, journalItems, dataItems, query],
+    () => [...items.filter((item) => matchItem(item, query.trim())), ...journalItems, ...academyItems, ...dataItems],
+    [items, journalItems, academyItems, dataItems, query],
   );
 
   // Group preserving canonical order.
@@ -348,7 +422,7 @@ export function CommandPalette() {
               setActiveIndex(0);
             }}
             onKeyDown={onInputKeyDown}
-            placeholder="Search actions, pages, themes…"
+            placeholder="Search actions, pages, Academy…"
             aria-label="Search commands"
             autoComplete="off"
             spellCheck={false}
