@@ -30,7 +30,7 @@ import { NOFY_REF_META, nofyRelativeTime } from "./nofy-shared";
 // ── Entity picker ────────────────────────────────────────────────────────────
 
 const PICKER_KINDS: (NofyRefKind | "ALL")[] = [
-  "ALL", "TRADE", "STRATEGY", "SETUP", "LESSON", "EVENT", "SYMBOL", "NOTE",
+  "ALL", "TRADE", "STRATEGY", "SETUP", "RULE", "LESSON", "EVENT", "SYMBOL", "NOTE",
 ];
 
 export function RefPickerDialog({

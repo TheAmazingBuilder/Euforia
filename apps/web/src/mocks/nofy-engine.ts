@@ -141,6 +141,11 @@ function resolveRef(kind: NofyRefKind, id: string): NofyRefResolved | null {
         if (!setup) return null;
         return { kind, id, label: setup.name, meta: "Playbook setup", href: "/playbook?tab=setups" };
       }
+      case "RULE": {
+        const rule = mockStore.listPlaybookRules().rules.find((r) => r.id === id);
+        if (!rule) return null;
+        return { kind, id, label: rule.title, meta: "Playbook rule", href: "/playbook?tab=rules" };
+      }
       case "LESSON": {
         for (const course of COURSES) {
           const lesson = course.lessons.find((l) => l.id === id);
@@ -794,9 +799,8 @@ export function searchNofy(q: string): NofySearchResponse {
 /** Entity picker — referenceable entities across the whole app. */
 export function listRefs(q: string, kind?: string): NofyRefsResponse {
   const query = q.trim().toLowerCase();
-  const kinds: NofyRefKind[] = kind && ["TRADE", "STRATEGY", "SETUP", "LESSON", "EVENT", "SYMBOL", "NOTE"].includes(kind)
-    ? [kind as NofyRefKind]
-    : ["TRADE", "STRATEGY", "SETUP", "LESSON", "EVENT", "SYMBOL", "NOTE"];
+  const ALL_KINDS: NofyRefKind[] = ["TRADE", "STRATEGY", "SETUP", "RULE", "LESSON", "EVENT", "SYMBOL", "NOTE"];
+  const kinds: NofyRefKind[] = kind && ALL_KINDS.includes(kind as NofyRefKind) ? [kind as NofyRefKind] : ALL_KINDS;
 
   const hits: NofyRefsResponse["refs"] = [];
   const push = (kind: NofyRefKind, id: string): void => {
@@ -809,6 +813,7 @@ export function listRefs(q: string, kind?: string): NofyRefsResponse {
   }
   if (kinds.includes("STRATEGY")) for (const s of mockStore.data.strategies) push("STRATEGY", s.id);
   if (kinds.includes("SETUP")) for (const s of mockStore.listSetups().setups) push("SETUP", s.id);
+  if (kinds.includes("RULE")) for (const r of mockStore.listPlaybookRules().rules) push("RULE", r.id);
   if (kinds.includes("LESSON")) {
     for (const course of COURSES) for (const lesson of course.lessons) push("LESSON", lesson.id);
   }

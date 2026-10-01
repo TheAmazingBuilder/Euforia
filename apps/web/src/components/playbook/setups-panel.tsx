@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ChevronDown, ChevronUp, Filter, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import type { Setup, SetupInsight, Strategy } from "@cosmoz/shared";
@@ -10,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { NofyLinkedNotesSection } from "@/components/nofy/nofy-linked-notes";
 import { SetupFormDialog } from "@/components/playbook/setup-form-dialog";
 import {
   MARKET_CONDITION_LABELS,
@@ -17,7 +19,7 @@ import {
   STATUS_LABELS,
 } from "@/components/playbook/playbook-labels";
 import { apiErrorMessage } from "@/lib/api/client";
-import { useDeleteSetup, useSetups, useSetupInsights } from "@/lib/api/queries";
+import { useCreateNofyNote, useDeleteSetup, useSetups, useSetupInsights } from "@/lib/api/queries";
 import { cn } from "@/lib/utils";
 
 /**
@@ -158,6 +160,25 @@ function SetupRow({
   onEdit: () => void;
 }) {
   const deleteSetup = useDeleteSetup();
+  const router = useRouter();
+
+  // Nofy integration — the SETUP side of the knowledge loop (increment ③):
+  // notes taken here carry a real SETUP ref and stay reachable from the row.
+  const createNofyNote = useCreateNofyNote({
+    onCreated: (note) => {
+      toast.success("Note created in Nofy.", { description: `Linked to ${setup.name}.` });
+      router.push(`/nofy?tab=notes&note=${note.id}`);
+    },
+  });
+  const takeNofyNotes = () => {
+    createNofyNote.mutate({
+      title: `${setup.name} — setup notes`,
+      blocks: [
+        { id: `nb-${Math.random().toString(36).slice(2, 10)}`, type: "ref", text: "", ref: { kind: "SETUP", id: setup.id } },
+        { id: `nb-${Math.random().toString(36).slice(2, 10)}`, type: "paragraph", text: "" },
+      ],
+    });
+  };
 
   const remove = async () => {
     try {
@@ -348,6 +369,14 @@ function SetupRow({
               ))}
             </div>
           ) : null}
+
+          <NofyLinkedNotesSection
+            kind="SETUP"
+            id={setup.id}
+            onCreateNote={takeNofyNotes}
+            creating={createNofyNote.isPending}
+            testidPrefix="setup"
+          />
         </div>
       ) : null}
     </div>

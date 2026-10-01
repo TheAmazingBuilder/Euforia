@@ -40,6 +40,7 @@ export const nofyRefKindSchema = z.enum([
   "TRADE",
   "STRATEGY",
   "SETUP",
+  "RULE",
   "LESSON",
   "EVENT",
   "SYMBOL",

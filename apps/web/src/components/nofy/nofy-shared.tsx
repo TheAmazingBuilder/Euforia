@@ -11,6 +11,7 @@ import {
   GraduationCap,
   Newspaper,
   NotebookText,
+  ScrollText,
   Swords,
   type LucideIcon,
 } from "lucide-react";
@@ -161,6 +162,7 @@ export const NOFY_REF_META: Record<NofyRefKind, { label: string; icon: LucideIco
   TRADE: { label: "Trade", icon: CandlestickChart, hue: "var(--profit)" },
   STRATEGY: { label: "Strategy", icon: Swords, hue: "var(--cat-strategies)" },
   SETUP: { label: "Setup", icon: FlaskConical, hue: "var(--cat-advanced)" },
+  RULE: { label: "Rule", icon: ScrollText, hue: "var(--cat-risk)" },
   LESSON: { label: "Lesson", icon: GraduationCap, hue: "var(--cat-ta)" },
   EVENT: { label: "Economic event", icon: Globe2, hue: "var(--warning)" },
   SYMBOL: { label: "Symbol", icon: Newspaper, hue: "var(--cat-fund)" },

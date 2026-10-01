@@ -1,7 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { Pencil, Plus, ScrollText, Trash2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Pencil, Plus, ScrollText, StickyNote, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import type { PlaybookRule, Strategy } from "@cosmoz/shared";
 
@@ -10,10 +11,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
+import { NofyLinkedNotesSection } from "@/components/nofy/nofy-linked-notes";
 import { PlaybookRuleFormDialog } from "@/components/playbook/playbook-rule-form-dialog";
 import { RULE_CATEGORY_LABELS } from "@/components/playbook/playbook-labels";
 import { apiErrorMessage } from "@/lib/api/client";
-import { useDeletePlaybookRule, usePlaybookRules, useUpdatePlaybookRule } from "@/lib/api/queries";
+import { useCreateNofyNote, useDeletePlaybookRule, usePlaybookRules, useUpdatePlaybookRule } from "@/lib/api/queries";
+import { cn } from "@/lib/utils";
 
 /**
  * Operating rules (§24): the playbook's own rule library — GLOBAL rules and
@@ -144,6 +147,10 @@ function RuleGroup({
   onEdit: (rule: PlaybookRule) => void;
   onRemove: (rule: PlaybookRule) => void;
 }) {
+  // Inline notes expansion — the RULE side of the Nofy knowledge loop.
+  // Mounted lazily per expanded rule so the linked-notes queries stay O(1).
+  const [notesFor, setNotesFor] = React.useState<string | null>(null);
+
   if (rules.length === 0) return null;
   return (
     <section aria-label={title}>
@@ -183,6 +190,17 @@ function RuleGroup({
                 <p className="text-sm leading-relaxed text-muted-foreground">{rule.detail}</p>
               </div>
               <div className="flex items-center gap-2">
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className={cn("size-7", notesFor === rule.id && "text-accent")}
+                  aria-label={`Notes of ${rule.title}`}
+                  aria-expanded={notesFor === rule.id}
+                  data-testid="rule-notes-toggle"
+                  onClick={() => setNotesFor(notesFor === rule.id ? null : rule.id)}
+                >
+                  <StickyNote className="size-3.5" aria-hidden="true" />
+                </Button>
                 <Switch
                   checked={rule.active}
                   onCheckedChange={() => onToggle(rule)}
@@ -208,9 +226,47 @@ function RuleGroup({
                 </Button>
               </div>
             </CardContent>
+            {notesFor === rule.id ? (
+              <div className="border-t border-border px-4 py-3" data-testid="rule-notes-area">
+                <RuleNotesArea rule={rule} />
+              </div>
+            ) : null}
           </Card>
         ))}
       </div>
     </section>
+  );
+}
+
+/**
+ * The RULE side of the Nofy integration (increment ③): linked notes with
+ * real RULE refs, "Take notes" spawning a connected note in Nofy. Mounted
+ * only while a rule's notes area is expanded.
+ */
+function RuleNotesArea({ rule }: { rule: PlaybookRule }) {
+  const router = useRouter();
+  const createNofyNote = useCreateNofyNote({
+    onCreated: (note) => {
+      toast.success("Note created in Nofy.", { description: `Linked to ${rule.title}.` });
+      router.push(`/nofy?tab=notes&note=${note.id}`);
+    },
+  });
+  const takeNofyNotes = () => {
+    createNofyNote.mutate({
+      title: `${rule.title} — rule notes`,
+      blocks: [
+        { id: `nb-${Math.random().toString(36).slice(2, 10)}`, type: "ref", text: "", ref: { kind: "RULE", id: rule.id } },
+        { id: `nb-${Math.random().toString(36).slice(2, 10)}`, type: "paragraph", text: "" },
+      ],
+    });
+  };
+  return (
+    <NofyLinkedNotesSection
+      kind="RULE"
+      id={rule.id}
+      onCreateNote={takeNofyNotes}
+      creating={createNofyNote.isPending}
+      testidPrefix="rule"
+    />
   );
 }
