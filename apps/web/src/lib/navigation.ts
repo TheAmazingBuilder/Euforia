@@ -11,6 +11,7 @@ import {
   List,
   LockKeyhole,
   NotebookPen,
+  NotebookText,
   Settings,
   ShieldCheck,
   type LucideIcon,
@@ -110,6 +111,15 @@ export const SIDEBAR_ITEMS: NavItem[] = [
       "The Academy curriculum will grow with practice drills, pattern labs and coaching recommendations from your own journal.",
   },
   {
+    href: "/nofy",
+    label: "Nofy",
+    icon: NotebookText,
+    description:
+      "Your personal trading knowledge workspace: notes, ideas, research and documentation — connected to your trades, strategies and lessons.",
+    comingSoon:
+      "Nofy will become the place where observations become knowledge, and knowledge feeds the playbook.",
+  },
+  {
     href: "/monitoring",
     label: "Monitoring",
     icon: HeartPulse,
@@ -174,7 +184,7 @@ export const NAV_SECTIONS: NavSection[] = [
   },
   {
     title: "Academy",
-    hrefs: ["/academy"],
+    hrefs: ["/academy", "/nofy"],
   },
   {
     title: "System",

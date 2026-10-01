@@ -40,6 +40,7 @@ export * from "./schemas/monitoring";
 export * from "./schemas/playbook";
 export * from "./schemas/tradeReview";
 export * from "./schemas/academy";
+export * from "./schemas/nofy";
 
 // ── Pure utils ───────────────────────────────────────────────────────────────
 export * from "./utils/money";

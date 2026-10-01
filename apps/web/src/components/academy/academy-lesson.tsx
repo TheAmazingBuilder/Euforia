@@ -17,6 +17,8 @@ import {
 } from "lucide-react";
 
 import type { AcademyCheckpointResult, AcademyLessonNote, AcademyQuizQuestionPublic, AcademyQuizResultResponse } from "@cosmoz/shared";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -24,7 +26,7 @@ import { cn } from "@/lib/utils";
 import { hueOf, tint } from "@/components/academy/academy-shared";
 import { CourseArt } from "@/components/academy/academy-illustrations";
 import { LessonBlock, LessonBlocks } from "@/components/academy/lesson-blocks";
-import { useAcademyCatalog } from "@/lib/api/queries";
+import { useAcademyCatalog, useCreateNofyNote } from "@/lib/api/queries";
 import {
   useAcademyBookmarks,
   useAcademyLesson,
@@ -55,6 +57,14 @@ export function LessonReader({
   const { data: lesson, isLoading, isError } = useAcademyLesson(lessonId);
   const complete = useCompleteLesson();
   const toggleBookmark = useToggleBookmark();
+  const router = useRouter();
+  const createNofyNote = useCreateNofyNote({
+    onCreated: (note) => {
+      toast.success("Note created in Nofy.");
+      // SPA navigation keeps the MSW store (and this lesson's progress) alive.
+      router.push(`/nofy?tab=notes&note=${note.id}`);
+    },
+  });
   // Derived from the server state — no local mirror to keep in sync.
   const { data: bookmarksData } = useAcademyBookmarks();
   const categoryName = useAcademyCatalog().data?.categories.find((cat) => cat.id === lesson?.categoryId)?.name;
@@ -197,20 +207,44 @@ export function LessonReader({
               testid="academy-lesson-vignette"
             />
           </span>
-          <button
-            type="button"
-            onClick={() => toggleBookmark.mutate({ kind: "LESSON", refId: lesson.id })}
-            className={
-              bookmarked
-                ? "inline-flex items-center gap-1.5 rounded-md border border-accent/40 bg-accent/10 px-2.5 py-1.5 text-xs font-medium text-accent"
-                : "inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
-            }
-            aria-pressed={bookmarked}
-            data-testid="academy-lesson-bookmark"
-          >
-            {bookmarked ? <BookmarkCheck className="size-3.5" aria-hidden="true" /> : <Bookmark className="size-3.5" aria-hidden="true" />}
-            {bookmarked ? "Bookmarked" : "Bookmark"}
-          </button>
+          <div className="flex shrink-0 items-center gap-2">
+            <button
+              type="button"
+              onClick={() =>
+                lesson &&
+                createNofyNote.mutate({
+                  title: `${lesson.title} — my notes`,
+                  lessonRef: {
+                    courseId: lesson.courseId,
+                    courseTitle: lesson.courseTitle,
+                    lessonId: lesson.id,
+                    lessonTitle: lesson.title,
+                  },
+                })
+              }
+              disabled={createNofyNote.isPending}
+              className="inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"
+              aria-label="Take notes on this lesson in Nofy"
+              data-testid="academy-lesson-take-notes"
+            >
+              <StickyNote className="size-3.5" aria-hidden="true" />
+              Take notes
+            </button>
+            <button
+              type="button"
+              onClick={() => toggleBookmark.mutate({ kind: "LESSON", refId: lesson.id })}
+              className={
+                bookmarked
+                  ? "inline-flex items-center gap-1.5 rounded-md border border-accent/40 bg-accent/10 px-2.5 py-1.5 text-xs font-medium text-accent"
+                  : "inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+              }
+              aria-pressed={bookmarked}
+              data-testid="academy-lesson-bookmark"
+            >
+              {bookmarked ? <BookmarkCheck className="size-3.5" aria-hidden="true" /> : <Bookmark className="size-3.5" aria-hidden="true" />}
+              {bookmarked ? "Bookmarked" : "Bookmark"}
+            </button>
+          </div>
         </div>
       </header>
 

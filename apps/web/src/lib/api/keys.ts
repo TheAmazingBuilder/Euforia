@@ -85,6 +85,25 @@ export const queryKeys = {
     ["academy-certifications"],
     ["academy-milestones"],
   ] as const,
+  // Nofy module (personal knowledge & notes workspace)
+  nofyOverview: ["nofy-overview"] as const,
+  nofyNotes: (view: string, folderId: string, tagId: string, q: string, sort: string) =>
+    ["nofy-notes", view, folderId, tagId, q, sort] as const,
+  nofyNotesRoot: ["nofy-notes"] as const,
+  nofyNote: (noteId: string) => ["nofy-note", noteId] as const,
+  nofyFolders: ["nofy-folders"] as const,
+  nofyTags: ["nofy-tags"] as const,
+  nofyTemplates: ["nofy-templates"] as const,
+  nofySearch: (q: string) => ["nofy-search", q] as const,
+  nofyRefs: (q: string, kind: string) => ["nofy-refs", q, kind] as const,
+  nofyVersions: (noteId: string) => ["nofy-versions", noteId] as const,
+  /** Mutations that touch note state refresh these aggregates. */
+  nofyAggregates: [
+    ["nofy-overview"],
+    ["nofy-notes"],
+    ["nofy-folders"],
+    ["nofy-tags"],
+  ] as const,
 } as const;
 
 /**

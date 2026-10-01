@@ -134,17 +134,20 @@ export function AbComparator({ suite }: { suite: Suite }) {
   const [idBState, setIdB] = React.useState<string>("");
 
   // Default A/B = the two most-traded rows — derived at render (no effect):
-  // an explicit selection sticks, an empty/invalid one falls back.
+  // an explicit selection sticks, an empty/invalid one falls back. "none"
+  // is the select's canonical value for the Out-of-playbook bucket
+  // (strategyId null) — the same ?? convention the SelectItems use.
   const sorted = React.useMemo(() => [...rows].sort((a, b) => b.trades - a.trades), [rows]);
   const resolveId = (current: string, fallbackIndex: number): string => {
     if (current !== "" && rows.some((row) => row.strategyId === current)) return current;
-    return sorted[fallbackIndex]?.strategyId ?? "none";
+    const fallback = sorted[fallbackIndex]?.strategyId;
+    return fallback ?? "none";
   };
   const idA = resolveId(idAState, 0);
   const idB = resolveId(idBState, 1);
 
-  const rowA = rows.find((row) => row.strategyId === idA);
-  const rowB = rows.find((row) => row.strategyId === idB);
+  const rowA = rows.find((row) => row.strategyId === (idA === "none" ? null : idA));
+  const rowB = rows.find((row) => row.strategyId === (idB === "none" ? null : idB));
 
   if (rows.length < 2) {
     return (

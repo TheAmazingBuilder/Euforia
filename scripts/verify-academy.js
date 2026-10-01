@@ -66,7 +66,8 @@ const NOISE = [/socket\.io/i, /candles/i, /market-service/i, /favicon/i, /net::E
     JSON.stringify(sectionMap.Insights) === JSON.stringify(["/analytics", "/calendar", "/discipline"]),
     JSON.stringify(sectionMap.Insights),
   );
-  check("ACADEMY section present with /academy", JSON.stringify(sectionMap.Academy) === JSON.stringify(["/academy"]), JSON.stringify(sectionMap.Academy));
+  // Nofy joined the ACADEMY section as an independent first-class module.
+  check("ACADEMY section present with /academy + /nofy", JSON.stringify(sectionMap.Academy) === JSON.stringify(["/academy", "/nofy"]), JSON.stringify(sectionMap.Academy));
   check(
     "SYSTEM section unchanged, after ACADEMY",
     JSON.stringify(sectionMap.System) === JSON.stringify(["/monitoring", "/settings", "/integrations", "/security"]),

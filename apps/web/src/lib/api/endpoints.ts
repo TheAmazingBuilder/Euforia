@@ -129,4 +129,22 @@ export const apiPaths = {
   academyExamSubmit: (categoryId: string) => `/academy/exams/${categoryId}/attempts`,
   academyMilestones: "/academy/milestones",
   academySuggestions: "/academy/suggestions",
+  // Nofy module (personal knowledge & notes workspace)
+  nofyOverview: "/nofy/overview",
+  nofyNotes: "/nofy/notes",
+  nofyNote: (noteId: string) => `/nofy/notes/${noteId}`,
+  nofyNoteDuplicate: (noteId: string) => `/nofy/notes/${noteId}/duplicate`,
+  nofyNoteRestore: (noteId: string) => `/nofy/notes/${noteId}/restore`,
+  nofyNotePermanent: (noteId: string) => `/nofy/notes/${noteId}/permanent`,
+  nofyNoteVersions: (noteId: string) => `/nofy/notes/${noteId}/versions`,
+  nofyNoteVersion: (noteId: string, versionId: string) => `/nofy/notes/${noteId}/versions/${versionId}`,
+  nofyNoteVersionRestore: (noteId: string, versionId: string) =>
+    `/nofy/notes/${noteId}/versions/${versionId}/restore`,
+  nofyFolders: "/nofy/folders",
+  nofyFolder: (folderId: string) => `/nofy/folders/${folderId}`,
+  nofyTags: "/nofy/tags",
+  nofyTemplates: "/nofy/templates",
+  nofyTemplatesInstantiate: "/nofy/templates/instantiate",
+  nofySearch: "/nofy/search",
+  nofyRefs: "/nofy/refs",
 } as const;

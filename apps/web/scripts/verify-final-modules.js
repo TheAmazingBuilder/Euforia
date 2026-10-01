@@ -139,7 +139,11 @@ const BASE = "http://localhost:3000";
   await page.locator('[data-testid="analytics-reset"]').click();
   await page.waitForTimeout(1400);
   await page.getByRole("tab", { name: "Strategy" }).first().click();
-  await page.waitForTimeout(1400);
+  // Wait for the comparator's default A/B rows to resolve (async stats).
+  await page
+    .locator('[data-testid="ab-comparator-table"]')
+    .waitFor({ state: "visible", timeout: 15_000 })
+    .catch(() => {});
   const ab = page.locator('[data-testid="ab-comparator"]');
   check("A/B comparator card rendered", await ab.isVisible());
   check(
