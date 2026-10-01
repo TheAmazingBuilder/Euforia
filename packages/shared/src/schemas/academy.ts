@@ -406,6 +406,10 @@ export type AcademyPatternDrill = {
   /** Candles to render — deterministic exemplar series. */
   candles: AcademyCandle[];
   context: string;
+  /** Family teaching tag, e.g. "Double candle" — pattern taxonomy chip. */
+  family?: string;
+  /** Directional teaching tag, e.g. "Bullish reversal". */
+  bias?: string;
   options: AcademyPatternOption[];
   /** Index into options. */
   answer: number;

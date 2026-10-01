@@ -1,7 +1,7 @@
 /**
  * Verify — Session Live upgrades (module-by-module round).
  * Probes (ONE SPA session — the mock store reseeds on full reload):
- *  1. Station loads: toolbar, chart, key-levels minimap with ≥1 level row
+ *  1. Station loads: toolbar, chart (Key Levels widget REMOVED from the chart)
  *  2. Session logbook: log a note (POST /session/notes), timestamped row,
  *     note SURVIVES SPA navigation (server persistence), delete removes it
  *  3. Session timer: start ticks; the duration cap persists via PATCH
@@ -39,15 +39,13 @@ const BASE = "http://localhost:3000";
   const toastFor = (text) => page.locator("[data-sonner-toast]", { hasText: text });
 
   const run = async () => {
-    // ── 1. Station + minimap ────────────────────────────────────────────────
+    // ── 1. Station ─────────────────────────────────────────────────────────
     await page.goto(`${BASE}/session`, { waitUntil: "networkidle", timeout: 60000 });
     await page.waitForTimeout(1500);
     check("Toolbar renders", await page.locator('[data-testid="session-toolbar"]').isVisible());
     check("Chart renders", await page.locator('[data-testid="price-chart"]').isVisible());
-    const minimapVisible = await page.locator('[data-testid="session-minimap"]').isVisible();
-    const levelCount = await page.locator('[data-testid="session-minimap-level"]').count();
-    check("Key-levels minimap renders", minimapVisible, `${levelCount} level rows`);
-    check("Minimap has at least one level (Entry)", levelCount >= 1, `${levelCount}`);
+    const minimapGone = (await page.locator('[data-testid="session-minimap"]').count()) === 0;
+    check("Key Levels widget removed from the chart", minimapGone);
     await page.screenshot({ path: "scripts/shots/session-upgrades-default.png" });
 
     // ── 2. Session logbook ──────────────────────────────────────────────────
@@ -149,7 +147,6 @@ const BASE = "http://localhost:3000";
     );
     check("Mobile 390: no horizontal overflow", overflow <= 0, `${overflow}px`);
     check("Mobile: logbook renders", await mobile.locator('[data-testid="session-logbook"]').isVisible());
-    check("Mobile: minimap renders", await mobile.locator('[data-testid="session-minimap"]').isVisible());
     await mobile.screenshot({ path: "scripts/shots/session-upgrades-mobile.png" });
     await mobile.close();
 

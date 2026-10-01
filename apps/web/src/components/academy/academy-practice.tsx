@@ -100,11 +100,79 @@ function PracticeStats() {
 
 // ── 1. Pattern identification drill ──────────────────────────────────────────
 
+/**
+ * Candle-ink palettes — the color-independence teaching device. Every
+ * palette re-inks the SAME anatomy via [data-candle-ink] CSS variables
+ * (globals.css): "inverse" mirrors the East-Asian convention (red = up),
+ * "mono" is the classic hollow/filled newspaper chart. The lesson: the
+ * pattern is the geometry and its location — never the color.
+ */
+const INK_PALETTES = [
+  { id: "classic", label: "Classic" },
+  { id: "inverse", label: "Inverse" },
+  { id: "ocean", label: "Ocean" },
+  { id: "violet", label: "Violet" },
+  { id: "mono", label: "Mono" },
+] as const;
+
+type InkPaletteId = (typeof INK_PALETTES)[number]["id"];
+
+const INK_STORAGE_KEY = "cosmoz:candle-ink";
+
+function CandleInkPicker({ value, onChange }: { value: InkPaletteId; onChange: (id: InkPaletteId) => void }) {
+  return (
+    <div className="flex items-center gap-2" data-testid="academy-ink-picker">
+      <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Candle ink</span>
+      <div role="radiogroup" aria-label="Candle ink palette" className="flex items-center gap-1">
+        {INK_PALETTES.map((palette) => (
+          <button
+            key={palette.id}
+            type="button"
+            role="radio"
+            aria-checked={value === palette.id}
+            aria-label={`${palette.label} candle colors`}
+            title={`${palette.label} — same patterns, different inks`}
+            onClick={() => onChange(palette.id)}
+            data-candle-ink={palette.id}
+            data-testid={`academy-ink-${palette.id}`}
+            className={cn(
+              "flex items-center gap-0.5 rounded-full border px-1.5 py-1 transition-colors",
+              value === palette.id ? "border-accent bg-accent/10" : "border-border bg-surface hover:bg-muted",
+            )}
+          >
+            {/* Swatch dots resolve the palette's own CSS variables locally. */}
+            <span aria-hidden="true" className="size-2.5 rounded-full border border-foreground/15" style={{ background: "var(--candle-bull)" }} />
+            <span aria-hidden="true" className="size-2.5 rounded-full border border-foreground/15" style={{ background: "var(--candle-bear)" }} />
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function PatternDrill() {
   const drillQuery = useAcademyPatternDrill();
   const logPractice = useLogPractice();
   const [choice, setChoice] = React.useState<number | null>(null);
   const [round, setRound] = React.useState(0);
+  const [ink, setInk] = React.useState<InkPaletteId>(() => {
+    if (typeof window === "undefined") return "classic";
+    try {
+      const stored = window.localStorage.getItem(INK_STORAGE_KEY);
+      return INK_PALETTES.some((palette) => palette.id === stored) ? (stored as InkPaletteId) : "classic";
+    } catch {
+      return "classic";
+    }
+  });
+
+  const changeInk = (id: InkPaletteId) => {
+    setInk(id);
+    try {
+      window.localStorage.setItem(INK_STORAGE_KEY, id);
+    } catch {
+      /* private mode — palette stays session-only */
+    }
+  };
 
   const drill = drillQuery.data;
   const answered = choice !== null && drill !== null;
@@ -114,6 +182,14 @@ function PatternDrill() {
     setRound((prev) => prev + 1);
     void drillQuery.refetch();
   };
+
+  const biasTone = drill?.bias
+    ? drill.bias.startsWith("Bullish")
+      ? "border-profit/40 bg-profit/10 text-profit"
+      : drill.bias.startsWith("Bearish")
+        ? "border-loss/40 bg-loss/10 text-loss"
+        : "border-border bg-muted text-muted-foreground"
+    : "";
 
   return (
     <section aria-label="Identify the pattern" className="rounded-lg border bg-surface px-4 py-4 sm:px-5">
@@ -137,9 +213,32 @@ function PatternDrill() {
         </div>
       ) : (
         <>
-          <div className="chart-paper mx-auto mt-4 flex max-w-sm items-center justify-center rounded-md border border-border px-3 py-4">
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+            <div className="flex items-center gap-1.5" data-testid="academy-drill-tags">
+              {drill.family ? (
+                <span className="inline-flex items-center rounded-sm border border-border bg-muted px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                  {drill.family}
+                </span>
+              ) : null}
+              {drill.bias ? (
+                <span className={cn("inline-flex items-center rounded-sm border px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider", biasTone)}>
+                  {drill.bias}
+                </span>
+              ) : null}
+            </div>
+            <CandleInkPicker value={ink} onChange={changeInk} />
+          </div>
+
+          <div
+            data-candle-ink={ink}
+            data-testid="academy-drill-chart"
+            className="chart-paper mx-auto mt-3 flex max-w-sm items-center justify-center rounded-md border border-border px-3 py-4"
+          >
             <CandleSeries candles={drill.candles} width={280} height={170} />
           </div>
+          <p className="mt-1.5 text-center text-[11px] text-muted-foreground" data-testid="academy-ink-hint">
+            Same anatomy, different ink — in some markets red means &ldquo;up&rdquo;. Read the pattern, not the palette.
+          </p>
 
           <div className="mt-4 grid gap-2 sm:grid-cols-2" role="radiogroup" aria-label="Pattern options" data-testid="academy-drill-options">
             {drill.options.map((option, index) => {

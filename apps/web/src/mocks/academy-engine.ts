@@ -836,6 +836,8 @@ export function patternDrill(): AcademyPatternDrill | null {
     patternId: exemplar.id,
     candles: exemplar.candles,
     context: exemplar.context,
+    family: exemplar.family,
+    bias: exemplar.bias,
     options: optionIds.map((id) => ({
       id,
       label: PATTERN_EXEMPLARS.find((entry) => entry.id === id)?.label ?? id,

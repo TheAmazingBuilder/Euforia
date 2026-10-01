@@ -32,10 +32,20 @@ type CandleRenderProps = {
   /** Optional index-labels under candles. */
   labels?: string[];
   className?: string;
+  /**
+   * Candle inks — CSS color values. Defaults resolve through the
+   * --candle-bull/--candle-bear palette variables (see globals.css
+   * [data-candle-ink]) falling back to the classic profit/loss pair, so a
+   * wrapper can re-ink the whole series for color-independence drills.
+   */
+  bullInk?: string;
+  bearInk?: string;
 };
 
-/** Renders a normalized candle series. Bullish = profit ink, bearish = loss ink. */
-export function CandleSeries({ candles, width = 300, height = 180, labels, className }: CandleRenderProps) {
+/** Renders a normalized candle series. Bullish = bull ink, bearish = bear ink. */
+export function CandleSeries({ candles, width = 300, height = 180, labels, className, bullInk, bearInk }: CandleRenderProps) {
+  const BULL = bullInk ?? "var(--candle-bull, var(--profit))";
+  const BEAR = bearInk ?? "var(--candle-bear, var(--loss))";
   const pad = 14;
   const highs = candles.map((candle) => candle.h);
   const lows = candles.map((candle) => candle.l);
@@ -69,7 +79,7 @@ export function CandleSeries({ candles, width = 300, height = 180, labels, class
       {candles.map((candle, index) => {
         const x = pad + slot * index + slot / 2;
         const bullish = candle.c >= candle.o;
-        const color = bullish ? PROFIT : LOSS;
+        const color = bullish ? BULL : BEAR;
         const bodyTop = yOf(Math.max(candle.o, candle.c));
         const bodyBottom = yOf(Math.min(candle.o, candle.c));
         return (

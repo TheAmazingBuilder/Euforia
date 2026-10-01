@@ -463,3 +463,32 @@
     margin: 8mm;
   }
 }
+
+/* ── Candle-ink palettes — Academy pattern drills ────────────────────────
+   Teaching device: pattern anatomy is color-independent. The drill wraps
+   its candle chart in [data-candle-ink] and CandleSeries resolves its
+   inks through --candle-bull/--candle-bear (falling back to profit/loss),
+   so re-inking never touches the app's chart tokens. Hex values live here
+   only, per the design hard rule (zero hex in .tsx). "inverse" mirrors the
+   East-Asian convention (red = up) — the strongest color-independence
+   lesson; "mono" is the classic hollow/filled newspaper chart. */
+[data-candle-ink="classic"] {
+  --candle-bull: var(--profit);
+  --candle-bear: var(--loss);
+}
+[data-candle-ink="inverse"] {
+  --candle-bull: var(--loss);
+  --candle-bear: var(--profit);
+}
+[data-candle-ink="ocean"] {
+  --candle-bull: #4c9eeb;
+  --candle-bear: #e8964b;
+}
+[data-candle-ink="violet"] {
+  --candle-bull: #a78bfa;
+  --candle-bear: #e8a54b;
+}
+[data-candle-ink="mono"] {
+  --candle-bull: var(--text-primary);
+  --candle-bear: var(--text-primary);
+}

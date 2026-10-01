@@ -12,7 +12,6 @@ import { formatPrice } from "@cosmoz/shared";
 import type { Candle, CandlesResponse, Instrument, MarketInterval, Trade } from "@cosmoz/shared";
 import { getChartTheme, type ChartTheme } from "@/lib/utils/chart-theme";
 import { STALE_MS, type LiveQuote } from "@/lib/realtime/market";
-import { KeyLevelsMinimap } from "@/components/session/key-levels-minimap";
 import { usePreferences } from "@/lib/api/queries";
 import { useNowMs } from "@/lib/realtime/use-now";
 import { cn } from "@/lib/utils";
@@ -532,9 +531,6 @@ export function PriceChart({
             <p className="text-sm text-muted-foreground">Loading market data…</p>
           </div>
         ) : null}
-
-        {/* Key-levels minimap — journal entries / SL / TP vs the live mark */}
-        <KeyLevelsMinimap trades={overlayTrades} quote={replayOn ? null : quote} candles={displayed} digits={digits} />
 
         {/* Replay toggle — always available once candles exist */}
         {displayed.length > 0 ? (

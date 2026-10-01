@@ -1,5 +1,5 @@
 import type { AuthoredCourse } from "./types";
-import { text, tip, warn, list, formula, structure, mc, tf, sc, num } from "./types";
+import { text, tip, warn, list, formula, structure, table, mc, tf, sc, num } from "./types";
 
 /**
  * Chart Patterns + Indicators — pattern geometry with measured-move targets,
@@ -207,7 +207,7 @@ export const INDICATOR_COURSES: AuthoredCourse[] = [
     categoryId: "cat-indicators",
     title: "Trend & Momentum Indicators",
     description:
-      "Moving averages, VWAP, MACD, ADX, RSI and stochastics — what each measures, how it is built, and when it lies.",
+      "Moving averages, VWAP, MACD, ADX, RSI and stochastics — plus the wider trend and momentum family (Parabolic SAR, SuperTrend, Ichimoku, Stochastic RSI, CCI, Williams %R, Aroon, TRIX…): what each measures, how it is built, and when it lies.",
     level: "INTERMEDIATE",
     objectives: [
       "Explain each indicator's construction in one sentence",
@@ -286,6 +286,109 @@ export const INDICATOR_COURSES: AuthoredCourse[] = [
           "Divergences warn; structure confirms",
         ],
       },
+      {
+        id: "lsn-ind-trend-followers",
+        title: "Trend Followers: Parabolic SAR & SuperTrend",
+        summary: "Two self-tightening trail lines: the stop-and-reverse dots and the ATR regime band that flips.",
+        minutes: 8,
+        objectives: [
+          "Explain the SAR's stop-and-reverse mechanics and its acceleration factor",
+          "Read SuperTrend's ATR-band flips as regime changes",
+          "Use both as trailing-stop frameworks, not entry oracles",
+        ],
+        blocks: [
+          text("The Parabolic SAR (Stop And Reverse) plots a trail of dots that hugs price and flips sides whenever price crosses it. Each new extreme in the run steps the acceleration factor up, so the trail tightens as the move matures — by design it wants to be stopped and reversed. That made it a complete mechanical system in its era; the professional borrow today is narrower: the dots as a trailing-stop skeleton, letting the market's own extremes ratchet your exit closer without you improvising."),
+          formula("Parabolic SAR", "SAR(next) = SAR + AF × (EP − SAR)", "AF starts at 0.02, steps +0.02 per new extreme, caps at 0.20; EP = extreme point of the current run."),
+          text("SuperTrend answers the same need with a volatility engine: an ATR-multiple band around the median price, drawn on one side of price at a time. A close beyond the band flips the line to the other side — so the tool's state IS the regime call. Above the line, the trend is bullish and the line is the trailing level; below, the mirror. Because the width is ATR-scaled, the same settings adapt naturally from a sleepy pair to a wild one."),
+          formula("SuperTrend", "Band = Median ± k × ATR(10), k ≈ 3", "A close beyond the band flips the trend — and the line."),
+          warn("Both are whipsaw machines in ranges",
+            "SAR and SuperTrend assume a trend exists. In sideways tape the same mechanics that ratchet a trail also flip side to side, donating spread each time. Filter regime first (structure, ADX); only then let the trail manage the position."),
+          list(
+            "Trailing-stop framework: exit where the trail exits — mechanical, unemotional",
+            "Regime filter: SuperTrend side confirms which pullback tactics are allowed",
+            "Never fade a fresh flip: the first candle after a flip is the weakest place to argue with it",
+          ),
+        ],
+        takeaways: [
+          "SAR = self-tightening stop-and-reverse trail; borrow the exit, not the reversal",
+          "SuperTrend = ATR regime line; its side is the trend call",
+          "Both shine in trends and bleed in ranges — filter state first",
+        ],
+      },
+      {
+        id: "lsn-ind-ichimoku",
+        title: "Ichimoku Kinko Hyo — Reading the Cloud",
+        summary: "Five components, one glance: equilibrium lines, a projected cloud, and the discipline of confluence.",
+        minutes: 9,
+        objectives: [
+          "Name the five components and what each averages",
+          "Read the cloud (kumo) as support/resistance plus momentum",
+          "Demand confluence instead of five separate signals",
+        ],
+        blocks: [
+          text("Ichimoku packs an entire chart-reading system into five overlays, all computed from midpoints of highs and lows rather than closes. The Tenkan-sen (conversion, 9-period midpoint) is the fast equilibrium; the Kijun-sen (base, 26-period midpoint) is the slow one — the trend's 'fair value'. Senkou Span A and B are those equilibria projected 26 periods FORWARD, and the space between them is the cloud (kumo). The Chikou span is today's close plotted 26 periods BACK, letting you compare price directly against its own past structure."),
+          table(
+            ["Component", "Engine", "Role"],
+            [
+              ["Tenkan-sen", "(HH + LL) / 2 over 9", "Fast equilibrium, momentum tilt"],
+              ["Kijun-sen", "(HH + LL) / 2 over 26", "Slow equilibrium, trend fair value"],
+              ["Senkou Span A/B", "Equilibria shifted +26", "The cloud: projected S/R and regime"],
+              ["Chikou Span", "Close shifted −26", "Price vs its own past — confirmation"],
+            ],
+          ),
+          formula("Midpoint engine", "Component = (Highest High + Lowest Low) / 2 over N", "Ichimoku averages POSITION, not closes — it maps where the auction balanced."),
+          text("The reading order matters: regime first, timing second. Price above a thick, green-ish cloud is a bullish regime where the cloud floor is the structural reference; price below a thick, red-ish cloud is the mirror. A cloud twist (Span A crossing Span B) marks projected momentum change; a kumo BREAK — price clearing the whole cloud and closing there — is the regime-change event. Inside the regime, the Tenkan/Kijun relationship provides timing, and Kijun acts as dynamic support in trends much like a slower moving average."),
+          warn("Five signals at a glance tempt five conclusions",
+            "Ichimoku's danger is conflation: a Tenkan/Kijun cross, a cloud twist and a Chikou break are three different statements about three different questions. The system earns its reputation only when they align — confluence first, or no trade."),
+        ],
+        takeaways: [
+          "All five components are midpoint-based equilibria, two projected in time",
+          "The cloud is regime + projected S/R; its thickness is the level's strength",
+          "One glance, one conclusion: no confluence, no trade",
+        ],
+      },
+      {
+        id: "lsn-ind-oscillator-family",
+        title: "The Wider Oscillator Family",
+        summary: "Stoch RSI, Williams %R, CCI, ROC, Awesome, Ultimate, Aroon, TRIX — one map: what each normalizes, and where each lies.",
+        minutes: 10,
+        objectives: [
+          "Place every oscillator on the 'what it normalizes' map",
+          "Match oscillator speed to market context",
+          "Recognize each tool's classic failure mode",
+        ],
+        blocks: [
+          text("RSI and Stochastic are only the famous two of a large family. Every oscillator normalizes momentum somehow — against its own range, against a statistical mean, against time. The professional shortcut is a one-line identity per tool: what does it divide by, how fast does it react, and which regime makes it lie?"),
+          list(
+            "Stochastic RSI — an oscillator OF an oscillator: the fastest, most whipsaw-prone member; range tool only",
+            "Williams %R — the stochastic in a 0 to −100 costume; same physics, inverted scale",
+            "CCI — deviation from the statistical mean of typical price; unbounded, so 'extreme' is contextual, not fixed",
+            "Momentum / ROC — raw percent rate of change; the family's honest ancestor, zero decoration",
+            "Awesome Oscillator — 5/34 median-price histogram; momentum of the trend in one visual",
+            "Ultimate Oscillator — blends 3 timeframes so a single-window spike can't fake a reversal",
+            "Aroon — time SINCE the N-period high/low; measures freshness of extremes, not their size",
+            "TRIX — triple-smoothed ROC; slow, trend-grade, almost noise-free and therefore late",
+          ),
+          table(
+            ["Tool", "Normalizes", "Best context", "Classic trap"],
+            [
+              ["Stoch RSI", "Stochastic of RSI", "Tight ranges", "Signals everywhere in trends"],
+              ["Williams %R", "Close vs N-range", "Ranges, timing", "Stays pinned in trends"],
+              ["CCI", "Mean deviation", "Breakouts from balance", "Unbounded = no fixed 'overbought'"],
+              ["ROC / Momentum", "N-period % change", "Regime confirmation", "Old-window distortion after gaps"],
+              ["Aroon", "Time since extreme", "Trend freshness", "Lags regime turns by design"],
+              ["TRIX", "Triple-smoothed ROC", "Position-trend grading", "Far too slow for tactical entries"],
+            ],
+          ),
+          warn("Oscillators of oscillators compound lag AND noise",
+            "Stochastic RSI inherits RSI's smoothing, then normalizes it again: the result reacts fast but swings to its rails constantly. Speed without context is not information — it is motion. Give every fast oscillator a regime filter and a slower confirmation, or it will trade you."),
+        ],
+        takeaways: [
+          "Every oscillator = a normalization choice: range, mean, or time",
+          "Fast oscillators belong to ranges; slow ones grade trends",
+          "Learn each tool's trap before learning its signals",
+        ],
+      },
     ],
     quiz: {
       id: "qz-indicators-trend-momentum",
@@ -298,6 +401,12 @@ export const INDICATOR_COURSES: AuthoredCourse[] = [
           "ADX quantifies trend strength regardless of direction; MACD is directional momentum."),
         tf("q3", "VWAP resets at the start of each trading session.", true,
           "VWAP is a session-anchored measure — it resets daily."),
+        mc("q4", "A tool that draws an ATR-scaled line on one side of price and flips sides when price closes beyond it is:",
+          ["Parabolic SAR", "SuperTrend", "Aroon"], 1,
+          "SuperTrend is the ATR regime line; the SAR is a stop-and-reverse dot trail; Aroon measures time since extremes."),
+        sc("q5", "Price trends strongly above a thick Ichimoku cloud. The professional read:",
+          ["The cloud will pull price back — short it", "Bullish regime — the cloud floor is the structural reference, timing via Tenkan/Kijun", "Ichimoku gives five signals, take the first"], 1,
+          "Regime first, timing second — and only on confluence. Five components are not five independent signals."),
       ],
     },
   },
@@ -306,7 +415,7 @@ export const INDICATOR_COURSES: AuthoredCourse[] = [
     categoryId: "cat-indicators",
     title: "Volatility & Volume Tools",
     description:
-      "ATR, Bollinger Bands, volume, OBV and volume profile — measuring how much price moves, and where participation sits.",
+      "ATR, Bollinger Bands, volume, OBV and volume profile — plus channel tools (Keltner, Donchian, envelopes) and money-flow measures (MFI, Chaikin, A/D): how much price moves, and where participation sits.",
     level: "INTERMEDIATE",
     objectives: [
       "Use ATR for stops and expectations, not signals",
@@ -359,6 +468,75 @@ export const INDICATOR_COURSES: AuthoredCourse[] = [
           "Volume profile maps acceptance (HVN) and rejection (LVN) by price",
         ],
       },
+      {
+        id: "lsn-ind-channels",
+        title: "Channel Tools: Keltner, Donchian & Envelopes",
+        summary: "Three channel engines — fixed percent, ATR-scaled, pure extremes — and what each says about state.",
+        minutes: 8,
+        objectives: [
+          "Distinguish the three channel engines and their scaling",
+          "Use Donchian breakouts as the trend-following baseline",
+          "Compare the Bollinger/Keltner squeeze read",
+        ],
+        blocks: [
+          text("Channels answer one question — 'how far is too far?' — with three different engines. MA Envelopes take a moving average and offset it by a FIXED percent: simple, but blind to volatility changes. Keltner Channels scale the offset with ATR: the channel widens exactly when the instrument gets violent, narrows when it sleeps. Donchian Channels ignore averages entirely and plot the N-period HIGHEST high and LOWEST low: the raw envelope of what the market actually did."),
+          formula("Donchian channel", "Upper = Highest(High, N) · Lower = Lowest(Low, N)", "The classic 20-period version was the Turtle traders' entire entry engine."),
+          text("Donchian mechanics are the purest trend-following expression on a chart: price making a 20-period high IS the definition of an uptrend continuing, so breakouts of the upper channel are entries, not alarms to fade. Keltner, meanwhile, enables the sharper comparison with Bollinger Bands: when the standard-deviation bands (BB) contract INSIDE the ATR bands (Keltner), volatility has compressed below its average state — the squeeze that precedes expansion. The Donchian midline doubles as a dynamic level in trends."),
+          warn("Channels are trend tools at the break — and only sometimes fade tools at the edges",
+            "In trends, price walks one edge of every channel, and 'fading the edge' is the oscillator mistake in envelope form. Edge-fading belongs exclusively to proven ranges, where the fixed-percent envelope's blindness to volatility actually hurts least. State first, tool second."),
+        ],
+        takeaways: [
+          "Envelopes = fixed percent; Keltner = ATR-scaled; Donchian = raw extremes",
+          "Donchian breakouts are the trend definition, not a surprise to fade",
+          "BB inside Keltner = volatility compression; expansion often follows",
+        ],
+      },
+      {
+        id: "lsn-ind-money-flow",
+        title: "Money Flow: MFI, Chaikin & the A/D Line",
+        summary: "Volume-weighted momentum and accumulation evidence: flow tools tell you WHO is paying for the move.",
+        minutes: 9,
+        objectives: [
+          "Explain MFI as volume-weighted RSI",
+          "Read Chaikin Money Flow and the A/D line as accumulation evidence",
+          "Treat flow divergences as hypotheses, never triggers",
+        ],
+        blocks: [
+          text("The Money Flow Index is RSI's volume-weighted sibling: instead of comparing up-closes to down-closes, it compares volume-dollar inflow to outflow (typical price × volume, signed by the day's direction), normalized 0–100 with 80/20 as the conventional rails. A price high with a weak MFI says the last leg was carried on thinner money — a hypothesis, not a sell order. It inherits RSI's regime problem wholesale: strong trends stay 'overbought' in MFI too."),
+          formula("Money Flow Index", "MFI = 100 − 100 / (1 + PosFlow / NegFlow)", "Flow = typical price × volume; RSI's logic weighted by participation."),
+          text("Chaikin Money Flow (CMF) measures WHERE the close lands inside the day's range, weighted by volume: closes near the high on heavy volume accumulate, closes near the low distribute. Averaged over ~20 periods it reads from +1 to −1 — sustained positive CMF is persistent demand evidence. The Accumulation/Distribution line accumulates the same close-location logic cumulatively, drawing a flow 'trend' under price; the Volume Oscillator watches participation expand or fade between fast and slow volume averages."),
+          warn("The A/D line is blind to gaps",
+            "Close-location math ignores the overnight jump: an instrument gapping down day after day can print a flat or even rising A/D if intraday closes land near session highs. Like OBV, flow lines are magnitude-blind to gaps — read them as weak evidence, always subordinate to price structure."),
+        ],
+        takeaways: [
+          "MFI = volume-weighted RSI — same regime rules apply",
+          "CMF/A-D grade WHERE closes land, volume-weighted: accumulation evidence",
+          "Flow divergences generate hypotheses; structure decides",
+        ],
+      },
+      {
+        id: "lsn-ind-ma-variants",
+        title: "The Moving-Average Family, Extended",
+        summary: "WMA, DEMA, HMA, adaptive MAs and VWAP variants — a responsiveness ladder, and how to pick your lag.",
+        minutes: 8,
+        objectives: [
+          "Rank the MA family on the responsiveness-vs-smoothness ladder",
+          "Explain adaptive averages (KAMA) and when adaptivity earns its complexity",
+          "Use anchored and rolling VWAP variants correctly",
+        ],
+        blocks: [
+          text("Every moving average trades lag against smoothness, and the family is a ladder on that trade-off. The WMA weights recent closes linearly — faster than the SMA. The EMA weights exponentially — faster still. DEMA and TEMA subtract the smoothing error itself, chasing price harder at the cost of overshooting every reversal. The Hull MA (HMA) nests weighted averages to cut lag with less overshoot. Higher rungs react sooner and lie more often; pick the rung whose lag matches your holding period, not your impatience."),
+          formula("Hull MA", "HMA(N) = WMA(2 × WMA(N/2) − WMA(N), √N)", "Lag reduction by double smoothing — still overshoots at turns."),
+          text("Adaptive averages change speed by regime. Kaufman's KAMA scales its smoothing constant with an efficiency ratio: net directional travel divided by total path. A clean trend (high efficiency) makes KAMA fast; chop (low efficiency) makes it crawl — the average itself does the regime filtering. The GMMA fans a dozen EMAs from fast to slow: the ribbon's compression and expansion visualize the agreement (or disagreement) between short-term and long-term consensus."),
+          tip("VWAP has variants — anchor them to questions",
+            "Session VWAP answers 'where is today's average participant?'. ANCHORED VWAP resets from an event — earnings, a swing high, a policy shock — and maps value since THAT question began. Rolling VWAP replaces the session reset with an N-period window for instruments without session boundaries. The anchor is a question; choose it deliberately."),
+        ],
+        takeaways: [
+          "MA family = one trade-off ladder: responsiveness vs smoothness",
+          "Adaptive MAs (KAMA) build the regime filter into the line",
+          "VWAP anchors are questions — session, event, or rolling window",
+        ],
+      },
     ],
     quiz: {
       id: "qz-indicators-volatility-volume",
@@ -371,6 +549,11 @@ export const INDICATOR_COURSES: AuthoredCourse[] = [
           "Stops must respect the instrument's current temperament — widen per ATR, shrink size so the dollar risk stays fixed."),
         tf("q3", "A low-volume node in a volume profile usually acts as a price magnet.", false,
           "It is the reverse: HVNs (acceptance) attract, LVNs (rejection) are traversed quickly."),
+        mc("q4", "Which channel engine plots the N-period highest high and lowest low?",
+          ["Keltner Channels", "Donchian Channels", "MA Envelopes"], 1,
+          "Donchian is the raw-extreme engine — the Turtle breakout logic; Keltner scales an EMA offset by ATR, envelopes use a fixed percent."),
+        tf("q5", "The Accumulation/Distribution line fully accounts for overnight gaps.", false,
+          "A/D is gap-blind — intraday close-location math never sees the jump; a known distortion shared with OBV."),
       ],
     },
   },
