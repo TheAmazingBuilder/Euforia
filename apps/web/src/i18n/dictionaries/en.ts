@@ -42,6 +42,13 @@ const en = {
     signIn: "Sign in",
     createAccount: "Create account",
     language: "Language",
+    // LanguageSelector (header) — sync status chip + option subtitles.
+    languageSaving: "Saving…",
+    languageSynced: "Synced to your account",
+    languageSyncError: "Couldn't sync — retry from Settings",
+    languageLocalOnly: "Saved on this device",
+    languageEnSubtitle: "Interface in English",
+    languageFrSubtitle: "Interface in French",
   },
 
   auth: authCopy,

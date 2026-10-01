@@ -58,6 +58,13 @@ export const fr: Dictionary = {
     signIn: "Connexion",
     createAccount: "Créer un compte",
     language: "Langue",
+    // LanguageSelector (header) — puce d'état de sync + sous-titres d'options.
+    languageSaving: "Enregistrement…",
+    languageSynced: "Synchronisé à votre compte",
+    languageSyncError: "Synchronisation impossible — réessayez depuis Paramètres",
+    languageLocalOnly: "Enregistré sur cet appareil",
+    languageEnSubtitle: "Interface en anglais",
+    languageFrSubtitle: "Interface en français",
   },
 
   auth: {
