@@ -15,6 +15,12 @@ const nextConfig: NextConfig = {
       { source: "/prices", destination: `${MARKET_SERVICE}/prices` },
       { source: "/candles", destination: `${MARKET_SERVICE}/candles` },
       { source: "/health", destination: `${MARKET_SERVICE}/health` },
+      // socket.io handshakes hit the BARE path "/socket.io/?EIO=4…" —
+      // "/socket.io/:path*" alone misses it (zero segments + trailing slash),
+      // so the websocket never connected locally and silently degraded to
+      // HTTP polling. The exact-match source keeps the trailing slash in the
+      // destination (engine.io's path is "/socket.io/" WITH it).
+      { source: "/socket.io", destination: `${MARKET_SERVICE}/socket.io/` },
       { source: "/socket.io/:path*", destination: `${MARKET_SERVICE}/socket.io/:path*` },
     ];
   },

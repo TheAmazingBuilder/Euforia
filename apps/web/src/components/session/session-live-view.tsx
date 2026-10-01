@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { DisciplineBanner } from "@/components/trades/discipline-banner";
 import { AnalysisChart } from "@/components/session/analysis-chart";
 import { BrokerPanel } from "@/components/session/broker-panel";
+import { PrivatePositionsStream } from "@/components/session/private-positions-stream";
 import {
   ChartGrid,
   ChartGridToolbar,
@@ -379,6 +380,8 @@ function Workspace(props: WorkspaceProps) {
             onToggleVisible={() => setLevelsVisible((visible) => !visible)}
           />
           <BrokerPanel />
+          {/* PRIVATE WS stream (user:<id> room) — live mark-to-market, read only */}
+          <PrivatePositionsStream />
           <SymbolPositions trades={props.symbolTrades} instrument={instrument} quote={quote} />
         </aside>
       </div>

@@ -148,11 +148,18 @@ io.use((socket: Socket, next: (err?: Error) => void) => {
 io.on("connection", (socket) => {
   const userId = socket.data.userId as string;
   void socket.join(`user:${userId}`);
+  connectedUsers.set(userId, (connectedUsers.get(userId) ?? 0) + 1);
 
   // Fresh snapshot on connect; the shared broadcast keeps everyone live.
   // Market prices are shared global data — the per-user room exists for
   // private streams, not to shard the price feed.
   socket.emit("prices", [...quotes.values()]);
+  // Private snapshot immediately (and on every reconnect — the socket.io
+  // connect event IS the resync: Reconnect → Authenticate → snapshot).
+  const book = ensureUserPositions(userId);
+  if (book) {
+    socket.emit("positions", { source: "sim", positions: markToMarket(book), ts: Date.now() });
+  }
   socket.on("subscribe", () => {
     // Re-check the presented token so a long-lived socket cannot outlive an
     // expired/revoked token silently (spec §76 negative tests).
@@ -164,7 +171,141 @@ io.on("connection", (socket) => {
     }
     socket.emit("prices", [...quotes.values()]);
   });
+  socket.on("disconnect", () => {
+    const remaining = (connectedUsers.get(userId) ?? 1) - 1;
+    if (remaining <= 0) connectedUsers.delete(userId);
+    else connectedUsers.set(userId, remaining);
+  });
 });
+
+// ── Private positions stream (user:<id> room, honest SIM source) ────────────
+//
+// The `user:<id>` room bound at handshake is the scoping point for PRIVATE
+// streams. This service has no real broker bridge yet: the book is a
+// SIMULATED, per-user, deterministic broker book (labeled source: "sim" on
+// the wire — the UI repeats the label), marked-to-market against the live
+// quotes. Snapshot semantics: the FULL positions array every emit, so a
+// reconnect/replay can never duplicate a position. Authorization is purely
+// server-side: io.to(`user:${id}`) — user A structurally never receives
+// user B's events, and nothing here accepts execution input (read-only).
+
+/** Refcount of live sockets per verified user (multi-tab safe). */
+const connectedUsers = new Map<string, number>();
+
+interface PrivatePosition {
+  id: string;
+  symbol: string;
+  direction: "BUY" | "SELL";
+  volume: string;
+  entryPrice: string;
+  currentPrice: string | null;
+  stopLoss: string | null;
+  takeProfit: string | null;
+  unrealizedPnl: string | null;
+  openedAt: string;
+}
+
+/** FNV-1a 32-bit — deterministic per-user seed. */
+function hashSeed(input: string): number {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < input.length; i += 1) {
+    h ^= input.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return h >>> 0;
+}
+
+function mulberry32(seed: number): () => number {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/** Preferred stream symbols (first available win), with contract sizes. */
+const STREAM_INSTRUMENTS = [
+  { symbol: "BTCUSD", contractSize: 1 },
+  { symbol: "ETHUSD", contractSize: 1 },
+  { symbol: "EURUSD", contractSize: 100_000 },
+  { symbol: "XAUUSD", contractSize: 100 },
+] as const;
+
+const userPositions = new Map<string, PrivatePosition[]>();
+
+function ensureUserPositions(userId: string): PrivatePosition[] | null {
+  const existing = userPositions.get(userId);
+  if (existing) return existing;
+  // Seeding needs live quotes to anchor entries — wait for the first ticks.
+  const available = STREAM_INSTRUMENTS.filter((instrument) => quotes.has(instrument.symbol));
+  if (available.length === 0) return null;
+
+  const rnd = mulberry32(hashSeed(`cosmoz.positions:${userId}`));
+  const count = 2 + Math.floor(rnd() * 2); // 2–3 positions, per-user shape
+  const positions: PrivatePosition[] = [];
+  for (let i = 0; i < count; i += 1) {
+    const instrument = available[i % available.length];
+    const quote = quotes.get(instrument.symbol);
+    if (!quote) continue;
+    const direction: "BUY" | "SELL" = rnd() >= 0.5 ? "BUY" : "SELL";
+    const sign = direction === "BUY" ? 1 : -1;
+    const drift = (0.001 + rnd() * 0.004) * sign; // entry sits off the mark
+    const entry = quote.price * (1 - drift);
+    const digits = quote.price >= 100 ? 2 : 5;
+    const round = (value: number): string => String(Number(value.toFixed(digits)));
+    const volume = (0.1 + Math.floor(rnd() * 19) / 10).toFixed(2); // 0.10–1.90
+    positions.push({
+      id: `sim-${userId.slice(0, 8)}-${instrument.symbol.toLowerCase()}-${i + 1}`,
+      symbol: instrument.symbol,
+      direction,
+      volume,
+      entryPrice: round(entry),
+      currentPrice: round(quote.price),
+      stopLoss: round(entry * (1 - sign * (0.004 + rnd() * 0.008))),
+      takeProfit: round(entry * (1 + sign * (0.008 + rnd() * 0.016))),
+      unrealizedPnl: null,
+      openedAt: new Date(Date.now() - Math.floor(rnd() * 4 * 3600_000)).toISOString(),
+    });
+  }
+  userPositions.set(userId, positions);
+  return positions;
+}
+
+/** Internal contract size per seeded symbol (P&L engine input). */
+const contractSizes = new Map(STREAM_INSTRUMENTS.map((instrument) => [instrument.symbol, instrument.contractSize]));
+
+function markToMarket(positions: PrivatePosition[]): PrivatePosition[] {
+  return positions.map((position) => {
+    const quote = quotes.get(position.symbol);
+    if (!quote) {
+      return { ...position, currentPrice: null, unrealizedPnl: null };
+    }
+    const entry = Number(position.entryPrice);
+    const volume = Number(position.volume);
+    const size = contractSizes.get(position.symbol) ?? 1;
+    const sign = position.direction === "BUY" ? 1 : -1;
+    const pnl = (quote.price - entry) * volume * size * sign;
+    return {
+      ...position,
+      currentPrice: String(Number(quote.price.toFixed(quote.price >= 100 ? 2 : 5))),
+      unrealizedPnl: String(Number(pnl.toFixed(2))),
+    };
+  });
+}
+
+setInterval(() => {
+  for (const userId of connectedUsers.keys()) {
+    const book = ensureUserPositions(userId);
+    if (!book) continue;
+    io.to(`user:${userId}`).emit("positions", {
+      source: "sim",
+      positions: markToMarket(book),
+      ts: Date.now(),
+    });
+  }
+}, BROADCAST_MS);
 
 setInterval(() => {
   if (dirty.size === 0) return;

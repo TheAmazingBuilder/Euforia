@@ -4,7 +4,7 @@ import { useSyncExternalStore } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { io, type Socket } from "socket.io-client";
 
-import type { CandlesResponse, MarketInterval, QuoteSource } from "@cosmoz/shared";
+import type { BrokerPosition, BrokerPositionsStreamEvent, CandlesResponse, MarketInterval, QuoteSource } from "@cosmoz/shared";
 
 import { subscribeAuthEvents } from "@/lib/auth/auth-events";
 import { refreshAccessToken } from "@/lib/auth/refresh";
@@ -125,6 +125,81 @@ const telemetry: MarketTelemetry = {
   lastPollRttMs: null,
 };
 
+// ── Private positions stream (WS event "positions", user:<id> room) ─────────
+//
+// Carried by the SAME socket and the SAME auth lifecycle as the price feed
+// (one connection, one credential, one teardown — §76). The server pushes
+// SNAPSHOT events into the owner's room only; applying one is idempotent.
+// Independent listener set: positions consumers must not re-render on every
+// price tick (and vice versa).
+
+export interface PositionsStreamSnapshot {
+  positions: ReadonlyMap<string, BrokerPosition>;
+  /** Wire source label — "sim" until a real broker bridge exists. */
+  source: "idle" | "sim";
+  /** Transport alive AND at least one snapshot received. */
+  connected: boolean;
+  /** Client epoch ms of the last snapshot applied. */
+  lastEventAt: number;
+}
+
+const EMPTY_POSITIONS: ReadonlyMap<string, BrokerPosition> = new Map();
+const EMPTY_POSITIONS_SNAPSHOT: PositionsStreamSnapshot = Object.freeze({
+  positions: EMPTY_POSITIONS,
+  source: "idle" as const,
+  connected: false,
+  lastEventAt: 0,
+});
+
+let positionsSnapshot: PositionsStreamSnapshot = EMPTY_POSITIONS_SNAPSHOT;
+const positionListeners = new Set<Listener>();
+
+function emitPositions(): void {
+  for (const listener of positionListeners) listener();
+}
+
+function applyPositionsEvent(event: BrokerPositionsStreamEvent): void {
+  telemetry.messagesReceived += 1;
+  telemetry.lastMessageAt = Date.now();
+  positionsSnapshot = Object.freeze({
+    positions: new Map(event.positions.map((position) => [position.id, position])),
+    source: event.source,
+    connected: true,
+    lastEventAt: Date.now(),
+  });
+  emitPositions();
+}
+
+function markPositionsDisconnected(): void {
+  if (positionsSnapshot.lastEventAt === 0) return;
+  positionsSnapshot = Object.freeze({ ...positionsSnapshot, connected: false });
+  emitPositions();
+}
+
+/** Reset to the frozen empty snapshot (session end — §76). */
+function resetPositions(): void {
+  positionsSnapshot = EMPTY_POSITIONS_SNAPSHOT;
+  emitPositions();
+}
+
+/** Reactive private-positions snapshot for the authenticated user. */
+export function usePrivatePositions(): PositionsStreamSnapshot {
+  return useSyncExternalStore(
+    subscribePositions,
+    () => positionsSnapshot,
+    () => EMPTY_POSITIONS_SNAPSHOT,
+  );
+}
+
+function subscribePositions(listener: Listener): () => void {
+  positionListeners.add(listener);
+  start();
+  return () => {
+    positionListeners.delete(listener);
+    // Keep the socket alive across subscribers (single app-wide feed).
+  };
+}
+
 /** Read-side copy of the client-observed connection telemetry. */
 export function getMarketTelemetry(): MarketTelemetry {
   return { ...telemetry };
@@ -235,9 +310,16 @@ function startSocket(token: string): void {
     setQuotes(quotes, "socket", "socket");
   });
 
+  // PRIVATE stream — the server emits only into this user's room; the
+  // client cannot subscribe to anything else (server-side scoping).
+  socket.on("positions", (event: BrokerPositionsStreamEvent) => {
+    if (event && Array.isArray(event.positions)) applyPositionsEvent(event);
+  });
+
   socket.on("disconnect", () => {
     // Socket lost — polling carries the data while socket.io retries.
     telemetry.droppedConnections += 1;
+    markPositionsDisconnected();
     startPolling();
     patch({ phase: "reconnecting", connected: false, transport: "polling", source: "polling" });
   });
@@ -305,6 +387,7 @@ function teardownFeed(): void {
   socket?.disconnect();
   socket = null;
   gotData = false;
+  resetPositions();
   snapshot = Object.freeze({
     quotes: EMPTY,
     connected: false,

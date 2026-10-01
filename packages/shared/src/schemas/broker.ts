@@ -86,3 +86,23 @@ export const brokerSessionResponseSchema = z.object({
   lastSyncAt: isoDateTimeSchema.nullable(),
 });
 export type BrokerSessionResponse = z.infer<typeof brokerSessionResponseSchema>;
+
+/** Origin of a private-positions stream snapshot — honest labeling, always. */
+export const positionsStreamSourceSchema = z.enum(["sim"]);
+export type PositionsStreamSource = z.infer<typeof positionsStreamSourceSchema>;
+
+/**
+ * WS event "positions" — the PRIVATE stream pushed ONLY into the
+ * authenticated owner's `user:<id>` room (server-side scoping: never
+ * addressed by client-named channels, never broadcast). SNAPSHOT semantics —
+ * the full positions array on every emit, so applying it is idempotent
+ * (reconnect/replay cannot duplicate positions). Reuses brokerPositionSchema:
+ * the broker stays the only source of truth for position shape.
+ */
+export const brokerPositionsStreamEventSchema = z.object({
+  source: positionsStreamSourceSchema,
+  positions: z.array(brokerPositionSchema),
+  /** Server epoch ms when this snapshot was emitted. */
+  ts: z.number(),
+});
+export type BrokerPositionsStreamEvent = z.infer<typeof brokerPositionsStreamEventSchema>;
