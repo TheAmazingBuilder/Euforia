@@ -1,0 +1,77 @@
+EN keys: 2188 | FR keys: 2188
+
+EMPTY EN (1):
+  nofy.time.agoPrefix
+
+EMPTY FR (5):
+  session.toolbar.ago
+  session.toolRail.paramsTail
+  session.context.deleteLevelB
+  session.ghost.estRAriaTail
+  nofy.time.agoSuffix
+
+Identical EN==FR strings: 178
+
+IDENTICAL BUT NOT SELF-REFERENTIAL (143) — review:
+  nav.items./session
+  nav.items./playbook
+  nav.items./discipline
+  nav.items./nofy
+  nav.sections.Trading
+  nav.bottom./playbook
+  nav.bottom./analytics
+  nav.app
+  settings.categories.trading.label
+  settings.categories.journal.label
+  settings.categories.notifications.label
+  settings.localization.optionCurrencyCode
+  settings.profile.bio
+  settings.appearance.densityCompact
+  settings.trading.sessionLabel
+  settings.trading.sessions.NEW_YORK
+  settings.trading.positionTypes.STOP
+  settings.trading.rrRatio
+  settings.trading.violationOne
+  settings.trading.violationMany
+  settings.journal.title
+  settings.journal.fields.STOP_LOSS
+  settings.journal.fields.TAKE_PROFIT
+  settings.journal.fields.TAGS
+  settings.notifications.title
+  settings.notifications.channelInApp
+  settings.notifications.channelPush
+  settings.notifications.wordNotifications
+  settings.notifications.categories.trading.label
+  settings.privacy.emailVisible
+  settings.backup.toastImportedTags
+  settings.backup.exportToastTrades
+  settings.backup.exportToastTags
+  settings.themePreview.statPlan
+  session.labels.instrument
+  session.labels.notes
+  session.labels.volume
+  session.labels.long
+  session.labels.short
+  session.labels.source
+  session.labels.setup
+  session.labels.session
+  session.view.title
+  session.shell.broker
+  session.shell.trades
+  session.toolbar.live
+  session.toolbar.sim
+  session.timer.minUnit
+  session.toolRail.paramSignal
+  session.chart.replayToggle
+  session.chart.seriesVolume
+  session.context.phaseNewYork
+  session.broker.brokerRow
+  session.privateStream.badgeLive
+  session.tradeCard.noteBtn
+  session.logbook.noteOne
+  session.logbook.noteMany
+  session.regret.discipline
+  session.ghost.fallbackSymbol
+  session.ghost.longTag
+
+PARITY: FAIL
