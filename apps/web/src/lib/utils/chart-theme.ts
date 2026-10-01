@@ -20,6 +20,11 @@ export interface ChartTheme {
   /** Resolved next/font family stacks for canvas text (defined on <body>). */
   monoFont: string;
   headingFont: string;
+  /**
+   * Categorical palette for indicator series (design-tokens.md — chart code
+   * never hardcodes hex; indicators cycle through these resolved tokens).
+   */
+  indicatorPalette: readonly string[];
 }
 
 /** Font CSS variables live on <body> (next/font className), not on <html>. */
@@ -42,5 +47,14 @@ export function getChartTheme(): ChartTheme {
     warning: getThemeToken("--warning"),
     monoFont: `${bodyVar("--font-jetbrains-mono")}, monospace`,
     headingFont: `${bodyVar("--font-schibsted")}, sans-serif`,
+    indicatorPalette: [
+      getThemeToken("--cat-ta"),
+      getThemeToken("--cat-strategies"),
+      getThemeToken("--warning"),
+      getThemeToken("--cat-patterns"),
+      getThemeToken("--cat-pa"),
+      getThemeToken("--cat-indicators"),
+      getThemeToken("--cat-mgmt"),
+    ],
   };
 }

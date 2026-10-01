@@ -70,6 +70,27 @@ import {
   type SessionNote,
   type SessionNotesResponse,
   type CreateSessionNoteInput,
+  // Session Live module (trading-session lifecycle, saved analyses, key levels)
+  type SessionLiveStateResponse,
+  type TradingSession,
+  type TradingSessionResponse,
+  type StartSessionInput,
+  type UpdateSessionInput,
+  type EndSessionInput,
+  type EndSessionResponse,
+  type SessionSummary,
+  type SessionLiveEvent,
+  type SessionLiveEventKind,
+  type SavedAnalysis,
+  type SavedAnalysesResponse,
+  type SavedAnalysisResponse,
+  type CreateSavedAnalysisInput,
+  type KeyLevel,
+  type KeyLevelsResponse,
+  type KeyLevelResponse,
+  type CreateKeyLevelInput,
+  type UpdateKeyLevelInput,
+  type DeleteResponse,
   type SettleSkippedTradeInput,
   type SkippedTrade,
   type SkippedTradesResponse,
@@ -994,6 +1015,10 @@ export function createMockStore() {
     data.trades.push(trade);
     evaluateDiscipline(trade);
     refreshDailyStat(trade.tradingDate);
+    // Session Live (§33): an external execution journalled while a session is
+    // active becomes a timeline event WITH its source attribution — Session
+    // Live detected the trade, it did not execute it.
+    hookSessionTradeDetected(trade);
 
     if (input.variant === "open") return trade;
     // HARD CONTRACT (trade-entry-ux.md §13): no P&L fields in this response.
@@ -3731,6 +3756,12 @@ export function createMockStore() {
       text: input.text.trim(),
     };
     sessionNotes.push(note);
+    // Session Live (Phase 6): a note logged while a session is active becomes
+    // a NOTE_ADDED timeline event for that session.
+    const session = activeSessionLive();
+    if (session) {
+      pushSessionEvent(session, "NOTE_ADDED", "Session note logged", note.text.slice(0, 120), null);
+    }
     return note;
   }
 
@@ -3738,6 +3769,252 @@ export function createMockStore() {
     const index = sessionNotes.findIndex((note) => note.id === noteId);
     if (index < 0) throw new MockError(404, "Note not found");
     sessionNotes.splice(index, 1);
+    return { ok: true };
+  }
+
+  // ── Session Live — trading-session lifecycle, saved analyses, key levels ──
+  // In-memory like every other domain. The store is user-scoped by
+  // construction (single authenticated user), so authorization (§15) holds:
+  // a user can only ever read their own sessions/analyses/levels.
+  const sessionLiveSessions: TradingSession[] = [];
+  const sessionLiveAnalyses: SavedAnalysis[] = [];
+  const sessionLiveLevels: KeyLevel[] = [];
+
+  function activeSessionLive(): TradingSession | null {
+    return sessionLiveSessions.find((session) => session.status === "ACTIVE") ?? null;
+  }
+
+  function pushSessionEvent(
+    session: TradingSession,
+    kind: SessionLiveEventKind,
+    label: string,
+    detail: string | null,
+    source: string | null,
+  ): void {
+    const event: SessionLiveEvent = {
+      id: crypto.randomUUID(),
+      at: nowIso(),
+      kind,
+      label,
+      detail,
+      source,
+    };
+    session.events.push(event);
+    session.updatedAt = event.at;
+  }
+
+  /** Hook for createTrade — external executions surface in the active session. */
+  function hookSessionTradeDetected(trade: Trade): void {
+    const session = activeSessionLive();
+    if (!session) return;
+    const symbol = instrumentById.get(trade.instrumentId)?.symbol ?? "?";
+    pushSessionEvent(
+      session,
+      "TRADE_DETECTED",
+      `${symbol} trade detected`,
+      `${trade.direction} ${trade.quantity} @ ${trade.entryPrice}`,
+      "Journal",
+    );
+  }
+
+  function sessionLiveState(): SessionLiveStateResponse {
+    const history = sessionLiveSessions
+      .filter((session) => session.status !== "ACTIVE")
+      .sort((a, b) => b.startedAt.localeCompare(a.startedAt));
+    return { active: activeSessionLive(), history };
+  }
+
+  function startSessionLive(input: StartSessionInput): TradingSessionResponse {
+    const existing = activeSessionLive();
+    if (existing) {
+      throw new MockError(409, "A session is already active. End it before starting a new one.");
+    }
+    const now = nowIso();
+    const session: TradingSession = {
+      id: crypto.randomUUID(),
+      status: "ACTIVE",
+      startedAt: now,
+      endedAt: null,
+      primarySymbol: input.primarySymbol ?? "—",
+      primaryTimeframe: input.primaryTimeframe ?? "5m",
+      tradingWindow: input.tradingWindow ?? "OTHER",
+      strategyId: input.strategyId ?? null,
+      setupId: input.setupId ?? null,
+      marketBias: input.marketBias ?? "NEUTRAL",
+      sessionObjective: input.sessionObjective ?? null,
+      notes: input.notes ?? null,
+      riskPerTradePct: input.riskPerTradePct ?? null,
+      dailyRiskLimitPct: input.dailyRiskLimitPct ?? null,
+      events: [],
+      createdAt: now,
+      updatedAt: now,
+    };
+    pushSessionEvent(
+      session,
+      "SESSION_STARTED",
+      `Session started — ${session.primarySymbol} ${session.primaryTimeframe}`,
+      session.sessionObjective,
+      null,
+    );
+    sessionLiveSessions.push(session);
+    return { session };
+  }
+
+  function updateSessionLive(sessionId: string, input: UpdateSessionInput): TradingSessionResponse {
+    const session = sessionLiveSessions.find((item) => item.id === sessionId);
+    if (!session) throw new MockError(404, "Session not found");
+    if (session.status !== "ACTIVE") throw new MockError(409, "Only the active session can be updated");
+    const biasChanged = input.marketBias !== undefined && input.marketBias !== session.marketBias;
+    if (input.marketBias !== undefined) session.marketBias = input.marketBias;
+    if (input.sessionObjective !== undefined) session.sessionObjective = input.sessionObjective;
+    if (input.notes !== undefined) session.notes = input.notes;
+    session.updatedAt = nowIso();
+    if (biasChanged) {
+      pushSessionEvent(session, "BIAS_CHANGED", `Bias set to ${session.marketBias}`, null, null);
+    }
+    return { session };
+  }
+
+  /** §43 — only metrics supported by real data; unavailable stays null/0-honest. */
+  function sessionSummaryFor(session: TradingSession, endedAt: string): SessionSummary {
+    const start = session.startedAt;
+    const end = endedAt;
+    const inWindow = (at: string): boolean => at >= start && at <= end;
+
+    const windowTrades = data.trades.filter((trade) => inWindow(trade.entryAt));
+    const closedTrades = windowTrades.filter((trade) => trade.status === "CLOSED" && trade.exitAt !== null && inWindow(trade.exitAt));
+    const pnls = closedTrades.map((trade) => Number(trade.pnlNet ?? trade.pnlGross ?? Number.NaN)).filter((value) => Number.isFinite(value));
+    const rValues = closedTrades
+      .map((trade) => (trade.rMultiple !== null ? Number(trade.rMultiple) : Number.NaN))
+      .filter((value) => Number.isFinite(value));
+
+    const markets = [...new Set(windowTrades.map((trade) => instrumentById.get(trade.instrumentId)?.symbol ?? "?"))];
+    if (markets.length === 0 && session.primarySymbol !== "—") markets.push(session.primarySymbol);
+
+    return {
+      durationMinutes: Math.max(0, Math.round((Date.parse(end) - Date.parse(start)) / 60_000)),
+      markets,
+      tradeCount: windowTrades.length,
+      netPnl: pnls.length > 0 ? round2(pnls.reduce((sum, value) => sum + value, 0)) : null,
+      avgR: rValues.length > 0 ? round2(rValues.reduce((sum, value) => sum + value, 0) / rValues.length) : null,
+      violationsCount: data.ruleViolations.filter((violation) => inWindow(violation.occurredAt)).length,
+      ecoEventsCount: data.ecoEvents.filter((event) => inWindow(event.scheduledAt)).length,
+      notesCount: sessionNotes.filter((note) => inWindow(note.at)).length,
+      analysesCount: sessionLiveAnalyses.filter((analysis) => analysis.sessionId === session.id).length,
+    };
+  }
+
+  function endSessionLive(sessionId: string, input: EndSessionInput): EndSessionResponse {
+    const session = sessionLiveSessions.find((item) => item.id === sessionId);
+    if (!session) throw new MockError(404, "Session not found");
+    if (session.status !== "ACTIVE") throw new MockError(409, "Session is not active");
+    const endedAt = nowIso();
+    session.endedAt = endedAt;
+    session.status = "COMPLETED";
+    if (input.notes !== undefined && input.notes !== null && input.notes.trim() !== "") {
+      session.notes = input.notes;
+    }
+    session.updatedAt = endedAt;
+    pushSessionEvent(session, "SESSION_ENDED", "Session ended", null, null);
+    const summary = sessionSummaryFor(session, endedAt);
+    return { session, summary };
+  }
+
+  function cancelSessionLive(sessionId: string): TradingSessionResponse {
+    const session = sessionLiveSessions.find((item) => item.id === sessionId);
+    if (!session) throw new MockError(404, "Session not found");
+    if (session.status !== "ACTIVE") throw new MockError(409, "Session is not active");
+    session.endedAt = nowIso();
+    session.status = "CANCELLED";
+    session.updatedAt = session.endedAt;
+    return { session };
+  }
+
+  // ── Saved analyses (§41 — historical analytical snapshots) ────────────
+  function listSavedAnalyses(): SavedAnalysesResponse {
+    return {
+      analyses: [...sessionLiveAnalyses].sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+    };
+  }
+
+  function createSavedAnalysis(input: CreateSavedAnalysisInput): SavedAnalysisResponse {
+    const now = nowIso();
+    const analysis: SavedAnalysis = {
+      id: crypto.randomUUID(),
+      sessionId: input.sessionId ?? null,
+      symbol: input.symbol,
+      timeframe: input.timeframe,
+      createdAt: now,
+      priceAtSave: input.priceAtSave ?? null,
+      bias: input.bias,
+      bullishScenario: input.bullishScenario ?? null,
+      bearishScenario: input.bearishScenario ?? null,
+      strategyId: input.strategyId ?? null,
+      setupId: input.setupId ?? null,
+      notes: input.notes ?? null,
+      indicators: input.indicators ?? [],
+      drawings: input.drawings ?? [],
+      levels: input.levels ?? [],
+    };
+    sessionLiveAnalyses.push(analysis);
+    const session = activeSessionLive();
+    if (session && input.sessionId === session.id) {
+      pushSessionEvent(
+        session,
+        "ANALYSIS_SAVED",
+        `Analysis saved — ${analysis.symbol} ${analysis.timeframe}`,
+        `Bias ${analysis.bias}`,
+        null,
+      );
+    }
+    return { analysis };
+  }
+
+  function deleteSavedAnalysis(analysisId: string): DeleteResponse {
+    const index = sessionLiveAnalyses.findIndex((item) => item.id === analysisId);
+    if (index < 0) throw new MockError(404, "Analysis not found");
+    sessionLiveAnalyses.splice(index, 1);
+    return { ok: true };
+  }
+
+  // ── Key levels (§20 — per-symbol trader documentation) ────────────────
+  function listKeyLevels(symbol: string | null): KeyLevelsResponse {
+    const levels = sessionLiveLevels
+      .filter((level) => symbol === null || level.symbol === symbol)
+      .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    return { levels };
+  }
+
+  function createKeyLevel(input: CreateKeyLevelInput): KeyLevelResponse {
+    const level: KeyLevel = {
+      id: crypto.randomUUID(),
+      symbol: input.symbol,
+      kind: input.kind,
+      price: input.price,
+      note: input.note ?? null,
+      createdAt: nowIso(),
+    };
+    sessionLiveLevels.push(level);
+    const session = activeSessionLive();
+    if (session) {
+      pushSessionEvent(session, "LEVEL_ADDED", `Level ${level.kind} ${level.price} (${level.symbol})`, level.note, null);
+    }
+    return { level };
+  }
+
+  function updateKeyLevel(levelId: string, input: UpdateKeyLevelInput): KeyLevelResponse {
+    const level = sessionLiveLevels.find((item) => item.id === levelId);
+    if (!level) throw new MockError(404, "Level not found");
+    if (input.kind !== undefined) level.kind = input.kind;
+    if (input.price !== undefined) level.price = input.price;
+    if (input.note !== undefined) level.note = input.note;
+    return { level };
+  }
+
+  function deleteKeyLevel(levelId: string): DeleteResponse {
+    const index = sessionLiveLevels.findIndex((item) => item.id === levelId);
+    if (index < 0) throw new MockError(404, "Level not found");
+    sessionLiveLevels.splice(index, 1);
     return { ok: true };
   }
 
@@ -4949,6 +5226,19 @@ export function createMockStore() {
     listSessionNotes,
     addSessionNote,
     deleteSessionNote,
+    // Session Live module
+    sessionLiveState,
+    startSessionLive,
+    updateSessionLive,
+    endSessionLive,
+    cancelSessionLive,
+    listSavedAnalyses,
+    createSavedAnalysis,
+    deleteSavedAnalysis,
+    listKeyLevels,
+    createKeyLevel,
+    updateKeyLevel,
+    deleteKeyLevel,
     updateNotes,
     updateTrade,
     deleteTrade,

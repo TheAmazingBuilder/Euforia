@@ -61,8 +61,10 @@ export type NotificationChannels = z.infer<typeof notificationChannelsSchema>;
 export const timeframeSchema = z.enum(["M1", "M5", "M15", "M30", "H1", "H4", "D1", "W1"]);
 export type Timeframe = z.infer<typeof timeframeSchema>;
 
-export const tradingSessionSchema = z.enum(["ASIA", "LONDON", "NEW_YORK", "LONDON_NY_OVERLAP"]);
-export type TradingSession = z.infer<typeof tradingSessionSchema>;
+/** Renamed from tradingSessionSchema — the Session Live module owns the
+ * "Trading Session" entity name (schemas/sessionLive.ts). */
+export const marketSessionSchema = z.enum(["ASIA", "LONDON", "NEW_YORK", "LONDON_NY_OVERLAP"]);
+export type MarketSession = z.infer<typeof marketSessionSchema>;
 
 export const positionTypeSchema = z.enum(["MARKET", "LIMIT", "STOP"]);
 export type PositionType = z.infer<typeof positionTypeSchema>;
@@ -79,7 +81,7 @@ export const tradingPreferencesSchema = z.object({
   defaultAssetClass: assetClassSchema.nullable(),
   defaultInstrumentId: uuidSchema.nullable(),
   defaultTimeframe: timeframeSchema.nullable(),
-  defaultSession: tradingSessionSchema.nullable(),
+  defaultSession: marketSessionSchema.nullable(),
   /** Currency used for P&L display when a trade is in another currency. */
   displayCurrency: currencySchema,
   defaultDirection: directionSchema.nullable(),

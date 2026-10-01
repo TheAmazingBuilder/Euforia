@@ -2,18 +2,18 @@ import { Suspense } from "react";
 
 import type { Metadata } from "next";
 
-import { SessionView } from "@/components/session/session-view";
+import { SessionLiveView } from "@/components/session/session-live-view";
 
 export const metadata: Metadata = {
   title: "Session Live",
   description:
-    "Run a structured trading session in real time: open-trade monitoring, live discipline banner and the Regret Registry.",
+    "The real-time analytical cockpit: professional chart analysis, read-only account monitoring and complete session documentation.",
 };
 
 export default function SessionPage() {
   return (
     <Suspense fallback={<> <div className="mx-auto h-40 w-full max-w-5xl animate-pulse rounded-xl bg-muted" /> </>}>
-      <SessionView />
+      <SessionLiveView />
     </Suspense>
   );
 }
