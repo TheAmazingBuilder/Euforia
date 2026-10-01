@@ -3,13 +3,18 @@ import { profileUpdateInputSchema } from "@cosmoz/shared";
 
 import { apiPaths } from "@/lib/api/endpoints";
 import { mockStore } from "@/mocks/store";
-import { endpoint, latency, parseBody, readJson, toErrorResponse } from "./utils";
+import { endpoint, latency, parseBody, readJson, requireAuth, toErrorResponse } from "./utils";
 
 /** Profile domain — GET /me (identity) + PATCH /me (direct edit). */
 export const profileHandlers = [
-  http.get(endpoint(apiPaths.me), async () => {
+  http.get(endpoint(apiPaths.me), async ({ request }) => {
     await latency();
-    return HttpResponse.json(mockStore.getProfile());
+    try {
+      requireAuth(request);
+      return HttpResponse.json(mockStore.getProfile());
+    } catch (error) {
+      return toErrorResponse(error);
+    }
   }),
 
   http.patch(endpoint(apiPaths.me), async ({ request }) => {

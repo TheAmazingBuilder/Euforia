@@ -109,6 +109,9 @@ export const queryKeys = {
     ["nofy-folders"],
     ["nofy-tags"],
   ] as const,
+  // Application authentication — the single authoritative session state
+  authMe: ["auth", "me"] as const,
+  authRoot: ["auth"] as const,
 } as const;
 
 /**

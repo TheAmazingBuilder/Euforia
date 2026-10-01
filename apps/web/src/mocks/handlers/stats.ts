@@ -3,15 +3,16 @@ import { analyticsFiltersSchema } from "@cosmoz/shared";
 
 import { apiPaths } from "@/lib/api/endpoints";
 import { mockStore } from "@/mocks/store";
-import { endpoint, latency, toErrorResponse } from "./utils";
+import { endpoint, latency, requireAuth, toErrorResponse } from "./utils";
 
 /** Analytics domain — aggregate overview + the Phase 9 analytics suite. */
 export const statsHandlers = [
   // GET /stats/overview — netPnl, winRate, profitFactor, expectancy,
   // disciplineScore, equity points, daily P&L map (calendar fuel)
-  http.get(endpoint(apiPaths.statsOverview), async () => {
+  http.get(endpoint(apiPaths.statsOverview), async ({ request }) => {
     await latency();
     try {
+      requireAuth(request);
       return HttpResponse.json(mockStore.statsOverview());
     } catch (error) {
       return toErrorResponse(error);

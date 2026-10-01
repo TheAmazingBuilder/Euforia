@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/layout/theme-provider";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { MockProvider } from "@/components/providers/mock-provider";
+import { AuthProvider } from "@/components/auth/auth-provider";
 import { ServiceWorkerRegister } from "@/components/providers/sw-register";
 import "./globals.css";
 
@@ -32,7 +33,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       >
         <ThemeProvider>
           <QueryProvider>
-            <MockProvider>{children}</MockProvider>
+            {/* AuthProvider mounts INSIDE the MSW gate so identity restore
+                only runs once the (mocked) API is reachable — its /auth/me
+                boot query is the single source of session truth (§3, §8). */}
+            <MockProvider>
+              <AuthProvider>{children}</AuthProvider>
+            </MockProvider>
           </QueryProvider>
           <Toaster position="bottom-right" mobileOffset={{ bottom: 84 }} />
         </ThemeProvider>

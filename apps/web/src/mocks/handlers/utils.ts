@@ -3,8 +3,21 @@ import { HttpResponse, delay } from "msw";
 
 import { buildApiUrl } from "@/lib/api/urls";
 import { MockError } from "@/mocks/store";
+import { authEngine } from "@/mocks/auth-engine";
 
 /** Small helpers shared by every MSW handler. */
+
+/**
+ * Guard private endpoints (spec §68 — "no unauthorized private route
+ * access"): protected mock handlers call this BEFORE touching the store so
+ * private data never leaves the mock backend without a valid Bearer access
+ * token. The future NestJS backend enforces the same rule for real.
+ */
+export function requireAuth(request: Request): void {
+  if (!authEngine.authenticate(request.headers.get("authorization"))) {
+    throw new MockError(401, "Authentication required");
+  }
+}
 
 /** Resolve an endpoint path to the exact URL form the fetch client produces. */
 export const endpoint = (path: string): string => buildApiUrl(path);

@@ -25,6 +25,7 @@ import { Label } from "@/components/ui/label";
 import { ConfirmDialog } from "@/components/settings/settings-primitives";
 import { cn } from "@/lib/utils";
 import { apiErrorMessage } from "@/lib/api/client";
+import { useAuth } from "@/components/auth/auth-provider";
 import {
   useChangePassword,
   useConfirmTwoFactor,
@@ -107,6 +108,7 @@ export function SecurityCenterView() {
     setReauthRequest({ actionLabel, run });
 
   // ── Mutations ──────────────────────────────────────────────────────────────
+  const { logout } = useAuth();
   const changePassword = useChangePassword();
   const enableTwoFactor = useEnableTwoFactor();
   const confirmTwoFactor = useConfirmTwoFactor();
@@ -232,8 +234,11 @@ export function SecurityCenterView() {
       onSuccess: (result) => {
         if (result.currentSessionAffected) {
           toast.success(
-            `${result.revokedCount} session(s) revoked — in production yours ends now (demo keeps you signed in)`,
+            `${result.revokedCount} session(s) revoked — signing you out`,
           );
+          // Real application auth (spec §21): revoking the current session
+          // ends it — the auth provider performs the full teardown.
+          void logout({ reason: "revoked" });
         } else {
           toast.success(`${result.revokedCount} session(s) revoked — device(s) signed out`);
         }

@@ -8,14 +8,14 @@ export const metadata: Metadata = {
   description: "Sign in to Cosmoz — the trading journal that coaches you.",
 };
 
-export default function AuthLayout({
+/**
+ * The (auth) pages render their own premium split shell via AuthLayout —
+ * this group layout only carries shared metadata.
+ */
+export default function AuthGroupLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return (
-    <div className="grid min-h-screen place-items-center bg-background px-4 py-10">
-      {children}
-    </div>
-  );
+  return <>{children}</>;
 }

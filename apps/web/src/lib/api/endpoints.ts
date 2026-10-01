@@ -4,6 +4,19 @@
  * Paths are relative to the API base (lib/api/urls.ts).
  */
 export const apiPaths = {
+  // Application authentication (spec §79 — consumed by AuthProvider; the
+  // mock engine implements the future NestJS contract exactly)
+  authRegister: "/auth/register",
+  authLogin: "/auth/login",
+  authLogout: "/auth/logout",
+  authRefresh: "/auth/refresh",
+  authMe: "/auth/me",
+  authEmailVerify: "/auth/email/verify",
+  authEmailResend: "/auth/email/resend",
+  authPasswordForgot: "/auth/password/forgot",
+  authPasswordReset: "/auth/password/reset",
+  authMfaChallenge: "/auth/mfa/challenge",
+  authMfaRecover: "/auth/mfa/recover",
   me: "/me",
   preferences: "/me/preferences",
   preferenceDomain: (domain: string) => `/me/preferences/${domain}` as const,

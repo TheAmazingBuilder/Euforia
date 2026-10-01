@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { EyeOff, LogOut } from "lucide-react";
@@ -7,6 +8,7 @@ import { EyeOff, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CosmozLogo } from "@/components/layout/cosmoz-logo";
 import { openGhostModal } from "@/lib/hooks/use-ghost-modal";
+import { useAuth } from "@/components/auth/auth-provider";
 import {
   SIDEBAR_FIRST_ITEM,
   NAV_SECTIONS,
@@ -31,6 +33,15 @@ export function SidebarNav({
   onNavigate,
 }: SidebarNavProps) {
   const pathname = usePathname();
+  const { logout } = useAuth();
+  const [signingOut, setSigningOut] = React.useState(false);
+
+  const handleLogout = () => {
+    if (signingOut) return;
+    setSigningOut(true);
+    onNavigate?.();
+    void logout({ reason: "signed-out" });
+  };
 
   const linkBase =
     "flex h-8 items-center gap-2 rounded-md text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring";
@@ -105,28 +116,32 @@ export function SidebarNav({
         </div>
       ))}
 
-      {/* Sign-out — discreet, inside the nav below the SYSTEM section.
+      {/* Sign-out — real logout: POST /auth/logout, local teardown, redirect.
           Destructive on hover (the only red affordance of the rail). */}
       {collapsed ? (
         <div aria-hidden="true" className="my-2 h-px w-6 self-center bg-border" />
       ) : (
         <div className="mt-2 h-px bg-border" aria-hidden="true" />
       )}
-      <Link
-        href="/login"
-        onClick={onNavigate}
+      <button
+        type="button"
+        onClick={handleLogout}
+        disabled={signingOut}
         data-testid="sidebar-logout"
         aria-label="Log out"
         title="Log out"
+        aria-busy={signingOut}
         className={cn(
           linkBase,
-          "text-muted-foreground/70 transition-colors hover:bg-destructive/10 hover:text-destructive",
+          "text-muted-foreground/70 transition-colors hover:bg-destructive/10 hover:text-destructive disabled:opacity-60",
           collapsed ? "justify-center px-0" : linkExpanded,
         )}
       >
         <LogOut className="size-4 shrink-0" aria-hidden="true" />
-        {!collapsed && <span className="truncate">Log out</span>}
-      </Link>
+        {!collapsed && (
+          <span className="truncate">{signingOut ? "Signing out…" : "Log out"}</span>
+        )}
+      </button>
     </nav>
   );
 }

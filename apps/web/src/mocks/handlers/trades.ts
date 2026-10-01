@@ -18,7 +18,7 @@ import {
 
 import { apiPaths } from "@/lib/api/endpoints";
 import { mockStore } from "@/mocks/store";
-import { endpoint, latency, parseBody, pathParam, readJson, toErrorResponse } from "./utils";
+import { endpoint, latency, parseBody, pathParam, readJson, requireAuth, toErrorResponse } from "./utils";
 
 /**
  * Trades domain — implements the endpoint matrix from trade-entry-ux.md §12
@@ -31,6 +31,7 @@ export const tradeHandlers = [
   http.get(endpoint(apiPaths.trades), async ({ request }) => {
     await latency();
     try {
+      requireAuth(request);
       const url = new URL(request.url);
       const raw = {
         status: url.searchParams.get("status") ?? undefined,

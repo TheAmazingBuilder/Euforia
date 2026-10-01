@@ -190,3 +190,18 @@ export {
 } from "./nofy";
 
 export * from "./sessionLive";
+
+// Application authentication — consumed by the centralized AuthProvider and
+// the (auth) pages; see lib/auth and components/auth.
+export {
+  useAuthMeQuery,
+  useForgotPasswordMutation,
+  useLoginMutation,
+  useLogoutMutation,
+  useMfaChallengeMutation,
+  useMfaRecoveryMutation,
+  useRegisterMutation,
+  useResendVerificationMutation,
+  useResetPasswordMutation,
+  useVerifyEmailMutation,
+} from "./auth";

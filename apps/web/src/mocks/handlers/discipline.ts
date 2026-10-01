@@ -7,7 +7,7 @@ import {
 
 import { apiPaths } from "@/lib/api/endpoints";
 import { mockStore } from "@/mocks/store";
-import { endpoint, latency, parseBody, pathParam, readJson, toErrorResponse } from "./utils";
+import { endpoint, latency, parseBody, pathParam, readJson, requireAuth, toErrorResponse } from "./utils";
 
 /** Discipline domain — banner aggregate, alerts inbox, rules engine + log. */
 export const disciplineHandlers = [
@@ -123,9 +123,10 @@ export const disciplineHandlers = [
   }),
 
   // GET /alerts — inbox + unread count for the bell badge
-  http.get(endpoint(apiPaths.alerts), async () => {
+  http.get(endpoint(apiPaths.alerts), async ({ request }) => {
     await latency();
     try {
+      requireAuth(request);
       return HttpResponse.json(mockStore.listAlerts());
     } catch (error) {
       return toErrorResponse(error);

@@ -139,6 +139,14 @@ class SecurityEngine {
   /** Pending enrollment — the only place the demo TOTP code exists. */
   private pendingEnrollment: TwoFactorEnrollment | null = null;
 
+  // ── Auth-engine integration surface (ADDITIVE — application auth reads
+  // the two-factor/password domain from here; the Security center stays the
+  // single owner of these secrets and state) ──
+  /** Code currently accepted by the mocked authenticator while 2FA is on. */
+  private activeDemoCode: string | null = null;
+  /** Unused recovery codes — consumed at login when 2FA is unreachable. */
+  private recoveryCodes: string[] = [];
+
   private sessions: SecuritySession[] = [
     {
       id: "ses-current",
@@ -560,6 +568,8 @@ class SecurityEngine {
       recoveryCodes: generateRecoveryCodes(),
     };
     this.pendingEnrollment = enrollment;
+    this.activeDemoCode = enrollment.demoCode;
+    this.recoveryCodes = [...enrollment.recoveryCodes];
     this.twoFactor = {
       ...this.twoFactor,
       pending: true,
@@ -608,6 +618,8 @@ class SecurityEngine {
       return fail(409, "TFA_ALREADY_OFF", "Two-factor authentication is already off.");
     }
     this.pendingEnrollment = null;
+    this.activeDemoCode = null;
+    this.recoveryCodes = [];
     this.twoFactor = {
       enabled: false,
       pending: false,
@@ -633,6 +645,7 @@ class SecurityEngine {
       return fail(409, "TFA_OFF", "Enable two-factor authentication first.");
     }
     const recoveryCodes = generateRecoveryCodes();
+    this.recoveryCodes = [...recoveryCodes];
     this.twoFactor = { ...this.twoFactor, recoveryCodesRemaining: RECOVERY_CODE_COUNT };
     this.logEvent(
       "RECOVERY_CODES_REGENERATED",
@@ -739,6 +752,83 @@ class SecurityEngine {
       securityEventsDays: EVENTS_RETENTION_DAYS,
       loginHistoryDays: LOGIN_RETENTION_DAYS,
     };
+  }
+
+  // ── Application-auth integration surface (ADDITIVE, read/consume only) ─────
+  // The auth engine (mocks/auth-engine.ts) verifies credentials and consumes
+  // two-factor factors through these methods. The Security center remains the
+  // single owner of the password, the TOTP state and the recovery codes.
+
+  /** Verify the account password for application sign-in. */
+  verifyAccountPassword(password: string): boolean {
+    return this.password === password;
+  }
+
+  /** Apply a password-reset link result (demo account keeps both in sync). */
+  applyPasswordReset(newPassword: string): void {
+    this.password = newPassword;
+    this.auth.passwordLastChangedAt = nowIso();
+  }
+
+  isTwoFactorEnabled(): boolean {
+    return this.twoFactor.enabled;
+  }
+
+  /** Verify a 6-digit authenticator code (mock authenticator contract). */
+  verifyTotpCode(code: string): boolean {
+    const expected =
+      this.pendingEnrollment?.demoCode ?? this.activeDemoCode;
+    return expected !== null && code === expected;
+  }
+
+  /** Mock authenticator stand-in for the login challenge (demoCode precedent). */
+  currentDemoCode(): string | null {
+    return this.activeDemoCode;
+  }
+
+  /** Consume a recovery code at login — one-time use, decrements the counter. */
+  consumeRecoveryCode(code: string): boolean {
+    const index = this.recoveryCodes.indexOf(code);
+    if (index === -1) return false;
+    this.recoveryCodes.splice(index, 1);
+    this.twoFactor = {
+      ...this.twoFactor,
+      recoveryCodesRemaining: Math.max(0, this.twoFactor.recoveryCodesRemaining - 1),
+    };
+    return true;
+  }
+
+  /** Append an application-auth event to the append-only security log (§18). */
+  recordAuthEvent(
+    type: SecurityEventType,
+    actor: string,
+    context: string,
+    outcome: "SUCCESS" | "FAILURE" = "SUCCESS",
+  ): void {
+    this.logEvent(type, actor, context, outcome);
+  }
+
+  /** Append a login-history row (§11 — backend-provided metadata only). */
+  recordLogin(record: {
+    success: boolean;
+    reason: string | null;
+    device: string;
+    browser: string;
+    os: string;
+    ipMasked: string;
+    location: string;
+  }): void {
+    this.logins.push({
+      id: `00000000-0000-4000-9000-${String(200000 + this.logins.length).padStart(12, "0")}`,
+      at: nowIso(),
+      success: record.success,
+      device: record.device,
+      browser: record.browser,
+      os: record.os,
+      ipMasked: record.ipMasked,
+      location: record.location,
+      reason: record.reason,
+    });
   }
 }
 
