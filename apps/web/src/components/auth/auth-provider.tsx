@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { useAuthMeQuery, useLogoutMutation } from "@/lib/api/queries/auth";
 import { queryKeys } from "@/lib/api/keys";
 import type { AuthSession, AuthUser } from "@cosmoz/shared";
-import { subscribeAuthEvents } from "@/lib/auth/auth-events";
+import { subscribeAuthEvents, emitAuthEvent } from "@/lib/auth/auth-events";
 import { clearAccessToken } from "@/lib/auth/token-store";
 import { registerDevAuthHooks } from "@/lib/auth/dev-hooks";
 
@@ -107,11 +107,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Fresh identity — drop any cached data from a previous session.
       queryClient.clear();
       queryClient.setQueryData(queryKeys.authMe, { user, session });
+      // Lifecycle broadcast (login + MFA completion funnel through here) —
+      // lets the market feed (re)bind its authenticated socket without any
+      // component wiring. No secrets in events (§51).
+      emitAuthEvent({ type: "AUTHENTICATED" });
     },
     [queryClient],
   );
 
   const markUnauthenticated = React.useCallback(() => {
+    // Broadcast FIRST so streaming consumers tear down before private state
+    // disappears (§66: no private data after logout).
+    emitAuthEvent({ type: "LOGGED_OUT" });
     clearAccessToken();
     // Wipe ALL private application state (§66 — no private data after
     // logout): every module query belongs to the signed-out world now.
@@ -124,6 +131,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       reason?: "signed-out" | "session-expired" | "revoked";
     }) => {
       const reason = options?.reason ?? "signed-out";
+      // Broadcast before teardown: the market feed disconnects its socket
+      // immediately instead of streaming while the session ends (§76).
+      emitAuthEvent({ type: "LOGGED_OUT" });
       // The backend revokes the refresh chain FIRST (§21 — never rely on
       // frontend state deletion alone); local teardown happens regardless.
       try {

@@ -35,7 +35,7 @@ import type {
 } from "@cosmoz/shared";
 import { useBrokerSession, useCreateNofyNote, useEndSessionLive, useStartSessionLive, useStrategies, useSetups } from "@/lib/api/queries";
 import { FeedBadge } from "@/components/session/session-toolbar";
-import type { FeedPhase, LiveQuote } from "@/lib/realtime/market";
+import type { FeedPhase, LiveQuote, PriceSnapshot } from "@/lib/realtime/market";
 import { useNowMs } from "@/lib/realtime/use-now";
 import { cn } from "@/lib/utils";
 
@@ -64,6 +64,7 @@ interface SessionLiveHeaderProps {
   activeSession: TradingSession | null;
   quote: LiveQuote | null;
   phase: FeedPhase;
+  authError?: PriceSnapshot["authError"];
   onBiasChange: (bias: MarketBias) => void;
   onStartClick: () => void;
   onEndClick: () => void;
@@ -93,7 +94,7 @@ function BrokerBadge() {
   );
 }
 
-export function SessionLiveHeader({ activeSession, quote, phase, onBiasChange, onStartClick, onEndClick, onOpenHistory }: SessionLiveHeaderProps) {
+export function SessionLiveHeader({ activeSession, quote, phase, authError, onBiasChange, onStartClick, onEndClick, onOpenHistory }: SessionLiveHeaderProps) {
   const nowMs = useNowMs();
   const elapsed = React.useMemo(() => {
     if (!activeSession) return null;
@@ -168,7 +169,7 @@ export function SessionLiveHeader({ activeSession, quote, phase, onBiasChange, o
 
         {/* Connection statuses (§35) */}
         <div className="flex items-center gap-3">
-          <FeedBadge quote={quote} phase={phase} />
+          <FeedBadge quote={quote} phase={phase} authError={authError} />
           <BrokerBadge />
         </div>
 

@@ -6,8 +6,13 @@ import { io, type Socket } from "socket.io-client";
 
 import type { CandlesResponse, MarketInterval, QuoteSource } from "@cosmoz/shared";
 
+import { subscribeAuthEvents } from "@/lib/auth/auth-events";
+import { refreshAccessToken } from "@/lib/auth/refresh";
+import { getAccessToken, hasTokenRecord } from "@/lib/auth/token-store";
+
 /**
- * Live market prices — client store for the socket.io market service.
+ * Live market prices — client store for the authenticated socket.io market
+ * service.
  *
  * Transport: the sandbox gateway routes on the `XTransformPort` query param,
  * so the connection URL is RELATIVE ("/?XTransformPort=3003") — never a
@@ -20,6 +25,19 @@ import type { CandlesResponse, MarketInterval, QuoteSource } from "@cosmoz/share
  * live (a transport delivers), reconnecting (retrying after a loss),
  * offline (nothing works), connecting (initial). Staleness is computed by
  * consumers from `lastTickAt` — a frozen feed must read STALE, never live.
+ *
+ * Authentication (mission §45/§62/§63 — "reuse the existing auth
+ * infrastructure, do not create a second token manager"): the socket
+ * handshake presents the SAME access token the API client uses
+ * (lib/auth/token-store) via socket.io's `auth` payload; REST reads send it
+ * as Bearer. Lifecycle is driven by the shared auth event bus:
+ *   TOKEN_REFRESHED  → re-handshake so the server always sees a fresh
+ *                      credential (Reconnect → Authenticate, §45)
+ *   SESSION_EXPIRED / LOGGED_OUT → full teardown — the feed must NOT keep
+ *                      streaming after the session ends (§76 negative test)
+ *   AUTHENTICATED    → (re)start with the current token
+ * Handshake auth failures trigger ONE bounded single-flight refresh → retry;
+ * the server — not this client — is the security boundary.
  */
 
 export interface LiveQuote {
@@ -42,6 +60,8 @@ export interface PriceSnapshot {
   transport: FeedTransport;
   /** Server ts of the newest quote seen (epoch ms) — staleness input. */
   lastTickAt: number;
+  /** Last structured auth rejection from the service (null otherwise). */
+  authError: "AUTH_REQUIRED" | "TOKEN_INVALID" | "TOKEN_EXPIRED" | null;
 }
 
 const MARKET_PORT = 3003;
@@ -65,6 +85,7 @@ const EMPTY_SNAPSHOT: PriceSnapshot = Object.freeze({
   phase: "connecting" as const,
   transport: "none" as const,
   lastTickAt: 0,
+  authError: null,
 });
 
 let snapshot: PriceSnapshot = EMPTY_SNAPSHOT;
@@ -74,6 +95,14 @@ let gotData = false;
 let socket: Socket | null = null;
 let pollTimer: number | null = null;
 let graceTimer: number | null = null;
+
+/** Structured auth errors the market service answers handshakes with. */
+const AUTH_ERRORS = new Set(["AUTH_REQUIRED", "TOKEN_INVALID", "TOKEN_EXPIRED"]);
+/** Bounded re-auth: at most 3 refresh-driven handshakes per 30s window. */
+const AUTH_RETRY_LIMIT = 3;
+const AUTH_RETRY_WINDOW_MS = 30_000;
+let authRetryWindowStart = 0;
+let authRetries = 0;
 
 /**
  * Connection telemetry observed by this client (Monitoring MASTER PROMPT §8).
@@ -125,6 +154,7 @@ function setQuotes(
     phase: "live",
     transport,
     lastTickAt: Date.now(),
+    authError: null,
   });
   emit();
 }
@@ -132,7 +162,7 @@ function setQuotes(
 async function pollOnce(): Promise<void> {
   const pollStartedAt = Date.now();
   try {
-    const response = await fetch(SNAPSHOT_URL);
+    const response = await marketFetch(SNAPSHOT_URL);
     if (!response.ok) throw new Error(String(response.status));
     const body = (await response.json()) as { quotes?: LiveQuote[] };
     if (!Array.isArray(body.quotes)) throw new Error("malformed snapshot");
@@ -150,6 +180,24 @@ async function pollOnce(): Promise<void> {
   }
 }
 
+/**
+ * Authenticated fetch for the market service surface (polling snapshot +
+ * candles). Mirrors the API client's contract — Bearer injection, then on
+ * 401 ONE single-flight refresh and ONE retry — without routing through
+ * MSW (these paths bypass the mock worker on purpose).
+ */
+async function marketFetch(url: string, allowRetry = true): Promise<Response> {
+  const token = getAccessToken();
+  const response = await fetch(url, {
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+  });
+  if (response.status === 401 && allowRetry && hasTokenRecord()) {
+    const refreshed = await refreshAccessToken();
+    if (refreshed) return marketFetch(url, false);
+  }
+  return response;
+}
+
 function startPolling(): void {
   if (pollTimer !== null) return;
   void pollOnce();
@@ -163,16 +211,19 @@ function stopPolling(): void {
   }
 }
 
-function start(): void {
-  if (started || typeof window === "undefined") return;
-  started = true;
-
+function startSocket(token: string): void {
+  if (typeof window === "undefined") return;
+  socket?.removeAllListeners();
+  socket?.disconnect();
   socket = io(WS_URL, {
     // Long-polling first (works through every proxy), websocket upgrade when
     // the transport allows it — the classic resilient socket.io handshake.
     transports: ["polling", "websocket"],
     reconnectionDelay: 2000,
     timeout: 5000,
+    // Same credential the API client injects — one token manager, one
+    // identity (mission §6.1: no second auth store / token manager).
+    auth: { token },
   });
 
   socket.on("prices", (quotes: LiveQuote[]) => {
@@ -190,8 +241,46 @@ function start(): void {
     startPolling();
     patch({ phase: "reconnecting", connected: false, transport: "polling", source: "polling" });
   });
-  socket.on("connect_error", () => {
+  socket.on("connect_error", (error: Error) => {
     telemetry.reconnectAttempts += 1;
+    if (AUTH_ERRORS.has(error.message)) {
+      // Server rejected the credential. Reconnect → Authenticate (§45):
+      // one bounded single-flight refresh, then re-handshake. The server
+      // stays the security boundary — the client never self-authorizes.
+      const now = Date.now();
+      if (now - authRetryWindowStart > AUTH_RETRY_WINDOW_MS) {
+        authRetryWindowStart = now;
+        authRetries = 0;
+      }
+      if (authRetries >= AUTH_RETRY_LIMIT || !hasTokenRecord()) {
+        stopPolling();
+        patch({
+          phase: "offline",
+          connected: false,
+          transport: "none",
+          source: "idle",
+          authError: error.message as PriceSnapshot["authError"],
+        });
+        return;
+      }
+      authRetries += 1;
+      stopPolling();
+      void refreshAccessToken().then((refreshed) => {
+        if (refreshed && socket !== null) {
+          socket.auth = { token: getAccessToken() };
+          socket.connect();
+        } else if (!refreshed) {
+          patch({
+            phase: "offline",
+            connected: false,
+            transport: "none",
+            source: "idle",
+            authError: error.message as PriceSnapshot["authError"],
+          });
+        }
+      });
+      return;
+    }
     startPolling();
   });
   socket.io.on("reconnect_attempt", () => {
@@ -199,9 +288,76 @@ function start(): void {
   });
 
   // Grace period: if the socket never connects, degrade to polling quietly.
+  if (graceTimer !== null) window.clearTimeout(graceTimer);
   graceTimer = window.setTimeout(() => {
     if (!socket?.connected) startPolling();
   }, CONNECT_GRACE_MS);
+}
+
+/** Server-authoritative session end — the feed must stop streaming (§76). */
+function teardownFeed(): void {
+  stopPolling();
+  if (graceTimer !== null) {
+    window.clearTimeout(graceTimer);
+    graceTimer = null;
+  }
+  socket?.removeAllListeners();
+  socket?.disconnect();
+  socket = null;
+  gotData = false;
+  snapshot = Object.freeze({
+    quotes: EMPTY,
+    connected: false,
+    source: "idle" as const,
+    phase: "offline" as const,
+    transport: "none" as const,
+    lastTickAt: 0,
+    authError: null,
+  });
+  emit();
+}
+
+/** Re-handshake with the freshest credential (Reconnect → Authenticate, §45). */
+function rehandshake(): void {
+  const token = getAccessToken();
+  if (socket === null) {
+    if (token !== null) startSocket(token);
+    return;
+  }
+  socket.auth = { token };
+  if (socket.connected) socket.disconnect();
+  socket.connect();
+}
+
+function bindAuthLifecycle(): void {
+  // One subscription for the module lifetime — the feed is app-wide.
+  subscribeAuthEvents((event) => {
+    if (event.type === "TOKEN_REFRESHED") {
+      rehandshake();
+      return;
+    }
+    if (event.type === "SESSION_EXPIRED" || event.type === "LOGGED_OUT") {
+      teardownFeed();
+      return;
+    }
+    if (event.type === "AUTHENTICATED") {
+      rehandshake();
+    }
+  });
+}
+
+function start(): void {
+  if (typeof window === "undefined") return;
+  if (!started) {
+    started = true;
+    bindAuthLifecycle();
+  }
+  const token = getAccessToken();
+  if (token !== null) {
+    startSocket(token);
+  }
+  // No token yet (boot race): the AUTHENTICATED / TOKEN_REFRESHED event
+  // starts the socket — the feed never presents an empty credential.
 }
 
 function subscribe(listener: Listener): () => void {
@@ -229,9 +385,14 @@ export function useLiveQuote(symbol: string | null | undefined): LiveQuote | nul
  * render STALE honestly: `ageMs` recomputes on each store emission, and the
  * caller can add a 1s local ticker for "N seconds ago" copy.
  */
-export function useFeedStatus(): { phase: FeedPhase; transport: FeedTransport; lastTickAt: number } {
-  const { phase, transport, lastTickAt } = useLiveQuotes();
-  return { phase, transport, lastTickAt };
+export function useFeedStatus(): {
+  phase: FeedPhase;
+  transport: FeedTransport;
+  lastTickAt: number;
+  authError: PriceSnapshot["authError"];
+} {
+  const { phase, transport, lastTickAt, authError } = useLiveQuotes();
+  return { phase, transport, lastTickAt, authError };
 }
 
 /** Unrealized P&L in account currency for an open position. */
@@ -270,7 +431,7 @@ export function useCandles(symbol: string, interval: MarketInterval) {
     enabled: symbol.length > 0,
     queryFn: async (): Promise<CandlesResponse> => {
       const url = `${CANDLES_URL}&symbol=${encodeURIComponent(symbol)}&interval=${interval}&limit=${CANDLE_LIMIT}`;
-      const response = await fetch(url);
+      const response = await marketFetch(url);
       if (!response.ok) throw new Error(`candles ${response.status}`);
       return (await response.json()) as CandlesResponse;
     },
@@ -293,7 +454,7 @@ export function useCandlesRange(symbol: string, interval: MarketInterval, from: 
     enabled: enabled && symbol.length > 0 && to > from,
     queryFn: async (): Promise<CandlesResponse> => {
       const url = `${CANDLES_URL}&symbol=${encodeURIComponent(symbol)}&interval=${interval}&limit=1000&from=${Math.floor(from)}&to=${Math.ceil(to)}`;
-      const response = await fetch(url);
+      const response = await marketFetch(url);
       if (!response.ok) throw new Error(`candles-range ${response.status}`);
       return (await response.json()) as CandlesResponse;
     },

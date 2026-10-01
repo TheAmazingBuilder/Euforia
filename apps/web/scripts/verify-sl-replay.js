@@ -16,9 +16,11 @@
  */
 /* eslint-disable @typescript-eslint/no-require-imports -- Node verification script */
 const { chromium } = require("playwright");
+const { ensureLogin } = require("./helpers/login"); // AUTH-1 gate: scripts log the demo account in first
 
 const BASE = "http://localhost:3000";
-const NOISE = [/socket\.io/i, /candles/i, /market-service/i, /favicon/i, /net::ERR/i, /X-TransformPort/i];
+const NOISE = [/\/api\/auth\/(me|refresh)\b/i, // fresh-context boot restore 401s are expected
+  /socket\.io/i, /candles/i, /market-service/i, /favicon/i, /net::ERR/i, /X-TransformPort/i];
 const SHOTS = "/home/z/my-project/scripts/shots/sl-replay";
 
 /** React-controlled range input: set through the native setter + input event. */
@@ -48,6 +50,8 @@ async function scrubTo(page, selector, value) {
 
   await page.goto(`${BASE}/`, { waitUntil: "networkidle", timeout: 60_000 });
   await page.waitForTimeout(1500);
+  await ensureLogin(page); // AUTH-1 gate bootstrap (SPA flow preserved)
+  await page.waitForTimeout(800);
 
   // ══ A. Document a real session ═══════════════════════════════════════════
   await page.locator('nav[aria-label="Main navigation"] a[href="/session"]').click();

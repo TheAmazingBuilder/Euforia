@@ -22,9 +22,11 @@
  */
 /* eslint-disable @typescript-eslint/no-require-imports -- Node verification script */
 const { chromium } = require("playwright");
+const { ensureLogin } = require("./helpers/login"); // AUTH-1 gate: scripts log the demo account in first
 
 const BASE = "http://localhost:3000";
-const NOISE = [/socket\.io/i, /candles/i, /market-service/i, /favicon/i, /net::ERR/i, /X-TransformPort/i];
+const NOISE = [/\/api\/auth\/(me|refresh)\b/i, // fresh-context boot restore 401s are expected
+  /socket\.io/i, /candles/i, /market-service/i, /favicon/i, /net::ERR/i, /X-TransformPort/i];
 
 (async () => {
   const browser = await chromium.launch();
@@ -44,6 +46,8 @@ const NOISE = [/socket\.io/i, /candles/i, /market-service/i, /favicon/i, /net::E
 
   await page.goto(`${BASE}/`, { waitUntil: "networkidle", timeout: 60_000 });
   await page.waitForTimeout(1500);
+  await ensureLogin(page); // AUTH-1 gate bootstrap (SPA flow preserved)
+  await page.waitForTimeout(800);
 
   // ══ A. Workspace shell ═══════════════════════════════════════════════════
   await page.locator('nav[aria-label="Main navigation"] a[href="/session"]').click();

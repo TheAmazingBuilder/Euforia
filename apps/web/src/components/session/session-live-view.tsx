@@ -443,7 +443,7 @@ export function SessionLiveView() {
   const instrument = React.useMemo(() => instruments.find((item) => item.symbol === symbol) ?? null, [instruments, symbol]);
 
   const quote = useLiveQuote(symbol || null);
-  const { phase } = useFeedStatus();
+  const { phase, authError } = useFeedStatus();
   const { quotes } = useLiveQuotes();
 
   const { data: levelsData, isLoading: levelsLoading } = useKeyLevels(symbol || null);
@@ -530,6 +530,7 @@ export function SessionLiveView() {
             activeSession={activeSession}
             quote={quote}
             phase={phase}
+            authError={authError}
             onBiasChange={onBiasChange}
             onStartClick={() => setStartOpen(true)}
             onEndClick={() => {

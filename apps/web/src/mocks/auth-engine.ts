@@ -60,6 +60,21 @@ type RefreshPayload = {
   exp: number;
 };
 
+/**
+ * Self-describing access-token payload (sandbox seam). The token STRING is
+ * opaque to the client, but a separate resource server (today: the market
+ * service) must verify it WITHOUT access to this engine's in-memory map —
+ * the same stateless model a signed JWT gives a real NestJS backend. The
+ * payload is base64url JSON + a mock checksum signature; ONLY the expiry and
+ * subject are carried — never roles, permissions or credentials (§75).
+ */
+type AccessTokenPayload = {
+  uid: string;
+  iat: number;
+  exp: number;
+  v: 1;
+};
+
 type ChallengeRecord = { userId: string; expiresAt: number };
 
 type VerificationRecord = { email: string; expiresAt: number; used: boolean };
@@ -95,6 +110,14 @@ const RATE_LIMITS: Record<string, { max: number; windowMs: number }> = {
 
 /** Mock checksum secret — a REAL backend signs refresh tokens server-side. */
 const MOCK_REFRESH_SECRET = "cosmoz-mock-refresh-secret-v1";
+
+/**
+ * Mock signing secret for access tokens (sandbox seam). The market service
+ * verifies access tokens against THIS SAME secret to enforce its
+ * authenticated-WebSocket gate; in production both become real JWTs verified
+ * via JWKS / introspection against the NestJS auth module.
+ */
+const MOCK_ACCESS_SECRET = "cosmoz-mock-access-secret-v1";
 
 /**
  * Mock "cookie jar" (server-side emulation). A real NestJS backend owns the
@@ -151,6 +174,14 @@ function fnv1a(input: string): string {
     h2 = Math.imul(h2 ^ input.charCodeAt(input.length - 1 - i), 0x85ebca6b) >>> 0;
   }
   return `${h1.toString(16).padStart(8, "0")}${h2.toString(16).padStart(8, "0")}`;
+}
+
+function encodeAccessToken(payload: AccessTokenPayload): string {
+  const body = btoa(JSON.stringify(payload))
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
+  return `czat1.${body}.${fnv1a(`${MOCK_ACCESS_SECRET}:${body}`)}`;
 }
 
 function encodeRefreshToken(payload: RefreshPayload): string {
@@ -343,8 +374,14 @@ class AuthEngine {
   // ── Tokens ─────────────────────────────────────────────────────────────────
 
   private issueAccessToken(userId: string): { token: string; expiresAt: string } {
-    const token = `cosmoz_at_${randomId(32)}`;
-    this.accessTokens.set(token, { userId, expiresAt: nowMs() + ACCESS_TOKEN_TTL_MS });
+    // Self-describing signed format (czat1): lets the market service enforce
+    // its authenticated WebSocket/REST gate statelessly, exactly like a real
+    // JWT would. The in-memory map stays authoritative for THIS engine's own
+    // endpoint guards (MSW handlers) so revocation semantics are unchanged.
+    const issuedAt = nowMs();
+    const expiresAt = issuedAt + ACCESS_TOKEN_TTL_MS;
+    const token = encodeAccessToken({ uid: userId, iat: issuedAt, exp: expiresAt, v: 1 });
+    this.accessTokens.set(token, { userId, expiresAt });
     return { token, expiresAt: inMs(ACCESS_TOKEN_TTL_MS) };
   }
 

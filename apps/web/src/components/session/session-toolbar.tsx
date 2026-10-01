@@ -8,7 +8,7 @@ import type { Instrument, MarketInterval } from "@cosmoz/shared";
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SessionTimer } from "@/components/session/session-timer";
-import { STALE_MS, type FeedPhase, type LiveQuote } from "@/lib/realtime/market";
+import { STALE_MS, type FeedPhase, type LiveQuote, type PriceSnapshot } from "@/lib/realtime/market";
 import { useNowMs } from "@/lib/realtime/use-now";
 import { cn } from "@/lib/utils";
 
@@ -25,9 +25,11 @@ const INTERVALS: readonly MarketInterval[] = ["1m", "5m", "15m", "30m", "1H", "4
 interface FeedBadgeProps {
   quote: LiveQuote | null;
   phase: FeedPhase;
+  /** Structured auth rejection from the service — rendered honestly, never hidden (§16/§44). */
+  authError?: PriceSnapshot["authError"];
 }
 
-export function FeedBadge({ quote, phase }: FeedBadgeProps) {
+export function FeedBadge({ quote, phase, authError = null }: FeedBadgeProps) {
   // "Last update Ns ago" copy needs a 1 Hz heartbeat — time reads stay in
   // the useNowMs effect (purity rule); the store itself stays timer-free.
   const nowMs = useNowMs();
@@ -86,7 +88,11 @@ export function FeedBadge({ quote, phase }: FeedBadgeProps) {
         {label}
       </span>
       <span className="font-mono text-[10px] tabular-nums text-muted-foreground">
-        {ageSec === null ? "waiting for first tick…" : `last update ${ageSec}s ago`}
+        {authError !== null
+          ? "authentication required — feed paused"
+          : ageSec === null
+            ? "waiting for first tick…"
+            : `last update ${ageSec}s ago`}
       </span>
     </div>
   );
@@ -100,6 +106,7 @@ interface SessionToolbarProps {
   onIntervalChange: (interval: MarketInterval) => void;
   quote: LiveQuote | null;
   phase: FeedPhase;
+  authError?: PriceSnapshot["authError"];
 }
 
 export function SessionToolbar({
@@ -110,6 +117,7 @@ export function SessionToolbar({
   onIntervalChange,
   quote,
   phase,
+  authError,
 }: SessionToolbarProps) {
   const instrument = instruments.find((item) => item.symbol === symbol) ?? null;
   const digits = instrument?.digits ?? 5;
@@ -210,7 +218,7 @@ export function SessionToolbar({
         <SessionTimer />
 
         {/* Feed state */}
-        <FeedBadge quote={quote} phase={phase} />
+        <FeedBadge quote={quote} phase={phase} authError={authError} />
       </div>
     </section>
   );

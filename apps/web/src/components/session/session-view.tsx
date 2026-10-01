@@ -153,7 +153,7 @@ export function SessionView() {
     [instruments, symbol],
   );
   const quote = useLiveQuote(symbol);
-  const { phase } = useFeedStatus();
+  const { phase, authError } = useFeedStatus();
   const candles = useCandles(symbol ?? "", interval);
   const { quotes } = useLiveQuotes();
 
@@ -209,6 +209,7 @@ export function SessionView() {
             onIntervalChange={setIntervalState}
             quote={quote}
             phase={phase}
+            authError={authError}
           />
 
           {/* ── Chart row: the chart spans the FULL container width ─────── */}
