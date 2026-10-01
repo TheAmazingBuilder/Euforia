@@ -6,6 +6,7 @@ import type { AnalyticsFilters as Filters, AnalyticsSuiteResponse } from "@cosmo
 
 import { useAccounts, useInstruments, useStrategies, useTags } from "@/lib/api/queries/catalogs";
 import { useAnalyticsSuite } from "@/lib/api/queries/stats";
+import { useI18n } from "@/i18n/i18n-provider";
 import { FilterBar, type Catalogs } from "@/components/analytics/analytics-filters";
 import { OverviewTab, PerformanceTab, RiskTab } from "@/components/analytics/panels-performance";
 import { MarketTab, PsychologyTab, StrategyTab, TimeTab } from "@/components/analytics/panels-dimensions";
@@ -26,23 +27,24 @@ import { Skeleton } from "@/components/ui/skeleton";
  * view is shareable; the tab is persisted as ?tab= like the other modules.
  */
 
-const TABS = [
-  { id: "overview", label: "Overview" },
-  { id: "performance", label: "Performance" },
-  { id: "risk", label: "Risk" },
-  { id: "strategy", label: "Strategy" },
-  { id: "market", label: "Market" },
-  { id: "time", label: "Time" },
-  { id: "psychology", label: "Psychology" },
-  { id: "quality", label: "Trade Quality" },
-  { id: "mistakes", label: "Mistakes" },
-  { id: "events", label: "Events" },
-  { id: "advanced", label: "Advanced" },
-  { id: "montecarlo", label: "Monte Carlo" },
-  { id: "reports", label: "Reports" },
+/** Tab machine ids — labels resolve through dict.analytics.view.tabs. */
+const TAB_IDS = [
+  "overview",
+  "performance",
+  "risk",
+  "strategy",
+  "market",
+  "time",
+  "psychology",
+  "quality",
+  "mistakes",
+  "events",
+  "advanced",
+  "montecarlo",
+  "reports",
 ] as const;
 
-type TabId = (typeof TABS)[number]["id"];
+type TabId = (typeof TAB_IDS)[number];
 
 function filtersFromParams(searchParams: URLSearchParams): Filters {
   const get = (key: string): string | undefined => {
@@ -69,10 +71,12 @@ function filtersFromParams(searchParams: URLSearchParams): Filters {
 export function AnalyticsView() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { dict } = useI18n();
+  const V = dict.analytics.view;
 
   const filters = React.useMemo(() => filtersFromParams(searchParams), [searchParams]);
   const rawTab = searchParams.get("tab") ?? "overview";
-  const activeTab: TabId = (TABS.some((tab) => tab.id === rawTab) ? rawTab : "overview") as TabId;
+  const activeTab: TabId = (TAB_IDS.some((tab) => tab === rawTab) ? rawTab : "overview") as TabId;
 
   const setParams = React.useCallback(
     (mutate: (params: URLSearchParams) => void) => {
@@ -162,16 +166,16 @@ export function AnalyticsView() {
       <Tabs value={activeTab} onValueChange={setTab}>
         <div className="overflow-x-auto pb-0.5">
           <TabsList className="h-auto w-max flex-wrap gap-1">
-            {TABS.map((tab) => (
-              <TabsTrigger key={tab.id} value={tab.id} className="text-xs">
-                {tab.label}
+            {TAB_IDS.map((tab) => (
+              <TabsTrigger key={tab} value={tab} className="text-xs">
+                {V.tabs[tab]}
               </TabsTrigger>
             ))}
           </TabsList>
         </div>
 
         {data === undefined ? (
-          <div className="space-y-3 pt-4" aria-busy="true" aria-label="Loading analytics">
+          <div className="space-y-3 pt-4" aria-busy="true" aria-label={V.loadingAria}>
             <Skeleton className="h-28 rounded-xl" />
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <Skeleton className="h-36 rounded-xl" />

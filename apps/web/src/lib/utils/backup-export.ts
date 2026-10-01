@@ -28,16 +28,33 @@ export async function downloadBackupExport(): Promise<BackupPayload> {
   return parsed;
 }
 
-/** Toast-wrapped variant for direct button handlers. */
-export async function exportBackupWithToasts(): Promise<void> {
+/**
+ * Copy for the toast-wrapped variant — passed by the caller (settings cards)
+ * from the active dictionary: this helper is a pure function, not a hook
+ * (dict.* contract rule 8).
+ */
+export type BackupExportCopy = {
+  /** Toast title, e.g. "Backup exported". */
+  title: string;
+  /** Count words composed as `${n} ${word}, …` — e.g. "trades" / "trades". */
+  tradesWord: string;
+  strategiesWord: string;
+  tagsWord: string;
+  /** Failure toast title + description. */
+  failedTitle: string;
+  failedDescription: string;
+};
+
+/** Toast-wrapped variant for direct button handlers (copy is caller-supplied). */
+export async function exportBackupWithToasts(copy: BackupExportCopy): Promise<void> {
   try {
     const parsed = await downloadBackupExport();
-    toast.success("Backup exported", {
-      description: `${parsed.trades.length} trades, ${parsed.strategies.length} strategies, ${parsed.tags.length} tags.`,
+    toast.success(copy.title, {
+      description: `${parsed.trades.length} ${copy.tradesWord}, ${parsed.strategies.length} ${copy.strategiesWord}, ${parsed.tags.length} ${copy.tagsWord}.`,
     });
   } catch {
-    toast.error("Export failed", {
-      description: "The backup could not be generated — please retry.",
+    toast.error(copy.failedTitle, {
+      description: copy.failedDescription,
     });
   }
 }

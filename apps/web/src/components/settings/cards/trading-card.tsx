@@ -22,31 +22,31 @@ import {
   useUpdatePreferencesDomain,
 } from "@/lib/api/queries";
 import { apiErrorMessage } from "@/lib/api/client";
+import { useI18n } from "@/i18n/i18n-provider";
 
 /**
  * Trading preferences — DEFAULTS the trade form and session runner open
  * with, never hard limits (enforcement belongs to the Rules Engine).
  * One card = one domain save (PATCH /me/preferences/trading).
+ * Machine values stay module-scope (ASSET_CLASSES/TIMEFRAMES/CURRENCIES are
+ * rendered verbatim — format-like tokens identical across locales); the
+ * SESSIONS/POSITION_TYPES labels live in dict.settings.trading and resolve
+ * at render time.
  */
 
 const ASSET_CLASSES = ["FOREX", "CRYPTO", "SYNTHETIC", "INDEX", "METAL", "ENERGY"] as const;
 const TIMEFRAMES = ["M1", "M5", "M15", "M30", "H1", "H4", "D1", "W1"] as const;
-const SESSIONS = [
-  { value: "ASIA", label: "Asia (00–08 UTC)" },
-  { value: "LONDON", label: "London (08–13 UTC)" },
-  { value: "LONDON_NY_OVERLAP", label: "London/NY overlap (13–16 UTC)" },
-  { value: "NEW_YORK", label: "New York (13–21 UTC)" },
-] as const;
+const SESSIONS = ["ASIA", "LONDON", "LONDON_NY_OVERLAP", "NEW_YORK"] as const;
 const CURRENCIES = ["USD", "EUR", "GBP", "CHF", "CAD", "AUD", "JPY", "NZD", "SGD"] as const;
-const POSITION_TYPES = [
-  { value: "MARKET", label: "Market" },
-  { value: "LIMIT", label: "Limit" },
-  { value: "STOP", label: "Stop" },
-] as const;
+const POSITION_TYPES = ["MARKET", "LIMIT", "STOP"] as const;
 
-function nullableOptions<T extends string>(values: readonly T[], labels?: Record<string, string>) {
+function nullableOptions<T extends string>(
+  values: readonly T[],
+  labels: Record<string, string> | undefined,
+  noDefaultLabel: string,
+) {
   return [
-    { value: "", label: "No default" },
+    { value: "", label: noDefaultLabel },
     ...values.map((value) => ({ value, label: labels?.[value] ?? value })),
   ];
 }
@@ -59,20 +59,23 @@ export function TradingCard() {
   const resetDomain = useResetPreferencesDomain();
   const { draft, setDraft, dirty } = useDomainDraft(prefs?.trading);
   const [resetOpen, setResetOpen] = React.useState(false);
+  const { dict } = useI18n();
+  const L = dict.settings.trading;
+  const SH = dict.settings.shared;
 
   if (isLoading || !prefs || !draft) {
     return <SettingsCardSkeleton rows={5} />;
   }
 
   const accountOptions = [
-    { value: "", label: "No default" },
+    { value: "", label: L.noDefault },
     ...(accounts.data?.accounts ?? []).map((account) => ({
       value: account.id,
       label: `${account.name} (${account.type})`,
     })),
   ];
   const instrumentOptions = [
-    { value: "", label: "No default" },
+    { value: "", label: L.noDefault },
     ...(instruments.data?.instruments ?? []).map((instrument) => ({
       value: instrument.id,
       label: `${instrument.symbol} — ${instrument.assetClass}`,
@@ -84,8 +87,8 @@ export function TradingCard() {
 
   const onSave = () => {
     save.mutate(draft, {
-      onSuccess: () => toast.success("Trading preferences saved"),
-      onError: (error) => toast.error(apiErrorMessage(error, "Could not save trading preferences")),
+      onSuccess: () => toast.success(L.toastSaved),
+      onError: (error) => toast.error(apiErrorMessage(error, L.toastSaveFailed)),
     });
   };
 
@@ -93,22 +96,22 @@ export function TradingCard() {
     setResetOpen(false);
     resetDomain.mutate(
       { domain: "trading" },
-      { onSuccess: () => toast.success("Trading preferences reset to defaults") },
+      { onSuccess: () => toast.success(L.toastReset) },
     );
   };
 
   return (
     <SettingsCategoryCard
       icon={CandlestickChart}
-      title="Trading preferences"
-      description="Pre-fills for the trade form and session runner — defaults, never hard limits."
+      title={L.title}
+      description={L.description}
       testid="settings-trading"
       dirty={dirty}
       saving={save.isPending}
       onSave={onSave}
       onReset={() => setResetOpen(true)}
     >
-      <SettingsRow label="Default account" htmlFor="settings-trading-account">
+      <SettingsRow label={L.defaultAccountLabel} htmlFor="settings-trading-account">
         <SettingsSelect
           value={draft.defaultAccountId ?? ""}
           onChange={(value) => patch({ defaultAccountId: value === "" ? null : value })}
@@ -117,18 +120,18 @@ export function TradingCard() {
         />
       </SettingsRow>
 
-      <SettingsRow label="Default market" htmlFor="settings-trading-market">
+      <SettingsRow label={L.defaultMarketLabel} htmlFor="settings-trading-market">
         <SettingsSelect
           value={draft.defaultAssetClass ?? ""}
           onChange={(value) =>
             patch({ defaultAssetClass: value === "" ? null : (value as UserPreferences["trading"]["defaultAssetClass"]) })
           }
-          options={nullableOptions(ASSET_CLASSES)}
+          options={nullableOptions(ASSET_CLASSES, undefined, L.noDefault)}
           testid="settings-trading-market"
         />
       </SettingsRow>
 
-      <SettingsRow label="Default symbol" htmlFor="settings-trading-symbol">
+      <SettingsRow label={L.defaultSymbolLabel} htmlFor="settings-trading-symbol">
         <SettingsSelect
           value={draft.defaultInstrumentId ?? ""}
           onChange={(value) => patch({ defaultInstrumentId: value === "" ? null : value })}
@@ -138,23 +141,23 @@ export function TradingCard() {
       </SettingsRow>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <SettingsRow label="Timeframe" htmlFor="settings-trading-timeframe">
+        <SettingsRow label={L.timeframeLabel} htmlFor="settings-trading-timeframe">
           <SettingsSelect
             value={draft.defaultTimeframe ?? ""}
             onChange={(value) =>
               patch({ defaultTimeframe: value === "" ? null : (value as UserPreferences["trading"]["defaultTimeframe"]) })
             }
-            options={nullableOptions(TIMEFRAMES)}
+            options={nullableOptions(TIMEFRAMES, undefined, L.noDefault)}
             testid="settings-trading-timeframe"
           />
         </SettingsRow>
-        <SettingsRow label="Session" htmlFor="settings-trading-session">
+        <SettingsRow label={L.sessionLabel} htmlFor="settings-trading-session">
           <SettingsSelect
             value={draft.defaultSession ?? ""}
             onChange={(value) =>
               patch({ defaultSession: value === "" ? null : (value as UserPreferences["trading"]["defaultSession"]) })
             }
-            options={nullableOptions(SESSIONS.map((s) => s.value), Object.fromEntries(SESSIONS.map((s) => [s.value, s.label])))}
+            options={nullableOptions(SESSIONS, L.sessions, L.noDefault)}
             testid="settings-trading-session"
           />
         </SettingsRow>
@@ -162,9 +165,9 @@ export function TradingCard() {
 
       <div className="grid gap-4 sm:grid-cols-2">
         <SettingsRow
-          label="Display currency"
+          label={L.currencyLabel}
           htmlFor="settings-trading-currency"
-          hint="Converts P&L display when a trade is in another currency."
+          hint={L.currencyHint}
         >
           <SettingsSelect
             value={draft.displayCurrency}
@@ -173,36 +176,36 @@ export function TradingCard() {
             testid="settings-trading-currency"
           />
         </SettingsRow>
-        <SettingsRow label="Default direction" htmlFor="settings-trading-direction">
+        <SettingsRow label={L.directionLabel} htmlFor="settings-trading-direction">
           <SettingsSelect
             value={draft.defaultDirection ?? ""}
             onChange={(value) =>
               patch({ defaultDirection: value === "" ? null : (value as UserPreferences["trading"]["defaultDirection"]) })
             }
-            options={nullableOptions(["BUY", "SELL"] as const)}
+            options={nullableOptions(["BUY", "SELL"] as const, undefined, L.noDefault)}
             testid="settings-trading-direction"
           />
         </SettingsRow>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <SettingsRow label="Default position type" htmlFor="settings-trading-position-type">
+        <SettingsRow label={L.positionTypeLabel} htmlFor="settings-trading-position-type">
           <SettingsSelect
             value={draft.defaultPositionType ?? ""}
             onChange={(value) =>
               patch({ defaultPositionType: value === "" ? null : (value as UserPreferences["trading"]["defaultPositionType"]) })
             }
-            options={nullableOptions(POSITION_TYPES.map((p) => p.value), Object.fromEntries(POSITION_TYPES.map((p) => [p.value, p.label])))}
+            options={nullableOptions(POSITION_TYPES, L.positionTypes, L.noDefault)}
             testid="settings-trading-position-type"
           />
         </SettingsRow>
-        <SettingsRow label="Planned R:R display" htmlFor="settings-trading-rr">
+        <SettingsRow label={L.rrLabel} htmlFor="settings-trading-rr">
           <SettingsSelect
             value={draft.rrDisplay}
             onChange={(value) => patch({ rrDisplay: value as UserPreferences["trading"]["rrDisplay"] })}
             options={[
-              { value: "RATIO", label: "Ratio — 1 : 2" },
-              { value: "PERCENT", label: "Percent — +100 %" },
+              { value: "RATIO", label: L.rrRatio },
+              { value: "PERCENT", label: L.rrPercent },
             ]}
             testid="settings-trading-rr"
           />
@@ -210,28 +213,28 @@ export function TradingCard() {
       </div>
 
       <div className="grid gap-4 border-t border-border pt-4">
-        <SettingsRow label="Chart style" htmlFor="settings-trading-chart-style" stacked>
+        <SettingsRow label={L.chartStyleLabel} htmlFor="settings-trading-chart-style" stacked>
           <SettingsSelect
             value={draft.chart.style}
             onChange={(value) => patch({ chart: { ...draft.chart, style: value as UserPreferences["trading"]["chart"]["style"] } })}
             options={[
-              { value: "CANDLES", label: "Candles" },
-              { value: "LINE", label: "Line" },
-              { value: "AREA", label: "Area" },
+              { value: "CANDLES", label: L.chartCandles },
+              { value: "LINE", label: L.chartLine },
+              { value: "AREA", label: L.chartArea },
             ]}
             testid="settings-trading-chart-style"
           />
         </SettingsRow>
         <ToggleRow
-          label="Show volume"
-          hint="Volume bars under the entry chart."
+          label={L.showVolumeLabel}
+          hint={L.showVolumeHint}
           checked={draft.chart.showVolume}
           onChange={(checked) => patch({ chart: { ...draft.chart, showVolume: checked } })}
           testid="settings-trading-chart-volume"
         />
         <ToggleRow
-          label="Show grid"
-          hint="Price/time grid lines on charts."
+          label={L.showGridLabel}
+          hint={L.showGridHint}
           checked={draft.chart.showGrid}
           onChange={(checked) => patch({ chart: { ...draft.chart, showGrid: checked } })}
           testid="settings-trading-chart-grid"
@@ -240,19 +243,19 @@ export function TradingCard() {
 
       {/* Guardrail — soft-lock the capture form after N violations today */}
       <SettingsRow
-        label="Capture guardrail"
+        label={L.guardrailLabel}
         htmlFor="settings-trading-softlock"
-        hint="Soft-locks the capture form after N rule violations today — an acknowledgment step, never a hard block."
+        hint={L.guardrailHint}
         stacked
       >
         <SettingsSelect
           value={draft.softLockAfterViolations === null ? "" : String(draft.softLockAfterViolations)}
           onChange={(value) => patch({ softLockAfterViolations: value === "" ? null : Number(value) })}
           options={[
-            { value: "", label: "Off" },
+            { value: "", label: SH.off },
             ...[1, 2, 3, 4, 5, 6, 8, 10].map((count) => ({
               value: String(count),
-              label: `After ${count} violation${count === 1 ? "" : "s"} today`,
+              label: `${L.guardrailAfterPrefix} ${count} ${count === 1 ? L.violationOne : L.violationMany} ${L.guardrailToday}`,
             })),
           ]}
           testid="settings-trading-softlock"
@@ -262,9 +265,9 @@ export function TradingCard() {
       <ConfirmDialog
         open={resetOpen}
         onOpenChange={setResetOpen}
-        title="Reset to defaults?"
-        description="Every preference in this card returns to the safe Cosmoz defaults. This cannot be undone."
-        confirmLabel="Reset card"
+        title={SH.resetTitle}
+        description={SH.resetBodyGeneric}
+        confirmLabel={SH.resetConfirm}
         onConfirm={onReset}
         pending={resetDomain.isPending}
         testid="settings-trading-reset"

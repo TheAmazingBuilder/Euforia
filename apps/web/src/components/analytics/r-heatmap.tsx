@@ -8,6 +8,7 @@ import { ANALYTICS_HOUR_BUCKETS, ANALYTICS_WEEKDAYS, formatR } from "@cosmoz/sha
 
 import { EChart } from "@/components/charts/echart";
 import { getChartTheme } from "@/lib/utils/chart-theme";
+import { useI18n } from "@/i18n/i18n-provider";
 import { withAlpha } from "@/lib/utils/color";
 
 /**
@@ -33,6 +34,9 @@ interface TooltipParam {
 
 export function RHeatmap({ cells, className }: RHeatmapProps) {
   const { resolvedTheme } = useTheme();
+  const { dict } = useI18n();
+  const H = dict.analytics.heatmap;
+  const S = dict.analytics.shared;
 
   const option = React.useMemo<EChartsCoreOption>(() => {
     const t = getChartTheme();
@@ -111,17 +115,17 @@ export function RHeatmap({ cells, className }: RHeatmapProps) {
         formatter: (params: unknown): string => {
           const typed = (Array.isArray(params) ? params[0] : params) as TooltipParam | undefined;
           const raw = typed?.data.value[2];
-          if (!raw || raw.trades === 0) return "No trades in this window";
+          if (!raw || raw.trades === 0) return H.noTrades;
           const day = ANALYTICS_WEEKDAYS[typed!.data.value[1]!]?.label ?? "";
           const bucketLabel = ANALYTICS_HOUR_BUCKETS[typed!.data.value[0]!]?.label ?? "";
           const rText = raw.avgR === null ? "—" : formatR(raw.avgR);
           const lowNote =
             raw.trades < LOW_N_THRESHOLD
-              ? `<div style="color:${t.warning};margin-top:2px">Low sample — treat with caution</div>`
+              ? `<div style="color:${t.warning};margin-top:2px">${S.lowSample}</div>`
               : "";
           return [
             `<div style="color:${t.textMuted};font-size:10px">${day} · ${bucketLabel} UTC</div>`,
-            `<div>Avg ${rText} · ${raw.trades} trades (${raw.wins} wins)</div>`,
+            `<div>${S.avgCap} ${rText} · ${raw.trades} ${S.tradesSuffix} (${raw.wins} ${S.winsSuffix})</div>`,
             lowNote,
           ].join("");
         },
@@ -136,9 +140,9 @@ export function RHeatmap({ cells, className }: RHeatmapProps) {
         },
       ],
     };
-    // Rebuild with fresh tokens on theme switch (design-tokens.md §8).
+    // Rebuild with fresh tokens + labels on theme/locale switch (design-tokens.md §8).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cells, resolvedTheme]);
+  }, [cells, resolvedTheme, H, S]);
 
   return (
     <div className={className}>
@@ -146,7 +150,7 @@ export function RHeatmap({ cells, className }: RHeatmapProps) {
         <EChart
           option={option}
           className="h-[320px] w-full"
-          ariaLabel="Heatmap of average R by weekday and UTC hour bucket, low-sample cells flagged"
+          ariaLabel={H.aria}
         />
       </div>
     </div>

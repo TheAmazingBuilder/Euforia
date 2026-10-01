@@ -19,12 +19,15 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/i18n/i18n-provider";
 
 /**
  * Shared building blocks for the Settings module — one visual language for
  * every category card: labelled rows, toggles, selects, numeric fields and
  * a per-card save bar (unrelated settings are NEVER saved together).
  * All controls are keyboard accessible and labelled (a11y golden rule).
+ * All user-facing copy resolves through dict.settings.primitives (with
+ * common.* reuses) INSIDE the render — no module-level dict lookups.
  */
 
 // ── Timezones (curated list — same set the profile screen offers) ──────────
@@ -112,6 +115,9 @@ export function SettingsCategoryCard({
   onReset,
   footerNote,
 }: SettingsCategoryCardProps) {
+  const { dict } = useI18n();
+  const P = dict.settings.primitives;
+  const common = dict.common;
   const hasFooter = onSave !== undefined;
   return (
     <Card className="bg-surface" data-testid={testid}>
@@ -130,7 +136,7 @@ export function SettingsCategoryCard({
               <p className="text-xs leading-relaxed text-muted-foreground">{footerNote}</p>
             ) : (
               <span className="text-xs text-muted-foreground" aria-live="polite">
-                {dirty ? "Unsaved changes" : saving ? "Saving…" : "All changes saved"}
+                {dirty ? P.unsavedChanges : saving ? common.saving : P.allChangesSaved}
               </span>
             )}
             {hasFooter ? (
@@ -145,7 +151,7 @@ export function SettingsCategoryCard({
                     data-testid={`${testid}-reset`}
                   >
                     <RotateCcw className="size-3.5" aria-hidden="true" />
-                    Reset
+                    {common.reset}
                   </Button>
                 ) : null}
                 <Button
@@ -160,7 +166,7 @@ export function SettingsCategoryCard({
                   ) : (
                     <Save className="size-3.5" aria-hidden="true" />
                   )}
-                  Save
+                  {common.save}
                 </Button>
               </div>
             ) : null}
@@ -477,6 +483,9 @@ export function ConfirmDialog({
   requireTyped?: string;
   testid: string;
 }) {
+  const { dict } = useI18n();
+  const P = dict.settings.primitives;
+  const common = dict.common;
   const [typed, setTyped] = React.useState("");
 
   // Clear the typed phrase when the dialog closes — handled in the change
@@ -498,7 +507,8 @@ export function ConfirmDialog({
         {requireTyped ? (
           <div className="grid gap-1.5">
             <Label htmlFor={`${testid}-typed`}>
-              Type <span className="font-mono font-semibold">{requireTyped}</span> to confirm
+              {P.typedConfirmPrefix} <span className="font-mono font-semibold">{requireTyped}</span>{" "}
+              {P.typedConfirmSuffix}
             </Label>
             <Input
               id={`${testid}-typed`}
@@ -511,7 +521,7 @@ export function ConfirmDialog({
         ) : null}
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={pending}>
-            Cancel
+            {common.cancel}
           </Button>
           <Button
             variant={destructive ? "destructive" : "default"}

@@ -20,19 +20,22 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { MethodNote } from "@/components/analytics/metric-card";
+import type { AnalyticsDict } from "@/i18n/dictionaries/en/analytics";
+import { useI18n } from "@/i18n/i18n-provider";
 import { cn } from "@/lib/utils";
 
 /**
  * A/B strategy comparator (module upgrade). Side-by-side, FACTUAL read-out of
  * two rows of the SAME server dataset — the module never crowns a "winner",
  * it exposes the deltas with sample-size honesty and lets the trader judge.
+ * METRICS stays machine-only (keys + logic); labels resolve through
+ * dict.analytics.abComparator.labels at render time (the dict.* pattern).
  */
 
 type Suite = AnalyticsSuiteResponse;
 
 interface ComparatorMetric {
-  key: string;
-  label: string;
+  key: keyof AnalyticsDict["abComparator"]["labels"] & string;
   render: (row: AnalyticsStrategyRow, currency: AnalyticsSuiteResponse["currency"]) => string;
   /** Higher-is-better (default) or lower-is-better — drives the highlight. */
   better: "high" | "low";
@@ -45,7 +48,6 @@ interface ComparatorMetric {
 const METRICS: ComparatorMetric[] = [
   {
     key: "trades",
-    label: "Trades",
     render: (row) => String(row.trades),
     better: "high",
     value: (row) => row.trades,
@@ -53,7 +55,6 @@ const METRICS: ComparatorMetric[] = [
   },
   {
     key: "winRate",
-    label: "Win rate",
     render: (row) => (row.winRate === null ? "—" : formatPercent(row.winRate, 0)),
     better: "high",
     value: (row) => (row.winRate === null ? null : Number(row.winRate)),
@@ -61,7 +62,6 @@ const METRICS: ComparatorMetric[] = [
   },
   {
     key: "profitFactor",
-    label: "Profit factor",
     render: (row) => (row.profitFactor === null ? "—" : formatNumber(row.profitFactor, 2)),
     better: "high",
     value: (row) => (row.profitFactor === null ? null : Number(row.profitFactor)),
@@ -69,7 +69,6 @@ const METRICS: ComparatorMetric[] = [
   },
   {
     key: "expectancyR",
-    label: "Expectancy (R)",
     render: (row) => (row.expectancyR === null ? "—" : formatR(row.expectancyR)),
     better: "high",
     value: (row) => (row.expectancyR === null ? null : Number(row.expectancyR)),
@@ -77,7 +76,6 @@ const METRICS: ComparatorMetric[] = [
   },
   {
     key: "avgWinR",
-    label: "Avg win (R)",
     render: (row) => (row.avgWinR === null ? "—" : formatR(row.avgWinR)),
     better: "high",
     value: (row) => (row.avgWinR === null ? null : Number(row.avgWinR)),
@@ -85,7 +83,6 @@ const METRICS: ComparatorMetric[] = [
   },
   {
     key: "avgLossR",
-    label: "Avg loss (R)",
     render: (row) => (row.avgLossR === null ? "—" : formatR(row.avgLossR)),
     better: "low",
     value: (row) => (row.avgLossR === null ? null : Number(row.avgLossR)),
@@ -93,7 +90,6 @@ const METRICS: ComparatorMetric[] = [
   },
   {
     key: "maxDrawdownR",
-    label: "Max DD (R)",
     render: (row) => formatR(row.maxDrawdownR),
     better: "high", // closer to zero (less negative) is the shallower hole
     value: (row) => Number(row.maxDrawdownR),
@@ -101,7 +97,6 @@ const METRICS: ComparatorMetric[] = [
   },
   {
     key: "netPnl",
-    label: "Net P&L",
     render: (row, currency) =>
       row.netPnl === null ? "—" : formatSignedMoney(row.netPnl, currency),
     better: "high",
@@ -110,7 +105,6 @@ const METRICS: ComparatorMetric[] = [
   },
   {
     key: "avgDurationMin",
-    label: "Avg hold",
     render: (row) =>
       row.avgDurationMin === null ? "—" : row.avgDurationMin < 60 ? `${row.avgDurationMin}m` : `${Math.round(row.avgDurationMin / 60)}h`,
     better: "high",
@@ -119,7 +113,6 @@ const METRICS: ComparatorMetric[] = [
   },
   {
     key: "followedPlanPct",
-    label: "Plan followed",
     render: (row) => (row.followedPlanPct === null ? "—" : formatPercent(row.followedPlanPct, 0)),
     better: "high",
     value: (row) => (row.followedPlanPct === null ? null : Number(row.followedPlanPct)),
@@ -128,6 +121,8 @@ const METRICS: ComparatorMetric[] = [
 ];
 
 export function AbComparator({ suite }: { suite: Suite }) {
+  const { dict } = useI18n();
+  const T: AnalyticsDict["abComparator"] = dict.analytics.abComparator;
   const rows = suite.strategies;
 
   const [idAState, setIdA] = React.useState<string>("");
@@ -155,10 +150,10 @@ export function AbComparator({ suite }: { suite: Suite }) {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 font-heading text-base font-semibold">
             <Columns2 className="size-4 text-muted-foreground" aria-hidden="true" />
-            A/B comparator
+            {T.title}
           </CardTitle>
           <CardDescription className="text-xs">
-            Side-by-side comparison needs at least two strategy rows in the dataset.
+            {T.emptyDesc}
           </CardDescription>
         </CardHeader>
       </Card>
@@ -172,19 +167,18 @@ export function AbComparator({ suite }: { suite: Suite }) {
       <CardHeader>
         <CardTitle className="flex items-center gap-2 font-heading text-base font-semibold">
           <Columns2 className="size-4 text-muted-foreground" aria-hidden="true" />
-          A/B comparator
+          {T.title}
         </CardTitle>
         <CardDescription className="text-xs">
-          Pick two strategy rows from the SAME filtered dataset — the deltas are factual, not a recommendation.
-          Highlight marks the stronger side per metric; sample sizes stay visible.
+          {T.desc}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="grid grid-cols-2 gap-2">
           <div className="space-y-1">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-accent">Strategy A</p>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-accent">{T.strategyA}</p>
             <Select value={idA} onValueChange={setIdA}>
-              <SelectTrigger className="h-8 text-xs" data-testid="ab-strategy-a" aria-label="Strategy A">
+              <SelectTrigger className="h-8 text-xs" data-testid="ab-strategy-a" aria-label={T.strategyA}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -197,9 +191,9 @@ export function AbComparator({ suite }: { suite: Suite }) {
             </Select>
           </div>
           <div className="space-y-1">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Strategy B</p>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{T.strategyB}</p>
             <Select value={idB} onValueChange={setIdB}>
-              <SelectTrigger className="h-8 text-xs" data-testid="ab-strategy-b" aria-label="Strategy B">
+              <SelectTrigger className="h-8 text-xs" data-testid="ab-strategy-b" aria-label={T.strategyB}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -218,10 +212,10 @@ export function AbComparator({ suite }: { suite: Suite }) {
             <table className="w-full min-w-[520px] text-sm">
               <thead>
                 <tr className="border-b border-border text-left text-[11px] uppercase tracking-wide text-muted-foreground">
-                  <th className="py-2 pr-3 font-medium">Metric</th>
+                  <th className="py-2 pr-3 font-medium">{T.metricHeader}</th>
                   <th className="py-2 pr-3 font-medium">{rowA.name}</th>
                   <th className="py-2 pr-3 font-medium">{rowB.name}</th>
-                  <th className="py-2 font-medium">Δ (A − B)</th>
+                  <th className="py-2 font-medium">{T.deltaHeader}</th>
                 </tr>
               </thead>
               <tbody>
@@ -244,7 +238,7 @@ export function AbComparator({ suite }: { suite: Suite }) {
                   const delta = comparable && metric.delta !== false ? rawA - rawB : null;
                   return (
                     <tr key={metric.key} className="border-b border-border/50 last:border-0">
-                      <td className="py-2 pr-3 text-xs text-muted-foreground">{metric.label}</td>
+                      <td className="py-2 pr-3 text-xs text-muted-foreground">{T.labels[metric.key]}</td>
                       <td
                         className={cn(
                           "py-2 pr-3 font-mono text-xs tabular-nums",
@@ -279,8 +273,7 @@ export function AbComparator({ suite }: { suite: Suite }) {
         )}
 
         <MethodNote>
-          ● marks the stronger side per metric (Avg loss (R): lower is stronger; Max DD (R): closer to zero is stronger).
-          Deltas carry no significance test — with small samples the honest read is “different”, not “better”.
+          {T.methodNote}
         </MethodNote>
       </CardContent>
     </Card>

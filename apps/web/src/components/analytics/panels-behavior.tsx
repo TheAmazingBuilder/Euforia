@@ -15,13 +15,16 @@ import {
 import { MetricCard, MethodNote } from "@/components/analytics/metric-card";
 import { ExcursionScatter, HistogramChart, MonteCarloChart } from "@/components/analytics/panels-charts";
 import { QuarterlyReportDialog } from "@/components/analytics/quarterly-report-dialog";
+import type { AnalyticsDict } from "@/i18n/dictionaries/en/analytics";
+import { useI18n } from "@/i18n/i18n-provider";
 import { cn } from "@/lib/utils";
 
 /**
  * Trade Quality / Mistakes & Rules / Economic Events / Advanced Statistics /
  * Monte Carlo / Reports tabs (MASTER PROMPT §16–§18, §20, §21, §24, §25, §26).
  * Simulations are always labelled SIMULATION; missing data is declared, never
- * fabricated (§34).
+ * fabricated (§34). Labels resolve through dict.analytics.* — machine
+ * composition stays in the component (the dict.* pattern).
  */
 
 type Suite = AnalyticsSuiteResponse;
@@ -47,6 +50,8 @@ function exportCsv(suite: Suite): void {
 }
 
 export function QualityTab({ suite }: { suite: Suite }) {
+  const { dict } = useI18n();
+  const T: AnalyticsDict["behavior"]["quality"] = dict.analytics.behavior.quality;
   const quality = suite.quality;
   const followedPct = quality.planFollowed.followed + quality.planFollowed.violated > 0
     ? quality.planFollowed.followed / (quality.planFollowed.followed + quality.planFollowed.violated)
@@ -56,29 +61,29 @@ export function QualityTab({ suite }: { suite: Suite }) {
     <div className="space-y-4" data-testid="analytics-tab-quality">
       <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
         <MetricCard
-          label="Plan followed"
+          label={T.planFollowed}
           value={followedPct === null ? "—" : formatPercent(followedPct, 0)}
-          definition="Share of self-reports where the executed trade matched the plan, among trades with a known flag (unknown excluded from the ratio, shown separately)."
+          definition={T.planFollowedDef}
           tone={followedPct !== null && Number(followedPct) >= 0.8 ? "profit" : "neutral"}
-          sub={`${quality.planFollowed.followed} followed · ${quality.planFollowed.violated} violated · ${quality.planFollowed.unknown} unknown`}
+          sub={`${quality.planFollowed.followed} ${T.followedWord} · ${quality.planFollowed.violated} ${T.violatedWord} · ${quality.planFollowed.unknown} ${T.unknownWord}`}
           insufficient={followedPct === null}
         />
         <MetricCard
-          label="Avg MFE"
+          label={T.avgMfe}
           value={quality.mfe.avgR === null ? "—" : `+${formatNumber(quality.mfe.avgR, 2)}R`}
-          definition="Maximum Favorable Excursion — best open profit reached before exit, averaged in R. Requires intratrade excursion data."
+          definition={T.avgMfeDef}
           insufficient={quality.mfe.avgR === null}
         />
         <MetricCard
-          label="Avg MAE"
+          label={T.avgMae}
           value={quality.mae.avgR === null ? "—" : formatR(quality.mae.avgR)}
-          definition="Maximum Adverse Excursion — worst open drawdown suffered before exit, averaged in R."
+          definition={T.avgMaeDef}
           insufficient={quality.mae.avgR === null}
         />
         <MetricCard
-          label="MFE capture"
+          label={T.mfeCapture}
           value={quality.mfe.capturePct === null ? "—" : formatPercent(quality.mfe.capturePct, 0)}
-          definition="On winners: Σ realized R ÷ Σ MFE R. How much of the available favorable move your exits actually captured."
+          definition={T.mfeCaptureDef}
           tone={quality.mfe.capturePct !== null && Number(quality.mfe.capturePct) >= 0.6 ? "profit" : "neutral"}
           insufficient={quality.mfe.capturePct === null}
         />
@@ -86,16 +91,16 @@ export function QualityTab({ suite }: { suite: Suite }) {
 
       {!quality.excursionAvailable && (
         <MethodNote>
-          MAE/MFE analysis requires intratrade price data — this dataset has no excursion records.
+          {T.excursionNote}
         </MethodNote>
       )}
 
       <div className="grid gap-3 sm:gap-4 lg:grid-cols-2">
         <Card className="bg-surface">
           <CardHeader>
-            <CardTitle className="font-heading text-base font-semibold">Excursions vs realized R</CardTitle>
+            <CardTitle className="font-heading text-base font-semibold">{T.scatterTitle}</CardTitle>
             <CardDescription className="text-xs">
-              Each dot is a trade. MFE high + realized low = gave back profit; MAE deep = stop placement pressure.
+              {T.scatterDesc}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -103,7 +108,7 @@ export function QualityTab({ suite }: { suite: Suite }) {
               <ExcursionScatter scatter={quality.scatter} className="h-64" />
             ) : (
               <p className="py-10 text-center text-sm text-muted-foreground">
-                MAE requires intratrade price data.
+                {T.scatterEmpty}
               </p>
             )}
           </CardContent>
@@ -112,18 +117,18 @@ export function QualityTab({ suite }: { suite: Suite }) {
         <div className="space-y-3 sm:space-y-4">
           <Card className="bg-surface">
             <CardHeader>
-              <CardTitle className="font-heading text-base font-semibold">MFE distribution</CardTitle>
+              <CardTitle className="font-heading text-base font-semibold">{T.mfeDistTitle}</CardTitle>
             </CardHeader>
             <CardContent>
-              <HistogramChart bins={quality.mfeHistogram} ariaLabel="Distribution of maximum favorable excursion in R" color="profit" className="h-36" />
+              <HistogramChart bins={quality.mfeHistogram} ariaLabel={T.mfeDistAria} color="profit" className="h-36" />
             </CardContent>
           </Card>
           <Card className="bg-surface">
             <CardHeader>
-              <CardTitle className="font-heading text-base font-semibold">MAE distribution</CardTitle>
+              <CardTitle className="font-heading text-base font-semibold">{T.maeDistTitle}</CardTitle>
             </CardHeader>
             <CardContent>
-              <HistogramChart bins={quality.maeHistogram} ariaLabel="Distribution of maximum adverse excursion in R" color="loss" className="h-36" />
+              <HistogramChart bins={quality.maeHistogram} ariaLabel={T.maeDistAria} color="loss" className="h-36" />
             </CardContent>
           </Card>
         </div>
@@ -133,41 +138,42 @@ export function QualityTab({ suite }: { suite: Suite }) {
 }
 
 export function MistakesTab({ suite }: { suite: Suite }) {
+  const { dict } = useI18n();
+  const T: AnalyticsDict["behavior"]["mistakes"] = dict.analytics.behavior.mistakes;
   const mistakes = suite.mistakes;
   return (
     <div className="space-y-4" data-testid="analytics-tab-mistakes">
       <div className="grid grid-cols-3 gap-3 sm:gap-4">
         <MetricCard
-          label="Trades flagged"
+          label={T.tradesFlagged}
           value={String(mistakes.violatingTrades)}
-          definition="Closed trades in the dataset carrying at least one mistake from the catalog."
-          sub={`${suite.summary.trades} trades in dataset`}
+          definition={T.tradesFlaggedDef}
+          sub={`${suite.summary.trades} ${T.tradesInDataset}`}
         />
         <MetricCard
-          label="Σ R on flagged trades"
+          label={T.sumRFlagged}
           value={formatR(mistakes.totalR)}
-          definition="Sum of R over the flagged trades. A negative total is the observable cost of the mistakes — realized only, no invented counterfactual."
+          definition={T.sumRFlaggedDef}
           tone={Number(mistakes.totalR) < 0 ? "loss" : "neutral"}
         />
         <MetricCard
-          label="Distinct mistakes"
+          label={T.distinctMistakes}
           value={String(mistakes.entries.length)}
-          definition="How many different mistake types occurred in this dataset."
+          definition={T.distinctMistakesDef}
         />
       </div>
 
       <Card className="bg-surface">
         <CardHeader>
-          <CardTitle className="font-heading text-base font-semibold">Cost of mistakes</CardTitle>
+          <CardTitle className="font-heading text-base font-semibold">{T.costTitle}</CardTitle>
           <CardDescription className="text-xs">
-            Recomputed on the FILTERED dataset (the dashboard ledger shows a fixed 30-day window). Sorted by |cost|.
-            “Cost” here = realized P&L of the trades carrying the mistake — no counterfactual is claimed.
+            {T.costDesc}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {mistakes.entries.length === 0 ? (
             <p className="py-8 text-center text-sm text-muted-foreground">
-              No mistakes recorded in this dataset — either a clean run, or no flags were raised on these trades.
+              {T.empty}
             </p>
           ) : (
             <div className="space-y-2.5">
@@ -183,7 +189,7 @@ export function MistakesTab({ suite }: { suite: Suite }) {
                       <span className="flex min-w-0 items-center gap-2">
                         <span className="truncate font-medium">{entry.label}</span>
                         <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
-                          {entry.category.toLowerCase()} · sev {entry.severity}
+                          {entry.category.toLowerCase()} · {T.sev} {entry.severity}
                         </span>
                       </span>
                       <span className="flex shrink-0 items-center gap-3 font-mono tabular-nums">
@@ -204,8 +210,7 @@ export function MistakesTab({ suite }: { suite: Suite }) {
               })}
               <div className="pt-1">
                 <MethodNote>
-                  A positive ΣR on a flagged trade does NOT make the mistake harmless — it means the violating trade
-                  happened to win. The flag tracks process, not outcome.
+                  {T.methodNote}
                 </MethodNote>
               </div>
             </div>
@@ -217,6 +222,9 @@ export function MistakesTab({ suite }: { suite: Suite }) {
 }
 
 export function EventsTab({ suite }: { suite: Suite }) {
+  const { dict } = useI18n();
+  const T: AnalyticsDict["behavior"]["events"] = dict.analytics.behavior.events;
+  const SH: AnalyticsDict["shared"] = dict.analytics.shared;
   const events = suite.events;
   const coverage = events.calendarCoverage;
   const covered = coverage.classifiedTrades > 0;
@@ -226,9 +234,9 @@ export function EventsTab({ suite }: { suite: Suite }) {
         <Card className="bg-surface">
           <CardContent className="py-8 text-center">
             <p className="text-sm text-muted-foreground">
-              Economic-event analysis requires calendar data covering the trade dates. The calendar in this build spans{" "}
+              {T.coveragePrefix}{" "}
               <span className="font-mono">{coverage.from ?? "?"} → {coverage.to ?? "?"}</span>
-              {coverage.unclassifiedTrades > 0 && <> — {coverage.unclassifiedTrades} trade(s) fall outside it.</>}
+              {coverage.unclassifiedTrades > 0 && <> — {coverage.unclassifiedTrades} {T.tradesOutsideTail}</>}
             </p>
           </CardContent>
         </Card>
@@ -239,11 +247,10 @@ export function EventsTab({ suite }: { suite: Suite }) {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-heading text-base font-semibold">
               <CalendarClock className="size-4 text-muted-foreground" aria-hidden="true" />
-              Phase around releases
+              {T.phasesTitle}
             </CardTitle>
             <CardDescription className="text-xs">
-              Entry timing relative to the nearest HIGH/MEDIUM release on the instrument quote currency:
-              before (4h→1h), during (±1h), after (1h→4h), or no release nearby.
+              {T.phasesDesc}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
@@ -251,8 +258,8 @@ export function EventsTab({ suite }: { suite: Suite }) {
               <div key={phase.key} className="flex items-center justify-between gap-3 rounded-lg border border-border bg-surface-raised px-3 py-2">
                 <span className="min-w-0 truncate text-xs">{phase.label}</span>
                 <span className="flex shrink-0 items-center gap-3 font-mono text-xs tabular-nums">
-                  <span className={cn(phase.trades < 10 && "text-warning")}>{phase.trades} trades</span>
-                  <span>{phase.winRate === null ? "—" : formatPercent(phase.winRate, 0)} win</span>
+                  <span className={cn(phase.trades < 10 && "text-warning")}>{phase.trades} {SH.tradesSuffix}</span>
+                  <span>{phase.winRate === null ? "—" : formatPercent(phase.winRate, 0)} {SH.winSuffix}</span>
                   <span className={phase.avgR === null ? "text-muted-foreground" : Number(phase.avgR) >= 0 ? "text-profit" : "text-loss"}>
                     {phase.avgR === null ? "—" : formatR(phase.avgR)}
                   </span>
@@ -260,8 +267,7 @@ export function EventsTab({ suite }: { suite: Suite }) {
               </div>
             ))}
             <MethodNote>
-              Historical association only — trading around releases is not inherently good or bad; this shows what
-              happened in YOUR sample.
+              {T.methodNote}
             </MethodNote>
           </CardContent>
         </Card>
@@ -270,10 +276,10 @@ export function EventsTab({ suite }: { suite: Suite }) {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-heading text-base font-semibold">
               <Gauge className="size-4 text-muted-foreground" aria-hidden="true" />
-              By impact (±4h window)
+              {T.impactTitle}
             </CardTitle>
             <CardDescription className="text-xs">
-              Trades entered within four hours of any HIGH or MEDIUM release on their quote currency.
+              {T.impactDesc}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
@@ -281,8 +287,8 @@ export function EventsTab({ suite }: { suite: Suite }) {
               <div key={impact.key} className="flex items-center justify-between gap-3 rounded-lg border border-border bg-surface-raised px-3 py-2">
                 <span className="text-xs font-medium">{impact.label}</span>
                 <span className="flex shrink-0 items-center gap-3 font-mono text-xs tabular-nums">
-                  <span className={cn(impact.trades < 10 && "text-warning")}>{impact.trades} trades</span>
-                  <span>{impact.winRate === null ? "—" : formatPercent(impact.winRate, 0)} win</span>
+                  <span className={cn(impact.trades < 10 && "text-warning")}>{impact.trades} {SH.tradesSuffix}</span>
+                  <span>{impact.winRate === null ? "—" : formatPercent(impact.winRate, 0)} {SH.winSuffix}</span>
                   <span className={impact.avgR === null ? "text-muted-foreground" : Number(impact.avgR) >= 0 ? "text-profit" : "text-loss"}>
                     {impact.avgR === null ? "—" : formatR(impact.avgR)}
                   </span>
@@ -297,42 +303,45 @@ export function EventsTab({ suite }: { suite: Suite }) {
 }
 
 export function AdvancedTab({ suite }: { suite: Suite }) {
+  const { dict } = useI18n();
+  const T: AnalyticsDict["behavior"]["advanced"] = dict.analytics.behavior.advanced;
+  const SH: AnalyticsDict["shared"] = dict.analytics.shared;
   const advanced = suite.advanced;
   const summary = suite.summary;
   return (
     <div className="space-y-4" data-testid="analytics-tab-advanced">
       <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 xl:grid-cols-5">
         <MetricCard
-          label="Sharpe"
+          label={T.sharpe}
           value={summary.sharpe === null ? "—" : formatNumber(summary.sharpe, 2)}
           definition={summary.sharpeNote}
           tone={summary.sharpe !== null && Number(summary.sharpe) >= 1 ? "profit" : "neutral"}
           insufficient={summary.sharpe === null}
         />
         <MetricCard
-          label="Sortino"
+          label={T.sortino}
           value={summary.sortino === null ? "—" : formatNumber(summary.sortino, 2)}
           definition={summary.sortinoNote}
           tone={summary.sortino !== null && Number(summary.sortino) >= 1.5 ? "profit" : "neutral"}
           insufficient={summary.sortino === null}
         />
         <MetricCard
-          label="SQN"
+          label={T.sqn}
           value={summary.sqn === null ? "—" : formatNumber(summary.sqn, 2)}
-          definition="System Quality Number = mean(R) ÷ std(R) × √n. Rough reading: < 1.6 poor, 1.6–1.9 below average, 2.0–2.4 average, 2.5–2.9 good, 3+ excellent. Null below 10 trades."
+          definition={T.sqnDef}
           tone={summary.sqn !== null && Number(summary.sqn) >= 2 ? "profit" : "neutral"}
           insufficient={summary.sqn === null}
         />
         <MetricCard
-          label="Std dev of R"
+          label={T.stddevR}
           value={advanced.r.stddev === null ? "—" : formatNumber(advanced.r.stddev, 2)}
-          definition="Dispersion of per-trade R around the mean. Higher = lumpier, harder-to-stomach equity."
+          definition={T.stddevRDef}
           insufficient={advanced.r.stddev === null}
         />
         <MetricCard
-          label="Skew / Kurtosis"
+          label={T.skewKurtosis}
           value={`${advanced.r.skewness === null ? "—" : formatNumber(advanced.r.skewness, 2)} / ${advanced.r.kurtosis === null ? "—" : formatNumber(advanced.r.kurtosis, 2)}`}
-          definition="Skewness: asymmetry of the R distribution (negative = fat left tail). Kurtosis is EXCESS kurtosis: tails vs a normal distribution (0 = normal-like, positive = fat tails)."
+          definition={T.skewKurtosisDef}
           insufficient={advanced.r.skewness === null}
         />
       </div>
@@ -342,24 +351,24 @@ export function AdvancedTab({ suite }: { suite: Suite }) {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-heading text-base font-semibold">
               <Sigma className="size-4 text-muted-foreground" aria-hidden="true" />
-              R distribution profile
+              {T.profileTitle}
             </CardTitle>
             <CardDescription className="text-xs">
-              Percentiles and moments of the per-trade R series.
+              {T.profileDesc}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 font-mono text-xs tabular-nums sm:grid-cols-3">
               {[
-                ["Mean", advanced.r.mean],
-                ["Median", advanced.r.median],
-                ["Std dev", advanced.r.stddev],
-                ["Variance", advanced.r.variance],
-                ["P05", advanced.r.p05],
-                ["P25", advanced.r.p25],
-                ["P75", advanced.r.p75],
-                ["P95", advanced.r.p95],
-                ["Skewness", advanced.r.skewness],
+                [T.statMean, advanced.r.mean],
+                [T.statMedian, advanced.r.median],
+                [T.statStddev, advanced.r.stddev],
+                [T.statVariance, advanced.r.variance],
+                [T.statP05, advanced.r.p05],
+                [T.statP25, advanced.r.p25],
+                [T.statP75, advanced.r.p75],
+                [T.statP95, advanced.r.p95],
+                [T.statSkewness, advanced.r.skewness],
               ].map(([label, value]) => (
                 <div key={label as string} className="flex items-center justify-between gap-2 border-b border-border/40 py-1">
                   <span className="text-muted-foreground">{label}</span>
@@ -374,26 +383,26 @@ export function AdvancedTab({ suite }: { suite: Suite }) {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-heading text-base font-semibold">
               <Timer className="size-4 text-muted-foreground" aria-hidden="true" />
-              Streaks
+              {T.streaksTitle}
             </CardTitle>
             <CardDescription className="text-xs">
-              Consecutive win/loss runs — what your equity actually puts you through.
+              {T.streaksDesc}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-lg border border-border bg-surface-raised p-3 text-center">
-                <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Longest win run</p>
+                <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">{T.longestWinRun}</p>
                 <p className="font-mono text-2xl font-semibold tabular-nums text-profit">{advanced.streaks.longestWin}</p>
                 <p className="font-mono text-[11px] tabular-nums text-muted-foreground">
-                  avg {advanced.streaks.avgWin === null ? "—" : formatNumber(advanced.streaks.avgWin, 1)}
+                  {SH.avgLower} {advanced.streaks.avgWin === null ? "—" : formatNumber(advanced.streaks.avgWin, 1)}
                 </p>
               </div>
               <div className="rounded-lg border border-border bg-surface-raised p-3 text-center">
-                <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Longest loss run</p>
+                <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">{T.longestLossRun}</p>
                 <p className="font-mono text-2xl font-semibold tabular-nums text-loss">{advanced.streaks.longestLoss}</p>
                 <p className="font-mono text-[11px] tabular-nums text-muted-foreground">
-                  avg {advanced.streaks.avgLoss === null ? "—" : formatNumber(advanced.streaks.avgLoss, 1)}
+                  {SH.avgLower} {advanced.streaks.avgLoss === null ? "—" : formatNumber(advanced.streaks.avgLoss, 1)}
                 </p>
               </div>
             </div>
@@ -405,15 +414,17 @@ export function AdvancedTab({ suite }: { suite: Suite }) {
 }
 
 export function MonteCarloTab({ suite }: { suite: Suite }) {
+  const { dict } = useI18n();
+  const T: AnalyticsDict["behavior"]["monteCarlo"] = dict.analytics.behavior.monteCarlo;
   const mc = suite.monteCarlo;
   return (
     <div className="space-y-4" data-testid="analytics-tab-montecarlo">
       <Card className="bg-surface">
         <CardHeader>
           <CardTitle className="font-heading text-base font-semibold">
-            Monte Carlo simulation{" "}
+            {T.title}{" "}
             <span className="ml-1 rounded bg-warning/15 px-1.5 py-0.5 align-middle text-[10px] font-semibold uppercase tracking-wide text-warning">
-              Simulation
+              {T.simulationBadge}
             </span>
           </CardTitle>
           <CardDescription className="text-xs">{mc.methodology}</CardDescription>
@@ -421,38 +432,36 @@ export function MonteCarloTab({ suite }: { suite: Suite }) {
         <CardContent className="space-y-3">
           {mc.tradesPerRun === 0 ? (
             <p className="py-8 text-center text-sm text-muted-foreground">
-              Not enough trades to run a simulation.
+              {T.empty}
             </p>
           ) : (
             <>
               <MonteCarloChart monteCarlo={mc} className="h-64" />
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <div className="rounded-lg border border-border bg-surface-raised p-3">
-                  <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Runs</p>
+                  <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">{T.runs}</p>
                   <p className="font-mono text-lg font-semibold tabular-nums">{mc.simulations}</p>
-                  <p className="font-mono text-[10px] text-muted-foreground">{mc.tradesPerRun} trades each</p>
+                  <p className="font-mono text-[10px] text-muted-foreground">{mc.tradesPerRun} {T.tradesEach}</p>
                 </div>
                 <div className="rounded-lg border border-border bg-surface-raised p-3">
-                  <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Final ΣR (P05 / P50 / P95)</p>
+                  <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">{T.finalR}</p>
                   <p className="font-mono text-sm font-semibold tabular-nums">
                     {formatR(mc.finalR.p05)} / {formatR(mc.finalR.p50)} / {formatR(mc.finalR.p95)}
                   </p>
                 </div>
                 <div className="rounded-lg border border-border bg-surface-raised p-3">
-                  <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Max DD (P50 / P95)</p>
+                  <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">{T.maxDD}</p>
                   <p className="font-mono text-sm font-semibold tabular-nums text-loss">
                     {formatR(mc.maxDrawdownR.p50)} / {formatR(mc.maxDrawdownR.p95)}
                   </p>
                 </div>
                 <div className="rounded-lg border border-border bg-surface-raised p-3">
-                  <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Worst simulated DD</p>
+                  <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">{T.worstDD}</p>
                   <p className="font-mono text-sm font-semibold tabular-nums text-loss">{formatR(mc.maxDrawdownR.worst)}</p>
                 </div>
               </div>
               <MethodNote>
-                Reshuffling the SAME results shows the range of equity paths this edge could have produced — it says
-                nothing about future sequences. A profitable mean with a brutal P95 drawdown is the normal shape of
-                trading; size positions for the bands, not the midpoint.
+                {T.methodNote}
               </MethodNote>
             </>
           )}
@@ -463,6 +472,8 @@ export function MonteCarloTab({ suite }: { suite: Suite }) {
 }
 
 export function ReportsTab({ suite }: { suite: Suite }) {
+  const { dict } = useI18n();
+  const T: AnalyticsDict["behavior"]["reports"] = dict.analytics.behavior.reports;
   const money = suite.meta.singleCurrency;
   const currency = suite.currency;
   const [range, setRange] = React.useState<"daily" | "weekly" | "monthly">("monthly");
@@ -474,10 +485,9 @@ export function ReportsTab({ suite }: { suite: Suite }) {
       <Card className="bg-surface">
         <CardHeader className="flex-row items-start justify-between space-y-0">
           <div className="space-y-1">
-            <CardTitle className="font-heading text-base font-semibold">Period reports</CardTitle>
+            <CardTitle className="font-heading text-base font-semibold">{T.title}</CardTitle>
             <CardDescription className="text-xs">
-              Rollups of the FILTERED dataset — daily, weekly (ISO) and monthly. Export gives you the trade-level R
-              sequence as CSV.
+              {T.desc}
             </CardDescription>
           </div>
           <div className="flex items-center gap-2">
@@ -493,7 +503,7 @@ export function ReportsTab({ suite }: { suite: Suite }) {
                     range === option ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground",
                   )}
                 >
-                  {option}
+                  {T.ranges[option]}
                 </button>
               ))}
             </div>
@@ -504,7 +514,7 @@ export function ReportsTab({ suite }: { suite: Suite }) {
               data-testid="quarterly-report-open"
             >
               <FileDown className="size-3.5" aria-hidden="true" />
-              Quarterly PDF
+              {T.quarterlyPdf}
             </button>
             <button
               type="button"
@@ -519,17 +529,17 @@ export function ReportsTab({ suite }: { suite: Suite }) {
         </CardHeader>
         <CardContent>
           {rows.length === 0 ? (
-            <p className="py-8 text-center text-sm text-muted-foreground">No rows for this range in the dataset.</p>
+            <p className="py-8 text-center text-sm text-muted-foreground">{T.empty}</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full min-w-[420px] text-sm">
                 <thead>
                   <tr className="border-b border-border text-left text-[11px] uppercase tracking-wide text-muted-foreground">
-                    <th className="py-2 pr-3 font-medium">{range === "weekly" ? "ISO week" : range === "monthly" ? "Month" : "Day"}</th>
-                    <th className="py-2 pr-3 font-medium">Trades</th>
-                    <th className="py-2 pr-3 font-medium">Win rate</th>
-                    <th className="py-2 pr-3 font-medium">ΣR</th>
-                    {money && <th className="py-2 font-medium">Net P&L</th>}
+                    <th className="py-2 pr-3 font-medium">{range === "weekly" ? T.isoWeek : range === "monthly" ? T.month : T.day}</th>
+                    <th className="py-2 pr-3 font-medium">{T.thTrades}</th>
+                    <th className="py-2 pr-3 font-medium">{T.thWinRate}</th>
+                    <th className="py-2 pr-3 font-medium">{T.thSumR}</th>
+                    {money && <th className="py-2 font-medium">{T.thNetPnl}</th>}
                   </tr>
                 </thead>
                 <tbody>
@@ -566,7 +576,11 @@ export function ReportsTab({ suite }: { suite: Suite }) {
           )}
           <div className="mt-3">
             <MethodNote>
-              Money columns appear only on single-currency datasets ({formatMoney("1", currency)} = 1 {currency}).
+              {T.moneyNoteA}
+              {formatMoney("1", currency)}
+              {T.moneyNoteB}
+              {currency}
+              {T.moneyNoteC}
             </MethodNote>
           </div>
         </CardContent>

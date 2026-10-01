@@ -1,7 +1,11 @@
+"use client";
+
 import type { AnalyticsCards } from "@cosmoz/shared";
 import { formatNumber, formatPercent, formatR } from "@cosmoz/shared";
 
 import { Card, CardContent } from "@/components/ui/card";
+import type { AnalyticsDict } from "@/i18n/dictionaries/en/analytics";
+import { useI18n } from "@/i18n/i18n-provider";
 import { cn } from "@/lib/utils";
 
 /**
@@ -21,48 +25,55 @@ interface CardSpec {
   subs: { label: string; value: string; valueClassName?: string }[];
 }
 
-function buildCards(cards: AnalyticsCards): CardSpec[] {
+/** Card registry — machine composition stays, labels resolve through the dict. */
+function buildCards(cards: AnalyticsCards, T: AnalyticsDict["summary"], S: string): CardSpec[] {
   return [
     {
-      label: "Win rate",
+      label: T.winRate,
       value: formatPercent(cards.winRate, 1),
       subs: [
-        { label: "Sample", value: `${cards.sampleTrades} trades` },
+        { label: T.sample, value: `${cards.sampleTrades} ${S}` },
       ],
     },
     {
-      label: "Profit factor",
+      label: T.profitFactor,
       value: cards.profitFactor === null ? "—" : formatNumber(cards.profitFactor, 2),
       valueClassName:
         cards.profitFactor !== null && Number(cards.profitFactor) >= 1.5 ? "text-profit" : undefined,
-      subs: [{ label: "Healthy", value: "≥ 1.50" }, { label: "Optimal", value: "≥ 2.00" }],
+      subs: [{ label: T.healthy, value: "≥ 1.50" }, { label: T.optimal, value: "≥ 2.00" }],
     },
     {
-      label: "Expectancy",
+      label: T.expectancy,
       value: formatR(cards.expectancy),
       valueClassName: Number(cards.expectancy) >= 0 ? "text-profit" : "text-loss",
-      subs: [{ label: "Per trade", value: "closed only" }],
+      subs: [{ label: T.perTrade, value: T.closedOnly }],
     },
     {
-      label: "Payoff ratio",
+      label: T.payoffRatio,
       value: cards.payoffRatio === null ? "—" : formatNumber(cards.payoffRatio, 2),
-      subs: [{ label: "Avg win R /", value: "avg loss R" }],
+      subs: [{ label: T.avgWinR, value: T.avgLossR }],
     },
     {
-      label: "Max drawdown",
+      label: T.maxDrawdown,
       value: formatR(cards.maxDrawdownR),
       valueClassName: "text-loss",
       subs: [
         cards.recoveryTrades === null
-          ? { label: "Recovery", value: "not recovered yet", valueClassName: "text-warning" }
-          : { label: "Recovered in", value: `${cards.recoveryTrades} trades · ${cards.recoveryDays ?? 0}d` },
+          ? { label: T.recovery, value: T.notRecoveredYet, valueClassName: "text-warning" }
+          : {
+              label: T.recoveredIn,
+              value: `${cards.recoveryTrades} ${S} · ${cards.recoveryDays ?? 0}d`,
+            },
       ],
     },
   ];
 }
 
 export function SummaryCards({ cards }: SummaryCardsProps) {
-  const specs = buildCards(cards);
+  const { dict } = useI18n();
+  const T = dict.analytics.summary;
+  const S = dict.analytics.shared.tradesSuffix;
+  const specs = buildCards(cards, T, S);
   return (
     <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-5">
       {specs.map((spec) => (

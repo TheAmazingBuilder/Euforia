@@ -22,6 +22,7 @@ import {
   useUpdatePreferencesDomain,
 } from "@/lib/api/queries";
 import { apiErrorMessage } from "@/lib/api/client";
+import { useI18n } from "@/i18n/i18n-provider";
 
 /**
  * Privacy & data — analytics consents, visibility and data ownership
@@ -34,6 +35,9 @@ export function PrivacyCard() {
   const resetDomain = useResetPreferencesDomain();
   const { draft, setDraft, dirty } = useDomainDraft(prefs?.privacy);
   const [resetOpen, setResetOpen] = React.useState(false);
+  const { dict } = useI18n();
+  const L = dict.settings.privacy;
+  const SH = dict.settings.shared;
 
   if (isLoading || !prefs || !draft) {
     return (
@@ -48,8 +52,8 @@ export function PrivacyCard() {
 
   const onSave = () => {
     save.mutate(draft, {
-      onSuccess: () => toast.success("Privacy preferences saved"),
-      onError: (error) => toast.error(apiErrorMessage(error, "Could not save privacy preferences")),
+      onSuccess: () => toast.success(L.toastSaved),
+      onError: (error) => toast.error(apiErrorMessage(error, L.toastSaveFailed)),
     });
   };
 
@@ -57,7 +61,7 @@ export function PrivacyCard() {
     setResetOpen(false);
     resetDomain.mutate(
       { domain: "privacy" },
-      { onSuccess: () => toast.success("Privacy preferences reset to defaults") },
+      { onSuccess: () => toast.success(L.toastReset) },
     );
   };
 
@@ -65,8 +69,8 @@ export function PrivacyCard() {
     <div className="grid gap-4">
       <SettingsCategoryCard
         icon={Eye}
-        title="Privacy"
-        description="What Cosmoz may collect and who can see you — nothing about security lives here."
+        title={L.title}
+        description={L.description}
         testid="settings-privacy"
         dirty={dirty}
         saving={save.isPending}
@@ -74,29 +78,29 @@ export function PrivacyCard() {
         onReset={() => setResetOpen(true)}
       >
         <ToggleRow
-          label="Usage analytics"
-          hint="Anonymous product metrics — screens used, never trade content."
+          label={L.analyticsLabel}
+          hint={L.analyticsHint}
           checked={draft.usageAnalytics}
           onChange={(checked) => patch({ usageAnalytics: checked })}
           testid="settings-privacy-analytics"
         />
         <ToggleRow
-          label="Crash diagnostics"
-          hint="Error reports with technical context when something breaks."
+          label={L.crashLabel}
+          hint={L.crashHint}
           checked={draft.crashDiagnostics}
           onChange={(checked) => patch({ crashDiagnostics: checked })}
           testid="settings-privacy-crash"
         />
         <ToggleRow
-          label="Share anonymous statistics"
-          hint="Aggregated, de-identified discipline benchmarks for the community."
+          label={L.shareLabel}
+          hint={L.shareHint}
           checked={draft.shareAnonymousStats}
           onChange={(checked) => patch({ shareAnonymousStats: checked })}
           testid="settings-privacy-share"
         />
         <ToggleRow
-          label="Product emails"
-          hint="Occasional product news — never trade digests or marketing spam."
+          label={L.emailsLabel}
+          hint={L.emailsHint}
           checked={draft.productEmails}
           onChange={(checked) => patch({ productEmails: checked })}
           testid="settings-privacy-emails"
@@ -104,9 +108,9 @@ export function PrivacyCard() {
 
         <div className="grid gap-4 border-t border-border pt-4 sm:grid-cols-2">
           <SettingsRow
-            label="Profile visibility"
+            label={L.visibilityLabel}
             htmlFor="settings-privacy-visibility"
-            hint="Controls what shared views expose."
+            hint={L.visibilityHint}
           >
             <SettingsSelect
               value={draft.profileVisibility}
@@ -114,24 +118,24 @@ export function PrivacyCard() {
                 patch({ profileVisibility: value as UserPreferences["privacy"]["profileVisibility"] })
               }
               options={[
-                { value: "PRIVATE", label: "Private — only me" },
-                { value: "ANONYMOUS", label: "Anonymous — handle only" },
-                { value: "PUBLIC", label: "Public — profile page" },
+                { value: "PRIVATE", label: L.visibilityPrivate },
+                { value: "ANONYMOUS", label: L.visibilityAnonymous },
+                { value: "PUBLIC", label: L.visibilityPublic },
               ]}
               testid="settings-privacy-visibility"
             />
           </SettingsRow>
           <SettingsRow
-            label="Show email on profile"
+            label={L.emailDisplayLabel}
             htmlFor="settings-privacy-email-display"
-            hint="Never affects sign-in or security."
+            hint={L.emailDisplayHint}
           >
             <SettingsSelect
               value={draft.showEmailOnProfile ? "SHOW" : "HIDE"}
               onChange={(value) => patch({ showEmailOnProfile: value === "SHOW" })}
               options={[
-                { value: "HIDE", label: "Hidden" },
-                { value: "SHOW", label: "Visible" },
+                { value: "HIDE", label: L.emailHidden },
+                { value: "SHOW", label: L.emailVisible },
               ]}
               testid="settings-privacy-email-display"
             />
@@ -141,9 +145,9 @@ export function PrivacyCard() {
         <ConfirmDialog
           open={resetOpen}
           onOpenChange={setResetOpen}
-          title="Reset to defaults?"
-          description="Privacy consents return to the safe defaults. This cannot be undone."
-          confirmLabel="Reset card"
+          title={SH.resetTitle}
+          description={L.resetBody}
+          confirmLabel={SH.resetConfirm}
           onConfirm={onReset}
           pending={resetDomain.isPending}
           testid="settings-privacy-reset"
@@ -158,7 +162,7 @@ export function PrivacyCard() {
 
       <p className="flex items-start gap-2 text-xs leading-relaxed text-muted-foreground">
         <ShieldCheck className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
-        Sign-in, passwords and broker credentials are managed in Security — never in this tab.
+        {L.securityNote}
       </p>
     </div>
   );

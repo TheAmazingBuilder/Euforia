@@ -27,6 +27,7 @@ import {
 } from "@/lib/api/queries";
 import { apiErrorMessage } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/i18n/i18n-provider";
 
 /**
  * Risk preferences — the NUMBERS the Rules Engine enforces. Saving the card
@@ -34,27 +35,26 @@ import { cn } from "@/lib/utils";
  * discipline rules (MAX_RISK_PCT_PER_TRADE / MAX_DAILY_LOSS_PCT /
  * MAX_OPEN_POSITIONS) so monitoring, alerts and locks follow instantly.
  * Flow: Settings → Rules Engine → Monitoring / Notifications.
+ * Labels live in the dictionary (dict.settings.risk.rules) — the module
+ * map stays machine-only (types, severities, units, value getters).
  */
 
 const RISK_RULE_MAPPINGS = [
   {
     type: "MAX_RISK_PCT_PER_TRADE",
     severity: "LOCK",
-    label: "Max risk per trade",
     valueOf: (risk: UserPreferences["risk"]) => risk.maxRiskPerTradePct,
     unit: "%",
   },
   {
     type: "MAX_DAILY_LOSS_PCT",
     severity: "ALERT",
-    label: "Max daily loss",
     valueOf: (risk: UserPreferences["risk"]) => risk.dailyLossLimitPct,
     unit: "%",
   },
   {
     type: "MAX_OPEN_POSITIONS",
     severity: "WARN",
-    label: "Max open positions",
     valueOf: (risk: UserPreferences["risk"]) => risk.maxOpenPositions,
     unit: "",
   },
@@ -85,6 +85,9 @@ export function RiskCard() {
   const { draft, setDraft, dirty } = useDomainDraft(prefs?.risk);
   const [resetOpen, setResetOpen] = React.useState(false);
   const [syncing, setSyncing] = React.useState(false);
+  const { dict } = useI18n();
+  const L = dict.settings.risk;
+  const SH = dict.settings.shared;
 
   if (isLoading || !prefs || !draft) {
     return <SettingsCardSkeleton rows={6} />;
@@ -98,8 +101,8 @@ export function RiskCard() {
 
   const onSave = () => {
     save.mutate(draft, {
-      onSuccess: () => toast.success("Risk preferences saved"),
-      onError: (error) => toast.error(apiErrorMessage(error, "Could not save risk preferences")),
+      onSuccess: () => toast.success(L.toastSaved),
+      onError: (error) => toast.error(apiErrorMessage(error, L.toastSaveFailed)),
     });
   };
 
@@ -107,7 +110,7 @@ export function RiskCard() {
     setResetOpen(false);
     resetDomain.mutate(
       { domain: "risk" },
-      { onSuccess: () => toast.success("Risk preferences reset to defaults") },
+      { onSuccess: () => toast.success(L.toastReset) },
     );
   };
 
@@ -143,11 +146,11 @@ export function RiskCard() {
           }
         }
       }
-      toast.success("Rules Engine updated", {
-        description: "Monitoring, alerts and locks now follow these limits.",
+      toast.success(L.toastRulesUpdated, {
+        description: L.toastRulesUpdatedDescription,
       });
     } catch (error) {
-      toast.error(apiErrorMessage(error, "Could not update the Rules Engine"));
+      toast.error(apiErrorMessage(error, L.toastRulesFailed));
     } finally {
       setSyncing(false);
     }
@@ -156,8 +159,8 @@ export function RiskCard() {
   return (
     <SettingsCategoryCard
       icon={Gauge}
-      title="Risk preferences"
-      description="Your risk numbers — defaults for the trade form and the limits the Rules Engine enforces."
+      title={L.title}
+      description={L.description}
       testid="settings-risk"
       dirty={dirty && !maxBelowDefault}
       saving={save.isPending}
@@ -166,14 +169,14 @@ export function RiskCard() {
     >
       {maxBelowDefault ? (
         <p className="rounded-md border border-loss/40 bg-loss/10 px-3 py-2 text-xs text-loss" role="alert">
-          Max risk per trade must be greater than or equal to the default risk per trade.
+          {L.maxBelowDefault}
         </p>
       ) : null}
 
       <div className="grid gap-4 sm:grid-cols-2">
         <SettingsRow
-          label="Default risk / trade"
-          hint="Pre-filled by the position sizer."
+          label={L.defaultRiskLabel}
+          hint={L.defaultRiskHint}
           htmlFor="settings-risk-default"
         >
           <NumberField
@@ -188,8 +191,8 @@ export function RiskCard() {
           />
         </SettingsRow>
         <SettingsRow
-          label="Max risk / trade"
-          hint="Hard ceiling — seeds the LOCK rule."
+          label={L.maxRiskLabel}
+          hint={L.maxRiskHint}
           htmlFor="settings-risk-max"
         >
           <NumberField
@@ -206,7 +209,7 @@ export function RiskCard() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <SettingsRow label="Daily loss limit" htmlFor="settings-risk-daily">
+        <SettingsRow label={L.dailyLossLabel} htmlFor="settings-risk-daily">
           <NumberField
             key={`daily-${draft.dailyLossLimitPct}`}
             value={draft.dailyLossLimitPct}
@@ -218,7 +221,7 @@ export function RiskCard() {
             testid="settings-risk-daily"
           />
         </SettingsRow>
-        <SettingsRow label="Weekly loss limit" htmlFor="settings-risk-weekly">
+        <SettingsRow label={L.weeklyLossLabel} htmlFor="settings-risk-weekly">
           <NumberField
             key={`weekly-${draft.weeklyLossLimitPct}`}
             value={draft.weeklyLossLimitPct}
@@ -230,7 +233,7 @@ export function RiskCard() {
             testid="settings-risk-weekly"
           />
         </SettingsRow>
-        <SettingsRow label="Monthly loss limit" htmlFor="settings-risk-monthly">
+        <SettingsRow label={L.monthlyLossLabel} htmlFor="settings-risk-monthly">
           <NumberField
             key={`monthly-${draft.monthlyLossLimitPct}`}
             value={draft.monthlyLossLimitPct}
@@ -245,7 +248,7 @@ export function RiskCard() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <SettingsRow label="Max open positions" htmlFor="settings-risk-positions">
+        <SettingsRow label={L.maxOpenPositionsLabel} htmlFor="settings-risk-positions">
           <NumberField
             key={`positions-${draft.maxOpenPositions}`}
             value={draft.maxOpenPositions}
@@ -257,8 +260,8 @@ export function RiskCard() {
           />
         </SettingsRow>
         <SettingsRow
-          label="Max correlated exposure"
-          hint="Same asset class / direction."
+          label={L.correlatedLabel}
+          hint={L.correlatedHint}
           htmlFor="settings-risk-correlated"
         >
           <NumberField
@@ -272,7 +275,7 @@ export function RiskCard() {
             testid="settings-risk-correlated"
           />
         </SettingsRow>
-        <SettingsRow label="Max account exposure" htmlFor="settings-risk-exposure">
+        <SettingsRow label={L.exposureLabel} htmlFor="settings-risk-exposure">
           <NumberField
             key={`exp-${draft.maxAccountExposurePct}`}
             value={draft.maxAccountExposurePct}
@@ -288,27 +291,27 @@ export function RiskCard() {
 
       <div className="grid gap-4 border-t border-border pt-4">
         <SettingsRow
-          label="Position sizing method"
+          label={L.sizingLabel}
           htmlFor="settings-risk-sizing"
-          hint="How the trade form proposes a size."
+          hint={L.sizingHint}
         >
           <SettingsSelect
             value={draft.sizingMethod}
             onChange={(value) => patch({ sizingMethod: value as UserPreferences["risk"]["sizingMethod"] })}
             options={[
-              { value: "PERCENT_RISK", label: "Percentage risk" },
-              { value: "FIXED_AMOUNT", label: "Fixed amount" },
-              { value: "R_BASED", label: "R-based" },
-              { value: "MANUAL", label: "Manual" },
+              { value: "PERCENT_RISK", label: L.sizingPercentRisk },
+              { value: "FIXED_AMOUNT", label: L.sizingFixedAmount },
+              { value: "R_BASED", label: L.sizingRBased },
+              { value: "MANUAL", label: L.sizingManual },
             ]}
             testid="settings-risk-sizing"
           />
         </SettingsRow>
         {draft.sizingMethod === "FIXED_AMOUNT" ? (
           <SettingsRow
-            label="Fixed risk amount"
+            label={L.fixedAmountLabel}
             htmlFor="settings-risk-fixed-amount"
-            hint="Account currency per trade (e.g. 100.00)."
+            hint={L.fixedAmountHint}
           >
             <input
               id="settings-risk-fixed-amount"
@@ -325,8 +328,8 @@ export function RiskCard() {
           </SettingsRow>
         ) : null}
         <ToggleRow
-          label="Keep the Rules Engine in sync"
-          hint="Enables the one-click apply below; rule severities stay independent."
+          label={L.syncToggleLabel}
+          hint={L.syncToggleHint}
           checked={draft.syncWithRulesEngine}
           onChange={(checked) => patch({ syncWithRulesEngine: checked })}
           testid="settings-risk-sync-toggle"
@@ -341,7 +344,7 @@ export function RiskCard() {
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <ShieldCheck className="size-4 text-accent" aria-hidden="true" />
-            <span className="text-sm font-semibold">Rules Engine linkage</span>
+            <span className="text-sm font-semibold">{L.linkageTitle}</span>
           </div>
           <Button
             type="button"
@@ -352,20 +355,19 @@ export function RiskCard() {
             data-testid="settings-risk-apply"
           >
             <Link2 className="size-3.5" aria-hidden="true" />
-            {syncing ? "Applying…" : "Apply limits"}
+            {syncing ? L.applying : L.applyLimits}
           </Button>
         </div>
         <p className="text-xs leading-relaxed text-muted-foreground">
-          Settings → Rules Engine → Monitoring &amp; alerts. Applying upserts the matching
-          discipline rules with your numbers.
+          {L.linkageNote}
         </p>
         <ul className="grid gap-2">
           {mappingState.map(({ mapping, rule, wanted, inSync }) => (
             <li key={mapping.type} className="flex items-center justify-between gap-2 text-sm">
-              <span className="min-w-0 truncate text-muted-foreground">{mapping.label}</span>
+              <span className="min-w-0 truncate text-muted-foreground">{L.rules[mapping.type]}</span>
               <span className="flex items-center gap-2">
                 <span className="font-mono text-xs tabular-nums text-muted-foreground">
-                  rule: {ruleLimit(rule)}
+                  {L.rulePrefix} {ruleLimit(rule)}
                   {mapping.unit}
                 </span>
                 <Badge
@@ -375,7 +377,7 @@ export function RiskCard() {
                     inSync ? "border-profit/40 text-profit" : "border-warning/50 text-warning",
                   )}
                 >
-                  {inSync ? "in sync" : `yours: ${wanted}${mapping.unit}`}
+                  {inSync ? L.inSync : `${L.yoursPrefix} ${wanted}${mapping.unit}`}
                 </Badge>
               </span>
             </li>
@@ -386,9 +388,9 @@ export function RiskCard() {
       <ConfirmDialog
         open={resetOpen}
         onOpenChange={setResetOpen}
-        title="Reset to defaults?"
-        description="Every preference in this card returns to the safe Cosmoz defaults. Rules in the Rules Engine are untouched."
-        confirmLabel="Reset card"
+        title={SH.resetTitle}
+        description={L.resetBody}
+        confirmLabel={SH.resetConfirm}
         onConfirm={onReset}
         pending={resetDomain.isPending}
         testid="settings-risk-reset"

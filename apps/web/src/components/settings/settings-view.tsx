@@ -258,10 +258,10 @@ export function SettingsView() {
       <header className="space-y-1">
         <h1 className="flex items-center gap-2 font-heading text-2xl font-bold tracking-tight sm:text-3xl">
           <SettingsIcon className="size-6 text-accent" aria-hidden="true" />
-          Settings
+          {dict.settings.view.title}
         </h1>
         <p className="text-sm text-muted-foreground">
-          Tune Cosmoz to how you trade, journal and review — one card at a time.
+          {dict.settings.view.subtitle}
         </p>
       </header>
 
@@ -276,8 +276,8 @@ export function SettingsView() {
           type="search"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="Search settings — try “risk”, “timezone”, “push”…"
-          aria-label="Search settings"
+          placeholder={dict.settings.view.searchPlaceholder}
+          aria-label={dict.settings.view.searchAria}
           className="pl-9 pr-14"
           data-testid="settings-search"
         />
@@ -292,7 +292,7 @@ export function SettingsView() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[220px_minmax(0,1fr)]">
         {/* Category rail — sticky on desktop, chip scroller on mobile. */}
-        <nav aria-label="Settings categories" className="lg:sticky lg:top-20 lg:self-start">
+        <nav aria-label={dict.settings.view.categoriesNavAria} className="lg:sticky lg:top-20 lg:self-start">
           <div className="flex gap-2 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible lg:pb-0">
             {visibleCategories.map((category) => {
               const Icon = category.icon;

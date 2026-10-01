@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/card";
 import { useImportBackup } from "@/lib/api/queries";
 import { exportBackupWithToasts } from "@/lib/utils/backup-export";
+import { useI18n } from "@/i18n/i18n-provider";
 
 /**
  * Data & backup card (Priorité 3, feature 12) — export the user's authored
@@ -26,10 +27,20 @@ export function BackupCard() {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const importBackup = useImportBackup();
   const [exporting, setExporting] = React.useState(false);
+  const { dict } = useI18n();
+  const B = dict.settings.backup;
+  const S = dict.settings.shared;
 
   const onExport = async () => {
     setExporting(true);
-    await exportBackupWithToasts();
+    await exportBackupWithToasts({
+      title: B.exportToastTitle,
+      tradesWord: B.exportToastTrades,
+      strategiesWord: B.exportToastStrategies,
+      tagsWord: B.exportToastTags,
+      failedTitle: B.exportToastFailed,
+      failedDescription: B.exportToastFailedDescription,
+    });
     setExporting(false);
   };
 
@@ -40,12 +51,12 @@ export function BackupCard() {
       // Client-side validation — same contract as the server.
       const payload = backupPayloadSchema.parse(json);
       const result = await importBackup.mutateAsync(payload);
-      toast.success("Backup imported", {
-        description: `${result.imported.trades} trades restored, ${result.imported.strategies} strategies and ${result.imported.tags} tags added.`,
+      toast.success(B.toastImported, {
+        description: `${result.imported.trades} ${B.toastImportedTrades} ${result.imported.strategies} ${B.toastImportedStrategies} ${B.toastImportedAnd} ${result.imported.tags} ${B.toastImportedTags} ${B.toastImportedAdded}`,
       });
     } catch {
-      toast.error("Import failed", {
-        description: "That file is not a valid Cosmoz backup (JSON + schema).",
+      toast.error(B.toastImportFailed, {
+        description: B.toastImportFailedDescription,
       });
     }
   };
@@ -55,16 +66,16 @@ export function BackupCard() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2 font-heading text-base font-semibold">
           <DatabaseBackup className="size-4 text-accent" aria-hidden="true" />
-          Data &amp; backup
+          {B.dataTitle}
         </CardTitle>
         <CardDescription>
-          Your journal lives on this device — carry a plain JSON snapshot with you.
+          {B.dataDescription}
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-3 sm:flex-row">
         <Button onClick={onExport} disabled={exporting} data-testid="export-backup">
           <Download className="size-4" aria-hidden="true" />
-          {exporting ? "Exporting…" : "Export backup"}
+          {exporting ? S.exporting : B.exportButton}
         </Button>
 
         <Button
@@ -74,7 +85,7 @@ export function BackupCard() {
           data-testid="import-backup"
         >
           <Upload className="size-4" aria-hidden="true" />
-          {importBackup.isPending ? "Importing…" : "Import backup"}
+          {importBackup.isPending ? B.importing : B.importButton}
         </Button>
 
         <input
@@ -82,7 +93,7 @@ export function BackupCard() {
           type="file"
           accept="application/json,.json"
           className="hidden"
-          aria-label="Backup file"
+          aria-label={B.fileAria}
           onChange={(event) => {
             const file = event.target.files?.[0];
             if (file) void onImportFile(file);

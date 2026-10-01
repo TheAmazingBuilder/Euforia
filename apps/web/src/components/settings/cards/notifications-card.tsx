@@ -20,6 +20,7 @@ import {
   useUpdatePreferencesDomain,
 } from "@/lib/api/queries";
 import { apiErrorMessage } from "@/lib/api/client";
+import { useI18n } from "@/i18n/i18n-provider";
 
 /**
  * Notification preferences — the fine-grained matrix: 7 categories ×
@@ -36,100 +37,56 @@ type NotificationCategoryEnvelope = {
   events: Record<string, NotificationChannels>;
 };
 
+/**
+ * Machine-only category metadata — labels, descriptions and event labels
+ * resolve from dict.settings.notifications.categories[key] at render time
+ * (de-labeled module map, per the dict.* contract).
+ */
 interface CategoryMeta {
   key: CategoryKey;
-  label: string;
-  description: string;
   icon: LucideIcon;
-  events: { key: string; label: string }[];
+  events: readonly string[];
 }
-
-const CHANNELS: { key: keyof NotificationChannels; label: string }[] = [
-  { key: "inApp", label: "In-app" },
-  { key: "email", label: "Email" },
-  { key: "push", label: "Push" },
-];
 
 const CATEGORY_META: CategoryMeta[] = [
   {
     key: "trading",
-    label: "Trading",
-    description: "Execution lifecycle — opens, closes, position updates.",
     icon: BellRing,
-    events: [
-      { key: "TRADE_OPENED", label: "Trade opened" },
-      { key: "TRADE_CLOSED", label: "Trade closed" },
-      { key: "POSITION_UPDATED", label: "Position updated" },
-    ],
+    events: ["TRADE_OPENED", "TRADE_CLOSED", "POSITION_UPDATED"],
   },
   {
     key: "risk",
-    label: "Risk",
-    description: "Budget breaches and exposure thresholds.",
     icon: BellRing,
-    events: [
-      { key: "RISK_LIMIT_BREACH", label: "Risk limit breached" },
-      { key: "DAILY_LOSS_LIMIT", label: "Daily loss limit hit" },
-      { key: "DRAWDOWN_THRESHOLD", label: "Drawdown threshold reached" },
-      { key: "EXPOSURE_THRESHOLD", label: "Exposure threshold reached" },
-    ],
+    events: ["RISK_LIMIT_BREACH", "DAILY_LOSS_LIMIT", "DRAWDOWN_THRESHOLD", "EXPOSURE_THRESHOLD"],
   },
   {
     key: "strategy",
-    label: "Strategy",
-    description: "Playbook adherence and checklists.",
     icon: BellRing,
-    events: [
-      { key: "STRATEGY_VIOLATION", label: "Strategy violation" },
-      { key: "CHECKLIST_INCOMPLETE", label: "Checklist incomplete" },
-      { key: "RULE_VIOLATION", label: "Rule violation" },
-    ],
+    events: ["STRATEGY_VIOLATION", "CHECKLIST_INCOMPLETE", "RULE_VIOLATION"],
   },
   {
     key: "goals",
-    label: "Goals",
-    description: "Target pacing against real behavior — at-risk alerts, recoveries, achievements.",
     icon: Target,
-    events: [
-      { key: "GOAL_AT_RISK", label: "Goal slipping (at risk)" },
-      { key: "GOAL_RECOVERED", label: "Goal back on track" },
-      { key: "GOAL_ACHIEVED", label: "Goal achieved" },
-    ],
+    events: ["GOAL_AT_RISK", "GOAL_RECOVERED", "GOAL_ACHIEVED"],
   },
   {
     key: "economic",
-    label: "Economic calendar",
-    description: "High-impact events around your session.",
     icon: BellRing,
-    events: [
-      { key: "HIGH_IMPACT_EVENT", label: "High-impact event today" },
-      { key: "EVENT_APPROACHING", label: "Event approaching (30 min)" },
-      { key: "EVENT_RELEASED", label: "Event released" },
-    ],
+    events: ["HIGH_IMPACT_EVENT", "EVENT_APPROACHING", "EVENT_RELEASED"],
   },
   {
     key: "system",
-    label: "System",
-    description: "Connections and data health.",
     icon: BellRing,
-    events: [
-      { key: "BROKER_DISCONNECTED", label: "Broker disconnected" },
-      { key: "MARKET_DATA_STALE", label: "Market data stale" },
-      { key: "INTEGRATION_FAILURE", label: "Integration failure" },
-    ],
+    events: ["BROKER_DISCONNECTED", "MARKET_DATA_STALE", "INTEGRATION_FAILURE"],
   },
   {
     key: "reports",
-    label: "Reports",
-    description: "Scheduled summaries of your journal.",
     icon: BellRing,
-    events: [
-      { key: "DAILY_SUMMARY", label: "Daily summary" },
-      { key: "WEEKLY_SUMMARY", label: "Weekly summary" },
-      { key: "MONTHLY_SUMMARY", label: "Monthly summary" },
-    ],
+    events: ["DAILY_SUMMARY", "WEEKLY_SUMMARY", "MONTHLY_SUMMARY"],
   },
 ];
+
+const CHANNEL_KEYS = ["inApp", "email", "push"] as const;
 
 export function NotificationsCard() {
   const { data: prefs, isLoading } = usePreferences();
@@ -137,6 +94,16 @@ export function NotificationsCard() {
   const resetDomain = useResetPreferencesDomain();
   const { draft, setDraft, dirty } = useDomainDraft(prefs?.notifications);
   const [resetOpen, setResetOpen] = React.useState(false);
+  const { dict } = useI18n();
+  const N = dict.settings.notifications;
+  const SH = dict.settings.shared;
+
+  /** Channel display labels from the dict, keyed by machine channel key. */
+  const channelLabels: Record<(typeof CHANNEL_KEYS)[number], string> = {
+    inApp: N.channelInApp,
+    email: N.channelEmail,
+    push: N.channelPush,
+  };
 
   if (isLoading || !prefs || !draft) {
     return <SettingsCardSkeleton rows={6} />;
@@ -177,8 +144,8 @@ export function NotificationsCard() {
 
   const onSave = () => {
     save.mutate(draft, {
-      onSuccess: () => toast.success("Notification preferences saved"),
-      onError: (error) => toast.error(apiErrorMessage(error, "Could not save notification preferences")),
+      onSuccess: () => toast.success(N.toastSaved),
+      onError: (error) => toast.error(apiErrorMessage(error, N.toastSaveFailed)),
     });
   };
 
@@ -186,43 +153,44 @@ export function NotificationsCard() {
     setResetOpen(false);
     resetDomain.mutate(
       { domain: "notifications" },
-      { onSuccess: () => toast.success("Notification preferences reset to defaults") },
+      { onSuccess: () => toast.success(N.toastReset) },
     );
   };
 
   return (
     <SettingsCategoryCard
       icon={BellRing}
-      title="Notifications"
-      description="Choose exactly what reaches you, and where — per event, per channel."
+      title={N.title}
+      description={N.description}
       testid="settings-notifications"
       dirty={dirty}
       saving={save.isPending}
       onSave={onSave}
       onReset={() => setResetOpen(true)}
-      footerNote="In-app alerts feed the topbar inbox. Email and push activate when the delivery service ships — your choices are stored now."
+      footerNote={N.footerNote}
     >
       <div className="grid grid-cols-1 gap-5">
         {CATEGORY_META.map((category) => {
           const current = draft[category.key] as NotificationCategoryEnvelope;
+          const meta = N.categories[category.key];
           return (
             <section
               key={category.key}
               className="grid grid-cols-1 gap-3 rounded-xl border border-border p-4"
               data-testid={`settings-notifications-${category.key}`}
-              aria-label={`${category.label} notifications`}
+              aria-label={`${meta.label} ${N.wordNotifications}`}
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <span className="text-sm font-semibold">{category.label}</span>
+                  <span className="text-sm font-semibold">{meta.label}</span>
                   <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
-                    {category.description}
+                    {meta.description}
                   </p>
                 </div>
                 <Switch
                   checked={current.enabled}
                   onCheckedChange={(checked) => setEnabled(category.key, checked)}
-                  aria-label={`${category.label} notifications enabled`}
+                  aria-label={`${meta.label} ${N.wordNotifications} ${N.wordEnabled}`}
                   data-testid={`settings-notifications-${category.key}-enabled`}
                   className="shrink-0"
                 />
@@ -231,39 +199,39 @@ export function NotificationsCard() {
                 {/* Channel headers — same fixed lanes as the switches below. */}
                 <div className="flex items-center justify-between gap-3 px-1">
                   <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                    Event
+                    {N.eventColumn}
                   </span>
                   <span className="flex shrink-0 items-center">
-                    {CHANNELS.map((channel) => (
+                    {CHANNEL_KEYS.map((key) => (
                       <span
-                        key={channel.key}
+                        key={key}
                         className="w-14 text-center text-[11px] font-medium uppercase tracking-wide text-muted-foreground"
                       >
-                        {channel.label}
+                        {channelLabels[key]}
                       </span>
                     ))}
                   </span>
                 </div>
-                {category.events.map((event) => {
-                  const channels: NotificationChannels = current.events[event.key];
+                {category.events.map((eventKey) => {
+                  const channels: NotificationChannels = current.events[eventKey];
                   return (
                     <div
-                      key={event.key}
+                      key={eventKey}
                       className="flex items-center justify-between gap-3 rounded-lg px-1 py-1"
                     >
-                      <span className="min-w-0 truncate text-sm">{event.label}</span>
+                      <span className="min-w-0 truncate text-sm">{meta.events[eventKey]}</span>
                       <span className="flex shrink-0 items-center">
-                        {CHANNELS.map((channel) => (
-                          <span key={channel.key} className="grid w-14 place-items-center">
+                        {CHANNEL_KEYS.map((key) => (
+                          <span key={key} className="grid w-14 place-items-center">
                             <Switch
                               size="sm"
-                              checked={channels[channel.key]}
+                              checked={channels[key]}
                               onCheckedChange={(checked) =>
-                                setEventChannel(category.key, event.key, channel.key, checked)
+                                setEventChannel(category.key, eventKey, key, checked)
                               }
                               disabled={!current.enabled}
-                              aria-label={`${event.label} — ${channel.label}`}
-                              data-testid={`settings-notifications-${category.key}-${event.key}-${channel.key}`}
+                              aria-label={`${meta.events[eventKey]} — ${channelLabels[key]}`}
+                              data-testid={`settings-notifications-${category.key}-${eventKey}-${key}`}
                             />
                           </span>
                         ))}
@@ -280,18 +248,16 @@ export function NotificationsCard() {
         <section
           className="grid grid-cols-1 gap-3 rounded-xl border border-border p-4"
           data-testid="settings-notifications-quiet-hours"
-          aria-label="Quiet hours"
+          aria-label={N.quietHoursTitle}
         >
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <span className="flex items-center gap-1.5 text-sm font-semibold">
                 <BellOff className="size-4 text-muted-foreground" aria-hidden="true" />
-                Quiet hours
+                {N.quietHoursTitle}
               </span>
               <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
-                Silence push and email inside a daily window. In-app alerts are never silenced —
-                the inbox stays the system of record. A window crossing midnight (22:00 → 07:00) is
-                supported.
+                {N.quietHoursDescription}
               </p>
             </div>
             <Switch
@@ -301,7 +267,7 @@ export function NotificationsCard() {
                   previous ? { ...previous, quietHours: { ...previous.quietHours, enabled: checked } } : previous,
                 )
               }
-              aria-label="Quiet hours enabled"
+              aria-label={N.quietHoursEnabledAria}
               data-testid="settings-notifications-quiet-hours-enabled"
               className="shrink-0"
             />
@@ -312,7 +278,7 @@ export function NotificationsCard() {
           >
             <div className="space-y-1.5">
               <label className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground" htmlFor="quiet-hours-from">
-                From (HH:MM)
+                {N.quietHoursFrom}
               </label>
               <Input
                 id="quiet-hours-from"
@@ -330,7 +296,7 @@ export function NotificationsCard() {
             </div>
             <div className="space-y-1.5">
               <label className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground" htmlFor="quiet-hours-to">
-                To (HH:MM)
+                {N.quietHoursTo}
               </label>
               <Input
                 id="quiet-hours-to"
@@ -347,29 +313,24 @@ export function NotificationsCard() {
               />
             </div>
             <div className="flex items-center justify-between gap-3 sm:col-span-2">
-              <span className="text-sm">Muted channels inside the window</span>
+              <span className="text-sm">{N.quietHoursMuted}</span>
               <span className="flex shrink-0 items-center gap-4">
-                {(
-                  [
-                    { key: "push", label: "Push" },
-                    { key: "email", label: "Email" },
-                  ] as const
-                ).map((channel) => (
-                  <label key={channel.key} className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                    {channel.label}
+                {(["push", "email"] as const).map((key) => (
+                  <label key={key} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    {channelLabels[key]}
                     <Switch
                       size="sm"
-                      checked={draft.quietHours.channels[channel.key]}
+                      checked={draft.quietHours.channels[key]}
                       disabled={!draft.quietHours.enabled}
                       onCheckedChange={(checked) =>
                         setDraft((previous) =>
                           previous
-                            ? { ...previous, quietHours: { ...previous.quietHours, channels: { ...previous.quietHours.channels, [channel.key]: checked } } }
+                            ? { ...previous, quietHours: { ...previous.quietHours, channels: { ...previous.quietHours.channels, [key]: checked } } }
                             : previous,
                         )
                       }
-                      aria-label={`Quiet hours — mute ${channel.label}`}
-                      data-testid={`settings-notifications-quiet-hours-${channel.key}`}
+                      aria-label={`${N.quietHoursMuteAriaPrefix} ${channelLabels[key]}`}
+                      data-testid={`settings-notifications-quiet-hours-${key}`}
                     />
                   </label>
                 ))}
@@ -382,9 +343,9 @@ export function NotificationsCard() {
       <ConfirmDialog
         open={resetOpen}
         onOpenChange={setResetOpen}
-        title="Reset to defaults?"
-        description="The whole notification matrix returns to the safe Cosmoz defaults. This cannot be undone."
-        confirmLabel="Reset card"
+        title={SH.resetTitle}
+        description={N.resetBody}
+        confirmLabel={SH.resetConfirm}
         onConfirm={onReset}
         pending={resetDomain.isPending}
         testid="settings-notifications-reset"

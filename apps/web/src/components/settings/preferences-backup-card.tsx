@@ -19,6 +19,7 @@ import { apiRequest } from "@/lib/api/client";
 import { apiPaths } from "@/lib/api/endpoints";
 import { queryKeys } from "@/lib/api/keys";
 import { usePreferences } from "@/lib/api/queries";
+import { useI18n } from "@/i18n/i18n-provider";
 
 /**
  * Preferences backup (module upgrade) — the preferences PROFILE as a
@@ -45,6 +46,8 @@ export function PreferencesBackupCard() {
   const queryClient = useQueryClient();
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [importing, setImporting] = React.useState(false);
+  const { dict } = useI18n();
+  const B = dict.settings.backup;
 
   const onExport = () => {
     if (prefs === undefined) return;
@@ -55,9 +58,8 @@ export function PreferencesBackupCard() {
     anchor.download = `cosmoz-preferences-${new Date().toISOString().slice(0, 10)}.json`;
     anchor.click();
     URL.revokeObjectURL(url);
-    toast.success("Preferences exported", {
-      description:
-        "The JSON profile carries every settings card — journal data stays in the data backup.",
+    toast.success(B.toastProfileExported, {
+      description: B.toastProfileExportedDescription,
     });
   };
 
@@ -82,12 +84,12 @@ export function PreferencesBackupCard() {
           restored += 1;
         }
       }
-      toast.success("Preferences restored", {
-        description: `${restored} settings section${restored === 1 ? "" : "s"} imported from the profile.`,
+      toast.success(B.toastProfileRestored, {
+        description: `${restored} ${restored === 1 ? B.sectionOne : B.sectionMany} ${B.sectionImportedSuffix}`,
       });
     } catch {
-      toast.error("Import failed", {
-        description: "That file is not a valid Cosmoz preferences profile.",
+      toast.error(B.toastImportFailed, {
+        description: B.toastProfileImportFailedDescription,
       });
     } finally {
       setImporting(false);
@@ -99,17 +101,16 @@ export function PreferencesBackupCard() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2 font-heading text-base font-semibold">
           <FileJson className="size-4 text-accent" aria-hidden="true" />
-          Preferences profile
+          {B.profileTitle}
         </CardTitle>
         <CardDescription>
-          Export your SETTINGS profile (theme, risk numbers, notifications, quiet hours…) as JSON
-          and restore it on any device. Journal data lives in the data backup below.
+          {B.profileDescription}
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-3 sm:flex-row">
         <Button onClick={onExport} disabled={prefs === undefined} data-testid="export-preferences">
           <Download className="size-4" aria-hidden="true" />
-          Export profile
+          {B.exportProfileButton}
         </Button>
 
         <Button
@@ -119,7 +120,7 @@ export function PreferencesBackupCard() {
           data-testid="import-preferences"
         >
           <Upload className="size-4" aria-hidden="true" />
-          {importing ? "Restoring…" : "Import profile"}
+          {importing ? B.restoring : B.importProfileButton}
         </Button>
 
         <input
@@ -127,7 +128,7 @@ export function PreferencesBackupCard() {
           type="file"
           accept="application/json,.json"
           className="hidden"
-          aria-label="Preferences profile file"
+          aria-label={B.profileFileAria}
           onChange={(event) => {
             const file = event.target.files?.[0];
             if (file) void onImportFile(file);

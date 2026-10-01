@@ -8,6 +8,7 @@ import { formatPercent, formatR } from "@cosmoz/shared";
 
 import { EChart } from "@/components/charts/echart";
 import { getChartTheme } from "@/lib/utils/chart-theme";
+import { useI18n } from "@/i18n/i18n-provider";
 import { withAlpha } from "@/lib/utils/color";
 
 /**
@@ -41,6 +42,9 @@ interface BarDatum {
 
 export function BucketBars({ buckets, ariaLabel, height = 260, showN = true, className }: BucketBarsProps) {
   const { resolvedTheme } = useTheme();
+  const { dict } = useI18n();
+  const BT = dict.analytics.bucketBars;
+  const S = dict.analytics.shared;
 
   const option = React.useMemo<EChartsCoreOption>(() => {
     const t = getChartTheme();
@@ -132,11 +136,11 @@ export function BucketBars({ buckets, ariaLabel, height = 260, showN = true, cla
           const avgR = bucket.avgR === null ? "—" : formatR(bucket.avgR);
           const lowNote =
             bucket.trades > 0 && bucket.trades < LOW_SAMPLE_N
-              ? `<div style="color:${t.warning};margin-top:2px">Low sample — treat with caution</div>`
+              ? `<div style="color:${t.warning};margin-top:2px">${S.lowSample}</div>`
               : "";
           return [
             `<div style="color:${t.textMuted};font-size:10px">${bucket.label}</div>`,
-            `<div>Avg ${avgR} · win rate ${winRate} (${bucket.trades} trades)</div>`,
+            `<div>${S.avgCap} ${avgR} · ${BT.winRatePrefix} ${winRate} (${bucket.trades} ${S.tradesSuffix})</div>`,
             lowNote,
           ].join("");
         },
@@ -156,9 +160,9 @@ export function BucketBars({ buckets, ariaLabel, height = 260, showN = true, cla
         },
       ],
     };
-    // Rebuild with fresh tokens on theme switch (design-tokens.md §8).
+    // Rebuild with fresh tokens + labels on theme/locale switch (design-tokens.md §8).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [buckets, height, showN, resolvedTheme]);
+  }, [buckets, height, showN, resolvedTheme, BT, S]);
 
   return (
     <div className={className} style={{ height }}>

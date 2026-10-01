@@ -21,6 +21,7 @@ import {
   useUpdatePreferencesDomain,
 } from "@/lib/api/queries";
 import { apiErrorMessage } from "@/lib/api/client";
+import { useI18n } from "@/i18n/i18n-provider";
 
 /**
  * Academy preferences — provisioned ahead of the learning module (later
@@ -33,6 +34,9 @@ export function AcademyCard() {
   const resetDomain = useResetPreferencesDomain();
   const { draft, setDraft, dirty } = useDomainDraft(prefs?.academy);
   const [resetOpen, setResetOpen] = React.useState(false);
+  const { dict } = useI18n();
+  const L = dict.settings.academy;
+  const SH = dict.settings.shared;
 
   if (isLoading || !prefs || !draft) {
     return <SettingsCardSkeleton rows={4} />;
@@ -43,8 +47,8 @@ export function AcademyCard() {
 
   const onSave = () => {
     save.mutate(draft, {
-      onSuccess: () => toast.success("Academy preferences saved"),
-      onError: (error) => toast.error(apiErrorMessage(error, "Could not save academy preferences")),
+      onSuccess: () => toast.success(L.toastSaved),
+      onError: (error) => toast.error(apiErrorMessage(error, L.toastSaveFailed)),
     });
   };
 
@@ -52,51 +56,51 @@ export function AcademyCard() {
     setResetOpen(false);
     resetDomain.mutate(
       { domain: "academy" },
-      { onSuccess: () => toast.success("Academy preferences reset to defaults") },
+      { onSuccess: () => toast.success(L.toastReset) },
     );
   };
 
   return (
     <SettingsCategoryCard
       icon={GraduationCap}
-      title="Academy"
-      description="How the coach teaches you — difficulty, rhythm and reminders."
+      title={L.title}
+      description={L.description}
       testid="settings-academy"
       dirty={dirty}
       saving={save.isPending}
       onSave={onSave}
       onReset={() => setResetOpen(true)}
-      footerNote="The Academy module arrives in a later phase — your preferences are already wired for it."
+      footerNote={L.footerNote}
     >
       <ToggleRow
-        label="Enable Academy"
-        hint="Lessons and drills woven into your journal."
+        label={L.enableLabel}
+        hint={L.enableHint}
         checked={draft.enabled}
         onChange={(checked) => patch({ enabled: checked })}
         testid="settings-academy-enabled"
       />
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <SettingsRow label="Preferred difficulty" htmlFor="settings-academy-difficulty">
+        <SettingsRow label={L.difficultyLabel} htmlFor="settings-academy-difficulty">
           <SettingsSelect
             value={draft.difficulty}
             onChange={(value) => patch({ difficulty: value as UserPreferences["academy"]["difficulty"] })}
             options={[
-              { value: "BEGINNER", label: "Beginner" },
-              { value: "INTERMEDIATE", label: "Intermediate" },
-              { value: "ADVANCED", label: "Advanced" },
+              { value: "BEGINNER", label: L.difficultyBeginner },
+              { value: "INTERMEDIATE", label: L.difficultyIntermediate },
+              { value: "ADVANCED", label: L.difficultyAdvanced },
             ]}
             testid="settings-academy-difficulty"
           />
         </SettingsRow>
-        <SettingsRow label="Weekly reminder" htmlFor="settings-academy-reminder">
+        <SettingsRow label={L.reminderLabel} htmlFor="settings-academy-reminder">
           <SettingsSelect
             value={draft.weeklyReminder}
             onChange={(value) => patch({ weeklyReminder: value as UserPreferences["academy"]["weeklyReminder"] })}
             options={[
-              { value: "OFF", label: "Off" },
-              { value: "DAILY", label: "Daily" },
-              { value: "WEEKLY", label: "Weekly" },
+              { value: "OFF", label: SH.off },
+              { value: "DAILY", label: SH.daily },
+              { value: "WEEKLY", label: SH.weekly },
             ]}
             testid="settings-academy-reminder"
           />
@@ -104,9 +108,9 @@ export function AcademyCard() {
       </div>
 
       <SettingsRow
-        label="Weekly learning goal"
+        label={L.goalLabel}
         htmlFor="settings-academy-goal"
-        hint="Minutes of lessons per week."
+        hint={L.goalHint}
       >
         <NumberField
           key={`goal-${draft.weeklyGoalMinutes}`}
@@ -122,22 +126,22 @@ export function AcademyCard() {
 
       <div className="grid gap-4 border-t border-border pt-4">
         <ToggleRow
-          label="Show progress on dashboard"
-          hint="A compact learning-progress card next to your KPIs."
+          label={L.progressLabel}
+          hint={L.progressHint}
           checked={draft.showProgressOnDashboard}
           onChange={(checked) => patch({ showProgressOnDashboard: checked })}
           testid="settings-academy-progress"
         />
         <ToggleRow
-          label="Learning notifications"
-          hint="Tell me in-app when new lessons or drills land."
+          label={L.notificationsLabel}
+          hint={L.notificationsHint}
           checked={draft.newContentNotifications}
           onChange={(checked) => patch({ newContentNotifications: checked })}
           testid="settings-academy-new-content"
         />
         <ToggleRow
-          label="Autoplay lessons"
-          hint="Start the next lesson video automatically."
+          label={L.autoplayLabel}
+          hint={L.autoplayHint}
           checked={draft.autoplayLessons}
           onChange={(checked) => patch({ autoplayLessons: checked })}
           testid="settings-academy-autoplay"
@@ -147,9 +151,9 @@ export function AcademyCard() {
       <ConfirmDialog
         open={resetOpen}
         onOpenChange={setResetOpen}
-        title="Reset to defaults?"
-        description="Academy preferences return to the safe defaults. This cannot be undone."
-        confirmLabel="Reset card"
+        title={SH.resetTitle}
+        description={L.resetBody}
+        confirmLabel={SH.resetConfirm}
         onConfirm={onReset}
         pending={resetDomain.isPending}
         testid="settings-academy-reset"

@@ -16,6 +16,7 @@ import {
 } from "@/components/settings/settings-primitives";
 import { useProfile, useUpdateProfile } from "@/lib/api/queries";
 import { apiErrorMessage } from "@/lib/api/client";
+import { useI18n } from "@/i18n/i18n-provider";
 
 /**
  * Profile category — identity only. Edits go through PATCH /me (the profile
@@ -32,6 +33,9 @@ const inputClasses =
 export function ProfileCard() {
   const { data, isLoading } = useProfile();
   const updateProfile = useUpdateProfile();
+  const { dict } = useI18n();
+  const L = dict.settings.profile;
+  const S = dict.settings.shared;
 
   const [name, setName] = React.useState("");
   const [username, setUsername] = React.useState("");
@@ -57,11 +61,11 @@ export function ProfileCard() {
   const onPickAvatar = (file: File) => {
     setAvatarError(null);
     if (!file.type.startsWith("image/")) {
-      setAvatarError("Please choose an image file (PNG or JPG).");
+      setAvatarError(L.avatarErrorNotImage);
       return;
     }
     if (file.size > AVATAR_MAX_BYTES) {
-      setAvatarError("Image is too large — pick one under 150 KB.");
+      setAvatarError(L.avatarErrorTooLarge);
       return;
     }
     const reader = new FileReader();
@@ -94,8 +98,8 @@ export function ProfileCard() {
         avatarUrl,
       },
       {
-        onSuccess: () => toast.success("Profile saved"),
-        onError: (error) => toast.error(apiErrorMessage(error, "Could not save profile")),
+        onSuccess: () => toast.success(L.toastSaved),
+        onError: (error) => toast.error(apiErrorMessage(error, L.toastSaveFailed)),
       },
     );
   };
@@ -103,8 +107,8 @@ export function ProfileCard() {
   return (
     <SettingsCategoryCard
       icon={UserRound}
-      title="Profile"
-      description="Your identity across the journal — avatar, name, handle and the timezone that drives your trading days."
+      title={L.title}
+      description={L.description}
       testid="settings-profile"
       dirty={dirty && !usernameInvalid}
       saving={updateProfile.isPending}
@@ -134,7 +138,7 @@ export function ProfileCard() {
               data-testid="settings-profile-avatar-upload"
             >
               <ImageUp className="size-3.5" aria-hidden="true" />
-              Upload
+              {L.upload}
             </Button>
             {avatarUrl ? (
               <Button
@@ -145,11 +149,11 @@ export function ProfileCard() {
                 data-testid="settings-profile-avatar-remove"
               >
                 <Trash2 className="size-3.5" aria-hidden="true" />
-                Remove
+                {L.remove}
               </Button>
             ) : null}
           </div>
-          <p className="text-xs text-muted-foreground">PNG or JPG, under 150 KB.</p>
+          <p className="text-xs text-muted-foreground">{L.avatarFormatHint}</p>
           {avatarError ? (
             <p className="text-xs text-loss" role="status">
               {avatarError}
@@ -161,7 +165,7 @@ export function ProfileCard() {
           type="file"
           accept="image/png,image/jpeg"
           className="hidden"
-          aria-label="Avatar image"
+          aria-label={L.avatarInputAria}
           onChange={(event) => {
             const file = event.target.files?.[0];
             if (file) onPickAvatar(file);
@@ -171,7 +175,7 @@ export function ProfileCard() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <SettingsRow label="Name" htmlFor="settings-profile-name">
+        <SettingsRow label={S.name} htmlFor="settings-profile-name">
           <input
             id="settings-profile-name"
             value={name}
@@ -183,9 +187,9 @@ export function ProfileCard() {
           />
         </SettingsRow>
         <SettingsRow
-          label="Username"
+          label={S.username}
           htmlFor="settings-profile-username"
-          hint="Letters, digits, _ and - (3–30 chars)."
+          hint={L.usernameHint}
         >
           <input
             id="settings-profile-username"
@@ -201,11 +205,11 @@ export function ProfileCard() {
 
       {usernameInvalid ? (
         <p className="text-xs text-loss" role="status" data-testid="settings-profile-username-error">
-          Username must be 3–30 characters: letters, digits, underscore or dash.
+          {L.usernameError}
         </p>
       ) : null}
 
-      <SettingsRow label="Email" htmlFor="settings-profile-email">
+      <SettingsRow label={S.email} htmlFor="settings-profile-email">
         <input
           id="settings-profile-email"
           type="email"
@@ -218,21 +222,21 @@ export function ProfileCard() {
         />
       </SettingsRow>
 
-      <SettingsRow label="Bio" htmlFor="settings-profile-bio" stacked hint={`${bio.length}/280`}>
+      <SettingsRow label={L.bio} htmlFor="settings-profile-bio" stacked hint={`${bio.length}/280`}>
         <Textarea
           id="settings-profile-bio"
           value={bio}
           onChange={(event) => setBio(event.target.value.slice(0, 280))}
           rows={3}
-          placeholder="A few lines about your trading focus…"
+          placeholder={L.bioPlaceholder}
           data-testid="settings-profile-bio"
         />
       </SettingsRow>
 
       <SettingsRow
-        label="Timezone"
+        label={S.timezone}
         htmlFor="settings-profile-timezone"
-        hint="Drives your local trading days — when a “day” starts and ends. Shared with the Localization tab."
+        hint={L.timezoneHint}
       >
         <SettingsSelect
           value={timezone}

@@ -5,6 +5,7 @@ import type { Strategy, StrategyStat } from "@cosmoz/shared";
 import { formatPercent, formatR } from "@cosmoz/shared";
 
 import { GradeBadge } from "@/components/playbook/strategy-card";
+import { useI18n } from "@/i18n/i18n-provider";
 import { getThemeToken } from "@/lib/utils/theme";
 import { cn } from "@/lib/utils";
 
@@ -20,6 +21,8 @@ interface StrategyTableProps {
 }
 
 export function StrategyTable({ stats, strategies }: StrategyTableProps) {
+  const { dict } = useI18n();
+  const T = dict.analytics.strategyTable;
   const byId = new Map(strategies.map((strategy) => [strategy.id, strategy]));
 
   const rows = [...stats]
@@ -30,7 +33,7 @@ export function StrategyTable({ stats, strategies }: StrategyTableProps) {
   if (rows.length === 0) {
     return (
       <p className="py-8 text-center text-sm text-muted-foreground">
-        No strategy has closed trades yet — capture executions linked to a playbook setup.
+        {T.empty}
       </p>
     );
   }
@@ -38,15 +41,15 @@ export function StrategyTable({ stats, strategies }: StrategyTableProps) {
   return (
     <div className="overflow-x-auto">
       <table className="w-full min-w-[640px] border-collapse text-sm">
-        <caption className="sr-only">Per-strategy performance statistics</caption>
+        <caption className="sr-only">{T.caption}</caption>
         <thead>
           <tr className="border-b border-border text-left text-[11px] uppercase tracking-wider text-muted-foreground">
-            <th scope="col" className="px-3 py-2 font-medium">Strategy</th>
-            <th scope="col" className="px-3 py-2 font-medium">Grade</th>
-            <th scope="col" className="px-3 py-2 text-right font-medium">Trades</th>
-            <th scope="col" className="px-3 py-2 text-right font-medium">Win rate</th>
-            <th scope="col" className="px-3 py-2 text-right font-medium">Avg R</th>
-            <th scope="col" className="px-3 py-2 text-right font-medium">Last-20 R</th>
+            <th scope="col" className="px-3 py-2 font-medium">{T.thStrategy}</th>
+            <th scope="col" className="px-3 py-2 font-medium">{T.thGrade}</th>
+            <th scope="col" className="px-3 py-2 text-right font-medium">{T.thTrades}</th>
+            <th scope="col" className="px-3 py-2 text-right font-medium">{T.thWinRate}</th>
+            <th scope="col" className="px-3 py-2 text-right font-medium">{T.thAvgR}</th>
+            <th scope="col" className="px-3 py-2 text-right font-medium">{T.thLast20R}</th>
           </tr>
         </thead>
         <tbody>
@@ -97,8 +100,7 @@ export function StrategyTable({ stats, strategies }: StrategyTableProps) {
         </tbody>
       </table>
       <p className="px-3 pt-2 text-[11px] leading-relaxed text-muted-foreground">
-        Last-20 R is the coach&apos;s decay window — negative expectancy over the most recent 20
-        trades surfaces as the playbook banner. Win-rate counts shown as (wins).
+        {T.footnote}
       </p>
     </div>
   );

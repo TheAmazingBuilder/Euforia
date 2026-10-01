@@ -28,6 +28,7 @@ import {
 } from "@/lib/api/queries";
 import { apiErrorMessage } from "@/lib/api/client";
 import { exportBackupWithToasts } from "@/lib/utils/backup-export";
+import { useI18n } from "@/i18n/i18n-provider";
 
 /**
  * Account — identity summary, plan, connected trading accounts and the
@@ -40,6 +41,10 @@ export function AccountCard() {
   const { data: accountsData, isLoading: accountsLoading } = useAccounts();
   const deactivate = useDeactivateAccount();
   const requestDeletion = useRequestAccountDeletion();
+  const { dict } = useI18n();
+  const L = dict.settings.account;
+  const S = dict.settings.shared;
+  const B = dict.settings.backup;
 
   const [deactivateOpen, setDeactivateOpen] = React.useState(false);
   const [deleteOpen, setDeleteOpen] = React.useState(false);
@@ -55,11 +60,11 @@ export function AccountCard() {
       {
         onSuccess: () => {
           setDeactivateOpen(false);
-          toast.success("Account deactivated", {
-            description: "Your journal is paused — sign back in any time to reactivate it.",
+          toast.success(L.toastDeactivated, {
+            description: L.toastDeactivatedDescription,
           });
         },
-        onError: (error) => toast.error(apiErrorMessage(error, "Could not deactivate the account")),
+        onError: (error) => toast.error(apiErrorMessage(error, L.toastDeactivateFailed)),
       },
     );
   };
@@ -73,18 +78,25 @@ export function AccountCard() {
           const until = new Intl.DateTimeFormat(undefined, { dateStyle: "long" }).format(
             new Date(response.scheduledFor),
           );
-          toast.success("Deletion scheduled", {
-            description: `Your account will be deleted on ${until}. Sign back in before then to cancel.`,
+          toast.success(L.toastDeletionScheduled, {
+            description: `${L.toastDeletionDatePrefix} ${until}${L.toastDeletionDateSuffix}`,
           });
         },
-        onError: (error) => toast.error(apiErrorMessage(error, "Could not schedule the deletion")),
+        onError: (error) => toast.error(apiErrorMessage(error, L.toastDeletionFailed)),
       },
     );
   };
 
   const onExport = async () => {
     setExporting(true);
-    await exportBackupWithToasts();
+    await exportBackupWithToasts({
+      title: B.exportToastTitle,
+      tradesWord: B.exportToastTrades,
+      strategiesWord: B.exportToastStrategies,
+      tagsWord: B.exportToastTags,
+      failedTitle: B.exportToastFailed,
+      failedDescription: B.exportToastFailedDescription,
+    });
     setExporting(false);
   };
 
@@ -98,31 +110,31 @@ export function AccountCard() {
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="flex items-center gap-2">
               <UserCog className="size-4 shrink-0 text-accent" aria-hidden="true" />
-              <h2 className="font-heading text-base font-semibold">Account</h2>
+              <h2 className="font-heading text-base font-semibold">{L.title}</h2>
             </div>
             <Badge variant="outline" className="gap-1 border-accent/40 text-accent">
               <BadgeCheck className="size-3" aria-hidden="true" />
-              FREE plan
+              {L.planBadge}
             </Badge>
           </div>
 
           <dl className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2" data-testid="settings-account-info">
             <div className="flex items-center justify-between gap-3 sm:block">
-              <dt className="text-xs text-muted-foreground">Name</dt>
+              <dt className="text-xs text-muted-foreground">{S.name}</dt>
               <dd className="font-medium">{profile.name}</dd>
             </div>
             <div className="flex items-center justify-between gap-3 sm:block">
-              <dt className="text-xs text-muted-foreground">Email</dt>
+              <dt className="text-xs text-muted-foreground">{S.email}</dt>
               <dd className="truncate font-medium">{profile.email}</dd>
             </div>
             <div className="flex items-center justify-between gap-3 sm:block">
-              <dt className="text-xs text-muted-foreground">Username</dt>
+              <dt className="text-xs text-muted-foreground">{S.username}</dt>
               <dd className="font-mono text-[13px] font-medium">
                 {profile.username ?? "—"}
               </dd>
             </div>
             <div className="flex items-center justify-between gap-3 sm:block">
-              <dt className="text-xs text-muted-foreground">Base currency</dt>
+              <dt className="text-xs text-muted-foreground">{L.baseCurrency}</dt>
               <dd className="font-mono text-[13px] font-medium">{profile.baseCurrency}</dd>
             </div>
           </dl>
@@ -133,7 +145,7 @@ export function AccountCard() {
           <div className="grid gap-3" data-testid="settings-account-connected">
             <div className="flex items-center gap-2">
               <Wallet className="size-4 text-muted-foreground" aria-hidden="true" />
-              <span className="text-sm font-semibold">Connected trading accounts</span>
+              <span className="text-sm font-semibold">{L.connectedTitle}</span>
             </div>
             <ul className="grid gap-2">
               {(accountsData?.accounts ?? []).map((account) => (
@@ -145,7 +157,7 @@ export function AccountCard() {
                     <span className="truncate font-medium">{account.name}</span>
                     {account.isDefault ? (
                       <Badge variant="outline" className="text-[10px]">
-                        default
+                        {L.defaultBadge}
                       </Badge>
                     ) : null}
                   </span>
@@ -156,7 +168,7 @@ export function AccountCard() {
               ))}
             </ul>
             <p className="text-xs text-muted-foreground">
-              Broker connections and credentials are managed in Integrations — never stored in preferences.
+              {L.connectedNote}
             </p>
           </div>
 
@@ -165,9 +177,9 @@ export function AccountCard() {
           {/* Data ownership */}
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="min-w-0">
-              <span className="text-sm font-medium">Your data</span>
+              <span className="text-sm font-medium">{L.dataTitle}</span>
               <p className="text-xs text-muted-foreground">
-                Full JSON snapshot — trades, strategies, tags. Also in Privacy.
+                {L.dataDescription}
               </p>
             </div>
             <Button
@@ -179,7 +191,7 @@ export function AccountCard() {
               data-testid="settings-account-export"
             >
               <Download className="size-3.5" aria-hidden="true" />
-              {exporting ? "Exporting…" : "Export data"}
+              {exporting ? S.exporting : L.exportData}
             </Button>
           </div>
         </div>
@@ -191,14 +203,14 @@ export function AccountCard() {
         >
           <div className="flex items-center gap-2">
             <PauseCircle className="size-4 shrink-0 text-loss" aria-hidden="true" />
-            <h2 className="font-heading text-base font-semibold text-loss">Danger zone</h2>
+            <h2 className="font-heading text-base font-semibold text-loss">{L.dangerTitle}</h2>
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="min-w-0">
-              <span className="text-sm font-medium">Deactivate account</span>
+              <span className="text-sm font-medium">{L.deactivateTitle}</span>
               <p className="text-xs leading-relaxed text-muted-foreground">
-                Pause the journal. Your data is kept; sign back in to reactivate.
+                {L.deactivateDescription}
               </p>
             </div>
             <Button
@@ -209,15 +221,15 @@ export function AccountCard() {
               disabled={deactivate.isPending}
               data-testid="settings-account-deactivate"
             >
-              Deactivate…
+              {L.deactivateButton}
             </Button>
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-loss/20 pt-4">
             <div className="min-w-0">
-              <span className="text-sm font-medium">Delete account</span>
+              <span className="text-sm font-medium">{L.deleteTitle}</span>
               <p className="text-xs leading-relaxed text-muted-foreground">
-                Permanent removal after a 14-day grace period. Requires typing DELETE.
+                {L.deleteDescription}
               </p>
             </div>
             <Button
@@ -229,7 +241,7 @@ export function AccountCard() {
               data-testid="settings-account-delete"
             >
               <Trash2 className="size-3.5" aria-hidden="true" />
-              Delete…
+              {L.deleteButton}
             </Button>
           </div>
         </div>
@@ -239,7 +251,7 @@ export function AccountCard() {
           <Button variant="outline" asChild>
             <Link href="/login" data-testid="settings-account-signout">
               <LogOut className="size-4" aria-hidden="true" />
-              Sign out
+              {L.signOut}
             </Link>
           </Button>
         </div>
@@ -248,9 +260,9 @@ export function AccountCard() {
       <ConfirmDialog
         open={deactivateOpen}
         onOpenChange={setDeactivateOpen}
-        title="Deactivate your account?"
-        description="The journal becomes read-only and alerts stop. Nothing is deleted — signing back in reactivates everything."
-        confirmLabel="Deactivate account"
+        title={L.deactivateDialogTitle}
+        description={L.deactivateDialogDescription}
+        confirmLabel={L.deactivateConfirm}
         onConfirm={onDeactivate}
         pending={deactivate.isPending}
         destructive
@@ -260,9 +272,9 @@ export function AccountCard() {
       <ConfirmDialog
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
-        title="Delete your account?"
-        description="All trades, journals and analytics will be permanently deleted after a 14-day grace period. This is the point of no return — type DELETE to confirm."
-        confirmLabel="Schedule deletion"
+        title={L.deleteDialogTitle}
+        description={L.deleteDialogDescription}
+        confirmLabel={L.deleteConfirm}
         onConfirm={onDelete}
         pending={requestDeletion.isPending}
         destructive

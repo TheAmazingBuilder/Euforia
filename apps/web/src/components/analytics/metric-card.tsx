@@ -10,6 +10,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useI18n } from "@/i18n/i18n-provider";
 import { cn } from "@/lib/utils";
 
 /**
@@ -49,6 +50,8 @@ export function MetricCard({
   insufficient = false,
   className,
 }: MetricCardProps) {
+  const { dict } = useI18n();
+  const M = dict.analytics.metricCard;
   return (
     <Card className={cn("bg-surface", className)}>
       <CardContent className="space-y-1.5 p-4">
@@ -61,7 +64,7 @@ export function MetricCard({
               <TooltipTrigger asChild>
                 <button
                   type="button"
-                  aria-label={`${label} — definition`}
+                  aria-label={`${label} ${M.definitionTail}`}
                   className="shrink-0 rounded-sm text-muted-foreground/60 outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <Info className="size-3.5" aria-hidden="true" />
@@ -77,7 +80,7 @@ export function MetricCard({
           <div>
             <p className="font-mono text-2xl font-semibold tabular-nums text-muted-foreground/40">—</p>
             <p className="mt-1 text-[11px] italic leading-snug text-muted-foreground">
-              Not enough trades to calculate this metric reliably.
+              {M.insufficient}
             </p>
           </div>
         ) : (

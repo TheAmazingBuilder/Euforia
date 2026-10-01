@@ -202,7 +202,7 @@ export function LocalizationCard() {
       <div
         className="grid gap-2 rounded-xl border border-border bg-background/60 p-4 font-mono text-sm tabular-nums"
         data-testid="settings-localization-preview"
-        aria-label="Format preview"
+        aria-label={L.previewAria}
       >
         <span className="text-[11px] font-sans font-medium uppercase tracking-wide text-muted-foreground">
           {L.preview}
