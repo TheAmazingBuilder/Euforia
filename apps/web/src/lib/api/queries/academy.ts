@@ -35,6 +35,7 @@ import type {
   AcademyScenariosResponse,
   AcademySearchResponse,
   AcademySrDrill,
+  AcademySuggestionsResponse,
   AcademyZoneDrill,
 } from "@cosmoz/shared";
 
@@ -222,6 +223,13 @@ export function useAcademyMilestones() {
   return useQuery({
     queryKey: queryKeys.academyMilestones,
     queryFn: () => apiRequest<AcademyMilestonesResponse>(apiPaths.academyMilestones),
+  });
+}
+
+export function useAcademySuggestions() {
+  return useQuery({
+    queryKey: queryKeys.academySuggestions,
+    queryFn: () => apiRequest<AcademySuggestionsResponse>(apiPaths.academySuggestions),
   });
 }
 

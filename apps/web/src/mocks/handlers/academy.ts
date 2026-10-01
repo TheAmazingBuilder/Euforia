@@ -28,6 +28,7 @@ import {
   academyQuiz,
   academyScenarios,
   academySearch,
+  academySuggestions,
   certifications,
   completeLesson,
   examPaper,
@@ -398,6 +399,16 @@ export const academyHandlers = [
     await latency();
     try {
       return HttpResponse.json(milestones());
+    } catch (error) {
+      return toErrorResponse(error);
+    }
+  }),
+
+  /** GET /academy/suggestions — journal-driven lesson recommendations. */
+  http.get(endpoint(apiPaths.academySuggestions), async () => {
+    await latency();
+    try {
+      return HttpResponse.json(academySuggestions());
     } catch (error) {
       return toErrorResponse(error);
     }

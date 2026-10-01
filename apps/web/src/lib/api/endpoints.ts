@@ -128,4 +128,5 @@ export const apiPaths = {
   academyExam: (categoryId: string) => `/academy/exams/${categoryId}`,
   academyExamSubmit: (categoryId: string) => `/academy/exams/${categoryId}/attempts`,
   academyMilestones: "/academy/milestones",
+  academySuggestions: "/academy/suggestions",
 } as const;

@@ -33,6 +33,7 @@ import {
   useAcademyBookmarks,
   useAcademyCatalog,
   useAcademyOverview,
+  useAcademySuggestions,
 } from "@/lib/api/queries";
 
 /**
@@ -280,6 +281,8 @@ export function AcademyOverviewPanel({
         </section>
       </div>
 
+      <JournalSuggestions onOpenLesson={onOpenLesson} onOpenCourse={onOpenCourse} />
+
       <CategoryMap onOpenCourse={onOpenCourse} />
     </div>
   );
@@ -342,6 +345,61 @@ function cnWeekChip(complete: boolean): string {
   return complete
     ? "inline-flex items-center rounded-sm border border-profit/40 bg-profit/10 px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wider text-profit"
     : "inline-flex items-center rounded-sm border border-border px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground";
+}
+
+// ── Journal → Academy — the bridge between trading and learning ───────────
+
+function JournalSuggestions({
+  onOpenLesson,
+  onOpenCourse,
+}: {
+  onOpenLesson: (lessonId: string) => void;
+  onOpenCourse: (courseId: string) => void;
+}) {
+  const { data } = useAcademySuggestions();
+  const suggestions = data?.suggestions ?? [];
+  if (suggestions.length === 0) return null;
+
+  return (
+    <section aria-label="From your journal" data-testid="academy-journal-suggestions">
+      <AcademySectionTitle className="mb-2">From your journal</AcademySectionTitle>
+      <p className="mb-2.5 text-xs text-muted-foreground">
+        Patterns the Academy noticed in your closed trades — each suggestion links to the track that addresses it.
+      </p>
+      <ul className="divide-y divide-border rounded-lg border border-border bg-surface">
+        {suggestions.map((suggestion) => {
+          const hue = hueOf(suggestion.categoryId);
+          return (
+            <li key={suggestion.courseId}>
+              <button
+                type="button"
+                onClick={() => onOpenLesson(suggestion.lessonId)}
+                className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-muted"
+                data-testid={`academy-suggestion-${suggestion.courseId}`}
+              >
+                <HueChip hue={hue} icon={BookOpen} />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-medium text-foreground">{suggestion.courseTitle}</span>
+                  <span className="mt-0.5 block text-xs leading-relaxed text-muted-foreground">{suggestion.reason}</span>
+                </span>
+                <span className="hidden shrink-0 font-mono text-[10px] uppercase tracking-wider text-muted-foreground sm:block">
+                  start lesson
+                </span>
+                <ArrowRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+      <button
+        type="button"
+        onClick={() => onOpenCourse(suggestions[0].courseId)}
+        className="mt-1.5 text-[11px] text-muted-foreground transition-colors hover:text-foreground"
+      >
+        Prefer the full course view? Open {suggestions[0].courseTitle} →
+      </button>
+    </section>
+  );
 }
 
 function ContinueLearning({

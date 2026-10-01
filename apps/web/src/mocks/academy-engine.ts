@@ -41,6 +41,7 @@ import type {
   AcademySearchResponse,
   AcademySrDrill,
   AcademyStreak,
+  AcademySuggestionsResponse,
   AcademyWeeklyPlan,
   AcademyZoneDrill,
 } from "@cosmoz/shared";
@@ -49,6 +50,7 @@ import { CATEGORIES, COURSES, LEVEL_ORDER, PATHS } from "./academy/catalog";
 import { GLOSSARY_TERMS } from "./academy/glossary";
 import { PATTERN_EXEMPLARS } from "./academy/patterns";
 import { SCENARIOS } from "./academy/scenarios";
+import { mockStore } from "./store";
 
 /**
  * Academy engine — the learning domain's server-side brain.
@@ -1257,3 +1259,99 @@ export function milestones(): AcademyMilestonesResponse {
 }
 
 type AcademyMilestoneResponse = AcademyMilestonesResponse["milestones"][number];
+
+// ── Journal → Academy — evidence-based lesson suggestions ──────────────
+
+const num = (value: string | null): number | null => (value === null ? null : Number(value));
+
+/**
+ * Reads the journal's closed trades and maps observed weakness patterns to
+ * the course that addresses them. Rules are deliberately readable — the
+ * Analytics-driven engine can replace them later at the same seam.
+ */
+export function academySuggestions(): AcademySuggestionsResponse {
+  const closed = mockStore.listTrades({ status: "CLOSED" }).trades;
+  if (closed.length === 0) return { suggestions: [] };
+
+  const r = (trade: (typeof closed)[number]) => num(trade.rMultiple);
+  const mfe = (trade: (typeof closed)[number]) => num(trade.mfeR);
+  const planned = (trade: (typeof closed)[number]) => num(trade.plannedRR);
+
+  const rules: {
+    courseId: string;
+    weight: number;
+    reason: string;
+  }[] = [];
+
+  // Winners given back: price traveled ≥ +2R but the trade closed below +1R.
+  const givenBack = closed.filter((trade) => (mfe(trade) ?? 0) >= 2 && (r(trade) ?? 0) < 1).length;
+  if (givenBack >= 2) {
+    rules.push({
+      courseId: "crs-trademgmt",
+      weight: givenBack,
+      reason: `${givenBack} of your closed trades traveled +2R but finished below +1R — managing winners is the gap the Trade Management track closes.`,
+    });
+  }
+
+  // Full-stop losses: closed at or beyond −1R.
+  const fullLosses = closed.filter((trade) => (r(trade) ?? 0) <= -1).length;
+  if (fullLosses >= 2) {
+    rules.push({
+      courseId: "crs-risk-fundamentals",
+      weight: fullLosses,
+      reason: `${fullLosses} closed trades hit −1R or worse — worth revisiting stop placement and position sizing in Risk Management.`,
+    });
+  }
+
+  // Emotional exits: the journal tagged the aftermath FOMO/revenge/frustration/euphoria.
+  const emotional = closed.filter((trade) =>
+    ["FOMO", "REVENGE", "FRUSTRATED", "EUPHORIC"].includes(trade.emotionAfter ?? ""),
+  ).length;
+  if (emotional >= 2) {
+    rules.push({
+      courseId: "crs-psychology",
+      weight: emotional,
+      reason: `${emotional} trades carry an emotional exit tag — Trading Psychology covers the routine that makes discipline cheap.`,
+    });
+  }
+
+  // Outside the playbook.
+  const noStrategy = closed.filter((trade) => trade.strategyId === null).length;
+  if (noStrategy >= 2) {
+    rules.push({
+      courseId: "crs-strategies-core",
+      weight: noStrategy,
+      reason: `${noStrategy} trades sat outside your playbook — the 13-field strategy template turns loose setups into testable systems.`,
+    });
+  }
+
+  // Plan/outcome drift: planned ≥ 2R but closed negative.
+  const planDrift = closed.filter((trade) => (planned(trade) ?? 0) >= 2 && (r(trade) ?? 0) < 0).length;
+  if (planDrift >= 2) {
+    rules.push({
+      courseId: "crs-advanced-execution",
+      weight: planDrift,
+      reason: `${planDrift} trades planned ≥2R but closed red — Advanced Execution covers the entry-to-exit gap.`,
+    });
+  }
+
+  const picks = rules
+    .sort((a, b) => b.weight - a.weight)
+    .slice(0, 3)
+    .map((rule) => {
+      const course = COURSES.find((crs) => crs.id === rule.courseId);
+      const lesson = course?.lessons[0];
+      if (!course || !lesson) return null;
+      return {
+        courseId: course.id,
+        courseTitle: course.title,
+        categoryId: course.categoryId,
+        lessonId: lesson.id,
+        lessonTitle: lesson.title,
+        reason: rule.reason,
+      };
+    })
+    .filter((pick): pick is NonNullable<typeof pick> => pick !== null);
+
+  return { suggestions: picks };
+}

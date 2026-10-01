@@ -572,3 +572,19 @@ export type AcademyWeeklyPlan = {
   quizzesTarget: number;
   quizzesDone: number;
 };
+
+// ── Journal → Academy suggestions (evidence-based lesson links) ────────────
+
+export type AcademySuggestion = {
+  courseId: string;
+  courseTitle: string;
+  categoryId: string;
+  /** First lesson of the suggested course — the deep link target. */
+  lessonId: string;
+  lessonTitle: string;
+  reason: string;
+};
+
+export type AcademySuggestionsResponse = {
+  suggestions: AcademySuggestion[];
+};

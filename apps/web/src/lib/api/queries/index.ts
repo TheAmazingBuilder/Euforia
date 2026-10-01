@@ -150,6 +150,7 @@ export {
   useAcademyScenarios,
   useAcademySearch,
   useAcademySrDrill,
+  useAcademySuggestions,
   useAcademyZoneDrill,
   useCompleteLesson,
   useLogPractice,
