@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useForgotPasswordMutation } from "@/lib/api/queries/auth";
 import { apiErrorMessage, apiErrorCode } from "@/lib/api/client";
-import { authCopy } from "@/components/auth/auth-copy";
+import { useDict } from "@/i18n/i18n-provider";
 import {
   AuthField,
   FormError,
@@ -26,6 +26,7 @@ import {
  * with an explicit MOCKED panel (demoCode precedent).
  */
 export function ForgotPasswordForm() {
+  const auth = useDict().auth;
   const router = useRouter();
   const forgot = useForgotPasswordMutation();
 
@@ -51,14 +52,14 @@ export function ForgotPasswordForm() {
       onSuccess: (data) => setSent(data),
       onError: (error) => {
         if (apiErrorCode(error) === "RATE_LIMITED") {
-          setFormError(apiErrorMessage(error, authCopy.errors.rateLimited));
+          setFormError(apiErrorMessage(error, auth.errors.rateLimited));
           return;
         }
         if (error instanceof Error && error.message.startsWith("Network error")) {
-          setFormError(authCopy.errors.network);
+          setFormError(auth.errors.network);
           return;
         }
-        setFormError(apiErrorMessage(error, authCopy.errors.server));
+        setFormError(apiErrorMessage(error, auth.errors.server));
       },
     });
   }
@@ -74,20 +75,20 @@ export function ForgotPasswordForm() {
             <MailQuestion className="size-5 text-accent" aria-hidden="true" />
           </span>
           <h1 className="font-heading text-xl font-semibold">
-            {authCopy.forgot.sentTitle}
+            {auth.forgot.sentTitle}
           </h1>
-          <p className="text-sm text-muted-foreground">{authCopy.forgot.sentBody}</p>
+          <p className="text-sm text-muted-foreground">{auth.forgot.sentBody}</p>
         </header>
 
-        <FormSuccess body={authCopy.forgot.sentBody} testId="forgot-sent-banner" />
+        <FormSuccess body={auth.forgot.sentBody} testId="forgot-sent-banner" />
 
         {mocked && resetHref ? (
           <div className="flex flex-col gap-2.5 rounded-lg border border-dashed border-border bg-muted/30 px-3.5 py-3">
             <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              {authCopy.forgot.sentMockTitle}
+              {auth.forgot.sentMockTitle}
             </p>
             <p className="text-xs text-muted-foreground">
-              {authCopy.forgot.sentMockBody}
+              {auth.forgot.sentMockBody}
             </p>
             <Button
               type="button"
@@ -96,7 +97,7 @@ export function ForgotPasswordForm() {
               onClick={() => router.push(resetHref)}
               data-testid="forgot-open-reset"
             >
-              {authCopy.forgot.sentMockOpen}
+              {auth.forgot.sentMockOpen}
             </Button>
           </div>
         ) : null}
@@ -107,7 +108,7 @@ export function ForgotPasswordForm() {
             data-testid="forgot-to-login"
             className="text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
           >
-            &larr; {authCopy.forgot.backToLogin}
+            &larr; {auth.forgot.backToLogin}
           </Link>
         </footer>
       </div>
@@ -118,9 +119,9 @@ export function ForgotPasswordForm() {
     <div className="flex flex-col gap-6" data-testid="forgot-form">
       <header className="flex flex-col gap-1.5">
         <h1 className="font-heading text-xl font-semibold">
-          {authCopy.forgot.title}
+          {auth.forgot.title}
         </h1>
-        <p className="text-sm text-muted-foreground">{authCopy.forgot.subtitle}</p>
+        <p className="text-sm text-muted-foreground">{auth.forgot.subtitle}</p>
       </header>
 
       {formError ? <FormError body={formError} testId="forgot-error" /> : null}
@@ -128,7 +129,7 @@ export function ForgotPasswordForm() {
       <form onSubmit={submit} className="flex flex-col gap-4" noValidate>
         <AuthField
           id="forgot-email"
-          label={authCopy.forgot.email}
+          label={auth.forgot.email}
           error={fieldError}
         >
           <Input
@@ -144,8 +145,8 @@ export function ForgotPasswordForm() {
 
         <SubmitButton
           pending={forgot.isPending}
-          label={authCopy.forgot.submit}
-          pendingLabel={authCopy.forgot.submitting}
+          label={auth.forgot.submit}
+          pendingLabel={auth.forgot.submitting}
           testId="forgot-submit"
         />
       </form>
@@ -155,7 +156,7 @@ export function ForgotPasswordForm() {
           href="/login"
           className="text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
         >
-          &larr; {authCopy.forgot.backToLogin}
+          &larr; {auth.forgot.backToLogin}
         </Link>
       </footer>
     </div>

@@ -16,6 +16,7 @@ import { openCommandPalette } from "@/lib/hooks/use-command-palette";
 import { ToGradeQueue } from "@/components/trades/to-grade-queue";
 import { getBreadcrumb } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/i18n/i18n-provider";
 
 type TopbarProps = {
   onMenuClick: () => void;
@@ -28,7 +29,23 @@ type TopbarProps = {
  */
 export function Topbar({ onMenuClick }: TopbarProps) {
   const pathname = usePathname();
-  const crumbs = getBreadcrumb(pathname);
+  const { dict } = useI18n();
+  // Breadcrumb labels resolve through the active dictionary (EN fallback for
+  // special paths like /profile handled by getPageTitle's fallback map).
+  const crumbs = getBreadcrumb(pathname).map((crumb) => ({
+    ...crumb,
+    label:
+      dict.nav.items[crumb.href] ??
+      (crumb.href === "/profile"
+        ? dict.nav.profile
+        : crumb.href === "/login"
+          ? dict.nav.signIn
+          : crumb.href === "/register"
+            ? dict.nav.createAccount
+            : crumb.label === "Cosmoz"
+              ? dict.nav.app
+              : crumb.label),
+  }));
   const [queueOpen, setQueueOpen] = React.useState(false);
 
   // Elevation shadow — flips on only after real scroll (threshold 6px).

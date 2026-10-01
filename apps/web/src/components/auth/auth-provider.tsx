@@ -11,6 +11,7 @@ import type { AuthSession, AuthUser } from "@cosmoz/shared";
 import { subscribeAuthEvents, emitAuthEvent } from "@/lib/auth/auth-events";
 import { clearAccessToken } from "@/lib/auth/token-store";
 import { registerDevAuthHooks } from "@/lib/auth/dev-hooks";
+import { useI18n } from "@/i18n/i18n-provider";
 
 /**
  * Centralized authentication state (spec §3, §8, §32) — the SINGLE source of
@@ -67,6 +68,7 @@ export function usePermissions() {
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { t } = useI18n();
   const meQuery = useAuthMeQuery();
   const logoutMutation = useLogoutMutation();
 
@@ -91,8 +93,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         clearAccessToken();
         queryClient.clear();
         queryClient.setQueryData(queryKeys.authMe, null);
-        toast.warning("Your session has expired", {
-          description: "Please sign in again to continue.",
+        toast.warning(t("common.sessionExpiredTitle"), {
+          description: t("common.sessionExpiredBody"),
           duration: 8000,
         });
         const current = window.location.pathname + window.location.search;
@@ -100,7 +102,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         router.replace(`/login?reason=session-expired&returnTo=${returnTo}`);
       }
     });
-  }, [queryClient, router]);
+  }, [queryClient, router, t]);
 
   const setAuthenticated = React.useCallback(
     (user: AuthUser, session: AuthSession | null) => {

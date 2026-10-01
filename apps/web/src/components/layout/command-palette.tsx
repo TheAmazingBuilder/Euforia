@@ -25,6 +25,7 @@ import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { SIDEBAR_ITEMS } from "@/lib/navigation";
 import { SETTINGS_FINDER_META } from "@/components/settings/settings-view";
+import { useI18n } from "@/i18n/i18n-provider";
 import { useAcademySearch, useInstruments, useStrategies, useTrades } from "@/lib/api/queries";
 import { openGhostModal } from "@/lib/hooks/use-ghost-modal";
 import { openTradeModal } from "@/lib/hooks/use-trade-modal";
@@ -77,6 +78,7 @@ function matchItem(item: PaletteItem, query: string): boolean {
 export function CommandPalette() {
   const router = useRouter();
   const { setTheme } = useTheme();
+  const { dict } = useI18n();
   const { open } = useCommandPaletteState();
   const [query, setQuery] = React.useState("");
   const [activeIndex, setActiveIndex] = React.useState(0);
@@ -234,7 +236,7 @@ export function CommandPalette() {
 
     const navItems: PaletteItem[] = SIDEBAR_ITEMS.map((nav) => ({
       id: `nav-${nav.href}`,
-      label: nav.label,
+      label: dict.nav.items[nav.href] ?? nav.label,
       keywords: nav.description,
       icon: nav.icon,
       group: "Navigate",
@@ -245,7 +247,7 @@ export function CommandPalette() {
     // with one keystroke; entries carry the card's own search keywords.
     const settingsItems: PaletteItem[] = SETTINGS_FINDER_META.map((category) => ({
       id: `settings-${category.id}`,
-      label: `Settings — ${category.label}`,
+      label: `Settings — ${dict.settings.categories[category.id]?.label ?? category.label}`,
       keywords: `settings preferences ${category.description} ${category.keywords}`,
       icon: category.icon,
       group: "Settings" as const,
@@ -307,7 +309,7 @@ export function CommandPalette() {
     ];
 
     return [...actions, ...navItems, ...academyTabs, ...settingsItems, ...themes];
-  }, [router, setTheme]);
+  }, [router, setTheme, dict]);
 
   // ── Filtering ────────────────────────────────────────────────────────────
   const filtered = React.useMemo(

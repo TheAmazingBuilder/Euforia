@@ -21,6 +21,7 @@ import {
   useUpdateProfile,
 } from "@/lib/api/queries";
 import { apiErrorMessage } from "@/lib/api/client";
+import { useI18n } from "@/i18n/i18n-provider";
 
 /**
  * Localization — language, formats and the timezone MIRROR. The timezone
@@ -134,6 +135,8 @@ export function LocalizationCard() {
   const updateProfile = useUpdateProfile();
   const { draft, setDraft, dirty } = useDomainDraft(prefs?.localization);
   const [resetOpen, setResetOpen] = React.useState(false);
+  const { dict, setLocale } = useI18n();
+  const L = dict.settings.localization;
 
   if (isLoading || !prefs || !draft) {
     return <SettingsCardSkeleton rows={5} />;
@@ -151,16 +154,21 @@ export function LocalizationCard() {
     updateProfile.mutate(
       { timezone },
       {
-        onSuccess: () => toast.success("Timezone updated — trading days follow it"),
-        onError: (error) => toast.error(apiErrorMessage(error, "Could not update timezone")),
+        onSuccess: () => toast.success(L.toastTimezoneSaved),
+        onError: (error) => toast.error(apiErrorMessage(error, L.toastTimezoneFailed)),
       },
     );
   };
 
   const onSave = () => {
     save.mutate(draft, {
-      onSuccess: () => toast.success("Localization saved"),
-      onError: (error) => toast.error(apiErrorMessage(error, "Could not save localization")),
+      // The saved language BECOMES the runtime language — dynamic switching,
+      // no reload (the provider updates <html lang> + the boot mirror).
+      onSuccess: () => {
+        setLocale(draft.language);
+        toast.success(L.toastSaved);
+      },
+      onError: (error) => toast.error(apiErrorMessage(error, L.toastSaveFailed)),
     });
   };
 
@@ -168,7 +176,13 @@ export function LocalizationCard() {
     setResetOpen(false);
     resetDomain.mutate(
       { domain: "localization" },
-      { onSuccess: () => toast.success("Localization reset to defaults") },
+      {
+        onSuccess: (preferences) => {
+          // Reset restores the EN default at runtime too (mirror follows).
+          setLocale(preferences.localization.language);
+          toast.success(L.toastReset);
+        },
+      },
     );
   };
 
@@ -177,8 +191,8 @@ export function LocalizationCard() {
   return (
     <SettingsCategoryCard
       icon={Globe2}
-      title="Localization"
-      description="Language, formats and how numbers present themselves — everywhere in the journal."
+      title={L.title}
+      description={L.description}
       testid="settings-localization"
       dirty={dirty}
       saving={save.isPending}
@@ -191,7 +205,7 @@ export function LocalizationCard() {
         aria-label="Format preview"
       >
         <span className="text-[11px] font-sans font-medium uppercase tracking-wide text-muted-foreground">
-          Preview
+          {L.preview}
         </span>
         <span>{preview.date}</span>
         <span>{preview.number}</span>
@@ -199,7 +213,7 @@ export function LocalizationCard() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <SettingsRow label="Language" htmlFor="settings-localization-language">
+        <SettingsRow label={L.language} htmlFor="settings-localization-language">
           <SettingsSelect
             value={draft.language}
             onChange={(value) => patch({ language: value as UserPreferences["localization"]["language"] })}
@@ -211,9 +225,9 @@ export function LocalizationCard() {
           />
         </SettingsRow>
         <SettingsRow
-          label="Timezone"
+          label={L.timezone}
           htmlFor="settings-localization-timezone"
-          hint="Saves instantly via your profile — it defines your trading days."
+          hint={L.timezoneHint}
         >
           <SettingsSelect
             value={prefs.localization.timezone}
@@ -225,7 +239,7 @@ export function LocalizationCard() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <SettingsRow label="Date format" htmlFor="settings-localization-date">
+        <SettingsRow label={L.dateFormat} htmlFor="settings-localization-date">
           <SettingsSelect
             value={draft.dateFormat}
             onChange={(value) => patch({ dateFormat: value as UserPreferences["localization"]["dateFormat"] })}
@@ -238,7 +252,7 @@ export function LocalizationCard() {
             testid="settings-localization-date"
           />
         </SettingsRow>
-        <SettingsRow label="Time format" htmlFor="settings-localization-time">
+        <SettingsRow label={L.timeFormat} htmlFor="settings-localization-time">
           <SettingsSelect
             value={draft.timeFormat}
             onChange={(value) => patch({ timeFormat: value as UserPreferences["localization"]["timeFormat"] })}
@@ -252,28 +266,28 @@ export function LocalizationCard() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <SettingsRow label="Decimal separator" htmlFor="settings-localization-decimal">
+        <SettingsRow label={L.decimalSeparator} htmlFor="settings-localization-decimal">
           <SettingsSelect
             value={draft.decimalSeparator}
             onChange={(value) =>
               patch({ decimalSeparator: value as UserPreferences["localization"]["decimalSeparator"] })
             }
             options={[
-              { value: "LOCALE", label: "Language default" },
-              { value: "COMMA", label: "Comma — 1 234,50" },
-              { value: "DOT", label: "Dot — 1,234.50" },
+              { value: "LOCALE", label: L.optionLanguageDefault },
+              { value: "COMMA", label: L.optionDecimalComma },
+              { value: "DOT", label: L.optionDecimalDot },
             ]}
             testid="settings-localization-decimal"
           />
         </SettingsRow>
-        <SettingsRow label="Number format" htmlFor="settings-localization-number">
+        <SettingsRow label={L.numberFormat} htmlFor="settings-localization-number">
           <SettingsSelect
             value={draft.numberFormat}
             onChange={(value) =>
               patch({ numberFormat: value as UserPreferences["localization"]["numberFormat"] })
             }
             options={[
-              { value: "LOCALE", label: "Language default" },
+              { value: "LOCALE", label: L.optionLanguageDefault },
               { value: "COMMA", label: "1,234.50" },
               { value: "SPACE", label: "1\u202F234.50" },
               { value: "NONE", label: "1234.50" },
@@ -281,26 +295,26 @@ export function LocalizationCard() {
             testid="settings-localization-number"
           />
         </SettingsRow>
-        <SettingsRow label="Currency display" htmlFor="settings-localization-currency">
+        <SettingsRow label={L.currencyDisplay} htmlFor="settings-localization-currency">
           <SettingsSelect
             value={draft.currencyDisplay}
             onChange={(value) =>
               patch({ currencyDisplay: value as UserPreferences["localization"]["currencyDisplay"] })
             }
             options={[
-              { value: "CODE", label: "Code — USD 1,234.50" },
-              { value: "SYMBOL", label: "Symbol — $1,234.50" },
+              { value: "CODE", label: L.optionCurrencyCode },
+              { value: "SYMBOL", label: L.optionCurrencySymbol },
             ]}
             testid="settings-localization-currency"
           />
         </SettingsRow>
-        <SettingsRow label="Week starts on" htmlFor="settings-localization-week">
+        <SettingsRow label={L.weekStart} htmlFor="settings-localization-week">
           <SettingsSelect
             value={draft.weekStart}
             onChange={(value) => patch({ weekStart: value as UserPreferences["localization"]["weekStart"] })}
             options={[
-              { value: "MONDAY", label: "Monday" },
-              { value: "SUNDAY", label: "Sunday" },
+              { value: "MONDAY", label: L.optionMonday },
+              { value: "SUNDAY", label: L.optionSunday },
             ]}
             testid="settings-localization-week"
           />
@@ -310,9 +324,9 @@ export function LocalizationCard() {
       <ConfirmDialog
         open={resetOpen}
         onOpenChange={setResetOpen}
-        title="Reset to defaults?"
-        description="Formats return to the safe defaults (your timezone is untouched). This cannot be undone."
-        confirmLabel="Reset card"
+        title={L.resetTitle}
+        description={L.resetBody}
+        confirmLabel={L.resetConfirm}
         onConfirm={onReset}
         pending={resetDomain.isPending}
         testid="settings-localization-reset"

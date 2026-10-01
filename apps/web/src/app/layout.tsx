@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/layout/theme-provider";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { MockProvider } from "@/components/providers/mock-provider";
+import { I18nProvider } from "@/i18n/i18n-provider";
 import { AuthProvider } from "@/components/auth/auth-provider";
 import { ServiceWorkerRegister } from "@/components/providers/sw-register";
 import "./globals.css";
@@ -22,22 +23,28 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0E1116", // authorized exception: metadata-only (never rendered by components); mirrors --background
+  // i18n: the runtime language default is EN; <html lang> is updated by the
+  // I18nProvider (dynamic switching). themeColor mirrors --background.
+  themeColor: "#0E1116",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="fr" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${inter.variable} ${grotesk.variable} ${mono.variable} font-sans antialiased`}
       >
         <ThemeProvider>
           <QueryProvider>
-            {/* AuthProvider mounts INSIDE the MSW gate so identity restore
-                only runs once the (mocked) API is reachable — its /auth/me
-                boot query is the single source of session truth (§3, §8). */}
+            {/* MockProvider mounts the (mocked) API before anything consumes
+                it; I18nProvider is auth-independent (pure runtime state) and
+                must wrap AuthProvider so auth surfaces localize too. The
+                runtime language default is EN — <html lang> follows the
+                active locale (i18n provider). */}
             <MockProvider>
-              <AuthProvider>{children}</AuthProvider>
+              <I18nProvider>
+                <AuthProvider>{children}</AuthProvider>
+              </I18nProvider>
             </MockProvider>
           </QueryProvider>
           <Toaster position="bottom-right" mobileOffset={{ bottom: 84 }} />

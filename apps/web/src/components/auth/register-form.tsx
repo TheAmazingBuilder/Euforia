@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useRegisterMutation, useResendVerificationMutation } from "@/lib/api/queries/auth";
 import { apiErrorMessage, apiErrorCode } from "@/lib/api/client";
-import { authCopy } from "@/components/auth/auth-copy";
+import { useDict } from "@/i18n/i18n-provider";
 import {
   AuthField,
   FormError,
@@ -28,6 +28,7 @@ import {
  * Success lands on a deliberate verification-pending state (§17).
  */
 export function RegisterForm() {
+  const auth = useDict().auth;
   const router = useRouter();
   const register = useRegisterMutation();
   const resend = useResendVerificationMutation();
@@ -57,7 +58,7 @@ export function RegisterForm() {
       }
     }
     if (confirm !== password) {
-      errors.confirm = authCopy.register.mismatch;
+      errors.confirm = auth.register.mismatch;
     }
     setFieldErrors(errors);
     if (Object.keys(errors).length > 0 || !parsed.success) return;
@@ -73,14 +74,14 @@ export function RegisterForm() {
           return;
         }
         if (code === "RATE_LIMITED") {
-          setFormError(apiErrorMessage(error, authCopy.errors.rateLimited));
+          setFormError(apiErrorMessage(error, auth.errors.rateLimited));
           return;
         }
         if (error instanceof Error && error.message.startsWith("Network error")) {
-          setFormError(authCopy.errors.network);
+          setFormError(auth.errors.network);
           return;
         }
-        setFormError(apiErrorMessage(error, authCopy.errors.server));
+        setFormError(apiErrorMessage(error, auth.errors.server));
       },
     });
   }
@@ -95,7 +96,7 @@ export function RegisterForm() {
         }
       },
       onError: (error) => {
-        setFormError(apiErrorMessage(error, authCopy.errors.rateLimited));
+        setFormError(apiErrorMessage(error, auth.errors.rateLimited));
       },
     });
   }
@@ -113,10 +114,10 @@ export function RegisterForm() {
             <MailCheck className="size-5 text-accent" aria-hidden="true" />
           </span>
           <h1 className="font-heading text-xl font-semibold">
-            {authCopy.register.pendingTitle}
+            {auth.register.pendingTitle}
           </h1>
           <p className="text-sm text-muted-foreground">
-            {authCopy.register.pendingBody}
+            {auth.register.pendingBody}
           </p>
         </header>
 
@@ -125,10 +126,10 @@ export function RegisterForm() {
         {mocked && verificationHref ? (
           <div className="flex flex-col gap-2.5 rounded-lg border border-dashed border-border bg-muted/30 px-3.5 py-3">
             <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              {authCopy.register.pendingMockTitle}
+              {auth.register.pendingMockTitle}
             </p>
             <p className="text-xs text-muted-foreground">
-              {authCopy.register.pendingMockBody}
+              {auth.register.pendingMockBody}
             </p>
             <Button
               type="button"
@@ -137,13 +138,13 @@ export function RegisterForm() {
               onClick={() => router.push(verificationHref)}
               data-testid="register-open-verification"
             >
-              {authCopy.register.pendingMockOpen}
+              {auth.register.pendingMockOpen}
             </Button>
           </div>
         ) : null}
 
         {resent ? (
-          <FormSuccess body={authCopy.verifyEmail.resendDone} testId="register-resend-success" />
+          <FormSuccess body={auth.verifyEmail.resendDone} testId="register-resend-success" />
         ) : null}
         {formError ? <FormError body={formError} testId="register-resend-error" /> : null}
 
@@ -154,13 +155,13 @@ export function RegisterForm() {
             disabled={resend.isPending}
             className="min-h-11 text-left text-accent underline-offset-4 hover:underline disabled:opacity-60"
           >
-            {resend.isPending ? authCopy.register.resending : authCopy.register.resend}
+            {resend.isPending ? auth.register.resending : auth.register.resend}
           </button>
           <Link
             href="/login"
             className="text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
           >
-            &larr; {authCopy.register.signIn}
+            &larr; {auth.register.signIn}
           </Link>
         </div>
       </div>
@@ -173,15 +174,15 @@ export function RegisterForm() {
     <div className="flex flex-col gap-6" data-testid="register-form">
       <header className="flex flex-col gap-1.5">
         <h1 className="font-heading text-xl font-semibold">
-          {authCopy.register.title}
+          {auth.register.title}
         </h1>
-        <p className="text-sm text-muted-foreground">{authCopy.register.subtitle}</p>
+        <p className="text-sm text-muted-foreground">{auth.register.subtitle}</p>
       </header>
 
       {formError ? <FormError body={formError} testId="register-error" /> : null}
 
       <form onSubmit={submit} className="flex flex-col gap-4" noValidate>
-        <AuthField id="register-name" label={authCopy.register.name} error={fieldErrors.name}>
+        <AuthField id="register-name" label={auth.register.name} error={fieldErrors.name}>
           <Input
             type="text"
             autoComplete="name"
@@ -193,7 +194,7 @@ export function RegisterForm() {
           />
         </AuthField>
 
-        <AuthField id="register-email" label={authCopy.register.email} error={fieldErrors.email}>
+        <AuthField id="register-email" label={auth.register.email} error={fieldErrors.email}>
           <Input
             type="email"
             autoComplete="email"
@@ -207,9 +208,9 @@ export function RegisterForm() {
         <div className="flex flex-col gap-2">
           <AuthField
             id="register-password"
-            label={authCopy.register.password}
+            label={auth.register.password}
             error={fieldErrors.password}
-            hint={authCopy.register.passwordRule}
+            hint={auth.register.passwordRule}
           >
             <PasswordField
               value={password}
@@ -223,7 +224,7 @@ export function RegisterForm() {
 
         <AuthField
           id="register-confirm"
-          label={authCopy.register.confirmPassword}
+          label={auth.register.confirmPassword}
           error={fieldErrors.confirm}
         >
           <PasswordField
@@ -237,28 +238,28 @@ export function RegisterForm() {
 
         <SubmitButton
           pending={register.isPending}
-          label={authCopy.register.submit}
-          pendingLabel={authCopy.register.submitting}
+          label={auth.register.submit}
+          pendingLabel={auth.register.submitting}
           testId="register-submit"
         />
       </form>
 
       {mocked ? (
         <FormInfo
-          title={authCopy.login.demoHintTitle}
-          body={authCopy.login.demoHintNote}
+          title={auth.login.demoHintTitle}
+          body={auth.login.demoHintNote}
           testId="register-mock-note"
         />
       ) : null}
 
       <footer className="text-sm text-muted-foreground">
-        {authCopy.register.haveAccount}{" "}
+        {auth.register.haveAccount}{" "}
         <Link
           href="/login"
           data-testid="register-to-login"
           className="text-accent underline-offset-4 hover:underline"
         >
-          {authCopy.register.signIn}
+          {auth.register.signIn}
         </Link>
       </footer>
     </div>

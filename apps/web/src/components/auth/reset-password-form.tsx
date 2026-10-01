@@ -8,7 +8,7 @@ import { BadgeCheck, CircleX, Clock3, CopyCheck } from "lucide-react";
 import { resetPasswordInputSchema } from "@cosmoz/shared";
 import { useResetPasswordMutation } from "@/lib/api/queries/auth";
 import { apiErrorMessage, apiErrorCode } from "@/lib/api/client";
-import { authCopy } from "@/components/auth/auth-copy";
+import { useDict } from "@/i18n/i18n-provider";
 import {
   AuthField,
   FormError,
@@ -30,6 +30,7 @@ type Outcome =
   | { kind: "invalid" };
 
 export function ResetPasswordForm() {
+  const auth = useDict().auth;
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
@@ -57,7 +58,7 @@ export function ResetPasswordForm() {
         if (!errors[key]) errors[key] = issue.message;
       }
     }
-    if (confirm !== password) errors.confirm = authCopy.register.mismatch;
+    if (confirm !== password) errors.confirm = auth.register.mismatch;
     setFieldErrors(errors);
     if (Object.keys(errors).length > 0 || !parsed.success) return;
 
@@ -68,7 +69,7 @@ export function ResetPasswordForm() {
         if (code === "EXPIRED_TOKEN") setOutcome({ kind: "expired" });
         else if (code === "TOKEN_ALREADY_USED") setOutcome({ kind: "used" });
         else if (code === "INVALID_TOKEN") setOutcome({ kind: "invalid" });
-        else setFormError(apiErrorMessage(error, authCopy.errors.server));
+        else setFormError(apiErrorMessage(error, auth.errors.server));
       },
     });
   }
@@ -76,26 +77,26 @@ export function ResetPasswordForm() {
   const header: Partial<Record<Outcome["kind"], { icon: React.ReactNode; title: string; body: string; testId: string }>> = {
     success: {
       icon: <BadgeCheck className="size-5 text-emerald-500" aria-hidden="true" />,
-      title: authCopy.reset.successTitle,
-      body: authCopy.reset.successBody,
+      title: auth.reset.successTitle,
+      body: auth.reset.successBody,
       testId: "reset-state-success",
     },
     expired: {
       icon: <Clock3 className="size-5 text-amber-500" aria-hidden="true" />,
-      title: authCopy.reset.expiredTitle,
-      body: authCopy.reset.expiredBody,
+      title: auth.reset.expiredTitle,
+      body: auth.reset.expiredBody,
       testId: "reset-state-expired",
     },
     used: {
       icon: <CopyCheck className="size-5 text-accent" aria-hidden="true" />,
-      title: authCopy.reset.usedTitle,
-      body: authCopy.reset.usedBody,
+      title: auth.reset.usedTitle,
+      body: auth.reset.usedBody,
       testId: "reset-state-used",
     },
     invalid: {
       icon: <CircleX className="size-5 text-destructive" aria-hidden="true" />,
-      title: authCopy.reset.invalidTitle,
-      body: authCopy.reset.invalidBody,
+      title: auth.reset.invalidTitle,
+      body: auth.reset.invalidBody,
       testId: "reset-state-invalid",
     },
   };
@@ -127,7 +128,7 @@ export function ResetPasswordForm() {
               className="min-h-11 rounded-md bg-foreground px-4 text-sm font-medium text-background transition-colors hover:opacity-90"
               data-testid="reset-continue"
             >
-              {authCopy.reset.successCta}
+              {auth.reset.successCta}
             </button>
           ) : (
             <Link
@@ -135,7 +136,7 @@ export function ResetPasswordForm() {
               data-testid="reset-request-new"
               className="min-h-11 text-sm text-accent underline-offset-4 hover:underline"
             >
-              {authCopy.reset.requestNew}
+              {auth.reset.requestNew}
             </Link>
           )}
         </>
@@ -143,9 +144,9 @@ export function ResetPasswordForm() {
         <>
           <header className="flex flex-col gap-1.5">
             <h1 className="font-heading text-xl font-semibold">
-              {authCopy.reset.title}
+              {auth.reset.title}
             </h1>
-            <p className="text-sm text-muted-foreground">{authCopy.reset.subtitle}</p>
+            <p className="text-sm text-muted-foreground">{auth.reset.subtitle}</p>
           </header>
 
           {formError ? <FormError body={formError} testId="reset-error" /> : null}
@@ -154,9 +155,9 @@ export function ResetPasswordForm() {
             <div className="flex flex-col gap-2">
               <AuthField
                 id="reset-password"
-                label={authCopy.reset.password}
+                label={auth.reset.password}
                 error={fieldErrors.password}
-                hint={authCopy.register.passwordRule}
+                hint={auth.register.passwordRule}
               >
                 <PasswordField
                   value={password}
@@ -171,7 +172,7 @@ export function ResetPasswordForm() {
 
             <AuthField
               id="reset-confirm"
-              label={authCopy.reset.confirmPassword}
+              label={auth.reset.confirmPassword}
               error={fieldErrors.confirm}
             >
               <PasswordField
@@ -185,8 +186,8 @@ export function ResetPasswordForm() {
 
             <SubmitButton
               pending={reset.isPending}
-              label={authCopy.reset.submit}
-              pendingLabel={authCopy.reset.submitting}
+              label={auth.reset.submit}
+              pendingLabel={auth.reset.submitting}
               testId="reset-submit"
             />
           </form>
@@ -195,7 +196,7 @@ export function ResetPasswordForm() {
             href="/login"
             className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
           >
-            &larr; {authCopy.forgot.backToLogin}
+            &larr; {auth.forgot.backToLogin}
           </Link>
         </>
       )}

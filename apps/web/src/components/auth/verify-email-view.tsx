@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { useResendVerificationMutation, useVerifyEmailMutation } from "@/lib/api/queries/auth";
 import { apiErrorCode } from "@/lib/api/client";
 import { useAuth } from "@/components/auth/auth-provider";
-import { authCopy } from "@/components/auth/auth-copy";
+import { useDict } from "@/i18n/i18n-provider";
 import { FormError, FormSuccess } from "@/components/auth/auth-primitives";
 
 /**
@@ -26,6 +26,7 @@ type Outcome =
   | { kind: "invalid" };
 
 export function VerifyEmailView() {
+  const auth = useDict().auth;
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
@@ -71,8 +72,8 @@ export function VerifyEmailView() {
       onError: (error) => {
         setResendError(
           apiErrorCode(error) === "RATE_LIMITED"
-            ? authCopy.errors.rateLimited
-            : authCopy.errors.server,
+            ? auth.errors.rateLimited
+            : auth.errors.server,
         );
       },
     });
@@ -84,38 +85,38 @@ export function VerifyEmailView() {
   > = {
     verifying: {
       icon: <span className="size-5 animate-spin rounded-full border-2 border-accent border-t-transparent" aria-hidden="true" />,
-      title: authCopy.verifyEmail.verifying,
+      title: auth.verifyEmail.verifying,
       body: "",
       testId: "verify-state-verifying",
     },
     success: {
       icon: <BadgeCheck className="size-5 text-emerald-500" aria-hidden="true" />,
-      title: authCopy.verifyEmail.successTitle,
-      body: authCopy.verifyEmail.successBody,
+      title: auth.verifyEmail.successTitle,
+      body: auth.verifyEmail.successBody,
       testId: "verify-state-success",
     },
     already: {
       icon: <CopyCheck className="size-5 text-accent" aria-hidden="true" />,
-      title: authCopy.verifyEmail.alreadyTitle,
-      body: authCopy.verifyEmail.alreadyBody,
+      title: auth.verifyEmail.alreadyTitle,
+      body: auth.verifyEmail.alreadyBody,
       testId: "verify-state-already",
     },
     expired: {
       icon: <Clock3 className="size-5 text-amber-500" aria-hidden="true" />,
-      title: authCopy.verifyEmail.expiredTitle,
-      body: authCopy.verifyEmail.expiredBody,
+      title: auth.verifyEmail.expiredTitle,
+      body: auth.verifyEmail.expiredBody,
       testId: "verify-state-expired",
     },
     used: {
       icon: <CopyCheck className="size-5 text-accent" aria-hidden="true" />,
-      title: authCopy.verifyEmail.usedTitle,
-      body: authCopy.verifyEmail.usedBody,
+      title: auth.verifyEmail.usedTitle,
+      body: auth.verifyEmail.usedBody,
       testId: "verify-state-used",
     },
     invalid: {
       icon: <CircleX className="size-5 text-destructive" aria-hidden="true" />,
-      title: authCopy.verifyEmail.invalidTitle,
-      body: authCopy.verifyEmail.invalidBody,
+      title: auth.verifyEmail.invalidTitle,
+      body: auth.verifyEmail.invalidBody,
       testId: "verify-state-invalid",
     },
   };
@@ -143,14 +144,14 @@ export function VerifyEmailView() {
 
       {outcome.kind === "success" ? (
         <>
-          <FormSuccess body={authCopy.verifyEmail.successBody} testId="verify-success-banner" />
+          <FormSuccess body={auth.verifyEmail.successBody} testId="verify-success-banner" />
           <Button
             type="button"
             className="w-full"
             onClick={() => router.replace("/login?reason=verified")}
             data-testid="verify-continue"
           >
-            {authCopy.verifyEmail.successCta}
+            {auth.verifyEmail.successCta}
           </Button>
         </>
       ) : null}
@@ -159,7 +160,7 @@ export function VerifyEmailView() {
         <div className="flex flex-col gap-3">
           <div className="flex flex-col gap-2">
             <label htmlFor="verify-resend-email" className="text-sm font-medium">
-              {authCopy.verifyEmail.resend}
+              {auth.verifyEmail.resend}
             </label>
             <input
               id="verify-resend-email"
@@ -179,11 +180,11 @@ export function VerifyEmailView() {
             disabled={resend.isPending || !resendEmail.trim()}
             data-testid="verify-resend"
           >
-            {resend.isPending ? authCopy.verifyEmail.resending : authCopy.verifyEmail.resend}
+            {resend.isPending ? auth.verifyEmail.resending : auth.verifyEmail.resend}
           </Button>
           {resent ? (
             <FormSuccess
-              body={authCopy.verifyEmail.resendDone}
+              body={auth.verifyEmail.resendDone}
               testId="verify-resend-success"
             />
           ) : null}
@@ -198,7 +199,7 @@ export function VerifyEmailView() {
             onClick={() => logout({ reason: "signed-out" })}
             className="min-h-11 text-left text-accent underline-offset-4 hover:underline"
           >
-            {authCopy.gate.signOut}
+            {auth.gate.signOut}
           </button>
         ) : (
           <Link
@@ -206,7 +207,7 @@ export function VerifyEmailView() {
             data-testid="verify-to-login"
             className="text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
           >
-            {authCopy.verifyEmail.ctaLogin}
+            {auth.verifyEmail.ctaLogin}
           </Link>
         )}
       </footer>

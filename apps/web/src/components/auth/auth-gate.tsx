@@ -10,7 +10,7 @@ import { CosmozLogo } from "@/components/layout/cosmoz-logo";
 import { useAuth } from "@/components/auth/auth-provider";
 import { useResendVerificationMutation } from "@/lib/api/queries/auth";
 import { apiErrorCode } from "@/lib/api/client";
-import { authCopy } from "@/components/auth/auth-copy";
+import { useDict } from "@/i18n/i18n-provider";
 
 /**
  * Centralized protected-route mechanism (spec §34, §36, §7) — applied ONCE
@@ -42,6 +42,7 @@ function AuthSplash({ label }: { label: string }) {
 }
 
 function VerificationRequiredScreen() {
+  const auth = useDict().auth;
   const { user, logout } = useAuth();
   const resend = useResendVerificationMutation();
   const [resent, setResent] = React.useState(false);
@@ -57,8 +58,8 @@ function VerificationRequiredScreen() {
       onError: (err) =>
         setError(
           apiErrorCode(err) === "RATE_LIMITED"
-            ? authCopy.errors.rateLimited
-            : authCopy.errors.server,
+            ? auth.errors.rateLimited
+            : auth.errors.server,
         ),
     });
   }
@@ -72,10 +73,10 @@ function VerificationRequiredScreen() {
           </span>
           <div className="flex flex-col gap-1.5">
             <h1 className="font-heading text-lg font-semibold">
-              {authCopy.gate.verificationTitle}
+              {auth.gate.verificationTitle}
             </h1>
             <p className="text-sm text-muted-foreground">
-              {authCopy.gate.verificationBody.replace(
+              {auth.gate.verificationBody.replace(
                 "your email address",
                 user?.email ?? "your email address",
               )}
@@ -84,7 +85,7 @@ function VerificationRequiredScreen() {
 
           {mocked ? (
             <Button asChild variant="outline" className="w-full" data-testid="gate-open-verification">
-              <Link href="/verify-email">{authCopy.gate.verificationMockOpen}</Link>
+              <Link href="/verify-email">{auth.gate.verificationMockOpen}</Link>
             </Button>
           ) : null}
 
@@ -94,7 +95,7 @@ function VerificationRequiredScreen() {
               data-testid="gate-resend-success"
               className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3.5 py-2.5 text-sm text-emerald-600 dark:text-emerald-400"
             >
-              ✓ {authCopy.verifyEmail.resendDone}
+              ✓ {auth.verifyEmail.resendDone}
             </p>
           ) : null}
           {error ? (
@@ -110,14 +111,14 @@ function VerificationRequiredScreen() {
               disabled={resend.isPending}
               className="min-h-11 text-left text-accent underline-offset-4 hover:underline disabled:opacity-60"
             >
-              {resend.isPending ? authCopy.verifyEmail.resending : authCopy.verifyEmail.resend}
+              {resend.isPending ? auth.verifyEmail.resending : auth.verifyEmail.resend}
             </button>
             <button
               type="button"
               onClick={() => logout({ reason: "signed-out" })}
               className="min-h-11 text-left text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
             >
-              {authCopy.gate.signOut}
+              {auth.gate.signOut}
             </button>
           </div>
         </div>
@@ -127,6 +128,7 @@ function VerificationRequiredScreen() {
 }
 
 function AccountStatusScreen({ status }: { status: "SUSPENDED" | "DEACTIVATED" }) {
+  const auth = useDict().auth;
   const { logout } = useAuth();
   return (
     <div className="grid min-h-screen place-items-center bg-background px-4">
@@ -137,9 +139,9 @@ function AccountStatusScreen({ status }: { status: "SUSPENDED" | "DEACTIVATED" }
           </span>
           <div className="flex flex-col gap-1.5">
             <h1 className="font-heading text-lg font-semibold">
-              {authCopy.gate.blockedTitle}
+              {auth.gate.blockedTitle}
             </h1>
-            <p className="text-sm text-muted-foreground">{authCopy.gate.blockedBody}</p>
+            <p className="text-sm text-muted-foreground">{auth.gate.blockedBody}</p>
             <p className="text-xs uppercase tracking-wider text-muted-foreground/70" data-testid="gate-status">
               Status: {status}
             </p>
@@ -150,7 +152,7 @@ function AccountStatusScreen({ status }: { status: "SUSPENDED" | "DEACTIVATED" }
             className="w-full"
             onClick={() => logout({ reason: "signed-out" })}
           >
-            {authCopy.gate.signOut}
+            {auth.gate.signOut}
           </Button>
         </div>
       </div>
@@ -159,6 +161,7 @@ function AccountStatusScreen({ status }: { status: "SUSPENDED" | "DEACTIVATED" }
 }
 
 export function AuthGate({ children }: { children: React.ReactNode }) {
+  const auth = useDict().auth;
   const { status, user } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
@@ -176,7 +179,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   if (status === "initializing" || status === "unauthenticated") {
     // The splash keeps the session-resolution state visible (§8: never
     // treat "not resolved yet" as logged out).
-    return <AuthSplash label={authCopy.gate.splashLabel} />;
+    return <AuthSplash label={auth.gate.splashLabel} />;
   }
 
   if (user?.status === "PENDING_VERIFICATION") {

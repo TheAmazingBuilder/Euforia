@@ -8,6 +8,7 @@ import { BOTTOM_NAV_ITEMS } from "@/lib/navigation";
 import { openGhostModal } from "@/lib/hooks/use-ghost-modal";
 import { openTradeModal } from "@/lib/hooks/use-trade-modal";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/i18n/i18n-provider";
 
 function NewTradeFab() {
   return (
@@ -44,6 +45,7 @@ function GhostFab() {
  */
 export function BottomNav() {
   const pathname = usePathname();
+  const { dict } = useI18n();
   const left = BOTTOM_NAV_ITEMS.slice(0, 2);
   const right = BOTTOM_NAV_ITEMS.slice(2);
 
@@ -63,7 +65,7 @@ export function BottomNav() {
         )}
       >
         <Icon className="size-5" aria-hidden="true" />
-        <span>{item.label}</span>
+        <span>{dict.nav.bottom[item.href] ?? item.label}</span>
       </Link>
     );
   };

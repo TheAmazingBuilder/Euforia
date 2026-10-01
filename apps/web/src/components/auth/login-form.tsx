@@ -16,7 +16,7 @@ import {
 import { apiErrorMessage, apiErrorCode } from "@/lib/api/client";
 import { setAccessToken } from "@/lib/auth/token-store";
 import { useAuth } from "@/components/auth/auth-provider";
-import { authCopy } from "@/components/auth/auth-copy";
+import { useDict } from "@/i18n/i18n-provider";
 import {
   AuthField,
   FormError,
@@ -45,6 +45,7 @@ type Step = "credentials" | "mfa";
  * non-sensitive UI state; anti-enumeration messages stay generic.
  */
 export function LoginForm() {
+  const auth = useDict().auth;
   const router = useRouter();
   const searchParams = useSearchParams();
   const { setAuthenticated, user } = useAuth();
@@ -79,33 +80,33 @@ export function LoginForm() {
     const serverMessage = apiErrorMessage(error, "");
     switch (code) {
       case "INVALID_CREDENTIALS":
-        return { body: authCopy.errors.invalidCredentials };
+        return { body: auth.errors.invalidCredentials };
       case "EMAIL_NOT_VERIFIED":
         return {
-          body: authCopy.errors.emailNotVerified,
+          body: auth.errors.emailNotVerified,
           hint: "Signed in but blocked? Visit /verify-email for options.",
         };
       case "ACCOUNT_SUSPENDED":
-        return { body: authCopy.errors.suspended };
+        return { body: auth.errors.suspended };
       case "ACCOUNT_DEACTIVATED":
-        return { body: authCopy.errors.deactivated };
+        return { body: auth.errors.deactivated };
       case "RATE_LIMITED":
-        return { body: serverMessage || authCopy.errors.rateLimited };
+        return { body: serverMessage || auth.errors.rateLimited };
       case "INVALID_MFA_CODE":
         return {
           body: recoveryMode
-            ? authCopy.errors.recoveryInvalid
-            : authCopy.errors.invalidMfa,
+            ? auth.errors.recoveryInvalid
+            : auth.errors.invalidMfa,
         };
       case "INVALID_CHALLENGE":
-        return { body: authCopy.errors.challengeExpired };
+        return { body: auth.errors.challengeExpired };
       case "VALIDATION_ERROR":
         return { body: serverMessage || "Check the form and try again." };
       default: {
         if (error instanceof Error && error.message.startsWith("Network error")) {
-          return { body: authCopy.errors.network };
+          return { body: auth.errors.network };
         }
-        return { body: serverMessage || authCopy.errors.server };
+        return { body: serverMessage || auth.errors.server };
       }
     }
   }
@@ -158,7 +159,7 @@ export function LoginForm() {
     mutate.mutate(body as never, {
       onSuccess: (data) => {
         if (data.outcome === "MFA_REQUIRED") {
-          setFormError({ body: authCopy.errors.challengeExpired });
+          setFormError({ body: auth.errors.challengeExpired });
           setStep("credentials");
           return;
         }
@@ -193,15 +194,15 @@ export function LoginForm() {
     <div className="flex flex-col gap-6" data-testid="login-form">
       <header className="flex flex-col gap-1.5">
         <h1 className="font-heading text-xl font-semibold">
-          {authCopy.login.title}
+          {auth.login.title}
         </h1>
-        <p className="text-sm text-muted-foreground">{authCopy.login.subtitle}</p>
+        <p className="text-sm text-muted-foreground">{auth.login.subtitle}</p>
       </header>
 
-      {reason && authCopy.reasons[reason] ? (
+      {reason && auth.reasons[reason] ? (
         <FormInfo
-          title={authCopy.reasons[reason]!.title}
-          body={authCopy.reasons[reason]!.body}
+          title={auth.reasons[reason]!.title}
+          body={auth.reasons[reason]!.body}
           testId={`login-reason-${reason}`}
         />
       ) : null}
@@ -210,7 +211,7 @@ export function LoginForm() {
 
       {step === "credentials" ? (
         <form onSubmit={handleCredentialsSubmit} className="flex flex-col gap-4" noValidate>
-          <AuthField id="login-email" label={authCopy.login.email}>
+          <AuthField id="login-email" label={auth.login.email}>
             <Input
               type="email"
               autoComplete="email"
@@ -222,7 +223,7 @@ export function LoginForm() {
             />
           </AuthField>
 
-          <AuthField id="login-password" label={authCopy.login.password}>
+          <AuthField id="login-password" label={auth.login.password}>
             <PasswordField
               value={password}
               onChange={setPassword}
@@ -238,21 +239,21 @@ export function LoginForm() {
                 onCheckedChange={(checked) => setRemember(checked === true)}
                 data-testid="login-remember"
               />
-              {authCopy.login.remember}
+              {auth.login.remember}
             </label>
             <Link
               href="/forgot-password"
               data-testid="login-forgot"
               className="text-sm text-accent underline-offset-4 hover:underline"
             >
-              {authCopy.login.forgot}
+              {auth.login.forgot}
             </Link>
           </div>
 
           <SubmitButton
             pending={login.isPending}
-            label={authCopy.login.submit}
-            pendingLabel={authCopy.login.submitting}
+            label={auth.login.submit}
+            pendingLabel={auth.login.submitting}
             testId="login-submit"
           />
         </form>
@@ -264,18 +265,18 @@ export function LoginForm() {
           >
             <ShieldCheck className="mt-0.5 size-4 shrink-0 text-accent" aria-hidden="true" />
             <div className="flex flex-col gap-0.5">
-              <p className="text-sm font-medium">{authCopy.login.mfaTitle}</p>
+              <p className="text-sm font-medium">{auth.login.mfaTitle}</p>
               <p className="text-xs text-muted-foreground">
                 {recoveryMode
                   ? "Enter one of your unused recovery codes (e.g. 1A2B-3C4D)."
-                  : authCopy.login.mfaSubtitle}
+                  : auth.login.mfaSubtitle}
               </p>
             </div>
           </div>
 
           <AuthField
             id="login-mfa-code"
-            label={recoveryMode ? authCopy.login.mfaRecoveryLabel : authCopy.login.mfaCode}
+            label={recoveryMode ? auth.login.mfaRecoveryLabel : auth.login.mfaCode}
           >
             <Input
               key={recoveryMode ? "recovery" : "totp"}
@@ -299,7 +300,7 @@ export function LoginForm() {
             >
               <span className="flex items-center gap-1.5">
                 <KeyRound className="size-3.5" aria-hidden="true" />
-                {authCopy.login.mfaDemoHint}
+                {auth.login.mfaDemoHint}
               </span>
               <span className="font-mono text-sm font-semibold text-foreground">
                 {demoCode}
@@ -309,8 +310,8 @@ export function LoginForm() {
 
           <SubmitButton
             pending={mfaChallenge.isPending || mfaRecovery.isPending}
-            label={authCopy.login.mfaSubmit}
-            pendingLabel={authCopy.login.mfaVerifying}
+            label={auth.login.mfaSubmit}
+            pendingLabel={auth.login.mfaVerifying}
             testId="login-mfa-submit"
           />
 
@@ -323,7 +324,7 @@ export function LoginForm() {
             }}
             className="min-h-11 text-sm text-accent underline-offset-4 hover:underline"
           >
-            {recoveryMode ? authCopy.login.mfaUseCode : authCopy.login.mfaUseRecovery}
+            {recoveryMode ? auth.login.mfaUseCode : auth.login.mfaUseRecovery}
           </button>
         </form>
       )}
@@ -331,13 +332,13 @@ export function LoginForm() {
       <footer className="flex flex-col gap-2 text-sm">
         {step === "credentials" ? (
           <p className="text-muted-foreground">
-            {authCopy.login.noAccount}{" "}
+            {auth.login.noAccount}{" "}
             <Link
               href="/register"
               data-testid="login-to-register"
               className="text-accent underline-offset-4 hover:underline"
             >
-              {authCopy.login.createAccount}
+              {auth.login.createAccount}
             </Link>
           </p>
         ) : null}
@@ -358,21 +359,21 @@ export function LoginForm() {
         >
           <div className="flex items-center justify-between gap-2">
             <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              {authCopy.login.demoHintTitle}
+              {auth.login.demoHintTitle}
             </span>
             <button
               type="button"
               onClick={fillDemo}
               className="min-h-8 rounded-md border border-border px-2.5 text-xs font-medium transition-colors hover:bg-muted"
             >
-              {authCopy.login.demoHintFill}
+              {auth.login.demoHintFill}
             </button>
           </div>
           <p className="font-mono text-xs text-muted-foreground">
             trader@cosmoz.app
           </p>
           <p className="text-[11px] text-muted-foreground/80">
-            {authCopy.login.demoHintNote}
+            {auth.login.demoHintNote}
           </p>
         </div>
       ) : null}

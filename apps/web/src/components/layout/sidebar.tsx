@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { EyeOff, LogOut } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/i18n/i18n-provider";
 import { CosmozLogo } from "@/components/layout/cosmoz-logo";
 import { openGhostModal } from "@/lib/hooks/use-ghost-modal";
 import { useAuth } from "@/components/auth/auth-provider";
@@ -51,6 +52,10 @@ export function SidebarNav({
   // accent stays reserved for the primary action and interactive marks.
   const linkActive = "bg-foreground text-background";
 
+  const { dict } = useI18n();
+  /** Localized label keyed by href — EN label is the fallback for unknown hrefs. */
+  const navLabel = (item: NavItem) => dict.nav.items[item.href] ?? item.label;
+
   const renderItem = (item: NavItem) => {
     const Icon = item.icon;
     const active = pathname === item.href;
@@ -60,8 +65,8 @@ export function SidebarNav({
         href={item.href}
         onClick={onNavigate}
         aria-current={active ? "page" : undefined}
-        aria-label={collapsed ? item.label : undefined}
-        title={item.label}
+        aria-label={collapsed ? navLabel(item) : undefined}
+        title={navLabel(item)}
         className={cn(
           linkBase,
           collapsed ? "justify-center px-0" : linkExpanded,
@@ -69,7 +74,7 @@ export function SidebarNav({
         )}
       >
         <Icon className="size-4 shrink-0" aria-hidden="true" />
-        {!collapsed && <span className="truncate">{item.label}</span>}
+        {!collapsed && <span className="truncate">{navLabel(item)}</span>}
       </Link>
     );
   };
@@ -109,7 +114,7 @@ export function SidebarNav({
             />
           ) : (
             <div className="px-2.5 pb-1 pt-4 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">
-              {section.title}
+              {dict.nav.sections[section.title] ?? section.title}
             </div>
           )}
           {section.hrefs.map(getNavItem).map(renderItem)}

@@ -263,6 +263,30 @@ export function createMockStore() {
   const reviews: TradeReview[] = buildReviewSeed(user.id, data.trades);
 
   /**
+   * Mock-backend language jar (sandbox durability seam — same ownership
+   * pattern as the auth mock jar): localStorage is owned by the MOCK
+   * BACKEND, never by application state, so the localization language
+   * survives page reloads the way a real server document would. Production
+   * replaces this transparently with the real preferences table.
+   */
+  const MOCK_LANGUAGE_JAR_KEY = "cosmoz.mock.prefs-language";
+  function jarReadLanguage(): "en" | "fr" {
+    try {
+      const value = localStorage.getItem(MOCK_LANGUAGE_JAR_KEY);
+      return value === "fr" ? "fr" : "en";
+    } catch {
+      return "en";
+    }
+  }
+  function jarWriteLanguage(language: "en" | "fr"): void {
+    try {
+      localStorage.setItem(MOCK_LANGUAGE_JAR_KEY, language);
+    } catch {
+      // Storage unavailable — the domain still saves in memory.
+    }
+  }
+
+  /**
    * User preferences (Settings module) — seeded from the safe shared
    * defaults, with the seeded instruments/account resolved into the
    * trading domain so the trade form opens pre-filled with real ids.
@@ -280,6 +304,7 @@ export function createMockStore() {
       localization: {
         ...DEFAULT_USER_PREFERENCES.localization,
         timezone: user.timezone,
+        language: jarReadLanguage(),
       },
       updatedAt: new Date().toISOString(),
     });
@@ -4439,6 +4464,7 @@ export function createMockStore() {
     writable[domain] = structuredClone(parsed);
     if (domain === "localization") {
       user.timezone = preferences.localization.timezone;
+      jarWriteLanguage(preferences.localization.language);
     }
     preferences.updatedAt = nowIso();
     return getPreferences();
@@ -4447,7 +4473,10 @@ export function createMockStore() {
   function resetPreferencesDomain(domain: PreferenceDomain): UserPreferences {
     const writable = preferences as Record<PreferenceDomain, UserPreferences[PreferenceDomain]>;
     writable[domain] = structuredClone(DEFAULT_USER_PREFERENCES[domain]);
-    if (domain === "localization") user.timezone = preferences.localization.timezone;
+    if (domain === "localization") {
+      user.timezone = preferences.localization.timezone;
+      jarWriteLanguage(preferences.localization.language);
+    }
     preferences.updatedAt = nowIso();
     return getPreferences();
   }

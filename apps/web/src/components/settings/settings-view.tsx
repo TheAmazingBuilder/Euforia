@@ -22,6 +22,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { DEFAULT_USER_PREFERENCES, type PreferenceDomain } from "@cosmoz/shared";
 import { usePreferences } from "@/lib/api/queries";
+import { useI18n } from "@/i18n/i18n-provider";
 import { ProfileCard } from "@/components/settings/cards/profile-card";
 import { TradingCard } from "@/components/settings/cards/trading-card";
 import { RiskCard } from "@/components/settings/cards/risk-card";
@@ -211,6 +212,12 @@ export function SettingsView() {
   const [active, setActive] = React.useState<string>(readInitialCategory);
   const [query, setQuery] = React.useState("");
   const modifiedDomains = useModifiedDomains();
+  const { dict } = useI18n();
+  /** Localized category meta — EN CATEGORIES stay the structural source. */
+  const categoryMeta = (category: (typeof CATEGORIES)[number]) => ({
+    label: dict.settings.categories[category.id]?.label ?? category.label,
+    description: dict.settings.categories[category.id]?.description ?? category.description,
+  });
 
   // Deep links stay live — back/forward and manual hash edits work.
   React.useEffect(() => {
@@ -227,13 +234,14 @@ export function SettingsView() {
 
   const needle = query.trim().toLowerCase();
   const visibleCategories = needle
-    ? CATEGORIES.filter((category) =>
-        [
-          category.label,
-          category.description,
+    ? CATEGORIES.filter((category) => {
+        const meta = categoryMeta(category);
+        return [
+          meta.label,
+          meta.description,
           ...category.keywords,
-        ].some((text) => text.toLowerCase().includes(needle)),
-      )
+        ].some((text) => text.toLowerCase().includes(needle));
+      })
     : CATEGORIES;
 
   // When searching, if the active category fell out of the results, follow
@@ -305,7 +313,7 @@ export function SettingsView() {
                 >
                   <Icon className="size-4 shrink-0" aria-hidden="true" />
                   <span className="whitespace-nowrap font-medium lg:whitespace-normal">
-                    {category.label}
+                    {categoryMeta(category).label}
                   </span>
                   {modifiedDomains.has(category.id) && (
                     <span

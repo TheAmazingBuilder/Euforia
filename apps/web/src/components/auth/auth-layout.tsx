@@ -1,8 +1,10 @@
+"use client";
+
 import Link from "next/link";
 
 import { CosmozLogo } from "@/components/layout/cosmoz-logo";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
-import { authCopy } from "@/components/auth/auth-copy";
+import { useDict } from "@/i18n/i18n-provider";
 
 /**
  * Authentication shell (spec §44, §45, §46) — belongs to the Cosmoz design
@@ -18,6 +20,7 @@ export function AuthLayout({
   /** SR-only page landmark title (the visual card carries its own heading). */
   title: string;
 }) {
+  const auth = useDict().auth;
   return (
     <div className="grid min-h-screen bg-background text-foreground lg:grid-cols-[1fr_460px] xl:grid-cols-[1fr_520px]">
       {/* Branding column — desktop only (§44: mobile stays simple/focused) */}
@@ -39,7 +42,7 @@ export function AuthLayout({
         <div className="relative flex max-w-md flex-col gap-8">
           <div className="flex flex-col gap-3">
             <p className="text-[11px] font-semibold uppercase tracking-widest text-accent">
-              {authCopy.brandTagline}
+              {auth.brandTagline}
             </p>
             <h2 className="font-heading text-3xl font-semibold leading-tight xl:text-4xl">
               A journal that
@@ -49,12 +52,12 @@ export function AuthLayout({
               <span className="text-accent">disciplined trader.</span>
             </h2>
             <p className="text-sm leading-relaxed text-muted-foreground">
-              {authCopy.brandPitch}
+              {auth.brandPitch}
             </p>
           </div>
 
           <ul className="flex flex-col gap-3">
-            {authCopy.pillars.map((pillar) => (
+            {auth.pillars.map((pillar) => (
               <li
                 key={pillar.title}
                 className="flex items-start gap-3 rounded-lg border border-border bg-surface-raised/60 px-4 py-3"
