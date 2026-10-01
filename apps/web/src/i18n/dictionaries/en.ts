@@ -35,6 +35,7 @@ const en = {
     profile: "Profile",
     signIn: "Sign in",
     createAccount: "Create account",
+    language: "Language",
   },
 
   auth: authCopy,

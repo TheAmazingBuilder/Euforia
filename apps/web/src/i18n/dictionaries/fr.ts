@@ -54,6 +54,7 @@ export const fr: Dictionary = {
     profile: "Profil",
     signIn: "Connexion",
     createAccount: "Créer un compte",
+    language: "Langue",
   },
 
   auth: {
