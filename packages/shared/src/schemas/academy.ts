@@ -281,6 +281,8 @@ export type AcademyOverviewResponse = {
    *  Distinct from continueLearning, which points at the curriculum's next-up. */
   resume: AcademyResume;
   progress: AcademyProgressResponse;
+  /** This week's habit loop — lessons/drills/quizzes done vs. targets. */
+  weeklyPlan: AcademyWeeklyPlan;
   recommendations: AcademyRecommendation[];
   /** Recent completions, newest first (max 6). */
   recent: { lessonId: string; lessonTitle: string; courseTitle: string; at: string }[];
@@ -492,4 +494,66 @@ export const academyFlashcardReviewInputSchema = z.object({
 export type AcademyFlashcardReviewResponse = {
   reviewedToday: number;
   dueRemaining: number;
+};
+
+// ── Category certifications (exams over the category question pool) ────────
+
+export type AcademyExamPaper = {
+  categoryId: string;
+  questions: AcademyQuizQuestionPublic[];
+};
+
+export type AcademyExamResultResponse = {
+  categoryId: string;
+  score: number;
+  total: number;
+  passed: boolean;
+  /** BRONZE ≥50%, SILVER ≥70%, GOLD ≥90% — computed on this attempt. */
+  tier: "NONE" | "BRONZE" | "SILVER" | "GOLD";
+  /** Best percent across attempts INCLUDING this one. */
+  bestPercent: number;
+  previousBestPercent: number | null;
+  results: AcademyQuizQuestionResult[];
+};
+
+export type AcademyCertification = {
+  categoryId: string;
+  name: string;
+  bestPercent: number | null;
+  attempts: number;
+  tier: "NONE" | "BRONZE" | "SILVER" | "GOLD";
+  questionPool: number;
+};
+
+export type AcademyCertificationsResponse = {
+  certifications: AcademyCertification[];
+};
+
+// ── Milestones (sober achievements, computed from real state) ─────────────
+
+export type AcademyMilestone = {
+  id: string;
+  label: string;
+  description: string;
+  achieved: boolean;
+  achievedAt: string | null;
+  /** Progress toward the milestone while it is still locked. */
+  progress: { current: number; target: number } | null;
+};
+
+export type AcademyMilestonesResponse = {
+  milestones: AcademyMilestone[];
+};
+
+// ── Weekly study plan (adaptive habit loop) ──────────────────────────────────
+
+export type AcademyWeeklyPlan = {
+  /** UTC date (YYYY-MM-DD) of the Monday that starts the current week. */
+  weekStart: string;
+  lessonsTarget: number;
+  lessonsDone: number;
+  drillsTarget: number;
+  drillsDone: number;
+  quizzesTarget: number;
+  quizzesDone: number;
 };

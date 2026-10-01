@@ -1,20 +1,22 @@
 "use client";
 
 import * as React from "react";
-import { CircleCheck, Dumbbell, Flame, Trophy } from "lucide-react";
+import { CircleCheck, Dumbbell, Flame, Lock, Trophy } from "lucide-react";
 
 import type { AcademyProgressResponse } from "@cosmoz/shared";
 
 import { Skeleton } from "@/components/ui/skeleton";
+import { CertificationsSection } from "@/components/academy/academy-exams";
 import {
   AcademySectionTitle,
   HueChip,
   ProgressBar,
   hueOf,
+  tint,
   useInViewOnce,
   usePrefersReducedMotion,
 } from "@/components/academy/academy-shared";
-import { useAcademyProgress } from "@/lib/api/queries";
+import { useAcademyMilestones, useAcademyProgress } from "@/lib/api/queries";
 
 /**
  * Progress panel — the honest transcript: a 12-segment ring where each arc
@@ -173,11 +175,71 @@ export function AcademyProgressPanel() {
         </div>
       </section>
 
+      <MilestonesSection />
+      <CertificationsSection />
+
       {progress.coursesCompleted > 0 ? (
         <p className="text-xs text-muted-foreground">
           Completed courses stay open — rereading a lesson after a few live weeks is where it actually clicks.
         </p>
       ) : null}
     </div>
+  );
+}
+
+// ── Milestones — sober achievements with honest progress bars ──────────────
+
+function MilestonesSection() {
+  const { data, isLoading } = useAcademyMilestones();
+  const { ref, inView } = useInViewOnce<HTMLDivElement>();
+  const reducedMotion = usePrefersReducedMotion();
+  const shown = inView || reducedMotion;
+
+  return (
+    <section aria-label="Milestones" data-testid="academy-milestones">
+      <AcademySectionTitle className="mb-2">Milestones</AcademySectionTitle>
+      <p className="mb-2.5 text-xs text-muted-foreground">No vanity badges — each milestone is computed from what you have actually done.</p>
+      <div ref={ref} className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+        {isLoading || !data
+          ? Array.from({ length: 6 }).map((_, index) => <Skeleton key={index} className="h-28 rounded-lg" />)
+          : data.milestones.map((milestone, index) => (
+              <div
+                key={milestone.id}
+                className="flex flex-col rounded-lg border px-3.5 py-3 transition-all duration-500"
+                style={
+                  milestone.achieved
+                    ? { borderColor: tint("var(--warning)", 35), backgroundColor: tint("var(--warning)", 6), transitionDelay: `${reducedMotion ? 0 : index * 40}ms`, opacity: shown ? 1 : 0, transform: shown ? "none" : "translateY(8px)" }
+                    : { opacity: shown ? 1 : 0, transform: shown ? "none" : "translateY(8px)", transitionDelay: `${reducedMotion ? 0 : index * 40}ms` }
+                }
+                data-testid={`academy-milestone-${milestone.id}`}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-sm font-semibold text-foreground">{milestone.label}</p>
+                  {milestone.achieved ? (
+                    <span className="inline-flex shrink-0 items-center gap-1 rounded-sm border border-warning/40 bg-warning/10 px-1.5 py-0.5 font-mono text-[9px] font-semibold uppercase tracking-wider text-warning">
+                      <CircleCheck className="size-3" aria-hidden="true" />
+                      earned
+                    </span>
+                  ) : (
+                    <Lock className="size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
+                  )}
+                </div>
+                <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">{milestone.description}</p>
+                {milestone.progress ? (
+                  <div className="mt-auto pt-2">
+                    <ProgressBar percent={Math.min(100, Math.round((milestone.progress.current / milestone.progress.target) * 100))} label={`${milestone.label} progress`} />
+                    <p className="mt-1 font-mono text-[10px] tabular-nums text-muted-foreground">
+                      {milestone.progress.current}/{milestone.progress.target}
+                    </p>
+                  </div>
+                ) : (
+                  <p className="mt-auto pt-2 font-mono text-[10px] uppercase tracking-wider text-warning">
+                    earned {milestone.achievedAt ? new Date(milestone.achievedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : ""}
+                  </p>
+                )}
+              </div>
+            ))}
+      </div>
+    </section>
   );
 }

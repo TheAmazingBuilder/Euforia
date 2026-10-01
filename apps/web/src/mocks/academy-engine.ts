@@ -6,9 +6,12 @@ import type {
   AcademyCandle,
   AcademyCatalogResponse,
   AcademyCategoryProgress,
+  AcademyCertificationsResponse,
   AcademyCheckpointInput,
   AcademyCheckpointResult,
   AcademyCourseDetailResponse,
+  AcademyExamPaper,
+  AcademyExamResultResponse,
   AcademyFlashcard,
   AcademyFlashcardReviewInput,
   AcademyFlashcardReviewResponse,
@@ -17,6 +20,7 @@ import type {
   AcademyLessonCompleteResponse,
   AcademyLessonNote,
   AcademyLessonResponse,
+  AcademyMilestonesResponse,
   AcademyNoteInput,
   AcademyNoteResponse,
   AcademyOverviewResponse,
@@ -37,6 +41,7 @@ import type {
   AcademySearchResponse,
   AcademySrDrill,
   AcademyStreak,
+  AcademyWeeklyPlan,
   AcademyZoneDrill,
 } from "@cosmoz/shared";
 
@@ -60,7 +65,9 @@ import { SCENARIOS } from "./academy/scenarios";
 
 // ── State ────────────────────────────────────────────────────────────────────
 
-type QuizAttempt = { scores: number[]; best: number; lastAt: string };
+type QuizAttempt = { scores: number[]; best: number; lastAt: string; attemptsAt: string[] };
+
+type ExamAttempt = { bestPercent: number; attempts: number; bestAt: string | null };
 
 type AcademyState = {
   userKey: string;
@@ -87,6 +94,8 @@ type AcademyState = {
   flashcardStates: Map<string, { box: number; due: string; reviews: number }>;
   flashcardDay: string;
   flashcardReviewedToday: number;
+  /** Category exam attempts — the certification ladder. */
+  examAttempts: Map<string, ExamAttempt>;
 };
 
 const state: AcademyState = {
@@ -105,6 +114,7 @@ const state: AcademyState = {
   flashcardStates: new Map(),
   flashcardDay: "",
   flashcardReviewedToday: 0,
+  examAttempts: new Map(),
 };
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -421,10 +431,11 @@ export function submitQuiz(quizId: string, input: AcademyQuizSubmitInput): Acade
 
   const score = results.filter((res) => res.correct).length;
   const previousBest = state.quizAttempts.get(quizId)?.best ?? null;
-  const attempt = state.quizAttempts.get(quizId) ?? { scores: [], best: 0, lastAt: "" };
+  const attempt = state.quizAttempts.get(quizId) ?? { scores: [], best: 0, lastAt: "", attemptsAt: [] };
   attempt.scores.push(score);
   attempt.best = Math.max(attempt.best, score);
   attempt.lastAt = new Date().toISOString();
+  attempt.attemptsAt.push(attempt.lastAt);
   state.quizAttempts.set(quizId, attempt);
   touchActivity();
 
@@ -611,8 +622,36 @@ export function academyOverview(): AcademyOverviewResponse {
     continueLearning: continueLearning(),
     resume: resumeLearning(),
     progress: academyProgress(),
+    weeklyPlan: weeklyPlan(),
     recommendations: recommendations(),
     recent,
+  };
+}
+
+// ── Weekly study plan ───────────────────────────────────────────────────────
+
+const WEEK_TARGETS = { lessons: 3, drills: 3, quizzes: 1 };
+
+function weeklyPlan(): AcademyWeeklyPlan {
+  const now = new Date();
+  const monday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  const dayOfWeek = (monday.getUTCDay() + 6) % 7; // Monday = 0
+  monday.setUTCDate(monday.getUTCDate() - dayOfWeek);
+  const weekStart = utcDate(monday);
+  const inWeek = (iso: string) => utcDate(new Date(iso)) >= weekStart;
+
+  const lessonsDone = [...state.completedLessons.values()].filter(inWeek).length;
+  const drillsDone = state.drillLog.filter((row) => inWeek(row.at)).length;
+  const quizzesDone = [...state.quizAttempts.values()].flatMap((attempt) => attempt.attemptsAt).filter(inWeek).length;
+
+  return {
+    weekStart,
+    lessonsTarget: WEEK_TARGETS.lessons,
+    lessonsDone,
+    drillsTarget: WEEK_TARGETS.drills,
+    drillsDone,
+    quizzesTarget: WEEK_TARGETS.quizzes,
+    quizzesDone,
   };
 }
 
@@ -1055,3 +1094,150 @@ export function reviewFlashcard(input: AcademyFlashcardReviewInput): AcademyFlas
   }).length;
   return { reviewedToday: state.flashcardReviewedToday, dueRemaining };
 }
+
+// ── Category certifications — exams over the category's question pool ─────
+
+const EXAM_SIZE = 20;
+
+function examPool(categoryId: string): AcademyQuizQuestion[] {
+  return COURSES.filter((crs) => crs.categoryId === categoryId).flatMap((crs) => crs.quiz?.questions ?? []);
+}
+
+function tierOf(percent: number): AcademyExamResultResponse["tier"] {
+  if (percent >= 90) return "GOLD";
+  if (percent >= 70) return "SILVER";
+  if (percent >= 50) return "BRONZE";
+  return "NONE";
+}
+
+export function examPaper(categoryId: string): AcademyExamPaper | null {
+  if (!categoryById(categoryId)) return null;
+  const pool = examPool(categoryId);
+  if (pool.length === 0) return null;
+  const picked = shuffle(pool).slice(0, Math.min(EXAM_SIZE, pool.length));
+  return { categoryId, questions: picked.map(stripQuestion) };
+}
+
+export function submitExam(categoryId: string, input: AcademyQuizSubmitInput): AcademyExamResultResponse | null {
+  const pool = examPool(categoryId);
+  if (pool.length === 0) return null;
+
+  const answerMap = new Map(input.answers.map((entry) => [entry.questionId, entry.value ?? null]));
+  // Grade only questions that belong to this category's pool (defensive).
+  const graded = pool
+    .filter((question) => answerMap.has(question.id))
+    .map((question) => {
+      const given = answerMap.get(question.id);
+      let correct = false;
+      let answer: number | boolean = 0;
+      if (question.kind === "NUMERIC") {
+        const value = typeof given === "number" ? given : Number.NaN;
+        const tolerance = (question.tolerance ?? 0.02) * Math.abs(question.value ?? 0);
+        correct = Number.isFinite(value) && Math.abs(value - (question.value ?? 0)) <= Math.max(tolerance, 1e-9);
+        answer = question.value ?? 0;
+      } else if (question.kind === "TF") {
+        correct = typeof given === "boolean" && given === question.answer;
+        answer = question.answer === true;
+      } else {
+        correct = typeof given === "number" && given === question.answer;
+        answer = typeof question.answer === "number" ? question.answer : 0;
+      }
+      return { questionId: question.id, correct, answer, explanation: question.explanation };
+    });
+
+  const score = graded.filter((res) => res.correct).length;
+  const total = graded.length;
+  const percent = total === 0 ? 0 : Math.round((score / total) * 100);
+  const previous = state.examAttempts.get(categoryId);
+  const previousBestPercent = previous?.bestPercent ?? null;
+  const bestPercent = Math.max(previousBestPercent ?? 0, percent);
+  state.examAttempts.set(categoryId, {
+    bestPercent,
+    attempts: (previous?.attempts ?? 0) + 1,
+    bestAt: percent >= (previous?.bestPercent ?? 0) ? new Date().toISOString() : previous?.bestAt ?? null,
+  });
+  touchActivity();
+
+  return {
+    categoryId,
+    score,
+    total,
+    passed: percent >= 50,
+    tier: tierOf(percent),
+    bestPercent,
+    previousBestPercent,
+    results: graded,
+  };
+}
+
+export function certifications(): AcademyCertificationsResponse {
+  return {
+    certifications: CATEGORIES.map((cat) => {
+      const attempt = state.examAttempts.get(cat.id);
+      return {
+        categoryId: cat.id,
+        name: cat.name,
+        bestPercent: attempt?.bestPercent ?? null,
+        attempts: attempt?.attempts ?? 0,
+        tier: attempt ? tierOf(attempt.bestPercent) : "NONE",
+        questionPool: examPool(cat.id).length,
+      };
+    }),
+  };
+}
+
+// ── Milestones — sober, computed from real state ─────────────────────────
+
+export function milestones(): AcademyMilestonesResponse {
+  const completedCount = state.completedLessons.size;
+  const coursesDone = COURSES.filter((crs) => crs.lessons.length > 0 && crs.lessons.every((lsn) => state.completedLessons.has(lsn.id))).length;
+  const quizCount = state.quizAttempts.size;
+  const examsPassed = [...state.examAttempts.values()].filter((attempt) => attempt.bestPercent >= 50).length;
+  const categoryPercents = CATEGORIES.map((cat) => {
+    const lessons = COURSES.filter((crs) => crs.categoryId === cat.id).flatMap((crs) => crs.lessons);
+    const done = lessons.filter((lsn) => state.completedLessons.has(lsn.id)).length;
+    return lessons.length === 0 ? 0 : done / lessons.length;
+  });
+  const bestCategory = Math.max(0, ...categoryPercents);
+  const flashcardReviews = [...state.flashcardStates.values()].reduce((sum, st) => sum + st.reviews, 0);
+  const scenarioSteps = state.drillLog.filter((row) => row.drill === "SCENARIO").length;
+  const notesCount = state.notes.size;
+
+  const streakInfo = streak();
+
+  const build = (
+    id: string,
+    label: string,
+    description: string,
+    current: number,
+    target: number,
+    achievedAt: string | null,
+  ): AcademyMilestoneResponse => ({
+    id,
+    label,
+    description,
+    achieved: current >= target,
+    achievedAt: current >= target ? achievedAt ?? new Date().toISOString() : null,
+    progress: current >= target ? null : { current, target },
+  });
+
+  return {
+    milestones: [
+      build("first-lesson", "First steps", "Complete your first lesson", completedCount, 1, [...state.completedLessons.values()].sort()[0] ?? null),
+      build("first-course", "Course complete", "Finish an entire course", coursesDone, 1, null),
+      build("first-quiz", "Prove it", "Take your first course quiz", quizCount, 1, null),
+      build("lessons-10", "Ten down", "Complete 10 lessons", completedCount, 10, null),
+      build("lessons-25", "Quarter century", "Complete 25 lessons", completedCount, 25, null),
+      build("lessons-50", "Curriculum hound", "Complete 50 lessons", completedCount, 50, null),
+      build("streak-7", "One week loop", "Reach a 7-day learning streak", streakInfo.longestDays, 7, null),
+      build("streak-30", "Month of reps", "Reach a 30-day learning streak", streakInfo.longestDays, 30, null),
+      build("category-master", "Track mastered", "Bring any category to 100%", Math.round(bestCategory * 100), 100, null),
+      build("first-exam", "Certified", "Pass a category certification", examsPassed, 1, null),
+      build("flashcards-50", "Recall trained", "Review 50 flashcards", flashcardReviews, 50, null),
+      build("scenarios-6", "Decision trained", "Work through 6 scenario decisions", scenarioSteps, 6, null),
+      build("notes-3", "Margin writer", "Save notes on 3 lessons", notesCount, 3, null),
+    ],
+  };
+}
+
+type AcademyMilestoneResponse = AcademyMilestonesResponse["milestones"][number];

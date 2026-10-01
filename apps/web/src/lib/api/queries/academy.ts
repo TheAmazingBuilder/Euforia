@@ -7,15 +7,19 @@ import type {
   AcademyBookmarkToggleResponse,
   AcademyBookmarksResponse,
   AcademyCatalogResponse,
+  AcademyCertificationsResponse,
   AcademyCheckpointInput,
   AcademyCheckpointResult,
   AcademyCourseDetailResponse,
+  AcademyExamPaper,
+  AcademyExamResultResponse,
   AcademyFlashcardReviewInput,
   AcademyFlashcardReviewResponse,
   AcademyFlashcardsResponse,
   AcademyGlossaryResponse,
   AcademyLessonCompleteResponse,
   AcademyLessonResponse,
+  AcademyMilestonesResponse,
   AcademyNoteInput,
   AcademyNoteResponse,
   AcademyOverviewResponse,
@@ -183,6 +187,41 @@ export function useReviewFlashcard() {
       invalidate();
     },
     onError: (error) => toast.error(apiErrorMessage(error, "Could not save the card review")),
+  });
+}
+
+export function useAcademyCertifications() {
+  return useQuery({
+    queryKey: queryKeys.academyCertifications,
+    queryFn: () => apiRequest<AcademyCertificationsResponse>(apiPaths.academyCertifications),
+  });
+}
+
+export function useAcademyExam(categoryId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.academyExam(categoryId ?? "none"),
+    queryFn: () => apiRequest<AcademyExamPaper>(apiPaths.academyExam(categoryId ?? "")),
+    enabled: categoryId !== null && categoryId !== "",
+    gcTime: 0,
+    staleTime: 0,
+    refetchOnWindowFocus: false,
+  });
+}
+
+export function useSubmitExam(categoryId: string) {
+  const invalidate = useInvalidateAcademy();
+  return useMutation({
+    mutationFn: (input: AcademyQuizSubmitInput) =>
+      apiRequest<AcademyExamResultResponse>(apiPaths.academyExamSubmit(categoryId), { method: "POST", body: input }),
+    onSuccess: () => invalidate(),
+    onError: (error) => toast.error(apiErrorMessage(error, "Could not submit the exam")),
+  });
+}
+
+export function useAcademyMilestones() {
+  return useQuery({
+    queryKey: queryKeys.academyMilestones,
+    queryFn: () => apiRequest<AcademyMilestonesResponse>(apiPaths.academyMilestones),
   });
 }
 

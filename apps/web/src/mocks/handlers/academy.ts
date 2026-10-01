@@ -28,16 +28,20 @@ import {
   academyQuiz,
   academyScenarios,
   academySearch,
+  certifications,
   completeLesson,
+  examPaper,
   flashcards,
   gradeCheckpoint,
   logPractice,
+  milestones,
   patternDrill,
   positionDrill,
   practiceStats,
   reviewFlashcard,
   saveLessonNote,
   srDrill,
+  submitExam,
   submitQuiz,
   toggleBookmark,
   zoneDrill,
@@ -342,6 +346,58 @@ export const academyHandlers = [
         return HttpResponse.json({ error: "Card not found" }, { status: 404 });
       }
       return HttpResponse.json(result);
+    } catch (error) {
+      return toErrorResponse(error);
+    }
+  }),
+
+  /** GET /academy/certifications — per-category exam bests and tiers. */
+  http.get(endpoint(apiPaths.academyCertifications), async () => {
+    await latency();
+    try {
+      return HttpResponse.json(certifications());
+    } catch (error) {
+      return toErrorResponse(error);
+    }
+  }),
+
+  /** GET /academy/exams/:categoryId — an exam paper over the category pool. */
+  http.get(endpoint(apiPaths.academyExam(":categoryId")), async ({ params }) => {
+    await latency();
+    try {
+      const paper = examPaper(pathParam(params, "categoryId"));
+      if (!paper) {
+        return HttpResponse.json({ error: "No question pool for this category" }, { status: 404 });
+      }
+      return HttpResponse.json(paper);
+    } catch (error) {
+      return toErrorResponse(error);
+    }
+  }),
+
+  /** POST /academy/exams/:categoryId/attempts — grade the exam server-side. */
+  http.post(endpoint(apiPaths.academyExamSubmit(":categoryId")), async ({ request, params }) => {
+    await latency();
+    try {
+      const input = parseBody<AcademyQuizSubmitInput>(
+        academyQuizSubmitInputSchema,
+        await request.json().catch(() => null),
+      );
+      const result = submitExam(pathParam(params, "categoryId"), input);
+      if (!result) {
+        return HttpResponse.json({ error: "No question pool for this category" }, { status: 404 });
+      }
+      return HttpResponse.json(result);
+    } catch (error) {
+      return toErrorResponse(error);
+    }
+  }),
+
+  /** GET /academy/milestones — sober achievements computed from real state. */
+  http.get(endpoint(apiPaths.academyMilestones), async () => {
+    await latency();
+    try {
+      return HttpResponse.json(milestones());
     } catch (error) {
       return toErrorResponse(error);
     }

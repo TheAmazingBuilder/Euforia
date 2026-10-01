@@ -134,10 +134,13 @@ export {
 export {
   useAcademyBookmarks,
   useAcademyCatalog,
+  useAcademyCertifications,
   useAcademyCourse,
+  useAcademyExam,
   useAcademyFlashcards,
   useAcademyGlossary,
   useAcademyLesson,
+  useAcademyMilestones,
   useAcademyOverview,
   useAcademyPatternDrill,
   useAcademyPositionDrill,
@@ -153,6 +156,7 @@ export {
   useReviewFlashcard,
   useSaveLessonNote,
   useSubmitCheckpoint,
+  useSubmitExam,
   useSubmitQuiz,
   useToggleBookmark,
 } from "./academy";

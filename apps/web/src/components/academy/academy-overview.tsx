@@ -144,6 +144,9 @@ export function AcademyOverviewPanel({
         </div>
       </section>
 
+      {/* Weekly plan — the habit loop: lessons / drills / quizzes this week */}
+      <WeeklyPlanCard plan={overview.weeklyPlan} onGoPractice={onGoPractice} />
+
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Recommendations */}
         <section aria-label="Recommended for you">
@@ -280,6 +283,65 @@ export function AcademyOverviewPanel({
       <CategoryMap onOpenCourse={onOpenCourse} />
     </div>
   );
+}
+
+// ── Weekly plan — three honest bars against weekly targets ─────────────────
+
+function WeeklyPlanCard({
+  plan,
+  onGoPractice,
+}: {
+  plan: AcademyOverviewResponse["weeklyPlan"];
+  onGoPractice: () => void;
+}) {
+  const rows = [
+    { label: "Lessons", done: plan.lessonsDone, target: plan.lessonsTarget, hue: "var(--cat-fund)" },
+    { label: "Drills", done: plan.drillsDone, target: plan.drillsTarget, hue: "var(--cat-patterns)" },
+    { label: "Quizzes", done: plan.quizzesDone, target: plan.quizzesTarget, hue: "var(--cat-pa)" },
+  ];
+  const complete = rows.every((row) => row.done >= row.target);
+  return (
+    <section aria-label="This week's plan" className="rounded-lg border border-border bg-surface px-5 py-4" data-testid="academy-weekly-plan">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="ledger-label">This week — lessons · drills · quizzes</p>
+        <span
+          className={cnWeekChip(complete)}
+          data-testid="academy-weekly-status"
+        >
+          {complete ? "weekly plan complete" : `week of ${plan.weekStart}`}
+        </span>
+      </div>
+      <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+        {rows.map((row) => (
+          <div key={row.label}>
+            <div className="flex items-baseline justify-between gap-2">
+              <p className="text-sm font-medium text-foreground">{row.label}</p>
+              <p className="font-mono text-xs tabular-nums text-muted-foreground">
+                <span className={row.done >= row.target ? "font-semibold text-profit" : "text-foreground"}>{Math.min(row.done, row.target)}</span>/{row.target}
+              </p>
+            </div>
+            <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-muted">
+              <div
+                className="h-full rounded-full transition-[width] duration-700"
+                style={{ width: `${Math.min(100, (row.done / row.target) * 100)}%`, background: row.hue }}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+      {!complete ? (
+        <button type="button" onClick={onGoPractice} className="mt-3 text-xs font-medium text-accent transition-colors hover:text-accent-hover">
+          Short on drills? The practice zone is one click away →
+        </button>
+      ) : null}
+    </section>
+  );
+}
+
+function cnWeekChip(complete: boolean): string {
+  return complete
+    ? "inline-flex items-center rounded-sm border border-profit/40 bg-profit/10 px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wider text-profit"
+    : "inline-flex items-center rounded-sm border border-border px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground";
 }
 
 function ContinueLearning({

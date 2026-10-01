@@ -4,6 +4,8 @@ import * as React from "react";
 
 import type { AcademyCandle } from "@cosmoz/shared";
 
+import { useInViewOnce, usePrefersReducedMotion } from "@/components/academy/academy-shared";
+
 /**
  * Academy visual registry — data-driven SVG diagrams for lesson blocks.
  * All color comes from design tokens via CSS variables (style props, so the
@@ -457,10 +459,36 @@ export function RiskFigure({ variant, caption }: { variant: string; caption?: st
 
 // ── Shared figure frame ──────────────────────────────────────────────────────
 
+/**
+ * Figure frame with a scroll-reveal: the chart wipes in left-to-right and
+ * rises slightly the first time it enters the viewport — the "chart drawing
+ * itself" moment, in the ledger language. Honors prefers-reduced-motion.
+ *
+ * NOTE: the observer sits on the <figure> wrapper, NOT on the animated div —
+ * the div's own clip-path would zero its intersection box and deadlock the
+ * reveal (IntersectionObserver honors the target's clip).
+ */
 function Figure({ children, caption }: { children: React.ReactNode; caption?: string }) {
+  const { ref, inView } = useInViewOnce<HTMLElement>("0px 0px -4% 0px");
+  const reducedMotion = usePrefersReducedMotion();
+  const shown = inView || reducedMotion;
+
   return (
-    <figure className="my-4 overflow-hidden rounded-lg border border-border bg-surface">
-      <div className="chart-paper flex items-center justify-center px-4 py-5">{children}</div>
+    <figure ref={ref} className="my-4 overflow-hidden rounded-lg border border-border bg-surface">
+      <div
+        className="chart-paper flex items-center justify-center px-4 py-5"
+        style={{
+          opacity: shown ? 1 : 0,
+          transform: shown ? "none" : "translateY(10px)",
+          clipPath: shown ? "inset(0 0% 0 0)" : "inset(0 100% 0 0)",
+          transition: reducedMotion
+            ? "none"
+            : "opacity 500ms ease-out, transform 700ms cubic-bezier(0.16,1,0.3,1), clip-path 900ms cubic-bezier(0.16,1,0.3,1)",
+        }}
+        data-shown={shown ? "true" : "false"}
+      >
+        {children}
+      </div>
       {caption ? (
         <figcaption className="border-t border-border px-4 py-2 text-xs leading-relaxed text-muted-foreground">
           {caption}

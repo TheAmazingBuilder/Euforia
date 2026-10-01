@@ -124,4 +124,8 @@ export const apiPaths = {
   academyScenarios: "/academy/scenarios",
   academyFlashcards: "/academy/flashcards",
   academyFlashcardReview: "/academy/flashcards/review",
+  academyCertifications: "/academy/certifications",
+  academyExam: (categoryId: string) => `/academy/exams/${categoryId}`,
+  academyExamSubmit: (categoryId: string) => `/academy/exams/${categoryId}/attempts`,
+  academyMilestones: "/academy/milestones",
 } as const;
