@@ -3,11 +3,16 @@ import type {
   AcademyBookmark,
   AcademyBookmarkToggleInput,
   AcademyBookmarksResponse,
+  AcademyCandle,
   AcademyCatalogResponse,
   AcademyCategoryProgress,
   AcademyCheckpointInput,
   AcademyCheckpointResult,
   AcademyCourseDetailResponse,
+  AcademyFlashcard,
+  AcademyFlashcardReviewInput,
+  AcademyFlashcardReviewResponse,
+  AcademyFlashcardsResponse,
   AcademyGlossaryResponse,
   AcademyLessonCompleteResponse,
   AcademyLessonNote,
@@ -16,8 +21,10 @@ import type {
   AcademyNoteResponse,
   AcademyOverviewResponse,
   AcademyPatternDrill,
+  AcademyPositionDrill,
   AcademyPracticeLogInput,
   AcademyPracticeLogResponse,
+  AcademyPracticeStats,
   AcademyProgressResponse,
   AcademyQuizQuestion,
   AcademyQuizQuestionPublic,
@@ -25,13 +32,18 @@ import type {
   AcademyQuizSubmitInput,
   AcademyRecommendation,
   AcademyResume,
+  AcademyScenario,
+  AcademyScenariosResponse,
   AcademySearchResponse,
+  AcademySrDrill,
   AcademyStreak,
+  AcademyZoneDrill,
 } from "@cosmoz/shared";
 
 import { CATEGORIES, COURSES, LEVEL_ORDER } from "./academy/catalog";
 import { GLOSSARY_TERMS } from "./academy/glossary";
 import { PATTERN_EXEMPLARS } from "./academy/patterns";
+import { SCENARIOS } from "./academy/scenarios";
 
 /**
  * Academy engine — the learning domain's server-side brain.
@@ -67,6 +79,14 @@ type AcademyState = {
   viewedLessons: Map<string, string>;
   /** lessonId → personal note. */
   notes: Map<string, AcademyLessonNote>;
+  /** Practice ledger — per-attempt rows (drill, outcome, time). */
+  drillLog: { drill: string; correct: boolean; at: string }[];
+  /** Patterns the learner missed — resurface with priority until cleared. */
+  wrongPatternIds: string[];
+  /** Flashcard SRS state (Leitner boxes). */
+  flashcardStates: Map<string, { box: number; due: string; reviews: number }>;
+  flashcardDay: string;
+  flashcardReviewedToday: number;
 };
 
 const state: AcademyState = {
@@ -80,6 +100,11 @@ const state: AcademyState = {
   lastActivityLessonId: null,
   viewedLessons: new Map(),
   notes: new Map(),
+  drillLog: [],
+  wrongPatternIds: [],
+  flashcardStates: new Map(),
+  flashcardDay: "",
+  flashcardReviewedToday: 0,
 };
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -298,8 +323,7 @@ export function gradeCheckpoint(lessonId: string, input: AcademyCheckpointInput)
     }
 
     // Checkpoints feed the same practice ledger as drills (honest aggregate).
-    state.practiceAttempts += 1;
-    if (correct) state.practiceCorrect += 1;
+    recordAttempt("CHECKPOINT", correct);
     touchActivity();
 
     return { questionId: question.id, correct, answer, explanation: question.explanation };
@@ -682,10 +706,51 @@ export function toggleBookmark(input: AcademyBookmarkToggleInput): { bookmarked:
 // ── Practice ─────────────────────────────────────────────────────────────────
 
 export function logPractice(input: AcademyPracticeLogInput): AcademyPracticeLogResponse {
-  state.practiceAttempts += 1;
-  if (input.correct) state.practiceCorrect += 1;
+  recordAttempt(input.drill, input.correct, input.refId);
   touchActivity();
   return { practiceAttempts: state.practiceAttempts, practiceCorrect: state.practiceCorrect };
+}
+
+/** One honest row in the practice ledger — shared by drills and checkpoints. */
+function recordAttempt(drill: string, correct: boolean, refId?: string): void {
+  state.practiceAttempts += 1;
+  if (correct) state.practiceCorrect += 1;
+  state.drillLog.push({ drill, correct, at: new Date().toISOString() });
+  if (state.drillLog.length > 300) state.drillLog.splice(0, state.drillLog.length - 300);
+
+  // Weakness bank: missed patterns resurface with priority until answered right.
+  if (drill === "PATTERN_ID" && refId) {
+    if (correct) {
+      state.wrongPatternIds = state.wrongPatternIds.filter((id) => id !== refId);
+    } else if (!state.wrongPatternIds.includes(refId)) {
+      state.wrongPatternIds.push(refId);
+      if (state.wrongPatternIds.length > 12) state.wrongPatternIds.shift();
+    }
+  }
+}
+
+export function practiceStats(): AcademyPracticeStats {
+  const DRILL_LABELS: Record<string, string> = {
+    PATTERN_ID: "Pattern ID",
+    CANDLE_LAB: "Candle Lab",
+    STRUCTURE: "Structure",
+    CHECKPOINT: "Checkpoints",
+    SR_LEVEL: "Support/Resistance",
+    POSITION_SIZE: "Position Sizing",
+    ZONE_ID: "Supply/Demand",
+    SCENARIO: "Scenarios",
+    FLASHCARD: "Flashcards",
+  };
+  const perDrill = Object.entries(DRILL_LABELS).map(([drill, label]) => {
+    const rows = state.drillLog.filter((row) => row.drill === drill);
+    const attempts = rows.length;
+    const correct = rows.filter((row) => row.correct).length;
+    return { drill, label, attempts, correct, accuracy: attempts === 0 ? null : Math.round((correct / attempts) * 100) };
+  });
+  return {
+    perDrill,
+    recent: [...state.drillLog].reverse().slice(0, 8).map(({ drill, correct, at }) => ({ drill, correct, at })),
+  };
 }
 
 /** Shuffle helper — deterministic-enough for drills; no crypto needs here. */
@@ -700,7 +765,14 @@ function shuffle<T>(items: T[]): T[] {
 
 export function patternDrill(): AcademyPatternDrill | null {
   if (PATTERN_EXEMPLARS.length === 0) return null;
-  const exemplar = PATTERN_EXEMPLARS[Math.floor(Math.random() * PATTERN_EXEMPLARS.length)];
+  // Weakness bank first: ~50% of rounds resurface a missed pattern.
+  const bank = state.wrongPatternIds
+    .map((id) => PATTERN_EXEMPLARS.find((entry) => entry.id === id))
+    .filter((entry): entry is (typeof PATTERN_EXEMPLARS)[number] => Boolean(entry));
+  const exemplar =
+    bank.length > 0 && Math.random() < 0.5
+      ? bank[Math.floor(Math.random() * bank.length)]
+      : PATTERN_EXEMPLARS[Math.floor(Math.random() * PATTERN_EXEMPLARS.length)];
   const optionIds = shuffle([exemplar.answer, ...exemplar.distractors].slice(0, 4));
   while (optionIds.length < 4) optionIds.push(PATTERN_EXEMPLARS[optionIds.length % PATTERN_EXEMPLARS.length].id);
   return {
@@ -714,4 +786,272 @@ export function patternDrill(): AcademyPatternDrill | null {
     answer: optionIds.indexOf(exemplar.answer),
     explanation: exemplar.explanation,
   };
+}
+
+// ── Engine-generated drills: support/resistance, position sizing, zones ────
+
+const round2 = (value: number): number => Math.round(value * 100) / 100;
+
+/** Support/Resistance — a shaped random walk: approach, prior touch, retest,
+ *  reaction. The learner reads which side the level is serving. */
+export function srDrill(): AcademySrDrill {
+  const support = Math.random() < 0.5;
+  const level = 100;
+  const vol = 1.1;
+  const candles: AcademyCandle[] = [];
+  let price = support ? level + 9 : level - 9;
+
+  const pushCandle = (o: number, c: number, wickHigh: number, wickLow: number) => {
+    candles.push({ o: round2(o), h: round2(Math.max(o, c) + wickHigh), l: round2(Math.min(o, c) - wickLow), c: round2(c) });
+    price = c;
+  };
+
+  // First approach toward the level.
+  for (let i = 0; i < 4; i += 1) {
+    const drift = support ? -2.1 : 2.1;
+    const c = price + drift + (Math.random() - 0.5) * vol;
+    pushCandle(price, c, Math.random() * vol * 0.5, Math.random() * vol * 0.5);
+  }
+  // Prior touch + reversal away (this is what makes the level honest).
+  for (let i = 0; i < 2; i += 1) {
+    if (support) {
+      const l = level - Math.random() * 1.1;
+      const c = price + 1.6 + Math.random() * 0.8;
+      pushCandle(price, c, Math.random() * vol * 0.5, price - l);
+    } else {
+      const h = level + Math.random() * 1.1;
+      const c = price - 1.6 - Math.random() * 0.8;
+      pushCandle(price, c, h - price, Math.random() * vol * 0.5);
+    }
+  }
+  // Travel back toward the level.
+  for (let i = 0; i < 3; i += 1) {
+    const drift = support ? 1.8 : -1.8;
+    const c = price + drift + (Math.random() - 0.5) * vol;
+    pushCandle(price, c, Math.random() * vol * 0.5, Math.random() * vol * 0.5);
+  }
+  // The retest under examination — wicks probe the level.
+  for (let i = 0; i < 2; i += 1) {
+    if (support) {
+      const l = level - Math.random() * 1.2;
+      const c = price + 1.3 + Math.random() * 0.7;
+      pushCandle(price, c, Math.random() * vol * 0.4, price - l);
+    } else {
+      const h = level + Math.random() * 1.2;
+      const c = price - 1.3 - Math.random() * 0.7;
+      pushCandle(price, c, h - price, Math.random() * vol * 0.4);
+    }
+  }
+  // Resolution away from the level.
+  const c = support ? price + 2.1 : price - 2.1;
+  pushCandle(price, c, Math.random() * 0.4, Math.random() * 0.4);
+
+  const options = shuffle([
+    { id: "support", label: "Support — buyers defended the level, price bounced" },
+    { id: "resistance", label: "Resistance — sellers capped the level, price turned down" },
+  ]);
+  const answerId = support ? "support" : "resistance";
+  return {
+    candles,
+    level,
+    context: "Intraday chart, no scheduled news. The dashed line is a horizontal level with a prior touch.",
+    prompt: "Price is retesting the dashed level. What is the level doing in this sequence?",
+    options,
+    answer: options.findIndex((option) => option.id === answerId),
+    explanation: support
+      ? "Price descended into the level, probed below with wicks, and closed back above before bouncing — the footprint of buyers defending support. A level is a zone of interest, never a guarantee: the reaction is the evidence, and invalidation sits below the retest low."
+      : "Price rallied into the level, probed above with wicks, and closed back below before turning down — the footprint of sellers capping resistance. A level is a zone of interest, never a guarantee: the reaction is the evidence, and invalidation sits above the retest high.",
+  };
+}
+
+/** Position sizing — the arithmetic that keeps traders solvent, randomized. */
+export function positionDrill(): AcademyPositionDrill {
+  const balances = [5000, 10000, 25000, 50000];
+  const percents = [0.5, 1, 1.5, 2];
+  const accountBalance = balances[Math.floor(Math.random() * balances.length)];
+  const riskPercent = percents[Math.floor(Math.random() * percents.length)];
+  const riskBudget = (accountBalance * riskPercent) / 100;
+  const entry = round2(80 + Math.random() * 40);
+  const stopDistance = round2(0.4 + Math.random() * 1.6);
+  const stop = round2(entry - stopDistance);
+  const answer = Math.round((riskBudget / stopDistance) * 10) / 10;
+
+  return {
+    accountBalance,
+    riskPercent,
+    entry,
+    stop,
+    pointValue: 1,
+    prompt: `Account $${accountBalance.toLocaleString("en-US")}, risk rule ${riskPercent}% ($${riskBudget.toLocaleString("en-US", { maximumFractionDigits: 2 })}). Long entry ${entry}, stop ${stop}. Each unit loses $1 per point of adverse movement. What position size (units) keeps the loss at the stop exactly within the risk budget?`,
+    unit: "units",
+    answer,
+    tolerance: 0.03,
+    explanation: `Risk budget = $${accountBalance.toLocaleString("en-US")} × ${riskPercent}% = $${riskBudget.toLocaleString("en-US", { maximumFractionDigits: 2 })}. Stop distance = ${entry} − ${stop} = ${stopDistance}. Size = budget ÷ distance = ${riskBudget.toLocaleString("en-US", { maximumFractionDigits: 2 })} ÷ ${stopDistance} = ${answer} units. Confidence never sizes a position — the stop distance and the account rule do.`,
+  };
+}
+
+/** Supply/Demand — two bands, one displacement origin. The learner reads
+ *  which band buyers (or sellers) built. Identity is never on the wire. */
+export function zoneDrill(): AcademyZoneDrill {
+  const vol = 1.2;
+  const candles: AcademyCandle[] = [];
+  let price = 100;
+
+  const pushCandle = (o: number, c: number, wickHigh: number, wickLow: number) => {
+    candles.push({ o: round2(o), h: round2(Math.max(o, c) + wickHigh), l: round2(Math.min(o, c) - wickLow), c: round2(c) });
+    price = c;
+  };
+
+  // Drop into the demand band (91-94), base, then rally away with displacement.
+  for (let i = 0; i < 3; i += 1) {
+    const c = price - 2.4 - Math.random();
+    pushCandle(price, c, Math.random() * vol * 0.4, Math.random() * vol * 0.5);
+  }
+  for (let i = 0; i < 2; i += 1) {
+    const c = price + (Math.random() - 0.5) * 1.2;
+    pushCandle(price, c, Math.random() * 0.8, Math.random() * 0.8);
+  }
+  for (let i = 0; i < 3; i += 1) {
+    const c = price + 3.4 + Math.random();
+    pushCandle(price, c, Math.random() * vol * 0.5, Math.random() * 0.4);
+  }
+  // Stall at the supply band (103-106): wicks above, closes back below.
+  for (let i = 0; i < 2; i += 1) {
+    const h = 105.2 + Math.random() * 1.2;
+    const c = price - 1.8 - Math.random() * 0.8;
+    pushCandle(price, c, h - price, Math.random() * vol * 0.4);
+  }
+  // Fall back to mid-range and drift sideways.
+  for (let i = 0; i < 3; i += 1) {
+    const c = price - 1.9 - Math.random() * 0.6;
+    pushCandle(price, c, Math.random() * vol * 0.4, Math.random() * vol * 0.4);
+  }
+  for (let i = 0; i < 2; i += 1) {
+    const c = price + (Math.random() - 0.5) * 1.4;
+    pushCandle(price, c, Math.random() * 0.9, Math.random() * 0.9);
+  }
+
+  // Bands: demand where the rally was born, supply where it stalled.
+  const bands = [
+    { top: 106, bottom: 103, identity: "supply" },
+    { top: 94, bottom: 91, identity: "demand" },
+  ];
+  const ordered = Math.random() < 0.5 ? bands : [bands[1], bands[0]];
+  const zones = ordered.map((band, index) => ({ top: band.top, bottom: band.bottom, tag: "AB"[index] }));
+  const demandTag = ordered[0].identity === "demand" ? "A" : "B";
+
+  const options = [
+    { id: "a", label: `Band A (${demandTag === "A" ? "the lower band" : "the upper band"}) is the demand zone` },
+    { id: "b", label: `Band B (${demandTag === "B" ? "the lower band" : "the upper band"}) is the demand zone` },
+  ];
+  return {
+    candles,
+    zones,
+    context: "Daily chart, trending leg followed by a pullback. Bands mark prior reaction areas.",
+    prompt: "Which band is the demand zone — the area where buyers previously stepped in with displacement?",
+    options,
+    answer: demandTag === "A" ? 0 : 1,
+    explanation:
+      "Demand is where aggressive buying originated: the strong rally away from the lower band is displacement — the footprint of unfilled interest. Supply sits where the rally stalled and rolled over. Price returning toward a demand zone is where buyers may defend again — potential, never a promise.",
+  };
+}
+
+// ── Scenarios (self-paced decision sequences) ──────────────────────────────
+
+export function academyScenarios(): AcademyScenariosResponse {
+  return { scenarios: SCENARIOS satisfies AcademyScenario[] };
+}
+
+// ── Flashcards — Leitner boxes over glossary + lesson takeaways ────────────
+
+const FLASH_INTERVALS = [1, 2, 4, 8, 15]; // days per box
+const FLASHCARD_DAILY_CAP = 10;
+
+type DeckCard = AcademyFlashcard;
+let deckCache: DeckCard[] | null = null;
+
+function buildFlashcardDeck(): DeckCard[] {
+  if (deckCache) return deckCache;
+  const deck: DeckCard[] = [];
+
+  for (const term of GLOSSARY_TERMS) {
+    deck.push({
+      id: `fc-term-${term.id}`,
+      kind: "TERM",
+      front: term.term,
+      back: term.simple,
+      source: "Glossary",
+      categoryId: term.categoryId,
+    });
+  }
+
+  for (const course of COURSES) {
+    for (const lesson of course.lessons) {
+      const takeaways = lesson.blocks.find((block) => block.kind === "takeaways");
+      if (takeaways?.kind !== "takeaways") continue;
+      takeaways.items.forEach((item, index) => {
+        deck.push({
+          id: `fc-take-${lesson.id}-${index}`,
+          kind: "TAKEAWAY",
+          front: `${lesson.title} — key takeaway`,
+          back: item,
+          source: lesson.title,
+          categoryId: course.categoryId,
+        });
+      });
+    }
+  }
+
+  deckCache = deck;
+  return deck;
+}
+
+export function flashcards(): AcademyFlashcardsResponse {
+  const deck = buildFlashcardDeck();
+  const today = utcDate(new Date());
+  const reviewedToday = state.flashcardDay === today ? state.flashcardReviewedToday : 0;
+  const dueCards = deck.filter((card) => {
+    const st = state.flashcardStates.get(card.id);
+    return !st || st.due <= today;
+  });
+  const remaining = Math.max(0, FLASHCARD_DAILY_CAP - reviewedToday);
+  const queue = dueCards.slice(0, remaining).map((card) => ({ ...card, extra: false }));
+  if (queue.length === 0) {
+    // Nothing due — free practice keeps the deck warm without touching caps.
+    const free = shuffle(deck).slice(0, 5).map((card) => ({ ...card, extra: true }));
+    return { due: free, dueCount: dueCards.length, reviewedToday, totalCards: deck.length };
+  }
+  return { due: queue, dueCount: dueCards.length, reviewedToday, totalCards: deck.length };
+}
+
+export function reviewFlashcard(input: AcademyFlashcardReviewInput): AcademyFlashcardReviewResponse | null {
+  const deck = buildFlashcardDeck();
+  if (!deck.some((card) => card.id === input.cardId)) return null;
+
+  const today = utcDate(new Date());
+  if (state.flashcardDay !== today) {
+    state.flashcardDay = today;
+    state.flashcardReviewedToday = 0;
+  }
+
+  const st = state.flashcardStates.get(input.cardId) ?? { box: 0, due: today, reviews: 0 };
+  if (input.grade === "AGAIN") {
+    st.box = 0;
+    st.due = today; // resurfaces this session / next one
+  } else {
+    const steps = input.grade === "EASY" ? 2 : 1;
+    st.box = Math.min(st.box + steps, FLASH_INTERVALS.length - 1);
+    st.due = utcDate(new Date(Date.now() + FLASH_INTERVALS[st.box] * 86_400_000));
+  }
+  st.reviews += 1;
+  state.flashcardStates.set(input.cardId, st);
+
+  recordAttempt("FLASHCARD", input.grade !== "AGAIN", input.cardId);
+  touchActivity();
+
+  const dueRemaining = deck.filter((card) => {
+    const cardState = state.flashcardStates.get(card.id);
+    return !cardState || cardState.due <= today;
+  }).length;
+  return { reviewedToday: state.flashcardReviewedToday, dueRemaining };
 }

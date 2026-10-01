@@ -356,13 +356,23 @@ export type AcademySearchResponse = {
 
 export type AcademyPracticeLogInput = z.infer<typeof academyPracticeLogInputSchema>;
 export const academyPracticeLogInputSchema = z.object({
-  drill: z.enum(["PATTERN_ID", "CANDLE_LAB", "STRUCTURE", "CHECKPOINT"]),
+  drill: z.enum(["PATTERN_ID", "CANDLE_LAB", "STRUCTURE", "CHECKPOINT", "SR_LEVEL", "POSITION_SIZE", "ZONE_ID", "SCENARIO", "FLASHCARD"]),
   correct: z.boolean(),
+  /** Optional target ref (pattern id, card id, scenario step) for stats/weakness bank. */
+  refId: z.string().optional(),
 });
 
 export type AcademyPracticeLogResponse = {
   practiceAttempts: number;
   practiceCorrect: number;
+};
+
+// ── Practice stats (per-drill accuracy + recent history) ────────────────────
+
+export type AcademyPracticeStats = {
+  perDrill: { drill: string; label: string; attempts: number; correct: number; accuracy: number | null }[];
+  /** Most recent attempts, newest first (max 8). */
+  recent: { drill: string; correct: boolean; at: string }[];
 };
 
 // ── Pattern identification drill (served by the engine, seeded client-side) ──
@@ -383,4 +393,103 @@ export type AcademyPatternDrill = {
   /** Index into options. */
   answer: number;
   explanation: string;
+};
+
+// ── Support/Resistance drill (engine-generated, server-graded shapes) ──────
+
+export type AcademySrDrill = {
+  candles: AcademyCandle[];
+  /** Level price in candle units — client draws the hairline. */
+  level: number;
+  context: string;
+  prompt: string;
+  options: { id: string; label: string }[];
+  /** Index into options. */
+  answer: number;
+  explanation: string;
+};
+
+// ── Position sizing drill (numeric answer with tolerance) ─────────────────
+
+export type AcademyPositionDrill = {
+  accountBalance: number;
+  riskPercent: number;
+  entry: number;
+  stop: number;
+  /** $ risked per unit of position size per point of adverse move. */
+  pointValue: number;
+  prompt: string;
+  unit: string;
+  answer: number;
+  /** Relative tolerance (0.03 = ±3%). */
+  tolerance: number;
+  explanation: string;
+};
+
+// ── Supply/Demand zone drill (two bands, pick the right one) ───────────────
+
+export type AcademyZoneDrill = {
+  candles: AcademyCandle[];
+  /** Bands in candle price units — client shades + tags them (A/B). The
+   *  supply/demand identity is NOT on the wire; it is what the learner picks. */
+  zones: { top: number; bottom: number; tag: string }[];
+  context: string;
+  prompt: string;
+  options: { id: string; label: string }[];
+  /** Index into options. */
+  answer: number;
+  explanation: string;
+};
+
+// ── Scenario player (self-paced decision sequences) ────────────────────────
+
+export type AcademyScenarioStep = {
+  id: string;
+  narrative: string;
+  options: { id: string; label: string }[];
+  correctOptionId: string;
+  feedback: string;
+};
+
+export type AcademyScenario = {
+  id: string;
+  title: string;
+  categoryId: string;
+  context: string;
+  steps: AcademyScenarioStep[];
+};
+
+export type AcademyScenariosResponse = {
+  scenarios: AcademyScenario[];
+};
+
+// ── Flashcards (spaced repetition over glossary + lesson takeaways) ────────
+
+export type AcademyFlashcard = {
+  id: string;
+  kind: "TERM" | "TAKEAWAY";
+  front: string;
+  back: string;
+  source: string;
+  categoryId: string | null;
+  /** True when served as free practice outside the due queue. */
+  extra?: boolean;
+};
+
+export type AcademyFlashcardsResponse = {
+  due: AcademyFlashcard[];
+  dueCount: number;
+  reviewedToday: number;
+  totalCards: number;
+};
+
+export type AcademyFlashcardReviewInput = z.infer<typeof academyFlashcardReviewInputSchema>;
+export const academyFlashcardReviewInputSchema = z.object({
+  cardId: z.string().min(1),
+  grade: z.enum(["AGAIN", "GOOD", "EASY"]),
+});
+
+export type AcademyFlashcardReviewResponse = {
+  reviewedToday: number;
+  dueRemaining: number;
 };

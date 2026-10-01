@@ -7,26 +7,94 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { CandleSeries, StructureFigure } from "@/components/academy/visuals";
-import { useAcademyPatternDrill, useLogPractice } from "@/lib/api/queries";
+import { Flashcards, ScenarioPlayer } from "@/components/academy/academy-flashcards";
+import { PositionSizingDrill, SrDrill, ZoneDrill } from "@/components/academy/academy-practice-drills";
+import { useAcademyPatternDrill, useAcademyPracticeStats, useLogPractice } from "@/lib/api/queries";
 
 /**
- * Practice zone — three drills that train recognition, not prediction:
- * 1. Pattern Identification — randomized candle-pattern drills graded by the
- *    engine (answers never leak pre-submission);
- * 2. Candle Lab — the interactive OHLC simulator (spec §25);
- * 3. Structure Reading — scenario drills over the structure diagrams.
- * Every answered attempt is logged server-side for the Progress stats.
+ * Practice zone — six ways to train recognition, not prediction:
+ * 1. Flashcards — daily spaced repetition (glossary + lesson takeaways);
+ * 2. Pattern Identification — randomized drills, engine-graded, with a
+ *    weakness bank that resurfaces missed patterns;
+ * 3. Support/Resistance + Supply/Demand — read the level / the zone;
+ * 4. Candle Lab — the interactive OHLC simulator (spec §25);
+ * 5. Position Sizing — risk arithmetic with tolerance grading;
+ * 6. Structure Reading + Scenario Player — decision training.
+ * Every attempt lands in the practice ledger (per-drill accuracy below).
  */
 
 export function AcademyPracticePanel() {
   return (
     <div className="space-y-8" data-testid="academy-practice">
+      <PracticeStats />
+      <Flashcards />
       <PatternDrill />
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <SrDrill />
+        <ZoneDrill />
+      </div>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <CandleLab />
+        <PositionSizingDrill />
+      </div>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <StructureDrill />
+        <ScenarioPlayer />
       </div>
     </div>
+  );
+}
+
+// ── Practice ledger (per-drill accuracy + recent rows) ──────────────────
+
+function PracticeStats() {
+  const { data } = useAcademyPracticeStats();
+  if (!data) return null;
+  const used = data.perDrill.filter((row) => row.attempts > 0);
+  return (
+    <section aria-label="Practice ledger" className="rounded-lg border bg-surface px-4 py-3.5" data-testid="academy-practice-stats">
+      <div className="flex items-center justify-between gap-2">
+        <h2 className="flex items-center gap-2 font-heading text-sm font-semibold">
+          <Dumbbell className="size-4 text-accent" aria-hidden="true" />
+          Practice ledger
+        </h2>
+        {data.recent.length > 0 ? (
+          <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">last {data.recent.length} attempts</span>
+        ) : null}
+      </div>
+      {used.length === 0 ? (
+        <p className="mt-1.5 text-xs text-muted-foreground">
+          No attempts yet — your per-drill accuracy will build here as you train.
+        </p>
+      ) : (
+        <div className="mt-2.5 flex flex-wrap gap-1.5">
+          {used.map((row) => (
+            <span
+              key={row.drill}
+              title={`${row.correct}/${row.attempts} correct`}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-sm border px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider",
+                (row.accuracy ?? 0) >= 70 && "border-profit/40 bg-profit/10 text-profit",
+                (row.accuracy ?? 0) < 70 && (row.accuracy ?? 0) >= 45 && "border-warning/40 bg-warning/10 text-warning",
+                (row.accuracy ?? 0) < 45 && "border-loss/40 bg-loss/10 text-loss",
+              )}
+            >
+              {row.label} {row.accuracy}%
+            </span>
+          ))}
+        </div>
+      )}
+      {data.recent.length > 0 ? (
+        <ul className="mt-2.5 flex flex-wrap gap-x-3 gap-y-1">
+          {data.recent.map((row, index) => (
+            <li key={`${row.at}-${index}`} className="flex items-center gap-1 font-mono text-[10px] text-muted-foreground">
+              <span aria-hidden="true" className={cn("size-1.5 rounded-full", row.correct ? "bg-profit" : "bg-loss")} />
+              {row.drill.replace("_", " ").toLowerCase()}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </section>
   );
 }
 
@@ -86,7 +154,7 @@ function PatternDrill() {
                   disabled={answered}
                   onClick={() => {
                     setChoice(index);
-                    logPractice.mutate({ drill: "PATTERN_ID", correct: isCorrect });
+                    logPractice.mutate({ drill: "PATTERN_ID", correct: isCorrect, refId: drill.patternId });
                   }}
                   className={cn(
                     "flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-left text-sm transition-colors",

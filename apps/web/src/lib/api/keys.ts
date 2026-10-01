@@ -65,12 +65,19 @@ export const queryKeys = {
   academySearch: (q: string) => ["academy-search", q] as const,
   academyBookmarks: ["academy-bookmarks"] as const,
   academyPatternDrill: ["academy-pattern-drill"] as const,
+  academySrDrill: ["academy-sr-drill"] as const,
+  academyPositionDrill: ["academy-position-drill"] as const,
+  academyZoneDrill: ["academy-zone-drill"] as const,
+  academyPracticeStats: ["academy-practice-stats"] as const,
+  academyScenarios: ["academy-scenarios"] as const,
+  academyFlashcards: ["academy-flashcards"] as const,
   /** Mutations that touch learning state refresh these aggregates (array of key arrays). */
   academyAggregates: [
     ["academy-catalog"],
     ["academy-overview"],
     ["academy-progress"],
     ["academy-bookmarks"],
+    ["academy-practice-stats"],
   ] as const,
 } as const;
 

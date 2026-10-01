@@ -2,6 +2,7 @@ import { http, HttpResponse } from "msw";
 import type {
   AcademyBookmarkToggleInput,
   AcademyCheckpointInput,
+  AcademyFlashcardReviewInput,
   AcademyNoteInput,
   AcademyPracticeLogInput,
   AcademyQuizSubmitInput,
@@ -9,6 +10,7 @@ import type {
 import {
   academyBookmarkToggleInputSchema,
   academyCheckpointInputSchema,
+  academyFlashcardReviewInputSchema,
   academyNoteInputSchema,
   academyPracticeLogInputSchema,
   academyQuizSubmitInputSchema,
@@ -24,14 +26,21 @@ import {
   academyOverview,
   academyProgress,
   academyQuiz,
+  academyScenarios,
   academySearch,
   completeLesson,
+  flashcards,
   gradeCheckpoint,
   logPractice,
   patternDrill,
+  positionDrill,
+  practiceStats,
+  reviewFlashcard,
   saveLessonNote,
+  srDrill,
   submitQuiz,
   toggleBookmark,
+  zoneDrill,
 } from "@/mocks/academy-engine";
 import { MockError } from "@/mocks/store";
 import { endpoint, latency, parseBody, pathParam, toErrorResponse } from "./utils";
@@ -255,6 +264,84 @@ export const academyHandlers = [
         return HttpResponse.json({ error: "No drills available" }, { status: 404 });
       }
       return HttpResponse.json(drill);
+    } catch (error) {
+      return toErrorResponse(error);
+    }
+  }),
+
+  /** GET /academy/practice/sr-drill — engine-generated support/resistance read. */
+  http.get(endpoint(apiPaths.academySrDrill), async () => {
+    await latency();
+    try {
+      return HttpResponse.json(srDrill());
+    } catch (error) {
+      return toErrorResponse(error);
+    }
+  }),
+
+  /** GET /academy/practice/position-drill — randomized position-sizing arithmetic. */
+  http.get(endpoint(apiPaths.academyPositionDrill), async () => {
+    await latency();
+    try {
+      return HttpResponse.json(positionDrill());
+    } catch (error) {
+      return toErrorResponse(error);
+    }
+  }),
+
+  /** GET /academy/practice/zone-drill — engine-generated supply/demand read. */
+  http.get(endpoint(apiPaths.academyZoneDrill), async () => {
+    await latency();
+    try {
+      return HttpResponse.json(zoneDrill());
+    } catch (error) {
+      return toErrorResponse(error);
+    }
+  }),
+
+  /** GET /academy/practice/stats — per-drill accuracy + recent ledger rows. */
+  http.get(endpoint(apiPaths.academyPracticeStats), async () => {
+    await latency();
+    try {
+      return HttpResponse.json(practiceStats());
+    } catch (error) {
+      return toErrorResponse(error);
+    }
+  }),
+
+  /** GET /academy/scenarios — the full scenario library (learning tool). */
+  http.get(endpoint(apiPaths.academyScenarios), async () => {
+    await latency();
+    try {
+      return HttpResponse.json(academyScenarios());
+    } catch (error) {
+      return toErrorResponse(error);
+    }
+  }),
+
+  /** GET /academy/flashcards — the due queue (Leitner SRS, 10/day cap). */
+  http.get(endpoint(apiPaths.academyFlashcards), async () => {
+    await latency();
+    try {
+      return HttpResponse.json(flashcards());
+    } catch (error) {
+      return toErrorResponse(error);
+    }
+  }),
+
+  /** POST /academy/flashcards/review — grade a card (AGAIN/GOOD/EASY). */
+  http.post(endpoint(apiPaths.academyFlashcardReview), async ({ request }) => {
+    await latency();
+    try {
+      const input = parseBody<AcademyFlashcardReviewInput>(
+        academyFlashcardReviewInputSchema,
+        await request.json().catch(() => null),
+      );
+      const result = reviewFlashcard(input);
+      if (!result) {
+        return HttpResponse.json({ error: "Card not found" }, { status: 404 });
+      }
+      return HttpResponse.json(result);
     } catch (error) {
       return toErrorResponse(error);
     }

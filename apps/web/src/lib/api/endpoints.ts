@@ -117,4 +117,11 @@ export const apiPaths = {
   academyBookmarks: "/academy/bookmarks",
   academyPracticeLog: "/academy/practice/log",
   academyPatternDrill: "/academy/practice/pattern-drill",
+  academySrDrill: "/academy/practice/sr-drill",
+  academyPositionDrill: "/academy/practice/position-drill",
+  academyZoneDrill: "/academy/practice/zone-drill",
+  academyPracticeStats: "/academy/practice/stats",
+  academyScenarios: "/academy/scenarios",
+  academyFlashcards: "/academy/flashcards",
+  academyFlashcardReview: "/academy/flashcards/review",
 } as const;

@@ -10,6 +10,9 @@ import type {
   AcademyCheckpointInput,
   AcademyCheckpointResult,
   AcademyCourseDetailResponse,
+  AcademyFlashcardReviewInput,
+  AcademyFlashcardReviewResponse,
+  AcademyFlashcardsResponse,
   AcademyGlossaryResponse,
   AcademyLessonCompleteResponse,
   AcademyLessonResponse,
@@ -17,13 +20,18 @@ import type {
   AcademyNoteResponse,
   AcademyOverviewResponse,
   AcademyPatternDrill,
+  AcademyPositionDrill,
   AcademyPracticeLogInput,
   AcademyPracticeLogResponse,
+  AcademyPracticeStats,
   AcademyProgressResponse,
   AcademyQuizQuestionPublic,
   AcademyQuizResultResponse,
   AcademyQuizSubmitInput,
+  AcademyScenariosResponse,
   AcademySearchResponse,
+  AcademySrDrill,
+  AcademyZoneDrill,
 } from "@cosmoz/shared";
 
 import { apiErrorMessage, apiRequest } from "@/lib/api/client";
@@ -118,6 +126,63 @@ export function useAcademyPatternDrill() {
     gcTime: 0,
     staleTime: 0,
     refetchOnWindowFocus: false,
+  });
+}
+
+function useDrillQuery<T>(key: readonly unknown[], path: string) {
+  return useQuery({
+    queryKey: key,
+    queryFn: () => apiRequest<T>(path),
+    gcTime: 0,
+    staleTime: 0,
+    refetchOnWindowFocus: false,
+  });
+}
+
+export function useAcademySrDrill() {
+  return useDrillQuery<AcademySrDrill>(queryKeys.academySrDrill, apiPaths.academySrDrill);
+}
+
+export function useAcademyPositionDrill() {
+  return useDrillQuery<AcademyPositionDrill>(queryKeys.academyPositionDrill, apiPaths.academyPositionDrill);
+}
+
+export function useAcademyZoneDrill() {
+  return useDrillQuery<AcademyZoneDrill>(queryKeys.academyZoneDrill, apiPaths.academyZoneDrill);
+}
+
+export function useAcademyPracticeStats() {
+  return useQuery({
+    queryKey: queryKeys.academyPracticeStats,
+    queryFn: () => apiRequest<AcademyPracticeStats>(apiPaths.academyPracticeStats),
+  });
+}
+
+export function useAcademyScenarios() {
+  return useQuery({
+    queryKey: queryKeys.academyScenarios,
+    queryFn: () => apiRequest<AcademyScenariosResponse>(apiPaths.academyScenarios),
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useAcademyFlashcards() {
+  return useQuery({
+    queryKey: queryKeys.academyFlashcards,
+    queryFn: () => apiRequest<AcademyFlashcardsResponse>(apiPaths.academyFlashcards),
+  });
+}
+
+export function useReviewFlashcard() {
+  const invalidate = useInvalidateAcademy();
+  return useMutation({
+    mutationFn: (input: AcademyFlashcardReviewInput) =>
+      apiRequest<AcademyFlashcardReviewResponse>(apiPaths.academyFlashcardReview, { method: "POST", body: input }),
+    onSuccess: () => {
+      // The local queue advances immediately; aggregates (streak, stats) refresh.
+      invalidate();
+    },
+    onError: (error) => toast.error(apiErrorMessage(error, "Could not save the card review")),
   });
 }
 
