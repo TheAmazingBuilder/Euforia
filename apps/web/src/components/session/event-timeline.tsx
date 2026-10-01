@@ -2,6 +2,7 @@
 
 import type { SessionEvent } from "@cosmoz/shared";
 
+import { useI18n } from "@/i18n/i18n-provider";
 import { cn } from "@/lib/utils";
 
 /**
@@ -28,16 +29,19 @@ function timeOf(iso: string): string {
 }
 
 export function EventTimeline({ events }: { events: SessionEvent[] }) {
+  const { dict } = useI18n();
+  const S = dict.session;
+
   if (events.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">
-        Nothing logged yet today — your entries, exits and stop changes will appear here as they happen.
+        {S.timeline.empty}
       </p>
     );
   }
 
   return (
-    <ol className="relative space-y-3 border-l border-border pl-4" aria-label="Today's session timeline">
+    <ol className="relative space-y-3 border-l border-border pl-4" aria-label={S.timeline.aria}>
       {events.map((event) => (
         <li key={event.id} className="relative">
           <span

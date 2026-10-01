@@ -6,6 +6,7 @@ import { NotebookPen, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
+import { useI18n } from "@/i18n/i18n-provider";
 import { useCreateSessionNote, useDeleteSessionNote, useSessionNotes } from "@/lib/api/queries";
 import { cn } from "@/lib/utils";
 
@@ -28,6 +29,8 @@ function timeOf(iso: string): string {
  * timeline so the post-market review has the running commentary.
  */
 export function SessionLogbook() {
+  const { dict } = useI18n();
+  const S = dict.session;
   const notesQuery = useSessionNotes();
   const createNote = useCreateSessionNote();
   const deleteNote = useDeleteSessionNote();
@@ -61,10 +64,10 @@ export function SessionLogbook() {
       <header className="border-b border-border px-4 py-3">
         <h2 className="flex items-center gap-1.5 font-heading text-base font-semibold text-foreground">
           <NotebookPen className="size-4 text-accent" aria-hidden="true" />
-          Session logbook
+          {S.logbook.title}
         </h2>
         <p className="text-xs text-muted-foreground">
-          Timestamped notes while you trade — levels watched, the why, the hesitation. ⌘/Ctrl + Enter to log.
+          {S.logbook.subtitle}
         </p>
       </header>
       <div className="space-y-3 p-4">
@@ -72,18 +75,18 @@ export function SessionLogbook() {
           value={text}
           onChange={(event) => setText(event.target.value)}
           onKeyDown={onKeyDown}
-          placeholder="Watching 4,180 — retest with volume would be my trigger…"
+          placeholder={S.logbook.inputPlaceholder}
           rows={2}
           className="min-h-[60px] resize-none text-sm"
-          aria-label="Session note"
+          aria-label={S.logbook.inputAria}
           data-testid="session-logbook-input"
         />
         <div className="flex items-center justify-between gap-2">
           <p className="text-[11px] text-muted-foreground">
-            {notes.length} {notes.length === 1 ? "note" : "notes"} today
+            {`${notes.length} ${notes.length === 1 ? S.logbook.noteOne : S.logbook.noteMany} ${S.logbook.today}`}
           </p>
           <Button size="sm" onClick={submit} disabled={text.trim().length === 0 || createNote.isPending} data-testid="session-logbook-submit">
-            Log note
+            {S.logbook.submit}
           </Button>
         </div>
 
@@ -93,10 +96,10 @@ export function SessionLogbook() {
             <Skeleton className="h-12 rounded-lg" />
           </div>
         ) : notesQuery.isError ? (
-          <p className="text-sm text-muted-foreground">Notes could not be loaded. Retry from the toolbar.</p>
+          <p className="text-sm text-muted-foreground">{S.logbook.loadFailed}</p>
         ) : notes.length === 0 ? (
           <p className="rounded-lg border border-dashed border-border px-3 py-4 text-center text-xs text-muted-foreground">
-            No notes yet — the first observation of the session is usually the honest one.
+            {S.logbook.empty}
           </p>
         ) : (
           <ul className="space-y-1.5" data-testid="session-logbook-list">
@@ -117,7 +120,7 @@ export function SessionLogbook() {
                 </p>
                 <button
                   type="button"
-                  aria-label="Delete note"
+                  aria-label={S.logbook.deleteAria}
                   data-testid="session-logbook-delete"
                   disabled={deleteNote.isPending}
                   onClick={() => deleteNote.mutate(note.id)}

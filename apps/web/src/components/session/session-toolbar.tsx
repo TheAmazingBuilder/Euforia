@@ -8,6 +8,7 @@ import type { Instrument, MarketInterval } from "@cosmoz/shared";
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SessionTimer } from "@/components/session/session-timer";
+import { useI18n } from "@/i18n/i18n-provider";
 import { STALE_MS, type FeedPhase, type LiveQuote, type PriceSnapshot } from "@/lib/realtime/market";
 import { useNowMs } from "@/lib/realtime/use-now";
 import { cn } from "@/lib/utils";
@@ -30,6 +31,8 @@ interface FeedBadgeProps {
 }
 
 export function FeedBadge({ quote, phase, authError = null }: FeedBadgeProps) {
+  const { dict } = useI18n();
+  const S = dict.session;
   // "Last update Ns ago" copy needs a 1 Hz heartbeat — time reads stay in
   // the useNowMs effect (purity rule); the store itself stays timer-free.
   const nowMs = useNowMs();
@@ -38,35 +41,43 @@ export function FeedBadge({ quote, phase, authError = null }: FeedBadgeProps) {
     quote !== null && nowMs !== null ? Math.max(0, Math.round((nowMs - quote.ts) / 1000)) : null;
   const stale = quote !== null && nowMs !== null && nowMs - quote.ts > STALE_MS;
 
-  let tone: "accent" | "warning" | "loss" | "muted";
-  let label: string;
+  let tone: "accent" | "warning" | "loss" | "muted" = "muted";
+  // Stable (untranslated) state token — data-state must not follow language.
+  let stateToken = "connecting";
+  let label = "";
   if (quote === null) {
     if (phase === "reconnecting") {
       tone = "warning";
-      label = "RECONNECTING";
+      stateToken = "reconnecting";
+      label = S.toolbar.reconnecting;
     } else if (phase === "offline") {
       tone = "loss";
-      label = "OFFLINE";
+      stateToken = "offline";
+      label = S.toolbar.offline;
     } else {
       tone = "muted";
-      label = "CONNECTING";
+      stateToken = "connecting";
+      label = S.toolbar.connecting;
     }
   } else if (stale) {
     tone = "warning";
-    label = `STALE · ${ageSec}s`;
+    stateToken = "stale";
+    label = `${S.toolbar.stale} · ${ageSec}s`;
   } else if (quote.source === "real") {
     tone = "accent";
-    label = "LIVE";
+    stateToken = "live";
+    label = S.toolbar.live;
   } else {
     tone = "warning";
-    label = "SIM";
+    stateToken = "sim";
+    label = S.toolbar.sim;
   }
 
   return (
     <div className="flex flex-col items-end gap-0.5">
       <span
         data-testid="feed-badge"
-        data-state={label.split(" ")[0].toLowerCase()}
+        data-state={stateToken}
         className={cn(
           "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold tracking-wide",
           tone === "accent" && "border-accent/40 bg-accent/10 text-accent",
@@ -89,10 +100,10 @@ export function FeedBadge({ quote, phase, authError = null }: FeedBadgeProps) {
       </span>
       <span className="font-mono text-[10px] tabular-nums text-muted-foreground">
         {authError !== null
-          ? "authentication required — feed paused"
+          ? S.toolbar.authRequired
           : ageSec === null
-            ? "waiting for first tick…"
-            : `last update ${ageSec}s ago`}
+            ? S.toolbar.waitingFirstTick
+            : `${S.toolbar.lastUpdate} ${ageSec}s${S.toolbar.ago !== "" ? ` ${S.toolbar.ago}` : ""}`}
       </span>
     </div>
   );
@@ -119,6 +130,8 @@ export function SessionToolbar({
   phase,
   authError,
 }: SessionToolbarProps) {
+  const { dict } = useI18n();
+  const S = dict.session;
   const instrument = instruments.find((item) => item.symbol === symbol) ?? null;
   const digits = instrument?.digits ?? 5;
 
@@ -128,22 +141,22 @@ export function SessionToolbar({
 
   return (
     <section
-      aria-label="Market station controls"
+      aria-label={S.toolbar.controlsAria}
       className="rounded-xl border border-border bg-surface"
       data-testid="session-toolbar"
     >
       <div className="flex flex-wrap items-center gap-x-4 gap-y-3 px-4 py-3">
         {/* Symbol */}
         <div className="space-y-1">
-          <p className="ledger-label">Symbol</p>
+          <p className="ledger-label">{S.labels.symbol}</p>
           <Select value={symbol} onValueChange={onSymbolChange}>
             <SelectTrigger
               size="sm"
-              aria-label="Select symbol"
+              aria-label={S.toolbar.selectSymbolAria}
               className="w-[150px] font-mono font-semibold"
               data-testid="symbol-select"
             >
-              <SelectValue placeholder="Symbol" />
+              <SelectValue placeholder={S.toolbar.symbolPlaceholder} />
             </SelectTrigger>
             <SelectContent>
               {instruments.map((item) => (
@@ -158,18 +171,18 @@ export function SessionToolbar({
 
         {/* Timeframe */}
         <div className="space-y-1">
-          <p className="ledger-label">Timeframe</p>
+          <p className="ledger-label">{S.labels.timeframe}</p>
           <Select
             value={interval}
             onValueChange={(value) => onIntervalChange(value as MarketInterval)}
           >
             <SelectTrigger
               size="sm"
-              aria-label="Select timeframe"
+              aria-label={S.toolbar.selectTimeframeAria}
               className="w-[84px] font-mono font-semibold"
               data-testid="interval-select"
             >
-              <SelectValue placeholder="TF" />
+              <SelectValue placeholder={S.toolbar.timeframePlaceholder} />
             </SelectTrigger>
             <SelectContent>
               {INTERVALS.map((item) => (
@@ -183,7 +196,7 @@ export function SessionToolbar({
 
         {/* Marked price */}
         <div className="min-w-0 flex-1 space-y-1">
-          <p className="ledger-label">Marked price</p>
+          <p className="ledger-label">{S.toolbar.markedPrice}</p>
           <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-0.5">
             <span
               data-testid="marked-price"

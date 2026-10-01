@@ -48,6 +48,7 @@ import { apiErrorMessage } from "@/lib/api/client";
 import { isoToLocalInput, localInputToISO } from "@/lib/utils/datetime";
 import { useIsDesktop } from "@/lib/hooks/use-media-query";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/i18n/i18n-provider";
 
 const EXIT_REASONS = ["TP", "SL", "MANUAL", "TRAILING", "PARTIAL", "MARGIN"] as const;
 
@@ -109,6 +110,8 @@ export function TradeDetailDrawer({
   onEdit,
   onDeleted,
 }: TradeDetailDrawerProps) {
+  const { dict } = useI18n();
+  const T = dict.trades.detail;
   const isDesktop = useIsDesktop();
   const { data: instrumentsData } = useInstruments();
   const { data: strategiesData } = useStrategies();
@@ -167,8 +170,8 @@ export function TradeDetailDrawer({
     updateNotes.mutate(
       { tradeId: trade.id, input: { notes: notesDraft } },
       {
-        onSuccess: () => toast.success("Notes saved"),
-        onError: (error) => toast.error(apiErrorMessage(error, "Could not save notes")),
+        onSuccess: () => toast.success(T.notesSaved),
+        onError: (error) => toast.error(apiErrorMessage(error, dict.trades.errors.notesSave)),
       },
     );
   };
@@ -178,8 +181,8 @@ export function TradeDetailDrawer({
     updateReview.mutate(
       { tradeId: trade.id, input: { tagIds: next } },
       {
-        onSuccess: () => toast.success("Tags updated"),
-        onError: (error) => toast.error(apiErrorMessage(error, "Could not update tags")),
+        onSuccess: () => toast.success(T.tagsUpdated),
+        onError: (error) => toast.error(apiErrorMessage(error, dict.trades.errors.tagsUpdate)),
       },
     );
   };
@@ -187,12 +190,12 @@ export function TradeDetailDrawer({
   const onDelete = () => {
     deleteTrade.mutate(trade.id, {
       onSuccess: () => {
-        toast.success("Trade deleted");
+        toast.success(T.tradeDeleted);
         setConfirmDelete(false);
         onOpenChange(false);
         onDeleted();
       },
-      onError: (error) => toast.error(apiErrorMessage(error, "Could not delete the trade")),
+      onError: (error) => toast.error(apiErrorMessage(error, dict.trades.errors.tradeDelete)),
     });
   };
 
@@ -206,8 +209,8 @@ export function TradeDetailDrawer({
       addScreenshot.mutate(
         { tradeId: trade.id, input: { kind: "CHART", dataUrl } },
         {
-          onSuccess: () => toast.success("Screenshot attached"),
-          onError: (error) => toast.error(apiErrorMessage(error, "Upload failed")),
+          onSuccess: () => toast.success(T.screenshotAttached),
+          onError: (error) => toast.error(apiErrorMessage(error, dict.trades.errors.screenshotUpload)),
         },
       );
     };
@@ -224,11 +227,11 @@ export function TradeDetailDrawer({
       },
       {
         onSuccess: () => {
-          toast.success("Position closed — grade it when ready");
+          toast.success(T.positionClosed);
           setCloseOpen(false);
           onOpenChange(false);
         },
-        onError: (error) => toast.error(apiErrorMessage(error, "Could not close the position")),
+        onError: (error) => toast.error(apiErrorMessage(error, dict.trades.errors.positionClose)),
       },
     );
   };
@@ -238,40 +241,40 @@ export function TradeDetailDrawer({
   const verdictSection = (
     <section className="grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-8">
       <Readout
-        label="Net P&L"
+        label={T.netPnl}
         value={trade.pnlNet === null ? "—" : formatSignedMoney(trade.pnlNet, currency, { digits: 2 })}
         tone={trade.pnlNet === null ? "muted" : Number(trade.pnlNet) >= 0 ? "profit" : "loss"}
       />
       <Readout
-        label="R multiple"
+        label={T.rMultiple}
         value={trade.rMultiple === null ? "—" : formatR(trade.rMultiple)}
         tone={trade.rMultiple === null ? "muted" : Number(trade.rMultiple) >= 0 ? "profit" : "loss"}
       />
-      <Readout label="Entry" value={formatNumber(trade.entryPrice, priceDigits)} />
-      <Readout label="Exit" value={trade.exitPrice === null ? "—" : formatNumber(trade.exitPrice, priceDigits)} />
+      <Readout label={T.entry} value={formatNumber(trade.entryPrice, priceDigits)} />
+      <Readout label={T.exit} value={trade.exitPrice === null ? "—" : formatNumber(trade.exitPrice, priceDigits)} />
       <Readout
-        label="Initial stop"
+        label={T.initialStop}
         value={trade.initialStop === null ? "—" : formatNumber(trade.initialStop, priceDigits)}
       />
       <Readout
-        label="Take profit"
+        label={T.takeProfit}
         value={trade.initialTP === null ? "—" : formatNumber(trade.initialTP, priceDigits)}
       />
       <Readout
-        label="Risked"
+        label={T.risked}
         value={trade.riskAmount === null ? "—" : formatNumber(trade.riskAmount, 2)}
       />
-      <Readout label="Fees" value={formatNumber(trade.fees, 2)} />
+      <Readout label={T.fees} value={formatNumber(trade.fees, 2)} />
     </section>
   );
 
   const strategySection = (
     <section>
       <p className="mb-1.5 text-[11px] font-semibold tracking-wider uppercase text-muted-foreground">
-        Strategy
+        {T.strategyHeading}
       </p>
       <p className="text-sm text-foreground">
-        {strategy?.name ?? "Out of playbook"}
+        {strategy?.name ?? dict.trades.shared.outOfPlaybook}
         {strategy?.grade ? (
           <span className="ml-2 font-mono text-xs text-muted-foreground">{strategy.grade}</span>
         ) : null}
@@ -282,7 +285,7 @@ export function TradeDetailDrawer({
   const tagsSection = (
     <section>
       <p className="mb-1.5 text-[11px] font-semibold tracking-wider uppercase text-muted-foreground">
-        Tags
+        {T.tagsHeading}
       </p>
       <div className="flex flex-wrap gap-1.5" data-testid="trade-tags">
         {tags.map((tag) => {
@@ -312,7 +315,7 @@ export function TradeDetailDrawer({
           );
         })}
         {tagsDirty ? (
-          <span className="self-center text-[10px] text-warning">saving…</span>
+          <span className="self-center text-[10px] text-warning">{T.savingChip}</span>
         ) : null}
       </div>
     </section>
@@ -322,7 +325,7 @@ export function TradeDetailDrawer({
     <section>
       <div className="mb-1.5 flex items-center justify-between">
         <p className="text-[11px] font-semibold tracking-wider uppercase text-muted-foreground">
-          Notes
+          {T.notesHeading}
         </p>
         <Button
           variant="ghost"
@@ -335,13 +338,13 @@ export function TradeDetailDrawer({
           {updateNotes.isPending ? (
             <Loader2 className="size-3 animate-spin" aria-hidden="true" />
           ) : null}
-          Save
+          {dict.common.save}
         </Button>
       </div>
       <Textarea
         value={notesDraft}
         onChange={(event) => setNotesDraft(event.target.value)}
-        placeholder="What did you see, do, and learn?"
+        placeholder={T.notesPlaceholder}
         className="min-h-24"
         data-testid="trade-notes-input"
       />
@@ -352,7 +355,7 @@ export function TradeDetailDrawer({
     <section>
       <div className="mb-1.5 flex items-center justify-between">
         <p className="text-[11px] font-semibold tracking-wider uppercase text-muted-foreground">
-          Screenshots ({screenshots.length})
+          {T.screenshotsWord} ({screenshots.length})
         </p>
         <input
           ref={fileInputRef}
@@ -374,12 +377,12 @@ export function TradeDetailDrawer({
           ) : (
             <Camera className="size-3.5" aria-hidden="true" />
           )}
-          Upload
+          {T.upload}
         </Button>
       </div>
       {screenshots.length === 0 ? (
         <p className="rounded-md border border-dashed border-border px-3 py-4 text-center text-xs text-muted-foreground">
-          No chart evidence yet — upload the setup or the exit.
+          {T.noEvidence}
         </p>
       ) : (
         <ul className="grid grid-cols-2 gap-2 lg:grid-cols-3 xl:grid-cols-4" data-testid="trade-screenshots">
@@ -392,7 +395,7 @@ export function TradeDetailDrawer({
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={screenshot.storageKey}
-                alt={`Screenshot ${screenshot.kind.toLowerCase()}`}
+                alt={`${T.screenshotAlt} ${screenshot.kind.toLowerCase()}`}
                 className="h-24 w-full object-cover"
               />
               <button
@@ -400,7 +403,7 @@ export function TradeDetailDrawer({
                 onClick={() =>
                   deleteScreenshot.mutate({ tradeId: trade.id, screenshotId: screenshot.id })
                 }
-                aria-label="Delete screenshot"
+                aria-label={T.deleteScreenshotAria}
                 className="absolute top-1 right-1 grid size-6 place-items-center rounded-md bg-background/80 text-loss opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
               >
                 <Trash2 className="size-3.5" aria-hidden="true" />
@@ -438,7 +441,7 @@ export function TradeDetailDrawer({
         data-testid="trade-edit-open"
       >
         <Pencil className="size-3.5" aria-hidden="true" />
-        Edit
+        {dict.trades.shared.edit}
       </Button>
       {!isClosed ? (
         <Button
@@ -452,7 +455,7 @@ export function TradeDetailDrawer({
           }}
           data-testid="trade-close-open"
         >
-          Close position
+          {T.closePosition}
         </Button>
       ) : null}
       <Button
@@ -463,7 +466,7 @@ export function TradeDetailDrawer({
         data-testid="trade-delete-open"
       >
         <Trash2 className="size-3.5" aria-hidden="true" />
-        Delete
+        {dict.trades.shared.delete}
       </Button>
     </div>
   );
@@ -475,16 +478,15 @@ export function TradeDetailDrawer({
       <Dialog open={confirmDelete} onOpenChange={setConfirmDelete}>
         <DialogContent className="sm:max-w-sm" data-testid="trade-delete-dialog">
           <DialogHeader>
-            <DialogTitle className="font-heading">Delete this trade?</DialogTitle>
+            <DialogTitle className="font-heading">{T.deleteTitle}</DialogTitle>
             <DialogDescription>
               {instrument?.symbol} {trade.direction} ·{" "}
-              {isoToLocalInput(trade.entryAt).slice(0, 10)} — aggregates refresh immediately.
-              This can be undone only by re-creating the record.
+              {isoToLocalInput(trade.entryAt).slice(0, 10)} {T.deleteBody}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2">
             <Button variant="ghost" onClick={() => setConfirmDelete(false)}>
-              Cancel
+              {dict.common.cancel}
             </Button>
             <Button
               variant="destructive"
@@ -497,7 +499,7 @@ export function TradeDetailDrawer({
               ) : (
                 <Trash2 className="size-4" aria-hidden="true" />
               )}
-              Delete trade
+              {T.deleteTrade}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -508,16 +510,15 @@ export function TradeDetailDrawer({
         <DialogContent className="sm:max-w-sm" data-testid="trade-close-dialog">
           <SheetHeader className="p-0">
             <DialogHeader className="gap-1 p-0">
-              <DialogTitle className="font-heading">Close position</DialogTitle>
+              <DialogTitle className="font-heading">{T.closeDialogTitle}</DialogTitle>
               <DialogDescription>
-                Record the exit — results are computed server-side and withheld until the
-                decision is graded.
+                {T.closeDialogDescription}
               </DialogDescription>
             </DialogHeader>
           </SheetHeader>
           <form onSubmit={onClosePosition} className="grid gap-3">
             <div className="space-y-1.5">
-              <Label htmlFor="close-exit-price">Exit price</Label>
+              <Label htmlFor="close-exit-price">{dict.trades.form.exitPrice}</Label>
               <input
                 id="close-exit-price"
                 value={exitPrice}
@@ -530,7 +531,7 @@ export function TradeDetailDrawer({
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="close-exit-at">Exit time</Label>
+              <Label htmlFor="close-exit-at">{dict.trades.form.exitTime}</Label>
               <input
                 id="close-exit-at"
                 type="datetime-local"
@@ -540,7 +541,7 @@ export function TradeDetailDrawer({
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="close-exit-reason">Exit reason</Label>
+              <Label htmlFor="close-exit-reason">{dict.trades.form.exitReason}</Label>
               <select
                 id="close-exit-reason"
                 value={exitReason}
@@ -556,13 +557,13 @@ export function TradeDetailDrawer({
             </div>
             <DialogFooter className="gap-2">
               <Button type="button" variant="ghost" onClick={() => setCloseOpen(false)}>
-                Cancel
+                {dict.common.cancel}
               </Button>
               <Button type="submit" disabled={closeTrade.isPending} data-testid="trade-close-confirm">
                 {closeTrade.isPending ? (
                   <Loader2 className="size-4 animate-spin" aria-hidden="true" />
                 ) : null}
-                Close position
+                {T.closePosition}
               </Button>
             </DialogFooter>
           </form>
@@ -585,7 +586,7 @@ export function TradeDetailDrawer({
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <SheetTitle className="flex items-center gap-2 font-heading text-lg font-semibold">
-                    {instrument?.symbol ?? "Trade"}
+                    {instrument?.symbol ?? T.fallbackTitle}
                     <span
                       className={cn(
                         "rounded-full border px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wide",
@@ -607,7 +608,7 @@ export function TradeDetailDrawer({
                   size="icon"
                   className="size-7 shrink-0"
                   onClick={() => onOpenChange(false)}
-                  aria-label="Close details"
+                  aria-label={T.closeDetailsAria}
                 >
                   <X className="size-4" aria-hidden="true" />
                 </Button>
@@ -637,7 +638,7 @@ export function TradeDetailDrawer({
         >
           <DialogHeader className="gap-1 border-b border-border p-4 pr-14 pb-3">
             <DialogTitle className="flex items-center gap-2 font-heading text-lg font-semibold">
-              {instrument?.symbol ?? "Trade"}
+              {instrument?.symbol ?? T.fallbackTitle}
               <span
                 className={cn(
                   "rounded-full border px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wide",

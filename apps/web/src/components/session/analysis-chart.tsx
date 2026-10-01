@@ -25,6 +25,8 @@ import { getChartTheme, type ChartTheme } from "@/lib/utils/chart-theme";
 import { anchorIndex, drawingTool, FIB_RATIOS, fibLabel, fibLevels, newId } from "@/lib/utils/drawings";
 import { computeIndicators } from "@/lib/utils/indicators";
 import { STALE_MS, type LiveQuote } from "@/lib/realtime/market";
+import { levelKindLabel } from "@/i18n/dictionaries/en/session";
+import { useI18n } from "@/i18n/i18n-provider";
 import { usePreferences } from "@/lib/api/queries";
 import { useNowMs } from "@/lib/realtime/use-now";
 import { cn } from "@/lib/utils";
@@ -164,6 +166,8 @@ export function AnalysisChart({
   heightClass = "h-[320px] sm:h-[440px]",
   syncGroup = null,
 }: AnalysisChartProps) {
+  const { dict } = useI18n();
+  const S = dict.session;
   const containerRef = React.useRef<HTMLDivElement | null>(null);
   const chartRef = React.useRef<EChartsType | null>(null);
   const { resolvedTheme } = useTheme();
@@ -440,7 +444,7 @@ export function AnalysisChart({
 
     const series: Array<Record<string, unknown>> = [mainSeries];
     if (volumeVisible) {
-      series.push({ name: "Volume", type: "bar", xAxisIndex: 1, yAxisIndex: 1, data: [], barWidth: "60%", large: true });
+      series.push({ name: S.chart.seriesVolume, type: "bar", xAxisIndex: 1, yAxisIndex: 1, data: [], barWidth: "60%", large: true });
     }
 
     const zoomIndexes = Array.from({ length: grids.length }, (_, i) => i);
@@ -515,7 +519,7 @@ export function AnalysisChart({
     };
     // Tool state is structural (zoom armed/disarmed); data flows through the
     // data option so ticks never reset zoom.
-  }, [theme, interval, symbol, digits, chartPrefs, volumeVisible, subPanes, tool]);
+  }, [theme, interval, symbol, digits, chartPrefs, volumeVisible, subPanes, tool, S]);
 
   // ── Data option: candles + overlays + indicator series + drawings ────────
   const dataOption = React.useMemo<EChartsCoreOption>(() => {
@@ -532,7 +536,7 @@ export function AnalysisChart({
       markLineData.push({
         yAxis: Number(trade.entryPrice),
         lineStyle: { color: theme.accent, type: "solid", width: 1, opacity: 0.9 },
-        label: { formatter: `Entry${tag} ${formatPrice(Number(trade.entryPrice), digits)}`, position: "insideEndTop", color: theme.accent, fontFamily: theme.monoFont, fontSize: 9 },
+        label: { formatter: `${S.chart.overlayEntry}${tag} ${formatPrice(Number(trade.entryPrice), digits)}`, position: "insideEndTop", color: theme.accent, fontFamily: theme.monoFont, fontSize: 9 },
         symbol: "none",
         emphasis: { disabled: true },
         silent: true,
@@ -542,7 +546,7 @@ export function AnalysisChart({
         markLineData.push({
           yAxis: Number(stop),
           lineStyle: { color: theme.loss, type: "dashed", width: 1, opacity: 0.85 },
-          label: { formatter: `SL${tag} ${formatPrice(Number(stop), digits)}`, position: "insideEndTop", color: theme.loss, fontFamily: theme.monoFont, fontSize: 9 },
+          label: { formatter: `${S.chart.overlaySl}${tag} ${formatPrice(Number(stop), digits)}`, position: "insideEndTop", color: theme.loss, fontFamily: theme.monoFont, fontSize: 9 },
           symbol: "none",
           emphasis: { disabled: true },
           silent: true,
@@ -552,7 +556,7 @@ export function AnalysisChart({
         markLineData.push({
           yAxis: Number(trade.initialTP),
           lineStyle: { color: theme.profit, type: "dashed", width: 1, opacity: 0.85 },
-          label: { formatter: `TP${tag} ${formatPrice(Number(trade.initialTP), digits)}`, position: "insideEndTop", color: theme.profit, fontFamily: theme.monoFont, fontSize: 9 },
+          label: { formatter: `${S.chart.overlayTp}${tag} ${formatPrice(Number(trade.initialTP), digits)}`, position: "insideEndTop", color: theme.profit, fontFamily: theme.monoFont, fontSize: 9 },
           symbol: "none",
           emphasis: { disabled: true },
           silent: true,
@@ -576,7 +580,7 @@ export function AnalysisChart({
         markLineData.push({
           yAxis: level.price,
           lineStyle: { color: theme.warning, type: "dashed", width: 1, opacity: 0.5 },
-          label: { formatter: `${level.kind.replace(/_/g, " ")} ${formatPrice(level.price, digits)}`, position: "insideEndBottom", color: theme.warning, fontFamily: theme.monoFont, fontSize: 9 },
+          label: { formatter: `${levelKindLabel(S, level.kind)} ${formatPrice(level.price, digits)}`, position: "insideEndBottom", color: theme.warning, fontFamily: theme.monoFont, fontSize: 9 },
           symbol: "none",
           emphasis: { disabled: true },
           silent: true,
@@ -726,7 +730,7 @@ export function AnalysisChart({
     let gridCursor = 1;
     if (volumeVisible) {
       series.push({
-        name: "Volume",
+        name: S.chart.seriesVolume,
         type: "bar",
         xAxisIndex: gridCursor,
         yAxisIndex: gridCursor,
@@ -741,7 +745,7 @@ export function AnalysisChart({
       if (!sub) continue;
       if (sub.hist !== undefined) {
         series.push({
-          name: "MACD hist",
+          name: S.chart.seriesMacdHist,
           type: "bar",
           xAxisIndex: gridCursor,
           yAxisIndex: gridCursor,
@@ -804,7 +808,7 @@ export function AnalysisChart({
       xAxis: [view.labels, ...Array.from({ length: (volumeVisible ? 1 : 0) + subPanes.length }, () => view.labels)],
       series,
     };
-  }, [view, displayed, overlayTrades, brokerPositions, levels, levelsVisible, quote, stale, theme, digits, chartPrefs, replayOn, visibleComputed, subPanes, volumeVisible, drawings]);
+  }, [view, displayed, overlayTrades, brokerPositions, levels, levelsVisible, quote, stale, theme, digits, chartPrefs, replayOn, visibleComputed, subPanes, volumeVisible, drawings, S]);
 
   // ── Canvas lifecycle ───────────────────────────────────────────────────────
   React.useEffect(() => {
@@ -855,20 +859,20 @@ export function AnalysisChart({
     ? pendingPoints.length === 0
       ? toolMeta.hint
       : tool === "TEXT"
-        ? "Type the note, press Enter"
-        : "Click the second point · Esc to cancel"
+        ? S.chart.hintTypeNote
+        : S.chart.hintSecondPoint
     : null;
 
   if (isError) {
     return (
       <div className={cn("flex flex-col items-center justify-center rounded-xl border border-border bg-surface", heightClass)}>
-        <p className="font-heading text-base font-semibold text-foreground">Market data unavailable</p>
+        <p className="font-heading text-base font-semibold text-foreground">{S.chart.errorTitle}</p>
         <p className="mt-1 max-w-xs text-center text-sm text-muted-foreground">
-          The candle feed could not be reached. Your positions and account are unaffected.
+          {S.chart.errorBody}
         </p>
         <Button variant="outline" size="sm" className="mt-4" onClick={() => void queryClient.refetchQueries({ queryKey: ["candles"] })}>
           <RefreshCcw className="size-3.5" aria-hidden="true" />
-          Retry
+          {dict.common.retry}
         </Button>
       </div>
     );
@@ -889,7 +893,7 @@ export function AnalysisChart({
       >
         {isLoading && displayed.length === 0 ? (
           <div className="absolute inset-0 flex items-center justify-center" aria-live="polite">
-            <p className="text-sm text-muted-foreground">Loading market data…</p>
+            <p className="text-sm text-muted-foreground">{S.chart.loading}</p>
           </div>
         ) : null}
 
@@ -910,7 +914,7 @@ export function AnalysisChart({
           <button
             type="button"
             onClick={toggleReplay}
-            aria-label={replayOn ? "Exit price replay" : "Replay the price curve"}
+            aria-label={replayOn ? S.chart.replayExitAria : S.chart.replayStartAria}
             aria-pressed={replayOn}
             data-testid="session-replay-toggle"
             className={cn(
@@ -919,7 +923,7 @@ export function AnalysisChart({
             )}
           >
             <History className="size-3.5" aria-hidden="true" />
-            Replay
+            {S.chart.replayToggle}
           </button>
         ) : null}
 
@@ -953,8 +957,8 @@ export function AnalysisChart({
               }}
               onBlur={() => setTextDraft(null)}
               maxLength={120}
-              placeholder="Note text…"
-              aria-label="Drawing note text"
+              placeholder={S.chart.notePlaceholder}
+              aria-label={S.chart.noteAria}
               className="w-44 rounded-md border border-accent/50 bg-background px-2 py-1 text-xs text-foreground shadow-lg outline-none"
             />
           </div>
@@ -963,7 +967,7 @@ export function AnalysisChart({
         <div
           ref={containerRef}
           role="img"
-          aria-label={`${symbol} ${interval} analysis chart with indicators, drawings and position overlays`}
+          aria-label={`${symbol} ${interval} ${S.chart.imgAriaAnalysis}`}
           className={cn("size-full", tool !== null && "cursor-crosshair")}
         />
       </div>
@@ -974,7 +978,7 @@ export function AnalysisChart({
           <button
             type="button"
             onClick={() => setReplayPlaying((playing) => !playing)}
-            aria-label={replayPlaying ? "Pause replay" : "Play replay"}
+            aria-label={replayPlaying ? S.chart.pauseAria : S.chart.playAria}
             data-testid="session-replay-play"
             className="inline-flex size-7 shrink-0 items-center justify-center rounded-full border border-accent/40 bg-accent/10 text-accent transition-colors hover:bg-accent/20"
           >
@@ -990,7 +994,7 @@ export function AnalysisChart({
               setReplayPlaying(false);
               setReplayIndex(Number(event.target.value));
             }}
-            aria-label="Replay position"
+            aria-label={S.chart.scrubAria}
             data-testid="session-replay-scrubber"
             className="h-1.5 min-w-0 flex-1 cursor-pointer accent-[var(--accent)]"
           />
@@ -999,7 +1003,7 @@ export function AnalysisChart({
             <span className="mx-1 text-border">·</span>
             {replayIndex + 1}/{merged.length}
           </span>
-          <button type="button" onClick={toggleReplay} aria-label="Close replay" data-testid="session-replay-close" className="shrink-0 rounded p-1 text-muted-foreground transition-colors hover:text-foreground">
+          <button type="button" onClick={toggleReplay} aria-label={S.chart.closeAria} data-testid="session-replay-close" className="shrink-0 rounded p-1 text-muted-foreground transition-colors hover:text-foreground">
             <X className="size-4" aria-hidden="true" />
           </button>
         </div>

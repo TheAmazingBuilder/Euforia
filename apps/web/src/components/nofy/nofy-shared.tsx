@@ -18,6 +18,7 @@ import {
 
 import { cn } from "@/lib/utils";
 import type { NofyRefKind, NofyTag } from "@cosmoz/shared";
+import type { Dictionary } from "@/i18n/dictionaries/en";
 
 /**
  * Nofy shared primitives — relative time, tag/folder chips, empty states,
@@ -29,31 +30,31 @@ import type { NofyRefKind, NofyTag } from "@cosmoz/shared";
 
 const DAY_MS = 86_400_000;
 
-/** "Just now" → "2 minutes ago" → "Yesterday" → "3 days ago" → date. */
-export function nofyRelativeTime(iso: string | null | undefined): string {
+/** Locale-aware relative time — takes the nofy.time dictionary slice. */
+export function nofyRelativeTime(
+  iso: string | null | undefined,
+  time: Dictionary["nofy"]["time"],
+): string {
   if (!iso) return "—";
   const then = new Date(iso).getTime();
   const diff = Date.now() - then;
-  if (diff < 45_000) return "just now";
+  const ago = (value: number, unit: string): string =>
+    `${time.agoPrefix !== "" ? `${time.agoPrefix} ` : ""}${value} ${unit}${time.agoSuffix !== "" ? ` ${time.agoSuffix}` : ""}`;
+  if (diff < 45_000) return time.justNow;
   if (diff < 3_600_000) {
     const minutes = Math.max(1, Math.round(diff / 60_000));
-    return `${minutes} minute${minutes === 1 ? "" : "s"} ago`;
+    return ago(minutes, minutes === 1 ? time.minuteOne : time.minuteMany);
   }
   if (diff < DAY_MS) {
     const hours = Math.round(diff / 3_600_000);
-    return `${hours} hour${hours === 1 ? "" : "s"} ago`;
+    return ago(hours, hours === 1 ? time.hourOne : time.hourMany);
   }
-  if (diff < 2 * DAY_MS) return "yesterday";
+  if (diff < 2 * DAY_MS) return time.yesterday;
   if (diff < 7 * DAY_MS) {
     const days = Math.round(diff / DAY_MS);
-    return `${days} days ago`;
+    return ago(days, time.days);
   }
   return new Date(iso).toLocaleDateString("en-CA");
-}
-
-/** Autosave status phrasing ("Saved 10 seconds ago"). */
-export function nofySavedAt(iso: string): string {
-  return `Saved ${nofyRelativeTime(iso)}`;
 }
 
 // ── Chips ────────────────────────────────────────────────────────────────────

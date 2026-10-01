@@ -13,6 +13,7 @@ import { getChartTheme, type ChartTheme } from "@/lib/utils/chart-theme";
 import { withAlpha } from "@/lib/utils/color";
 import { formatNumber } from "@cosmoz/shared";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/i18n/i18n-provider";
 
 /** Time axis label — local clock, same convention as the rest of the app. */
 const axisTime = new Intl.DateTimeFormat("en-US", {
@@ -39,6 +40,9 @@ interface TradeSessionChartProps {
  * Collapsible so the drawer keeps its rhythm when the chart is not needed.
  */
 export function TradeSessionChart({ tradeId, open }: TradeSessionChartProps) {
+  const { dict } = useI18n();
+  const chartT = dict.trades.chart;
+  const detailT = dict.trades.detail;
   const [expanded, setExpanded] = React.useState(true);
   const { resolvedTheme } = useTheme();
   const { data, isPending } = useTradeSessionSeries(open ? tradeId : null);
@@ -63,7 +67,7 @@ export function TradeSessionChart({ tradeId, open }: TradeSessionChartProps) {
       itemStyle: { color: theme.accent, borderColor: theme.background, borderWidth: 2 },
       label: {
         show: true,
-        formatter: `Entry ${formatNumber(data.entryPrice, digits)}`,
+        formatter: `${detailT.entry} ${formatNumber(data.entryPrice, digits)}`,
         position: [0, -22] as [number, number],
         color: theme.textPrimary,
         fontFamily: theme.monoFont,
@@ -85,7 +89,7 @@ export function TradeSessionChart({ tradeId, open }: TradeSessionChartProps) {
             },
             label: {
               show: true,
-              formatter: `Exit ${formatNumber(data.exitPrice!, digits)}`,
+              formatter: `${detailT.exit} ${formatNumber(data.exitPrice!, digits)}`,
               position: [0, 20] as [number, number],
               color: theme.textPrimary,
               fontFamily: theme.monoFont,
@@ -130,7 +134,7 @@ export function TradeSessionChart({ tradeId, open }: TradeSessionChartProps) {
               lineStyle: { color: theme.loss, type: "dashed" as const, width: 1 },
               label: {
                 show: true,
-                formatter: `SL ${formatNumber(data.initialStop!, digits)}`,
+                formatter: `${chartT.sl} ${formatNumber(data.initialStop!, digits)}`,
                 position: "insideEndTop" as const,
                 color: theme.loss,
                 fontFamily: theme.monoFont,
@@ -147,7 +151,7 @@ export function TradeSessionChart({ tradeId, open }: TradeSessionChartProps) {
               lineStyle: { color: theme.profit, type: "dashed" as const, width: 1 },
               label: {
                 show: true,
-                formatter: `TP ${formatNumber(data.initialTP!, digits)}`,
+                formatter: `${chartT.tp} ${formatNumber(data.initialTP!, digits)}`,
                 position: "insideEndBottom" as const,
                 color: theme.profit,
                 fontFamily: theme.monoFont,
@@ -207,16 +211,16 @@ export function TradeSessionChart({ tradeId, open }: TradeSessionChartProps) {
         },
       ],
     };
-  }, [data, theme]);
+  }, [data, theme, chartT, detailT]);
 
   const levels = data
     ? [
-        { label: "Entry", value: data.entryPrice, tone: "text-accent" },
+        { label: detailT.entry, value: data.entryPrice, tone: "text-accent" },
         ...(data.exitPrice !== null
-          ? [{ label: "Exit", value: data.exitPrice, tone: "text-foreground" }]
+          ? [{ label: detailT.exit, value: data.exitPrice, tone: "text-foreground" }]
           : []),
-        ...(data.initialStop !== null ? [{ label: "SL", value: data.initialStop, tone: "text-loss" }] : []),
-        ...(data.initialTP !== null ? [{ label: "TP", value: data.initialTP, tone: "text-profit" }] : []),
+        ...(data.initialStop !== null ? [{ label: chartT.sl, value: data.initialStop, tone: "text-loss" }] : []),
+        ...(data.initialTP !== null ? [{ label: chartT.tp, value: data.initialTP, tone: "text-profit" }] : []),
       ]
     : [];
 
@@ -229,7 +233,7 @@ export function TradeSessionChart({ tradeId, open }: TradeSessionChartProps) {
         <div className="flex items-center gap-2">
           <LineChart className="size-3.5 text-accent" aria-hidden="true" />
           <p className="text-[11px] font-semibold tracking-wider uppercase text-muted-foreground">
-            Session price path
+            {chartT.heading}
           </p>
           {data ? (
             <span className="font-mono text-[10px] text-muted-foreground">
@@ -241,7 +245,7 @@ export function TradeSessionChart({ tradeId, open }: TradeSessionChartProps) {
           variant="ghost"
           size="icon"
           className="size-6"
-          aria-label={expanded ? "Collapse chart" : "Expand chart"}
+          aria-label={expanded ? chartT.collapse : chartT.expand}
           aria-expanded={expanded}
           onClick={() => setExpanded((previous) => !previous)}
           data-testid="trade-session-chart-toggle"
@@ -259,12 +263,12 @@ export function TradeSessionChart({ tradeId, open }: TradeSessionChartProps) {
             {isPending ? (
               <Loader2 className="size-4 animate-spin" aria-hidden="true" />
             ) : (
-              <p className="text-xs">Price path unavailable.</p>
+              <p className="text-xs">{chartT.unavailable}</p>
             )}
           </div>
         ) : (
           <div className="px-1 pb-2">
-            <EChart option={option} className="h-48 w-full" ariaLabel="Entry and exit projected on session price" />
+            <EChart option={option} className="h-48 w-full" ariaLabel={chartT.projectionAria} />
             <div className="flex flex-wrap gap-x-4 gap-y-1 px-3 pt-1">
               {levels.map((level) => (
                 <span key={level.label} className="flex items-center gap-1.5 font-mono text-[10px] text-muted-foreground">
@@ -274,7 +278,7 @@ export function TradeSessionChart({ tradeId, open }: TradeSessionChartProps) {
               ))}
               {data.exitPrice === null ? (
                 <span className="text-[10px] italic text-muted-foreground/70">
-                  open position — exit will project once recorded
+                  {chartT.openNote}
                 </span>
               ) : null}
             </div>

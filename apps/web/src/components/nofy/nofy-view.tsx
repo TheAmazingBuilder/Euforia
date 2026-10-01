@@ -17,6 +17,7 @@ import { NofyEditor } from "./nofy-editor";
 import { NotesBrowser } from "./nofy-notes";
 import { FoldersPanel, OverviewPanel, TemplatesPanel, TrashPanel } from "./nofy-panels";
 import { nofyRelativeTime } from "./nofy-shared";
+import { useI18n } from "@/i18n/i18n-provider";
 import {
   NOFY_DEFAULT_PARAMS,
   useCreateNofyNote,
@@ -37,13 +38,14 @@ import {
  * ACADEMY section — never a sub-tab of Academy (spec §1/§78).
  */
 
+/** Tab ids + icons only — labels resolve through dict.nofy.view.tabs. */
 const TABS = [
-  { id: "overview", label: "Overview", icon: LayoutDashboard },
-  { id: "notes", label: "My Notes", icon: FileText },
-  { id: "folders", label: "Folders", icon: Folder },
-  { id: "favorites", label: "Favorites", icon: Star },
-  { id: "templates", label: "Templates", icon: NotebookText },
-  { id: "trash", label: "Trash", icon: Trash2 },
+  { id: "overview", icon: LayoutDashboard },
+  { id: "notes", icon: FileText },
+  { id: "folders", icon: Folder },
+  { id: "favorites", icon: Star },
+  { id: "templates", icon: NotebookText },
+  { id: "trash", icon: Trash2 },
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
@@ -51,6 +53,8 @@ type TabId = (typeof TABS)[number]["id"];
 export function NofyView() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { dict } = useI18n();
+  const N = dict.nofy;
 
   const rawTab = searchParams.get("tab") ?? "overview";
   const activeTab: TabId = (TABS.some((tab) => tab.id === rawTab) ? rawTab : "overview") as TabId;
@@ -144,7 +148,7 @@ export function NofyView() {
                 ← Nofy
               </button>
               {openNoteQuery.data?.note.updatedAt ? (
-                <span className="text-xs text-muted-foreground">last edited {nofyRelativeTime(openNoteQuery.data.note.updatedAt)}</span>
+                <span className="text-xs text-muted-foreground">{N.view.lastEdited} {nofyRelativeTime(openNoteQuery.data.note.updatedAt, N.time)}</span>
               ) : null}
             </div>
           ) : null}
@@ -157,7 +161,7 @@ export function NofyView() {
           />
           {focusMode ? (
             <p className="text-center text-xs text-muted-foreground">
-              Focus mode — navigation is hidden while you write. Use the minimize button to come back.
+              {N.view.focusHint}
             </p>
           ) : null}
         </div>
@@ -177,8 +181,7 @@ export function NofyView() {
                 Nofy
               </h1>
               <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-                Learn → think → write → document → research → connect → apply. Your personal trading knowledge
-                workspace: notes, ideas, research and documentation — connected to your trades, strategies and lessons.
+                {N.view.tagline}
               </p>
             </div>
             {overviewQuery.data ? (
@@ -187,7 +190,7 @@ export function NofyView() {
                 data-testid="nofy-note-count"
               >
                 <span className="font-mono font-semibold tabular-nums">{overviewQuery.data.totals.notes}</span>
-                notes
+                {N.shared.noteMany}
               </span>
             ) : null}
           </div>
@@ -207,7 +210,9 @@ export function NofyView() {
         <Tabs value={activeTab} onValueChange={setTab}>
           <div className="overflow-x-auto pb-0.5">
             <TabsList className="h-auto w-full justify-start gap-1 overflow-x-auto rounded-lg border border-border bg-surface p-1 sm:w-fit">
-              {TABS.map(({ id, label, icon: Icon }) => (
+              {TABS.map(({ id, icon: Icon }) => {
+                const label = N.view.tabs[id];
+                return (
                 <TabsTrigger
                   key={id}
                   value={id}
@@ -217,7 +222,8 @@ export function NofyView() {
                   <Icon className="size-4" aria-hidden="true" />
                   {label}
                 </TabsTrigger>
-              ))}
+                );
+              })}
             </TabsList>
           </div>
 
@@ -238,8 +244,8 @@ export function NofyView() {
               onOpenNote={openNote}
               onCreateNote={() => handleCreateNote(notesParams.folderId === "" ? null : notesParams.folderId)}
               emptyState={{
-                title: "No notes yet.",
-                body: "Start capturing your ideas, observations, research and trading knowledge.",
+                title: N.overview.emptyTitle,
+                body: N.overview.emptyBody,
               }}
               testid="nofy-notes-panel"
             />
@@ -262,8 +268,8 @@ export function NofyView() {
               onCreateNote={() => handleCreateNote()}
               emptyState={{
                 icon: Star,
-                title: "No favorite notes yet.",
-                body: "Star important notes to access them quickly.",
+                title: N.view.favoritesEmptyTitle,
+                body: N.overview.favoritesEmpty,
               }}
               testid="nofy-favorites-panel"
             />

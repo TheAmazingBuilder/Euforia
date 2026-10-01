@@ -6,6 +6,7 @@ import { Check, ChevronsUpDown, Search, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import type { Instrument } from "@cosmoz/shared";
+import { useI18n } from "@/i18n/i18n-provider";
 import { cn } from "@/lib/utils";
 
 /**
@@ -31,16 +32,6 @@ function loadStore(): { favorites: string[]; recents: string[] } {
   }
 }
 
-const ASSET_CLASS_LABEL: Record<string, string> = {
-  FOREX: "Forex",
-  CRYPTO: "Crypto",
-  METAL: "Metals",
-  INDEX: "Indices",
-  STOCK: "Stocks",
-  COMMODITY: "Commodities",
-  SYNTHETIC: "Synthetic",
-};
-
 interface SymbolPickerProps {
   instruments: Instrument[];
   value: string;
@@ -53,9 +44,16 @@ interface SymbolPickerProps {
 }
 
 export function SymbolPicker({ instruments, value, onChange, compact = false }: SymbolPickerProps) {
+  const { dict } = useI18n();
+  const S = dict.session;
   const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState("");
   const [store, setStore] = React.useState(loadStore);
+
+  const assetClassLabel = (assetClass: string): string =>
+    assetClass in S.assetClasses
+      ? S.assetClasses[assetClass as keyof typeof S.assetClasses]
+      : assetClass;
 
   const persist = React.useCallback((next: { favorites: string[]; recents: string[] }) => {
     setStore(next);
@@ -113,14 +111,18 @@ export function SymbolPicker({ instruments, value, onChange, compact = false }: 
           <span className="truncate text-xs text-muted-foreground">{item.name}</span>
         </span>
         <span className="shrink-0 text-[10px] uppercase tracking-wide text-muted-foreground">
-          {ASSET_CLASS_LABEL[item.assetClass] ?? item.assetClass}
+          {assetClassLabel(item.assetClass)}
         </span>
         {value === item.symbol ? <Check className="size-3.5 shrink-0 text-accent" aria-hidden="true" /> : null}
       </button>
       <button
         type="button"
         onClick={() => toggleFavorite(item.symbol)}
-        aria-label={store.favorites.includes(item.symbol) ? `Remove ${item.symbol} from favorites` : `Add ${item.symbol} to favorites`}
+        aria-label={
+          store.favorites.includes(item.symbol)
+            ? `${S.symbolPicker.removeFavorite} ${item.symbol} ${S.symbolPicker.favoriteTailRemove}`
+            : `${S.symbolPicker.addFavorite} ${item.symbol} ${S.symbolPicker.favoriteTailAdd}`
+        }
         aria-pressed={store.favorites.includes(item.symbol)}
         className="shrink-0 rounded p-1 text-muted-foreground transition-colors hover:text-warning"
       >
@@ -129,11 +131,11 @@ export function SymbolPicker({ instruments, value, onChange, compact = false }: 
     </div>
   );
 
-  const section = (title: string, rows: Instrument[]) =>
+  const section = (title: string, rows: Instrument[], isAll = false) =>
     rows.length > 0 ? (
       <div className="space-y-0.5">
         <p className="px-2 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{title}</p>
-        {rows.slice(0, title === "All instruments" ? 40 : 6).map(renderRow)}
+        {rows.slice(0, isAll ? 40 : 6).map(renderRow)}
       </div>
     ) : null;
 
@@ -145,14 +147,14 @@ export function SymbolPicker({ instruments, value, onChange, compact = false }: 
           size="sm"
           role="combobox"
           aria-expanded={open}
-          aria-label="Select symbol"
+          aria-label={S.symbolPicker.triggerAria}
           data-testid="symbol-picker-trigger"
           className={cn(
             "justify-between font-mono font-semibold",
             compact ? "h-7 w-auto gap-1 px-2 text-xs" : "w-full",
           )}
         >
-          <span className="truncate">{selected ? selected.symbol : "Symbol"}</span>
+          <span className="truncate">{selected ? selected.symbol : S.symbolPicker.fallback}</span>
           <ChevronsUpDown className="size-3.5 shrink-0 opacity-50" aria-hidden="true" />
         </Button>
       </PopoverTrigger>
@@ -162,20 +164,20 @@ export function SymbolPicker({ instruments, value, onChange, compact = false }: 
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search symbol or name…"
-            aria-label="Search instruments"
+            placeholder={S.symbolPicker.searchPlaceholder}
+            aria-label={S.symbolPicker.searchAria}
             data-testid="symbol-search"
             className="w-full rounded-md border border-border bg-surface-raised py-1.5 pl-8 pr-2 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-accent/60"
           />
         </div>
         <div className="mt-1 max-h-[300px] overflow-y-auto" data-testid="symbol-picker-list">
           {matches.length === 0 ? (
-            <p className="px-2 py-6 text-center text-xs text-muted-foreground">No instrument matches “{query}”.</p>
+            <p className="px-2 py-6 text-center text-xs text-muted-foreground">{`${S.symbolPicker.noMatch} “${query}”.`}</p>
           ) : (
             <>
-              {section("Favorites", favoriteRows)}
-              {section("Recent", recentRows)}
-              {section("All instruments", restRows)}
+              {section(S.symbolPicker.favorites, favoriteRows)}
+              {section(S.symbolPicker.recent, recentRows)}
+              {section(S.symbolPicker.all, restRows, true)}
             </>
           )}
         </div>

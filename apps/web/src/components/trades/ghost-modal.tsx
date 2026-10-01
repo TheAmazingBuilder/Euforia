@@ -25,6 +25,7 @@ import { useCreateSkippedTrade } from "@/lib/api/queries";
 import { useIsDesktop } from "@/lib/hooks/use-media-query";
 import { closeGhostModal } from "@/lib/hooks/use-ghost-modal";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/i18n/i18n-provider";
 
 /**
  * Ghost trade — the 10-second capture (spec §8): instrument combobox,
@@ -33,21 +34,30 @@ import { cn } from "@/lib/utils";
  * tomorrow ("We'll ask you tomorrow how it played out.").
  */
 
-const REASONS: readonly { value: SkipReason; label: string; hint: string }[] = [
-  { value: "FEAR", label: "Fear", hint: "Hesitation" },
-  { value: "DISCIPLINE", label: "Discipline", hint: "Rules obeyed" },
-  { value: "OUT_OF_PLAYBOOK", label: "Out of playbook", hint: "No edge" },
-  { value: "NO_SETUP", label: "No valid setup", hint: "Bad criteria" },
-  { value: "MISSED_EXECUTION", label: "Missed execution", hint: "Late entry" },
+// Machine values stay module-scope; the user-facing labels/hints resolve
+// through dict.trades.ghost at render time (i18n pattern — same as the
+// emotion chips' EMOTION_OPTIONS).
+const REASONS: readonly SkipReason[] = [
+  "FEAR",
+  "DISCIPLINE",
+  "OUT_OF_PLAYBOOK",
+  "NO_SETUP",
+  "MISSED_EXECUTION",
 ];
 
-const DIRECTIONS: readonly { value: Direction | null; label: string; glyph: string }[] = [
-  { value: "BUY", label: "Long", glyph: "▲" },
-  { value: "SELL", label: "Short", glyph: "▼" },
-  { value: null, label: "Undecided", glyph: "—" },
+const DIRECTIONS: readonly {
+  value: Direction | null;
+  labelKey: "long" | "short" | "undecided";
+  glyph: string;
+}[] = [
+  { value: "BUY", labelKey: "long", glyph: "▲" },
+  { value: "SELL", labelKey: "short", glyph: "▼" },
+  { value: null, labelKey: "undecided", glyph: "—" },
 ];
 
 function GhostForm() {
+  const { dict } = useI18n();
+  const T = dict.trades.ghost;
   const [instrumentId, setInstrumentId] = React.useState<string | null>(null);
   const [direction, setDirection] = React.useState<Direction | null>(null);
   const [reason, setReason] = React.useState<SkipReason | null>(null);
@@ -59,16 +69,16 @@ function GhostForm() {
     if (instrumentId === null || reason === null) return;
     try {
       await createGhost.mutateAsync({ instrumentId, direction, reason });
-      toast.success("Setup logged, not taken", {
-        description: "We'll ask you tomorrow how it played out.",
+      toast.success(T.logged, {
+        description: T.tomorrow,
       });
       closeGhostModal();
     } catch {
-      toast.error("Could not log the skipped setup", {
-        description: "Check your connection and try again.",
+      toast.error(dict.trades.errors.ghostLog, {
+        description: T.failedDescription,
       });
     }
-  }, [createGhost, direction, instrumentId, reason]);
+  }, [createGhost, direction, instrumentId, reason, dict, T]);
 
   const fieldLabel = "text-xs font-medium uppercase tracking-wide text-muted-foreground";
 
@@ -83,7 +93,7 @@ function GhostForm() {
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
           <span className={fieldLabel} id="ghost-instrument-label">
-            Market / instrument
+            {T.marketInstrument}
           </span>
           <div aria-labelledby="ghost-instrument-label">
             <InstrumentCombobox value={instrumentId} onChange={(instrument) => setInstrumentId(instrument.id)} />
@@ -92,7 +102,7 @@ function GhostForm() {
 
         <div className="space-y-1.5">
           <span className={fieldLabel} id="ghost-direction-label">
-            Potential bias
+            {T.potentialBias}
           </span>
           <div
             role="radiogroup"
@@ -103,7 +113,7 @@ function GhostForm() {
               const selected = option.value === direction;
               return (
                 <button
-                  key={option.label}
+                  key={option.labelKey}
                   type="button"
                   role="radio"
                   aria-checked={selected}
@@ -118,7 +128,7 @@ function GhostForm() {
                   <span aria-hidden="true" className="text-sm leading-none">
                     {option.glyph}
                   </span>
-                  {option.label}
+                  {T.directions[option.labelKey]}
                 </button>
               );
             })}
@@ -128,18 +138,19 @@ function GhostForm() {
 
       <div className="space-y-1.5">
         <span className={fieldLabel}>
-          Why didn&apos;t you execute? <span className="text-destructive">*</span>
+          {T.whyNot} <span className="text-destructive">*</span>
         </span>
-        <div role="radiogroup" aria-label="Skip reason" className="grid grid-cols-2 gap-1.5 sm:grid-cols-5">
-          {REASONS.map((option) => {
-            const selected = option.value === reason;
+        <div role="radiogroup" aria-label={T.skipReasonAria} className="grid grid-cols-2 gap-1.5 sm:grid-cols-5">
+          {REASONS.map((value) => {
+            const option = T.reasons[value];
+            const selected = value === reason;
             return (
               <button
-                key={option.value}
+                key={value}
                 type="button"
                 role="radio"
                 aria-checked={selected}
-                onClick={() => setReason(option.value)}
+                onClick={() => setReason(value)}
                 className={cn(
                   "flex flex-col items-center gap-0.5 rounded-md border px-2 py-2.5 text-xs font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
                   selected
@@ -165,10 +176,10 @@ function GhostForm() {
       <div className="flex items-center justify-between gap-3 border-t border-border pt-3">
         <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <EyeOff className="size-3.5 shrink-0" aria-hidden="true" />
-          We&apos;ll ask you tomorrow how it played out.
+          {T.tomorrow}
         </p>
         <Button type="submit" disabled={!ready}>
-          Log it
+          {T.logIt}
         </Button>
       </div>
     </form>
@@ -176,6 +187,8 @@ function GhostForm() {
 }
 
 export function GhostModal({ open }: { open: boolean }) {
+  const { dict } = useI18n();
+  const T = dict.trades.ghost;
   const isDesktop = useIsDesktop();
   if (!open || isDesktop === null) return null;
 
@@ -190,13 +203,13 @@ export function GhostModal({ open }: { open: boolean }) {
         <DialogContent className="p-0 sm:max-w-xl">
           <DialogHeader className="gap-1 border-b border-border p-4 pb-3">
             <DialogTitle className="flex items-center gap-2 font-heading text-lg font-semibold text-foreground">
-              Setup seen, not taken
+              {T.title}
               <span className="rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                10-sec capture
+                {T.badge}
               </span>
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
-              Log an unexecuted opportunity — the Regret Registry turns it into discipline data.
+              {T.description}
             </DialogDescription>
           </DialogHeader>
           <div className="p-4">
@@ -221,10 +234,10 @@ export function GhostModal({ open }: { open: boolean }) {
       >
         <SheetHeader className="gap-1 border-b border-border p-4 pb-3">
           <SheetTitle className="flex items-center gap-2 font-heading text-lg font-semibold text-foreground">
-            Setup seen, not taken
+            {T.title}
           </SheetTitle>
           <SheetDescription className="text-xs text-muted-foreground">
-            10-second capture — we&apos;ll ask you tomorrow how it played out.
+            {T.sheetDescription}
           </SheetDescription>
         </SheetHeader>
         <div className="max-h-[70dvh] overflow-y-auto p-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">

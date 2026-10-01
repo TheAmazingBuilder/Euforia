@@ -20,6 +20,7 @@ import { ScreenshotPicker, type DraftScreenshot } from "@/components/trades/scre
 import { EMOTION_OPTIONS } from "@/components/trades/emotion-picker";
 import { cn } from "@/lib/utils";
 import { closeJudgmentFlow } from "@/lib/hooks/use-judgment-flow";
+import { useI18n } from "@/i18n/i18n-provider";
 
 /**
  * ACT 3 — Reflect (trade-entry-ux.md §6): optional, one minute, ALL skippable.
@@ -28,15 +29,10 @@ import { closeJudgmentFlow } from "@/lib/hooks/use-judgment-flow";
  * screenshots. The flow ends with [Finish] — or Esc at any time.
  */
 
-const LESSON_PLACEHOLDERS: readonly string[] = [
-  "What would you do differently?",
-  "What did the market teach you here?",
-  "Which habit deserves a reward — or a fix?",
-];
-
-function rotatePlaceholder(): string {
+/** Rotate through the hourly slots — labels come from dict.trades.reflect. */
+function rotatePlaceholder(placeholders: readonly string[]): string {
   const slot = Math.floor(Date.now() / 3_600_000);
-  return LESSON_PLACEHOLDERS[slot % LESSON_PLACEHOLDERS.length] ?? LESSON_PLACEHOLDERS[0]!;
+  return placeholders[slot % placeholders.length] ?? placeholders[0]!;
 }
 
 function normalizeDecimalInput(raw: string): string {
@@ -48,6 +44,8 @@ export interface ReflectProps {
 }
 
 export function Reflect({ tradeId }: ReflectProps) {
+  const { dict } = useI18n();
+  const T = dict.trades.reflect;
   const review = useReview(tradeId);
   const { data: tagsData } = useTags();
   const { data: instrumentsData } = useInstruments();
@@ -88,6 +86,7 @@ export function Reflect({ tradeId }: ReflectProps) {
 
   const tags: Tag[] = tagsData?.tags ?? [];
   const mistakes = data?.detectedMistakes ?? [];
+  const lessonPlaceholders: readonly string[] = [T.lessonPh1, T.lessonPh2, T.lessonPh3];
 
   const toggleTag = (tagId: string) => {
     setSelectedTagIds((previous) =>
@@ -141,15 +140,14 @@ export function Reflect({ tradeId }: ReflectProps) {
   return (
     <div className="space-y-5" data-testid="reflect">
       <p className="text-sm text-muted-foreground">
-        Optional — one minute. Everything here is skippable; it trains your detector and
-        feeds the analytics.
+        {T.intro}
       </p>
 
       {/* Detected mistakes — confirm/dismiss in 1 tap (spec §6) */}
       {mistakes.length > 0 ? (
         <section className="space-y-2" aria-labelledby="reflect-mistakes">
           <h3 id="reflect-mistakes" className="font-heading text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-            Detected mistakes
+            {T.mistakes}
           </h3>
           <ul className="space-y-2">
             {mistakes.map((mistake) => (
@@ -169,11 +167,11 @@ export function Reflect({ tradeId }: ReflectProps) {
                 <span className="flex items-center gap-1.5">
                   {mistake.userConfirmed === true ? (
                     <span className="rounded-sm border border-border px-1.5 py-0.5 font-mono text-[10px] uppercase text-muted-foreground">
-                      confirmed
+                      {T.confirmed}
                     </span>
                   ) : mistake.userConfirmed === false ? (
                     <span className="rounded-sm border border-border px-1.5 py-0.5 font-mono text-[10px] uppercase text-muted-foreground">
-                      dismissed
+                      {T.dismissed}
                     </span>
                   ) : (
                     <>
@@ -192,7 +190,7 @@ export function Reflect({ tradeId }: ReflectProps) {
                         }
                       >
                         <Check className="size-3.5" aria-hidden="true" />
-                        Confirm
+                        {T.confirm}
                       </Button>
                       <Button
                         type="button"
@@ -209,7 +207,7 @@ export function Reflect({ tradeId }: ReflectProps) {
                         }
                       >
                         <X className="size-3.5" aria-hidden="true" />
-                        Dismiss
+                        {T.dismiss}
                       </Button>
                     </>
                   )}
@@ -224,9 +222,9 @@ export function Reflect({ tradeId }: ReflectProps) {
       <section className="space-y-2" aria-labelledby="reflect-emotion">
         <div className="flex items-baseline justify-between">
           <h3 id="reflect-emotion" className="font-heading text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-            Emotion after
+            {T.emotionAfter}
           </h3>
-          <span className="text-[11px] text-muted-foreground">optional — single tap</span>
+          <span className="text-[11px] text-muted-foreground">{dict.trades.shared.optionalSingleTap}</span>
         </div>
         <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-labelledby="reflect-emotion">
           {EMOTION_OPTIONS.map((option) => {
@@ -253,7 +251,7 @@ export function Reflect({ tradeId }: ReflectProps) {
                     : "border-border bg-surface text-muted-foreground hover:border-accent/60 hover:text-foreground",
                 )}
               >
-                {option.charAt(0) + option.slice(1).toLowerCase()}
+                {dict.trades.emotions[option]}
               </button>
             );
           })}
@@ -263,11 +261,11 @@ export function Reflect({ tradeId }: ReflectProps) {
       {/* MFE / MAE — user-observed prices; R is recomputed server-side */}
       <section className="space-y-2" aria-labelledby="reflect-excursion">
         <h3 id="reflect-excursion" className="font-heading text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-          MFE / MAE — how far it went for / against you
+          {T.excursion}
         </h3>
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
-            <Label htmlFor="reflect-mfe">MFE price (max favorable)</Label>
+            <Label htmlFor="reflect-mfe">{T.mfeLabel}</Label>
             <input
               id="reflect-mfe"
               type="text"
@@ -280,7 +278,7 @@ export function Reflect({ tradeId }: ReflectProps) {
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="reflect-mae">MAE price (max adverse)</Label>
+            <Label htmlFor="reflect-mae">{T.maeLabel}</Label>
             <input
               id="reflect-mae"
               type="text"
@@ -298,7 +296,7 @@ export function Reflect({ tradeId }: ReflectProps) {
       {/* Tags — existing chips + inline creation */}
       <section className="space-y-2" aria-labelledby="reflect-tags">
         <h3 id="reflect-tags" className="font-heading text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-          Tags
+          {dict.trades.form.tags}
         </h3>
         <div className="flex flex-wrap items-center gap-1.5">
           {tags.map((tag) => {
@@ -331,8 +329,8 @@ export function Reflect({ tradeId }: ReflectProps) {
                   submitInlineTag();
                 }
               }}
-              placeholder="new tag…"
-              aria-label="New tag name"
+              placeholder={T.newTagPlaceholder}
+              aria-label={T.newTagAria}
               className="h-7 w-28 rounded-full border border-dashed border-border bg-background px-3 text-xs outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
             />
             <Button
@@ -340,7 +338,7 @@ export function Reflect({ tradeId }: ReflectProps) {
               size="sm"
               variant="ghost"
               className="h-7 w-7 p-0"
-              aria-label="Create tag"
+              aria-label={T.createTagAria}
               disabled={newTagName.trim() === "" || createTag.isPending}
               onClick={submitInlineTag}
             >
@@ -353,14 +351,14 @@ export function Reflect({ tradeId }: ReflectProps) {
       {/* Note / lesson — one textarea, rotating placeholder */}
       <section className="space-y-2" aria-labelledby="reflect-lesson">
         <h3 id="reflect-lesson" className="font-heading text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-          Note / lesson
+          {T.lessonHeading}
         </h3>
         <Textarea
           id="reflect-lesson-field"
           aria-labelledby="reflect-lesson"
           value={lesson}
           onChange={(event) => setLesson(event.target.value)}
-          placeholder={rotatePlaceholder()}
+          placeholder={rotatePlaceholder(lessonPlaceholders)}
           rows={3}
           className="resize-none text-sm"
         />
@@ -369,18 +367,18 @@ export function Reflect({ tradeId }: ReflectProps) {
       {/* Screenshots — same client-only picker as capture (uploads come later) */}
       <section className="space-y-2" aria-labelledby="reflect-screenshots">
         <h3 id="reflect-screenshots" className="font-heading text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-          Screenshots
+          {dict.trades.detail.screenshotsWord}
         </h3>
         <ScreenshotPicker screenshots={screenshots} onChange={setScreenshots} />
       </section>
 
       <div className="flex items-center justify-between gap-3">
         <p className="font-mono text-[11px] text-muted-foreground" data-testid="reflect-save-state">
-          {savedNote === "saving" ? "Saving…" : savedNote === "saved" ? "Saved" : "Everything optional — Esc to skip"}
+          {savedNote === "saving" ? dict.common.saving : savedNote === "saved" ? T.savedState : T.escToSkip}
         </p>
         <Button type="button" onClick={finish} className="h-11 px-6" disabled={updateReview.isPending}>
           <Check className="size-4" aria-hidden="true" />
-          Finish
+          {dict.trades.shared.finish}
         </Button>
       </div>
     </div>

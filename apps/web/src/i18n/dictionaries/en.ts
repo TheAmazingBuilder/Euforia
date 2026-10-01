@@ -1,5 +1,8 @@
 import { SIDEBAR_ITEMS, NAV_SECTIONS, BOTTOM_NAV_ITEMS } from "@/lib/navigation";
 import { authCopy } from "@/components/auth/auth-copy";
+import { sessionDict } from "@/i18n/dictionaries/en/session";
+import { tradesDict } from "@/i18n/dictionaries/en/trades";
+import { nofyDict } from "@/i18n/dictionaries/en/nofy";
 
 /**
  * EN dictionary — the CANONICAL language pack and the type source for every
@@ -13,6 +16,9 @@ import { authCopy } from "@/components/auth/auth-copy";
  *              mobile bottom nav, page-title fallbacks
  *   auth     — the full auth surface (auth-copy.ts, migrated verbatim)
  *   settings — settings shell categories + the Localization card
+ *   session  — Session Live module (dictionaries/en/session.ts)
+ *   trades   — Trades module (dictionaries/en/trades.ts)
+ *   nofy     — Nofy module (dictionaries/en/nofy.ts)
  */
 const en = {
   common: {
@@ -84,6 +90,12 @@ const en = {
       resetConfirm: "Reset card",
     },
   },
+
+  session: sessionDict,
+
+  trades: tradesDict,
+
+  nofy: nofyDict,
 } as const;
 
 /**

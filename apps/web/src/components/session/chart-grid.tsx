@@ -6,6 +6,7 @@ import { Columns2, LayoutGrid, Link2, Link2Off, Square, X } from "lucide-react";
 import { AnalysisChart } from "@/components/session/analysis-chart";
 import { SymbolPicker } from "@/components/session/symbol-picker";
 import type { BrokerPosition, IndicatorConfig, Instrument, MarketInterval, Trade } from "@cosmoz/shared";
+import { useI18n } from "@/i18n/i18n-provider";
 import type { LiveQuote } from "@/lib/realtime/market";
 import { useCandles, useLiveQuote } from "@/lib/realtime/market";
 import { cn } from "@/lib/utils";
@@ -117,23 +118,25 @@ interface ChartGridToolbarProps {
   onTimeframeSyncChange: (value: boolean) => void;
 }
 
-const LAYOUT_OPTIONS: Array<{ value: MultiChartLayout; label: string; icon: React.ReactNode; hint: string }> = [
-  { value: 1, label: "1", icon: <Square className="size-3" aria-hidden="true" />, hint: "Single chart" },
-  { value: 2, label: "2", icon: <Columns2 className="size-3.5" aria-hidden="true" />, hint: "Two charts" },
-  { value: 4, label: "4", icon: <LayoutGrid className="size-3.5" aria-hidden="true" />, hint: "Four charts (2×2)" },
-];
-
 export function ChartGridToolbar(props: ChartGridToolbarProps) {
+  const { dict } = useI18n();
+  const S = dict.session;
+  const layoutOptions: Array<{ value: MultiChartLayout; label: string; icon: React.ReactNode; hint: string }> = [
+    { value: 1, label: "1", icon: <Square className="size-3" aria-hidden="true" />, hint: S.grid.single },
+    { value: 2, label: "2", icon: <Columns2 className="size-3.5" aria-hidden="true" />, hint: S.grid.two },
+    { value: 4, label: "4", icon: <LayoutGrid className="size-3.5" aria-hidden="true" />, hint: S.grid.four },
+  ];
+
   return (
     <div
       className="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-surface px-2.5 py-2"
       data-testid="chart-grid-toolbar"
       role="toolbar"
-      aria-label="Multi-chart layout and synchronization"
+      aria-label={S.grid.toolbarAria}
     >
-      <span className="ledger-label shrink-0 pr-1">Layout</span>
-      <div className="flex items-center gap-1" role="group" aria-label="Chart layout">
-        {LAYOUT_OPTIONS.map((option) => (
+      <span className="ledger-label shrink-0 pr-1">{S.grid.layout}</span>
+      <div className="flex items-center gap-1" role="group" aria-label={S.grid.layoutGroupAria}>
+        {layoutOptions.map((option) => (
           <button
             key={option.value}
             type="button"
@@ -161,7 +164,7 @@ export function ChartGridToolbar(props: ChartGridToolbarProps) {
         type="button"
         aria-pressed={props.crosshairSync}
         data-testid="chart-sync-crosshair"
-        title="Mirror crosshair and zoom across all charts"
+        title={S.grid.crosshairHint}
         onClick={() => props.onCrosshairSyncChange(!props.crosshairSync)}
         className={cn(
           "inline-flex h-7 items-center gap-1.5 rounded-md border px-2 text-xs font-medium transition-colors",
@@ -171,13 +174,13 @@ export function ChartGridToolbar(props: ChartGridToolbarProps) {
         )}
       >
         {props.crosshairSync ? <Link2 className="size-3.5" aria-hidden="true" /> : <Link2Off className="size-3.5" aria-hidden="true" />}
-        Crosshair sync
+        {S.grid.crosshairSync}
       </button>
       <button
         type="button"
         aria-pressed={props.timeframeSync}
         data-testid="chart-sync-timeframe"
-        title="The left-rail timeframe applies to every chart"
+        title={S.grid.timeframeHint}
         onClick={() => props.onTimeframeSyncChange(!props.timeframeSync)}
         className={cn(
           "inline-flex h-7 items-center gap-1.5 rounded-md border px-2 text-xs font-medium transition-colors",
@@ -187,10 +190,10 @@ export function ChartGridToolbar(props: ChartGridToolbarProps) {
         )}
       >
         {props.timeframeSync ? <Link2 className="size-3.5" aria-hidden="true" /> : <Link2Off className="size-3.5" aria-hidden="true" />}
-        Timeframe sync
+        {S.grid.timeframeSync}
       </button>
       <span className="ml-auto hidden text-[11px] text-muted-foreground lg:block">
-        Panes beyond the first are read-only observation charts.
+        {S.grid.readonlyHint}
       </span>
     </div>
   );
@@ -215,6 +218,8 @@ interface AuxChartPaneProps {
 }
 
 function AuxChartPane(props: AuxChartPaneProps) {
+  const { dict } = useI18n();
+  const S = dict.session;
   const { pane, index } = props;
   const instrument = React.useMemo(
     () => props.instruments.find((item) => item.symbol === pane.symbol) ?? null,
@@ -237,11 +242,11 @@ function AuxChartPane(props: AuxChartPaneProps) {
       className="rounded-xl border border-border bg-surface p-2"
       data-testid={`aux-pane-${index}`}
       data-symbol={pane.symbol}
-      aria-label={`Observation chart ${index + 1}`}
+      aria-label={`${S.grid.observationAria} ${index + 1}`}
     >
       <header className="mb-1.5 flex items-center gap-1.5">
         <SymbolPicker instruments={props.instruments} value={pane.symbol} onChange={props.onSymbolChange} compact />
-        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-0.5" role="group" aria-label={`Chart ${index + 1} timeframe`}>
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-0.5" role="group" aria-label={`${S.grid.paneTfAria} ${index + 1} ${S.grid.paneTfTail}`}>
           {AUX_INTERVALS.map((item) => (
             <button
               key={item}
@@ -263,7 +268,7 @@ function AuxChartPane(props: AuxChartPaneProps) {
         <button
           type="button"
           onClick={props.onRemove}
-          aria-label={`Remove chart ${index + 1}`}
+          aria-label={`${S.grid.removeAria} ${index + 1}`}
           data-testid={`aux-remove-${index}`}
           className="shrink-0 rounded p-1 text-muted-foreground transition-colors hover:text-foreground"
         >
@@ -275,9 +280,9 @@ function AuxChartPane(props: AuxChartPaneProps) {
           className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border text-center"
           style={{ height: "clamp(220px, 30vh, 340px)" }}
         >
-          <p className="text-sm font-medium text-foreground">Pick a market</p>
+          <p className="text-sm font-medium text-foreground">{S.grid.pickMarket}</p>
           <p className="mt-1 max-w-[220px] text-xs text-muted-foreground">
-            Choose an instrument to watch it beside the master chart — crosshair and zoom stay in sync.
+            {S.grid.pickMarketBody}
           </p>
         </div>
       ) : (

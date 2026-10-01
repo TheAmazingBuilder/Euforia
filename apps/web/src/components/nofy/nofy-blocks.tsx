@@ -15,6 +15,8 @@ import {
 
 import type { NofyBlock, NofyRefKind } from "@cosmoz/shared";
 
+import { useI18n } from "@/i18n/i18n-provider";
+import type { Dictionary } from "@/i18n/dictionaries/en";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -71,18 +73,32 @@ export function autoResize(el: HTMLTextAreaElement): void {
 const TEXT_BLOCK_CLASS =
   "w-full resize-none overflow-hidden rounded-sm border border-transparent bg-transparent text-[15px] leading-relaxed text-foreground outline-none placeholder:text-muted-foreground/50 focus:border-border focus:bg-background";
 
-const PLACEHOLDERS: Record<string, string> = {
-  paragraph: "Write something, press '/' for commands…",
-  h1: "Heading 1",
-  h2: "Heading 2",
-  h3: "Heading 3",
-  bullet: "List item…",
-  numbered: "List item…",
-  todo: "To-do…",
-  quote: "Quote…",
-  callout: "Callout text…",
-  code: "Code…",
-};
+/** refKinds dict key for a machine ref kind (TRADE → trade). */
+const refKindKey = (kind: NofyRefKind): keyof Dictionary["nofy"]["refKinds"] =>
+  kind.toLowerCase() as keyof Dictionary["nofy"]["refKinds"];
+
+/** Display label for a block machine type (ids stay machine; "ref" falls back to its id). */
+export function blockTypeLabel(type: NofyBlock["type"], B: Dictionary["nofy"]["blockTypes"]): string {
+  const labels = B as Record<string, string>;
+  return labels[type] ?? type;
+}
+
+/** Empty-block placeholder — headings reuse their blockTypes label (i18n). */
+function placeholderFor(type: NofyBlock["type"], N: Dictionary["nofy"]): string {
+  switch (type) {
+    case "paragraph": return N.placeholders.paragraph;
+    case "h1": return N.blockTypes.h1;
+    case "h2": return N.blockTypes.h2;
+    case "h3": return N.blockTypes.h3;
+    case "bullet":
+    case "numbered": return N.placeholders.list;
+    case "todo": return N.placeholders.todo;
+    case "quote": return N.placeholders.quote;
+    case "callout": return N.placeholders.callout;
+    case "code": return N.placeholders.code;
+    default: return "";
+  }
+}
 
 const HEADING_SIZES: Record<string, string> = {
   h1: "text-2xl font-bold font-heading",
@@ -141,6 +157,8 @@ function TextBlockBody({
   ops: NofyBlockOps;
   focusable: boolean;
 }) {
+  const { dict } = useI18n();
+  const N = dict.nofy;
   const refCallback = React.useCallback(
     (el: HTMLTextAreaElement | null) => {
       ops.registerTextArea(block.id, el);
@@ -205,11 +223,11 @@ function TextBlockBody({
       HEADING_SIZES[block.type],
       block.type === "code" && "font-mono text-[13px] leading-normal",
     ),
-    placeholder: PLACEHOLDERS[block.type] ?? "",
+    placeholder: placeholderFor(block.type, N),
     defaultValue: block.text,
     onInput: handleInput,
     onKeyDown: handleKeyDown,
-    "aria-label": `${block.type} block`,
+    "aria-label": `${blockTypeLabel(block.type, N.blockTypes)} ${N.blocks.blockAria}`,
     onFocus: () => {
       if (focusable) return;
     },
@@ -237,6 +255,8 @@ export function NofyBlockRow({
   setDragState: React.Dispatch<React.SetStateAction<{ dragId: string | null; overId: string | null; position: "above" | "below" | null }>>;
   compactGutter?: boolean;
 }) {
+  const { dict } = useI18n();
+  const N = dict.nofy;
   const isDragging = dragState.dragId === block.id;
   const dropEdge =
     dragState.dragId !== null && dragState.overId === block.id && dragState.dragId !== block.id
@@ -290,8 +310,8 @@ export function NofyBlockRow({
               setDragState({ dragId: block.id, overId: null, position: null });
             }}
             onDragEnd={() => setDragState({ dragId: null, overId: null, position: null })}
-            aria-label="Drag to reorder this block"
-            title="Drag to reorder"
+            aria-label={N.blocks.dragReorder}
+            title={N.blocks.dragReorderTitle}
             className="cursor-grab rounded p-0.5 text-muted-foreground/60 hover:text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <GripVertical className="size-4" aria-hidden="true" />
@@ -323,7 +343,7 @@ export function NofyBlockRow({
               type="checkbox"
               checked={block.checked ?? false}
               onChange={(event) => ops.updateBlock(block.id, { checked: event.target.checked })}
-              aria-label="Toggle to-do"
+              aria-label={N.blocks.toggleTodo}
               className="mt-2.5 size-3.5 shrink-0 cursor-pointer accent-[var(--accent)]"
               data-testid="nofy-todo-check"
             />
@@ -347,7 +367,7 @@ export function NofyBlockRow({
             <button
               type="button"
               onClick={() => ops.deleteBlock(block.id)}
-              aria-label="Delete divider"
+              aria-label={N.blocks.deleteDivider}
               className="rounded p-0.5 text-muted-foreground/50 opacity-0 transition-opacity hover:text-loss group-hover/row:opacity-100 outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <Trash2 className="size-3.5" aria-hidden="true" />
@@ -367,17 +387,9 @@ export function NofyBlockRow({
 
 // ── Block menu (turn into / duplicate / move / delete) ───────────────────────
 
-const TURN_INTO: { type: NofyBlock["type"]; label: string }[] = [
-  { type: "paragraph", label: "Text" },
-  { type: "h1", label: "Heading 1" },
-  { type: "h2", label: "Heading 2" },
-  { type: "h3", label: "Heading 3" },
-  { type: "bullet", label: "Bullet list" },
-  { type: "numbered", label: "Numbered list" },
-  { type: "todo", label: "To-do" },
-  { type: "quote", label: "Quote" },
-  { type: "callout", label: "Callout" },
-  { type: "code", label: "Code" },
+/** Machine types offered by "Turn into" — display labels resolve via blockTypes (i18n). */
+const TURN_INTO: readonly NofyBlock["type"][] = [
+  "paragraph", "h1", "h2", "h3", "bullet", "numbered", "todo", "quote", "callout", "code",
 ];
 
 function BlockMenu({
@@ -391,13 +403,15 @@ function BlockMenu({
   total: number;
   ops: NofyBlockOps;
 }) {
+  const { dict } = useI18n();
+  const N = dict.nofy;
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          aria-label="Block options"
-          title="Block options"
+          aria-label={N.blocks.blockOptions}
+          title={N.blocks.blockOptions}
           className="rounded p-0.5 text-muted-foreground/60 hover:text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <MoreVertical className="size-4" aria-hidden="true" />
@@ -406,23 +420,23 @@ function BlockMenu({
       <DropdownMenuContent align="start" className="w-44">
         {isTextLike(block.type) ? (
           <>
-            {TURN_INTO.map((option) => (
+            {TURN_INTO.map((type) => (
               <DropdownMenuItem
-                key={option.type}
-                disabled={option.type === block.type}
-                onClick={() => ops.updateBlock(block.id, { type: option.type, ...(option.type !== "todo" ? { checked: undefined } : { checked: false }) })}
+                key={type}
+                disabled={type === block.type}
+                onClick={() => ops.updateBlock(block.id, { type, ...(type !== "todo" ? { checked: undefined } : { checked: false }) })}
               >
-                Turn into {option.label}
+                {N.blocks.turnInto} {blockTypeLabel(type, N.blockTypes)}
               </DropdownMenuItem>
             ))}
             <DropdownMenuSeparator />
           </>
         ) : null}
-        <DropdownMenuItem onClick={() => ops.duplicateBlock(block.id)}>Duplicate</DropdownMenuItem>
-        <DropdownMenuItem disabled={index === 0} onClick={() => ops.moveBlock(block.id, -1)}>Move up</DropdownMenuItem>
-        <DropdownMenuItem disabled={index === total - 1} onClick={() => ops.moveBlock(block.id, 1)}>Move down</DropdownMenuItem>
+        <DropdownMenuItem onClick={() => ops.duplicateBlock(block.id)}>{N.shared.duplicate}</DropdownMenuItem>
+        <DropdownMenuItem disabled={index === 0} onClick={() => ops.moveBlock(block.id, -1)}>{N.blocks.moveUp}</DropdownMenuItem>
+        <DropdownMenuItem disabled={index === total - 1} onClick={() => ops.moveBlock(block.id, 1)}>{N.blocks.moveDown}</DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem variant="destructive" onClick={() => ops.deleteBlock(block.id)}>Delete block</DropdownMenuItem>
+        <DropdownMenuItem variant="destructive" onClick={() => ops.deleteBlock(block.id)}>{N.blocks.deleteBlock}</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
@@ -434,14 +448,17 @@ function isTextLike(type: NofyBlock["type"]): boolean {
 
 // ── Callout ──────────────────────────────────────────────────────────────────
 
-const CALLOUT_TONES: { tone: NonNullable<NofyBlock["tone"]>; icon: typeof Info; hue: string; label: string }[] = [
-  { tone: "info", icon: Info, hue: "var(--accent)", label: "Info" },
-  { tone: "tip", icon: Lightbulb, hue: "var(--profit)", label: "Tip" },
-  { tone: "warn", icon: AlertTriangle, hue: "var(--warning)", label: "Warning" },
-  { tone: "risk", icon: ShieldAlert, hue: "var(--loss)", label: "Risk" },
+/** Machine tones + identity — display labels resolve through blocks.tones (i18n). */
+const CALLOUT_TONES: { tone: NonNullable<NofyBlock["tone"]>; icon: typeof Info; hue: string }[] = [
+  { tone: "info", icon: Info, hue: "var(--accent)" },
+  { tone: "tip", icon: Lightbulb, hue: "var(--profit)" },
+  { tone: "warn", icon: AlertTriangle, hue: "var(--warning)" },
+  { tone: "risk", icon: ShieldAlert, hue: "var(--loss)" },
 ];
 
 function CalloutBody({ block, ops }: { block: NofyBlock; ops: NofyBlockOps }) {
+  const { dict } = useI18n();
+  const N = dict.nofy;
   const tone = block.tone ?? "info";
   const meta = CALLOUT_TONES.find((entry) => entry.tone === tone) ?? CALLOUT_TONES[0]!;
   const Icon = meta.icon;
@@ -459,13 +476,14 @@ function CalloutBody({ block, ops }: { block: NofyBlock; ops: NofyBlockOps }) {
         <span className="flex flex-col gap-0.5">
           {CALLOUT_TONES.map((entry) => {
             const ToneIcon = entry.icon;
+            const toneLabel = N.blocks.tones[entry.tone];
             return (
               <button
                 key={entry.tone}
                 type="button"
                 onClick={() => ops.updateBlock(block.id, { tone: entry.tone })}
-                aria-label={`Callout tone: ${entry.label}`}
-                title={entry.label}
+                aria-label={`${N.blocks.calloutToneAria} ${toneLabel}`}
+                title={toneLabel}
                 className={cn(
                   "rounded p-0.5 outline-none focus-visible:ring-2 focus-visible:ring-ring",
                   entry.tone === tone ? "opacity-100" : "opacity-25 hover:opacity-70",
@@ -489,6 +507,8 @@ function CalloutBody({ block, ops }: { block: NofyBlock; ops: NofyBlockOps }) {
 const MAX_IMAGE_BYTES = 2_000_000;
 
 function ImageBody({ block, ops }: { block: NofyBlock; ops: NofyBlockOps }) {
+  const { dict } = useI18n();
+  const N = dict.nofy;
   const fileRef = React.useRef<HTMLInputElement>(null);
   const [urlDraft, setUrlDraft] = React.useState("");
 
@@ -521,13 +541,13 @@ function ImageBody({ block, ops }: { block: NofyBlock; ops: NofyBlockOps }) {
               ops.updateBlock(block.id, { src: urlDraft.trim() });
             }
           }}
-          placeholder="Paste an image URL and press Enter…"
+          placeholder={N.blocks.imageUrlPlaceholder}
           className="h-8 min-w-0 flex-1 rounded-md border border-border bg-background px-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
-          aria-label="Image URL"
+          aria-label={N.blocks.imageUrlLabel}
         />
         <Button type="button" variant="outline" size="sm" className="h-8 gap-1.5" onClick={() => fileRef.current?.click()}>
           <Upload className="size-3.5" aria-hidden="true" />
-          Upload
+          {N.blocks.upload}
         </Button>
         <input
           ref={fileRef}
@@ -549,19 +569,19 @@ function ImageBody({ block, ops }: { block: NofyBlock; ops: NofyBlockOps }) {
       {/* Remote URLs are only ever self-seeded data URLs / user-provided image srcs
           rendered as an <img> — never injected HTML (spec §49). */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={block.src} alt={block.alt ?? block.caption ?? "Note image"} className="max-h-96 w-full object-contain bg-muted/30" />
+      <img src={block.src} alt={block.alt ?? block.caption ?? N.blocks.noteImageAlt} className="max-h-96 w-full object-contain bg-muted/30" />
       <figcaption className="flex items-center gap-2 border-t border-border bg-surface px-2 py-1.5">
         <input
           value={block.caption ?? ""}
           onChange={(event) => ops.updateBlock(block.id, { caption: event.target.value })}
-          placeholder="Caption…"
-          aria-label="Image caption"
+          placeholder={N.blocks.captionPlaceholder}
+          aria-label={N.blocks.captionLabel}
           className="h-6 min-w-0 flex-1 rounded-sm border border-transparent bg-transparent text-xs text-muted-foreground outline-none placeholder:text-muted-foreground/50 focus:border-border"
         />
         <button
           type="button"
           onClick={() => ops.updateBlock(block.id, { src: undefined })}
-          aria-label="Remove image"
+          aria-label={N.blocks.removeImage}
           className="rounded p-0.5 text-muted-foreground/60 hover:text-loss outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <Trash2 className="size-3.5" aria-hidden="true" />
@@ -574,6 +594,8 @@ function ImageBody({ block, ops }: { block: NofyBlock; ops: NofyBlockOps }) {
 // ── Table ────────────────────────────────────────────────────────────────────
 
 function TableBody({ block, ops }: { block: NofyBlock; ops: NofyBlockOps }) {
+  const { dict } = useI18n();
+  const BL = dict.nofy.blocks;
   const rows = block.rows ?? [["", "", ""], ["", "", ""]];
   const setRows = (next: string[][]) => ops.updateBlock(block.id, { rows: next });
 
@@ -593,7 +615,7 @@ function TableBody({ block, ops }: { block: NofyBlock; ops: NofyBlockOps }) {
                   <input
                     value={cell}
                     onChange={(event) => setCell(rowIndex, colIndex, event.target.value)}
-                    aria-label={rowIndex === 0 ? `Header column ${colIndex + 1}` : `Row ${rowIndex} column ${colIndex + 1}`}
+                    aria-label={rowIndex === 0 ? `${BL.headerColumn} ${colIndex + 1}` : `${BL.rowColumn} ${rowIndex} ${BL.column} ${colIndex + 1}`}
                     className={cn(
                       "w-full min-w-24 bg-transparent py-0.5 text-[13px] text-foreground outline-none placeholder:text-muted-foreground/50",
                       rowIndex === 0 && "font-semibold",
@@ -607,7 +629,7 @@ function TableBody({ block, ops }: { block: NofyBlock; ops: NofyBlockOps }) {
                   type="button"
                   onClick={() => setRows(rows.filter((_, r) => r !== rowIndex))}
                   disabled={rows.length <= 1}
-                  aria-label={`Delete row ${rowIndex + 1}`}
+                  aria-label={`${BL.deleteRow} ${rowIndex + 1}`}
                   className="rounded p-0.5 text-muted-foreground/50 opacity-0 transition-opacity hover:text-loss focus:opacity-100 group-hover/row:opacity-100 outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-0"
                 >
                   <Trash2 className="size-3" aria-hidden="true" />
@@ -619,7 +641,7 @@ function TableBody({ block, ops }: { block: NofyBlock; ops: NofyBlockOps }) {
       </table>
       <div className="flex items-center gap-2 border-t border-border bg-surface px-2 py-1">
         <Button type="button" variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => setRows([...rows, rows[0]!.map(() => "")])}>
-          + Row
+          {BL.addRow}
         </Button>
         <Button
           type="button"
@@ -629,7 +651,7 @@ function TableBody({ block, ops }: { block: NofyBlock; ops: NofyBlockOps }) {
           onClick={() => setRows(rows.map((row) => [...row, ""]))}
           disabled={rows[0]!.length >= 8}
         >
-          + Column
+          {BL.addColumn}
         </Button>
         <Button
           type="button"
@@ -639,7 +661,7 @@ function TableBody({ block, ops }: { block: NofyBlock; ops: NofyBlockOps }) {
           onClick={() => setRows(rows.map((row) => row.slice(0, -1)))}
           disabled={rows[0]!.length <= 1}
         >
-          − Column
+          {BL.removeColumn}
         </Button>
       </div>
     </div>
@@ -649,14 +671,16 @@ function TableBody({ block, ops }: { block: NofyBlock; ops: NofyBlockOps }) {
 // ── Trading reference ────────────────────────────────────────────────────────
 
 function RefBody({ block, ops }: { block: NofyBlock; ops: NofyBlockOps }) {
+  const { dict } = useI18n();
+  const N = dict.nofy;
   const ref = block.ref;
   if (!ref) {
     return (
       <div className="flex items-center gap-2 rounded-md border border-dashed border-border p-3 text-sm text-muted-foreground">
         <Link2 className="size-4" aria-hidden="true" />
-        Missing reference
+        {N.blocks.missingRef}
         <Button type="button" variant="outline" size="sm" className="ml-auto h-7" onClick={() => ops.deleteBlock(block.id)}>
-          Remove
+          {N.blocks.remove}
         </Button>
       </div>
     );
@@ -679,7 +703,7 @@ function RefBody({ block, ops }: { block: NofyBlock; ops: NofyBlockOps }) {
         <Icon className="size-4" style={{ color: meta.hue }} />
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-medium text-foreground">{ref.label ?? meta.label}</span>
+        <span className="block truncate text-sm font-medium text-foreground">{ref.label ?? N.refKinds[refKindKey(ref.kind)]}</span>
         {ref.meta ? <span className="block truncate text-xs text-muted-foreground">{ref.meta}</span> : null}
       </span>
       {href ? (
@@ -691,13 +715,13 @@ function RefBody({ block, ops }: { block: NofyBlock; ops: NofyBlockOps }) {
           onClick={() => ops.navigateToRef(href)}
           data-testid="nofy-ref-open"
         >
-          Open
+          {N.blocks.open}
         </Button>
       ) : null}
       <button
         type="button"
         onClick={() => ops.deleteBlock(block.id)}
-        aria-label="Remove reference"
+        aria-label={N.blocks.removeRef}
         className="rounded p-0.5 text-muted-foreground/60 hover:text-loss outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         <Trash2 className="size-3.5" aria-hidden="true" />

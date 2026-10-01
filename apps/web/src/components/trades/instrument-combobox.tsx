@@ -8,6 +8,7 @@ import { useInstruments } from "@/lib/api/queries";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { assetClassBadge } from "@/lib/utils/instrument";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/i18n/i18n-provider";
 
 /**
  * Search-first instrument combobox (spec §4): matches symbol AND name
@@ -39,6 +40,8 @@ export interface InstrumentComboboxProps {
 }
 
 export function InstrumentCombobox({ value, onChange }: InstrumentComboboxProps) {
+  const { dict } = useI18n();
+  const T = dict.trades.combobox;
   const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState("");
   const [debouncedQuery, setDebouncedQuery] = React.useState("");
@@ -100,7 +103,7 @@ export function InstrumentCombobox({ value, onChange }: InstrumentComboboxProps)
             <span className="truncate text-xs text-muted-foreground">{selected.name}</span>
           </>
         ) : (
-          <span className="text-sm">Search instrument — symbol or name…</span>
+          <span className="text-sm">{T.triggerPlaceholder}</span>
         )}
         <ChevronsUpDown className="ml-auto size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
       </PopoverTrigger>
@@ -111,7 +114,7 @@ export function InstrumentCombobox({ value, onChange }: InstrumentComboboxProps)
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="eur, boom, vol75…"
-            aria-label="Search instrument by symbol or name"
+            aria-label={T.searchAria}
             autoComplete="off"
             className="h-10 w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
           />
@@ -120,7 +123,7 @@ export function InstrumentCombobox({ value, onChange }: InstrumentComboboxProps)
         {recentInstruments.length > 0 && debouncedQuery === "" ? (
           <div className="flex flex-wrap items-center gap-1.5 border-b border-border px-3 py-2">
             <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-              Recents:
+              {T.recents}
             </span>
             {recentInstruments.map((instrument) => (
               <button
@@ -135,10 +138,10 @@ export function InstrumentCombobox({ value, onChange }: InstrumentComboboxProps)
           </div>
         ) : null}
 
-        <div className="max-h-56 overflow-y-auto p-1" role="listbox" aria-label="Instruments">
+        <div className="max-h-56 overflow-y-auto p-1" role="listbox" aria-label={T.listboxAria}>
           {instruments.length === 0 ? (
             <p className="px-3 py-4 text-center text-xs text-muted-foreground">
-              {isFetching ? "Searching…" : "No instrument matches."}
+              {isFetching ? T.searching : T.noMatch}
             </p>
           ) : (
             instruments.map((instrument) => (

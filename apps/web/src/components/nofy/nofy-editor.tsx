@@ -33,6 +33,8 @@ import {
 
 import type { NofyBlock, NofyRefHit, NofyRefKind } from "@cosmoz/shared";
 
+import { useI18n } from "@/i18n/i18n-provider";
+import type { Dictionary } from "@/i18n/dictionaries/en";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -108,8 +110,12 @@ const TEXT_TYPES = new Set<NofyBlock["type"]>(["paragraph", "h1", "h2", "h3", "b
 
 // ── Markdown export (spec §58) ───────────────────────────────────────────────
 
-function blocksToMarkdown(title: string, blocks: NofyBlock[]): string {
-  const lines: string[] = [`# ${title === "" ? "Untitled note" : title}`, ""];
+function blocksToMarkdown(
+  title: string,
+  blocks: NofyBlock[],
+  copy: { untitledNote: string; refLabel: (kind: NofyRefKind) => string },
+): string {
+  const lines: string[] = [`# ${title === "" ? copy.untitledNote : title}`, ""];
   for (const block of blocks) {
     switch (block.type) {
       case "h1": lines.push(`# ${block.text}`, ""); break;
@@ -140,8 +146,9 @@ function blocksToMarkdown(title: string, blocks: NofyBlock[]): string {
       }
       case "ref": {
         if (block.ref) {
-          const label = block.ref.label ?? NOFY_REF_META[block.ref.kind].label;
-          lines.push(`> **${NOFY_REF_META[block.ref.kind].label}** — ${label}${block.ref.href ? ` (${block.ref.href})` : ""}`, "");
+          const kindLabel = copy.refLabel(block.ref.kind);
+          const label = block.ref.label ?? kindLabel;
+          lines.push(`> **${kindLabel}** — ${label}${block.ref.href ? ` (${block.ref.href})` : ""}`, "");
         }
         break;
       }
@@ -152,6 +159,10 @@ function blocksToMarkdown(title: string, blocks: NofyBlock[]): string {
 }
 
 // ── Slash commands (spec §12) ────────────────────────────────────────────────
+
+/** refKinds dict key for a machine ref kind (TRADE → trade). */
+const refKindKey = (kind: NofyRefKind): keyof Dictionary["nofy"]["refKinds"] =>
+  kind.toLowerCase() as keyof Dictionary["nofy"]["refKinds"];
 
 type SlashItem = {
   cmd: string;
@@ -164,31 +175,41 @@ type SlashItem = {
   refKind?: NofyRefKind;
 };
 
-const SLASH_ITEMS: SlashItem[] = [
-  { cmd: "text", label: "Text", desc: "Plain paragraph", icon: Type, group: "Basic", type: "paragraph" },
-  { cmd: "heading", label: "Heading 1", desc: "Large section title", icon: Heading1, group: "Basic", type: "h1" },
-  { cmd: "h2", label: "Heading 2", desc: "Medium section title", icon: Heading2, group: "Basic", type: "h2" },
-  { cmd: "h3", label: "Heading 3", desc: "Small section title", icon: Heading3, group: "Basic", type: "h3" },
-  { cmd: "bullet", label: "Bullet list", desc: "Simple bulleted list", icon: List, group: "Basic", type: "bullet" },
-  { cmd: "numbered", label: "Numbered list", desc: "Ordered steps", icon: ListOrdered, group: "Basic", type: "numbered" },
-  { cmd: "todo", label: "To-do", desc: "Checkbox item", icon: SquareCheck, group: "Basic", type: "todo", extra: { checked: false } },
-  { cmd: "quote", label: "Quote", desc: "A highlighted citation", icon: Quote, group: "Advanced", type: "quote" },
-  { cmd: "callout", label: "Callout", desc: "Semantic info / warning box", icon: CircleDot, group: "Advanced", type: "callout", extra: { tone: "info" } },
-  { cmd: "code", label: "Code", desc: "Monospaced block", icon: FileCode, group: "Advanced", type: "code" },
-  {
-    cmd: "table", label: "Table", desc: "Structured research grid", icon: TableIcon, group: "Advanced", type: "table",
-    extra: { rows: [["Condition", "Observation", "Result"], ["", "", ""]] },
-  },
-  { cmd: "divider", label: "Divider", desc: "Visual separator", icon: Minus, group: "Advanced", type: "divider" },
-  { cmd: "image", label: "Image", desc: "Screenshot or chart image", icon: ImageIcon, group: "Advanced", type: "image" },
-  { cmd: "trade", label: "Trade", desc: "Reference a real trade", icon: NOFY_REF_META.TRADE.icon, group: "Trading", refKind: "TRADE" },
-  { cmd: "strategy", label: "Strategy", desc: "Reference a playbook strategy", icon: NOFY_REF_META.STRATEGY.icon, group: "Trading", refKind: "STRATEGY" },
-  { cmd: "setup", label: "Setup", desc: "Reference a playbook setup", icon: NOFY_REF_META.SETUP.icon, group: "Trading", refKind: "SETUP" },
-  { cmd: "lesson", label: "Lesson", desc: "Reference an Academy lesson", icon: NOFY_REF_META.LESSON.icon, group: "Trading", refKind: "LESSON" },
-  { cmd: "event", label: "Economic event", desc: "Reference a calendar event", icon: NOFY_REF_META.EVENT.icon, group: "Trading", refKind: "EVENT" },
-  { cmd: "symbol", label: "Symbol", desc: "Reference a market/symbol", icon: NOFY_REF_META.SYMBOL.icon, group: "Trading", refKind: "SYMBOL" },
-  { cmd: "note", label: "Note", desc: "Link another Nofy note", icon: NOFY_REF_META.NOTE.icon, group: "Trading", refKind: "NOTE" },
-];
+/**
+ * Slash registry — machine ids (cmd/group/type/refKind) stay constant;
+ * labels, descriptions and the seeded table headers resolve through the
+ * dict at render time (i18n pattern — same as the trades EMOTION_OPTIONS).
+ */
+function slashItemsFor(N: Dictionary["nofy"]): SlashItem[] {
+  const B = N.blockTypes;
+  const D = N.slash.desc;
+  const R = N.refKinds;
+  return [
+    { cmd: "text", label: B.paragraph, desc: D.text, icon: Type, group: "Basic", type: "paragraph" },
+    { cmd: "heading", label: B.h1, desc: D.heading, icon: Heading1, group: "Basic", type: "h1" },
+    { cmd: "h2", label: B.h2, desc: D.h2, icon: Heading2, group: "Basic", type: "h2" },
+    { cmd: "h3", label: B.h3, desc: D.h3, icon: Heading3, group: "Basic", type: "h3" },
+    { cmd: "bullet", label: B.bullet, desc: D.bullet, icon: List, group: "Basic", type: "bullet" },
+    { cmd: "numbered", label: B.numbered, desc: D.numbered, icon: ListOrdered, group: "Basic", type: "numbered" },
+    { cmd: "todo", label: B.todo, desc: D.todo, icon: SquareCheck, group: "Basic", type: "todo", extra: { checked: false } },
+    { cmd: "quote", label: B.quote, desc: D.quote, icon: Quote, group: "Advanced", type: "quote" },
+    { cmd: "callout", label: B.callout, desc: D.callout, icon: CircleDot, group: "Advanced", type: "callout", extra: { tone: "info" } },
+    { cmd: "code", label: B.code, desc: D.code, icon: FileCode, group: "Advanced", type: "code" },
+    {
+      cmd: "table", label: B.table, desc: D.table, icon: TableIcon, group: "Advanced", type: "table",
+      extra: { rows: [[N.slash.seed.condition, N.slash.seed.observation, N.slash.seed.result], ["", "", ""]] },
+    },
+    { cmd: "divider", label: B.divider, desc: D.divider, icon: Minus, group: "Advanced", type: "divider" },
+    { cmd: "image", label: B.image, desc: D.image, icon: ImageIcon, group: "Advanced", type: "image" },
+    { cmd: "trade", label: R.trade, desc: D.trade, icon: NOFY_REF_META.TRADE.icon, group: "Trading", refKind: "TRADE" },
+    { cmd: "strategy", label: R.strategy, desc: D.strategy, icon: NOFY_REF_META.STRATEGY.icon, group: "Trading", refKind: "STRATEGY" },
+    { cmd: "setup", label: R.setup, desc: D.setup, icon: NOFY_REF_META.SETUP.icon, group: "Trading", refKind: "SETUP" },
+    { cmd: "lesson", label: R.lesson, desc: D.lesson, icon: NOFY_REF_META.LESSON.icon, group: "Trading", refKind: "LESSON" },
+    { cmd: "event", label: R.event, desc: D.event, icon: NOFY_REF_META.EVENT.icon, group: "Trading", refKind: "EVENT" },
+    { cmd: "symbol", label: R.symbol, desc: D.symbol, icon: NOFY_REF_META.SYMBOL.icon, group: "Trading", refKind: "SYMBOL" },
+    { cmd: "note", label: R.note, desc: D.note, icon: NOFY_REF_META.NOTE.icon, group: "Trading", refKind: "NOTE" },
+  ];
+}
 
 // ── Editor ───────────────────────────────────────────────────────────────────
 
@@ -205,6 +226,8 @@ export function NofyEditor({
 }) {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { dict } = useI18n();
+  const N = dict.nofy;
   const noteQuery = useNofyNote(noteId);
 
   const serverNoteRef = React.useRef<{ id: string; updatedAt: string } | null>(null);
@@ -466,11 +489,12 @@ export function NofyEditor({
   }, [focusTick, draft]);
 
   // ── Slash menu filtering + application ──────────────────────────────────────
+  const slashItems = React.useMemo(() => slashItemsFor(N), [N]);
   const slashMatches = React.useMemo(() => {
     if (!slashMenu) return [];
     const query = slashMenu.filter.toLowerCase();
-    return SLASH_ITEMS.filter((item) => item.cmd.includes(query) || item.label.toLowerCase().includes(query));
-  }, [slashMenu]);
+    return slashItems.filter((item) => item.cmd.includes(query) || item.label.toLowerCase().includes(query));
+  }, [slashMenu, slashItems]);
 
   const applySlashItem = React.useCallback(
     (item: SlashItem) => {
@@ -630,7 +654,10 @@ export function NofyEditor({
 
   const exportMarkdown = () => {
     if (!draft) return;
-    const markdown = blocksToMarkdown(draft.title, draft.blocks);
+    const markdown = blocksToMarkdown(draft.title, draft.blocks, {
+      untitledNote: N.shared.untitledNote,
+      refLabel: (kind) => N.refKinds[refKindKey(kind)],
+    });
     const blob = new Blob([markdown], { type: "text/markdown;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
@@ -638,7 +665,7 @@ export function NofyEditor({
     anchor.download = `${(draft.title || "note").replace(/[^\w-]+/g, "-").toLowerCase()}.md`;
     anchor.click();
     URL.revokeObjectURL(url);
-    toast.success("Note exported as Markdown.");
+    toast.success(N.editor.markdownToast);
   };
 
   const exportPdf = () => {
@@ -686,10 +713,10 @@ export function NofyEditor({
   if (noteQuery.isError) {
     return (
       <div className="rounded-xl border bg-surface p-10 text-center" data-testid="nofy-editor-error">
-        <p className="text-sm font-semibold text-foreground">This note could not be loaded.</p>
+        <p className="text-sm font-semibold text-foreground">{N.editor.loadError}</p>
         <div className="mt-3 flex justify-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => void noteQuery.refetch()}>Retry</Button>
-          <Button variant="ghost" size="sm" onClick={closeEditor}>Back to notes</Button>
+          <Button variant="outline" size="sm" onClick={() => void noteQuery.refetch()}>{dict.common.retry}</Button>
+          <Button variant="ghost" size="sm" onClick={closeEditor}>{N.editor.backToNotes}</Button>
         </div>
       </div>
     );
@@ -699,12 +726,13 @@ export function NofyEditor({
   const allTags = tagsQuery.data?.tags ?? [];
   const addedTags = allTags.filter((tag) => draft.tagIds.includes(tag.id));
   const suggestions = allTags.filter((tag) => !draft.tagIds.includes(tag.id)).slice(0, 8);
+  const wordCount = wordCountOf(draft.blocks);
   const statusLabel =
-    saveStatus === "saving" ? "Saving…"
-    : saveStatus === "dirty" ? "Unsaved changes"
-    : saveStatus === "error" ? "Save failed"
-    : savedAt ? `Saved ${nofyRelativeTime(savedAt)}`
-    : "Saved";
+    saveStatus === "saving" ? dict.common.saving
+    : saveStatus === "dirty" ? N.editor.statusDirty
+    : saveStatus === "error" ? N.editor.statusError
+    : savedAt ? `${N.time.savedPrefix} ${nofyRelativeTime(savedAt, N.time)}`
+    : N.editor.statusSaved;
 
   return (
     <div
@@ -732,8 +760,8 @@ export function NofyEditor({
                 if (first) ops.focusBlock(first.id, "start");
               }
             }}
-            placeholder="Untitled note"
-            aria-label="Note title"
+            placeholder={N.shared.untitledNote}
+            aria-label={N.editor.titleLabel}
             data-testid="nofy-title-input"
             className="w-full bg-transparent font-heading text-xl font-bold tracking-tight text-foreground outline-none placeholder:text-muted-foreground/40 sm:text-2xl"
           />
@@ -752,16 +780,16 @@ export function NofyEditor({
               {statusLabel}
               {saveStatus === "error" ? (
                 <button type="button" onClick={() => flushSave()} className="font-medium text-accent underline-offset-2 hover:underline">
-                  Retry
+                  {dict.common.retry}
                 </button>
               ) : null}
             </span>
             <span aria-hidden="true">·</span>
-            <span data-testid="nofy-word-count" className="font-mono tabular-nums">{wordCountOf(draft.blocks)} words</span>
+            <span data-testid="nofy-word-count" className="font-mono tabular-nums">{wordCount} {wordCount === 1 ? N.shared.wordOne : N.shared.wordMany}</span>
             {noteQuery.data?.note.updatedAt ? (
               <>
                 <span aria-hidden="true">·</span>
-                <span>edited {nofyRelativeTime(noteQuery.data.note.updatedAt)}</span>
+                <span>{N.shared.edited} {nofyRelativeTime(noteQuery.data.note.updatedAt, N.time)}</span>
               </>
             ) : null}
           </div>
@@ -770,8 +798,8 @@ export function NofyEditor({
           <button
             type="button"
             onClick={() => applyDraft({ ...draft, favorite: !draft.favorite })}
-            aria-label={draft.favorite ? "Remove from favorites" : "Add to favorites"}
-            title={draft.favorite ? "Favorited" : "Favorite"}
+            aria-label={draft.favorite ? N.shared.removeFromFavorites : N.shared.addToFavorites}
+            title={draft.favorite ? N.editor.favoritedTitle : N.editor.favoriteTitle}
             data-testid="nofy-favorite-toggle"
             className={cn(
               "rounded-md p-2 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring hover:bg-muted",
@@ -783,8 +811,8 @@ export function NofyEditor({
           <button
             type="button"
             onClick={() => onToggleFocusMode(!focusMode)}
-            aria-label={focusMode ? "Exit focus mode" : "Enter focus mode"}
-            title={focusMode ? "Exit focus mode" : "Focus mode"}
+            aria-label={focusMode ? N.editor.focusExit : N.editor.focusEnter}
+            title={focusMode ? N.editor.focusExitTitle : N.editor.focusEnterTitle}
             data-testid="nofy-focus-toggle"
             className="rounded-md p-2 text-muted-foreground transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring hover:bg-muted hover:text-foreground"
           >
@@ -793,20 +821,20 @@ export function NofyEditor({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm" className="gap-1 px-2" data-testid="nofy-note-menu">
-                Note actions
+                {N.shared.noteActions}
                 <ChevronDown className="size-3.5" aria-hidden="true" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-52">
               <DropdownMenuItem onClick={() => duplicateMutation.mutate({ noteId })}>
                 <Copy className="size-3.5" aria-hidden="true" />
-                Duplicate note
+                {N.editor.duplicateNote}
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() =>
                   createTemplateMutation.mutate(
-                    { name: draft.title === "" ? "Untitled template" : draft.title, description: "Saved from a note", icon: draft.icon ?? "📄", fromNoteId: noteId },
-                    { onSuccess: () => toast.success("Saved to your templates.") },
+                    { name: draft.title === "" ? N.shared.untitledTemplate : draft.title, description: N.shared.savedFromNote, icon: draft.icon ?? "📄", fromNoteId: noteId },
+                    { onSuccess: () => toast.success(N.editor.templatesToast) },
                   )
                 }
               >
@@ -820,15 +848,15 @@ export function NofyEditor({
                 }}
               >
                 <History className="size-3.5" aria-hidden="true" />
-                Version history
+                {N.dialogs.versionsTitle}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={exportMarkdown}>
                 <Download className="size-3.5" aria-hidden="true" />
-                Export Markdown
+                {N.editor.exportMarkdown}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={exportPdf} data-testid="nofy-export-pdf">
                 <FileDown className="size-3.5" aria-hidden="true" />
-                Export PDF
+                {N.editor.exportPdf}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
@@ -836,7 +864,7 @@ export function NofyEditor({
                 onClick={() =>
                   trashMutation.mutate(noteId, {
                     onSuccess: () => {
-                      toast.success("Note moved to trash.");
+                      toast.success(N.editor.trashToast);
                       dirtyRef.current = false;
                       closeEditor();
                     },
@@ -844,11 +872,11 @@ export function NofyEditor({
                 }
               >
                 <Trash2 className="size-3.5" aria-hidden="true" />
-                Move to trash
+                {N.shared.moveToTrash}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          <Button variant="ghost" size="sm" className="gap-1 px-2" onClick={closeEditor} data-testid="nofy-editor-back" aria-label="Back to notes">
+          <Button variant="ghost" size="sm" className="gap-1 px-2" onClick={closeEditor} data-testid="nofy-editor-back" aria-label={N.editor.backToNotes}>
             <X className="size-4" aria-hidden="true" />
           </Button>
         </div>
@@ -860,12 +888,12 @@ export function NofyEditor({
           value={draft.folderId ?? "none"}
           onValueChange={(value) => applyDraft({ ...draft, folderId: value === "none" ? null : value })}
         >
-          <SelectTrigger size="sm" className="h-7 w-40 text-xs" aria-label="Note folder" data-testid="nofy-folder-select">
+          <SelectTrigger size="sm" className="h-7 w-40 text-xs" aria-label={N.editor.folderLabel} data-testid="nofy-folder-select">
             <FolderOpen className="size-3.5 text-muted-foreground" aria-hidden="true" />
-            <SelectValue placeholder="No folder" />
+            <SelectValue placeholder={N.shared.noFolder} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="none">No folder</SelectItem>
+            <SelectItem value="none">{N.shared.noFolder}</SelectItem>
             {folders.map((folder) => (
               <SelectItem key={folder.id} value={folder.id}>{folder.name}</SelectItem>
             ))}
@@ -880,7 +908,7 @@ export function NofyEditor({
               data-testid="nofy-tags-button"
             >
               <TagIcon className="size-3.5" aria-hidden="true" />
-              {addedTags.length === 0 ? "Add tags" : `${addedTags.length} tag${addedTags.length === 1 ? "" : "s"}`}
+              {addedTags.length === 0 ? N.editor.addTags : `${addedTags.length} ${addedTags.length === 1 ? N.shared.tagOne : N.shared.tagMany}`}
             </button>
           </PopoverTrigger>
           <PopoverContent align="start" className="w-64 p-3" data-testid="nofy-tags-popover">
@@ -901,28 +929,28 @@ export function NofyEditor({
                     });
                   }
                 }}
-                placeholder="New tag name…"
-                aria-label="New tag name"
+                placeholder={N.editor.tagInputPlaceholder}
+                aria-label={N.editor.tagInputLabel}
                 className="h-8 min-w-0 flex-1 rounded-md border border-border bg-background px-2 text-xs text-foreground outline-none focus:ring-2 focus:ring-ring"
               />
             </div>
             {addedTags.length > 0 ? (
               <div className="mt-2.5 flex flex-wrap gap-1" data-testid="nofy-note-tags">
                 {addedTags.map((tag) => (
-                  <button key={tag.id} type="button" onClick={() => toggleTag(tag.id)} title="Remove tag">
+                  <button key={tag.id} type="button" onClick={() => toggleTag(tag.id)} title={N.shared.removeTag}>
                     <TagChip tag={tag} active />
                   </button>
                 ))}
               </div>
             ) : null}
             <div className="mt-2 border-t border-border pt-2">
-              <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">Suggestions</p>
+              <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">{N.editor.suggestions}</p>
               <div className="flex flex-wrap gap-1">
                 {suggestions.length === 0 ? (
-                  <span className="text-xs text-muted-foreground">No other tags yet.</span>
+                  <span className="text-xs text-muted-foreground">{N.editor.noOtherTags}</span>
                 ) : (
                   suggestions.map((tag) => (
-                    <button key={tag.id} type="button" onClick={() => toggleTag(tag.id)} title="Add tag">
+                    <button key={tag.id} type="button" onClick={() => toggleTag(tag.id)} title={N.shared.addTag}>
                       <TagChip tag={tag} />
                     </button>
                   ))
@@ -959,10 +987,10 @@ export function NofyEditor({
             mutateBlocks((blocks) => [...blocks, fresh]);
             requestFocus(fresh.id, "start");
           }}
-          aria-label="Add a block"
+          aria-label={N.editor.addBlockLabel}
           className="mt-2 h-10 w-full rounded-md text-left text-sm text-muted-foreground/40 transition-colors hover:bg-muted/40 hover:text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <span className="pl-7">Click to add a block — press / for commands</span>
+          <span className="pl-7">{N.editor.addBlockHint}</span>
         </button>
       </div>
 
@@ -973,7 +1001,7 @@ export function NofyEditor({
           style={{ top: slashMenu.top, left: slashMenu.left }}
           data-testid="nofy-slash-menu"
           role="listbox"
-          aria-label="Block commands"
+          aria-label={N.editor.slashMenuLabel}
         >
           <ul className="max-h-64 overflow-y-auto overscroll-contain py-1">
             {slashMatches.map((item, index) => {
@@ -1001,7 +1029,7 @@ export function NofyEditor({
                       <span className="block truncate text-sm text-foreground">{item.label}</span>
                       <span className="block truncate text-xs text-muted-foreground">{item.desc}</span>
                     </span>
-                    <span className="shrink-0 font-mono text-[10px] uppercase tracking-wider text-muted-foreground/60">{item.group}</span>
+                    <span className="shrink-0 font-mono text-[10px] uppercase tracking-wider text-muted-foreground/60">{N.slash.groups[item.group]}</span>
                   </button>
                 </li>
               );
@@ -1032,7 +1060,7 @@ export function NofyEditor({
               onSuccess: () => {
                 dirtyRef.current = false;
                 void queryClient.invalidateQueries({ queryKey: queryKeys.nofyNote(noteId) });
-                toast.success("Version restored.");
+                toast.success(N.editor.versionRestoredToast);
               },
             },
           );

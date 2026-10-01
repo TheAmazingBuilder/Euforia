@@ -5,6 +5,7 @@ import { formatPercent, type RuleStatusLimit, type RulesStatusResponse } from "@
 
 import { useRulesStatus } from "@/lib/api/queries";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/i18n/i18n-provider";
 
 /**
  * Discipline banner (trade-entry-ux.md §4): thin live-updating strip —
@@ -64,6 +65,8 @@ function Segment({
 }
 
 export function DisciplineBanner({ className }: { className?: string }) {
+  const { dict } = useI18n();
+  const T = dict.trades.discipline;
   const { data } = useRulesStatus(null);
 
   if (!data) {
@@ -84,12 +87,12 @@ export function DisciplineBanner({ className }: { className?: string }) {
   const overall: Level = worst >= 1 ? "red" : worst >= AMBER_RATIO ? "amber" : "calm";
 
   const guardLabel =
-    overall === "calm" ? "Discipline guard" : overall === "amber" ? "Approaching limit" : "Limit hit";
+    overall === "calm" ? T.guardCalm : overall === "amber" ? T.guardAmber : T.guardRed;
 
   return (
     <div
       role="status"
-      aria-label="Discipline status for today"
+      aria-label={T.aria}
       className={cn(
         "flex items-center justify-between gap-2 rounded-md border px-3 py-1.5 text-xs",
         overall === "calm" && "border-border bg-surface text-muted-foreground",
@@ -100,10 +103,10 @@ export function DisciplineBanner({ className }: { className?: string }) {
     >
       <div className="flex min-w-0 items-center gap-2 overflow-x-auto">
         <span className="shrink-0 font-sans font-medium uppercase tracking-wide text-muted-foreground">
-          Today:
+          {T.today}
         </span>
         <Segment
-          label="trades"
+          label={T.tradesUnit}
           value={String(data.tradesToday)}
           limit={tradesRule !== null ? tradesRule.limit : null}
           ratio={tradesRatio}
@@ -112,7 +115,7 @@ export function DisciplineBanner({ className }: { className?: string }) {
           ·
         </span>
         <Segment
-          label="risk budget"
+          label={T.riskBudget}
           value={`${riskSpent}/${riskLimitValue !== null ? `${riskLimitValue}%` : "—"}`}
           limit={null}
           ratio={riskRatio}
@@ -121,7 +124,7 @@ export function DisciplineBanner({ className }: { className?: string }) {
           ·
         </span>
         <Segment
-          label="losses"
+          label={T.losses}
           value={String(data.lossesToday)}
           limit={lossesRule !== null ? lossesRule.limit : null}
           ratio={lossesRatio}

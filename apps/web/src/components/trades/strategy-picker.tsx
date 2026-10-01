@@ -4,6 +4,7 @@ import { Ban } from "lucide-react";
 import type { Strategy } from "@cosmoz/shared";
 
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/i18n/i18n-provider";
 
 /**
  * Playbook strategy chips (spec §4): colored chips with grade badges;
@@ -33,8 +34,10 @@ export function StrategyPicker({
   onStrategyChange,
   onOutOfPlaybookChange,
 }: StrategyPickerProps) {
+  const { dict } = useI18n();
+  const T = dict.trades.strategyPicker;
   return (
-    <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Strategy">
+    <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label={T.aria}>
       {strategies.map((strategy) => {
         const selected = !outOfPlaybook && strategy.id === value;
         return (
@@ -92,14 +95,14 @@ export function StrategyPicker({
         )}
       >
         <Ban className="size-3" aria-hidden="true" />
-        Out of playbook
+        {dict.trades.shared.outOfPlaybook}
         <span
           className={cn(
             "rounded-sm px-1 py-px font-mono text-[10px] font-bold leading-none",
             outOfPlaybook ? "bg-warning text-background" : "bg-muted text-muted-foreground",
           )}
         >
-          RISK
+          {T.riskBadge}
         </span>
       </button>
     </div>

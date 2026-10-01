@@ -6,6 +6,7 @@ import { RadioTower } from "lucide-react";
 import { formatMoney, formatPrice } from "@cosmoz/shared";
 import type { BrokerPosition, Currency } from "@cosmoz/shared";
 
+import { useI18n } from "@/i18n/i18n-provider";
 import { usePrivatePositions } from "@/lib/realtime/market";
 import { cn } from "@/lib/utils";
 
@@ -23,6 +24,8 @@ import { cn } from "@/lib/utils";
  */
 
 function StreamRow({ position, currency }: { position: BrokerPosition; currency: Currency }) {
+  const { dict } = useI18n();
+  const S = dict.session;
   return (
     <div className="rounded-md border border-border bg-surface-raised px-3 py-2" data-testid="private-positions-item">
       <div className="flex items-center justify-between gap-2">
@@ -33,28 +36,28 @@ function StreamRow({ position, currency }: { position: BrokerPosition; currency:
             position.direction === "SELL" ? "bg-destructive/15 text-destructive" : "bg-profit/15 text-profit",
           )}
         >
-          {position.direction === "SELL" ? "Short" : "Long"} {position.volume}
+          {position.direction === "SELL" ? S.labels.short : S.labels.long} {position.volume}
         </span>
       </div>
       <div className="mt-1.5 grid grid-cols-2 gap-x-4 sm:grid-cols-4">
         <div className="flex items-baseline justify-between gap-2 py-1">
-          <span className="text-xs text-muted-foreground">Entry</span>
+          <span className="text-xs text-muted-foreground">{S.labels.entry}</span>
           <span className="font-mono text-sm tabular-nums text-foreground">{formatPrice(position.entryPrice, 5)}</span>
         </div>
         <div className="flex items-baseline justify-between gap-2 py-1">
-          <span className="text-xs text-muted-foreground">Current</span>
+          <span className="text-xs text-muted-foreground">{S.labels.current}</span>
           <span className="font-mono text-sm tabular-nums text-foreground">
             {position.currentPrice !== null ? formatPrice(position.currentPrice, 5) : "—"}
           </span>
         </div>
         <div className="flex items-baseline justify-between gap-2 py-1">
-          <span className="text-xs text-muted-foreground">SL</span>
+          <span className="text-xs text-muted-foreground">{S.labels.sl}</span>
           <span className="font-mono text-sm tabular-nums text-foreground">
             {position.stopLoss !== null ? formatPrice(position.stopLoss, 5) : "—"}
           </span>
         </div>
         <div className="flex items-baseline justify-between gap-2 py-1">
-          <span className="text-xs text-muted-foreground">TP</span>
+          <span className="text-xs text-muted-foreground">{S.labels.tp}</span>
           <span className="font-mono text-sm tabular-nums text-foreground">
             {position.takeProfit !== null ? formatPrice(position.takeProfit, 5) : "—"}
           </span>
@@ -75,7 +78,7 @@ function StreamRow({ position, currency }: { position: BrokerPosition; currency:
           data-pnl={position.unrealizedPnl ?? "null"}
           data-symbol={position.symbol}
         >
-          {position.unrealizedPnl !== null ? formatMoney(position.unrealizedPnl, currency) : "P&L —"}
+          {position.unrealizedPnl !== null ? formatMoney(position.unrealizedPnl, currency) : S.positions.pnlNone}
         </span>
       </div>
     </div>
@@ -83,6 +86,8 @@ function StreamRow({ position, currency }: { position: BrokerPosition; currency:
 }
 
 export function PrivatePositionsStream() {
+  const { dict } = useI18n();
+  const S = dict.session;
   const stream = usePrivatePositions();
   const positions = React.useMemo(() => [...stream.positions.values()], [stream.positions]);
   const live = stream.connected;
@@ -92,15 +97,15 @@ export function PrivatePositionsStream() {
       className="rounded-xl border border-border bg-surface"
       data-testid="private-positions-stream"
       data-stream-state={live ? "live" : stream.lastEventAt > 0 ? "stale" : "idle"}
-      aria-label="Private positions stream"
+      aria-label={S.privateStream.aria}
     >
       <header className="flex items-center justify-between gap-2 border-b border-border px-4 py-3">
         <div className="flex items-center gap-2">
           <RadioTower className="size-4 text-accent" aria-hidden="true" />
           <div>
-            <h2 className="font-heading text-base font-semibold text-foreground">Private positions stream</h2>
+            <h2 className="font-heading text-base font-semibold text-foreground">{S.privateStream.title}</h2>
             <p className="text-xs text-muted-foreground">
-              Pushed to your private channel — read only.
+              {S.privateStream.subtitle}
             </p>
           </div>
         </div>
@@ -115,7 +120,7 @@ export function PrivatePositionsStream() {
             aria-hidden="true"
             className={cn("size-1.5 rounded-full", live ? "animate-pulse bg-profit" : "bg-muted-foreground")}
           />
-          {live ? "LIVE · SIM" : stream.lastEventAt > 0 ? "STALE · SIM" : "IDLE"}
+          {live ? S.privateStream.badgeLive : stream.lastEventAt > 0 ? S.privateStream.badgeStale : S.privateStream.badgeIdle}
         </span>
       </header>
 
@@ -123,8 +128,8 @@ export function PrivatePositionsStream() {
         {positions.length === 0 ? (
           <p className="text-xs leading-relaxed text-muted-foreground" data-testid="private-positions-empty">
             {live
-              ? "No open positions in your private stream."
-              : "Positions will stream here once the authenticated channel connects."}
+              ? S.privateStream.emptyLive
+              : S.privateStream.emptyIdle}
           </p>
         ) : (
           positions.map((position) => (

@@ -3,7 +3,7 @@
 import * as React from "react";
 import { Printer } from "lucide-react";
 
-import type { NofyBlock } from "@cosmoz/shared";
+import type { NofyBlock, NofyRefKind } from "@cosmoz/shared";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -13,6 +13,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useI18n } from "@/i18n/i18n-provider";
+import type { Dictionary } from "@/i18n/dictionaries/en";
 import { InlineMarkdown, NOFY_REF_META } from "./nofy-shared";
 
 /**
@@ -32,12 +34,9 @@ export type NofyPrintNote = {
   updatedAt: string;
 };
 
-const TONE_LABEL: Record<string, string> = {
-  info: "Info",
-  tip: "Tip",
-  warn: "Warning",
-  risk: "Risk",
-};
+/** refKinds dict key for a machine ref kind (TRADE → trade). */
+const refKindKey = (kind: NofyRefKind): keyof Dictionary["nofy"]["refKinds"] =>
+  kind.toLowerCase() as keyof Dictionary["nofy"]["refKinds"];
 
 /** Groups consecutive list blocks (bullet/numbered/todo) into list items. */
 type Item =
@@ -65,6 +64,8 @@ function toItems(blocks: NofyBlock[]): Item[] {
 }
 
 function PrintBlock({ block }: { block: NofyBlock }) {
+  const { dict } = useI18n();
+  const N = dict.nofy;
   switch (block.type) {
     case "h1":
       return <h2 className="mt-6 font-heading text-xl font-bold text-foreground">{block.text}</h2>;
@@ -105,7 +106,7 @@ function PrintBlock({ block }: { block: NofyBlock }) {
       return (
         <div className="rounded-md border border-border bg-muted/50 px-3 py-2 text-[13px] leading-relaxed text-foreground">
           <span className="mr-1.5 font-mono text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            {TONE_LABEL[block.tone ?? "info"]}
+            {N.blocks.tones[block.tone ?? "info"]}
           </span>
           <InlineMarkdown text={block.text} />
         </div>
@@ -162,7 +163,7 @@ function PrintBlock({ block }: { block: NofyBlock }) {
       return (
         <p className="rounded-md border border-border px-3 py-2 text-[12px] text-muted-foreground">
           <span className="font-semibold uppercase tracking-wider" style={{ color: meta.hue }}>
-            {meta.label}
+            {N.refKinds[refKindKey(block.ref.kind)]}
           </span>
           {" — "}
           <span className="font-medium text-foreground">{block.ref.label ?? "—"}</span>
@@ -188,6 +189,9 @@ export function NotePrintDialog({
   onOpenChange: (open: boolean) => void;
   note: NofyPrintNote | null;
 }) {
+  const { dict } = useI18n();
+  const N = dict.nofy;
+  const P = N.print;
   // Keep the body class in sync while the dialog is open so the @media print
   // rules only ever hijack a print that STARTED from this sheet.
   React.useEffect(() => {
@@ -210,16 +214,16 @@ export function NotePrintDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[92dvh] overflow-y-auto sm:max-w-3xl" data-testid="nofy-print-dialog">
         <DialogHeader>
-          <DialogTitle className="font-heading">Export PDF</DialogTitle>
+          <DialogTitle className="font-heading">{P.title}</DialogTitle>
           <DialogDescription>
-            A clean print rendering of this note — print it or save it as PDF from the browser dialog.
+            {P.body}
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex items-center justify-end gap-2">
           <Button onClick={onPrint} className="gap-1.5 bg-accent text-accent-foreground hover:bg-accent-hover" data-testid="nofy-print-button">
             <Printer className="size-4" aria-hidden="true" />
-            Print / Save as PDF
+            {P.button}
           </Button>
         </div>
 
@@ -228,15 +232,15 @@ export function NotePrintDialog({
           <header className="flex items-start justify-between gap-4 border-b border-border pb-3">
             <div className="min-w-0">
               <p className="font-mono text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-                Cosmoz — Nofy note
+                {P.sheetLabel}
               </p>
               <h1 className="mt-1 truncate font-heading text-2xl font-bold tracking-tight text-foreground">
                 {note.icon ? `${note.icon} ` : ""}
-                {note.title === "" ? "Untitled note" : note.title}
+                {note.title === "" ? N.shared.untitledNote : note.title}
               </h1>
             </div>
             <div className="shrink-0 text-right text-[10px] leading-relaxed text-muted-foreground">
-              <p className="font-mono">Updated {updated.toLocaleDateString("en-CA")}</p>
+              <p className="font-mono">{P.updated} {updated.toLocaleDateString("en-CA")}</p>
               {note.folderName ? <p>{note.folderName}</p> : null}
               {note.tagNames.length > 0 ? <p>{note.tagNames.map((tag) => `#${tag}`).join(" ")}</p> : null}
             </div>
@@ -244,7 +248,7 @@ export function NotePrintDialog({
 
           <div className="mt-4 space-y-3">
             {items.length === 0 ? (
-              <p className="text-[13px] italic text-muted-foreground">This note is empty.</p>
+              <p className="text-[13px] italic text-muted-foreground">{P.empty}</p>
             ) : (
               items.map((item, index) => {
                 if (item.kind === "bullets") {

@@ -21,29 +21,14 @@ import { sizeUnitLabel } from "@/lib/utils/instrument";
 import { closeJudgmentFlow, revealFinished } from "@/lib/hooks/use-judgment-flow";
 import { openTradeModal, type TradeContextSeed } from "@/lib/hooks/use-trade-modal";
 import { setRevealAnimation, useRevealAnimation } from "@/lib/utils/preferences";
+import { useI18n } from "@/i18n/i18n-provider";
 
 /**
  * The Reveal (trade-entry-ux.md §5) — the signature moment AFTER the grade.
  * Everything arrives in one RevealPayload from POST /trades/:id/decision
- * (the only P&L carrier in the app). Coaching copy is the 4-quadrant matrix,
- * VERBATIM — it is product copy, not to be reworded.
+ * (the only P&L carrier in the app). Coaching copy is the 4-quadrant matrix
+ * (dict.trades.reveal.coaching) — VERBATIM product copy, not to be reworded.
  */
-
-/** Coaching matrix — Win/Loss × Decision(A/B|D/F), VERBATIM product copy. */
-const COACHING_COPY: Record<string, string> = {
-  win_ab: "Solid process, deserved result.",
-  loss_ab: "Good decision, unfavorable outcome — nothing to fix.",
-  win_df: "Lucky gain — this result does not reinforce the habit.",
-  loss_df: "The process failed, not luck.",
-};
-
-const GRADE_TAG: Record<Grade, string> = {
-  A: "Exemplary",
-  B: "Solid",
-  C: "Average",
-  D: "Sloppy",
-  F: "Impulsive",
-};
 
 /** Build the fast-loop seed from the revealed trade (spec §7). */
 function seedFromTrade(trade: Trade): TradeContextSeed {
@@ -64,6 +49,8 @@ export interface RevealProps {
 }
 
 export function Reveal({ reveal, currency, decision }: RevealProps) {
+  const { dict } = useI18n();
+  const T = dict.trades;
   const { data: tradesData } = useTrades();
   const { data: instrumentsData } = useInstruments();
   const { data: strategiesData } = useStrategies();
@@ -131,7 +118,13 @@ export function Reveal({ reveal, currency, decision }: RevealProps) {
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [newTrade]);
 
-  const coaching = COACHING_COPY[reveal.coachingKey] ?? COACHING_COPY.loss_ab!;
+  // Coaching matrix keyed by the server string (unknown key → loss_ab
+  // fallback, same semantics as the previous Record lookup).
+  const coachingCopy = T.reveal.coaching;
+  const coaching =
+    reveal.coachingKey in coachingCopy
+      ? coachingCopy[reveal.coachingKey as keyof typeof coachingCopy]
+      : coachingCopy.loss_ab;
   const durationText =
     trade !== null ? formatDuration(trade.entryAt, trade.exitAt ?? trade.entryAt) : "—";
   const animClass = (enabled: boolean) => (playing && enabled ? "animate-reveal-fade-up" : "");
@@ -140,7 +133,7 @@ export function Reveal({ reveal, currency, decision }: RevealProps) {
     <div className="space-y-5" data-testid="reveal">
       {/* The star — subtle constellation motif (mockup: the_reveal) */}
       <div className="flex flex-col items-center gap-3">
-        <RevealStar animated={animationEnabled} />
+        <RevealStar animated={animationEnabled} ariaLabel={T.reveal.constellationAria} />
         <div className="flex flex-wrap items-center justify-center gap-1.5 font-mono text-xs text-muted-foreground">
           <span className="font-semibold text-foreground">{instrument?.symbol ?? "—"}</span>
           <span className="rounded-sm border border-border px-1.5 py-0.5 font-semibold text-foreground">
@@ -149,7 +142,7 @@ export function Reveal({ reveal, currency, decision }: RevealProps) {
           <span aria-hidden="true">·</span>
           <span>{durationText}</span>
           <span aria-hidden="true">·</span>
-          <span>{strategy?.name ?? "Out of playbook"}</span>
+          <span>{strategy?.name ?? T.shared.outOfPlaybook}</span>
           {trade !== null ? (
             <>
               <span aria-hidden="true">·</span>
@@ -177,7 +170,7 @@ export function Reveal({ reveal, currency, decision }: RevealProps) {
             win ? "text-profit" : "text-loss",
           )}
         >
-          {formatSignedMoney(reveal.pnlNet, currency, { digits: 2 })} net
+          {formatSignedMoney(reveal.pnlNet, currency, { digits: 2 })} {T.reveal.net}
         </p>
       </div>
 
@@ -186,10 +179,10 @@ export function Reveal({ reveal, currency, decision }: RevealProps) {
         <div className="mb-1.5 flex items-center justify-between gap-2">
           <span className="flex items-center gap-1.5 font-heading text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             <Sparkles className="size-3.5 text-accent" aria-hidden="true" />
-            Coaching
+            {T.reveal.coachingLabel}
           </span>
           <span className="rounded-sm border border-border px-1.5 py-0.5 font-mono text-[10px] uppercase text-muted-foreground">
-            Grade {decision.grade} · {GRADE_TAG[decision.grade]}
+            {T.shared.gradeWord} {decision.grade} · {T.reveal.gradeTag[decision.grade]}
           </span>
         </div>
         <p className="font-heading text-sm italic text-foreground" data-testid="reveal-coaching">
@@ -202,14 +195,14 @@ export function Reveal({ reveal, currency, decision }: RevealProps) {
         <div className="rounded-lg border border-border bg-surface p-3">
           <p className="flex items-center gap-1.5 text-[11px] uppercase tracking-wide text-muted-foreground">
             {win ? <TrendingUp className="size-3.5" aria-hidden="true" /> : <TrendingDown className="size-3.5" aria-hidden="true" />}
-            Setups avoided today
+            {T.reveal.setupsAvoided}
           </p>
           <p className="mt-1 font-mono text-xl font-semibold tabular-nums text-foreground">
             {reveal.savedSetupsToday}
           </p>
         </div>
         <div className="rounded-lg border border-border bg-surface p-3">
-          <p className="text-[11px] uppercase tracking-wide text-muted-foreground">R saved</p>
+          <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{T.reveal.rSaved}</p>
           <p className="mt-1 font-mono text-xl font-semibold tabular-nums text-profit">
             {reveal.savedRToday !== null ? formatR(reveal.savedRToday) : "—"}
           </p>
@@ -219,11 +212,11 @@ export function Reveal({ reveal, currency, decision }: RevealProps) {
       {/* Actions — fast loop: Enter finishes, N opens a pre-filled trade */}
       <div className="grid grid-cols-2 gap-2.5">
         <Button type="button" variant="outline" onClick={newTrade} className="h-11">
-          New trade
+          {T.shared.newTrade}
           <kbd className="ml-1.5 rounded-sm bg-muted px-1 font-mono text-[10px]">N</kbd>
         </Button>
         <Button type="button" onClick={revealFinished} className="h-11">
-          Finish
+          {T.shared.finish}
           <kbd className="ml-1.5 rounded-sm bg-accent-foreground/10 px-1 font-mono text-[10px]">⏎</kbd>
         </Button>
       </div>
@@ -235,7 +228,7 @@ export function Reveal({ reveal, currency, decision }: RevealProps) {
           data-testid="reveal-animation-toggle"
           className="font-mono text-[11px] text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
         >
-          Star animation: {animationEnabled ? "on" : "off"} (settings)
+          {T.reveal.starAnimation} {animationEnabled ? T.reveal.on : T.reveal.off} {T.reveal.settingsSuffix}
         </button>
       </div>
     </div>
@@ -248,7 +241,7 @@ export function Reveal({ reveal, currency, decision }: RevealProps) {
  * are reserved for P&L text — the constellation is UI, the R/P&L line is
  * the verdict). Purely celebratory: no result hint in the motif itself.
  */
-function RevealStar({ animated }: { animated: boolean }) {
+function RevealStar({ animated, ariaLabel }: { animated: boolean; ariaLabel: string }) {
   const nodes: readonly { x: number; y: number }[] = [
     { x: 60, y: 14 },
     { x: 104, y: 46 },
@@ -270,7 +263,7 @@ function RevealStar({ animated }: { animated: boolean }) {
     <svg
       viewBox="0 0 120 112"
       role="img"
-      aria-label="Reveal constellation"
+      aria-label={ariaLabel}
       className={cn("size-28", color, animated ? "animate-reveal-star" : "")}
       style={{ filter: "drop-shadow(0 0 14px currentColor)" }}
     >

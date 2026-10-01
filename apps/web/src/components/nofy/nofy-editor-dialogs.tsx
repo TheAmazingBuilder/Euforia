@@ -18,6 +18,8 @@ import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useNofyRefs } from "@/lib/api/queries";
+import { useI18n } from "@/i18n/i18n-provider";
+import type { Dictionary } from "@/i18n/dictionaries/en";
 import { NOFY_REF_META, nofyRelativeTime } from "./nofy-shared";
 
 /**
@@ -33,6 +35,10 @@ const PICKER_KINDS: (NofyRefKind | "ALL")[] = [
   "ALL", "TRADE", "STRATEGY", "SETUP", "RULE", "LESSON", "EVENT", "SYMBOL", "NOTE",
 ];
 
+/** refKinds dict key for a machine ref kind (TRADE → trade). */
+const refKindKey = (kind: NofyRefKind): keyof Dictionary["nofy"]["refKinds"] =>
+  kind.toLowerCase() as keyof Dictionary["nofy"]["refKinds"];
+
 export function RefPickerDialog({
   open,
   onOpenChange,
@@ -44,6 +50,10 @@ export function RefPickerDialog({
   initialKind: NofyRefKind | null;
   onPick: (hit: NofyRefHit) => void;
 }) {
+  const { dict } = useI18n();
+  const N = dict.nofy;
+  const D = N.dialogs;
+  const R = N.refKinds;
   const [kind, setKind] = React.useState<NofyRefKind | "ALL">(initialKind ?? "ALL");
   const [rawQuery, setRawQuery] = React.useState("");
   const [query, setQuery] = React.useState("");
@@ -70,16 +80,15 @@ export function RefPickerDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg" data-testid="nofy-ref-picker">
         <DialogHeader>
-          <DialogTitle>Reference an entity</DialogTitle>
+          <DialogTitle>{D.refPickerTitle}</DialogTitle>
           <DialogDescription>
-            Link a real trade, strategy, setup, lesson, event, symbol or note — the card stays fresh.
+            {D.refPickerBody}
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col gap-3">
           <div className="flex flex-wrap gap-1">
             {PICKER_KINDS.map((entry) => {
-              const meta = entry === "ALL" ? null : NOFY_REF_META[entry];
               return (
                 <button
                   key={entry}
@@ -93,7 +102,7 @@ export function RefPickerDialog({
                       : "border-border bg-surface text-muted-foreground hover:text-foreground",
                   )}
                 >
-                  {meta ? meta.label : "All"}
+                  {entry === "ALL" ? D.all : R[refKindKey(entry)]}
                 </button>
               );
             })}
@@ -109,9 +118,9 @@ export function RefPickerDialog({
                 if (event.key === "ArrowUp") { event.preventDefault(); setSelected((s) => Math.max(s - 1, 0)); }
                 if (event.key === "Enter") { event.preventDefault(); pickAt(activeIndex); }
               }}
-              placeholder="Search entities…"
+              placeholder={D.searchPlaceholder}
               className="pl-8"
-              aria-label="Search entities"
+              aria-label={D.searchLabel}
               autoFocus
             />
           </div>
@@ -122,7 +131,7 @@ export function RefPickerDialog({
                 {Array.from({ length: 5 }).map((_, index) => <Skeleton key={index} className="h-9 rounded-md" />)}
               </div>
             ) : refs.length === 0 ? (
-              <p className="p-6 text-center text-sm text-muted-foreground">No entity matches this search.</p>
+              <p className="p-6 text-center text-sm text-muted-foreground">{D.noMatch}</p>
             ) : (
               <ul className="divide-y divide-border">
                 {refs.map((hit, index) => {
@@ -145,7 +154,7 @@ export function RefPickerDialog({
                           <span className="block truncate text-sm text-foreground">{hit.label}</span>
                           {hit.meta ? <span className="block truncate text-xs text-muted-foreground">{hit.meta}</span> : null}
                         </span>
-                        <span className="shrink-0 font-mono text-[10px] uppercase tracking-wider text-muted-foreground/70">{meta.label}</span>
+                        <span className="shrink-0 font-mono text-[10px] uppercase tracking-wider text-muted-foreground/70">{R[refKindKey(hit.kind)]}</span>
                       </button>
                     </li>
                   );
@@ -174,16 +183,19 @@ export function VersionsDialog({
   isLoading: boolean;
   onRestore: (versionId: string) => void;
 }) {
+  const { dict } = useI18n();
+  const N = dict.nofy;
+  const D = N.dialogs;
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md" data-testid="nofy-versions-dialog">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <History className="size-4 text-accent" aria-hidden="true" />
-            Version history
+            {D.versionsTitle}
           </DialogTitle>
           <DialogDescription>
-            Snapshots are taken while you write (roughly every few minutes). Restoring keeps a snapshot of the current state.
+            {D.versionsBody}
           </DialogDescription>
         </DialogHeader>
 
@@ -194,7 +206,7 @@ export function VersionsDialog({
             </div>
           ) : !versions || versions.length === 0 ? (
             <p className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-              No versions yet — keep editing and snapshots will appear here.
+              {D.versionsEmpty}
             </p>
           ) : (
             <ul className="space-y-1.5">
@@ -205,9 +217,9 @@ export function VersionsDialog({
                   data-testid="nofy-version-row"
                 >
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm text-foreground">{version.title === "" ? "Untitled note" : version.title}</span>
+                    <span className="block truncate text-sm text-foreground">{version.title === "" ? N.shared.untitledNote : version.title}</span>
                     <span className="block text-xs text-muted-foreground">
-                      {nofyRelativeTime(version.savedAt)} · {version.wordCount} words
+                      {nofyRelativeTime(version.savedAt, N.time)} · {version.wordCount} {version.wordCount === 1 ? N.shared.wordOne : N.shared.wordMany}
                     </span>
                   </span>
                   <Button
@@ -221,7 +233,7 @@ export function VersionsDialog({
                     }}
                   >
                     <RotateCcw className="size-3" aria-hidden="true" />
-                    Restore
+                    {N.shared.restore}
                   </Button>
                 </li>
               ))}
@@ -250,6 +262,8 @@ export function IconPicker({
   onPick: (emoji: string | null) => void;
   testid?: string;
 }) {
+  const { dict } = useI18n();
+  const D = dict.nofy.dialogs;
   const [open, setOpen] = React.useState(false);
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -257,8 +271,8 @@ export function IconPicker({
         <button
           type="button"
           data-testid={testid}
-          aria-label="Change note icon"
-          title="Change icon"
+          aria-label={D.changeIconAria}
+          title={D.changeIconTitle}
           className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-transparent text-2xl transition-colors hover:border-border hover:bg-muted outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           {icon ?? "📝"}
@@ -294,7 +308,7 @@ export function IconPicker({
           }}
         >
           <Check className="size-3" aria-hidden="true" />
-          Remove icon
+          {D.removeIcon}
         </Button>
       </PopoverContent>
     </Popover>

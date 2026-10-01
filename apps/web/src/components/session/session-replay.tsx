@@ -35,6 +35,8 @@ import type {
 } from "@cosmoz/shared";
 import { loadPersistedChartState } from "@/lib/utils/chart-state";
 import { useCandlesRange } from "@/lib/realtime/market";
+import { biasLabel } from "@/i18n/dictionaries/en/session";
+import { useI18n } from "@/i18n/i18n-provider";
 import { cn } from "@/lib/utils";
 
 /**
@@ -98,6 +100,8 @@ interface SessionReplayDialogProps {
 }
 
 export function SessionReplayDialog({ open, onOpenChange, session, strategyName, instruments, trades }: SessionReplayDialogProps) {
+  const { dict } = useI18n();
+  const S = dict.session;
   const start = React.useMemo(() => Date.parse(session.startedAt), [session.startedAt]);
   // Replays open from completed sessions (endedAt set by the drawer); a null
   // end degenerates to a zero-length window rather than reading the clock.
@@ -184,11 +188,10 @@ export function SessionReplayDialog({ open, onOpenChange, session, strategyName,
       <DialogContent className="max-h-[92vh] overflow-y-auto lg:max-w-5xl" data-testid="session-replay-dialog">
         <DialogHeader>
           <DialogTitle className="font-heading" data-testid="replay-title">
-            Session replay — {session.primarySymbol} · {session.primaryTimeframe}
+            {`${S.replay.title} — ${session.primarySymbol} · ${session.primaryTimeframe}`}
           </DialogTitle>
           <DialogDescription>
-            Watch the session as it happened: market data up to the playhead, events surfacing in real order. A documentation
-            replay — strictly read-only.
+            {S.replay.description}
           </DialogDescription>
         </DialogHeader>
 
@@ -196,10 +199,10 @@ export function SessionReplayDialog({ open, onOpenChange, session, strategyName,
           <Badge variant="outline" className="font-mono">
             {utcClock(start, false)} → {utcClock(end, false)} UTC
           </Badge>
-          <Badge variant="outline">{session.marketBias.toLowerCase()}</Badge>
+          <Badge variant="outline">{biasLabel(S, session.marketBias).toLowerCase()}</Badge>
           {strategyName ? <Badge variant="outline">{strategyName}</Badge> : null}
-          <Badge variant="outline">{events.length} events</Badge>
-          <Badge variant="outline">{overlayTrades.length} trade{overlayTrades.length === 1 ? "" : "s"} revealed</Badge>
+          <Badge variant="outline">{`${events.length} ${S.replay.eventsCount}`}</Badge>
+          <Badge variant="outline">{`${overlayTrades.length} ${overlayTrades.length === 1 ? S.replay.tradeOne : S.replay.tradeMany}`}</Badge>
         </div>
 
         <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_270px]">
@@ -216,10 +219,10 @@ export function SessionReplayDialog({ open, onOpenChange, session, strategyName,
                   <span className="shrink-0 font-mono text-xs tabular-nums text-accent">{utcClock(Date.parse(currentEvent.at), false)}</span>
                   <span className="shrink-0 text-accent">{KIND_ICON[currentEvent.kind]}</span>
                   <span className="min-w-0 truncate font-medium text-foreground">{currentEvent.label}</span>
-                  {currentEvent.source ? <span className="shrink-0 text-xs text-muted-foreground">— Source: {currentEvent.source}</span> : null}
+                  {currentEvent.source ? <span className="shrink-0 text-xs text-muted-foreground">{`— ${S.labels.source}: ${currentEvent.source}`}</span> : null}
                 </>
               ) : (
-                <span className="text-muted-foreground">Pre-session — market context only.</span>
+                <span className="text-muted-foreground">{S.replay.preSession}</span>
               )}
             </div>
 
@@ -241,7 +244,7 @@ export function SessionReplayDialog({ open, onOpenChange, session, strategyName,
             />
             {!candles.isLoading && windowCandles.length === 0 ? (
               <p className="text-xs text-warning" data-testid="replay-no-data">
-                No market data retained for this window — the replay continues on the event timeline alone.
+                {S.replay.noData}
               </p>
             ) : null}
 
@@ -254,7 +257,7 @@ export function SessionReplayDialog({ open, onOpenChange, session, strategyName,
                     setPlaying(true);
                     setPlayhead(start);
                   }}
-                  aria-label="Restart replay"
+                  aria-label={S.replay.restartAria}
                   data-testid="replay-restart"
                   className="inline-flex size-7 shrink-0 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:text-foreground"
                 >
@@ -266,7 +269,7 @@ export function SessionReplayDialog({ open, onOpenChange, session, strategyName,
                     if (playhead >= end) setPlayhead(start);
                     setPlaying((value) => !value);
                   }}
-                  aria-label={playing ? "Pause replay" : "Play replay"}
+                  aria-label={playing ? S.chart.pauseAria : S.chart.playAria}
                   data-testid="replay-play"
                   aria-pressed={playing}
                   className="inline-flex size-8 shrink-0 items-center justify-center rounded-full border border-accent/40 bg-accent/10 text-accent transition-colors hover:bg-accent/20"
@@ -284,7 +287,7 @@ export function SessionReplayDialog({ open, onOpenChange, session, strategyName,
                       setPlaying(false);
                       setPlayhead(Number(event.target.value));
                     }}
-                    aria-label="Replay playhead"
+                    aria-label={S.replay.scrubAria}
                     data-testid="replay-scrubber"
                     className="h-1.5 w-full cursor-pointer accent-[var(--accent)]"
                   />
@@ -305,8 +308,8 @@ export function SessionReplayDialog({ open, onOpenChange, session, strategyName,
                   {utcClock(playhead, true)} UTC
                 </span>
               </div>
-              <div className="mt-2 flex items-center gap-1.5" role="group" aria-label="Replay speed">
-                <span className="ledger-label mr-1">Speed</span>
+              <div className="mt-2 flex items-center gap-1.5" role="group" aria-label={S.replay.speedGroupAria}>
+                <span className="ledger-label mr-1">{S.replay.speed}</span>
                 {SPEEDS.map((value) => (
                   <button
                     key={value}
@@ -330,10 +333,10 @@ export function SessionReplayDialog({ open, onOpenChange, session, strategyName,
           </div>
 
           {/* Event feed */}
-          <aside className="min-w-0 rounded-xl border border-border bg-surface" aria-label="Session event feed" data-testid="replay-feed">
+          <aside className="min-w-0 rounded-xl border border-border bg-surface" aria-label={S.replay.feedAria} data-testid="replay-feed">
             <header className="border-b border-border px-3 py-2">
-              <p className="ledger-label">Timeline</p>
-              <p className="text-[11px] text-muted-foreground">Events appear as the playhead passes them.</p>
+              <p className="ledger-label">{S.labels.timeline}</p>
+              <p className="text-[11px] text-muted-foreground">{S.replay.timelineHint}</p>
             </header>
             <ul className="max-h-[300px] space-y-0.5 overflow-y-auto p-2 lg:max-h-[420px]">
               {events.map((event, index) => {
@@ -360,17 +363,17 @@ export function SessionReplayDialog({ open, onOpenChange, session, strategyName,
                     </span>
                     <span className="min-w-0">
                       <span className="block leading-snug text-foreground">{event.label}</span>
-                      {event.source ? <span className="block text-[10px] text-muted-foreground">Source: {event.source}</span> : null}
+                      {event.source ? <span className="block text-[10px] text-muted-foreground">{`${S.labels.source}: ${event.source}`}</span> : null}
                     </span>
                   </li>
                 );
               })}
               {events.length === 0 ? (
-                <li className="px-2 py-6 text-center text-xs text-muted-foreground">This session has no recorded events.</li>
+                <li className="px-2 py-6 text-center text-xs text-muted-foreground">{S.replay.emptyEvents}</li>
               ) : null}
             </ul>
             <footer className="border-t border-border px-3 py-2 text-[11px] text-muted-foreground">
-              Price at playhead:{" "}
+              {S.replay.priceAtPlayhead}{" "}
               <span className="font-mono tabular-nums text-foreground" data-testid="replay-price">
                 {displayed.length > 0 ? formatPrice(displayed[displayed.length - 1].c, digits) : "—"}
               </span>
@@ -381,7 +384,7 @@ export function SessionReplayDialog({ open, onOpenChange, session, strategyName,
                 data-testid="replay-close"
               >
                 <X className="size-3" aria-hidden="true" />
-                Close replay
+                {S.replay.closeBtn}
               </button>
             </footer>
           </aside>

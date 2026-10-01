@@ -5,6 +5,7 @@ import * as React from "react";
 import { formatPrice } from "@cosmoz/shared";
 import type { Instrument, Trade } from "@cosmoz/shared";
 
+import { useI18n } from "@/i18n/i18n-provider";
 import { unrealizedPnl, type LiveQuote } from "@/lib/realtime/market";
 import { useNowMs } from "@/lib/realtime/use-now";
 import { cn } from "@/lib/utils";
@@ -36,13 +37,15 @@ export function SymbolPositions({
   instrument: Instrument | null;
   quote: LiveQuote | null;
 }) {
+  const { dict } = useI18n();
+  const S = dict.session;
   const digits = instrument?.digits ?? 5;
   const contractSize = instrument?.contractSize ?? "1";
   // A frozen quote must not keep valuing positions as if the market moved
   // (mission §17) — time gating via useNowMs, never Date.now in render.
   const nowMs = useNowMs();
   const price = quote !== null && nowMs !== null && nowMs - quote.ts <= 10_000 ? quote.price : null;
-  const feedLabel = quote?.source === "real" ? "live feed" : "sim feed";
+  const feedLabel = quote?.source === "real" ? S.positions.feedLive : S.positions.feedSim;
 
   return (
     <section className="rounded-xl border border-border bg-surface" data-testid="symbol-positions">
@@ -50,15 +53,15 @@ export function SymbolPositions({
         <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
           <div>
             <h2 className="font-heading text-base font-semibold text-foreground">
-              Positions on {instrument?.symbol ?? "…"}
+              {`${S.positions.title} ${instrument?.symbol ?? "…"}`}
             </h2>
             <p className="text-xs text-muted-foreground">
-              Your open journal trades for this symbol, valued at the marked price.
+              {S.positions.subtitle}
             </p>
           </div>
           {price !== null ? (
             <span className="rounded-full border border-border bg-surface-raised px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-              marked to {feedLabel}
+              {`${S.positions.markedTo} ${feedLabel}`}
             </span>
           ) : null}
         </div>
@@ -66,7 +69,7 @@ export function SymbolPositions({
 
       <div className="p-4">
         {trades.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No open journal positions on this symbol.</p>
+          <p className="text-sm text-muted-foreground">{S.positions.empty}</p>
         ) : (
           <ul className="divide-y divide-border/60">
             {trades.map((trade) => {
@@ -87,7 +90,7 @@ export function SymbolPositions({
                         trade.direction === "SELL" ? "bg-destructive/15 text-destructive" : "bg-profit/15 text-profit",
                       )}
                     >
-                      {trade.direction === "SELL" ? "Short" : "Long"} {trade.quantity}
+                      {trade.direction === "SELL" ? S.labels.short : S.labels.long} {trade.quantity}
                     </span>
                     <span
                       data-testid="symbol-position-pnl"
@@ -97,16 +100,16 @@ export function SymbolPositions({
                       )}
                     >
                       {pnl === null
-                        ? "P&L —"
+                        ? S.positions.pnlNone
                         : `${pnl >= 0 ? "+" : "-"}${formatPrice(Math.abs(pnl), 2)}`}
                     </span>
                   </div>
                   <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1.5 sm:grid-cols-5">
-                    <Cell label="Entry">{formatPrice(trade.entryPrice, digits)}</Cell>
-                    <Cell label="Current">{price !== null ? formatPrice(price, digits) : "—"}</Cell>
-                    <Cell label="SL">{stop !== null ? formatPrice(stop, digits) : "—"}</Cell>
-                    <Cell label="TP">{trade.initialTP !== null ? formatPrice(trade.initialTP, digits) : "—"}</Cell>
-                    <Cell label="Opened">
+                    <Cell label={S.labels.entry}>{formatPrice(trade.entryPrice, digits)}</Cell>
+                    <Cell label={S.labels.current}>{price !== null ? formatPrice(price, digits) : "—"}</Cell>
+                    <Cell label={S.labels.sl}>{stop !== null ? formatPrice(stop, digits) : "—"}</Cell>
+                    <Cell label={S.labels.tp}>{trade.initialTP !== null ? formatPrice(trade.initialTP, digits) : "—"}</Cell>
+                    <Cell label={S.positions.opened}>
                       {new Intl.DateTimeFormat(undefined, { hour: "2-digit", minute: "2-digit", hour12: false }).format(
                         new Date(trade.entryAt),
                       )}

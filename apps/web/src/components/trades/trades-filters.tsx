@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { useInstruments, useStrategies, useTags } from "@/lib/api/queries";
 import type { Direction, TradeStatus } from "@cosmoz/shared";
+import { useI18n } from "@/i18n/i18n-provider";
 
 /**
  * Trade module filters — every filter lives in the URL (?q=&status=&…), so a
@@ -117,6 +118,8 @@ export function TradesFilters({
   state: TradesUrlState;
   patch: ReturnType<typeof useTradesUrlPatch>;
 }) {
+  const { dict } = useI18n();
+  const T = dict.trades.filters;
   const { data: instrumentsData } = useInstruments();
   const { data: strategiesData } = useStrategies();
   const { data: tagsData } = useTags();
@@ -138,7 +141,7 @@ export function TradesFilters({
 
   return (
     <section
-      aria-label="Trade filters"
+      aria-label={T.aria}
       data-testid="trades-filters"
       className="rounded-lg border border-border bg-surface p-3"
     >
@@ -146,7 +149,7 @@ export function TradesFilters({
         {/* Free text — symbol or notes */}
         <div className="min-w-44 flex-1 space-y-1 sm:max-w-64">
           <Label htmlFor="trades-filter-q" className="text-[11px] text-muted-foreground">
-            Search
+            {T.search}
           </Label>
           <div className="relative">
             <Search
@@ -157,7 +160,7 @@ export function TradesFilters({
               id="trades-filter-q"
               value={state.q}
               onChange={(event) => patch({ q: event.target.value })}
-              placeholder="Symbol or note…"
+              placeholder={T.searchPlaceholder}
               data-testid="trades-filter-q"
               className="h-8 pl-8 text-sm"
             />
@@ -166,7 +169,7 @@ export function TradesFilters({
 
         {/* Status */}
         <div className="space-y-1">
-          <Label className="text-[11px] text-muted-foreground">Status</Label>
+          <Label className="text-[11px] text-muted-foreground">{T.status}</Label>
           <Select
             value={state.status}
             onValueChange={(value) => patch({ status: value === "all" ? "" : value })}
@@ -175,16 +178,16 @@ export function TradesFilters({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All</SelectItem>
-              <SelectItem value="OPEN">Open</SelectItem>
-              <SelectItem value="CLOSED">Closed</SelectItem>
+              <SelectItem value="all">{T.all}</SelectItem>
+              <SelectItem value="OPEN">{T.open}</SelectItem>
+              <SelectItem value="CLOSED">{T.closed}</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         {/* Direction */}
         <div className="space-y-1">
-          <Label className="text-[11px] text-muted-foreground">Side</Label>
+          <Label className="text-[11px] text-muted-foreground">{T.direction}</Label>
           <Select
             value={state.direction}
             onValueChange={(value) => patch({ dir: value === "all" ? "" : value })}
@@ -193,7 +196,7 @@ export function TradesFilters({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="all">{T.all}</SelectItem>
               <SelectItem value="BUY">BUY</SelectItem>
               <SelectItem value="SELL">SELL</SelectItem>
             </SelectContent>
@@ -202,7 +205,7 @@ export function TradesFilters({
 
         {/* Instrument */}
         <div className="space-y-1">
-          <Label className="text-[11px] text-muted-foreground">Instrument</Label>
+          <Label className="text-[11px] text-muted-foreground">{T.instrument}</Label>
           <Select
             value={state.instrumentId || "all"}
             onValueChange={(value) => patch({ inst: value === "all" ? "" : value })}
@@ -211,7 +214,7 @@ export function TradesFilters({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="all">{T.all}</SelectItem>
               {instruments.map((instrument) => (
                 <SelectItem key={instrument.id} value={instrument.id}>
                   {instrument.symbol}
@@ -223,7 +226,7 @@ export function TradesFilters({
 
         {/* Strategy */}
         <div className="space-y-1">
-          <Label className="text-[11px] text-muted-foreground">Strategy</Label>
+          <Label className="text-[11px] text-muted-foreground">{T.strategy}</Label>
           <Select
             value={state.strategyId || "all"}
             onValueChange={(value) => patch({ strat: value === "all" ? "" : value })}
@@ -232,20 +235,20 @@ export function TradesFilters({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="all">{T.all}</SelectItem>
               {strategies.map((strategy) => (
                 <SelectItem key={strategy.id} value={strategy.id}>
                   {strategy.name}
                 </SelectItem>
               ))}
-              <SelectItem value="none">Out of playbook</SelectItem>
+              <SelectItem value="none">{dict.trades.shared.outOfPlaybook}</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         {/* Outcome */}
         <div className="space-y-1">
-          <Label className="text-[11px] text-muted-foreground">Outcome</Label>
+          <Label className="text-[11px] text-muted-foreground">{T.outcome}</Label>
           <Select
             value={state.outcome}
             onValueChange={(value) => patch({ out: value === "all" ? "" : value })}
@@ -254,16 +257,16 @@ export function TradesFilters({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All</SelectItem>
-              <SelectItem value="win">Wins</SelectItem>
-              <SelectItem value="loss">Losses</SelectItem>
+              <SelectItem value="all">{T.all}</SelectItem>
+              <SelectItem value="win">{T.wins}</SelectItem>
+              <SelectItem value="loss">{T.losses}</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         {/* Tag */}
         <div className="space-y-1">
-          <Label className="text-[11px] text-muted-foreground">Tag</Label>
+          <Label className="text-[11px] text-muted-foreground">{T.tag}</Label>
           <Select
             value={state.tagId || "all"}
             onValueChange={(value) => patch({ tag: value === "all" ? "" : value })}
@@ -272,7 +275,7 @@ export function TradesFilters({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="all">{T.all}</SelectItem>
               {tags.map((tag) => (
                 <SelectItem key={tag.id} value={tag.id}>
                   {tag.name}
@@ -285,7 +288,7 @@ export function TradesFilters({
         {/* Date range */}
         <div className="space-y-1">
           <Label htmlFor="trades-filter-from" className="text-[11px] text-muted-foreground">
-            From
+            {T.from}
           </Label>
           <Input
             id="trades-filter-from"
@@ -298,7 +301,7 @@ export function TradesFilters({
         </div>
         <div className="space-y-1">
           <Label htmlFor="trades-filter-to" className="text-[11px] text-muted-foreground">
-            To
+            {T.to}
           </Label>
           <Input
             id="trades-filter-to"
@@ -323,12 +326,12 @@ export function TradesFilters({
             data-testid="trades-filter-reset"
           >
             <RotateCcw className="size-3.5" aria-hidden="true" />
-            Reset
+            {dict.common.reset}
           </Button>
         ) : (
           <span className="flex h-8 items-center gap-1.5 text-[11px] text-muted-foreground">
             <Filter className="size-3" aria-hidden="true" />
-            {state.sortKey === "date" ? "Newest first" : "Sorted view"}
+            {state.sortKey === "date" ? T.newestFirst : T.sortedView}
           </span>
         )}
       </div>

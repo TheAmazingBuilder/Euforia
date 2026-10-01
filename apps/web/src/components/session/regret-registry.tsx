@@ -4,6 +4,7 @@ import { useTheme } from "next-themes";
 import type { GhostTrendPoint } from "@cosmoz/shared";
 import { formatR } from "@cosmoz/shared";
 
+import { useI18n } from "@/i18n/i18n-provider";
 import { getThemeToken } from "@/lib/utils/theme";
 
 /**
@@ -20,6 +21,8 @@ const PAD = 4;
 
 function TrendSparkline({ trend }: { trend: GhostTrendPoint[] }) {
   const { resolvedTheme } = useTheme();
+  const { dict } = useI18n();
+  const S = dict.session;
   // Theme tokens are read at render time; resolvedTheme in the dependency
   // trail guarantees a fresh read after a theme switch.
   void resolvedTheme;
@@ -42,7 +45,7 @@ function TrendSparkline({ trend }: { trend: GhostTrendPoint[] }) {
       viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
       className="h-11 w-full"
       role="img"
-      aria-label="Fear versus discipline skips over the last 30 days"
+      aria-label={S.regret.sparkAria}
       preserveAspectRatio="none"
     >
       <polyline
@@ -83,45 +86,48 @@ export function RegretRegistry({
   hesitationCostCount: number;
   trend: GhostTrendPoint[];
 }) {
+  const { dict } = useI18n();
+  const S = dict.session;
+
   return (
-    <section aria-label="Regret registry" className="rounded-xl border border-border bg-surface">
+    <section aria-label={S.regret.aria} className="rounded-xl border border-border bg-surface">
       <header className="border-b border-border px-4 py-3">
-        <h2 className="font-heading text-base font-semibold text-foreground">Regret Registry</h2>
+        <h2 className="font-heading text-base font-semibold text-foreground">{S.regret.title}</h2>
         <p className="text-xs text-muted-foreground">
-          What skipping setups saved you — and what hesitation cost you.
+          {S.regret.subtitle}
         </p>
       </header>
 
       <div className="grid gap-3 p-4 sm:grid-cols-2">
         <div className="rounded-lg border border-profit/25 bg-profit/5 p-3">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Discipline saved</p>
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{S.regret.disciplineSaved}</p>
           <p className="mt-1 font-mono text-2xl font-semibold tabular-nums text-profit">
             {formatR(disciplineSavedR)}
           </p>
           <p className="mt-1 text-xs text-muted-foreground">
-            Avoided losses on {disciplineSavedCount} settled ghost {disciplineSavedCount === 1 ? "trade" : "trades"}
+            {`${S.regret.savedBody} ${disciplineSavedCount} ${disciplineSavedCount === 1 ? S.regret.tradeOne : S.regret.tradeMany}`}
           </p>
         </div>
         <div className="rounded-lg border border-warning/25 bg-warning/5 p-3">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Hesitation cost</p>
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{S.regret.hesitationCost}</p>
           <p className="mt-1 font-mono text-2xl font-semibold tabular-nums text-warning">
             {formatR(-Number(hesitationCostR))}
           </p>
           <p className="mt-1 text-xs text-muted-foreground">
-            Missed gains on {hesitationCostCount} settled ghost {hesitationCostCount === 1 ? "trade" : "trades"}
+            {`${S.regret.costBody} ${hesitationCostCount} ${hesitationCostCount === 1 ? S.regret.tradeOne : S.regret.tradeMany}`}
           </p>
         </div>
       </div>
 
       <div className="border-t border-border px-4 pb-4 pt-3">
         <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
-          <p className="text-xs font-medium text-muted-foreground">Fear vs discipline — last 30 days</p>
+          <p className="text-xs font-medium text-muted-foreground">{S.regret.trendTitle}</p>
           <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
             <span className="inline-flex items-center gap-1">
-              <span aria-hidden="true" className="size-2 rounded-full bg-warning" /> Fear
+              <span aria-hidden="true" className="size-2 rounded-full bg-warning" /> {S.regret.fear}
             </span>
             <span className="inline-flex items-center gap-1">
-              <span aria-hidden="true" className="size-2 rounded-full bg-profit" /> Discipline
+              <span aria-hidden="true" className="size-2 rounded-full bg-profit" /> {S.regret.discipline}
             </span>
           </div>
         </div>

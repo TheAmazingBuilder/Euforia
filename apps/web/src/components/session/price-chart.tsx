@@ -12,6 +12,7 @@ import { formatPrice } from "@cosmoz/shared";
 import type { Candle, CandlesResponse, Instrument, MarketInterval, Trade } from "@cosmoz/shared";
 import { getChartTheme, type ChartTheme } from "@/lib/utils/chart-theme";
 import { STALE_MS, type LiveQuote } from "@/lib/realtime/market";
+import { useI18n } from "@/i18n/i18n-provider";
 import { usePreferences } from "@/lib/api/queries";
 import { useNowMs } from "@/lib/realtime/use-now";
 import { cn } from "@/lib/utils";
@@ -136,6 +137,8 @@ export function PriceChart({
   overlayTrades,
   heightClass = "h-[320px] sm:h-[420px]",
 }: PriceChartProps) {
+  const { dict } = useI18n();
+  const S = dict.session;
   const containerRef = React.useRef<HTMLDivElement | null>(null);
   const chartRef = React.useRef<EChartsType | null>(null);
   const { resolvedTheme } = useTheme();
@@ -271,7 +274,7 @@ export function PriceChart({
     const series: Record<string, unknown>[] = [mainSeries];
     if (chartPrefs.showVolume) {
       series.push({
-        name: "Volume",
+        name: S.chart.seriesVolume,
         type: "bar",
         xAxisIndex: 1,
         yAxisIndex: 1,
@@ -406,7 +409,7 @@ export function PriceChart({
     // `merged` is read inside the tooltip formatter through a ref, so the
     // structural option never rebuilds (and never resets zoom) on ticks.
     // Chart-pref changes ARE structural (series type / panes / grid lines).
-  }, [theme, interval, symbol, digits, chartPrefs]);
+  }, [theme, interval, symbol, digits, chartPrefs, S]);
 
   // ── Data option (labels + candles + overlays) — merge keeps zoom/pan ─────
   const dataOption = React.useMemo<EChartsCoreOption>(() => {
@@ -501,13 +504,13 @@ export function PriceChart({
   if (isError) {
     return (
       <div className={`flex flex-col items-center justify-center rounded-xl border border-border bg-surface ${heightClass}`}>
-        <p className="font-heading text-base font-semibold text-foreground">Market data unavailable</p>
+        <p className="font-heading text-base font-semibold text-foreground">{S.chart.errorTitle}</p>
         <p className="mt-1 max-w-xs text-center text-sm text-muted-foreground">
-          The candle feed could not be reached. Your positions and account are unaffected.
+          {S.chart.errorBody}
         </p>
         <Button variant="outline" size="sm" className="mt-4" onClick={() => void queryClient.refetchQueries({ queryKey: ["candles"] })}>
           <RefreshCcw className="size-3.5" aria-hidden="true" />
-          Retry
+          {dict.common.retry}
         </Button>
       </div>
     );
@@ -528,7 +531,7 @@ export function PriceChart({
       >
         {isLoading && displayed.length === 0 ? (
           <div className="absolute inset-0 flex items-center justify-center" aria-live="polite">
-            <p className="text-sm text-muted-foreground">Loading market data…</p>
+            <p className="text-sm text-muted-foreground">{S.chart.loading}</p>
           </div>
         ) : null}
 
@@ -537,7 +540,7 @@ export function PriceChart({
           <button
             type="button"
             onClick={toggleReplay}
-            aria-label={replayOn ? "Exit price replay" : "Replay the price curve"}
+            aria-label={replayOn ? S.chart.replayExitAria : S.chart.replayStartAria}
             aria-pressed={replayOn}
             data-testid="session-replay-toggle"
             className={cn(
@@ -548,14 +551,14 @@ export function PriceChart({
             )}
           >
             <History className="size-3.5" aria-hidden="true" />
-            Replay
+            {S.chart.replayToggle}
           </button>
         ) : null}
 
         <div
           ref={containerRef}
           role="img"
-          aria-label={`${symbol} ${interval} ${chartPrefs.style.toLowerCase()} chart with journal position overlays`}
+          aria-label={`${symbol} ${interval} ${chartPrefs.style.toLowerCase()} ${S.chart.imgAriaStation}`}
           className="size-full"
         />
       </div>
@@ -569,7 +572,7 @@ export function PriceChart({
           <button
             type="button"
             onClick={() => setReplayPlaying((playing) => !playing)}
-            aria-label={replayPlaying ? "Pause replay" : "Play replay"}
+            aria-label={replayPlaying ? S.chart.pauseAria : S.chart.playAria}
             data-testid="session-replay-play"
             className="inline-flex size-7 shrink-0 items-center justify-center rounded-full border border-accent/40 bg-accent/10 text-accent transition-colors hover:bg-accent/20"
           >
@@ -585,7 +588,7 @@ export function PriceChart({
               setReplayPlaying(false);
               setReplayIndex(Number(event.target.value));
             }}
-            aria-label="Replay position"
+            aria-label={S.chart.scrubAria}
             data-testid="session-replay-scrubber"
             className="h-1.5 min-w-0 flex-1 cursor-pointer accent-[var(--accent)]"
           />
@@ -597,7 +600,7 @@ export function PriceChart({
           <button
             type="button"
             onClick={toggleReplay}
-            aria-label="Close replay"
+            aria-label={S.chart.closeAria}
             data-testid="session-replay-close"
             className="shrink-0 rounded p-1 text-muted-foreground transition-colors hover:text-foreground"
           >

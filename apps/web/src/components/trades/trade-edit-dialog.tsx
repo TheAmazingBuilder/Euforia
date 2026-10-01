@@ -27,6 +27,7 @@ import { useStrategies, useUpdateTrade } from "@/lib/api/queries";
 import { apiErrorMessage } from "@/lib/api/client";
 import { isoToLocalInput, localInputToISO } from "@/lib/utils/datetime";
 import type { UpdateTradeInput } from "@cosmoz/shared";
+import { useI18n } from "@/i18n/i18n-provider";
 
 const EXIT_REASONS: ExitReason[] = ["TP", "SL", "MANUAL", "TRAILING", "PARTIAL", "MARGIN"];
 
@@ -45,6 +46,8 @@ interface TradeEditDialogProps {
  * (results recompute server-side on save).
  */
 export function TradeEditDialog({ trade, open, onOpenChange }: TradeEditDialogProps) {
+  const { dict } = useI18n();
+  const T = dict.trades.edit;
   const updateTrade = useUpdateTrade();
   const { data: strategiesData } = useStrategies();
   const strategies = strategiesData?.strategies ?? [];
@@ -130,10 +133,10 @@ export function TradeEditDialog({ trade, open, onOpenChange }: TradeEditDialogPr
       { tradeId: trade.id, input: patch },
       {
         onSuccess: () => {
-          toast.success("Trade updated", { description: isClosed ? "Results recomputed." : undefined });
+          toast.success(T.tradeUpdated, { description: isClosed ? T.resultsRecomputed : undefined });
           onOpenChange(false);
         },
-        onError: (error) => toast.error(apiErrorMessage(error, "Could not update the trade")),
+        onError: (error) => toast.error(apiErrorMessage(error, dict.trades.errors.tradeUpdate)),
       },
     );
   };
@@ -143,28 +146,28 @@ export function TradeEditDialog({ trade, open, onOpenChange }: TradeEditDialogPr
       <DialogContent className="max-h-[92vh] overflow-y-auto p-0 sm:max-w-xl">
         <DialogHeader className="gap-1 border-b border-border p-4 pb-3">
           <DialogTitle className="font-heading text-lg font-semibold">
-            Edit trade
+            {T.title}
           </DialogTitle>
           <DialogDescription>
-            Correct the record — {isClosed ? "results recompute on save." : "plan fields only."}
+            {T.descPrefix}{isClosed ? T.descClosed : T.descOpen}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={onSave} className="grid gap-3 p-4" data-testid="trade-edit-form">
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label>Instrument</Label>
+              <Label>{dict.trades.form.instrument}</Label>
               <InstrumentCombobox value={instrumentId} onChange={(selected) => setInstrumentId(selected.id)} />
             </div>
             <div className="space-y-1.5">
-              <Label>Direction</Label>
+              <Label>{dict.trades.form.direction}</Label>
               <DirectionSegmented value={direction} onChange={setDirection} />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             <div className="space-y-1.5">
-              <Label htmlFor="edit-entry-price">Entry price</Label>
+              <Label htmlFor="edit-entry-price">{dict.trades.form.entryPrice}</Label>
               <input
                 id="edit-entry-price"
                 value={entryPrice}
@@ -175,7 +178,7 @@ export function TradeEditDialog({ trade, open, onOpenChange }: TradeEditDialogPr
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="edit-entry-at">Entry time</Label>
+              <Label htmlFor="edit-entry-at">{dict.trades.form.entryTime}</Label>
               <input
                 id="edit-entry-at"
                 type="datetime-local"
@@ -185,7 +188,7 @@ export function TradeEditDialog({ trade, open, onOpenChange }: TradeEditDialogPr
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="edit-quantity">Quantity</Label>
+              <Label htmlFor="edit-quantity">{T.quantity}</Label>
               <input
                 id="edit-quantity"
                 value={quantity}
@@ -198,7 +201,7 @@ export function TradeEditDialog({ trade, open, onOpenChange }: TradeEditDialogPr
 
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             <div className="space-y-1.5">
-              <Label htmlFor="edit-stop">Initial stop</Label>
+              <Label htmlFor="edit-stop">{dict.trades.detail.initialStop}</Label>
               <input
                 id="edit-stop"
                 value={initialStop}
@@ -209,7 +212,7 @@ export function TradeEditDialog({ trade, open, onOpenChange }: TradeEditDialogPr
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="edit-tp">Initial TP</Label>
+              <Label htmlFor="edit-tp">{T.initialTP}</Label>
               <input
                 id="edit-tp"
                 value={initialTP}
@@ -220,7 +223,7 @@ export function TradeEditDialog({ trade, open, onOpenChange }: TradeEditDialogPr
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Strategy</Label>
+              <Label>{dict.trades.form.strategy}</Label>
               <Select value={strategyId || "none"} onValueChange={setStrategyId}>
                 <SelectTrigger className="h-9" data-testid="trade-edit-strategy">
                   <SelectValue />
@@ -231,7 +234,7 @@ export function TradeEditDialog({ trade, open, onOpenChange }: TradeEditDialogPr
                       {strategy.name}
                     </SelectItem>
                   ))}
-                  <SelectItem value="none">Out of playbook</SelectItem>
+                  <SelectItem value="none">{dict.trades.shared.outOfPlaybook}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -239,7 +242,7 @@ export function TradeEditDialog({ trade, open, onOpenChange }: TradeEditDialogPr
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label htmlFor="edit-fees">Fees</Label>
+              <Label htmlFor="edit-fees">{dict.trades.detail.fees}</Label>
               <input
                 id="edit-fees"
                 value={fees}
@@ -249,7 +252,7 @@ export function TradeEditDialog({ trade, open, onOpenChange }: TradeEditDialogPr
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="edit-swap">Swap</Label>
+              <Label htmlFor="edit-swap">{T.swap}</Label>
               <input
                 id="edit-swap"
                 value={swap}
@@ -263,7 +266,7 @@ export function TradeEditDialog({ trade, open, onOpenChange }: TradeEditDialogPr
           {isClosed ? (
             <div className="grid grid-cols-2 gap-3 rounded-lg border border-border bg-surface p-3 sm:grid-cols-3">
               <div className="space-y-1.5">
-                <Label htmlFor="edit-exit-price">Exit price</Label>
+                <Label htmlFor="edit-exit-price">{dict.trades.form.exitPrice}</Label>
                 <input
                   id="edit-exit-price"
                   value={exitPrice}
@@ -274,7 +277,7 @@ export function TradeEditDialog({ trade, open, onOpenChange }: TradeEditDialogPr
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="edit-exit-at">Exit time</Label>
+                <Label htmlFor="edit-exit-at">{dict.trades.form.exitTime}</Label>
                 <input
                   id="edit-exit-at"
                   type="datetime-local"
@@ -284,7 +287,7 @@ export function TradeEditDialog({ trade, open, onOpenChange }: TradeEditDialogPr
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>Exit reason</Label>
+                <Label>{dict.trades.form.exitReason}</Label>
                 <Select value={exitReason} onValueChange={(value) => setExitReason(value as ExitReason)}>
                   <SelectTrigger className="h-9">
                     <SelectValue />
@@ -303,7 +306,7 @@ export function TradeEditDialog({ trade, open, onOpenChange }: TradeEditDialogPr
 
           <div className="flex items-center justify-end gap-2 border-t border-border pt-3">
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
+              {dict.common.cancel}
             </Button>
             <Button type="submit" disabled={updateTrade.isPending} data-testid="trade-edit-save">
               {updateTrade.isPending ? (
@@ -311,7 +314,7 @@ export function TradeEditDialog({ trade, open, onOpenChange }: TradeEditDialogPr
               ) : (
                 <Save className="size-4" aria-hidden="true" />
               )}
-              Save changes
+              {T.saveChanges}
             </Button>
           </div>
         </form>

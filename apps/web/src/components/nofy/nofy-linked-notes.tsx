@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useNofyLinkedNotes } from "@/lib/api/queries";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/i18n/i18n-provider";
 import { NOFY_REF_META, nofyRelativeTime } from "./nofy-shared";
 
 /**
@@ -35,6 +36,8 @@ export function NofyLinkedNotesSection({
   className?: string;
 }) {
   const router = useRouter();
+  const { dict } = useI18n();
+  const N = dict.nofy;
   const { data, isLoading } = useNofyLinkedNotes(kind, id);
   const notes: NofyNoteRow[] = data?.notes ?? [];
 
@@ -46,7 +49,7 @@ export function NofyLinkedNotesSection({
       <div className="flex items-center justify-between gap-2">
         <p className="flex min-w-0 items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           <NotebookText className="size-3.5 shrink-0" style={{ color: NOFY_REF_META[kind].hue }} aria-hidden="true" />
-          Nofy notes
+          {N.linked.title}
           <span className="rounded-full border border-border bg-muted px-1.5 font-mono text-[10px] tabular-nums text-muted-foreground" data-testid={`${testidPrefix}-nofy-count`}>
             {notes.length}
           </span>
@@ -60,7 +63,7 @@ export function NofyLinkedNotesSection({
           data-testid={`${testidPrefix}-take-notes`}
         >
           <StickyNote className="size-3.5" aria-hidden="true" />
-          Take notes
+          {N.linked.takeNotes}
         </Button>
       </div>
 
@@ -71,7 +74,7 @@ export function NofyLinkedNotesSection({
         </div>
       ) : notes.length === 0 ? (
         <p className="mt-2 text-xs text-muted-foreground">
-          No notes linked yet — notes you take here live in Nofy and stay connected to this {NOFY_REF_META[kind].label.toLowerCase()}.
+          {N.linked.emptyPrefix} {NOFY_REF_META[kind].label.toLowerCase()}{N.linked.emptySuffix}
         </p>
       ) : (
         <ul className="mt-2 space-y-1" data-testid={`${testidPrefix}-nofy-list`}>
@@ -87,10 +90,10 @@ export function NofyLinkedNotesSection({
                   {note.icon ?? "📝"}
                 </span>
                 <span className="min-w-0 flex-1 truncate text-xs font-medium text-foreground">
-                  {note.title === "" ? "Untitled note" : note.title}
+                  {note.title === "" ? N.shared.untitledNote : note.title}
                 </span>
                 <span className="shrink-0 text-[10px] text-muted-foreground">
-                  {nofyRelativeTime(note.updatedAt)}
+                  {nofyRelativeTime(note.updatedAt, N.time)}
                 </span>
                 <ArrowUpRight className="size-3 shrink-0 text-muted-foreground/50 transition-colors group-hover:text-accent" aria-hidden="true" />
               </button>
@@ -103,7 +106,7 @@ export function NofyLinkedNotesSection({
                 onClick={() => router.push("/nofy?tab=notes")}
                 className="w-full px-2 py-1 text-left text-[11px] text-muted-foreground transition-colors hover:text-accent"
               >
-                + {notes.length - 5} more in Nofy
+                + {notes.length - 5} {N.linked.moreInNofy}
               </button>
             </li>
           ) : null}

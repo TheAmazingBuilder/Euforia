@@ -67,6 +67,7 @@ import {
 import type { TradeContextSeed } from "@/lib/hooks/use-trade-modal";
 import { closeTradeModal } from "@/lib/hooks/use-trade-modal";
 import { openGate } from "@/lib/hooks/use-judgment-flow";
+import { useI18n } from "@/i18n/i18n-provider";
 
 /**
  * ACT 1 — Capture (trade-entry-ux.md §4). One adaptive form, numbers first:
@@ -78,18 +79,12 @@ import { openGate } from "@/lib/hooks/use-judgment-flow";
 
 const DRAFT_DEBOUNCE_MS = 400;
 
-const REASON_PLACEHOLDERS: readonly string[] = [
-  "Clean London H1 breaker retest…",
-  "Pre-open range break with rising volume…",
-  "Reclaim of the flipped S/R level…",
-  "Trend continuation after the liquidity sweep…",
-];
-
 const EXIT_REASONS: readonly ExitReason[] = ["TP", "SL", "MANUAL", "TRAILING", "PARTIAL", "MARGIN"];
 
-function rotatePlaceholder(): string {
+/** Rotating entry-reason placeholder (hourly slot — pure pick, no state). */
+function rotatePlaceholder(placeholders: readonly string[]): string {
   const slot = Math.floor(Date.now() / 3_600_000);
-  return REASON_PLACEHOLDERS[slot % REASON_PLACEHOLDERS.length] ?? REASON_PLACEHOLDERS[0]!;
+  return placeholders[slot % placeholders.length] ?? placeholders[0]!;
 }
 
 /** User typing may include commas ("1,5") — normalize to the wire format. */
@@ -147,6 +142,8 @@ export interface TradeFormProps {
 }
 
 export function TradeForm({ seed }: TradeFormProps) {
+  const { dict } = useI18n();
+  const T = dict.trades.form;
   // ── Data ────────────────────────────────────────────────────────────────
   const { data: instrumentsData } = useInstruments();
   const { data: strategiesData } = useStrategies();
@@ -254,7 +251,7 @@ export function TradeForm({ seed }: TradeFormProps) {
     instrument !== null
       ? { pipSize: instrument.pipSize, contractSize: instrument.contractSize }
       : null;
-  const unitLabel = instrument !== null ? sizeUnitLabel(instrument.assetClass) : "units";
+  const unitLabel = instrument !== null ? sizeUnitLabel(instrument.assetClass) : T.unitsFallback;
 
   const closed = values.variant === "closed";
   const entry = normalizeDecimalInput(values.entryPrice);
@@ -296,11 +293,11 @@ export function TradeForm({ seed }: TradeFormProps) {
       const beyondStop =
         direction === "BUY" ? Number(exit) < Number(stop) : Number(exit) > Number(stop);
       if (Number.isFinite(Number(exit)) && Number.isFinite(Number(stop)) && beyondStop) {
-        list.push({ id: "exit-beyond-sl", message: "Exit beyond your SL — stop moved?" });
+        list.push({ id: "exit-beyond-sl", message: T.warn.exitBeyondSl });
       }
     }
     if (rr !== null && rr < 0.5) {
-      list.push({ id: "rr-low", message: `R:R 1:${rr.toFixed(1)} — intended?` });
+      list.push({ id: "rr-low", message: `${T.warn.rrPrefix} 1:${rr.toFixed(1)} ${T.warn.rrSuffix}` });
     }
     const riskLimitRule = rulesStatus.data?.limits.find(
       (limit) => limit.type === "MAX_RISK_PCT_PER_TRADE",
@@ -312,7 +309,7 @@ export function TradeForm({ seed }: TradeFormProps) {
     ) {
       list.push({
         id: "risk-over-limit",
-        message: `Risk ${formatPercent(sizer.riskPct / 100, 1)} > your ${Number(riskLimitRule.limit)}% limit`,
+        message: `${T.warn.riskPrefix} ${formatPercent(sizer.riskPct / 100, 1)} ${T.warn.riskMid} ${Number(riskLimitRule.limit)}${T.warn.riskTail}`,
       });
     }
     const closedTrades = (tradesData?.trades ?? []).filter((trade) => trade.status === "CLOSED");
@@ -324,12 +321,12 @@ export function TradeForm({ seed }: TradeFormProps) {
           sameInstrument.length;
         const current = Number(effectiveQuantity);
         if (average > 0 && Number.isFinite(current) && current >= 10 * average) {
-          list.push({ id: "size-10x", message: "Size 10× your usual — confirm?" });
+          list.push({ id: "size-10x", message: T.warn.size10x });
         }
       }
     }
     return list;
-  }, [closed, stop, exit, direction, rr, sizer.riskPct, rulesStatus.data, instrument, effectiveQuantity, tradesData]);
+  }, [closed, stop, exit, direction, rr, sizer.riskPct, rulesStatus.data, instrument, effectiveQuantity, tradesData, T]);
 
   const riskRuleSeverity =
     rulesStatus.data?.limits.find((limit) => limit.type === "MAX_RISK_PCT_PER_TRADE")?.severity ?? null;
@@ -349,21 +346,21 @@ export function TradeForm({ seed }: TradeFormProps) {
   const entryAtISO = localInputToISO(values.entryAtLocal);
   const exitAtISO = localInputToISO(values.exitAtLocal);
   const missing: string[] = [];
-  if (instrument === null) missing.push("instrument");
-  if (!(Number(entry) > 0)) missing.push("entry price");
-  if (!(entryAtISO !== null)) missing.push("entry time");
-  if (closed && !(Number(exit) > 0)) missing.push("exit price");
-  if (closed && exitAtISO === null) missing.push("exit time");
+  if (instrument === null) missing.push(T.missing.instrument);
+  if (!(Number(entry) > 0)) missing.push(T.missing.entryPrice);
+  if (!(entryAtISO !== null)) missing.push(T.missing.entryTime);
+  if (closed && !(Number(exit) > 0)) missing.push(T.missing.exitPrice);
+  if (closed && exitAtISO === null) missing.push(T.missing.exitTime);
   if (closed && entryAtISO !== null && exitAtISO !== null && exitAtISO <= entryAtISO) {
-    missing.push("exit after entry");
+    missing.push(T.missing.exitAfterEntry);
   }
   if (values.sizeMode === "risk_percent" && sizer.suggestedQuantity === null) {
-    missing.push("risk % + stop for auto-size");
+    missing.push(T.missing.riskStop);
   }
   if (values.sizeMode === "quantity" && !(Number(effectiveQuantity) > 0)) {
-    missing.push("size");
+    missing.push(T.missing.size);
   }
-  if (!values.outOfPlaybook && values.strategyId === null) missing.push("strategy (or out of playbook)");
+  if (!values.outOfPlaybook && values.strategyId === null) missing.push(T.missing.strategy);
   const canSubmit =
     missing.length === 0 && !createTrade.isPending && !guardrailLocked;
 
@@ -422,14 +419,14 @@ export function TradeForm({ seed }: TradeFormProps) {
           closeTradeModal();
           openGate(response.id);
         } else {
-          toast.success("Trade saved — journaled as OPEN", {
+          toast.success(T.savedOpenTitle, {
             description: `${instrument?.symbol ?? ""} ${direction} @ ${entry}`,
           });
           closeTradeModal();
         }
       },
       onError: (error) => {
-        toast.error("Could not save the trade", {
+        toast.error(dict.trades.errors.tradeSave, {
           description: error instanceof Error ? error.message : String(error),
         });
       },
@@ -461,6 +458,9 @@ export function TradeForm({ seed }: TradeFormProps) {
   const inputClasses =
     "h-10 w-full rounded-md border border-border bg-background px-3 font-mono text-sm tabular-nums outline-none transition-colors placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring";
 
+  // Rotating entry-reason placeholders — labels resolve through the active dictionary.
+  const reasonPlaceholders = [T.reasonPh1, T.reasonPh2, T.reasonPh3, T.reasonPh4];
+
   return (
     <form onSubmit={onSubmit} className="space-y-4" noValidate>
       <DisciplineBanner />
@@ -469,8 +469,8 @@ export function TradeForm({ seed }: TradeFormProps) {
         {/* Instrument */}
         <div className="space-y-1.5">
           <div className="flex items-baseline justify-between">
-            <Label htmlFor="trade-instrument">Instrument</Label>
-            <span className="text-[11px] text-muted-foreground">search symbol or name</span>
+            <Label htmlFor="trade-instrument">{T.instrument}</Label>
+            <span className="text-[11px] text-muted-foreground">{T.instrumentHint}</span>
           </div>
           <InstrumentCombobox
             value={values.instrumentId}
@@ -480,7 +480,7 @@ export function TradeForm({ seed }: TradeFormProps) {
 
         {/* Direction */}
         <div className="space-y-1.5">
-          <Label htmlFor="trade-direction">Direction</Label>
+          <Label htmlFor="trade-direction">{T.direction}</Label>
           <DirectionSegmented
             id="trade-direction"
             value={direction}
@@ -492,7 +492,7 @@ export function TradeForm({ seed }: TradeFormProps) {
       {/* Prices & times — numbers first */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <div className="space-y-1.5">
-          <Label htmlFor="trade-entry-price">Entry price</Label>
+          <Label htmlFor="trade-entry-price">{T.entryPrice}</Label>
           <input
             id="trade-entry-price"
             type="text"
@@ -506,7 +506,7 @@ export function TradeForm({ seed }: TradeFormProps) {
           />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="trade-entry-at">Entry time</Label>
+          <Label htmlFor="trade-entry-at">{T.entryTime}</Label>
           <input
             id="trade-entry-at"
             type="datetime-local"
@@ -518,7 +518,7 @@ export function TradeForm({ seed }: TradeFormProps) {
         {closed ? (
           <>
             <div className="space-y-1.5">
-              <Label htmlFor="trade-exit-price">Exit price</Label>
+              <Label htmlFor="trade-exit-price">{T.exitPrice}</Label>
               <input
                 id="trade-exit-price"
                 type="text"
@@ -531,7 +531,7 @@ export function TradeForm({ seed }: TradeFormProps) {
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="trade-exit-at">Exit time</Label>
+              <Label htmlFor="trade-exit-at">{T.exitTime}</Label>
               <input
                 id="trade-exit-at"
                 type="datetime-local"
@@ -543,14 +543,14 @@ export function TradeForm({ seed }: TradeFormProps) {
           </>
         ) : (
           <div className="col-span-2 flex items-end pb-1 text-xs text-muted-foreground lg:col-span-2">
-            Still running — close it later from Session Live.
+            {T.stillRunning}
           </div>
         )}
       </div>
 
       {closed ? (
         <div className="max-w-56 space-y-1.5">
-          <Label htmlFor="trade-exit-reason">Exit reason</Label>
+          <Label htmlFor="trade-exit-reason">{T.exitReason}</Label>
           <Select
             value={values.exitReason}
             onValueChange={(reason) => patch({ exitReason: reason as ExitReason })}
@@ -582,21 +582,21 @@ export function TradeForm({ seed }: TradeFormProps) {
           ) : (
             <ChevronRight className="size-4 text-muted-foreground" aria-hidden="true" />
           )}
-          <span className="text-sm font-semibold text-foreground">The Plan</span>
+          <span className="text-sm font-semibold text-foreground">{T.plan}</span>
           {rr !== null ? (
             <span className="ml-auto font-mono text-xs tabular-nums text-muted-foreground">
-              planned R:R{" "}
+              {T.plannedRR}{" "}
               <span className="text-foreground">1:{rr >= 10 ? rr.toFixed(0) : rr.toFixed(1)}</span>
             </span>
           ) : (
-            <span className="ml-auto text-[11px] text-muted-foreground">SL + TP → auto R:R</span>
+            <span className="ml-auto text-[11px] text-muted-foreground">{T.autoRR}</span>
           )}
         </button>
         {planOpen ? (
           <div className="space-y-3 border-t border-border p-3">
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label htmlFor="trade-stop">Planned stop loss</Label>
+                <Label htmlFor="trade-stop">{T.plannedStop}</Label>
                 <input
                   id="trade-stop"
                   type="text"
@@ -604,12 +604,12 @@ export function TradeForm({ seed }: TradeFormProps) {
                   autoComplete="off"
                   value={values.initialStop}
                   onChange={(event) => patch({ initialStop: event.target.value })}
-                  placeholder="Stop price"
+                  placeholder={T.stopPlaceholder}
                   className={inputClasses}
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="trade-tp">Planned take profit</Label>
+                <Label htmlFor="trade-tp">{T.plannedTP}</Label>
                 <input
                   id="trade-tp"
                   type="text"
@@ -617,25 +617,25 @@ export function TradeForm({ seed }: TradeFormProps) {
                   autoComplete="off"
                   value={values.initialTP}
                   onChange={(event) => patch({ initialTP: event.target.value })}
-                  placeholder="Target price"
+                  placeholder={T.targetPlaceholder}
                   className={inputClasses}
                 />
               </div>
             </div>
             <div className="grid gap-3 lg:grid-cols-2">
               <div className="space-y-1.5">
-                <Label htmlFor="trade-reason">Entry reason (one line)</Label>
+                <Label htmlFor="trade-reason">{T.entryReason}</Label>
                 <input
                   id="trade-reason"
                   type="text"
                   value={values.reason}
                   onChange={(event) => patch({ reason: event.target.value })}
-                  placeholder={rotatePlaceholder()}
+                  placeholder={rotatePlaceholder(reasonPlaceholders)}
                   className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="trade-fees">Fees (total)</Label>
+                <Label htmlFor="trade-fees">{T.fees}</Label>
                 <input
                   id="trade-fees"
                   type="text"
@@ -672,8 +672,8 @@ export function TradeForm({ seed }: TradeFormProps) {
       {/* Strategy — recommended, one tap */}
       <div className="space-y-1.5">
         <div className="flex items-baseline justify-between">
-          <Label>Strategy</Label>
-          <span className="text-[11px] text-muted-foreground">recommended — one tap</span>
+          <Label>{T.strategy}</Label>
+          <span className="text-[11px] text-muted-foreground">{T.strategyHint}</span>
         </div>
         <StrategyPicker
           strategies={strategies}
@@ -687,8 +687,8 @@ export function TradeForm({ seed }: TradeFormProps) {
       {/* Emotion before — optional, single tap */}
       <div className="space-y-1.5">
         <div className="flex items-baseline justify-between">
-          <Label>Emotion before</Label>
-          <span className="text-[11px] text-muted-foreground">optional — single tap</span>
+          <Label>{T.emotionBefore}</Label>
+          <span className="text-[11px] text-muted-foreground">{dict.trades.shared.optionalSingleTap}</span>
         </div>
         <EmotionPicker value={values.emotionBefore} onChange={(emotionBefore) => patch({ emotionBefore })} />
       </div>
@@ -715,13 +715,13 @@ export function TradeForm({ seed }: TradeFormProps) {
           ) : (
             <ChevronRight className="size-4 text-muted-foreground" aria-hidden="true" />
           )}
-          <span className="text-sm font-semibold text-foreground">Add details</span>
-          <span className="ml-auto text-[11px] text-muted-foreground">tags · notes · screenshots</span>
+          <span className="text-sm font-semibold text-foreground">{T.addDetails}</span>
+          <span className="ml-auto text-[11px] text-muted-foreground">{T.detailsHint}</span>
         </button>
         {detailsOpen ? (
           <div className="space-y-4 border-t border-border p-3">
             <div className="space-y-1.5">
-              <Label>Tags</Label>
+              <Label>{T.tags}</Label>
               <div className="flex flex-wrap gap-1.5">
                 {tags.map((tag) => {
                   const selected = values.tagIds.includes(tag.id);
@@ -749,17 +749,17 @@ export function TradeForm({ seed }: TradeFormProps) {
                   );
                 })}
                 {tags.length === 0 ? (
-                  <span className="text-xs text-muted-foreground">No tags yet.</span>
+                  <span className="text-xs text-muted-foreground">{T.noTags}</span>
                 ) : null}
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="trade-notes">Notes</Label>
+              <Label htmlFor="trade-notes">{T.notes}</Label>
               <Textarea
                 id="trade-notes"
                 value={values.notes}
                 onChange={(event) => patch({ notes: event.target.value })}
-                placeholder="Context, execution quality, what you noticed…"
+                placeholder={T.notesPlaceholder}
                 className="min-h-20"
               />
             </div>
@@ -776,8 +776,9 @@ export function TradeForm({ seed }: TradeFormProps) {
         >
           <ShieldAlert className="size-3.5 shrink-0" aria-hidden="true" />
           <span>
-            Guardrail — {violationsToday} rule violation{violationsToday === 1 ? "" : "s"} today
-            (limit {guardrailLimit}). Capture is soft-locked.
+            {T.guardrailLead} {violationsToday}{" "}
+            {violationsToday === 1 ? T.violationOne : T.violationsMany} {guardrailLimit}
+            {T.guardrailTail}
           </span>
           {guardrailLocked ? (
             <Button
@@ -788,17 +789,17 @@ export function TradeForm({ seed }: TradeFormProps) {
               onClick={() => setGuardrailAcked(true)}
               data-testid="trade-form-guardrail-confirm"
             >
-              Capture anyway
+              {T.captureAnyway}
             </Button>
           ) : (
-            <span className="ml-auto font-mono text-[10px]">acknowledged — proceed carefully</span>
+            <span className="ml-auto font-mono text-[10px]">{T.acknowledged}</span>
           )}
         </div>
       ) : null}
 
       {/* Amber warnings — non-blocking, auto-dismiss on fix */}
       {warnings.length > 0 ? (
-        <ul className="space-y-1" aria-label="Warnings">
+        <ul className="space-y-1" aria-label={T.warningsAria}>
           {warnings.map((warning) => (
             <li
               key={warning.id}
@@ -823,7 +824,7 @@ export function TradeForm({ seed }: TradeFormProps) {
               "border border-warning/60 bg-warning/10 text-warning hover:bg-warning/20 hover:text-warning",
           )}
         >
-          {closed ? "Save & close" : "Save as open"}
+          {closed ? T.submitClosed : T.submitOpen}
           <kbd className="ml-2 hidden rounded-sm bg-accent-foreground/10 px-1 font-mono text-[10px] sm:inline">
             ↵
           </kbd>
@@ -832,17 +833,17 @@ export function TradeForm({ seed }: TradeFormProps) {
           type="button"
           variant="ghost"
           onClick={() => patch({ variant: closed ? "open" : "closed" })}
-          title={closed ? "Journal as an OPEN position instead" : "Journal as already closed instead"}
+          title={closed ? T.switchToOpenTitle : T.switchToClosedTitle}
         >
-          {closed ? "Save as open instead" : "Save & close instead"}
+          {closed ? T.switchToOpen : T.switchToClosed}
         </Button>
         {missing.length > 0 ? (
           <p className="text-[11px] text-muted-foreground sm:ml-auto sm:text-right">
-            Add: <span className="font-medium text-foreground">{missing.join(", ")}</span>
+            {T.addMissing} <span className="font-medium text-foreground">{missing.join(", ")}</span>
           </p>
         ) : (
           <p className="text-[11px] text-muted-foreground sm:ml-auto sm:text-right">
-            Draft is always saved. Esc closes.
+            {T.draftHint}
           </p>
         )}
       </div>
@@ -854,7 +855,7 @@ export function TradeForm({ seed }: TradeFormProps) {
           className="flex items-center gap-1.5 text-[11px] text-muted-foreground"
         >
           <span className="size-1.5 rounded-full bg-accent" aria-hidden="true" />
-          {draftBadge === "restored" ? "Draft restored" : "Draft saved"}
+          {draftBadge === "restored" ? T.draftRestored : T.draftSaved}
         </p>
       ) : null}
     </form>

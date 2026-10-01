@@ -29,6 +29,7 @@ import {
 import { apiErrorMessage } from "@/lib/api/client";
 import { localInputToISO } from "@/lib/utils/datetime";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/i18n/i18n-provider";
 
 /** MT5-style sample (dots in dates, buy/sell lowercase, "Item" column). */
 const SAMPLE_CSV = [
@@ -46,23 +47,24 @@ type ImportFieldKey =
 
 interface ImportField {
   key: ImportFieldKey;
-  label: string;
   required: boolean;
   /** Header-name heuristics, strongest match first. */
   hints: string[];
 }
 
+// Header-name heuristics stay EN (they match the CSV data, not the UI);
+// the user-facing labels resolve through dict.trades.csvImport.fields.
 const IMPORT_FIELDS: ImportField[] = [
-  { key: "symbol", label: "Symbol", required: true, hints: ["symbol", "item", "instrument", "ticker", "pair", "market"] },
-  { key: "side", label: "Side", required: true, hints: ["type", "side", "direction", "long/short"] },
-  { key: "entryAt", label: "Entry time", required: true, hints: ["open time", "date/time", "entry time", "entry date", "open date", "date", "time"] },
-  { key: "entryPrice", label: "Entry price", required: true, hints: ["open price", "entry price", "price in", "open", "price"] },
-  { key: "exitAt", label: "Exit time", required: false, hints: ["close time", "exit time", "exit date", "close date"] },
-  { key: "exitPrice", label: "Exit price", required: false, hints: ["close price", "exit price", "price out", "close"] },
-  { key: "quantity", label: "Quantity", required: false, hints: ["volume", "qty", "quantity", "lots", "size"] },
-  { key: "fees", label: "Fees", required: false, hints: ["commission", "fee", "fees"] },
-  { key: "pnl", label: "P&L (reference)", required: false, hints: ["profit", "pnl", "p/l", "net p/l"] },
-  { key: "notes", label: "Notes", required: false, hints: ["comment", "note", "description"] },
+  { key: "symbol", required: true, hints: ["symbol", "item", "instrument", "ticker", "pair", "market"] },
+  { key: "side", required: true, hints: ["type", "side", "direction", "long/short"] },
+  { key: "entryAt", required: true, hints: ["open time", "date/time", "entry time", "entry date", "open date", "date", "time"] },
+  { key: "entryPrice", required: true, hints: ["open price", "entry price", "price in", "open", "price"] },
+  { key: "exitAt", required: false, hints: ["close time", "exit time", "exit date", "close date"] },
+  { key: "exitPrice", required: false, hints: ["close price", "exit price", "price out", "close"] },
+  { key: "quantity", required: false, hints: ["volume", "qty", "quantity", "lots", "size"] },
+  { key: "fees", required: false, hints: ["commission", "fee", "fees"] },
+  { key: "pnl", required: false, hints: ["profit", "pnl", "p/l", "net p/l"] },
+  { key: "notes", required: false, hints: ["comment", "note", "description"] },
 ];
 
 const BROKER_PRESETS = ["Generic CSV", "MT4 / MT5", "TradingView", "cTrader"] as const;
@@ -158,6 +160,8 @@ export function CsvImportDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const { dict } = useI18n();
+  const T = dict.trades.csvImport;
   const { data: strategiesData } = useStrategies();
   const importTrades = useImportTrades();
 
@@ -175,9 +179,10 @@ export function CsvImportDialog({
   const delimiter = React.useMemo(() => detectDelimiter(csvText), [csvText]);
   const rows = React.useMemo(() => parseCsvRows(csvText, delimiter), [csvText, delimiter]);
   const headerRow = rows[0] ?? [];
+  const columnWord = dict.trades.csvImport.columnWord;
   const headers = hasHeader
-    ? headerRow.map((cell, index) => (cell.trim() === "" ? `Column ${index + 1}` : cell.trim()))
-    : (rows[0] ?? []).map((_, index) => `Column ${index + 1}`);
+    ? headerRow.map((cell, index) => (cell.trim() === "" ? `${columnWord} ${index + 1}` : cell.trim()))
+    : (rows[0] ?? []).map((_, index) => `${columnWord} ${index + 1}`);
   const dataRows = hasHeader ? rows.slice(1) : rows;
 
   // Auto-map on new content: render-time adjustment against a content key
@@ -267,22 +272,27 @@ export function CsvImportDialog({
     importTrades.mutate(input, {
       onSuccess: (result) => {
         if (result.imported > 0) {
-          toast.success(`Imported ${result.imported} trade${result.imported === 1 ? "" : "s"}`, {
-            description:
-              result.skippedDuplicates > 0
-                ? `${result.skippedDuplicates} duplicate${result.skippedDuplicates === 1 ? "" : "s"} skipped (already in the journal)`
-                : "Results computed server-side — grade them from the review queue",
-          });
+          toast.success(
+            result.imported === 1 ? T.importedOne : `${result.imported} ${T.importedManyUnit}`,
+            {
+              description:
+                result.skippedDuplicates > 0
+                  ? result.skippedDuplicates === 1
+                    ? T.duplicateOne
+                    : `${result.skippedDuplicates} ${T.duplicateManyUnit}`
+                  : T.serverComputed,
+            },
+          );
         }
         if (result.unknownSymbols.length > 0) {
-          toast.warning(`${result.unknownSymbols.length} row(s) skipped — unknown symbols`, {
+          toast.warning(`${result.unknownSymbols.length} ${T.rowsSkippedUnknown}`, {
             description: [...new Set(result.unknownSymbols)].join(", "),
             duration: 10_000,
           });
         }
         if (result.imported > 0 || result.skippedDuplicates > 0) onOpenChange(false);
       },
-      onError: (error) => toast.error(apiErrorMessage(error, "Import failed")),
+      onError: (error) => toast.error(apiErrorMessage(error, dict.trades.errors.import)),
     });
   };
 
@@ -292,18 +302,15 @@ export function CsvImportDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[92dvh] overflow-y-auto sm:max-w-3xl" data-testid="trades-import-dialog">
         <DialogHeader>
-          <DialogTitle className="font-heading">Import trades from CSV</DialogTitle>
-          <DialogDescription>
-            Map your broker&apos;s columns once — Cosmoz normalizes, deduplicates per broker
-            reference, and recomputes results server-side.
-          </DialogDescription>
+          <DialogTitle className="font-heading">{T.title}</DialogTitle>
+          <DialogDescription>{T.description}</DialogDescription>
         </DialogHeader>
 
         <div className="grid gap-4">
           {/* Source: broker preset + file / paste / sample */}
           <div className="flex flex-wrap items-end gap-2.5">
             <div className="space-y-1">
-              <Label className="text-[11px] text-muted-foreground">Broker format</Label>
+              <Label className="text-[11px] text-muted-foreground">{T.brokerFormat}</Label>
               <Select value={broker} onValueChange={setBroker}>
                 <SelectTrigger className="h-9 w-40 text-sm" data-testid="trades-import-broker">
                   <SelectValue />
@@ -326,7 +333,7 @@ export function CsvImportDialog({
               data-testid="trades-import-file"
             >
               <Upload className="size-3.5" aria-hidden="true" />
-              Choose file
+              {T.chooseFile}
             </Button>
             <Button
               variant="ghost"
@@ -336,7 +343,7 @@ export function CsvImportDialog({
               data-testid="trades-import-paste"
             >
               <ClipboardPaste className="size-3.5" aria-hidden="true" />
-              Paste CSV
+              {T.pasteCsv}
             </Button>
             <Button
               variant="ghost"
@@ -349,7 +356,7 @@ export function CsvImportDialog({
               data-testid="trades-import-sample"
             >
               <FileUp className="size-3.5" aria-hidden="true" />
-              Load MT5 sample
+              {T.loadSample}
             </Button>
             {fileName !== null ? (
               <span className="pb-2 font-mono text-[11px] text-muted-foreground">{fileName}</span>
@@ -363,7 +370,7 @@ export function CsvImportDialog({
                 setCsvText(event.target.value);
                 setFileName(null);
               }}
-              placeholder="Paste raw CSV content…"
+              placeholder={T.pastePlaceholder}
               className="min-h-24 font-mono text-xs"
               data-testid="trades-import-paste-area"
             />
@@ -376,7 +383,7 @@ export function CsvImportDialog({
                 {IMPORT_FIELDS.map((field) => (
                   <div key={field.key} className="space-y-1">
                     <Label className="text-[11px] text-muted-foreground">
-                      {field.label}
+                      {T.fields[field.key]}
                       {field.required ? <span className="text-loss"> *</span> : null}
                     </Label>
                     <Select
@@ -387,7 +394,7 @@ export function CsvImportDialog({
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="__none">— not mapped —</SelectItem>
+                        <SelectItem value="__none">{T.notMapped}</SelectItem>
                         {headers.map((header) => (
                           <SelectItem key={header} value={header}>
                             {header}
@@ -404,12 +411,12 @@ export function CsvImportDialog({
                 className="font-mono text-xs text-muted-foreground"
                 data-testid="trades-import-status"
               >
-                {dataRows.length} row{dataRows.length === 1 ? "" : "s"} parsed
+                {dataRows.length === 1 ? T.parsedOne : `${dataRows.length} ${T.parsedManyUnit}`}
                 {" · "}
-                <span className={noValidRows ? "text-loss" : "text-profit"}>{parsed.valid.length} ready</span>
-                {parsed.invalid > 0 ? <> · {parsed.invalid} skipped (missing required fields)</> : null}
+                <span className={noValidRows ? "text-loss" : "text-profit"}>{parsed.valid.length} {T.readyUnit}</span>
+                {parsed.invalid > 0 ? <> · {parsed.invalid} {T.skippedMissing}</> : null}
                 {" · "}
-                delimiter <span className="text-foreground">{delimiter === "\t" ? "TAB" : delimiter}</span>
+                {T.delimiter} <span className="text-foreground">{delimiter === "\t" ? "TAB" : delimiter}</span>
                 {" · "}
                 <button
                   type="button"
@@ -417,7 +424,7 @@ export function CsvImportDialog({
                   className="rounded border border-border px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground hover:border-accent/50 hover:text-foreground"
                   data-testid="trades-import-header-toggle"
                 >
-                  {hasHeader ? "1st row = header" : "no header row"}
+                  {hasHeader ? T.headerOn : T.headerOff}
                 </button>
               </p>
 
@@ -426,13 +433,13 @@ export function CsvImportDialog({
                 <table className="w-full min-w-[560px] text-left font-mono text-[11px]">
                   <thead>
                     <tr className="border-b border-border text-[10px] uppercase tracking-wide text-muted-foreground">
-                      <th scope="col" className="px-2.5 py-2 font-medium">Symbol</th>
-                      <th scope="col" className="px-2.5 py-2 font-medium">Side</th>
-                      <th scope="col" className="px-2.5 py-2 font-medium">Entry</th>
-                      <th scope="col" className="px-2.5 py-2 text-right font-medium">Entry px</th>
-                      <th scope="col" className="px-2.5 py-2 text-right font-medium">Exit px</th>
-                      <th scope="col" className="px-2.5 py-2 text-right font-medium">Qty</th>
-                      <th scope="col" className="px-2.5 py-2 text-right font-medium">P&amp;L</th>
+                      <th scope="col" className="px-2.5 py-2 font-medium">{T.preview.symbol}</th>
+                      <th scope="col" className="px-2.5 py-2 font-medium">{T.preview.side}</th>
+                      <th scope="col" className="px-2.5 py-2 font-medium">{T.preview.entry}</th>
+                      <th scope="col" className="px-2.5 py-2 text-right font-medium">{T.preview.entryPx}</th>
+                      <th scope="col" className="px-2.5 py-2 text-right font-medium">{T.preview.exitPx}</th>
+                      <th scope="col" className="px-2.5 py-2 text-right font-medium">{T.preview.qty}</th>
+                      <th scope="col" className="px-2.5 py-2 text-right font-medium">{T.preview.pnl}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -448,7 +455,7 @@ export function CsvImportDialog({
                         </td>
                         <td className="px-2.5 py-1.5 text-muted-foreground">{row.entryAt.slice(0, 16).replace("T", " ")}</td>
                         <td className="px-2.5 py-1.5 text-right tabular-nums">{row.entryPrice}</td>
-                        <td className="px-2.5 py-1.5 text-right tabular-nums">{row.exitPrice ?? "open"}</td>
+                        <td className="px-2.5 py-1.5 text-right tabular-nums">{row.exitPrice ?? T.openValue}</td>
                         <td className="px-2.5 py-1.5 text-right tabular-nums">{row.quantity ?? "—"}</td>
                         <td className="px-2.5 py-1.5 text-right tabular-nums">{row.pnl ?? "—"}</td>
                       </tr>
@@ -460,13 +467,13 @@ export function CsvImportDialog({
               {/* Strategy assignment + submit */}
               <div className="flex flex-wrap items-end justify-between gap-3">
                 <div className="space-y-1">
-                  <Label className="text-[11px] text-muted-foreground">Assign strategy (optional)</Label>
+                  <Label className="text-[11px] text-muted-foreground">{T.assignStrategy}</Label>
                   <Select value={strategyId} onValueChange={setStrategyId}>
                     <SelectTrigger className="h-9 w-56 text-sm" data-testid="trades-import-strategy">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="__none">Out of playbook</SelectItem>
+                      <SelectItem value="__none">{dict.trades.shared.outOfPlaybook}</SelectItem>
                       {(strategiesData?.strategies ?? []).map((strategy) => (
                         <SelectItem key={strategy.id} value={strategy.id}>
                           {strategy.name}
@@ -486,13 +493,17 @@ export function CsvImportDialog({
                   ) : (
                     <Upload className="size-4" aria-hidden="true" />
                   )}
-                  Import {parsed.valid.length} trade{parsed.valid.length === 1 ? "" : "s"}
+                  {importTrades.isPending
+                    ? T.importCtaPrefix
+                    : parsed.valid.length === 1
+                      ? T.importCtaOne
+                      : `${T.importCtaPrefix} ${parsed.valid.length} ${T.importCtaUnit}`}
                 </Button>
               </div>
             </>
           ) : (
             <p className="rounded-md border border-dashed border-border px-3 py-6 text-center text-xs text-muted-foreground">
-              Choose a CSV file, paste its content, or load the MT5 sample to map the columns.
+              {T.emptyState}
             </p>
           )}
         </div>

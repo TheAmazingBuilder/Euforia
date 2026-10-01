@@ -6,6 +6,7 @@ import type { Outcome, SkippedTrade } from "@cosmoz/shared";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useI18n } from "@/i18n/i18n-provider";
 import { useInstruments, useSettleSkippedTrade } from "@/lib/api/queries";
 
 /**
@@ -15,14 +16,6 @@ import { useInstruments, useSettleSkippedTrade } from "@/lib/api/queries";
  * Hesitation Cost.
  */
 
-const REASON_LABELS: Record<SkippedTrade["reason"], string> = {
-  DISCIPLINE: "Discipline",
-  FEAR: "Fear",
-  OUT_OF_PLAYBOOK: "Out of playbook",
-  NO_SETUP: "No valid setup",
-  MISSED_EXECUTION: "Missed execution",
-};
-
 function dayLabel(iso: string): string {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return "";
@@ -30,12 +23,14 @@ function dayLabel(iso: string): string {
 }
 
 export function GhostSettlements({ ghosts }: { ghosts: SkippedTrade[] }) {
+  const { dict } = useI18n();
+  const S = dict.session;
   const { data: instrumentsData } = useInstruments();
   const settle = useSettleSkippedTrade();
   const [draftR, setDraftR] = React.useState<Record<string, string>>({});
 
   const symbolOf = (instrumentId: string): string =>
-    instrumentsData?.instruments.find((instrument) => instrument.id === instrumentId)?.symbol ?? "Setup";
+    instrumentsData?.instruments.find((instrument) => instrument.id === instrumentId)?.symbol ?? S.ghost.fallbackSymbol;
 
   const settleGhost = async (ghost: SkippedTrade, outcome: Extract<Outcome, "WOULD_HAVE_WON" | "WOULD_HAVE_LOST" | "UNKNOWN">) => {
     const raw = (draftR[ghost.id] ?? "").trim();
@@ -50,14 +45,14 @@ export function GhostSettlements({ ghosts }: { ghosts: SkippedTrade[] }) {
       });
       toast.success(
         outcome === "WOULD_HAVE_WON"
-          ? "Settled: would have won"
+          ? S.ghost.settledWon
           : outcome === "WOULD_HAVE_LOST"
-            ? "Settled: would have lost"
-            : "Settled: not sure",
-        { description: "Your Regret Registry has been updated." },
+            ? S.ghost.settledLost
+            : S.ghost.settledUnknown,
+        { description: S.ghost.settledDesc },
       );
     } catch {
-      toast.error("Could not settle the ghost trade");
+      toast.error(S.ghost.toastFailed);
     }
   };
 
@@ -70,14 +65,14 @@ export function GhostSettlements({ ghosts }: { ghosts: SkippedTrade[] }) {
               {symbolOf(ghost.instrumentId)}
               {ghost.direction !== null ? (
                 <span className="ml-1.5 text-xs font-normal text-muted-foreground">
-                  {ghost.direction === "BUY" ? "▲ long" : "▼ short"}
+                  {ghost.direction === "BUY" ? S.ghost.longTag : S.ghost.shortTag}
                 </span>
               ) : null}
             </span>
             <span className="text-xs capitalize text-muted-foreground">{dayLabel(ghost.seenAt)}</span>
           </div>
           <p className="text-xs text-muted-foreground">
-            Skipped: {REASON_LABELS[ghost.reason]} — how did it play out?
+            {`${S.ghost.skipped} ${S.ghost.reasons[ghost.reason]} — ${S.ghost.howPlayed}`}
           </p>
           <div className="flex flex-wrap items-center gap-1.5">
             <Button
@@ -87,7 +82,7 @@ export function GhostSettlements({ ghosts }: { ghosts: SkippedTrade[] }) {
               disabled={settle.isPending}
               onClick={() => void settleGhost(ghost, "WOULD_HAVE_WON")}
             >
-              Won
+              {S.ghost.won}
             </Button>
             <Button
               size="sm"
@@ -96,7 +91,7 @@ export function GhostSettlements({ ghosts }: { ghosts: SkippedTrade[] }) {
               disabled={settle.isPending}
               onClick={() => void settleGhost(ghost, "WOULD_HAVE_LOST")}
             >
-              Lost
+              {S.ghost.lost}
             </Button>
             <Button
               size="sm"
@@ -105,12 +100,12 @@ export function GhostSettlements({ ghosts }: { ghosts: SkippedTrade[] }) {
               disabled={settle.isPending}
               onClick={() => void settleGhost(ghost, "UNKNOWN")}
             >
-              Not sure
+              {S.ghost.notSure}
             </Button>
             <Input
               inputMode="decimal"
-              placeholder="Est. R"
-              aria-label={`Estimated R for the ${symbolOf(ghost.instrumentId)} ghost trade`}
+              placeholder={S.ghost.estRPlaceholder}
+              aria-label={`${S.ghost.estRAria} ${symbolOf(ghost.instrumentId)} ${S.ghost.estRAriaTail}`.replace(/\s+/g, " ").trim()}
               value={draftR[ghost.id] ?? ""}
               onChange={(event) => setDraftR((previous) => ({ ...previous, [ghost.id]: event.target.value }))}
               className="h-8 w-20 font-mono text-xs"

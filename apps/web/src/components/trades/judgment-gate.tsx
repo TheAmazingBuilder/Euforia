@@ -14,6 +14,7 @@ import {
 import { isoToLocalInput } from "@/lib/utils/datetime";
 import { cn } from "@/lib/utils";
 import { closeJudgmentFlow, type GateDecision } from "@/lib/hooks/use-judgment-flow";
+import { useI18n } from "@/i18n/i18n-provider";
 
 /**
  * ACT 2 — The Judgment Gate (trade-entry-ux.md §5, the signature moment).
@@ -24,13 +25,9 @@ import { closeJudgmentFlow, type GateDecision } from "@/lib/hooks/use-judgment-f
  * gate is submitted (hard API contract, §13).
  */
 
-const GRADE_OPTIONS: readonly { grade: Grade; label: string; hint: string }[] = [
-  { grade: "A", label: "A", hint: "Exemplary" },
-  { grade: "B", label: "B", hint: "Solid" },
-  { grade: "C", label: "C", hint: "Average" },
-  { grade: "D", label: "D", hint: "Sloppy" },
-  { grade: "F", label: "F", hint: "Impulsive" },
-];
+// Grade letters stay raw (display + keyboard 1–5 mapping below); the hint
+// words resolve through dict.trades.reveal.gradeTag at render time.
+const GRADE_OPTIONS: readonly Grade[] = ["A", "B", "C", "D", "F"];
 
 const GRADE_BY_KEY: Record<string, Grade> = {
   "1": "A",
@@ -47,6 +44,8 @@ export interface JudgmentGateProps {
 }
 
 export function JudgmentGate({ tradeId, onGraded }: JudgmentGateProps) {
+  const { dict } = useI18n();
+  const T = dict.trades;
   const { data: tradesData } = useTrades();
   const { data: instrumentsData } = useInstruments();
   const { data: strategiesData } = useStrategies();
@@ -130,15 +129,15 @@ export function JudgmentGate({ tradeId, onGraded }: JudgmentGateProps) {
           {trade?.direction ?? "—"}
         </span>
         <span aria-hidden="true">·</span>
-        <span>{strategy?.name ?? "Out of playbook"}</span>
+        <span>{strategy?.name ?? T.shared.outOfPlaybook}</span>
         {trade !== undefined ? (
           <>
             <span aria-hidden="true">·</span>
-            <span>entry {isoToLocalInput(trade.entryAt).replace("T", " ")}</span>
+            <span>{T.judgment.entryPrefix} {isoToLocalInput(trade.entryAt).replace("T", " ")}</span>
             {trade.exitAt !== null ? (
               <>
                 <span aria-hidden="true">·</span>
-                <span>{formatDuration(trade.entryAt, trade.exitAt)} in position</span>
+                <span>{formatDuration(trade.entryAt, trade.exitAt)} {T.judgment.inPosition}</span>
               </>
             ) : null}
           </>
@@ -150,24 +149,24 @@ export function JudgmentGate({ tradeId, onGraded }: JudgmentGateProps) {
         <div className="flex items-baseline justify-between gap-2">
           <h3 id="gate-plan-question" className="font-heading text-base font-semibold text-foreground">
             <span className="mr-2 inline-grid size-5 place-items-center rounded-full bg-accent align-middle font-mono text-[11px] font-bold text-accent-foreground">1</span>
-            Did you follow your plan?
+            {T.judgment.planQuestion}
           </h3>
-          <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">binary check</span>
+          <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">{T.judgment.binaryCheck}</span>
         </div>
         <div className="grid grid-cols-2 gap-2.5" role="radiogroup" aria-labelledby="gate-plan-question">
           <PlanCard
             selected={followedPlan === true}
             onSelect={() => setFollowedPlan(true)}
             icon={<Check className="size-5" aria-hidden="true" />}
-            title="Yes, followed"
-            description="Entry, stop and size respected the plan."
+            title={T.judgment.planYes}
+            description={T.judgment.planYesDesc}
           />
           <PlanCard
             selected={followedPlan === false}
             onSelect={() => setFollowedPlan(false)}
             icon={<X className="size-5" aria-hidden="true" />}
-            title="No, deviated"
-            description="Chased, moved the stop or oversized."
+            title={T.judgment.planNo}
+            description={T.judgment.planNoDesc}
           />
         </div>
       </section>
@@ -177,24 +176,24 @@ export function JudgmentGate({ tradeId, onGraded }: JudgmentGateProps) {
         <div className="flex items-baseline justify-between gap-2">
           <h3 id="gate-grade-question" className="font-heading text-base font-semibold text-foreground">
             <span className="mr-2 inline-grid size-5 place-items-center rounded-full bg-accent align-middle font-mono text-[11px] font-bold text-accent-foreground">2</span>
-            Grade your decision
+            {T.judgment.gradeQuestion}
           </h3>
-          <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">1–5 keys</span>
+          <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">{T.judgment.keysHint}</span>
         </div>
         <p className="text-xs text-muted-foreground">
-          Based only on what you knew at entry — not on how it ended.
+          {T.judgment.blind}
         </p>
         <div className="grid grid-cols-5 gap-2" role="radiogroup" aria-labelledby="gate-grade-question">
           {GRADE_OPTIONS.map((option) => {
-            const selected = grade === option.grade;
+            const selected = grade === option;
             return (
               <button
-                key={option.grade}
+                key={option}
                 type="button"
                 role="radio"
                 aria-checked={selected}
-                aria-label={`Grade ${option.grade} — ${option.hint}`}
-                onClick={() => setGrade(option.grade)}
+                aria-label={`${T.shared.gradeWord} ${option} — ${T.reveal.gradeTag[option]}`}
+                onClick={() => setGrade(option)}
                 className={cn(
                   "flex flex-col items-center gap-0.5 rounded-lg border py-3 outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
                   selected
@@ -202,9 +201,9 @@ export function JudgmentGate({ tradeId, onGraded }: JudgmentGateProps) {
                     : "border-border bg-surface text-foreground hover:border-accent/60",
                 )}
               >
-                <span className="font-heading text-2xl font-bold leading-none">{option.label}</span>
+                <span className="font-heading text-2xl font-bold leading-none">{option}</span>
                 <span className={cn("text-[10px]", selected ? "text-accent-foreground/80" : "text-muted-foreground")}>
-                  {option.hint}
+                  {T.reveal.gradeTag[option]}
                 </span>
               </button>
             );
@@ -215,7 +214,7 @@ export function JudgmentGate({ tradeId, onGraded }: JudgmentGateProps) {
       {/* Submit — the grade locks BEFORE the outcome exists */}
       <Button type="button" onClick={submit} disabled={!ready || pending} className="h-11 w-full text-sm font-semibold">
         <Lock className="size-4" aria-hidden="true" />
-        {pending ? "Sealing grade…" : "Lock grade & reveal outcome"}
+        {pending ? T.judgment.sealing : T.judgment.lockGrade}
         <kbd className="ml-1.5 rounded-sm bg-accent-foreground/10 px-1 font-mono text-[10px]">⏎</kbd>
       </Button>
 
@@ -227,13 +226,13 @@ export function JudgmentGate({ tradeId, onGraded }: JudgmentGateProps) {
           data-testid="gate-skip"
           className="text-xs text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
         >
-          Skip — grade later
+          {T.judgment.skip}
         </button>
       </div>
 
       <p className="flex items-center justify-center gap-1.5 text-center font-mono text-[11px] text-muted-foreground">
         <ShieldCheck className="size-3.5 text-accent" aria-hidden="true" />
-        Outcome figures stay sealed until your grade is locked.
+        {T.judgment.sealed}
       </p>
     </div>
   );

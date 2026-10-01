@@ -5,6 +5,7 @@ import { AlertTriangle, Pause, Play, Timer } from "lucide-react";
 import { toast } from "sonner";
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useI18n } from "@/i18n/i18n-provider";
 import { usePreferences, useUpdatePreferencesDomain } from "@/lib/api/queries";
 import { useNowMs } from "@/lib/realtime/use-now";
 import { cn } from "@/lib/utils";
@@ -41,17 +42,6 @@ function getNullSnapshot(): string | null {
   return null;
 }
 
-const MAX_OPTIONS = [
-  { value: "off", label: "No cap", minutes: null },
-  { value: "30", label: "30 min", minutes: 30 },
-  { value: "45", label: "45 min", minutes: 45 },
-  { value: "60", label: "60 min", minutes: 60 },
-  { value: "90", label: "90 min", minutes: 90 },
-  { value: "120", label: "2 h", minutes: 120 },
-  { value: "180", label: "3 h", minutes: 180 },
-  { value: "240", label: "4 h", minutes: 240 },
-] as const;
-
 function formatElapsed(totalSeconds: number): string {
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
@@ -61,9 +51,25 @@ function formatElapsed(totalSeconds: number): string {
 }
 
 export function SessionTimer() {
+  const { dict } = useI18n();
+  const S = dict.session;
   const { data: prefs } = usePreferences();
   const updateTrading = useUpdatePreferencesDomain("trading");
   const maxMinutes = prefs?.trading.sessionMaxDurationMin ?? null;
+
+  const maxOptions = React.useMemo(
+    () => [
+      { value: "off", label: S.timer.noCap, minutes: null },
+      { value: "30", label: `30 ${S.timer.minUnit}`, minutes: 30 },
+      { value: "45", label: `45 ${S.timer.minUnit}`, minutes: 45 },
+      { value: "60", label: `60 ${S.timer.minUnit}`, minutes: 60 },
+      { value: "90", label: `90 ${S.timer.minUnit}`, minutes: 90 },
+      { value: "120", label: S.timer.h2, minutes: 120 },
+      { value: "180", label: S.timer.h3, minutes: 180 },
+      { value: "240", label: S.timer.h4, minutes: 240 },
+    ],
+    [S],
+  );
 
   const nowMs = useNowMs();
   // The stopwatch lives in localStorage (per-device) and is read through
@@ -98,10 +104,10 @@ export function SessionTimer() {
   const changeMax = React.useCallback(
     (value: string) => {
       if (!prefs) return;
-      const option = MAX_OPTIONS.find((item) => item.value === value);
+      const option = maxOptions.find((item) => item.value === value);
       updateTrading.mutate({ ...prefs.trading, sessionMaxDurationMin: option?.minutes ?? null });
     },
-    [prefs, updateTrading],
+    [prefs, updateTrading, maxOptions],
   );
 
   // Cap alert — fires once per run when the elapsed time crosses the cap
@@ -109,20 +115,20 @@ export function SessionTimer() {
   React.useEffect(() => {
     if (!running || maxMinutes === null || !capped || capAlertedRef.current) return;
     capAlertedRef.current = true;
-    toast.warning("Session duration cap reached", {
-      description: `You have been at the station for ${maxMinutes} min. Fatigue compounds — consider wrapping up the session.`,
+    toast.warning(S.timer.toastTitle, {
+      description: `${S.timer.toastBodyA} ${maxMinutes} ${S.timer.toastBodyB}`,
       duration: 10_000,
     });
-  }, [running, maxMinutes, capped]);
+  }, [running, maxMinutes, capped, S]);
 
   return (
     <div className="space-y-1" data-testid="session-timer" data-running={running ? "true" : "false"}>
-      <p className="ledger-label">Session timer</p>
+      <p className="ledger-label">{S.timer.label}</p>
       <div className="flex items-center gap-2">
         <button
           type="button"
           onClick={toggle}
-          aria-label={running ? "Stop session timer" : "Start session timer"}
+          aria-label={running ? S.timer.stopAria : S.timer.startAria}
           data-testid="session-timer-toggle"
           className={cn(
             "inline-flex size-8 items-center justify-center rounded-full border transition-colors",
@@ -151,14 +157,14 @@ export function SessionTimer() {
       <Select value={maxMinutes === null ? "off" : String(maxMinutes)} onValueChange={changeMax}>
         <SelectTrigger
           size="sm"
-          aria-label="Max session duration"
+          aria-label={S.timer.maxAria}
           className="h-6 w-[104px] text-[11px]"
           data-testid="session-timer-max"
         >
-          <SelectValue placeholder="Cap" />
+          <SelectValue placeholder={S.timer.capPlaceholder} />
         </SelectTrigger>
         <SelectContent>
-          {MAX_OPTIONS.map((option) => (
+          {maxOptions.map((option) => (
             <SelectItem key={option.value} value={option.value}>
               {option.label}
             </SelectItem>

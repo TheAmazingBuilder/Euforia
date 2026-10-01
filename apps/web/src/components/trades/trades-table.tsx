@@ -66,6 +66,7 @@ import {
 import { apiErrorMessage } from "@/lib/api/client";
 import { openTradeModal } from "@/lib/hooks/use-trade-modal";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/i18n/i18n-provider";
 
 // Ledger grade marks: bordered ink text, no tinted fills.
 const GRADE_COLORS: Record<string, string> = {
@@ -117,20 +118,23 @@ interface LedgerColumn {
   cellClass: string;
 }
 
-const LEDGER_COLUMNS: LedgerColumn[] = [
-  { key: "date", label: "Date", cellClass: "whitespace-nowrap px-3 py-2.5 font-mono text-xs tabular-nums text-muted-foreground" },
-  { key: "instrument", label: "Instrument", cellClass: "whitespace-nowrap px-3 py-2.5 font-medium text-foreground" },
-  { key: "side", label: "Side", cellClass: "px-3 py-2.5" },
-  { key: "strategy", label: "Strategy", cellClass: "max-w-36 truncate px-3 py-2.5 text-muted-foreground" },
-  { key: "duration", label: "Duration", cellClass: "whitespace-nowrap px-3 py-2.5 font-mono text-xs tabular-nums text-muted-foreground" },
-  { key: "r", label: "R", headerClass: "text-right", cellClass: "whitespace-nowrap px-3 py-2.5 text-right font-mono tabular-nums text-foreground" },
-  { key: "pnl", label: "P&L", headerClass: "text-right", cellClass: "whitespace-nowrap px-3 py-2.5 text-right font-mono font-medium tabular-nums" },
-  { key: "grade", label: "Grade", cellClass: "px-3 py-2.5" },
-  { key: "tags", label: "Tags", cellClass: "px-3 py-2.5" },
-  { key: "status", label: "Status", cellClass: "px-3 py-2.5" },
+// Key + class definitions stay static at module scope; the user-facing labels
+// resolve through the active dictionary inside the component (i18n — hooks
+// cannot run at module scope).
+const LEDGER_COLUMN_DEFS: readonly Omit<LedgerColumn, "label">[] = [
+  { key: "date", cellClass: "whitespace-nowrap px-3 py-2.5 font-mono text-xs tabular-nums text-muted-foreground" },
+  { key: "instrument", cellClass: "whitespace-nowrap px-3 py-2.5 font-medium text-foreground" },
+  { key: "side", cellClass: "px-3 py-2.5" },
+  { key: "strategy", cellClass: "max-w-36 truncate px-3 py-2.5 text-muted-foreground" },
+  { key: "duration", cellClass: "whitespace-nowrap px-3 py-2.5 font-mono text-xs tabular-nums text-muted-foreground" },
+  { key: "r", headerClass: "text-right", cellClass: "whitespace-nowrap px-3 py-2.5 text-right font-mono tabular-nums text-foreground" },
+  { key: "pnl", headerClass: "text-right", cellClass: "whitespace-nowrap px-3 py-2.5 text-right font-mono font-medium tabular-nums" },
+  { key: "grade", cellClass: "px-3 py-2.5" },
+  { key: "tags", cellClass: "px-3 py-2.5" },
+  { key: "status", cellClass: "px-3 py-2.5" },
 ];
 
-const ALL_COLUMN_KEYS = LEDGER_COLUMNS.map((column) => column.key);
+const ALL_COLUMN_KEYS = LEDGER_COLUMN_DEFS.map((column) => column.key);
 
 /** Number of non-default filters a saved view captures (for the menu subtitle). */
 function filterCount(view: SavedTradeView): number {
@@ -164,8 +168,9 @@ export function TradesTable() {
 }
 
 function TradesSkeleton() {
+  const { dict } = useI18n();
   return (
-    <div className="space-y-4" aria-busy="true" aria-label="Loading trades">
+    <div className="space-y-4" aria-busy="true" aria-label={dict.trades.table.loadingAria}>
       <Skeleton className="h-9 w-56" />
       <Skeleton className="h-14 rounded-lg" />
       <Skeleton className="h-96 rounded-lg" />
@@ -174,6 +179,8 @@ function TradesSkeleton() {
 }
 
 function TradesModule() {
+  const { dict } = useI18n();
+  const T = dict.trades;
   const state = useTradesUrlState();
   const patch = useTradesUrlPatch();
   const { data: tradesData, isLoading } = useTrades();
@@ -187,6 +194,11 @@ function TradesModule() {
   const strategies = React.useMemo(() => strategiesData?.strategies ?? [], [strategiesData]);
   const tags = React.useMemo(() => tagsData?.tags ?? [], [tagsData]);
   const currency: Currency = "USD";
+
+  const ledgerColumns = React.useMemo<LedgerColumn[]>(
+    () => LEDGER_COLUMN_DEFS.map((column) => ({ ...column, label: T.table.columns[column.key] })),
+    [T],
+  );
 
   const symbolOf = React.useMemo(() => {
     const map = new Map(instruments.map((instrument) => [instrument.id, instrument.symbol]));
@@ -299,24 +311,35 @@ function TradesModule() {
       {
         onSuccess: (result) => {
           setSelectedIds(new Set());
-          toast.success(`${result.affected} trade${result.affected === 1 ? "" : "s"} deleted`);
+          toast.success(
+            result.affected === 1
+              ? T.table.bulk.deleteOne
+              : `${result.affected} ${T.table.bulk.deleteManyUnit}`,
+          );
         },
-        onError: (error) => toast.error(apiErrorMessage(error, "Bulk delete failed")),
+        onError: (error) => toast.error(apiErrorMessage(error, T.errors.bulkDelete)),
       },
     );
   };
 
   const bulkTag = (tagId: string, mode: "add" | "remove") => {
-    const tagName = tagNameOf(tagId) ?? "tag";
+    const tagName = tagNameOf(tagId) ?? T.table.bulk.tagFallback;
     bulk.mutate(
       { op: "TAG", tradeIds: [...selectedIds], tagId, mode },
       {
         onSuccess: (result) =>
           toast.success(
-            `${result.affected} trade${result.affected === 1 ? "" : "s"} ${mode === "add" ? "tagged" : "untagged"} “${tagName}”`,
-            { description: result.skipped > 0 ? `${result.skipped} skipped (already ${mode === "add" ? "tagged" : "untagged"})` : undefined },
+            result.affected === 1
+              ? `${T.table.bulk.tagOne} “${tagName}”`
+              : `${result.affected} ${T.table.bulk.tagManyUnit} “${tagName}”`,
+            {
+              description:
+                result.skipped > 0
+                  ? `${result.skipped} ${mode === "add" ? T.table.bulk.skippedTagged : T.table.bulk.skippedUntagged}`
+                  : undefined,
+            },
           ),
-        onError: (error) => toast.error(apiErrorMessage(error, "Bulk tag failed")),
+        onError: (error) => toast.error(apiErrorMessage(error, T.errors.bulkTag)),
       },
     );
   };
@@ -326,13 +349,18 @@ function TradesModule() {
       { op: "GRADE", tradeIds: [...selectedIds], grade },
       {
         onSuccess: (result) =>
-          toast.success(`Graded ${result.affected} trade${result.affected === 1 ? "" : "s"} ${grade}`, {
-            description:
-              result.skipped > 0
-                ? `${result.skipped} skipped (open trades cannot be graded)`
-                : undefined,
-          }),
-        onError: (error) => toast.error(apiErrorMessage(error, "Bulk grade failed")),
+          toast.success(
+            result.affected === 1
+              ? `${T.table.bulk.gradeOne} ${grade}`
+              : `${result.affected} ${T.table.bulk.gradeManyUnit} ${grade}`,
+            {
+              description:
+                result.skipped > 0
+                  ? `${result.skipped} ${T.table.bulk.skippedOpen}`
+                  : undefined,
+            },
+          ),
+        onError: (error) => toast.error(apiErrorMessage(error, T.errors.bulkGrade)),
       },
     );
   };
@@ -421,13 +449,13 @@ function TradesModule() {
       { name, filters: currentFilters, columns: visibleOrder, sortKey: state.sortKey, sortDir: state.sortDir },
       {
         onSuccess: (result) => {
-          toast.success(`View “${result.view.name}” saved`, {
-            description: "Filters, columns and sort restore in one click.",
+          toast.success(`${T.table.views.view} “${result.view.name}” ${T.table.views.saved}`, {
+            description: T.table.views.savedDescription,
           });
           setViewDialogOpen(false);
           setViewName("");
         },
-        onError: (error) => toast.error(apiErrorMessage(error, "Could not save the view")),
+        onError: (error) => toast.error(apiErrorMessage(error, T.errors.viewSave)),
       },
     );
   };
@@ -491,7 +519,7 @@ function TradesModule() {
     anchor.download = `cosmoz-trades-${new Date().toISOString().slice(0, 10)}.csv`;
     anchor.click();
     URL.revokeObjectURL(url);
-    toast.success("CSV exported", { description: `${sorted.length} rows` });
+    toast.success(T.table.csvExported, { description: `${sorted.length} ${T.table.rowsUnit}` });
   };
 
   return (
@@ -500,10 +528,10 @@ function TradesModule() {
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div className="space-y-1">
           <h1 className="font-heading text-2xl font-semibold tracking-tight text-foreground">
-            Trades
+            {T.table.title}
           </h1>
           <p className="text-sm text-muted-foreground">
-            The complete trade log — filter, correct, annotate. Every execution with its result and grade.
+            {T.table.subtitle}
           </p>
         </div>
         <div className="flex flex-wrap items-center justify-end gap-2">
@@ -517,7 +545,7 @@ function TradesModule() {
                 data-testid="trades-views-trigger"
               >
                 <Bookmark className="size-3.5" aria-hidden="true" />
-                {activeView !== null ? activeView.name : "Views"}
+                {activeView !== null ? activeView.name : T.table.views.label}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="min-w-64">
@@ -527,12 +555,12 @@ function TradesModule() {
                 data-testid="trades-view-save"
               >
                 <BookmarkPlus className="size-3.5 text-accent" aria-hidden="true" />
-                Save current view…
+                {T.table.views.saveCurrent}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               {views.length === 0 ? (
                 <p className="px-2 py-1.5 text-xs text-muted-foreground">
-                  No saved views yet — set filters, then save.
+                  {T.table.views.empty}
                 </p>
               ) : (
                 views.map((view) => (
@@ -545,16 +573,16 @@ function TradesModule() {
                     <Bookmark className="size-3.5 shrink-0 text-accent" aria-hidden="true" />
                     <span className="min-w-0 flex-1 truncate">{view.name}</span>
                     <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
-                      {filterCount(view)}f · {view.columns.length}c
+                      {filterCount(view)}{T.table.views.filtersShort} · {view.columns.length}{T.table.views.columnsShort}
                     </span>
                     <button
                       type="button"
-                      aria-label={`Delete view ${view.name}`}
+                      aria-label={`${T.table.views.deleteViewAria} ${view.name}`}
                       className="grid size-5 shrink-0 place-items-center rounded-sm text-muted-foreground hover:bg-destructive/10 hover:text-loss"
                       onClick={(event) => {
                         event.stopPropagation();
                         deleteView.mutate(view.id, {
-                          onSuccess: () => toast.success(`View “${view.name}” deleted`),
+                          onSuccess: () => toast.success(`${T.table.views.view} “${view.name}” ${T.table.views.deleted}`),
                         });
                       }}
                       data-testid={`trades-view-delete-${view.name.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}`}
@@ -568,10 +596,10 @@ function TradesModule() {
               <DropdownMenuSub>
                 <DropdownMenuSubTrigger className="gap-2">
                   <Columns3 className="size-3.5" aria-hidden="true" />
-                  Columns
+                  {T.table.views.columns}
                 </DropdownMenuSubTrigger>
                 <DropdownMenuSubContent data-testid="trades-columns-menu">
-                  {LEDGER_COLUMNS.map((column) => (
+                  {ledgerColumns.map((column) => (
                     <DropdownMenuCheckboxItem
                       key={column.key}
                       checked={visibleColumns.has(column.key)}
@@ -594,7 +622,7 @@ function TradesModule() {
             disabled={sorted.length === 0}
           >
             <Download className="size-3.5" aria-hidden="true" />
-            Export CSV
+            {T.table.actions.exportCsv}
           </Button>
           <Button
             variant="outline"
@@ -604,7 +632,7 @@ function TradesModule() {
             data-testid="trades-import-open"
           >
             <Upload className="size-3.5" aria-hidden="true" />
-            Import CSV
+            {T.table.actions.importCsv}
           </Button>
           <Button
             size="sm"
@@ -613,7 +641,7 @@ function TradesModule() {
             data-testid="trades-new"
           >
             <Plus className="size-4" aria-hidden="true" />
-            New trade
+            {T.shared.newTrade}
           </Button>
         </div>
       </header>
@@ -627,19 +655,19 @@ function TradesModule() {
           className="flex flex-wrap items-center gap-2.5 rounded-lg border border-accent/40 bg-accent/5 px-3 py-2"
         >
           <span className="font-mono text-sm font-semibold tabular-nums text-accent">
-            {selectedIds.size} selected
+            {selectedIds.size} {T.table.bulk.selected}
           </span>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="gap-1.5" data-testid="trades-bulk-tag">
                 <Tag className="size-3.5" aria-hidden="true" />
-                Tag
+                {T.table.bulk.tag}
                 <ChevronDown className="size-3 opacity-60" aria-hidden="true" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="min-w-44">
               <DropdownMenuSub>
-                <DropdownMenuSubTrigger>Add tag</DropdownMenuSubTrigger>
+                <DropdownMenuSubTrigger>{T.table.bulk.addTag}</DropdownMenuSubTrigger>
                 <DropdownMenuSubContent className="max-h-64 overflow-y-auto">
                   {tags.map((tag) => (
                     <DropdownMenuItem
@@ -653,7 +681,7 @@ function TradesModule() {
                 </DropdownMenuSubContent>
               </DropdownMenuSub>
               <DropdownMenuSub>
-                <DropdownMenuSubTrigger>Remove tag</DropdownMenuSubTrigger>
+                <DropdownMenuSubTrigger>{T.table.bulk.removeTag}</DropdownMenuSubTrigger>
                 <DropdownMenuSubContent className="max-h-64 overflow-y-auto">
                   {tags.map((tag) => (
                     <DropdownMenuItem key={tag.id} onClick={() => bulkTag(tag.id, "remove")}>
@@ -668,7 +696,7 @@ function TradesModule() {
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="gap-1.5" data-testid="trades-bulk-grade">
                 <Award className="size-3.5" aria-hidden="true" />
-                Grade
+                {T.table.bulk.grade}
                 <ChevronDown className="size-3 opacity-60" aria-hidden="true" />
               </Button>
             </DropdownMenuTrigger>
@@ -688,12 +716,12 @@ function TradesModule() {
                   >
                     {grade}
                   </span>
-                  Grade {grade}
+                  {T.table.bulk.grade} {grade}
                 </DropdownMenuItem>
               ))}
               <DropdownMenuSeparator />
               <p className="px-2 py-1 text-[10px] leading-relaxed text-muted-foreground">
-                Applies to closed trades — open rows are skipped and reported.
+                {T.table.bulk.gradeHint}
               </p>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -710,7 +738,7 @@ function TradesModule() {
             ) : (
               <Trash2 className="size-3.5" aria-hidden="true" />
             )}
-            Delete selected
+            {T.table.bulk.deleteSelected}
           </Button>
           <Button
             variant="ghost"
@@ -719,7 +747,7 @@ function TradesModule() {
             onClick={() => setSelectedIds(new Set())}
             data-testid="trades-bulk-clear"
           >
-            Clear
+            {T.table.bulk.clear}
           </Button>
         </div>
       ) : null}
@@ -736,12 +764,12 @@ function TradesModule() {
                 <Checkbox
                   checked={pageRows.length > 0 && allOnPageSelected}
                   onCheckedChange={toggleAll}
-                  aria-label="Select all on page"
+                  aria-label={T.table.selectAllPage}
                   data-testid="trades-select-all"
                 />
               </th>
               {visibleOrder.map((key) => {
-                const column = LEDGER_COLUMNS.find((candidate) => candidate.key === key)!;
+                const column = ledgerColumns.find((candidate) => candidate.key === key)!;
                 const sortable = key === "date" || key === "r" || key === "pnl";
                 const alignClass = column.headerClass ?? "";
                 return (
@@ -768,32 +796,33 @@ function TradesModule() {
                   </th>
                 );
               })}
-              <th scope="col" className="relative w-10 px-2 py-2.5"><span className="sr-only">Actions</span></th>
+              <th scope="col" className="relative w-10 px-2 py-2.5"><span className="sr-only">{T.table.actionsSr}</span></th>
             </tr>
           </thead>
           <tbody>
             {isLoading ? (
               <tr>
-                <td colSpan={visibleOrder.length + 2} className="px-3 py-10 text-center text-muted-foreground">Loading…</td>
+                <td colSpan={visibleOrder.length + 2} className="px-3 py-10 text-center text-muted-foreground">{dict.common.loading}</td>
               </tr>
             ) : pageRows.length === 0 ? (
               <tr>
                 <td colSpan={visibleOrder.length + 2} className="px-3 py-10 text-center text-muted-foreground" data-testid="trades-empty">
                   {trades.length === 0 ? (
                     <>
-                      No trades yet — press{" "}
-                      <kbd className="rounded-sm bg-muted px-1 font-mono text-[10px]">N</kbd> or use{" "}
+                      {T.table.emptyHint}{" "}
+                      <kbd className="rounded-sm bg-muted px-1 font-mono text-[10px]">N</kbd>{" "}
+                      {T.table.emptyOrUse}{" "}
                       <button
                         type="button"
                         className="text-accent underline-offset-4 hover:underline"
                         onClick={() => openTradeModal()}
                       >
-                        New trade
+                        {T.shared.newTrade}
                       </button>
                       .
                     </>
                   ) : (
-                    "No trades match these filters."
+                    T.table.emptyFiltered
                   )}
                 </td>
               </tr>
@@ -824,7 +853,7 @@ function TradesModule() {
                     </span>
                   ),
                   strategy: strategyNameOf(trade.strategyId) ?? (
-                    <span className="italic opacity-70">Out of playbook</span>
+                    <span className="italic opacity-70">{T.shared.outOfPlaybook}</span>
                   ),
                   duration,
                   r: trade.rMultiple === null ? "—" : formatR(trade.rMultiple),
@@ -871,10 +900,10 @@ function TradesModule() {
                   ),
                   status:
                     trade.status === "OPEN" ? (
-                      <span className="stamp stamp-accent">Open</span>
+                      <span className="stamp stamp-accent">{T.table.statusOpen}</span>
                     ) : (
                       <span className="font-mono text-[11px] uppercase tracking-wide text-muted-foreground/70">
-                        Closed
+                        {T.table.statusClosed}
                       </span>
                     ),
                 };
@@ -889,14 +918,14 @@ function TradesModule() {
                       <Checkbox
                         checked={selectedIds.has(trade.id)}
                         onCheckedChange={() => toggleOne(trade.id)}
-                        aria-label={`Select trade ${trade.tradingDate}`}
+                        aria-label={`${T.table.rowActions.selectTrade} ${trade.tradingDate}`}
                         data-testid={`trades-row-checkbox-${trade.id}`}
                       />
                     </td>
                     {visibleOrder.map((key) => (
                       <td
                         key={key}
-                        className={LEDGER_COLUMNS.find((candidate) => candidate.key === key)!.cellClass}
+                        className={ledgerColumns.find((candidate) => candidate.key === key)!.cellClass}
                       >
                         {cells[key]}
                       </td>
@@ -908,18 +937,18 @@ function TradesModule() {
                             variant="ghost"
                             size="icon"
                             className="size-7"
-                            aria-label={`Actions for ${symbolOf(trade.instrumentId)} ${trade.tradingDate}`}
+                            aria-label={`${T.table.rowActions.actionsFor} ${symbolOf(trade.instrumentId)} ${trade.tradingDate}`}
                           >
                             <MoreHorizontal className="size-4" aria-hidden="true" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="min-w-40">
                           <DropdownMenuItem onClick={() => setDetailId(trade.id)}>
-                            View details
+                            {T.table.rowActions.details}
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => setEditTrade(trade)} data-testid="trades-row-edit">
                             <Pencil className="size-3.5" aria-hidden="true" />
-                            Edit
+                            {T.shared.edit}
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
@@ -928,7 +957,7 @@ function TradesModule() {
                             data-testid="trades-row-delete"
                           >
                             <Trash2 className="size-3.5" aria-hidden="true" />
-                            Delete
+                            {T.shared.delete}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -947,27 +976,27 @@ function TradesModule() {
         data-testid="trades-pagination"
       >
         <p className="text-xs text-muted-foreground">
-          Showing{" "}
+          {T.table.showing}{" "}
           <span className="font-mono tabular-nums text-foreground">
             {sorted.length === 0 ? 0 : (safePage - 1) * state.pageSize + 1}–
             {Math.min(safePage * state.pageSize, sorted.length)}
           </span>{" "}
-          of{" "}
-          <span className="font-mono tabular-nums text-foreground">{sorted.length}</span> trades
+          {T.table.of}{" "}
+          <span className="font-mono tabular-nums text-foreground">{sorted.length}</span> {T.table.tradesUnit}
           <span className="mx-1.5 opacity-40">·</span>
           <Link href="/analytics" className="underline-offset-4 hover:underline">
-            open analytics
+            {T.table.openAnalytics}
           </Link>
         </p>
         <div className="flex items-center gap-2">
           <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            Rows
+            {T.table.rowsLabel}
             <select
               value={state.pageSize}
               onChange={(event) => patch({ size: event.target.value })}
               className="h-7 rounded-md border border-border bg-background px-1.5 font-mono text-xs outline-none"
               data-testid="trades-page-size"
-              aria-label="Rows per page"
+              aria-label={T.table.rowsPerPage}
             >
               <option value="10">10</option>
               <option value="25">25</option>
@@ -981,7 +1010,7 @@ function TradesModule() {
               className="h-7 px-2 font-mono text-xs"
               disabled={safePage <= 1}
               onClick={() => patch({ page: safePage - 1 }, false)}
-              aria-label="Previous page"
+              aria-label={T.table.prevPage}
             >
               ‹
             </Button>
@@ -994,7 +1023,7 @@ function TradesModule() {
               className="h-7 px-2 font-mono text-xs"
               disabled={safePage >= totalPages}
               onClick={() => patch({ page: safePage + 1 }, false)}
-              aria-label="Next page"
+              aria-label={T.table.nextPage}
             >
               ›
             </Button>
@@ -1006,19 +1035,19 @@ function TradesModule() {
       <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
         <DialogContent className="sm:max-w-md" data-testid="trades-view-dialog">
           <DialogHeader>
-            <DialogTitle className="font-heading">Save current view</DialogTitle>
+            <DialogTitle className="font-heading">{T.table.views.dialogTitle}</DialogTitle>
             <DialogDescription>
-              Captures the active filters, the visible columns and the sort — reusable from any session.
+              {T.table.views.dialogDescription}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-3">
             <div className="space-y-1.5">
-              <Label htmlFor="trade-view-name">View name</Label>
+              <Label htmlFor="trade-view-name">{T.table.views.nameLabel}</Label>
               <Input
                 id="trade-view-name"
                 value={viewName}
                 onChange={(event) => setViewName(event.target.value)}
-                placeholder="e.g. Losses — EURUSD only"
+                placeholder={T.table.views.namePlaceholder}
                 autoFocus
                 data-testid="trades-view-name-input"
               />
@@ -1029,19 +1058,19 @@ function TradesModule() {
                   id: "", name: "", createdAt: "", sortKey: state.sortKey, sortDir: state.sortDir,
                   scope: "TRADES", analyticsFilters: null,
                   columns: [], filters: currentFilters,
-                })} filter(s)
+                })} {T.table.views.filtersUnit}
               </span>
               <span className="rounded-full border border-border px-2 py-0.5 text-[10px] text-muted-foreground">
-                {visibleOrder.length} column(s)
+                {visibleOrder.length} {T.table.views.columnsUnit}
               </span>
               <span className="rounded-full border border-border px-2 py-0.5 text-[10px] text-muted-foreground">
-                sort: {state.sortKey} {state.sortDir}
+                {T.table.views.sortPrefix} {state.sortKey} {state.sortDir}
               </span>
             </div>
           </div>
           <DialogFooter className="gap-2">
             <Button variant="ghost" onClick={() => setViewDialogOpen(false)} data-testid="trades-view-save-cancel">
-              Cancel
+              {dict.common.cancel}
             </Button>
             <Button
               onClick={onSaveView}
@@ -1054,7 +1083,7 @@ function TradesModule() {
               ) : (
                 <BookmarkPlus className="size-4" aria-hidden="true" />
               )}
-              Save view
+              {T.table.views.saveAction}
             </Button>
           </DialogFooter>
         </DialogContent>

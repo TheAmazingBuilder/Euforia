@@ -42,6 +42,7 @@ import {
   useRestoreNofyNote,
   useUpdateNofyFolder,
 } from "@/lib/api/queries";
+import { useI18n } from "@/i18n/i18n-provider";
 import {
   NofyEmptyState,
   NofySectionHeader,
@@ -49,6 +50,7 @@ import {
   TagChip,
   nofyRelativeTime,
 } from "./nofy-shared";
+import { blockTypeLabel } from "./nofy-blocks";
 
 /**
  * Nofy panels — Overview (the knowledge dashboard, spec §4), Folders
@@ -67,6 +69,8 @@ export function CompactNoteRow({
   onOpen: (noteId: string) => void;
   testid?: string;
 }) {
+  const { dict } = useI18n();
+  const N = dict.nofy;
   return (
     <button
       type="button"
@@ -77,11 +81,11 @@ export function CompactNoteRow({
       <span className="mt-0.5 shrink-0 text-base leading-none" aria-hidden="true">{note.icon ?? "📝"}</span>
       <span className="min-w-0 flex-1">
         <span className="flex items-center gap-1.5">
-          <span className="truncate text-sm font-medium text-foreground">{note.title === "" ? "Untitled note" : note.title}</span>
+          <span className="truncate text-sm font-medium text-foreground">{note.title === "" ? N.shared.untitledNote : note.title}</span>
           {note.favorite ? <Star className="size-3 shrink-0 fill-warning text-warning" aria-hidden="true" /> : null}
         </span>
         <span className="mt-0.5 block truncate text-xs text-muted-foreground">
-          {note.folderName ? `${note.folderName} · ` : ""}edited {nofyRelativeTime(note.updatedAt)}
+          {note.folderName ? `${note.folderName} · ` : ""}{N.shared.edited} {nofyRelativeTime(note.updatedAt, N.time)}
         </span>
       </span>
     </button>
@@ -103,6 +107,8 @@ export function OverviewPanel({
   onCreateNote: () => void;
   onGoTab: (tab: "notes" | "folders" | "templates" | "favorites" | "trash") => void;
 }) {
+  const { dict } = useI18n();
+  const O = dict.nofy.overview;
   if (isLoading || !overview) {
     return (
       <div className="space-y-4">
@@ -120,25 +126,25 @@ export function OverviewPanel({
     <div className="space-y-6" data-testid="nofy-overview">
       {/* Stat band */}
       <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-        <NofyStatCell label="Notes" value={overview.totals.notes} hint="Active notes in your workspace" testid="nofy-stat-notes" />
-        <NofyStatCell label="Created this week" value={overview.totals.createdThisWeek} hint="New notes over the last 7 days" testid="nofy-stat-created" />
-        <NofyStatCell label="Favorites" value={overview.totals.favorites} hint="Starred notes" testid="nofy-stat-favorites" />
-        <NofyStatCell label="Folders" value={overview.totals.folders} hint="Folders organizing your notes" testid="nofy-stat-folders" />
+        <NofyStatCell label={O.statNotes} value={overview.totals.notes} hint={O.statNotesHint} testid="nofy-stat-notes" />
+        <NofyStatCell label={O.statCreated} value={overview.totals.createdThisWeek} hint={O.statCreatedHint} testid="nofy-stat-created" />
+        <NofyStatCell label={O.statFavorites} value={overview.totals.favorites} hint={O.statFavoritesHint} testid="nofy-stat-favorites" />
+        <NofyStatCell label={O.statFolders} value={overview.totals.folders} hint={O.statFoldersHint} testid="nofy-stat-folders" />
       </div>
 
       {/* Quick actions (spec §4) */}
       <div className="flex flex-wrap gap-2" data-testid="nofy-quick-actions">
         <Button size="sm" className="gap-1.5" onClick={onCreateNote} data-testid="nofy-quick-new-note">
           <Plus className="size-4" aria-hidden="true" />
-          New note
+          {O.newNote}
         </Button>
         <Button size="sm" variant="outline" className="gap-1.5" onClick={() => onGoTab("folders")}>
           <FolderPlus className="size-4" aria-hidden="true" />
-          New folder
+          {O.newFolder}
         </Button>
         <Button size="sm" variant="outline" className="gap-1.5" onClick={() => onGoTab("templates")}>
           <LayoutTemplate className="size-4" aria-hidden="true" />
-          From template
+          {O.fromTemplate}
         </Button>
       </div>
 
@@ -146,19 +152,19 @@ export function OverviewPanel({
         {/* Recent notes */}
         <section className="rounded-xl border bg-surface p-4 xl:col-span-2">
           <NofySectionHeader
-            title="Recently edited"
-            hint="Where your knowledge is being written right now"
+            title={O.recentEditedTitle}
+            hint={O.recentEditedHint}
             action={
               <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => onGoTab("notes")}>
-                All notes
+                {O.allNotes}
               </Button>
             }
           />
           {overview.recentEdited.length === 0 ? (
             <NofyEmptyState
-              title="No notes yet."
-              body="Start capturing your ideas, observations, research and trading knowledge."
-              action={{ label: "Create your first note", onClick: onCreateNote }}
+              title={O.emptyTitle}
+              body={O.emptyBody}
+              action={{ label: O.createFirstNote, onClick: onCreateNote }}
               testid="nofy-overview-empty"
             />
           ) : (
@@ -172,10 +178,10 @@ export function OverviewPanel({
 
         {/* Recently viewed */}
         <section className="rounded-xl border bg-surface p-4">
-          <NofySectionHeader title="Recently viewed" hint="Pick up where you left off" />
+          <NofySectionHeader title={O.recentViewedTitle} hint={O.recentViewedHint} />
           {overview.recentViewed.length === 0 ? (
             <p className="mt-2 rounded-lg border border-dashed border-border p-4 text-center text-xs text-muted-foreground">
-              Open a note and it will appear here.
+              {O.recentViewedEmpty}
             </p>
           ) : (
             <div className="mt-2 space-y-0.5" data-testid="nofy-recent-viewed">
@@ -191,16 +197,16 @@ export function OverviewPanel({
         {/* Favorites shelf */}
         <section className="rounded-xl border bg-surface p-4">
           <NofySectionHeader
-            title="Favorites"
+            title={O.favoritesTitle}
             action={
               <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => onGoTab("favorites")}>
-                View all
+                {O.viewAll}
               </Button>
             }
           />
           {overview.favorites.length === 0 ? (
             <p className="mt-2 rounded-lg border border-dashed border-border p-4 text-center text-xs text-muted-foreground">
-              Star important notes to access them quickly.
+              {O.favoritesEmpty}
             </p>
           ) : (
             <div className="mt-2 space-y-0.5" data-testid="nofy-favorites-shelf">
@@ -214,16 +220,16 @@ export function OverviewPanel({
         {/* Folders */}
         <section className="rounded-xl border bg-surface p-4">
           <NofySectionHeader
-            title="Folders"
+            title={O.foldersTitle}
             action={
               <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => onGoTab("folders")}>
-                Manage
+                {O.manage}
               </Button>
             }
           />
           {overview.folders.length === 0 ? (
             <p className="mt-2 rounded-lg border border-dashed border-border p-4 text-center text-xs text-muted-foreground">
-              Create folders to organize strategies, research and psychology notes.
+              {O.foldersEmpty}
             </p>
           ) : (
             <ul className="mt-2 space-y-1" data-testid="nofy-overview-folders">
@@ -246,16 +252,16 @@ export function OverviewPanel({
 
         {/* Activity + tags */}
         <section className="rounded-xl border bg-surface p-4">
-          <NofySectionHeader title="Note activity" hint="Created vs edited, last 8 weeks" />
+          <NofySectionHeader title={O.activityTitle} hint={O.activityHint} />
           <div className="mt-3 flex h-24 items-end gap-1.5" data-testid="nofy-activity">
             {overview.activity.map((week) => {
               const createdHeight = Math.round((week.created / maxActivity) * 100);
               const editedHeight = Math.round((week.edited / maxActivity) * 100);
               return (
-                <div key={week.weekStart} className="flex min-w-0 flex-1 flex-col items-center gap-1" title={`${week.weekStart}: ${week.created} created, ${week.edited} edited`}>
+                <div key={week.weekStart} className="flex min-w-0 flex-1 flex-col items-center gap-1" title={`${week.weekStart}: ${week.created} ${O.legendCreated}, ${week.edited} ${O.legendEdited}`}>
                   <div className="flex h-20 w-full flex-col justify-end gap-px">
-                    <div className="w-full rounded-sm bg-accent/70" style={{ height: `${editedHeight}%` }} title={`${week.edited} edited`} />
-                    <div className="w-full rounded-sm bg-accent" style={{ height: `${createdHeight}%` }} title={`${week.created} created`} />
+                    <div className="w-full rounded-sm bg-accent/70" style={{ height: `${editedHeight}%` }} title={`${week.edited} ${O.legendEdited}`} />
+                    <div className="w-full rounded-sm bg-accent" style={{ height: `${createdHeight}%` }} title={`${week.created} ${O.legendCreated}`} />
                   </div>
                   <span className="text-[9px] text-muted-foreground/70">{week.weekStart.slice(5).replace("-", "/")}</span>
                 </div>
@@ -263,12 +269,12 @@ export function OverviewPanel({
             })}
           </div>
           <div className="mt-2 flex items-center gap-3 text-[10px] text-muted-foreground">
-            <span className="inline-flex items-center gap-1"><span className="size-2 rounded-sm bg-accent" aria-hidden="true" /> created</span>
-            <span className="inline-flex items-center gap-1"><span className="size-2 rounded-sm bg-accent/70" aria-hidden="true" /> edited</span>
+            <span className="inline-flex items-center gap-1"><span className="size-2 rounded-sm bg-accent" aria-hidden="true" /> {O.legendCreated}</span>
+            <span className="inline-flex items-center gap-1"><span className="size-2 rounded-sm bg-accent/70" aria-hidden="true" /> {O.legendEdited}</span>
           </div>
           {overview.topTags.length > 0 ? (
             <>
-              <NofySectionHeader title="Most-used tags" />
+              <NofySectionHeader title={O.mostUsedTags} />
               <div className="mt-2 flex flex-wrap gap-1.5" data-testid="nofy-top-tags">
                 {overview.topTags.map((tag) => (
                   <TagChip key={tag.id} tag={tag} onClick={() => onGoTab("notes")} />
@@ -299,6 +305,9 @@ export function FoldersPanel({
   const [renaming, setRenaming] = React.useState<NofyFolder | null>(null);
   const [renameValue, setRenameValue] = React.useState("");
   const [deleting, setDeleting] = React.useState<NofyFolder & { noteCount: number } | null>(null);
+  const { dict } = useI18n();
+  const N = dict.nofy;
+  const F = N.folders;
 
   const folders = foldersQuery.data?.folders ?? [];
 
@@ -313,8 +322,8 @@ export function FoldersPanel({
               createFolder.mutate({ name }, { onSuccess: () => setName("") });
             }
           }}
-          placeholder="New folder name — e.g. Strategies, Psychology, Research…"
-          aria-label="New folder name"
+          placeholder={F.inputPlaceholder}
+          aria-label={F.inputLabel}
           data-testid="nofy-folder-name-input"
           className="max-w-md"
         />
@@ -326,7 +335,7 @@ export function FoldersPanel({
           data-testid="nofy-folder-create"
         >
           <Plus className="size-4" aria-hidden="true" />
-          Create folder
+          {F.create}
         </Button>
       </div>
 
@@ -337,8 +346,8 @@ export function FoldersPanel({
       ) : folders.length === 0 ? (
         <NofyEmptyState
           icon={Folder}
-          title="No folders yet"
-          body="Folders organize your notes — Strategies, Market Analysis, Psychology, Research, Trade Ideas… you own the taxonomy."
+          title={F.emptyTitle}
+          body={F.emptyBody}
           testid="nofy-folders-empty"
         />
       ) : (
@@ -358,7 +367,7 @@ export function FoldersPanel({
                   <span className="min-w-0">
                     <span className="block truncate text-sm font-semibold text-foreground">{folder.name}</span>
                     <span className="block text-xs text-muted-foreground">
-                      {folder.noteCount} note{folder.noteCount === 1 ? "" : "s"}
+                      {folder.noteCount} {folder.noteCount === 1 ? N.shared.noteOne : N.shared.noteMany}
                     </span>
                   </span>
                 </button>
@@ -366,7 +375,7 @@ export function FoldersPanel({
                   <DropdownMenuTrigger asChild>
                     <button
                       type="button"
-                      aria-label={`Options for ${folder.name}`}
+                      aria-label={`${F.optionsFor} ${folder.name}`}
                       className="rounded-md p-1.5 text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-foreground group-hover:opacity-100 outline-none focus-visible:ring-2 focus-visible:ring-ring focus:opacity-100"
                     >
                       <MoreVertical className="size-4" aria-hidden="true" />
@@ -380,11 +389,11 @@ export function FoldersPanel({
                       }}
                     >
                       <Pencil className="size-3.5" aria-hidden="true" />
-                      Rename
+                      {F.rename}
                     </DropdownMenuItem>
                     <DropdownMenuItem variant="destructive" onClick={() => setDeleting(folder)}>
                       <Trash2 className="size-3.5" aria-hidden="true" />
-                      Delete folder
+                      {F.deleteFolder}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -397,7 +406,7 @@ export function FoldersPanel({
                 onClick={() => onCreateNoteIn(folder.id)}
               >
                 <Plus className="size-3" aria-hidden="true" />
-                New note here
+                {F.newNoteHere}
               </Button>
             </div>
           ))}
@@ -408,17 +417,17 @@ export function FoldersPanel({
       <Dialog open={renaming !== null} onOpenChange={(open) => (!open ? setRenaming(null) : undefined)}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>Rename folder</DialogTitle>
-            <DialogDescription>Notes keep their folder assignment through the rename.</DialogDescription>
+            <DialogTitle>{F.renameTitle}</DialogTitle>
+            <DialogDescription>{F.renameBody}</DialogDescription>
           </DialogHeader>
           <Input
             value={renameValue}
             onChange={(event) => setRenameValue(event.target.value)}
-            aria-label="Folder name"
+            aria-label={F.folderName}
             autoFocus
           />
           <DialogFooter>
-            <Button variant="outline" size="sm" onClick={() => setRenaming(null)}>Cancel</Button>
+            <Button variant="outline" size="sm" onClick={() => setRenaming(null)}>{dict.common.cancel}</Button>
             <Button
               size="sm"
               disabled={renameValue.trim() === ""}
@@ -431,7 +440,7 @@ export function FoldersPanel({
               }}
             >
               <Check className="size-3.5" aria-hidden="true" />
-              Rename
+              {F.rename}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -441,13 +450,13 @@ export function FoldersPanel({
       <Dialog open={deleting !== null} onOpenChange={(open) => (!open ? setDeleting(null) : undefined)}>
         <DialogContent className="max-w-sm" data-testid="nofy-folder-delete-dialog">
           <DialogHeader>
-            <DialogTitle>Delete “{deleting?.name}”?</DialogTitle>
+            <DialogTitle>{`${F.deleteTitlePrefix} “${deleting?.name}”?`}</DialogTitle>
             <DialogDescription>
-              The folder is removed; its {deleting?.noteCount ?? 0} note{(deleting?.noteCount ?? 0) === 1 ? "" : "s"} move to “No folder” — nothing is lost.
+              {`${F.deleteBodyPrefix} ${deleting?.noteCount ?? 0} ${(deleting?.noteCount ?? 0) === 1 ? N.shared.noteOne : N.shared.noteMany} ${F.deleteBodySuffix}`}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" size="sm" onClick={() => setDeleting(null)}>Cancel</Button>
+            <Button variant="outline" size="sm" onClick={() => setDeleting(null)}>{dict.common.cancel}</Button>
             <Button
               variant="destructive"
               size="sm"
@@ -458,7 +467,7 @@ export function FoldersPanel({
               data-testid="nofy-folder-delete-confirm"
             >
               <Trash2 className="size-3.5" aria-hidden="true" />
-              Delete folder
+              {F.deleteFolder}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -478,13 +487,16 @@ export function TemplatesPanel({
   isLoading: boolean;
   onUseTemplate: (templateId: string) => void;
 }) {
+  const { dict } = useI18n();
+  const N = dict.nofy;
+  const TP = N.templates;
   const instantiate = useInstantiateNofyTemplate();
 
   return (
     <div className="space-y-4" data-testid="nofy-templates-panel">
       <NofySectionHeader
-        title="Templates"
-        hint="Reusable structures for ideas, analyses, reviews and learning notes. Create your own from any note: Note actions → Save as template."
+        title={TP.title}
+        hint={TP.hint}
       />
       {isLoading ? (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -493,8 +505,8 @@ export function TemplatesPanel({
       ) : !templates || templates.length === 0 ? (
         <NofyEmptyState
           icon={LayoutTemplate}
-          title="No templates yet"
-          body="Save any note as a template to reuse its structure — trading ideas, market analyses, reviews and more."
+          title={TP.emptyTitle}
+          body={TP.emptyBody}
           testid="nofy-templates-empty"
         />
       ) : (
@@ -507,7 +519,7 @@ export function TemplatesPanel({
                 </span>
                 <div className="min-w-0 flex-1">
                   <h3 className="truncate text-sm font-semibold text-foreground">{template.name}</h3>
-                  <p className="text-xs text-muted-foreground">{template.builtIn ? "Built-in" : "Custom"} · {template.blocks.length} blocks</p>
+                  <p className="text-xs text-muted-foreground">{template.builtIn ? TP.builtin : TP.custom} · {template.blocks.length} {template.blocks.length === 1 ? TP.blocksOne : TP.blocksMany}</p>
                 </div>
               </div>
               <p className="mt-2 line-clamp-2 min-h-8 text-xs text-muted-foreground">{template.description}</p>
@@ -521,9 +533,9 @@ export function TemplatesPanel({
                     ) : block.type === "divider" ? (
                       "—"
                     ) : block.type === "table" ? (
-                      "▦ Table"
+                      TP.tablePreview
                     ) : block.text === "" ? (
-                      <span className="italic">Empty {block.type}</span>
+                      <span className="italic">{TP.emptyPrefix} {blockTypeLabel(block.type, N.blockTypes)}</span>
                     ) : (
                       block.text
                     )}
@@ -538,7 +550,7 @@ export function TemplatesPanel({
                 data-testid={`nofy-template-use-${template.id}`}
               >
                 <FileText className="size-3.5" aria-hidden="true" />
-                Use template
+                {TP.use}
               </Button>
             </article>
           ))}
@@ -561,17 +573,20 @@ export function TrashPanel({
   const purge = usePurgeNofyNote();
   const [purging, setPurging] = React.useState<NofyNoteRow | null>(null);
   const [emptying, setEmptying] = React.useState(false);
+  const { dict } = useI18n();
+  const N = dict.nofy;
+  const TR = N.trash;
 
   return (
     <div className="space-y-4" data-testid="nofy-trash-panel">
       <NofySectionHeader
-        title="Trash"
-        hint="Deleted notes stay here until permanently removed. Restore them any time."
+        title={TR.title}
+        hint={TR.hint}
         action={
           notes && notes.length > 0 ? (
             <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setEmptying(true)} data-testid="nofy-trash-empty">
               <Trash2 className="size-3.5" aria-hidden="true" />
-              Empty trash
+              {TR.empty}
             </Button>
           ) : undefined
         }
@@ -584,8 +599,8 @@ export function TrashPanel({
       ) : !notes || notes.length === 0 ? (
         <NofyEmptyState
           icon={Trash2}
-          title="Trash is empty"
-          body="Deleted notes land here first — nothing is lost until you empty the trash."
+          title={TR.emptyTitle}
+          body={TR.emptyBody}
           testid="nofy-trash-empty"
         />
       ) : (
@@ -594,9 +609,9 @@ export function TrashPanel({
             <li key={note.id} className="flex items-center gap-3 px-4 py-3" data-testid="nofy-trash-row">
               <span className="shrink-0 text-lg" aria-hidden="true">{note.icon ?? "📝"}</span>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-foreground">{note.title === "" ? "Untitled note" : note.title}</p>
+                <p className="truncate text-sm font-medium text-foreground">{note.title === "" ? N.shared.untitledNote : note.title}</p>
                 <p className="truncate text-xs text-muted-foreground">
-                  deleted {nofyRelativeTime(note.deletedAt)} · created {nofyRelativeTime(note.createdAt)}
+                  {N.shared.deleted} {nofyRelativeTime(note.deletedAt, N.time)} · {N.shared.created} {nofyRelativeTime(note.createdAt, N.time)}
                 </p>
               </div>
               <Button
@@ -607,11 +622,11 @@ export function TrashPanel({
                 data-testid={`nofy-trash-restore-${note.id}`}
               >
                 <RotateCcw className="size-3" aria-hidden="true" />
-                Restore
+                {N.shared.restore}
               </Button>
               <Button variant="ghost" size="sm" className="h-7 gap-1 text-loss hover:text-loss" onClick={() => setPurging(note)}>
                 <Trash2 className="size-3" aria-hidden="true" />
-                Delete forever
+                {TR.deleteForever}
               </Button>
             </li>
           ))}
@@ -623,16 +638,16 @@ export function TrashPanel({
         <DialogContent className="max-w-sm" data-testid="nofy-purge-dialog">
           <DialogHeader>
             <DialogTitle>
-              {purging ? `Delete “${purging.title === "" ? "Untitled note" : purging.title}” forever?` : "Empty the trash?"}
+              {purging ? `${TR.purgeSinglePrefix} “${purging.title === "" ? N.shared.untitledNote : purging.title}” ${TR.purgeSingleSuffix}` : TR.purgeAllTitle}
             </DialogTitle>
             <DialogDescription>
               {purging
-                ? "This permanently removes the note, its blocks and its version history. This cannot be undone."
-                : `This permanently removes ${notes?.length ?? 0} note${(notes?.length ?? 0) === 1 ? "" : "s"} with their version history. This cannot be undone.`}
+                ? TR.purgeBodySingle
+                : `${TR.purgeBodyCountPrefix} ${notes?.length ?? 0} ${(notes?.length ?? 0) === 1 ? N.shared.noteOne : N.shared.noteMany} ${TR.purgeBodyCountSuffix}`}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" size="sm" onClick={() => { setPurging(null); setEmptying(false); }}>Cancel</Button>
+            <Button variant="outline" size="sm" onClick={() => { setPurging(null); setEmptying(false); }}>{dict.common.cancel}</Button>
             <Button
               variant="destructive"
               size="sm"
@@ -653,7 +668,7 @@ export function TrashPanel({
               }}
             >
               <Trash2 className="size-3.5" aria-hidden="true" />
-              {purging ? "Delete forever" : "Empty trash"}
+              {purging ? TR.deleteForever : TR.empty}
             </Button>
           </DialogFooter>
         </DialogContent>

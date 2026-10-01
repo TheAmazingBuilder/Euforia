@@ -5,6 +5,7 @@ import { computeRiskAmount, suggestPositionSize, toDecimalString } from "@cosmoz
 import type { TradeSizeModeValue } from "@/lib/utils/trade-draft";
 import { formatPercent } from "@cosmoz/shared";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/i18n/i18n-provider";
 
 /**
  * Position sizer (spec §4, the signature detail): Risk % ↔ Size respond to
@@ -36,10 +37,9 @@ export interface PositionSizerProps {
   id?: string;
 }
 
-const MODES: readonly { value: TradeSizeModeValue; label: string }[] = [
-  { value: "risk_percent", label: "Risk % (auto-size)" },
-  { value: "quantity", label: "Fixed size" },
-];
+// Mode values stay structural at module scope; labels resolve through the
+// active dictionary inside the component (i18n — hooks cannot run at module scope).
+const MODES: readonly TradeSizeModeValue[] = ["risk_percent", "quantity"];
 
 export interface SizerDerived {
   /** Quantity for risk_percent mode (auto-suggested), null when not computable. */
@@ -94,6 +94,8 @@ export function deriveSizer(
 }
 
 export function PositionSizer(props: PositionSizerProps) {
+  const { dict } = useI18n();
+  const T = dict.trades.sizer;
   const { mode, onModeChange, riskPercent, onRiskPercentChange, quantity, onQuantityChange, unitLabel, id } =
     props;
   const derived = deriveSizer(props);
@@ -103,24 +105,24 @@ export function PositionSizer(props: PositionSizerProps) {
     <div className="rounded-lg border border-border bg-background p-3">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground" id={id}>
-          Position sizer
+          {T.title}
         </span>
-        <div className="flex rounded-md border border-border p-0.5" role="tablist" aria-label="Sizing mode">
-          {MODES.map((option) => (
+        <div className="flex rounded-md border border-border p-0.5" role="tablist" aria-label={T.modeAria}>
+          {MODES.map((modeValue) => (
             <button
-              key={option.value}
+              key={modeValue}
               type="button"
               role="tab"
-              aria-selected={mode === option.value}
-              onClick={() => onModeChange(option.value)}
+              aria-selected={mode === modeValue}
+              onClick={() => onModeChange(modeValue)}
               className={cn(
                 "rounded-sm px-2.5 py-1 text-xs font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
-                mode === option.value
+                mode === modeValue
                   ? "bg-accent text-accent-foreground"
                   : "text-muted-foreground hover:text-foreground",
               )}
             >
-              {option.label}
+              {modeValue === "risk_percent" ? T.modeRisk : T.modeFixed}
             </button>
           ))}
         </div>
@@ -131,7 +133,7 @@ export function PositionSizer(props: PositionSizerProps) {
           <>
             <div className="space-y-1.5">
               <label htmlFor={`${id}-risk`} className="text-xs font-medium text-muted-foreground">
-                Risk %
+                {T.riskPctLabel}
               </label>
               <input
                 id={`${id}-risk`}
@@ -146,7 +148,7 @@ export function PositionSizer(props: PositionSizerProps) {
             </div>
             <div className="space-y-1.5">
               <label htmlFor={`${id}-size-auto`} className="text-xs font-medium text-muted-foreground">
-                Size ({unitLabel}) — auto
+                {T.size} ({unitLabel}) — {T.auto}
               </label>
               <output
                 id={`${id}-size-auto`}
@@ -156,7 +158,7 @@ export function PositionSizer(props: PositionSizerProps) {
                   derived.suggestedQuantity !== null ? "text-foreground" : "text-muted-foreground",
                 )}
               >
-                {needsStop ? "add a stop" : (derived.suggestedQuantity ?? "—")}
+                {needsStop ? T.addStop : (derived.suggestedQuantity ?? "—")}
               </output>
             </div>
           </>
@@ -164,7 +166,7 @@ export function PositionSizer(props: PositionSizerProps) {
           <>
             <div className="space-y-1.5">
               <label htmlFor={`${id}-quantity`} className="text-xs font-medium text-muted-foreground">
-                Size ({unitLabel})
+                {T.size} ({unitLabel})
               </label>
               <input
                 id={`${id}-quantity`}
@@ -178,7 +180,7 @@ export function PositionSizer(props: PositionSizerProps) {
               />
             </div>
             <div className="space-y-1.5">
-              <span className="text-xs font-medium text-muted-foreground">Risk (derived)</span>
+              <span className="text-xs font-medium text-muted-foreground">{T.riskDerived}</span>
               <div className="flex h-10 items-center rounded-md border border-dashed border-border bg-surface px-3 font-mono text-sm tabular-nums text-foreground">
                 {derived.riskPct !== null ? formatPercent(derived.riskPct / 100, 2) : "—"}
               </div>
@@ -189,7 +191,7 @@ export function PositionSizer(props: PositionSizerProps) {
 
       {derived.stopPips !== null ? (
         <p className="mt-2 font-mono text-[11px] tabular-nums text-muted-foreground">
-          Stop distance: {derived.stopPips} pips
+          {T.stopDistance} {derived.stopPips} {T.pips}
         </p>
       ) : null}
     </div>

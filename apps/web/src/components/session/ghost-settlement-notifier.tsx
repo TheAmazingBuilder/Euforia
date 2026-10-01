@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import type { SkippedTrade } from "@cosmoz/shared";
 
 import { useInstruments } from "@/lib/api/queries";
+import { useI18n } from "@/i18n/i18n-provider";
 
 /**
  * Soft settlement reminders (spec §8): when the session view mounts with
@@ -16,6 +17,8 @@ import { useInstruments } from "@/lib/api/queries";
 const MAX_TOASTS = 2;
 
 export function GhostSettlementNotifier({ ghosts }: { ghosts: SkippedTrade[] }) {
+  const { dict } = useI18n();
+  const S = dict.session;
   const { data: instrumentsData } = useInstruments();
   const firedRef = React.useRef(false);
 
@@ -26,19 +29,19 @@ export function GhostSettlementNotifier({ ghosts }: { ghosts: SkippedTrade[] }) 
     for (const ghost of ghosts.slice(0, MAX_TOASTS)) {
       const symbol =
         instrumentsData?.instruments.find((instrument) => instrument.id === ghost.instrumentId)?.symbol ??
-        "your setup";
+        S.ghost.fallbackYourSetup;
       const weekday = new Intl.DateTimeFormat("en-US", { weekday: "long" }).format(new Date(ghost.seenAt));
-      toast.info("Ghost check-in", {
-        description: `Your ${weekday} ${symbol} — how did it play out?`,
+      toast.info(S.ghost.toastTitle, {
+        description: `${S.ghost.toastBodyA} ${weekday} ${symbol} — ${S.ghost.howPlayed}`,
         action: {
-          label: "Settle",
+          label: S.ghost.settleAction,
           onClick: () =>
             document.getElementById("ghost-settlements")?.scrollIntoView({ behavior: "smooth", block: "start" }),
         },
         duration: 12_000,
       });
     }
-  }, [ghosts, instrumentsData]);
+  }, [ghosts, instrumentsData, S]);
 
   return null;
 }

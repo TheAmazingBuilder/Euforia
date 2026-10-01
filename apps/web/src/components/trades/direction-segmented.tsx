@@ -4,6 +4,7 @@ import { ArrowDownRight, ArrowUpRight } from "lucide-react";
 import type { Direction } from "@cosmoz/shared";
 
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/i18n/i18n-provider";
 
 export interface DirectionSegmentedProps {
   value: Direction;
@@ -20,6 +21,7 @@ const OPTIONS: readonly Direction[] = ["BUY", "SELL"];
  * Direction is NOT P&L — accent styling only (golden rule: no green/red UI).
  */
 export function DirectionSegmented({ value, onChange, id }: DirectionSegmentedProps) {
+  const { dict } = useI18n();
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
       event.preventDefault();
@@ -36,7 +38,7 @@ export function DirectionSegmented({ value, onChange, id }: DirectionSegmentedPr
     <div
       id={id}
       role="radiogroup"
-      aria-label="Direction"
+      aria-label={dict.trades.form.direction}
       onKeyDown={handleKeyDown}
       className="grid grid-cols-2 gap-1 rounded-md border border-border bg-background p-1"
     >

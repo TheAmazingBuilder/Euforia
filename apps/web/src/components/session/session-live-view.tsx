@@ -60,6 +60,7 @@ import { useBrokerSession } from "@/lib/api/queries";
 import { useCandles, useFeedStatus, useLiveQuote, useLiveQuotes } from "@/lib/realtime/market";
 import { atrNow } from "@/lib/utils/indicators";
 import { loadPersistedChartState, persistChartState } from "@/lib/utils/chart-state";
+import { useI18n } from "@/i18n/i18n-provider";
 import type {
   BrokerPosition,
   DrawingKind,
@@ -110,8 +111,10 @@ const TIMEFRAMES: readonly MarketInterval[] = ["1m", "5m", "15m", "30m", "1H", "
 // own indicator template.
 
 function SessionSkeleton() {
+  const { dict } = useI18n();
+  const S = dict.session;
   return (
-    <div className="space-y-4 sm:space-y-6" aria-busy="true" aria-label="Loading session">
+    <div className="space-y-4 sm:space-y-6" aria-busy="true" aria-label={S.view.loadingAria}>
       <Skeleton className="h-[72px] rounded-xl" />
       <div className="grid gap-3 lg:grid-cols-[230px_minmax(0,1fr)_320px]">
         <Skeleton className="hidden h-[480px] rounded-xl lg:block" />
@@ -123,17 +126,19 @@ function SessionSkeleton() {
 }
 
 function ErrorSession({ onRetry }: { onRetry: () => void }) {
+  const { dict } = useI18n();
+  const S = dict.session;
   return (
     <Card className="mx-auto max-w-md bg-surface">
       <CardContent className="flex flex-col items-center py-14 text-center">
         <Stars className="size-8 text-muted-foreground" aria-hidden="true" />
-        <h2 className="mt-4 font-heading text-lg font-semibold">Session data unavailable</h2>
+        <h2 className="mt-4 font-heading text-lg font-semibold">{S.view.errorTitle}</h2>
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-          The session view could not load your open trades and timeline. Check your connection, then retry.
+          {S.view.errorBody}
         </p>
         <Button variant="outline" className="mt-6" onClick={onRetry}>
           <RefreshCcw className="size-4" aria-hidden="true" />
-          Retry
+          {dict.common.retry}
         </Button>
       </CardContent>
     </Card>
@@ -141,16 +146,18 @@ function ErrorSession({ onRetry }: { onRetry: () => void }) {
 }
 
 function EmptyOpenTrades() {
+  const { dict } = useI18n();
+  const S = dict.session;
   return (
     <Card className="bg-surface">
       <CardContent className="flex flex-col items-center py-10 text-center">
         <CalendarCheck className="size-8 text-muted-foreground" aria-hidden="true" />
-        <h2 className="mt-4 font-heading text-lg font-semibold">No open trades</h2>
+        <h2 className="mt-4 font-heading text-lg font-semibold">{S.view.emptyTradesTitle}</h2>
         <p className="mt-2 max-w-sm text-sm leading-relaxed text-muted-foreground">
-          Prepare your session: review your playbook, pre-flight your checklist and wait for a setup that is yours.
+          {S.view.emptyTradesBody}
         </p>
         <Button asChild className="mt-6">
-          <Link href="/journal">Plan the day</Link>
+          <Link href="/journal">{S.view.planTheDay}</Link>
         </Button>
       </CardContent>
     </Card>
@@ -195,6 +202,8 @@ interface WorkspaceProps {
 }
 
 function Workspace(props: WorkspaceProps) {
+  const { dict } = useI18n();
+  const S = dict.session;
   const { symbol, instrument, quote } = props;
   const digits = instrument?.digits ?? 5;
 
@@ -246,7 +255,7 @@ function Workspace(props: WorkspaceProps) {
     setIndicators(analysis.indicators);
     setDrawings(analysis.drawings);
     toast.success(
-      `Restored ${analysis.symbol} ${analysis.timeframe} analysis from ${new Date(analysis.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}.`,
+      `${S.view.toastRestoredA} ${analysis.symbol} ${analysis.timeframe} ${S.view.toastRestoredB} ${new Date(analysis.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}.`,
     );
   };
 
@@ -254,17 +263,17 @@ function Workspace(props: WorkspaceProps) {
     <>
       <div className="grid gap-3 sm:gap-4 lg:grid-cols-[230px_minmax(0,1fr)_320px]">
         {/* Left rail — market + tools */}
-        <aside className="space-y-3" aria-label="Market and tools" data-testid="session-left-rail">
+        <aside className="space-y-3" aria-label={S.view.leftRailAria} data-testid="session-left-rail">
           <section className="rounded-xl border border-border bg-surface p-3">
-            <p className="ledger-label mb-1.5">Timeframe</p>
-            <div className="flex flex-wrap gap-1" role="group" aria-label="Timeframe">
+            <p className="ledger-label mb-1.5">{S.labels.timeframe}</p>
+            <div className="flex flex-wrap gap-1" role="group" aria-label={S.labels.timeframe}>
               {TIMEFRAMES.map((item) => (
                 <button
                   key={item}
                   type="button"
                   aria-pressed={interval === item}
                   data-testid={`tf-${item}`}
-                  title={props.multi.timeframeSync ? `Applies to every chart (timeframe sync on) — ${item}` : item}
+                  title={props.multi.timeframeSync ? `${S.view.timeframeSyncTitle} — ${item}` : item}
                   onClick={() => applyIntervalToAll(item)}
                   className={cn(
                     "min-w-[38px] rounded-md border px-1.5 py-1 font-mono text-xs font-semibold transition-colors",
@@ -280,7 +289,7 @@ function Workspace(props: WorkspaceProps) {
           </section>
 
           <section className="space-y-2 rounded-xl border border-border bg-surface p-3">
-            <p className="ledger-label">Tools</p>
+            <p className="ledger-label">{S.view.tools}</p>
             <IndicatorsPopover indicators={indicators} onChange={setIndicators} />
             <DrawingToolbar
               tool={tool}
@@ -358,7 +367,7 @@ function Workspace(props: WorkspaceProps) {
         </div>
 
         {/* Right rail — context + levels + monitoring */}
-        <aside className="space-y-3" aria-label="Session context" data-testid="session-right-rail">
+        <aside className="space-y-3" aria-label={S.view.rightRailAria} data-testid="session-right-rail">
           <MarketContextPanel
             symbol={symbol}
             digits={digits}
@@ -407,6 +416,8 @@ function Workspace(props: WorkspaceProps) {
 // ── Top-level view ──────────────────────────────────────────────────────────
 
 export function SessionLiveView() {
+  const { dict } = useI18n();
+  const S = dict.session;
   const queryClient = useQueryClient();
 
   // ── Data ────────────────────────────────────────────────────────────────
@@ -497,7 +508,7 @@ export function SessionLiveView() {
     if (!activeSession) return;
     updateSession.mutate(
       { sessionId: activeSession.id, marketBias: bias },
-      { onError: () => toast.error("Unable to update the bias.") },
+      { onError: () => toast.error(S.view.toastBiasFailed) },
     );
   };
 
@@ -514,10 +525,9 @@ export function SessionLiveView() {
       <PriceAlertToaster trades={trades} instruments={instruments} quotes={quotes} />
 
       <header className="space-y-3">
-        <h1 className="font-heading text-2xl font-bold tracking-tight sm:text-3xl">Session Live</h1>
+        <h1 className="font-heading text-2xl font-bold tracking-tight sm:text-3xl">{S.view.title}</h1>
         <p className="max-w-3xl text-sm text-muted-foreground">
-          The real-time analytical cockpit: analyze the market, watch read-only accounts, document the session. Execution stays
-          external (MT5 / TradingView) — nothing here can place or modify an order.
+          {S.view.subtitle}
         </p>
         <DisciplineBanner />
       </header>
@@ -547,11 +557,11 @@ export function SessionLiveView() {
           <section className="rounded-xl border border-border bg-surface px-4 py-3" data-testid="session-market-row">
             <div className="flex flex-wrap items-end gap-4">
               <div className="w-[220px] shrink-0 space-y-1">
-                <p className="ledger-label">Market</p>
+                <p className="ledger-label">{S.labels.market}</p>
                 <SymbolPicker instruments={instruments} value={symbol} onChange={setUserSymbol} />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="ledger-label">Instrument</p>
+                <p className="ledger-label">{S.labels.instrument}</p>
                 <p className="truncate text-sm text-foreground">
                   {instrument ? instrument.name : "—"}
                   <span className="ml-2 text-xs text-muted-foreground">{instrument?.assetClass}</span>
@@ -587,9 +597,9 @@ export function SessionLiveView() {
           {/* ── Journaling flow (existing, unchanged contract) ───────────── */}
           <div className="grid gap-3 sm:gap-4 lg:grid-cols-3">
             <div className="space-y-3 sm:space-y-4 lg:col-span-2">
-              <section aria-label="Open positions" className="space-y-3">
+              <section aria-label={S.view.openPositionsAria} className="space-y-3">
                 <div className="flex items-center gap-2">
-                  <h2 className="font-heading text-base font-semibold text-foreground">Open positions</h2>
+                  <h2 className="font-heading text-base font-semibold text-foreground">{S.view.openPositions}</h2>
                   <span className="rounded-full border border-accent/40 bg-accent/10 px-2 py-0.5 font-mono text-xs tabular-nums text-accent">
                     {trades.length}
                   </span>
@@ -622,14 +632,14 @@ export function SessionLiveView() {
               ) : null}
             </div>
 
-            <aside className="space-y-3 sm:space-y-4" aria-label="Session sidebar">
+            <aside className="space-y-3 sm:space-y-4" aria-label={S.view.sessionSidebarAria}>
               <SessionLogbook />
 
               {pendingGhosts.length > 0 ? (
                 <section id="ghost-settlements" className="rounded-xl border border-warning/40 bg-surface">
                   <header className="border-b border-border px-4 py-3">
-                    <h2 className="font-heading text-base font-semibold text-foreground">Ghost check-in</h2>
-                    <p className="text-xs text-muted-foreground">Setups seen, not taken — how did they play out? Two taps each.</p>
+                    <h2 className="font-heading text-base font-semibold text-foreground">{S.view.ghostCheckIn}</h2>
+                    <p className="text-xs text-muted-foreground">{S.view.ghostCheckInSub}</p>
                   </header>
                   <div className="p-4">
                     <GhostSettlements ghosts={pendingGhosts} />
@@ -639,14 +649,14 @@ export function SessionLiveView() {
 
               <section className="rounded-xl border border-border bg-surface">
                 <header className="border-b border-border px-4 py-3">
-                  <h2 className="font-heading text-base font-semibold text-foreground">Today&apos;s timeline</h2>
-                  <p className="text-xs text-muted-foreground">Entries, exits, stop changes, coach alerts and session events.</p>
+                  <h2 className="font-heading text-base font-semibold text-foreground">{S.view.todayTimeline}</h2>
+                  <p className="text-xs text-muted-foreground">{S.view.todayTimelineSub}</p>
                 </header>
                 <div className="p-4">
                   {timeline.data ? <EventTimeline events={timeline.data.events} /> : null}
                   {activeSession && activeSession.events.length > 0 ? (
                     <div className="mt-3 border-t border-border pt-3" data-testid="session-events">
-                      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">This session</p>
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{S.view.thisSession}</p>
                       <ul className="mt-1.5 space-y-1">
                         {[...activeSession.events]
                           .reverse()
@@ -670,8 +680,8 @@ export function SessionLiveView() {
 
               <section className="rounded-xl border border-border bg-surface">
                 <header className="border-b border-border px-4 py-3">
-                  <h2 className="font-heading text-base font-semibold text-foreground">Mood strip</h2>
-                  <p className="text-xs text-muted-foreground">Today&apos;s logged feelings — your live tilt biomarker.</p>
+                  <h2 className="font-heading text-base font-semibold text-foreground">{S.view.moodStrip}</h2>
+                  <p className="text-xs text-muted-foreground">{S.view.moodStripSub}</p>
                 </header>
                 <div className="p-4">
                   {timeline.data ? <MoodStrip moods={timeline.data.moods} /> : null}

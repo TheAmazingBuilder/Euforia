@@ -21,6 +21,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { EmotionPicker } from "@/components/trades/emotion-picker";
+import { useI18n } from "@/i18n/i18n-provider";
 import { useCloseTrade, useUpdateNotes, useUpdatePlan, useUpdatePsychology } from "@/lib/api/queries";
 import { unrealizedPnl, type LiveQuote } from "@/lib/realtime/market";
 import { useNowMs } from "@/lib/realtime/use-now";
@@ -65,6 +66,8 @@ function LiveDuration({ entryAt }: { entryAt: string }) {
 }
 
 function DirectionBadge({ direction }: { direction: Trade["direction"] }) {
+  const { dict } = useI18n();
+  const S = dict.session;
   const sell = direction === "SELL";
   const Icon = sell ? ArrowDownRight : ArrowUpRight;
   return (
@@ -75,7 +78,7 @@ function DirectionBadge({ direction }: { direction: Trade["direction"] }) {
       )}
     >
       <Icon className="size-3" aria-hidden="true" />
-      {sell ? "Short" : "Long"}
+      {sell ? S.labels.short : S.labels.long}
     </span>
   );
 }
@@ -91,7 +94,7 @@ function Metric({ label, children }: { label: string; children: React.ReactNode 
 
 // ── Close dialog ─────────────────────────────────────────────────────────────
 
-const CLOSE_REASONS: readonly ExitReason[] = ["TP", "SL", "MANUAL", "TRAILING", "MARGIN"];
+const CLOSE_REASONS = ["TP", "SL", "MANUAL", "TRAILING", "MARGIN"] as const;
 
 function CloseTradeDialog({
   trade,
@@ -102,6 +105,8 @@ function CloseTradeDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const { dict } = useI18n();
+  const S = dict.session;
   // Initial values are set once per mount — the card remounts this dialog
   // with a fresh key each time it opens (see OpenTradeCard below).
   const [exitPrice, setExitPrice] = React.useState("");
@@ -130,7 +135,7 @@ function CloseTradeDialog({
         openGate(response.id);
       }
     } catch {
-      toast.error("Could not close the trade", { description: "Check the exit price and retry." });
+      toast.error(S.tradeCard.toastCloseFailed, { description: S.tradeCard.toastCloseFailedDesc });
     }
   };
 
@@ -138,15 +143,15 @@ function CloseTradeDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="font-heading">Close position</DialogTitle>
+          <DialogTitle className="font-heading">{S.tradeCard.closeTitle}</DialogTitle>
           <DialogDescription>
-            Log the exit — the judgment gate opens right after, before any result is shown.
+            {S.tradeCard.closeDesc}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label htmlFor="close-exit-price">Exit price</Label>
+              <Label htmlFor="close-exit-price">{S.tradeCard.exitPrice}</Label>
               <Input
                 id="close-exit-price"
                 inputMode="decimal"
@@ -158,7 +163,7 @@ function CloseTradeDialog({
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="close-exit-time">Exit time</Label>
+              <Label htmlFor="close-exit-time">{S.tradeCard.exitTime}</Label>
               <Input
                 id="close-exit-time"
                 type="datetime-local"
@@ -169,7 +174,7 @@ function CloseTradeDialog({
             </div>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="close-reason">Exit reason</Label>
+            <Label htmlFor="close-reason">{S.tradeCard.exitReason}</Label>
             <Select value={reason} onValueChange={(value) => setReason(value as ExitReason)}>
               <SelectTrigger id="close-reason" className="w-full">
                 <SelectValue />
@@ -177,7 +182,7 @@ function CloseTradeDialog({
               <SelectContent>
                 {CLOSE_REASONS.map((item) => (
                   <SelectItem key={item} value={item}>
-                    {item}
+                    {S.exitReasons[item]}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -186,10 +191,10 @@ function CloseTradeDialog({
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} type="button">
-            Cancel
+            {dict.common.cancel}
           </Button>
           <Button onClick={() => void submit()} disabled={!ready} type="button">
-            Close trade
+            {S.tradeCard.closeTradeBtn}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -208,6 +213,8 @@ function ModifyStopEditor({
   instrument: Instrument | null;
   onDone: () => void;
 }) {
+  const { dict } = useI18n();
+  const S = dict.session;
   const currentStop = trade.finalStop ?? trade.initialStop;
   const [value, setValue] = React.useState(currentStop ?? "");
   const updatePlan = useUpdatePlan();
@@ -231,14 +238,14 @@ function ModifyStopEditor({
         input: { stop: value.trim() },
       });
       toast.success(
-        widened ? "Stop widened — logged as a behavioral event" : "Stop updated",
+        widened ? S.tradeCard.toastStopWidened : S.tradeCard.toastStopUpdated,
         {
-          description: `${formatPrice(Number(currentStop), digits)} → ${formatPrice(Number(value), digits)} — recorded in the trade event log.`,
+          description: `${formatPrice(Number(currentStop), digits)} → ${formatPrice(Number(value), digits)} — ${S.tradeCard.toastStopDescTail}`,
         },
       );
       onDone();
     } catch {
-      toast.error("Could not update the stop", { description: "Check the price and retry." });
+      toast.error(S.tradeCard.toastStopFailed, { description: S.tradeCard.toastStopFailedDesc });
     }
   };
 
@@ -254,7 +261,7 @@ function ModifyStopEditor({
         </span>
         {widened ? (
           <span className="inline-flex items-center gap-1 rounded border border-warning/50 bg-warning/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-warning">
-            <TriangleAlert className="size-3" aria-hidden="true" /> Stop widened — risk increases
+            <TriangleAlert className="size-3" aria-hidden="true" /> {S.tradeCard.stopWidenedChip}
           </span>
         ) : null}
       </div>
@@ -262,16 +269,16 @@ function ModifyStopEditor({
         <Input
           inputMode="decimal"
           autoComplete="off"
-          aria-label="New stop price"
+          aria-label={S.tradeCard.newStopAria}
           value={value}
           onChange={(event) => setValue(event.target.value)}
           className="h-8 w-32 font-mono"
         />
         <Button size="sm" variant="outline" onClick={onDone} type="button">
-          Cancel
+          {dict.common.cancel}
         </Button>
         <Button size="sm" onClick={() => void save()} disabled={!valid || updatePlan.isPending} type="button">
-          {updatePlan.isPending ? "Saving…" : "Save stop"}
+          {updatePlan.isPending ? dict.common.saving : S.tradeCard.saveStop}
         </Button>
       </div>
     </div>
@@ -281,6 +288,8 @@ function ModifyStopEditor({
 // ── Note popover ─────────────────────────────────────────────────────────────
 
 function NotePopover({ trade }: { trade: Trade }) {
+  const { dict } = useI18n();
+  const S = dict.session;
   const [open, setOpen] = React.useState(false);
   const [text, setText] = React.useState(trade.notes ?? "");
   const updateNotes = useUpdateNotes();
@@ -288,10 +297,10 @@ function NotePopover({ trade }: { trade: Trade }) {
   const save = async () => {
     try {
       await updateNotes.mutateAsync({ tradeId: trade.id, input: { notes: text } });
-      toast.success("Note saved");
+      toast.success(S.tradeCard.toastNoteSaved);
       setOpen(false);
     } catch {
-      toast.error("Could not save the note");
+      toast.error(S.tradeCard.toastNoteFailed);
     }
   };
 
@@ -304,22 +313,22 @@ function NotePopover({ trade }: { trade: Trade }) {
       }}
     >
       <PopoverTrigger asChild>
-        <Button variant="outline" size="sm" aria-label="Trade note">
+        <Button variant="outline" size="sm" aria-label={S.tradeCard.noteBtnAria}>
           <StickyNote className="size-3.5" aria-hidden="true" />
-          Note
+          {S.tradeCard.noteBtn}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-80 space-y-2" align="start">
-        <Label htmlFor="trade-note">Session note</Label>
+        <Label htmlFor="trade-note">{S.tradeCard.noteLabel}</Label>
         <Textarea
           id="trade-note"
           value={text}
           onChange={(event) => setText(event.target.value)}
-          placeholder="What are you seeing right now?"
+          placeholder={S.tradeCard.notePlaceholder}
           rows={3}
         />
         <Button size="sm" onClick={() => void save()} disabled={updateNotes.isPending} type="button">
-          {updateNotes.isPending ? "Saving…" : "Save note"}
+          {updateNotes.isPending ? dict.common.saving : S.tradeCard.saveNote}
         </Button>
       </PopoverContent>
     </Popover>
@@ -328,20 +337,9 @@ function NotePopover({ trade }: { trade: Trade }) {
 
 // ── Emotion quick-log ────────────────────────────────────────────────────────
 
-const EMOTION_LABELS: Record<Emotion, string> = {
-  CALM: "Calm",
-  CONFIDENT: "Confident",
-  ANXIOUS: "Anxious",
-  FOMO: "FOMO",
-  TIRED: "Tired",
-  FRUSTRATED: "Frustrated",
-  REVENGE: "Revenge",
-  EUPHORIC: "Euphoric",
-  RELIEVED: "Relieved",
-  BORED: "Bored",
-};
-
 function EmotionQuickLog({ trade }: { trade: Trade }) {
+  const { dict } = useI18n();
+  const S = dict.session;
   const [open, setOpen] = React.useState(false);
   const updatePsychology = useUpdatePsychology();
 
@@ -350,23 +348,23 @@ function EmotionQuickLog({ trade }: { trade: Trade }) {
     if (emotion === null || emotion === trade.emotionAfter) return;
     try {
       await updatePsychology.mutateAsync({ tradeId: trade.id, input: { emotionAfter: emotion } });
-      toast.success(`Feeling logged: ${EMOTION_LABELS[emotion]}`);
+      toast.success(`${S.tradeCard.toastFeelingLogged} ${S.emotions[emotion]}`);
     } catch {
-      toast.error("Could not log the feeling");
+      toast.error(S.tradeCard.toastFeelingFailed);
     }
   };
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="outline" size="sm" aria-label="Quick-log how you feel">
+        <Button variant="outline" size="sm" aria-label={S.tradeCard.feelingAria}>
           <Smile className="size-3.5" aria-hidden="true" />
-          {trade.emotionAfter !== null ? EMOTION_LABELS[trade.emotionAfter] : "Feeling"}
+          {trade.emotionAfter !== null ? S.emotions[trade.emotionAfter] : S.tradeCard.feelingBtn}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-72" align="start">
-        <p className="mb-2 text-xs font-medium text-muted-foreground">How does this trade feel right now?</p>
-        <EmotionPicker value={trade.emotionAfter} onChange={(emotion) => void log(emotion)} ariaLabel="In-trade emotion" />
+        <p className="mb-2 text-xs font-medium text-muted-foreground">{S.tradeCard.feelingPrompt}</p>
+        <EmotionPicker value={trade.emotionAfter} onChange={(emotion) => void log(emotion)} ariaLabel={S.tradeCard.emotionAria} />
       </PopoverContent>
     </Popover>
   );
@@ -383,6 +381,8 @@ export function OpenTradeCard({
   instrument: Instrument | null;
   quote: LiveQuote | null;
 }) {
+  const { dict } = useI18n();
+  const S = dict.session;
   const [closeOpen, setCloseOpen] = React.useState(false);
   const [editingStop, setEditingStop] = React.useState(false);
   const digits = instrument?.digits ?? 5;
@@ -415,11 +415,11 @@ export function OpenTradeCard({
       </div>
 
       <div className="grid grid-cols-2 gap-3 px-4 py-3 sm:grid-cols-3">
-        <Metric label="Entry">{formatPrice(trade.entryPrice, digits)}</Metric>
-        <Metric label="Current">
+        <Metric label={S.labels.entry}>{formatPrice(trade.entryPrice, digits)}</Metric>
+        <Metric label={S.labels.current}>
           {price !== null ? formatPrice(price, digits) : "—"}
         </Metric>
-        <Metric label="Unrealized P&L">
+        <Metric label={S.tradeCard.unrealizedPnl}>
           <span
             className={cn(
               pnl === null ? "text-muted-foreground" : pnl >= 0 ? "text-profit" : "text-loss",
@@ -428,13 +428,13 @@ export function OpenTradeCard({
             {pnl === null ? "—" : `${pnl >= 0 ? "+" : "-"}${formatPrice(Math.abs(pnl), 2)}`}
           </span>
         </Metric>
-        <Metric label="Initial SL">
+        <Metric label={S.tradeCard.initialSl}>
           {trade.initialStop !== null ? formatPrice(trade.initialStop, digits) : "—"}
         </Metric>
-        <Metric label="Initial TP">
+        <Metric label={S.tradeCard.initialTp}>
           {trade.initialTP !== null ? formatPrice(trade.initialTP, digits) : "—"}
         </Metric>
-        <Metric label="Potential R:R">
+        <Metric label={S.tradeCard.potentialRR}>
           {trade.plannedRR !== null ? `1:${Number(trade.plannedRR).toFixed(2)}` : "—"}
         </Metric>
       </div>
@@ -446,7 +446,7 @@ export function OpenTradeCard({
         <div className="flex flex-wrap items-center gap-2">
           <Button size="sm" variant="destructive" onClick={() => setCloseOpen(true)}>
             <X className="size-3.5" aria-hidden="true" />
-            Close
+            {S.tradeCard.close}
           </Button>
           <Button
             size="sm"
@@ -455,7 +455,7 @@ export function OpenTradeCard({
             aria-expanded={editingStop}
           >
             <PencilLine className="size-3.5" aria-hidden="true" />
-            Modify SL
+            {S.tradeCard.modifySl}
           </Button>
           <EmotionQuickLog trade={trade} />
           <NotePopover trade={trade} />

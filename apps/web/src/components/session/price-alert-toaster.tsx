@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { formatPrice } from "@cosmoz/shared";
 import type { Instrument, Trade } from "@cosmoz/shared";
 
+import { useI18n } from "@/i18n/i18n-provider";
 import type { LiveQuote } from "@/lib/realtime/market";
 
 /**
@@ -62,6 +63,8 @@ function PriceLine({ label, value }: { label: string; value: string }) {
 }
 
 export function PriceAlertToaster({ trades, instruments, quotes }: PriceAlertToasterProps) {
+  const { dict } = useI18n();
+  const S = dict.session;
   // Latest data in refs: the effect reads them per quote emission without
   // re-subscribing to anything else. Synced in an effect (never during render)
   // that runs after every render — declared BEFORE the quote effect so the
@@ -95,7 +98,7 @@ export function PriceAlertToaster({ trades, instruments, quotes }: PriceAlertToa
       const slRaw = trade.finalStop ?? trade.initialStop;
       const tp = tpRaw !== null && Number.isFinite(Number(tpRaw)) ? Number(tpRaw) : null;
       const sl = slRaw !== null && Number.isFinite(Number(slRaw)) ? Number(slRaw) : null;
-      const side = trade.direction === "BUY" ? "Long" : "Short";
+      const side = trade.direction === "BUY" ? S.labels.long : S.labels.short;
 
       const baseline = baselineRef.current.get(trade.id) ?? null;
       if (baseline === null) {
@@ -116,18 +119,15 @@ export function PriceAlertToaster({ trades, instruments, quotes }: PriceAlertToa
 
       const level = kind === "TP" ? tp : sl;
       if (level === null) continue;
-      const levelLabel = kind === "TP" ? "Take profit touched" : "Stop loss touched";
-      const hint =
-        kind === "TP"
-          ? "Your plan's exit zone is live — manage the position, don't improvise."
-          : "The level that invalidates this trade is live — the plan says respect it.";
+      const levelLabel = kind === "TP" ? S.alerts.tpTouched : S.alerts.slTouched;
+      const hint = kind === "TP" ? S.alerts.tpHint : S.alerts.slHint;
 
       const description = (
         <span className="flex flex-col gap-0.5">
           <span className="flex flex-wrap items-center gap-x-3 gap-y-0.5">
-            <PriceLine label="Live" value={formatPrice(quote.price, digits)} />
+            <PriceLine label={S.alerts.live} value={formatPrice(quote.price, digits)} />
             <PriceLine label={kind} value={formatPrice(level, digits)} />
-            <PriceLine label="Entry" value={formatPrice(Number(trade.entryPrice), digits)} />
+            <PriceLine label={S.labels.entry} value={formatPrice(Number(trade.entryPrice), digits)} />
           </span>
           <span className="text-xs text-muted-foreground">{hint}</span>
         </span>
@@ -144,7 +144,7 @@ export function PriceAlertToaster({ trades, instruments, quotes }: PriceAlertToa
         toast.warning(`${levelLabel} — ${side} ${instrument.symbol}`, payload);
       }
     }
-  }, [quotes]);
+  }, [quotes, S]);
 
   return null;
 }

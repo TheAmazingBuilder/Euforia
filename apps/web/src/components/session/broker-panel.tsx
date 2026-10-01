@@ -7,6 +7,7 @@ import { formatMoney, formatPrice } from "@cosmoz/shared";
 import type { BrokerSessionResponse } from "@cosmoz/shared";
 
 import { Skeleton } from "@/components/ui/skeleton";
+import { useI18n } from "@/i18n/i18n-provider";
 import { useBrokerSession } from "@/lib/api/queries";
 import { cn } from "@/lib/utils";
 
@@ -29,6 +30,8 @@ function AccountRow({ label, value }: { label: string; value: React.ReactNode })
 }
 
 function StateBanner({ state, reason }: { state: BrokerSessionResponse["state"]; reason: string | null }) {
+  const { dict } = useI18n();
+  const S = dict.session;
   const isError = state === "ERROR";
   return (
     <p
@@ -38,12 +41,14 @@ function StateBanner({ state, reason }: { state: BrokerSessionResponse["state"];
         isError ? "border-warning/50 bg-warning/10 text-warning" : "border-border bg-surface-raised text-muted-foreground",
       )}
     >
-      {reason ?? "Trading account state unknown."}
+      {reason ?? S.broker.stateUnknown}
     </p>
   );
 }
 
 function PositionsMiniList({ session }: { session: BrokerSessionResponse }) {
+  const { dict } = useI18n();
+  const S = dict.session;
   return (
     <div className="space-y-2">
       {session.positions.map((position) => (
@@ -56,14 +61,14 @@ function PositionsMiniList({ session }: { session: BrokerSessionResponse }) {
                 position.direction === "SELL" ? "bg-destructive/15 text-destructive" : "bg-profit/15 text-profit",
               )}
             >
-              {position.direction === "SELL" ? "Short" : "Long"} {position.volume}
+              {position.direction === "SELL" ? S.labels.short : S.labels.long} {position.volume}
             </span>
           </div>
           <div className="mt-1.5 grid grid-cols-2 gap-x-4 sm:grid-cols-4">
-            <AccountRow label="Entry" value={formatPrice(position.entryPrice, 5)} />
-            <AccountRow label="Current" value={position.currentPrice !== null ? formatPrice(position.currentPrice, 5) : "—"} />
-            <AccountRow label="SL" value={position.stopLoss !== null ? formatPrice(position.stopLoss, 5) : "—"} />
-            <AccountRow label="TP" value={position.takeProfit !== null ? formatPrice(position.takeProfit, 5) : "—"} />
+            <AccountRow label={S.labels.entry} value={formatPrice(position.entryPrice, 5)} />
+            <AccountRow label={S.labels.current} value={position.currentPrice !== null ? formatPrice(position.currentPrice, 5) : "—"} />
+            <AccountRow label={S.labels.sl} value={position.stopLoss !== null ? formatPrice(position.stopLoss, 5) : "—"} />
+            <AccountRow label={S.labels.tp} value={position.takeProfit !== null ? formatPrice(position.takeProfit, 5) : "—"} />
           </div>
           <div className="mt-1 flex justify-end">
             <span
@@ -72,7 +77,7 @@ function PositionsMiniList({ session }: { session: BrokerSessionResponse }) {
                 position.unrealizedPnl === null ? "text-muted-foreground" : Number(position.unrealizedPnl) >= 0 ? "text-profit" : "text-loss",
               )}
             >
-              {position.unrealizedPnl !== null ? formatMoney(position.unrealizedPnl, session.account?.currency ?? "USD") : "P&L —"}
+              {position.unrealizedPnl !== null ? formatMoney(position.unrealizedPnl, session.account?.currency ?? "USD") : S.positions.pnlNone}
             </span>
           </div>
         </div>
@@ -82,13 +87,15 @@ function PositionsMiniList({ session }: { session: BrokerSessionResponse }) {
 }
 
 export function BrokerPanel() {
+  const { dict } = useI18n();
+  const S = dict.session;
   const { data: session, isLoading } = useBrokerSession();
 
   if (isLoading || session === undefined) {
     return (
-      <section className="rounded-xl border border-border bg-surface" aria-busy="true" aria-label="Loading trading account">
+      <section className="rounded-xl border border-border bg-surface" aria-busy="true" aria-label={S.broker.loadingAria}>
         <header className="border-b border-border px-4 py-3">
-          <h2 className="font-heading text-base font-semibold text-foreground">Trading account</h2>
+          <h2 className="font-heading text-base font-semibold text-foreground">{S.broker.title}</h2>
         </header>
         <div className="space-y-2 p-4">
           <Skeleton className="h-5 w-3/4" />
@@ -107,11 +114,11 @@ export function BrokerPanel() {
     <section className="rounded-xl border border-border bg-surface" data-testid="broker-panel">
       <header className="flex items-center justify-between gap-2 border-b border-border px-4 py-3">
         <div>
-          <h2 className="font-heading text-base font-semibold text-foreground">Trading account</h2>
-          <p className="text-xs text-muted-foreground">Live broker monitoring — read only.</p>
+          <h2 className="font-heading text-base font-semibold text-foreground">{S.broker.title}</h2>
+          <p className="text-xs text-muted-foreground">{S.broker.subtitle}</p>
         </div>
-        <span className="stamp stamp-ink shrink-0 -rotate-2" aria-label="Read-only">
-          READ ONLY
+        <span className="stamp stamp-ink shrink-0 -rotate-2" aria-label={S.broker.readOnlyAria}>
+          {S.broker.readOnly}
         </span>
       </header>
 
@@ -119,11 +126,11 @@ export function BrokerPanel() {
         <StateBanner state={session.state} reason={session.reason} />
 
         <div className="divide-y divide-border/60">
-          <AccountRow label="Broker" value={connected ? account.broker : "—"} />
-          <AccountRow label="Balance" value={connected && account.balance !== null ? formatMoney(account.balance, currency) : "—"} />
-          <AccountRow label="Equity" value={connected && account.equity !== null ? formatMoney(account.equity, currency) : "—"} />
+          <AccountRow label={S.broker.brokerRow} value={connected ? account.broker : "—"} />
+          <AccountRow label={S.broker.balance} value={connected && account.balance !== null ? formatMoney(account.balance, currency) : "—"} />
+          <AccountRow label={S.broker.equity} value={connected && account.equity !== null ? formatMoney(account.equity, currency) : "—"} />
           <AccountRow
-            label="Unrealized P&L"
+            label={S.broker.unrealizedPnl}
             value={
               connected && account.unrealizedPnl !== null ? (
                 <span className={Number(account.unrealizedPnl) >= 0 ? "text-profit" : "text-loss"}>
@@ -134,19 +141,19 @@ export function BrokerPanel() {
               )
             }
           />
-          <AccountRow label="Used margin" value={connected && account.usedMargin !== null ? formatMoney(account.usedMargin, currency) : "—"} />
-          <AccountRow label="Free margin" value={connected && account.freeMargin !== null ? formatMoney(account.freeMargin, currency) : "—"} />
-          <AccountRow label="Margin level" value={connected && account.marginLevel !== null ? `${formatPrice(account.marginLevel, 2)}%` : "—"} />
+          <AccountRow label={S.broker.usedMargin} value={connected && account.usedMargin !== null ? formatMoney(account.usedMargin, currency) : "—"} />
+          <AccountRow label={S.broker.freeMargin} value={connected && account.freeMargin !== null ? formatMoney(account.freeMargin, currency) : "—"} />
+          <AccountRow label={S.broker.marginLevel} value={connected && account.marginLevel !== null ? `${formatPrice(account.marginLevel, 2)}%` : "—"} />
         </div>
 
         <div className="border-t border-border pt-3">
           <h3 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             <Landmark className="size-3.5" aria-hidden="true" />
-            Broker positions
+            {S.broker.positions}
           </h3>
           {session.positions.length === 0 ? (
             <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-              {connected ? "No open positions on the broker account." : "Positions will stream here once a broker is connected."}
+              {connected ? S.broker.positionsEmpty : S.broker.positionsStreamEmpty}
             </p>
           ) : (
             <div className="mt-2">
@@ -158,11 +165,11 @@ export function BrokerPanel() {
         <div className="border-t border-border pt-3">
           <h3 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             <ScrollText className="size-3.5" aria-hidden="true" />
-            Pending orders
+            {S.broker.orders}
           </h3>
           {session.orders.length === 0 ? (
             <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-              {connected ? "No pending orders." : "Pending orders will stream here once a broker is connected — view only, no cancel or modify."}
+              {connected ? S.broker.ordersEmpty : S.broker.ordersStreamEmpty}
             </p>
           ) : (
             <div className="mt-2 space-y-2">
@@ -173,8 +180,8 @@ export function BrokerPanel() {
                     <span className="uppercase tracking-wide">{order.type}</span>
                   </div>
                   <div className="mt-1 grid grid-cols-2 gap-x-4">
-                    <AccountRow label="Price" value={formatPrice(order.price, 5)} />
-                    <AccountRow label="Volume" value={order.volume} />
+                    <AccountRow label={S.labels.price} value={formatPrice(order.price, 5)} />
+                    <AccountRow label={S.labels.volume} value={order.volume} />
                   </div>
                 </div>
               ))}

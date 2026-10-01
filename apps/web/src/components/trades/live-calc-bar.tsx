@@ -3,6 +3,7 @@
 import { formatMoney, type Currency } from "@cosmoz/shared";
 
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/i18n/i18n-provider";
 
 /**
  * Live calculation bar (spec §4): mono font, updated live —
@@ -19,6 +20,8 @@ export interface LiveCalcBarProps {
 }
 
 export function LiveCalcBar({ rr, riskAmount, riskPct, estimatedPnl, currency }: LiveCalcBarProps) {
+  const { dict } = useI18n();
+  const T = dict.trades.liveCalc;
   const rrLabel = rr !== null ? `1:${rr >= 10 ? rr.toFixed(0) : rr.toFixed(1)}` : "—";
   const riskLabel =
     riskAmount !== null
@@ -31,17 +34,17 @@ export function LiveCalcBar({ rr, riskAmount, riskPct, estimatedPnl, currency }:
   return (
     <div
       role="status"
-      aria-label="Live trade calculation"
+      aria-label={T.aria}
       className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-md border border-border bg-background px-3 py-2 font-mono text-xs tabular-nums text-muted-foreground"
     >
       <span>
-        R:R <span className="text-foreground">{rrLabel}</span>
+        {T.rr} <span className="text-foreground">{rrLabel}</span>
       </span>
       <span className="text-border" aria-hidden="true">
         ·
       </span>
       <span>
-        Risk <span className="text-foreground">{riskLabel}</span>
+        {T.risk} <span className="text-foreground">{riskLabel}</span>
       </span>
       {pnlLabel !== null ? (
         <>
@@ -49,7 +52,7 @@ export function LiveCalcBar({ rr, riskAmount, riskPct, estimatedPnl, currency }:
             ·
           </span>
           <span>
-            Est. P&amp;L{" "}
+            {T.estPnl}{" "}
             <span
               className={cn(
                 Number(estimatedPnl) >= 0 ? "text-profit" : "text-loss",

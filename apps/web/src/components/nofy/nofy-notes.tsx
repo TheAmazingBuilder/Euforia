@@ -16,6 +16,7 @@ import {
 
 import type { NofyNoteRow } from "@cosmoz/shared";
 
+import { useI18n } from "@/i18n/i18n-provider";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -70,6 +71,8 @@ export function NotesBrowser({
   testid?: string;
   showTagFilter?: boolean;
 }) {
+  const { dict } = useI18n();
+  const N = dict.nofy;
   const [rawQuery, setRawQuery] = React.useState(params.q);
   const [layout, setLayout] = React.useState<"list" | "grid">("list");
   const [moveTarget, setMoveTarget] = React.useState<NofyNoteRow | null>(null);
@@ -102,28 +105,28 @@ export function NotesBrowser({
           <Input
             value={rawQuery}
             onChange={(event) => setRawQuery(event.target.value)}
-            placeholder="Search notes, content, tags…"
-            aria-label="Search notes"
+            placeholder={N.notes.searchPlaceholder}
+            aria-label={N.notes.searchLabel}
             className="pl-8"
             data-testid="nofy-notes-search"
           />
         </div>
         <Select value={params.sort} onValueChange={(value) => onParamsChange({ sort: value })}>
-          <SelectTrigger className="h-9 w-40 text-sm" aria-label="Sort notes">
+          <SelectTrigger className="h-9 w-40 text-sm" aria-label={N.notes.sortLabel}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="updated">Last edited</SelectItem>
-            <SelectItem value="created">Date created</SelectItem>
-            <SelectItem value="title">Title A→Z</SelectItem>
-            <SelectItem value="viewed">Last viewed</SelectItem>
+            <SelectItem value="updated">{N.notes.sortUpdated}</SelectItem>
+            <SelectItem value="created">{N.notes.sortCreated}</SelectItem>
+            <SelectItem value="title">{N.notes.sortTitle}</SelectItem>
+            <SelectItem value="viewed">{N.notes.sortViewed}</SelectItem>
           </SelectContent>
         </Select>
-        <div className="flex overflow-hidden rounded-md border border-border" role="group" aria-label="View layout">
+        <div className="flex overflow-hidden rounded-md border border-border" role="group" aria-label={N.notes.layoutLabel}>
           <button
             type="button"
             onClick={() => setLayout("list")}
-            aria-label="List view"
+            aria-label={N.notes.listView}
             aria-pressed={layout === "list"}
             className={cn("p-2 transition-colors", layout === "list" ? "bg-accent/15 text-accent" : "text-muted-foreground hover:text-foreground")}
           >
@@ -132,7 +135,7 @@ export function NotesBrowser({
           <button
             type="button"
             onClick={() => setLayout("grid")}
-            aria-label="Grid view"
+            aria-label={N.notes.gridView}
             aria-pressed={layout === "grid"}
             className={cn("p-2 transition-colors", layout === "grid" ? "bg-accent/15 text-accent" : "text-muted-foreground hover:text-foreground")}
           >
@@ -141,7 +144,7 @@ export function NotesBrowser({
         </div>
         <Button size="sm" className="h-9 gap-1.5" onClick={onCreateNote} data-testid="nofy-new-note">
           <Plus className="size-4" aria-hidden="true" />
-          New note
+          {N.notes.newNote}
         </Button>
       </div>
 
@@ -170,8 +173,8 @@ export function NotesBrowser({
         params.q !== "" ? (
           <NofyEmptyState
             icon={Search}
-            title="No notes match this search"
-            body="Try another keyword — search covers titles, content, tags and folders."
+            title={N.notes.emptySearchTitle}
+            body={N.notes.emptySearchBody}
             testid="nofy-notes-empty-search"
           />
         ) : (
@@ -179,7 +182,7 @@ export function NotesBrowser({
             icon={emptyState.icon}
             title={emptyState.title}
             body={emptyState.body}
-            action={{ label: "Create your first note", onClick: onCreateNote }}
+            action={{ label: N.overview.createFirstNote, onClick: onCreateNote }}
             testid="nofy-notes-empty"
           />
         )
@@ -218,6 +221,9 @@ export function NotesBrowser({
 // ── List row ─────────────────────────────────────────────────────────────────
 
 function NoteRow({ note, onOpen, onMove }: { note: NofyNoteRow; onOpen: () => void; onMove: () => void }) {
+  const { dict } = useI18n();
+  const N = dict.nofy;
+  const displayTitle = note.title === "" ? N.shared.untitledNote : note.title;
   return (
     <li>
       <div
@@ -228,22 +234,22 @@ function NoteRow({ note, onOpen, onMove }: { note: NofyNoteRow; onOpen: () => vo
         }}
         role="button"
         tabIndex={0}
-        aria-label={`Open note ${note.title === "" ? "Untitled note" : note.title}`}
+        aria-label={`${N.shared.openNote} ${displayTitle}`}
         data-testid="nofy-note-row"
       >
         <span className="mt-0.5 shrink-0 text-lg leading-none" aria-hidden="true">{note.icon ?? "📝"}</span>
         <span className="min-w-0 flex-1">
           <span className="flex items-center gap-1.5">
-            <span className="truncate text-sm font-semibold text-foreground">{note.title === "" ? "Untitled note" : note.title}</span>
+            <span className="truncate text-sm font-semibold text-foreground">{displayTitle}</span>
             {note.favorite ? <Star className="size-3 shrink-0 fill-warning text-warning" aria-hidden="true" /> : null}
             {note.todoOpen > 0 ? (
-              <span className="shrink-0 rounded-sm border border-border bg-muted px-1 font-mono text-[10px] text-muted-foreground" title="Open to-dos">
+              <span className="shrink-0 rounded-sm border border-border bg-muted px-1 font-mono text-[10px] text-muted-foreground" title={N.notes.openToDos}>
                 {note.todoOpen}○
               </span>
             ) : null}
             {note.refCount > 0 ? (
-              <span className="shrink-0 rounded-sm border border-accent/30 bg-accent/10 px-1 font-mono text-[10px] text-accent" title="Entity references">
-                {note.refCount} ref
+              <span className="shrink-0 rounded-sm border border-accent/30 bg-accent/10 px-1 font-mono text-[10px] text-accent" title={N.notes.refs}>
+                {note.refCount} {note.refCount === 1 ? N.shared.refOne : N.shared.refMany}
               </span>
             ) : null}
           </span>
@@ -255,7 +261,7 @@ function NoteRow({ note, onOpen, onMove }: { note: NofyNoteRow; onOpen: () => vo
             {note.tagNames.slice(0, 3).map((name) => (
               <TagChip key={name} tag={{ id: name, name }} />
             ))}
-            <span className="text-[11px] text-muted-foreground/70">edited {nofyRelativeTime(note.updatedAt)}</span>
+            <span className="text-[11px] text-muted-foreground/70">{N.shared.edited} {nofyRelativeTime(note.updatedAt, N.time)}</span>
           </span>
         </span>
         <span className="shrink-0 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
@@ -269,6 +275,9 @@ function NoteRow({ note, onOpen, onMove }: { note: NofyNoteRow; onOpen: () => vo
 // ── Grid card ────────────────────────────────────────────────────────────────
 
 function NoteCard({ note, onOpen, onMove }: { note: NofyNoteRow; onOpen: () => void; onMove: () => void }) {
+  const { dict } = useI18n();
+  const N = dict.nofy;
+  const displayTitle = note.title === "" ? N.shared.untitledNote : note.title;
   return (
     <div
       className="group flex cursor-pointer flex-col rounded-lg border border-border bg-surface p-4 transition-colors hover:border-accent/40 hover:bg-muted/30 outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -278,13 +287,13 @@ function NoteCard({ note, onOpen, onMove }: { note: NofyNoteRow; onOpen: () => v
       }}
       role="button"
       tabIndex={0}
-      aria-label={`Open note ${note.title === "" ? "Untitled note" : note.title}`}
+      aria-label={`${N.shared.openNote} ${displayTitle}`}
       data-testid="nofy-note-card"
     >
       <div className="flex items-start gap-2">
         <span className="text-lg leading-none" aria-hidden="true">{note.icon ?? "📝"}</span>
         <span className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground">
-          {note.title === "" ? "Untitled note" : note.title}
+          {displayTitle}
         </span>
         <span className="shrink-0 opacity-0 transition-opacity group-hover:opacity-100">
           <NoteMenu note={note} onOpen={onOpen} onMove={onMove} />
@@ -293,12 +302,12 @@ function NoteCard({ note, onOpen, onMove }: { note: NofyNoteRow; onOpen: () => v
       {note.excerpt !== "" ? (
         <p className="mt-1.5 line-clamp-3 min-h-10 text-xs text-muted-foreground">{note.excerpt}</p>
       ) : (
-        <p className="mt-1.5 min-h-10 text-xs italic text-muted-foreground/60">Empty note</p>
+        <p className="mt-1.5 min-h-10 text-xs italic text-muted-foreground/60">{N.notes.emptyNote}</p>
       )}
       <div className="mt-3 flex flex-wrap items-center gap-1.5">
         {note.favorite ? <Star className="size-3 fill-warning text-warning" aria-hidden="true" /> : null}
         <FolderChip name={note.folderName} />
-        <span className="ml-auto text-[11px] text-muted-foreground/70">{nofyRelativeTime(note.updatedAt)}</span>
+        <span className="ml-auto text-[11px] text-muted-foreground/70">{nofyRelativeTime(note.updatedAt, N.time)}</span>
       </div>
     </div>
   );
@@ -307,6 +316,8 @@ function NoteCard({ note, onOpen, onMove }: { note: NofyNoteRow; onOpen: () => v
 // ── Row actions ──────────────────────────────────────────────────────────────
 
 function NoteMenu({ note, onOpen, onMove }: { note: NofyNoteRow; onOpen: () => void; onMove: () => void }) {
+  const { dict } = useI18n();
+  const N = dict.nofy;
   const trashMutation = useTrashNofyNote();
   const duplicateMutation = useDuplicateNofyNote();
   const updateMutation = useUpdateNofyNote();
@@ -315,7 +326,7 @@ function NoteMenu({ note, onOpen, onMove }: { note: NofyNoteRow; onOpen: () => v
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          aria-label="Note actions"
+          aria-label={N.shared.noteActions}
           onClick={(event) => event.stopPropagation()}
           className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
@@ -323,23 +334,23 @@ function NoteMenu({ note, onOpen, onMove }: { note: NofyNoteRow; onOpen: () => v
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48" onClick={(event) => event.stopPropagation()}>
-        <DropdownMenuItem onClick={onOpen}>Open note</DropdownMenuItem>
+        <DropdownMenuItem onClick={onOpen}>{N.shared.openNote}</DropdownMenuItem>
         <DropdownMenuItem onClick={() => duplicateMutation.mutate({ noteId: note.id })}>
           <Copy className="size-3.5" aria-hidden="true" />
-          Duplicate
+          {N.shared.duplicate}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => onMove()}>
           <FolderInput className="size-3.5" aria-hidden="true" />
-          Move to folder
+          {N.notes.moveToFolder}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => updateMutation.mutate({ noteId: note.id, favorite: !note.favorite })}>
           <Star className={cn("size-3.5", note.favorite && "fill-warning text-warning")} aria-hidden="true" />
-          {note.favorite ? "Remove from favorites" : "Add to favorites"}
+          {note.favorite ? N.shared.removeFromFavorites : N.shared.addToFavorites}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem variant="destructive" onClick={() => trashMutation.mutate(note.id)}>
           <Trash2 className="size-3.5" aria-hidden="true" />
-          Move to trash
+          {N.shared.moveToTrash}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -349,6 +360,8 @@ function NoteMenu({ note, onOpen, onMove }: { note: NofyNoteRow; onOpen: () => v
 // ── Move-to-folder dialog ────────────────────────────────────────────────────
 
 function MoveDialog({ note, onClose }: { note: NofyNoteRow | null; onClose: () => void }) {
+  const { dict } = useI18n();
+  const N = dict.nofy;
   const foldersQuery = useNofyFolders();
   const updateMutation = useUpdateNofyNote();
   const [folderId, setFolderId] = React.useState<string>("none");
@@ -363,17 +376,17 @@ function MoveDialog({ note, onClose }: { note: NofyNoteRow | null; onClose: () =
     <Dialog open={note !== null} onOpenChange={(open) => (!open ? onClose() : undefined)}>
       <DialogContent className="max-w-sm" data-testid="nofy-move-dialog">
         <DialogHeader>
-          <DialogTitle>Move to folder</DialogTitle>
+          <DialogTitle>{N.notes.moveTitle}</DialogTitle>
           <DialogDescription>
-            {note ? `“${note.title === "" ? "Untitled note" : note.title}” — pick where this note lives.` : ""}
+            {note ? `“${note.title === "" ? N.shared.untitledNote : note.title}” — ${N.notes.movePickWhere}` : ""}
           </DialogDescription>
         </DialogHeader>
         <Select value={folderId} onValueChange={setFolderId}>
-          <SelectTrigger className="w-full" aria-label="Target folder">
-            <SelectValue placeholder="No folder" />
+          <SelectTrigger className="w-full" aria-label={N.notes.targetFolder}>
+            <SelectValue placeholder={N.shared.noFolder} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="none">No folder</SelectItem>
+            <SelectItem value="none">{N.shared.noFolder}</SelectItem>
             {(foldersQuery.data?.folders ?? []).map((folder) => (
               <SelectItem key={folder.id} value={folder.id}>
                 {folder.name} ({folder.noteCount})
@@ -382,7 +395,7 @@ function MoveDialog({ note, onClose }: { note: NofyNoteRow | null; onClose: () =
           </SelectContent>
         </Select>
         <DialogFooter>
-          <Button variant="outline" size="sm" onClick={onClose}>Cancel</Button>
+          <Button variant="outline" size="sm" onClick={onClose}>{dict.common.cancel}</Button>
           <Button
             size="sm"
             onClick={() => {
@@ -395,7 +408,7 @@ function MoveDialog({ note, onClose }: { note: NofyNoteRow | null; onClose: () =
             data-testid="nofy-move-confirm"
           >
             <Check className="size-3.5" aria-hidden="true" />
-            Move
+            {N.notes.move}
           </Button>
         </DialogFooter>
       </DialogContent>
