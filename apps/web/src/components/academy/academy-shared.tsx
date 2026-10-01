@@ -133,7 +133,9 @@ export function ProgressBar({
   );
 }
 
-/** Ring gauge — single arc on a hairline track, rounded caps, token color. */
+/** Ring gauge — single arc on a hairline track, rounded caps, token color.
+ *  The arc draws itself the first time it scrolls into view (IntersectionObserver,
+ *  once); honors prefers-reduced-motion by rendering the final state instantly. */
 export function ProgressRing({
   percent,
   size = 64,
@@ -152,11 +154,15 @@ export function ProgressRing({
   testid?: string;
 }) {
   const clamped = Math.max(0, Math.min(100, percent));
+  const { ref, inView } = useInViewOnce<HTMLSpanElement>();
+  const reducedMotion = usePrefersReducedMotion();
   const r = (size - strokeWidth) / 2;
   const c = 2 * Math.PI * r;
   const filled = (clamped / 100) * c;
+  const drawn = inView || reducedMotion;
   return (
     <span
+      ref={ref}
       className={cn("relative inline-flex shrink-0 items-center justify-center", className)}
       style={{ width: size, height: size }}
       role="progressbar"
@@ -177,8 +183,8 @@ export function ProgressRing({
             stroke: hue ?? "var(--accent)",
             strokeWidth,
             strokeLinecap: "round",
-            strokeDasharray: `${filled} ${c - filled}`,
-            transition: "stroke-dasharray 500ms cubic-bezier(0.16,1,0.3,1)",
+            strokeDasharray: drawn ? `${filled} ${c - filled}` : `0.01 ${c - 0.01}`,
+            transition: reducedMotion ? "none" : "stroke-dasharray 900ms cubic-bezier(0.16,1,0.3,1)",
           }}
         />
       </svg>
@@ -233,4 +239,51 @@ export function HueLetter({ letter, hue, className }: { letter: string; hue: str
 /** Section heading in the ledger annotation style. */
 export function AcademySectionTitle({ children, className }: { children: React.ReactNode; className?: string }) {
   return <h2 className={cn("ledger-label", className)}>{children}</h2>;
+}
+
+// ── Scroll-reveal primitives (ring/diagram animations) ──────────────────────
+
+/** True after the referenced element first enters the viewport (observes once).
+ *  Falls back to "in view" when IntersectionObserver is unavailable (SSR/tests). */
+export function useInViewOnce<T extends HTMLElement>(rootMargin = "0px 0px -8% 0px") {
+  const ref = React.useRef<T | null>(null);
+  const [inView, setInView] = React.useState(false);
+
+  React.useEffect(() => {
+    const node = ref.current;
+    if (!node || inView) return;
+    if (typeof IntersectionObserver === "undefined") {
+      // Ancient engines / test environments — reveal async (never sync in effect).
+      const timer = window.setTimeout(() => setInView(true), 0);
+      return () => window.clearTimeout(timer);
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            setInView(true);
+            observer.disconnect();
+          }
+        }
+      },
+      { rootMargin, threshold: 0.2 },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [inView, rootMargin]);
+
+  return { ref, inView };
+}
+
+/** Live preference for reduced motion — animations render their final state.
+ *  Backed by useSyncExternalStore: no setState-in-effect, SSR-safe. */
+export function usePrefersReducedMotion(): boolean {
+  const subscribe = React.useCallback((onChange: () => void) => {
+    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+    media.addEventListener("change", onChange);
+    return () => media.removeEventListener("change", onChange);
+  }, []);
+  const getSnapshot = React.useCallback(() => window.matchMedia("(prefers-reduced-motion: reduce)").matches, []);
+  const getServerSnapshot = React.useCallback(() => false, []);
+  return React.useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }

@@ -11,6 +11,8 @@ import {
   HueChip,
   ProgressBar,
   hueOf,
+  useInViewOnce,
+  usePrefersReducedMotion,
 } from "@/components/academy/academy-shared";
 import { useAcademyProgress } from "@/lib/api/queries";
 
@@ -21,13 +23,16 @@ import { useAcademyProgress } from "@/lib/api/queries";
  */
 
 function SegmentedRing({ progress, size = 116, strokeWidth = 9 }: { progress: AcademyProgressResponse; size?: number; strokeWidth?: number }) {
+  const { ref, inView } = useInViewOnce<HTMLSpanElement>();
+  const reducedMotion = usePrefersReducedMotion();
+  const drawn = inView || reducedMotion;
   const r = (size - strokeWidth) / 2;
   const c = 2 * Math.PI * r;
   const seg = c / progress.categories.length;
   const gap = 2.4;
 
   return (
-    <span className="relative inline-flex shrink-0 items-center justify-center" style={{ width: size, height: size }}>
+    <span ref={ref} className="relative inline-flex shrink-0 items-center justify-center" style={{ width: size, height: size }}>
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden="true">
         <circle cx={size / 2} cy={size / 2} r={r} fill="none" style={{ stroke: "var(--surface-raised)", strokeWidth }} />
         {progress.categories.map((category, index) => {
@@ -45,9 +50,9 @@ function SegmentedRing({ progress, size = 116, strokeWidth = 9 }: { progress: Ac
                 stroke: hue,
                 strokeWidth,
                 strokeLinecap: "butt",
-                strokeDasharray: `${arc} ${c - arc}`,
+                strokeDasharray: drawn ? `${arc} ${c - arc}` : `0.01 ${c - 0.01}`,
                 strokeDashoffset: -gap / 2,
-                transition: "stroke-dasharray 500ms cubic-bezier(0.16,1,0.3,1)",
+                transition: reducedMotion ? "none" : `stroke-dasharray 900ms cubic-bezier(0.16,1,0.3,1) ${index * 45}ms`,
               }}
             />
           );

@@ -18,7 +18,10 @@ import type { AcademyQuizResultResponse } from "@cosmoz/shared";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { hueOf, tint } from "@/components/academy/academy-shared";
+import { CourseArt } from "@/components/academy/academy-illustrations";
 import { LessonBlocks } from "@/components/academy/lesson-blocks";
+import { useAcademyCatalog } from "@/lib/api/queries";
 import {
   useAcademyBookmarks,
   useAcademyLesson,
@@ -29,9 +32,10 @@ import {
 } from "@/lib/api/queries";
 
 /**
- * Lesson reader — breadcrumb, objectives, the block document (text, callouts,
- * tables, SVG visuals), takeaways, completion, bookmarking and prev/next.
- * The last lesson of a course also exposes its quiz inline.
+ * Lesson reader — breadcrumb, the course's concept vignette (the chart the
+ * lesson teaches, in the track hue), objectives, the block document (text,
+ * callouts, tables, SVG visuals), takeaways, completion, bookmarking and
+ * prev/next. The last lesson of a course also exposes its quiz inline.
  */
 
 export function LessonReader({
@@ -48,6 +52,7 @@ export function LessonReader({
   const toggleBookmark = useToggleBookmark();
   // Derived from the server state — no local mirror to keep in sync.
   const { data: bookmarksData } = useAcademyBookmarks();
+  const categoryName = useAcademyCatalog().data?.categories.find((cat) => cat.id === lesson?.categoryId)?.name;
   const bookmarked = bookmarksData?.bookmarks.some((mark) => mark.kind === "LESSON" && mark.refId === lessonId) ?? false;
 
   if (isLoading) {
@@ -74,6 +79,7 @@ export function LessonReader({
   const isLastLesson = lesson.position === lesson.lessonCount;
   const objectivesBlock = lesson.blocks.find((block) => block.kind === "objectives");
   const bodyBlocks = lesson.blocks.filter((block) => block.kind !== "objectives");
+  const hue = hueOf(lesson.categoryId);
 
   return (
     <article className="space-y-5" data-testid="academy-lesson-reader" aria-label={lesson.title}>
@@ -88,13 +94,31 @@ export function LessonReader({
         </span>
       </div>
 
-      {/* Title band */}
-      <header className="rounded-lg border bg-surface px-5 py-4">
-        <div className="flex flex-wrap items-start justify-between gap-3">
+      {/* Title band — opens with the course concept vignette: side card on
+          desktop, full-width banner on mobile (the chart this lesson teaches). */}
+      <header className="overflow-hidden rounded-lg border bg-surface" data-testid="academy-lesson-header">
+        <span className="relative block md:hidden">
+          <CourseArt
+            courseId={lesson.courseId}
+            categoryId={lesson.categoryId}
+            className="aspect-[32/13] w-full"
+            testid="academy-lesson-vignette"
+          />
+          <span
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-px"
+            style={{ background: tint(hue, 45) }}
+            aria-hidden="true"
+          />
+        </span>
+        <div className="flex flex-wrap items-start justify-between gap-3 px-5 py-4">
           <div className="min-w-0">
             <h1 className="font-heading text-xl font-bold tracking-tight sm:text-2xl">{lesson.title}</h1>
             <p className="mt-1 max-w-3xl text-sm text-muted-foreground">{lesson.summary}</p>
-            <p className="mt-2 flex items-center gap-3 font-mono text-[11px] tabular-nums text-muted-foreground">
+            <p className="mt-2 flex flex-wrap items-center gap-3 font-mono text-[11px] tabular-nums text-muted-foreground">
+              <span className="inline-flex items-center gap-1.5">
+                <span aria-hidden="true" className="size-2 rounded-full" style={{ backgroundColor: hue }} />
+                {categoryName ?? "Course"}
+              </span>
               <span className="inline-flex items-center gap-1">
                 <Clock className="size-3" aria-hidden="true" />
                 {lesson.minutes} min
@@ -107,6 +131,15 @@ export function LessonReader({
               ) : null}
             </p>
           </div>
+          {/* Concept vignette at its natural ratio — nothing cropped (desktop) */}
+          <span className="hidden shrink-0 md:block">
+            <CourseArt
+              courseId={lesson.courseId}
+              categoryId={lesson.categoryId}
+              className="aspect-[32/15] w-64 rounded-md border border-border"
+              testid="academy-lesson-vignette"
+            />
+          </span>
           <button
             type="button"
             onClick={() => toggleBookmark.mutate({ kind: "LESSON", refId: lesson.id })}

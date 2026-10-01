@@ -760,10 +760,12 @@ export function CourseArt({
   courseId,
   categoryId,
   className,
+  testid,
 }: {
   courseId: string;
   categoryId?: string | null;
   className?: string;
+  testid?: string;
 }) {
   const Art = COURSE_ART[courseId];
   const catId = categoryId ?? COURSE_CATEGORY[courseId];
@@ -771,7 +773,7 @@ export function CourseArt({
   if (!Art) {
     // Unknown course: an abstract "open book of charts" placeholder in the hue.
     return (
-      <span className={className} aria-hidden="true" style={{ display: "block", overflow: "hidden" }}>
+      <span className={className} aria-hidden="true" style={{ display: "block", overflow: "hidden" }} data-testid={testid}>
         <ArtFrame hue={hue} title="Course illustration">
           <Line d={[[40, 104], [104, 48], [150, 76], [212, 32], [276, 56]]} color={hue} smooth />
           <Dot x={104} y={48} color={hue} r={2.6} />
@@ -781,7 +783,7 @@ export function CourseArt({
     );
   }
   return (
-    <span className={className} aria-hidden="true" style={{ display: "block", overflow: "hidden" }}>
+    <span className={className} aria-hidden="true" style={{ display: "block", overflow: "hidden" }} data-testid={testid}>
       <Art hue={hue} />
     </span>
   );
