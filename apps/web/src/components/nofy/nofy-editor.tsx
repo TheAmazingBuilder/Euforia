@@ -26,6 +26,7 @@ import {
   Trash2,
   Type,
   Copy,
+  FileDown,
   FolderOpen,
   X,
 } from "lucide-react";
@@ -61,6 +62,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { NofyBlockRow, autoResize, type NofyBlockOps } from "./nofy-blocks";
 import { IconPicker, RefPickerDialog, VersionsDialog } from "./nofy-editor-dialogs";
+import { NotePrintDialog } from "./nofy-print";
 import { LessonOriginChip, NOFY_REF_META, TagChip, nofyRelativeTime } from "./nofy-shared";
 
 /**
@@ -500,11 +502,65 @@ export function NofyEditor({
     [slashMenu, ops, mutateBlocks, requestFocus],
   );
 
+  // ── Slash menu anchoring (scroll-safe) ──────────────────────────────────────
+  // The menu stays anchored to its source block: ANY scroll (the page shell,
+  // an ancestor, the editor itself) re-derives top/left from the block row's
+  // live viewport rect instead of closing the menu. Scrolls that originate
+  // INSIDE the menu (its own scrollable list) are ignored — closing on them
+  // made the list unscrollable. A capture-phase document listener catches
+  // ancestor scrollers (native scroll doesn't bubble to the editor).
+  const repositionSlashMenu = React.useCallback(() => {
+    setSlashMenu((previous) => {
+      if (!previous) return previous;
+      const el = textAreasRef.current.get(previous.sourceId);
+      const row = el?.closest<HTMLElement>("[data-testid=nofy-block]");
+      if (!row) return null;
+      const rect = row.getBoundingClientRect();
+      // Clamp inside the viewport (menu ≈ 270px tall, 288px wide).
+      const top = Math.min(rect.bottom + 4, window.innerHeight - 280);
+      const left = Math.min(rect.left, window.innerWidth - 296);
+      if (Math.abs(previous.top - top) < 0.5 && Math.abs(previous.left - left) < 0.5) return previous;
+      return { ...previous, top, left };
+    });
+  }, []);
+
+  const handleScrollCapture = (event: React.SyntheticEvent) => {
+    const target = event.target;
+    if (target instanceof Element && target.closest("[data-testid=nofy-slash-menu]")) return;
+    repositionSlashMenu();
+  };
+
+  const slashMenuOpen = slashMenu !== null;
+  React.useEffect(() => {
+    if (!slashMenuOpen) return;
+    const onAncestorScroll = (event: Event) => {
+      if (event.target instanceof Element && event.target.closest("[data-testid=nofy-slash-menu]")) return;
+      repositionSlashMenu();
+    };
+    document.addEventListener("scroll", onAncestorScroll, { capture: true, passive: true });
+    window.addEventListener("resize", repositionSlashMenu, { passive: true });
+    return () => {
+      document.removeEventListener("scroll", onAncestorScroll, { capture: true });
+      window.removeEventListener("resize", repositionSlashMenu);
+    };
+  }, [slashMenuOpen, repositionSlashMenu]);
+
+  // Keyboard navigation scrolls the highlighted option into view. Hover is
+  // EXCLUDED: scrolling the list with the wheel moves items under the cursor
+  // and a hover-driven scrollIntoView would snap the list back mid-gesture.
+  const activeSlashRef = React.useRef<HTMLButtonElement | null>(null);
+  const slashKbNavRef = React.useRef(false);
+  React.useEffect(() => {
+    if (!slashKbNavRef.current) return;
+    slashKbNavRef.current = false;
+    activeSlashRef.current?.scrollIntoView({ block: "nearest" });
+  }, [slashIndex, slashMatches]);
+
   // ── Container-level keyboard: slash menu nav, Ctrl+S, Ctrl+B/I ──────────────
   const handleKeyDownCapture = (event: React.KeyboardEvent) => {
     if (slashMenu) {
-      if (event.key === "ArrowDown") { event.preventDefault(); event.stopPropagation(); setSlashIndex((index) => Math.min(index + 1, slashMatches.length - 1)); return; }
-      if (event.key === "ArrowUp") { event.preventDefault(); event.stopPropagation(); setSlashIndex((index) => Math.max(index - 1, 0)); return; }
+      if (event.key === "ArrowDown") { event.preventDefault(); event.stopPropagation(); slashKbNavRef.current = true; setSlashIndex((index) => Math.min(index + 1, slashMatches.length - 1)); return; }
+      if (event.key === "ArrowUp") { event.preventDefault(); event.stopPropagation(); slashKbNavRef.current = true; setSlashIndex((index) => Math.max(index - 1, 0)); return; }
       if (event.key === "Enter") { event.preventDefault(); event.stopPropagation(); const item = slashMatches[slashIndex]; if (item) applySlashItem(item); return; }
       if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); setSlashMenu(null); return; }
     }
@@ -570,6 +626,7 @@ export function NofyEditor({
   const versionsQuery = useNofyVersions(versionsOpen ? noteId : null);
   const foldersQuery = useNofyFolders();
   const tagsQuery = useNofyTags();
+  const [printOpen, setPrintOpen] = React.useState(false);
 
   const exportMarkdown = () => {
     if (!draft) return;
@@ -583,6 +640,28 @@ export function NofyEditor({
     URL.revokeObjectURL(url);
     toast.success("Note exported as Markdown.");
   };
+
+  const exportPdf = () => {
+    flushSave();
+    setPrintOpen(true);
+  };
+
+  const printNote = React.useMemo(
+    () =>
+      draft
+        ? {
+            title: draft.title,
+            icon: draft.icon,
+            blocks: draft.blocks,
+            folderName: foldersQuery.data?.folders.find((folder) => folder.id === draft.folderId)?.name ?? null,
+            tagNames: draft.tagIds
+              .map((tagId) => tagsQuery.data?.tags.find((tag) => tag.id === tagId)?.name ?? null)
+              .filter((name): name is string => name !== null),
+            updatedAt: noteQuery.data?.note.updatedAt ?? new Date().toISOString(),
+          }
+        : null,
+    [draft, foldersQuery.data, tagsQuery.data, noteQuery.data],
+  );
 
   const toggleTag = (tagId: string) => {
     if (!draftRef.current) return;
@@ -633,7 +712,7 @@ export function NofyEditor({
       className="rounded-xl border bg-surface"
       data-testid="nofy-editor"
       onKeyDownCapture={handleKeyDownCapture}
-      onScrollCapture={() => setSlashMenu(null)}
+      onScrollCapture={handleScrollCapture}
     >
       {/* ── Header row ─────────────────────────────────────────────────────── */}
       <div className="flex items-start gap-2 border-b border-border px-4 pb-3 pt-4 sm:px-6">
@@ -746,6 +825,10 @@ export function NofyEditor({
               <DropdownMenuItem onClick={exportMarkdown}>
                 <Download className="size-3.5" aria-hidden="true" />
                 Export Markdown
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={exportPdf} data-testid="nofy-export-pdf">
+                <FileDown className="size-3.5" aria-hidden="true" />
+                Export PDF
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
@@ -892,7 +975,7 @@ export function NofyEditor({
           role="listbox"
           aria-label="Block commands"
         >
-          <ul className="max-h-64 overflow-y-auto py-1">
+          <ul className="max-h-64 overflow-y-auto overscroll-contain py-1">
             {slashMatches.map((item, index) => {
               const Icon = item.icon;
               return (
@@ -905,6 +988,7 @@ export function NofyEditor({
                     aria-selected={index === slashIndex}
                     data-testid="nofy-slash-item"
                     data-cmd={item.cmd}
+                    ref={index === slashIndex ? activeSlashRef : undefined}
                     className={cn(
                       "flex w-full items-center gap-2.5 px-3 py-1.5 text-left outline-none",
                       index === slashIndex ? "bg-accent/10" : "",
@@ -954,6 +1038,7 @@ export function NofyEditor({
           );
         }}
       />
+      <NotePrintDialog open={printOpen} onOpenChange={setPrintOpen} note={printNote} />
     </div>
   );
 }

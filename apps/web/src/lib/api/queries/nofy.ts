@@ -12,6 +12,7 @@ import type {
   NofyNotesResponse,
   NofyNoteUpdateInput,
   NofyOverviewResponse,
+  NofyRefKind,
   NofyRefsResponse,
   NofySearchResponse,
   NofyTagsResponse,
@@ -71,6 +72,20 @@ export function useNofyNote(noteId: string | null) {
     queryKey: queryKeys.nofyNote(noteId ?? "none"),
     queryFn: () => apiRequest<NofyNoteResponse>(apiPaths.nofyNote(noteId ?? "")),
     enabled: noteId !== null && noteId !== "",
+  });
+}
+
+/**
+ * Notes linked to an app entity (Playbook strategy, reviewed trade, …) —
+ * the entity side of the Nofy↔Playbook/Trade-Review integration. Keyed
+ * under the "nofy-notes" root so any note mutation invalidates it.
+ */
+export function useNofyLinkedNotes(kind: NofyRefKind, id: string | null | undefined) {
+  return useQuery({
+    queryKey: queryKeys.nofyLinkedNotes(kind, id ?? "none"),
+    queryFn: () =>
+      apiRequest<NofyNotesResponse>(apiPaths.nofyNotes, { query: { refKind: kind, refId: id ?? "" } }),
+    enabled: typeof id === "string" && id !== "",
   });
 }
 

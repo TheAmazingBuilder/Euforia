@@ -3,6 +3,7 @@ import type {
   NofyNoteCreateInput,
   NofyNoteDuplicateInput,
   NofyNoteUpdateInput,
+  NofyRefKind,
   NofyTemplateCreateInput,
   NofyTemplateInstantiateInput,
 } from "@cosmoz/shared";
@@ -30,6 +31,7 @@ import {
   instantiateTemplate,
   listFolders,
   listNotes,
+  listNotesLinkedTo,
   listRefs,
   listTags,
   listTemplates,
@@ -62,11 +64,18 @@ export const nofyHandlers = [
     }
   }),
 
-  /** GET /nofy/notes?view=&folderId=&tagId=&q=&sort= — filtered note lists. */
+  /** GET /nofy/notes?view=&folderId=&tagId=&q=&sort= — filtered note lists.
+   *  ?refKind=&refId= instead returns the notes linked to an app entity
+   *  (the Playbook / Trade Review integration surface). */
   http.get(endpoint(apiPaths.nofyNotes), async ({ request }) => {
     await latency();
     try {
       const url = new URL(request.url);
+      const refKind = url.searchParams.get("refKind");
+      const refId = url.searchParams.get("refId");
+      if (refKind && refId) {
+        return HttpResponse.json(listNotesLinkedTo(refKind as NofyRefKind, refId));
+      }
       const view = url.searchParams.get("view") ?? "all";
       const folderId = url.searchParams.get("folderId");
       const tagId = url.searchParams.get("tagId");

@@ -1,9 +1,10 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
 import { CheckCircle2, History, NotebookPen, Sparkles, XCircle } from "lucide-react";
 import { toast } from "sonner";
-import type { Grade, PlaybookMatch, ReviewRow } from "@cosmoz/shared";
+import type { Grade, NofyBlockInput, PlaybookMatch, ReviewRow } from "@cosmoz/shared";
 import { formatR } from "@cosmoz/shared";
 
 import { Button } from "@/components/ui/button";
@@ -19,7 +20,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { useReviewOverview, useUpsertReview } from "@/lib/api/queries";
+import { NofyLinkedNotesSection } from "@/components/nofy/nofy-linked-notes";
+import { useCreateNofyNote, useReviewOverview, useUpsertReview } from "@/lib/api/queries";
 import { cn } from "@/lib/utils";
 import { GRADE_STYLES, PLAYBOOK_MATCH_META } from "@/components/trade-review/trade-review-shared";
 
@@ -41,10 +43,21 @@ interface ReviewDialogProps {
 
 export function ReviewDialog({ row, open, onOpenChange }: ReviewDialogProps) {
   const upsert = useUpsertReview();
+  const router = useRouter();
   // The overview is already cached by the module — the recurring-lesson
   // template comes from it (shared query key, no extra round-trip).
   const { data: overviewData } = useReviewOverview();
   const lastImprovementNote = overviewData?.lastImprovementNote ?? null;
+
+  // Nofy integration — the trade side of the knowledge loop: the review's
+  // lesson becomes the seed of a note that stays linked to this trade.
+  const createNofyNote = useCreateNofyNote({
+    onCreated: (note) => {
+      onOpenChange(false);
+      toast.success("Note created in Nofy.", { description: `Linked to ${row?.symbol ?? "trade"}.` });
+      router.push(`/nofy?tab=notes&note=${note.id}`);
+    },
+  });
 
   const [executionGrade, setExecutionGrade] = React.useState<Grade>("B");
   const [playbookMatch, setPlaybookMatch] = React.useState<PlaybookMatch>("MATCHED");
@@ -74,6 +87,23 @@ export function ReviewDialog({ row, open, onOpenChange }: ReviewDialogProps) {
       setImprovementNote(row.improvementNote ?? "");
     }
   }
+
+  const takeNofyNotes = () => {
+    if (!row) return;
+    const blockId = () => `nb-${Math.random().toString(36).slice(2, 10)}`;
+    const blocks: NofyBlockInput[] = [
+      { id: blockId(), type: "ref", text: "", ref: { kind: "TRADE", id: row.tradeId } },
+      { id: blockId(), type: "paragraph", text: "" },
+    ];
+    if (lessons.trim() !== "") {
+      blocks.push({ id: blockId(), type: "h3", text: "The lesson" });
+      blocks.push({ id: blockId(), type: "paragraph", text: lessons.trim() });
+    }
+    if (improvementNote.trim() !== "") {
+      blocks.push({ id: blockId(), type: "todo", text: improvementNote.trim(), checked: false });
+    }
+    createNofyNote.mutate({ title: `${row.symbol} ${row.tradingDate} — review notes`, blocks });
+  };
 
   if (!row) return null;
 
@@ -310,6 +340,15 @@ export function ReviewDialog({ row, open, onOpenChange }: ReviewDialogProps) {
               </button>
             ) : null}
           </div>
+
+          {/* Nofy bridge — notes linked to this trade */}
+          <NofyLinkedNotesSection
+            kind="TRADE"
+            id={row.tradeId}
+            onCreateNote={takeNofyNotes}
+            creating={createNofyNote.isPending}
+            testidPrefix="review"
+          />
         </div>
 
         <DialogFooter>

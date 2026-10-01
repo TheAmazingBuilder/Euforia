@@ -18,10 +18,11 @@ import { Separator } from "@/components/ui/separator";
 import { Markdown } from "@/components/playbook/markdown";
 import { GradeBadge } from "@/components/playbook/strategy-card";
 import { StrategyVersionsDialog } from "@/components/playbook/strategy-versions-dialog";
+import { NofyLinkedNotesSection } from "@/components/nofy/nofy-linked-notes";
 import { formatPercent, formatR, type Strategy, type StrategyStat } from "@cosmoz/shared";
 import { apiErrorMessage } from "@/lib/api/client";
 
-import { useDeleteStrategy } from "@/lib/api/queries";
+import { useCreateNofyNote, useDeleteStrategy } from "@/lib/api/queries";
 import { openTradeModal } from "@/lib/hooks/use-trade-modal";
 import { cn } from "@/lib/utils";
 
@@ -54,6 +55,27 @@ export function StrategyDetailDialog({ strategy, stat, onOpenChange, onEdit }: S
   const deleteStrategy = useDeleteStrategy();
   const router = useRouter();
   const [versionsOpen, setVersionsOpen] = React.useState(false);
+
+  // Nofy integration — the strategy side of the knowledge loop: take notes
+  // that stay linked to this strategy, and see every note that already is.
+  const createNofyNote = useCreateNofyNote({
+    onCreated: (note) => {
+      onOpenChange(false);
+      toast.success("Note created in Nofy.", { description: `Linked to ${strategy?.name ?? "strategy"}.` });
+      router.push(`/nofy?tab=notes&note=${note.id}`);
+    },
+  });
+
+  const takeNofyNotes = () => {
+    if (!strategy) return;
+    createNofyNote.mutate({
+      title: `${strategy.name} — playbook notes`,
+      blocks: [
+        { id: `nb-${Math.random().toString(36).slice(2, 10)}`, type: "ref", text: "", ref: { kind: "STRATEGY", id: strategy.id } },
+        { id: `nb-${Math.random().toString(36).slice(2, 10)}`, type: "paragraph", text: "" },
+      ],
+    });
+  };
 
   if (strategy === null) return null;
 
@@ -133,6 +155,14 @@ export function StrategyDetailDialog({ strategy, stat, onOpenChange, onEdit }: S
           <RuleSection title="Exit rules" source={strategy.exitRules} />
           <RuleSection title="Risk rules" source={strategy.riskRules} />
         </div>
+
+        <NofyLinkedNotesSection
+          kind="STRATEGY"
+          id={strategy.id}
+          onCreateNote={takeNofyNotes}
+          creating={createNofyNote.isPending}
+          testidPrefix="strategy"
+        />
 
         <DialogFooter className="gap-2 sm:justify-between">
           <Button

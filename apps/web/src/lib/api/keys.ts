@@ -90,6 +90,7 @@ export const queryKeys = {
   nofyNotes: (view: string, folderId: string, tagId: string, q: string, sort: string) =>
     ["nofy-notes", view, folderId, tagId, q, sort] as const,
   nofyNotesRoot: ["nofy-notes"] as const,
+  nofyLinkedNotes: (kind: string, id: string) => ["nofy-notes", "linked", kind, id] as const,
   nofyNote: (noteId: string) => ["nofy-note", noteId] as const,
   nofyFolders: ["nofy-folders"] as const,
   nofyTags: ["nofy-tags"] as const,

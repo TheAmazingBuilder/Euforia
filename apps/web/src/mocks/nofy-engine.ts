@@ -681,6 +681,20 @@ export function listNotes(scope: NofyListScope, query?: { q?: string; sort?: str
   return { notes: sorted.map(toRow), total: sorted.length };
 }
 
+/**
+ * Notes linked to an app entity — the Playbook / Trade Review side of the
+ * integration. A note is "linked" when it carries a ref block pointing at
+ * the entity; rows are the same projection the browser shows.
+ */
+export function listNotesLinkedTo(kind: NofyRefKind, id: string): NofyNotesResponse {
+  ensureSeed();
+  const linked = state.notes
+    .filter((n) => n.deletedAt === null)
+    .filter((n) => n.blocks.some((b) => b.type === "ref" && b.ref?.kind === kind && b.ref?.id === id))
+    .sort(byUpdatedDesc);
+  return { notes: linked.map(toRow), total: linked.length };
+}
+
 export function nofyOverview(): NofyOverviewResponse {
   ensureSeed();
   const active = state.notes.filter((n) => n.deletedAt === null);

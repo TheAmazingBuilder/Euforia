@@ -426,26 +426,31 @@
    grip communicates the affordance via cursor — nothing else changes, so
    edit mode never redesigns the dashboard. */
 
-/* ── Print sheets: monthly review journal + quarterly analytics report ──
-   The rules activate ONLY while the body carries `printing-review` or
-   `printing-quarterly`, i.e. when a print was started from one of the
-   report dialogs. A normal page print is never hijacked. Everything
-   outside .print-sheet is hidden (visibility keeps layout so ECharts
-   canvases etc. don't reflow), the sheet is lifted to the top-left corner
-   at full width. */
+/* ── Print sheets: monthly review journal + quarterly analytics report +
+   Nofy note export ────────────────────────────────────────────────────────
+   The rules activate ONLY while the body carries `printing-review`,
+   `printing-quarterly` or `printing-nofy`, i.e. when a print was started
+   from one of the report dialogs. A normal page print is never hijacked.
+   Everything outside .print-sheet is hidden (visibility keeps layout so
+   ECharts canvases etc. don't reflow), the sheet is lifted to the top-left
+   corner at full width. */
 @media print {
   body.printing-review *,
-  body.printing-quarterly * {
+  body.printing-quarterly *,
+  body.printing-nofy * {
     visibility: hidden !important;
   }
   body.printing-review .print-sheet,
   body.printing-review .print-sheet *,
   body.printing-quarterly .print-sheet,
-  body.printing-quarterly .print-sheet * {
+  body.printing-quarterly .print-sheet *,
+  body.printing-nofy .print-sheet,
+  body.printing-nofy .print-sheet * {
     visibility: visible !important;
   }
   body.printing-review .print-sheet,
-  body.printing-quarterly .print-sheet {
+  body.printing-quarterly .print-sheet,
+  body.printing-nofy .print-sheet {
     position: absolute !important;
     inset: 0 auto auto 0;
     width: 100% !important;
@@ -456,7 +461,8 @@
     box-shadow: none !important;
   }
   body.printing-review .print-sheet .no-print,
-  body.printing-quarterly .print-sheet .no-print {
+  body.printing-quarterly .print-sheet .no-print,
+  body.printing-nofy .print-sheet .no-print {
     display: none !important;
   }
   @page {

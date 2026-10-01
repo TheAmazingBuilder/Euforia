@@ -171,6 +171,7 @@ export {
   useDuplicateNofyNote,
   useInstantiateNofyTemplate,
   useNofyFolders,
+  useNofyLinkedNotes,
   useNofyNote,
   useNofyNotes,
   useNofyOverview,
