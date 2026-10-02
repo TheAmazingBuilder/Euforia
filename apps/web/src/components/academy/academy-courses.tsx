@@ -19,6 +19,7 @@ import {
   useAcademyCourse,
   useAcademySearch,
 } from "@/lib/api/queries";
+import { useI18n } from "@/i18n/i18n-provider";
 
 /**
  * Courses panel — three stacked views: the catalog (12 categories, filters,
@@ -27,26 +28,14 @@ import {
  * deep-linkable via ?course= and ?lesson=.
  */
 
-const LEVELS: (AcademyLevel | "ALL")[] = ["ALL", "BEGINNER", "INTERMEDIATE", "ADVANCED"];
+const LEVELS: AcademyLevel[] = ["BEGINNER", "INTERMEDIATE", "ADVANCED"];
 const STATUS = ["ALL", "IN_PROGRESS", "COMPLETED", "NOT_STARTED"] as const;
 const DURATIONS = ["ALL", "SHORT", "MEDIUM", "LONG"] as const;
 const SORTS = ["curriculum", "shortest", "longest", "progress"] as const;
 
+// Machine ids only — labels resolve through dict.academy.courses
+// (status/duration/sort objects).
 type SortId = (typeof SORTS)[number];
-
-const SORT_LABELS: Record<SortId, string> = {
-  curriculum: "Curriculum order",
-  shortest: "Shortest first",
-  longest: "Longest first",
-  progress: "Most progress",
-};
-
-const DURATION_LABELS: Record<(typeof DURATIONS)[number], string> = {
-  ALL: "Any length",
-  SHORT: "Under 60 min",
-  MEDIUM: "60–120 min",
-  LONG: "120+ min",
-};
 
 export function AcademyCoursesPanel({
   courseId,
@@ -68,6 +57,9 @@ export function AcademyCoursesPanel({
   const [status, setStatus] = React.useState<(typeof STATUS)[number]>("ALL");
   const [duration, setDuration] = React.useState<(typeof DURATIONS)[number]>("ALL");
   const [sort, setSort] = React.useState<SortId>("curriculum");
+  const { dict } = useI18n();
+  const V = dict.academy.courses;
+  const S = dict.academy.shared;
 
   // Debounce the server search (300ms) — catalog filtering stays client-side.
   React.useEffect(() => {
@@ -91,9 +83,9 @@ export function AcademyCoursesPanel({
           <Input
             value={searchInput}
             onChange={(event) => setSearchInput(event.target.value)}
-            placeholder="Search courses, lessons, concepts… (e.g. breakout, drawdown)"
+            placeholder={V.searchPlaceholder}
             className="pl-9 pr-8"
-            aria-label="Search the Academy"
+            aria-label={V.searchAria}
             data-testid="academy-search-input"
           />
           {searchInput ? (
@@ -101,7 +93,7 @@ export function AcademyCoursesPanel({
               type="button"
               onClick={() => setSearchInput("")}
               className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              aria-label="Clear search"
+              aria-label={V.clearSearch}
             >
               <X className="size-4" />
             </button>
@@ -113,38 +105,38 @@ export function AcademyCoursesPanel({
             <CategoryFilter category={category} onPick={setCategory} />
             <div className="flex flex-wrap items-center gap-1.5" data-testid="academy-filters">
               <FilterChip active={level === "ALL"} onClick={() => setLevel("ALL")}>
-                All levels
+                {V.allLevels}
               </FilterChip>
-              {LEVELS.filter((l) => l !== "ALL").map((l) => (
+              {LEVELS.map((l) => (
                 <FilterChip key={l} active={level === l} onClick={() => setLevel(level === l ? "ALL" : l)}>
-                  {l === "BEGINNER" ? "Beginner" : l === "INTERMEDIATE" ? "Intermediate" : "Advanced"}
+                  {S.levels[l]}
                 </FilterChip>
               ))}
               <span aria-hidden="true" className="mx-1 h-4 w-px bg-border" />
               {STATUS.map((s) => (
                 <FilterChip key={s} active={status === s} onClick={() => setStatus(s)}>
-                  {s === "ALL" ? "Any status" : s === "IN_PROGRESS" ? "In progress" : s === "COMPLETED" ? "Completed" : "Not started"}
+                  {V.status[s]}
                 </FilterChip>
               ))}
               <span aria-hidden="true" className="mx-1 h-4 w-px bg-border" />
               {DURATIONS.map((d) => (
                 <FilterChip key={d} active={duration === d} onClick={() => setDuration(d)}>
-                  {DURATION_LABELS[d]}
+                  {V.duration[d]}
                 </FilterChip>
               ))}
               <span aria-hidden="true" className="mx-1 h-4 w-px bg-border" />
               <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                Sort
+                {V.sortLabel}
                 <select
                   value={sort}
                   onChange={(event) => setSort(event.target.value as SortId)}
                   className="rounded-md border border-border bg-surface px-2 py-1 text-xs text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  aria-label="Sort courses"
+                  aria-label={V.sortAria}
                   data-testid="academy-sort"
                 >
                   {SORTS.map((s) => (
                     <option key={s} value={s}>
-                      {SORT_LABELS[s]}
+                      {V.sort[s]}
                     </option>
                   ))}
                 </select>
@@ -177,13 +169,16 @@ const PATH_ICONS: Record<string, LucideIcon> = {
 
 function LearningPaths({ onOpenCourse }: { onOpenCourse: (courseId: string) => void }) {
   const { data: catalog } = useAcademyCatalog();
+  const { dict } = useI18n();
+  const V = dict.academy.courses;
+  const S = dict.academy.shared;
   const [openPath, setOpenPath] = React.useState<string | null>(null);
   const paths = catalog?.paths ?? [];
   if (paths.length === 0) return null;
 
   return (
-    <section aria-label="Learning paths" data-testid="academy-paths">
-      <AcademySectionTitle className="mb-2">Learning paths</AcademySectionTitle>
+    <section aria-label={V.pathsAria} data-testid="academy-paths">
+      <AcademySectionTitle className="mb-2">{V.pathsTitle}</AcademySectionTitle>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {paths.map((path) => {
           const Icon = PATH_ICONS[path.icon] ?? GraduationCap;
@@ -208,13 +203,14 @@ function LearningPaths({ onOpenCourse }: { onOpenCourse: (courseId: string) => v
                     <Icon className="size-4" />
                   </span>
                   <span className="font-mono text-[11px] tabular-nums text-muted-foreground">
-                    {path.completedCourses}/{path.courses.length} courses
+                    {path.completedCourses}/{path.courses.length}
+                    {V.coursesSuffix}
                   </span>
                 </span>
                 <span className="mt-2.5 block font-heading text-sm font-semibold text-foreground">{path.title}</span>
                 <span className="mt-1 line-clamp-2 flex-1 text-xs leading-relaxed text-muted-foreground">{path.description}</span>
                 <span className="mt-3 block">
-                  <ProgressBar percent={path.percent} label={`${path.title} progress`} testid={`academy-path-progress-${path.id}`} />
+                  <ProgressBar percent={path.percent} label={`${path.title}${S.progressSuffix}`} testid={`academy-path-progress-${path.id}`} />
                 </span>
               </button>
               {open ? (
@@ -254,12 +250,14 @@ function LearningPaths({ onOpenCourse }: { onOpenCourse: (courseId: string) => v
 
 function CategoryFilter({ category, onPick }: { category: string; onPick: (id: string) => void }) {
   const { data: catalog } = useAcademyCatalog();
+  const { dict } = useI18n();
+  const V = dict.academy.courses;
   const categories = catalog?.categories ?? [];
   if (categories.length === 0) return null;
   return (
     <div className="flex flex-wrap items-center gap-1.5" data-testid="academy-category-filter">
       <FilterChip active={category === "ALL"} onClick={() => onPick("ALL")}>
-        All categories
+        {V.allCategories}
       </FilterChip>
       {categories.map((cat) => {
         const hue = hueOf(cat.id);
@@ -321,6 +319,8 @@ function CatalogGrid({
   onOpenCourse: (courseId: string) => void;
 }) {
   const { data: catalog, isLoading } = useAcademyCatalog();
+  const { dict } = useI18n();
+  const V = dict.academy.courses;
 
   if (isLoading || !catalog) {
     return (
@@ -360,7 +360,7 @@ function CatalogGrid({
   if (grouped.length === 0) {
     return (
       <div className="rounded-lg border border-dashed border-border px-4 py-10 text-center text-sm text-muted-foreground">
-        No course matches these filters.
+        {V.noMatch}
       </div>
     );
   }
@@ -398,6 +398,9 @@ function CatalogGrid({
 
 function CourseCard({ course, onOpen }: { course: AcademyCourseCard; onOpen: () => void }) {
   const hue = hueOf(course.categoryId);
+  const { dict } = useI18n();
+  const V = dict.academy.courses;
+  const S = dict.academy.shared;
   return (
     <button
       type="button"
@@ -419,7 +422,7 @@ function CourseCard({ course, onOpen }: { course: AcademyCourseCard; onOpen: () 
             style={{ color: "var(--profit)", backgroundColor: tint("var(--profit)", 14), borderColor: tint("var(--profit)", 40) }}
           >
             <CircleCheck className="size-3" aria-hidden="true" />
-            Done
+            {V.done}
           </span>
         ) : null}
       </span>
@@ -431,19 +434,31 @@ function CourseCard({ course, onOpen }: { course: AcademyCourseCard; onOpen: () 
         <span className="mt-1.5 line-clamp-2 flex-1 text-xs leading-relaxed text-muted-foreground">{course.description}</span>
         <span className="mt-3 block">
           {course.completedLessons > 0 || course.completed ? (
-            <ProgressBar percent={course.progress} hue={hue} label={`${course.title} progress`} testid={`academy-course-progress-${course.id}`} />
+            <ProgressBar percent={course.progress} hue={hue} label={`${course.title}${S.progressSuffix}`} testid={`academy-course-progress-${course.id}`} />
           ) : null}
         </span>
         <span className="mt-2 flex items-center gap-2 font-mono text-[11px] tabular-nums text-muted-foreground">
           <span>
-            {course.completedLessons}/{course.lessonCount} lessons
+            {course.completedLessons}/{course.lessonCount}
+            {V.lessonsSuffix}
           </span>
           <span aria-hidden="true">·</span>
-          <span>~{course.estimatedMinutes} min</span>
+          <span>~{course.estimatedMinutes}
+            {S.minSuffix}
+          </span>
           {course.quizId ? (
             <>
               <span aria-hidden="true">·</span>
-              <span>{course.quizBestScore !== null ? `quiz ${Math.round((course.quizBestScore / course.lessonCount) * 100)}%` : "quiz"}</span>
+              <span>
+                {course.quizBestScore !== null ? (
+                  <>
+                    {V.quizScorePrefix}
+                    {Math.round((course.quizBestScore / course.lessonCount) * 100)}%
+                  </>
+                ) : (
+                  V.quizWord
+                )}
+              </span>
             </>
           ) : null}
         </span>
@@ -464,6 +479,8 @@ function SearchResults({
   onOpenLesson: (lessonId: string) => void;
 }) {
   const { data, isLoading } = useAcademySearch(query);
+  const { dict } = useI18n();
+  const V = dict.academy.courses;
 
   if (isLoading) {
     return (
@@ -482,13 +499,15 @@ function SearchResults({
     <div className="space-y-6" data-testid="academy-search-results">
       {empty ? (
         <div className="rounded-lg border border-dashed border-border px-4 py-10 text-center text-sm text-muted-foreground">
-          Nothing found for “{query}”. Try a broader term — the glossary also matches definitions.
+          {V.noResultsPrefix}
+          {query}
+          {V.noResultsSuffix}
         </div>
       ) : null}
 
       {data.courses.length > 0 ? (
-        <section aria-label="Matching courses">
-          <AcademySectionTitle className="mb-2">Courses</AcademySectionTitle>
+        <section aria-label={V.matchingCoursesAria}>
+          <AcademySectionTitle className="mb-2">{V.coursesTitle}</AcademySectionTitle>
           <ul className="divide-y divide-border rounded-lg border border-border bg-surface">
             {data.courses.map((course) => (
               <li key={course.id}>
@@ -506,8 +525,8 @@ function SearchResults({
       ) : null}
 
       {data.lessons.length > 0 ? (
-        <section aria-label="Matching lessons">
-          <AcademySectionTitle className="mb-2">Lessons</AcademySectionTitle>
+        <section aria-label={V.matchingLessonsAria}>
+          <AcademySectionTitle className="mb-2">{V.lessonsTitle}</AcademySectionTitle>
           <ul className="divide-y divide-border rounded-lg border border-border bg-surface">
             {data.lessons.map((lesson) => (
               <li key={lesson.id}>
@@ -526,8 +545,8 @@ function SearchResults({
       ) : null}
 
       {data.glossary.length > 0 ? (
-        <section aria-label="Matching glossary terms">
-          <AcademySectionTitle className="mb-2">Glossary</AcademySectionTitle>
+        <section aria-label={V.matchingGlossaryAria}>
+          <AcademySectionTitle className="mb-2">{V.glossaryTitle}</AcademySectionTitle>
           <ul className="divide-y divide-border rounded-lg border border-border bg-surface">
             {data.glossary.map((term) => (
               <li key={term.id} className="px-4 py-3">
@@ -554,6 +573,9 @@ function CourseDetail({
   onBack: () => void;
 }) {
   const { data, isLoading, isError } = useAcademyCourse(courseId);
+  const { dict } = useI18n();
+  const V = dict.academy.courses;
+  const S = dict.academy.shared;
 
   if (isLoading) {
     return (
@@ -566,10 +588,10 @@ function CourseDetail({
   if (isError || !data) {
     return (
       <div className="rounded-lg border border-dashed border-border px-4 py-10 text-center">
-        <p className="text-sm text-muted-foreground">This course could not be loaded.</p>
+        <p className="text-sm text-muted-foreground">{V.loadError}</p>
         <Button size="sm" variant="outline" className="mt-3 gap-1.5" onClick={onBack}>
           <ArrowLeft className="size-3.5" aria-hidden="true" />
-          Back to catalog
+          {V.backToCatalog}
         </Button>
       </div>
     );
@@ -586,7 +608,7 @@ function CourseDetail({
         className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
       >
         <ArrowLeft className="size-3.5" aria-hidden="true" />
-        All courses
+        {V.allCourses}
       </button>
 
       <header className="rounded-lg border bg-surface px-5 py-4" data-testid="academy-course-header">
@@ -602,15 +624,17 @@ function CourseDetail({
               </span>
               <p className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">{data.category.name}</p>
               <LevelBadge level={course.level} />
-              {course.completed ? <Badge variant="outline" className="gap-1 border-profit/40 text-profit"><CircleCheck className="size-3" /> Completed</Badge> : null}
+              {course.completed ? <Badge variant="outline" className="gap-1 border-profit/40 text-profit"><CircleCheck className="size-3" /> {V.completedBadge}</Badge> : null}
             </div>
             <h2 className="mt-1.5 font-heading text-xl font-bold tracking-tight sm:text-2xl">{course.title}</h2>
             <p className="mt-1 max-w-3xl text-sm leading-relaxed text-muted-foreground">{course.description}</p>
             <div className="mt-3 max-w-md">
-              <ProgressBar percent={course.progress} hue={hue} label={`${course.title} progress`} />
+              <ProgressBar percent={course.progress} hue={hue} label={`${course.title}${S.progressSuffix}`} />
             </div>
             <p className="mt-2 font-mono text-xs tabular-nums text-muted-foreground">
-              {course.completedLessons}/{course.lessonCount} lessons · ~{course.estimatedMinutes} min
+              {course.completedLessons}/{course.lessonCount}
+              {V.lessonsSuffix} · ~{course.estimatedMinutes}
+              {S.minSuffix}
             </p>
           </div>
           {/* Concept vignette at its natural 32:15 ratio — nothing cropped */}
@@ -624,8 +648,8 @@ function CourseDetail({
         </div>
       </header>
 
-      <section aria-label="Course objectives" className="rounded-lg border px-4 py-3.5" style={{ borderColor: tint(hue, 32), backgroundColor: tint(hue, 6) }}>
-        <p className="ledger-label" style={{ color: hue }}>After this course, you will be able to</p>
+      <section aria-label={V.objectivesAria} className="rounded-lg border px-4 py-3.5" style={{ borderColor: tint(hue, 32), backgroundColor: tint(hue, 6) }}>
+        <p className="ledger-label" style={{ color: hue }}>{V.objectivesTitle}</p>
         <ul className="mt-2 grid grid-cols-1 gap-1 text-sm leading-relaxed sm:grid-cols-2">
           {objectives.map((objective, index) => (
             <li key={index} className="flex gap-2">
@@ -636,8 +660,8 @@ function CourseDetail({
         </ul>
       </section>
 
-      <section aria-label="Lessons">
-        <AcademySectionTitle className="mb-2">Lessons</AcademySectionTitle>
+      <section aria-label={V.lessonsAria}>
+        <AcademySectionTitle className="mb-2">{V.lessonsTitle}</AcademySectionTitle>
         <ol className="divide-y divide-border rounded-lg border border-border bg-surface" data-testid="academy-lesson-list">
           {lessons.map((lesson) => {
             const nextLesson = lessons.find((entry) => !entry.completed);
@@ -665,7 +689,10 @@ function CourseDetail({
                     <span className="block truncate text-sm font-medium text-foreground">{lesson.title}</span>
                     <span className="block truncate text-xs text-muted-foreground">{lesson.summary}</span>
                   </span>
-                  <span className="shrink-0 font-mono text-[11px] tabular-nums text-muted-foreground">{lesson.minutes} min</span>
+                  <span className="shrink-0 font-mono text-[11px] tabular-nums text-muted-foreground">
+                    {lesson.minutes}
+                    {S.minSuffix}
+                  </span>
                   <ArrowRight className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
                 </button>
               </li>
@@ -683,17 +710,17 @@ function CourseDetail({
 
 function CourseQuizSection({ quizId }: { quizId: string }) {
   const [open, setOpen] = React.useState(false);
+  const { dict } = useI18n();
+  const V = dict.academy.courses;
   return (
-    <section className="rounded-lg border border-border bg-surface-raised px-4 py-3.5" aria-label="Course quiz">
+    <section className="rounded-lg border border-border bg-surface-raised px-4 py-3.5" aria-label={V.quizAria}>
       <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
         <div>
-          <p className="text-sm font-medium">Course quiz</p>
-          <p className="text-xs text-muted-foreground">
-            Check your understanding — a few questions, graded with explanations. Only your best score is kept.
-          </p>
+          <p className="text-sm font-medium">{V.quizTitle}</p>
+          <p className="text-xs text-muted-foreground">{V.quizDesc}</p>
         </div>
         <Button size="sm" variant="outline" onClick={() => setOpen((prev) => !prev)} data-testid="academy-course-quiz-toggle">
-          {open ? "Hide quiz" : "Take the quiz"}
+          {open ? V.hideQuiz : V.takeQuiz}
         </Button>
       </div>
       {open ? (

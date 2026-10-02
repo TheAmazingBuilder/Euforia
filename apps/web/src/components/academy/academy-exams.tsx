@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { hueOf, tint } from "@/components/academy/academy-shared";
 import { useAcademyCertifications, useAcademyExam, useSubmitExam } from "@/lib/api/queries";
+import { useI18n } from "@/i18n/i18n-provider";
 
 /**
  * Category certifications — a 20-question exam sampled from every course
@@ -27,12 +28,14 @@ const TIER_STYLE: Record<string, string> = {
 export function CertificationsSection() {
   const { data, isLoading } = useAcademyCertifications();
   const [openCategory, setOpenCategory] = React.useState<string | null>(null);
+  const { dict } = useI18n();
+  const V = dict.academy.exams;
 
   return (
-    <section aria-label="Certifications" data-testid="academy-certifications">
+    <section aria-label={V.aria} data-testid="academy-certifications">
       <div className="mb-2 flex items-center justify-between gap-2">
-        <h2 className="ledger-label">Certifications</h2>
-        <p className="text-[11px] text-muted-foreground">Bronze ≥50% · Silver ≥70% · Gold ≥90% — best attempt kept</p>
+        <h2 className="ledger-label">{V.title}</h2>
+        <p className="text-[11px] text-muted-foreground">{V.tiersNote}</p>
       </div>
       <div className="divide-y divide-border rounded-lg border border-border bg-surface">
         {isLoading || !data
@@ -63,6 +66,8 @@ function CertificationRow({
 }) {
   const hue = hueOf(certification.categoryId);
   const tiered = certification.tier !== "NONE";
+  const { dict } = useI18n();
+  const V = dict.academy.exams;
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
@@ -77,8 +82,11 @@ function CertificationRow({
           <div className="min-w-0">
             <p className="truncate text-sm font-medium text-foreground">{certification.name}</p>
             <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-              {certification.questionPool} questions in pool · {certification.attempts} attempt
-              {certification.attempts === 1 ? "" : "s"}
+              {certification.questionPool}
+              {V.poolSuffix}
+              {certification.attempts}
+              {V.attempt}
+              {certification.attempts === 1 ? "" : V.attemptPlural}
             </p>
           </div>
         </div>
@@ -90,13 +98,16 @@ function CertificationRow({
             )}
             data-testid={`academy-cert-tier-${certification.categoryId}`}
           >
-            {certification.tier === "NONE" ? "not certified" : certification.tier}
+            {certification.tier === "NONE" ? V.notCertified : certification.tier}
           </span>
           {certification.bestPercent !== null ? (
-            <span className="font-mono text-[11px] tabular-nums text-muted-foreground">best {certification.bestPercent}%</span>
+            <span className="font-mono text-[11px] tabular-nums text-muted-foreground">
+              {V.bestPrefix}
+              {certification.bestPercent}%
+            </span>
           ) : null}
           <Button size="sm" variant="outline" onClick={onToggle} data-testid={`academy-cert-toggle-${certification.categoryId}`}>
-            {open ? "Close" : tiered ? "Improve" : "Take exam"}
+            {open ? V.close : tiered ? V.improve : V.takeExam}
           </Button>
         </div>
       </div>
@@ -114,6 +125,9 @@ function ExamRunner({ categoryId }: { categoryId: string }) {
   const submit = useSubmitExam(categoryId);
   const [answers, setAnswers] = React.useState<Record<string, number | boolean | null>>({});
   const [result, setResult] = React.useState<AcademyExamResultResponse | null>(null);
+  const { dict } = useI18n();
+  const V = dict.academy.exams;
+  const S = dict.academy.shared;
 
   const paper = examQuery.data;
   const questions = paper?.questions ?? [];
@@ -133,15 +147,17 @@ function ExamRunner({ categoryId }: { categoryId: string }) {
           <div>
             <p className="flex items-center gap-2 font-heading text-lg font-semibold">
               <Award className={cn("size-5", result.passed ? "text-warning" : "text-muted-foreground")} aria-hidden="true" />
-              {result.score}/{result.total} — {result.tier === "NONE" ? "not yet certified" : `${result.tier} tier`}
+              {result.score}/{result.total} — {result.tier === "NONE" ? V.notYetCertified : `${result.tier}${V.tierSuffix}`}
             </p>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              Best across attempts: {result.bestPercent}% ·{" "}
-              {result.passed ? "certification earned." : "50% unlocks Bronze — review the explanations and retake."}
+              {V.bestAcrossPrefix}
+              {result.bestPercent}
+              {V.bestAcrossMiddle}
+              {result.passed ? V.earned : V.bronzeHint}
             </p>
           </div>
           <Button size="sm" variant="outline" className="gap-1.5" onClick={retake}>
-            Retake (new sample)
+            {V.retakeNewSample}
           </Button>
         </div>
         <ul className="mt-3 max-h-72 space-y-2 overflow-y-auto pr-1">
@@ -153,7 +169,7 @@ function ExamRunner({ categoryId }: { categoryId: string }) {
                   {questions.find((question) => question.id === questionResult.questionId)?.prompt}
                 </p>
                 <span className={cn("stamp shrink-0 text-[10px]", questionResult.correct ? "stamp-win" : "stamp-loss")}>
-                  {questionResult.correct ? "correct" : "missed"}
+                  {questionResult.correct ? S.correct : S.missed}
                 </span>
               </div>
               <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{questionResult.explanation}</p>
@@ -169,7 +185,9 @@ function ExamRunner({ categoryId }: { categoryId: string }) {
   return (
     <div data-testid="academy-exam">
       <p className="ledger-label">
-        Certification exam · {answeredCount}/{questions.length} answered
+        {V.examHeading}
+        {answeredCount}/{questions.length}
+        {V.answeredSuffix}
       </p>
       <ol className="mt-3 max-h-96 space-y-4 overflow-y-auto pr-1">
         {questions.map((question, index) => {
@@ -185,7 +203,7 @@ function ExamRunner({ categoryId }: { categoryId: string }) {
                   <div className="flex gap-2">
                     {[true, false].map((value) => (
                       <ExamChoice key={String(value)} active={given === value} onClick={() => setAnswers((prev) => ({ ...prev, [question.id]: value }))}>
-                        {value ? "True" : "False"}
+                        {value ? S.true : S.false}
                       </ExamChoice>
                     ))}
                   </div>
@@ -234,9 +252,9 @@ function ExamRunner({ categoryId }: { categoryId: string }) {
           data-testid="academy-exam-submit"
         >
           <Sigma className="size-3.5" aria-hidden="true" />
-          Submit exam
+          {V.submitExam}
         </Button>
-        <p className="text-xs text-muted-foreground">Graded on the server — only your best attempt counts.</p>
+        <p className="text-xs text-muted-foreground">{V.gradedServerNote}</p>
       </div>
     </div>
   );

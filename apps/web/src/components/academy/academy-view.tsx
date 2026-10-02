@@ -13,6 +13,7 @@ import { AcademyProgressPanel } from "@/components/academy/academy-progress";
 import { AcademyGlossaryPanel } from "@/components/academy/academy-glossary";
 import { AcademyBookmarksPanel } from "@/components/academy/academy-bookmarks";
 import { useAcademyOverview } from "@/lib/api/queries";
+import { useI18n } from "@/i18n/i18n-provider";
 import { CATEGORY_HUES, tint } from "@/components/academy/academy-shared";
 
 /**
@@ -23,13 +24,14 @@ import { CATEGORY_HUES, tint } from "@/components/academy/academy-shared";
  * entry — the 12 course categories stay inside, never in the main nav.
  */
 
+/** Tab machine ids — labels resolve through dict.academy.view.tabs. */
 const TABS = [
-  { id: "overview", label: "Overview", icon: LayoutDashboard },
-  { id: "courses", label: "Courses", icon: BookOpen },
-  { id: "practice", label: "Practice", icon: Dumbbell },
-  { id: "progress", label: "Progress", icon: Sigma },
-  { id: "glossary", label: "Glossary", icon: Library },
-  { id: "bookmarks", label: "Bookmarks", icon: Bookmark },
+  { id: "overview", icon: LayoutDashboard },
+  { id: "courses", icon: BookOpen },
+  { id: "practice", icon: Dumbbell },
+  { id: "progress", icon: Sigma },
+  { id: "glossary", icon: Library },
+  { id: "bookmarks", icon: Bookmark },
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
@@ -37,6 +39,8 @@ type TabId = (typeof TABS)[number]["id"];
 export function AcademyView() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { dict } = useI18n();
+  const V = dict.academy.view;
 
   const rawTab = searchParams.get("tab") ?? "overview";
   const activeTab: TabId = (TABS.some((tab) => tab.id === rawTab) ? rawTab : "overview") as TabId;
@@ -90,31 +94,30 @@ export function AcademyView() {
             <div>
               <h1 className="flex items-center gap-2 font-heading text-2xl font-bold tracking-tight sm:text-3xl">
                 <GraduationCap className="size-6 text-accent sm:size-7" aria-hidden="true" />
-                Academy
+                {V.title}
               </h1>
-              <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-                Learn → practice → trade → journal → analyze → learn again. The curriculum behind the journal:
-                structured courses, drills, quizzes and a searchable glossary — from market fundamentals to
-                advanced execution.
-              </p>
+              <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{V.subtitle}</p>
             </div>
             {overviewQuery.data ? (
               <div className="flex items-center gap-2">
                 <span
                   className="inline-flex items-center gap-1.5 rounded-md border border-warning/30 bg-warning/10 px-2.5 py-1 text-xs text-warning"
-                  title="Consecutive days with learning activity"
+                  title={V.streakTitle}
                   data-testid="academy-streak"
                 >
                   <Flame className="size-3.5" aria-hidden="true" />
-                  <span className="font-mono font-semibold tabular-nums">{overviewQuery.data.progress.streak.currentDays}d</span>
-                  streak
+                  <span className="font-mono font-semibold tabular-nums">
+                    {overviewQuery.data.progress.streak.currentDays}
+                    {V.streakUnit}
+                  </span>
+                  {V.streak}
                 </span>
                 <span
                   className="inline-flex items-center gap-1.5 rounded-md border border-accent/30 bg-accent/10 px-2.5 py-1 text-xs text-accent"
                   data-testid="academy-overall"
                 >
                   <span className="font-mono font-semibold tabular-nums">{overviewQuery.data.progress.overall.percent}%</span>
-                  overall
+                  {V.overall}
                 </span>
               </div>
             ) : null}
@@ -135,7 +138,7 @@ export function AcademyView() {
         <Tabs value={activeTab} onValueChange={setTab}>
           <div className="overflow-x-auto pb-0.5">
             <TabsList className="h-auto w-full justify-start gap-1 overflow-x-auto rounded-lg border border-border bg-surface p-1 sm:w-fit">
-              {TABS.map(({ id, label, icon: Icon }) => (
+              {TABS.map(({ id, icon: Icon }) => (
                 <TabsTrigger
                   key={id}
                   value={id}
@@ -143,7 +146,7 @@ export function AcademyView() {
                   data-testid={`academy-tab-${id}`}
                 >
                   <Icon className="size-4" aria-hidden="true" />
-                  {label}
+                  {V.tabs[id]}
                 </TabsTrigger>
               ))}
             </TabsList>

@@ -6,6 +6,7 @@ import { AlertTriangle, Check, CircleCheck, Info, Lightbulb, Sigma } from "lucid
 import type { AcademyBlock } from "@cosmoz/shared";
 
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/i18n/i18n-provider";
 import { VisualBlock } from "./visuals";
 
 /**
@@ -14,11 +15,13 @@ import { VisualBlock } from "./visuals";
  * sections, mono annotations, one semantic ink per callout tone.
  */
 
+// Tone → icon/ink only — the fallback labels resolve through
+// dict.academy.blocks.callout (block.title overrides them).
 const CALLOUT_TONES = {
-  info: { icon: Info, className: "text-accent", label: "Note" },
-  tip: { icon: Lightbulb, className: "text-accent", label: "Tip" },
-  warn: { icon: AlertTriangle, className: "text-warning", label: "Watch out" },
-  risk: { icon: AlertTriangle, className: "text-loss", label: "Risk" },
+  info: { icon: Info, className: "text-accent" },
+  tip: { icon: Lightbulb, className: "text-accent" },
+  warn: { icon: AlertTriangle, className: "text-warning" },
+  risk: { icon: AlertTriangle, className: "text-loss" },
 } as const;
 
 export function LessonBlocks({ blocks }: { blocks: AcademyBlock[] }) {
@@ -32,6 +35,8 @@ export function LessonBlocks({ blocks }: { blocks: AcademyBlock[] }) {
 }
 
 export function LessonBlock({ block }: { block: AcademyBlock }) {
+  const { dict } = useI18n();
+  const B = dict.academy.blocks;
   switch (block.kind) {
     case "text":
       return <p className="max-w-3xl text-sm leading-relaxed text-foreground/90">{block.body}</p>;
@@ -46,7 +51,7 @@ export function LessonBlock({ block }: { block: AcademyBlock }) {
         >
           <div className={cn("flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide", tone.className)}>
             <Icon className="size-3.5" aria-hidden="true" />
-            {block.title ?? tone.label}
+            {block.title ?? B.callout[block.tone]}
           </div>
           <p className="mt-1.5 max-w-3xl text-sm leading-relaxed text-foreground/90">{block.body}</p>
         </aside>
@@ -73,8 +78,8 @@ export function LessonBlock({ block }: { block: AcademyBlock }) {
 
     case "objectives":
       return (
-        <section className="rounded-lg border border-accent/30 bg-accent/5 px-4 py-3.5" aria-label="Learning objectives">
-          <p className="ledger-label text-accent">After this lesson, you will be able to</p>
+        <section className="rounded-lg border border-accent/30 bg-accent/5 px-4 py-3.5" aria-label={B.objectivesAria}>
+          <p className="ledger-label text-accent">{B.objectivesTitle}</p>
           <ul className="mt-2 max-w-3xl space-y-1 text-sm leading-relaxed">
             {block.items.map((item, index) => (
               <li key={index} className="flex gap-2">
@@ -88,8 +93,8 @@ export function LessonBlock({ block }: { block: AcademyBlock }) {
 
     case "takeaways":
       return (
-        <section className="rounded-lg border border-border bg-surface-raised px-4 py-3.5" aria-label="Key takeaways">
-          <p className="ledger-label">Key takeaways</p>
+        <section className="rounded-lg border border-border bg-surface-raised px-4 py-3.5" aria-label={B.takeawaysAria}>
+          <p className="ledger-label">{B.takeawaysTitle}</p>
           <ul className="mt-2 max-w-3xl space-y-1 text-sm leading-relaxed">
             {block.items.map((item, index) => (
               <li key={index} className="flex gap-2">
@@ -143,9 +148,9 @@ export function LessonBlock({ block }: { block: AcademyBlock }) {
 
     case "example":
       return (
-        <section className="max-w-3xl rounded-lg border border-border bg-surface px-4 py-3.5" aria-label={`Example: ${block.title}`}>
+        <section className="max-w-3xl rounded-lg border border-border bg-surface px-4 py-3.5" aria-label={`${B.exampleAriaPrefix}${block.title}`}>
           <p className="stamp stamp-accent text-[10px]" style={{ transform: "rotate(-1deg)" }}>
-            Example
+            {B.exampleStamp}
           </p>
           <p className="mt-2 font-heading text-sm font-semibold text-foreground">{block.title}</p>
           <ol className="mt-2 space-y-1.5 pl-1 text-sm leading-relaxed text-foreground/90">

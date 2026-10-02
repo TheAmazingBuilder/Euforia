@@ -37,6 +37,7 @@ import {
   useSubmitQuiz,
   useToggleBookmark,
 } from "@/lib/api/queries";
+import { useI18n } from "@/i18n/i18n-provider";
 
 /**
  * Lesson reader — breadcrumb, the course's concept vignette (the chart the
@@ -58,9 +59,12 @@ export function LessonReader({
   const complete = useCompleteLesson();
   const toggleBookmark = useToggleBookmark();
   const router = useRouter();
+  const { dict } = useI18n();
+  const V = dict.academy.lesson;
+  const S = dict.academy.shared;
   const createNofyNote = useCreateNofyNote({
     onCreated: (note) => {
-      toast.success("Note created in Nofy.");
+      toast.success(V.nofyToast);
       // SPA navigation keeps the MSW store (and this lesson's progress) alive.
       router.push(`/nofy?tab=notes&note=${note.id}`);
     },
@@ -81,9 +85,9 @@ export function LessonReader({
     const cpAfter = Math.max(2, Math.floor(body.length * 0.6));
     const isLast = lesson.position === lesson.lessonCount;
     const entries: { id: string; label: string }[] = [];
-    if (objectives) entries.push({ id: "blk-objectives", label: "Objectives" });
+    if (objectives) entries.push({ id: "blk-objectives", label: V.tocObjectives });
     body.forEach((block, index) => {
-      if (cp && index === cpAfter) entries.push({ id: "blk-checkpoint", label: "Quick check" });
+      if (cp && index === cpAfter) entries.push({ id: "blk-checkpoint", label: V.tocCheckpoint });
       switch (block.kind) {
         case "callout":
           if (block.title) entries.push({ id: `blk-${index}`, label: block.title });
@@ -95,25 +99,25 @@ export function LessonReader({
           entries.push({ id: `blk-${index}`, label: block.title });
           break;
         case "table":
-          entries.push({ id: `blk-${index}`, label: "Reference table" });
+          entries.push({ id: `blk-${index}`, label: V.tocTable });
           break;
         case "candles":
         case "structure":
         case "zones":
         case "risk":
-          entries.push({ id: `blk-${index}`, label: block.caption ?? "Chart reading" });
+          entries.push({ id: `blk-${index}`, label: block.caption ?? V.tocChart });
           break;
         case "takeaways":
-          entries.push({ id: `blk-${index}`, label: "Key takeaways" });
+          entries.push({ id: `blk-${index}`, label: V.tocTakeaways });
           break;
         default:
           break;
       }
     });
-    if (cp && cpAfter >= body.length) entries.push({ id: "blk-checkpoint", label: "Quick check" });
-    if (isLast && lesson.quizId) entries.push({ id: "blk-quiz", label: "Course quiz" });
+    if (cp && cpAfter >= body.length) entries.push({ id: "blk-checkpoint", label: V.tocCheckpoint });
+    if (isLast && lesson.quizId) entries.push({ id: "blk-quiz", label: V.tocQuiz });
     return entries;
-  }, [lesson]);
+  }, [lesson, V]);
 
   if (isLoading) {
     return (
@@ -127,10 +131,10 @@ export function LessonReader({
   if (isError || !lesson) {
     return (
       <div className="rounded-lg border border-dashed border-border px-4 py-10 text-center">
-        <p className="text-sm text-muted-foreground">This lesson could not be loaded.</p>
+        <p className="text-sm text-muted-foreground">{V.loadError}</p>
         <Button size="sm" variant="outline" className="mt-3 gap-1.5" onClick={onBack}>
           <ArrowLeft className="size-3.5" aria-hidden="true" />
-          Back
+          {V.back}
         </Button>
       </div>
     );
@@ -154,7 +158,8 @@ export function LessonReader({
         </button>
         <span aria-hidden="true">/</span>
         <span className="font-mono tabular-nums">
-          Lesson {lesson.position}/{lesson.lessonCount}
+          {V.breadcrumbPrefix}
+          {lesson.position}/{lesson.lessonCount}
         </span>
       </div>
 
@@ -184,16 +189,17 @@ export function LessonReader({
             <p className="mt-2 flex flex-wrap items-center gap-3 font-mono text-[11px] tabular-nums text-muted-foreground">
               <span className="inline-flex items-center gap-1.5">
                 <span aria-hidden="true" className="size-2 rounded-full" style={{ backgroundColor: hue }} />
-                {categoryName ?? "Course"}
+                {categoryName ?? V.categoryFallback}
               </span>
               <span className="inline-flex items-center gap-1">
                 <Clock className="size-3" aria-hidden="true" />
-                {lesson.minutes} min
+                {lesson.minutes}
+                {S.minSuffix}
               </span>
               {lesson.completed ? (
                 <span className="inline-flex items-center gap-1 text-profit">
                   <CircleCheck className="size-3" aria-hidden="true" />
-                  completed
+                  {V.completedChip}
                 </span>
               ) : null}
             </p>
@@ -224,11 +230,11 @@ export function LessonReader({
               }
               disabled={createNofyNote.isPending}
               className="inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"
-              aria-label="Take notes on this lesson in Nofy"
+              aria-label={V.takeNotesAria}
               data-testid="academy-lesson-take-notes"
             >
               <StickyNote className="size-3.5" aria-hidden="true" />
-              Take notes
+              {V.takeNotes}
             </button>
             <button
               type="button"
@@ -242,7 +248,7 @@ export function LessonReader({
               data-testid="academy-lesson-bookmark"
             >
               {bookmarked ? <BookmarkCheck className="size-3.5" aria-hidden="true" /> : <Bookmark className="size-3.5" aria-hidden="true" />}
-              {bookmarked ? "Bookmarked" : "Bookmark"}
+              {bookmarked ? V.bookmarked : V.bookmark}
             </button>
           </div>
         </div>
@@ -289,11 +295,11 @@ export function LessonReader({
             data-testid="academy-lesson-complete"
           >
             <CircleCheck className="size-4" aria-hidden="true" />
-            {lesson.completed ? "Lesson completed" : "Mark lesson complete"}
+            {lesson.completed ? V.lessonCompleted : V.markComplete}
           </Button>
           {lesson.completed ? (
             <Button variant="outline" className="gap-1.5" onClick={() => lesson.nextLessonId && onOpenLesson(lesson.nextLessonId)} disabled={!lesson.nextLessonId}>
-              Next lesson
+              {V.nextLesson}
               <ArrowRight className="size-4" aria-hidden="true" />
             </Button>
           ) : null}
@@ -302,10 +308,10 @@ export function LessonReader({
         <div className="flex items-center justify-between gap-3">
           <Button variant="ghost" size="sm" className="gap-1.5" disabled={!lesson.prevLessonId} onClick={() => lesson.prevLessonId && onOpenLesson(lesson.prevLessonId)}>
             <ArrowLeft className="size-3.5" aria-hidden="true" />
-            Previous
+            {V.previous}
           </Button>
           <Button variant="ghost" size="sm" className="gap-1.5" disabled={!lesson.nextLessonId} onClick={() => lesson.nextLessonId && onOpenLesson(lesson.nextLessonId)}>
-            Next
+            {V.next}
             <ArrowRight className="size-3.5" aria-hidden="true" />
           </Button>
         </div>
@@ -370,6 +376,8 @@ function TocRail({
   title: string;
 }) {
   const [activeId, setActiveId] = React.useState<string>(entries[0]?.id ?? "");
+  const { dict } = useI18n();
+  const V = dict.academy.lesson;
 
   React.useEffect(() => {
     let raf = 0;
@@ -394,11 +402,11 @@ function TocRail({
   }, [entries]);
 
   return (
-    <aside className="hidden xl:block" aria-label="On this page" data-testid="academy-lesson-toc">
+    <aside className="hidden xl:block" aria-label={V.tocAria} data-testid="academy-lesson-toc">
       <nav className="sticky top-20 space-y-0.5 border-l border-border pl-3">
         <p className="flex items-center gap-1.5 pb-1 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
           <ListTree className="size-3" style={{ color: hue }} aria-hidden="true" />
-          On this page
+          {V.tocTitle}
         </p>
         {entries.map((entry) => (
           <a
@@ -420,7 +428,7 @@ function TocRail({
             {entry.label}
           </a>
         ))}
-        <p className="sr-only">Sections of {title}</p>
+        <p className="sr-only">{V.sectionsOfPrefix}{title}</p>
       </nav>
     </aside>
   );
@@ -440,17 +448,20 @@ function CheckpointCard({
   const submit = useSubmitCheckpoint(lessonId);
   const [value, setValue] = React.useState<number | boolean | null>(null);
   const [result, setResult] = React.useState<AcademyCheckpointResult | null>(null);
+  const { dict } = useI18n();
+  const V = dict.academy.lesson;
+  const S = dict.academy.shared;
 
   return (
     <section
       className="rounded-lg border px-4 py-3.5"
       style={{ borderColor: tint(hue, 32), backgroundColor: tint(hue, 5) }}
       data-testid="academy-checkpoint"
-      aria-label="Comprehension checkpoint"
+      aria-label={V.checkpointAria}
     >
       <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide" style={{ color: hue }}>
         <CircleHelp className="size-3.5" aria-hidden="true" />
-        Quick check — do you have it?
+        {V.checkpointTitle}
       </p>
       <p className="mt-2 max-w-3xl text-sm font-medium leading-snug">{question.prompt}</p>
 
@@ -458,7 +469,7 @@ function CheckpointCard({
         <div className="mt-2.5 flex items-start justify-between gap-3">
           <p className="max-w-3xl text-xs leading-relaxed text-muted-foreground">{result.explanation}</p>
           <span className={cn("stamp shrink-0 text-[10px]", result.correct ? "stamp-win" : "stamp-loss")} style={{ transform: "rotate(-1deg)" }}>
-            {result.correct ? "correct" : "missed"}
+            {result.correct ? S.correct : S.missed}
           </span>
         </div>
       ) : (
@@ -467,7 +478,7 @@ function CheckpointCard({
             <div className="flex max-w-md gap-2">
               {[true, false].map((option) => (
                 <QuizChoice key={String(option)} active={value === option} onClick={() => setValue(option)}>
-                  {option ? "True" : "False"}
+                  {option ? S.true : S.false}
                 </QuizChoice>
               ))}
             </div>
@@ -505,7 +516,7 @@ function CheckpointCard({
               data-testid="academy-checkpoint-submit"
             >
               <Sigma className="size-3.5" aria-hidden="true" />
-              Check answer
+              {V.checkAnswer}
             </Button>
           </div>
         </div>
@@ -522,6 +533,9 @@ function NotesPanel({ lessonId, note }: { lessonId: string; note: AcademyLessonN
   const [text, setText] = React.useState(note?.text ?? "");
   const [savedAt, setSavedAt] = React.useState<string | null>(note?.updatedAt ?? null);
   const timer = React.useRef<number | null>(null);
+  const { dict } = useI18n();
+  const V = dict.academy.lesson;
+  const S = dict.academy.shared;
   // Local edits win: while a keystroke is pending save, an incoming server
   // note (query cache refresh) must not clobber the textarea.
   const dirtyRef = React.useRef(false);
@@ -559,7 +573,7 @@ function NotesPanel({ lessonId, note }: { lessonId: string; note: AcademyLessonN
   };
 
   return (
-    <section className="rounded-lg border border-border bg-surface px-4 py-3.5" aria-label="Your notes" data-testid="academy-lesson-notes">
+    <section className="rounded-lg border border-border bg-surface px-4 py-3.5" aria-label={V.notesAria} data-testid="academy-lesson-notes">
       <div className="flex items-center justify-between gap-3">
         <button
           type="button"
@@ -569,14 +583,14 @@ function NotesPanel({ lessonId, note }: { lessonId: string; note: AcademyLessonN
           data-testid="academy-lesson-notes-toggle"
         >
           <StickyNote className="size-4 text-accent" aria-hidden="true" />
-          Your notes
+          {V.notesTitle}
         </button>
         <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground" aria-live="polite">
           {save.isPending
-            ? "Saving…"
+            ? S.saving
             : savedAt
-              ? `Saved ${new Date(savedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
-              : "Autosaves as you type"}
+              ? `${V.savedPrefix}${new Date(savedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
+              : V.autosaves}
         </p>
       </div>
       {open ? (
@@ -584,9 +598,9 @@ function NotesPanel({ lessonId, note }: { lessonId: string; note: AcademyLessonN
           value={text}
           onChange={(event) => onChange(event.target.value)}
           rows={3}
-          placeholder="What clicked? What do you want to remember before the quiz — or before your next session?"
+          placeholder={V.notesPlaceholder}
           className="mt-2.5 w-full resize-y rounded-md border border-border bg-background px-3 py-2 text-sm leading-relaxed outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          aria-label="Lesson notes"
+          aria-label={V.notesInputAria}
           data-testid="academy-lesson-notes-input"
         />
       ) : null}
@@ -598,31 +612,31 @@ function NotesPanel({ lessonId, note }: { lessonId: string; note: AcademyLessonN
 
 function InlineQuizTeaser({ quizId, onBack }: { quizId: string; onBack: () => void }) {
   const [open, setOpen] = React.useState(false);
+  const { dict } = useI18n();
+  const V = dict.academy.lesson;
   if (!open) {
     return (
       <section className="flex flex-col items-start justify-between gap-3 rounded-lg border border-accent/30 bg-accent/5 px-4 py-3.5 sm:flex-row sm:items-center">
         <div>
           <p className="flex items-center gap-1.5 text-sm font-medium">
             <ListChecks className="size-4 text-accent" aria-hidden="true" />
-            Course quiz available
+            {V.quizAvailable}
           </p>
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            A few questions with explanations — graded server-side, only your best score is kept.
-          </p>
+          <p className="mt-0.5 text-xs text-muted-foreground">{V.quizAvailableDesc}</p>
         </div>
         <Button size="sm" onClick={() => setOpen(true)} data-testid="academy-quiz-open">
-          Start quiz
+          {V.startQuiz}
         </Button>
       </section>
     );
   }
   return (
-    <section className="rounded-lg border border-border bg-surface px-4 py-4" aria-label="Course quiz">
+    <section className="rounded-lg border border-border bg-surface px-4 py-4" aria-label={dict.academy.courses.quizAria}>
       <CourseQuiz quizId={quizId} onDone={() => setOpen(false)} />
       <div className="mt-3 border-t border-border pt-3">
         <Button size="sm" variant="ghost" className="gap-1.5" onClick={onBack}>
           <ArrowLeft className="size-3.5" aria-hidden="true" />
-          Back to course
+          {V.backToCourse}
         </Button>
       </div>
     </section>
@@ -632,6 +646,9 @@ function InlineQuizTeaser({ quizId, onBack }: { quizId: string; onBack: () => vo
 export function CourseQuiz({ quizId, onDone }: { quizId: string; onDone?: () => void }) {
   const quizQuery = useAcademyQuiz(quizId);
   const submit = useSubmitQuiz(quizId);
+  const { dict } = useI18n();
+  const V = dict.academy.lesson;
+  const S = dict.academy.shared;
   // Answers start empty as soon as the quiz loads — no effect needed.
   const [answers, setAnswers] = React.useState<Record<string, number | boolean | null>>({});
   const [result, setResult] = React.useState<AcademyQuizResultResponse | null>(null);
@@ -651,24 +668,25 @@ export function CourseQuiz({ quizId, onDone }: { quizId: string; onDone?: () => 
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="font-heading text-lg font-semibold">
-              {result.score}/{result.total} correct
+              {result.score}/{result.total}
+              {V.correctSuffix}
             </p>
             <p className="text-xs text-muted-foreground">
               {result.passed
-                ? "Perfect score — the concept is yours."
+                ? V.passed
                 : result.previousBest !== null
-                  ? `Previous best: ${result.previousBest}/${result.total}. Only the best score is kept.`
-                  : "Review the explanations, then retake — only the best score is kept."}
+                  ? `${V.previousBestPrefix}${result.previousBest}/${result.total}${V.previousBestSuffix}`
+                  : V.failedHint}
             </p>
           </div>
           <div className="flex gap-2">
             <Button size="sm" variant="outline" className="gap-1.5" onClick={retake}>
               <RotateCcw className="size-3.5" aria-hidden="true" />
-              Retake
+              {V.retake}
             </Button>
             {onDone ? (
               <Button size="sm" variant="ghost" onClick={onDone}>
-                Close
+                {V.close}
               </Button>
             ) : null}
           </div>
@@ -684,7 +702,7 @@ export function CourseQuiz({ quizId, onDone }: { quizId: string; onDone?: () => 
                     {question?.prompt}
                   </p>
                   <span className={questionResult.correct ? "stamp stamp-win shrink-0 text-[10px]" : "stamp stamp-loss shrink-0 text-[10px]"} style={{ transform: "rotate(-1deg)" }}>
-                    {questionResult.correct ? "correct" : "missed"}
+                    {questionResult.correct ? S.correct : S.missed}
                   </span>
                 </div>
                 <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">{questionResult.explanation}</p>
@@ -701,7 +719,10 @@ export function CourseQuiz({ quizId, onDone }: { quizId: string; onDone?: () => 
   return (
     <div data-testid="academy-quiz">
       <p className="ledger-label">
-        {quiz.courseTitle} — quiz · {answeredCount}/{quiz.questions.length} answered
+        {quiz.courseTitle}
+        {V.quizHeadingSuffix}
+        {answeredCount}/{quiz.questions.length}
+        {V.answeredSuffix}
       </p>
               <ol className="mt-3 space-y-5">
         {quiz.questions.map((question, index) => {
@@ -717,7 +738,7 @@ export function CourseQuiz({ quizId, onDone }: { quizId: string; onDone?: () => 
                   <div className="flex gap-2">
                     {[true, false].map((value) => (
                       <QuizChoice key={String(value)} active={given === value} onClick={() => setAnswers((prev) => ({ ...prev, [question.id]: value }))}>
-                        {value ? "True" : "False"}
+                        {value ? S.true : S.false}
                       </QuizChoice>
                     ))}
                   </div>
@@ -766,9 +787,9 @@ export function CourseQuiz({ quizId, onDone }: { quizId: string; onDone?: () => 
           data-testid="academy-quiz-submit"
         >
           <Sigma className="size-3.5" aria-hidden="true" />
-          Submit answers
+          {V.submitAnswers}
         </Button>
-        <p className="text-xs text-muted-foreground">Graded on the server — answers never leave the engine ungraded.</p>
+        <p className="text-xs text-muted-foreground">{V.gradedServerNote}</p>
       </div>
     </div>
   );

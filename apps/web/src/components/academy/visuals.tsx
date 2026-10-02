@@ -5,6 +5,7 @@ import * as React from "react";
 import type { AcademyCandle } from "@cosmoz/shared";
 
 import { useInViewOnce, usePrefersReducedMotion } from "@/components/academy/academy-shared";
+import { useI18n } from "@/i18n/i18n-provider";
 
 /**
  * Academy visual registry — data-driven SVG diagrams for lesson blocks.
@@ -44,6 +45,7 @@ type CandleRenderProps = {
 
 /** Renders a normalized candle series. Bullish = bull ink, bearish = bear ink. */
 export function CandleSeries({ candles, width = 300, height = 180, labels, className, bullInk, bearInk }: CandleRenderProps) {
+  const { dict } = useI18n();
   const BULL = bullInk ?? "var(--candle-bull, var(--profit))";
   const BEAR = bearInk ?? "var(--candle-bear, var(--loss))";
   const pad = 14;
@@ -61,7 +63,7 @@ export function CandleSeries({ candles, width = 300, height = 180, labels, class
     <svg
       viewBox={`0 0 ${width} ${height}`}
       role="img"
-      aria-label="Candlestick diagram"
+      aria-label={dict.academy.visuals.candlestickAria}
       className={className}
       style={{ width: "100%", height: "auto", maxWidth: width }}
     >
@@ -117,6 +119,7 @@ export function CandleSeries({ candles, width = 300, height = 180, labels, class
 
 /** Single candle with OHLC callout — the anatomy diagram. */
 function AnatomyCandle({ bearish }: { bearish: boolean }) {
+  const { dict } = useI18n();
   // Fixed geometry: one candle + four labels (abstract units).
   const o = bearish ? 42 : 30;
   const cl = bearish ? 30 : 42;
@@ -132,7 +135,7 @@ function AnatomyCandle({ bearish }: { bearish: boolean }) {
   ];
 
   return (
-    <svg viewBox="0 0 260 150" role="img" aria-label="Candle anatomy" style={{ width: "100%", height: "auto", maxWidth: 260 }}>
+    <svg viewBox="0 0 260 150" role="img" aria-label={dict.academy.visuals.anatomyAria} style={{ width: "100%", height: "auto", maxWidth: 260 }}>
       <line x1={130} x2={130} y1={toY(h)} y2={toY(l)} style={{ stroke: INK, strokeWidth: 1.6 }} />
       <rect
         x={112}
@@ -186,11 +189,12 @@ const CANDLE_VARIANTS: Record<string, { candles: AcademyCandle[]; labels?: strin
 };
 
 export function CandleDiagram({ variant, caption }: { variant: string; caption?: string }) {
+  const { dict } = useI18n();
   if (variant === "anatomy-bull") {
-    return <Figure caption={caption ?? "Bullish candle — close above open. The lower wick marks rejected lows."}><AnatomyCandle bearish={false} /></Figure>;
+    return <Figure caption={caption ?? dict.academy.visuals.anatomyBullCaption}><AnatomyCandle bearish={false} /></Figure>;
   }
   if (variant === "anatomy-bear") {
-    return <Figure caption={caption ?? "Bearish candle — close below open. The upper wick marks rejected highs."}><AnatomyCandle bearish /></Figure>;
+    return <Figure caption={caption ?? dict.academy.visuals.anatomyBearCaption}><AnatomyCandle bearish /></Figure>;
   }
   const spec = CANDLE_VARIANTS[variant];
   if (!spec) return null;
@@ -340,9 +344,10 @@ function StructureDiagramSvg({ spec }: { spec: StructureSpec }) {
   const px = (x: number) => (x / 100) * W;
   const py = (y: number) => (y / 100) * H;
   const path = spec.points.map(([x, y], index) => `${index === 0 ? "M" : "L"} ${px(x)} ${py(y)}`).join(" ");
+  const { dict } = useI18n();
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Market structure diagram" style={{ width: "100%", height: "auto", maxWidth: 380 }}>
+    <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={dict.academy.visuals.structureAria} style={{ width: "100%", height: "auto", maxWidth: 380 }}>
       {[0.33, 0.66].map((t) => (
         <line key={t} x1={8} x2={W - 8} y1={H * t} y2={H * t} style={{ stroke: BORDER, strokeWidth: 0.5, strokeDasharray: "3 4" }} />
       ))}
@@ -392,6 +397,7 @@ export function StructureFigure({ variant, caption }: { variant: string; caption
 // ── Zones & risk diagrams ────────────────────────────────────────────────────
 
 export function ZonesFigure({ variant, caption }: { variant: string; caption?: string }) {
+  const { dict } = useI18n();
   const spec: StructureSpec =
     variant === "support-resistance"
       ? {
@@ -403,7 +409,7 @@ export function ZonesFigure({ variant, caption }: { variant: string; caption?: s
           zones: [{ y1: 24, y2: 36, tone: "loss" }, { y1: 56, y2: 68, tone: "profit" }],
         };
   return (
-    <Figure caption={caption ?? "Zones, not lines — width is part of the level. Reaction is expected at the band's edge."}>
+    <Figure caption={caption ?? dict.academy.visuals.zonesCaption}>
       <StructureDiagramSvg spec={spec} />
     </Figure>
   );
@@ -411,13 +417,14 @@ export function ZonesFigure({ variant, caption }: { variant: string; caption?: s
 
 function DrawdownFigure() {
   // Equity curve rising, then drawing down, then partial recovery.
+  const { dict } = useI18n();
   const path = "M 8 40 L 40 26 L 66 34 L 96 18 L 128 44 L 160 62 L 192 70 L 224 52 L 252 44 L 286 30";
   const peakX = 96;
   const peakY = 18;
   const troughX = 192;
   const troughY = 70;
   return (
-    <svg viewBox="0 0 300 150" role="img" aria-label="Drawdown diagram" style={{ width: "100%", height: "auto", maxWidth: 380 }}>
+    <svg viewBox="0 0 300 150" role="img" aria-label={dict.academy.visuals.drawdownAria} style={{ width: "100%", height: "auto", maxWidth: 380 }}>
       <line x1={8} x2={292} y1={peakY} y2={peakY} style={{ stroke: PROFIT, strokeWidth: 0.8, strokeDasharray: "5 4" }} />
       <line x1={8} x2={292} y1={troughY} y2={troughY} style={{ stroke: LOSS, strokeWidth: 0.8, strokeDasharray: "5 4" }} />
       <rect x={peakX} y={peakY} width={troughX - peakX} height={troughY - peakY} style={{ fill: LOSS, opacity: 0.1 }} />
@@ -437,8 +444,9 @@ function DrawdownFigure() {
 
 function RiskRewardFigure() {
   // Entry line, stop below, target above — asymmetric bars.
+  const { dict } = useI18n();
   return (
-    <svg viewBox="0 0 300 150" role="img" aria-label="Risk/reward diagram" style={{ width: "100%", height: "auto", maxWidth: 380 }}>
+    <svg viewBox="0 0 300 150" role="img" aria-label={dict.academy.visuals.riskRewardAria} style={{ width: "100%", height: "auto", maxWidth: 380 }}>
       <rect x={40} y={70} width={220} height={8} style={{ fill: MUTED, opacity: 0.25 }} />
       <text x={266} y={79} style={{ fill: MUTED, fontSize: 10, fontFamily: "var(--font-mono)" }}>
         entry

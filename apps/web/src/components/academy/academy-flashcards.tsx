@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { hueOf, tint } from "@/components/academy/academy-shared";
 import { useAcademyFlashcards, useAcademyScenarios, useLogPractice, useReviewFlashcard } from "@/lib/api/queries";
+import { useI18n } from "@/i18n/i18n-provider";
 
 /**
  * Daily review + decision training:
@@ -27,6 +28,8 @@ export function Flashcards() {
   const [flipped, setFlipped] = React.useState(false);
   const [graded, setGraded] = React.useState<string | null>(null);
   const [sessionDone, setSessionDone] = React.useState(false);
+  const { dict } = useI18n();
+  const V = dict.academy.flashcards;
 
   const data = query.data;
   const card: AcademyFlashcard | undefined = data?.due[index];
@@ -51,34 +54,36 @@ export function Flashcards() {
   };
 
   return (
-    <section aria-label="Flashcard review" className="rounded-lg border bg-surface px-4 py-4 sm:px-5" data-testid="academy-flashcards">
+    <section aria-label={V.aria} className="rounded-lg border bg-surface px-4 py-4 sm:px-5" data-testid="academy-flashcards">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="flex items-center gap-2 font-heading text-base font-semibold">
           <Brain className="size-4 text-accent" aria-hidden="true" />
-          Daily review — flashcards
+          {V.title}
         </h2>
         {data ? (
           <span className="font-mono text-[11px] tabular-nums text-muted-foreground" data-testid="academy-flashcards-counter">
-            {sessionDone ? "session complete" : `${Math.min(index + 1, data.due.length)}/${data.due.length}`}
-            {data.dueCount > data.due.length ? ` · ${data.dueCount} due today` : ""}
+            {sessionDone ? V.sessionComplete : `${Math.min(index + 1, data.due.length)}/${data.due.length}`}
+            {data.dueCount > data.due.length ? `${V.dueTodayPrefix}${data.dueCount}${V.dueTodaySuffix}` : ""}
           </span>
         ) : null}
       </div>
-      <p className="mt-1 text-xs text-muted-foreground">
-        Spaced repetition over the glossary and every lesson takeaway — ten cards a day keeps recall honest.
-      </p>
+      <p className="mt-1 text-xs text-muted-foreground">{V.desc}</p>
 
       {query.isLoading || !data ? (
         <Skeleton className="mt-3 h-44 w-full rounded-md" />
       ) : data.due.length === 0 ? (
         <div className="mt-3 rounded-md border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
-          Nothing due right now — the deck is clear. Come back tomorrow.
+          {V.deckEmpty}
         </div>
       ) : sessionDone ? (
         <div className="mt-3 flex flex-col items-center gap-2 rounded-md border border-profit/40 bg-profit/5 px-4 py-6 text-center">
           <CheckCircle2 className="size-6 text-profit" aria-hidden="true" />
-          <p className="text-sm font-medium">Session complete — {data.due.length} cards graded.</p>
-          <p className="text-xs text-muted-foreground">Cards you marked AGAIN return tomorrow; GOOD and EASY drift further out.</p>
+          <p className="text-sm font-medium">
+            {V.sessionDonePrefix}
+            {data.due.length}
+            {V.sessionDoneSuffix}
+          </p>
+          <p className="text-xs text-muted-foreground">{V.sessionDoneDesc}</p>
         </div>
       ) : card ? (
         <>
@@ -86,7 +91,7 @@ export function Flashcards() {
             type="button"
             onClick={() => setFlipped((prev) => !prev)}
             className="mt-3 flex min-h-44 w-full flex-col items-start justify-between rounded-md border border-border bg-surface-raised px-4 py-4 text-left transition-colors hover:bg-muted"
-            aria-label={flipped ? "Show front of card" : "Reveal answer"}
+            aria-label={flipped ? V.showFrontAria : V.revealAria}
             data-testid="academy-flashcard"
           >
             <span className="flex w-full items-center justify-between gap-2">
@@ -98,30 +103,30 @@ export function Flashcards() {
                   borderColor: tint(hueOf(card.categoryId), 28),
                 }}
               >
-                {card.kind === "TERM" ? "Term" : "Takeaway"} · {card.source}
+                {card.kind === "TERM" ? V.kindTerm : V.kindTakeaway} · {card.source}
               </span>
               {card.extra ? (
                 <span className="inline-flex items-center gap-1 font-mono text-[9px] uppercase tracking-wider text-muted-foreground">
                   <Sparkles className="size-3" aria-hidden="true" />
-                  free practice
+                  {V.freePractice}
                 </span>
               ) : null}
             </span>
             <span className="mt-3 block w-full">
               {flipped ? (
                 <>
-                  <span className="ledger-label">Answer</span>
+                  <span className="ledger-label">{V.answer}</span>
                   <span className="mt-1.5 block text-sm leading-relaxed text-foreground" data-testid="academy-flashcard-back">
                     {card.back}
                   </span>
                 </>
               ) : (
                 <>
-                  <span className="ledger-label">Prompt</span>
+                  <span className="ledger-label">{V.prompt}</span>
                   <span className="mt-1.5 block font-heading text-lg font-semibold text-foreground" data-testid="academy-flashcard-front">
                     {card.front}
                   </span>
-                  <span className="mt-2 block text-xs text-muted-foreground">Tap to reveal — recall first, then check.</span>
+                  <span className="mt-2 block text-xs text-muted-foreground">{V.tapToReveal}</span>
                 </>
               )}
             </span>
@@ -130,11 +135,11 @@ export function Flashcards() {
           <div className="mt-3 grid grid-cols-3 gap-2">
             {(
               [
-                ["AGAIN", "Again", "border-loss/50 bg-loss/10 text-loss hover:bg-loss/15"],
-                ["GOOD", "Good", "border-border bg-surface text-foreground hover:bg-muted"],
-                ["EASY", "Easy", "border-profit/50 bg-profit/10 text-profit hover:bg-profit/15"],
+                ["AGAIN", "border-loss/50 bg-loss/10 text-loss hover:bg-loss/15"],
+                ["GOOD", "border-border bg-surface text-foreground hover:bg-muted"],
+                ["EASY", "border-profit/50 bg-profit/10 text-profit hover:bg-profit/15"],
               ] as const
-            ).map(([value, label, className]) => (
+            ).map(([value, className]) => (
               <button
                 key={value}
                 type="button"
@@ -147,11 +152,11 @@ export function Flashcards() {
                 )}
                 data-testid={`academy-flashcard-${value.toLowerCase()}`}
               >
-                {label}
+                {V.grades[value]}
               </button>
             ))}
           </div>
-          {!flipped ? <p className="mt-2 text-center text-[11px] text-muted-foreground">Grade buttons unlock after you reveal the answer.</p> : null}
+          {!flipped ? <p className="mt-2 text-center text-[11px] text-muted-foreground">{V.gradesHint}</p> : null}
         </>
       ) : null}
     </section>
@@ -167,6 +172,8 @@ export function ScenarioPlayer() {
   const [stepIndex, setStepIndex] = React.useState(0);
   const [choice, setChoice] = React.useState<string | null>(null);
   const [score, setScore] = React.useState(0);
+  const { dict } = useI18n();
+  const V = dict.academy.scenario;
 
   const scenarios = query.data?.scenarios ?? [];
   const scenario: AcademyScenario | undefined = scenarios.find((entry) => entry.id === scenarioId);
@@ -189,14 +196,12 @@ export function ScenarioPlayer() {
   };
 
   return (
-    <section aria-label="Scenario player" className="rounded-lg border bg-surface px-4 py-4 sm:px-5" data-testid="academy-scenarios">
+    <section aria-label={V.aria} className="rounded-lg border bg-surface px-4 py-4 sm:px-5" data-testid="academy-scenarios">
       <h2 className="flex items-center gap-2 font-heading text-base font-semibold">
         <Layers className="size-4 text-cat-strategies" aria-hidden="true" />
-        Scenario player — what would you do?
+        {V.title}
       </h2>
-      <p className="mt-1 text-xs text-muted-foreground">
-        Step inside a market situation and choose the professional action. Every step gives feedback; every decision is logged.
-      </p>
+      <p className="mt-1 text-xs text-muted-foreground">{V.desc}</p>
 
       {query.isLoading ? <Skeleton className="mt-3 h-40 w-full rounded-md" /> : null}
 
@@ -215,7 +220,8 @@ export function ScenarioPlayer() {
                   <span className="block truncate text-xs text-muted-foreground">{entry.context}</span>
                 </span>
                 <span className="shrink-0 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-                  {entry.steps.length} steps
+                  {entry.steps.length}
+                  {V.stepsSuffix}
                 </span>
               </button>
             </li>
@@ -224,21 +230,20 @@ export function ScenarioPlayer() {
       ) : finished ? (
         <div className="mt-3 flex flex-col items-center gap-2 rounded-md border border-border bg-surface-raised px-4 py-6 text-center">
           <p className="font-heading text-lg font-semibold">
-            {score}/{scenario.steps.length} aligned with the professional read
+            {score}/{scenario.steps.length}
+            {V.alignedSuffix}
           </p>
-          <p className="max-w-md text-xs leading-relaxed text-muted-foreground">
-            Alignment, not perfection — every step traded the same edge: pattern + context + location + structure + confirmation + risk.
-          </p>
+          <p className="max-w-md text-xs leading-relaxed text-muted-foreground">{V.alignmentNote}</p>
           <Button size="sm" variant="outline" className="mt-1 gap-1.5" onClick={() => setScenarioId(null)} data-testid="academy-scenario-back">
             <RotateCcw className="size-3.5" aria-hidden="true" />
-            Back to scenarios
+            {V.backToScenarios}
           </Button>
         </div>
       ) : step ? (
         <div className="mt-3">
           <div className="flex items-center justify-between gap-2">
             <p className="ledger-label">
-              {scenario.title} · step <span className="tabular-nums">{stepIndex + 1}</span>/
+              {scenario.title} · {V.stepWord}{" "}<span className="tabular-nums">{stepIndex + 1}</span>/
               <span className="tabular-nums">{scenario.steps.length}</span>
             </p>
             <button
@@ -246,7 +251,7 @@ export function ScenarioPlayer() {
               onClick={() => setScenarioId(null)}
               className="text-xs text-muted-foreground transition-colors hover:text-foreground"
             >
-              exit
+              {V.exit}
             </button>
           </div>
           <p className="mt-2 rounded-md border border-border bg-surface-raised px-3.5 py-3 text-sm leading-relaxed" data-testid="academy-scenario-narrative">
@@ -294,7 +299,7 @@ export function ScenarioPlayer() {
                 }}
                 data-testid="academy-scenario-next"
               >
-                {stepIndex + 1 >= scenario.steps.length ? "See result" : "Next step"}
+                {stepIndex + 1 >= scenario.steps.length ? V.seeResult : V.nextStep}
               </Button>
             </div>
           ) : null}

@@ -10,6 +10,7 @@ import { CandleSeries, StructureFigure } from "@/components/academy/visuals";
 import { Flashcards, ScenarioPlayer } from "@/components/academy/academy-flashcards";
 import { PositionSizingDrill, SrDrill, ZoneDrill } from "@/components/academy/academy-practice-drills";
 import { useAcademyPatternDrill, useAcademyPracticeStats, useLogPractice } from "@/lib/api/queries";
+import { useI18n } from "@/i18n/i18n-provider";
 
 /**
  * Practice zone — six ways to train recognition, not prediction:
@@ -49,29 +50,33 @@ export function AcademyPracticePanel() {
 
 function PracticeStats() {
   const { data } = useAcademyPracticeStats();
+  const { dict } = useI18n();
+  const V = dict.academy.practice;
   if (!data) return null;
   const used = data.perDrill.filter((row) => row.attempts > 0);
   return (
-    <section aria-label="Practice ledger" className="rounded-lg border bg-surface px-4 py-3.5" data-testid="academy-practice-stats">
+    <section aria-label={V.ledgerAria} className="rounded-lg border bg-surface px-4 py-3.5" data-testid="academy-practice-stats">
       <div className="flex items-center justify-between gap-2">
         <h2 className="flex items-center gap-2 font-heading text-sm font-semibold">
           <Dumbbell className="size-4 text-accent" aria-hidden="true" />
-          Practice ledger
+          {V.ledgerTitle}
         </h2>
         {data.recent.length > 0 ? (
-          <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">last {data.recent.length} attempts</span>
+          <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+            {V.lastAttemptsPrefix}
+            {data.recent.length}
+            {V.lastAttemptsSuffix}
+          </span>
         ) : null}
       </div>
       {used.length === 0 ? (
-        <p className="mt-1.5 text-xs text-muted-foreground">
-          No attempts yet — your per-drill accuracy will build here as you train.
-        </p>
+        <p className="mt-1.5 text-xs text-muted-foreground">{V.ledgerEmpty}</p>
       ) : (
         <div className="mt-2.5 flex flex-wrap gap-1.5">
           {used.map((row) => (
             <span
               key={row.drill}
-              title={`${row.correct}/${row.attempts} correct`}
+              title={`${row.correct}/${row.attempts}${V.correctTitleSuffix}`}
               className={cn(
                 "inline-flex items-center gap-1.5 rounded-sm border px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider",
                 (row.accuracy ?? 0) >= 70 && "border-profit/40 bg-profit/10 text-profit",
@@ -108,43 +113,49 @@ function PracticeStats() {
  * pattern is the geometry and its location — never the color.
  */
 const INK_PALETTES = [
-  { id: "classic", label: "Classic" },
-  { id: "inverse", label: "Inverse" },
-  { id: "ocean", label: "Ocean" },
-  { id: "violet", label: "Violet" },
-  { id: "mono", label: "Mono" },
+  { id: "classic" },
+  { id: "inverse" },
+  { id: "ocean" },
+  { id: "violet" },
+  { id: "mono" },
 ] as const;
 
+// Palette machine ids — labels resolve through dict.academy.practice.inkPalettes.
 type InkPaletteId = (typeof INK_PALETTES)[number]["id"];
 
 const INK_STORAGE_KEY = "cosmoz:candle-ink";
 
 function CandleInkPicker({ value, onChange }: { value: InkPaletteId; onChange: (id: InkPaletteId) => void }) {
+  const { dict } = useI18n();
+  const V = dict.academy.practice;
   return (
     <div className="flex items-center gap-2" data-testid="academy-ink-picker">
-      <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Candle ink</span>
-      <div role="radiogroup" aria-label="Candle ink palette" className="flex items-center gap-1">
-        {INK_PALETTES.map((palette) => (
-          <button
-            key={palette.id}
-            type="button"
-            role="radio"
-            aria-checked={value === palette.id}
-            aria-label={`${palette.label} candle colors`}
-            title={`${palette.label} — same patterns, different inks`}
-            onClick={() => onChange(palette.id)}
-            data-candle-ink={palette.id}
-            data-testid={`academy-ink-${palette.id}`}
-            className={cn(
-              "flex items-center gap-0.5 rounded-full border px-1.5 py-1 transition-colors",
-              value === palette.id ? "border-accent bg-accent/10" : "border-border bg-surface hover:bg-muted",
-            )}
-          >
-            {/* Swatch dots resolve the palette's own CSS variables locally. */}
-            <span aria-hidden="true" className="size-2.5 rounded-full border border-foreground/15" style={{ background: "var(--candle-bull)" }} />
-            <span aria-hidden="true" className="size-2.5 rounded-full border border-foreground/15" style={{ background: "var(--candle-bear)" }} />
-          </button>
-        ))}
+      <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">{V.inkLabel}</span>
+      <div role="radiogroup" aria-label={V.inkAria} className="flex items-center gap-1">
+        {INK_PALETTES.map((palette) => {
+          const label = V.inkPalettes[palette.id];
+          return (
+            <button
+              key={palette.id}
+              type="button"
+              role="radio"
+              aria-checked={value === palette.id}
+              aria-label={`${label}${V.inkColorsSuffix}`}
+              title={`${label}${V.inkTitleSuffix}`}
+              onClick={() => onChange(palette.id)}
+              data-candle-ink={palette.id}
+              data-testid={`academy-ink-${palette.id}`}
+              className={cn(
+                "flex items-center gap-0.5 rounded-full border px-1.5 py-1 transition-colors",
+                value === palette.id ? "border-accent bg-accent/10" : "border-border bg-surface hover:bg-muted",
+              )}
+            >
+              {/* Swatch dots resolve the palette's own CSS variables locally. */}
+              <span aria-hidden="true" className="size-2.5 rounded-full border border-foreground/15" style={{ background: "var(--candle-bull)" }} />
+              <span aria-hidden="true" className="size-2.5 rounded-full border border-foreground/15" style={{ background: "var(--candle-bear)" }} />
+            </button>
+          );
+        })}
       </div>
     </div>
   );
@@ -155,6 +166,8 @@ function PatternDrill() {
   const logPractice = useLogPractice();
   const [choice, setChoice] = React.useState<number | null>(null);
   const [round, setRound] = React.useState(0);
+  const { dict } = useI18n();
+  const V = dict.academy.practice;
   const [ink, setInk] = React.useState<InkPaletteId>(() => {
     if (typeof window === "undefined") return "classic";
     try {
@@ -192,18 +205,20 @@ function PatternDrill() {
     : "";
 
   return (
-    <section aria-label="Identify the pattern" className="rounded-lg border bg-surface px-4 py-4 sm:px-5">
+    <section aria-label={V.patternAria} className="rounded-lg border bg-surface px-4 py-4 sm:px-5">
       <div className="flex items-center justify-between gap-2">
         <h2 className="flex items-center gap-2 font-heading text-base font-semibold">
           <Shuffle className="size-4 text-accent" aria-hidden="true" />
-          Identify the pattern
+          {V.patternTitle}
         </h2>
         <span className="font-mono text-[11px] text-muted-foreground">
-          round <span className="tabular-nums">{round + 1}</span>
+          {V.roundPrefix}
+          <span className="tabular-nums">{round + 1}</span>
         </span>
       </div>
       <p className="mt-1 text-xs text-muted-foreground">
-        A formation is drawn below. Name it — then read the explanation. {drill?.context ? `Context: ${drill.context}` : ""}
+        {V.patternIntro}
+        {drill?.context ? `${V.contextPrefix}${drill.context}` : ""}
       </p>
 
       {drillQuery.isLoading || !drill ? (
@@ -237,10 +252,10 @@ function PatternDrill() {
             <CandleSeries candles={drill.candles} width={280} height={170} />
           </div>
           <p className="mt-1.5 text-center text-[11px] text-muted-foreground" data-testid="academy-ink-hint">
-            Same anatomy, different ink — in some markets red means &ldquo;up&rdquo;. Read the pattern, not the palette.
+            {V.inkHint}
           </p>
 
-          <div className="mt-4 grid gap-2 sm:grid-cols-2" role="radiogroup" aria-label="Pattern options" data-testid="academy-drill-options">
+          <div className="mt-4 grid gap-2 sm:grid-cols-2" role="radiogroup" aria-label={V.optionsAria} data-testid="academy-drill-options">
             {drill.options.map((option, index) => {
               const isCorrect = index === drill.answer;
               const state = !answered ? "idle" : isCorrect ? "correct" : index === choice ? "wrong" : "dim";
@@ -280,12 +295,12 @@ function PatternDrill() {
                   choice === drill.answer ? "border-profit/40 bg-profit/5" : "border-loss/40 bg-loss/5",
                 )}
               >
-                <p className="font-medium">{choice === drill.answer ? "Correct." : "Not this one."}</p>
+                <p className="font-medium">{choice === drill.answer ? V.correct : V.notThisOne}</p>
                 <p className="mt-1 text-foreground/85">{drill.explanation}</p>
               </aside>
               <Button size="sm" variant="outline" className="gap-1.5" onClick={nextDrill} data-testid="academy-drill-next">
                 <RotateCcw className="size-3.5" aria-hidden="true" />
-                Next drill
+                {V.nextDrill}
               </Button>
             </div>
           ) : null}
@@ -301,6 +316,8 @@ type Ohlc = { o: number; h: number; l: number; c: number };
 
 function CandleLab() {
   const [ohlc, setOhlc] = React.useState<Ohlc>({ o: 30, h: 42, l: 20, c: 38 });
+  const { dict } = useI18n();
+  const V = dict.academy.practice;
 
   const set = (key: keyof Ohlc) => (value: number) => {
     setOhlc((prev) => {
@@ -318,21 +335,19 @@ function CandleLab() {
   const lowerWick = Math.min(ohlc.o, ohlc.c) - ohlc.l;
 
   const read = [
-    { label: "Direction", value: bullish ? "Bullish — close above open" : "Bearish — close below open" },
-    { label: "Body", value: bodySize < 3 ? "Small — balance between sides" : bodySize > 8 ? "Large — one side dominated" : "Medium" },
-    { label: "Upper wick", value: upperWick > 6 ? "Long — highs rejected" : upperWick < 2 ? "None meaningful" : "Short" },
-    { label: "Lower wick", value: lowerWick > 6 ? "Long — lows rejected, buyers stepped in" : lowerWick < 2 ? "None meaningful" : "Short" },
+    { label: V.readDirection, value: bullish ? V.bullDir : V.bearDir },
+    { label: V.readBody, value: bodySize < 3 ? V.bodySmall : bodySize > 8 ? V.bodyLarge : V.bodyMedium },
+    { label: V.readUpperWick, value: upperWick > 6 ? V.wickLongHighs : upperWick < 2 ? V.wickNone : V.wickShort },
+    { label: V.readLowerWick, value: lowerWick > 6 ? V.wickLongLows : lowerWick < 2 ? V.wickNone : V.wickShort },
   ];
 
   return (
-    <section aria-label="Candle lab" className="rounded-lg border bg-surface px-4 py-4 sm:px-5">
+    <section aria-label={V.labAria} className="rounded-lg border bg-surface px-4 py-4 sm:px-5">
       <h2 className="flex items-center gap-2 font-heading text-base font-semibold">
         <Dumbbell className="size-4 text-accent" aria-hidden="true" />
-        Candle Lab
+        {V.labTitle}
       </h2>
-      <p className="mt-1 text-xs text-muted-foreground">
-        Drag open, high, low and close — watch the candle rebuild and read what it says. The anatomy every pattern assumes.
-      </p>
+      <p className="mt-1 text-xs text-muted-foreground">{V.labDesc}</p>
 
       <div className="chart-paper mx-auto mt-3 max-w-[240px] rounded-md border border-border px-3 py-3">
         <CandleSeries candles={[ohlc]} width={200} height={160} />
@@ -341,10 +356,10 @@ function CandleLab() {
       <div className="mt-4 grid grid-cols-2 gap-3">
         {(
           [
-            ["Open", ohlc.o, "o"],
-            ["High", ohlc.h, "h"],
-            ["Low", ohlc.l, "l"],
-            ["Close", ohlc.c, "c"],
+            [V.ohlc.open, ohlc.o, "o"],
+            [V.ohlc.high, ohlc.h, "h"],
+            [V.ohlc.low, ohlc.l, "l"],
+            [V.ohlc.close, ohlc.c, "c"],
           ] as [string, number, keyof Ohlc][]
         ).map(([label, value, key]) => (
           <label key={key} className="block">
@@ -360,7 +375,7 @@ function CandleLab() {
               value={value}
               onChange={(event) => set(key)(Number(event.target.value))}
               className="mt-1 w-full accent-[var(--accent)]"
-              aria-label={`${label} price`}
+              aria-label={`${label}${V.priceSuffix}`}
               data-testid={`academy-lab-${key}`}
             />
           </label>
@@ -381,118 +396,55 @@ function CandleLab() {
 
 // ── 3. Structure reading drill ──────────────────────────────────────────────
 
-type StructureScenario = {
-  variant: string;
-  context: string;
-  prompt: string;
-  options: { label: string; correct: boolean }[];
-  explanation: string;
-};
+// Scenario machine ids — the content (context/prompt/options/explanation)
+// resolves through dict.academy.practice.scenarios; the variant id doubles
+// as the StructureFigure geometry key and stays API-stable.
+const STRUCTURE_VARIANTS = ["uptrend", "bos-up", "choch", "range", "liquidity-sweep", "double-top"] as const;
 
-const STRUCTURE_SCENARIOS: StructureScenario[] = [
-  {
-    variant: "uptrend",
-    context: "Daily timeframe, no news scheduled.",
-    prompt: "What state is this market in?",
-    options: [
-      { label: "Uptrend — repeating HH/HL sequence", correct: true },
-      { label: "Downtrend", correct: false },
-      { label: "Range — no directional progression", correct: false },
-    ],
-    explanation:
-      "Higher highs and higher lows repeating: an uptrend by definition. Trend tactics apply — pullback entries, not fades.",
-  },
-  {
-    variant: "bos-up",
-    context: "Within an established uptrend.",
-    prompt: "The highlighted event is best labeled…",
-    options: [
-      { label: "BOS — break of structure, continuation", correct: true },
-      { label: "CHoCH — change of character", correct: false },
-      { label: "Liquidity sweep", correct: false },
-    ],
-    explanation:
-      "A decisive close above the prior swing high IN the trend's direction is a break of structure — a continuation event, not a reversal warning.",
-  },
-  {
-    variant: "choch",
-    context: "After a long series of HH/HL.",
-    prompt: "Price just closed below the last higher low. This event is…",
-    options: [
-      { label: "CHoCH — first warning of a possible reversal", correct: true },
-      { label: "A confirmed downtrend — go short at market", correct: false },
-      { label: " meaningless noise", correct: false },
-    ],
-    explanation:
-      "First counter-trend structural break = change of character. It is a warning, not a confirmed reversal — the MSS (LH then LL) is the confirmation stage.",
-  },
-  {
-    variant: "range",
-    context: "Two levels tested repeatedly over weeks.",
-    prompt: "The highest-expectation tactics here are…",
-    options: [
-      { label: "Fade the extremes toward the middle", correct: true },
-      { label: "Chase mid-range breakouts", correct: false },
-      { label: "Trend-follow the middle", correct: false },
-    ],
-    explanation:
-      "In ranges, extremes carry the information; mid-range breakouts die. Range tactics and trend tactics are not interchangeable.",
-  },
-  {
-    variant: "liquidity-sweep",
-    context: "Equal lows, then a quick pierce and sharp reversal.",
-    prompt: "What did the pierce below the equal lows most plausibly do?",
-    options: [
-      { label: "Swept resting sell-stops, then reversed", correct: true },
-      { label: "Confirmed a breakdown", correct: false },
-      { label: "Nothing — it is a data error", correct: false },
-    ],
-    explanation:
-      "The observable sequence — pierce beyond obvious lows, fast reversal — is the classic sweep. Trade the reversal sequence with a stop beyond the sweep extreme.",
-  },
-  {
-    variant: "double-top",
-    context: "Two peaks at the same supply area.",
-    prompt: "When is this formation actually complete?",
-    options: [
-      { label: "On the decisive neckline (pullback low) break", correct: true },
-      { label: "When the second peak prints", correct: false },
-      { label: "Three candles after the first peak", correct: false },
-    ],
-    explanation:
-      "Until the neckline breaks, it is only a range. The break is the event; before it, shorting the 'top' is anticipation.",
-  },
-];
+const SCENARIO_KEY = {
+  "uptrend": "uptrend",
+  "bos-up": "bosUp",
+  choch: "choch",
+  range: "range",
+  "liquidity-sweep": "liquiditySweep",
+  "double-top": "doubleTop",
+} as const;
 
 function StructureDrill() {
   const logPractice = useLogPractice();
-  const [index, setIndex] = React.useState(() => Math.floor(Math.random() * STRUCTURE_SCENARIOS.length));
+  const [index, setIndex] = React.useState(() => Math.floor(Math.random() * STRUCTURE_VARIANTS.length));
   const [choice, setChoice] = React.useState<number | null>(null);
+  const { dict } = useI18n();
+  const V = dict.academy.practice;
 
-  const scenario = STRUCTURE_SCENARIOS[index];
+  const scenario = V.scenarios[SCENARIO_KEY[STRUCTURE_VARIANTS[index]]];
   const answered = choice !== null;
 
   const next = () => {
     setChoice(null);
-    setIndex((prev) => (prev + 1 + Math.floor(Math.random() * (STRUCTURE_SCENARIOS.length - 1))) % STRUCTURE_SCENARIOS.length);
+    setIndex((prev) => (prev + 1 + Math.floor(Math.random() * (STRUCTURE_VARIANTS.length - 1))) % STRUCTURE_VARIANTS.length);
   };
 
   return (
-    <section aria-label="Structure reading drill" className="rounded-lg border bg-surface px-4 py-4 sm:px-5">
+    <section aria-label={V.structureAria} className="rounded-lg border bg-surface px-4 py-4 sm:px-5">
       <h2 className="flex items-center gap-2 font-heading text-base font-semibold">
         <Dumbbell className="size-4 text-accent" aria-hidden="true" />
-        Structure reading
+        {V.structureTitle}
       </h2>
-      <p className="mt-1 text-xs text-muted-foreground">Read the diagram, answer, get the reason. Context: {scenario.context}</p>
+      <p className="mt-1 text-xs text-muted-foreground">
+        {V.structureIntro}
+        {scenario.context}
+      </p>
 
       <div className="mt-3">
-        <StructureFigure variant={scenario.variant} />
+        <StructureFigure variant={STRUCTURE_VARIANTS[index]} />
       </div>
 
       <p className="mt-1 text-sm font-medium">{scenario.prompt}</p>
       <div className="mt-2 space-y-1.5">
-        {scenario.options.map((option, optionIndex) => {
-          const state = !answered ? "idle" : option.correct ? "correct" : optionIndex === choice ? "wrong" : "dim";
+        {[scenario.opt1, scenario.opt2, scenario.opt3].map((label, optionIndex) => {
+          const correct = optionIndex === 0;
+          const state = !answered ? "idle" : correct ? "correct" : optionIndex === choice ? "wrong" : "dim";
           return (
             <button
               key={optionIndex}
@@ -500,7 +452,7 @@ function StructureDrill() {
               disabled={answered}
               onClick={() => {
                 setChoice(optionIndex);
-                logPractice.mutate({ drill: "STRUCTURE", correct: option.correct });
+                logPractice.mutate({ drill: "STRUCTURE", correct });
               }}
               className={cn(
                 "flex w-full items-center justify-between gap-2 rounded-md border px-3 py-2 text-left text-sm transition-colors",
@@ -511,7 +463,7 @@ function StructureDrill() {
               )}
               data-testid={`academy-structure-option-${optionIndex}`}
             >
-              {option.label}
+              {label}
               {state === "correct" ? <CircleCheck className="size-4 shrink-0 text-profit" aria-hidden="true" /> : null}
               {state === "wrong" ? <X className="size-4 shrink-0 text-loss" aria-hidden="true" /> : null}
             </button>
@@ -523,7 +475,7 @@ function StructureDrill() {
         <div className="mt-3 space-y-3">
           <p className="rounded-md border border-border bg-surface-raised px-3 py-2.5 text-xs leading-relaxed text-foreground/90">{scenario.explanation}</p>
           <Button size="sm" variant="outline" className="gap-1.5" onClick={next}>
-            Next scenario
+            {V.nextScenario}
             <ArrowRight className="size-3.5" aria-hidden="true" />
           </Button>
         </div>

@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { HueLetter, hueOf, tint } from "@/components/academy/academy-shared";
 import { useAcademyGlossary, useAcademySearch, useToggleBookmark } from "@/lib/api/queries";
+import { useI18n } from "@/i18n/i18n-provider";
 
 /**
  * Glossary panel — the searchable vocabulary (spec §19, §31). Server-side
@@ -29,6 +30,8 @@ export function AcademyGlossaryPanel({ initialTerm }: { initialTerm: string | nu
   }, [input]);
 
   const { data, isLoading } = useAcademyGlossary(query);
+  const { dict } = useI18n();
+  const V = dict.academy.glossary;
 
   // Deep-linked term: fetch it even when it does not match the query.
   const { data: search } = useAcademySearch(initialTerm ?? "");
@@ -46,9 +49,9 @@ export function AcademyGlossaryPanel({ initialTerm }: { initialTerm: string | nu
         <Input
           value={input}
           onChange={(event) => setInput(event.target.value)}
-          placeholder="Search the vocabulary — term, definition or related concept…"
+          placeholder={V.searchPlaceholder}
           className="pl-9 pr-8"
-          aria-label="Search the glossary"
+          aria-label={V.searchAria}
           data-testid="academy-glossary-search"
         />
         {input ? (
@@ -56,7 +59,7 @@ export function AcademyGlossaryPanel({ initialTerm }: { initialTerm: string | nu
             type="button"
             onClick={() => setInput("")}
             className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-            aria-label="Clear glossary search"
+            aria-label={V.clearSearch}
           >
             <X className="size-4" />
           </button>
@@ -64,8 +67,9 @@ export function AcademyGlossaryPanel({ initialTerm }: { initialTerm: string | nu
       </div>
 
       <p className="text-xs text-muted-foreground">
-        <span className="font-mono tabular-nums">{data?.total ?? "…"}</span> terms · layered definitions: simple first, professional second. The
-        letter tile carries the track color the term belongs to.
+        <span className="font-mono tabular-nums">{data?.total ?? "…"}</span>
+        {V.termsSuffix}
+        {V.layeredNote}
       </p>
 
       {linkedTerm ? (
@@ -82,7 +86,9 @@ export function AcademyGlossaryPanel({ initialTerm }: { initialTerm: string | nu
         </div>
       ) : terms.length === 0 ? (
         <div className="rounded-lg border border-dashed border-border px-4 py-10 text-center text-sm text-muted-foreground">
-          No term matches “{query}”. Try a broader word — or the Courses search, which also covers lessons.
+          {V.emptyPrefix}
+          {query}
+          {V.emptySuffix}
         </div>
       ) : (
         <ul className="divide-y divide-border rounded-lg border border-border bg-surface" data-testid="academy-glossary-list">
@@ -113,6 +119,8 @@ function GlossaryEntry({
   const [bookmarked, setBookmarked] = React.useState(false);
   const isOpen = defaultOpen || open || expanded;
   const hue = hueOf(term.categoryId);
+  const { dict } = useI18n();
+  const V = dict.academy.glossary;
 
   return (
     <div className={cn("px-4 py-3", isOpen && "bg-surface-raised/40")}>
@@ -140,7 +148,7 @@ function GlossaryEntry({
             setBookmarked((prev) => !prev);
           }}
           aria-pressed={bookmarked}
-          aria-label={bookmarked ? `Remove bookmark for ${term.term}` : `Bookmark ${term.term}`}
+          aria-label={bookmarked ? `${V.removeBookmarkPrefix}${term.term}` : `${V.bookmarkPrefix}${term.term}`}
           className={cn("shrink-0", bookmarked ? "text-accent" : "text-muted-foreground hover:text-foreground")}
         >
           {bookmarked ? <BookmarkCheck className="size-4" aria-hidden="true" /> : <Bookmark className="size-4" aria-hidden="true" />}
@@ -150,16 +158,16 @@ function GlossaryEntry({
       {isOpen ? (
         <dl className="mt-2.5 space-y-2 border-t border-border pt-2.5 text-sm leading-relaxed">
           <div>
-            <dt className="ledger-label">Simple</dt>
+            <dt className="ledger-label">{V.simple}</dt>
             <dd className="mt-0.5 text-foreground/90">{term.simple}</dd>
           </div>
           <div>
-            <dt className="ledger-label">Professional</dt>
+            <dt className="ledger-label">{V.professional}</dt>
             <dd className="mt-0.5 text-foreground/90">{term.professional}</dd>
           </div>
           {term.example ? (
             <div>
-              <dt className="ledger-label">Example</dt>
+              <dt className="ledger-label">{V.example}</dt>
               <dd
                 className="mt-1 rounded-md border px-2.5 py-1.5 font-mono text-xs tabular-nums text-foreground/85"
                 style={{ borderColor: tint(hue, 25), backgroundColor: tint(hue, 6) }}
@@ -170,7 +178,7 @@ function GlossaryEntry({
           ) : null}
           {term.related.length > 0 ? (
             <div>
-              <dt className="ledger-label">Related</dt>
+              <dt className="ledger-label">{V.related}</dt>
               <dd className="mt-1 flex flex-wrap gap-1.5">
                 {term.related.map((related) => (
                   <span key={related} className="rounded-sm border border-border px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">

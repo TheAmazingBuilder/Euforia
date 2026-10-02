@@ -20,6 +20,7 @@ import {
 import type { AcademyLevel } from "@cosmoz/shared";
 
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/i18n/i18n-provider";
 
 /**
  * Shared Academy primitives — category icon registry, category identity hues,
@@ -74,13 +75,9 @@ export function CategoryIcon({ icon, className }: { icon: string; className?: st
   return <Icon className={cn("size-4", className)} aria-hidden="true" />;
 }
 
-const LEVEL_LABELS: Record<AcademyLevel, string> = {
-  BEGINNER: "Beginner",
-  INTERMEDIATE: "Intermediate",
-  ADVANCED: "Advanced",
-};
-
+/** Level machine ids — labels resolve through dict.academy.shared.levels. */
 export function LevelBadge({ level, className }: { level: AcademyLevel; className?: string }) {
+  const { dict } = useI18n();
   return (
     <span
       className={cn(
@@ -91,7 +88,7 @@ export function LevelBadge({ level, className }: { level: AcademyLevel; classNam
         className,
       )}
     >
-      {LEVEL_LABELS[level]}
+      {dict.academy.shared.levels[level]}
     </span>
   );
 }
@@ -112,6 +109,7 @@ export function ProgressBar({
   hue?: string;
 }) {
   const clamped = Math.max(0, Math.min(100, percent));
+  const { dict } = useI18n();
   return (
     <div
       className={cn("flex items-center gap-2", className)}
@@ -119,7 +117,7 @@ export function ProgressBar({
       aria-valuenow={clamped}
       aria-valuemin={0}
       aria-valuemax={100}
-      aria-label={label ?? "Progress"}
+      aria-label={label ?? dict.academy.shared.progressAria}
     >
       <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
         <div

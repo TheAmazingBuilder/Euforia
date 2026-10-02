@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { useAcademyPositionDrill, useAcademySrDrill, useAcademyZoneDrill, useLogPractice } from "@/lib/api/queries";
+import { useI18n } from "@/i18n/i18n-provider";
 
 /**
  * Engine-generated drills — support/resistance reading, position sizing
@@ -47,12 +48,13 @@ function CandleChart({
   answered?: { demandTags: string[] } | null;
 }) {
   const { pad, slot, bodyWidth, yOf, width: w } = candleGeometry(candles, width, height);
+  const { dict } = useI18n();
 
   return (
     <svg
       viewBox={`0 0 ${width} ${height}`}
       role="img"
-      aria-label="Drill chart"
+      aria-label={dict.academy.drills.chartAria}
       style={{ width: "100%", height: "auto", maxWidth: width }}
     >
       {[0.25, 0.5, 0.75].map((t) => (
@@ -208,6 +210,8 @@ export function SrDrill() {
   const logPractice = useLogPractice();
   const [choice, setChoice] = React.useState<number | null>(null);
   const [round, setRound] = React.useState(0);
+  const { dict } = useI18n();
+  const V = dict.academy.drills;
   const drill = drillQuery.data;
   const answered = choice !== null && drill !== null;
 
@@ -218,12 +222,12 @@ export function SrDrill() {
   };
 
   return (
-    <section aria-label="Support and resistance drill" className="rounded-lg border bg-surface px-4 py-4 sm:px-5" data-testid="academy-sr-drill">
+    <section aria-label={V.srAria} className="rounded-lg border bg-surface px-4 py-4 sm:px-5" data-testid="academy-sr-drill">
       <h2 className="flex items-center gap-2 font-heading text-base font-semibold">
         <Ruler className="size-4 text-cat-ta" aria-hidden="true" />
-        Support / Resistance
+        {V.srTitle}
       </h2>
-      <p className="mt-1 text-xs text-muted-foreground">Read what the level is doing — the reaction tells you which side it serves.</p>
+      <p className="mt-1 text-xs text-muted-foreground">{V.srDesc}</p>
 
       {drillQuery.isLoading || !drill ? (
         <Skeleton className="mt-3 h-48 w-full rounded-md" />
@@ -246,10 +250,13 @@ export function SrDrill() {
           {answered ? (
             <>
               <DrillExplanation correct={choice === drill.answer} text={drill.explanation} />
-              <DrillNextButton onNext={next} label="Next level" />
+              <DrillNextButton onNext={next} label={V.nextLevel} />
             </>
           ) : null}
-          <p className="mt-2 text-right font-mono text-[10px] text-muted-foreground">round {round + 1}</p>
+          <p className="mt-2 text-right font-mono text-[10px] text-muted-foreground">
+            {V.roundPrefix}
+            {round + 1}
+          </p>
         </>
       )}
     </section>
@@ -264,6 +271,8 @@ export function PositionSizingDrill() {
   const [input, setInput] = React.useState("");
   const [result, setResult] = React.useState<{ correct: boolean; explanation: string } | null>(null);
   const [round, setRound] = React.useState(0);
+  const { dict } = useI18n();
+  const V = dict.academy.drills;
   const drill = drillQuery.data;
 
   const next = () => {
@@ -283,12 +292,12 @@ export function PositionSizingDrill() {
   };
 
   return (
-    <section aria-label="Position sizing drill" className="rounded-lg border bg-surface px-4 py-4 sm:px-5" data-testid="academy-position-drill">
+    <section aria-label={V.positionAria} className="rounded-lg border bg-surface px-4 py-4 sm:px-5" data-testid="academy-position-drill">
       <h2 className="flex items-center gap-2 font-heading text-base font-semibold">
         <Ruler className="size-4 text-cat-risk" aria-hidden="true" />
-        Position sizing
+        {V.positionTitle}
       </h2>
-      <p className="mt-1 text-xs text-muted-foreground">Risk arithmetic until it is reflex — the only formula that keeps accounts alive.</p>
+      <p className="mt-1 text-xs text-muted-foreground">{V.positionDesc}</p>
 
       {drillQuery.isLoading || !drill ? (
         <Skeleton className="mt-3 h-28 w-full rounded-md" />
@@ -306,13 +315,13 @@ export function PositionSizingDrill() {
               }}
               disabled={result !== null}
               className="w-36 rounded-md border border-border bg-background px-3 py-1.5 font-mono text-sm tabular-nums outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60"
-              aria-label="Position size"
+              aria-label={V.positionInputAria}
               placeholder={drill.unit}
               data-testid="academy-position-input"
             />
             {result === null ? (
               <Button size="sm" variant="outline" onClick={submit} disabled={input === ""} data-testid="academy-position-submit">
-                Check
+                {V.check}
               </Button>
             ) : null}
           </div>
@@ -326,13 +335,16 @@ export function PositionSizingDrill() {
                 data-testid="academy-position-verdict"
               >
                 {result.correct ? <CheckCircle2 className="size-3.5" aria-hidden="true" /> : <X className="size-3.5" aria-hidden="true" />}
-                {result.correct ? "within budget" : "outside budget"}
+                {result.correct ? V.withinBudget : V.outsideBudget}
               </p>
               <DrillExplanation correct={result.correct} text={result.explanation} />
-              <DrillNextButton onNext={next} label="Next scenario" />
+              <DrillNextButton onNext={next} label={V.nextScenario} />
             </>
           ) : null}
-          <p className="mt-2 text-right font-mono text-[10px] text-muted-foreground">round {round + 1}</p>
+          <p className="mt-2 text-right font-mono text-[10px] text-muted-foreground">
+            {V.roundPrefix}
+            {round + 1}
+          </p>
         </>
       )}
     </section>
@@ -346,6 +358,8 @@ export function ZoneDrill() {
   const logPractice = useLogPractice();
   const [choice, setChoice] = React.useState<number | null>(null);
   const [round, setRound] = React.useState(0);
+  const { dict } = useI18n();
+  const V = dict.academy.drills;
   const drill = drillQuery.data;
   const answered = choice !== null && drill !== null;
 
@@ -356,12 +370,12 @@ export function ZoneDrill() {
   };
 
   return (
-    <section aria-label="Supply and demand drill" className="rounded-lg border bg-surface px-4 py-4 sm:px-5" data-testid="academy-zone-drill">
+    <section aria-label={V.zoneAria} className="rounded-lg border bg-surface px-4 py-4 sm:px-5" data-testid="academy-zone-drill">
       <h2 className="flex items-center gap-2 font-heading text-base font-semibold">
         <Layers className="size-4 text-cat-pa" aria-hidden="true" />
-        Supply / Demand
+        {V.zoneTitle}
       </h2>
-      <p className="mt-1 text-xs text-muted-foreground">Two bands, one origin of displacement. Find where buyers built their zone.</p>
+      <p className="mt-1 text-xs text-muted-foreground">{V.zoneDesc}</p>
 
       {drillQuery.isLoading || !drill ? (
         <Skeleton className="mt-3 h-48 w-full rounded-md" />
@@ -392,10 +406,13 @@ export function ZoneDrill() {
           {answered ? (
             <>
               <DrillExplanation correct={choice === drill.answer} text={drill.explanation} />
-              <DrillNextButton onNext={next} label="Next chart" />
+              <DrillNextButton onNext={next} label={V.nextChart} />
             </>
           ) : null}
-          <p className="mt-2 text-right font-mono text-[10px] text-muted-foreground">round {round + 1}</p>
+          <p className="mt-2 text-right font-mono text-[10px] text-muted-foreground">
+            {V.roundPrefix}
+            {round + 1}
+          </p>
         </>
       )}
     </section>

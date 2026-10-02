@@ -35,6 +35,7 @@ import {
   useAcademyOverview,
   useAcademySuggestions,
 } from "@/lib/api/queries";
+import { useI18n } from "@/i18n/i18n-provider";
 
 /**
  * Academy Overview — the learning dashboard: where you left off, the numbers
@@ -57,6 +58,8 @@ export function AcademyOverviewPanel({
 }) {
   const { data: overview } = useAcademyOverview();
   const { data: bookmarks } = useAcademyBookmarks();
+  const { dict } = useI18n();
+  const V = dict.academy.overview;
 
   if (!overview) return <OverviewSkeleton />;
 
@@ -65,18 +68,18 @@ export function AcademyOverviewPanel({
       <ContinueLearning data={overview} onOpenLesson={onOpenLesson} onOpenCourse={onOpenCourse} />
 
       {/* Stat band — one ruled strip, ledger style, hue-tinted identity chips */}
-      <section aria-label="Your progress">
-        <AcademySectionTitle className="mb-2">Your progress</AcademySectionTitle>
+      <section aria-label={V.progressAria}>
+        <AcademySectionTitle className="mb-2">{V.progressTitle}</AcademySectionTitle>
         <div className="stat-strip" data-testid="academy-stats">
           <div className="stat-cell stat-hero">
-            <p className="ledger-label">Overall progress</p>
+            <p className="ledger-label">{V.overallProgress}</p>
             <div className="mt-3 flex items-center gap-5">
               <div className="min-w-0 flex-1">
-                <ProgressBar percent={overview.progress.overall.percent} testid="academy-progress-overall" label="Overall progress" />
+                <ProgressBar percent={overview.progress.overall.percent} testid="academy-progress-overall" label={V.overallProgress} />
                 <p className="mt-2 text-xs text-muted-foreground">
-                  <span className="font-mono tabular-nums">{overview.progress.overall.completedLessons}</span> of{" "}
-                  <span className="font-mono tabular-nums">{overview.progress.overall.lessonCount}</span> lessons across{" "}
-                  <span className="font-mono tabular-nums">{overview.progress.courseCount}</span> courses
+                  <span className="font-mono tabular-nums">{overview.progress.overall.completedLessons}</span> {V.of}{" "}
+                  <span className="font-mono tabular-nums">{overview.progress.overall.lessonCount}</span> {V.lessonsWord} {V.across}{" "}
+                  <span className="font-mono tabular-nums">{overview.progress.courseCount}</span> {V.coursesWord}
                 </p>
               </div>
               <ProgressRing
@@ -92,21 +95,21 @@ export function AcademyOverviewPanel({
           </div>
           <div className="stat-cell stat-hero">
             <div className="flex items-start justify-between gap-3">
-              <p className="ledger-label">Learning streak</p>
+              <p className="ledger-label">{V.streakLabel}</p>
               <HueChip hue="var(--warning)" icon={Flame} />
             </div>
             <p className="mt-2 flex items-baseline gap-1.5 font-mono text-3xl font-semibold tabular-nums">
               {overview.progress.streak.currentDays}
-              <span className="text-sm font-normal text-muted-foreground">days</span>
+              <span className="text-sm font-normal text-muted-foreground">{V.days}</span>
             </p>
             <p className="mt-2 text-xs text-muted-foreground">
-              Longest <span className="font-mono tabular-nums">{overview.progress.streak.longestDays}</span> ·{" "}
-              {overview.progress.streak.activeToday ? "Active today — the loop continues." : "No activity yet today."}
+              {V.longest}{" "}<span className="font-mono tabular-nums">{overview.progress.streak.longestDays}</span> ·{" "}
+              {overview.progress.streak.activeToday ? V.activeToday : V.noActivityToday}
             </p>
           </div>
           <div className="stat-cell stat-kpi">
             <div className="flex items-start justify-between gap-2">
-              <p className="ledger-label">Courses completed</p>
+              <p className="ledger-label">{V.coursesCompleted}</p>
               <HueChip hue="var(--cat-ta)" icon={BookOpen} />
             </div>
             <p className="mt-1.5 font-mono text-xl font-semibold tabular-nums" data-testid="academy-stat-courses">
@@ -115,7 +118,7 @@ export function AcademyOverviewPanel({
           </div>
           <div className="stat-cell stat-kpi">
             <div className="flex items-start justify-between gap-2">
-              <p className="ledger-label">Lessons completed</p>
+              <p className="ledger-label">{V.lessonsCompleted}</p>
               <HueChip hue="var(--profit)" icon={CircleCheck} />
             </div>
             <p className="mt-1.5 font-mono text-xl font-semibold tabular-nums" data-testid="academy-stat-lessons">
@@ -124,7 +127,7 @@ export function AcademyOverviewPanel({
           </div>
           <div className="stat-cell stat-kpi">
             <div className="flex items-start justify-between gap-2">
-              <p className="ledger-label">Quiz average</p>
+              <p className="ledger-label">{V.quizAverage}</p>
               <HueChip hue="var(--cat-pa)" icon={Trophy} />
             </div>
             <p className="mt-1.5 font-mono text-xl font-semibold tabular-nums" data-testid="academy-stat-quiz">
@@ -133,7 +136,7 @@ export function AcademyOverviewPanel({
           </div>
           <div className="stat-cell stat-kpi">
             <div className="flex items-start justify-between gap-2">
-              <p className="ledger-label">Drill accuracy</p>
+              <p className="ledger-label">{V.drillAccuracy}</p>
               <HueChip hue="var(--cat-patterns)" icon={Dumbbell} />
             </div>
             <p className="mt-1.5 font-mono text-xl font-semibold tabular-nums" data-testid="academy-stat-practice">
@@ -150,8 +153,8 @@ export function AcademyOverviewPanel({
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Recommendations */}
-        <section aria-label="Recommended for you">
-          <AcademySectionTitle className="mb-2">Recommended for you</AcademySectionTitle>
+        <section aria-label={V.recommendedAria}>
+          <AcademySectionTitle className="mb-2">{V.recommendedTitle}</AcademySectionTitle>
           <ul className="divide-y divide-border rounded-lg border border-border bg-surface" data-testid="academy-recommendations">
             {overview.recommendations.map((rec) => {
               const hue = hueOf(rec.categoryId);
@@ -173,19 +176,17 @@ export function AcademyOverviewPanel({
               );
             })}
             {overview.recommendations.length === 0 ? (
-              <li className="px-4 py-3 text-sm text-muted-foreground">
-                Every course completed — the curriculum salutes you. Revisit drills to stay sharp.
-              </li>
+              <li className="px-4 py-3 text-sm text-muted-foreground">{V.recommendationsEmpty}</li>
             ) : null}
           </ul>
         </section>
 
         {/* Recent activity */}
-        <section aria-label="Recently completed">
-          <AcademySectionTitle className="mb-2">Recently completed</AcademySectionTitle>
+        <section aria-label={V.recentAria}>
+          <AcademySectionTitle className="mb-2">{V.recentTitle}</AcademySectionTitle>
           {overview.recent.length === 0 ? (
             <div className="rounded-lg border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
-              Nothing yet — finish your first lesson and it will land here.
+              {V.recentEmpty}
             </div>
           ) : (
             <ul className="divide-y divide-border rounded-lg border border-border bg-surface" data-testid="academy-recent">
@@ -211,15 +212,15 @@ export function AcademyOverviewPanel({
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Bookmarks */}
-        <section aria-label="My bookmarks">
+        <section aria-label={V.bookmarksAria}>
           <div className="mb-2 flex items-center justify-between gap-2">
-            <AcademySectionTitle>My bookmarks</AcademySectionTitle>
+            <AcademySectionTitle>{V.bookmarksTitle}</AcademySectionTitle>
             {bookmarks && bookmarks.bookmarks.length > 0 ? (
               <Link
                 href="/academy?tab=bookmarks"
                 className="text-xs font-medium text-accent transition-colors hover:text-accent-hover"
               >
-                View all
+                {V.viewAll}
               </Link>
             ) : null}
           </div>
@@ -246,14 +247,14 @@ export function AcademyOverviewPanel({
             </ul>
           ) : (
             <div className="rounded-lg border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
-              Bookmark lessons and glossary terms with the star button — they will wait here.
+              {V.bookmarksEmpty}
             </div>
           )}
         </section>
 
         {/* Quick destinations */}
-        <section aria-label="Practice and glossary">
-          <AcademySectionTitle className="mb-2">Keep the loop turning</AcademySectionTitle>
+        <section aria-label={V.quickAria}>
+          <AcademySectionTitle className="mb-2">{V.quickTitle}</AcademySectionTitle>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <button
               type="button"
@@ -262,8 +263,8 @@ export function AcademyOverviewPanel({
             >
               <HueChip hue="var(--cat-patterns)" icon={Dumbbell} />
               <span>
-                <span className="block text-sm font-medium">Practice drills</span>
-                <span className="block text-xs text-muted-foreground">Pattern identification & the candle lab</span>
+                <span className="block text-sm font-medium">{V.practiceDrills}</span>
+                <span className="block text-xs text-muted-foreground">{V.practiceDrillsDesc}</span>
               </span>
             </button>
             <button
@@ -273,8 +274,8 @@ export function AcademyOverviewPanel({
             >
               <HueChip hue="var(--cat-fund)" icon={Library} />
               <span>
-                <span className="block text-sm font-medium">Glossary</span>
-                <span className="block text-xs text-muted-foreground">Searchable trading vocabulary</span>
+                <span className="block text-sm font-medium">{V.glossaryCard}</span>
+                <span className="block text-xs text-muted-foreground">{V.glossaryCardDesc}</span>
               </span>
             </button>
           </div>
@@ -297,21 +298,23 @@ function WeeklyPlanCard({
   plan: AcademyOverviewResponse["weeklyPlan"];
   onGoPractice: () => void;
 }) {
+  const { dict } = useI18n();
+  const V = dict.academy.overview;
   const rows = [
-    { label: "Lessons", done: plan.lessonsDone, target: plan.lessonsTarget, hue: "var(--cat-fund)" },
-    { label: "Drills", done: plan.drillsDone, target: plan.drillsTarget, hue: "var(--cat-patterns)" },
-    { label: "Quizzes", done: plan.quizzesDone, target: plan.quizzesTarget, hue: "var(--cat-pa)" },
+    { label: V.rowLessons, done: plan.lessonsDone, target: plan.lessonsTarget, hue: "var(--cat-fund)" },
+    { label: V.rowDrills, done: plan.drillsDone, target: plan.drillsTarget, hue: "var(--cat-patterns)" },
+    { label: V.rowQuizzes, done: plan.quizzesDone, target: plan.quizzesTarget, hue: "var(--cat-pa)" },
   ];
   const complete = rows.every((row) => row.done >= row.target);
   return (
-    <section aria-label="This week's plan" className="rounded-lg border border-border bg-surface px-5 py-4" data-testid="academy-weekly-plan">
+    <section aria-label={V.weeklyAria} className="rounded-lg border border-border bg-surface px-5 py-4" data-testid="academy-weekly-plan">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="ledger-label">This week — lessons · drills · quizzes</p>
+        <p className="ledger-label">{V.weeklyTitle}</p>
         <span
           className={cnWeekChip(complete)}
           data-testid="academy-weekly-status"
         >
-          {complete ? "weekly plan complete" : `week of ${plan.weekStart}`}
+          {complete ? V.weekComplete : `${V.weekOfPrefix}${plan.weekStart}`}
         </span>
       </div>
       <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -334,7 +337,7 @@ function WeeklyPlanCard({
       </div>
       {!complete ? (
         <button type="button" onClick={onGoPractice} className="mt-3 text-xs font-medium text-accent transition-colors hover:text-accent-hover">
-          Short on drills? The practice zone is one click away →
+          {V.shortOnDrills}
         </button>
       ) : null}
     </section>
@@ -357,15 +360,15 @@ function JournalSuggestions({
   onOpenCourse: (courseId: string) => void;
 }) {
   const { data } = useAcademySuggestions();
+  const { dict } = useI18n();
+  const V = dict.academy.overview;
   const suggestions = data?.suggestions ?? [];
   if (suggestions.length === 0) return null;
 
   return (
-    <section aria-label="From your journal" data-testid="academy-journal-suggestions">
-      <AcademySectionTitle className="mb-2">From your journal</AcademySectionTitle>
-      <p className="mb-2.5 text-xs text-muted-foreground">
-        Patterns the Academy noticed in your closed trades — each suggestion links to the track that addresses it.
-      </p>
+    <section aria-label={V.journalAria} data-testid="academy-journal-suggestions">
+      <AcademySectionTitle className="mb-2">{V.journalTitle}</AcademySectionTitle>
+      <p className="mb-2.5 text-xs text-muted-foreground">{V.journalDesc}</p>
       <ul className="divide-y divide-border rounded-lg border border-border bg-surface">
         {suggestions.map((suggestion) => {
           const hue = hueOf(suggestion.categoryId);
@@ -383,7 +386,7 @@ function JournalSuggestions({
                   <span className="mt-0.5 block text-xs leading-relaxed text-muted-foreground">{suggestion.reason}</span>
                 </span>
                 <span className="hidden shrink-0 font-mono text-[10px] uppercase tracking-wider text-muted-foreground sm:block">
-                  start lesson
+                  {V.startLesson}
                 </span>
                 <ArrowRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
               </button>
@@ -396,7 +399,9 @@ function JournalSuggestions({
         onClick={() => onOpenCourse(suggestions[0].courseId)}
         className="mt-1.5 text-[11px] text-muted-foreground transition-colors hover:text-foreground"
       >
-        Prefer the full course view? Open {suggestions[0].courseTitle} →
+        {V.preferCoursePrefix}
+        {suggestions[0].courseTitle}
+        {V.preferCourseSuffix}
       </button>
     </section>
   );
@@ -413,9 +418,12 @@ function ContinueLearning({
 }) {
   const item = data.continueLearning;
   const hue = item ? hueOf(item.categoryId) : "var(--accent)";
+  const { dict } = useI18n();
+  const V = dict.academy.overview;
+  const S = dict.academy.shared;
   return (
-    <section aria-label="Continue learning" data-testid="academy-continue">
-      <AcademySectionTitle className="mb-2">Continue learning</AcademySectionTitle>
+    <section aria-label={V.continueAria} data-testid="academy-continue">
+      <AcademySectionTitle className="mb-2">{V.continueTitle}</AcademySectionTitle>
       {item ? (
         <div
           className="flex flex-col gap-4 rounded-lg border border-border bg-surface px-5 py-4 sm:flex-row sm:items-center"
@@ -427,11 +435,11 @@ function ContinueLearning({
               <p className="truncate font-heading text-base font-semibold text-foreground">{item.courseTitle}</p>
             </div>
             <p className="mt-1 truncate text-sm text-muted-foreground">
-              {item.lessonTitle} · lesson <span className="font-mono tabular-nums">{item.lessonOrder}</span>/
+              {item.lessonTitle} · {V.lessonWord}{" "}<span className="font-mono tabular-nums">{item.lessonOrder}</span>/
               <span className="font-mono tabular-nums">{item.lessonCount}</span>
             </p>
             <div className="mt-2.5 max-w-md">
-              <ProgressBar percent={item.percent} hue={hue} label={`${item.courseTitle} progress`} />
+              <ProgressBar percent={item.percent} hue={hue} label={`${item.courseTitle}${S.progressSuffix}`} />
             </div>
           </div>
           <CourseArt
@@ -442,20 +450,20 @@ function ContinueLearning({
           <div className="flex shrink-0 gap-2">
             <Button size="sm" className="gap-1.5" onClick={() => item.nextLessonId && onOpenLesson(item.nextLessonId)} data-testid="academy-continue-btn">
               <PlayCircle className="size-3.5" aria-hidden="true" />
-              Continue lesson
+              {V.continueLesson}
             </Button>
             <Button size="sm" variant="outline" onClick={() => onOpenCourse(item.courseId)}>
-              Course
+              {V.course}
             </Button>
           </div>
         </div>
       ) : (
         <div className="rounded-lg border border-dashed border-border px-5 py-6 text-center">
-          <p className="text-sm text-muted-foreground">The curriculum is complete. Nothing left to continue — respect.</p>
+          <p className="text-sm text-muted-foreground">{V.curriculumComplete}</p>
           <Button size="sm" variant="outline" className="mt-3 gap-1.5" asChild>
             <Link href="/academy?tab=practice">
               <Trophy className="size-3.5" aria-hidden="true" />
-              Keep drills sharp
+              {V.keepDrillsSharp}
             </Link>
           </Button>
         </div>
@@ -468,7 +476,7 @@ function ContinueLearning({
           data-testid="academy-resume"
         >
           <div className="min-w-0">
-            <p className="ledger-label">Pick up where you left off</p>
+            <p className="ledger-label">{V.resumeTitle}</p>
             <p className="mt-0.5 truncate text-sm font-medium text-foreground">
               {data.resume.lessonTitle}
               <span className="text-muted-foreground">
@@ -478,7 +486,7 @@ function ContinueLearning({
           </div>
           <Button size="sm" variant="outline" className="gap-1.5" onClick={() => onOpenLesson(data.resume!.lessonId)} data-testid="academy-resume-btn">
             <BookOpen className="size-3.5" aria-hidden="true" />
-            Resume
+            {V.resume}
           </Button>
         </div>
       ) : null}
@@ -488,10 +496,12 @@ function ContinueLearning({
 
 function CategoryMap({ onOpenCourse }: { onOpenCourse: (courseId: string) => void }) {
   const { data: catalog } = useAcademyCatalog();
+  const { dict } = useI18n();
+  const V = dict.academy.overview;
   const categories = catalog?.categories ?? [];
   return (
-    <section aria-label="Explore categories">
-      <AcademySectionTitle className="mb-2">Explore categories</AcademySectionTitle>
+    <section aria-label={V.categoryMapAria}>
+      <AcademySectionTitle className="mb-2">{V.categoryMapTitle}</AcademySectionTitle>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {categories.map((category) => {
           const courses = (catalog?.courses ?? []).filter((course) => course.categoryId === category.id);
@@ -534,8 +544,11 @@ function CategoryMap({ onOpenCourse }: { onOpenCourse: (courseId: string) => voi
                 </span>
                 <span className="mt-1.5 line-clamp-2 text-xs leading-relaxed text-muted-foreground">{category.description}</span>
                 <span className="mt-auto pt-2 font-mono text-[11px] tabular-nums text-muted-foreground">
-                  {courses.length} courses · {completed}/{lessons} lessons
-                  {done === courses.length && courses.length > 0 ? " · done" : ""}
+                  {courses.length}
+                  {V.coursesMid}
+                  {completed}/{lessons}
+                  {V.lessonsSuffix}
+                  {done === courses.length && courses.length > 0 ? V.doneSuffix : ""}
                 </span>
               </span>
             </button>

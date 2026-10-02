@@ -7,6 +7,7 @@ import { ArrowRight, BookmarkCheck, BookOpen, Library } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AcademySectionTitle, HueChip } from "@/components/academy/academy-shared";
 import { useAcademyBookmarks, useToggleBookmark } from "@/lib/api/queries";
+import { useI18n } from "@/i18n/i18n-provider";
 
 /**
  * Bookmarks panel — the dedicated shelf for starred lessons and glossary
@@ -23,6 +24,8 @@ export function AcademyBookmarksPanel() {
   const router = useRouter();
   const { data, isLoading } = useAcademyBookmarks();
   const toggle = useToggleBookmark();
+  const { dict } = useI18n();
+  const V = dict.academy.bookmarks;
 
   const bookmarks = data?.bookmarks ?? [];
   const lessons = bookmarks.filter((mark) => mark.kind === "LESSON");
@@ -45,10 +48,8 @@ export function AcademyBookmarksPanel() {
         data-testid="academy-bookmarks-panel"
       >
         <BookmarkCheck className="mx-auto size-8 text-muted-foreground/60" aria-hidden="true" />
-        <p className="mt-3 text-sm font-medium text-foreground">Nothing bookmarked yet</p>
-        <p className="mx-auto mt-1 max-w-sm text-xs leading-relaxed text-muted-foreground">
-          Star any lesson from its reader, or any glossary term from the vocabulary — your saved spots line up here.
-        </p>
+        <p className="mt-3 text-sm font-medium text-foreground">{V.emptyTitle}</p>
+        <p className="mx-auto mt-1 max-w-sm text-xs leading-relaxed text-muted-foreground">{V.emptyDesc}</p>
         <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
           <button
             type="button"
@@ -56,7 +57,7 @@ export function AcademyBookmarksPanel() {
             className="inline-flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-1.5 text-xs font-medium transition-colors hover:bg-muted"
           >
             <BookOpen className="size-3.5" aria-hidden="true" />
-            Browse courses
+            {V.browseCourses}
           </button>
           <button
             type="button"
@@ -64,7 +65,7 @@ export function AcademyBookmarksPanel() {
             className="inline-flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-1.5 text-xs font-medium transition-colors hover:bg-muted"
           >
             <Library className="size-3.5" aria-hidden="true" />
-            Open the glossary
+            {V.openGlossary}
           </button>
         </div>
       </div>
@@ -92,7 +93,7 @@ export function AcademyBookmarksPanel() {
           <button
             type="button"
             onClick={() => toggle.mutate({ kind: mark.kind, refId: mark.refId })}
-            aria-label={`Remove bookmark: ${mark.title}`}
+            aria-label={`${V.removeAriaPrefix}${mark.title}`}
             className="shrink-0 text-muted-foreground opacity-60 transition-opacity hover:text-loss hover:opacity-100"
             data-testid="academy-bookmark-remove"
           >
@@ -106,21 +107,22 @@ export function AcademyBookmarksPanel() {
   return (
     <div className="space-y-6" data-testid="academy-bookmarks-panel">
       {lessons.length > 0 ? (
-        <section aria-label="Bookmarked lessons">
-          <AcademySectionTitle className="mb-2">Lessons</AcademySectionTitle>
+        <section aria-label={V.lessonsAria}>
+          <AcademySectionTitle className="mb-2">{V.lessonsTitle}</AcademySectionTitle>
           <ul className="divide-y divide-border rounded-lg border border-border bg-surface">{lessons.map(renderRow)}</ul>
         </section>
       ) : null}
 
       {terms.length > 0 ? (
-        <section aria-label="Bookmarked glossary terms">
-          <AcademySectionTitle className="mb-2">Glossary terms</AcademySectionTitle>
+        <section aria-label={V.termsAria}>
+          <AcademySectionTitle className="mb-2">{V.termsTitle}</AcademySectionTitle>
           <ul className="divide-y divide-border rounded-lg border border-border bg-surface">{terms.map(renderRow)}</ul>
         </section>
       ) : null}
 
       <p className="text-xs text-muted-foreground">
-        <span className="font-mono tabular-nums">{bookmarks.length}</span> saved · bookmarks stay on this account only.
+        <span className="font-mono tabular-nums">{bookmarks.length}</span>
+        {V.countSuffix}
       </p>
     </div>
   );
