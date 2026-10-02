@@ -2,6 +2,7 @@
 
 import * as React from "react";
 
+import { useI18n } from "@/i18n/i18n-provider";
 import { cn } from "@/lib/utils";
 
 /**
@@ -46,10 +47,13 @@ interface MarkdownProps {
   /** Markdown source; null/empty renders the empty hint. */
   source: string | null;
   className?: string;
+  /** Overrides the dict empty hint (dict.playbook.markdown.emptyLabel). */
   emptyLabel?: string;
 }
 
-export function Markdown({ source, className, emptyLabel = "Not defined yet." }: MarkdownProps) {
+export function Markdown({ source, className, emptyLabel }: MarkdownProps) {
+  const { dict } = useI18n();
+  const empty = emptyLabel ?? dict.playbook.markdown.emptyLabel;
   const blocks = React.useMemo(() => {
     if (source === null) return [];
     return source
@@ -59,7 +63,7 @@ export function Markdown({ source, className, emptyLabel = "Not defined yet." }:
   }, [source]);
 
   if (blocks.length === 0) {
-    return <p className={cn("text-sm italic text-muted-foreground", className)}>{emptyLabel}</p>;
+    return <p className={cn("text-sm italic text-muted-foreground", className)}>{empty}</p>;
   }
 
   return (

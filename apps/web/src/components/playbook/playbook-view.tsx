@@ -20,6 +20,7 @@ import { TemplatesPanel } from "@/components/playbook/templates-panel";
 import { StrategyDetailDialog } from "@/components/playbook/strategy-detail-dialog";
 import { StrategyFormDialog } from "@/components/playbook/strategy-form-dialog";
 import { UnderperformingBanner } from "@/components/playbook/underperforming-banner";
+import { useI18n } from "@/i18n/i18n-provider";
 import { usePlaybookOverview, useStrategies, useStrategiesStats } from "@/lib/api/queries";
 
 /**
@@ -30,29 +31,32 @@ import { usePlaybookOverview, useStrategies, useStrategiesStats } from "@/lib/ap
  * overview aggregate) is fetched ONCE here and passed down.
  */
 
-const TABS = [
-  { id: "overview", label: "Overview" },
-  { id: "strategies", label: "My Strategies" },
-  { id: "setups", label: "Setups" },
-  { id: "rules", label: "Rules" },
-  { id: "checklists", label: "Checklists" },
-  { id: "performance", label: "Performance" },
-  { id: "templates", label: "Templates" },
+/** Tab machine ids — labels resolve through dict.playbook.view.tabs. */
+const TAB_IDS = [
+  "overview",
+  "strategies",
+  "setups",
+  "rules",
+  "checklists",
+  "performance",
+  "templates",
 ] as const;
 
-type TabId = (typeof TABS)[number]["id"];
+type TabId = (typeof TAB_IDS)[number];
 
 export function PlaybookView() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
+  const { dict } = useI18n();
+  const V = dict.playbook.view;
 
   const strategiesQuery = useStrategies();
   const statsQuery = useStrategiesStats();
   const overviewQuery = usePlaybookOverview();
 
   const rawTab = searchParams.get("tab") ?? "overview";
-  const activeTab: TabId = (TABS.some((tab) => tab.id === rawTab) ? rawTab : "overview") as TabId;
+  const activeTab: TabId = (TAB_IDS.some((tab) => tab === rawTab) ? rawTab : "overview") as TabId;
   const setTab = React.useCallback(
     (tab: string) => {
       const params = new URLSearchParams(searchParams.toString());
@@ -95,15 +99,12 @@ export function PlaybookView() {
     <div className="mx-auto w-full max-w-7xl space-y-4 sm:space-y-6">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-heading text-2xl font-bold tracking-tight sm:text-3xl">Playbook</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Your operational trading system — what you trade, when, why, how you manage it, and
-            what invalidates it. Trade it as written, or change the page, never the moment.
-          </p>
+          <h1 className="font-heading text-2xl font-bold tracking-tight sm:text-3xl">{V.title}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">{V.subtitle}</p>
         </div>
         <Button onClick={openCreate}>
           <Plus className="size-4" aria-hidden="true" />
-          New Strategy
+          {V.newStrategy}
         </Button>
       </header>
 
@@ -115,9 +116,9 @@ export function PlaybookView() {
         <Tabs value={activeTab} onValueChange={setTab}>
           <div className="overflow-x-auto pb-0.5">
             <TabsList className="h-auto w-max flex-wrap gap-1">
-              {TABS.map((tab) => (
-                <TabsTrigger key={tab.id} value={tab.id} className="text-xs sm:text-sm" data-testid={`tab-${tab.id}`}>
-                  {tab.label}
+              {TAB_IDS.map((tab) => (
+                <TabsTrigger key={tab} value={tab} className="text-xs sm:text-sm" data-testid={`tab-${tab}`}>
+                  {V.tabs[tab]}
                 </TabsTrigger>
               ))}
             </TabsList>
@@ -184,8 +185,9 @@ export function PlaybookView() {
 }
 
 function PlaybookSkeleton() {
+  const { dict } = useI18n();
   return (
-    <div className="space-y-4" aria-busy="true" aria-label="Loading playbook">
+    <div className="space-y-4" aria-busy="true" aria-label={dict.playbook.view.loadingAria}>
       <Skeleton className="h-10 w-64 rounded-md" />
       <Skeleton className="h-14 w-full rounded-xl" />
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -198,17 +200,17 @@ function PlaybookSkeleton() {
 }
 
 function ErrorPlaybook({ onRetry }: { onRetry: () => void }) {
+  const { dict } = useI18n();
+  const V = dict.playbook.view;
   return (
     <Card className="mx-auto max-w-md bg-surface">
       <CardContent className="flex flex-col items-center py-14 text-center">
         <Stars className="size-8 text-muted-foreground" aria-hidden="true" />
-        <h2 className="mt-4 font-heading text-lg font-semibold">Playbook unavailable</h2>
-        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-          Your strategies could not be loaded. Check your connection, then retry.
-        </p>
+        <h2 className="mt-4 font-heading text-lg font-semibold">{V.errorTitle}</h2>
+        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{V.errorBody}</p>
         <Button variant="outline" className="mt-6" onClick={onRetry}>
           <RefreshCcw className="size-4" aria-hidden="true" />
-          Retry
+          {V.retry}
         </Button>
       </CardContent>
     </Card>

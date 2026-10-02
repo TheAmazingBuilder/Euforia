@@ -13,9 +13,10 @@ import { StrategyCard } from "@/components/playbook/strategy-card";
 import { DuplicateStrategyDialog } from "@/components/playbook/duplicate-strategy-dialog";
 import {
   ChipToggle,
-  HEALTH_FLAG_LABELS,
-  STATUS_LABELS,
+  healthFlagLabels,
+  statusLabels,
 } from "@/components/playbook/playbook-labels";
+import { useI18n } from "@/i18n/i18n-provider";
 
 /**
  * My Strategies (§6 + §20 + §25): the strategy grid with search/status
@@ -23,13 +24,8 @@ import {
  * action. Opening a card still opens the rich detail dialog.
  */
 
-const STATUS_FILTERS: Array<{ id: "ALL" | StrategyStatus; label: string }> = [
-  { id: "ALL", label: "All" },
-  { id: "ACTIVE", label: STATUS_LABELS.ACTIVE },
-  { id: "DRAFT", label: STATUS_LABELS.DRAFT },
-  { id: "PAUSED", label: STATUS_LABELS.PAUSED },
-  { id: "RETIRED", label: STATUS_LABELS.RETIRED },
-];
+/** Status filter machine ids — labels resolve through dict.playbook.labels.status. */
+const STATUS_FILTER_IDS = ["ALL", "ACTIVE", "DRAFT", "PAUSED", "RETIRED"] as const;
 
 interface StrategiesPanelProps {
   strategies: Strategy[];
@@ -40,6 +36,10 @@ interface StrategiesPanelProps {
 }
 
 export function StrategiesPanel({ strategies, statsById, healthById, isLoading, onOpenDetail }: StrategiesPanelProps) {
+  const { dict } = useI18n();
+  const V = dict.playbook.strategies;
+  const STATUS = statusLabels(dict.playbook.labels.status);
+  const FLAG_LABELS = healthFlagLabels(dict.playbook.labels.healthFlag);
   const [query, setQuery] = React.useState("");
   const [statusFilter, setStatusFilter] = React.useState<"ALL" | StrategyStatus>("ALL");
   const [duplicateOpen, setDuplicateOpen] = React.useState(false);
@@ -68,19 +68,19 @@ export function StrategiesPanel({ strategies, statsById, healthById, isLoading, 
           <Input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search by name, description, tag…"
-            aria-label="Search strategies"
+            placeholder={V.searchPlaceholder}
+            aria-label={V.searchAria}
             className="h-9 w-64 pl-8"
           />
         </div>
         <div className="flex flex-wrap gap-1.5">
-          {STATUS_FILTERS.map((filter) => (
+          {STATUS_FILTER_IDS.map((filter) => (
             <ChipToggle
-              key={filter.id}
-              selected={statusFilter === filter.id}
-              onClick={() => setStatusFilter(filter.id)}
+              key={filter}
+              selected={statusFilter === filter}
+              onClick={() => setStatusFilter(filter)}
             >
-              {filter.label}
+              {filter === "ALL" ? V.allFilter : STATUS[filter]}
             </ChipToggle>
           ))}
         </div>
@@ -92,12 +92,12 @@ export function StrategiesPanel({ strategies, statsById, healthById, isLoading, 
           onClick={() => setDuplicateOpen(true)}
           data-testid="strategies-duplicate"
         >
-          <Copy className="size-3.5" aria-hidden="true" /> Duplicate
+          <Copy className="size-3.5" aria-hidden="true" /> {V.duplicate}
         </Button>
       </div>
 
       {isLoading ? (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3" aria-busy="true" aria-label="Loading strategies">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3" aria-busy="true" aria-label={V.loadingAria}>
           <Skeleton className="h-44 rounded-xl" />
           <Skeleton className="h-44 rounded-xl" />
           <Skeleton className="h-44 rounded-xl" />
@@ -107,12 +107,10 @@ export function StrategiesPanel({ strategies, statsById, healthById, isLoading, 
           <CardContent className="flex flex-col items-center py-12 text-center">
             <BookOpen className="size-8 text-muted-foreground" aria-hidden="true" />
             <h2 className="mt-4 font-heading text-lg font-semibold">
-              {strategies.length === 0 ? "Your playbook is empty" : "No strategy matches"}
+              {strategies.length === 0 ? V.emptyTitle : V.noMatchTitle}
             </h2>
             <p className="mt-2 max-w-sm text-sm leading-relaxed text-muted-foreground">
-              {strategies.length === 0
-                ? "Write down the systems you actually trade — entry, management, invalidation, risk. The Templates tab is a fast starting point."
-                : "Try another search or clear the status filter."}
+              {strategies.length === 0 ? V.emptyBody : V.noMatchBody}
             </p>
           </CardContent>
         </Card>
@@ -136,7 +134,7 @@ export function StrategiesPanel({ strategies, statsById, healthById, isLoading, 
                         variant="outline"
                         className="border-warning/40 px-1.5 py-0 text-[10px] text-warning"
                       >
-                        {HEALTH_FLAG_LABELS[flag]}
+                        {FLAG_LABELS[flag]}
                       </Badge>
                     ))}
                   </div>

@@ -26,6 +26,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { apiErrorMessage } from "@/lib/api/client";
 import { useCreateChecklist, useUpdateChecklist } from "@/lib/api/queries";
+import { useI18n } from "@/i18n/i18n-provider";
 
 /**
  * Checklist template editor (§16): name, scope, and the ordered item list
@@ -50,6 +51,9 @@ export function ChecklistFormDialog({
   checklist: ChecklistTemplate | null;
   strategies: Strategy[];
 }) {
+  const { dict } = useI18n();
+  const V = dict.playbook.checklistForm;
+  const S = dict.playbook.shared;
   const isEdit = checklist !== null;
   const createChecklist = useCreateChecklist();
   const updateChecklist = useUpdateChecklist();
@@ -73,11 +77,11 @@ export function ChecklistFormDialog({
   }
 
   const pending = createChecklist.isPending || updateChecklist.isPending;
-  const nameError = name.trim() === "" ? "Name is required" : null;
+  const nameError = name.trim() === "" ? V.nameRequired : null;
   const cleanItems = items.filter((item) => item.label.trim() !== "");
-  const itemsError = cleanItems.length === 0 ? "Add at least one item" : null;
+  const itemsError = cleanItems.length === 0 ? V.itemsRequired : null;
   const strategyError =
-    !globalScope && strategyId === "" ? "Choose a strategy (or mark the checklist global)" : null;
+    !globalScope && strategyId === "" ? V.strategyRequired : null;
 
   const addItem = () => {
     setItems((previous) => [
@@ -113,8 +117,8 @@ export function ChecklistFormDialog({
             items: payloadItems,
           },
         });
-        toast.success("Checklist updated", {
-          description: "Trades already taken keep their frozen checklist snapshot.",
+        toast.success(V.toastUpdated, {
+          description: V.toastUpdatedDesc,
         });
       } else {
         await createChecklist.mutateAsync({
@@ -122,12 +126,12 @@ export function ChecklistFormDialog({
           strategyId: globalScope ? null : strategyId,
           items: payloadItems,
         });
-        toast.success("Checklist created");
+        toast.success(V.toastCreated);
       }
       onOpenChange(false);
     } catch (error) {
-      toast.error(isEdit ? "Could not update the checklist" : "Could not create the checklist", {
-        description: apiErrorMessage(error, "Unexpected error"),
+      toast.error(isEdit ? V.toastUpdateFailed : V.toastCreateFailed, {
+        description: apiErrorMessage(error, S.unexpectedError),
       });
     }
   };
@@ -136,46 +140,46 @@ export function ChecklistFormDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle className="font-heading">{isEdit ? "Edit checklist" : "New checklist"}</DialogTitle>
+          <DialogTitle className="font-heading">{isEdit ? V.editTitle : V.createTitle}</DialogTitle>
           <DialogDescription>
-            Ordered pre-trade items. Required items are the ones that MUST pass before entry.
+            {V.desc}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <Label htmlFor="checklist-name">Name</Label>
+            <Label htmlFor="checklist-name">{V.nameLabel}</Label>
             <Input
               id="checklist-name"
               value={name}
               onChange={(event) => setName(event.target.value)}
-              placeholder="Breakout NY — pre-flight"
+              placeholder={V.namePlaceholder}
             />
             {nameError ? <p className="text-xs text-loss">{nameError}</p> : null}
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label htmlFor="checklist-scope">Scope</Label>
+              <Label htmlFor="checklist-scope">{V.scopeLabel}</Label>
               <Select
                 value={globalScope ? "GLOBAL" : "STRATEGY"}
                 onValueChange={(value) => setGlobalScope(value === "GLOBAL")}
               >
-                <SelectTrigger id="checklist-scope" aria-label="Scope">
+                <SelectTrigger id="checklist-scope" aria-label={V.scopeAria}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="GLOBAL">Global — any strategy</SelectItem>
-                  <SelectItem value="STRATEGY">Scoped to one strategy</SelectItem>
+                  <SelectItem value="GLOBAL">{V.scopeGlobal}</SelectItem>
+                  <SelectItem value="STRATEGY">{V.scopeStrategy}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             {!globalScope ? (
               <div className="space-y-1.5">
-                <Label htmlFor="checklist-strategy">Strategy</Label>
+                <Label htmlFor="checklist-strategy">{V.strategyLabel}</Label>
                 <Select value={strategyId} onValueChange={setStrategyId}>
-                  <SelectTrigger id="checklist-strategy" aria-label="Strategy">
-                    <SelectValue placeholder="Choose…" />
+                  <SelectTrigger id="checklist-strategy" aria-label={V.strategyAria}>
+                    <SelectValue placeholder={V.choosePlaceholder} />
                   </SelectTrigger>
                   <SelectContent>
                     {strategies.map((strategy) => (
@@ -191,14 +195,16 @@ export function ChecklistFormDialog({
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label>Items ({cleanItems.length})</Label>
+              <Label>
+                {V.itemsLabel} ({cleanItems.length})
+              </Label>
               <Button type="button" size="sm" variant="outline" onClick={addItem}>
-                <Plus className="size-3.5" aria-hidden="true" /> Add item
+                <Plus className="size-3.5" aria-hidden="true" /> {V.addItem}
               </Button>
             </div>
             {items.length === 0 ? (
               <p className="rounded-md border border-dashed border-border px-3 py-4 text-center text-xs text-muted-foreground">
-                No item yet — start with the non-negotiables.
+                {V.itemsEmpty}
               </p>
             ) : (
               <ul className="space-y-2">
@@ -216,9 +222,9 @@ export function ChecklistFormDialog({
                           ),
                         )
                       }
-                      aria-label={`Item ${index + 1} label`}
+                      aria-label={`${V.itemWord} ${index + 1} ${V.labelWord}`}
                       className="h-8 flex-1"
-                      placeholder="Market structure confirmed…"
+                      placeholder={V.itemPlaceholder}
                     />
                     <div className="flex shrink-0 items-center gap-1">
                       <label className="flex items-center gap-1 text-[10px] uppercase tracking-wide text-muted-foreground">
@@ -231,16 +237,16 @@ export function ChecklistFormDialog({
                               ),
                             )
                           }
-                          aria-label={`Item ${index + 1} required`}
+                          aria-label={`${V.itemWord} ${index + 1} ${V.requiredWord}`}
                         />
-                        req.
+                        {V.reqShort}
                       </label>
                       <Button
                         type="button"
                         size="icon"
                         variant="ghost"
                         className="size-6"
-                        aria-label={`Move item ${index + 1} up`}
+                        aria-label={`${V.movePrefix} ${index + 1} ${V.upWord}`}
                         disabled={index === 0}
                         onClick={() => move(index, -1)}
                       >
@@ -251,7 +257,7 @@ export function ChecklistFormDialog({
                         size="icon"
                         variant="ghost"
                         className="size-6"
-                        aria-label={`Move item ${index + 1} down`}
+                        aria-label={`${V.movePrefix} ${index + 1} ${V.downWord}`}
                         disabled={index === items.length - 1}
                         onClick={() => move(index, 1)}
                       >
@@ -262,7 +268,7 @@ export function ChecklistFormDialog({
                         size="icon"
                         variant="ghost"
                         className="size-6 hover:text-destructive"
-                        aria-label={`Remove item ${index + 1}`}
+                        aria-label={`${V.removePrefix} ${index + 1}`}
                         onClick={() => setItems((previous) => previous.filter((row) => row.id !== item.id))}
                       >
                         <X className="size-3" aria-hidden="true" />
@@ -279,13 +285,13 @@ export function ChecklistFormDialog({
 
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            {S.cancel}
           </Button>
           <Button
             onClick={() => void submit()}
             disabled={pending || nameError !== null || itemsError !== null || strategyError !== null}
           >
-            {pending ? "Saving…" : isEdit ? "Save changes" : "Create checklist"}
+            {pending ? S.saving : isEdit ? S.saveChanges : V.createBtn}
           </Button>
         </DialogFooter>
       </DialogContent>

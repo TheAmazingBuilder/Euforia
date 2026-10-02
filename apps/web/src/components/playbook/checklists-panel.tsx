@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ChecklistFormDialog } from "@/components/playbook/checklist-form-dialog";
 import { apiErrorMessage } from "@/lib/api/client";
 import { useChecklists, useDeleteChecklist } from "@/lib/api/queries";
+import { useI18n } from "@/i18n/i18n-provider";
 
 /**
  * Checklist templates (§16): required/optional ordered items per strategy (or
@@ -19,6 +20,9 @@ import { useChecklists, useDeleteChecklist } from "@/lib/api/queries";
  * trade's checklistSnap at entry time — templates evolve, history does not.
  */
 export function ChecklistsPanel({ strategies }: { strategies: Strategy[] }) {
+  const { dict } = useI18n();
+  const V = dict.playbook.checklists;
+  const S = dict.playbook.shared;
   const checklistsQuery = useChecklists();
   const deleteChecklist = useDeleteChecklist();
   const [formOpen, setFormOpen] = React.useState(false);
@@ -30,10 +34,10 @@ export function ChecklistsPanel({ strategies }: { strategies: Strategy[] }) {
   const remove = async (checklist: ChecklistTemplate) => {
     try {
       await deleteChecklist.mutateAsync(checklist.id);
-      toast.success("Checklist deleted");
+      toast.success(V.toastDeleted);
     } catch (error) {
-      toast.error("Could not delete the checklist", {
-        description: apiErrorMessage(error, "Unexpected error"),
+      toast.error(V.toastDeleteFailed, {
+        description: apiErrorMessage(error, S.unexpectedError),
       });
     }
   };
@@ -42,8 +46,7 @@ export function ChecklistsPanel({ strategies }: { strategies: Strategy[] }) {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">
-          {checklists.length} {checklists.length === 1 ? "template" : "templates"} — pre-trade
-          discipline, written when you are calm, consumed when it matters.
+          {checklists.length} {checklists.length === 1 ? V.templateOne : V.templateMany} {V.introTail}
         </p>
         <Button
           size="sm"
@@ -52,12 +55,12 @@ export function ChecklistsPanel({ strategies }: { strategies: Strategy[] }) {
             setFormOpen(true);
           }}
         >
-          <Plus className="size-4" aria-hidden="true" /> New Checklist
+          <Plus className="size-4" aria-hidden="true" /> {V.newBtn}
         </Button>
       </div>
 
       {checklistsQuery.isLoading ? (
-        <div className="grid gap-4 md:grid-cols-2" aria-busy="true" aria-label="Loading checklists">
+        <div className="grid gap-4 md:grid-cols-2" aria-busy="true" aria-label={V.loadingAria}>
           <Skeleton className="h-48 rounded-xl" />
           <Skeleton className="h-48 rounded-xl" />
         </div>
@@ -65,10 +68,9 @@ export function ChecklistsPanel({ strategies }: { strategies: Strategy[] }) {
         <Card className="bg-surface">
           <CardContent className="flex flex-col items-center py-12 text-center">
             <ListChecks className="size-8 text-muted-foreground" aria-hidden="true" />
-            <p className="mt-4 font-heading text-lg font-semibold">No checklist yet</p>
+            <p className="mt-4 font-heading text-lg font-semibold">{V.emptyTitle}</p>
             <p className="mt-2 max-w-md text-sm leading-relaxed text-muted-foreground">
-              Start from the universal sanity items — economic calendar, position size, no open
-              violation — then add what your strategies really require.
+              {V.emptyBody}
             </p>
           </CardContent>
         </Card>
@@ -85,18 +87,18 @@ export function ChecklistsPanel({ strategies }: { strategies: Strategy[] }) {
                     <div className="mt-1 flex items-center gap-1.5">
                       {checklist.strategyId === null ? (
                         <Badge variant="outline" className="px-1.5 py-0 text-[10px]">
-                          Global
+                          {V.globalBadge}
                         </Badge>
                       ) : (
                         <Badge
                           variant="outline"
                           className="border-accent/40 px-1.5 py-0 text-[10px] text-accent"
                         >
-                          {strategyById.get(checklist.strategyId)?.name ?? "Unknown strategy"}
+                          {strategyById.get(checklist.strategyId)?.name ?? V.unknownStrategy}
                         </Badge>
                       )}
                       <span className="font-mono text-[10px] tabular-nums text-muted-foreground">
-                        {checklist.items.length} items
+                        {checklist.items.length} {V.itemsSuffix}
                       </span>
                     </div>
                   </div>
@@ -105,7 +107,7 @@ export function ChecklistsPanel({ strategies }: { strategies: Strategy[] }) {
                       size="icon"
                       variant="ghost"
                       className="size-7"
-                      aria-label={`Edit ${checklist.name}`}
+                      aria-label={`${S.editPrefix} ${checklist.name}`}
                       onClick={() => {
                         setEditTarget(checklist);
                         setFormOpen(true);
@@ -117,7 +119,7 @@ export function ChecklistsPanel({ strategies }: { strategies: Strategy[] }) {
                       size="icon"
                       variant="ghost"
                       className="size-7 hover:text-destructive"
-                      aria-label={`Delete ${checklist.name}`}
+                      aria-label={`${S.deletePrefix} ${checklist.name}`}
                       onClick={() => void remove(checklist)}
                     >
                       <Trash2 className="size-3.5" aria-hidden="true" />
@@ -137,7 +139,7 @@ export function ChecklistsPanel({ strategies }: { strategies: Strategy[] }) {
                       <span className="min-w-0 flex-1 text-foreground">{item.label}</span>
                       {!item.required ? (
                         <span className="shrink-0 text-[10px] uppercase tracking-wide text-muted-foreground">
-                          optional
+                          {V.optionalLabel}
                         </span>
                       ) : null}
                     </li>

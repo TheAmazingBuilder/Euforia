@@ -33,21 +33,21 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { apiErrorMessage } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/i18n/i18n-provider";
 import {
   useCreateStrategy,
   useUpdateStrategy,
 } from "@/lib/api/queries";
 import {
   ChipToggle,
-  DAY_LABELS,
-  MARKET_CONDITION_LABELS,
-  SESSION_LABELS,
-  STATUS_LABELS,
-  STYLE_LABELS,
+  dayLabels,
+  marketConditionLabels,
   parseTags,
+  sessionLabels,
+  statusLabels,
+  styleLabels,
   toggleInArray,
 } from "@/components/playbook/playbook-labels";
-
 /**
  * [New Strategy] / [Edit] dialog: identity (§6), the three markdown rule
  * bodies, grade, color, status — PLUS the professional structured blocks
@@ -55,12 +55,8 @@ import {
  * One component for both modes.
  */
 
-const GRADE_OPTIONS: { value: StrategyGrade; label: string }[] = [
-  { value: "A_PLUS", label: "A+ — core edge" },
-  { value: "A", label: "A — proven" },
-  { value: "B", label: "B — developing" },
-  { value: "C", label: "C — experimental" },
-];
+/** Grade machine values — labels resolve through dict.playbook.strategyForm.grades. */
+const GRADE_VALUES: StrategyGrade[] = ["A_PLUS", "A", "B", "C"];
 
 const STATUS_OPTIONS: readonly StrategyStatus[] = ["ACTIVE", "DRAFT", "PAUSED", "RETIRED"];
 
@@ -142,6 +138,15 @@ interface StrategyFormDialogProps {
 }
 
 export function StrategyFormDialog({ open, onOpenChange, strategy }: StrategyFormDialogProps) {
+  const { dict } = useI18n();
+  const V = dict.playbook.strategyForm;
+  const S = dict.playbook.shared;
+  // Enum label maps — built from the dict fragments inside the component.
+  const STATUS_LABELS = statusLabels(dict.playbook.labels.status);
+  const STYLE_LABELS = styleLabels(dict.playbook.labels.style);
+  const SESSION_LABELS = sessionLabels(dict.playbook.labels.session);
+  const DAY_LABELS = dayLabels(dict.playbook.labels.day);
+  const MARKET_CONDITION_LABELS = marketConditionLabels(dict.playbook.labels.marketCondition);
   const isEdit = strategy !== null;
   const createStrategy = useCreateStrategy();
   const updateStrategy = useUpdateStrategy();
@@ -160,7 +165,7 @@ export function StrategyFormDialog({ open, onOpenChange, strategy }: StrategyFor
     setValues((previous) => ({ ...previous, ...partial }));
 
   const pending = createStrategy.isPending || updateStrategy.isPending;
-  const nameError = values.name.trim() === "" ? "Name is required" : null;
+  const nameError = values.name.trim() === "" ? V.nameRequired : null;
 
   const submit = async () => {
     if (nameError !== null) return;
@@ -240,17 +245,17 @@ export function StrategyFormDialog({ open, onOpenChange, strategy }: StrategyFor
     try {
       if (isEdit && strategy !== null) {
         await updateStrategy.mutateAsync({ strategyId: strategy.id, input: payload });
-        toast.success("Strategy updated", {
-          description: "A new definition version was recorded — history is preserved.",
+        toast.success(V.toastUpdated, {
+          description: V.toastUpdatedDesc,
         });
       } else {
         await createStrategy.mutateAsync(payload);
-        toast.success("Strategy added to your playbook", { description: payload.name });
+        toast.success(V.toastCreated, { description: payload.name });
       }
       onOpenChange(false);
     } catch (error) {
-      toast.error(isEdit ? "Could not update the strategy" : "Could not create the strategy", {
-        description: apiErrorMessage(error, "Unexpected error"),
+      toast.error(isEdit ? V.toastUpdateFailed : V.toastCreateFailed, {
+        description: apiErrorMessage(error, S.unexpectedError),
       });
     }
   };
@@ -260,23 +265,21 @@ export function StrategyFormDialog({ open, onOpenChange, strategy }: StrategyFor
       <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-xl">
         <DialogHeader>
           <DialogTitle className="font-heading text-lg font-semibold">
-            {isEdit ? "Edit strategy" : "New strategy"}
+            {isEdit ? V.editTitle : V.createTitle}
           </DialogTitle>
           <DialogDescription>
-            {isEdit
-              ? "Refine the setup — the playbook evolves, your history stays true."
-              : "Define the setup once; grade it, color it, trade it."}
+            {isEdit ? V.editDesc : V.createDesc}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <Label htmlFor="strategy-name">Name</Label>
+            <Label htmlFor="strategy-name">{V.nameLabel}</Label>
             <Input
               id="strategy-name"
               value={values.name}
               onChange={(event) => patch({ name: event.target.value })}
-              placeholder="Breakout BOOM500 NY open"
+              placeholder={V.namePlaceholder}
               aria-invalid={nameError !== null}
               autoFocus
             />
@@ -286,43 +289,43 @@ export function StrategyFormDialog({ open, onOpenChange, strategy }: StrategyFor
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="strategy-description">Description</Label>
+            <Label htmlFor="strategy-description">{V.descriptionLabel}</Label>
             <Textarea
               id="strategy-description"
               value={values.description}
               onChange={(event) => patch({ description: event.target.value })}
-              placeholder="What this setup is, when it appears, what makes it valid…"
+              placeholder={V.descriptionPlaceholder}
               rows={2}
             />
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label htmlFor="strategy-grade">Grade</Label>
+              <Label htmlFor="strategy-grade">{V.gradeLabel}</Label>
               <Select
                 value={values.grade}
                 onValueChange={(next) => patch({ grade: next as StrategyGrade | "none" })}
               >
-                <SelectTrigger id="strategy-grade" aria-label="Strategy grade">
+                <SelectTrigger id="strategy-grade" aria-label={V.gradeAria}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">Ungraded</SelectItem>
-                  {GRADE_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
+                  <SelectItem value="none">{V.ungraded}</SelectItem>
+                  {GRADE_VALUES.map((grade) => (
+                    <SelectItem key={grade} value={grade}>
+                      {V.grades[grade]}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="strategy-status">Status</Label>
+              <Label htmlFor="strategy-status">{V.statusLabel}</Label>
               <Select
                 value={values.status}
                 onValueChange={(next) => patch({ status: next as StrategyStatus })}
               >
-                <SelectTrigger id="strategy-status" aria-label="Strategy status">
+                <SelectTrigger id="strategy-status" aria-label={V.statusAria}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -337,15 +340,15 @@ export function StrategyFormDialog({ open, onOpenChange, strategy }: StrategyFor
           </div>
 
           <fieldset className="space-y-1.5">
-            <legend className="text-sm font-medium text-foreground">Color</legend>
-            <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Strategy color">
+            <legend className="text-sm font-medium text-foreground">{V.colorLegend}</legend>
+            <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={V.colorAria}>
               {PLAYBOOK_COLOR_PALETTE.map((color) => (
                 <button
                   key={color}
                   type="button"
                   role="radio"
                   aria-checked={values.color === color}
-                  aria-label={`Color ${color}`}
+                  aria-label={`${V.colorSwatchPrefix} ${color}`}
                   onClick={() => patch({ color })}
                   className={cn(
                     "size-7 rounded-full border-2 outline-none transition-transform focus-visible:ring-2 focus-visible:ring-ring",
@@ -362,39 +365,39 @@ export function StrategyFormDialog({ open, onOpenChange, strategy }: StrategyFor
           {/* ── Professional definition (§6–§13) ─────────────────────────────── */}
           <fieldset className="space-y-3 rounded-lg border border-border bg-surface-raised/50 p-3">
             <legend className="px-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Market profile &amp; conditions
+              {V.profileLegend}
             </legend>
 
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label htmlFor="strategy-tags">Tags (comma-separated)</Label>
+                <Label htmlFor="strategy-tags">{V.tagsLabel}</Label>
                 <Input
                   id="strategy-tags"
                   value={values.tags}
                   onChange={(event) => patch({ tags: event.target.value })}
-                  placeholder="ny-open, levels, a-plus"
+                  placeholder={V.tagsPlaceholder}
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="strategy-timeframe">Timeframe</Label>
+                <Label htmlFor="strategy-timeframe">{V.timeframeLabel}</Label>
                 <Input
                   id="strategy-timeframe"
                   value={values.timeframe}
                   onChange={(event) => patch({ timeframe: event.target.value })}
-                  placeholder="15m"
+                  placeholder={V.timeframePlaceholder}
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="strategy-asset-class">Asset class</Label>
+                <Label htmlFor="strategy-asset-class">{V.assetClassLabel}</Label>
                 <Select
                   value={values.assetClass}
                   onValueChange={(next) => patch({ assetClass: next })}
                 >
-                  <SelectTrigger id="strategy-asset-class" aria-label="Asset class">
-                    <SelectValue placeholder="Any" />
+                  <SelectTrigger id="strategy-asset-class" aria-label={V.assetClassAria}>
+                    <SelectValue placeholder={V.assetClassAny} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Any</SelectItem>
+                    <SelectItem value="">{V.assetClassAny}</SelectItem>
                     {ASSET_CLASS_OPTIONS.map((option) => (
                       <SelectItem key={option} value={option}>
                         {option}
@@ -404,16 +407,16 @@ export function StrategyFormDialog({ open, onOpenChange, strategy }: StrategyFor
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="strategy-style">Trading style</Label>
+                <Label htmlFor="strategy-style">{V.styleLabel}</Label>
                 <Select
                   value={values.tradingStyle}
                   onValueChange={(next) => patch({ tradingStyle: next })}
                 >
-                  <SelectTrigger id="strategy-style" aria-label="Trading style">
-                    <SelectValue placeholder="Any" />
+                  <SelectTrigger id="strategy-style" aria-label={V.styleAria}>
+                    <SelectValue placeholder={V.styleAny} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Any</SelectItem>
+                    <SelectItem value="">{V.styleAny}</SelectItem>
                     {Object.entries(STYLE_LABELS).map(([value, label]) => (
                       <SelectItem key={value} value={value}>
                         {label}
@@ -423,18 +426,18 @@ export function StrategyFormDialog({ open, onOpenChange, strategy }: StrategyFor
                 </Select>
               </div>
               <div className="space-y-1.5 sm:col-span-2">
-                <Label htmlFor="strategy-symbols">Symbols (comma-separated)</Label>
+                <Label htmlFor="strategy-symbols">{V.symbolsLabel}</Label>
                 <Input
                   id="strategy-symbols"
                   value={values.symbols}
                   onChange={(event) => patch({ symbols: event.target.value })}
-                  placeholder="BOOM500, BTCUSDT"
+                  placeholder={V.symbolsPlaceholder}
                 />
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <Label>Sessions</Label>
+              <Label>{V.sessionsLabel}</Label>
               <div className="flex flex-wrap gap-1.5">
                 {Object.entries(SESSION_LABELS).map(([value, label]) => (
                   <ChipToggle
@@ -453,7 +456,7 @@ export function StrategyFormDialog({ open, onOpenChange, strategy }: StrategyFor
             </div>
 
             <div className="space-y-1.5">
-              <Label>Trading days</Label>
+              <Label>{V.daysLabel}</Label>
               <div className="flex flex-wrap gap-1.5">
                 {Object.entries(DAY_LABELS).map(([value, label]) => (
                   <ChipToggle
@@ -472,7 +475,7 @@ export function StrategyFormDialog({ open, onOpenChange, strategy }: StrategyFor
             </div>
 
             <div className="space-y-1.5">
-              <Label>Market conditions this strategy is meant for</Label>
+              <Label>{V.conditionsLabel}</Label>
               <div className="flex flex-wrap gap-1.5">
                 {Object.entries(MARKET_CONDITION_LABELS).map(([value, label]) => (
                   <ChipToggle
@@ -495,111 +498,111 @@ export function StrategyFormDialog({ open, onOpenChange, strategy }: StrategyFor
 
             <div className="grid gap-3 sm:grid-cols-3">
               <div className="space-y-1.5">
-                <Label htmlFor="risk-default">Default risk %</Label>
+                <Label htmlFor="risk-default">{V.defaultRiskLabel}</Label>
                 <Input
                   id="risk-default"
                   inputMode="decimal"
                   value={values.defaultRiskPct}
                   onChange={(event) => patch({ defaultRiskPct: event.target.value })}
-                  placeholder="1"
+                  placeholder={V.defaultRiskPlaceholder}
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="risk-max">Max risk %</Label>
+                <Label htmlFor="risk-max">{V.maxRiskLabel}</Label>
                 <Input
                   id="risk-max"
                   inputMode="decimal"
                   value={values.maxRiskPct}
                   onChange={(event) => patch({ maxRiskPct: event.target.value })}
-                  placeholder="2"
+                  placeholder={V.maxRiskPlaceholder}
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="risk-minrr">Min R:R</Label>
+                <Label htmlFor="risk-minrr">{V.minRRLabel}</Label>
                 <Input
                   id="risk-minrr"
                   inputMode="decimal"
                   value={values.minRR}
                   onChange={(event) => patch({ minRR: event.target.value })}
-                  placeholder="1.5"
+                  placeholder={V.minRRPlaceholder}
                 />
               </div>
               <div className="space-y-1.5 sm:col-span-3">
-                <Label htmlFor="risk-stop">Stop methodology</Label>
+                <Label htmlFor="risk-stop">{V.stopLabel}</Label>
                 <Input
                   id="risk-stop"
                   value={values.stopMethodology}
                   onChange={(event) => patch({ stopMethodology: event.target.value })}
-                  placeholder="Beyond the level + 0.2 × ATR(14)"
+                  placeholder={V.stopPlaceholder}
                 />
               </div>
               <div className="space-y-1.5 sm:col-span-3">
-                <Label htmlFor="risk-target">Target methodology</Label>
+                <Label htmlFor="risk-target">{V.targetLabel}</Label>
                 <Input
                   id="risk-target"
                   value={values.targetMethodology}
                   onChange={(event) => patch({ targetMethodology: event.target.value })}
-                  placeholder="1.5R partial, trail the rest"
+                  placeholder={V.targetPlaceholder}
                 />
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="strategy-invalidations">Invalidations — one per line</Label>
+              <Label htmlFor="strategy-invalidations">{V.invalidationsLabel}</Label>
               <Textarea
                 id="strategy-invalidations"
                 rows={3}
                 value={values.invalidations}
                 onChange={(event) => patch({ invalidations: event.target.value })}
-                placeholder={"Structure invalidated against the thesis\nTwo body closes back inside the level"}
+                placeholder={V.invalidationsPlaceholder}
                 className="border-loss/30 focus-visible:ring-loss/30"
               />
               <p className="text-[11px] text-muted-foreground">
-                When ANY of these is true, the system no longer applies (§12).
+                {V.invalidationsHint}
               </p>
             </div>
           </fieldset>
 
           <div className="space-y-1.5">
-            <Label htmlFor="strategy-detailed">Detailed description (markdown)</Label>
+            <Label htmlFor="strategy-detailed">{V.detailedLabel}</Label>
             <Textarea
               id="strategy-detailed"
               value={values.detailedDescription}
               onChange={(event) => patch({ detailedDescription: event.target.value })}
-              placeholder="The full operating manual: context, edge thesis, what history says…"
+              placeholder={V.detailedPlaceholder}
               rows={3}
             />
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="strategy-entry">Entry rules (markdown)</Label>
+            <Label htmlFor="strategy-entry">{V.entryLabel}</Label>
             <Textarea
               id="strategy-entry"
               value={values.entryRules}
               onChange={(event) => patch({ entryRules: event.target.value })}
-              placeholder={"1. Wait for the pre-open range…\n2. Enter on the 1m close beyond…"}
+              placeholder={V.entryPlaceholder}
               rows={4}
               className="font-mono text-xs"
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="strategy-exit">Exit rules (markdown)</Label>
+            <Label htmlFor="strategy-exit">{V.exitLabel}</Label>
             <Textarea
               id="strategy-exit"
               value={values.exitRules}
               onChange={(event) => patch({ exitRules: event.target.value })}
-              placeholder={"- Stop to breakeven at +1R\n- Scale out 50% at 1.5R"}
+              placeholder={V.exitPlaceholder}
               rows={3}
               className="font-mono text-xs"
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="strategy-risk">Risk rules (markdown)</Label>
+            <Label htmlFor="strategy-risk">{V.riskLabel}</Label>
             <Textarea
               id="strategy-risk"
               value={values.riskRules}
               onChange={(event) => patch({ riskRules: event.target.value })}
-              placeholder={"- Max 1% risk per trade\n- Max 2 concurrent positions"}
+              placeholder={V.riskPlaceholder}
               rows={3}
               className="font-mono text-xs"
             />
@@ -608,10 +611,10 @@ export function StrategyFormDialog({ open, onOpenChange, strategy }: StrategyFor
 
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={pending}>
-            Cancel
+            {S.cancel}
           </Button>
           <Button onClick={() => void submit()} disabled={pending || nameError !== null}>
-            {isEdit ? "Save changes" : "Create strategy"}
+            {isEdit ? S.saveChanges : V.createBtn}
           </Button>
         </DialogFooter>
       </DialogContent>

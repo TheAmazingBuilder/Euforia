@@ -20,25 +20,26 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useStrategyVersions } from "@/lib/api/queries";
+import { useI18n } from "@/i18n/i18n-provider";
 import { cn } from "@/lib/utils";
 
 const CURRENT_KEY = "__current";
 
 /** The definition fields worth diffing (§17 — the frozen definition). */
-const DIFF_FIELDS: Array<{ key: string; label: string }> = [
-  { key: "name", label: "Name" },
-  { key: "description", label: "Description" },
-  { key: "marketProfile", label: "Market profile" },
-  { key: "marketConditions", label: "Market conditions" },
-  { key: "entryConditions", label: "Entry conditions" },
-  { key: "entryRules", label: "Entry rules" },
-  { key: "exitRules", label: "Exit rules" },
-  { key: "riskRules", label: "Risk rules" },
-  { key: "invalidations", label: "Invalidations" },
-  { key: "risk", label: "Risk" },
-  { key: "grade", label: "Grade" },
-  { key: "tags", label: "Tags" },
-];
+const DIFF_FIELD_KEYS = [
+  "name",
+  "description",
+  "marketProfile",
+  "marketConditions",
+  "entryConditions",
+  "entryRules",
+  "exitRules",
+  "riskRules",
+  "invalidations",
+  "risk",
+  "grade",
+  "tags",
+] as const;
 
 const truncate = (value: string, max = 140): string =>
   value.length > max ? `${value.slice(0, max)}…` : value;
@@ -71,6 +72,8 @@ export function StrategyVersionsDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const { dict } = useI18n();
+  const V = dict.playbook.versions;
   const { data, isPending } = useStrategyVersions(open && strategy ? strategy.id : null);
   const versions = React.useMemo(() => data?.versions ?? [], [data]);
 
@@ -81,17 +84,17 @@ export function StrategyVersionsDialog({
       ...historical.map((snapshot) => ({
         key: String(snapshot.version),
         label: `v${snapshot.version}`,
-        sub: snapshot.reason ?? "Snapshot",
+        sub: snapshot.reason ?? V.snapshotFallback,
         snapshot: snapshot.snapshot as Record<string, unknown> | null,
       })),
       {
         key: CURRENT_KEY,
-        label: `v${data?.currentVersion ?? 1} — current`,
-        sub: "Live definition",
+        label: `v${data?.currentVersion ?? 1}${V.currentSuffix}`,
+        sub: V.liveDefinition,
         snapshot: (strategy ?? null) as unknown as Record<string, unknown> | null,
       },
     ];
-  }, [versions, data?.currentVersion, strategy]);
+  }, [versions, data?.currentVersion, strategy, V]);
 
   const [aKey, setAKey] = React.useState<string | null>(null);
   const [bKey, setBKey] = React.useState<string | null>(null);
@@ -108,15 +111,15 @@ export function StrategyVersionsDialog({
     const a = options.find((option) => option.key === aKey);
     const b = options.find((option) => option.key === bKey);
     if (!a || !b || !a.snapshot || !b.snapshot) return [];
-    return DIFF_FIELDS.map((field) => {
-      const before = render(a.snapshot![field.key]);
-      const after = render(b.snapshot![field.key]);
+    return DIFF_FIELD_KEYS.map((key) => {
+      const before = render(a.snapshot![key]);
+      const after = render(b.snapshot![key]);
       const same = before === after;
-      const kind =
+      const kind: "SAME" | "ADDED" | "REMOVED" | "CHANGED" =
         same ? "SAME" : before === "—" ? "ADDED" : after === "—" ? "REMOVED" : "CHANGED";
-      return { label: field.label, before, after, kind };
+      return { label: V.diffFields[key], before, after, kind };
     }).filter((entry) => entry.kind !== "SAME");
-  }, [options, aKey, bKey]);
+  }, [options, aKey, bKey, V]);
 
   if (!strategy) return null;
 
@@ -126,26 +129,24 @@ export function StrategyVersionsDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 font-heading">
             <History className="size-5 text-violet-400" aria-hidden="true" />
-            Version history — {strategy.name}
+            {V.titlePrefix} {strategy.name}
           </DialogTitle>
           <DialogDescription>
-            Every definition edit freezes the prior version before the change lands. Compare any
-            two snapshots field by field.
+            {V.desc}
           </DialogDescription>
         </DialogHeader>
 
         {isPending ? (
-          <p className="py-6 text-center text-sm text-muted-foreground">Loading versions…</p>
+          <p className="py-6 text-center text-sm text-muted-foreground">{V.loading}</p>
         ) : versions.length === 0 ? (
           <p className="rounded-lg border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
-            No prior version yet — edit a definition field (rules, conditions, risk…) and the
-            current definition is frozen as v1 automatically.
+            {V.empty}
           </p>
         ) : (
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <p className="text-[11px] text-muted-foreground">Compare</p>
+                <p className="text-[11px] text-muted-foreground">{V.compareLabel}</p>
                 <Select value={aKey ?? undefined} onValueChange={setAKey}>
                   <SelectTrigger className="h-9 text-sm" data-testid="versions-select-a">
                     <SelectValue />
@@ -160,7 +161,7 @@ export function StrategyVersionsDialog({
                 </Select>
               </div>
               <div className="space-y-1">
-                <p className="text-[11px] text-muted-foreground">With</p>
+                <p className="text-[11px] text-muted-foreground">{V.withLabel}</p>
                 <Select value={bKey ?? undefined} onValueChange={setBKey}>
                   <SelectTrigger className="h-9 text-sm" data-testid="versions-select-b">
                     <SelectValue />
@@ -178,11 +179,11 @@ export function StrategyVersionsDialog({
 
             {aKey === bKey ? (
               <p className="rounded-lg border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
-                Pick two different versions to see the diff.
+                {V.pickTwo}
               </p>
             ) : diff.length === 0 ? (
               <p className="rounded-lg border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground" data-testid="version-diff-empty">
-                These two versions are identical on the tracked fields.
+                {V.identical}
               </p>
             ) : (
               <ul className="space-y-2" data-testid="version-diff">
@@ -205,7 +206,7 @@ export function StrategyVersionsDialog({
                           entry.kind === "REMOVED" && "border-loss/40 text-loss",
                         )}
                       >
-                        {entry.kind}
+                        {V.kinds[entry.kind]}
                       </Badge>
                       <GitCompareArrows className="ml-auto size-3.5 text-muted-foreground" aria-hidden="true" />
                     </div>

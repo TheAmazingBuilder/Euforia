@@ -14,12 +14,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { NofyLinkedNotesSection } from "@/components/nofy/nofy-linked-notes";
 import { SetupFormDialog } from "@/components/playbook/setup-form-dialog";
 import {
-  MARKET_CONDITION_LABELS,
+  marketConditionLabels,
   STATUS_DOT,
-  STATUS_LABELS,
+  statusLabels,
 } from "@/components/playbook/playbook-labels";
 import { apiErrorMessage } from "@/lib/api/client";
 import { useCreateNofyNote, useDeleteSetup, useSetups, useSetupInsights } from "@/lib/api/queries";
+import { useI18n } from "@/i18n/i18n-provider";
 import { cn } from "@/lib/utils";
 
 /**
@@ -34,6 +35,8 @@ export function SetupsPanel({
   strategies: Strategy[];
   onOpenDetail: (strategy: Strategy) => void;
 }) {
+  const { dict } = useI18n();
+  const V = dict.playbook.setups;
   const setupsQuery = useSetups();
   const insightsQuery = useSetupInsights();
   const [formOpen, setFormOpen] = React.useState(false);
@@ -64,8 +67,8 @@ export function SetupsPanel({
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">
-          {setups.length} {setups.length === 1 ? "setup" : "setups"} across {grouped.length}{" "}
-          {grouped.length === 1 ? "strategy" : "strategies"} — the recipe layer of your systems.
+          {setups.length} {setups.length === 1 ? V.setupOne : V.setupMany} {V.acrossPrefix} {grouped.length}{" "}
+          {grouped.length === 1 ? V.strategyOne : V.strategyMany} {V.introTail}
         </p>
         <Button
           size="sm"
@@ -75,29 +78,28 @@ export function SetupsPanel({
             setFormOpen(true);
           }}
         >
-          <Plus className="size-4" aria-hidden="true" /> New Setup
+          <Plus className="size-4" aria-hidden="true" /> {V.newBtn}
         </Button>
       </div>
 
       {setupsQuery.isLoading ? (
-        <div className="space-y-3" aria-busy="true" aria-label="Loading setups">
+        <div className="space-y-3" aria-busy="true" aria-label={V.loadingAria}>
           <Skeleton className="h-28 rounded-xl" />
           <Skeleton className="h-28 rounded-xl" />
         </div>
       ) : grouped.length === 0 ? (
         <Card className="bg-surface">
           <CardContent className="flex flex-col items-center py-12 text-center">
-            <p className="font-heading text-lg font-semibold">No setup yet</p>
+            <p className="font-heading text-lg font-semibold">{V.emptyTitle}</p>
             <p className="mt-2 max-w-md text-sm leading-relaxed text-muted-foreground">
-              A strategy says WHEN the system applies; a setup says HOW the entry is executed.
-              Define the trigger, the confirmation, the models — and never skip the invalidation.
+              {V.emptyBody}
             </p>
           </CardContent>
         </Card>
       ) : (
         <div className="space-y-5">
           {grouped.map(({ strategy, setups: own }) => (
-            <section key={strategy.id} aria-label={`Setups of ${strategy.name}`}>
+            <section key={strategy.id} aria-label={`${V.ofAriaPrefix} ${strategy.name}`}>
               <header className="mb-2 flex items-center gap-2">
                 <span
                   className="size-2 rounded-full"
@@ -112,7 +114,7 @@ export function SetupsPanel({
                   {strategy.name}
                 </button>
                 <span className="font-mono text-xs tabular-nums text-muted-foreground">
-                  {own.length} {own.length === 1 ? "setup" : "setups"}
+                  {own.length} {own.length === 1 ? V.setupOne : V.setupMany}
                 </span>
               </header>
               <div className="space-y-2">
@@ -159,6 +161,11 @@ function SetupRow({
   onToggle: () => void;
   onEdit: () => void;
 }) {
+  const { dict } = useI18n();
+  const V = dict.playbook.setups;
+  const S = dict.playbook.shared;
+  const STATUS_LABELS = statusLabels(dict.playbook.labels.status);
+  const MARKET_CONDITION_LABELS = marketConditionLabels(dict.playbook.labels.marketCondition);
   const deleteSetup = useDeleteSetup();
   const router = useRouter();
 
@@ -166,13 +173,13 @@ function SetupRow({
   // notes taken here carry a real SETUP ref and stay reachable from the row.
   const createNofyNote = useCreateNofyNote({
     onCreated: (note) => {
-      toast.success("Note created in Nofy.", { description: `Linked to ${setup.name}.` });
+      toast.success(S.nofyToast, { description: `${S.nofyLinkedA}${setup.name}${S.nofyLinkedB}` });
       router.push(`/nofy?tab=notes&note=${note.id}`);
     },
   });
   const takeNofyNotes = () => {
     createNofyNote.mutate({
-      title: `${setup.name} — setup notes`,
+      title: `${setup.name}${V.noteTitleSuffix}`,
       blocks: [
         { id: `nb-${Math.random().toString(36).slice(2, 10)}`, type: "ref", text: "", ref: { kind: "SETUP", id: setup.id } },
         { id: `nb-${Math.random().toString(36).slice(2, 10)}`, type: "paragraph", text: "" },
@@ -183,20 +190,20 @@ function SetupRow({
   const remove = async () => {
     try {
       await deleteSetup.mutateAsync(setup.id);
-      toast.success("Setup deleted");
+      toast.success(V.toastDeleted);
     } catch (error) {
-      toast.error("Could not delete the setup", {
-        description: apiErrorMessage(error, "Unexpected error"),
+      toast.error(V.toastDeleteFailed, {
+        description: apiErrorMessage(error, S.unexpectedError),
       });
     }
   };
 
   const facts: Array<{ label: string; value: string | null }> = [
-    { label: "Trigger", value: setup.trigger },
-    { label: "Confirmation", value: setup.confirmation },
-    { label: "Entry model", value: setup.entryModel },
-    { label: "Stop model", value: setup.stopModel },
-    { label: "Target model", value: setup.targetModel },
+    { label: V.factTrigger, value: setup.trigger },
+    { label: V.factConfirmation, value: setup.confirmation },
+    { label: V.factEntryModel, value: setup.entryModel },
+    { label: V.factStopModel, value: setup.stopModel },
+    { label: V.factTargetModel, value: setup.targetModel },
   ];
 
   return (
@@ -220,18 +227,18 @@ function SetupRow({
           ) : null}
           {setup.invalidation === null ? (
             <Badge variant="outline" className="border-warning/40 px-1.5 py-0 text-[10px] text-warning">
-              Missing invalidation
+              {V.missingInvalidation}
             </Badge>
           ) : null}
         </button>
-        <Button size="icon" variant="ghost" className="size-7" aria-label={`Edit ${setup.name}`} onClick={onEdit}>
+        <Button size="icon" variant="ghost" className="size-7" aria-label={`${S.editPrefix} ${setup.name}`} onClick={onEdit}>
           <Pencil className="size-3.5" aria-hidden="true" />
         </Button>
         <Button
           size="icon"
           variant="ghost"
           className="size-7 hover:text-destructive"
-          aria-label={`Delete ${setup.name}`}
+          aria-label={`${S.deletePrefix} ${setup.name}`}
           onClick={() => void remove()}
         >
           <Trash2 className="size-3.5" aria-hidden="true" />
@@ -239,7 +246,7 @@ function SetupRow({
         <button
           type="button"
           onClick={onToggle}
-          aria-label={expanded ? "Collapse" : "Expand"}
+          aria-label={expanded ? V.collapseAria : V.expandAria}
           className="text-muted-foreground hover:text-foreground"
         >
           {expanded ? (
@@ -269,7 +276,7 @@ function SetupRow({
           </dl>
           {setup.invalidation ? (
             <div className={cn("rounded-md border border-loss/30 bg-loss/5 px-3 py-2")}>
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-loss">Invalidation</p>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-loss">{V.invalidationHeading}</p>
               <p className="mt-0.5 text-sm text-foreground">{setup.invalidation}</p>
             </div>
           ) : null}
@@ -279,7 +286,7 @@ function SetupRow({
             <div className="rounded-lg border border-border bg-background/40 px-3 py-2.5" data-testid="setup-insight">
               <div className="flex flex-wrap items-center gap-2">
                 <p className="text-[11px] font-semibold tracking-wider uppercase text-muted-foreground">
-                  90-day track record
+                  {V.trackRecord}
                 </p>
                 {insight.smallSample ? (
                   <Badge
@@ -287,7 +294,7 @@ function SetupRow({
                     className="border-warning/40 px-1.5 py-0 text-[10px] text-warning"
                     data-testid="setup-insight-sample"
                   >
-                    small sample — n = {insight.trades}
+                    {V.smallSamplePrefix} {insight.trades}
                   </Badge>
                 ) : (
                   <Badge
@@ -295,7 +302,7 @@ function SetupRow({
                     className="border-border px-1.5 py-0 font-mono text-[10px] text-muted-foreground"
                     data-testid="setup-insight-sample"
                   >
-                    n = {insight.trades}
+                    {V.nPrefix} {insight.trades}
                   </Badge>
                 )}
                 {insight.topInstrumentId !== null ? (
@@ -305,25 +312,24 @@ function SetupRow({
                     data-testid="setup-insight-filter"
                   >
                     <Filter className="size-3" aria-hidden="true" />
-                    Filter ledger: {insight.topInstrument}
+                    {V.filterLedgerPrefix} {insight.topInstrument}
                   </Link>
                 ) : null}
               </div>
               {insight.trades === 0 ? (
                 <p className="mt-1.5 text-xs italic text-muted-foreground">
-                  No trade linked to this setup in the last 90 days — link one from the capture
-                  form or the imports.
+                  {V.insightEmpty}
                 </p>
               ) : (
                 <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 sm:grid-cols-4">
                   <div>
-                    <dt className="text-[10px] uppercase tracking-wide text-muted-foreground">Win rate</dt>
+                    <dt className="text-[10px] uppercase tracking-wide text-muted-foreground">{V.statWinRate}</dt>
                     <dd className="font-mono text-sm font-semibold tabular-nums">
                       {insight.winRatePct === null ? "—" : `${insight.winRatePct.toFixed(0)}%`}
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-[10px] uppercase tracking-wide text-muted-foreground">Total R</dt>
+                    <dt className="text-[10px] uppercase tracking-wide text-muted-foreground">{V.statTotalR}</dt>
                     <dd
                       className={cn(
                         "font-mono text-sm font-semibold tabular-nums",
@@ -334,7 +340,7 @@ function SetupRow({
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-[10px] uppercase tracking-wide text-muted-foreground">Expectancy</dt>
+                    <dt className="text-[10px] uppercase tracking-wide text-muted-foreground">{V.statExpectancy}</dt>
                     <dd
                       className={cn(
                         "font-mono text-sm font-semibold tabular-nums",
@@ -345,7 +351,7 @@ function SetupRow({
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-[10px] uppercase tracking-wide text-muted-foreground">Best window</dt>
+                    <dt className="text-[10px] uppercase tracking-wide text-muted-foreground">{V.statBestWindow}</dt>
                     <dd className="text-sm text-foreground">
                       {insight.topInstrument ?? "—"}
                       {insight.topSession ? (
@@ -358,7 +364,7 @@ function SetupRow({
             </div>
           ) : null}
           {setup.context ? (
-            <p className="text-xs leading-relaxed text-muted-foreground">Context: {setup.context}</p>
+            <p className="text-xs leading-relaxed text-muted-foreground">{V.contextPrefix} {setup.context}</p>
           ) : null}
           {setup.tags.length > 0 ? (
             <div className="flex flex-wrap gap-1.5">

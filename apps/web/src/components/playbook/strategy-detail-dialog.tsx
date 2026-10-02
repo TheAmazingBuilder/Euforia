@@ -23,6 +23,7 @@ import { formatPercent, formatR, type Strategy, type StrategyStat } from "@cosmo
 import { apiErrorMessage } from "@/lib/api/client";
 
 import { useCreateNofyNote, useDeleteStrategy } from "@/lib/api/queries";
+import { useI18n } from "@/i18n/i18n-provider";
 import { openTradeModal } from "@/lib/hooks/use-trade-modal";
 import { cn } from "@/lib/utils";
 
@@ -52,6 +53,9 @@ function RuleSection({ title, source }: { title: string; source: string | null }
 }
 
 export function StrategyDetailDialog({ strategy, stat, onOpenChange, onEdit }: StrategyDetailDialogProps) {
+  const { dict } = useI18n();
+  const V = dict.playbook.detail;
+  const S = dict.playbook.shared;
   const deleteStrategy = useDeleteStrategy();
   const router = useRouter();
   const [versionsOpen, setVersionsOpen] = React.useState(false);
@@ -61,7 +65,9 @@ export function StrategyDetailDialog({ strategy, stat, onOpenChange, onEdit }: S
   const createNofyNote = useCreateNofyNote({
     onCreated: (note) => {
       onOpenChange(false);
-      toast.success("Note created in Nofy.", { description: `Linked to ${strategy?.name ?? "strategy"}.` });
+      toast.success(S.nofyToast, {
+        description: `${S.nofyLinkedA}${strategy?.name ?? S.strategyFallback}${S.nofyLinkedB}`,
+      });
       router.push(`/nofy?tab=notes&note=${note.id}`);
     },
   });
@@ -69,7 +75,7 @@ export function StrategyDetailDialog({ strategy, stat, onOpenChange, onEdit }: S
   const takeNofyNotes = () => {
     if (!strategy) return;
     createNofyNote.mutate({
-      title: `${strategy.name} — playbook notes`,
+      title: `${strategy.name}${V.noteTitleSuffix}`,
       blocks: [
         { id: `nb-${Math.random().toString(36).slice(2, 10)}`, type: "ref", text: "", ref: { kind: "STRATEGY", id: strategy.id } },
         { id: `nb-${Math.random().toString(36).slice(2, 10)}`, type: "paragraph", text: "" },
@@ -98,12 +104,12 @@ export function StrategyDetailDialog({ strategy, stat, onOpenChange, onEdit }: S
   const remove = async () => {
     try {
       await deleteStrategy.mutateAsync(strategy.id);
-      toast.success("Strategy deleted", { description: strategy.name });
+      toast.success(V.toastDeleted, { description: strategy.name });
       onOpenChange(false);
       router.refresh();
     } catch (error) {
-      toast.error("Could not delete the strategy", {
-        description: apiErrorMessage(error, "Unexpected error"),
+      toast.error(V.toastDeleteFailed, {
+        description: apiErrorMessage(error, S.unexpectedError),
       });
     }
   };
@@ -119,28 +125,28 @@ export function StrategyDetailDialog({ strategy, stat, onOpenChange, onEdit }: S
             </DialogTitle>
           </div>
           <DialogDescription className="whitespace-pre-line">
-            {strategy.description ?? "No description yet."}
+            {strategy.description ?? V.noDescription}
           </DialogDescription>
         </DialogHeader>
 
         {stat !== undefined ? (
           <div className="grid grid-cols-4 gap-2 rounded-lg border border-border bg-surface-raised px-3 py-2 font-mono text-xs tabular-nums">
             <div>
-              <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">Trades</span>
+              <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">{V.statTrades}</span>
               <span className="text-foreground">{String(stat.trades)}</span>
             </div>
             <div>
-              <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">Win rate</span>
+              <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">{V.statWinRate}</span>
               <span className="text-foreground">{formatPercent(stat.winRate, 0)}</span>
             </div>
             <div>
-              <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">Avg R</span>
+              <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">{V.statAvgR}</span>
               <span className={cn(avgR !== null && avgR < 0 ? "text-loss" : "text-profit")}>
                 {formatR(stat.avgR)}
               </span>
             </div>
             <div>
-              <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">Last 20</span>
+              <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">{V.statLast20}</span>
               <span className={cn(Number(stat.last20Expectancy) < 0 ? "text-loss" : "text-profit")}>
                 {formatR(stat.last20Expectancy)}
               </span>
@@ -151,9 +157,9 @@ export function StrategyDetailDialog({ strategy, stat, onOpenChange, onEdit }: S
         <Separator />
 
         <div className="space-y-4">
-          <RuleSection title="Entry rules" source={strategy.entryRules} />
-          <RuleSection title="Exit rules" source={strategy.exitRules} />
-          <RuleSection title="Risk rules" source={strategy.riskRules} />
+          <RuleSection title={V.entryRulesTitle} source={strategy.entryRules} />
+          <RuleSection title={V.exitRulesTitle} source={strategy.exitRules} />
+          <RuleSection title={V.riskRulesTitle} source={strategy.riskRules} />
         </div>
 
         <NofyLinkedNotesSection
@@ -173,7 +179,7 @@ export function StrategyDetailDialog({ strategy, stat, onOpenChange, onEdit }: S
             disabled={deleteStrategy.isPending}
           >
             <Trash2 className="size-4" aria-hidden="true" />
-            Delete
+            {V.deleteBtn}
           </Button>
           <div className="flex gap-2">
             <Button
@@ -183,15 +189,15 @@ export function StrategyDetailDialog({ strategy, stat, onOpenChange, onEdit }: S
               data-testid="strategy-versions-open"
             >
               <History className="size-3.5" aria-hidden="true" />
-              Version history
+              {V.versionsBtn}
             </Button>
             <Button variant="outline" onClick={() => onEdit(strategy)}>
               <Pencil className="size-4" aria-hidden="true" />
-              Edit
+              {V.editBtn}
             </Button>
             <Button onClick={tradeThisSetup}>
               <Play className="size-4" aria-hidden="true" />
-              Trade this setup
+              {V.tradeBtn}
             </Button>
           </div>
         </DialogFooter>

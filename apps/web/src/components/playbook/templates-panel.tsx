@@ -7,12 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  MARKET_CONDITION_LABELS,
-  STYLE_LABELS,
+  marketConditionLabels,
+  styleLabels,
 } from "@/components/playbook/playbook-labels";
 import { useInstantiateTemplate, usePlaybookTemplates } from "@/lib/api/queries";
 import { toast } from "sonner";
 import { apiErrorMessage } from "@/lib/api/client";
+import { useI18n } from "@/i18n/i18n-provider";
 
 /**
  * Template library (§18): ten starting points that pre-fill identity, market
@@ -20,6 +21,11 @@ import { apiErrorMessage } from "@/lib/api/client";
  * They are starting points — NEVER claims that these approaches are profitable.
  */
 export function TemplatesPanel() {
+  const { dict } = useI18n();
+  const V = dict.playbook.templates;
+  const S = dict.playbook.shared;
+  const STYLE_LABELS = styleLabels(dict.playbook.labels.style);
+  const MARKET_CONDITION_LABELS = marketConditionLabels(dict.playbook.labels.marketCondition);
   const templatesQuery = usePlaybookTemplates();
   const instantiate = useInstantiateTemplate();
   const [busyKey, setBusyKey] = React.useState<string | null>(null);
@@ -31,13 +37,13 @@ export function TemplatesPanel() {
     setBusyKey(key);
     try {
       const strategy = await instantiate.mutateAsync({ key });
-      toast.success(`"${strategy.name}" created as a draft`, {
-        description: "Open it in My Strategies and make it yours before trading it.",
+      toast.success(`${V.toastCreatedA}${strategy.name}${V.toastCreatedB}`, {
+        description: V.toastCreatedDesc,
       });
       setCreatedKeys((previous) => [...previous, key]);
     } catch (error) {
-      toast.error("Could not create the strategy from template", {
-        description: apiErrorMessage(error, "Unexpected error"),
+      toast.error(V.toastFailed, {
+        description: apiErrorMessage(error, S.unexpectedError),
       });
     } finally {
       setBusyKey(null);
@@ -46,7 +52,7 @@ export function TemplatesPanel() {
 
   if (templatesQuery.isLoading) {
     return (
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3" aria-busy="true" aria-label="Loading templates">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3" aria-busy="true" aria-label={V.loadingAria}>
         <Skeleton className="h-44 rounded-xl" />
         <Skeleton className="h-44 rounded-xl" />
         <Skeleton className="h-44 rounded-xl" />
@@ -56,17 +62,13 @@ export function TemplatesPanel() {
 
   return (
     <div className="space-y-4">
-      <p className="max-w-3xl text-sm text-muted-foreground">
-        Ten classic structures to start from. A template gives you the SHAPE — market profile,
-        conditions, risk frame, invalidations — not an edge. You still have to define your own
-        levels, sessions and proof.
-      </p>
+      <p className="max-w-3xl text-sm text-muted-foreground">{V.intro}</p>
 
       {templates.length === 0 ? (
         <Card className="bg-surface">
           <CardContent className="flex flex-col items-center py-12 text-center">
             <LayoutTemplate className="size-8 text-muted-foreground" aria-hidden="true" />
-            <p className="mt-4 font-heading text-lg font-semibold">Template library unavailable</p>
+            <p className="mt-4 font-heading text-lg font-semibold">{V.emptyTitle}</p>
           </CardContent>
         </Card>
       ) : (
@@ -114,12 +116,12 @@ export function TemplatesPanel() {
                     >
                       <Plus className="size-3.5" aria-hidden="true" />
                       {busyKey === template.key
-                        ? "Creating…"
+                        ? V.creating
                         : created
-                          ? "Create another"
-                          : "Create draft"}
+                          ? V.createAnother
+                          : V.createDraft}
                     </Button>
-                    <span className="text-[10px] text-muted-foreground">v1 draft · unproven</span>
+                    <span className="text-[10px] text-muted-foreground">{V.draftBadge}</span>
                   </div>
                 </CardContent>
               </Card>
@@ -128,10 +130,7 @@ export function TemplatesPanel() {
         </div>
       )}
 
-      <p className="text-[11px] leading-relaxed text-muted-foreground">
-        Reminder: templates are starting points, not claims that these strategies are profitable —
-        your own data (Analytics) is the only judge.
-      </p>
+      <p className="text-[11px] leading-relaxed text-muted-foreground">{V.reminder}</p>
     </div>
   );
 }

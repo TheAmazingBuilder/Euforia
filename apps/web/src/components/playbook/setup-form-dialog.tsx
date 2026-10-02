@@ -24,12 +24,13 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  MARKET_CONDITION_LABELS,
-  STATUS_LABELS,
+  marketConditionLabels,
+  statusLabels,
   parseTags,
 } from "@/components/playbook/playbook-labels";
 import { apiErrorMessage } from "@/lib/api/client";
 import { useCreateSetup, useUpdateSetup } from "@/lib/api/queries";
+import { useI18n } from "@/i18n/i18n-provider";
 
 /**
  * Setup create/edit dialog (§9). The invalidation field is deliberately
@@ -88,6 +89,11 @@ export function SetupFormDialog({
   setup: Setup | null;
   strategies: Strategy[];
 }) {
+  const { dict } = useI18n();
+  const V = dict.playbook.setupForm;
+  const S = dict.playbook.shared;
+  const STATUS_LABELS = statusLabels(dict.playbook.labels.status);
+  const MARKET_CONDITION_LABELS = marketConditionLabels(dict.playbook.labels.marketCondition);
   const isEdit = setup !== null;
   const createSetup = useCreateSetup();
   const updateSetup = useUpdateSetup();
@@ -103,8 +109,8 @@ export function SetupFormDialog({
   const patch = (partial: Partial<SetupFormValues>) =>
     setValues((previous) => ({ ...previous, ...partial }));
 
-  const nameError = values.name.trim() === "" ? "Name is required" : null;
-  const strategyError = values.strategyId === "" ? "Choose a strategy" : null;
+  const nameError = values.name.trim() === "" ? V.nameRequired : null;
+  const strategyError = values.strategyId === "" ? V.strategyRequired : null;
   const pending = createSetup.isPending || updateSetup.isPending;
 
   const submit = async () => {
@@ -127,17 +133,17 @@ export function SetupFormDialog({
       if (isEdit) {
         const input: UpdateSetupInput = { ...base, strategyId: values.strategyId };
         await updateSetup.mutateAsync({ setupId: setup.id, input });
-        toast.success("Setup updated", { description: "The recipe is current again." });
+        toast.success(V.toastUpdated, { description: V.toastUpdatedDesc });
       } else {
         await createSetup.mutateAsync({ ...base, strategyId: values.strategyId });
-        toast.success("Setup added", {
-          description: "Define its invalidation before you trade it — that is the exit door.",
+        toast.success(V.toastCreated, {
+          description: V.toastCreatedDesc,
         });
       }
       onOpenChange(false);
     } catch (error) {
-      toast.error(isEdit ? "Could not update the setup" : "Could not create the setup", {
-        description: apiErrorMessage(error, "Unexpected error"),
+      toast.error(isEdit ? V.toastUpdateFailed : V.toastCreateFailed, {
+        description: apiErrorMessage(error, S.unexpectedError),
       });
     }
   };
@@ -146,19 +152,19 @@ export function SetupFormDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-xl">
         <DialogHeader>
-          <DialogTitle className="font-heading">{isEdit ? "Edit setup" : "New setup"}</DialogTitle>
+          <DialogTitle className="font-heading">{isEdit ? V.editTitle : V.createTitle}</DialogTitle>
           <DialogDescription>
-            The recipe: when it triggers, what confirms it, how it is executed — and what kills it.
+            {V.desc}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label htmlFor="setup-strategy">Strategy</Label>
+              <Label htmlFor="setup-strategy">{V.strategyLabel}</Label>
               <Select value={values.strategyId} onValueChange={(value) => patch({ strategyId: value })}>
-                <SelectTrigger id="setup-strategy" aria-label="Strategy">
-                  <SelectValue placeholder="Choose…" />
+                <SelectTrigger id="setup-strategy" aria-label={V.strategyAria}>
+                  <SelectValue placeholder={V.choosePlaceholder} />
                 </SelectTrigger>
                 <SelectContent>
                   {strategies.map((strategy) => (
@@ -171,12 +177,12 @@ export function SetupFormDialog({
               {strategyError ? <p className="text-xs text-loss">{strategyError}</p> : null}
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="setup-name">Name</Label>
+              <Label htmlFor="setup-name">{V.nameLabel}</Label>
               <Input
                 id="setup-name"
                 value={values.name}
                 onChange={(event) => patch({ name: event.target.value })}
-                placeholder="Breakout + Retest"
+                placeholder={V.namePlaceholder}
               />
               {nameError ? <p className="text-xs text-loss">{nameError}</p> : null}
             </div>
@@ -184,12 +190,12 @@ export function SetupFormDialog({
 
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label htmlFor="setup-status">Status</Label>
+              <Label htmlFor="setup-status">{V.statusLabel}</Label>
               <Select
                 value={values.status}
                 onValueChange={(value) => patch({ status: value as Setup["status"] })}
               >
-                <SelectTrigger id="setup-status" aria-label="Status">
+                <SelectTrigger id="setup-status" aria-label={V.statusAria}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -202,16 +208,16 @@ export function SetupFormDialog({
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="setup-condition">Market condition</Label>
+              <Label htmlFor="setup-condition">{V.conditionLabel}</Label>
               <Select
                 value={values.marketCondition}
                 onValueChange={(value) => patch({ marketCondition: value })}
               >
-                <SelectTrigger id="setup-condition" aria-label="Market condition">
-                  <SelectValue placeholder="Any / not specified" />
+                <SelectTrigger id="setup-condition" aria-label={V.conditionAria}>
+                  <SelectValue placeholder={V.conditionAny} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Any / not specified</SelectItem>
+                  <SelectItem value="">{V.conditionAny}</SelectItem>
                   {Object.entries(MARKET_CONDITION_LABELS).map(([value, label]) => (
                     <SelectItem key={value} value={value}>
                       {label}
@@ -223,70 +229,70 @@ export function SetupFormDialog({
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="setup-description">Short description</Label>
+            <Label htmlFor="setup-description">{V.descriptionLabel}</Label>
             <Input
               id="setup-description"
               value={values.description}
               onChange={(event) => patch({ description: event.target.value })}
-              placeholder="One sentence a future-you will understand."
+              placeholder={V.descriptionPlaceholder}
             />
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="setup-context">Context</Label>
+            <Label htmlFor="setup-context">{V.contextLabel}</Label>
             <Textarea
               id="setup-context"
               rows={2}
               value={values.context}
               onChange={(event) => patch({ context: event.target.value })}
-              placeholder="When does this setup apply? Regime, session, preconditions…"
+              placeholder={V.contextPlaceholder}
             />
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
-            <Field id="setup-trigger" label="Trigger" value={values.trigger} onChange={(value) => patch({ trigger: value })} />
-            <Field id="setup-confirmation" label="Confirmation" value={values.confirmation} onChange={(value) => patch({ confirmation: value })} />
-            <Field id="setup-entry" label="Entry model" value={values.entryModel} onChange={(value) => patch({ entryModel: value })} />
-            <Field id="setup-stop" label="Stop model" value={values.stopModel} onChange={(value) => patch({ stopModel: value })} />
-            <Field id="setup-target" label="Target model" value={values.targetModel} onChange={(value) => patch({ targetModel: value })} />
-            <Field id="setup-tags" label="Tags (comma-separated)" value={values.tags} onChange={(value) => patch({ tags: value })} />
+            <Field id="setup-trigger" label={V.triggerLabel} value={values.trigger} onChange={(value) => patch({ trigger: value })} />
+            <Field id="setup-confirmation" label={V.confirmationLabel} value={values.confirmation} onChange={(value) => patch({ confirmation: value })} />
+            <Field id="setup-entry" label={V.entryModelLabel} value={values.entryModel} onChange={(value) => patch({ entryModel: value })} />
+            <Field id="setup-stop" label={V.stopModelLabel} value={values.stopModel} onChange={(value) => patch({ stopModel: value })} />
+            <Field id="setup-target" label={V.targetModelLabel} value={values.targetModel} onChange={(value) => patch({ targetModel: value })} />
+            <Field id="setup-tags" label={V.tagsLabel} value={values.tags} onChange={(value) => patch({ tags: value })} />
           </div>
 
           <div className="space-y-1.5">
             <Label htmlFor="setup-invalidation" className="text-loss">
-              Invalidation — when is this setup NO LONGER valid?
+              {V.invalidationLabel}
             </Label>
             <Textarea
               id="setup-invalidation"
               rows={2}
               value={values.invalidation}
               onChange={(event) => patch({ invalidation: event.target.value })}
-              placeholder="e.g. Candle body closes back through the level."
+              placeholder={V.invalidationPlaceholder}
               className="border-loss/40 focus-visible:ring-loss/40"
             />
             <p className="text-[11px] text-muted-foreground">
-              A setup without an invalidation is an open door to hoping. Fill it.
+              {V.invalidationHint}
             </p>
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="setup-notes">Notes / examples</Label>
+            <Label htmlFor="setup-notes">{V.notesLabel}</Label>
             <Textarea
               id="setup-notes"
               rows={2}
               value={values.notes}
               onChange={(event) => patch({ notes: event.target.value })}
-              placeholder="Past examples, edge cases, references…"
+              placeholder={V.notesPlaceholder}
             />
           </div>
         </div>
 
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            {S.cancel}
           </Button>
           <Button onClick={() => void submit()} disabled={pending || nameError !== null || strategyError !== null}>
-            {pending ? "Saving…" : isEdit ? "Save changes" : "Create setup"}
+            {pending ? S.saving : isEdit ? S.saveChanges : V.createBtn}
           </Button>
         </DialogFooter>
       </DialogContent>

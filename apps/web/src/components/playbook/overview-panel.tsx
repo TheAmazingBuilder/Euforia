@@ -10,11 +10,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  HEALTH_FLAG_LABELS,
+  healthFlagLabels,
   STATUS_DOT,
-  STATUS_LABELS,
+  statusLabels,
 } from "@/components/playbook/playbook-labels";
 import { formatSignedMoney } from "@cosmoz/shared";
+import { useI18n } from "@/i18n/i18n-provider";
 import { cn } from "@/lib/utils";
 
 /**
@@ -38,9 +39,14 @@ export function OverviewPanel({
   onCreateStrategy,
   onGoTo,
 }: OverviewPanelProps) {
+  const { dict } = useI18n();
+  const V = dict.playbook.overview;
+  const FLAG_LABELS = healthFlagLabels(dict.playbook.labels.healthFlag);
+  const STATUS = statusLabels(dict.playbook.labels.status);
+
   if (!overview) {
     return (
-      <div className="grid gap-4 sm:grid-cols-2" aria-busy="true" aria-label="Loading overview">
+      <div className="grid gap-4 sm:grid-cols-2" aria-busy="true" aria-label={V.loadingAria}>
         <Skeleton className="h-40 rounded-xl" />
         <Skeleton className="h-40 rounded-xl" />
         <Skeleton className="h-64 rounded-xl sm:col-span-2" />
@@ -58,39 +64,39 @@ export function OverviewPanel({
   const nameOf = (strategyId: string) =>
     recentlyUpdated.find((entry) => entry.strategyId === strategyId)?.name ??
     recentlyUsed.find((entry) => entry.strategyId === strategyId)?.name ??
-    "Strategy";
+    V.strategyFallback;
 
   return (
     <div className="space-y-4">
       {/* ── Quick actions (§5) ─────────────────────────────────────────────── */}
       <div className="flex flex-wrap gap-2">
         <Button size="sm" onClick={onCreateStrategy}>
-          <Plus className="size-3.5" aria-hidden="true" /> Create Strategy
+          <Plus className="size-3.5" aria-hidden="true" /> {V.createStrategy}
         </Button>
         <Button size="sm" variant="outline" onClick={() => onGoTo("setups")}>
-          <TrendingUp className="size-3.5" aria-hidden="true" /> Create Setup
+          <TrendingUp className="size-3.5" aria-hidden="true" /> {V.createSetup}
         </Button>
         <Button size="sm" variant="outline" onClick={() => onGoTo("rules")}>
-          <ScrollText className="size-3.5" aria-hidden="true" /> Create Rule
+          <ScrollText className="size-3.5" aria-hidden="true" /> {V.createRule}
         </Button>
         <Button size="sm" variant="outline" onClick={() => onGoTo("checklists")}>
-          <ListChecks className="size-3.5" aria-hidden="true" /> Create Checklist
+          <ListChecks className="size-3.5" aria-hidden="true" /> {V.createChecklist}
         </Button>
         <Button size="sm" variant="outline" onClick={() => onGoTo("strategies")}>
-          <Copy className="size-3.5" aria-hidden="true" /> Duplicate Strategy
+          <Copy className="size-3.5" aria-hidden="true" /> {V.duplicateStrategy}
         </Button>
       </div>
 
       {/* ── Counts (§5) ────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <CountTile label="Total strategies" value={counts.totalStrategies} testid="overview-total-strategies" />
-        <CountTile label="Active" value={counts.active} testid="overview-active-strategies" />
-        <CountTile label="Draft" value={counts.draft} testid="overview-draft-strategies" />
-        <CountTile label="Archived" value={counts.archived} testid="overview-archived-strategies" />
-        <CountTile label="Setups" value={counts.totalSetups} testid="overview-total-setups" />
-        <CountTile label="Operating rules" value={counts.totalRules} testid="overview-total-rules" />
-        <CountTile label="Checklists" value={counts.totalChecklists} testid="overview-total-checklists" />
-        <CountTile label="Paused" value={counts.paused} testid="overview-paused-strategies" />
+        <CountTile label={V.countTotalStrategies} value={counts.totalStrategies} testid="overview-total-strategies" />
+        <CountTile label={V.countActive} value={counts.active} testid="overview-active-strategies" />
+        <CountTile label={V.countDraft} value={counts.draft} testid="overview-draft-strategies" />
+        <CountTile label={V.countArchived} value={counts.archived} testid="overview-archived-strategies" />
+        <CountTile label={V.countSetups} value={counts.totalSetups} testid="overview-total-setups" />
+        <CountTile label={V.countRules} value={counts.totalRules} testid="overview-total-rules" />
+        <CountTile label={V.countChecklists} value={counts.totalChecklists} testid="overview-total-checklists" />
+        <CountTile label={V.countPaused} value={counts.paused} testid="overview-paused-strategies" />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
@@ -98,18 +104,15 @@ export function OverviewPanel({
         <Card className="bg-surface" data-testid="compliance-card">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center justify-between font-heading text-base font-semibold">
-              Live compliance
+              {V.complianceTitle}
               <Badge variant="outline" className="border-border px-1.5 py-0 font-mono text-[10px] text-muted-foreground">
-                last {compliance.windowSize} closed
+                {V.windowA} {compliance.windowSize} {V.windowB}
               </Badge>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             {compliance.reviewed === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                Nothing reviewed in the window yet — review your trades and the score appears
-                (matched trades only, no partial credit).
-              </p>
+              <p className="text-sm text-muted-foreground">{V.complianceEmpty}</p>
             ) : (
               <>
                 <div className="flex items-end gap-3">
@@ -127,8 +130,7 @@ export function OverviewPanel({
                     {compliance.scorePct === null ? "—" : `${compliance.scorePct.toFixed(0)}%`}
                   </span>
                   <span className="pb-1 text-xs text-muted-foreground">
-                    {compliance.matched} of {compliance.reviewed} reviewed trades matched the
-                    declared setup
+                    {compliance.matched} {V.matchedOf} {compliance.reviewed} {V.reviewedTail}
                   </span>
                 </div>
                 <div className="flex h-2.5 w-full overflow-hidden rounded-full bg-muted" data-testid="compliance-bar">
@@ -148,23 +150,22 @@ export function OverviewPanel({
                 </div>
                 <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-muted-foreground">
                   <span className="inline-flex items-center gap-1">
-                    <span className="size-2 rounded-full bg-profit" aria-hidden="true" /> Matched {compliance.matched}
+                    <span className="size-2 rounded-full bg-profit" aria-hidden="true" /> {V.legendMatched} {compliance.matched}
                   </span>
                   <span className="inline-flex items-center gap-1">
-                    <span className="size-2 rounded-full bg-warning" aria-hidden="true" /> Partial {compliance.partial}
+                    <span className="size-2 rounded-full bg-warning" aria-hidden="true" /> {V.legendPartial} {compliance.partial}
                   </span>
                   <span className="inline-flex items-center gap-1">
-                    <span className="size-2 rounded-full bg-loss" aria-hidden="true" /> Off playbook {compliance.offPlaybook}
+                    <span className="size-2 rounded-full bg-loss" aria-hidden="true" /> {V.legendOff} {compliance.offPlaybook}
                   </span>
                   {compliance.unreviewed > 0 ? (
-                    <span className="italic">{compliance.unreviewed} not reviewed yet — not judged</span>
+                    <span className="italic">{compliance.unreviewed} {V.notReviewedSuffix}</span>
                   ) : null}
                 </div>
               </>
             )}
             <p className="border-t border-border pt-2 text-[11px] leading-relaxed text-muted-foreground">
-              Declared at review time (Playbook match) — the score counts MATCHED only; a half
-              followed plan is not followed.
+              {V.complianceNote}
             </p>
           </CardContent>
         </Card>
@@ -172,17 +173,15 @@ export function OverviewPanel({
         {/* ── Performance summary (§5, §19 feeds from here) ─────────────────── */}
         <Card className="bg-surface">
           <CardHeader className="pb-2">
-            <CardTitle className="font-heading text-base font-semibold">Performance summary</CardTitle>
+            <CardTitle className="font-heading text-base font-semibold">{V.performanceTitle}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             {performanceSummary.trades === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                No closed playbook trade yet — run the system first, the numbers will follow.
-              </p>
+              <p className="text-sm text-muted-foreground">{V.performanceEmpty}</p>
             ) : (
               <>
                 <div className="flex items-baseline justify-between gap-3">
-                  <span className="text-xs text-muted-foreground">Net P&L (playbook trades)</span>
+                  <span className="text-xs text-muted-foreground">{V.netPnlLabel}</span>
                   <span
                     className={`font-mono text-lg font-semibold tabular-nums ${
                       Number(performanceSummary.netPnl) >= 0 ? "text-profit" : "text-loss"
@@ -193,28 +192,28 @@ export function OverviewPanel({
                   </span>
                 </div>
                 <dl className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
-                  <SummaryLine label="Closed trades" value={String(performanceSummary.trades)} />
+                  <SummaryLine label={V.statClosedTrades} value={String(performanceSummary.trades)} />
                   <SummaryLine
-                    label="Win rate"
+                    label={V.statWinRate}
                     value={performanceSummary.winRate === null ? "—" : `${performanceSummary.winRate.toFixed(1)}%`}
                   />
                   <SummaryLine
-                    label="Expectancy (R)"
+                    label={V.statExpectancy}
                     value={performanceSummary.expectancyR === null ? "—" : Number(performanceSummary.expectancyR).toFixed(2)}
                   />
                   <SummaryLine
-                    label="Plan followed"
+                    label={V.statPlanFollowed}
                     value={performanceSummary.followedPlanPct === null ? "—" : `${performanceSummary.followedPlanPct.toFixed(0)}%`}
                   />
                 </dl>
               </>
             )}
             <p className="border-t border-border pt-2 text-[11px] leading-relaxed text-muted-foreground">
-              Playbook trades only (a strategy was linked). Out-of-playbook trades live in{" "}
+              {V.perfNoteA}{" "}
               <Link href="/analytics" className="text-accent underline-offset-2 hover:underline">
-                Analytics
+                {V.analyticsLink}
               </Link>
-              .
+              {V.perfNoteB}
             </p>
           </CardContent>
         </Card>
@@ -222,14 +221,11 @@ export function OverviewPanel({
         {/* ── Completeness attention (§20) ───────────────────────────────────── */}
         <Card className="bg-surface">
           <CardHeader className="pb-2">
-            <CardTitle className="font-heading text-base font-semibold">Completeness to fix</CardTitle>
+            <CardTitle className="font-heading text-base font-semibold">{V.completenessTitle}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             {attention.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                Every strategy is complete on the fundamentals: risk, entry conditions, invalidation,
-                checklist. These are completeness indicators — never a performance judgment.
-              </p>
+              <p className="text-sm text-muted-foreground">{V.completenessEmpty}</p>
             ) : (
               attention.slice(0, 4).map((entry) => (
                 <div key={entry.strategyId} className="rounded-md border border-border bg-surface-raised px-3 py-2">
@@ -248,7 +244,7 @@ export function OverviewPanel({
                       .filter((flag) => flag !== "DRAFT" && flag !== "ARCHIVED")
                       .map((flag) => (
                         <Badge key={flag} variant="outline" className="border-warning/40 text-warning">
-                          {HEALTH_FLAG_LABELS[flag]}
+                          {FLAG_LABELS[flag]}
                         </Badge>
                       ))}
                   </div>
@@ -263,11 +259,11 @@ export function OverviewPanel({
       <div className="grid gap-4 lg:grid-cols-2">
         <Card className="bg-surface">
           <CardHeader className="pb-2">
-            <CardTitle className="font-heading text-base font-semibold">Recently updated</CardTitle>
+            <CardTitle className="font-heading text-base font-semibold">{V.recentlyUpdatedTitle}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-1.5">
             {recentlyUpdated.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No strategy yet.</p>
+              <p className="text-sm text-muted-foreground">{V.noStrategyYet}</p>
             ) : (
               recentlyUpdated.map((entry) => (
                 <div key={entry.strategyId} className="flex items-center justify-between gap-2 text-sm">
@@ -286,13 +282,11 @@ export function OverviewPanel({
 
         <Card className="bg-surface">
           <CardHeader className="pb-2">
-            <CardTitle className="font-heading text-base font-semibold">Recently used</CardTitle>
+            <CardTitle className="font-heading text-base font-semibold">{V.recentlyUsedTitle}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-1.5">
             {recentlyUsed.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                No trade linked to a strategy yet — associate one at entry to build history.
-              </p>
+              <p className="text-sm text-muted-foreground">{V.recentlyUsedEmpty}</p>
             ) : (
               recentlyUsed.map((entry) => (
                 <div key={entry.strategyId} className="flex items-center justify-between gap-2 text-sm">
@@ -305,7 +299,7 @@ export function OverviewPanel({
                     <span className="truncate text-foreground">{entry.name}</span>
                   </span>
                   <span className="shrink-0 font-mono text-xs tabular-nums text-muted-foreground">
-                    {entry.tradesCount} {entry.tradesCount === 1 ? "trade" : "trades"} · last {shortDate(entry.lastTradeAt)}
+                    {entry.tradesCount} {entry.tradesCount === 1 ? V.tradeOne : V.tradeMany} · {V.lastPrefix} {shortDate(entry.lastTradeAt)}
                   </span>
                 </div>
               ))
@@ -316,8 +310,8 @@ export function OverviewPanel({
 
       <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
         <FileCheck2 className="size-3.5" aria-hidden="true" />
-        Statuses on this page: {STATUS_LABELS.ACTIVE}, {STATUS_LABELS.DRAFT}, {STATUS_LABELS.PAUSED},{" "}
-        {STATUS_LABELS.RETIRED} — lifecycle labels only, never profitability scores.
+        {V.statusesPrefix} {STATUS.ACTIVE}, {STATUS.DRAFT}, {STATUS.PAUSED},{" "}
+        {STATUS.RETIRED} {V.statusesSuffix}
       </p>
     </div>
   );

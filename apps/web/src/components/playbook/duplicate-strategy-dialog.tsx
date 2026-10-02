@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/select";
 import { apiErrorMessage } from "@/lib/api/client";
 import { useDuplicateStrategy } from "@/lib/api/queries";
+import { useI18n } from "@/i18n/i18n-provider";
 
 /**
  * Duplicate Strategy quick action (§5): pick a source, get a fresh DRAFT copy
@@ -40,18 +41,21 @@ export function DuplicateStrategyDialog({
 }) {
   const [strategyId, setStrategyId] = React.useState<string>("");
   const duplicate = useDuplicateStrategy();
+  const { dict } = useI18n();
+  const V = dict.playbook.duplicate;
+  const S = dict.playbook.shared;
 
   const submit = async () => {
     if (strategyId === "") return;
     try {
       const copy = await duplicate.mutateAsync(strategyId);
-      toast.success("Strategy duplicated as a draft", {
-        description: `"${copy.name}" is ready to edit — its copy starts unproven (grade reset, history not carried over).`,
+      toast.success(V.toastCreated, {
+        description: `${V.toastCreatedDescA}${copy.name}${V.toastCreatedDescB}`,
       });
       onOpenChange(false);
     } catch (error) {
-      toast.error("Could not duplicate the strategy", {
-        description: apiErrorMessage(error, "Unexpected error"),
+      toast.error(V.toastFailed, {
+        description: apiErrorMessage(error, S.unexpectedError),
       });
     }
   };
@@ -60,17 +64,16 @@ export function DuplicateStrategyDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="font-heading">Duplicate a strategy</DialogTitle>
+          <DialogTitle className="font-heading">{V.title}</DialogTitle>
           <DialogDescription>
-            Creates a new DRAFT with the same definition, its setups and its checklists. Version
-            history stays with the original.
+            {V.desc}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-2">
-          <Label htmlFor="duplicate-source">Source strategy</Label>
+          <Label htmlFor="duplicate-source">{V.sourceLabel}</Label>
           <Select value={strategyId} onValueChange={setStrategyId}>
-            <SelectTrigger id="duplicate-source" aria-label="Source strategy">
-              <SelectValue placeholder="Choose a strategy…" />
+            <SelectTrigger id="duplicate-source" aria-label={V.sourceAria}>
+              <SelectValue placeholder={V.sourcePlaceholder} />
             </SelectTrigger>
             <SelectContent>
               {strategies.map((strategy) => (
@@ -83,10 +86,10 @@ export function DuplicateStrategyDialog({
         </div>
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            {S.cancel}
           </Button>
           <Button onClick={() => void submit()} disabled={strategyId === "" || duplicate.isPending}>
-            {duplicate.isPending ? "Duplicating…" : "Duplicate"}
+            {duplicate.isPending ? V.duplicating : V.duplicateBtn}
           </Button>
         </DialogFooter>
       </DialogContent>
