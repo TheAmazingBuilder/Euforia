@@ -1,0 +1,49 @@
+# COSMOZ — development/deployment compose (Foundation).
+#
+#   docker compose up db            → PostgreSQL only (web + api run via pnpm)
+#   docker compose --profile full up → PostgreSQL + API container
+#
+# The web app keeps its own dev workflow (pnpm dev) and is intentionally not
+# containerized in Foundation — revisit at deployment phase.
+#
+# NOTE: the dev sandbox has no Docker; this compose is exercised only in
+# environments that have it. For the embedded dev database used in this
+# sandbox see apps/api/scripts/dev-db.mjs.
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: cosmoz
+      POSTGRES_PASSWORD: cosmoz
+      POSTGRES_DB: cosmoz
+    ports:
+      - "5432:5432"
+    volumes:
+      - cosmoz-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cosmoz -d cosmoz"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    profiles: ["full"]
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      DATABASE_URL: postgresql://cosmoz:cosmoz@db:5432/cosmoz
+      # The Next.js dev server origin — tighten for real deployments.
+      CORS_ORIGINS: http://localhost:3000
+      LOG_LEVEL: info
+    ports:
+      - "4000:4000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  cosmoz-pgdata:

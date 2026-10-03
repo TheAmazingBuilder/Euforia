@@ -30,3 +30,6 @@ dev.log
 worklog.md
 .agent*
 tool-results/
+
+# embedded dev database (apps/api — local PostgreSQL data, never commit)
+.localpg/

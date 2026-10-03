@@ -8,3 +8,13 @@ allowBuilds:
   msw: false
   sharp: false
   unrs-resolver: true
+  # Prisma engine download + client postinstall generation (apps/api).
+  prisma: true
+  "@prisma/engines": true
+  "@prisma/client": true
+  # Embedded PostgreSQL binaries (apps/api dev/test database — no docker in sandbox).
+  "@embedded-postgres/linux-x64": true
+  # esbuild binary setup (vitest).
+  esbuild: true
+  # SWC native binding (vitest decorator-metadata plugin).
+  "@swc/core": true

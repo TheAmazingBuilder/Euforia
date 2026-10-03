@@ -1,0 +1,27 @@
+// COSMOZ — Prisma schema (FOUNDATION)
+//
+// Phase 1 mandate (§9/§37): the Foundation establishes DATABASE INFRASTRUCTURE
+// ONLY — client lifecycle, connectivity, migrations conventions, health.
+// Business models (User, Trade, Strategy, …) are created by their own bounded
+// contexts in later phases, following docs/specs/data-model.md as the design
+// source and the migration order drafted there.
+//
+// CONVENTIONS (binding for all future migrations):
+//   - Money/prices/quantities/R → Decimal(18,8) columns, string wire format.
+//   - All timestamps stored UTC; user timezone lives on the User model.
+//   - Migrations are deterministic, versioned, reviewable; created with
+//     `pnpm db:migrate -- --name <descriptive_name>`; applied non-interactively
+//     with `prisma migrate deploy`. Never reset a non-test database.
+//   - Seeding is done by migration tooling only (never hand INSERTs).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Intentionally NO models in Foundation.
+// The first real migration (Identity & Security) will arrive with Phase 2.

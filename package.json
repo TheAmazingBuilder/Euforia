@@ -5,7 +5,10 @@
   "scripts": {
     "dev": "turbo dev",
     "build": "turbo build",
-    "lint": "turbo lint"
+    "lint": "turbo lint",
+    "test": "turbo test",
+    "api:dev": "pnpm --filter @cosmoz/api dev",
+    "api:db:up": "pnpm --filter @cosmoz/api db:up"
   },
   "devDependencies": {
     "turbo": "^2"
