@@ -30,7 +30,14 @@ export type SecurityEventType =
   | "SENSITIVE_SETTINGS_CHANGED"
   | "REAUTH_OK"
   | "REAUTH_FAILED"
-  | "ACCOUNT_DELETION_REQUESTED";
+  | "ACCOUNT_DELETION_REQUESTED"
+  // Accounts / Trading Connectivity (Phase 3 §39) — connection lifecycle and
+  // sync failures are security-sensitive. Sync success lives in the run
+  // records (observability) to keep the audit log signal-dense.
+  | "TRADING_ACCOUNT_CONNECTED"
+  | "TRADING_ACCOUNT_CONNECTION_FAILED"
+  | "TRADING_ACCOUNT_DISCONNECTED"
+  | "TRADING_ACCOUNT_SYNC_FAILED";
 
 export interface RequestFingerprint {
   device: string;

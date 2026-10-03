@@ -94,6 +94,7 @@ describe("environment validation fails safely at startup", () => {
       DATABASE_URL: "postgresql://u:p@h/db",
       AUTH_JWT_SECRET: "prod-jwt-secret-0123456789abcdef0123456789",
       AUTH_MFA_ENCRYPTION_KEY: "h0mEbiEr05Qkg5f8Duz4PrOups2o69gGx+LIEdXAuvU=",
+      ACCOUNTS_CREDENTIALS_ENCRYPTION_KEY: "Mck3U8lb0RHzT7eDlBd7hgmE5FpYm0ZOSJB3ZfA4GFo=",
     });
     // Schema default still applies here by design (dev default); the
     // production gate is enforced in two layers:

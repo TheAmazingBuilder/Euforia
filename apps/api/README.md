@@ -207,15 +207,78 @@ Key mechanics (all negative-tested):
 Transactional email uses a log-rendering dev transport (see `mailer.service.ts`);
 a real provider plugs into `MailTransport` (Phase 0 open question #1).
 
+## Accounts / Trading Connectivity (Phase 3)
+
+`src/modules/accounts/` implements the provider-agnostic, **READ-ONLY**
+trading-accounts domain (Phase 3 mandate). Execution is architecturally
+impossible: the provider interface has no execution methods, no execution
+endpoints exist, and V1 permissions are `READ_*` only.
+
+Key mechanics:
+
+- **Concept separation (§3)**: `TradingAccount` (stable external identity:
+  provider, external login, environment DEMO/LIVE/PROP_FIRM, currency,
+  starting balance) ≠ `TradingConnection` (how Cosmoz talks to the provider:
+  method, status, **encrypted credentials**) ≠ `TradingAccountSnapshot` +
+  positions/orders/deals (mutable external state). `TradingSyncRun` records
+  every synchronization attempt (observability, §50).
+- **Orthogonal lifecycles (§15)**: connection status
+  (`DISCONNECTED|CONNECTING|CONNECTED|ERROR`) never merges with
+  synchronization status (`UNKNOWN|SYNCING|LIVE|DELAYED|STALE|ERROR`, derived
+  from run outcomes + a 15-min freshness TTL in `mappers.ts`).
+- **Provider abstraction (§9–§11)**: the domain depends only on
+  `TradingProviderAdapter` (read-oriented: `testConnection`, `fetchAccountInfo`,
+  `fetchSnapshot`, `fetchPositions`, `fetchOrders`, `fetchDeals`) +
+  `ProviderRegistryService`. Adapter output is schema-validated at the
+  normalization boundary (`normalization.ts`) — a type-broken provider
+  response becomes 502 `INVALID_PROVIDER_RESPONSE`, never a corrupted row.
+- **Adding a provider (§60)**: implement `TradingProviderAdapter`, add the
+  instance to the registry factory in `accounts.module.ts`, done. Registry,
+  capabilities, descriptors and UI metadata follow automatically; nothing
+  outside the accounts module changes.
+- **Mock provider (§55/§57)**: `MOCK` simulates an MT5-style broker with
+  deterministic data (pure function of the external account id) and
+  controlled failures via secret prefixes (`fail-invalid`, `fail-timeout`,
+  `fail-unavailable`, `fail-malformed`). Registered ONLY when
+  `ACCOUNTS_MOCK_PROVIDER` allows (default: on outside production) —
+  production cannot silently serve mock data.
+- **Credentials (§22/§23)**: API-key secrets arrive over TLS, are validated
+  with the provider BEFORE persistence, encrypted at rest with AES-256-GCM
+  under the dedicated `ACCOUNTS_CREDENTIALS_ENCRYPTION_KEY` (key separation
+  from the MFA key), and are NEVER returned, logged, or echoed — responses
+  carry a `••••1234`-style hint only. Disconnect DESTROYS credentials but
+  keeps all history (§52); deletion semantics are a future product decision.
+- **Idempotency & concurrency (§18/§38)**: external objects are keyed by
+  `(accountId, externalXxxId)` — re-syncing upserts, never duplicates.
+  At most ONE `RUNNING` run per account (partial unique index); a second
+  trigger gets 409 `SYNC_ALREADY_RUNNING`. Sync persistence is ONE
+  transaction (snapshot + positions + orders + deals + run + lastSyncAt).
+- **Rate limits (§37)**: per-user sliding windows via the identity limiter
+  class — connect 5/15m, reconnect 5/15m, sync 20/15m; provider failures are
+  normalized to the stable `TRADING_ERROR_CODES` (§36).
+- **Audit (§39)**: `TRADING_ACCOUNT_CONNECTED` / `_CONNECTION_FAILED` /
+  `_DISCONNECTED` / `_SYNC_FAILED` events land in the append-only security
+  event log (sync success lives in run records to keep the log signal-dense).
+- **API surface** (`/api/v1`, all authenticated): `GET/POST /accounts`,
+  `GET /accounts/providers`, `GET /accounts/:id`, `…/snapshot`, `…/positions`,
+  `…/orders`, `…/deals`, `…/sync` (GET status / POST trigger),
+  `POST …/connection`, `DELETE …/connection`, `POST …/connection/test`, and
+  `GET /broker/session` (the Session-Live panel aggregate, served from the
+  synchronized state — the provider stays the source of truth, §46).
+
 ## Testing
 
 - **Unit** (`test/unit/`): env validation, error mapping, request-id rules,
-  contract liftability. No DB, no HTTP.
+  contract liftability, AES-GCM roundtrip/tamper, the mock provider's
+  determinism + controlled failures, synchronization-status derivation.
+  No DB, no HTTP.
 - **e2e** (`test/e2e/`): boots the REAL `AppModule` over Fastify
   (`test/helpers/build-app.ts`, fastify `inject()`) — health endpoints, 404
   envelope, Zod validation, full error taxonomy, security headers, CORS,
-  rate limiting, oversized bodies, DB-down readiness, plus the security
-  NEGATIVE cases (mandate §33).
+  rate limiting, oversized bodies, DB-down readiness, security NEGATIVE
+  cases (mandate §33), the full identity contract, and the accounts
+  lifecycle + ownership + credential-redaction + execution-red-line suites
+  (`accounts.e2e.spec.ts`, §48/§49).
 - The probe routes live in `test/helpers/probe.controller.ts` and are **not**
   part of the production build.
 - Frontend Playwright suites (`apps/web/scripts/verify-*.js`) keep running

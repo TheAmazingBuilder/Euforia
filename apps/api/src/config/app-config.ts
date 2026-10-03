@@ -18,6 +18,14 @@ export interface AppConfig {
   trustProxy: boolean;
   rateLimit: { windowSeconds: number; max: number };
   marketServiceUrl?: string;
+  accounts: {
+    /** AES-256-GCM key encrypting trading credentials at rest (§22). */
+    credentialsEncryptionKey: Buffer;
+    /** Per-call timeout applied to trading provider adapter calls. */
+    providerTimeoutMs: number;
+    /** Whether the mock trading provider may be registered (§57). */
+    mockProviderEnabled: boolean;
+  };
   auth: {
     jwtSecret: string;
     mfaEncryptionKey: Buffer;
@@ -51,6 +59,14 @@ function build(env: Env): AppConfig {
       max: env.RATE_LIMIT_MAX,
     },
     marketServiceUrl: env.MARKET_SERVICE_URL,
+    accounts: {
+      credentialsEncryptionKey: Buffer.from(env.ACCOUNTS_CREDENTIALS_ENCRYPTION_KEY, "base64"),
+      providerTimeoutMs: env.ACCOUNTS_PROVIDER_TIMEOUT_MS,
+      mockProviderEnabled:
+        env.ACCOUNTS_MOCK_PROVIDER !== undefined
+          ? env.ACCOUNTS_MOCK_PROVIDER === "enabled"
+          : env.NODE_ENV !== "production",
+    },
     auth: {
       jwtSecret: env.AUTH_JWT_SECRET,
       mfaEncryptionKey: Buffer.from(env.AUTH_MFA_ENCRYPTION_KEY, "base64"),

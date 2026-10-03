@@ -62,5 +62,9 @@ export default async function globalSetup(): Promise<void> {
     "cosmoz-test-only-jwt-secret-0123456789abcdef0123456789";
   process.env.AUTH_MFA_ENCRYPTION_KEY =
     process.env.AUTH_MFA_ENCRYPTION_KEY ?? "h0mEbiEr05Qkg5f8Duz4PrOups2o69gGx+LIEdXAuvU=";
+  // Accounts (Phase 3) — test-only encryption key + fast provider timeout.
+  process.env.ACCOUNTS_CREDENTIALS_ENCRYPTION_KEY =
+    process.env.ACCOUNTS_CREDENTIALS_ENCRYPTION_KEY ?? "Mck3U8lb0RHzT7eDlBd7hgmE5FpYm0ZOSJB3ZfA4GFo=";
+  process.env.ACCOUNTS_PROVIDER_TIMEOUT_MS = process.env.ACCOUNTS_PROVIDER_TIMEOUT_MS ?? "2000";
   process.env.WEB_APP_URL = process.env.WEB_APP_URL ?? "http://localhost:3000";
 }

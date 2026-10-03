@@ -10,6 +10,12 @@
 // AuthChallenge, RecoveryCode, ApiKey — per docs/specs/data-model.md Domaine 1
 // refined by the shared contract (schemas/auth.ts, schemas/security.ts).
 //
+// Phase 3 (Accounts / Trading Connectivity): TradingAccount,
+// TradingConnection, TradingAccountSnapshot, TradingPosition, TradingOrder,
+// TradingDeal, TradingSyncRun — per docs/specs/data-model.md Domaine 2 and
+// the Phase 3 mandate (§3 concepts kept separate, §15 lifecycles orthogonal,
+// §18 stable external identity, §22 credentials encrypted at rest).
+//
 // CONVENTIONS (binding for all future migrations):
 //   - Money/prices/quantities/R → Decimal(18,8) columns, string wire format.
 //   - All timestamps stored UTC; user timezone lives on the User model.
@@ -82,6 +88,7 @@ model User {
   challenges     AuthChallenge[]
   recoveryCodes  RecoveryCode[]
   apiKeys        ApiKey[]
+  tradingAccounts TradingAccount[]
 
   @@index([status])
 }
@@ -191,4 +198,213 @@ model ApiKey {
   revokedAt   DateTime?
 
   @@index([userId])
+}
+
+// ── Accounts / Trading Connectivity (Domaine 2 — Phase 3) ────────────────────
+
+/// An EXTERNAL trading account (broker/platform identity) owned by a Cosmoz
+/// user. Identity is stable metadata — mutable state lives in the snapshot
+/// and the normalized position/order/deal tables, never here (§25).
+model TradingAccount {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Human label (defaults to "<provider> <environment>").
+  name      String
+  /// Explicit environment — DEMO | LIVE | PROP_FIRM. Never inferred from naming (§21).
+  type      String
+  /// Broker/platform family (Cosmoz broker enum, e.g. "MT5").
+  broker    String
+  /// Account currency as reported by the provider (validated against the shared currency enum).
+  currency  String
+  /// Provider-reported balance at initial connection (journal anchor).
+  startingBalance Decimal @db.Decimal(18, 8)
+  /// The first account of a user is the default; otherwise a journal-only concern.
+  isDefault Boolean  @default(false)
+  /// Prop-firm challenge config (shared propFirmConfigSchema) — journal domain, null on connect.
+  propConfig Json?
+  /// Provider-side account identifier (e.g. MT5 login). Unique per user+provider (§49 duplicates).
+  externalAccountId String
+  /// Provider registry key (e.g. "MOCK" — real adapters register their own).
+  providerId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  connection TradingConnection?
+  snapshots  TradingAccountSnapshot[]
+  positions  TradingPosition[]
+  orders     TradingOrder[]
+  deals      TradingDeal[]
+  syncRuns   TradingSyncRun[]
+
+  @@unique([userId, providerId, externalAccountId])
+  @@index([userId])
+}
+
+/// HOW Cosmoz talks to the provider for one account — a separate entity from
+/// both the account (identity) and its snapshots (state) (§3).
+/// 1:1 with the account; disconnect wipes credentials but keeps the row (§52).
+model TradingConnection {
+  id         String   @id @default(uuid()) @db.Uuid
+  accountId  String   @unique @db.Uuid
+  account    TradingAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  /// Provider registry key (denormalized from the account for direct lookups).
+  providerId String
+  /// API_KEY in V1 (shared tradingConnectionMethodSchema).
+  method     String
+  /// DISCONNECTED | CONNECTING | CONNECTED | ERROR (§15 — orthogonal to sync status).
+  status     String   @default("DISCONNECTED")
+  /// AES-256-GCM encrypted credentials — NEVER plaintext, never returned, never logged (§22).
+  /// Wiped (empty) on disconnect.
+  credentialsEnc  String  @default("")
+  /// Masked hint (last characters only) for UI display — never enough to authenticate.
+  credentialsHint String  @default("")
+  /// Read-only permission set granted from the provider descriptor (§24).
+  permissions String[]
+  /// Sanitized, credential-free provider failure text.
+  lastError       String?
+  lastConnectedAt DateTime?
+  /// Last SUCCESSFUL synchronization completion (UTC).
+  lastSyncAt      DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([providerId, status])
+}
+
+/// Mutable external state (balance/equity/margin) — the LATEST snapshot per
+/// account (§25). The provider is the source of truth; this is a synchronized
+/// representation (§46). Historical runs are observable via TradingSyncRun.
+model TradingAccountSnapshot {
+  id        String   @id @default(uuid()) @db.Uuid
+  accountId String   @unique @db.Uuid
+  account   TradingAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  balance   Decimal? @db.Decimal(18, 8)
+  equity    Decimal? @db.Decimal(18, 8)
+  /// Derived as equity − balance when both exist; null otherwise.
+  unrealizedPnl Decimal? @db.Decimal(18, 8)
+  margin      Decimal? @db.Decimal(18, 8)
+  freeMargin  Decimal? @db.Decimal(18, 8)
+  marginLevel Decimal? @db.Decimal(18, 8)
+  currency   String
+  /// When the provider reported this state (UTC).
+  syncedAt  DateTime
+  /// Run that produced this snapshot (observability, §50).
+  syncRunId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([accountId, syncedAt])
+}
+
+/// Open position, normalized from the provider (§26). Nullable fields are
+/// preferred over false assumptions — providers differ.
+model TradingPosition {
+  id                 String   @id @default(uuid()) @db.Uuid
+  accountId          String   @db.Uuid
+  account            TradingAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  /// Stable external identity — idempotency key together with the account (§18).
+  externalPositionId String
+  symbol             String
+  /// BUY | SELL (shared directionSchema).
+  side               String
+  volume             Decimal  @db.Decimal(18, 8)
+  entryPrice         Decimal  @db.Decimal(18, 8)
+  currentPrice       Decimal? @db.Decimal(18, 8)
+  stopLoss           Decimal? @db.Decimal(18, 8)
+  takeProfit         Decimal? @db.Decimal(18, 8)
+  /// Unrealized profit in account currency.
+  profit             Decimal? @db.Decimal(18, 8)
+  swap               Decimal? @db.Decimal(18, 8)
+  commission         Decimal? @db.Decimal(18, 8)
+  /// When the position was opened according to the PROVIDER (UTC, §64).
+  openedAt           DateTime
+  /// When Cosmoz last refreshed this row from the provider (UTC).
+  syncedAt           DateTime @default(now())
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([accountId, externalPositionId])
+  @@index([accountId, symbol])
+}
+
+/// Pending order, normalized read-only (§27). No execution path exists anywhere.
+model TradingOrder {
+  id               String   @id @default(uuid()) @db.Uuid
+  accountId        String   @db.Uuid
+  account          TradingAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  externalOrderId  String
+  symbol           String
+  /// Broker verb, e.g. "BUY_LIMIT", "SELL_STOP" (provider vocabulary, read-only).
+  type             String
+  volume           Decimal  @db.Decimal(18, 8)
+  price            Decimal  @db.Decimal(18, 8)
+  stopLoss         Decimal? @db.Decimal(18, 8)
+  takeProfit       Decimal? @db.Decimal(18, 8)
+  /// Provider order status vocabulary.
+  status           String
+  /// Provider-side timestamps (UTC, §64).
+  providerCreatedAt DateTime?
+  providerUpdatedAt DateTime?
+  syncedAt         DateTime @default(now())
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([accountId, externalOrderId])
+  @@index([accountId, status])
+}
+
+/// Completed trading activity (deals), normalized (§28). Symbol is nullable:
+/// balance operations (deposits/withdrawals) have no instrument.
+model TradingDeal {
+  id             String   @id @default(uuid()) @db.Uuid
+  accountId      String   @db.Uuid
+  account        TradingAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  externalDealId String
+  symbol         String?
+  /// BUY | SELL.
+  side           String
+  volume         Decimal  @db.Decimal(18, 8)
+  price          Decimal? @db.Decimal(18, 8)
+  profit         Decimal? @db.Decimal(18, 8)
+  commission     Decimal? @db.Decimal(18, 8)
+  swap           Decimal? @db.Decimal(18, 8)
+  /// Provider-side execution timestamp (UTC, §64).
+  executedAt     DateTime
+  syncedAt       DateTime @default(now())
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([accountId, externalDealId])
+  @@index([accountId, executedAt])
+}
+
+/// One synchronization attempt over one account — observability + concurrency
+/// guard (§38/§50). At most ONE RUNNING run per account (partial unique index
+/// added in the migration — Prisma cannot express partial indexes).
+model TradingSyncRun {
+  id                String    @id @default(uuid()) @db.Uuid
+  accountId         String    @db.Uuid
+  account           TradingAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  status            String    @default("RUNNING")
+  /// INITIAL | MANUAL.
+  trigger           String
+  startedAt         DateTime  @default(now())
+  finishedAt        DateTime?
+  durationMs        Int?
+  positionsUpserted Int       @default(0)
+  ordersUpserted    Int       @default(0)
+  dealsUpserted     Int       @default(0)
+  /// Stable normalized error code — never a raw provider message, never a secret.
+  errorCode         String?
+  /// Request correlation id (§50).
+  requestId         String?
+
+  @@index([accountId, startedAt(sort: Desc)])
 }

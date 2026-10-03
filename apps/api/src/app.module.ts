@@ -19,6 +19,7 @@ import { HealthModule } from "./infrastructure/health/health.module";
 import { AllExceptionsFilter } from "./shared/http/all-exceptions.filter";
 import { APP_CONFIG, type AppConfig } from "./config/app-config";
 import { IdentityModule } from "./modules/identity/identity.module";
+import { AccountsModule } from "./modules/accounts/accounts.module";
 
 const globalExceptionFilterProvider: Provider = {
   provide: APP_FILTER,
@@ -37,6 +38,7 @@ const globalExceptionFilterProvider: Provider = {
     HealthModule,
     // ── bounded contexts ────────────────────────────────────────────────────
     IdentityModule,
+    AccountsModule,
     // modules/reference … — added by their own phases.
   ],
   providers: [globalExceptionFilterProvider],

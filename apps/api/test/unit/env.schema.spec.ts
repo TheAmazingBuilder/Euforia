@@ -6,6 +6,7 @@ const BASE_ENV = {
   DATABASE_URL: "postgresql://cosmoz@127.0.0.1:5433/cosmoz_test",
   AUTH_JWT_SECRET: "test-only-jwt-secret-0123456789abcdef0123456789",
   AUTH_MFA_ENCRYPTION_KEY: "h0mEbiEr05Qkg5f8Duz4PrOups2o69gGx+LIEdXAuvU=",
+  ACCOUNTS_CREDENTIALS_ENCRYPTION_KEY: "Mck3U8lb0RHzT7eDlBd7hgmE5FpYm0ZOSJB3ZfA4GFo=",
 } as const;
 
 describe("validateEnv", () => {

@@ -89,6 +89,30 @@ export const envSchema = z.object({
     .optional()
     .or(z.literal("").transform(() => undefined)),
 
+  // ── Accounts / Trading Connectivity (Phase 3) ──────────────────────────────
+  /** AES-256-GCM key (base64, 32 bytes) encrypting trading credentials at rest (§22). */
+  ACCOUNTS_CREDENTIALS_ENCRYPTION_KEY: z
+    .string()
+    .trim()
+    .refine(
+      (value) => {
+        try {
+          return Buffer.from(value, "base64").length === 32;
+        } catch {
+          return false;
+        }
+      },
+      "ACCOUNTS_CREDENTIALS_ENCRYPTION_KEY must be base64 encoding exactly 32 bytes",
+    ),
+  /** Per-call timeout for trading provider adapter calls. */
+  ACCOUNTS_PROVIDER_TIMEOUT_MS: z.coerce.number().int().min(1_000).max(60_000).default(10_000),
+  /**
+   * Mock trading provider gate (§57 — production must never silently serve
+   * mock data). Defaults to enabled in non-production, disabled in production;
+   * an explicit value always wins.
+   */
+  ACCOUNTS_MOCK_PROVIDER: z.enum(["enabled", "disabled"]).optional(),
+
   // ── Authentication (Identity phase — REQUIRED, never defaulted) ────────────
   /** HS256 signing secret for short-lived access JWTs. ≥ 32 chars. */
   AUTH_JWT_SECRET: z

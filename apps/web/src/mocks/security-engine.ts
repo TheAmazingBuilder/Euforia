@@ -568,7 +568,9 @@ class SecurityEngine {
       recoveryCodes: generateRecoveryCodes(),
     };
     this.pendingEnrollment = enrollment;
-    this.activeDemoCode = enrollment.demoCode;
+    // demoCode became optional in the shared schema (Phase 2) — coerce to the
+    // mock's internal `string | null` representation.
+    this.activeDemoCode = enrollment.demoCode ?? null;
     this.recoveryCodes = [...enrollment.recoveryCodes];
     this.twoFactor = {
       ...this.twoFactor,
