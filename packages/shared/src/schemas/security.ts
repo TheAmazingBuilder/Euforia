@@ -102,12 +102,13 @@ export type TwoFactorState = z.infer<typeof twoFactorStateSchema>;
 /**
  * One-time enrollment payload (§6). Returned exactly once by the enable
  * action — recovery codes are never displayed again afterwards.
- * `demoCode` stands in for the rotating TOTP the authenticator app would
- * produce (no real authenticator exists in the mock environment).
+ * `demoCode` is the MOCKED authenticator stand-in (no real authenticator
+ * exists in the mock environment) — the real backend NEVER returns it
+ * (it would expose the current TOTP), hence optional.
  */
 export const twoFactorEnrollmentSchema = z.object({
   secret: z.string().min(1),
-  demoCode: z.string().regex(/^\d{6}$/),
+  demoCode: z.string().regex(/^\d{6}$/).optional(),
   recoveryCodes: z.array(z.string().regex(/^\d{4}-\d{4}$/)).length(10),
 });
 export type TwoFactorEnrollment = z.infer<typeof twoFactorEnrollmentSchema>;

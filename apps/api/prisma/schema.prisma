@@ -1,10 +1,14 @@
-// COSMOZ — Prisma schema (FOUNDATION)
+// COSMOZ — Prisma schema
 //
 // Phase 1 mandate (§9/§37): the Foundation establishes DATABASE INFRASTRUCTURE
 // ONLY — client lifecycle, connectivity, migrations conventions, health.
-// Business models (User, Trade, Strategy, …) are created by their own bounded
+// Business models (Trade, Strategy, …) are created by their own bounded
 // contexts in later phases, following docs/specs/data-model.md as the design
 // source and the migration order drafted there.
+//
+// Phase 2 (Identity & Security): User, Session, SecurityEvent, LoginRecord,
+// AuthChallenge, RecoveryCode, ApiKey — per docs/specs/data-model.md Domaine 1
+// refined by the shared contract (schemas/auth.ts, schemas/security.ts).
 //
 // CONVENTIONS (binding for all future migrations):
 //   - Money/prices/quantities/R → Decimal(18,8) columns, string wire format.
@@ -23,5 +27,168 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Intentionally NO models in Foundation.
-// The first real migration (Identity & Security) will arrive with Phase 2.
+// ── Enums ────────────────────────────────────────────────────────────────────
+
+enum AccountStatus {
+  ACTIVE
+  PENDING_VERIFICATION
+  SUSPENDED
+  DEACTIVATED
+}
+
+enum AuthRole {
+  TRADER
+  ADMIN
+}
+
+// ── Identity (Domaine 1 — data-model.md) ─────────────────────────────────────
+
+model User {
+  id             String        @id @default(uuid()) @db.Uuid
+  email          String        @unique
+  name           String
+  passwordHash   String
+  status         AccountStatus @default(PENDING_VERIFICATION)
+  role           AuthRole      @default(TRADER)
+  emailVerifiedAt DateTime?
+  passwordLastChangedAt DateTime @default(now())
+
+  // MFA / TOTP — secrets are AES-256-GCM encrypted at rest, never plaintext.
+  mfaSecretEnc        String?
+  mfaPendingSecretEnc String?
+  mfaEnabledAt        DateTime?
+  mfaDisabledAt       DateTime?
+  mfaLastVerifiedAt   DateTime?
+
+  // Profile (shared profileSchema — one source of truth for timezone).
+  timezone     String  @default("UTC")
+  baseCurrency String  @default("USD")
+  username     String? @unique
+  bio          String?
+  avatarUrl    String?
+
+  // UserPreferences doc (shared userPreferencesSchema, JSON per user).
+  preferences Json?
+
+  // Account deletion is SCHEDULED (grace period) — purge job is a later phase.
+  deletionScheduledFor DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sessions       Session[]
+  securityEvents SecurityEvent[]
+  loginRecords   LoginRecord[]
+  challenges     AuthChallenge[]
+  recoveryCodes  RecoveryCode[]
+  apiKeys        ApiKey[]
+
+  @@index([status])
+}
+
+model Session {
+  id               String    @id @default(uuid()) @db.Uuid
+  userId           String    @db.Uuid
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// SHA-256 of the presented refresh token — never the raw token.
+  refreshTokenHash String    @unique
+  /// The hash rotated AWAY in the last rotation — presenting it is REUSE.
+  previousTokenHash String?
+  /// Rotation generation — presenting a lower generation is REUSE.
+  generation       Int       @default(1)
+  device           String    @default("Unknown device")
+  browser          String    @default("Unknown")
+  os               String    @default("Unknown")
+  /// Masked at creation — full addresses never stored, never returned (§11).
+  ipMasked         String    @default("unknown")
+  location         String    @default("Unknown")
+  userAgent        String?
+  createdAt        DateTime  @default(now())
+  lastActivityAt   DateTime  @default(now())
+  expiresAt        DateTime
+  revokedAt        DateTime?
+
+  @@index([userId, revokedAt])
+  @@index([userId, expiresAt])
+}
+
+/// Append-only security event log — no endpoint may update or delete rows.
+model SecurityEvent {
+  id     String   @id @default(uuid()) @db.Uuid
+  userId String?  @db.Uuid
+  user   User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  at     DateTime @default(now())
+  type   String
+  /// Who performed it — the user, a session id, or "system".
+  actor  String
+  /// Sanitized human context — never contains secret material.
+  context String
+  outcome String @default("SUCCESS")
+
+  @@index([userId, at(sort: Desc)])
+}
+
+model LoginRecord {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  at        DateTime @default(now())
+  success   Boolean
+  device    String
+  browser   String
+  os        String
+  ipMasked  String
+  location  String
+  /// Failure reason only — sanitized, no secret material.
+  reason    String?
+
+  @@index([userId, at(sort: Desc)])
+}
+
+/// Single-use, purpose-scoped one-time tokens (email verification, password
+/// reset). Only the SHA-256 hash is stored — never the raw token.
+model AuthChallenge {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @db.Uuid
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// EMAIL_VERIFICATION | PASSWORD_RESET — cross-purpose use is impossible.
+  purpose   String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, purpose])
+}
+
+model RecoveryCode {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @db.Uuid
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  codeHash  String    @unique
+  /// Activation happens at 2FA confirm; regeneration replaces the whole set.
+  active    Boolean   @default(false)
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, active])
+}
+
+model ApiKey {
+  id          String    @id @default(uuid()) @db.Uuid
+  userId      String    @db.Uuid
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  /// Recognizable prefix only — the secret is discarded after creation.
+  prefix      String
+  /// Short SHA-256 fingerprint so users can recognize the key later.
+  fingerprint String
+  secretHash  String    @unique
+  scopes      String[]
+  createdAt   DateTime  @default(now())
+  lastUsedAt  DateTime?
+  expiresAt   DateTime?
+  revokedAt   DateTime?
+
+  @@index([userId])
+}

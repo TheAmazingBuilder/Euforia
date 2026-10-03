@@ -11,6 +11,7 @@
  */
 import { Catch, type ArgumentsHost, type ExceptionFilter } from "@nestjs/common";
 import type { FastifyReply, FastifyRequest } from "fastify";
+import { RateLimitError } from "../errors/app-error";
 import {
   logSeverityFor,
   mapErrorToResponse,
@@ -33,6 +34,12 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
     const requestId = request?.id !== undefined ? String(request.id) : undefined;
     const payload = requestId !== undefined ? { ...body, requestId } : body;
+
+    // Rate-limit responses carry Retry-After (whole seconds) — the frontend
+    // uses it for countdown copy (mock-parity contract).
+    if (exception instanceof RateLimitError && exception.retryAfterSeconds !== undefined) {
+      void reply.header("retry-after", String(Math.max(1, exception.retryAfterSeconds)));
+    }
 
     this.log(exception, request, status, sanitized);
 

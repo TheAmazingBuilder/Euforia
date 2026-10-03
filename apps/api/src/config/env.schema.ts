@@ -88,6 +88,43 @@ export const envSchema = z.object({
     .url("MARKET_SERVICE_URL must be a valid URL when provided")
     .optional()
     .or(z.literal("").transform(() => undefined)),
+
+  // ── Authentication (Identity phase — REQUIRED, never defaulted) ────────────
+  /** HS256 signing secret for short-lived access JWTs. ≥ 32 chars. */
+  AUTH_JWT_SECRET: z
+    .string()
+    .trim()
+    .min(32, "AUTH_JWT_SECRET must be at least 32 characters")
+    .max(256),
+  /** AES-256-GCM key (base64, 32 bytes) encrypting TOTP secrets at rest. */
+  AUTH_MFA_ENCRYPTION_KEY: z
+    .string()
+    .trim()
+    .refine(
+      (value) => {
+        try {
+          return Buffer.from(value, "base64").length === 32;
+        } catch {
+          return false;
+        }
+      },
+      "AUTH_MFA_ENCRYPTION_KEY must be base64 encoding exactly 32 bytes",
+    ),
+  AUTH_ACCESS_TTL_SECONDS: z.coerce.number().int().min(60).max(3_600).default(900),
+  AUTH_REFRESH_REMEMBER_DAYS: z.coerce.number().int().min(1).max(90).default(30),
+  AUTH_REFRESH_SESSION_HOURS: z.coerce.number().int().min(1).max(24 * 7).default(12),
+  AUTH_EMAIL_VERIFICATION_HOURS: z.coerce.number().int().min(1).max(168).default(24),
+  AUTH_PASSWORD_RESET_MINUTES: z.coerce.number().int().min(5).max(1_440).default(30),
+  AUTH_MFA_CHALLENGE_MINUTES: z.coerce.number().int().min(1).max(30).default(5),
+  AUTH_REAUTH_MINUTES: z.coerce.number().int().min(1).max(30).default(5),
+  /** Public web origin — used to build email links (verify/reset). */
+  WEB_APP_URL: z
+    .string()
+    .trim()
+    .url("WEB_APP_URL must be a valid URL")
+    .default("http://localhost:3000"),
+  /** From-header for transactional emails. */
+  EMAIL_FROM: z.string().trim().min(3).default("Cosmoz <no-reply@cosmoz.app>"),
 });
 
 export type Env = z.infer<typeof envSchema>;

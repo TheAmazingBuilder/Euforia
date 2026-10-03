@@ -15,6 +15,7 @@
  */
 import { Controller, Get, Inject, Optional, ServiceUnavailableException, VERSION_NEUTRAL } from "@nestjs/common";
 import { SkipThrottle } from "@nestjs/throttler";
+import { Public } from "../../shared/auth/public.decorator";
 import { APP_CONFIG, type AppConfig } from "../../config/app-config";
 import { COSMOZ_VERSION } from "../../shared/contracts";
 import { PrismaService } from "../prisma/prisma.service";
@@ -24,6 +25,7 @@ const BOOTED_AT = Date.now();
 
 @Controller({ path: "health", version: VERSION_NEUTRAL })
 @SkipThrottle()
+@Public()
 export class HealthController {
   constructor(
     private readonly prisma: PrismaService,

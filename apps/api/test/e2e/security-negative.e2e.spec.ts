@@ -92,6 +92,8 @@ describe("environment validation fails safely at startup", () => {
     const result = validateEnv({
       NODE_ENV: "production",
       DATABASE_URL: "postgresql://u:p@h/db",
+      AUTH_JWT_SECRET: "prod-jwt-secret-0123456789abcdef0123456789",
+      AUTH_MFA_ENCRYPTION_KEY: "h0mEbiEr05Qkg5f8Duz4PrOups2o69gGx+LIEdXAuvU=",
     });
     // Schema default still applies here by design (dev default); the
     // production gate is enforced in two layers:

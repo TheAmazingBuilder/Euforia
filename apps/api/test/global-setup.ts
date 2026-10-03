@@ -56,4 +56,11 @@ export default async function globalSetup(): Promise<void> {
   // 4. Exported for all forked test workers (see setup.ts for the re-check).
   process.env.NODE_ENV = "test";
   process.env.DATABASE_URL = TEST_DB_URL;
+  // Fixed test-only auth secrets — NEVER used outside `cosmoz_test` runs.
+  process.env.AUTH_JWT_SECRET =
+    process.env.AUTH_JWT_SECRET ??
+    "cosmoz-test-only-jwt-secret-0123456789abcdef0123456789";
+  process.env.AUTH_MFA_ENCRYPTION_KEY =
+    process.env.AUTH_MFA_ENCRYPTION_KEY ?? "h0mEbiEr05Qkg5f8Duz4PrOups2o69gGx+LIEdXAuvU=";
+  process.env.WEB_APP_URL = process.env.WEB_APP_URL ?? "http://localhost:3000";
 }

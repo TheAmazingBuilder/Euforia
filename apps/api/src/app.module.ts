@@ -18,6 +18,7 @@ import { RateLimitModule } from "./infrastructure/security/rate-limit.module";
 import { HealthModule } from "./infrastructure/health/health.module";
 import { AllExceptionsFilter } from "./shared/http/all-exceptions.filter";
 import { APP_CONFIG, type AppConfig } from "./config/app-config";
+import { IdentityModule } from "./modules/identity/identity.module";
 
 const globalExceptionFilterProvider: Provider = {
   provide: APP_FILTER,
@@ -34,8 +35,9 @@ const globalExceptionFilterProvider: Provider = {
     RateLimitModule,
     // ── system ──────────────────────────────────────────────────────────────
     HealthModule,
-    // ── bounded contexts (Phase 2+) ─────────────────────────────────────────
-    // modules/identity … modules/system — added by their own phases.
+    // ── bounded contexts ────────────────────────────────────────────────────
+    IdentityModule,
+    // modules/reference … — added by their own phases.
   ],
   providers: [globalExceptionFilterProvider],
 })

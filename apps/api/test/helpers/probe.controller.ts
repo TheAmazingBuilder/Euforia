@@ -7,6 +7,7 @@
  */
 import { Controller, Get, Post, Query, Body } from "@nestjs/common";
 import { Throttle } from "@nestjs/throttler";
+import { Public } from "../../src/shared/auth/public.decorator";
 import { z } from "zod";
 import { ZodValidationPipe } from "../../src/shared/http/zod-validation.pipe";
 import {
@@ -65,6 +66,7 @@ const ERROR_CASES: Record<string, () => never> = {
   },
 };
 
+@Public()
 @Controller("probe")
 export class ProbeController {
   /** Exercises the Zod validation pipe on the request body. */

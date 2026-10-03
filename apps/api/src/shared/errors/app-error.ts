@@ -84,9 +84,14 @@ export class BusinessRuleError extends AppError {
   }
 }
 
-/** 429 — rate limit exceeded. */
+/** 429 — rate limit exceeded. Carries Retry-After when known. */
 export class RateLimitError extends AppError {
-  constructor(message = "Too many requests. Please slow down.", code?: string) {
+  constructor(
+    message = "Too many requests. Please slow down.",
+    code?: string,
+    /** Whole seconds for the Retry-After response header. */
+    readonly retryAfterSeconds?: number,
+  ) {
     super("RateLimited", 429, message, code);
   }
 }

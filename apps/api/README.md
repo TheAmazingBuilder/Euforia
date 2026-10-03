@@ -34,7 +34,9 @@ The API listens on **http://localhost:4000**:
 | `GET /health` | App status (no DB) — monitoring/UI target |
 | `GET /health/live` | Liveness probe |
 | `GET /health/ready` | Readiness probe (pings the database) |
-| `/api/v1/…` | All domain routes (versioned; none exist yet) |
+| `POST /api/v1/auth/*` | register · login · refresh · logout · me · email verify/resend · password forgot/reset · MFA challenge/recover |
+| `GET·POST /api/v1/security/*` | overview · reauth · password change · 2FA enable/confirm/disable · recovery codes · sessions revoke · API keys |
+| `GET·PATCH /api/v1/me` | profile + preferences doc (9 domains) · deactivate · delete |
 
 ## Scripts
 
@@ -163,6 +165,47 @@ apps/api/src/
 6. **Authorization is server-side** — the frontend `AuthGate` is UX only.
 7. **No speculative abstractions** — rich domain layers only where invariants
    live (Journal, Discipline, Playbook, Analytics, Review).
+
+## Identity & Security (Phase 2)
+
+`src/modules/identity/` implements the auth contract defined by
+`@cosmoz/shared` (schemas/auth.ts + schemas/security.ts) — the MSW engines
+were the porting spec; the frontend needs **zero changes** to swap
+(`NEXT_PUBLIC_API_MOCKED=false` + `NEXT_PUBLIC_API_URL=http://localhost:4000/api/v1`).
+
+Key mechanics (all negative-tested):
+
+- **Passwords**: Argon2id (OWASP params) via `PasswordHasherService`.
+- **Tokens**: 15-min HS256 access JWT `{sub, sid}` (memory-only client-side) +
+  rotating refresh token — opaque random, `SHA-256`-hashed at rest, delivered
+  ONLY as the HttpOnly `cosmoz_rt` cookie (SameSite=Lax, Secure in prod,
+  Max-Age only when "remember"). Reuse of a rotated token revokes EVERY
+  session of the user + `SESSION_REVOKED` event.
+- **Status gates**: PENDING_VERIFICATION / SUSPENDED / DEACTIVATED → 403
+  with the contract codes; anti-enumeration: unknown email and wrong password
+  produce byte-identical 401s; forgot/resend always answer 202.
+- **Rate limits** (per-email sliding windows, 429 + Retry-After): login 5/15m ·
+  MFA 5/15m · register 5/15m · resend 3/15m · forgot 3/15m · reauth 5/15m.
+- **MFA**: TOTP (RFC 6238, ±1 step), secret AES-256-GCM encrypted at rest,
+  shown once at enrollment with 10 single-use XXXX-XXXX recovery codes
+  (hashed). No `demoCode` ever leaves the server.
+- **Reauth**: `POST /security/reauth` (password) → single-use 5-min token;
+  consumed by password change, 2FA enable/disable, recovery regeneration,
+  API-key create/revoke. Missing token → 401 INVALID_REAUTH_TOKEN.
+- **Security events**: append-only table (19 contract types) + login history;
+  no update/delete paths exist. Retention constants declared (365d / 180d;
+  purge job deferred).
+- **API keys**: prefix + fingerprint + hashed secret; plaintext shown exactly
+  once at creation. Not yet accepted as request credentials (no consumers).
+- **Account**: deactivation (revoke-all + DEACTIVATED) and scheduled deletion
+  (14-day grace, `ACCOUNT_DELETION_REQUESTED`; purge job is a later phase —
+  all data-owning domains must exist first).
+- **Authorization**: global `JwtAuthGuard` (token → live session → ACTIVE
+  user), `@Public()` opt-out, `@CurrentUser` principal; ownership checks
+  demonstrated on sessions/keys (foreign ids → 404, never leaky).
+
+Transactional email uses a log-rendering dev transport (see `mailer.service.ts`);
+a real provider plugs into `MailTransport` (Phase 0 open question #1).
 
 ## Testing
 

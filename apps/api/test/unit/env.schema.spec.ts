@@ -4,6 +4,8 @@ import { EnvValidationError, validateEnv } from "../../src/config/env.schema";
 const BASE_ENV = {
   NODE_ENV: "test",
   DATABASE_URL: "postgresql://cosmoz@127.0.0.1:5433/cosmoz_test",
+  AUTH_JWT_SECRET: "test-only-jwt-secret-0123456789abcdef0123456789",
+  AUTH_MFA_ENCRYPTION_KEY: "h0mEbiEr05Qkg5f8Duz4PrOups2o69gGx+LIEdXAuvU=",
 } as const;
 
 describe("validateEnv", () => {

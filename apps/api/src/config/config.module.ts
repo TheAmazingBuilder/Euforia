@@ -1,6 +1,8 @@
 import { Global, Module } from "@nestjs/common";
 import { APP_CONFIG, loadAppConfig } from "./app-config";
 
+export { APP_CONFIG };
+
 /**
  * Global configuration module — provides the validated {@link AppConfig}
  * under the {@link APP_CONFIG} token. Validation happens when the provider

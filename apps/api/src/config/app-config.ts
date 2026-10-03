@@ -18,6 +18,19 @@ export interface AppConfig {
   trustProxy: boolean;
   rateLimit: { windowSeconds: number; max: number };
   marketServiceUrl?: string;
+  auth: {
+    jwtSecret: string;
+    mfaEncryptionKey: Buffer;
+    accessTtlSeconds: number;
+    refreshRememberDays: number;
+    refreshSessionHours: number;
+    emailVerificationHours: number;
+    passwordResetMinutes: number;
+    mfaChallengeMinutes: number;
+    reauthMinutes: number;
+    webAppUrl: string;
+    emailFrom: string;
+  };
 }
 
 let cached: AppConfig | undefined;
@@ -38,6 +51,19 @@ function build(env: Env): AppConfig {
       max: env.RATE_LIMIT_MAX,
     },
     marketServiceUrl: env.MARKET_SERVICE_URL,
+    auth: {
+      jwtSecret: env.AUTH_JWT_SECRET,
+      mfaEncryptionKey: Buffer.from(env.AUTH_MFA_ENCRYPTION_KEY, "base64"),
+      accessTtlSeconds: env.AUTH_ACCESS_TTL_SECONDS,
+      refreshRememberDays: env.AUTH_REFRESH_REMEMBER_DAYS,
+      refreshSessionHours: env.AUTH_REFRESH_SESSION_HOURS,
+      emailVerificationHours: env.AUTH_EMAIL_VERIFICATION_HOURS,
+      passwordResetMinutes: env.AUTH_PASSWORD_RESET_MINUTES,
+      mfaChallengeMinutes: env.AUTH_MFA_CHALLENGE_MINUTES,
+      reauthMinutes: env.AUTH_REAUTH_MINUTES,
+      webAppUrl: env.WEB_APP_URL,
+      emailFrom: env.EMAIL_FROM,
+    },
   };
 }
 

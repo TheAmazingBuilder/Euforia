@@ -7,6 +7,7 @@ import { VersioningType } from "@nestjs/common";
 import { FastifyAdapter, type NestFastifyApplication } from "@nestjs/platform-fastify";
 import type { FastifyPluginCallback } from "fastify";
 import helmet from "@fastify/helmet";
+import cookie from "@fastify/cookie";
 import pinoHttp from "pino-http";
 import { REQUEST_ID_HEADER, resolveRequestId } from "./shared/http/request-id";
 import type { AppConfig } from "./config/app-config";
@@ -66,6 +67,9 @@ export async function configureApp(app: NestFastifyApplication, config: AppConfi
   // hide-powered-by. A JSON API needs no exceptions today; relax explicitly
   // (and document) only if a browser-served surface is ever added here.
   await instance.register(helmet);
+
+  // ── Cookies (refresh-token cookie jar: HttpOnly cosmoz_rt) ────────────────
+  await instance.register(cookie);
 
   // ── CORS (origin allowlist from validated config) ─────────────────────────
   app.enableCors({
