@@ -20,6 +20,8 @@ import { AllExceptionsFilter } from "./shared/http/all-exceptions.filter";
 import { APP_CONFIG, type AppConfig } from "./config/app-config";
 import { IdentityModule } from "./modules/identity/identity.module";
 import { AccountsModule } from "./modules/accounts/accounts.module";
+import { SecurityEventModule } from "./modules/security/security-event.module";
+import { SecurityModule } from "./modules/security/security.module";
 
 const globalExceptionFilterProvider: Provider = {
   provide: APP_FILTER,
@@ -37,8 +39,14 @@ const globalExceptionFilterProvider: Provider = {
     // ── system ──────────────────────────────────────────────────────────────
     HealthModule,
     // ── bounded contexts ────────────────────────────────────────────────────
+    // SecurityEventModule FIRST: the shared append-only ledger port that
+    // Identity and Accounts record into (Phase 16 §34).
+    SecurityEventModule,
     IdentityModule,
     AccountsModule,
+    // Security center — posture, activity, visibility (Phase 16). Orchestrates
+    // identity capabilities; owns NO authentication/session/MFA logic (§3).
+    SecurityModule,
     // modules/reference … — added by their own phases.
   ],
   providers: [globalExceptionFilterProvider],

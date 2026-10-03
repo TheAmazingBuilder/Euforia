@@ -26,7 +26,7 @@ import {
 } from "../../shared/contracts";
 import { IdentityRepository, type UserRow } from "./identity.repository";
 import { MailerService } from "./mailer.service";
-import { SecurityEventService } from "./security-event.service";
+import { SecurityEventService } from "../security/security-event.service";
 import { AuthRateLimiterService } from "./auth-rate-limiter.service";
 import { toAuthUser } from "./mappers";
 import { ConflictError } from "../../shared/errors/app-error";

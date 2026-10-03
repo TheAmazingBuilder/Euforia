@@ -1,9 +1,15 @@
 /**
- * Identity bounded context (Phase 2) — authentication, sessions, MFA,
- * security events, account protection.
+ * Identity bounded context (Phase 2, refined Phase 16) — authentication,
+ * sessions, MFA, authorization foundation, account lifecycle.
  *
  * Generic subdomain (Phase 0 §I): flat application services + one
  * repository + thin controllers — no ceremonial layering.
+ *
+ * Phase 16 boundary refinement: the Security center and the security-event
+ * ledger now live in `modules/security` (SecurityModule + the shared
+ * SecurityEventModule write port). Identity records auth events THROUGH
+ * that port and keeps ownership of authentication, sessions, MFA and
+ * authorization — it never implements security visibility itself.
  *
  * Guard order note: the global ThrottlerGuard (RateLimitModule, imported
  * before this module in AppModule) runs BEFORE JwtAuthGuard — unauthenticated
@@ -17,21 +23,19 @@ import type { AppConfig } from "../../config/app-config";
 import { PrismaModule } from "../../infrastructure/prisma/prisma.module";
 import { LoggingModule } from "../../infrastructure/logging/logging.module";
 import { JwtAuthGuard } from "../../shared/auth/jwt-auth.guard";
+import { SecurityEventModule } from "../security/security-event.module";
 import { IDENTITY_GUARD_DEPS, type IdentityGuardDeps } from "./identity-guard-deps";
 import { IdentityRepository } from "./identity.repository";
 import { PasswordHasherService } from "./password-hasher.service";
 import { TokenService } from "./token.service";
 import { TotpService } from "./totp.service";
 import { MailerService } from "./mailer.service";
-import { SecurityEventService } from "./security-event.service";
 import { AuthRateLimiterService, AUTH_RATE_LIMITS } from "./auth-rate-limiter.service";
 import { ReauthService } from "./reauth.service";
 import { AuthService } from "./auth.service";
 import { MfaService } from "./mfa.service";
-import { SecurityService } from "./security.service";
 import { AccountService } from "./account.service";
 import { AuthController } from "./auth.controller";
-import { SecurityController } from "./security.controller";
 import { MeController } from "./me.controller";
 
 const guardDepsProvider: Provider = {
@@ -60,6 +64,7 @@ const rateLimiterProvider: Provider = {
     ConfigModule,
     LoggingModule,
     PrismaModule,
+    SecurityEventModule,
     JwtModule.registerAsync({
       inject: [APP_CONFIG],
       useFactory: (config: AppConfig) => ({
@@ -69,7 +74,7 @@ const rateLimiterProvider: Provider = {
       }),
     }),
   ],
-  controllers: [AuthController, SecurityController, MeController],
+  controllers: [AuthController, MeController],
   providers: [
     IdentityRepository,
     // Factory provider: the hasher's OWASP options are constructor args, not
@@ -78,17 +83,17 @@ const rateLimiterProvider: Provider = {
     TokenService,
     TotpService,
     MailerService,
-    SecurityEventService,
     rateLimiterProvider,
     ReauthService,
     AuthService,
     MfaService,
-    SecurityService,
     AccountService,
     guardDepsProvider,
     // Global authentication — after the throttler (module import order).
     { provide: APP_GUARD, useClass: JwtAuthGuard },
   ],
-  exports: [IdentityRepository, TokenService, SecurityEventService],
+  // SecurityModule (the Security center) orchestrates these capabilities —
+  // they stay OWNED here; exports are the narrow public contract (§33).
+  exports: [IdentityRepository, TokenService, PasswordHasherService, ReauthService, MfaService],
 })
 export class IdentityModule {}

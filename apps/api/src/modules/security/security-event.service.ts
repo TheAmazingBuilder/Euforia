@@ -1,43 +1,24 @@
 /**
- * Security-event recording (Phase 2 mandate §30; shared security.ts §10).
+ * Security-event recording — the SHARED write port for security-relevant
+ * facts (Phase 2 mandate §30; Phase 16 bounded-context extraction §33/§34).
  *
- * The log is APPEND-ONLY: this service exposes append + reads — no update,
+ * Identity (auth flows), Accounts (connection lifecycle) and any future
+ * domain record through THIS service — they never touch the Security
+ * center's internals, and the Security center never writes into another
+ * context's tables. One coherent event architecture (§38): a single model,
+ * a single writer, one catalog (shared securityEventTypeSchema).
+ *
+ * The log is APPEND-ONLY: this service exposes record + reads — no update,
  * no delete. Events carry sanitized human context and NEVER contain
  * passwords, tokens, MFA secrets or recovery codes (§30).
  * Login history rows share the same metadata discipline (§31).
  */
 import { Injectable } from "@nestjs/common";
-import { IdentityRepository } from "./identity.repository";
-import type { SessionRow, UserRow } from "./identity.repository";
-import { isoDateTime } from "./mappers";
+import type { SecurityEventType } from "../../shared/contracts";
+import { SecurityEventRepository, type LoginRecordRow, type SecurityEventRow } from "./security-event.repository";
+import { isoDateTime } from "../identity/mappers";
 
-export type SecurityEventType =
-  | "LOGIN_SUCCESS"
-  | "LOGIN_FAILED"
-  | "LOGOUT"
-  | "PASSWORD_CHANGED"
-  | "PASSWORD_RESET_REQUESTED"
-  | "EMAIL_VERIFIED"
-  | "TFA_ENABLED"
-  | "TFA_DISABLED"
-  | "TFA_CHALLENGE_FAILED"
-  | "RECOVERY_CODES_REGENERATED"
-  | "API_KEY_CREATED"
-  | "API_KEY_REVOKED"
-  | "INTEGRATION_CONNECTED"
-  | "INTEGRATION_DISCONNECTED"
-  | "SESSION_REVOKED"
-  | "SENSITIVE_SETTINGS_CHANGED"
-  | "REAUTH_OK"
-  | "REAUTH_FAILED"
-  | "ACCOUNT_DELETION_REQUESTED"
-  // Accounts / Trading Connectivity (Phase 3 §39) — connection lifecycle and
-  // sync failures are security-sensitive. Sync success lives in the run
-  // records (observability) to keep the audit log signal-dense.
-  | "TRADING_ACCOUNT_CONNECTED"
-  | "TRADING_ACCOUNT_CONNECTION_FAILED"
-  | "TRADING_ACCOUNT_DISCONNECTED"
-  | "TRADING_ACCOUNT_SYNC_FAILED";
+export type { SecurityEventType };
 
 export interface RequestFingerprint {
   device: string;
@@ -50,7 +31,7 @@ export interface RequestFingerprint {
 
 @Injectable()
 export class SecurityEventService {
-  constructor(private readonly repository: IdentityRepository) {}
+  constructor(private readonly repository: SecurityEventRepository) {}
 
   async record(input: {
     userId: string | null;
@@ -108,14 +89,14 @@ export class SecurityEventService {
 }
 
 /** Row → contract mappers for security payloads. */
-export function toSecurityEvent(event: {
+export function toSecurityEvent(event: SecurityEventRow): {
   id: string;
-  at: Date;
+  at: string;
   type: string;
   actor: string;
   context: string;
   outcome: string;
-}): { id: string; at: string; type: string; actor: string; context: string; outcome: string } {
+} {
   return {
     id: event.id,
     at: isoDateTime(event.at),
@@ -126,17 +107,7 @@ export function toSecurityEvent(event: {
   };
 }
 
-export function toLoginRecord(record: {
-  id: string;
-  at: Date;
-  success: boolean;
-  device: string;
-  browser: string;
-  os: string;
-  ipMasked: string;
-  location: string;
-  reason: string | null;
-}) {
+export function toLoginRecord(record: LoginRecordRow) {
   return {
     id: record.id,
     at: isoDateTime(record.at),
@@ -148,19 +119,4 @@ export function toLoginRecord(record: {
     location: record.location,
     reason: record.reason,
   };
-}
-
-export function sessionFingerprint(session: SessionRow): RequestFingerprint {
-  return {
-    device: session.device,
-    browser: session.browser,
-    os: session.os,
-    ipMasked: session.ipMasked,
-    location: session.location,
-    userAgent: session.userAgent,
-  };
-}
-
-export function userActor(user: UserRow): string {
-  return user.email;
 }

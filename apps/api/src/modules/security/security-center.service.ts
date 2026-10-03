@@ -1,21 +1,34 @@
 /**
- * Security & account-protection application service (shared security.ts).
+ * Security Center application service (Phase 16 bounded context).
  *
- * - /security/overview: server-computed aggregate of REAL state (protection
- *   checks state hard facts with their methodology — no invented score).
- * - Password change: reauth + revoke-other-sessions (§23) + event.
- * - Session revocation: ownership-checked (IDOR-safe), scopes one/others/all.
- * - API keys: prefix + fingerprint + hash — the secret is shown exactly once.
+ * OWNERSHIP (Phase 16 §3/§48): this service owns security POSTURE and
+ * VISIBILITY — the overview aggregate (protection checklist, deterministic
+ * score), the paginated activity reads, and the orchestration of sensitive
+ * account-protection flows. It deliberately does NOT re-implement any
+ * identity capability:
+ *   - password hashing/verification → PasswordHasherService (Identity)
+ *   - re-authentication tokens      → ReauthService (Identity)
+ *   - MFA/TOTP state and lifecycle  → MfaService (Identity)
+ *   - session persistence/revocation→ IdentityRepository (Identity)
+ *   - event/log persistence         → SecurityEventRepository (Security)
+ *
+ * /security/overview: server-computed aggregate of REAL state (protection
+ * checks state hard facts with their methodology — no invented score).
+ * Password change: reauth + revoke-other-sessions (§23) + event.
+ * Session revocation: ownership-checked (IDOR-safe), scopes one/others/all.
+ * API keys: prefix + fingerprint + hash — the secret is shown exactly once.
  */
 import { Injectable } from "@nestjs/common";
 import { createHash, randomBytes } from "node:crypto";
-import { IdentityRepository, type SessionRow, type UserRow } from "./identity.repository";
-import { ReauthService } from "./reauth.service";
+import { IdentityRepository, type UserRow } from "../identity/identity.repository";
+import { ReauthService } from "../identity/reauth.service";
+import { MfaService } from "../identity/mfa.service";
+import { PasswordHasherService } from "../identity/password-hasher.service";
+import { toAuthSession } from "../identity/mappers";
 import { SecurityEventService, toLoginRecord, toSecurityEvent } from "./security-event.service";
-import { MfaService } from "./mfa.service";
-import { PasswordHasherService } from "./password-hasher.service";
-import { toAuthSession } from "./mappers";
-import { ConflictError, NotFoundError } from "../../shared/errors/app-error";
+import { decodeActivityCursor, SecurityEventRepository } from "./security-event.repository";
+import type { SecurityEventPageQuery, LoginRecordPageQuery } from "../../shared/contracts";
+import { ConflictError, NotFoundError, ValidationError } from "../../shared/errors/app-error";
 
 const PASSWORD_MIN_LENGTH = 10;
 const PASSWORD_MAX_AGE_DAYS = 180;
@@ -24,11 +37,12 @@ const OVERVIEW_EVENTS = 60;
 const OVERVIEW_LOGINS = 15;
 
 @Injectable()
-export class SecurityService {
+export class SecurityCenterService {
   constructor(
     private readonly repository: IdentityRepository,
-    private readonly reauth: ReauthService,
+    private readonly eventLog: SecurityEventRepository,
     private readonly events: SecurityEventService,
+    private readonly reauth: ReauthService,
     private readonly mfa: MfaService,
     private readonly hasher: PasswordHasherService,
   ) {}
@@ -41,9 +55,9 @@ export class SecurityService {
         this.mfa.state(user),
         this.repository.listSessions(user.id),
         this.repository.listApiKeys(user.id),
-        this.repository.listSecurityEvents(user.id, OVERVIEW_EVENTS),
-        this.repository.listLoginRecords(user.id, OVERVIEW_LOGINS),
-        this.repository.countRecentFailedLogins(
+        this.eventLog.listSecurityEvents(user.id, OVERVIEW_EVENTS),
+        this.eventLog.listLoginRecords(user.id, OVERVIEW_LOGINS),
+        this.eventLog.countRecentFailedLogins(
           user.id,
           new Date(Date.now() - 15 * 60 * 1000),
         ),
@@ -127,7 +141,7 @@ export class SecurityService {
         passwordMinLength: PASSWORD_MIN_LENGTH,
       },
       twoFactor,
-      sessions: sessions.map((session) => toSecuritySession(session, currentSessionId)),
+      sessions: sessions.map((session) => toAuthSession(session, currentSessionId)),
       apiKeys: apiKeys.map((key) => ({
         id: key.id,
         name: key.name,
@@ -139,7 +153,12 @@ export class SecurityService {
         expiresAt: key.expiresAt ? iso(key.expiresAt) : null,
         revoked: key.revokedAt !== null,
       })),
-      // Integrations are a later bounded context — honestly empty here.
+      // Integrations are a separate bounded context (backend Phase 14 was
+      // never executed — no provider registry exists yet). Security exposes
+      // an honestly EMPTY projection rather than inventing one; when the
+      // Integrations context lands it will emit INTEGRATION_* events through
+      // the shared event log and this projection reads from its public
+      // contract. Security NEVER owns provider credentials (§23/§24).
       connectedAccounts: [],
       events: events.map(toSecurityEvent),
       logins: logins.map(toLoginRecord),
@@ -158,6 +177,55 @@ export class SecurityService {
       ],
       retention: { securityEventsDays: 365, loginHistoryDays: 180 },
     };
+  }
+
+  // ── GET /security/events — paginated audit trail (Phase 16 §28/§29) ────────
+
+  async listEventsPage(userId: string, query: SecurityEventPageQuery) {
+    const cursor = this.decodeCursor(query.cursor);
+    const page = await this.eventLog.listSecurityEventPage(userId, {
+      limit: query.limit,
+      cursor,
+      type: query.type,
+      outcome: query.outcome,
+      from: query.from !== undefined ? new Date(query.from) : undefined,
+      to: query.to !== undefined ? new Date(query.to) : undefined,
+    });
+    return {
+      items: page.items.map(toSecurityEvent),
+      nextCursor: page.nextCursor,
+    };
+  }
+
+  // ── GET /security/logins — paginated login history (Phase 16 §28/§29) ──────
+
+  async listLoginsPage(userId: string, query: LoginRecordPageQuery) {
+    const cursor = this.decodeCursor(query.cursor);
+    const page = await this.eventLog.listLoginRecordPage(userId, {
+      limit: query.limit,
+      cursor,
+      success: query.success,
+      from: query.from !== undefined ? new Date(query.from) : undefined,
+      to: query.to !== undefined ? new Date(query.to) : undefined,
+    });
+    return {
+      items: page.items.map(toLoginRecord),
+      nextCursor: page.nextCursor,
+    };
+  }
+
+  /** Malformed cursors are a client error — 400, never a 500 (§27). */
+  private decodeCursor(raw: string | undefined) {
+    if (raw === undefined) return null;
+    const cursor = decodeActivityCursor(raw);
+    if (!cursor) {
+      throw new ValidationError(
+        "The pagination cursor is invalid.",
+        [{ path: "cursor", message: "Malformed cursor" }],
+        "INVALID_CURSOR",
+      );
+    }
+    return cursor;
   }
 
   // ── POST /security/reauth ───────────────────────────────────────────────────
@@ -329,7 +397,6 @@ export class SecurityService {
     });
     return { id: key.id };
   }
-
 }
 
 function daysSince(date: Date): number {
@@ -338,8 +405,4 @@ function daysSince(date: Date): number {
 
 function iso(date: Date): string {
   return date.toISOString().replace(/\.\d{3}Z$/, "Z");
-}
-
-export function toSecuritySession(session: SessionRow, currentSessionId: string) {
-  return toAuthSession(session, currentSessionId);
 }

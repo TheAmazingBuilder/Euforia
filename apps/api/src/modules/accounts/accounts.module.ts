@@ -7,10 +7,12 @@
  * TradingProviderAdapter (§9–§11).
  *
  * Reuse over reinvention: error taxonomy, ZodValidationPipe, auth guard +
- * principal decorator and the audit log (SecurityEventService) come from the
- * Foundation / identity; the sliding-window rate limiter class is reused
- * with accounts-specific vectors; AES-256-GCM encryption is parameterized
- * per-domain (ACCOUNTS_CREDENTIALS_ENCRYPTION_KEY ≠ AUTH_MFA_ENCRYPTION_KEY).
+ * principal decorator come from the Foundation; security-relevant facts are
+ * recorded through the shared append-only ledger port (SecurityEventModule,
+ * Phase 16) — never through a second audit system; the sliding-window rate
+ * limiter class is reused with accounts-specific vectors; AES-256-GCM
+ * encryption is parameterized per-domain (ACCOUNTS_CREDENTIALS_ENCRYPTION_KEY
+ * ≠ AUTH_MFA_ENCRYPTION_KEY).
  *
  * Provider registration (§57): the mock adapter is only registered when
  * config.accounts.mockProviderEnabled (default: on outside production).
@@ -21,6 +23,7 @@ import { Module, type Provider } from "@nestjs/common";
 import { ConfigModule } from "../../config/config.module";
 import { PrismaModule } from "../../infrastructure/prisma/prisma.module";
 import { LoggingModule } from "../../infrastructure/logging/logging.module";
+import { SecurityEventModule } from "../security/security-event.module";
 import { IdentityModule } from "../identity/identity.module";
 import { APP_CONFIG } from "../../config/app-config";
 import type { AppConfig } from "../../config/app-config";
@@ -49,7 +52,7 @@ const providerRegistryProvider: Provider = {
 };
 
 @Module({
-  imports: [ConfigModule, LoggingModule, PrismaModule, IdentityModule],
+  imports: [ConfigModule, LoggingModule, PrismaModule, SecurityEventModule, IdentityModule],
   controllers: [AccountsController, BrokerController],
   providers: [
     AccountsRepository,

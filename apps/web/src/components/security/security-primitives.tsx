@@ -54,6 +54,13 @@ export const EVENT_TYPE_META: Record<SecurityEventType, { label: string }> = {
   REAUTH_OK: { label: "Re-auth OK" },
   REAUTH_FAILED: { label: "Re-auth failed" },
   ACCOUNT_DELETION_REQUESTED: { label: "Deletion request" },
+  // Trading-connectivity lifecycle facts emitted by the Accounts context
+  // through the same append-only log (backend Phase 3; catalog reconciled
+  // in Phase 16) — rendered like any other event in the audit trail.
+  TRADING_ACCOUNT_CONNECTED: { label: "Trading account connected" },
+  TRADING_ACCOUNT_CONNECTION_FAILED: { label: "Connection failed" },
+  TRADING_ACCOUNT_DISCONNECTED: { label: "Trading account disconnected" },
+  TRADING_ACCOUNT_SYNC_FAILED: { label: "Sync failed" },
 };
 
 // ── Re-authentication gate (§13) ─────────────────────────────────────────────

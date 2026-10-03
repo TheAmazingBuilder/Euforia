@@ -49,7 +49,7 @@ import type { TradingAccountRow, TradingConnectionRow } from "./accounts.reposit
 import { CredentialsEncryptionService } from "./credentials-encryption.service";
 import { ProviderRegistryService } from "./provider-registry.service";
 import { TradingSyncService } from "./trading-sync.service";
-import { SecurityEventService } from "../identity/security-event.service";
+import { SecurityEventService } from "../security/security-event.service";
 import type { UserRow } from "../identity/identity.repository";
 import { toAccountDetails, toJournalAccount, toSnapshotView, toSynchronizationView, isoDateTime } from "./mappers";
 

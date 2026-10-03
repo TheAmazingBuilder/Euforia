@@ -1,9 +1,16 @@
 /**
- * Security controller — account-protection endpoints (shared security.ts).
+ * Security Center controller (Phase 16 bounded context — routes unchanged
+ * from the Phase 2 placement; the extraction is internal to the API).
+ *
  * Requires an authenticated session; sensitive mutations additionally
  * consume a single-use re-authentication token (body `reauthToken`).
+ *
+ * Phase 16 additions: the paginated audit trail (§28) — GET /security/events
+ * and GET /security/logins. Read-only, ownership-scoped to the caller by the
+ * repository, filtered by validated values only (§29). Rate limiting comes
+ * from the existing global ThrottlerGuard (Phase 1) — no new limiter (§39).
  */
-import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post, Query } from "@nestjs/common";
 import { ZodValidationPipe } from "../../shared/http/zod-validation.pipe";
 import { z } from "zod";
 import { CurrentUser, type AuthPrincipal } from "../../shared/auth/current-user.decorator";
@@ -15,6 +22,8 @@ import {
   sensitiveActionInputSchema,
   sessionRevokeInputSchema,
   apiKeyCreateInputSchema,
+  securityEventPageQuerySchema,
+  loginRecordPageQuerySchema,
   type ReauthInput,
   type PasswordChangeInput,
   type TwoFactorConfirmInput,
@@ -22,9 +31,9 @@ import {
   type SessionRevokeInput,
   type ApiKeyCreateInput,
 } from "../../shared/contracts";
-import { SecurityService } from "./security.service";
-import { MfaService } from "./mfa.service";
-import { IdentityRepository, type UserRow } from "./identity.repository";
+import { SecurityCenterService } from "./security-center.service";
+import { MfaService } from "../identity/mfa.service";
+import { IdentityRepository, type UserRow } from "../identity/identity.repository";
 
 /**
  * Missing reauthToken must reach the HANDLER (contract: 401
@@ -38,10 +47,29 @@ const passwordChangeOptional = passwordChangeInputSchema.extend({
   reauthToken: z.string().min(1).optional(),
 });
 
+/**
+ * Wire variants of the shared page-query contracts: Fastify delivers query
+ * params as strings, so `limit` is coerced and the `success` filter is an
+ * explicit "true"/"false" enum (z.coerce.boolean would accept any string).
+ */
+const securityEventsQueryWire = securityEventPageQuerySchema.extend({
+  limit: z.coerce.number().int().min(1).max(100).default(30),
+});
+const securityLoginsQueryWire = loginRecordPageQuerySchema.extend({
+  limit: z.coerce.number().int().min(1).max(100).default(30),
+  success: z
+    .enum(["true", "false"])
+    .optional()
+    .transform((value) => (value === undefined ? undefined : value === "true")),
+});
+
+type SecurityEventsQuery = z.infer<typeof securityEventsQueryWire>;
+type SecurityLoginsQuery = z.infer<typeof securityLoginsQueryWire>;
+
 @Controller("security")
-export class SecurityController {
+export class SecurityCenterController {
   constructor(
-    private readonly security: SecurityService,
+    private readonly security: SecurityCenterService,
     private readonly mfa: MfaService,
     private readonly repository: IdentityRepository,
   ) {}
@@ -59,6 +87,24 @@ export class SecurityController {
   @Get("overview")
   async overview(@CurrentUser() principal: AuthPrincipal) {
     return this.security.overview(await this.loadUser(principal.userId), principal.sessionId);
+  }
+
+  @Get("events")
+  async events(
+    @CurrentUser() principal: AuthPrincipal,
+    @Query(new ZodValidationPipe(securityEventsQueryWire)) query: SecurityEventsQuery,
+  ) {
+    // Ownership is enforced inside the query itself — the principal's own
+    // userId is the only scope ever consulted (§32).
+    return this.security.listEventsPage(principal.userId, query);
+  }
+
+  @Get("logins")
+  async logins(
+    @CurrentUser() principal: AuthPrincipal,
+    @Query(new ZodValidationPipe(securityLoginsQueryWire)) query: SecurityLoginsQuery,
+  ) {
+    return this.security.listLoginsPage(principal.userId, query);
   }
 
   @Post("reauth")

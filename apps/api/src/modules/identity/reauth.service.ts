@@ -16,7 +16,7 @@ import { PasswordHasherService } from "./password-hasher.service";
 import type { UserRow } from "./identity.repository";
 import { AuthRateLimiterService } from "./auth-rate-limiter.service";
 import { RateLimitError, UnauthorizedError } from "../../shared/errors/app-error";
-import { SecurityEventService } from "./security-event.service";
+import { SecurityEventService } from "../security/security-event.service";
 
 const REAUTH_LIMIT = 5;
 

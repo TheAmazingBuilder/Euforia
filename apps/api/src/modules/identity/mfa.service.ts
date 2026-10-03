@@ -11,7 +11,7 @@ import { Injectable } from "@nestjs/common";
 import { IdentityRepository, type UserRow } from "./identity.repository";
 import { TotpService } from "./totp.service";
 import { ReauthService } from "./reauth.service";
-import { SecurityEventService } from "./security-event.service";
+import { SecurityEventService } from "../security/security-event.service";
 import { BusinessRuleError, ConflictError } from "../../shared/errors/app-error";
 
 export interface TwoFactorState {

@@ -12,7 +12,7 @@ import { REFRESH_COOKIE_NAME, TokenService } from "./token.service";
 import { IdentityRepository, type UserRow } from "./identity.repository";
 import { PasswordHasherService } from "./password-hasher.service";
 import { AuthRateLimiterService } from "./auth-rate-limiter.service";
-import { SecurityEventService, type RequestFingerprint } from "./security-event.service";
+import { SecurityEventService, type RequestFingerprint } from "../security/security-event.service";
 import { TotpService } from "./totp.service";
 import { MailerService } from "./mailer.service";
 import {

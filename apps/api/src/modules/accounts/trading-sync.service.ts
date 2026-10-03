@@ -38,7 +38,7 @@ import { AccountsRepository } from "./accounts.repository";
 import type { SyncRunRow, TradingAccountRow, TradingConnectionRow } from "./accounts.repository";
 import { CredentialsEncryptionService } from "./credentials-encryption.service";
 import { ProviderRegistryService } from "./provider-registry.service";
-import { SecurityEventService } from "../identity/security-event.service";
+import { SecurityEventService } from "../security/security-event.service";
 import { toSyncRunView, toSynchronizationView } from "./mappers";
 
 /** Provider failure codes that mean "the stored credentials stopped working". */

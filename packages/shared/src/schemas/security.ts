@@ -22,6 +22,13 @@ import { isoDateTimeSchema, uuidSchema } from "./primitives";
 
 // ── Event types (§10) ────────────────────────────────────────────────────────
 
+/**
+ * THE event catalog — one coherent security-event architecture (Phase 16 §38):
+ * the backend emits exactly these values, the frontend labels exactly these.
+ * The four TRADING_ACCOUNT_* values record connection-lifecycle facts emitted
+ * by the Accounts context (Phase 3) through the same append-only log — sync
+ * success stays in the sync-run records (signal density).
+ */
 export const securityEventTypeSchema = z.enum([
   "LOGIN_SUCCESS",
   "LOGIN_FAILED",
@@ -42,6 +49,10 @@ export const securityEventTypeSchema = z.enum([
   "REAUTH_OK",
   "REAUTH_FAILED",
   "ACCOUNT_DELETION_REQUESTED",
+  "TRADING_ACCOUNT_CONNECTED",
+  "TRADING_ACCOUNT_CONNECTION_FAILED",
+  "TRADING_ACCOUNT_DISCONNECTED",
+  "TRADING_ACCOUNT_SYNC_FAILED",
 ]);
 export type SecurityEventType = z.infer<typeof securityEventTypeSchema>;
 
@@ -295,3 +306,46 @@ export const recoveryRegenerateResponseSchema = z.object({
 export type RecoveryRegenerateResponse = z.infer<
   typeof recoveryRegenerateResponseSchema
 >;
+
+// ── Paginated audit trail (Phase 16 §28/§29) ─────────────────────────────────
+
+/**
+ * Stable keyset pagination — the security event log grows indefinitely and
+ * is NEVER returned unbounded. `cursor` is opaque to clients (base64url of
+ * "<at ISO>|<id>"); the server orders by (at DESC, id DESC) and pages on
+ * that compound key, so inserts never shift a page. Canonical shape here;
+ * the API derives the coerced wire variant (query strings) from it.
+ */
+export const pageCursorSchema = z.string().min(1).max(256);
+
+export const securityEventPageQuerySchema = z.object({
+  limit: z.number().int().min(1).max(100).default(30),
+  cursor: pageCursorSchema.optional(),
+  type: securityEventTypeSchema.optional(),
+  outcome: z.enum(["SUCCESS", "FAILURE"]).optional(),
+  from: isoDateTimeSchema.optional(),
+  to: isoDateTimeSchema.optional(),
+});
+export type SecurityEventPageQuery = z.infer<typeof securityEventPageQuerySchema>;
+
+export const securityEventPageSchema = z.object({
+  items: z.array(securityEventSchema),
+  /** Null on the last page — the walk is complete. */
+  nextCursor: pageCursorSchema.nullable(),
+});
+export type SecurityEventPage = z.infer<typeof securityEventPageSchema>;
+
+export const loginRecordPageQuerySchema = z.object({
+  limit: z.number().int().min(1).max(100).default(30),
+  cursor: pageCursorSchema.optional(),
+  success: z.boolean().optional(),
+  from: isoDateTimeSchema.optional(),
+  to: isoDateTimeSchema.optional(),
+});
+export type LoginRecordPageQuery = z.infer<typeof loginRecordPageQuerySchema>;
+
+export const loginRecordPageSchema = z.object({
+  items: z.array(loginRecordSchema),
+  nextCursor: pageCursorSchema.nullable(),
+});
+export type LoginRecordPage = z.infer<typeof loginRecordPageSchema>;
