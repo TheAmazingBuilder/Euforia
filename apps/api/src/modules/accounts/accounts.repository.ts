@@ -315,6 +315,21 @@ export class AccountsRepository {
     return (row as SyncRunRow) ?? null;
   }
 
+  /**
+   * Recent sync runs across ALL of the user's accounts — the canonical
+   * provider/sync health source consumed by the Monitoring module (Phase 17
+   * §26: Monitoring reads the owning domain's state, never a duplicate).
+   * Bounded to the most recent `take` runs; user-scoped via the account.
+   */
+  async listRecentSyncRunsForUser(userId: string, take = 200): Promise<SyncRunRow[]> {
+    const rows = await this.prisma.tradingSyncRun.findMany({
+      where: { account: { userId } },
+      orderBy: { startedAt: "desc" },
+      take,
+    });
+    return rows as SyncRunRow[];
+  }
+
   // ── Synchronized state ─────────────────────────────────────────────────────
 
   /**

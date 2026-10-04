@@ -12,7 +12,9 @@
  * Phase 16) — never through a second audit system; the sliding-window rate
  * limiter class is reused with accounts-specific vectors; AES-256-GCM
  * encryption is parameterized per-domain (ACCOUNTS_CREDENTIALS_ENCRYPTION_KEY
- * ≠ AUTH_MFA_ENCRYPTION_KEY).
+ * ≠ AUTH_MFA_ENCRYPTION_KEY). The repository is exported as the context's
+ * narrow read contract — the Monitoring module (Phase 17 §26) consumes sync
+ * health from HERE instead of duplicating synchronization state.
  *
  * Provider registration (§57): the mock adapter is only registered when
  * config.accounts.mockProviderEnabled (default: on outside production).
@@ -62,6 +64,6 @@ const providerRegistryProvider: Provider = {
     TradingAccountService,
     AccountsRateLimiterService,
   ],
-  exports: [],
+  exports: [AccountsRepository],
 })
 export class AccountsModule {}

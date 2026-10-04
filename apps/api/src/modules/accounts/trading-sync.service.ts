@@ -41,8 +41,9 @@ import { ProviderRegistryService } from "./provider-registry.service";
 import { SecurityEventService } from "../security/security-event.service";
 import { toSyncRunView, toSynchronizationView } from "./mappers";
 
-/** Provider failure codes that mean "the stored credentials stopped working". */
-const AUTH_CLASS_CODES = new Set(["INVALID_CREDENTIALS", "UNAUTHORIZED_PROVIDER_ACCESS"]);
+/** Provider failure codes that mean "the stored credentials stopped working".
+ * Exported for the Monitoring module's connection-health mapping (Phase 17). */
+export const AUTH_CLASS_CODES = new Set(["INVALID_CREDENTIALS", "UNAUTHORIZED_PROVIDER_ACCESS"]);
 
 /** Normalize any provider-side failure into the existing error architecture (§36). */
 export function normalizeProviderError(error: unknown): AppError {

@@ -10,6 +10,7 @@ import helmet from "@fastify/helmet";
 import cookie from "@fastify/cookie";
 import pinoHttp from "pino-http";
 import { REQUEST_ID_HEADER, resolveRequestId } from "./shared/http/request-id";
+import { registerApiTelemetryHook } from "./infrastructure/telemetry/api-telemetry";
 import type { AppConfig } from "./config/app-config";
 import { getOrCreateRootLogger } from "./infrastructure/logging/logger.factory";
 import { buildPinoHttpOptions } from "./infrastructure/logging/logging.module";
@@ -61,6 +62,13 @@ export async function configureApp(app: NestFastifyApplication, config: AppConfi
     reply.header("x-request-id", String(request.id));
     done(null, payload);
   });
+
+  // ── API telemetry (Phase 17) ────────────────────────────────────────────
+  // Bounded in-memory observation ring (500 calls): route template, status,
+  // duration and the guard-stamped principal. Consumed by the Monitoring
+  // module; nothing is persisted (§40). Runs for EVERY response — 401/429
+  // and unmatched routes included — so error rates are honest.
+  registerApiTelemetryHook(instance);
 
   // ── Security headers (helmet defaults) ────────────────────────────────────
   // Defaults include CSP, HSTS, no-sniff, frameguard, referrer-policy and

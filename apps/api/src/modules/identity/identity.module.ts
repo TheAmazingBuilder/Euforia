@@ -92,8 +92,9 @@ const rateLimiterProvider: Provider = {
     // Global authentication — after the throttler (module import order).
     { provide: APP_GUARD, useClass: JwtAuthGuard },
   ],
-  // SecurityModule (the Security center) orchestrates these capabilities —
-  // they stay OWNED here; exports are the narrow public contract (§33).
-  exports: [IdentityRepository, TokenService, PasswordHasherService, ReauthService, MfaService],
+  // SecurityModule (the Security center) and MonitoringModule (Phase 17)
+  // orchestrate these capabilities — they stay OWNED here; exports are the
+  // narrow public contract (§33).
+  exports: [IdentityRepository, TokenService, PasswordHasherService, ReauthService, MfaService, MailerService],
 })
 export class IdentityModule {}

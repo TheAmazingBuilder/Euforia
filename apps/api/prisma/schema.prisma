@@ -89,6 +89,7 @@ model User {
   recoveryCodes  RecoveryCode[]
   apiKeys        ApiKey[]
   tradingAccounts TradingAccount[]
+  monitoringSetting MonitoringSetting?
 
   @@index([status])
 }
@@ -198,6 +199,23 @@ model ApiKey {
   revokedAt   DateTime?
 
   @@index([userId])
+}
+
+// ── Monitoring (Phase 17 — operational observability) ─────────────────────
+
+/// Per-user Monitoring configuration — the ONLY persisted Monitoring entity.
+/// Metrics, system events, alerts and health are DERIVED from bounded
+/// in-memory windows at read time (§40/§45: no metrics warehouse inside
+/// PostgreSQL; no homemade time-series store). Thresholds persist because
+/// the user configures them explicitly (PATCH /monitoring/thresholds) and
+/// they must survive process restarts.
+model MonitoringSetting {
+  userId    String   @id @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// monitoringThresholdsSchema JSON (shared contract — freshness knobs +
+  /// the 8 alert rules with their enabled flag and numeric knob).
+  data      Json
+  updatedAt DateTime @updatedAt
 }
 
 // ── Accounts / Trading Connectivity (Domaine 2 — Phase 3) ────────────────────

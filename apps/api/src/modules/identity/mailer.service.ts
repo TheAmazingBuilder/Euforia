@@ -9,6 +9,7 @@
  * plugs in by implementing MailTransport. No marketing email system.
  */
 import { Inject, Injectable, Optional } from "@nestjs/common";
+import { randomUUID } from "node:crypto";
 import { APP_CONFIG } from "../../config/app-config";
 import type { AppConfig } from "../../config/app-config";
 import { ROOT_LOGGER, type RootLogger } from "../../infrastructure/logging/logger.factory";
@@ -26,6 +27,22 @@ export interface MailMessage {
 
 export interface MailTransport {
   send(message: MailMessage): Promise<void>;
+}
+
+/** Operational delivery record (Phase 17 telemetry) — NO recipient, NO URL:
+ * only the message kind and the outcome, data-minimal by design (§18). */
+export interface MailDeliveryRecord {
+  id: string;
+  at: Date;
+  kind: MailKind;
+  status: "SENT" | "FAILED";
+}
+
+export interface MailDeliveryTelemetry {
+  sent: number;
+  failed: number;
+  /** Latest deliveries first — bounded ring (50). */
+  recent: MailDeliveryRecord[];
 }
 
 /** Dev/sandbox transport: structured log output — honest and inspectable. */
@@ -51,6 +68,10 @@ export class ConsoleMailTransport implements MailTransport {
 @Injectable()
 export class MailerService {
   private transport: MailTransport;
+  /** Phase 17 — bounded operational telemetry (never user content). */
+  private readonly deliveries: MailDeliveryRecord[] = [];
+  private sentCount = 0;
+  private failedCount = 0;
 
   constructor(
     @Inject(APP_CONFIG) private readonly config: AppConfig,
@@ -64,8 +85,33 @@ export class MailerService {
     this.transport = transport;
   }
 
+  /** Operational delivery telemetry consumed by the Monitoring module (§25). */
+  deliveryTelemetry(): MailDeliveryTelemetry {
+    return { sent: this.sentCount, failed: this.failedCount, recent: [...this.deliveries].reverse() };
+  }
+
+  /** Single delivery funnel: outcome recorded, failures rethrown unchanged. */
+  private async deliver(message: MailMessage): Promise<void> {
+    try {
+      await this.transport.send(message);
+      this.sentCount += 1;
+      this.pushDelivery(message.kind, "SENT");
+    } catch (error) {
+      this.failedCount += 1;
+      this.pushDelivery(message.kind, "FAILED");
+      throw error;
+    }
+  }
+
+  private pushDelivery(kind: MailKind, status: "SENT" | "FAILED"): void {
+    this.deliveries.push({ id: randomUUID(), at: new Date(), kind, status });
+    if (this.deliveries.length > 50) {
+      this.deliveries.splice(0, this.deliveries.length - 50);
+    }
+  }
+
   async sendEmailVerification(to: string, token: string, expiresIn: string): Promise<void> {
-    await this.transport.send({
+    await this.deliver({
       kind: "EMAIL_VERIFICATION",
       to,
       subject: "Verify your Cosmoz email address",
@@ -76,7 +122,7 @@ export class MailerService {
   }
 
   async sendPasswordReset(to: string, token: string, expiresIn: string): Promise<void> {
-    await this.transport.send({
+    await this.deliver({
       kind: "PASSWORD_RESET",
       to,
       subject: "Reset your Cosmoz password",
@@ -87,7 +133,7 @@ export class MailerService {
   }
 
   async sendEmailChangeVerification(to: string, token: string, expiresIn: string): Promise<void> {
-    await this.transport.send({
+    await this.deliver({
       kind: "EMAIL_CHANGE",
       to,
       subject: "Confirm your new Cosmoz email address",

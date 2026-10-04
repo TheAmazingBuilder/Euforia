@@ -22,6 +22,7 @@ import { IdentityModule } from "./modules/identity/identity.module";
 import { AccountsModule } from "./modules/accounts/accounts.module";
 import { SecurityEventModule } from "./modules/security/security-event.module";
 import { SecurityModule } from "./modules/security/security.module";
+import { MonitoringModule } from "./modules/monitoring/monitoring.module";
 
 const globalExceptionFilterProvider: Provider = {
   provide: APP_FILTER,
@@ -47,6 +48,10 @@ const globalExceptionFilterProvider: Provider = {
     // Security center — posture, activity, visibility (Phase 16). Orchestrates
     // identity capabilities; owns NO authentication/session/MFA logic (§3).
     SecurityModule,
+    // Monitoring — thin operational observability (Phase 17): health,
+    // metrics, jobs, providers. Consumes Accounts/Identity state; owns NO
+    // domain semantics and NO security events (§3/§56).
+    MonitoringModule,
     // modules/reference … — added by their own phases.
   ],
   providers: [globalExceptionFilterProvider],
