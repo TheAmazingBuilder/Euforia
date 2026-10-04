@@ -62,7 +62,20 @@ const DECIMAL_ALLOWED = /^[-+]?[\d.,]+$/;
  * never silently resolved (§14: "ambiguous input must remain ambiguous").
  * Currency symbols/letters are stripped with a warning before parsing.
  */
-export function normalizeDecimal(raw: string): DecimalNormalization {
+/** Separator-resolved literal text, BEFORE numeric normalization. */
+interface ResolvedDecimalText {
+  /** Plain-dot literal ("1,234.50" → "1234.50") or null when not parseable. */
+  cleaned: string | null;
+  status: "VALID" | "INVALID" | "AMBIGUOUS";
+  warnings: string[];
+}
+
+/**
+ * Resolve separators/currency text of a decimal fragment WITHOUT touching
+ * its digits — shared by the machine normalization (toFixed) and the user
+ * correction paths (which may preserve the declared precision).
+ */
+function resolveDecimalText(raw: string): ResolvedDecimalText {
   const warnings: string[] = [];
   let text = raw.trim();
 
@@ -75,7 +88,7 @@ export function normalizeDecimal(raw: string): DecimalNormalization {
     text = stripped;
   }
   if (text.length === 0 || !DECIMAL_ALLOWED.test(text)) {
-    return { normalized: null, status: "INVALID", warnings };
+    return { cleaned: null, status: "INVALID", warnings };
   }
 
   const lastDot = text.lastIndexOf(".");
@@ -86,7 +99,7 @@ export function normalizeDecimal(raw: string): DecimalNormalization {
     const decimalSep = lastDot > lastComma ? "." : ",";
     const thousandSep = decimalSep === "." ? "," : ".";
     const cleaned = text.split(thousandSep).join("").split(decimalSep).join(".");
-    return finish(cleaned, warnings);
+    return { cleaned, status: "VALID", warnings };
   }
 
   const sep = lastDot >= 0 ? "." : lastComma >= 0 ? "," : null;
@@ -94,21 +107,29 @@ export function normalizeDecimal(raw: string): DecimalNormalization {
     const occurrences = text.split(sep).length - 1;
     if (occurrences > 1) {
       // Repeated single separator — thousands grouping, unambiguous.
-      return finish(text.split(sep).join(""), warnings);
+      return { cleaned: text.split(sep).join(""), status: "VALID", warnings };
     }
     const [, fraction = ""] = text.split(sep);
     if (fraction.length === 3) {
       // Exactly one separator + 3-digit group — genuinely ambiguous (§14).
       warnings.push(AMBIGUOUS_SEPARATOR_WARNING);
-      return { normalized: null, status: "AMBIGUOUS", warnings };
+      return { cleaned: null, status: "AMBIGUOUS", warnings };
     }
     if (sep === ",") {
-      return finish(text.split(",").join("."), warnings);
+      return { cleaned: text.split(",").join("."), status: "VALID", warnings };
     }
-    return finish(text, warnings);
+    return { cleaned: text, status: "VALID", warnings };
   }
 
-  return finish(text, warnings);
+  return { cleaned: text, status: "VALID", warnings };
+}
+
+export function normalizeDecimal(raw: string): DecimalNormalization {
+  const resolved = resolveDecimalText(raw);
+  if (resolved.status !== "VALID" || resolved.cleaned === null) {
+    return { normalized: null, status: resolved.status, warnings: resolved.warnings };
+  }
+  return finish(resolved.cleaned, resolved.warnings);
 }
 
 function finish(cleaned: string, warnings: string[]): DecimalNormalization {
@@ -123,35 +144,59 @@ function finish(cleaned: string, warnings: string[]): DecimalNormalization {
   }
 }
 
-/** Already-canonical decimal wire form — idempotency fast-path (§21). */
-const CANONICAL_DECIMAL = /^-?\d+(\.\d+)?$/;
+/**
+ * A SINGLE separator followed by EXACTLY three fraction digits is the
+ * ambiguous case ("1.234" could be 1.234 or 1234) — rejected for USER-typed
+ * corrections even when the text is otherwise canonical wire form (§14: the
+ * user can retype it clearly, "1.2340"). Machine values keep the AMBIGUOUS
+ * status instead (normalizeDecimal).
+ */
+const AMBIGUOUS_CORRECTION_PATTERN = /^-?\d+[.,]\d{3}$/;
 
 /**
- * Decimal-string acceptability for USER-typed corrections: same parser, but
- * ambiguous input is a hard failure because the user can retype it clearly.
- * Values already in canonical wire form are accepted directly so that a
- * canonicalized correction survives re-validation IDEMPOTENTLY (a canonical
- * "1.085" must not trip the 3-digit ambiguity heuristic). Negative values
- * are allowed only for signed fields (profit).
+ * Decimal-string parsing for USER-typed corrections (§21): the SAME
+ * separator semantics as machine values, but ambiguous input is a hard
+ * failure because the user can retype it clearly. Returns the NORMALIZED
+ * wire form (toFixed — "2345.60" → "2345.6"); the user's declared precision
+ * lives in the corrections record via parseCorrectedStoredDecimal. Negative
+ * values are allowed only for signed fields (profit).
  */
 export function parseCorrectedDecimal(raw: string, signed: boolean): string | null {
   const text = raw.trim();
-  if (CANONICAL_DECIMAL.test(text)) {
-    try {
-      const dec = new Prisma.Decimal(text);
-      if (!dec.isFinite()) return null;
-      if (!signed && dec.isNegative()) return null;
-      return dec.toFixed();
-    } catch {
-      return null;
-    }
+  if (AMBIGUOUS_CORRECTION_PATTERN.test(text)) return null;
+  const resolved = resolveDecimalText(text);
+  if (resolved.status !== "VALID" || resolved.cleaned === null) return null;
+  try {
+    const dec = new Prisma.Decimal(resolved.cleaned);
+    if (!dec.isFinite()) return null;
+    if (!signed && dec.isNegative()) return null;
+    return dec.toFixed();
+  } catch {
+    return null;
   }
-  const result = normalizeDecimal(raw);
-  if (result.status !== "VALID" || result.normalized === null) return null;
-  const dec = new Prisma.Decimal(result.normalized);
-  if (!dec.isFinite()) return null;
-  if (!signed && dec.isNegative()) return null;
-  return result.normalized;
+}
+
+/**
+ * The STORED form of a user correction (§21): validated with the SAME rules,
+ * but the user's declared precision is preserved — separators are
+ * canonicalized to plain-dot form ("1,0850" → "1.0850") WITHOUT toFixed,
+ * so a confirmation replay stays idempotent against the exact declaration
+ * the user confirmed. Machine-merged fields never consume this form; they
+ * read the normalized value (parseCorrectedDecimal).
+ */
+export function parseCorrectedStoredDecimal(raw: string, signed: boolean): string | null {
+  const text = raw.trim();
+  if (AMBIGUOUS_CORRECTION_PATTERN.test(text)) return null;
+  const resolved = resolveDecimalText(text);
+  if (resolved.status !== "VALID" || resolved.cleaned === null) return null;
+  try {
+    const dec = new Prisma.Decimal(resolved.cleaned);
+    if (!dec.isFinite()) return null;
+    if (!signed && dec.isNegative()) return null;
+    return resolved.cleaned;
+  } catch {
+    return null;
+  }
 }
 
 // ── Field-specific normalization (§12/§15/§16) ──────────────────────────────
@@ -334,6 +379,29 @@ export function validateCorrection(fieldKey: OcrFieldKey, value: string | null):
     throw new CorrectionError([{ path: fieldKey, message: "not a recognizable timestamp" }]);
   }
   return parsed.normalized;
+}
+
+/**
+ * The STORED declaration form of a user correction (§21): validated with the
+ * SAME domain rules as validateCorrection, but decimal fields keep the
+ * user's declared precision (separators canonicalized to plain dot form,
+ * trailing zeros preserved) so the confirmed record is an idempotent replay
+ * handle of the exact declaration. Non-decimal fields have a single
+ * canonical form — the stored declaration IS the normalized value.
+ */
+export function validateCorrectionStored(fieldKey: OcrFieldKey, value: string | null): string | null {
+  if (value === null) return null;
+  const text = value.trim();
+  if (text.length === 0) return null;
+
+  if (DECIMAL_KEYS.has(fieldKey)) {
+    const parsed = parseCorrectedStoredDecimal(text, SIGNED_DECIMAL_KEYS.has(fieldKey));
+    if (parsed === null) {
+      throw new CorrectionError([{ path: fieldKey, message: "not a valid decimal value for this field" }]);
+    }
+    return parsed;
+  }
+  return validateCorrection(fieldKey, value);
 }
 
 /**

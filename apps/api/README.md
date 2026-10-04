@@ -39,6 +39,7 @@ The API listens on **http://localhost:4000**:
 | `GET·PATCH /api/v1/me` | profile + preferences doc (9 domains) · deactivate · delete |
 | `POST /api/v1/calculators/lot-size` | authoritative position sizing — exact-decimal, broker-aware specs per request; informational only, never an order instruction |
 | `POST /api/v1/calculators/compounding` | period-by-period growth projection (full precision, ≤ 1 000 periods); informational only |
+| `GET·POST /api/v1/ocr/recognitions` · `…/:id` · `…/:id/image` · `…/:id/confirm` · `DELETE …/:id` | trade-screenshot recognition (Phase 19) — upload → deterministic engine (FastAPI sidecar) → human review → confirmation; NEVER creates a Trade |
 
 ## Scripts
 

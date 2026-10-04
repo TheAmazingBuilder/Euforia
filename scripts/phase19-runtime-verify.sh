@@ -134,10 +134,14 @@ python3 - << 'EOF'
 import json
 rec = json.load(open("/tmp/cosmoz-ocr-verify/confirm.json"))["recognition"]
 assert rec["status"] == "CONFIRMED", rec.get("status")
-assert rec["corrections"]["symbol"] == "XAUUSD.M", rec["corrections"]
-assert rec["corrections"]["entryPrice"] == "2345.6", rec["corrections"]
+# Corrections record = the user's VALIDATED declaration: the symbol is
+# normalized per §15 (non-alphanumerics stripped: "XAUUSD.m" → "XAUUSDM")
+# and decimal declared precision is preserved ("2345,60" → "2345.60").
+assert rec["corrections"]["symbol"] == "XAUUSDM", rec["corrections"]
+assert rec["corrections"]["entryPrice"] == "2345.60", rec["corrections"]
 fields = {f["field"]: f for f in rec["fields"]}
-assert fields["symbol"]["normalizedValue"] == "XAUUSD.M"
+# Merged FIELDS carry the normalized wire form ("2345.60" → "2345.6").
+assert fields["symbol"]["normalizedValue"] == "XAUUSDM"
 assert fields["entryPrice"]["normalizedValue"] == "2345.6"
 assert fields["symbol"]["confidence"] == 1.0  # authoritative (§21)
 print("  corrections:", rec["corrections"])

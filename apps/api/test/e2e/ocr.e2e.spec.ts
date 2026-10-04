@@ -15,6 +15,10 @@ import type { NestFastifyApplication } from "@nestjs/platform-fastify";
 import { buildTestApp } from "../helpers/build-app";
 import { authenticatedUser, captureMail, type MailCapture } from "../helpers/identity";
 import {
+  ocrRecognitionPageSchema,
+  ocrRecognitionResponseSchema,
+} from "../../src/shared/contracts";
+import {
   makeHappyPathPng,
   makeUnprocessablePng,
   makeOcrFixturePng,
@@ -46,31 +50,32 @@ async function user(): Promise<UserCtx> {
 async function upload(
   authHeader: Record<string, string>,
   dataUrl: string,
-): Promise<{ status: number; body: any }> {
+) {
   const res = await app.inject({
     method: "POST",
     url: "/api/v1/ocr/recognitions",
     headers: { ...authHeader, "content-type": "application/json" },
     payload: { imageDataUrl: dataUrl, requestedProfile: "TRADE_SUMMARY" },
   });
-  return { status: res.statusCode, body: res.json() };
+  // Parse through the shared contract — typed payloads, no any in the suite.
+  return { status: res.statusCode, body: ocrRecognitionResponseSchema.parse(res.json()) };
 }
 
 // ── Auth boundary (§39) ──────────────────────────────────────────────────────
 
 describe("OCR routes — authentication boundary", () => {
-  const routes: Array<[string, string]> = [
+  const routes = [
     ["POST", "/api/v1/ocr/recognitions"],
     ["GET", "/api/v1/ocr/recognitions"],
     ["GET", "/api/v1/ocr/recognitions/00000000-0000-4000-8000-000000000001"],
     ["GET", "/api/v1/ocr/recognitions/00000000-0000-4000-8000-000000000001/image"],
     ["POST", "/api/v1/ocr/recognitions/00000000-0000-4000-8000-000000000001/confirm"],
     ["DELETE", "/api/v1/ocr/recognitions/00000000-0000-4000-8000-000000000001"],
-  ];
+  ] as const;
 
   it("every route is 401 without credentials", async () => {
     for (const [method, url] of routes) {
-      const res = await app.inject({ method: method as any, url });
+      const res = await app.inject({ method, url });
       expect(res.statusCode, `${method} ${url}`).toBe(401);
     }
   });
@@ -96,7 +101,7 @@ describe("OCR recognition lifecycle (happy path, deterministic engine)", () => {
 
     // The engine result carries classification + confidence (§17).
     expect(recognition.classification?.type).toBe("MT5_TRADE");
-    const fields = new Map<string, any>(recognition.fields.map((f: any) => [f.field, f]));
+    const fields = new Map(recognition.fields.map((f) => [f.field, f]));
     expect(fields.get("symbol")?.normalizedValue).toMatch(/^[A-Z0-9]{3,}$/);
     expect(fields.get("direction")?.normalizedValue).toMatch(/^(BUY|SELL)$/);
     for (const field of recognition.fields) {
@@ -148,7 +153,7 @@ describe("OCR recognition lifecycle (happy path, deterministic engine)", () => {
     const { status, body } = await upload(a.authHeader, pngDataUrl(makeUnprocessablePng()));
     expect(status).toBe(201);
     expect(body.recognition.status).toBe("FAILED");
-    expect(body.recognition.failure.category).toBe("SCREENSHOT_UNSUPPORTED");
+    expect(body.recognition.failure?.category).toBe("SCREENSHOT_UNSUPPORTED");
     expect(body.recognition.fields).toHaveLength(0);
   });
 });
@@ -160,7 +165,6 @@ describe("OCR confirmation — human-in-the-loop (§21)", () => {
     const a = await user();
     const created = await upload(a.authHeader, pngDataUrl(makeHappyPathPng()));
     const id = created.body.recognition.id;
-    const symbolBefore = created.body.recognition.fields.find((f: any) => f.field === "symbol").normalizedValue;
 
     const res = await app.inject({
       method: "POST",
@@ -169,18 +173,17 @@ describe("OCR confirmation — human-in-the-loop (§21)", () => {
       payload: { corrections: { symbol: "EURUSD", entryPrice: "1.0850" } },
     });
     expect(res.statusCode).toBe(200);
-    const confirmed = res.json().recognition;
+    const confirmed = ocrRecognitionResponseSchema.parse(res.json()).recognition;
     expect(confirmed.status).toBe("CONFIRMED");
     expect(confirmed.confirmedAt).toBeTruthy();
     expect(confirmed.corrections).toMatchObject({ symbol: "EURUSD", entryPrice: "1.0850" });
 
-    const fields = new Map<string, any>(confirmed.fields.map((f: any) => [f.field, f]));
+    const fields = new Map(confirmed.fields.map((f) => [f.field, f]));
     expect(fields.get("symbol")?.normalizedValue).toBe("EURUSD");
     expect(fields.get("symbol")?.confidence).toBe(1); // authoritative (§21)
     expect(fields.get("entryPrice")?.normalizedValue).toBe("1.085");
     // Untouched machine fields keep their provenance.
     expect(fields.get("direction")?.confidence).not.toBe(1);
-    void symbolBefore;
   });
 
   it("is idempotent for the SAME corrections and 409 for different ones (§51)", async () => {
@@ -259,20 +262,21 @@ describe("OCR listing and deletion", () => {
       headers: a.authHeader,
     });
     expect(page1.statusCode).toBe(200);
-    const p1 = page1.json();
+    const p1 = ocrRecognitionPageSchema.parse(page1.json());
     expect(p1.items).toHaveLength(2);
     expect(p1.nextCursor).toBeTruthy();
+    const pageCursor = p1.nextCursor as string; // proven truthy above
 
     const page2 = await app.inject({
       method: "GET",
-      url: `/api/v1/ocr/recognitions?limit=2&cursor=${encodeURIComponent(p1.nextCursor)}`,
+      url: `/api/v1/ocr/recognitions?limit=2&cursor=${encodeURIComponent(pageCursor)}`,
       headers: a.authHeader,
     });
     expect(page2.statusCode).toBe(200);
-    const p2 = page2.json();
+    const p2 = ocrRecognitionPageSchema.parse(page2.json());
     const walk = [
-      ...p1.items.map((i: any) => i.id),
-      ...p2.items.map((i: any) => i.id),
+      ...p1.items.map((i) => i.id),
+      ...p2.items.map((i) => i.id),
     ];
     for (const id of ids) expect(walk).toContain(id);
 
@@ -355,7 +359,7 @@ describe("OCR IDOR — User A can never touch User B's recognitions (§39)", () 
     // B's list never contains A's recognition; forged list ids are invisible.
     const bList = await app.inject({ method: "GET", url: "/api/v1/ocr/recognitions?limit=50", headers: b.authHeader });
     expect(bList.statusCode).toBe(200);
-    expect(bList.json().items.some((item: any) => item.id === id)).toBe(false);
+    expect(ocrRecognitionPageSchema.parse(bList.json()).items.some((item) => item.id === id)).toBe(false);
 
     // A still sees it — the attempts above had no side effect.
     const aRead = await app.inject({ method: "GET", url: `/api/v1/ocr/recognitions/${id}`, headers: a.authHeader });
@@ -496,9 +500,9 @@ describe("OCR negative capabilities (§53)", () => {
       ["PUT", "/api/v1/ocr/recognitions/00000000-0000-4000-8000-000000000001"],
       ["PATCH", "/api/v1/ocr/recognitions/00000000-0000-4000-8000-000000000001"],
       ["POST", "/api/v1/ocr/recognitions/00000000-0000-4000-8000-000000000001/retry"],
-    ];
+    ] as const;
     for (const [method, url] of probes) {
-      const res = await app.inject({ method: method as any, url, headers: a.authHeader });
+      const res = await app.inject({ method, url, headers: a.authHeader });
       expect(res.statusCode, `${method} ${url}`).toBe(404);
     }
     // The confirm route is a POST action; a PATCH variant must not exist.

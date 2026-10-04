@@ -57,7 +57,7 @@ import {
   confidenceBand,
   CorrectionError,
   deriveIdempotencyKey,
-  validateCorrection,
+  validateCorrectionStored,
 } from "./ocr.logic";
 import { OcrRateLimiterService } from "./ocr-rate-limiter.service";
 import {
@@ -448,11 +448,14 @@ export class OcrService {
       );
     }
 
-    // User corrections become authoritative — re-normalized with the SAME
-    // domain rules as machine values (§21). The record stores CANONICAL
-    // values ("2 345,60" is rejected, "2345,60" → "2345.6"), so the confirmed
-    // state is replayable and comparable. Invalid user values are a 422 with
-    // a stable code, never a 500, never a silent store.
+    // User corrections become authoritative — validated with the SAME domain
+    // rules as machine values (§21). The record stores the user's VALIDATED
+    // DECLARATION (separators canonicalized to plain-dot form, declared
+    // precision preserved: "2345,60" → "2345.60"), so a confirmation replay
+    // is idempotent against the exact confirmed statement; ambiguous input
+    // ("1.234", "2 345,60") is a 422 with a stable code, never a 500, never
+    // a silent store. The merged FIELDS carry the normalized wire form
+    // ("1.0850" → "1.085").
     const machineFields = (row.result?.fields ?? []) as OcrExtractedField[];
     const canonicalCorrections = canonicalizeCorrections(input.corrections);
     const { fields: mergedFields, correctionCount } = applyCorrectionsSafe(
@@ -625,14 +628,16 @@ function mimeExtension(mime: string): string {
 }
 
 /**
- * Canonical form of the user's corrections (§21): each value is normalized
- * through the SAME validators as machine values; raw input is never stored.
+ * Stored form of the user's corrections (§21): each value is validated
+ * through the SAME validators as machine values and kept in its validated
+ * declaration form (see validateCorrectionStored); raw input is never
+ * stored unvalidated.
  */
 function canonicalizeCorrections(corrections: OcrCorrectionRecord): Record<string, string | null> {
   const canonical: Record<string, string | null> = {};
   for (const [key, value] of Object.entries(corrections)) {
     try {
-      canonical[key] = validateCorrection(key as OcrFieldKey, value);
+      canonical[key] = validateCorrectionStored(key as OcrFieldKey, value);
     } catch (error) {
       if (error instanceof CorrectionError) {
         const detail = error.issues.map((issue) => `${issue.path}: ${issue.message}`).join("; ");
