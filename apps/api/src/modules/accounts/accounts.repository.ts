@@ -542,4 +542,28 @@ export class AccountsRepository {
     });
     return rows as DealRow[];
   }
+
+  // ── Owned-entity counts (Phase 20 §39) ──────────────────────────────────────
+
+  /**
+   * User-scoped counts over the context's OWN tables (accounts, connections'
+   * normalized state, sync runs) — the narrow read contract Monitoring
+   * consumes (Phase 20 §39: no cross-context Prisma access anywhere else).
+   */
+  async countUserEntities(userId: string): Promise<{
+    accounts: number;
+    positions: number;
+    orders: number;
+    deals: number;
+    syncRuns: number;
+  }> {
+    const [accounts, positions, orders, deals, syncRuns] = await Promise.all([
+      this.prisma.tradingAccount.count({ where: { userId } }),
+      this.prisma.tradingPosition.count({ where: { account: { userId } } }),
+      this.prisma.tradingOrder.count({ where: { account: { userId } } }),
+      this.prisma.tradingDeal.count({ where: { account: { userId } } }),
+      this.prisma.tradingSyncRun.count({ where: { account: { userId } } }),
+    ]);
+    return { accounts, positions, orders, deals, syncRuns };
+  }
 }

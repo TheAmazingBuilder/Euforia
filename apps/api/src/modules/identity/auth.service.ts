@@ -256,23 +256,19 @@ export class AuthService {
     const secret = this.totp.decryptSecret(user.mfaSecretEnc ?? "");
     if (!secret || !this.totp.verify(secret, user.email, input.code)) {
       this.limiter.hit("mfa", user.email);
-      await this.events.record({
-        userId: user.id,
-        type: "TFA_CHALLENGE_FAILED",
-        actor: fingerprint.device,
-        context: "Invalid TOTP code during sign-in.",
-        outcome: "FAILURE",
-      });
-      await this.repository.appendLoginRecord({
-        userId: user.id,
-        success: false,
-        device: fingerprint.device,
-        browser: fingerprint.browser,
-        os: fingerprint.os,
-        ipMasked: fingerprint.ipMasked,
-        location: fingerprint.location,
-        reason: "Invalid MFA code",
-      });
+      // Phase 20 §39: the LoginRecord is Security-owned — the failure pair
+      // (security event + login history row) is recorded through the shared
+      // SecurityEventService port, never through raw identity Prisma access.
+      await this.events.recordLogin(
+        {
+          userId: user.id,
+          type: "TFA_CHALLENGE_FAILED",
+          context: "Invalid TOTP code during sign-in.",
+          outcome: "FAILURE",
+          reason: "Invalid MFA code",
+        },
+        fingerprint,
+      );
       throw new UnauthorizedError("That code didn't match. Check your authenticator app.", "INVALID_MFA_CODE");
     }
 

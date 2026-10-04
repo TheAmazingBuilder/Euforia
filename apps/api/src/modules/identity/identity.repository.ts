@@ -238,51 +238,23 @@ export class IdentityRepository {
     return result.count;
   }
 
-  // ── Security events + login records (append-only) ──────────────────────────
+  // ── Owned-entity counts (Phase 20 §39) ──────────────────────────────────────
+  //
+  // The append-only SecurityEvent log and the LoginRecord history are owned by
+  // the Security context (Phase 16 bounded-context extraction): Identity never
+  // reads or writes those tables directly — it records through the
+  // SecurityEventService port. These counts cover ONLY Identity-owned tables
+  // and are the narrow read contract Monitoring consumes (Phase 20 §39).
 
-  async appendSecurityEvent(data: {
-    userId: string | null;
-    type: string;
-    actor: string;
-    context: string;
-    outcome: "SUCCESS" | "FAILURE";
-  }): Promise<void> {
-    await this.prisma.securityEvent.create({ data });
-  }
-
-  async listSecurityEvents(userId: string, take: number) {
-    return this.prisma.securityEvent.findMany({
-      where: { userId },
-      orderBy: { at: "desc" },
-      take,
-    });
-  }
-
-  async appendLoginRecord(data: {
-    userId: string;
-    success: boolean;
-    device: string;
-    browser: string;
-    os: string;
-    ipMasked: string;
-    location: string;
-    reason: string | null;
-  }): Promise<void> {
-    await this.prisma.loginRecord.create({ data });
-  }
-
-  async listLoginRecords(userId: string, take: number) {
-    return this.prisma.loginRecord.findMany({
-      where: { userId },
-      orderBy: { at: "desc" },
-      take,
-    });
-  }
-
-  async countRecentFailedLogins(userId: string, since: Date): Promise<number> {
-    return this.prisma.loginRecord.count({
-      where: { userId, success: false, at: { gte: since } },
-    });
+  async countUserEntities(userId: string): Promise<{
+    sessions: number;
+    apiKeys: number;
+  }> {
+    const [sessions, apiKeys] = await Promise.all([
+      this.prisma.session.count({ where: { userId } }),
+      this.prisma.apiKey.count({ where: { userId } }),
+    ]);
+    return { sessions, apiKeys };
   }
 
   // ── Auth challenges (email verification / password reset) ──────────────────

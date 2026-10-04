@@ -11,21 +11,27 @@
  * Dependency graph (acyclic):
  *   MonitoringModule → MonitoringRepository (own Prisma boundary)
  *                    → AccountsModule (AccountsRepository — canonical sync
- *                      health, §26 "consume, never duplicate")
- *                    → IdentityModule (MailerService delivery telemetry)
+ *                      health + owned-entity counts, §26 "consume, never
+ *                      duplicate"; Phase 20 §39)
+ *                    → IdentityModule (MailerService delivery telemetry +
+ *                      IdentityRepository owned-entity counts)
+ *                    → SecurityEventModule (SecurityEventRepository — the
+ *                      ledger/login-record counts stay owned by Security,
+ *                      Phase 20 §39)
  *   Shared infrastructure: apiTelemetry ring (app.setup.ts hook), global
  *   JwtAuthGuard + ThrottlerGuard.
  */
 import { Module } from "@nestjs/common";
 import { AccountsModule } from "../accounts/accounts.module";
 import { IdentityModule } from "../identity/identity.module";
+import { SecurityEventModule } from "../security/security-event.module";
 import { MonitoringController } from "./monitoring.controller";
 import { MonitoringRepository } from "./monitoring.repository";
 import { MonitoringService } from "./monitoring.service";
 import { PrismaModule } from "../../infrastructure/prisma/prisma.module";
 
 @Module({
-  imports: [PrismaModule, AccountsModule, IdentityModule],
+  imports: [PrismaModule, AccountsModule, IdentityModule, SecurityEventModule],
   controllers: [MonitoringController],
   providers: [MonitoringRepository, MonitoringService],
 })

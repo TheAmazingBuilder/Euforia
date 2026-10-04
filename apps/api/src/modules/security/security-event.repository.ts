@@ -114,6 +114,24 @@ export class SecurityEventRepository {
     await this.prisma.loginRecord.create({ data });
   }
 
+  // ── Owned-entity counts (Phase 20 §39) ──────────────────────────────────────
+
+  /**
+   * User-scoped counts over the context's OWN tables (SecurityEvent ledger +
+   * LoginRecord history) — the narrow read contract Monitoring consumes
+   * (Phase 20 §39: no cross-context Prisma access anywhere else).
+   */
+  async countUserEntities(userId: string): Promise<{
+    securityEvents: number;
+    loginRecords: number;
+  }> {
+    const [securityEvents, loginRecords] = await Promise.all([
+      this.prisma.securityEvent.count({ where: { userId } }),
+      this.prisma.loginRecord.count({ where: { userId } }),
+    ]);
+    return { securityEvents, loginRecords };
+  }
+
   // ── Reads — overview windows (bounded, Phase 2 semantics) ───────────────────
 
   async listSecurityEvents(userId: string, take: number): Promise<SecurityEventRow[]> {

@@ -43,6 +43,8 @@ import type {
   SystemEvent,
 } from "../../shared/contracts";
 import { AccountsRepository } from "../accounts/accounts.repository";
+import { IdentityRepository } from "../identity/identity.repository";
+import { SecurityEventRepository } from "../security/security-event.repository";
 import { MailerService } from "../identity/mailer.service";
 import { MonitoringRepository } from "./monitoring.repository";
 import {
@@ -62,6 +64,12 @@ const EVENT_RING_CAP = 200;
 const EVENTS_RETURNED = 60;
 const STUCK_RUNNING_MS = 60_000;
 const KNOWN_JOBS = new Set(["trading-sync", "email-dispatch"]);
+
+/** One user-scoped row count shown in the Database panel. */
+interface EntityCount {
+  label: string;
+  count: number;
+}
 
 function iso(date: Date): string {
   return date.toISOString().replace(/\.\d{3}Z$/, "Z");
@@ -83,6 +91,8 @@ export class MonitoringService {
   constructor(
     private readonly monitoringRepository: MonitoringRepository,
     private readonly accountsRepository: AccountsRepository,
+    private readonly identityRepository: IdentityRepository,
+    private readonly securityEvents: SecurityEventRepository,
     private readonly mailer: MailerService,
   ) {}
 
@@ -251,9 +261,32 @@ export class MonitoringService {
 
   // ── Internals ───────────────────────────────────────────────────────────────
 
-  private async databaseEntities(userId: string) {
+  /**
+   * Row counts for the caller's own observable entities (§10/§34) — composed
+   * from the OWNING contexts' narrow contracts (Phase 20 §39): Identity counts
+   * its sessions/api keys, Security counts its ledger + login history, Accounts
+   * counts its trading tables. Monitoring owns ONLY the presentation labels —
+   * the frontend renders them verbatim, so this list grows with the data model
+   * honestly, one owning context at a time.
+   */
+  private async databaseEntities(userId: string): Promise<EntityCount[]> {
     try {
-      return await this.monitoringRepository.countUserEntities(userId);
+      const [identity, security, accounts] = await Promise.all([
+        this.identityRepository.countUserEntities(userId),
+        this.securityEvents.countUserEntities(userId),
+        this.accountsRepository.countUserEntities(userId),
+      ]);
+      return [
+        { label: "Sessions", count: identity.sessions },
+        { label: "Security events", count: security.securityEvents },
+        { label: "Login records", count: security.loginRecords },
+        { label: "API keys", count: identity.apiKeys },
+        { label: "Trading accounts", count: accounts.accounts },
+        { label: "Positions", count: accounts.positions },
+        { label: "Orders", count: accounts.orders },
+        { label: "Deals", count: accounts.deals },
+        { label: "Sync runs", count: accounts.syncRuns },
+      ];
     } catch {
       // A failing count must not fail the whole overview — DOWN shows in the
       // database status itself (ping drives that, not this).
