@@ -45,6 +45,7 @@ export * from "./schemas/nofy";
 export * from "./schemas/sessionLive";
 export * from "./schemas/trading-account";
 export * from "./schemas/calculators";
+export * from "./schemas/ocr";
 
 // ── Pure utils ───────────────────────────────────────────────────────────────
 export * from "./utils/money";

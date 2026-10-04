@@ -16,6 +16,14 @@
 // the Phase 3 mandate (§3 concepts kept separate, §15 lifecycles orthogonal,
 // §18 stable external identity, §22 credentials encrypted at rest).
 //
+// Phase 19 (OCR / Screenshot Recognition): OcrAsset, OcrRecognition — the
+// recognition bounded context. PostgreSQL stores METADATA + the recognition
+// aggregate only; the actual image binary lives in the OCR storage adapter
+// (local filesystem in this build), referenced by storageKey (§6). The
+// canonical Trade remains owned by Trading Core — OCR never writes to any
+// Trade table (§22/§42), and no OCR→Trade association exists yet (§23/§59:
+// no Trade model server-side; deferred to the Trading Core phase).
+//
 // CONVENTIONS (binding for all future migrations):
 //   - Money/prices/quantities/R → Decimal(18,8) columns, string wire format.
 //   - All timestamps stored UTC; user timezone lives on the User model.
@@ -90,6 +98,8 @@ model User {
   apiKeys        ApiKey[]
   tradingAccounts TradingAccount[]
   monitoringSetting MonitoringSetting?
+  ocrAssets        OcrAsset[]
+  ocrRecognitions  OcrRecognition[]
 
   @@index([status])
 }
@@ -425,4 +435,88 @@ model TradingSyncRun {
   requestId         String?
 
   @@index([accountId, startedAt(sort: Desc)])
+}
+
+// ── OCR / Screenshot Recognition (Phase 19) ─────────────────────────────────
+
+/// Metadata for one uploaded screenshot — the DB never stores the binary
+/// (§6: PostgreSQL = metadata + storage reference, storage adapter = bytes).
+/// One row per distinct image per user: the checksum is the dedup anchor and
+/// the idempotency input (§32), so re-uploading the same screenshot never
+/// duplicates stored bytes.
+model OcrAsset {
+  id              String   @id @default(uuid()) @db.Uuid
+  userId          String   @db.Uuid
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Storage-adapter reference — validated to stay inside the storage root;
+  /// never a raw filesystem path, never client-controlled (§7).
+  storageKey      String   @unique
+  /// Sanitized display name — the original filename is NEVER used for
+  /// storage paths (path-traversal prevention, §7).
+  originalName    String
+  /// MIME determined by MAGIC-BYTE sniffing — never the client Content-Type (§7).
+  mime            String
+  sizeBytes       Int
+  width           Int
+  height          Int
+  /// SHA-256 of the decoded binary — identity + integrity anchor (§6).
+  checksumSha256  String
+  createdAt       DateTime @default(now())
+
+  recognitions OcrRecognition[]
+
+  /// One stored binary per distinct image per user (§32 idempotency input).
+  @@unique([userId, checksumSha256])
+  @@index([userId, createdAt(sort: Desc)])
+}
+
+/// One recognition request over one asset — the full job lifecycle (§24) and
+/// the human-in-the-loop aggregate (§21). The machine result is untrusted
+/// data (§1): it stays a JSON extraction payload, while user corrections are
+/// the ONLY authoritative values and can never be overwritten by the engine.
+model OcrRecognition {
+  id                String    @id @default(uuid()) @db.Uuid
+  userId            String    @db.Uuid
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assetId           String    @db.Uuid
+  asset             OcrAsset  @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  /// QUEUED | PROCESSING | REVIEW_REQUIRED | FAILED | CONFIRMED (§24 states
+  /// that actually exist — guarded transitions enforced in the repository).
+  status            String    @default("QUEUED")
+  /// TRADE_SUMMARY in V1 (shared ocrExtractionProfileSchema).
+  extractionProfile String
+  /// Pipeline version that produced/last touched the result (§33).
+  pipelineVersion   String
+  /// Deterministic idempotency input: sha256(userId + checksum + profile +
+  /// pipelineVersion) — re-submitting the same screenshot for the same
+  /// pipeline version returns the existing recognition (§32).
+  idempotencyKey    String
+
+  /// Machine result payload {classification, fields, warnings, engine,
+  /// durationMs} — untrusted engine output AFTER strict validation (§54).
+  result            Json?
+  /// Stable failure category (shared ocrFailureCategorySchema) + sanitized
+  /// message — never raw engine output, never secrets (§35/§36).
+  failureCategory   String?
+  failureMessage    String?
+  /// Processing attempt counter — bounded retries only (§34).
+  attempt           Int       @default(1)
+  /// Correlation ids for observability (§57) — no image data, ever (§36).
+  requestId         String?
+  processingStartedAt  DateTime?
+  processingFinishedAt DateTime?
+
+  /// Authoritative user-confirmed values (field → value, §21). Written once
+  /// by the confirmation endpoint inside a transaction (§50); the engine can
+  /// never write here.
+  corrections       Json?
+  confirmedAt       DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// Idempotency: one recognition per (user, image, profile, pipeline) (§32).
+  @@unique([userId, idempotencyKey])
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([userId, status])
 }

@@ -24,6 +24,7 @@ import { SecurityEventModule } from "./modules/security/security-event.module";
 import { SecurityModule } from "./modules/security/security.module";
 import { MonitoringModule } from "./modules/monitoring/monitoring.module";
 import { CalculatorsModule } from "./modules/calculators/calculators.module";
+import { OcrModule } from "./modules/ocr/ocr.module";
 
 const globalExceptionFilterProvider: Provider = {
   provide: APP_FILTER,
@@ -58,6 +59,12 @@ const globalExceptionFilterProvider: Provider = {
     // account/instrument ownership (§3/§34/§53); the authoritative sizing
     // implementation future contexts must reuse (§37).
     CalculatorsModule,
+    // OCR / Screenshot Recognition (Phase 19): upload → validate → store →
+    // recognize (FastAPI sidecar) → review → confirm. Owns its own aggregate
+    // (OcrAsset/OcrRecognition); NEVER touches a Trade (§22/§42); records
+    // into the shared SecurityEvent ledger (§48); engine resolved by factory
+    // (sidecar → mock → explicit unavailable, §57).
+    OcrModule,
     // modules/reference … — added by their own phases.
   ],
   providers: [globalExceptionFilterProvider],

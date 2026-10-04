@@ -61,6 +61,10 @@ export const EVENT_TYPE_META: Record<SecurityEventType, { label: string }> = {
   TRADING_ACCOUNT_CONNECTION_FAILED: { label: "Connection failed" },
   TRADING_ACCOUNT_DISCONNECTED: { label: "Trading account disconnected" },
   TRADING_ACCOUNT_SYNC_FAILED: { label: "Sync failed" },
+  OCR_UPLOAD: { label: "Screenshot uploaded" },
+  OCR_PROCESSING_FAILED: { label: "Screenshot processing failed" },
+  OCR_RESULT_CONFIRMED: { label: "Recognition confirmed" },
+  OCR_RESULT_DELETED: { label: "Recognition deleted" },
 };
 
 // ── Re-authentication gate (§13) ─────────────────────────────────────────────

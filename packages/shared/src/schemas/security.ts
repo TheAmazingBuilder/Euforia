@@ -53,6 +53,16 @@ export const securityEventTypeSchema = z.enum([
   "TRADING_ACCOUNT_CONNECTION_FAILED",
   "TRADING_ACCOUNT_DISCONNECTED",
   "TRADING_ACCOUNT_SYNC_FAILED",
+  // Phase 19 — OCR / screenshot recognition lifecycle facts emitted by the
+  // OCR context through the same append-only log (Phase 19 §48). Only events
+  // that actually fit the audit model exist: no PROCESSING_STARTED (the
+  // request-scoped pipeline would double-log every upload) and no
+  // TRADE_CREATED_FROM_RESULT (Trading Core does not exist server-side yet —
+  // deferred until that phase lands).
+  "OCR_UPLOAD",
+  "OCR_PROCESSING_FAILED",
+  "OCR_RESULT_CONFIRMED",
+  "OCR_RESULT_DELETED",
 ]);
 export type SecurityEventType = z.infer<typeof securityEventTypeSchema>;
 

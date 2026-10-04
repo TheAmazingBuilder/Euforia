@@ -113,6 +113,44 @@ export const envSchema = z.object({
    */
   ACCOUNTS_MOCK_PROVIDER: z.enum(["enabled", "disabled"]).optional(),
 
+  // ── OCR / Screenshot Recognition (Phase 19) ───────────────────────────────
+  /**
+   * FastAPI OCR sidecar base URL (e.g. http://127.0.0.1:3004). When unset the
+   * FastAPI engine adapter is not registered — the deterministic mock engine
+   * (OCR_MOCK_ENGINE) is then the only option, so production with a disabled
+   * mock degrades to an explicit OCR_UNAVAILABLE, never a fake result.
+   */
+  OCR_SERVICE_URL: z
+    .string()
+    .trim()
+    .url("OCR_SERVICE_URL must be a valid URL when provided")
+    .optional()
+    .or(z.literal("").transform(() => undefined)),
+  /**
+   * Shared secret the API presents to the sidecar (service-to-service, §27).
+   * Required when OCR_SERVICE_URL is set; must be at least 32 characters.
+   */
+  OCR_SERVICE_TOKEN: z
+    .string()
+    .trim()
+    .min(32, "OCR_SERVICE_TOKEN must be at least 32 characters")
+    .optional(),
+  /** Mock OCR engine gate (same policy as ACCOUNTS_MOCK_PROVIDER, §57). */
+  OCR_MOCK_ENGINE: z.enum(["enabled", "disabled"]).optional(),
+  /** Max decoded binary size accepted for one screenshot upload. */
+  OCR_UPLOAD_MAX_BYTES: z.coerce.number().int().min(10_240).max(8_388_608).default(6_291_456),
+  /** Max pixel count per image — decompression-bomb guard (§38). */
+  OCR_IMAGE_MAX_PIXELS: z.coerce.number().int().min(65_536).max(80_000_000).default(24_000_000),
+  /** Per-sidecar-call timeout for the recognition request (§26/§56). */
+  OCR_ENGINE_TIMEOUT_MS: z.coerce.number().int().min(2_000).max(120_000).default(30_000),
+  /**
+   * Local filesystem storage root for screenshot binaries (§6). The directory
+   * is created on demand; paths are validated to stay inside it.
+   */
+  OCR_STORAGE_ROOT: z.string().trim().min(1).default(".data/ocr-storage"),
+  /** Bounded retry attempts for TRANSIENT engine failures (§34) — extra attempts on top of the first call. */
+  OCR_ENGINE_MAX_RETRIES: z.coerce.number().int().min(0).max(3).default(1),
+
   // ── Authentication (Identity phase — REQUIRED, never defaulted) ────────────
   /** HS256 signing secret for short-lived access JWTs. ≥ 32 chars. */
   AUTH_JWT_SECRET: z
@@ -153,6 +191,20 @@ export const envSchema = z.object({
 
 export type Env = z.infer<typeof envSchema>;
 
+/**
+ * Cross-field invariant (§27): the sidecar URL without a shared secret would
+ * mean unauthenticated internal calls — refuse to boot in that state.
+ */
+const refinedEnvSchema = envSchema.superRefine((env, ctx) => {
+  if (env.OCR_SERVICE_URL && !env.OCR_SERVICE_TOKEN) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["OCR_SERVICE_TOKEN"],
+      message: "OCR_SERVICE_TOKEN is required when OCR_SERVICE_URL is set",
+    });
+  }
+});
+
 export class EnvValidationError extends Error {
   constructor(
     public readonly issues: ReadonlyArray<{ path: string; message: string }>,
@@ -173,7 +225,7 @@ export class EnvValidationError extends Error {
 export function validateEnv(
   source: Record<string, string | undefined> = process.env,
 ): Env {
-  const result = envSchema.safeParse(source);
+  const result = refinedEnvSchema.safeParse(source);
   if (!result.success) {
     const issues = result.error.issues.map((issue) => ({
       path: issue.path.join(".") || "(root)",

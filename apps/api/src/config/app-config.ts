@@ -18,6 +18,24 @@ export interface AppConfig {
   trustProxy: boolean;
   rateLimit: { windowSeconds: number; max: number };
   marketServiceUrl?: string;
+  ocr: {
+    /** FastAPI sidecar base URL — absent means the sidecar is not registered. */
+    serviceUrl?: string;
+    /** Shared secret for service-to-service auth (§27) — never logged. */
+    serviceToken?: string;
+    /** Whether the deterministic mock engine may be registered (§57). */
+    mockEngineEnabled: boolean;
+    /** Max decoded binary size per screenshot upload (§8). */
+    uploadMaxBytes: number;
+    /** Decompression-bomb pixel guard (§38). */
+    imageMaxPixels: number;
+    /** Sidecar call timeout (§26). */
+    engineTimeoutMs: number;
+    /** Extra attempts for TRANSIENT engine failures (§34). */
+    engineMaxRetries: number;
+    /** Local filesystem storage root for screenshot binaries (§6). */
+    storageRoot: string;
+  };
   accounts: {
     /** AES-256-GCM key encrypting trading credentials at rest (§22). */
     credentialsEncryptionKey: Buffer;
@@ -59,6 +77,19 @@ function build(env: Env): AppConfig {
       max: env.RATE_LIMIT_MAX,
     },
     marketServiceUrl: env.MARKET_SERVICE_URL,
+    ocr: {
+      serviceUrl: env.OCR_SERVICE_URL,
+      serviceToken: env.OCR_SERVICE_TOKEN,
+      mockEngineEnabled:
+        env.OCR_MOCK_ENGINE !== undefined
+          ? env.OCR_MOCK_ENGINE === "enabled"
+          : env.NODE_ENV !== "production",
+      uploadMaxBytes: env.OCR_UPLOAD_MAX_BYTES,
+      imageMaxPixels: env.OCR_IMAGE_MAX_PIXELS,
+      engineTimeoutMs: env.OCR_ENGINE_TIMEOUT_MS,
+      engineMaxRetries: env.OCR_ENGINE_MAX_RETRIES,
+      storageRoot: env.OCR_STORAGE_ROOT,
+    },
     accounts: {
       credentialsEncryptionKey: Buffer.from(env.ACCOUNTS_CREDENTIALS_ENCRYPTION_KEY, "base64"),
       providerTimeoutMs: env.ACCOUNTS_PROVIDER_TIMEOUT_MS,
