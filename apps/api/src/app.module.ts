@@ -23,6 +23,7 @@ import { AccountsModule } from "./modules/accounts/accounts.module";
 import { SecurityEventModule } from "./modules/security/security-event.module";
 import { SecurityModule } from "./modules/security/security.module";
 import { MonitoringModule } from "./modules/monitoring/monitoring.module";
+import { CalculatorsModule } from "./modules/calculators/calculators.module";
 
 const globalExceptionFilterProvider: Provider = {
   provide: APP_FILTER,
@@ -52,6 +53,11 @@ const globalExceptionFilterProvider: Provider = {
     // metrics, jobs, providers. Consumes Accounts/Identity state; owns NO
     // domain semantics and NO security events (§3/§56).
     MonitoringModule,
+    // Calculators — deterministic quantitative utilities (Phase 18): lot
+    // size + compounding. Pure Request → Result, NO persistence, NO DB, NO
+    // account/instrument ownership (§3/§34/§53); the authoritative sizing
+    // implementation future contexts must reuse (§37).
+    CalculatorsModule,
     // modules/reference … — added by their own phases.
   ],
   providers: [globalExceptionFilterProvider],

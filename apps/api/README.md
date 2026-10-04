@@ -37,6 +37,8 @@ The API listens on **http://localhost:4000**:
 | `POST /api/v1/auth/*` | register · login · refresh · logout · me · email verify/resend · password forgot/reset · MFA challenge/recover |
 | `GET·POST /api/v1/security/*` | overview · reauth · password change · 2FA enable/confirm/disable · recovery codes · sessions revoke · API keys |
 | `GET·PATCH /api/v1/me` | profile + preferences doc (9 domains) · deactivate · delete |
+| `POST /api/v1/calculators/lot-size` | authoritative position sizing — exact-decimal, broker-aware specs per request; informational only, never an order instruction |
+| `POST /api/v1/calculators/compounding` | period-by-period growth projection (full precision, ≤ 1 000 periods); informational only |
 
 ## Scripts
 
