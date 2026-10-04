@@ -145,6 +145,35 @@ export class IdentityRepository {
     return row as UserRow;
   }
 
+  // ── Preferences (narrow Settings contract — Phase 15 §32) ──────────────────
+  // The Settings bounded context persists its JSON document through THESE
+  // methods only: explicit, mass-assignment-safe field sets instead of the
+  // generic updateUser patch. `updatePreferencesWithTimezone` keeps the
+  // Localization→Profile timezone write-through atomic (Phase 15 §29.6).
+
+  async updatePreferences(id: string, preferences: unknown): Promise<UserRow> {
+    const row = await this.prisma.user.update({
+      where: { id },
+      data: { preferences: preferences as Prisma.InputJsonValue },
+    });
+    return row as UserRow;
+  }
+
+  async updatePreferencesWithTimezone(
+    id: string,
+    preferences: unknown,
+    timezone: string,
+  ): Promise<UserRow> {
+    const [row] = await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id },
+        data: { preferences: preferences as Prisma.InputJsonValue },
+      }),
+      this.prisma.user.update({ where: { id }, data: { timezone } }),
+    ]);
+    return row as UserRow;
+  }
+
   // ── Sessions ───────────────────────────────────────────────────────────────
 
   async findSessionByTokenHash(hash: string): Promise<SessionRow | null> {

@@ -20,6 +20,7 @@ import { AllExceptionsFilter } from "./shared/http/all-exceptions.filter";
 import { APP_CONFIG, type AppConfig } from "./config/app-config";
 import { IdentityModule } from "./modules/identity/identity.module";
 import { AccountsModule } from "./modules/accounts/accounts.module";
+import { SettingsModule } from "./modules/settings/settings.module";
 import { TradesModule } from "./modules/trades/trades.module";
 import { SecurityEventModule } from "./modules/security/security-event.module";
 import { SecurityModule } from "./modules/security/security.module";
@@ -48,6 +49,11 @@ const globalExceptionFilterProvider: Provider = {
     SecurityEventModule,
     IdentityModule,
     AccountsModule,
+    // Settings — user preferences & display configuration (Phase 15): the
+    // 9-domain doc. Reuses User.preferences via Identity's narrow contract
+    // (§28 evolve-not-duplicate); owns NO identity/auth/account data (§42),
+    // holds only a validated default-account reference (§21).
+    SettingsModule,
     // Trading Core — the canonical journal domain (Phase 4): Cosmoz Trade
     // ≠ broker position ≠ broker deal (§1). Consumes the Accounts module's
     // narrow read contract for reconstruction (§26); owns the trade

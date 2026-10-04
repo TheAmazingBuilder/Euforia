@@ -314,7 +314,7 @@ export type AppearancePreferencesInput = z.infer<typeof appearancePreferencesInp
  * Forward-compatible: the client merges a saved order with the canonical
  * registry, so widgets added later appear without a migration.
  */
-export const dashboardWidgetKeySchema = z.enum([
+export const DASHBOARD_WIDGET_KEYS = [
   "PNL_BAND",
   "EQUITY_ROW",
   "GOALS_PACE",
@@ -322,12 +322,14 @@ export const dashboardWidgetKeySchema = z.enum([
   "HEATMAP",
   "BEST_WORST",
   "ALERTS",
-]);
-export type DashboardWidgetKey = z.infer<typeof dashboardWidgetKeySchema>;
+] as const;
+export type DashboardWidgetKey = (typeof DASHBOARD_WIDGET_KEYS)[number];
+
+export const dashboardWidgetKeySchema = z.enum(DASHBOARD_WIDGET_KEYS);
 
 export const dashboardPreferencesSchema = z.object({
   /** Widget ids in display order; unknown/missing ids are merged client-side. */
-  widgetOrder: z.array(dashboardWidgetKeySchema),
+  widgetOrder: z.array(dashboardWidgetKeySchema).max(DASHBOARD_WIDGET_KEYS.length),
 });
 
 export type DashboardPreferences = z.infer<typeof dashboardPreferencesSchema>;
@@ -458,6 +460,13 @@ export const resetPreferencesInputSchema = z.object({
 });
 
 export type ResetPreferencesInput = z.infer<typeof resetPreferencesInputSchema>;
+
+/** Business error codes for the Settings bounded context (Phase 15 §35). */
+export const SETTINGS_ERROR_CODES = {
+  /** Referenced default trading account does not exist or belongs to another user. */
+  DEFAULT_ACCOUNT_NOT_FOUND: "DEFAULT_ACCOUNT_NOT_FOUND",
+} as const;
+export type SettingsErrorCode = (typeof SETTINGS_ERROR_CODES)[keyof typeof SETTINGS_ERROR_CODES];
 
 // ── Account actions (dangerous — explicit typed confirmation) ───────────────
 

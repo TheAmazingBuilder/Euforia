@@ -1,7 +1,14 @@
 /**
  * Account application service (Phase 2 §24, §32–§33 + Phase 0 §K "profile &
- * prefs" scope): /me profile, the 9-domain preferences doc, deactivation and
- * scheduled deletion.
+ * prefs" scope): /me profile, deactivation and scheduled deletion.
+ *
+ * Phase 15: the 9-domain preferences doc moved to the dedicated Settings
+ * bounded context (modules/settings). This service keeps ONE preferences
+ * responsibility — the Localization↔Profile timezone mirror (single source
+ * of truth: Profile, settings.ts boundary rules): a profile timezone change
+ * mirrors into the existing preferences document through the narrow
+ * updatePreferences contract. If the document does not exist yet, there is
+ * nothing to mirror — Settings provisions it from the current profile.
  *
  * Email change (§24): the new address must complete verification before it
  * becomes the verified identity — until then the account returns to
@@ -9,21 +16,7 @@
  * never automatically verified.
  */
 import { Inject, Injectable } from "@nestjs/common";
-import {
-  DEFAULT_USER_PREFERENCES,
-  userPreferencesSchema,
-  tradingPreferencesSchema,
-  riskPreferencesSchema,
-  journalPreferencesSchema,
-  notificationPreferencesSchema,
-  appearancePreferencesSchema,
-  dashboardPreferencesSchema,
-  academyPreferencesSchema,
-  privacyPreferencesSchema,
-  localizationPreferencesSchema,
-  type PreferenceDomain,
-  type UserPreferences,
-} from "../../shared/contracts";
+import { userPreferencesSchema } from "../../shared/contracts";
 import { IdentityRepository, type UserRow } from "./identity.repository";
 import { MailerService } from "./mailer.service";
 import { SecurityEventService } from "../security/security-event.service";
@@ -32,23 +25,6 @@ import { toAuthUser } from "./mappers";
 import { ConflictError } from "../../shared/errors/app-error";
 import { APP_CONFIG } from "../../config/app-config";
 import type { AppConfig } from "../../config/app-config";
-import { z } from "zod";
-
-/**
- * Per-domain input schemas — single source of truth: @cosmoz/shared
- * (each `<domain>PreferencesSchema` is its own input schema per settings.ts).
- */
-const PREFERENCE_DOMAIN_SCHEMAS: Record<PreferenceDomain, z.ZodTypeAny> = {
-  trading: tradingPreferencesSchema,
-  risk: riskPreferencesSchema,
-  journal: journalPreferencesSchema,
-  notifications: notificationPreferencesSchema,
-  appearance: appearancePreferencesSchema,
-  dashboard: dashboardPreferencesSchema,
-  academy: academyPreferencesSchema,
-  privacy: privacyPreferencesSchema,
-  localization: localizationPreferencesSchema,
-};
 
 @Injectable()
 export class AccountService {
@@ -120,12 +96,18 @@ export class AccountService {
     const updated = await this.repository.updateUser(user.id, patch);
 
     // One source of truth for timezone = Profile (settings.ts boundary rule):
-    // mirror into the preferences localization domain.
-    if (input.timezone !== undefined) {
-      const doc = await this.getPreferences(user.id);
-      await this.repository.updateUser(user.id, {
-        preferences: { ...doc, localization: { ...doc.localization, timezone: input.timezone }, updatedAt: new Date().toISOString() },
-      });
+    // mirror into the preferences localization domain when the document
+    // already exists (Phase 15 — Settings owns the doc and its provisioning;
+    // a missing document is provisioned from the current profile instead).
+    if (input.timezone !== undefined && user.preferences) {
+      const doc = userPreferencesSchema.parse(user.preferences);
+      const mirrored = {
+        ...doc,
+        localization: { ...doc.localization, timezone: input.timezone },
+        updatedAt: new Date().toISOString(),
+      };
+      userPreferencesSchema.parse(mirrored);
+      await this.repository.updatePreferences(user.id, mirrored);
     }
 
     if (emailChangePending) {
@@ -144,64 +126,6 @@ export class AccountService {
       user: toAuthUser(updated),
       emailChangePending,
     };
-  }
-
-  // ── Preferences (9 domains, one JSON doc per user) ──────────────────────────
-
-  async getPreferences(userId: string): Promise<UserPreferences> {
-    const user = await this.repository.findUserById(userId);
-    if (user?.preferences) {
-      return userPreferencesSchema.parse(user.preferences);
-    }
-    const fresh: UserPreferences = {
-      ...structuredClone(DEFAULT_USER_PREFERENCES),
-      userId,
-      updatedAt: new Date().toISOString(),
-    } as UserPreferences;
-    await this.repository.updateUser(userId, { preferences: fresh });
-    return fresh;
-  }
-
-  async updatePreferencesDomain(
-    userId: string,
-    domain: PreferenceDomain,
-    input: unknown,
-  ): Promise<UserPreferences> {
-    const doc = await this.getPreferences(userId);
-    const parsed = PREFERENCE_DOMAIN_SCHEMAS[domain].parse(input) as Record<string, unknown>;
-    const next: UserPreferences = {
-      ...doc,
-      [domain]: parsed,
-      updatedAt: new Date().toISOString(),
-    } as UserPreferences;
-    userPreferencesSchema.parse(next); // full-doc invariant before persisting
-
-    // The Localization domain mirrors Profile.timezone — write-through (§
-    // settings.ts boundary rule: ONE source of truth = Profile).
-    if (domain === "localization") {
-      const tz = (parsed as { timezone?: string }).timezone;
-      if (typeof tz === "string") {
-        await this.repository.updateUser(userId, { timezone: tz });
-      }
-    }
-    await this.repository.updateUser(userId, { preferences: next });
-    return next;
-  }
-
-  async resetPreferencesDomain(userId: string, domain: PreferenceDomain): Promise<UserPreferences> {
-    const doc = await this.getPreferences(userId);
-    const next: UserPreferences = {
-      ...doc,
-      [domain]: structuredClone(DEFAULT_USER_PREFERENCES[domain]),
-      updatedAt: new Date().toISOString(),
-    } as UserPreferences;
-    if (domain === "localization") {
-      await this.repository.updateUser(userId, {
-        timezone: DEFAULT_USER_PREFERENCES.localization.timezone,
-      });
-    }
-    await this.repository.updateUser(userId, { preferences: next });
-    return next;
   }
 
   // ── Deactivation / scheduled deletion (§32–§33) ─────────────────────────────
