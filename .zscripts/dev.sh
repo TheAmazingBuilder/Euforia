@@ -31,8 +31,11 @@ set -u
 ROOT=/home/z/my-project
 NODE=/usr/bin/node
 BUN=/usr/local/bin/bun
-PNPM="/home/z/.npm-global/bin/pnpm"
-[ -x "$PNPM" ] || PNPM=$(command -v pnpm)
+# pnpm is NOT persisted across restores — corepack (system node) serves
+# the version pinned by package.json "packageManager" (pnpm@12.4.2).
+export COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+PNPM="/usr/bin/corepack pnpm"
+run_pnpm() { "$NODE" /usr/bin/corepack pnpm "$@"; }
 cd "$ROOT"
 
 log() { echo "[dev.sh $(date '+%F %T')] $*"; }
@@ -40,9 +43,9 @@ log() { echo "[dev.sh $(date '+%F %T')] $*"; }
 # ── 0. dependencies ─────────────────────────────────────────────────────────
 if [ ! -d "$ROOT/apps/web/node_modules" ] || [ ! -d "$ROOT/apps/api/node_modules" ]; then
   log "installing workspace dependencies (pnpm, fresh archive)"
-  "$PNPM" install >> /tmp/cosmoz-install.log 2>&1 \
-    || "$PNPM" install --no-frozen-lockfile >> /tmp/cosmoz-install.log 2>&1
-  (cd apps/api && "$PNPM" prisma generate >> /tmp/cosmoz-install.log 2>&1) || true
+  run_pnpm install >> /tmp/cosmoz-install.log 2>&1 \
+    || run_pnpm install --no-frozen-lockfile >> /tmp/cosmoz-install.log 2>&1
+  (cd apps/api && run_pnpm prisma generate >> /tmp/cosmoz-install.log 2>&1) || true
   log "dependencies installed (see /tmp/cosmoz-install.log)"
 fi
 
@@ -61,7 +64,7 @@ fi
 # flag is inlined into the client bundle.
 if [ ! -f "$ROOT/apps/web/.next/BUILD_ID" ]; then
   log "building web (production, mocked product contract) — see /tmp/cosmoz-web-build.log"
-  (cd "$ROOT/apps/web" && NEXT_PUBLIC_API_MOCKED=true "$PNPM" build) \
+  (cd "$ROOT/apps/web" && NEXT_PUBLIC_API_MOCKED=true run_pnpm build) \
     > /tmp/cosmoz-web-build.log 2>&1
 fi
 if [ -f "$ROOT/apps/web/.next/BUILD_ID" ]; then
