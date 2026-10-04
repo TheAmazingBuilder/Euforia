@@ -1157,8 +1157,11 @@ export type TradeScreenshotsResponse = z.infer<typeof tradeScreenshotsResponseSc
 /** POST /trades/:id/screenshots — upload (data URL stored by the mock API). */
 export const addScreenshotInputSchema = z.object({
   kind: shotKindSchema,
-  /** Data URL — real deployments swap this for object-storage keys. */
-  dataUrl: z.string().min(1).max(8_000_000),
+  /** Data URL — real deployments swap this for object-storage keys. The
+   * char ceiling must clear the DECODED byte cap (TRADES_SCREENSHOT_MAX_BYTES
+   * 6 291 456 → 8 388 608 base64 chars + envelope) so an oversized upload
+   * reaches the domain validator (422) instead of failing validation (400). */
+  dataUrl: z.string().min(1).max(8_400_000),
   caption: z.string().max(300).optional(),
 });
 

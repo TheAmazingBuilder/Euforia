@@ -214,15 +214,6 @@ export class TradesRepository {
     return rows as TradeRow[];
   }
 
-  async findDefaultAccount(userId: string): Promise<{ id: string } | null> {
-    const row = await this.prisma.tradingAccount.findFirst({
-      where: { userId },
-      orderBy: [{ isDefault: "desc" }, { createdAt: "asc" }],
-      select: { id: true },
-    });
-    return row ?? null;
-  }
-
   // ── Trade writes ─────────────────────────────────────────────────────────────
 
   /**
@@ -359,12 +350,6 @@ export class TradesRepository {
       data: { decisionGrade: grade },
     });
     return result.count;
-  }
-
-  async countLiveByIds(userId: string, tradeIds: string[]): Promise<number> {
-    return this.prisma.trade.count({
-      where: { id: { in: tradeIds }, userId, deletedAt: null },
-    });
   }
 
   // ── Trade legs ───────────────────────────────────────────────────────────────

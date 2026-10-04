@@ -149,6 +149,21 @@ export class AccountsRepository {
     return this.prisma.tradingAccount.count({ where: { userId } });
   }
 
+  /**
+   * Narrow read contract (ADR-0003): the user's default account id — the
+   * persisted default first, else the oldest account (same ordering as
+   * listAccountsByUser). Consumers (e.g. the Trades import path) must come
+   * here instead of touching prisma.tradingAccount themselves.
+   */
+  async findDefaultAccountIdForUser(userId: string): Promise<string | null> {
+    const row = await this.prisma.tradingAccount.findFirst({
+      where: { userId },
+      orderBy: [{ isDefault: "desc" }, { createdAt: "asc" }],
+      select: { id: true },
+    });
+    return row?.id ?? null;
+  }
+
   async findAccountByExternal(
     userId: string,
     providerId: string,

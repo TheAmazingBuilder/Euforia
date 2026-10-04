@@ -16,7 +16,7 @@ describe("validateEnv", () => {
     expect(env.PORT).toBe(4000);
     expect(env.CORS_ORIGINS).toEqual(["http://localhost:3000"]);
     expect(env.LOG_LEVEL).toBe("info");
-    expect(env.BODY_LIMIT_BYTES).toBe(1_048_576);
+    expect(env.BODY_LIMIT_BYTES).toBe(9_437_184);
     expect(env.TRUST_PROXY).toBe(false);
     expect(env.RATE_LIMIT_WINDOW_SECONDS).toBe(60);
     expect(env.RATE_LIMIT_MAX).toBe(120);
@@ -29,7 +29,7 @@ describe("validateEnv", () => {
       PORT: "8080",
       CORS_ORIGINS: "https://app.cosmoz.app , https://admin.cosmoz.app/",
       LOG_LEVEL: "warn",
-      BODY_LIMIT_BYTES: "4096",
+      BODY_LIMIT_BYTES: "10485760",
       TRUST_PROXY: "true",
       RATE_LIMIT_WINDOW_SECONDS: "30",
       RATE_LIMIT_MAX: "1000",
@@ -67,6 +67,20 @@ describe("validateEnv", () => {
     expect(() => validateEnv({ ...BASE_ENV, CORS_ORIGINS: "localhost:3000" })).toThrow(
       /http:\/\//,
     );
+  });
+
+  it("rejects a body limit below the largest image upload cap (§85 coherence)", () => {
+    // Default caps: OCR 6 MB / trades screenshots 6 MB — a 2 MB body limit
+    // cannot carry the base64 data URL of a max-size upload, so boot must
+    // fail loudly instead of 413-ing at runtime.
+    try {
+      validateEnv({ ...BASE_ENV, BODY_LIMIT_BYTES: "2097152" });
+      expect.unreachable("expected EnvValidationError");
+    } catch (error) {
+      expect(error).toBeInstanceOf(EnvValidationError);
+      const issues = (error as EnvValidationError).issues;
+      expect(issues.some((issue) => issue.path === "BODY_LIMIT_BYTES")).toBe(true);
+    }
   });
 
   it("rejects invalid values for numeric and enum settings", () => {

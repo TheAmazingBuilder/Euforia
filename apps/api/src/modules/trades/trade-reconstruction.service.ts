@@ -35,6 +35,7 @@ import { TradesRepository } from "./trades.repository";
 import {
   computeRiskForTrade,
   tradingDateOf,
+  weightedAveragePrice,
   wire,
 } from "./trade-calculations";
 import type { TradeStatus } from "../../shared/contracts";
@@ -153,61 +154,83 @@ export class TradeReconstructionService {
               contractSize: instrument.contractSize.toFixed(),
             });
 
-      const existing = await this.tradesRepository.findTradeByExternalPosition(
+      let existing = await this.tradesRepository.findTradeByExternalPosition(
         input.accountId,
         cycle.positionId,
       );
 
       if (existing === null) {
-        await this.tradesRepository.createTradeWithLegs({
-          trade: {
-            userId: input.userId,
-            accountId: input.accountId,
-            instrumentId: instrument.id,
-            strategyId: null,
-            setupId: null,
-            strategyVersion: null,
-            status: reconstructed.status,
-            direction: reconstructed.direction,
-            source: "EXTERNAL_SYNC",
-            entryPrice: reconstructed.entryPrice,
-            entryAt: reconstructed.entryAt,
-            quantity: reconstructed.quantity,
-            initialStop: stopLoss,
-            initialTP: takeProfit,
-            plannedRR: null,
-            riskAmount,
-            finalStop: stopLoss,
-            exitPrice: reconstructed.exitPrice,
-            exitAt: reconstructed.exitAt,
-            exitReason: reconstructed.status === "CLOSED" && reconstructed.exits.length > 0 ? "MANUAL" : null,
-            fees: reconstructed.fees,
-            swap: reconstructed.swap,
-            pnlGross: reconstructed.pnlGross,
-            pnlNet: reconstructed.pnlNet,
-            rMultiple: riskAmount === null || reconstructed.pnlNet === null ? null : wire(
-              new Prisma.Decimal(reconstructed.pnlNet).dividedBy(riskAmount),
-            ),
-            mfePrice: null,
-            maePrice: null,
-            mfeR: null,
-            maeR: null,
-            emotionBefore: null,
-            confidence: null,
-            notes: null,
-            // The trading day is the PROVIDER entry moment localized to the
-            // owner's timezone — computed server-side (§22/§56).
-            tradingDate: tradingDateOf(reconstructed.entryAt.toISOString(), input.userTimezone),
-            externalRef: null,
-            importBatchId: null,
-            // §9/§27: the mapping anchor — without it the composite unique
-            // could not deduplicate across reconciliation passes.
-            externalPositionId: cycle.positionId,
-          },
-          exits: reconstructed.exits.map((exit) => ({ ...exit, note: null })),
-        });
-        input.outcome.created += 1;
-        continue;
+        try {
+          await this.tradesRepository.createTradeWithLegs({
+            trade: {
+              userId: input.userId,
+              accountId: input.accountId,
+              instrumentId: instrument.id,
+              strategyId: null,
+              setupId: null,
+              strategyVersion: null,
+              status: reconstructed.status,
+              direction: reconstructed.direction,
+              source: "EXTERNAL_SYNC",
+              entryPrice: reconstructed.entryPrice,
+              entryAt: reconstructed.entryAt,
+              quantity: reconstructed.quantity,
+              initialStop: stopLoss,
+              initialTP: takeProfit,
+              plannedRR: null,
+              riskAmount,
+              finalStop: stopLoss,
+              exitPrice: reconstructed.exitPrice,
+              exitAt: reconstructed.exitAt,
+              exitReason: reconstructed.status === "CLOSED" && reconstructed.exits.length > 0 ? "MANUAL" : null,
+              fees: reconstructed.fees,
+              swap: reconstructed.swap,
+              pnlGross: reconstructed.pnlGross,
+              pnlNet: reconstructed.pnlNet,
+              rMultiple: riskAmount === null || reconstructed.pnlNet === null ? null : wire(
+                new Prisma.Decimal(reconstructed.pnlNet).dividedBy(riskAmount),
+              ),
+              mfePrice: null,
+              maePrice: null,
+              mfeR: null,
+              maeR: null,
+              emotionBefore: null,
+              confidence: null,
+              notes: null,
+              // The trading day is the PROVIDER entry moment localized to the
+              // owner's timezone — computed server-side (§22/§56).
+              tradingDate: tradingDateOf(reconstructed.entryAt.toISOString(), input.userTimezone),
+              externalRef: null,
+              importBatchId: null,
+              // §9/§27: the mapping anchor — without it the composite unique
+              // could not deduplicate across reconciliation passes.
+              externalPositionId: cycle.positionId,
+            },
+            exits: reconstructed.exits.map((exit) => ({ ...exit, note: null })),
+          });
+          input.outcome.created += 1;
+          continue;
+        } catch (error) {
+          // §31 — the composite unique is the concurrency backstop: two
+          // concurrent first reconciliations race the check-then-create.
+          // The loser adopts the winner's row instead of failing a READ
+          // path with a 409.
+          if (
+            !(
+              error instanceof Prisma.PrismaClientKnownRequestError &&
+              error.code === "P2002"
+            )
+          ) {
+            throw error;
+          }
+          existing = await this.tradesRepository.findTradeByExternalPosition(
+            input.accountId,
+            cycle.positionId,
+          );
+          if (existing === null) {
+            throw error;
+          }
+        }
       }
 
       const changed =
@@ -215,13 +238,13 @@ export class TradeReconstructionService {
         existing.direction !== reconstructed.direction ||
         existing.instrumentId !== instrument.id ||
         existing.entryPrice.toFixed() !== normalizedDecimal(reconstructed.entryPrice) ||
-        existing.exitPrice?.toFixed() !== normalizedDecimalNullable(reconstructed.exitPrice) ||
+        (existing.exitPrice?.toFixed() ?? null) !== normalizedDecimalNullable(reconstructed.exitPrice) ||
         existing.quantity.toFixed() !== normalizedDecimal(reconstructed.quantity) ||
         existing.fees.toFixed() !== normalizedDecimal(reconstructed.fees) ||
         existing.swap.toFixed() !== normalizedDecimal(reconstructed.swap) ||
-        existing.pnlGross?.toFixed() !== normalizedDecimalNullable(reconstructed.pnlGross) ||
-        existing.pnlNet?.toFixed() !== normalizedDecimalNullable(reconstructed.pnlNet) ||
-        existing.riskAmount?.toFixed() !== normalizedDecimalNullable(riskAmount) ||
+        (existing.pnlGross?.toFixed() ?? null) !== normalizedDecimalNullable(reconstructed.pnlGross) ||
+        (existing.pnlNet?.toFixed() ?? null) !== normalizedDecimalNullable(reconstructed.pnlNet) ||
+        (existing.riskAmount?.toFixed() ?? null) !== normalizedDecimalNullable(riskAmount) ||
         existing.exitAt?.getTime() !== reconstructed.exitAt?.getTime();
 
       if (!changed) {
@@ -363,17 +386,6 @@ function sumVolumes(deals: DealRow[]): Prisma.Decimal {
   );
 }
 
-function weightedAveragePrice(deals: DealRow[]): Prisma.Decimal {
-  let weighted = new Prisma.Decimal(0);
-  let volume = new Prisma.Decimal(0);
-  for (const deal of deals) {
-    const price = deal.price ?? new Prisma.Decimal(0);
-    weighted = weighted.plus(price.times(deal.volume));
-    volume = volume.plus(deal.volume);
-  }
-  return volume.isZero() ? new Prisma.Decimal(0) : weighted.dividedBy(volume);
-}
-
 function sumDecimals(values: Array<Prisma.Decimal | null>): Prisma.Decimal | null {
   let sawValue = false;
   let total = new Prisma.Decimal(0);
@@ -391,6 +403,11 @@ function normalizedDecimal(value: string): string {
   return new Prisma.Decimal(value).toFixed();
 }
 
-function normalizedDecimalNullable(value: string | null): string | null | undefined {
-  return value === null || value === undefined ? value : normalizedDecimal(value);
+/** Nullable-side normalization — `null` and `undefined` BOTH mean "no
+ * value": an `existing.X?.toFixed()` on a NULL column yields `undefined`
+ * while a computed absent value yields `null`; treating them as different
+ * made every stop-less/open sync trade look "changed" and rewrote it on
+ * every pass (idempotency hole caught by the finalization unit tests). */
+function normalizedDecimalNullable(value: string | null | undefined): string | null {
+  return value === null || value === undefined ? null : normalizedDecimal(value);
 }

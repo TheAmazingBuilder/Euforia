@@ -306,7 +306,11 @@ describe("POST /trades + lifecycle + decision gate", () => {
 
     const row = await prisma.trade.findUnique({ where: { id: tradeId }, include: { exits: true } });
     expect(row?.status).toBe("CLOSED");
-    expect(row?.exitPrice?.toFixed()).toBe("1.09"); // weighted avg, 2dp (mock parity: round2)
+    // Finalization §16 — the weighted average is DECIMAL now: (1.09×0.4 +
+    // 1.095×0.6)/1 = 1.093 exactly. The old float path quantized to 2dp
+    // ("1.09", mock simplification) and skewed the stored P&L — the
+    // precision divergence from the mock is documented in the report.
+    expect(row?.exitPrice?.toFixed()).toBe("1.093");
     expect(row?.exits).toHaveLength(2);
   });
 
@@ -686,6 +690,28 @@ describe("trade screenshots", () => {
       url: `/api/v1/trades/${tradeId}/screenshots`,
       headers: user.authHeader,
       payload: { kind: "CHART", dataUrl: fake },
+    });
+    expect(response.statusCode).toBe(422);
+    expect(response.json().code).toBe("INVALID_SCREENSHOT");
+  });
+
+  it("422 INVALID_SCREENSHOT (not a generic 413) on an upload beyond the size cap (§85 coherence)", async () => {
+    const user = await userWithAccount();
+    const instrument = await eurInstrument(user.authHeader);
+    const created = await createOpenTrade(user.authHeader, user.accountId, instrument.id);
+    const tradeId = (created.json() as { id: string }).id;
+    // Decoded size > TRADES_SCREENSHOT_MAX_BYTES (6 MB default) while the
+    // base64 body (~8.4 MB) still clears the coherent BODY_LIMIT_BYTES
+    // (9 MB default) — the DOMAIN validator must own the rejection.
+    const oversized = Buffer.alloc(6_291_456 + 1024, 7);
+    const response = await app.inject({
+      method: "POST",
+      url: `/api/v1/trades/${tradeId}/screenshots`,
+      headers: user.authHeader,
+      payload: {
+        kind: "CHART",
+        dataUrl: `data:image/png;base64,${oversized.toString("base64")}`,
+      },
     });
     expect(response.statusCode).toBe(422);
     expect(response.json().code).toBe("INVALID_SCREENSHOT");

@@ -39,7 +39,9 @@ describe("rate limiting foundation", () => {
 
 describe("oversized payloads are rejected", () => {
   it("body beyond BODY_LIMIT_BYTES → 413 with the error envelope", async () => {
-    const bigPayload = JSON.stringify({ name: "x".repeat(1_100_000), count: 1 });
+    // Beyond the COHERENT default (9 MB — must clear the 6 MB image caps,
+    // see env.schema superRefine). 9.6 MB of JSON trips the Fastify limit.
+    const bigPayload = JSON.stringify({ name: "x".repeat(9_600_000), count: 1 });
     const res = await app.inject({
       method: "POST",
       url: "/api/v1/probe/validate",

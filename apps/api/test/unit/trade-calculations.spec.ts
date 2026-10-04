@@ -10,6 +10,7 @@ import {
   computeTradeResults,
   resolvePositionSize,
   tradingDateOf,
+  weightedAveragePrice,
   wire,
 } from "../../src/modules/trades/trade-calculations";
 
@@ -227,5 +228,43 @@ describe("tradingDateOf — server-side trading day (§22/§56)", () => {
 
   it("fails loudly on an unknown timezone (a silent wrong day corrupts aggregates)", () => {
     expect(() => tradingDateOf("2026-09-17T12:00:00.000Z", "Mars/Olympus")).toThrow();
+  });
+});
+
+describe("weightedAveragePrice — THE canonical decimal aggregation (finalization §15/§16)", () => {
+  it("keeps FULL FX precision on a multi-leg close (2dp rounding would corrupt P&L)", () => {
+    // (1.0900 × 0.4 + 1.0950 × 0.6) / 1.0 = 1.093 — a 2dp quantizer would
+    // store 1.09 and skew every downstream result by ~$50 per 0.1 lot.
+    const avg = weightedAveragePrice([
+      { price: new Prisma.Decimal("1.0900"), volume: new Prisma.Decimal("0.40") },
+      { price: new Prisma.Decimal("1.0950"), volume: new Prisma.Decimal("0.60") },
+    ]);
+    expect(avg.toFixed()).toBe("1.093");
+  });
+
+  it("accumulates in Decimal (no float drift on repeating decimals)", () => {
+    const avg = weightedAveragePrice([
+      { price: new Prisma.Decimal("0.1"), volume: new Prisma.Decimal("0.3") },
+      { price: new Prisma.Decimal("0.2"), volume: new Prisma.Decimal("0.3") },
+      { price: new Prisma.Decimal("0.3"), volume: new Prisma.Decimal("0.3") },
+    ]);
+    // (0.03 + 0.06 + 0.09) / 0.9 = 0.2 exactly — float accumulation of the
+    // same products lands on 0.19999999999999998.
+    expect(avg.toFixed()).toBe("0.2");
+  });
+
+  it("a null price contributes volume only (reconstruction parity rule)", () => {
+    const avg = weightedAveragePrice([
+      { price: null, volume: new Prisma.Decimal("1") },
+      { price: new Prisma.Decimal("2"), volume: new Prisma.Decimal("1") },
+    ]);
+    expect(avg.toFixed()).toBe("1");
+  });
+
+  it("zero total volume degenerates to 0 (unreachable per Zod, defensive)", () => {
+    const avg = weightedAveragePrice([
+      { price: new Prisma.Decimal("5"), volume: new Prisma.Decimal("0") },
+    ]);
+    expect(avg.isZero()).toBe(true);
   });
 });

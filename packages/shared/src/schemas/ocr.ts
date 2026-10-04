@@ -225,15 +225,16 @@ export type OcrRecognition = z.infer<typeof ocrRecognitionSchema>;
 
 /**
  * Upload input. The wire format mirrors the existing frontend screenshot
- * contract (`addScreenshotInputSchema`: data URL ≤ 8 000 000 chars) — the
- * only image format the product currently speaks (§2/§8). The binary size
- * after base64 decoding is bounded server-side (OCR_UPLOAD_MAX_BYTES).
+ * contract (`addScreenshotInputSchema`: data URL ≤ 8 400 000 chars — large
+ * enough to carry the decoded OCR_UPLOAD_MAX_BYTES cap) — the only image
+ * format the product currently speaks (§2/§8). The binary size after base64
+ * decoding is bounded server-side (OCR_UPLOAD_MAX_BYTES).
  */
 export const ocrCreateInputSchema = z.object({
   imageDataUrl: z
     .string()
     .min(30)
-    .max(8_000_000)
+    .max(8_400_000)
     .startsWith("data:image/")
     .includes(";base64,"),
   requestedProfile: ocrExtractionProfileSchema.default("TRADE_SUMMARY"),

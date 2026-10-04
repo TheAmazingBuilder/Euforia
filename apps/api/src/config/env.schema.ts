@@ -71,7 +71,11 @@ export const envSchema = z.object({
     .default("info"),
 
   // ── Security / requests ────────────────────────────────────────────────────
-  BODY_LIMIT_BYTES: z.coerce.number().int().min(1024).max(16_777_216).default(1_048_576),
+  // Default must always clear the largest domain upload cap (base64 data-URL
+  // inflation ≈ 4/3 + JSON envelope) — superRefine below enforces the
+  // invariant for explicit values, so an oversized screenshot reaches the
+  // domain validator (422) instead of dying as a generic body-limit 413.
+  BODY_LIMIT_BYTES: z.coerce.number().int().min(1024).max(16_777_216).default(9_437_184),
   TRUST_PROXY: z
     .enum(["true", "false"])
     .default("false")
@@ -213,6 +217,20 @@ const refinedEnvSchema = envSchema.superRefine((env, ctx) => {
       code: z.ZodIssueCode.custom,
       path: ["OCR_SERVICE_TOKEN"],
       message: "OCR_SERVICE_TOKEN is required when OCR_SERVICE_URL is set",
+    });
+  }
+  // The body limit must clear every domain image cap (§85 coherence): the
+  // wire carries base64 data URLs (≈ 4/3 of the decoded bytes) inside JSON.
+  const largestUploadCap = Math.max(
+    env.OCR_UPLOAD_MAX_BYTES,
+    env.TRADES_SCREENSHOT_MAX_BYTES,
+  );
+  if (env.BODY_LIMIT_BYTES <= largestUploadCap + Math.floor(largestUploadCap / 3)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["BODY_LIMIT_BYTES"],
+      message:
+        "BODY_LIMIT_BYTES must exceed the largest image upload cap (OCR_UPLOAD_MAX_BYTES / TRADES_SCREENSHOT_MAX_BYTES) by the base64 inflation factor (×4/3)",
     });
   }
 });

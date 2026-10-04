@@ -59,6 +59,7 @@ import {
   computeTradeResults,
   resolvePositionSize,
   tradingDateOf,
+  weightedAveragePrice,
   wire,
 } from "./trade-calculations";
 import {
@@ -326,12 +327,20 @@ export class TradesService {
     } else {
       // Partial-exit legs stay preserved (§18); the journal header carries
       // the aggregated exit (weighted price, last leg timestamp, total qty).
-      let weighted = 0;
-      let total = 0;
+      // §16 — the aggregation is DECIMAL through the one canonical
+      // weightedAveragePrice; float accumulation here would silently round
+      // FX prices (e.g. 1.08505 → "1.09") and corrupt the stored results.
+      const aggregated = weightedAveragePrice(
+        input.exits.map((leg) => ({
+          price: new Prisma.Decimal(leg.price),
+          volume: new Prisma.Decimal(leg.quantity),
+        })),
+      );
+      const totalQuantity = input.exits.reduce(
+        (sum, leg) => sum.plus(new Prisma.Decimal(leg.quantity)),
+        new Prisma.Decimal(0),
+      );
       for (const leg of input.exits) {
-        const legQuantity = Number(leg.quantity);
-        weighted += Number(leg.price) * legQuantity;
-        total += legQuantity;
         exits.push({
           price: leg.price,
           quantity: leg.quantity,
@@ -340,10 +349,14 @@ export class TradesService {
           note: leg.note ?? null,
         });
       }
-      exitPrice = total > 0 ? wire(weighted / total) : trade.entryPrice.toFixed();
+      // Schema guarantees ≥ 1 leg with a positive quantity — the zero-total
+      // branch is unreachable defense (keeps the header coherent regardless).
+      exitPrice = totalQuantity.isZero()
+        ? trade.entryPrice.toFixed()
+        : wire(aggregated, 8);
       exitAt = input.exits[input.exits.length - 1]?.exitedAt ?? new Date().toISOString();
       exitReason = input.exits[0]?.reason ?? "MANUAL";
-      quantity = wire(total);
+      quantity = wire(totalQuantity, 8);
     }
 
     const fees = input.fees ?? trade.fees.toFixed();
@@ -695,7 +708,6 @@ export class TradesService {
       );
     }
     const ids = [...new Set(input.tradeIds)];
-    void (await this.repository.countLiveByIds(userId, ids));
 
     if (input.op === "DELETE") {
       const affected = await this.repository.bulkSoftDelete(userId, ids);
@@ -715,8 +727,10 @@ export class TradesService {
     const user = await this.loadUser(userId);
     // The import contract has no account field — trades land on the
     // PERSISTED default account (backend convention), never a client hint.
-    const defaultAccount = await this.repository.findDefaultAccount(userId);
-    if (defaultAccount === null) {
+    // §24/ADR-0003 — the default account is resolved through the owner's
+    // narrow read contract, never by touching prisma.tradingAccount here.
+    const defaultAccountId = await this.accounts.findDefaultAccountIdForUser(userId);
+    if (defaultAccountId === null) {
       throw new BusinessRuleError("No trading account found", TRADING_ERROR.ACCOUNT_NOT_FOUND);
     }
     const catalog = await this.repository.listActiveInstruments();
@@ -735,7 +749,7 @@ export class TradesService {
       // Broker ref → idempotent re-imports (same file twice = zero duplicates).
       const externalRef = `${input.broker}:${row.symbol.toUpperCase()}:${row.side}:${row.entryAt}:${row.entryPrice}`;
       if (
-        (await this.repository.findLiveTradeByExternalRef(defaultAccount.id, externalRef)) !== null
+        (await this.repository.findLiveTradeByExternalRef(defaultAccountId, externalRef)) !== null
       ) {
         skippedDuplicates += 1;
         continue;
@@ -765,7 +779,7 @@ export class TradesService {
       const created = await this.repository.createTradeWithLegs({
         trade: {
           userId,
-          accountId: defaultAccount.id,
+          accountId: defaultAccountId,
           instrumentId: instrument.id,
           strategyId: input.strategyId ?? null,
           setupId: null,

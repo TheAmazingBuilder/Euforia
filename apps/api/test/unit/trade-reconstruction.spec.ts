@@ -124,3 +124,69 @@ describe("reconstructCycle — §17 execution aggregation", () => {
     expect(trade.pnlNet).toBe("997");
   });
 });
+
+describe("reconstructAccounts — P2002 race tolerance (finalization §31)", () => {
+  it("a concurrent winner is ADOPTED, not 409-ed: the unique constraint is the backstop", async () => {
+    const { TradeReconstructionService } = await import("../../src/modules/trades/trade-reconstruction.service");
+
+    const instrument = { id: crypto.randomUUID(), contractSize: new Prisma.Decimal("100000") };
+    const exitAt = d(60);
+    // A row identical to what the reconciliation would compute → after the
+    // P2002 fall-through the state comparison concludes "unchanged".
+    const existingRow = {
+      id: crypto.randomUUID(),
+      status: "CLOSED",
+      direction: "BUY",
+      instrumentId: instrument.id,
+      entryPrice: new Prisma.Decimal("1.1"),
+      exitPrice: new Prisma.Decimal("1.1"),
+      quantity: new Prisma.Decimal("0.2"),
+      fees: new Prisma.Decimal("0"),
+      swap: new Prisma.Decimal("0"),
+      pnlGross: new Prisma.Decimal("0"),
+      pnlNet: new Prisma.Decimal("0"),
+      riskAmount: null,
+      exitAt,
+    };
+
+    let findCalls = 0;
+    const tradesRepository = {
+      findInstrumentBySymbol: async () => instrument,
+      findTradeByExternalPosition: async () => {
+        findCalls += 1;
+        return findCalls === 1 ? null : existingRow; // winner lands between check and create
+      },
+      createTradeWithLegs: async () => {
+        throw new Prisma.PrismaClientKnownRequestError(
+          "Unique constraint failed on the fields: (`accountId`,`externalPositionId`)",
+          { code: "P2002", clientVersion: "test" },
+        );
+      },
+      updateTradeFields: async () => undefined,
+      replaceExits: async () => undefined,
+    };
+    const accountsRepository = {
+      listDeals: async () => [
+        deal({ externalDealId: "in1", side: "BUY", volume: new Prisma.Decimal("0.2"), price: new Prisma.Decimal("1.1"), executedAt: d(0) }),
+        deal({ externalDealId: "out1", side: "SELL", volume: new Prisma.Decimal("0.2"), price: new Prisma.Decimal("1.1"), profit: new Prisma.Decimal("0"), executedAt: exitAt }),
+      ],
+      listPositions: async () => [],
+    };
+
+    const service = new TradeReconstructionService(
+      tradesRepository as never,
+      accountsRepository as never,
+      undefined,
+    );
+    const outcome = await service.reconstructAccounts({
+      userId: crypto.randomUUID(),
+      userTimezone: "UTC",
+      accountIds: ["00000000-0000-4000-8000-000000000001"],
+    });
+
+    // No throw on the READ path; the winner's row was adopted as "unchanged".
+    expect(outcome.created).toBe(0);
+    expect(outcome.unchanged).toBe(1);
+    expect(outcome.updated).toBe(0);
+  });
+});

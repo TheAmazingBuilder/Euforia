@@ -17,6 +17,26 @@
 import { Prisma } from "@prisma/client";
 import { toTradingDateKey } from "../../shared/contracts";
 
+/**
+ * THE canonical weighted-average price (§15/§16): Decimal accumulation,
+ * one definition shared by the journal close path (multi-leg partial exits)
+ * and the external reconstruction pipeline — no float arithmetic on prices
+ * anywhere (MASTER §16: financial computation uses an exact strategy).
+ * A null price contributes its volume to the denominator only — mirroring
+ * the reconstruction rule for provider rows with a missing price.
+ */
+export function weightedAveragePrice(
+  rows: Array<{ price: Prisma.Decimal | null; volume: Prisma.Decimal }>,
+): Prisma.Decimal {
+  let weighted = new Prisma.Decimal(0);
+  let total = new Prisma.Decimal(0);
+  for (const row of rows) {
+    weighted = weighted.plus((row.price ?? new Prisma.Decimal(0)).times(row.volume));
+    total = total.plus(row.volume);
+  }
+  return total.isZero() ? new Prisma.Decimal(0) : weighted.dividedBy(total);
+}
+
 /** Wire-format decimal string: at most `places` decimals, trailing zeros
  * stripped (e.g. "12.50" → "12.5", "0.00" → "0"), never exponent notation. */
 export function wire(value: Prisma.Decimal | number | string, places = 2): string {

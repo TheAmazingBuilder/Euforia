@@ -131,7 +131,11 @@ describe("preferences document read (Phase 15 §12/§30)", () => {
     // §34 — the wire contract IS the shared schema (frontend parity).
     const doc = userPreferencesSchema.parse(res.json()) as UserPreferences;
     expect(doc.userId).toBe(ctx.userId);
-    for (const domain of ["trading", "risk", "journal", "notifications", "appearance", "dashboard", "academy", "privacy", "localization"]) {
+    const domains: Array<keyof UserPreferences> = [
+      "trading", "risk", "journal", "notifications", "appearance",
+      "dashboard", "academy", "privacy", "localization",
+    ];
+    for (const domain of domains) {
       expect(doc[domain]).toBeDefined();
     }
     expect(doc.trading.displayCurrency).toBe(DEFAULT_USER_PREFERENCES.trading.displayCurrency);
@@ -358,7 +362,9 @@ describe("settings mass-assignment protection (Phase 15 §31/§32)", () => {
     expect(after).not.toHaveProperty("role");
     expect(after).not.toHaveProperty("permissions");
     const parsed = userPreferencesSchema.parse(after) as UserPreferences;
-    expect(parsed.trading.baseCurrency).toBeUndefined(); // stripped, not mapped
+    // The planted key is not part of the trading-domain type — the strip is
+    // proven by its ABSENCE on the parsed (Zod-stripped) document.
+    expect((parsed.trading as Record<string, unknown>).baseCurrency).toBeUndefined(); // stripped, not mapped
   });
 
   it("exposes no :userId-shaped route — a user cannot address another user's doc", async () => {
