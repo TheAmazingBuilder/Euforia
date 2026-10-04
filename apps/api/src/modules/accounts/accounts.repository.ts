@@ -102,6 +102,8 @@ export interface DealRow {
   profit: Prisma.Decimal | null;
   commission: Prisma.Decimal | null;
   swap: Prisma.Decimal | null;
+  /** Provider-side position this deal belongs to (Phase 4 §9) — nullable. */
+  positionId: string | null;
   executedAt: Date;
   syncedAt: Date;
 }
@@ -467,6 +469,7 @@ export class AccountsRepository {
           profit: string | null;
           commission: string | null;
           swap: string | null;
+          positionId: string | null;
           executedAt: Date;
         };
         const row = {
@@ -478,6 +481,7 @@ export class AccountsRepository {
           profit: d.profit === null ? null : new Prisma.Decimal(d.profit),
           commission: d.commission === null ? null : new Prisma.Decimal(d.commission),
           swap: d.swap === null ? null : new Prisma.Decimal(d.swap),
+          positionId: d.positionId,
           executedAt: d.executedAt,
           syncedAt: data.snapshot.syncedAt,
         };

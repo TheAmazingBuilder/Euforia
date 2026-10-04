@@ -71,6 +71,40 @@ export type TradeScreenshot = z.infer<typeof tradeScreenshotSchema>;
 // ── Trade entity (data-model.md "Domaine 3") ─────────────────────────────────
 
 /**
+ * Phase 4 (Trading Core §8/§30/§58): explicit provenance. MANUAL = user
+ * capture; IMPORT = file/CSV batch; EXTERNAL_SYNC = reconstructed from
+ * synchronized provider activity (broker-derived fields are authoritative
+ * for those — journal metadata stays editable).
+ */
+export const tradeSourceSchema = z.enum(["MANUAL", "IMPORT", "EXTERNAL_SYNC"]);
+export type TradeSource = z.infer<typeof tradeSourceSchema>;
+
+/**
+ * Stable trade error-code registry (Phase 4 §64). Values ride the existing
+ * AppError envelope (`{ error, code, message, issues?, requestId? }`) — the
+ * HTTP category comes from the thrown error class, the code from this
+ * registry. Ownership access is reported as TRADE_NOT_FOUND (404) per the
+ * repository-wide "foreign = not found" IDOR convention.
+ */
+export const TRADE_ERROR_CODES = {
+  TRADE_NOT_FOUND: "TRADE_NOT_FOUND",
+  UNAUTHORIZED_TRADE_ACCESS: "UNAUTHORIZED_TRADE_ACCESS",
+  INVALID_TRADE_STATE: "INVALID_TRADE_STATE",
+  INVALID_EXECUTION: "INVALID_EXECUTION",
+  DUPLICATE_EXTERNAL_TRADE: "DUPLICATE_EXTERNAL_TRADE",
+  ACCOUNT_NOT_FOUND: "ACCOUNT_NOT_FOUND",
+  ACCOUNT_ACCESS_DENIED: "ACCOUNT_ACCESS_DENIED",
+  INVALID_TRADE_DATA: "INVALID_TRADE_DATA",
+  UNKNOWN_INSTRUMENT: "UNKNOWN_INSTRUMENT",
+  UNKNOWN_STRATEGY: "UNKNOWN_STRATEGY",
+  DECISION_ALREADY_SUBMITTED: "DECISION_ALREADY_SUBMITTED",
+  SAVING_VIEW_CONFLICT: "SAVING_VIEW_CONFLICT",
+  INVALID_SCREENSHOT: "INVALID_SCREENSHOT",
+} as const;
+
+export type TradeErrorCode = (typeof TRADE_ERROR_CODES)[keyof typeof TRADE_ERROR_CODES];
+
+/**
  * Trade — the heart of the model. The PLAN (decided before) is kept separate
  * from REALITY (what happened) and RESULTS (computed server-side at close,
  * never trusted from the client — data-model.md §15).
@@ -89,6 +123,12 @@ export const tradeSchema = z.object({
 
   status: tradeStatusSchema,
   direction: directionSchema,
+  /**
+   * Provenance (Phase 4 §8) — optional for backward compatibility with the
+   * pre-Phase-4 wire consumers; the backend always stores it (default MANUAL
+   * for user captures, IMPORT for batches, EXTERNAL_SYNC for reconstructions).
+   */
+  source: tradeSourceSchema.optional(),
 
   // ── THE PLAN (decided BEFORE) ──
   entryPrice: decimalStringSchema,

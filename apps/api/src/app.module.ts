@@ -20,6 +20,7 @@ import { AllExceptionsFilter } from "./shared/http/all-exceptions.filter";
 import { APP_CONFIG, type AppConfig } from "./config/app-config";
 import { IdentityModule } from "./modules/identity/identity.module";
 import { AccountsModule } from "./modules/accounts/accounts.module";
+import { TradesModule } from "./modules/trades/trades.module";
 import { SecurityEventModule } from "./modules/security/security-event.module";
 import { SecurityModule } from "./modules/security/security.module";
 import { MonitoringModule } from "./modules/monitoring/monitoring.module";
@@ -47,6 +48,12 @@ const globalExceptionFilterProvider: Provider = {
     SecurityEventModule,
     IdentityModule,
     AccountsModule,
+    // Trading Core — the canonical journal domain (Phase 4): Cosmoz Trade
+    // ≠ broker position ≠ broker deal (§1). Consumes the Accounts module's
+    // narrow read contract for reconstruction (§26); owns the trade
+    // lifecycle, the decision gate and ONE authoritative P&L implementation
+    // (§46). No execution capability, no analytics (§59/§60/§68).
+    TradesModule,
     // Security center — posture, activity, visibility (Phase 16). Orchestrates
     // identity capabilities; owns NO authentication/session/MFA logic (§3).
     SecurityModule,

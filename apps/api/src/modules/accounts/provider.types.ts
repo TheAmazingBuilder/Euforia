@@ -90,7 +90,10 @@ export interface NormalizedOrder {
   updatedAt: string | null;
 }
 
-/** Normalized completed deal (fetchDeals). Symbol null = balance operation. */
+/** Normalized completed deal (fetchDeals). Symbol null = balance operation.
+ * positionId (Phase 4 §9/§17) links the deal to the provider-side position
+ * it belongs to (MT5 netting semantics) — nullable when the provider does
+ * not expose it (balance operations always have none). */
 export interface NormalizedDeal {
   externalDealId: string;
   symbol: string | null;
@@ -100,6 +103,8 @@ export interface NormalizedDeal {
   profit: string | null;
   commission: string | null;
   swap: string | null;
+  /** Provider-side position identifier this deal belongs to, when exposed. */
+  positionId: string | null;
   /** Provider-side execution time, UTC ISO. */
   executedAt: string;
 }

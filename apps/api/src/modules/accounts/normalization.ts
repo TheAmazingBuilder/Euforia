@@ -72,6 +72,8 @@ export const normalizedDealSchema = z.object({
   profit: decimalStringSchema.nullable(),
   commission: decimalStringSchema.nullable(),
   swap: decimalStringSchema.nullable(),
+  /** Provider-side position identifier — nullable (balance ops have none). */
+  positionId: z.string().min(1).nullable(),
   executedAt: isoDateTimeSchema,
 });
 

@@ -151,6 +151,18 @@ export const envSchema = z.object({
   /** Bounded retry attempts for TRANSIENT engine failures (§34) — extra attempts on top of the first call. */
   OCR_ENGINE_MAX_RETRIES: z.coerce.number().int().min(0).max(3).default(1),
 
+  // ── Trading Core / Journal (Phase 4) ───────────────────────────────────────
+  /** Local filesystem storage root for trade-screenshot binaries (§39) —
+   * metadata-only rows in PostgreSQL; binaries live under this root. */
+  TRADES_SCREENSHOTS_ROOT: z.string().trim().min(1).default(".data/trades-screenshots"),
+  /** Max decoded binary size accepted for one trade screenshot (wire limit). */
+  TRADES_SCREENSHOT_MAX_BYTES: z.coerce
+    .number()
+    .int()
+    .min(10_240)
+    .max(8_000_000)
+    .default(6_291_456),
+
   // ── Authentication (Identity phase — REQUIRED, never defaulted) ────────────
   /** HS256 signing secret for short-lived access JWTs. ≥ 32 chars. */
   AUTH_JWT_SECRET: z

@@ -21,8 +21,21 @@
 // aggregate only; the actual image binary lives in the OCR storage adapter
 // (local filesystem in this build), referenced by storageKey (§6). The
 // canonical Trade remains owned by Trading Core — OCR never writes to any
-// Trade table (§22/§42), and no OCR→Trade association exists yet (§23/§59:
-// no Trade model server-side; deferred to the Trading Core phase).
+// Trade table (§22/§42).
+//
+// Phase 4 (Trading Core & Trade Journal Foundation): Instrument, Trade,
+// TradeExit, TradeEvent, TradeScreenshot — per docs/specs/data-model.md
+// Domaine 3 and the Phase 4 mandate (§5 canonical journal trade ≠ broker
+// position ≠ deal, §6 multiple executions per trade, §7 Cosmoz-owned
+// identity, §8 explicit source, §9 external mapping, §15/§46 Decimal
+// money, §46 single authoritative P&L implementation). Deliberately NOT
+// created: TradeExecution (the broker executions ARE Phase 3's TradingDeal
+// rows — duplicating them would violate §3/ADR-0003) and
+// ExternalTradeMapping (Trade.externalPositionId + its composite unique
+// carries the mapping). strategyId/setupId are OPAQUE uuid references —
+// the Playbook domain arrives in a later phase and will attach the FKs.
+// TradingDeal gained "positionId" (nullable) so the deal→trade
+// reconstruction (§17/§26) can group executions the way MT5 netting does.
 //
 // CONVENTIONS (binding for all future migrations):
 //   - Money/prices/quantities/R → Decimal(18,8) columns, string wire format.
@@ -100,6 +113,8 @@ model User {
   monitoringSetting MonitoringSetting?
   ocrAssets        OcrAsset[]
   ocrRecognitions  OcrRecognition[]
+  trades           Trade[]
+  savedTradeViews  SavedTradeView[]
 
   @@index([status])
 }
@@ -265,6 +280,7 @@ model TradingAccount {
   orders     TradingOrder[]
   deals      TradingDeal[]
   syncRuns   TradingSyncRun[]
+  trades     Trade[]
 
   @@unique([userId, providerId, externalAccountId])
   @@index([userId])
@@ -402,6 +418,10 @@ model TradingDeal {
   profit         Decimal? @db.Decimal(18, 8)
   commission     Decimal? @db.Decimal(18, 8)
   swap           Decimal? @db.Decimal(18, 8)
+  /// Provider-side position this deal belongs to (MT5 netting semantics) —
+  /// the Trading Core reconstruction groups on it (Phase 4 §9/§17).
+  /// Null = balance operation (deposits/withdrawals have no instrument).
+  positionId     String?
   /// Provider-side execution timestamp (UTC, §64).
   executedAt     DateTime
   syncedAt       DateTime @default(now())
@@ -411,6 +431,7 @@ model TradingDeal {
 
   @@unique([accountId, externalDealId])
   @@index([accountId, executedAt])
+  @@index([accountId, positionId])
 }
 
 /// One synchronization attempt over one account — observability + concurrency
@@ -519,4 +540,225 @@ model OcrRecognition {
   @@unique([userId, idempotencyKey])
   @@index([userId, createdAt(sort: Desc)])
   @@index([userId, status])
+}
+
+// ── Trading Core / Journal (Domaine 3 — Phase 4) ───────────────────────────
+
+/// Instrument catalog (Domaine 2). Specs live per instrument (pipSize,
+/// contractSize, digits) — NO per-asset-class constants in code (synthetic
+/// indices ≠ forex lots). Seeded by migration tooling only (conventions).
+model Instrument {
+  id            String   @id @default(uuid()) @db.Uuid
+  /// Unique ticker, e.g. "EURUSD", "BOOM500", "VOL75(1s)".
+  symbol        String   @unique
+  name          String
+  /// FOREX | CRYPTO | SYNTHETIC | INDEX | METAL | ENERGY (shared assetClassSchema).
+  assetClass    String
+  quoteCurrency String
+  /// Price increment of one pip, e.g. "0.0001" forex, "1.0" Boom/Crash.
+  pipSize       Decimal  @db.Decimal(18, 8)
+  /// Display digits for prices.
+  digits        Int
+  /// Units per lot/contract, e.g. "100000" EURUSD, "1" synthetics/crypto.
+  contractSize  Decimal  @db.Decimal(18, 8)
+  isActive      Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+
+  trades Trade[]
+}
+
+/// The CANONICAL journal trade (Phase 4 §5): a journal-level business object
+/// reconstructed from/linked to external executions — never a mirror of a
+/// broker position or deal (§1). The PLAN is kept separate from REALITY and
+/// from RESULTS (server-computed, §15/§46). Soft delete only (§57).
+model Trade {
+  id           String   @id @default(uuid()) @db.Uuid
+  userId       String   @db.Uuid
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accountId    String   @db.Uuid
+  account      TradingAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  instrumentId String   @db.Uuid
+  instrument   Instrument @relation(fields: [instrumentId], references: [id], onDelete: Restrict)
+  /// Opaque playbook reference in V1 — the Playbook domain (later phase)
+  /// attaches the FK. Null = out-of-playbook trade (valuable to track).
+  strategyId   String?  @db.Uuid
+  setupId      String?  @db.Uuid
+  /// Definition version frozen at entry.
+  strategyVersion Int?
+  /// PLANNED | OPEN | CLOSED | CANCELLED (shared tradeStatusSchema).
+  status       String   @default("OPEN")
+  /// BUY | SELL (shared directionSchema).
+  direction    String
+  /// MANUAL | IMPORT | EXTERNAL_SYNC (shared tradeSourceSchema, §8).
+  source       String   @default("MANUAL")
+
+  // ── THE PLAN (decided BEFORE) ──
+  entryPrice  Decimal  @db.Decimal(18, 8)
+  entryAt     DateTime
+  quantity    Decimal  @db.Decimal(18, 8)
+  initialStop Decimal? @db.Decimal(18, 8)
+  initialTP   Decimal? @db.Decimal(18, 8)
+  plannedRR   Decimal? @db.Decimal(18, 8)
+  /// Money risked at entry, in account currency.
+  riskAmount  Decimal? @db.Decimal(18, 8)
+
+  // ── REALITY (what happened) ──
+  /// Stop at exit time; ≠ initialStop → stop was moved (see TradeEvent).
+  finalStop  Decimal?  @db.Decimal(18, 8)
+  exitPrice  Decimal?  @db.Decimal(18, 8)
+  exitAt     DateTime?
+  /// TP | SL | MANUAL | TRAILING | PARTIAL | MARGIN.
+  exitReason String?
+  fees       Decimal   @default(0) @db.Decimal(18, 8)
+  swap       Decimal   @default(0) @db.Decimal(18, 8)
+
+  // ── RESULTS (server-computed at close — the ONLY authority, §15/§46) ──
+  pnlGross  Decimal? @db.Decimal(18, 8)
+  pnlNet    Decimal? @db.Decimal(18, 8)
+  rMultiple Decimal? @db.Decimal(18, 8)
+  mfePrice  Decimal? @db.Decimal(18, 8)
+  maePrice  Decimal? @db.Decimal(18, 8)
+  mfeR      Decimal? @db.Decimal(18, 8)
+  maeR      Decimal? @db.Decimal(18, 8)
+
+  // ── PSYCHOLOGY (friction minimal: 1 tap) ──
+  emotionBefore String?
+  emotionAfter  String?
+  /// 1–5.
+  confidence    Int?
+
+  // ── DECISION GATE / DISCIPLINE ──
+  /// Grade submitted BEFORE the P&L reveal (A–F). Re-submission → 409.
+  decisionGrade String?
+  decisionAt    DateTime?
+  /// Self-report (the feeling).
+  followedPlan  Boolean?
+  /// Checklist answers frozen at trade time.
+  checklistSnap Json?
+
+  // ── CONTEXT ──
+  notes   String?
+  lessons String?
+  /// User-local trading day — server-computed via the user timezone (§56).
+  tradingDate  DateTime @db.Date
+  /// Broker-side trade ref → CSV/import idempotence.
+  externalRef  String?
+  importBatchId String? @db.Uuid
+
+  /// External mapping (§9/§44): one broker position = one journal trade.
+  /// Null for MANUAL/IMPORT trades. Repeated syncs upsert on it (§27).
+  externalPositionId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  /// Soft delete (undo possible, §57) — synchronized history is never
+  /// hard-deleted.
+  deletedAt DateTime?
+
+  exits       TradeExit[]
+  events      TradeEvent[]
+  screenshots TradeScreenshot[]
+
+  /// Import idempotence (§27): one broker ref per account. PostgreSQL allows
+  /// several (account, NULL) rows — MANUAL trades stay unconstrained.
+  @@unique([accountId, externalRef])
+  /// One journal trade per broker position per account (§27 idempotency).
+  @@unique([accountId, externalPositionId])
+  @@index([userId, tradingDate])
+  @@index([userId, status])
+  @@index([accountId, status])
+  @@index([userId, deletedAt])
+}
+
+/// One partial-exit leg of a journal trade. A simple trade uses
+/// Trade.exitPrice directly; partial exits keep the execution relationship
+/// (Phase 4 §18) without flattening history irreversibly (§19).
+model TradeExit {
+  id       String   @id @default(uuid()) @db.Uuid
+  tradeId  String   @db.Uuid
+  trade    Trade    @relation(fields: [tradeId], references: [id], onDelete: Cascade)
+  price    Decimal  @db.Decimal(18, 8)
+  quantity Decimal  @db.Decimal(18, 8)
+  exitedAt DateTime
+  /// TP | SL | MANUAL | TRAILING | PARTIAL | MARGIN.
+  reason   String
+  note     String?
+
+  createdAt DateTime @default(now())
+
+  @@index([tradeId, exitedAt])
+}
+
+/// Lightweight event sourcing on a trade (§38/§40): the ONLY way to detect
+/// "stop widened" — final state alone never tells the story. Server-forged:
+/// no endpoint accepts a client-written TradeEvent.
+model TradeEvent {
+  id      String   @id @default(uuid()) @db.Uuid
+  tradeId String   @db.Uuid
+  trade   Trade    @relation(fields: [tradeId], references: [id], onDelete: Cascade)
+  /// SL_MODIFIED | TP_MODIFIED | SIZE_MODIFIED | REOPENED | NOTE.
+  type    String
+  /// e.g. { "from": "1.0850", "to": "1.0800" }.
+  payload Json
+  /// USER | AUTO | IMPORT.
+  source  String
+
+  createdAt DateTime @default(now())
+
+  @@index([tradeId, createdAt])
+}
+
+/// Chart evidence for a trade. PostgreSQL stores METADATA + the storage
+/// reference; the binary lives in the Trading Core storage adapter (§39:
+/// raw payloads isolated, restricted, never the domain model).
+model TradeScreenshot {
+  id      String   @id @default(uuid()) @db.Uuid
+  tradeId String   @db.Uuid
+  trade   Trade    @relation(fields: [tradeId], references: [id], onDelete: Cascade)
+  /// BEFORE | AFTER | CHART | OTHER.
+  kind    String
+  /// Storage-adapter reference — validated, never client-controlled.
+  storageKey String
+  /// SHA-256 of the stored binary (integrity + dedup anchor).
+  checksumSha256 String
+  /// MIME determined by MAGIC-BYTE sniffing — never the client header.
+  mime    String
+  sizeBytes Int
+  caption String?
+  /// User-drawn arrows/zones.
+  annotations Json?
+
+  createdAt DateTime @default(now())
+
+  @@index([tradeId, createdAt])
+}
+
+/// Named, reusable (filters + columns + sort) snapshot — one unified preset
+/// library shared by the Trades ledger (TRADES scope) and the Analytics
+/// module (ANALYTICS scope), per the shared savedTradeViewSchema contract.
+model SavedTradeView {
+  id     String @id @default(uuid()) @db.Uuid
+  userId String @db.Uuid
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name   String
+  /// TRADES | ANALYTICS.
+  scope  String @default("TRADES")
+  /// savedTradeViewFiltersSchema JSON (mirrors the trades URL param bag).
+  filters Json
+  /// analyticsViewFiltersSchema JSON — ANALYTICS-scope presets only.
+  analyticsFilters Json?
+  /// Visible ledger columns (checkbox/actions columns are structural).
+  columns String[]
+  /// date | r | pnl.
+  sortKey String
+  /// asc | desc.
+  sortDir String
+
+  createdAt DateTime @default(now())
+
+  /// View names are unique per user (case-insensitive check at the service
+  /// boundary; the DB constraint is the backstop).
+  @@unique([userId, name])
+  @@index([userId])
 }

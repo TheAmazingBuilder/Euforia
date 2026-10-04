@@ -43,7 +43,10 @@ const ALL_READ_PERMISSIONS = [
   "READ_HISTORY",
 ] as const;
 
-const SYMBOLS = ["EURUSD", "XAUUSD", "BTCUSD", "GBPJPY", "US30"] as const;
+/** Catalog-aligned symbols (Phase 4 §14): the mock simulates a broker whose
+ * instruments all exist in the Cosmoz catalog, so the deal→trade
+ * reconstruction can resolve every symbol. Deterministic, read-only. */
+const SYMBOLS = ["EURUSD", "XAUUSD", "BTCUSDT", "BOOM500", "CRASH500"] as const;
 const CURRENCIES = ["USD", "EUR", "GBP"] as const;
 
 /** Fixed epoch anchors — UTC (§64), deterministic across calls and restarts. */
@@ -214,23 +217,110 @@ export class MockTradingProviderAdapter implements TradingProviderAdapter {
   async fetchDeals(context: ProviderRequestContext): Promise<NormalizedDeal[]> {
     await this.guard(context.credentials.secret);
     const h = hashSeed(context.externalAccountId);
-    const count = 6 + (h % 5); // 6–10 deals
-    const deals: NormalizedDeal[] = [];
-    for (let k = 0; k < count; k += 1) {
-      const hk = (h + k * 0x85ebca6b) >>> 0;
-      const isBalanceOp = k % 4 === 3; // every 4th deal is a deposit
-      deals.push({
-        externalDealId: `${context.externalAccountId}-deal-${k + 1}`,
-        symbol: isBalanceOp ? null : (SYMBOLS[hk % SYMBOLS.length] ?? "EURUSD"),
-        side: hk % 2 === 0 ? "BUY" : "SELL",
-        volume: isBalanceOp ? "0.00" : (0.1 + 0.1 * (hk % 4)).toFixed(2),
-        price: isBalanceOp ? null : (1.02 + (hk % 500) / 1_000).toFixed(5),
-        profit: isBalanceOp ? money(1_000 + (hk % 500)) : money((hk % 400) / 2 - 90),
-        commission: isBalanceOp ? null : money(-((hk % 30) / 10) - 1),
-        swap: hk % 5 === 0 ? money((hk % 20) / -10) : null,
-        executedAt: new Date(BASE_DEAL_MS + k * 86_400_000).toISOString(),
-      });
+
+    /**
+     * Phase 4 §9/§17: deals carry the provider-side positionId and form
+     * COHERENT netting cycles — entry deals share the position side, exit
+     * deals the opposite one, exit volume sums back to entry volume — so
+     * the Trading Core reconstruction can rebuild journal trades the way it
+     * will with real MT5 data. Balance operations (deposits) have no symbol
+     * and no positionId. All deterministic (pure function of the external
+     * account id), still idempotent across repeated syncs (§18).
+     */
+    const bases = [1.0865, 2385.0, 61240.0, 9820.0, 8340.0] as const;
+    const cycleCount = 3 + (h % 3); // 3–5 position cycles
+    const lastCycleOpen = h % 2 === 0; // one reconstructable OPEN trade on even logins
+
+    interface Draft {
+      executedAtMs: number;
+      deal: NormalizedDeal;
     }
-    return deals;
+    const drafts: Draft[] = [];
+    let cursorMs = BASE_DEAL_MS;
+    let dealSeq = 0;
+
+    for (let cycle = 0; cycle < cycleCount; cycle += 1) {
+      const hc = (h + cycle * 0x9e3779b9) >>> 0;
+      const isDeposit = cycle % 3 === 2; // every 3rd cycle is a balance op
+      if (isDeposit) {
+        cursorMs += 86_400_000;
+        drafts.push({
+          executedAtMs: cursorMs,
+          deal: {
+            externalDealId: `${context.externalAccountId}-deal-${(dealSeq += 1)}`,
+            symbol: null,
+            side: "BUY",
+            volume: "0.00",
+            price: null,
+            profit: money(1_000 + (hc % 500)),
+            commission: null,
+            swap: null,
+            positionId: null,
+            executedAt: "",
+          },
+        });
+        continue;
+      }
+
+      const base = bases[hc % bases.length] ?? 1.0865;
+      const digits = base < 10 ? 5 : 2;
+      const isOpenCycle = lastCycleOpen && cycle === cycleCount - 1;
+      const positionId = `${context.externalAccountId}-cyc-${cycle + 1}`;
+      const direction: "BUY" | "SELL" = hc % 2 === 0 ? "BUY" : "SELL";
+      const exitSide: "BUY" | "SELL" = direction === "BUY" ? "SELL" : "BUY";
+      const entry = base + ((hc % 200) / 10_000);
+
+      // Entry volume split across 1–2 in-deals; exits mirror it exactly.
+      const totalVolume = Number((0.2 + 0.1 * (hc % 4)).toFixed(2));
+      const inCount = 1 + (hc % 2);
+      const inLeg = Number((totalVolume / inCount).toFixed(2));
+      const outCount = isOpenCycle ? 0 : 1 + ((hc >> 3) % 2);
+      const outLeg = outCount === 0 ? 0 : Number((totalVolume / outCount).toFixed(2));
+      const profitFinal = money((hc % 600) / 2 - 150);
+
+      const push = (
+        side: "BUY" | "SELL",
+        volume: string,
+        price: number,
+        profit: string | null,
+        minutesOffset: number,
+      ): void => {
+        cursorMs += minutesOffset * 60_000;
+        drafts.push({
+          executedAtMs: cursorMs,
+          deal: {
+            externalDealId: `${context.externalAccountId}-deal-${(dealSeq += 1)}`,
+            symbol: SYMBOLS[hc % SYMBOLS.length] ?? "EURUSD",
+            side,
+            volume,
+            price: price.toFixed(digits),
+            profit,
+            commission: money(-((hc % 30) / 10) - 1),
+            swap: hc % 5 === 0 ? money((hc % 20) / -10) : null,
+            positionId,
+            executedAt: "",
+          },
+        });
+      };
+
+      // In-deals at the (weighted-same) entry price, then out-deals at a
+      // nearby price — the LAST out-deal carries the cycle's closed profit.
+      for (let i = 0; i < inCount; i += 1) {
+        push(direction, inLeg.toFixed(2), entry, "0.00", 17 + i * 41);
+      }
+      const exitPrice = entry * (direction === "BUY" ? 1.0009 : 0.9991);
+      for (let i = 0; i < outCount; i += 1) {
+        const isLast = i === outCount - 1;
+        push(exitSide, outLeg.toFixed(2), exitPrice, isLast ? profitFinal : "0.00", 23 + i * 37);
+      }
+      cursorMs += 86_400_000;
+    }
+
+    return drafts
+      .sort((a, b) => a.executedAtMs - b.executedAtMs)
+      .map((draft) => ({
+        ...draft.deal,
+        executedAt: new Date(draft.executedAtMs).toISOString(),
+      }));
   }
 }

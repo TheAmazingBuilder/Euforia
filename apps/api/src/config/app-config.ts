@@ -44,6 +44,12 @@ export interface AppConfig {
     /** Whether the mock trading provider may be registered (§57). */
     mockProviderEnabled: boolean;
   };
+  trades: {
+    /** Local filesystem storage root for trade-screenshot binaries (§39). */
+    screenshotsRoot: string;
+    /** Max decoded binary size accepted for one trade screenshot. */
+    screenshotMaxBytes: number;
+  };
   auth: {
     jwtSecret: string;
     mfaEncryptionKey: Buffer;
@@ -97,6 +103,10 @@ function build(env: Env): AppConfig {
         env.ACCOUNTS_MOCK_PROVIDER !== undefined
           ? env.ACCOUNTS_MOCK_PROVIDER === "enabled"
           : env.NODE_ENV !== "production",
+    },
+    trades: {
+      screenshotsRoot: env.TRADES_SCREENSHOTS_ROOT,
+      screenshotMaxBytes: env.TRADES_SCREENSHOT_MAX_BYTES,
     },
     auth: {
       jwtSecret: env.AUTH_JWT_SECRET,
