@@ -14,7 +14,7 @@ import type {
 import { COSMOZ_VERSION, classifyFreshness } from "@cosmoz/shared";
 
 import { cn } from "@/lib/utils";
-import { apiErrorMessage } from "@/lib/api/client";
+import { ApiError, apiErrorMessage } from "@/lib/api/client";
 import { Button } from "@/components/ui/button";
 import {
   useMonitoringOverview,
@@ -224,7 +224,21 @@ export function MonitoringView() {
         if (result.accepted) toast.success(result.message);
         else toast.info(result.message);
       },
-      onError: (mutationError) => toast.error(apiErrorMessage(mutationError, "Could not run the job")),
+      onError: (mutationError) => {
+        // The real API answers 409 {accepted:false, message} on purpose —
+        // manual runs are observational-only (Phase 17). A refusal is an
+        // expected outcome, not an error: surface the server's message.
+        if (mutationError instanceof ApiError && mutationError.status === 409) {
+          const body = mutationError.body as { message?: unknown } | null;
+          const message =
+            body !== null && typeof body === "object" && typeof body.message === "string" && body.message !== ""
+              ? body.message
+              : "This job cannot be run manually — it is evaluated automatically.";
+          toast.info(message);
+        } else {
+          toast.error(apiErrorMessage(mutationError, "Could not run the job"));
+        }
+      },
       onSettled: () => setRunningJobId(null),
     });
   };

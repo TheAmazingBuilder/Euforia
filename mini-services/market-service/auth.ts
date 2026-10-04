@@ -27,8 +27,10 @@
  * never grant execution capability because none exists here.
  */
 
-/** Must match MOCK_ACCESS_SECRET in the auth engine (sandbox seam — see header). */
-const MOCK_ACCESS_SECRET = "cosmoz-mock-access-secret-v1";
+/** Must match MOCK_ACCESS_SECRET in the auth engine (sandbox seam — see header).
+ *  Exported so the boot guard (index.ts) can refuse production starts while
+ *  this mock verifier is in place (finalization §113). */
+export const MOCK_ACCESS_SECRET = "cosmoz-mock-access-secret-v1";
 
 export type AccessTokenVerification =
   | { ok: true; userId: string }

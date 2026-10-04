@@ -18,13 +18,26 @@ import { createServer } from "node:http";
 import type { Socket } from "socket.io";
 import { Server } from "socket.io";
 
-import { bearerFromHeader, verifyAccessToken } from "./auth";
+import { bearerFromHeader, verifyAccessToken, MOCK_ACCESS_SECRET } from "./auth";
 import { BinanceProvider } from "./providers/binance";
 import { SimulatedProvider } from "./providers/simulated";
 import { isInterval, type MarketDataProvider, type Tick } from "./providers/types";
 
 const PORT = Number(process.env.PORT ?? 3003);
 const BROADCAST_MS = 750;
+
+// ── Production guard (finalization §113) ─────────────────────────────────────
+// The token verification seam below is a MOCK (shared sandbox secret). It must
+// never silently serve production traffic: fail the boot instead of inheriting
+// development-only behavior. A real deployment plugs the JWT/JWKS verifier
+// into auth.ts (structure, error codes and call sites stay put).
+if (process.env.NODE_ENV === "production" && MOCK_ACCESS_SECRET === "cosmoz-mock-access-secret-v1") {
+  console.error(
+    "market-service: refusing to start — NODE_ENV=production with the mock access secret. " +
+      "Replace the mock token verifier in auth.ts (JWT/JWKS) before serving production traffic.",
+  );
+  process.exit(1);
+}
 
 // ── Providers (order = routing priority) ─────────────────────────────────────
 const providers: MarketDataProvider[] = [new BinanceProvider(), new SimulatedProvider()];
@@ -101,7 +114,7 @@ const httpServer = createServer(async (req, res) => {
     } catch (error) {
       // Structured, secret-free error (mission §27) — the client renders
       // "market data unavailable" and retries.
-      console.error(`[market-service] candles ${symbol} ${interval} failed:`, error instanceof Error ? error.message : error);
+      console.error("market-service: candles fetch failed:", error instanceof Error ? error.message : error);
       json(res, 502, { error: "market data provider unavailable" });
     }
     return;
@@ -315,4 +328,4 @@ setInterval(() => {
 
 httpServer.listen(PORT);
 
-console.log(`[market-service] listening on :${PORT} — REST /prices /candles, WS path /socket.io/`);
+console.log("market-service listening on :" + PORT + " — REST /prices /candles, WS path /socket.io/");
