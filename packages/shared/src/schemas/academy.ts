@@ -592,3 +592,95 @@ export type AcademySuggestion = {
 export type AcademySuggestionsResponse = {
   suggestions: AcademySuggestion[];
 };
+
+// ── Events (Academy live sessions — workshops, webinars, Q&A, exams) ────────
+
+export type AcademyEventType = "WORKSHOP" | "WEBINAR" | "LIVE_QA" | "EXAM";
+
+export type AcademyEvent = {
+  id: string;
+  title: string;
+  description: string;
+  type: AcademyEventType;
+  host: string;
+  hostRole: string;
+  /** ISO instant — the mock generates dates relative to "now". */
+  startsAt: string;
+  durationMin: number;
+  categoryId: string | null;
+  seatsTotal: number;
+  seatsTaken: number;
+  registered: boolean;
+  /** Rendered as a "replay available" chip on past events. */
+  hasReplay: boolean;
+};
+
+export type AcademyEventsResponse = {
+  upcoming: AcademyEvent[];
+  past: AcademyEvent[];
+};
+
+export const academyEventRegisterInputSchema = z.object({
+  eventId: z.string().min(1),
+});
+export type AcademyEventRegisterInput = z.infer<typeof academyEventRegisterInputSchema>;
+
+export type AcademyEventRegisterResponse = {
+  eventId: string;
+  registered: boolean;
+  seatsTaken: number;
+};
+
+// ── Tasky (Academy study task manager) ──────────────────────────────────────
+
+export const academyTaskKindSchema = z.enum(["LESSON", "DRILL", "REVIEW", "CUSTOM"]);
+export type AcademyTaskKind = z.infer<typeof academyTaskKindSchema>;
+export const academyTaskPrioritySchema = z.enum(["LOW", "MEDIUM", "HIGH"]);
+export type AcademyTaskPriority = z.infer<typeof academyTaskPrioritySchema>;
+
+export type AcademyTask = {
+  id: string;
+  title: string;
+  description: string | null;
+  kind: AcademyTaskKind;
+  priority: AcademyTaskPriority;
+  /** ISO instant deadline — null means "no deadline". */
+  dueAt: string | null;
+  /** Deep link when the task ties back to a lesson or drill. */
+  href: string | null;
+  categoryId: string | null;
+  done: boolean;
+  completedAt: string | null;
+  xp: number;
+};
+
+export type AcademyTasksResponse = {
+  tasks: AcademyTask[];
+  /** Derived streak of consecutive days with at least one completion. */
+  streakDays: number;
+  /** Total XP earned across completed tasks (custom engine currency). */
+  totalXp: number;
+};
+
+export const academyTaskCreateInputSchema = z.object({
+  title: z.string().min(1).max(120),
+  description: z.string().max(280).nullable().optional(),
+  kind: academyTaskKindSchema,
+  priority: academyTaskPrioritySchema,
+  dueAt: z.string().datetime({ offset: true }).nullable().optional(),
+  href: z.string().min(1).max(200).nullable().optional(),
+  categoryId: z.string().min(1).nullable().optional(),
+  xp: z.number().int().min(0).max(500).optional(),
+});
+export type AcademyTaskCreateInput = z.infer<typeof academyTaskCreateInputSchema>;
+
+export const academyTaskToggleInputSchema = z.object({
+  taskId: z.string().min(1),
+  done: z.boolean(),
+});
+export type AcademyTaskToggleInput = z.infer<typeof academyTaskToggleInputSchema>;
+
+export const academyTaskDeleteInputSchema = z.object({
+  taskId: z.string().min(1),
+});
+export type AcademyTaskDeleteInput = z.infer<typeof academyTaskDeleteInputSchema>;

@@ -79,6 +79,8 @@ export const queryKeys = {
   academyExam: (categoryId: string) => ["academy-exam", categoryId] as const,
   academyMilestones: ["academy-milestones"] as const,
   academySuggestions: ["academy-suggestions"] as const,
+  academyEvents: ["academy-events"] as const,
+  academyTasks: ["academy-tasks"] as const,
   /** Mutations that touch learning state refresh these aggregates (array of key arrays). */
   academyAggregates: [
     ["academy-catalog"],

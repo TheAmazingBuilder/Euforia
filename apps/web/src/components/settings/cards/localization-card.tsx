@@ -24,14 +24,15 @@ import { apiErrorMessage } from "@/lib/api/client";
 import { useI18n } from "@/i18n/i18n-provider";
 
 /**
- * Localization — language, formats and the timezone MIRROR. The timezone
- * select writes through PATCH /me (single source of truth for trading-day
- * keys); every other field saves with the localization domain. The preview
- * line renders one sample through the exact Intl pipeline the app uses.
+ * Localization — formats and the timezone MIRROR. The timezone select
+ * writes through PATCH /me (single source of truth for trading-day keys);
+ * every other field saves with the localization domain. The preview line
+ * renders one sample through the exact Intl pipeline the app uses.
+ * The application is English-only: no language row (legacy `language`
+ * field stays "en" in the stored document).
  */
 
-const localeFor = (language: UserPreferences["localization"]["language"]): string =>
-  language === "fr" ? "fr-FR" : "en-US";
+const localeFor = (_language: UserPreferences["localization"]["language"]): string => "en-US";
 
 function previewFor(localization: UserPreferences["localization"]): {
   date: string;
@@ -135,7 +136,7 @@ export function LocalizationCard() {
   const updateProfile = useUpdateProfile();
   const { draft, setDraft, dirty } = useDomainDraft(prefs?.localization);
   const [resetOpen, setResetOpen] = React.useState(false);
-  const { dict, setLocale } = useI18n();
+  const { dict } = useI18n();
   const L = dict.settings.localization;
 
   if (isLoading || !prefs || !draft) {
@@ -162,10 +163,7 @@ export function LocalizationCard() {
 
   const onSave = () => {
     save.mutate(draft, {
-      // The saved language BECOMES the runtime language — dynamic switching,
-      // no reload (the provider updates <html lang> + the boot mirror).
       onSuccess: () => {
-        setLocale(draft.language);
         toast.success(L.toastSaved);
       },
       onError: (error) => toast.error(apiErrorMessage(error, L.toastSaveFailed)),
@@ -177,9 +175,7 @@ export function LocalizationCard() {
     resetDomain.mutate(
       { domain: "localization" },
       {
-        onSuccess: (preferences) => {
-          // Reset restores the EN default at runtime too (mirror follows).
-          setLocale(preferences.localization.language);
+        onSuccess: () => {
           toast.success(L.toastReset);
         },
       },
@@ -213,17 +209,6 @@ export function LocalizationCard() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <SettingsRow label={L.language} htmlFor="settings-localization-language">
-          <SettingsSelect
-            value={draft.language}
-            onChange={(value) => patch({ language: value as UserPreferences["localization"]["language"] })}
-            options={[
-              { value: "en", label: "English" },
-              { value: "fr", label: "Français" },
-            ]}
-            testid="settings-localization-language"
-          />
-        </SettingsRow>
         <SettingsRow
           label={L.timezone}
           htmlFor="settings-localization-timezone"

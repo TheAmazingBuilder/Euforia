@@ -378,7 +378,9 @@ export type PrivacyPreferencesInput = z.infer<typeof privacyPreferencesInputSche
 
 // ── Localization preferences ────────────────────────────────────────────────
 
-export const languageSchema = z.enum(["fr", "en"]);
+// English-only application: the field stays part of the stored document
+// (older backups carry it) but accepts a single value.
+export const languageSchema = z.literal("en");
 export type Language = z.infer<typeof languageSchema>;
 
 export const dateFormatSchema = z.enum(["ISO", "EU", "US", "LONG"]);

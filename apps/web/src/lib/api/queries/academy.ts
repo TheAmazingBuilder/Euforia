@@ -5,6 +5,14 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
   AcademyBookmarkToggleInput,
   AcademyBookmarkToggleResponse,
+  AcademyEventRegisterInput,
+  AcademyEventRegisterResponse,
+  AcademyEventsResponse,
+  AcademyTask,
+  AcademyTaskCreateInput,
+  AcademyTaskDeleteInput,
+  AcademyTaskToggleInput,
+  AcademyTasksResponse,
   AcademyBookmarksResponse,
   AcademyCatalogResponse,
   AcademyCertificationsResponse,
@@ -323,5 +331,71 @@ export function useSaveLessonNote(lessonId: string) {
       void queryClient.invalidateQueries({ queryKey: queryKeys.academyOverview });
     },
     onError: (error) => toast.error(apiErrorMessage(error, "Could not save the note")),
+  });
+}
+
+// ── Events (live sessions) ───────────────────────────────────────────────────
+
+export function useAcademyEvents() {
+  return useQuery({
+    queryKey: queryKeys.academyEvents,
+    queryFn: () => apiRequest<AcademyEventsResponse>(apiPaths.academyEvents),
+  });
+}
+
+export function useAcademyRegisterEvent() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: AcademyEventRegisterInput) =>
+      apiRequest<AcademyEventRegisterResponse>(apiPaths.academyEventRegister, { method: "POST", body: input }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.academyEvents });
+    },
+    onError: (error) => toast.error(apiErrorMessage(error, "Could not update the registration")),
+  });
+}
+
+// ── Tasky (study task manager) ───────────────────────────────────────────────
+
+export function useAcademyTasks() {
+  return useQuery({
+    queryKey: queryKeys.academyTasks,
+    queryFn: () => apiRequest<AcademyTasksResponse>(apiPaths.academyTasks),
+  });
+}
+
+export function useAcademyCreateTask() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: AcademyTaskCreateInput) =>
+      apiRequest<AcademyTask>(apiPaths.academyTasks, { method: "POST", body: input }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.academyTasks });
+    },
+    onError: (error) => toast.error(apiErrorMessage(error, "Could not create the task")),
+  });
+}
+
+export function useAcademyToggleTask() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: AcademyTaskToggleInput) =>
+      apiRequest<AcademyTask>(apiPaths.academyTaskToggle, { method: "POST", body: input }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.academyTasks });
+    },
+    onError: (error) => toast.error(apiErrorMessage(error, "Could not update the task")),
+  });
+}
+
+export function useAcademyDeleteTask() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: AcademyTaskDeleteInput) =>
+      apiRequest<{ ok: boolean }>(apiPaths.academyTaskDelete, { method: "POST", body: input }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.academyTasks });
+    },
+    onError: (error) => toast.error(apiErrorMessage(error, "Could not delete the task")),
   });
 }

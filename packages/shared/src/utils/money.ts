@@ -9,8 +9,8 @@ import type { Currency } from "../enums";
  * form estimates and rendering only.
  */
 
-/** App UI language is French (layout lang="fr"). Override via options.locale. */
-export const DEFAULT_FORMAT_LOCALE = "fr-FR";
+/** App UI language is English. Override via options.locale. */
+export const DEFAULT_FORMAT_LOCALE = "en-US";
 
 /** Placeholder rendered when a value cannot be parsed (bad contract, loading). */
 export const MONEY_PLACEHOLDER = "-";

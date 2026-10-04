@@ -11,24 +11,17 @@ import {
   type Locale,
 } from "@/i18n/config";
 import { en, type Dictionary } from "@/i18n/dictionaries/en";
-import { fr } from "@/i18n/dictionaries/fr";
 
 /**
- * I18nProvider — the dynamic runtime language engine.
+ * I18nProvider — the dictionary engine (English-only application).
  *
- * Pure client state (NO network, NO auth dependency): the active dictionary
- * lives in React state, so switching re-renders every consumer in place —
- * no reload, no route change. Persistence:
- *   - localStorage mirror (cosmoz:i18n:locale) restores the choice on boot
- *     (post-hydration effect — SSR always renders the EN default, so there
- *     is no hydration mismatch, just one paint of EN for FR users).
- *   - the SERVER document (PATCH /me/preferences/localization, written by
- *     the Settings card) stays the account-level truth; a real backend can
- *     re-apply it on boot by observing the preferences query — seam noted
- *     for the production migration.
+ * The locale machinery is KEPT but pinned: `setLocale` accepts only "en"
+ * (a no-op at runtime), so the whole `dict.*` consumer surface keeps
+ * working untouched. The French pack and the language switcher were
+ * removed by product decision — one language, zero switching chrome.
  */
 
-const PACKS: Record<Locale, Dictionary> = { en, fr };
+const PACKS: Record<Locale, Dictionary> = { en };
 
 /**
  * Locale as an EXTERNAL STORE (the app's established pattern — see

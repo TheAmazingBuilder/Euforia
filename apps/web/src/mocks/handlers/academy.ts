@@ -10,10 +10,14 @@ import type {
 import {
   academyBookmarkToggleInputSchema,
   academyCheckpointInputSchema,
+  academyEventRegisterInputSchema,
   academyFlashcardReviewInputSchema,
   academyNoteInputSchema,
   academyPracticeLogInputSchema,
   academyQuizSubmitInputSchema,
+  academyTaskCreateInputSchema,
+  academyTaskDeleteInputSchema,
+  academyTaskToggleInputSchema,
 } from "@cosmoz/shared";
 
 import { apiPaths } from "@/lib/api/endpoints";
@@ -47,8 +51,16 @@ import {
   toggleBookmark,
   zoneDrill,
 } from "@/mocks/academy-engine";
+import {
+  academyEvents,
+  academyTasks,
+  createTask,
+  deleteTask,
+  registerEvent,
+  toggleTask,
+} from "@/mocks/academy/events-tasks";
 import { MockError } from "@/mocks/store";
-import { endpoint, latency, parseBody, pathParam, toErrorResponse } from "./utils";
+import { endpoint, latency, parseBody, pathParam, readJson, toErrorResponse } from "./utils";
 
 /**
  * Academy endpoints — the learning platform's API surface. Content is served
@@ -409,6 +421,78 @@ export const academyHandlers = [
     await latency();
     try {
       return HttpResponse.json(academySuggestions());
+    } catch (error) {
+      return toErrorResponse(error);
+    }
+  }),
+
+  /** GET /academy/events — live sessions (upcoming + past). */
+  http.get(endpoint(apiPaths.academyEvents), async () => {
+    await latency();
+    try {
+      return HttpResponse.json(academyEvents());
+    } catch (error) {
+      return toErrorResponse(error);
+    }
+  }),
+
+  /** POST /academy/events/register — toggle a seat on an upcoming event. */
+  http.post(endpoint(apiPaths.academyEventRegister), async ({ request }) => {
+    await latency();
+    try {
+      const input = parseBody(academyEventRegisterInputSchema, await readJson(request));
+      const result = registerEvent(input);
+      if (!result) {
+        return HttpResponse.json({ error: "Event not found or already finished" }, { status: 404 });
+      }
+      return HttpResponse.json(result);
+    } catch (error) {
+      return toErrorResponse(error);
+    }
+  }),
+
+  /** GET /academy/tasks — the Tasky study list. */
+  http.get(endpoint(apiPaths.academyTasks), async () => {
+    await latency();
+    try {
+      return HttpResponse.json(academyTasks());
+    } catch (error) {
+      return toErrorResponse(error);
+    }
+  }),
+
+  /** POST /academy/tasks — create a custom study task. */
+  http.post(endpoint(apiPaths.academyTasks), async ({ request }) => {
+    await latency();
+    try {
+      const input = parseBody(academyTaskCreateInputSchema, await readJson(request));
+      return HttpResponse.json(createTask(input));
+    } catch (error) {
+      return toErrorResponse(error);
+    }
+  }),
+
+  /** POST /academy/tasks/toggle — mark a task done / reopen it. */
+  http.post(endpoint(apiPaths.academyTaskToggle), async ({ request }) => {
+    await latency();
+    try {
+      const input = parseBody(academyTaskToggleInputSchema, await readJson(request));
+      const task = toggleTask(input);
+      if (!task) {
+        return HttpResponse.json({ error: "Task not found" }, { status: 404 });
+      }
+      return HttpResponse.json(task);
+    } catch (error) {
+      return toErrorResponse(error);
+    }
+  }),
+
+  /** POST /academy/tasks/delete — remove a task permanently. */
+  http.post(endpoint(apiPaths.academyTaskDelete), async ({ request }) => {
+    await latency();
+    try {
+      const input = parseBody(academyTaskDeleteInputSchema, await readJson(request));
+      return HttpResponse.json(deleteTask(input));
     } catch (error) {
       return toErrorResponse(error);
     }

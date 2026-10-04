@@ -2,13 +2,15 @@
 
 import * as React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Flame, GraduationCap, LayoutDashboard, BookOpen, Dumbbell, Sigma, Library, Bookmark } from "lucide-react";
+import { Flame, GraduationCap, LayoutDashboard, BookOpen, Dumbbell, Sigma, Library, Bookmark, CalendarDays, ListTodo } from "lucide-react";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AcademyOverviewPanel } from "@/components/academy/academy-overview";
 import { AcademyCoursesPanel } from "@/components/academy/academy-courses";
 import { AcademyPracticePanel } from "@/components/academy/academy-practice";
+import { AcademyEventsPanel } from "@/components/academy/academy-events";
+import { AcademyTaskyPanel } from "@/components/academy/academy-tasky";
 import { AcademyProgressPanel } from "@/components/academy/academy-progress";
 import { AcademyGlossaryPanel } from "@/components/academy/academy-glossary";
 import { AcademyBookmarksPanel } from "@/components/academy/academy-bookmarks";
@@ -29,6 +31,8 @@ const TABS = [
   { id: "overview", icon: LayoutDashboard },
   { id: "courses", icon: BookOpen },
   { id: "practice", icon: Dumbbell },
+  { id: "events", icon: CalendarDays },
+  { id: "tasky", icon: ListTodo },
   { id: "progress", icon: Sigma },
   { id: "glossary", icon: Library },
   { id: "bookmarks", icon: Bookmark },
@@ -173,6 +177,14 @@ export function AcademyView() {
 
           <TabsContent value="practice" className="mt-4">
             <AcademyPracticePanel />
+          </TabsContent>
+
+          <TabsContent value="events" className="mt-4">
+            <AcademyEventsPanel />
+          </TabsContent>
+
+          <TabsContent value="tasky" className="mt-4">
+            <AcademyTaskyPanel />
           </TabsContent>
 
           <TabsContent value="progress" className="mt-4">

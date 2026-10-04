@@ -151,6 +151,11 @@ export const apiPaths = {
   academyExamSubmit: (categoryId: string) => `/academy/exams/${categoryId}/attempts`,
   academyMilestones: "/academy/milestones",
   academySuggestions: "/academy/suggestions",
+  academyEvents: "/academy/events",
+  academyEventRegister: "/academy/events/register",
+  academyTasks: "/academy/tasks",
+  academyTaskToggle: "/academy/tasks/toggle",
+  academyTaskDelete: "/academy/tasks/delete",
   // Nofy module (personal knowledge & notes workspace)
   nofyOverview: "/nofy/overview",
   nofyNotes: "/nofy/notes",

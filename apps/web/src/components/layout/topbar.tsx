@@ -9,7 +9,6 @@ import { useTrades } from "@/lib/api/queries";
 import { Button } from "@/components/ui/button";
 import { AccountSwitcher } from "@/components/layout/account-switcher";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
-import { LanguageSelector } from "@/components/layout/language-selector";
 import { NotificationCenter } from "@/components/layout/notification-center";
 import { SessionLiveBadge } from "@/components/layout/session-live-badge";
 import { UserAvatar } from "@/components/layout/user-avatar";
@@ -159,9 +158,6 @@ export function Topbar({ onMenuClick }: TopbarProps) {
 
         {/* Notification center — bell inbox with unread badge + mark-as-read */}
         <NotificationCenter />
-
-        {/* Language selector — instant runtime switching (dynamic i18n) */}
-        <LanguageSelector />
 
         <ThemeToggle />
 
