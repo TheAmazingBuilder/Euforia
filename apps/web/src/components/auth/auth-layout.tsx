@@ -2,12 +2,12 @@
 
 import Link from "next/link";
 
-import { CosmozLogo } from "@/components/layout/cosmoz-logo";
+import { EuforiaLogo } from "@/components/brand/euforia-logo";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { useDict } from "@/i18n/i18n-provider";
 
 /**
- * Authentication shell (spec §44, §45, §46) — belongs to the Cosmoz design
+ * Authentication shell (spec §44, §45, §46) — belongs to the Euforia design
  * system: premium, technical, restrained. Desktop gets a branding column +
  * the auth card; mobile collapses to a focused single column with large
  * touch targets. No generic gradients, no stock illustrations (§45).
@@ -28,16 +28,16 @@ export function AuthLayout({
         aria-hidden="true"
         className="relative hidden flex-col justify-between overflow-hidden border-r border-border bg-surface p-10 lg:flex xl:p-14"
       >
-        {/* Orbital motif — the brand mark, oversized and faint. Single
+        {/* Ribbon motif — the brand mark, oversized and faint. Single
             decorative element, deliberately quiet (§45). */}
-        <CosmozLogo className="pointer-events-none absolute -bottom-40 -right-28 size-[560px] opacity-[0.07]" />
+        <EuforiaLogo
+          variant="mark"
+          tone="auto"
+          size="md"
+          className="pointer-events-none absolute -bottom-40 -right-28 size-[560px] opacity-[0.07]"
+        />
 
-        <div className="flex items-center gap-2.5">
-          <CosmozLogo className="size-8" />
-          <span className="font-heading text-lg font-semibold tracking-tight">
-            Cosmoz
-          </span>
-        </div>
+        <EuforiaLogo variant="full" tone="auto" size="md" />
 
         <div className="relative flex max-w-md flex-col gap-8">
           <div className="flex flex-col gap-3">
@@ -78,7 +78,7 @@ export function AuthLayout({
         </div>
 
         <p className="relative text-xs text-muted-foreground/70">
-          Cosmoz — trading journal &amp; behavioral coach
+          Euforia — trading journal &amp; behavioral coach
         </p>
       </aside>
 
@@ -91,13 +91,10 @@ export function AuthLayout({
           {/* Mobile brand (the desktop column already carries it) */}
           <Link
             href="/login"
-            aria-label="Cosmoz"
+            aria-label="Euforia"
             className="flex items-center gap-2 lg:hidden"
           >
-            <CosmozLogo className="size-7" />
-            <span className="font-heading text-base font-semibold tracking-tight">
-              Cosmoz
-            </span>
+            <EuforiaLogo variant="full" tone="auto" size="sm" />
           </Link>
           <div className="flex items-center gap-2">
             <ThemeToggle />

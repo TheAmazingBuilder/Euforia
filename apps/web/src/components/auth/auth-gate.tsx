@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { ShieldAlert, ShieldOff } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { CosmozLogo } from "@/components/layout/cosmoz-logo";
+import { EuforiaLogo } from "@/components/brand/euforia-logo";
 import { useAuth } from "@/components/auth/auth-provider";
 import { useResendVerificationMutation } from "@/lib/api/queries/auth";
 import { apiErrorCode } from "@/lib/api/client";
@@ -31,7 +31,7 @@ function AuthSplash({ label }: { label: string }) {
       data-testid="auth-splash"
     >
       <div className="flex flex-col items-center gap-4">
-        <CosmozLogo className="size-10 animate-pulse" />
+        <EuforiaLogo className="size-10 animate-pulse" />
         <p className="text-sm text-muted-foreground">{label}</p>
         <div className="h-1 w-40 overflow-hidden rounded-full bg-muted">
           <div className="h-full w-1/2 animate-pulse rounded-full bg-accent" />

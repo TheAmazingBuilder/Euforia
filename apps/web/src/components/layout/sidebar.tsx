@@ -7,7 +7,7 @@ import { EyeOff, LogOut } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/i18n/i18n-provider";
-import { CosmozLogo } from "@/components/layout/cosmoz-logo";
+import { EuforiaLogo } from "@/components/brand/euforia-logo";
 import { openGhostModal } from "@/lib/hooks/use-ghost-modal";
 import { useAuth } from "@/components/auth/auth-provider";
 import {
@@ -160,13 +160,12 @@ export function SidebarBrand({ collapsed }: { collapsed: boolean }) {
         "flex h-14 shrink-0 items-center border-b border-border bg-surface",
         collapsed ? "justify-center px-0" : "gap-2.5 px-4",
       )}
-      aria-label="Cosmoz — Dashboard"
+      aria-label="Euforia — Dashboard"
     >
-      <CosmozLogo className="size-7" />
-      {!collapsed && (
-        <span className="font-heading text-lg font-semibold tracking-tight text-foreground">
-          Cosmoz
-        </span>
+      {collapsed ? (
+        <EuforiaLogo variant="mark" tone="auto" size="md" className="size-7" />
+      ) : (
+        <EuforiaLogo variant="full" tone="auto" size="md" />
       )}
     </Link>
   );
