@@ -42,8 +42,9 @@ import { DisciplineService } from "./discipline.service";
     AlertsController,
   ],
   providers: [DisciplineRepository, DisciplineService],
-  // Narrow read contract (house pattern): Session's timeline consumes the
-  // ALERT rows (today's rule violations) without re-owning them (§26/§39).
-  exports: [DisciplineRepository],
+  // Narrow contracts (house pattern): Session's timeline consumes the ALERT
+  // rows; Calendar consumes the per-day discipline scores. They never
+  // re-own discipline facts (§26/§39).
+  exports: [DisciplineRepository, DisciplineService],
 })
 export class DisciplineModule {}

@@ -433,7 +433,7 @@ export class DisciplineService implements OnModuleInit {
 
     // Per-day Cosmoz Index (mock formula) averaged over SCORED days —
     // computed from live facts instead of persisted daily stats.
-    const scores = await this.perDayScores(userId, windowClosed);
+    const scores = await this.perDayScores(userId);
     const score =
       scores.length > 0
         ? scores.reduce((sum, value) => sum + value, 0) / scores.length
@@ -451,7 +451,45 @@ export class DisciplineService implements OnModuleInit {
   }
 
   /** Days with ≥1 graded trade get a score via the mock's exact weights. */
-  private async perDayScores(userId: string, windowClosed: TradeRow[]): Promise<number[]> {
+  private async perDayScores(userId: string): Promise<number[]> {
+    const scores = await this.dailyScores(userId, { from: "0000-01-01", to: "9999-12-31" });
+    return [...scores.values()].filter((value): value is number => value !== null);
+  }
+
+  /** RULE_VIOLATION count per day over a window — public for the calendar. */
+  async violationsByDay(
+    userId: string,
+    window: { from: string; to: string },
+  ): Promise<Map<string, number>> {
+    const [all, alertRows] = await Promise.all([
+      this.trades.listTrades(userId, {}),
+      this.repository.listByKind(userId, "ALERT"),
+    ]);
+    const tradeDay = new Map(all.map((t) => [t.id, dateKeyOf(t.tradingDate)]));
+    const result = new Map<string, number>();
+    for (const row of alertRows) {
+      const data = row.data as unknown as AlertData;
+      if (data.type !== "RULE_VIOLATION" || data.tradeId === null) continue;
+      const day = tradeDay.get(data.tradeId);
+      if (day === undefined || day < window.from || day > window.to) continue;
+      result.set(day, (result.get(day) ?? 0) + 1);
+    }
+    return result;
+  }
+
+  /**
+   * Per-day Cosmoz Index over a date window — PUBLIC contract for consumers
+   * (calendar overlay). A day with closed but ungraded trades scores null.
+   */
+  async dailyScores(
+    userId: string,
+    window: { from: string; to: string },
+  ): Promise<Map<string, number | null>> {
+    const all = await this.trades.listTrades(userId, {});
+    const windowClosed = all.filter((t) => {
+      const key = dateKeyOf(t.tradingDate);
+      return t.status === "CLOSED" && key >= window.from && key <= window.to;
+    });
     const days = new Set(windowClosed.map((t) => dateKeyOf(t.tradingDate)));
     const mistakeRows = await this.trades.listSubRowsByUser(userId, "MISTAKE");
     const alertRows = await this.repository.listByKind(userId, "ALERT");
@@ -459,24 +497,31 @@ export class DisciplineService implements OnModuleInit {
     for (const row of mistakeRows) {
       mistakesByTrade.set(row.tradeId, (mistakesByTrade.get(row.tradeId) ?? 0) + 1);
     }
-    const scores: number[] = [];
+    const violationsByTrade = new Map<string, number>();
+    for (const row of alertRows) {
+      const data = row.data as unknown as AlertData;
+      if (data.type === "RULE_VIOLATION" && data.tradeId !== null) {
+        violationsByTrade.set(data.tradeId, (violationsByTrade.get(data.tradeId) ?? 0) + 1);
+      }
+    }
+    const result = new Map<string, number | null>();
     for (const day of days) {
       const dayTrades = windowClosed.filter((t) => dateKeyOf(t.tradingDate) === day);
       const graded = dayTrades.filter((t) => t.decisionGrade !== null);
-      if (graded.length === 0) continue;
+      if (graded.length === 0) {
+        result.set(day, null);
+        continue;
+      }
       const followedPct =
         graded.filter((t) => t.followedPlan === true).length / graded.length;
       const dayMistakes = dayTrades.reduce(
         (sum, t) => sum + (mistakesByTrade.get(t.id) ?? 0),
         0,
       );
-      const tradeIds = new Set(dayTrades.map((t) => t.id));
-      const dayViolations = alertRows.filter((row) => {
-        const data = row.data as unknown as AlertData;
-        return (
-          data.type === "RULE_VIOLATION" && data.tradeId !== null && tradeIds.has(data.tradeId)
-        );
-      }).length;
+      const dayViolations = dayTrades.reduce(
+        (sum, t) => sum + (violationsByTrade.get(t.id) ?? 0),
+        0,
+      );
       const value =
         100 *
         (SCORE_WEIGHTS.plan * followedPct +
@@ -484,9 +529,9 @@ export class DisciplineService implements OnModuleInit {
             (1 - Math.min(1, dayMistakes / Math.max(1, dayTrades.length))) +
           SCORE_WEIGHTS.violations *
             (1 - Math.min(1, dayViolations / Math.max(1, dayTrades.length))));
-      scores.push(Math.max(0, Math.min(100, value)));
+      result.set(day, Math.max(0, Math.min(100, value)));
     }
-    return scores;
+    return result;
   }
 
   // ── GET /mistakes/ledger ──────────────────────────────────────────────────

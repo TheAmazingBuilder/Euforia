@@ -25,6 +25,7 @@ import { TradesModule } from "./modules/trades/trades.module";
 import { GhostsModule } from "./modules/ghosts/ghosts.module";
 import { DisciplineModule } from "./modules/discipline/discipline.module";
 import { SessionModule } from "./modules/session/session.module";
+import { CalendarModule } from "./modules/calendar/calendar.module";
 import { DomainEventsModule } from "./infrastructure/events/domain-events.module";
 import { SecurityEventModule } from "./modules/security/security-event.module";
 import { SecurityModule } from "./modules/security/security.module";
@@ -82,6 +83,11 @@ const globalExceptionFilterProvider: Provider = {
     // + logbook notes. Consumes journal facts and discipline alerts via the
     // owning contexts' narrow contracts; owns ONLY sessionNoteRow.
     SessionModule,
+    // Calendar (B7) — the trading-calendar overlay: eco events (deterministic
+    // synthetic source), day-off/news blocks, per-day aggregates (OFF days
+    // excluded server-side). Consumes journal/discipline/settings facts via
+    // narrow contracts; owns ONLY calendarBlockRow.
+    CalendarModule,
     // Security center — posture, activity, visibility (Phase 16). Orchestrates
     // identity capabilities; owns NO authentication/session/MFA logic (§3).
     SecurityModule,

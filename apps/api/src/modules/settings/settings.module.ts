@@ -28,5 +28,8 @@ import { SettingsService } from "./settings.service";
   imports: [PrismaModule, IdentityModule, AccountsModule, SecurityEventModule],
   controllers: [SettingsController],
   providers: [SettingsService],
+  // Narrow contract (house pattern): consumers of the preferences doc
+  // (calendar guard-line) consume the service — never User rows directly.
+  exports: [SettingsService],
 })
 export class SettingsModule {}
