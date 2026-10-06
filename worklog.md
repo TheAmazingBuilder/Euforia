@@ -203,3 +203,22 @@ Work Log:
 Stage Summary:
 - PARITÉ BACKEND COMPLÈTE : B1-B13 tous livrés — 460/460 tests e2e verts (38 fichiers), lint propre, typecheck OK.
 - Reste : Phase C (bridge live NEXT_PUBLIC_API_LIVE + smoke E2E) → Phase D (vérification totale + worklog + rapport final).
+
+---
+Task ID: phase-c (bridge live + B14)
+Agent: Super Z (main)
+Date: 2026-10-06 17:10 UTC
+
+Task: Phase C — brancher le frontend sur le vrai backend (NEXT_PUBLIC_API_LIVE + smoke E2E) et Phase D partielle
+
+Work Log:
+- Pont live : rewrite Next `/api/v1/:path*` → `API_PROXY_TARGET` (défaut http://localhost:4000) — same-origin, zéro CORS, cookie HttpOnly `cosmoz_rt` first-party. `NEXT_PUBLIC_API_LIVE=true` → base `/api/v1` + pas de MSW ; le mock reste le DÉFAUT zéro-env (sémantique inversée : NEXT_PUBLIC_API_MOCKED!=="false" && LIVE!=="true").
+- DÉRIVE DE CONTRAT TRACQUÉE : le refresh frontend envoyait `Content-Type: application/json` avec corps vide — le mock MSW tolérait, Fastify rejette 400 → session non restaurée au reload. Fix : plus de header sur le refresh (contrat : pas de corps).
+- DÉCOUVERTE MAJEURE : le module Integration Hub (page /integrations, 6 routes §5-§27) n'avait AUCUN backend — l'audit l'avait manqué. B14 CONSTRUIT : module `integrations` (catalogue 12 providers statique + état par user sur IntegrationRow kind=PROVIDER|WEBHOOK|EVENT|ERROR|ECO|NEWS|SEEN, seed paresseux, connect/disconnect/test/sync, §32 scénario cTrader, §12 pipeline webhook HMAC idempotent, §28 rétention, secrets jamais sur le wire). 2 migrations (table + unique). 4 e2e.
+- Smoke live `scripts/verify-live-bridge.js` : register UI → token dev-mail → verify → login → 15 routes → write-through discipline/OCR/nofy + persistance après reload → audit trafic. RÉSULTAT FINAL : 26/26, 330 requêtes /api/v1, zéro 4xx/5xx, zéro pageerror.
+- Pièges : process serveurs qui meurent entre appels bash → subshell `(setsid nohup … &)` OBLIGATOIRE ; pkill "next start" ne tue pas next-server → `fuser -k 3000/tcp` ; build mélangé (serveur stale + .next neuf) = pages vides sans hydratation ; racine/.env + DATABASE_URL shell sqlite écrasent apps/api/.env pour Prisma (migrate dev non-interactif échoue sur warning → migration SQL manuelle + migrate deploy) ; identifiants mock = trader@cosmoz.app / cosmoz-demo-2026 (verify-recognition.js corrigé).
+- Suite API : 464/464 verts (460 + 4 B14), lint propre, typecheck OK. Builds défaut (mocké, probe recognition vert) et live (26/26) validés. Commit `git log -1`.
+
+Stage Summary:
+- PHASE C COMPLÈTE : le frontend tourne de bout en bout sur le vrai backend. Parité backend B1-B14 (14/14 domaines).
+- Reste : Phase D — vérification finale totale + rapport.
