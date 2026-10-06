@@ -28,12 +28,13 @@
   --eu-warning: #f59e0b;
   --eu-error: #ef4444;
 
-  /* Official gradients */
+  /* Official gradients — sampled from the founder's reference artwork */
   --eu-gradient-primary: linear-gradient(
-    135deg,
-    #8b5cf6 0%,
-    #6366f1 46%,
-    #22d3ee 100%
+    93deg,
+    #7b22f4 0%,
+    #6318e8 28%,
+    #4299fd 62%,
+    #28d6f6 100%
   );
   --eu-gradient-text: linear-gradient(90deg, #a78bfa 0%, #22d3ee 100%);
 }

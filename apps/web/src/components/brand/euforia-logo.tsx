@@ -1,21 +1,19 @@
 "use client";
 
-import { useId } from "react";
-
 import { cn } from "@/lib/utils";
 
 /**
- * EuforiaLogo — the official brand mark (docs/brand-guide.md).
+ * EuforiaLogo — the official brand mark, vectorized verbatim from the
+ * founder's reference artwork (three-ribbon "E", violet→cyan gradient).
  *
- * The approved symbol is a stylized "E" made of three flowing ribbon bands.
- * The geometry below is the kit's artwork verbatim (euforia-mark.svg /
- * favicon.svg / euforia-mark-white|black.svg) — never re-proportion it,
- * never add candlesticks, dollar symbols or other gradients (forbidden
- * treatments §9).
+ * The geometry lives in the /brand SVGs (public/brand/euforia-*.svg) —
+ * traced from the reference image, NOT re-drawn: the mark must stay
+ * pixel-identical to it. Never re-proportion, never add candlesticks,
+ * dollar symbols or other gradients (forbidden treatments §9).
  *
  * Variants:
  *  - "mark" — the squircle app icon: deep-navy tile + gradient ribbons
- *    (favicon construction). Use in compact navigation, loading states,
+ *    (euforia-icon.svg). Use in compact navigation, loading states,
  *    avatars/watermarks.
  *  - "full" — mark + "Euforia" wordmark (+ optional tagline). Minimum
  *    120px wide per the guide; never use the tagline below that.
@@ -49,12 +47,14 @@ const WORDMARK_CLASS: Record<EuforiaLogoSize, string> = {
   lg: "text-2xl",
 };
 
-/** Ribbon artwork — verbatim from the kit's euforia-mark.svg (viewBox 216×224). */
-const RIBBONS = [
-  "M31 75 C22 57 31 38 51 31 L184 0 L172 37 L65 66 C54 69 49 76 52 84 C55 93 64 96 75 92 L169 64 L157 101 L66 128 C46 134 30 122 28 104 C27 94 28 84 31 75 Z",
-  "M31 126 C22 108 31 89 51 82 L151 53 L139 90 L66 113 C55 116 49 123 52 131 C55 140 64 143 75 139 L136 121 L124 157 L66 174 C46 180 30 168 28 150 C27 140 28 134 31 126 Z",
-  "M31 177 C22 159 31 140 51 133 L116 114 L104 151 L66 162 C55 165 49 172 52 180 C55 189 64 192 75 188 L101 181 L89 216 L66 223 C46 229 30 217 28 199 C27 189 28 185 31 177 Z",
-] as const;
+/** Mark artwork per tone — traced reference geometry, served from /brand. */
+const MARK_SRC: Record<EuforiaLogoTone, string> = {
+  dark: "/brand/euforia-icon.svg",
+  light: "/brand/euforia-icon.svg",
+  auto: "/brand/euforia-icon.svg",
+  white: "/brand/euforia-mark-white.svg",
+  black: "/brand/euforia-mark-black.svg",
+};
 
 const WORDMARK_FILL: Record<EuforiaLogoTone, string | undefined> = {
   dark: "#F8FAFC", // euforia-logo-dark.svg
@@ -64,10 +64,8 @@ const WORDMARK_FILL: Record<EuforiaLogoTone, string | undefined> = {
   auto: undefined, // inherit the theme's foreground token
 };
 
-const MONO_FILL: Record<"white" | "black", string> = {
-  white: "#FFFFFF",
-  black: "#020617",
-};
+/** Bare mark aspect ratio (750×918 traced artwork). */
+const MARK_ASPECT = 750 / 918;
 
 export function EuforiaLogo({
   variant = "mark",
@@ -83,61 +81,23 @@ export function EuforiaLogo({
   withTagline?: boolean;
   className?: string;
 }) {
-  const uid = useId();
-  const gradientId = `eu-grad-${uid}`;
   const px = MARK_PX[size];
-  const mono = tone === "white" || tone === "black";
-  const fill = mono ? MONO_FILL[tone] : `url(#${gradientId})`;
+  const bare = tone === "white" || tone === "black";
+  // width/height are ATTRIBUTES so Tailwind size-* classes (watermark 560px,
+  // collapsed sidebar size-7) override them; they only act as the default.
+  const wAttr = bare ? Math.round(px * MARK_ASPECT) : px;
 
-  // Gradient tones use the favicon construction (navy squircle tile);
-  // monochrome tones use the bare 216×224 artwork.
-  const mark = mono ? (
-    <svg
-      viewBox="0 0 216 224"
-      width={px}
-      height={(px * 224) / 216}
+  const mark = (
+    <img
+      src={MARK_SRC[tone]}
+      alt="Euforia"
       role={variant === "full" ? undefined : "img"}
-      aria-label={variant === "full" ? undefined : "Euforia"}
       aria-hidden={variant === "full" ? true : undefined}
-      className={cn("shrink-0", variant === "mark" && className)}
-      style={variant === "full" ? { height: px, width: "auto" } : undefined}
-    >
-      {RIBBONS.map((d) => (
-        <path key={d.slice(0, 24)} d={d} fill={fill} />
-      ))}
-    </svg>
-  ) : (
-    <svg
-      viewBox="0 0 256 256"
-      width={px}
+      draggable={false}
+      width={wAttr}
       height={px}
-      role={variant === "full" ? undefined : "img"}
-      aria-label={variant === "full" ? undefined : "Euforia"}
-      aria-hidden={variant === "full" ? true : undefined}
-      className={cn("shrink-0", variant === "mark" && className)}
-      style={variant === "full" ? { height: px, width: "auto" } : undefined}
-    >
-      <defs>
-        <linearGradient
-          id={gradientId}
-          x1="20"
-          y1="20"
-          x2="230"
-          y2="230"
-          gradientUnits="userSpaceOnUse"
-        >
-          <stop offset="0%" stopColor="#8B5CF6" />
-          <stop offset="46%" stopColor="#6366F1" />
-          <stop offset="100%" stopColor="#22D3EE" />
-        </linearGradient>
-      </defs>
-      <rect width="256" height="256" rx="56" fill="#020617" />
-      <g transform="translate(27 17) scale(.93)">
-        {RIBBONS.map((d) => (
-          <path key={d.slice(0, 24)} d={d} fill={fill} />
-        ))}
-      </g>
-    </svg>
+      className={cn("shrink-0 select-none", variant === "mark" && className)}
+    />
   );
 
   if (variant === "mark") {

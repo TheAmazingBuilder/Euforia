@@ -32,9 +32,11 @@ export const brand = {
   },
 
   gradients: {
-    /** Primary brand gradient (135°) — violet → indigo → cyan. */
-    primary: "linear-gradient(135deg, #8B5CF6 0%, #6366F1 46%, #22D3EE 100%)",
-    /** Text gradient (90°) — light violet → cyan. */
+    /** Mark gradient — sampled from the founder's reference artwork (axis:
+     *  left → upper-right, ~93deg). Used by the traced mark SVGs. */
+    primary:
+      "linear-gradient(93deg, #7B22F4 0%, #6318E8 28%, #4299FD 62%, #28D6F6 100%)",
+    /** Text gradient (90°) — light violet → cyan (reference tagline). */
     text: "linear-gradient(90deg, #A78BFA 0%, #22D3EE 100%)",
   },
 } as const;
