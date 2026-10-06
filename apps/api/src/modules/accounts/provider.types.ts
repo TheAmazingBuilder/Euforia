@@ -2,7 +2,7 @@
  * Trading provider abstraction (Phase 3 §9–§14).
  *
  * The core domain NEVER depends on MT5 / IC Markets / cTrader / any SDK —
- * it depends on this interface and on the normalized Cosmoz shapes below.
+ * it depends on this interface and on the normalized Euforia shapes below.
  * Provider-specific code stays inside its adapter boundary; provider-specific
  * types never leak past it (§11).
  *
@@ -30,7 +30,7 @@ export interface ProviderCredentials {
 
 /**
  * Request context for data-fetching calls: WHICH external account to read.
- * Cosmoz owns the mapping account↔externalAccountId (persisted on connect);
+ * Euforia owns the mapping account↔externalAccountId (persisted on connect);
  * adapters receive it as input, never guess it.
  */
 export interface ProviderRequestContext {

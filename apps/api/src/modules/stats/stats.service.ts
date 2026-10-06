@@ -13,7 +13,7 @@
  * Sources of truth:
  *   TradesRepository (journal facts + instruments + tag joins),
  *   AccountsRepository (currency + starting balances),
- *   DisciplineService (Cosmoz daily scores + mistakes ledger),
+ *   DisciplineService (Euforia daily scores + mistakes ledger),
  *   GhostsService (settled skipped trades for Discipline Saved /
  *   Hesitation Cost / the 30-day ghost trend).
  *

@@ -2,7 +2,7 @@
  * Session price series (B3) — the deterministic projection behind
  * GET /trades/:id/session-series.
  *
- * HONESTY CONTRACT (Phase 4 §68 carries over): Cosmoz has NO market-data
+ * HONESTY CONTRACT (Phase 4 §68 carries over): Euforia has NO market-data
  * provider, so this endpoint does NOT pretend to return ticks. It builds a
  * DETERMINISTIC SYNTHETIC PATH anchored on the trade's REAL recorded points
  * (entry, exit, MFE, MAE) and interpolated in between with a seeded walk

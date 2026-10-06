@@ -30,7 +30,7 @@ afterAll(async () => {
 
 function totpCode(secretBase32: string, email: string): string {
   const totp = new TOTP({
-    issuer: "Cosmoz",
+    issuer: "Euforia",
     label: email,
     algorithm: "SHA1",
     digits: 6,

@@ -450,7 +450,7 @@ export class TradingAccountService {
   }
 
   /**
-   * Disconnect (§52): destroys credentials, preserves every piece of Cosmoz
+   * Disconnect (§52): destroys credentials, preserves every piece of Euforia
    * data (account, history, runs). Deletion is NOT offered in V1 — removal
    * semantics (soft/hard/anonymization) are an explicit product decision.
    */

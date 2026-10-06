@@ -301,7 +301,7 @@ export const PROVIDER_CATALOG: ProviderCatalogEntry[] = [
     kind: "NOTIFICATION",
     tagline: "Web-push delivery for risk and system alerts",
     description:
-      "Delivers the alerts your notification preferences allow to devices running the Cosmoz PWA.",
+      "Delivers the alerts your notification preferences allow to devices running the Euforia PWA.",
     docsUrl: null,
     capabilities: [],
     marketData: null,
@@ -382,7 +382,7 @@ const NEWS_SAMPLES: Array<Omit<NewsItem, "id" | "sample">> = [
   {
     providerKey: "sample:news-1",
     headline: "Dollar steadies as traders look past mixed US jobs revisions",
-    source: "Cosmoz Sample Wire",
+    source: "Euforia Sample Wire",
     category: "FOREX",
     publishedAt: "",
     relatedSymbols: ["EURUSD", "USDJPY"],
@@ -393,7 +393,7 @@ const NEWS_SAMPLES: Array<Omit<NewsItem, "id" | "sample">> = [
   {
     providerKey: "sample:news-2",
     headline: "Gold holds the 2 330 $ pivot ahead of the FOMC minutes",
-    source: "Cosmoz Sample Wire",
+    source: "Euforia Sample Wire",
     category: "GOLD",
     publishedAt: "",
     relatedSymbols: ["XAUUSD"],
@@ -404,7 +404,7 @@ const NEWS_SAMPLES: Array<Omit<NewsItem, "id" | "sample">> = [
   {
     providerKey: "sample:news-3",
     headline: "Bitcoin ETF inflows resume after two quiet sessions",
-    source: "Cosmoz Sample Wire",
+    source: "Euforia Sample Wire",
     category: "CRYPTO",
     publishedAt: "",
     relatedSymbols: ["BTCUSDT"],
@@ -415,7 +415,7 @@ const NEWS_SAMPLES: Array<Omit<NewsItem, "id" | "sample">> = [
   {
     providerKey: "sample:news-4",
     headline: "ECB speakers signal patience: rate path hinges on Q2 prints",
-    source: "Cosmoz Sample Wire",
+    source: "Euforia Sample Wire",
     category: "CENTRAL_BANKS",
     publishedAt: "",
     relatedSymbols: ["EURUSD", "DE40"],
@@ -426,7 +426,7 @@ const NEWS_SAMPLES: Array<Omit<NewsItem, "id" | "sample">> = [
   {
     providerKey: "sample:news-5",
     headline: "Index futures drift lower as macro calendar thins out",
-    source: "Cosmoz Sample Wire",
+    source: "Euforia Sample Wire",
     category: "INDICES",
     publishedAt: "",
     relatedSymbols: ["US500", "NAS100"],
@@ -437,7 +437,7 @@ const NEWS_SAMPLES: Array<Omit<NewsItem, "id" | "sample">> = [
   {
     providerKey: "sample:news-6",
     headline: "Oil inventories surprise: energy majors trim hedges",
-    source: "Cosmoz Sample Wire",
+    source: "Euforia Sample Wire",
     category: "MACRO",
     publishedAt: "",
     relatedSymbols: ["USOIL"],

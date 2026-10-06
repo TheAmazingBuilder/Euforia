@@ -2,7 +2,7 @@
  * Settings application service (Phase 15) — the 9-domain user preferences
  * document.
  *
- * Bounded context (Phase 15 §3): Settings owns HOW the user prefers Cosmoz
+ * Bounded context (Phase 15 §3): Settings owns HOW the user prefers Euforia
  * to behave/display information. It does NOT own identity (Profile), auth,
  * trading accounts (it only holds a validated reference, §21), integrations
  * or system configuration (§6 — no GET /settings/config exists here).

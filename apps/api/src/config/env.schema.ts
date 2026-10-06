@@ -202,7 +202,7 @@ export const envSchema = z.object({
     .url("WEB_APP_URL must be a valid URL")
     .default("http://localhost:3000"),
   /** From-header for transactional emails. */
-  EMAIL_FROM: z.string().trim().min(3).default("Cosmoz <no-reply@cosmoz.app>"),
+  EMAIL_FROM: z.string().trim().min(3).default("Euforia <no-reply@cosmoz.app>"),
 });
 
 export type Env = z.infer<typeof envSchema>;

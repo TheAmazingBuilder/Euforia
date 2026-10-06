@@ -47,7 +47,7 @@ const SYSTEM_MISTAKE_LIST = SYSTEM_MISTAKES;
 /** Rolling aggregation window used by every discipline screen (30 days). */
 const WINDOW_DAYS = 30;
 
-/** Per-day Cosmoz Index weights (mock engine parity). */
+/** Per-day Euforia Index weights (mock engine parity). */
 const SCORE_WEIGHTS = { plan: 0.55, mistakes: 0.25, violations: 0.2 } as const;
 
 type CreateRuleInput = z.infer<typeof createRuleInputSchema>;
@@ -431,7 +431,7 @@ export class DisciplineService implements OnModuleInit {
           100
         : 0;
 
-    // Per-day Cosmoz Index (mock formula) averaged over SCORED days —
+    // Per-day Euforia Index (mock formula) averaged over SCORED days —
     // computed from live facts instead of persisted daily stats.
     const scores = await this.perDayScores(userId);
     const score =
@@ -478,7 +478,7 @@ export class DisciplineService implements OnModuleInit {
   }
 
   /**
-   * Per-day Cosmoz Index over a date window — PUBLIC contract for consumers
+   * Per-day Euforia Index over a date window — PUBLIC contract for consumers
    * (calendar overlay). A day with closed but ungraded trades scores null.
    */
   async dailyScores(

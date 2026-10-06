@@ -2,7 +2,7 @@
  * Trading Core bounded context (Phase 4) — the canonical journal domain.
  *
  * The journal trade is a FIRST-CLASS business object distinct from both the
- * broker position and the broker deal (§1): Cosmoz owns its identity (§7),
+ * broker position and the broker deal (§1): Euforia owns its identity (§7),
  * the source is explicit (§8), external mappings stay separate (§9), and
  * every money computation flows through ONE authoritative implementation
  * (trade-calculations, §46).

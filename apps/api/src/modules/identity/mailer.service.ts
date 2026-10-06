@@ -129,7 +129,7 @@ export class MailerService {
     await this.deliver({
       kind: "EMAIL_VERIFICATION",
       to,
-      subject: "Verify your Cosmoz email address",
+      subject: "Verify your Euforia email address",
       actionLabel: "Verify email address",
       actionUrl: `${this.config.auth.webAppUrl}/verify-email?token=${encodeURIComponent(token)}`,
       expiresIn,
@@ -140,7 +140,7 @@ export class MailerService {
     await this.deliver({
       kind: "PASSWORD_RESET",
       to,
-      subject: "Reset your Cosmoz password",
+      subject: "Reset your Euforia password",
       actionLabel: "Choose a new password",
       actionUrl: `${this.config.auth.webAppUrl}/reset-password?token=${encodeURIComponent(token)}`,
       expiresIn,
@@ -151,7 +151,7 @@ export class MailerService {
     await this.deliver({
       kind: "EMAIL_CHANGE",
       to,
-      subject: "Confirm your new Cosmoz email address",
+      subject: "Confirm your new Euforia email address",
       actionLabel: "Confirm new email address",
       actionUrl: `${this.config.auth.webAppUrl}/verify-email?token=${encodeURIComponent(token)}`,
       expiresIn,

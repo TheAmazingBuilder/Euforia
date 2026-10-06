@@ -4,7 +4,7 @@
  *
  * Owns (§3/§43): the 9-domain preferences document (trading, risk, journal,
  * notifications, appearance, dashboard, academy, privacy, localization) —
- * HOW the user prefers Cosmoz to behave/display information.
+ * HOW the user prefers Euforia to behave/display information.
  *
  * Does NOT own (§42): identity/profile (Identity), authentication, security
  * controls (Security), trading accounts (Accounts — Settings only holds a

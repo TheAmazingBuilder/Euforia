@@ -110,7 +110,7 @@ export class ViolationsController {
 export class DisciplineController {
   constructor(private readonly discipline: DisciplineService) {}
 
-  /** GET /discipline/score — Cosmoz Discipline Score + window components. */
+  /** GET /discipline/score — Euforia Discipline Score + window components. */
   @Get("score")
   async score(@CurrentUser() principal: AuthPrincipal) {
     return this.discipline.disciplineScore(principal.userId);

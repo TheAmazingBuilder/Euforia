@@ -44,7 +44,7 @@ const ALL_READ_PERMISSIONS = [
 ] as const;
 
 /** Catalog-aligned symbols (Phase 4 §14): the mock simulates a broker whose
- * instruments all exist in the Cosmoz catalog, so the deal→trade
+ * instruments all exist in the Euforia catalog, so the deal→trade
  * reconstruction can resolve every symbol. Deterministic, read-only. */
 const SYMBOLS = ["EURUSD", "XAUUSD", "BTCUSDT", "BOOM500", "CRASH500"] as const;
 const CURRENCIES = ["USD", "EUR", "GBP"] as const;
@@ -97,7 +97,7 @@ function money(value: number): string {
 export class MockTradingProviderAdapter implements TradingProviderAdapter {
   readonly descriptor: TradingProviderDescriptor = {
     providerId: "MOCK",
-    providerName: "Cosmoz Mock Broker",
+    providerName: "Euforia Mock Broker",
     platform: "MT5",
     supportedEnvironments: ["DEMO", "LIVE"],
     supportedConnectionMethods: ["API_KEY"],
@@ -135,7 +135,7 @@ export class MockTradingProviderAdapter implements TradingProviderAdapter {
       externalAccountId: context.externalAccountId,
       currency: CURRENCIES[h % CURRENCIES.length] ?? "USD",
       leverage: String([30, 100, 200, 500][h % 4]),
-      server: "Cosmoz-MT5-Sim",
+      server: "Euforia-MT5-Sim",
     };
   }
 

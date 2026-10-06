@@ -1,7 +1,7 @@
 /**
  * Discipline bounded context (B4 — data-model.md "Domaine 7", the
  * Discipline Engine): rules CRUD, violation log (context frozen at time T),
- * alert inbox and the server-side process aggregates (Cosmoz Discipline
+ * alert inbox and the server-side process aggregates (Euforia Discipline
  * Score, emotion → outcome matrix, mistakes ledger).
  *
  * Dependency graph (acyclic):

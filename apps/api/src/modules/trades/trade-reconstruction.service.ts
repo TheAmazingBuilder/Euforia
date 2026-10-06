@@ -5,7 +5,7 @@
  *
  *   Provider  →  Accounts/Connectivity (Phase 3, normalized deals)
  *            →  THIS service (grouping by provider positionId)
- *            →  canonical Cosmoz Trade (upsert, idempotent)
+ *            →  canonical Euforia Trade (upsert, idempotent)
  *
  * It NEVER calls a broker adapter (§26) — it reads the already-normalized
  * TradingDeal rows through the Accounts module's exported repository (the

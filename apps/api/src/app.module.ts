@@ -70,7 +70,7 @@ const globalExceptionFilterProvider: Provider = {
     // (§28 evolve-not-duplicate); owns NO identity/auth/account data (§42),
     // holds only a validated default-account reference (§21).
     SettingsModule,
-    // Trading Core — the canonical journal domain (Phase 4): Cosmoz Trade
+    // Trading Core — the canonical journal domain (Phase 4): Euforia Trade
     // ≠ broker position ≠ broker deal (§1). Consumes the Accounts module's
     // narrow read contract for reconstruction (§26); owns the trade
     // lifecycle, the decision gate and ONE authoritative P&L implementation

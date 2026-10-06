@@ -1,5 +1,5 @@
 /**
- * Deterministic eco-calendar source (B7). Cosmoz has NO live macro-data
+ * Deterministic eco-calendar source (B7). Euforia has NO live macro-data
  * provider (§68 honesty contract), so the calendar runs on the SAME
  * solution as the mock engine's "macro-sample" provider: a DETERMINISTIC
  * SYNTHETIC schedule generated relative to today — seeded per date key
