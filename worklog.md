@@ -105,3 +105,15 @@ Work Log:
 Stage Summary:
 - 6 chantiers livrés (B3,B6,B4,B5,B7,B8) — 420/420 tests verts, build+lint OK.
 - Reste : B9 (session live, 12 routes) → B10 (playbook 22) → B11 (nofy 23) → B12 (academy 33) → B1 (stats 3) → B13 (accounts riche SPEC-1) → B2 (backup 2) → Phase C (bridge live) → Phase D (vérif+rapport).
+
+---
+Task ID: 1-backends (B9 livré)
+Agent: Super Z (main)
+Date: 2026-10-06 ~07:10 UTC
+
+Work Log:
+- B9 (commit dédié) : module session-live — sessions (start/409 single-active, PATCH bias/objective/notes avec événement BIAS_CHANGED, end avec résumé §43 honnête depuis journal/discipline/eco/notes/analyses, cancel), analyses sauvegardées (push ANALYSIS_SAVED), key levels (filtre symbol, push LEVEL_ADDED). sessionLiveRow kind=SESSION|ANALYSIS|LEVEL, row id = entity id. Pièges : end/cancel répondent 200 (@HttpCode OK), createSavedAnalysisInput exige indicator.id + params.length (pas period), keyLevel.price est un NUMBER.
+
+Stage Summary:
+- 7 chantiers livrés (B3,B6,B4,B5,B7,B8,B9) — 425/425 tests verts.
+- Reste : B10 (playbook 22) → B11 (nofy 23) → B12 (academy 33) → B1 (stats 3) → B13 (accounts SPEC-1) → B2 (backup) → Phase C → Phase D.
