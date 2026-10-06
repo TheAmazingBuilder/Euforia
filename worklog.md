@@ -117,3 +117,22 @@ Work Log:
 Stage Summary:
 - 7 chantiers livrés (B3,B6,B4,B5,B7,B8,B9) — 425/425 tests verts.
 - Reste : B10 (playbook 22) → B11 (nofy 23) → B12 (academy 33) → B1 (stats 3) → B13 (accounts SPEC-1) → B2 (backup) → Phase C → Phase D.
+
+---
+Task ID: 1-backends (B10 livré + forensic)
+Agent: Super Z (main)
+Date: 2026-10-06 13:30 UTC
+
+Task: Forensic demandée par l'utilisateur (travail 5h-17h) + finalisation B10 playbook
+
+Work Log:
+- FORENSIC : inventaire complet du jour reconstitué depuis git log/reflog/find — TOUS les commits 01:38→05:27 UTC identifiés (7fe462e → 6dfa88c), zéro perte. git status propre au réveil.
+- Découverte clé : le commit-snapshot plateforme 6dfa88c (05:27 UTC) contient B10 PLAYBOOK COMPLET (2071 lignes : service 811, seed 598, contrôleur 235, repo 62, module 43, e2e 313) committé sous message UUID — le code était SÛR mais non documenté.
+- DB embarquée relancée (node scripts/dev-db.mjs up), migrations réappliquées (migrate deploy), .env recréé (il disparaît à chaque restore — piège récurrent).
+- B10 finalisé : 2 tests rouges corrigés — (1) service : snapshot VERSION doit exposer `id` (= row id, exigé par strategyVersionSnapshotSchema) ; (2) test : category "ENTRY" n'existe pas dans le contrat (enum : RISK/SESSION/NEWS/BEHAVIOR/EXECUTION/CUSTOM) → "EXECUTION".
+- Suite complète : 433/433 vitest vert.
+
+Stage Summary:
+- 8 chantiers livrés et VERROUILLÉS dans git : B3, B6, B4, B5, B7, B8, B9, B10 — 433/433 tests e2e verts.
+- Reste : B11 (nofy 23) → B12 (academy 33) → B1 (stats 3) → B13 (accounts SPEC-1) → B2 (backup 2) → Phase C (bridge live) → Phase D (vérif+rapport).
+- Rappel pièges permanents : .env disparaît au restore ; DB fresh → migrate deploy ; commit à CHAQUE livrable.

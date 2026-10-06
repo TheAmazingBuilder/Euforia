@@ -221,7 +221,7 @@ describe("setups, checklists, rules (B10)", () => {
       method: "POST",
       url: "/api/v1/playbook/rules",
       headers: auth(user),
-      payload: { title: "Scoped but dangling", detail: "No strategy attached.", category: "ENTRY", scope: "STRATEGY" },
+      payload: { title: "Scoped but dangling", detail: "No strategy attached.", category: "EXECUTION", scope: "STRATEGY" },
     });
     expect(badRule.statusCode).toBe(422);
 
@@ -232,7 +232,7 @@ describe("setups, checklists, rules (B10)", () => {
       payload: {
         title: "Never chase",
         detail: "If the entry moved more than 0.5 × ATR without you — skip.",
-        category: "ENTRY",
+        category: "EXECUTION",
         scope: "GLOBAL",
         evaluatable: false,
       },

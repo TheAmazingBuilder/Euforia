@@ -166,11 +166,15 @@ export class PlaybookService {
     );
     if (touchesDefinition) {
       const priorVersion = strategy.version ?? 1;
+      // The frozen row's id doubles as the snapshot id the shared contract
+      // exposes (strategyVersionSnapshotSchema requires `id`).
+      const versionRowId = crypto.randomUUID();
       await this.repository.insert(
         userId,
         "VERSION",
-        crypto.randomUUID(),
+        versionRowId,
         {
+          id: versionRowId,
           strategyId: strategy.id,
           version: priorVersion,
           snapshot: structuredClone(strategy),
