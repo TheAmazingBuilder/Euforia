@@ -136,3 +136,20 @@ Stage Summary:
 - 8 chantiers livrés et VERROUILLÉS dans git : B3, B6, B4, B5, B7, B8, B9, B10 — 433/433 tests e2e verts.
 - Reste : B11 (nofy 23) → B12 (academy 33) → B1 (stats 3) → B13 (accounts SPEC-1) → B2 (backup 2) → Phase C (bridge live) → Phase D (vérif+rapport).
 - Rappel pièges permanents : .env disparaît au restore ; DB fresh → migrate deploy ; commit à CHAQUE livrable.
+
+---
+Task ID: 1-backends (B11 livré)
+Agent: Super Z (main)
+Date: 2026-10-06 13:40 UTC
+
+Work Log:
+- B11 (module nofy, 23 routes) : nofyRow kind=NOTE|FOLDER|TAG|TEMPLATE|VERSION (row id = entity id). Lazy seed par user (7 dossiers, 10 tags, 5 templates builtin, 8 notes + 1 trashed) avec refs pointant vers les VRAIES entités du user (trade perdant/gagnant, stratégie, setup, event HIGH, instrument XAUUSD — fallbacks gracieux si absents).
+- Reads : overview (totaux, activity 8 semaines lundi→dimanche, topTags, recentEdited/Viewed/Favorites), listes (view all/favorites/trash/recent/folder/tag + q + sort), note détail (GET re-résout les refs et touche lastViewedAt), search (snippets ±60/80), listNotesLinkedTo (?refKind&refId — intégration Playbook/Trade Review), refs entity picker (TRADE/STRATEGY/SETUP/RULE/EVENT/SYMBOL/NOTE — LESSON stocké mais non résolu tant que B12 n'existe pas, documenté honnête).
+- Writes : note CRUD (create avec template, PATCH autosave avec snapshot version conditionnel 3 min + cap 12 PERSISTANT, trash/restore/purge + purge des versions, duplicate "(copy)"), folders (create/rename 409 case-insensitive, delete → notes fallback "No folder"), tags idempotents par nom (strip #), templates (capture depuis note SANS fuir les refs personnelles, instantiate DRAFT).
+- Refs re-résolues à CHAQUE lecture (labels/hrefs jamais stalés, spec §24/§31). TRADE via TradesService.listTrades (rMultiple wire), SYMBOL via instruments, EVENT via generateEcoEvents (B7), STRATEGY/SETUP/RULE via PlaybookService (export ajouté), NOTE via nofyRow.
+- CONTRAT : schémas de réponse Zod ajoutés à packages/shared/src/schemas/nofy.ts (nofyNoteSchema, nofyNotesResponseSchema, overview/search/refs/versions...) — l'API et les tests valident les sorties contre les MÊMES schémas que le frontend.
+- Pièges : purgeNote doit matcher les VERSION rows par data.noteId (le row id EST la version id) ; le template "from note" garde des blocs type "ref" SANS payload (le mock fait pareil) ; TradesModule exporte maintenant TradesService aussi.
+
+Stage Summary:
+- 9 chantiers livrés (B3,B6,B4,B5,B7,B8,B9,B10,B11) — 442/442 tests verts, typecheck OK.
+- Reste : B12 (academy 33) → B1 (stats 3) → B13 (accounts SPEC-1) → B2 (backup 2) → Phase C (bridge live) → Phase D (vérif+rapport).

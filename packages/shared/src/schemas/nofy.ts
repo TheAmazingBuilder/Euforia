@@ -319,3 +319,216 @@ export const nofyTemplateInstantiateInputSchema = z.object({
   folderId: z.string().nullable().optional(),
 });
 export type NofyTemplateInstantiateInput = z.infer<typeof nofyTemplateInstantiateInputSchema>;
+// ── Response schemas (read models validated by BOTH the API and the tests) ──
+
+export const nofyBlockSchema = z.object({
+  id: z.string().min(1).max(64),
+  type: nofyBlockTypeSchema,
+  text: z.string().max(20_000),
+  checked: z.boolean().optional(),
+  tone: nofyCalloutToneSchema.optional(),
+  src: z.string().max(2_000_000).optional(),
+  alt: z.string().max(300).optional(),
+  caption: z.string().max(300).optional(),
+  rows: z.array(z.array(z.string().max(2_000)).max(8)).max(200).optional(),
+  ref: z
+    .object({
+      kind: nofyRefKindSchema,
+      id: z.string().min(1).max(128),
+      label: z.string().max(200).optional(),
+      meta: z.string().max(200).nullable().optional(),
+      href: z.string().max(300).nullable().optional(),
+    })
+    .optional(),
+});
+export type NofyBlockSchema = z.infer<typeof nofyBlockSchema>;
+
+export const nofyLessonRefSchema = z.object({
+  courseId: z.string().min(1),
+  courseTitle: z.string().min(1),
+  lessonId: z.string().min(1),
+  lessonTitle: z.string().min(1),
+});
+export type NofyLessonRefSchema = z.infer<typeof nofyLessonRefSchema>;
+
+export const nofyNoteSchema = z.object({
+  id: z.string().min(1),
+  userId: z.string().min(1),
+  title: z.string().max(200),
+  icon: z.string().max(16).nullable(),
+  folderId: z.string().nullable(),
+  tagIds: z.array(z.string()),
+  favorite: z.boolean(),
+  templateId: z.string().nullable(),
+  lessonRef: nofyLessonRefSchema.nullable(),
+  blocks: z.array(nofyBlockSchema),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  lastViewedAt: z.string().nullable(),
+  deletedAt: z.string().nullable(),
+});
+export type NofyNoteSchema = z.infer<typeof nofyNoteSchema>;
+
+export const nofyNoteRowSchema = z.object({
+  id: z.string().min(1),
+  title: z.string().max(200),
+  icon: z.string().max(16).nullable(),
+  folderId: z.string().nullable(),
+  folderName: z.string().nullable(),
+  tagIds: z.array(z.string()),
+  tagNames: z.array(z.string()),
+  favorite: z.boolean(),
+  templateId: z.string().nullable(),
+  lessonRef: nofyLessonRefSchema.nullable(),
+  excerpt: z.string(),
+  wordCount: z.number().int().min(0),
+  blockCount: z.number().int().min(0),
+  refCount: z.number().int().min(0),
+  todoOpen: z.number().int().min(0),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  lastViewedAt: z.string().nullable(),
+  deletedAt: z.string().nullable(),
+});
+export type NofyNoteRowSchema = z.infer<typeof nofyNoteRowSchema>;
+
+export const nofyNoteResponseSchema = z.object({
+  note: nofyNoteSchema,
+  folderName: z.string().nullable(),
+  tagNames: z.array(z.string()),
+});
+export type NofyNoteResponseSchema = z.infer<typeof nofyNoteResponseSchema>;
+
+export const nofyNotesResponseSchema = z.object({
+  notes: z.array(nofyNoteRowSchema),
+  total: z.number().int().min(0),
+});
+export type NofyNotesResponseSchema = z.infer<typeof nofyNotesResponseSchema>;
+
+export const nofyFoldersResponseSchema = z.object({
+  folders: z.array(
+    z.object({
+      id: z.string().min(1),
+      name: z.string().min(1).max(80),
+      createdAt: z.string(),
+      noteCount: z.number().int().min(0),
+    }),
+  ),
+});
+export type NofyFoldersResponseSchema = z.infer<typeof nofyFoldersResponseSchema>;
+
+export const nofyTagsResponseSchema = z.object({
+  tags: z.array(
+    z.object({
+      id: z.string().min(1),
+      name: z.string().min(1),
+      noteCount: z.number().int().min(0),
+    }),
+  ),
+});
+export type NofyTagsResponseSchema = z.infer<typeof nofyTagsResponseSchema>;
+
+export const nofyTemplatesResponseSchema = z.object({
+  templates: z.array(
+    z.object({
+      id: z.string().min(1),
+      name: z.string().min(1).max(120),
+      description: z.string().max(300),
+      icon: z.string().max(16),
+      blocks: z.array(nofyBlockSchema),
+      builtIn: z.boolean(),
+      createdAt: z.string(),
+    }),
+  ),
+});
+export type NofyTemplatesResponseSchema = z.infer<typeof nofyTemplatesResponseSchema>;
+
+export const nofyVersionsResponseSchema = z.object({
+  versions: z.array(
+    z.object({
+      id: z.string().min(1),
+      title: z.string(),
+      savedAt: z.string(),
+      wordCount: z.number().int().min(0),
+    }),
+  ),
+});
+export type NofyVersionsResponseSchema = z.infer<typeof nofyVersionsResponseSchema>;
+
+export const nofyVersionResponseSchema = z.object({
+  version: z.object({
+    id: z.string().min(1),
+    title: z.string(),
+    savedAt: z.string(),
+    blocks: z.array(nofyBlockSchema),
+  }),
+});
+export type NofyVersionResponseSchema = z.infer<typeof nofyVersionResponseSchema>;
+
+export const nofyActivityWeekSchema = z.object({
+  weekStart: z.string(),
+  created: z.number().int().min(0),
+  edited: z.number().int().min(0),
+});
+export type NofyActivityWeekSchema = z.infer<typeof nofyActivityWeekSchema>;
+
+export const nofyOverviewResponseSchema = z.object({
+  totals: z.object({
+    notes: z.number().int().min(0),
+    createdThisWeek: z.number().int().min(0),
+    favorites: z.number().int().min(0),
+    folders: z.number().int().min(0),
+    tags: z.number().int().min(0),
+    trashed: z.number().int().min(0),
+  }),
+  recentEdited: z.array(nofyNoteRowSchema),
+  recentViewed: z.array(nofyNoteRowSchema),
+  favorites: z.array(nofyNoteRowSchema),
+  folders: z.array(
+    z.object({
+      id: z.string().min(1),
+      name: z.string().min(1).max(80),
+      createdAt: z.string(),
+      noteCount: z.number().int().min(0),
+    }),
+  ),
+  topTags: z.array(
+    z.object({
+      id: z.string().min(1),
+      name: z.string().min(1),
+      noteCount: z.number().int().min(0),
+    }),
+  ),
+  activity: z.array(nofyActivityWeekSchema),
+  templates: z.array(
+    z.object({
+      id: z.string().min(1),
+      name: z.string().min(1).max(120),
+      description: z.string().max(300),
+      icon: z.string().max(16),
+      blocks: z.array(nofyBlockSchema),
+      builtIn: z.boolean(),
+      createdAt: z.string(),
+    }),
+  ),
+});
+export type NofyOverviewResponseSchema = z.infer<typeof nofyOverviewResponseSchema>;
+
+export const nofySearchResponseSchema = z.object({
+  results: z.array(nofyNoteRowSchema.extend({ snippet: z.string() })),
+  total: z.number().int().min(0),
+});
+export type NofySearchResponseSchema = z.infer<typeof nofySearchResponseSchema>;
+
+export const nofyRefsResponseSchema = z.object({
+  refs: z.array(
+    z.object({
+      kind: nofyRefKindSchema,
+      id: z.string().min(1),
+      label: z.string(),
+      meta: z.string().nullable(),
+      href: z.string().nullable(),
+    }),
+  ),
+});
+export type NofyRefsResponseSchema = z.infer<typeof nofyRefsResponseSchema>;

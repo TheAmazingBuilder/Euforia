@@ -29,6 +29,7 @@ import { CalendarModule } from "./modules/calendar/calendar.module";
 import { ReviewModule } from "./modules/review/review.module";
 import { SessionLiveModule } from "./modules/session-live/session-live.module";
 import { PlaybookModule } from "./modules/playbook/playbook.module";
+import { NofyModule } from "./modules/nofy/nofy.module";
 import { DomainEventsModule } from "./infrastructure/events/domain-events.module";
 import { SecurityEventModule } from "./modules/security/security-event.module";
 import { SecurityModule } from "./modules/security/security.module";
@@ -104,6 +105,11 @@ const globalExceptionFilterProvider: Provider = {
     // library and the module aggregates. Owns playbookRow
     // (STRATEGY|SETUP|CHECKLIST|RULE|VERSION).
     PlaybookModule,
+    // Nofy (B11) — the personal trading knowledge & notes workspace: notes
+    // of ordered blocks, folders, tags, templates, version history, search,
+    // entity picker. Reference blocks are relational pointers re-resolved
+    // server-side at read time. Owns nofyRow (NOTE|FOLDER|TAG|TEMPLATE|VERSION).
+    NofyModule,
     // Security center — posture, activity, visibility (Phase 16). Orchestrates
     // identity capabilities; owns NO authentication/session/MFA logic (§3).
     SecurityModule,

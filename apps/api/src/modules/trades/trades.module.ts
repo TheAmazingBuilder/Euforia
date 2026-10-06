@@ -55,6 +55,6 @@ const screenshotStorageProvider = {
   // reference journal infrastructure (ghosts validate instrument ids against
   // the catalog; discipline aggregates consume journal facts) consume the
   // repository — never the service internals.
-  exports: [TradesRepository],
+  exports: [TradesRepository, TradesService],
 })
 export class TradesModule {}
