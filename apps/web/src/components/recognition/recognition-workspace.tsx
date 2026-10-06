@@ -374,14 +374,6 @@ function WorkspaceInner() {
         </section>
       ) : null}
 
-      {items.length > 0 ? (
-        <RecentImports
-          dict={dict}
-          items={recent}
-          onOpen={(id) => setParams({ job: id })}
-          onOpenHistory={() => setParams({ tab: "history" })}
-        />
-      ) : null}
     </div>
   );
 }

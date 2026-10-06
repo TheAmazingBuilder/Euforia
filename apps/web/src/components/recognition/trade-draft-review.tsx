@@ -82,6 +82,14 @@ export function TradeDraftReview({
           <section key={section.titleKey} aria-label={dict.draft.sections[section.titleKey]} className="border-t border-border pt-3 first:border-t-0">
             <p className="ledger-label">{dict.draft.sections[section.titleKey]}</p>
             <dl className="mt-2 grid grid-cols-[minmax(0,1fr)_minmax(0,auto)] gap-x-6">
+              {section.titleKey === "basic" ? (
+                <div className="col-span-2 grid grid-cols-subgrid items-baseline border-b border-border/60 py-2" data-testid="draft-platform">
+                  <dt className="text-sm text-muted-foreground">{dict.draft.platform}</dt>
+                  <dd className="text-right font-mono text-[15px] tabular-nums">
+                    {platformLabel(dict, recognition.classification)}
+                  </dd>
+                </div>
+              ) : null}
               {section.fields.map((field) => {
                 const tone = field === "profit" ? profitTone(value(field)) : null;
                 return (
@@ -111,12 +119,6 @@ export function TradeDraftReview({
             </dl>
           </section>
         ))}
-        <div className="border-t border-border pt-3">
-          <p className="ledger-label">{dict.draft.sections.basic}</p>
-          <p className="mt-2 text-sm text-muted-foreground">
-            {dict.draft.platform} — {platformLabel(dict, recognition.classification)}
-          </p>
-        </div>
       </div>
 
       <div className="flex flex-col gap-3 rounded-xl border border-border bg-surface px-4 py-4 sm:flex-row sm:items-center sm:justify-between" data-testid="recognition-confirm-zone">

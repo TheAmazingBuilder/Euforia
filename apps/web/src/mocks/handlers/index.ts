@@ -1,5 +1,6 @@
 import { brokerHandlers } from "./broker";
 import { authHandlers } from "./auth";
+import { ocrHandlers } from "./ocr";
 import { catalogHandlers } from "./catalogs";
 import { preferencesHandlers } from "./preferences";
 import { disciplineHandlers } from "./discipline";
@@ -22,6 +23,7 @@ import { nofyHandlers } from "./nofy";
 /** Full §12 endpoint matrix, one file per domain. */
 export const handlers = [
   ...authHandlers,
+  ...ocrHandlers,
   ...catalogHandlers,
   ...playbookHandlers,
   ...tradeHandlers,

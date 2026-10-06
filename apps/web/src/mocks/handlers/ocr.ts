@@ -440,7 +440,7 @@ export const ocrHandlers = [
       requireAuth(request);
       await latency();
       ensureSeeds();
-      const id = pathParam(params, ":id");
+      const id = pathParam(params, "id");
       const found = store.get(id);
       if (!found) {
         return HttpResponse.json({ error: "Recognition not found." }, { status: 404 });
@@ -456,7 +456,7 @@ export const ocrHandlers = [
     try {
       requireAuth(request);
       ensureSeeds();
-      const id = pathParam(params, ":id");
+      const id = pathParam(params, "id");
       const found = store.get(id);
       if (!found) {
         return HttpResponse.json({ error: "Recognition not found." }, { status: 404 });
@@ -481,7 +481,7 @@ export const ocrHandlers = [
     try {
       requireAuth(request);
       await latency();
-      const id = pathParam(params, ":id");
+      const id = pathParam(params, "id");
       const found = store.get(id);
       if (!found) {
         return HttpResponse.json({ error: "Recognition not found." }, { status: 404 });
@@ -511,7 +511,7 @@ export const ocrHandlers = [
     try {
       requireAuth(request);
       await latency();
-      const id = pathParam(params, ":id");
+      const id = pathParam(params, "id");
       if (!store.has(id)) {
         return HttpResponse.json({ error: "Recognition not found." }, { status: 404 });
       }
