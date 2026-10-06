@@ -125,6 +125,7 @@ model User {
   playbookRows      PlaybookRow[]
   nofyRows          NofyRow[]
   academyRows       AcademyRow[]
+  integrationRows   IntegrationRow[]
   tagRows           TagRow[]
 
   @@index([status])
@@ -945,4 +946,24 @@ model TagRow {
   updatedAt DateTime @updatedAt
 
   @@index([userId])
+}
+
+/// Integration Hub context — per-user provider connections, webhook endpoints,
+/// audit event log, error ledger, normalized eco events and sample news.
+/// The provider REGISTRY (12 catalog entries with capabilities/licensing) is
+/// static module content; these rows hold only per-user runtime state.
+model IntegrationRow {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// PROVIDER | WEBHOOK | EVENT | ERROR | ECO | NEWS | SEEN
+  kind      String
+  /// providerId ("deriv") / webhook id ("wh-macro") / providerKey for ECO+SEEN.
+  refId     String
+  data      Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, kind])
+  @@unique([userId, kind, refId])
 }

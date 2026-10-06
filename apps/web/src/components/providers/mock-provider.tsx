@@ -3,10 +3,13 @@
 import * as React from "react";
 
 /**
- * Boots the MSW worker before rendering children — but ONLY when
- * NEXT_PUBLIC_API_MOCKED === "true". Components know nothing about MSW;
- * when the env flag is off this provider is a transparent passthrough and
- * the future NestJS API serves the same contract.
+ * Boots the MSW worker before rendering children — but ONLY when mocking is
+ * active. Mocking is the DEFAULT (the canonical preview needs zero env); the
+ * two ways to leave mock mode:
+ *   - NEXT_PUBLIC_API_LIVE=true (the live bridge — explicit opt-in)
+ *   - NEXT_PUBLIC_API_MOCKED=false (explicit legacy switch)
+ * When neither applies this provider is a transparent passthrough and the
+ * real NestJS API serves the same contract.
  *
  * The start promise is a module-level singleton: React Strict Mode
  * double-invokes effects in dev, and MSW throws when started twice.
@@ -28,7 +31,9 @@ function startWorkerOnce(): Promise<void> {
 }
 
 export function MockProvider({ children }: { children: React.ReactNode }) {
-  const mocked = process.env.NEXT_PUBLIC_API_MOCKED === "true";
+  const mocked =
+    process.env.NEXT_PUBLIC_API_MOCKED !== "false" &&
+    process.env.NEXT_PUBLIC_API_LIVE !== "true";
   // SSR and first client render agree: not ready when mocking, ready otherwise.
   const [ready, setReady] = React.useState(!mocked);
 

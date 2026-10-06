@@ -44,9 +44,11 @@ async function doRefresh(): Promise<boolean> {
   try {
     // Raw fetch, deliberately NOT the authenticated client — no Authorization
     // header, no interceptor. Cookies ride along (same-origin credentials).
+    // NO Content-Type header: the request carries NO body, and a JSON
+    // content-type with an empty body is a hard 400 on the real API
+    // (Fastify JSON parser) even though the MSW mock tolerated it.
     const response = await fetch(buildApiUrl(apiPaths.authRefresh), {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
     });
     if (!response.ok) {
       clearAccessToken();

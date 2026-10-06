@@ -14,8 +14,8 @@ const { chromium } = require("playwright");
   // 2) Login with the demo credentials
   await page.goto("http://localhost:3000/login", { waitUntil: "networkidle", timeout: 60000 });
   await page.waitForTimeout(600);
-  const email = process.env.DEMO_EMAIL || "demo@cosmoz.app";
-  const password = process.env.DEMO_PASSWORD || "Demo1234!";
+  const email = process.env.DEMO_EMAIL || "trader@cosmoz.app";
+  const password = process.env.DEMO_PASSWORD || "cosmoz-demo-2026";
   await page.fill('input[type="email"]', email).catch(() => console.log("no email input"));
   await page.fill('input[type="password"]', password).catch(() => console.log("no password input"));
   await page.click('button[type="submit"]').catch(() => console.log("no submit"));

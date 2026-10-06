@@ -4,8 +4,19 @@
  * registered handler URLs always match requested URLs.
  */
 
-/** Base URL of the COSMOZ API. Same-origin "/api" in mocked dev mode. */
-export const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "/api";
+/**
+ * Base URL of the COSMOZ API.
+ *
+ * - Default (mocked dev): same-origin "/api" — MSW intercepts.
+ * - Live bridge (NEXT_PUBLIC_API_LIVE=true): same-origin "/api/v1" — the
+ *   NestJS backend serves the versioned prefix and next.config.ts proxies
+ *   /api/v1 to it, keeping every request first-party (cookies, no CORS).
+ * - NEXT_PUBLIC_API_URL always wins when set (direct cross-origin pointing;
+ *   include the version segment, e.g. http://localhost:4000/api/v1).
+ */
+export const API_BASE =
+  process.env.NEXT_PUBLIC_API_URL ??
+  (process.env.NEXT_PUBLIC_API_LIVE === "true" ? "/api/v1" : "/api");
 
 export type ApiQuery = Record<
   string,
