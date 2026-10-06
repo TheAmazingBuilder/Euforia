@@ -42,9 +42,10 @@ export const queryKeys = {
   integrations: ["integrations"] as const,
   security: ["security"] as const,
   monitoring: ["monitoring"] as const,
-  // OCR & screenshot recognition (/recognition)
+  // Import & Recognition (/recognition — PROMPT 3)
   ocrRecognitions: (status?: string) => ["ocr-recognitions", status ?? "all"] as const,
   ocrRecognitionsRoot: ["ocr-recognitions"] as const,
+  ocrRecognition: (id: string) => ["ocr-recognitions", "job", id] as const,
   // Professional Playbook module
   playbookOverview: ["playbook-overview"] as const,
   playbookTemplates: ["playbook-templates"] as const,

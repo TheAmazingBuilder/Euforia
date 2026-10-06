@@ -6,6 +6,7 @@ import { nofyDict } from "@/i18n/dictionaries/en/nofy";
 import { analyticsDict } from "@/i18n/dictionaries/en/analytics";
 import { playbookDict } from "@/i18n/dictionaries/en/playbook";
 import { academyDict } from "@/i18n/dictionaries/en/academy";
+import { recognitionDict } from "@/i18n/dictionaries/en/recognition";
 
 /**
  * EN dictionary — the CANONICAL language pack and the type source for every
@@ -21,6 +22,7 @@ import { academyDict } from "@/i18n/dictionaries/en/academy";
  *   settings — settings shell categories + the Localization card
  *   session  — Session Live module (dictionaries/en/session.ts)
  *   trades   — Trades module (dictionaries/en/trades.ts)
+ *   recognition — Import & Recognition module (dictionaries/en/recognition.ts)
  *   nofy     — Nofy module (dictionaries/en/nofy.ts)
  */
 const en = {
@@ -552,6 +554,7 @@ const en = {
   },
 
   session: sessionDict,
+  recognition: recognitionDict,
 
   trades: tradesDict,
 
