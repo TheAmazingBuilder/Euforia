@@ -27,6 +27,7 @@ import { RecognitionResult } from "@/components/recognition/recognition-result";
 import { RecognitionSuccess } from "@/components/recognition/recognition-success";
 import { TradeDraftReview } from "@/components/recognition/trade-draft-review";
 import { ScreenshotUploader } from "@/components/recognition/screenshot-uploader";
+import { RecognitionHistory } from "@/components/recognition/recognition-history";
 import {
   formatRelative,
   platformLabel,
@@ -48,7 +49,7 @@ import { RecognitionStatusBadge } from "@/components/recognition/recognition-sta
  * The views never know whether the data comes from the MSW
  * MockRecognitionService or the NestJS ApiRecognitionService (§41).
  */
-export function RecognitionWorkspace() {
+function WorkspaceInner() {
   const dict = useDict().recognition;
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -214,7 +215,7 @@ export function RecognitionWorkspace() {
   // ── tab: HISTORY ─────────────────────────────────────────────────────────
   if (tab === "history" && !jobId) {
     return (
-      <HistoryPanel
+      <RecognitionHistory
         dict={dict}
         items={items}
         loading={list.isLoading}
@@ -479,34 +480,6 @@ function RecentImports({
   );
 }
 
-/** History placeholder — the full table lands with commit 5. */
-function HistoryPanel({
-  dict,
-  items,
-  loading,
-  onOpen,
-}: {
-  dict: ReturnType<typeof useDict>["recognition"];
-  items: OcrRecognition[];
-  loading: boolean;
-  onOpen: (id: string) => void;
-  onDelete: (id: string) => void;
-}) {
-  return (
-    <div className="flex min-h-48 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border px-6 py-10 text-center" data-testid="recognition-history-shell">
-      <p className="font-heading text-base font-semibold">{dict.history.title}</p>
-      <p className="max-w-md text-sm text-muted-foreground">
-        {loading ? "…" : `${items.length} import(s)`}
-      </p>
-      {items[0] ? (
-        <Button type="button" variant="outline" size="sm" onClick={() => onOpen(items[0].id)}>
-          {dict.history.open}
-        </Button>
-      ) : null}
-    </div>
-  );
-}
-
 function JobSkeleton({ dict }: { dict: ReturnType<typeof useDict>["recognition"] }) {
   return (
     <div className="flex min-h-48 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border px-6 py-10 text-center" aria-busy="true">
@@ -529,6 +502,51 @@ function EmptyPanel({
       <Button type="button" variant="outline" size="sm" onClick={action.onClick} data-testid="recognition-empty-back">
         {action.label}
       </Button>
+    </div>
+  );
+}
+
+/**
+ * Tab navigation — Overview | History (§30). Rendered above every branch;
+ * switching tabs clears any focused job (the URL stays the single source).
+ */
+export function RecognitionWorkspace() {
+  const dict = useDict().recognition;
+  const searchParams = useSearchParams();
+  const tab = searchParams.get("tab") === "history" ? "history" : "overview";
+  const router = useRouter();
+
+  function switchTab(next: "overview" | "history") {
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("job");
+    if (next === "history") params.set("tab", "history");
+    else params.delete("tab");
+    const query = params.toString();
+    router.replace(query ? `/recognition?${query}` : "/recognition", { scroll: false });
+  }
+
+  return (
+    <div className="flex flex-col gap-5">
+      <nav aria-label={dict.nav.title} className="flex items-center gap-1 border-b border-border pb-2">
+        {(["overview", "history"] as const).map((key) => (
+          <Button
+            key={key}
+            type="button"
+            variant="ghost"
+            size="sm"
+            className={cn(
+              "min-h-8 font-mono text-xs uppercase tracking-[0.06em]",
+              tab === key ? "bg-surface-raised text-foreground" : "text-muted-foreground",
+            )}
+            onClick={() => switchTab(key)}
+            aria-current={tab === key ? "page" : undefined}
+            data-testid={`recognition-tab-${key}`}
+          >
+            {key === "overview" ? dict.tabs.overview : dict.tabs.history}
+          </Button>
+        ))}
+      </nav>
+      <WorkspaceInner />
     </div>
   );
 }

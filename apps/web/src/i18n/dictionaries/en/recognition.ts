@@ -35,6 +35,11 @@ export const recognitionDict = {
     title: "Import & Recognition",
   },
 
+  tabs: {
+    overview: "Overview",
+    history: "History",
+  },
+
   overview: {
     subtitle: "Turn any trading screenshot into a verified journal entry — the engine drafts, you confirm.",
     uploadCta: "Upload screenshot",
