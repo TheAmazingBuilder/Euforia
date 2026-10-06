@@ -22,5 +22,8 @@ import { SessionService } from "./session.service";
   imports: [PrismaModule, TradesModule, DisciplineModule, IdentityModule],
   controllers: [SessionTimelineController, SessionNotesController],
   providers: [SessionRepository, SessionService],
+  // Narrow contract: Session Live's end-summary counts today's logbook notes
+  // from the owning context (§26).
+  exports: [SessionRepository],
 })
 export class SessionModule {}

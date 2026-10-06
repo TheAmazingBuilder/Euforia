@@ -27,6 +27,7 @@ import { DisciplineModule } from "./modules/discipline/discipline.module";
 import { SessionModule } from "./modules/session/session.module";
 import { CalendarModule } from "./modules/calendar/calendar.module";
 import { ReviewModule } from "./modules/review/review.module";
+import { SessionLiveModule } from "./modules/session-live/session-live.module";
 import { DomainEventsModule } from "./infrastructure/events/domain-events.module";
 import { SecurityEventModule } from "./modules/security/security-event.module";
 import { SecurityModule } from "./modules/security/security.module";
@@ -93,6 +94,10 @@ const globalExceptionFilterProvider: Provider = {
     // setting: reviews (one per trade, upsert) + goals with server-computed
     // progress over resolved calendar periods. Owns reviewRow (REVIEW|GOAL).
     ReviewModule,
+    // Session Live (B9) — trading-session lifecycle, saved analyses, key
+    // levels. Documentation entities ONLY; strictly read-only vs brokers
+    // (§2/§50): no execution path exists. End summary is §43-honest.
+    SessionLiveModule,
     // Security center — posture, activity, visibility (Phase 16). Orchestrates
     // identity capabilities; owns NO authentication/session/MFA logic (§3).
     SecurityModule,
