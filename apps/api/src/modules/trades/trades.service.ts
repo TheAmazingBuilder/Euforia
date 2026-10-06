@@ -35,6 +35,7 @@ import {
   type bulkTradesInputSchema,
   type closeTradeInputSchema,
   type createSavedTradeViewInputSchema,
+  type createTagInputSchema,
   type createTradeInputSchema,
   type importTradesInputSchema,
   type instrumentSchema,
@@ -45,6 +46,9 @@ import {
   type tradeDecisionInputSchema,
   type tradeSchema,
   type updateTradeInputSchema,
+  type DetectedMistakeSummary,
+  type ReviewMistake,
+  type Tag,
 } from "../../shared/contracts";
 import { AccountsRepository } from "../accounts/accounts.repository";
 import { IdentityRepository } from "../identity/identity.repository";
@@ -68,6 +72,9 @@ import {
   toTradeEventView,
   toTradeView,
 } from "./mappers";
+import { computeSessionSeries } from "./session-series";
+import { findSystemMistake, STARTER_TAGS, systemMistakeIdByKey } from "./trade-catalogs";
+import type { TagRowData } from "./trades.repository";
 
 /** The hard close contract: no P&L in this response (trade-entry-ux §12). */
 export interface AwaitingDecisionResponse {
@@ -90,6 +97,9 @@ type AddScreenshotInput = z.infer<typeof addScreenshotInputSchema>;
 type Trade = z.infer<typeof tradeSchema>;
 
 const TRADING_ERROR = TRADE_ERROR_CODES;
+
+/** Revenge detection window (B3): a closed loss 15 min before an entry. */
+const REVENGE_WINDOW_MINUTES = 15;
 
 @Injectable()
 export class TradesService {
@@ -189,8 +199,24 @@ export class TradesService {
       graded: query.graded,
       accountId: query.accountId,
     });
+    // Tag chip projection (B3): one join query for the whole page.
+    const tagJoins = await this.repository.listTagJoinsForTrades(
+      userId,
+      rows.map((row) => row.id),
+    );
+    const tagsByTrade = new Map<string, string[]>();
+    for (const join of tagJoins) {
+      const tagId = join.data["tagId"];
+      if (typeof tagId !== "string") continue;
+      const list = tagsByTrade.get(join.tradeId) ?? [];
+      list.push(tagId);
+      tagsByTrade.set(join.tradeId, list);
+    }
     return {
-      trades: rows.map((row) => ({ ...toTradeView(row), tagIds: [] })),
+      trades: rows.map((row) => ({
+        ...toTradeView(row),
+        tagIds: tagsByTrade.get(row.id) ?? [],
+      })),
       total: rows.length,
     };
   }
@@ -414,7 +440,7 @@ export class TradesService {
     rMultiple: string;
     durationSeconds: number;
     coachingKey: string;
-    detectedMistakes: never[];
+    detectedMistakes: DetectedMistakeSummary[];
     triggeredAlerts: never[];
     savedSetupsToday: number;
     savedRToday: null;
@@ -434,8 +460,19 @@ export class TradesService {
       decisionAt: new Date(),
     });
 
+    // B3 — mistake detection runs HERE, at the decision gate: this is the
+    // reveal moment, so auto-detections surface exactly when the user can
+    // confirm/contest them (the mock seeds equivalent rows at fixture time).
+    // Detection is idempotent per trade: rows exist only after the first
+    // decide() because the route 409s on re-submission.
+    await this.detectMistakes(trade);
+    const detectedRows = await this.repository.listSubRows(trade.userId, trade.id, "MISTAKE");
+    const detectedMistakes: DetectedMistakeSummary[] = detectedRows.map((row) =>
+      this.toDetectedSummary(row),
+    );
+
     // Deterministic reveal: the verdict comes from the stored results; the
-    // mistake/alert/ghost aggregates stay neutral until their domains exist.
+    // alert aggregate stays neutral until the Alerts domain exists (B4).
     const rMultiple = Number(trade.rMultiple?.toFixed() ?? "0");
     const win = rMultiple >= 0;
     const bucket = input.grade === "A" || input.grade === "B" ? "ab" : "df";
@@ -452,7 +489,7 @@ export class TradesService {
       rMultiple: trade.rMultiple?.toFixed() ?? "0",
       durationSeconds,
       coachingKey: `${win ? "win" : "loss"}_${bucket}`,
-      detectedMistakes: [],
+      detectedMistakes,
       triggeredAlerts: [],
       savedSetupsToday: 0,
       savedRToday: null,
@@ -463,11 +500,27 @@ export class TradesService {
 
   async getReview(userId: string, tradeId: string): Promise<{
     trade: Trade;
-    detectedMistakes: never[];
+    detectedMistakes: ReviewMistake[];
     tagIds: string[];
   }> {
     await this.loadOwnedTrade(userId, tradeId);
-    return { trade: await this.tradeViewOf(userId, tradeId), detectedMistakes: [], tagIds: [] };
+    const [trade, mistakeRows, tagRows] = await Promise.all([
+      this.tradeViewOf(userId, tradeId),
+      this.repository.listSubRows(userId, tradeId, "MISTAKE"),
+      this.repository.listSubRows(userId, tradeId, "TAG"),
+    ]);
+    const detectedMistakes: ReviewMistake[] = mistakeRows.map((row) => {
+      const summary = this.toDetectedSummary(row);
+      return {
+        ...summary,
+        id: row.id,
+        note: typeof row.data["note"] === "string" ? row.data["note"] : null,
+      };
+    });
+    const tagIds = tagRows
+      .map((row) => row.data["tagId"])
+      .filter((value): value is string => typeof value === "string");
+    return { trade, detectedMistakes, tagIds };
   }
 
   async updateReview(
@@ -481,8 +534,11 @@ export class TradesService {
     const mfePrice = input.mfePrice ?? trade.mfePrice?.toFixed() ?? null;
     const maePrice = input.maePrice ?? trade.maePrice?.toFixed() ?? null;
     // MFE/MAE are user-observed PRICES — their R conversions (and any other
-    // result) are recomputed server-side (§13/§46). tagIds are deferred to
-    // the Tags domain (Phase 4 scope note in the report).
+    // result) are recomputed server-side (§13/§46). tagIds replace the full
+    // join set (B3 — mock parity: no per-id existence validation).
+    if (input.tagIds !== undefined) {
+      await this.repository.replaceTagJoins(userId, trade.id, input.tagIds);
+    }
     const results = trade.status === "CLOSED"
       ? computeTradeResults(
           {
@@ -942,5 +998,166 @@ export class TradesService {
   private async tradeViewOf(userId: string, tradeId: string): Promise<Trade> {
     const fresh = await this.loadOwnedTrade(userId, tradeId);
     return toTradeView(fresh);
+  }
+
+  // ── B3 — tags, mistakes, session series ─────────────────────────────────────
+
+  /** GET /tags — lazily seeds the starter set on the user's first read. */
+  async listTags(userId: string): Promise<{ tags: Tag[] }> {
+    let rows = await this.repository.listTagRows(userId);
+    if (rows.length === 0) {
+      const starters: TagRowData[] = STARTER_TAGS.map((def) => ({
+        name: def.name,
+        category: def.category,
+        color: null,
+        parentId: null,
+      }));
+      await this.repository.insertTagRows(userId, starters);
+      rows = await this.repository.listTagRows(userId);
+    }
+    return {
+      tags: rows.map((row) => this.toTagView(row)),
+    };
+  }
+
+  /** POST /tags — inline tag creation (Act 3 reflect, capture details). */
+  async createTag(userId: string, input: z.infer<typeof createTagInputSchema>): Promise<Tag> {
+    const name = input.name.trim();
+    if (name === "") {
+      throw new BusinessRuleError("Tag name is required", TRADING_ERROR.INVALID_TRADE_DATA);
+    }
+    const category = input.category ?? "CUSTOM";
+    const existing = await this.repository.listTagRows(userId);
+    const duplicate = existing.some(
+      (row) =>
+        row.data.name.toLowerCase() === name.toLowerCase() && row.data.category === category,
+    );
+    if (duplicate) {
+      throw new ConflictError("Tag already exists", TRADING_ERROR.DUPLICATE_EXTERNAL_TRADE);
+    }
+    const row = await this.repository.insertTagRow(userId, {
+      name,
+      category,
+      color: null,
+      parentId: null,
+    });
+    return this.toTagView(row);
+  }
+
+  /** PATCH /trades/:id/mistakes/:mistakeId — confirm/contest a detection. */
+  async resolveMistake(
+    userId: string,
+    tradeId: string,
+    mistakeRowId: string,
+    confirmed: boolean,
+  ): Promise<ReviewMistake> {
+    await this.loadOwnedTrade(userId, tradeId);
+    const row = await this.repository.findSubRowForUser(userId, tradeId, mistakeRowId, "MISTAKE");
+    if (row === null) {
+      throw new NotFoundError("Trade mistake not found", TRADING_ERROR.TRADE_NOT_FOUND);
+    }
+    const data = { ...row.data, userConfirmed: confirmed, note: row.data["note"] ?? null };
+    await this.repository.updateSubRowData(row.id, data);
+    const summary = this.toDetectedSummary({ ...row, data });
+    return { ...summary, id: row.id, note: data.note as string | null };
+  }
+
+  /** GET /trades/:id/session-series — deterministic projection (see session-series.ts). */
+  async getTradeSessionSeries(
+    userId: string,
+    tradeId: string,
+  ): Promise<ReturnType<typeof computeSessionSeries>> {
+    const trade = await this.loadOwnedTrade(userId, tradeId);
+    const instrument = await this.repository.findInstrument(trade.instrumentId);
+    return computeSessionSeries(
+      {
+        id: trade.id,
+        direction: trade.direction,
+        entryPrice: trade.entryPrice.toFixed(),
+        exitPrice: trade.exitPrice?.toFixed() ?? null,
+        entryAt: trade.entryAt,
+        exitAt: trade.exitAt,
+        mfePrice: trade.mfePrice?.toFixed() ?? null,
+        maePrice: trade.maePrice?.toFixed() ?? null,
+        initialStop: trade.initialStop?.toFixed() ?? null,
+        initialTP: trade.initialTP?.toFixed() ?? null,
+      },
+      instrument
+        ? { symbol: instrument.symbol, digits: instrument.digits, pipSize: instrument.pipSize.toFixed() }
+        : null,
+    );
+  }
+
+  /**
+   * Auto-detection at the decision gate (B3). Mirrors the mock's seeded
+   * rules that are computable from journal data alone:
+   *   - no_stop_loss   — the trade carries no planned stop;
+   *   - revenge_trade  — a closed LOSS exited within 15 min before entry.
+   * The remaining catalog entries (moved_stop, oversized, out_of_hours,
+   * cut_winner_early) need plan/context data the journal does not record —
+   * they stay USER-detectable via the discipline module (B4), never faked.
+   */
+  private async detectMistakes(trade: {
+    id: string;
+    userId: string;
+    initialStop: unknown;
+    entryAt: Date;
+  }): Promise<void> {
+    const existing = await this.repository.listSubRows(trade.userId, trade.id, "MISTAKE");
+    if (existing.length > 0) return; // detection runs once per trade
+
+    const detections: Array<{ mistakeId: string; detectedBy: "AUTO" }> = [];
+    if (trade.initialStop === null || trade.initialStop === undefined) {
+      const id = systemMistakeIdByKey("no_stop_loss");
+      if (id !== null) detections.push({ mistakeId: id, detectedBy: "AUTO" });
+    }
+    const recentLoss = await this.repository.findRecentClosedLoss(
+      trade.userId,
+      trade.entryAt,
+      REVENGE_WINDOW_MINUTES,
+    );
+    if (recentLoss !== null) {
+      const id = systemMistakeIdByKey("revenge_trade");
+      if (id !== null) detections.push({ mistakeId: id, detectedBy: "AUTO" });
+    }
+    for (const detection of detections) {
+      await this.repository.insertSubRow(trade.userId, trade.id, "MISTAKE", {
+        ...detection,
+        userConfirmed: null,
+        note: null,
+        createdAt: new Date().toISOString(),
+      });
+    }
+  }
+
+  /** TradeSubRow (MISTAKE) → reveal projection with catalog enrichment. */
+  private toDetectedSummary(row: {
+    id: string;
+    data: Record<string, unknown>;
+  }): DetectedMistakeSummary {
+    const mistakeId = typeof row.data["mistakeId"] === "string" ? row.data["mistakeId"] : "";
+    const catalog = findSystemMistake(mistakeId);
+    const detectedBy = row.data["detectedBy"] === "MANUAL" ? "MANUAL" : "AUTO";
+    const confirmed = row.data["userConfirmed"];
+    return {
+      mistakeId,
+      key: catalog?.key ?? "unknown",
+      label: catalog?.label ?? "Unknown mistake",
+      category: catalog?.category ?? "BEHAVIOR",
+      detectedBy,
+      userConfirmed: typeof confirmed === "boolean" ? confirmed : null,
+    };
+  }
+
+  /** TagRow → shared Tag contract (the row id IS the tag id). */
+  private toTagView(row: { id: string; userId: string; data: TagRowData }): Tag {
+    return {
+      id: row.id,
+      userId: row.userId,
+      name: row.data.name,
+      category: (row.data.category as Tag["category"]) ?? "CUSTOM",
+      color: row.data.color,
+      parentId: row.data.parentId,
+    };
   }
 }

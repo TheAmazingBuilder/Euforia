@@ -33,7 +33,7 @@ import { TradesRepository } from "./trades.repository";
 import { TradesService } from "./trades.service";
 import { TradeReconstructionService } from "./trade-reconstruction.service";
 import { TradeScreenshotStorage } from "./trade-screenshots.storage";
-import { TradesController, InstrumentsController, TradeViewsController } from "./trades.controller";
+import { TradesController, InstrumentsController, TradeViewsController, TagsController } from "./trades.controller";
 
 const screenshotStorageProvider = {
   provide: TradeScreenshotStorage,
@@ -44,7 +44,7 @@ const screenshotStorageProvider = {
 
 @Module({
   imports: [ConfigModule, LoggingModule, PrismaModule, IdentityModule, AccountsModule],
-  controllers: [InstrumentsController, TradesController, TradeViewsController],
+  controllers: [InstrumentsController, TradesController, TradeViewsController, TagsController],
   providers: [
     TradesRepository,
     TradesService,

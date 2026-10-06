@@ -5,11 +5,10 @@
  * @CurrentUser principal, uuid-validated params, ownership resolved in the
  * service. No Prisma model ever crosses this boundary.
  *
- * NOT routed (mandate §68 — market-data provider infrastructure is out of
- * scope, inventing price points would fabricate market data):
- * GET /trades/:id/session-series — the frontend mock serves a synthetic
- * deterministic path; the real endpoint belongs to the future Market Data
- * domain. Documented in the phase report as deferred.
+ * GET /trades/:id/session-series (B3) returns a DETERMINISTIC SYNTHETIC
+ * path anchored on the trade's real recorded points (entry/exit/MFE/MAE)
+ * — no market-data provider exists, and the endpoint never pretends
+ * otherwise (§68); see session-series.ts for the honesty contract.
  */
 import {
   Body,
@@ -28,15 +27,19 @@ import {
   bulkTradesInputSchema,
   closeTradeInputSchema,
   createSavedTradeViewInputSchema,
+  createTagInputSchema,
   createTradeInputSchema,
   importTradesInputSchema,
   notesUpdateInputSchema,
   planUpdateInputSchema,
   psychologyUpdateInputSchema,
+  resolveMistakeInputSchema,
   reviewUpdateInputSchema,
   savedTradeViewsResponseSchema,
+  tagsResponseSchema,
   tradeDecisionInputSchema,
   tradeScreenshotsResponseSchema,
+  tradeSessionSeriesResponseSchema,
   tradesListQuerySchema,
   tradesListResponseSchema,
   updateTradeInputSchema,
@@ -132,6 +135,33 @@ export class TradesController {
   ) {
     const id = uuidSchema.parse(tradeId);
     return this.trades.decide(principal.userId, id, payload);
+  }
+
+  // ── B3 — session series projection + mistake resolution ────────────────────
+
+  /** Deterministic projection path anchored on the trade's real points. */
+  @Get(":tradeId/session-series")
+  async sessionSeries(
+    @CurrentUser() principal: AuthPrincipal,
+    @Param("tradeId") tradeId: string,
+  ) {
+    const id = uuidSchema.parse(tradeId);
+    const response = await this.trades.getTradeSessionSeries(principal.userId, id);
+    return tradeSessionSeriesResponseSchema.parse(response);
+  }
+
+  /** Confirm/contest an auto-detected mistake (reveal + review screens). */
+  @Patch(":tradeId/mistakes/:mistakeId")
+  async resolveMistake(
+    @CurrentUser() principal: AuthPrincipal,
+    @Param("tradeId") tradeId: string,
+    @Param("mistakeId") mistakeId: string,
+    @Body(new ZodValidationPipe(resolveMistakeInputSchema))
+    payload: z.infer<typeof resolveMistakeInputSchema>,
+  ) {
+    const id = uuidSchema.parse(tradeId);
+    const rowId = uuidSchema.parse(mistakeId);
+    return this.trades.resolveMistake(principal.userId, id, rowId, payload.confirmed);
   }
 
   @Post("import")
@@ -273,5 +303,27 @@ export class TradeViewsController {
   ) {
     const id = uuidSchema.parse(viewId);
     return this.trades.deleteView(principal.userId, id);
+  }
+}
+
+/** Tag catalog (B3, Domaine 4) — capture-form chips + inline creation. */
+@Controller("tags")
+export class TagsController {
+  constructor(private readonly trades: TradesService) {}
+
+  @Get()
+  async list(@CurrentUser() principal: AuthPrincipal) {
+    const response = await this.trades.listTags(principal.userId);
+    return tagsResponseSchema.parse(response);
+  }
+
+  @Post()
+  @HttpCode(HttpStatus.CREATED)
+  async create(
+    @CurrentUser() principal: AuthPrincipal,
+    @Body(new ZodValidationPipe(createTagInputSchema))
+    payload: z.infer<typeof createTagInputSchema>,
+  ) {
+    return this.trades.createTag(principal.userId, payload);
   }
 }

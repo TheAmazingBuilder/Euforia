@@ -133,6 +133,29 @@ export interface TradeListFilters {
   accountId?: string;
 }
 
+/** TagRow projection — the row id IS the tag id (data holds the rest). */
+export interface TagRowData {
+  name: string;
+  category: string;
+  color: string | null;
+  parentId: string | null;
+}
+
+export interface TagRow {
+  id: string;
+  userId: string;
+  data: TagRowData;
+}
+
+/** TradeSubRow (MISTAKE | TAG) projection — data holds the sub-resource. */
+export interface TradeSubRow {
+  id: string;
+  userId: string;
+  tradeId: string;
+  kind: string;
+  data: Record<string, unknown>;
+}
+
 @Injectable()
 export class TradesRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -486,5 +509,122 @@ export class TradesRepository {
 
   async deleteView(viewId: string): Promise<void> {
     await this.prisma.savedTradeView.delete({ where: { id: viewId } });
+  }
+
+  // ── Tag catalog (B3 — Domaine 4, per-user) ─────────────────────────────────
+
+  async listTagRows(userId: string): Promise<TagRow[]> {
+    const rows = await this.prisma.tagRow.findMany({
+      where: { userId },
+      orderBy: { createdAt: "asc" },
+    });
+    return rows as unknown as TagRow[];
+  }
+
+  async insertTagRows(
+    userId: string,
+    rows: TagRowData[],
+  ): Promise<void> {
+    await this.prisma.tagRow.createMany({
+      data: rows.map((data) => ({ userId, data: data as unknown as Prisma.InputJsonValue })),
+    });
+  }
+
+  async insertTagRow(userId: string, data: TagRowData): Promise<TagRow> {
+    const row = await this.prisma.tagRow.create({
+      data: { userId, data: data as unknown as Prisma.InputJsonValue },
+    });
+    return row as unknown as TagRow;
+  }
+
+  // ── Trade sub-rows (B3 — mistake detections + trade↔tag joins) ────────────
+
+  async listSubRows(userId: string, tradeId: string, kind: string): Promise<TradeSubRow[]> {
+    const rows = await this.prisma.tradeSubRow.findMany({
+      where: { userId, tradeId, kind },
+      orderBy: { createdAt: "asc" },
+    });
+    return rows as unknown as TradeSubRow[];
+  }
+
+  /** All TAG joins for a whole set of trades (list projection tagIds). */
+  async listTagJoinsForTrades(
+    userId: string,
+    tradeIds: string[],
+  ): Promise<TradeSubRow[]> {
+    if (tradeIds.length === 0) return [];
+    const rows = await this.prisma.tradeSubRow.findMany({
+      where: { userId, kind: "TAG", tradeId: { in: tradeIds } },
+    });
+    return rows as unknown as TradeSubRow[];
+  }
+
+  async findSubRowForUser(
+    userId: string,
+    tradeId: string,
+    rowId: string,
+    kind: string,
+  ): Promise<TradeSubRow | null> {
+    const row = await this.prisma.tradeSubRow.findFirst({
+      where: { userId, tradeId, kind, id: rowId },
+    });
+    return (row as unknown as TradeSubRow) ?? null;
+  }
+
+  async insertSubRow(
+    userId: string,
+    tradeId: string,
+    kind: string,
+    data: Prisma.InputJsonValue,
+  ): Promise<TradeSubRow> {
+    const row = await this.prisma.tradeSubRow.create({
+      data: { userId, tradeId, kind, data },
+    });
+    return row as unknown as TradeSubRow;
+  }
+
+  async updateSubRowData(
+    id: string,
+    data: Prisma.InputJsonValue,
+  ): Promise<void> {
+    await this.prisma.tradeSubRow.update({ where: { id }, data: { data } });
+  }
+
+  /** Replace the trade↔tag join set (full replacement semantics, mock parity). */
+  async replaceTagJoins(
+    userId: string,
+    tradeId: string,
+    tagIds: string[],
+  ): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      await tx.tradeSubRow.deleteMany({ where: { userId, tradeId, kind: "TAG" } });
+      for (const tagId of tagIds) {
+        await tx.tradeSubRow.create({
+          data: { userId, tradeId, kind: "TAG", data: { tagId } },
+        });
+      }
+    });
+  }
+
+  /** Recent closed LOSING trade before `before` (revenge detection window). */
+  async findRecentClosedLoss(
+    userId: string,
+    before: Date,
+    windowMinutes: number,
+  ): Promise<TradeRow | null> {
+    const row = await this.prisma.trade.findFirst({
+      where: {
+        userId,
+        deletedAt: null,
+        status: "CLOSED",
+        pnlNet: { lt: 0 },
+        exitAt: {
+          gte: new Date(before.getTime() - windowMinutes * 60_000),
+          lt: before,
+        },
+      },
+      orderBy: { exitAt: "desc" },
+    });
+    return (row as TradeRow) ?? null;
   }
 }

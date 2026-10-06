@@ -856,10 +856,10 @@ describe("ownership — User A vs User B (IDOR → 404)", () => {
   });
 });
 
-// ── Out-of-scope endpoints stay honest ───────────────────────────────────────
+// ── Session-series projection (B3) ──────────────────────────────────────────
 
-describe("deferred capabilities", () => {
-  it("session-series is NOT served (market data is out of scope §68)", async () => {
+describe("session-series (B3)", () => {
+  it("serves a deterministic synthetic projection anchored on the trade", async () => {
     const user = await userWithAccount();
     const instrument = await eurInstrument(user.authHeader);
     const created = await createOpenTrade(user.authHeader, user.accountId, instrument.id);
@@ -869,6 +869,210 @@ describe("deferred capabilities", () => {
       url: `/api/v1/trades/${tradeId}/session-series`,
       headers: user.authHeader,
     });
+    expect(response.statusCode).toBe(200);
+    const body = response.json() as {
+      symbol: string;
+      digits: number;
+      direction: string;
+      points: Array<{ t: string; price: string }>;
+      entryIndex: number;
+      exitIndex: number | null;
+      entryPrice: string;
+    };
+    // Anchored on the journal's truth: symbol, entry price/level, direction.
+    expect(body.symbol).toBe("EURUSD");
+    expect(body.direction).toBe("BUY");
+    expect(body.entryPrice).toBe((created.json() as { entryPrice: string }).entryPrice);
+    expect(body.points.length).toBeGreaterThanOrEqual(2);
+    expect(body.exitIndex).toBeNull(); // the trade is still open
+
+    // Deterministic: the same trade always yields the same series.
+    const again = await app.inject({
+      method: "GET",
+      url: `/api/v1/trades/${tradeId}/session-series`,
+      headers: user.authHeader,
+    });
+    expect(again.json()).toEqual(body);
+  });
+
+  it("404s a foreign trade (IDOR → 404, repository-wide convention)", async () => {
+    const [userA, userB] = await Promise.all([userWithAccount(), userWithAccount()]);
+    const instrument = await eurInstrument(userA.authHeader);
+    const created = await createOpenTrade(userA.authHeader, userA.accountId, instrument.id);
+    const tradeId = (created.json() as { id: string }).id;
+    const response = await app.inject({
+      method: "GET",
+      url: `/api/v1/trades/${tradeId}/session-series`,
+      headers: userB.authHeader,
+    });
     expect(response.statusCode).toBe(404);
+  });
+});
+
+// ── Tag catalog (B3) ─────────────────────────────────────────────────────────
+
+describe("tags (B3)", () => {
+  it("GET /tags lazily seeds the starter set exactly once", async () => {
+    const user = await userWithAccount();
+    const first = await app.inject({ method: "GET", url: "/api/v1/tags", headers: user.authHeader });
+    expect(first.statusCode).toBe(200);
+    const { tags } = first.json() as { tags: Array<{ id: string; name: string; category: string }> };
+    expect(tags.length).toBe(10); // the seeded starter chips
+    expect(tags.some((t) => t.name === "A+ context")).toBe(true);
+
+    // Second read returns the SAME rows (no re-seed duplication).
+    const second = await app.inject({ method: "GET", url: "/api/v1/tags", headers: user.authHeader });
+    expect((second.json() as { tags: unknown[] }).tags).toHaveLength(10);
+    expect((second.json() as { tags: Array<{ id: string }> }).tags[0]!.id).toBe(tags[0]!.id);
+  });
+
+  it("POST /tags creates inline, trims, 409s duplicates (case-insensitive), 422s empty", async () => {
+    const user = await userWithAccount();
+    const created = await app.inject({
+      method: "POST",
+      url: "/api/v1/tags",
+      headers: user.authHeader,
+      payload: { name: "  Asia range  ", category: "SETUP" },
+    });
+    expect(created.statusCode).toBe(201);
+    expect(created.json()).toMatchObject({ name: "Asia range", category: "SETUP" });
+
+    const duplicate = await app.inject({
+      method: "POST",
+      url: "/api/v1/tags",
+      headers: user.authHeader,
+      payload: { name: "asia RANGE", category: "SETUP" },
+    });
+    expect(duplicate.statusCode).toBe(409);
+
+    const empty = await app.inject({
+      method: "POST",
+      url: "/api/v1/tags",
+      headers: user.authHeader,
+      payload: { name: "   " },
+    });
+    expect(empty.statusCode).toBe(422);
+  });
+
+  it("review round-trip: PATCH review stores tag joins, GET review reads them back", async () => {
+    const user = await userWithAccount();
+    const instrument = await eurInstrument(user.authHeader);
+    const tagA = (
+      await app.inject({
+        method: "POST",
+        url: "/api/v1/tags",
+        headers: user.authHeader,
+        payload: { name: "Round trip", category: "CUSTOM" },
+      })
+    ).json() as { id: string };
+    const created = await createOpenTrade(user.authHeader, user.accountId, instrument.id);
+    const tradeId = (created.json() as { id: string }).id;
+
+    const patched = await app.inject({
+      method: "PATCH",
+      url: `/api/v1/trades/${tradeId}/review`,
+      headers: user.authHeader,
+      payload: { tagIds: [tagA.id] },
+    });
+    expect(patched.statusCode).toBe(200);
+
+    const review = await app.inject({
+      method: "GET",
+      url: `/api/v1/trades/${tradeId}/review`,
+      headers: user.authHeader,
+    });
+    expect(review.json()).toMatchObject({ tagIds: [tagA.id] });
+
+    // The list projection carries the same join.
+    const list = await app.inject({
+      method: "GET",
+      url: "/api/v1/trades",
+      headers: user.authHeader,
+    });
+    const row = (list.json() as { trades: Array<{ id: string; tagIds: string[] }> }).trades.find(
+      (t) => t.id === tradeId,
+    );
+    expect(row?.tagIds).toEqual([tagA.id]);
+  });
+});
+
+// ── Mistake detection + resolution (B3) ─────────────────────────────────────
+
+describe("trade mistakes (B3)", () => {
+  it("decide() auto-detects no_stop_loss and the reveal lists it pending", async () => {
+    const user = await userWithAccount();
+    const instrument = await eurInstrument(user.authHeader);
+    // No initialStop → AUTO no_stop_loss detection at the decision gate.
+    const created = await createOpenTrade(user.authHeader, user.accountId, instrument.id, {
+      initialStop: undefined,
+    });
+    const tradeId = (created.json() as { id: string }).id;
+    await app.inject({
+      method: "POST",
+      url: `/api/v1/trades/${tradeId}/close`,
+      headers: user.authHeader,
+      payload: { mode: "single", exitPrice: "1.0900", exitAt: "2026-01-05T10:30:00.000Z", exitReason: "TP" },
+    });
+    const decision = await app.inject({
+      method: "POST",
+      url: `/api/v1/trades/${tradeId}/decision`,
+      headers: user.authHeader,
+      payload: { grade: "D", followedPlan: false },
+    });
+    expect(decision.statusCode).toBe(200);
+    const reveal = decision.json() as { detectedMistakes: Array<{ key: string; userConfirmed: boolean | null }> };
+    expect(reveal.detectedMistakes.some((m) => m.key === "no_stop_loss")).toBe(true);
+    expect(reveal.detectedMistakes.every((m) => m.userConfirmed === null)).toBe(true);
+  });
+
+  it("resolve round-trip: PATCH confirm persists, review reflects it", async () => {
+    const user = await userWithAccount();
+    const instrument = await eurInstrument(user.authHeader);
+    const created = await createOpenTrade(user.authHeader, user.accountId, instrument.id, {
+      initialStop: undefined,
+    });
+    const tradeId = (created.json() as { id: string }).id;
+    await app.inject({
+      method: "POST",
+      url: `/api/v1/trades/${tradeId}/close`,
+      headers: user.authHeader,
+      payload: { mode: "single", exitPrice: "1.0900", exitAt: "2026-01-05T10:30:00.000Z", exitReason: "TP" },
+    });
+    const decision = await app.inject({
+      method: "POST",
+      url: `/api/v1/trades/${tradeId}/decision`,
+      headers: user.authHeader,
+      payload: { grade: "C", followedPlan: true },
+    });
+    const mistake = (decision.json() as { detectedMistakes: Array<{ mistakeId: string }> })
+      .detectedMistakes[0]!;
+    expect(mistake.mistakeId).toBeTruthy();
+
+    // resolveMistake is addressed by the TradeMistake ROW id — fetch it from review.
+    const review = await app.inject({
+      method: "GET",
+      url: `/api/v1/trades/${tradeId}/review`,
+      headers: user.authHeader,
+    });
+    const row = (review.json() as { detectedMistakes: Array<{ id: string }> }).detectedMistakes[0]!;
+
+    const resolved = await app.inject({
+      method: "PATCH",
+      url: `/api/v1/trades/${tradeId}/mistakes/${row.id}`,
+      headers: user.authHeader,
+      payload: { confirmed: true },
+    });
+    expect(resolved.statusCode).toBe(200);
+    expect(resolved.json()).toMatchObject({ id: row.id, userConfirmed: true });
+
+    const after = await app.inject({
+      method: "GET",
+      url: `/api/v1/trades/${tradeId}/review`,
+      headers: user.authHeader,
+    });
+    const persisted = (
+      after.json() as { detectedMistakes: Array<{ id: string; userConfirmed: boolean }> }
+    ).detectedMistakes.find((m) => m.id === row.id);
+    expect(persisted?.userConfirmed).toBe(true);
   });
 });

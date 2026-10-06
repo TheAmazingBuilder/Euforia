@@ -125,6 +125,7 @@ model User {
   playbookRows      PlaybookRow[]
   nofyRows          NofyRow[]
   academyRows       AcademyRow[]
+  tagRows           TagRow[]
 
   @@index([status])
 }
@@ -796,14 +797,15 @@ model DisciplineRow {
   @@index([userId, kind])
 }
 
-/// Trade sub-resources owned by other contexts — mistake links, session
-/// series snapshots (kept OUT of the Trade table: no bounded-context leaks).
+/// Trade sub-resources owned by other contexts — mistake links, trade↔tag
+/// joins, session series snapshots (kept OUT of the Trade table: no
+/// bounded-context leaks).
 model TradeSubRow {
   id        String   @id @default(uuid()) @db.Uuid
   userId    String   @db.Uuid
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   tradeId   String   @db.Uuid
-  /// MISTAKE | SESSION_SERIES
+  /// MISTAKE | TAG | SESSION_SERIES
   kind      String
   /// Shared-contract JSON for the sub-resource.
   data      Json
@@ -928,4 +930,19 @@ model AcademyRow {
   updatedAt DateTime @updatedAt
 
   @@index([userId, kind])
+}
+
+/// Journal context — user-owned tag catalog (data-model.md "Domaine 4": free,
+/// hierarchical tags; the system starter set is lazily seeded on first read).
+model TagRow {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Shared-contract tag payload MINUS id/userId (the row id IS the tag id):
+  /// { name, category, color, parentId }.
+  data      Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
 }
