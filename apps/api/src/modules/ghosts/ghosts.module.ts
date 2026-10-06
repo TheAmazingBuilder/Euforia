@@ -24,5 +24,6 @@ import { GhostsService } from "./ghosts.service";
   imports: [PrismaModule, TradesModule],
   controllers: [GhostsController],
   providers: [GhostsRepository, GhostsService],
+  exports: [GhostsService],
 })
 export class GhostsModule {}

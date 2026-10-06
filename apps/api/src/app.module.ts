@@ -31,6 +31,7 @@ import { SessionLiveModule } from "./modules/session-live/session-live.module";
 import { PlaybookModule } from "./modules/playbook/playbook.module";
 import { NofyModule } from "./modules/nofy/nofy.module";
 import { AcademyModule } from "./modules/academy/academy.module";
+import { StatsModule } from "./modules/stats/stats.module";
 import { DomainEventsModule } from "./infrastructure/events/domain-events.module";
 import { SecurityEventModule } from "./modules/security/security-event.module";
 import { SecurityModule } from "./modules/security/security.module";
@@ -116,6 +117,10 @@ const globalExceptionFilterProvider: Provider = {
     // practice drills, milestones and journal-driven suggestions. Owns
     // academyRow (STATE|TASK|EVENT_REG).
     AcademyModule,
+    // Stats (B1) — the analytics lens over the journal: overview,
+    // analytics aggregates and the filtered analytics-suite dataset with
+    // Monte Carlo. READ-ONLY — owns NO tables (§3).
+    StatsModule,
     // Security center — posture, activity, visibility (Phase 16). Orchestrates
     // identity capabilities; owns NO authentication/session/MFA logic (§3).
     SecurityModule,

@@ -149,7 +149,7 @@ describe("academy (B12)", () => {
         headers: auth(user),
         payload: { answers: quiz.questions.map((q) => ({ questionId: q.id, value: q.kind === "TF" ? false : 99 })) },
       })
-    ).json() as { score: number; total: number; passed: boolean; previousBest: number | null; results: Array<{ correct: boolean; explanation: string }> };
+    ).json() as { score: number; total: number; passed: boolean; previousBest: number | null; results: Array<{ questionId: string; correct: boolean; answer: number | boolean; explanation: string }> };
     expect(bad.previousBest).toBeNull();
     expect(bad.results).toHaveLength(quiz.questions.length);
     // Every result carries the explanation (the reveal moment) — but the

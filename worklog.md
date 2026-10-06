@@ -170,3 +170,21 @@ Work Log:
 Stage Summary:
 - 10 chantiers livrés (B3,B6,B4,B5,B7,B8,B9,B10,B11,B12) — 453/453 tests verts, lint propre, typecheck API+web OK.
 - Reste : B1 (stats 3) → B13 (accounts SPEC-1) → B2 (backup 2) → Phase C (bridge live) → Phase D (vérif+rapport).
+
+---
+Task ID: 1-backends (B1 livré)
+Agent: Super Z (main)
+Date: 2026-10-06 14:25 UTC
+
+Work Log:
+- B1 (module stats, 3 routes READ-ONLY, zéro table propre — analytics = lens sur le journal) : stats-helpers (TradeLike, date keys, mulberry32), service transposé 1:1 du mock :
+  · statsOverview — netPnl/winRate/profitFactor/expectancy, disciplineScore (moyenne des dailyScores B4), equity curve + dailyPnl, equity peak + maxDD %, deltas 7j vs 7j (netPnl/sparklines hebdo 8 semaines lundi), ghostTrend 30j (fear/discipline), disciplineSaved + hesitationCost (ghosts settled), weeklyCompare 7 colonnes zero-filled.
+  · analytics — cards (winRate, PF, expectancy, payoff, maxDD R, recovery trades/days), heatmap 7×6, buckets heures/jours/sessions, emotions (pire avgR d'abord), grade×outcome A-F, tilt timeline (streaks + spikes), sleepScatter [] HONNÊTE (pas de stockage daily-stats), mistakes ledger (B4), distributions R par stratégie.
+  · analyticsSuite — resolvePeriodRange (11 périodes + CUSTOM), filtres complets (account/instrument/assetClass/strategy "none"/direction/session/emotion/exitReason/tag), meta (resolvedFrom/To, descriptor, warnings, anomalies TAIL_LOSS, singleCurrency), summary (Sharpe/Sortino √252 methodology notes, SQN), equity+drawdownPct, cumulativeR, rolling 10, dailyPnl, histogrammes R/PnL/durées, drawdowns (flush pattern), risk (concurrent positions, riskDeviationPct, plannedVsRealized), strategies/symbols/assetClasses/directions, psychology (emotions before/after, confidence bands, tilt), quality (MFE capture, scatter), mistakes sur set filtré, events (phases vs éco ±4h, coverage), advanced (moments, percentiles, streaks), Monte Carlo bootstrap seedé (100-2000 sims), reports daily/weekly/monthly ISO.
+- Sources : TradesRepository (Decimal→TradeLike), AccountsRepository (currency/balance), DisciplineService (dailyScores+mistakesLedger), GhostsService (export ajouté), PlaybookService (noms stratégies), generateEcoEvents.
+- ALIGNEMENT CONTRAT : la vraie shape analyticsSuiteResponseSchema diffère des noms du mock (meta.resolvedFrom/resolvedTo/closedTrades/singleCurrency ; risk ; quality {excursionAvailable, mfe/mae {avgR,medianR,capturePct}, scatter} ; events.calendarCoverage.classifiedTrades ; advanced.r{...}/streaks{avgWin,avgLoss} ; monteCarlo {tradesPerRun, finalR p05/p50/p95, maxDrawdownR p50/p95/worst, methodology}) — service aligné sur LE CONTRAT (source de vérité), pas sur le mock.
+- Pièges : heredoc python "\\n" a mangé un `[h` et un commentaire (réparé) ; ordre de déclaration plannedBuckets/plannedVsRealized ; TradeSubRow sans createdAt (lastSeenAt via data.detectedAt) ; anomaly.hint requis ; currency enum cast.
+
+Stage Summary:
+- 11 chantiers livrés (B3,B6,B4,B5,B7,B8,B9,B10,B11,B12,B1) — 457/457 tests verts, lint propre, TS OK.
+- Reste : B13 (accounts SPEC-1) → B2 (backup 2) → Phase C (bridge live) → Phase D (vérif+rapport).
