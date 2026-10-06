@@ -69,3 +69,25 @@ Stage Summary:
 - RIEN n'est définitivement perdu : specs archivées dans git, frontend /recognition reconstruit, backend OCR intact.
 - Reste à faire (ordre) : appliquer migration Prisma module_upgrade_contexts → B3→B6→B4→B5→B7→B8→B9→B10→B11→B12→B1(stats)→B13(accounts, SPEC-1)→B2(backup) → Phase C (bridge live) → Phase D (vérif totale).
 - OCR V2 (SPEC-4, 40 capacités) reste en file après la parité backend B1-B13, comme convenu.
+
+---
+Task ID: 1-backends (B3→B5 livrés)
+Agent: Super Z (main)
+Date: 2026-10-06 05:00-05:50 UTC
+
+Task: Appliquer la migration Prisma puis construire les backends manquants (chantier par chantier, commit par livrable)
+
+Work Log:
+- Postgres 17 embarqué relancé via `node scripts/dev-db.mjs up` (le restore sandbox avait effacé les paquets système ; embedded-postgres est une devDep d'apps/api).
+- Piège .env : un `/home/z/my-project/.env` racine (DATABASE_URL=file:) écrase apps/api/.env pour Prisma → exporter DATABASE_URL explicitement ou exécuter depuis apps/api.
+- Migration `module_upgrade_contexts` créée + appliquée (10 tables), commit 57bbe44. Puis migration `tag_catalog` (TagRow).
+- B3 (commit dédié) : tags GET/POST (starter seed paresseux 10 tags, 409 dup case-insensitive, 422 vide), jointures trade↔tag via review PATCH + projection tagIds dans la liste, détection d'erreurs à la decision gate (no_stop_loss, revenge_trade — fenêtre 15 min) stockée en TradeSubRow kind=MISTAKE, PATCH /trades/:id/mistakes/:mid (resolve), GET /trades/:id/session-series (projection déterministe mulberry32 ancrée sur entry/exit/MFE/MAE — le test Phase 4 "NOT served" remplacé). Fichiers : trades/trade-catalogs.ts (SYSTEM_MISTAKES ids fixes 00000000-...-000001..6, STARTER_TAGS), trades/session-series.ts, TagRow model.
+- B6 (commit dédié) : module ghosts — GET/POST /skipped-trades, PATCH /skipped-trades/:id/settle (re-settle = écrasement, parité mock). SkippedTradeRow. Instrument validé (422 UNKNOWN_INSTRUMENT).
+- B4 (commit dédié) : module discipline — rules CRUD + /rules/status (banner), évaluation des règles déclenchée par un NOUVEAU bus d'événements domaine `trade.closed` (infrastructure/events/domain-events.module.ts, node:events, @Global, zéro cycle Trades→Discipline), violation + alerte créées avec contexte figé à T, dédoublonnage (tradeId, ruleId), log /violations + acknowledge, inbox /alerts + mark read, agrégats serveur : /discipline/score (index par jour : 0.55 plan + 0.25 erreurs + 0.2 violations, moyenne sur jours scorés), /discipline/emotion-matrix, /mistakes/ledger (catalogue système). DisciplineRow kind=RULE|VIOLATION|ALERT.
+- B5 (commit dédié) : module session — GET /session/timeline (ENTRY/EXIT depuis journal, SL/TP_MODIFIED depuis tradeEvents, ALERT du jour depuis Discipline, mood strip BEFORE/AOUT avec attribution par jour du tap), notes /session/notes GET/POST/DELETE (date + horodatage serveur). SessionNoteRow. IMPORTANT : le schéma sessionEventSchema.id exige un UUID — le mock violait son propre contrat ("entry-<id>") ; l'API génère des UUID déterministes dérivés (derivedId, base+variant). Ids d'événements utilisés uniquement comme clés React côté front.
+- Pièges découverts : createTrade exige strategyId OU outOfPlaybook:true ; initialStop est optional NON nullable (omettre, pas null) ; le mood AFTER passe par PATCH /trades/:id/psychology (pas au close) ; close = mode "single"/"partial" (pas "full") ; Decimal Prisma normalise les zéros de fin (1.0850 → "1.085") ; repository `data Json` nécessite des casts `as unknown as Prisma.InputJsonValue`.
+
+Stage Summary:
+- 4 chantiers livrés + testés (B3, B6, B4, B5) — suite : 408/408 vitest vert, lint propre, build OK, typecheck OK.
+- Reste B7 (eco, 5 routes) → B8 (reviews/goals, 9) → B9 (session live, 12) → B10 (playbook, 22) → B11 (nofy, 23) → B12 (academy, 33) → B1 (stats, 3, dépend ghosts/discipline) → B13 (accounts riche, SPEC-1) → B2 (backup) → Phase C (bridge live + smoke E2E) → Phase D (vérif totale + rapport).
+- Infra ajoutée : DomainEventsModule (bus d'événements @Global) réutilisable pour les prochains chantiers (B8 goals→alerts, B9 note push...).
