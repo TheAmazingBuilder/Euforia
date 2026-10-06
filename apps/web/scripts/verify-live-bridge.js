@@ -120,7 +120,7 @@ function fail(label, detail) { results.push({ label, pass: false, detail }); con
     await page.goto(`${BASE}${route}`, { waitUntil: "networkidle", timeout: 60000 });
     await page.waitForTimeout(1200);
     const h1 = await page.locator("h1").first().textContent().catch(() => null);
-    // "Sign in to Cosmoz" = the auth gate — the route did NOT render. This is
+    // "Sign in to Euforia" = the auth gate — the route did NOT render. This is
     // exactly the symptom of a broken boot refresh (mock↔API drift).
     const rendered = h1 && h1.trim().length > 0 && !/sign in/i.test(h1);
     const noNewErrors = pageErrors.length === before;

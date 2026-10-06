@@ -56,7 +56,7 @@ const ok = (label, cond) => {
   await page.waitForTimeout(2500);
 
   const brandHasSvg = await page.locator("aside a[data-slot?] svg, aside a svg").first().isVisible().catch(() => false);
-  const logoSvg = await page.locator("aside a[aria-label='Cosmoz — Dashboard'] svg").first();
+  const logoSvg = await page.locator("aside a[aria-label='Euforia — Dashboard'] svg").first();
   ok("Sidebar brand renders an SVG mark", brandHasSvg || (await logoSvg.isVisible().catch(() => false)));
   // Logo: the ORBITAL COMET artwork (orbit arc ending in a comet head).
   const cometShape = await logoSvg.locator("path[d^='M 74.43 43.11']").count().catch(() => 0);

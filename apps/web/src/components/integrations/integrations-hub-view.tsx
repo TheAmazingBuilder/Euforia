@@ -224,7 +224,7 @@ export function IntegrationsHubView() {
           Integrations
         </h1>
         <p className="max-w-2xl text-sm text-muted-foreground">
-          The platform layer between Cosmoz and the outside world — brokers,
+          The platform layer between Euforia and the outside world — brokers,
           exchanges, market data, economic feeds, news, charting and delivery
           channels. One contract, many adapters; read-only by design.
         </p>
@@ -305,7 +305,7 @@ export function IntegrationsHubView() {
           }}
           onDisconnect={(provider) => setDisconnectId(provider.id)}
           busy={connect.isPending || disconnect.isPending || test.isPending || sync.isPending}
-          footnote="Exchanges differ from brokers: custody, API scopes and limits are provider-specific. Withdrawal scopes are refused by policy — Cosmoz journals, it never trades."
+          footnote="Exchanges differ from brokers: custody, API scopes and limits are provider-specific. Withdrawal scopes are refused by policy — Euforia journals, it never trades."
         />
       )}
       {activeTab === "market-data" && (
@@ -967,7 +967,7 @@ function AccountsPanel({ overview }: { overview: Overview }) {
           </CardTitle>
           <CardDescription>
             Balance, equity and positions stream from the broker adapter once
-            it connects — Cosmoz never invents account figures (the honesty
+            it connects — Euforia never invents account figures (the honesty
             rule the Session Live broker panel already follows). The normalized
             contract (<span className="font-mono text-xs">brokerSessionResponseSchema</span>)
             is stable; only the answer changes when the adapter lands.
@@ -1326,7 +1326,7 @@ function ExternalPanel({
       ))}
 
       {/* Outgoing webhooks (module upgrade) — documented contract with a
-          sample JSON payload Cosmoz DELIVERS to customer endpoints. */}
+          sample JSON payload Euforia DELIVERS to customer endpoints. */}
       <Card className="border-border bg-surface" data-testid="outgoing-webhooks">
         <CardHeader className="flex-row items-start justify-between space-y-0">
           <div className="space-y-1.5">
@@ -1335,7 +1335,7 @@ function ExternalPanel({
               Outgoing webhooks
             </CardTitle>
             <CardDescription>
-              Cosmoz POSTs journal events to your endpoints — HMAC-SHA256 signed, retried with
+              Euforia POSTs journal events to your endpoints — HMAC-SHA256 signed, retried with
               backoff. The sample payload below documents the contract.
             </CardDescription>
           </div>
@@ -1371,9 +1371,9 @@ function ExternalPanel({
             >
               {`POST <your-endpoint-url>
 Content-Type: application/json
-X-Cosmoz-Event: trade.closed
-X-Cosmoz-Signature: sha256=<hmac-of-body-with-endpoint-secret>
-X-Cosmoz-Delivery: <unique-uuid>
+X-Euforia-Event: trade.closed
+X-Euforia-Signature: sha256=<hmac-of-body-with-endpoint-secret>
+X-Euforia-Delivery: <unique-uuid>
 
 {
   "event": "trade.closed",
@@ -1390,7 +1390,7 @@ X-Cosmoz-Delivery: <unique-uuid>
             <p className="text-xs leading-relaxed text-muted-foreground">
               Verification: recompute the HMAC over the raw body with your endpoint secret
               (vault-stored, masked in this UI). Deliveries retry 5× with exponential backoff;
-              duplicates carry the same <span className="font-mono">X-Cosmoz-Delivery</span> id —
+              duplicates carry the same <span className="font-mono">X-Euforia-Delivery</span> id —
               dedupe on it. Respond 2xx within 10 s to acknowledge.
             </p>
           </CardContent>

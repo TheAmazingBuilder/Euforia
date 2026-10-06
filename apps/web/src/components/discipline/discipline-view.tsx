@@ -25,7 +25,7 @@ import {
 import { formatDateKeyShort } from "@/lib/utils/datetime";
 
 /**
- * Discipline screen (Phase 8): the Cosmoz Discipline Score gauge with its
+ * Discipline screen (Phase 8): the Euforia Discipline Score gauge with its
  * four process components, the rule cards (toggle / param editor / history
  * mini-timeline), the violation log with acknowledge and the Mistake
  * Ledger with frequency bars + R cost. All aggregates come from the API.
@@ -105,7 +105,7 @@ export function DisciplineView() {
         <div>
           <h1 className="font-heading text-2xl font-bold tracking-tight sm:text-3xl">Discipline</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            The engine that watches your process: rules, violations and the Cosmoz score.
+            The engine that watches your process: rules, violations and the Euforia score.
           </p>
         </div>
         <Button onClick={() => setFormOpen(true)}>

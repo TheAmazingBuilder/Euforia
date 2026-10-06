@@ -49,7 +49,7 @@ const PROVIDERS: Provider[] = [
       { label: "Account", icon: Wallet, value: "Read-only" },
       { label: "Execution", icon: KeyRound, value: "Disabled by design" },
     ],
-    note: "Scoped to monitoring: balances, open positions and ticks. No order can leave Cosmoz through this connection.",
+    note: "Scoped to monitoring: balances, open positions and ticks. No order can leave Euforia through this connection.",
   },
   {
     name: "MT5 — Local Bridge",
@@ -162,7 +162,7 @@ export function IntegrationsView() {
           <CardDescription>
             Every provider implements the same three capabilities — market
             data, account monitoring, execution. Execution stays disabled in
-            this phase: Cosmoz observes and journals, it never places orders.
+            this phase: Euforia observes and journals, it never places orders.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex items-center gap-2 text-xs text-muted-foreground">

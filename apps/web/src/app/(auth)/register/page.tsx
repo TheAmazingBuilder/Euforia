@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function RegisterPage() {
   return (
-    <AuthLayout title="Create your Cosmoz account">
+    <AuthLayout title="Create your Euforia account">
       <RegisterForm />
     </AuthLayout>
   );

@@ -20,7 +20,7 @@ export const authCopy = {
   ],
 
   login: {
-    title: "Sign in to Cosmoz",
+    title: "Sign in to Euforia",
     subtitle: "Welcome back, trader — your journal and your coach are waiting.",
     email: "Email",
     password: "Password",

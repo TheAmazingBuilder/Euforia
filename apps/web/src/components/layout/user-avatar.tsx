@@ -25,7 +25,7 @@ function initialsOf(name: string): string {
  */
 export function UserAvatar({ className }: { className?: string }) {
   const { data } = useProfile();
-  const name = data?.name ?? "Cosmoz Trader";
+  const name = data?.name ?? "Euforia Trader";
   const avatarUrl = data?.avatarUrl ?? null;
 
   return (

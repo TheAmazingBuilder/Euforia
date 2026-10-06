@@ -18,7 +18,7 @@ export const metadata: Metadata = {
  */
 export default function LoginPage() {
   return (
-    <AuthLayout title="Sign in to Cosmoz">
+    <AuthLayout title="Sign in to Euforia">
       <Suspense fallback={<div className="min-h-24" aria-hidden="true" />}>
         <LoginForm />
       </Suspense>

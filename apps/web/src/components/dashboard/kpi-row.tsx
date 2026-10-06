@@ -215,7 +215,7 @@ export function KpiRow({ overview }: { overview: StatsOverviewResponse }) {
               ? "-"
               : formatNumber(overview.disciplineScore, 0)
           }
-          sub="Cosmoz Index · /100"
+          sub="Euforia Index · /100"
           delta={overview.deltas.disciplineScore}
           formatDelta={(value) => `${signedFormat(value, 1)} pts`}
           sparkline={overview.sparklines.disciplineScore}

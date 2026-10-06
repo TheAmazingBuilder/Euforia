@@ -8,7 +8,7 @@ import { getThemeToken } from "@/lib/utils/theme";
 import { cn } from "@/lib/utils";
 
 /**
- * Cosmoz Discipline Score (Phase 8) — large circular SVG gauge in the
+ * Euforia Discipline Score (Phase 8) — large circular SVG gauge in the
  * accent color + the four process components + the product note, verbatim:
  * "Score measures process, not profit — you can be disciplined in a losing
  * week." The value comes from GET /discipline/score (server-computed).
@@ -56,7 +56,7 @@ export function ScoreGauge({ score, isLoading }: ScoreGaugeProps) {
   ];
 
   return (
-    <section className="rounded-xl border border-border bg-surface" aria-label="Cosmoz Discipline Score">
+    <section className="rounded-xl border border-border bg-surface" aria-label="Euforia Discipline Score">
       <div className="flex flex-col items-center gap-6 p-5 sm:p-6 md:flex-row md:items-center md:gap-8">
         <div className="relative shrink-0" role="img" aria-label={`Discipline score ${value === null ? "unavailable" : formatNumber(value, 0)} out of 100`}>
           <svg width={140} height={140} viewBox="0 0 140 140" className="-rotate-90">
@@ -96,7 +96,7 @@ export function ScoreGauge({ score, isLoading }: ScoreGaugeProps) {
         <div className="w-full space-y-3">
           <div>
             <h2 className="font-heading text-base font-semibold text-foreground">
-              Cosmoz Discipline Score
+              Euforia Discipline Score
             </h2>
             <p className="mt-0.5 text-xs text-muted-foreground">
               Rolling 30 days — four process components, one index.

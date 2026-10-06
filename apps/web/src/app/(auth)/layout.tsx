@@ -2,10 +2,10 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: {
-    template: "%s — Cosmoz",
-    default: "Cosmoz",
+    template: "%s — Euforia",
+    default: "Euforia",
   },
-  description: "Sign in to Cosmoz — the trading journal that coaches you.",
+  description: "Sign in to Euforia — the trading journal that coaches you.",
 };
 
 /**

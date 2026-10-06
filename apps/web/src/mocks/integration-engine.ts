@@ -454,7 +454,7 @@ class IntegrationEngine {
         kind: "NOTIFICATION",
         tagline: "Web-push delivery for risk and system alerts",
         description:
-          "Delivers the alerts your notification preferences allow to devices running the Cosmoz PWA.",
+          "Delivers the alerts your notification preferences allow to devices running the Euforia PWA.",
         docsUrl: null,
         capabilities: [],
         marketData: null,
@@ -585,7 +585,7 @@ class IntegrationEngine {
       {
         providerKey: "sample:news-1",
         headline: "Dollar steadies as traders look past mixed US jobs revisions",
-        source: "Cosmoz Sample Wire",
+        source: "Euforia Sample Wire",
         category: "FOREX",
         publishedAt: new Date(nowMs - 2 * 3_600_000).toISOString(),
         relatedSymbols: ["EURUSD", "USDJPY"],
@@ -596,7 +596,7 @@ class IntegrationEngine {
       {
         providerKey: "sample:news-2",
         headline: "Gold holds the 2 330 $ pivot ahead of the FOMC minutes",
-        source: "Cosmoz Sample Wire",
+        source: "Euforia Sample Wire",
         category: "GOLD",
         publishedAt: new Date(nowMs - 5 * 3_600_000).toISOString(),
         relatedSymbols: ["XAUUSD"],
@@ -607,7 +607,7 @@ class IntegrationEngine {
       {
         providerKey: "sample:news-3",
         headline: "Bitcoin ETF inflows resume after two quiet sessions",
-        source: "Cosmoz Sample Wire",
+        source: "Euforia Sample Wire",
         category: "CRYPTO",
         publishedAt: new Date(nowMs - 8 * 3_600_000).toISOString(),
         relatedSymbols: ["BTCUSDT"],
@@ -618,7 +618,7 @@ class IntegrationEngine {
       {
         providerKey: "sample:news-4",
         headline: "ECB speakers signal patience: rate path hinges on Q2 prints",
-        source: "Cosmoz Sample Wire",
+        source: "Euforia Sample Wire",
         category: "CENTRAL_BANKS",
         publishedAt: new Date(nowMs - day - 3_600_000).toISOString(),
         relatedSymbols: ["EURUSD", "DE40"],
@@ -629,7 +629,7 @@ class IntegrationEngine {
       {
         providerKey: "sample:news-5",
         headline: "Index futures drift lower as macro calendar thins out",
-        source: "Cosmoz Sample Wire",
+        source: "Euforia Sample Wire",
         category: "INDICES",
         publishedAt: new Date(nowMs - day - 7 * 3_600_000).toISOString(),
         relatedSymbols: ["US500", "NAS100"],
@@ -640,7 +640,7 @@ class IntegrationEngine {
       {
         providerKey: "sample:news-6",
         headline: "Oil inventories surprise: energy majors trim hedges",
-        source: "Cosmoz Sample Wire",
+        source: "Euforia Sample Wire",
         category: "MACRO",
         publishedAt: new Date(nowMs - 2 * day).toISOString(),
         relatedSymbols: ["USOIL"],

@@ -345,7 +345,7 @@ export const nofyDict = {
     title: "Export PDF",
     body: "A clean print rendering of this note — print it or save it as PDF from the browser dialog.",
     button: "Print / Save as PDF",
-    sheetLabel: "Cosmoz — Nofy note",
+    sheetLabel: "Euforia — Nofy note",
     updated: "Updated",
     empty: "This note is empty.",
   },

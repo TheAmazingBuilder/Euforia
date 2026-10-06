@@ -10,7 +10,7 @@ const nav = getNavItem("/academy");
 export const metadata: Metadata = {
   title: nav.label,
   description:
-    "The Cosmoz Academy — structured trading courses, drills, quizzes and a searchable glossary, from market fundamentals to advanced execution.",
+    "The Euforia Academy — structured trading courses, drills, quizzes and a searchable glossary, from market fundamentals to advanced execution.",
 };
 
 export default function AcademyPage() {

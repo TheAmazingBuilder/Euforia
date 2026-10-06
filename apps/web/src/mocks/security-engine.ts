@@ -172,8 +172,8 @@ class SecurityEngine {
     },
     {
       id: "ses-iphone",
-      device: "iPhone 14 — Cosmoz PWA",
-      browser: "Cosmoz PWA",
+      device: "iPhone 14 — Euforia PWA",
+      browser: "Euforia PWA",
       os: "iOS 18",
       ipMasked: "99.42.•••.••",
       location: "Toronto, CA (approximate)",
@@ -231,7 +231,7 @@ class SecurityEngine {
 
     pushEvent("EMAIL_VERIFIED", 62, 4, "trader@cosmoz.app", "Email address verified via confirmation link.");
     pushEvent("INTEGRATION_CONNECTED", 30, 6, "trader@cosmoz.app", "Deriv connected with read-only scope (account data + market data).");
-    pushEvent("LOGIN_SUCCESS", 21, 1, "iPhone 14 — Cosmoz PWA", "Sign-in from Toronto, CA (approximate).");
+    pushEvent("LOGIN_SUCCESS", 21, 1, "iPhone 14 — Euforia PWA", "Sign-in from Toronto, CA (approximate).");
     pushEvent("PASSWORD_CHANGED", 34, 2, "trader@cosmoz.app", "Password changed from an authenticated session. Other sessions stayed signed in.");
     pushEvent("API_KEY_CREATED", 12, 5, "trader@cosmoz.app", "API key “Journal export script” created with scopes read:trades, read:analytics. Secret shown once.");
     pushEvent("LOGIN_SUCCESS", 7, 3, "MacBook Pro", "Sign-in from Toronto, CA (approximate).");
@@ -267,9 +267,9 @@ class SecurityEngine {
     login(1, 5, false, "Unknown device", "Chrome 130", "Windows 11", "203.0.•••.••", "Frankfurt, DE", "Wrong password — attempt rate-limited and logged.");
     login(6, 3, true, "MacBook Pro", "Safari 18", "macOS 15", "24.114.•••.••", "Toronto, CA");
     login(12, 9, true, "This device", "Current browser", "This OS", "24.114.•••.••", "Toronto, CA");
-    login(13, 2, true, "iPhone 14 — Cosmoz PWA", "Cosmoz PWA", "iOS 18", "99.42.•••.••", "Toronto, CA");
+    login(13, 2, true, "iPhone 14 — Euforia PWA", "Euforia PWA", "iOS 18", "99.42.•••.••", "Toronto, CA");
     login(19, 4, true, "MacBook Pro", "Safari 18", "macOS 15", "24.114.•••.••", "Toronto, CA");
-    login(26, 6, true, "iPhone 14 — Cosmoz PWA", "Cosmoz PWA", "iOS 18", "99.42.•••.••", "Toronto, CA");
+    login(26, 6, true, "iPhone 14 — Euforia PWA", "Euforia PWA", "iOS 18", "99.42.•••.••", "Toronto, CA");
   }
 
   // ── Event log (§18 — append-only) ─────────────────────────────────────────

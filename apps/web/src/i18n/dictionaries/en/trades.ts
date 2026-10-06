@@ -327,7 +327,7 @@ export const tradesDict = {
 
   csvImport: {
     title: "Import trades from CSV",
-    description: "Map your broker's columns once — Cosmoz normalizes, deduplicates per broker reference, and recomputes results server-side.",
+    description: "Map your broker's columns once — Euforia normalizes, deduplicates per broker reference, and recomputes results server-side.",
     brokerFormat: "Broker format",
     chooseFile: "Choose file",
     pasteCsv: "Paste CSV",

@@ -146,7 +146,7 @@ export function GoalFormDialog({ open, onOpenChange, editTarget }: GoalFormDialo
         <DialogHeader>
           <DialogTitle>{editTarget ? "Edit goal" : "New goal"}</DialogTitle>
           <DialogDescription>
-            Pick what to hold yourself to — Cosmoz compares it with your real trading behavior over the period.
+            Pick what to hold yourself to — Euforia compares it with your real trading behavior over the period.
           </DialogDescription>
         </DialogHeader>
 

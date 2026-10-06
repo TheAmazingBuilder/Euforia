@@ -12,7 +12,7 @@ import {
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 
 export const metadata = {
-  title: "Cosmoz — Theme test",
+  title: "Euforia — Theme test",
   description:
     "QA page for the COSMOZ 3-theme system: tokens, typography and P&L semantics.",
 };

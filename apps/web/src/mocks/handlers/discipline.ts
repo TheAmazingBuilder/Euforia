@@ -92,7 +92,7 @@ export const disciplineHandlers = [
     }
   }),
 
-  // GET /discipline/score — Cosmoz Discipline Score + month components
+  // GET /discipline/score — Euforia Discipline Score + month components
   http.get(endpoint(apiPaths.disciplineScore), async () => {
     await latency();
     try {

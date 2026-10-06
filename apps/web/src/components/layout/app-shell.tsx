@@ -114,7 +114,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </div>
             </SheetTitle>
             <SheetDescription className="sr-only">
-              Cosmoz main navigation
+              Euforia main navigation
             </SheetDescription>
           </SheetHeader>
           <div className="flex-1 overflow-y-auto pb-[calc(1rem+env(safe-area-inset-bottom))]">

@@ -10,7 +10,7 @@ const nav = getNavItem("/discipline");
 export const metadata: Metadata = {
   title: nav.label,
   description:
-    "The Cosmoz Discipline Score, your rule engine with violation history and the Mistake Ledger.",
+    "The Euforia Discipline Score, your rule engine with violation history and the Mistake Ledger.",
 };
 
 export default function DisciplinePage() {

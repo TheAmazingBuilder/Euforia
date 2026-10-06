@@ -515,7 +515,7 @@ export function CommandPalette() {
             </kbd>
             run
           </span>
-          <span className="ml-auto hidden sm:inline">Cosmoz command palette</span>
+          <span className="ml-auto hidden sm:inline">Euforia command palette</span>
         </div>
       </DialogContent>
     </Dialog>

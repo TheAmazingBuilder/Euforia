@@ -161,7 +161,7 @@ export const SIDEBAR_ITEMS: NavItem[] = [
     label: "Settings",
     icon: Settings,
     description:
-      "Tune Cosmoz to your accounts, timezone, risk defaults and display preferences.",
+      "Tune Euforia to your accounts, timezone, risk defaults and display preferences.",
     comingSoon:
       "Account management, risk defaults, theme and timezone preferences will be configured here.",
   },
@@ -228,16 +228,16 @@ export function getPageTitle(pathname: string): string {
   if (pathname === "/profile") return "Profile";
   if (pathname === "/login") return "Sign in";
   if (pathname === "/register") return "Create account";
-  return "Cosmoz";
+  return "Euforia";
 }
 
 /**
  * Breadcrumb trail for the topbar: the app root first, then the active page.
- * Unknown paths collapse to a single "Cosmoz" crumb (no dead ends).
+ * Unknown paths collapse to a single "Euforia" crumb (no dead ends).
  */
 export function getBreadcrumb(pathname: string): { href: string; label: string }[] {
   const crumbs: { href: string; label: string }[] = [
-    { href: "/", label: "Cosmoz" },
+    { href: "/", label: "Euforia" },
   ];
   if (pathname !== "/") {
     crumbs.push({ href: pathname, label: getPageTitle(pathname) });

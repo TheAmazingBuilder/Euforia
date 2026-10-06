@@ -6,10 +6,10 @@ import { DensitySync } from "@/components/settings/density-sync";
 
 export const metadata: Metadata = {
   title: {
-    template: "%s — Cosmoz",
-    default: "Cosmoz",
+    template: "%s — Euforia",
+    default: "Euforia",
   },
-  description: "Cosmoz — the trading journal that coaches you.",
+  description: "Euforia — the trading journal that coaches you.",
 };
 
 export default function AppLayout({

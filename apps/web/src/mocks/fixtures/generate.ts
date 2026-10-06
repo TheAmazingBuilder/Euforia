@@ -894,7 +894,7 @@ export function buildFixtureData(): FixtureData {
       type: "DISCIPLINE_WIN",
       severity: "NOTIFY",
       title: "5 plan-following trades in a row",
-      message: "Five graded trades in a row followed the plan. Cosmoz Index trending up.",
+      message: "Five graded trades in a row followed the plan. Euforia Index trending up.",
       payload: { streak: 5 },
       tradeId: null,
       readAt: isoAt(12, 21),

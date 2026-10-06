@@ -42,7 +42,7 @@ export function Topbar({ onMenuClick }: TopbarProps) {
           ? dict.nav.signIn
           : crumb.href === "/register"
             ? dict.nav.createAccount
-            : crumb.label === "Cosmoz"
+            : crumb.label === "Euforia"
               ? dict.nav.app
               : crumb.label),
   }));

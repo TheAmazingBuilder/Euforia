@@ -508,7 +508,7 @@ export const analyticsDict = {
     title: "Quarterly report",
     description: "The 13 analytics tabs condensed into one printable page — print it or save it as PDF from the browser dialog.",
     printBtn: "Print / Save as PDF",
-    sheetHeader: "Cosmoz — Quarterly trading report",
+    sheetHeader: "Euforia — Quarterly trading report",
     equityAria: "Equity curve over the quarter",
     kpis: {
       closedTrades: "Closed trades",
@@ -547,6 +547,6 @@ export const analyticsDict = {
     thExpectancy: "Expectancy",
     thMaxDDR: "Max DD (R)",
     noteChip: "NOTE",
-    footer: "Generated with Cosmoz · every figure comes from the SAME filtered server dataset as the tabs · Sharpe: √252 over daily R sums, risk-free 0",
+    footer: "Generated with Euforia · every figure comes from the SAME filtered server dataset as the tabs · Sharpe: √252 over daily R sums, risk-free 0",
   },
 } as const;

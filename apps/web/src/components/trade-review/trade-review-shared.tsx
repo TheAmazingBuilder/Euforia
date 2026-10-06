@@ -74,7 +74,7 @@ export const METRIC_META: Record<GoalMetric, { label: string; hint: string }> = 
   R_EARNED: { label: "R earned", hint: "Total R accumulated over the period" },
   AVG_R: { label: "Average R", hint: "Mean R per closed trade" },
   PROFIT_TARGET: { label: "Net P&L", hint: "Net profit in account currency" },
-  DISCIPLINE_SCORE: { label: "Discipline score", hint: "Cosmoz Index — process, not profit" },
+  DISCIPLINE_SCORE: { label: "Discipline score", hint: "Euforia Index — process, not profit" },
   FOLLOWED_PLAN_PCT: { label: "Followed plan", hint: "% of trades executed as planned" },
   MAX_TRADES_PER_DAY: { label: "Max trades per day", hint: "A ceiling — your worst day must stay under it" },
   MAX_DAILY_LOSS_R: { label: "Worst daily loss", hint: "A floor — no day may lose more R than the limit" },

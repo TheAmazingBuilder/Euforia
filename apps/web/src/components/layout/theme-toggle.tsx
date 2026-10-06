@@ -47,7 +47,7 @@ const emptySubscribe = () => () => {};
 
 /**
  * Theme switch — ONE click toggles light ↔ dark (the default dark-blue is
- * remembered). The dropdown chevron still exposes all three Cosmoz themes.
+ * remembered). The dropdown chevron still exposes all three Euforia themes.
  */
 export function ThemeToggle() {
   const { theme, resolvedTheme, setTheme } = useTheme();

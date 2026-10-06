@@ -40,7 +40,7 @@ const en = {
     items: Object.fromEntries(SIDEBAR_ITEMS.map((item) => [item.href, item.label])) as Record<string, string>,
     sections: Object.fromEntries(NAV_SECTIONS.map((section) => [section.title, section.title])) as Record<string, string>,
     bottom: Object.fromEntries(BOTTOM_NAV_ITEMS.map((item) => [item.href, item.label])) as Record<string, string>,
-    app: "Cosmoz",
+    app: "Euforia",
     profile: "Profile",
     signIn: "Sign in",
     createAccount: "Create account",
@@ -59,7 +59,7 @@ const en = {
   settings: {
     view: {
       title: "Settings",
-      subtitle: "Tune Cosmoz to how you trade, journal and review — one card at a time.",
+      subtitle: "Tune Euforia to how you trade, journal and review — one card at a time.",
       searchPlaceholder: "Search settings — try “risk”, “timezone”, “push”…",
       searchAria: "Search settings",
       categoriesNavAria: "Settings categories",
@@ -122,7 +122,7 @@ const en = {
       exporting: "Exporting…",
       resetTitle: "Reset to defaults?",
       resetConfirm: "Reset card",
-      resetBodyGeneric: "Every preference in this card returns to the safe Cosmoz defaults. This cannot be undone.",
+      resetBodyGeneric: "Every preference in this card returns to the safe Euforia defaults. This cannot be undone.",
     },
 
     /** settings-primitives.tsx — save bar, status line, typed-confirm dialog. */
@@ -230,12 +230,12 @@ const en = {
       toastRulesUpdated: "Rules Engine updated",
       toastRulesUpdatedDescription: "Monitoring, alerts and locks now follow these limits.",
       toastRulesFailed: "Could not update the Rules Engine",
-      resetBody: "Every preference in this card returns to the safe Cosmoz defaults. Rules in the Rules Engine are untouched.",
+      resetBody: "Every preference in this card returns to the safe Euforia defaults. Rules in the Rules Engine are untouched.",
     },
 
     appearance: {
       title: "Appearance",
-      description: "How Cosmoz looks and feels — theme, density and how P&L numbers are shown.",
+      description: "How Euforia looks and feels — theme, density and how P&L numbers are shown.",
       toastSaved: "Appearance saved",
       toastSaveFailed: "Could not save appearance",
       toastReset: "Appearance reset to defaults",
@@ -443,7 +443,7 @@ const en = {
       quietHoursTo: "To (HH:MM)",
       quietHoursMuted: "Muted channels inside the window",
       quietHoursMuteAriaPrefix: "Quiet hours — mute",
-      resetBody: "The whole notification matrix returns to the safe Cosmoz defaults. This cannot be undone.",
+      resetBody: "The whole notification matrix returns to the safe Euforia defaults. This cannot be undone.",
     },
 
     academy: {
@@ -473,7 +473,7 @@ const en = {
 
     privacy: {
       title: "Privacy",
-      description: "What Cosmoz may collect and who can see you — nothing about security lives here.",
+      description: "What Euforia may collect and who can see you — nothing about security lives here.",
       toastSaved: "Privacy preferences saved",
       toastSaveFailed: "Could not save privacy preferences",
       toastReset: "Privacy preferences reset to defaults",
@@ -513,7 +513,7 @@ const en = {
       toastImportedTags: "tags",
       toastImportedAdded: "added.",
       toastImportFailed: "Import failed",
-      toastImportFailedDescription: "That file is not a valid Cosmoz backup (JSON + schema).",
+      toastImportFailedDescription: "That file is not a valid Euforia backup (JSON + schema).",
       exportToastTitle: "Backup exported",
       exportToastTrades: "trades",
       exportToastStrategies: "strategies",
@@ -534,7 +534,7 @@ const en = {
       sectionOne: "settings section",
       sectionMany: "settings sections",
       sectionImportedSuffix: "imported from the profile.",
-      toastProfileImportFailedDescription: "That file is not a valid Cosmoz preferences profile.",
+      toastProfileImportFailedDescription: "That file is not a valid Euforia preferences profile.",
     },
 
     themePreview: {

@@ -247,7 +247,7 @@ export function SecretOnceDialog({
             <p className="text-xs text-muted-foreground">
               For security, {secret !== undefined ? "this secret is" : "these codes are"}{" "}
               displayed <span className="font-medium text-foreground">only once</span>.
-              Cosmoz stores just a masked prefix and a fingerprint — nobody can
+              Euforia stores just a masked prefix and a fingerprint — nobody can
               retrieve it later, not even support.
             </p>
           </div>

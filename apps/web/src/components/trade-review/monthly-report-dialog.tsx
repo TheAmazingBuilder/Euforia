@@ -176,7 +176,7 @@ export function MonthlyReportDialog({
         <div className="print-sheet rounded-xl border border-border bg-background p-6" data-testid="review-report-sheet">
           <header className="flex items-start justify-between border-b pb-3">
             <div>
-              <p className="font-heading text-lg font-bold tracking-tight">Cosmoz — Trade Review</p>
+              <p className="font-heading text-lg font-bold tracking-tight">Euforia — Trade Review</p>
               <p className="text-sm text-muted-foreground">Monthly journal · {label}</p>
             </div>
             <div className="text-right text-[10px] leading-relaxed text-muted-foreground">
@@ -300,7 +300,7 @@ export function MonthlyReportDialog({
           )}
 
           <footer className="mt-5 border-t pt-2 text-center text-[9px] text-muted-foreground">
-            Generated with Cosmoz · grades are self-verified against the playbook · results recomputed server-side
+            Generated with Euforia · grades are self-verified against the playbook · results recomputed server-side
           </footer>
         </div>
       </DialogContent>

@@ -2292,7 +2292,7 @@ export function createMockStore() {
   }
 
   /**
-   * GET /discipline/score — the Cosmoz Discipline Score with its current
+   * GET /discipline/score — the Euforia Discipline Score with its current
    * month component breakdown (data-model.md "Tier-1 feature wiring"):
    * process only, deliberately decoupled from P&L.
    */

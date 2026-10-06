@@ -1,5 +1,5 @@
 /**
- * Cosmoz service worker — Priorité 3, feature 12 (PWA offline).
+ * Euforia service worker — Priorité 3, feature 12 (PWA offline).
  *
  * COMPOSITION: this worker ALSO hosts the MSW mock layer. MSW's generated
  * script (mockServiceWorker.js) is imported below — it intercepts the API
@@ -56,7 +56,7 @@ self.addEventListener("fetch", (event) => {
           if (offline) return offline;
         } catch {}
         return new Response(
-          "<!doctype html><title>Cosmoz</title><p style='font-family:sans-serif;padding:2rem'>You are offline.</p>",
+          "<!doctype html><title>Euforia</title><p style='font-family:sans-serif;padding:2rem'>You are offline.</p>",
           { status: 503, headers: { "Content-Type": "text/html" } },
         );
       }
