@@ -18,6 +18,7 @@ import { backupHandlers } from "./backup";
 import { tradeReviewHandlers } from "./tradeReview";
 import { academyHandlers } from "./academy";
 import { nofyHandlers } from "./nofy";
+import { ocrHandlers } from "./ocr";
 
 /** Full §12 endpoint matrix, one file per domain. */
 export const handlers = [
@@ -41,4 +42,5 @@ export const handlers = [
   ...securityHandlers,
   ...academyHandlers,
   ...nofyHandlers,
+  ...ocrHandlers,
 ];

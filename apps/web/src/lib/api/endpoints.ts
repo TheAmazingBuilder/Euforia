@@ -52,6 +52,12 @@ export const apiPaths = {
   sessionTimeline: "/session/timeline",
   sessionNotes: "/session/notes",
   sessionNote: (noteId: string) => `/session/notes/${noteId}`,
+  // OCR & screenshot recognition (review UI at /recognition — mirrors the
+  // NestJS Phase 19 contract exactly: upload, list, review, confirm, delete)
+  ocrRecognitions: "/ocr/recognitions",
+  ocrRecognition: (recognitionId: string) => `/ocr/recognitions/${recognitionId}`,
+  ocrRecognitionImage: (recognitionId: string) => `/ocr/recognitions/${recognitionId}/image`,
+  ocrRecognitionConfirm: (recognitionId: string) => `/ocr/recognitions/${recognitionId}/confirm`,
   // Session Live module (trading sessions, saved analyses, key levels)
   sessionLiveSessions: "/session-live/sessions",
   sessionLiveSession: (sessionId: string) => `/session-live/sessions/${sessionId}`,

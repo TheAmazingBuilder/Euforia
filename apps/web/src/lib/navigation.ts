@@ -12,6 +12,7 @@ import {
   LockKeyhole,
   NotebookPen,
   NotebookText,
+  ScanText,
   Settings,
   ShieldCheck,
   type LucideIcon,
@@ -55,6 +56,15 @@ export const SIDEBAR_ITEMS: NavItem[] = [
       "The complete trade log: every execution with its result and decision grade, side by side.",
     comingSoon:
       "Filters, CSV import and per-trade detail views will build on this table.",
+  },
+  {
+    href: "/recognition",
+    label: "Recognition",
+    icon: ScanText,
+    description:
+      "Upload trade screenshots and turn them into reviewable records: the engine drafts, you confirm.",
+    comingSoon:
+      "Recognition will pre-fill trade entries from confirmed screenshots and batch-review queues.",
   },
   {
     href: "/journal",
@@ -175,7 +185,7 @@ export type NavSection = {
 export const NAV_SECTIONS: NavSection[] = [
   {
     title: "Trading",
-    hrefs: ["/session", "/trades", "/journal", "/playbook"],
+    hrefs: ["/session", "/trades", "/recognition", "/journal", "/playbook"],
   },
   // Goals lives inside Trade Review (/journal?tab=goals) — /goals redirects there.
   {
