@@ -242,3 +242,24 @@ Work Log:
 Stage Summary:
 - PHASE D COMPLÈTE : parité backend B1-B14 (14 domaines, ~190 routes), pont live prouvé par E2E de bout en bout, mock par défaut intact.
 - Livrables : commits a5c1064 (Phase C + B14) et 287bc6f (Phase D) sur main — tout verrouillé dans git.
+
+---
+Task ID: rebrand-euforia (logo app + rebrand complet)
+Agent: Super Z (main)
+Date: 2026-10-06 18:20 UTC
+
+Task: Implémenter le logo de l'app depuis Eurofia.zip (kit "Euforia") en suivant docs/brand-guide.md + README.md ; commit avant chaque livrable (règle verrouillée).
+
+Work Log:
+- État disque vérifié d'abord : Phases C/D committées (a5c1064→c3b72f0), tree propre. Zip extrait → kit complet "Euforia" (marque E 3 rubans, tagline TRADE SMARTER. GROW FASTER., palette violet #8B5CF6 / indigo #6366F1 / cyan #22D3EE sur navy #020617).
+- Commit d9c50f5 — assets : public/brand/** (15 SVG + PNG), icon.svg remplacé (favicon squircle officiel), favicon.ico reconstruit (16/32/48, Pillow), apple-icon.png 180 généré (auto-découvert par Next), icon-192.png générée (manquante du kit), PNG tronqué du zip réparé (mark-light-512 depuis le 1024) — script persisté scripts/build-euforia-icons.py ; manifest mergé (identité Euforia + chrome navy #020617, PNG any+maskable) ; design tokens src/design-system/brand.ts + euforia.css importés dans globals.css (valeurs opt-in, thème "Le Registre" intact) ; metadata racine mergée (title template %s — Euforia, description, applicationName, og-image 1200×630).
+- Commit b960dbc — composant : src/components/brand/euforia-logo.tsx, artwork géométrie kit verbatim (paths rubans, gradient 135°, IDs scopés useId), API documentée variant=mark|full tone=dark|light|white|black|auto size=sm|md|lg (+withTagline, interdit <120px), tone auto = mot-symbole text-foreground (thème-aware) avec marque invariante ; remplace CosmozLogo dans SidebarBrand (mark collapsed / full étendu), AuthLayout (watermark 560px + lockups), AuthGate splash ; cosmoz-logo.tsx supprimé.
+- Commit 36b09bc — rebrand chaînes web : sed sensible à la casse sur 40 fichiers/94 occurrences (i18n dictionaries, metadata layouts auth/app, navigation.ts root crumb, topbar match, command palette, user-avatar fallback, register/login, discipline gauge "Euforia Discipline Score" + aria, kpi "Euforia Index · /100", integrations hub copy + headers doc X-Cosmoz-*→X-Euforia-* [simulateur seul, aucun wire réel], security device labels "Euforia PWA", playbook template library, monthly report, offline.html + sw.js, comment sw-register/sonner/theme-toggle/equity-constellation) ; probes verify-analytics (locator aria-label) + verify-live-bridge (commentaire) mis à jour. Emails @cosmoz.app, cookie cosmoz_rt, identifiants démo CONSERVÉS (identité de connexion, pas de la marque).
+- Commit d506538 — rebrand chaînes API : EMAIL_FROM "Euforia <no-reply@cosmoz.app>", TOTP ISSUER "Euforia" (codes inchangés — issuer ne fait que labeler l'URI otpauth, HMAC = secret+temps ; test security ligné), sujets mail ×3, "Euforia Mock Broker" + "Euforia-MT5-Sim", catalogue intégrations (PWA/Sample Wire), commentaires modules. Suite vitest : 464/464 verte.
+- Commit d7e87ba — fix manifest (chemins /brand/png/* — le kit range les PNG dans png/) + sonde scripts/verify-rebrand.js : 16/16 verts (assets 200, manifest name Euforia, lockups login/dashboard, zéro texte Cosmoz visible, zéro pageerror) + captures scripts/shots/rebrand-{login,dashboard}.png vérifiées visuellement (squircle + rubans gradient + wordmark Inter, watermark discret, design par ailleurs intact).
+- Build web clean-rebuild OK (ports tués par PID avant build — piège verrouillé), lint 0 erreur, tsc 0 erreur.
+
+Stage Summary:
+- REBRAND EUFORIA COMPLET : app 100% Euforia (logo, favicon, manifest, UI, i18n, mocks, API payloads), design système préexistant intact, identifiants démo inchangés (trader@cosmoz.app / cosmoz-demo-2026).
+- 5 commits : d9c50f5 (assets) → b960dbc (composant+swap) → 36b09bc (chaînes web) → d506538 (API, 464/464) → d7e87ba (fix manifest + sonde 16/16).
+- Vérification : tsc/lint/build verts, sonde navigateur 16/16, captures validées à l'œil.
