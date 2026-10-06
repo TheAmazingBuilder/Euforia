@@ -383,17 +383,23 @@ function ReviewDialog({
   const remove = useDeleteOcrRecognition();
   const editable = recognition.status === "REVIEW_REQUIRED";
   const [imageUrl, setImageUrl] = React.useState<string | null>(null);
-  const [corrections, setCorrections] = React.useState<Record<string, string>>({});
-
-  React.useEffect(() => {
-    setCorrections(
-      Object.fromEntries(
-        recognition.fields
-          .filter((field) => field.normalizedValue !== null)
-          .map((field) => [field.field, field.normalizedValue ?? ""]),
-      ),
+  const correctionsFrom = (source: OcrRecognition): Record<string, string> =>
+    Object.fromEntries(
+      source.fields
+        .filter((field) => field.normalizedValue !== null)
+        .map((field) => [field.field, field.normalizedValue ?? ""]),
     );
-  }, [recognition]);
+  const [corrections, setCorrections] = React.useState<Record<string, string>>(() =>
+    correctionsFrom(recognition),
+  );
+  // Reset the editable corrections when the dialog switches to another
+  // recognition — state adjusted during render (React's recommended
+  // alternative to a setState-in-effect, which cascades renders).
+  const [lastRecognition, setLastRecognition] = React.useState(recognition);
+  if (lastRecognition !== recognition) {
+    setLastRecognition(recognition);
+    setCorrections(correctionsFrom(recognition));
+  }
 
   React.useEffect(() => {
     if (!open) return;
