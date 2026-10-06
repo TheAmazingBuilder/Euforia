@@ -2,6 +2,8 @@
 
 import * as React from "react";
 
+import { API_MOCKED } from "@/lib/api/mode";
+
 /**
  * Boots the MSW worker before rendering children — but ONLY when mocking is
  * active. Mocking is the DEFAULT (the canonical preview needs zero env); the
@@ -31,9 +33,7 @@ function startWorkerOnce(): Promise<void> {
 }
 
 export function MockProvider({ children }: { children: React.ReactNode }) {
-  const mocked =
-    process.env.NEXT_PUBLIC_API_MOCKED !== "false" &&
-    process.env.NEXT_PUBLIC_API_LIVE !== "true";
+  const mocked = API_MOCKED;
   // SSR and first client render agree: not ready when mocking, ready otherwise.
   const [ready, setReady] = React.useState(!mocked);
 

@@ -14,6 +14,7 @@ import {
   useMfaRecoveryMutation,
 } from "@/lib/api/queries/auth";
 import { apiErrorMessage, apiErrorCode } from "@/lib/api/client";
+import { API_MOCKED } from "@/lib/api/mode";
 import { setAccessToken } from "@/lib/auth/token-store";
 import { useAuth } from "@/components/auth/auth-provider";
 import { useDict } from "@/i18n/i18n-provider";
@@ -73,7 +74,9 @@ export function LoginForm() {
   const mfaChallenge = useMfaChallengeMutation();
   const mfaRecovery = useMfaRecoveryMutation();
 
-  const mocked = process.env.NEXT_PUBLIC_API_MOCKED === "true";
+  // Canonical mode check (mode.ts) — the zero-env canonical preview is
+  // mocked, so the demo affordances must be visible there too.
+  const mocked = API_MOCKED;
 
   function mapError(error: unknown): { body: string; hint?: string } {
     const code = apiErrorCode(error);
@@ -369,9 +372,10 @@ export function LoginForm() {
               {auth.login.demoHintFill}
             </button>
           </div>
-          <p className="font-mono text-xs text-muted-foreground">
-            trader@cosmoz.app
-          </p>
+          <div className="flex flex-col gap-0.5 font-mono text-xs text-muted-foreground">
+            <span data-testid="login-demo-email">trader@cosmoz.app</span>
+            <span data-testid="login-demo-password">cosmoz-demo-2026</span>
+          </div>
           <p className="text-[11px] text-muted-foreground/80">
             {auth.login.demoHintNote}
           </p>

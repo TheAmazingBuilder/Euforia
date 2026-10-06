@@ -10,6 +10,7 @@ import { EuforiaLogo } from "@/components/brand/euforia-logo";
 import { useAuth } from "@/components/auth/auth-provider";
 import { useResendVerificationMutation } from "@/lib/api/queries/auth";
 import { apiErrorCode } from "@/lib/api/client";
+import { API_MOCKED } from "@/lib/api/mode";
 import { useDict } from "@/i18n/i18n-provider";
 
 /**
@@ -48,7 +49,7 @@ function VerificationRequiredScreen() {
   const [resent, setResent] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
-  const mocked = process.env.NEXT_PUBLIC_API_MOCKED === "true";
+  const mocked = API_MOCKED;
 
   function requestNew() {
     if (!user?.email) return;

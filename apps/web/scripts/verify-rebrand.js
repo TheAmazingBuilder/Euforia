@@ -36,7 +36,15 @@ const fs = require("fs");
   await page.waitForTimeout(800);
   const body = await page.locator("body").innerText();
   /euforia/i.test(body) ? ok("Euforia text present") : bad("no Euforia text");
-  /cosmoz/i.test(body) ? bad("Cosmoz text still visible") : ok("no Cosmoz text");
+  // The seeded demo identity keeps its @cosmoz.app email + cosmoz-demo-2026
+  // password (connection data, not brand copy) and the demo panel displays
+  // both — strip them before the brand-word check.
+  const brandText = body
+    .replace(/[\w.+-]+@cosmoz\.app/g, "")
+    .replace(/cosmoz-demo-2026/g, "");
+  /cosmoz/i.test(brandText) ? bad("Cosmoz text still visible") : ok("no Cosmoz text");
+  const demoHint = await page.locator('[data-testid="login-demo-hint"]').isVisible().catch(() => false);
+  demoHint ? ok("demo credentials panel visible") : bad("demo panel hidden");
   const brandSvgs = await page.locator('svg[aria-label="Euforia"], svg[aria-hidden="true"]').count();
   brandSvgs > 0 ? ok(`brand mark svg count = ${brandSvgs}`) : bad("no brand svg");
   const title = await page.title();

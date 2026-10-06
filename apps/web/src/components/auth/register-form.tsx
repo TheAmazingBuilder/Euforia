@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useRegisterMutation, useResendVerificationMutation } from "@/lib/api/queries/auth";
 import { apiErrorMessage, apiErrorCode } from "@/lib/api/client";
+import { API_MOCKED } from "@/lib/api/mode";
 import { useDict } from "@/i18n/i18n-provider";
 import {
   AuthField,
@@ -42,7 +43,7 @@ export function RegisterForm() {
   const [pending, setPending] = React.useState<RegisterResponse | null>(null);
   const [resent, setResent] = React.useState(false);
 
-  const mocked = process.env.NEXT_PUBLIC_API_MOCKED === "true";
+  const mocked = API_MOCKED;
 
   function submit(event: React.FormEvent) {
     event.preventDefault();

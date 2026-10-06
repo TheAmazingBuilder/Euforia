@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useForgotPasswordMutation } from "@/lib/api/queries/auth";
 import { apiErrorMessage, apiErrorCode } from "@/lib/api/client";
+import { API_MOCKED } from "@/lib/api/mode";
 import { useDict } from "@/i18n/i18n-provider";
 import {
   AuthField,
@@ -35,7 +36,7 @@ export function ForgotPasswordForm() {
   const [formError, setFormError] = React.useState<string | null>(null);
   const [sent, setSent] = React.useState<ForgotPasswordResponse | null>(null);
 
-  const mocked = process.env.NEXT_PUBLIC_API_MOCKED === "true";
+  const mocked = API_MOCKED;
 
   function submit(event: React.FormEvent) {
     event.preventDefault();
