@@ -306,3 +306,22 @@ Stage Summary:
 - LE E DE L'APP = TA RÉFÉRENCE Y COMPRIS OMBRES ET CONTOURS (exactitude photométrique, pas seulement la silhouette).
 - 1 commit : 89f1201. Scripts persistés : bake-reference-shading.py (production), add-mark-depth.py + try-color-trace.py (tentatives documentées), render-mark-frame.js (utilitaire).
 - Intermédiaires gardés : scripts/euforia-trace/{flat-render,baked-render,map-shadow,map-hilite}.png.
+
+---
+Task ID: auth-demo-panel-fix (login bloqué — identifiants démo invisibles)
+Agent: Super Z (main)
+Date: 2026-10-07 01:05 UTC
+
+Task: « je suis bloqué à la page login, j'arrive pas à me connecter, j'ai pas les emails et password de démos »
+
+Work Log:
+- CAUSE RACINE : deux tests de mode mock divergents. MockProvider : mock PAR DÉFAUT (mocked sauf API_MOCKED=false ou API_LIVE=true — la preview canonique n'a aucune env) ; les panneaux démo auth : test strict legacy `NEXT_PUBLIC_API_MOCKED === "true"` → undefined en zero-env → couche mock ACTIVE mais panneaux d'identifiants CACHÉS. Login fonctionnel, mais aucun identifiant visible nulle part.
+- FIX (commit aef9f27) : src/lib/api/mode.ts = constante canonique API_MOCKED unique, importée par MockProvider + login/register/forgot + auth-gate + dev-hooks (dev-hooks garde son garde-fou NODE_ENV=production).
+- BONUS : le panneau DEMO ACCOUNT affiche maintenant LES DEUX identifiants (trader@cosmoz.app + cosmoz-demo-2026) — le bouton Fill les remplit, plus besoin de deviner.
+- PIÈGE SONDE : le check "no Cosmoz text" matchait l'email démo puis le mot de passe démo désormais AFFICHÉS → le probe strip l'identité de connexion (données de connexion ≠ copie marque) et asserte maintenant "demo credentials panel visible" → 17/17 verts.
+- Vérification : tsc 0 erreur, eslint 0 erreur (7 fichiers), rebuild + start propre (kill PID d'abord), login end-to-end rejoué sur build frais → dashboard.
+
+Stage Summary:
+- PLUS JAMAIS DE BLOCAGE LOGIN : identifiants démo affichés sur la page (panneau Demo account), bouton Fill, sonde 17/17 avec assertion panel visible.
+- Identifiants inchangés : trader@cosmoz.app / cosmoz-demo-2026 (identité de connexion, volontairement non rebrandée).
+- 1 commit : aef9f27.
