@@ -283,3 +283,26 @@ Work Log:
 Stage Summary:
 - LE E DE L'APP = TA RÉFÉRENCE, à l'identique (silhouette vectorisée de ton image, gradient sur tes couleurs). Assets cohérents de bout en bout (SVG, PNG, favicon, og-image, composant, tokens).
 - 2 commits : f678bd5 (assets) → 5d56f29 (composant + tokens). Scripts persistés : trace-euforia-mark.py, extract-reference-mark.py, rasterize-euforia.js, rebuild-og-and-icons.py, compare-e-marks.py.
+
+---
+Task ID: mark-depth-ombres-contours (fidélité photométrique du E)
+Agent: Super Z (main)
+Date: 2026-10-07 00:15 UTC
+
+Task: « c'est parfait… mais on va juste bien ajouter, arranger les détails des contours, les ombres — c'est ce qui fait la vraie différence » — ajouter la profondeur 3D (ombres de plis + brillance) au marqueur, désormais silhouette-exact.
+
+Work Log:
+- CONSTAT : la référence est un rendu 3D — le gradient linéaire plat n'a ni les creux sombres sous chaque pli ni la brillance le long des rubans (MAE plat vs référence : 20.23).
+- TENTATIVE 1 (abandonnée, scripts/add-mark-depth.py) : cartes d'ombre/lumière = écarts réf vs plat, vectorisées vtracer binary ×niveaux + feGaussianBlur → taches nuageuses (MAE 21.8) ; les seuils bas captent le mismatch gradient, le blanc désature la brillance.
+- TENTATIVE 2 (abandonnée, scripts/try-color-trace.py) : vtracer colormode='color' sur la réf compositée → 630 paths / 510KB postérisés en bandes plates (MAE 23.2) — vtracer couleur est fait pour l'art à aplats, pas les dégradés lisses.
+- SOLUTION RETENUE (scripts/bake-reference-shading.py) : hybride vector/raster — silhouette vectorielle tracée + gradient de base CONSERVÉS (bords nets à toute taille, fallback si image rejetée) + <image data:URI PNG 500×612 lossless (≈2× détail natif, 148KB→198KB b64)> des pixels DE LA RÉFÉRENCE, clippée par la silhouette. MAE 20.23 → 1.14 (résidu = rééchantillonnage). Data-URI obligatoire : un SVG chargé en <img> ne peut pas fetcher de ressources externes.
+- Pièges quantification : P-256 FASTOCTREE = 39KB mais banding visible à 2× (p95=12) → rejeté ; WebP-lossless possible (114KB) mais PNG = compat universelle, retenu.
+- Mono white/black INTENTIONNELLEMENT plats (reproduction monochrome — pratique marque standard).
+- Propagation : 21 PNG re-rastérisés (rasterize-euforia.js), og-image + public/icon.svg + favicon.ico + apple-icon reconstruits (rebuild-og-and-icons.py).
+- PIÈGE INFRA re-confirmé : le serveur lancé via setsid meurt à la fin de l'appel shell (sandbox reape les enfants) → lancer next start ET la sonde dans LE MÊME appel bash. EADDRINUSE évité (kill par PID d'abord, port vérifié libre, "Ready" au log).
+- Vérification : sonde rebrand 16/16 (pageerrors=0), captures in-app — plis visibles header 56px, sidebar 28px, watermark auth ; MAE panel scripts/shots/depth-compare-2.png (gauche=app, droite=référence : identiques).
+
+Stage Summary:
+- LE E DE L'APP = TA RÉFÉRENCE Y COMPRIS OMBRES ET CONTOURS (exactitude photométrique, pas seulement la silhouette).
+- 1 commit : 89f1201. Scripts persistés : bake-reference-shading.py (production), add-mark-depth.py + try-color-trace.py (tentatives documentées), render-mark-frame.js (utilitaire).
+- Intermédiaires gardés : scripts/euforia-trace/{flat-render,baked-render,map-shadow,map-hilite}.png.
