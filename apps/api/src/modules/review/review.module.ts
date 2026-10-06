@@ -29,5 +29,8 @@ import { ReviewService } from "./review.service";
   imports: [PrismaModule, TradesModule, DisciplineModule, AccountsModule, IdentityModule],
   controllers: [ReviewsController, GoalsController],
   providers: [ReviewRepository, GoalService, ReviewService],
+  // Narrow contract: Playbook compliance reads review playbookMatch rows
+  // from the owning context (§26).
+  exports: [ReviewRepository],
 })
 export class ReviewModule {}

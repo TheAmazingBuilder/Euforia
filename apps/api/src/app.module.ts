@@ -28,6 +28,7 @@ import { SessionModule } from "./modules/session/session.module";
 import { CalendarModule } from "./modules/calendar/calendar.module";
 import { ReviewModule } from "./modules/review/review.module";
 import { SessionLiveModule } from "./modules/session-live/session-live.module";
+import { PlaybookModule } from "./modules/playbook/playbook.module";
 import { DomainEventsModule } from "./infrastructure/events/domain-events.module";
 import { SecurityEventModule } from "./modules/security/security-event.module";
 import { SecurityModule } from "./modules/security/security.module";
@@ -98,6 +99,11 @@ const globalExceptionFilterProvider: Provider = {
     // levels. Documentation entities ONLY; strictly read-only vs brokers
     // (§2/§50): no execution path exists. End summary is §43-honest.
     SessionLiveModule,
+    // Playbook (B10) — the Professional Playbook: strategy CRUD with
+    // server-side versioning, setups, checklists, operating rules, template
+    // library and the module aggregates. Owns playbookRow
+    // (STRATEGY|SETUP|CHECKLIST|RULE|VERSION).
+    PlaybookModule,
     // Security center — posture, activity, visibility (Phase 16). Orchestrates
     // identity capabilities; owns NO authentication/session/MFA logic (§3).
     SecurityModule,
