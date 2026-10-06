@@ -30,6 +30,7 @@ import { ReviewModule } from "./modules/review/review.module";
 import { SessionLiveModule } from "./modules/session-live/session-live.module";
 import { PlaybookModule } from "./modules/playbook/playbook.module";
 import { NofyModule } from "./modules/nofy/nofy.module";
+import { AcademyModule } from "./modules/academy/academy.module";
 import { DomainEventsModule } from "./infrastructure/events/domain-events.module";
 import { SecurityEventModule } from "./modules/security/security-event.module";
 import { SecurityModule } from "./modules/security/security.module";
@@ -110,6 +111,11 @@ const globalExceptionFilterProvider: Provider = {
     // entity picker. Reference blocks are relational pointers re-resolved
     // server-side at read time. Owns nofyRow (NOTE|FOLDER|TAG|TEMPLATE|VERSION).
     NofyModule,
+    // Academy (B12) — the learning domain: catalog + content from the shared
+    // registry, server-graded quizzes/checkpoints/exams, SRS flashcards,
+    // practice drills, milestones and journal-driven suggestions. Owns
+    // academyRow (STATE|TASK|EVENT_REG).
+    AcademyModule,
     // Security center — posture, activity, visibility (Phase 16). Orchestrates
     // identity capabilities; owns NO authentication/session/MFA logic (§3).
     SecurityModule,

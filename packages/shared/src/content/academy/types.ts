@@ -2,7 +2,7 @@ import type {
   AcademyBlock,
   AcademyLevel,
   AcademyQuizQuestion,
-} from "@cosmoz/shared";
+} from "../../schemas/academy";
 
 /**
  * Academy content authoring types. Content lives server-side (mock server)

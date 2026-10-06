@@ -54,3 +54,13 @@ export * from "./utils/format";
 export * from "./utils/dates";
 export * from "./utils/rules";
 export * from "./utils/integrations";
+
+// Academy content — the single source of truth for the pedagogical corpus
+// (categories, courses, lessons, quizzes, glossary, pattern exemplars,
+// scenarios). Served by the NestJS module; the browser mock re-exports it.
+export * from "./content/academy/catalog";
+export { GLOSSARY_TERMS } from "./content/academy/glossary";
+export type { PatternFamily, PatternBias, PatternExemplar } from "./content/academy/patterns";
+export { PATTERN_EXEMPLARS } from "./content/academy/patterns";
+export { SCENARIOS } from "./content/academy/scenarios";
+export type { AuthoredLesson, AuthoredQuiz, AuthoredCourse, AuthoredCategory } from "./content/academy/types";

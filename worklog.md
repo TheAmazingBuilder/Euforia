@@ -153,3 +153,20 @@ Work Log:
 Stage Summary:
 - 9 chantiers livrés (B3,B6,B4,B5,B7,B8,B9,B10,B11) — 442/442 tests verts, typecheck OK.
 - Reste : B12 (academy 33) → B1 (stats 3) → B13 (accounts SPEC-1) → B2 (backup 2) → Phase C (bridge live) → Phase D (vérif+rapport).
+
+---
+Task ID: 1-backends (B12 livré)
+Agent: Super Z (main)
+Date: 2026-10-06 14:05 UTC
+
+Work Log:
+- REFACTOR CONTENU : le corpus pédagogique (types/catalog/5 lessons/glossary/patterns/scenarios, ~5300 lignes) DÉPLACÉ de apps/web/src/mocks/academy/ vers packages/shared/src/content/academy/ — source unique servie par l'API et réexportée par le mock (shims). events-tasks.ts reste au mock (logique mock), portée dans le service.
+- B12 (module academy, 33 routes) : academyRow kind=STATE|TASK|EVENT_REG. STATE = blob JSON par user (completedLessons, quizAttempts, bookmarks, practice ledger cap 300, wrongPatternIds, flashcardStates Leitner, examAttempts, viewedLessons, notes, activityDates). TASK/EVENT_REG = rows par entité (lazy seed 6 tâches slug + uuid dérivé).
+- Contenu : 12 catégories, 25+ cours, leçons à blocs visuels, quiz (réponses JAMAIS sur le wire — stripQuestion), checkpoints déterministes par lessonId+UTC day, glossaire 100+ termes, 10 pattern exemplars, scénarios.
+- Moteur : catalog (cards + paths avec progression), course detail, lesson (touchViewed + resume), notes (PUT, clear via ""), complete idempotent, quiz attempts (best score server-side), progress (streaks UTC walk), overview (continueLearning + resume + weeklyPlan lun→dim + recommandations par règles + recent 6), bookmarks toggle, search multi-corpus, practice log (ledger + weakness bank PATTERN_ID), 4 drills générés (pattern/sr random-walk/position sizing/zones supply-demand), flashcards SRS (Leitner 5 boîtes 1/2/4/8/15j, cap quotidien 10, free practice si rien dû), exams (pool 20 questions, tiers BRONZE/SILVER/GOLD), certifications, milestones 13 (computés du vrai état), suggestions journal→cours (5 règles lisibles sur trades CLOSED), events (seeds relatifs à now, toggle registration, passé non joignable), tasks (create/toggle/delete, XP, streak).
+- Suggestions via TradesService.listTrades(status CLOSED) — rMultiple/mfeR/plannedRR/emotionAfter/strategyId.
+- Pièges : noUncheckedIndexedAccess (guards partout) ; toggle/delete tasks adressent row id OU slug payload ; heredoc python "\\n" a corrompu une ligne (questionsashString) — corrigé ; test TF peut matcher par hasard (assertion honnête).
+
+Stage Summary:
+- 10 chantiers livrés (B3,B6,B4,B5,B7,B8,B9,B10,B11,B12) — 453/453 tests verts, lint propre, typecheck API+web OK.
+- Reste : B1 (stats 3) → B13 (accounts SPEC-1) → B2 (backup 2) → Phase C (bridge live) → Phase D (vérif+rapport).
