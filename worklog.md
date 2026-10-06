@@ -263,3 +263,23 @@ Stage Summary:
 - REBRAND EUFORIA COMPLET : app 100% Euforia (logo, favicon, manifest, UI, i18n, mocks, API payloads), design système préexistant intact, identifiants démo inchangés (trader@cosmoz.app / cosmoz-demo-2026).
 - 5 commits : d9c50f5 (assets) → b960dbc (composant+swap) → 36b09bc (chaînes web) → d506538 (API, 464/464) → d7e87ba (fix manifest + sonde 16/16).
 - Vérification : tsc/lint/build verts, sonde navigateur 16/16, captures validées à l'œil.
+
+---
+Task ID: rebrand-euforia-mark-identique (correction du E)
+Agent: Super Z (main)
+Date: 2026-10-06 20:55 UTC
+
+Task: « Je veux que le E soit exactement pareil, à l'identique » — le E du kit ne correspondait pas à l'image de référence fournie.
+
+Work Log:
+- CONSTAT : comparaison côte à côte (scripts/compare-e-marks.py) — le kit zip et l'image de référence sont DEUX dessins différents (rubans plus fins + pointes crantées + gradient inversé violet TL→cyan BR dans le kit ; référence = rubans gras à pointes arrondies + gradient cyan TR→violet BL). L'image de l'utilisateur = vérité.
+- VECTORISATION DE LA RÉFÉRENCE : extraction du masque (seuil luminance 0.20→0.34, despeckle, feather) → silhouette 250×306 (crop 185,435→455,770 de l'image 1233²) ; vtracer 0.6.15 mode binary/spline sur mask 3x (750×918) → 1 seul path (pas de trous) ; PIÈGE : le path porte son propre transform translate(733.375,5.625) — conservé, gradient userSpaceOnUse recalé dans l'espace local du path.
+- GRADIENT ÉCHANTILLONNÉ sur les vrais pixels : #7B22F4 (échine) → #6318E8 28% → #4299FD 62% → #28D6F6 (pointe TR), axe gauche→haut-droit (~93°). Rendu final comparé à la référence : IDENTIQUE (scripts/shots/e-compare-v2.png, e-final-check.png).
+- ASSETS RECONSTRUITS (commit f678bd5) : euforia-mark{,-white,-black}.svg, euforia-icon.svg (squircle 256 rx56 + marque à hauteur 208), favicon.svg, 21 PNG re-rastérisés Playwright transparent (mark 64→1024, mono, icon 16→512), og-image.png rebuild (Carlito-Bold, tagline dégradée), icon.svg/favicon.ico/apple-icon.png régénérés ; fichiers kit à l'ancien E supprimés (logo-*, wordmark-*, variantes light/dark).
+- COMPOSANT (commit 5d56f29) : EuforiaLogo en <img> des SVG servis (/brand/euforia-icon.svg ou mono), width/height en ATTRIBUTS (les classes size-* les surchargent — watermark 560px et sidebar size-7 préservés), API variant/tone/size inchangée ; tokens brand.ts + euforia.css alignés sur le gradient échantillonné.
+- PIÈGE INFRA RE-DÉCLENCHÉ : EADDRINUSE au redémarrage — l'ancien next-server survivait à fuser -k et servait un .next supprimé (chunks 404, hydration morte, body vide dans la sonde). FIX : kill par PID via ss -tlnp, port vérifié LIBRE, start, log "Ready" vérifié → sonde 16/16.
+- Vérification : tsc 0, lint 0 erreur, build OK, sonde rebrand 16/16, captures login+dashboard validées à l'œil — E identique à la référence.
+
+Stage Summary:
+- LE E DE L'APP = TA RÉFÉRENCE, à l'identique (silhouette vectorisée de ton image, gradient sur tes couleurs). Assets cohérents de bout en bout (SVG, PNG, favicon, og-image, composant, tokens).
+- 2 commits : f678bd5 (assets) → 5d56f29 (composant + tokens). Scripts persistés : trace-euforia-mark.py, extract-reference-mark.py, rasterize-euforia.js, rebuild-og-and-icons.py, compare-e-marks.py.
