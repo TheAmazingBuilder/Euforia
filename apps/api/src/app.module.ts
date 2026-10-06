@@ -22,6 +22,7 @@ import { IdentityModule } from "./modules/identity/identity.module";
 import { AccountsModule } from "./modules/accounts/accounts.module";
 import { SettingsModule } from "./modules/settings/settings.module";
 import { TradesModule } from "./modules/trades/trades.module";
+import { GhostsModule } from "./modules/ghosts/ghosts.module";
 import { SecurityEventModule } from "./modules/security/security-event.module";
 import { SecurityModule } from "./modules/security/security.module";
 import { MonitoringModule } from "./modules/monitoring/monitoring.module";
@@ -60,6 +61,11 @@ const globalExceptionFilterProvider: Provider = {
     // lifecycle, the decision gate and ONE authoritative P&L implementation
     // (§46). No execution capability, no analytics (§59/§60/§68).
     TradesModule,
+    // Ghost Trades (B6) — the Registre des Regrets: 10-second skipped-setup
+    // capture + deferred settlement. Owns ONLY skippedTradeRow; aggregates
+    // (Discipline Saved / Hesitation Cost) belong to Discipline (B4), which
+    // consumes these rows — never duplicates them (§26/§46).
+    GhostsModule,
     // Security center — posture, activity, visibility (Phase 16). Orchestrates
     // identity capabilities; owns NO authentication/session/MFA logic (§3).
     SecurityModule,

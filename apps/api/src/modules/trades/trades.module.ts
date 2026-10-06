@@ -51,5 +51,10 @@ const screenshotStorageProvider = {
     TradeReconstructionService,
     screenshotStorageProvider,
   ],
+  // Narrow read contract (ADR-0003 house pattern): contexts that legitimately
+  // reference journal infrastructure (ghosts validate instrument ids against
+  // the catalog; discipline aggregates consume journal facts) consume the
+  // repository — never the service internals.
+  exports: [TradesRepository],
 })
 export class TradesModule {}
