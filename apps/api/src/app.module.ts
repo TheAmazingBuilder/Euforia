@@ -23,6 +23,8 @@ import { AccountsModule } from "./modules/accounts/accounts.module";
 import { SettingsModule } from "./modules/settings/settings.module";
 import { TradesModule } from "./modules/trades/trades.module";
 import { GhostsModule } from "./modules/ghosts/ghosts.module";
+import { DisciplineModule } from "./modules/discipline/discipline.module";
+import { DomainEventsModule } from "./infrastructure/events/domain-events.module";
 import { SecurityEventModule } from "./modules/security/security-event.module";
 import { SecurityModule } from "./modules/security/security.module";
 import { MonitoringModule } from "./modules/monitoring/monitoring.module";
@@ -42,6 +44,9 @@ const globalExceptionFilterProvider: Provider = {
     LoggingModule,
     PrismaModule,
     RateLimitModule,
+    // Domain events — the in-process fact bus (`trade.closed`, …) that lets
+    // contexts react to other contexts' facts without module cycles.
+    DomainEventsModule,
     // ── system ──────────────────────────────────────────────────────────────
     HealthModule,
     // ── bounded contexts ────────────────────────────────────────────────────
@@ -66,6 +71,12 @@ const globalExceptionFilterProvider: Provider = {
     // (Discipline Saved / Hesitation Cost) belong to Discipline (B4), which
     // consumes these rows — never duplicates them (§26/§46).
     GhostsModule,
+    // Discipline (B4) — the Discipline Engine (Domaine 7): rules, violations
+    // (context frozen at time T), alert inbox and the process aggregates
+    // (score, emotion matrix, mistakes ledger). Consumes journal facts via
+    // the Trades read contract; rule evaluation rides the `trade.closed`
+    // domain event — NO Trades→Discipline cycle (§26/§46).
+    DisciplineModule,
     // Security center — posture, activity, visibility (Phase 16). Orchestrates
     // identity capabilities; owns NO authentication/session/MFA logic (§3).
     SecurityModule,

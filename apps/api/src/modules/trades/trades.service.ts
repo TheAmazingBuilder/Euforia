@@ -12,17 +12,18 @@
  * STORED at close time (§15/§46, server-side only) but only the decision
  * endpoint reveals them, and a grade can never be re-submitted.
  *
- * Out of scope by mandate (§59/§60/§68): no mistake detection, no alerts,
- * no analytics, no coaching logic — the reveal payload carries deterministic
- * neutral aggregates (empty detections, no ghost stats) until those domains
- * exist. Discipline evaluation, daily stats and Session Live hooks are
- * consumers of future phases; they are NOT called from here.
+ * Out of scope by mandate (§59/§60/§68): no analytics, no coaching logic —
+ * the reveal payload carries deterministic neutral aggregates (no ghost
+ * stats) until those domains exist. B3 mistake detection and B6 fills the
+ * mistake rows at the gate; discipline RULE evaluation is triggered via the
+ * `trade.closed` domain event (Discipline subscribes — no module cycle).
  */
 import { Inject, Injectable } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
 import type { z } from "zod";
 import { APP_CONFIG } from "../../config/app-config";
 import type { AppConfig } from "../../config/app-config";
+import { DomainEventsService } from "../../infrastructure/events/domain-events.module";
 import {
   BusinessRuleError,
   ConflictError,
@@ -109,6 +110,7 @@ export class TradesService {
     private readonly identity: IdentityRepository,
     private readonly reconstruction: TradeReconstructionService,
     private readonly screenshotStorage: TradeScreenshotStorage,
+    private readonly events: DomainEventsService,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
   ) {}
 
@@ -425,6 +427,9 @@ export class TradesService {
     if (exits.length > 0) {
       await this.repository.replaceExits(trade.id, exits);
     }
+    // Domain fact (B4): Discipline subscribes to evaluate its rules against
+    // the freshly closed trade — without a Trades→Discipline module cycle.
+    this.events.publish("trade.closed", { userId, tradeId: trade.id, accountId: trade.accountId });
     return { id: trade.id, awaitingDecision: true };
   }
 

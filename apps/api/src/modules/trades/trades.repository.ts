@@ -559,6 +559,15 @@ export class TradesRepository {
     return rows as unknown as TradeSubRow[];
   }
 
+  /** All sub-rows of one kind for a user, across every trade (aggregates). */
+  async listSubRowsByUser(userId: string, kind: string): Promise<TradeSubRow[]> {
+    const rows = await this.prisma.tradeSubRow.findMany({
+      where: { userId, kind },
+      orderBy: { createdAt: "asc" },
+    });
+    return rows as unknown as TradeSubRow[];
+  }
+
   async findSubRowForUser(
     userId: string,
     tradeId: string,
