@@ -6,6 +6,9 @@
    (radix-nova) components are generated against. No variables, no conflicts
    with the token system below. Not part of spec §5 — see deviation report. */
 @import "shadcn/tailwind.css";
+/* Euforia brand tokens (palette + official gradients) — values only, opt-in
+   styling. The app theme system below is untouched. */
+@import "../design-system/euforia.css";
 
 /* Makes shadcn/ui `dark:` variants work on BOTH dark themes.
    Without this, all shadcn components break on theme switch. */

@@ -1,0 +1,54 @@
+/* ============================================================
+   EUFORIA — brand tokens (docs/brand-guide.md)
+   Values only: defines the brand palette and the two official
+   gradients as CSS custom properties + two utility classes.
+   Nothing here is applied to existing components — the app's
+   theme system ("Le Registre") stays untouched. Opt-in styling
+   only (logo lockups, featured/active states per the guide).
+   ============================================================ */
+
+:root {
+  /* Brand */
+  --eu-violet: #8b5cf6;
+  --eu-indigo: #6366f1;
+  --eu-cyan: #22d3ee;
+
+  /* Surfaces */
+  --eu-deep-navy: #020617;
+  --eu-surface: #0b1020;
+  --eu-card: #111827;
+  --eu-border: #1e293b;
+
+  /* Text */
+  --eu-primary: #f8fafc;
+  --eu-muted: #94a3b8;
+
+  /* Semantic */
+  --eu-success: #10b981;
+  --eu-warning: #f59e0b;
+  --eu-error: #ef4444;
+
+  /* Official gradients */
+  --eu-gradient-primary: linear-gradient(
+    135deg,
+    #8b5cf6 0%,
+    #6366f1 46%,
+    #22d3ee 100%
+  );
+  --eu-gradient-text: linear-gradient(90deg, #a78bfa 0%, #22d3ee 100%);
+}
+
+/* Brand gradient as text fill (taglines, featured headings).
+   Use sparingly — the guide: gradients are accents, not defaults. */
+.euforia-gradient-text {
+  background: var(--eu-gradient-text);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Primary action treatment per the guide (buttons: primary = brand
+   gradient). Provided for future opt-in; not attached to any element. */
+.euforia-gradient-surface {
+  background: var(--eu-gradient-primary);
+}

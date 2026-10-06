@@ -17,9 +17,19 @@ const grotesk = Schibsted_Grotesk({
 const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jetbrains-mono" });
 
 export const metadata: Metadata = {
+  title: {
+    default: "Euforia — Trade smarter. Grow faster.",
+    template: "%s — Euforia",
+  },
+  description:
+    "The trading journal that coaches you: capture, grade and review every decision.",
   manifest: "/manifest.webmanifest",
   icons: { icon: "/icon.svg" },
-  applicationName: "Cosmoz",
+  applicationName: "Euforia",
+  openGraph: {
+    siteName: "Euforia",
+    images: [{ url: "/brand/og-image.png", width: 1200, height: 630 }],
+  },
 };
 
 export const viewport: Viewport = {
