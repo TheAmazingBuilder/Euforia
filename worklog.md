@@ -91,3 +91,17 @@ Stage Summary:
 - 4 chantiers livrés + testés (B3, B6, B4, B5) — suite : 408/408 vitest vert, lint propre, build OK, typecheck OK.
 - Reste B7 (eco, 5 routes) → B8 (reviews/goals, 9) → B9 (session live, 12) → B10 (playbook, 22) → B11 (nofy, 23) → B12 (academy, 33) → B1 (stats, 3, dépend ghosts/discipline) → B13 (accounts riche, SPEC-1) → B2 (backup) → Phase C (bridge live + smoke E2E) → Phase D (vérif totale + rapport).
 - Infra ajoutée : DomainEventsModule (bus d'événements @Global) réutilisable pour les prochains chantiers (B8 goals→alerts, B9 note push...).
+
+---
+Task ID: 1-backends (B7+B8 livrés)
+Agent: Super Z (main)
+Date: 2026-10-06 ~06:40 UTC
+
+Work Log:
+- B7 (commit dédié) : module calendar — /eco-events (générateur déterministe seedé par date clé, ±14 jours, mulberry32 + uuidFrom), /calendar-blocks GET/PUT/DELETE/import-eco (colonne `date` dédiée dans CalendarBlockRow), /calendar-view?from&to (agrégats par jour depuis journal+discipline, jours OFF exclus serveur, dailyLossLimitPct via SettingsService, devise compte). DisciplineService expose maintenant dailyScores(userId,{from,to}) et violationsByDay() publics (consommés par Calendar). SettingsService exporté (contrat étroit).
+- B8 (commit dédié) : module review — /reviews GET (read model PENDING+REVIEWED joint trades), PUT/DELETE /reviews/:tradeId (upsert 1/trade + sync trade.lessons/followedPlan), /reviews/lessons (union REVIEW+TRADE_NOTE), /reviews/overview (stats, distribution, streak avec freeze 1 jour/semaine, weeklyGradeTrend, pendingQueuePreview, lastImprovementNote), /goals GET/POST/PATCH/DELETE avec progrès CALCULÉ (8 métriques, resolvePeriod week/month/quarter, pacing ON_TRACK/AT_RISK/BEHIND/ACHIEVED, DISCIPLINE_SCORE via dailyScores). reviewRow kind=REVIEW|GOAL ; row id = goal.id (PATCH/DELETE adressent l'entité). Fichiers : review/review-domain.ts (helpers purs), goal.service.ts, review.service.ts.
+- Pièges : target goal non-nul (schema refine) ; psychology PATCH pour emotionAfter (pas au close) ; Decimal normalise "1.0850"→"1.085" (assertions tests) ; strategyName/setupName = null honnête en attendant B10 (playbook).
+
+Stage Summary:
+- 6 chantiers livrés (B3,B6,B4,B5,B7,B8) — 420/420 tests verts, build+lint OK.
+- Reste : B9 (session live, 12 routes) → B10 (playbook 22) → B11 (nofy 23) → B12 (academy 33) → B1 (stats 3) → B13 (accounts riche SPEC-1) → B2 (backup 2) → Phase C (bridge live) → Phase D (vérif+rapport).
