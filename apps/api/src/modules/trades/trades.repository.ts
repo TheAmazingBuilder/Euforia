@@ -407,6 +407,15 @@ export class TradesRepository {
     return rows as TradeEventRow[];
   }
 
+  /** All plan-modification events across the user's trades (timeline). */
+  async listEventsByUser(userId: string): Promise<TradeEventRow[]> {
+    const rows = await this.prisma.tradeEvent.findMany({
+      where: { trade: { userId } },
+      orderBy: { createdAt: "asc" },
+    });
+    return rows as TradeEventRow[];
+  }
+
   async appendEvent(data: {
     tradeId: string;
     type: string;

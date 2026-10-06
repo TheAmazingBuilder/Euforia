@@ -24,6 +24,7 @@ import { SettingsModule } from "./modules/settings/settings.module";
 import { TradesModule } from "./modules/trades/trades.module";
 import { GhostsModule } from "./modules/ghosts/ghosts.module";
 import { DisciplineModule } from "./modules/discipline/discipline.module";
+import { SessionModule } from "./modules/session/session.module";
 import { DomainEventsModule } from "./infrastructure/events/domain-events.module";
 import { SecurityEventModule } from "./modules/security/security-event.module";
 import { SecurityModule } from "./modules/security/security.module";
@@ -77,6 +78,10 @@ const globalExceptionFilterProvider: Provider = {
     // the Trades read contract; rule evaluation rides the `trade.closed`
     // domain event — NO Trades→Discipline cycle (§26/§46).
     DisciplineModule,
+    // Session (B5) — the server-assembled trading day: timeline + mood strip
+    // + logbook notes. Consumes journal facts and discipline alerts via the
+    // owning contexts' narrow contracts; owns ONLY sessionNoteRow.
+    SessionModule,
     // Security center — posture, activity, visibility (Phase 16). Orchestrates
     // identity capabilities; owns NO authentication/session/MFA logic (§3).
     SecurityModule,
