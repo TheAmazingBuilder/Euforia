@@ -222,3 +222,23 @@ Work Log:
 Stage Summary:
 - PHASE C COMPLÈTE : le frontend tourne de bout en bout sur le vrai backend. Parité backend B1-B14 (14/14 domaines).
 - Reste : Phase D — vérification finale totale + rapport.
+
+---
+Task ID: phase-d (vérification totale + rapport)
+Agent: Super Z (main)
+Date: 2026-10-06 17:35 UTC
+
+Task: Phase D — vérification totale du projet après Phase C + rapport final
+
+Work Log:
+- Vérification API : 464/464 vitest verts (39 fichiers e2e/unit), lint 0 erreur, tsc build OK, 12 migrations appliquées.
+- Vérification Web : typecheck OK, lint 0 erreur (après 2 correctifs : eslint override scripts/*.js CommonJS + recognition-view setState-in-effect → ajustement d'état au rendu), build mocké et build live OK.
+- E2E mocké : probe recognition VERT (login → upload → analyse → review → confirm) ; sonde session-restore VERT (reload complet → Dashboard, 0 pageerror — valide le fix refresh sur les deux transports).
+- E2E live : smoke verify-live-bridge 26/26 (register → verify → login, 15 routes, write-throughs discipline/OCR/nofy persistés après reload, 330 requêtes /api/v1, zéro 4xx/5xx).
+- Probes legacy périmés documentés (préexistants, pas des régressions) : probe-regression.js (sélecteur `aref` corrompu), verify-final-modules.js (sans login), verify-auth.js (testids register périmés).
+- PIÈGE INFRA VERROUILLÉ : ne JAMAIS builder pendant qu'un next-server tourne — le vieux process sert l'ancien .next (chunks fantômes → 500, pages vides). Kill par PID (kill -9 <pid>) ou fuser -k 3000/tcp vérifié par `ss -tlnp` AVANT le build ; vérifier l'absence de EADDRINUSE au log après start.
+- Captures probes (scripts/shots) désormais ignorées par eslint + checkout avant commit.
+
+Stage Summary:
+- PHASE D COMPLÈTE : parité backend B1-B14 (14 domaines, ~190 routes), pont live prouvé par E2E de bout en bout, mock par défaut intact.
+- Livrables : commits a5c1064 (Phase C + B14) et 287bc6f (Phase D) sur main — tout verrouillé dans git.
