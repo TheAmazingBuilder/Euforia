@@ -4,6 +4,7 @@ import {
   CalendarDays,
   ChartColumn,
   Cable,
+  FileScan,
   GraduationCap,
   HeartPulse,
   House,
@@ -12,7 +13,6 @@ import {
   LockKeyhole,
   NotebookPen,
   NotebookText,
-  ScanText,
   Settings,
   ShieldCheck,
   type LucideIcon,
@@ -58,15 +58,6 @@ export const SIDEBAR_ITEMS: NavItem[] = [
       "Filters, CSV import and per-trade detail views will build on this table.",
   },
   {
-    href: "/recognition",
-    label: "Recognition",
-    icon: ScanText,
-    description:
-      "Upload trade screenshots and turn them into reviewable records: the engine drafts, you confirm.",
-    comingSoon:
-      "Recognition will pre-fill trade entries from confirmed screenshots and batch-review queues.",
-  },
-  {
     href: "/journal",
     label: "Trade Review",
     icon: NotebookPen,
@@ -92,6 +83,15 @@ export const SIDEBAR_ITEMS: NavItem[] = [
       "Turn your trade history into patterns, edges and honest statistics.",
     comingSoon:
       "Expect the constellation equity curve, win/loss heatmaps and breakdowns by setup, session and account.",
+  },
+  {
+    href: "/recognition",
+    label: "Import & Recognition",
+    icon: FileScan,
+    description:
+      "Import a trading screenshot, review what the engine recognized — every field carries its confidence — and confirm what enters the journal.",
+    comingSoon:
+      "Batch import queues, multi-trade screenshots and source-region highlighting will land with the OCR engine.",
   },
   {
     href: "/calendar",
@@ -185,12 +185,12 @@ export type NavSection = {
 export const NAV_SECTIONS: NavSection[] = [
   {
     title: "Trading",
-    hrefs: ["/session", "/trades", "/recognition", "/journal", "/playbook"],
+    hrefs: ["/session", "/trades", "/journal", "/playbook"],
   },
   // Goals lives inside Trade Review (/journal?tab=goals) — /goals redirects there.
   {
     title: "Insights",
-    hrefs: ["/analytics", "/calendar", "/discipline"],
+    hrefs: ["/analytics", "/recognition", "/calendar", "/discipline"],
   },
   {
     title: "Academy",
