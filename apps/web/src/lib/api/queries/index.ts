@@ -121,6 +121,14 @@ export {
   useUpdateMonitoringThresholds,
 } from "./monitoring";
 export {
+  useConfirmOcrRecognition,
+  useCreateOcrRecognition,
+  useDeleteOcrRecognition,
+  useOcrRecognition,
+  useOcrRecognitions,
+  fetchOcrRecognitionImage,
+} from "./recognition";
+export {
   useCreateGoal,
   useDeleteGoal,
   useDeleteReview,

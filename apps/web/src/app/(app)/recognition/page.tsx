@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 
+import { RecognitionWorkspace } from "@/components/recognition/recognition-workspace";
 import { getNavItem } from "@/lib/navigation";
 
 const nav = getNavItem("/recognition");
@@ -10,12 +12,15 @@ export const metadata: Metadata = {
 };
 
 /**
- * /recognition — Import & Recognition (Insights section).
+ * /recognition — Import & Recognition (Insights section, between Analytics
+ * and Calendar). PROMPT 3 rebuild: upload → preview → configure → staged
+ * processing → result → field review → trade draft → confirm → success,
+ * with recognition history one tab away (?tab=history) and URL-carried job
+ * context (?job=<id>, refresh-safe — spec §44).
  *
- * PROMPT 3 rebuild, in progress: the Phase 19 monolithic review view was
- * removed; the full workspace (upload → processing → result → draft →
- * confirm → history) is being recomposed per the OCR & Trade Recognition
- * V1 spec. This shell keeps the route coherent between commits.
+ * `<Suspense>` boundary: RecognitionWorkspace reads useSearchParams(), which
+ * triggers a CSR bailout during prerendering without it (same pattern as
+ * LoginForm).
  */
 export default function RecognitionPage() {
   return (
@@ -24,16 +29,9 @@ export default function RecognitionPage() {
         <h1 className="font-heading text-2xl font-semibold tracking-tight">{nav.label}</h1>
         <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{nav.description}</p>
       </header>
-      <div
-        className="flex min-h-48 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border px-6 py-10 text-center"
-        data-testid="recognition-rebuild-shell"
-      >
-        <p className="font-heading text-base font-semibold">Workspace rebuilding</p>
-        <p className="max-w-md text-sm text-muted-foreground">
-          The Import &amp; Recognition workspace is being recomposed — screenshot upload,
-          staged recognition, field review with confidence, trade draft and history.
-        </p>
-      </div>
+      <Suspense fallback={<div className="h-64 w-full animate-pulse rounded-xl bg-muted" />}>
+        <RecognitionWorkspace />
+      </Suspense>
     </section>
   );
 }
