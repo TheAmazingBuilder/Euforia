@@ -71,14 +71,14 @@ enum AuthRole {
 // ── Identity (Domaine 1 — data-model.md) ─────────────────────────────────────
 
 model User {
-  id             String        @id @default(uuid()) @db.Uuid
-  email          String        @unique
-  name           String
-  passwordHash   String
-  status         AccountStatus @default(PENDING_VERIFICATION)
-  role           AuthRole      @default(TRADER)
-  emailVerifiedAt DateTime?
-  passwordLastChangedAt DateTime @default(now())
+  id                    String        @id @default(uuid()) @db.Uuid
+  email                 String        @unique
+  name                  String
+  passwordHash          String
+  status                AccountStatus @default(PENDING_VERIFICATION)
+  role                  AuthRole      @default(TRADER)
+  emailVerifiedAt       DateTime?
+  passwordLastChangedAt DateTime      @default(now())
 
   // MFA / TOTP — secrets are AES-256-GCM encrypted at rest, never plaintext.
   mfaSecretEnc        String?
@@ -103,43 +103,53 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  sessions       Session[]
-  securityEvents SecurityEvent[]
-  loginRecords   LoginRecord[]
-  challenges     AuthChallenge[]
-  recoveryCodes  RecoveryCode[]
-  apiKeys        ApiKey[]
-  tradingAccounts TradingAccount[]
+  sessions          Session[]
+  securityEvents    SecurityEvent[]
+  loginRecords      LoginRecord[]
+  challenges        AuthChallenge[]
+  recoveryCodes     RecoveryCode[]
+  apiKeys           ApiKey[]
+  tradingAccounts   TradingAccount[]
   monitoringSetting MonitoringSetting?
-  ocrAssets        OcrAsset[]
-  ocrRecognitions  OcrRecognition[]
-  trades           Trade[]
-  savedTradeViews  SavedTradeView[]
+  ocrAssets         OcrAsset[]
+  ocrRecognitions   OcrRecognition[]
+  trades            Trade[]
+  savedTradeViews   SavedTradeView[]
+  disciplineRows    DisciplineRow[]
+  tradeSubRows      TradeSubRow[]
+  sessionNoteRows   SessionNoteRow[]
+  skippedTradeRows  SkippedTradeRow[]
+  calendarBlockRows CalendarBlockRow[]
+  reviewRows        ReviewRow[]
+  sessionLiveRows   SessionLiveRow[]
+  playbookRows      PlaybookRow[]
+  nofyRows          NofyRow[]
+  academyRows       AcademyRow[]
 
   @@index([status])
 }
 
 model Session {
-  id               String    @id @default(uuid()) @db.Uuid
-  userId           String    @db.Uuid
-  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                String    @id @default(uuid()) @db.Uuid
+  userId            String    @db.Uuid
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   /// SHA-256 of the presented refresh token — never the raw token.
-  refreshTokenHash String    @unique
+  refreshTokenHash  String    @unique
   /// The hash rotated AWAY in the last rotation — presenting it is REUSE.
   previousTokenHash String?
   /// Rotation generation — presenting a lower generation is REUSE.
-  generation       Int       @default(1)
-  device           String    @default("Unknown device")
-  browser          String    @default("Unknown")
-  os               String    @default("Unknown")
+  generation        Int       @default(1)
+  device            String    @default("Unknown device")
+  browser           String    @default("Unknown")
+  os                String    @default("Unknown")
   /// Masked at creation — full addresses never stored, never returned (§11).
-  ipMasked         String    @default("unknown")
-  location         String    @default("Unknown")
-  userAgent        String?
-  createdAt        DateTime  @default(now())
-  lastActivityAt   DateTime  @default(now())
-  expiresAt        DateTime
-  revokedAt        DateTime?
+  ipMasked          String    @default("unknown")
+  location          String    @default("Unknown")
+  userAgent         String?
+  createdAt         DateTime  @default(now())
+  lastActivityAt    DateTime  @default(now())
+  expiresAt         DateTime
+  revokedAt         DateTime?
 
   @@index([userId, revokedAt])
   @@index([userId, expiresAt])
@@ -147,33 +157,33 @@ model Session {
 
 /// Append-only security event log — no endpoint may update or delete rows.
 model SecurityEvent {
-  id     String   @id @default(uuid()) @db.Uuid
-  userId String?  @db.Uuid
-  user   User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-  at     DateTime @default(now())
-  type   String
+  id      String   @id @default(uuid()) @db.Uuid
+  userId  String?  @db.Uuid
+  user    User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  at      DateTime @default(now())
+  type    String
   /// Who performed it — the user, a session id, or "system".
-  actor  String
+  actor   String
   /// Sanitized human context — never contains secret material.
   context String
-  outcome String @default("SUCCESS")
+  outcome String   @default("SUCCESS")
 
   @@index([userId, at(sort: Desc)])
 }
 
 model LoginRecord {
-  id        String   @id @default(uuid()) @db.Uuid
-  userId    String   @db.Uuid
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  at        DateTime @default(now())
-  success   Boolean
-  device    String
-  browser   String
-  os        String
-  ipMasked  String
-  location  String
+  id       String   @id @default(uuid()) @db.Uuid
+  userId   String   @db.Uuid
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  at       DateTime @default(now())
+  success  Boolean
+  device   String
+  browser  String
+  os       String
+  ipMasked String
+  location String
   /// Failure reason only — sanitized, no secret material.
-  reason    String?
+  reason   String?
 
   @@index([userId, at(sort: Desc)])
 }
@@ -249,27 +259,27 @@ model MonitoringSetting {
 /// user. Identity is stable metadata — mutable state lives in the snapshot
 /// and the normalized position/order/deal tables, never here (§25).
 model TradingAccount {
-  id        String   @id @default(uuid()) @db.Uuid
-  userId    String   @db.Uuid
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                String  @id @default(uuid()) @db.Uuid
+  userId            String  @db.Uuid
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   /// Human label (defaults to "<provider> <environment>").
-  name      String
+  name              String
   /// Explicit environment — DEMO | LIVE | PROP_FIRM. Never inferred from naming (§21).
-  type      String
+  type              String
   /// Broker/platform family (Cosmoz broker enum, e.g. "MT5").
-  broker    String
+  broker            String
   /// Account currency as reported by the provider (validated against the shared currency enum).
-  currency  String
+  currency          String
   /// Provider-reported balance at initial connection (journal anchor).
-  startingBalance Decimal @db.Decimal(18, 8)
+  startingBalance   Decimal @db.Decimal(18, 8)
   /// The first account of a user is the default; otherwise a journal-only concern.
-  isDefault Boolean  @default(false)
+  isDefault         Boolean @default(false)
   /// Prop-firm challenge config (shared propFirmConfigSchema) — journal domain, null on connect.
-  propConfig Json?
+  propConfig        Json?
   /// Provider-side account identifier (e.g. MT5 login). Unique per user+provider (§49 duplicates).
   externalAccountId String
   /// Provider registry key (e.g. "MOCK" — real adapters register their own).
-  providerId String
+  providerId        String
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -290,22 +300,22 @@ model TradingAccount {
 /// both the account (identity) and its snapshots (state) (§3).
 /// 1:1 with the account; disconnect wipes credentials but keeps the row (§52).
 model TradingConnection {
-  id         String   @id @default(uuid()) @db.Uuid
-  accountId  String   @unique @db.Uuid
-  account    TradingAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  id              String         @id @default(uuid()) @db.Uuid
+  accountId       String         @unique @db.Uuid
+  account         TradingAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
   /// Provider registry key (denormalized from the account for direct lookups).
-  providerId String
+  providerId      String
   /// API_KEY in V1 (shared tradingConnectionMethodSchema).
-  method     String
+  method          String
   /// DISCONNECTED | CONNECTING | CONNECTED | ERROR (§15 — orthogonal to sync status).
-  status     String   @default("DISCONNECTED")
+  status          String         @default("DISCONNECTED")
   /// AES-256-GCM encrypted credentials — NEVER plaintext, never returned, never logged (§22).
   /// Wiped (empty) on disconnect.
-  credentialsEnc  String  @default("")
+  credentialsEnc  String         @default("")
   /// Masked hint (last characters only) for UI display — never enough to authenticate.
-  credentialsHint String  @default("")
+  credentialsHint String         @default("")
   /// Read-only permission set granted from the provider descriptor (§24).
-  permissions String[]
+  permissions     String[]
   /// Sanitized, credential-free provider failure text.
   lastError       String?
   lastConnectedAt DateTime?
@@ -322,21 +332,21 @@ model TradingConnection {
 /// account (§25). The provider is the source of truth; this is a synchronized
 /// representation (§46). Historical runs are observable via TradingSyncRun.
 model TradingAccountSnapshot {
-  id        String   @id @default(uuid()) @db.Uuid
-  accountId String   @unique @db.Uuid
-  account   TradingAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  balance   Decimal? @db.Decimal(18, 8)
-  equity    Decimal? @db.Decimal(18, 8)
+  id            String         @id @default(uuid()) @db.Uuid
+  accountId     String         @unique @db.Uuid
+  account       TradingAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  balance       Decimal?       @db.Decimal(18, 8)
+  equity        Decimal?       @db.Decimal(18, 8)
   /// Derived as equity − balance when both exist; null otherwise.
-  unrealizedPnl Decimal? @db.Decimal(18, 8)
-  margin      Decimal? @db.Decimal(18, 8)
-  freeMargin  Decimal? @db.Decimal(18, 8)
-  marginLevel Decimal? @db.Decimal(18, 8)
-  currency   String
+  unrealizedPnl Decimal?       @db.Decimal(18, 8)
+  margin        Decimal?       @db.Decimal(18, 8)
+  freeMargin    Decimal?       @db.Decimal(18, 8)
+  marginLevel   Decimal?       @db.Decimal(18, 8)
+  currency      String
   /// When the provider reported this state (UTC).
-  syncedAt  DateTime
+  syncedAt      DateTime
   /// Run that produced this snapshot (observability, §50).
-  syncRunId String?
+  syncRunId     String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -347,27 +357,27 @@ model TradingAccountSnapshot {
 /// Open position, normalized from the provider (§26). Nullable fields are
 /// preferred over false assumptions — providers differ.
 model TradingPosition {
-  id                 String   @id @default(uuid()) @db.Uuid
-  accountId          String   @db.Uuid
+  id                 String         @id @default(uuid()) @db.Uuid
+  accountId          String         @db.Uuid
   account            TradingAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
   /// Stable external identity — idempotency key together with the account (§18).
   externalPositionId String
   symbol             String
   /// BUY | SELL (shared directionSchema).
   side               String
-  volume             Decimal  @db.Decimal(18, 8)
-  entryPrice         Decimal  @db.Decimal(18, 8)
-  currentPrice       Decimal? @db.Decimal(18, 8)
-  stopLoss           Decimal? @db.Decimal(18, 8)
-  takeProfit         Decimal? @db.Decimal(18, 8)
+  volume             Decimal        @db.Decimal(18, 8)
+  entryPrice         Decimal        @db.Decimal(18, 8)
+  currentPrice       Decimal?       @db.Decimal(18, 8)
+  stopLoss           Decimal?       @db.Decimal(18, 8)
+  takeProfit         Decimal?       @db.Decimal(18, 8)
   /// Unrealized profit in account currency.
-  profit             Decimal? @db.Decimal(18, 8)
-  swap               Decimal? @db.Decimal(18, 8)
-  commission         Decimal? @db.Decimal(18, 8)
+  profit             Decimal?       @db.Decimal(18, 8)
+  swap               Decimal?       @db.Decimal(18, 8)
+  commission         Decimal?       @db.Decimal(18, 8)
   /// When the position was opened according to the PROVIDER (UTC, §64).
   openedAt           DateTime
   /// When Cosmoz last refreshed this row from the provider (UTC).
-  syncedAt           DateTime @default(now())
+  syncedAt           DateTime       @default(now())
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -378,23 +388,23 @@ model TradingPosition {
 
 /// Pending order, normalized read-only (§27). No execution path exists anywhere.
 model TradingOrder {
-  id               String   @id @default(uuid()) @db.Uuid
-  accountId        String   @db.Uuid
-  account          TradingAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  externalOrderId  String
-  symbol           String
+  id                String         @id @default(uuid()) @db.Uuid
+  accountId         String         @db.Uuid
+  account           TradingAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  externalOrderId   String
+  symbol            String
   /// Broker verb, e.g. "BUY_LIMIT", "SELL_STOP" (provider vocabulary, read-only).
-  type             String
-  volume           Decimal  @db.Decimal(18, 8)
-  price            Decimal  @db.Decimal(18, 8)
-  stopLoss         Decimal? @db.Decimal(18, 8)
-  takeProfit       Decimal? @db.Decimal(18, 8)
+  type              String
+  volume            Decimal        @db.Decimal(18, 8)
+  price             Decimal        @db.Decimal(18, 8)
+  stopLoss          Decimal?       @db.Decimal(18, 8)
+  takeProfit        Decimal?       @db.Decimal(18, 8)
   /// Provider order status vocabulary.
-  status           String
+  status            String
   /// Provider-side timestamps (UTC, §64).
   providerCreatedAt DateTime?
   providerUpdatedAt DateTime?
-  syncedAt         DateTime @default(now())
+  syncedAt          DateTime       @default(now())
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -406,25 +416,25 @@ model TradingOrder {
 /// Completed trading activity (deals), normalized (§28). Symbol is nullable:
 /// balance operations (deposits/withdrawals) have no instrument.
 model TradingDeal {
-  id             String   @id @default(uuid()) @db.Uuid
-  accountId      String   @db.Uuid
+  id             String         @id @default(uuid()) @db.Uuid
+  accountId      String         @db.Uuid
   account        TradingAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
   externalDealId String
   symbol         String?
   /// BUY | SELL.
   side           String
-  volume         Decimal  @db.Decimal(18, 8)
-  price          Decimal? @db.Decimal(18, 8)
-  profit         Decimal? @db.Decimal(18, 8)
-  commission     Decimal? @db.Decimal(18, 8)
-  swap           Decimal? @db.Decimal(18, 8)
+  volume         Decimal        @db.Decimal(18, 8)
+  price          Decimal?       @db.Decimal(18, 8)
+  profit         Decimal?       @db.Decimal(18, 8)
+  commission     Decimal?       @db.Decimal(18, 8)
+  swap           Decimal?       @db.Decimal(18, 8)
   /// Provider-side position this deal belongs to (MT5 netting semantics) —
   /// the Trading Core reconstruction groups on it (Phase 4 §9/§17).
   /// Null = balance operation (deposits/withdrawals have no instrument).
   positionId     String?
   /// Provider-side execution timestamp (UTC, §64).
   executedAt     DateTime
-  syncedAt       DateTime @default(now())
+  syncedAt       DateTime       @default(now())
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -438,18 +448,18 @@ model TradingDeal {
 /// guard (§38/§50). At most ONE RUNNING run per account (partial unique index
 /// added in the migration — Prisma cannot express partial indexes).
 model TradingSyncRun {
-  id                String    @id @default(uuid()) @db.Uuid
-  accountId         String    @db.Uuid
+  id                String         @id @default(uuid()) @db.Uuid
+  accountId         String         @db.Uuid
   account           TradingAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  status            String    @default("RUNNING")
+  status            String         @default("RUNNING")
   /// INITIAL | MANUAL.
   trigger           String
-  startedAt         DateTime  @default(now())
+  startedAt         DateTime       @default(now())
   finishedAt        DateTime?
   durationMs        Int?
-  positionsUpserted Int       @default(0)
-  ordersUpserted    Int       @default(0)
-  dealsUpserted     Int       @default(0)
+  positionsUpserted Int            @default(0)
+  ordersUpserted    Int            @default(0)
+  dealsUpserted     Int            @default(0)
   /// Stable normalized error code — never a raw provider message, never a secret.
   errorCode         String?
   /// Request correlation id (§50).
@@ -466,23 +476,23 @@ model TradingSyncRun {
 /// the idempotency input (§32), so re-uploading the same screenshot never
 /// duplicates stored bytes.
 model OcrAsset {
-  id              String   @id @default(uuid()) @db.Uuid
-  userId          String   @db.Uuid
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id             String   @id @default(uuid()) @db.Uuid
+  userId         String   @db.Uuid
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   /// Storage-adapter reference — validated to stay inside the storage root;
   /// never a raw filesystem path, never client-controlled (§7).
-  storageKey      String   @unique
+  storageKey     String   @unique
   /// Sanitized display name — the original filename is NEVER used for
   /// storage paths (path-traversal prevention, §7).
-  originalName    String
+  originalName   String
   /// MIME determined by MAGIC-BYTE sniffing — never the client Content-Type (§7).
-  mime            String
-  sizeBytes       Int
-  width           Int
-  height          Int
+  mime           String
+  sizeBytes      Int
+  width          Int
+  height         Int
   /// SHA-256 of the decoded binary — identity + integrity anchor (§6).
-  checksumSha256  String
-  createdAt       DateTime @default(now())
+  checksumSha256 String
+  createdAt      DateTime @default(now())
 
   recognitions OcrRecognition[]
 
@@ -496,14 +506,14 @@ model OcrAsset {
 /// data (§1): it stays a JSON extraction payload, while user corrections are
 /// the ONLY authoritative values and can never be overwritten by the engine.
 model OcrRecognition {
-  id                String    @id @default(uuid()) @db.Uuid
-  userId            String    @db.Uuid
-  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  assetId           String    @db.Uuid
-  asset             OcrAsset  @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  id                String   @id @default(uuid()) @db.Uuid
+  userId            String   @db.Uuid
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assetId           String   @db.Uuid
+  asset             OcrAsset @relation(fields: [assetId], references: [id], onDelete: Cascade)
   /// QUEUED | PROCESSING | REVIEW_REQUIRED | FAILED | CONFIRMED (§24 states
   /// that actually exist — guarded transitions enforced in the repository).
-  status            String    @default("QUEUED")
+  status            String   @default("QUEUED")
   /// TRADE_SUMMARY in V1 (shared ocrExtractionProfileSchema).
   extractionProfile String
   /// Pipeline version that produced/last touched the result (§33).
@@ -515,23 +525,23 @@ model OcrRecognition {
 
   /// Machine result payload {classification, fields, warnings, engine,
   /// durationMs} — untrusted engine output AFTER strict validation (§54).
-  result            Json?
+  result               Json?
   /// Stable failure category (shared ocrFailureCategorySchema) + sanitized
   /// message — never raw engine output, never secrets (§35/§36).
-  failureCategory   String?
-  failureMessage    String?
+  failureCategory      String?
+  failureMessage       String?
   /// Processing attempt counter — bounded retries only (§34).
-  attempt           Int       @default(1)
+  attempt              Int       @default(1)
   /// Correlation ids for observability (§57) — no image data, ever (§36).
-  requestId         String?
+  requestId            String?
   processingStartedAt  DateTime?
   processingFinishedAt DateTime?
 
   /// Authoritative user-confirmed values (field → value, §21). Written once
   /// by the confirmation endpoint inside a transaction (§50); the engine can
   /// never write here.
-  corrections       Json?
-  confirmedAt       DateTime?
+  corrections Json?
+  confirmedAt DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -548,20 +558,20 @@ model OcrRecognition {
 /// contractSize, digits) — NO per-asset-class constants in code (synthetic
 /// indices ≠ forex lots). Seeded by migration tooling only (conventions).
 model Instrument {
-  id            String   @id @default(uuid()) @db.Uuid
+  id            String  @id @default(uuid()) @db.Uuid
   /// Unique ticker, e.g. "EURUSD", "BOOM500", "VOL75(1s)".
-  symbol        String   @unique
+  symbol        String  @unique
   name          String
   /// FOREX | CRYPTO | SYNTHETIC | INDEX | METAL | ENERGY (shared assetClassSchema).
   assetClass    String
   quoteCurrency String
   /// Price increment of one pip, e.g. "0.0001" forex, "1.0" Boom/Crash.
-  pipSize       Decimal  @db.Decimal(18, 8)
+  pipSize       Decimal @db.Decimal(18, 8)
   /// Display digits for prices.
   digits        Int
   /// Units per lot/contract, e.g. "100000" EURUSD, "1" synthetics/crypto.
-  contractSize  Decimal  @db.Decimal(18, 8)
-  isActive      Boolean  @default(true)
+  contractSize  Decimal @db.Decimal(18, 8)
+  isActive      Boolean @default(true)
 
   createdAt DateTime @default(now())
 
@@ -573,25 +583,25 @@ model Instrument {
 /// broker position or deal (§1). The PLAN is kept separate from REALITY and
 /// from RESULTS (server-computed, §15/§46). Soft delete only (§57).
 model Trade {
-  id           String   @id @default(uuid()) @db.Uuid
-  userId       String   @db.Uuid
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  accountId    String   @db.Uuid
-  account      TradingAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  instrumentId String   @db.Uuid
-  instrument   Instrument @relation(fields: [instrumentId], references: [id], onDelete: Restrict)
+  id              String         @id @default(uuid()) @db.Uuid
+  userId          String         @db.Uuid
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accountId       String         @db.Uuid
+  account         TradingAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  instrumentId    String         @db.Uuid
+  instrument      Instrument     @relation(fields: [instrumentId], references: [id], onDelete: Restrict)
   /// Opaque playbook reference in V1 — the Playbook domain (later phase)
   /// attaches the FK. Null = out-of-playbook trade (valuable to track).
-  strategyId   String?  @db.Uuid
-  setupId      String?  @db.Uuid
+  strategyId      String?        @db.Uuid
+  setupId         String?        @db.Uuid
   /// Definition version frozen at entry.
   strategyVersion Int?
   /// PLANNED | OPEN | CLOSED | CANCELLED (shared tradeStatusSchema).
-  status       String   @default("OPEN")
+  status          String         @default("OPEN")
   /// BUY | SELL (shared directionSchema).
-  direction    String
+  direction       String
   /// MANUAL | IMPORT | EXTERNAL_SYNC (shared tradeSourceSchema, §8).
-  source       String   @default("MANUAL")
+  source          String         @default("MANUAL")
 
   // ── THE PLAN (decided BEFORE) ──
   entryPrice  Decimal  @db.Decimal(18, 8)
@@ -638,20 +648,20 @@ model Trade {
   checklistSnap Json?
 
   // ── CONTEXT ──
-  notes   String?
-  lessons String?
+  notes         String?
+  lessons       String?
   /// User-local trading day — server-computed via the user timezone (§56).
-  tradingDate  DateTime @db.Date
+  tradingDate   DateTime @db.Date
   /// Broker-side trade ref → CSV/import idempotence.
-  externalRef  String?
-  importBatchId String? @db.Uuid
+  externalRef   String?
+  importBatchId String?  @db.Uuid
 
   /// External mapping (§9/§44): one broker position = one journal trade.
   /// Null for MANUAL/IMPORT trades. Repeated syncs upsert on it (§27).
   externalPositionId String?
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   /// Soft delete (undo possible, §57) — synchronized history is never
   /// hard-deleted.
   deletedAt DateTime?
@@ -694,9 +704,9 @@ model TradeExit {
 /// "stop widened" — final state alone never tells the story. Server-forged:
 /// no endpoint accepts a client-written TradeEvent.
 model TradeEvent {
-  id      String   @id @default(uuid()) @db.Uuid
-  tradeId String   @db.Uuid
-  trade   Trade    @relation(fields: [tradeId], references: [id], onDelete: Cascade)
+  id      String @id @default(uuid()) @db.Uuid
+  tradeId String @db.Uuid
+  trade   Trade  @relation(fields: [tradeId], references: [id], onDelete: Cascade)
   /// SL_MODIFIED | TP_MODIFIED | SIZE_MODIFIED | REOPENED | NOTE.
   type    String
   /// e.g. { "from": "1.0850", "to": "1.0800" }.
@@ -713,21 +723,21 @@ model TradeEvent {
 /// reference; the binary lives in the Trading Core storage adapter (§39:
 /// raw payloads isolated, restricted, never the domain model).
 model TradeScreenshot {
-  id      String   @id @default(uuid()) @db.Uuid
-  tradeId String   @db.Uuid
-  trade   Trade    @relation(fields: [tradeId], references: [id], onDelete: Cascade)
+  id             String  @id @default(uuid()) @db.Uuid
+  tradeId        String  @db.Uuid
+  trade          Trade   @relation(fields: [tradeId], references: [id], onDelete: Cascade)
   /// BEFORE | AFTER | CHART | OTHER.
-  kind    String
+  kind           String
   /// Storage-adapter reference — validated, never client-controlled.
-  storageKey String
+  storageKey     String
   /// SHA-256 of the stored binary (integrity + dedup anchor).
   checksumSha256 String
   /// MIME determined by MAGIC-BYTE sniffing — never the client header.
-  mime    String
-  sizeBytes Int
-  caption String?
+  mime           String
+  sizeBytes      Int
+  caption        String?
   /// User-drawn arrows/zones.
-  annotations Json?
+  annotations    Json?
 
   createdAt DateTime @default(now())
 
@@ -738,22 +748,22 @@ model TradeScreenshot {
 /// library shared by the Trades ledger (TRADES scope) and the Analytics
 /// module (ANALYTICS scope), per the shared savedTradeViewSchema contract.
 model SavedTradeView {
-  id     String @id @default(uuid()) @db.Uuid
-  userId String @db.Uuid
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name   String
+  id               String   @id @default(uuid()) @db.Uuid
+  userId           String   @db.Uuid
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name             String
   /// TRADES | ANALYTICS.
-  scope  String @default("TRADES")
+  scope            String   @default("TRADES")
   /// savedTradeViewFiltersSchema JSON (mirrors the trades URL param bag).
-  filters Json
+  filters          Json
   /// analyticsViewFiltersSchema JSON — ANALYTICS-scope presets only.
   analyticsFilters Json?
   /// Visible ledger columns (checkbox/actions columns are structural).
-  columns String[]
+  columns          String[]
   /// date | r | pnl.
-  sortKey String
+  sortKey          String
   /// asc | desc.
-  sortDir String
+  sortDir          String
 
   createdAt DateTime @default(now())
 
@@ -761,4 +771,161 @@ model SavedTradeView {
   /// boundary; the DB constraint is the backstop).
   @@unique([userId, name])
   @@index([userId])
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// Module-upgrade bounded contexts (backend parity build) — one table per
+// domain, following the MonitoringSetting precedent: the row identity lives
+// in columns (userId, kind, tradeId…), the domain aggregate lives in `data`
+// as the shared-contract JSON. No cross-context joins: each context owns its
+// table and maps rows to its shared schemas inside its own repository.
+// ════════════════════════════════════════════════════════════════════════════
+
+/// Discipline context — rules, violations, emotion entries, daily ledger.
+model DisciplineRow {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// RULE | VIOLATION | ALERT | EMOTION
+  kind      String
+  /// Shared-contract JSON (ruleSchema / disciplineViolationSchema / alertSchema / …).
+  data      Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, kind])
+}
+
+/// Trade sub-resources owned by other contexts — mistake links, session
+/// series snapshots (kept OUT of the Trade table: no bounded-context leaks).
+model TradeSubRow {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tradeId   String   @db.Uuid
+  /// MISTAKE | SESSION_SERIES
+  kind      String
+  /// Shared-contract JSON for the sub-resource.
+  data      Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, tradeId, kind])
+}
+
+/// Journal context — session notes (the /session/notes CRUD).
+model SessionNoteRow {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Shared-contract JSON (sessionNoteSchema).
+  data      Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+/// Ghost context — skipped trades awaiting settlement + settled history.
+model SkippedTradeRow {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Shared-contract JSON (skippedTradeSchema).
+  data      Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+/// Calendar context — calendar blocks (imported eco events + manual blocks).
+model CalendarBlockRow {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// ISO date key the block lands on (yyyy-mm-dd, user timezone).
+  date      String
+  /// Shared-contract JSON (calendarBlockSchema).
+  data      Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, date])
+}
+
+/// Trade Review context — per-trade reviews, lessons and goals.
+model ReviewRow {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// REVIEW | GOAL | LESSON — reviews additionally carry tradeId.
+  kind      String
+  tradeId   String?  @db.Uuid
+  /// Shared-contract JSON (tradeReviewSchema / goalSchema / lessonSchema).
+  data      Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, kind])
+}
+
+/// Session Live context — trading sessions, saved analyses, key levels.
+model SessionLiveRow {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// SESSION | ANALYSIS | LEVEL
+  kind      String
+  /// Shared-contract JSON (sessionLiveSessionSchema / analysis / keyLevel).
+  data      Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, kind])
+}
+
+/// Playbook context — setups, rules, templates, checklists, versions.
+model PlaybookRow {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// SETUP | RULE | TEMPLATE | CHECKLIST | VERSION
+  kind      String
+  /// Shared-contract JSON for the sub-resource.
+  data      Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, kind])
+}
+
+/// Nofy context — knowledge notes, folders, tags, templates, versions.
+model NofyRow {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// NOTE | FOLDER | TAG | TEMPLATE | VERSION
+  kind      String
+  /// Shared-contract JSON (nofyNoteSchema / folder / tag / template).
+  data      Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, kind])
+}
+
+/// Academy context — per-user progress, event registrations, Tasky tasks.
+model AcademyRow {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// PROGRESS | EVENT_REGISTRATION | TASK
+  kind      String
+  /// Shared-contract JSON for the sub-resource.
+  data      Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, kind])
 }
