@@ -32,6 +32,7 @@ import { PlaybookModule } from "./modules/playbook/playbook.module";
 import { NofyModule } from "./modules/nofy/nofy.module";
 import { AcademyModule } from "./modules/academy/academy.module";
 import { StatsModule } from "./modules/stats/stats.module";
+import { BackupModule } from "./modules/backup/backup.module";
 import { DomainEventsModule } from "./infrastructure/events/domain-events.module";
 import { SecurityEventModule } from "./modules/security/security-event.module";
 import { SecurityModule } from "./modules/security/security.module";
@@ -121,6 +122,10 @@ const globalExceptionFilterProvider: Provider = {
     // analytics aggregates and the filtered analytics-suite dataset with
     // Monte Carlo. READ-ONLY — owns NO tables (§3).
     StatsModule,
+    // Backup (B2) — authored-data portability: full snapshot export and
+    // validated import (replace trades, merge strategies/tags). Operates
+    // over the owning contexts' stores; owns NO tables.
+    BackupModule,
     // Security center — posture, activity, visibility (Phase 16). Orchestrates
     // identity capabilities; owns NO authentication/session/MFA logic (§3).
     SecurityModule,

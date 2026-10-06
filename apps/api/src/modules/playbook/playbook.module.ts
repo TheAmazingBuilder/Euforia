@@ -39,6 +39,6 @@ import { PlaybookService } from "./playbook.service";
     PlaybookRulesController,
   ],
   providers: [PlaybookRepository, PlaybookService],
-  exports: [PlaybookService],
+  exports: [PlaybookService, PlaybookRepository],
 })
 export class PlaybookModule {}

@@ -188,3 +188,18 @@ Work Log:
 Stage Summary:
 - 11 chantiers livrés (B3,B6,B4,B5,B7,B8,B9,B10,B11,B12,B1) — 457/457 tests verts, lint propre, TS OK.
 - Reste : B13 (accounts SPEC-1) → B2 (backup 2) → Phase C (bridge live) → Phase D (vérif+rapport).
+
+---
+Task ID: 1-backends (B13 vérifié + B2 livré — PARITÉ BACKEND COMPLÈTE)
+Agent: Super Z (main)
+Date: 2026-10-06 14:50 UTC
+
+Work Log:
+- B13 (accounts riche) : VÉRIFIÉ DÉJÀ IMPLÉMENTÉ — le module accounts (trading-account.service 672 lignes, sync 324, provider-registry, encryption AES-256-GCM, rate limiter) couvre le contrat trading-account.ts Phase 3 : providers, connect+initial sync, reconnect/disconnect (§52), test connection (checks nommés), sync trigger/status (idempotent §18), snapshot, positions/orders/deals, codes d'erreur stables §36, 35 tests e2e dans la suite. La matrice d'audit visait le FRONTEND (aucun consommateur du contrat riche) — l'API est prête pour l'UI future.
+- B2 (backup, 2 routes) : export GET /export/backup (snapshot wire : trades via toTradeView, playbook strategies, tags) + import POST /import/backup (backupPayloadSchema partagé, re-own au user demandeur, REPLACE trades transactionnel, MERGE strategies/tags).
+- DÉCOUVERTE CRITIQUE : les PK (Trade.id, PlaybookRow.id, TagRow.id) sont GLOBALES en DB — le mock les scope par user. Politique d'import : id préservé si libre (restore même-user = ids stables), nouvel uuid sinon (cross-user). accountId des trades importés remappé au compte de l'importeur (422 si aucun). Déduplication strategies/tags par nom (les ids réémis cassent le merge par id). accountId @unique sur TradingConnection/Snapshot : 1:1.
+- Pièges : tradeEvent/TradeScreenshot deleteMany via relation trade.userId (pas de colonne userId) ; le sync initial MOCK du connect crée des trades de démo EN ARRIÈRE-PLAN → counts cross-user non déterministes (test aligné sur le déterminisme : restore même-user strict + merge cross-user).
+
+Stage Summary:
+- PARITÉ BACKEND COMPLÈTE : B1-B13 tous livrés — 460/460 tests e2e verts (38 fichiers), lint propre, typecheck OK.
+- Reste : Phase C (bridge live NEXT_PUBLIC_API_LIVE + smoke E2E) → Phase D (vérification totale + worklog + rapport final).
