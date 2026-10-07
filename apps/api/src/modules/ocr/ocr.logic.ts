@@ -20,6 +20,7 @@ import { createHash } from "node:crypto";
 import { Prisma } from "@prisma/client";
 import type {
   OcrClassification,
+  OcrExtractionProfile,
   OcrExtractedField,
   OcrFieldKey,
   OcrIssue,
@@ -28,6 +29,7 @@ import type {
   OcrTradeDuplicateEvidence,
   OcrValidationStatus,
 } from "../../shared/contracts";
+import { OCR_PROFILE_REQUIRED_FIELD_KEYS } from "../../shared/contracts";
 
 /** Candidate-key warnings must stay short and stable (client-copyable). */
 export const TIMEZONE_UNKNOWN_WARNING = "TIMEZONE_UNKNOWN";
@@ -268,9 +270,28 @@ export function normalizeDirection(raw: string): "BUY" | "SELL" | null {
   return null;
 }
 
-const SIGNED_DECIMAL_KEYS: ReadonlySet<OcrFieldKey> = new Set(["profit"]);
+const SIGNED_DECIMAL_KEYS: ReadonlySet<OcrFieldKey> = new Set([
+  "profit",
+  // Account snapshots: balances/equity CAN legitimately be negative (a
+  // blown account is still a truthful snapshot — never "validated away").
+  "accountBalance",
+  "accountEquity",
+  "accountMargin",
+  "accountFreeMargin",
+  "accountMarginLevel",
+  // Chart: signed change % and MACD readings are data.
+  "chartChangePct",
+  "chartMacd",
+]);
 const DECIMAL_KEYS: ReadonlySet<OcrFieldKey> = new Set([
   "volume", "entryPrice", "exitPrice", "stopLoss", "takeProfit", "profit",
+  "accountBalance", "accountEquity", "accountMargin", "accountFreeMargin", "accountMarginLevel",
+  "chartOpen", "chartHigh", "chartLow", "chartClose", "chartPrice", "chartChangePct",
+  "chartRsi", "chartMacd", "chartAtr", "chartStoch", "chartAdx", "chartMa",
+]);
+/** Non-negative chart prices — an OHLC quote is never negative. */
+const POSITIVE_DECIMAL_KEYS: ReadonlySet<OcrFieldKey> = new Set([
+  "chartOpen", "chartHigh", "chartLow", "chartClose", "chartPrice",
 ]);
 
 // ── Domain validation (§19) — applied to normalized values ──────────────────
@@ -297,7 +318,48 @@ export function applyDomainValidation(fields: OcrExtractedField[]): OcrExtracted
 
   // Positivity rules (§19): volume and prices must be > 0. Decimal#isPositive
   // treats zero as positive — use a strict comparison against 0 instead.
+  // Account balances are EXCLUDED on purpose: a negative balance is a
+  // truthful snapshot, never invalidated (Account profile honesty rule).
   for (const key of ["volume", "entryPrice", "exitPrice", "stopLoss", "takeProfit"] as const) {
+    const value = decimal(key);
+    const field = byKey.get(key);
+    if (value !== null && field && !value.greaterThan("0")) {
+      byKey.set(key, invalidate(field, key, "must be positive"));
+    }
+  }
+  // Chart quote geometry (Account & Chart expansion): H >= max(O, C),
+  // L <= min(O, C), price inside [L, H] — each rule only fires when BOTH
+  // operands are present (§19: a missing operand never invalidates).
+  const chartOpen = decimal("chartOpen");
+  const chartHigh = decimal("chartHigh");
+  const chartLow = decimal("chartLow");
+  const chartClose = decimal("chartClose");
+  if (chartHigh !== null && chartOpen !== null && chartHigh.lessThan(chartOpen)) {
+    const field = byKey.get("chartHigh");
+    if (field) byKey.set("chartHigh", invalidate(field, "chartHigh", "high below open"));
+  }
+  if (chartHigh !== null && chartClose !== null && chartHigh.lessThan(chartClose)) {
+    const field = byKey.get("chartHigh");
+    if (field) byKey.set("chartHigh", invalidate(field, "chartHigh", "high below close"));
+  }
+  if (chartLow !== null && chartOpen !== null && chartLow.greaterThan(chartOpen)) {
+    const field = byKey.get("chartLow");
+    if (field) byKey.set("chartLow", invalidate(field, "chartLow", "low above open"));
+  }
+  if (chartLow !== null && chartClose !== null && chartLow.greaterThan(chartClose)) {
+    const field = byKey.get("chartLow");
+    if (field) byKey.set("chartLow", invalidate(field, "chartLow", "low above close"));
+  }
+  const chartPrice = decimal("chartPrice");
+  if (chartPrice !== null && chartLow !== null && chartPrice.lessThan(chartLow)) {
+    const field = byKey.get("chartPrice");
+    if (field) byKey.set("chartPrice", invalidate(field, "chartPrice", "price below range"));
+  }
+  if (chartPrice !== null && chartHigh !== null && chartPrice.greaterThan(chartHigh)) {
+    const field = byKey.get("chartPrice");
+    if (field) byKey.set("chartPrice", invalidate(field, "chartPrice", "price above range"));
+  }
+  for (const key of POSITIVE_DECIMAL_KEYS) {
     const value = decimal(key);
     const field = byKey.get(key);
     if (value !== null && field && !value.greaterThan("0")) {
@@ -600,13 +662,12 @@ export function suggestedTagsForImport(values: {
 /** Confidence below this band is report-worthy (V2 §16 LOW_OCR_CONFIDENCE). */
 export const LOW_OCR_CONFIDENCE_THRESHOLD = 0.7;
 
-/** The import-critical floor — mirrors trade-import eligibility (V2 §16). */
-export const REQUIRED_FIELD_KEYS: readonly OcrFieldKey[] = [
-  "symbol",
-  "direction",
-  "volume",
-  "entryPrice",
-];
+/**
+ * The import-critical floor per profile — shared OCR_PROFILE_REQUIRED_FIELD_KEYS.
+ * Kept as the TRADE default for callers that do not know a profile (fusion
+ * of sets is a TRADE-only feature, so the default is honest there).
+ */
+export const REQUIRED_FIELD_KEYS: readonly OcrFieldKey[] = OCR_PROFILE_REQUIRED_FIELD_KEYS.TRADE_SUMMARY;
 
 export interface RecognitionIssueInput {
   fields: readonly OcrExtractedField[];
@@ -615,6 +676,8 @@ export interface RecognitionIssueInput {
   possibleTradeDuplicate: { tradeId: string; matchedOn: readonly string[] } | null;
   /** The symbol resolved against the instrument catalog (null = unknown). */
   symbolInCatalog: boolean;
+  /** Extraction profile — scopes the required-field floor (defaults TRADE). */
+  profile?: OcrExtractionProfile;
 }
 
 /**
@@ -629,9 +692,10 @@ export function deriveRecognitionIssues(input: RecognitionIssueInput): OcrIssue[
     if (issues.length < 32) issues.push(issue);
   };
 
+  const required = OCR_PROFILE_REQUIRED_FIELD_KEYS[input.profile ?? "TRADE_SUMMARY"];
   for (const field of input.fields) {
     if (field.validationStatus === "MISSING") {
-      if ((REQUIRED_FIELD_KEYS as readonly string[]).includes(field.field)) {
+      if ((required as readonly string[]).includes(field.field)) {
         push({ code: "MISSING_REQUIRED_FIELD", field: field.field, detail: null });
       }
       continue;
@@ -656,6 +720,32 @@ export function deriveRecognitionIssues(input: RecognitionIssueInput): OcrIssue[
     }
   }
 
+  // Account & Chart headers are flat label-driven lists — a required value
+  // the engine NEVER PRODUCED is meaningful absence (the review must say
+  // "enter it manually"). Trade rows keep the legacy semantics: candidate
+  // grouping makes empty MAIN fields normal, so absence stays un-flagged
+  // there (the multi-trade review owns that evidence).
+  if (input.profile === "ACCOUNT_POSITION" || input.profile === "CHART_ANALYSIS") {
+    for (const key of required) {
+      if (!input.fields.some((f) => f.field === key)) {
+        push({ code: "MISSING_REQUIRED_FIELD", field: key, detail: null });
+      }
+    }
+  }
+
+  // A chart legend on an ACCOUNT run (or an account header on a CHART run)
+  // is honest evidence of a profile mismatch — the review must know the
+  // extraction ran against the wrong vocabulary.
+  if (input.profile !== undefined && input.classification !== null) {
+    const type = input.classification.type;
+    const mismatch =
+      (input.profile === "ACCOUNT_POSITION" && type !== "ACCOUNT_SUMMARY" && type !== "OPEN_POSITION" && type !== "POSITION_DETAIL") ||
+      (input.profile === "CHART_ANALYSIS" && type !== "CHART" && type !== "TRADINGVIEW_CHART") ||
+      (input.profile === "TRADE_SUMMARY" && (type === "ACCOUNT_SUMMARY" || type === "CHART"));
+    if (mismatch) {
+      push({ code: "PROFILE_TYPE_MISMATCH", field: null, detail: type });
+    }
+  }
   if (input.classification === null || input.classification.type === "UNKNOWN") {
     push({ code: "UNSUPPORTED_SCREENSHOT", field: null, detail: null });
   }
@@ -701,6 +791,8 @@ export interface QualityScoreInput {
   fields: readonly OcrExtractedField[];
   classification: OcrClassification | null;
   duplicateOf: { recognitionId: string } | null;
+  /** Extraction profile — scopes the completeness component (defaults TRADE). */
+  profile?: OcrExtractionProfile;
 }
 
 /**
@@ -714,10 +806,11 @@ export function computeQualityScore(input: QualityScoreInput): OcrQualityScore |
   const fieldConfidence =
     readable.reduce((total, field) => total + field.confidence, 0) / readable.length;
 
+  const required = OCR_PROFILE_REQUIRED_FIELD_KEYS[input.profile ?? "TRADE_SUMMARY"];
   const completeness =
-    REQUIRED_FIELD_KEYS.filter((key) =>
+    required.filter((key) =>
       input.fields.some((f) => f.field === key && f.normalizedValue !== null),
-    ).length / REQUIRED_FIELD_KEYS.length;
+    ).length / required.length;
 
   const invalidCount = input.fields.filter((f) => f.validationStatus === "INVALID").length;
   const validation = Math.max(0, 1 - invalidCount * VALIDATION_PENALTY_PER_FIELD);

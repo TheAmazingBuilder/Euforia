@@ -43,15 +43,22 @@ export type OcrRecognitionStatus = z.infer<typeof ocrRecognitionStatusSchema>;
 // ── Extraction profile + field keys (§12: only what the product needs) ──────
 
 /**
- * V1 extraction profile. The only consumer target is the trade journal:
- * MT5-style trade summary lines (symbol, direction, prices, SL/TP, volume,
- * profit, timestamps). One profile, deliberately small (§12: "do not create
- * an enormous universal OCR schema merely because these fields are possible").
+ * Extraction profiles (Recognition V1.1 — Account & Chart expansion).
+ *
+ * TRADE_SUMMARY is the V1 target: MT5-style trade summary lines consumed by
+ * the trade journal. ACCOUNT_POSITION reads account-level snapshots (login,
+ * server, currency, leverage, balance, equity, margin, free margin, margin
+ * level + the open-positions table as grouped candidates). CHART_ANALYSIS
+ * reads chart screenshots (symbol, timeframe, OHLC quote panel, current
+ * price, change and the visible indicator readings). The rule stays §12:
+ * one deliberately small field vocabulary per profile, never a universal
+ * OCR schema.
  */
-export const ocrExtractionProfileSchema = z.enum(["TRADE_SUMMARY"]);
+export const ocrExtractionProfileSchema = z.enum(["TRADE_SUMMARY", "ACCOUNT_POSITION", "CHART_ANALYSIS"]);
 export type OcrExtractionProfile = z.infer<typeof ocrExtractionProfileSchema>;
 
 export const ocrFieldKeySchema = z.enum([
+  // TRADE_SUMMARY vocabulary (V1).
   "symbol",
   "direction",
   "volume",
@@ -62,6 +69,31 @@ export const ocrFieldKeySchema = z.enum([
   "profit",
   "openTime",
   "closeTime",
+  // ACCOUNT_POSITION vocabulary — the account snapshot header.
+  "accountLogin",
+  "accountServer",
+  "accountCurrency",
+  "accountLeverage",
+  "accountBalance",
+  "accountEquity",
+  "accountMargin",
+  "accountFreeMargin",
+  "accountMarginLevel",
+  // CHART_ANALYSIS vocabulary — quote panel + visible indicator readings.
+  "chartTimeframe",
+  "chartTime",
+  "chartOpen",
+  "chartHigh",
+  "chartLow",
+  "chartClose",
+  "chartPrice",
+  "chartChangePct",
+  "chartRsi",
+  "chartMacd",
+  "chartAtr",
+  "chartStoch",
+  "chartAdx",
+  "chartMa",
 ]);
 export type OcrFieldKey = z.infer<typeof ocrFieldKeySchema>;
 
@@ -73,7 +105,68 @@ export const OCR_DECIMAL_FIELD_KEYS = [
   "stopLoss",
   "takeProfit",
   "profit",
+  "accountBalance",
+  "accountEquity",
+  "accountMargin",
+  "accountFreeMargin",
+  "accountMarginLevel",
+  "chartOpen",
+  "chartHigh",
+  "chartLow",
+  "chartClose",
+  "chartPrice",
+  "chartChangePct",
+  "chartRsi",
+  "chartMacd",
+  "chartAtr",
+  "chartStoch",
+  "chartAdx",
+  "chartMa",
 ] as const satisfies readonly (typeof ocrFieldKeySchema.options)[number][];
+
+/** ACCOUNT_POSITION vocabulary — the snapshot header (positions are candidates). */
+export const OCR_ACCOUNT_FIELD_KEYS = [
+  "accountLogin",
+  "accountServer",
+  "accountCurrency",
+  "accountLeverage",
+  "accountBalance",
+  "accountEquity",
+  "accountMargin",
+  "accountFreeMargin",
+  "accountMarginLevel",
+] as const satisfies readonly (typeof ocrFieldKeySchema.options)[number][];
+
+/** CHART_ANALYSIS vocabulary — quote panel + visible indicator readings. */
+export const OCR_CHART_FIELD_KEYS = [
+  "chartTimeframe",
+  "chartTime",
+  "chartOpen",
+  "chartHigh",
+  "chartLow",
+  "chartClose",
+  "chartPrice",
+  "chartChangePct",
+  "chartRsi",
+  "chartMacd",
+  "chartAtr",
+  "chartStoch",
+  "chartAdx",
+  "chartMa",
+] as const satisfies readonly (typeof ocrFieldKeySchema.options)[number][];
+
+/**
+ * The import-critical floor PER PROFILE (§16/§19): only these missing fields
+ * raise MISSING_REQUIRED_FIELD, and only these count against completeness.
+ * TRADE mirrors trade-import eligibility (symbol, direction, volume,
+ * entry price); ACCOUNT mirrors a meaningful snapshot (currency + balance +
+ * equity); CHART mirrors a usable reading (timeframe + close).
+ */
+export const OCR_PROFILE_REQUIRED_FIELD_KEYS: Record<OcrExtractionProfile, readonly OcrFieldKey[]> = {
+  TRADE_SUMMARY: ["symbol", "direction", "volume", "entryPrice"],
+  ACCOUNT_POSITION: ["accountCurrency", "accountBalance", "accountEquity"],
+  CHART_ANALYSIS: ["chartTimeframe", "chartClose"],
+};
 
 // ── Confidence model (§17) ───────────────────────────────────────────────────
 
@@ -286,6 +379,7 @@ export const ocrIssueCodeSchema = z.enum([
   "MISSING_REQUIRED_FIELD",
   "CONFLICTING_FIELDS",
   "UNSUPPORTED_SCREENSHOT",
+  "PROFILE_TYPE_MISMATCH",
   "POSSIBLE_DUPLICATE",
   "POSSIBLE_TRADE_DUPLICATE",
 ]);
@@ -672,7 +766,10 @@ export const ocrSetCreateInputSchema = z.object({
     )
     .min(2)
     .max(6),
-  requestedProfile: ocrExtractionProfileSchema.default("TRADE_SUMMARY"),
+  // Sets FUSE trade drafts — the fusion grammar is trade-shaped, so the
+  // set path stays TRADE_SUMMARY-only (account/chart workflows use the
+  // single-image route; honest restriction, not a hidden failure).
+  requestedProfile: z.literal("TRADE_SUMMARY").default("TRADE_SUMMARY"),
   accountId: uuidSchema.nullable().optional(),
 });
 export type OcrSetCreateInput = z.infer<typeof ocrSetCreateInputSchema>;

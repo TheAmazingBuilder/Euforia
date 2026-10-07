@@ -20,7 +20,14 @@ import {
 
 export const OCR_CONTRACT_VERSION = "1";
 
-export const OCR_EXTRACTION_PROFILE = "TRADE_SUMMARY" as const;
+/**
+ * Extraction profiles (Recognition V1.1 — Account & Chart expansion).
+ * The requested profile flows from the controller into the engine request;
+ * the sidecar routes its extraction vocabulary accordingly and the Nest
+ * side re-validates the output against the SAME profile (defense in depth).
+ */
+export const OCR_EXTRACTION_PROFILES = ["TRADE_SUMMARY", "ACCOUNT_POSITION", "CHART_ANALYSIS"] as const;
+export type EngineExtractionProfile = (typeof OCR_EXTRACTION_PROFILES)[number];
 
 /** What NestJS sends to the sidecar (§26 request). Built server-side only. */
 export interface EngineRecognizeRequest {
@@ -36,7 +43,7 @@ export interface EngineRecognizeRequest {
     checksumSha256: string;
   };
   /** Fixed enum — never free user text (§26). */
-  extractionProfile: typeof OCR_EXTRACTION_PROFILE;
+  extractionProfile: EngineExtractionProfile;
   /** Soft processing budget in milliseconds — the sidecar honors it best-effort. */
   deadlineMs: number;
   /** Re-OCR by crop (engine quality §2.4) — validated against the asset dims. */

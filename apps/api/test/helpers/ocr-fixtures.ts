@@ -104,6 +104,23 @@ export function makeHappyPathPng(): Buffer {
   throw new Error("no happy-path nonce found");
 }
 
+/**
+ * Profile-aware bucket (Account & Chart V1.1): the mock seed is
+ * fnv1a32(checksum|profile), so the SAME image lands in DIFFERENT buckets
+ * per profile — happy-path fixtures must be steered per profile.
+ */
+export function bucketOfProfile(bytes: Buffer, profile: string): number {
+  return fnv1a32(`${fixtureChecksum(bytes)}|${profile}`) % 50;
+}
+
+export function makeHappyPathPngForProfile(profile: string): Buffer {
+  for (let nonce = 2; nonce < 256; nonce += 1) {
+    const bytes = makeOcrFixturePng({ nonce });
+    if (bucketOfProfile(bytes, profile) >= 2) return bytes;
+  }
+  throw new Error(`no happy-path nonce found for profile ${profile}`);
+}
+
 export function makeUnprocessablePng(): Buffer {
   for (let nonce = 0; nonce < 256; nonce += 1) {
     const bytes = makeOcrFixturePng({ nonce });

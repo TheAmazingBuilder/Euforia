@@ -36,6 +36,10 @@ export const TRADE_IMPORT_SKIPPED_NO_ACCOUNT = "TRADE_IMPORT_SKIPPED_NO_ACCOUNT"
 export const TRADE_IMPORT_SKIPPED_UNKNOWN_SYMBOL = "TRADE_IMPORT_SKIPPED_UNKNOWN_SYMBOL";
 /** Trading Core refused the import (duplicate/ownership/domain rule). */
 export const TRADE_IMPORT_SKIPPED_REJECTED = "TRADE_IMPORT_SKIPPED_REJECTED";
+/** Non-trade profile (ACCOUNT_POSITION / CHART_ANALYSIS) — there is no trade
+ * to import; the confirmation stores the reviewed snapshot/reading instead.
+ * An explicit token, never a misleading INCOMPLETE (Account & Chart V1.1). */
+export const TRADE_IMPORT_SKIPPED_PROFILE = "TRADE_IMPORT_SKIPPED_PROFILE";
 /** Unexpected bridge failure — never propagated to the confirmation (§126). */
 export const TRADE_IMPORT_FAILED = "TRADE_IMPORT_FAILED";
 

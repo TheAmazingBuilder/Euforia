@@ -177,3 +177,78 @@ def render_mt5_pdf() -> tuple[bytes, int, int]:
             buffer, format="PDF", save_all=True, append_images=[second], resolution=72
         )
     return buffer.getvalue(), width, height
+
+
+def render_mt5_account_summary() -> tuple[bytes, int, int]:
+    """An MT5-style account snapshot (Account & Chart V1.1 ACCOUNT_POSITION).
+
+    Header = labeled values (login/server/currency/leverage/balance/equity/
+    margin/free margin/margin level); body = TWO open position rows in the
+    desktop "Trade" tab shape (direction + volume + symbol + price + SL/TP).
+    """
+    width, height = 1150, 560
+    img = Image.new("RGB", (width, height), (248, 249, 251))
+    draw = ImageDraw.Draw(img)
+    font = _font(30)
+    small = _font(26)
+    ink = (24, 26, 32)
+    draw.text((24, 16), "MetaTrader 5", font=font, fill=ink)
+    draw.text((24, 64), "Trade  EURUSD  XAUUSD", font=small, fill=(110, 116, 128))
+    lines = [
+        "Login 5102083990",
+        "Server MetaQuotes-Demo",
+        "Currency USD",
+        "Leverage 1:500",
+        "Balance 10420.50",
+        "Equity 10653.40",
+        "Margin 421.10",
+        "Free Margin 10232.30",
+        "Margin Level 2529.60",
+        "buy 0.50 XAUUSD 2645.60",
+        "S/L 2630.00  T/P 2680.00",
+        "sell 0.30 EURUSD 1.08450",
+    ]
+    y = 120
+    for line in lines:
+        draw.text((24, y), line, font=small, fill=ink)
+        y += 36
+    buffer = io.BytesIO()
+    img.save(buffer, format="PNG")
+    return buffer.getvalue(), width, height
+
+
+def render_chart_legend() -> tuple[bytes, int, int]:
+    """A TradingView-style chart legend (Account & Chart V1.1 CHART_ANALYSIS).
+
+    Legend line = symbol + timeframe + OHLC values (space-separated shape);
+    indicator panes below carry label + parameter group + value.
+    """
+    width, height = 900, 420
+    img = Image.new("RGB", (width, height), (248, 249, 251))
+    draw = ImageDraw.Draw(img)
+    font = _font(30)
+    small = _font(26)
+    ink = (24, 26, 32)
+    draw.text((24, 16), "TradingView", font=font, fill=(95, 173, 86))
+    lines = [
+        "XAUUSD 15 O2345.6 H2350.1 L2340.2 C2348.9",
+        "RSI (14) 62.35",
+        "MACD (12 26 close 9) -0.15",
+        "EMA (50) 2330.15",
+    ]
+    y = 90
+    for line in lines:
+        draw.text((24, y), line, font=small, fill=ink)
+        y += 58
+    buffer = io.BytesIO()
+    img.save(buffer, format="PNG")
+    return buffer.getvalue(), width, height
+
+
+def to_request_profile(
+    image: bytes, width: int, height: int, profile: str, request_id: str = "req-1"
+) -> dict:
+    """to_request with an explicit extraction profile (Account & Chart V1.1)."""
+    request = to_request(image, width, height, request_id)
+    request["extractionProfile"] = profile
+    return request

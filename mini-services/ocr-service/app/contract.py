@@ -13,9 +13,14 @@ from typing import Any, Dict, List, Literal, Optional
 from pydantic import BaseModel, Field
 
 ProcessingStatus = Literal["COMPLETED", "UNPROCESSABLE", "FAILED"]
-Profile = Literal["TRADE_SUMMARY"]
+# Recognition V1.1 — Account & Chart expansion. TRADE_SUMMARY stays the V1
+# target; ACCOUNT_POSITION reads account snapshots (header fields + the open
+# positions table as candidates); CHART_ANALYSIS reads chart screenshots
+# (quote panel + visible indicator readings). Profiles route the extraction
+# vocabulary — never invent fields outside the set.
+Profile = Literal["TRADE_SUMMARY", "ACCOUNT_POSITION", "CHART_ANALYSIS"]
 
-FIELD_KEYS = (
+TRADE_FIELD_KEYS = (
     "symbol",
     "direction",
     "volume",
@@ -27,6 +32,39 @@ FIELD_KEYS = (
     "openTime",
     "closeTime",
 )
+
+ACCOUNT_FIELD_KEYS = (
+    "accountLogin",
+    "accountServer",
+    "accountCurrency",
+    "accountLeverage",
+    "accountBalance",
+    "accountEquity",
+    "accountMargin",
+    "accountFreeMargin",
+    "accountMarginLevel",
+)
+
+CHART_FIELD_KEYS = (
+    "chartTimeframe",
+    "chartTime",
+    "chartOpen",
+    "chartHigh",
+    "chartLow",
+    "chartClose",
+    "chartPrice",
+    "chartChangePct",
+    "chartRsi",
+    "chartMacd",
+    "chartAtr",
+    "chartStoch",
+    "chartAdx",
+    "chartMa",
+)
+
+# Legacy name kept: candidate grouping validates against the TRADE set (the
+# open-positions table of an account snapshot reuses the trade row grammar).
+FIELD_KEYS = TRADE_FIELD_KEYS
 
 FAILURE_CATEGORIES = (
     "PROCESSING_TIMEOUT",
@@ -137,5 +175,10 @@ class EngineResponse(BaseModel):
 
 
 def field_names() -> List[str]:
-    """Valid field keys — the sidecar never invents fields outside this set."""
-    return list(FIELD_KEYS)
+    """Valid field keys — the sidecar never invents fields outside this set.
+
+    The union spans every profile: the Nest side re-validates per profile,
+    so a TRADE_SUMMARY run returning account fields would be rejected there
+    (defense in depth — the wire stays honest).
+    """
+    return list(TRADE_FIELD_KEYS) + list(ACCOUNT_FIELD_KEYS) + list(CHART_FIELD_KEYS)

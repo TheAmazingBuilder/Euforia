@@ -34,7 +34,9 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 from PIL import Image, ImageOps
 
+from .account_extraction import extract_account_fields
 from .arbitration import PASS_NAMES, arbitrate_fields, run_sparse_pass
+from .chart_extraction import extract_chart_fields
 from .classification import classify
 from .config import CONTRACT_VERSION, settings
 from .contract import (
@@ -228,6 +230,10 @@ def _recognize_pdf(request: EngineRequest, image_bytes: bytes, started: float) -
     warnings: list[str] = []
     if partial:
         warnings.append(f"PDF_DEADLINE_PARTIAL:{processed_pages}")
+    # Statement PDFs are TRADE-vocabulary documents (Account & Chart V1.1):
+    # the extraction stays on the trade path and the answer says so honestly.
+    if request.extractionProfile != "TRADE_SUMMARY":
+        warnings.append("PROFILE_PDF_TRADE_ONLY")
 
     # Primary fields — the first page whose block pass yields fields, else
     # the first page (an honest default, never merged across pages: merging
@@ -415,21 +421,49 @@ def recognize(request: EngineRequest) -> JSONResponse:
 
     classification = classify(text_joined)
     template = choose_template(classification.type, prepared.width, prepared.height, classification.platform)
-    fields = extract_fields(lines, template)
 
-    # Field-level arbitrage with the challenger pass (§ engine quality —
-    # agreement boosts, disagreements recorded, single-source kept honest).
-    if sparse_lines:
-        challenger_fields = extract_fields(sparse_lines, template)
-        fields, _all_clear = arbitrate_fields(fields, challenger_fields)
-        warnings: list[str] = []
+    # Profile routing (Account & Chart V1.1): the OCR passes are shared, the
+    # FIELD GRAMMAR is profile-specific. Each branch arbitrates its own
+    # fields with the same challenger pass (agreement boosts, disagreements
+    # recorded — identical semantics across profiles).
+    profile = request.extractionProfile
+    if profile == "ACCOUNT_POSITION":
+        fields = extract_account_fields(lines)
+        if sparse_lines:
+            challenger_fields = extract_account_fields(sparse_lines)
+            fields, _all_clear = arbitrate_fields(fields, challenger_fields)
+            warnings: list[str] = []
+        else:
+            warnings = ["SECOND_PASS_UNAVAILABLE"]
+        # Open positions reuse the trade-row grammar — each position is one
+        # candidate draft for grouped confirmation (evidence, never a trade).
+        candidates = extract_trade_candidates(lines, template)
+        trade_candidates = [EngineTradeCandidate(fields=group) for group in candidates]
+    elif profile == "CHART_ANALYSIS":
+        fields = extract_chart_fields(lines)
+        if sparse_lines:
+            challenger_fields = extract_chart_fields(sparse_lines)
+            fields, _all_clear = arbitrate_fields(fields, challenger_fields)
+            warnings = []
+        else:
+            warnings = ["SECOND_PASS_UNAVAILABLE"]
+        trade_candidates = []
     else:
-        warnings = ["SECOND_PASS_UNAVAILABLE"]
+        fields = extract_fields(lines, template)
 
-    # Multi-trade candidates — grouped evidence from account-history rows
-    # (never merged into one fake trade; empty for the mono-trade path).
-    candidates = extract_trade_candidates(lines, template)
-    trade_candidates = [EngineTradeCandidate(fields=group) for group in candidates]
+        # Field-level arbitrage with the challenger pass (§ engine quality —
+        # agreement boosts, disagreements recorded, single-source kept honest).
+        if sparse_lines:
+            challenger_fields = extract_fields(sparse_lines, template)
+            fields, _all_clear = arbitrate_fields(fields, challenger_fields)
+            warnings = []
+        else:
+            warnings = ["SECOND_PASS_UNAVAILABLE"]
+
+        # Multi-trade candidates — grouped evidence from account-history rows
+        # (never merged into one fake trade; empty for the mono-trade path).
+        candidates = extract_trade_candidates(lines, template)
+        trade_candidates = [EngineTradeCandidate(fields=group) for group in candidates]
 
     logger.info(
         "recognition request_id=%s bytes=%d lines=%d fields=%d candidates=%d template=%s ocr_ms=%d total_ms=%d",
@@ -555,10 +589,25 @@ def recrop(request: EngineRequest) -> JSONResponse:
 
     classification = classify(text_joined)
     template = choose_template(classification.type, cropped.width, cropped.height, classification.platform)
-    fields = extract_fields(lines, template)
+
+    # Same profile routing as the main route (Account & Chart V1.1): a
+    # region re-scan on an account snapshot re-reads the ACCOUNT grammar,
+    # on a chart the CHART grammar — never trade-only.
+    profile = request.extractionProfile
+    if profile == "ACCOUNT_POSITION":
+        fields = extract_account_fields(lines)
+    elif profile == "CHART_ANALYSIS":
+        fields = extract_chart_fields(lines)
+    else:
+        fields = extract_fields(lines, template)
     recrop_warnings: list[str] = []
     if sparse_lines:
-        challenger_fields = extract_fields(sparse_lines, template)
+        if profile == "ACCOUNT_POSITION":
+            challenger_fields = extract_account_fields(sparse_lines)
+        elif profile == "CHART_ANALYSIS":
+            challenger_fields = extract_chart_fields(sparse_lines)
+        else:
+            challenger_fields = extract_fields(sparse_lines, template)
         fields, _ = arbitrate_fields(fields, challenger_fields)
     else:
         # Same honest degradation as the main route (V2 audit: the recrop

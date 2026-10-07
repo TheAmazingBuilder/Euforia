@@ -104,12 +104,18 @@ export class OcrTradeImportService {
     const entryPrice = textOf("entryPrice");
     const openTime = textOf("openTime");
 
-    if (symbol === null || (direction !== "BUY" && direction !== "SELL")) {
+    if (symbol === null) {
       return { symbolInCatalog: false, duplicate: null };
     }
     const instrument = await this.tradesRepository.findInstrumentBySymbol(symbol);
     if (instrument === null || !instrument.isActive) {
       return { symbolInCatalog: false, duplicate: null };
+    }
+    // A symbol without a direction (chart profile) resolves against the
+    // catalog — real information for the UNKNOWN_SYMBOL issue — but can
+    // never be a trade duplicate (nothing trade-shaped was recognized).
+    if (direction !== "BUY" && direction !== "SELL") {
+      return { symbolInCatalog: true, duplicate: null };
     }
 
     // Wall-clock window — widened to ±48h BEFORE the query so the wall

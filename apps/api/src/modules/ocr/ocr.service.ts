@@ -35,6 +35,7 @@ import type {
   OcrAsset,
   OcrClassification,
   OcrCorrectionRecord,
+  OcrExtractionProfile,
   OcrExtractedField,
   OcrFieldKey,
   OcrRecognition,
@@ -48,7 +49,7 @@ import {
   EngineTransientError,
   EngineUnprocessableError,
   OCR_ENGINE,
-  OCR_EXTRACTION_PROFILE,
+  type EngineExtractionProfile,
   type EngineResponse,
   type OcrEngine,
 } from "./engine/ocr-engine.port";
@@ -75,6 +76,7 @@ import {
 } from "./ocr.repository";
 import type { OcrRecropResponse } from "../../shared/contracts";
 import { OcrTradeImportService } from "./ocr-trade-import.service";
+import { TRADE_IMPORT_SKIPPED_PROFILE } from "./trade-import.logic";
 import { AccountsRepository } from "../accounts/accounts.repository";
 import { SecurityEventService } from "../security/security-event.service";
 
@@ -137,7 +139,7 @@ export class OcrService {
   async createRecognition(input: {
     userId: string;
     imageDataUrl: string;
-    requestedProfile: "TRADE_SUMMARY";
+    requestedProfile: OcrExtractionProfile;
     requestId: string | null;
     accountId?: string | null;
   }): Promise<OcrRecognitionDto> {
@@ -167,10 +169,12 @@ export class OcrService {
     });
 
     // Stage 2 — idempotency (§32): replays return the existing recognition.
+    // The profile is PART of the key: the same screenshot analyzed in trade
+    // mode and in account mode are different recognitions by design.
     const idempotencyKey = deriveIdempotencyKey(
       input.userId,
       image.checksumSha256,
-      OCR_EXTRACTION_PROFILE,
+      input.requestedProfile,
       OCR_PIPELINE_VERSION,
     );
     const existing = await this.repository.findRecognitionByIdempotencyKey(input.userId, idempotencyKey);
@@ -186,7 +190,7 @@ export class OcrService {
     const row = await this.repository
       .createRecognition(assetRow, {
         status: "QUEUED",
-        extractionProfile: OCR_EXTRACTION_PROFILE,
+        extractionProfile: input.requestedProfile,
         pipelineVersion: OCR_PIPELINE_VERSION,
         idempotencyKey,
         requestId: input.requestId,
@@ -262,7 +266,7 @@ export class OcrService {
     const idempotencyKey = deriveIdempotencyKey(
       input.userId,
       row.asset.checksumSha256,
-      OCR_EXTRACTION_PROFILE,
+      row.extractionProfile,
       `${OCR_PIPELINE_VERSION}|reprocess|${revision}`,
     );
     const replayed = await this.repository.findRecognitionByIdempotencyKey(input.userId, idempotencyKey);
@@ -273,7 +277,7 @@ export class OcrService {
 
     const newRow = await this.repository.createRecognition(assetMeta, {
       status: "QUEUED",
-      extractionProfile: OCR_EXTRACTION_PROFILE,
+      extractionProfile: row.extractionProfile as EngineExtractionProfile,
       pipelineVersion: OCR_PIPELINE_VERSION,
       idempotencyKey,
       requestId: null,
@@ -402,7 +406,7 @@ export class OcrService {
           height: asset.height,
           checksumSha256: asset.checksumSha256,
         },
-        extractionProfile: OCR_EXTRACTION_PROFILE,
+        extractionProfile: row.extractionProfile as EngineExtractionProfile,
         deadlineMs: this.config.ocr.engineTimeoutMs,
       });
       attemptsUsed.count = 1 + this.config.ocr.engineMaxRetries;
@@ -477,9 +481,14 @@ export class OcrService {
       // Trade duplicate detection (V2 §4) — content match against the
       // user's existing Trades. Advisory: stored on the result, surfaced at
       // review, and an explicit acknowledgment is required to confirm.
-      const duplicateDetection = await this.tradeImport
-        .detectTradeDuplicate({ userId, fields })
-        .catch(() => ({ symbolInCatalog: false, duplicate: null }));
+      // Account snapshots are NOT trade-shaped — the query is skipped
+      // entirely; chart symbols still resolve the catalog (no direction,
+      // no duplicate) for the UNKNOWN_SYMBOL issue.
+      const duplicateDetection = row.extractionProfile === "ACCOUNT_POSITION"
+        ? { symbolInCatalog: false as boolean, duplicate: null }
+        : await this.tradeImport
+          .detectTradeDuplicate({ userId, fields })
+          .catch(() => ({ symbolInCatalog: false, duplicate: null }));
       const possibleTradeDuplicate: OcrResultPayload["possibleTradeDuplicate"] =
         duplicateDetection.duplicate === null
           ? null
@@ -844,21 +853,34 @@ export class OcrService {
     // recognition plus an audit fact. Trades are created through
     // TradesService.createTrade (canonical application service); ids are
     // linked here afterwards (one-way provenance, §77).
+    //
+    // Account & Chart profiles (V1.1): the confirmed values are NOT trade
+    // facts — an account snapshot / chart reading is stored as-is and the
+    // bridge is skipped with an EXPLICIT token (never a misleading
+    // INCOMPLETE skip that would imply a broken trade).
+    const confirmedProfile = row.extractionProfile as OcrExtractionProfile;
     const { tradeId, tradeIds, warnings: importWarnings, suggestedTags } =
-      await this.tradeImport.importFromConfirmation({
-        userId: input.userId,
-        recognitionId: input.id,
-        ...(batchPlan !== null
-          ? {
-              drafts: draftMergedFields!.map((draft) => ({
-                index: draft.index,
-                include: draft.include,
-                mergedFields: draft.fields,
-              })),
-            }
-          : { mergedFields }),
-        accountId: input.accountId,
-      });
+      confirmedProfile === "TRADE_SUMMARY"
+        ? await this.tradeImport.importFromConfirmation({
+            userId: input.userId,
+            recognitionId: input.id,
+            ...(batchPlan !== null
+              ? {
+                  drafts: draftMergedFields!.map((draft) => ({
+                    index: draft.index,
+                    include: draft.include,
+                    mergedFields: draft.fields,
+                  })),
+                }
+              : { mergedFields }),
+            accountId: input.accountId,
+          })
+        : {
+            tradeId: null,
+            tradeIds: [],
+            warnings: [TRADE_IMPORT_SKIPPED_PROFILE],
+            suggestedTags: [] as string[],
+          };
 
     const finalWarnings = [...mergedResult.warnings, ...importWarnings].slice(0, 16);
     const finalRow =
@@ -934,7 +956,7 @@ export class OcrService {
         height: row.asset.height,
         checksumSha256: row.asset.checksumSha256,
       },
-      extractionProfile: OCR_EXTRACTION_PROFILE,
+      extractionProfile: row.extractionProfile as EngineExtractionProfile,
       deadlineMs: this.config.ocr.engineTimeoutMs,
       crop: region,
     });
@@ -1046,15 +1068,18 @@ export function toRecognitionDto(row: OcrRecognitionRow): OcrRecognition {
     null) as OcrRecognition["possibleTradeDuplicate"];
   // V2 §16/§15/§23 — issues, quality and timeline are DERIVED from the
   // stored evidence at read time (pure functions — confirmed rows never
-  // mutate, §33, and improved logic explains old rows retroactively).
+  // mutate, §33, and improved logic explains old rows retroactively). The
+  // profile scopes the required-field floor (Account & Chart V1.1).
+  const extractionProfile = row.extractionProfile as OcrExtractionProfile;
   const issues = deriveRecognitionIssues({
     fields,
     classification,
     duplicateOf,
     possibleTradeDuplicate,
     symbolInCatalog: row.result?.symbolInCatalog === true,
+    profile: extractionProfile,
   });
-  const qualityScore = computeQualityScore({ fields, classification, duplicateOf });
+  const qualityScore = computeQualityScore({ fields, classification, duplicateOf, profile: extractionProfile });
   const timeline = buildRecognitionTimeline({
     fields,
     uploadedAt: asset.createdAt,
@@ -1063,7 +1088,7 @@ export function toRecognitionDto(row: OcrRecognitionRow): OcrRecognition {
   return {
     id: row.id,
     status: row.status as OcrRecognition["status"],
-    extractionProfile: row.extractionProfile as OcrRecognition["extractionProfile"],
+    extractionProfile: extractionProfile,
     classification,
     fields,
     warnings: row.result?.warnings ?? [],
