@@ -15,16 +15,15 @@ import {
   useCreateOcrRecognition,
   useReprocessOcrRecognition,
   useOcrStorage,
-  fetchOcrHistoryPage,
   useDeleteOcrRecognition,
   useOcrRecrop,
   useOcrRecognition,
   useOcrRecognitionEvents,
-  useOcrRecognitions,
   useOcrRecognitionsInfinite,
   fetchOcrRecognitionImage,
 } from "@/lib/api/queries";
 import { useDict } from "@/i18n/i18n-provider";
+import { profileMetaKey } from "@/components/recognition/recognition-model";
 import {
   RecognitionSettings,
 } from "@/components/recognition/recognition-settings";
@@ -246,7 +245,7 @@ function WorkspaceInner() {
         {
           onSuccess: (data) => {
             setImportOutcome({ count: data.recognition.tradeIds.length || 1, tags: data.recognition.suggestedTags });
-            toast.success(dict.success.toast);
+            toast.success(successToastFor(recognition.extractionProfile, dict));
             setStepRaw("success");
           },
           onError: (error) => toast.error(dict.errors.server, { description: apiErrorMessage(error, "") }),
@@ -270,7 +269,7 @@ function WorkspaceInner() {
       {
         onSuccess: (data) => {
           setImportOutcome({ count: Math.max(data.recognition.tradeIds.length, 1), tags: data.recognition.suggestedTags });
-          toast.success(dict.success.toast);
+          toast.success(successToastFor(recognition.extractionProfile, dict));
           setStepRaw("success");
         },
         onError: (error) => toast.error(dict.errors.server, { description: apiErrorMessage(error, "") }),
@@ -431,6 +430,7 @@ function WorkspaceInner() {
             onImportAnother={() => resetToOverview()}
             importedCount={importOutcome.count}
             suggestedTags={importOutcome.tags}
+            profile={recognition.extractionProfile}
           />
         </StepShell>
       );
@@ -539,17 +539,19 @@ function WorkspaceInner() {
 
   return (
     <div className="flex flex-col gap-6" data-testid="recognition-overview">
-      {/* Upload hero — the empty state IS the entry point (§10). */}
+      {/* Upload hero — the entry point IS the product (§10), V1.1 premium. */}
       {items.length === 0 ? (
-        <div className="flex flex-col gap-5 rounded-xl border border-dashed border-border bg-surface px-6 py-10">
-          <div className="mx-auto flex max-w-lg flex-col items-center gap-2 text-center">
-            <h2 className="font-heading text-xl font-semibold">{dict.overview.heroTitle}</h2>
-            <p className="text-sm text-muted-foreground">{dict.overview.heroBody}</p>
+        <div className="chart-paper flex flex-col gap-6 rounded-xl border border-border bg-surface px-6 py-10">
+          <div className="mx-auto flex max-w-2xl flex-col items-center gap-3 text-center">
+            <p className="ledger-label text-accent">{dict.overview.heroKicker}</p>
+            <h2 className="font-heading text-2xl font-semibold tracking-tight">{dict.overview.heroTitle}</h2>
+            <p className="max-w-xl text-sm leading-relaxed text-muted-foreground">{dict.overview.heroBody}</p>
             <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground/80">
               {dict.overview.heroPlatforms}
             </p>
           </div>
           <ScreenshotUploader file={null} onFile={(picked) => { setFile(picked); setStepRaw("configure"); }} onClear={() => setFile(null)} dict={dict} disabled={create.isPending} />
+          <HeroModes dict={dict} />
           <p className="text-center text-xs text-muted-foreground/80">{dict.overview.privacy}</p>
         </div>
       ) : (
@@ -561,12 +563,15 @@ function WorkspaceInner() {
             <ScreenshotUploader file={null} onFile={(picked) => { setFile(picked); setStepRaw("configure"); }} onClear={() => setFile(null)} dict={dict} disabled={create.isPending} />
             <p className="text-xs text-muted-foreground/80">{dict.overview.privacy}</p>
           </div>
-          <RecentImports
-            dict={dict}
-            items={recent}
-            onOpen={(id) => setParams({ job: id })}
-            onOpenHistory={() => setParams({ tab: "history" })}
-          />
+          <div className="flex flex-col gap-6">
+            <RecentImports
+              dict={dict}
+              items={recent}
+              onOpen={(id) => setParams({ job: id })}
+              onOpenHistory={() => setParams({ tab: "history" })}
+            />
+            <HeroModes dict={dict} compact />
+          </div>
         </div>
       )}
 
@@ -599,6 +604,37 @@ function WorkspaceInner() {
       <StorageIndicator dict={dict} />
 
     </div>
+  );
+}
+
+/**
+ * HeroModes — the three recognition modes as a ruled capability list
+ * (V1.1 redesign): what the engine reads in each mode, at a glance,
+ * before any upload. Informational — the real selection happens in the
+ * configure step.
+ */
+function HeroModes({ dict, compact = false }: { dict: ReturnType<typeof useDict>["recognition"]; compact?: boolean }) {
+  const modes = [
+    { key: "trade" as const, label: dict.settings.profileTrade, hint: dict.settings.profileTradeHint, items: dict.settings.profileTradeItems },
+    { key: "account" as const, label: dict.settings.profileAccount, hint: dict.settings.profileAccountHint, items: dict.settings.profileAccountItems },
+    { key: "chart" as const, label: dict.settings.profileChart, hint: dict.settings.profileChartHint, items: dict.settings.profileChartItems },
+  ];
+  return (
+    <section aria-label={dict.overview.heroModesTitle} className="flex flex-col" data-testid="recognition-hero-modes">
+      <div className="flex items-baseline justify-between gap-3 border-b border-border pb-2">
+        <p className="ledger-label">{dict.overview.heroModesTitle}</p>
+        {!compact ? <p className="text-[11px] text-muted-foreground">{dict.overview.heroModesHint}</p> : null}
+      </div>
+      <div className={cn("grid gap-x-8", compact ? "" : "sm:grid-cols-3")}>
+        {modes.map((mode) => (
+          <div key={mode.key} className="flex flex-col gap-1 border-b border-border/60 py-3">
+            <p className="text-sm font-medium">{mode.label}</p>
+            <p className="text-xs leading-relaxed text-muted-foreground">{mode.hint}</p>
+            <p className="mt-0.5 text-[11px] leading-relaxed text-muted-foreground/80">{mode.items}</p>
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -796,4 +832,15 @@ function readFileAsDataUrl(file: File): Promise<string> {
     reader.onerror = () => reject(new Error("read-failed"));
     reader.readAsDataURL(file);
   });
+}
+
+/** Per-profile confirmation toast (Account & Chart V1.1). */
+function successToastFor(
+  profile: OcrRecognition["extractionProfile"],
+  dict: ReturnType<typeof useDict>["recognition"],
+): string {
+  const metaKey = profileMetaKey(profile);
+  if (metaKey === "account") return dict.success.toastAccount;
+  if (metaKey === "chart") return dict.success.toastChart;
+  return dict.success.toast;
 }

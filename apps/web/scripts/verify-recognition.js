@@ -104,7 +104,9 @@ async function makeScreenshotPng(page, width = 1280, height = 720, withText = tr
     await page.waitForTimeout(600);
     await check("configure step shows preview", await page.locator('[data-testid="recognition-preview-image"]').isVisible().catch(() => false));
     await check("settings visible", await page.locator('[data-testid="recognition-settings"]').isVisible().catch(() => false));
-    await check("future modes disabled", (await page.locator('[data-testid="recognition-settings"] [aria-disabled="true"]').count()) === 2);
+    // V1.1 — three recognition modes, ALL selectable (no coming-soon rows).
+    await check("three profile cards", (await page.locator('[data-testid^="recognition-profile-"]').count()) === 3);
+    await check("no disabled profile rows", (await page.locator('[data-testid="recognition-settings"] [aria-disabled="true"]').count()) === 0);
     await page.screenshot({ path: "scripts/shots/recognition-configure.png", fullPage: true });
 
     // ── 5. Processing → result ─────────────────────────────────────────────
@@ -191,8 +193,55 @@ async function makeScreenshotPng(page, width = 1280, height = 720, withText = tr
     await page.waitForTimeout(2600);
     await check("cancel returns to overview", await page.locator('[data-testid="recognition-overview"]').isVisible().catch(() => false));
 
-    // ── 11. Responsive captures ────────────────────────────────────────────
-    console.log("\n[11] Responsive captures");
+    // ── 11. Account / position profile (V1.1) ──────────────────────────
+    console.log("\n[11] Account / position profile");
+    await page.click('[data-testid="recognition-tab-overview"]');
+    await page.waitForTimeout(600);
+    const accountShot = await makeScreenshotPng(page, 1280, 720, false);
+    await page.setInputFiles('input[type="file"]', { name: "account-snapshot.png", mimeType: "image/png", buffer: accountShot });
+    await page.waitForTimeout(600);
+    await page.click('[data-testid="recognition-profile-account_position"]');
+    await page.click('[data-testid="recognition-start"]');
+    await page.waitForSelector('[data-testid="recognition-result"]', { timeout: 15000 });
+    await check("account view reached", await page.locator('[data-testid="recognition-account-view"]').isVisible().catch(() => false));
+    await check("account KPI strip", (await page.locator('[data-testid="recognition-account-view"] .stat-cell').count()) === 5);
+    await check("open positions table", (await page.locator('[data-testid="recognition-account-positions"] table').count()) === 1);
+    await check("mode badge account", /account/i.test(await page.locator('[data-testid="recognition-mode-badge"]').innerText()));
+    await page.screenshot({ path: "scripts/shots/recognition-account-result.png", fullPage: true });
+    await page.click('[data-testid="recognition-review-draft"]');
+    await page.waitForTimeout(500);
+    await page.click('[data-testid="recognition-confirm"]');
+    await page.waitForSelector('[data-testid="recognition-confirm-final"]', { timeout: 10000 });
+    await page.click('[data-testid="recognition-confirm-final"]');
+    await page.waitForSelector('[data-testid="recognition-success"]', { timeout: 10000 });
+    await check("account success copy", /snapshot/i.test(await page.locator('[data-testid="recognition-success"]').innerText()));
+    await page.screenshot({ path: "scripts/shots/recognition-account-success.png", fullPage: true });
+
+    // ── 12. Chart analysis profile (V1.1) ──────────────────────────────
+    console.log("\n[12] Chart analysis profile");
+    await page.click('[data-testid="recognition-import-another"]');
+    await page.waitForTimeout(600);
+    const chartShot = await makeScreenshotPng(page, 1280, 720, false);
+    await page.setInputFiles('input[type="file"]', { name: "chart-xauusd.png", mimeType: "image/png", buffer: chartShot });
+    await page.waitForTimeout(600);
+    await page.click('[data-testid="recognition-profile-chart_analysis"]');
+    await page.click('[data-testid="recognition-start"]');
+    await page.waitForSelector('[data-testid="recognition-result"]', { timeout: 15000 });
+    await check("chart view reached", await page.locator('[data-testid="recognition-chart-view"]').isVisible().catch(() => false));
+    await check("chart quote header", await page.locator('[data-testid="recognition-chart-quote"]').isVisible().catch(() => false));
+    await check("indicator rows", (await page.locator('[data-testid="recognition-chart-view"] [data-testid^="recognition-field-chart"]').count()) >= 3);
+    await check("mode badge chart", /chart/i.test(await page.locator('[data-testid="recognition-mode-badge"]').innerText()));
+    await page.screenshot({ path: "scripts/shots/recognition-chart-result.png", fullPage: true });
+    await page.click('[data-testid="recognition-review-draft"]');
+    await page.waitForTimeout(500);
+    await page.click('[data-testid="recognition-confirm"]');
+    await page.waitForSelector('[data-testid="recognition-confirm-final"]', { timeout: 10000 });
+    await page.click('[data-testid="recognition-confirm-final"]');
+    await page.waitForSelector('[data-testid="recognition-success"]', { timeout: 10000 });
+    await check("chart success copy", /reading/i.test(await page.locator('[data-testid="recognition-success"]').innerText()));
+
+    // ── 13. Responsive captures ────────────────────────────────────────
+    console.log("\n[13] Responsive captures");
     // Fresh pages carry NO session — log in on each before capturing (§59).
     async function captureViewport(width, height, prefix) {
       const vp = await browser.newPage({ viewport: { width, height } });
@@ -215,8 +264,8 @@ async function makeScreenshotPng(page, width = 1280, height = 720, withText = tr
     await captureViewport(390, 844, "recognition-mobile");
     ok("tablet + mobile captures saved (overview + history)");
 
-    // ── 12. Page errors ────────────────────────────────────────────────────
-    console.log("\n[12] Console integrity");
+    // ── 14. Page errors ────────────────────────────────────────────────────
+    console.log("\n[14] Console integrity");
     await check("zero pageerrors", pageErrors.length === 0, pageErrors.slice(0, 2).join(" | "));
   } catch (error) {
     bad(`probe crashed: ${error.message}`);

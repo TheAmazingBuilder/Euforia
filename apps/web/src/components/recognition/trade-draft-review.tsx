@@ -18,10 +18,13 @@ import type { OcrRecognition } from "@cosmoz/shared";
 import { Button } from "@/components/ui/button";
 import { RecognitionStatusBadge } from "@/components/recognition/recognition-status-badge";
 import {
+  ACCOUNT_FIELD_SECTIONS,
+  CHART_FIELD_SECTIONS,
   DRAFT_SECTIONS,
   formatExtractedTime,
   formatFinancial,
   platformLabel,
+  profileMetaKey,
   profitTone,
   type FieldKey,
 } from "@/components/recognition/recognition-model";
@@ -161,6 +164,28 @@ function DraftCard({ index, total, fields, effectiveValues, include, onToggle, d
   );
 }
 
+/** How one profile's field list renders in the review (raw vs formatted). */
+const RAW_TEXT_KEYS = new Set(["symbol", "direction", "accountLogin", "accountServer", "accountCurrency", "accountLeverage", "chartTimeframe"]);
+
+function reviewDisplay(field: FieldKey | string, raw: string | null, dict: RecognitionDict): string {
+  if (raw === null || raw === "") return dict.draft.notDetected;
+  if (field === "openTime" || field === "closeTime" || field === "chartTime") return formatExtractedTime(raw);
+  if (RAW_TEXT_KEYS.has(field)) return raw;
+  return formatFinancial(raw);
+}
+
+/** The review sections per profile (Account & Chart V1.1). */
+function reviewSections(profile: ReturnType<typeof profileMetaKey>) {
+  if (profile === "account") return ACCOUNT_FIELD_SECTIONS;
+  if (profile === "chart") {
+    return [
+      { titleKey: "chartQuote" as const, fields: ["symbol", "chartTimeframe", "chartPrice", "chartChangePct", "chartTime", "chartOpen", "chartHigh", "chartLow", "chartClose"] },
+      { titleKey: "chartIndicators" as const, fields: CHART_FIELD_SECTIONS[1]!.fields },
+    ];
+  }
+  return DRAFT_SECTIONS;
+}
+
 export function TradeDraftReview({
   recognition,
   dict,
@@ -183,6 +208,8 @@ export function TradeDraftReview({
 }) {
   // V2 §60 — the confirmation dialog state; §59 — recognized-vs-corrected.
   const [confirmOpen, setConfirmOpen] = React.useState(false);
+  const metaKey = profileMetaKey(recognition.extractionProfile);
+  const sections = reviewSections(metaKey);
   const changedRows = Object.entries(effectiveValues).filter(([field, value]) => {
     const machine = recognition.fields.find((f) => f.field === field)?.normalizedValue ?? null;
     return value !== null && machine !== null && value !== machine;
@@ -191,16 +218,16 @@ export function TradeDraftReview({
   const isMulti = Boolean(draftStates && draftStates.length > 0);
   const includedCount = draftStates?.filter((draft) => draft.include).length ?? 1;
 
+  const title = isMulti ? dict.multi.reviewTitle : metaKey === "account" ? dict.draft.titleAccount : metaKey === "chart" ? dict.draft.titleChart : dict.draft.title;
+  const subtitle = isMulti ? dict.multi.reviewSubtitle : metaKey === "account" ? dict.draft.subtitleAccount : metaKey === "chart" ? dict.draft.subtitleChart : dict.draft.subtitle;
+  const confirmLabel = metaKey === "account" ? dict.draft.confirmAndSaveAccount : metaKey === "chart" ? dict.draft.confirmAndSaveChart : dict.draft.confirmAndImport;
+
   return (
     <div className="flex flex-col gap-5" data-testid="recognition-draft">
       <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
         <div className="flex flex-col gap-1">
-          <h2 className="font-heading text-lg font-semibold">
-            {isMulti ? dict.multi.reviewTitle : dict.draft.title}
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            {isMulti ? dict.multi.reviewSubtitle : dict.draft.subtitle}
-          </p>
+          <h2 className="font-heading text-lg font-semibold">{title}</h2>
+          <p className="text-sm text-muted-foreground">{subtitle}</p>
         </div>
         <RecognitionStatusBadge status={recognition.status} dict={dict} />
       </header>
@@ -223,11 +250,11 @@ export function TradeDraftReview({
         </div>
       ) : (
         <div className="flex flex-col">
-          {DRAFT_SECTIONS.map((section) => (
+          {sections.map((section) => (
             <section key={section.titleKey} aria-label={dict.draft.sections[section.titleKey]} className="border-t border-border pt-3 first:border-t-0">
               <p className="ledger-label">{dict.draft.sections[section.titleKey]}</p>
               <dl className="mt-2 grid grid-cols-[minmax(0,1fr)_minmax(0,auto)] gap-x-6">
-                {section.titleKey === "basic" ? (
+                {metaKey === "trade" && section.titleKey === "basic" ? (
                   <div className="col-span-2 grid grid-cols-subgrid items-baseline border-b border-border/60 py-2" data-testid="draft-platform">
                     <dt className="text-sm text-muted-foreground">{dict.draft.platform}</dt>
                     <dd className="text-right font-mono text-[15px] tabular-nums">
@@ -236,8 +263,8 @@ export function TradeDraftReview({
                   </div>
                 ) : null}
                 {section.fields.map((field) => {
-                  const value = (key: FieldKey): string | null => {
-                    if (key in effectiveValues) return effectiveValues[key];
+                  const value = (key: FieldKey | string): string | null => {
+                    if (key in effectiveValues) return effectiveValues[key] ?? null;
                     return recognition.fields.find((f) => f.field === key)?.normalizedValue ?? null;
                   };
                   const tone = field === "profit" ? profitTone(value(field)) : null;
@@ -252,17 +279,12 @@ export function TradeDraftReview({
                           (value(field) === null || value(field) === "") && "italic text-muted-foreground/70",
                         )}
                       >
-                        {(() => {
-                          const raw = value(field);
-                          if (raw === null || raw === "") return dict.draft.notDetected;
-                          if (field === "openTime" || field === "closeTime") return formatExtractedTime(raw);
-                          return formatFinancial(raw);
-                        })()}
+                        {reviewDisplay(field, value(field), dict)}
                       </dd>
                     </div>
                   );
                 })}
-                {section.titleKey === "risk" ? (
+                {metaKey === "trade" && section.titleKey === "risk" ? (
                   <div className="col-span-2 grid grid-cols-subgrid items-baseline border-b border-border/60 py-2" data-testid="draft-risk-reward">
                     <dt className="text-sm text-muted-foreground">{dict.draft.riskReward}</dt>
                     <dd className="text-right font-mono text-[15px] tabular-nums" title={dict.draft.riskRewardCalc}>
@@ -300,7 +322,7 @@ export function TradeDraftReview({
             disabled={pending || (isMulti && includedCount === 0)}
             data-testid="recognition-confirm"
           >
-            {pending ? "…" : dict.draft.confirmAndImport}
+            {pending ? "…" : confirmLabel}
           </Button>
         </div>
       </div>

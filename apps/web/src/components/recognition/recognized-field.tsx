@@ -23,7 +23,6 @@ import {
   needsReview,
   profitTone,
   validateFieldValue,
-  type FieldKey,
 } from "@/components/recognition/recognition-model";
 import { recognitionFieldLabel, type RecognitionDict } from "@/i18n/dictionaries/en/recognition";
 
@@ -59,7 +58,7 @@ export function RecognizedField({
   disabled?: boolean;
 }) {
   const [suggestionApplied, setSuggestionApplied] = React.useState(false);
-  const key = field.field as FieldKey;
+  const key: string = field.field;
   const label = recognitionFieldLabel(dict, field.field);
   const missing = isMissing(field);
   const review = needsReview(field) && !missing;
@@ -67,7 +66,10 @@ export function RecognizedField({
 
   const displayValue = (() => {
     if (missing) return "";
-    if (key === "openTime" || key === "closeTime") return formatExtractedTime(field.normalizedValue);
+    if (key === "openTime" || key === "closeTime" || key === "chartTime") return formatExtractedTime(field.normalizedValue);
+    if (key === "chartTimeframe" || key === "accountCurrency" || key === "accountLeverage" || key === "accountLogin" || key === "accountServer") {
+      return field.normalizedValue ?? "";
+    }
     return formatFinancial(field.normalizedValue);
   })();
   const profit = key === "profit" ? profitTone(field.normalizedValue) : null;
@@ -193,7 +195,7 @@ function EditRow({
   onCancel,
   onSave,
 }: {
-  fieldKey: FieldKey;
+  fieldKey: string;
   initial: string;
   dict: RecognitionDict;
   disabled: boolean;

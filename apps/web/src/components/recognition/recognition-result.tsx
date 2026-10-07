@@ -11,10 +11,12 @@ import { RecognitionStatusBadge } from "@/components/recognition/recognition-sta
 import { RecognizedField } from "@/components/recognition/recognized-field";
 import { RecognitionWarnings } from "@/components/recognition/recognition-warnings";
 import { QualityScore, RecognitionIssues, RecognitionTimeline } from "@/components/recognition/recognition-issues";
+import { AccountSnapshotView, ChartReadingView } from "@/components/recognition/recognition-profile-views";
 import {
   FIELD_ORDER,
   formatFinancial,
   platformLabel,
+  profileMetaKey,
   type FieldKey,
 } from "@/components/recognition/recognition-model";
 import { recognitionFieldLabel, type RecognitionDict } from "@/i18n/dictionaries/en/recognition";
@@ -163,11 +165,39 @@ export function RecognitionResult({
     recognition.fields.find((field) => field.field === key),
   ).filter((field): field is NonNullable<typeof field> => Boolean(field));
 
+  // Account & Chart V1.1 — the profile decides WHAT the right column is.
+  const metaKey = profileMetaKey(recognition.extractionProfile);
+
+  /** Shared props for the profile-specific right columns. */
+  const profileViewProps = {
+    recognition,
+    dict,
+    effectiveValues,
+    editingField,
+    readOnly,
+    activeField,
+    onEditStart,
+    onEditCancel,
+    onSaveField,
+    onFieldFocus: setActiveField,
+    onFieldBlur: (field: string) => setActiveField((current) => (current === field ? null : current)),
+  };
+
+  const modeStamp =
+    metaKey === "account" ? (
+      <span className="stamp stamp-accent !text-[10px]" data-testid="recognition-mode-badge">{dict.result.mode.account}</span>
+    ) : metaKey === "chart" ? (
+      <span className="stamp stamp-accent !text-[10px]" data-testid="recognition-mode-badge">{dict.result.mode.chart}</span>
+    ) : (
+      <span className="stamp stamp-ink !text-[10px]" data-testid="recognition-mode-badge">{dict.result.mode.trade}</span>
+    );
+
   return (
     <div className="flex flex-col gap-4" data-testid="recognition-result">
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2.5">
           <RecognitionStatusBadge status={recognition.status} dict={dict} />
+          {modeStamp}
           <span className="text-sm text-muted-foreground">
             {platformLabel(dict, recognition.classification)}
           </span>
@@ -468,61 +498,91 @@ export function RecognitionResult({
           ) : null}
         </div>
 
-        {/* Extracted fields — one ruled list, never cards-in-cards. */}
+        {/* Extracted fields — one ruled list, never cards-in-cards.
+            Account & Chart profiles render their dedicated surfaces. */}
         <div className="flex flex-col gap-4">
-          <div className="flex flex-col">
-            <div className="flex items-baseline justify-between gap-3 border-b border-border pb-2">
-              <p className="ledger-label">{dict.result.detectedTitle}</p>
-              {!readOnly ? (
-                <p className="text-[11px] text-muted-foreground">{dict.result.editHint}</p>
-              ) : null}
-            </div>
-            {fieldsByOrder.length === 0 ? (
-              <p className="py-8 text-center text-sm text-muted-foreground">{dict.result.detectedEmpty}</p>
-            ) : (
-              fieldsByOrder.map((field) => (
-                <div
-                  key={field.field}
-                  data-field-row={field.field}
-                  className={cn(
-                    activeField === field.field && "-mx-2 rounded-md bg-accent/[0.06] px-2",
-                  )}
-                  onMouseEnter={() => setActiveField(field.field)}
-                  onMouseLeave={() => setActiveField((current) => (current === field.field ? null : current))}
-                >
-                  <RecognizedField
-                    field={{ ...field, normalizedValue: field.field in effectiveValues ? effectiveValues[field.field] : field.normalizedValue }}
+          {metaKey === "account" ? (
+            <AccountSnapshotView {...profileViewProps} />
+          ) : metaKey === "chart" ? (
+            <ChartReadingView {...profileViewProps} />
+          ) : (
+            <>
+              <div className="flex flex-col">
+                <div className="flex items-baseline justify-between gap-3 border-b border-border pb-2">
+                  <p className="ledger-label">{dict.result.detectedTitle}</p>
+                  {!readOnly ? (
+                    <p className="text-[11px] text-muted-foreground">{dict.result.editHint}</p>
+                  ) : null}
+                </div>
+                {fieldsByOrder.length === 0 ? (
+                  <p className="py-8 text-center text-sm text-muted-foreground">{dict.result.detectedEmpty}</p>
+                ) : (
+                  fieldsByOrder.map((field) => (
+                    <div
+                      key={field.field}
+                      data-field-row={field.field}
+                      className={cn(
+                        activeField === field.field && "-mx-2 rounded-md bg-accent/[0.06] px-2",
+                      )}
+                      onMouseEnter={() => setActiveField(field.field)}
+                      onMouseLeave={() => setActiveField((current) => (current === field.field ? null : current))}
+                    >
+                      <RecognizedField
+                        field={{ ...field, normalizedValue: field.field in effectiveValues ? effectiveValues[field.field] : field.normalizedValue }}
+                        dict={dict}
+                        editing={editingField === field.field && !readOnly}
+                        onEditStart={() => onEditStart(field.field)}
+                        onEditCancel={onEditCancel}
+                        onSave={(value) => onSaveField(field.field, value)}
+                        disabled={readOnly}
+                      />
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* V2 §15/§16/§23 — quality, issues and timeline under the fields. */}
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="flex flex-col rounded-xl border border-border bg-surface px-4 py-3">
+                  <QualityScore qualityScore={recognition.qualityScore} dict={dict} />
+                  <RecognitionTimeline timeline={recognition.timeline} dict={dict} />
+                </div>
+                <div className="flex flex-col rounded-xl border border-border bg-surface px-4 py-3">
+                  <RecognitionIssues
+                    issues={recognition.issues}
                     dict={dict}
-                    editing={editingField === field.field && !readOnly}
-                    onEditStart={() => onEditStart(field.field)}
-                    onEditCancel={onEditCancel}
-                    onSave={(value) => onSaveField(field.field, value)}
-                    disabled={readOnly}
+                    onSelectField={(field) => {
+                      setActiveField(field);
+                      document
+                        .querySelector(`[data-field-row="${field}"]`)
+                        ?.scrollIntoView({ behavior: "smooth", block: "center" });
+                    }}
                   />
                 </div>
-              ))
-            )}
-          </div>
+              </div>
+            </>
+          )}
 
-          {/* V2 §15/§16/§23 — quality, issues and timeline under the fields. */}
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="flex flex-col rounded-xl border border-border bg-surface px-4 py-3">
-              <QualityScore qualityScore={recognition.qualityScore} dict={dict} />
-              <RecognitionTimeline timeline={recognition.timeline} dict={dict} />
+          {/* Quality + issues for the NON-trade profiles sit below their panels. */}
+          {metaKey !== "trade" ? (
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="flex flex-col rounded-xl border border-border bg-surface px-4 py-3">
+                <QualityScore qualityScore={recognition.qualityScore} dict={dict} />
+              </div>
+              <div className="flex flex-col rounded-xl border border-border bg-surface px-4 py-3">
+                <RecognitionIssues
+                  issues={recognition.issues}
+                  dict={dict}
+                  onSelectField={(field) => {
+                    setActiveField(field);
+                    document
+                      .querySelector(`[data-field-row="${field}"]`)
+                      ?.scrollIntoView({ behavior: "smooth", block: "center" });
+                  }}
+                />
+              </div>
             </div>
-            <div className="flex flex-col rounded-xl border border-border bg-surface px-4 py-3">
-              <RecognitionIssues
-                issues={recognition.issues}
-                dict={dict}
-                onSelectField={(field) => {
-                  setActiveField(field);
-                  document
-                    .querySelector(`[data-field-row="${field}"]`)
-                    ?.scrollIntoView({ behavior: "smooth", block: "center" });
-                }}
-              />
-            </div>
-          </div>
+          ) : null}
         </div>
       </div>
 
@@ -536,7 +596,11 @@ export function RecognitionResult({
           >
             {recognition.candidates && recognition.candidates.length > 1
               ? dict.multi.reviewTitle
-              : dict.result.nextReview}
+              : metaKey === "account"
+                ? dict.result.nextReviewAccount
+                : metaKey === "chart"
+                  ? dict.result.nextReviewChart
+                  : dict.result.nextReview}
           </Button>
         </div>
       ) : null}

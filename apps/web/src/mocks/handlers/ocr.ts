@@ -96,14 +96,22 @@ const setStore = new Map<string, MockSet>();
 const collectionStore = new Map<string, MockCollection>();
 
 /** The mock-side single-image pipeline (same discipline as the POST route). */
-async function createMockRecognition(dataUrl: string, checksum: string): Promise<StoredRecognition> {
-  const { fields, warnings } = simulateExtraction(checksum);
+async function createMockRecognition(
+  dataUrl: string,
+  checksum: string,
+  profile: OcrRecognition["extractionProfile"] = "TRADE_SUMMARY",
+): Promise<StoredRecognition> {
+  const { fields, warnings, candidates } = simulateExtraction(checksum, profile);
   const createdAt = new Date().toISOString();
   const item: StoredRecognition = {
     id: crypto.randomUUID(),
     status: "REVIEW_REQUIRED",
-    extractionProfile: "TRADE_SUMMARY",
-    classification: TEMPLATE_TRADES[0]!.classification,
+    extractionProfile: profile,
+    classification: profile === "ACCOUNT_POSITION"
+      ? ACCOUNT_TEMPLATE.classification
+      : profile === "CHART_ANALYSIS"
+        ? CHART_TEMPLATE.classification
+        : TEMPLATE_TRADES[0]!.classification,
     fields,
     warnings,
     asset: {
@@ -117,7 +125,7 @@ async function createMockRecognition(dataUrl: string, checksum: string): Promise
     corrections: null,
     tradeId: null,
     tradeIds: [],
-    candidates: null,
+    candidates: candidates && candidates.length > 0 ? candidates : null,
     duplicateOf: null,
     accountId: null,
     suggestedTags: [],
@@ -362,6 +370,119 @@ const FIELD_KEYS = [
   "stopLoss", "takeProfit", "profit", "openTime", "closeTime",
 ] as const;
 
+// ── Account & Chart mock templates (Recognition V1.1) ───────────────────────
+
+/** ACCOUNT_POSITION — one coherent account snapshot + ONE open position. */
+const ACCOUNT_TEMPLATE: {
+  label: string;
+  classification: OcrRecognition["classification"];
+  values: Record<string, string>;
+} = {
+  label: "MT5 account snapshot",
+  classification: { type: "ACCOUNT_SUMMARY", confidence: 0.93, platform: "MT5", alternatives: [{ type: "OPEN_POSITION", confidence: 0.05 }, { type: "UNKNOWN", confidence: 0.02 }] },
+  values: {
+    accountLogin: "5102083990",
+    accountServer: "MetaQuotes-Demo",
+    accountCurrency: "USD",
+    accountLeverage: "1:500",
+    accountBalance: "10420.50",
+    accountEquity: "10653.40",
+    accountMargin: "421.10",
+    accountFreeMargin: "10232.30",
+    accountMarginLevel: "2529.60",
+  },
+};
+
+/** The one open-position candidate of the ACCOUNT template (trade vocabulary). */
+const ACCOUNT_POSITION_CANDIDATE: NonNullable<OcrRecognition["candidates"]> = [
+  {
+    fields: [
+      { field: "symbol", rawValue: "XAUUSD", normalizedValue: "XAUUSD", confidence: 0.94, confidenceBand: "HIGH", validationStatus: "VALID", sourceRegion: null, warnings: [] },
+      { field: "direction", rawValue: "buy", normalizedValue: "BUY", confidence: 0.92, confidenceBand: "HIGH", validationStatus: "VALID", sourceRegion: null, warnings: [] },
+      { field: "volume", rawValue: "0.50", normalizedValue: "0.50", confidence: 0.9, confidenceBand: "HIGH", validationStatus: "VALID", sourceRegion: null, warnings: [] },
+      { field: "entryPrice", rawValue: "2645.60", normalizedValue: "2645.60", confidence: 0.89, confidenceBand: "HIGH", validationStatus: "VALID", sourceRegion: null, warnings: [] },
+      { field: "stopLoss", rawValue: "2630.00", normalizedValue: "2630.00", confidence: 0.87, confidenceBand: "HIGH", validationStatus: "VALID", sourceRegion: null, warnings: [] },
+      { field: "takeProfit", rawValue: "2680.00", normalizedValue: "2680.00", confidence: 0.86, confidenceBand: "HIGH", validationStatus: "VALID", sourceRegion: null, warnings: [] },
+    ],
+  },
+];
+
+/** CHART_ANALYSIS — one coherent chart reading (legend + indicators). */
+const CHART_TEMPLATE: {
+  label: string;
+  classification: OcrRecognition["classification"];
+  values: Record<string, string>;
+} = {
+  label: "TradingView chart reading",
+  classification: { type: "CHART", confidence: 0.9, platform: "TRADINGVIEW", alternatives: [{ type: "TRADINGVIEW_CHART", confidence: 0.06 }, { type: "UNKNOWN", confidence: 0.04 }] },
+  values: {
+    symbol: "XAUUSD",
+    chartTimeframe: "M15",
+    chartOpen: "2345.6",
+    chartHigh: "2350.1",
+    chartLow: "2340.2",
+    chartClose: "2348.9",
+    chartPrice: "2348.9",
+    chartChangePct: "+0.42",
+    chartRsi: "62.35",
+    chartMacd: "-0.15",
+    chartAtr: "3.42",
+    chartMa: "2330.15",
+  },
+};
+
+/** Field keys the mock may mark missing per profile (never the required floor). */
+const ACCOUNT_OPTIONAL_FIELDS = new Set(["accountLogin", "accountServer", "accountMargin", "accountFreeMargin", "accountMarginLevel"]);
+const CHART_OPTIONAL_FIELDS = new Set(["chartChangePct", "chartMacd", "chartAtr", "chartMa", "chartRsi"]);
+
+/** Simple profile field builder: deterministic rolls over the template. */
+function simulateProfileFields(
+  checksum: string,
+  template: { label: string; values: Record<string, string> },
+  optionalFields: Set<string>,
+): { fields: SimulatedField[]; warnings: string[] } {
+  const seed = Number.parseInt(checksum.slice(0, 8), 16) || 1;
+  const random = seededRandom(seed);
+  const fields: SimulatedField[] = Object.entries(template.values).map(([field, rawValue], index) => {
+    const roll = random();
+    const confidence = Math.round((0.62 + random() * 0.37) * 100) / 100;
+    const confidenceBand: SimulatedField["confidenceBand"] =
+      confidence >= 0.85 ? "HIGH" : confidence >= 0.7 ? "MEDIUM" : confidence >= 0.6 ? "LOW" : "UNKNOWN";
+    const region = mockRegion(index);
+    if (roll > 0.94 && optionalFields.has(field)) {
+      return {
+        field: field as SimulatedField["field"], rawValue: null, normalizedValue: null,
+        confidence: 0, confidenceBand: "UNKNOWN", validationStatus: "MISSING", sourceRegion: null,
+        warnings: ["Not found in the recognized text — enter it manually if it applies."],
+      };
+    }
+    if (roll > 0.88 && optionalFields.has(field)) {
+      return {
+        field: field as SimulatedField["field"], rawValue, normalizedValue: rawValue,
+        confidence, confidenceBand, validationStatus: "LOW_CONFIDENCE", sourceRegion: region,
+        warnings: ["Recognition confidence is low for this value."],
+      };
+    }
+    return {
+      field: field as SimulatedField["field"], rawValue, normalizedValue: rawValue,
+      confidence, confidenceBand, validationStatus: "VALID", sourceRegion: region, warnings: [],
+    };
+  });
+  const missing = fields.filter((f) => f.validationStatus === "MISSING").map((f) => f.field);
+  const warnings: string[] = [];
+  if (missing.length >= 3) warnings.push("The screenshot appears incomplete — several fields could not be read.");
+  return { fields, warnings };
+}
+
+function simulateAccount(checksum: string): { fields: SimulatedField[]; warnings: string[]; candidates: NonNullable<OcrRecognition["candidates"]> } {
+  const { fields, warnings } = simulateProfileFields(checksum, ACCOUNT_TEMPLATE, ACCOUNT_OPTIONAL_FIELDS);
+  return { fields, warnings, candidates: ACCOUNT_POSITION_CANDIDATE };
+}
+
+function simulateChart(checksum: string): { fields: SimulatedField[]; warnings: string[] } {
+  return simulateProfileFields(checksum, CHART_TEMPLATE, CHART_OPTIONAL_FIELDS);
+}
+
 /** Fields the engine may legitimately not find in a partial screenshot. */
 const OPTIONAL_FIELDS = new Set(["exitPrice", "profit", "closeTime", "openTime"]);
 
@@ -394,7 +515,12 @@ function mockRegion(index: number): { x: number; y: number; width: number; heigh
   };
 }
 
-function simulateExtraction(checksum: string): { fields: SimulatedField[]; warnings: string[] } {
+function simulateExtraction(
+  checksum: string,
+  profile: OcrRecognition["extractionProfile"] = "TRADE_SUMMARY",
+): { fields: SimulatedField[]; warnings: string[]; candidates?: NonNullable<OcrRecognition["candidates"]> } {
+  if (profile === "ACCOUNT_POSITION") return simulateAccount(checksum);
+  if (profile === "CHART_ANALYSIS") return simulateChart(checksum);
   const seed = Number.parseInt(checksum.slice(0, 8), 16) || 1;
   const random = seededRandom(seed);
   const template = TEMPLATE_TRADES[Math.floor(random() * TEMPLATE_TRADES.length)];
@@ -478,6 +604,8 @@ type SeedSpec = {
   multi?: boolean;
   /** V2 §4 — seeded content-based trade duplicate flag for the review demo. */
   tradeDuplicate?: boolean;
+  /** Account & Chart V1.1 — non-trade seeds. */
+  profile?: OcrRecognition["extractionProfile"];
 };
 
 const SEED_SPECS: SeedSpec[] = [
@@ -487,17 +615,29 @@ const SEED_SPECS: SeedSpec[] = [
   { label: "NAS100 SELL 1.00 — MT5 summary", file: "nas100_mt5_1530.png", status: "CONFIRMED", ageMinutes: 26 * 60, confirmed: true },
   { label: "US30 SELL 0.40 — unreadable crop", file: "us30_crop_2210.png", status: "FAILED", ageMinutes: 27 * 60 },
   { label: "History panel — 2 trades (grouped draft)", file: "history_multi_1030.png", status: "REVIEW_REQUIRED", ageMinutes: 90, multi: true },
+  { label: "MT5 account snapshot — 1 open position", file: "account_snapshot_1410.png", status: "REVIEW_REQUIRED", ageMinutes: 55, profile: "ACCOUNT_POSITION" },
+  { label: "TradingView chart — XAUUSD M15", file: "chart_xauusd_m15.png", status: "CONFIRMED", ageMinutes: 5 * 60, confirmed: true, profile: "CHART_ANALYSIS" },
 ];
 
 function buildSeed(spec: SeedSpec, index: number): StoredRecognition {
   const createdAt = new Date(Date.now() - spec.ageMinutes * 60_000).toISOString();
   const checksum = fakeChecksum(spec.label + index);
-  const { fields, warnings } = simulateExtraction(checksum);
+  const profile = spec.profile ?? "TRADE_SUMMARY";
+  const simulated = simulateExtraction(checksum, profile);
+  const fields = simulated.fields;
+  const warnings = simulated.warnings;
   const base: StoredRecognition = {
     id: crypto.randomUUID(),
     status: spec.status,
-    extractionProfile: "TRADE_SUMMARY",
-    classification: spec.status === "FAILED" ? null : TEMPLATE_TRADES[index % TEMPLATE_TRADES.length].classification,
+    extractionProfile: profile,
+    classification:
+      spec.status === "FAILED"
+        ? null
+        : profile === "ACCOUNT_POSITION"
+          ? ACCOUNT_TEMPLATE.classification
+          : profile === "CHART_ANALYSIS"
+            ? CHART_TEMPLATE.classification
+            : TEMPLATE_TRADES[index % TEMPLATE_TRADES.length].classification,
     fields,
     warnings,
     asset: {
@@ -516,7 +656,7 @@ function buildSeed(spec: SeedSpec, index: number): StoredRecognition {
     // The mocked backend never creates journal trades — no linked trade id.
     tradeId: null,
     tradeIds: [],
-    candidates: null,
+    candidates: profile === "ACCOUNT_POSITION" ? ACCOUNT_POSITION_CANDIDATE : null,
     duplicateOf: null,
     accountId: null,
     suggestedTags: [],
@@ -581,7 +721,7 @@ function settleProcessing(item: StoredRecognition): void {
   if (item.status !== "PROCESSING") return;
   const elapsed = Date.now() - new Date(item.createdAt).getTime();
   if (elapsed < OCR_TOTAL_PROCESSING_MS) return;
-  const { fields, warnings } = simulateExtraction(item.asset.checksumSha256);
+  const { fields, warnings, candidates } = simulateExtraction(item.asset.checksumSha256, item.extractionProfile);
   // Corrections memory (engine quality §2.3): the mock suggests the stored
   // corrected value for any rawValue the ledger has seen for this user.
   const patterns = patternStore.get("demo-user");
@@ -594,14 +734,23 @@ function settleProcessing(item: StoredRecognition): void {
   } else {
     item.fields = fields;
   }
+  if (candidates && candidates.length > 0) item.candidates = candidates;
   item.warnings = warnings;
   item.status = "REVIEW_REQUIRED";
   item.durationMs = OCR_TOTAL_PROCESSING_MS - 320;
   item.updatedAt = new Date().toISOString();
 }
 
-/** The import-critical floor (mirrors the Nest deriveRecognitionIssues input). */
+/** The import-critical floor per profile (mirrors the Nest derivation input). */
 const REQUIRED_FIELDS = new Set(["symbol", "direction", "volume", "entryPrice"]);
+const REQUIRED_FIELDS_ACCOUNT = new Set(["accountCurrency", "accountBalance", "accountEquity"]);
+const REQUIRED_FIELDS_CHART = new Set(["chartTimeframe", "chartClose"]);
+
+function requiredFor(profile: OcrRecognition["extractionProfile"]): Set<string> {
+  if (profile === "ACCOUNT_POSITION") return REQUIRED_FIELDS_ACCOUNT;
+  if (profile === "CHART_ANALYSIS") return REQUIRED_FIELDS_CHART;
+  return REQUIRED_FIELDS;
+}
 
 /**
  * Read-time derivation of the V2 decision layer (§15/§16/§23/§32/§4) —
@@ -618,7 +767,7 @@ function deriveV2(
 ): Pick<OcrRecognition, "issues" | "qualityScore" | "timeline" | "possibleTradeDuplicate" | "reprocessedFrom"> {
   const issues: OcrRecognition["issues"] = [];
   for (const field of body.fields) {
-    if (field.validationStatus === "MISSING" && REQUIRED_FIELDS.has(field.field)) {
+    if (field.validationStatus === "MISSING" && requiredFor(body.extractionProfile).has(field.field)) {
       issues.push({ code: "MISSING_REQUIRED_FIELD", field: field.field, detail: null });
       continue;
     }
@@ -659,7 +808,7 @@ function deriveV2(
   let qualityScore: OcrRecognition["qualityScore"] = null;
   if (readable.length > 0) {
     const fieldConfidence = readable.reduce((t, f) => t + f.confidence, 0) / readable.length;
-    const required = ["symbol", "direction", "volume", "entryPrice"];
+    const required = [...requiredFor(body.extractionProfile)];
     const completeness = required.filter((key) =>
       body.fields.some((f) => f.field === key && f.normalizedValue !== null),
     ).length / required.length;
@@ -937,7 +1086,11 @@ export const ocrHandlers = [
 
       // Grouped confirmation: canonical batches land in the stored aggregate
       // (the mock never creates journal trades — § house rule).
-      if (input.batches) {
+      // Non-trade profiles (Account & Chart V1.1): the confirmed values are
+      // NOT trade facts — an explicit skip warning mirrors the Nest bridge.
+      if (found.extractionProfile !== "TRADE_SUMMARY") {
+        found.warnings = [...found.warnings, "TRADE_IMPORT_SKIPPED_PROFILE"].slice(0, 16);
+      } else if (input.batches) {
         found.suggestedTags = ["Import", "Session London"];
         found.tradeIds = input.batches.filter((batch) => batch.include).map(() => "mock");
       } else if (Object.keys(input.corrections).length > 0) {

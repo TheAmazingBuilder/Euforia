@@ -1,6 +1,7 @@
 "use client";
 
-import type { OcrConfidenceBand, OcrExtractedField, OcrRecognitionStatus } from "@cosmoz/shared";
+import type { OcrConfidenceBand, OcrExtractionProfile, OcrExtractedField, OcrRecognitionStatus } from "@cosmoz/shared";
+import { OCR_ACCOUNT_FIELD_KEYS, OCR_CHART_FIELD_KEYS } from "@cosmoz/shared";
 
 import type { RecognitionDict } from "@/i18n/dictionaries/en/recognition";
 
@@ -93,6 +94,68 @@ export function confidenceStamp(band: OcrConfidenceBand): { tone: StampTone; lab
   }
 }
 
+// ── Extraction profiles (Account & Chart V1.1) ───────────────────────────
+
+/** The three recognition modes, in presentation order. */
+export const PROFILE_IDS: readonly OcrExtractionProfile[] = [
+  "TRADE_SUMMARY",
+  "ACCOUNT_POSITION",
+  "CHART_ANALYSIS",
+];
+
+export type ProfileMetaKey = "trade" | "account" | "chart";
+
+export function profileMetaKey(profile: OcrExtractionProfile): ProfileMetaKey {
+  switch (profile) {
+    case "ACCOUNT_POSITION":
+      return "account";
+    case "CHART_ANALYSIS":
+      return "chart";
+    default:
+      return "trade";
+  }
+}
+
+/**
+ * The chart quote header lives OUTSIDE the field list: symbol, price,
+ * change and time become the reading's headline. The rest renders as
+ * grouped sections.
+ */
+export const CHART_HEADER_KEYS = ["symbol", "chartPrice", "chartChangePct", "chartTime"] as const;
+
+export const ACCOUNT_FIELD_SECTIONS: Array<{
+  titleKey: "accountIdentity" | "accountSnapshot";
+  fields: readonly string[];
+}> = [
+  { titleKey: "accountIdentity", fields: ["accountLogin", "accountServer", "accountCurrency", "accountLeverage"] },
+  { titleKey: "accountSnapshot", fields: ["accountBalance", "accountEquity", "accountMargin", "accountFreeMargin", "accountMarginLevel"] },
+];
+
+export const CHART_FIELD_SECTIONS: Array<{
+  titleKey: "chartQuote" | "chartIndicators";
+  fields: readonly string[];
+}> = [
+  { titleKey: "chartQuote", fields: ["chartTimeframe", "chartOpen", "chartHigh", "chartLow", "chartClose"] },
+  { titleKey: "chartIndicators", fields: ["chartRsi", "chartMacd", "chartAtr", "chartStoch", "chartAdx", "chartMa"] },
+];
+
+/** Fields of an account snapshot that render as the KPI stat strip. */
+export const ACCOUNT_STAT_KEYS = [
+  "accountBalance", "accountEquity", "accountMargin", "accountFreeMargin", "accountMarginLevel",
+] as const;
+
+/** The largest possible per-profile field count (presentation guard). */
+export function profileFieldOrder(profile: OcrExtractionProfile): readonly string[] {
+  switch (profile) {
+    case "ACCOUNT_POSITION":
+      return OCR_ACCOUNT_FIELD_KEYS;
+    case "CHART_ANALYSIS":
+      return [...CHART_HEADER_KEYS, ...OCR_CHART_FIELD_KEYS.filter((k) => !CHART_HEADER_KEYS.includes(k as (typeof CHART_HEADER_KEYS)[number]))];
+    default:
+      return FIELD_ORDER;
+  }
+}
+
 // ── Field model (§19/§20) ───────────────────────────────────────────────────
 
 /**
@@ -140,16 +203,27 @@ export type FieldValidation =
   | { ok: true; value: string }
   | { ok: false; messageKey: "invalid"; message: string };
 
-const DECIMAL_FIELDS = new Set<FieldKey>(["volume", "entryPrice", "exitPrice", "stopLoss", "takeProfit", "profit"]);
-const DATETIME_FIELDS = new Set<FieldKey>(["openTime", "closeTime"]);
-const POSITIVE_FIELDS = new Set<FieldKey>(["volume"]);
+const DECIMAL_FIELDS = new Set<string>([
+  "volume", "entryPrice", "exitPrice", "stopLoss", "takeProfit", "profit",
+  "accountBalance", "accountEquity", "accountMargin", "accountFreeMargin", "accountMarginLevel",
+  "chartOpen", "chartHigh", "chartLow", "chartClose", "chartPrice", "chartChangePct",
+  "chartRsi", "chartMacd", "chartAtr", "chartStoch", "chartAdx", "chartMa",
+]);
+const DATETIME_FIELDS = new Set<string>(["openTime", "closeTime", "chartTime"]);
+const POSITIVE_FIELDS = new Set<string>(["volume", "chartOpen", "chartHigh", "chartLow", "chartClose", "chartPrice"]);
+const TEXT_PATTERNS: Record<string, RegExp> = {
+  accountLogin: /^\d{4,12}$/,
+  accountCurrency: /^[A-Za-z]{3}$/,
+  accountLeverage: /^\d{1,3}:\d{1,5}$/,
+  chartTimeframe: /^[MHD]\d?$/i,
+};
 
 /**
  * Client-side validation for edited values. The API re-validates with the
  * same domain rules on confirm — this is the immediate feedback layer, not
  * the authority (financial data never trusts `if (!value)`, §22).
  */
-export function validateFieldValue(field: FieldKey, raw: string): FieldValidation {
+export function validateFieldValue(field: string, raw: string): FieldValidation {
   const value = raw.trim();
   if (value === "") {
     // Clearing a value is legitimate (null clears, contract §21).
@@ -168,6 +242,26 @@ export function validateFieldValue(field: FieldKey, raw: string): FieldValidatio
       return { ok: false, messageKey: "invalid", message: "3–20 characters — letters, digits, . _ -" };
     }
     return { ok: true, value: symbol };
+  }
+  // Free-text keys of the Account profile (server names — permissive).
+  if (field === "accountServer") {
+    if (!/^[A-Za-z0-9][A-Za-z0-9 ._-]{0,30}$/.test(value)) {
+      return { ok: false, messageKey: "invalid", message: "Letters, digits, dots, dashes and spaces" };
+    }
+    return { ok: true, value };
+  }
+  if (field in TEXT_PATTERNS) {
+    const pattern = TEXT_PATTERNS[field]!;
+    if (!pattern.test(value)) {
+      const hint: Record<string, string> = {
+        accountLogin: "A 4–12 digit account number",
+        accountCurrency: "A 3-letter currency code — e.g. USD",
+        accountLeverage: "A leverage ratio — e.g. 1:500",
+        chartTimeframe: "A timeframe — e.g. M5, H1, D1",
+      };
+      return { ok: false, messageKey: "invalid", message: hint[field] ?? "Invalid value" };
+    }
+    return { ok: true, value: field === "accountCurrency" ? value.toUpperCase() : value.toUpperCase() };
   }
   if (DECIMAL_FIELDS.has(field)) {
     const normalized = value.replace(/\s/g, "").replace(",", ".");

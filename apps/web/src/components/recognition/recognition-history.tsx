@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { CameraOff, Maximize2, RotateCcw, Trash2 } from "lucide-react";
+import { CameraOff, Maximize2, PenLine, RotateCcw, Trash2 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import type { OcrRecognition, OcrRecognitionStatus } from "@cosmoz/shared";
@@ -15,7 +15,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { RecognitionStatusBadge } from "@/components/recognition/recognition-status-badge";
-import { PenLine } from "lucide-react";
+import { profileMetaKey } from "@/components/recognition/recognition-model";
 import {
   formatRelative,
   platformLabel,
@@ -140,6 +140,7 @@ export function RecognitionHistory({
               {[
                 dict.history.columns.screenshot,
                 dict.history.columns.platform,
+                dict.history.columns.mode,
                 dict.history.columns.status,
                 dict.history.columns.confidence,
                 dict.history.columns.created,
@@ -156,10 +157,10 @@ export function RecognitionHistory({
           </thead>
           <tbody>
             {loading ? (
-              <HistoryRowSkeleton cols={6} />
+              <HistoryRowSkeleton cols={7} />
             ) : filtered.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-3 py-10 text-center text-sm text-muted-foreground">
+                <td colSpan={7} className="px-3 py-10 text-center text-sm text-muted-foreground">
                   {emptyMessage}
                 </td>
               </tr>
@@ -176,17 +177,15 @@ export function RecognitionHistory({
                   </td>
                   <td className="px-3 py-2 text-sm">{platformLabel(dict, item.classification)}</td>
                   <td className="px-3 py-2">
+                    <ModeStamp profile={item.extractionProfile} dict={dict} />
+                  </td>
+                  <td className="px-3 py-2">
                     <RecognitionStatusBadge status={item.status} dict={dict} />
-                        {item.corrections !== null && Object.keys(item.corrections).length > 0 ? (
-                          <span className="ml-1 inline-flex items-center gap-0.5 align-middle text-warning" title={dict.history2.corrected}>
-                            <PenLine className="size-3" aria-hidden="true" />
-                          </span>
-                        ) : null}
-                        {item.corrections !== null && Object.keys(item.corrections).length > 0 ? (
-                          <span className="ml-1 inline-flex items-center gap-0.5 align-middle text-warning" title={dict.history2.corrected}>
-                            <PenLine className="size-3" aria-hidden="true" />
-                          </span>
-                        ) : null}
+                    {item.corrections !== null && Object.keys(item.corrections).length > 0 ? (
+                      <span className="ml-1 inline-flex items-center gap-0.5 align-middle text-warning" title={dict.history2.corrected}>
+                        <PenLine className="size-3" aria-hidden="true" />
+                      </span>
+                    ) : null}
                   </td>
                   <td className="px-3 py-2 font-mono text-sm tabular-nums">
                     {item.status === "FAILED" ? "—" : `${recognitionConfidence(item.fields) ?? 0}%`}
@@ -205,6 +204,19 @@ export function RecognitionHistory({
                         <Maximize2 className="size-3.5" aria-hidden="true" />
                         {dict.history.open}
                       </Button>
+                      {onReprocess ? (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="min-h-8"
+                          onClick={() => onReprocess(item.id)}
+                          aria-label={dict.reprocess.action}
+                          data-testid={`recognition-reprocess-${item.id}`}
+                        >
+                          <RotateCcw className="size-3.5" aria-hidden="true" />
+                        </Button>
+                      ) : null}
                       <Button
                         type="button"
                         variant="ghost"
@@ -223,6 +235,20 @@ export function RecognitionHistory({
             )}
           </tbody>
         </table>
+        {hasMore && onLoadMore && !loading ? (
+          <div className="border-t border-border/60 p-3 text-center">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="min-h-8 font-mono text-xs"
+              onClick={onLoadMore}
+              data-testid="recognition-load-more"
+            >
+              {dict.history2.loadMore}
+            </Button>
+          </div>
+        ) : null}
       </div>
 
       {/* Mobile — stacked ruled rows (§35). */}
@@ -240,6 +266,8 @@ export function RecognitionHistory({
                   <div className="flex min-w-0 flex-col">
                     <span className="truncate text-sm">{platformLabel(dict, item.classification)}</span>
                     <span className="font-mono text-[11px] tabular-nums text-muted-foreground">
+                      {modeStampLabel(item.extractionProfile, dict)}
+                      {" · "}
                       {item.status === "FAILED" ? "—" : `${recognitionConfidence(item.fields) ?? 0}%`}
                       {" · "}
                       {formatRelative(item.createdAt)}
@@ -253,6 +281,18 @@ export function RecognitionHistory({
                   <Maximize2 className="size-3.5" aria-hidden="true" />
                   {dict.history.open}
                 </Button>
+                {onReprocess ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="min-h-8"
+                    onClick={() => onReprocess(item.id)}
+                    aria-label={dict.reprocess.action}
+                  >
+                    <RotateCcw className="size-3.5" aria-hidden="true" />
+                  </Button>
+                ) : null}
                 <Button
                   type="button"
                   variant="ghost"
@@ -267,6 +307,18 @@ export function RecognitionHistory({
             </div>
           ))
         )}
+        {hasMore && onLoadMore && !loading ? (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="min-h-8 self-center font-mono text-xs"
+            onClick={onLoadMore}
+            data-testid="recognition-load-more"
+          >
+            {dict.history2.loadMore}
+          </Button>
+        ) : null}
       </div>
 
       {/* Delete confirmation — focused dialog, keyboard-friendly (§61). */}
@@ -379,5 +431,28 @@ function HistoryRowSkeleton({ cols, mobile = false }: { cols: number; mobile?: b
         </div>
       ))}
     </>
+  );
+}
+
+/** Mode stamp per extraction profile (Account & Chart V1.1). */
+function modeStampLabel(
+  profile: OcrRecognition["extractionProfile"],
+  dict: RecognitionDict,
+): string {
+  const metaKey = profileMetaKey(profile);
+  if (metaKey === "account") return dict.history.modeAccount;
+  if (metaKey === "chart") return dict.history.modeChart;
+  return dict.history.modeTrade;
+}
+
+function ModeStamp({ profile, dict }: { profile: OcrRecognition["extractionProfile"]; dict: RecognitionDict }) {
+  const metaKey = profileMetaKey(profile);
+  return (
+    <span
+      className={cn("stamp !text-[10px]", metaKey === "trade" ? "stamp-ink" : "stamp-accent")}
+      data-testid="recognition-history-mode"
+    >
+      {modeStampLabel(profile, dict)}
+    </span>
   );
 }
