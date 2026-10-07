@@ -3,7 +3,6 @@ import {
   calculateCompounding,
   COMPOUNDING_MAX_PERIODS,
   computeRR,
-  parseDecimal,
   toDecimalString,
   type CompoundingSchedule,
   type Currency,
@@ -323,9 +322,3 @@ export function validateCompoundingForm(
   return { ok: true, data: { startingBalance, periods, gainPerPeriod }, schedule };
 }
 
-// ── Shared display parsing (fields stay strings in React state) ─────────────
-
-/** Parse a form string for display-side math; null when unparsable. */
-export function parseFormField(value: string): number | null {
-  return parseDecimal(value);
-}

@@ -186,11 +186,10 @@ async function ensureLoggedIn(page, context) {
     console.log("\n[8] Mobile (390px)");
     await page.setViewportSize({ width: 390, height: 844 });
     await page.waitForTimeout(900);
-    await check(
-      "lot-size stacks (no side-by-side)",
-      !(await page.locator('[data-testid="lotsize-result"]').isVisible().catch(() => false)) ||
-        true,
+    const lotOverflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - window.innerWidth,
     );
+    await check("lot-size mobile: no horizontal overflow", lotOverflow <= 1, `${lotOverflow}px`);
     await page.screenshot({ path: "scripts/shots/tools-lotsize-mobile.png", fullPage: true });
     await page.goto(`${BASE}/tools/compounding`, { waitUntil: "domcontentloaded", timeout: 60000 });
     await page.waitForTimeout(1500);

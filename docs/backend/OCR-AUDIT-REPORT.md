@@ -2,10 +2,10 @@
 
 | | |
 |---|---|
-| **Date** | 2026-10-07 |
-| **Head at audit time** | `e40091a` (working tree clean) |
-| **Scope** | OCR module end-to-end: NestJS backend, FastAPI sidecar, frontend consumption. Research + runtime verification only — no code changed. |
-| **Runtime verification** | FastAPI sidecar **79/79** pytest ✅ · NestJS API **572/572** vitest (full suite, 50 files) ✅ · web `tsc` clean ✅ · web eslint **0 errors** (4 pre-existing `_locale` warnings) ✅ |
+| **Date** | 2026-10-07 (audit) · **2026-10-08 (re-verified after the collections UI + housekeeping pass)** |
+| **Head at audit time** | `e40091a` (working tree clean) → re-verified on the post-collections head |
+| **Scope** | OCR module end-to-end: NestJS backend, FastAPI sidecar, frontend consumption. Research + runtime verification only — no code changed at audit time. |
+| **Runtime verification (latest)** | FastAPI sidecar **79/79** pytest ✅ · NestJS API **580/580** vitest (full suite, 51 files) ✅ · web `tsc` clean ✅ · web eslint **0 errors** (4 pre-existing warnings) ✅ · probes **51/51** recognition + **17/17** rebrand, 0 pageerrors ✅ |
 
 ---
 
@@ -34,20 +34,22 @@
 - **i18n**: OCR copy is dict-keyed (`i18n/dictionaries/en/recognition.ts`, 567 lines). Minor exception: two hardcoded English strings on the page header (kicker + one sentence) — English-only app, cosmetic debt only.
 - **Analytics integration**: OCR-quality card consumes `useOcrAnalytics(30)` in `components/analytics/panels-behavior.tsx`.
 
-## 4. Runtime verification (this audit)
+## 4. Runtime verification (latest run)
 
 | Suite | Command | Result |
 |---|---|---|
-| FastAPI sidecar | `python -m pytest tests/ -q` | **79 passed** (30.8 s) |
-| NestJS API (full) | `pnpm vitest run` | **572 passed / 50 files** (83 s) — includes all 8 OCR spec files + `calculators.e2e.spec.ts` |
+| FastAPI sidecar | `python -m pytest tests/ -q` | **79 passed** (31 s) — re-run after the config.py cleanup |
+| NestJS API (full) | `pnpm vitest run` | **580 passed / 51 files** (84 s) — includes the 8 shared-compounding unit tests |
 | Web typecheck | `tsc --noEmit` | clean |
-| Web lint | `eslint src` | 0 errors, 4 pre-existing `_locale` warnings |
+| Web lint | `eslint src` | 0 errors, 4 pre-existing `_locale`/`_language` warnings |
+| Recognition probe | `node scripts/verify-recognition.js` | **51 passed / 0 failed / 0 pageerrors** — includes the 16 collection checks (panel, membership menu, result-view chips, by-collection filter) |
+| Rebrand probe | `node scripts/verify-rebrand.js` | **17 passed / 0 failed / 0 pageerrors** |
 
 ## 5. Gaps & dead code — CLOSURE STATUS (updated after the follow-up pass)
 
 The three actionable gaps found at audit time have been **closed** in the follow-up pass (same day):
 
-1. ✅ **CLOSED — collections UI surface.** `components/recognition/recognition-collections.tsx` consumes all five `useOcrCollection*` hooks: a history-side panel (ruled rows, expandable member lists, create dialog, delete with focused confirmation — recognitions always kept per §28) plus a per-row "Add to collection" menu (membership toggle with check marks, "New collection…" create-&-add pre-targeted). Member details resolve from the loaded history pages first, single-GET fallback for members outside them. Probe: verify-recognition.js extended with 13 collection checks — **48/48 passed, 0 pageerrors**.
+1. ✅ **CLOSED — collections UI surface.** `components/recognition/recognition-collections.tsx` — three standalone components over the five `useOcrCollection*` hooks: the history-side panel (ruled rows, expandable member lists, create dialog, delete with focused confirmation — recognitions always kept per §28), the per-row "Add to collection" menu (membership toggle with check marks, "New collection…" create-&-add pre-targeted), the **result-view collection chips row**, and the **"by collection" history filter**. Member details resolve from the loaded history pages first, single-GET fallback for members outside them. Probe: verify-recognition.js — **51/51 passed, 0 pageerrors**.
 2. ✅ **CLOSED — dead query-layer exports.** `useOcrRecognitions` (non-infinite) and `fetchOcrHistoryPage` removed from `lib/api/queries` (the infinite hook is the only history reader).
 3. ✅ **CLOSED — dead/stale remnants.** `SUPPORTED_PROFILES` removed from `ocr-service/app/config.py` (79/79 pytest re-verified), `viewSource`/`viewSourceSoon` dict keys removed (the concept was replaced by the source-region overlay + crop tool), `NavItem.comingSoon` removed from the type and all 16 entries, and the unused `PagePlaceholder` component deleted.
 
