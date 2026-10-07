@@ -13,8 +13,10 @@ import {
   LockKeyhole,
   NotebookPen,
   NotebookText,
+  Scale,
   Settings,
   ShieldCheck,
+  TrendingUp,
   type LucideIcon,
 } from "lucide-react";
 
@@ -130,6 +132,24 @@ export const SIDEBAR_ITEMS: NavItem[] = [
       "Nofy will become the place where observations become knowledge, and knowledge feeds the playbook.",
   },
   {
+    href: "/tools/lot-size",
+    label: "Lot Size Calculator",
+    icon: Scale,
+    description:
+      "Size positions from your risk budget: balance, risk %, entry, stop and the instrument's specifications — with the full calculation breakdown.",
+    comingSoon:
+      "Live broker instrument specifications and portfolio-level risk will extend the calculator.",
+  },
+  {
+    href: "/tools/compounding",
+    label: "Compounding Calculator",
+    icon: TrendingUp,
+    description:
+      "Project account growth across compounding periods — period by period, with the full schedule and growth curve.",
+    comingSoon:
+      "Deposits, withdrawals and variable return sequences will extend the projection model.",
+  },
+  {
     href: "/monitoring",
     label: "Monitoring",
     icon: HeartPulse,
@@ -195,6 +215,10 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     title: "Academy",
     hrefs: ["/academy", "/nofy"],
+  },
+  {
+    title: "Tools",
+    hrefs: ["/tools/lot-size", "/tools/compounding"],
   },
   {
     title: "System",

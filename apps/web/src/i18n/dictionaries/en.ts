@@ -7,6 +7,7 @@ import { analyticsDict } from "@/i18n/dictionaries/en/analytics";
 import { playbookDict } from "@/i18n/dictionaries/en/playbook";
 import { academyDict } from "@/i18n/dictionaries/en/academy";
 import { recognitionDict } from "@/i18n/dictionaries/en/recognition";
+import { toolsDict } from "@/i18n/dictionaries/en/tools";
 
 /**
  * EN dictionary — the CANONICAL language pack and the type source for every
@@ -565,6 +566,8 @@ const en = {
   playbook: playbookDict,
 
   academy: academyDict,
+
+  tools: toolsDict,
 } as const;
 
 /**
