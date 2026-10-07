@@ -621,6 +621,25 @@ describe("OCR confirmation → canonical trade import (Phase 21)", () => {
     expect(matches).toHaveLength(1);
   });
 
+  it("replays idempotently even when the retry arrives in RAW user form (§21/§51 regression)", async () => {
+    // Runtime verification caught this: the stored declaration is the
+    // CANONICAL form ("2345,60" → "2345.60"), so a retry of the same
+    // logical payload arriving with the comma separator must replay 200 —
+    // never a 409 (two tabs / network retry).
+    const a = await userWithAccount();
+    const created = await upload(a.authHeader, pngDataUrl(makeHappyPathPng()));
+    const id = created.body.recognition.id;
+    const raw = { symbol: "EURUSD", entryPrice: "1,0850" };
+
+    const first = await confirm(a, id, raw);
+    expect(first.statusCode).toBe(200);
+    expect(first.json().recognition.corrections).toMatchObject({ entryPrice: "1.0850" });
+
+    const replay = await confirm(a, id, raw);
+    expect(replay.statusCode).toBe(200);
+    expect(replay.json().recognition.id).toBe(id);
+  });
+
   it("skips honestly with a stable warning when the symbol is unknown (§50)", async () => {
     const a = await userWithAccount();
     const created = await upload(a.authHeader, pngDataUrl(makeHappyPathPng()));

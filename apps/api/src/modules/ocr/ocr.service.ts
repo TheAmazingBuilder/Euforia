@@ -435,11 +435,19 @@ export class OcrService {
     const row = await this.repository.findForUser(input.id, input.userId);
     if (!row) throw new NotFoundError("Recognition not found.");
 
+    // Canonicalize BEFORE the replay comparison: the stored record holds the
+    // VALIDATED DECLARATION ("2345,60" → "2345.60", §21), so a retry of the
+    // SAME logical payload must replay idempotently even when it arrives in
+    // raw user form (two tabs, network retry — §51). Invalid corrections are
+    // a 422 here regardless of the row state — the payload is what is broken.
+    const machineFields = (row.result?.fields ?? []) as OcrExtractedField[];
+    const canonicalCorrections = canonicalizeCorrections(input.corrections);
+
     if (row.status === "CONFIRMED") {
       // Idempotent replay of the SAME corrections (two tabs, §51) is a
       // no-op success; a DIFFERENT payload after confirmation is a conflict
       // — confirmed values are never silently rewritten (§21).
-      if (sameCorrections(row.corrections, input.corrections)) {
+      if (sameCorrections(row.corrections, canonicalCorrections)) {
         return { recognition: toRecognitionDto(row) };
       }
       throw new ConflictError("This recognition is already confirmed.", OCR_ERROR_CODES.ALREADY_CONFIRMED);
@@ -459,8 +467,6 @@ export class OcrService {
     // ("1.234", "2 345,60") is a 422 with a stable code, never a 500, never
     // a silent store. The merged FIELDS carry the normalized wire form
     // ("1.0850" → "1.085").
-    const machineFields = (row.result?.fields ?? []) as OcrExtractedField[];
-    const canonicalCorrections = canonicalizeCorrections(input.corrections);
     const { fields: mergedFields, correctionCount } = applyCorrectionsSafe(
       machineFields,
       canonicalCorrections,
