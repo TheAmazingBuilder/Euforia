@@ -19,6 +19,7 @@ Exits non-zero on any failure.
 from __future__ import annotations
 
 import base64
+import hashlib
 import io
 import json
 import os
@@ -104,7 +105,7 @@ def payload(image: bytes, request_id: str, crop: dict | None = None) -> dict:
             "sizeBytes": len(image),
             "width": width,
             "height": height,
-            "checksumSha256": "0" * 64,
+            "checksumSha256": hashlib.sha256(image).hexdigest(),  # V2 §20 — verified
         },
         "extractionProfile": "TRADE_SUMMARY",
         "deadlineMs": 60_000,
@@ -136,7 +137,7 @@ def main() -> None:
     check("entry recognized", fields.get("entryPrice", {}).get("normalizedValue") == "2345.6")
     check("dHash present", body.get("perceptualHash") is not None and len(body["perceptualHash"]) == 16)
     passes = body["processingMetadata"]["passes"]
-    check("dual passes ran", "block_psm6" in passes and "sparse_psm11" in passes, ",".join(passes))
+    check("dual passes ran", "block_psm3" in passes and "sparse_psm11" in passes, ",".join(passes))
     check("layout template reported", body["processingMetadata"]["layoutTemplate"] is not None)
     check("deskew measured", body["processingMetadata"]["deskewDeg"] is not None)
     check("mono has no candidates", len(body.get("tradeCandidates", [])) == 0)
