@@ -66,6 +66,11 @@ export const securityEventTypeSchema = z.enum([
   // honest evidence when the confirmed values could not resolve into a trade.
   "OCR_TRADE_IMPORTED",
   "OCR_TRADE_IMPORT_SKIPPED",
+  // V2 §32 — explicit reprocess (a fresh recognition from the same asset).
+  "OCR_REPROCESSED",
+  // V2 §28 — screenshot collection lifecycle facts.
+  "OCR_COLLECTION_CREATED",
+  "OCR_COLLECTION_DELETED",
 ]);
 export type SecurityEventType = z.infer<typeof securityEventTypeSchema>;
 

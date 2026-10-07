@@ -80,6 +80,8 @@ export interface OcrResultPayload {
   /** Whether the recognized symbol resolved against the instrument catalog
    * (V2 §16 UNKNOWN_SYMBOL input) — null when no symbol was recognized. */
   symbolInCatalog?: boolean | null;
+  /** V2 §32 — set when this row was produced by an explicit reprocess. */
+  reprocessedFrom?: string | null;
 }
 
 export interface OcrRecognitionRow {
@@ -313,14 +315,34 @@ export class OcrRepository {
     return row ? toRecognitionRow(row) : null;
   }
 
+  /** How many recognitions exist for this asset (V2 §32 revision counter). */
+  async countRecognitionsForAsset(userId: string, assetId: string): Promise<number> {
+    return this.prisma.ocrRecognition.count({ where: { userId, assetId } });
+  }
+
   /** Keyset page (createdAt DESC, id DESC), always owner-scoped (§39). */
   async listPageForUser(
     userId: string,
-    options: { limit: number; cursor: { createdAt: Date; id: string } | null; status: string | null },
+    options: {
+      limit: number;
+      cursor: { createdAt: Date; id: string } | null;
+      status: string | null;
+      /** V2 §62 — detected-platform / screenshot-type jsonb path filters. */
+      platform?: string | null;
+      screenshotType?: string | null;
+    },
   ): Promise<{ items: OcrRecognitionRow[]; nextCursor: string | null }> {
+    const AND: Prisma.OcrRecognitionWhereInput[] = [];
+    if (options.status !== null) AND.push({ status: options.status });
+    if (options.platform) {
+      AND.push({ result: { path: ["classification", "platform"], equals: options.platform } });
+    }
+    if (options.screenshotType) {
+      AND.push({ result: { path: ["classification", "type"], equals: options.screenshotType } });
+    }
     const where: Prisma.OcrRecognitionWhereInput = {
       userId,
-      ...(options.status !== null ? { status: options.status } : {}),
+      ...(AND.length > 0 ? { AND } : {}),
       ...(options.cursor !== null
         ? {
             OR: [
@@ -752,6 +774,93 @@ export class OcrSetRepository {
   /** Set rows survive member recognitions: only the set + its items go. */
   async deleteSetForUser(id: string, userId: string): Promise<boolean> {
     const deleted = await this.prisma.ocrSet.deleteMany({ where: { id, userId } });
+    return deleted.count > 0;
+  }
+}
+
+// ── V2 §28 — screenshot collections ─────────────────────────────────────────
+
+export interface OcrCollectionItemRow {
+  recognitionId: string;
+  addedAt: Date;
+}
+
+export interface OcrCollectionRow {
+  id: string;
+  userId: string;
+  name: string;
+  createdAt: Date;
+  items: OcrCollectionItemRow[];
+}
+
+const collectionInclude = {
+  items: { orderBy: { addedAt: "desc" as const } },
+} satisfies Prisma.OcrCollectionInclude;
+
+function toCollectionRow(
+  row: Prisma.OcrCollectionGetPayload<{ include: typeof collectionInclude }>,
+): OcrCollectionRow {
+  return {
+    id: row.id,
+    userId: row.userId,
+    name: row.name,
+    createdAt: row.createdAt,
+    items: row.items.map((item) => ({
+      recognitionId: item.recognitionId,
+      addedAt: item.addedAt,
+    })),
+  };
+}
+
+@Injectable()
+export class OcrCollectionRepository {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async create(userId: string, name: string): Promise<OcrCollectionRow> {
+    const row = await this.prisma.ocrCollection.create({ data: { userId, name }, include: collectionInclude });
+    return toCollectionRow(row);
+  }
+
+  async findByName(userId: string, name: string): Promise<OcrCollectionRow | null> {
+    const row = await this.prisma.ocrCollection.findFirst({ where: { userId, name }, include: collectionInclude });
+    return row ? toCollectionRow(row) : null;
+  }
+
+  async findForUser(id: string, userId: string): Promise<OcrCollectionRow | null> {
+    const row = await this.prisma.ocrCollection.findFirst({ where: { id, userId }, include: collectionInclude });
+    return row ? toCollectionRow(row) : null;
+  }
+
+  async listForUser(userId: string): Promise<OcrCollectionRow[]> {
+    const rows = await this.prisma.ocrCollection.findMany({
+      where: { userId },
+      include: collectionInclude,
+      orderBy: [{ createdAt: "desc" }, { id: "asc" }],
+      take: 100,
+    });
+    return rows.map(toCollectionRow);
+  }
+
+  /** Duplicate membership is an idempotent no-op (unique constraint ride). */
+  async addItem(collectionId: string, recognitionId: string): Promise<void> {
+    await this.prisma.ocrCollectionItem
+      .create({ data: { collectionId, recognitionId } })
+      .catch((error) => {
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") return;
+        throw error;
+      });
+  }
+
+  async removeItem(collectionId: string, recognitionId: string): Promise<boolean> {
+    const deleted = await this.prisma.ocrCollectionItem.deleteMany({
+      where: { collectionId, recognitionId },
+    });
+    return deleted.count > 0;
+  }
+
+  /** The set + membership rows go; recognitions and binaries stay (§28). */
+  async deleteForUser(id: string, userId: string): Promise<boolean> {
+    const deleted = await this.prisma.ocrCollection.deleteMany({ where: { id, userId } });
     return deleted.count > 0;
   }
 }

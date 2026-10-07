@@ -99,6 +99,8 @@ export const OCR_ERROR_CODES = {
   // V2 §58 — a flagged recognition needs an explicit user acknowledgment.
   DUPLICATE_SCREENSHOT_UNACKNOWLEDGED: "OCR_DUPLICATE_UNACKNOWLEDGED",
   DUPLICATE_TRADE_UNACKNOWLEDGED: "OCR_TRADE_DUPLICATE_UNACKNOWLEDGED",
+  ASSET_PURGED: "OCR_ASSET_PURGED",
+  COLLECTION_NAME_TAKEN: "OCR_COLLECTION_NAME_TAKEN",
 } as const;
 
 export interface OcrRecognitionDto {
@@ -213,6 +215,82 @@ export class OcrService {
     return this.processRow(input.userId, row, assetRow);
   }
 
+  /**
+   * V2 §32/§39 — explicit REPROCESS: run the CURRENT pipeline over an
+   * existing asset again. The original recognition is NEVER mutated (§33 —
+   * confirmed rows are immutable); a reprocess creates a FRESH, fully
+   * independent recognition (own corrections, own confirmation, own trade)
+   * that carries `reprocessedFrom` for provenance. Each call is a fresh run
+   * (bounded by the upload rate limit) — reprocess idempotency rides the
+   * revision counter so concurrent calls can never collide on the
+   * idempotency key, while the user keeps a honest re-run affordance.
+   */
+  async reprocessRecognition(input: { userId: string; id: string }): Promise<OcrRecognitionDto> {
+    const row = await this.repository.findForUser(input.id, input.userId);
+    if (!row) throw new NotFoundError("Recognition not found.");
+    if (row.screenshotPurgedAt !== null) {
+      throw new ConflictError(
+        "The stored screenshot was purged by retention and can no longer be reprocessed.",
+        OCR_ERROR_CODES.ASSET_PURGED,
+      );
+    }
+
+    // Reprocessing costs an upload slot — it runs the same pipeline (§32).
+    const check = this.limiter.check("upload", input.userId);
+    if (!check.allowed) {
+      throw new RateLimitError(
+        "Too many reprocess attempts. Please wait before trying again.",
+        OCR_ERROR_CODES.RATE_LIMITED_UPLOAD,
+        check.retryAfterSeconds,
+      );
+    }
+
+    const assetMeta: AssetMeta = {
+      id: row.asset.id,
+      userId: row.asset.userId,
+      mime: row.asset.mime,
+      sizeBytes: row.asset.sizeBytes,
+      width: row.asset.width,
+      height: row.asset.height,
+      checksumSha256: row.asset.checksumSha256,
+      storageKey: row.asset.storageKey,
+    };
+
+    // Revision-scoped idempotency (§32): the same reprocess replay returns
+    // the same fresh row instead of piling up duplicates.
+    const revision = await this.repository.countRecognitionsForAsset(input.userId, row.asset.id);
+    const idempotencyKey = deriveIdempotencyKey(
+      input.userId,
+      row.asset.checksumSha256,
+      OCR_EXTRACTION_PROFILE,
+      `${OCR_PIPELINE_VERSION}|reprocess|${revision}`,
+    );
+    const replayed = await this.repository.findRecognitionByIdempotencyKey(input.userId, idempotencyKey);
+    if (replayed) {
+      return { recognition: toRecognitionDto(replayed) };
+    }
+    this.limiter.hit("upload", input.userId);
+
+    const newRow = await this.repository.createRecognition(assetMeta, {
+      status: "QUEUED",
+      extractionProfile: OCR_EXTRACTION_PROFILE,
+      pipelineVersion: OCR_PIPELINE_VERSION,
+      idempotencyKey,
+      requestId: null,
+      accountId: row.accountId,
+    });
+
+    await this.securityEvents.record({
+      userId: input.userId,
+      type: "OCR_REPROCESSED",
+      actor: input.userId,
+      context: `recognition ${row.id} reprocessed as ${newRow.id}`,
+      outcome: "SUCCESS",
+    });
+
+    return this.processRow(input.userId, newRow, assetMeta, row.id);
+  }
+
   /** Store the binary + metadata row when the image has never been stored. */
   private async ensureAsset(userId: string, image: {
     bytes: Buffer;
@@ -296,7 +374,12 @@ export class OcrService {
   }
 
   /** QUEUED → (REVIEW_REQUIRED | FAILED) for one recognition row. */
-  private async processRow(userId: string, row: OcrRecognitionRow, asset: AssetMeta): Promise<OcrRecognitionDto> {
+  private async processRow(
+    userId: string,
+    row: OcrRecognitionRow,
+    asset: AssetMeta,
+    reprocessedFrom?: string,
+  ): Promise<OcrRecognitionDto> {
     await this.repository.markProcessing(row.id, row.requestId);
     const attemptsUsed = { count: 1 };
     try {
@@ -434,6 +517,7 @@ export class OcrService {
         deskewDeg: response.processingMetadata.deskewDeg,
         possibleTradeDuplicate,
         symbolInCatalog,
+        reprocessedFrom: reprocessedFrom ?? null,
       };
       const updated = await this.repository.persistResult(row.id, result);
       if (!updated) {
@@ -512,7 +596,13 @@ export class OcrService {
 
   async listRecognitions(
     userId: string,
-    query: { limit: number; cursor?: string; status?: OcrRecognition["status"] },
+    query: {
+      limit: number;
+      cursor?: string;
+      status?: OcrRecognition["status"];
+      platform?: string;
+      screenshotType?: string;
+    },
   ): Promise<OcrRecognitionPage> {
     let cursor: { createdAt: Date; id: string } | null = null;
     if (query.cursor !== undefined) {
@@ -531,6 +621,8 @@ export class OcrService {
       limit: query.limit,
       cursor,
       status: query.status ?? null,
+      platform: query.platform ?? null,
+      screenshotType: query.screenshotType ?? null,
     });
     return {
       items: page.items.map(toRecognitionDto),
@@ -1002,6 +1094,7 @@ export function toRecognitionDto(row: OcrRecognitionRow): OcrRecognition {
     qualityScore,
     timeline,
     possibleTradeDuplicate,
+    reprocessedFrom: row.result?.reprocessedFrom ?? null,
     confirmedAt: row.confirmedAt ? row.confirmedAt.toISOString() : null,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),

@@ -107,6 +107,50 @@ export class OcrOpsService {
       since,
     );
 
+    // V2 §30 — correction rate: the share of confirmed recognitions whose
+    // user declaration carried at least one correction. Null when nothing
+    // was confirmed (no basis to compute a rate, never a fabricated 0).
+    const correctedRows = await this.prisma.$queryRawUnsafe<{ count: bigint }[]>(
+      `SELECT COUNT(*) AS count
+         FROM "OcrRecognition" r
+        WHERE r."userId" = $1::uuid
+          AND r."createdAt" >= $2
+          AND r."status" = 'CONFIRMED'
+          AND r."corrections" IS NOT NULL
+          AND NOT (r."corrections" <@ '{}'::jsonb)`,
+      userId,
+      since,
+    );
+    const correctedCount = Number(correctedRows[0]?.count ?? 0);
+    const correctionRate = confirmed > 0 ? Math.round((correctedCount / confirmed) * 1000) / 1000 : null;
+
+    // V2 §30 — platform + screenshot-type distributions (detected values
+    // only; legacy rows without the classification field are not invented).
+    const platformRows = await this.prisma.$queryRawUnsafe<{ platform: string; count: bigint }[]>(
+      `SELECT r."result"->'classification'->>'platform' AS platform, COUNT(*) AS count
+         FROM "OcrRecognition" r
+        WHERE r."userId" = $1::uuid
+          AND r."createdAt" >= $2
+          AND r."result"->'classification'->>'platform' IS NOT NULL
+        GROUP BY 1
+        ORDER BY count DESC
+        LIMIT 8`,
+      userId,
+      since,
+    );
+    const typeRows = await this.prisma.$queryRawUnsafe<{ type: string; count: bigint }[]>(
+      `SELECT r."result"->'classification'->>'type' AS type, COUNT(*) AS count
+         FROM "OcrRecognition" r
+        WHERE r."userId" = $1::uuid
+          AND r."createdAt" >= $2
+          AND r."result"->'classification'->>'type' IS NOT NULL
+        GROUP BY 1
+        ORDER BY count DESC
+        LIMIT 10`,
+      userId,
+      since,
+    );
+
     return {
       windowDays,
       funnel: {
@@ -122,6 +166,15 @@ export class OcrOpsService {
       avgDurationMs: durationRows[0]?.avg === null || durationRows[0]?.avg === undefined
         ? null
         : Math.round(Number(durationRows[0]!.avg)),
+      correctionRate,
+      platformDistribution: platformRows.map((row) => ({
+        platform: row.platform as OcrAnalyticsResponse["platformDistribution"][number]["platform"],
+        count: Number(row.count),
+      })),
+      typeDistribution: typeRows.map((row) => ({
+        type: row.type as OcrAnalyticsResponse["typeDistribution"][number]["type"],
+        count: Number(row.count),
+      })),
     };
   }
 

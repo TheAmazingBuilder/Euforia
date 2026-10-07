@@ -115,6 +115,7 @@ model User {
   ocrRecognitions   OcrRecognition[]
   ocrCorrectionPatterns OcrCorrectionPattern[]
   ocrSets           OcrSet[]
+  ocrCollections    OcrCollection[]
   trades            Trade[]
   savedTradeViews   SavedTradeView[]
   disciplineRows    DisciplineRow[]
@@ -584,6 +585,8 @@ model OcrRecognition {
   /// V2 multi-screenshot — at most one set membership per recognition
   /// (fusion never destroys the individual recognition row).
   setItem OcrSetItem?
+  /// V2 §28 — collection memberships (a recognition may be in several).
+  collectionItems OcrCollectionItem[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -671,6 +674,37 @@ model OcrSetItem {
   order         Int
 
   @@index([setId, order])
+}
+
+/// V2 spec §28 — named screenshot collections ("Gold Scalping", "London
+/// Session", …). A lightweight ORGANIZATION layer over existing recognitions
+/// — NOT a second storage system (the binaries live behind the screenshot
+/// storage port, §6); membership references recognition rows.
+model OcrCollection {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Display name — unique per owner, trimmed, 1..64 chars.
+  name      String
+  createdAt DateTime @default(now())
+
+  items OcrCollectionItem[]
+
+  @@unique([userId, name])
+  @@index([userId, createdAt(sort: Desc)])
+}
+
+/// One recognition in one collection. A recognition may live in several
+/// collections (a screenshot can be both "Gold Scalping" and "Winning Trades").
+model OcrCollectionItem {
+  id            String         @id @default(uuid()) @db.Uuid
+  collectionId  String         @db.Uuid
+  collection    OcrCollection  @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  recognitionId String         @unique @db.Uuid
+  recognition   OcrRecognition @relation(fields: [recognitionId], references: [id], onDelete: Cascade)
+  addedAt       DateTime       @default(now())
+
+  @@index([collectionId, addedAt(sort: Desc)])
 }
 
 // ── Trading Core / Journal (Domaine 3 — Phase 4) ───────────────────────────

@@ -415,6 +415,12 @@ export const ocrRecognitionSchema = z.object({
    * discard, and never a silent double import).
    */
   possibleTradeDuplicate: ocrPossibleTradeDuplicateSchema.nullable(),
+  /**
+   * V2 §32 — set when this recognition was produced by an explicit
+   * reprocess of an earlier one. The original row is NEVER mutated
+   * (§33); a reprocess is a fresh, independently confirmable recognition.
+   */
+  reprocessedFrom: uuidSchema.nullable(),
   confirmedAt: isoDateTimeSchema.nullable(),
   createdAt: isoDateTimeSchema,
   updatedAt: isoDateTimeSchema,
@@ -457,6 +463,10 @@ export const ocrRecognitionPageQuerySchema = z.object({
   limit: z.number().int().min(1).max(50).default(20),
   cursor: pageCursorSchema.optional(),
   status: ocrRecognitionStatusSchema.optional(),
+  /** V2 §62 — detected-platform filter (jsonb path filter server-side). */
+  platform: ocrPlatformSchema.optional(),
+  /** V2 §62 — recognized screenshot-type filter (jsonb path filter). */
+  screenshotType: ocrScreenshotTypeSchema.optional(),
 });
 export type OcrRecognitionPageQuery = z.infer<typeof ocrRecognitionPageQuerySchema>;
 
@@ -551,6 +561,17 @@ export const ocrAnalyticsResponseSchema = z.object({
   avgConfidence: z.number().min(0).max(1).nullable(),
   duplicatesBlocked: z.number().int().nonnegative(),
   avgDurationMs: z.number().int().nonnegative().nullable(),
+  /** V2 §30 — share of confirmed recognitions that carried corrections. */
+  correctionRate: z.number().min(0).max(1).nullable(),
+  /** V2 §30 — recognized platform distribution over the window (detected
+   * platforms only — legacy rows without the field are not fabricated). */
+  platformDistribution: z
+    .array(z.object({ platform: ocrPlatformSchema, count: z.number().int().nonnegative() }))
+    .max(8),
+  /** V2 §30 — recognized screenshot-type distribution over the window. */
+  typeDistribution: z
+    .array(z.object({ type: ocrScreenshotTypeSchema, count: z.number().int().nonnegative() }))
+    .max(10),
 });
 export type OcrAnalyticsResponse = z.infer<typeof ocrAnalyticsResponseSchema>;
 
@@ -690,3 +711,56 @@ export type OcrSetConfirmInput = z.infer<typeof ocrSetConfirmInputSchema>;
 
 export const ocrSetDeleteResponseSchema = z.object({ deleted: z.literal(true), id: uuidSchema });
 export type OcrSetDeleteResponse = z.infer<typeof ocrSetDeleteResponseSchema>;
+
+// ── V2 §28 — screenshot collections ─────────────────────────────────────────
+
+export const ocrCollectionItemSchema = z.object({
+  recognitionId: uuidSchema,
+  addedAt: isoDateTimeSchema,
+});
+export type OcrCollectionItem = z.infer<typeof ocrCollectionItemSchema>;
+
+export const ocrCollectionSchema = z.object({
+  id: uuidSchema,
+  name: z.string().min(1).max(64),
+  createdAt: isoDateTimeSchema,
+  /** Membership in reading order of insertion (newest first). */
+  items: z.array(ocrCollectionItemSchema).max(200),
+});
+export type OcrCollection = z.infer<typeof ocrCollectionSchema>;
+
+export const ocrCollectionCreateInputSchema = z.object({
+  name: z.string().trim().min(1).max(64),
+});
+export type OcrCollectionCreateInput = z.infer<typeof ocrCollectionCreateInputSchema>;
+
+export const ocrCollectionCreateResponseSchema = z.object({ collection: ocrCollectionSchema });
+export type OcrCollectionCreateResponse = z.infer<typeof ocrCollectionCreateResponseSchema>;
+
+export const ocrCollectionListResponseSchema = z.object({
+  collections: z.array(ocrCollectionSchema).max(100),
+});
+export type OcrCollectionListResponse = z.infer<typeof ocrCollectionListResponseSchema>;
+
+export const ocrCollectionAddItemInputSchema = z.object({
+  recognitionId: uuidSchema,
+});
+export type OcrCollectionAddItemInput = z.infer<typeof ocrCollectionAddItemInputSchema>;
+
+export const ocrCollectionAddItemResponseSchema = z.object({ collection: ocrCollectionSchema });
+export type OcrCollectionAddItemResponse = z.infer<typeof ocrCollectionAddItemResponseSchema>;
+
+export const ocrCollectionDeleteResponseSchema = z.object({ deleted: z.literal(true), id: uuidSchema });
+export type OcrCollectionDeleteResponse = z.infer<typeof ocrCollectionDeleteResponseSchema>;
+
+/** Removing one recognition from one collection. */
+export const ocrCollectionRemoveItemParamsSchema = z.object({
+  id: uuidSchema,
+  recognitionId: uuidSchema,
+});
+export type OcrCollectionRemoveItemParams = z.infer<typeof ocrCollectionRemoveItemParamsSchema>;
+
+// ── V2 §32/§39 — reprocessing (a fresh recognition from the same asset) ─────
+
+export const ocrReprocessResponseSchema = z.object({ recognition: ocrRecognitionSchema });
+export type OcrReprocessResponse = z.infer<typeof ocrReprocessResponseSchema>;

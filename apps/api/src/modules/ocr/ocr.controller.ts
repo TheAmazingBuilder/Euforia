@@ -48,9 +48,13 @@ import {
   type OcrRecropInput,
   type OcrSetConfirmInput,
   type OcrSetCreateInput,
+  ocrCollectionCreateInputSchema,
+  ocrCollectionAddItemInputSchema,
+  type OcrCollectionCreateInput,
 } from "../../shared/contracts";
 import { OcrService } from "./ocr.service";
 import { OcrSetService } from "./ocr-set.service";
+import { OcrCollectionService } from "./ocr-collection.service";
 import { decodeOcrCursor } from "./ocr.repository";
 import { OcrOpsService } from "./ocr-ops.service";
 import {
@@ -83,6 +87,7 @@ export class OcrController {
   constructor(
     private readonly ocr: OcrService,
     private readonly sets: OcrSetService,
+    private readonly collectionsService: OcrCollectionService,
     private readonly ops: OcrOpsService,
   ) {}
 
@@ -108,6 +113,8 @@ export class OcrController {
       limit: number;
       cursor?: string;
       status?: "QUEUED" | "PROCESSING" | "REVIEW_REQUIRED" | "FAILED" | "CONFIRMED";
+      platform?: string;
+      screenshotType?: string;
     },
   ) {
     return this.ocr.listRecognitions(principal.userId, query);
@@ -245,6 +252,75 @@ export class OcrController {
   @Get("storage")
   async storage(@CurrentUser() principal: AuthPrincipal) {
     return this.ops.getStorage(principal.userId);
+  }
+
+  /** V2 §32/§39 — reprocess: a FRESH recognition from the same asset. */
+  @Post("recognitions/:id/reprocess")
+  async reprocess(
+    @CurrentUser() principal: AuthPrincipal,
+    @Param("id") id: string,
+  ) {
+    return this.ocr.reprocessRecognition({
+      userId: principal.userId,
+      id: uuidSchema.parse(id),
+    });
+  }
+
+  // ── V2 §28 — screenshot collections ──────────────────────────────────────
+
+  @Post("collections")
+  async createCollection(
+    @CurrentUser() principal: AuthPrincipal,
+    @Body(new ZodValidationPipe(ocrCollectionCreateInputSchema)) input: OcrCollectionCreateInput,
+  ) {
+    return this.collectionsService.create({ userId: principal.userId, name: input.name });
+  }
+
+  @Get("collections")
+  async listCollections(@CurrentUser() principal: AuthPrincipal) {
+    return this.collectionsService.list(principal.userId);
+  }
+
+  @Get("collections/:id")
+  async getCollection(
+    @CurrentUser() principal: AuthPrincipal,
+    @Param("id") id: string,
+  ) {
+    return this.collectionsService.get({ userId: principal.userId, id: uuidSchema.parse(id) });
+  }
+
+  @Post("collections/:id/items")
+  async addToCollection(
+    @CurrentUser() principal: AuthPrincipal,
+    @Param("id") id: string,
+    @Body(new ZodValidationPipe(ocrCollectionAddItemInputSchema)) input: { recognitionId: string },
+  ) {
+    return this.collectionsService.addItem({
+      userId: principal.userId,
+      id: uuidSchema.parse(id),
+      recognitionId: uuidSchema.parse(input.recognitionId),
+    });
+  }
+
+  @Delete("collections/:id/items/:recognitionId")
+  async removeFromCollection(
+    @CurrentUser() principal: AuthPrincipal,
+    @Param("id") id: string,
+    @Param("recognitionId") recognitionId: string,
+  ) {
+    return this.collectionsService.removeItem({
+      userId: principal.userId,
+      id: uuidSchema.parse(id),
+      recognitionId: uuidSchema.parse(recognitionId),
+    });
+  }
+
+  @Delete("collections/:id")
+  async deleteCollection(
+    @CurrentUser() principal: AuthPrincipal,
+    @Param("id") id: string,
+  ) {
+    return this.collectionsService.delete({ userId: principal.userId, id: uuidSchema.parse(id) });
   }
 
   // ── V2 §1/§2/§14/§15/§18 — multi-screenshot recognition sets ──────────────
