@@ -53,7 +53,9 @@ describe("integration hub (B14)", () => {
     // Economic pipeline fed by the normalization layer, sorted by time.
     expect(overview.ecoEvents.length).toBeGreaterThan(0);
     for (let index = 1; index < overview.ecoEvents.length; index += 1) {
-      expect(overview.ecoEvents[index - 1].scheduledAt <= overview.ecoEvents[index].scheduledAt).toBe(true);
+      const previous = overview.ecoEvents[index - 1];
+      const current = overview.ecoEvents[index];
+      expect(previous !== undefined && current !== undefined && previous.scheduledAt <= current.scheduledAt).toBe(true);
     }
     expect(overview.webhooks).toHaveLength(1);
     expect(overview.webhooks[0]?.id).toBe("wh-macro");
@@ -178,6 +180,7 @@ describe("integration hub (B14)", () => {
     });
     const ecoEvent = integrationsOverviewResponseSchema.parse(overview.json()).ecoEvents[0];
     expect(ecoEvent).toBeDefined();
+    if (ecoEvent === undefined) throw new Error("expected a seeded eco event");
 
     // 1) valid delivery — event applied to the referenced normalized record.
     const valid = await app.inject({

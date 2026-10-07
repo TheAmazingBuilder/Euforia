@@ -514,3 +514,177 @@ describe("OCR negative capabilities (§53)", () => {
     expect(patchConfirm.statusCode).toBe(404);
   });
 });
+
+// ── Phase 21 — the sanctioned confirmation → Trading Core bridge (§77) ──────
+
+describe("OCR confirmation → canonical trade import (Phase 21)", () => {
+  /** Register a user and connect one MOCK account (trades-e2e house pattern). */
+  async function userWithAccount(): Promise<UserCtx> {
+    const a = await user();
+    const connected = await app.inject({
+      method: "POST",
+      url: "/api/v1/accounts",
+      headers: a.authHeader,
+      payload: {
+        providerId: "MOCK",
+        environment: "DEMO",
+        externalAccountId: `77${Math.random().toString(36).slice(2, 8)}`,
+        credentials: { method: "API_KEY", secret: "mock-api-key-ocr-bridge" },
+      },
+    });
+    expect(connected.statusCode).toBe(201);
+    return a;
+  }
+
+  async function confirm(a: UserCtx, id: string, corrections: Record<string, string | null>) {
+    return app.inject({
+      method: "POST",
+      url: `/api/v1/ocr/recognitions/${id}/confirm`,
+      headers: { ...a.authHeader, "content-type": "application/json" },
+      payload: { corrections },
+    });
+  }
+
+  async function listTrades(a: UserCtx): Promise<Array<Record<string, unknown>>> {
+    const res = await app.inject({ method: "GET", url: "/api/v1/trades", headers: a.authHeader });
+    expect(res.statusCode).toBe(200);
+    return (res.json() as { trades: Array<Record<string, unknown>> }).trades;
+  }
+
+  async function instrumentIdOf(a: UserCtx, symbol: string): Promise<string> {
+    const res = await app.inject({ method: "GET", url: "/api/v1/instruments", headers: a.authHeader });
+    const instruments = (res.json() as { instruments?: Array<{ symbol: string; id: string }> }).instruments ?? [];
+    const found = instruments.find((instrument) => instrument.symbol === symbol);
+    if (found === undefined) throw new Error(`${symbol} missing from the catalog`);
+    return found.id;
+  }
+
+  it("creates the canonical Trade through Trading Core on explicit confirmation", async () => {
+    const a = await userWithAccount();
+    const created = await upload(a.authHeader, pngDataUrl(makeHappyPathPng()));
+    const id = created.body.recognition.id;
+
+    const res = await confirm(a, id, { symbol: "EURUSD" });
+    expect(res.statusCode).toBe(200);
+    const confirmed = ocrRecognitionResponseSchema.parse(res.json()).recognition;
+    expect(confirmed.status).toBe("CONFIRMED");
+    // The bridge linked the canonical Trade on the recognition.
+    expect(confirmed.tradeId).toBeTruthy();
+
+    // Merged (authoritative) values the trade must mirror.
+    const fields = new Map(confirmed.fields.map((f) => [f.field, f]));
+    const valueOf = (key: (typeof confirmed.fields)[number]["field"]) => fields.get(key)?.normalizedValue ?? null;
+    const direction = valueOf("direction");
+    const exitPrice = valueOf("exitPrice");
+    const closeTime = valueOf("closeTime");
+
+    const trades = await listTrades(a);
+    const imported = trades.find((trade) => trade.externalRef === `ocr:${id}`);
+    expect(imported).toBeDefined();
+    expect(imported).toMatchObject({
+      instrumentId: await instrumentIdOf(a, "EURUSD"),
+      direction,
+      source: "IMPORT",
+      entryPrice: valueOf("entryPrice"),
+      quantity: valueOf("volume"),
+      // Server-computed — the OCR profit field is NEVER copied (§55/§15).
+      strategyId: null,
+    });
+    expect(String(imported?.notes)).toContain(`recognition ${id}`);
+    expect(imported?.initialStop).toBe(valueOf("stopLoss"));
+    expect(imported?.initialTP).toBe(valueOf("takeProfit"));
+    if (exitPrice !== null && closeTime !== null) {
+      expect(imported?.status).toBe("CLOSED");
+      expect(imported?.exitReason).toBe("MANUAL");
+      // P&L recomputed by Trading Core from prices/quantity/contract specs.
+      expect(imported?.pnlGross).not.toBeNull();
+      expect(imported?.pnlNet).not.toBeNull();
+    } else {
+      expect(imported?.status).toBe("OPEN");
+    }
+  });
+
+  it("is idempotent — a confirmation replay never creates a second trade", async () => {
+    const a = await userWithAccount();
+    const created = await upload(a.authHeader, pngDataUrl(makeHappyPathPng()));
+    const id = created.body.recognition.id;
+    const corrections = { symbol: "EURUSD" };
+
+    const first = await confirm(a, id, corrections);
+    expect(first.statusCode).toBe(200);
+    const replay = await confirm(a, id, corrections);
+    expect(replay.statusCode).toBe(200);
+    expect(replay.json().recognition.tradeId).toBe(first.json().recognition.tradeId);
+
+    const trades = await listTrades(a);
+    const matches = trades.filter((trade) => trade.externalRef === `ocr:${id}`);
+    expect(matches).toHaveLength(1);
+  });
+
+  it("skips honestly with a stable warning when the symbol is unknown (§50)", async () => {
+    const a = await userWithAccount();
+    const created = await upload(a.authHeader, pngDataUrl(makeHappyPathPng()));
+    const id = created.body.recognition.id;
+
+    const res = await confirm(a, id, { symbol: "NOSUCHCOIN" });
+    expect(res.statusCode).toBe(200);
+    const confirmed = ocrRecognitionResponseSchema.parse(res.json()).recognition;
+    // The confirmed declaration stays authoritative — only the import skipped.
+    expect(confirmed.status).toBe("CONFIRMED");
+    expect(confirmed.tradeId).toBeNull();
+    expect(confirmed.warnings).toContain("TRADE_IMPORT_SKIPPED_UNKNOWN_SYMBOL");
+
+    const trades = await listTrades(a);
+    expect(trades.find((trade) => trade.externalRef === `ocr:${id}`)).toBeUndefined();
+  });
+
+  it("skips with NO_ACCOUNT when the owner has no trading account", async () => {
+    const a = await user(); // no account connected
+    const created = await upload(a.authHeader, pngDataUrl(makeHappyPathPng()));
+    const id = created.body.recognition.id;
+
+    const res = await confirm(a, id, {});
+    expect(res.statusCode).toBe(200);
+    const confirmed = ocrRecognitionResponseSchema.parse(res.json()).recognition;
+    expect(confirmed.status).toBe("CONFIRMED");
+    expect(confirmed.tradeId).toBeNull();
+    expect(confirmed.warnings).toContain("TRADE_IMPORT_SKIPPED_NO_ACCOUNT");
+  });
+
+  it("keeps the imported Trade when the recognition is deleted (one-way provenance)", async () => {
+    const a = await userWithAccount();
+    const created = await upload(a.authHeader, pngDataUrl(makeHappyPathPng()));
+    const id = created.body.recognition.id;
+    const confirmed = (await confirm(a, id, { symbol: "EURUSD" })).json().recognition;
+    expect(confirmed.tradeId).toBeTruthy();
+
+    const deleted = await app.inject({
+      method: "DELETE",
+      url: `/api/v1/ocr/recognitions/${id}`,
+      headers: a.authHeader,
+    });
+    expect(deleted.statusCode).toBe(200);
+
+    const after = await app.inject({
+      method: "GET",
+      url: `/api/v1/ocr/recognitions/${id}`,
+      headers: a.authHeader,
+    });
+    expect(after.statusCode).toBe(404);
+
+    const trades = await listTrades(a);
+    expect(trades.find((trade) => trade.externalRef === `ocr:${id}`)).toBeDefined();
+  });
+
+  it("never exposes another user's imported trade (IDOR)", async () => {
+    const a = await userWithAccount();
+    const b = await userWithAccount();
+    const created = await upload(a.authHeader, pngDataUrl(makeHappyPathPng()));
+    const id = created.body.recognition.id;
+    const confirmed = (await confirm(a, id, { symbol: "EURUSD" })).json().recognition;
+    expect(confirmed.tradeId).toBeTruthy();
+
+    const bTrades = await listTrades(b);
+    expect(bTrades.find((trade) => trade.externalRef === `ocr:${id}`)).toBeUndefined();
+  });
+});
