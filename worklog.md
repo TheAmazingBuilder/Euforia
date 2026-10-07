@@ -462,3 +462,24 @@ Stage Summary:
 - Commits : `9b28050` (audit OCR), `0c05d80` (layer calcul + fix spec préexistant), `808008c` (implémentation TOOLS complète), `903362c` (fix stat band + sonde 38/38).
 - Artifacts : docs/backend/OCR-AUDIT-REPORT.md · scripts/verify-tools.js · scripts/shots/tools-{lotsize,compounding}-{desktop,mobile,light}.png (6 captures).
 - Restes connus (documentés, non bloquants) : UI collections OCR sans surface (hooks+mocks prêts), code mort listé §5 du rapport d'audit.
+
+---
+Task ID: ocr-collections-ui-and-cleanup
+Agent: Super Z (main)
+Date: 2026-10-08 01:20 UTC
+
+Task: « continu » — poursuivre après la livraison TOOLS : fermer les écarts documentés par l'audit OCR §5 (surface UI collections absente — 5 hooks + namespace dict inutilisés — et code mort listé §5.2/§5.3).
+
+Work Log:
+- ÉTAT DÉPART : tree propre (413f085), TOOLS livré (38/38), audit OCR §5 documentait 3 écarts actionnables + 3 choix documentés.
+- COMMIT 1 `7b9eaac` — COLLECTIONS UI (V2 §28) : nouveau `components/recognition/recognition-collections.tsx` — CollectionsProvider possède les 5 hooks useOcrCollection* (list/create/add/remove/delete) + toasts + dialogs ; CollectionsPanel dans l'onglet Historique (rangées réglées nom · N screenshots · créé, expansibles vers les membres avec open/remove, dialog création depuis l'en-tête, suppression avec confirmation focalisée — les reconnaissances sont TOUJOURS conservées, contrat §28) ; AddToCollectionButton dans chaque rangée d'historique (desktop ledger + cartes mobiles) : toggle d'appartenance avec check marks, « New collection… » ouvre le dialog pré-ciblé (create & add). Résolution des détails membres : d'abord les pages d'historique déjà chargées (Map), fallback single-GET via useOcrRecognition (enabled: false quand connue — pas de fan-out). dict.collections étendu (created/deleted/deleteTitle/deleteBody/membersTitle/remove/menuEmpty). Le membre affiché par la sonde : « CHART · Auto detect · 77% · this minute · CONFIRMED ».
+- SONDE : verify-recognition.js +13 checks (création panneau → état 0 → ajout par menu → expansion + membre → retrait → create & add 2e collection → membre pré-rempli → suppression avec confirm → historique intact ≥5 rangées) → **48/48 passed, 0 pageerrors**.
+- COMMIT 2 `cc3a8ad` — CLEANUP §5.2/§5.3 : suppression useOcrRecognitions (non-infinite) + fetchOcrHistoryPage (+ import OcrRecognitionStatus orphelin) ; NavItem.comingSoon retiré du type + des 16 entrées (le commentaire de `description` mis à jour) ; PagePlaceholder supprimé (unique consommateur) + dossier shared/ vidé ; clés dict viewSource/viewSourceSoon supprimées (remplacées par l'overlay source-region + crop tool) ; SUPPORTED_PROFILES retiré du config.py sidecar.
+- VÉRIFICATIONS : web tsc 0 / eslint 0 erreur (4 warnings `_locale` préexistants) · build OK (30 routes statiques) · sonde recognition 48/48 · sonde rebrand 17/17 · sidecar pytest 79/79 (après edit config.py) · API non touchée (dernier run complet 580/580 reste valable).
+- RAPPORT : docs/backend/OCR-AUDIT-REPORT.md §5 réécrit en « CLOSURE STATUS » (3 écarts marqués ✅ CLOSED avec preuves) + §6 conclusion mise à jour ; restent documentés comme choix (docker-compose sans ocr-service, pas de test runner web, limites produit §8 V2).
+
+Stage Summary:
+- Les 3 écarts actionnables de l'audit OCR sont FERMÉS : la feature collections a maintenant sa surface UI complète (panneau Historique + menu par rangée, fidèle au contrat §28 — jamais destructrice), le code mort listé est supprimé.
+- 2 commits : `7b9eaac` (collections UI + sonde 48/48) → `cc3a8ad` (cleanup + rapport audit mis à jour).
+- Discipline Le Registre intacte : tokens uniquement, rangées réglées, stamps, confirmation focalisée ; le pipeline human-in-the-loop n'est pas touché (collections purement référentielles).
+- Restes connus : uniquement les 3 items documentés comme choix de workflow dans §5 (docker-compose, test runner web, limites produit V2).
