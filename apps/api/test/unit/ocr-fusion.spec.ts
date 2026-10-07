@@ -38,8 +38,8 @@ const MT5_CLASSIFICATION = {
   platform: "MT5" as const,
 };
 
-function member(id: string, fields: OcrExtractedField[]): FusionMember {
-  return { recognitionId: id, fields, createdAt: "2026-10-07T10:00:00.000Z" };
+function member(id: string, fields: OcrExtractedField[], createdAt = "2026-10-07T10:00:00.000Z"): FusionMember {
+  return { recognitionId: id, fields, createdAt };
 }
 
 describe("fuseMemberFields — agreement (V2 §18)", () => {

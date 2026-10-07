@@ -141,20 +141,23 @@ export class OcrController {
   async confirm(
     @CurrentUser() principal: AuthPrincipal,
     @Param("id") id: string,
-    @Body(new ZodValidationPipe(ocrConfirmInputSchema)) input: OcrConfirmInput,
+    @Body(new ZodValidationPipe(ocrConfirmInputSchema)) input?: OcrConfirmInput,
   ) {
+    // An absent body behaves like the valid no-correction payload (§76 —
+    // degenerate input is a 4xx/OK path, never a 500).
+    const body = input ?? { corrections: {}, acknowledgeDuplicateScreenshot: false, acknowledgeDuplicateTrade: false };
     return this.ocr.confirmRecognition({
       userId: principal.userId,
       id: uuidSchema.parse(id),
-      corrections: input.corrections,
-      batches: input.batches?.map((batch) => ({
+      corrections: body.corrections,
+      batches: body.batches?.map((batch) => ({
         corrections: batch.corrections,
         include: batch.include,
       })),
-      accountId: input.accountId,
+      accountId: body.accountId,
       // V2 §58 — explicit duplicate acknowledgments (default false).
-      acknowledgeDuplicateScreenshot: input.acknowledgeDuplicateScreenshot,
-      acknowledgeDuplicateTrade: input.acknowledgeDuplicateTrade,
+      acknowledgeDuplicateScreenshot: body.acknowledgeDuplicateScreenshot,
+      acknowledgeDuplicateTrade: body.acknowledgeDuplicateTrade,
     });
   }
 
@@ -286,15 +289,17 @@ export class OcrController {
   async confirmSet(
     @CurrentUser() principal: AuthPrincipal,
     @Param("id") id: string,
-    @Body(new ZodValidationPipe(ocrSetConfirmInputSchema)) input: OcrSetConfirmInput,
+    @Body(new ZodValidationPipe(ocrSetConfirmInputSchema)) input?: OcrSetConfirmInput,
   ) {
+    // Same absent-body discipline as the single-path confirm (§76).
+    const body = input ?? { corrections: {}, acknowledgeDuplicateScreenshot: false, acknowledgeDuplicateTrade: false };
     return this.sets.confirmSet({
       userId: principal.userId,
       id: uuidSchema.parse(id),
-      corrections: input.corrections,
-      accountId: input.accountId ?? undefined,
-      acknowledgeDuplicateScreenshot: input.acknowledgeDuplicateScreenshot,
-      acknowledgeDuplicateTrade: input.acknowledgeDuplicateTrade,
+      corrections: body.corrections,
+      accountId: body.accountId ?? undefined,
+      acknowledgeDuplicateScreenshot: body.acknowledgeDuplicateScreenshot,
+      acknowledgeDuplicateTrade: body.acknowledgeDuplicateTrade,
     });
   }
 

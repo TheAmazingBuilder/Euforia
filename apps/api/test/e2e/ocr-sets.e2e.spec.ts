@@ -12,19 +12,16 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { NestFastifyApplication } from "@nestjs/platform-fastify";
 import { buildTestApp } from "../helpers/build-app";
 import { authenticatedUser, captureMail, type MailCapture } from "../helpers/identity";
-import { PrismaService } from "../../src/infrastructure/prisma/prisma.service";
 import { ocrSetResponseSchema, ocrRecognitionResponseSchema } from "../../src/shared/contracts";
 import { makeOcrFixturePng, pngDataUrl, fixtureChecksum } from "../helpers/ocr-fixtures";
 import { fnv1a32 } from "../../src/modules/ocr/ocr.logic";
 
 let app: NestFastifyApplication;
 let mail: MailCapture;
-let prisma: PrismaService;
 
 beforeAll(async () => {
   app = await buildTestApp();
   mail = captureMail(app);
-  prisma = app.get(PrismaService);
 });
 
 afterAll(async () => {
@@ -176,6 +173,21 @@ describe("multi-screenshot set lifecycle (V2 §1/§14/§18)", () => {
     expect(symbolField?.normalizedValue).toBe(first.symbol);
     expect(symbolField?.warnings).toContain("MULTI_SOURCE_AGREEMENT");
 
+    // One MOCK account connected — the import needs a target (the persisted
+    // default account convention, engine quality §3.1).
+    const connected = await app.inject({
+      method: "POST",
+      url: "/api/v1/accounts",
+      headers: a.authHeader,
+      payload: {
+        providerId: "MOCK",
+        environment: "DEMO",
+        externalAccountId: `77${Math.random().toString(36).slice(2, 8)}`,
+        credentials: { method: "API_KEY", secret: "mock-api-key-ocr-sets" },
+      },
+    });
+    expect(connected.statusCode).toBe(201);
+
     const tradesBefore = await listTrades(a);
 
     const confirmed = await confirmSet(a, set.id, {});
@@ -259,4 +271,3 @@ async function listTrades(a: UserCtx): Promise<Array<Record<string, unknown>>> {
 // The recognition response schema import is used by the member assertion
 // helper below — keeps the suite contract-typed end to end.
 void ocrRecognitionResponseSchema;
-void prisma;
