@@ -347,3 +347,25 @@ Stage Summary:
 - PROMPT 3 LIVRÉ : module Import & Recognition complet dans INSIGHTS (entre Analytics et Calendar), production-grade, integration-ready (MockRecognitionService ⇄ ApiRecognitionService interchangeables, l'UI ne voit que des hooks React Query → apiClient → NestJS), Le Registre respecté (détecteur design : 0 finding), a11y + responsive + i18n-namespace EN (FR prêt à revenir — décision EN-only verrouillée).
 - 5 commits : 3e51379 → ac9e4be → bbf00c6 → ef72e17 → 5651e45.
 - Hors scope respecté (§66) : aucun moteur OCR, aucun appel FastAPI direct, aucun modèle Prisma — le contrat Phase 19 reste la frontière.
+
+---
+Task ID: ocr-phase21-backend-bridge (confirmation → Trading Core)
+Agent: Super Z (main)
+Date: 2026-10-07 00:40 UTC
+
+Task: « On continue avec le module OCR, cette fois on passe backend » + prompt maître backend uploadé (Pasted Content_1791329188474.txt == SPEC-3, 3639 lignes : NestJS orchestration + FastAPI déterministe, sans ML/LLM, human-in-the-loop obligatoire).
+
+Work Log:
+- PRÉ-REQUIS : tree propre (c0d1d12) — règle « commit avant chaque implémentation » respectée.
+- AUDIT §8–§26 (découverte seule, zéro modif) : le backend OCR Phase 19 EXISTE ET EST VÉRIFIÉ (module complet + sidecar FastAPI/Tesseract 27 pytest + migration + 68 tests) ; le frontend PROMPT 3 consomme ce contrat 1:1 ; Trading Core (modules/trades) EXISTE MAINTENANT — le report Phase 19 (« Trade-creation DEFERRED until Trading Core exists ») est le SEUL trou restant. Décisions : pont = orchestration APRÈS le commit de confirmation via TradesService.createTrade (§77, jamais prisma.trade côté OCR) ; compte = convention importTrades (défaut persisté, jamais la capture §81) ; dédoublonnage externalRef ocr:<recognitionId> (§79) ; échec d'import NE JAMAIS faire échouer la confirmation (§126 → warning stable + audit).
+- Commit bridge : contrat additif (OcrRecognition.tradeId nullable, capture input source MANUAL|IMPORT pour la provenance §82, 2 types d'audit OCR_TRADE_IMPORTED/OCR_TRADE_IMPORT_SKIPPED) ; Prisma tradeId FK ON DELETE SET NULL + migration 20261007010000_ocr_trade_link (provenance à sens unique : supprimer la reconnaissance garde le Trade) ; trade-import.logic.ts PURE (éligibilité = les 4 champs cœur complets et positifs ; variante CLOSED seulement si prix de sortie ET closeTime confirmés — rien d'inventé §54 ; P&L JAMAIS copié de l'OCR §55/§15) ; ocr-trade-import.service.ts (résolution compte/instrument/doublon, skips honnêtes INCOMPLETE/NO_ACCOUNT/UNKNOWN_SYMBOL/REJECTED, isolation totale) ; repository.linkTrade gardé sur status=CONFIRMED ; source traversée dans createTrade (+3 lignes). Compat frontend minimale (§7) : tradeId null dans les seeds MSW, 2 libellés d'audit — UI intacts, le mock ne crée toujours JAMAIS de Trade.
+- Commit tests : 11 unitaires mapping (éligibilité, variantes, planchers, provenance) + 7 e2e Phase 21 sur AppModule/DB/moteur réels (import canonique miroir des valeurs confirmées, replay sans doublon, skips honnêtes, IDOR, survie du Trade) + gate typecheck restauré (7 erreurs noUncheckedIndexedAccess préexistantes sur HEAD dans integrations.e2e).
+- Commit runtime : scripts/phase21-runtime-verify.sh — sidecar RÉEL (:3004) + API compilée (:4000) + DB dev : compte MOCK → vraie capture MT5 1150×420 → Tesseract → confirm → Trade lié → asserts journal (source IMPORT, SL/TP/quantité reflétés, notes provenance, OPEN honnête car prix de sortie illisible §54) → replay ×1 → suppression reconnaissance garde le Trade. **PHASE 21 RUNTIME VERIFICATION: ALL CHECKS PASSED**.
+- BUG RÉEL ATTRAPÉ AU RUNTIME (§106) : le replay idempotent comparait le payload BRUT au record CANONISÉ → retry « 2345,60 » = 409 au lieu de 200. FIX : canonicalizeCorrections AVANT la comparaison de replay (canonical-vs-canonical) + e2e de régression (replay forme virgule → 200). 64 tests OCR verts après fix.
+- Vérification finale : tsc 0 (src+test), eslint 0, api 480/482 (2 échecs PRÉEXISTANTS sur HEAD vérifiés par stash : discipline B4 tradesToday + session B5 — hors scope, documentés), sidecar pytest 27/27, web build + sonde recognition 24/24 + sonde rebrand 17/17 (zéro pageerror), migration appliquée à la DB dev (migrate deploy).
+- PIÈGE INFRA : la ligne mail du register arrive avec un délai — boucle de token durcie (80×0.5s) dans le script runtime ; le premier échec venait aussi de la migration absente de la DB dev (migrate deploy avant le run).
+
+Stage Summary:
+- LE PONT CONFIRMATION → TRADE CANONIQUE EST EN PLACE ET VÉRIFIÉ SUR STACK RÉELLE : « Confirm & import » du frontend fait maintenant atterrir le trade dans le journal en mode live (source IMPORT, P&L recalculé serveur, lien traçable recognition→trade, suppression à sens unique). Contrat frontend inchangé (tradeId additif), human-in-the-loop intact, zéro ML/LLM.
+- 3 commits : bridge (contrat+logique+service) → tests+gate → fix replay+runtime. Rapport : docs/backend/PHASE-21-OCR-TRADE-BRIDGE-REPORT.md.
+- Restes connus : 2 échecs e2e préexistants hors module (discipline B4, session B5) ; fuseau horaire des timestamps wall-clock = report Phase 19 assumé.
