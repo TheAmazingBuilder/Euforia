@@ -50,6 +50,7 @@ export * from "./schemas/ocr";
 // ── Pure utils ───────────────────────────────────────────────────────────────
 export * from "./utils/money";
 export * from "./utils/risk";
+export * from "./utils/compounding";
 export * from "./utils/format";
 export * from "./utils/dates";
 export * from "./utils/rules";

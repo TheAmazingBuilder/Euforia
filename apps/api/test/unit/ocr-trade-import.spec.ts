@@ -26,9 +26,12 @@ function field(overrides: Partial<OcrExtractedField> = {}): OcrExtractedField {
   };
 }
 
-/** A complete, coherent confirmed MT5-style field set (closed trade). */
+/** A complete, coherent confirmed MT5-style field set (closed trade).
+ *  Trade-only base: since V1.1 OcrFieldKey also carries the account/chart
+ *  profile keys — they are optional extras here (Partial), the import
+ *  eligibility only consumes the trade fields. */
 function completeFields(overrides: Partial<Record<OcrFieldKey, OcrExtractedField>> = {}): OcrExtractedField[] {
-  const base: Record<OcrFieldKey, OcrExtractedField> = {
+  const base: Partial<Record<OcrFieldKey, OcrExtractedField>> = {
     symbol: field({ field: "symbol", normalizedValue: "XAUUSD" }),
     direction: field({ field: "direction", normalizedValue: "BUY" }),
     volume: field({ field: "volume", normalizedValue: "0.1" }),
