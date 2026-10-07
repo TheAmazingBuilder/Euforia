@@ -63,6 +63,15 @@ export interface OcrResultPayload {
   passes?: string[];
   layoutTemplate?: string | null;
   deskewDeg?: number | null;
+  /** Content-based trade duplicate flag (V2 §4) — advisory, set at processing. */
+  possibleTradeDuplicate?: {
+    tradeId: string;
+    matchedOn: string[];
+    detectedAt: string;
+  } | null;
+  /** Whether the recognized symbol resolved against the instrument catalog
+   * (V2 §16 UNKNOWN_SYMBOL input) — null when no symbol was recognized. */
+  symbolInCatalog?: boolean | null;
 }
 
 export interface OcrRecognitionRow {

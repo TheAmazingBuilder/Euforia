@@ -55,10 +55,13 @@ import {
 import {
   applyCorrections,
   applyDomainValidation,
+  buildRecognitionTimeline,
   collectCorrectionPatterns,
+  computeQualityScore,
   confidenceBand,
   CorrectionError,
   deriveIdempotencyKey,
+  deriveRecognitionIssues,
   DUPLICATE_HAMMING_THRESHOLD,
   hammingDistance64,
   validateCorrectionStored,
@@ -93,6 +96,9 @@ export const OCR_ERROR_CODES = {
   RECROP_UNPROCESSABLE: "OCR_RECROP_UNPROCESSABLE",
   RECROP_UNSUPPORTED: "OCR_RECROP_UNSUPPORTED",
   ACCOUNT_NOT_FOUND: "OCR_ACCOUNT_NOT_FOUND",
+  // V2 §58 — a flagged recognition needs an explicit user acknowledgment.
+  DUPLICATE_SCREENSHOT_UNACKNOWLEDGED: "OCR_DUPLICATE_UNACKNOWLEDGED",
+  DUPLICATE_TRADE_UNACKNOWLEDGED: "OCR_TRADE_DUPLICATE_UNACKNOWLEDGED",
 } as const;
 
 export interface OcrRecognitionDto {
@@ -385,6 +391,27 @@ export class OcrService {
           return suggestion ? { ...field, suggestion } : field;
         });
       }
+      // Trade duplicate detection (V2 §4) — content match against the
+      // user's existing Trades. Advisory: stored on the result, surfaced at
+      // review, and an explicit acknowledgment is required to confirm.
+      const duplicateDetection = await this.tradeImport
+        .detectTradeDuplicate({ userId, fields })
+        .catch(() => ({ symbolInCatalog: false, duplicate: null }));
+      const possibleTradeDuplicate: OcrResultPayload["possibleTradeDuplicate"] =
+        duplicateDetection.duplicate === null
+          ? null
+          : {
+              tradeId: duplicateDetection.duplicate.tradeId,
+              matchedOn: [...duplicateDetection.duplicate.matchedOn],
+              detectedAt: new Date().toISOString(),
+            };
+      // Catalog resolution is a processing-time fact (V2 §16) — persisted
+      // so the derived UNKNOWN_SYMBOL issue never needs a DB roundtrip.
+      const symbolInCatalog: boolean | null = fields.some(
+        (f) => f.field === "symbol" && f.normalizedValue !== null,
+      )
+        ? duplicateDetection.symbolInCatalog
+        : null;
       const mergedWarnings = mergeWarnings(
         response.warnings,
         fields.flatMap((f) => f.warnings.filter((w) => w === "TIMEZONE_UNKNOWN")),
@@ -405,6 +432,8 @@ export class OcrService {
         passes: response.processingMetadata.passes,
         layoutTemplate: response.processingMetadata.layoutTemplate,
         deskewDeg: response.processingMetadata.deskewDeg,
+        possibleTradeDuplicate,
+        symbolInCatalog,
       };
       const updated = await this.repository.persistResult(row.id, result);
       if (!updated) {
@@ -517,6 +546,9 @@ export class OcrService {
     corrections: OcrCorrectionRecord;
     batches?: { corrections: OcrCorrectionRecord; include: boolean }[];
     accountId?: string | null;
+    /** V2 §58 — explicit acknowledgments of the advisory duplicate flags. */
+    acknowledgeDuplicateScreenshot?: boolean;
+    acknowledgeDuplicateTrade?: boolean;
   }): Promise<OcrRecognitionDto> {
     const check = this.limiter.check("confirm", input.userId);
     if (!check.allowed) {
@@ -542,6 +574,22 @@ export class OcrService {
 
     const machineFieldsPre = (row.result?.fields ?? []) as OcrExtractedField[];
     const candidateDrafts = (row.result?.candidates ?? null) as { fields: OcrExtractedField[] }[] | null;
+
+    // V2 §58 — duplicate warnings are ADVISORY at review time but BLOCKING
+    // at confirmation: the user must have seen the flag and acknowledged it
+    // explicitly. Never a silent double import, never a silent discard.
+    if (row.result?.duplicateOf && input.acknowledgeDuplicateScreenshot !== true) {
+      throw new ConflictError(
+        "This screenshot was flagged as a near-duplicate of an earlier import. Acknowledge the warning to proceed.",
+        OCR_ERROR_CODES.DUPLICATE_SCREENSHOT_UNACKNOWLEDGED,
+      );
+    }
+    if (row.result?.possibleTradeDuplicate && input.acknowledgeDuplicateTrade !== true) {
+      throw new ConflictError(
+        "This recognition was flagged as a possible duplicate of an existing trade. Acknowledge the warning to proceed.",
+        OCR_ERROR_CODES.DUPLICATE_TRADE_UNACKNOWLEDGED,
+      );
+    }
 
     // Canonicalize BEFORE the replay comparison: the stored record holds the
     // VALIDATED DECLARATION ("2345,60" → "2345.60", §21), so a retry of the
@@ -643,6 +691,8 @@ export class OcrService {
       passes: row.result?.passes,
       layoutTemplate: row.result?.layoutTemplate,
       deskewDeg: row.result?.deskewDeg,
+      possibleTradeDuplicate: row.result?.possibleTradeDuplicate ?? null,
+      symbolInCatalog: row.result?.symbolInCatalog ?? null,
       ...(batchPlan !== null
         ? { batches: batchPlan.map((batch) => ({ corrections: batch.corrections, include: batch.include })) }
         : {}),
@@ -898,12 +948,32 @@ export function toRecognitionDto(row: OcrRecognitionRow): OcrRecognition {
     purged: row.screenshotPurgedAt !== null,
   };
   const classification = (row.result?.classification ?? null) as OcrClassification | null;
+  const fields = (row.result?.fields ?? []) as OcrExtractedField[];
+  const duplicateOf = (row.result?.duplicateOf ?? null) as OcrRecognition["duplicateOf"];
+  const possibleTradeDuplicate = (row.result?.possibleTradeDuplicate ??
+    null) as OcrRecognition["possibleTradeDuplicate"];
+  // V2 §16/§15/§23 — issues, quality and timeline are DERIVED from the
+  // stored evidence at read time (pure functions — confirmed rows never
+  // mutate, §33, and improved logic explains old rows retroactively).
+  const issues = deriveRecognitionIssues({
+    fields,
+    classification,
+    duplicateOf,
+    possibleTradeDuplicate,
+    symbolInCatalog: row.result?.symbolInCatalog === true,
+  });
+  const qualityScore = computeQualityScore({ fields, classification, duplicateOf });
+  const timeline = buildRecognitionTimeline({
+    fields,
+    uploadedAt: asset.createdAt,
+    confirmedAt: row.confirmedAt ? row.confirmedAt.toISOString() : null,
+  });
   return {
     id: row.id,
     status: row.status as OcrRecognition["status"],
     extractionProfile: row.extractionProfile as OcrRecognition["extractionProfile"],
     classification,
-    fields: (row.result?.fields ?? []) as OcrExtractedField[],
+    fields,
     warnings: row.result?.warnings ?? [],
     asset,
     engine: row.result?.engine ?? null,
@@ -925,9 +995,13 @@ export function toRecognitionDto(row: OcrRecognitionRow): OcrRecognition {
     /** Multi-trade drafts — null for the mono-trade path. */
     candidates: (row.result?.candidates ?? null) as OcrRecognition["candidates"],
     /** Advisory duplicate flag (engine quality §2.1) — stored in the result. */
-    duplicateOf: (row.result?.duplicateOf ?? null) as OcrRecognition["duplicateOf"],
+    duplicateOf,
     accountId: row.accountId,
     suggestedTags: row.result?.suggestedTags ?? [],
+    issues,
+    qualityScore,
+    timeline,
+    possibleTradeDuplicate,
     confirmedAt: row.confirmedAt ? row.confirmedAt.toISOString() : null,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),

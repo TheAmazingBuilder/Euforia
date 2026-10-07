@@ -212,6 +212,42 @@ export class TradesRepository {
     return (row as TradeRow) ?? null;
   }
 
+  /**
+   * Content-based trade duplicate candidates (V2 spec §4 — "different
+   * screenshots representing the same trade"). Same owner only (§ IDOR),
+   * same instrument + direction as PREREQUISITES; the entry-price /
+   * entry-time refinements happen in pure logic (tradeDuplicateEvidence).
+   * Returns the most recent candidates (bounded — advisory input only).
+   */
+  async findTradeDuplicateCandidates(input: {
+    userId: string;
+    instrumentId: string;
+    direction: string;
+    entryPrice: string | null;
+    /** Wall-clock window bounds (already widened to ±48h by the caller). */
+    entryAtFrom: Date | null;
+    entryAtTo: Date | null;
+    limit?: number;
+  }): Promise<TradeRow[]> {
+    const rows = await this.prisma.trade.findMany({
+      where: {
+        userId: input.userId,
+        deletedAt: null,
+        instrumentId: input.instrumentId,
+        direction: input.direction,
+        OR: [
+          ...(input.entryPrice !== null ? [{ entryPrice: new Prisma.Decimal(input.entryPrice) }] : []),
+          ...(input.entryAtFrom !== null && input.entryAtTo !== null
+            ? [{ entryAt: { gte: input.entryAtFrom, lte: input.entryAtTo } }]
+            : []),
+        ],
+      },
+      orderBy: [{ createdAt: "desc" }, { id: "asc" }],
+      take: input.limit ?? 5,
+    });
+    return rows as TradeRow[];
+  }
+
   async listTrades(userId: string, filters: TradeListFilters): Promise<TradeRow[]> {
     const where: Prisma.TradeWhereInput = {
       userId,

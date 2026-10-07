@@ -139,6 +139,9 @@ export class OcrController {
         include: batch.include,
       })),
       accountId: input.accountId,
+      // V2 §58 — explicit duplicate acknowledgments (default false).
+      acknowledgeDuplicateScreenshot: input.acknowledgeDuplicateScreenshot,
+      acknowledgeDuplicateTrade: input.acknowledgeDuplicateTrade,
     });
   }
 

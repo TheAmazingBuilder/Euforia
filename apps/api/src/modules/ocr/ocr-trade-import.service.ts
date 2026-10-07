@@ -25,7 +25,7 @@
 import { Injectable, Logger } from "@nestjs/common";
 
 import { BusinessRuleError, ConflictError, NotFoundError, ValidationError } from "../../shared/errors/app-error";
-import type { OcrExtractedField } from "../../shared/contracts";
+import type { OcrExtractedField, OcrFieldKey, OcrTradeDuplicateEvidence } from "../../shared/contracts";
 import { AccountsRepository } from "../accounts/accounts.repository";
 import { TradesRepository } from "../trades/trades.repository";
 import { TradesService } from "../trades/trades.service";
@@ -38,7 +38,7 @@ import {
   TRADE_IMPORT_SKIPPED_REJECTED,
   TRADE_IMPORT_SKIPPED_UNKNOWN_SYMBOL,
 } from "./trade-import.logic";
-import { suggestedTagsForImport } from "./ocr.logic";
+import { suggestedTagsForImport, TRADE_DUPLICATE_TIME_WINDOW_MS, tradeDuplicateEvidence } from "./ocr.logic";
 
 export interface ConfirmationDraft {
   /** Position of the draft among the recognition's candidates. */
@@ -74,6 +74,81 @@ export class OcrTradeImportService {
   /** Deterministic dedup handle — one recognition draft can ever import one trade. */
   externalRefOf(recognitionId: string, batchIndex?: number): string {
     return batchIndex === undefined ? `ocr:${recognitionId}` : `ocr:${recognitionId}:${batchIndex}`;
+  }
+
+  /**
+   * Content-based trade duplicate detection (V2 spec §4 — "different
+   * screenshots representing the same trade"). ADVISORY: the caller stores
+   * the flag on the recognition; the review UI surfaces it and confirmation
+   * requires an explicit acknowledgment (V2 §58). Same owner only (§ IDOR).
+   *
+   * Prerequisites: symbol resolves in the catalog + direction matches.
+   * Evidence: entry price equal OR entry time within ±48h (wall-clock vs
+   * instant tolerance — never a timezone assertion, §16).
+   *
+   * Returns null when nothing matched or there is not enough evidence.
+   * Also returns whether the symbol exists in the catalog (feeds the
+   * UNKNOWN_SYMBOL issue derivation without a second query).
+   */
+  async detectTradeDuplicate(input: {
+    userId: string;
+    fields: readonly OcrExtractedField[];
+  }): Promise<{
+    symbolInCatalog: boolean;
+    duplicate: { tradeId: string; matchedOn: OcrTradeDuplicateEvidence[] } | null;
+  }> {
+    const byKey = new Map(input.fields.map((f) => [f.field, f]));
+    const textOf = (key: OcrFieldKey): string | null => byKey.get(key)?.normalizedValue ?? null;
+    const symbol = textOf("symbol");
+    const direction = textOf("direction");
+    const entryPrice = textOf("entryPrice");
+    const openTime = textOf("openTime");
+
+    if (symbol === null || (direction !== "BUY" && direction !== "SELL")) {
+      return { symbolInCatalog: false, duplicate: null };
+    }
+    const instrument = await this.tradesRepository.findInstrumentBySymbol(symbol);
+    if (instrument === null || !instrument.isActive) {
+      return { symbolInCatalog: false, duplicate: null };
+    }
+
+    // Wall-clock window — widened to ±48h BEFORE the query so the wall
+    // clock vs instant comparison stays a pure-logic concern (§16: the
+    // persisted candidate window is coarse, the evidence check is exact).
+    const window = openTime !== null && !Number.isNaN(Date.parse(`${openTime}Z`))
+      ? {
+          from: new Date(Date.parse(`${openTime}Z`) - TRADE_DUPLICATE_TIME_WINDOW_MS),
+          to: new Date(Date.parse(`${openTime}Z`) + TRADE_DUPLICATE_TIME_WINDOW_MS),
+        }
+      : null;
+
+    const candidates = await this.tradesRepository.findTradeDuplicateCandidates({
+      userId: input.userId,
+      instrumentId: instrument.id,
+      direction,
+      entryPrice,
+      entryAtFrom: window?.from ?? null,
+      entryAtTo: window?.to ?? null,
+    });
+
+    for (const candidate of candidates) {
+      const evidence = tradeDuplicateEvidence(
+        { symbol, direction, entryPrice, openTime },
+        {
+          entryPrice: candidate.entryPrice === null ? null : candidate.entryPrice.toFixed(),
+          entryAt: candidate.entryAt.toISOString(),
+        },
+      );
+      if (evidence.length > 0) {
+        // The matchedOn list is SELF-DESCRIBING for the review UI: the
+        // prerequisites (symbol + direction) plus every further agreement.
+        return {
+          symbolInCatalog: true,
+          duplicate: { tradeId: candidate.id, matchedOn: ["SYMBOL", "DIRECTION", ...evidence] },
+        };
+      }
+    }
+    return { symbolInCatalog: true, duplicate: null };
   }
 
   async importFromConfirmation(input: {

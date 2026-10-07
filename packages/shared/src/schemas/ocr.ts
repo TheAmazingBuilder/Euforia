@@ -267,6 +267,96 @@ export const ocrConfirmBatchSchema = z.object({
 });
 export type OcrConfirmBatch = z.infer<typeof ocrConfirmBatchSchema>;
 
+// ── V2 §16 — structured recognition issues ─────────────────────────────────
+
+/**
+ * Stable issue codes (V2 spec §16). Every issue is derived from the stored
+ * recognition evidence — never a free-text judgment call. `field` scopes the
+ * issue to one extracted field when the code is field-level; `detail` is a
+ * STABLE token (e.g. a trade id or matched-on evidence), not prose.
+ */
+export const ocrIssueCodeSchema = z.enum([
+  "LOW_OCR_CONFIDENCE",
+  "UNKNOWN_PLATFORM",
+  "UNKNOWN_SYMBOL",
+  "AMBIGUOUS_DIRECTION",
+  "AMBIGUOUS_NUMBER",
+  "INVALID_PRICE_RELATIONSHIP",
+  "INVALID_TIMESTAMP",
+  "MISSING_REQUIRED_FIELD",
+  "CONFLICTING_FIELDS",
+  "UNSUPPORTED_SCREENSHOT",
+  "POSSIBLE_DUPLICATE",
+  "POSSIBLE_TRADE_DUPLICATE",
+]);
+export type OcrIssueCode = z.infer<typeof ocrIssueCodeSchema>;
+
+export const ocrIssueSchema = z.object({
+  code: ocrIssueCodeSchema,
+  field: ocrFieldKeySchema.nullable(),
+  detail: z.string().max(256).nullable(),
+});
+export type OcrIssue = z.infer<typeof ocrIssueSchema>;
+
+// ── V2 §15 — deterministic recognition quality score ───────────────────
+
+/**
+ * Composite quality score with EXPLAINABLE components (V2 spec §15):
+ *   fieldConfidence — mean confidence over readable fields (text evidence);
+ *   completeness    — share of the import-critical fields present;
+ *   validation      — cross-field/domain validation penalty (INVALID fields);
+ *   consistency     — evidence agreement (duplicates/unknown classification
+ *                     penalize; fusion agreement feeds this for sets).
+ * The score is a deterministic function of the stored fields — the same
+ * recognition always produces the same score (V2 §77).
+ */
+export const ocrQualityScoreSchema = z.object({
+  score: z.number().min(0).max(1),
+  components: z.object({
+    fieldConfidence: z.number().min(0).max(1),
+    completeness: z.number().min(0).max(1),
+    validation: z.number().min(0).max(1),
+    consistency: z.number().min(0).max(1),
+  }),
+});
+export type OcrQualityScore = z.infer<typeof ocrQualityScoreSchema>;
+
+// ── V2 §23 — trade timeline ─────────────────────────────────────────────
+
+/**
+ * Deterministic chronology derived from the recognized timestamps plus the
+ * recognition lifecycle. OPEN_TIME/CLOSE_TIME carry the timezone-unknown
+ * wall-clock canonical form (§16 — never converted, never invented);
+ * UPLOADED/CONFIRMED carry real ISO instants. Entries with no recognized
+ * timestamp are omitted — never guessed.
+ */
+export const ocrTimelineEntrySchema = z.object({
+  kind: z.enum(["OPEN_TIME", "CLOSE_TIME", "UPLOADED", "CONFIRMED"]),
+  /** Wall-clock canonical string for OPEN/CLOSE, ISO instant otherwise. */
+  at: z.string().max(32).nullable(),
+  /** Raw recognized stamp when the entry came from the OCR fields. */
+  raw: z.string().max(64).nullable(),
+});
+export type OcrTimelineEntry = z.infer<typeof ocrTimelineEntrySchema>;
+
+// ── V2 §4 — trade duplicate detection (different screenshot, same trade) ──
+
+/** Evidence tokens explaining WHY a trade looks like a duplicate. */
+export const ocrTradeDuplicateEvidenceSchema = z.enum([
+  "SYMBOL",
+  "DIRECTION",
+  "ENTRY_PRICE",
+  "ENTRY_TIME",
+]);
+export type OcrTradeDuplicateEvidence = z.infer<typeof ocrTradeDuplicateEvidenceSchema>;
+
+export const ocrPossibleTradeDuplicateSchema = z.object({
+  tradeId: uuidSchema,
+  matchedOn: z.array(ocrTradeDuplicateEvidenceSchema).max(4),
+  detectedAt: isoDateTimeSchema,
+});
+export type OcrPossibleTradeDuplicate = z.infer<typeof ocrPossibleTradeDuplicateSchema>;
+
 export const ocrRecognitionSchema = z.object({
   id: uuidSchema,
   status: ocrRecognitionStatusSchema,
@@ -309,6 +399,22 @@ export const ocrRecognitionSchema = z.object({
   accountId: uuidSchema.nullable(),
   /** Playbook tag suggestions (engine quality §3.3) — set at confirmation. */
   suggestedTags: z.array(z.string().max(64)).max(8).default([]),
+  /**
+   * V2 §16 — structured issues derived from the stored evidence at read
+   * time (the derivation is a pure function; confirmed rows never mutate).
+   */
+  issues: z.array(ocrIssueSchema).max(32).default([]),
+  /** V2 §15 — deterministic quality score (null when nothing is readable). */
+  qualityScore: ocrQualityScoreSchema.nullable(),
+  /** V2 §23 — derived chronology (only entries with real evidence). */
+  timeline: z.array(ocrTimelineEntrySchema).max(16).default([]),
+  /**
+   * V2 §4 — content-based trade duplicate flag (different screenshot, same
+   * trade). Advisory at review time; confirmation REQUIRES an explicit
+   * acknowledgment to proceed (V2 §58 — the user decides, never a silent
+   * discard, and never a silent double import).
+   */
+  possibleTradeDuplicate: ocrPossibleTradeDuplicateSchema.nullable(),
   confirmedAt: isoDateTimeSchema.nullable(),
   createdAt: isoDateTimeSchema,
   updatedAt: isoDateTimeSchema,
@@ -376,6 +482,14 @@ export const ocrConfirmInputSchema = z
     corrections: ocrCorrectionRecordSchema,
     batches: z.array(ocrConfirmBatchSchema).min(1).max(20).optional(),
     accountId: uuidSchema.nullable().optional(),
+    /**
+     * V2 §58 — explicit acknowledgment of advisory duplicate warnings.
+     * A flagged recognition cannot be confirmed without the matching
+     * acknowledgment (409 otherwise): the user saw the warning and chose
+     * to proceed — never a silent double import.
+     */
+    acknowledgeDuplicateScreenshot: z.boolean().default(false),
+    acknowledgeDuplicateTrade: z.boolean().default(false),
   })
   .refine((input) => input.batches === undefined || input.batches.length >= 1, {
     message: "batches must not be empty",

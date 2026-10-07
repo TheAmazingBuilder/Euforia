@@ -18,7 +18,16 @@
  */
 import { createHash } from "node:crypto";
 import { Prisma } from "@prisma/client";
-import type { OcrExtractedField, OcrFieldKey, OcrValidationStatus } from "../../shared/contracts";
+import type {
+  OcrClassification,
+  OcrExtractedField,
+  OcrFieldKey,
+  OcrIssue,
+  OcrQualityScore,
+  OcrTimelineEntry,
+  OcrTradeDuplicateEvidence,
+  OcrValidationStatus,
+} from "../../shared/contracts";
 
 /** Candidate-key warnings must stay short and stable (client-copyable). */
 export const TIMEZONE_UNKNOWN_WARNING = "TIMEZONE_UNKNOWN";
@@ -26,6 +35,7 @@ export const USER_CORRECTED_WARNING = "USER_CORRECTED";
 export const AMBIGUOUS_SEPARATOR_WARNING = "AMBIGUOUS_THOUSANDS_SEPARATOR";
 export const CURRENCY_STRIPPED_WARNING = "CURRENCY_SYMBOL_STRIPPED";
 export const DIRECTIONAL_INCONSISTENCY_WARNING = "DIRECTIONAL_INCONSISTENCY";
+export const TIMESTAMP_ORDER_WARNING = "TIMESTAMP_ORDER_INCONSISTENCY";
 
 // ── Confidence banding (§17) ─────────────────────────────────────────────────
 
@@ -300,6 +310,19 @@ export function applyDomainValidation(fields: OcrExtractedField[]): OcrExtracted
     byKey.set("profit", invalidate(profitField, "profit", "must be a finite number"));
   }
 
+  // Timestamp order (V2 §17): close must not precede open. Only fires when
+  // both are present; each side carries the timezone-unknown wall clock
+  // (§16) so the comparison is calendar-and-clock honest — no tz inference.
+  const openTime = byKey.get("openTime");
+  const closeTime = byKey.get("closeTime");
+  if (openTime?.normalizedValue && closeTime?.normalizedValue) {
+    const open = Date.parse(`${openTime.normalizedValue}Z`);
+    const close = Date.parse(`${closeTime.normalizedValue}Z`);
+    if (!Number.isNaN(open) && !Number.isNaN(close) && close < open) {
+      byKey.set("closeTime", invalidateTimestamp(closeTime));
+    }
+  }
+
   // Directional coherence (§19) — only with all three values present.
   const direction = byKey.get("direction");
   const dir = direction?.normalizedValue === "BUY" ? "BUY" : direction?.normalizedValue === "SELL" ? "SELL" : null;
@@ -323,11 +346,18 @@ export function applyDomainValidation(fields: OcrExtractedField[]): OcrExtracted
 /** Stable per-rule warning tokens — the reason is not free user text. */
 function invalidate(field: OcrExtractedField, key: OcrFieldKey, reason: string): OcrExtractedField {
   void key;
+  void reason; // kept out of user-visible data — the status token is the contract
   const token = DIRECTIONAL_INCONSISTENCY_WARNING;
   const warnings = [...field.warnings];
   if (!warnings.includes(token)) warnings.push(token);
-  void reason; // kept out of user-visible data — the status token is the contract
-  return { ...field, validationStatus: "INVALID", warnings: warnings.slice(0, 8) };
+  return { ...field, validationStatus: "INVALID", warnings: warnings.slice(0, 8) as typeof field.warnings };
+}
+
+/** Timestamp-order violations carry their own stable token (V2 §17). */
+function invalidateTimestamp(field: OcrExtractedField): OcrExtractedField {
+  const warnings = [...field.warnings];
+  if (!warnings.includes(TIMESTAMP_ORDER_WARNING)) warnings.push(TIMESTAMP_ORDER_WARNING);
+  return { ...field, validationStatus: "INVALID", warnings: warnings.slice(0, 8) as typeof field.warnings };
 }
 
 // ── Corrections — the authoritative human values (§21) ──────────────────────
@@ -563,4 +593,247 @@ export function suggestedTagsForImport(values: {
   else if (assetClass === "CRYPTO") tags.push("Crypto");
   else if (assetClass === "ENERGY") tags.push("Energy");
   return tags.slice(0, 8);
+}
+
+// ── V2 §16 — structured recognition issues (derived, never persisted) ───────
+
+/** Confidence below this band is report-worthy (V2 §16 LOW_OCR_CONFIDENCE). */
+export const LOW_OCR_CONFIDENCE_THRESHOLD = 0.7;
+
+/** The import-critical floor — mirrors trade-import eligibility (V2 §16). */
+export const REQUIRED_FIELD_KEYS: readonly OcrFieldKey[] = [
+  "symbol",
+  "direction",
+  "volume",
+  "entryPrice",
+];
+
+export interface RecognitionIssueInput {
+  fields: readonly OcrExtractedField[];
+  classification: OcrClassification | null;
+  duplicateOf: { recognitionId: string } | null;
+  possibleTradeDuplicate: { tradeId: string; matchedOn: readonly string[] } | null;
+  /** The symbol resolved against the instrument catalog (null = unknown). */
+  symbolInCatalog: boolean;
+}
+
+/**
+ * Derive the structured issue list from the STORED recognition evidence
+ * (V2 §16). Pure + deterministic: the same recognition always yields the
+ * same issues (V2 §77). Issues are READ-TIME derivations — confirmed rows
+ * never mutate (V2 §33) and improved logic retroactively explains old rows.
+ */
+export function deriveRecognitionIssues(input: RecognitionIssueInput): OcrIssue[] {
+  const issues: OcrIssue[] = [];
+  const push = (issue: OcrIssue) => {
+    if (issues.length < 32) issues.push(issue);
+  };
+
+  for (const field of input.fields) {
+    if (field.validationStatus === "MISSING") {
+      if ((REQUIRED_FIELD_KEYS as readonly string[]).includes(field.field)) {
+        push({ code: "MISSING_REQUIRED_FIELD", field: field.field, detail: null });
+      }
+      continue;
+    }
+    if (field.confidence < LOW_OCR_CONFIDENCE_THRESHOLD) {
+      push({ code: "LOW_OCR_CONFIDENCE", field: field.field, detail: null });
+    }
+    if (field.validationStatus === "INVALID") {
+      const timestamp = field.field === "openTime" || field.field === "closeTime";
+      push({
+        code: timestamp ? "INVALID_TIMESTAMP" : "INVALID_PRICE_RELATIONSHIP",
+        field: field.field,
+        detail: null,
+      });
+    }
+    if (field.validationStatus === "AMBIGUOUS") {
+      if (field.field === "direction") {
+        push({ code: "AMBIGUOUS_DIRECTION", field: field.field, detail: null });
+      } else {
+        push({ code: "AMBIGUOUS_NUMBER", field: field.field, detail: null });
+      }
+    }
+  }
+
+  if (input.classification === null || input.classification.type === "UNKNOWN") {
+    push({ code: "UNSUPPORTED_SCREENSHOT", field: null, detail: null });
+  }
+  if (input.classification !== null && input.classification.platform === "UNKNOWN") {
+    push({ code: "UNKNOWN_PLATFORM", field: null, detail: null });
+  }
+  if (!input.symbolInCatalog) {
+    const symbol = input.fields.find((f) => f.field === "symbol" && f.normalizedValue !== null);
+    if (symbol) {
+      push({ code: "UNKNOWN_SYMBOL", field: "symbol", detail: symbol.normalizedValue });
+    }
+  }
+  if (input.duplicateOf !== null) {
+    push({ code: "POSSIBLE_DUPLICATE", field: null, detail: input.duplicateOf.recognitionId });
+  }
+  if (input.possibleTradeDuplicate !== null) {
+    push({
+      code: "POSSIBLE_TRADE_DUPLICATE",
+      field: null,
+      detail: input.possibleTradeDuplicate.tradeId,
+    });
+  }
+  return issues;
+}
+
+// ── V2 §15 — deterministic quality score ─────────────────────────────────────
+
+/** Documented weights — the score is explainable, not adjustable (V2 §15). */
+export const QUALITY_SCORE_WEIGHTS = {
+  fieldConfidence: 0.4,
+  completeness: 0.25,
+  validation: 0.2,
+  consistency: 0.15,
+} as const;
+
+/** Per-INVALID-field penalty on the validation component. */
+export const VALIDATION_PENALTY_PER_FIELD = 0.2;
+/** Penalties on the consistency component (evidence disagreement). */
+export const CONSISTENCY_PENALTY_DUPLICATE = 0.3;
+export const CONSISTENCY_PENALTY_UNKNOWN = 0.3;
+
+export interface QualityScoreInput {
+  fields: readonly OcrExtractedField[];
+  classification: OcrClassification | null;
+  duplicateOf: { recognitionId: string } | null;
+}
+
+/**
+ * Deterministic composite quality score (V2 §15). Bounded 0..1, explainable
+ * through its components, reproducible (V2 §77: same input → same score).
+ */
+export function computeQualityScore(input: QualityScoreInput): OcrQualityScore | null {
+  const readable = input.fields.filter((f) => f.validationStatus !== "MISSING");
+  if (readable.length === 0) return null;
+
+  const fieldConfidence =
+    readable.reduce((total, field) => total + field.confidence, 0) / readable.length;
+
+  const completeness =
+    REQUIRED_FIELD_KEYS.filter((key) =>
+      input.fields.some((f) => f.field === key && f.normalizedValue !== null),
+    ).length / REQUIRED_FIELD_KEYS.length;
+
+  const invalidCount = input.fields.filter((f) => f.validationStatus === "INVALID").length;
+  const validation = Math.max(0, 1 - invalidCount * VALIDATION_PENALTY_PER_FIELD);
+
+  let consistency = 1;
+  if (input.duplicateOf !== null) consistency -= CONSISTENCY_PENALTY_DUPLICATE;
+  if (input.classification === null || input.classification.type === "UNKNOWN") {
+    consistency -= CONSISTENCY_PENALTY_UNKNOWN;
+  }
+  consistency = Math.max(0, consistency);
+
+  const score =
+    QUALITY_SCORE_WEIGHTS.fieldConfidence * fieldConfidence +
+    QUALITY_SCORE_WEIGHTS.completeness * completeness +
+    QUALITY_SCORE_WEIGHTS.validation * validation +
+    QUALITY_SCORE_WEIGHTS.consistency * consistency;
+
+  return {
+    score: round3(score),
+    components: {
+      fieldConfidence: round3(fieldConfidence),
+      completeness: round3(completeness),
+      validation: round3(validation),
+      consistency: round3(consistency),
+    },
+  };
+}
+
+function round3(value: number): number {
+  return Math.round(value * 1000) / 1000;
+}
+
+// ── V2 §23 — trade timeline (derived chronology) ─────────────────────────────
+
+export interface TimelineInput {
+  fields: readonly OcrExtractedField[];
+  uploadedAt: string | null;
+  confirmedAt: string | null;
+}
+
+/**
+ * Deterministic chronology from recognized timestamps + lifecycle facts
+ * (V2 §23). Entries without evidence are OMITTED — a missing timestamp is
+ * never invented (§20/§23). Wall-clock stamps keep their canonical form
+ * (no timezone conversion, §16).
+ */
+export function buildRecognitionTimeline(input: TimelineInput): OcrTimelineEntry[] {
+  const timeline: OcrTimelineEntry[] = [];
+  const byKey = new Map(input.fields.map((f) => [f.field, f]));
+  const open = byKey.get("openTime");
+  const close = byKey.get("closeTime");
+  if (open?.normalizedValue) {
+    timeline.push({ kind: "OPEN_TIME", at: open.normalizedValue, raw: open.rawValue });
+  }
+  if (close?.normalizedValue) {
+    timeline.push({ kind: "CLOSE_TIME", at: close.normalizedValue, raw: close.rawValue });
+  }
+  if (input.uploadedAt) {
+    timeline.push({ kind: "UPLOADED", at: input.uploadedAt, raw: null });
+  }
+  if (input.confirmedAt) {
+    timeline.push({ kind: "CONFIRMED", at: input.confirmedAt, raw: null });
+  }
+  return timeline.slice(0, 16);
+}
+
+// ── V2 §4 — trade duplicate evidence (pure decision, DB lookup is the caller's) ─
+
+export interface TradeDuplicateCandidateValues {
+  symbol: string;
+  direction: "BUY" | "SELL";
+  entryPrice: string | null;
+  /** Timezone-unknown wall clock (canonical) or null — §16. */
+  openTime: string | null;
+}
+
+export interface TradeDuplicateExistingValues {
+  entryPrice: string | null;
+  /** ISO instant of the existing trade's entry. */
+  entryAt: string | null;
+}
+
+/** ±48h window — tolerant to the ≤14h timezone spread of wall-clock stamps. */
+export const TRADE_DUPLICATE_TIME_WINDOW_MS = 48 * 60 * 60 * 1000;
+
+/**
+ * Evidence comparison (pure): symbol + direction are the PREREQUISITES
+ * (both must match — compared by the caller before calling); each further
+ * agreement adds an evidence token. The caller flags a duplicate when at
+ * least ONE further evidence matches (V2 §4: "different screenshots
+ * representing the same trade").
+ */
+export function tradeDuplicateEvidence(
+  candidate: TradeDuplicateCandidateValues,
+  existing: TradeDuplicateExistingValues,
+): OcrTradeDuplicateEvidence[] {
+  const evidence: OcrTradeDuplicateEvidence[] = [];
+  if (
+    candidate.entryPrice !== null &&
+    existing.entryPrice !== null &&
+    new Prisma.Decimal(candidate.entryPrice).equals(new Prisma.Decimal(existing.entryPrice))
+  ) {
+    evidence.push("ENTRY_PRICE");
+  }
+  if (candidate.openTime !== null && existing.entryAt !== null) {
+    // Wall clock vs instant: parse the wall clock as if UTC (§16 — an
+    // assumption ONLY inside a ±48h window, never a persisted conversion).
+    const candidateMs = Date.parse(`${candidate.openTime}Z`);
+    const existingMs = Date.parse(existing.entryAt);
+    if (
+      !Number.isNaN(candidateMs) &&
+      !Number.isNaN(existingMs) &&
+      Math.abs(candidateMs - existingMs) <= TRADE_DUPLICATE_TIME_WINDOW_MS
+    ) {
+      evidence.push("ENTRY_TIME");
+    }
+  }
+  return evidence;
 }
