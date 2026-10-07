@@ -463,9 +463,16 @@ export const recognitionDict = {
     createAndAdd: "Create & add",
     added: "Added to collection",
     removed: "Removed from collection",
+    remove: "Remove from collection",
     items: "screenshots",
     empty: "No collections yet.",
     inCollections: "Collections",
+    created: "Collection created.",
+    deleted: "Collection deleted — its screenshots stay in the history.",
+    deleteTitle: "Delete collection",
+    deleteBody: "The collection is removed; the screenshots it held remain in the history.",
+    membersTitle: "Screenshots in this collection",
+    menuEmpty: "No collections yet — create one first.",
   },
 
   reprocess: {

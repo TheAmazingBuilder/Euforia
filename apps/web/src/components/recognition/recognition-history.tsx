@@ -14,6 +14,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AddToCollectionButton,
+  CollectionsProvider,
+} from "@/components/recognition/recognition-collections";
 import { RecognitionStatusBadge } from "@/components/recognition/recognition-status-badge";
 import { profileMetaKey, profileStampLabel } from "@/components/recognition/recognition-model";
 import {
@@ -93,6 +97,7 @@ export function RecognitionHistory({
   })();
 
   return (
+    <CollectionsProvider dict={dict} items={items} onOpen={onOpen}>
     <div className="flex flex-col gap-4" data-testid="recognition-history">
       <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label={dict.history.title}>
         {FILTERS.map((entry) => (
@@ -217,6 +222,7 @@ export function RecognitionHistory({
                           <RotateCcw className="size-3.5" aria-hidden="true" />
                         </Button>
                       ) : null}
+                      <AddToCollectionButton recognitionId={item.id} />
                       <Button
                         type="button"
                         variant="ghost"
@@ -293,6 +299,7 @@ export function RecognitionHistory({
                     <RotateCcw className="size-3.5" aria-hidden="true" />
                   </Button>
                 ) : null}
+                <AddToCollectionButton recognitionId={item.id} />
                 <Button
                   type="button"
                   variant="ghost"
@@ -353,6 +360,7 @@ export function RecognitionHistory({
         </DialogContent>
       </Dialog>
     </div>
+    </CollectionsProvider>
   );
 }
 

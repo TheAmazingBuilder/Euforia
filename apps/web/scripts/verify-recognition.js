@@ -243,8 +243,67 @@ async function makeScreenshotPng(page, width = 1280, height = 720, withText = tr
     await page.waitForSelector('[data-testid="recognition-success"]', { timeout: 10000 });
     await check("chart success copy", /reading/i.test(await page.locator('[data-testid="recognition-success"]').innerText()));
 
-    // ── 13. Responsive captures ────────────────────────────────────────
-    console.log("\n[13] Responsive captures");
+    // ── 13. Collections (V2 §28) ────────────────────────────────────
+    console.log("\n[13] Collections (V2 §28)");
+    await page.click('[data-testid="recognition-tab-history"]');
+    await page.waitForTimeout(1000);
+    await check("collections panel renders", await page.locator('[data-testid="recognition-collections"]').isVisible().catch(() => false));
+    await check("collections empty state", /No collections yet/i.test(await page.locator('[data-testid="recognition-collections"]').innerText()));
+
+    // Create from the panel header (no pre-targeted recognition).
+    await page.click('[data-testid="recognition-collection-new"]');
+    await page.waitForSelector('[data-testid="recognition-collection-name-input"]', { timeout: 5000 });
+    await page.fill('[data-testid="recognition-collection-name-input"]', "Review shots");
+    await page.click('[data-testid="recognition-collection-create"]');
+    await page.waitForSelector('[data-testid="recognition-collection-row"]', { timeout: 5000 });
+    await check("collection created from panel", (await page.locator('[data-testid="recognition-collection-row"]').count()) === 1);
+    await check("collection starts empty", /0 screenshots/i.test(await page.locator('[data-testid="recognition-collection-row"]').first().innerText()));
+
+    // Add the first history row via the per-row menu.
+    await page.locator('[data-testid^="recognition-collection-add-"]').first().click();
+    await page.waitForSelector('[data-testid="recognition-collection-menu"]', { timeout: 5000 });
+    await check("menu lists the collection", await page.locator('[data-testid="recognition-collection-option-Review shots"]').isVisible().catch(() => false));
+    await page.click('[data-testid="recognition-collection-option-Review shots"]');
+    await page.waitForTimeout(800);
+    await check("membership added", /1 screenshots/i.test(await page.locator('[data-testid="recognition-collection-row"]').first().innerText()));
+
+    // Expand → the member row resolves from the loaded history pages.
+    await page.click('[data-testid="recognition-collection-expand-Review shots"]');
+    await page.waitForSelector('[data-testid="recognition-collection-members-Review shots"] [data-testid="recognition-collection-member"]', { timeout: 5000 });
+    await check("member row rendered", (await page.locator('[data-testid="recognition-collection-members-Review shots"] [data-testid="recognition-collection-member"]').count()) === 1);
+    const memberText = await page.locator('[data-testid="recognition-collection-members-Review shots"] [data-testid="recognition-collection-member"]').first().innerText();
+    await check("member shows platform + confidence", /%/.test(memberText), memberText.replace(/\n/g, " · ").slice(0, 60));
+    await page.screenshot({ path: "scripts/shots/recognition-collections.png", fullPage: true });
+
+    // Remove the member → the collection is empty again (recognition kept).
+    await page.locator('[data-testid^="recognition-collection-remove-"]').first().click();
+    await page.waitForTimeout(800);
+    await check("member removed, recognition kept", /0 screenshots/i.test(await page.locator('[data-testid="recognition-collection-row"]').first().innerText()));
+
+    // "New collection…" from the row menu → create & add in one pass.
+    await page.locator('[data-testid^="recognition-collection-add-"]').first().click();
+    await page.waitForSelector('[data-testid="recognition-collection-menu"]', { timeout: 5000 });
+    await page.click('[data-testid="recognition-collection-menu-new"]');
+    await page.waitForSelector('[data-testid="recognition-collection-name-input"]', { timeout: 5000 });
+    await page.fill('[data-testid="recognition-collection-name-input"]', "Imports");
+    await page.click('[data-testid="recognition-collection-create"]');
+    await page.waitForTimeout(900);
+    await check("create & add makes a second collection", (await page.locator('[data-testid="recognition-collection-row"]').count()) === 2);
+    await page.click('[data-testid="recognition-collection-expand-Imports"]');
+    await page.waitForSelector('[data-testid="recognition-collection-members-Imports"] [data-testid="recognition-collection-member"]', { timeout: 5000 });
+    await check("create & add pre-filled the member", (await page.locator('[data-testid="recognition-collection-members-Imports"] [data-testid="recognition-collection-member"]').count()) === 1);
+
+    // Delete the empty collection — confirm dialog, recognitions untouched.
+    await page.click('[data-testid="recognition-collection-delete-Review shots"]');
+    await page.waitForSelector('[data-testid="recognition-collection-delete-confirm"]', { timeout: 5000 });
+    await page.click('[data-testid="recognition-collection-delete-confirm"]');
+    await page.waitForTimeout(900);
+    await check("collection deleted", (await page.locator('[data-testid="recognition-collection-row"]').count()) === 1);
+    await check("history rows untouched by collection ops", (await page.locator('[data-testid="recognition-history-row"]').count()) >= 5);
+    await page.screenshot({ path: "scripts/shots/recognition-collections-final.png", fullPage: true });
+
+    // ── 14. Responsive captures ──────────────────────────────────────────
+    console.log("\n[14] Responsive captures");
     // Fresh pages carry NO session — log in on each before capturing (§59).
     async function captureViewport(width, height, prefix) {
       const vp = await browser.newPage({ viewport: { width, height } });
@@ -267,8 +326,8 @@ async function makeScreenshotPng(page, width = 1280, height = 720, withText = tr
     await captureViewport(390, 844, "recognition-mobile");
     ok("tablet + mobile captures saved (overview + history)");
 
-    // ── 14. Page errors ────────────────────────────────────────────────────
-    console.log("\n[14] Console integrity");
+    // ── 15. Page errors ────────────────────────────────────────────────────
+    console.log("\n[15] Console integrity");
     await check("zero pageerrors", pageErrors.length === 0, pageErrors.slice(0, 2).join(" | "));
   } catch (error) {
     bad(`probe crashed: ${error.message}`);
