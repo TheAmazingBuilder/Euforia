@@ -15,8 +15,9 @@
  *   - bounded retries (§34): only TRANSIENT engine failures retry, non-
  *     transient failures fail fast with a stable category;
  *   - human-in-the-loop (§21): nothing outside CONFIRMATION ever writes
- *     `corrections`; OCR never touches a Trade (§22/§42 — Trading Core
- *     integration is deferred until that context exists server-side);
+ *     `corrections`; the ONLY path from a confirmed recognition to a Trade
+ *     is the Phase 21 bridge (§77), which runs AFTER the confirmation commit
+ *     and through Trading Core's canonical creation service;
  *   - every step is owner-scoped (§39) and audited through the shared
  *     SecurityEventService port (§48).
  */
@@ -66,6 +67,7 @@ import {
   type OcrRecognitionRow,
   type OcrResultPayload,
 } from "./ocr.repository";
+import { OcrTradeImportService } from "./ocr-trade-import.service";
 import { SecurityEventService } from "../security/security-event.service";
 
 /** Pipeline version recorded on every row (§33 — results stay interpretable). */
@@ -107,6 +109,7 @@ export class OcrService {
     @Inject(OCR_ENGINE) private readonly engine: OcrEngine,
     private readonly limiter: OcrRateLimiterService,
     private readonly securityEvents: SecurityEventService,
+    private readonly tradeImport: OcrTradeImportService,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
   ) {}
 
@@ -491,7 +494,30 @@ export class OcrService {
       context: `recognition confirmed with ${correctionCount} correction(s)`,
       outcome: "SUCCESS",
     });
-    return { recognition: toRecognitionDto(updated) };
+
+    // Phase 21 — the sanctioned confirmation → Trading Core bridge (§77).
+    // Runs AFTER the confirmation commit: the user's declaration is already
+    // authoritative, so an import problem can NEVER fail the confirmation
+    // (§126 failure isolation) — it becomes a stable warning on the
+    // recognition plus an audit fact. The trade itself is created through
+    // TradesService.createTrade (canonical application service); the id is
+    // linked here afterwards (one-way provenance, §77).
+    const { tradeId, warnings: importWarnings } = await this.tradeImport.importFromConfirmation({
+      userId: input.userId,
+      recognitionId: input.id,
+      mergedFields,
+    });
+
+    const finalWarnings = [...mergedResult.warnings, ...importWarnings].slice(0, 16);
+    const finalRow =
+      tradeId !== null || importWarnings.length > 0
+        ? ((await this.repository.linkTrade(input.id, {
+            tradeId,
+            result: { ...mergedResult, warnings: finalWarnings },
+          })) ?? updated)
+        : updated;
+
+    return { recognition: toRecognitionDto(finalRow) };
   }
 
   // ── Deletion (§31) ────────────────────────────────────────────────────────
@@ -597,6 +623,8 @@ export function toRecognitionDto(row: OcrRecognitionRow): OcrRecognition {
           }
         : null,
     corrections: row.corrections ?? null,
+    /** Canonical Trade from the Phase 21 bridge — null when unlinked. */
+    tradeId: row.tradeId,
     confirmedAt: row.confirmedAt ? row.confirmedAt.toISOString() : null,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),

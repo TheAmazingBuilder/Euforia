@@ -215,6 +215,14 @@ export const ocrRecognitionSchema = z.object({
   failure: ocrFailureSchema.nullable(),
   /** Authoritative user corrections — set at confirmation (§21). */
   corrections: ocrCorrectionRecordSchema.nullable(),
+  /**
+   * Canonical Trade created from the confirmed values through Trading Core
+   * (Phase 21 bridge — the ONLY sanctioned OCR→Trade path, §77). Null while
+   * the recognition is unconfirmed and when the confirmed values could not
+   * resolve into a complete trade (stable skip warning explains why).
+   * One-way provenance: deleting the recognition never deletes the Trade.
+   */
+  tradeId: uuidSchema.nullable(),
   confirmedAt: isoDateTimeSchema.nullable(),
   createdAt: isoDateTimeSchema,
   updatedAt: isoDateTimeSchema,

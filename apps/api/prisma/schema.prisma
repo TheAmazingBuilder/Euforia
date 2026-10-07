@@ -545,6 +545,14 @@ model OcrRecognition {
   corrections Json?
   confirmedAt DateTime?
 
+  /// Phase 21 — the canonical Trade created from the confirmed values through
+  /// Trading Core (the ONLY sanctioned OCR→Trade path, §77). Null while
+  /// unconfirmed and when the confirmed values could not resolve into a
+  /// complete trade. ON DELETE SET NULL: the journal trade is authoritative
+  /// and must survive a recognition delete (one-way provenance).
+  tradeId String?
+  trade   Trade?  @relation(fields: [tradeId], references: [id], onDelete: SetNull)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -552,6 +560,7 @@ model OcrRecognition {
   @@unique([userId, idempotencyKey])
   @@index([userId, createdAt(sort: Desc)])
   @@index([userId, status])
+  @@index([tradeId])
 }
 
 // ── Trading Core / Journal (Domaine 3 — Phase 4) ───────────────────────────
@@ -668,9 +677,13 @@ model Trade {
   /// hard-deleted.
   deletedAt DateTime?
 
-  exits       TradeExit[]
-  events      TradeEvent[]
-  screenshots TradeScreenshot[]
+  exits           TradeExit[]
+  events          TradeEvent[]
+  screenshots     TradeScreenshot[]
+  /// Phase 21 — recognitions whose CONFIRMED values produced this trade
+  /// through the OCR bridge (§77). One-way provenance: the trade never
+  /// depends on the recognition, and deleting the recognition keeps the trade.
+  ocrRecognitions OcrRecognition[]
 
   /// Import idempotence (§27): one broker ref per account. PostgreSQL allows
   /// several (account, NULL) rows — MANUAL trades stay unconstrained.

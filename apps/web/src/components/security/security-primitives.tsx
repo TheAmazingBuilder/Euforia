@@ -65,6 +65,9 @@ export const EVENT_TYPE_META: Record<SecurityEventType, { label: string }> = {
   OCR_PROCESSING_FAILED: { label: "Screenshot processing failed" },
   OCR_RESULT_CONFIRMED: { label: "Recognition confirmed" },
   OCR_RESULT_DELETED: { label: "Recognition deleted" },
+  // Phase 21 — the confirmation→journal bridge audit facts.
+  OCR_TRADE_IMPORTED: { label: "Trade imported from screenshot" },
+  OCR_TRADE_IMPORT_SKIPPED: { label: "Screenshot import skipped" },
 };
 
 // ── Re-authentication gate (§13) ─────────────────────────────────────────────

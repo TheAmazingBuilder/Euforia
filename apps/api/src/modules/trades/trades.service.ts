@@ -290,7 +290,9 @@ export class TradesService {
         strategyVersion: input.strategyId !== undefined ? 1 : null,
         status: closed ? "CLOSED" : "OPEN",
         direction: input.direction,
-        source: "MANUAL",
+        // Provenance (§82): MANUAL capture by default; IMPORT when the
+        // values were ingested programmatically (OCR confirmation bridge).
+        source: input.source ?? "MANUAL",
         entryPrice: input.entryPrice,
         entryAt: new Date(entryAt),
         quantity: size.quantity,

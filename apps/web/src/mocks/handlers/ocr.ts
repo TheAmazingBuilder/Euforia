@@ -289,6 +289,8 @@ function buildSeed(spec: SeedSpec, index: number): StoredRecognition {
       ? { category: "EXTRACTION_FAILED", message: "We couldn't recognize enough information from this screenshot." }
       : null,
     corrections: null,
+    // The mocked backend never creates journal trades — no linked trade id.
+    tradeId: null,
     confirmedAt: null,
     createdAt,
     updatedAt: createdAt,
@@ -377,6 +379,7 @@ export const ocrHandlers = [
           durationMs: 460,
           failure: { category: "EXTRACTION_FAILED", message: "We couldn't recognize enough information from this screenshot." },
           corrections: null,
+          tradeId: null,
           confirmedAt: null,
           createdAt: now,
           updatedAt: now,
@@ -398,6 +401,7 @@ export const ocrHandlers = [
         durationMs: null,
         failure: null,
         corrections: null,
+        tradeId: null,
         confirmedAt: null,
         createdAt: now,
         updatedAt: now,

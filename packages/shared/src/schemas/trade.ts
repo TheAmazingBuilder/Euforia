@@ -236,6 +236,13 @@ const captureBaseFields = {
   outOfPlaybook: z.boolean().optional(),
   /** Broker-side id → import idempotence. */
   externalRef: z.string().min(1).optional(),
+  /**
+   * Provenance of the captured values (§82). MANUAL (default) = hand-entered
+   * capture; IMPORT = programmatic ingestion (OCR confirmation bridge) — the
+   * server recomputes P&L either way, this label only records WHERE the
+   * declaration came from.
+   */
+  source: z.enum(["MANUAL", "IMPORT"]).optional(),
 };
 
 /**

@@ -64,6 +64,8 @@ export interface OcrRecognitionRow {
   processingFinishedAt: Date | null;
   corrections: Record<string, string | null> | null;
   confirmedAt: Date | null;
+  /// Phase 21 — canonical Trade created from the confirmed values (§77).
+  tradeId: string | null;
   createdAt: Date;
   updatedAt: Date;
   asset: OcrAssetRow;
@@ -89,6 +91,7 @@ function toRecognitionRow(row: Prisma.OcrRecognitionGetPayload<{ include: typeof
     processingFinishedAt: row.processingFinishedAt,
     corrections: (row.corrections as Record<string, string | null> | null) ?? null,
     confirmedAt: row.confirmedAt,
+    tradeId: row.tradeId,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
     asset: {
@@ -305,9 +308,34 @@ export class OcrRepository {
   }
 
   /**
+   * Phase 21 — link the canonical Trade produced by the confirmation bridge
+   * and append the import warnings to the result payload. Guarded on
+   * status=CONFIRMED (the link can only follow the confirmation, §76).
+   * Returns the fresh row, or null when a concurrent transition won.
+   */
+  async linkTrade(
+    id: string,
+    data: { tradeId: string | null; result: OcrResultPayload },
+  ): Promise<OcrRecognitionRow | null> {
+    return this.prisma.$transaction(async (tx) => {
+      const updated = await tx.ocrRecognition.updateMany({
+        where: { id, status: "CONFIRMED" },
+        data: {
+          ...(data.tradeId !== null ? { tradeId: data.tradeId } : {}),
+          result: data.result as unknown as Prisma.InputJsonValue,
+        },
+      });
+      if (updated.count === 0) return null;
+      const row = await tx.ocrRecognition.findUnique({ where: { id }, include: recognitionInclude });
+      return row ? toRecognitionRow(row) : null;
+    });
+  }
+
+  /**
    * Delete the recognition; when no sibling recognition still references the
    * asset, delete the asset row too. Returns the storage key whose BINARY
    * the service must remove after commit (never inside the transaction, §50).
+   * The linked Trade (tradeId) is NEVER touched — one-way provenance (§77).
    */
   async deleteForUser(id: string, userId: string): Promise<{ storageKey: string | null; deleted: boolean } | null> {
     return this.prisma.$transaction(async (tx) => {

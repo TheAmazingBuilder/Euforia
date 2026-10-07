@@ -11,10 +11,11 @@
  *     image/OCR processing (§4).
  *
  * What OCR is NOT (§59 — architecture review):
- *   - not a second Trade entity: Trading Core owns the canonical Trade;
- *     OCR never writes to any Trade table, and the Trade-creation flow
- *     after confirmation is DEFERRED until Trading Core exists server-side
- *     (§22/§42);
+ *   - not a second Trade entity: Trading Core owns the canonical Trade. The
+ *     ONLY sanctioned OCR→Trade path is the Phase 21 confirmation bridge
+ *     (OcrTradeImportService), which CALLS TradesService.createTrade — the
+ *     canonical application service — and never writes a Trade row itself
+ *     (§77); deleting a recognition never deletes the imported Trade.
  *   - not a second storage system (storage lives behind one port; the
  *     local-disk adapter ships in this build, MinIO/S3 can replace it);
  *   - not a second queue (processing is request-scoped, the Accounts-sync
@@ -23,7 +24,9 @@
  *   - not a monitoring system (Phase 17 owns observability).
  *
  * Dependency graph (acyclic):
- *   OcrModule → SecurityEventModule (shared event port)
+ *   OcrModule → TradesModule (canonical Trade creation — Phase 21 bridge)
+ *             → AccountsModule (persisted default account resolution)
+ *             → SecurityEventModule (shared event port)
  *             → PrismaModule (global), ConfigModule (global)
  *   Shared infrastructure: JwtAuthGuard, ThrottlerGuard, ZodValidationPipe,
  *   shared contracts barrel. The engine is resolved by factory:
@@ -34,6 +37,8 @@
  */
 import { Module, type Provider } from "@nestjs/common";
 import { APP_CONFIG, type AppConfig } from "../../config/app-config";
+import { AccountsModule } from "../accounts/accounts.module";
+import { TradesModule } from "../trades/trades.module";
 import { SecurityEventModule } from "../security/security-event.module";
 import { ImageValidationService } from "./image/image-validation.service";
 import { LocalDiskScreenshotStorage } from "./storage/local-disk-storage.adapter";
@@ -47,6 +52,7 @@ import { OCR_ENGINE } from "./engine/ocr-engine.port";
 import { OcrRateLimiterService } from "./ocr-rate-limiter.service";
 import { OcrRepository } from "./ocr.repository";
 import { OcrService } from "./ocr.service";
+import { OcrTradeImportService } from "./ocr-trade-import.service";
 import { OcrController } from "./ocr.controller";
 
 /** One engine wins: the real sidecar when configured, else the mock, else "unavailable". */
@@ -65,10 +71,11 @@ export const ocrEngineProvider: Provider = {
 };
 
 @Module({
-  imports: [SecurityEventModule],
+  imports: [AccountsModule, TradesModule, SecurityEventModule],
   controllers: [OcrController],
   providers: [
     OcrService,
+    OcrTradeImportService,
     OcrRepository,
     OcrRateLimiterService,
     ImageValidationService,
