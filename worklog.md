@@ -436,3 +436,29 @@ Stage Summary:
 - Commits : `d3565ae` (frontend V1.1 account/chart), `78951f5` (console redesign + probe fix).
 - Artifacts : scripts/capture-recognition.js (baseline avant/après), scripts/shots/redesign-{before,after}-*.png (12 captures).
 - Suite : les 13 features des phases précédentes sont déjà commitées (git log : preprocessing/dual-pass/templates/multi-trade/pHash v9da499f, contract 5de638b, service f34da20, ops 928182f, frontend 098be19, sidecar fbb70b0, decision 54cd294, multi-shot c7cc521, ops slice 81746de, frontend v2 aa18738). Reste à vérifier la couverture PDF multi-pages et clôturer l'inventaire 12 points.
+
+---
+Task ID: tools-section-v1
+Agent: Super Z (main)
+Date: 2026-10-07 16:10 UTC
+
+Task: « D'abord fait un audit juste du module OCR, verifie si tout fonctionne bien, si le backend de ce module est complet et si son frontend consomme bien le backend (NestJs et FastAPI). Ensuite tu vas faire un commit pour save cela, et ensuite On va creer et implementer une nouvelle section qui doit s'appeller TOOLS dans la quelle il y aura deux module : Lot size et Compounding » (la section s'appelle TOOLS, pas FEATURES).
+
+Work Log:
+- AUDIT OCR COMPLET (agent Explore very thorough + runtime) : backend NestJS 22 routes validées (Zod partagé, owner-scoped, SSE, retention, analytics, sets/collections), pont moteur port/adapter avec validation stricte de la réponse sidecar ; FastAPI 3 profils implémentés (trade/account/chart), preprocessing complet, PDF multi-pages, dHash ; frontend 22/22 hooks ↔ endpoints (parité parfaite), AccountSnapshotView/ChartReadingView montées, « coming soon » absent du module. Rapport : docs/backend/OCR-AUDIT-REPORT.md, commit `9b28050`.
+- RUNTIME : sidecar pytest 79/79 · API vitest FULL 572/572 · web tsc 0 / eslint 0 erreur (4 warnings `_locale` préexistants).
+- DÉFAUT PRÉEXISTANT CORRIGÉ au passage : test/unit/ocr-trade-import.spec.ts — Record<OcrFieldKey,…> non mis à jour après l'union V1.1 (24 clés account/chart) → Partial Record (commit `0c05d80`).
+- LAYER CALCUL PARTAGÉ : packages/shared/src/utils/compounding.ts (calculateCompounding — A = P×(1+r)ⁿ par période, boucle full-precision, émission toDecimalString 8dp, garde overflow 1e15, taux négatifs [−100, +10 000] pour what-ifs, cap périodes réutilisé du contrat calculators — pas de double export barrel). 8 tests unitaires (apps/api/test/unit/shared-compounding.spec.ts, import relatif source — l'API ne dépend pas du workspace package).
+- NAVIGATION : section TOOLS entre Academy et System (hrefs /tools/lot-size, /tools/compounding, icônes Scale/TrendingUp), /tools → redirect lot-size ; libellés nav dérivés automatiquement (nav.items/nav.sections par href/titre). Dict i18n : nouveau namespace `tools` (dictionaries/en/tools.ts) — libellés, validations (codes stables), disclaimers, copy.
+- MODÈLE : components/calculators/calculator-model.ts — schemas Zod champs texte → codes d'erreur stables (dict rend la copie), validateLotSizeForm (règles directionnelles stop/entry, risk ≤ 100 %), calculateLotSize (sizing broker-step §16 : raw → floor(step) → realized ≤ budget, statut explicite BELOW_STEP — aucun clamp silencieux), validateCompoundingForm (bornes + mapping overflow).
+- LOT SIZE : selects instrument (6 presets specs explicites éditables, miroir du catalogue mock) + devise (9 devises), segmented Long·Buy/Short·Sell, presets risque 0.25–2 %, advanced params (pip/contract/volume step + avertissement broker), R:R via computeRR partagé (négatif signalé), hero résultat + stamp WITHIN LIMITS/BELOW STEP, stat band 4 KPI, breakdown ledger avec rule-double + ligne équivalence micro/mini/standard, Copy result. Bouton Calculate (flux DoD) puis live.
+- COMPOUNDING : calcul LIVE à chaque frappe (§19), stat band 2×2 héros (Initial/Final/Total Profit/Total Gain, +signe, tokens profit/loss + icônes), graphique EChart sur chart-paper (tooltip mono, axe compact devise, rebuild thème), table results sticky-header 5 colonnes (Period/Starting/Ending/Total Profit/Total Gain — Total Gain cumulé vs balance ORIGINALE), cartes mobiles par période (§31), presets balance/gain, How it works 3 lignes, Copy summary, disclaimer « projection mathématique — pas une promesse de performance ».
+- DESIGN : headers console (kicker + bloc méta réglé), ledger-label/rule-double/stat-strip/chart-paper — discipline Le Registre respectée, zéro hex hors tokens, dark/light OK.
+- BUG SONDE → FIX : stat band compounding squeezed (section sans col-span + 18/12 colonnes) → lg:col-span-7 + 4 stat-hero 2×2 (+ !border-l-0 sur la cellule ouvrant la rangée 2). Commit `903362c`.
+- VÉRIFICATION : sonde apps/web/scripts/verify-tools.js **38/38 passed, 0 pageerrors** (login, section TOOLS sidebar, redirect /tools, vecteur spec 10 000/1 %/XAUUSD 2650→2640 → 0.10 lots $100 R:R 1:2.35, erreurs same-price/short-side/risk-range, advanced disclosure, vecteur compounding 1000/20×5 % → $2,653.30 +165.33 %, live 10 % → $6,727.50, taux négatif, erreur périodes, mobile 390 px (20 cartes), light theme, nav sidebar) · tsc 0 / eslint 0 erreur · API 580/580 · build OK (3 routes /tools/*).
+
+Stage Summary:
+- Section TOOLS livrée (2 calculateurs frontend-only V1, zéro backend/Prisma/FastAPI/exécution — math déterministe pure côté client via couches partagées existantes).
+- Commits : `9b28050` (audit OCR), `0c05d80` (layer calcul + fix spec préexistant), `808008c` (implémentation TOOLS complète), `903362c` (fix stat band + sonde 38/38).
+- Artifacts : docs/backend/OCR-AUDIT-REPORT.md · scripts/verify-tools.js · scripts/shots/tools-{lotsize,compounding}-{desktop,mobile,light}.png (6 captures).
+- Restes connus (documentés, non bloquants) : UI collections OCR sans surface (hooks+mocks prêts), code mort listé §5 du rapport d'audit.
