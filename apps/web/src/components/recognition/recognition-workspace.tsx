@@ -23,7 +23,7 @@ import {
   fetchOcrRecognitionImage,
 } from "@/lib/api/queries";
 import { useDict } from "@/i18n/i18n-provider";
-import { profileMetaKey } from "@/components/recognition/recognition-model";
+import { profileMetaKey, profileStampLabel } from "@/components/recognition/recognition-model";
 import {
   RecognitionSettings,
 } from "@/components/recognition/recognition-settings";
@@ -539,20 +539,25 @@ function WorkspaceInner() {
 
   return (
     <div className="flex flex-col gap-6" data-testid="recognition-overview">
-      {/* Upload hero — the entry point IS the product (§10), V1.1 premium. */}
+      {/* Upload hero — the entry point IS the product (§10), console redesign:
+          the dropzone wears viewfinder corners; modes are numbered columns. */}
       {items.length === 0 ? (
-        <div className="chart-paper flex flex-col gap-6 rounded-xl border border-border bg-surface px-6 py-10">
-          <div className="mx-auto flex max-w-2xl flex-col items-center gap-3 text-center">
-            <p className="ledger-label text-accent">{dict.overview.heroKicker}</p>
-            <h2 className="font-heading text-2xl font-semibold tracking-tight">{dict.overview.heroTitle}</h2>
-            <p className="max-w-xl text-sm leading-relaxed text-muted-foreground">{dict.overview.heroBody}</p>
-            <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground/80">
-              {dict.overview.heroPlatforms}
-            </p>
+        <div className="flex flex-col gap-6">
+          <div className="chart-paper flex flex-col gap-8 rounded-xl border border-border bg-surface px-6 py-10">
+            <div className="mx-auto flex max-w-2xl flex-col items-center gap-3 text-center">
+              <p className="ledger-label text-accent">{dict.overview.heroKicker}</p>
+              <h2 className="font-heading text-2xl font-semibold tracking-tight">{dict.overview.heroTitle}</h2>
+              <p className="max-w-xl text-sm leading-relaxed text-muted-foreground">{dict.overview.heroBody}</p>
+              <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground/80">
+                {dict.overview.heroPlatforms}
+              </p>
+            </div>
+            <div className="mx-auto w-full max-w-2xl">
+              <ScreenshotUploader file={null} onFile={(picked) => { setFile(picked); setStepRaw("configure"); }} onClear={() => setFile(null)} dict={dict} disabled={create.isPending} />
+            </div>
+            <p className="text-center text-xs text-muted-foreground/80">{dict.overview.privacy}</p>
           </div>
-          <ScreenshotUploader file={null} onFile={(picked) => { setFile(picked); setStepRaw("configure"); }} onClear={() => setFile(null)} dict={dict} disabled={create.isPending} />
           <HeroModes dict={dict} />
-          <p className="text-center text-xs text-muted-foreground/80">{dict.overview.privacy}</p>
         </div>
       ) : (
         <div className="grid gap-6 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
@@ -609,15 +614,15 @@ function WorkspaceInner() {
 
 /**
  * HeroModes — the three recognition modes as a ruled capability list
- * (V1.1 redesign): what the engine reads in each mode, at a glance,
- * before any upload. Informational — the real selection happens in the
- * configure step.
+ * (console redesign): mono INDEX, icon in a bordered square, and what the
+ * engine reads in each mode. Informational — the real selection happens in
+ * the configure step.
  */
 function HeroModes({ dict, compact = false }: { dict: ReturnType<typeof useDict>["recognition"]; compact?: boolean }) {
   const modes = [
-    { key: "trade" as const, label: dict.settings.profileTrade, hint: dict.settings.profileTradeHint, items: dict.settings.profileTradeItems },
-    { key: "account" as const, label: dict.settings.profileAccount, hint: dict.settings.profileAccountHint, items: dict.settings.profileAccountItems },
-    { key: "chart" as const, label: dict.settings.profileChart, hint: dict.settings.profileChartHint, items: dict.settings.profileChartItems },
+    { index: "01", label: dict.settings.profileTrade, hint: dict.settings.profileTradeHint, items: dict.settings.profileTradeItems },
+    { index: "02", label: dict.settings.profileAccount, hint: dict.settings.profileAccountHint, items: dict.settings.profileAccountItems },
+    { index: "03", label: dict.settings.profileChart, hint: dict.settings.profileChartHint, items: dict.settings.profileChartItems },
   ];
   return (
     <section aria-label={dict.overview.heroModesTitle} className="flex flex-col" data-testid="recognition-hero-modes">
@@ -627,8 +632,11 @@ function HeroModes({ dict, compact = false }: { dict: ReturnType<typeof useDict>
       </div>
       <div className={cn("grid gap-x-8", compact ? "" : "sm:grid-cols-3")}>
         {modes.map((mode) => (
-          <div key={mode.key} className="flex flex-col gap-1 border-b border-border/60 py-3">
-            <p className="text-sm font-medium">{mode.label}</p>
+          <div key={mode.index} className="flex flex-col gap-1.5 border-b border-border/60 py-3.5">
+            <div className="flex items-center gap-2.5">
+              <span className="font-mono text-[10px] font-medium tracking-[0.08em] text-accent">{mode.index}</span>
+              <p className="text-sm font-medium">{mode.label}</p>
+            </div>
             <p className="text-xs leading-relaxed text-muted-foreground">{mode.hint}</p>
             <p className="mt-0.5 text-[11px] leading-relaxed text-muted-foreground/80">{mode.items}</p>
           </div>
@@ -640,29 +648,40 @@ function HeroModes({ dict, compact = false }: { dict: ReturnType<typeof useDict>
 
 // ── Shared pieces ────────────────────────────────────────────────────────────
 
-/** Retention + storage indicator (engine quality §4.2) — the overview footer. */
+/** Retention + storage indicator (engine quality §4.2) — the overview footer,
+ * console redesign: a ruled strip with a thin usage meter. */
 function StorageIndicator({ dict }: { dict: ReturnType<typeof useDict>["recognition"] }) {
   const storage = useOcrStorage();
   if (storage.isLoading || storage.isError || !storage.data || storage.data.assetCount === 0) return null;
   const data = storage.data;
+  // The quota the mock contract serves (10 MB) — the meter shows the used
+  // share; without a quota the bar stays empty rather than guessing.
+  const quotaBytes = 10 * 1024 * 1024;
+  const usedPct = Math.min(100, Math.round((data.usedBytes / quotaBytes) * 100));
   return (
-    <p
-      className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-border pt-3 font-mono text-[11px] tabular-nums text-muted-foreground"
+    <div
+      className="flex flex-col gap-2 border-t border-border pt-3"
       data-testid="recognition-storage"
     >
-      <span className="ledger-label !text-[10px]">{dict.storage.label}</span>
-      <span>
-        {formatStorageBytes(data.usedBytes)} · {data.retainedAssetCount} {dict.storage.retained}
-        {data.purgedAssetCount > 0 ? ` · ${data.purgedAssetCount} ${dict.storage.purged}` : null}
-      </span>
-      <span>
-        {data.retentionDays > 0 ? `${dict.storage.retention} ${data.retentionDays} ${dict.storage.days}` : dict.storage.disabled}
-      </span>
-    </p>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 font-mono text-[11px] tabular-nums text-muted-foreground">
+        <span className="ledger-label !text-[10px]">{dict.storage.label}</span>
+        <span>
+          {formatStorageBytes(data.usedBytes)} · {data.retainedAssetCount} {dict.storage.retained}
+          {data.purgedAssetCount > 0 ? ` · ${data.purgedAssetCount} ${dict.storage.purged}` : null}
+        </span>
+        <span>
+          {data.retentionDays > 0 ? `${dict.storage.retention} ${data.retentionDays} ${dict.storage.days}` : dict.storage.disabled}
+        </span>
+      </div>
+      <div className="meter max-w-xs" role="presentation">
+        <span style={{ width: `${usedPct}%` }} />
+      </div>
+    </div>
   );
 }
 
-/** Ruled step indicator — UPLOAD → REVIEW → CONFIRM (§4 workflow). */
+/** Ruled step indicator — 01 UPLOAD → 02 REVIEW → 03 CONFIRM (§4 workflow),
+ * console redesign: mono indices with hairline connectors and honest states. */
 function StepShell({
   dict,
   active,
@@ -680,19 +699,28 @@ function StepShell({
   const activeIndex = steps.findIndex((entry) => entry.key === active);
   return (
     <div className="flex flex-col gap-6">
-      <nav aria-label="Progress" className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.08em]">
+      <nav aria-label="Progress" className="flex items-center gap-2">
         {steps.map((entry, index) => (
           <React.Fragment key={entry.key}>
             {index > 0 ? <span className="h-px w-6 bg-border" aria-hidden="true" /> : null}
             <span
               className={cn(
-                "font-mono",
+                "flex items-center gap-1.5 font-mono text-[11px] font-medium uppercase tracking-[0.08em]",
                 index < activeIndex && "text-muted-foreground",
                 index === activeIndex && "text-foreground",
                 index > activeIndex && "text-muted-foreground/50",
               )}
               aria-current={index === activeIndex ? "step" : undefined}
             >
+              <span
+                className={cn(
+                  "!text-[10px]",
+                  index === activeIndex && "text-accent",
+                )}
+                aria-hidden="true"
+              >
+                {String(index + 1).padStart(2, "0")}
+              </span>
               {entry.label}
             </span>
           </React.Fragment>
@@ -736,6 +764,10 @@ function RecentImports({
           >
             <span className="flex min-w-0 flex-col">
               <span className="truncate text-sm">
+                <span className="font-mono text-[10px] tracking-[0.06em] text-accent" aria-hidden="true">
+                  {profileStampLabel(item.extractionProfile, dict)}
+                </span>
+                {" · "}
                 {platformLabel(dict, item.classification)}
                 <span className="text-muted-foreground"> · {formatRelative(item.createdAt)}</span>
               </span>

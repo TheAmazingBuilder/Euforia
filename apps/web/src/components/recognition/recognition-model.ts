@@ -116,6 +116,14 @@ export function profileMetaKey(profile: OcrExtractionProfile): ProfileMetaKey {
   }
 }
 
+/** Mode stamp label per extraction profile (shared: history + overview). */
+export function profileStampLabel(profile: OcrExtractionProfile, dict: RecognitionDict): string {
+  const metaKey = profileMetaKey(profile);
+  if (metaKey === "account") return dict.history.modeAccount;
+  if (metaKey === "chart") return dict.history.modeChart;
+  return dict.history.modeTrade;
+}
+
 /**
  * The chart quote header lives OUTSIDE the field list: symbol, price,
  * change and time become the reading's headline. The rest renders as

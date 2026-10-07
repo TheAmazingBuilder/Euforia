@@ -182,7 +182,7 @@ export function AccountSnapshotView({
 
   return (
     <div className="flex flex-col gap-5" data-testid="recognition-account-view">
-      <p className="ledger-label border-b border-border pb-2">{dict.result.accountTitle}</p>
+      <p className="ledger-label rule-double pb-2">{dict.result.accountTitle}</p>
 
       {/* KPI strip — equity + balance heroes, margin metrics as KPI cells. */}
       <section aria-label={dict.result.accountSnapshot} className="stat-strip">
@@ -314,7 +314,7 @@ export function ChartReadingView({
 
   return (
     <div className="flex flex-col gap-5" data-testid="recognition-chart-view">
-      <p className="ledger-label border-b border-border pb-2">{dict.result.chartTitle}</p>
+      <p className="ledger-label rule-double pb-2">{dict.result.chartTitle}</p>
 
       {/* Quote headline — symbol, timeframe stamp, price, signed change. */}
       <div className="chart-paper flex flex-col gap-3 rounded-xl border border-border bg-surface px-5 py-4" data-testid="recognition-chart-quote">

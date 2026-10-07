@@ -57,6 +57,8 @@ export function RecognitionProgress({
   const currentStage = stageFromElapsed(elapsedMs);
   const currentKey = currentStage === "done" ? "done" : currentStage;
   const currentIndex = STAGE_KEYS.indexOf(currentKey);
+  const doneCount = status === "REVIEW_REQUIRED" || status === "CONFIRMED" ? STAGE_KEYS.length : Math.max(0, currentIndex);
+  const progressPct = Math.round((doneCount / STAGE_KEYS.length) * 100);
 
   return (
     <div className="flex flex-col gap-6" data-testid="recognition-progress" data-stage={currentStage}>
@@ -64,6 +66,11 @@ export function RecognitionProgress({
         <h2 className="font-heading text-lg font-semibold">{dict.progress.title}</h2>
         <p className="text-sm text-muted-foreground">{dict.progress.subtitle}</p>
       </header>
+
+      {/* Thin pipeline meter — stage completion, honest (no fake tweening). */}
+      <div className="meter" role="presentation" data-testid="recognition-progress-meter">
+        <span style={{ width: `${progressPct}%` }} />
+      </div>
 
       <ol
         className="flex flex-col border-t border-border"
@@ -84,7 +91,10 @@ export function RecognitionProgress({
               data-testid={`recognition-stage-${key}`}
               data-state={done ? "done" : active ? "active" : "pending"}
             >
-              <span className="flex size-6 shrink-0 items-center justify-center">
+              <span className="w-5 shrink-0 font-mono text-[10px] tabular-nums text-muted-foreground/70" aria-hidden="true">
+                {String(index + 1).padStart(2, "0")}
+              </span>
+              <span className="flex size-5 shrink-0 items-center justify-center">
                 {done ? (
                   <Check className="size-4 text-profit" strokeWidth={2} aria-hidden="true" />
                 ) : active ? (

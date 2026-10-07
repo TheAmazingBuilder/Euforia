@@ -74,6 +74,14 @@ export const recognitionDict = {
     heroModesTitle: "Three recognition modes",
     heroModesHint: "Pick a mode after uploading — the engine adapts what it reads.",
     privacy: "Your screenshot is processed securely and is only visible to you.",
+    meta: {
+      modesLabel: "Recognition modes",
+      modesValue: "Trade · Account · Chart",
+      stagesLabel: "Pipeline stages",
+      stagesValue: "Upload → confirm",
+      guardLabel: "Duplicate guard",
+      guardValue: "Perceptual hash",
+    },
     stats: {
       analyzed: "Screenshots analyzed",
       confirmed: "Confirmed imports",
@@ -91,6 +99,8 @@ export const recognitionDict = {
     dragging: "Drop to import",
     rejected: "This file can't be imported",
     browse: "Choose a file",
+    formatsLabel: "Accepted formats",
+    maxSizeLabel: "6 MB max",
     pdfLabel: "PDF statement",
     replace: "Replace",
     remove: "Remove",

@@ -15,7 +15,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { RecognitionStatusBadge } from "@/components/recognition/recognition-status-badge";
-import { profileMetaKey } from "@/components/recognition/recognition-model";
+import { profileMetaKey, profileStampLabel } from "@/components/recognition/recognition-model";
 import {
   formatRelative,
   platformLabel,
@@ -439,10 +439,7 @@ function modeStampLabel(
   profile: OcrRecognition["extractionProfile"],
   dict: RecognitionDict,
 ): string {
-  const metaKey = profileMetaKey(profile);
-  if (metaKey === "account") return dict.history.modeAccount;
-  if (metaKey === "chart") return dict.history.modeChart;
-  return dict.history.modeTrade;
+  return profileStampLabel(profile, dict);
 }
 
 function ModeStamp({ profile, dict }: { profile: OcrRecognition["extractionProfile"]; dict: RecognitionDict }) {

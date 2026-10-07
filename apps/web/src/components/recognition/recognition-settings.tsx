@@ -26,14 +26,15 @@ import type { RecognitionDict } from "@/i18n/dictionaries/en/recognition";
 
 const PROFILE_CARDS: Array<{
   value: OcrExtractionProfile;
+  index: string;
   icon: typeof CandlestickChart;
   titleKey: "profileTrade" | "profileAccount" | "profileChart";
   hintKey: "profileTradeHint" | "profileAccountHint" | "profileChartHint";
   itemsKey: "profileTradeItems" | "profileAccountItems" | "profileChartItems";
 }> = [
-  { value: "TRADE_SUMMARY", icon: CandlestickChart, titleKey: "profileTrade", hintKey: "profileTradeHint", itemsKey: "profileTradeItems" },
-  { value: "ACCOUNT_POSITION", icon: Wallet, titleKey: "profileAccount", hintKey: "profileAccountHint", itemsKey: "profileAccountItems" },
-  { value: "CHART_ANALYSIS", icon: LineChart, titleKey: "profileChart", hintKey: "profileChartHint", itemsKey: "profileChartItems" },
+  { value: "TRADE_SUMMARY", index: "01", icon: CandlestickChart, titleKey: "profileTrade", hintKey: "profileTradeHint", itemsKey: "profileTradeItems" },
+  { value: "ACCOUNT_POSITION", index: "02", icon: Wallet, titleKey: "profileAccount", hintKey: "profileAccountHint", itemsKey: "profileAccountItems" },
+  { value: "CHART_ANALYSIS", index: "03", icon: LineChart, titleKey: "profileChart", hintKey: "profileChartHint", itemsKey: "profileChartItems" },
 ];
 
 export function RecognitionSettings({
@@ -101,11 +102,29 @@ export function RecognitionSettings({
                   onChange={() => onProfile(card.value)}
                 />
                 <span className="flex items-center justify-between gap-2">
-                  <Icon
-                    className={cn("size-4.5", active ? "text-accent" : "text-muted-foreground")}
-                    strokeWidth={1.5}
-                    aria-hidden="true"
-                  />
+                  <span className="flex items-center gap-2">
+                    <span
+                      className={cn(
+                        "font-mono text-[10px] font-medium tracking-[0.08em]",
+                        active ? "text-accent" : "text-muted-foreground/60",
+                      )}
+                      aria-hidden="true"
+                    >
+                      {card.index}
+                    </span>
+                    <span
+                      className={cn(
+                        "flex size-7 items-center justify-center rounded-md border",
+                        active ? "border-accent/40 bg-accent/[0.08]" : "border-border bg-surface-raised",
+                      )}
+                      aria-hidden="true"
+                    >
+                      <Icon
+                        className={cn("size-4", active ? "text-accent" : "text-muted-foreground")}
+                        strokeWidth={1.5}
+                      />
+                    </span>
+                  </span>
                   {active ? (
                     <CheckCircle2 className="size-4 text-accent" strokeWidth={1.5} aria-hidden="true" />
                   ) : null}

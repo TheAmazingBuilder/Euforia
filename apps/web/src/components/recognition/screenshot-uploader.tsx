@@ -226,7 +226,7 @@ export function ScreenshotUploader({
         aria-disabled={disabled}
         aria-label={dict.uploader.dropTitle}
         className={cn(
-          "flex min-h-56 cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border bg-surface px-6 py-10 text-center transition-colors",
+          "scan-frame flex min-h-64 cursor-pointer flex-col items-center justify-center gap-4 rounded-xl border border-dashed border-border bg-surface px-6 py-12 text-center transition-colors",
           "hover:bg-surface-raised focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
           dragging && "border-accent bg-accent/[0.04]",
           disabled && "pointer-events-none opacity-60",
@@ -234,13 +234,22 @@ export function ScreenshotUploader({
         data-testid="recognition-dropzone"
         data-state={dragging ? "dragging" : "idle"}
       >
+        {/* Viewfinder corner ticks (§ console redesign). */}
+        <span className="scan-corner scan-corner-tl" aria-hidden="true" />
+        <span className="scan-corner scan-corner-tr" aria-hidden="true" />
+        <span className="scan-corner scan-corner-bl" aria-hidden="true" />
+        <span className="scan-corner scan-corner-br" aria-hidden="true" />
         {dragging ? (
-          <ImageUp className="size-7 text-accent" strokeWidth={1.5} aria-hidden="true" />
+          <span className="flex size-12 items-center justify-center rounded-lg border border-accent/50 bg-accent/[0.06]">
+            <ImageUp className="size-6 text-accent" strokeWidth={1.5} aria-hidden="true" />
+          </span>
         ) : (
-          <FileScan className="size-7 text-muted-foreground" strokeWidth={1.5} aria-hidden="true" />
+          <span className="flex size-12 items-center justify-center rounded-lg border border-border bg-surface-raised">
+            <FileScan className="size-6 text-muted-foreground" strokeWidth={1.5} aria-hidden="true" />
+          </span>
         )}
         <div className="flex flex-col gap-1">
-          <p className="font-heading text-base font-semibold">
+          <p className="font-heading text-lg font-semibold">
             {dragging ? dict.uploader.dragging : dict.uploader.dropTitle}
           </p>
           <p className="text-sm text-muted-foreground">{dict.uploader.dropSubtitle}</p>
@@ -248,6 +257,23 @@ export function ScreenshotUploader({
         <Button type="button" variant="outline" size="sm" tabIndex={-1} aria-hidden="true">
           {dict.uploader.browse}
         </Button>
+        {/* Accepted formats — mono chips, the console's title block. */}
+        <div
+          className="mt-1 flex flex-wrap items-center justify-center gap-1.5"
+          data-testid="recognition-format-chips"
+        >
+          {["PNG", "JPG", "WEBP", "PDF"].map((format) => (
+            <span
+              key={format}
+              className="rounded-sm border border-border bg-surface-raised/60 px-1.5 py-0.5 font-mono text-[10px] font-medium tracking-[0.06em] text-muted-foreground"
+            >
+              {format}
+            </span>
+          ))}
+          <span className="ml-1 font-mono text-[10px] uppercase tracking-[0.06em] text-muted-foreground/70">
+            {dict.uploader.maxSizeLabel}
+          </span>
+        </div>
       </div>
       {rejection ? (
         <p className="text-sm text-loss" role="alert" data-testid="recognition-upload-error">

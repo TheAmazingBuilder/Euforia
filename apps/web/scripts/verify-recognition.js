@@ -25,15 +25,18 @@ async function check(label, condition, extra = "") {
   condition ? ok(label, extra) : bad(label, extra);
 }
 
-/** Draw a fake MT5 screenshot in the page and return PNG bytes. */
-async function makeScreenshotPng(page, width = 1280, height = 720, withText = true) {
+/** Draw a fake MT5 screenshot in the page and return PNG bytes.
+ *  `tint` shifts the background so different steps never produce
+ *  pixel-identical shots (the pHash duplicate guard would — correctly —
+ *  reject the confirmation otherwise). */
+async function makeScreenshotPng(page, width = 1280, height = 720, withText = true, tint = 0) {
   const dataUrl = await page.evaluate(
-    ([w, h, text]) => {
+    ([w, h, text, t]) => {
       const canvas = document.createElement("canvas");
       canvas.width = w;
       canvas.height = h;
       const ctx = canvas.getContext("2d");
-      ctx.fillStyle = "#0E1116";
+      ctx.fillStyle = `rgb(${14 + t}, ${17 + t}, ${22 + t * 2})`;
       ctx.fillRect(0, 0, w, h);
       ctx.fillStyle = "#141920";
       ctx.fillRect(0, 0, w, 28);
@@ -52,7 +55,7 @@ async function makeScreenshotPng(page, width = 1280, height = 720, withText = tr
       }
       return canvas.toDataURL("image/png");
     },
-    [width, height, withText],
+    [width, height, withText, tint],
   );
   return Buffer.from(dataUrl.replace(/^data:image\/png;base64,/, ""), "base64");
 }
@@ -221,7 +224,7 @@ async function makeScreenshotPng(page, width = 1280, height = 720, withText = tr
     console.log("\n[12] Chart analysis profile");
     await page.click('[data-testid="recognition-import-another"]');
     await page.waitForTimeout(600);
-    const chartShot = await makeScreenshotPng(page, 1280, 720, false);
+    const chartShot = await makeScreenshotPng(page, 1280, 720, false, 24);
     await page.setInputFiles('input[type="file"]', { name: "chart-xauusd.png", mimeType: "image/png", buffer: chartShot });
     await page.waitForTimeout(600);
     await page.click('[data-testid="recognition-profile-chart_analysis"]');

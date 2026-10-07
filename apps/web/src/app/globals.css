@@ -331,6 +331,42 @@
   box-shadow: 0 3px 0 -2px var(--border);
 }
 
+/* ---- Scan frame — the viewfinder -------------------------------------------
+   Upload/scan surfaces wear corner ticks instead of heavy chrome: a dashed
+   hairline body with four L-shaped accent corners, like a plotter's register
+   marks. Purely decorative structure — the inner content stays plain. */
+.scan-frame {
+  position: relative;
+}
+.scan-corner {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-color: var(--accent);
+  opacity: 0.85;
+  pointer-events: none;
+  transition: opacity 160ms ease;
+}
+.scan-corner-tl { top: -1px; left: -1px; border-top: 2px solid; border-left: 2px solid; border-top-left-radius: 2px; }
+.scan-corner-tr { top: -1px; right: -1px; border-top: 2px solid; border-right: 2px solid; border-top-right-radius: 2px; }
+.scan-corner-bl { bottom: -1px; left: -1px; border-bottom: 2px solid; border-left: 2px solid; border-bottom-left-radius: 2px; }
+.scan-corner-br { bottom: -1px; right: -1px; border-bottom: 2px solid; border-right: 2px solid; border-bottom-right-radius: 2px; }
+.scan-frame[data-dragging="true"] .scan-corner { opacity: 1; }
+
+/* Thin meter bar for storage/usage strips — token-driven track + fill. */
+.meter {
+  height: 3px;
+  background-color: var(--surface-raised);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.meter > span {
+  display: block;
+  height: 100%;
+  background-color: color-mix(in srgb, var(--accent) 75%, transparent);
+  border-radius: 999px;
+}
+
 /* ---- Reveal animations ("paper laid on a desk") ----
    One authored entrance per page: fade + 8px rise, exponential
    ease-out. Stagger children 40ms; ≤ 500 ms, skippable. */
