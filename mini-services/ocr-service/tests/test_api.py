@@ -105,7 +105,8 @@ def test_recognize_mt5_screenshot():
     assert fields["takeProfit"]["normalizedValue"] == "2365.6"
     assert fields["profit"]["normalizedValue"] == "123.75"
     assert fields["openTime"]["normalizedValue"] == "2026-01-05T09:30:00"
-    assert fields["openTime"]["notes"] == ["TIMEZONE_UNKNOWN"]
+    # LAYOUT_MATCH (engine-quality phase) may join — additive notes only.
+    assert "TIMEZONE_UNKNOWN" in fields["openTime"]["notes"]
 
     # Confidence model (§17): numeric 0..1 everywhere.
     for field in body["fields"]:

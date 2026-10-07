@@ -47,6 +47,13 @@ class EngineMetadata(BaseModel):
     checksumSha256: str
 
 
+class SourceRegion(BaseModel):
+    x: int = Field(ge=0)
+    y: int = Field(ge=0)
+    width: int = Field(gt=0)
+    height: int = Field(gt=0)
+
+
 class EngineRequest(BaseModel):
     requestId: str = Field(min_length=1, max_length=128)
     contractVersion: str = Field(min_length=1, max_length=8)
@@ -54,13 +61,10 @@ class EngineRequest(BaseModel):
     metadata: EngineMetadata
     extractionProfile: Profile = "TRADE_SUMMARY"
     deadlineMs: int = Field(default=25_000, ge=1_000, le=120_000)
-
-
-class SourceRegion(BaseModel):
-    x: int = Field(ge=0)
-    y: int = Field(ge=0)
-    width: int = Field(gt=0)
-    height: int = Field(gt=0)
+    # Re-OCR by crop (engine quality phase §2.4): optional pixel region —
+    # the image is cropped to this region BEFORE preprocessing. Owner-side
+    # (NestJS) validates the region against the asset dimensions.
+    crop: Optional[SourceRegion] = None
 
 
 class EngineField(BaseModel):
@@ -88,6 +92,18 @@ class EngineProcessingMetadata(BaseModel):
     engineVersion: str
     pipelineVersion: str
     durationsMs: Dict[str, int] = Field(default_factory=dict)
+    # Engine-quality observability: the passes that ran ("block_psm6",
+    # "sparse_psm11"), the chosen layout template, deskew measurement.
+    passes: List[str] = Field(default_factory=list, max_length=8)
+    layoutTemplate: Optional[str] = None
+    deskewDeg: Optional[float] = None
+
+
+class EngineTradeCandidate(BaseModel):
+    """One multi-trade draft grouped from an account-history screenshot.
+    Fields only — grouping is evidence, never a created trade (§21)."""
+
+    fields: List[EngineField] = Field(default_factory=list, max_length=16)
 
 
 class EngineFailure(BaseModel):
@@ -101,7 +117,13 @@ class EngineResponse(BaseModel):
     processingStatus: ProcessingStatus
     classification: Optional[EngineClassification] = None
     fields: List[EngineField] = Field(default_factory=list, max_length=64)
+    # Multi-trade drafts (account-history screenshots) — empty for the
+    # mono-trade path (UI keeps a single review card).
+    tradeCandidates: List[EngineTradeCandidate] = Field(default_factory=list, max_length=20)
     warnings: List[str] = Field(default_factory=list, max_length=16)
+    # Perceptual fingerprint (dHash, 16 hex chars) — the Nest side owns
+    # storage and duplicate decisions; the sidecar only computes it.
+    perceptualHash: Optional[str] = None
     processingMetadata: EngineProcessingMetadata
     failure: Optional[EngineFailure] = None
 

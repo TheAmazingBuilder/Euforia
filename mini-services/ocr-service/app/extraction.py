@@ -7,6 +7,15 @@ labeled S/L / T/P / Profit values. Extraction is CONSERVATIVE (§20): when
 evidence is missing, the field is absent — never invented. The recognized
 words keep their bounding boxes (§18) so the review UI can highlight the
 source region later.
+
+Engine-quality phase additions:
+  - LAYOUT TEMPLATES — extraction accepts a LayoutTemplate (templates.py)
+    that tightens/widens plausibility windows per platform layout and may
+    enable the trailing-profit rule for MT5 desktop history rows;
+  - MULTI-TRADE CANDIDATES — account-history screenshots carry N trade
+    rows; extract_trade_candidates() groups order rows into per-trade
+    field sets (drafts for grouped confirmation). Candidates are only
+    GROUPED evidence — never merged into one fake trade.
 """
 
 from __future__ import annotations
@@ -14,13 +23,13 @@ from __future__ import annotations
 import re
 import subprocess
 import time
-from dataclasses import dataclass, field as dc_field
 from typing import Dict, List, Optional
 
 import pytesseract
 from pytesseract import Output
 
 from .contract import EngineField, SourceRegion
+from .extraction_types import OcrLine, OcrWord  # re-exported for compat
 from .normalization import (
     Normalized,
     normalize_decimal,
@@ -28,62 +37,37 @@ from .normalization import (
     normalize_symbol,
     normalize_timestamp,
 )
+from .templates import (
+    GENERIC,
+    LayoutTemplate,
+    PROFIT_LABELS,
+    SL_LABELS,
+    TP_LABELS,
+    DIRECTION_WORD,
+    SYMBOL_STOPWORDS,
+    SYMBOL_TOKEN,
+    TIME_TOKEN,
+    apply_shape_bonus,
+    find_order_rows,
+    symbol_candidate,
+    trailing_profit_value,
+    volume_plausible,
+)
+
+__all__ = ["ENGINE_NAME", "OcrLine", "OcrWord", "extract_fields", "extract_trade_candidates", "run_ocr", "tesseract_version"]
 
 ENGINE_NAME = "fastapi-tesseract"
 
 # MT5 vocabulary — the extraction evidence (deterministic, explainable).
-SL_LABELS = re.compile(r"\bs[./]?l\b", re.IGNORECASE)
-TP_LABELS = re.compile(r"\bt[./]?p\b", re.IGNORECASE)
-PROFIT_LABELS = re.compile(r"\bprofit\b", re.IGNORECASE)
-DIRECTION_WORD = re.compile(r"^(buy|sell|b|s)$", re.IGNORECASE)
+# Label/direction/decimal/token patterns now live in templates.py (shared
+# with the layout templates); DATE/CLOCK stay extraction-local.
 DECIMAL_TOKEN = re.compile(r"^[-+]?\d{1,3}(?:[.,\s]\d{3})*(?:[.,]\d+)?|[-+]?\d+[.,]\d+|^[-+]?\d+$")
-SYMBOL_TOKEN = re.compile(r"^[A-Za-z]{2,6}(?:[A-Za-z0-9]{0,4})?$")
-TIME_TOKEN = re.compile(r"^\d{4}[.-]\d{2}[.-]\d{2}[ T]?\d{2}:\d{2}(?::\d{2})?$")
 DATE_ONLY_TOKEN = re.compile(r"^\d{4}[.-]\d{2}[.-]\d{2}$")
 CLOCK_ONLY_TOKEN = re.compile(r"^\d{2}:\d{2}(?::\d{2})?$")
-# Words that disqualify a token from being a symbol (platform vocabulary).
-SYMBOL_STOPWORDS = {
-    "BUY", "SELL", "PROFIT", "BALANCE", "EQUITY", "MARGIN", "DEPOSIT",
-    "WITHDRAWAL", "CREDIT", "SYMBOL", "TIME", "TYPE", "VOLUME", "PRICE",
-    "ORDER", "DEAL", "POSITION", "METATRADER", "TRADINGVIEW", "CHART",
-    "INDICATOR", "TOOLS", "MARKET", "WATCH", "NAVIGATOR", "TOOLBOX",
-    "LOGIN", "ACCOUNT", "HISTORY", "EXPERT", "TRADE", "LOSS",
-}
 
 
-@dataclass
-class OcrWord:
-    text: str
-    x: int
-    y: int
-    w: int
-    h: int
-    confidence: float
-
-
-@dataclass
-class OcrLine:
-    words: List[OcrWord] = dc_field(default_factory=list)
-
-    @property
-    def text(self) -> str:
-        return " ".join(word.text for word in self.words)
-
-    @property
-    def confidence(self) -> float:
-        if not self.words:
-            return 0.0
-        return sum(word.confidence for word in self.words) / len(self.words) / 100.0
-
-    @property
-    def region(self) -> Optional[SourceRegion]:
-        if not self.words:
-            return None
-        x0 = min(word.x for word in self.words)
-        y0 = min(word.y for word in self.words)
-        x1 = max(word.x + word.w for word in self.words)
-        y1 = max(word.y + word.h for word in self.words)
-        return SourceRegion(x=x0, y=y0, width=x1 - x0, height=y1 - y0)
+# OcrWord / OcrLine now live in extraction_types.py (shared with
+# templates.py and arbitration.py — no import cycles). Re-exported above.
 
 
 def run_ocr(image, lang: str) -> List[OcrLine]:
@@ -139,9 +123,17 @@ def _labeled_value(line: OcrLine, label_pattern: re.Pattern) -> Optional[tuple]:
     return None
 
 
-def extract_fields(lines: List[OcrLine]) -> List[EngineField]:
-    """Deterministic field extraction over the OCR lines (§10 stage 6–8)."""
+def extract_fields(
+    lines: List[OcrLine], template: Optional[LayoutTemplate] = None
+) -> List[EngineField]:
+    """Deterministic field extraction over the OCR lines (§10 stage 6–8).
+
+    `template` (optional) carries the platform layout priors: plausibility
+    windows and the trailing-profit rule. GENERIC behavior when absent —
+    identical to the V1 extraction.
+    """
     started = time.perf_counter()
+    template = template or _GENERIC_TEMPLATE
     fields: Dict[str, EngineField] = {}
 
     def upsert(field: EngineField) -> None:
@@ -202,7 +194,7 @@ def extract_fields(lines: List[OcrLine]) -> List[EngineField]:
                 normalized = _decimal_from(follower)
                 if normalized is not None and volume_seen is None and normalized.value is not None:
                     volume_value = float(normalized.value)
-                    if 0 < volume_value <= 1000:  # plausible lot range
+                    if volume_plausible(volume_value, template):  # layout-windowed lots
                         volume_seen = normalized
                         upsert(
                             EngineField(
@@ -301,9 +293,195 @@ def extract_fields(lines: List[OcrLine]) -> List[EngineField]:
         if "entryPrice" in fields:
             break
 
-    result = list(fields.values())
+    # Trailing-profit rule — history template only, explicit sign required
+    # (templates.py never invents: an unsigned trailing number is too
+    # ambiguous to claim, §20).
+    if template.trailing_profit and "profit" not in fields:
+        for line in lines:
+            if not any(DIRECTION_WORD.match(w.text) for w in line.words):
+                continue
+            word = trailing_profit_value(line)
+            if word is None:
+                continue
+            normalized = normalize_decimal(word.text)
+            if normalized.value is not None:
+                upsert(
+                    EngineField(
+                        field="profit",
+                        rawValue=word.text,
+                        normalizedValue=normalized.value,
+                        confidence=round(min(line.confidence * (word.confidence / 100.0), 0.99), 3),
+                        sourceRegion=_region_in(line, word),
+                        notes=normalized.notes,
+                    )
+                )
+                break
+
+    # Layout shape bonus — last, explainable, capped (templates.py).
+    if template.name != GENERIC:
+        result = [apply_shape_bonus(field, template) for field in fields.values()]
+    else:
+        result = list(fields.values())
     result.sort(key=lambda f: f.field)
     return result
+
+
+# ── Multi-trade candidates (account-history screenshots) ────────────────────
+
+MAX_TRADE_CANDIDATES = 20
+
+
+def extract_trade_candidates(
+    lines: List[OcrLine], template: Optional[LayoutTemplate] = None
+) -> List[List[EngineField]]:
+    """Group order rows into per-trade field sets (multi-trade drafts).
+
+    A candidate is an order row (direction + symbol) extended with:
+      - the leading timestamp on the same row (openTime);
+      - labeled S/L / T/P / Profit values from the row itself;
+      - labeled values from the following lines up to the NEXT order row
+        (MT5 stacks the S/L line under the order row — conftest fixture
+        shape) — those lines are consumed and not re-offered;
+      - the trailing signed profit when the template allows it.
+
+    A candidate needs direction + symbol + at least one more field to be
+    offered — never a naked single-word row. Capped at MAX_TRADE_CANDIDATES
+    (a screenshot is not a CSV import; huge statements belong to files).
+    """
+    template = template or _GENERIC_TEMPLATE
+    candidates: List[List[EngineField]] = []
+    order_rows = find_order_rows(lines)
+    if len(order_rows) < 2:
+        # Single order row → the mono-trade path already covers it; do not
+        # duplicate it into a candidates list (UI keeps one review card).
+        return []
+
+    for position, (index, row) in enumerate(order_rows):
+        if len(candidates) >= MAX_TRADE_CANDIDATES:
+            break
+        next_index = order_rows[position + 1][0] if position + 1 < len(order_rows) else len(lines)
+        fields: Dict[str, EngineField] = {}
+
+        def upsert(field: EngineField) -> None:
+            existing = fields.get(field.field)
+            if existing is None or field.confidence > existing.confidence:
+                fields[field.field] = field
+
+        # Row scan — direction, symbol, volume, entry, openTime, labels.
+        direction_seen: Optional[str] = None
+        symbol_seen: Optional[str] = None
+        entry_done = False
+        for idx, word in enumerate(row.words):
+            # Direction + volume adjacency.
+            if DIRECTION_WORD.match(word.text) and direction_seen is None:
+                direction = normalize_direction(word.text)
+                if direction is not None:
+                    direction_seen = direction
+                    upsert(EngineField(
+                        field="direction", rawValue=word.text, normalizedValue=direction,
+                        confidence=round(min(row.confidence * (word.confidence / 100.0), 0.99), 3),
+                        sourceRegion=_region_in(row, word), notes=[],
+                    ))
+                    for follower in row.words[idx + 1 : idx + 3]:
+                        volume = _decimal_from(follower)
+                        if volume is not None and volume.value is not None and volume_plausible(float(volume.value), template):
+                            upsert(EngineField(
+                                field="volume", rawValue=follower.text, normalizedValue=volume.value,
+                                confidence=round(min(row.confidence * (follower.confidence / 100.0), 0.99), 3),
+                                sourceRegion=_region_in(row, follower), notes=volume.notes,
+                            ))
+                            break
+                continue
+            # Symbol.
+            if symbol_seen is None and symbol_candidate(word):
+                normalized = normalize_symbol(word.text)
+                if normalized is not None:
+                    symbol_seen = normalized
+                    upsert(EngineField(
+                        field="symbol", rawValue=word.text, normalizedValue=normalized,
+                        confidence=round(min(row.confidence * (word.confidence / 100.0), 0.99), 3),
+                        sourceRegion=_region_in(row, word), notes=[],
+                    ))
+                continue
+            # Entry price — first decimal after the symbol.
+            if symbol_seen is not None and not entry_done and _decimal_from(word) is not None:
+                normalized = _decimal_from(word)
+                if normalized is not None and normalized.value is not None and float(normalized.value) > 0:
+                    entry_done = True
+                    upsert(EngineField(
+                        field="entryPrice", rawValue=word.text, normalizedValue=normalized.value,
+                        confidence=round(min(row.confidence * (word.confidence / 100.0), 0.99), 3),
+                        sourceRegion=_region_in(row, word), notes=normalized.notes,
+                    ))
+            # Open time — leading date(+clock) on the row.
+            combined: Optional[str] = None
+            if TIME_TOKEN.match(word.text):
+                combined = word.text
+            elif DATE_ONLY_TOKEN.match(word.text):
+                follower = row.words[idx + 1] if idx + 1 < len(row.words) else None
+                if follower is not None and CLOCK_ONLY_TOKEN.match(follower.text):
+                    combined = f"{word.text} {follower.text}"
+            if combined is not None and "openTime" not in fields:
+                normalized = normalize_timestamp(combined)
+                if normalized.value is not None:
+                    upsert(EngineField(
+                        field="openTime", rawValue=combined, normalizedValue=normalized.value,
+                        confidence=round(min(row.confidence * (word.confidence / 100.0), 0.99), 3),
+                        sourceRegion=_region_in(row, word), notes=normalized.notes,
+                    ))
+            # Labeled values on the row itself.
+            for pattern, key in ((SL_LABELS, "stopLoss"), (TP_LABELS, "takeProfit"), (PROFIT_LABELS, "profit")):
+                if "profit" in fields and key == "profit" and template.trailing_profit:
+                    continue
+                labeled = _labeled_value(row, pattern)
+                if labeled is not None:
+                    normalized, token = labeled
+                    upsert(EngineField(
+                        field=key, rawValue=token.text, normalizedValue=normalized.value,
+                        confidence=round(min(row.confidence * (token.confidence / 100.0), 0.99), 3),
+                        sourceRegion=_region_in(row, token), notes=normalized.notes,
+                    ))
+
+        # Follower lines up to the next order row — labeled SL/TP/profit.
+        for follower_index in range(index + 1, next_index):
+            follower_line = lines[follower_index]
+            for pattern, key in ((SL_LABELS, "stopLoss"), (TP_LABELS, "takeProfit"), (PROFIT_LABELS, "profit")):
+                if key in fields:
+                    continue
+                labeled = _labeled_value(follower_line, pattern)
+                if labeled is None:
+                    continue
+                normalized, token = labeled
+                upsert(EngineField(
+                    field=key, rawValue=token.text, normalizedValue=normalized.value,
+                    confidence=round(min(follower_line.confidence * (token.confidence / 100.0), 0.99), 3),
+                    sourceRegion=_region_in(follower_line, token), notes=normalized.notes,
+                ))
+
+        # Trailing profit (history template only).
+        if template.trailing_profit and "profit" not in fields:
+            word = trailing_profit_value(row)
+            if word is not None:
+                normalized = normalize_decimal(word.text)
+                if normalized.value is not None:
+                    upsert(EngineField(
+                        field="profit", rawValue=word.text, normalizedValue=normalized.value,
+                        confidence=round(min(row.confidence * (word.confidence / 100.0), 0.99), 3),
+                        sourceRegion=_region_in(row, word), notes=normalized.notes,
+                    ))
+
+        # Offer only structured candidates: direction + symbol + one more.
+        if "direction" in fields and "symbol" in fields and len(fields) >= 3:
+            candidate_fields = list(fields.values())
+            if template.name != GENERIC:
+                candidate_fields = [apply_shape_bonus(f, template) for f in candidate_fields]
+            candidate_fields.sort(key=lambda f: f.field)
+            candidates.append(candidate_fields)
+
+    return candidates
+
+
+_GENERIC_TEMPLATE = LayoutTemplate(name=GENERIC, volume_min=0.01, volume_max=1000.0, trailing_profit=False, shape_bonus=0.0)
 
 
 def _region_in(line: OcrLine, word: OcrWord) -> SourceRegion:

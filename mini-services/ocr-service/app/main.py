@@ -1,4 +1,4 @@
-"""FastAPI OCR sidecar (Phase 19 §4/§26/§27).
+"""FastAPI OCR sidecar (Phase 19 §4/§26/§27 + engine quality phase).
 
 Boundary discipline:
   - NO users, NO authnz decisions, NO trading state, NO persistence (§4):
@@ -8,31 +8,49 @@ Boundary discipline:
   - per-image failures answer 200 with processingStatus
     UNPROCESSABLE/FAILED (the Nest side maps them, §34); request-level
     problems (auth, size, schema) are HTTP errors;
-  - no LLM (§28) — deterministic OCR (Tesseract) + keyword classification;
+  - no LLM (§28) — deterministic OCR (Tesseract ×2 passes with field-level
+    arbitrage) + keyword classification + layout templates;
   - never logs image bytes or secrets (§36): request ids, sizes, durations.
+
+Pipeline v2 (engine quality phase):
+  validate → [crop] → preprocess (denoise → deskew → ×2 LANCZOS → CLAHE
+  | binarized alternate) → pass A (PSM 6 block) ⇄ pass B (PSM 11 sparse)
+  → field arbitrage → layout-template priors → multi-trade candidates
+  → dHash fingerprint → response.
 """
 
 from __future__ import annotations
 
 import base64
 import binascii
+import io
 import logging
 import time
 from typing import Optional
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
+from PIL import Image, ImageOps
 
+from .arbitration import PASS_NAMES, arbitrate_fields, run_sparse_pass
 from .classification import classify
 from .config import CONTRACT_VERSION, settings
-from .contract import EngineRequest, EngineResponse, EngineProcessingMetadata, EngineFailure
-from .extraction import ENGINE_NAME, extract_fields, run_ocr, tesseract_version
+from .contract import (
+    EngineRequest,
+    EngineResponse,
+    EngineProcessingMetadata,
+    EngineFailure,
+    EngineTradeCandidate,
+    SourceRegion,
+)
+from .extraction import ENGINE_NAME, extract_fields, extract_trade_candidates, run_ocr, tesseract_version
+from .templates import choose_template
 from .validation import ImageRejected, validate_and_prepare
 
 logger = logging.getLogger("ocr-service")
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 
-PIPELINE_VERSION = "1.0.0"
+PIPELINE_VERSION = "2.0.0"
 ENGINE_VERSION = tesseract_version()
 
 app = FastAPI(title="Cosmoz OCR Service", version=PIPELINE_VERSION, docs_url=None, redoc_url=None)
@@ -55,7 +73,63 @@ async def internal_token_guard(request: Request, call_next):
 @app.get("/healthz")
 def healthz() -> dict:
     """Liveness for orchestration — carries NO user data."""
-    return {"status": "ok", "engine": ENGINE_NAME, "engineVersion": ENGINE_VERSION}
+    return {"status": "ok", "engine": ENGINE_NAME, "engineVersion": ENGINE_VERSION, "pipeline": PIPELINE_VERSION}
+
+
+def _respond(
+    request_id: str,
+    processing_status: str,
+    classification,
+    fields,
+    warnings: list,
+    failure: Optional[EngineFailure],
+    durations: dict,
+    trade_candidates: Optional[list] = None,
+    perceptual_hash: Optional[str] = None,
+    passes: Optional[list] = None,
+    layout_template: Optional[str] = None,
+    deskew_deg: Optional[float] = None,
+) -> JSONResponse:
+    body = EngineResponse(
+        requestId=request_id,
+        contractVersion=CONTRACT_VERSION,
+        processingStatus=processing_status,  # type: ignore[arg-type]
+        classification=classification,
+        fields=fields,
+        tradeCandidates=trade_candidates or [],
+        warnings=warnings,
+        perceptualHash=perceptual_hash,
+        processingMetadata=EngineProcessingMetadata(
+            engine=ENGINE_NAME,
+            engineVersion=ENGINE_VERSION,
+            pipelineVersion=PIPELINE_VERSION,
+            durationsMs=durations,
+            passes=passes or [],
+            layoutTemplate=layout_template,
+            deskewDeg=deskew_deg,
+        ),
+        failure=failure,
+    )
+    return JSONResponse(status_code=200, content=body.model_dump(mode="json"))
+
+
+def _crop_bytes(image_bytes: bytes, region: SourceRegion):
+    """Decode + crop the original to the requested region (re-OCR by crop).
+
+    The Nest side validates the region against the stored asset dimensions
+    before calling; the sidecar clamps defensively anyway. Returns a PIL
+    RGB image or None when the decode fails.
+    """
+    try:
+        with Image.open(io.BytesIO(image_bytes)) as img:
+            img.load()
+            left = max(0, min(region.x, img.width - 1))
+            top = max(0, min(region.y, img.height - 1))
+            right = max(left + 1, min(region.x + region.width, img.width))
+            bottom = max(top + 1, min(region.y + region.height, img.height))
+            return img.convert("RGB").crop((left, top, right, bottom))
+    except (UnidentifiedImageError, OSError, ValueError, SyntaxError):
+        return None
 
 
 @app.post("/v1/recognitions")
@@ -106,7 +180,17 @@ def recognize(request: EngineRequest) -> JSONResponse:
 
     ocr_started = time.perf_counter()
     try:
-        lines = run_ocr(prepared.upscaled, settings.tesseract_lang)
+        # Pass A — block segmentation over the full preprocessing chain.
+        lines = run_ocr(prepared.main, settings.tesseract_lang)
+        # Pass B — sparse segmentation over the Otsu-binarized variant
+        # (arbitration challenger; failures degrade to single-pass, never
+        # fail the request — the primary pass is the contract).
+        try:
+            sparse_lines = run_sparse_pass(prepared.alternate, settings.tesseract_lang)
+            passes_ran = list(PASS_NAMES)
+        except (RuntimeError, OSError):
+            sparse_lines = []
+            passes_ran = [PASS_NAMES[0]]
     except (RuntimeError, OSError) as exc:  # tesseract binary failure
         logger.error("tesseract failure request_id=%s error=%s", request_id, type(exc).__name__)
         return _respond(
@@ -146,18 +230,163 @@ def recognize(request: EngineRequest) -> JSONResponse:
                 message="no readable text found in this screenshot",
             ),
             durations=durations(),
+            perceptual_hash=prepared.dhash_hex,
+            passes=passes_ran,
+            deskew_deg=prepared.skew_deg,
         )
 
     classification = classify(text_joined)
-    fields = extract_fields(lines)
+    template = choose_template(classification.type, prepared.width, prepared.height)
+    fields = extract_fields(lines, template)
+
+    # Field-level arbitrage with the challenger pass (§ engine quality —
+    # agreement boosts, disagreements recorded, single-source kept honest).
+    if sparse_lines:
+        challenger_fields = extract_fields(sparse_lines, template)
+        fields, _all_clear = arbitrate_fields(fields, challenger_fields)
+        warnings: list[str] = []
+    else:
+        warnings = ["SECOND_PASS_UNAVAILABLE"]
+
+    # Multi-trade candidates — grouped evidence from account-history rows
+    # (never merged into one fake trade; empty for the mono-trade path).
+    candidates = extract_trade_candidates(lines, template)
+    trade_candidates = [EngineTradeCandidate(fields=group) for group in candidates]
 
     logger.info(
-        "recognition request_id=%s bytes=%d lines=%d fields=%d ocr_ms=%d total_ms=%d",
+        "recognition request_id=%s bytes=%d lines=%d fields=%d candidates=%d template=%s ocr_ms=%d total_ms=%d",
         request_id,
         len(image_bytes),
         len(lines),
         len(fields),
+        len(trade_candidates),
+        template.name,
         ocr_ms,
+        durations()["totalMs"],
+    )
+
+    return _respond(
+        request_id,
+        processing_status="COMPLETED",
+        classification=classification,
+        fields=fields,
+        warnings=warnings,
+        failure=None,
+        durations={"totalMs": durations()["totalMs"], "ocrMs": ocr_ms},
+        trade_candidates=trade_candidates,
+        perceptual_hash=prepared.dhash_hex,
+        passes=passes_ran,
+        layout_template=template.name,
+        deskew_deg=prepared.skew_deg,
+    )
+
+
+@app.post("/v1/recrops")
+def recrop(request: EngineRequest) -> JSONResponse:
+    """Targeted re-OCR over a user-selected region (§ engine quality 2.4).
+
+    Same contract as /v1/recognitions but the pipeline runs on the CROP,
+    not the full screenshot: the review UI sends the region when a field
+    came back LOW_CONFIDENCE and the user re-frames it by hand. The dHash
+    is computed on the crop (irrelevant for dedup here; the Nest side
+    ignores it on this route).
+    """
+    if request.contractVersion != CONTRACT_VERSION:
+        raise HTTPException(status_code=400, detail="unsupported contractVersion")
+    if request.crop is None:
+        raise HTTPException(status_code=400, detail="crop region is required on /v1/recrops")
+
+    started = time.perf_counter()
+    request_id = request.requestId
+
+    def durations() -> dict:
+        return {"totalMs": int((time.perf_counter() - started) * 1000)}
+
+    if len(request.imageBase64) > settings.max_bytes * 1.4:
+        return JSONResponse(
+            status_code=413,
+            content={"error": "ResourceLimit", "message": "image payload exceeds the sidecar limit"},
+        )
+    try:
+        image_bytes = base64.b64decode(request.imageBase64, validate=True)
+    except (binascii.Error, ValueError):
+        raise HTTPException(status_code=400, detail="imageBase64 is not valid base64")
+
+    cropped = _crop_bytes(image_bytes, request.crop)
+    if cropped is None:
+        return _respond(
+            request_id,
+            processing_status="UNPROCESSABLE",
+            classification=None,
+            fields=[],
+            warnings=[],
+            failure=EngineFailure(category="SCREENSHOT_UNSUPPORTED", message="the stored image could not be decoded"),
+            durations=durations(),
+        )
+    if cropped.width * cropped.height > settings.max_pixels:
+        return _respond(
+            request_id,
+            processing_status="UNPROCESSABLE",
+            classification=None,
+            fields=[],
+            warnings=[],
+            failure=EngineFailure(category="RESOURCE_LIMIT", message="the crop exceeds the pixel budget"),
+            durations=durations(),
+        )
+
+    # Minimal preparation of the crop (no full re-validation — the source
+    # was already validated at upload; region coordinates were checked).
+    from .preprocessing import binarize, clahe_equalize, upscale
+
+    gray = ImageOps.grayscale(cropped)
+    scaled, _ = upscale(gray, settings.max_pixels)
+    main = clahe_equalize(scaled)
+    alternate = binarize(scaled)
+
+    try:
+        lines = run_ocr(main, settings.tesseract_lang)
+        sparse_lines = run_sparse_pass(alternate, settings.tesseract_lang)
+    except (RuntimeError, OSError):
+        return _respond(
+            request_id,
+            processing_status="FAILED",
+            classification=None,
+            fields=[],
+            warnings=[],
+            failure=EngineFailure(category="OCR_UNAVAILABLE", message="tesseract engine failed"),
+            durations=durations(),
+        )
+
+    text_joined = " ".join(line.text for line in lines)
+    if not lines or not text_joined.strip():
+        return _respond(
+            request_id,
+            processing_status="UNPROCESSABLE",
+            classification=None,
+            fields=[],
+            warnings=[],
+            failure=EngineFailure(
+                category="SCREENSHOT_UNSUPPORTED",
+                message="no readable text found in this region",
+            ),
+            durations=durations(),
+        )
+
+    classification = classify(text_joined)
+    template = choose_template(classification.type, cropped.width, cropped.height)
+    fields = extract_fields(lines, template)
+    if sparse_lines:
+        challenger_fields = extract_fields(sparse_lines, template)
+        fields, _ = arbitrate_fields(fields, challenger_fields)
+
+    logger.info(
+        "recrop request_id=%s region=%dx%d+%d+%d fields=%d total_ms=%d",
+        request_id,
+        request.crop.width,
+        request.crop.height,
+        request.crop.x,
+        request.crop.y,
+        len(fields),
         durations()["totalMs"],
     )
 
@@ -168,32 +397,8 @@ def recognize(request: EngineRequest) -> JSONResponse:
         fields=fields,
         warnings=[],
         failure=None,
-        durations={"totalMs": durations()["totalMs"], "ocrMs": ocr_ms},
+        durations={"totalMs": durations()["totalMs"]},
+        perceptual_hash=None,
+        passes=list(PASS_NAMES),
+        layout_template=template.name,
     )
-
-
-def _respond(
-    request_id: str,
-    processing_status: str,
-    classification,
-    fields,
-    warnings: list,
-    failure: Optional[EngineFailure],
-    durations: dict,
-) -> JSONResponse:
-    body = EngineResponse(
-        requestId=request_id,
-        contractVersion=CONTRACT_VERSION,
-        processingStatus=processing_status,  # type: ignore[arg-type]
-        classification=classification,
-        fields=fields,
-        warnings=warnings,
-        processingMetadata=EngineProcessingMetadata(
-            engine=ENGINE_NAME,
-            engineVersion=ENGINE_VERSION,
-            pipelineVersion=PIPELINE_VERSION,
-            durationsMs=durations,
-        ),
-        failure=failure,
-    )
-    return JSONResponse(status_code=200, content=body.model_dump(mode="json"))
