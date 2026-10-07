@@ -124,7 +124,7 @@ type TemplateTrade = {
 const TEMPLATE_TRADES: TemplateTrade[] = [
   {
     label: "XAUUSD BUY",
-    classification: { type: "MT5_TRADE", confidence: 0.94, alternatives: [{ type: "TRADINGVIEW_CHART", confidence: 0.04 }, { type: "UNKNOWN", confidence: 0.02 }] },
+    classification: { type: "MT5_TRADE", confidence: 0.94, platform: "MT5", alternatives: [{ type: "TRADINGVIEW_CHART", confidence: 0.04 }, { type: "UNKNOWN", confidence: 0.02 }] },
     values: {
       symbol: "XAUUSD", direction: "BUY", volume: "0.10",
       entryPrice: "2645.32", exitPrice: "2659.98", stopLoss: "2638.50", takeProfit: "2660.00",
@@ -133,7 +133,7 @@ const TEMPLATE_TRADES: TemplateTrade[] = [
   },
   {
     label: "EURUSD BUY",
-    classification: { type: "MT5_TRADE", confidence: 0.86, alternatives: [{ type: "UNKNOWN", confidence: 0.14 }] },
+    classification: { type: "MT5_TRADE", confidence: 0.86, platform: "MT5", alternatives: [{ type: "UNKNOWN", confidence: 0.14 }] },
     values: {
       symbol: "EURUSD", direction: "BUY", volume: "0.50",
       entryPrice: "1.08452", exitPrice: "1.08390", stopLoss: "1.08590", takeProfit: "1.08210",
@@ -142,7 +142,7 @@ const TEMPLATE_TRADES: TemplateTrade[] = [
   },
   {
     label: "NAS100 SELL",
-    classification: { type: "MT5_TRADE", confidence: 0.88, alternatives: [{ type: "TRADINGVIEW_CHART", confidence: 0.09 }, { type: "UNKNOWN", confidence: 0.03 }] },
+    classification: { type: "MT5_TRADE", confidence: 0.88, platform: "MT5", alternatives: [{ type: "TRADINGVIEW_CHART", confidence: 0.09 }, { type: "UNKNOWN", confidence: 0.03 }] },
     values: {
       symbol: "NAS100", direction: "SELL", volume: "1.00",
       entryPrice: "24120.5", exitPrice: "23995.25", stopLoss: "24188.0", takeProfit: "23980.0",
@@ -151,7 +151,7 @@ const TEMPLATE_TRADES: TemplateTrade[] = [
   },
   {
     label: "BTCUSD BUY",
-    classification: { type: "MT5_TRADE", confidence: 0.79, alternatives: [{ type: "TRADINGVIEW_CHART", confidence: 0.17 }, { type: "UNKNOWN", confidence: 0.04 }] },
+    classification: { type: "MT5_TRADE", confidence: 0.79, platform: "MT5", alternatives: [{ type: "TRADINGVIEW_CHART", confidence: 0.17 }, { type: "UNKNOWN", confidence: 0.04 }] },
     values: {
       symbol: "BTCUSD", direction: "BUY", volume: "0.25",
       entryPrice: "64210.5", exitPrice: "", stopLoss: "63940.0", takeProfit: "66900.0",

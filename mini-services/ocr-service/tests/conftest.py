@@ -6,6 +6,7 @@ Tesseract version, which the assertions rely on.
 from __future__ import annotations
 
 import base64
+import hashlib
 import io
 
 from PIL import Image, ImageDraw, ImageFont
@@ -57,6 +58,36 @@ def render_mt5_screenshot() -> tuple[bytes, int, int]:
     return buffer.getvalue(), width, height
 
 
+def render_mt5_with_exit_price() -> tuple[bytes, int, int]:
+    """A MT5-style mobile trade card with an explicit EXIT PRICE label.
+
+    The exit-price extractor (V2 §11) requires the explicit
+    "exit price" / "close price" / "closed:" label shapes — the bare word
+    "close" in a history row is an order TYPE, never a price label.
+    """
+    width, height = 700, 500
+    img = Image.new("RGB", (width, height), (248, 249, 251))
+    draw = ImageDraw.Draw(img)
+    font = _font(30)
+    small = _font(26)
+    ink = (24, 26, 32)
+    draw.text((24, 16), "MetaTrader 5", font=font, fill=ink)
+    lines = [
+        "buy 0.15 XAUUSD 2345.60",
+        "S/L 2335.60  T/P 2365.60",
+        "Exit price 2353.85",
+        "Closed: 2026.01.05 10:15:00",
+        "Profit 123.75",
+    ]
+    y = 90
+    for line in lines:
+        draw.text((24, y), line, font=small, fill=ink)
+        y += 56
+    buffer = io.BytesIO()
+    img.save(buffer, format="PNG")
+    return buffer.getvalue(), width, height
+
+
 def render_tradingview_chart() -> tuple[bytes, int, int]:
     width, height = 800, 400
     img = Image.new("RGB", (width, height), (14, 17, 22))
@@ -85,7 +116,8 @@ def to_request(image: bytes, width: int, height: int, request_id: str = "req-1")
             "sizeBytes": len(image),
             "width": width,
             "height": height,
-            "checksumSha256": "0" * 64,
+            # The REAL checksum — the sidecar verifies it (V2 §20).
+            "checksumSha256": hashlib.sha256(image).hexdigest(),
         },
         "extractionProfile": "TRADE_SUMMARY",
         "deadlineMs": 25_000,

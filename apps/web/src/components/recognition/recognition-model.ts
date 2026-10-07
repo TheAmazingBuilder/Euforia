@@ -246,12 +246,30 @@ export function formatRelative(iso: string): string {
   return rtf.format(-days, "day");
 }
 
-/** Best-effort platform label from the classification (§14 — auto detect). */
+/** Best-effort platform label — V2 §18: prefer the detected platform field
+ * (sidecar v3 emits MT5/MT4/CTRADER/...), fall back to the legacy type. */
 export function platformLabel(
   dict: RecognitionDict,
-  classification: { type: string } | null,
+  classification: { type: string; platform?: string | null } | null,
 ): string {
-  if (!classification || classification.type === "UNKNOWN") return dict.settings.platformAuto;
+  if (!classification) return dict.settings.platformAuto;
+  switch (classification.platform) {
+    case "MT5":
+      return dict.settings.platformMt5;
+    case "MT4":
+      return dict.settings.platformMt4;
+    case "TRADINGVIEW":
+      return dict.settings.platformTradingview;
+    case "CTRADER":
+      return dict.settings.platformCtrader;
+    case "NINJATRADER":
+      return dict.settings.platformNinjatrader;
+    case "INTERACTIVE_BROKERS":
+      return dict.settings.platformIbkr;
+    case "DERIV":
+      return dict.settings.platformDeriv;
+  }
+  if (classification.type === "UNKNOWN") return dict.settings.platformAuto;
   if (classification.type === "MT5_TRADE") return dict.settings.platformMt5;
   if (classification.type === "TRADINGVIEW_CHART") return dict.settings.platformTradingview;
   return dict.settings.platformOther;

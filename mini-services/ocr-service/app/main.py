@@ -12,17 +12,19 @@ Boundary discipline:
     arbitrage) + keyword classification + layout templates;
   - never logs image bytes or secrets (§36): request ids, sizes, durations.
 
-Pipeline v2 (engine quality phase):
-  validate → [crop] → preprocess (denoise → deskew → ×2 LANCZOS → CLAHE
-  | binarized alternate) → pass A (PSM 6 block) ⇄ pass B (PSM 11 sparse)
-  → field arbitrage → layout-template priors → multi-trade candidates
-  → dHash fingerprint → response.
+Pipeline v3 (V2 spec):
+  validate (checksum verified) → [crop] → preprocess (denoise → deskew →
+  ×2 LANCZOS → CLAHE | binarized alternate) → pass A (PSM 3 auto) ⇄
+  pass B (PSM 11 sparse) → field arbitrage → platform + screenshot-type
+  detection → layout-template priors → multi-trade candidates → dHash
+  fingerprint → response.
 """
 
 from __future__ import annotations
 
 import base64
 import binascii
+import hashlib
 import io
 import logging
 import time
@@ -46,13 +48,13 @@ from .contract import (
 from .extraction import ENGINE_NAME, extract_fields, extract_trade_candidates, run_ocr, tesseract_version
 from .pdf import PDF_MIME, PdfRejected, looks_like_pdf, render_pdf_pages
 from .templates import choose_template
-from .validation import ImageRejected, validate_and_prepare
+from .validation import ChecksumMismatch, ImageRejected, validate_and_prepare
 from .preprocessing import binarize, clahe_equalize, upscale as upscale_image
 
 logger = logging.getLogger("ocr-service")
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 
-PIPELINE_VERSION = "2.0.0"
+PIPELINE_VERSION = "3.0.0"
 ENGINE_VERSION = tesseract_version()
 
 app = FastAPI(title="Cosmoz OCR Service", version=PIPELINE_VERSION, docs_url=None, redoc_url=None)
@@ -221,7 +223,7 @@ def _recognize_pdf(request: EngineRequest, image_bytes: bytes, started: float) -
         )
 
     classification = classify(text_joined)
-    template = choose_template(classification.type, first_page.width, first_page.height)
+    template = choose_template(classification.type, first_page.width, first_page.height, classification.platform)
 
     warnings: list[str] = []
     if partial:
@@ -305,6 +307,22 @@ def recognize(request: EngineRequest) -> JSONResponse:
             content={"error": "ResourceLimit", "message": "decoded image exceeds the sidecar limit"},
         )
 
+    # Declared checksum verified for EVERY payload (V2 §20) — before the
+    # PDF branch: PDF statements ride the same integrity discipline.
+    if hashlib.sha256(image_bytes).hexdigest() != request.metadata.checksumSha256.lower():
+        return _respond(
+            request_id,
+            processing_status="UNPROCESSABLE",
+            classification=None,
+            fields=[],
+            warnings=[],
+            failure=EngineFailure(
+                category="VALIDATION_FAILED",
+                message="declared checksum does not match the image bytes",
+            ),
+            durations=durations(),
+        )
+
     # PDF statements (ops §4.3) — multi-page documents take the dedicated
     # per-page pipeline (one code path per page, same extraction rules).
     if request.metadata.mime == PDF_MIME:
@@ -312,6 +330,18 @@ def recognize(request: EngineRequest) -> JSONResponse:
 
     try:
         _mime, prepared = validate_and_prepare(image_bytes, request.metadata, settings.max_pixels)
+    except ChecksumMismatch as exc:
+        # V2 §20 — a checksum mismatch means the bytes were corrupted in
+        # transit: a caller-side validation failure, NOT a bad image.
+        return _respond(
+            request_id,
+            processing_status="UNPROCESSABLE",
+            classification=None,
+            fields=[],
+            warnings=[],
+            failure=EngineFailure(category="VALIDATION_FAILED", message=str(exc)),
+            durations=durations(),
+        )
     except ImageRejected as exc:
         return _respond(
             request_id,
@@ -384,7 +414,7 @@ def recognize(request: EngineRequest) -> JSONResponse:
         )
 
     classification = classify(text_joined)
-    template = choose_template(classification.type, prepared.width, prepared.height)
+    template = choose_template(classification.type, prepared.width, prepared.height, classification.platform)
     fields = extract_fields(lines, template)
 
     # Field-level arbitrage with the challenger pass (§ engine quality —
@@ -493,7 +523,10 @@ def recrop(request: EngineRequest) -> JSONResponse:
 
     try:
         lines = run_ocr(main, settings.tesseract_lang)
-        sparse_lines = run_sparse_pass(alternate, settings.tesseract_lang)
+        try:
+            sparse_lines = run_sparse_pass(alternate, settings.tesseract_lang)
+        except (RuntimeError, OSError):
+            sparse_lines = []
     except (RuntimeError, OSError):
         return _respond(
             request_id,
@@ -521,11 +554,16 @@ def recrop(request: EngineRequest) -> JSONResponse:
         )
 
     classification = classify(text_joined)
-    template = choose_template(classification.type, cropped.width, cropped.height)
+    template = choose_template(classification.type, cropped.width, cropped.height, classification.platform)
     fields = extract_fields(lines, template)
+    recrop_warnings: list[str] = []
     if sparse_lines:
         challenger_fields = extract_fields(sparse_lines, template)
         fields, _ = arbitrate_fields(fields, challenger_fields)
+    else:
+        # Same honest degradation as the main route (V2 audit: the recrop
+        # path used to fail the whole request when the sparse pass failed).
+        recrop_warnings = ["SECOND_PASS_UNAVAILABLE"]
 
     logger.info(
         "recrop request_id=%s region=%dx%d+%d+%d fields=%d total_ms=%d",
@@ -543,7 +581,7 @@ def recrop(request: EngineRequest) -> JSONResponse:
         processing_status="COMPLETED",
         classification=classification,
         fields=fields,
-        warnings=[],
+        warnings=recrop_warnings,
         failure=None,
         durations={"totalMs": durations()["totalMs"]},
         perceptual_hash=None,

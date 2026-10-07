@@ -100,6 +100,7 @@ export class DeterministicOcrEngine implements OcrEngine {
           { type: "TRADINGVIEW_CHART", confidence: 0.3 },
           { type: "UNKNOWN", confidence: 0.1 },
         ],
+        platform: "MT5",
       },
       fields: [
         { field: "symbol", rawValue: symbol, normalizedValue: symbol, confidence: 0.97, sourceRegion: { x: regionX, y: regionY, width: 120, height: 22 }, notes: [] },

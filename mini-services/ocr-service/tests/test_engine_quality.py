@@ -220,7 +220,7 @@ def test_recognize_reports_perceptual_hash_and_passes():
     body = response.json()
     assert body["perceptualHash"] is not None
     assert len(body["perceptualHash"]) == 16
-    assert "block_psm6" in body["processingMetadata"]["passes"]
+    assert "block_psm3" in body["processingMetadata"]["passes"]
     assert body["processingMetadata"]["layoutTemplate"] == MT5_DESKTOP_HISTORY
 
 

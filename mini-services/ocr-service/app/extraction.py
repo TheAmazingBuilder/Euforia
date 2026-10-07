@@ -106,21 +106,82 @@ def _decimal_from(word: OcrWord) -> Optional[Normalized]:
     # bug caught by the fixture: "2026.01.05" parsed as 20260105).
     if TIME_TOKEN.match(word.text):
         return None
+    # A DATE-only token is not a price either (V2 fix: "Closed: 2026.01.05
+    # 10:15:00" parsed the date as an exit price of 20260105).
+    if DATE_ONLY_TOKEN.match(word.text):
+        return None
     if not DECIMAL_TOKEN.match(word.text):
         return None
     return normalize_decimal(word.text)
 
 
 def _labeled_value(line: OcrLine, label_pattern: re.Pattern) -> Optional[tuple]:
-    """The numeric token that follows a label (S/L, T/P, Profit)."""
+    """The numeric token that follows a label (S/L, T/P, Profit).
+
+    V2 fix: the follower must be DECIMAL-SHAPED as a whole token (fullmatch
+    on the punctuation-stripped text) and must actually normalize to a value
+    (or be an explicit AMBIGUOUS separator case). The old prefix match let
+    "Closed: 2026.01.05 10:15:00" extract "10:15:00" as a null-valued price.
+    """
     for index, word in enumerate(line.words):
         if not label_pattern.search(word.text):
             continue
         for follower in line.words[index + 1 : index + 3]:
+            candidate = follower.text.strip(",.;:")
+            if not DECIMAL_TOKEN.fullmatch(candidate):
+                continue
             normalized = _decimal_from(follower)
-            if normalized is not None:
+            if normalized is not None and (normalized.value is not None or normalized.ambiguous):
                 return (normalized, follower)
     return None
+
+
+# Exit-price labels (V2 §11) — WORD-level shapes. The bare word "close" in
+# a history row is an ORDER TYPE ("close 0.15 XAUUSD ...") and must never
+# capture the following volume as a price; an explicit "exit" word, a
+# colon-carrying "closed:"/"close:" or an "exit price" word pair are the
+# only accepted label shapes.
+_EXIT_WORD = re.compile(r"^(?:exit[:,]?|clos(?:e|ed|ing):)$", re.IGNORECASE)
+_PRICE_FILLER = re.compile(r"^price[:,.]?$", re.IGNORECASE)
+
+
+def _exit_labeled_value(line: OcrLine) -> Optional[tuple]:
+    """Exit price from explicit label shapes ("Exit price 2353.85",
+    "Closed: 2353.85", "exit: 2353.85"). Same decimal-shape discipline as
+    _labeled_value; accepts the word "price" as a label filler."""
+    for index, word in enumerate(line.words):
+        if not _EXIT_WORD.match(word.text.strip(",.;:")):
+            continue
+        window = line.words[index + 1 : index + 4]
+        if window and _PRICE_FILLER.match(window[0].text.strip(",.;:")):
+            window = window[1:]
+        for follower in window[:2]:
+            candidate = follower.text.strip(",.;:")
+            if not DECIMAL_TOKEN.fullmatch(candidate):
+                continue
+            normalized = _decimal_from(follower)
+            if normalized is not None and (normalized.value is not None or normalized.ambiguous):
+                return (normalized, follower)
+    return None
+
+
+def _upsert_exit(line: OcrLine, fields: Dict[str, EngineField], line_confidence: float) -> None:
+    """Extract + upsert exitPrice from one line (shared by mono + candidates)."""
+    labeled = _exit_labeled_value(line)
+    if labeled is None:
+        return
+    normalized, word = labeled
+    existing = fields.get("exitPrice")
+    confidence = round(min(line_confidence * (word.confidence / 100.0), 0.99), 3)
+    if existing is None or confidence > existing.confidence:
+        fields["exitPrice"] = EngineField(
+            field="exitPrice",
+            rawValue=word.text,
+            normalizedValue=normalized.value,
+            confidence=confidence,
+            sourceRegion=_region_in(line, word),
+            notes=normalized.notes,
+        )
 
 
 def extract_fields(
@@ -208,8 +269,13 @@ def extract_fields(
                         )
                     break
 
-        # Labeled risk/profit values.
-        for pattern, key in ((SL_LABELS, "stopLoss"), (TP_LABELS, "takeProfit"), (PROFIT_LABELS, "profit")):
+        # Labeled risk/profit values (V2 §11: exit price via explicit
+        # exit/close-price labels — see _exit_labeled_value).
+        for pattern, key in (
+            (SL_LABELS, "stopLoss"),
+            (TP_LABELS, "takeProfit"),
+            (PROFIT_LABELS, "profit"),
+        ):
             labeled = _labeled_value(line, pattern)
             if labeled is None:
                 continue
@@ -224,6 +290,9 @@ def extract_fields(
                     notes=normalized.notes,
                 )
             )
+
+        # Exit price — explicit label shapes only.
+        _upsert_exit(line, fields, line.confidence)
 
         # Timestamps: MT5-style dotted/dashed wall clocks (§16 — no tz guess).
         # Tesseract splits "2026.01.05 09:30:00" into date + clock words —
@@ -430,7 +499,11 @@ def extract_trade_candidates(
                         sourceRegion=_region_in(row, word), notes=normalized.notes,
                     ))
             # Labeled values on the row itself.
-            for pattern, key in ((SL_LABELS, "stopLoss"), (TP_LABELS, "takeProfit"), (PROFIT_LABELS, "profit")):
+            for pattern, key in (
+                (SL_LABELS, "stopLoss"),
+                (TP_LABELS, "takeProfit"),
+                (PROFIT_LABELS, "profit"),
+            ):
                 if "profit" in fields and key == "profit" and template.trailing_profit:
                     continue
                 labeled = _labeled_value(row, pattern)
@@ -441,11 +514,17 @@ def extract_trade_candidates(
                         confidence=round(min(row.confidence * (token.confidence / 100.0), 0.99), 3),
                         sourceRegion=_region_in(row, token), notes=normalized.notes,
                     ))
+            # Exit price on the row itself — explicit label shapes only.
+            _upsert_exit(row, fields, row.confidence)
 
         # Follower lines up to the next order row — labeled SL/TP/profit.
         for follower_index in range(index + 1, next_index):
             follower_line = lines[follower_index]
-            for pattern, key in ((SL_LABELS, "stopLoss"), (TP_LABELS, "takeProfit"), (PROFIT_LABELS, "profit")):
+            for pattern, key in (
+                (SL_LABELS, "stopLoss"),
+                (TP_LABELS, "takeProfit"),
+                (PROFIT_LABELS, "profit"),
+            ):
                 if key in fields:
                     continue
                 labeled = _labeled_value(follower_line, pattern)
@@ -457,6 +536,8 @@ def extract_trade_candidates(
                     confidence=round(min(follower_line.confidence * (token.confidence / 100.0), 0.99), 3),
                     sourceRegion=_region_in(follower_line, token), notes=normalized.notes,
                 ))
+            # Exit price from follower lines too (MT5 stacks labels below).
+            _upsert_exit(follower_line, fields, follower_line.confidence)
 
         # Trailing profit (history template only).
         if template.trailing_profit and "profit" not in fields:

@@ -85,6 +85,9 @@ class EngineClassification(BaseModel):
     type: str
     confidence: float = Field(ge=0.0, le=1.0)
     alternatives: List[ClassificationCandidate] = Field(default_factory=list, max_length=4)
+    # V2 spec §18 — detected platform (MT5/MT4/TRADINGVIEW/CTRADER/...);
+    # UNKNOWN is explicit, never a guess. Default keeps old callers parsing.
+    platform: str = "UNKNOWN"
 
 
 class EngineProcessingMetadata(BaseModel):

@@ -13,6 +13,7 @@ import { z } from "zod";
 import {
   ocrFieldKeySchema,
   ocrScreenshotTypeSchema,
+  ocrPlatformSchema,
   ocrSourceRegionSchema,
   ocrFailureCategorySchema,
 } from "../../../shared/contracts";
@@ -58,6 +59,8 @@ export const engineResponseSchema = z.object({
       type: ocrScreenshotTypeSchema,
       confidence: z.number().min(0).max(1),
       alternatives: z.array(engineCandidateSchema).max(4),
+      /** V2 §18 — detected platform (default keeps older sidecars parsing). */
+      platform: ocrPlatformSchema.default("UNKNOWN"),
     })
     .nullable(),
   fields: z

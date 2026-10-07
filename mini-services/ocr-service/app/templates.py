@@ -37,13 +37,20 @@ MT5_DESKTOP_HISTORY = "MT5_DESKTOP_HISTORY"
 MT5_MOBILE_SUMMARY = "MT5_MOBILE_SUMMARY"
 GENERIC = "GENERIC"
 
-DIRECTION_WORD = re.compile(r"^(buy|sell|b|s)$", re.IGNORECASE)
+# Direction words — V2 §11 normalization vocabulary: the LONG/SHORT synonyms
+# are now FIRST-CLASS direction evidence (they were already accepted by
+# normalize_direction; the regex simply never matched them before).
+DIRECTION_WORD = re.compile(r"^(buy|sell|b|s|long|short)$", re.IGNORECASE)
 DECIMAL_TOKEN = re.compile(r"^[-+]?\d{1,3}(?:[.,\s]\d{3})*(?:[.,]\d+)?|[-+]?\d+[.,]\d+|^[-+]?\d+$")
 TIME_TOKEN = re.compile(r"^\d{4}[.-]\d{2}[.-]\d{2}[ T]?\d{2}:\d{2}(?::\d{2})?$")
 SYMBOL_TOKEN = re.compile(r"^[A-Za-z]{2,6}(?:[A-Za-z0-9]{0,4})?$")
 SL_LABELS = re.compile(r"\bs[./]?l\b", re.IGNORECASE)
 TP_LABELS = re.compile(r"\bt[./]?p\b", re.IGNORECASE)
 PROFIT_LABELS = re.compile(r"\bprofit\b", re.IGNORECASE)
+# Exit price (V2 §11) lives in extraction.py as WORD-level label shapes —
+# the bare word "close" in a history row is an order TYPE there, and the
+# OCR splits "exit price" into two words, so a single-line regex cannot
+# express the rule (see _EXIT_WORD / _exit_labeled_value).
 
 # Words that can never be a symbol (platform vocabulary — mirrors extraction).
 SYMBOL_STOPWORDS = {
@@ -94,16 +101,35 @@ GENERIC_TEMPLATE = LayoutTemplate(
 )
 
 
+# Classification types that carry MT5 layout evidence (V2 §19 taxonomy +
+# the legacy MT5_TRADE value that older persisted results still use).
+MT5_TYPES = frozenset({
+    "MT5_TRADE",
+    "TRADE_HISTORY",
+    "OPEN_POSITION",
+    "TRADE_DETAIL",
+    "POSITION_DETAIL",
+    "ORDER",
+})
+
+
 def choose_template(
-    classification_type: Optional[str], width: int, height: int
+    classification_type: Optional[str],
+    width: int,
+    height: int,
+    platform: Optional[str] = None,
 ) -> LayoutTemplate:
     """Pick the layout template from the classification + geometry.
 
-    MT5 evidence + a landscape aspect ratio (desktop panel) selects the
-    history template; MT5 evidence on a portrait/square crop selects the
-    mobile summary. Anything else stays GENERIC — no guesses (§9).
+    MT5 evidence (detected platform, or an MT5-shaped type for legacy
+    callers) + a landscape aspect ratio (desktop panel) selects the history
+    template; MT5 evidence on a portrait/square crop selects the mobile
+    summary. Anything else stays GENERIC — no guesses (§9).
     """
-    if classification_type != "MT5_TRADE":
+    is_mt5 = (platform == "MT5") or (
+        platform is None and classification_type in MT5_TYPES
+    )
+    if not is_mt5:
         return GENERIC_TEMPLATE
     if height <= 0:
         return GENERIC_TEMPLATE

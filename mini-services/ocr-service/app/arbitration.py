@@ -5,9 +5,10 @@ the sidecar's concrete answer: a SECOND DETERMINISTIC PASS run in parallel
 with the primary one, plus field-level arbitrage between the two.
 
 Design (honest, no ML, §28):
-  - Pass A (primary): PSM 6 (uniform block) over the full preprocessing
-    chain (denoise → deskew → ×2 LANCZOS → CLAHE) — the best all-round
-    configuration for panel screenshots.
+  - Pass A (primary): tesseract's default page segmentation (PSM 3, full
+    auto analysis) over the complete preprocessing chain (denoise → deskew
+    → ×2 LANCZOS → CLAHE) — the best all-round configuration for panel
+    screenshots with mixed column layouts.
   - Pass B (challenger): PSM 11 (sparse text) over the OTSU-BINARIZED
     variant — a genuinely different segmentation of the same pixels, which
     is exactly what makes disagreement informative. Sparse text finds
@@ -39,7 +40,11 @@ PASS_DISAGREEMENT = "PASS_DISAGREEMENT"
 SECOND_PASS_ONLY = "SECOND_PASS_ONLY"
 FIRST_PASS_ONLY = "FIRST_PASS_ONLY"
 
-PASS_NAMES = ("block_psm6", "sparse_psm11")
+# Honest pass labels (V2 audit fix): pass A runs tesseract's DEFAULT
+# segmentation (PSM 3) — the previous "block_psm6" label claimed a config
+# that was never passed. Renaming keeps the observability surface truthful;
+# contractVersion stays "1" (labels are metadata, not contract shape).
+PASS_NAMES = ("block_psm3", "sparse_psm11")
 
 
 def run_sparse_pass(image, lang: str) -> list[OcrLine]:

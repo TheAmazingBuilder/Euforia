@@ -1,11 +1,12 @@
 """Image validation + advanced preprocessing (Phase 19 §7/§11/§38 + engine
-quality phase).
+quality phase + V2 spec §20).
 
 The sidecar treats every image as UNTRUSTED (§7): the format is re-derived
-with Pillow (never the declared MIME), decodability is verified, and the
-pixel ceiling is enforced BEFORE any heavy work. Preprocessing (§11) is
-non-destructive — the original stays upstream in COSMOZ storage; only the
-in-memory working copies are transformed.
+with Pillow (never the declared MIME), decodability is verified, the declared
+SHA-256 checksum is RECOMPUTED and compared (V2 §20 — the caller's metadata
+is evidence, not authority), and the pixel ceiling is enforced BEFORE any
+heavy work. Preprocessing (§11) is non-destructive — the original stays
+upstream in COSMOZ storage; only the in-memory working copies are transformed.
 
 Working copies produced (engine quality phase):
   gray       — original, grayscale (reference + dHash input);
@@ -16,6 +17,7 @@ Working copies produced (engine quality phase):
 
 from __future__ import annotations
 
+import hashlib
 import io
 from typing import Optional
 
@@ -34,6 +36,15 @@ SUPPORTED_MIME = ("image/png", "image/jpeg", "image/webp")
 
 class ImageRejected(Exception):
     """Raised for structurally unusable images (maps to UNPROCESSABLE)."""
+
+
+class ChecksumMismatch(ImageRejected):
+    """The declared SHA-256 does not match the payload (V2 §20).
+
+    A DISTINCT failure class: a transport corruption is a caller/pipe
+    problem (VALIDATION_FAILED at the Nest side), not a bad image
+    (SCREENSHOT_UNSUPPORTED) — the retry semantics differ.
+    """
 
 
 def sniff_mime(data: bytes) -> Optional[str]:
@@ -78,6 +89,12 @@ def validate_and_prepare(data: bytes, metadata: EngineMetadata, max_pixels: int)
         raise ImageRejected("unsupported or undecodable image format")
     if actual_mime != metadata.mime:
         raise ImageRejected("declared MIME does not match the actual image content")
+
+    # Declared checksum is re-derived from the bytes (V2 §20 — never trust
+    # client-side validation; the checksum is verified, not assumed).
+    actual_checksum = hashlib.sha256(data).hexdigest()
+    if actual_checksum != metadata.checksumSha256.lower():
+        raise ChecksumMismatch("declared checksum does not match the image bytes")
 
     try:
         with Image.open(io.BytesIO(data)) as probe:

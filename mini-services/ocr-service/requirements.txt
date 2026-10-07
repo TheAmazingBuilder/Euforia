@@ -14,3 +14,7 @@ uvicorn>=0.29,<1
 pydantic>=2.6,<3
 pytesseract>=0.3.10,<0.4
 Pillow>=10.2,<12
+# Hard runtime dependencies that were missing from this manifest (V2 audit
+# §10 — a clean `pip install -r requirements.txt` deploy must not crash):
+numpy>=1.26,<3          # preprocessing (CLAHE tile blend, projection profiles)
+pypdfium2>=4.30,<5      # PDF statement rendering (pdf.py)

@@ -29,6 +29,20 @@ def _headers(token: str = TOKEN) -> dict:
     return {"x-internal-token": token}
 
 
+# ── V2 §20 — declared checksum is verified, not assumed ─────────────────
+
+def test_checksum_mismatch_is_validation_failure():
+    image, width, height = render_mt5_screenshot()
+    request = to_request(image, width, height)
+    request["metadata"]["checksumSha256"] = "f" * 64
+    response = client.post("/v1/recognitions", json=request, headers=_headers())
+    assert response.status_code == 200
+    body = response.json()
+    assert body["processingStatus"] == "UNPROCESSABLE"
+    # A transport corruption is a VALIDATION failure — not a bad image.
+    assert body["failure"]["category"] == "VALIDATION_FAILED"
+
+
 # ── Auth (§27) ───────────────────────────────────────────────────────────────
 
 def test_healthz_is_public():
@@ -94,7 +108,10 @@ def test_recognize_mt5_screenshot():
     assert body["contractVersion"] == "1"
     assert body["processingStatus"] == "COMPLETED"
     assert body["failure"] is None
-    assert body["classification"]["type"] == "MT5_TRADE"
+    # V2 §18/§19 — platform + fine-grained type (the fixture is a history
+    # panel; the legacy MT5_TRADE value stays reserved for old rows).
+    assert body["classification"]["platform"] == "MT5"
+    assert body["classification"]["type"] == "TRADE_HISTORY"
 
     fields = {f["field"]: f for f in body["fields"]}
     assert fields["symbol"]["normalizedValue"] == "XAUUSD"

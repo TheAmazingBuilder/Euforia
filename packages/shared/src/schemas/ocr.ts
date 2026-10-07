@@ -141,12 +141,38 @@ export type OcrExtractedField = z.infer<typeof ocrExtractedFieldSchema>;
  * Deterministic keyword-heuristic classification. Provider-specific logic
  * stays minimal: only platforms the product actually targets (§9).
  */
+/**
+ * Screenshot taxonomy (V2 spec §19) — additive extension. The legacy
+ * MT5_TRADE / TRADINGVIEW_CHART values stay valid forever (persisted
+ * results and mocks keep parsing); the sidecar V2 pipeline (v3.0.0)
+ * emits the finer TRADE_HISTORY / OPEN_POSITION / ... vocabulary.
+ */
 export const ocrScreenshotTypeSchema = z.enum([
   "MT5_TRADE",
   "TRADINGVIEW_CHART",
+  "TRADE_HISTORY",
+  "OPEN_POSITION",
+  "ORDER",
+  "TRADE_DETAIL",
+  "ACCOUNT_SUMMARY",
+  "CHART",
+  "POSITION_DETAIL",
   "UNKNOWN",
 ]);
 export type OcrScreenshotType = z.infer<typeof ocrScreenshotTypeSchema>;
+
+/** Trading platforms recognized deterministically (V2 spec §18). */
+export const ocrPlatformSchema = z.enum([
+  "MT5",
+  "MT4",
+  "TRADINGVIEW",
+  "CTRADER",
+  "NINJATRADER",
+  "INTERACTIVE_BROKERS",
+  "DERIV",
+  "UNKNOWN",
+]);
+export type OcrPlatform = z.infer<typeof ocrPlatformSchema>;
 
 export const ocrClassificationCandidateSchema = z.object({
   type: ocrScreenshotTypeSchema,
@@ -157,6 +183,8 @@ export const ocrClassificationSchema = z.object({
   type: ocrScreenshotTypeSchema,
   confidence: z.number().min(0).max(1),
   alternatives: z.array(ocrClassificationCandidateSchema).max(4),
+  /** V2 §18 — detected platform (default keeps old persisted rows valid). */
+  platform: ocrPlatformSchema.default("UNKNOWN"),
 });
 export type OcrClassification = z.infer<typeof ocrClassificationSchema>;
 
