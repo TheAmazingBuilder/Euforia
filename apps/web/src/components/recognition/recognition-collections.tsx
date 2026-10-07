@@ -49,163 +49,160 @@ import type { RecognitionDict } from "@/i18n/dictionaries/en/recognition";
  * stays purely referential: adding or removing never mutates the
  * recognition itself, and deleting a collection never touches the history
  * (the backend keeps every recognition row — the collection is just
- * membership). This module owns the whole surface the audit gap listed:
- * the per-row "Add to collection" menu and the history-side panel that
- * lists, expands, creates and deletes collections.
+ * membership).
  *
- * Server state lives in the five useOcrCollection* React Query hooks;
- * this file adds only local UI state (dialogs, expansion) and the
- * membership toggles. No hex outside tokens, Le Registre discipline.
+ * Three standalone surfaces, all reading the same React Query cache (the
+ * five useOcrCollection* hooks) — no context needed:
+ *   - AddToCollectionMenu   per-row membership manager (history rows AND
+ *                           the result view)
+ *   - CollectionsPanel      the history-side panel (list / expand / create
+ *                           / delete)
+ *   - RecognitionCollectionsRow  read-only chips in the result view
+ *
+ * No hex outside tokens, Le Registre discipline.
  */
 
-type CollectionsController = {
-  dict: RecognitionDict;
-  collections: OcrCollection[];
-  /** Loaded history recognitions — the first-resort member resolver. */
-  known: Map<string, OcrRecognition>;
-  loading: boolean;
-  /** Open the create dialog; optionally pre-target a recognition to add. */
-  openCreate: (recognitionId?: string) => void;
-  /** Toggle membership (add when absent, remove when present). */
-  toggleMembership: (collection: OcrCollection, recognitionId: string) => void;
-  removeMember: (collectionId: string, recognitionId: string) => void;
-  deleteCollection: (collection: OcrCollection) => void;
-  isBusy: (collectionId: string) => boolean;
-};
-
-const CollectionsContext = React.createContext<CollectionsController | null>(null);
-
-function useCollections(): CollectionsController {
-  const controller = React.useContext(CollectionsContext);
-  if (!controller) {
-    throw new Error("useCollections must be used inside <CollectionsProvider>");
-  }
-  return controller;
+function useCollectionMemberships(recognitionId: string): OcrCollection[] {
+  const list = useOcrCollections();
+  return React.useMemo(
+    () => (list.data?.collections ?? []).filter((collection) =>
+      collection.items.some((item) => item.recognitionId === recognitionId),
+    ),
+    [list.data, recognitionId],
+  );
 }
 
-export function CollectionsProvider({
+/**
+ * AddToCollectionMenu — the membership affordance for ONE recognition.
+ * Lists every collection with a membership check (clicking toggles), then
+ * "New collection…" which opens the create dialog with this recognition
+ * pre-targeted (create & add in one pass).
+ */
+export function AddToCollectionMenu({
   dict,
-  items,
-  onOpen,
-  children,
+  recognitionId,
 }: {
   dict: RecognitionDict;
-  items: readonly OcrRecognition[];
-  /** Deep-open a recognition (?job=<id>). */
-  onOpen: (id: string) => void;
-  children: React.ReactNode;
+  recognitionId: string;
 }) {
   const list = useOcrCollections();
-  const create = useCreateOcrCollection();
   const addTo = useAddToOcrCollection();
   const removeFrom = useRemoveFromOcrCollection();
-  const deleteCollectionMutation = useDeleteOcrCollection();
+  const create = useCreateOcrCollection();
+  const [createOpen, setCreateOpen] = React.useState(false);
+  const [name, setName] = React.useState("");
 
-  const [createState, setCreateState] = React.useState<{ open: boolean; recognitionId: string | null; name: string }>({
-    open: false,
-    recognitionId: null,
-    name: "",
-  });
-  const [pendingDelete, setPendingDelete] = React.useState<OcrCollection | null>(null);
-  const [busyIds, setBusyIds] = React.useState<Set<string>>(new Set());
+  const collections = React.useMemo(() => list.data?.collections ?? [], [list.data]);
+  const busy = addTo.isPending || removeFrom.isPending;
+  const memberIds = React.useMemo(
+    () =>
+      new Set(
+        collections
+          .filter((collection) =>
+            collection.items.some((item) => item.recognitionId === recognitionId),
+          )
+          .map((collection) => collection.id),
+      ),
+    [collections, recognitionId],
+  );
 
-  const collections = list.data?.collections ?? [];
-  const known = React.useMemo(() => new Map(items.map((item) => [item.id, item])), [items]);
-
-  const markBusy = (collectionId: string, busy: boolean) =>
-    setBusyIds((current) => {
-      const next = new Set(current);
-      if (busy) next.add(collectionId);
-      else next.delete(collectionId);
-      return next;
-    });
-
-  const controller: CollectionsController = {
-    dict,
-    collections,
-    known,
-    loading: list.isLoading,
-    openCreate: (recognitionId) => setCreateState({ open: true, recognitionId: recognitionId ?? null, name: "" }),
-    toggleMembership: (collection, recognitionId) => {
-      const member = collection.items.some((item) => item.recognitionId === recognitionId);
-      markBusy(collection.id, true);
-      if (member) {
-        removeFrom.mutate(
-          { collectionId: collection.id, recognitionId },
-          {
-            onSettled: () => markBusy(collection.id, false),
-            onSuccess: () => toast.success(dict.collections.removed),
-            onError: (error) => toast.error(dict.errors.server, { description: apiErrorMessage(error, "") }),
-          },
-        );
-      } else {
-        addTo.mutate(
-          { collectionId: collection.id, recognitionId },
-          {
-            onSettled: () => markBusy(collection.id, false),
-            onSuccess: () => toast.success(dict.collections.added),
-            onError: (error) => toast.error(dict.errors.server, { description: apiErrorMessage(error, "") }),
-          },
-        );
-      }
-    },
-    removeMember: (collectionId, recognitionId) => {
-      markBusy(collectionId, true);
+  function toggle(collection: OcrCollection) {
+    const member = memberIds.has(collection.id);
+    if (member) {
       removeFrom.mutate(
-        { collectionId, recognitionId },
-        {
-          onSettled: () => markBusy(collectionId, false),
-          onSuccess: () => toast.success(dict.collections.removed),
-          onError: (error) => toast.error(dict.errors.server, { description: apiErrorMessage(error, "") }),
-        },
+        { collectionId: collection.id, recognitionId },
+        { onSuccess: () => toast.success(dict.collections.removed),
+          onError: (error) => toast.error(dict.errors.server, { description: apiErrorMessage(error, "") }) },
       );
-    },
-    deleteCollection: (collection) => setPendingDelete(collection),
-    isBusy: (collectionId) => busyIds.has(collectionId) || addTo.isPending || removeFrom.isPending,
-  };
+    } else {
+      addTo.mutate(
+        { collectionId: collection.id, recognitionId },
+        { onSuccess: () => toast.success(dict.collections.added),
+          onError: (error) => toast.error(dict.errors.server, { description: apiErrorMessage(error, "") }) },
+      );
+    }
+  }
 
   function handleCreate() {
-    const name = createState.name.trim();
-    if (!name) return;
-    create.mutate(name, {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    create.mutate(trimmed, {
       onSuccess: (data) => {
         toast.success(dict.collections.created);
-        const recognitionId = createState.recognitionId;
-        setCreateState({ open: false, recognitionId: null, name: "" });
-        if (recognitionId) {
-          addTo.mutate(
-            { collectionId: data.collection.id, recognitionId },
-            {
-              onSuccess: () => toast.success(dict.collections.added),
-              onError: (error) => toast.error(dict.errors.server, { description: apiErrorMessage(error, "") }),
-            },
-          );
-        }
+        setCreateOpen(false);
+        setName("");
+        addTo.mutate(
+          { collectionId: data.collection.id, recognitionId },
+          { onSuccess: () => toast.success(dict.collections.added),
+            onError: (error) => toast.error(dict.errors.server, { description: apiErrorMessage(error, "") }) },
+        );
       },
       onError: (error) => toast.error(dict.errors.server, { description: apiErrorMessage(error, "") }),
     });
   }
 
   return (
-    <CollectionsContext.Provider value={controller}>
-      {children}
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="min-h-8"
+            disabled={busy}
+            aria-label={dict.collections.addTo}
+            title={dict.collections.addTo}
+            data-testid={`recognition-collection-add-${recognitionId}`}
+          >
+            {busy ? (
+              <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
+            ) : (
+              <FolderPlus className="size-3.5" aria-hidden="true" />
+            )}
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-56" data-testid="recognition-collection-menu">
+          <DropdownMenuLabel className="font-mono text-[11px] uppercase tracking-[0.06em] text-muted-foreground">
+            {dict.collections.addTo}
+          </DropdownMenuLabel>
+          {collections.length === 0 ? (
+            <DropdownMenuSeparator />
+          ) : (
+            collections.map((collection) => {
+              const member = memberIds.has(collection.id);
+              return (
+                <DropdownMenuItem
+                  key={collection.id}
+                  onClick={() => toggle(collection)}
+                  data-testid={`recognition-collection-option-${collection.name}`}
+                >
+                  <Check className={cn("size-3.5", member ? "opacity-100" : "opacity-0")} aria-hidden="true" />
+                  <span className="min-w-0 flex-1 truncate">{collection.name}</span>
+                  <span className="font-mono text-[11px] tabular-nums text-muted-foreground">
+                    {collection.items.length}
+                  </span>
+                </DropdownMenuItem>
+              );
+            })
+          )}
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            onClick={() => setCreateOpen(true)}
+            data-testid="recognition-collection-menu-new"
+          >
+            <Plus className="size-3.5" aria-hidden="true" />
+            {dict.collections.newCollection}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
 
-      {/* Create — reached from the panel header and from the row menus
-          ("New collection…" with the recognition pre-targeted). */}
-      <Dialog
-        open={createState.open}
-        onOpenChange={(open) =>
-          setCreateState((current) => (open ? current : { open: false, recognitionId: null, name: "" }))
-        }
-      >
+      {/* Create & add — reached from the menu's "New collection…" entry. */}
+      <Dialog open={createOpen} onOpenChange={(open) => (open ? setCreateOpen(true) : (setCreateOpen(false), setName("")))}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle className="font-heading">{dict.collections.newCollection}</DialogTitle>
-            <DialogDescription>
-              {createState.recognitionId
-                ? dict.collections.createAndAdd
-                : dict.collections.inCollections}
-            </DialogDescription>
+            <DialogDescription>{dict.collections.createAndAdd}</DialogDescription>
           </DialogHeader>
           <form
             className="flex flex-col gap-3"
@@ -216,23 +213,232 @@ export function CollectionsProvider({
           >
             <Input
               autoFocus
-              value={createState.name}
-              onChange={(event) => setCreateState((current) => ({ ...current, name: event.target.value }))}
+              value={name}
+              onChange={(event) => setName(event.target.value)}
               placeholder={dict.collections.namePlaceholder}
               maxLength={64}
               data-testid="recognition-collection-name-input"
             />
             <div className="flex items-center justify-end gap-2">
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => setCreateState({ open: false, recognitionId: null, name: "" })}
-              >
+              <Button type="button" variant="ghost" onClick={() => setCreateOpen(false)}>
                 {dict.result.states.cancel}
               </Button>
-              <Button type="submit" disabled={!createState.name.trim() || create.isPending} data-testid="recognition-collection-create">
+              <Button type="submit" disabled={!name.trim() || create.isPending} data-testid="recognition-collection-create">
                 {create.isPending ? <Loader2 className="size-3.5 animate-spin" aria-hidden="true" /> : null}
-                {createState.recognitionId ? dict.collections.createAndAdd : dict.collections.create}
+                {dict.collections.createAndAdd}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+/**
+ * RecognitionCollectionsRow — the result-view display: which collections
+ * already hold this screenshot. Renders nothing when the recognition
+ * belongs to none (no noise on fresh recognitions); the menu at the end
+ * lets the reviewer manage membership without leaving the review.
+ */
+export function RecognitionCollectionsRow({
+  dict,
+  recognitionId,
+}: {
+  dict: RecognitionDict;
+  recognitionId: string;
+}) {
+  const memberships = useCollectionMemberships(recognitionId);
+  if (memberships.length === 0) return null;
+  return (
+    <div
+      className="flex flex-wrap items-center gap-2"
+      data-testid="recognition-result-collections"
+    >
+      <span className="ledger-label">{dict.collections.inCollections}</span>
+      {memberships.map((collection) => (
+        <span
+          key={collection.id}
+          className="flex items-center gap-1.5 rounded-md border border-border bg-background px-2 py-0.5 text-xs"
+          data-testid="recognition-result-collection-chip"
+        >
+          <FolderOpen className="size-3 text-accent" strokeWidth={1.5} aria-hidden="true" />
+          {collection.name}
+        </span>
+      ))}
+      <AddToCollectionMenu dict={dict} recognitionId={recognitionId} />
+    </div>
+  );
+}
+
+/**
+ * CollectionsPanel — the history-side surface: every collection as a ruled
+ * row (name, member count, created), expandable to its member
+ * recognitions with open / remove actions, plus create and delete.
+ * Standalone: consumes the collection hooks directly (same cache as the
+ * row menus).
+ */
+export function CollectionsPanel({
+  dict,
+  items,
+  onOpen,
+}: {
+  dict: RecognitionDict;
+  /** Loaded history recognitions — the first-resort member resolver. */
+  items: readonly OcrRecognition[];
+  /** Deep-open a recognition (?job=<id>). */
+  onOpen: (id: string) => void;
+}) {
+  const list = useOcrCollections();
+  const create = useCreateOcrCollection();
+  const removeFrom = useRemoveFromOcrCollection();
+  const deleteCollectionMutation = useDeleteOcrCollection();
+  const [expandedId, setExpandedId] = React.useState<string | null>(null);
+  const [createOpen, setCreateOpen] = React.useState(false);
+  const [name, setName] = React.useState("");
+  const [pendingDelete, setPendingDelete] = React.useState<OcrCollection | null>(null);
+
+  const collections = list.data?.collections ?? [];
+  const known = React.useMemo(() => new Map(items.map((item) => [item.id, item])), [items]);
+
+  function handleCreate() {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    create.mutate(trimmed, {
+      onSuccess: () => {
+        toast.success(dict.collections.created);
+        setCreateOpen(false);
+        setName("");
+      },
+      onError: (error) => toast.error(dict.errors.server, { description: apiErrorMessage(error, "") }),
+    });
+  }
+
+  return (
+    <div className="flex flex-col gap-2 rounded-xl border border-border bg-surface px-4 py-4" data-testid="recognition-collections">
+      <div className="flex items-center justify-between gap-3">
+        <p className="flex items-center gap-2 font-heading text-sm font-semibold">
+          <FolderOpen className="size-4 text-accent" strokeWidth={1.5} aria-hidden="true" />
+          {dict.collections.inCollections}
+          {collections.length > 0 ? (
+            <span className="stamp stamp-accent !text-[10px] font-mono tabular-nums">
+              {collections.length}
+            </span>
+          ) : null}
+        </p>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="min-h-8 font-mono text-xs"
+          onClick={() => setCreateOpen(true)}
+          data-testid="recognition-collection-new"
+        >
+          <Plus className="size-3.5" aria-hidden="true" />
+          {dict.collections.newCollection}
+        </Button>
+      </div>
+
+      {list.isLoading ? (
+        <div className="flex items-center gap-2 py-3 text-sm text-muted-foreground" aria-live="polite">
+          <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+        </div>
+      ) : collections.length === 0 ? (
+        <p className="py-3 text-sm text-muted-foreground">{dict.collections.empty}</p>
+      ) : (
+        <div className="flex flex-col">
+          {collections.map((collection) => {
+            const expanded = expandedId === collection.id;
+            return (
+              <div key={collection.id} className="border-b border-border/60 last:border-b-0" data-testid="recognition-collection-row">
+                <div className="flex items-center gap-2 py-2">
+                  <button
+                    type="button"
+                    className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                    onClick={() => setExpandedId(expanded ? null : collection.id)}
+                    aria-expanded={expanded}
+                    data-testid={`recognition-collection-expand-${collection.name}`}
+                  >
+                    <ChevronDown
+                      className={cn("size-3.5 shrink-0 text-muted-foreground transition-transform", expanded && "rotate-180")}
+                      aria-hidden="true"
+                    />
+                    <span className="truncate text-sm">{collection.name}</span>
+                    <span className="font-mono text-[11px] tabular-nums text-muted-foreground">
+                      {collection.items.length} {dict.collections.items}
+                    </span>
+                  </button>
+                  <span className="hidden font-mono text-[11px] tabular-nums text-muted-foreground sm:inline">
+                    {formatRelative(collection.createdAt)}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="min-h-8"
+                    onClick={() => setPendingDelete(collection)}
+                    aria-label={dict.collections.deleteTitle}
+                    data-testid={`recognition-collection-delete-${collection.name}`}
+                  >
+                    <Trash2 className="size-3.5" aria-hidden="true" />
+                  </Button>
+                </div>
+                {expanded ? (
+                  <div className="flex flex-col pb-2" data-testid={`recognition-collection-members-${collection.name}`}>
+                    <p className="ledger-label border-b border-border/40 pb-1">{dict.collections.membersTitle}</p>
+                    {collection.items.length === 0 ? (
+                      <p className="py-2 text-xs text-muted-foreground">{dict.collections.empty}</p>
+                    ) : (
+                      collection.items.map((item) => (
+                        <CollectionMemberRow
+                          key={item.recognitionId}
+                          dict={dict}
+                          known={known}
+                          collectionId={collection.id}
+                          recognitionId={item.recognitionId}
+                          busy={removeFrom.isPending}
+                          onRemove={removeFrom.mutate}
+                          onOpen={onOpen}
+                        />
+                      ))
+                    )}
+                  </div>
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Create — panel header (no pre-targeted recognition). */}
+      <Dialog open={createOpen} onOpenChange={(open) => (open ? setCreateOpen(true) : (setCreateOpen(false), setName("")))}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="font-heading">{dict.collections.newCollection}</DialogTitle>
+            <DialogDescription>{dict.collections.inCollections}</DialogDescription>
+          </DialogHeader>
+          <form
+            className="flex flex-col gap-3"
+            onSubmit={(event) => {
+              event.preventDefault();
+              handleCreate();
+            }}
+          >
+            <Input
+              autoFocus
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              placeholder={dict.collections.namePlaceholder}
+              maxLength={64}
+              data-testid="recognition-collection-name-input"
+            />
+            <div className="flex items-center justify-end gap-2">
+              <Button type="button" variant="ghost" onClick={() => setCreateOpen(false)}>
+                {dict.result.states.cancel}
+              </Button>
+              <Button type="submit" disabled={!name.trim() || create.isPending} data-testid="recognition-collection-create">
+                {create.isPending ? <Loader2 className="size-3.5 animate-spin" aria-hidden="true" /> : null}
+                {dict.collections.create}
               </Button>
             </div>
           </form>
@@ -275,175 +481,6 @@ export function CollectionsProvider({
           </div>
         </DialogContent>
       </Dialog>
-
-      {/* The panel itself — rendered once by RecognitionHistory below the
-          ledger table (it is a sibling of the rows, not a child). */}
-      <CollectionsPanel onOpen={onOpen} />
-    </CollectionsContext.Provider>
-  );
-}
-
-/**
- * AddToCollectionButton — the per-row affordance. Lists every collection
- * with a membership check (clicking toggles), then "New collection…"
- * which opens the create dialog with this recognition pre-targeted.
- */
-export function AddToCollectionButton({ recognitionId }: { recognitionId: string }) {
-  const { dict, collections, toggleMembership, openCreate, isBusy } = useCollections();
-  const busy = isBusy(recognitionId);
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="min-h-8"
-          disabled={busy}
-          aria-label={dict.collections.addTo}
-          data-testid={`recognition-collection-add-${recognitionId}`}
-        >
-          {busy ? (
-            <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
-          ) : (
-            <FolderPlus className="size-3.5" aria-hidden="true" />
-          )}
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56" data-testid="recognition-collection-menu">
-        <DropdownMenuLabel className="font-mono text-[11px] uppercase tracking-[0.06em] text-muted-foreground">
-          {dict.collections.addTo}
-        </DropdownMenuLabel>
-        {collections.length === 0 ? (
-          <DropdownMenuSeparator />
-        ) : (
-          collections.map((collection) => {
-            const member = collection.items.some((item) => item.recognitionId === recognitionId);
-            return (
-              <DropdownMenuItem
-                key={collection.id}
-                onClick={() => toggleMembership(collection, recognitionId)}
-                data-testid={`recognition-collection-option-${collection.name}`}
-              >
-                <Check className={cn("size-3.5", member ? "opacity-100" : "opacity-0")} aria-hidden="true" />
-                <span className="min-w-0 flex-1 truncate">{collection.name}</span>
-                <span className="font-mono text-[11px] tabular-nums text-muted-foreground">
-                  {collection.items.length}
-                </span>
-              </DropdownMenuItem>
-            );
-          })
-        )}
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => openCreate(recognitionId)} data-testid="recognition-collection-menu-new">
-          <Plus className="size-3.5" aria-hidden="true" />
-          {dict.collections.newCollection}
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
-
-/**
- * CollectionsPanel — the history-side surface: every collection as a ruled
- * row (name, member count, created), expandable to its member
- * recognitions with open / remove actions, plus create and delete.
- */
-function CollectionsPanel({ onOpen }: { onOpen: (id: string) => void }) {
-  const { dict, collections, loading, openCreate, deleteCollection } = useCollections();
-  const [expandedId, setExpandedId] = React.useState<string | null>(null);
-
-  return (
-    <div className="mt-4 flex flex-col gap-2 rounded-xl border border-border bg-surface px-4 py-4" data-testid="recognition-collections">
-      <div className="flex items-center justify-between gap-3">
-        <p className="flex items-center gap-2 font-heading text-sm font-semibold">
-          <FolderOpen className="size-4 text-accent" strokeWidth={1.5} aria-hidden="true" />
-          {dict.collections.inCollections}
-          {collections.length > 0 ? (
-            <span className="stamp stamp-accent !text-[10px] font-mono tabular-nums">
-              {collections.length}
-            </span>
-          ) : null}
-        </p>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="min-h-8 font-mono text-xs"
-          onClick={() => openCreate()}
-          data-testid="recognition-collection-new"
-        >
-          <Plus className="size-3.5" aria-hidden="true" />
-          {dict.collections.newCollection}
-        </Button>
-      </div>
-
-      {loading ? (
-        <div className="flex items-center gap-2 py-3 text-sm text-muted-foreground" aria-live="polite">
-          <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-        </div>
-      ) : collections.length === 0 ? (
-        <p className="py-3 text-sm text-muted-foreground">{dict.collections.empty}</p>
-      ) : (
-        <div className="flex flex-col">
-          {collections.map((collection) => {
-            const expanded = expandedId === collection.id;
-            return (
-              <div key={collection.id} className="border-b border-border/60 last:border-b-0" data-testid="recognition-collection-row">
-                <div className="flex items-center gap-2 py-2">
-                  <button
-                    type="button"
-                    className="flex min-w-0 flex-1 items-center gap-2 text-left"
-                    onClick={() => setExpandedId(expanded ? null : collection.id)}
-                    aria-expanded={expanded}
-                    data-testid={`recognition-collection-expand-${collection.name}`}
-                  >
-                    <ChevronDown
-                      className={cn("size-3.5 shrink-0 text-muted-foreground transition-transform", expanded && "rotate-180")}
-                      aria-hidden="true"
-                    />
-                    <span className="truncate text-sm">{collection.name}</span>
-                    <span className="font-mono text-[11px] tabular-nums text-muted-foreground">
-                      {collection.items.length} {dict.collections.items}
-                    </span>
-                  </button>
-                  <span className="hidden font-mono text-[11px] tabular-nums text-muted-foreground sm:inline">
-                    {formatRelative(collection.createdAt)}
-                  </span>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="min-h-8"
-                    onClick={() => deleteCollection(collection)}
-                    aria-label={dict.collections.deleteTitle}
-                    data-testid={`recognition-collection-delete-${collection.name}`}
-                  >
-                    <Trash2 className="size-3.5" aria-hidden="true" />
-                  </Button>
-                </div>
-                {expanded ? (
-                  <div className="flex flex-col pb-2" data-testid={`recognition-collection-members-${collection.name}`}>
-                    <p className="ledger-label border-b border-border/40 pb-1">{dict.collections.membersTitle}</p>
-                    {collection.items.length === 0 ? (
-                      <p className="py-2 text-xs text-muted-foreground">{dict.collections.empty}</p>
-                    ) : (
-                      collection.items.map((item) => (
-                        <CollectionMemberRow
-                          key={item.recognitionId}
-                          collectionId={collection.id}
-                          recognitionId={item.recognitionId}
-                          onOpen={onOpen}
-                        />
-                      ))
-                    )}
-                  </div>
-                ) : null}
-              </div>
-            );
-          })}
-        </div>
-      )}
     </div>
   );
 }
@@ -454,15 +491,22 @@ function CollectionsPanel({ onOpen }: { onOpen: (id: string) => void }) {
  * single GET (the same cached hook the focused job uses).
  */
 function CollectionMemberRow({
+  dict,
+  known,
   collectionId,
   recognitionId,
+  busy,
+  onRemove,
   onOpen,
 }: {
+  dict: RecognitionDict;
+  known: Map<string, OcrRecognition>;
   collectionId: string;
   recognitionId: string;
+  busy: boolean;
+  onRemove: (input: { collectionId: string; recognitionId: string }, options?: { onSuccess?: () => void }) => void;
   onOpen: (id: string) => void;
 }) {
-  const { dict, known, isBusy } = useCollections();
   const knownRecognition = known.get(recognitionId) ?? null;
   // Hook is skipped (enabled: false) whenever the resolver already knows
   // the recognition — no fetch fan-out for the common case.
@@ -475,7 +519,19 @@ function CollectionMemberRow({
         <span className="truncate font-mono text-[11px] text-muted-foreground">
           {fetched.isLoading ? "…" : recognitionId}
         </span>
-        <RemoveMemberButton collectionId={collectionId} recognitionId={recognitionId} busy={isBusy(collectionId)} />
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="min-h-7"
+          disabled={busy}
+          onClick={() => onRemove({ collectionId, recognitionId })}
+          aria-label={dict.collections.remove}
+          title={dict.collections.remove}
+          data-testid={`recognition-collection-remove-${recognitionId}`}
+        >
+          {busy ? <Loader2 className="size-3.5 animate-spin" aria-hidden="true" /> : <X className="size-3.5" aria-hidden="true" />}
+        </Button>
       </div>
     );
   }
@@ -511,35 +567,20 @@ function CollectionMemberRow({
         >
           {dict.history.open}
         </Button>
-        <RemoveMemberButton collectionId={collectionId} recognitionId={recognitionId} busy={isBusy(collectionId)} />
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="min-h-7"
+          disabled={busy}
+          onClick={() => onRemove({ collectionId, recognitionId })}
+          aria-label={dict.collections.remove}
+          title={dict.collections.remove}
+          data-testid={`recognition-collection-remove-${recognitionId}`}
+        >
+          {busy ? <Loader2 className="size-3.5 animate-spin" aria-hidden="true" /> : <X className="size-3.5" aria-hidden="true" />}
+        </Button>
       </div>
     </div>
-  );
-}
-
-function RemoveMemberButton({
-  collectionId,
-  recognitionId,
-  busy,
-}: {
-  collectionId: string;
-  recognitionId: string;
-  busy: boolean;
-}) {
-  const { dict, removeMember } = useCollections();
-  return (
-    <Button
-      type="button"
-      variant="ghost"
-      size="sm"
-      className="min-h-7"
-      disabled={busy}
-      onClick={() => removeMember(collectionId, recognitionId)}
-      aria-label={dict.collections.remove}
-      title={dict.collections.remove}
-      data-testid={`recognition-collection-remove-${recognitionId}`}
-    >
-      {busy ? <Loader2 className="size-3.5 animate-spin" aria-hidden="true" /> : <X className="size-3.5" aria-hidden="true" />}
-    </Button>
   );
 }

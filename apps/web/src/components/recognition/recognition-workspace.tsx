@@ -365,7 +365,13 @@ function WorkspaceInner() {
             onError: (error) => toast.error(dict.errors.server, { description: apiErrorMessage(error, "") }),
           })
         }
-        onOpen={(id) => setParams({ job: id })}
+        onOpen={(id) => {
+          // Opening a record must never inherit the wizard's stale step
+          // (e.g. "success" from a just-confirmed job) — reset to
+          // "overview" so the derivation shows the read-only record.
+          setStepRaw("overview");
+          setParams({ job: id });
+        }}
         onDelete={(id) =>
           deleteJob.mutate(id, {
             onSuccess: () => toast.success(dict.history.deleted),
@@ -572,7 +578,13 @@ function WorkspaceInner() {
             <RecentImports
               dict={dict}
               items={recent}
-              onOpen={(id) => setParams({ job: id })}
+              onOpen={(id) => {
+          // Opening a record must never inherit the wizard's stale step
+          // (e.g. "success" from a just-confirmed job) — reset to
+          // "overview" so the derivation shows the read-only record.
+          setStepRaw("overview");
+          setParams({ job: id });
+        }}
               onOpenHistory={() => setParams({ tab: "history" })}
             />
             <HeroModes dict={dict} compact />

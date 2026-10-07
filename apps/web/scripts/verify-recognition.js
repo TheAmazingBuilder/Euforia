@@ -302,6 +302,24 @@ async function makeScreenshotPng(page, width = 1280, height = 720, withText = tr
     await check("history rows untouched by collection ops", (await page.locator('[data-testid="recognition-history-row"]').count()) >= 5);
     await page.screenshot({ path: "scripts/shots/recognition-collections-final.png", fullPage: true });
 
+    // V2 §28b — the RESULT view lists the collections holding this screenshot.
+    await page.locator('[data-testid^="recognition-collection-open-"]').first().click();
+    await page.waitForSelector('[data-testid="recognition-result"]', { timeout: 10000 });
+    await page.waitForSelector('[data-testid="recognition-result-collections"]', { timeout: 5000 });
+    await check("result view shows collection chips", /Imports/.test(await page.locator('[data-testid="recognition-result-collections"]').innerText()));
+    await page.screenshot({ path: "scripts/shots/recognition-result-collections.png", fullPage: true });
+    await page.click('[data-testid="recognition-tab-history"]');
+    await page.waitForTimeout(800);
+
+    // V2 §28c — the "by collection" filter isolates the collection's members.
+    await page.click('[data-testid="recognition-collection-filter"]');
+    await page.waitForSelector('[data-testid="recognition-collection-filter-menu"]', { timeout: 5000 });
+    await page.click('[data-testid="recognition-collection-filter-option-Imports"]');
+    await page.waitForTimeout(500);
+    const filteredRows = await page.locator('[data-testid="recognition-history-row"]').count();
+    await check("collection filter isolates members", filteredRows === 1, `${filteredRows} row(s)`);
+    await check("filter button carries the collection name", /Imports/.test(await page.locator('[data-testid="recognition-collection-filter"]').innerText()));
+
     // ── 14. Responsive captures ──────────────────────────────────────────
     console.log("\n[14] Responsive captures");
     // Fresh pages carry NO session — log in on each before capturing (§59).

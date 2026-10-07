@@ -471,6 +471,7 @@ export const recognitionDict = {
     deleteBody: "The collection is removed; the screenshots it held remain in the history.",
     membersTitle: "Screenshots in this collection",
     menuEmpty: "No collections yet — create one first.",
+    allCollections: "All collections",
   },
 
   reprocess: {

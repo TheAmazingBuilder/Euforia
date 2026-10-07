@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { CameraOff, Maximize2, PenLine, RotateCcw, Trash2 } from "lucide-react";
+import { CameraOff, Check, FolderOpen, Maximize2, PenLine, RotateCcw, Trash2 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import type { OcrRecognition, OcrRecognitionStatus } from "@cosmoz/shared";
@@ -15,8 +15,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  AddToCollectionButton,
-  CollectionsProvider,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AddToCollectionMenu,
+  CollectionsPanel,
 } from "@/components/recognition/recognition-collections";
 import { RecognitionStatusBadge } from "@/components/recognition/recognition-status-badge";
 import { profileMetaKey, profileStampLabel } from "@/components/recognition/recognition-model";
@@ -27,6 +33,8 @@ import {
 } from "@/components/recognition/recognition-model";
 import type { RecognitionDict } from "@/i18n/dictionaries/en/recognition";
 
+import { useOcrCollections } from "@/lib/api/queries";
+
 /**
  * RecognitionHistory — every imported screenshot with its outcome
  * (PROMPT 3 §30/§31/§33).
@@ -36,6 +44,10 @@ import type { RecognitionDict } from "@/i18n/dictionaries/en/recognition";
  * Status filters map to the empty-state messages (§33). Deleting asks for
  * confirmation in a focused dialog (§61) and goes through the service
  * layer, never a page reload (§56).
+ *
+ * V2 §28 — collections: a per-row membership menu, a "by collection"
+ * filter over the loaded pages, and the CollectionsPanel below the table
+ * (all three read the same React Query cache).
  */
 
 const FILTERS: Array<{ key: "all" | OcrRecognitionStatus; labelKey: keyof RecognitionDict["history"]["filters"] }> = [
@@ -71,6 +83,11 @@ export function RecognitionHistory({
   // V2 §62 — derived-state filters (corrected / flagged) apply client-side
   // over the loaded pages; they are read-time derivations, not columns.
   const [derivedFilter, setDerivedFilter] = React.useState<"none" | "corrected" | "flagged">("none");
+  // V2 §28 — membership filter over the loaded pages (read-time too).
+  const collectionList = useOcrCollections();
+  const collections = collectionList.data?.collections ?? [];
+  const [collectionFilterId, setCollectionFilterId] = React.useState<string | null>(null);
+  const activeCollection = collections.find((collection) => collection.id === collectionFilterId) ?? null;
 
   const filtered = React.useMemo(
     () =>
@@ -78,9 +95,10 @@ export function RecognitionHistory({
         if (filter !== "all" && item.status !== filter) return false;
         if (derivedFilter === "corrected") return item.corrections !== null && Object.keys(item.corrections).length > 0;
         if (derivedFilter === "flagged") return item.duplicateOf !== null || item.possibleTradeDuplicate !== null;
+        if (activeCollection && !activeCollection.items.some((item2) => item2.recognitionId === item.id)) return false;
         return true;
       }),
-    [items, filter, derivedFilter],
+    [items, filter, derivedFilter, activeCollection],
   );
 
   const emptyMessage = (() => {
@@ -97,7 +115,6 @@ export function RecognitionHistory({
   })();
 
   return (
-    <CollectionsProvider dict={dict} items={items} onOpen={onOpen}>
     <div className="flex flex-col gap-4" data-testid="recognition-history">
       <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label={dict.history.title}>
         {FILTERS.map((entry) => (
@@ -135,6 +152,50 @@ export function RecognitionHistory({
             {label}
           </Button>
         ))}
+        <span className="mx-1 h-5 w-px bg-border" aria-hidden="true" />
+        {/* V2 §28 — "by collection" filter (members of the selected
+            collection, over the loaded pages). */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              type="button"
+              variant={activeCollection ? "secondary" : "ghost"}
+              size="sm"
+              className="min-h-8 font-mono text-xs"
+              data-testid="recognition-collection-filter"
+              aria-pressed={Boolean(activeCollection)}
+            >
+              <FolderOpen className="size-3.5" aria-hidden="true" />
+              {activeCollection ? activeCollection.name : dict.collections.allCollections}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-56" data-testid="recognition-collection-filter-menu">
+            <DropdownMenuItem
+              onClick={() => setCollectionFilterId(null)}
+              disabled={!activeCollection}
+              data-testid="recognition-collection-filter-all"
+            >
+              <Check className={cn("size-3.5", !activeCollection ? "opacity-100" : "opacity-0")} aria-hidden="true" />
+              {dict.collections.allCollections}
+            </DropdownMenuItem>
+            {collections.map((collection) => {
+              const selected = activeCollection?.id === collection.id;
+              return (
+                <DropdownMenuItem
+                  key={collection.id}
+                  onClick={() => setCollectionFilterId(collection.id)}
+                  data-testid={`recognition-collection-filter-option-${collection.name}`}
+                >
+                  <Check className={cn("size-3.5", selected ? "opacity-100" : "opacity-0")} aria-hidden="true" />
+                  <span className="min-w-0 flex-1 truncate">{collection.name}</span>
+                  <span className="font-mono text-[11px] tabular-nums text-muted-foreground">
+                    {collection.items.length}
+                  </span>
+                </DropdownMenuItem>
+              );
+            })}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Desktop ledger table. */}
@@ -222,7 +283,7 @@ export function RecognitionHistory({
                           <RotateCcw className="size-3.5" aria-hidden="true" />
                         </Button>
                       ) : null}
-                      <AddToCollectionButton recognitionId={item.id} />
+                      <AddToCollectionMenu dict={dict} recognitionId={item.id} />
                       <Button
                         type="button"
                         variant="ghost"
@@ -299,7 +360,7 @@ export function RecognitionHistory({
                     <RotateCcw className="size-3.5" aria-hidden="true" />
                   </Button>
                 ) : null}
-                <AddToCollectionButton recognitionId={item.id} />
+                <AddToCollectionMenu dict={dict} recognitionId={item.id} />
                 <Button
                   type="button"
                   variant="ghost"
@@ -359,8 +420,11 @@ export function RecognitionHistory({
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* V2 §28 — the collections surface (panel + its dialogs), sibling of
+          the ledger: list, expand, create, delete, per-member open/remove. */}
+      <CollectionsPanel dict={dict} items={items} onOpen={onOpen} />
     </div>
-    </CollectionsProvider>
   );
 }
 

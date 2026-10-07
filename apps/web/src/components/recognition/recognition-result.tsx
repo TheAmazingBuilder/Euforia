@@ -20,6 +20,7 @@ import {
   type FieldKey,
 } from "@/components/recognition/recognition-model";
 import { recognitionFieldLabel, type RecognitionDict } from "@/i18n/dictionaries/en/recognition";
+import { RecognitionCollectionsRow } from "@/components/recognition/recognition-collections";
 
 /** A region the user framed on the capture for a targeted re-scan. */
 export interface CropRegion {
@@ -212,6 +213,9 @@ export function RecognitionResult({
           {recognition.engine ? <span>{recognition.engine.name}</span> : null}
         </div>
       </div>
+
+      {/* V2 §28 — collections holding this screenshot (hidden when none). */}
+      <RecognitionCollectionsRow dict={dict} recognitionId={recognition.id} />
 
       {/* Duplicate banner (engine quality §2.1) — advisory, never blocking. */}
       {recognition.duplicateOf ? (
