@@ -160,6 +160,7 @@ export class OcrService {
         pipelineVersion: OCR_PIPELINE_VERSION,
         idempotencyKey,
         requestId: input.requestId,
+        accountId: null, // account attachment is validated + wired in the service layer (engine quality §3.1)
       })
       .catch(async (error) => {
         // Lost the (userId, idempotencyKey) race against a concurrent tab
@@ -214,6 +215,7 @@ export class OcrService {
     });
     const created = await this.repository
       .createAsset(userId, {
+        phashHex: null, // the engine computes the fingerprint during processing
         storageKey,
         originalName: `screenshot.${mimeExtension(image.mime)}`,
         mime: image.mime,
@@ -301,6 +303,17 @@ export class OcrService {
 
       // Stage 9–10 — map + domain-validate the engine output (§19/§17).
       const fields = applyDomainValidation(response.fields.map(mapEngineField));
+      // Multi-trade candidates get the SAME domain treatment (§2.2) —
+      // grouped evidence is untrusted machine output until confirmed.
+      const candidates = response.tradeCandidates.map((candidate) => ({
+        fields: applyDomainValidation(candidate.fields.map(mapEngineField)),
+      }));
+      // Perceptual fingerprint → asset row (duplicate detection input,
+      // engine quality §2.1). Best-effort: a missing hash only disables the
+      // advisory duplicate flag, never the pipeline.
+      if (response.perceptualHash) {
+        await this.repository.setAssetPhash(asset.id, response.perceptualHash);
+      }
       const mergedWarnings = mergeWarnings(
         response.warnings,
         fields.flatMap((f) => f.warnings.filter((w) => w === "TIMEZONE_UNKNOWN")),
@@ -316,6 +329,10 @@ export class OcrService {
           contractVersion: response.contractVersion,
         },
         durationMs: response.processingMetadata.durationsMs["total"] ?? null,
+        candidates: candidates.length > 0 ? candidates : null,
+        passes: response.processingMetadata.passes,
+        layoutTemplate: response.processingMetadata.layoutTemplate,
+        deskewDeg: response.processingMetadata.deskewDeg,
       };
       const updated = await this.repository.persistResult(row.id, result);
       if (!updated) {
@@ -607,6 +624,7 @@ export function toRecognitionDto(row: OcrRecognitionRow): OcrRecognition {
     height: row.asset.height,
     checksumSha256: row.asset.checksumSha256,
     createdAt: row.asset.createdAt.toISOString(),
+    purged: row.screenshotPurgedAt !== null,
   };
   const classification = (row.result?.classification ?? null) as OcrClassification | null;
   return {
@@ -631,6 +649,14 @@ export function toRecognitionDto(row: OcrRecognitionRow): OcrRecognition {
     corrections: row.corrections ?? null,
     /** Canonical Trade from the Phase 21 bridge — null when unlinked. */
     tradeId: row.tradeId,
+    /** Every Trade imported from this recognition (grouped confirmation). */
+    tradeIds: row.tradeIds,
+    /** Multi-trade drafts — null for the mono-trade path. */
+    candidates: (row.result?.candidates ?? null) as OcrRecognition["candidates"],
+    /** Advisory duplicate flag (engine quality §2.1) — stored in the result. */
+    duplicateOf: (row.result?.duplicateOf ?? null) as OcrRecognition["duplicateOf"],
+    accountId: row.accountId,
+    suggestedTags: row.result?.suggestedTags ?? [],
     confirmedAt: row.confirmedAt ? row.confirmedAt.toISOString() : null,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),

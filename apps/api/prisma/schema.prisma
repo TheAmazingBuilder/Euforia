@@ -113,6 +113,7 @@ model User {
   monitoringSetting MonitoringSetting?
   ocrAssets         OcrAsset[]
   ocrRecognitions   OcrRecognition[]
+  ocrCorrectionPatterns OcrCorrectionPattern[]
   trades            Trade[]
   savedTradeViews   SavedTradeView[]
   disciplineRows    DisciplineRow[]
@@ -293,6 +294,9 @@ model TradingAccount {
   deals      TradingDeal[]
   syncRuns   TradingSyncRun[]
   trades     Trade[]
+  /// OCR recognitions attached to this account (engine quality §3.1) —
+  /// the import target chosen by the user at upload/confirmation.
+  ocrRecognitions OcrRecognition[]
 
   @@unique([userId, providerId, externalAccountId])
   @@index([userId])
@@ -494,6 +498,10 @@ model OcrAsset {
   height         Int
   /// SHA-256 of the decoded binary — identity + integrity anchor (§6).
   checksumSha256 String
+  /// 64-bit dHash perceptual fingerprint (hex, engine quality §2.1) —
+  /// near-duplicate detection across the user's uploads. Nullable for rows
+  /// created before this phase.
+  phashHex String?
   createdAt      DateTime @default(now())
 
   recognitions OcrRecognition[]
@@ -550,8 +558,25 @@ model OcrRecognition {
   /// unconfirmed and when the confirmed values could not resolve into a
   /// complete trade. ON DELETE SET NULL: the journal trade is authoritative
   /// and must survive a recognition delete (one-way provenance).
-  tradeId String?
+  tradeId String? @db.Uuid
   trade   Trade?  @relation(fields: [tradeId], references: [id], onDelete: SetNull)
+
+  /// Grouped confirmation (engine quality §2.2): every Trade imported from
+  /// the multi-trade drafts, as a JSON array of uuids (tradeId above stays
+  /// the FIRST/primary one). Written only by the confirmation bridge.
+  tradeIds Json?
+
+  /// ACCOUNTS attachment (engine quality §3.1): the trading account chosen
+  /// for the import — set at upload or confirmation; the bridge prefers it
+  /// over the persisted default. ON DELETE SET NULL: deleting the account
+  /// keeps the recognition record.
+  accountId String? @db.Uuid
+  account   TradingAccount? @relation(fields: [accountId], references: [id], onDelete: SetNull)
+
+  /// Retention (engine quality §4.2): when the stored screenshot binary was
+  /// purged. Metadata rows remain (idempotency, history, analytics) — the
+  /// image endpoint answers 404 once purged.
+  screenshotPurgedAt DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -561,6 +586,28 @@ model OcrRecognition {
   @@index([userId, createdAt(sort: Desc)])
   @@index([userId, status])
   @@index([tradeId])
+  @@index([accountId])
+}
+
+/// Corrections memory (engine quality §2.3): one row per (field, raw
+/// reading → user correction) pair, with a hit counter. Feeds the
+/// pre-suggestion hints on future recognitions of the SAME user — advisory
+/// only, never applied automatically (§21 human-in-the-loop).
+model OcrCorrectionPattern {
+  id             String   @id @default(uuid()) @db.Uuid
+  userId         String   @db.Uuid
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fieldKey       String
+  /// The machine rawValue exactly as it was read (the memory key).
+  rawValue       String
+  /// The user's validated declaration (canonical stored form, §21).
+  correctedValue String
+  /// How many times this correction repeated (recurrence = confidence).
+  count          Int      @default(1)
+  lastSeenAt     DateTime
+
+  @@unique([userId, fieldKey, rawValue, correctedValue])
+  @@index([userId, fieldKey, rawValue])
 }
 
 // ── Trading Core / Journal (Domaine 3 — Phase 4) ───────────────────────────

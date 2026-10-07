@@ -30,6 +30,8 @@ export interface OcrAssetRow {
   width: number;
   height: number;
   checksumSha256: string;
+  /** 64-bit dHash hex — null for rows created before the engine-quality phase. */
+  phashHex: string | null;
   createdAt: Date;
 }
 
@@ -45,6 +47,20 @@ export interface OcrResultPayload {
     contractVersion: string;
   } | null;
   durationMs: number | null;
+  /** Multi-trade drafts (engine quality §2.2) — absent for the mono path. */
+  candidates?: { fields: unknown[] }[] | null;
+  /** Advisory duplicate flag (engine quality §2.1). */
+  duplicateOf?: {
+    recognitionId: string;
+    createdAt: string;
+    tradeId: string | null;
+  } | null;
+  /** Playbook tag suggestions (engine quality §3.3) — set at confirmation. */
+  suggestedTags?: string[];
+  /** Observability metadata from the engine passes (engine quality §1). */
+  passes?: string[];
+  layoutTemplate?: string | null;
+  deskewDeg?: number | null;
 }
 
 export interface OcrRecognitionRow {
@@ -66,6 +82,12 @@ export interface OcrRecognitionRow {
   confirmedAt: Date | null;
   /// Phase 21 — canonical Trade created from the confirmed values (§77).
   tradeId: string | null;
+  /// Grouped confirmation — every imported Trade id (engine quality §2.2).
+  tradeIds: string[];
+  /// ACCOUNTS attachment (engine quality §3.1).
+  accountId: string | null;
+  /// Retention — when the stored binary was purged (engine quality §4.2).
+  screenshotPurgedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
   asset: OcrAssetRow;
@@ -92,6 +114,9 @@ function toRecognitionRow(row: Prisma.OcrRecognitionGetPayload<{ include: typeof
     corrections: (row.corrections as Record<string, string | null> | null) ?? null,
     confirmedAt: row.confirmedAt,
     tradeId: row.tradeId,
+    tradeIds: Array.isArray(row.tradeIds) ? (row.tradeIds as string[]) : [],
+    accountId: row.accountId,
+    screenshotPurgedAt: row.screenshotPurgedAt,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
     asset: {
@@ -104,6 +129,7 @@ function toRecognitionRow(row: Prisma.OcrRecognitionGetPayload<{ include: typeof
       width: row.asset.width,
       height: row.asset.height,
       checksumSha256: row.asset.checksumSha256,
+      phashHex: row.asset.phashHex,
       createdAt: row.asset.createdAt,
     },
   };
@@ -144,6 +170,54 @@ export class OcrRepository {
     return row ?? null;
   }
 
+  /** Persist the perceptual fingerprint after processing (best-effort). */
+  async setAssetPhash(assetId: string, phashHex: string): Promise<void> {
+    await this.prisma.ocrAsset.update({
+      where: { id: assetId },
+      data: { phashHex },
+      select: { id: true },
+    });
+  }
+
+  /**
+   * Recent perceptual hashes for the user (duplicate detection pool,
+   * engine quality §2.1). Excludes the given asset (the upload's own row)
+   * — the caller computes Hamming distances in JS (no native bitcount).
+   */
+  async recentPhashesForUser(
+    userId: string,
+    options: { limit: number; excludeAssetId?: string },
+  ): Promise<{ assetId: string; phashHex: string }[]> {
+    const rows = await this.prisma.ocrAsset.findMany({
+      where: {
+        userId,
+        phashHex: { not: null },
+        ...(options.excludeAssetId ? { id: { not: options.excludeAssetId } } : {}),
+      },
+      orderBy: { createdAt: "desc" },
+      take: options.limit,
+      select: { id: true, phashHex: true },
+    });
+    return rows.flatMap((row) =>
+      row.phashHex !== null ? [{ assetId: row.id, phashHex: row.phashHex }] : [],
+    );
+  }
+
+  /** Oldest recognition carrying a given asset — the duplicate target. */
+  async findOldestRecognitionForAsset(assetId: string): Promise<{
+    id: string;
+    createdAt: Date;
+    tradeId: string | null;
+    status: string;
+  } | null> {
+    const row = await this.prisma.ocrRecognition.findFirst({
+      where: { assetId },
+      orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+      select: { id: true, createdAt: true, tradeId: true, status: true },
+    });
+    return row ?? null;
+  }
+
   async findRecognitionByIdempotencyKey(userId: string, idempotencyKey: string): Promise<OcrRecognitionRow | null> {
     const row = await this.prisma.ocrRecognition.findUnique({
       where: { userId_idempotencyKey: { userId, idempotencyKey } },
@@ -165,6 +239,7 @@ export class OcrRepository {
     width: number;
     height: number;
     checksumSha256: string;
+    phashHex: string | null;
   }): Promise<OcrAssetRow> {
     return this.prisma.ocrAsset.create({ data: { userId, ...asset } });
   }
@@ -182,6 +257,7 @@ export class OcrRepository {
       pipelineVersion: string;
       idempotencyKey: string;
       requestId: string | null;
+      accountId: string | null;
     },
   ): Promise<OcrRecognitionRow> {
     const created = await this.prisma.ocrRecognition.create({
@@ -193,6 +269,7 @@ export class OcrRepository {
         pipelineVersion: recognition.pipelineVersion,
         idempotencyKey: recognition.idempotencyKey,
         requestId: recognition.requestId,
+        accountId: recognition.accountId,
       },
       include: recognitionInclude,
     });
@@ -315,13 +392,14 @@ export class OcrRepository {
    */
   async linkTrade(
     id: string,
-    data: { tradeId: string | null; result: OcrResultPayload },
+    data: { tradeId: string | null; tradeIds?: string[]; result: OcrResultPayload },
   ): Promise<OcrRecognitionRow | null> {
     return this.prisma.$transaction(async (tx) => {
       const updated = await tx.ocrRecognition.updateMany({
         where: { id, status: "CONFIRMED" },
         data: {
           ...(data.tradeId !== null ? { tradeId: data.tradeId } : {}),
+          ...(data.tradeIds !== undefined ? { tradeIds: data.tradeIds as unknown as Prisma.InputJsonValue } : {}),
           result: data.result as unknown as Prisma.InputJsonValue,
         },
       });

@@ -38,6 +38,8 @@ export interface EngineRecognizeRequest {
   extractionProfile: typeof OCR_EXTRACTION_PROFILE;
   /** Soft processing budget in milliseconds — the sidecar honors it best-effort. */
   deadlineMs: number;
+  /** Re-OCR by crop (engine quality §2.4) — validated against the asset dims. */
+  crop?: { x: number; y: number; width: number; height: number };
 }
 
 // ── Response schemas (strict parsing of untrusted output, §54) ──────────────
@@ -70,12 +72,39 @@ export const engineResponseSchema = z.object({
       }),
     )
     .max(64),
+  /** Multi-trade drafts from account-history screenshots (engine quality §2.2). */
+  tradeCandidates: z
+    .array(
+      z.object({
+        fields: z.array(
+          z.object({
+            field: ocrFieldKeySchema,
+            rawValue: z.string().max(512).nullable(),
+            normalizedValue: z.string().max(512).nullable(),
+            confidence: z.number().min(0).max(1),
+            sourceRegion: ocrSourceRegionSchema.nullable(),
+            notes: z.array(z.string().max(256)).max(8),
+          }),
+        ),
+      }),
+    )
+    .max(20)
+    .default([]),
+  /** 64-bit dHash fingerprint — duplicate detection input (engine quality §2.1). */
+  perceptualHash: z
+    .string()
+    .regex(/^[0-9a-f]{16}$/)
+    .nullable()
+    .default(null),
   warnings: z.array(z.string().max(256)).max(16),
   processingMetadata: z.object({
     engine: z.string().min(1).max(64),
     engineVersion: z.string().min(1).max(32),
     pipelineVersion: z.string().min(1).max(32),
     durationsMs: z.record(z.string(), z.number().int().nonnegative()),
+    passes: z.array(z.string().max(64)).max(8).default([]),
+    layoutTemplate: z.string().max(64).nullable().default(null),
+    deskewDeg: z.number().min(-45).max(45).nullable().default(null),
   }),
   failure: z
     .object({
