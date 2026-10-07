@@ -483,3 +483,22 @@ Stage Summary:
 - 2 commits : `7b9eaac` (collections UI + sonde 48/48) → `cc3a8ad` (cleanup + rapport audit mis à jour).
 - Discipline Le Registre intacte : tokens uniquement, rangées réglées, stamps, confirmation focalisée ; le pipeline human-in-the-loop n'est pas touché (collections purement référentielles).
 - Restes connus : uniquement les 3 items documentés comme choix de workflow dans §5 (docker-compose, test runner web, limites produit V2).
+
+---
+Task ID: ocr-collections-result-filter-and-full-audit
+Agent: Super Z (main)
+Date: 2026-10-08 02:30 UTC
+
+Task: « ajouter l'affichage des collections d'un screenshot dans la vue résultat, intégrer un filtre "par collection" dans l'historique, Ensuite fait moi un commit de ce que l'on a deja fait afin de rien perdre et un audit complet du module OCR et du module Lot size/compounding. Enfin des que tu fini fais moi signe »
+
+Work Log:
+- COMMIT `feat(ocr)` — DEUX SURFACES + UN FIX : (1) RecognitionCollectionsRow dans la vue résultat — chips folder des collections contenant le screenshot (masquée si aucune) + menu d'appartenance à portée ; (2) filtre « All collections / <nom> » dans la rangée de filtres de l'historique (membres sur les pages chargées, options à check marks + comptes) ; (3) refactor du module collections en 3 composants autonomes sur le même cache React Query (plus de contexte) ; (4) FIX RÉEL : ouvrir un enregistrement depuis l'historique (ou les imports récents) héritait du step « success » périmé d'une confirmation précédente → onOpen reset stepRaw → les jobs CONFIRMED montrent leur enregistrement read-only (découvert par la sonde, étape result-chips en timeout). dict += allCollections. Sonde +4 checks → **51/51, 0 pageerror** · rebrand 17/17.
+- AUDIT TOOLS (agent Explore + exécution réelle des vecteurs) : 8/9 PASS — frontend-only prouvé (zéro apiRequest/useQuery/fetch/lib.api dans tools/*), vecteur lot-size exécuté (10 000 $/1 %/XAUUSD 2650/2640 → 100 $/0.10 lots, floor step, BELOW_STEP explicite), vecteur compounding exécuté (1 000 $/20×5 % → 2 653.29770514 → $2,653.30/+165.33 %, boucle par période, pas d'annualisée), validations dict-keyées, presets (BTCUSDT documenté vs BTCUSD du prompt), UI complète (live recompute, sticky header, cartes mobiles, ECharts partagé), navigation « Tools » + redirect, 8 tests unitaires. CORRECTION FACTUELLE : RR 1:2.35 ⇔ TP 2673.50 (l'UI et la sonde utilisent bien 2673.50 ; « TP 2660 → 2.35 » était incohérent).
+- HOUSEKEEPING same-day : sonde tools — l'assert mobile tautologique (|| true) remplacée par un vrai contrôle d'overflow 390px (→ 0px) ; 4 clés dict mortes (rrUnit/2×stopPips/pipSize) + parseFormField + import orphelin supprimés. Dettes acceptées documentées (payloads clipboard EN, pas de test runner web, endpoints Phase-18 non consommés par le V1 frontend).
+- AUDIT OCR re-vérifié : API vitest FULL **580/580 (51 fichiers)** · sidecar pytest **79/79** · tsc 0 · eslint 0 erreur (4 warnings préexistants) · build OK (30 routes) · sondes recognition **51/51** + rebrand **17/17** · rapports : docs/backend/TOOLS-AUDIT-REPORT.md (nouveau) + OCR-AUDIT-REPORT.md (§0/§4/§5 actualisés).
+- PIÈGE : la sonde 28b échouait AVANT le fix onOpen — ce n'était pas un problème de sonde mais le bug produit du step périmé ; le fix est un vrai gain UX couvert par la sonde.
+
+Stage Summary:
+- La surface §28 est COMPLÈTE : panneau historique + menu par rangée + chips en vue résultat + filtre par collection — le tout non destructeur, même cache, même discipline Le Registre.
+- Audit complet des deux modules : VERDICTS « COMPLETE AND SPEC-COMPLIANT » (OCR) et « COMPLETE AND SPEC-COMPLIANT (8/9 PASS, housekeeping fermé) » (TOOLS) avec preuves chiffrées dans les deux rapports.
+- 2 commits de feature/audit + 1 commit worklog ; toutes les suites vertes au head.
