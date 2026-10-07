@@ -415,3 +415,24 @@ Stage Summary:
 - 5 commits : fbb70b0 (sidecar v3) → 54cd294 (couche décision) → c7cc521 (sets/fusion) → 81746de (ops) → aa18738 (frontend) + docs/backend/OCR-V2-REPORT.md.
 - Vérifications : sidecar 67/67, api 558/558, web tsc/eslint/build verts, sondes 24/24 + 17/17, real-stack 16/16 ALL CHECKS PASSED.
 - Limites honnêtes documentées (rapport §8) : templates de layout uniquement MT5 (les autres plateformes sont détectées mais GENERIC), pas de proposition cross-set de « possible group », idempotence du reprocess par révision, pas de page collections dans Analytics.
+
+---
+Task ID: ocr-v11-frontend-console-redesign
+Agent: Super Z (main)
+Date: 2026-10-07 14:20 UTC
+
+Task: « d'abord je veux que l'on retravaille notre frontend… professionnel, premium… ensuite qu'il soit aussi capable de detecter, travailler, analyser les Account et les Chart analysis » — finir le frontend Account/Chart V1.1 interrompu, puis redesign premium complet du module OCR.
+
+Work Log:
+- REPRISE GIT : les 833 lignes non commités de la session précédente = le frontend Account/Chart V1.1 complet (profile cards sélectionnables, AccountSnapshotView KPI+ledger, ChartReadingView quote+indicateurs, mode stamps history, mocks déterministes). Fix des props orphelines de recognition-history (reprocess → bouton RotateCcw desktop+mobile, load-more → rangées dédiées, clés dict `reprocess.action`/`history2.loadMore`), commit `d3565ae`.
+- AUDIT : plus aucun « coming soon » dans le module OCR (les hits restants = placeholder générique des autres modules). Sonde verify-recognition.js : 14 étapes dont Account (11) et Chart (12).
+- BASELINE : capture-recognition.js écrit (login → overview/history/configure/result trade/account/chart, PREFIX=env). Reconstruit .next (l'ancien build servait des chunks 500) ; kills par PID avant build ; server+probe dans le même appel bash.
+- REDESIGN « CONSOLE » (commit `78951f5`) : header de page avec bloc méta réglé à droite (Recognition modes / Pipeline stages / Duplicate guard — vérités produit statiques) ; primitives CSS `.scan-frame` + `.scan-corner-*` (coins viseur accent) + `.meter` (barre d'usage) dans globals.css ; dropzone viewfinder avec chips formats PNG/JPG/WEBP/PDF + « 6 MB max » ; HeroModes numérotés 01/02/03 ; StepShell 01→02→03 ; progression : étapes numérotées + meter honnête (pas de tweening) ; StorageIndicator avec meter ; imports récents avec stamp de mode accent ; profile cards premium (index mono + icône en carré réglé) ; rule-double sous les titres Account/Chart ; clés dict `overview.meta.*` + `uploader.formatsLabel/maxSizeLabel`.
+- BUG SONDE RÉSOLU (pas un bug produit) : l'étape 12 (chart) confirmait le MÊME PNG vierge que l'étape 11 (account) → le garde-fou pHash rejetait à juste titre la confirmation (« A near-duplicate of this screenshot was already imported »), le dialog restait ouvert avec le toast d'erreur — comportement backend+frontend CORRECT. Fix : paramètre `tint` dans makeScreenshotPng (chart = +24), sync capture-recognition.js.
+- VÉRIFICATION : sonde complète **35/35 passed, 0 failed, pageerrors=0** (login, overview, history, upload→confirm, failure, cancel, Account confirm, Chart confirm, captures tablette/mobile, intégrité console) ; tsc 0 erreur ; eslint 0 erreur (4 warnings `_locale` préexistants hors module).
+
+Stage Summary:
+- Les deux consignes du user sont LIVRÉES : (1) redesign professionnel/premium du module OCR — « The Console », dans la discipline Le Registre (hairlines, zéro hex hors tokens, un seul accent) ; (2) Account/position + Chart analysis pleinement reconnus, éditables, confirmables — plus aucun « coming soon ».
+- Commits : `d3565ae` (frontend V1.1 account/chart), `78951f5` (console redesign + probe fix).
+- Artifacts : scripts/capture-recognition.js (baseline avant/après), scripts/shots/redesign-{before,after}-*.png (12 captures).
+- Suite : les 13 features des phases précédentes sont déjà commitées (git log : preprocessing/dual-pass/templates/multi-trade/pHash v9da499f, contract 5de638b, service f34da20, ops 928182f, frontend 098be19, sidecar fbb70b0, decision 54cd294, multi-shot c7cc521, ops slice 81746de, frontend v2 aa18738). Reste à vérifier la couverture PDF multi-pages et clôturer l'inventaire 12 points.
