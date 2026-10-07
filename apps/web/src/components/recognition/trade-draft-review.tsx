@@ -1,6 +1,16 @@
 "use client";
 
-import { ShieldCheck, SquareCheckBig, Square } from "lucide-react";
+import * as React from "react";
+import { PenLine, ShieldCheck, SquareCheckBig, Square } from "lucide-react";
+
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 import { cn } from "@/lib/utils";
 import type { OcrRecognition } from "@cosmoz/shared";
@@ -171,6 +181,13 @@ export function TradeDraftReview({
   onConfirm: () => void;
   pending?: boolean;
 }) {
+  // V2 §60 — the confirmation dialog state; §59 — recognized-vs-corrected.
+  const [confirmOpen, setConfirmOpen] = React.useState(false);
+  const changedRows = Object.entries(effectiveValues).filter(([field, value]) => {
+    const machine = recognition.fields.find((f) => f.field === field)?.normalizedValue ?? null;
+    return value !== null && machine !== null && value !== machine;
+  });
+
   const isMulti = Boolean(draftStates && draftStates.length > 0);
   const includedCount = draftStates?.filter((draft) => draft.include).length ?? 1;
 
@@ -277,11 +294,54 @@ export function TradeDraftReview({
           <Button type="button" variant="ghost" onClick={onBack} disabled={pending} data-testid="recognition-back-to-result">
             {dict.draft.backToResult}
           </Button>
-          <Button type="button" onClick={onConfirm} disabled={pending || (isMulti && includedCount === 0)} data-testid="recognition-confirm">
+          <Button
+            type="button"
+            onClick={() => setConfirmOpen(true)}
+            disabled={pending || (isMulti && includedCount === 0)}
+            data-testid="recognition-confirm"
+          >
             {pending ? "…" : dict.draft.confirmAndImport}
           </Button>
         </div>
       </div>
+
+      {/* V2 §60 — the explicit confirmation dialog: everything looks correct?
+          [Confirm Trade] / [Continue Editing] / [Cancel]. The dialog also
+          shows the USER_CORRECTED fields (V2 §59 — recognized vs confirmed). */}
+      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{dict.confirmDialog.title}</DialogTitle>
+            <DialogDescription>{dict.confirmDialog.body}</DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col" data-testid="recognition-confirm-changes">
+            {changedRows.length === 0 ? (
+              <p className="text-xs text-muted-foreground">{dict.confirmDialog.noChanges}</p>
+            ) : (
+              changedRows.map(([field, value]) => (
+                <div key={field} className="flex items-center justify-between gap-3 border-b border-border/40 py-1.5 last:border-b-0">
+                  <span className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <PenLine className="size-3 text-warning" strokeWidth={1.5} aria-hidden="true" />
+                    {recognitionFieldLabel(dict, field as FieldKey)}
+                  </span>
+                  <span className="font-mono text-sm tabular-nums">{formatFinancial(value)}</span>
+                </div>
+              ))
+            )}
+          </div>
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button type="button" variant="ghost" onClick={() => setConfirmOpen(false)} data-testid="recognition-confirm-cancel">
+              {dict.confirmDialog.cancel}
+            </Button>
+            <Button type="button" variant="outline" onClick={() => { setConfirmOpen(false); onBack(); }} data-testid="recognition-confirm-continue">
+              {dict.confirmDialog.continueEditing}
+            </Button>
+            <Button type="button" onClick={onConfirm} disabled={pending} data-testid="recognition-confirm-final">
+              {pending ? "…" : dict.confirmDialog.confirm}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

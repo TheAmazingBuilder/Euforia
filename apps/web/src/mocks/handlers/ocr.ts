@@ -9,16 +9,22 @@ import type {
   OcrRecognitionPage,
   OcrRecognitionResponse,
   OcrStorageResponse,
+  OcrCollection,
+  OcrFieldKey,
+  OcrSet,
 } from "@cosmoz/shared";
 import {
+  ocrCollectionAddItemInputSchema,
+  ocrCollectionCreateInputSchema,
   ocrConfirmInputSchema,
   ocrCreateInputSchema,
   ocrRecropInputSchema,
+  ocrSetConfirmInputSchema,
+  ocrSetCreateInputSchema,
 } from "@cosmoz/shared";
 
 import { apiPaths } from "@/lib/api/endpoints";
 import { endpoint, latency, parseBody, pathParam, readJson, requireAuth, toErrorResponse } from "./utils";
-
 /**
  * OCR & screenshot recognition handlers — the mocked mirror of the NestJS
  * OcrController (Phase 19 contract), rebuilt for PROMPT 3.
@@ -44,10 +50,201 @@ import { endpoint, latency, parseBody, pathParam, readJson, requireAuth, toError
  */
 
 /** Session-scoped store — recognition id → persisted aggregate (+ upload bytes for session uploads). */
-type StoredRecognition = OcrRecognition & { imageDataUrl: string | null };
+/**
+ * V2 fields (issues / qualityScore / timeline / possibleTradeDuplicate /
+ * reprocessedFrom) are DERIVED at read time by publicBody — the same
+ * read-time-derivation discipline as the NestJS DTO (confirmed rows never
+ * mutate, V2 §33). The stored shape keeps only the evidence.
+ */
+type StoredRecognition = Omit<
+  OcrRecognition,
+  "issues" | "qualityScore" | "timeline" | "possibleTradeDuplicate" | "reprocessedFrom"
+> & {
+  imageDataUrl: string | null;
+  /** Simulated trade-duplicate flag (V2 §4) for the seeded demo. */
+  storedTradeDuplicate?: NonNullable<OcrRecognition["possibleTradeDuplicate"]> | null;
+};
 /** Corrections-memory ledger (engine quality §2.3) — per-user patterns. */
 const patternStore = new Map<string, Map<string, { value: string; occurrences: number }>>();
 const store = new Map<string, StoredRecognition>();
+
+/** V2 sets (§18) + collections (§28) — mock-side state. */
+type MockSet = {
+  id: string;
+  status: "REVIEW_REQUIRED" | "CONFIRMED" | "FAILED";
+  members: { order: number; recognitionId: string }[];
+  result: {
+    fields: OcrRecognition["fields"];
+    conflicts: NonNullable<OcrSet["fused"]>["conflicts"];
+    issues: OcrRecognition["issues"];
+    qualityScore: OcrRecognition["qualityScore"];
+    timeline: OcrRecognition["timeline"];
+    coherent: boolean;
+    storedTradeDuplicate?: NonNullable<OcrRecognition["possibleTradeDuplicate"]> | null;
+  } | null;
+  corrections: OcrRecognition["corrections"];
+  tradeId: string | null;
+  tradeIds: string[];
+  accountId: string | null;
+  confirmedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+type MockCollection = OcrCollection;
+
+const setStore = new Map<string, MockSet>();
+const collectionStore = new Map<string, MockCollection>();
+
+/** The mock-side single-image pipeline (same discipline as the POST route). */
+async function createMockRecognition(dataUrl: string, checksum: string): Promise<StoredRecognition> {
+  const { fields, warnings } = simulateExtraction(checksum);
+  const createdAt = new Date().toISOString();
+  const item: StoredRecognition = {
+    id: crypto.randomUUID(),
+    status: "REVIEW_REQUIRED",
+    extractionProfile: "TRADE_SUMMARY",
+    classification: TEMPLATE_TRADES[0]!.classification,
+    fields,
+    warnings,
+    asset: {
+      id: crypto.randomUUID(), mime: "image/png",
+      sizeBytes: Math.round((dataUrl.split(";base64,")[1] ?? "").length * 0.75),
+      width: 1280, height: 720, checksumSha256: checksum, createdAt, purged: false,
+    },
+    engine: { name: "mock-recognition", engineVersion: "2.0.0", pipelineVersion: "2.0.0", contractVersion: "1" },
+    durationMs: OCR_TOTAL_PROCESSING_MS - 120,
+    failure: null,
+    corrections: null,
+    tradeId: null,
+    tradeIds: [],
+    candidates: null,
+    duplicateOf: null,
+    accountId: null,
+    suggestedTags: [],
+    confirmedAt: null,
+    createdAt,
+    updatedAt: createdAt,
+    imageDataUrl: dataUrl,
+  };
+  store.set(item.id, item);
+  return item;
+}
+
+/**
+ * Mock fusion (V2 §18): per-field agreement/conflict over the members'
+ * machine fields — same semantics as the Nest fusion engine, simplified.
+ */
+function fuseMockMembers(members: StoredRecognition[]): MockSet["result"] {
+  const keys: string[] = [];
+  for (const member of members) {
+    for (const field of member.fields) {
+      if (!keys.includes(field.field)) keys.push(field.field);
+    }
+  }
+  const fields: OcrRecognition["fields"] = [];
+  const conflicts: NonNullable<OcrSet["fused"]>["conflicts"] = [];
+  for (const key of keys) {
+    const readings = members
+      .map((member) => member.fields.find((f) => f.field === key))
+      .filter((f): f is OcrRecognition["fields"][number] => Boolean(f) && f!.normalizedValue !== null);
+    if (readings.length === 0) {
+      const missing = members
+        .map((member) => member.fields.find((f) => f.field === key))
+        .find((f) => f !== undefined);
+      if (missing) fields.push(missing);
+      continue;
+    }
+    const values = new Set(readings.map((f) => f.normalizedValue));
+    const strongest = [...readings].sort((a, b) => b.confidence - a.confidence)[0]!;
+    if (values.size === 1 && readings.length > 1) {
+      fields.push({
+        ...strongest,
+        confidence: Math.min(0.99, Math.round((strongest.confidence + 0.03 * (readings.length - 1)) * 1000) / 1000),
+        warnings: [...strongest.warnings, "MULTI_SOURCE_AGREEMENT"].slice(0, 8),
+      });
+    } else if (values.size > 1) {
+      fields.push({
+        ...strongest,
+        validationStatus: "AMBIGUOUS",
+        warnings: [...strongest.warnings, "CONFLICTING_VALUES"].slice(0, 8),
+      });
+      conflicts.push({
+        field: key as OcrFieldKey,
+        values: readings.slice(0, 6).map((f) => ({
+          value: f.normalizedValue as string,
+          recognitionId: members.find((m) => m.fields.some((x) => x.field === key && x.normalizedValue === f.normalizedValue))!.id,
+        })),
+      });
+    } else {
+      fields.push({ ...strongest, warnings: [...strongest.warnings, "SINGLE_SOURCE"].slice(0, 8) });
+    }
+  }
+  const symbolField = fields.find((f) => f.field === "symbol" && f.normalizedValue !== null);
+  const directionField = fields.find((f) => f.field === "direction" && f.normalizedValue !== null);
+  const coherent =
+    Boolean(symbolField) &&
+    (directionField?.normalizedValue === "BUY" || directionField?.normalizedValue === "SELL") &&
+    !conflicts.some((c) => c.field === "symbol" || c.field === "direction");
+
+  // Quality + issues via the same read-time derivation used for recognitions.
+  const pseudo: Omit<OcrRecognition, "issues" | "qualityScore" | "timeline" | "possibleTradeDuplicate" | "reprocessedFrom"> = {
+    id: "fusion", status: "REVIEW_REQUIRED", extractionProfile: "TRADE_SUMMARY",
+    classification: members[0]?.classification ?? null,
+    fields, warnings: [], asset: members[0]!.asset, engine: null, durationMs: null,
+    failure: null, corrections: null, tradeId: null, tradeIds: [], candidates: null,
+    duplicateOf: null, accountId: null, suggestedTags: [], confirmedAt: null,
+    createdAt: members[0]!.createdAt, updatedAt: members[0]!.updatedAt,
+  };
+  const derived = deriveV2(pseudo);
+  const timeline: OcrRecognition["timeline"] = [
+    ...derived.timeline.filter((entry) => entry.kind === "OPEN_TIME" || entry.kind === "CLOSE_TIME"),
+  ];
+  for (const member of members) {
+    timeline.push({ kind: "UPLOADED", at: member.createdAt, raw: null });
+  }
+
+  return {
+    fields,
+    conflicts,
+    issues: derived.issues,
+    qualityScore: derived.qualityScore,
+    timeline: timeline.sort((a, b) => String(a.at).localeCompare(String(b.at))).slice(0, 16),
+    coherent,
+  };
+}
+
+function setBody(set: MockSet): OcrSet {
+  const members = set.members
+    .slice()
+    .sort((a, b) => a.order - b.order)
+    .map((member) => {
+      const recognition = store.get(member.recognitionId);
+      if (!recognition) throw new Error("set member missing");
+      return { order: member.order, recognitionId: member.recognitionId, recognition: publicBody(recognition) };
+    });
+  return {
+    id: set.id,
+    status: set.status,
+    members,
+    fused: set.result
+      ? {
+          fields: set.result.fields,
+          conflicts: set.result.conflicts,
+          issues: set.result.issues,
+          qualityScore: set.result.qualityScore,
+          timeline: set.result.timeline,
+          coherent: set.result.coherent,
+        }
+      : null,
+    corrections: set.corrections,
+    tradeId: set.tradeId,
+    tradeIds: set.tradeIds,
+    accountId: set.accountId,
+    confirmedAt: set.confirmedAt,
+    createdAt: set.createdAt,
+    updatedAt: set.updatedAt,
+  };
+}
 
 /** Simulated pipeline wall-clock: POST → REVIEW_REQUIRED after this long. */
 export const OCR_TOTAL_PROCESSING_MS = 4_500;
@@ -183,12 +380,26 @@ function normalizeMockValue(field: string, raw: string): string {
 
 type SimulatedField = OcrRecognition["fields"][number];
 
+/**
+ * Deterministic plausible word boxes (V2 §10/§55): every READ field keeps a
+ * source region so the review UI can overlay it on the screenshot. The
+ * coordinates sit inside the 1280x720 placeholder raster, two-column grid.
+ */
+function mockRegion(index: number): { x: number; y: number; width: number; height: number } {
+  return {
+    x: 60 + (index % 2) * 620,
+    y: 96 + Math.floor(index / 2) * 62,
+    width: 170 + ((index * 37) % 120),
+    height: 24,
+  };
+}
+
 function simulateExtraction(checksum: string): { fields: SimulatedField[]; warnings: string[] } {
   const seed = Number.parseInt(checksum.slice(0, 8), 16) || 1;
   const random = seededRandom(seed);
   const template = TEMPLATE_TRADES[Math.floor(random() * TEMPLATE_TRADES.length)];
 
-  const fields: SimulatedField[] = FIELD_KEYS.map((field) => {
+  const fields: SimulatedField[] = FIELD_KEYS.map((field, index) => {
     const rawValue = template.values[field] ?? "";
     // Per-field rolls: 6% missing (optional only), 10% ambiguous, else read
     // with a plausible confidence distribution.
@@ -197,6 +408,7 @@ function simulateExtraction(checksum: string): { fields: SimulatedField[]; warni
     const confidenceBand: SimulatedField["confidenceBand"] =
       confidence >= 0.85 ? "HIGH" : confidence >= 0.7 ? "MEDIUM" : confidence >= 0.6 ? "LOW" : "UNKNOWN";
 
+    const region = mockRegion(index);
     if (!rawValue) {
       return {
         field, rawValue: null, normalizedValue: null, confidence: 0, confidenceBand: "UNKNOWN",
@@ -217,18 +429,18 @@ function simulateExtraction(checksum: string): { fields: SimulatedField[]; warni
     if (roll > 0.86) {
       return {
         field, rawValue, normalizedValue, confidence, confidenceBand,
-        validationStatus: "AMBIGUOUS", sourceRegion: null,
+        validationStatus: "AMBIGUOUS", sourceRegion: region,
         warnings: ["Multiple interpretations possible — review before confirming."],
       };
     }
     if (confidence < 0.7) {
       return {
         field, rawValue, normalizedValue, confidence, confidenceBand,
-        validationStatus: "LOW_CONFIDENCE", sourceRegion: null,
+        validationStatus: "LOW_CONFIDENCE", sourceRegion: region,
         warnings: ["Recognition confidence is low for this value."],
       };
     }
-    return { field, rawValue, normalizedValue, confidence, confidenceBand, validationStatus: "VALID", sourceRegion: null, warnings: [] };
+    return { field, rawValue, normalizedValue, confidence, confidenceBand, validationStatus: "VALID", sourceRegion: region, warnings: [] };
   });
 
   const missing = fields.filter((f) => f.validationStatus === "MISSING").map((f) => f.field);
@@ -264,11 +476,13 @@ type SeedSpec = {
   confirmed?: boolean;
   /** Seed carries grouped multi-trade drafts (engine quality §2.2). */
   multi?: boolean;
+  /** V2 §4 — seeded content-based trade duplicate flag for the review demo. */
+  tradeDuplicate?: boolean;
 };
 
 const SEED_SPECS: SeedSpec[] = [
   { label: "XAUUSD BUY 0.10 — MT5 summary", file: "xauusd_mt5_0931.png", status: "CONFIRMED", ageMinutes: 4 * 60, confirmed: true },
-  { label: "EURUSD BUY 0.50 — MT5 summary", file: "eurusd_mt5_0812.png", status: "REVIEW_REQUIRED", ageMinutes: 35 },
+  { label: "EURUSD BUY 0.50 — MT5 summary", file: "eurusd_mt5_0812.png", status: "REVIEW_REQUIRED", ageMinutes: 35, tradeDuplicate: true },
   { label: "BTCUSD BUY 0.25 — partial screenshot", file: "btcusd_mt5_1102.png", status: "REVIEW_REQUIRED", ageMinutes: 3 * 60 },
   { label: "NAS100 SELL 1.00 — MT5 summary", file: "nas100_mt5_1530.png", status: "CONFIRMED", ageMinutes: 26 * 60, confirmed: true },
   { label: "US30 SELL 0.40 — unreadable crop", file: "us30_crop_2210.png", status: "FAILED", ageMinutes: 27 * 60 },
@@ -311,6 +525,15 @@ function buildSeed(spec: SeedSpec, index: number): StoredRecognition {
     updatedAt: createdAt,
     imageDataUrl: placeholderDataUrl(),
   };
+  if (spec.tradeDuplicate) {
+    // A deterministic pseudo-trade the review banner can point at (the mock
+    // never touches the real journal — the trade id is demo-only).
+    base.storedTradeDuplicate = {
+      tradeId: "d4e5f6a7-b8c9-4d0e-9f1a-2b3c4d5e6f70",
+      matchedOn: ["SYMBOL", "DIRECTION", "ENTRY_PRICE"],
+      detectedAt: createdAt,
+    };
+  }
   if (spec.multi) {
     // Grouped-confirmation demo: two coherent drafts from one history panel.
     const draft = (symbol: string, direction: "BUY" | "SELL", entry: string, profit: string): OcrRecognition["candidates"] extends null ? never : { fields: OcrRecognition["fields"] } => ({
@@ -377,10 +600,125 @@ function settleProcessing(item: StoredRecognition): void {
   item.updatedAt = new Date().toISOString();
 }
 
+/** The import-critical floor (mirrors the Nest deriveRecognitionIssues input). */
+const REQUIRED_FIELDS = new Set(["symbol", "direction", "volume", "entryPrice"]);
+
+/**
+ * Read-time derivation of the V2 decision layer (§15/§16/§23/§32/§4) —
+ * a simplified mirror of the NestJS pure functions so the mock answers the
+ * EXACT contract the real backend answers.
+ */
+function deriveV2(
+  body: Omit<
+    OcrRecognition,
+    "issues" | "qualityScore" | "timeline" | "possibleTradeDuplicate" | "reprocessedFrom"
+  > & {
+    storedTradeDuplicate?: NonNullable<OcrRecognition["possibleTradeDuplicate"]> | null;
+  },
+): Pick<OcrRecognition, "issues" | "qualityScore" | "timeline" | "possibleTradeDuplicate" | "reprocessedFrom"> {
+  const issues: OcrRecognition["issues"] = [];
+  for (const field of body.fields) {
+    if (field.validationStatus === "MISSING" && REQUIRED_FIELDS.has(field.field)) {
+      issues.push({ code: "MISSING_REQUIRED_FIELD", field: field.field, detail: null });
+      continue;
+    }
+    if (field.validationStatus !== "MISSING" && field.confidence < 0.7) {
+      issues.push({ code: "LOW_OCR_CONFIDENCE", field: field.field, detail: null });
+    }
+    if (field.validationStatus === "INVALID") {
+      issues.push({
+        code: field.field === "openTime" || field.field === "closeTime" ? "INVALID_TIMESTAMP" : "INVALID_PRICE_RELATIONSHIP",
+        field: field.field,
+        detail: null,
+      });
+    }
+    if (field.validationStatus === "AMBIGUOUS") {
+      issues.push({
+        code: field.field === "direction" ? "AMBIGUOUS_DIRECTION" : "AMBIGUOUS_NUMBER",
+        field: field.field,
+        detail: null,
+      });
+    }
+  }
+  if (body.classification === null || body.classification.type === "UNKNOWN") {
+    issues.push({ code: "UNSUPPORTED_SCREENSHOT", field: null, detail: null });
+  }
+  if (body.classification !== null && body.classification.platform === "UNKNOWN") {
+    issues.push({ code: "UNKNOWN_PLATFORM", field: null, detail: null });
+  }
+  if (body.duplicateOf) {
+    issues.push({ code: "POSSIBLE_DUPLICATE", field: null, detail: body.duplicateOf.recognitionId });
+  }
+  const possibleTradeDuplicate = body.storedTradeDuplicate ?? null;
+  if (possibleTradeDuplicate) {
+    issues.push({ code: "POSSIBLE_TRADE_DUPLICATE", field: null, detail: possibleTradeDuplicate.tradeId });
+  }
+
+  // Quality score (V2 §15 — documented weights, deterministic).
+  const readable = body.fields.filter((f) => f.validationStatus !== "MISSING");
+  let qualityScore: OcrRecognition["qualityScore"] = null;
+  if (readable.length > 0) {
+    const fieldConfidence = readable.reduce((t, f) => t + f.confidence, 0) / readable.length;
+    const required = ["symbol", "direction", "volume", "entryPrice"];
+    const completeness = required.filter((key) =>
+      body.fields.some((f) => f.field === key && f.normalizedValue !== null),
+    ).length / required.length;
+    const invalidCount = body.fields.filter((f) => f.validationStatus === "INVALID").length;
+    const validation = Math.max(0, 1 - invalidCount * 0.2);
+    let consistency = 1;
+    if (body.duplicateOf) consistency -= 0.3;
+    if (body.classification === null || body.classification.type === "UNKNOWN") consistency -= 0.3;
+    consistency = Math.max(0, consistency);
+    const round3 = (v: number) => Math.round(v * 1000) / 1000;
+    qualityScore = {
+      score: round3(0.4 * fieldConfidence + 0.25 * completeness + 0.2 * validation + 0.15 * consistency),
+      components: {
+        fieldConfidence: round3(fieldConfidence),
+        completeness: round3(completeness),
+        validation: round3(validation),
+        consistency: round3(consistency),
+      },
+    };
+  }
+
+  // Timeline (V2 §23 — only real evidence, wall-clock preserved).
+  const byKey = new Map(body.fields.map((f) => [f.field, f]));
+  const timeline: OcrRecognition["timeline"] = [];
+  if (byKey.get("openTime")?.normalizedValue) {
+    timeline.push({ kind: "OPEN_TIME", at: byKey.get("openTime")!.normalizedValue!, raw: byKey.get("openTime")!.rawValue });
+  }
+  if (byKey.get("closeTime")?.normalizedValue) {
+    timeline.push({ kind: "CLOSE_TIME", at: byKey.get("closeTime")!.normalizedValue!, raw: byKey.get("closeTime")!.rawValue });
+  }
+  timeline.push({ kind: "UPLOADED", at: body.createdAt, raw: null });
+  if (body.confirmedAt) timeline.push({ kind: "CONFIRMED", at: body.confirmedAt, raw: null });
+
+  return {
+    issues: issues.slice(0, 32),
+    qualityScore,
+    timeline: timeline.slice(0, 16),
+    possibleTradeDuplicate,
+    reprocessedFrom: null,
+  };
+}
+
+/** Count non-null classification values into the distribution shape (V2 §30). */
+function deriveDistribution<T extends string>(values: Array<T | null>): Array<{ key: T; count: number }> {
+  const counts = new Map<T, number>();
+  for (const value of values) {
+    if (value === null) continue;
+    counts.set(value, (counts.get(value) ?? 0) + 1);
+  }
+  return [...counts.entries()]
+    .map(([key, count]) => ({ key, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 10);
+}
+
 function publicBody(item: StoredRecognition): OcrRecognition {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars -- destructuring strips the bytes
-  const { imageDataUrl: _omit, ...body } = item;
-  return body;
+  const { imageDataUrl: _omit, storedTradeDuplicate: _dup, ...body } = item;
+  return { ...body, ...deriveV2(item) };
 }
 
 // ── Handlers ────────────────────────────────────────────────────────────────
@@ -562,6 +900,20 @@ export const ocrHandlers = [
         ocrConfirmInputSchema,
         await readJson(request),
       );
+      // V2 §58 — the duplicate warnings are blocking at confirmation: the
+      // user must acknowledge them explicitly ([Import Anyway] is a decision).
+      if (found.duplicateOf && input.acknowledgeDuplicateScreenshot !== true) {
+        return HttpResponse.json(
+          { error: "A near-duplicate of this screenshot was already imported.", code: "OCR_DUPLICATE_UNACKNOWLEDGED" },
+          { status: 409 },
+        );
+      }
+      if (found.storedTradeDuplicate && input.acknowledgeDuplicateTrade !== true) {
+        return HttpResponse.json(
+          { error: "This recognition was flagged as a possible duplicate of an existing trade.", code: "OCR_TRADE_DUPLICATE_UNACKNOWLEDGED" },
+          { status: 409 },
+        );
+      }
       const now = new Date().toISOString();
       found.corrections = input.corrections;
       found.status = "CONFIRMED";
@@ -692,6 +1044,27 @@ export const ocrHandlers = [
         avgDurationMs: durations.length > 0
           ? Math.round(durations.reduce((total, value) => total + value, 0) / durations.length)
           : null,
+        // V2 §30 — correction rate + distributions (derived from the store).
+        correctionRate:
+          confirmed > 0
+            ? Math.round(
+                ((all.filter(
+                  (item) =>
+                    item.status === "CONFIRMED" &&
+                    item.corrections !== null &&
+                    Object.keys(item.corrections).length > 0,
+                ).length /
+                  confirmed) *
+                  1000) /
+                  1000,
+              )
+            : null,
+        platformDistribution: deriveDistribution(
+          all.map((item) => item.classification?.platform ?? null),
+        ).map(({ key, count }) => ({ platform: key, count })),
+        typeDistribution: deriveDistribution(
+          all.map((item) => item.classification?.type ?? null),
+        ).map(({ key, count }) => ({ type: key, count })),
       };
       return HttpResponse.json(body);
     } catch (error) {
@@ -716,6 +1089,263 @@ export const ocrHandlers = [
           all.filter((item) => !item.asset.purged).sort((a, b) => a.createdAt.localeCompare(b.createdAt))[0]?.createdAt ?? null,
       };
       return HttpResponse.json(body);
+    } catch (error) {
+      return toErrorResponse(error);
+    }
+  }),
+
+  // ── V2 §32/§39 — reprocess: a FRESH recognition from the same asset ──────
+  http.post(endpoint(apiPaths.ocrRecognitionReprocess(":id")), async ({ request, params }) => {
+    try {
+      requireAuth(request);
+      await latency();
+      const id = pathParam(params, "id");
+      const found = store.get(id);
+      if (!found) {
+        return HttpResponse.json({ error: "Recognition not found." }, { status: 404 });
+      }
+      if (found.asset.purged) {
+        return HttpResponse.json(
+          { error: "The stored screenshot was purged.", code: "OCR_ASSET_PURGED" },
+          { status: 409 },
+        );
+      }
+      const fresh: StoredRecognition = {
+        ...structuredClone(found),
+        id: crypto.randomUUID(),
+        status: "PROCESSING",
+        corrections: null,
+        confirmedAt: null,
+        tradeId: null,
+        tradeIds: [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      store.set(fresh.id, fresh);
+      return HttpResponse.json({ recognition: { ...publicBody(fresh), reprocessedFrom: found.id } });
+    } catch (error) {
+      return toErrorResponse(error);
+    }
+  }),
+
+  // ── V2 §1/§2/§18 — multi-screenshot recognition sets ──────────────────────
+  http.post(endpoint(apiPaths.ocrSets), async ({ request }) => {
+    try {
+      requireAuth(request);
+      await latency();
+      const input = parseBody(ocrSetCreateInputSchema, await readJson(request));
+      const members: StoredRecognition[] = [];
+      for (const dataUrl of input.imageDataUrls) {
+        const payloadBytes = Uint8Array.from(atob(dataUrl.split(";base64,")[1] ?? ""), (char) => char.charCodeAt(0));
+        const checksum = await sha256Hex(payloadBytes);
+        const existing = [...store.values()].find((item) => item.asset.checksumSha256 === checksum);
+        if (existing) {
+          if (members.some((m) => m.id === existing.id)) {
+            return HttpResponse.json(
+              { error: "The same screenshot appears more than once in this set.", code: "OCR_SET_DUPLICATE_IMAGE" },
+              { status: 400 },
+            );
+          }
+          members.push(existing);
+          continue;
+        }
+        const created = await createMockRecognition(dataUrl, checksum);
+        members.push(created);
+      }
+      if (members.length < 2) {
+        return HttpResponse.json({ error: "A set needs at least two screenshots." }, { status: 400 });
+      }
+      const now = new Date().toISOString();
+      const fusion = fuseMockMembers(members);
+      const set: MockSet = {
+        id: crypto.randomUUID(),
+        status: "REVIEW_REQUIRED",
+        members: members.map((member, order) => ({ order, recognitionId: member.id })),
+        result: fusion,
+        corrections: null,
+        tradeId: null,
+        tradeIds: [],
+        accountId: input.accountId ?? null,
+        confirmedAt: null,
+        createdAt: now,
+        updatedAt: now,
+      };
+      setStore.set(set.id, set);
+      return HttpResponse.json({ set: setBody(set) }, { status: 201 });
+    } catch (error) {
+      return toErrorResponse(error);
+    }
+  }),
+
+  http.get(endpoint(apiPaths.ocrSets), async ({ request }) => {
+    try {
+      requireAuth(request);
+      await latency();
+      const sets = [...setStore.values()]
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+        .map((set) => setBody(set));
+      return HttpResponse.json({ items: sets, nextCursor: null });
+    } catch (error) {
+      return toErrorResponse(error);
+    }
+  }),
+
+  http.get(endpoint(apiPaths.ocrSet(":id")), async ({ request, params }) => {
+    try {
+      requireAuth(request);
+      await latency();
+      const set = setStore.get(pathParam(params, "id"));
+      if (!set) return HttpResponse.json({ error: "Recognition set not found." }, { status: 404 });
+      return HttpResponse.json({ set: setBody(set) });
+    } catch (error) {
+      return toErrorResponse(error);
+    }
+  }),
+
+  http.post(endpoint(apiPaths.ocrSetConfirm(":id")), async ({ request, params }) => {
+    try {
+      requireAuth(request);
+      await latency();
+      const set = setStore.get(pathParam(params, "id"));
+      if (!set) return HttpResponse.json({ error: "Recognition set not found." }, { status: 404 });
+      if (set.status === "CONFIRMED") {
+        return HttpResponse.json({ error: "This recognition set is already confirmed." }, { status: 409 });
+      }
+      const input = parseBody(ocrSetConfirmInputSchema, await readJson(request));
+      const membersDuplicate = set.members.some((member) => store.get(member.recognitionId)?.duplicateOf);
+      if (membersDuplicate && input.acknowledgeDuplicateScreenshot !== true) {
+        return HttpResponse.json(
+          { error: "A screenshot in this set was flagged as a near-duplicate.", code: "OCR_DUPLICATE_UNACKNOWLEDGED" },
+          { status: 409 },
+        );
+      }
+      if (set.result?.storedTradeDuplicate && input.acknowledgeDuplicateTrade !== true) {
+        return HttpResponse.json(
+          { error: "This set was flagged as a possible duplicate of an existing trade.", code: "OCR_TRADE_DUPLICATE_UNACKNOWLEDGED" },
+          { status: 409 },
+        );
+      }
+      const now = new Date().toISOString();
+      set.status = "CONFIRMED";
+      set.corrections = input.corrections;
+      set.confirmedAt = now;
+      set.updatedAt = now;
+      if (input.accountId !== undefined) set.accountId = input.accountId;
+      set.tradeIds = ["mock-set-import"];
+      set.tradeId = "mock-set-import";
+      return HttpResponse.json({ set: setBody(set) });
+    } catch (error) {
+      return toErrorResponse(error);
+    }
+  }),
+
+  http.delete(endpoint(apiPaths.ocrSet(":id")), async ({ request, params }) => {
+    try {
+      requireAuth(request);
+      await latency();
+      const id = pathParam(params, "id");
+      if (!setStore.has(id)) {
+        return HttpResponse.json({ error: "Recognition set not found." }, { status: 404 });
+      }
+      setStore.delete(id); // members survive (V2 §15)
+      return HttpResponse.json({ deleted: true as const, id });
+    } catch (error) {
+      return toErrorResponse(error);
+    }
+  }),
+
+  // ── V2 §28 — screenshot collections ──────────────────────────────────────
+  http.post(endpoint(apiPaths.ocrCollections), async ({ request }) => {
+    try {
+      requireAuth(request);
+      await latency();
+      const input = parseBody(ocrCollectionCreateInputSchema, await readJson(request));
+      const name = input.name.trim();
+      if ([...collectionStore.values()].some((c) => c.name === name)) {
+        return HttpResponse.json(
+          { error: "A collection with this name already exists.", code: "OCR_COLLECTION_NAME_TAKEN" },
+          { status: 409 },
+        );
+      }
+      const collection: MockCollection = {
+        id: crypto.randomUUID(),
+        name,
+        createdAt: new Date().toISOString(),
+        items: [],
+      };
+      collectionStore.set(collection.id, collection);
+      return HttpResponse.json({ collection }, { status: 201 });
+    } catch (error) {
+      return toErrorResponse(error);
+    }
+  }),
+
+  http.get(endpoint(apiPaths.ocrCollections), async ({ request }) => {
+    try {
+      requireAuth(request);
+      await latency();
+      const collections = [...collectionStore.values()].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+      return HttpResponse.json({ collections });
+    } catch (error) {
+      return toErrorResponse(error);
+    }
+  }),
+
+  http.get(endpoint(apiPaths.ocrCollection(":id")), async ({ request, params }) => {
+    try {
+      requireAuth(request);
+      await latency();
+      const collection = collectionStore.get(pathParam(params, "id"));
+      if (!collection) return HttpResponse.json({ error: "Collection not found." }, { status: 404 });
+      return HttpResponse.json({ collection });
+    } catch (error) {
+      return toErrorResponse(error);
+    }
+  }),
+
+  http.post(endpoint(apiPaths.ocrCollectionItems(":id")), async ({ request, params }) => {
+    try {
+      requireAuth(request);
+      await latency();
+      const collection = collectionStore.get(pathParam(params, "id"));
+      if (!collection) return HttpResponse.json({ error: "Collection not found." }, { status: 404 });
+      const input = parseBody(ocrCollectionAddItemInputSchema, await readJson(request));
+      if (!store.has(input.recognitionId)) {
+        return HttpResponse.json({ error: "Recognition not found." }, { status: 404 });
+      }
+      if (!collection.items.some((item) => item.recognitionId === input.recognitionId)) {
+        collection.items.unshift({ recognitionId: input.recognitionId, addedAt: new Date().toISOString() });
+      }
+      return HttpResponse.json({ collection }, { status: 201 });
+    } catch (error) {
+      return toErrorResponse(error);
+    }
+  }),
+
+  http.delete(endpoint(apiPaths.ocrCollectionItem(":id", ":recognitionId")), async ({ request, params }) => {
+    try {
+      requireAuth(request);
+      await latency();
+      const collection = collectionStore.get(pathParam(params, "id"));
+      if (!collection) return HttpResponse.json({ error: "Collection not found." }, { status: 404 });
+      const recognitionId = pathParam(params, "recognitionId");
+      collection.items = collection.items.filter((item) => item.recognitionId !== recognitionId);
+      return HttpResponse.json({ collection });
+    } catch (error) {
+      return toErrorResponse(error);
+    }
+  }),
+
+  http.delete(endpoint(apiPaths.ocrCollection(":id")), async ({ request, params }) => {
+    try {
+      requireAuth(request);
+      await latency();
+      const id = pathParam(params, "id");
+      if (!collectionStore.has(id)) {
+        return HttpResponse.json({ error: "Collection not found." }, { status: 404 });
+      }
+      collectionStore.delete(id); // recognitions stay (§28)
+      return HttpResponse.json({ deleted: true as const, id });
     } catch (error) {
       return toErrorResponse(error);
     }

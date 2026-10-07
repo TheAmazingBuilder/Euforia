@@ -268,7 +268,123 @@ export const recognitionDict = {
   duplicate: {
     title: "Already imported",
     body: "This screenshot looks like one you imported earlier — check it before confirming another copy.",
-    open: "Open the earlier import",
+    open: "Review existing",
+    anyway: "Import anyway",
+    dismissed: "You chose to proceed despite the duplicate warning.",
+  },
+
+  tradeDuplicate: {
+    title: "Possible duplicate trade",
+    body: "A different screenshot of yours appears to show this same trade. You can still import it — or open the existing trade first.",
+    open: "Review existing trade",
+    anyway: "Import anyway",
+    dismissed: "You chose to proceed despite the duplicate warning.",
+    matchedOn: "Matched on",
+  },
+
+  quality: {
+    label: "Recognition quality",
+    components: "Components",
+    fieldConfidence: "Text confidence",
+    completeness: "Field completeness",
+    validation: "Validation",
+    consistency: "Consistency",
+    none: "Nothing readable",
+  },
+
+  issues: {
+    title: "What to look at",
+    hint: "Signals from the recognition — each one explains what needs your attention.",
+    LOW_OCR_CONFIDENCE: "Low reading confidence — double-check this value.",
+    UNKNOWN_PLATFORM: "The platform could not be identified — check the values carefully.",
+    UNKNOWN_SYMBOL: "This symbol is not in the instrument catalog — the import will need a matching symbol.",
+    AMBIGUOUS_DIRECTION: "Conflicting buy/sell readings — resolve the trade side.",
+    AMBIGUOUS_NUMBER: "Ambiguous number format — verify the value.",
+    INVALID_PRICE_RELATIONSHIP: "This price contradicts the trade direction (SL/TP geometry).",
+    INVALID_TIMESTAMP: "This timestamp contradicts the other one (close before open).",
+    MISSING_REQUIRED_FIELD: "A required field was not found — enter it manually.",
+    CONFLICTING_FIELDS: "Screenshots disagree on this value — pick the right one.",
+    UNSUPPORTED_SCREENSHOT: "The screenshot type is unknown — verify everything before importing.",
+    POSSIBLE_DUPLICATE: "This screenshot was already imported.",
+    POSSIBLE_TRADE_DUPLICATE: "This trade may already exist in your journal.",
+    empty: "No signals — everything reads cleanly.",
+  },
+
+  confirmDialog: {
+    title: "Everything looks correct?",
+    body: "Confirming makes these values authoritative and imports the trade into your journal.",
+    noChanges: "You kept every recognized value as read.",
+    confirm: "Confirm trade",
+    continueEditing: "Continue editing",
+    cancel: "Cancel",
+  },
+
+  timeline: {
+    title: "Timeline",
+    OPEN_TIME: "Entry recognized",
+    CLOSE_TIME: "Exit recognized",
+    UPLOADED: "Screenshot uploaded",
+    CONFIRMED: "Trade confirmed",
+    empty: "No timestamps recognized yet.",
+  },
+
+  boxes: {
+    toggle: "Show source regions",
+    empty: "No source regions for this reading.",
+  },
+
+  sets: {
+    uploaderTitle: "One event, several screenshots",
+    uploaderHint: "Entry, position and exit shots are fused into a single trade draft.",
+    membersTitle: "Screenshots in this set",
+    member: "Screenshot",
+    fusedTitle: "Fused trade draft",
+    fusedHint: "Values the screenshots agree on are strengthened; conflicts are kept for you to resolve.",
+    coherentOk: "The screenshots agree on symbol and direction.",
+    coherentWarning: "These screenshots may show DIFFERENT trades — verify the symbol and direction.",
+    conflictsTitle: "Conflicting values",
+    conflictValues: "Readings",
+    reviewTitle: "Review the fused draft",
+    confirmTitle: "Confirm & import fused trade",
+    confirmedCount: "trade(s) imported from the set",
+    delete: "Discard set",
+    deleted: "Set discarded — individual recognitions kept.",
+  },
+
+  collections: {
+    addTo: "Add to collection",
+    newCollection: "New collection…",
+    namePlaceholder: "Collection name",
+    create: "Create",
+    createAndAdd: "Create & add",
+    added: "Added to collection",
+    removed: "Removed from collection",
+    items: "screenshots",
+    empty: "No collections yet.",
+    inCollections: "Collections",
+  },
+
+  reprocess: {
+    action: "Re-run recognition",
+    hint: "Runs the current engine over the stored screenshot again — the original stays untouched.",
+    running: "Re-running…",
+    done: "Recognition re-run — review the fresh result.",
+    purged: "The screenshot was purged and can no longer be re-processed.",
+  },
+
+  history2: {
+    loadMore: "Load more",
+    all: "All",
+    needsReview: "Needs review",
+    confirmed: "Confirmed",
+    failed: "Failed",
+    corrected: "Corrected",
+    duplicates: "Flagged",
+    compare: "Compare",
+    compareHint: "Side-by-side screenshot comparison",
+    selectTwo: "Select two recognitions to compare.",
+    platform: "Platform",
+    anyPlatform: "Any platform",
   },
 
   suggestions: {
@@ -321,6 +437,10 @@ export const recognitionDict = {
     imported: "Trades imported",
     avgConfidence: "Avg. recognition confidence",
     correctionsTitle: "Fields you correct most",
+    correctionRate: "Correction rate",
+    avgDuration: "Avg. processing",
+    seconds: "s",
+    distributions: "Platforms & screenshot types",
   },
 
   statuses: {

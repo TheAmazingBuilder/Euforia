@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { CameraOff, Maximize2, Trash2 } from "lucide-react";
+import { CameraOff, Maximize2, RotateCcw, Trash2 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import type { OcrRecognition, OcrRecognitionStatus } from "@cosmoz/shared";
@@ -15,6 +15,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { RecognitionStatusBadge } from "@/components/recognition/recognition-status-badge";
+import { PenLine } from "lucide-react";
 import {
   formatRelative,
   platformLabel,
@@ -46,19 +47,36 @@ export function RecognitionHistory({
   loading,
   onOpen,
   onDelete,
+  onReprocess,
+  hasMore = false,
+  onLoadMore,
 }: {
   dict: RecognitionDict;
   items: readonly OcrRecognition[];
   loading: boolean;
   onOpen: (id: string) => void;
   onDelete: (id: string) => void;
+  /** V2 §32/§39 — re-run the pipeline on a stored row. */
+  onReprocess?: (id: string) => void;
+  /** V2 §62 — keyset "Load more". */
+  hasMore?: boolean;
+  onLoadMore?: () => void;
 }) {
   const [filter, setFilter] = React.useState<(typeof FILTERS)[number]["key"]>("all");
   const [pendingDelete, setPendingDelete] = React.useState<OcrRecognition | null>(null);
+  // V2 §62 — derived-state filters (corrected / flagged) apply client-side
+  // over the loaded pages; they are read-time derivations, not columns.
+  const [derivedFilter, setDerivedFilter] = React.useState<"none" | "corrected" | "flagged">("none");
 
   const filtered = React.useMemo(
-    () => (filter === "all" ? items : items.filter((item) => item.status === filter)),
-    [items, filter],
+    () =>
+      items.filter((item) => {
+        if (filter !== "all" && item.status !== filter) return false;
+        if (derivedFilter === "corrected") return item.corrections !== null && Object.keys(item.corrections).length > 0;
+        if (derivedFilter === "flagged") return item.duplicateOf !== null || item.possibleTradeDuplicate !== null;
+        return true;
+      }),
+    [items, filter, derivedFilter],
   );
 
   const emptyMessage = (() => {
@@ -89,6 +107,27 @@ export function RecognitionHistory({
             aria-pressed={filter === entry.key}
           >
             {dict.history.filters[entry.labelKey]}
+          </Button>
+        ))}
+        <span className="mx-1 h-5 w-px bg-border" aria-hidden="true" />
+        {(
+          [
+            ["none", dict.history.filters.all],
+            ["corrected", dict.history2.corrected],
+            ["flagged", dict.history2.duplicates],
+          ] as const
+        ).map(([key, label]) => (
+          <Button
+            key={key}
+            type="button"
+            variant={derivedFilter === key ? "secondary" : "ghost"}
+            size="sm"
+            className="min-h-8 font-mono text-xs"
+            onClick={() => setDerivedFilter(key)}
+            data-testid={`recognition-derived-filter-${key}`}
+            aria-pressed={derivedFilter === key}
+          >
+            {label}
           </Button>
         ))}
       </div>
@@ -138,6 +177,16 @@ export function RecognitionHistory({
                   <td className="px-3 py-2 text-sm">{platformLabel(dict, item.classification)}</td>
                   <td className="px-3 py-2">
                     <RecognitionStatusBadge status={item.status} dict={dict} />
+                        {item.corrections !== null && Object.keys(item.corrections).length > 0 ? (
+                          <span className="ml-1 inline-flex items-center gap-0.5 align-middle text-warning" title={dict.history2.corrected}>
+                            <PenLine className="size-3" aria-hidden="true" />
+                          </span>
+                        ) : null}
+                        {item.corrections !== null && Object.keys(item.corrections).length > 0 ? (
+                          <span className="ml-1 inline-flex items-center gap-0.5 align-middle text-warning" title={dict.history2.corrected}>
+                            <PenLine className="size-3" aria-hidden="true" />
+                          </span>
+                        ) : null}
                   </td>
                   <td className="px-3 py-2 font-mono text-sm tabular-nums">
                     {item.status === "FAILED" ? "—" : `${recognitionConfidence(item.fields) ?? 0}%`}

@@ -48,6 +48,10 @@ export const queryKeys = {
   ocrRecognition: (id: string) => ["ocr-recognitions", "job", id] as const,
   ocrAnalytics: (days: number) => ["ocr-analytics", days] as const,
   ocrStorage: ["ocr-storage"] as const,
+  // V2 — sets, collections, reprocess
+  ocrSetsRoot: ["ocr-sets"] as const,
+  ocrSet: (id: string) => ["ocr-sets", "set", id] as const,
+  ocrCollections: ["ocr-collections"] as const,
   // Professional Playbook module
   playbookOverview: ["playbook-overview"] as const,
   playbookTemplates: ["playbook-templates"] as const,

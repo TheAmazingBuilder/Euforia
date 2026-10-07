@@ -13,11 +13,15 @@ import { apiErrorMessage } from "@/lib/api/client";
 import {
   useConfirmOcrRecognition,
   useCreateOcrRecognition,
+  useReprocessOcrRecognition,
+  useOcrStorage,
+  fetchOcrHistoryPage,
   useDeleteOcrRecognition,
   useOcrRecrop,
   useOcrRecognition,
   useOcrRecognitionEvents,
   useOcrRecognitions,
+  useOcrRecognitionsInfinite,
   fetchOcrRecognitionImage,
 } from "@/lib/api/queries";
 import { useDict } from "@/i18n/i18n-provider";
@@ -30,8 +34,10 @@ import { RecognitionSuccess } from "@/components/recognition/recognition-success
 import { TradeDraftReview } from "@/components/recognition/trade-draft-review";
 import { ScreenshotUploader } from "@/components/recognition/screenshot-uploader";
 import { RecognitionHistory } from "@/components/recognition/recognition-history";
+import { SetWorkspace } from "@/components/recognition/set-workspace";
 import {
   formatRelative,
+  formatStorageBytes,
   platformLabel,
   recognitionConfidence,
   type RecognitionStep,
@@ -77,12 +83,29 @@ function WorkspaceInner() {
   const [importOutcome, setImportOutcome] = React.useState<{ count: number; tags: string[] }>({ count: 1, tags: [] });
 
   // ── server state ─────────────────────────────────────────────────────────
-  const list = useOcrRecognitions();
+  const list = useOcrRecognitionsInfinite();
+  // V2 §62 — pages live in the React Query cache (no component-state sync).
+  const historyItems: OcrRecognition[] = list.data
+    ? list.data.pages.flatMap((page: { items: OcrRecognition[] }) => page.items)
+    : [];
   const focusedJob = useOcrRecognition(jobId);
   useOcrRecognitionEvents(jobId, focusedJob.data?.recognition.status === "PROCESSING" || focusedJob.data?.recognition.status === "QUEUED");
   const create = useCreateOcrRecognition();
   const confirm = useConfirmOcrRecognition();
+  const reprocess = useReprocessOcrRecognition();
   const deleteJob = useDeleteOcrRecognition();
+  // V2 §58 — explicit duplicate acknowledgments. Render-time derivation
+  // resets them when the focused job changes (no cascading effect).
+  const [acks, setAcks] = React.useState<{ jobId: string | null; screenshot: boolean; trade: boolean }>({
+    jobId: null,
+    screenshot: false,
+    trade: false,
+  });
+  const currentAcks = acks.jobId === jobId ? acks : { jobId, screenshot: false, trade: false };
+  const ackDuplicateScreenshot = currentAcks.screenshot;
+  const ackTradeDuplicate = currentAcks.trade;
+  const setAckDuplicateScreenshot = (value: boolean) => setAcks({ jobId, screenshot: value, trade: currentAcks.trade });
+  const setAckTradeDuplicate = (value: boolean) => setAcks({ jobId, screenshot: currentAcks.screenshot, trade: value });
   const recrop = useOcrRecrop();
 
   const recognition = focusedJob.data?.recognition ?? null;
@@ -212,7 +235,14 @@ function WorkspaceInner() {
         return { corrections: merged, include: candidateIncludes[index] ?? true };
       });
       confirm.mutate(
-        { id: recognition.id, corrections: batches[0]?.corrections ?? {}, batches, accountId },
+        {
+          id: recognition.id,
+          corrections: batches[0]?.corrections ?? {},
+          batches,
+          accountId,
+          acknowledgeDuplicateScreenshot: ackDuplicateScreenshot,
+          acknowledgeDuplicateTrade: ackTradeDuplicate,
+        },
         {
           onSuccess: (data) => {
             setImportOutcome({ count: data.recognition.tradeIds.length || 1, tags: data.recognition.suggestedTags });
@@ -230,7 +260,13 @@ function WorkspaceInner() {
       full[field.field] = field.field in corrections ? corrections[field.field] : field.normalizedValue;
     }
     confirm.mutate(
-      { id: recognition.id, corrections: full, accountId },
+      {
+        id: recognition.id,
+        corrections: full,
+        accountId,
+        acknowledgeDuplicateScreenshot: ackDuplicateScreenshot,
+        acknowledgeDuplicateTrade: ackTradeDuplicate,
+      },
       {
         onSuccess: (data) => {
           setImportOutcome({ count: Math.max(data.recognition.tradeIds.length, 1), tags: data.recognition.suggestedTags });
@@ -255,7 +291,10 @@ function WorkspaceInner() {
   };
 
   // ── derived overview data ────────────────────────────────────────────────
-  const items = list.data?.items ?? [];
+  // V2 §62 — the history table reads the ACCUMULATED pages (Load more);
+  // single-page consumers (overview recent strip) keep list.data directly.
+  const items: OcrRecognition[] =
+    historyItems.length > 0 ? historyItems : list.data?.pages[0]?.items ?? [];
   const stats = {
     analyzed: items.length,
     confirmed: items.filter((item) => item.status === "CONFIRMED").length,
@@ -314,6 +353,19 @@ function WorkspaceInner() {
         dict={dict}
         items={items}
         loading={list.isLoading}
+        hasMore={list.hasNextPage}
+        onLoadMore={() => {
+          void list.fetchNextPage();
+        }}
+        onReprocess={(id) =>
+          reprocess.mutate(id, {
+            onSuccess: (data) => {
+              toast.success(dict.reprocess.done);
+              setParams({ job: data.recognition.id });
+            },
+            onError: (error) => toast.error(dict.errors.server, { description: apiErrorMessage(error, "") }),
+          })
+        }
         onOpen={(id) => setParams({ job: id })}
         onDelete={(id) =>
           deleteJob.mutate(id, {
@@ -396,6 +448,37 @@ function WorkspaceInner() {
           onSaveField={handleSaveFieldValue}
           onReviewDraft={() => setStepRaw("review")}
           onRetry={handleRetry}
+          onReprocess={
+            recognition.status !== "PROCESSING" && recognition.status !== "QUEUED"
+              ? () => {
+                  reprocess.mutate(recognition.id, {
+                    onSuccess: (data) => {
+                      toast.success(dict.reprocess.done);
+                      router.replace(`/recognition?job=${data.recognition.id}`);
+                      setStepRaw("overview");
+                    },
+                    onError: (error) => toast.error(dict.errors.server, { description: apiErrorMessage(error, "") }),
+                  });
+                }
+              : undefined
+          }
+          reprocessing={reprocess.isPending}
+          onAcknowledgeTradeDuplicate={
+            recognition.possibleTradeDuplicate
+              ? () => {
+                  setAckTradeDuplicate(true);
+                  toast.info(dict.tradeDuplicate.dismissed);
+                }
+              : undefined
+          }
+          onAcknowledgeScreenshotDuplicate={
+            recognition.duplicateOf
+              ? () => {
+                  setAckDuplicateScreenshot(true);
+                  toast.info(dict.duplicate.dismissed);
+                }
+              : undefined
+          }
           readOnly={recognition.status === "CONFIRMED"}
           recrop={{
             pending: recrop.isPending,
@@ -509,11 +592,39 @@ function WorkspaceInner() {
         </section>
       ) : null}
 
+      {/* V2 §1/§2/§18 — the multi-screenshot flow (one event, several shots). */}
+      <SetWorkspace dict={dict} />
+
+      {/* Storage + retention indicator (engine quality §4.2 — now live). */}
+      <StorageIndicator dict={dict} />
+
     </div>
   );
 }
 
 // ── Shared pieces ────────────────────────────────────────────────────────────
+
+/** Retention + storage indicator (engine quality §4.2) — the overview footer. */
+function StorageIndicator({ dict }: { dict: ReturnType<typeof useDict>["recognition"] }) {
+  const storage = useOcrStorage();
+  if (storage.isLoading || storage.isError || !storage.data || storage.data.assetCount === 0) return null;
+  const data = storage.data;
+  return (
+    <p
+      className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-border pt-3 font-mono text-[11px] tabular-nums text-muted-foreground"
+      data-testid="recognition-storage"
+    >
+      <span className="ledger-label !text-[10px]">{dict.storage.label}</span>
+      <span>
+        {formatStorageBytes(data.usedBytes)} · {data.retainedAssetCount} {dict.storage.retained}
+        {data.purgedAssetCount > 0 ? ` · ${data.purgedAssetCount} ${dict.storage.purged}` : null}
+      </span>
+      <span>
+        {data.retentionDays > 0 ? `${dict.storage.retention} ${data.retentionDays} ${dict.storage.days}` : dict.storage.disabled}
+      </span>
+    </p>
+  );
+}
 
 /** Ruled step indicator — UPLOAD → REVIEW → CONFIRM (§4 workflow). */
 function StepShell({

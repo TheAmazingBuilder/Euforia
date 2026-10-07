@@ -60,6 +60,15 @@ export const apiPaths = {
   ocrRecognitionConfirm: (recognitionId: string) => `/ocr/recognitions/${recognitionId}/confirm`,
   ocrRecognitionRecrop: (recognitionId: string) => `/ocr/recognitions/${recognitionId}/recrop`,
   ocrRecognitionEvents: (recognitionId: string) => `/ocr/recognitions/${recognitionId}/events`,
+  ocrRecognitionReprocess: (recognitionId: string) => `/ocr/recognitions/${recognitionId}/reprocess`,
+  ocrSets: "/ocr/sets",
+  ocrSet: (setId: string) => `/ocr/sets/${setId}`,
+  ocrSetConfirm: (setId: string) => `/ocr/sets/${setId}/confirm`,
+  ocrCollections: "/ocr/collections",
+  ocrCollection: (collectionId: string) => `/ocr/collections/${collectionId}`,
+  ocrCollectionItems: (collectionId: string) => `/ocr/collections/${collectionId}/items`,
+  ocrCollectionItem: (collectionId: string, recognitionId: string) =>
+    `/ocr/collections/${collectionId}/items/${recognitionId}`,
   ocrAnalytics: "/ocr/analytics",
   ocrStorage: "/ocr/storage",
   // Session Live module (trading sessions, saved analyses, key levels)

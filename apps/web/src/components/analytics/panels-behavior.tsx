@@ -112,6 +112,38 @@ function OcrQualityCard() {
             </div>
           </div>
         ) : null}
+        {data.correctionRate !== null ? (
+          <div className="mt-4 border-t border-border pt-3">
+            <p className="ledger-label">{R.analytics.correctionRate}</p>
+            <p className="mt-1 font-mono text-xl tabular-nums">{formatPercent(data.correctionRate, 0)}</p>
+            {data.avgDurationMs !== null ? (
+              <p className="mt-1 font-mono text-xs tabular-nums text-muted-foreground">
+                {R.analytics.avgDuration} {(data.avgDurationMs / 1000).toFixed(1)}{R.analytics.seconds}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
+        {data.platformDistribution.length > 0 || data.typeDistribution.length > 0 ? (
+          <div className="mt-4 border-t border-border pt-3">
+            <p className="ledger-label">{R.analytics.distributions}</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {data.platformDistribution.slice(0, 5).map((entry) => (
+                <span
+                  key={entry.platform}
+                  className="stamp stamp-ink !text-[9px]"
+                  data-testid="analytics-platform-distribution"
+                >
+                  {entry.platform.replace(/_/g, " ")} ×{entry.count}
+                </span>
+              ))}
+              {data.typeDistribution.slice(0, 5).map((entry) => (
+                <span key={entry.type} className="rounded-sm border border-border bg-surface-raised px-2 py-0.5 font-mono text-[11px] tabular-nums text-muted-foreground">
+                  {entry.type.replace(/_/g, " ")} ×{entry.count}
+                </span>
+              ))}
+            </div>
+          </div>
+        ) : null}
       </CardContent>
     </Card>
   );

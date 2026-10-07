@@ -68,6 +68,9 @@ export const EVENT_TYPE_META: Record<SecurityEventType, { label: string }> = {
   // Phase 21 — the confirmation→journal bridge audit facts.
   OCR_TRADE_IMPORTED: { label: "Trade imported from screenshot" },
   OCR_TRADE_IMPORT_SKIPPED: { label: "Screenshot import skipped" },
+  OCR_REPROCESSED: { label: "Screenshot reprocessed" },
+  OCR_COLLECTION_CREATED: { label: "Screenshot collection created" },
+  OCR_COLLECTION_DELETED: { label: "Screenshot collection deleted" },
 };
 
 // ── Re-authentication gate (§13) ─────────────────────────────────────────────

@@ -144,7 +144,11 @@ async function makeScreenshotPng(page, width = 1280, height = 720, withText = tr
     await check("draft sections render", (await page.locator('[data-testid="recognition-draft"] [data-testid^="draft-"]').count()) >= 9);
     await check("risk/reward computed", /[0-9]/.test(await page.locator('[data-testid="draft-risk-reward"]').innerText()));
     await page.screenshot({ path: "scripts/shots/recognition-draft.png", fullPage: true });
+    // V2 §60 — the confirm button now opens the explicit confirmation
+    // dialog; the final "Confirm trade" action lives inside it.
     await page.click('[data-testid="recognition-confirm"]');
+    await page.waitForSelector('[data-testid="recognition-confirm-final"]', { timeout: 10000 });
+    await page.click('[data-testid="recognition-confirm-final"]');
     await page.waitForSelector('[data-testid="recognition-success"]', { timeout: 10000 });
     await check("success state reached", true);
     await page.screenshot({ path: "scripts/shots/recognition-success.png", fullPage: true });
