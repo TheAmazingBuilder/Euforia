@@ -35,6 +35,8 @@ export interface AppConfig {
     engineMaxRetries: number;
     /** Local filesystem storage root for screenshot binaries (§6). */
     storageRoot: string;
+    /** Screenshot retention window in days (0 disables, engine quality §4.2). */
+    retentionDays: number;
   };
   accounts: {
     /** AES-256-GCM key encrypting trading credentials at rest (§22). */
@@ -95,6 +97,7 @@ function build(env: Env): AppConfig {
       engineTimeoutMs: env.OCR_ENGINE_TIMEOUT_MS,
       engineMaxRetries: env.OCR_ENGINE_MAX_RETRIES,
       storageRoot: env.OCR_STORAGE_ROOT,
+      retentionDays: env.OCR_RETENTION_DAYS,
     },
     accounts: {
       credentialsEncryptionKey: Buffer.from(env.ACCOUNTS_CREDENTIALS_ENCRYPTION_KEY, "base64"),

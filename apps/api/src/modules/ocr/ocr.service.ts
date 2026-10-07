@@ -468,6 +468,11 @@ export class OcrService {
     return { recognition: toRecognitionDto(current) };
   }
 
+  /** Lightweight status projection for the SSE progress stream. */
+  async getStatus(userId: string, id: string): Promise<{ id: string; status: string } | null> {
+    return this.repository.findStatusForUser(id, userId);
+  }
+
   // ── Read paths (§39 owner-scoped) ─────────────────────────────────────────
 
   async getRecognition(userId: string, id: string): Promise<OcrRecognitionDto> {

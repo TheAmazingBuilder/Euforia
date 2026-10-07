@@ -278,6 +278,15 @@ export class OcrRepository {
     return toRecognitionRow(created);
   }
 
+  /** Lightweight status read for the SSE stream (§ engine quality 4.1). */
+  async findStatusForUser(id: string, userId: string): Promise<{ id: string; status: string } | null> {
+    const row = await this.prisma.ocrRecognition.findFirst({
+      where: { id, userId },
+      select: { id: true, status: true },
+    });
+    return row ?? null;
+  }
+
   /** Owner-scoped single read — the IDOR boundary (§39). */
   async findForUser(id: string, userId: string): Promise<OcrRecognitionRow | null> {
     const row = await this.prisma.ocrRecognition.findFirst({
@@ -409,6 +418,45 @@ export class OcrRepository {
       const row = await tx.ocrRecognition.findUnique({ where: { id }, include: recognitionInclude });
       return row ? toRecognitionRow(row) : null;
     });
+  }
+
+  /**
+   * Retention candidates (engine quality §4.2): CONFIRMED rows past the
+   * hard window, REVIEW_REQUIRED past the 2× grace window. Never QUEUED/
+   * PROCESSING (live pipeline state), never already-purged rows.
+   */
+  async findPurgeable(
+    hardCutoff: Date,
+    graceCutoff: Date,
+    limit: number,
+  ): Promise<{ id: string; storageKey: string | null; sizeBytes: number }[]> {
+    const rows = await this.prisma.ocrRecognition.findMany({
+      where: {
+        screenshotPurgedAt: null,
+        OR: [
+          { status: "CONFIRMED", createdAt: { lt: hardCutoff } },
+          { status: "FAILED", createdAt: { lt: hardCutoff } },
+          { status: "REVIEW_REQUIRED", createdAt: { lt: graceCutoff } },
+        ],
+      },
+      select: { id: true, asset: { select: { storageKey: true, sizeBytes: true } } },
+      orderBy: { createdAt: "asc" },
+      take: limit,
+    });
+    return rows.map((row) => ({
+      id: row.id,
+      storageKey: row.asset.storageKey,
+      sizeBytes: row.asset.sizeBytes,
+    }));
+  }
+
+  /** Stamp the row as purged (guarded: never stamps the same row twice). */
+  async markScreenshotPurged(id: string): Promise<boolean> {
+    const result = await this.prisma.ocrRecognition.updateMany({
+      where: { id, screenshotPurgedAt: null },
+      data: { screenshotPurgedAt: new Date() },
+    });
+    return result.count > 0;
   }
 
   /** Attach/detach the ACCOUNTS target (engine quality §3.1). Owner-checked upstream. */

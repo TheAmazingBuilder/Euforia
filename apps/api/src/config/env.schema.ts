@@ -154,6 +154,9 @@ export const envSchema = z.object({
   OCR_STORAGE_ROOT: z.string().trim().min(1).default(".data/ocr-storage"),
   /** Bounded retry attempts for TRANSIENT engine failures (§34) — extra attempts on top of the first call. */
   OCR_ENGINE_MAX_RETRIES: z.coerce.number().int().min(0).max(3).default(1),
+  /** Screenshot retention (engine quality §4.2): binaries of CONFIRMED/FAILED
+   *  recognitions older than this are purged (0 disables retention). */
+  OCR_RETENTION_DAYS: z.coerce.number().int().min(0).max(3650).default(30),
 
   // ── Trading Core / Journal (Phase 4) ───────────────────────────────────────
   /** Local filesystem storage root for trade-screenshot binaries (§39) —

@@ -53,6 +53,8 @@ import { OcrRateLimiterService } from "./ocr-rate-limiter.service";
 import { OcrRepository } from "./ocr.repository";
 import { OcrService } from "./ocr.service";
 import { OcrTradeImportService } from "./ocr-trade-import.service";
+import { OcrOpsService } from "./ocr-ops.service";
+import { OcrRetentionService } from "./ocr-retention.service";
 import { OcrController } from "./ocr.controller";
 
 /** One engine wins: the real sidecar when configured, else the mock, else "unavailable". */
@@ -76,6 +78,8 @@ export const ocrEngineProvider: Provider = {
   providers: [
     OcrService,
     OcrTradeImportService,
+    OcrOpsService,
+    OcrRetentionService,
     OcrRepository,
     OcrRateLimiterService,
     ImageValidationService,

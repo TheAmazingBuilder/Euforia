@@ -45,6 +45,11 @@ import {
   type OcrRecropInput,
 } from "../../shared/contracts";
 import { OcrService } from "./ocr.service";
+import { OcrOpsService } from "./ocr-ops.service";
+import {
+  ocrAnalyticsQuerySchema,
+  type OcrAnalyticsQuery,
+} from "../../shared/contracts";
 
 /** The correlation id attached by the request-id infrastructure (§57). */
 function requestIdOf(request: FastifyRequest): string | null {
@@ -57,9 +62,16 @@ const ocrPageQueryWire = ocrRecognitionPageQuerySchema.extend({
   limit: z.coerce.number().int().min(1).max(50).default(20),
 });
 
+const ocrAnalyticsQueryWire = ocrAnalyticsQuerySchema.extend({
+  days: z.coerce.number().int().min(1).max(365).default(30),
+});
+
 @Controller("ocr")
 export class OcrController {
-  constructor(private readonly ocr: OcrService) {}
+  constructor(
+    private readonly ocr: OcrService,
+    private readonly ops: OcrOpsService,
+  ) {}
 
   @Post("recognitions")
   async recognize(
@@ -142,6 +154,78 @@ export class OcrController {
     @Body(new ZodValidationPipe(ocrRecropInputSchema)) input: OcrRecropInput,
   ) {
     return this.ocr.recropRecognition(principal.userId, uuidSchema.parse(id), input.region);
+  }
+
+  /**
+   * Real-time progress (engine quality §4.1): a server-sent-events stream
+   * of the job status. Emits the current state immediately, then follows
+   * the repository until the job leaves QUEUED/PROCESSING (or a bounded
+   * window elapses — the stream closes honestly instead of hanging).
+   * Works in both live and mock frontends via fetch-stream readers (the
+   * browser EventSource cannot carry an Authorization header).
+   */
+  @Get("recognitions/:id/events")
+  async events(
+    @CurrentUser() principal: AuthPrincipal,
+    @Param("id") id: string,
+    @Res() reply: FastifyReply,
+  ) {
+    const recognitionId = uuidSchema.parse(id);
+    reply.raw.writeHead(200, {
+      "content-type": "text/event-stream",
+      "cache-control": "no-cache, no-transform",
+      connection: "keep-alive",
+      "x-accel-buffering": "no",
+    });
+    reply.raw.write(`retry: 2000\n\n`);
+
+    const write = (event: string, data: unknown): boolean => {
+      reply.raw.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+      return true;
+    };
+
+    const startedAt = Date.now();
+    const MAX_WINDOW_MS = 60_000;
+    const POLL_MS = 300;
+    let closed = false;
+    const close = () => {
+      if (!closed) {
+        closed = true;
+        reply.raw.end();
+      }
+    };
+    try {
+      while (!closed && Date.now() - startedAt < MAX_WINDOW_MS) {
+        const row = await this.ocr.getStatus(principal.userId, recognitionId);
+        if (row === null) {
+          write("gone", { id: recognitionId });
+          break;
+        }
+        write("status", { id: recognitionId, status: row.status });
+        if (row.status !== "QUEUED" && row.status !== "PROCESSING") break;
+        await new Promise((resolve) => setTimeout(resolve, POLL_MS));
+      }
+    } catch {
+      // client disconnect or transient repo failure — close honestly
+    } finally {
+      close();
+    }
+    return reply;
+  }
+
+  /** OCR quality analytics (engine quality §3.2) — the Analytics card feed. */
+  @Get("analytics")
+  async analytics(
+    @CurrentUser() principal: AuthPrincipal,
+    @Query(new ZodValidationPipe(ocrAnalyticsQueryWire)) query: OcrAnalyticsQuery,
+  ) {
+    return this.ops.getAnalytics(principal.userId, query.days);
+  }
+
+  /** Storage + retention indicator (engine quality §4.2). */
+  @Get("storage")
+  async storage(@CurrentUser() principal: AuthPrincipal) {
+    return this.ops.getStorage(principal.userId);
   }
 
   @Delete("recognitions/:id")
