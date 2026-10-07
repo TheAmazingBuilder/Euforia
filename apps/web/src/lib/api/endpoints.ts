@@ -58,6 +58,10 @@ export const apiPaths = {
   ocrRecognition: (recognitionId: string) => `/ocr/recognitions/${recognitionId}`,
   ocrRecognitionImage: (recognitionId: string) => `/ocr/recognitions/${recognitionId}/image`,
   ocrRecognitionConfirm: (recognitionId: string) => `/ocr/recognitions/${recognitionId}/confirm`,
+  ocrRecognitionRecrop: (recognitionId: string) => `/ocr/recognitions/${recognitionId}/recrop`,
+  ocrRecognitionEvents: (recognitionId: string) => `/ocr/recognitions/${recognitionId}/events`,
+  ocrAnalytics: "/ocr/analytics",
+  ocrStorage: "/ocr/storage",
   // Session Live module (trading sessions, saved analyses, key levels)
   sessionLiveSessions: "/session-live/sessions",
   sessionLiveSession: (sessionId: string) => `/session-live/sessions/${sessionId}`,

@@ -61,10 +61,11 @@ export const recognitionDict = {
 
   uploader: {
     dropTitle: "Drag your screenshot here",
-    dropSubtitle: "or click to browse — PNG, JPG or WEBP, up to 6 MB",
+    dropSubtitle: "or click to browse — PNG, JPG, WEBP or PDF statement, up to 6 MB",
     dragging: "Drop to import",
     rejected: "This file can't be imported",
     browse: "Choose a file",
+    pdfLabel: "PDF statement",
     replace: "Replace",
     remove: "Remove",
     previewLabel: "Screenshot preview",
@@ -74,7 +75,7 @@ export const recognitionDict = {
     format: "Format",
     size: "Size",
     errEmpty: "This image file is empty.",
-    errType: "This image format isn't supported — use PNG, JPG or WEBP.",
+    errType: "This format isn't supported — use PNG, JPG, WEBP or a PDF statement.",
     errSize: "This file is too large — screenshots must stay under 6 MB.",
     errRead: "We couldn't read this file — try re-exporting the screenshot.",
   },
@@ -95,6 +96,9 @@ export const recognitionDict = {
     profileAccount: "Account / position — coming soon",
     profileChart: "Chart analysis — coming soon",
     profileTradeHint: "Symbol, direction, volume, prices, SL/TP, result and times.",
+    account: "Import into account",
+    accountHint: "Confirmed trades land on this account. Defaults to your primary account.",
+    accountDefault: "Default account",
     start: "Start recognition",
     changeImage: "Back to the screenshot",
   },
@@ -197,6 +201,7 @@ export const recognitionDict = {
     viewTrades: "Open the journal",
     importAnother: "Import another screenshot",
     toast: "Recognition confirmed — the reviewed values are saved.",
+    importedCount: "trade(s) imported",
   },
 
   history: {
@@ -242,6 +247,76 @@ export const recognitionDict = {
     },
     delete: "Delete",
     deleted: "Recognition deleted.",
+  },
+
+  engine: {
+    dualPass: "Dual-pass recognition",
+    dualPassHint: "Two independent reads of the pixels — values they agree on are marked as verified.",
+    layout: "Layout",
+    layoutDesktop: "MT5 desktop history",
+    layoutMobile: "MT5 mobile summary",
+    layoutGeneric: "Generic layout",
+    deskew: "Deskew",
+    deskewApplied: "rotation corrected",
+    deskewNone: "already straight",
+  },
+
+  duplicate: {
+    title: "Already imported",
+    body: "This screenshot looks like one you imported earlier — check it before confirming another copy.",
+    open: "Open the earlier import",
+  },
+
+  suggestions: {
+    apply: "Use",
+    applied: "Applied",
+    hint: "You corrected this reading before",
+  },
+
+  crop: {
+    tool: "Re-scan a region",
+    hint: "Drag a rectangle over the part of the screenshot the engine should read again.",
+    scan: "Scan region",
+    scanning: "Scanning…",
+    clear: "Clear selection",
+    results: "Region readings",
+    resultsEmpty: "No readable text in this region — try a wider frame.",
+    applyField: "Use value",
+    failed: "The region scan found nothing usable.",
+  },
+
+  multi: {
+    reviewTitle: "Grouped confirmation",
+    reviewSubtitle: "This screenshot contains several trades — review each draft, then import the ones you keep.",
+    draft: "Draft",
+    include: "Import this trade",
+    excluded: "Excluded — will not be imported",
+    confirmedCount: "trade(s) imported",
+  },
+
+  storage: {
+    label: "Screenshot storage",
+    retained: "retained",
+    purged: "purged",
+    retention: "Auto-purge after",
+    days: "days",
+    disabled: "Auto-purge disabled",
+    oldest: "Oldest kept",
+  },
+
+  tags: {
+    title: "Suggested playbook tags",
+    hint: "Based on when and what you traded — apply them in the journal.",
+  },
+
+  analytics: {
+    cardTitle: "Import & Recognition quality",
+    cardHint: "How your screenshot imports perform over the last 30 days.",
+    uploads: "Uploads",
+    confirmed: "Confirmed",
+    imported: "Trades imported",
+    avgConfidence: "Avg. recognition confidence",
+    correctionsTitle: "Fields you correct most",
   },
 
   statuses: {

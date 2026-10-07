@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Pencil, TriangleAlert } from "lucide-react";
+import { History, Pencil, TriangleAlert } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import type { OcrExtractedField } from "@cosmoz/shared";
@@ -58,6 +58,7 @@ export function RecognizedField({
   onSave: (value: string | null) => void;
   disabled?: boolean;
 }) {
+  const [suggestionApplied, setSuggestionApplied] = React.useState(false);
   const key = field.field as FieldKey;
   const label = recognitionFieldLabel(dict, field.field);
   const missing = isMissing(field);
@@ -151,6 +152,27 @@ export function RecognizedField({
                 {warning}
               </span>
             ))}
+            {field.suggestion && !missing && field.suggestion.value !== field.normalizedValue ? (
+              <button
+                type="button"
+                onClick={() => {
+                  onSave(field.suggestion!.value);
+                  setSuggestionApplied(true);
+                }}
+                disabled={disabled}
+                className={cn(
+                  "inline-flex items-center gap-1 rounded-sm border border-border bg-surface-raised px-1.5 py-0.5 font-mono text-[11px] tabular-nums transition-colors hover:border-accent hover:text-accent",
+                  disabled && "pointer-events-none opacity-60",
+                  suggestionApplied && "border-accent/50 text-accent",
+                )}
+                title={dict.suggestions.hint}
+                data-testid={`recognition-suggestion-${field.field}`}
+              >
+                <History className="size-3" aria-hidden="true" />
+                {dict.suggestions.apply} {formatFinancial(field.suggestion.value)}
+                <span className="text-muted-foreground">×{field.suggestion.occurrences}</span>
+              </button>
+            ) : null}
           </div>
         </>
       )}

@@ -127,6 +127,10 @@ export {
   useOcrRecognition,
   useOcrRecognitions,
   fetchOcrRecognitionImage,
+  useOcrRecrop,
+  useOcrAnalytics,
+  useOcrStorage,
+  useOcrRecognitionEvents,
 } from "./recognition";
 export {
   useCreateGoal,

@@ -1,6 +1,6 @@
 "use client";
 
-import { ShieldCheck } from "lucide-react";
+import { ShieldCheck, SquareCheckBig, Square } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import type { OcrRecognition } from "@cosmoz/shared";
@@ -19,11 +19,16 @@ import { recognitionFieldLabel, type RecognitionDict } from "@/i18n/dictionaries
 
 /**
  * TradeDraftReview — the final look before confirmation (PROMPT 3 §23/§24/
- * §28). Sections mirror the trade form (Basic / Execution / Risk / Result /
- * Timing); risk-reward is computed only when entry, stop and target are all
- * readable. The explicit "Confirm & import" action is the ONLY path that
- * makes the reviewed values authoritative (§28) — until then this stays a
- * draft, never a Trade (contract invariant).
+ * §28 + grouped confirmation, engine quality §2.2). Sections mirror the
+ * trade form (Basic / Execution / Risk / Result / Timing); risk-reward is
+ * computed only when entry, stop and target are all readable. The explicit
+ * "Confirm & import" action is the ONLY path that makes the reviewed values
+ * authoritative (§28) — until then this stays a draft, never a Trade
+ * (contract invariant).
+ *
+ * Grouped confirmation: when the recognition carries N candidate drafts,
+ * each draft renders as its own ruled card with an include decision —
+ * the user imports exactly the drafts they checked.
  */
 
 /** Risk/reward from entry, stop, target and direction — 1 : X, when computable. */
@@ -39,24 +44,22 @@ export function riskReward(entry: string | null, stop: string | null, target: st
   return Math.round((reward / risk) * 100) / 100;
 }
 
-export function TradeDraftReview({
-  recognition,
-  dict,
-  effectiveValues,
-  onBack,
-  onConfirm,
-  pending = false,
-}: {
-  recognition: OcrRecognition;
-  dict: RecognitionDict;
+interface DraftCardProps {
+  index: number;
+  total: number;
+  fields: OcrRecognition["fields"];
   effectiveValues: Record<string, string | null>;
-  onBack: () => void;
-  onConfirm: () => void;
-  pending?: boolean;
-}) {
+  include: boolean;
+  onToggle: (include: boolean) => void;
+  dict: RecognitionDict;
+  platform: string;
+}
+
+/** One draft card — the ruled form-mirror summary with an include decision. */
+function DraftCard({ index, total, fields, effectiveValues, include, onToggle, dict, platform }: DraftCardProps) {
   const value = (field: FieldKey): string | null => {
     if (field in effectiveValues) return effectiveValues[field];
-    return recognition.fields.find((f) => f.field === field)?.normalizedValue ?? null;
+    return fields.find((f) => f.field === field)?.normalizedValue ?? null;
   };
   const display = (field: FieldKey): string => {
     const raw = value(field);
@@ -68,36 +71,60 @@ export function TradeDraftReview({
   const rr = riskReward(value("entryPrice"), value("stopLoss"), value("takeProfit"), direction);
 
   return (
-    <div className="flex flex-col gap-5" data-testid="recognition-draft">
-      <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-        <div className="flex flex-col gap-1">
-          <h2 className="font-heading text-lg font-semibold">{dict.draft.title}</h2>
-          <p className="text-sm text-muted-foreground">{dict.draft.subtitle}</p>
+    <section
+      aria-label={`${dict.multi.draft} ${index + 1}`}
+      className={cn(
+        "flex flex-col rounded-xl border bg-surface px-4 py-4 transition-colors",
+        include ? "border-border" : "border-dashed border-border/70 opacity-70",
+      )}
+      data-testid={`recognition-draft-card-${index}`}
+      data-included={include}
+    >
+      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3">
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            role="checkbox"
+            aria-checked={include}
+            aria-label={`${dict.multi.include} — ${dict.multi.draft} ${index + 1}`}
+            onClick={() => onToggle(!include)}
+            className="flex items-center gap-2 text-sm"
+            data-testid={`recognition-draft-include-${index}`}
+          >
+            {include ? (
+              <SquareCheckBig className="size-4 text-accent" strokeWidth={1.5} aria-hidden="true" />
+            ) : (
+              <Square className="size-4 text-muted-foreground" strokeWidth={1.5} aria-hidden="true" />
+            )}
+            <span className="font-mono text-xs uppercase tracking-[0.06em]">
+              {dict.multi.draft} {index + 1}/{total}
+            </span>
+          </button>
         </div>
-        <RecognitionStatusBadge status={recognition.status} dict={dict} />
+        <span className={cn("font-mono text-[11px] uppercase tracking-[0.06em]", include ? "text-accent" : "text-muted-foreground")}>
+          {include ? dict.multi.include : dict.multi.excluded}
+        </span>
       </header>
 
       <div className="flex flex-col">
         {DRAFT_SECTIONS.map((section) => (
-          <section key={section.titleKey} aria-label={dict.draft.sections[section.titleKey]} className="border-t border-border pt-3 first:border-t-0">
+          <div key={section.titleKey} className="border-t border-border/60 pt-2 first:border-t-0 first:pt-0 mt-2 first:mt-0">
             <p className="ledger-label">{dict.draft.sections[section.titleKey]}</p>
-            <dl className="mt-2 grid grid-cols-[minmax(0,1fr)_minmax(0,auto)] gap-x-6">
+            <dl className="mt-1.5 grid grid-cols-[minmax(0,1fr)_minmax(0,auto)] gap-x-6">
               {section.titleKey === "basic" ? (
-                <div className="col-span-2 grid grid-cols-subgrid items-baseline border-b border-border/60 py-2" data-testid="draft-platform">
+                <div className="col-span-2 grid grid-cols-subgrid items-baseline border-b border-border/40 py-1.5">
                   <dt className="text-sm text-muted-foreground">{dict.draft.platform}</dt>
-                  <dd className="text-right font-mono text-[15px] tabular-nums">
-                    {platformLabel(dict, recognition.classification)}
-                  </dd>
+                  <dd className="text-right font-mono text-sm tabular-nums">{platform}</dd>
                 </div>
               ) : null}
               {section.fields.map((field) => {
                 const tone = field === "profit" ? profitTone(value(field)) : null;
                 return (
-                  <div key={field} className="col-span-2 grid grid-cols-subgrid items-baseline border-b border-border/60 py-2" data-testid={`draft-${field}`}>
+                  <div key={field} className="col-span-2 grid grid-cols-subgrid items-baseline border-b border-border/40 py-1.5" data-testid={`draft-${index}-${field}`}>
                     <dt className="text-sm text-muted-foreground">{recognitionFieldLabel(dict, field)}</dt>
                     <dd
                       className={cn(
-                        "text-right font-mono text-[15px] tabular-nums",
+                        "text-right font-mono text-sm tabular-nums",
                         tone === "profit" && "text-profit",
                         tone === "loss" && "text-loss",
                         (value(field) === null || value(field) === "") && "italic text-muted-foreground/70",
@@ -109,28 +136,148 @@ export function TradeDraftReview({
                 );
               })}
               {section.titleKey === "risk" ? (
-                <div className="col-span-2 grid grid-cols-subgrid items-baseline border-b border-border/60 py-2" data-testid="draft-risk-reward">
+                <div className="col-span-2 grid grid-cols-subgrid items-baseline border-b border-border/40 py-1.5">
                   <dt className="text-sm text-muted-foreground">{dict.draft.riskReward}</dt>
-                  <dd className="text-right font-mono text-[15px] tabular-nums" title={dict.draft.riskRewardCalc}>
+                  <dd className="text-right font-mono text-sm tabular-nums">
                     {rr === null ? <span className="italic text-muted-foreground/70">{dict.draft.notDetected}</span> : `1 : ${rr.toFixed(2)}`}
                   </dd>
                 </div>
               ) : null}
             </dl>
-          </section>
+          </div>
         ))}
       </div>
+    </section>
+  );
+}
+
+export function TradeDraftReview({
+  recognition,
+  dict,
+  effectiveValues,
+  draftStates,
+  onToggleInclude,
+  onBack,
+  onConfirm,
+  pending = false,
+}: {
+  recognition: OcrRecognition;
+  dict: RecognitionDict;
+  effectiveValues: Record<string, string | null>;
+  /** Grouped confirmation (engine quality §2.2) — one entry per candidate. */
+  draftStates?: { effectiveValues: Record<string, string | null>; include: boolean }[];
+  onToggleInclude?: (index: number, include: boolean) => void;
+  onBack: () => void;
+  onConfirm: () => void;
+  pending?: boolean;
+}) {
+  const isMulti = Boolean(draftStates && draftStates.length > 0);
+  const includedCount = draftStates?.filter((draft) => draft.include).length ?? 1;
+
+  return (
+    <div className="flex flex-col gap-5" data-testid="recognition-draft">
+      <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+        <div className="flex flex-col gap-1">
+          <h2 className="font-heading text-lg font-semibold">
+            {isMulti ? dict.multi.reviewTitle : dict.draft.title}
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            {isMulti ? dict.multi.reviewSubtitle : dict.draft.subtitle}
+          </p>
+        </div>
+        <RecognitionStatusBadge status={recognition.status} dict={dict} />
+      </header>
+
+      {isMulti ? (
+        <div className="flex flex-col gap-4">
+          {draftStates!.map((draft, index) => (
+            <DraftCard
+              key={index}
+              index={index}
+              total={draftStates!.length}
+              fields={recognition.candidates?.[index]?.fields ?? recognition.fields}
+              effectiveValues={draft.effectiveValues}
+              include={draft.include}
+              onToggle={(include) => onToggleInclude?.(index, include)}
+              dict={dict}
+              platform={platformLabel(dict, recognition.classification)}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="flex flex-col">
+          {DRAFT_SECTIONS.map((section) => (
+            <section key={section.titleKey} aria-label={dict.draft.sections[section.titleKey]} className="border-t border-border pt-3 first:border-t-0">
+              <p className="ledger-label">{dict.draft.sections[section.titleKey]}</p>
+              <dl className="mt-2 grid grid-cols-[minmax(0,1fr)_minmax(0,auto)] gap-x-6">
+                {section.titleKey === "basic" ? (
+                  <div className="col-span-2 grid grid-cols-subgrid items-baseline border-b border-border/60 py-2" data-testid="draft-platform">
+                    <dt className="text-sm text-muted-foreground">{dict.draft.platform}</dt>
+                    <dd className="text-right font-mono text-[15px] tabular-nums">
+                      {platformLabel(dict, recognition.classification)}
+                    </dd>
+                  </div>
+                ) : null}
+                {section.fields.map((field) => {
+                  const value = (key: FieldKey): string | null => {
+                    if (key in effectiveValues) return effectiveValues[key];
+                    return recognition.fields.find((f) => f.field === key)?.normalizedValue ?? null;
+                  };
+                  const tone = field === "profit" ? profitTone(value(field)) : null;
+                  return (
+                    <div key={field} className="col-span-2 grid grid-cols-subgrid items-baseline border-b border-border/60 py-2" data-testid={`draft-${field}`}>
+                      <dt className="text-sm text-muted-foreground">{recognitionFieldLabel(dict, field)}</dt>
+                      <dd
+                        className={cn(
+                          "text-right font-mono text-[15px] tabular-nums",
+                          tone === "profit" && "text-profit",
+                          tone === "loss" && "text-loss",
+                          (value(field) === null || value(field) === "") && "italic text-muted-foreground/70",
+                        )}
+                      >
+                        {(() => {
+                          const raw = value(field);
+                          if (raw === null || raw === "") return dict.draft.notDetected;
+                          if (field === "openTime" || field === "closeTime") return formatExtractedTime(raw);
+                          return formatFinancial(raw);
+                        })()}
+                      </dd>
+                    </div>
+                  );
+                })}
+                {section.titleKey === "risk" ? (
+                  <div className="col-span-2 grid grid-cols-subgrid items-baseline border-b border-border/60 py-2" data-testid="draft-risk-reward">
+                    <dt className="text-sm text-muted-foreground">{dict.draft.riskReward}</dt>
+                    <dd className="text-right font-mono text-[15px] tabular-nums" title={dict.draft.riskRewardCalc}>
+                      {(() => {
+                        const value = (key: FieldKey): string | null => {
+                          if (key in effectiveValues) return effectiveValues[key];
+                          return recognition.fields.find((f) => f.field === key)?.normalizedValue ?? null;
+                        };
+                        const rr = riskReward(value("entryPrice"), value("stopLoss"), value("takeProfit"), value("direction"));
+                        return rr === null ? <span className="italic text-muted-foreground/70">{dict.draft.notDetected}</span> : `1 : ${rr.toFixed(2)}`;
+                      })()}
+                    </dd>
+                  </div>
+                ) : null}
+              </dl>
+            </section>
+          ))}
+        </div>
+      )}
 
       <div className="flex flex-col gap-3 rounded-xl border border-border bg-surface px-4 py-4 sm:flex-row sm:items-center sm:justify-between" data-testid="recognition-confirm-zone">
         <p className="flex items-start gap-2 text-sm text-muted-foreground">
           <ShieldCheck className="mt-0.5 size-4 shrink-0 text-accent" strokeWidth={1.5} aria-hidden="true" />
-          {dict.draft.confirmHint}
+          {isMulti
+            ? `${dict.multi.confirmedCount} — ${includedCount}/${draftStates!.length}`
+            : dict.draft.confirmHint}
         </p>
         <div className="flex shrink-0 items-center gap-2">
           <Button type="button" variant="ghost" onClick={onBack} disabled={pending} data-testid="recognition-back-to-result">
             {dict.draft.backToResult}
           </Button>
-          <Button type="button" onClick={onConfirm} disabled={pending} data-testid="recognition-confirm">
+          <Button type="button" onClick={onConfirm} disabled={pending || (isMulti && includedCount === 0)} data-testid="recognition-confirm">
             {pending ? "…" : dict.draft.confirmAndImport}
           </Button>
         </div>

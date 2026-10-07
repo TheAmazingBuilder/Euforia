@@ -1,11 +1,19 @@
 "use client";
 
-import { CheckCircle2, CircleDashed, Lock } from "lucide-react";
+import { CheckCircle2, CircleDashed, Lock, Wallet } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import type { OcrExtractionProfile } from "@cosmoz/shared";
 
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useAccounts } from "@/lib/api/queries";
 import type { RecognitionDict } from "@/i18n/dictionaries/en/recognition";
 
 /**
@@ -23,6 +31,8 @@ export function RecognitionSettings({
   profile,
   onProfile,
   detectedPlatform,
+  accountId,
+  onAccountId,
   onStart,
   onBack,
   pending = false,
@@ -32,10 +42,15 @@ export function RecognitionSettings({
   onProfile: (profile: OcrExtractionProfile) => void;
   /** What the engine expects to classify — informational, not a selector. */
   detectedPlatform: string;
+  /** ACCOUNTS attachment (engine quality §3.1) — null = default account. */
+  accountId: string | null;
+  onAccountId: (accountId: string | null) => void;
   onStart: () => void;
   onBack: () => void;
   pending?: boolean;
 }) {
+  const accounts = useAccounts();
+  const accountOptions = accounts.data?.accounts ?? [];
   const profiles: Array<{
     value: OcrExtractionProfile | "ACCOUNT_POSITION" | "CHART_ANALYSIS";
     label: string;
@@ -67,6 +82,32 @@ export function RecognitionSettings({
         <p className="mt-1 font-mono text-xs text-muted-foreground" data-testid="recognition-platform-expected">
           {detectedPlatform}
         </p>
+      </div>
+
+      {/* Account attachment (engine quality §3.1) — where confirmed trades land. */}
+      <div className="border-t border-border pt-4">
+        <p className="ledger-label">{dict.settings.account}</p>
+        <p className="mt-1 text-xs text-muted-foreground">{dict.settings.accountHint}</p>
+        <Select
+          value={accountId ?? "default"}
+          onValueChange={(next) => onAccountId(next === "default" ? null : next)}
+          disabled={pending}
+        >
+          <SelectTrigger className="mt-2 h-9 w-full max-w-xs font-mono text-sm" data-testid="recognition-account-select">
+            <span className="flex items-center gap-2">
+              <Wallet className="size-3.5 text-muted-foreground" aria-hidden="true" />
+              <SelectValue placeholder={dict.settings.accountDefault} />
+            </span>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="default">{dict.settings.accountDefault}</SelectItem>
+            {accountOptions.map((account) => (
+              <SelectItem key={account.id} value={account.id}>
+                {account.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Profile — the one real V1 option + disabled future modes. */}

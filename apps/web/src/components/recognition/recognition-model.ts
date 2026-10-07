@@ -269,5 +269,18 @@ export function recognitionConfidence(fields: readonly OcrExtractedField[]): num
 
 /** Mirrors ocrCreateInputSchema's 8 400 000-char data-URL ceiling ≈ 6 MB decoded. */
 export const UPLOAD_MAX_BYTES = 6 * 1024 * 1024;
-export const ACCEPTED_MIMES = ["image/png", "image/jpeg", "image/webp"] as const;
-export const ACCEPT_ATTR = ".png,.jpg,.jpeg,.webp";
+/** PDF statements (engine quality §4.3) ride the same data-URL ceiling. */
+export const ACCEPTED_MIMES = ["image/png", "image/jpeg", "image/webp", "application/pdf"] as const;
+export const ACCEPT_ATTR = ".png,.jpg,.jpeg,.webp,.pdf";
+
+export function isPdfFile(file: { type: string; name: string }): boolean {
+  return file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+}
+
+/** Human storage size for the retention indicator (engine quality §4.2). */
+export function formatStorageBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+}

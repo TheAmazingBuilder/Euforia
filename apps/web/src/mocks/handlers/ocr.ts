@@ -2,14 +2,18 @@ import { http, HttpResponse } from "msw";
 import type { ZodType } from "zod";
 
 import type {
+  OcrAnalyticsResponse,
   OcrCreateInput,
+  OcrRecropResponse,
   OcrRecognition,
   OcrRecognitionPage,
   OcrRecognitionResponse,
+  OcrStorageResponse,
 } from "@cosmoz/shared";
 import {
   ocrConfirmInputSchema,
   ocrCreateInputSchema,
+  ocrRecropInputSchema,
 } from "@cosmoz/shared";
 
 import { apiPaths } from "@/lib/api/endpoints";
@@ -41,6 +45,8 @@ import { endpoint, latency, parseBody, pathParam, readJson, requireAuth, toError
 
 /** Session-scoped store — recognition id → persisted aggregate (+ upload bytes for session uploads). */
 type StoredRecognition = OcrRecognition & { imageDataUrl: string | null };
+/** Corrections-memory ledger (engine quality §2.3) — per-user patterns. */
+const patternStore = new Map<string, Map<string, { value: string; occurrences: number }>>();
 const store = new Map<string, StoredRecognition>();
 
 /** Simulated pipeline wall-clock: POST → REVIEW_REQUIRED after this long. */
@@ -256,6 +262,8 @@ type SeedSpec = {
   status: OcrRecognition["status"];
   ageMinutes: number;
   confirmed?: boolean;
+  /** Seed carries grouped multi-trade drafts (engine quality §2.2). */
+  multi?: boolean;
 };
 
 const SEED_SPECS: SeedSpec[] = [
@@ -264,6 +272,7 @@ const SEED_SPECS: SeedSpec[] = [
   { label: "BTCUSD BUY 0.25 — partial screenshot", file: "btcusd_mt5_1102.png", status: "REVIEW_REQUIRED", ageMinutes: 3 * 60 },
   { label: "NAS100 SELL 1.00 — MT5 summary", file: "nas100_mt5_1530.png", status: "CONFIRMED", ageMinutes: 26 * 60, confirmed: true },
   { label: "US30 SELL 0.40 — unreadable crop", file: "us30_crop_2210.png", status: "FAILED", ageMinutes: 27 * 60 },
+  { label: "History panel — 2 trades (grouped draft)", file: "history_multi_1030.png", status: "REVIEW_REQUIRED", ageMinutes: 90, multi: true },
 ];
 
 function buildSeed(spec: SeedSpec, index: number): StoredRecognition {
@@ -280,6 +289,7 @@ function buildSeed(spec: SeedSpec, index: number): StoredRecognition {
     asset: {
       id: crypto.randomUUID(), mime: "image/png", sizeBytes: 184_320 + index * 4096,
       width: 1280, height: 720, checksumSha256: checksum, createdAt,
+      purged: false,
     },
     engine: spec.status === "FAILED"
       ? { name: "mock-recognition", engineVersion: "2.0.0", pipelineVersion: "2.0.0", contractVersion: "1" }
@@ -291,11 +301,32 @@ function buildSeed(spec: SeedSpec, index: number): StoredRecognition {
     corrections: null,
     // The mocked backend never creates journal trades — no linked trade id.
     tradeId: null,
+    tradeIds: [],
+    candidates: null,
+    duplicateOf: null,
+    accountId: null,
+    suggestedTags: [],
     confirmedAt: null,
     createdAt,
     updatedAt: createdAt,
     imageDataUrl: placeholderDataUrl(),
   };
+  if (spec.multi) {
+    // Grouped-confirmation demo: two coherent drafts from one history panel.
+    const draft = (symbol: string, direction: "BUY" | "SELL", entry: string, profit: string): OcrRecognition["candidates"] extends null ? never : { fields: OcrRecognition["fields"] } => ({
+      fields: [
+        { field: "symbol", rawValue: symbol, normalizedValue: symbol, confidence: 0.93, confidenceBand: "HIGH", validationStatus: "VALID", sourceRegion: null, warnings: [] },
+        { field: "direction", rawValue: direction.toLowerCase(), normalizedValue: direction, confidence: 0.92, confidenceBand: "HIGH", validationStatus: "VALID", sourceRegion: null, warnings: [] },
+        { field: "volume", rawValue: "0.20", normalizedValue: "0.20", confidence: 0.88, confidenceBand: "HIGH", validationStatus: "VALID", sourceRegion: null, warnings: [] },
+        { field: "entryPrice", rawValue: entry, normalizedValue: entry, confidence: 0.9, confidenceBand: "HIGH", validationStatus: "VALID", sourceRegion: null, warnings: [] },
+        { field: "profit", rawValue: profit, normalizedValue: profit, confidence: 0.86, confidenceBand: "HIGH", validationStatus: "VALID", sourceRegion: null, warnings: [] },
+      ],
+    });
+    base.candidates = [
+      draft("GBPUSD", "BUY", "1.26340", "+89.10"),
+      draft("USDJPY", "SELL", "149.850", "+54.20"),
+    ];
+  }
   if (spec.confirmed) {
     const corrected: Record<string, string | null> = {};
     for (const field of base.fields) {
@@ -328,7 +359,18 @@ function settleProcessing(item: StoredRecognition): void {
   const elapsed = Date.now() - new Date(item.createdAt).getTime();
   if (elapsed < OCR_TOTAL_PROCESSING_MS) return;
   const { fields, warnings } = simulateExtraction(item.asset.checksumSha256);
-  item.fields = fields;
+  // Corrections memory (engine quality §2.3): the mock suggests the stored
+  // corrected value for any rawValue the ledger has seen for this user.
+  const patterns = patternStore.get("demo-user");
+  if (patterns) {
+    item.fields = fields.map((field) => {
+      if (field.rawValue === null) return field;
+      const suggestion = patterns.get(`${field.field}\u0000${field.rawValue}`);
+      return suggestion ? { ...field, suggestion } : field;
+    });
+  } else {
+    item.fields = fields;
+  }
   item.warnings = warnings;
   item.status = "REVIEW_REQUIRED";
   item.durationMs = OCR_TOTAL_PROCESSING_MS - 320;
@@ -361,7 +403,8 @@ export const ocrHandlers = [
         return HttpResponse.json({ error: "The uploaded image is empty." }, { status: 400 });
       }
       const checksumSha256 = await sha256Hex(bytes);
-      const { width, height } = imageDimensions(bytes, mime);
+      const isPdf = mime === "application/pdf";
+      const { width, height } = isPdf ? { width: 2530, height: 925 } : imageDimensions(bytes, mime);
       const now = new Date().toISOString();
 
       // Deterministic QA failure: a screenshot whose smallest side is under
@@ -374,12 +417,17 @@ export const ocrHandlers = [
           classification: null,
           fields: [],
           warnings: [],
-          asset: { id: crypto.randomUUID(), mime: mime as "image/png" | "image/jpeg" | "image/webp", sizeBytes: bytes.length, width, height, checksumSha256, createdAt: now },
+          asset: { id: crypto.randomUUID(), mime: mime as "image/png" | "image/jpeg" | "image/webp" | "application/pdf", sizeBytes: bytes.length, width, height, checksumSha256, createdAt: now, purged: false },
           engine: { name: "mock-recognition", engineVersion: "2.0.0", pipelineVersion: "2.0.0", contractVersion: "1" },
           durationMs: 460,
           failure: { category: "EXTRACTION_FAILED", message: "We couldn't recognize enough information from this screenshot." },
           corrections: null,
           tradeId: null,
+          tradeIds: [],
+          candidates: null,
+          duplicateOf: null,
+          accountId: input.accountId ?? null,
+          suggestedTags: [],
           confirmedAt: null,
           createdAt: now,
           updatedAt: now,
@@ -396,17 +444,31 @@ export const ocrHandlers = [
         classification: null,
         fields: [],
         warnings: [],
-        asset: { id: crypto.randomUUID(), mime: mime as "image/png" | "image/jpeg" | "image/webp", sizeBytes: bytes.length, width, height, checksumSha256, createdAt: now },
+        asset: { id: crypto.randomUUID(), mime: mime as "image/png" | "image/jpeg" | "image/webp" | "application/pdf", sizeBytes: bytes.length, width, height, checksumSha256, createdAt: now, purged: false },
         engine: null,
         durationMs: null,
         failure: null,
         corrections: null,
         tradeId: null,
+        tradeIds: [],
+        candidates: null,
+        duplicateOf: null,
+        accountId: input.accountId ?? null,
+        suggestedTags: [],
         confirmedAt: null,
         createdAt: now,
         updatedAt: now,
         imageDataUrl: input.imageDataUrl,
       };
+      // Duplicate detection (engine quality §2.1): a session upload whose
+      // checksum shares the first 10 hex chars with an earlier asset flags
+      // the earlier recognition (mock-grade perceptual match).
+      for (const item of store.values()) {
+        if (item.asset.checksumSha256.slice(0, 10) === checksumSha256.slice(0, 10)) {
+          recognition.duplicateOf = { recognitionId: item.id, createdAt: item.createdAt, tradeId: item.tradeId };
+          break;
+        }
+      }
       store.set(recognition.id, recognition);
       return HttpResponse.json({ recognition: publicBody(recognition) } satisfies OcrRecognitionResponse, { status: 201 });
     } catch (error) {
@@ -496,7 +558,7 @@ export const ocrHandlers = [
       if (found.status !== "REVIEW_REQUIRED") {
         return HttpResponse.json({ error: "This recognition is still processing." }, { status: 409 });
       }
-      const input = parseBody<{ corrections: Record<string, string | null> }>(
+      const input = parseBody(
         ocrConfirmInputSchema,
         await readJson(request),
       );
@@ -505,6 +567,30 @@ export const ocrHandlers = [
       found.status = "CONFIRMED";
       found.confirmedAt = now;
       found.updatedAt = now;
+      if (input.accountId !== undefined) found.accountId = input.accountId;
+
+      // Corrections memory ledger (engine quality §2.3).
+      const patterns = patternStore.get("demo-user") ?? new Map<string, { value: string; occurrences: number }>();
+      const machineByKey = new Map<string, OcrRecognition["fields"][number]>(found.fields.map((field) => [field.field as string, field]));
+      const entries = Object.entries(input.corrections);
+      for (const [key, value] of entries) {
+        if (value === null || value === "") continue;
+        const machine = machineByKey.get(key);
+        if (!machine || machine.rawValue === null || machine.rawValue === value) continue;
+        const patternKey = `${key}\u0000${machine.rawValue}`;
+        const existing = patterns.get(patternKey);
+        patterns.set(patternKey, { value, occurrences: (existing?.occurrences ?? 0) + 1 });
+      }
+      patternStore.set("demo-user", patterns);
+
+      // Grouped confirmation: canonical batches land in the stored aggregate
+      // (the mock never creates journal trades — § house rule).
+      if (input.batches) {
+        found.suggestedTags = ["Import", "Session London"];
+        found.tradeIds = input.batches.filter((batch) => batch.include).map(() => "mock");
+      } else if (Object.keys(input.corrections).length > 0) {
+        found.suggestedTags = ["Import"];
+      }
       return HttpResponse.json({ recognition: publicBody(found) } satisfies OcrRecognitionResponse);
     } catch (error) {
       return toErrorResponse(error);
@@ -521,6 +607,115 @@ export const ocrHandlers = [
       }
       store.delete(id);
       return HttpResponse.json({ deleted: true as const, id });
+    } catch (error) {
+      return toErrorResponse(error);
+    }
+  }),
+
+  // Re-OCR by crop (engine quality §2.4) — returns the overlapping fields
+  // of the stored result shifted by the region origin (mock-grade guidance).
+  http.post(endpoint(apiPaths.ocrRecognitionRecrop(":id")), async ({ request, params }) => {
+    try {
+      requireAuth(request);
+      await latency();
+      const id = pathParam(params, "id");
+      const found = store.get(id);
+      if (!found) {
+        return HttpResponse.json({ error: "Recognition not found." }, { status: 404 });
+      }
+      const input = parseBody(
+        ocrRecropInputSchema,
+        await readJson(request),
+      );
+      const inRegion = found.fields.filter(
+        (field) =>
+          field.sourceRegion !== null &&
+          field.sourceRegion.x >= input.region.x &&
+          field.sourceRegion.x + field.sourceRegion.width <= input.region.x + input.region.width &&
+          field.sourceRegion.y >= input.region.y &&
+          field.sourceRegion.y + field.sourceRegion.height <= input.region.y + input.region.height,
+      );
+      const fields = (inRegion.length > 0 ? inRegion : found.fields).map((field) => ({
+        ...field,
+        sourceRegion: field.sourceRegion === null
+          ? null
+          : {
+              x: Math.max(0, field.sourceRegion.x),
+              y: Math.max(0, field.sourceRegion.y),
+              width: field.sourceRegion.width,
+              height: field.sourceRegion.height,
+            },
+      }));
+      return HttpResponse.json({ fields, region: input.region } satisfies OcrRecropResponse);
+    } catch (error) {
+      return toErrorResponse(error);
+    }
+  }),
+
+  // OCR quality analytics (engine quality §3.2) — derived from the store.
+  http.get(endpoint(apiPaths.ocrAnalytics), async ({ request }) => {
+    try {
+      requireAuth(request);
+      await latency();
+      ensureSeeds();
+      const url = new URL(request.url);
+      const windowDays = Math.min(Math.max(Number(url.searchParams.get("days") ?? "30"), 1), 365);
+      const all = Array.from(store.values()).map((item) => {
+        settleProcessing(item);
+        return item;
+      });
+      const uploads = all.length;
+      const failed = all.filter((item) => item.status === "FAILED").length;
+      const confirmed = all.filter((item) => item.status === "CONFIRMED").length;
+      const reviewRequired = all.filter((item) => item.status === "REVIEW_REQUIRED").length;
+      const confidences = all
+        .flatMap((item) => item.fields.filter((field) => field.validationStatus !== "MISSING").map((field) => field.confidence));
+      const avgConfidence = confidences.length > 0
+        ? Math.round((confidences.reduce((total, value) => total + value, 0) / confidences.length) * 100) / 100
+        : null;
+      const durations = all.map((item) => item.durationMs).filter((value): value is number => value !== null);
+      const body: OcrAnalyticsResponse = {
+        windowDays,
+        funnel: {
+          uploads,
+          completed: uploads - failed,
+          reviewRequired,
+          confirmed,
+          importedTrades: confirmed,
+        },
+        correctionsByField: [
+          { field: "volume", corrections: 2, confirmations: confirmed },
+          { field: "openTime", corrections: 1, confirmations: confirmed },
+        ],
+        avgConfidence,
+        duplicatesBlocked: 0,
+        avgDurationMs: durations.length > 0
+          ? Math.round(durations.reduce((total, value) => total + value, 0) / durations.length)
+          : null,
+      };
+      return HttpResponse.json(body);
+    } catch (error) {
+      return toErrorResponse(error);
+    }
+  }),
+
+  // Storage + retention indicator (engine quality §4.2).
+  http.get(endpoint(apiPaths.ocrStorage), async ({ request }) => {
+    try {
+      requireAuth(request);
+      await latency();
+      ensureSeeds();
+      const all = Array.from(store.values());
+      const body: OcrStorageResponse = {
+        usedBytes: all.reduce((total, item) => total + item.asset.sizeBytes, 0),
+        assetCount: all.length,
+        retainedAssetCount: all.filter((item) => !item.asset.purged).length,
+        purgedAssetCount: all.filter((item) => item.asset.purged).length,
+        retentionDays: 30,
+        oldestRetainedAssetAt:
+          all.filter((item) => !item.asset.purged).sort((a, b) => a.createdAt.localeCompare(b.createdAt))[0]?.createdAt ?? null,
+      };
+      return HttpResponse.json(body);
     } catch (error) {
       return toErrorResponse(error);
     }

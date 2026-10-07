@@ -13,9 +13,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { MetricCard, MethodNote } from "@/components/analytics/metric-card";
+import { useOcrAnalytics } from "@/lib/api/queries";
 import { ExcursionScatter, HistogramChart, MonteCarloChart } from "@/components/analytics/panels-charts";
 import { QuarterlyReportDialog } from "@/components/analytics/quarterly-report-dialog";
 import type { AnalyticsDict } from "@/i18n/dictionaries/en/analytics";
+import { recognitionFieldLabel } from "@/i18n/dictionaries/en/recognition";
 import { useI18n } from "@/i18n/i18n-provider";
 import { cn } from "@/lib/utils";
 
@@ -49,6 +51,72 @@ function exportCsv(suite: Suite): void {
   URL.revokeObjectURL(url);
 }
 
+/**
+ * OCR quality card (engine quality §3.2) — the Import & Recognition funnel
+ * and the correction hot-spots, fed by GET /ocr/analytics. Rendered inside
+ * the Quality tab: recognition quality is a quality signal of the journal
+ * itself.
+ */
+function OcrQualityCard() {
+  const { dict } = useI18n();
+  const R = dict.recognition;
+  const analytics = useOcrAnalytics(30);
+
+  if (analytics.isLoading || analytics.isError) return null;
+  const data = analytics.data;
+  if (!data || data.funnel.uploads === 0) return null;
+
+  const completion = data.funnel.uploads > 0 ? data.funnel.confirmed / data.funnel.uploads : null;
+  return (
+    <Card className="bg-surface" data-testid="analytics-ocr-quality">
+      <CardHeader>
+        <CardTitle className="font-heading text-base font-semibold">{R.analytics.cardTitle}</CardTitle>
+        <CardDescription className="text-xs">{R.analytics.cardHint}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="flex flex-col gap-1">
+            <p className="ledger-label">{R.analytics.uploads}</p>
+            <p className="font-mono text-xl tabular-nums">{data.funnel.uploads}</p>
+          </div>
+          <div className="flex flex-col gap-1">
+            <p className="ledger-label">{R.analytics.confirmed}</p>
+            <p className="font-mono text-xl tabular-nums">
+              {data.funnel.confirmed}
+              {completion !== null ? <span className="text-sm text-muted-foreground"> · {formatPercent(completion, 0)}</span> : null}
+            </p>
+          </div>
+          <div className="flex flex-col gap-1">
+            <p className="ledger-label">{R.analytics.imported}</p>
+            <p className="font-mono text-xl tabular-nums text-accent">{data.funnel.importedTrades}</p>
+          </div>
+          <div className="flex flex-col gap-1">
+            <p className="ledger-label">{R.analytics.avgConfidence}</p>
+            <p className="font-mono text-xl tabular-nums">
+              {data.avgConfidence === null ? "—" : `${Math.round(data.avgConfidence * 100)}%`}
+            </p>
+          </div>
+        </div>
+        {data.correctionsByField.length > 0 ? (
+          <div className="mt-4 border-t border-border pt-3">
+            <p className="ledger-label">{R.analytics.correctionsTitle}</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {data.correctionsByField.slice(0, 6).map((entry) => (
+                <span
+                  key={entry.field}
+                  className="rounded-sm border border-border bg-surface-raised px-2 py-0.5 font-mono text-[11px] tabular-nums text-muted-foreground"
+                >
+                  {recognitionFieldLabel(dict.recognition, entry.field)} ×{entry.corrections}
+                </span>
+              ))}
+            </div>
+          </div>
+        ) : null}
+      </CardContent>
+    </Card>
+  );
+}
+
 export function QualityTab({ suite }: { suite: Suite }) {
   const { dict } = useI18n();
   const T: AnalyticsDict["behavior"]["quality"] = dict.analytics.behavior.quality;
@@ -59,6 +127,7 @@ export function QualityTab({ suite }: { suite: Suite }) {
 
   return (
     <div className="space-y-4" data-testid="analytics-tab-quality">
+      <OcrQualityCard />
       <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
         <MetricCard
           label={T.planFollowed}

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { FileScan, ImageUp, RefreshCw, Trash2 } from "lucide-react";
+import { FileScan, FileText, ImageUp, RefreshCw, Trash2 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import {
   ACCEPT_ATTR,
   ACCEPTED_MIMES,
   UPLOAD_MAX_BYTES,
+  isPdfFile,
 } from "@/components/recognition/recognition-model";
 import type { RecognitionDict } from "@/i18n/dictionaries/en/recognition";
 
@@ -83,7 +84,10 @@ export function ScreenshotUploader({
   const validate = React.useCallback(
     (candidate: File): UploadRejection | null => {
       if (candidate.size === 0) return "empty";
-      if (!(ACCEPTED_MIMES as readonly string[]).includes(candidate.type)) return "type";
+      const typeOk =
+        (ACCEPTED_MIMES as readonly string[]).includes(candidate.type) ||
+        isPdfFile(candidate); // some browsers report an empty/legacy type for PDFs
+      if (!typeOk) return "type";
       if (candidate.size > UPLOAD_MAX_BYTES) return "size";
       return null;
     },
@@ -125,18 +129,29 @@ export function ScreenshotUploader({
   };
 
   if (file) {
+    const pdf = isPdfFile(file);
     return (
       <div className="flex flex-col gap-3" data-testid="recognition-upload-preview">
         <div className="overflow-hidden rounded-xl border border-border bg-surface">
-          <div className="flex max-h-[340px] items-center justify-center bg-background/60 p-2 sm:max-h-[420px]">
-            {/* eslint-disable-next-line @next/next/no-img-element -- user-local object URL, never routed */}
-            <img
-              src={preview.url ?? undefined}
-              alt={dict.uploader.previewLabel}
-              className="max-h-[320px] w-auto max-w-full rounded-lg object-contain sm:max-h-[400px]"
-              data-testid="recognition-preview-image"
-            />
-          </div>
+          {pdf ? (
+            // PDF statements carry no inline raster preview — an honest file card.
+            <div className="flex max-h-[340px] flex-col items-center justify-center gap-2 bg-background/60 p-8 sm:max-h-[420px]">
+              <FileText className="size-10 text-muted-foreground" strokeWidth={1.25} aria-hidden="true" />
+              <p className="font-mono text-xs uppercase tracking-[0.08em] text-muted-foreground">
+                {dict.uploader.pdfLabel}
+              </p>
+            </div>
+          ) : (
+            <div className="flex max-h-[340px] items-center justify-center bg-background/60 p-2 sm:max-h-[420px]">
+              {/* eslint-disable-next-line @next/next/no-img-element -- user-local object URL, never routed */}
+              <img
+                src={preview.url ?? undefined}
+                alt={dict.uploader.previewLabel}
+                className="max-h-[320px] w-auto max-w-full rounded-lg object-contain sm:max-h-[400px]"
+                data-testid="recognition-preview-image"
+              />
+            </div>
+          )}
           <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-1 border-t border-border px-4 py-2.5">
             <span className="font-mono text-xs text-muted-foreground" data-testid="recognition-file-name">
               {file.name}

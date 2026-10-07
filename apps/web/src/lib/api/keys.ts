@@ -46,6 +46,8 @@ export const queryKeys = {
   ocrRecognitions: (status?: string) => ["ocr-recognitions", status ?? "all"] as const,
   ocrRecognitionsRoot: ["ocr-recognitions"] as const,
   ocrRecognition: (id: string) => ["ocr-recognitions", "job", id] as const,
+  ocrAnalytics: (days: number) => ["ocr-analytics", days] as const,
+  ocrStorage: ["ocr-storage"] as const,
   // Professional Playbook module
   playbookOverview: ["playbook-overview"] as const,
   playbookTemplates: ["playbook-templates"] as const,

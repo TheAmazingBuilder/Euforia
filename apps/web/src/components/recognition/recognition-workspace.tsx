@@ -14,7 +14,9 @@ import {
   useConfirmOcrRecognition,
   useCreateOcrRecognition,
   useDeleteOcrRecognition,
+  useOcrRecrop,
   useOcrRecognition,
+  useOcrRecognitionEvents,
   useOcrRecognitions,
   fetchOcrRecognitionImage,
 } from "@/lib/api/queries";
@@ -34,6 +36,7 @@ import {
   recognitionConfidence,
   type RecognitionStep,
 } from "@/components/recognition/recognition-model";
+import type { CropRegion } from "@/components/recognition/recognition-result";
 import { RecognitionStatusBadge } from "@/components/recognition/recognition-status-badge";
 
 /**
@@ -63,13 +66,24 @@ function WorkspaceInner() {
   const [profile, setProfile] = React.useState<OcrExtractionProfile>("TRADE_SUMMARY");
   const [editingField, setEditingField] = React.useState<string | null>(null);
   const [corrections, setCorrections] = React.useState<Record<string, string | null>>({});
+  // ACCOUNTS attachment (engine quality §3.1) — null = the default account.
+  const [accountId, setAccountId] = React.useState<string | null>(null);
+  // Grouped confirmation (§2.2): per-draft corrections + include decisions.
+  const [activeCandidate, setActiveCandidate] = React.useState(0);
+  const [candidateCorrections, setCandidateCorrections] = React.useState<Record<number, Record<string, string | null>>>({});
+  const [candidateIncludes, setCandidateIncludes] = React.useState<boolean[]>([]);
+  // Region re-scan results (§2.4) + the confirmation outcome facts.
+  const [recropResults, setRecropResults] = React.useState<{ fields: OcrRecognition["fields"]; region: CropRegion } | null>(null);
+  const [importOutcome, setImportOutcome] = React.useState<{ count: number; tags: string[] }>({ count: 1, tags: [] });
 
   // ── server state ─────────────────────────────────────────────────────────
   const list = useOcrRecognitions();
   const focusedJob = useOcrRecognition(jobId);
+  useOcrRecognitionEvents(jobId, focusedJob.data?.recognition.status === "PROCESSING" || focusedJob.data?.recognition.status === "QUEUED");
   const create = useCreateOcrRecognition();
   const confirm = useConfirmOcrRecognition();
   const deleteJob = useDeleteOcrRecognition();
+  const recrop = useOcrRecrop();
 
   const recognition = focusedJob.data?.recognition ?? null;
 
@@ -132,6 +146,12 @@ function WorkspaceInner() {
     setFile(null);
     setEditingField(null);
     setCorrections({});
+    setAccountId(null);
+    setActiveCandidate(0);
+    setCandidateCorrections({});
+    setCandidateIncludes([]);
+    setRecropResults(null);
+    setImportOutcome({ count: 1, tags: [] });
     setStepRaw("overview");
     if (clearJob) setParams({ job: null });
   }
@@ -141,7 +161,7 @@ function WorkspaceInner() {
     try {
       const dataUrl = await readFileAsDataUrl(file);
       create.mutate(
-        { imageDataUrl: dataUrl, requestedProfile: profile },
+        { imageDataUrl: dataUrl, requestedProfile: profile, accountId },
         {
           onSuccess: (data) => {
             setCorrections({});
@@ -178,14 +198,42 @@ function WorkspaceInner() {
 
   function handleConfirm() {
     if (!recognition) return;
+    const candidates = recognition.candidates ?? null;
+    const isMulti = Boolean(candidates && candidates.length > 1);
+
+    if (isMulti && candidates) {
+      // Grouped confirmation (engine quality §2.2): one batch per draft.
+      const batches = candidates.map((candidate, index) => {
+        const draftCorrections = candidateCorrections[index] ?? {};
+        const merged: Record<string, string | null> = {};
+        for (const field of candidate.fields) {
+          merged[field.field] = field.field in draftCorrections ? draftCorrections[field.field] : field.normalizedValue;
+        }
+        return { corrections: merged, include: candidateIncludes[index] ?? true };
+      });
+      confirm.mutate(
+        { id: recognition.id, corrections: batches[0]?.corrections ?? {}, batches, accountId },
+        {
+          onSuccess: (data) => {
+            setImportOutcome({ count: data.recognition.tradeIds.length || 1, tags: data.recognition.suggestedTags });
+            toast.success(dict.success.toast);
+            setStepRaw("success");
+          },
+          onError: (error) => toast.error(dict.errors.server, { description: apiErrorMessage(error, "") }),
+        },
+      );
+      return;
+    }
+
     const full: Record<string, string | null> = {};
     for (const field of recognition.fields) {
       full[field.field] = field.field in corrections ? corrections[field.field] : field.normalizedValue;
     }
     confirm.mutate(
-      { id: recognition.id, corrections: full },
+      { id: recognition.id, corrections: full, accountId },
       {
-        onSuccess: () => {
+        onSuccess: (data) => {
+          setImportOutcome({ count: Math.max(data.recognition.tradeIds.length, 1), tags: data.recognition.suggestedTags });
           toast.success(dict.success.toast);
           setStepRaw("success");
         },
@@ -193,6 +241,18 @@ function WorkspaceInner() {
       },
     );
   }
+
+  /** Region re-scan (engine quality §2.4) — results are ephemeral guidance. */
+  const handleRecrop = (region: CropRegion) => {
+    if (!recognition) return;
+    recrop.mutate(
+      { id: recognition.id, region },
+      {
+        onSuccess: (data) => setRecropResults({ fields: data.fields, region: data.region }),
+        onError: (error) => toast.error(dict.errors.server, { description: apiErrorMessage(error, "") }),
+      },
+    );
+  };
 
   // ── derived overview data ────────────────────────────────────────────────
   const items = list.data?.items ?? [];
@@ -211,6 +271,41 @@ function WorkspaceInner() {
       effectiveValues[field.field] = field.field in corrections ? corrections[field.field] : field.normalizedValue;
     }
   }
+
+  // Grouped-confirmation view model: per-draft merged values + includes.
+  const candidates = recognition?.candidates ?? null;
+  const isMulti = Boolean(candidates && candidates.length > 1);
+  const activeCandidateFields = isMulti && candidates ? (candidates[activeCandidate]?.fields ?? candidates[0]!.fields) : recognition?.fields ?? [];
+  const activeCandidateCorrections = isMulti ? (candidateCorrections[activeCandidate] ?? {}) : corrections;
+  const activeEffectiveValues: Record<string, string | null> = {};
+  for (const field of activeCandidateFields) {
+    activeEffectiveValues[field.field] = field.field in activeCandidateCorrections
+      ? activeCandidateCorrections[field.field]
+      : field.normalizedValue;
+  }
+  const draftStates = isMulti && candidates
+    ? candidates.map((candidate, index) => {
+        const draftCorrections = candidateCorrections[index] ?? {};
+        const draftEffective: Record<string, string | null> = {};
+        for (const field of candidate.fields) {
+          draftEffective[field.field] = field.field in draftCorrections ? draftCorrections[field.field] : field.normalizedValue;
+        }
+        return { effectiveValues: draftEffective, include: candidateIncludes[index] ?? true };
+      })
+    : undefined;
+
+  /** Apply a value (edited or suggested) to the ACTIVE draft (or single). */
+  const handleSaveFieldValue = (field: string, value: string | null) => {
+    if (isMulti) {
+      setCandidateCorrections((current) => ({
+        ...current,
+        [activeCandidate]: { ...(current[activeCandidate] ?? {}), [field]: value },
+      }));
+    } else {
+      setCorrections((current) => ({ ...current, [field]: value }));
+    }
+    setEditingField(null);
+  };
 
   // ── tab: HISTORY ─────────────────────────────────────────────────────────
   if (tab === "history" && !jobId) {
@@ -260,6 +355,15 @@ function WorkspaceInner() {
             recognition={recognition}
             dict={dict}
             effectiveValues={effectiveValues}
+            draftStates={draftStates}
+            onToggleInclude={(index, include) =>
+              setCandidateIncludes((current) => {
+                const next = [...current];
+                while (next.length <= index) next.push(true);
+                next[index] = include;
+                return next;
+              })
+            }
             onBack={() => setStepRaw("result")}
             onConfirm={handleConfirm}
             pending={confirm.isPending}
@@ -270,7 +374,12 @@ function WorkspaceInner() {
     if (step === "success") {
       return (
         <StepShell dict={dict} active="confirm">
-          <RecognitionSuccess dict={dict} onImportAnother={() => resetToOverview()} />
+          <RecognitionSuccess
+            dict={dict}
+            onImportAnother={() => resetToOverview()}
+            importedCount={importOutcome.count}
+            suggestedTags={importOutcome.tags}
+          />
         </StepShell>
       );
     }
@@ -280,18 +389,42 @@ function WorkspaceInner() {
           recognition={recognition}
           dict={dict}
           imageUrl={jobImageUrl}
-          effectiveValues={effectiveValues}
+          effectiveValues={activeEffectiveValues}
           editingField={editingField}
           onEditStart={setEditingField}
           onEditCancel={() => setEditingField(null)}
-          onSaveField={(field, value) => {
-            setCorrections((current) => ({ ...current, [field]: value }));
-            setEditingField(null);
-          }}
+          onSaveField={handleSaveFieldValue}
           onReviewDraft={() => setStepRaw("review")}
           onRetry={handleRetry}
           readOnly={recognition.status === "CONFIRMED"}
+          recrop={{
+            pending: recrop.isPending,
+            results: recropResults,
+            onScan: handleRecrop,
+            onClear: () => setRecropResults(null),
+          }}
         />
+        {isMulti && candidates ? (
+          <div className="flex items-center gap-2 border-t border-border pt-3" data-testid="recognition-draft-selector">
+            <span className="ledger-label">{dict.multi.draft}</span>
+            {candidates.map((_, index) => (
+              <Button
+                key={index}
+                type="button"
+                variant="ghost"
+                size="sm"
+                className={cn(
+                  "min-h-8 font-mono text-xs uppercase tracking-[0.06em]",
+                  activeCandidate === index ? "bg-surface-raised text-foreground" : "text-muted-foreground",
+                )}
+                onClick={() => setActiveCandidate(index)}
+                data-testid={`recognition-draft-tab-${index}`}
+              >
+                {index + 1}
+              </Button>
+            ))}
+          </div>
+        ) : null}
       </StepShell>
     );
   }
@@ -307,6 +440,8 @@ function WorkspaceInner() {
             profile={profile}
             onProfile={setProfile}
             detectedPlatform={dict.settings.platformMt5}
+            accountId={accountId}
+            onAccountId={setAccountId}
             onStart={handleStart}
             onBack={() => {
               setFile(null);
