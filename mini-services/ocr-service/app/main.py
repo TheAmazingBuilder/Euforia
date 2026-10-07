@@ -44,8 +44,10 @@ from .contract import (
     SourceRegion,
 )
 from .extraction import ENGINE_NAME, extract_fields, extract_trade_candidates, run_ocr, tesseract_version
+from .pdf import PDF_MIME, PdfRejected, looks_like_pdf, render_pdf_pages
 from .templates import choose_template
 from .validation import ImageRejected, validate_and_prepare
+from .preprocessing import binarize, clahe_equalize, upscale as upscale_image
 
 logger = logging.getLogger("ocr-service")
 logging.basicConfig(level=logging.INFO, format="%(message)s")
@@ -89,6 +91,9 @@ def _respond(
     passes: Optional[list] = None,
     layout_template: Optional[str] = None,
     deskew_deg: Optional[float] = None,
+    document_pages: Optional[int] = None,
+    document_width: Optional[int] = None,
+    document_height: Optional[int] = None,
 ) -> JSONResponse:
     body = EngineResponse(
         requestId=request_id,
@@ -107,6 +112,9 @@ def _respond(
             passes=passes or [],
             layoutTemplate=layout_template,
             deskewDeg=deskew_deg,
+            documentPages=document_pages,
+            documentWidth=document_width,
+            documentHeight=document_height,
         ),
         failure=failure,
     )
@@ -130,6 +138,141 @@ def _crop_bytes(image_bytes: bytes, region: SourceRegion):
             return img.convert("RGB").crop((left, top, right, bottom))
     except (UnidentifiedImageError, OSError, ValueError, SyntaxError):
         return None
+
+
+def _recognize_pdf(request: EngineRequest, image_bytes: bytes, started: float) -> JSONResponse:
+    """Multi-page PDF statement pipeline (ops review §4.3).
+
+    Every page runs the SAME pipeline as a screenshot (preprocess → two
+    passes → arbitrage → template priors → candidates); the document-level
+    result aggregates the pages: candidates concatenate (capped), the
+    primary field set comes from the FIRST page that produced candidates
+    (else page 1), classification reads the combined text. The soft deadline
+    is honored BETWEEN pages — an overrun stops further pages and carries an
+    explicit partial warning (never a silent truncation).
+    """
+    request_id = request.requestId
+
+    def durations() -> dict:
+        return {"totalMs": int((time.perf_counter() - started) * 1000)}
+
+    deadline_seconds = request.deadlineMs / 1000.0
+
+    if not looks_like_pdf(image_bytes):
+        return _respond(
+            request_id, "UNPROCESSABLE", None, [], [],
+            EngineFailure(category="SCREENSHOT_UNSUPPORTED", message="the payload is not a PDF document"),
+            durations(),
+        )
+    try:
+        pages = render_pdf_pages(image_bytes, settings.max_pixels)
+    except PdfRejected as exc:
+        return _respond(
+            request_id, "UNPROCESSABLE", None, [], [],
+            EngineFailure(category="SCREENSHOT_UNSUPPORTED", message=str(exc)),
+            durations(),
+        )
+    except ValueError as exc:
+        return _respond(
+            request_id, "UNPROCESSABLE", None, [], [],
+            EngineFailure(category="RESOURCE_LIMIT", message=str(exc)),
+            durations(),
+        )
+
+    first_page = pages[0]
+    first_gray = ImageOps.grayscale(first_page)
+    from .preprocessing import dhash as compute_dhash
+
+    doc_hash = compute_dhash(first_gray)
+
+    combined_text_parts = []
+    page_field_sets = []
+    all_candidates: list = []
+    partial = False
+    processed_pages = 0
+
+    for page in pages:
+        if time.perf_counter() - started > deadline_seconds:
+            partial = True
+            break
+        gray = ImageOps.grayscale(page)
+        scaled, _ = upscale_image(gray, settings.max_pixels)
+        main = clahe_equalize(scaled)
+        alternate = binarize(scaled)
+        try:
+            lines = run_ocr(main, settings.tesseract_lang)
+            sparse = run_sparse_pass(alternate, settings.tesseract_lang)
+        except (RuntimeError, OSError):
+            return _respond(
+                request_id, "FAILED", None, [], [],
+                EngineFailure(category="OCR_UNAVAILABLE", message="tesseract engine failed"),
+                durations(),
+            )
+        combined_text_parts.append(" ".join(line.text for line in lines))
+        page_field_sets.append((lines, sparse))
+        processed_pages += 1
+
+    text_joined = " ".join(part for part in combined_text_parts if part.strip())
+    if not text_joined.strip():
+        return _respond(
+            request_id, "UNPROCESSABLE", None, [], [],
+            EngineFailure(category="SCREENSHOT_UNSUPPORTED", message="no readable text found in this document"),
+            durations(),
+        )
+
+    classification = classify(text_joined)
+    template = choose_template(classification.type, first_page.width, first_page.height)
+
+    warnings: list[str] = []
+    if partial:
+        warnings.append(f"PDF_DEADLINE_PARTIAL:{processed_pages}")
+
+    # Primary fields — the first page whose block pass yields fields, else
+    # the first page (an honest default, never merged across pages: merging
+    # would fabricate one trade out of many, §21).
+    fields = []
+    for lines, sparse in page_field_sets:
+        candidate_fields = extract_fields(lines, template)
+        if sparse:
+            challenger = extract_fields(sparse, template)
+            candidate_fields, _ = arbitrate_fields(candidate_fields, challenger)
+        if candidate_fields:
+            fields = candidate_fields
+            break
+
+    # Candidates concatenate across pages (each page grouped independently —
+    # never cross-page merging: rows from different pages are not related).
+    for lines, _sparse in page_field_sets:
+        for group in extract_trade_candidates(lines, template):
+            if len(all_candidates) >= 20:
+                break
+            all_candidates.append(EngineTradeCandidate(fields=group))
+
+    logger.info(
+        "pdf recognition request_id=%s pages=%d/%d candidates=%d total_ms=%d",
+        request_id,
+        processed_pages,
+        len(pages),
+        len(all_candidates),
+        durations()["totalMs"],
+    )
+
+    return _respond(
+        request_id,
+        "COMPLETED",
+        classification,
+        fields,
+        warnings,
+        None,
+        {"totalMs": durations()["totalMs"]},
+        trade_candidates=all_candidates,
+        perceptual_hash=doc_hash,
+        passes=list(PASS_NAMES),
+        layout_template=template.name,
+        document_pages=len(pages),
+        document_width=first_page.width,
+        document_height=first_page.height,
+    )
 
 
 @app.post("/v1/recognitions")
@@ -161,6 +304,11 @@ def recognize(request: EngineRequest) -> JSONResponse:
             status_code=413,
             content={"error": "ResourceLimit", "message": "decoded image exceeds the sidecar limit"},
         )
+
+    # PDF statements (ops §4.3) — multi-page documents take the dedicated
+    # per-page pipeline (one code path per page, same extraction rules).
+    if request.metadata.mime == PDF_MIME:
+        return _recognize_pdf(request, image_bytes, started)
 
     try:
         _mime, prepared = validate_and_prepare(image_bytes, request.metadata, settings.max_pixels)

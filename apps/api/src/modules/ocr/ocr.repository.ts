@@ -57,6 +57,8 @@ export interface OcrResultPayload {
   } | null;
   /** Playbook tag suggestions (engine quality §3.3) — set at confirmation. */
   suggestedTags?: string[];
+  /** Grouped confirmation canonical payloads (engine quality §2.2). */
+  batches?: { corrections: Record<string, string | null>; include: boolean }[] | null;
   /** Observability metadata from the engine passes (engine quality §1). */
   passes?: string[];
   layoutTemplate?: string | null;
@@ -407,6 +409,80 @@ export class OcrRepository {
       const row = await tx.ocrRecognition.findUnique({ where: { id }, include: recognitionInclude });
       return row ? toRecognitionRow(row) : null;
     });
+  }
+
+  /** Attach/detach the ACCOUNTS target (engine quality §3.1). Owner-checked upstream. */
+  async attachAccount(id: string, accountId: string | null): Promise<void> {
+    await this.prisma.ocrRecognition.updateMany({
+      where: { id },
+      data: { accountId },
+    });
+  }
+
+  /** PDF statements learn their real pixel size from the engine render (§4.3). */
+  async updateAssetDimensions(assetId: string, width: number, height: number): Promise<void> {
+    await this.prisma.ocrAsset.update({
+      where: { id: assetId },
+      data: { width, height },
+      select: { id: true },
+    });
+  }
+
+  /** Corrections memory — upsert the (field, raw → corrected) patterns (§2.3). */
+  async upsertCorrectionPatterns(
+    userId: string,
+    entries: { fieldKey: string; rawValue: string; correctedValue: string }[],
+  ): Promise<void> {
+    const now = new Date();
+    for (const entry of entries) {
+      await this.prisma.ocrCorrectionPattern.upsert({
+        where: {
+          userId_fieldKey_rawValue_correctedValue: {
+            userId,
+            fieldKey: entry.fieldKey,
+            rawValue: entry.rawValue,
+            correctedValue: entry.correctedValue,
+          },
+        },
+        create: {
+          userId,
+          fieldKey: entry.fieldKey,
+          rawValue: entry.rawValue,
+          correctedValue: entry.correctedValue,
+          count: 1,
+          lastSeenAt: now,
+        },
+        update: { count: { increment: 1 }, lastSeenAt: now },
+      });
+    }
+  }
+
+  /**
+   * Best suggestion per (fieldKey, rawValue) for the given machine readings —
+   * ordered by recurrence; advisory only (§21: never auto-applied).
+   */
+  async findSuggestionsForRawValues(
+    userId: string,
+    items: { fieldKey: string; rawValue: string }[],
+  ): Promise<Map<string, { value: string; occurrences: number }>> {
+    if (items.length === 0) return new Map();
+    const rows = await this.prisma.ocrCorrectionPattern.findMany({
+      where: {
+        userId,
+        OR: items.map((item) => ({ fieldKey: item.fieldKey, rawValue: item.rawValue })),
+      },
+      orderBy: [{ count: "desc" }, { lastSeenAt: "desc" }],
+      take: 200,
+    });
+    const best = new Map<string, { value: string; occurrences: number }>();
+    for (const row of rows) {
+      const key = `${row.fieldKey}\u0000${row.rawValue}`;
+      const current = best.get(key);
+      if (!current || row.count > current.occurrences) {
+        best.set(key, { value: row.correctedValue, occurrences: row.count });
+      }
+    }
+    return best;
   }
 
   /**

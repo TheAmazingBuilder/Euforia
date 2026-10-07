@@ -15,14 +15,15 @@
  * (§38) at the API boundary.
  */
 
-export type SupportedImageMime = "image/png" | "image/jpeg" | "image/webp";
+export type SupportedImageMime = "image/png" | "image/jpeg" | "image/webp" | "application/pdf";
 
 export interface ImageDimensions {
   width: number;
   height: number;
 }
 
-/** Magic-byte sniffing — returns null for anything that is not PNG/JPEG/WEBP. */
+/** Magic-byte sniffing — returns null for anything the product does not speak.
+ *  PDF statements (engine quality §4.3) are recognized by the %PDF- magic. */
 export function sniffImageMime(bytes: Buffer): SupportedImageMime | null {
   if (bytes.length < 12) return null;
   // PNG: 89 50 4E 47 0D 0A 1A 0A
@@ -43,6 +44,11 @@ export function sniffImageMime(bytes: Buffer): SupportedImageMime | null {
   ) {
     return "image/webp";
   }
+  // PDF statement: %PDF- (pages carry no intrinsic pixel size — the sidecar
+  // reports the rendered first-page dimensions in the engine metadata).
+  if (bytes.toString("latin1", 0, 5) === "%PDF-") {
+    return "application/pdf";
+  }
   return null;
 }
 
@@ -59,6 +65,10 @@ export function parseImageDimensions(bytes: Buffer, mime: SupportedImageMime): I
       return parseJpegDimensions(bytes);
     case "image/webp":
       return parseWebpDimensions(bytes);
+    case "application/pdf":
+      // Statements carry no intrinsic pixel size — the sidecar reports the
+      // rendered first-page dimensions (engine quality §4.3).
+      return null;
   }
 }
 

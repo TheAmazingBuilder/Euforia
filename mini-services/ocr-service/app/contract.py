@@ -97,6 +97,11 @@ class EngineProcessingMetadata(BaseModel):
     passes: List[str] = Field(default_factory=list, max_length=8)
     layoutTemplate: Optional[str] = None
     deskewDeg: Optional[float] = None
+    # PDF statements (ops §4.3): pages processed + rendered first-page dims
+    # (PDFs carry no intrinsic pixel size — the Nest side learns them here).
+    documentPages: Optional[int] = None
+    documentWidth: Optional[int] = None
+    documentHeight: Optional[int] = None
 
 
 class EngineTradeCandidate(BaseModel):

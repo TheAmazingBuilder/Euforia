@@ -56,7 +56,7 @@ export class DeterministicOcrEngine implements OcrEngine {
         tradeCandidates: [],
         perceptualHash: null,
         warnings: ["no recognizable trading content in this image (mock scenario)"],
-        processingMetadata: { engine: this.info.name, engineVersion: this.info.engineVersion, pipelineVersion: this.info.pipelineVersion, durationsMs: { total: 1 }, passes: [], layoutTemplate: null, deskewDeg: null },
+        processingMetadata: { engine: this.info.name, engineVersion: this.info.engineVersion, pipelineVersion: this.info.pipelineVersion, durationsMs: { total: 1 }, passes: [], layoutTemplate: null, deskewDeg: null, documentPages: null, documentWidth: null, documentHeight: null },
         failure: { category: "SCREENSHOT_UNSUPPORTED", message: "no recognizable trading content (mock scenario)" },
       };
     }
@@ -138,6 +138,9 @@ export class DeterministicOcrEngine implements OcrEngine {
         passes: [],
         layoutTemplate: null,
         deskewDeg: null,
+        documentPages: null,
+        documentWidth: null,
+        documentHeight: null,
       },
       failure: null,
     };

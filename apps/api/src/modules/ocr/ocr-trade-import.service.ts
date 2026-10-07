@@ -1,6 +1,5 @@
 /**
- * OCR → Trading Core bridge (Phase 21) — the ONLY sanctioned path from a
- * confirmed recognition to a canonical Trade (§72/§76/§77/§141).
+ * OCR → Trading Core bridge (Phase 21 + grouped confirmation, §72/§76/§77/§141).
  *
  * Architectural position (§27/§29):
  *   - THIS service orchestrates; it does NOT persist trades. Every Trade is
@@ -8,19 +7,20 @@
  *     Core application service that owns the account check, the sizing math,
  *     the P&L recomputation and the external-ref dedup. There is no
  *     OCR-specific Trade creation logic here and no Prisma trade write.
- *   - The account is resolved through the SAME house convention as the CSV
- *     import: the owner's PERSISTED default account — never a client hint,
- *     never a screenshot account number (§81).
+ *   - The account resolves, in order: the user's EXPLICIT choice (engine
+ *     quality §3.1 — validated for ownership by the caller) then the owner's
+ *     PERSISTED default account — never a screenshot account number (§81).
  *   - The symbol resolves against the instrument catalog ONLY (§50): no
  *     invented alias tables — an unknown symbol is an honest skip.
  *   - FAILURE ISOLATION (§126): an import problem NEVER fails the
- *     confirmation. The user's corrections are already authoritative when
- *     this service runs; every skip/failure becomes a stable warning on the
- *     recognition plus an append-only audit fact (§83).
+ *     confirmation. Per-draft isolation extends this to grouped
+ *     confirmations: one skipped draft never blocks its siblings.
  *
- * Idempotency: the external ref is `ocr:<recognitionId>` — deterministic,
- * so a race that reaches creation twice hits Trading Core's duplicate
- * conflict and resolves to linking the existing trade (never a second one).
+ * Idempotency: the external ref is `ocr:<recognitionId>` for the single
+ * path and `ocr:<recognitionId>:<batchIndex>` per grouped draft —
+ * deterministic, so a race that reaches creation twice hits Trading Core's
+ * duplicate conflict and resolves to linking the existing trade (never a
+ * second one).
  */
 import { Injectable, Logger } from "@nestjs/common";
 
@@ -38,12 +38,26 @@ import {
   TRADE_IMPORT_SKIPPED_REJECTED,
   TRADE_IMPORT_SKIPPED_UNKNOWN_SYMBOL,
 } from "./trade-import.logic";
+import { suggestedTagsForImport } from "./ocr.logic";
+
+export interface ConfirmationDraft {
+  /** Position of the draft among the recognition's candidates. */
+  index: number;
+  /** false → the user unchecked this draft; it is never imported. */
+  include: boolean;
+  /** The draft's merged fields (candidate fields + user corrections). */
+  mergedFields: OcrExtractedField[];
+}
 
 export interface TradeImportOutcome {
-  /** The canonical Trade id when one exists (created or already present). */
+  /** The primary canonical Trade id (first import) — null when none. */
   tradeId: string | null;
+  /** Every imported Trade id (grouped confirmation) in draft order. */
+  tradeIds: string[];
   /** Skip/failure tokens to append to the recognition warnings. */
   warnings: string[];
+  /** Deterministic playbook tag hints derived from the confirmed values. */
+  suggestedTags: string[];
 }
 
 @Injectable()
@@ -57,54 +71,138 @@ export class OcrTradeImportService {
     private readonly securityEvents: SecurityEventService,
   ) {}
 
-  /** Deterministic dedup handle — one recognition can ever import one trade. */
-  externalRefOf(recognitionId: string): string {
-    return `ocr:${recognitionId}`;
+  /** Deterministic dedup handle — one recognition draft can ever import one trade. */
+  externalRefOf(recognitionId: string, batchIndex?: number): string {
+    return batchIndex === undefined ? `ocr:${recognitionId}` : `ocr:${recognitionId}:${batchIndex}`;
   }
 
   async importFromConfirmation(input: {
     userId: string;
     recognitionId: string;
-    mergedFields: OcrExtractedField[];
+    /** Single-trade path — the confirmed primary fields. */
+    mergedFields?: OcrExtractedField[];
+    /** Grouped-confirmation path — one entry per candidate draft. */
+    drafts?: ConfirmationDraft[];
+    /** The user's explicit ACCOUNTS choice (ownership validated upstream). */
+    accountId?: string | null;
   }): Promise<TradeImportOutcome> {
-    // 1. Eligibility — the confirmed fields must resolve into a complete
+    const drafts: ConfirmationDraft[] =
+      input.drafts ??
+      (input.mergedFields ? [{ index: 0, include: true, mergedFields: input.mergedFields }] : []);
+    if (drafts.length === 0) {
+      return { tradeId: null, tradeIds: [], warnings: [], suggestedTags: [] };
+    }
+
+    // 1. Account — explicit choice first (engine quality §3.1), then the
+    // persisted default (importTrades convention). An explicit but
+    // unresolvable account is an honest per-confirmation skip.
+    let accountId: string | null = null;
+    if (input.accountId) {
+      const chosen = await this.accounts.findAccountForUser(input.accountId, input.userId);
+      accountId = chosen?.id ?? null;
+      if (accountId === null) {
+        return {
+          ...await this.skip(input.userId, input.recognitionId, TRADE_IMPORT_SKIPPED_NO_ACCOUNT, "chosen account not found for the owner"),
+          tradeIds: [],
+          suggestedTags: [],
+        };
+      }
+    } else {
+      accountId = await this.accounts.findDefaultAccountIdForUser(input.userId);
+    }
+    if (accountId === null) {
+      return {
+        ...await this.skip(input.userId, input.recognitionId, TRADE_IMPORT_SKIPPED_NO_ACCOUNT, "no trading account for the owner"),
+        tradeIds: [],
+        suggestedTags: [],
+      };
+    }
+
+    // 2. Per-draft import with FULL isolation (§126): one skipped draft
+    // never blocks its siblings; every skip is its own audit fact.
+    const tradeIds: string[] = [];
+    const warnings: string[] = [];
+    let primaryFields = drafts[0]!.mergedFields;
+    let instrumentAssetClass: string | null = null;
+
+    for (const draft of drafts) {
+      if (!draft.include) continue;
+      const outcome = await this.importDraft({
+        userId: input.userId,
+        recognitionId: input.recognitionId,
+        draftIndex: input.drafts ? draft.index : undefined,
+        mergedFields: draft.mergedFields,
+        accountId,
+      });
+      if (outcome.tradeId) {
+        if (tradeIds.length === 0) {
+          primaryFields = draft.mergedFields;
+          instrumentAssetClass = outcome.instrumentAssetClass;
+        }
+        tradeIds.push(outcome.tradeId);
+      }
+      warnings.push(...outcome.warnings);
+    }
+
+    // 3. Playbook tag suggestions (engine quality §3.3) — deterministic,
+    // derived from the FIRST imported (or attempted) draft's values.
+    const resolved = resolveTradeImportValues(primaryFields);
+    const suggestedTags = resolved.eligible
+      ? suggestedTagsForImport({
+          symbol: resolved.values.symbol,
+          openTime: resolved.values.openTime ?? null,
+          instrumentAssetClass,
+        })
+      : [];
+
+    return { tradeId: tradeIds[0] ?? null, tradeIds, warnings, suggestedTags };
+  }
+
+  /** One draft → one canonical Trade attempt (create-or-link semantics). */
+  private async importDraft(input: {
+    userId: string;
+    recognitionId: string;
+    draftIndex: number | undefined;
+    mergedFields: OcrExtractedField[];
+    accountId: string;
+  }): Promise<{ tradeId: string | null; warnings: string[]; instrumentAssetClass: string | null }> {
+    // Eligibility — the confirmed fields must resolve into a complete
     // trade fact set (§76 "validate fields"). Incomplete stays a CONFIRMED
     // recognition without a trade (honest, never fabricated — §44).
     const resolved = resolveTradeImportValues(input.mergedFields);
     if (!resolved.eligible) {
-      return this.skip(input, resolved.reason, "confirmed values are not a complete trade");
+      const outcome = await this.skip(input.userId, input.recognitionId, resolved.reason, "confirmed values are not a complete trade", "SUCCESS", input.draftIndex);
+      return { ...outcome, instrumentAssetClass: null };
     }
 
-    // 2. Account — the owner's persisted default (importTrades convention).
-    const accountId = await this.accounts.findDefaultAccountIdForUser(input.userId);
-    if (accountId === null) {
-      return this.skip(input, TRADE_IMPORT_SKIPPED_NO_ACCOUNT, "no trading account for the owner");
-    }
-
-    // 3. Instrument — catalog lookup only (§50: no invented mapping).
+    // Instrument — catalog lookup only (§50: no invented mapping).
     const instrument = await this.tradesRepository.findInstrumentBySymbol(resolved.values.symbol);
     if (instrument === null || !instrument.isActive) {
-      return this.skip(
-        input,
+      const outcome = await this.skip(
+        input.userId,
+        input.recognitionId,
         TRADE_IMPORT_SKIPPED_UNKNOWN_SYMBOL,
         `symbol ${resolved.values.symbol} is not in the instrument catalog`,
+        "SUCCESS",
+        input.draftIndex,
       );
+      return { ...outcome, instrumentAssetClass: null };
     }
 
-    const externalRef = this.externalRefOf(input.recognitionId);
+    const externalRef = this.externalRefOf(input.recognitionId, input.draftIndex);
 
-    // 4. Duplicate check (§79 — reuse the existing external-ref mechanism):
+    // Duplicate check (§79 — reuse the existing external-ref mechanism):
     // a live trade with this ref means the import already happened.
-    const existing = await this.tradesRepository.findLiveTradeByExternalRef(accountId, externalRef);
+    const existing = await this.tradesRepository.findLiveTradeByExternalRef(input.accountId, externalRef);
     if (existing !== null) {
-      return { tradeId: existing.id, warnings: [] };
+      return { tradeId: existing.id, warnings: [], instrumentAssetClass: instrument.assetClass };
     }
 
-    // 5. Create through Trading Core (§77 — the canonical application
+    // Create through Trading Core (§77 — the canonical application
     // service; no OCR-side persistence, P&L recomputed server-side).
     const tradeInput = buildOcrTradeInput({
       values: resolved.values,
-      accountId,
+      accountId: input.accountId,
       instrumentId: instrument.id,
       externalRef,
     });
@@ -114,17 +212,17 @@ export class OcrTradeImportService {
         userId: input.userId,
         type: "OCR_TRADE_IMPORTED",
         actor: input.userId,
-        context: `trade ${created.id} imported from recognition ${input.recognitionId}`,
+        context: `trade ${created.id} imported from recognition ${input.recognitionId}${input.draftIndex !== undefined ? ` draft ${input.draftIndex}` : ""}`,
         outcome: "SUCCESS",
       });
-      return { tradeId: created.id, warnings: [] };
+      return { tradeId: created.id, warnings: [], instrumentAssetClass: instrument.assetClass };
     } catch (error) {
       // A concurrent confirmation could have won the creation race — link
       // instead of conflicting (§51 house policy).
       if (error instanceof ConflictError) {
-        const winner = await this.tradesRepository.findLiveTradeByExternalRef(accountId, externalRef);
+        const winner = await this.tradesRepository.findLiveTradeByExternalRef(input.accountId, externalRef);
         if (winner !== null) {
-          return { tradeId: winner.id, warnings: [] };
+          return { tradeId: winner.id, warnings: [], instrumentAssetClass: instrument.assetClass };
         }
       }
       const known =
@@ -135,35 +233,42 @@ export class OcrTradeImportService {
       if (known) {
         // Stable domain refusal (account state, instrument specs, sizing…)
         // — sanitized code only, never the raw message (§36).
-        return this.skip(
-          input,
+        const outcome = await this.skip(
+          input.userId,
+          input.recognitionId,
           TRADE_IMPORT_SKIPPED_REJECTED,
           `trading core refused the import: ${error.code ?? "DOMAIN_RULE"}`,
           "FAILURE",
+          input.draftIndex,
         );
+        return { ...outcome, instrumentAssetClass: null };
       }
       // Unexpected — still isolated (§126): log server-side, answer honestly.
       this.logger.error(
         `trade import failed for recognition ${input.recognitionId}: ${error instanceof Error ? error.name : "unknown"}`,
       );
-      return this.skip(input, TRADE_IMPORT_FAILED, "unexpected import failure", "FAILURE");
+      const outcome = await this.skip(input.userId, input.recognitionId, TRADE_IMPORT_FAILED, "unexpected import failure", "FAILURE", input.draftIndex);
+      return { ...outcome, instrumentAssetClass: null };
     }
   }
 
   /** A skip is a FACT, not an exception: warning + audit, never a throw. */
   private async skip(
-    input: { userId: string; recognitionId: string },
+    userId: string,
+    _recognitionId: string,
     warning: string,
     context: string,
     outcome: "SUCCESS" | "FAILURE" = "SUCCESS",
-  ): Promise<TradeImportOutcome> {
+    draftIndex?: number,
+  ): Promise<{ tradeId: null; warnings: string[] }> {
+    const token = draftIndex !== undefined ? `${warning}:DRAFT_${draftIndex}` : warning;
     await this.securityEvents.record({
-      userId: input.userId,
+      userId,
       type: "OCR_TRADE_IMPORT_SKIPPED",
-      actor: input.userId,
-      context: `${warning}: ${context}`,
+      actor: userId,
+      context: `${warning}${draftIndex !== undefined ? ` (draft ${draftIndex})` : ""}: ${context}`,
       outcome,
     });
-    return { tradeId: null, warnings: [warning] };
+    return { tradeId: null, warnings: [token] };
   }
 }

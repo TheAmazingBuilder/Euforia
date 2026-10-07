@@ -483,3 +483,84 @@ export function deriveIdempotencyKey(
     .update(`${userId}|${checksumSha256}|${profile}|${pipelineVersion}`)
     .digest("hex");
 }
+
+// ── Perceptual duplicate detection (engine quality §2.1) ────────────────────
+
+/** Popcount per hex nibble — table lookup keeps the hot loop branch-free. */
+const NIBBLE_POPCOUNT = [0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4];
+
+/**
+ * Hamming distance between two 64-bit dHash fingerprints given as 16-char
+ * hex strings. Returns null when either input is malformed — callers treat
+ * null as "cannot compare" (advisory signal, never a hard failure).
+ */
+export function hammingDistance64(a: string, b: string): number | null {
+  if (!/^[0-9a-f]{16}$/.test(a) || !/^[0-9a-f]{16}$/.test(b)) return null;
+  let distance = 0;
+  for (let i = 0; i < 16; i += 1) {
+    const x = parseInt(a[i]!, 16) ^ parseInt(b[i]!, 16);
+    distance += NIBBLE_POPCOUNT[x] ?? 0;
+  }
+  return distance;
+}
+
+/**
+ * Near-duplicate threshold (of 64 bits): dHash of the SAME panel reshot or
+ * recompressed differs by a handful of bits; a different panel differs by
+ * far more. 8 is the conservative middle — the flag is advisory anyway.
+ */
+export const DUPLICATE_HAMMING_THRESHOLD = 8;
+
+/** Corrections-memory pattern key input (engine quality §2.3). */
+export interface CorrectionPatternEntry {
+  fieldKey: OcrFieldKey;
+  rawValue: string;
+  correctedValue: string;
+}
+
+/**
+ * Collect the correction-pattern entries from one confirmation: every field
+ * the user CHANGED (machine rawValue ≠ corrected value) becomes a memory
+ * row. Unchanged fields and null (cleared) values never enter the memory.
+ */
+export function collectCorrectionPatterns(
+  machineFields: OcrExtractedField[],
+  corrections: Record<string, string | null>,
+): CorrectionPatternEntry[] {
+  const rawByKey = new Map<string, string>();
+  for (const field of machineFields) {
+    if (field.rawValue !== null) rawByKey.set(field.field, field.rawValue);
+  }
+  const entries: CorrectionPatternEntry[] = [];
+  for (const [key, value] of Object.entries(corrections)) {
+    if (value === null || value.length === 0) continue;
+    const rawValue = rawByKey.get(key);
+    if (rawValue === undefined || rawValue === value) continue;
+    entries.push({ fieldKey: key as OcrFieldKey, rawValue, correctedValue: value });
+  }
+  return entries;
+}
+
+/** Playbook tag suggestions (engine quality §3.3) — deterministic hints. */
+export function suggestedTagsForImport(values: {
+  symbol: string | null;
+  openTime: string | null;
+  instrumentAssetClass?: string | null;
+}): string[] {
+  const tags: string[] = ["Import"];
+  // Session from the confirmed open time (UTC wall clock, §16 — no tz guess
+  // beyond the coarse session buckets the trader already reasons with).
+  const hour = values.openTime ? Number.parseInt(values.openTime.slice(11, 13), 10) : NaN;
+  if (!Number.isNaN(hour)) {
+    if (hour >= 23 || hour < 7) tags.push("Session Asia");
+    else if (hour < 12) tags.push("Session London");
+    else if (hour < 21) tags.push("Session New York");
+  }
+  const assetClass = values.instrumentAssetClass?.toUpperCase();
+  if (assetClass === "FOREX") tags.push("Forex");
+  else if (assetClass === "METAL") tags.push("Metals");
+  else if (assetClass === "INDEX") tags.push("Indices");
+  else if (assetClass === "CRYPTO") tags.push("Crypto");
+  else if (assetClass === "ENERGY") tags.push("Energy");
+  return tags.slice(0, 8);
+}

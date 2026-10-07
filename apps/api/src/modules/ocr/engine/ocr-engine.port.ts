@@ -105,6 +105,9 @@ export const engineResponseSchema = z.object({
     passes: z.array(z.string().max(64)).max(8).default([]),
     layoutTemplate: z.string().max(64).nullable().default(null),
     deskewDeg: z.number().min(-45).max(45).nullable().default(null),
+    documentPages: z.number().int().min(1).max(1000).nullable().default(null),
+    documentWidth: z.number().int().min(1).nullable().default(null),
+    documentHeight: z.number().int().min(1).nullable().default(null),
   }),
   failure: z
     .object({

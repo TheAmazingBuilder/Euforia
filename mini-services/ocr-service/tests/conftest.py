@@ -125,3 +125,23 @@ def render_mt5_history_multi() -> tuple[bytes, int, int]:
     buffer = io.BytesIO()
     img.save(buffer, format="PNG")
     return buffer.getvalue(), width, height
+
+
+def render_mt5_pdf() -> tuple[bytes, int, int]:
+    """A TWO-PAGE PDF statement whose pages carry the MT5 fixture content.
+
+    Pillow writes raster PDFs; pypdfium2 renders them back — a closed loop
+    that exercises the multi-page statement pipeline deterministically.
+    Returns (bytes, first_page_width, first_page_height).
+    """
+    base, width, height = render_mt5_screenshot()
+    with Image.open(io.BytesIO(base)) as page_img:
+        second = Image.new("RGB", (width, height), (248, 249, 251))
+        draw = ImageDraw.Draw(second)
+        draw.text((24, 16), "MetaTrader 5", font=_font(30), fill=(24, 26, 32))
+        draw.text((24, 64), "History page 2 — no trade rows", font=_font(26), fill=(110, 116, 128))
+        buffer = io.BytesIO()
+        page_img.convert("RGB").save(
+            buffer, format="PDF", save_all=True, append_images=[second], resolution=72
+        )
+    return buffer.getvalue(), width, height

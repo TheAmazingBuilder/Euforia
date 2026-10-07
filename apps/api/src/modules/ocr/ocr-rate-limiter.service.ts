@@ -18,6 +18,7 @@ import { AuthRateLimiterService } from "../identity/auth-rate-limiter.service";
 export const OCR_RATE_LIMITS: Record<string, number> = {
   upload: 10,
   confirm: 30,
+  recrop: 30, // targeted re-OCR — same cost class as a confirmation (one engine call)
 };
 
 @Injectable()

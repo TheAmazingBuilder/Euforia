@@ -41,16 +41,16 @@ export interface ValidatedImage {
 export class ImageValidationService {
   validateDataUrl(dataUrl: string, limits: { maxBytes: number; maxPixels: number }): ValidatedImage {
     // 1. Strict envelope parse — anything outside data:<allowed>;base64 is a 400.
-    const match = /^data:(image\/([a-z0-9.+-]+));base64,([A-Za-z0-9+/=\r\n]+)$/.exec(dataUrl);
-    if (match === null || match[3] === undefined) {
+    const match = /^data:((?:image\/[a-z0-9.+-]+)|application\/pdf);base64,([A-Za-z0-9+/=\r\n]+)$/.exec(dataUrl);
+    if (match === null || match[2] === undefined) {
       throw new ValidationError(
-        "The image payload must be a base64 data URL (image/png, image/jpeg or image/webp).",
-        [{ path: "imageDataUrl", message: "expected a data:image/*;base64 URL" }],
+        "The image payload must be a base64 data URL (image/png, image/jpeg, image/webp or application/pdf).",
+        [{ path: "imageDataUrl", message: "expected a data:image/* or application/pdf base64 URL" }],
         "INVALID_IMAGE",
       );
     }
     const declared = match[1];
-    const base64 = match[3];
+    const base64 = match[2];
 
     // 2. Size guard BEFORE decoding (cheap, deterministic). base64 length × 3/4
     //    is an upper bound of the decoded size (padding only shrinks it).
@@ -75,7 +75,7 @@ export class ImageValidationService {
     if (actual === null) {
       throw new ValidationError(
         "Unsupported image format.",
-        [{ path: "imageDataUrl", message: "only PNG, JPEG and WEBP images are supported" }],
+        [{ path: "imageDataUrl", message: "only PNG, JPEG, WEBP images and PDF statements are supported" }],
         "UNSUPPORTED_FORMAT",
       );
     }
@@ -88,8 +88,25 @@ export class ImageValidationService {
       );
     }
 
+    // PDF statements (engine quality §4.3): no intrinsic pixel size and no
+    // header dimension parse — the page budget + pixel ceiling are enforced
+    // by the SIDE CAR at render time (pypdfium2). Dimensions land on the
+    // asset row once the engine reports the rendered first page.
+    if (actual === "application/pdf") {
+      const checksumSha256 = createHash("sha256").update(bytes).digest("hex");
+      return {
+        bytes,
+        mime: actual,
+        sizeBytes: bytes.length,
+        width: 1,
+        height: 1,
+        checksumSha256,
+      };
+    }
+
     // 4. Structural dimension parse (also catches truncated/malformed files).
-    const dimensions = parseImageDimensions(bytes, actual);
+    //    (PDF never reaches here — handled above.)
+    const dimensions = parseImageDimensions(bytes, actual as "image/png" | "image/jpeg" | "image/webp");
     if (dimensions === null) {
       throw new ValidationError(
         "The image is malformed.",

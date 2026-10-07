@@ -39,8 +39,10 @@ import {
   ocrConfirmInputSchema,
   ocrCreateInputSchema,
   ocrRecognitionPageQuerySchema,
+  ocrRecropInputSchema,
   type OcrConfirmInput,
   type OcrCreateInput,
+  type OcrRecropInput,
 } from "../../shared/contracts";
 import { OcrService } from "./ocr.service";
 
@@ -69,6 +71,7 @@ export class OcrController {
       userId: principal.userId,
       imageDataUrl: input.imageDataUrl,
       requestedProfile: input.requestedProfile,
+      accountId: input.accountId ?? undefined,
       requestId: requestIdOf(request),
     });
   }
@@ -119,7 +122,26 @@ export class OcrController {
       userId: principal.userId,
       id: uuidSchema.parse(id),
       corrections: input.corrections,
+      batches: input.batches?.map((batch) => ({
+        corrections: batch.corrections,
+        include: batch.include,
+      })),
+      accountId: input.accountId,
     });
+  }
+
+  /**
+   * Re-OCR by crop (engine quality §2.4): targeted re-scan of a framed
+   * region. Ephemeral guidance — never persisted, never authoritative.
+   */
+  @Post("recognitions/:id/recrop")
+  @HttpCode(HttpStatus.OK)
+  async recrop(
+    @CurrentUser() principal: AuthPrincipal,
+    @Param("id") id: string,
+    @Body(new ZodValidationPipe(ocrRecropInputSchema)) input: OcrRecropInput,
+  ) {
+    return this.ocr.recropRecognition(principal.userId, uuidSchema.parse(id), input.region);
   }
 
   @Delete("recognitions/:id")

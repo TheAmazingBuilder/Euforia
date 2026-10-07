@@ -447,7 +447,7 @@ describe("OCR upload security (§7)", () => {
     expect(res.statusCode).toBe(201);
     const asset = res.json().recognition.asset;
     expect(Object.keys(asset).sort()).toEqual([
-      "checksumSha256", "createdAt", "height", "id", "mime", "sizeBytes", "width",
+      "checksumSha256", "createdAt", "height", "id", "mime", "purged", "sizeBytes", "width",
     ]);
   });
 

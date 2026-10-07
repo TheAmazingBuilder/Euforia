@@ -55,9 +55,12 @@ import {
 import {
   applyCorrections,
   applyDomainValidation,
+  collectCorrectionPatterns,
   confidenceBand,
   CorrectionError,
   deriveIdempotencyKey,
+  DUPLICATE_HAMMING_THRESHOLD,
+  hammingDistance64,
   validateCorrectionStored,
 } from "./ocr.logic";
 import { OcrRateLimiterService } from "./ocr-rate-limiter.service";
@@ -67,7 +70,9 @@ import {
   type OcrRecognitionRow,
   type OcrResultPayload,
 } from "./ocr.repository";
+import type { OcrRecropResponse } from "../../shared/contracts";
 import { OcrTradeImportService } from "./ocr-trade-import.service";
+import { AccountsRepository } from "../accounts/accounts.repository";
 import { SecurityEventService } from "../security/security-event.service";
 
 /** Pipeline version recorded on every row (§33 — results stay interpretable). */
@@ -83,6 +88,11 @@ export const OCR_ERROR_CODES = {
   ALREADY_CONFIRMED: "OCR_ALREADY_CONFIRMED",
   NO_REVIEW_PENDING: "OCR_REVIEW_NOT_PENDING",
   INVALID_CURSOR: "INVALID_CURSOR",
+  NO_BATCHES: "OCR_NO_TRADE_CANDIDATES",
+  BATCHES_MISMATCH: "OCR_BATCHES_MISMATCH",
+  RECROP_UNPROCESSABLE: "OCR_RECROP_UNPROCESSABLE",
+  RECROP_UNSUPPORTED: "OCR_RECROP_UNSUPPORTED",
+  ACCOUNT_NOT_FOUND: "OCR_ACCOUNT_NOT_FOUND",
 } as const;
 
 export interface OcrRecognitionDto {
@@ -110,6 +120,7 @@ export class OcrService {
     private readonly limiter: OcrRateLimiterService,
     private readonly securityEvents: SecurityEventService,
     private readonly tradeImport: OcrTradeImportService,
+    private readonly accounts: AccountsRepository,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
   ) {}
 
@@ -120,7 +131,18 @@ export class OcrService {
     imageDataUrl: string;
     requestedProfile: "TRADE_SUMMARY";
     requestId: string | null;
+    accountId?: string | null;
   }): Promise<OcrRecognitionDto> {
+    // ACCOUNTS attachment (engine quality §3.1): the explicit choice is
+    // validated for OWNERSHIP before anything persists (§39).
+    let accountId: string | null = null;
+    if (input.accountId) {
+      const account = await this.accounts.findAccountForUser(input.accountId, input.userId);
+      if (!account) {
+        throw new NotFoundError("Trading account not found.", OCR_ERROR_CODES.ACCOUNT_NOT_FOUND);
+      }
+      accountId = account.id;
+    }
     const check = this.limiter.check("upload", input.userId);
     if (!check.allowed) {
       throw new RateLimitError(
@@ -160,7 +182,7 @@ export class OcrService {
         pipelineVersion: OCR_PIPELINE_VERSION,
         idempotencyKey,
         requestId: input.requestId,
-        accountId: null, // account attachment is validated + wired in the service layer (engine quality §3.1)
+        accountId,
       })
       .catch(async (error) => {
         // Lost the (userId, idempotencyKey) race against a concurrent tab
@@ -302,7 +324,7 @@ export class OcrService {
       }
 
       // Stage 9–10 — map + domain-validate the engine output (§19/§17).
-      const fields = applyDomainValidation(response.fields.map(mapEngineField));
+      let fields = applyDomainValidation(response.fields.map(mapEngineField));
       // Multi-trade candidates get the SAME domain treatment (§2.2) —
       // grouped evidence is untrusted machine output until confirmed.
       const candidates = response.tradeCandidates.map((candidate) => ({
@@ -313,6 +335,55 @@ export class OcrService {
       // advisory duplicate flag, never the pipeline.
       if (response.perceptualHash) {
         await this.repository.setAssetPhash(asset.id, response.perceptualHash);
+      }
+      // PDF statements report the RENDERED first-page dimensions (§4.3) —
+      // the asset row was created with placeholders.
+      if (response.processingMetadata.documentWidth && response.processingMetadata.documentHeight) {
+        await this.repository.updateAssetDimensions(
+          asset.id,
+          response.processingMetadata.documentWidth,
+          response.processingMetadata.documentHeight,
+        );
+      }
+      // Duplicate detection (engine quality §2.1): compare the fresh
+      // fingerprint against the user's recent pool. Advisory — the pipeline
+      // result stands; the review UI surfaces the earlier import.
+      let duplicateOf: OcrResultPayload["duplicateOf"] = null;
+      if (response.perceptualHash) {
+        const pool = await this.repository.recentPhashesForUser(userId, {
+          limit: 400,
+          excludeAssetId: asset.id,
+        });
+        const match = pool.find(
+          (candidate) =>
+            hammingDistance64(candidate.phashHex, response.perceptualHash as string) !== null &&
+            (hammingDistance64(candidate.phashHex, response.perceptualHash as string) as number) <=
+              DUPLICATE_HAMMING_THRESHOLD,
+        );
+        if (match) {
+          const prior = await this.repository.findOldestRecognitionForAsset(match.assetId);
+          if (prior && prior.id !== row.id) {
+            duplicateOf = {
+              recognitionId: prior.id,
+              createdAt: prior.createdAt.toISOString(),
+              tradeId: prior.tradeId,
+            };
+          }
+        }
+      }
+      // Corrections memory (engine quality §2.3): attach the user's own
+      // recurring corrections as advisory suggestions on matching rawValues.
+      const suggestions = await this.repository.findSuggestionsForRawValues(
+        userId,
+        fields
+          .filter((f) => f.rawValue !== null)
+          .map((f) => ({ fieldKey: f.field, rawValue: f.rawValue as string })),
+      );
+      if (suggestions.size > 0) {
+        fields = fields.map((field) => {
+          const suggestion = suggestions.get(`${field.field}\u0000${field.rawValue ?? ""}`);
+          return suggestion ? { ...field, suggestion } : field;
+        });
       }
       const mergedWarnings = mergeWarnings(
         response.warnings,
@@ -330,6 +401,7 @@ export class OcrService {
         },
         durationMs: response.processingMetadata.durationsMs["total"] ?? null,
         candidates: candidates.length > 0 ? candidates : null,
+        duplicateOf,
         passes: response.processingMetadata.passes,
         layoutTemplate: response.processingMetadata.layoutTemplate,
         deskewDeg: response.processingMetadata.deskewDeg,
@@ -438,6 +510,8 @@ export class OcrService {
     userId: string;
     id: string;
     corrections: OcrCorrectionRecord;
+    batches?: { corrections: OcrCorrectionRecord; include: boolean }[];
+    accountId?: string | null;
   }): Promise<OcrRecognitionDto> {
     const check = this.limiter.check("confirm", input.userId);
     if (!check.allowed) {
@@ -452,19 +526,60 @@ export class OcrService {
     const row = await this.repository.findForUser(input.id, input.userId);
     if (!row) throw new NotFoundError("Recognition not found.");
 
+    // ACCOUNTS attachment at confirmation (engine quality §3.1): validated
+    // ownership; `null` explicitly detaches, `undefined` leaves as-is.
+    if (input.accountId) {
+      const account = await this.accounts.findAccountForUser(input.accountId, input.userId);
+      if (!account) {
+        throw new NotFoundError("Trading account not found.", OCR_ERROR_CODES.ACCOUNT_NOT_FOUND);
+      }
+    }
+
+    const machineFieldsPre = (row.result?.fields ?? []) as OcrExtractedField[];
+    const candidateDrafts = (row.result?.candidates ?? null) as { fields: OcrExtractedField[] }[] | null;
+
     // Canonicalize BEFORE the replay comparison: the stored record holds the
     // VALIDATED DECLARATION ("2345,60" → "2345.60", §21), so a retry of the
     // SAME logical payload must replay idempotently even when it arrives in
     // raw user form (two tabs, network retry — §51). Invalid corrections are
     // a 422 here regardless of the row state — the payload is what is broken.
-    const machineFields = (row.result?.fields ?? []) as OcrExtractedField[];
+    const machineFields = machineFieldsPre;
     const canonicalCorrections = canonicalizeCorrections(input.corrections);
 
+    // Grouped confirmation (engine quality §2.2): every batch is
+    // canonicalized against ITS candidate's machine fields — the same
+    // domain rules, per draft. When batches are absent the single-trade
+    // path is used verbatim (backward compatible).
+    let batchPlan: { index: number; corrections: Record<string, string | null>; include: boolean }[] | null = null;
+    if (input.batches !== undefined) {
+      if (candidateDrafts === null || candidateDrafts.length === 0) {
+        throw new ConflictError(
+          "This recognition has no multi-trade drafts to confirm.",
+          OCR_ERROR_CODES.NO_BATCHES,
+        );
+      }
+      if (input.batches.length !== candidateDrafts.length) {
+        throw new ValidationError(
+          "The confirmation must cover every trade draft exactly once.",
+          [{ path: "batches", message: `expected ${candidateDrafts.length} batches` }],
+          OCR_ERROR_CODES.BATCHES_MISMATCH,
+        );
+      }
+      batchPlan = input.batches.map((batch, index) => ({
+        index,
+        corrections: canonicalizeCorrections(batch.corrections),
+        include: batch.include,
+      }));
+    }
+
     if (row.status === "CONFIRMED") {
-      // Idempotent replay of the SAME corrections (two tabs, §51) is a
-      // no-op success; a DIFFERENT payload after confirmation is a conflict
-      // — confirmed values are never silently rewritten (§21).
-      if (sameCorrections(row.corrections, canonicalCorrections)) {
+      // Idempotent replay of the SAME payload (two tabs, §51) is a no-op
+      // success; a DIFFERENT payload after confirmation is a conflict —
+      // confirmed values are never silently rewritten (§21).
+      const samePayload = batchPlan !== null
+        ? sameBatches((row.result?.batches ?? null) as OcrResultPayload["batches"] ?? null, batchPlan)
+        : sameCorrections(row.corrections, canonicalCorrections);
+      if (samePayload) {
         return { recognition: toRecognitionDto(row) };
       }
       throw new ConflictError("This recognition is already confirmed.", OCR_ERROR_CODES.ALREADY_CONFIRMED);
@@ -489,32 +604,89 @@ export class OcrService {
       canonicalCorrections,
     );
 
+    // Per-draft merged fields for the grouped path (validated above).
+    const draftMergedFields = batchPlan === null
+      ? null
+      : batchPlan.map((batch) => {
+          const candidateFields = candidateDrafts![batch.index]!.fields;
+          try {
+            return {
+              index: batch.index,
+              include: batch.include,
+              fields: applyCorrections(candidateFields, batch.corrections).fields,
+            };
+          } catch (error) {
+            if (error instanceof CorrectionError) {
+              const detail = error.issues.map((issue) => `${issue.path}: ${issue.message}`).join("; ");
+              throw new BusinessRuleError(
+                `Invalid correction value for draft ${batch.index} (${detail}).`,
+                "OCR_CORRECTION_INVALID",
+              );
+            }
+            throw error;
+          }
+        });
+
     const mergedResult: OcrResultPayload = {
       classification: row.result?.classification ?? null,
       fields: mergedFields,
       warnings: row.result?.warnings ?? [],
       engine: row.result?.engine ?? null,
       durationMs: row.result?.durationMs ?? null,
+      candidates: row.result?.candidates ?? null,
+      duplicateOf: row.result?.duplicateOf ?? null,
+      passes: row.result?.passes,
+      layoutTemplate: row.result?.layoutTemplate,
+      deskewDeg: row.result?.deskewDeg,
+      ...(batchPlan !== null
+        ? { batches: batchPlan.map((batch) => ({ corrections: batch.corrections, include: batch.include })) }
+        : {}),
     };
 
     const updated = await this.repository.confirm(input.id, {
-      corrections: canonicalCorrections,
+      corrections: batchPlan !== null ? batchPlan[0]!.corrections : canonicalCorrections,
       mergedResult,
     });
     if (!updated) {
       // Concurrent confirmation raced us (§51) — replay the same policy.
       const winner = await this.repository.findForUser(input.id, input.userId);
-      if (winner?.status === "CONFIRMED" && sameCorrections(winner.corrections, canonicalCorrections)) {
-        return { recognition: toRecognitionDto(winner) };
+      const winnerSame = winner?.status === "CONFIRMED" && (
+        batchPlan !== null
+          ? sameBatches((winner.result?.batches ?? null) as OcrResultPayload["batches"] ?? null, batchPlan)
+          : sameCorrections(winner.corrections, canonicalCorrections)
+      );
+      if (winnerSame) {
+        return { recognition: toRecognitionDto(winner!) };
       }
       throw new ConflictError("This recognition is already confirmed.", OCR_ERROR_CODES.ALREADY_CONFIRMED);
+    }
+
+    // Account attachment (engine quality §3.1) — after the confirmation
+    // commit, before the bridge so the import sees the final target.
+    if (input.accountId !== undefined) {
+      await this.repository.attachAccount(input.id, input.accountId);
+    }
+
+    // Corrections memory (engine quality §2.3): every CHANGED field becomes
+    // a recurrence-counted pattern that feeds future suggestions.
+    const memoryEntries = batchPlan === null
+      ? collectCorrectionPatterns(machineFields, canonicalCorrections)
+      : batchPlan.flatMap((batch) =>
+          collectCorrectionPatterns(candidateDrafts![batch.index]!.fields, batch.corrections),
+        );
+    if (memoryEntries.length > 0) {
+      await this.repository
+        .upsertCorrectionPatterns(input.userId, memoryEntries)
+        .catch(() => undefined); // advisory memory — never blocks confirmation
     }
 
     await this.securityEvents.record({
       userId: input.userId,
       type: "OCR_RESULT_CONFIRMED",
       actor: input.userId,
-      context: `recognition confirmed with ${correctionCount} correction(s)`,
+      context: batchPlan !== null
+        ? `recognition confirmed as ${batchPlan.filter((b) => b.include).length} grouped trade(s) with ${correctionCount} correction(s)`
+        : `recognition confirmed with ${correctionCount} correction(s)`,
       outcome: "SUCCESS",
     });
 
@@ -522,25 +694,119 @@ export class OcrService {
     // Runs AFTER the confirmation commit: the user's declaration is already
     // authoritative, so an import problem can NEVER fail the confirmation
     // (§126 failure isolation) — it becomes a stable warning on the
-    // recognition plus an audit fact. The trade itself is created through
-    // TradesService.createTrade (canonical application service); the id is
+    // recognition plus an audit fact. Trades are created through
+    // TradesService.createTrade (canonical application service); ids are
     // linked here afterwards (one-way provenance, §77).
-    const { tradeId, warnings: importWarnings } = await this.tradeImport.importFromConfirmation({
-      userId: input.userId,
-      recognitionId: input.id,
-      mergedFields,
-    });
+    const { tradeId, tradeIds, warnings: importWarnings, suggestedTags } =
+      await this.tradeImport.importFromConfirmation({
+        userId: input.userId,
+        recognitionId: input.id,
+        ...(batchPlan !== null
+          ? {
+              drafts: draftMergedFields!.map((draft) => ({
+                index: draft.index,
+                include: draft.include,
+                mergedFields: draft.fields,
+              })),
+            }
+          : { mergedFields }),
+        accountId: input.accountId,
+      });
 
     const finalWarnings = [...mergedResult.warnings, ...importWarnings].slice(0, 16);
     const finalRow =
-      tradeId !== null || importWarnings.length > 0
+      tradeId !== null || tradeIds.length > 0 || importWarnings.length > 0 || suggestedTags.length > 0
         ? ((await this.repository.linkTrade(input.id, {
             tradeId,
-            result: { ...mergedResult, warnings: finalWarnings },
+            tradeIds,
+            result: { ...mergedResult, warnings: finalWarnings, suggestedTags },
           })) ?? updated)
         : updated;
 
     return { recognition: toRecognitionDto(finalRow) };
+  }
+
+  // ── Re-OCR by crop (engine quality §2.4) ─────────────────────────────────
+
+  /**
+   * Targeted re-OCR over a user-framed region of the stored screenshot.
+   * EPHEMERAL guidance for the review UI — nothing is persisted, the
+   * stored machine result stays untouched (§21: corrections remain the
+   * only authoritative write path).
+   */
+  async recropRecognition(
+    userId: string,
+    id: string,
+    region: { x: number; y: number; width: number; height: number },
+  ): Promise<OcrRecropResponse> {
+    const check = this.limiter.check("recrop", userId);
+    if (!check.allowed) {
+      throw new RateLimitError(
+        "Too many region re-scans. Please wait before trying again.",
+        "OCR_RECROP_RATE_LIMITED",
+        check.retryAfterSeconds,
+      );
+    }
+    this.limiter.hit("recrop", userId);
+
+    const row = await this.repository.findForUser(id, userId);
+    if (!row) throw new NotFoundError("Recognition not found.");
+    if (row.screenshotPurgedAt !== null) {
+      throw new NotFoundError("Stored screenshot is missing.");
+    }
+    if (row.asset.mime === "application/pdf") {
+      throw new BusinessRuleError(
+        "Region re-scan is available for screenshots, not PDF statements.",
+        OCR_ERROR_CODES.RECROP_UNSUPPORTED,
+      );
+    }
+    if (
+      region.x + region.width > row.asset.width ||
+      region.y + region.height > row.asset.height
+    ) {
+      throw new ValidationError(
+        "The region exceeds the screenshot dimensions.",
+        [{ path: "region", message: `must fit within ${row.asset.width}x${row.asset.height}` }],
+        "OCR_RECROP_REGION_INVALID",
+      );
+    }
+
+    const bytes = await this.storage.get(row.asset.storageKey);
+    if (bytes === null) {
+      throw new NotFoundError("Stored screenshot is missing.");
+    }
+
+    const response = await this.callEngine({
+      requestId: row.id,
+      contractVersion: "1",
+      imageBase64: bytes.toString("base64"),
+      metadata: {
+        mime: row.asset.mime,
+        sizeBytes: row.asset.sizeBytes,
+        width: row.asset.width,
+        height: row.asset.height,
+        checksumSha256: row.asset.checksumSha256,
+      },
+      extractionProfile: OCR_EXTRACTION_PROFILE,
+      deadlineMs: this.config.ocr.engineTimeoutMs,
+      crop: region,
+    });
+
+    if (response.processingStatus === "UNPROCESSABLE") {
+      throw new BusinessRuleError(
+        "No readable text found in this region.",
+        OCR_ERROR_CODES.RECROP_UNPROCESSABLE,
+      );
+    }
+    if (response.processingStatus !== "COMPLETED") {
+      throw new BusinessRuleError(
+        "The region re-scan could not complete.",
+        OCR_ERROR_CODES.UNAVAILABLE,
+      );
+    }
+
+    const fields = applyDomainValidation(response.fields.map(mapEngineField));
+    return { fields, region };
   }
 
   // ── Deletion (§31) ────────────────────────────────────────────────────────
@@ -661,6 +927,18 @@ export function toRecognitionDto(row: OcrRecognitionRow): OcrRecognition {
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
+}
+
+function sameBatches(
+  a: { corrections: Record<string, string | null>; include: boolean }[] | null,
+  b: { corrections: Record<string, string | null>; include: boolean }[],
+): boolean {
+  if (!a || a.length !== b.length) return false;
+  return a.every(
+    (batch, index) =>
+      batch.include === b[index]!.include &&
+      sameCorrections(batch.corrections, b[index]!.corrections),
+  );
 }
 
 function sameCorrections(

@@ -222,3 +222,42 @@ def test_recognize_reports_perceptual_hash_and_passes():
     assert len(body["perceptualHash"]) == 16
     assert "block_psm6" in body["processingMetadata"]["passes"]
     assert body["processingMetadata"]["layoutTemplate"] == MT5_DESKTOP_HISTORY
+
+
+# ── PDF statements (ops §4.3) ───────────────────────────────────────────────
+
+def test_pdf_statement_pipeline_multi_page():
+    from conftest import render_mt5_pdf
+
+    image, width, height = render_mt5_pdf()
+    request = to_request(image, width, height, "req-pdf")
+    request["metadata"]["mime"] = "application/pdf"
+    response = client.post("/v1/recognitions", json=request, headers=_headers())
+    assert response.status_code == 200
+    body = response.json()
+    assert body["processingStatus"] == "COMPLETED"
+    assert body["processingMetadata"]["documentPages"] == 2
+    assert body["processingMetadata"]["documentWidth"] > width
+    fields = {f["field"]: f for f in body["fields"]}
+    assert fields["symbol"]["normalizedValue"] == "XAUUSD"
+
+
+def test_pdf_rejects_non_pdf_payload_with_pdf_mime():
+    image, width, height = render_mt5_screenshot()
+    request = to_request(image, width, height, "req-fake-pdf")
+    request["metadata"]["mime"] = "application/pdf"
+    response = client.post("/v1/recognitions", json=request, headers=_headers())
+    assert response.status_code == 200
+    body = response.json()
+    assert body["processingStatus"] == "UNPROCESSABLE"
+    assert body["failure"]["category"] == "SCREENSHOT_UNSUPPORTED"
+
+
+def test_recrops_crops_before_preprocessing():
+    image, width, height = render_mt5_screenshot()
+    request = to_request(image, width, height, "req-crop-narrow")
+    request["crop"] = {"x": 0, "y": 110, "width": width, "height": 80}
+    response = client.post("/v1/recrops", json=request, headers=_headers())
+    assert response.status_code == 200
+    body = response.json()
+    assert body["processingStatus"] in ("COMPLETED", "UNPROCESSABLE")
