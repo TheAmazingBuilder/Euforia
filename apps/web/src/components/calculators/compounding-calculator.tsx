@@ -241,7 +241,7 @@ export function CompoundingCalculator() {
 
         {/* ── Summary — the ruled stat band ────────────────────────────── */}
         <section
-          className="rounded-xl border border-border bg-surface"
+          className="rounded-xl border border-border bg-surface lg:col-span-7"
           data-testid="comp-summary"
           aria-live="polite"
         >
@@ -277,22 +277,23 @@ export function CompoundingCalculator() {
                   {formatNumber(schedule.periods, 0)} × {formatPercent(Number(schedule.gainPerPeriodPercent) / 100, 2)}
                 </p>
               </div>
-              <div className="stat-cell stat-kpi">
+              {/* Row 2 opens at column 1 — drop the duplicated frame hairline */}
+              <div className="stat-cell stat-hero !border-l-0">
                 <p className="ledger-label">{T.summary.totalProfit}</p>
                 <p
                   className={cn(
-                    "mt-1.5 font-mono text-xl font-semibold tabular-nums",
+                    "mt-1.5 font-mono text-2xl font-semibold tabular-nums sm:text-3xl",
                     isGrowth ? "text-profit" : "text-loss",
                   )}
                 >
                   {formatSignedMoney(schedule.totalProfit, currency)}
                 </p>
               </div>
-              <div className="stat-cell stat-kpi">
+              <div className="stat-cell stat-hero">
                 <p className="ledger-label">{T.summary.totalGain}</p>
                 <p
                   className={cn(
-                    "mt-1.5 font-mono text-xl font-semibold tabular-nums",
+                    "mt-1.5 font-mono text-2xl font-semibold tabular-nums sm:text-3xl",
                     isGrowth ? "text-profit" : "text-loss",
                   )}
                 >
