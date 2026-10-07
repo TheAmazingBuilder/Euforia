@@ -43,16 +43,20 @@
 | Web typecheck | `tsc --noEmit` | clean |
 | Web lint | `eslint src` | 0 errors, 4 pre-existing `_locale` warnings |
 
-## 5. Known gaps & dead code (documented, non-blocking)
+## 5. Gaps & dead code — CLOSURE STATUS (updated after the follow-up pass)
 
-Reverse-direction gaps (backend exists, no frontend consumer — all pre-existing from the V2 phase):
-1. `GET /ocr/sets` list and `GET /ocr/collections/:id` have MSW handlers but no frontend hook consumer; the **collections feature has no UI surface** (5 hooks + a full `dict.collections` namespace unused).
-2. Dead query-layer exports: `useOcrRecognitions` (non-infinite), `fetchOcrHistoryPage`.
-3. Dead/stale remnants: `SUPPORTED_PROFILES` in `ocr-service/app/config.py` (pre-V1.1), `viewSourceSoon` dict key, `NavItem.comingSoon` for `/recognition` + the unused `PagePlaceholder` component.
+The three actionable gaps found at audit time have been **closed** in the follow-up pass (same day):
+
+1. ✅ **CLOSED — collections UI surface.** `components/recognition/recognition-collections.tsx` consumes all five `useOcrCollection*` hooks: a history-side panel (ruled rows, expandable member lists, create dialog, delete with focused confirmation — recognitions always kept per §28) plus a per-row "Add to collection" menu (membership toggle with check marks, "New collection…" create-&-add pre-targeted). Member details resolve from the loaded history pages first, single-GET fallback for members outside them. Probe: verify-recognition.js extended with 13 collection checks — **48/48 passed, 0 pageerrors**.
+2. ✅ **CLOSED — dead query-layer exports.** `useOcrRecognitions` (non-infinite) and `fetchOcrHistoryPage` removed from `lib/api/queries` (the infinite hook is the only history reader).
+3. ✅ **CLOSED — dead/stale remnants.** `SUPPORTED_PROFILES` removed from `ocr-service/app/config.py` (79/79 pytest re-verified), `viewSource`/`viewSourceSoon` dict keys removed (the concept was replaced by the source-region overlay + crop tool), `NavItem.comingSoon` removed from the type and all 16 entries, and the unused `PagePlaceholder` component deleted.
+
+Remaining, intentionally documented (not defects):
+
 4. `docker-compose.yml` omits the ocr-service (manual uvicorn :3004 per `.env.example` — documented dev workflow).
-5. `apps/web` has no test runner; OCR frontend verification relies on puppeteer probes (35/35 last recorded).
+5. `apps/web` has no test runner; OCR frontend verification relies on Playwright probes (now 48/48 + rebrand 17/17).
 6. Documented product limits (OCR-V2-REPORT §8 / PHASE-21 report): GENERIC template only for non-MT5 platforms, wall-clock timestamp timezone attribution deferred, one-way recognition→trade provenance, in-memory rate limiter (single-instance).
 
 ## 6. Conclusion
 
-The OCR module is **complete and healthy across all three tiers**: the NestJS API implements the full product surface with disciplined validation/error handling, the FastAPI sidecar implements all three recognition profiles with the full preprocessing/PDF/arbitration chain, and the frontend consumes every capability it exposes (22/22 hook→endpoint parity) with real Account/position and Chart analysis views. The full test estate is green (79 + 572) and the frontend typechecks and lints clean. The remaining items in §5 are pre-existing, documented, and none block the module's product flow; they are candidates for a later housekeeping pass (collections UI being the only user-visible one).
+The OCR module is **complete and healthy across all three tiers**: the NestJS API implements the full product surface with disciplined validation/error handling, the FastAPI sidecar implements all three recognition profiles with the full preprocessing/PDF/arbitration chain, and the frontend consumes every capability it exposes (22/22 hook→endpoint parity) with real Account/position and Chart analysis views. The full test estate is green (79 + 572) and the frontend typechecks and lints clean. The three actionable §5 items (collections UI, dead exports, stale remnants) were closed in the same-day follow-up pass; what remains documented there is workflow choice, not debt.

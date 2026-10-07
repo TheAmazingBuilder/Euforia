@@ -238,8 +238,6 @@ export const recognitionDict = {
       uncertain: "Please verify",
       missing: "Not detected — enter it manually",
       raw: "As read",
-      viewSource: "View source",
-      viewSourceSoon: "Source highlighting arrives with the OCR engine",
     },
     directionBuy: "BUY",
     directionSell: "SELL",

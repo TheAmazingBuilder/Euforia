@@ -11,7 +11,6 @@ import type {
   OcrRecropResponse,
   OcrRecognitionPage,
   OcrRecognitionResponse,
-  OcrRecognitionStatus,
   OcrSetConfirmInput,
   OcrSetCreateInput,
   OcrSetCreateResponse,
@@ -60,24 +59,6 @@ export function useOcrRecognitionsInfinite() {
       }),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
-    refetchOnWindowFocus: false,
-  });
-}
-
-/** V2 §62 — fetch one keyset page by cursor (the "Load more" primitive). */
-export async function fetchOcrHistoryPage(cursor: string) {
-  return apiRequest<OcrRecognitionPage>(apiPaths.ocrRecognitions, {
-    query: { limit: 20, cursor },
-  });
-}
-
-export function useOcrRecognitions(status?: OcrRecognitionStatus) {
-  return useQuery({
-    queryKey: queryKeys.ocrRecognitions(status),
-    queryFn: () =>
-      apiRequest<OcrRecognitionPage>(apiPaths.ocrRecognitions, {
-        query: { limit: 20, status },
-      }),
     refetchOnWindowFocus: false,
   });
 }

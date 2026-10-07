@@ -24,10 +24,8 @@ export type NavItem = {
   href: string;
   label: string;
   icon: LucideIcon;
-  /** One-sentence description used by the placeholder pages. */
+  /** One-sentence description used by the page headers and metadata. */
   description: string;
-  /** What the screen will become in a later phase. */
-  comingSoon: string;
 };
 
 /** Main sidebar navigation — grouped by NAV_SECTIONS below. */
@@ -38,8 +36,6 @@ export const SIDEBAR_ITEMS: NavItem[] = [
     icon: LayoutDashboard,
     description:
       "Your trading command center: today's P&L, your discipline score and the sessions that matter, at a glance.",
-    comingSoon:
-      "The dashboard will surface your equity curve (the constellation), key KPIs and the coach's daily briefing.",
   },
   {
     href: "/session",
@@ -47,8 +43,6 @@ export const SIDEBAR_ITEMS: NavItem[] = [
     icon: Activity,
     description:
       "Run a structured trading session in real time, one decision at a time.",
-    comingSoon:
-      "The live session runner will arrive here: trade entry, judgment gates and the post-decision reveal.",
   },
   {
     href: "/trades",
@@ -56,8 +50,6 @@ export const SIDEBAR_ITEMS: NavItem[] = [
     icon: List,
     description:
       "The complete trade log: every execution with its result and decision grade, side by side.",
-    comingSoon:
-      "Filters, CSV import and per-trade detail views will build on this table.",
   },
   {
     href: "/journal",
@@ -65,8 +57,6 @@ export const SIDEBAR_ITEMS: NavItem[] = [
     icon: NotebookPen,
     description:
       "Review every executed trade and hold your goals against reality: plan vs. actual, execution grades and the lesson you keep.",
-    comingSoon:
-      "The trade review workflow will grade execution against the playbook and capture lessons.",
   },
   {
     href: "/playbook",
@@ -74,8 +64,6 @@ export const SIDEBAR_ITEMS: NavItem[] = [
     icon: BookOpen,
     description:
       "Define the setups you are allowed to trade and the rules that protect you from yourself.",
-    comingSoon:
-      "The playbook editor will let you describe setups, entry criteria and checklists per strategy.",
   },
   {
     href: "/analytics",
@@ -83,8 +71,6 @@ export const SIDEBAR_ITEMS: NavItem[] = [
     icon: ChartColumn,
     description:
       "Turn your trade history into patterns, edges and honest statistics.",
-    comingSoon:
-      "Expect the constellation equity curve, win/loss heatmaps and breakdowns by setup, session and account.",
   },
   {
     href: "/recognition",
@@ -92,8 +78,6 @@ export const SIDEBAR_ITEMS: NavItem[] = [
     icon: FileScan,
     description:
       "Import a trading screenshot, review what the engine recognized — every field carries its confidence — and confirm what enters the journal.",
-    comingSoon:
-      "Batch import queues, multi-trade screenshots and source-region highlighting will land with the OCR engine.",
   },
   {
     href: "/calendar",
@@ -101,8 +85,6 @@ export const SIDEBAR_ITEMS: NavItem[] = [
     icon: CalendarDays,
     description:
       "See your month at a glance: trading days, big wins, rule violations and rest days.",
-    comingSoon:
-      "A monthly calendar will map daily P&L, discipline states and trading activity over time.",
   },
   {
     href: "/discipline",
@@ -110,8 +92,6 @@ export const SIDEBAR_ITEMS: NavItem[] = [
     icon: ShieldCheck,
     description:
       "The coach that watches your rules: limits, streaks, violations and mindset.",
-    comingSoon:
-      "Your discipline score, daily limits, rule-violation feed and ghost-trade settlements will live here.",
   },
   {
     href: "/academy",
@@ -119,8 +99,6 @@ export const SIDEBAR_ITEMS: NavItem[] = [
     icon: GraduationCap,
     description:
       "The learning hub: structured courses, drills, quizzes and a searchable glossary — from market fundamentals to advanced execution.",
-    comingSoon:
-      "The Academy curriculum will grow with practice drills, pattern labs and coaching recommendations from your own journal.",
   },
   {
     href: "/nofy",
@@ -128,8 +106,6 @@ export const SIDEBAR_ITEMS: NavItem[] = [
     icon: NotebookText,
     description:
       "Your personal trading knowledge workspace: notes, ideas, research and documentation — connected to your trades, strategies and lessons.",
-    comingSoon:
-      "Nofy will become the place where observations become knowledge, and knowledge feeds the playbook.",
   },
   {
     href: "/tools/lot-size",
@@ -137,8 +113,6 @@ export const SIDEBAR_ITEMS: NavItem[] = [
     icon: Scale,
     description:
       "Size positions from your risk budget: balance, risk %, entry, stop and the instrument's specifications — with the full calculation breakdown.",
-    comingSoon:
-      "Live broker instrument specifications and portfolio-level risk will extend the calculator.",
   },
   {
     href: "/tools/compounding",
@@ -146,8 +120,6 @@ export const SIDEBAR_ITEMS: NavItem[] = [
     icon: TrendingUp,
     description:
       "Project account growth across compounding periods — period by period, with the full schedule and growth curve.",
-    comingSoon:
-      "Deposits, withdrawals and variable return sequences will extend the projection model.",
   },
   {
     href: "/monitoring",
@@ -155,8 +127,6 @@ export const SIDEBAR_ITEMS: NavItem[] = [
     icon: HeartPulse,
     description:
       "System health at a glance: market feed, API status and offline readiness.",
-    comingSoon:
-      "Live service dashboards, latency history and incident notes will live here.",
   },
   {
     href: "/integrations",
@@ -164,8 +134,6 @@ export const SIDEBAR_ITEMS: NavItem[] = [
     icon: Cable,
     description:
       "Connect your brokers and data providers — Deriv, MT5, cTrader, Binance.",
-    comingSoon:
-      "Broker adapters will plug into this hub with scoped, read-only connections.",
   },
   {
     href: "/security",
@@ -173,8 +141,6 @@ export const SIDEBAR_ITEMS: NavItem[] = [
     icon: LockKeyhole,
     description:
       "Protection center: 2FA, sessions, API keys, connected accounts and the audit trail.",
-    comingSoon:
-      "Passkeys, IP allow-lists and exportable audit reports will land here later.",
   },
   {
     href: "/settings",
@@ -182,8 +148,6 @@ export const SIDEBAR_ITEMS: NavItem[] = [
     icon: Settings,
     description:
       "Tune Euforia to your accounts, timezone, risk defaults and display preferences.",
-    comingSoon:
-      "Account management, risk defaults, theme and timezone preferences will be configured here.",
   },
 ];
 

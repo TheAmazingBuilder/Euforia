@@ -11,7 +11,6 @@ from dataclasses import dataclass
 
 # Contract version mirrored from the NestJS side (ocr-engine.port.ts).
 CONTRACT_VERSION = "1"
-SUPPORTED_PROFILES = ("TRADE_SUMMARY",)
 
 
 @dataclass(frozen=True)
