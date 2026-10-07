@@ -1050,7 +1050,7 @@ function mimeExtension(mime: string): string {
  * declaration form (see validateCorrectionStored); raw input is never
  * stored unvalidated.
  */
-function canonicalizeCorrections(corrections: OcrCorrectionRecord): Record<string, string | null> {
+export function canonicalizeCorrections(corrections: OcrCorrectionRecord): Record<string, string | null> {
   const canonical: Record<string, string | null> = {};
   for (const [key, value] of Object.entries(corrections)) {
     try {
@@ -1070,7 +1070,7 @@ function canonicalizeCorrections(corrections: OcrCorrectionRecord): Record<strin
 }
 
 /** Domain validation of user corrections — mapped to a 422 business error. */
-function applyCorrectionsSafe(
+export function applyCorrectionsSafe(
   machineFields: OcrExtractedField[],
   corrections: OcrCorrectionRecord,
 ): { fields: OcrExtractedField[]; correctionCount: number } {

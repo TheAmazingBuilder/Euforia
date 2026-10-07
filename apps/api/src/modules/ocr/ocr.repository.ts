@@ -17,6 +17,14 @@
 import { Injectable } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
 import { PrismaService } from "../../infrastructure/prisma/prisma.service";
+import type {
+  OcrClassification,
+  OcrExtractedField,
+  OcrFieldKey,
+  OcrIssue,
+  OcrQualityScore,
+  OcrTimelineEntry,
+} from "../../shared/contracts";
 
 // ── Narrow row shapes ────────────────────────────────────────────────────────
 
@@ -563,5 +571,187 @@ export class OcrRepository {
       }
       return { storageKey: null, deleted: true };
     });
+  }
+}
+
+// ── V2 — recognition sets (multi-screenshot fusion) ─────────────────────────
+
+export interface OcrSetItemRow {
+  setId: string;
+  recognitionId: string;
+  order: number;
+}
+
+export interface OcrSetRow {
+  id: string;
+  userId: string;
+  status: string;
+  result: OcrSetFusedPayload | null;
+  corrections: Record<string, string | null> | null;
+  confirmedAt: Date | null;
+  tradeId: string | null;
+  tradeIds: string[];
+  accountId: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  items: OcrSetItemRow[];
+}
+
+const setInclude = {
+  items: { orderBy: { order: "asc" as const } },
+} satisfies Prisma.OcrSetInclude;
+
+function toSetRow(row: Prisma.OcrSetGetPayload<{ include: typeof setInclude }>): OcrSetRow {
+  return {
+    id: row.id,
+    userId: row.userId,
+    status: row.status,
+    result: (row.result as OcrSetFusedPayload | null) ?? null,
+    corrections: (row.corrections as Record<string, string | null> | null) ?? null,
+    confirmedAt: row.confirmedAt,
+    tradeId: row.tradeId,
+    tradeIds: (row.tradeIds as string[] | null) ?? [],
+    accountId: row.accountId,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+    items: row.items.map((item) => ({
+      setId: item.setId,
+      recognitionId: item.recognitionId,
+      order: item.order,
+    })),
+  };
+}
+
+export interface OcrSetFusedPayload {
+  fields: OcrExtractedField[];
+  conflicts: {
+    field: OcrFieldKey;
+    values: { value: string; recognitionId: string }[];
+  }[];
+  issues: OcrIssue[];
+  qualityScore: OcrQualityScore | null;
+  timeline: OcrTimelineEntry[];
+  coherent: boolean;
+  /** Reading-order first member's classification (documented in fusion.logic). */
+  classification: OcrClassification | null;
+  possibleTradeDuplicate?: {
+    tradeId: string;
+    matchedOn: string[];
+    detectedAt: string;
+  } | null;
+  symbolInCatalog?: boolean | null;
+}
+
+@Injectable()
+export class OcrSetRepository {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async createSetWithItems(userId: string, recognitionIds: string[]): Promise<OcrSetRow> {
+    const row = await this.prisma.$transaction(async (tx) => {
+      const set = await tx.ocrSet.create({ data: { userId, status: "REVIEW_REQUIRED" } });
+      await tx.ocrSetItem.createMany({
+        data: recognitionIds.map((recognitionId, order) => ({
+          setId: set.id,
+          recognitionId,
+          order,
+        })),
+      });
+      return set;
+    });
+    return this.findForUser(row.id, userId) as Promise<OcrSetRow>;
+  }
+
+  async findForUser(id: string, userId: string): Promise<OcrSetRow | null> {
+    const row = await this.prisma.ocrSet.findFirst({
+      where: { id, userId },
+      include: setInclude,
+    });
+    return row ? toSetRow(row) : null;
+  }
+
+  /** Every member recognition row (owner-checked via the set membership). */
+  async findMemberRecognitions(setId: string, userId: string): Promise<OcrRecognitionRow[]> {
+    const rows = await this.prisma.ocrRecognition.findMany({
+      where: { userId, setItem: { setId } },
+      include: recognitionInclude,
+      orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+    });
+    return rows.map(toRecognitionRow);
+  }
+
+  /** Keyset page for the set list (V2 §62 — sets in the history surface). */
+  async listSetsPageForUser(
+    userId: string,
+    input: { limit: number; cursor: { createdAt: Date; id: string } | null },
+  ): Promise<{ items: OcrSetRow[]; nextCursor: string | null }> {
+    const rows = await this.prisma.ocrSet.findMany({
+      where: {
+        userId,
+        ...(input.cursor
+          ? { createdAt: { lt: input.cursor.createdAt } }
+          : {}),
+      },
+      include: setInclude,
+      orderBy: [{ createdAt: "desc" }, { id: "asc" }],
+      take: input.limit + 1,
+    });
+    const hasMore = rows.length > input.limit;
+    const page = hasMore ? rows.slice(0, input.limit) : rows;
+    const last = page[page.length - 1];
+    return {
+      items: page.map(toSetRow),
+      nextCursor: hasMore && last ? encodeOcrCursor(last.createdAt, last.id) : null,
+    };
+  }
+
+  async updateSetResult(id: string, result: OcrSetFusedPayload): Promise<void> {
+    await this.prisma.ocrSet.update({
+      where: { id },
+      data: { result: result as unknown as Prisma.InputJsonValue },
+    });
+  }
+
+  /**
+   * Guarded confirmation transition (§51 discipline) — only REVIEW_REQUIRED
+   * rows confirm, in one transaction with the trade links.
+   */
+  async confirmSet(
+    id: string,
+    data: {
+      corrections: Record<string, string | null>;
+      result: OcrSetFusedPayload;
+      tradeId: string | null;
+      tradeIds: string[];
+      accountId?: string | null;
+    },
+  ): Promise<OcrSetRow | null> {
+    return this.prisma.$transaction(async (tx) => {
+      const updated = await tx.ocrSet.updateMany({
+        where: { id, status: "REVIEW_REQUIRED" },
+        data: {
+          status: "CONFIRMED",
+          corrections: data.corrections,
+          result: data.result as unknown as Prisma.InputJsonValue,
+          confirmedAt: new Date(),
+          tradeId: data.tradeId,
+          tradeIds: data.tradeIds,
+          ...(data.accountId !== undefined ? { accountId: data.accountId } : {}),
+        },
+      });
+      if (updated.count === 0) return null;
+      const row = await tx.ocrSet.findUnique({ where: { id }, include: setInclude });
+      return row ? toSetRow(row) : null;
+    });
+  }
+
+  /** Attach the ACCOUNTS target at confirm time (engine quality §3.1). */
+  async attachSetAccount(id: string, accountId: string | null): Promise<void> {
+    await this.prisma.ocrSet.update({ where: { id }, data: { accountId } });
+  }
+
+  /** Set rows survive member recognitions: only the set + its items go. */
+  async deleteSetForUser(id: string, userId: string): Promise<boolean> {
+    const deleted = await this.prisma.ocrSet.deleteMany({ where: { id, userId } });
+    return deleted.count > 0;
   }
 }

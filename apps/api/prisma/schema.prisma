@@ -114,6 +114,7 @@ model User {
   ocrAssets         OcrAsset[]
   ocrRecognitions   OcrRecognition[]
   ocrCorrectionPatterns OcrCorrectionPattern[]
+  ocrSets           OcrSet[]
   trades            Trade[]
   savedTradeViews   SavedTradeView[]
   disciplineRows    DisciplineRow[]
@@ -297,6 +298,8 @@ model TradingAccount {
   /// OCR recognitions attached to this account (engine quality §3.1) —
   /// the import target chosen by the user at upload/confirmation.
   ocrRecognitions OcrRecognition[]
+  /// OCR recognition SETS attached to this account (V2 multi-screenshot).
+  ocrSets OcrSet[]
 
   @@unique([userId, providerId, externalAccountId])
   @@index([userId])
@@ -578,6 +581,10 @@ model OcrRecognition {
   /// image endpoint answers 404 once purged.
   screenshotPurgedAt DateTime?
 
+  /// V2 multi-screenshot — at most one set membership per recognition
+  /// (fusion never destroys the individual recognition row).
+  setItem OcrSetItem?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -608,6 +615,62 @@ model OcrCorrectionPattern {
 
   @@unique([userId, fieldKey, rawValue, correctedValue])
   @@index([userId, fieldKey, rawValue])
+}
+
+/// V2 spec §1/§2/§14/§15/§18 — a multi-screenshot recognition SET: several
+/// screenshots of ONE trading event, grouped explicitly by the user at
+/// upload, recognized individually (each member keeps its own full
+/// recognition row — fusion never destroys individual results), then FUSED
+/// into a single TradeDraft by the deterministic fusion engine. Fusion is
+/// EVIDENCE (agreement boosts, conflicts surfaced) — the user review remains
+/// the authority (V2 §103).
+model OcrSet {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// REVIEW_REQUIRED | CONFIRMED | FAILED — same guarded-transition
+  /// discipline as OcrRecognition (enforced in the repository).
+  status    String   @default("REVIEW_REQUIRED")
+  /// The fused draft payload {fields, conflicts, fusion metadata} — machine
+  /// evidence only, same untrusted-until-validated discipline (§54).
+  result    Json?
+  /// Authoritative user corrections on the FUSED draft (field → value).
+  corrections Json?
+  confirmedAt DateTime?
+
+  /// The canonical Trade created from the confirmed FUSED values through
+  /// Trading Core — same bridge, same one-way provenance as OcrRecognition.
+  tradeId String? @db.Uuid
+  trade   Trade?  @relation(fields: [tradeId], references: [id], onDelete: SetNull)
+  tradeIds Json?
+
+  /// ACCOUNTS module attachment (engine quality §3.1 semantics).
+  accountId String? @db.Uuid
+  account   TradingAccount? @relation(fields: [accountId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items OcrSetItem[]
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([tradeId])
+  @@index([accountId])
+}
+
+/// One member of a recognition set. A recognition belongs to AT MOST ONE
+/// set (unique) — re-grouping means deleting the set and creating a new one
+/// (honest, auditable, no silent re-ordering of history).
+model OcrSetItem {
+  id            String         @id @default(uuid()) @db.Uuid
+  setId         String         @db.Uuid
+  set           OcrSet         @relation(fields: [setId], references: [id], onDelete: Cascade)
+  recognitionId String         @unique @db.Uuid
+  recognition   OcrRecognition @relation(fields: [recognitionId], references: [id], onDelete: Cascade)
+  /// 0-based reading order chosen by the user at upload.
+  order         Int
+
+  @@index([setId, order])
 }
 
 // ── Trading Core / Journal (Domaine 3 — Phase 4) ───────────────────────────
@@ -731,6 +794,9 @@ model Trade {
   /// through the OCR bridge (§77). One-way provenance: the trade never
   /// depends on the recognition, and deleting the recognition keeps the trade.
   ocrRecognitions OcrRecognition[]
+  /// V2 multi-screenshot — sets whose FUSED confirmation produced this trade
+  /// through the same bridge (same one-way provenance discipline).
+  ocrSets OcrSet[]
 
   /// Import idempotence (§27): one broker ref per account. PostgreSQL allows
   /// several (account, NULL) rows — MANUAL trades stay unconstrained.

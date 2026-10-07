@@ -40,11 +40,18 @@ import {
   ocrCreateInputSchema,
   ocrRecognitionPageQuerySchema,
   ocrRecropInputSchema,
+  ocrSetConfirmInputSchema,
+  ocrSetCreateInputSchema,
+  ocrSetPageQuerySchema,
   type OcrConfirmInput,
   type OcrCreateInput,
   type OcrRecropInput,
+  type OcrSetConfirmInput,
+  type OcrSetCreateInput,
 } from "../../shared/contracts";
 import { OcrService } from "./ocr.service";
+import { OcrSetService } from "./ocr-set.service";
+import { decodeOcrCursor } from "./ocr.repository";
 import { OcrOpsService } from "./ocr-ops.service";
 import {
   ocrAnalyticsQuerySchema,
@@ -66,10 +73,16 @@ const ocrAnalyticsQueryWire = ocrAnalyticsQuerySchema.extend({
   days: z.coerce.number().int().min(1).max(365).default(30),
 });
 
+/** Same coercion discipline for the set list page (V2 §62). */
+const ocrSetPageQueryWire = ocrSetPageQuerySchema.extend({
+  limit: z.coerce.number().int().min(1).max(50).default(20),
+});
+
 @Controller("ocr")
 export class OcrController {
   constructor(
     private readonly ocr: OcrService,
+    private readonly sets: OcrSetService,
     private readonly ops: OcrOpsService,
   ) {}
 
@@ -229,6 +242,69 @@ export class OcrController {
   @Get("storage")
   async storage(@CurrentUser() principal: AuthPrincipal) {
     return this.ops.getStorage(principal.userId);
+  }
+
+  // ── V2 §1/§2/§14/§15/§18 — multi-screenshot recognition sets ──────────────
+
+  @Post("sets")
+  async createSet(
+    @Req() request: FastifyRequest,
+    @CurrentUser() principal: AuthPrincipal,
+    @Body(new ZodValidationPipe(ocrSetCreateInputSchema)) input: OcrSetCreateInput,
+  ) {
+    return this.sets.createSet({
+      userId: principal.userId,
+      imageDataUrls: input.imageDataUrls,
+      requestedProfile: input.requestedProfile,
+      accountId: input.accountId ?? undefined,
+      requestId: requestIdOf(request),
+    });
+  }
+
+  @Get("sets")
+  async listSets(
+    @CurrentUser() principal: AuthPrincipal,
+    @Query(new ZodValidationPipe(ocrSetPageQueryWire)) query: { limit: number; cursor?: string },
+  ) {
+    return this.sets.listSets({
+      userId: principal.userId,
+      limit: query.limit,
+      cursor: query.cursor ? decodeOcrCursor(query.cursor) : null,
+    });
+  }
+
+  @Get("sets/:id")
+  async getSet(
+    @CurrentUser() principal: AuthPrincipal,
+    @Param("id") id: string,
+  ) {
+    return this.sets.getSet({ userId: principal.userId, id: uuidSchema.parse(id) });
+  }
+
+  @Post("sets/:id/confirm")
+  @HttpCode(HttpStatus.OK) // idempotent replay — not a 201 creation
+  async confirmSet(
+    @CurrentUser() principal: AuthPrincipal,
+    @Param("id") id: string,
+    @Body(new ZodValidationPipe(ocrSetConfirmInputSchema)) input: OcrSetConfirmInput,
+  ) {
+    return this.sets.confirmSet({
+      userId: principal.userId,
+      id: uuidSchema.parse(id),
+      corrections: input.corrections,
+      accountId: input.accountId ?? undefined,
+      acknowledgeDuplicateScreenshot: input.acknowledgeDuplicateScreenshot,
+      acknowledgeDuplicateTrade: input.acknowledgeDuplicateTrade,
+    });
+  }
+
+  /** Deletes the SET only — member recognitions survive (V2 §15). */
+  @Delete("sets/:id")
+  async removeSet(
+    @CurrentUser() principal: AuthPrincipal,
+    @Param("id") id: string,
+  ) {
+    return this.sets.deleteSet({ userId: principal.userId, id: uuidSchema.parse(id) });
   }
 
   @Delete("recognitions/:id")

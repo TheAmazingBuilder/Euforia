@@ -50,8 +50,9 @@ import {
 import { FastApiOcrEngine } from "./engine/fastapi-ocr.engine";
 import { OCR_ENGINE } from "./engine/ocr-engine.port";
 import { OcrRateLimiterService } from "./ocr-rate-limiter.service";
-import { OcrRepository } from "./ocr.repository";
+import { OcrRepository, OcrSetRepository } from "./ocr.repository";
 import { OcrService } from "./ocr.service";
+import { OcrSetService } from "./ocr-set.service";
 import { OcrTradeImportService } from "./ocr-trade-import.service";
 import { OcrOpsService } from "./ocr-ops.service";
 import { OcrRetentionService } from "./ocr-retention.service";
@@ -77,10 +78,12 @@ export const ocrEngineProvider: Provider = {
   controllers: [OcrController],
   providers: [
     OcrService,
+    OcrSetService,
     OcrTradeImportService,
     OcrOpsService,
     OcrRetentionService,
     OcrRepository,
+    OcrSetRepository,
     OcrRateLimiterService,
     ImageValidationService,
     {

@@ -566,3 +566,127 @@ export const ocrStorageResponseSchema = z.object({
   oldestRetainedAssetAt: isoDateTimeSchema.nullable(),
 });
 export type OcrStorageResponse = z.infer<typeof ocrStorageResponseSchema>;
+
+// ── V2 §1/§2/§14/§15/§18 — multi-screenshot recognition sets ────────────────
+
+/** A member's recognized fields as stored on its own recognition row. */
+export const ocrSetMemberSchema = z.object({
+  order: z.number().int().min(0).max(15),
+  recognitionId: uuidSchema,
+  /** Fully-derived member DTO — the individual result is NEVER destroyed. */
+  recognition: ocrRecognitionSchema,
+});
+export type OcrSetMember = z.infer<typeof ocrSetMemberSchema>;
+
+/**
+ * One conflicting field across members (V2 §18): both readings are kept
+ * with their provenance — the user decides, nothing is auto-merged away.
+ */
+export const ocrFieldConflictSchema = z.object({
+  field: ocrFieldKeySchema,
+  values: z
+    .array(
+      z.object({
+        value: z.string().max(256),
+        recognitionId: uuidSchema,
+      }),
+    )
+    .min(2)
+    .max(6),
+});
+export type OcrFieldConflict = z.infer<typeof ocrFieldConflictSchema>;
+
+/** The fused draft — one TradeDraft out of N member recognitions (V2 §18). */
+export const ocrFusedDraftSchema = z.object({
+  fields: z.array(ocrExtractedFieldSchema).max(64),
+  /** Fields whose members disagreed — kept for the review UI. */
+  conflicts: z.array(ocrFieldConflictSchema).max(16),
+  /** V2 §16 — issues derived from the fused evidence. */
+  issues: z.array(ocrIssueSchema).max(32),
+  /** V2 §15 — quality over the fused fields (agreement lifts consistency). */
+  qualityScore: ocrQualityScoreSchema.nullable(),
+  /** V2 §23 — chronology across members (entry/position/exit shots). */
+  timeline: z.array(ocrTimelineEntrySchema).max(16),
+  /** True when the members AGREE on symbol + direction (correlation check,
+   * V2 §14: insufficient evidence stays a "possible group" for the user). */
+  coherent: z.boolean(),
+});
+
+export type OcrFusedDraft = z.infer<typeof ocrFusedDraftSchema>;
+
+export const ocrSetStatusSchema = z.enum(["REVIEW_REQUIRED", "CONFIRMED", "FAILED"]);
+export type OcrSetStatus = z.infer<typeof ocrSetStatusSchema>;
+
+export const ocrSetSchema = z.object({
+  id: uuidSchema,
+  status: ocrSetStatusSchema,
+  /** Reading order chosen at upload — index 0 first. */
+  members: z.array(ocrSetMemberSchema).min(1).max(6),
+  fused: ocrFusedDraftSchema.nullable(),
+  corrections: ocrCorrectionRecordSchema.nullable(),
+  tradeId: uuidSchema.nullable(),
+  tradeIds: z.array(uuidSchema).max(20).default([]),
+  accountId: uuidSchema.nullable(),
+  confirmedAt: isoDateTimeSchema.nullable(),
+  createdAt: isoDateTimeSchema,
+  updatedAt: isoDateTimeSchema,
+});
+export type OcrSet = z.infer<typeof ocrSetSchema>;
+
+export const ocrSetCreateInputSchema = z.object({
+  /** 2..6 screenshots of one trading event, in reading order. Single-image
+   * workflows stay on POST /ocr/recognitions (one job = one image). */
+  imageDataUrls: z
+    .array(
+      z
+        .string()
+        .min(30)
+        .max(8_400_000)
+        .refine(
+          (value) =>
+            (value.startsWith("data:image/") || value.startsWith("data:application/pdf;")) &&
+            value.includes(";base64,"),
+          { message: "expected a base64 data URL for an image or a PDF" },
+        ),
+    )
+    .min(2)
+    .max(6),
+  requestedProfile: ocrExtractionProfileSchema.default("TRADE_SUMMARY"),
+  accountId: uuidSchema.nullable().optional(),
+});
+export type OcrSetCreateInput = z.infer<typeof ocrSetCreateInputSchema>;
+
+export const ocrSetCreateResponseSchema = z.object({ set: ocrSetSchema });
+export type OcrSetCreateResponse = z.infer<typeof ocrSetCreateResponseSchema>;
+
+export const ocrSetResponseSchema = z.object({ set: ocrSetSchema });
+export type OcrSetResponse = z.infer<typeof ocrSetResponseSchema>;
+
+export const ocrSetPageQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(50).default(20),
+  cursor: z.string().max(256).optional(),
+});
+export type OcrSetPageQuery = z.infer<typeof ocrSetPageQuerySchema>;
+
+export const ocrSetPageResponseSchema = z.object({
+  items: z.array(ocrSetSchema).max(50),
+  nextCursor: z.string().max(256).nullable(),
+});
+export type OcrSetPageResponse = z.infer<typeof ocrSetPageResponseSchema>;
+
+/**
+ * Confirmation of the FUSED draft. Corrections are canonicalized against
+ * the fused fields with the SAME domain rules as the single-trade path.
+ * The explicit duplicate acknowledgments carry the same semantics as the
+ * single recognition confirm (V2 §58).
+ */
+export const ocrSetConfirmInputSchema = z.object({
+  corrections: ocrCorrectionRecordSchema,
+  accountId: uuidSchema.nullable().optional(),
+  acknowledgeDuplicateScreenshot: z.boolean().default(false),
+  acknowledgeDuplicateTrade: z.boolean().default(false),
+});
+export type OcrSetConfirmInput = z.infer<typeof ocrSetConfirmInputSchema>;
+
+export const ocrSetDeleteResponseSchema = z.object({ deleted: z.literal(true), id: uuidSchema });
+export type OcrSetDeleteResponse = z.infer<typeof ocrSetDeleteResponseSchema>;

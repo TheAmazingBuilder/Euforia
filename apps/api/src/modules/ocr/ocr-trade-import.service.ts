@@ -160,6 +160,12 @@ export class OcrTradeImportService {
     drafts?: ConfirmationDraft[];
     /** The user's explicit ACCOUNTS choice (ownership validated upstream). */
     accountId?: string | null;
+    /**
+     * V2 multi-screenshot — the dedup ref scope for a FUSED set confirm.
+     * When provided the externalRef becomes `ocr:<scopeLabel>` instead of
+     * `ocr:<recognitionId>` (audit context keeps the scope label too).
+     */
+    scopeLabel?: string;
   }): Promise<TradeImportOutcome> {
     const drafts: ConfirmationDraft[] =
       input.drafts ??
@@ -208,6 +214,7 @@ export class OcrTradeImportService {
         draftIndex: input.drafts ? draft.index : undefined,
         mergedFields: draft.mergedFields,
         accountId,
+        scopeLabel: input.scopeLabel,
       });
       if (outcome.tradeId) {
         if (tradeIds.length === 0) {
@@ -240,6 +247,8 @@ export class OcrTradeImportService {
     draftIndex: number | undefined;
     mergedFields: OcrExtractedField[];
     accountId: string;
+    /** V2 — set-scope external ref (`ocr:set:<id>`); undefined for single. */
+    scopeLabel?: string;
   }): Promise<{ tradeId: string | null; warnings: string[]; instrumentAssetClass: string | null }> {
     // Eligibility — the confirmed fields must resolve into a complete
     // trade fact set (§76 "validate fields"). Incomplete stays a CONFIRMED
@@ -264,10 +273,14 @@ export class OcrTradeImportService {
       return { ...outcome, instrumentAssetClass: null };
     }
 
-    const externalRef = this.externalRefOf(input.recognitionId, input.draftIndex);
-
-    // Duplicate check (§79 — reuse the existing external-ref mechanism):
-    // a live trade with this ref means the import already happened.
+    // V2 — the dedup ref: set scope (`ocr:set:<id>`) when the confirmation
+    // comes from a fused set, else the per-recognition/per-draft ref (§79 —
+    // reuse the existing external-ref mechanism either way).
+    const externalRef = input.scopeLabel !== undefined
+      ? `ocr:${input.scopeLabel}`
+      : this.externalRefOf(input.recognitionId, input.draftIndex);
+    // Duplicate check — a live trade with this ref means the import already
+    // happened.
     const existing = await this.tradesRepository.findLiveTradeByExternalRef(input.accountId, externalRef);
     if (existing !== null) {
       return { tradeId: existing.id, warnings: [], instrumentAssetClass: instrument.assetClass };
