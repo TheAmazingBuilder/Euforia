@@ -585,3 +585,23 @@ Stage Summary:
 - La « nouvelle base » est presque complète : typographie unifiée ✅ renames ✅ collapse header ✅ ACADEMY 4 entrées ✅ Tasky (titre, horizontal, scroller, touch) ✅ Events (filtres, tri, New Calendar, touch, extras) ✅ — tout vérifié par sondes dédiées, 5 suites vertes au head 880a5d1.
 - Restant : la page Profile « à l'identique » — les images fournies en IM ont été perdues par la compression de contexte (aucune trace disque) ; redemander les captures à l'utilisateur.
 - Reflet preview : au prochain restart plateforme, le serveur repartira directement sur le build 880a5d1 (stamp visible en bas à gauche).
+
+---
+Task ID: profile-replica-reference
+Agent: Super Z (main)
+Date: 2026-10-09 (IM — images Profile 01→04 re-fournies)
+
+Task: « Voici les images de profile » — répliquer à l'identique les 4 captures (en-tête identité + onglets Personal/Account/Security/Notifications), dernier item de la liste « nouvelle base ».
+
+Work Log:
+- SPÉC EXTRAITE DES 4 CAPTURES : (01) header avatar rond + badge caméra, nom + pill « Pro Member », sous-titre métier, meta email/localisation/« Joined March 2023 », bouton Edit Profile ; barre 4 onglets segmentée à pill active bordée. (02) Account : rangées séparées par hairlines — statut (badge vert Active), plan (Manage Subscription), visibilité (switch), export ; carte Danger Zone rouge avec Delete Account. (03) Security : Password (Change Password, icône clé), 2FA (badge Enabled + Configure), Login Notifications (switch), Active Sessions (View Sessions, icône bouclier). (04) Notifications : 5 switches — email ON, push OFF, marketing ON, weekly ON, security alerts verrouillé ON (« always enabled »).
+- CARTOGRAPHIE DONNÉES (réel d'abord, local pour le reste) : name/email/bio + avatar → PATCH /me existant (name splitté First/Last, rejoint au save, header synchronisé) ; extras de la référence (téléphone/métier/société/localisation/joinedAt seed « 2023-03-01 ») → document local cosmoz.profile.extras.v1 ; toggles préférences → cosmoz.profile.prefs.v1 ; Security tab → VRAIES données : useSecurityOverview (passwordLastChangedAt relatif « Last changed 34 days ago », état 2FA, sessions live + useRevokeSessions) ; Change Password et Configure → routage vers /security (le flow reauthToken complet y vit déjà) ; Export Data → téléchargement JSON réel (profil + extras + préférences) ; Delete Account → dialog focalisé avec saisie « DELETE » obligatoire (demo : requête simulée).
+- L'ANCIENNE PAGE (hero + stats + achievements + formulaire identity + appearance) est REMPLACÉE — la référence n'a pas ces sections ; le h1 module header standard est conservé (cohérence typographie demandée précédemment) ; le theme picker reste accessible via l'icône topbar + /settings.
+- SONDE verify-profile.js (59 checks, seed-agnostique — le nom/email sont dérivés du rendu et non codés en dur) : header complet, 4 onglets, formulaire pré-rempli + save désactivé si propre, flow PATCH (Probe → header sync → restore), focus Edit Profile sur first-name, Account (badge, switch + persistance, download réel attrapé via waitForEvent), danger (3 états de confirmation), Security (âge mot de passe réel, badge 2FA, dialog sessions avec 3 lignes réelles), Notifications (seeds exacts, persistance reload, security verrouillé), mobile 390px 0 overflow, light, 0 pageerror.
+- PIÈGE RÉCURRENT : le seed mock utilisateur du store est « Dev Trader » (pas « Alex Moreau » de l'auth-engine) → sonde rendue agnostique du seed ; et `cd X && cmd &` attache le cd au job de fond (2e fois) — réflexe : `cd X;` en instruction séparée.
+- VÉRIFICATIONS : tsc 0 · eslint 0 · build OK · profile **59/59** · régressions events 48/48, tasky 33/33, shell 10/10, tools 37/37, rebrand 17/17.
+- COMMITS : `b2afbdc` feat(profile) + captures profile-{desktop,mobile,light}.png (+ ce commit worklog).
+
+Stage Summary:
+- La liste « nouvelle base » de l'utilisateur est COMPLÈTE : typographie ✅ renames ✅ Profile répliqué ✅ collapse header ✅ ACADEMY 4 entrées ✅ Tasky ✅ Events ✅ — 6 suites vertes au head (59/48/33/10/37/17).
+- La preview servira ce build au prochain boot plateforme (stamp b2afbdc en bas à gauche).
