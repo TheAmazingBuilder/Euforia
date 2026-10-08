@@ -116,6 +116,8 @@ interface ChartGridToolbarProps {
   onLayoutChange: (layout: MultiChartLayout) => void;
   onCrosshairSyncChange: (value: boolean) => void;
   onTimeframeSyncChange: (value: boolean) => void;
+  /** Render as a borderless segment for embedding in the chart toolbar strip. */
+  bare?: boolean;
 }
 
 export function ChartGridToolbar(props: ChartGridToolbarProps) {
@@ -129,7 +131,11 @@ export function ChartGridToolbar(props: ChartGridToolbarProps) {
 
   return (
     <div
-      className="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-surface px-2.5 py-2"
+      className={cn(
+        props.bare
+          ? "flex flex-wrap items-center gap-2"
+          : "flex flex-wrap items-center gap-2 rounded-xl border border-border bg-surface px-2.5 py-2",
+      )}
       data-testid="chart-grid-toolbar"
       role="toolbar"
       aria-label={S.grid.toolbarAria}
@@ -192,9 +198,11 @@ export function ChartGridToolbar(props: ChartGridToolbarProps) {
         {props.timeframeSync ? <Link2 className="size-3.5" aria-hidden="true" /> : <Link2Off className="size-3.5" aria-hidden="true" />}
         {S.grid.timeframeSync}
       </button>
-      <span className="ml-auto hidden text-[11px] text-muted-foreground lg:block">
-        {S.grid.readonlyHint}
-      </span>
+      {!props.bare ? (
+        <span className="ml-auto hidden text-[11px] text-muted-foreground lg:block">
+          {S.grid.readonlyHint}
+        </span>
+      ) : null}
     </div>
   );
 }

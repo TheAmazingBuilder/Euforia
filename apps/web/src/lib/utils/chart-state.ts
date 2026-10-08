@@ -1,4 +1,6 @@
-import type { DrawingObject, IndicatorConfig, MarketInterval } from "@cosmoz/shared";
+import type { DrawingObject, IndicatorConfig, IndicatorKind, MarketInterval } from "@cosmoz/shared";
+
+import { INDICATOR_DEFAULTS } from "@/lib/utils/indicators";
 
 /**
  * Per-symbol persisted chart state (Session Live workspace) — shared by the
@@ -8,6 +10,25 @@ import type { DrawingObject, IndicatorConfig, MarketInterval } from "@cosmoz/sha
  */
 
 const STORE_KEY = "cosmoz.session-live.chart.v1";
+
+/**
+ * Indicators a FIRST visit opens with (nothing persisted yet): the
+ * TradingView-style starter template — volume histogram + RSI(14) — so the
+ * chart shows the panes traders expect instead of bare candles. Any user
+ * edit persists the per-symbol workspace, which then always wins.
+ * Ids are deterministic ("tpl-*"): stable across loads, and a later manual
+ * add of the same kind gets a fresh id (newId) — no collisions.
+ */
+const TEMPLATE_KINDS: readonly IndicatorKind[] = ["VOLUME", "RSI"];
+
+export function defaultIndicatorTemplate(): IndicatorConfig[] {
+  return TEMPLATE_KINDS.map((kind, index) => ({
+    id: `tpl-${kind.toLowerCase()}-${index}`,
+    kind,
+    visible: true,
+    params: { ...INDICATOR_DEFAULTS[kind] },
+  }));
+}
 
 export interface PersistedChartState {
   interval?: MarketInterval;

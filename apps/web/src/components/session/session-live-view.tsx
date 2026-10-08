@@ -59,7 +59,7 @@ import {
 import { useBrokerSession } from "@/lib/api/queries";
 import { useCandles, useFeedStatus, useLiveQuote, useLiveQuotes } from "@/lib/realtime/market";
 import { atrNow } from "@/lib/utils/indicators";
-import { loadPersistedChartState, persistChartState } from "@/lib/utils/chart-state";
+import { loadPersistedChartState, persistChartState, defaultIndicatorTemplate } from "@/lib/utils/chart-state";
 import { useI18n } from "@/i18n/i18n-provider";
 import type {
   BrokerPosition,
@@ -116,10 +116,14 @@ function SessionSkeleton() {
   return (
     <div className="space-y-4 sm:space-y-6" aria-busy="true" aria-label={S.view.loadingAria}>
       <Skeleton className="h-[72px] rounded-xl" />
-      <div className="grid gap-3 lg:grid-cols-[230px_minmax(0,1fr)_320px]">
-        <Skeleton className="hidden h-[480px] rounded-xl lg:block" />
-        <Skeleton className="h-[420px] rounded-xl sm:h-[500px]" />
-        <Skeleton className="hidden h-[480px] rounded-xl lg:block" />
+      <div className="space-y-3 sm:space-y-4">
+        <Skeleton className="h-12 rounded-xl" />
+        <Skeleton className="h-[420px] rounded-xl sm:h-[520px] xl:h-[640px]" />
+        <div className="grid gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <Skeleton className="h-[230px] rounded-xl" />
+          <Skeleton className="h-[230px] rounded-xl" />
+          <Skeleton className="h-[230px] rounded-xl" />
+        </div>
       </div>
     </div>
   );
@@ -211,7 +215,7 @@ function Workspace(props: WorkspaceProps) {
   // symbol), persists via a write-only effect.
   const seeded = loadPersistedChartState(symbol);
   const [interval, setIntervalState] = React.useState<MarketInterval>(seeded.interval ?? "5m");
-  const [indicators, setIndicators] = React.useState<IndicatorConfig[]>(seeded.indicators ?? []);
+  const [indicators, setIndicators] = React.useState<IndicatorConfig[]>(seeded.indicators ?? defaultIndicatorTemplate());
   const [drawings, setDrawings] = React.useState<DrawingObject[]>(seeded.drawings ?? []);
   const [tool, setTool] = React.useState<DrawingKind | null>(null);
   const [levelsVisible, setLevelsVisible] = React.useState(false);
@@ -261,53 +265,54 @@ function Workspace(props: WorkspaceProps) {
 
   return (
     <>
-      <div className="grid gap-3 sm:gap-4 lg:grid-cols-[230px_minmax(0,1fr)_320px]">
-        {/* Left rail — market + tools */}
-        <aside className="space-y-3" aria-label={S.view.leftRailAria} data-testid="session-left-rail">
-          <section className="rounded-xl border border-border bg-surface p-3">
-            <p className="ledger-label mb-1.5">{S.labels.timeframe}</p>
-            <div className="flex flex-wrap gap-1" role="group" aria-label={S.labels.timeframe}>
-              {TIMEFRAMES.map((item) => (
-                <button
-                  key={item}
-                  type="button"
-                  aria-pressed={interval === item}
-                  data-testid={`tf-${item}`}
-                  title={props.multi.timeframeSync ? `${S.view.timeframeSyncTitle} — ${item}` : item}
-                  onClick={() => applyIntervalToAll(item)}
-                  className={cn(
-                    "min-w-[38px] rounded-md border px-1.5 py-1 font-mono text-xs font-semibold transition-colors",
-                    interval === item
-                      ? "border-accent/60 bg-accent/10 text-accent"
-                      : "border-border text-muted-foreground hover:border-accent/40 hover:text-foreground",
-                  )}
-                >
-                  {item}
-                </button>
-              ))}
-            </div>
-          </section>
+      <div className="space-y-2 sm:space-y-3">
+        {/* Chart toolbar — a full-width strip above the chart: timeframe,
+            indicators, drawing tools, multi-chart layout, session timer.
+            The chart itself takes the ENTIRE remaining width (no side rails). */}
+        <div
+          className="flex flex-wrap items-center gap-x-2 gap-y-2 rounded-xl border border-border bg-surface px-2.5 py-2"
+          data-testid="session-chart-toolbar"
+          role="toolbar"
+          aria-label={S.view.chartToolbarAria}
+        >
+          <span className="ledger-label shrink-0 pr-1">{S.labels.timeframe}</span>
+          <div className="flex flex-wrap items-center gap-1" role="group" aria-label={S.labels.timeframe}>
+            {TIMEFRAMES.map((item) => (
+              <button
+                key={item}
+                type="button"
+                aria-pressed={interval === item}
+                data-testid={`tf-${item}`}
+                title={props.multi.timeframeSync ? `${S.view.timeframeSyncTitle} — ${item}` : item}
+                onClick={() => applyIntervalToAll(item)}
+                className={cn(
+                  "min-w-[38px] rounded-md border px-1.5 py-1 font-mono text-xs font-semibold transition-colors",
+                  interval === item
+                    ? "border-accent/60 bg-accent/10 text-accent"
+                    : "border-border text-muted-foreground hover:border-accent/40 hover:text-foreground",
+                )}
+              >
+                {item}
+              </button>
+            ))}
+          </div>
 
-          <section className="space-y-2 rounded-xl border border-border bg-surface p-3">
-            <p className="ledger-label">{S.view.tools}</p>
-            <IndicatorsPopover indicators={indicators} onChange={setIndicators} />
-            <DrawingToolbar
-              tool={tool}
-              onToolChange={setTool}
-              drawings={drawings}
-              onDrawingDelete={(id) => setDrawings((current) => current.filter((item) => item.id !== id))}
-              onDrawingsClear={() => setDrawings([])}
-              onUndo={() => setDrawings((current) => current.slice(0, -1))}
-            />
-            <div className="border-t border-border pt-2">
-              <SessionTimer />
-            </div>
-          </section>
-        </aside>
+          <span className="mx-1 hidden h-5 w-px bg-border sm:block" aria-hidden="true" />
 
-        {/* Center — the analysis charts (master + synchronized observation panes) */}
-        <div data-testid="session-chart-area" className="min-w-0 space-y-2">
+          <IndicatorsPopover indicators={indicators} onChange={setIndicators} />
+          <DrawingToolbar
+            tool={tool}
+            onToolChange={setTool}
+            drawings={drawings}
+            onDrawingDelete={(id) => setDrawings((current) => current.filter((item) => item.id !== id))}
+            onDrawingsClear={() => setDrawings([])}
+            onUndo={() => setDrawings((current) => current.slice(0, -1))}
+          />
+
+          <span className="mx-1 hidden h-5 w-px bg-border md:block" aria-hidden="true" />
+
           <ChartGridToolbar
+            bare
             layout={effectiveMulti.layout}
             crosshairSync={effectiveMulti.crosshairSync}
             timeframeSync={effectiveMulti.timeframeSync}
@@ -315,6 +320,14 @@ function Workspace(props: WorkspaceProps) {
             onCrosshairSyncChange={(value) => props.onMultiChange((current) => ({ ...current, crosshairSync: value }))}
             onTimeframeSyncChange={(value) => props.onMultiChange((current) => ({ ...current, timeframeSync: value }))}
           />
+
+          <div className="ml-auto flex items-center border-l border-border pl-3">
+            <SessionTimer />
+          </div>
+        </div>
+
+        {/* The charts — master + synchronized observation panes, FULL WIDTH */}
+        <div data-testid="session-chart-area" className="min-w-0">
           <ChartGrid
             master={
               <AnalysisChart
@@ -336,7 +349,7 @@ function Workspace(props: WorkspaceProps) {
                 onToolDone={() => setTool(null)}
                 syncGroup={chartSyncGroupFor(effectiveMulti)}
                 heightClass={
-                  effectiveMulti.layout > 1 ? "h-[300px] sm:h-[380px] xl:h-[430px]" : "h-[360px] sm:h-[460px] xl:h-[560px]"
+                  effectiveMulti.layout > 1 ? "h-[300px] sm:h-[380px] xl:h-[430px]" : "h-[420px] sm:h-[520px] xl:h-[640px]"
                 }
               />
             }
@@ -366,8 +379,12 @@ function Workspace(props: WorkspaceProps) {
           />
         </div>
 
-        {/* Right rail — context + levels + monitoring */}
-        <aside className="space-y-3" aria-label={S.view.rightRailAria} data-testid="session-right-rail">
+        {/* Market context — responsive panel grid under the full-width chart */}
+        <div
+          className="grid gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-3"
+          aria-label={S.view.contextGridAria}
+          data-testid="session-context-grid"
+        >
           <MarketContextPanel
             symbol={symbol}
             digits={digits}
@@ -392,7 +409,7 @@ function Workspace(props: WorkspaceProps) {
           {/* PRIVATE WS stream (user:<id> room) — live mark-to-market, read only */}
           <PrivatePositionsStream />
           <SymbolPositions trades={props.symbolTrades} instrument={instrument} quote={quote} />
-        </aside>
+        </div>
       </div>
 
       {/* Bottom context strip */}

@@ -122,43 +122,41 @@ export function SessionTimer() {
   }, [running, maxMinutes, capped, S]);
 
   return (
-    <div className="space-y-1" data-testid="session-timer" data-running={running ? "true" : "false"}>
-      <p className="ledger-label">{S.timer.label}</p>
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={toggle}
-          aria-label={running ? S.timer.stopAria : S.timer.startAria}
-          data-testid="session-timer-toggle"
-          className={cn(
-            "inline-flex size-8 items-center justify-center rounded-full border transition-colors",
-            running
-              ? "border-loss/40 bg-loss/10 text-loss hover:bg-loss/20"
-              : "border-accent/40 bg-accent/10 text-accent hover:bg-accent/20",
-          )}
-        >
-          {running ? <Pause className="size-3.5" aria-hidden="true" /> : <Play className="size-3.5" aria-hidden="true" />}
-        </button>
-        <span
-          data-testid="session-timer-elapsed"
-          className={cn(
-            "font-mono text-lg font-semibold tabular-nums leading-none",
-            capped ? "text-warning" : running ? "text-foreground" : "text-muted-foreground",
-          )}
-        >
-          {nowMs === null ? "--:--:--" : formatElapsed(elapsedSec)}
-        </span>
-        {capped ? (
-          <AlertTriangle className="size-4 text-warning" aria-hidden="true" data-testid="session-timer-capped" />
-        ) : (
-          <Timer className="size-4 text-muted-foreground/60" aria-hidden="true" />
+    <div className="flex items-center gap-2" data-testid="session-timer" data-running={running ? "true" : "false"}>
+      <p className="ledger-label hidden 2xl:block">{S.timer.label}</p>
+      <button
+        type="button"
+        onClick={toggle}
+        aria-label={running ? S.timer.stopAria : S.timer.startAria}
+        data-testid="session-timer-toggle"
+        className={cn(
+          "inline-flex size-8 shrink-0 items-center justify-center rounded-full border transition-colors",
+          running
+            ? "border-loss/40 bg-loss/10 text-loss hover:bg-loss/20"
+            : "border-accent/40 bg-accent/10 text-accent hover:bg-accent/20",
         )}
-      </div>
+      >
+        {running ? <Pause className="size-3.5" aria-hidden="true" /> : <Play className="size-3.5" aria-hidden="true" />}
+      </button>
+      <span
+        data-testid="session-timer-elapsed"
+        className={cn(
+          "font-mono text-base font-semibold tabular-nums leading-none",
+          capped ? "text-warning" : running ? "text-foreground" : "text-muted-foreground",
+        )}
+      >
+        {nowMs === null ? "--:--:--" : formatElapsed(elapsedSec)}
+      </span>
+      {capped ? (
+        <AlertTriangle className="size-4 shrink-0 text-warning" aria-hidden="true" data-testid="session-timer-capped" />
+      ) : (
+        <Timer className="size-4 shrink-0 text-muted-foreground/60" aria-hidden="true" />
+      )}
       <Select value={maxMinutes === null ? "off" : String(maxMinutes)} onValueChange={changeMax}>
         <SelectTrigger
           size="sm"
           aria-label={S.timer.maxAria}
-          className="h-6 w-[104px] text-[11px]"
+          className="h-7 w-[96px] text-[11px]"
           data-testid="session-timer-max"
         >
           <SelectValue placeholder={S.timer.capPlaceholder} />

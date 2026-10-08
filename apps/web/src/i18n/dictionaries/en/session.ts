@@ -66,10 +66,9 @@ export const sessionDict = {
     title: "Session Live",
     subtitle:
       "The real-time analytical cockpit: analyze the market, watch read-only accounts, document the session. Execution stays external (MT5 / TradingView) — nothing here can place or modify an order.",
-    leftRailAria: "Market and tools",
     timeframeSyncTitle: "Applies to every chart (timeframe sync on)",
-    tools: "Tools",
-    rightRailAria: "Session context",
+    chartToolbarAria: "Chart toolbar — timeframe, indicators, drawing tools, layouts and session timer",
+    contextGridAria: "Market context panels",
     openPositions: "Open positions",
     openPositionsAria: "Open positions",
     sessionSidebarAria: "Session sidebar",

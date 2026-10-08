@@ -65,7 +65,7 @@ export function IndicatorsPopover({ indicators, onChange }: IndicatorsPopoverPro
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="outline" size="sm" aria-label={S.toolRail.indicatorsAria} data-testid="indicators-button" className="w-full justify-start">
+        <Button variant="outline" size="sm" aria-label={S.toolRail.indicatorsAria} data-testid="indicators-button" className="justify-start">
           {S.toolRail.indicators}
           {indicators.length > 0 ? (
             <span className="ml-auto rounded-full border border-accent/40 bg-accent/10 px-1.5 text-[10px] font-semibold text-accent">
@@ -74,7 +74,7 @@ export function IndicatorsPopover({ indicators, onChange }: IndicatorsPopoverPro
           ) : null}
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="start" side="right" className="w-[300px] p-3" data-testid="indicators-popover">
+      <PopoverContent align="start" side="bottom" className="w-[300px] p-3" data-testid="indicators-popover">
         <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{S.toolRail.addIndicator}</p>
         <div className="mt-1.5 flex flex-wrap gap-1">
           {INDICATOR_ORDER.map((kind) => (
@@ -180,7 +180,7 @@ export function DrawingToolbar({ tool, onToolChange, drawings, onDrawingDelete, 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="outline" size="sm" aria-label={S.toolRail.drawingsAria} data-testid="drawings-button" className="w-full justify-start">
+        <Button variant="outline" size="sm" aria-label={S.toolRail.drawingsAria} data-testid="drawings-button" className="justify-start">
           {S.toolRail.drawings}
           {drawings.length > 0 ? (
             <span className="ml-auto rounded-full border border-warning/40 bg-warning/10 px-1.5 text-[10px] font-semibold text-warning">
@@ -189,7 +189,7 @@ export function DrawingToolbar({ tool, onToolChange, drawings, onDrawingDelete, 
           ) : null}
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="start" side="right" className="w-[280px] p-3" data-testid="drawings-popover">
+      <PopoverContent align="start" side="bottom" className="w-[280px] p-3" data-testid="drawings-popover">
         <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{S.toolRail.placeOnChart}</p>
         <div className="mt-1.5 grid grid-cols-4 gap-1" role="toolbar" aria-label={S.toolRail.drawingsAria}>
           {DRAWING_TOOLS.map((meta) => {
