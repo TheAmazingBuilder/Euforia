@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronRight, GraduationCap, Menu, Search } from "lucide-react";
+import { ChevronRight, GraduationCap, Menu, PanelLeft, Search } from "lucide-react";
 
 import { useTrades } from "@/lib/api/queries";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ import { UserAvatar } from "@/components/layout/user-avatar";
 import { openCommandPalette } from "@/lib/hooks/use-command-palette";
 import { ToGradeQueue } from "@/components/trades/to-grade-queue";
 import { getBreadcrumb } from "@/lib/navigation";
+import { toggleSidebarCollapsed, isSidebarCollapsed, subscribeSidebar } from "@/lib/utils/sidebar";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/i18n/i18n-provider";
 
@@ -30,6 +31,13 @@ type TopbarProps = {
 export function Topbar({ onMenuClick }: TopbarProps) {
   const pathname = usePathname();
   const { dict } = useI18n();
+  // Sidebar collapse state — same external store as the AppShell rail. The
+  // toggle affordance is THIS header icon (the rail itself has no button).
+  const collapsed = React.useSyncExternalStore(
+    subscribeSidebar,
+    isSidebarCollapsed,
+    () => false,
+  );
   // Breadcrumb labels resolve through the active dictionary (EN fallback for
   // special paths like /profile handled by getPageTitle's fallback map).
   const crumbs = getBreadcrumb(pathname).map((crumb) => ({
@@ -81,6 +89,22 @@ export function Topbar({ onMenuClick }: TopbarProps) {
       >
         <Menu className="size-5" aria-hidden="true" />
       </Button>
+
+      {/* Desktop sidebar toggle — the collapse icon lives in the header
+          (reference: panel glyph before the breadcrumb, separated by a
+          hairline). Visible affordance only on lg+, where the rail exists. */}
+      <Button
+        variant="ghost"
+        size="icon"
+        className="hidden lg:inline-flex"
+        onClick={toggleSidebarCollapsed}
+        aria-expanded={!collapsed}
+        aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        data-testid="sidebar-toggle"
+      >
+        <PanelLeft className="size-[18px]" aria-hidden="true" />
+      </Button>
+      <span aria-hidden="true" className="hidden h-5 w-px bg-border lg:block" />
 
       {/* Breadcrumb — app root first, then the active page */}
       <nav aria-label="Breadcrumb" data-testid="breadcrumb" className="min-w-0">

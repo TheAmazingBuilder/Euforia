@@ -1,9 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
 import {
   Sheet,
   SheetContent,
@@ -24,9 +22,10 @@ import {
 } from "@/lib/utils/sidebar";
 
 /**
- * Application shell: fixed desktop sidebar (240px <-> 72px, persisted),
- * sticky topbar, mobile sheet navigation and the mobile bottom nav + FAB.
- * Server pages are rendered through `children`, so they stay Server Components.
+ * Application shell: fixed desktop sidebar (240px <-> 72px, persisted —
+ * toggled from the header icon, not from inside the rail), sticky topbar,
+ * mobile sheet navigation and the mobile bottom nav + FAB. Server pages are
+ * rendered through `children`, so they stay Server Components.
  */
 export function AppShell({ children }: { children: React.ReactNode }) {
   const collapsed = React.useSyncExternalStore(
@@ -41,7 +40,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* Desktop sidebar */}
+      {/* Desktop sidebar — the collapse affordance lives in the Topbar. */}
       <aside
         className={`fixed inset-y-0 left-0 z-40 hidden flex-col border-r border-border bg-surface transition-[width] duration-200 ease-in-out lg:flex ${
           collapsed ? "w-[72px]" : "w-[240px]"
@@ -51,27 +50,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
         <div className="flex-1 overflow-y-auto">
           <SidebarNav collapsed={collapsed} />
-        </div>
-
-        <div className="border-t border-border p-2">
-          <Button
-            variant="ghost"
-            onClick={toggleSidebarCollapsed}
-            aria-expanded={!collapsed}
-            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            className={`w-full ${
-              collapsed
-                ? "justify-center px-0"
-                : "justify-start gap-2 px-2.5 text-muted-foreground"
-            }`}
-          >
-            {collapsed ? (
-              <PanelLeftOpen className="size-4" aria-hidden="true" />
-            ) : (
-              <PanelLeftClose className="size-4" aria-hidden="true" />
-            )}
-            {!collapsed && <span className="truncate text-sm">Collapse</span>}
-          </Button>
         </div>
       </aside>
 
