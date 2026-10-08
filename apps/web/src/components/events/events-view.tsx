@@ -128,10 +128,12 @@ export function EventsView() {
 
   // Hydrate from local storage after mount, then persist on every change.
   React.useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect -- one-shot hydration-safe local load: the server renders the seed, the client swaps in the persisted calendar right after mount */
     const state = loadEventsState();
     setCalendars(state.calendars);
     setEvents(state.events);
     setHydrated(true);
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, []);
   React.useEffect(() => {
     if (!hydrated) return;
@@ -487,9 +489,12 @@ export function EventsView() {
             {monthLabel(viewYear, viewMonth)}
           </h2>
 
-          <div className="ml-auto flex items-center gap-1.5">
+          {/* min-w-0 + flex-wrap: on narrow screens the chips row wraps under
+              the month label and scrolls horizontally instead of stretching
+              the toolbar past the viewport (390px regression). */}
+          <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-1.5">
             {/* Mobile filter chips (parity with the panel groups) */}
-            <div className="flex max-w-full items-center gap-1.5 overflow-x-auto lg:hidden" data-testid="events-chips">
+            <div className="flex max-w-full min-w-0 items-center gap-1.5 overflow-x-auto lg:hidden" data-testid="events-chips">
               {calendars.map((calendar) => (
                 <button
                   key={calendar.id}

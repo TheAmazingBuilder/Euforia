@@ -181,6 +181,7 @@ export function TaskyView() {
 
   // Hydrate from local storage after mount (hydration-safe), then persist.
   React.useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot hydration-safe local load: the server renders the seed, the client swaps in the persisted board right after mount
     setColumns(loadBoard());
     setHydrated(true);
   }, []);
