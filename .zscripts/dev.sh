@@ -51,6 +51,13 @@ fi
 
 # ── 1. market-service (:3003) ───────────────────────────────────────────────
 if ! curl -sf --max-time 2 http://127.0.0.1:3003/health > /dev/null 2>&1; then
+  # Fresh archives ship WITHOUT mini-service node_modules (the pnpm install
+  # above only covers the workspace) — bun start dies on missing socket.io
+  # (incident 2026-10-08: silent boot failure left the chart in its error
+  # card for the whole session). bun install is idempotent and fast when
+  # node_modules already exists.
+  log "installing market-service dependencies"
+  (cd "$ROOT/mini-services/market-service" && "$BUN" install >> /tmp/cosmoz-market.log 2>&1)
   log "starting market-service on :3003"
   (cd "$ROOT/mini-services/market-service" && exec "$BUN" --hot index.ts) \
     > /tmp/cosmoz-market.log 2>&1 &

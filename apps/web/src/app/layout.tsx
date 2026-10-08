@@ -1,6 +1,7 @@
 import { Inter, Schibsted_Grotesk, JetBrains_Mono } from "next/font/google";
 import type { Metadata, Viewport } from "next";
 import { Toaster } from "@/components/ui/sonner";
+import { BuildStamp } from "@/components/layout/build-stamp";
 import { ThemeProvider } from "@/components/layout/theme-provider";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { MockProvider } from "@/components/providers/mock-provider";
@@ -59,6 +60,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </QueryProvider>
           <Toaster position="bottom-right" mobileOffset={{ bottom: 84 }} />
         </ThemeProvider>
+        <BuildStamp />
         <ServiceWorkerRegister />
       </body>
     </html>
