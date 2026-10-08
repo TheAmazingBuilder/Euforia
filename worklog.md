@@ -525,3 +525,23 @@ Stage Summary:
 - Le cockpit Session Live est passé à l'expérience TradingView : chart PLEINE LARGEUR (plus de rails latéraux), RSI(14) + histogramme de volume visibles dès la première visite, drawing tools et multi-chart dans une barre d'outils au-dessus du chart, panneaux de contexte en grille dessous.
 - 1 commit de feature + 1 commit worklog ; toutes les suites vertes (20/20 · 51/51 · 38/38 · 17/17), tsc/eslint/build OK.
 - Restes connus : session-view.tsx + price-chart.tsx (ancienne station non montée) toujours présents — code mort documenté, nettoyage à l'audit suivant.
+
+---
+Task ID: post-restart-recovery
+Agent: Super Z (main)
+Date: 2026-10-08 (IM — « la preview ne reflète pas notre travail d'hier »)
+
+Task: Restaurer la preview après le restart de la sandbox — l'utilisateur voyait une app ne reflétant pas la livraison charts committée (19451c6 + 7768de8, tree propre vérifié).
+
+Work Log:
+- ÉTAT DÉPART : git log confirme les 3 commits cités intacts (7839589 / 19451c6 / 7768de8 = HEAD), tree propre → le CODE n'a jamais été perdu ; problème purement runtime.
+- DIAGNOSTIC LONG : la sonde verify-session-charts passait 9/20 puis timeout sur add-EMA ; bissect 7/7 kinds → tout ajout d'indicateur « tue le chart ». Pistes éliminées une à une : corruption fichiers (FAUSSE ALERTE — le canal d'affichage des outils avale les séquences `[h`/`[m`/`me`, preuve par char-codes 0x5b ; tsc --noEmit --incremental false EXIT=0), root-unmount React (CDP Runtime.exceptionThrown : zéro exception ; DebugErrorBoundary : n'attrape rien ; fibres intactes), suspension (aucun useSuspenseQuery/lazy/loading.tsx), bougies vides (crash persiste avec données mock injectées via route interception).
+- VERDICT : MutationObserver sur <main> → 0 removal + innerHTML 93k caractères INTACT au moment du « crash » → le composant AnalysisChart se SUBSTITUE lui-même par sa carte d'erreur (`if (isError)` sans data-testid=analysis-chart) quand la query useCandles (proxy :3003, retry: 2) passe en erreur — le service marchand :3003 (bun, mini-services/market-service) était MORT après le restart (ECONNREFUSED + node_modules effacés). Hier le même service avait dû être relancé (déjà documenté) — le restart de sandbox ne persiste ni les processus ni node_modules non-trackés.
+- FIX : `bun install` + relance market-service → :3003 LISTEN. 
+- VÉRIFICATIONS POST-FIX : verify-session-charts **20/20** (template VOLUME+RSI, EMA add/remove, HLINE drawing, layout 2, mobile 390, light, zéro pageerror/HTTP≥400) · verify-recognition **51/51** (module OCR en mock mode sans sidecar : OK). Dev server :3100 de debug tué, fichiers de debug supprimés, page.tsx restauré.
+- LEÇON INFRA : chaque restart de sandbox exige — (1) relancer mini-services/market-service (`cd mini-services/market-service && bun install && bun index.ts`), (2) `next build/start` est géré par le supervisor (BUILD_ID 12:53). Le service OCR sidecar (:3004) exige OCR_SERVICE_TOKEN partagé avec l'API Nest : non requis pour la preview (web en mock MSW), à remonter si un jour l'API réelle est branchée.
+
+Stage Summary:
+- Le travail d'hier était INTACT (code committé + build servi) ; seule l'infra runtime manquait. La preview :3000 sert désormais l'expérience charts complète : 20/20 · 51/51 vertes.
+- Artifacts : captures session-charts-* et recognition-* régénérées sur l'état fonctionnel (commit de rafraîchissement).
+- Ne pas rejouer ce diagnostic : si la preview semble « ne rien montrer » après un restart sandbox, TESTER D'ABORD `curl localhost:3000/candles?XTransformPort=3003&symbol=BOOM500&interval=5m&limit=5` (AUTH_REQUIRED attendu = service vivant ; ECONNREFUSED/500 = relancer le market-service).
