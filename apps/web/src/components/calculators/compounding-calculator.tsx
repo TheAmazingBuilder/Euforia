@@ -246,7 +246,7 @@ export function CompoundingCalculator() {
           aria-live="polite"
         >
           <header className="flex items-center justify-between gap-3 border-b border-border/70 px-4 py-3 sm:px-5">
-            <h2 className="ledger-label">{T.overview.kicker.replace(/^Tools · /, "")}</h2>
+            <h2 className="ledger-label">{T.overview.kicker}</h2>
             {copyPayload ? (
               <CopyButton
                 payload={copyPayload}

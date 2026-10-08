@@ -66,10 +66,10 @@ async function ensureLoggedIn(page, context) {
       .isVisible()
       .catch(() => false);
     await check("TOOLS section title visible", toolsSectionVisible);
-    const lotSizeLink = page.getByRole("link", { name: "Lot Size Calculator" }).first();
-    const compoundingLink = page.getByRole("link", { name: "Compounding Calculator" }).first();
-    await check("Lot Size Calculator link", await lotSizeLink.isVisible().catch(() => false));
-    await check("Compounding Calculator link", await compoundingLink.isVisible().catch(() => false));
+    const lotSizeLink = page.getByRole("link", { name: "Lot", exact: true }).first();
+    const compoundingLink = page.getByRole("link", { name: "Interest", exact: true }).first();
+    await check("Lot link", await lotSizeLink.isVisible().catch(() => false));
+    await check("Interest link", await compoundingLink.isVisible().catch(() => false));
 
     // ── 2. /tools redirect ─────────────────────────────────────────────────
     console.log("\n[2] /tools redirect");
@@ -77,11 +77,14 @@ async function ensureLoggedIn(page, context) {
     await page.waitForTimeout(1500);
     await check("redirected to /tools/lot-size", page.url().includes("/tools/lot-size"), page.url());
 
-    // ── 3. Lot Size — console header + defaults ────────────────────────────
-    console.log("\n[3] Lot Size — header + defaults");
+    // ── 3. Lot — standard header + defaults ──────────────────────────
+    console.log("\n[3] Lot — header + defaults");
     await page.goto(`${BASE}/tools/lot-size`, { waitUntil: "domcontentloaded", timeout: 60000 });
     await page.waitForTimeout(1500);
-    await check("console meta visible", await page.locator('[data-testid="lotsize-console-meta"]').isVisible().catch(() => false));
+    await check(
+      "standard h1 present",
+      (await page.locator("h1").first().innerText().catch(() => "")) === "Lot",
+    );
     await check("instrument select present", await page.locator('[data-testid="lotsize-instrument"]').isVisible().catch(() => false));
     await check(
       "XAUUSD default",
@@ -148,7 +151,6 @@ async function ensureLoggedIn(page, context) {
     console.log("\n[6] Compounding — spec vector");
     await page.goto(`${BASE}/tools/compounding`, { waitUntil: "domcontentloaded", timeout: 60000 });
     await page.waitForTimeout(1800);
-    await check("console meta visible", await page.locator('[data-testid="comp-console-meta"]').isVisible().catch(() => false));
     const summaryText = await page.locator('[data-testid="comp-summary"]').innerText();
     await check("initial $1,000.00", summaryText.includes("1,000.00"), "");
     await check("final $2,653.30", summaryText.includes("2,653.30"), "");
@@ -213,7 +215,7 @@ async function ensureLoggedIn(page, context) {
     // ── 10. Sidebar navigation through the section ─────────────────────────
     console.log("\n[10] Sidebar navigation");
     await ensureLoggedIn(page);
-    await page.getByRole("link", { name: "Compounding Calculator" }).first().click();
+    await page.getByRole("link", { name: "Interest", exact: true }).first().click();
     await page.waitForTimeout(1200);
     await check("sidebar navigates to compounding", page.url().includes("/tools/compounding"), page.url());
   } catch (error) {

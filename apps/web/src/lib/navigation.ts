@@ -74,7 +74,7 @@ export const SIDEBAR_ITEMS: NavItem[] = [
   },
   {
     href: "/recognition",
-    label: "Import & Recognition",
+    label: "Recognition",
     icon: FileScan,
     description:
       "Import a trading screenshot, review what the engine recognized — every field carries its confidence — and confirm what enters the journal.",
@@ -109,14 +109,14 @@ export const SIDEBAR_ITEMS: NavItem[] = [
   },
   {
     href: "/tools/lot-size",
-    label: "Lot Size Calculator",
+    label: "Lot",
     icon: Scale,
     description:
       "Size positions from your risk budget: balance, risk %, entry, stop and the instrument's specifications — with the full calculation breakdown.",
   },
   {
     href: "/tools/compounding",
-    label: "Compounding Calculator",
+    label: "Interest",
     icon: TrendingUp,
     description:
       "Project account growth across compounding periods — period by period, with the full schedule and growth curve.",

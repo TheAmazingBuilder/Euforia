@@ -55,7 +55,7 @@ export function recognitionFieldLabel(S: RecognitionDict, field: string): string
 
 export const recognitionDict = {
   nav: {
-    title: "Import & Recognition",
+    title: "Recognition",
   },
 
   tabs: {
@@ -74,14 +74,6 @@ export const recognitionDict = {
     heroModesTitle: "Three recognition modes",
     heroModesHint: "Pick a mode after uploading — the engine adapts what it reads.",
     privacy: "Your screenshot is processed securely and is only visible to you.",
-    meta: {
-      modesLabel: "Recognition modes",
-      modesValue: "Trade · Account · Chart",
-      stagesLabel: "Pipeline stages",
-      stagesValue: "Upload → confirm",
-      guardLabel: "Duplicate guard",
-      guardValue: "Perceptual hash",
-    },
     stats: {
       analyzed: "Screenshots analyzed",
       confirmed: "Confirmed imports",
@@ -540,7 +532,7 @@ export const recognitionDict = {
   },
 
   analytics: {
-    cardTitle: "Import & Recognition quality",
+    cardTitle: "Recognition quality",
     cardHint: "How your screenshot imports perform over the last 30 days.",
     uploads: "Uploads",
     confirmed: "Confirmed",

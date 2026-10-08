@@ -14,15 +14,6 @@ export type ToolsDict = Dictionary["tools"];
 
 export const toolsDict = {
   lotSize: {
-    overview: {
-      kicker: "Tools · Position sizing",
-      metaModes: "Inputs",
-      metaModesValue: "Balance · Risk · Entry · Stop · Target",
-      metaModel: "Model",
-      metaModelValue: "Risk-budget sizing · floored to volume step",
-      metaGuard: "Guard",
-      metaGuardValue: "No silent clamping · explicit status",
-    },
     form: {
       section: "Trade parameters",
       instrument: "Instrument",
@@ -95,13 +86,7 @@ export const toolsDict = {
 
   compounding: {
     overview: {
-      kicker: "Tools · Growth projection",
-      metaModel: "Model",
-      metaModelValue: "A = P × (1 + r)ⁿ — gain per period, compounded",
-      metaRange: "Range",
-      metaRangeValue: "1–1 000 periods · −100% to +10 000%",
-      metaGuard: "Guard",
-      metaGuardValue: "Full-precision loop · overflow guard",
+      kicker: "Growth projection",
     },
     form: {
       section: "Projection parameters",
