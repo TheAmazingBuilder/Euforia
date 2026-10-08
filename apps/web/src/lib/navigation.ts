@@ -2,6 +2,7 @@ import {
   Activity,
   BookOpen,
   CalendarDays,
+  CalendarRange,
   ChartColumn,
   Cable,
   FileScan,
@@ -16,6 +17,7 @@ import {
   Scale,
   Settings,
   ShieldCheck,
+  SquareKanban,
   TrendingUp,
   type LucideIcon,
 } from "lucide-react";
@@ -108,6 +110,20 @@ export const SIDEBAR_ITEMS: NavItem[] = [
       "Your personal trading knowledge workspace: notes, ideas, research and documentation — connected to your trades, strategies and lessons.",
   },
   {
+    href: "/events",
+    label: "Events",
+    icon: CalendarRange,
+    description:
+      "Your trading calendar: sessions, economic events and personal deadlines across the calendars you define — drag, filter and plan month by month.",
+  },
+  {
+    href: "/tasky",
+    label: "Tasky",
+    icon: SquareKanban,
+    description:
+      "Your trading kanban: plan the work around your edge — studies, routines, reviews — and drag each card from backlog to done.",
+  },
+  {
     href: "/tools/lot-size",
     label: "Lot",
     icon: Scale,
@@ -178,7 +194,7 @@ export const NAV_SECTIONS: NavSection[] = [
   },
   {
     title: "Academy",
-    hrefs: ["/academy", "/nofy"],
+    hrefs: ["/academy", "/nofy", "/events", "/tasky"],
   },
   {
     title: "Tools",
