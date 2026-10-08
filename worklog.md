@@ -545,3 +545,19 @@ Stage Summary:
 - Le travail d'hier était INTACT (code committé + build servi) ; seule l'infra runtime manquait. La preview :3000 sert désormais l'expérience charts complète : 20/20 · 51/51 vertes.
 - Artifacts : captures session-charts-* et recognition-* régénérées sur l'état fonctionnel (commit de rafraîchissement).
 - Ne pas rejouer ce diagnostic : si la preview semble « ne rien montrer » après un restart sandbox, TESTER D'ABORD `curl localhost:3000/candles?XTransformPort=3003&symbol=BOOM500&interval=5m&limit=5` (AUTH_REQUIRED attendu = service vivant ; ECONNREFUSED/500 = relancer le market-service).
+
+---
+Task ID: preview-verification-aid
+Agent: Super Z (main)
+Date: 2026-10-08 (IM — « rien n'a changé »)
+
+Task: L'utilisateur rapporte que la preview ne change toujours pas malgré le fix market-service.
+
+Work Log:
+- ÉTAT SERVEUR RE-VÉRIFIÉ : :3000 (next start prod) + :3003 (market-service) up, /candles → 401 AUTH_REQUIRED (service vivant), gateway :81 (Caddy) sert le HTML de l'app actuelle, sondes 20/20. Le serveur est certain de servir le travail d'hier → le décalage est côté lien navigateur (ancien bot-id) ou cache client persistant.
+- BOOT HOOK LUS (/start.sh + .zscripts/dev.sh) : l'archive repo.tar ne contient PAS les node_modules des mini-services → au boot, market-service crashait sur socket.io manquant (cosmoz-market.log) — cause racine de l'incident, désormais corrigée dans dev.sh (bun install avant start, idempotent).
+- BUILD STAMP : src/components/layout/build-stamp.tsx — chip fixe discret bas-gauche `build <hash> · <heure> UTC` (server component, git lu au build, testid=build-stamp) → l'utilisateur peut vérifier EN UN COUP D'ŒIL quel build son navigateur affiche. Rebuild prod (NEXT_PUBLIC_API_MOCKED=true) + restart :3000 (pid 5257). Stamp servi : « build a7e827f · 14:02 UTC ».
+- VÉRIFICATIONS : tsc 0 erreur, build OK, verify-session-charts 20/20 après redémarrage.
+
+Stage Summary:
+- Commit b6b2ba6 (stamp + dev.sh). Le réflexe de dépannage devient : voir le stamp = bon build ; pas de stamp = vieux lien/cache → vider les données du site ou rouvrir le lien courant du chat.
