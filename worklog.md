@@ -561,3 +561,27 @@ Work Log:
 
 Stage Summary:
 - Commit b6b2ba6 (stamp + dev.sh). Le réflexe de dépannage devient : voir le stamp = bon build ; pas de stamp = vieux lien/cache → vider les données du site ou rouvrir le lien courant du chat.
+
+---
+Task ID: tasky-events-delivery-audit-and-events-probe
+Agent: Super Z (main)
+Date: 2026-10-09 (IM — « continu » après compression de contexte)
+
+Task: Reprendre après la compression du contexte : auditer l'état réel des commits non journalisés (66ebb19 / 634232b / 285738f), vérifier la conformité aux exigences Tasky/Events, combler les trous de vérification, et avancer la liste « nouvelle base » de l'utilisateur.
+
+Work Log:
+- ÉTAT DÉPART : tree propre, HEAD 285738f (message UUID, cosmétique). La session précédente avait DÉJÀ livré et committé, sans journaliser : (1) 66ebb19 renames Recognition/Lot/Interest + typographie unifiée des 3 modules (headers standard h1 font-heading), (2) 634232b collapse déplacé de la sidebar vers une icône header (PanelLeft, lg+, aria, persistance 240<->72px intacte, verify-shell 10/10), (3) 285738f Tasky + Events complets + section ACADEMY 4 entrées (/academy /nofy /events /tasky) + verify-tasky.js.
+- CONFORMITÉ EXIGENCES VÉRIFIÉE DANS LE CODE : Tasky — titre « Tasky Board » + sous-titre court, colonnes gauche→droite dans un board overflow-x-auto, grip drag curseur ET doigt (Pointer Events unifiés, touch-action none), add-list à droite ; Events — groupes My Calendars/Favorites/Other comme filtres (checkbox + collapse), menu tri time/title/calendar, modal New Calendar (nom + 9 couleurs + groupe), New event, carte détails (star/rename/delete), drag inter-jours curseur ET doigt, mini-mois, panneau repliable, persistance localStorage 100%.
+- RUNTIME : :3000 up (next start prod, build 285738f), market-service :3003 vivant (AUTH_REQUIRED attendu), /tasky + /events 200. verify-tasky 33/33.
+- SONDE EVENTS CRÉÉE (verify-events.js, 48 checks) : couvre structure, filtres par groupe (décocher « work » masque ses pills, collapse/expand Favorites), tri (time → e7,e8 ; calendar → e8,e7 ; title → e8,e7 + label bouton), modal New Calendar (create désactivé si nom vide, routage groupe Other), New event (désactivé si titre vide, pill sur le jour du dropdown date), détails (star → Starred + glyphe, rename persistant, delete), drag souris e1 Oct1→Oct2 avec ghost visible, drag touch (pointerType touch, pointerId dédié) e2 Oct2→Oct3, toggle panneau, persistance reload, mobile 390px, light, zéro pageerror.
+- BUG RÉEL TROUVÉ + FIXÉ PAR LA SONDE : overflow horizontal de 524px à 390px — le cluster droit de la toolbar (ml-auto flex) ne rétrécissait pas : chips 652px + sort + nav mois = 826px > viewport. Fix : min-w-0 + flex-wrap + justify-end sur le cluster, min-w-0 sur les chips → elles passent sous le label du mois et scrollent (overflow mesuré 0px). Diag par script jetable (éléments dépassant le viewport), supprimé après usage.
+- 2 ASSERTIONS DE SONDE CORRIGÉES PENDANT L'AUTORING : e9 (Mom's Birthday) est sur le calendrier « family » invisible par défaut → check sur e7 ; le tri par titre met « Dentist » AVANT « Design Review » (ordre alphabétique réel) — l'assertion initiale inversait l'attendu.
+- LINT : react-hooks/set-state-in-effect (préexistant aux 2 vues, commit 285738f) — la règle ne permet pas d'exprimer le chargement local one-shot post-hydratation (le pattern effect est la voie hydration-safe standard ici) ; eslint-disable ciblé + justification dans tasky-view et events-view. tsc 0, eslint 0 erreur.
+- INFRA LEÇON (nouvelle, à ne PAS re-diagnostiquer) : dans CETTE session IM, tout processus spawné depuis un appel d'outil est purgé à la frontière d'appel suivante (testé : next start via node ET bun, sleep, http.server — tous tués ; ceux des sessions précédentes survivent). Conséquences : (1) toute vérification sonde doit se faire DANS LE MÊME appel que le démarrage du serveur ; (2) la preview :3000 revient au prochain boot plateforme via dev.sh (BUILD_ID présent → pas de rebuild) ; (3) le piège shell : `cd X && cmd &` attache le cd au job de fond — le shell principal ne change pas de cwd (MODULE_NOT_FOUND sur les sondes).
+- VÉRIFICATION FINALE (un seul appel : build → start → 5 sondes) : events **48/48** · tasky **33/33** · shell **10/10** · tools **37/37** · rebrand **17/17**, zéro pageerror partout · tsc 0 · eslint 0 · build OK.
+- COMMITS : `880a5d1` fix(events) mobile wrap + sonde 48/48 + captures events/tasky (+ ce commit worklog).
+
+Stage Summary:
+- La « nouvelle base » est presque complète : typographie unifiée ✅ renames ✅ collapse header ✅ ACADEMY 4 entrées ✅ Tasky (titre, horizontal, scroller, touch) ✅ Events (filtres, tri, New Calendar, touch, extras) ✅ — tout vérifié par sondes dédiées, 5 suites vertes au head 880a5d1.
+- Restant : la page Profile « à l'identique » — les images fournies en IM ont été perdues par la compression de contexte (aucune trace disque) ; redemander les captures à l'utilisateur.
+- Reflet preview : au prochain restart plateforme, le serveur repartira directement sur le build 880a5d1 (stamp visible en bas à gauche).
