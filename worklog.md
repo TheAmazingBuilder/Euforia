@@ -502,3 +502,26 @@ Stage Summary:
 - La surface §28 est COMPLÈTE : panneau historique + menu par rangée + chips en vue résultat + filtre par collection — le tout non destructeur, même cache, même discipline Le Registre.
 - Audit complet des deux modules : VERDICTS « COMPLETE AND SPEC-COMPLIANT » (OCR) et « COMPLETE AND SPEC-COMPLIANT (8/9 PASS, housekeeping fermé) » (TOOLS) avec preuves chiffrées dans les deux rapports.
 - 2 commits de feature/audit + 1 commit worklog ; toutes les suites vertes au head.
+
+---
+Task ID: session-charts-indicators-drawings
+Agent: Super Z (main)
+Date: 2026-10-08 (IM continuation)
+
+Task: « D'abord fait un commit pour save le travail precedent et ensuite je veux d'autres indicateurs (RSI, volumes en histogramme), les drawing tools » — dans la continuité de la demande charts « TradingView/MT5, toute la largeur ».
+
+Work Log:
+- ÉTAT DÉPART : tree PROPRE à `7839589` — le travail précédent était DÉJÀ committé (aucun commit vide créé ; le point de sécurité demandé est ce commit de feature + le worklog, règle verrouillée respectée). Contexte perdu confirmé : les commits Tasky/Events de la session résumée n'existent plus dans l'historique (restaure disque), le cockpit Session Live actuel reste la surface charts canonique.
+- DIAGNOSTIC RACINE : le moteur existait déjà (computeIndicators réel — Wilder RSI/MACD/ATR/BB/VWAP + drawings HLINE/TREND/RAY/RECT/TEXT/MEASURE/FIB) MAIS le template par défaut était VIDE (`seeded.indicators ?? []`) → un chart nu sans RSI ni volume à la première visite, outils enterrés dans un rail latéral de 230px, chart coincé entre deux colonnes.
+- TEMPLATE PAR DÉFAUT : `defaultIndicatorTemplate()` dans lib/utils/chart-state.ts — [VOLUME, RSI(14)] ids déterministes "tpl-*", INDICATOR_DEFAULTS appliqués ; l'état persisté par symbole gagne toujours dès la première édition. Panneaux visibles d'office : histogramme de volume coloré par direction + sous-pane RSI avec guides 30/70.
+- RESTRUCTURE FULL-WIDTH (session-live-view.tsx) : la grille 3-colonnes [230px | 1fr | 320px] est remplacée par — (1) barre d'outils pleine largeur AU-DESSUS du chart (timeframe chips · IndicatorsPopover · DrawingToolbar · ChartGridToolbar bare (layout 1/2/4 + syncs) · SessionTimer compact horizontal à droite), (2) chart (master + observation panes) sur TOUTE la remaining width (hauteurs h-[420/520/640] en layout 1), (3) grille de panneaux contexte responsive dessous (md:2 / xl:3 : MarketContext, KeyLevels, Broker, PrivatePositionsStream, SymbolPositions). ContextTabs inchangé. Skeleton aligné sur la nouvelle structure.
+- ADAPTATIONS : popovers side="bottom" + boutons auto-width (chart-tool-rail.tsx) ; ChartGridToolbar prop `bare` (sans bordure, hint readonly masqué) ; SessionTimer réorganisé en rangée horizontale (testids conservés) ; dict : +view.chartToolbarAria, +view.contextGridAria, −view.tools, −view.leftRailAria, −view.rightRailAria.
+- SONDE NOUVELLE : scripts/verify-session-charts.js — **20/20 passed, 0 pageerror** : rails supprimés, toolbar + context grid présents, chart width == market-row width (drift 0px = pleine largeur prouvée), template par défaut 2 indicateurs, chip légende "RSI 14", popover liste Volume+RSI, add EMA→3/remove→2, flux dessin complet (arm HLINE → hint → clic chart → drawing-list 1), layout 2 → 2 charts dont aux hérite du template, mobile 390px (0 overflow, toolbar wrap, chart ≈ full viewport), light theme intact. Captures : session-charts-{desktop,mobile,light}.png.
+- INFRA : market-service :3003 était éteint (candles/socket 500 → chart en erreur) — `bun install` + relance, feed opérationnel ; le flow 401 /api/auth/* pré-login est le comportement attendu (filtré comme bruit dans la sonde).
+- VÉRIFICATIONS : web tsc 0 / eslint 0 erreur (4 warnings `_locale` préexistants) · build OK (compilation 6.6s, routes statiques) · régressions : verify-recognition **51/51**, verify-tools **38/38** (1er run instable au cold-compile, rerun vert), verify-rebrand **17/17**.
+- PIÈGE OUTIL : le gateway IM réécrit le littéral `a[href=` en `aref=` dans TOUTES les écritures de fichiers (cause du « typo » historique des sondes) — contourné par goto direct /session dans la nouvelle sonde.
+
+Stage Summary:
+- Le cockpit Session Live est passé à l'expérience TradingView : chart PLEINE LARGEUR (plus de rails latéraux), RSI(14) + histogramme de volume visibles dès la première visite, drawing tools et multi-chart dans une barre d'outils au-dessus du chart, panneaux de contexte en grille dessous.
+- 1 commit de feature + 1 commit worklog ; toutes les suites vertes (20/20 · 51/51 · 38/38 · 17/17), tsc/eslint/build OK.
+- Restes connus : session-view.tsx + price-chart.tsx (ancienne station non montée) toujours présents — code mort documenté, nettoyage à l'audit suivant.
