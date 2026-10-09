@@ -605,3 +605,24 @@ Work Log:
 Stage Summary:
 - La liste « nouvelle base » de l'utilisateur est COMPLÈTE : typographie ✅ renames ✅ Profile répliqué ✅ collapse header ✅ ACADEMY 4 entrées ✅ Tasky ✅ Events ✅ — 6 suites vertes au head (59/48/33/10/37/17).
 - La preview servira ce build au prochain boot plateforme (stamp b2afbdc en bas à gauche).
+
+---
+Task ID: session-live-removal
+Agent: Super Z (main)
+Date: 2026-10-09 (IM — « on va repartir sur de nouvelle base »)
+
+Task: Supprimer complètement le module Session Live (frontend) + commit, préalable à l'audit frontend avant la reconstruction du module « Oryon » (le prompt utilisateur emploie « Charty », NB explicite : le module doit se nommer Oryon).
+
+Work Log:
+- ÉTAT DÉPART : tree PROPRE à `8b4b0fe` (l'audit de récupération de la session précédente a établi qu'Oryon n'a jamais été committé ; la substance charts vivait dans Session Live).
+- CARTOGRAPHIE : components/session autonome (0 import externe) ; accroches externes : navigation (entrée + section TRADING), topbar (SessionLiveBadge), dashboard open-positions-card (lien « Open the session runner »), mocks/nofy-engine (deep-link SYMBOL), i18n (en/session.ts + assemblage en.ts), lib/api (queries/sessionLive.ts, endpoints, keys), mocks (handlers/sessionLive.ts + bloc store 3776–4020 + hook createTrade + hook addSessionNote), settings trading-card (contrôles chart-preferences sans plus aucun consommateur), 12 sondes dédiées.
+- SUPPRESSIONS (29 fichiers) : app/(app)/session, components/session (23 : analysis-chart, chart-grid, chart-tool-rail, session-live-view, session-replay, session-shell, session-view/price-chart morts documentés, context-tabs, market-context-panel, private-positions-stream, broker-panel, symbol-picker, session-timer/toolbar, logbook, mood-strip, ghosts, regret-registry, event-timeline, open-trade-card, price-alert-toaster, symbol-positions), session-live-badge, lib/utils/{chart-state,drawings,indicators}.ts, queries/sessionLive.ts, dictionaries/en/session.ts, handlers/sessionLive.ts + sondes (verify-session-charts, verify-session-live-rebuild, verify-sl-multichart, verify-sl-replay, probe-sl 1/2/4/5, root verify-session-upgrades, e2e-session-live.sh, verify-chart-prefs). PNG de captures conservés (artefacts historiques inertes).
+- ÉDITS : navigation.ts (entrée retirée + TRADING = ["/trades","/journal","/playbook"]) · en.ts (import + clé session + commentaire namespaces) · topbar.tsx (badge + doc-comment) · open-positions-card.tsx (bouton + imports Link/Button) · nofy-engine.ts (SYMBOL href → /trades) · handlers/index.ts · queries/index.ts (export * sessionLive) · endpoints.ts + keys.ts (entrées sessionLive) · queries/session.ts (invalidation sessionLiveState dans useCreateSessionNote) · store.ts (bloc session-live 244 lignes, hookSessionTradeDetected dans createTrade, hook NOTE_ADDED dans addSessionNote, 21 imports types, 13 exports) · trading-card.tsx (3 contrôles chart + import ToggleRow) · settings-view.tsx (description « session runner » + keywords) · sondes verify-shell (goto /trades), verify-live-bridge, check-console, verify-academy (assert TRADING sans /session).
+- CONSERVÉ (distinctions) : queries/session.ts + handlers/session.ts = module session JOURNAL (timeline/notes, consommé par trades/journal) — NE PAS confondre ; lib/realtime/market.ts (useCandles/useLiveQuotes/useFeedStatus/usePrivatePositions/unrealizedPnl — consommé par dashboard + monitoring) ; useBrokerSession (couche données réutilisable pour Oryon) ; BACKEND apps/api/src/modules/session-live INTACT (la mission interdit de toucher le backend pendant l'audit frontend) — orphelins documentés : API /session-live/* + deep-link nofy backend (nofy.service.ts:241 href "/session") à traiter en étape backend séparée.
+- PIÈGE ÉVITÉ : le tsc initial rapportait une erreur `.next/types/validator.ts` sur la page supprimée — cache stale ; régénéré par le build (jamais supprimer .next à la main, il sert la preview next start).
+- VÉRIFICATIONS : rg résidus sessionLive + "/session" dans src = 0 · tsc --noEmit 0 · eslint 0 erreur (1 warning ToggleRow introduit puis corrigé ; reste = préexistants) · next build OK (route /session disparue de la liste des routes).
+
+Stage Summary:
+- Le module Session Live frontend est complètement retiré ; commit `079a8e0` (+ ce commit worklog). La base est propre pour l'audit frontend Oryon (lecture seule, zéro modification, zéro commit pendant l'audit).
+- Orphelins backend connus (décision séparée à demander) : modules/session-live API + deep-link nofy côté Nest.
+- Couche données réutilisable pour Oryon confirmée : market.ts (candles/quotes/positions/feed) + schemas shared (market, sessionLive restants pour l'API, broker, trade).
