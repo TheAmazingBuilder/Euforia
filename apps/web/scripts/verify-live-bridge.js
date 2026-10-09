@@ -111,7 +111,7 @@ function fail(label, detail) { results.push({ label, pass: false, detail }); con
   // ── 4. Walk every authenticated route ─────────────────────────────────────
   console.log("\n[4] Domain walk (all authenticated routes, live API)");
   const routes = [
-    "/", "/session", "/trades", "/recognition", "/journal", "/playbook",
+    "/", "/trades", "/recognition", "/journal", "/playbook",
     "/analytics", "/calendar", "/discipline", "/academy", "/nofy",
     "/monitoring", "/integrations", "/security", "/settings",
   ];

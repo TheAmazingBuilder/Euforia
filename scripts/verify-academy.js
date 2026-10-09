@@ -57,8 +57,8 @@ const NOISE = [/socket\.io/i, /candles/i, /market-service/i, /favicon/i, /net::E
   });
 
   check(
-    "TRADING section = session, trades, journal, playbook",
-    JSON.stringify(sectionMap.Trading) === JSON.stringify(["/session", "/trades", "/journal", "/playbook"]),
+    "TRADING section = trades, journal, playbook",
+    JSON.stringify(sectionMap.Trading) === JSON.stringify(["/trades", "/journal", "/playbook"]),
     JSON.stringify(sectionMap.Trading),
   );
   check(

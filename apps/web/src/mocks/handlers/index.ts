@@ -12,7 +12,6 @@ import { ghostHandlers } from "./ghosts";
 import { playbookHandlers } from "./playbook";
 import { profileHandlers } from "./profile";
 import { sessionHandlers } from "./session";
-import { sessionLiveHandlers } from "./sessionLive";
 import { statsHandlers } from "./stats";
 import { tradeHandlers } from "./trades";
 import { backupHandlers } from "./backup";
@@ -32,7 +31,6 @@ export const handlers = [
   ...ghostHandlers,
   ...statsHandlers,
   ...sessionHandlers,
-  ...sessionLiveHandlers,
   ...ecoHandlers,
   ...backupHandlers,
   ...profileHandlers,

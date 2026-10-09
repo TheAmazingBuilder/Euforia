@@ -37,8 +37,6 @@ export function useCreateSessionNote() {
       apiRequest<SessionNote>(apiPaths.sessionNotes, { method: "POST", body: input }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.sessionNotes });
-      // A note logged during an active session becomes a NOTE_ADDED event.
-      void queryClient.invalidateQueries({ queryKey: queryKeys.sessionLiveState });
     },
   });
 }

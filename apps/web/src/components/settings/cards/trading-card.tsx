@@ -11,7 +11,6 @@ import {
   SettingsCardSkeleton,
   SettingsRow,
   SettingsSelect,
-  ToggleRow,
   useDomainDraft,
 } from "@/components/settings/settings-primitives";
 import {
@@ -210,35 +209,6 @@ export function TradingCard() {
             testid="settings-trading-rr"
           />
         </SettingsRow>
-      </div>
-
-      <div className="grid gap-4 border-t border-border pt-4">
-        <SettingsRow label={L.chartStyleLabel} htmlFor="settings-trading-chart-style" stacked>
-          <SettingsSelect
-            value={draft.chart.style}
-            onChange={(value) => patch({ chart: { ...draft.chart, style: value as UserPreferences["trading"]["chart"]["style"] } })}
-            options={[
-              { value: "CANDLES", label: L.chartCandles },
-              { value: "LINE", label: L.chartLine },
-              { value: "AREA", label: L.chartArea },
-            ]}
-            testid="settings-trading-chart-style"
-          />
-        </SettingsRow>
-        <ToggleRow
-          label={L.showVolumeLabel}
-          hint={L.showVolumeHint}
-          checked={draft.chart.showVolume}
-          onChange={(checked) => patch({ chart: { ...draft.chart, showVolume: checked } })}
-          testid="settings-trading-chart-volume"
-        />
-        <ToggleRow
-          label={L.showGridLabel}
-          hint={L.showGridHint}
-          checked={draft.chart.showGrid}
-          onChange={(checked) => patch({ chart: { ...draft.chart, showGrid: checked } })}
-          testid="settings-trading-chart-grid"
-        />
       </div>
 
       {/* Guardrail — soft-lock the capture form after N violations today */}

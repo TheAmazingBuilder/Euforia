@@ -1,6 +1,5 @@
 import { SIDEBAR_ITEMS, NAV_SECTIONS, BOTTOM_NAV_ITEMS } from "@/lib/navigation";
 import { authCopy } from "@/components/auth/auth-copy";
-import { sessionDict } from "@/i18n/dictionaries/en/session";
 import { tradesDict } from "@/i18n/dictionaries/en/trades";
 import { nofyDict } from "@/i18n/dictionaries/en/nofy";
 import { analyticsDict } from "@/i18n/dictionaries/en/analytics";
@@ -21,7 +20,6 @@ import { toolsDict } from "@/i18n/dictionaries/en/tools";
  *              mobile bottom nav, page-title fallbacks
  *   auth     — the full auth surface (auth-copy.ts, migrated verbatim)
  *   settings — settings shell categories + the Localization card
- *   session  — Session Live module (dictionaries/en/session.ts)
  *   trades   — Trades module (dictionaries/en/trades.ts)
  *   recognition — Import & Recognition module (dictionaries/en/recognition.ts)
  *   nofy     — Nofy module (dictionaries/en/nofy.ts)
@@ -554,7 +552,6 @@ const en = {
     },
   },
 
-  session: sessionDict,
   recognition: recognitionDict,
 
   trades: tradesDict,

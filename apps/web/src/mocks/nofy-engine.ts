@@ -169,7 +169,7 @@ function resolveRef(kind: NofyRefKind, id: string): NofyRefResolved | null {
       case "SYMBOL": {
         const instrument = mockStore.data.instruments.find((i) => i.id === id || i.symbol === id);
         if (!instrument) return null;
-        return { kind, id: instrument.id, label: instrument.symbol, meta: instrument.assetClass, href: "/session" };
+        return { kind, id: instrument.id, label: instrument.symbol, meta: instrument.assetClass, href: "/trades" };
       }
       case "NOTE": {
         const note = state.notes.find((n) => n.id === id && n.deletedAt === null);

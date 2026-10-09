@@ -39,7 +39,7 @@ async function login(page) {
   try {
     console.log("\n[1] Header toggle");
     await login(page);
-    await page.goto(`${BASE}/session`, { waitUntil: "domcontentloaded", timeout: 60000 });
+    await page.goto(`${BASE}/trades`, { waitUntil: "domcontentloaded", timeout: 60000 });
     await page.waitForTimeout(1500);
 
     const toggle = page.locator('[data-testid="sidebar-toggle"]');

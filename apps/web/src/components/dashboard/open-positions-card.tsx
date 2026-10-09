@@ -1,11 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { ArrowDownRight, ArrowUpRight, Activity } from "lucide-react";
 import type { Currency, Instrument, Trade } from "@cosmoz/shared";
 import { formatSignedMoney, formatNumber } from "@cosmoz/shared";
 
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -14,6 +12,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+
 import { useAccounts, useInstruments, useTrades } from "@/lib/api/queries";
 import {
   useLiveQuotes,
@@ -207,9 +206,6 @@ export function OpenPositionsCard() {
             <p className="text-xs text-muted-foreground">
               No open positions — enjoy the quiet or capture the next setup.
             </p>
-            <Button asChild size="sm" variant="outline" className="mt-2">
-              <Link href="/session">Open the session runner</Link>
-            </Button>
           </div>
         ) : (
           <ul className="max-h-72 overflow-y-auto overscroll-contain" aria-label="Open positions">

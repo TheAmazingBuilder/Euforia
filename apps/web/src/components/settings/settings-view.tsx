@@ -63,11 +63,11 @@ const CATEGORIES: CategoryMeta[] = [
   {
     id: "trading",
     label: "Trading",
-    description: "Defaults for the trade form and session runner",
+    description: "Defaults for the trade form",
     icon: CandlestickChart,
     keywords: [
-      "default account", "market", "symbol", "timeframe", "session", "currency",
-      "direction", "position type", "r:r", "rr", "chart", "volume", "grid",
+      "default account", "market", "symbol", "timeframe", "currency",
+      "direction", "position type", "r:r", "rr",
     ],
     Component: TradingCard,
   },

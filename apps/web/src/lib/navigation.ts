@@ -1,5 +1,4 @@
 import {
-  Activity,
   BookOpen,
   CalendarDays,
   CalendarRange,
@@ -38,13 +37,6 @@ export const SIDEBAR_ITEMS: NavItem[] = [
     icon: LayoutDashboard,
     description:
       "Your trading command center: today's P&L, your discipline score and the sessions that matter, at a glance.",
-  },
-  {
-    href: "/session",
-    label: "Session Live",
-    icon: Activity,
-    description:
-      "Run a structured trading session in real time, one decision at a time.",
   },
   {
     href: "/trades",
@@ -185,7 +177,7 @@ export type NavSection = {
 export const NAV_SECTIONS: NavSection[] = [
   {
     title: "Trading",
-    hrefs: ["/session", "/trades", "/journal", "/playbook"],
+    hrefs: ["/trades", "/journal", "/playbook"],
   },
   // Goals lives inside Trade Review (/journal?tab=goals) — /goals redirects there.
   {

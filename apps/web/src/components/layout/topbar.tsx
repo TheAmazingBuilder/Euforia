@@ -10,7 +10,6 @@ import { Button } from "@/components/ui/button";
 import { AccountSwitcher } from "@/components/layout/account-switcher";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { NotificationCenter } from "@/components/layout/notification-center";
-import { SessionLiveBadge } from "@/components/layout/session-live-badge";
 import { UserAvatar } from "@/components/layout/user-avatar";
 import { openCommandPalette } from "@/lib/hooks/use-command-palette";
 import { ToGradeQueue } from "@/components/trades/to-grade-queue";
@@ -24,7 +23,7 @@ type TopbarProps = {
 };
 
 /**
- * Topbar: hamburger (mobile) + breadcrumb | session-live badge, to-grade
+ * Topbar: hamburger (mobile) + breadcrumb | to-grade
  * queue, account switcher, alerts bell, one-click theme toggle, avatar.
  * Sticky with an elevation shadow once the page scrolls.
  */
@@ -158,7 +157,6 @@ export function Topbar({ onMenuClick }: TopbarProps) {
         </button>
 
         {/* Pulsing badge while positions are open */}
-        <SessionLiveBadge />
 
         {/* "To grade" queue badge — hidden when the queue is empty */}
         {toGradeCount > 0 ? (

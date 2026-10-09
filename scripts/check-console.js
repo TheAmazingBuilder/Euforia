@@ -5,7 +5,7 @@
 const { chromium } = require("playwright");
 
 const BASE = "http://localhost:3000";
-const ROUTES = ["/", "/session", "/playbook", "/analytics", "/calendar", "/trades", "/journal", "/discipline", "/coach", "/goals", "/settings"];
+const ROUTES = ["/", "/playbook", "/analytics", "/calendar", "/trades", "/journal", "/discipline", "/coach", "/goals", "/settings"];
 
 (async () => {
   const browser = await chromium.launch();

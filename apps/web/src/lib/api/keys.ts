@@ -34,10 +34,6 @@ export const queryKeys = {
   skippedTrades: ["skipped-trades"] as const,
   sessionTimeline: ["session-timeline"] as const,
   sessionNotes: ["session-notes"] as const,
-  // Session Live module
-  sessionLiveState: ["session-live-state"] as const,
-  sessionLiveAnalyses: ["session-live-analyses"] as const,
-  sessionLiveLevels: (symbol: string) => ["session-live-levels", symbol] as const,
   brokerSession: ["broker-session"] as const,
   integrations: ["integrations"] as const,
   security: ["security"] as const,
