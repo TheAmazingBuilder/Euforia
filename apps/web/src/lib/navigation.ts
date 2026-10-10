@@ -3,6 +3,7 @@ import {
   CalendarDays,
   CalendarRange,
   ChartColumn,
+  ChartCandlestick,
   Cable,
   FileScan,
   GraduationCap,
@@ -44,6 +45,13 @@ export const SIDEBAR_ITEMS: NavItem[] = [
     icon: List,
     description:
       "The complete trade log: every execution with its result and decision grade, side by side.",
+  },
+  {
+    href: "/oryon",
+    label: "Oryon",
+    icon: ChartCandlestick,
+    description:
+      "The full-screen charting workspace: live candles, honest feed states and room for the drawing tools of the next phases.",
   },
   {
     href: "/journal",
@@ -177,7 +185,7 @@ export type NavSection = {
 export const NAV_SECTIONS: NavSection[] = [
   {
     title: "Trading",
-    hrefs: ["/trades", "/journal", "/playbook"],
+    hrefs: ["/trades", "/oryon", "/journal", "/playbook"],
   },
   // Goals lives inside Trade Review (/journal?tab=goals) — /goals redirects there.
   {

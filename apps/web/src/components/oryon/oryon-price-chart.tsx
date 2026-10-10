@@ -1,0 +1,195 @@
+"use client";
+
+import * as React from "react";
+
+import { useTheme } from "next-themes";
+
+import type { Candle, MarketInterval } from "@cosmoz/shared";
+
+import { useLiveQuote } from "@/lib/realtime/market";
+import { useDict } from "@/i18n/i18n-provider";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { OryonChartEngine, type OryonChartType, type OryonCrosshairBar } from "@/lib/charting/oryon-chart-engine";
+import { intervalToMs } from "@/lib/charting/oryon-intervals";
+import { cn } from "@/lib/utils";
+
+/**
+ * Oryon price chart — the ONLY component that owns the chart engine.
+ *
+ * Lifecycle: the engine is created in a mount effect (client-only — never
+ * during SSR), survives prop updates, and is destroyed with the unmount
+ * effect. Theme changes re-apply resolved tokens; type/magnet changes are
+ * engine option updates, not recreations.
+ *
+ * Tick discipline: <OryonTickBridge> subscribes to the quote store so ticks
+ * re-render ONLY the bridge (which renders null) and update the engine
+ * imperatively — the workspace tree never re-renders per tick.
+ */
+export function OryonPriceChart({
+  dataSymbol,
+  liveSymbol,
+  interval,
+  chartType,
+  magnet,
+  candles,
+  digits,
+  source,
+  fitKey,
+  onEngineReady,
+}: {
+  /** Symbol of the data ACTUALLY displayed — the legend labels this. */
+  dataSymbol: string;
+  /** Selected symbol for live ticks — null while placeholder data shows. */
+  liveSymbol: string | null;
+  interval: MarketInterval;
+  chartType: OryonChartType;
+  magnet: boolean;
+  candles: Candle[];
+  digits: number;
+  source: "real" | "sim";
+  /** Symbol+interval key — data windows for a NEW key fit content; refetches keep the viewport. */
+  fitKey: string;
+  /** Exposes the engine's return-to-latest to the toolbar (via the panel). */
+  onEngineReady?: (goToLatest: () => void) => void;
+}) {
+  const containerRef = React.useRef<HTMLDivElement | null>(null);
+  const engineRef = React.useRef<OryonChartEngine | null>(null);
+  const fitKeyRef = React.useRef<string>("");
+  const [hoverBar, setHoverBar] = React.useState<OryonCrosshairBar | null>(null);
+  const { resolvedTheme } = useTheme();
+
+  // Mount once / destroy on unmount (no duplicate instances, no leaks).
+  React.useEffect(() => {
+    const container = containerRef.current;
+    if (container === null) return;
+    const engine = new OryonChartEngine();
+    engine.mount(container);
+    engine.onCrosshair(setHoverBar);
+    engineRef.current = engine;
+    onEngineReady?.(() => engine.goToLatest());
+    return () => {
+      engineRef.current = null;
+      engine.destroy();
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- mount once
+  }, []);
+  React.useEffect(() => {
+    const engine = engineRef.current;
+    if (engine === null) return;
+    const fit = fitKey !== fitKeyRef.current;
+    fitKeyRef.current = fitKey;
+    engine.setCandles(candles, digits, intervalToMs(interval), fit);
+    // Seed the legend with the newest bar — OHLC must be populated without
+    // requiring a hover first (crosshair moves then override it).
+    setHoverBar(engine.lastBar);
+  }, [candles, digits, interval, fitKey]);
+
+  React.useEffect(() => {
+    engineRef.current?.setChartType(chartType);
+  }, [chartType]);
+
+  React.useEffect(() => {
+    engineRef.current?.setMagnet(magnet);
+  }, [magnet]);
+
+  React.useEffect(() => {
+    engineRef.current?.applyTheme();
+  }, [resolvedTheme]);
+
+  return (
+    <div className="relative h-full w-full">
+      <div ref={containerRef} data-testid="oryon-chart-canvas" className="h-full w-full" />
+      <OryonTickBridge engineRef={engineRef} symbol={liveSymbol ?? dataSymbol} />
+      <OryonChartLegend
+        symbol={dataSymbol}
+        interval={interval}
+        source={source}
+        bar={hoverBar}
+        hasData={candles.length > 0}
+      />
+    </div>
+  );
+}
+
+/**
+ * Imperative tick → candle bridge. Renders null; the per-tick store
+ * subscription re-renders this leaf only, then the engine merges the tick
+ * into the current bucket (no workspace re-render, no React state).
+ */
+function OryonTickBridge({
+  engineRef,
+  symbol,
+}: {
+  engineRef: React.RefObject<OryonChartEngine | null>;
+  symbol: string;
+}) {
+  const quote = useLiveQuote(symbol);
+
+  React.useEffect(() => {
+    if (quote === null) return;
+    engineRef.current?.applyTick(quote.price, quote.ts);
+  }, [quote, engineRef]);
+
+  return null;
+}
+
+/** Top-left overlay: identity, honest source badge, OHLC of the inspected bar. */
+function OryonChartLegend({
+  symbol,
+  interval,
+  source,
+  bar,
+  hasData,
+}: {
+  symbol: string;
+  interval: MarketInterval;
+  source: "real" | "sim";
+  bar: OryonCrosshairBar | null;
+  hasData: boolean;
+}) {
+  const dict = useDict();
+  const S = dict.oryon;
+  const sim = source === "sim";
+
+  return (
+    <div className="pointer-events-none absolute left-2 top-2 z-10 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-md border border-border bg-background/85 px-2 py-1 backdrop-blur">
+      <span data-testid="oryon-legend-symbol" className="font-mono text-xs font-semibold text-foreground">
+        {symbol}
+      </span>
+      <span data-testid="oryon-legend-interval" className="font-mono text-[11px] text-muted-foreground">
+        {interval}
+      </span>
+      <TooltipProvider delayDuration={250}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span
+              data-testid={sim ? "oryon-source-sim" : "oryon-source-real"}
+              className={cn(
+                "rounded-sm px-1 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+                sim ? "bg-warning/15 text-warning" : "bg-surface-raised text-muted-foreground",
+              )}
+            >
+              {sim ? S.source.sim : S.source.real}
+            </span>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="text-xs">
+            {sim ? S.source.simHint : S.source.realHint}
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+      {hasData && bar !== null ? (
+        <span data-testid="oryon-legend-ohlc" className="font-mono text-[11px] tabular-nums text-muted-foreground">
+          {S.legend.open} <span className="text-foreground">{bar.o}</span>{" "}
+          {S.legend.high} <span className="text-foreground">{bar.h}</span>{" "}
+          {S.legend.low} <span className="text-foreground">{bar.l}</span>{" "}
+          {S.legend.close} <span className="text-foreground">{bar.c}</span>
+        </span>
+      ) : null}
+    </div>
+  );
+}

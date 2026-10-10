@@ -1,0 +1,91 @@
+import type { Dictionary } from "@/i18n/dictionaries/en";
+
+/**
+ * EN dictionary — ORYON namespace (canonical). The full-screen charting
+ * workspace. Values are STATIC strings — components compose dynamic parts
+ * themselves (dict.* pattern, no {var} templates).
+ *
+ * Voice contract: Oryon states what the workspace CAN do in this phase and
+ * never implies that drawing tools, indicators, positions or news data are
+ * already integrated. Deferred surfaces say so in plain copy, and the data
+ * source badge labels simulated feeds honestly ("SIM").
+ */
+
+export type OryonDict = Dictionary["oryon"];
+
+export const oryonDict = {
+  toolbar: {
+    instrument: "Instrument",
+    searchPlaceholder: "Search symbol…",
+    noMatch: "No instrument matches.",
+    feed: "Live feed",
+    noFeed: "No feed",
+    coverageHint: "Covered by the market feed",
+    exitHint: "Exit the workspace",
+    fullscreenHint: "Toggle full screen",
+    notificationsHint: "Notifications",
+    calendarHint: "Economic calendar",
+    lowerPanelHint: "Positions panel",
+    chartType: "Chart type",
+    candles: "Candles",
+    line: "Line",
+    magnetHint: "Magnet crosshair",
+    crosshairHint: "Free crosshair",
+    latestHint: "Return to latest",
+    timeframes: "Timeframe",
+  },
+  source: {
+    sim: "SIM",
+    simHint: "Simulated market data — the feed is labeled, not real.",
+    real: "REAL",
+    realHint: "Real market data from the provider.",
+  },
+  feed: {
+    connecting: "Connecting…",
+    live: "Live",
+    reconnecting: "Reconnecting…",
+    offline: "Feed offline",
+    stale: "Stale",
+    staleAgo: "last tick {s}s ago",
+    offlineBody: "Showing the last known data. The chart resumes when the feed returns.",
+  },
+  states: {
+    loadingInstruments: "Loading instruments…",
+    loadingHistory: "Loading history…",
+    historyError: "Market data is unavailable for this instrument right now.",
+    emptyHistory: "No history returned for this instrument and timeframe.",
+    retry: "Retry",
+    pickInstrument: "Pick an instrument to start the chart.",
+  },
+  legend: {
+    open: "O",
+    high: "H",
+    low: "L",
+    close: "C",
+  },
+  rail: {
+    toolsGroup: "Drawing tools — next phase",
+    pointerHint: "Crosshair mode",
+    trendline: "Trendline (next phase)",
+    hline: "Horizontal level (next phase)",
+    rect: "Zone (next phase)",
+    fib: "Fibonacci (next phase)",
+    text: "Text note (next phase)",
+    measure: "Measure (next phase)",
+  },
+  utility: {
+    notifications: "Notifications",
+    notificationsBody: "Notifications are not wired into the charting workspace yet. Your knowledge base and alerts live in Nofy.",
+    notificationsLink: "Open Nofy",
+    calendar: "Economic calendar",
+    calendarBody: "Upcoming releases from the app calendar — the full day view stays in Events.",
+    calendarEmpty: "No upcoming releases in the loaded window.",
+    calendarLink: "Open Events",
+  },
+  lower: {
+    title: "Open positions",
+    deferredTitle: "Positions are not integrated into Oryon yet",
+    body: "This panel is the reserved shell for the open-position visualization of a later phase. No broker positions are streamed here — mock account data is never presented as real.",
+    link: "View positions in Trades",
+  },
+} as const;
