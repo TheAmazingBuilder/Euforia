@@ -648,3 +648,23 @@ Stage Summary:
 - Livré : cahier des charges Oryon v1.0 — 14 sections, 9 tableaux, TDM 43 entrées, postcheck 9/9, statut « Proposition à valider » (docx de livraison + md versionné).
 - Le document sépare explicitement le VÉRIFIÉ (section 5) du PROPOSÉ (section 8) et fait de la lecture seule une exigence testable (RNF-06).
 - Prochaine étape côté produit : arbitrage des 7 questions ouvertes (§13) par l'utilisateur, puis lancement du jalon P0 (socle graphique + POC Lightweight Charts v5/panes).
+
+---
+Task ID: oryon-phase1
+Agent: Super Z (main)
+Date: 2026-10-10 (IM — « phase 1 : EUPHORIA — ORYON »)
+
+Task: Implémenter Oryon Phase 1 — workspace de charting plein écran + fondation du moteur graphique (Lightweight Charts), code fonctionnel uniquement, lecture seule trading, sans dessins/indicateurs/positions.
+
+Work Log:
+- ÉTAT DÉPART : tree propre à 0e3ff57 (session-live retiré 079a8e0, cahier des charges 0e3ff57). Relecture disque : market.ts (useCandles 300/60s, useLiveQuote, useFeedStatus, STALE_MS 8s), schemas market (7 intervals, Candle, QuoteSource real|sim), fixtures catalog (7 instruments specs complets), market-service :3003 (REST /candles ≤500, Binance+Simulated, health public), MSW par défaut, EN-only (i18n dict.* conservé), AppShell main px-4 py-6 lg:px-8 lg:pb-8, topbar h-14.
+- DÉPENDANCE : lightweight-charts@5.2.1 installé (pnpm --filter web — 1 ligne package.json + lockfile ; AGENTS.md sanctionne déjà « TradingView Lightweight Charts (price charts) » ; ECharts ^6.1.0 intouché, 7 usages préservés).
+- ARCHITECTURE : lib/charting/oryon-chart-engine.ts (adaptateur v5 — createChart/addSeries(CandlestickSeries|LineSeries), autoSize, thème via getChartTheme() zéro hex codé, fusion tick→bougie dans le dernier bucket impérative, magnet, goToLatest, crosshair callback, attribution logo TradingView conservé) ; lib/charting/oryon-intervals.ts (source unique = marketIntervalSchema partagé) ; components/oryon/* (12 fichiers) : view (dérivation instrument par défaut = catalogue ∩ health.symbols, zéro symbole codé en dur), toolbar, tool-rail (outils dessin TOUS disabled honnêtes), chart-panel (états waiting/loading/error+retry/empty/ready — placeholder data → loading, jamais de données déguisées), price-chart (TickBridge impératif — zéro re-render workspace par tick, légende OHLC seedée dernière bougie, badge SIM/REAL honnête), instrument-selector (couverture feed réelle, « No feed » explicite), timeframe-selector, feed-status (feuille 1 Hz, stale honnête), utility-rail (docké lg+ / Sheet <lg ; notifications = état reporté assumé ; calendrier éco = réusage useEcoEvents lecture seule), lower-panel (replié défaut, copie honnête, zéro contrôle d'ordre), icon-button ; page.tsx server + metadata ; i18n oryon.ts + en.ts ; navigation (entrée après Trades).
+- PIÈGE SESSION (documentation honnête) : échos d'outils corrompus en milieu de session (chemins/contenus hallucinés, éditions en échos incohérents) — discipline rétablie par « vérité compilateur » uniquement : tsc/noEmit + next build (leur sortie disque fait foi), éditions minimes verbatim, double lecture indépendante, journal de sonde sur disque. Deux échos hallucinés ont visé des chemins inexistants (aucun effet disque confirmé par tsc final = 0).
+- VÉRIFICATIONS : tsc --noEmit 0 · eslint (oryon/**) 0 · next build OK (/oryon route statique) · sonde Playwright scripts/verify-oryon-phase1.js **31 PASS / 0 FAIL** (connexion démo réelle via bouton démo, desktop 1440 + mobile 390, screenshots shots/oryon-phase1-*.png, 0 erreur console des deux viewports) — incluant : 7 timeframes, switch 1H/5m sans dupliquer le canvas, type line/candles, rail outils désactivé, panneau bas replié + copie reportée, rail utilité docké/overlay, BTCUSDT → badge REAL (données Binance réelles via passerelle) + canvas unique, retour EURUSD SIM.
+- ENVIRONNEMENT : preview = next start sur build (BUILD_ID) — les nouvelles routes exigent build+restart (dev.log vide) ; flux auth démo = bouton demo-hint (fills directs non fiables) ; redirection /login côté client après hydratation (waitUntil load + waitForSelector).
+
+Stage Summary:
+- Livré : Oryon Phase 1 complet — commit `feat(oryon)` sur main ; route /oryon opérationnelle en preview (200), moteur Lightweight Charts v5.2.1 rendant bougies réelles (SIM EURUSD par défaut + REAL BTCUSDT vérifié), états honnêtes partout, lecture seule stricte (aucun ordre, aucune position, outils dessin désactivés).
+- Limites documentées : orphelins backend session-live (passe dédiée), dessins/indicateurs/positions = phases suivantes (frontières d'intégration prêtes), MT5 hors V1.
+- Prochaine phase recommandée : moteur de dessin (Phase 2) sur la frontière engine existante (setCandles/applyTick déjà séparés de l'UI).
