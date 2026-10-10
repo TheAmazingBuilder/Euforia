@@ -1,0 +1,7 @@
+{
+  "name": "oryon-cahier",
+  "private": true,
+  "dependencies": {
+    "docx": "^9.9.0"
+  }
+}
