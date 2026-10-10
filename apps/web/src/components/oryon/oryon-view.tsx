@@ -14,6 +14,7 @@ import { OryonLowerPanel } from "@/components/oryon/oryon-lower-panel";
 import { OryonToolbar } from "@/components/oryon/oryon-toolbar";
 import { OryonToolRail } from "@/components/oryon/oryon-tool-rail";
 import { OryonUtilityRail } from "@/components/oryon/oryon-utility-rail";
+import { OryonDrawingsProvider } from "@/components/oryon/oryon-drawings-context";
 import type { OryonChartType } from "@/lib/charting/oryon-chart-engine";
 
 export type OryonUtilityPanel = "notifications" | "calendar";
@@ -36,7 +37,8 @@ export type OryonUtilityPanel = "notifications" | "calendar";
  * State discipline: only instrument / timeframe / chart type / magnet /
  * panel visibility live here. Ticks never re-render this tree (the tick
  * bridge updates the engine imperatively) and staleness is computed in
- * leaves.
+ * leaves. Drawing state (tool, store, list) lives in the drawings context
+ * — see OryonDrawingsProvider.
  */
 export function OryonView() {
   const dict = useDict();
@@ -93,10 +95,11 @@ export function OryonView() {
   }, []);
 
   return (
-    <div
-      data-testid="oryon-workspace"
-      className="flex flex-col lg:-mx-8 lg:-mb-8 lg:-mt-6 lg:h-[calc(100dvh-3.5rem)]"
-    >
+    <OryonDrawingsProvider>
+      <div
+        data-testid="oryon-workspace"
+        className="flex flex-col lg:-mx-8 lg:-mb-8 lg:-mt-6 lg:h-[calc(100dvh-3.5rem)]"
+      >
       <OryonToolbar
         instruments={instruments}
         instrument={instrument}
@@ -157,6 +160,7 @@ export function OryonView() {
       <p className="sr-only">
         {S.toolbar.instrument} · {S.toolbar.timeframes}
       </p>
-    </div>
+      </div>
+    </OryonDrawingsProvider>
   );
 }

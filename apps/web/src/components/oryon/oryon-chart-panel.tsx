@@ -119,6 +119,7 @@ export function OryonChartPanel({
         magnet={magnet}
         candles={candles}
         digits={instrument.digits}
+        pipSize={instrument.pipSize}
         source={source}
         fitKey={`${symbol}:${interval}`}
         onEngineReady={onEngineReady}

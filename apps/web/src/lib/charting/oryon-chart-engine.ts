@@ -8,7 +8,9 @@ import {
   type CandlestickData,
   type IChartApi,
   type ISeriesApi,
+  type ISeriesPrimitive,
   type LineData,
+  type Logical,
   type UTCTimestamp,
 } from "lightweight-charts";
 
@@ -51,6 +53,47 @@ export type OryonChartType = "candles" | "line";
 /** Bar handed to the legend on crosshair inspection (raw candle shape). */
 export type OryonCrosshairBar = Pick<Candle, "t" | "o" | "h" | "l" | "c">;
 
+/**
+ * Drawing-domain conversion facade (Phase 2 spec §4B — coordinate layer).
+ *
+ * Screen space: CSS pixels relative to the chart PANE (plot area) top-left.
+ * Domain space: unix seconds + raw price. Every method is null-safe — the
+ * callers MUST handle null explicitly (no arbitrary substitutes, spec §6).
+ *
+ * Why the LOGICAL pipeline instead of timeToCoordinate(): Lightweight
+ * Charts maps TIME→X only for times that exactly match a loaded bar. A
+ * 5m-anchored drawing viewed on 1D (or panned between bars) would vanish.
+ * Logical indexes are CONTINUOUS, so the engine interpolates the bar index
+ * for an arbitrary time (binary search over the loaded candles) and lets
+ * the time scale project logical→X with its own spacing. Anchors are always
+ * snapped to a real bar time on creation, so the store↔screen round trip is
+ * deterministic on any timeframe.
+ */
+export interface OryonDrawingConversions {
+  /** Bar time (unix sec) → pane X (CSS px, may be off-screen). */
+  timeToX(timeSec: number): number | null;
+  /** Pointer X → SNAPPED bar time (unix sec) for anchor creation. */
+  xToSnappedTimeSec(x: number): number | null;
+  /** Continuous logical bar index → pane X. */
+  logicalToX(logical: number): number | null;
+  /** Pointer X → continuous logical bar index. */
+  xToLogical(x: number): number | null;
+  /** Bar time (unix sec) → continuous logical index (interpolated). */
+  timeSecToLogical(timeSec: number): number | null;
+  /** Continuous logical index → interpolated time (unix sec, unsnapped). */
+  logicalToTimeSec(logical: number): number | null;
+  /** Continuous logical index → SNAPPED bar time (clamped into loaded bars). */
+  logicalToSnappedTimeSec(logical: number): number | null;
+  /** Raw price → pane Y (CSS px). */
+  priceToY(price: number): number | null;
+  /** Pane Y (CSS px) → raw price. */
+  yToPrice(y: number): number | null;
+  /** Current interval in ms (snap tolerance + measure Δbars). */
+  getIntervalMs(): number;
+  /** Number of loaded bars (0 = nothing to project against). */
+  getBarCount(): number;
+}
+
 export class OryonChartEngine {
   private chart: IChartApi | null = null;
   private candleSeries: ISeriesApi<"Candlestick"> | null = null;
@@ -60,6 +103,8 @@ export class OryonChartEngine {
   private digits = 2;
   private intervalMs = 300_000;
   private crosshairHandler: ((bar: OryonCrosshairBar | null) => void) | null = null;
+  /** Drawing overlay primitive — re-attached whenever the series is rebuilt. */
+  private drawingsPrimitive: ISeriesPrimitive<UTCTimestamp> | null = null;
 
   /** True once mount() succeeded (guards every later call). */
   get isMounted(): boolean {
@@ -98,8 +143,33 @@ export class OryonChartEngine {
     });
 
     this.candleSeries = this.chart.addSeries(CandlestickSeries, this.candleStyle());
+    this.attachDrawingsToActiveSeries();
     this.chart.subscribeCrosshairMove(this.handleCrosshairMove);
     this.rebuildSeriesData();
+  }
+
+  /** Registers the drawing overlay. Re-attached automatically when the
+   *  active series is rebuilt (chart type switch) — the primitive never
+   *  dies silently with its host series. */
+  attachDrawings(primitive: ISeriesPrimitive<UTCTimestamp>): void {
+    this.drawingsPrimitive = primitive;
+    this.attachDrawingsToActiveSeries();
+  }
+
+  /** Unregisters the drawing overlay (component unmount). */
+  detachDrawings(primitive: ISeriesPrimitive<UTCTimestamp>): void {
+    if (this.drawingsPrimitive !== primitive) return;
+    const series = this.activeSeries();
+    if (series !== null) {
+      try {
+        series.detachPrimitive(
+          primitive as unknown as Parameters<ISeriesApi<"Candlestick">["detachPrimitive"]>[0],
+        );
+      } catch {
+        // Already detached with a removed series — nothing to clean up.
+      }
+    }
+    this.drawingsPrimitive = null;
   }
 
   /** Removes the chart instance and every internal reference. */
@@ -174,6 +244,7 @@ export class OryonChartEngine {
     } else {
       this.lineSeries = this.chart.addSeries(LineSeries, { color: getChartTheme().accent, lineWidth: 2 });
     }
+    this.attachDrawingsToActiveSeries();
     this.rebuildSeriesData();
     this.chart.timeScale().scrollToRealTime();
   }
@@ -232,7 +303,129 @@ export class OryonChartEngine {
     this.chart.timeScale().scrollToRealTime();
   }
 
+  // ── drawing coordinate facade (OryonDrawingConversions) ────────────────────
+
+  /** Implements the drawing-domain conversion contract (null-safe). */
+  readonly conversions: OryonDrawingConversions = {
+    timeToX: (timeSec: number): number | null => {
+      const logical = this.timeSecToLogical(timeSec);
+      if (logical === null) return null;
+      return this.logicalIndexToX(logical);
+    },
+    xToSnappedTimeSec: (x: number): number | null => {
+      if (this.chart === null || this.candles.length === 0) return null;
+      const logical = this.chart.timeScale().coordinateToLogical(x as Logical);
+      if (logical === null) return null;
+      const index = Math.max(0, Math.min(this.candles.length - 1, Math.round(logical)));
+      return this.candles[index]!.t / 1000;
+    },
+    logicalToX: (logical: number): number | null => this.logicalIndexToX(logical),
+    xToLogical: (x: number): number | null => {
+      if (this.chart === null || this.candles.length === 0) return null;
+      const logical = this.chart.timeScale().coordinateToLogical(x as Logical);
+      return logical === null ? null : (logical as number);
+    },
+    timeSecToLogical: (timeSec: number): number | null => this.timeSecToLogical(timeSec),
+    logicalToTimeSec: (logical: number): number | null => {
+      const candles = this.candles;
+      if (candles.length === 0) return null;
+      if (candles.length === 1) return candles[0]!.t / 1000;
+      const last = candles.length - 1;
+      if (logical <= 0) {
+        // Linear extrapolation on the first spacing (keeps pre-data geometry stable).
+        return candles[0]!.t / 1000 + logical * (this.intervalMs / 1000);
+      }
+      if (logical >= last) {
+        return candles[last]!.t / 1000 + (logical - last) * (this.intervalMs / 1000);
+      }
+      const i = Math.floor(logical);
+      const frac = logical - i;
+      const t0 = candles[i]!.t;
+      const t1 = candles[i + 1]!.t;
+      return (t0 + frac * (t1 - t0)) / 1000;
+    },
+    logicalToSnappedTimeSec: (logical: number): number | null => {
+      const candles = this.candles;
+      if (candles.length === 0 || !Number.isFinite(logical)) return null;
+      const index = Math.max(0, Math.min(candles.length - 1, Math.round(logical)));
+      return candles[index]!.t / 1000;
+    },
+    priceToY: (price: number): number | null => {
+      const series = this.activeSeries();
+      if (series === null) return null;
+      const y = series.priceToCoordinate(price);
+      return y === null ? null : (y as number);
+    },
+    yToPrice: (y: number): number | null => {
+      const series = this.activeSeries();
+      if (series === null) return null;
+      const price = series.coordinateToPrice(y as number);
+      return price === null ? null : (price as number);
+    },
+    getIntervalMs: (): number => this.intervalMs,
+    getBarCount: (): number => this.candles.length,
+  };
+
   // ── internals ──────────────────────────────────────────────────────────────
+
+  /** Continuous logical index → pane X (the time scale's own spacing). */
+  private logicalIndexToX(logical: number): number | null {
+    if (this.chart === null || this.candles.length === 0) return null;
+    const x = this.chart.timeScale().logicalToCoordinate(logical as Logical);
+    return x === null ? null : (x as number);
+  }
+
+  /** Re-attaches the drawing primitive to the CURRENTLY active series. */
+  private attachDrawingsToActiveSeries(): void {
+    const primitive = this.drawingsPrimitive;
+    if (primitive === null) return;
+    const series = this.activeSeries();
+    if (series === null) return;
+    try {
+      // The engine stores UTC-timestamp primitives; the library's generic
+      // default is Time — this cast is the documented boundary (our series
+      // data is ALWAYS UTCTimestamp, see toCandlestickBar/toLineBar).
+      series.attachPrimitive(primitive as unknown as Parameters<ISeriesApi<"Candlestick">["attachPrimitive"]>[0]);
+    } catch {
+      // Attaching the same primitive twice is an upstream error we survive.
+    }
+  }
+
+  private activeSeries(): ISeriesApi<"Candlestick"> | ISeriesApi<"Line"> | null {
+    if (this.chartType === "candles") return this.candleSeries;
+    return this.lineSeries;
+  }
+
+  /** Bar time (unix sec) → continuous logical index (binary search + interp). */
+  private timeSecToLogical(timeSec: number): number | null {
+    const candles = this.candles;
+    if (candles.length === 0 || !Number.isFinite(timeSec)) return null;
+    if (candles.length === 1) return 0;
+    const ms = timeSec * 1000;
+    const first = candles[0]!.t;
+    const last = candles[candles.length - 1]!.t;
+    if (ms <= first) {
+      // Extrapolate before the first bar on the actual first spacing.
+      const spacing = candles.length > 1 ? candles[1]!.t - first : this.intervalMs;
+      return (ms - first) / spacing;
+    }
+    if (ms >= last) {
+      const spacing =
+        candles.length > 1 ? last - candles[candles.length - 2]!.t : this.intervalMs;
+      return (candles.length - 1) + (ms - last) / spacing;
+    }
+    // Binary search: greatest i with candles[i].t <= ms.
+    let lo = 0;
+    let hi = candles.length - 1;
+    while (hi - lo > 1) {
+      const mid = (lo + hi) >> 1;
+      if (candles[mid]!.t <= ms) lo = mid;
+      else hi = mid;
+    }
+    const span = candles[hi]!.t - candles[lo]!.t;
+    const frac = span === 0 ? 0 : (ms - candles[lo]!.t) / span;
+    return lo + frac;
+  }
 
   private candleStyle() {
     const theme = getChartTheme();

@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/tooltip";
 import { OryonChartEngine, type OryonChartType, type OryonCrosshairBar } from "@/lib/charting/oryon-chart-engine";
 import { intervalToMs } from "@/lib/charting/oryon-intervals";
+import { OryonDrawingLayer } from "@/components/oryon/oryon-drawing-layer";
 import { cn } from "@/lib/utils";
 
 /**
@@ -38,6 +39,7 @@ export function OryonPriceChart({
   magnet,
   candles,
   digits,
+  pipSize,
   source,
   fitKey,
   onEngineReady,
@@ -51,6 +53,8 @@ export function OryonPriceChart({
   magnet: boolean;
   candles: Candle[];
   digits: number;
+  /** Price increment of one pip (measure readout) — instrument contract. */
+  pipSize: string;
   source: "real" | "sim";
   /** Symbol+interval key — data windows for a NEW key fit content; refetches keep the viewport. */
   fitKey: string;
@@ -58,9 +62,15 @@ export function OryonPriceChart({
   onEngineReady?: (goToLatest: () => void) => void;
 }) {
   const containerRef = React.useRef<HTMLDivElement | null>(null);
+  const wrapperRef = React.useRef<HTMLDivElement | null>(null);
   const engineRef = React.useRef<OryonChartEngine | null>(null);
   const fitKeyRef = React.useRef<string>("");
   const [hoverBar, setHoverBar] = React.useState<OryonCrosshairBar | null>(null);
+  /** Engine + host held in STATE for render access (refs are for effects). */
+  const [chartInstance, setChartInstance] = React.useState<{
+    engine: OryonChartEngine;
+    host: HTMLDivElement;
+  } | null>(null);
   const { resolvedTheme } = useTheme();
 
   // Mount once / destroy on unmount (no duplicate instances, no leaks).
@@ -72,8 +82,11 @@ export function OryonPriceChart({
     engine.onCrosshair(setHoverBar);
     engineRef.current = engine;
     onEngineReady?.(() => engine.goToLatest());
+    const host = wrapperRef.current;
+    if (host !== null) setChartInstance({ engine, host }); // Gates the drawing layer.
     return () => {
       engineRef.current = null;
+      setChartInstance(null);
       engine.destroy();
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps -- mount once
@@ -102,8 +115,17 @@ export function OryonPriceChart({
   }, [resolvedTheme]);
 
   return (
-    <div className="relative h-full w-full">
+    <div ref={wrapperRef} className="relative h-full w-full">
       <div ref={containerRef} data-testid="oryon-chart-canvas" className="h-full w-full" />
+      {chartInstance !== null ? (
+        <OryonDrawingLayer
+          engine={chartInstance.engine}
+          interactionHost={chartInstance.host}
+          symbol={dataSymbol}
+          digits={digits}
+          pipSize={pipSize}
+        />
+      ) : null}
       <OryonTickBridge engineRef={engineRef} symbol={liveSymbol ?? dataSymbol} />
       <OryonChartLegend
         symbol={dataSymbol}
