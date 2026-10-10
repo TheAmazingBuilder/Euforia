@@ -165,3 +165,138 @@ export type OryonDrawingsFile = z.infer<typeof oryonDrawingsFileSchema>;
 
 /** Fibonacci retracement levels (verified ratios, 0..1 band). */
 export const ORYON_FIB_LEVELS = [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1] as const;
+
+// ── Indicator contracts (Phase 3 — cahier des charges RF-05, jalon P2) ──────
+//
+// The indicator instance model mirrors the drawing model: persisted through
+// the SAME shared schema that validates the load (safeParse — invalid data
+// is dropped, never rendered), styles carry THEME TOKEN KEYS resolved at
+// render time (never raw hex), and the envelope is versioned for future
+// migrations.
+//
+// Persistence scope decision (documented in the Phase 3 report): indicators
+// are a CHART-LEVEL setup (an analyst's stack — e.g. RSI 14 + MACD 12/26/9),
+// not per-symbol annotation: one file, keyed by nothing but the versioned
+// prefix. They survive instrument and timeframe switches and are recomputed
+// from the candles actually displayed. Drawings stay per-symbol.
+//
+// Business rules that Zod CANNOT express inside a discriminated union
+// (MACD fast < slow, RSI lower < upper) live in the calc/validation layer —
+// the loader drops rule-violating instances with a warning instead of
+// rendering mathematically dishonest series.
+
+/** The implemented indicator set (RF-05). No placeholder entries. */
+export const oryonIndicatorTypeSchema = z.enum([
+  "sma",
+  "ema",
+  "rsi",
+  "macd",
+  "bbands",
+  "atr",
+  "volume",
+]);
+
+export type OryonIndicatorType = z.infer<typeof oryonIndicatorTypeSchema>;
+
+/** Persisted line style. Palette VALUES resolve at render time from tokens. */
+export const oryonIndicatorStyleSchema = z.object({
+  /** Theme token KEY (e.g. "cat-ta", "warning") — never a raw hex. */
+  color: z.string().min(1).max(32),
+  width: z.number().int().min(1).max(4),
+  dash: oryonLineDashSchema,
+});
+
+export type OryonIndicatorStyle = z.infer<typeof oryonIndicatorStyleSchema>;
+
+const commonIndicatorFields = {
+  id: z.string().min(8).max(64),
+  visible: z.boolean(),
+  /** Creation / modification timestamps, unix ms (repo convention). */
+  createdAt: z.number().finite().int(),
+  updatedAt: z.number().finite().int(),
+};
+
+/** Simple Moving Average — configurable period, main-chart overlay. */
+export const oryonSmaIndicatorSchema = z.object({
+  ...commonIndicatorFields,
+  type: z.literal("sma"),
+  period: z.number().int().min(2).max(500),
+  style: oryonIndicatorStyleSchema,
+});
+
+/** Exponential Moving Average — SMA-seeded, main-chart overlay. */
+export const oryonEmaIndicatorSchema = z.object({
+  ...commonIndicatorFields,
+  type: z.literal("ema"),
+  period: z.number().int().min(2).max(500),
+  style: oryonIndicatorStyleSchema,
+});
+
+/** Relative Strength Index — Wilder smoothing, dedicated pane. */
+export const oryonRsiIndicatorSchema = z.object({
+  ...commonIndicatorFields,
+  type: z.literal("rsi"),
+  period: z.number().int().min(2).max(500),
+  /** Reference levels (0..100) — configurable, drawn as price lines. */
+  upper: z.number().min(1).max(100),
+  lower: z.number().min(1).max(100),
+  style: oryonIndicatorStyleSchema,
+});
+
+/** MACD — fast/slow/signal EMAs, dedicated pane with histogram. */
+export const oryonMacdIndicatorSchema = z.object({
+  ...commonIndicatorFields,
+  type: z.literal("macd"),
+  fast: z.number().int().min(2).max(200),
+  slow: z.number().int().min(3).max(400),
+  signal: z.number().int().min(1).max(100),
+  /** MACD line style. */
+  style: oryonIndicatorStyleSchema,
+  /** Signal line style. */
+  signalStyle: oryonIndicatorStyleSchema,
+});
+
+/** Bollinger Bands — SMA basis ± k·σ (population), main-chart overlay. */
+export const oryonBbandsIndicatorSchema = z.object({
+  ...commonIndicatorFields,
+  type: z.literal("bbands"),
+  period: z.number().int().min(2).max(500),
+  stddev: z.number().min(0.1).max(10),
+  /** Basis line style; upper/lower bands reuse color with hairline width. */
+  style: oryonIndicatorStyleSchema,
+});
+
+/** Average True Range — Wilder-smoothed true range, dedicated pane. */
+export const oryonAtrIndicatorSchema = z.object({
+  ...commonIndicatorFields,
+  type: z.literal("atr"),
+  period: z.number().int().min(2).max(500),
+  style: oryonIndicatorStyleSchema,
+});
+
+/** Volume histogram — candle volumes, dedicated pane. */
+export const oryonVolumeIndicatorSchema = z.object({
+  ...commonIndicatorFields,
+  type: z.literal("volume"),
+});
+
+export const oryonIndicatorSchema = z.discriminatedUnion("type", [
+  oryonSmaIndicatorSchema,
+  oryonEmaIndicatorSchema,
+  oryonRsiIndicatorSchema,
+  oryonMacdIndicatorSchema,
+  oryonBbandsIndicatorSchema,
+  oryonAtrIndicatorSchema,
+  oryonVolumeIndicatorSchema,
+]);
+
+export type OryonIndicatorInstance = z.infer<typeof oryonIndicatorSchema>;
+
+/** Versioned persistence envelope (Phase 3 §11) — ONE chart-level file. */
+export const oryonIndicatorsFileSchema = z.object({
+  version: z.literal(1),
+  savedAt: z.number().finite().int(),
+  indicators: z.array(oryonIndicatorSchema).max(50),
+});
+
+export type OryonIndicatorsFile = z.infer<typeof oryonIndicatorsFileSchema>;

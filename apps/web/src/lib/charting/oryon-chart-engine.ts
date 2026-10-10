@@ -14,8 +14,12 @@ import {
   type UTCTimestamp,
 } from "lightweight-charts";
 
-import type { Candle } from "@cosmoz/shared";
+import type { Candle, OryonIndicatorInstance } from "@cosmoz/shared";
 
+import {
+  OryonIndicatorSeriesManager,
+  type ManagedIndicatorValue,
+} from "@/lib/charting/oryon-indicator-series";
 import { getChartTheme } from "@/lib/utils/chart-theme";
 
 /**
@@ -28,13 +32,17 @@ import { getChartTheme } from "@/lib/utils/chart-theme";
  * through this single adapter so the workspace components never touch the
  * library directly.
  *
- * Scope discipline (Phase 1):
+ * Scope discipline (Phase 1 + Phase 3):
  *   - chart creation / disposal, theming via getChartTheme() (NEVER hardcoded
  *     hex — AGENTS.md golden rule), candlestick + line series, tick→candle
  *     merge into the last bucket, crosshair inspection, magnet toggle,
  *     go-to-latest.
- *   - NO drawing tools, NO indicators, NO panes, NO position overlays — the
- *     adapter is deliberately narrow; future phases extend it without a
+ *   - Phase 3: indicator series management (overlays in pane 0, RSI/MACD/
+ *     ATR/Volume in NATIVE v5 panes) delegated to
+ *     OryonIndicatorSeriesManager — the engine forwards data/theme/tick
+ *     events but owns no indicator math.
+ *   - NO drawing tools (owned by the drawing primitive), NO position
+ *     overlays — the adapter stays narrow; phases extend it without a
  *     rewrite.
  *
  * Library facts honored:
@@ -105,6 +113,8 @@ export class OryonChartEngine {
   private crosshairHandler: ((bar: OryonCrosshairBar | null) => void) | null = null;
   /** Drawing overlay primitive — re-attached whenever the series is rebuilt. */
   private drawingsPrimitive: ISeriesPrimitive<UTCTimestamp> | null = null;
+  /** Indicator series manager (Phase 3) — created with the chart. */
+  private indicators: OryonIndicatorSeriesManager | null = null;
 
   /** True once mount() succeeded (guards every later call). */
   get isMounted(): boolean {
@@ -143,6 +153,7 @@ export class OryonChartEngine {
     });
 
     this.candleSeries = this.chart.addSeries(CandlestickSeries, this.candleStyle());
+    this.indicators = new OryonIndicatorSeriesManager(this.chart);
     this.attachDrawingsToActiveSeries();
     this.chart.subscribeCrosshairMove(this.handleCrosshairMove);
     this.rebuildSeriesData();
@@ -176,6 +187,8 @@ export class OryonChartEngine {
   destroy(): void {
     if (this.chart === null) return;
     this.chart.unsubscribeCrosshairMove(this.handleCrosshairMove);
+    this.indicators?.destroy();
+    this.indicators = null;
     this.chart.remove();
     this.chart = null;
     this.candleSeries = null;
@@ -210,6 +223,7 @@ export class OryonChartEngine {
     });
     this.candleSeries?.applyOptions(this.candleStyle());
     this.lineSeries?.applyOptions({ color: theme.accent });
+    this.indicators?.restyle({ digits: this.digits, theme });
   }
 
   /**
@@ -224,7 +238,28 @@ export class OryonChartEngine {
     if (this.chart === null) return;
     this.chart.timeScale().applyOptions({ timeVisible: intervalMs < 86_400_000 });
     this.rebuildSeriesData();
+    // Indicator datasets follow the displayed window (history load, symbol
+    // or timeframe switch, background refetch).
+    this.indicators?.rebuild(candles, { digits, theme: getChartTheme() });
     if (fit) this.chart.timeScale().fitContent();
+  }
+
+  /**
+   * Structural indicator sync (Phase 3) — create/update/remove indicator
+   * series + panes to mirror the instance list. Full data rebuild included.
+   */
+  setIndicators(instances: readonly OryonIndicatorInstance[]): void {
+    if (this.chart === null || this.indicators === null) return;
+    this.indicators.sync(instances, this.candles, {
+      digits: this.digits,
+      theme: getChartTheme(),
+    });
+  }
+
+  /** Legend subscription — latest valid value per indicator output. */
+  onIndicatorValues(handler: (values: readonly ManagedIndicatorValue[]) => void): void {
+    if (this.indicators === null) return;
+    this.indicators.onValues(handler);
   }
 
   /** Switches the rendered series type without touching the data window. */
@@ -271,12 +306,14 @@ export class OryonChartEngine {
       };
       this.candles = [...this.candles.slice(0, -1), merged];
       this.updateSeries(merged);
+      this.updateIndicatorLastPoints();
       return true;
     }
 
     const opened: Candle = { t: bucket, o: price, h: price, l: price, c: price, v: 0 };
     this.candles = [...this.candles, opened];
     this.updateSeries(opened);
+    this.updateIndicatorLastPoints();
     return true;
   }
 
@@ -366,7 +403,28 @@ export class OryonChartEngine {
     getBarCount: (): number => this.candles.length,
   };
 
-  // ── internals ──────────────────────────────────────────────────────────────
+  /**
+   * Dev-probe handle (window.__ORYON_CHART_DEBUG__, dev builds only): the
+   * number of live series + native panes — structural assertions without
+   * scraping the canvas.
+   */
+  get debugStats(): { series: number; panes: number } | null {
+    if (this.chart === null) return null;
+    const main = (this.candleSeries !== null ? 1 : 0) + (this.lineSeries !== null ? 1 : 0);
+    const managed = this.indicators?.stats ?? { series: 0, panes: 1 };
+    return { series: main + managed.series, panes: managed.panes };
+  }
+
+  // ── internals ──────────────────────────────────────────────────────────
+
+  /** Tick path: refresh the FORMING bar of every indicator (spec §10). */
+  private updateIndicatorLastPoints(): void {
+    if (this.indicators === null || this.candles.length === 0) return;
+    this.indicators.updateLast(this.candles, {
+      digits: this.digits,
+      theme: getChartTheme(),
+    });
+  }
 
   /** Continuous logical index → pane X (the time scale's own spacing). */
   private logicalIndexToX(logical: number): number | null {

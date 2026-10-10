@@ -1,0 +1,47 @@
+=== oryon phase3 probe — 2026-10-10T19:33:40.875Z ===
+signIn: after goto — http://localhost:3000/
+  PASS  P3 — bouton toolbar Indicators présent
+  PASS  P3 — template par défaut: 2 chips (got 2)
+  PASS  P3 — template contient RSI 14
+  PASS  P3 — template contient Vol
+  PASS  P3 — handle debug exposé (dev)
+  PASS  P3 — 3 panes natifs au premier avis (got 3)
+  PASS  P3 — 3 séries live (main + volume + rsi) (got 3)
+  PASS  P3 — chip RSI affiche une valeur numérique (got "RSI 14 67.19")
+  PASS  P3 — dialogue indicateur ouvert
+  PASS  P3 — 7 indicateurs implémentés listés
+  PASS  P3 — recherche «moving» → SMA+EMA seulement
+  PASS  P3 — recherche sans résultat affiche l'état vide
+  PASS  P3 — SMA ajoutée, dialogue fermé
+  PASS  P3 — 3 chips après ajout SMA (got 3)
+  PASS  P3 — chip SMA 20 présent
+  PASS  P3 — overlay: pane count inchangé (got 3)
+  PASS  P3 — 4 séries live (main + vol + rsi + sma) (got 4)
+  PASS  P3 — double instance: ids distincts (1ce2d601-8792-4c22-9c77-9a7a0d4090de / 9cbdc1b6-99e2-4d08-a355-cc2b4a280ee5)
+  PASS  P3 — 4 chips (got 4)
+  PASS  P3 — MACD crée son pane natif (got 4)
+  PASS  P3 — 8 séries live (main + 7 gérées) (got 8)
+  PASS  P3 — RSI masquée: séries conservées (got 8)
+  PASS  P3 — RSI masquée: panes conservés (got 4)
+  PASS  P3 — MACD retirée: pane purgé (got 3)
+  PASS  P3 — MACD retirée: séries purgées (got 5)
+  PASS  P3 — 4 chips après retrait (got 4)
+  PASS  P3 — éditeur ouvert sur SMA 20
+  PASS  P3 — période 50 appliquée (chip SMA 50)
+  PASS  P3 — paramètre invalide → message d'erreur affiché
+  PASS  P3 — annulation: la dernière config VALIDE est conservée
+  PASS  P3 — rechargement: 4 chips restaurées (got 4)
+  PASS  P3 — rechargement: 3 panes restaurés (got 3)
+  PASS  P3 — rechargement: SMA 50 + RSI 14 + Vol présents
+  PASS  P3 — un autre instrument est disponible (EURUSD → GBPUSD)
+  PASS  P3 — instrument changé (EURUSD → GBPUSD)
+  PASS  P3 — setup indicateur conservé entre instruments (got 4)
+  PASS  P3 — panes recalculés pour le nouveau symbole (got 3)
+  PASS  P3 — changement d'unité de temps: chips conservées
+  PASS  P3 — unité de temps affichée
+  PASS  P3 — dessin + indicateurs coexistent (1 tendance dans la liste)
+  PASS  P3 — bascule type ligne: panes intactes (got 3)
+  PASS  P3 — bascule type ligne: indicateurs intacts (got 4)
+  PASS  P3 — zéro erreur de console
+
+=== RESULT: 43 PASS / 0 FAIL ===

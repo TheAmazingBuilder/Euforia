@@ -17,6 +17,8 @@ import {
 import { OryonChartEngine, type OryonChartType, type OryonCrosshairBar } from "@/lib/charting/oryon-chart-engine";
 import { intervalToMs } from "@/lib/charting/oryon-intervals";
 import { OryonDrawingLayer } from "@/components/oryon/oryon-drawing-layer";
+import { OryonIndicatorLegend } from "@/components/oryon/oryon-indicator-legend";
+import { useIndicatorSnapshot } from "@/components/oryon/oryon-indicators-context";
 import { cn } from "@/lib/utils";
 
 /**
@@ -72,6 +74,8 @@ export function OryonPriceChart({
     host: HTMLDivElement;
   } | null>(null);
   const { resolvedTheme } = useTheme();
+  // Indicator instances (rare commits) — the engine diffs them imperatively.
+  const indicatorSnapshot = useIndicatorSnapshot();
 
   // Mount once / destroy on unmount (no duplicate instances, no leaks).
   React.useEffect(() => {
@@ -114,6 +118,26 @@ export function OryonPriceChart({
     engineRef.current?.applyTheme();
   }, [resolvedTheme]);
 
+  // Structural indicator sync — runs AFTER the candles effect on mount
+  // (declaration order), so the first sync already sees the loaded window.
+  React.useEffect(() => {
+    engineRef.current?.setIndicators(indicatorSnapshot.indicators);
+  }, [indicatorSnapshot]);
+
+  // Dev-probe handle — structural assertions without scraping the canvas.
+  React.useEffect(() => {
+    if (chartInstance === null || process.env.NODE_ENV === "production") return;
+    const readChartStats = (): { series: number; panes: number } | null =>
+      engineRef.current?.debugStats ?? null;
+    const host = window as unknown as {
+      __ORYON_CHART_DEBUG__?: () => { series: number; panes: number } | null;
+    };
+    host.__ORYON_CHART_DEBUG__ = readChartStats;
+    return () => {
+      delete host.__ORYON_CHART_DEBUG__;
+    };
+  }, [chartInstance]);
+
   return (
     <div ref={wrapperRef} className="relative h-full w-full">
       <div ref={containerRef} data-testid="oryon-chart-canvas" className="h-full w-full" />
@@ -133,7 +157,9 @@ export function OryonPriceChart({
         source={source}
         bar={hoverBar}
         hasData={candles.length > 0}
-      />
+      >
+        {chartInstance !== null ? <OryonIndicatorLegend engine={chartInstance.engine} /> : null}
+      </OryonChartLegend>
     </div>
   );
 }
@@ -167,12 +193,14 @@ function OryonChartLegend({
   source,
   bar,
   hasData,
+  children = null,
 }: {
   symbol: string;
   interval: MarketInterval;
   source: "real" | "sim";
   bar: OryonCrosshairBar | null;
   hasData: boolean;
+  children?: React.ReactNode;
 }) {
   const dict = useDict();
   const S = dict.oryon;
@@ -212,6 +240,7 @@ function OryonChartLegend({
           {S.legend.close} <span className="text-foreground">{bar.c}</span>
         </span>
       ) : null}
+      {children}
     </div>
   );
 }

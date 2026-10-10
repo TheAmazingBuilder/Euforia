@@ -15,34 +15,35 @@ import { OryonToolbar } from "@/components/oryon/oryon-toolbar";
 import { OryonToolRail } from "@/components/oryon/oryon-tool-rail";
 import { OryonUtilityRail } from "@/components/oryon/oryon-utility-rail";
 import { OryonDrawingsProvider } from "@/components/oryon/oryon-drawings-context";
+import { OryonIndicatorDialog } from "@/components/oryon/oryon-indicator-dialog";
+import {
+  OryonIndicatorsProvider,
+  useOryonIndicators,
+} from "@/components/oryon/oryon-indicators-context";
 import type { OryonChartType } from "@/lib/charting/oryon-chart-engine";
 
 export type OryonUtilityPanel = "notifications" | "calendar";
 
 /**
- * Oryon — the full-screen charting workspace (Phase 1).
+ * Oryon — the full-screen charting workspace (Phase 1 + Phase 3).
  *
- * Layout contract (Phase 1 spec §6): a top toolbar, a left drawing-tool rail
- * (visual foundation — unimplemented tools are disabled, never faked), the
- * central chart canvas, a compact right utility rail (notifications +
- * economic calendar) and a collapsed lower panel reserved for the
- * open-position phase.
- *
- * Full-bleed discipline: on lg+ the workspace escapes the shell's main
- * padding (fixed, known values — px-8 / py-6 / pb-8) and fills the viewport
- * below the h-14 topbar. Below lg it stays inside the padded shell — the
- * bottom nav owns that space — with stacked compact layouts and the
- * utilities as a Sheet overlay instead of a docked rail.
- *
- * State discipline: only instrument / timeframe / chart type / magnet /
- * panel visibility live here. Ticks never re-render this tree (the tick
- * bridge updates the engine imperatively) and staleness is computed in
- * leaves. Drawing state (tool, store, list) lives in the drawings context
- * — see OryonDrawingsProvider.
+ * Provider nesting: indicator state wraps the WHOLE workspace (toolbar
+ * dialog entry + chart series + legend chips share one store); drawing
+ * state nests inside (rail + chart layer).
  */
 export function OryonView() {
+  return (
+    <OryonIndicatorsProvider>
+      <OryonWorkspace />
+      <OryonIndicatorDialog />
+    </OryonIndicatorsProvider>
+  );
+}
+
+function OryonWorkspace() {
   const dict = useDict();
   const S = dict.oryon;
+  const { openBrowse } = useOryonIndicators();
 
   const instrumentsQuery = useInstruments();
   const healthQuery = useMarketServiceHealth();
@@ -113,6 +114,7 @@ export function OryonView() {
         magnet={magnet}
         onMagnetChange={setMagnet}
         onGoLatest={() => latestRef.current()}
+        onOpenIndicators={openBrowse}
         lowerOpen={lowerOpen}
         onToggleLower={() => setLowerOpen((open) => !open)}
         onOpenUtility={openUtility}

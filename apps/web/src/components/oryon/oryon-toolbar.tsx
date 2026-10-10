@@ -14,6 +14,7 @@ import {
   PanelBottom,
   ChartCandlestick,
   ArrowDownToLine,
+  Activity,
 } from "lucide-react";
 
 import type { Instrument, MarketInterval } from "@cosmoz/shared";
@@ -32,9 +33,9 @@ import { cn } from "@/lib/utils";
  * Oryon top toolbar — only controls this phase actually supports:
  * instrument selection (catalog + honest feed coverage), the current
  * instrument identity, timeframes (the shared interval contract), the
- * implemented chart types, the live feed status, return-to-latest, the
- * lower-panel toggle, utility access, browser full screen and the
- * workspace exit. No buttons implying drawing, indicators or orders.
+ * implemented chart types, indicator management (Phase 3), the live feed
+ * status, return-to-latest, the lower-panel toggle, utility access, browser
+ * full screen and the workspace exit. No buttons implying drawing or orders.
  */
 export function OryonToolbar({
   instruments,
@@ -49,6 +50,7 @@ export function OryonToolbar({
   magnet,
   onMagnetChange,
   onGoLatest,
+  onOpenIndicators,
   lowerOpen,
   onToggleLower,
   onOpenUtility,
@@ -66,6 +68,7 @@ export function OryonToolbar({
   magnet: boolean;
   onMagnetChange: (magnet: boolean) => void;
   onGoLatest: () => void;
+  onOpenIndicators: () => void;
   lowerOpen: boolean;
   onToggleLower: () => void;
   onOpenUtility: (panel: OryonUtilityPanel) => void;
@@ -145,6 +148,15 @@ export function OryonToolbar({
           onClick={() => onChartTypeChange("line")}
         />
       </div>
+
+      <div className="h-6 w-px shrink-0 bg-border" aria-hidden />
+
+      <OryonIconButton
+        icon={Activity}
+        label={S.indicatorsHint}
+        onClick={onOpenIndicators}
+        testid="oryon-indicators"
+      />
 
       <div className="h-6 w-px shrink-0 bg-border" aria-hidden />
 
