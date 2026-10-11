@@ -7,16 +7,22 @@ import {
   ChartCandlestick,
   Copy,
   EllipsisVertical,
+  Globe,
   Trash,
 } from "lucide-react";
 
-import type { Instrument, MarketInterval } from "@cosmoz/shared";
+import type { Instrument, MarketInterval, OryonPanelContext } from "@cosmoz/shared";
 
 import { useDict } from "@/i18n/i18n-provider";
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { OryonInstrumentSelector } from "@/components/oryon/oryon-instrument-selector";
@@ -48,9 +54,11 @@ export function OryonPanelHeader({
   feedSymbols,
   feedKnown,
   canRemove,
+  context,
   onInstrumentSelect,
   onIntervalChange,
   onChartTypeChange,
+  onContextChange,
   onDuplicate,
   onRemove,
   onGoLatest,
@@ -66,9 +74,13 @@ export function OryonPanelHeader({
   feedSymbols: ReadonlySet<string>;
   feedKnown: boolean;
   canRemove: boolean;
+  /** THIS panel's temporal-context prefs (Phase 8 §12). */
+  context: OryonPanelContext;
   onInstrumentSelect: (id: string) => void;
   onIntervalChange: (interval: MarketInterval) => void;
   onChartTypeChange: (type: OryonChartType) => void;
+  /** Replaces THIS panel's temporal-context prefs (Phase 8). */
+  onContextChange: (context: OryonPanelContext) => void;
   onDuplicate: () => void;
   onRemove: () => void;
   onGoLatest: () => void;
@@ -155,6 +167,72 @@ export function OryonPanelHeader({
       ) : null}
 
       <div className="ml-auto flex shrink-0 items-center">
+        {/* Temporal-context menu (Phase 8 §12) — per-panel display prefs.
+            Session shading and event markers toggle INDEPENDENTLY; the
+            importance threshold only ever widens/narrows the marker set. */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              aria-label={dict.oryon.context.menuHint}
+              data-testid={`${prefix}-context-menu`}
+              className={cn(
+                "inline-flex size-7 items-center justify-center rounded-md transition-colors hover:bg-surface-raised hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring",
+                context.sessionShading || context.eventMarkers
+                  ? "text-accent"
+                  : "text-muted-foreground",
+              )}
+            >
+              <Globe className="size-4" aria-hidden />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="min-w-52">
+            <DropdownMenuLabel className="text-xs text-muted-foreground">
+              {dict.oryon.context.menuTitle}
+            </DropdownMenuLabel>
+            <DropdownMenuCheckboxItem
+              checked={context.sessionShading}
+              data-testid={`${prefix}-context-sessions`}
+              onCheckedChange={(checked) =>
+                onContextChange({ ...context, sessionShading: checked === true })
+              }
+            >
+              {dict.oryon.context.sessionsToggle}
+            </DropdownMenuCheckboxItem>
+            <DropdownMenuCheckboxItem
+              checked={context.eventMarkers}
+              data-testid={`${prefix}-context-events`}
+              onCheckedChange={(checked) =>
+                onContextChange({ ...context, eventMarkers: checked === true })
+              }
+            >
+              {dict.oryon.context.eventsToggle}
+            </DropdownMenuCheckboxItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel className="text-[11px] font-normal text-muted-foreground">
+              {dict.oryon.context.minImportance}
+            </DropdownMenuLabel>
+            <DropdownMenuRadioGroup
+              value={context.eventMinImportance}
+              onValueChange={(value) =>
+                onContextChange({
+                  ...context,
+                  eventMinImportance: value as OryonPanelContext["eventMinImportance"],
+                })
+              }
+            >
+              <DropdownMenuRadioItem value="LOW" data-testid={`${prefix}-context-imp-low`}>
+                {dict.oryon.context.importanceLow}
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="MEDIUM" data-testid={`${prefix}-context-imp-medium`}>
+                {dict.oryon.context.importanceMedium}
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="HIGH" data-testid={`${prefix}-context-imp-high`}>
+                {dict.oryon.context.importanceHigh}
+              </DropdownMenuRadioItem>
+            </DropdownMenuRadioGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button

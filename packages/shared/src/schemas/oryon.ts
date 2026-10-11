@@ -608,3 +608,79 @@ export const oryonLayoutsFileV2Schema = z.object({
 });
 
 export type OryonLayoutsFileV2 = z.infer<typeof oryonLayoutsFileV2Schema>;
+
+// ── Temporal-context contracts (Phase 8 — spec §12) ─────────────────────────
+//
+// Session overlays and economic-event markers are PER-PANEL display
+// preferences: a multi-chart workspace compares, among other things, a
+// session-driven FX chart against a 24/7 crypto chart, so a single
+// workspace-level toggle would flatten a real product need (spec §11
+// "per-chart visibility preferences remain independent").
+//
+// What is deliberately NOT in this contract (spec §12 scope discipline):
+//  - the session DEFINITIONS themselves (IANA zones, local hours, days) —
+//    they are versioned CODE constants in the web domain layer, not user
+//    data; persisting them would let an old layout resurrect an outdated
+//    schedule;
+//  - the economic-event RECORDS (they live in the calendar data layer,
+//    refetched and revalidated — never copied into a layout);
+//  - transient event-detail popovers / open menus (not applyable state);
+//  - the events-panel browsing filters (currency / date-range filters are
+//    reading controls of the calendar surface, not chart configuration).
+//
+// The v3 layout REPLACES the v2 panel shape additively (context field);
+// the migration v2→v3 is deterministic (context = the documented default)
+// and lives in the web domain layer, mirroring the v1→v2 pattern.
+
+/** Minimum event importance a panel renders as chart markers (spec §8). */
+export const oryonEventImportanceSchema = z.enum(["LOW", "MEDIUM", "HIGH"]);
+
+export type OryonEventImportance = z.infer<typeof oryonEventImportanceSchema>;
+
+/** One panel's temporal-context display preferences (spec §12). */
+export const oryonPanelContextSchema = z.object({
+  /** Subtle session background shading + start markers. */
+  sessionShading: z.boolean(),
+  /** Economic-event markers within the loaded chart span. */
+  eventMarkers: z.boolean(),
+  /** Events below this importance never become markers. */
+  eventMinImportance: oryonEventImportanceSchema,
+});
+
+export type OryonPanelContext = z.infer<typeof oryonPanelContextSchema>;
+
+/**
+ * Default context for a NEW panel and the deterministic v2→v3 migration:
+ * shading ON (standard terminal furniture, subtle by design), markers ON
+ * restricted to MEDIUM+ (readable default — LOW noise stays in the panel).
+ */
+export const ORYON_DEFAULT_PANEL_CONTEXT: OryonPanelContext = {
+  sessionShading: true,
+  eventMarkers: true,
+  eventMinImportance: "MEDIUM",
+};
+
+/** Chart panel v3 — the v2 configuration plus the context preferences. */
+export const oryonChartPanelV3Schema = oryonChartPanelSchema.extend({
+  context: oryonPanelContextSchema,
+});
+
+export type OryonChartPanelV3 = z.infer<typeof oryonChartPanelV3Schema>;
+
+/** Workspace layout v3 — the v2 arrangement with per-panel context. */
+export const oryonWorkspaceLayoutV3Schema = oryonWorkspaceLayoutV2Schema.extend({
+  panels: z.array(oryonChartPanelV3Schema).min(1).max(ORYON_MAX_PANELS),
+});
+
+export type OryonWorkspaceLayoutV3 = z.infer<typeof oryonWorkspaceLayoutV3Schema>;
+
+/** Versioned persistence envelope v3 (Phase 8) — ONE browser-local file.
+ *  Loaders accept v1/v2 and migrate deterministically; saves write v3. */
+export const oryonLayoutsFileV3Schema = z.object({
+  version: z.literal(3),
+  savedAt: z.number().finite().int(),
+  layouts: z.array(oryonWorkspaceLayoutV3Schema).max(20),
+  activeLayoutId: z.string().min(8).max(64).nullable(),
+});
+
+export type OryonLayoutsFileV3 = z.infer<typeof oryonLayoutsFileV3Schema>;

@@ -930,3 +930,28 @@ Work Log:
 
 Stage Summary:
 - **ORYON PHASE 7 LIVRÉE ET VÉRIFIÉE** : multi-panneaux (1/2h/2v/2×2) sans recréation de graphes, modèle de panneau actif (premier clic = activation), 4 synchronisations indépendantes (time-scale, crosshair par timestamp, instrument, timeframe) avec triple protection anti-boucle, ownership respecté (dessins par symbole, indicateurs par panneau, positions/alertes scopées par symbole, alertes indépendantes des panneaux), layouts v2 multi-panneaux avec migration v1 déterministe, templates appliqués au panneau actif. 573 assertions unitaires + 54 vérifications E2E + smokes prod verts, tsc/eslint/build propres. Commit final sur main.
+
+---
+Task ID: oryon-phase8-audit
+Agent: Super Z (main)
+Date: 2026-10-11 (IM — « phase 8 : ORYON — PHASE 8 Market Sessions, Economic Events, and Temporal Context Engine »)
+
+Task: Audit obligatoire Phase 8 (spec §2) — calendrier éco existant, sessions de marché, conventions temporelles, capacité LWC v5.2.1 pour les overlays session/événement.
+
+Work Log:
+- Git : `main` @ `b856fe5` (Phase 7 livrée), arbre PROPRE.
+- PHASES 1-7 VÉRIFIÉES OPÉRATIONNELLES (worklog + code) : P1 moteur LWC v5.2.1 ; P2 dessins 8 outils (registry par symbole) ; P3 indicateurs 7 types (registry par panneau) ; P4 positions overlay scopé symbole ; P5 mesure + crosshair UTC + alertes ; P6 layouts+templates ; P7 multi-panneaux (1/2h/2v/quad), panneau actif, sync 4 flags, layouts v2 + migration v1.
+- CALENDRIER ÉCO EXISTANT (VERIFIED — réutilisation obligatoire, spec §6) :
+  * Contrat partagé `eco-event.ts` : EcoEvent {id, title, currency(3), impact HIGH|MEDIUM|LOW, scheduledAt ISO-UTC, actual/forecast/previous nullable} — via `ecoEventsResponseSchema` (api.ts) GET /eco-events.
+  * API NestJS module `calendar/` complet : port provider (`EconomicCalendarProvider.fetchWindow`) + adaptateur `builtin-economic.provider.ts` (échantillon déterministe « builtin-sample », créneaux Toronto, fenêtre [-92..+13] j) + repository Prisma + contrôleurs. Le domaine dérive SCHEDULED/RELEASED (actual non null + passé).
+  * Web : `useEcoEvents()` (TanStack, key ["eco-events"]) → MSW mock OU API réelle — les DEUX servent le même générateur déterministe. Source = DONNÉES D'ÉCHANTILLON, aucun provider live n'existe → étiquetage honnête obligatoire (spec §13).
+  * UI existante : page /events (eco-calendar.tsx, 525 l.) + trading-calendar.tsx + **le rail utilitaire Oryon a DÉJÀ un onglet calendar** (OryonEcoPanel l.183 : 8 prochaines, read-only, Toronto codé en dur).
+- SESSIONS DE MARCHÉ : **MISSING**. Seul `ANALYTIC_SESSIONS` (shared/constants.ts) = buckets UTC fixes pour analytics journal (Asia 20-07, London 07-13, NY 13-20 UTC) — convention journal, PAS un moteur de sessions (offsets fixes interdits par spec §4.2 pour le rendu).
+- FUSEAUX (VERIFIED) : transport ISO-UTC/epoch-ms partout ; axe graphique + légende crosshair = UTC (format.ts documenté) ; **préférence timezone utilisateur EXISTE : Profile.timezone (PATCH /me, ianaTimezoneSchema, défaut America/Toronto, source unique spec settings.ts)** → réutilisée (§9.1) via useProfile().
+- INSTRUMENTS : catalogue {symbol, name, assetClass FOREX|CRYPTO|SYNTHETIC|INDEX|METAL|ENERGY, quoteCurrency, pipSize, digits} — AUCUNE métadonnée horaires → périmètre sessions défini par assetClass dans les définitions Phase 8 (CRYPTO/SYNTHETIC = 24/7, sessions non applicables — affiché honnêtement) ; mapping événement↔instrument fiable INDISPONIBLE (pas de devise de base dans le schéma) → §10 : browse-all + filtres utilisateur, jamais de match par préfixe.
+- LAYOUTS v2 : panels[]{id,symbol,interval,chartType,indicators} + utilityRail{open,panel:notifications|alerts|calendar} → préférences contextuelles par panneau = CROISSANCE ADDITIVE v3 (pattern v1→v2 établi, migration déterministe).
+- LWC v5.2.1 CAPACITÉS CONFIRMÉES (typings) : PrimitivePaneViewZOrder = "bottom"|"normal"|"top" → shading session DERRIÈRE les séries ; createSeriesMarkers(series, markers, options) → setMarkers, SeriesMarker {time, position, shape, color, id?, text?} (ids stables) ; subscribeClick → MouseEventParams {time?, point?, paneIndex?} → sélection de marqueur sans primitive custom.
+- OUTILS : datetime.ts (helpers formulaires), useNowMs (ticker 1 Hz, SSR-safe), getChartTheme (tokens), i18n dictionaries/en.ts, tests bun scripts/oryon-*-tests.ts + sondes Playwright verify-oryon-phase*.js + tsc/eslint/next build.
+
+Stage Summary:
+- Audit consigné : TOUTES les dépendances Phase 8 sont résolues — calendrier éco RÉUTILISÉ (contrat + requête existants), timezone utilisateur RÉUTILISÉE (Profile), sessions à construire (moteur Intl pur, IANA, sans nouvelle lib), rendu via primitive zOrder "bottom" + createSeriesMarkers natifs. Limites documentées : pas de calendrier vacances vérifié (sessions = indicatives), pas de provider live (événements = échantillon étiqueté). Prochaine étape : Stage B — schéma v3 contextuel + définitions sessions typées + moteur pur.

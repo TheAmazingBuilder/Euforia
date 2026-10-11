@@ -5,14 +5,24 @@ import {
   CrosshairMode,
   LineSeries,
   createChart,
+  createSeriesMarkers,
   type CandlestickData,
   type IChartApi,
   type ISeriesApi,
+  type ISeriesMarkersPluginApi,
   type ISeriesPrimitive,
   type LineData,
   type Logical,
+  type MouseEventParams,
+  type SeriesMarker,
   type UTCTimestamp,
 } from "lightweight-charts";
+
+import {
+  OryonSessionOverlayManager,
+  createSessionColorResolver,
+  type OryonSessionBandSpec,
+} from "@/lib/charting/oryon-session-overlay";
 
 import type { Candle, OryonIndicatorInstance } from "@cosmoz/shared";
 
@@ -33,6 +43,20 @@ import {
   type SyncRange,
 } from "@/lib/oryon/sync/alignment";
 import { getChartTheme } from "@/lib/utils/chart-theme";
+
+/** One economic-event marker input (Phase 8) — BAR-SNAPPED UTC seconds.
+ *  The color arrives RESOLVED (bridge reads theme tokens); the id is the
+ *  event's stable record id (§8). */
+export interface OryonEventMarkerSpec {
+  /** Stable identity — the verified event record's id. */
+  readonly id: string;
+  /** Open time of the bar CONTAINING the event instant (unix seconds). */
+  readonly timeSec: number;
+  /** Resolved marker color (importance encoding — size also varies). */
+  readonly color: string;
+  /** Marker size (importance encoding — never color alone, §15). */
+  readonly size: number;
+}
 
 /**
  * Oryon chart-engine boundary — TradingView Lightweight Charts v5.
@@ -145,6 +169,14 @@ export class OryonChartEngine {
   /** Sync surface (Phase 7) — raw listeners + programmatic-apply guards. */
   private rangeListeners = new Set<(range: SyncRange | null) => void>();
   private crosshairListeners = new Set<(timeSec: number | null) => void>();
+  /** Session shading (Phase 8) — "bottom" zOrder primitive, diffed bands. */
+  private sessions: OryonSessionOverlayManager | null = null;
+  private sessionColors = createSessionColorResolver();
+  /** Economic-event markers (Phase 8) — native markers plugin, stable ids. */
+  private markersPlugin: ISeriesMarkersPluginApi<UTCTimestamp> | null = null;
+  private eventMarkerSpecs: readonly OryonEventMarkerSpec[] = [];
+  private markerClickListeners = new Set<(timeSec: number, point: { x: number; y: number } | null) => void>();
+  private clickSubscribed = false;
   /** Last dispatched crosshair time (dev-probe observability). */
   private lastCrosshairTime: number | null = null;
   private rangeEcho: EchoGuard = createEchoGuard();
@@ -194,6 +226,13 @@ export class OryonChartEngine {
     this.positions.setSeries(this.candleSeries);
     this.alerts = new OryonAlertOverlayManager();
     this.alerts.setSeries(this.candleSeries);
+    this.sessions = new OryonSessionOverlayManager({
+      getColor: this.sessionColors.resolve,
+      getMonoFont: () => getChartTheme().monoFont,
+      getTextMuted: () => getChartTheme().textMuted,
+      conversions: this.conversions,
+    });
+    this.sessions.attach(this.candleSeries);
     this.attachDrawingsToActiveSeries();
     this.chart.subscribeCrosshairMove(this.handleCrosshairMove);
     this.chart.timeScale().subscribeVisibleTimeRangeChange(this.handleVisibleRangeChange);
@@ -237,6 +276,12 @@ export class OryonChartEngine {
     this.positions = null;
     this.alerts?.destroy();
     this.alerts = null;
+    this.sessions?.destroy();
+    this.sessions = null;
+    this.detachMarkersPlugin();
+    this.eventMarkerSpecs = [];
+    this.markerClickListeners.clear();
+    this.sessionColors.invalidate();
     this.chart.remove();
     this.chart = null;
     this.candleSeries = null;
@@ -274,6 +319,9 @@ export class OryonChartEngine {
     this.indicators?.restyle({ digits: this.digits, theme });
     this.positions?.restyle(theme);
     this.alerts?.restyle(theme);
+    // Session band colors resolve from theme tokens — refresh the cache so
+    // bands follow the palette switch on the NEXT paint (§15 theming).
+    this.sessionColors.invalidate();
   }
 
   /**
@@ -372,6 +420,11 @@ export class OryonChartEngine {
     this.attachDrawingsToActiveSeries();
     this.positions?.setSeries(this.activeSeries());
     this.alerts?.setSeries(this.activeSeries());
+    // Session bands live on the series — re-attach after the rebuild.
+    const currentSeries = this.activeSeries();
+    if (this.sessions !== null && currentSeries !== null) this.sessions.attach(currentSeries);
+    // The markers plugin is series-bound: re-create it on the new series.
+    this.recreateMarkersPlugin();
     this.rebuildSeriesData();
     this.chart.timeScale().scrollToRealTime();
   }
@@ -418,6 +471,103 @@ export class OryonChartEngine {
   /** Registers the crosshair-inspection callback (legend OHLC). */
   onCrosshair(handler: (bar: OryonCrosshairBar | null) => void): void {
     this.crosshairHandler = handler;
+  }
+
+  // ── temporal context surface (Phase 8) ─────────────────────────────────
+
+  /**
+   * Replaces the session shading bands (UTC seconds). Diff-free by design:
+   * the primitive reads the array at paint time and one applyOptions({})
+   * requests a redraw — visibility toggles NEVER recreate the chart (§5/§14).
+   * A no-op before mount (the panel's honest empty/error states own the
+   * canvas until real data arrives) and on unmounted destroy.
+   */
+  setSessionBands(bands: readonly OryonSessionBandSpec[]): void {
+    if (this.sessions === null) return;
+    this.sessions.setBands(bands);
+  }
+
+  /**
+   * Replaces the economic-event markers. Specs arrive BAR-SNAPPED from the
+   * bridge (the marker lands on the bar containing the event instant — the
+   * containment rule the crosshair sync already documents); stable ids
+   * (event ids) keep re-sets identity-stable (§8/§14).
+   */
+  setEventMarkers(specs: readonly OryonEventMarkerSpec[]): void {
+    this.eventMarkerSpecs = specs;
+    if (this.markersPlugin !== null) {
+      this.markersPlugin.setMarkers(this.toSeriesMarkers(specs));
+    }
+  }
+
+  /** Subscribes a marker-click listener. The payload is the clicked BAR
+   *  time (unix seconds) plus the click point in CSS px (chart-local, null
+   *  outside the plot) — the bridge anchors its event popover there.
+   *  Returns the unsubscribe function (cleanup on panel unmount). */
+  onEventMarkerClick(handler: (timeSec: number, point: { x: number; y: number } | null) => void): () => void {
+    this.markerClickListeners.add(handler);
+    this.ensureClickSubscription();
+    return () => {
+      this.markerClickListeners.delete(handler);
+    };
+  }
+
+  private ensureClickSubscription(): void {
+    if (this.chart === null || this.clickSubscribed) return;
+    // The chart's HorzScaleItem generic defaults to Time; this workspace's
+    // domain is UTCTimestamp (same documented boundary as the drawing
+    // primitive cast).
+    this.chart.subscribeClick(
+      this.handleChartClick as unknown as Parameters<IChartApi["subscribeClick"]>[0],
+    );
+    this.clickSubscribed = true;
+  }
+
+  private handleChartClick = (param: { time?: unknown; point?: { x: number; y: number } | null }): void => {
+    if (this.markerClickListeners.size === 0) return;
+    const time = param.time;
+    if (typeof time !== "number") return;
+    // Emit only when a marker actually sits on this bar — clicks on empty
+    // bars never open a phantom popover (§8: markers are linked to verified
+    // records, nothing else).
+    const hit = this.eventMarkerSpecs.some((spec) => spec.timeSec === time);
+    if (!hit) return;
+    const point =
+      param.point !== undefined && param.point !== null
+        ? { x: param.point.x, y: param.point.y }
+        : null;
+    for (const listener of this.markerClickListeners) listener(time, point);
+  };
+
+  private toSeriesMarkers(specs: readonly OryonEventMarkerSpec[]): SeriesMarker<UTCTimestamp>[] {
+    return specs.map((spec) => ({
+      id: spec.id,
+      time: spec.timeSec as UTCTimestamp,
+      position: "aboveBar" as const,
+      shape: "circle" as const,
+      color: spec.color,
+      size: spec.size,
+    }));
+  }
+
+  private recreateMarkersPlugin(): void {
+    this.detachMarkersPlugin();
+    const series = this.activeSeries();
+    if (series === null || this.eventMarkerSpecs.length === 0) return;
+    this.markersPlugin = createSeriesMarkers(series, this.toSeriesMarkers(this.eventMarkerSpecs), {
+      autoScale: false,
+    }) as unknown as ISeriesMarkersPluginApi<UTCTimestamp>;
+  }
+
+  private detachMarkersPlugin(): void {
+    if (this.markersPlugin === null) return;
+    try {
+      this.markersPlugin.setMarkers([]);
+      this.markersPlugin.detach();
+    } catch {
+      // Host series already removed — nothing left to clean.
+    }
+    this.markersPlugin = null;
   }
 
   /** Crosshair magnet on/off (real engine option — the rail's honest toggle). */
@@ -593,7 +743,14 @@ export class OryonChartEngine {
    * number of live series + native panes — structural assertions without
    * scraping the canvas.
    */
-  get debugStats(): { series: number; panes: number; priceLines: number; alertLines: number } | null {
+  get debugStats(): {
+    series: number;
+    panes: number;
+    priceLines: number;
+    alertLines: number;
+    sessionBands: number;
+    eventMarkers: number;
+  } | null {
     if (this.chart === null) return null;
     const main = (this.candleSeries !== null ? 1 : 0) + (this.lineSeries !== null ? 1 : 0);
     const managed = this.indicators?.stats ?? { series: 0, panes: 1 };
@@ -602,6 +759,8 @@ export class OryonChartEngine {
       panes: managed.panes,
       priceLines: this.positions?.count ?? 0,
       alertLines: this.alerts?.count ?? 0,
+      sessionBands: this.sessions?.count ?? 0,
+      eventMarkers: this.eventMarkerSpecs.length,
     };
   }
 

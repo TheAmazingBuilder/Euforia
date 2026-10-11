@@ -330,6 +330,7 @@ function OryonWorkspace() {
             panel={session.utilityPanel}
             onPanelChange={(panel) => store.openUtility(panel)}
             onClose={() => store.setUtilityOpen(false)}
+            activeInstrument={instrument}
           />
         ) : null}
       </div>
@@ -347,6 +348,7 @@ function OryonWorkspace() {
         panel={session.utilityPanel}
         onPanelChange={(panel) => store.openUtility(panel)}
         onClose={() => store.setUtilityOpen(false)}
+        activeInstrument={instrument}
       />
 
       {/* Screen-reader summary of the workspace purpose (a11y). */}

@@ -6,7 +6,7 @@ import type {
   OryonLayoutChartType,
   OryonLayoutPanel,
   MarketInterval,
-  OryonWorkspaceLayoutV2,
+  OryonWorkspaceLayoutV3,
 } from "@cosmoz/shared";
 
 import { indicatorRuleError } from "@/lib/oryon/indicators/validation";
@@ -94,7 +94,7 @@ export function OryonWorkspaceConfigProvider({ children }: { children: React.Rea
    * stack is left untouched (v1 heritage, honest partial semantics).
    */
   const applyPanelStacks = React.useCallback(
-    (layout: OryonWorkspaceLayoutV2) => {
+    (layout: OryonWorkspaceLayoutV3) => {
       for (const panel of layout.panels) {
         if (panel.indicators === null) continue;
         const panelStore = indicatorRegistry.storeFor(panel.id);

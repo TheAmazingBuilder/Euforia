@@ -4,7 +4,7 @@ import * as React from "react";
 
 import { useTheme } from "next-themes";
 
-import type { Candle, MarketInterval } from "@cosmoz/shared";
+import type { Candle, MarketInterval, OryonPanelContext } from "@cosmoz/shared";
 
 import { useLiveQuote } from "@/lib/realtime/market";
 import { useDict } from "@/i18n/i18n-provider";
@@ -23,6 +23,10 @@ import { useIndicatorSnapshot } from "@/components/oryon/oryon-indicators-contex
 import { useOryonDrawings } from "@/components/oryon/oryon-drawings-context";
 import { useOryonPositions } from "@/components/oryon/oryon-positions-context";
 import { useOryonAlerts } from "@/components/oryon/oryon-alerts-context";
+import {
+  OryonContextOverlaysBridge,
+  OryonEventPopover,
+} from "@/components/oryon/oryon-context-overlays";
 import { positionsForChart } from "@/lib/oryon/positions/match";
 import { buildPositionLineSpecs } from "@/lib/oryon/positions/overlay";
 import { buildAlertLineSpecs } from "@/lib/oryon/alerts/overlay";
@@ -60,6 +64,7 @@ export function OryonPriceChart({
   source,
   fitKey,
   indicatorStore,
+  context,
   interactive,
   onEngineReady,
   onEngineGone,
@@ -80,6 +85,8 @@ export function OryonPriceChart({
   fitKey: string;
   /** THIS panel's indicator stack (per panel id — Phase 7). */
   indicatorStore: OryonIndicatorStore;
+  /** THIS panel's temporal-context prefs (per panel id — Phase 8). */
+  context: OryonPanelContext;
   /** True while this panel is the workspace's active chart. */
   interactive: boolean;
   /** Exposes the engine to the panel wrapper (sync registration, toolbar). */
@@ -186,6 +193,21 @@ export function OryonPriceChart({
       <OryonTickBridge engineRef={engineRef} symbol={liveSymbol ?? dataSymbol} />
       <OryonPositionsOverlayBridge engineRef={engineRef} dataSymbol={dataSymbol} mounted={chartInstance !== null} />
       <OryonAlertsOverlayBridge engineRef={engineRef} dataSymbol={dataSymbol} mounted={chartInstance !== null} />
+      <OryonContextOverlaysBridge
+        engineRef={engineRef}
+        mounted={chartInstance !== null}
+        dataSymbol={dataSymbol}
+        interval={interval}
+        candles={candles}
+        context={context}
+      />
+      <OryonEventPopover
+        engineRef={engineRef}
+        mounted={chartInstance !== null}
+        interval={interval}
+        candles={candles}
+        dataSymbol={dataSymbol}
+      />
       <OryonChartLegend
         symbol={dataSymbol}
         interval={interval}

@@ -4,7 +4,7 @@ import * as React from "react";
 
 import { Loader2, RefreshCcw, TriangleAlert } from "lucide-react";
 
-import type { Instrument, MarketInterval } from "@cosmoz/shared";
+import type { Instrument, MarketInterval, OryonPanelContext } from "@cosmoz/shared";
 
 import { useCandles } from "@/lib/realtime/market";
 import { useDict } from "@/i18n/i18n-provider";
@@ -31,6 +31,7 @@ export function OryonChartPanel({
   chartType,
   magnet,
   indicatorStore,
+  context,
   interactive,
   onEngineReady,
   onEngineGone,
@@ -41,6 +42,8 @@ export function OryonChartPanel({
   magnet: boolean;
   /** THIS panel's indicator stack (per panel id — Phase 7). */
   indicatorStore: OryonIndicatorStore;
+  /** THIS panel's temporal-context prefs (per panel id — Phase 8). */
+  context: OryonPanelContext;
   /** True while this panel is the workspace's active chart. */
   interactive: boolean;
   onEngineReady?: (engine: OryonChartEngine) => void;
@@ -138,6 +141,7 @@ export function OryonChartPanel({
         source={source}
         fitKey={`${symbol}:${interval}`}
         indicatorStore={indicatorStore}
+        context={context}
         interactive={interactive}
         onEngineReady={onEngineReady}
         onEngineGone={onEngineGone}
