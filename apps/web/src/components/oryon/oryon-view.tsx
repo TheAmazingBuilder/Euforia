@@ -152,24 +152,28 @@ function OryonWorkspace() {
   const covered = instrument !== null && feedSymbols.has(instrument.symbol);
 
   // ── Sync coordinator (engine-level: time scale + crosshair) ───────────────
+  // Created lazily on FIRST USE — an effect or a child's engine-ready
+  // callback, never during render (react-hooks/refs discipline) — and
+  // disposed on unmount. Registration always flows through the accessor,
+  // so a re-created engine re-registers against a live coordinator.
   const syncRef = React.useRef<OryonSyncCoordinator | null>(null);
-  if (syncRef.current === null) {
-    syncRef.current = new OryonSyncCoordinator();
-  }
-  const sync = syncRef.current;
+  const getSync = React.useCallback((): OryonSyncCoordinator => {
+    if (syncRef.current === null) syncRef.current = new OryonSyncCoordinator();
+    return syncRef.current;
+  }, []);
 
   React.useEffect(() => {
     // Settings changes are rare commits — pushed imperatively, never via
     // re-render (the engines read nothing from React).
-    sync.setFeatures(session.sync);
-  }, [sync, session.sync]);
+    getSync().setFeatures(session.sync);
+  }, [getSync, session.sync]);
 
   React.useEffect(() => {
     return () => {
-      sync.dispose();
+      syncRef.current?.dispose();
       syncRef.current = null;
     };
-  }, [sync]);
+  }, [getSync]);
 
   // ── Engine registry (toolbar go-latest + sync registration) ───────────────
   const enginesRef = React.useRef<Map<string, OryonChartEngine>>(new Map());
@@ -179,7 +183,7 @@ function OryonWorkspace() {
       enginesRef.current.set(panelId, engine);
       // The engine implements the coordinator's adapter surface directly —
       // clearCrosshairPosition is adapted to the adapter's clearCrosshair.
-      sync.register(panelId, {
+      getSync().register(panelId, {
         getVisibleRange: () => engine.getVisibleRange(),
         applyVisibleRange: (range) => engine.applyVisibleRange(range),
         onVisibleRangeChange: (handler) => engine.onVisibleRangeChange(handler),
@@ -188,15 +192,15 @@ function OryonWorkspace() {
         onCrosshairTime: (handler) => engine.onCrosshairTime(handler),
       });
     },
-    [sync],
+    [getSync],
   );
 
   const handleEngineGone = React.useCallback(
     (panelId: string) => {
       enginesRef.current.delete(panelId);
-      sync.unregister(panelId);
+      getSync().unregister(panelId);
     },
-    [sync],
+    [getSync],
   );
 
   /** "Return to latest" lives in the toolbar; the engine is the ACTIVE
@@ -206,6 +210,45 @@ function OryonWorkspace() {
     if (panelId === undefined) return;
     enginesRef.current.get(panelId)?.goToLatest();
   }, [activePanel]);
+
+  // Dev-probe handle (multi-chart, dev builds only — mirrors the single-
+  // chart __ORYON_CHART_DEBUG__ convention): per-panel identity, sync
+  // state and engine observables WITHOUT scraping canvases. Never shipped
+  // to production, never read by the app itself.
+  React.useEffect(() => {
+    if (process.env.NODE_ENV === "production") return;
+    const host = window as unknown as {
+      __ORYON_PANELS_DEBUG__?: () => unknown;
+    };
+    host.__ORYON_PANELS_DEBUG__ = () => {
+      const snap = store.getSnapshot();
+      return snap.session.panels.map((panel, index) => {
+        const engine = enginesRef.current.get(panel.id) ?? null;
+        const stats = engine?.debugStats ?? null;
+        const range = engine?.getVisibleRange() ?? null;
+        return {
+          panelId: panel.id,
+          index,
+          symbol: panel.symbol,
+          interval: panel.interval,
+          chartType: panel.chartType,
+          active: snap.session.activePanelId === panel.id,
+          grid: snap.session.grid,
+          sync: snap.session.sync,
+          visibleRange: range ? { from: range.from, to: range.to } : null,
+          crosshairTime: engine?.observedCrosshairTime ?? null,
+          lastCandleTime: engine?.lastCandleTime ?? null,
+          series: stats?.series ?? 0,
+          panes: stats?.panes ?? 0,
+          priceLines: stats?.priceLines ?? 0,
+          alertLines: stats?.alertLines ?? 0,
+        };
+      });
+    };
+    return () => {
+      delete host.__ORYON_PANELS_DEBUG__;
+    };
+  }, [store]);
 
   /**
    * Alert creation entry point — STABLE per instrument (never per tick):
@@ -274,7 +317,6 @@ function OryonWorkspace() {
               instruments={instruments}
               feedSymbols={feedSymbols}
               feedKnown={feedSymbols.size > 0}
-              sync={sync}
               onEngineReady={handleEngineReady}
               onEngineGone={handleEngineGone}
             />

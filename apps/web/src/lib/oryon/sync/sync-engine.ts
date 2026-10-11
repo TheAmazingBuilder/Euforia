@@ -158,10 +158,11 @@ export class OryonSyncCoordinator {
       entry.crosshairGuard.mark(timeSec);
       if (timeSec === null) {
         entry.adapter.clearCrosshair();
-      } else {
-        // A target that cannot represent the timestamp keeps an honest
-        // empty crosshair — no snap fabrication (spec §8.2).
-        entry.adapter.applyCrosshairAtTime(timeSec);
+      } else if (!entry.adapter.applyCrosshairAtTime(timeSec)) {
+        // A target that cannot represent the timestamp (session gap,
+        // out-of-span bar) keeps an honest EMPTY crosshair — no snap
+        // fabrication, no stale position left behind (spec §8.2).
+        entry.adapter.clearCrosshair();
       }
     }
   }

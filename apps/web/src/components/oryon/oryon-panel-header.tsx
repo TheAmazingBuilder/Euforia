@@ -38,7 +38,6 @@ import { cn } from "@/lib/utils";
  * never collide with the toolbar's canonical ids in strict-mode probes.
  */
 export function OryonPanelHeader({
-  panelId,
   index,
   multi,
   instrument,
@@ -56,7 +55,6 @@ export function OryonPanelHeader({
   onRemove,
   onGoLatest,
 }: {
-  panelId: string;
   index: number;
   /** True when the grid shows more than one chart. */
   multi: boolean;
@@ -82,7 +80,7 @@ export function OryonPanelHeader({
   return (
     <div
       data-testid={`${prefix}-header`}
-      className="flex h-9 shrink-0 items-center gap-1.5 border-b border-border bg-surface px-2"
+      className="flex h-9 shrink-0 items-center gap-1.5 overflow-x-auto border-b border-border bg-surface px-2"
     >
       <span
         data-testid={`${prefix}-active-dot`}

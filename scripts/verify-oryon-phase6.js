@@ -274,7 +274,8 @@ async function indicatorsFile(page) {
   ok("B3 enveloppe persistée (1 layout + pointeur)", file !== null && file.layouts.length === 1 && file.activeLayoutId === file.layouts[0].id);
   ok("B4 arrangement capturé (15m/line/lower/utility)", (() => {
     const l = file.layouts[0];
-    return l.interval === "15m" && l.chartType === "line" && l.lowerPanel === true && l.utilityRail.open === true && l.utilityRail.panel === "alerts";
+    // Phase 7: v2 envelope — chart settings live in panels[0] (main panel).
+    return l.panels[0].interval === "15m" && l.panels[0].chartType === "line" && l.lowerPanel === true && l.utilityRail.open === true && l.utilityRail.panel === "alerts";
   })());
 
   await page.click('[data-testid="oryon-tf-1H"]');
@@ -285,7 +286,7 @@ async function indicatorsFile(page) {
   await page.waitForTimeout(600);
   ok("B6 save changes → dirty disparue", (await page.locator('[data-testid="oryon-layout-dirty"]').count()) === 0);
   file = await layoutsFile(page);
-  ok("B7 interval sauvegardé = 1H", file.layouts[0].interval === "1H");
+  ok("B7 interval sauvegardé = 1H", file.layouts[0].panels[0].interval === "1H");
 
   console.log("— C. Layouts : switch aller-retour (configuration sauvegardée)");
   await selectSavedLayout(page, "Default layout");
@@ -340,7 +341,7 @@ async function indicatorsFile(page) {
   ok("E3 discard → défaut actif", (await activeLayoutName(page)) === "Default layout");
   ok("E4 discard → interval 5m appliqué", (await page.locator('[data-testid="oryon-tf-5m"][aria-pressed="true"]').count()) === 1);
   file = await layoutsFile(page);
-  ok("E5 la sauvegarde du layout précédent est INTACTE (1H)", file.layouts.find((l) => l.name === "Phase6 Renamed").interval === "1H");
+  ok("E5 la sauvegarde du layout précédent est INTACTE (1H)", file.layouts.find((l) => l.name === "Phase6 Renamed").panels[0].interval === "1H");
 
   // Chemin « Save & switch » : repartir du layout, diverger, switcher vers
   // la copie en SAUVEGARDANT d'abord.
@@ -354,7 +355,7 @@ async function indicatorsFile(page) {
   await page.waitForTimeout(800);
   ok("E7 save & switch → copie active", (await activeLayoutName(page)) === "Phase6 Renamed (copy)");
   file = await layoutsFile(page);
-  ok("E8 l'original a bien été sauvé (candles)", file.layouts.find((l) => l.name === "Phase6 Renamed").chartType === "candles");
+  ok("E8 l'original a bien été sauvé (candles)", file.layouts.find((l) => l.name === "Phase6 Renamed").panels[0].chartType === "candles");
   ok("E9 dirty résorbée", (await page.locator('[data-testid="oryon-layout-dirty"]').count()) === 0);
 
   console.log("— F. Layouts : delete confirmé + restore default");

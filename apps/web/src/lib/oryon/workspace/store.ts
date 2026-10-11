@@ -11,13 +11,13 @@ import type {
 import {
   ORYON_DEFAULT_SESSION,
   buildLayout,
-  defaultPanelState,
   layoutSessionOf,
   newConfigId,
   newPanelId,
   normalizeActivePanel,
   panelsForGrid,
   sessionStateEqual,
+  sessionStateIdentical,
   type OryonConfigOpError,
   type OryonPanelSessionState,
   type OryonWorkspaceSessionState,
@@ -341,9 +341,13 @@ export class OryonWorkspaceConfigStore {
   private patchSession(partial: Partial<OryonWorkspaceSessionState>): void {
     const session = { ...this.state.session, ...partial };
     const dirty = this.computeDirty(session);
+    // No-change guard compares the NEW session against the CURRENT in-memory
+    // one — INCLUDING the active pointer (an activation must still reach the
+    // UI even though it never flips the dirty flag). Dirty-vs-saved equality
+    // deliberately excludes the active pointer (view preference, §7).
     if (
       session === this.state.session ||
-      (dirty === this.state.dirty && sessionStateEqual(session, this.state.session))
+      (dirty === this.state.dirty && sessionStateIdentical(session, this.state.session))
     ) {
       return;
     }

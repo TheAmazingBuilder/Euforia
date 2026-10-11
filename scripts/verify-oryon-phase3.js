@@ -145,6 +145,18 @@ async function addIndicator(page, type) {
   await page.waitForSelector('[data-testid="oryon-workspace"]', { timeout: 20_000 });
   await page.waitForSelector('[data-testid="oryon-chart-canvas"] canvas', { timeout: 15_000 });
   await page.waitForTimeout(2_500); // history load + default template sync
+  // Phase 7 multi-chart era: reset the config domains to the factory state
+  // (the probe baseline is the default single-panel workspace).
+  await page.evaluate(() => {
+    window.localStorage.removeItem("euforia.oryon.layouts.v1");
+    window.localStorage.removeItem("euforia.oryon.templates.v1");
+    window.localStorage.removeItem("euforia.oryon.indicators.v1");
+  });
+  await page.reload({ waitUntil: "load" });
+  await clearDevOverlay(page);
+  await page.waitForSelector('[data-testid="oryon-workspace"]', { timeout: 20_000 });
+  await page.waitForSelector('[data-testid="oryon-chart-canvas"] canvas', { timeout: 15_000 });
+  await page.waitForTimeout(2_000);
 
   // ── 2. PRD default template: Volume + RSI(14) → 3 panes, 2 series ─────────
   ok("P3 — bouton toolbar Indicators présent", (await page.locator('[data-testid="oryon-indicators"]').count()) === 1);

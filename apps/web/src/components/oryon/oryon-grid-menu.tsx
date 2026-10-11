@@ -2,7 +2,7 @@
 
 import * as React from "react";
 
-import { Columns2, Grid2x2, LayoutGrid, Link2, Rows2, Square } from "lucide-react";
+import { Columns2, Grid2x2, Link2, Rows2, Square } from "lucide-react";
 
 import type { LucideIcon } from "lucide-react";
 import type { OryonGrid, OryonSyncSettings } from "@cosmoz/shared";

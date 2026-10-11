@@ -29,10 +29,7 @@ import {
 import { cn } from "@/lib/utils";
 
 import { useIndicatorSnapshot, useOryonIndicators } from "./oryon-indicators-context";
-import {
-  useOryonWorkspaceConfig,
-  useWorkspaceConfigSnapshot,
-} from "./oryon-workspace-context";
+import { useWorkspaceConfigSnapshot } from "./oryon-workspace-context";
 
 /**
  * Oryon indicator dialog — search / add / configure / manage (Phase 3 §4F

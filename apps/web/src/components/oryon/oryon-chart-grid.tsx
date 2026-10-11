@@ -10,7 +10,6 @@ import type { OryonPanelSessionState } from "@/lib/oryon/workspace/layouts";
 
 import { useDict } from "@/i18n/i18n-provider";
 import type { OryonChartEngine } from "@/lib/charting/oryon-chart-engine";
-import type { OryonSyncCoordinator } from "@/lib/oryon/sync/sync-engine";
 import {
   useOryonWorkspaceConfig,
 } from "@/components/oryon/oryon-workspace-context";
@@ -104,7 +103,6 @@ export function OryonChartGridPanel({
   instruments,
   feedSymbols,
   feedKnown,
-  sync,
   onEngineReady,
   onEngineGone,
 }: {
@@ -117,8 +115,6 @@ export function OryonChartGridPanel({
   instruments: readonly Instrument[];
   feedSymbols: ReadonlySet<string>;
   feedKnown: boolean;
-  /** The workspace sync coordinator (engine registration). */
-  sync: OryonSyncCoordinator;
   onEngineReady: (panelId: string, engine: OryonChartEngine) => void;
   onEngineGone: (panelId: string) => void;
 }) {
@@ -135,6 +131,21 @@ export function OryonChartGridPanel({
   const handleActivate = React.useCallback(() => {
     if (!active) store.setActivePanel(panel.id);
   }, [active, panel.id, store]);
+
+  /** Keyboard navigation activates a panel (spec §7). PROGRAMMATIC focus
+   *  moves do NOT — e.g. Radix restoring focus to a menu trigger after a
+   *  duplicate/remove action would otherwise steal activation back from
+   *  the copy/survivor panel the store just activated. Mouse clicks are
+   *  handled by the pointerdown capture above. */
+  const handleFocusActivate = React.useCallback(
+    (event: React.FocusEvent<HTMLElement>) => {
+      const target = event.target;
+      if (target instanceof HTMLElement && target.matches(":focus-visible")) {
+        handleActivate();
+      }
+    },
+    [handleActivate],
+  );
 
   const handleEngineReady = React.useCallback(
     (engine: OryonChartEngine) => {
@@ -180,7 +191,7 @@ export function OryonChartGridPanel({
       data-active={active ? "true" : "false"}
       tabIndex={0}
       onPointerDownCapture={handleActivate}
-      onFocusCapture={handleActivate}
+      onFocusCapture={handleFocusActivate}
       className={cn(
         "relative flex min-h-[320px] min-w-0 flex-col bg-surface outline-none md:min-h-0",
         active
@@ -189,7 +200,6 @@ export function OryonChartGridPanel({
       )}
     >
       <OryonPanelHeader
-        panelId={panel.id}
         index={index}
         multi={multi}
         instrument={instrument}

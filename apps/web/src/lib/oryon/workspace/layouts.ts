@@ -143,12 +143,14 @@ function panelStateEqual(
 }
 
 /**
- * Field-by-field session equality — the unsaved-changes detector
- * (spec §10). Every persisted arrangement field participates; the active
- * panel id deliberately does NOT (activation is a viewing preference, not
- * arrangement content — clicking another chart must not flag the layout
- * dirty). There are no hidden fields, so the comparison can never report a
- * false dirty state from transient data.
+ * Field-by-field session equality — the UNSAVED-CHANGES detector (spec §10).
+ *
+ * Every persisted arrangement field participates; `activePanelId` is
+ * deliberately EXCLUDED: which chart is active is a view preference
+ * (spec §7), not part of the saved arrangement a user could lose —
+ * clicking another chart must never flag the layout dirty or block a
+ * layout switch. There are no hidden fields, so the comparison can never
+ * report a false dirty state from transient data.
  */
 export function sessionStateEqual(
   a: OryonWorkspaceSessionState,
@@ -156,7 +158,6 @@ export function sessionStateEqual(
 ): boolean {
   if (
     a.grid !== b.grid ||
-    a.activePanelId !== b.activePanelId ||
     a.sync.timeScale !== b.sync.timeScale ||
     a.sync.crosshair !== b.sync.crosshair ||
     a.sync.instrument !== b.sync.instrument ||
@@ -175,18 +176,30 @@ export function sessionStateEqual(
   return true;
 }
 
+/**
+ * Full session identity INCLUDING the active pointer — used ONLY as the
+ * no-change guard between two in-memory sessions (a dirty computation
+ * must never use this: the active pointer is a view preference).
+ */
+export function sessionStateIdentical(
+  a: OryonWorkspaceSessionState,
+  b: OryonWorkspaceSessionState,
+): boolean {
+  return a.activePanelId === b.activePanelId && sessionStateEqual(a, b);
+}
+
 // ── Grid invariants (Phase 7 spec §5) ────────────────────────────────────────
 
 /**
  * Adjusts the panel list to a grid arrangement:
  *  - `single` keeps ONLY the active panel (one large chart);
  *  - `twoHorizontal`/`twoVertical` ensure at least two panels (adding
- *    defaults that inherit the active panel's analysis shape);
- *  - `quad` fills up to four.
- * Panels beyond the target are trimmed from the END (the active panel and
- * the oldest configurations survive); added panels take the app's default
- * instrument — never an invented symbol. The active pointer is normalized
- * to a surviving panel.
+ *    defaults that inherit the active panel's analysis shape) and NEVER
+ *    trim — a third or fourth configured panel wraps onto an implicit CSS
+ *    row (auto-placement), so switching quad → side-by-side loses nothing;
+ *  - `quad` fills up to four (the workspace capacity).
+ * Added panels take the app's default instrument — never an invented
+ * symbol. The active pointer is normalized to a surviving panel.
  */
 export function panelsForGrid(
   grid: OryonGrid,
@@ -202,8 +215,14 @@ export function panelsForGrid(
 
   const minCount = grid === "quad" ? ORYON_MAX_PANELS : 2;
   const next = [...panels];
-  // Trim from the end, never the active panel.
-  while (next.length > minCount && next.length > 1 && next[next.length - 1]!.id !== active.id) {
+  // Defensive cap (corrupt/hand-edited file): trim from the END, never the
+  // active panel — normal flows cannot exceed ORYON_MAX_PANELS.
+  while (
+    grid === "quad" &&
+    next.length > ORYON_MAX_PANELS &&
+    next.length > 1 &&
+    next[next.length - 1]!.id !== active.id
+  ) {
     next.pop();
   }
   // Fill with defaults inheriting the active panel's analysis shape.

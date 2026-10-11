@@ -587,14 +587,18 @@ console.log("— store : save-as / dirty / save");
   store.setPanelInterval("panel-main", "1H");
   ok("mutation → dirty true (layout custom actif)", store.getSnapshot().dirty);
   ok("activation d'un autre panneau → PAS dirty (préférence de vue)", (() => {
+    // Baseline PROPRE d'abord : sauvegarder l'arrangement à deux panneaux
+    // (intervalle 1H compris) pour isoler l'effet de l'activation seule.
     store.setGrid("twoHorizontal");
+    ok("changement de grille → dirty (contenu d'arrangement)", store.getSnapshot().dirty);
+    ok("save du two-horizontal → baseline propre", store.saveActiveLayout().ok);
+    eq("dirty après save de la baseline", store.getSnapshot().dirty, false);
     const active = store.getSnapshot().session.activePanelId;
     const other = store.getSnapshot().session.panels.find((p) => p.id !== active)!;
     store.setActivePanel(other.id);
     const dirtyAfterActivate = store.getSnapshot().dirty;
-    // Nettoyage : retour au panneau principal + grille single pour la suite.
+    // Vue restaurée pour la suite (le panneau principal redevient actif).
     store.setActivePanel("panel-main");
-    store.setGrid("single");
     return dirtyAfterActivate === false;
   })());
   ok("save changes répare", store.saveActiveLayout().ok);

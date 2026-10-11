@@ -157,6 +157,18 @@ async function chartSymbol(page) {
   await page.waitForSelector('[data-testid="oryon-workspace"]', { timeout: 20_000 });
   await page.waitForSelector('[data-testid="oryon-chart-canvas"] canvas', { timeout: 15_000 });
   await page.waitForTimeout(2_500);
+  // Phase 7 multi-chart era: reset the config domains to the factory state
+  // (the probe baseline is the default single-panel workspace).
+  await page.evaluate(() => {
+    window.localStorage.removeItem("euforia.oryon.layouts.v1");
+    window.localStorage.removeItem("euforia.oryon.templates.v1");
+    window.localStorage.removeItem("euforia.oryon.indicators.v1");
+  });
+  await page.reload({ waitUntil: "load" });
+  await clearDevOverlay(page);
+  await page.waitForSelector('[data-testid="oryon-workspace"]', { timeout: 20_000 });
+  await page.waitForSelector('[data-testid="oryon-chart-canvas"] canvas', { timeout: 15_000 });
+  await page.waitForTimeout(2_000);
 
   // ── 2. Panel collapsed by default; opens from the toolbar toggle ──────────
   ok("P4 — panneau bas replié par défaut", (await page.locator('[data-testid="oryon-lower-panel"]').count()) === 0);

@@ -145,6 +145,8 @@ export class OryonChartEngine {
   /** Sync surface (Phase 7) — raw listeners + programmatic-apply guards. */
   private rangeListeners = new Set<(range: SyncRange | null) => void>();
   private crosshairListeners = new Set<(timeSec: number | null) => void>();
+  /** Last dispatched crosshair time (dev-probe observability). */
+  private lastCrosshairTime: number | null = null;
   private rangeEcho: EchoGuard = createEchoGuard();
   private crosshairEcho: EchoGuard = createEchoGuard();
   private applyingRange = false;
@@ -443,9 +445,14 @@ export class OryonChartEngine {
     return { from, to };
   }
 
-  /** Programmatic visible-range apply (echo-guarded — see the coordinator). */
+  /** Programmatic visible-range apply (echo-guarded — see the coordinator).
+   *  An EMPTY time scale (data reloading after a symbol switch, unknown
+   *  instrument state) cannot accept a range — the library throws on it.
+   *  The apply is skipped honestly; the chart re-aligns on the next
+   *  user-initated event once its data is back. */
   applyVisibleRange(range: SyncRange): void {
     if (this.chart === null) return;
+    if (this.chart.timeScale().getVisibleRange() === null) return;
     this.applyingRange = true;
     try {
       this.chart.timeScale().setVisibleRange({
@@ -484,6 +491,10 @@ export class OryonChartEngine {
     this.applyingCrosshair = true;
     try {
       this.chart.setCrosshairPosition(bar.c, (bar.t / 1000) as UTCTimestamp, series);
+      // The library SKIPS its crosshair-moved event for synthetic positions,
+      // so the applied time is recorded HERE — the authoritative state —
+      // not via the (suppressed) event echo.
+      this.lastCrosshairTime = bar.t / 1000;
       this.crosshairEcho.mark(bar.t / 1000);
     } finally {
       this.applyingCrosshair = false;
@@ -497,6 +508,7 @@ export class OryonChartEngine {
     this.applyingCrosshair = true;
     try {
       this.chart.clearCrosshairPosition();
+      this.lastCrosshairTime = null;
       this.crosshairEcho.mark(null);
     } finally {
       this.applyingCrosshair = false;
@@ -591,6 +603,21 @@ export class OryonChartEngine {
       priceLines: this.positions?.count ?? 0,
       alertLines: this.alerts?.count ?? 0,
     };
+  }
+
+  /** Dev-probe observability: the last crosshair time this engine
+   *  dispatched (unix seconds) — sync propagation assertions read this
+   *  instead of scraping canvases. Mirrors the crosshair state, whether
+   *  the move came from a real hover or a synchronized apply. */
+  get observedCrosshairTime(): number | null {
+    return this.lastCrosshairTime;
+  }
+
+  /** Dev-probe observability: open time of the LAST loaded candle
+   *  (unix seconds) — honest-span assertions for crosshair containment. */
+  get lastCandleTime(): number | null {
+    if (this.candles.length === 0) return null;
+    return this.candles[this.candles.length - 1]!.t / 1000;
   }
 
   // ── internals ──────────────────────────────────────────────────────────
@@ -708,6 +735,7 @@ export class OryonChartEngine {
 
   private handleCrosshairMove = (param: { time?: unknown; point?: { x: number; y: number } | null }): void => {
     const timeSec = typeof param.time === "number" ? param.time : null;
+    this.lastCrosshairTime = timeSec;
     // Sync dispatch — programmatic applies are suppressed (they marked the
     // echo guard synchronously inside applyCrosshairAtTime/clear).
     if (!this.applyingCrosshair && !this.crosshairEcho.matches(timeSec)) {
