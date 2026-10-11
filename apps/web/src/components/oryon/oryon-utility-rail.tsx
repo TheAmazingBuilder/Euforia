@@ -2,7 +2,7 @@
 
 import * as React from "react";
 
-import { Bell, CalendarDays, X } from "lucide-react";
+import { Bell, BellRing, CalendarDays, X } from "lucide-react";
 
 import type { EcoEvent } from "@cosmoz/shared";
 
@@ -17,17 +17,19 @@ import {
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 
+import { OryonAlertsPanel } from "@/components/oryon/oryon-alerts-panel";
 import type { OryonUtilityPanel } from "@/components/oryon/oryon-view";
 
 /**
- * Oryon right utility rail — notifications + economic calendar.
+ * Oryon right utility rail — notifications + price alerts + eco calendar.
  *
  * lg+: docked aside, one panel visible at a time (tabs), closes without
  * eating chart space. Below lg: the SAME content opens in a Sheet overlay.
  *
  * Honesty contract (Phase 1 spec §6D): the notifications panel states that
- * notifications are not wired into the charting workspace yet, and the
- * calendar reuses the app's REAL eco-event surface read-only — nothing is
+ * notifications are not wired into the charting workspace yet, the calendar
+ * reuses the app's REAL eco-event surface read-only, and the alerts panel
+ * (Phase 5) states its browser-local scope in plain copy — nothing is
  * fabricated here.
  */
 export function OryonUtilityRail({
@@ -109,6 +111,21 @@ function OryonUtilityContent({
         </button>
         <button
           type="button"
+          aria-pressed={panel === "alerts"}
+          data-testid="oryon-utility-tab-alerts"
+          onClick={() => onPanelChange("alerts")}
+          className={cn(
+            "inline-flex h-7 items-center gap-1.5 rounded-md px-2 text-xs font-medium transition-colors",
+            panel === "alerts"
+              ? "bg-surface-raised text-foreground"
+              : "text-muted-foreground hover:bg-surface-raised hover:text-foreground",
+          )}
+        >
+          <BellRing className="size-3.5" aria-hidden />
+          {S.alerts}
+        </button>
+        <button
+          type="button"
           aria-pressed={panel === "calendar"}
           data-testid="oryon-utility-tab-calendar"
           onClick={() => onPanelChange("calendar")}
@@ -133,7 +150,13 @@ function OryonUtilityContent({
         </button>
       </div>
 
-      {panel === "notifications" ? <OryonNotificationsPanel /> : <OryonEcoPanel />}
+      {panel === "notifications" ? (
+        <OryonNotificationsPanel />
+      ) : panel === "alerts" ? (
+        <OryonAlertsPanel />
+      ) : (
+        <OryonEcoPanel />
+      )}
     </div>
   );
 }

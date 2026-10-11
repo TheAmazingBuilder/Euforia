@@ -19,6 +19,7 @@ import {
   type IndicatorCalculation,
   type IndicatorOutputId,
 } from "@/lib/oryon/indicators/calculate";
+import { indicatorIndexOfTime, indicatorValuesAtIndex } from "@/lib/oryon/indicators/lookup";
 import {
   INDICATOR_COLOR_TOKENS,
   INDICATOR_REGISTRY,
@@ -247,6 +248,26 @@ export class OryonIndicatorSeriesManager {
       if (entry.calc === null) continue;
       const latest = latestOf(entry.calc);
       values.push({ id, values: latest });
+    }
+    return values;
+  }
+
+  /**
+   * Indicator readings AT one bar-open time, unix seconds (Phase 5 crosshair
+   * §5). Exact-time lookup on the calculation's own `times` — the crosshair
+   * always reports a loaded bar's open time, so an exact match is the honest
+   * contract; anything else (uncomputed bar, warm-up nulls) yields NO value
+   * for that output rather than an interpolation. Never throws.
+   */
+  valuesAtTime(timeSec: number): readonly ManagedIndicatorValue[] {
+    const values: ManagedIndicatorValue[] = [];
+    if (!Number.isFinite(timeSec)) return values;
+    for (const [id, entry] of this.entries) {
+      if (entry.calc === null) continue;
+      const index = indicatorIndexOfTime(entry.calc, timeSec);
+      if (index < 0) continue;
+      const at = indicatorValuesAtIndex(entry.calc, index);
+      if (at !== null) values.push({ id, values: at });
     }
     return values;
   }

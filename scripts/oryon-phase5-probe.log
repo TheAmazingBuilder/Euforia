@@ -1,0 +1,48 @@
+=== oryon phase5 probe — 2026-10-11T01:23:20.759Z ===
+  PASS  P5 — workspace chargé sur EURUSD
+  PASS  P5 — canvas mesurable
+  PASS  P5 — Escape annule un draft de mesure (rien de persisté)
+  PASS  P5 — mesure deux clics persistée (enveloppe par symbole)
+  PASS  P5 — mesure ancrée temps+prix (domaine chart, pas pixels)
+  PASS  P5 — outil désarmé après création
+  PASS  P5 — Ctrl+Z retire la mesure
+  PASS  P5 — Ctrl+Shift+Z la restaure
+  PASS  P5 — horodatage UTC affiché au survol
+  PASS  P5 — OHLC toujours peuplé au survol
+  PASS  P5 — chip indicateur avec valeur numérique au survol
+  PASS  P5 — BTCUSDT (REAL) : volume affiché au survol
+  PASS  P5 — onglet alerts ouvert (rail utilité existant)
+  PASS  P5 — état vide honnête
+  PASS  P5 — statut d'évaluation "live" = live (honnête)
+  PASS  P5 — dialogue d'alerte ouvert depuis la toolbar
+  PASS  P5 — instrument prérempli = instrument actif (BTCUSDT)
+  PASS  P5 — cible vide rejetée avec message inline
+  PASS  P5 — dialogue toujours ouvert après rejet
+  PASS  P5 — création valide → dialogue fermé
+  PASS  P5 — ligne active dans le panneau
+  PASS  P5 — statut initial = active
+  PASS  P5 — overlay alerte = 1 ligne de prix (got 1)
+  PASS  P5 — alerte persistée navigateur-local (enveloppe v1)
+  PASS  P5 — handle dev d'injection disponible (dev only)
+  PASS  P5 — franchissement confirmé → statut triggered
+  PASS  P5 — alerte triggered → ligne retirée du graphique (got 0)
+  PASS  P5 — notification in-app (toast) émise (1)
+  PASS  P5 — re-arm → statut active
+  PASS  P5 — re-arm → overlay restauré (got 1)
+  PASS  P5 — désactivation → statut disabled
+  PASS  P5 — désactivée → ligne retirée (got 0)
+  PASS  P5 — réactivée → exactement 1 ligne, pas de doublon (got 1)
+  PASS  P5 — EURUSD : 0 ligne d'alerte (BTCUSDT ≠ EURUSD, matching exact) (got 0)
+  PASS  P5 — alerte EURUSD créée → 1 ligne sur EURUSD
+  PASS  P5 — panneau : 2 alertes au total
+  PASS  P5 — retour BTCUSDT : seule l'alerte BTCUSDT dessine (got 1)
+  PASS  P5 — retour EURUSD : seule l'alerte EURUSD dessine (got 1)
+  PASS  P5 — suppression → ligne retirée, 1 ligne(s) restante(s) dans le panneau
+  PASS  P5 — panneau positions intact (3 lignes)
+  PASS  P5 — overlays positions intacts (attendu 6, got 6)
+  PASS  P5 — chips indicateurs intactes (got 2)
+  PASS  P5 — panes natifs intacts (got 3)
+  PASS  P5 — dessins intacts (mesure toujours là)
+  PASS  P5 — zéro erreur de console
+
+=== RESULT: 45 PASS / 0 FAIL ===

@@ -300,3 +300,61 @@ export const oryonIndicatorsFileSchema = z.object({
 });
 
 export type OryonIndicatorsFile = z.infer<typeof oryonIndicatorsFileSchema>;
+
+// ── Price-alert contracts (Phase 5 — spec §6, §9) ───────────────────────────
+//
+// Oryon has NO server-side alert infrastructure in this deployment (no NestJS
+// alert module, no database model, no evaluation transport — audited Phase 5
+// §2). The alert record therefore lives in the SHARED contract like drawings
+// and indicators: the frontend persists it locally (versioned envelope,
+// safeParse on load — invalid records are dropped, never rendered) and
+// evaluates it against the app's verified market feed while the workspace is
+// open. This schema intentionally carries NO delivery-channel field: the
+// only implemented channel is the in-app toast + panel state, and a contract
+// that pretends email/push/webhook support would be a product lie.
+//
+// The lifecycle is deliberately minimal and HONEST:
+//   active    — evaluated against live feed observations;
+//   triggered — the evaluator CONFIRMED a crossing (timestamped); one-shot
+//               until the user re-arms (documented product decision, spec
+//               §6.2: re-arm behavior defined by an explicit decision);
+//   disabled  — kept but not evaluated, not drawn.
+// There is no "expired" state: no expiry policy exists in the product yet,
+// and inventing one would imply an evaluator that does not exist.
+
+export const oryonAlertConditionSchema = z.enum(["crosses_above", "crosses_below"]);
+
+export type OryonAlertCondition = z.infer<typeof oryonAlertConditionSchema>;
+
+export const oryonAlertStatusSchema = z.enum(["active", "triggered", "disabled"]);
+
+export type OryonAlertStatus = z.infer<typeof oryonAlertStatusSchema>;
+
+export const oryonAlertSchema = z.object({
+  id: z.string().min(8).max(64),
+  /** Market symbol — the repo's stable identity, matched EXACTLY (never a
+   *  substring) against the feed and the chart instrument. */
+  symbol: z.string().min(1).max(32),
+  /** Threshold the condition evaluates against (chart price domain). */
+  targetPrice: z.number().finite(),
+  condition: oryonAlertConditionSchema,
+  /** Optional user label (max 64, mirroring the drawing label contract). */
+  label: z.string().max(64).nullable(),
+  status: oryonAlertStatusSchema,
+  /** Creation / modification timestamps, unix ms (repo convention). */
+  createdAt: z.number().finite().int(),
+  updatedAt: z.number().finite().int(),
+  /** Client epoch ms of the CONFIRMED trigger — null while not triggered. */
+  triggeredAt: z.number().finite().int().nullable(),
+});
+
+export type OryonAlert = z.infer<typeof oryonAlertSchema>;
+
+/** Versioned persistence envelope (Phase 5) — ONE browser-local file. */
+export const oryonAlertsFileSchema = z.object({
+  version: z.literal(1),
+  savedAt: z.number().finite().int(),
+  alerts: z.array(oryonAlertSchema).max(100),
+});
+
+export type OryonAlertsFile = z.infer<typeof oryonAlertsFileSchema>;

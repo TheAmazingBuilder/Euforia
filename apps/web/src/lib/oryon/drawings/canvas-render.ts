@@ -195,6 +195,12 @@ function paintFib(paint: PaintContext, view: {
   }
 }
 
+/**
+ * Measure readout — Phase 5: the label may carry MULTIPLE lines (newline
+ * split, composed by the pure measure module). The box grows with the row
+ * count and stays clamped inside the plot area; nothing here computes
+ * financial values.
+ */
 function paintMeasure(paint: PaintContext, view: {
   a: ScreenPoint;
   b: ScreenPoint;
@@ -203,18 +209,27 @@ function paintMeasure(paint: PaintContext, view: {
 }): void {
   paintRectBody(paint, view.a, view.b, view.style);
   if (view.label === null) return;
+  const lines = view.label.split("\n").slice(0, 4);
   paint.ctx.font = `11px ${paint.monoFont}`;
-  const textWidth = paint.ctx.measureText(view.label).width;
-  const boxX = Math.min(Math.max(view.a.x, view.b.x) + 8, paint.plot.right - textWidth - 14);
+  let textWidth = 0;
+  for (const line of lines) {
+    textWidth = Math.max(textWidth, paint.ctx.measureText(line).width);
+  }
+  const lineHeight = 15;
+  const boxW = textWidth + 12;
+  const boxH = lines.length * lineHeight + 8;
+  const boxX = Math.min(Math.max(view.a.x, view.b.x) + 8, paint.plot.right - boxW - 2);
   const boxY = Math.max(Math.min(view.a.y, view.b.y) + 8, paint.plot.top + 4);
   paint.ctx.fillStyle = "rgba(0,0,0,0.62)";
   paint.ctx.beginPath();
-  paint.ctx.roundRect(boxX, boxY, textWidth + 12, 18, 4);
+  paint.ctx.roundRect(boxX, boxY, boxW, boxH, 4);
   paint.ctx.fill();
   paint.ctx.fillStyle = paint.textPrimary;
   paint.ctx.textBaseline = "middle";
   paint.ctx.textAlign = "left";
-  paint.ctx.fillText(view.label, boxX + 6, boxY + 9);
+  lines.forEach((line, i) => {
+    paint.ctx.fillText(line, boxX + 6, boxY + 8 + i * lineHeight);
+  });
 }
 
 function paintText(paint: PaintContext, view: {

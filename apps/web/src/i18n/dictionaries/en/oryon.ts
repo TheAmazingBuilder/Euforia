@@ -34,6 +34,7 @@ export const oryonDict = {
     latestHint: "Return to latest",
     timeframes: "Timeframe",
     indicatorsHint: "Indicators",
+    alertHint: "Create price alert",
   },
   source: {
     sim: "SIM",
@@ -63,6 +64,7 @@ export const oryonDict = {
     high: "H",
     low: "L",
     close: "C",
+    volume: "V",
   },
   rail: {
     toolsGroup: "Drawing tools",
@@ -120,6 +122,7 @@ export const oryonDict = {
     notifications: "Notifications",
     notificationsBody: "Notifications are not wired into the charting workspace yet. Your knowledge base and alerts live in Nofy.",
     notificationsLink: "Open Nofy",
+    alerts: "Price alerts",
     calendar: "Economic calendar",
     calendarBody: "Upcoming releases from the app calendar — the full day view stays in Events.",
     calendarEmpty: "No upcoming releases in the loaded window.",
@@ -219,5 +222,42 @@ export const oryonDict = {
     nameBbands: "Bollinger Bands",
     nameAtr: "Average True Range (ATR)",
     nameVolume: "Volume",
+  },
+  alerts: {
+    // Create dialog (§6.1) — one entry point, active chart instrument.
+    createTitle: "New price alert",
+    instrumentLabel: "Instrument",
+    instrumentHint: "The alert watches the active chart instrument.",
+    targetLabel: "Target price",
+    conditionLabel: "Trigger condition",
+    conditionAbove: "Price crosses above",
+    conditionBelow: "Price crosses below",
+    labelOptional: "Label (optional)",
+    labelPlaceholder: "e.g. breakout level",
+    errorTarget: "Enter a valid target price.",
+    create: "Create alert",
+    cancel: "Cancel",
+    notificationNote:
+      "In-app notification only — evaluated while this page is open. Stored in this browser, not on a server.",
+    // Management panel (§8).
+    feedLive: "Evaluating — feed live",
+    feedPaused: "Paused — feed offline",
+    empty: "No price alerts yet.",
+    emptyHint: "Create one from the toolbar to watch a price level.",
+    scopeNote:
+      "Browser-local alerts. Evaluated only while this workspace is open — no server-side monitoring, no email or push delivery.",
+    statusActive: "Active",
+    statusTriggered: "Triggered",
+    statusDisabled: "Disabled",
+    createdAtLabel: "Created",
+    triggeredAtLabel: "Triggered",
+    rearmHint: "Re-arm alert",
+    enableHint: "Enable alert",
+    disableHint: "Disable alert",
+    deleteHint: "Delete alert",
+    // Trigger toast — the only implemented notification channel.
+    triggerToastTitle: "Price alert triggered",
+    triggerAbove: "crossed above",
+    triggerBelow: "crossed below",
   },
 } as const;

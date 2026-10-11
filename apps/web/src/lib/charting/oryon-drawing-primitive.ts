@@ -21,6 +21,7 @@ import {
   fibLevelPrice,
   type ScreenRect,
 } from "@/lib/oryon/drawings/geometry";
+import { computeMeasureReadout } from "@/lib/oryon/drawings/measure";
 import type { DraftOverlay } from "@/lib/oryon/drawings/draft";
 import {
   paintProjectedDrawing,
@@ -316,22 +317,27 @@ export class OryonDrawingsPrimitive implements ISeriesPrimitive<UTCTimestamp> {
     return levels;
   }
 
-  /** Measure readout — Δprice, Δ%, pips (instrument pipSize), Δbars. */
+  /**
+   * Measure readout (Phase 5) — delegated to the PURE measure module
+   * (lib/oryon/drawings/measure.ts): start/end prices, direction, Δprice,
+   * Δ%, pips, bars and elapsed time from the ACTUAL anchor timestamps.
+   * Only the bar count is computed here (the chart's logical pipeline);
+   * every financial value, validation and composition lives in the pure
+   * module (unit-tested without a chart). Invalid inputs → no label.
+   */
   private measureLabel(drawing: TwoAnchorDrawing): string | null {
-    const digits = this.deps.getDigits();
-    const pipSize = this.deps.getPipSize();
-    const delta = drawing.b.p - drawing.a.p;
-    if (!Number.isFinite(delta) || drawing.a.p === 0) return null;
-    const pct = (delta / drawing.a.p) * 100;
-    const pips = pipSize > 0 ? delta / pipSize : NaN;
     const logicalA = this.deps.conversions.timeSecToLogical(drawing.a.t);
     const logicalB = this.deps.conversions.timeSecToLogical(drawing.b.t);
     const bars =
       logicalA === null || logicalB === null
         ? null
         : Math.abs(Math.round(logicalB) - Math.round(logicalA));
-    const pipsPart = Number.isFinite(pips) ? ` · ${Math.abs(pips).toFixed(1)} pips` : "";
-    const barsPart = bars === null ? "" : ` · ${bars} bars`;
-    return `Δ ${delta >= 0 ? "+" : ""}${delta.toFixed(digits)} (${pct >= 0 ? "+" : ""}${pct.toFixed(2)}%)${pipsPart}${barsPart}`;
+    const readout = computeMeasureReadout(drawing.a, drawing.b, {
+      digits: this.deps.getDigits(),
+      pipSize: this.deps.getPipSize(),
+      bars,
+    });
+    if (!readout.valid || readout.lines.length === 0) return null;
+    return readout.lines.join("\n");
   }
 }

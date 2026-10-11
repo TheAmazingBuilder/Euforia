@@ -23,7 +23,9 @@ import {
 import {
   OryonPositionOverlayManager,
 } from "@/lib/charting/oryon-position-overlays";
+import { OryonAlertOverlayManager } from "@/lib/charting/oryon-alert-overlays";
 import type { PositionLineSpec } from "@/lib/oryon/positions/overlay";
+import type { AlertLineSpec } from "@/lib/oryon/alerts/overlay";
 import { getChartTheme } from "@/lib/utils/chart-theme";
 
 /**
@@ -65,8 +67,13 @@ import { getChartTheme } from "@/lib/utils/chart-theme";
 
 export type OryonChartType = "candles" | "line";
 
-/** Bar handed to the legend on crosshair inspection (raw candle shape). */
-export type OryonCrosshairBar = Pick<Candle, "t" | "o" | "h" | "l" | "c">;
+/**
+ * Bar handed to the legend on crosshair inspection (raw candle shape).
+ * Phase 5: `v` (volume) joins the payload — the legend decides honestly
+ * whether to display it (valid positive values only; the locally-merged
+ * forming candle reports 0 until the server refetch).
+ */
+export type OryonCrosshairBar = Pick<Candle, "t" | "o" | "h" | "l" | "c" | "v">;
 
 /**
  * Drawing-domain conversion facade (Phase 2 spec §4B — coordinate layer).
@@ -124,6 +131,8 @@ export class OryonChartEngine {
   private indicators: OryonIndicatorSeriesManager | null = null;
   /** Position overlay manager (Phase 4) — created with the chart. */
   private positions: OryonPositionOverlayManager | null = null;
+  /** Alert overlay manager (Phase 5) — created with the chart. */
+  private alerts: OryonAlertOverlayManager | null = null;
 
   /** True once mount() succeeded (guards every later call). */
   get isMounted(): boolean {
@@ -165,6 +174,8 @@ export class OryonChartEngine {
     this.indicators = new OryonIndicatorSeriesManager(this.chart);
     this.positions = new OryonPositionOverlayManager();
     this.positions.setSeries(this.candleSeries);
+    this.alerts = new OryonAlertOverlayManager();
+    this.alerts.setSeries(this.candleSeries);
     this.attachDrawingsToActiveSeries();
     this.chart.subscribeCrosshairMove(this.handleCrosshairMove);
     this.rebuildSeriesData();
@@ -202,6 +213,8 @@ export class OryonChartEngine {
     this.indicators = null;
     this.positions?.destroy();
     this.positions = null;
+    this.alerts?.destroy();
+    this.alerts = null;
     this.chart.remove();
     this.chart = null;
     this.candleSeries = null;
@@ -238,6 +251,7 @@ export class OryonChartEngine {
     this.lineSeries?.applyOptions({ color: theme.accent });
     this.indicators?.restyle({ digits: this.digits, theme });
     this.positions?.restyle(theme);
+    this.alerts?.restyle(theme);
   }
 
   /**
@@ -287,6 +301,27 @@ export class OryonChartEngine {
     this.positions.sync(specs, getChartTheme());
   }
 
+  /**
+   * Structural alert-overlay sync (Phase 5) — mirrors the ACTIVE alerts of
+   * the displayed instrument onto price lines. Specs are remembered across
+   * series rebuilds (chart-type switch) and replayed — the overlay survives
+   * type switches without caller action.
+   */
+  setAlerts(specs: readonly AlertLineSpec[]): void {
+    if (this.chart === null || this.alerts === null) return;
+    this.alerts.sync(specs, getChartTheme());
+  }
+
+  /**
+   * Indicator readings AT one bar-open time (Phase 5 crosshair §5) — exact
+   * lookup on the manager's calculations; empty when nothing is computed
+   * there (honest omission, never an interpolation).
+   */
+  indicatorValuesAtTime(timeSec: number): readonly ManagedIndicatorValue[] {
+    if (this.indicators === null) return [];
+    return this.indicators.valuesAtTime(timeSec);
+  }
+
   /** Switches the rendered series type without touching the data window. */
   setChartType(type: OryonChartType): void {
     if (this.chart === null || type === this.chartType) return;
@@ -314,6 +349,7 @@ export class OryonChartEngine {
     paneZero?.setPreserveEmptyPane(false);
     this.attachDrawingsToActiveSeries();
     this.positions?.setSeries(this.activeSeries());
+    this.alerts?.setSeries(this.activeSeries());
     this.rebuildSeriesData();
     this.chart.timeScale().scrollToRealTime();
   }
@@ -354,7 +390,7 @@ export class OryonChartEngine {
   /** Latest candle the engine holds (legend fallback when not hovering). */
   get lastBar(): OryonCrosshairBar | null {
     const last = this.candles[this.candles.length - 1];
-    return last ? { t: last.t, o: last.o, h: last.h, l: last.l, c: last.c } : null;
+    return last ? { t: last.t, o: last.o, h: last.h, l: last.l, c: last.c, v: last.v } : null;
   }
 
   /** Registers the crosshair-inspection callback (legend OHLC). */
@@ -442,11 +478,16 @@ export class OryonChartEngine {
    * number of live series + native panes — structural assertions without
    * scraping the canvas.
    */
-  get debugStats(): { series: number; panes: number; priceLines: number } | null {
+  get debugStats(): { series: number; panes: number; priceLines: number; alertLines: number } | null {
     if (this.chart === null) return null;
     const main = (this.candleSeries !== null ? 1 : 0) + (this.lineSeries !== null ? 1 : 0);
     const managed = this.indicators?.stats ?? { series: 0, panes: 1 };
-    return { series: main + managed.series, panes: managed.panes, priceLines: this.positions?.count ?? 0 };
+    return {
+      series: main + managed.series,
+      panes: managed.panes,
+      priceLines: this.positions?.count ?? 0,
+      alertLines: this.alerts?.count ?? 0,
+    };
   }
 
   // ── internals ──────────────────────────────────────────────────────────
@@ -570,6 +611,6 @@ export class OryonChartEngine {
     }
     const timeSec = typeof param.time === "number" ? param.time : NaN;
     const bar = this.candles.find((c) => c.t / 1000 === timeSec);
-    this.crosshairHandler(bar ? { t: bar.t, o: bar.o, h: bar.h, l: bar.l, c: bar.c } : null);
+    this.crosshairHandler(bar ? { t: bar.t, o: bar.o, h: bar.h, l: bar.l, c: bar.c, v: bar.v } : null);
   };
 }

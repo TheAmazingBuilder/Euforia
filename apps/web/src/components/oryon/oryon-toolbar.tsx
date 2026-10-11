@@ -7,6 +7,7 @@ import Link from "next/link";
 import {
   CalendarDays,
   Bell,
+  BellPlus,
   House,
   Magnet,
   Maximize,
@@ -51,6 +52,7 @@ export function OryonToolbar({
   onMagnetChange,
   onGoLatest,
   onOpenIndicators,
+  onCreateAlert,
   lowerOpen,
   onToggleLower,
   onOpenUtility,
@@ -69,6 +71,7 @@ export function OryonToolbar({
   onMagnetChange: (magnet: boolean) => void;
   onGoLatest: () => void;
   onOpenIndicators: () => void;
+  onCreateAlert: () => void;
   lowerOpen: boolean;
   onToggleLower: () => void;
   onOpenUtility: (panel: OryonUtilityPanel) => void;
@@ -156,6 +159,13 @@ export function OryonToolbar({
         label={S.indicatorsHint}
         onClick={onOpenIndicators}
         testid="oryon-indicators"
+      />
+
+      <OryonIconButton
+        icon={BellPlus}
+        label={S.alertHint}
+        onClick={onCreateAlert}
+        testid="oryon-alert-create"
       />
 
       <div className="h-6 w-px shrink-0 bg-border" aria-hidden />

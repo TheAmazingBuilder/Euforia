@@ -464,6 +464,16 @@ export function useLiveQuote(symbol: string | null | undefined): LiveQuote | nul
 }
 
 /**
+ * Imperative read of the latest quote — for NON-reactive consumers (form
+ * prefill at click time). Components that must UPDATE with the quote use
+ * useLiveQuote/useLiveQuotes; this getter exists so a stable click handler
+ * never has to subscribe and re-render per tick.
+ */
+export function getLiveQuote(symbol: string): LiveQuote | null {
+  return snapshot.quotes.get(symbol) ?? null;
+}
+
+/**
  * Feed connection state (§16) + the raw inputs (§17) consumers need to
  * render STALE honestly: `ageMs` recomputes on each store emission, and the
  * caller can add a 1s local ticker for "N seconds ago" copy.

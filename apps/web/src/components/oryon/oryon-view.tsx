@@ -16,6 +16,11 @@ import { OryonToolRail } from "@/components/oryon/oryon-tool-rail";
 import { OryonUtilityRail } from "@/components/oryon/oryon-utility-rail";
 import { OryonDrawingsProvider } from "@/components/oryon/oryon-drawings-context";
 import { OryonIndicatorDialog } from "@/components/oryon/oryon-indicator-dialog";
+import { OryonAlertDialog } from "@/components/oryon/oryon-alerts-dialog";
+import {
+  OryonAlertsProvider,
+  useOryonAlerts,
+} from "@/components/oryon/oryon-alerts-context";
 import {
   OryonIndicatorsProvider,
   useOryonIndicators,
@@ -23,25 +28,30 @@ import {
 import {
   OryonPositionsProvider,
 } from "@/components/oryon/oryon-positions-context";
+import { getLiveQuote } from "@/lib/realtime/market";
 import type { OryonChartType } from "@/lib/charting/oryon-chart-engine";
 
-export type OryonUtilityPanel = "notifications" | "calendar";
+export type OryonUtilityPanel = "notifications" | "alerts" | "calendar";
 
 /**
- * Oryon — the full-screen charting workspace (Phase 1 → Phase 4).
+ * Oryon — the full-screen charting workspace (Phase 1 → Phase 5).
  *
  * Provider nesting: indicator state wraps the WHOLE workspace (toolbar
  * dialog entry + chart series + legend chips share one store); position
  * state wraps it too (ONE subscription to the private stream feeds the
- * lower panel + the chart overlay bridge); drawing state nests inside
- * (rail + chart layer).
+ * lower panel + the chart overlay bridge); alert state wraps it as well
+ * (ONE subscription to the quote store feeds the evaluation engine);
+ * drawing state nests inside (rail + chart layer).
  */
 export function OryonView() {
   return (
     <OryonIndicatorsProvider>
       <OryonPositionsProvider>
-        <OryonWorkspace />
-        <OryonIndicatorDialog />
+        <OryonAlertsProvider>
+          <OryonWorkspace />
+          <OryonIndicatorDialog />
+          <OryonAlertDialog />
+        </OryonAlertsProvider>
       </OryonPositionsProvider>
     </OryonIndicatorsProvider>
   );
@@ -51,6 +61,7 @@ function OryonWorkspace() {
   const dict = useDict();
   const S = dict.oryon;
   const { openBrowse } = useOryonIndicators();
+  const { openCreate } = useOryonAlerts();
 
   const instrumentsQuery = useInstruments();
   const healthQuery = useMarketServiceHealth();
@@ -102,6 +113,21 @@ function OryonWorkspace() {
     setUtilityOpen(true);
   }, []);
 
+  /**
+   * Alert creation entry point — STABLE per instrument (never per tick):
+   * the current quote is read imperatively at click time (getLiveQuote),
+   * so the toolbar does not re-render on the price stream.
+   */
+  const onCreateAlert = React.useCallback(() => {
+    if (instrument === null) return;
+    const quote = getLiveQuote(instrument.symbol);
+    openCreate({
+      symbol: instrument.symbol,
+      price: quote?.price ?? null,
+      digits: instrument.digits,
+    });
+  }, [instrument, openCreate]);
+
   return (
     <OryonDrawingsProvider>
       <div
@@ -122,6 +148,7 @@ function OryonWorkspace() {
         onMagnetChange={setMagnet}
         onGoLatest={() => latestRef.current()}
         onOpenIndicators={openBrowse}
+        onCreateAlert={onCreateAlert}
         lowerOpen={lowerOpen}
         onToggleLower={() => setLowerOpen((open) => !open)}
         onOpenUtility={openUtility}

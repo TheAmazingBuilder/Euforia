@@ -6,7 +6,7 @@ import { Eye, EyeOff, X } from "lucide-react";
 
 import type { OryonIndicatorInstance } from "@cosmoz/shared";
 
-import type { OryonChartEngine } from "@/lib/charting/oryon-chart-engine";
+import type { OryonChartEngine, OryonCrosshairBar } from "@/lib/charting/oryon-chart-engine";
 import type { ManagedIndicatorValue } from "@/lib/charting/oryon-indicator-series";
 import type { IndicatorOutputId } from "@/lib/oryon/indicators/calculate";
 import { formatIndicatorValue } from "@/lib/oryon/indicators/format";
@@ -18,16 +18,26 @@ import { useIndicatorSnapshot, useOryonIndicators } from "./oryon-indicators-con
 
 /**
  * Oryon indicator legend — one compact chip per active instance, rendered
- * inside the chart legend block (Phase 3 spec §4F, §8).
+ * inside the chart legend block (Phase 3 spec §4F, §8; Phase 5 §5).
  *
  * Values arrive through the engine's imperative callback (rebuild + tick
  * path) — this leaf is the ONLY component that re-renders on the tick path
- * (≤ feed rate), the workspace tree stays still. Quick actions: chip body
- * opens settings, eye toggles visibility, X removes. Hidden instances stay
- * listed (muted, eye-off) so the state is discoverable — never silently
- * vanished.
+ * (≤ feed rate), the workspace tree stays still. While the crosshair
+ * INSPECTS a bar (Phase 5), the chips show that bar's readings via the
+ * engine's exact-time lookup — never an interpolation; when the inspected
+ * time has no computed value the chip simply shows nothing new. Quick
+ * actions: chip body opens settings, eye toggles visibility, X removes.
+ * Hidden instances stay listed (muted, eye-off) so the state is
+ * discoverable — never silently vanished.
  */
-export function OryonIndicatorLegend({ engine }: { engine: OryonChartEngine | null }) {
+export function OryonIndicatorLegend({
+  engine,
+  hoverBar = null,
+}: {
+  engine: OryonChartEngine | null;
+  /** Inspected bar (crosshair) — null when the mouse left the chart. */
+  hoverBar?: OryonCrosshairBar | null;
+}) {
   const dict = useDict();
   const S = dict.oryon.indicators;
   const { store, removeIndicator, openSettings } = useOryonIndicators();
@@ -49,6 +59,16 @@ export function OryonIndicatorLegend({ engine }: { engine: OryonChartEngine | nu
     };
   }, [engine]);
 
+  // Crosshair inspection (Phase 5): exact-time lookup per hovered bar —
+  // cheap (few indicators × binary search), no new subscriptions, and the
+  // fallback stays the live stream when the mouse leaves.
+  const hoverValues = React.useMemo(() => {
+    if (engine === null || hoverBar === null) return null;
+    const at = engine.indicatorValuesAtTime(hoverBar.t / 1000);
+    return new Map(at.map((entry) => [entry.id, entry.values]));
+  }, [engine, hoverBar]);
+  const effectiveValues = hoverValues ?? valuesById;
+
   if (snapshot.indicators.length === 0) return null;
 
   return (
@@ -60,7 +80,7 @@ export function OryonIndicatorLegend({ engine }: { engine: OryonChartEngine | nu
         <IndicatorChip
           key={instance.id}
           instance={instance}
-          values={valuesById.get(instance.id)}
+          values={effectiveValues.get(instance.id)}
           onOpen={() => openSettings(instance.id)}
           onToggleVisible={() => store.toggleVisible(instance.id)}
           onRemove={() => removeIndicator(instance.id)}

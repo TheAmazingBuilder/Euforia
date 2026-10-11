@@ -20,8 +20,11 @@ import { OryonDrawingLayer } from "@/components/oryon/oryon-drawing-layer";
 import { OryonIndicatorLegend } from "@/components/oryon/oryon-indicator-legend";
 import { useIndicatorSnapshot } from "@/components/oryon/oryon-indicators-context";
 import { useOryonPositions } from "@/components/oryon/oryon-positions-context";
+import { useOryonAlerts } from "@/components/oryon/oryon-alerts-context";
 import { positionsForChart } from "@/lib/oryon/positions/match";
 import { buildPositionLineSpecs } from "@/lib/oryon/positions/overlay";
+import { buildAlertLineSpecs } from "@/lib/oryon/alerts/overlay";
+import { formatCandleTime, formatLegendVolume } from "@/lib/oryon/crosshair/format";
 import { cn } from "@/lib/utils";
 
 /**
@@ -155,6 +158,7 @@ export function OryonPriceChart({
       ) : null}
       <OryonTickBridge engineRef={engineRef} symbol={liveSymbol ?? dataSymbol} />
       <OryonPositionsOverlayBridge engineRef={engineRef} dataSymbol={dataSymbol} mounted={chartInstance !== null} />
+      <OryonAlertsOverlayBridge engineRef={engineRef} dataSymbol={dataSymbol} mounted={chartInstance !== null} />
       <OryonChartLegend
         symbol={dataSymbol}
         interval={interval}
@@ -162,7 +166,7 @@ export function OryonPriceChart({
         bar={hoverBar}
         hasData={candles.length > 0}
       >
-        {chartInstance !== null ? <OryonIndicatorLegend engine={chartInstance.engine} /> : null}
+        {chartInstance !== null ? <OryonIndicatorLegend engine={chartInstance.engine} hoverBar={hoverBar} /> : null}
       </OryonChartLegend>
     </div>
   );
@@ -224,6 +228,40 @@ function OryonPositionsOverlayBridge({
   return null;
 }
 
+/**
+ * Imperative alerts → overlay bridge (Phase 5). Renders null; the alert
+ * store re-renders this leaf only on RARE commits (create/remove/status),
+ * then the engine diffs the overlay specs onto price lines — no chart
+ * reinitialization, no duplicated lines, no workspace re-render.
+ *
+ * Instrument filtering (spec §7): ONLY active alerts whose symbol matches
+ * the DISPLAYED data exactly are projected — the bridge follows `dataSymbol`,
+ * so switching instruments cleans up ineligible overlays automatically and
+ * a triggered/disabled alert leaves the chart until re-armed.
+ */
+function OryonAlertsOverlayBridge({
+  engineRef,
+  dataSymbol,
+  mounted,
+}: {
+  engineRef: React.RefObject<OryonChartEngine | null>;
+  dataSymbol: string;
+  mounted: boolean;
+}) {
+  const { store } = useOryonAlerts();
+  const snapshot = React.useSyncExternalStore(store.subscribe, store.getSnapshot);
+
+  React.useEffect(() => {
+    if (!mounted) return;
+    const engine = engineRef.current;
+    if (engine === null) return;
+    const specs = buildAlertLineSpecs(snapshot.alerts, dataSymbol);
+    engine.setAlerts(specs);
+  }, [snapshot, dataSymbol, mounted, engineRef]);
+
+  return null;
+}
+
 /** Top-left overlay: identity, honest source badge, OHLC of the inspected bar. */
 function OryonChartLegend({
   symbol,
@@ -243,6 +281,9 @@ function OryonChartLegend({
   const dict = useDict();
   const S = dict.oryon;
   const sim = source === "sim";
+  // Volume is shown ONLY for a valid positive value — the locally-merged
+  // forming candle reports 0 until the server refetch (never faked).
+  const volumeText = formatLegendVolume(bar?.v);
 
   return (
     <div className="pointer-events-none absolute left-2 top-2 z-10 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-md border border-border bg-background/85 px-2 py-1 backdrop-blur">
@@ -271,12 +312,22 @@ function OryonChartLegend({
         </Tooltip>
       </TooltipProvider>
       {hasData && bar !== null ? (
-        <span data-testid="oryon-legend-ohlc" className="font-mono text-[11px] tabular-nums text-muted-foreground">
-          {S.legend.open} <span className="text-foreground">{bar.o}</span>{" "}
-          {S.legend.high} <span className="text-foreground">{bar.h}</span>{" "}
-          {S.legend.low} <span className="text-foreground">{bar.l}</span>{" "}
-          {S.legend.close} <span className="text-foreground">{bar.c}</span>
-        </span>
+        <>
+          <span data-testid="oryon-legend-time" className="font-mono text-[11px] tabular-nums text-muted-foreground">
+            {formatCandleTime(bar.t, interval)}
+          </span>
+          <span data-testid="oryon-legend-ohlc" className="font-mono text-[11px] tabular-nums text-muted-foreground">
+            {S.legend.open} <span className="text-foreground">{bar.o}</span>{" "}
+            {S.legend.high} <span className="text-foreground">{bar.h}</span>{" "}
+            {S.legend.low} <span className="text-foreground">{bar.l}</span>{" "}
+            {S.legend.close} <span className="text-foreground">{bar.c}</span>
+          </span>
+          {volumeText !== null ? (
+            <span data-testid="oryon-legend-volume" className="font-mono text-[11px] tabular-nums text-muted-foreground">
+              {S.legend.volume} <span className="text-foreground">{volumeText}</span>
+            </span>
+          ) : null}
+        </>
       ) : null}
       {children}
     </div>
