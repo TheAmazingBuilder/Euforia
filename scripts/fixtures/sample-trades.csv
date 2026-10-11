@@ -1,0 +1,4 @@
+symbol,direction,entry_time,entry_price,quantity,exit_time,exit_price,initial_stop,initial_tp,fees,strategy,notes
+EURUSD,BUY,2026-09-21T08:30:00Z,1.0845,0.32,2026-09-21T10:12:00Z,1.0892,1.0810,1.0920,2.4,Breakout NY,Clean breakout retest
+XAUUSD,SELL,2026-09-22T14:05:00Z,2387.4,1,2026-09-22T15:40:00Z,2380.1,2392.8,2372,3.1,,Manual fade at resistance
+BOOM500,BUY,2026-09-23T09:00:00Z,9700.5,2,2026-09-23T09:45:00Z,9730.2,9680,9750,1.8,Range Scalping,Boom spike ride

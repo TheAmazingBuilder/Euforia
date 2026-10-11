@@ -1,0 +1,1 @@
+[market-service] listening on :3003 — REST /prices /candles, WS path /socket.io/
