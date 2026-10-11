@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { marketIntervalSchema } from "./market";
+
 /**
  * Oryon drawing contracts — cahier des charges §8.3 (RF-04, RF-09).
  *
@@ -358,3 +360,130 @@ export const oryonAlertsFileSchema = z.object({
 });
 
 export type OryonAlertsFile = z.infer<typeof oryonAlertsFileSchema>;
+
+// ── Workspace layout contracts (Phase 6 — spec §4, §5) ──────────────────────
+//
+// A workspace layout describes HOW THE WORKSPACE IS ARRANGED: the active
+// instrument, timeframe, chart type, crosshair mode and the visibility of
+// the workspace rails/panels. It is deliberately DISTINCT from a chart
+// template (below): a layout answers "how is my working environment set
+// up", a template answers "how do I analyze a chart". They share no mutable
+// state and applying one never mutates the other.
+//
+// Scope discipline (spec §5): ONLY state the current application can
+// actually apply is part of the contract. Transient UI state (hover
+// tooltips, in-progress gestures, context menus, drag states, loading and
+// error surfaces) is structurally excluded — it does not exist here.
+// Chart-panel split proportions do not exist in the current single-chart
+// workspace (fixed-height lower panel), so nothing is persisted for them;
+// the schema grows additively when a future phase introduces resizable
+// arrangements (version bump + migration, never a silent reshape).
+//
+// Multi-chart note (spec §12): Oryon renders ONE chart panel today. The
+// layout record is a single-chart shape by design; a future multi-chart
+// engine adds a `charts` array alongside these fields in a NEW schema
+// version instead of overloading this one.
+
+/** The panels the utility rail can show (mirrors the rail's tab model). */
+export const oryonLayoutPanelSchema = z.enum(["notifications", "alerts", "calendar"]);
+
+export type OryonLayoutPanel = z.infer<typeof oryonLayoutPanelSchema>;
+
+/** Chart types the engine implements (mirrors OryonChartType). */
+export const oryonLayoutChartTypeSchema = z.enum(["candles", "line"]);
+
+export type OryonLayoutChartType = z.infer<typeof oryonLayoutChartTypeSchema>;
+
+export const oryonWorkspaceLayoutSchema = z.object({
+  id: z.string().min(8).max(64),
+  /** Display name, trimmed, 1..48 chars. Uniqueness is a store policy
+   *  (case-insensitive) — Zod cannot express it inside a list. */
+  name: z.string().min(1).max(48),
+  /** Active instrument SYMBOL (the feed identity — stable across sessions),
+   *  or null to keep the app's default selection. Resolved through the
+   *  instrument catalog on apply; an unknown symbol applies the REST of the
+   *  layout and leaves the selection at its default (partial restore). */
+  symbol: z.string().min(1).max(32).nullable(),
+  interval: marketIntervalSchema,
+  chartType: oryonLayoutChartTypeSchema,
+  /** Magnet crosshair mode (toolbar toggle). */
+  magnet: z.boolean(),
+  /** Lower positions panel visibility. */
+  lowerPanel: z.boolean(),
+  /** Right utility rail visibility + active panel. */
+  utilityRail: z.object({
+    open: z.boolean(),
+    panel: oryonLayoutPanelSchema,
+  }),
+  /** Creation / modification timestamps, unix ms (repo convention). */
+  createdAt: z.number().finite().int(),
+  updatedAt: z.number().finite().int(),
+});
+
+export type OryonWorkspaceLayout = z.infer<typeof oryonWorkspaceLayoutSchema>;
+
+/**
+ * Versioned persistence envelope (Phase 6) — ONE browser-local file.
+ * `activeLayoutId` is the persisted pointer to the layout that was active
+ * when the workspace last saved; null = the built-in default layout. The
+ * DEFAULT LAYOUT ITSELF IS NEVER STORED — it is a code-level constant, so
+ * it stays recoverable no matter what the user does to their saved records.
+ */
+export const oryonLayoutsFileSchema = z.object({
+  version: z.literal(1),
+  savedAt: z.number().finite().int(),
+  layouts: z.array(oryonWorkspaceLayoutSchema).max(20),
+  activeLayoutId: z.string().min(8).max(64).nullable(),
+});
+
+export type OryonLayoutsFile = z.infer<typeof oryonLayoutsFileSchema>;
+
+// ── Chart template contracts (Phase 6 — spec §6) ────────────────────────────
+//
+// A chart template is a reusable ANALYSIS configuration: chart type, an
+// optional timeframe and the indicator stack with its validated parameters
+// and styles. Indicator entries REUSE the existing oryonIndicatorSchema —
+// the exact same validated shape the live chart persists — so a template
+// can never carry configuration the chart cannot rebuild, and business
+// rules (MACD fast < slow, RSI lower < upper) are re-checked on apply by
+// the same validation layer.
+//
+// What a template deliberately does NOT contain: runtime objects (chart
+// instances, DOM nodes, subscriptions, callbacks — impossible in JSON, and
+// the contract states it), broker/account data, drawings, price alerts and
+// workspace arrangement (a layout's job, spec §3). Applying a template
+// never erases drawings, alerts or positions (spec §11).
+//
+// `interval` semantics: null = the timeframe is NOT part of this template
+// (applying it leaves the current timeframe untouched). Non-null = the
+// template restores the timeframe it was saved with. The save flow captures
+// the current interval; the null case exists so future template flows can
+// scope a template to "analysis settings only" without a schema change.
+
+export const oryonChartTemplateSchema = z.object({
+  id: z.string().min(8).max(64),
+  /** Display name, trimmed, 1..48 chars. Uniqueness is a store policy
+   *  (case-insensitive), mirroring layouts. */
+  name: z.string().min(1).max(48),
+  chart: z.object({
+    type: oryonLayoutChartTypeSchema,
+    /** null = applying this template does not touch the timeframe. */
+    interval: marketIntervalSchema.nullable(),
+  }),
+  /** The validated indicator stack this template restores (max = the
+   *  live chart's own instance cap, so a template can always be applied). */
+  indicators: z.array(oryonIndicatorSchema).max(50),
+  createdAt: z.number().finite().int(),
+  updatedAt: z.number().finite().int(),
+});
+
+export type OryonChartTemplate = z.infer<typeof oryonChartTemplateSchema>;
+
+/** Versioned persistence envelope (Phase 6) — ONE browser-local file. */
+export const oryonChartTemplatesFileSchema = z.object({
+  version: z.literal(1),
+  savedAt: z.number().finite().int(),
+  templates: z.array(oryonChartTemplateSchema).max(30),
+});
+
+export type OryonChartTemplatesFile = z.infer<typeof oryonChartTemplatesFileSchema>;

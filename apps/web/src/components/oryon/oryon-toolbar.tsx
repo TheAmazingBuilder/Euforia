@@ -24,6 +24,8 @@ import { useDict } from "@/i18n/i18n-provider";
 
 import { OryonIconButton } from "@/components/oryon/oryon-icon-button";
 import { OryonInstrumentSelector } from "@/components/oryon/oryon-instrument-selector";
+import { OryonLayoutsMenu } from "@/components/oryon/oryon-layouts-menu";
+import { OryonTemplatesMenu } from "@/components/oryon/oryon-templates-menu";
 import { OryonTimeframeSelector } from "@/components/oryon/oryon-timeframe-selector";
 import { OryonFeedStatus } from "@/components/oryon/oryon-feed-status";
 import type { OryonUtilityPanel } from "@/components/oryon/oryon-view";
@@ -167,6 +169,12 @@ export function OryonToolbar({
         onClick={onCreateAlert}
         testid="oryon-alert-create"
       />
+
+      <div className="h-6 w-px shrink-0 bg-border" aria-hidden />
+
+      {/* Phase 6 — workspace configuration cluster: layouts + templates. */}
+      <OryonLayoutsMenu />
+      <OryonTemplatesMenu />
 
       <div className="h-6 w-px shrink-0 bg-border" aria-hidden />
 

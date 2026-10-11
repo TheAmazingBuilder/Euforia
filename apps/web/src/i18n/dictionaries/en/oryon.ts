@@ -260,4 +260,97 @@ export const oryonDict = {
     triggerAbove: "crossed above",
     triggerBelow: "crossed below",
   },
+  layouts: {
+    // Toolbar trigger + menu header (§4) — the active layout is named here.
+    triggerHint: "Workspace layouts",
+    activeHeading: "Active layout",
+    defaultName: "Default layout",
+    dirtyLabel: "Unsaved changes",
+    savedGroup: "Saved layouts",
+    savedEmpty: "No saved layouts yet — the default layout is in use.",
+    // Menu actions (§4) — operations target the ACTIVE layout.
+    saveChanges: "Save changes",
+    saveAsNew: "Save as new…",
+    rename: "Rename…",
+    duplicate: "Duplicate",
+    delete: "Delete…",
+    restoreDefault: "Restore default layout",
+    // Feedback.
+    savedToast: "Layout saved",
+    createdToast: "Layout created",
+    duplicatedToast: "Layout duplicated",
+    deletedToast: "Layout deleted",
+    restoredToast: "Default layout restored",
+    // Name dialog (save-as / rename).
+    nameSaveTitle: "Save layout as…",
+    nameRenameTitle: "Rename layout",
+    nameLabel: "Layout name",
+    namePlaceholder: "e.g. Swing desk",
+    nameSubmitCreate: "Save layout",
+    nameSubmitRename: "Rename",
+    // Delete confirmation.
+    deleteTitle: "Delete layout",
+    deleteBody: "The saved arrangement is removed permanently. The default layout stays available, and saved templates are not affected.",
+    deleteSubmit: "Delete layout",
+    // Unsaved-changes guard on switch (§10) — explicit, predictable policy.
+    switchTitle: "Unsaved layout changes",
+    switchBody: "The active layout has unsaved changes. Save them before switching, or discard them.",
+    switchSave: "Save & switch",
+    switchDiscard: "Discard changes",
+    switchCancel: "Cancel",
+    switchSavedToast: "Changes saved — layout applied",
+    // Partial restore (unknown instrument symbol after a catalog load).
+    instrumentMissingToast: "Layout instrument is unavailable — the default selection is kept.",
+    // Errors (inline in dialogs).
+    errorNameInvalid: "Enter a name (1–48 characters).",
+    errorNameTaken: "A layout with this name already exists.",
+    errorCapacity: "The layout limit is reached.",
+    errorNotFound: "This layout no longer exists.",
+    errorDefaultImmutable: "The default layout cannot be overwritten — save as a new layout instead.",
+  },
+  templates: {
+    // Toolbar trigger + menu (§6).
+    triggerHint: "Chart templates",
+    heading: "Chart templates",
+    headingHint: "Reusable analysis settings — indicators, chart type, timeframe.",
+    savedEmpty: "No templates yet.",
+    savedEmptyHint: "Set the chart up, then save it as a template to reuse this analysis.",
+    metaIndicators: "indicators",
+    metaNoInterval: "analysis only",
+    // Menu actions.
+    saveCurrent: "Save current as template…",
+    manage: "Manage templates…",
+    // Save dialog — what a template captures, stated exactly (§6, §11).
+    saveTitle: "Save chart template",
+    saveBody: "Captures the chart type, the current timeframe and the indicator stack with their settings. Drawings, alerts and positions are not included.",
+    nameLabel: "Template name",
+    namePlaceholder: "e.g. Swing analysis",
+    nameSubmitCreate: "Save template",
+    savedToast: "Template saved",
+    // Apply confirmation (replaces the indicator stack — §6, §11).
+    applyTitle: "Apply chart template",
+    applyBody: "Applying this template replaces the current indicator stack. Drawings, alerts and open positions are untouched.",
+    applySubmit: "Apply template",
+    appliedToast: "Template applied",
+    appliedPartialToast: "Template applied with skipped indicators",
+    skippedDetail: "indicators skipped",
+    // Manage dialog (§6 — list + apply + rename + delete).
+    manageTitle: "Manage templates",
+    manageEmpty: "No saved templates yet.",
+    apply: "Apply",
+    rename: "Rename",
+    delete: "Delete",
+    renameTitle: "Rename template",
+    nameSubmitRename: "Rename",
+    // Delete confirmation.
+    deleteTitle: "Delete template",
+    deleteBody: "Deleting a template does not affect the current chart or the other saved templates.",
+    deleteSubmit: "Delete template",
+    deletedToast: "Template deleted",
+    // Errors (inline in dialogs).
+    errorNameInvalid: "Enter a name (1–48 characters).",
+    errorNameTaken: "A template with this name already exists.",
+    errorCapacity: "The template limit is reached.",
+    errorNotFound: "This template no longer exists.",
+  },
 } as const;
