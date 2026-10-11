@@ -21,6 +21,12 @@ import { marketIntervalSchema } from "./market";
  * MEASURE, FIB) plus VLINE. All eight are part of the persisted contract;
  * a renderer may not exist for every type yet — the loader filters
  * unrenderable types out instead of rendering something dishonest.
+ *
+ * V3 type set (Drawing toolbar v2 — TradingView-parity rail): eight ADDITIVE
+ * members. The persistence envelope is unchanged (same version, same file
+ * shape) — old records load untouched, and every new member has a renderer
+ * in the same build that can persist it (the "unrenderable type" loader
+ * filter above remains a safety net, never the happy path).
  */
 
 export const oryonDrawingTypeSchema = z.enum([
@@ -32,6 +38,23 @@ export const oryonDrawingTypeSchema = z.enum([
   "text",
   "measure",
   "fib",
+  // ── V3 additions (additive, backward-compatible) ──
+  /** Infinite line through a→b, extended BOTH directions (clipped to plot). */
+  "extended",
+  /** One-click cross: horizontal + vertical line through one anchor. */
+  "crossline",
+  /** Trend-based Fibonacci extension — three anchors a→b projected from c. */
+  "fibext",
+  /** Vertical price ruler: Δprice / Δ% / pips readout. */
+  "pricerange",
+  /** Horizontal time ruler: elapsed duration + bars readout. */
+  "daterange",
+  /** Long position tool: entry at a, stop at b.p, 1:1 target derived. */
+  "longpos",
+  /** Short position tool: entry at a, stop at b.p, 1:1 target derived. */
+  "shortpos",
+  /** Ellipse inscribed in the a→b bounding rect. */
+  "ellipse",
 ]);
 
 export type OryonDrawingType = z.infer<typeof oryonDrawingTypeSchema>;
@@ -136,6 +159,81 @@ export const oryonFibDrawingSchema = z.object({
   b: oryonDrawingAnchorSchema,
 });
 
+// ── V3 types (Drawing toolbar v2 — additive members, same style/anchors) ────
+
+/** Extended line — two anchors, drawn infinitely in BOTH directions. */
+export const oryonExtendedDrawingSchema = z.object({
+  ...commonDrawingFields,
+  type: z.literal("extended"),
+  a: oryonDrawingAnchorSchema,
+  b: oryonDrawingAnchorSchema,
+});
+
+/** Cross line — one anchor; horizontal AND vertical through it. */
+export const oryonCrosslineDrawingSchema = z.object({
+  ...commonDrawingFields,
+  type: z.literal("crossline"),
+  at: oryonDrawingAnchorSchema,
+});
+
+/**
+ * Trend-based Fibonacci extension — THREE anchors: the A→B swing measured
+ * and projected from C. Extension levels = c.p + (b.p − a.p) × level
+ * (ORYON_FIB_EXT_LEVELS), drawn from the last-placed anchor rightward.
+ */
+export const oryonFibExtDrawingSchema = z.object({
+  ...commonDrawingFields,
+  type: z.literal("fibext"),
+  a: oryonDrawingAnchorSchema,
+  b: oryonDrawingAnchorSchema,
+  c: oryonDrawingAnchorSchema,
+});
+
+/** Price range — vertical ruler between the two anchor prices (at a.t). */
+export const oryonPriceRangeDrawingSchema = z.object({
+  ...commonDrawingFields,
+  type: z.literal("pricerange"),
+  a: oryonDrawingAnchorSchema,
+  b: oryonDrawingAnchorSchema,
+});
+
+/** Date range — horizontal ruler between the two anchor times (at a.p). */
+export const oryonDateRangeDrawingSchema = z.object({
+  ...commonDrawingFields,
+  type: z.literal("daterange"),
+  a: oryonDrawingAnchorSchema,
+  b: oryonDrawingAnchorSchema,
+});
+
+/**
+ * Position tool (long/short) — TWO anchors: a = entry (time + price),
+ * b = stop corner (time + stop price). The TARGET is DERIVED at 1:1 R:R
+ * (ORYON_POSITION_RR): target.p = entry.p + (entry.p − stop.p) — never
+ * persisted (a stored value could silently disagree with the documented
+ * ratio); the time span is a.t → b.t.
+ */
+export const oryonLongPositionDrawingSchema = z.object({
+  ...commonDrawingFields,
+  type: z.literal("longpos"),
+  a: oryonDrawingAnchorSchema,
+  b: oryonDrawingAnchorSchema,
+});
+
+export const oryonShortPositionDrawingSchema = z.object({
+  ...commonDrawingFields,
+  type: z.literal("shortpos"),
+  a: oryonDrawingAnchorSchema,
+  b: oryonDrawingAnchorSchema,
+});
+
+/** Ellipse — inscribed in the a→b bounding rect. */
+export const oryonEllipseDrawingSchema = z.object({
+  ...commonDrawingFields,
+  type: z.literal("ellipse"),
+  a: oryonDrawingAnchorSchema,
+  b: oryonDrawingAnchorSchema,
+});
+
 export const oryonDrawingSchema = z.discriminatedUnion("type", [
   oryonTrendDrawingSchema,
   oryonHLineDrawingSchema,
@@ -145,14 +243,28 @@ export const oryonDrawingSchema = z.discriminatedUnion("type", [
   oryonTextDrawingSchema,
   oryonMeasureDrawingSchema,
   oryonFibDrawingSchema,
+  oryonExtendedDrawingSchema,
+  oryonCrosslineDrawingSchema,
+  oryonFibExtDrawingSchema,
+  oryonPriceRangeDrawingSchema,
+  oryonDateRangeDrawingSchema,
+  oryonLongPositionDrawingSchema,
+  oryonShortPositionDrawingSchema,
+  oryonEllipseDrawingSchema,
 ]);
 
 export type OryonDrawing = z.infer<typeof oryonDrawingSchema>;
 
-/** Two-anchor drawing shapes (trend, ray, rect, measure, fib). */
+/** Two-anchor drawing shapes (trend, ray, rect, measure, fib + V3 pairs). */
 export type OryonTwoAnchorDrawing = Extract<
   OryonDrawing,
   { a: OryonDrawingAnchor; b: OryonDrawingAnchor }
+>;
+
+/** Three-anchor drawing shapes (fibext). */
+export type OryonThreeAnchorDrawing = Extract<
+  OryonDrawing,
+  { a: OryonDrawingAnchor; b: OryonDrawingAnchor; c: OryonDrawingAnchor }
 >;
 
 /** Versioned persistence envelope (RF-09) — one file per symbol. */
@@ -167,6 +279,32 @@ export type OryonDrawingsFile = z.infer<typeof oryonDrawingsFileSchema>;
 
 /** Fibonacci retracement levels (verified ratios, 0..1 band). */
 export const ORYON_FIB_LEVELS = [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1] as const;
+
+/**
+ * Trend-based Fibonacci EXTENSION ratios (fractions of the A→B swing,
+ * projected from C). 0 = at C itself, 1 = one full swing beyond C,
+ * 1.618 = the golden extension. Values > 1 genuinely extend — the
+ * readout labels every line with its ratio + price, nothing hidden.
+ */
+export const ORYON_FIB_EXT_LEVELS = [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1, 1.618] as const;
+
+/**
+ * Position tool risk:reward — DERIVED target ratio (documented constant;
+ * a configurable ratio arrives with the property editor, never a silent
+ * change of the drawn geometry).
+ */
+export const ORYON_POSITION_RR = 1 as const;
+
+/** Derives the position-tool target price from entry/stop (pure, tested).
+ *  target = entry + (entry − stop) × RR — works for BOTH directions: the
+ *  risk term is naturally positive for a long (stop below entry) and
+ *  negative for a short (stop above entry). */
+export function oryonPositionTargetPrice(
+  entryPrice: number,
+  stopPrice: number,
+): number {
+  return entryPrice + (entryPrice - stopPrice) * ORYON_POSITION_RR;
+}
 
 // ── Indicator contracts (Phase 3 — cahier des charges RF-05, jalon P2) ──────
 //

@@ -83,7 +83,12 @@ export function OryonDrawingLayer({
 
   // ── default drawing factory (theme token keys — never hex) ─────────────────
   const makeDrawing = React.useCallback(
-    (tool: OryonDrawingTool, a: { t: number; p: number }, b: { t: number; p: number } | null): OryonDrawing => {
+    (
+      tool: OryonDrawingTool,
+      a: { t: number; p: number },
+      b: { t: number; p: number } | null,
+      c?: { t: number; p: number } | null,
+    ): OryonDrawing => {
       const now = Date.now();
       const id = newDrawingId();
       const style = {
@@ -94,15 +99,25 @@ export function OryonDrawingLayer({
         fillOpacity: 0.12,
         fontSize: 13,
       };
+      const two = (type: OryonDrawingTool): OryonDrawing =>
+        ({ id, type, visible: true, locked: false, label: null, createdAt: now, updatedAt: now, style, a, b: b ?? a }) as OryonDrawing;
       switch (tool) {
         case "trend":
         case "ray":
+        case "extended":
         case "rect":
+        case "ellipse":
         case "measure":
+        case "pricerange":
+        case "daterange":
         case "fib":
+        case "longpos":
+        case "shortpos":
+          return two(tool);
+        case "fibext":
           return {
             id,
-            type: tool,
+            type: "fibext",
             visible: true,
             locked: false,
             label: null,
@@ -111,15 +126,21 @@ export function OryonDrawingLayer({
             style,
             a,
             b: b ?? a,
+            c: c ?? b ?? a,
           };
         case "hline":
           return { id, type: "hline", visible: true, locked: false, label: null, createdAt: now, updatedAt: now, style, price: a.p };
         case "vline":
           return { id, type: "vline", visible: true, locked: false, label: null, createdAt: now, updatedAt: now, style, time: a.t };
+        case "crossline":
+          return { id, type: "crossline", visible: true, locked: false, label: null, createdAt: now, updatedAt: now, style, at: a };
         case "text":
           return { id, type: "text", visible: true, locked: false, label: null, createdAt: now, updatedAt: now, style, at: a, text: "" };
         case "cursor":
-          throw new Error("makeDrawing: cursor is not a drawing tool");
+        case "cursor-cross":
+        case "cursor-dot":
+        case "eraser":
+          throw new Error(`makeDrawing: ${tool} is not a drawing tool`);
       }
     },
     [],

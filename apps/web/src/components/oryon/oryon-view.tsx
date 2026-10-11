@@ -12,6 +12,8 @@ import { useIsDesktop } from "@/lib/hooks/use-media-query";
 import { useDict } from "@/i18n/i18n-provider";
 
 import { OryonChartGrid, OryonChartGridPanel, useResolvedInstrument } from "@/components/oryon/oryon-chart-grid";
+import { OryonBottomBar } from "@/components/oryon/oryon-bottom-bar";
+import { OryonFavoritesBar } from "@/components/oryon/oryon-favorites-bar";
 import { OryonLowerPanel } from "@/components/oryon/oryon-lower-panel";
 import { OryonToolbar } from "@/components/oryon/oryon-toolbar";
 import { OryonToolRail } from "@/components/oryon/oryon-tool-rail";
@@ -151,6 +153,9 @@ function OryonWorkspace() {
 
   const covered = instrument !== null && feedSymbols.has(instrument.symbol);
 
+  /** Chart-area box — the floating favorites bar's coordinate reference. */
+  const chartAreaRef = React.useRef<HTMLDivElement | null>(null);
+
   // ── Sync coordinator (engine-level: time scale + crosshair) ───────────────
   // Created lazily on FIRST USE — an effect or a child's engine-ready
   // callback, never during render (react-hooks/refs discipline) — and
@@ -286,10 +291,6 @@ function OryonWorkspace() {
         covered={covered}
         feedKnown={feedSymbols.size > 0}
         feedSymbols={feedSymbols}
-        interval={activePanel?.interval ?? "5m"}
-        onIntervalChange={(next: MarketInterval) => {
-          if (activePanel !== null) store.setPanelInterval(activePanel.id, next);
-        }}
         chartType={activePanel?.chartType ?? "candles"}
         onChartTypeChange={(next) => {
           if (activePanel !== null) store.setPanelChartType(activePanel.id, next);
@@ -313,23 +314,30 @@ function OryonWorkspace() {
       <div className="flex min-h-0 flex-1">
         <OryonToolRail />
 
-        <OryonChartGrid grid={session.grid}>
-          {session.panels.map((panel, index) => (
-            <OryonChartGridPanel
-              key={panel.id}
-              panel={panel}
-              index={index}
-              multi={session.panels.length > 1}
-              active={panel.id === session.activePanelId}
-              magnet={session.magnet}
-              instruments={instruments}
-              feedSymbols={feedSymbols}
-              feedKnown={feedSymbols.size > 0}
-              onEngineReady={handleEngineReady}
-              onEngineGone={handleEngineGone}
-            />
-          ))}
-        </OryonChartGrid>
+        {/* Chart-area wrapper — the favorites bar floats INSIDE this box
+            (its persisted coordinates are relative to the chart area, and
+            its clamp bounds are exactly what the user sees as "the chart"). */}
+        <div ref={chartAreaRef} className="relative flex min-h-0 min-w-0 flex-1">
+          <OryonChartGrid grid={session.grid}>
+            {session.panels.map((panel, index) => (
+              <OryonChartGridPanel
+                key={panel.id}
+                panel={panel}
+                index={index}
+                multi={session.panels.length > 1}
+                active={panel.id === session.activePanelId}
+                magnet={session.magnet}
+                instruments={instruments}
+                feedSymbols={feedSymbols}
+                feedKnown={feedSymbols.size > 0}
+                onEngineReady={handleEngineReady}
+                onEngineGone={handleEngineGone}
+              />
+            ))}
+          </OryonChartGrid>
+
+          <OryonFavoritesBar containerRef={chartAreaRef} />
+        </div>
 
         {/* Docked utility rail — lg+ only. */}
         {isDesktop ? (
@@ -342,6 +350,15 @@ function OryonWorkspace() {
           />
         ) : null}
       </div>
+
+      {/* Bottom bar — the ACTIVE panel's timeframe strip + clock + display
+          timezone (md+; below md the panel headers own the timeframes). */}
+      <OryonBottomBar
+        interval={activePanel?.interval ?? "5m"}
+        onIntervalChange={(next: MarketInterval) => {
+          if (activePanel !== null) store.setPanelInterval(activePanel.id, next);
+        }}
+      />
 
       <OryonLowerPanel
         open={session.lowerOpen}

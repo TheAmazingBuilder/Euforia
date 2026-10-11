@@ -15,13 +15,19 @@ import type {
   OryonDrawingAnchor,
 } from "@cosmoz/shared";
 
-import { ORYON_FIB_LEVELS } from "@cosmoz/shared";
+import { ORYON_FIB_EXT_LEVELS, ORYON_FIB_LEVELS, oryonPositionTargetPrice } from "@cosmoz/shared";
 
 import {
+  fibExtLevelPrice,
   fibLevelPrice,
   type ScreenRect,
 } from "@/lib/oryon/drawings/geometry";
-import { computeMeasureReadout } from "@/lib/oryon/drawings/measure";
+import {
+  computeDateRangeReadout,
+  computeMeasureReadout,
+  computePositionReadout,
+  computePriceRangeReadout,
+} from "@/lib/oryon/drawings/measure";
 import type { DraftOverlay } from "@/lib/oryon/drawings/draft";
 import {
   paintProjectedDrawing,
@@ -76,8 +82,9 @@ export interface DrawingsPrimitiveDeps {
   conversions: OryonDrawingConversions;
 }
 
-/** Two-anchor drawing union (trend/ray/rect/measure/fib). */
+/** Two-anchor drawing union (V2 + V3 pairs). */
 type TwoAnchorDrawing = Extract<OryonDrawing, { a: OryonDrawingAnchor; b: OryonDrawingAnchor }>;
+type ThreeAnchorDrawing = Extract<OryonDrawing, { a: OryonDrawingAnchor; b: OryonDrawingAnchor; c: OryonDrawingAnchor }>;
 
 class OryonDrawingsPaneRenderer implements IPrimitivePaneRenderer {
   constructor(
@@ -208,19 +215,43 @@ export class OryonDrawingsPrimitive implements ISeriesPrimitive<UTCTimestamp> {
       switch (drawing.type) {
         case "trend":
         case "ray":
+        case "extended":
         case "rect":
+        case "ellipse":
         case "measure":
+        case "pricerange":
+        case "daterange":
+        case "longpos":
+        case "shortpos":
         case "fib": {
           const two = drawing as TwoAnchorDrawing;
           const a = this.projectAnchor(two.a);
           const b = this.projectAnchor(two.b);
           if (a === null || b === null) return;
-          if (drawing.type === "trend" || drawing.type === "ray") {
+          if (drawing.type === "trend" || drawing.type === "ray" || drawing.type === "extended") {
             views.push({ kind: drawing.type, drawing, a, b, state });
           } else if (drawing.type === "rect") {
             views.push({ kind: "rect", drawing, a, b, state });
+          } else if (drawing.type === "ellipse") {
+            views.push({ kind: "ellipse", drawing, a, b, state });
           } else if (drawing.type === "measure") {
             views.push({ kind: "measure", drawing, a, b, state, label: this.measureLabel(two) });
+          } else if (drawing.type === "pricerange") {
+            views.push({ kind: "pricerange", drawing, a, b, state, label: this.priceRangeLabel(two) });
+          } else if (drawing.type === "daterange") {
+            views.push({ kind: "daterange", drawing, a, b, state, label: this.dateRangeLabel(two) });
+          } else if (drawing.type === "longpos" || drawing.type === "shortpos") {
+            const targetPrice = oryonPositionTargetPrice(two.a.p, two.b.p);
+            const targetY = this.deps.conversions.priceToY(targetPrice);
+            views.push({
+              kind: "position",
+              drawing,
+              a,
+              b,
+              state,
+              targetY,
+              label: this.positionLabel(two),
+            });
           } else {
             const levels = this.fibLevels(two);
             if (levels === null) return;
@@ -228,6 +259,20 @@ export class OryonDrawingsPrimitive implements ISeriesPrimitive<UTCTimestamp> {
           }
           if (state.selected && !isDraft) {
             handles.push(a, b);
+          }
+          return;
+        }
+        case "fibext": {
+          const three = drawing as ThreeAnchorDrawing;
+          const a = this.projectAnchor(three.a);
+          const b = this.projectAnchor(three.b);
+          const c = this.projectAnchor(three.c);
+          if (a === null || b === null || c === null) return;
+          const levels = this.fibExtLevels(three);
+          if (levels === null) return;
+          views.push({ kind: "fibext", drawing, a, b, c, levels, state, digits: this.deps.getDigits() });
+          if (state.selected && !isDraft) {
+            handles.push(a, b, c);
           }
           return;
         }
@@ -248,6 +293,15 @@ export class OryonDrawingsPrimitive implements ISeriesPrimitive<UTCTimestamp> {
           if (state.selected && !isDraft) {
             const plot = this.plotRect();
             handles.push({ x, y: plot === null ? 0 : (plot.top + plot.bottom) / 2 });
+          }
+          return;
+        }
+        case "crossline": {
+          const at = this.projectAnchor(drawing.at);
+          if (at === null) return;
+          views.push({ kind: "crossline", drawing, at, state });
+          if (state.selected && !isDraft) {
+            handles.push(at);
           }
           return;
         }
@@ -284,6 +338,55 @@ export class OryonDrawingsPrimitive implements ISeriesPrimitive<UTCTimestamp> {
           if (a !== null) {
             // First anchor placed — render a marker so the user sees the start.
             handles.push(a);
+          }
+        }
+      } else if (draft.kind === "create3") {
+        // fibext stages: A alone → start dot; A+B → leg preview (levels
+        // appear only once C exists — the extension is undefined before).
+        if (draft.b !== null && draft.c !== null) {
+          const preview = {
+            id: "__draft__",
+            type: "fibext",
+            visible: true,
+            locked: false,
+            label: null,
+            createdAt: 0,
+            updatedAt: 0,
+            style: draft.style,
+            a: draft.a,
+            b: draft.b,
+            c: draft.c,
+          } as ThreeAnchorDrawing;
+          projectDrawing(preview, true);
+        } else {
+          const a = this.projectAnchor(draft.a);
+          if (a !== null) handles.push(a);
+          if (draft.b !== null) {
+            const b = this.projectAnchor(draft.b);
+            if (b !== null) handles.push(b);
+            const aPt = this.projectAnchor(draft.a);
+            if (aPt !== null && b !== null) {
+              // Leg preview via a degenerate trend view (screen-only — the
+              // frame fields below are never persisted or hit-tested).
+              views.push({
+                kind: "trend",
+                drawing: {
+                  id: "__draft-leg__",
+                  type: "trend",
+                  visible: true,
+                  locked: false,
+                  label: null,
+                  createdAt: 0,
+                  updatedAt: 0,
+                  style: draft.style,
+                  a: draft.a,
+                  b: draft.b,
+                },
+                a: aPt,
+                b,
+                state: { selected: false, locked: false, hover: false },
+              });
+            }
           }
         }
       } else {
@@ -339,5 +442,51 @@ export class OryonDrawingsPrimitive implements ISeriesPrimitive<UTCTimestamp> {
     });
     if (!readout.valid || readout.lines.length === 0) return null;
     return readout.lines.join("\n");
+  }
+
+  /** Price-range readout label (pure module; bars are irrelevant here). */
+  private priceRangeLabel(drawing: TwoAnchorDrawing): string | null {
+    const readout = computePriceRangeReadout(drawing.a, drawing.b, {
+      digits: this.deps.getDigits(),
+      pipSize: this.deps.getPipSize(),
+    });
+    if (!readout.valid || readout.lines.length === 0) return null;
+    return readout.lines.join("\n");
+  }
+
+  /** Date-range readout label (bar count from the chart's logical pipeline). */
+  private dateRangeLabel(drawing: TwoAnchorDrawing): string | null {
+    const logicalA = this.deps.conversions.timeSecToLogical(drawing.a.t);
+    const logicalB = this.deps.conversions.timeSecToLogical(drawing.b.t);
+    const bars =
+      logicalA === null || logicalB === null
+        ? null
+        : Math.abs(Math.round(logicalB) - Math.round(logicalA));
+    const readout = computeDateRangeReadout(drawing.a, drawing.b, { bars });
+    if (!readout.valid || readout.lines.length === 0) return null;
+    return readout.lines.join("\n");
+  }
+
+  /** Position tool label — Entry/Stop/Target (target DERIVED, never stored). */
+  private positionLabel(drawing: TwoAnchorDrawing): string | null {
+    const readout = computePositionReadout(drawing.a, drawing.b, {
+      digits: this.deps.getDigits(),
+      pipSize: this.deps.getPipSize(),
+    });
+    if (!readout.valid || readout.lines.length === 0) return null;
+    return readout.lines.join("\n");
+  }
+
+  /** Fib extension level positions — null when ANY level fails to project. */
+  private fibExtLevels(drawing: ThreeAnchorDrawing): readonly FibLevelView[] | null {
+    const priceToY = this.deps.conversions.priceToY;
+    const levels: FibLevelView[] = [];
+    for (const level of ORYON_FIB_EXT_LEVELS) {
+      const price = fibExtLevelPrice(drawing.a.p, drawing.b.p, drawing.c.p, level);
+      const y = priceToY(price);
+      if (y === null) return null;
+      levels.push({ level, y, price });
+    }
+    return levels;
   }
 }

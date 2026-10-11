@@ -1,0 +1,55 @@
+=== oryon toolbar2 probe — 2026-10-11T21:42:56.275Z ===
+  PASS  rail visible (desktop)
+  PASS  group button cursors present
+  PASS  caret cursors present
+  PASS  group button trend present
+  PASS  caret trend present
+  PASS  group button fib present
+  PASS  caret fib present
+  PASS  group button forecast present
+  PASS  caret forecast present
+  PASS  group button shapes present
+  PASS  caret shapes present
+  PASS  group button text present
+  PASS  caret text present
+  PASS  top toolbar has no interval buttons (moved to bottom bar)
+  PASS  bottom bar visible
+  PASS  bottom bar interval count (1m→1D) (got 7, want 7)
+  PASS  bottom-bar 15m applied to the active panel
+  PASS  live clock renders (got "17:43:17 EDT")
+  PASS  timezone options (curated list) (got 16, want 16)
+  PASS  timezone PATCH /me applied (got "Europe/London")
+  PASS  trend flyout lists trend
+  PASS  trend flyout lists ray
+  PASS  trend flyout lists extended
+  PASS  trend flyout lists hline
+  PASS  trend flyout lists vline
+  PASS  trend flyout lists crossline
+  PASS  star toggle persisted (crossline ∈ favorites)
+  PASS  trendline drawn (objects present)
+  PASS  trend tool disarms after completion
+  PASS  rectangle press-drag drawn
+  PASS  cursors flyout lists dot + eraser
+  PASS  eraser removed the trendline (list shows 1 object: "Drawing objects1 objects Delete all Zone")
+  PASS  remove-objects cleared everything
+  PASS  favorites bar visible by default
+  PASS  default favorites rendered (got 6, want 6)
+  PASS  favorites bar DRAGS (Δx=160, Δy=120)
+  PASS  dragged position persisted (x=256, y=240)
+  PASS  favorites bar hides via the rail star
+  PASS  favorites visibility persisted (false) (got false, want false)
+  PASS  favorites bar shows again
+  PASS  Alt+T arms the trend tool
+  PASS  fib flyout lists retracement
+  PASS  fib flyout lists trend-based fib extension
+  PASS  forecast flyout lists measure
+  PASS  forecast flyout lists pricerange
+  PASS  forecast flyout lists daterange
+  PASS  forecast flyout lists longpos
+  PASS  forecast flyout lists shortpos
+  PASS  mobile: workspace alive
+  PASS  mobile: bottom bar hidden (md+ only)
+  PASS  mobile: rail hidden (md+ only, documented)
+  PASS  0 console/page errors
+
+=== 52 PASS / 0 FAIL ===

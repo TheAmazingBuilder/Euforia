@@ -9,6 +9,13 @@ import {
   saveDrawingsForSymbol,
 } from "@/lib/oryon/drawings/persistence";
 import { OryonDrawingStore } from "@/lib/oryon/drawings/store";
+import {
+  flushUiPrefs,
+  loadUiPrefs,
+  saveUiPrefs,
+  type OryonUiPrefs,
+} from "@/lib/oryon/workspace/ui-prefs";
+import { isCatalogToolId, type OryonCatalogToolId } from "@/lib/oryon/tools/catalog";
 
 /**
  * Oryon drawings context — per-SYMBOL drawing state (Phase 2 + Phase 7
@@ -107,6 +114,14 @@ export interface OryonDrawingsContextValue {
   setActiveTool: (tool: OryonDrawingTool) => void;
   listOpen: boolean;
   setListOpen: (open: boolean) => void;
+  // ── Toolbar v2 — favorites (catalog-validated, persisted) ───────────────
+  favorites: readonly OryonCatalogToolId[];
+  toggleFavorite: (tool: OryonDrawingTool) => void;
+  isFavorite: (tool: OryonDrawingTool) => boolean;
+  favoritesBarVisible: boolean;
+  setFavoritesBarVisible: (visible: boolean) => void;
+  favoritesBarPos: { x: number; y: number };
+  setFavoritesBarPos: (pos: { x: number; y: number }) => void;
 }
 
 const OryonDrawingsContext = React.createContext<OryonDrawingsContextValue | null>(null);
@@ -120,10 +135,58 @@ export function OryonDrawingsProvider({ children }: { children: React.ReactNode 
   const [activeTool, setActiveTool] = React.useState<OryonDrawingTool>("cursor");
   const [listOpen, setListOpen] = React.useState(false);
 
+  // ── Toolbar v2 — favorites + floating bar (validated, debounced save) ────
+  const [prefs, setPrefs] = React.useState<OryonUiPrefs>(() => loadUiPrefs());
+
+  const patchPrefs = React.useCallback((patch: Partial<OryonUiPrefs>) => {
+    setPrefs((current) => {
+      const next = { ...current, ...patch };
+      saveUiPrefs(next);
+      return next;
+    });
+  }, []);
+
+  const toggleFavorite = React.useCallback(
+    (tool: OryonDrawingTool) => {
+      if (!isCatalogToolId(tool)) return; // Non-drawing tools (cursor variants) are not starable.
+      setPrefs((current) => {
+        const favorites = current.favorites.includes(tool)
+          ? current.favorites.filter((t) => t !== tool)
+          : [...current.favorites, tool];
+        const next = { ...current, favorites };
+        saveUiPrefs(next);
+        return next;
+      });
+    },
+    [],
+  );
+
+  const isFavorite = React.useCallback(
+    (tool: OryonDrawingTool): boolean =>
+      isCatalogToolId(tool) && prefs.favorites.includes(tool),
+    [prefs.favorites],
+  );
+
+  const setFavoritesBarVisible = React.useCallback(
+    (visible: boolean) => patchPrefs({ favoritesBar: { ...prefs.favoritesBar, visible } }),
+    [patchPrefs, prefs.favoritesBar],
+  );
+
+  const setFavoritesBarPos = React.useCallback(
+    (pos: { x: number; y: number }) => patchPrefs({ favoritesBar: { ...prefs.favoritesBar, ...pos } }),
+    [patchPrefs, prefs.favoritesBar],
+  );
+
   // Flush every cached symbol's pending write on workspace unmount.
   React.useEffect(() => {
     return () => registry.dispose();
   }, [registry]);
+
+  React.useEffect(() => {
+    return () => flushUiPrefs(prefs);
+    // Unmount only — the debounce owns every intermediate state.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const value = React.useMemo(
     () => ({
@@ -134,8 +197,15 @@ export function OryonDrawingsProvider({ children }: { children: React.ReactNode 
       setActiveTool,
       listOpen,
       setListOpen,
+      favorites: prefs.favorites,
+      toggleFavorite,
+      isFavorite,
+      favoritesBarVisible: prefs.favoritesBar.visible,
+      setFavoritesBarVisible,
+      favoritesBarPos: { x: prefs.favoritesBar.x, y: prefs.favoritesBar.y },
+      setFavoritesBarPos,
     }),
-    [registry, activeStore, activeTool, listOpen],
+    [registry, activeStore, activeTool, listOpen, prefs, toggleFavorite, isFavorite, setFavoritesBarVisible, setFavoritesBarPos],
   );
 
   return <OryonDrawingsContext.Provider value={value}>{children}</OryonDrawingsContext.Provider>;

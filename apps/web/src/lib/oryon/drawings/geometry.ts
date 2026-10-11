@@ -173,6 +173,152 @@ export function fibLevelPrice(
   return priceB + (priceA - priceB) * level;
 }
 
+/**
+ * Distance from point P to the INFINITE line through A→B, clipped to the
+ * plot rect (extended-line tool: the drawn portion is the full chord of
+ * the plot the line crosses). Returns the distance to the DRAWN portion
+ * only — points beyond the plot edge are not hit-testable, consistent
+ * with the painter.
+ */
+export function distanceToLineClipped(
+  px: number,
+  py: number,
+  ax: number,
+  ay: number,
+  bx: number,
+  by: number,
+  plot: ScreenRect,
+): number {
+  const dx = bx - ax;
+  const dy = by - ay;
+  if (dx === 0 && dy === 0) return Math.hypot(px - ax, py - ay);
+  // Full-line slab clip: keep every t (positive AND negative) where the
+  // line is inside the plot, then distance to that visible segment.
+  let tMin = -Infinity;
+  let tMax = Infinity;
+  // X slab: dx === 0 → the line is vertical; inside iff ax is in range.
+  if (dx === 0) {
+    if (ax < plot.left || ax > plot.right) return Infinity;
+  } else {
+    let t1 = (plot.left - ax) / dx;
+    let t2 = (plot.right - ax) / dx;
+    if (t1 > t2) [t1, t2] = [t2, t1];
+    tMin = Math.max(tMin, t1);
+    tMax = Math.min(tMax, t2);
+  }
+  // Y slab: dy === 0 → horizontal; inside iff ay is in range.
+  if (dy === 0) {
+    if (ay < plot.top || ay > plot.bottom) return Infinity;
+  } else {
+    let t1 = (plot.top - ay) / dy;
+    let t2 = (plot.bottom - ay) / dy;
+    if (t1 > t2) [t1, t2] = [t2, t1];
+    tMin = Math.max(tMin, t1);
+    tMax = Math.min(tMax, t2);
+  }
+  if (tMin > tMax) return Infinity; // Line misses the plot entirely.
+  const ex = ax + dx * tMin;
+  const ey = ay + dy * tMin;
+  const fx = ax + dx * tMax;
+  const fy = ay + dy * tMax;
+  return distanceToSegment(px, py, ex, ey, fx, fy);
+}
+
+/**
+ * Clips the INFINITE line through A→B to the plot rect — the visible chord
+ * endpoints for the extended-line painter (null = the line misses the plot).
+ */
+export function clipLineToRect(
+  ax: number,
+  ay: number,
+  bx: number,
+  by: number,
+  plot: ScreenRect,
+): [ScreenPoint, ScreenPoint] | null {
+  const dx = bx - ax;
+  const dy = by - ay;
+  if (dx === 0 && dy === 0) return null;
+  let tMin = -Infinity;
+  let tMax = Infinity;
+  if (dx === 0) {
+    if (ax < plot.left || ax > plot.right) return null;
+  } else {
+    let t1 = (plot.left - ax) / dx;
+    let t2 = (plot.right - ax) / dx;
+    if (t1 > t2) [t1, t2] = [t2, t1];
+    tMin = Math.max(tMin, t1);
+    tMax = Math.min(tMax, t2);
+  }
+  if (dy === 0) {
+    if (ay < plot.top || ay > plot.bottom) return null;
+  } else {
+    let t1 = (plot.top - ay) / dy;
+    let t2 = (plot.bottom - ay) / dy;
+    if (t1 > t2) [t1, t2] = [t2, t1];
+    tMin = Math.max(tMin, t1);
+    tMax = Math.min(tMax, t2);
+  }
+  if (tMin > tMax || !Number.isFinite(tMin) || !Number.isFinite(tMax)) return null;
+  return [
+    { x: ax + dx * tMin, y: ay + dy * tMin },
+    { x: ax + dx * tMax, y: ay + dy * tMax },
+  ];
+}
+
+/** Ellipse inscribed in the a↔b bounding rect: center + radii. */
+export function ellipseFromRect(a: ScreenPoint, b: ScreenPoint): {
+  cx: number;
+  cy: number;
+  rx: number;
+  ry: number;
+} {
+  return {
+    cx: (a.x + b.x) / 2,
+    cy: (a.y + b.y) / 2,
+    rx: Math.abs(b.x - a.x) / 2,
+    ry: Math.abs(b.y - a.y) / 2,
+  };
+}
+
+/**
+ * Ellipse STROKE hit: |normalized radius − 1| scaled by the pixel size of
+ * one normalized-radius unit along the ray — an approximation that is
+ * exact on the axes and within a few px elsewhere (documented; the ring is
+ * a thin stroke, interior hits do NOT move the shape — matches TV where
+ * the ellipse body is hollow).
+ */
+export function hitEllipseEdge(
+  px: number,
+  py: number,
+  a: ScreenPoint,
+  b: ScreenPoint,
+  tolerance = HIT_TOLERANCE,
+): boolean {
+  const { cx, cy, rx, ry } = ellipseFromRect(a, b);
+  if (rx === 0 || ry === 0) return false;
+  const nx = (px - cx) / rx;
+  const ny = (py - cy) / ry;
+  const r = Math.hypot(nx, ny);
+  if (r === 0) return false;
+  // Pixel length of one unit of the normalized radius along this ray.
+  const unitPx = Math.hypot(nx / r * rx, ny / r * ry);
+  return Math.abs(r - 1) * unitPx <= tolerance;
+}
+
+/**
+ * Trend-based Fibonacci EXTENSION level price: the A→B swing measured as
+ * (b − a), projected from C — level 0 sits AT C, level 1 one full swing
+ * beyond C. Pure mirror of the retracement helper above.
+ */
+export function fibExtLevelPrice(
+  priceA: number,
+  priceB: number,
+  priceC: number,
+  level: number,
+): number {
+  return priceC + (priceB - priceA) * level;
+}
+
 /** Clamp a value into a range. */
 export function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));

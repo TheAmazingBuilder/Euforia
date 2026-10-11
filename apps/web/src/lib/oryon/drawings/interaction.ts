@@ -1,12 +1,16 @@
 import type { OryonDrawing, OryonDrawingAnchor } from "@cosmoz/shared";
+import { oryonPositionTargetPrice } from "@cosmoz/shared";
 
 import {
   HANDLE_HIT_RADIUS,
   HIT_TOLERANCE,
   clamp,
+  distanceToLineClipped,
   distanceToRay,
   distanceToSegment,
+  fibExtLevelPrice,
   fibLevelPrice,
+  hitEllipseEdge,
   hitHandle,
   hitRect,
   hitTextBox,
@@ -22,9 +26,13 @@ import type { OryonDrawingConversions } from "@/lib/charting/oryon-chart-engine"
  *
  * Explicit states (no scattered booleans):
  *   idle → drafting (two-anchor tools) → idle
+ *   idle → drafting3 (fibext: a, b, then c) → idle
  *   idle → moving (object drag) → idle
  *   idle → anchoring (handle drag) → idle
- * One-click tools (hline/vline/text) create + hand off in a single step.
+ * One-click tools (hline/vline/crossline/text) create + hand off in a
+ * single step. Eraser: click a drawing → delete (hit-tested, undoable).
+ * Cursor variants (arrow/cross/dot) BEHAVE as the select tool — they only
+ * change the pointer affordance over the chart.
  *
  * Pointer contract:
  *  - listeners live on the chart container, in the CAPTURE phase — when the
@@ -38,24 +46,74 @@ import type { OryonDrawingConversions } from "@/lib/charting/oryon-chart-engine"
 
 export type OryonDrawingTool =
   | "cursor"
+  | "cursor-cross"
+  | "cursor-dot"
+  | "eraser"
   | "trend"
   | "hline"
   | "vline"
   | "ray"
+  | "extended"
+  | "crossline"
   | "rect"
+  | "ellipse"
   | "text"
   | "measure"
-  | "fib";
+  | "pricerange"
+  | "daterange"
+  | "fib"
+  | "fibext"
+  | "longpos"
+  | "shortpos";
 
-export type TwoAnchorTool = "trend" | "ray" | "rect" | "text" | "measure" | "fib";
+export type TwoAnchorTool =
+  | "trend"
+  | "ray"
+  | "extended"
+  | "rect"
+  | "ellipse"
+  | "measure"
+  | "pricerange"
+  | "daterange"
+  | "fib"
+  | "longpos"
+  | "shortpos";
 
-const TWO_ANCHOR_TOOLS: ReadonlySet<string> = new Set(["trend", "ray", "rect", "measure", "fib"]);
+export type ThreeAnchorTool = "fibext";
+
+const TWO_ANCHOR_TOOLS: ReadonlySet<string> = new Set([
+  "trend", "ray", "extended", "rect", "ellipse", "measure", "pricerange", "daterange", "fib", "longpos", "shortpos",
+]);
+
+/** Select-class tools — same interaction semantics as the arrow cursor. */
+const SELECT_TOOLS: ReadonlySet<string> = new Set(["cursor", "cursor-cross", "cursor-dot"]);
+
+/** Base pointer affordance per tool (applied whenever no richer state wins).
+ *  SVG data-URIs are percent-encoded (%22 for quotes) — valid inside the
+ *  single-quoted CSS url() AND the double-quoted TS string. */
+const BASE_CURSOR: Partial<Record<OryonDrawingTool, string>> = {
+  cursor: "default",
+  "cursor-cross": "crosshair",
+  "cursor-dot": [
+    "url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22",
+    'width=%2212%22 height=%2212%22><circle cx=%226%22 cy=%226%22 r=%223.5%22',
+    'fill=%22%23ffffff%22 stroke=%22%23000000%22 stroke-width=%221.5%22/></svg>\') 6 6, auto',
+  ].join(" "),
+  eraser: [
+    "url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22",
+    'width=%2218%22 height=%2218%22><circle cx=%229%22 cy=%229%22 r=%227%22',
+    'fill=%22none%22 stroke=%22%23888888%22 stroke-width=%221.5%22',
+    'stroke-dasharray=%223 2%22/><line x1=%225%22 y1=%2213%22 x2=%2213%22 y2=%225%22',
+    'stroke=%22%23888888%22 stroke-width=%221.5%22/></svg>\') 9 9, cell',
+  ].join(" "),
+};
 
 type InteractionState =
   | { name: "idle" }
-  | { name: "drafting"; tool: "trend" | "ray" | "rect" | "measure" | "fib"; a: OryonDrawingAnchor }
+  | { name: "drafting"; tool: TwoAnchorTool; a: OryonDrawingAnchor }
+  | { name: "drafting3"; tool: ThreeAnchorTool; a: OryonDrawingAnchor; b: OryonDrawingAnchor | null }
   | { name: "moving"; id: string; grabLogical: number; grabPrice: number; original: OryonDrawing }
-  | { name: "anchoring"; id: string; index: 0 | 1; original: OryonDrawing };
+  | { name: "anchoring"; id: string; index: number; original: OryonDrawing };
 
 export interface InteractionCallbacks {
   /** A drawing was completed — the layer disarms the tool (TV behavior). */
@@ -80,8 +138,14 @@ export interface InteractionDeps {
   store: OryonDrawingStore;
   /** Plot bounds provider (pane size) — from the primitive. */
   getPlotRect(): ScreenRect | null;
-  /** Drawing factory (id, timestamps, default style) — layer-owned. */
-  makeDrawing(tool: OryonDrawingTool, a: OryonDrawingAnchor, b: OryonDrawingAnchor | null): OryonDrawing;
+  /** Drawing factory (id, timestamps, default style) — layer-owned. The
+   *  third anchor is the fibext projection point (null for the others). */
+  makeDrawing(
+    tool: OryonDrawingTool,
+    a: OryonDrawingAnchor,
+    b: OryonDrawingAnchor | null,
+    c?: OryonDrawingAnchor | null,
+  ): OryonDrawing;
   callbacks: InteractionCallbacks;
   /**
    * Phase 7 active-chart gate — NEW interactions (creation, selection,
@@ -126,7 +190,7 @@ export class DrawingInteractionController {
   /** Escape semantics: cancel draft/drag, else deselect. */
   cancelActive(): void {
     this.dragPointerId = null;
-    if (this.state.name === "drafting") {
+    if (this.state.name === "drafting" || this.state.name === "drafting3") {
       this.draft = null;
       this.state = { name: "idle" };
       this.deps.callbacks.requestRedraw();
@@ -184,6 +248,13 @@ export class DrawingInteractionController {
       return;
     }
 
+    if (this.state.name === "drafting3") {
+      // Second/third pointer action advance the fibext gesture.
+      this.advanceDraft3(point);
+      this.consume(event);
+      return;
+    }
+
     if (this.state.name === "drafting") {
       // Second pointer action completes the two-anchor drawing.
       this.completeDraft(point);
@@ -191,8 +262,22 @@ export class DrawingInteractionController {
       return;
     }
 
-    if (this.activeTool === "cursor") {
+    if (SELECT_TOOLS.has(this.activeTool)) {
       this.handleCursorDown(event, point);
+      return;
+    }
+
+    if (this.activeTool === "eraser") {
+      const hit = this.hitTest(point);
+      if (hit !== null) {
+        const target = this.deps.store.drawings.find((d) => d.id === hit.id);
+        if (target !== undefined && !target.locked) {
+          this.deps.store.remove(target.id);
+          this.consume(event);
+        }
+        // Locked drawings stay put (the store would refuse anyway) — the
+        // click falls through to the chart so the pan gesture stays live.
+      }
       return;
     }
 
@@ -227,10 +312,32 @@ export class DrawingInteractionController {
       return;
     }
 
+    if (this.activeTool === "crossline") {
+      const anchor = this.domainAnchor(point);
+      if (anchor === null) return;
+      const drawing = this.deps.makeDrawing("crossline", anchor, null);
+      this.deps.store.add(drawing);
+      this.finishTool();
+      this.consume(event);
+      return;
+    }
+
+    if (this.activeTool === "fibext") {
+      const anchor = this.domainAnchor(point);
+      if (anchor === null) return;
+      const style = this.deps.makeDrawing("fibext", anchor, null).style;
+      this.state = { name: "drafting3", tool: "fibext", a: anchor, b: null };
+      this.dragPointerId = event.pointerId;
+      this.draft = { kind: "create3", type: "fibext", a: anchor, b: null, c: null, style };
+      this.deps.callbacks.requestRedraw();
+      this.consume(event);
+      return;
+    }
+
     if (TWO_ANCHOR_TOOLS.has(this.activeTool)) {
       const anchor = this.domainAnchor(point);
       if (anchor === null) return;
-      const tool = this.activeTool as "trend" | "ray" | "rect" | "measure" | "fib";
+      const tool = this.activeTool as TwoAnchorTool;
       this.state = { name: "drafting", tool, a: anchor };
       this.dragPointerId = event.pointerId;
       this.draft = { kind: "create", type: tool, a: anchor, b: anchor, style: this.deps.makeDrawing(tool, anchor, null).style };
@@ -252,6 +359,20 @@ export class DrawingInteractionController {
     }
     const point = this.eventPoint(event);
     if (point === null) return;
+
+    if (this.state.name === "drafting3") {
+      const anchor = this.domainAnchor(point);
+      if (anchor !== null && this.draft?.kind === "create3") {
+        // Stage 1: the pointer previews the B end of the A→B leg; stage 2:
+        // the fixed B + the pointer previews C (the extension origin).
+        this.draft = this.state.b === null
+          ? { ...this.draft, b: anchor }
+          : { ...this.draft, c: anchor };
+        this.deps.callbacks.requestRedraw();
+      }
+      this.consume(event);
+      return;
+    }
 
     if (this.state.name === "drafting") {
       const anchor = this.domainAnchor(point);
@@ -276,7 +397,7 @@ export class DrawingInteractionController {
     }
 
     // Idle: hover feedback + cursor affordances (no state changes).
-    if (this.activeTool === "cursor") {
+    if (SELECT_TOOLS.has(this.activeTool)) {
       const hit = this.hitTest(point);
       if (this.hoverId !== (hit?.id ?? null)) {
         this.hoverId = hit?.id ?? null;
@@ -302,6 +423,19 @@ export class DrawingInteractionController {
       this.dragPointerId = null;
       this.deps.callbacks.requestRedraw();
       this.consume(event);
+      return;
+    }
+
+    if (this.state.name === "drafting3" && point !== null) {
+      // Press-drag-release per stage: release far from the previous anchor
+      // advances the gesture (same 8px threshold as the two-anchor tools).
+      const ref = this.state.b === null ? this.state.a : this.state.b;
+      const refScreen = this.projectAnchor(ref);
+      if (refScreen !== null && Math.hypot(point.x - refScreen.x, point.y - refScreen.y) >= 8) {
+        this.advanceDraft3(point);
+        this.consume(event);
+      }
+      // Otherwise stay drafting3 (click-click-click mode).
       return;
     }
 
@@ -332,7 +466,7 @@ export class DrawingInteractionController {
   };
 
   private onDoubleClick = (event: MouseEvent): void => {
-    if (this.activeTool !== "cursor") return;
+    if (!SELECT_TOOLS.has(this.activeTool)) return;
     if (isUiTarget(event)) return;
     if (this.state.name === "idle" && this.deps.canInteract !== undefined && !this.deps.canInteract()) {
       return;
@@ -413,6 +547,32 @@ export class DrawingInteractionController {
     this.deps.callbacks.requestRedraw();
   }
 
+  /**
+   * fibext gesture — one stage per call:
+   *   b not placed → the click FIXES b (A→B leg locked, C preview starts)
+   *   b placed     → the click is C — the extension commits.
+   */
+  private advanceDraft3(point: ScreenPoint): void {
+    if (this.state.name !== "drafting3" || this.draft?.kind !== "create3") return;
+    const anchor = this.domainAnchor(point);
+    if (anchor === null) {
+      this.cancelActive();
+      return;
+    }
+    if (this.state.b === null) {
+      this.state = { ...this.state, b: anchor };
+      this.draft = { ...this.draft, b: anchor, c: anchor };
+      this.deps.callbacks.requestRedraw();
+      return;
+    }
+    const drawing = this.deps.makeDrawing("fibext", this.state.a, this.state.b, anchor);
+    this.draft = null;
+    this.state = { name: "idle" };
+    this.deps.store.add(drawing);
+    this.finishTool();
+    this.deps.callbacks.requestRedraw();
+  }
+
   private applyMove(point: ScreenPoint): void {
     if (this.state.name !== "moving") return;
     const grab = this.domainPoint(point);
@@ -437,13 +597,28 @@ export class DrawingInteractionController {
       case "rect":
       case "measure":
       case "fib":
+      case "extended":
+      case "ellipse":
+      case "pricerange":
+      case "daterange":
+      case "longpos":
+      case "shortpos":
         edited = { ...original, [index === 0 ? "a" : "b"]: anchor };
+        break;
+      case "fibext":
+        edited = {
+          ...original,
+          [index === 0 ? "a" : index === 1 ? "b" : "c"]: anchor,
+        };
         break;
       case "hline":
         edited = { ...original, price: anchor.p };
         break;
       case "vline":
         edited = { ...original, time: anchor.t };
+        break;
+      case "crossline":
+        edited = { ...original, at: anchor };
         break;
       case "text":
         edited = { ...original, at: anchor };
@@ -478,7 +653,13 @@ export class DrawingInteractionController {
       case "ray":
       case "rect":
       case "measure":
-      case "fib": {
+      case "fib":
+      case "extended":
+      case "ellipse":
+      case "pricerange":
+      case "daterange":
+      case "longpos":
+      case "shortpos": {
         const ta = snapTime(drawing.a.t);
         const tb = snapTime(drawing.b.t);
         if (ta === null || tb === null) return null;
@@ -488,11 +669,27 @@ export class DrawingInteractionController {
           b: { t: tb, p: drawing.b.p + deltaPrice },
         };
       }
+      case "fibext": {
+        const ta = snapTime(drawing.a.t);
+        const tb = snapTime(drawing.b.t);
+        const tc = snapTime(drawing.c.t);
+        if (ta === null || tb === null || tc === null) return null;
+        return {
+          ...drawing,
+          a: { t: ta, p: drawing.a.p + deltaPrice },
+          b: { t: tb, p: drawing.b.p + deltaPrice },
+          c: { t: tc, p: drawing.c.p + deltaPrice },
+        };
+      }
       case "hline":
         return { ...drawing, price: drawing.price + deltaPrice };
       case "vline": {
         const t = snapTime(drawing.time);
         return t === null ? null : { ...drawing, time: t };
+      }
+      case "crossline": {
+        const t = snapTime(drawing.at.t);
+        return t === null ? null : { ...drawing, at: { t, p: drawing.at.p + deltaPrice } };
       }
       case "text": {
         const t = snapTime(drawing.at.t);
@@ -503,35 +700,55 @@ export class DrawingInteractionController {
 
   // ── hit testing ────────────────────────────────────────────────────────────
 
-  /** Hit-tests the SELECTED object's handles → 0 | 1 | null. */
-  private hitSelectedHandle(selected: OryonDrawing, point: ScreenPoint): 0 | 1 | null {
+  /** Hit-tests the SELECTED object's handles → handle index | null. */
+  private hitSelectedHandle(selected: OryonDrawing, point: ScreenPoint): number | null {
     const plot = this.deps.getPlotRect();
     if (plot === null) return null;
     const points = this.handlePointsFor(selected, plot);
     if (points === null) return null;
-    if (hitHandle(point.x, point.y, points[0]!)) return 0;
-    if (hitHandle(point.x, point.y, points[1]!)) return 1;
+    for (let i = 0; i < points.length; i += 1) {
+      if (hitHandle(point.x, point.y, points[i]!)) return i;
+    }
     return null;
   }
 
-  private handlePointsFor(drawing: OryonDrawing, plot: ScreenRect): [ScreenPoint, ScreenPoint] | null {
+  /** Anchor handles in SELECTION order (a, b, then c for fibext). */
+  private handlePointsFor(drawing: OryonDrawing, plot: ScreenRect): ScreenPoint[] | null {
     switch (drawing.type) {
       case "trend":
       case "ray":
       case "rect":
       case "measure":
-      case "fib": {
+      case "fib":
+      case "extended":
+      case "ellipse":
+      case "pricerange":
+      case "daterange":
+      case "longpos":
+      case "shortpos": {
         const a = this.projectAnchor(drawing.a);
         const b = this.projectAnchor(drawing.b);
         return a !== null && b !== null ? [a, b] : null;
       }
+      case "fibext": {
+        const a = this.projectAnchor(drawing.a);
+        const b = this.projectAnchor(drawing.b);
+        const c = this.projectAnchor(drawing.c);
+        return a !== null && b !== null && c !== null ? [a, b, c] : null;
+      }
       case "hline": {
         const y = this.deps.conversions.priceToY(drawing.price);
-        return y === null ? null : [{ x: (plot.left + plot.right) / 2, y }, { x: (plot.left + plot.right) / 2, y }];
+        const p: ScreenPoint = { x: (plot.left + plot.right) / 2, y: y ?? 0 };
+        return y === null ? null : [p, p];
       }
       case "vline": {
         const x = this.deps.conversions.timeToX(drawing.time);
-        return x === null ? null : [{ x, y: (plot.top + plot.bottom) / 2 }, { x, y: (plot.top + plot.bottom) / 2 }];
+        const p: ScreenPoint = { x: x ?? 0, y: (plot.top + plot.bottom) / 2 };
+        return x === null ? null : [p, p];
+      }
+      case "crossline": {
+        const at = this.projectAnchor(drawing.at);
+        return at === null ? null : [at, at];
       }
       case "text":
         return null; // Text moves via its body; no endpoint handles.
@@ -584,6 +801,83 @@ export class DrawingInteractionController {
           }
         }
         return false;
+      }
+      case "extended": {
+        const a = this.projectAnchor(drawing.a);
+        const b = this.projectAnchor(drawing.b);
+        if (a === null || b === null) return false;
+        return distanceToLineClipped(point.x, point.y, a.x, a.y, b.x, b.y, plot) <= tolerance;
+      }
+      case "ellipse": {
+        const a = this.projectAnchor(drawing.a);
+        const b = this.projectAnchor(drawing.b);
+        if (a === null || b === null) return false;
+        return hitEllipseEdge(point.x, point.y, a, b, tolerance);
+      }
+      case "pricerange": {
+        const a = this.projectAnchor(drawing.a);
+        const b = this.projectAnchor(drawing.b);
+        if (a === null || b === null) return false;
+        // Vertical ruler drawn AT a.x between the two prices.
+        return (
+          Math.abs(point.x - a.x) <= tolerance &&
+          point.y >= Math.min(a.y, b.y) - tolerance &&
+          point.y <= Math.max(a.y, b.y) + tolerance
+        );
+      }
+      case "daterange": {
+        const a = this.projectAnchor(drawing.a);
+        const b = this.projectAnchor(drawing.b);
+        if (a === null || b === null) return false;
+        // Horizontal ruler drawn AT a.y between the two times.
+        return (
+          Math.abs(point.y - a.y) <= tolerance &&
+          point.x >= Math.min(a.x, b.x) - tolerance &&
+          point.x <= Math.max(a.x, b.x) + tolerance
+        );
+      }
+      case "longpos":
+      case "shortpos": {
+        const a = this.projectAnchor(drawing.a);
+        const b = this.projectAnchor(drawing.b);
+        if (a === null || b === null) return false;
+        // Risk zone (entry↔stop) OR reward zone (entry↔derived target).
+        const targetY = this.deps.conversions.priceToY(
+          oryonPositionTargetPrice(drawing.a.p, drawing.b.p),
+        );
+        if (targetY !== null && hitRect(point.x, point.y, a, { x: b.x, y: targetY }, tolerance)) {
+          return true;
+        }
+        return hitRect(point.x, point.y, a, b, tolerance);
+      }
+      case "fibext": {
+        const a = this.projectAnchor(drawing.a);
+        const b = this.projectAnchor(drawing.b);
+        const c = this.projectAnchor(drawing.c);
+        if (a === null || b === null || c === null) return false;
+        // The two swing legs are draggable geometry.
+        if (distanceToSegment(point.x, point.y, a.x, a.y, b.x, b.y) <= tolerance) return true;
+        if (distanceToSegment(point.x, point.y, b.x, b.y, c.x, c.y) <= tolerance) return true;
+        // Extension levels — from the LAST placed anchor rightward.
+        const xStart = Math.max(a.x, b.x, c.x);
+        for (const level of FIB_EXT_HIT_LEVELS) {
+          const price = fibExtLevelPrice(drawing.a.p, drawing.b.p, drawing.c.p, level);
+          const y = this.deps.conversions.priceToY(price);
+          if (y === null) continue;
+          if (
+            Math.abs(point.y - y) <= tolerance &&
+            point.x >= xStart - tolerance &&
+            point.x <= plot.right + tolerance
+          ) {
+            return true;
+          }
+        }
+        return false;
+      }
+      case "crossline": {
+        const at = this.projectAnchor(drawing.at);
+        if (at === null) return false;
+        return Math.abs(point.y - at.y) <= tolerance || Math.abs(point.x - at.x) <= tolerance;
       }
       case "hline": {
         const y = this.deps.conversions.priceToY(drawing.price);
@@ -656,12 +950,12 @@ export class DrawingInteractionController {
 
   private updateCursor(point: ScreenPoint | null): void {
     const { container } = this.deps;
-    let cursor = "";
-    if (this.state.name === "drafting" || (this.activeTool !== "cursor" && this.state.name === "idle")) {
+    let cursor = BASE_CURSOR[this.activeTool] ?? "";
+    if (this.state.name === "drafting" || this.state.name === "drafting3") {
       cursor = "crosshair";
     } else if (this.state.name === "moving" || this.state.name === "anchoring") {
       cursor = "grabbing";
-    } else if (point !== null && this.activeTool === "cursor") {
+    } else if (point !== null && SELECT_TOOLS.has(this.activeTool)) {
       const selected = this.deps.store.getSelected();
       if (selected !== null && selected.visible && !selected.locked && this.hitSelectedHandle(selected, point) !== null) {
         cursor = "grab";
@@ -693,6 +987,9 @@ export class DrawingInteractionController {
 
 /** Fibonacci ratios used for hit-testing mirror the renderer's band lines. */
 const FIB_HIT_LEVELS = [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1] as const;
+
+/** Extension ratios used for hit-testing mirror the renderer's level set. */
+const FIB_EXT_HIT_LEVELS = [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1, 1.618] as const;
 
 /** Generous text bounding box for hit-testing (no canvas measure here). */
 export function approximateTextBox(text: string, fontSize: number): { w: number; h: number } {

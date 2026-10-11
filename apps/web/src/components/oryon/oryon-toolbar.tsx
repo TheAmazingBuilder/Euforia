@@ -18,7 +18,7 @@ import {
   Activity,
 } from "lucide-react";
 
-import type { Instrument, MarketInterval } from "@cosmoz/shared";
+import type { Instrument } from "@cosmoz/shared";
 
 import { useDict } from "@/i18n/i18n-provider";
 
@@ -27,7 +27,6 @@ import { OryonGridMenu, OryonSyncMenu } from "@/components/oryon/oryon-grid-menu
 import { OryonInstrumentSelector } from "@/components/oryon/oryon-instrument-selector";
 import { OryonLayoutsMenu } from "@/components/oryon/oryon-layouts-menu";
 import { OryonTemplatesMenu } from "@/components/oryon/oryon-templates-menu";
-import { OryonTimeframeSelector } from "@/components/oryon/oryon-timeframe-selector";
 import { OryonFeedStatus } from "@/components/oryon/oryon-feed-status";
 import type { OryonUtilityPanel } from "@/components/oryon/oryon-view";
 import type { OryonChartType } from "@/lib/charting/oryon-chart-engine";
@@ -47,8 +46,6 @@ export function OryonToolbar({
   covered,
   feedKnown,
   feedSymbols,
-  interval,
-  onIntervalChange,
   chartType,
   onChartTypeChange,
   magnet,
@@ -66,8 +63,6 @@ export function OryonToolbar({
   covered: boolean;
   feedKnown: boolean;
   feedSymbols: ReadonlySet<string>;
-  interval: MarketInterval;
-  onIntervalChange: (interval: MarketInterval) => void;
   chartType: OryonChartType;
   onChartTypeChange: (type: OryonChartType) => void;
   magnet: boolean;
@@ -132,7 +127,9 @@ export function OryonToolbar({
 
       <div className="h-6 w-px shrink-0 bg-border" aria-hidden />
 
-      <OryonTimeframeSelector value={interval} onChange={onIntervalChange} />
+      {/* Timeframe selection moved to the BOTTOM BAR (TradingView parity) —
+          the canonical testids (oryon-tf-*) live there; per-panel strips
+          remain in the panel headers for multi-chart grids. */}
 
       <div
         role="group"

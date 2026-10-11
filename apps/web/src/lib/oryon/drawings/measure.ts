@@ -1,4 +1,5 @@
 import type { OryonDrawingAnchor } from "@cosmoz/shared";
+import { ORYON_POSITION_RR, oryonPositionTargetPrice } from "@cosmoz/shared";
 
 /**
  * Oryon measure readout — PURE computation (Phase 5 spec §4.1–§4.3).
@@ -135,5 +136,131 @@ export function computeMeasureReadout(
     bars,
     elapsedSec,
     lines: [line1, parts.join(" · ")],
+  };
+}
+
+// ── Price range ruler (Drawing toolbar v2) ───────────────────────────────────
+
+export interface PriceRangeReadout {
+  valid: boolean;
+  delta: number | null;
+  pct: number | null;
+  pips: number | null;
+  /** Composed canvas label lines (empty when invalid). */
+  lines: string[];
+}
+
+/**
+ * Vertical price ruler: Δprice / Δ% / Δpips between the two anchor prices.
+ * Same honesty rules as the measure readout: a zero start disables ONLY
+ * the percentage; a non-positive pipSize disables ONLY the pips; invalid
+ * inputs yield no label at all.
+ */
+export function computePriceRangeReadout(
+  a: OryonDrawingAnchor,
+  b: OryonDrawingAnchor,
+  inputs: { digits: number; pipSize: number },
+): PriceRangeReadout {
+  const digits = Number.isFinite(inputs.digits) ? Math.max(0, inputs.digits) : 2;
+  if (!Number.isFinite(a.p) || !Number.isFinite(b.p)) {
+    return { valid: false, delta: null, pct: null, pips: null, lines: [] };
+  }
+  const delta = b.p - a.p;
+  const pct = a.p === 0 ? null : (delta / a.p) * 100;
+  const pips =
+    Number.isFinite(inputs.pipSize) && inputs.pipSize > 0 ? delta / inputs.pipSize : null;
+  const parts: string[] = [`Δ ${signed(delta, digits)}`];
+  if (pct !== null) parts.push(signed(pct, 2, "%"));
+  if (pips !== null) parts.push(`${Math.abs(pips).toFixed(1)} pips`);
+  return { valid: true, delta, pct, pips, lines: [parts.join(" · ")] };
+}
+
+// ── Date range ruler (Drawing toolbar v2) ────────────────────────────────────
+
+export interface DateRangeReadout {
+  valid: boolean;
+  /** |Δt| in seconds from the ACTUAL anchor timestamps. */
+  elapsedSec: number | null;
+  bars: number | null;
+  lines: string[];
+}
+
+/**
+ * Horizontal time ruler: elapsed duration from the ACTUAL anchor timestamp
+ * delta (never bars × interval — gapped sessions are not continuous time,
+ * same honesty contract as the measure tool) + the bar count when the
+ * chart's logical pipeline provides it.
+ */
+export function computeDateRangeReadout(
+  a: OryonDrawingAnchor,
+  b: OryonDrawingAnchor,
+  inputs: { bars: number | null },
+): DateRangeReadout {
+  if (!Number.isFinite(a.t) || !Number.isFinite(b.t)) {
+    return { valid: false, elapsedSec: null, bars: null, lines: [] };
+  }
+  const elapsedSec = Math.abs(b.t - a.t);
+  const bars =
+    inputs.bars !== null && Number.isFinite(inputs.bars)
+      ? Math.max(0, Math.round(inputs.bars))
+      : null;
+  const elapsed = formatElapsedDuration(elapsedSec);
+  const lines: string[] = [];
+  if (elapsed !== null) lines.push(elapsed);
+  if (bars !== null) lines.push(`${bars} bars`);
+  return { valid: elapsed !== null || bars !== null, elapsedSec, bars, lines };
+}
+
+// ── Position tool readout (Drawing toolbar v2) ──────────────────────────────
+
+export interface PositionReadout {
+  valid: boolean;
+  entryPrice: number | null;
+  stopPrice: number | null;
+  /** Derived at ORYON_POSITION_RR (shared constant) — never persisted. */
+  targetPrice: number | null;
+  riskPips: number | null;
+  /** Composed canvas label lines (empty when invalid). */
+  lines: string[];
+}
+
+/**
+ * Position tool labels: Entry / Stop / Target prices (target DERIVED via
+ * the shared oryonPositionTargetPrice helper) + the risk in pips. Invalid
+ * inputs omit the label — no fabricated levels.
+ */
+export function computePositionReadout(
+  entry: OryonDrawingAnchor,
+  stop: OryonDrawingAnchor,
+  inputs: { digits: number; pipSize: number },
+): PositionReadout {
+  const digits = Number.isFinite(inputs.digits) ? Math.max(0, inputs.digits) : 2;
+  if (!Number.isFinite(entry.p) || !Number.isFinite(stop.p)) {
+    return {
+      valid: false,
+      entryPrice: null,
+      stopPrice: null,
+      targetPrice: null,
+      riskPips: null,
+      lines: [],
+    };
+  }
+  const targetPrice = oryonPositionTargetPrice(entry.p, stop.p);
+  const risk = Math.abs(entry.p - stop.p);
+  const riskPips =
+    Number.isFinite(inputs.pipSize) && inputs.pipSize > 0 ? risk / inputs.pipSize : null;
+  const lines = [
+    `Entry ${entry.p.toFixed(digits)}`,
+    `Stop ${stop.p.toFixed(digits)}`,
+    `Target ${targetPrice.toFixed(digits)} (1:${ORYON_POSITION_RR})`,
+    riskPips !== null ? `Risk ${riskPips.toFixed(1)} pips` : "",
+  ].filter((line) => line !== "");
+  return {
+    valid: true,
+    entryPrice: entry.p,
+    stopPrice: stop.p,
+    targetPrice,
+    riskPips,
+    lines,
   };
 }

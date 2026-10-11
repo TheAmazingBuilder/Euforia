@@ -4,6 +4,8 @@ import {
   HANDLE_RADIUS,
   type ScreenPoint,
   type ScreenRect,
+  clipLineToRect,
+  ellipseFromRect,
   normalizeRect,
   rayExitParameter,
 } from "./geometry";
@@ -40,12 +42,18 @@ export interface FibLevelView {
 }
 
 export type ProjectedDrawing =
-  | { kind: "trend" | "ray"; drawing: OryonDrawing & { type: "trend" | "ray" }; a: ScreenPoint; b: ScreenPoint; state: DrawingVisualState }
+  | { kind: "trend" | "ray" | "extended"; drawing: OryonDrawing & { type: "trend" | "ray" | "extended" }; a: ScreenPoint; b: ScreenPoint; state: DrawingVisualState }
   | { kind: "hline"; drawing: OryonDrawing & { type: "hline" }; y: number; state: DrawingVisualState }
   | { kind: "vline"; drawing: OryonDrawing & { type: "vline" }; x: number; state: DrawingVisualState }
+  | { kind: "crossline"; drawing: OryonDrawing & { type: "crossline" }; at: ScreenPoint; state: DrawingVisualState }
   | { kind: "rect"; drawing: OryonDrawing & { type: "rect" }; a: ScreenPoint; b: ScreenPoint; state: DrawingVisualState }
+  | { kind: "ellipse"; drawing: OryonDrawing & { type: "ellipse" }; a: ScreenPoint; b: ScreenPoint; state: DrawingVisualState }
   | { kind: "measure"; drawing: OryonDrawing & { type: "measure" }; a: ScreenPoint; b: ScreenPoint; state: DrawingVisualState; label: string | null }
+  | { kind: "pricerange"; drawing: OryonDrawing & { type: "pricerange" }; a: ScreenPoint; b: ScreenPoint; state: DrawingVisualState; label: string | null }
+  | { kind: "daterange"; drawing: OryonDrawing & { type: "daterange" }; a: ScreenPoint; b: ScreenPoint; state: DrawingVisualState; label: string | null }
+  | { kind: "position"; drawing: OryonDrawing & { type: "longpos" | "shortpos" }; a: ScreenPoint; b: ScreenPoint; state: DrawingVisualState; targetY: number | null; label: string | null }
   | { kind: "fib"; drawing: OryonDrawing & { type: "fib" }; a: ScreenPoint; b: ScreenPoint; levels: readonly FibLevelView[]; state: DrawingVisualState; digits: number }
+  | { kind: "fibext"; drawing: OryonDrawing & { type: "fibext" }; a: ScreenPoint; b: ScreenPoint; c: ScreenPoint; levels: readonly FibLevelView[]; state: DrawingVisualState; digits: number }
   | { kind: "text"; drawing: OryonDrawing & { type: "text" }; at: ScreenPoint; state: DrawingVisualState };
 
 /** Canvas draw context handed to every paint function (already DPR-scaled). */
@@ -118,12 +126,21 @@ function strokeSegment(paint: PaintContext, a: ScreenPoint, b: ScreenPoint): voi
 
 function paintTrendOrRay(
   paint: PaintContext,
-  view: { a: ScreenPoint; b: ScreenPoint; type: "trend" | "ray"; style: OryonDrawingStyle },
+  view: { a: ScreenPoint; b: ScreenPoint; type: "trend" | "ray" | "extended"; style: OryonDrawingStyle },
 ): void {
   const { a, b } = view;
   if (view.type === "trend") {
     applyStroke(paint, view.style);
     strokeSegment(paint, a, b);
+    return;
+  }
+  if (view.type === "extended") {
+    // Infinite line BOTH directions — clipped to the plot (the hit test
+    // uses the same chord, so what you can see is what you can hit).
+    const chord = clipLineToRect(a.x, a.y, b.x, b.y, paint.plot);
+    if (chord === null) return;
+    applyStroke(paint, view.style);
+    strokeSegment(paint, chord[0], chord[1]);
     return;
   }
   // Ray: from a THROUGH b, extended to the plot boundary.
@@ -132,6 +149,18 @@ function paintTrendOrRay(
   const t = rayExitParameter(dx, dy, a.x, a.y, paint.plot);
   applyStroke(paint, view.style);
   strokeSegment(paint, a, { x: a.x + dx * t, y: a.y + dy * t });
+}
+
+function paintCrossline(paint: PaintContext, at: ScreenPoint, style: OryonDrawingStyle): void {
+  applyStroke(paint, style);
+  strokeSegment(paint, { x: paint.plot.left, y: at.y }, { x: paint.plot.right, y: at.y });
+  strokeSegment(paint, { x: at.x, y: paint.plot.top }, { x: at.x, y: paint.plot.bottom });
+  // Intersection dot — the one-click anchor stays findable/selectable.
+  paint.ctx.setLineDash([]);
+  paint.ctx.fillStyle = resolveColor(paint.palette, style.color, paint.accent);
+  paint.ctx.beginPath();
+  paint.ctx.arc(at.x, at.y, 3, 0, Math.PI * 2);
+  paint.ctx.fill();
 }
 
 function paintHLine(paint: PaintContext, y: number, style: OryonDrawingStyle): void {
@@ -158,6 +187,20 @@ function paintRectBody(
   }
   applyStroke(paint, style);
   paint.ctx.strokeRect(r.left, r.top, r.right - r.left, r.bottom - r.top);
+}
+
+function paintEllipse(paint: PaintContext, a: ScreenPoint, b: ScreenPoint, style: OryonDrawingStyle): void {
+  const { cx, cy, rx, ry } = ellipseFromRect(a, b);
+  if (rx <= 0 || ry <= 0) return;
+  const fill = fillStyleFor(paint, style);
+  paint.ctx.beginPath();
+  paint.ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+  if (fill !== null) {
+    paint.ctx.fillStyle = fill;
+    paint.ctx.fill();
+  }
+  applyStroke(paint, style);
+  paint.ctx.stroke();
 }
 
 function paintFib(paint: PaintContext, view: {
@@ -209,7 +252,15 @@ function paintMeasure(paint: PaintContext, view: {
 }): void {
   paintRectBody(paint, view.a, view.b, view.style);
   if (view.label === null) return;
-  const lines = view.label.split("\n").slice(0, 4);
+  paintLabelBox(paint, view.label.split("\n").slice(0, 4), Math.max(view.a.x, view.b.x) + 8, Math.min(view.a.y, view.b.y) + 8);
+}
+
+/**
+ * Shared readout label box (measure / price range / date range / position
+ * tools) — dark translucent panel, clamped INSIDE the plot, mono rows.
+ * Pure presentation: the lines arrive composed by the pure modules.
+ */
+function paintLabelBox(paint: PaintContext, lines: readonly string[], x: number, y: number): void {
   paint.ctx.font = `11px ${paint.monoFont}`;
   let textWidth = 0;
   for (const line of lines) {
@@ -218,8 +269,8 @@ function paintMeasure(paint: PaintContext, view: {
   const lineHeight = 15;
   const boxW = textWidth + 12;
   const boxH = lines.length * lineHeight + 8;
-  const boxX = Math.min(Math.max(view.a.x, view.b.x) + 8, paint.plot.right - boxW - 2);
-  const boxY = Math.max(Math.min(view.a.y, view.b.y) + 8, paint.plot.top + 4);
+  const boxX = Math.min(Math.max(x, paint.plot.left + 2), paint.plot.right - boxW - 2);
+  const boxY = Math.min(Math.max(y, paint.plot.top + 4), paint.plot.bottom - boxH - 2);
   paint.ctx.fillStyle = "rgba(0,0,0,0.62)";
   paint.ctx.beginPath();
   paint.ctx.roundRect(boxX, boxY, boxW, boxH, 4);
@@ -230,6 +281,151 @@ function paintMeasure(paint: PaintContext, view: {
   lines.forEach((line, i) => {
     paint.ctx.fillText(line, boxX + 6, boxY + 8 + i * lineHeight);
   });
+}
+
+/** Small filled arrowhead pointing along (from→to) — ruler end caps. */
+function paintArrowCap(paint: PaintContext, tip: ScreenPoint, from: ScreenPoint, color: string): void {
+  const angle = Math.atan2(from.y - tip.y, from.x - tip.x);
+  const wing = Math.PI / 6;
+  const len = 8;
+  paint.ctx.setLineDash([]);
+  paint.ctx.fillStyle = color;
+  paint.ctx.beginPath();
+  paint.ctx.moveTo(tip.x, tip.y);
+  paint.ctx.lineTo(tip.x + len * Math.cos(angle - wing), tip.y + len * Math.sin(angle - wing));
+  paint.ctx.lineTo(tip.x + len * Math.cos(angle + wing), tip.y + len * Math.sin(angle + wing));
+  paint.ctx.closePath();
+  paint.ctx.fill();
+}
+
+/** Price range ruler — vertical segment AT a.x with arrow caps + readout. */
+function paintPriceRange(paint: PaintContext, view: {
+  a: ScreenPoint;
+  b: ScreenPoint;
+  style: OryonDrawingStyle;
+  label: string | null;
+}): void {
+  const color = resolveColor(paint.palette, view.style.color, paint.accent);
+  applyStroke(paint, view.style);
+  strokeSegment(paint, { x: view.a.x, y: view.a.y }, { x: view.a.x, y: view.b.y });
+  paintArrowCap(paint, { x: view.a.x, y: view.a.y }, { x: view.a.x, y: view.b.y }, color);
+  paintArrowCap(paint, { x: view.a.x, y: view.b.y }, { x: view.a.x, y: view.a.y }, color);
+  if (view.label !== null) {
+    paintLabelBox(
+      paint,
+      view.label.split("\n"),
+      view.a.x + 8,
+      (view.a.y + view.b.y) / 2 - 10,
+    );
+  }
+}
+
+/** Date range ruler — horizontal segment AT a.y with arrow caps + readout. */
+function paintDateRange(paint: PaintContext, view: {
+  a: ScreenPoint;
+  b: ScreenPoint;
+  style: OryonDrawingStyle;
+  label: string | null;
+}): void {
+  const color = resolveColor(paint.palette, view.style.color, paint.accent);
+  applyStroke(paint, view.style);
+  strokeSegment(paint, { x: view.a.x, y: view.a.y }, { x: view.b.x, y: view.a.y });
+  paintArrowCap(paint, { x: view.a.x, y: view.a.y }, { x: view.b.x, y: view.a.y }, color);
+  paintArrowCap(paint, { x: view.b.x, y: view.a.y }, { x: view.a.x, y: view.a.y }, color);
+  if (view.label !== null) {
+    paintLabelBox(
+      paint,
+      view.label.split("\n"),
+      (view.a.x + view.b.x) / 2,
+      view.a.y + 10,
+    );
+  }
+}
+
+/**
+ * Position tool (long/short) — risk box (entry↔stop, loss token) + reward
+ * box (entry↔derived target, profit token) across the a.t→b.t span. The
+ * target is DERIVED (never stored); the label lists Entry/Stop/Target.
+ */
+function paintPosition(paint: PaintContext, view: {
+  a: ScreenPoint;
+  b: ScreenPoint;
+  targetY: number | null;
+  style: OryonDrawingStyle;
+  label: string | null;
+}): void {
+  const left = Math.min(view.a.x, view.b.x);
+  const right = Math.max(view.a.x, view.b.x);
+  const riskColor = withAlpha(resolveColor(paint.palette, "loss", "#ef4444"), 0.14);
+  const rewardColor = withAlpha(resolveColor(paint.palette, "profit", "#22c55e"), 0.14);
+  if (view.targetY !== null) {
+    // Reward zone spans entry↔target, risk zone entry↔stop — whichever
+    // side each price lands is derived from the actual Y coordinates.
+    const entryY = view.a.y;
+    paint.ctx.fillStyle = rewardColor;
+    paint.ctx.fillRect(left, Math.min(entryY, view.targetY), Math.max(right - left, 1), Math.abs(view.targetY - entryY));
+    paint.ctx.fillStyle = riskColor;
+    paint.ctx.fillRect(left, Math.min(entryY, view.b.y), Math.max(right - left, 1), Math.abs(view.b.y - entryY));
+    // Boundary lines: entry (style color), stop + target (zone-colored).
+    applyStroke(paint, view.style);
+    strokeSegment(paint, { x: left, y: entryY }, { x: right, y: entryY });
+    paint.ctx.setLineDash([4, 3]);
+    paint.ctx.lineWidth = 1;
+    paint.ctx.strokeStyle = resolveColor(paint.palette, "loss", "#ef4444");
+    strokeSegment(paint, { x: left, y: view.b.y }, { x: right, y: view.b.y });
+    paint.ctx.strokeStyle = resolveColor(paint.palette, "profit", "#22c55e");
+    strokeSegment(paint, { x: left, y: view.targetY }, { x: right, y: view.targetY });
+    paint.ctx.setLineDash([]);
+  } else {
+    paintRectBody(paint, view.a, view.b, view.style);
+  }
+  if (view.label !== null) {
+    paintLabelBox(paint, view.label.split("\n"), right + 8, Math.min(view.a.y, view.b.y, view.targetY ?? view.b.y));
+  }
+}
+
+/**
+ * Trend-based Fibonacci extension — the A→B and B→C swing legs + the
+ * extension levels projected from C, drawn from the LAST anchor rightward.
+ */
+function paintFibExt(paint: PaintContext, view: {
+  a: ScreenPoint;
+  b: ScreenPoint;
+  c: ScreenPoint;
+  levels: readonly FibLevelView[];
+  style: OryonDrawingStyle;
+  digits: number;
+}): void {
+  const xStart = Math.max(view.a.x, view.b.x, view.c.x);
+  const right = paint.plot.right;
+  paint.ctx.font = `10px ${paint.monoFont}`;
+  paint.ctx.textBaseline = "middle";
+  paint.ctx.textAlign = "left";
+
+  // Swing legs (A→B, B→C) — the measured move.
+  applyStroke(paint, view.style);
+  strokeSegment(paint, view.a, view.b);
+  strokeSegment(paint, view.b, view.c);
+
+  const fill = fillStyleFor(paint, view.style);
+  for (let i = 0; i < view.levels.length; i += 1) {
+    const level = view.levels[i]!;
+    if (fill !== null && i < view.levels.length - 1) {
+      const nextLevel = view.levels[i + 1]!;
+      paint.ctx.fillStyle = fill;
+      paint.ctx.fillRect(
+        xStart,
+        Math.min(level.y, nextLevel.y),
+        Math.max(right - xStart, 1),
+        Math.abs(nextLevel.y - level.y),
+      );
+    }
+    applyStroke(paint, view.style);
+    strokeSegment(paint, { x: xStart, y: level.y }, { x: right, y: level.y });
+    const label = `${Math.round(level.level * 1000) / 10}%  ${level.price.toFixed(view.digits)}`;
+    paint.ctx.fillStyle = paint.textPrimary;
+    paint.ctx.fillText(label, Math.min(xStart + 6, right - 110), level.y);
+  }
 }
 
 function paintText(paint: PaintContext, view: {
@@ -287,6 +483,7 @@ export function paintProjectedDrawing(paint: PaintContext, view: ProjectedDrawin
   switch (view.kind) {
     case "trend":
     case "ray":
+    case "extended":
       paintTrendOrRay(paint, { a: view.a, b: view.b, type: view.kind, style });
       if (state.selected) paintHandles(paint, [view.a, view.b]);
       break;
@@ -302,12 +499,38 @@ export function paintProjectedDrawing(paint: PaintContext, view: ProjectedDrawin
         paintHandles(paint, [{ x: view.x, y: (paint.plot.top + paint.plot.bottom) / 2 }]);
       }
       break;
+    case "crossline":
+      paintCrossline(paint, view.at, style);
+      if (state.selected) paintHandles(paint, [view.at]);
+      break;
     case "rect":
       paintRectBody(paint, view.a, view.b, style);
       if (state.selected) paintHandles(paint, [view.a, view.b]);
       break;
+    case "ellipse":
+      paintEllipse(paint, view.a, view.b, style);
+      if (state.selected) paintHandles(paint, [view.a, view.b]);
+      break;
     case "measure":
       paintMeasure(paint, { a: view.a, b: view.b, style, label: view.label });
+      if (state.selected) paintHandles(paint, [view.a, view.b]);
+      break;
+    case "pricerange":
+      paintPriceRange(paint, { a: view.a, b: view.b, style, label: view.label });
+      if (state.selected) paintHandles(paint, [view.a, view.b]);
+      break;
+    case "daterange":
+      paintDateRange(paint, { a: view.a, b: view.b, style, label: view.label });
+      if (state.selected) paintHandles(paint, [view.a, view.b]);
+      break;
+    case "position":
+      paintPosition(paint, {
+        a: view.a,
+        b: view.b,
+        targetY: view.targetY,
+        style,
+        label: view.label,
+      });
       if (state.selected) paintHandles(paint, [view.a, view.b]);
       break;
     case "fib":
@@ -319,6 +542,17 @@ export function paintProjectedDrawing(paint: PaintContext, view: ProjectedDrawin
         digits: view.digits,
       });
       if (state.selected) paintHandles(paint, [view.a, view.b]);
+      break;
+    case "fibext":
+      paintFibExt(paint, {
+        a: view.a,
+        b: view.b,
+        c: view.c,
+        levels: view.levels,
+        style,
+        digits: view.digits,
+      });
+      if (state.selected) paintHandles(paint, [view.a, view.b, view.c]);
       break;
     case "text":
       paintText(paint, { at: view.at, style, text: view.drawing.text });
