@@ -869,3 +869,35 @@ Work Log:
 
 Stage Summary:
 - Audit consigné. Fondation single-chart STABLE (aucun bloqueur — la spec autorise la construction directe). 3 conflits de ownership identifiés avec solutions (registries + gating). API sync LWC confirmées. Prochaine étape : Stage B — contrats Zod v2 + domaine pur (session multi-panneau, migration, sync coordinator).
+
+---
+Task ID: oryon-phase7-wip-checkpoint
+Agent: Super Z (main)
+Date: 2026-10-11 (IM — demande utilisateur explicite : commit avant restart sandbox ~00h00)
+
+Task: CHECKPOINT Phase 7 — figer le travail en cours dans git pour survivre au restart du sandbox.
+
+Work Log:
+- ÉTAT STAGE B/C/D/E (implémentation ~70% faite, TOUT commité dans ce checkpoint) :
+  * Contrats partagés v2 (packages/shared/schemas/oryon.ts) : oryonGridSchema, oryonSyncSettingsSchema, oryonChartPanelSchema (indicators nullable = « non géré »), oryonWorkspaceLayoutV2Schema, oryonLayoutsFileV2Schema, ORYON_MAIN_PANEL_ID, ORYON_MAX_PANELS=4.
+  * Domaine (lib/oryon/workspace/layouts.ts) : session v2 {grid, panels[], activePanelId, sync, magnet, lowerOpen, utilityOpen, utilityPanel}, ORYON_DEFAULT_SESSION, panelsForGrid (invariants fill/trim), normalizeActivePanel, buildLayout (capture stacks par panneau), migrateLayoutV1toV2 (déterministe), sessionStateEqual (activePanelId EXCLU du dirty).
+  * Persistance (workspace/persistence.ts) : charge v1 ET v2 (migration par enregistrement), sauvegarde toujours v2, salvage inchangé.
+  * Store (workspace/store.ts) : setActivePanel/setPanelSymbol/setPanelInterval/setPanelChartType/setSync/setGrid/duplicatePanel/removePanel/applyTemplateChart(panelId) + propagation instrument/timeframe (null ne propage pas) + hook setPanelIndicatorsCapture pour les saves.
+  * Sync (lib/oryon/sync/alignment.ts + sync-engine.ts) : rangesEqual, findBarContainingTime (containment honnête, gaps rejetés), EchoGuard (150 ms), OryonSyncCoordinator (register(id, adapter), time-scale + crosshair, triple garde anti-boucle, features indépendantes).
+  * Engine (lib/charting/oryon-chart-engine.ts) : getVisibleRange/applyVisibleRange/onVisibleRangeChange/applyCrosshairAtTime/clearCrosshairPosition/onCrosshairTime + guards écho + dispatch crosshair multiplexé (légende + sync) + subscribeVisibleTimeRangeChange branché dans mount/destroy.
+  * Contextes : indicators = REGISTRY par panelId (panel-main garde persistance legacy `euforia.oryon.indicators.v1`) ; drawings = REGISTRY par symbole (LRU 24, dispose) + bindActiveStore ; workspace context : applyTemplate/saveCurrentTemplate ciblent le panneau ACTIF, applySavedLayout orchestre switch + stacks, hydrate applique les stacks du layout actif.
+  * UI : OryonChartGrid (CSS grid single/twoHorizontal/twoVertical/quad, <md pile), OryonChartGridPanel (activation pointerdown/focus capture, résolution instrument, header par panneau), OryonPanelHeader (sélecteurs namespacés oryon-panel-{index}-*, badge actif, menu duplicate/remove/latest), OryonGridMenu + OryonSyncMenu (toolbar), OryonView réécrite (coordinator sync, engines map, toast agrégé instruments inconnus), tool rail sur activeStore publiée, drawing layer (store par prop, gate canInteract dans interaction.ts : premier clic = activation sans dessin, hover/shortcuts/object-list gated), sélecteurs instrument/timeframe avec idPrefix, i18n grids/panels/sync + copies templates multi-panneau.
+  * Tests workspace réécrits v2 (~120 assertions attendues) — PAS ENCORE RUNNÉS.
+- RESTE À FAIRE après restart (dans l'ordre) :
+  1. `cd apps/web && npx tsc --noEmit` — corriger les erreurs résiduelles (la suite tests vient d'être réécrite ; templates-menu/légende/price-chart corrigés mais non re-vérifiés).
+  2. Créer scripts/oryon-multichart-tests.ts (coordinator avec fake adapters : broadcast range/crosshair, écho, epsilon, unregister, gaps) — le Write était en cours quand l'interruption est arrivée, FICHIER NON CRÉÉ.
+  3. Bun : oryon-workspace-tests + régressions P2/P3/P4/P5 (drawings 61, indicators 92, positions 66, measure 33, crosshair 23, alerts 62) + multichart.
+  4. eslint fichiers P7 ; vérifier lint de oryon-chart-grid (toast import utilisé ?), oryon-grid-menu (SVG check inline — remplacer par lucide si refusé).
+  5. Sonde Playwright scripts/verify-oryon-phase7.js (grids, panneau actif, sync on/off, layout multi save/restore, template → panneau actif, isolation drawings/indicators, positions/alertes scoping, mobile 390, 0 erreur console) + debug handle dev `__ORYON_PANEL_DEBUG__` si nécessaire.
+  6. next build + smokes prod P4/P6 + régression sonde P6 64 checks.
+  7. Vérifier : engine destroy() a unsubscribeVisibleTimeRangeChange ; lower panel activeSymbol = panneau actif ; createAlert = panneau actif.
+- DÉCISIONS FIGÉES : sync = un groupe implicite (tous panneaux, 4 flags) ; comparison §13 = graphes synchronisés côte à côte (overlay normalisé = future work, contrat sans mode comparaison) ; stacks non-main = mémoire + capture layout (documenté) ; magnet/shell = workspace-level.
+- ATTENTION au restart : auto-snapshot `23f56ac` a déjà capturé l'état +30 fichiers ; CE checkpoint est le commit de référence Phase 7 WIP. La branche backup/modifs-du-29-sept n'a PAS été touchée. Jamais de git gc.
+
+Stage Summary:
+- Phase 7 à ~70% (Stages B-C-D-E codés, F partiellement — données/overlays déjà multi-panneau par construction, G persistances v2 codées) ; H (tests+vérifications) à démarrer. Tout est commité — le restart ne peut plus rien perdre.
