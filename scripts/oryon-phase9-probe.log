@@ -1,16 +1,16 @@
-=== oryon phase9 probe — 2026-10-11T19:26:19.095Z ===
+=== oryon phase9 probe — 2026-10-11T21:44:28.710Z ===
   PASS  workspace démarré avec un panneau
   PASS  défaut : 0 marqueur structure / 0 ligne niveau / 0 boîte OR
   PASS  défaut : structure OFF (menu)
   PASS  défaut : PDH/L OFF (menu)
   PASS  défaut : OR OFF (menu)
-  PASS  structure ON → pivots confirmés rendus (got 58)
+  PASS  structure ON → pivots confirmés rendus (got 65)
   PASS  baseline series/panes stables
-  PASS  swing highs OFF → sous-ensemble strict (28 < 58)
+  PASS  swing highs OFF → sous-ensemble strict (35 < 65)
   PASS  toggle sans recréation : series/panes/viewport stables
-  PASS  provisional ON → ensemble élargi monotone (59 ≥ 28)
-  PASS  breaks ON (close) → marqueurs de cassure ajoutés (got 75)
-  PASS  mode wick ⊇ mode close (90 ≥ 75)
+  PASS  provisional ON → ensemble élargi monotone (66 ≥ 35)
+  PASS  breaks ON (close) → marqueurs de cassure ajoutés (got 80)
+  PASS  mode wick ⊇ mode close (94 ≥ 80)
   PASS  PDH/L ON → 2 lignes (got 2)
   PASS  PWH/L ON → 4 lignes cumulées (got 4)
   PASS  PDO/C ON → 6 lignes cumulées (got 6)
@@ -24,14 +24,14 @@
   PASS  grille 2 panneaux montée
   PASS  panneau 1 (nouveau) : défauts neutres — 0 marqueur structure
   PASS  panneau 0 : structure intacte (isolation par panneau)
-  PASS  panneau 1 : structure ON → son propre jeu de pivots (58)
+  PASS  panneau 1 : structure ON → son propre jeu de pivots (65)
   PASS  panneau 0 : jeu inchangé pendant la mutation du panneau 1
   PASS  enveloppe v4 sur disque
   PASS  analyse persistée dans le record
   PASS  layout par défaut : analyse neutre (0 marqueur / 0 ligne)
-  PASS  restore : analyse restaurée (structure 58, lignes 6)
+  PASS  restore : analyse restaurée (structure 65, lignes 6)
   PASS  menu contexte P8 toujours fonctionnel (sessions ON)
-  PASS  bandes de session P8 intactes (got 5)
+  PASS  bandes de session P8 intactes (got 6)
   PASS  lower panel P4 s'ouvre
   PASS  mobile : workspace toujours vivant
   PASS  mobile : trigger analysis visible
