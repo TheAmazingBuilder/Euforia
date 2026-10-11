@@ -395,7 +395,11 @@ async function setGrid(app, grid) {
   await page.click('[data-testid="oryon-layout-name-submit"]');
   await page.waitForTimeout(800);
   const file = await layoutsFile(page);
-  ok("enveloppe v3 sur disque", file?.version === 3);
+  // Phase 9 raised the save generation to v4 (additive per-panel `analysis`);
+  // the loader still accepts every generation, so the envelope check asserts
+  // the CURRENT generation (>= 3 keeps this probe meaningful across later
+  // additive phases).
+  ok("enveloppe v3+ sur disque", typeof file?.version === "number" && file.version >= 3);
   ok(
     "contexte sauvegardé dans l'enregistrement (sessions false)",
     file?.layouts?.[0]?.panels?.[0]?.context?.sessionShading === false,

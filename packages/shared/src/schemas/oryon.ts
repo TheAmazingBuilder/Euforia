@@ -684,3 +684,136 @@ export const oryonLayoutsFileV3Schema = z.object({
 });
 
 export type OryonLayoutsFileV3 = z.infer<typeof oryonLayoutsFileV3Schema>;
+
+// ── Market-structure & key-level contracts (Phase 9 — spec §7, §9) ──────────
+//
+// Structure and key-level analysis are PER-PANEL configuration, exactly
+// like the Phase 8 context: a multi-chart workspace legitimately compares
+// a structure-annotated FX chart with a clean crypto chart, so the config
+// cannot be workspace-level. The v4 layout EXTENDS the v3 panel shape
+// additively (`analysis` field); the migration v3→v4 is deterministic
+// (every migrated panel takes the documented defaults — everything OFF, so
+// a restored old layout renders exactly as it did before) and lives in the
+// web domain layer, mirroring the v2→v3 pattern.
+//
+// Deliberately NOT in this contract (scope discipline):
+//  - calculation RESULTS (pivots, labels, break events, level prices) —
+//    they are derived data recomputed from candles, never persisted;
+//  - the session DEFINITIONS (same rule as v3: code constants, so an old
+//    layout can never resurrect an outdated schedule — the persisted
+//    vocabulary is the session ID, the schedule always renders from code).
+
+/** How a structure break is confirmed (spec §4.4: both modes are reliably
+ *  implementable, so the choice is user-facing; "close" is the default). */
+export const oryonBreakModeSchema = z.enum(["close", "wick"]);
+
+export type OryonBreakMode = z.infer<typeof oryonBreakModeSchema>;
+
+/** Whitelist of opening-range durations (validated config, §7.3). */
+export const oryonOpeningRangeDurationSchema = z.union([
+  z.literal(15),
+  z.literal(30),
+  z.literal(60),
+  z.literal(120),
+]);
+
+/**
+ * One panel's analysis configuration. Values are WHITELISTED (enums,
+ * bounded ints, literal unions) so a persisted record can never carry an
+ * invalid calculation parameter — the calculation engines never see
+ * unvalidated numbers.
+ */
+export const oryonPanelAnalysisSchema = z.object({
+  structure: z.object({
+    /** Master switch — off renders nothing (default: charts stay clean). */
+    enabled: z.boolean(),
+    showSwingHighs: z.boolean(),
+    showSwingLows: z.boolean(),
+    /** HH/LH/HL/LL labels, independent from the pivot markers (§4.3). */
+    showLabels: z.boolean(),
+    /** Provisional (right-window-incomplete) candidates, opt-in (§4.2). */
+    showProvisional: z.boolean(),
+    leftBars: z.number().int().min(1).max(10),
+    rightBars: z.number().int().min(1).max(10),
+    /** Optional minimum swing distance in pips (null = disabled, §4.1). */
+    minDistancePips: z.number().int().min(1).max(10_000).nullable(),
+    /** Optional minimum bar separation between same-kind pivots (§4.1). */
+    minSeparationBars: z.number().int().min(1).max(200).nullable(),
+    /** BOS/CHoCH annotations — implemented with tested semantics (§4.4). */
+    breaksEnabled: z.boolean(),
+    breakMode: oryonBreakModeSchema,
+  }),
+  levels: z.object({
+    prevDayHighLow: z.boolean(),
+    /** Previous-day open/close lines (secondary reference, off default). */
+    prevDayOpenClose: z.boolean(),
+    prevWeekHighLow: z.boolean(),
+    prevWeekOpenClose: z.boolean(),
+    /** Session opening range (requires a session-scoped asset class, §5.3). */
+    openingRange: z.boolean(),
+    /** Session whose OPEN defines the range — ID of the code constants. */
+    orSessionId: z.enum(["sydney", "tokyo", "london", "newyork"]),
+    orDurationMinutes: oryonOpeningRangeDurationSchema,
+    /** Show a still-forming range (developing) at all (§5.3). */
+    orShowDeveloping: z.boolean(),
+  }),
+});
+
+export type OryonPanelAnalysis = z.infer<typeof oryonPanelAnalysisSchema>;
+
+/**
+ * Defaults for a NEW panel and the deterministic v3→v4 migration: every
+ * analysis overlay is OFF — restoring an older layout must not suddenly
+ * decorate charts the user configured before this phase existed (§6.3
+ * "sensible visibility defaults" + §9.2 backward compatibility).
+ */
+export const ORYON_DEFAULT_PANEL_ANALYSIS: OryonPanelAnalysis = {
+  structure: {
+    enabled: false,
+    showSwingHighs: true,
+    showSwingLows: true,
+    showLabels: true,
+    showProvisional: false,
+    leftBars: 3,
+    rightBars: 3,
+    minDistancePips: null,
+    minSeparationBars: null,
+    breaksEnabled: false,
+    breakMode: "close",
+  },
+  levels: {
+    prevDayHighLow: false,
+    prevDayOpenClose: false,
+    prevWeekHighLow: false,
+    prevWeekOpenClose: false,
+    openingRange: false,
+    orSessionId: "newyork",
+    orDurationMinutes: 60,
+    orShowDeveloping: true,
+  },
+};
+
+/** Chart panel v4 — the v3 configuration plus the analysis preferences. */
+export const oryonChartPanelV4Schema = oryonChartPanelV3Schema.extend({
+  analysis: oryonPanelAnalysisSchema,
+});
+
+export type OryonChartPanelV4 = z.infer<typeof oryonChartPanelV4Schema>;
+
+/** Workspace layout v4 — the v3 arrangement with per-panel analysis. */
+export const oryonWorkspaceLayoutV4Schema = oryonWorkspaceLayoutV2Schema.extend({
+  panels: z.array(oryonChartPanelV4Schema).min(1).max(ORYON_MAX_PANELS),
+});
+
+export type OryonWorkspaceLayoutV4 = z.infer<typeof oryonWorkspaceLayoutV4Schema>;
+
+/** Versioned persistence envelope v4 (Phase 9) — ONE browser-local file.
+ *  Loaders accept v1/v2/v3 and migrate deterministically; saves write v4. */
+export const oryonLayoutsFileV4Schema = z.object({
+  version: z.literal(4),
+  savedAt: z.number().finite().int(),
+  layouts: z.array(oryonWorkspaceLayoutV4Schema).max(20),
+  activeLayoutId: z.string().min(8).max(64).nullable(),
+});
+
+export type OryonLayoutsFileV4 = z.infer<typeof oryonLayoutsFileV4Schema>;

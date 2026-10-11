@@ -1,7 +1,39 @@
-=== oryon phase8 probe — 2026-10-11T08:55:05.630Z ===
-signIn: no login form (already authed?)
-CRASH: locator.waitFor: Timeout 40000ms exceeded.
-Call log:
-  - waiting for locator('a[href="/oryon"]').first() to be visible
+=== oryon phase8 probe — 2026-10-11T19:32:24.922Z ===
+  PASS  workspace démarré avec un panneau
+  PASS  contexte sessions par défaut ON
+  PASS  contexte événements par défaut ON
+  PASS  seuil d'importance par défaut MEDIUM
+  PASS  bandes de session présentes sur EURUSD 15m (got 5)
+  PASS  marqueurs d'événements présents (fenêtre 75 h, seuil MEDIUM) (got 4)
+  PASS  series/panes stables avant toggle
+  PASS  sessions OFF → 0 bande
+  PASS  toggle sans recréation : series/panes/viewport stables
+  PASS  sessions ON → bandes de retour
+  PASS  événements OFF → 0 marqueur
+  PASS  événements ON → marqueurs de retour
+  PASS  seuil HIGH → sous-ensemble monotone (3 ≤ 4)
+  PASS  sonde : un marqueur projetable à l'écran
+  PASS  clic marqueur → popover ouvert
+  PASS  popover liste les événements du bucket (3 ≥ 1)
+  PASS  valeurs manquantes rendues « — » (jamais 0)
+  PASS  fermeture du popover
+  PASS  1D → aucune bande (porte intraday documentée)
+  PASS  CRYPTO 24/7 → aucune bande (honnête)
+  PASS  statuts de session affichés pour FOREX (4 = 4)
+  PASS  note de source honnête visible (échantillon)
+  PASS  filtres d'événements présents (portée/impact/devise)
+  PASS  portée ALL ≥ upcoming (40 ≥ 0)
+  PASS  sessions OFF avant sauvegarde
+  PASS  enveloppe v3+ sur disque
+  PASS  contexte sauvegardé dans l'enregistrement (sessions false)
+  PASS  sessions ON après mutation (dirty)
+  PASS  switch vers le layout sauvegardé → sessions OFF restaurées
+  PASS  panneau 0 : bandes propres
+  PASS  panneau 1 : bandes propres (indépendance)
+  PASS  panneau 1 : événements OFF
+  PASS  panneau 0 : événements intacts (préférence indépendante)
+  PASS  mobile : panneau de contexte ouvert en overlay
+  PASS  mobile : 0 erreur console
+  PASS  desktop : 0 erreur console
 
-    at /home/z/my-project/scripts/verify-oryon-phase8.js:246:17
+=== 36 PASS / 0 FAIL ===

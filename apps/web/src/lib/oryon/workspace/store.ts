@@ -4,9 +4,10 @@ import type {
   OryonGrid,
   OryonIndicatorInstance,
   OryonLayoutChartType,
+  OryonPanelAnalysis,
   OryonPanelContext,
   OryonSyncSettings,
-  OryonWorkspaceLayoutV3,
+  OryonWorkspaceLayoutV4,
 } from "@cosmoz/shared";
 
 import {
@@ -80,7 +81,7 @@ import {
 export interface WorkspaceConfigSnapshot {
   /** Live workspace arrangement. */
   session: OryonWorkspaceSessionState;
-  layouts: readonly OryonWorkspaceLayoutV3[];
+  layouts: readonly OryonWorkspaceLayoutV4[];
   templates: readonly OryonChartTemplate[];
   /** null = the built-in default layout is active. */
   activeLayoutId: string | null;
@@ -245,6 +246,29 @@ export class OryonWorkspaceConfigStore {
   }
 
   /**
+   * Replaces ONE panel's analysis preferences (Phase 9 §9) — a per-panel
+   * setting, never propagated to linked charts (§9.3 multi-chart
+   * isolation). Null-safe on an unknown panel id (stale menu after a
+   * removal). The configuration arrives pre-validated (shared schema
+   * whitelist); the store persists it verbatim.
+   */
+  setPanelAnalysis(panelId: string, analysis: OryonPanelAnalysis): void {
+    this.patchSession({
+      panels: this.state.session.panels.map((p) =>
+        p.id === panelId
+          ? {
+              ...p,
+              analysis: {
+                structure: { ...analysis.structure },
+                levels: { ...analysis.levels },
+              },
+            }
+          : p,
+      ),
+    });
+  }
+
+  /**
    * Toggles synchronization features INDEPENDENTLY (spec §8) — enabling
    * one never enables another.
    */
@@ -302,6 +326,10 @@ export class OryonWorkspaceConfigStore {
       interval: source.interval,
       chartType: source.chartType,
       context: { ...source.context },
+      analysis: {
+        structure: { ...source.analysis.structure },
+        levels: { ...source.analysis.levels },
+      },
     };
     const panels = [...session.panels, copy];
     const grid = session.grid === "single" ? "twoHorizontal" : session.grid;
@@ -458,7 +486,7 @@ export class OryonWorkspaceConfigStore {
     if (this.state.layouts.length >= MAX_LAYOUTS) return { ok: false, error: "capacity" };
 
     const name = uniqueCopyName(target.name, this.state.layouts.map((l) => l.name));
-    const copy: OryonWorkspaceLayoutV3 = {
+    const copy: OryonWorkspaceLayoutV4 = {
       ...structuredClone(target),
       id: newConfigId("layout"),
       name,
@@ -586,7 +614,7 @@ export class OryonWorkspaceConfigStore {
 
   /** Layout-list/pointer commit: state + debounced persist (single write). */
   private commitLayouts(
-    layouts: OryonWorkspaceLayoutV3[],
+    layouts: OryonWorkspaceLayoutV4[],
     activeLayoutId: string | null,
   ): void {
     // Dirty is recomputed against the NEW list — a save/update that lands

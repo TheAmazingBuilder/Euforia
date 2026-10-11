@@ -1,11 +1,5 @@
-=== oryon phase6 prod smoke — 2026-10-11T08:59:43.694Z ===
-  PASS  P1 workspace rendu en production
-  PASS  P2 déclencheur layouts présent
-  PASS  P3 nom actif affiché (Default layout)
-  PASS  P4 menu layouts : état vide honnête
-  PASS  P5 save-as fonctionne en production
-  PASS  P6 enveloppe layouts persistée
-  PASS  P7 menu templates : état vide honnête
-  PASS  P8 0 erreur console
+=== oryon phase6 prod smoke — 2026-10-11T19:45:32.494Z ===
+crashed: TimeoutError: page.waitForSelector: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator('[data-testid="oryon-workspace"]') to be visible
 
-8 PASS / 0 FAIL

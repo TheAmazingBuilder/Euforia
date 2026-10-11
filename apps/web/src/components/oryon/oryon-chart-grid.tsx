@@ -211,6 +211,7 @@ export function OryonChartGridPanel({
         feedKnown={feedKnown}
         canRemove={canRemove}
         context={panel.context}
+        analysis={panel.analysis}
         onInstrumentSelect={(id) => {
           const next = instruments.find((i) => i.id === id);
           if (next !== undefined) store.setPanelSymbol(panel.id, next.symbol);
@@ -218,6 +219,7 @@ export function OryonChartGridPanel({
         onIntervalChange={(interval) => store.setPanelInterval(panel.id, interval)}
         onChartTypeChange={(type) => store.setPanelChartType(panel.id, type)}
         onContextChange={(context) => store.setPanelContext(panel.id, context)}
+        onAnalysisChange={(analysis) => store.setPanelAnalysis(panel.id, analysis)}
         onDuplicate={handleDuplicate}
         onRemove={handleRemove}
         onGoLatest={handleLatest}
@@ -230,6 +232,7 @@ export function OryonChartGridPanel({
           magnet={magnet}
           indicatorStore={indicatorStore}
           context={panel.context}
+          analysis={panel.analysis}
           interactive={active}
           onEngineReady={handleEngineReady}
           onEngineGone={handleEngineGone}

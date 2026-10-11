@@ -22,6 +22,14 @@ import {
   createSessionColorResolver,
   type OryonSessionBandSpec,
 } from "@/lib/charting/oryon-session-overlay";
+import {
+  OryonKeyLevelsOverlayManager,
+  type OryonKeyLevelSpec,
+} from "@/lib/charting/oryon-key-levels";
+import {
+  OryonRangeBoxManager,
+  type OryonRangeBoxSpec,
+} from "@/lib/charting/oryon-range-box-overlay";
 
 import type { Candle, OryonIndicatorInstance } from "@cosmoz/shared";
 
@@ -55,6 +63,27 @@ export interface OryonEventMarkerSpec {
   readonly color: string;
   /** Marker size (importance encoding — never color alone, §15). */
   readonly size: number;
+}
+
+/**
+ * One market-structure marker input (Phase 9) — BAR-SNAPPED UTC seconds.
+ * Unlike event markers, the color travels as a THEME TOKEN KEY: the engine
+ * resolves it at paint time, so a theme switch restyles structure markers
+ * without any bridge involvement (the events bridge predates this — its
+ * resolved-color contract is unchanged).
+ */
+export interface OryonStructureMarkerSpec {
+  /** Stable identity — pivot/break id derived from source candles (§4.4). */
+  readonly id: string;
+  /** Open time of the anchor bar (pivot or break candle, unix seconds). */
+  readonly timeSec: number;
+  readonly position: "aboveBar" | "belowBar";
+  readonly shape: "arrowDown" | "arrowUp" | "circle";
+  /** Theme token KEY ("cat-ta", "warning", …) — resolved at paint. */
+  readonly colorToken: string;
+  readonly size: number;
+  /** Compact label (HH/LH/HL/LL/BOS/CHoCH) — never long text (§6.3). */
+  readonly text?: string;
 }
 
 /**
@@ -176,6 +205,24 @@ export class OryonChartEngine {
   private eventMarkerSpecs: readonly OryonEventMarkerSpec[] = [];
   private markerClickListeners = new Set<(timeSec: number, point: { x: number; y: number } | null) => void>();
   private clickSubscribed = false;
+  /** Last bridge INPUTS for the marker sets — re-validated against every
+   *  new candle window in setCandles. Child-bridge effects run BEFORE the
+   *  parent's setCandles effect, so a window change (symbol/timeframe)
+   *  otherwise leaves the stored sets filtered against the PREVIOUS
+   *  window; the engine re-validates the full inputs here (Phase 9
+   *  hardening, extends the Phase 8 containment guard). */
+  private lastEventMarkerInput: readonly OryonEventMarkerSpec[] = [];
+  /** Key levels (Phase 9) — native price lines, diffed by stable key. */
+  private keyLevels: OryonKeyLevelsOverlayManager | null = null;
+  /** Opening-range boxes (Phase 9) — "bottom" zOrder primitive. */
+  private rangeBoxes: OryonRangeBoxManager | null = null;
+  private rangeBoxColors = createSessionColorResolver();
+  /** Structure markers (Phase 9) — SECOND markers plugin instance: the
+   *  Phase 8 event-marker set stays identity-stable and untouched. */
+  private structurePlugin: ISeriesMarkersPluginApi<UTCTimestamp> | null = null;
+  private structureSpecs: readonly OryonStructureMarkerSpec[] = [];
+  private structureColors = createSessionColorResolver();
+  private lastStructureInput: readonly OryonStructureMarkerSpec[] = [];
   /** Last dispatched crosshair time (dev-probe observability). */
   private lastCrosshairTime: number | null = null;
   private rangeEcho: EchoGuard = createEchoGuard();
@@ -232,6 +279,13 @@ export class OryonChartEngine {
       conversions: this.conversions,
     });
     this.sessions.attach(this.candleSeries);
+    this.keyLevels = new OryonKeyLevelsOverlayManager();
+    this.keyLevels.setSeries(this.candleSeries);
+    this.rangeBoxes = new OryonRangeBoxManager({
+      getColor: this.rangeBoxColors.resolve,
+      conversions: this.conversions,
+    });
+    this.rangeBoxes.attach(this.candleSeries);
     this.attachDrawingsToActiveSeries();
     this.chart.subscribeCrosshairMove(this.handleCrosshairMove);
     this.chart.timeScale().subscribeVisibleTimeRangeChange(this.handleVisibleRangeChange);
@@ -277,6 +331,14 @@ export class OryonChartEngine {
     this.alerts = null;
     this.sessions?.destroy();
     this.sessions = null;
+    this.keyLevels?.destroy();
+    this.keyLevels = null;
+    this.rangeBoxes?.destroy();
+    this.rangeBoxes = null;
+    this.detachStructurePlugin();
+    this.structureSpecs = [];
+    this.lastStructureInput = [];
+    this.lastEventMarkerInput = [];
     this.detachMarkersPlugin();
     this.eventMarkerSpecs = [];
     this.markerClickListeners.clear();
@@ -318,9 +380,16 @@ export class OryonChartEngine {
     this.indicators?.restyle({ digits: this.digits, theme });
     this.positions?.restyle(theme);
     this.alerts?.restyle(theme);
-    // Session band colors resolve from theme tokens — refresh the cache so
-    // bands follow the palette switch on the NEXT paint (§15 theming).
+    this.keyLevels?.restyle(theme);
+    // Session band + range-box colors resolve from theme tokens — refresh
+    // the caches so overlays follow the palette switch on the NEXT paint
+    // (§15 theming). Structure markers re-resolve and re-apply directly.
     this.sessionColors.invalidate();
+    this.rangeBoxColors.invalidate();
+    this.structureColors.invalidate();
+    if (this.structurePlugin !== null) {
+      this.structurePlugin.setMarkers(this.toStructureSeriesMarkers(this.structureSpecs));
+    }
   }
 
   /**
@@ -335,6 +404,11 @@ export class OryonChartEngine {
     if (this.chart === null) return;
     this.chart.timeScale().applyOptions({ timeVisible: intervalMs < 86_400_000 });
     this.rebuildSeriesData();
+    // Re-validate the stored marker INPUTS against the NEW window (see the
+    // field notes): a symbol/timeframe switch re-derives the loadable sets
+    // from exactly the specs the bridges computed for THIS window.
+    if (this.lastEventMarkerInput.length > 0) this.setEventMarkers(this.lastEventMarkerInput);
+    if (this.lastStructureInput.length > 0) this.setStructureMarkers(this.lastStructureInput);
     // Indicator datasets follow the displayed window (history load, symbol
     // or timeframe switch, background refetch).
     this.indicators?.rebuild(candles, { digits, theme: getChartTheme() });
@@ -430,7 +504,11 @@ export class OryonChartEngine {
     // Session bands live on the series — re-attach after the rebuild.
     const currentSeries = this.activeSeries();
     if (this.sessions !== null && currentSeries !== null) this.sessions.attach(currentSeries);
-    // The markers plugin is series-bound: re-create it on the new series.
+    // Key levels + range boxes are series-bound — re-home and re-attach.
+    this.keyLevels?.setSeries(currentSeries);
+    if (this.rangeBoxes !== null && currentSeries !== null) this.rangeBoxes.attach(currentSeries);
+    // The markers plugins are series-bound: re-create them on the new series.
+    this.recreateStructurePlugin();
     this.recreateMarkersPlugin();
     this.chart.timeScale().scrollToRealTime();
   }
@@ -501,6 +579,7 @@ export class OryonChartEngine {
    * re-validates against its OWN loaded candles (see below).
    */
   setEventMarkers(specs: readonly OryonEventMarkerSpec[]): void {
+    this.lastEventMarkerInput = specs;
     // The engine re-validates every spec against the candles IT ACTUALLY
     // RENDERS: child bridges run their effects BEFORE the parent's
     // setCandles effect (React ordering), so a marker set computed from
@@ -595,6 +674,90 @@ export class OryonChartEngine {
       // Host series already removed — nothing left to clean.
     }
     this.markersPlugin = null;
+  }
+
+  // ── market-structure & key-level surface (Phase 9) ───────────────────
+
+  /**
+   * Replaces the structure markers (swing pivots, HH/LH/HL/LL labels,
+   * BOS/CHoCH events). Same containment discipline as the event markers:
+   * every spec is re-validated against the candles the engine ACTUALLY
+   * RENDERS (child bridges run their effects before the parent's
+   * setCandles effect) — a marker without a loaded bar under it is dropped
+   * here, never painted (§6.2), and the next candles commit re-applies the
+   * full set. Stable ids keep re-sets identity-stable (§14).
+   */
+  setStructureMarkers(specs: readonly OryonStructureMarkerSpec[]): void {
+    this.lastStructureInput = specs;
+    const step = this.intervalMs;
+    const first = this.candles.length > 0 ? this.candles[0]!.t : null;
+    const last = this.candles.length > 0 ? this.candles[this.candles.length - 1]!.t : null;
+    const loadable =
+      first !== null && last !== null
+        ? specs.filter((spec) => {
+            const ms = spec.timeSec * 1000;
+            return ms >= first - step && ms <= last + step;
+          })
+        : [];
+    this.structureSpecs = loadable;
+    if (this.structurePlugin !== null) {
+      this.structurePlugin.setMarkers(this.toStructureSeriesMarkers(loadable));
+    } else {
+      this.recreateStructurePlugin();
+    }
+  }
+
+  /**
+   * Replaces the key-level price lines (previous-day/week, opening range).
+   * Specs are remembered across series rebuilds and replayed — the overlay
+   * survives chart-type switches without caller action (positions/alerts
+   * contract). Prices arrive pre-validated from the calculation engines.
+   */
+  setKeyLevels(specs: readonly OryonKeyLevelSpec[]): void {
+    if (this.keyLevels === null) return;
+    this.keyLevels.sync(specs, getChartTheme());
+  }
+
+  /**
+   * Replaces the opening-range boxes. Diff-free by design: the primitive
+   * reads the array at paint time and one applyOptions({}) requests a
+   * redraw — visibility toggles NEVER recreate the chart (§14).
+   */
+  setOpeningRangeBoxes(boxes: readonly OryonRangeBoxSpec[]): void {
+    if (this.rangeBoxes === null) return;
+    this.rangeBoxes.setBoxes(boxes);
+  }
+
+  private toStructureSeriesMarkers(specs: readonly OryonStructureMarkerSpec[]): SeriesMarker<UTCTimestamp>[] {
+    return specs.map((spec) => ({
+      id: spec.id,
+      time: spec.timeSec as UTCTimestamp,
+      position: spec.position,
+      shape: spec.shape,
+      color: this.structureColors.resolve(spec.colorToken),
+      size: spec.size,
+      ...(spec.text !== undefined ? { text: spec.text } : {}),
+    }));
+  }
+
+  private recreateStructurePlugin(): void {
+    this.detachStructurePlugin();
+    const series = this.activeSeries();
+    if (series === null || this.structureSpecs.length === 0) return;
+    this.structurePlugin = createSeriesMarkers(series, this.toStructureSeriesMarkers(this.structureSpecs), {
+      autoScale: false,
+    }) as unknown as ISeriesMarkersPluginApi<UTCTimestamp>;
+  }
+
+  private detachStructurePlugin(): void {
+    if (this.structurePlugin === null) return;
+    try {
+      this.structurePlugin.setMarkers([]);
+      this.structurePlugin.detach();
+    } catch {
+      // Host series already removed — nothing left to clean.
+    }
+    this.structurePlugin = null;
   }
 
   /** Crosshair magnet on/off (real engine option — the rail's honest toggle). */
@@ -777,6 +940,9 @@ export class OryonChartEngine {
     alertLines: number;
     sessionBands: number;
     eventMarkers: number;
+    structureMarkers: number;
+    keyLevelLines: number;
+    orBoxes: number;
   } | null {
     if (this.chart === null) return null;
     const main = (this.candleSeries !== null ? 1 : 0) + (this.lineSeries !== null ? 1 : 0);
@@ -788,6 +954,9 @@ export class OryonChartEngine {
       alertLines: this.alerts?.count ?? 0,
       sessionBands: this.sessions?.count ?? 0,
       eventMarkers: this.eventMarkerSpecs.length,
+      structureMarkers: this.structureSpecs.length,
+      keyLevelLines: this.keyLevels?.count ?? 0,
+      orBoxes: this.rangeBoxes?.count ?? 0,
     };
   }
 

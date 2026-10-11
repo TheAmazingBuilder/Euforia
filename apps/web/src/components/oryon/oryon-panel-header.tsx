@@ -7,11 +7,17 @@ import {
   ChartCandlestick,
   Copy,
   EllipsisVertical,
+  Activity,
   Globe,
   Trash,
 } from "lucide-react";
 
-import type { Instrument, MarketInterval, OryonPanelContext } from "@cosmoz/shared";
+import type {
+  Instrument,
+  MarketInterval,
+  OryonPanelAnalysis,
+  OryonPanelContext,
+} from "@cosmoz/shared";
 
 import { useDict } from "@/i18n/i18n-provider";
 import {
@@ -55,10 +61,12 @@ export function OryonPanelHeader({
   feedKnown,
   canRemove,
   context,
+  analysis,
   onInstrumentSelect,
   onIntervalChange,
   onChartTypeChange,
   onContextChange,
+  onAnalysisChange,
   onDuplicate,
   onRemove,
   onGoLatest,
@@ -76,18 +84,38 @@ export function OryonPanelHeader({
   canRemove: boolean;
   /** THIS panel's temporal-context prefs (Phase 8 §12). */
   context: OryonPanelContext;
+  /** THIS panel's structure & key-level analysis prefs (Phase 9 §7). */
+  analysis: OryonPanelAnalysis;
   onInstrumentSelect: (id: string) => void;
   onIntervalChange: (interval: MarketInterval) => void;
   onChartTypeChange: (type: OryonChartType) => void;
   /** Replaces THIS panel's temporal-context prefs (Phase 8). */
   onContextChange: (context: OryonPanelContext) => void;
+  /** Replaces THIS panel's analysis prefs (Phase 9). */
+  onAnalysisChange: (analysis: OryonPanelAnalysis) => void;
   onDuplicate: () => void;
   onRemove: () => void;
   onGoLatest: () => void;
 }) {
   const dict = useDict();
   const S = dict.oryon.panels;
+  const A = dict.oryon.analysis;
   const prefix = `oryon-panel-${index}`;
+
+  const structure = analysis.structure;
+  const levels = analysis.levels;
+  const anyAnalysisActive =
+    structure.enabled ||
+    levels.prevDayHighLow ||
+    levels.prevDayOpenClose ||
+    levels.prevWeekHighLow ||
+    levels.prevWeekOpenClose ||
+    levels.openingRange;
+
+  const patchStructure = (partial: Partial<OryonPanelAnalysis["structure"]>): void =>
+    onAnalysisChange({ ...analysis, structure: { ...structure, ...partial } });
+  const patchLevels = (partial: Partial<OryonPanelAnalysis["levels"]>): void =>
+    onAnalysisChange({ ...analysis, levels: { ...levels, ...partial } });
 
   return (
     <div
@@ -167,6 +195,231 @@ export function OryonPanelHeader({
       ) : null}
 
       <div className="ml-auto flex shrink-0 items-center">
+        {/* Analysis menu (Phase 9 §7) — per-panel structure + key-level
+            config. Grouped, whitelist-validated values (radios over bounded
+            vocabularies — no free numeric input can produce an invalid
+            calculation parameter). */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              aria-label={A.menuHint}
+              data-testid={`${prefix}-analysis-menu`}
+              className={cn(
+                "inline-flex size-7 items-center justify-center rounded-md transition-colors hover:bg-surface-raised hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring",
+                anyAnalysisActive ? "text-accent" : "text-muted-foreground",
+              )}
+            >
+              <Activity className="size-4" aria-hidden />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="max-h-[70vh] min-w-64 overflow-y-auto">
+            <DropdownMenuLabel className="text-xs text-muted-foreground">
+              {A.menuTitle}
+            </DropdownMenuLabel>
+
+            <DropdownMenuLabel className="text-[11px] font-semibold text-foreground">
+              {A.structureTitle}
+            </DropdownMenuLabel>
+            <DropdownMenuCheckboxItem
+              checked={structure.enabled}
+              data-testid={`${prefix}-analysis-structure`}
+              onCheckedChange={(checked) => patchStructure({ enabled: checked === true })}
+            >
+              {A.structureEnable}
+            </DropdownMenuCheckboxItem>
+            <DropdownMenuCheckboxItem
+              checked={structure.showSwingHighs}
+              disabled={!structure.enabled}
+              data-testid={`${prefix}-analysis-highs`}
+              onCheckedChange={(checked) => patchStructure({ showSwingHighs: checked === true })}
+            >
+              {A.swingHighs}
+            </DropdownMenuCheckboxItem>
+            <DropdownMenuCheckboxItem
+              checked={structure.showSwingLows}
+              disabled={!structure.enabled}
+              data-testid={`${prefix}-analysis-lows`}
+              onCheckedChange={(checked) => patchStructure({ showSwingLows: checked === true })}
+            >
+              {A.swingLows}
+            </DropdownMenuCheckboxItem>
+            <DropdownMenuCheckboxItem
+              checked={structure.showLabels}
+              disabled={!structure.enabled}
+              data-testid={`${prefix}-analysis-labels`}
+              onCheckedChange={(checked) => patchStructure({ showLabels: checked === true })}
+            >
+              {A.labels}
+            </DropdownMenuCheckboxItem>
+            <DropdownMenuCheckboxItem
+              checked={structure.showProvisional}
+              disabled={!structure.enabled}
+              data-testid={`${prefix}-analysis-provisional`}
+              onCheckedChange={(checked) => patchStructure({ showProvisional: checked === true })}
+            >
+              {A.provisional}
+            </DropdownMenuCheckboxItem>
+            <DropdownMenuCheckboxItem
+              checked={structure.breaksEnabled}
+              disabled={!structure.enabled}
+              data-testid={`${prefix}-analysis-breaks`}
+              onCheckedChange={(checked) => patchStructure({ breaksEnabled: checked === true })}
+            >
+              {A.breaks}
+            </DropdownMenuCheckboxItem>
+            <DropdownMenuLabel className="text-[11px] font-normal text-muted-foreground">
+              {A.breakMode}
+            </DropdownMenuLabel>
+            <DropdownMenuRadioGroup
+              value={structure.breakMode}
+              onValueChange={(value) =>
+                patchStructure({ breakMode: value as OryonPanelAnalysis["structure"]["breakMode"] })
+              }
+            >
+              <DropdownMenuRadioItem
+                value="close"
+                disabled={!structure.breaksEnabled}
+                data-testid={`${prefix}-analysis-break-close`}
+              >
+                {A.breakModeClose}
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem
+                value="wick"
+                disabled={!structure.breaksEnabled}
+                data-testid={`${prefix}-analysis-break-wick`}
+              >
+                {A.breakModeWick}
+              </DropdownMenuRadioItem>
+            </DropdownMenuRadioGroup>
+            <DropdownMenuLabel className="text-[11px] font-normal text-muted-foreground">
+              {A.pivotLeft}
+            </DropdownMenuLabel>
+            <DropdownMenuRadioGroup
+              value={String(structure.leftBars)}
+              onValueChange={(value) => patchStructure({ leftBars: Number(value) })}
+            >
+              {[2, 3, 5, 8].map((bars) => (
+                <DropdownMenuRadioItem
+                  key={bars}
+                  value={String(bars)}
+                  disabled={!structure.enabled}
+                  data-testid={`${prefix}-analysis-left-${bars}`}
+                >
+                  {bars}
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
+            <DropdownMenuLabel className="text-[11px] font-normal text-muted-foreground">
+              {A.pivotRight}
+            </DropdownMenuLabel>
+            <DropdownMenuRadioGroup
+              value={String(structure.rightBars)}
+              onValueChange={(value) => patchStructure({ rightBars: Number(value) })}
+            >
+              {[1, 2, 3, 5].map((bars) => (
+                <DropdownMenuRadioItem
+                  key={bars}
+                  value={String(bars)}
+                  disabled={!structure.enabled}
+                  data-testid={`${prefix}-analysis-right-${bars}`}
+                >
+                  {bars}
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
+
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel className="text-[11px] font-semibold text-foreground">
+              {A.levelsTitle}
+            </DropdownMenuLabel>
+            <DropdownMenuCheckboxItem
+              checked={levels.prevDayHighLow}
+              data-testid={`${prefix}-analysis-pdhl`}
+              onCheckedChange={(checked) => patchLevels({ prevDayHighLow: checked === true })}
+            >
+              {A.pdhl}
+            </DropdownMenuCheckboxItem>
+            <DropdownMenuCheckboxItem
+              checked={levels.prevDayOpenClose}
+              data-testid={`${prefix}-analysis-pdoc`}
+              onCheckedChange={(checked) => patchLevels({ prevDayOpenClose: checked === true })}
+            >
+              {A.pdoc}
+            </DropdownMenuCheckboxItem>
+            <DropdownMenuCheckboxItem
+              checked={levels.prevWeekHighLow}
+              data-testid={`${prefix}-analysis-pwhl`}
+              onCheckedChange={(checked) => patchLevels({ prevWeekHighLow: checked === true })}
+            >
+              {A.pwhl}
+            </DropdownMenuCheckboxItem>
+            <DropdownMenuCheckboxItem
+              checked={levels.prevWeekOpenClose}
+              data-testid={`${prefix}-analysis-pwoc`}
+              onCheckedChange={(checked) => patchLevels({ prevWeekOpenClose: checked === true })}
+            >
+              {A.pwoc}
+            </DropdownMenuCheckboxItem>
+            <DropdownMenuCheckboxItem
+              checked={levels.openingRange}
+              data-testid={`${prefix}-analysis-or`}
+              onCheckedChange={(checked) => patchLevels({ openingRange: checked === true })}
+            >
+              {A.orEnable}
+            </DropdownMenuCheckboxItem>
+            <DropdownMenuLabel className="text-[11px] font-normal text-muted-foreground">
+              {A.orSession}
+            </DropdownMenuLabel>
+            <DropdownMenuRadioGroup
+              value={levels.orSessionId}
+              onValueChange={(value) =>
+                patchLevels({ orSessionId: value as OryonPanelAnalysis["levels"]["orSessionId"] })
+              }
+            >
+              {(["sydney", "tokyo", "london", "newyork"] as const).map((sessionId) => (
+                <DropdownMenuRadioItem
+                  key={sessionId}
+                  value={sessionId}
+                  data-testid={`${prefix}-analysis-or-${sessionId}`}
+                >
+                  {A[sessionId]}
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
+            <DropdownMenuLabel className="text-[11px] font-normal text-muted-foreground">
+              {A.orDuration}
+            </DropdownMenuLabel>
+            <DropdownMenuRadioGroup
+              value={String(levels.orDurationMinutes)}
+              onValueChange={(value) =>
+                patchLevels({ orDurationMinutes: Number(value) as OryonPanelAnalysis["levels"]["orDurationMinutes"] })
+              }
+            >
+              {[15, 30, 60, 120].map((minutes) => (
+                <DropdownMenuRadioItem
+                  key={minutes}
+                  value={String(minutes)}
+                  data-testid={`${prefix}-analysis-or-${minutes}`}
+                >
+                  {A[`orDuration${minutes}` as keyof typeof A] as string}
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
+            <DropdownMenuCheckboxItem
+              checked={levels.orShowDeveloping}
+              data-testid={`${prefix}-analysis-or-dev`}
+              onCheckedChange={(checked) => patchLevels({ orShowDeveloping: checked === true })}
+            >
+              {A.orDeveloping}
+            </DropdownMenuCheckboxItem>
+
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel className="text-[10px] font-normal leading-tight text-muted-foreground">
+              {A.sourceNote}
+            </DropdownMenuLabel>
+          </DropdownMenuContent>
+        </DropdownMenu>
         {/* Temporal-context menu (Phase 8 §12) — per-panel display prefs.
             Session shading and event markers toggle INDEPENDENTLY; the
             importance threshold only ever widens/narrows the marker set. */}

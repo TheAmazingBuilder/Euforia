@@ -1,15 +1,5 @@
-=== oryon phase7 prod smoke — 2026-10-11T08:59:12.634Z ===
-  PASS  A1 workspace + grille single
-  PASS  A2 déclencheur grille présent
-  PASS  A3 déclencheur sync présent (aucun lien actif)
-  PASS  A4 header du panneau 1 avec menu
-  PASS  B1 les 4 flags exposés en aria-checked=false
-  PASS  C1 twoHorizontal → 2 panneaux
-  PASS  C2 chaque panneau a son header + menu
-  PASS  C3 retour single → 1 panneau (l'actif survit)
-  PASS  D1 mutation de session seule → AUCUN layout persisté (écriture explicite)
-  PASS  D2 reload → session sync réinitialisée (mutation jamais persistée seule)
-  PASS  D3 reload → la grille twoHorizontal N'A PAS survécu (aucun layout sauvé)
-  PASS  E1 zéro erreur console (hors bruit filtré)
+=== oryon phase7 prod smoke — 2026-10-11T19:44:41.848Z ===
+SMOKE CRASH: TimeoutError: locator.click: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator('a[href="/oryon"]').first()
 
-12 PASS / 0 FAIL

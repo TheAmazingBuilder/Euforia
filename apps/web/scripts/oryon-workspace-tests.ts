@@ -30,10 +30,10 @@ import type {
   OryonChartTemplate,
   OryonIndicatorInstance,
   OryonWorkspaceLayout,
-  OryonWorkspaceLayoutV3,
+  OryonWorkspaceLayoutV4,
 } from "@cosmoz/shared";
 
-import { ORYON_DEFAULT_PANEL_CONTEXT } from "@cosmoz/shared";
+import { ORYON_DEFAULT_PANEL_ANALYSIS, ORYON_DEFAULT_PANEL_CONTEXT } from "@cosmoz/shared";
 
 import { indicatorRuleError } from "../src/lib/oryon/indicators/validation";
 import { defaultIndicatorInstance } from "../src/lib/oryon/indicators/registry";
@@ -42,7 +42,7 @@ import {
   ORYON_DEFAULT_SESSION,
   buildLayout,
   layoutSessionOf,
-  migrateLayoutV1toV3,
+  migrateLayoutV1toV4,
   newConfigId,
   newPanelId,
   normalizeActivePanel,
@@ -145,7 +145,7 @@ eq(
   ORYON_DEFAULT_SESSION,
   {
     grid: "single",
-    panels: [{ id: "panel-main", symbol: null, interval: "5m", chartType: "candles", context: { ...ORYON_DEFAULT_PANEL_CONTEXT } }],
+    panels: [{ id: "panel-main", symbol: null, interval: "5m", chartType: "candles", context: { ...ORYON_DEFAULT_PANEL_CONTEXT }, analysis: { structure: { ...ORYON_DEFAULT_PANEL_ANALYSIS.structure }, levels: { ...ORYON_DEFAULT_PANEL_ANALYSIS.levels } } }],
     activePanelId: "panel-main",
     sync: { timeScale: false, crosshair: false, instrument: false, timeframe: false },
     magnet: false,
@@ -161,15 +161,23 @@ const panelOf = (
   interval: OryonPanelSessionState["interval"],
   chartType: OryonPanelSessionState["chartType"],
   context: OryonPanelSessionState["context"] = ORYON_DEFAULT_PANEL_CONTEXT,
-): OryonPanelSessionState => ({ id, symbol, interval, chartType, context: { ...context } });
+  analysis: OryonPanelSessionState["analysis"] = ORYON_DEFAULT_PANEL_ANALYSIS,
+): OryonPanelSessionState => ({
+  id,
+  symbol,
+  interval,
+  chartType,
+  context: { ...context },
+  analysis: { structure: { ...analysis.structure }, levels: { ...analysis.levels } },
+});
 
-const layoutA: OryonWorkspaceLayoutV3 = {
+const layoutA: OryonWorkspaceLayoutV4 = {
   id: "layout-aaaaaaaa",
   name: "Intraday",
   grid: "twoHorizontal",
   panels: [
-    { id: "panel-main", symbol: "EURUSD", interval: "1H", chartType: "line", indicators: null, context: { ...ORYON_DEFAULT_PANEL_CONTEXT } },
-    { id: "panel-bbbbbbbb", symbol: "XAUUSD", interval: "5m", chartType: "candles", indicators: null, context: { sessionShading: false, eventMarkers: true, eventMinImportance: "HIGH" } },
+    { id: "panel-main", symbol: "EURUSD", interval: "1H", chartType: "line", indicators: null, context: { ...ORYON_DEFAULT_PANEL_CONTEXT }, analysis: { structure: { ...ORYON_DEFAULT_PANEL_ANALYSIS.structure }, levels: { ...ORYON_DEFAULT_PANEL_ANALYSIS.levels } } },
+    { id: "panel-bbbbbbbb", symbol: "XAUUSD", interval: "5m", chartType: "candles", indicators: null, context: { sessionShading: false, eventMarkers: true, eventMinImportance: "HIGH" }, analysis: { structure: { ...ORYON_DEFAULT_PANEL_ANALYSIS.structure }, levels: { ...ORYON_DEFAULT_PANEL_ANALYSIS.levels } } },
   ],
   activePanelId: "panel-main",
   sync: { timeScale: true, crosshair: false, instrument: false, timeframe: true },
@@ -319,15 +327,16 @@ const layoutV1: OryonWorkspaceLayout = {
   updatedAt: 1_760_000_000_000,
 };
 
-const migrated = migrateLayoutV1toV3(layoutV1);
+const migrated = migrateLayoutV1toV4(layoutV1);
 eq("migration : grille single à un panneau", { grid: migrated.grid, panels: migrated.panels.length }, { grid: "single", panels: 1 });
-eq("migration : panneau = champs v1, id panel-main, contexte par défaut", migrated.panels[0], {
+eq("migration : panneau = champs v1, id panel-main, contexte + analyse par défaut", migrated.panels[0], {
   id: "panel-main",
   symbol: "EURUSD",
   interval: "1H",
   chartType: "line",
   indicators: null,
   context: { ...ORYON_DEFAULT_PANEL_CONTEXT },
+  analysis: { structure: { ...ORYON_DEFAULT_PANEL_ANALYSIS.structure }, levels: { ...ORYON_DEFAULT_PANEL_ANALYSIS.levels } },
 });
 eq("migration : sync all-off", migrated.sync, { timeScale: false, crosshair: false, instrument: false, timeframe: false });
 eq("migration : coque préservée", { magnet: migrated.magnet, lowerPanel: migrated.lowerPanel, rail: migrated.utilityRail, active: migrated.activePanelId }, {
@@ -410,12 +419,12 @@ console.log("— persistance navigateur-local (layouts)");
 
 let memory = installStorage();
 
-const layoutB: OryonWorkspaceLayoutV3 = {
+const layoutB: OryonWorkspaceLayoutV4 = {
   ...layoutA,
   id: "layout-bbbbbbbb",
   name: "Scalp",
   grid: "single",
-  panels: [{ id: "panel-main", symbol: null, interval: "5m", chartType: "candles", indicators: null, context: { ...ORYON_DEFAULT_PANEL_CONTEXT } }],
+  panels: [{ id: "panel-main", symbol: null, interval: "5m", chartType: "candles", indicators: null, context: { ...ORYON_DEFAULT_PANEL_CONTEXT }, analysis: { structure: { ...ORYON_DEFAULT_PANEL_ANALYSIS.structure }, levels: { ...ORYON_DEFAULT_PANEL_ANALYSIS.levels } } }],
   activePanelId: "panel-main",
   sync: { timeScale: false, crosshair: false, instrument: false, timeframe: false },
   magnet: false,
@@ -465,7 +474,7 @@ eq(
   { grid: migratedLoad.layouts[0]!.grid, panels: migratedLoad.layouts[0]!.panels, active: migratedLoad.layouts[0]!.activePanelId },
   {
     grid: "single",
-    panels: [{ id: "panel-main", symbol: "EURUSD", interval: "1H", chartType: "line", indicators: null, context: { ...ORYON_DEFAULT_PANEL_CONTEXT } }],
+    panels: [{ id: "panel-main", symbol: "EURUSD", interval: "1H", chartType: "line", indicators: null, context: { ...ORYON_DEFAULT_PANEL_CONTEXT }, analysis: { structure: { ...ORYON_DEFAULT_PANEL_ANALYSIS.structure }, levels: { ...ORYON_DEFAULT_PANEL_ANALYSIS.levels } } }],
     active: "panel-main",
   },
 );
@@ -894,7 +903,7 @@ console.log("— store : hydratation avec layout actif (v1 migré + v2)");
   eq(
     "hydrate applique la session du layout v1 MIGRÉ",
     store.getSnapshot().session,
-    layoutSessionOf(migrateLayoutV1toV3(layoutV1)),
+    layoutSessionOf(migrateLayoutV1toV4(layoutV1)),
   );
   eq("hydrate → active pointer", store.getSnapshot().activeLayoutId, "layout-aaaaaaaa");
   eq("hydrate → dirty false", store.getSnapshot().dirty, false);

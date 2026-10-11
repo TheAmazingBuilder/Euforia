@@ -4,7 +4,7 @@ import * as React from "react";
 
 import { useTheme } from "next-themes";
 
-import type { Candle, MarketInterval, OryonPanelContext } from "@cosmoz/shared";
+import type { Candle, MarketInterval, OryonPanelAnalysis, OryonPanelContext } from "@cosmoz/shared";
 
 import { useLiveQuote } from "@/lib/realtime/market";
 import { useDict } from "@/i18n/i18n-provider";
@@ -27,6 +27,7 @@ import {
   OryonContextOverlaysBridge,
   OryonEventPopover,
 } from "@/components/oryon/oryon-context-overlays";
+import { OryonAnalysisOverlaysBridge } from "@/components/oryon/oryon-analysis-overlays";
 import { positionsForChart } from "@/lib/oryon/positions/match";
 import { buildPositionLineSpecs } from "@/lib/oryon/positions/overlay";
 import { buildAlertLineSpecs } from "@/lib/oryon/alerts/overlay";
@@ -65,6 +66,7 @@ export function OryonPriceChart({
   fitKey,
   indicatorStore,
   context,
+  analysis,
   interactive,
   onEngineReady,
   onEngineGone,
@@ -87,6 +89,8 @@ export function OryonPriceChart({
   indicatorStore: OryonIndicatorStore;
   /** THIS panel's temporal-context prefs (per panel id — Phase 8). */
   context: OryonPanelContext;
+  /** THIS panel's analysis prefs (per panel id — Phase 9). */
+  analysis: OryonPanelAnalysis;
   /** True while this panel is the workspace's active chart. */
   interactive: boolean;
   /** Exposes the engine to the panel wrapper (sync registration, toolbar). */
@@ -200,6 +204,15 @@ export function OryonPriceChart({
         interval={interval}
         candles={candles}
         context={context}
+      />
+      <OryonAnalysisOverlaysBridge
+        engineRef={engineRef}
+        mounted={chartInstance !== null}
+        dataSymbol={dataSymbol}
+        interval={interval}
+        candles={candles}
+        analysis={analysis}
+        pipSize={pipSize}
       />
       <OryonEventPopover
         engineRef={engineRef}

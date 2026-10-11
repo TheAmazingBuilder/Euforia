@@ -4,14 +4,17 @@ import type {
   OryonIndicatorInstance,
   OryonLayoutChartType,
   OryonLayoutPanel,
+  OryonPanelAnalysis,
   OryonPanelContext,
   OryonSyncSettings,
   OryonWorkspaceLayout,
   OryonWorkspaceLayoutV2,
   OryonWorkspaceLayoutV3,
+  OryonWorkspaceLayoutV4,
 } from "@cosmoz/shared";
 
 import {
+  ORYON_DEFAULT_PANEL_ANALYSIS,
   ORYON_DEFAULT_PANEL_CONTEXT,
   ORYON_MAX_PANELS,
   ORYON_SYNC_ALL_OFF,
@@ -51,6 +54,8 @@ export interface OryonPanelSessionState {
   chartType: OryonLayoutChartType;
   /** Temporal-context display prefs (Phase 8 §12) — per panel by design. */
   context: OryonPanelContext;
+  /** Structure & key-level analysis prefs (Phase 9 §9) — per panel. */
+  analysis: OryonPanelAnalysis;
 }
 
 /** The live workspace arrangement — one-to-one with the v3 layout contract
@@ -87,6 +92,10 @@ export const ORYON_DEFAULT_SESSION: OryonWorkspaceSessionState = {
       interval: "5m",
       chartType: "candles",
       context: { ...ORYON_DEFAULT_PANEL_CONTEXT },
+      analysis: {
+        structure: { ...ORYON_DEFAULT_PANEL_ANALYSIS.structure },
+        levels: { ...ORYON_DEFAULT_PANEL_ANALYSIS.levels },
+      },
     },
   ],
   activePanelId: "panel-main",
@@ -122,18 +131,29 @@ export function newPanelId(): string {
 
 /** Builds a default panel config — added panels inherit the analysis
  *  shape of the panel the user was looking at (interval + chart type +
- *  context prefs) and take the app's default instrument (symbol null),
- *  never a guessed one. */
+ *  context + structure/levels prefs) and take the app's default instrument
+ *  (symbol null), never a guessed one. */
 export function defaultPanelState(
   interval: MarketInterval,
   chartType: OryonLayoutChartType,
   context: OryonPanelContext = ORYON_DEFAULT_PANEL_CONTEXT,
+  analysis: OryonPanelAnalysis = ORYON_DEFAULT_PANEL_ANALYSIS,
 ): OryonPanelSessionState {
-  return { id: newPanelId(), symbol: null, interval, chartType, context: { ...context } };
+  return {
+    id: newPanelId(),
+    symbol: null,
+    interval,
+    chartType,
+    context: { ...context },
+    analysis: {
+      structure: { ...analysis.structure },
+      levels: { ...analysis.levels },
+    },
+  };
 }
 
-/** Extracts the live session shape a v3 layout restores. */
-export function layoutSessionOf(layout: OryonWorkspaceLayoutV3): OryonWorkspaceSessionState {
+/** Extracts the live session shape a v4 layout restores. */
+export function layoutSessionOf(layout: OryonWorkspaceLayoutV4): OryonWorkspaceSessionState {
   return {
     grid: layout.grid,
     panels: layout.panels.map((panel) => ({
@@ -142,6 +162,10 @@ export function layoutSessionOf(layout: OryonWorkspaceLayoutV3): OryonWorkspaceS
       interval: panel.interval,
       chartType: panel.chartType,
       context: { ...panel.context },
+      analysis: {
+        structure: { ...panel.analysis.structure },
+        levels: { ...panel.analysis.levels },
+      },
     })),
     activePanelId: layout.activePanelId,
     sync: { ...layout.sync },
@@ -160,13 +184,44 @@ function panelContextEqual(a: OryonPanelContext, b: OryonPanelContext): boolean 
   );
 }
 
+/** Field-by-field analysis equality — a toggled overlay must flag the
+ *  layout dirty exactly like any other persisted arrangement field. */
+function panelAnalysisEqual(a: OryonPanelAnalysis, b: OryonPanelAnalysis): boolean {
+  const s = a.structure;
+  const t = b.structure;
+  const l = a.levels;
+  const m = b.levels;
+  return (
+    s.enabled === t.enabled &&
+    s.showSwingHighs === t.showSwingHighs &&
+    s.showSwingLows === t.showSwingLows &&
+    s.showLabels === t.showLabels &&
+    s.showProvisional === t.showProvisional &&
+    s.leftBars === t.leftBars &&
+    s.rightBars === t.rightBars &&
+    s.minDistancePips === t.minDistancePips &&
+    s.minSeparationBars === t.minSeparationBars &&
+    s.breaksEnabled === t.breaksEnabled &&
+    s.breakMode === t.breakMode &&
+    l.prevDayHighLow === m.prevDayHighLow &&
+    l.prevDayOpenClose === m.prevDayOpenClose &&
+    l.prevWeekHighLow === m.prevWeekHighLow &&
+    l.prevWeekOpenClose === m.prevWeekOpenClose &&
+    l.openingRange === m.openingRange &&
+    l.orSessionId === m.orSessionId &&
+    l.orDurationMinutes === m.orDurationMinutes &&
+    l.orShowDeveloping === m.orShowDeveloping
+  );
+}
+
 function panelStateEqual(a: OryonPanelSessionState, b: OryonPanelSessionState): boolean {
   return (
     a.id === b.id &&
     a.symbol === b.symbol &&
     a.interval === b.interval &&
     a.chartType === b.chartType &&
-    panelContextEqual(a.context, b.context)
+    panelContextEqual(a.context, b.context) &&
+    panelAnalysisEqual(a.analysis, b.analysis)
   );
 }
 
@@ -274,7 +329,7 @@ export function normalizeActivePanel(
   return panels.some((p) => p.id === activePanelId) ? activePanelId : panels[0]!.id;
 }
 
-/** Builds a validated-shaped v3 layout record from a live session snapshot.
+/** Builds a validated-shaped v4 layout record from a live session snapshot.
  *  `panelIndicators` maps panel ids to the stack captured at save time; a
  *  missing entry records `null` ("not managed by this layout"). Captured
  *  stacks are COPIED into the record — the layout owns its snapshot. */
@@ -284,7 +339,7 @@ export function buildLayout(
   session: OryonWorkspaceSessionState,
   panelIndicators: Record<string, readonly OryonIndicatorInstance[] | null>,
   now: number = Date.now(),
-): OryonWorkspaceLayoutV3 {
+): OryonWorkspaceLayoutV4 {
   return {
     id,
     name,
@@ -298,6 +353,10 @@ export function buildLayout(
         chartType: panel.chartType,
         indicators: captured !== null ? [...captured] : null,
         context: { ...panel.context },
+        analysis: {
+          structure: { ...panel.analysis.structure },
+          levels: { ...panel.analysis.levels },
+        },
       };
     }),
     activePanelId: session.activePanelId,
@@ -328,12 +387,44 @@ export function migrateLayoutV2toV3(layout: OryonWorkspaceLayoutV2): OryonWorksp
 }
 
 /**
- * Migrates a Phase 6 single-chart layout record to the v3 shape: the flat
- * arrangement becomes the ONE panel of a `single` grid, sync is all-off,
- * the panel's indicator stack is `null` — a v1 layout never managed
- * analysis stacks, so applying the migrated layout must leave them
+ * v3 → v4 (Phase 9): the ONLY change is the per-panel `analysis` field;
+ * every migrated panel takes the documented default (every overlay OFF —
+ * a restored old layout renders exactly as it did before Phase 9).
+ */
+export function migrateLayoutV3toV4(layout: OryonWorkspaceLayoutV3): OryonWorkspaceLayoutV4 {
+  return {
+    ...layout,
+    panels: layout.panels.map((panel) => ({
+      ...panel,
+      analysis: {
+        structure: { ...ORYON_DEFAULT_PANEL_ANALYSIS.structure },
+        levels: { ...ORYON_DEFAULT_PANEL_ANALYSIS.levels },
+      },
+    })),
+  };
+}
+
+/** v2 → v4 — the composed deterministic path (context default + analysis
+ *  default; never a guess at either generation). */
+export function migrateLayoutV2toV4(layout: OryonWorkspaceLayoutV2): OryonWorkspaceLayoutV4 {
+  return migrateLayoutV3toV4(migrateLayoutV2toV3(layout));
+}
+
+/**
+ * Migrates a Phase 6 single-chart layout record directly to the v4 shape:
+ * the flat arrangement becomes the ONE panel of a `single` grid, sync is
+ * all-off, the panel's indicator stack is `null` — a v1 layout never
+ * managed analysis stacks, so applying the migrated layout must leave them
  * untouched (honest "not managed" semantics, never a silent wipe) — and
- * the context prefs take the documented default.
+ * the context/analysis prefs take the documented defaults.
+ */
+export function migrateLayoutV1toV4(layout: OryonWorkspaceLayout): OryonWorkspaceLayoutV4 {
+  return migrateLayoutV3toV4(migrateLayoutV1toV3(layout));
+}
+
+/**
+ * v2 → v3 legacy path (kept for the v3 envelope readers; the v4 loader
+ * composes through it via migrateLayoutV2toV4).
  */
 export function migrateLayoutV1toV3(layout: OryonWorkspaceLayout): OryonWorkspaceLayoutV3 {
   return migrateLayoutV2toV3({

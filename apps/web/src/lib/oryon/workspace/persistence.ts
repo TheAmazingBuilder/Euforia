@@ -2,16 +2,17 @@ import {
   oryonChartTemplateSchema,
   oryonChartTemplatesFileSchema,
   oryonIndicatorSchema,
-  oryonLayoutsFileV3Schema,
+  oryonLayoutsFileV4Schema,
   oryonWorkspaceLayoutSchema,
   oryonWorkspaceLayoutV2Schema,
   oryonWorkspaceLayoutV3Schema,
+  oryonWorkspaceLayoutV4Schema,
   type OryonChartTemplate,
-  type OryonWorkspaceLayoutV3,
+  type OryonWorkspaceLayoutV4,
 } from "@cosmoz/shared";
 import { z } from "zod";
 
-import { migrateLayoutV1toV3, migrateLayoutV2toV3 } from "./layouts";
+import { migrateLayoutV1toV4, migrateLayoutV2toV4, migrateLayoutV3toV4 } from "./layouts";
 
 /**
  * Oryon workspace configuration persistence — browser-local adapters
@@ -35,11 +36,12 @@ import { migrateLayoutV1toV3, migrateLayoutV2toV3 } from "./layouts";
  *  - every load validates the ENVELOPE then each RECORD independently —
  *    one corrupt layout never nukes the others (per-record salvage);
  *  - EVERY schema generation loads: a v1 envelope (Phase 6 single-chart
- *    records) and a v2 envelope (Phase 7 multi-chart records) migrate
- *    deterministically to v3 (per-panel temporal-context prefs take the
- *    documented default); a v3 envelope parses directly. A record that
- *    fails ITS generation's schema is dropped individually — never one bad
- *    record nuking the file;
+ *    records), a v2 envelope (Phase 7 multi-chart records) and a v3
+ *    envelope (Phase 8 temporal context) migrate deterministically to v4
+ *    (per-panel analysis prefs take the documented default — every overlay
+ *    OFF, so migrated layouts render exactly as before Phase 9); a v4
+ *    envelope parses directly. A record that fails ITS generation's schema
+ *    is dropped individually — never one bad record nuking the file;
  *  - a template whose indicator LIST is partially invalid is salvaged
  *    indicator-by-indicator (the frame must still be valid);
  *  - a dangling activeLayoutId (record dropped by salvage) normalizes to
@@ -47,7 +49,7 @@ import { migrateLayoutV1toV3, migrateLayoutV2toV3 } from "./layouts";
  *  - corrupt JSON / wrong version / unavailable storage → empty state,
  *    never a throw;
  *  - writes pass through the SAME schemas (validate before save) and are
- *    always v2 — the migration is a read path only;
+ *    always v4 — the migration is a read path only;
  *  - saves debounce 300 ms and flush on demand (unmount safety).
  */
 
@@ -66,7 +68,7 @@ function isStorageAvailable(): boolean {
 // ── Layouts ──────────────────────────────────────────────────────────────────
 
 export interface LoadedLayouts {
-  layouts: OryonWorkspaceLayoutV3[];
+  layouts: OryonWorkspaceLayoutV4[];
   activeLayoutId: string | null;
 }
 
@@ -82,21 +84,25 @@ const rawLayoutsEnvelopeSchema = z.object({
 });
 
 /**
- * Parses ONE persisted layout record against its generation's schema. v1
- * and v2 records migrate to v3; invalid records return null (per-record
+ * Parses ONE persisted layout record against its generation's schema. v1,
+ * v2 and v3 records migrate to v4; invalid records return null (per-record
  * salvage — the caller keeps the survivors).
  */
-function parseLayoutRecord(record: unknown, version: number): OryonWorkspaceLayoutV3 | null {
+function parseLayoutRecord(record: unknown, version: number): OryonWorkspaceLayoutV4 | null {
   if (version === 1) {
     const v1 = oryonWorkspaceLayoutSchema.safeParse(record);
-    return v1.success ? migrateLayoutV1toV3(v1.data) : null;
+    return v1.success ? migrateLayoutV1toV4(v1.data) : null;
   }
   if (version === 2) {
     const v2 = oryonWorkspaceLayoutV2Schema.safeParse(record);
-    return v2.success ? migrateLayoutV2toV3(v2.data) : null;
+    return v2.success ? migrateLayoutV2toV4(v2.data) : null;
   }
-  const v3 = oryonWorkspaceLayoutV3Schema.safeParse(record);
-  return v3.success ? v3.data : null;
+  if (version === 3) {
+    const v3 = oryonWorkspaceLayoutV3Schema.safeParse(record);
+    return v3.success ? migrateLayoutV3toV4(v3.data) : null;
+  }
+  const v4 = oryonWorkspaceLayoutV4Schema.safeParse(record);
+  return v4.success ? v4.data : null;
 }
 
 /** Loads + validates the persisted layouts (v1 and v2 files). Never throws. */
@@ -124,13 +130,16 @@ export function loadLayouts(): LoadedLayouts {
   const envelope = rawLayoutsEnvelopeSchema.safeParse(parsed);
   if (
     !envelope.success ||
-    (envelope.data.version !== 1 && envelope.data.version !== 2 && envelope.data.version !== 3)
+    (envelope.data.version !== 1 &&
+      envelope.data.version !== 2 &&
+      envelope.data.version !== 3 &&
+      envelope.data.version !== 4)
   ) {
     console.warn("[oryon] layouts: invalid or outdated payload dropped — default layout in use.");
     return fallback;
   }
 
-  const layouts: OryonWorkspaceLayoutV3[] = [];
+  const layouts: OryonWorkspaceLayoutV4[] = [];
   for (const record of envelope.data.layouts) {
     const parsedRecord = parseLayoutRecord(record, envelope.data.version);
     if (parsedRecord !== null) {
@@ -173,15 +182,15 @@ function cancelPending(key: string): void {
   }
 }
 
-function writeLayouts(layouts: readonly OryonWorkspaceLayoutV3[], activeLayoutId: string | null): void {
+function writeLayouts(layouts: readonly OryonWorkspaceLayoutV4[], activeLayoutId: string | null): void {
   try {
     const file = {
-      version: 3 as const,
+      version: 4 as const,
       savedAt: Date.now(),
       layouts: [...layouts],
       activeLayoutId,
     };
-    const check = oryonLayoutsFileV3Schema.safeParse(file);
+    const check = oryonLayoutsFileV4Schema.safeParse(file);
     if (!check.success) {
       console.warn("[oryon] layouts save skipped — payload invalid.");
       return;
@@ -192,9 +201,9 @@ function writeLayouts(layouts: readonly OryonWorkspaceLayoutV3[], activeLayoutId
   }
 }
 
-/** Debounced layouts save (300 ms) — always the v3 envelope. */
+/** Debounced layouts save (300 ms) — always the v4 envelope. */
 export function saveLayouts(
-  layouts: readonly OryonWorkspaceLayoutV3[],
+  layouts: readonly OryonWorkspaceLayoutV4[],
   activeLayoutId: string | null,
 ): void {
   if (!isStorageAvailable()) return;
@@ -203,7 +212,7 @@ export function saveLayouts(
 
 /** Flushes a pending layouts write immediately (unmount safety). */
 export function flushLayouts(
-  layouts: readonly OryonWorkspaceLayoutV3[],
+  layouts: readonly OryonWorkspaceLayoutV4[],
   activeLayoutId: string | null,
 ): void {
   if (!isStorageAvailable()) return;
