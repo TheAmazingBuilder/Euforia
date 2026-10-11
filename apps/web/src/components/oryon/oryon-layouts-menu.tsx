@@ -59,7 +59,7 @@ type ConfirmState =
 export function OryonLayoutsMenu() {
   const dict = useDict();
   const S = dict.oryon.layouts;
-  const { store } = useOryonWorkspaceConfig();
+  const { store, applySavedLayout } = useOryonWorkspaceConfig();
   const snapshot = React.useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
 
   const [menuOpen, setMenuOpen] = React.useState(false);
@@ -78,12 +78,17 @@ export function OryonLayoutsMenu() {
     capacity: S.errorCapacity,
     not_found: S.errorNotFound,
     default_immutable: S.errorDefaultImmutable,
+    // Layout operations never hit the panel cap — the fallback copy keeps
+    // the record exhaustive without inventing a layouts-specific message.
+    panel_capacity: S.errorCapacity,
   };
 
   /** Radio change — guarded by the unsaved-changes policy when dirty.
    *  Switching to the already-active layout is a no-op, but RESTORE-DEFAULT
    *  (targetId null) always resets: the live session may have drifted from
-   *  the default arrangement even while the default is active. */
+   *  the default arrangement even while the default is active. The
+   *  orchestrated apply (context) also lands the record's per-panel
+   *  indicator stacks (Phase 7). */
   const requestSwitch = (targetId: string | null) => {
     if (targetId !== null && targetId === snapshot.activeLayoutId) return;
     if (snapshot.dirty) {
@@ -91,12 +96,16 @@ export function OryonLayoutsMenu() {
       return;
     }
     if (targetId === null) {
-      store.restoreDefaultLayout();
+      applySavedLayout(null);
       toast(S.restoredToast);
       return;
     }
-    const result = store.switchLayout(targetId);
-    if (!result.ok) toast.error(errorMessages[result.error]);
+    const target = snapshot.layouts.find((l) => l.id === targetId);
+    if (target === undefined) {
+      toast.error(S.errorNotFound);
+      return;
+    }
+    applySavedLayout(targetId);
   };
 
   const confirmUnsaved = (saveFirst: boolean) => {
@@ -112,13 +121,12 @@ export function OryonLayoutsMenu() {
     }
     setConfirm({ kind: "closed" });
     if (targetId === null) {
-      store.restoreDefaultLayout();
+      applySavedLayout(null);
       toast(S.restoredToast);
       return;
     }
-    const result = store.switchLayout(targetId);
-    if (!result.ok) toast.error(errorMessages[result.error]);
-    else if (saveFirst) toast(S.switchSavedToast);
+    applySavedLayout(targetId);
+    if (saveFirst) toast(S.switchSavedToast);
   };
 
   return (

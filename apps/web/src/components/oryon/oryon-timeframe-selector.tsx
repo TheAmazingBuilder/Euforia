@@ -18,9 +18,13 @@ import { ORYON_INTERVALS } from "@/lib/charting/oryon-intervals";
 export function OryonTimeframeSelector({
   value,
   onChange,
+  /** Optional testid namespace — panel headers use `oryon-panel-{index}`
+   *  so their controls never collide with the toolbar's canonical ids. */
+  idPrefix = "oryon",
 }: {
   value: MarketInterval;
   onChange: (interval: MarketInterval) => void;
+  idPrefix?: string;
 }) {
   const dict = useDict();
   const label = dict.oryon.toolbar.timeframes;
@@ -29,7 +33,7 @@ export function OryonTimeframeSelector({
     <div
       role="group"
       aria-label={label}
-      data-testid="oryon-timeframes"
+      data-testid={`${idPrefix}-timeframes`}
       className="flex items-center gap-0.5 rounded-md border border-border bg-background p-0.5"
     >
       {ORYON_INTERVALS.map((interval) => {
@@ -40,7 +44,7 @@ export function OryonTimeframeSelector({
             type="button"
             aria-pressed={active}
             aria-label={`${label} ${interval}`}
-            data-testid={`oryon-tf-${interval}`}
+            data-testid={`${idPrefix}-tf-${interval}`}
             onClick={() => onChange(interval)}
             className={cn(
               "min-w-8 rounded-sm px-1.5 py-1 font-mono text-[11px] font-semibold leading-none transition-colors",

@@ -83,6 +83,16 @@ export interface InteractionDeps {
   /** Drawing factory (id, timestamps, default style) — layer-owned. */
   makeDrawing(tool: OryonDrawingTool, a: OryonDrawingAnchor, b: OryonDrawingAnchor | null): OryonDrawing;
   callbacks: InteractionCallbacks;
+  /**
+   * Phase 7 active-chart gate — NEW interactions (creation, selection,
+   * hover) only start while this returns true (the panel is the active
+   * one). The FIRST click on an inactive panel activates it without
+   * drawing (predictable, spec §7 — a tool armed for one chart never
+   * accidentally modifies another). In-progress gestures (drafting,
+   * moving, anchoring) always complete — the user is mid-motion on this
+   * chart. Optional: absent = always interactive (single-chart default).
+   */
+  canInteract?: () => boolean;
 }
 
 /** Layer UI (text editor, object list) — events inside never draw. */
@@ -166,6 +176,14 @@ export class DrawingInteractionController {
     const point = this.eventPoint(event);
     if (point === null) return; // Outside the pane (over axes) — chart handles it.
 
+    // Active-chart gate (Phase 7 §7): in-progress gestures ALWAYS complete;
+    // new interactions only start on the active panel. The activation click
+    // itself is not swallowed — the event flows through (pan) and the panel
+    // wrapper's own handler activates the panel; the NEXT click interacts.
+    if (this.state.name === "idle" && this.deps.canInteract !== undefined && !this.deps.canInteract()) {
+      return;
+    }
+
     if (this.state.name === "drafting") {
       // Second pointer action completes the two-anchor drawing.
       this.completeDraft(point);
@@ -223,6 +241,15 @@ export class DrawingInteractionController {
 
   private onPointerMove = (event: PointerEvent): void => {
     if (isUiTarget(event)) return;
+    // Hover feedback follows the same gate: an inactive panel never hints
+    // editability its next click will not deliver (it activates instead).
+    if (this.state.name === "idle" && this.deps.canInteract !== undefined && !this.deps.canInteract()) {
+      if (this.hoverId !== null) {
+        this.hoverId = null;
+        this.deps.callbacks.requestRedraw();
+      }
+      return;
+    }
     const point = this.eventPoint(event);
     if (point === null) return;
 
@@ -307,6 +334,9 @@ export class DrawingInteractionController {
   private onDoubleClick = (event: MouseEvent): void => {
     if (this.activeTool !== "cursor") return;
     if (isUiTarget(event)) return;
+    if (this.state.name === "idle" && this.deps.canInteract !== undefined && !this.deps.canInteract()) {
+      return;
+    }
     const point = this.eventPoint(event as unknown as PointerEvent);
     if (point === null) return;
     const hit = this.hitTest(point);

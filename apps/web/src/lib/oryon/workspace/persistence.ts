@@ -2,12 +2,15 @@ import {
   oryonChartTemplateSchema,
   oryonChartTemplatesFileSchema,
   oryonIndicatorSchema,
-  oryonLayoutsFileSchema,
+  oryonLayoutsFileV2Schema,
   oryonWorkspaceLayoutSchema,
+  oryonWorkspaceLayoutV2Schema,
   type OryonChartTemplate,
-  type OryonWorkspaceLayout,
+  type OryonWorkspaceLayoutV2,
 } from "@cosmoz/shared";
 import { z } from "zod";
+
+import { migrateLayoutV1toV2 } from "./layouts";
 
 /**
  * Oryon workspace configuration persistence — browser-local adapters
@@ -30,13 +33,19 @@ import { z } from "zod";
  * Robustness contract (spec §9):
  *  - every load validates the ENVELOPE then each RECORD independently —
  *    one corrupt layout never nukes the others (per-record salvage);
+ *  - BOTH schema generations load: a v1 envelope (Phase 6 single-chart
+ *    records) migrates deterministically to v2 (one-panel grid, sync off,
+ *    indicator stacks "not managed"); a v2 envelope parses directly. A
+ *    record that fails ITS generation's schema is dropped individually —
+ *    never one bad record nuking the file;
  *  - a template whose indicator LIST is partially invalid is salvaged
  *    indicator-by-indicator (the frame must still be valid);
  *  - a dangling activeLayoutId (record dropped by salvage) normalizes to
  *    null — the default layout, never a crash;
  *  - corrupt JSON / wrong version / unavailable storage → empty state,
  *    never a throw;
- *  - writes pass through the SAME schemas (validate before save);
+ *  - writes pass through the SAME schemas (validate before save) and are
+ *    always v2 — the migration is a read path only;
  *  - saves debounce 300 ms and flush on demand (unmount safety).
  */
 
@@ -55,7 +64,7 @@ function isStorageAvailable(): boolean {
 // ── Layouts ──────────────────────────────────────────────────────────────────
 
 export interface LoadedLayouts {
-  layouts: OryonWorkspaceLayout[];
+  layouts: OryonWorkspaceLayoutV2[];
   activeLayoutId: string | null;
 }
 
@@ -70,7 +79,21 @@ const rawLayoutsEnvelopeSchema = z.object({
   activeLayoutId: z.unknown(),
 });
 
-/** Loads + validates the persisted layouts. Never throws. */
+/**
+ * Parses ONE persisted layout record against its generation's schema. v1
+ * records migrate to v2; invalid records return null (per-record salvage —
+ * the caller keeps the survivors).
+ */
+function parseLayoutRecord(record: unknown, version: number): OryonWorkspaceLayoutV2 | null {
+  if (version === 1) {
+    const v1 = oryonWorkspaceLayoutSchema.safeParse(record);
+    return v1.success ? migrateLayoutV1toV2(v1.data) : null;
+  }
+  const v2 = oryonWorkspaceLayoutV2Schema.safeParse(record);
+  return v2.success ? v2.data : null;
+}
+
+/** Loads + validates the persisted layouts (v1 and v2 files). Never throws. */
 export function loadLayouts(): LoadedLayouts {
   const fallback: LoadedLayouts = { layouts: [], activeLayoutId: null };
 
@@ -93,16 +116,16 @@ export function loadLayouts(): LoadedLayouts {
   }
 
   const envelope = rawLayoutsEnvelopeSchema.safeParse(parsed);
-  if (!envelope.success || envelope.data.version !== 1) {
+  if (!envelope.success || (envelope.data.version !== 1 && envelope.data.version !== 2)) {
     console.warn("[oryon] layouts: invalid or outdated payload dropped — default layout in use.");
     return fallback;
   }
 
-  const layouts: OryonWorkspaceLayout[] = [];
+  const layouts: OryonWorkspaceLayoutV2[] = [];
   for (const record of envelope.data.layouts) {
-    const parsedRecord = oryonWorkspaceLayoutSchema.safeParse(record);
-    if (parsedRecord.success) {
-      layouts.push(parsedRecord.data);
+    const parsedRecord = parseLayoutRecord(record, envelope.data.version);
+    if (parsedRecord !== null) {
+      layouts.push(parsedRecord);
     } else {
       console.warn("[oryon] layouts: invalid layout record dropped.");
     }
@@ -141,15 +164,15 @@ function cancelPending(key: string): void {
   }
 }
 
-function writeLayouts(layouts: readonly OryonWorkspaceLayout[], activeLayoutId: string | null): void {
+function writeLayouts(layouts: readonly OryonWorkspaceLayoutV2[], activeLayoutId: string | null): void {
   try {
     const file = {
-      version: 1 as const,
+      version: 2 as const,
       savedAt: Date.now(),
       layouts: [...layouts],
       activeLayoutId,
     };
-    const check = oryonLayoutsFileSchema.safeParse(file);
+    const check = oryonLayoutsFileV2Schema.safeParse(file);
     if (!check.success) {
       console.warn("[oryon] layouts save skipped — payload invalid.");
       return;
@@ -160,9 +183,9 @@ function writeLayouts(layouts: readonly OryonWorkspaceLayout[], activeLayoutId: 
   }
 }
 
-/** Debounced layouts save (300 ms). */
+/** Debounced layouts save (300 ms) — always the v2 envelope. */
 export function saveLayouts(
-  layouts: readonly OryonWorkspaceLayout[],
+  layouts: readonly OryonWorkspaceLayoutV2[],
   activeLayoutId: string | null,
 ): void {
   if (!isStorageAvailable()) return;
@@ -171,7 +194,7 @@ export function saveLayouts(
 
 /** Flushes a pending layouts write immediately (unmount safety). */
 export function flushLayouts(
-  layouts: readonly OryonWorkspaceLayout[],
+  layouts: readonly OryonWorkspaceLayoutV2[],
   activeLayoutId: string | null,
 ): void {
   if (!isStorageAvailable()) return;

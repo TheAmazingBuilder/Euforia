@@ -19,6 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import type { IndicatorRuleError } from "@/lib/oryon/indicators/validation";
+import type { OryonIndicatorStore } from "@/lib/oryon/indicators/store";
 import {
   INDICATOR_COLOR_TOKENS,
   INDICATOR_ORDER,
@@ -28,9 +29,19 @@ import {
 import { cn } from "@/lib/utils";
 
 import { useIndicatorSnapshot, useOryonIndicators } from "./oryon-indicators-context";
+import {
+  useOryonWorkspaceConfig,
+  useWorkspaceConfigSnapshot,
+} from "./oryon-workspace-context";
 
 /**
- * Oryon indicator dialog — search / add / configure / manage (Phase 3 §4F).
+ * Oryon indicator dialog — search / add / configure / manage (Phase 3 §4F
+ * + Phase 7 §11/§12 ownership).
+ *
+ * Phase 7: the dialog operates on the ACTIVE chart panel's indicator store
+ * (the toolbar opens it for the chart the user is looking at; the dialog
+ * is modal, so the target cannot change while it is open). Applying a
+ * template-level stack to one panel never rewrites another panel.
  *
  * Two modes driven by the context state:
  *  - browse: search box + the IMPLEMENTED registry (no fake entries) + the
@@ -42,11 +53,20 @@ import { useIndicatorSnapshot, useOryonIndicators } from "./oryon-indicators-con
  * Keyboard: Radix dialog focus trap, autofocus on the search field, visible
  * focus rings from the UI primitives. No emoji — lucide icons only.
  */
+
+/** The ACTIVE panel's indicator store — the dialog's single target. */
+function useActiveIndicatorStore(): OryonIndicatorStore {
+  const { registry } = useOryonIndicators();
+  const { session } = useWorkspaceConfigSnapshot();
+  return registry.storeFor(session.activePanelId);
+}
+
 export function OryonIndicatorDialog() {
   const { dialog, closeDialog } = useOryonIndicators();
   const dict = useDict();
   const S = dict.oryon.indicators;
-  const snapshot = useIndicatorSnapshot();
+  const activeStore = useActiveIndicatorStore();
+  const snapshot = useIndicatorSnapshot(activeStore);
 
   const settingsInstance =
     dialog.kind === "settings"
@@ -81,7 +101,8 @@ function BrowseMode() {
   const dict = useDict();
   const S = dict.oryon.indicators;
   const { addIndicator, removeIndicator, openSettings, closeDialog } = useOryonIndicators();
-  const snapshot = useIndicatorSnapshot();
+  const store = useActiveIndicatorStore();
+  const snapshot = useIndicatorSnapshot(store);
   const [query, setQuery] = React.useState("");
 
   const q = query.trim().toLowerCase();
@@ -121,7 +142,7 @@ function BrowseMode() {
               role="listitem"
               data-testid={`oryon-indicator-add-${type}`}
               onClick={() => {
-                const added = addIndicator(type);
+                const added = addIndicator(store, type);
                 if (added !== null) closeDialog();
               }}
               className="flex items-center justify-between rounded-md border border-transparent px-2 py-1.5 text-left transition-colors hover:border-border hover:bg-surface-raised focus-visible:outline-2 focus-visible:outline-ring"
@@ -148,7 +169,7 @@ function BrowseMode() {
               key={instance.id}
               instance={instance}
               onOpenSettings={() => openSettings(instance.id)}
-              onRemove={() => removeIndicator(instance.id)}
+              onRemove={() => removeIndicator(store, instance.id)}
             />
           ))
         )}
@@ -168,7 +189,7 @@ function ActiveRow({
 }) {
   const dict = useDict();
   const S = dict.oryon.indicators;
-  const { store } = useOryonIndicators();
+  const store = useActiveIndicatorStore();
   return (
     <div
       data-testid="oryon-indicator-active-row"
@@ -221,8 +242,9 @@ type DraftParams = Record<string, string>;
 function SettingsMode({ id }: { id: string }) {
   const dict = useDict();
   const S = dict.oryon.indicators;
-  const { store, closeDialog } = useOryonIndicators();
-  const snapshot = useIndicatorSnapshot();
+  const { closeDialog } = useOryonIndicators();
+  const store = useActiveIndicatorStore();
+  const snapshot = useIndicatorSnapshot(store);
   const instance = snapshot.indicators.find((i) => i.id === id) ?? null;
 
   const meta = instance !== null ? INDICATOR_REGISTRY[instance.type] : null;

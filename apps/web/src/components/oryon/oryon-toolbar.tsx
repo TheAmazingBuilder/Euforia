@@ -23,6 +23,7 @@ import type { Instrument, MarketInterval } from "@cosmoz/shared";
 import { useDict } from "@/i18n/i18n-provider";
 
 import { OryonIconButton } from "@/components/oryon/oryon-icon-button";
+import { OryonGridMenu, OryonSyncMenu } from "@/components/oryon/oryon-grid-menu";
 import { OryonInstrumentSelector } from "@/components/oryon/oryon-instrument-selector";
 import { OryonLayoutsMenu } from "@/components/oryon/oryon-layouts-menu";
 import { OryonTemplatesMenu } from "@/components/oryon/oryon-templates-menu";
@@ -169,6 +170,12 @@ export function OryonToolbar({
         onClick={onCreateAlert}
         testid="oryon-alert-create"
       />
+
+      <div className="h-6 w-px shrink-0 bg-border" aria-hidden />
+
+      {/* Phase 7 — multi-chart arrangement + synchronization. */}
+      <OryonGridMenu />
+      <OryonSyncMenu />
 
       <div className="h-6 w-px shrink-0 bg-border" aria-hidden />
 

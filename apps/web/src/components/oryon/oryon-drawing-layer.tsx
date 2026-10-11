@@ -16,49 +16,56 @@ import {
   DrawingInteractionController,
   type OryonDrawingTool,
 } from "@/lib/oryon/drawings/interaction";
-import {
-  flushDrawingsForSymbol,
-  loadDrawingsForSymbol,
-  saveDrawingsForSymbol,
-} from "@/lib/oryon/drawings/persistence";
-import { newDrawingId } from "@/lib/oryon/drawings/store";
+import { newDrawingId, type OryonDrawingStore } from "@/lib/oryon/drawings/store";
 import type { ScreenPoint } from "@/lib/oryon/drawings/geometry";
 import { useDict } from "@/i18n/i18n-provider";
 import { useOryonDrawings } from "@/components/oryon/oryon-drawings-context";
 import { OryonDrawingObjectList } from "@/components/oryon/oryon-drawing-object-list";
 
 /**
- * Oryon drawing layer — the ONLY component wiring the engine, the primitive,
- * the interaction controller and persistence together (spec §4).
+ * Oryon drawing layer — the ONLY component wiring the engine, the primitive
+ * and the interaction controller together (Phase 2 spec §4 + Phase 7 §7).
  *
- * Mount contract: rendered by OryonPriceChart AFTER the engine mounted, with
- * `interactionHost` = the price-chart wrapper (an ancestor of the LWC canvas,
- * so capture-phase listeners run BEFORE the library's own and can preempt
- * panning when a drawing interaction is in play).
+ * Phase 7 ownership: the store arrives as a PROP — the per-symbol store the
+ * registry handed to the price chart for the symbol ACTUALLY displayed
+ * (two panels on one instrument share one store; different instruments
+ * never see each other's drawings). Persistence is the registry's job; this
+ * layer renders and interacts.
+ *
+ * Active-panel gating: `interactive` marks this panel as the workspace's
+ * active chart. The controller refuses to START interactions on inactive
+ * panels (the first click activates — it never draws); keyboard shortcuts
+ * and the object list run only here, so two panels can never both consume
+ * the same Ctrl+Z. In-progress gestures always complete.
  *
  * Lifecycle: engine.attachDrawings(primitive) re-attaches across chart-type
- * switches; the store subscription repaints + debounced-persists on commits
- * only; instrument switch flushes + reloads (loadAll clears history — undo
- * never crosses instruments).
+ * switches; store swaps (instrument change) rebuild the wiring through the
+ * same effect; commits repaint via the store subscription.
  */
 export function OryonDrawingLayer({
   engine,
   interactionHost,
+  store,
   symbol,
   digits,
   pipSize,
+  interactive,
 }: {
   engine: OryonChartEngine;
   /** Wrapper element that hosts the chart canvas — event capture point. */
   interactionHost: HTMLElement;
-  /** Symbol of the data ACTUALLY displayed — persistence scope key. */
+  /** The panel's drawing store (per displayed symbol — see the registry). */
+  store: OryonDrawingStore;
+  /** Symbol of the data ACTUALLY displayed — scopes the text editor. */
   symbol: string;
   digits: number;
   pipSize: string;
+  /** True while this panel is the workspace's active chart. */
+  interactive: boolean;
 }) {
   const dict = useDict();
   const S = dict.oryon.drawings;
-  const { store, activeTool, setActiveTool, listOpen } = useOryonDrawings();
+  const { activeTool, setActiveTool, listOpen, bindActiveStore } = useOryonDrawings();
   const { resolvedTheme } = useTheme();
 
   const primitiveRef = React.useRef<OryonDrawingsPrimitive | null>(null);
@@ -66,6 +73,7 @@ export function OryonDrawingLayer({
   const symbolRef = React.useRef(symbol);
   const digitsRef = React.useRef(digits);
   const pipSizeRef = React.useRef(pipSize);
+  const interactiveRef = React.useRef(interactive);
 
   /** Editor state carries the symbol it opened under — a stale entry
    *  (instrument switched) is simply ignored, no reset render needed. */
@@ -117,7 +125,8 @@ export function OryonDrawingLayer({
     [],
   );
 
-  // ── primitive + controller wiring (mount once) ─────────────────────────────
+  // ── primitive + controller wiring (per store — the store swaps when the
+  //    displayed symbol changes; the registry hands a preloaded store) ────────
   React.useEffect(() => {
     const primitive = new OryonDrawingsPrimitive({
       getDrawings: () => store.getSnapshot().drawings,
@@ -157,6 +166,7 @@ export function OryonDrawingLayer({
       store,
       getPlotRect: () => primitive.plotRect(),
       makeDrawing,
+      canInteract: () => interactiveRef.current,
       callbacks: {
         onToolComplete: () => setActiveTool("cursor"),
         onTextEditRequest: (id, screen: ScreenPoint) => {
@@ -168,10 +178,9 @@ export function OryonDrawingLayer({
     controllerRef.current = controller;
     controller.attach();
 
-    // Store commits → repaint + debounced persistence. ONE subscription.
+    // Store commits → repaint (persistence lives in the registry).
     const unsubscribe = store.subscribe(() => {
       primitive.requestRedraw();
-      saveDrawingsForSymbol(symbolRef.current, store.getSnapshot().drawings);
       forceRender(); // Text editor + root-level state stay in sync.
     });
 
@@ -181,21 +190,20 @@ export function OryonDrawingLayer({
       controllerRef.current = null;
       engine.detachDrawings(primitive);
       primitiveRef.current = null;
-      flushDrawingsForSymbol(symbolRef.current, store.getSnapshot().drawings);
     };
   }, [engine, interactionHost, store, makeDrawing, setActiveTool]);
 
-  // ── per-symbol load / flush ────────────────────────────────────────────────
+  // ── refs synced outside render ─────────────────────────────────────────────
   React.useEffect(() => {
-    const previous = symbolRef.current;
-    if (previous !== symbol) {
-      flushDrawingsForSymbol(previous, store.getSnapshot().drawings);
-      symbolRef.current = symbol;
-    }
-    controllerRef.current?.cancelActive();
-    store.loadAll(loadDrawingsForSymbol(symbol));
-    primitiveRef.current?.requestRedraw();
-  }, [symbol, store]);
+    symbolRef.current = symbol;
+  }, [symbol]);
+
+  React.useEffect(() => {
+    interactiveRef.current = interactive;
+    // The ACTIVE panel publishes its store — the rail (undo/redo, object
+    // list) operates on the drawings the user is actually looking at.
+    if (interactive) bindActiveStore(store);
+  }, [interactive, store, bindActiveStore]);
 
   // digits/pipSize feed the primitive through refs (measure readout) —
   // synced here, outside render, with a repaint so labels re-render.
@@ -215,9 +223,11 @@ export function OryonDrawingLayer({
     primitiveRef.current?.requestRedraw();
   }, [resolvedTheme]);
 
-  // ── keyboard shortcuts (guarded against text editing) ──────────────────────
+  // ── keyboard shortcuts (ACTIVE panel only — two panels must never both
+  //    consume the same Ctrl+Z; guarded against text editing) ─────────────────
   React.useEffect(() => {
     const onKeyDown = (event: KeyboardEvent): void => {
+      if (!interactiveRef.current) return;
       const target = event.target;
       const inTextField =
         target instanceof HTMLElement &&
@@ -310,9 +320,9 @@ export function OryonDrawingLayer({
         </div>
       ) : null}
 
-      {listOpen ? (
+      {listOpen && interactive ? (
         <div className="pointer-events-auto absolute right-2 top-2 z-20">
-          <OryonDrawingObjectList />
+          <OryonDrawingObjectList store={store} />
         </div>
       ) : null}
     </div>

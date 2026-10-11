@@ -21,6 +21,7 @@ import {
 
 import type { OryonDrawing, OryonDrawingStyle } from "@cosmoz/shared";
 
+import type { OryonDrawingStore } from "@/lib/oryon/drawings/store";
 import { useDict } from "@/i18n/i18n-provider";
 import { useOryonDrawings } from "@/components/oryon/oryon-drawings-context";
 import { OryonIconButton } from "@/components/oryon/oryon-icon-button";
@@ -65,17 +66,22 @@ const COLOR_CHOICES: readonly { key: string; cssVar: string }[] = [
 const WIDTH_CHOICES = [1, 2, 3] as const;
 const DASH_CHOICES: readonly OryonDrawingStyle["dash"][] = ["solid", "dashed", "dotted"];
 
-function useDrawingSnapshot() {
-  const { store } = useOryonDrawings();
-  const snapshot = React.useSyncExternalStore(store.subscribe, store.getSnapshot);
-  return { store, snapshot };
-}
+const EMPTY_SNAPSHOT = { drawings: [] as readonly OryonDrawing[], selectedId: null, version: 0 };
+const noopSubscribe = () => () => {};
 
-export function OryonDrawingObjectList() {
+export function OryonDrawingObjectList({ store: storeOverride }: { store?: OryonDrawingStore }) {
   const dict = useDict();
   const S = dict.oryon.drawings;
-  const { store, snapshot } = useDrawingSnapshot();
+  const { activeStore: contextStore } = useOryonDrawings();
+  const store = storeOverride ?? contextStore;
+  const snapshot = React.useSyncExternalStore(
+    store?.subscribe ?? noopSubscribe,
+    store?.getSnapshot ?? (() => EMPTY_SNAPSHOT),
+  );
   const [confirmClear, setConfirmClear] = React.useState(false);
+
+  // No bound store yet (no active chart layer) — nothing to manage.
+  if (store === null) return null;
 
   const selected = snapshot.selectedId !== null
     ? snapshot.drawings.find((d) => d.id === snapshot.selectedId) ?? null
@@ -150,7 +156,7 @@ export function OryonDrawingObjectList() {
         )}
       </div>
 
-      {selected !== null ? <OryonDrawingStyleEditor key={selected.id} drawing={selected} /> : null}
+      {selected !== null ? <OryonDrawingStyleEditor key={selected.id} drawing={selected} store={store} /> : null}
     </div>
   );
 }
@@ -239,10 +245,9 @@ const TYPE_LABEL_KEYS: Record<OryonDrawing["type"], keyof typeof import("@/i18n/
 };
 
 /** Compact style editor for the selected object (spec §11). */
-function OryonDrawingStyleEditor({ drawing }: { drawing: OryonDrawing }) {
+function OryonDrawingStyleEditor({ drawing, store }: { drawing: OryonDrawing; store: OryonDrawingStore }) {
   const dict = useDict();
   const S = dict.oryon.drawings;
-  const { store } = useDrawingSnapshot();
   const [textDraft, setTextDraft] = React.useState<string | null>(null);
 
   const patchStyle = (patch: Partial<OryonDrawingStyle>): void => {

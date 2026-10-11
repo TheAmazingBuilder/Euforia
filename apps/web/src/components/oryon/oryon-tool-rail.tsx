@@ -19,28 +19,40 @@ import {
 } from "lucide-react";
 
 import { useDict } from "@/i18n/i18n-provider";
+import type { OryonDrawing } from "@cosmoz/shared";
 import { useOryonDrawings } from "@/components/oryon/oryon-drawings-context";
 import { OryonIconButton } from "@/components/oryon/oryon-icon-button";
 import type { OryonDrawingTool } from "@/lib/oryon/drawings/interaction";
 
 /**
- * Oryon left tool rail — the REAL drawing tools (Phase 2, RF-04).
+ * Oryon left tool rail — the REAL drawing tools (Phase 2, RF-04 + Phase 7
+ * active-chart targeting).
  *
  * Groups (spec §9): selection · line tools (trend, hline, vline, ray) ·
  * shapes (rect, fib, measure) · text · history + object list. Every button
  * is functional; the active tool is visually distinct; tooltips carry the
  * interaction shape. No decorative button, no emoji, no dead control.
  *
- * State discipline: tool + list live in the drawings context (shared with
- * the chart layer); undo/redo counts subscribe to the store — commits are
- * rare, pointer drags never re-render this rail.
+ * Phase 7: the tool is a WORKSPACE-level selection — the ACTIVE panel's
+ * chart layer receives it (the interaction controller gates new
+ * interactions on the active panel, so an armed tool can never modify a
+ * chart the user is not looking at). Undo/redo and the object list operate
+ * on the store the active panel publishes (the drawings actually
+ * displayed); with no bound store yet the history buttons stay disabled.
+ *
+ * State discipline: tool + list live in the drawings context; undo/redo
+ * counts subscribe to the bound store — commits are rare, pointer drags
+ * never re-render this rail.
  */
 export function OryonToolRail() {
   const dict = useDict();
   const S = dict.oryon.rail;
-  const { store, activeTool, setActiveTool, listOpen, setListOpen } = useOryonDrawings();
+  const { activeStore, activeTool, setActiveTool, listOpen, setListOpen } = useOryonDrawings();
 
-  const snapshot = React.useSyncExternalStore(store.subscribe, store.getSnapshot);
+  const snapshot = React.useSyncExternalStore(
+    activeStore?.subscribe ?? noopSubscribe,
+    activeStore?.getSnapshot ?? (() => EMPTY_DRAWING_SNAPSHOT),
+  );
   const hasObjects = snapshot.drawings.length > 0;
 
   const selectTool = React.useCallback(
@@ -82,28 +94,31 @@ export function OryonToolRail() {
       <OryonIconButton
         icon={Undo2}
         label={S.undoHint}
-        disabled={!store.canUndo}
-        onClick={() => store.undo()}
+        disabled={activeStore === null || !activeStore.canUndo}
+        onClick={() => activeStore?.undo()}
         testid="oryon-drawing-undo"
       />
       <OryonIconButton
         icon={Redo2}
         label={S.redoHint}
-        disabled={!store.canRedo}
-        onClick={() => store.redo()}
+        disabled={activeStore === null || !activeStore.canRedo}
+        onClick={() => activeStore?.redo()}
         testid="oryon-drawing-redo"
       />
       <OryonIconButton
         icon={List}
         label={S.listHint}
         active={listOpen}
-        disabled={!hasObjects && !listOpen}
+        disabled={activeStore === null || (!hasObjects && !listOpen)}
         onClick={() => setListOpen(!listOpen)}
         testid="oryon-drawing-list-toggle"
       />
     </nav>
   );
 }
+
+const EMPTY_DRAWING_SNAPSHOT = { drawings: [] as readonly OryonDrawing[], selectedId: null, version: 0 };
+const noopSubscribe = () => () => {};
 
 function OryonToolButton({
   tool,

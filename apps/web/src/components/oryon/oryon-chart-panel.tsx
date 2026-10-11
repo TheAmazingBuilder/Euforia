@@ -11,26 +11,41 @@ import { useDict } from "@/i18n/i18n-provider";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { OryonPriceChart } from "@/components/oryon/oryon-price-chart";
-import type { OryonChartType } from "@/lib/charting/oryon-chart-engine";
+import type { OryonChartEngine, OryonChartType } from "@/lib/charting/oryon-chart-engine";
+import type { OryonIndicatorStore } from "@/lib/oryon/indicators/store";
 
 /**
  * Oryon chart panel — owns the HISTORY query state and renders the honest
  * state machine around the chart: waiting for an instrument, loading
  * history, load failure with retry, empty history, then the live chart.
  * Every state preserves the surrounding workspace (the shell stays put).
+ *
+ * Phase 7: each panel instance is INDEPENDENT — its own history query
+ * (TanStack deduplicates identical symbol+interval requests across panels),
+ * its own indicator stack and its own drawing set. `interactive` gates the
+ * drawing layer; the engine handle surfaces through onEngineReady.
  */
 export function OryonChartPanel({
   instrument,
   interval,
   chartType,
   magnet,
+  indicatorStore,
+  interactive,
   onEngineReady,
+  onEngineGone,
 }: {
   instrument: Instrument | null;
   interval: MarketInterval;
   chartType: OryonChartType;
   magnet: boolean;
-  onEngineReady?: (goToLatest: () => void) => void;
+  /** THIS panel's indicator stack (per panel id — Phase 7). */
+  indicatorStore: OryonIndicatorStore;
+  /** True while this panel is the workspace's active chart. */
+  interactive: boolean;
+  onEngineReady?: (engine: OryonChartEngine) => void;
+  /** Engine destroyed (chart unmounted) — mirrors onEngineReady. */
+  onEngineGone?: () => void;
 }) {
   const dict = useDict();
   const S = dict.oryon.states;
@@ -122,7 +137,10 @@ export function OryonChartPanel({
         pipSize={instrument.pipSize}
         source={source}
         fitKey={`${symbol}:${interval}`}
+        indicatorStore={indicatorStore}
+        interactive={interactive}
         onEngineReady={onEngineReady}
+        onEngineGone={onEngineGone}
       />
     </div>
   );

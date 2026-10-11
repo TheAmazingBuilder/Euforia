@@ -8,6 +8,7 @@ import type { OryonIndicatorInstance } from "@cosmoz/shared";
 
 import type { OryonChartEngine, OryonCrosshairBar } from "@/lib/charting/oryon-chart-engine";
 import type { ManagedIndicatorValue } from "@/lib/charting/oryon-indicator-series";
+import type { OryonIndicatorStore } from "@/lib/oryon/indicators/store";
 import type { IndicatorOutputId } from "@/lib/oryon/indicators/calculate";
 import { formatIndicatorValue } from "@/lib/oryon/indicators/format";
 import { indicatorLabel } from "@/lib/oryon/indicators/registry";
@@ -19,6 +20,9 @@ import { useIndicatorSnapshot, useOryonIndicators } from "./oryon-indicators-con
 /**
  * Oryon indicator legend — one compact chip per active instance, rendered
  * inside the chart legend block (Phase 3 spec §4F, §8; Phase 5 §5).
+ *
+ * Phase 7: the chips reflect THIS panel's indicator stack (the store is a
+ * prop — indicators belong to the chart panel they are configured on).
  *
  * Values arrive through the engine's imperative callback (rebuild + tick
  * path) — this leaf is the ONLY component that re-renders on the tick path
@@ -32,16 +36,19 @@ import { useIndicatorSnapshot, useOryonIndicators } from "./oryon-indicators-con
  */
 export function OryonIndicatorLegend({
   engine,
+  store,
   hoverBar = null,
 }: {
   engine: OryonChartEngine | null;
+  /** THIS panel's indicator store (Phase 7 panel ownership). */
+  store: OryonIndicatorStore;
   /** Inspected bar (crosshair) — null when the mouse left the chart. */
   hoverBar?: OryonCrosshairBar | null;
 }) {
   const dict = useDict();
   const S = dict.oryon.indicators;
-  const { store, removeIndicator, openSettings } = useOryonIndicators();
-  const snapshot = useIndicatorSnapshot();
+  const { removeIndicator, openSettings } = useOryonIndicators();
+  const snapshot = useIndicatorSnapshot(store);
   const [valuesById, setValuesById] = React.useState<Map<string, ManagedIndicatorValue["values"]>>(
     () => new Map(),
   );
@@ -83,7 +90,7 @@ export function OryonIndicatorLegend({
           values={effectiveValues.get(instance.id)}
           onOpen={() => openSettings(instance.id)}
           onToggleVisible={() => store.toggleVisible(instance.id)}
-          onRemove={() => removeIndicator(instance.id)}
+          onRemove={() => removeIndicator(store, instance.id)}
           labels={S}
         />
       ))}

@@ -26,6 +26,12 @@ import {
 import { OryonAlertOverlayManager } from "@/lib/charting/oryon-alert-overlays";
 import type { PositionLineSpec } from "@/lib/oryon/positions/overlay";
 import type { AlertLineSpec } from "@/lib/oryon/alerts/overlay";
+import {
+  findBarContainingTime,
+  createEchoGuard,
+  type EchoGuard,
+  type SyncRange,
+} from "@/lib/oryon/sync/alignment";
 import { getChartTheme } from "@/lib/utils/chart-theme";
 
 /**
@@ -51,8 +57,11 @@ import { getChartTheme } from "@/lib/utils/chart-theme";
  *     library price lines are non-interactive by construction) delegated to
  *     OryonPositionOverlayManager; the engine owns the series-lifecycle
  *     re-homing (chart-type switch) and theme restyling.
- *   - NO drawing tools (owned by the drawing primitive) — the adapter stays
- *     narrow; phases extend it without a rewrite.
+ *   - Phase 7: synchronization surface — visible-range get/apply/subscribe
+ *     and timestamp-based crosshair positioning with echo guards, so the
+ *     sync coordinator can align charts without re-entry loops. NO drawing
+ *     tools (owned by the drawing primitive) — the adapter stays narrow;
+ *     phases extend it without a rewrite.
  *
  * Library facts honored:
  *   - v5 API: series are added with chart.addSeries(CandlestickSeries, …)
@@ -133,6 +142,13 @@ export class OryonChartEngine {
   private positions: OryonPositionOverlayManager | null = null;
   /** Alert overlay manager (Phase 5) — created with the chart. */
   private alerts: OryonAlertOverlayManager | null = null;
+  /** Sync surface (Phase 7) — raw listeners + programmatic-apply guards. */
+  private rangeListeners = new Set<(range: SyncRange | null) => void>();
+  private crosshairListeners = new Set<(timeSec: number | null) => void>();
+  private rangeEcho: EchoGuard = createEchoGuard();
+  private crosshairEcho: EchoGuard = createEchoGuard();
+  private applyingRange = false;
+  private applyingCrosshair = false;
 
   /** True once mount() succeeded (guards every later call). */
   get isMounted(): boolean {
@@ -178,6 +194,7 @@ export class OryonChartEngine {
     this.alerts.setSeries(this.candleSeries);
     this.attachDrawingsToActiveSeries();
     this.chart.subscribeCrosshairMove(this.handleCrosshairMove);
+    this.chart.timeScale().subscribeVisibleTimeRangeChange(this.handleVisibleRangeChange);
     this.rebuildSeriesData();
   }
 
@@ -209,6 +226,9 @@ export class OryonChartEngine {
   destroy(): void {
     if (this.chart === null) return;
     this.chart.unsubscribeCrosshairMove(this.handleCrosshairMove);
+    this.chart.timeScale().unsubscribeVisibleTimeRangeChange(this.handleVisibleRangeChange);
+    this.rangeListeners.clear();
+    this.crosshairListeners.clear();
     this.indicators?.destroy();
     this.indicators = null;
     this.positions?.destroy();
@@ -410,6 +430,89 @@ export class OryonChartEngine {
     this.chart.timeScale().scrollToRealTime();
   }
 
+  // ── synchronization surface (Phase 7 — coordinator adapter) ────────────
+
+  /** Current visible time range (unix seconds), or null when no data. */
+  getVisibleRange(): SyncRange | null {
+    if (this.chart === null) return null;
+    const range = this.chart.timeScale().getVisibleRange();
+    if (range === null) return null;
+    const from = Number(range.from);
+    const to = Number(range.to);
+    if (!Number.isFinite(from) || !Number.isFinite(to)) return null;
+    return { from, to };
+  }
+
+  /** Programmatic visible-range apply (echo-guarded — see the coordinator). */
+  applyVisibleRange(range: SyncRange): void {
+    if (this.chart === null) return;
+    this.applyingRange = true;
+    try {
+      this.chart.timeScale().setVisibleRange({
+        from: range.from as UTCTimestamp,
+        to: range.to as UTCTimestamp,
+      });
+      this.rangeEcho.mark(range);
+    } finally {
+      this.applyingRange = false;
+    }
+  }
+
+  /** Subscribes a sync listener to visible-range changes. Returns the
+   *  unsubscribe function (cleaned up automatically on destroy). */
+  onVisibleRangeChange(handler: (range: SyncRange | null) => void): () => void {
+    this.rangeListeners.add(handler);
+    return () => {
+      this.rangeListeners.delete(handler);
+    };
+  }
+
+  /**
+   * Moves the crosshair onto the bar CONTAINING `timeSec` (timestamp-based
+   * alignment — never pixel positions). The vertical line lands on that
+   * bar; the horizontal line sits at the bar's CLOSE (a real value of this
+   * chart's data — never a fabricated level). False = the timestamp falls
+   * in a session gap or outside the loaded span: nothing moved (the caller
+   * decides whether to clear — the coordinator does).
+   */
+  applyCrosshairAtTime(timeSec: number): boolean {
+    if (this.chart === null) return false;
+    const bar = findBarContainingTime(this.candles, timeSec, this.intervalMs);
+    if (bar === null) return false;
+    const series = this.activeSeries();
+    if (series === null) return false;
+    this.applyingCrosshair = true;
+    try {
+      this.chart.setCrosshairPosition(bar.c, (bar.t / 1000) as UTCTimestamp, series);
+      this.crosshairEcho.mark(bar.t / 1000);
+    } finally {
+      this.applyingCrosshair = false;
+    }
+    return true;
+  }
+
+  /** Removes the crosshair (programmatic — echo-guarded). */
+  clearCrosshairPosition(): void {
+    if (this.chart === null) return;
+    this.applyingCrosshair = true;
+    try {
+      this.chart.clearCrosshairPosition();
+      this.crosshairEcho.mark(null);
+    } finally {
+      this.applyingCrosshair = false;
+    }
+  }
+
+  /** Subscribes a sync listener to crosshair movements. The payload is the
+   *  hovered bar time (unix seconds) or null when the crosshair left the
+   *  plot area. Returns the unsubscribe function. */
+  onCrosshairTime(handler: (timeSec: number | null) => void): () => void {
+    this.crosshairListeners.add(handler);
+    return () => {
+      this.crosshairListeners.delete(handler);
+    };
+  }
+
   // ── drawing coordinate facade (OryonDrawingConversions) ────────────────────
 
   /** Implements the drawing-domain conversion contract (null-safe). */
@@ -604,13 +707,30 @@ export class OryonChartEngine {
   });
 
   private handleCrosshairMove = (param: { time?: unknown; point?: { x: number; y: number } | null }): void => {
+    const timeSec = typeof param.time === "number" ? param.time : null;
+    // Sync dispatch — programmatic applies are suppressed (they marked the
+    // echo guard synchronously inside applyCrosshairAtTime/clear).
+    if (!this.applyingCrosshair && !this.crosshairEcho.matches(timeSec)) {
+      for (const listener of this.crosshairListeners) listener(timeSec);
+    }
     if (this.crosshairHandler === null) return;
     if (param.time === undefined || param.point === undefined || param.point === null) {
       this.crosshairHandler(this.lastBar);
       return;
     }
-    const timeSec = typeof param.time === "number" ? param.time : NaN;
     const bar = this.candles.find((c) => c.t / 1000 === timeSec);
     this.crosshairHandler(bar ? { t: bar.t, o: bar.o, h: bar.h, l: bar.l, c: bar.c, v: bar.v } : null);
+  };
+
+  private handleVisibleRangeChange = (param: { from: unknown; to: unknown } | null): void => {
+    if (this.applyingRange) return;
+    let range: SyncRange | null = null;
+    if (param !== null) {
+      const from = Number(param.from);
+      const to = Number(param.to);
+      if (Number.isFinite(from) && Number.isFinite(to)) range = { from, to };
+    }
+    if (range !== null && this.rangeEcho.matches(range)) return;
+    for (const listener of this.rangeListeners) listener(range);
   };
 }

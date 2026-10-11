@@ -27,12 +27,17 @@ export function OryonInstrumentSelector({
   feedSymbols,
   feedKnown,
   onSelect,
+  /** Optional testid namespace — panel headers use `oryon-panel-{index}`
+   *  so their controls never collide with the toolbar's canonical ids
+   *  (Playwright strict mode). */
+  idPrefix = "oryon",
 }: {
   instruments: readonly Instrument[];
   selected: Instrument | null;
   feedSymbols: ReadonlySet<string>;
   feedKnown: boolean;
   onSelect: (id: string) => void;
+  idPrefix?: string;
 }) {
   const dict = useDict();
   const S = dict.oryon.toolbar;
@@ -56,7 +61,7 @@ export function OryonInstrumentSelector({
           type="button"
           variant="outline"
           size="sm"
-          data-testid="oryon-instrument-trigger"
+          data-testid={`${idPrefix}-instrument-trigger`}
           aria-label={S.instrument}
           aria-expanded={open}
           className="h-8 gap-1.5 px-2.5 font-mono text-xs font-semibold"
@@ -77,7 +82,7 @@ export function OryonInstrumentSelector({
               onChange={(event) => setQuery(event.target.value)}
               placeholder={S.searchPlaceholder}
               aria-label={S.instrument}
-              data-testid="oryon-instrument-search"
+              data-testid={`${idPrefix}-instrument-search`}
               className="h-8 pl-8 text-xs"
             />
           </div>
@@ -102,7 +107,7 @@ export function OryonInstrumentSelector({
                   role="option"
                   aria-selected={isSelected}
                   disabled={!hasFeed}
-                  data-testid={`oryon-instrument-option-${item.symbol}`}
+                  data-testid={`${idPrefix}-instrument-option-${item.symbol}`}
                   onClick={() => {
                     onSelect(item.id);
                     close();

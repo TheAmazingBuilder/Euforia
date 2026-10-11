@@ -27,21 +27,26 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 import { useOryonIndicators } from "@/components/oryon/oryon-indicators-context";
-import { useOryonWorkspaceConfig } from "@/components/oryon/oryon-workspace-context";
+import {
+  useOryonWorkspaceConfig,
+  useWorkspaceConfigSnapshot,
+} from "@/components/oryon/oryon-workspace-context";
 import {
   OryonConfigConfirmDialog,
   OryonConfigNameDialog,
 } from "@/components/oryon/oryon-config-dialogs";
 
 /**
- * Oryon chart-template management (Phase 6 spec §6, §7, §11).
+ * Oryon chart-template management (Phase 6 spec §6, §7, §11 + Phase 7 §12
+ * panel scoping).
  *
  * A separate workflow from layouts — templates capture ANALYSIS settings
  * (chart type, optional timeframe, the indicator stack), never workspace
- * arrangement. Applying one replaces the current indicator stack through
- * the existing store (no duplicates, one diff) and is confirmed first when
- * a stack is present; drawings, alerts and positions are structurally out
- * of reach (different stores) and the dialogs say so in plain copy.
+ * arrangement. Applying one replaces the ACTIVE PANEL's indicator stack
+ * through its registry store (no duplicates, one diff) and is confirmed
+ * first when that panel has a stack; drawings, alerts and positions are
+ * structurally out of reach (different stores) and the dialogs say so in
+ * plain copy. Other panels keep their own setup.
  *
  * Partial applications are REPORTED: an honest toast states how many
  * indicator entries were skipped (unsupported/invalid/duplicate ids).
@@ -55,7 +60,8 @@ export function OryonTemplatesMenu() {
   const dict = useDict();
   const S = dict.oryon.templates;
   const { store, applyTemplate, saveCurrentTemplate } = useOryonWorkspaceConfig();
-  const { store: indicatorStore } = useOryonIndicators();
+  const { registry: indicatorRegistry } = useOryonIndicators();
+  const { session } = useWorkspaceConfigSnapshot();
   const snapshot = React.useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
 
   const [menuOpen, setMenuOpen] = React.useState(false);
@@ -71,6 +77,9 @@ export function OryonTemplatesMenu() {
     capacity: S.errorCapacity,
     not_found: S.errorNotFound,
     default_immutable: S.errorNameInvalid, // templates have no default record
+    // Template operations never hit the panel cap — the fallback copy keeps
+    // the record exhaustive.
+    panel_capacity: S.errorCapacity,
   };
 
   const runApply = React.useCallback(
@@ -92,9 +101,11 @@ export function OryonTemplatesMenu() {
     [applyTemplate, S],
   );
 
-  /** Apply entry point — confirmed when a live stack would be replaced. */
+  /** Apply entry point — confirmed when the ACTIVE panel's live stack
+   *  would be replaced (that panel only; other panels are untouched). */
   const requestApply = (template: OryonChartTemplate) => {
-    if (indicatorStore.indicators.length > 0) {
+    const activeStore = indicatorRegistry.find(session.activePanelId);
+    if (activeStore !== null && activeStore.indicators.length > 0) {
       setApplyTarget({ id: template.id, name: template.name });
       return;
     }

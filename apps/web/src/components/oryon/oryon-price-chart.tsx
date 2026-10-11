@@ -16,9 +16,11 @@ import {
 } from "@/components/ui/tooltip";
 import { OryonChartEngine, type OryonChartType, type OryonCrosshairBar } from "@/lib/charting/oryon-chart-engine";
 import { intervalToMs } from "@/lib/charting/oryon-intervals";
+import type { OryonIndicatorStore } from "@/lib/oryon/indicators/store";
 import { OryonDrawingLayer } from "@/components/oryon/oryon-drawing-layer";
 import { OryonIndicatorLegend } from "@/components/oryon/oryon-indicator-legend";
 import { useIndicatorSnapshot } from "@/components/oryon/oryon-indicators-context";
+import { useOryonDrawings } from "@/components/oryon/oryon-drawings-context";
 import { useOryonPositions } from "@/components/oryon/oryon-positions-context";
 import { useOryonAlerts } from "@/components/oryon/oryon-alerts-context";
 import { positionsForChart } from "@/lib/oryon/positions/match";
@@ -35,6 +37,13 @@ import { cn } from "@/lib/utils";
  * effect. Theme changes re-apply resolved tokens; type/magnet changes are
  * engine option updates, not recreations.
  *
+ * Phase 7 panel ownership: the indicator store arrives as a PROP (per panel
+ * id); the drawing store is resolved HERE from the per-symbol registry for
+ * the symbol ACTUALLY displayed (dataSymbol) — during a placeholder window
+ * the drawings on screen always belong to the data on screen, never to the
+ * incoming selection. `interactive` marks the workspace's active chart:
+ * drawings start only here.
+ *
  * Tick discipline: <OryonTickBridge> subscribes to the quote store so ticks
  * re-render ONLY the bridge (which renders null) and update the engine
  * imperatively — the workspace tree never re-renders per tick.
@@ -50,7 +59,10 @@ export function OryonPriceChart({
   pipSize,
   source,
   fitKey,
+  indicatorStore,
+  interactive,
   onEngineReady,
+  onEngineGone,
 }: {
   /** Symbol of the data ACTUALLY displayed — the legend labels this. */
   dataSymbol: string;
@@ -66,8 +78,15 @@ export function OryonPriceChart({
   source: "real" | "sim";
   /** Symbol+interval key — data windows for a NEW key fit content; refetches keep the viewport. */
   fitKey: string;
-  /** Exposes the engine's return-to-latest to the toolbar (via the panel). */
-  onEngineReady?: (goToLatest: () => void) => void;
+  /** THIS panel's indicator stack (per panel id — Phase 7). */
+  indicatorStore: OryonIndicatorStore;
+  /** True while this panel is the workspace's active chart. */
+  interactive: boolean;
+  /** Exposes the engine to the panel wrapper (sync registration, toolbar). */
+  onEngineReady?: (engine: OryonChartEngine) => void;
+  /** Called when the engine is destroyed (chart unmounted — error/empty
+   *  state, panel removal). Registration must follow the SAME lifecycle. */
+  onEngineGone?: () => void;
 }) {
   const containerRef = React.useRef<HTMLDivElement | null>(null);
   const wrapperRef = React.useRef<HTMLDivElement | null>(null);
@@ -80,8 +99,13 @@ export function OryonPriceChart({
     host: HTMLDivElement;
   } | null>(null);
   const { resolvedTheme } = useTheme();
-  // Indicator instances (rare commits) — the engine diffs them imperatively.
-  const indicatorSnapshot = useIndicatorSnapshot();
+  // THIS panel's indicator instances (rare commits) — the engine diffs
+  // them imperatively.
+  const indicatorSnapshot = useIndicatorSnapshot(indicatorStore);
+  // THIS panel's drawing store — keyed by the symbol ACTUALLY displayed,
+  // so annotations never leak across instruments during data switches.
+  const { registry: drawingRegistry } = useOryonDrawings();
+  const drawingStore = drawingRegistry.storeFor(dataSymbol);
 
   // Mount once / destroy on unmount (no duplicate instances, no leaks).
   React.useEffect(() => {
@@ -91,12 +115,13 @@ export function OryonPriceChart({
     engine.mount(container);
     engine.onCrosshair(setHoverBar);
     engineRef.current = engine;
-    onEngineReady?.(() => engine.goToLatest());
+    onEngineReady?.(engine);
     const host = wrapperRef.current;
     if (host !== null) setChartInstance({ engine, host }); // Gates the drawing layer.
     return () => {
       engineRef.current = null;
       setChartInstance(null);
+      onEngineGone?.();
       engine.destroy();
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps -- mount once
@@ -151,9 +176,11 @@ export function OryonPriceChart({
         <OryonDrawingLayer
           engine={chartInstance.engine}
           interactionHost={chartInstance.host}
+          store={drawingStore}
           symbol={dataSymbol}
           digits={digits}
           pipSize={pipSize}
+          interactive={interactive}
         />
       ) : null}
       <OryonTickBridge engineRef={engineRef} symbol={liveSymbol ?? dataSymbol} />
@@ -166,7 +193,9 @@ export function OryonPriceChart({
         bar={hoverBar}
         hasData={candles.length > 0}
       >
-        {chartInstance !== null ? <OryonIndicatorLegend engine={chartInstance.engine} hoverBar={hoverBar} /> : null}
+        {chartInstance !== null ? (
+          <OryonIndicatorLegend engine={chartInstance.engine} store={indicatorStore} hoverBar={hoverBar} />
+        ) : null}
       </OryonChartLegend>
     </div>
   );

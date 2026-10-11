@@ -842,3 +842,30 @@ Stage Summary:
 - Décisions documentées : persistance locale (backend mock volatile — voir audit) ; défaut = constante code jamais stockée ; noms uniques insensibles à la casse ; duplicate = copie du SAUVEGARDÉ ; delete de l'actif préserve l'arrangement vivant ; switch applique la config sauvegardée (abandon explicite via garde) ; template = remplacement de pile documenté ; intervalle template nullable (« analyse seule ») ; instrument par symbol (identité cross-session).
 - Limites : PAS de synchronisation inter-appareils/compte (le bridge backend exigerait d'étendre le contrat Settings 9 domaines + un stockage réel — la frontière est prête : remplacer les 2 adaptateurs de persistence.ts suffit) ; opérations de gestion ciblées sur le layout ACTIF (renomer un non-actif = switch d'abord) ; pas de proportions de panneaux (l'app n'a pas de splits redimensionnables — le schéma croîtra additivement) ; mono-graphe (le schéma réserve l'extensibilité multi-graphes sans l'implémenter) ; hygiène cross-tab non couverte (convention des autres enregistrements Oryon).
 - Prochaine étape recommandée : extension du backend Settings (10e domaine `oryon` multi-enregistrements OU ressource dédiée) + adaptation des 2 adaptateurs de persistance pour la synchronisation de compte, puis multi-graphes (le schéma layouts est prêt à croître).
+
+---
+Task ID: oryon-phase7-audit
+Agent: Super Z (main)
+Date: 2026-10-11 (IM — « On passe a la phase7 : ORYON — PHASE 7 Multi-Chart Workspace, Market Comparison, and Chart Synchronization »)
+
+Task: Audit initial Phase 7 (spec §2) — état réel des Phases 1-6 et des fondations réutilisables pour le multi-chart.
+
+Work Log:
+- Git : `main` @ `32fe4e2` (Phase 6 commitée), arbre PROPRE. Branche backup `backup/modifs-du-29-sept` intacte (jamais de gc).
+- PHASES 1-6 VÉRIFIÉES OPÉRATIONNELLES : P1 workspace plein écran + LWC v5.2.1 (lockfile confirmé) ; P2 drawings 8 outils ; P3 indicateurs 7 types sur panes natifs v5 ; P4 positions read-only (lower panel + overlays price lines) ; P5 mesure avancée + crosshair enrichi + alertes ; P6 layouts + templates (Zod v1, store useSyncExternalStore, menus toolbar, 106 tests bun + 64 E2E).
+- CHART ENGINE (lib/charting/oryon-chart-engine.ts) : adaptateur unique — mount/destroy, autoSize:true (le ResizeObserver de la lib gère le resize de grille SANS travail manuel), addSeries v5, panes natifs, conversions drawing null-safe. API sync ABSENTES (visible range, crosshair positionnel) → à étendre. onCrosshair = handler unique (légende) → à multiplexer.
+- DONNÉES MARCHÉ (lib/realtime/market.ts) : DÉDUPLICATION DÉJÀ EN PLACE — useCandles = TanStack Query key ["candles", symbol, interval] (2 panneaux même symbole+TF = UNE requête partagée) ; UN socket global (prices + positions) broadcast à tous les consommateurs ; useLiveQuote lit la map globale. Multi-chart hérite de la dédup sans changement.
+- CONFLITS MULTI-PANNEL identifiés (3) : (1) OryonDrawingStore = UNIQUE par workspace + layer charge par symbole → 2 panneaux s'écraseraient (violations §11) → registry par symbole requis ; (2) OryonIndicatorStore = UNIQUE + persiste fichier global → ownership par panneau requis (registry par panelId, panel-main garde la persistance legacy `euforia.oryon.indicators.v1`) ; (3) raccourcis clavier drawings au niveau document + object list par layer → gating « panneau actif » requis.
+- CONTRÔLEUR INTERACTION (drawings/interaction.ts) : gate `canInteract` à ajouter aux deps — premier clic = activation sans dessin, second clic dessine (sémantique TV prévisible, §7).
+- API LWC v5.2.1 CONFIRMÉES dans typings : subscribeVisibleTimeRangeChange, getVisibleRange/setVisibleRange (IRange<number> = seconds UTC), series.setCrosshairPosition(price, time, series) + chart.clearCrosshairPosition (en fait méthodes CHART), subscribeCrosshairMove.
+- ÉTAT SESSION v1 (layouts.ts) : {symbol, interval, chartType, magnet, lowerOpen, utilityOpen, utilityPanel} — aplati mono-graphe ; le schéma partagé documente déjà « a future multi-chart engine adds a `charts` array in a NEW schema version » → migration v1→v2 prévue par le design existant.
+- SCHEMA v2 DÉCIDÉ : layout {id, name, grid, panels[≤4]{id, symbol nullable, interval, chartType, indicators array|null}, activePanelId, sync{timeScale, crosshair, instrument, timeframe}, magnet, lowerPanel, utilityRail, timestamps} ; envelope version 2 ; migration v1 déterministe (grid single, panel "panel-main", indicators null = « non géré », sync false) ; dirty exclut activePanelId (préférence de vue).
+- GRILLES : single | twoHorizontal | twoVertical | quad via CSS grid (auto-placement + grid-auto-rows minmax(0,1fr) pour les effectifs 3) ; <md → pile 1 colonne ; stable keys = panel ids → transitions SANS recréation de chart ; sync groupe unique implicite (tous les panneaux, 4 flags indépendants — membres dérivés = jamais de références stale, §9).
+- COMPARAISON (§13) : le contrat CandlesResponse n'a AUCUN mode de comparaison normalisée → comparaison = graphes côte à côte synchronisés ; overlay normalisé documenté « future work » (lecture honnête de la spec : pas de moteur normalisé non requis).
+- ICÔNES lucide 1.46 vérifiées : Columns2, Rows2, Grid2x2, Link2, Unlink2, Copy, Trash, Square, LayoutGrid, Maximize2 présentes (Trash2 absente).
+- TESTIDS : les headers de panneau utiliseront des testids namespacés (`oryon-panel-{index}-*`) pour ne PAS casser le strict mode Playwright des sondes P1-P6 (toolbar garde les testids canoniques).
+- Services : web :3000 UP (build preview), market :3003 UP, API mockée (NEXT_PUBLIC_API_MOCKED=true), bun 1.3.14.
+- ISOLATION : positions/alerts overlays déjà filtrés par dataSymbol PAR PANNEAU (bridges dans OryonPriceChart) → prêts pour multi-chart sans modification.
+
+Stage Summary:
+- Audit consigné. Fondation single-chart STABLE (aucun bloqueur — la spec autorise la construction directe). 3 conflits de ownership identifiés avec solutions (registries + gating). API sync LWC confirmées. Prochaine étape : Stage B — contrats Zod v2 + domaine pur (session multi-panneau, migration, sync coordinator).

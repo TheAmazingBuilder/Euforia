@@ -11,7 +11,7 @@ import { useInstruments } from "@/lib/api/queries";
 import { useIsDesktop } from "@/lib/hooks/use-media-query";
 import { useDict } from "@/i18n/i18n-provider";
 
-import { OryonChartPanel } from "@/components/oryon/oryon-chart-panel";
+import { OryonChartGrid, OryonChartGridPanel, useResolvedInstrument } from "@/components/oryon/oryon-chart-grid";
 import { OryonLowerPanel } from "@/components/oryon/oryon-lower-panel";
 import { OryonToolbar } from "@/components/oryon/oryon-toolbar";
 import { OryonToolRail } from "@/components/oryon/oryon-tool-rail";
@@ -35,22 +35,32 @@ import {
   useOryonWorkspaceConfig,
   useWorkspaceConfigSnapshot,
 } from "@/components/oryon/oryon-workspace-context";
+import { OryonSyncCoordinator } from "@/lib/oryon/sync/sync-engine";
+import type { OryonChartEngine } from "@/lib/charting/oryon-chart-engine";
 import { getLiveQuote } from "@/lib/realtime/market";
 
 export type OryonUtilityPanel = "notifications" | "alerts" | "calendar";
 
 /**
- * Oryon — the full-screen charting workspace (Phase 1 → Phase 6).
+ * Oryon — the full-screen charting workspace (Phase 1 → Phase 7).
  *
- * Provider nesting: indicator state wraps the WHOLE workspace (toolbar
- * dialog entry + chart series + legend chips share one store); position
- * state wraps it too (ONE subscription to the private stream feeds the
- * lower panel + the chart overlay bridge); alert state wraps it as well
- * (ONE subscription to the quote store feeds the evaluation engine);
- * drawing state nests inside (rail + chart layer). Phase 6 adds the
- * workspace CONFIG layer (layouts + chart templates) above the workspace
- * itself: it owns the live arrangement state, restores the active layout
- * on mount and orchestrates template application into the indicator store.
+ * Provider nesting: indicator state wraps the WHOLE workspace — since
+ * Phase 7 it is a REGISTRY (one store per chart panel; the toolbar dialog
+ * and template flows resolve the ACTIVE panel's store); position state
+ * wraps it too (ONE subscription to the private stream feeds the lower
+ * panel + every chart overlay bridge); alert state wraps it as well (ONE
+ * subscription to the quote store feeds the evaluation engine); drawing
+ * state nests inside (a per-symbol store registry + the rail binding).
+ * Phase 6 adds the workspace CONFIG layer (layouts + chart templates)
+ * above the workspace itself: it owns the live arrangement state, restores
+ * the active layout on mount and orchestrates template application into
+ * the active panel's indicator store.
+ *
+ * Phase 7 adds the multi-chart grid: several INDEPENDENT chart panels
+ * (own instrument/timeframe/type/indicators/drawings), an explicit
+ * active-chart model, optional synchronization (time scale + crosshair at
+ * the engine level, instrument + timeframe at the config level) and
+ * multi-chart layout persistence.
  */
 export function OryonView() {
   return (
@@ -89,62 +99,119 @@ function OryonWorkspace() {
     [healthQuery.data],
   );
 
+  /** The ACTIVE chart panel — every chart-specific toolbar action targets it. */
+  const activePanel = React.useMemo(
+    () =>
+      session.panels.find((p) => p.id === session.activePanelId) ??
+      session.panels[0] ??
+      null,
+    [session.panels, session.activePanelId],
+  );
+
   /**
-   * Default instrument — DERIVED, no effect: a layout/session symbol wins
+   * Active panel's instrument — DERIVED, no effect: the panel's symbol wins
    * (resolved through the catalog), then the first active catalog
    * instrument the market feed actually covers (health.symbols is the
    * provider's own list), then the first active one. No hardcoded symbol,
    * no cascading render.
    */
-  const instrument: Instrument | null = React.useMemo(() => {
-    if (instruments.length === 0) return null;
-    if (session.symbol !== null) {
-      const chosen = instruments.find((i) => i.symbol === session.symbol);
-      if (chosen !== undefined) return chosen;
-    }
-    return (
-      instruments.find((i) => i.isActive && feedSymbols.has(i.symbol)) ??
-      instruments.find((i) => i.isActive) ??
-      instruments[0]!
-    );
-  }, [instruments, session.symbol, feedSymbols]);
+  const instrument: Instrument | null = useResolvedInstrument(
+    activePanel?.symbol ?? null,
+    instruments,
+    feedSymbols,
+  );
 
   /**
-   * Partial layout restore (spec §5): a layout may reference an instrument
-   * the current catalog does not carry. Once the catalog is loaded, an
-   * unresolved session symbol is reset to the default selection and the
-   * limitation is REPORTED — the rest of the layout stays applied and the
-   * dirty flag reflects the difference honestly.
+   * Partial layout restore (spec §5): a layout's panels may reference
+   * instruments the current catalog does not carry. Once the catalog is
+   * loaded, unresolved panel symbols reset to the default selection and the
+   * limitation is REPORTED once (aggregated) — the rest of the layout stays
+   * applied and the dirty flag reflects the difference honestly.
    */
-  const lastUnresolvedRef = React.useRef<string | null>(null);
+  const lastResetSignatureRef = React.useRef<string>("");
   React.useEffect(() => {
     if (instruments.length === 0) return;
-    if (session.symbol === null) {
-      lastUnresolvedRef.current = null;
+    const unknown = session.panels.filter(
+      (p) => p.symbol !== null && !instruments.some((i) => i.symbol === p.symbol),
+    );
+    if (unknown.length === 0) {
+      lastResetSignatureRef.current = "";
       return;
     }
-    const known = instruments.some((i) => i.symbol === session.symbol);
-    if (known) {
-      lastUnresolvedRef.current = null;
-      return;
+    const signature = unknown.map((p) => `${p.id}:${p.symbol}`).join("|");
+    if (lastResetSignatureRef.current === signature) return;
+    lastResetSignatureRef.current = signature;
+    for (const panel of unknown) {
+      store.setPanelSymbol(panel.id, null);
     }
-    if (lastUnresolvedRef.current === session.symbol) return;
-    lastUnresolvedRef.current = session.symbol;
-    store.setSymbol(null);
-    toast.warning(S.layouts.instrumentMissingToast, {
+    toast.warning(S.panels.instrumentsMissingToast, {
       testId: "oryon-layout-instrument-missing-toast",
     });
-  }, [instruments, session.symbol, store, S.layouts.instrumentMissingToast]);
+  }, [instruments, session.panels, store, S.panels.instrumentsMissingToast]);
 
   const covered = instrument !== null && feedSymbols.has(instrument.symbol);
 
-  /** "Return to latest" lives in the toolbar; the engine lives in the chart. */
-  const latestRef = React.useRef<() => void>(() => {});
+  // ── Sync coordinator (engine-level: time scale + crosshair) ───────────────
+  const syncRef = React.useRef<OryonSyncCoordinator | null>(null);
+  if (syncRef.current === null) {
+    syncRef.current = new OryonSyncCoordinator();
+  }
+  const sync = syncRef.current;
+
+  React.useEffect(() => {
+    // Settings changes are rare commits — pushed imperatively, never via
+    // re-render (the engines read nothing from React).
+    sync.setFeatures(session.sync);
+  }, [sync, session.sync]);
+
+  React.useEffect(() => {
+    return () => {
+      sync.dispose();
+      syncRef.current = null;
+    };
+  }, [sync]);
+
+  // ── Engine registry (toolbar go-latest + sync registration) ───────────────
+  const enginesRef = React.useRef<Map<string, OryonChartEngine>>(new Map());
+
+  const handleEngineReady = React.useCallback(
+    (panelId: string, engine: OryonChartEngine) => {
+      enginesRef.current.set(panelId, engine);
+      // The engine implements the coordinator's adapter surface directly —
+      // clearCrosshairPosition is adapted to the adapter's clearCrosshair.
+      sync.register(panelId, {
+        getVisibleRange: () => engine.getVisibleRange(),
+        applyVisibleRange: (range) => engine.applyVisibleRange(range),
+        onVisibleRangeChange: (handler) => engine.onVisibleRangeChange(handler),
+        applyCrosshairAtTime: (timeSec) => engine.applyCrosshairAtTime(timeSec),
+        clearCrosshair: () => engine.clearCrosshairPosition(),
+        onCrosshairTime: (handler) => engine.onCrosshairTime(handler),
+      });
+    },
+    [sync],
+  );
+
+  const handleEngineGone = React.useCallback(
+    (panelId: string) => {
+      enginesRef.current.delete(panelId);
+      sync.unregister(panelId);
+    },
+    [sync],
+  );
+
+  /** "Return to latest" lives in the toolbar; the engine is the ACTIVE
+   *  panel's — read at click time, never stale. */
+  const onGoLatest = React.useCallback(() => {
+    const panelId = activePanel?.id;
+    if (panelId === undefined) return;
+    enginesRef.current.get(panelId)?.goToLatest();
+  }, [activePanel]);
 
   /**
    * Alert creation entry point — STABLE per instrument (never per tick):
    * the current quote is read imperatively at click time (getLiveQuote),
-   * so the toolbar does not re-render on the price stream.
+   * so the toolbar does not re-render on the price stream. Alerts always
+   * bind to the ACTIVE panel's instrument.
    */
   const onCreateAlert = React.useCallback(() => {
     if (instrument === null) return;
@@ -168,13 +235,17 @@ function OryonWorkspace() {
         covered={covered}
         feedKnown={feedSymbols.size > 0}
         feedSymbols={feedSymbols}
-        interval={session.interval}
-        onIntervalChange={(next: MarketInterval) => store.setInterval(next)}
-        chartType={session.chartType}
-        onChartTypeChange={(next) => store.setChartType(next)}
+        interval={activePanel?.interval ?? "5m"}
+        onIntervalChange={(next: MarketInterval) => {
+          if (activePanel !== null) store.setPanelInterval(activePanel.id, next);
+        }}
+        chartType={activePanel?.chartType ?? "candles"}
+        onChartTypeChange={(next) => {
+          if (activePanel !== null) store.setPanelChartType(activePanel.id, next);
+        }}
         magnet={session.magnet}
         onMagnetChange={(next) => store.setMagnet(next)}
-        onGoLatest={() => latestRef.current()}
+        onGoLatest={onGoLatest}
         onOpenIndicators={openBrowse}
         onCreateAlert={onCreateAlert}
         lowerOpen={session.lowerOpen}
@@ -182,24 +253,33 @@ function OryonWorkspace() {
         onOpenUtility={(panel) => store.openUtility(panel)}
         onSelectInstrument={(id) => {
           const next = instruments.find((i) => i.id === id);
-          if (next !== undefined) store.setSymbol(next.symbol);
+          if (next !== undefined && activePanel !== null) {
+            store.setPanelSymbol(activePanel.id, next.symbol);
+          }
         }}
       />
 
       <div className="flex min-h-0 flex-1">
         <OryonToolRail />
 
-        <div className="relative min-w-0 flex-1">
-          <OryonChartPanel
-            instrument={instrument}
-            interval={session.interval}
-            chartType={session.chartType}
-            magnet={session.magnet}
-            onEngineReady={(goToLatest) => {
-              latestRef.current = goToLatest;
-            }}
-          />
-        </div>
+        <OryonChartGrid grid={session.grid}>
+          {session.panels.map((panel, index) => (
+            <OryonChartGridPanel
+              key={panel.id}
+              panel={panel}
+              index={index}
+              multi={session.panels.length > 1}
+              active={panel.id === session.activePanelId}
+              magnet={session.magnet}
+              instruments={instruments}
+              feedSymbols={feedSymbols}
+              feedKnown={feedSymbols.size > 0}
+              sync={sync}
+              onEngineReady={handleEngineReady}
+              onEngineGone={handleEngineGone}
+            />
+          ))}
+        </OryonChartGrid>
 
         {/* Docked utility rail — lg+ only. */}
         {isDesktop ? (

@@ -487,3 +487,124 @@ export const oryonChartTemplatesFileSchema = z.object({
 });
 
 export type OryonChartTemplatesFile = z.infer<typeof oryonChartTemplatesFileSchema>;
+
+// ── Multi-chart workspace contracts (Phase 7 — spec §4, §5, §8, §9, §12) ────
+//
+// Phase 6 documented the growth path: "a future multi-chart engine adds a
+// `charts` array alongside these fields in a NEW schema version instead of
+// overloading this one." Phase 7 is that version. The v2 layout REPLACES the
+// flat single-chart fields with an explicit panel list — the migration from
+// v1 is deterministic (one panel built from the flat fields) and lives in
+// the web domain layer, so this contract stays a pure data description.
+//
+// Sync model (spec §9, simpler-model clause): the workspace is ONE implicit
+// synchronization group — every panel is a member by construction (derived
+// membership can never hold stale references, and conflicting memberships
+// are structurally impossible). The group carries four INDEPENDENT feature
+// flags; enabling one never enables another (spec §8.3/§8.4). A future
+// multi-group partition grows this record additively.
+
+/** Chart-grid arrangements the workspace implements (spec §5). */
+export const oryonGridSchema = z.enum(["single", "twoHorizontal", "twoVertical", "quad"]);
+
+export type OryonGrid = z.infer<typeof oryonGridSchema>;
+
+/** Synchronization features — each toggled independently (spec §8). */
+export const oryonSyncSettingsSchema = z.object({
+  /** Align the visible time range of synchronized charts. */
+  timeScale: z.boolean(),
+  /** Mirror the crosshair time position across synchronized charts. */
+  crosshair: z.boolean(),
+  /** An instrument change on one chart updates the linked charts. */
+  instrument: z.boolean(),
+  /** A timeframe change on one chart updates the linked charts. */
+  timeframe: z.boolean(),
+});
+
+export type OryonSyncSettings = z.infer<typeof oryonSyncSettingsSchema>;
+
+/** Deterministic all-off sync state — the default (nothing is linked). */
+export const ORYON_SYNC_ALL_OFF: OryonSyncSettings = {
+  timeScale: false,
+  crosshair: false,
+  instrument: false,
+  timeframe: false,
+};
+
+/** Hard panel cap — the quad grid is the largest implemented arrangement. */
+export const ORYON_MAX_PANELS = 4;
+
+/** Stable id of the DEFAULT panel (the Phase 1 single chart). A code-level
+ *  constant so the default panel's analysis stack keeps a stable identity
+ *  across sessions even when no layout is saved. */
+export const ORYON_MAIN_PANEL_ID = "panel-main";
+
+/**
+ * One chart panel's validated configuration (spec §4). Everything here is
+ * serializable configuration the application can actually apply — chart
+ * runtime objects, DOM nodes, subscriptions and callbacks do not exist in
+ * this contract by construction.
+ */
+export const oryonChartPanelSchema = z.object({
+  /** Stable panel identity — independent of instrument and timeframe. */
+  id: z.string().min(8).max(64),
+  /** Instrument SYMBOL (feed identity), or null = the app's default
+   *  selection. Resolved through the instrument catalog on apply. */
+  symbol: z.string().min(1).max(32).nullable(),
+  interval: marketIntervalSchema,
+  chartType: oryonLayoutChartTypeSchema,
+  /**
+   * The indicator stack the LAYOUT restores for this panel. null = the
+   * layout does not manage this panel's analysis stack (v1 heritage and an
+   * explicit "not managed" marker) — applying the layout leaves the live
+   * stack untouched. An array is applied as-is through the validated
+   * indicator schema (business rules re-checked at apply time).
+   */
+  indicators: z.array(oryonIndicatorSchema).max(50).nullable(),
+});
+
+export type OryonChartPanel = z.infer<typeof oryonChartPanelSchema>;
+
+/**
+ * Workspace layout v2 — the multi-chart arrangement (spec §12): grid
+ * arrangement, stable panel identities, per-panel instrument/timeframe and
+ * supported chart configuration, synchronization preferences and the
+ * workspace shell settings Phase 6 already persisted.
+ */
+export const oryonWorkspaceLayoutV2Schema = z.object({
+  id: z.string().min(8).max(64),
+  /** Display name, trimmed, 1..48 chars — uniqueness is a store policy. */
+  name: z.string().min(1).max(48),
+  grid: oryonGridSchema,
+  /** 1..4 panels; ids are unique within the record (store invariant). */
+  panels: z.array(oryonChartPanelSchema).min(1).max(ORYON_MAX_PANELS),
+  /** The panel that was active when the layout was saved (viewing
+   *  preference — restored on apply, excluded from the dirty comparison). */
+  activePanelId: z.string().min(8).max(64),
+  sync: oryonSyncSettingsSchema,
+  magnet: z.boolean(),
+  lowerPanel: z.boolean(),
+  utilityRail: z.object({
+    open: z.boolean(),
+    panel: oryonLayoutPanelSchema,
+  }),
+  createdAt: z.number().finite().int(),
+  updatedAt: z.number().finite().int(),
+});
+
+export type OryonWorkspaceLayoutV2 = z.infer<typeof oryonWorkspaceLayoutV2Schema>;
+
+/**
+ * Versioned persistence envelope v2 (Phase 7) — ONE browser-local file.
+ * Loaders accept the v1 envelope (single-chart records) and migrate them
+ * deterministically; saves always write v2. The default layout stays a
+ * code-level constant — never stored.
+ */
+export const oryonLayoutsFileV2Schema = z.object({
+  version: z.literal(2),
+  savedAt: z.number().finite().int(),
+  layouts: z.array(oryonWorkspaceLayoutV2Schema).max(20),
+  activeLayoutId: z.string().min(8).max(64).nullable(),
+});
+
+export type OryonLayoutsFileV2 = z.infer<typeof oryonLayoutsFileV2Schema>;

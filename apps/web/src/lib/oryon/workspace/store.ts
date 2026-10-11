@@ -1,16 +1,25 @@
 import type {
+  MarketInterval,
   OryonChartTemplate,
+  OryonGrid,
   OryonIndicatorInstance,
-  OryonWorkspaceLayout,
+  OryonLayoutChartType,
+  OryonSyncSettings,
+  OryonWorkspaceLayoutV2,
 } from "@cosmoz/shared";
 
 import {
   ORYON_DEFAULT_SESSION,
   buildLayout,
+  defaultPanelState,
   layoutSessionOf,
   newConfigId,
+  newPanelId,
+  normalizeActivePanel,
+  panelsForGrid,
   sessionStateEqual,
   type OryonConfigOpError,
+  type OryonPanelSessionState,
   type OryonWorkspaceSessionState,
 } from "./layouts";
 import { configNameTaken, normalizeConfigName, uniqueCopyName } from "./naming";
@@ -24,13 +33,27 @@ import {
 } from "./persistence";
 
 /**
- * Oryon workspace configuration store (Phase 6 spec §4, §7, §10, §14).
+ * Oryon workspace configuration store (Phase 6 spec §4, §7, §10, §14 +
+ * Phase 7 spec §4, §5, §8, §9, §12).
  *
  * Single source of truth for the workspace ARRANGEMENT (the live session
- * state), the saved layouts, the chart templates and which layout is
- * active. Built on the same discipline as the indicator/drawing/alert
- * stores: one class per workspace, shared through a React context, leaves
- * subscribe with useSyncExternalStore, immutable updates.
+ * state: grid + panels + sync + shell), the saved layouts, the chart
+ * templates and which layout is active. Built on the same discipline as the
+ * indicator/drawing/alert stores: one class per workspace, shared through a
+ * React context, leaves subscribe with useSyncExternalStore, immutable
+ * updates.
+ *
+ * Panel identity discipline (Phase 7 spec §4): panel ids are stable and
+ * independent of instrument/timeframe. Grid transitions reuse ids (charts
+ * are not recreated); added panels get fresh ids with a deterministic
+ * default config; removed panels leave no stale references (the active
+ * pointer normalizes, the sync group derives its membership from the live
+ * panel list).
+ *
+ * Sync propagation (spec §8): instrument and timeframe linking are STATE
+ * rules enforced here — a change on one panel patches every panel when the
+ * feature is enabled. Time-scale and crosshair linking are CHART-ENGINE
+ * concerns and live in the sync coordinator, not in this store.
  *
  * Unsaved-changes model (spec §10): the live session is compared
  * field-by-field against the ACTIVE layout's saved arrangement. The dirty
@@ -39,16 +62,16 @@ import {
  * is no saved record to diverge from, and the flag is structurally false.
  *
  * Persistence model: layout/template mutations schedule debounced writes;
- * session-only changes (moving the timeframe, toggling a panel) NEVER
- * touch storage — saving is always an explicit user action. Switching
- * layouts applies the target's SAVED configuration (unsaved changes are
- * discarded — the UI prompts first; a reload re-applies the saved layout,
- * both behaviors documented in the interface).
+ * session-only changes (moving a timeframe, toggling a panel) NEVER touch
+ * storage — saving is always an explicit user action. Switching layouts
+ * applies the target's SAVED configuration (unsaved changes are discarded —
+ * the UI prompts first; a reload re-applies the saved layout, both
+ * behaviors documented in the interface).
  *
  * Restoration discipline (spec §14): applying a layout/template is a
- * controlled configuration update — it patches session fields and the
- * indicator stack through the existing update paths. It never
- * re-initializes the chart, never duplicates subscriptions (the indicator
+ * controlled configuration update — it patches session fields and indicator
+ * stacks through the existing update paths. It never re-initializes a
+ * chart, never duplicates subscriptions (stable panel ids + the indicator
  * series manager diffs by id), and never touches drawings, alerts or
  * positions (different stores entirely).
  */
@@ -56,7 +79,7 @@ import {
 export interface WorkspaceConfigSnapshot {
   /** Live workspace arrangement. */
   session: OryonWorkspaceSessionState;
-  layouts: readonly OryonWorkspaceLayout[];
+  layouts: readonly OryonWorkspaceLayoutV2[];
   templates: readonly OryonChartTemplate[];
   /** null = the built-in default layout is active. */
   activeLayoutId: string | null;
@@ -93,6 +116,18 @@ export class OryonWorkspaceConfigStore {
     version: 0,
   };
   private listeners = new Set<() => void>();
+
+  /**
+   * Panel-indicator capture hook — wired by the provider so a layout save
+   * can record each panel's CURRENT analysis stack. Default: not managed
+   * (null), which keeps the store testable without a registry.
+   */
+  private capturePanelIndicators: (panelId: string) => readonly OryonIndicatorInstance[] | null = () => null;
+
+  /** Wires the indicator-stack capture (called once by the provider). */
+  setPanelIndicatorsCapture(capture: (panelId: string) => readonly OryonIndicatorInstance[] | null): void {
+    this.capturePanelIndicators = capture;
+  }
 
   // ── React external store contract ─────────────────────────────────────────
 
@@ -138,16 +173,69 @@ export class OryonWorkspaceConfigStore {
 
   // ── Live session mutations (never persist by themselves) ──────────────────
 
-  setSymbol(symbol: string | null): void {
-    this.patchSession({ symbol });
+  /** Activates a chart panel (click / focus — spec §7). */
+  setActivePanel(panelId: string): void {
+    if (this.state.session.activePanelId === panelId) return;
+    this.patchSession({ activePanelId: panelId });
   }
 
-  setInterval(interval: OryonWorkspaceSessionState["interval"]): void {
-    this.patchSession({ interval });
+  /**
+   * Changes ONE panel's instrument. With instrument linking enabled the
+   * change propagates to every panel (one implicit group — spec §8.3); a
+   * null symbol (default selection) never propagates.
+   */
+  setPanelSymbol(panelId: string, symbol: string | null): void {
+    const { session } = this.state;
+    const target = session.panels.find((p) => p.id === panelId);
+    if (target === undefined) return;
+    if (session.sync.instrument && symbol !== null) {
+      this.patchSession({
+        panels: session.panels.map((p) => (p.symbol === symbol ? p : { ...p, symbol })),
+      });
+      return;
+    }
+    this.patchSession({
+      panels: session.panels.map((p) => (p.id === panelId ? { ...p, symbol } : p)),
+    });
   }
 
-  setChartType(chartType: OryonWorkspaceSessionState["chartType"]): void {
-    this.patchSession({ chartType });
+  /**
+   * Changes ONE panel's timeframe. With timeframe linking enabled the
+   * change propagates to every panel (spec §8.4). A target that cannot
+   * serve the interval surfaces its own per-panel error state — the
+   * requested timeframe is never silently substituted.
+   */
+  setPanelInterval(panelId: string, interval: MarketInterval): void {
+    const { session } = this.state;
+    const target = session.panels.find((p) => p.id === panelId);
+    if (target === undefined) return;
+    if (session.sync.timeframe) {
+      if (session.panels.every((p) => p.interval === interval)) return;
+      this.patchSession({
+        panels: session.panels.map((p) => (p.interval === interval ? p : { ...p, interval })),
+      });
+      return;
+    }
+    this.patchSession({
+      panels: session.panels.map((p) => (p.id === panelId ? { ...p, interval } : p)),
+    });
+  }
+
+  /** Changes ONE panel's chart type — never propagated (per-panel setting). */
+  setPanelChartType(panelId: string, chartType: OryonLayoutChartType): void {
+    this.patchSession({
+      panels: this.state.session.panels.map((p) =>
+        p.id === panelId ? { ...p, chartType } : p,
+      ),
+    });
+  }
+
+  /**
+   * Toggles synchronization features INDEPENDENTLY (spec §8) — enabling
+   * one never enables another.
+   */
+  setSync(partial: Partial<OryonSyncSettings>): void {
+    this.patchSession({ sync: { ...this.state.session.sync, ...partial } });
   }
 
   setMagnet(magnet: boolean): void {
@@ -167,17 +255,87 @@ export class OryonWorkspaceConfigStore {
     this.patchSession({ utilityOpen: true, utilityPanel: panel });
   }
 
+  // ── Grid arrangement (Phase 7 spec §5) ────────────────────────────────────
+
   /**
-   * Template-chart application (called by the provider's applyTemplate): the
-   * chart type always applies; the timeframe only when the template defines
-   * one. Flows through the same patch path — the active layout's dirty flag
-   * reflects the change honestly.
+   * Switches the grid arrangement. Panel identities are reused (charts are
+   * NOT recreated on grid transitions); missing panels are added with
+   * deterministic defaults, `single` keeps only the active panel. The
+   * invariants live in panelsForGrid — this mutation stays declarative.
+   */
+  setGrid(grid: OryonGrid): void {
+    const { session } = this.state;
+    if (session.grid === grid) return;
+    const adjusted = panelsForGrid(grid, session.panels, session.activePanelId);
+    this.patchSession({ grid, panels: adjusted.panels, activePanelId: adjusted.activePanelId });
+  }
+
+  /**
+   * Duplicates a panel — an INDEPENDENT copy of its configuration (fresh
+   * stable id, same instrument/timeframe/chart type). The copy becomes
+   * active. Capacity: the workspace holds at most four panels (the quad
+   * grid); a single grid grows to side-by-side to make room.
+   */
+  duplicatePanel(panelId: string): WorkspaceOpResult {
+    const { session } = this.state;
+    if (session.panels.length >= 4) return { ok: false, error: "panel_capacity" };
+    const source = session.panels.find((p) => p.id === panelId);
+    if (source === undefined) return { ok: false, error: "not_found" };
+
+    const copy: OryonPanelSessionState = {
+      id: newPanelId(),
+      symbol: source.symbol,
+      interval: source.interval,
+      chartType: source.chartType,
+    };
+    const panels = [...session.panels, copy];
+    const grid = session.grid === "single" ? "twoHorizontal" : session.grid;
+    this.patchSession({ grid, panels, activePanelId: copy.id });
+    return { ok: true };
+  }
+
+  /**
+   * Removes a chart panel. The last remaining panel cannot be removed
+   * (the workspace always shows one chart). Removing the active panel
+   * activates the first survivor; a one-panel workspace collapses to the
+   * `single` grid. Removing a chart NEVER touches alerts, drawings or
+   * positions (independent domains — spec §11).
+   */
+  removePanel(panelId: string): WorkspaceOpResult {
+    const { session } = this.state;
+    if (session.panels.length <= 1) return { ok: false, error: "panel_capacity" };
+    const target = session.panels.find((p) => p.id === panelId);
+    if (target === undefined) return { ok: false, error: "not_found" };
+
+    const panels = session.panels.filter((p) => p.id !== panelId);
+    const grid = panels.length === 1 ? "single" : session.grid;
+    const activePanelId = normalizeActivePanel(panels, session.activePanelId);
+    this.patchSession({ grid, panels, activePanelId });
+    return { ok: true };
+  }
+
+  /**
+   * Template-chart application (called by the provider's applyTemplate):
+   * the chart type always applies to the TARGET panel; the timeframe only
+   * when the template defines one. Flows through the same patch path —
+   * the active layout's dirty flag reflects the change honestly.
    */
   applyTemplateChart(
-    chartType: OryonWorkspaceSessionState["chartType"],
-    interval: OryonWorkspaceSessionState["interval"] | null,
+    panelId: string,
+    chartType: OryonWorkspaceSessionState["panels"][number]["chartType"],
+    interval: MarketInterval | null,
   ): void {
-    this.patchSession(interval !== null ? { chartType, interval } : { chartType });
+    const { session } = this.state;
+    const target = session.panels.find((p) => p.id === panelId);
+    if (target === undefined) return;
+    if (target.chartType === chartType && (interval === null || target.interval === interval)) return;
+    this.patchSession({
+      panels: session.panels.map((p) =>
+        p.id === panelId
+          ? { ...p, chartType, interval: interval !== null ? interval : p.interval }
+          : p,
+      ),
+    });
   }
 
   private patchSession(partial: Partial<OryonWorkspaceSessionState>): void {
@@ -206,6 +364,8 @@ export class OryonWorkspaceConfigStore {
    * Saves the CURRENT session into the active SAVED layout. Only a custom
    * active layout can be saved over — with the default active, the UI
    * offers "save as new" instead (the default is immutable by design).
+   * Per-panel indicator stacks are captured through the provider-wired
+   * hook at save time.
    */
   saveActiveLayout(): WorkspaceOpResult {
     if (this.state.activeLayoutId === null) return { ok: false, error: "default_immutable" };
@@ -213,7 +373,13 @@ export class OryonWorkspaceConfigStore {
     if (index === -1) return { ok: false, error: "not_found" };
 
     const current = this.state.layouts[index]!;
-    const updated = buildLayout(current.id, current.name, this.state.session, now());
+    const updated = buildLayout(
+      current.id,
+      current.name,
+      this.state.session,
+      this.captureAllPanelIndicators(),
+      now(),
+    );
     // Preserve the original creation timestamp — an update, not a re-create.
     updated.createdAt = current.createdAt;
 
@@ -231,7 +397,13 @@ export class OryonWorkspaceConfigStore {
       return { ok: false, error: "name_taken" };
     }
 
-    const layout = buildLayout(newConfigId("layout"), name, this.state.session, now());
+    const layout = buildLayout(
+      newConfigId("layout"),
+      name,
+      this.state.session,
+      this.captureAllPanelIndicators(),
+      now(),
+    );
     this.commitLayouts([...this.state.layouts, layout], layout.id);
     return { ok: true };
   }
@@ -267,7 +439,13 @@ export class OryonWorkspaceConfigStore {
     if (this.state.layouts.length >= MAX_LAYOUTS) return { ok: false, error: "capacity" };
 
     const name = uniqueCopyName(target.name, this.state.layouts.map((l) => l.name));
-    const copy = buildLayout(newConfigId("layout"), name, layoutSessionOf(target), now());
+    const copy: OryonWorkspaceLayoutV2 = {
+      ...structuredClone(target),
+      id: newConfigId("layout"),
+      name,
+      createdAt: now(),
+      updatedAt: now(),
+    };
     this.commitLayouts([...this.state.layouts, copy], this.state.activeLayoutId);
     return { ok: true };
   }
@@ -290,7 +468,9 @@ export class OryonWorkspaceConfigStore {
   /**
    * Switches to a saved layout by applying its SAVED configuration. The
    * unsaved-changes prompt is the UI's responsibility — by the time this
-   * runs, the user has confirmed the discard (or saved) decision.
+   * runs, the user has confirmed the discard (or saved) decision. The
+   * PROVIDER applies the record's per-panel indicator stacks afterwards
+   * (the store owns the session, the registry owns the stacks).
    */
   switchLayout(id: string): WorkspaceOpResult {
     if (id === this.state.activeLayoutId) return { ok: true };
@@ -376,9 +556,18 @@ export class OryonWorkspaceConfigStore {
 
   // ── Internals ─────────────────────────────────────────────────────────────
 
+  /** Captures every live panel's indicator stack at layout-save time. */
+  private captureAllPanelIndicators(): Record<string, readonly OryonIndicatorInstance[] | null> {
+    const capture: Record<string, readonly OryonIndicatorInstance[] | null> = {};
+    for (const panel of this.state.session.panels) {
+      capture[panel.id] = this.capturePanelIndicators(panel.id);
+    }
+    return capture;
+  }
+
   /** Layout-list/pointer commit: state + debounced persist (single write). */
   private commitLayouts(
-    layouts: OryonWorkspaceLayout[],
+    layouts: OryonWorkspaceLayoutV2[],
     activeLayoutId: string | null,
   ): void {
     // Dirty is recomputed against the NEW list — a save/update that lands
