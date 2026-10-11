@@ -9,7 +9,6 @@ import type {
   UTCTimestamp,
 } from "lightweight-charts";
 
-import type { OryonSessionBand } from "@/lib/oryon/sessions/engine";
 import type { OryonDrawingConversions } from "./oryon-chart-engine";
 import { getThemeToken } from "@/lib/utils/theme";
 

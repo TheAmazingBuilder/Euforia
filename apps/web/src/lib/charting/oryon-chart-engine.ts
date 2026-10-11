@@ -13,7 +13,6 @@ import {
   type ISeriesPrimitive,
   type LineData,
   type Logical,
-  type MouseEventParams,
   type SeriesMarker,
   type UTCTimestamp,
 } from "lightweight-charts";
@@ -420,12 +419,19 @@ export class OryonChartEngine {
     this.attachDrawingsToActiveSeries();
     this.positions?.setSeries(this.activeSeries());
     this.alerts?.setSeries(this.activeSeries());
+    // ORDERING (Phase 8 regression guard): the new series must receive its
+    // DATA before any time-anchored overlay re-attaches. The time scale is
+    // CHART-level — it still holds the previous series' bars during the
+    // rebuild window; createSeriesMarkers (and any time-anchored attach)
+    // landing on a data-less series while the scale has rows lets LWC's
+    // candle paint loop hit a null style lookup ("Value is null" uncaught
+    // in drawSourceViews). rebuildSeriesData FIRST, overlays after.
+    this.rebuildSeriesData();
     // Session bands live on the series — re-attach after the rebuild.
     const currentSeries = this.activeSeries();
     if (this.sessions !== null && currentSeries !== null) this.sessions.attach(currentSeries);
     // The markers plugin is series-bound: re-create it on the new series.
     this.recreateMarkersPlugin();
-    this.rebuildSeriesData();
     this.chart.timeScale().scrollToRealTime();
   }
 
@@ -491,12 +497,33 @@ export class OryonChartEngine {
    * Replaces the economic-event markers. Specs arrive BAR-SNAPPED from the
    * bridge (the marker lands on the bar containing the event instant — the
    * containment rule the crosshair sync already documents); stable ids
-   * (event ids) keep re-sets identity-stable (§8/§14).
+   * (event ids) keep re-sets identity-stable (§8/§14). The engine
+   * re-validates against its OWN loaded candles (see below).
    */
   setEventMarkers(specs: readonly OryonEventMarkerSpec[]): void {
-    this.eventMarkerSpecs = specs;
+    // The engine re-validates every spec against the candles IT ACTUALLY
+    // RENDERS: child bridges run their effects BEFORE the parent's
+    // setCandles effect (React ordering), so a marker set computed from
+    // the incoming window can otherwise land on a series one commit
+    // behind — LWC logs "Value is null" for markers outside the loaded
+    // data. A marker outside [first − bucket, last + bucket] is dropped
+    // here: the chart never renders a marker without a loaded bar under
+    // it (§8), and the next candles commit re-applies the full set.
+    const step = this.intervalMs;
+    const first = this.candles.length > 0 ? this.candles[0]!.t : null;
+    const last = this.candles.length > 0 ? this.candles[this.candles.length - 1]!.t : null;
+    const loadable =
+      first !== null && last !== null
+        ? specs.filter((spec) => {
+            const ms = spec.timeSec * 1000;
+            return ms >= first - step && ms <= last + step;
+          })
+        : [];
+    this.eventMarkerSpecs = loadable;
     if (this.markersPlugin !== null) {
-      this.markersPlugin.setMarkers(this.toSeriesMarkers(specs));
+      this.markersPlugin.setMarkers(this.toSeriesMarkers(loadable));
+    } else {
+      this.recreateMarkersPlugin();
     }
   }
 
@@ -777,6 +804,19 @@ export class OryonChartEngine {
   get lastCandleTime(): number | null {
     if (this.candles.length === 0) return null;
     return this.candles[this.candles.length - 1]!.t / 1000;
+  }
+
+  /**
+   * Dev-probe helper (Phase 8, dev builds only): the screen x of the FIRST
+   * event marker plus its bar time — lets E2E probes CLICK a marker
+   * without scraping the canvas. Null when nothing is projected.
+   */
+  firstEventMarkerScreen(): { timeSec: number; x: number } | null {
+    const spec = this.eventMarkerSpecs[0];
+    if (spec === undefined) return null;
+    const x = this.conversions.timeToX(spec.timeSec);
+    if (x === null || !Number.isFinite(x)) return null;
+    return { timeSec: spec.timeSec, x };
   }
 
   // ── internals ──────────────────────────────────────────────────────────

@@ -30,8 +30,10 @@ import type {
   OryonChartTemplate,
   OryonIndicatorInstance,
   OryonWorkspaceLayout,
-  OryonWorkspaceLayoutV2,
+  OryonWorkspaceLayoutV3,
 } from "@cosmoz/shared";
+
+import { ORYON_DEFAULT_PANEL_CONTEXT } from "@cosmoz/shared";
 
 import { indicatorRuleError } from "../src/lib/oryon/indicators/validation";
 import { defaultIndicatorInstance } from "../src/lib/oryon/indicators/registry";
@@ -40,7 +42,7 @@ import {
   ORYON_DEFAULT_SESSION,
   buildLayout,
   layoutSessionOf,
-  migrateLayoutV1toV2,
+  migrateLayoutV1toV3,
   newConfigId,
   newPanelId,
   normalizeActivePanel,
@@ -143,7 +145,7 @@ eq(
   ORYON_DEFAULT_SESSION,
   {
     grid: "single",
-    panels: [{ id: "panel-main", symbol: null, interval: "5m", chartType: "candles" }],
+    panels: [{ id: "panel-main", symbol: null, interval: "5m", chartType: "candles", context: { ...ORYON_DEFAULT_PANEL_CONTEXT } }],
     activePanelId: "panel-main",
     sync: { timeScale: false, crosshair: false, instrument: false, timeframe: false },
     magnet: false,
@@ -153,16 +155,21 @@ eq(
   },
 );
 
-const panelOf = (id: string, symbol: string | null, interval: OryonPanelSessionState["interval"], chartType: OryonPanelSessionState["chartType"]): OryonPanelSessionState =>
-  ({ id, symbol, interval, chartType });
+const panelOf = (
+  id: string,
+  symbol: string | null,
+  interval: OryonPanelSessionState["interval"],
+  chartType: OryonPanelSessionState["chartType"],
+  context: OryonPanelSessionState["context"] = ORYON_DEFAULT_PANEL_CONTEXT,
+): OryonPanelSessionState => ({ id, symbol, interval, chartType, context: { ...context } });
 
-const layoutA: OryonWorkspaceLayoutV2 = {
+const layoutA: OryonWorkspaceLayoutV3 = {
   id: "layout-aaaaaaaa",
   name: "Intraday",
   grid: "twoHorizontal",
   panels: [
-    { id: "panel-main", symbol: "EURUSD", interval: "1H", chartType: "line", indicators: null },
-    { id: "panel-bbbbbbbb", symbol: "XAUUSD", interval: "5m", chartType: "candles", indicators: null },
+    { id: "panel-main", symbol: "EURUSD", interval: "1H", chartType: "line", indicators: null, context: { ...ORYON_DEFAULT_PANEL_CONTEXT } },
+    { id: "panel-bbbbbbbb", symbol: "XAUUSD", interval: "5m", chartType: "candles", indicators: null, context: { sessionShading: false, eventMarkers: true, eventMinImportance: "HIGH" } },
   ],
   activePanelId: "panel-main",
   sync: { timeScale: true, crosshair: false, instrument: false, timeframe: true },
@@ -178,7 +185,7 @@ eq("layout → session (stacks non portées par la session)", sessionA, {
   grid: "twoHorizontal",
   panels: [
     panelOf("panel-main", "EURUSD", "1H", "line"),
-    panelOf("panel-bbbbbbbb", "XAUUSD", "5m", "candles"),
+    panelOf("panel-bbbbbbbb", "XAUUSD", "5m", "candles", { sessionShading: false, eventMarkers: true, eventMinImportance: "HIGH" }),
   ],
   activePanelId: "panel-main",
   sync: { timeScale: true, crosshair: false, instrument: false, timeframe: true },
@@ -214,6 +221,15 @@ ok(
   !sessionStateEqual(sessionA, {
     ...sessionA,
     panels: sessionA.panels.map((p) => (p.id === "panel-main" ? { ...p, interval: "5m" } : p)),
+  }),
+);
+ok(
+  "contexte de panneau différent → inégal (les prefs sont persistées)",
+  !sessionStateEqual(sessionA, {
+    ...sessionA,
+    panels: sessionA.panels.map((p) =>
+      p.id === "panel-main" ? { ...p, context: { ...p.context, eventMarkers: !p.context.eventMarkers } } : p,
+    ),
   }),
 );
 ok(
@@ -286,9 +302,9 @@ console.log("— invariants de grille");
   eq("pointeur actif valide → inchangé", normalizeActivePanel([p1, p2], p2.id), p2.id);
 }
 
-// ── 4. Migration v1 → v2 (déterministe, rétrocompatible) ────────────────────
+// ── 4. Migrations v1/v2 → v3 (déterministes, rétrocompatibles) ───────────────
 
-console.log("— migration v1 → v2");
+console.log("— migration v1 → v3");
 
 const layoutV1: OryonWorkspaceLayout = {
   id: "layout-aaaaaaaa",
@@ -303,14 +319,15 @@ const layoutV1: OryonWorkspaceLayout = {
   updatedAt: 1_760_000_000_000,
 };
 
-const migrated = migrateLayoutV1toV2(layoutV1);
+const migrated = migrateLayoutV1toV3(layoutV1);
 eq("migration : grille single à un panneau", { grid: migrated.grid, panels: migrated.panels.length }, { grid: "single", panels: 1 });
-eq("migration : panneau = champs v1, id panel-main", migrated.panels[0], {
+eq("migration : panneau = champs v1, id panel-main, contexte par défaut", migrated.panels[0], {
   id: "panel-main",
   symbol: "EURUSD",
   interval: "1H",
   chartType: "line",
   indicators: null,
+  context: { ...ORYON_DEFAULT_PANEL_CONTEXT },
 });
 eq("migration : sync all-off", migrated.sync, { timeScale: false, crosshair: false, instrument: false, timeframe: false });
 eq("migration : coque préservée", { magnet: migrated.magnet, lowerPanel: migrated.lowerPanel, rail: migrated.utilityRail, active: migrated.activePanelId }, {
@@ -393,12 +410,12 @@ console.log("— persistance navigateur-local (layouts)");
 
 let memory = installStorage();
 
-const layoutB: OryonWorkspaceLayoutV2 = {
+const layoutB: OryonWorkspaceLayoutV3 = {
   ...layoutA,
   id: "layout-bbbbbbbb",
   name: "Scalp",
   grid: "single",
-  panels: [{ id: "panel-main", symbol: null, interval: "5m", chartType: "candles", indicators: null }],
+  panels: [{ id: "panel-main", symbol: null, interval: "5m", chartType: "candles", indicators: null, context: { ...ORYON_DEFAULT_PANEL_CONTEXT } }],
   activePanelId: "panel-main",
   sync: { timeScale: false, crosshair: false, instrument: false, timeframe: false },
   magnet: false,
@@ -416,7 +433,7 @@ eq("roundtrip v2 : stacks par panneau", loadedLayouts.layouts[0]!.panels.map((p)
 memory.set(LAYOUTS_KEY, "{not json");
 eq("JSON corrompu → vide, jamais de crash", loadLayouts(), { layouts: [], activeLayoutId: null });
 
-memory.set(LAYOUTS_KEY, JSON.stringify({ version: 3, savedAt: 1, layouts: [], activeLayoutId: null }));
+memory.set(LAYOUTS_KEY, JSON.stringify({ version: 4, savedAt: 1, layouts: [], activeLayoutId: null }));
 eq("version inconnue → rejetée", loadLayouts(), { layouts: [], activeLayoutId: null });
 
 memory.set(
@@ -444,13 +461,48 @@ memory.set(
 const migratedLoad = loadLayouts();
 eq("enveloppe v1 → migration par enregistrement", migratedLoad.layouts.map((l) => l.id), ["layout-aaaaaaaa"]);
 eq(
-  "enveloppe v1 → enregistrement migré en v2",
+  "enveloppe v1 → enregistrement migré en v3 (contexte par défaut)",
   { grid: migratedLoad.layouts[0]!.grid, panels: migratedLoad.layouts[0]!.panels, active: migratedLoad.layouts[0]!.activePanelId },
   {
     grid: "single",
-    panels: [{ id: "panel-main", symbol: "EURUSD", interval: "1H", chartType: "line", indicators: null }],
+    panels: [{ id: "panel-main", symbol: "EURUSD", interval: "1H", chartType: "line", indicators: null, context: { ...ORYON_DEFAULT_PANEL_CONTEXT } }],
     active: "panel-main",
   },
+);
+
+// Enveloppe v2 (Phase 7) : les panneaux n'ont PAS de contexte — le chargeur
+// le complète avec la valeur par défaut documentée (migration v2→v3).
+memory.set(
+  LAYOUTS_KEY,
+  JSON.stringify({
+    version: 2,
+    savedAt: 1,
+    layouts: [
+      {
+        id: "layout-v2legacy1",
+        name: "Legacy",
+        grid: "twoVertical",
+        panels: [
+          { id: "panel-main", symbol: "EURUSD", interval: "5m", chartType: "candles", indicators: null },
+          { id: "panel-22222222", symbol: "XAUUSD", interval: "15m", chartType: "line", indicators: null },
+        ],
+        activePanelId: "panel-main",
+        sync: { timeScale: true, crosshair: false, instrument: false, timeframe: false },
+        magnet: false,
+        lowerPanel: false,
+        utilityRail: { open: false, panel: "notifications" },
+        createdAt: 1,
+        updatedAt: 1,
+      },
+    ],
+    activeLayoutId: "layout-v2legacy1",
+  }),
+);
+const v2Load = loadLayouts();
+eq(
+  "enveloppe v2 → contexte ajouté à chaque panneau",
+  v2Load.layouts[0]!.panels.map((p) => p.context),
+  [ORYON_DEFAULT_PANEL_CONTEXT, ORYON_DEFAULT_PANEL_CONTEXT],
 );
 
 memory.set(
@@ -842,7 +894,7 @@ console.log("— store : hydratation avec layout actif (v1 migré + v2)");
   eq(
     "hydrate applique la session du layout v1 MIGRÉ",
     store.getSnapshot().session,
-    layoutSessionOf(migrateLayoutV1toV2(layoutV1)),
+    layoutSessionOf(migrateLayoutV1toV3(layoutV1)),
   );
   eq("hydrate → active pointer", store.getSnapshot().activeLayoutId, "layout-aaaaaaaa");
   eq("hydrate → dirty false", store.getSnapshot().dirty, false);

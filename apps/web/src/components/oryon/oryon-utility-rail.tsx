@@ -266,11 +266,20 @@ function OryonMarketContextPanel({ instrument }: { instrument: Instrument | null
 
   // Sessions of the ACTIVE chart's asset class (§4.1 scope) — re-computed
   // on the 15 s cadence; the engine caches per session-day internally.
-  const sessionDefs = instrument !== null ? sessionsForAssetClass(instrument.assetClass) : [];
-  const statuses = React.useMemo(() => {
-    if (nowMs === null) return [];
-    return sessionDefs.map((def) => ({ def, status: sessionStatusAt(def, nowMs) }));
-  }, [sessionDefs, nowMs]);
+  // Before the first tick (nowMs null — SSR/hydration-safe) the rows render
+  // with an "unavailable" status: never a Date.now() read during render.
+  const sessionDefs = React.useMemo(
+    () => (instrument !== null ? sessionsForAssetClass(instrument.assetClass) : []),
+    [instrument],
+  );
+  const statuses = React.useMemo(
+    () =>
+      sessionDefs.map((def) => ({
+        def,
+        status: nowMs === null ? null : sessionStatusAt(def, nowMs),
+      })),
+    [sessionDefs, nowMs],
+  );
 
   return (
     <div className="flex min-h-0 flex-1 flex-col p-4" data-testid="oryon-panel-calendar">
@@ -282,14 +291,14 @@ function OryonMarketContextPanel({ instrument }: { instrument: Instrument | null
       </h3>
       {instrument === null ? (
         <p className="mb-3 text-xs text-muted-foreground">{S.sessionsWaiting}</p>
-      ) : statuses.length === 0 ? (
+      ) : sessionDefs.length === 0 ? (
         <p className="mb-3 text-xs text-muted-foreground" data-testid="oryon-sessions-none">
           {S.sessionsNone}
         </p>
       ) : (
         <ul className="mb-2 space-y-1" data-testid="oryon-sessions-list">
           {statuses.map(({ def, status }) => {
-            const now = nowMs ?? Date.now();
+            const now = nowMs;
             return (
               <li
                 key={def.id}
@@ -306,12 +315,13 @@ function OryonMarketContextPanel({ instrument }: { instrument: Instrument | null
                 <span className="min-w-0 flex-1">
                   <span className="block text-xs font-medium text-foreground">{def.name}</span>
                   <span className="block font-mono text-[10px] text-muted-foreground">
-                    {formatTimeInZone(now, def.ianaZone)} {zoneAbbreviation(now, def.ianaZone)}
-                    {status !== null && status.transitionMs !== null
-                      ? status.open
-                        ? ` · ${S.sessionClosesAt.replace("{t}", formatTimeInZone(status.transitionMs, def.ianaZone))}`
-                        : ` · ${S.sessionOpensAt.replace("{t}", formatTimeInZone(status.transitionMs, def.ianaZone))}`
-                      : ""}
+                    {now !== null && status !== null && status.transitionMs !== null
+                      ? `${formatTimeInZone(now, def.ianaZone)} ${zoneAbbreviation(now, def.ianaZone)} · ${
+                          status.open
+                            ? S.sessionClosesAt.replace("{t}", formatTimeInZone(status.transitionMs, def.ianaZone))
+                            : S.sessionOpensAt.replace("{t}", formatTimeInZone(status.transitionMs, def.ianaZone))
+                        }`
+                      : "—"}
                   </span>
                 </span>
                 <span

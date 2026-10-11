@@ -178,10 +178,16 @@ export function OryonEventPopover({
     [eco.data],
   );
 
-  /** Open state: clicked bar time + anchor point (chart-local CSS px). */
-  const [open, setOpen] = React.useState<{ timeSec: number; point: { x: number; y: number } } | null>(
-    null,
-  );
+  /** Open state: clicked bar time + anchor point (chart-local CSS px) + the
+   *  display-window key it was opened on. A symbol/timeframe switch changes
+   *  the key — the stale popover renders closed WITHOUT an effect-driven
+   *  setState (purity discipline: derived invalidation, not a reset effect). */
+  const [open, setOpen] = React.useState<{
+    key: string;
+    timeSec: number;
+    point: { x: number; y: number };
+  } | null>(null);
+  const windowKey = `${dataSymbol}:${interval}`;
 
   React.useEffect(() => {
     if (!mounted) return;
@@ -189,9 +195,9 @@ export function OryonEventPopover({
     if (engine === null) return;
     return engine.onEventMarkerClick((timeSec, point) => {
       if (point === null) return;
-      setOpen({ timeSec, point });
+      setOpen({ key: windowKey, timeSec, point });
     });
-  }, [mounted, engineRef]);
+  }, [mounted, engineRef, windowKey]);
 
   // Escape closes (keyboard discipline, §15).
   React.useEffect(() => {
@@ -203,33 +209,30 @@ export function OryonEventPopover({
     return () => window.removeEventListener("keydown", onKey);
   }, [open]);
 
-  // Every reset of the displayed window (symbol/timeframe switch, data
-  // reload) invalidates the anchor — the popover never floats over data
-  // it was not opened on.
-  React.useEffect(() => {
-    setOpen(null);
-  }, [dataSymbol, interval]);
+  // A popover opened on a previous display window (symbol/timeframe switch,
+  // data reload) is invalid — render closed, never float over foreign data.
+  const effectiveOpen = open !== null && open.key === windowKey ? open : null;
 
   const intervalMs = intervalToMs(interval);
   const eventsAtBar = React.useMemo(() => {
-    if (open === null) return [];
-    const barStartMs = open.timeSec * 1000;
+    if (effectiveOpen === null) return [];
+    const barStartMs = effectiveOpen.timeSec * 1000;
     return events.filter(
       (event) => {
         const atMs = new Date(event.scheduledAt).getTime();
         return Number.isFinite(atMs) && atMs >= barStartMs && atMs < barStartMs + intervalMs;
       },
     );
-  }, [open, events, intervalMs]);
+  }, [effectiveOpen, events, intervalMs]);
 
-  if (open === null || candles.length === 0) return null;
+  if (effectiveOpen === null || candles.length === 0) return null;
 
   // Clamp the card inside the wrapper — never off-panel, never over the
   // whole chart (§15 "tooltips or detail views that do not obscure the
   // entire chart").
   const CARD_WIDTH = 260;
-  const left = Math.max(8, open.point.x - CARD_WIDTH / 2);
-  const top = Math.max(8, open.point.y - 12);
+  const left = Math.max(8, effectiveOpen.point.x - CARD_WIDTH / 2);
+  const top = Math.max(8, effectiveOpen.point.y - 12);
 
   return (
     <div
@@ -247,7 +250,7 @@ export function OryonEventPopover({
       >
         <div className="mb-2 flex items-center justify-between gap-2">
           <span className="font-mono text-[11px] text-muted-foreground">
-            {formatInstantInZone(open.timeSec * 1000, displayTz)} · {displayTz}
+            {formatInstantInZone(effectiveOpen.timeSec * 1000, displayTz)} · {displayTz}
           </span>
           <button
             type="button"

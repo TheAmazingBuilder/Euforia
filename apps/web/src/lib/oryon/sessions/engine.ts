@@ -178,7 +178,11 @@ function intervalForLocalDay(
   def: OryonSessionDefinition,
   dateKey: string,
 ): OryonSessionInterval | null {
-  const cacheKey = `${def.id}|${dateKey}`;
+  // The cache key carries the FULL effective definition (id + zone + times
+  // + days): a definition is a code constant whose identity is its id, but
+  // keying on the id ALONE would let a changed schedule read a stale
+  // interval — cheap insurance, no correctness assumptions.
+  const cacheKey = `${def.id}|${def.ianaZone}|${def.startHHmm}|${def.endHHmm}|${def.daysLocal.join(",")}|${dateKey}`;
   if (dayIntervalCache.has(cacheKey)) return dayIntervalCache.get(cacheKey) ?? null;
 
   let result: OryonSessionInterval | null = null;

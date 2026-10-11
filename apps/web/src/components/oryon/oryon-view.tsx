@@ -242,6 +242,10 @@ function OryonWorkspace() {
           panes: stats?.panes ?? 0,
           priceLines: stats?.priceLines ?? 0,
           alertLines: stats?.alertLines ?? 0,
+          // Phase 8 structural counters (dev probes only).
+          sessionBands: stats?.sessionBands ?? 0,
+          eventMarkers: stats?.eventMarkers ?? 0,
+          firstMarker: engine?.firstEventMarkerScreen() ?? null,
         };
       });
     };
