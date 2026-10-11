@@ -1045,3 +1045,20 @@ Stage Summary:
 - **TOOLBAR V2 LIVRÉE ET VÉRIFIÉE** : 20 outils fonctionnels (8 nouveaux types de dessins rendus/interactifs/persistés), favoris étoilés persistés + barre flottante déplaçable, corbeille undoable, barre du bas TV (intervalles panneau actif, horloge, fuseau via PATCH /me). 928 assertions unitaires vertes, sonde dédiée 52/52, régression P9 38/38, tsc/eslint/build propres. Le diff est strictement limité au périmètre toolbar v2 (14 fichiers modifiés, 7 créés).
 - Choix documentés : cible position DÉRIVÉE 1:1 (constante partagée, jamais stockée) ; fibext = ratios [0, .236, .382, .5, .618, .786, 1, 1.618] projetés de C ; pas d'outils non implémentés à l'écran (Brush/Polyline/Ghost feed/VWAP/etc. ABSENTS du catalogue — ils n'existent pas encore, aucun bouton mort) ; timezone = PATCH /me (pas de seconde préférence).
 - Prochaine étape : reprendre la Phase 9 suite (rapport final §16 A–G) ou itérer sur la toolbar (éditeur de propriétés par objet, ratio R:R configurable, tools supplémentaires) selon la demande utilisateur.
+
+---
+Task ID: oryon-hotfix-preview-500
+Agent: Super Z (main)
+Date: 2026-10-12 (IM — « La page Oryon ne marche pas : This page couldn't load »)
+
+Task: Diagnostiquer et réparer la page /oryon qui affiche « This page couldn't load » sur la preview :3000.
+
+Work Log:
+- DIAGNOSTIC (sonde scripts/diag-oryon-load.js, login démo puis /oryon) : le HTML shell servait (stamp build cad6024) mais TOUTES les chunks statiques `/_next/static/chunks/*.{js,css}` répondaient **500** → zéro hydratation → page d'erreur Next.js.
+- CAUSE RACINE : le process `next start` sur :3000 (pid 1382, démarré 17:31 avec le build cad6024 du boot) est resté vivant pendant que les builds Phase 9 (21:46) puis toolbar v2 (21:48) REMPLAÇAIENT `.next` sur disque ; le manifeste en mémoire du serveur périmé ne correspondait plus aux artifacts → 500 sur chaque chunk. La « relance » consignée au worklog toolbar-v2 avait en fait ÉCHOUÉ avec EADDRINUSE (/tmp/oryon-preview-3000.log) — le vieux serveur n'avait jamais été remplacé.
+- FIX : kill -9 pid 1382 → port 3000 libéré → `npx next start -p 3000` relancé depuis apps/web (setsid nohup, log /tmp/oryon-preview-3000.log) sur le build toolbar-v2 on-disk (BUILD_ID WFSAulEy9PL2whlL9W10e, vérifié vert au commit 80d7a35, arbre git propre — aucun rebuild nécessaire).
+- VÉRIFICATION : sonde re-passée — login OK, /oryon rendu complet (graphe EURUSD 5m candles+Volume+RSI, rail dessins v2, barre de favoris, barre du bas 1m→1D + fuseau America/Toronto + horloge EDT, shading Sydney, labels positions, toast notification) ; 0 erreur chunk, 0 pageerror ; seuls bruits restants = paire 401 /api/auth/me + /api/auth/refresh au boot de contexte frais (bruit AUTH-1 documenté) + warning WebSocket avant établissement (reconnexion, non fatal). Screenshot : scripts/diag-oryon-load.png.
+- Serveurs finaux : :3000 = build toolbar-v2 (prod, user-facing), :3001 = dev, :3003 = market service (bun).
+
+Stage Summary:
+- « This page couldn't load » éliminé — cause = serveur prod périmé servi des chunks 500 après remplacement de .next sous lui ; relance propre sur le build toolbar-v2 vérifiée bout-en-bout (0 erreur console non documentée). Leçon opérationnelle consignée : TOUTE relance de preview doit tuer l'ancien process (lsof -ti:3000 | xargs kill) avant `next start`, sinon EADDRINUSE silencieux = vieux serveur stalé. Aucun changement de code — dépôt inchangé (HEAD f51d3b2).
