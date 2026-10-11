@@ -20,22 +20,29 @@ import {
   OryonIndicatorsProvider,
   useOryonIndicators,
 } from "@/components/oryon/oryon-indicators-context";
+import {
+  OryonPositionsProvider,
+} from "@/components/oryon/oryon-positions-context";
 import type { OryonChartType } from "@/lib/charting/oryon-chart-engine";
 
 export type OryonUtilityPanel = "notifications" | "calendar";
 
 /**
- * Oryon — the full-screen charting workspace (Phase 1 + Phase 3).
+ * Oryon — the full-screen charting workspace (Phase 1 → Phase 4).
  *
  * Provider nesting: indicator state wraps the WHOLE workspace (toolbar
- * dialog entry + chart series + legend chips share one store); drawing
- * state nests inside (rail + chart layer).
+ * dialog entry + chart series + legend chips share one store); position
+ * state wraps it too (ONE subscription to the private stream feeds the
+ * lower panel + the chart overlay bridge); drawing state nests inside
+ * (rail + chart layer).
  */
 export function OryonView() {
   return (
     <OryonIndicatorsProvider>
-      <OryonWorkspace />
-      <OryonIndicatorDialog />
+      <OryonPositionsProvider>
+        <OryonWorkspace />
+        <OryonIndicatorDialog />
+      </OryonPositionsProvider>
     </OryonIndicatorsProvider>
   );
 }
@@ -147,7 +154,11 @@ function OryonWorkspace() {
         ) : null}
       </div>
 
-      <OryonLowerPanel open={lowerOpen} onClose={() => setLowerOpen(false)} />
+      <OryonLowerPanel
+        open={lowerOpen}
+        onClose={() => setLowerOpen(false)}
+        activeSymbol={instrument?.symbol ?? null}
+      />
 
       {/* Overlay utilities below lg — same content, Sheet semantics. */}
       <OryonUtilityRail

@@ -1,5 +1,5 @@
-=== oryon phase3 probe — 2026-10-10T19:33:40.875Z ===
-signIn: after goto — http://localhost:3000/
+=== oryon phase3 probe — 2026-10-11T00:00:12.078Z ===
+signIn: after goto — http://localhost:3001/
   PASS  P3 — bouton toolbar Indicators présent
   PASS  P3 — template par défaut: 2 chips (got 2)
   PASS  P3 — template contient RSI 14
@@ -7,7 +7,7 @@ signIn: after goto — http://localhost:3000/
   PASS  P3 — handle debug exposé (dev)
   PASS  P3 — 3 panes natifs au premier avis (got 3)
   PASS  P3 — 3 séries live (main + volume + rsi) (got 3)
-  PASS  P3 — chip RSI affiche une valeur numérique (got "RSI 14 67.19")
+  PASS  P3 — chip RSI affiche une valeur numérique (got "RSI 14 44.16")
   PASS  P3 — dialogue indicateur ouvert
   PASS  P3 — 7 indicateurs implémentés listés
   PASS  P3 — recherche «moving» → SMA+EMA seulement
@@ -17,7 +17,7 @@ signIn: after goto — http://localhost:3000/
   PASS  P3 — chip SMA 20 présent
   PASS  P3 — overlay: pane count inchangé (got 3)
   PASS  P3 — 4 séries live (main + vol + rsi + sma) (got 4)
-  PASS  P3 — double instance: ids distincts (1ce2d601-8792-4c22-9c77-9a7a0d4090de / 9cbdc1b6-99e2-4d08-a355-cc2b4a280ee5)
+  PASS  P3 — double instance: ids distincts (ed97c019-83a1-4f4c-b01a-65b68aca6383 / 318f5e09-9cb9-4afa-8e27-ccb29d818064)
   PASS  P3 — 4 chips (got 4)
   PASS  P3 — MACD crée son pane natif (got 4)
   PASS  P3 — 8 séries live (main + 7 gérées) (got 8)

@@ -1,0 +1,31 @@
+=== oryon phase4 probe — 2026-10-10T23:59:40.618Z ===
+  PASS  P4 — panneau bas replié par défaut
+  PASS  P4 — panneau bas ouvert via le toggle toolbar
+  PASS  P4 — livre SIM reçu: 3 positions (2–3 attendu)
+  PASS  P4 — badge SIM affiché (source honnête)
+  PASS  P4 — statut du flux "live" = live|stale (honnête)
+  PASS  P4 — compteur de positions affiché
+  PASS  P4 — total P&L latent affiché
+  PASS  P4 — side explicites (LONG, LONG, SHORT)
+  PASS  P4 — long ET short présents dans le livre
+  PASS  P4 — contexte compte: broker non connecté (honnête)
+  PASS  P4 — lien Accounts depuis le contexte compte
+  PASS  P4 — handle debug exposé (dev)
+  PASS  P4 — overlays au démarrage = positions EURUSD ×3 (attendu 6, got 6)
+  PASS  P4 — un autre symbole du livre couvert par le feed existe (XAUUSD)
+  PASS  P4 — overlays 1 position(s) ×3 sur XAUUSD (attendu 3, got 3)
+  PASS  P4 — ligne sélectionnée: aria-selected
+  PASS  P4 — sélection = update in place, pas de doublon (got 3)
+  PASS  P4 — désélection: aria-selected retiré
+  PASS  P4 — désélection: nombre de lignes stable
+  PASS  P4 — bascule ligne: overlays re-attachés + panes intacts (got 3/3)
+  PASS  P4 — retour bougies: overlays intacts + panes intacts (got 3/3)
+  PASS  P4 — BTCUSDT: 0 overlay (BTCUSD ≠ BTCUSDT, jamais de substring) (got 0)
+  PASS  P4 — retour XAUUSD: overlays restaurés (attendu 3, got 3)
+  PASS  P4 — chips indicateurs intactes (got 2)
+  PASS  P4 — panes natifs intacts (got 3)
+  PASS  P4 — table de positions toujours rendue
+  PASS  P4 — panneau refermé
+  PASS  P4 — zéro erreur de console
+
+=== RESULT: 28 PASS / 0 FAIL ===

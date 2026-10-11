@@ -1,5 +1,5 @@
-=== oryon phase2 probe — 2026-10-10T16:00:55.311Z ===
-signIn: after goto — http://localhost:3000/
+=== oryon phase2 probe — 2026-10-10T23:58:15.498Z ===
+signIn: after goto — http://localhost:3001/
   PASS  P2 — workspace rendu
   PASS  P2 — rail: outil pointer présent et actif
   PASS  P2 — rail: outil trendline présent et actif
@@ -23,17 +23,17 @@ signIn: after goto — http://localhost:3000/
   PASS  P2 — hline créé (2 objets)
   PASS  P2 — hline visible sur le canvas (pixels)
   PASS  P2 — hline reste à son prix après pan (alignement)
-  PASS  P2 — vline créé
-  PASS  P2 — ray créé
+  FAIL  P2 — vline créé
+  FAIL  P2 — ray créé
   PASS  P2 — rect créé
   PASS  P2 — fib créé
   PASS  P2 — measure créé
   PASS  P2 — texte: Esc sans contenu ne laisse pas d'objet vide
   PASS  P2 — texte commité (Ctrl+Enter)
-  PASS  P2 — contrôles lock présents par objet
+  FAIL  P2 — contrôles lock présents par objet
   PASS  P2 — lock togglé (badge actif)
   PASS  P2 — hide togglé
-  PASS  P2 — persistance: 8 objets restaurés après reload
+  PASS  P2 — persistance: 6 objets restaurés après reload
   PASS  P2 — changement d'instrument: liste vide (pas de fuite)
   PASS  P2 — retour instrument: dessins restaurés
   PASS  P2 — changement d'UT: dessins conservés (domaine temps/prix)
@@ -42,4 +42,4 @@ signIn: after goto — http://localhost:3000/
   PASS  P2 — stockage corrompu: pas de crash, liste vide
   PASS  P2 — zéro erreur de console
 
-=== RESULT: 41 PASS / 0 FAIL ===
+=== RESULT: 38 PASS / 3 FAIL ===

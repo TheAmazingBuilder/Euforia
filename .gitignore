@@ -36,3 +36,7 @@ tool-results/
 
 # OCR local-disk screenshot storage (apps/api — runtime artifacts, never commit)
 .data/
+
+# Oryon Phase 4 — quarantined restore-glitch zombies (see .quarantine-phase4/README.md)
+.quarantine-phase4/
+.worktree-headcheck/

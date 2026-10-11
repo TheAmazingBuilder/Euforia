@@ -20,6 +20,10 @@ import {
   OryonIndicatorSeriesManager,
   type ManagedIndicatorValue,
 } from "@/lib/charting/oryon-indicator-series";
+import {
+  OryonPositionOverlayManager,
+} from "@/lib/charting/oryon-position-overlays";
+import type { PositionLineSpec } from "@/lib/oryon/positions/overlay";
 import { getChartTheme } from "@/lib/utils/chart-theme";
 
 /**
@@ -41,9 +45,12 @@ import { getChartTheme } from "@/lib/utils/chart-theme";
  *     ATR/Volume in NATIVE v5 panes) delegated to
  *     OryonIndicatorSeriesManager — the engine forwards data/theme/tick
  *     events but owns no indicator math.
- *   - NO drawing tools (owned by the drawing primitive), NO position
- *     overlays — the adapter stays narrow; phases extend it without a
- *     rewrite.
+ *   - Phase 4: open-position overlays (entry/SL/TP price lines, read-only —
+ *     library price lines are non-interactive by construction) delegated to
+ *     OryonPositionOverlayManager; the engine owns the series-lifecycle
+ *     re-homing (chart-type switch) and theme restyling.
+ *   - NO drawing tools (owned by the drawing primitive) — the adapter stays
+ *     narrow; phases extend it without a rewrite.
  *
  * Library facts honored:
  *   - v5 API: series are added with chart.addSeries(CandlestickSeries, …)
@@ -115,6 +122,8 @@ export class OryonChartEngine {
   private drawingsPrimitive: ISeriesPrimitive<UTCTimestamp> | null = null;
   /** Indicator series manager (Phase 3) — created with the chart. */
   private indicators: OryonIndicatorSeriesManager | null = null;
+  /** Position overlay manager (Phase 4) — created with the chart. */
+  private positions: OryonPositionOverlayManager | null = null;
 
   /** True once mount() succeeded (guards every later call). */
   get isMounted(): boolean {
@@ -154,6 +163,8 @@ export class OryonChartEngine {
 
     this.candleSeries = this.chart.addSeries(CandlestickSeries, this.candleStyle());
     this.indicators = new OryonIndicatorSeriesManager(this.chart);
+    this.positions = new OryonPositionOverlayManager();
+    this.positions.setSeries(this.candleSeries);
     this.attachDrawingsToActiveSeries();
     this.chart.subscribeCrosshairMove(this.handleCrosshairMove);
     this.rebuildSeriesData();
@@ -189,6 +200,8 @@ export class OryonChartEngine {
     this.chart.unsubscribeCrosshairMove(this.handleCrosshairMove);
     this.indicators?.destroy();
     this.indicators = null;
+    this.positions?.destroy();
+    this.positions = null;
     this.chart.remove();
     this.chart = null;
     this.candleSeries = null;
@@ -224,6 +237,7 @@ export class OryonChartEngine {
     this.candleSeries?.applyOptions(this.candleStyle());
     this.lineSeries?.applyOptions({ color: theme.accent });
     this.indicators?.restyle({ digits: this.digits, theme });
+    this.positions?.restyle(theme);
   }
 
   /**
@@ -262,10 +276,28 @@ export class OryonChartEngine {
     this.indicators.onValues(handler);
   }
 
+  /**
+   * Structural position-overlay sync (Phase 4) — mirrors the validated
+   * position set of the ACTIVE instrument onto price lines. Specs are
+   * remembered even while the series is being rebuilt (chart-type switch),
+   * then replayed — overlays survive type switches without caller action.
+   */
+  setPositions(specs: readonly PositionLineSpec[]): void {
+    if (this.chart === null || this.positions === null) return;
+    this.positions.sync(specs, getChartTheme());
+  }
+
   /** Switches the rendered series type without touching the data window. */
   setChartType(type: OryonChartType): void {
     if (this.chart === null || type === this.chartType) return;
     this.chartType = type;
+    // Pane-0 survival: the main series is pane 0's ONLY data source, and
+    // LWC v5 auto-removes an empty pane on removeSeries
+    // (cleanupIfPaneIsEmpty) — the indicator panes would lose their anchor
+    // and the rebuilt main series would land in the wrong pane. Preserve
+    // pane 0 across the rebuild, then restore the default semantics.
+    const paneZero = this.chart.panes()[0];
+    paneZero?.setPreserveEmptyPane(true);
     if (this.candleSeries !== null) {
       this.chart.removeSeries(this.candleSeries);
       this.candleSeries = null;
@@ -279,7 +311,9 @@ export class OryonChartEngine {
     } else {
       this.lineSeries = this.chart.addSeries(LineSeries, { color: getChartTheme().accent, lineWidth: 2 });
     }
+    paneZero?.setPreserveEmptyPane(false);
     this.attachDrawingsToActiveSeries();
+    this.positions?.setSeries(this.activeSeries());
     this.rebuildSeriesData();
     this.chart.timeScale().scrollToRealTime();
   }
@@ -408,11 +442,11 @@ export class OryonChartEngine {
    * number of live series + native panes — structural assertions without
    * scraping the canvas.
    */
-  get debugStats(): { series: number; panes: number } | null {
+  get debugStats(): { series: number; panes: number; priceLines: number } | null {
     if (this.chart === null) return null;
     const main = (this.candleSeries !== null ? 1 : 0) + (this.lineSeries !== null ? 1 : 0);
     const managed = this.indicators?.stats ?? { series: 0, panes: 1 };
-    return { series: main + managed.series, panes: managed.panes };
+    return { series: main + managed.series, panes: managed.panes, priceLines: this.positions?.count ?? 0 };
   }
 
   // ── internals ──────────────────────────────────────────────────────────

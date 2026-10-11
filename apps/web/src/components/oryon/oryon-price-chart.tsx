@@ -19,6 +19,9 @@ import { intervalToMs } from "@/lib/charting/oryon-intervals";
 import { OryonDrawingLayer } from "@/components/oryon/oryon-drawing-layer";
 import { OryonIndicatorLegend } from "@/components/oryon/oryon-indicator-legend";
 import { useIndicatorSnapshot } from "@/components/oryon/oryon-indicators-context";
+import { useOryonPositions } from "@/components/oryon/oryon-positions-context";
+import { positionsForChart } from "@/lib/oryon/positions/match";
+import { buildPositionLineSpecs } from "@/lib/oryon/positions/overlay";
 import { cn } from "@/lib/utils";
 
 /**
@@ -151,6 +154,7 @@ export function OryonPriceChart({
         />
       ) : null}
       <OryonTickBridge engineRef={engineRef} symbol={liveSymbol ?? dataSymbol} />
+      <OryonPositionsOverlayBridge engineRef={engineRef} dataSymbol={dataSymbol} mounted={chartInstance !== null} />
       <OryonChartLegend
         symbol={dataSymbol}
         interval={interval}
@@ -182,6 +186,40 @@ function OryonTickBridge({
     if (quote === null) return;
     engineRef.current?.applyTick(quote.price, quote.ts);
   }, [quote, engineRef]);
+
+  return null;
+}
+
+/**
+ * Imperative positions → overlay bridge (Phase 4). Renders null; the
+ * positions context re-renders this leaf only (≈ broadcast cadence), then
+ * the engine diffs the overlay specs onto price lines — no chart
+ * reinitialization, no duplicated lines, no workspace re-render.
+ *
+ * Instrument filtering (spec §8.5): ONLY positions whose symbol matches the
+ * DISPLAYED data exactly are projected — the bridge follows `dataSymbol`,
+ * so during a placeholder-data window the overlays belong to the data
+ * actually on screen, never to the incoming selection.
+ */
+function OryonPositionsOverlayBridge({
+  engineRef,
+  dataSymbol,
+  mounted,
+}: {
+  engineRef: React.RefObject<OryonChartEngine | null>;
+  dataSymbol: string;
+  mounted: boolean;
+}) {
+  const { positions, selectedId } = useOryonPositions();
+
+  React.useEffect(() => {
+    if (!mounted) return;
+    const engine = engineRef.current;
+    if (engine === null) return;
+    const eligible = positionsForChart(positions, dataSymbol);
+    const specs = buildPositionLineSpecs(eligible, selectedId);
+    engine.setPositions(specs);
+  }, [positions, selectedId, dataSymbol, mounted, engineRef]);
 
   return null;
 }

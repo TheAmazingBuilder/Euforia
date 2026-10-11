@@ -127,9 +127,48 @@ export const oryonDict = {
   },
   lower: {
     title: "Open positions",
-    deferredTitle: "Positions are not integrated into Oryon yet",
-    body: "This panel is the reserved shell for the open-position visualization of a later phase. No broker positions are streamed here — mock account data is never presented as real.",
-    link: "View positions in Trades",
+    // Stream freshness (same honesty machine as the price feed — §9/§10).
+    statusLive: "Synced",
+    statusConnecting: "Connecting…",
+    statusDisconnected: "Disconnected",
+    statusStale: "Stale",
+    staleAgo: "last update {s}s ago",
+    simBadge: "SIM",
+    simHint:
+      "Simulated broker book — per-user demo positions marked to market. Not a live broker connection; real positions appear once a broker account is connected.",
+    // Summary line.
+    openCount: "open",
+    pnlTotalLabel: "Unrealized P&L",
+    pnlPartial: "partial",
+    usdDenominated: "USD-denominated simulated book",
+    // Honest states (§10) — connected-with-zero ≠ disconnected.
+    stateConnecting: "Connecting to the position feed…",
+    stateDisconnected: "Position feed disconnected. Updates resume automatically on reconnect.",
+    stateEmpty: "No open positions on this book.",
+    stateEmptyHint: "Positions opened on the connected book appear here in real time.",
+    stateError: "Position data is unavailable right now.",
+    // Table (§7.2).
+    table: {
+      symbol: "Symbol",
+      side: "Side",
+      volume: "Volume",
+      entry: "Entry",
+      market: "Market",
+      sl: "Stop loss",
+      tp: "Take profit",
+      pnl: "Unrealized P&L",
+      opened: "Opened",
+    },
+    sideLong: "LONG",
+    sideShort: "SHORT",
+    na: "—",
+    selectHint: "Select a position to highlight its levels on the chart.",
+    rowSelectAria: "Select position",
+    // Broker account context (§10) — separate from the simulated book.
+    accountNotConfigured: "No broker account connected — real positions appear once an account is linked.",
+    accountLink: "Connect in Accounts",
+    accountError: "Trading connection error",
+    positionsSourceNote: "Showing the simulated book — the connected broker's positions are not merged here.",
   },
   indicators: {
     title: "Indicators",
