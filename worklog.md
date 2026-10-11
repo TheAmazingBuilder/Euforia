@@ -901,3 +901,32 @@ Work Log:
 
 Stage Summary:
 - Phase 7 à ~70% (Stages B-C-D-E codés, F partiellement — données/overlays déjà multi-panneau par construction, G persistances v2 codées) ; H (tests+vérifications) à démarrer. Tout est commité — le restart ne peut plus rien perdre.
+
+---
+Task ID: oryon-phase7
+Agent: Super Z (main)
+Date: 2026-10-11 (IM — « on continue la phase 7 » — reprise du checkpoint 76512db)
+
+Task: Compléter Oryon Phase 7 (Stages F-H restants du checkpoint ~70%) — tests, vérifications, corrections, build et rapport final.
+
+Work Log:
+- REPRISE : checkpoint 76512db intact, arbre propre. tsc --noEmit : 0 erreur d'emblée (H1).
+- H2 — tests multichart (apps/web/scripts/oryon-multichart-tests.ts, bun) : EchoGuard (fenêtre 150 ms, expiration, epsilon de plage, null), rangesEqual, findBarContainingTime (containment, gaps, hors-span, non-finis), coordinateur avec FAKE adapters : discipline d'inscription (double id no-op strict-mode, unregister bidirectionnel, dispose), time-scale (broadcast aux autres, source jamais re-appliquée, écho synchrone terminé, skip epsilon, range null ignoré), crosshair (timestamp exact, cible non représentable → clear honnête), indépendance des 4 canaux, copie défensive setFeatures, remount. **67/67 PASS**.
+- H3 — workspace v2 : 3 échecs → 2 DÉVIATIONS D'IMPLÉMENTATION vs design consigné : (1) sessionStateEqual incluait activePanelId (le checkpoint dit « dirty exclut activePanelId ») → exclu + sessionStateIdentical ajoutée pour le no-change guard de patchSession (sinon l'activation était avalée) ; (2) panelsForGrid élaguait à 2 pour twoHorizontal/twoVertical → non destructif (auto-placement CSS, 3-4 panneaux survivent), trim défensif quad uniquement. Test dirty restructuré (baseline propre avant activation). **169/169 PASS**. Régressions P2-P5 : 61/92/66/33/23/62 vertes.
+- H4 — eslint P7 : 5 erreurs react-hooks/refs (lectures de ref pendant le render dans oryon-view : lazy-init du coordinateur) → accesseur getSync impératif (création au premier usage effet/callback) + prop sync inutilisée retirée de OryonChartGridPanel ; 5 imports inutilisés nettoyés. **0 erreur 0 warning**.
+- H5 — sonde scripts/verify-oryon-phase7.js (54 vérifications) + handle dev __ORYON_PANELS_DEBUG__ (oryon-view : identité/sync/range/crosshair/stats par panneau) + lastCandleTime + observedCrosshairTime côté moteur. Corrections en route :
+  * sémantique premier-clic-active : les contrôles de header d'un panneau inactif exigent l'activation d'abord (la sonde active explicitement comme un utilisateur) ;
+  * app — focus-capture : activation au clavier uniquement (:focus-visible) — la restitution de focus Radix après duplicate/remove volait l'activation à la copie/survivant ;
+  * app — sync-engine : cible non représentable → clearCrosshair (le docstring promettait un crosshair vide, le code laissait une position stale) ;
+  * app — moteur : applyVisibleRange guard time-scale vide (setVisibleRange LWC lève « Value is null » pendant les rechargements de données — cause de 7 erreurs console) ; lastCrosshairTime enregistré AUTORITAIREMENT dans applyCrosshairAtTime/clearCrosshairPosition (LWC passe skipEvent=true pour les positions synthétiques — l'événement crosshair-moved ne fire jamais — la métrique mentait, PAS la sync) ;
+  * app — headers de panneaux overflow-x-auto (<md, §15) ;
+  * sonde — hover sur les barres (35% de largeur, la marge droite LWC ne produit pas de timestamp), leavePlot entre les hovers (expiration des gardes d'écho 150 ms face aux événements synthétiques de fermeture de menu), attente de disparition des toasts sonner avant la mesure mobile (éléments fixed hors périmètre), polling des positions WS avant les assertions de scoping.
+  **54/54 PASS** (desktop 1440 + mobile 390, 0 erreur console).
+- Régressions sondes : P6 64/64 (lectures d'enveloppe adaptées v2 : panels[0].interval/chartType) ; P3 43/43, P4 28/28, P5 45/45 sur dev :3001 avec reset config (les sondes P1-P5 prédatent le multi-chart — baseline usine ajoutée à leur setup ; PIÈGE DÉCOUVERT : leur BASE par défaut est :3000 production où les handles dev n'existent pas — d'où 14/10/11 faux échecs avant BASE_URL explicite) ; P2 38/3 = la dérive pré-existante documentée (inchangée).
+- H6 — next build OK (32/32 statiques, /oryon prérendu) APRÈS arrêt du dev (leçon P3) ; preview :3000 relancée ; smokes prod : **P7 12/12** (scripts/smoke-p7-prod.js nouveau), P6 8/8, P4 baseline rows=3.
+- H7 — destroy() du moteur vérifié (unsubscribeCrosshairMove + unsubscribeVisibleTimeRangeChange + overlays) ; lower panel activeSymbol et createAlert ciblent l'instrument du panneau ACTIF (code revu) ; tsc 0, eslint 0, commit final.
+- Décisions : comparison §13 = graphes côte à côte synchronisés (overlay normalisé = future work, contrat sans mode comparaison) ; sync = un groupe implicite (4 flags indépendants) ; dirty exclut l'activation (préférence de vue) ; grilles à deux non destructives ; le handle __ORYON_PANELS_DEBUG__ est dev-only (jamais en production).
+- Limites documentées : pas de réorganisation libre par glisser-déposer (les 4 arrangements supportés seulement) ; comparaison en pourcentage non implémentée (future work) ; piles d'indicateurs des panneaux non-main = mémoire + capture au save (documenté) ; sync crosshair inter-intervalles = containment honnête (gaps → clear).
+
+Stage Summary:
+- **ORYON PHASE 7 LIVRÉE ET VÉRIFIÉE** : multi-panneaux (1/2h/2v/2×2) sans recréation de graphes, modèle de panneau actif (premier clic = activation), 4 synchronisations indépendantes (time-scale, crosshair par timestamp, instrument, timeframe) avec triple protection anti-boucle, ownership respecté (dessins par symbole, indicateurs par panneau, positions/alertes scopées par symbole, alertes indépendantes des panneaux), layouts v2 multi-panneaux avec migration v1 déterministe, templates appliqués au panneau actif. 573 assertions unitaires + 54 vérifications E2E + smokes prod verts, tsc/eslint/build propres. Commit final sur main.
