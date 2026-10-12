@@ -188,8 +188,19 @@ export const upsertReviewInputSchema = z.object({
   riskManagement: z.number().int().min(1).max(5).nullable().optional(),
   lessons: z.string().min(3, "Capture at least a short lesson").max(4000),
   improvementNote: z.string().max(1000).nullable().optional(),
+  /** Origin TradePlan (Phase 5) — ownership validated server-side, values frozen into planSnapshot. */
+  originTradePlanId: uuidSchema.nullable().optional(),
 });
 export type UpsertReviewInput = z.infer<typeof upsertReviewInputSchema>;
+
+/** PATCH /reviews/:tradeId — partial update (every field optional, tradeId in path). */
+export const patchReviewInputSchema = upsertReviewInputSchema
+  .omit({ tradeId: true })
+  .partial()
+  .refine((value) => Object.keys(value).length > 0, {
+    message: "Provide at least one field to patch.",
+  });
+export type PatchReviewInput = z.infer<typeof patchReviewInputSchema>;
 
 // ── Review rows (read model joined with trade context) ──────────────────────
 
@@ -223,7 +234,14 @@ export type ReviewRow = z.infer<typeof reviewRowSchema>;
 
 export const reviewsResponseSchema = z.object({
   reviews: z.array(reviewRowSchema),
-  meta: z.object({ generatedAt: isoDateTimeSchema }),
+  meta: z.object({
+    generatedAt: isoDateTimeSchema,
+    /** Phase 6 pagination (server merges reviewed+pending, tradingDate DESC). */
+    total: z.number().int().nonnegative(),
+    page: z.number().int().min(1),
+    limit: z.number().int().min(1),
+    hasMore: z.boolean(),
+  }),
 });
 export type ReviewsResponse = z.infer<typeof reviewsResponseSchema>;
 
@@ -325,3 +343,125 @@ export type TradeReviewOverviewResponse = z.infer<typeof tradeReviewOverviewResp
 /** DELETE /reviews/:tradeId — undo a review (trade returns to pending). */
 export const deleteReviewResponseSchema = z.object({ ok: z.boolean() });
 export type DeleteReviewResponse = z.infer<typeof deleteReviewResponseSchema>;
+
+// ── Phase 6 — plan-linked reviews: pagination, patch, detail, comparison ─────
+
+/** Stable error-code registry (Phase 6). Rides the AppError envelope. */
+export const TRADE_REVIEW_ERROR_CODES = {
+  /** Trade id does not exist for this user (ownership-safe 404). */
+  TRADE_REVIEW_TRADE_NOT_FOUND: "TRADE_REVIEW_TRADE_NOT_FOUND",
+  /** Trade exists but is not CLOSED (only closed trades are reviewable). */
+  TRADE_REVIEW_TRADE_NOT_REVIEWABLE: "TRADE_REVIEW_TRADE_NOT_REVIEWABLE",
+  /** Optimistic concurrency: reviewedAt moved since the caller loaded it. */
+  TRADE_REVIEW_CONCURRENT_MODIFICATION: "TRADE_REVIEW_CONCURRENT_MODIFICATION",
+  /** No review row for that trade (archive/undo paths). */
+  TRADE_REVIEW_NOT_FOUND: "TRADE_REVIEW_NOT_FOUND",
+  /** originTradePlanId points at a plan that does not exist for this user. */
+  TRADE_REVIEW_PLAN_NOT_FOUND: "TRADE_REVIEW_PLAN_NOT_FOUND",
+  /** Linked plan's instrument differs from the trade's (explicit confirm required). */
+  TRADE_REVIEW_PLAN_MISMATCH: "TRADE_REVIEW_PLAN_MISMATCH",
+} as const;
+
+/** GET /reviews — list query (pagination only; ordering is tradingDate DESC). */
+export const reviewsQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).max(10_000).optional(),
+  limit: z.coerce.number().int().min(1).max(100).optional(),
+});
+export type ReviewsQuery = z.infer<typeof reviewsQuerySchema>;
+
+/** Frozen comparison-relevant plan values (JSONB `planSnapshot` on TradeReview). */
+export const reviewPlanSnapshotSchema = z.object({
+  planId: uuidSchema,
+  /** Plan lifecycle status at snapshot time (Phase 5 string vocabulary). */
+  planStatus: z.string().min(1).max(32),
+  direction: directionSchema,
+  symbol: z.string().min(1).max(32),
+  currency: z.string().min(1).max(16),
+  entryPrice: z.string().min(1),
+  stopLoss: z.string().nullable(),
+  takeProfit: z.string().nullable(),
+  sizeMode: z.string().min(1).max(32),
+  sizeValue: z.string().min(1),
+  riskAmount: z.string().nullable(),
+  riskPercent: z.string().nullable(),
+  positionSize: z.string().nullable(),
+  /** Planned reward:risk ratio (Phase 5 canonical rrRatio). */
+  rrRatio: z.string().nullable(),
+  /** When the freeze happened (ISO, server clock at save). */
+  snapshottedAt: isoDateTimeSchema,
+});
+export type ReviewPlanSnapshot = z.infer<typeof reviewPlanSnapshotSchema>;
+
+/** One objective leg of the planned-vs-actual comparison (facts, no judgment). */
+export const comparisonLegSchema = z.object({
+  planned: z.string().nullable(),
+  actual: z.string().nullable(),
+  deviation: z.string().nullable(),
+  deviationPips: z.number().nullable(),
+  /** false = the value was unavailable on either side — never fabricated. */
+  available: z.boolean(),
+});
+export type ComparisonLeg = z.infer<typeof comparisonLegSchema>;
+
+/** Phase 6 §12 — planned vs actual. Computed facts, never quality labels. */
+export const planVsActualComparisonSchema = z.object({
+  /** SNAPSHOT = frozen plan values, LIVE = defensive legacy row, NONE = no plan. */
+  basedOn: z.enum(["SNAPSHOT", "LIVE", "NONE"]),
+  hasPlan: z.boolean(),
+  direction: z.object({
+    planned: directionSchema.nullable(),
+    actual: directionSchema.nullable(),
+    match: z.boolean().nullable(),
+  }),
+  entry: comparisonLegSchema,
+  stop: comparisonLegSchema,
+  target: comparisonLegSchema,
+  risk: comparisonLegSchema,
+  size: comparisonLegSchema,
+  /** Planned reward:risk (Phase 5) vs realized R (Trading Core canonical). */
+  rMultiple: comparisonLegSchema,
+});
+export type PlanVsActualComparison = z.infer<typeof planVsActualComparisonSchema>;
+
+/** The linked plan as of review time: reference + current lifecycle + frozen values. */
+export const reviewPlanSummarySchema = z.object({
+  planId: uuidSchema,
+  /** Plan status NOW (may differ from the snapshot's frozen planStatus). */
+  currentStatus: z.string().nullable(),
+  snapshot: reviewPlanSnapshotSchema,
+});
+export type ReviewPlanSummary = z.infer<typeof reviewPlanSummarySchema>;
+
+/** Authoritative trade facts at detail time (read-only, Trading Core owns them). */
+export const reviewTradeSummarySchema = z.object({
+  tradeId: uuidSchema,
+  status: z.string().min(1).max(32),
+  direction: directionSchema,
+  symbol: z.string().min(1).max(32),
+  currency: z.string().min(1).max(16),
+  quantity: z.string(),
+  closedQuantity: z.string(),
+  entryPrice: z.string().nullable(),
+  exitPrice: z.string().nullable(),
+  entryAt: isoDateTimeSchema.nullable(),
+  exitAt: isoDateTimeSchema.nullable(),
+  durationSeconds: z.number().int().nonnegative().nullable(),
+  pnlGross: z.string().nullable(),
+  pnlNet: z.string().nullable(),
+  fees: z.string().nullable(),
+  swap: z.string().nullable(),
+  riskAmount: z.string().nullable(),
+  rMultiple: z.string().nullable(),
+  initialStop: z.string().nullable(),
+  initialTP: z.string().nullable(),
+});
+export type ReviewTradeSummary = z.infer<typeof reviewTradeSummarySchema>;
+
+/** GET /reviews/:tradeId — review payload + trade summary + plan + comparison. */
+export const reviewDetailResponseSchema = z.object({
+  review: tradeReviewSchema,
+  tradeSummary: reviewTradeSummarySchema,
+  planSummary: reviewPlanSummarySchema.nullable(),
+  comparison: planVsActualComparisonSchema,
+});
+export type ReviewDetailResponse = z.infer<typeof reviewDetailResponseSchema>;

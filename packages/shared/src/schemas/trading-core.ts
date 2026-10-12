@@ -12,6 +12,7 @@ import {
   positiveDecimalStringSchema,
   uuidSchema,
 } from "./primitives";
+import { tradeSourceSchema } from "./trade";
 
 /**
  * Trading Core contract (Phase 4) — the canonical journal trade.
@@ -34,14 +35,9 @@ import {
 
 // ── Lifecycle enums ──────────────────────────────────────────────────────────
 
-/**
- * How a trade entered Cosmoz (§8 — the source must be explicit):
- * - EXTERNAL_SYNC: reconstructed from synchronized provider activity;
- * - MANUAL: entered by hand in the journal (never pretends to be broker data);
- * - IMPORT: bulk-imported from a file via the client-side mapping dialog.
- */
-export const tradeSourceSchema = z.enum(["EXTERNAL_SYNC", "MANUAL", "IMPORT"]);
-export type TradeSource = z.infer<typeof tradeSourceSchema>;
+// `tradeSourceSchema` (MANUAL | IMPORT | EXTERNAL_SYNC) is imported from
+// ./trade — same three values; re-declaring it here would make the two
+// `export *` barrel surfaces ambiguous.
 
 /**
  * One leg of a trade: an entry (position building) or an exit (position

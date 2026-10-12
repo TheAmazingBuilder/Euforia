@@ -287,8 +287,9 @@ export const ocrAssetSchema = z.object({
   id: uuidSchema,
   mime: z.enum(["image/png", "image/jpeg", "image/webp", "application/pdf"]),
   sizeBytes: z.number().int().positive(),
-  width: z.number().int().positive(),
-  height: z.number().int().positive(),
+  /** V2 — null for PDF statements (the pages carry the rendering). */
+  width: z.number().int().positive().nullable(),
+  height: z.number().int().positive().nullable(),
   checksumSha256: z.string().regex(/^[a-f0-9]{64}$/),
   createdAt: isoDateTimeSchema,
   /** Retention purged the binary (metadata rows remain, § ops review). */
@@ -861,3 +862,473 @@ export type OcrCollectionRemoveItemParams = z.infer<typeof ocrCollectionRemoveIt
 
 export const ocrReprocessResponseSchema = z.object({ recognition: ocrRecognitionSchema });
 export type OcrReprocessResponse = z.infer<typeof ocrReprocessResponseSchema>;
+
+// ── Recognition V2/V3 — the /recognition wire family ─────────────────────────
+// Frontend-derived API surface for the recognition backend (jobs, drafts,
+// groups, collections, corrections). Distinct from the legacy /ocr family
+// above: jobs are first-class, drafts are user-editable, groups fuse several
+// screenshots into one trade, collections organise assets. Wire conventions
+// are the house ones — UTC ISO-8601 Z, decimal strings, zod-validated
+// everywhere, 16 normalized field keys (engine's 10 + 6 wire-only).
+
+/** The 16 wire field keys (engine keys + account/chart keys, profit→profitLoss). */
+export const recognitionFieldKeySchema = z.enum([
+  "symbol",
+  "direction",
+  "volume",
+  "entryPrice",
+  "exitPrice",
+  "stopLoss",
+  "takeProfit",
+  "profitLoss",
+  "openTime",
+  "closeTime",
+  "platform",
+  "currency",
+  "positionId",
+  "orderId",
+  "accountBalance",
+  "accountEquity",
+]);
+export type RecognitionFieldKey = z.infer<typeof recognitionFieldKeySchema>;
+
+/** Per-field read state (never invented — the engine signals each state). */
+export const recognitionFieldStateSchema = z.enum(["FOUND", "UNCERTAIN", "NOT_FOUND"]);
+export type RecognitionFieldState = z.infer<typeof recognitionFieldStateSchema>;
+
+/** Normalized 0..1 source region (frontend §25 — resolution independent). */
+const recognitionRegionSchema = z.object({
+  x: z.number().min(0).max(1),
+  y: z.number().min(0).max(1),
+  width: z.number().min(0).max(1),
+  height: z.number().min(0).max(1),
+});
+
+/** One recognized field on the wire (0..100 confidence, user edits flagged). */
+export const recognizedFieldSchema = z.object({
+  key: recognitionFieldKeySchema,
+  value: z.string().max(256).nullable(),
+  state: recognitionFieldStateSchema,
+  confidence: z.number().int().min(0).max(100).nullable(),
+  sourceRegion: recognitionRegionSchema.optional(),
+  editedByUser: z.boolean().optional(),
+});
+export type RecognizedField = z.infer<typeof recognizedFieldSchema>;
+
+/** One recognized trade within a (multi-trade) screenshot result. */
+export const recognizedTradeSchema = z.object({
+  /** 1-based position within the screenshot. */
+  index: z.number().int().positive(),
+  fields: z.record(recognitionFieldKeySchema, recognizedFieldSchema),
+  pageIndex: z.number().int().nonnegative().optional(),
+});
+export type RecognizedTrade = z.infer<typeof recognizedTradeSchema>;
+
+/** Typed warning codes (free-string engine warnings are mapped, never leaked). */
+export const recognitionWarningSchema = z.object({
+  code: z.enum(["SCREENSHOT_INCOMPLETE", "LOW_CONFIDENCE_FIELD", "FIELD_NOT_DETECTED"]),
+  message: z.string().max(256),
+  field: recognitionFieldKeySchema.optional(),
+});
+export type RecognitionWarning = z.infer<typeof recognitionWarningSchema>;
+
+/** Platform as detected by the engine (AUTO lives only on job inputs). */
+export const detectedPlatformSchema = z.enum(["METATRADER_5", "TRADINGVIEW", "OTHER"]);
+export type DetectedPlatform = z.infer<typeof detectedPlatformSchema>;
+
+/** Coarse pipeline stage (the frontend's finer timeline is display-only). */
+export const recognitionStageSchema = z.enum(["UPLOADING", "OCR", "COMPLETED"]);
+export type RecognitionStage = z.infer<typeof recognitionStageSchema>;
+
+export const recognitionJobStatusSchema = z.enum([
+  "PENDING",
+  "PROCESSING",
+  "COMPLETED",
+  "FAILED",
+  "CANCELLED",
+]);
+export type RecognitionJobStatus = z.infer<typeof recognitionJobStatusSchema>;
+
+export const recognitionJobErrorCodeSchema = z.enum([
+  "SERVICE_UNAVAILABLE",
+  "UNSUPPORTED_IMAGE",
+  "RECOGNITION_FAILED",
+]);
+export type RecognitionJobErrorCode = z.infer<typeof recognitionJobErrorCodeSchema>;
+
+/** The uploaded screenshot as the job sees it (PDF pages counted, dims nullable). */
+export const recognitionScreenshotSchema = z.object({
+  id: uuidSchema,
+  name: z.string().max(120),
+  sizeBytes: z.number().int().positive(),
+  mimeType: z.enum(["image/png", "image/jpeg", "image/webp", "application/pdf"]),
+  width: z.number().int().positive().nullable(),
+  height: z.number().int().positive().nullable(),
+  uploadedAt: isoDateTimeSchema,
+  documentPageCount: z.number().int().min(1).max(1000).optional(),
+});
+export type RecognitionScreenshot = z.infer<typeof recognitionScreenshotSchema>;
+
+/** The full recognition result attached to a completed job. */
+export const recognitionResultSchema = z.object({
+  jobId: uuidSchema,
+  detectedPlatform: detectedPlatformSchema,
+  platformConfidence: z.number().int().min(0).max(100).nullable(),
+  trades: z.array(recognizedTradeSchema).min(1).max(20),
+  warnings: z.array(recognitionWarningSchema).max(16),
+  /** Evidence-weighted mean of detected field confidences (never a constant). */
+  overallConfidence: z.number().int().min(0).max(100).nullable(),
+  /** V3 engine quality (0..100 components; consistency only for fused jobs). */
+  quality: z
+    .object({
+      overall: z.number().min(0).max(100),
+      components: z.object({
+        textRecognition: z.number(),
+        fieldExtraction: z.number(),
+        tradingInterpretation: z.number(),
+        crossFieldValidation: z.number(),
+        consistency: z.number().nullable(),
+      }),
+    })
+    .optional(),
+  versions: z
+    .object({
+      engine: z.string().max(64),
+      pipeline: z.string().max(32),
+      schema: z.literal("3"),
+    })
+    .optional(),
+  processingMs: z.number().int().nonnegative().nullable(),
+  completedAt: isoDateTimeSchema.nullable(),
+});
+export type RecognitionResult = z.infer<typeof recognitionResultSchema>;
+
+/** GET /recognition/jobs/:id — the job aggregate. */
+export const recognitionJobSchema = z.object({
+  id: uuidSchema,
+  ownerId: uuidSchema,
+  status: recognitionJobStatusSchema,
+  stage: recognitionStageSchema,
+  progress: z.number().int().min(0).max(100),
+  platform: z.enum(["AUTO", "METATRADER_5", "TRADINGVIEW", "OTHER"]),
+  mode: z.enum(["AUTOMATIC"]),
+  screenshot: recognitionScreenshotSchema,
+  createdAt: isoDateTimeSchema,
+  completedAt: isoDateTimeSchema.nullable(),
+  processingMs: z.number().int().nonnegative().nullable(),
+  error: z
+    .object({ code: recognitionJobErrorCodeSchema, message: z.string() })
+    .nullable(),
+  /** The trade created by the ONLY confirm bridge (explicit user action). */
+  importedTradeId: uuidSchema.nullable(),
+  importedTradeIds: z.array(uuidSchema).max(20).optional(),
+  hasWarnings: z.boolean(),
+});
+export type RecognitionJob = z.infer<typeof recognitionJobSchema>;
+
+/** History row (keyset-paginated list) — the list projection of a job. */
+export const recognitionHistoryItemSchema = z.object({
+  id: uuidSchema,
+  status: recognitionJobStatusSchema,
+  platform: z.enum(["AUTO", "METATRADER_5", "TRADINGVIEW", "OTHER"]),
+  detectedPlatform: detectedPlatformSchema.nullable(),
+  screenshotName: z.string().max(120),
+  sizeBytes: z.number().int().positive(),
+  mimeType: z.enum(["image/png", "image/jpeg", "image/webp", "application/pdf"]),
+  width: z.number().int().positive().nullable(),
+  height: z.number().int().positive().nullable(),
+  documentPageCount: z.number().int().min(1).max(1000).optional(),
+  detectedTradeCount: z.number().int().min(0).max(20),
+  overallConfidence: z.number().int().min(0).max(100).nullable(),
+  hasWarnings: z.boolean(),
+  error: z
+    .object({ code: recognitionJobErrorCodeSchema, message: z.string() })
+    .nullable(),
+  createdAt: isoDateTimeSchema,
+  completedAt: isoDateTimeSchema.nullable(),
+  processingMs: z.number().int().nonnegative().nullable(),
+  importedTradeId: uuidSchema.nullable(),
+  /** V3 facets (§62/§41) — present only when meaningful. */
+  correctedCount: z.number().int().nonnegative().optional(),
+  duplicateWarned: z.literal(true).optional(),
+  qualityOverall: z.number().min(0).max(100).optional(),
+  screenshotId: uuidSchema,
+});
+export type RecognitionHistoryItem = z.infer<typeof recognitionHistoryItemSchema>;
+
+/** GET /recognition/jobs list query — server-side history filters. */
+export const recognitionJobListQuerySchema = z.object({
+  status: recognitionJobStatusSchema.optional(),
+  platform: z.string().max(32).optional(),
+  mimeType: z.string().max(64).optional(),
+  corrected: z.enum(["true", "false"]).optional(),
+  duplicate: z.enum(["true", "false"]).optional(),
+  minConfidence: z.coerce.number().int().min(0).max(100).optional(),
+  from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+});
+export type RecognitionJobListQuery = z.infer<typeof recognitionJobListQuerySchema>;
+
+/** Stored JSONB draft shape (OcrRecognition.draft / OcrRecognitionGroup.fusedDraft). */
+export const tradeDraftRecordSchema = z.object({
+  symbol: z.string().max(64).nullable(),
+  direction: z.enum(["BUY", "SELL"]).nullable(),
+  volume: z.string().max(64).nullable(),
+  entryPrice: z.string().max(64).nullable(),
+  exitPrice: z.string().max(64).nullable(),
+  stopLoss: z.string().max(64).nullable(),
+  takeProfit: z.string().max(64).nullable(),
+  profitLoss: z.string().max(64).nullable(),
+  openTime: z.string().max(64).nullable(),
+  closeTime: z.string().max(64).nullable(),
+  platform: z.string().max(32).nullable(),
+  currency: z.string().max(16).nullable(),
+  positionId: z.string().max(64).nullable(),
+  orderId: z.string().max(64).nullable(),
+  accountBalance: z.string().max(64).nullable().optional(),
+  accountEquity: z.string().max(64).nullable().optional(),
+});
+export type TradeDraftRecord = z.infer<typeof tradeDraftRecordSchema>;
+
+/** Wire draft = stored record + server-added provenance. */
+export const tradeDraftSchema = tradeDraftRecordSchema.extend({
+  platform: detectedPlatformSchema.nullable(),
+  jobId: uuidSchema,
+  updatedAt: isoDateTimeSchema,
+  tradeIndex: z.number().int().positive().max(20).optional(),
+});
+export type TradeDraft = z.infer<typeof tradeDraftSchema>;
+
+/** PUT /recognition/jobs/:id/draft — the user's corrected draft (≡ record). */
+export const tradeDraftUpdateInputSchema = tradeDraftRecordSchema;
+export type TradeDraftUpdateInput = z.infer<typeof tradeDraftUpdateInputSchema>;
+
+/** POST /recognition/uploads — data-URL upload (image or PDF). */
+export const recognitionUploadInputSchema = z.object({
+  fileDataUrl: z
+    .string()
+    .min(30)
+    .max(8_400_000)
+    .refine(
+      (v) =>
+        (v.startsWith("data:image/") || v.startsWith("data:application/pdf;")) &&
+        v.includes(";base64,"),
+      { message: "expected a base64 data URL for an image or a PDF" },
+    ),
+  name: z.string().min(1).max(255),
+});
+export type RecognitionUploadInput = z.infer<typeof recognitionUploadInputSchema>;
+
+/** POST /recognition/jobs — start recognition on a previously uploaded asset. */
+export const createRecognitionJobInputSchema = z.object({
+  screenshotId: uuidSchema,
+  platform: z.enum(["AUTO", "METATRADER_5", "TRADINGVIEW", "OTHER"]).default("AUTO"),
+  mode: z.enum(["AUTOMATIC"]).default("AUTOMATIC"),
+});
+export type CreateRecognitionJobInput = z.infer<typeof createRecognitionJobInputSchema>;
+
+/** POST /recognition/jobs/:id/confirm — THE trade bridge (explicit human action). */
+export const recognitionConfirmInputSchema = z.object({
+  tradeIndexes: z.array(z.number().int().positive().max(20)).max(20).optional(),
+  accountId: uuidSchema.optional(),
+});
+export type RecognitionConfirmInput = z.infer<typeof recognitionConfirmInputSchema>;
+
+/** POST /recognition/jobs/:id/recrop — re-read a zoomed region of the asset. */
+export const recognitionRecropInputSchema = z.object({
+  region: recognitionRegionSchema,
+  tradeIndex: z.number().int().positive().max(20).optional(),
+});
+export type RecognitionRecropInput = z.infer<typeof recognitionRecropInputSchema>;
+
+// ── Groups (V3 — fuse several screenshots into one trade) ────────────────────
+
+/** Machine-readable correlation evidence between two members. */
+export const correlationEvidenceSchema = z.object({
+  kind: z.string(),
+  score: z.number().min(0).max(1),
+  detail: z.string().max(256),
+});
+export type CorrelationEvidence = z.infer<typeof correlationEvidenceSchema>;
+
+export const recognitionGroupMemberSchema = z.object({
+  jobId: uuidSchema,
+  status: recognitionJobStatusSchema,
+  screenshotName: z.string().max(120),
+  detectedPlatform: detectedPlatformSchema.nullable(),
+  /** Raw screenshot type token (provider vocabulary, deliberately not an enum). */
+  screenshotType: z.string().max(64).nullable(),
+  trade: recognizedTradeSchema.nullable(),
+  overallConfidence: z.number().int().min(0).max(100).nullable(),
+  uploadedAt: isoDateTimeSchema,
+});
+export type RecognitionGroupMember = z.infer<typeof recognitionGroupMemberSchema>;
+
+export const recognitionGroupSchema = z.object({
+  id: uuidSchema,
+  ownerId: uuidSchema,
+  status: z.enum(["PROPOSED", "ACTIVE", "CONFIRMED", "DISCARDED"]),
+  members: z.array(recognitionGroupMemberSchema).min(0).max(8),
+  evidence: z.array(correlationEvidenceSchema),
+  fusionConfidence: z.number().min(0).max(100),
+  autoConfirmed: z.boolean(),
+  fusedDraft: tradeDraftSchema.nullable(),
+  /** Winning member per wire key (field → jobId). */
+  fieldOrigins: z.record(z.string(), uuidSchema).optional(),
+  conflicts: z
+    .array(
+      z.object({
+        field: z.string(),
+        values: z
+          .array(z.object({ value: z.string(), jobId: uuidSchema }))
+          .min(2),
+        selectedJobId: uuidSchema,
+      }),
+    )
+    .optional(),
+  timeline: z
+    .array(
+      z.object({
+        jobId: uuidSchema,
+        role: z.enum(["ENTRY", "EXIT", "POSITION"]),
+        at: isoDateTimeSchema.nullable(),
+      }),
+    )
+    .optional(),
+  quality: z
+    .object({
+      overall: z.number().min(0).max(100),
+      components: z.record(z.string(), z.number().nullable()),
+    })
+    .nullable(),
+  importedTradeId: uuidSchema.nullable(),
+  createdAt: isoDateTimeSchema,
+  updatedAt: isoDateTimeSchema,
+});
+export type RecognitionGroup = z.infer<typeof recognitionGroupSchema>;
+
+export const recognitionGroupSummarySchema = z.object({
+  id: uuidSchema,
+  status: z.enum(["PROPOSED", "ACTIVE", "CONFIRMED", "DISCARDED"]),
+  memberCount: z.number().int().min(2).max(8),
+  leadScreenshotName: z.string(),
+  fusionConfidence: z.number().min(0).max(100),
+  importedTradeId: uuidSchema.nullable(),
+  createdAt: isoDateTimeSchema,
+});
+export type RecognitionGroupSummary = z.infer<typeof recognitionGroupSummarySchema>;
+
+/** POST /recognition/groups — correlate 2..8 jobs into one trade. */
+export const recognitionGroupCreateInputSchema = z.object({
+  jobIds: z.array(uuidSchema).min(2).max(8),
+});
+export type RecognitionGroupCreateInput = z.infer<typeof recognitionGroupCreateInputSchema>;
+
+/** POST /recognition/groups/:id/confirm — confirm the fused draft. */
+export const recognitionGroupConfirmInputSchema = z.object({
+  accountId: uuidSchema.optional(),
+});
+export type RecognitionGroupConfirmInput = z.infer<typeof recognitionGroupConfirmInputSchema>;
+
+// ── Collections (V3 — asset-based organization) ──────────────────────────────
+
+export const recognitionCollectionSchema = z.object({
+  id: uuidSchema,
+  name: z.string().min(1).max(64),
+  description: z.string().max(280).nullable(),
+  assetsCount: z.number().int().nonnegative(),
+  createdAt: isoDateTimeSchema,
+  updatedAt: isoDateTimeSchema,
+});
+export type RecognitionCollection = z.infer<typeof recognitionCollectionSchema>;
+
+export const recognitionCollectionDetailSchema = recognitionCollectionSchema.extend({
+  assets: z.array(recognitionScreenshotSchema),
+});
+export type RecognitionCollectionDetail = z.infer<typeof recognitionCollectionDetailSchema>;
+
+export const recognitionCollectionCreateInputSchema = z.object({
+  name: z.string().trim().min(1).max(64),
+  description: z.string().max(280).nullable().optional(),
+});
+export type RecognitionCollectionCreateInput = z.infer<typeof recognitionCollectionCreateInputSchema>;
+
+export const recognitionCollectionAssetInputSchema = z.object({
+  assetId: uuidSchema,
+});
+export type RecognitionCollectionAssetInput = z.infer<typeof recognitionCollectionAssetInputSchema>;
+
+// ── Draft coherence (pure domain rule — shared by jobs, groups, quality) ─────
+
+export interface DraftCoherenceInput {
+  direction?: string | null;
+  entryPrice?: string | null;
+  exitPrice?: string | null;
+  stopLoss?: string | null;
+  takeProfit?: string | null;
+  openTime?: string | null;
+  closeTime?: string | null;
+}
+
+export interface DraftCoherenceIssue {
+  field: string;
+  message: string;
+}
+
+/**
+ * The THREE domain coherence rules (mirrors the §19 validation battery):
+ *   1. stop-loss must sit on the losing side of entry (BUY: < entry; SELL: >);
+ *   2. take-profit must sit on the winning side of entry;
+ *   3. closeTime must not precede openTime.
+ * Each rule fires only when its operands are present and parseable as
+ * decimals; direction defaults to BUY when absent. Exactly these three —
+ * callers derive `applicableRules` from the same operand presence, so any
+ * additional issue here would poison the cross-field quality component.
+ */
+export function validateDraftCoherence(draft: DraftCoherenceInput): DraftCoherenceIssue[] {
+  const issues: DraftCoherenceIssue[] = [];
+  const parse = (value: string | null | undefined): number | null => {
+    if (value === null || value === undefined || value === "") return null;
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  };
+  const entry = parse(draft.entryPrice);
+  const stop = parse(draft.stopLoss);
+  const target = parse(draft.takeProfit);
+  const direction: "BUY" | "SELL" = draft.direction === "SELL" ? "SELL" : "BUY";
+
+  if (entry !== null && stop !== null) {
+    const invalid = direction === "BUY" ? stop >= entry : stop <= entry;
+    if (invalid) {
+      issues.push({
+        field: "stopLoss",
+        message:
+          direction === "BUY"
+            ? "Stop loss must be below the entry price for a BUY."
+            : "Stop loss must be above the entry price for a SELL.",
+      });
+    }
+  }
+  if (entry !== null && target !== null) {
+    const invalid = direction === "BUY" ? target <= entry : target >= entry;
+    if (invalid) {
+      issues.push({
+        field: "takeProfit",
+        message:
+          direction === "BUY"
+            ? "Take profit must be above the entry price for a BUY."
+            : "Take profit must be below the entry price for a SELL.",
+      });
+    }
+  }
+
+  const open = parse(draft.openTime);
+  const close = parse(draft.closeTime);
+  if (open !== null && close !== null && close < open) {
+    issues.push({
+      field: "closeTime",
+      message: "Close time must not be earlier than the open time.",
+    });
+  }
+  return issues;
+}

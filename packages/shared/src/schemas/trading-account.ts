@@ -350,3 +350,17 @@ export const TRADING_ERROR_CODES = {
 } as const;
 
 export type TradingErrorCode = (typeof TRADING_ERROR_CODES)[keyof typeof TRADING_ERROR_CODES];
+
+// ── Update (PATCH /accounts/:accountId) ──────────────────────────────────────
+
+/**
+ * Journal-side edits only: the account identity (provider, environment,
+ * external id, currency, starting balance) is provider-anchored and never
+ * client-mutable — a rename is the one documented user edit (§21: labels
+ * never impersonate the provider's own data).
+ */
+export const tradingAccountUpdateInputSchema = z.object({
+  /** Human label; provider/environment defaults preserved when omitted. */
+  name: z.string().trim().min(1).max(64).optional(),
+});
+export type TradingAccountUpdateInput = z.infer<typeof tradingAccountUpdateInputSchema>;
