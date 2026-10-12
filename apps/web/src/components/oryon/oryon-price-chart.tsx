@@ -17,7 +17,14 @@ import {
 import { OryonChartEngine, type OryonChartType, type OryonCrosshairBar } from "@/lib/charting/oryon-chart-engine";
 import { intervalToMs } from "@/lib/charting/oryon-intervals";
 import type { OryonIndicatorStore } from "@/lib/oryon/indicators/store";
+import {
+  flushPanelChartPrefs,
+  loadPanelChartPrefs,
+  savePanelChartPrefs,
+  type OryonPanelChartPrefs,
+} from "@/lib/oryon/workspace/chart-prefs";
 import { OryonDrawingLayer } from "@/components/oryon/oryon-drawing-layer";
+import { OryonChartContextMenu } from "@/components/oryon/oryon-chart-context-menu";
 import { OryonIndicatorLegend } from "@/components/oryon/oryon-indicator-legend";
 import { useIndicatorSnapshot } from "@/components/oryon/oryon-indicators-context";
 import { useOryonDrawings } from "@/components/oryon/oryon-drawings-context";
@@ -54,6 +61,7 @@ import { cn } from "@/lib/utils";
  * imperatively — the workspace tree never re-renders per tick.
  */
 export function OryonPriceChart({
+  panelId,
   dataSymbol,
   liveSymbol,
   interval,
@@ -71,6 +79,8 @@ export function OryonPriceChart({
   onEngineReady,
   onEngineGone,
 }: {
+  /** STABLE panel identity — chart prefs are keyed per panel (Settings). */
+  panelId: string;
   /** Symbol of the data ACTUALLY displayed — the legend labels this. */
   dataSymbol: string;
   /** Selected symbol for live ticks — null while placeholder data shows. */
@@ -117,6 +127,21 @@ export function OryonPriceChart({
   // so annotations never leak across instruments during data switches.
   const { registry: drawingRegistry } = useOryonDrawings();
   const drawingStore = drawingRegistry.storeFor(dataSymbol);
+
+  // THIS panel's chart prefs (context-menu Settings) — browser-local,
+  // keyed by the stable panel id; the engine applies them imperatively.
+  // NO panelId-change sync: the grid keys panels by their stable id, so a
+  // changed identity REMOUNTS this component (the initializer re-runs).
+  const [chartPrefs, setChartPrefs] = React.useState<OryonPanelChartPrefs>(() =>
+    loadPanelChartPrefs(panelId),
+  );
+  React.useEffect(() => {
+    engineRef.current?.applyAppearance(chartPrefs.appearance);
+    savePanelChartPrefs(panelId, chartPrefs);
+    // The cleanup flushes the OUTGOING snapshot — every committed value is
+    // eventually written synchronously (no lost tail write on unmount).
+    return () => flushPanelChartPrefs(panelId, chartPrefs);
+  }, [chartPrefs, panelId]);
 
   // Mount once / destroy on unmount (no duplicate instances, no leaks).
   React.useEffect(() => {
@@ -182,7 +207,17 @@ export function OryonPriceChart({
 
   return (
     <div ref={wrapperRef} className="relative h-full w-full">
-      <div ref={containerRef} data-testid="oryon-chart-canvas" className="h-full w-full" />
+      <OryonChartContextMenu
+        engineRef={engineRef}
+        dataSymbol={dataSymbol}
+        interval={interval}
+        digits={digits}
+        interactive={interactive}
+        chartPrefs={chartPrefs}
+        onChartPrefsChange={setChartPrefs}
+      >
+        <div ref={containerRef} data-testid="oryon-chart-canvas" className="h-full w-full" />
+      </OryonChartContextMenu>
       {chartInstance !== null ? (
         <OryonDrawingLayer
           engine={chartInstance.engine}
@@ -227,6 +262,7 @@ export function OryonPriceChart({
         source={source}
         bar={hoverBar}
         hasData={candles.length > 0}
+        statusLine={chartPrefs.statusLine}
       >
         {chartInstance !== null ? (
           <OryonIndicatorLegend engine={chartInstance.engine} store={indicatorStore} hoverBar={hoverBar} />
@@ -326,13 +362,17 @@ function OryonAlertsOverlayBridge({
   return null;
 }
 
-/** Top-left overlay: identity, honest source badge, OHLC of the inspected bar. */
+/** Top-left overlay: identity, honest source badge, OHLC of the inspected bar.
+ *  OHLC values take the BAR's direction color (bullish → profit, bearish →
+ *  loss) — the readout reads like the candles it describes. The status-line
+ *  switches (chart settings) hide the time / OHLC / volume spans. */
 function OryonChartLegend({
   symbol,
   interval,
   source,
   bar,
   hasData,
+  statusLine,
   children = null,
 }: {
   symbol: string;
@@ -340,6 +380,7 @@ function OryonChartLegend({
   source: "real" | "sim";
   bar: OryonCrosshairBar | null;
   hasData: boolean;
+  statusLine: { ohlc: boolean; volume: boolean; time: boolean };
   children?: React.ReactNode;
 }) {
   const dict = useDict();
@@ -375,25 +416,31 @@ function OryonChartLegend({
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
-      {hasData && bar !== null ? (
-        <>
-          <span data-testid="oryon-legend-time" className="font-mono text-[11px] tabular-nums text-muted-foreground">
-            {formatCandleTime(bar.t, interval)}
-          </span>
-          <span data-testid="oryon-legend-ohlc" className="font-mono text-[11px] tabular-nums text-muted-foreground">
-            {S.legend.open} <span className="text-foreground">{bar.o}</span>{" "}
-            {S.legend.high} <span className="text-foreground">{bar.h}</span>{" "}
-            {S.legend.low} <span className="text-foreground">{bar.l}</span>{" "}
-            {S.legend.close} <span className="text-foreground">{bar.c}</span>
-          </span>
-          {volumeText !== null ? (
-            <span data-testid="oryon-legend-volume" className="font-mono text-[11px] tabular-nums text-muted-foreground">
-              {S.legend.volume} <span className="text-foreground">{volumeText}</span>
-            </span>
-          ) : null}
-        </>
+      {hasData && bar !== null && statusLine.time ? (
+        <span data-testid="oryon-legend-time" className="font-mono text-[11px] tabular-nums text-muted-foreground">
+          {formatCandleTime(bar.t, interval)}
+        </span>
+      ) : null}
+      {hasData && bar !== null && statusLine.ohlc ? (
+        <span data-testid="oryon-legend-ohlc" className="font-mono text-[11px] tabular-nums text-muted-foreground">
+          {S.legend.open} <span className={barDirectionClass(bar)}>{bar.o}</span>{" "}
+          {S.legend.high} <span className={barDirectionClass(bar)}>{bar.h}</span>{" "}
+          {S.legend.low} <span className={barDirectionClass(bar)}>{bar.l}</span>{" "}
+          {S.legend.close} <span className={barDirectionClass(bar)}>{bar.c}</span>
+        </span>
+      ) : null}
+      {hasData && bar !== null && statusLine.volume && volumeText !== null ? (
+        <span data-testid="oryon-legend-volume" className="font-mono text-[11px] tabular-nums text-muted-foreground">
+          {S.legend.volume} <span className="text-foreground">{volumeText}</span>
+        </span>
       ) : null}
       {children}
     </div>
   );
+}
+
+/** The inspected bar's direction class — close ≥ open is bullish (the same
+ *  convention the candles themselves paint by). */
+function barDirectionClass(bar: OryonCrosshairBar): string {
+  return bar.c >= bar.o ? "text-profit" : "text-loss";
 }

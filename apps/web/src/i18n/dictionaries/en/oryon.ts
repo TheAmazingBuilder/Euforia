@@ -554,4 +554,58 @@ export const oryonDict = {
     errorCapacity: "The template limit is reached.",
     errorNotFound: "This template no longer exists.",
   },
+  contextMenu: {
+    // Price actions.
+    copyPrice: "Copy price",
+    copyPriceTime: "Copy price & time",
+    priceCopied: "Price copied —",
+    coordsCopied: "Chart coordinates copied",
+    copyFailed: "Copy failed — the clipboard is unavailable.",
+    // Alert + level.
+    addAlert: "Add alert…",
+    addAlertOn: "Add alert on",
+    addAlertAt: "at",
+    addLevel: "Add horizontal level at",
+    levelInactiveHint: "Activate this chart first — levels are drawing tools.",
+    // Display + navigation.
+    resetView: "Reset chart view",
+    objectTree: "Object tree",
+    templates: "Chart template",
+    templatesEmpty: "No saved templates yet — save the current setup first.",
+    settings: "Settings…",
+  },
+  chartSettings: {
+    title: "Chart settings",
+    hint: "Applies to this chart panel only —",
+    tabSymbol: "Symbol",
+    tabStatusLine: "Status line",
+    tabScales: "Scales and lines",
+    tabCanvas: "Canvas",
+    // Symbol tab.
+    candlesSection: "Candles",
+    structureSection: "Structure",
+    bullishColor: "Bullish",
+    bearishColor: "Bearish",
+    wicks: "Wick",
+    borders: "Borders",
+    // Status line tab.
+    showTime: "Show bar time",
+    showOhlc: "Show OHLC values",
+    showVolume: "Show volume",
+    statusLineHint: "The legend labels the bar under the crosshair; hide what you do not read.",
+    // Scales and lines tab.
+    priceScale: "Price scale",
+    timeScale: "Time scale",
+    lastPriceLine: "Last price line and label",
+    // Canvas tab.
+    gridLines: "Grid lines",
+    crosshairMagnet: "Magnet crosshair",
+    canvasHint: "Magnet snaps the crosshair to the nearest bar's close while you move it.",
+    // Footer.
+    reset: "Reset to defaults",
+    cancel: "Cancel",
+    ok: "Ok",
+    themeDefault: "Follow the app theme",
+    themeDefaultShort: "Theme",
+  },
 } as const;

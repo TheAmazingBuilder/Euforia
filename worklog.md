@@ -1144,3 +1144,29 @@ Stage Summary:
 - AUCUN remote git configuré → sauvegarde = fichiers download/ à télécharger par l'owner AVANT minuit
 - Restauration : git clone bundle, ou tar -xzf, ou checkout du tag
 - Prochaines tâches (post-restart ou si sandbox survit) : menu contextuel clic droit TradingView + OHLC coloré au survol des bougies
+
+---
+Task ID: ctx-menu
+Agent: Super Z (main)
+Task: Menu contextuel clic droit TradingView + infos OHLC colorées selon la bougie survolée.
+
+Work Log:
+- Audit: moteur LWC custom (conversions yToPrice/xToSnappedTimeSec), contrôleur dessins consomme les contextmenu sur DESSINS en capture (éditeur de propriétés existant préservé), alertes openCreate, templates store, ui-prefs comme mécanisme de persistance.
+- Décision honnêteté: PAS de sous-menu trading (aucun broker — ne pas fabriquer), pas de Table View / Lock cursor (non supportés moteur). Radix ContextMenu déjà dans l'arbre radix-ui (zéro dépendance).
+- ui/context-menu.tsx: wrapper Radix (style dropdown-menu, RadioItem sans checked — API ContextMenu diffère).
+- lib/oryon/workspace/chart-prefs.ts: OryonPanelChartPrefs (appearance + statusLine) par panel id, envelope v1 zod, salvage par panneau, save debounced + flush (pattern ui-prefs).
+- Engine: OryonChartAppearance + applyAppearance() — couleurs bougies (null = theme), wicks (couleur transparente), borders (borderVisible), last price line, scales visibles, grid, crosshair Magnet; applyTheme() re-merge les overrides (survit aux changements de thème).
+- oryon-chart-context-menu.tsx: Radix ContextMenu sur le conteneur canvas UNIQUEMENT (les clics dessins restent consommés par l'éditeur existant — jamais de course); prix/temps calculés DANS le handler (règle react-hooks: refs jamais lues au rendu), items: Copy price (presse-papier + toast), Copy price & time, Add alert (dialog prérempli), Add horizontal level (vrai hline, même forme que l'outil rail, gated interactive), Reset chart view (goToLatest), Object tree (dock objects), Chart template ▸ (apply avec confirmation de remplacement de stack + save current), Settings…
+- oryon-chart-settings-dialog.tsx: 4 onglets (Symbol: couleurs Bullish/Bearish + presets + picker natif + "Theme"; Status line: time/OHLC/volume; Scales and lines: price scale/time scale/last price line; Canvas: grid + magnet) — application LIVE, Ok conserve, Cancel/Escape revalident le snapshot pris au montage (dialog monté par ouverture, zéro effet).
+- price-chart: menu monté autour du canvas, chartPrefs par panel (keying par panel.id = remount, pas d'effet de sync), légende: OHLC colorés par direction (c>=o → text-profit, sinon text-loss) + switches status line (time/OHLC/volume).
+- i18n: sections contextMenu + chartSettings (en).
+- Vérif: tsc OK, eslint OK (règles react-hooks strictes respectées), build OK, :3000 relancé (pattern sous-shell).
+- Sonde verify-ctx-menu.js (PROD-SAFE, sans handles dev): 34/34 sur 1440x900 + 1280x720 — menu ancré curseur (<40px), jamais clippé, prix presse-papier == prix affiché, alerte préremplie == prix menu, hline créée (ligne dans l'arbre d'objets), reset OK, dock objets ouvert, OHLC caché live via switch, prefs persistées localStorage (priceScale=false + magnet=true), Escape revalide (état sauvé intact), clic droit sur DESSIN → éditeur de propriétés (menu=false editor=true), zéro erreur page (AUTH-1 filtré).
+- Captures: scripts/ctx-menu-open.png (menu), ctx-settings-open.png (dialog + bougies passées au vert en live).
+
+Stage Summary:
+- Menu contextuel TradingView livré: 100% branché sur l'architecture existante (alertes, dessins, templates, dock objets, moteur), zéro fonctionnalité fabriquée, zéro nouvelle dépendance.
+- OHLC de la légende prennent la couleur de la bougie survolée (profit/loss) + switches status line.
+- Persistance par panneau via chart-prefs (localStorage euforia.oryon.chart-prefs.v1) — survit aux reloads, respecte l'isolation multi-graphes.
+- Piège retenu: les handles __ORYON_*_DEBUG__ sont dev-only — les sondes prod assertent via DOM/testids.
+- À faire ensuite: commit puis (selon owner) raffinements menu (sous-menu alertes conditionnelles?) ou Phase 9.

@@ -26,6 +26,7 @@ import type { OryonIndicatorStore } from "@/lib/oryon/indicators/store";
  * drawing layer; the engine handle surfaces through onEngineReady.
  */
 export function OryonChartPanel({
+  panelId,
   instrument,
   interval,
   chartType,
@@ -37,6 +38,8 @@ export function OryonChartPanel({
   onEngineReady,
   onEngineGone,
 }: {
+  /** STABLE panel identity — chart prefs (context-menu Settings) key on it. */
+  panelId: string;
   instrument: Instrument | null;
   interval: MarketInterval;
   chartType: OryonChartType;
@@ -133,6 +136,7 @@ export function OryonChartPanel({
         </div>
       ) : null}
       <OryonPriceChart
+        panelId={panelId}
         dataSymbol={dataSymbol}
         liveSymbol={history.isPlaceholderData ? null : symbol}
         interval={interval}

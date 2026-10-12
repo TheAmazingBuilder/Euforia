@@ -236,6 +236,7 @@ export function OryonChartGridPanel({
       />
       <div className="relative min-h-0 flex-1">
         <OryonChartPanel
+          panelId={panel.id}
           instrument={instrument}
           interval={panel.interval}
           chartType={panel.chartType}

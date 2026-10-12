@@ -129,6 +129,38 @@ export interface OryonStructureMarkerSpec {
 export type OryonChartType = "candles" | "line";
 
 /**
+ * Chart appearance overrides (chart context-menu Settings). `null` colors
+ * follow the active theme tokens; booleans mirror the engine options they
+ * map to one-to-one. The engine retains the last applied snapshot and
+ * re-merges it on every theme re-resolve — user overrides survive palette
+ * switches, and a null color follows the theme it switched to.
+ */
+export interface OryonChartAppearance {
+  upColor: string | null;
+  downColor: string | null;
+  wicksVisible: boolean;
+  bordersVisible: boolean;
+  lastPriceVisible: boolean;
+  priceScaleVisible: boolean;
+  timeScaleVisible: boolean;
+  gridVisible: boolean;
+  crosshairMagnet: boolean;
+}
+
+/** Documented defaults — everything follows the theme, everything visible. */
+export const ORYON_CHART_APPEARANCE_DEFAULT: OryonChartAppearance = {
+  upColor: null,
+  downColor: null,
+  wicksVisible: true,
+  bordersVisible: true,
+  lastPriceVisible: true,
+  priceScaleVisible: true,
+  timeScaleVisible: true,
+  gridVisible: true,
+  crosshairMagnet: false,
+};
+
+/**
  * Bar handed to the legend on crosshair inspection (raw candle shape).
  * Phase 5: `v` (volume) joins the payload — the legend decides honestly
  * whether to display it (valid positive values only; the locally-merged
@@ -223,6 +255,9 @@ export class OryonChartEngine {
   private structureSpecs: readonly OryonStructureMarkerSpec[] = [];
   private structureColors = createSessionColorResolver();
   private lastStructureInput: readonly OryonStructureMarkerSpec[] = [];
+  /** Appearance overrides (context-menu Settings) — re-merged on theme
+   *  changes so user colors survive palette switches. */
+  private appearance: OryonChartAppearance = { ...ORYON_CHART_APPEARANCE_DEFAULT };
   /** Last dispatched crosshair time (dev-probe observability). */
   private lastCrosshairTime: number | null = null;
   private rangeEcho: EchoGuard = createEchoGuard();
@@ -352,9 +387,18 @@ export class OryonChartEngine {
   }
 
   /**
-   * Re-applies theme-resolved colors. Called when the active Euphoria theme
-   * changes (canvas engines cannot resolve CSS variables themselves).
+   * Applies appearance overrides (chart context-menu Settings → engine).
+   * Options are diffed onto the live chart/series imperatively — no
+   * re-mount, no data loss. The snapshot is retained: applyTheme() re-merges
+   * it, so overrides survive theme switches (null colors follow the theme).
    */
+  applyAppearance(next: OryonChartAppearance): void {
+    this.appearance = { ...next };
+    this.applyAppearanceOptions();
+  }
+
+  /** Re-applies theme-resolved colors. Called when the active Euphoria theme
+   *  changes (canvas engines cannot resolve CSS variables themselves). */
   applyTheme(): void {
     if (this.chart === null) return;
     const theme = getChartTheme();
@@ -364,19 +408,10 @@ export class OryonChartEngine {
         textColor: theme.textPrimary,
         fontFamily: theme.monoFont,
       },
-      grid: {
-        vertLines: { color: theme.border },
-        horzLines: { color: theme.border },
-      },
-      crosshair: {
-        vertLine: { color: theme.textMuted, labelBackgroundColor: theme.accent },
-        horzLine: { color: theme.textMuted, labelBackgroundColor: theme.accent },
-      },
-      rightPriceScale: { borderColor: theme.border },
-      timeScale: { borderColor: theme.border },
     });
-    this.candleSeries?.applyOptions(this.candleStyle());
-    this.lineSeries?.applyOptions({ color: theme.accent });
+    // Grid + crosshair + scales + series colors — theme tokens MERGED with
+    // the user's appearance overrides (one diff, no duplicated apply).
+    this.applyAppearanceOptions();
     this.indicators?.restyle({ digits: this.digits, theme });
     this.positions?.restyle(theme);
     this.alerts?.restyle(theme);
@@ -1068,16 +1103,49 @@ export class OryonChartEngine {
     return lo + frac;
   }
 
+  private applyAppearanceOptions(): void {
+    if (this.chart === null) return;
+    const theme = getChartTheme();
+    const a = this.appearance;
+    this.chart.applyOptions({
+      grid: {
+        vertLines: { visible: a.gridVisible, color: theme.border },
+        horzLines: { visible: a.gridVisible, color: theme.border },
+      },
+      crosshair: {
+        mode: a.crosshairMagnet ? CrosshairMode.Magnet : CrosshairMode.Normal,
+        vertLine: { color: theme.textMuted, labelBackgroundColor: theme.accent },
+        horzLine: { color: theme.textMuted, labelBackgroundColor: theme.accent },
+      },
+      rightPriceScale: { visible: a.priceScaleVisible, borderColor: theme.border },
+      timeScale: { visible: a.timeScaleVisible, borderColor: theme.border },
+    });
+    this.candleSeries?.applyOptions(this.candleStyle());
+    this.lineSeries?.applyOptions({
+      color: theme.accent,
+      lastValueVisible: a.lastPriceVisible,
+      priceLineVisible: a.lastPriceVisible,
+    });
+  }
+
   private candleStyle() {
     const theme = getChartTheme();
+    const a = this.appearance;
+    const up = a.upColor ?? theme.profit;
+    const down = a.downColor ?? theme.loss;
     const minMove = 10 ** -this.digits;
     return {
-      upColor: theme.profit,
-      downColor: theme.loss,
-      borderUpColor: theme.profit,
-      borderDownColor: theme.loss,
-      wickUpColor: theme.profit,
-      wickDownColor: theme.loss,
+      upColor: up,
+      downColor: down,
+      borderVisible: a.bordersVisible,
+      borderUpColor: up,
+      borderDownColor: down,
+      // Wicks have no boolean in the engine options — the transparent-color
+      // convention is the documented way to hide them per direction.
+      wickUpColor: a.wicksVisible ? up : "rgba(0,0,0,0)",
+      wickDownColor: a.wicksVisible ? down : "rgba(0,0,0,0)",
+      lastValueVisible: a.lastPriceVisible,
+      priceLineVisible: a.lastPriceVisible,
       priceFormat: { type: "price" as const, precision: this.digits, minMove },
     };
   }
