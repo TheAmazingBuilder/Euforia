@@ -530,8 +530,11 @@ function OryonMarketContextPanel({ instrument }: { instrument: Instrument | null
         </ul>
       )}
 
-      <p className="mt-2 text-[10px] leading-snug text-muted-foreground" data-testid="oryon-events-source-note">
-        {S.eventsSourceNote}
+      <p
+        className="mt-2 text-[10px] leading-snug text-muted-foreground"
+        data-testid="oryon-events-source-note"
+      >
+        {(eco.data?.source ?? "sample") === "sample" ? S.eventsSourceNote : S.eventsSourceLive}
       </p>
       <Button asChild variant="ghost" size="sm" className="mt-1 w-fit">
         <a href="/events">{utility.calendarLink}</a>

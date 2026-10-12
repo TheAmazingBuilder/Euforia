@@ -127,9 +127,19 @@ export const alertsResponseSchema = z.object({
 
 export type AlertsResponse = z.infer<typeof alertsResponseSchema>;
 
-/** GET /eco-events — economic calendar window (±weeks around today). */
+/**
+ * GET /eco-events — economic calendar window (±weeks around today).
+ *
+ * `source` states WHERE the rows came from (the honesty contract): the
+ * real ForexFactory weekly bridge ("forexfactory", possibly widened with
+ * sample fixtures outside its one-week window → "forexfactory+sample")
+ * or the deterministic development fixtures ("sample") whenever the real
+ * provider is unreachable/absent. Optional so every existing consumer
+ * (older saved responses, tests) stays valid.
+ */
 export const ecoEventsResponseSchema = z.object({
   events: z.array(ecoEventSchema),
+  source: z.enum(["forexfactory", "forexfactory+sample", "sample"]).optional(),
 });
 
 export type EcoEventsResponse = z.infer<typeof ecoEventsResponseSchema>;

@@ -70,28 +70,38 @@ export function OryonChartGrid({
 }
 
 /**
- * Resolves a panel's instrument through the catalog: an explicit symbol
- * wins (resolved by SYMBOL — the stable cross-session identity), otherwise
- * the default selection (the first active instrument the feed actually
- * covers, then the first active one). No hardcoded symbol, no invention.
+ * PURE instrument resolution (shared with the eco-approach bridge — the
+ * same rule everywhere): an explicit symbol wins (resolved by SYMBOL — the
+ * stable cross-session identity), otherwise the default selection (the
+ * first active instrument the feed actually covers, then the first active
+ * one). No hardcoded symbol, no invention.
  */
+export function resolveInstrument(
+  symbol: string | null,
+  instruments: readonly Instrument[],
+  feedSymbols: ReadonlySet<string>,
+): Instrument | null {
+  if (instruments.length === 0) return null;
+  if (symbol !== null) {
+    const chosen = instruments.find((i) => i.symbol === symbol);
+    if (chosen !== undefined) return chosen;
+  }
+  return (
+    instruments.find((i) => i.isActive && feedSymbols.has(i.symbol)) ??
+    instruments.find((i) => i.isActive) ??
+    instruments[0]!
+  );
+}
+
 export function useResolvedInstrument(
   symbol: string | null,
   instruments: readonly Instrument[],
   feedSymbols: ReadonlySet<string>,
 ): Instrument | null {
-  return React.useMemo(() => {
-    if (instruments.length === 0) return null;
-    if (symbol !== null) {
-      const chosen = instruments.find((i) => i.symbol === symbol);
-      if (chosen !== undefined) return chosen;
-    }
-    return (
-      instruments.find((i) => i.isActive && feedSymbols.has(i.symbol)) ??
-      instruments.find((i) => i.isActive) ??
-      instruments[0]!
-    );
-  }, [instruments, symbol, feedSymbols]);
+  return React.useMemo(
+    () => resolveInstrument(symbol, instruments, feedSymbols),
+    [instruments, symbol, feedSymbols],
+  );
 }
 
 export function OryonChartGridPanel({

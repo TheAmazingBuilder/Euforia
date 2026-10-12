@@ -129,6 +129,8 @@ export const oryonDict = {
     eventsRetry: "Retry",
     eventsSourceNote:
       "Sample provider data — deterministic development fixtures, not live announcements. The full calendar stays in Events.",
+    eventsSourceLive:
+      "Live source: ForexFactory weekly calendar — real announcements for the current week; deterministic samples outside it. The full calendar stays in Events.",
     displayTzLabel: "Times shown in {tz}",
   },
   analysis: {
@@ -419,6 +421,12 @@ export const oryonDict = {
   alerts: {
     // Create dialog (§6.1) — one entry point, active chart instrument.
     createTitle: "New price alert",
+    // Eco-approach notices (HIGH-impact events on workspace instruments) —
+    // the alerts engine's pattern applied to the calendar surface.
+    ecoToastTitle: "High-impact event",
+    ecoToastIn: "in {m} min",
+    ecoToastImminent: "imminent",
+    ecoToastInstruments: "applies to",
     instrumentLabel: "Instrument",
     instrumentHint: "The alert watches the active chart instrument.",
     targetLabel: "Target price",

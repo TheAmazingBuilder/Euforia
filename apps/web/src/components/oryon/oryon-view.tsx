@@ -19,6 +19,7 @@ import { OryonToolbar } from "@/components/oryon/oryon-toolbar";
 import { OryonToolRail } from "@/components/oryon/oryon-tool-rail";
 import { OryonUtilityRail } from "@/components/oryon/oryon-utility-rail";
 import { OryonDrawingsProvider } from "@/components/oryon/oryon-drawings-context";
+import { OryonEcoApproachBridge } from "@/components/oryon/oryon-eco-approach-bridge";
 import { OryonIndicatorDialog } from "@/components/oryon/oryon-indicator-dialog";
 import { OryonAlertDialog } from "@/components/oryon/oryon-alerts-dialog";
 import {
@@ -162,6 +163,13 @@ function OryonWorkspace() {
   }, [instruments, session.panels, store, S.panels.instrumentsMissingToast]);
 
   const covered = instrument !== null && feedSymbols.has(instrument.symbol);
+
+  /** The symbols the workspace panels display — the eco-approach bridge
+   *  resolves each through the catalog itself (one shared pure rule). */
+  const panelSymbols = React.useMemo(
+    () => session.panels.map((panel) => panel.symbol) as readonly (string | null)[],
+    [session.panels],
+  );
 
   /** Chart-area box — the floating favorites bar's coordinate reference. */
   const chartAreaRef = React.useRef<HTMLDivElement | null>(null);
@@ -442,6 +450,15 @@ function OryonWorkspace() {
         onPanelChange={(panel) => store.openUtility(panel)}
         onClose={() => store.setUtilityOpen(false)}
         activeInstrument={instrument}
+      />
+
+      {/* Eco-approach notifications (HIGH-impact events on the instruments
+          the workspace panels display) — a null-rendering leaf in the
+          alerts engine's pattern; the toast is the only channel. */}
+      <OryonEcoApproachBridge
+        instruments={instruments}
+        feedSymbols={feedSymbols}
+        panelSymbols={panelSymbols}
       />
 
       {/* Screen-reader summary of the workspace purpose (a11y). */}
