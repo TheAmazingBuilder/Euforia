@@ -1127,3 +1127,20 @@ Stage Summary:
 - Commit 3eba9d9. La surface éco du workspace sert maintenant des annonces RÉELLES de la semaine courante (fallback honnête vers les fixtures), avec provenance affichée. Les événements HIGH à venir sur les instruments des panels notifient à T-30/T-10/T-2 via le même canal toast que les alertes prix.
 - Artefact dev connu: StrictMode peut monter le bridge 2× (2 toasts identiques) — prod monte 1×.
 - :3000 = build prod à jour; :3001 = dev avec handles debug.
+
+---
+Task ID: backup-2026-10-12
+Agent: Super Z (main)
+Task: Sauvegarde complète avant restart sandbox de minuit (00:00 America/Toronto)
+
+Work Log:
+- Vérifié working tree propre (tout le travail Oryon déjà commité : 229 commits)
+- Ajouté SAVEPOINT.md v2 (procédures de restauration A/B/C + pièges connus)
+- Commit 9515b2f + tag savepoint/2026-10-12
+- Créé download/oryon-backup-2026-10-12.bundle (214M, historique git complet cloneable)
+- Créé download/oryon-backup-2026-10-12.tar.gz (360M, code + .git + .env, sans node_modules/.next/skills)
+
+Stage Summary:
+- AUCUN remote git configuré → sauvegarde = fichiers download/ à télécharger par l'owner AVANT minuit
+- Restauration : git clone bundle, ou tar -xzf, ou checkout du tag
+- Prochaines tâches (post-restart ou si sandbox survit) : menu contextuel clic droit TradingView + OHLC coloré au survol des bougies
