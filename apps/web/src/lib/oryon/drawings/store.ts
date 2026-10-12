@@ -183,12 +183,17 @@ export class OryonDrawingStore {
 
   // ── Undo / redo ────────────────────────────────────────────────────────────
 
-  /** Single-step mutation commit (one history entry). */
+  /** Single-step mutation commit (one history entry — unless a batch is
+   *  open, in which case the BATCH owns the entry: endBatch records the
+   *  pre-batch snapshot exactly once. The unconditional push that used to
+   *  live here double-recorded every batched drag (two identical entries),
+   *  so one drag consumed TWO undo presses — the batch discipline in
+   *  history.ts §12 exists precisely to prevent that). */
   private commit(next: (current: readonly OryonDrawing[]) => readonly OryonDrawing[]): void {
     const before = this.state.drawings;
     const after = next(before);
     if (after === before) return;
-    this.history.push(before);
+    if (!this.history.isBatchOpen) this.history.push(before);
     this.state = { ...this.state, drawings: after, version: this.state.version + 1 };
     this.emit();
   }

@@ -27,8 +27,11 @@ import { z } from "zod";
 const CHART_PREFS_KEY = "euforia.oryon.chart-prefs.v1";
 const SAVE_DEBOUNCE_MS = 300;
 
-/** Hex color override — null = follow the active theme token. */
-const hexColor = z.string().regex(/^#[0-9a-fA-F]{6}$/);
+/** Color override — null = follow the active theme token. Six-digit hex is
+ *  the base form; the optional trailing pair carries the picker's opacity
+ *  slider (#RRGGBBAA). The extension is ADDITIVE: every record persisted
+ *  before the picker validates unchanged, so the envelope version stays 1. */
+const hexColor = z.string().regex(/^#[0-9a-fA-F]{6}(?:[0-9a-fA-F]{2})?$/);
 
 export const oryonChartAppearanceSchema = z.object({
   upColor: hexColor.nullable(),

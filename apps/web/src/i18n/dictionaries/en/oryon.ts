@@ -607,5 +607,8 @@ export const oryonDict = {
     ok: "Ok",
     themeDefault: "Follow the app theme",
     themeDefaultShort: "Theme",
+    // TradingView-style color picker.
+    addCustomColor: "Pick a custom color",
+    opacity: "Opacity",
   },
 } as const;

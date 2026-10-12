@@ -577,7 +577,7 @@ export function paintProjectedDrawing(paint: PaintContext, view: ProjectedDrawin
       paintDateRange(paint, { a: view.a, b: view.b, style, label: view.label });
       if (state.selected) paintHandles(paint, [view.a, view.b]);
       break;
-    case "position":
+    case "position": {
       paintPosition(paint, {
         a: view.a,
         b: view.b,
@@ -585,8 +585,20 @@ export function paintProjectedDrawing(paint: PaintContext, view: ProjectedDrawin
         style,
         label: view.label,
       });
-      if (state.selected) paintHandles(paint, [view.a, view.b]);
+      if (state.selected) {
+        // FOUR handles in the interaction's slot order: a/b corners + the
+        // TARGET line (rr) + the STOP line (stop price), both mid-line.
+        // The target handle drops out when the target cannot project —
+        // the same condition under which the controller leaves an unhittable
+        // NaN slot (painter and hit-test agree).
+        const midX = (view.a.x + view.b.x) / 2;
+        const handles = [view.a, view.b];
+        if (view.targetY !== null) handles.push({ x: midX, y: view.targetY });
+        handles.push({ x: midX, y: view.b.y });
+        paintHandles(paint, handles);
+      }
       break;
+    }
     case "fib":
       paintFib(paint, {
         a: view.a,

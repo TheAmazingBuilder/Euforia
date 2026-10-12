@@ -15,7 +15,11 @@
 
 import {
   ORYON_FIB_LEVELS,
+  ORYON_POSITION_RR_MAX,
+  ORYON_POSITION_RR_MIN,
   oryonDrawingsFileSchema,
+  oryonPositionRrBetween,
+  oryonPositionTargetPrice,
   type OryonDrawing,
 } from "@cosmoz/shared";
 
@@ -323,6 +327,74 @@ console.log("\n[persistence]");
 
   flushDrawingsForSymbol(symbol, []);
   ok("empty collection removes the key", !backing.has(`euforia.oryon.drawings.v1:${symbol}`));
+}
+
+// ── position-tool edge handles — the rr round-trip math (shared) ───────────
+// The direct-manipulation handles (target line → rr, stop line → stop price
+// with the target preserved) lean on oryonPositionRrBetween — the inverse
+// of oryonPositionTargetPrice, clamped to the documented bounds.
+{
+  console.log("\n── position edge-handle math ──");
+  // Long: entry 100, stop 90 (risk 10). Target at 130 ⇔ rr 3.
+  eq("long: rr for target 130", oryonPositionRrBetween(100, 90, 130), 3);
+  eq("long: round-trip target", oryonPositionTargetPrice(100, 90, oryonPositionRrBetween(100, 90, 130) ?? 0), 130);
+  // Short: entry 100, stop 110 (risk −10). Target at 70 ⇔ rr 3.
+  eq("short: rr for target 70", oryonPositionRrBetween(100, 110, 70), 3);
+  eq("short: round-trip target", oryonPositionTargetPrice(100, 110, oryonPositionRrBetween(100, 110, 70) ?? 0), 70);
+  // Stop drag with target PRESERVED: entry 100, stop 90, rr 2 → target 120.
+  // New stop 95 (risk 5) → rr 4 keeps 120.
+  eq("stop drag keeps target", oryonPositionRrBetween(100, 95, 120), 4);
+  // Degenerate risk → null (caller keeps the current rr).
+  ok("entry == stop → null", oryonPositionRrBetween(100, 100, 130) === null);
+  // Saturation at the documented bounds.
+  eq("target beyond 10× → RR_MAX", oryonPositionRrBetween(100, 90, 500), ORYON_POSITION_RR_MAX);
+  eq("target inverted → RR_MIN", oryonPositionRrBetween(100, 90, 99), ORYON_POSITION_RR_MIN);
+}
+
+// ── batch discipline — one drag = ONE undo entry (regression) ──────────────
+// commit() used to push unconditionally, so every batched drag recorded TWO
+// identical snapshots and consumed TWO undo presses. The batch (open at
+// grab, closed at release) must own the entry exclusively.
+{
+  console.log("\n── batch history discipline ──");
+  const store = new OryonDrawingStore();
+  const base: Extract<OryonDrawing, { type: "longpos" }> = {
+    id: newDrawingId(),
+    type: "longpos",
+    a: { t: 1_700_000_000, p: 100 },
+    b: { t: 1_700_003_600, p: 90 },
+    style: { color: "accent", width: 1, dash: "solid", fill: null, fillOpacity: 0, fontSize: 13 },
+    visible: true,
+    locked: false,
+    label: null,
+    createdAt: 1,
+    updatedAt: 1,
+  };
+  const rrOf = (): number => {
+    const d = store.getSelected() ?? store.drawings[0];
+    if (d === undefined || d.type !== "longpos") return NaN;
+    return typeof d.rr === "number" ? d.rr : 1;
+  };
+
+  store.add(base);
+  store.beginBatch();
+  store.replace({ ...base, rr: 2.5 });
+  store.endBatch();
+  eq("batched replace → rr applied", rrOf(), 2.5);
+  eq("depth after one drag", store.canUndo, true);
+  store.undo();
+  eq("ONE undo returns the pre-drag state", rrOf(), 1);
+  // The create itself is still undoable (exactly ONE further entry).
+  store.undo();
+  eq("second undo removes the created object", store.drawings.length, 0);
+  ok("history exhausted", !store.canUndo);
+
+  // Editor-style (outside batch) replaces still record one entry each.
+  store.add(base);
+  store.replace({ ...base, rr: 3 });
+  eq("out-of-batch replace applies", rrOf(), 3);
+  store.undo();
+  eq("out-of-batch undo restores", rrOf(), 1);
 }
 
 console.log(`\n=== ${passed} PASS / ${failed} FAIL ===`);

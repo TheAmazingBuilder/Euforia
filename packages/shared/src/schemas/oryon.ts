@@ -370,6 +370,29 @@ export function oryonPositionTargetPrice(
   return entryPrice + (entryPrice - stopPrice) * rr;
 }
 
+/**
+ * The rr that maps (entry, stop) onto a GIVEN target — the inverse of
+ * `oryonPositionTargetPrice` and the single choke point for the direct-
+ * manipulation handles (dragging the target edge or the stop edge of a
+ * position tool). Guarantees:
+ *  - degenerate risk (|entry − stop| < 1e-12) → null (the caller keeps the
+ *    current rr — a zero-width risk zone carries no ratio information);
+ *  - the result is CLAMPED to the documented bounds — a drag beyond 10×
+ *    (or below 0.1×) honestly saturates instead of storing an out-of-range
+ *    record the schema would reject on reload.
+ */
+export function oryonPositionRrBetween(
+  entryPrice: number,
+  stopPrice: number,
+  targetPrice: number,
+): number | null {
+  const risk = entryPrice - stopPrice;
+  if (!Number.isFinite(risk) || Math.abs(risk) < 1e-12) return null;
+  const rr = (targetPrice - entryPrice) / risk;
+  if (!Number.isFinite(rr)) return null;
+  return Math.min(ORYON_POSITION_RR_MAX, Math.max(ORYON_POSITION_RR_MIN, rr));
+}
+
 /** Readout formatting for the rr multiple: 1 → "1", 1.5 → "1.5", 2.5 → "2.5". */
 export function oryonFormatRr(rr: number): string {
   return String(Number(rr.toFixed(2)));

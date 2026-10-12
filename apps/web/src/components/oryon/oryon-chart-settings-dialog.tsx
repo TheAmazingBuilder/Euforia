@@ -8,6 +8,7 @@ import type { OryonChartAppearance, OryonStatusLinePrefs } from "@/lib/oryon/wor
 import { ORYON_PANEL_CHART_PREFS_DEFAULT, type OryonPanelChartPrefs } from "@/lib/oryon/workspace/chart-prefs";
 
 import { useDict } from "@/i18n/i18n-provider";
+import { OryonTvColorPicker } from "@/components/oryon/oryon-tv-color-picker";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -19,14 +20,14 @@ import {
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { cn } from "@/lib/utils";
 
 /**
  * Oryon chart settings dialog (chart context-menu → Settings…) — four
  * TradingView-inspired sections, each mapped onto REAL engine options or
  * legend display flags (nothing decorative, nothing mock):
  *
- *  - Symbol        → candle body/border/wick colors (theme-token overrides)
+ *  - Symbol        → candle body colors via the TradingView-style palette
+ *                    picker (grid + custom swatches + opacity → #RRGGBBAA)
  *  - Status line   → the legend's time / OHLC / volume spans
  *  - Scales & lines→ price-scale + time-scale visibility, last-price line
  *  - Canvas        → grid lines, crosshair magnet mode
@@ -35,22 +36,6 @@ import { cn } from "@/lib/utils";
  * persists + engine-applies each snapshot). Cancel restores the snapshot
  * taken at open; Ok closes. "Reset" restores the documented defaults.
  */
-
-/** Curated preset swatches — flat hexes (canvas colors, not theme tokens). */
-const PRESET_COLORS: readonly string[] = [
-  "#22c55e",
-  "#16a34a",
-  "#10b981",
-  "#06b6d4",
-  "#3b82f6",
-  "#f97316",
-  "#ef4444",
-  "#dc2626",
-  "#e11d48",
-  "#a855f7",
-  "#eab308",
-  "#f4f4f5",
-];
 
 interface SettingsDraft {
   appearance: OryonChartAppearance;
@@ -305,9 +290,10 @@ function SwitchRow({
 }
 
 /**
- * Label + color override control: preset swatches + a free-form picker +
- * "theme default" when an override is active. `null` renders the
- * theme-following state (the swatch row collapses — honest, not hidden).
+ * Label + TradingView-style color override control: the palette picker
+ * (grid/customs/opacity popover) + a "theme default" clear button when an
+ * override is active. `null` renders the theme-following state (dashed
+ * trigger — honest, not hidden).
  */
 function ColorRow({
   label,
@@ -327,53 +313,19 @@ function ColorRow({
   return (
     <div className="flex items-center justify-between gap-4 rounded-md border border-border bg-surface-raised/50 px-3 py-2">
       <Label className="shrink-0 text-sm font-normal text-foreground">{label}</Label>
-      <div className="flex flex-col items-end gap-1.5">
-        <div className="flex items-center gap-1.5">
-          {value !== null ? (
-            <button
-              type="button"
-              onClick={onClear}
-              title={S.themeDefault}
-              data-testid={`${testid}-clear`}
-              className="rounded-md border border-dashed border-border px-1.5 py-1 text-[10px] text-muted-foreground hover:text-foreground"
-            >
-              {S.themeDefaultShort}
-            </button>
-          ) : null}
-          <label
-            className={cn(
-              "relative inline-flex size-7 cursor-pointer items-center justify-center overflow-hidden rounded-md border",
-              value === null ? "border-dashed border-border" : "border-border",
-            )}
-            title={value === null ? S.themeDefault : undefined}
+      <div className="flex items-center gap-1.5">
+        {value !== null ? (
+          <button
+            type="button"
+            onClick={onClear}
+            title={S.themeDefault}
+            data-testid={`${testid}-clear`}
+            className="rounded-md border border-dashed border-border px-1.5 py-1 text-[10px] text-muted-foreground hover:text-foreground"
           >
-            <input
-              type="color"
-              data-testid={testid}
-              aria-label={label}
-              value={value ?? "#22c55e"}
-              onChange={(event) => onPick(event.target.value)}
-              className="absolute inset-0 size-full cursor-pointer border-0 bg-transparent p-0"
-            />
-          </label>
-        </div>
-        <div className="flex flex-wrap items-center justify-end gap-1">
-          {PRESET_COLORS.map((color) => (
-            <button
-              key={color}
-              type="button"
-              aria-label={`${label} ${color}`}
-              onClick={() => onPick(color)}
-              className={cn(
-                "size-4 rounded-sm border transition-transform hover:scale-110",
-                value !== null && value.toLowerCase() === color.toLowerCase()
-                  ? "border-foreground"
-                  : "border-transparent",
-              )}
-              style={{ backgroundColor: color }}
-            />
-          ))}
-        </div>
+            {S.themeDefaultShort}
+          </button>
+        ) : null}
+        <OryonTvColorPicker value={value} onChange={onPick} testid={testid} label={label} />
       </div>
     </div>
   );

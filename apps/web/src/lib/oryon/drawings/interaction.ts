@@ -1,5 +1,9 @@
 import type { OryonDrawing, OryonDrawingAnchor, OryonDrawingStyle } from "@cosmoz/shared";
-import { oryonPositionRr, oryonPositionTargetPrice } from "@cosmoz/shared";
+import {
+  oryonPositionRr,
+  oryonPositionRrBetween,
+  oryonPositionTargetPrice,
+} from "@cosmoz/shared";
 
 import {
   HANDLE_HIT_RADIUS,
@@ -722,9 +726,11 @@ export class DrawingInteractionController {
       case "ellipse":
       case "pricerange":
       case "daterange":
+        edited = { ...original, [index === 0 ? "a" : "b"]: anchor };
+        break;
       case "longpos":
       case "shortpos":
-        edited = { ...original, [index === 0 ? "a" : "b"]: anchor };
+        edited = this.applyPositionHandleEdit(original, index, anchor);
         break;
       case "fibext":
         edited = {
@@ -751,6 +757,46 @@ export class DrawingInteractionController {
     if (edited === null) return;
     this.draft = { kind: "edit", drawing: edited };
     this.deps.callbacks.requestRedraw();
+  }
+
+  /**
+   * Position-tool handle edit (slots: 0 = a corner, 1 = b corner, 2 = the
+   * TARGET line, 3 = the STOP line). The two edge handles give the zones
+   * INDEPENDENT direct length control while the rr round-trip keeps the
+   * documented contract (target always derived, rr stored, bounds honored):
+   *
+   *  - target drag → the pointer price IS the new target: rr maps
+   *    (entry, stop) onto it; the stop edge stays put;
+   *  - stop drag → the pointer price IS the new stop, and rr is recomputed
+   *    so the CURRENT target stays exactly where it was — the reward zone
+   *    does not move when the risk zone is resized (TV-style independence).
+   *
+   * Degenerate risk (entry == stop) carries no ratio → the current rr is
+   * kept; `oryonPositionRrBetween` saturates at the documented bounds.
+   */
+  private applyPositionHandleEdit(
+    original: Extract<OryonDrawing, { type: "longpos" | "shortpos" }>,
+    index: number,
+    anchor: OryonDrawingAnchor,
+  ): OryonDrawing {
+    if (index === 2) {
+      const rr = oryonPositionRrBetween(original.a.p, original.b.p, anchor.p);
+      return { ...original, rr: rr ?? oryonPositionRr(original) };
+    }
+    if (index === 3) {
+      const target = oryonPositionTargetPrice(
+        original.a.p,
+        original.b.p,
+        oryonPositionRr(original),
+      );
+      const rr = oryonPositionRrBetween(original.a.p, anchor.p, target);
+      return {
+        ...original,
+        rr: rr ?? oryonPositionRr(original),
+        b: { t: original.b.t, p: anchor.p },
+      };
+    }
+    return { ...original, [index === 0 ? "a" : "b"]: anchor };
   }
 
   private commitBatch(): void {
@@ -863,9 +909,21 @@ export class DrawingInteractionController {
       case "daterange":
       case "longpos":
       case "shortpos": {
+        // FOUR handles in FIXED slots (the index maps to the anchor-edit
+        // switch, never reorder): 0/1 = the a/b corners (existing diagonal
+        // drag), 2 = the TARGET line (rr), 3 = the STOP line (stop price).
+        // Both edge handles sit mid-line — collision-free with the corners
+        // for either drawing direction. A non-projectable target keeps the
+        // slot with a NaN y: it can never be hit (NaN comparisons fail) so
+        // the handle silently disappears while the index map stays stable.
         const a = this.projectAnchor(drawing.a);
         const b = this.projectAnchor(drawing.b);
-        return a !== null && b !== null ? [a, b] : null;
+        if (a === null || b === null) return null;
+        const midX = (a.x + b.x) / 2;
+        const targetY = this.deps.conversions.priceToY(
+          oryonPositionTargetPrice(drawing.a.p, drawing.b.p, oryonPositionRr(drawing)),
+        );
+        return [a, b, { x: midX, y: targetY ?? NaN }, { x: midX, y: b.y }];
       }
       case "fibext": {
         const a = this.projectAnchor(drawing.a);

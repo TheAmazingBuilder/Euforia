@@ -78,6 +78,11 @@ export class DrawingHistory<T> {
     return this.redoStack.length > 0;
   }
 
+  /** True while a batch owns the next history entry (commit stays silent). */
+  get isBatchOpen(): boolean {
+    return this.batchDepth > 0;
+  }
+
   get depth(): number {
     return this.undoStack.length;
   }
