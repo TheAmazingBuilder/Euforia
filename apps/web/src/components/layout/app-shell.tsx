@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { usePathname } from "next/navigation";
 
 import {
   Sheet,
@@ -16,9 +17,10 @@ import { CommandPalette } from "@/components/layout/command-palette";
 import { TradeModalHost } from "@/components/trades/trade-modal-host";
 import { JudgmentFlowModal } from "@/components/trades/judgment-flow-modal";
 import {
+  collapseSidebarForRoute,
   isSidebarCollapsed,
+  restoreSidebarAfterRoute,
   subscribeSidebar,
-  toggleSidebarCollapsed,
 } from "@/lib/utils/sidebar";
 
 /**
@@ -26,6 +28,11 @@ import {
  * toggled from the header icon, not from inside the rail), sticky topbar,
  * mobile sheet navigation and the mobile bottom nav + FAB. Server pages are
  * rendered through `children`, so they stay Server Components.
+ *
+ * The Oryon workspace (/oryon) is full-bleed: entering the route collapses
+ * the desktop sidebar to icon mode automatically (route-driven, so sidebar
+ * clicks, ⌘K palette and deep links all behave the same). Leaving the route
+ * restores the previous width unless the user toggled it manually.
  */
 export function AppShell({ children }: { children: React.ReactNode }) {
   const collapsed = React.useSyncExternalStore(
@@ -35,6 +42,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     () => false,
   );
   const [sheetOpen, setSheetOpen] = React.useState(false);
+  const pathname = usePathname();
+
+  React.useEffect(() => {
+    if (pathname === "/oryon") {
+      collapseSidebarForRoute();
+    } else {
+      restoreSidebarAfterRoute();
+    }
+  }, [pathname]);
 
   const closeSheet = React.useCallback(() => setSheetOpen(false), []);
 

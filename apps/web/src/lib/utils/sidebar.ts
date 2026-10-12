@@ -36,6 +36,38 @@ export function setSidebarCollapsed(collapsed: boolean): void {
   emit();
 }
 
+/**
+ * Session-only marker: the current collapse was performed automatically FOR
+ * the Oryon workspace (never persisted — a reload mid-Oryon keeps the stored
+ * value, which is already "1"). Cleared by any manual toggle so the user's
+ * explicit choice always wins.
+ */
+let autoCollapsedForRoute = false;
+
+/**
+ * Route-driven collapse: entering the Oryon workspace maximises chart real
+ * estate by switching the desktop sidebar to icon mode. No-op when the user
+ * already collapsed it themselves.
+ */
+export function collapseSidebarForRoute(): void {
+  if (!isSidebarCollapsed()) {
+    autoCollapsedForRoute = true;
+    setSidebarCollapsed(true);
+  }
+}
+
+/**
+ * Leaving Oryon restores the pre-Oryon width, but only when the collapse was
+ * the automatic one — a manual toggle during the session is respected.
+ */
+export function restoreSidebarAfterRoute(): void {
+  if (autoCollapsedForRoute) {
+    autoCollapsedForRoute = false;
+    setSidebarCollapsed(false);
+  }
+}
+
 export function toggleSidebarCollapsed(): void {
+  autoCollapsedForRoute = false;
   setSidebarCollapsed(!isSidebarCollapsed());
 }
