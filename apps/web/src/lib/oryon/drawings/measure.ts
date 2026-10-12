@@ -1,5 +1,5 @@
 import type { OryonDrawingAnchor } from "@cosmoz/shared";
-import { ORYON_POSITION_RR, oryonPositionTargetPrice } from "@cosmoz/shared";
+import { ORYON_POSITION_RR, oryonFormatRr, oryonPositionTargetPrice } from "@cosmoz/shared";
 
 /**
  * Oryon measure readout — PURE computation (Phase 5 spec §4.1–§4.3).
@@ -226,15 +226,18 @@ export interface PositionReadout {
 
 /**
  * Position tool labels: Entry / Stop / Target prices (target DERIVED via
- * the shared oryonPositionTargetPrice helper) + the risk in pips. Invalid
- * inputs omit the label — no fabricated levels.
+ * the shared oryonPositionTargetPrice helper at the object's OWN rr — the
+ * property editor's per-object risk:reward, defaulting to the documented
+ * ORYON_POSITION_RR) + the risk in pips. Invalid inputs omit the label —
+ * no fabricated levels.
  */
 export function computePositionReadout(
   entry: OryonDrawingAnchor,
   stop: OryonDrawingAnchor,
-  inputs: { digits: number; pipSize: number },
+  inputs: { digits: number; pipSize: number; rr?: number },
 ): PositionReadout {
   const digits = Number.isFinite(inputs.digits) ? Math.max(0, inputs.digits) : 2;
+  const rr = Number.isFinite(inputs.rr) ? (inputs.rr as number) : ORYON_POSITION_RR;
   if (!Number.isFinite(entry.p) || !Number.isFinite(stop.p)) {
     return {
       valid: false,
@@ -245,14 +248,14 @@ export function computePositionReadout(
       lines: [],
     };
   }
-  const targetPrice = oryonPositionTargetPrice(entry.p, stop.p);
+  const targetPrice = oryonPositionTargetPrice(entry.p, stop.p, rr);
   const risk = Math.abs(entry.p - stop.p);
   const riskPips =
     Number.isFinite(inputs.pipSize) && inputs.pipSize > 0 ? risk / inputs.pipSize : null;
   const lines = [
     `Entry ${entry.p.toFixed(digits)}`,
     `Stop ${stop.p.toFixed(digits)}`,
-    `Target ${targetPrice.toFixed(digits)} (1:${ORYON_POSITION_RR})`,
+    `Target ${targetPrice.toFixed(digits)} (1:${oryonFormatRr(rr)})`,
     riskPips !== null ? `Risk ${riskPips.toFixed(1)} pips` : "",
   ].filter((line) => line !== "");
   return {

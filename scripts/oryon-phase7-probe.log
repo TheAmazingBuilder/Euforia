@@ -1,4 +1,4 @@
-=== oryon phase7 probe — 2026-10-11T19:34:34.770Z ===
+=== oryon phase7 probe — 2026-10-12T00:38:16.531Z ===
   PASS  A1 grille single (data-grid)
   PASS  A2 un seul panneau, actif
   PASS  A3 déclencheur sync présent sans état actif
@@ -43,7 +43,6 @@
   PASS  H9 save → pastille disparue
   PASS  I1 indicateur ajouté au panneau ACTIF seul
   PASS  I2 template capturé (pile d'indicateurs du panneau actif)
-pageerror-stack: Error: Value is null
 pageerror-stack: Error: Value is null
 pageerror-stack: Error: Value is null
 pageerror-stack: Error: Value is null

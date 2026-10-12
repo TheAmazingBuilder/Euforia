@@ -322,7 +322,7 @@ async function setGrid(app, grid) {
     const box = await panelLoc(page, 0).locator('[data-testid="oryon-chart-canvas"] canvas').first().boundingBox();
     // The wrapper is the canvas container — click coordinates are
     // chart-local; the canvas top-left IS the wrapper origin here.
-    await page.mouse.click(box.x + probeTarget.x, box.y + 120);
+    await page.mouse.click(box.x + probeTarget.x, box.y + 240); // below the HTML legend band (click resolves by TIME, any Y works)
     await page.waitForTimeout(500);
     const popoverVisible = await page.locator('[data-testid="oryon-event-popover"]').count();
     ok("clic marqueur → popover ouvert", popoverVisible === 1);

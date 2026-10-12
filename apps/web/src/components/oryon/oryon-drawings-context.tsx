@@ -182,6 +182,38 @@ export function OryonDrawingsProvider({ children }: { children: React.ReactNode 
     return () => registry.dispose();
   }, [registry]);
 
+  // Dev-probe handle (dev builds only — the __ORYON_PANELS_DEBUG__ convention):
+  // structural drawing facts for the ACTIVE store — counts by type, selected
+  // id and the object list, WITHOUT canvas scraping. Never shipped to prod.
+  React.useEffect(() => {
+    if (process.env.NODE_ENV === "production") return;
+    const host = window as unknown as {
+      __ORYON_DRAWINGS_DEBUG__?: () => unknown;
+    };
+    host.__ORYON_DRAWINGS_DEBUG__ = () => {
+      const snap = activeStore?.getSnapshot() ?? null;
+      const byType: Record<string, number> = {};
+      if (snap !== null) {
+        for (const d of snap.drawings) {
+          byType[d.type] = (byType[d.type] ?? 0) + 1;
+        }
+      }
+      return {
+        total: snap?.drawings.length ?? 0,
+        byType,
+        // Full objects — style/rr/dir assertions read the PERSISTED SHAPE,
+        // never the canvas. Dev-only handle, mirrors the panels handle.
+        drawings: snap?.drawings ?? [],
+        selectedId: snap?.selectedId ?? null,
+        version: snap?.version ?? 0,
+        activeTool,
+      };
+    };
+    return () => {
+      delete host.__ORYON_DRAWINGS_DEBUG__;
+    };
+  }, [activeStore, activeTool]);
+
   React.useEffect(() => {
     return () => flushUiPrefs(prefs);
     // Unmount only — the debounce owns every intermediate state.

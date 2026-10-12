@@ -26,12 +26,13 @@
  */
 const path = require("path");
 const { chromium } = require("playwright");
+const { armTool, isToolArmed } = require("./oryon-probe-helpers.js");
 const fs = require("fs");
 
 const LOG = path.resolve(__dirname, "oryon-phase5-probe.log");
 fs.writeFileSync(LOG, `=== oryon phase5 probe — ${new Date().toISOString()} ===\n`);
 
-const BASE = process.env.BASE_URL || "http://localhost:3000";
+const BASE = process.env.BASE_URL || "http://localhost:3001";
 const OUT = path.resolve(__dirname, "shots");
 
 let pass = 0;
@@ -198,14 +199,14 @@ async function openAlertsTab(page) {
     const cy = box.y + box.height / 2;
 
     // Escape mid-draft: arm, first click, Escape → nothing persisted.
-    await page.click('[data-testid="oryon-tool-measure"]');
+    await armTool(page, "measure");
     await page.mouse.click(cx, cy);
     await page.keyboard.press("Escape");
     await page.waitForTimeout(500);
     ok("P5 — Escape annule un draft de mesure (rien de persisté)", (await measureCount(page, symbol)) === 0);
 
     // Two-click creation → persisted measure object.
-    await page.click('[data-testid="oryon-tool-measure"]');
+    await armTool(page, "measure");
     await page.mouse.click(cx - 120, cy + 40);
     await page.mouse.click(cx + 120, cy - 40);
     await page.waitForTimeout(500);
@@ -218,7 +219,7 @@ async function openAlertsTab(page) {
     // Tool disarmed after creation (TV behavior).
     ok(
       "P5 — outil désarmé après création",
-      (await page.locator('[data-testid="oryon-tool-measure"]').getAttribute("aria-pressed")) === "false",
+      !(await isToolArmed(page, "measure")),
     );
     await page.screenshot({ path: `${OUT}/oryon-phase5-measure.png` });
 

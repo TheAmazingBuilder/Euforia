@@ -21,12 +21,13 @@
  */
 const path = require("path");
 const { chromium } = require("playwright");
+const { armTool } = require("./oryon-probe-helpers.js");
 const fs = require("fs");
 
 const LOG = path.resolve(__dirname, "oryon-phase3-probe.log");
 fs.writeFileSync(LOG, `=== oryon phase3 probe — ${new Date().toISOString()} ===\n`);
 
-const BASE = process.env.BASE_URL || "http://localhost:3000";
+const BASE = process.env.BASE_URL || "http://localhost:3001";
 const OUT = path.resolve(__dirname, "shots");
 
 let pass = 0;
@@ -298,7 +299,7 @@ async function addIndicator(page, type) {
   ok("P3 — unité de temps affichée", (await page.locator('[data-testid="oryon-legend-interval"]').innerText()).includes("1H"));
 
   // ── 11. Drawings keep working next to indicators ──────────────────────────
-  await page.click('[data-testid="oryon-tool-trendline"]');
+  await armTool(page, "trend");
   const box = await page.locator('[data-testid="oryon-chart-canvas"]').boundingBox();
   await page.mouse.click(box.x + box.width * 0.3, box.y + box.height * 0.25);
   await page.waitForTimeout(150);

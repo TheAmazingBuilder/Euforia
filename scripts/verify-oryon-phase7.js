@@ -27,6 +27,7 @@
  */
 const path = require("path");
 const { chromium } = require("playwright");
+const { armTool } = require("./oryon-probe-helpers.js");
 const fs = require("fs");
 
 const LOG = path.resolve(__dirname, "oryon-phase7-probe.log");
@@ -405,7 +406,7 @@ async function leavePlot(app) {
   })());
 
   // First click on an INACTIVE panel activates without drawing.
-  await page.click('[data-testid="oryon-tool-trendline"]');
+  await armTool(page, "trend");
   await page.waitForTimeout(300);
   const box0 = await canvasBox(page, 0);
   await page.mouse.click(box0.x + box0.width * 0.4, box0.y + box0.height * 0.5);
@@ -424,7 +425,7 @@ async function leavePlot(app) {
   const drawsAfter = await drawingsBySymbol(page);
   ok("C4 clics suivants → la tendance appartient à EURUSD", (drawsAfter["v1:EURUSD"] ?? drawsAfter.EURUSD ?? 0) >= 1);
   ok("C5 isolation dessins : XAUUSD reste vide", (drawsAfter["v1:XAUUSD"] ?? drawsAfter.XAUUSD ?? 0) === 0);
-  await page.click('[data-testid="oryon-tool-pointer"]');
+  await armTool(page, "cursor");
   await page.waitForTimeout(200);
 
   // ── D. Sync time-scale (§8.1) ────────────────────────────────────────────

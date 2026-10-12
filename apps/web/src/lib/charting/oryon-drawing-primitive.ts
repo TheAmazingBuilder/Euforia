@@ -15,7 +15,12 @@ import type {
   OryonDrawingAnchor,
 } from "@cosmoz/shared";
 
-import { ORYON_FIB_EXT_LEVELS, ORYON_FIB_LEVELS, oryonPositionTargetPrice } from "@cosmoz/shared";
+import {
+  ORYON_FIB_EXT_LEVELS,
+  ORYON_FIB_LEVELS,
+  oryonPositionRr,
+  oryonPositionTargetPrice,
+} from "@cosmoz/shared";
 
 import {
   fibExtLevelPrice,
@@ -241,7 +246,8 @@ export class OryonDrawingsPrimitive implements ISeriesPrimitive<UTCTimestamp> {
           } else if (drawing.type === "daterange") {
             views.push({ kind: "daterange", drawing, a, b, state, label: this.dateRangeLabel(two) });
           } else if (drawing.type === "longpos" || drawing.type === "shortpos") {
-            const targetPrice = oryonPositionTargetPrice(two.a.p, two.b.p);
+            const rr = oryonPositionRr(drawing);
+            const targetPrice = oryonPositionTargetPrice(two.a.p, two.b.p, rr);
             const targetY = this.deps.conversions.priceToY(targetPrice);
             views.push({
               kind: "position",
@@ -309,6 +315,26 @@ export class OryonDrawingsPrimitive implements ISeriesPrimitive<UTCTimestamp> {
           const at = this.projectAnchor(drawing.at);
           if (at === null) return;
           views.push({ kind: "text", drawing, at, state });
+          return;
+        }
+        case "brush": {
+          const points: { x: number; y: number }[] = [];
+          for (const anchor of drawing.points) {
+            const p = this.projectAnchor(anchor);
+            if (p === null) return; // Any unprojectable point → skip the stroke.
+            points.push(p);
+          }
+          if (points.length < 2) return;
+          views.push({ kind: "brush", drawing, points, state });
+          return;
+        }
+        case "arrowmark": {
+          const at = this.projectAnchor(drawing.at);
+          if (at === null) return;
+          views.push({ kind: "arrowmark", drawing, at, state });
+          if (state.selected && !isDraft) {
+            handles.push(at);
+          }
           return;
         }
       }
@@ -389,6 +415,39 @@ export class OryonDrawingsPrimitive implements ISeriesPrimitive<UTCTimestamp> {
             }
           }
         }
+      } else if (draft.kind === "brush") {
+        // Live freehand preview — projected directly (no store object yet).
+        const points: { x: number; y: number }[] = [];
+        let ok = true;
+        for (const anchor of draft.points) {
+          const p = this.projectAnchor(anchor);
+          if (p === null) {
+            ok = false;
+            break;
+          }
+          points.push(p);
+        }
+        if (ok && points.length >= 2) {
+          views.push({
+            kind: "brush",
+            drawing: {
+              id: "__draft-brush__",
+              type: "brush",
+              visible: true,
+              locked: false,
+              label: null,
+              createdAt: 0,
+              updatedAt: 0,
+              style: draft.style,
+              points: draft.points,
+            },
+            points,
+            state: { selected: false, locked: false, hover: false },
+          });
+        } else if (draft.points.length >= 1) {
+          const a = this.projectAnchor(draft.points[0]!);
+          if (a !== null) handles.push(a);
+        }
       } else {
         projectDrawing(draft.drawing, true);
       }
@@ -467,11 +526,13 @@ export class OryonDrawingsPrimitive implements ISeriesPrimitive<UTCTimestamp> {
     return readout.lines.join("\n");
   }
 
-  /** Position tool label — Entry/Stop/Target (target DERIVED, never stored). */
+  /** Position tool label — Entry/Stop/Target (target DERIVED at the object's
+   *  own rr — the property editor's per-object risk:reward, never stored). */
   private positionLabel(drawing: TwoAnchorDrawing): string | null {
     const readout = computePositionReadout(drawing.a, drawing.b, {
       digits: this.deps.getDigits(),
       pipSize: this.deps.getPipSize(),
+      rr: oryonPositionRr(drawing),
     });
     if (!readout.valid || readout.lines.length === 0) return null;
     return readout.lines.join("\n");

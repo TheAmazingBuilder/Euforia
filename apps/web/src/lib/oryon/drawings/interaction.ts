@@ -1,11 +1,14 @@
-import type { OryonDrawing, OryonDrawingAnchor } from "@cosmoz/shared";
-import { oryonPositionTargetPrice } from "@cosmoz/shared";
+import type { OryonDrawing, OryonDrawingAnchor, OryonDrawingStyle } from "@cosmoz/shared";
+import { oryonPositionRr, oryonPositionTargetPrice } from "@cosmoz/shared";
 
 import {
   HANDLE_HIT_RADIUS,
   HIT_TOLERANCE,
+  ARROW_MARK_SIZE,
+  ARROW_TAIL_OFFSET,
   clamp,
   distanceToLineClipped,
+  distanceToPolyline,
   distanceToRay,
   distanceToSegment,
   fibExtLevelPrice,
@@ -64,7 +67,26 @@ export type OryonDrawingTool =
   | "fib"
   | "fibext"
   | "longpos"
-  | "shortpos";
+  | "shortpos"
+  // ── Property-editor iteration (additive) ──
+  | "brush"
+  | "arrow-up"
+  | "arrow-down"
+  | "arrow-left"
+  | "arrow-right";
+
+/** Interaction tool → arrow-mark direction (the four flyout rows share one
+ *  persisted drawing type; the tool only presets the direction). */
+export const ARROW_TOOL_DIR: Record<"arrow-up" | "arrow-down" | "arrow-left" | "arrow-right", "up" | "down" | "left" | "right"> = {
+  "arrow-up": "up",
+  "arrow-down": "down",
+  "arrow-left": "left",
+  "arrow-right": "right",
+};
+
+export function isArrowTool(tool: OryonDrawingTool): tool is "arrow-up" | "arrow-down" | "arrow-left" | "arrow-right" {
+  return tool === "arrow-up" || tool === "arrow-down" || tool === "arrow-left" || tool === "arrow-right";
+}
 
 export type TwoAnchorTool =
   | "trend"
@@ -88,12 +110,18 @@ const TWO_ANCHOR_TOOLS: ReadonlySet<string> = new Set([
 /** Select-class tools — same interaction semantics as the arrow cursor. */
 const SELECT_TOOLS: ReadonlySet<string> = new Set(["cursor", "cursor-cross", "cursor-dot"]);
 
+/** Minimum SCREEN px between captured brush points (smooth + bounded payload). */
+const BRUSH_CAPTURE_SPACING_PX = 3;
+/** Schema point cap — capture stops appending beyond it (stroke stays valid). */
+const BRUSH_MAX_POINTS = 800;
+
 /** Base pointer affordance per tool (applied whenever no richer state wins).
  *  SVG data-URIs are percent-encoded (%22 for quotes) — valid inside the
  *  single-quoted CSS url() AND the double-quoted TS string. */
 const BASE_CURSOR: Partial<Record<OryonDrawingTool, string>> = {
   cursor: "default",
   "cursor-cross": "crosshair",
+  brush: "crosshair",
   "cursor-dot": [
     "url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22",
     'width=%2212%22 height=%2212%22><circle cx=%226%22 cy=%226%22 r=%223.5%22',
@@ -112,6 +140,7 @@ type InteractionState =
   | { name: "idle" }
   | { name: "drafting"; tool: TwoAnchorTool; a: OryonDrawingAnchor }
   | { name: "drafting3"; tool: ThreeAnchorTool; a: OryonDrawingAnchor; b: OryonDrawingAnchor | null }
+  | { name: "brushing"; points: OryonDrawingAnchor[]; lastScreen: ScreenPoint; style: OryonDrawingStyle }
   | { name: "moving"; id: string; grabLogical: number; grabPrice: number; original: OryonDrawing }
   | { name: "anchoring"; id: string; index: number; original: OryonDrawing };
 
@@ -120,6 +149,9 @@ export interface InteractionCallbacks {
   onToolComplete(): void;
   /** Text annotation placed — the layer opens the editor at this anchor. */
   onTextEditRequest(id: string, screen: ScreenPoint): void;
+  /** RIGHT-CLICK on a drawing — the layer opens the property editor there.
+   *  The hit object is already selected by the controller (TV behavior). */
+  onDrawingContextMenu(id: string, screen: ScreenPoint): void;
   /** Repaint request (draft/preview updates). */
   requestRedraw(): void;
 }
@@ -139,12 +171,14 @@ export interface InteractionDeps {
   /** Plot bounds provider (pane size) — from the primitive. */
   getPlotRect(): ScreenRect | null;
   /** Drawing factory (id, timestamps, default style) — layer-owned. The
-   *  third anchor is the fibext projection point (null for the others). */
+   *  third anchor is the fibext projection point (null for the others);
+   *  `points` carries the captured brush polyline (brush tool only). */
   makeDrawing(
     tool: OryonDrawingTool,
     a: OryonDrawingAnchor,
     b: OryonDrawingAnchor | null,
     c?: OryonDrawingAnchor | null,
+    points?: OryonDrawingAnchor[],
   ): OryonDrawing;
   callbacks: InteractionCallbacks;
   /**
@@ -190,7 +224,11 @@ export class DrawingInteractionController {
   /** Escape semantics: cancel draft/drag, else deselect. */
   cancelActive(): void {
     this.dragPointerId = null;
-    if (this.state.name === "drafting" || this.state.name === "drafting3") {
+    if (
+      this.state.name === "drafting" ||
+      this.state.name === "drafting3" ||
+      this.state.name === "brushing"
+    ) {
       this.draft = null;
       this.state = { name: "idle" };
       this.deps.callbacks.requestRedraw();
@@ -218,6 +256,7 @@ export class DrawingInteractionController {
     container.addEventListener("pointercancel", this.onPointerCancel, true);
     container.addEventListener("dblclick", this.onDoubleClick, true);
     container.addEventListener("pointerleave", this.onPointerLeave, true);
+    container.addEventListener("contextmenu", this.onContextMenu, true);
   }
 
   detach(): void {
@@ -230,6 +269,7 @@ export class DrawingInteractionController {
     container.removeEventListener("pointercancel", this.onPointerCancel, true);
     container.removeEventListener("dblclick", this.onDoubleClick, true);
     container.removeEventListener("pointerleave", this.onPointerLeave, true);
+    container.removeEventListener("contextmenu", this.onContextMenu, true);
   }
 
   // ── pointer handlers (capture phase) ──────────────────────────────────────
@@ -322,6 +362,32 @@ export class DrawingInteractionController {
       return;
     }
 
+    if (isArrowTool(this.activeTool)) {
+      const anchor = this.domainAnchor(point);
+      if (anchor === null) return;
+      const drawing = this.deps.makeDrawing(this.activeTool, anchor, null);
+      this.deps.store.add(drawing);
+      this.finishTool();
+      this.consume(event);
+      return;
+    }
+
+    if (this.activeTool === "brush") {
+      const anchor = this.domainAnchorUnsnapped(point);
+      if (anchor === null) return;
+      this.state = {
+        name: "brushing",
+        points: [anchor],
+        lastScreen: point,
+        style: this.deps.makeDrawing("brush", anchor, null).style,
+      };
+      this.dragPointerId = event.pointerId;
+      this.draft = { kind: "brush", points: [anchor], style: this.state.style };
+      this.deps.callbacks.requestRedraw();
+      this.consume(event);
+      return;
+    }
+
     if (this.activeTool === "fibext") {
       const anchor = this.domainAnchor(point);
       if (anchor === null) return;
@@ -384,6 +450,29 @@ export class DrawingInteractionController {
       return;
     }
 
+    if (this.state.name === "brushing") {
+      // Freehand capture: append only past the spacing threshold (smooth
+      // strokes, bounded payload) and preview straight into the primitive.
+      if (
+        Math.hypot(point.x - this.state.lastScreen.x, point.y - this.state.lastScreen.y) >=
+          BRUSH_CAPTURE_SPACING_PX &&
+        this.state.points.length < BRUSH_MAX_POINTS
+      ) {
+        const anchor = this.domainAnchorUnsnapped(point);
+        if (anchor !== null) {
+          this.state = {
+            ...this.state,
+            points: [...this.state.points, anchor],
+            lastScreen: point,
+          };
+          this.draft = { kind: "brush", points: this.state.points, style: this.state.style };
+          this.deps.callbacks.requestRedraw();
+        }
+      }
+      this.consume(event);
+      return;
+    }
+
     if (this.state.name === "moving") {
       this.applyMove(point);
       this.consume(event);
@@ -415,6 +504,23 @@ export class DrawingInteractionController {
   private onPointerUp = (event: PointerEvent): void => {
     if (isUiTarget(event)) return;
     const point = this.eventPoint(event);
+
+    if (this.state.name === "brushing") {
+      // A stroke with a single point is a tap — discarded (no artifact),
+      // never persisted as a degenerate object.
+      const points = this.state.points;
+      this.state = { name: "idle" };
+      this.draft = null;
+      this.dragPointerId = null;
+      if (points.length >= 2) {
+        const drawing = this.deps.makeDrawing("brush", points[0]!, points[points.length - 1]!, null, points);
+        this.deps.store.add(drawing);
+        this.finishTool();
+      }
+      this.deps.callbacks.requestRedraw();
+      this.consume(event);
+      return;
+    }
 
     if (this.state.name === "moving" || this.state.name === "anchoring") {
       this.commitBatch();
@@ -463,6 +569,21 @@ export class DrawingInteractionController {
       this.hoverId = null;
       this.deps.callbacks.requestRedraw();
     }
+  };
+
+  /** RIGHT-CLICK on a drawing → select + property editor (TV behavior).
+   *  Right-click on empty space stays chart-native (no menu hijack). */
+  private onContextMenu = (event: MouseEvent): void => {
+    if (isUiTarget(event)) return;
+    if (this.state.name !== "idle") return;
+    if (this.deps.canInteract !== undefined && !this.deps.canInteract()) return;
+    const point = this.eventPoint(event as unknown as PointerEvent);
+    if (point === null) return;
+    const hit = this.hitTest(point);
+    if (hit === null) return;
+    this.deps.store.select(hit.id);
+    this.deps.callbacks.onDrawingContextMenu(hit.id, point);
+    this.consume(event);
   };
 
   private onDoubleClick = (event: MouseEvent): void => {
@@ -623,6 +744,9 @@ export class DrawingInteractionController {
       case "text":
         edited = { ...original, at: anchor };
         break;
+      case "arrowmark":
+        edited = { ...original, at: anchor };
+        break;
     }
     if (edited === null) return;
     this.draft = { kind: "edit", drawing: edited };
@@ -695,6 +819,19 @@ export class DrawingInteractionController {
         const t = snapTime(drawing.at.t);
         return t === null ? null : { ...drawing, at: { t, p: drawing.at.p + deltaPrice } };
       }
+      case "brush": {
+        const points: OryonDrawingAnchor[] = [];
+        for (const pt of drawing.points) {
+          const t = snapTime(pt.t);
+          if (t === null) return null;
+          points.push({ t, p: pt.p + deltaPrice });
+        }
+        return { ...drawing, points };
+      }
+      case "arrowmark": {
+        const t = snapTime(drawing.at.t);
+        return t === null ? null : { ...drawing, at: { t, p: drawing.at.p + deltaPrice } };
+      }
     }
   }
 
@@ -752,6 +889,12 @@ export class DrawingInteractionController {
       }
       case "text":
         return null; // Text moves via its body; no endpoint handles.
+      case "brush":
+        return null; // The stroke moves via its body; no point handles.
+      case "arrowmark": {
+        const at = this.projectAnchor(drawing.at);
+        return at === null ? null : [at];
+      }
     }
   }
 
@@ -841,9 +984,10 @@ export class DrawingInteractionController {
         const a = this.projectAnchor(drawing.a);
         const b = this.projectAnchor(drawing.b);
         if (a === null || b === null) return false;
-        // Risk zone (entry↔stop) OR reward zone (entry↔derived target).
+        // Risk zone (entry↔stop) OR reward zone (entry↔derived target at
+        // the object's OWN rr) — the drawn geometry is what you can hit.
         const targetY = this.deps.conversions.priceToY(
-          oryonPositionTargetPrice(drawing.a.p, drawing.b.p),
+          oryonPositionTargetPrice(drawing.a.p, drawing.b.p, oryonPositionRr(drawing)),
         );
         if (targetY !== null && hitRect(point.x, point.y, a, { x: b.x, y: targetY }, tolerance)) {
           return true;
@@ -893,7 +1037,31 @@ export class DrawingInteractionController {
         const extent = approximateTextBox(drawing.text, drawing.style.fontSize);
         return hitTextBox(point.x, point.y, at, extent.w, extent.h);
       }
+      case "brush": {
+        const points = this.projectPoints(drawing.points);
+        if (points === null || points.length < 2) return false;
+        return distanceToPolyline(point.x, point.y, points) <= tolerance;
+      }
+      case "arrowmark": {
+        const at = this.projectAnchor(drawing.at);
+        if (at === null) return false;
+        // Bounding box of the glyph (tip AT the anchor, tail opposite dir).
+        const [dx, dy] = ARROW_TAIL_OFFSET[drawing.dir]!;
+        const tail = { x: at.x + dx * ARROW_MARK_SIZE, y: at.y + dy * ARROW_MARK_SIZE };
+        return hitRect(point.x, point.y, at, tail, tolerance + 3);
+      }
     }
+  }
+
+  /** Projects a brush polyline — null when ANY point fails to project. */
+  private projectPoints(anchors: readonly OryonDrawingAnchor[]): ScreenPoint[] | null {
+    const points: ScreenPoint[] = [];
+    for (const anchor of anchors) {
+      const p = this.projectAnchor(anchor);
+      if (p === null) return null;
+      points.push(p);
+    }
+    return points;
   }
 
   private fibLevelPrices(drawing: Extract<OryonDrawing, { type: "fib" }>): { level: number; price: number }[] {
@@ -930,6 +1098,21 @@ export class DrawingInteractionController {
     const time = conversions.xToSnappedTimeSec(point.x);
     const price = conversions.yToPrice(point.y);
     if (time === null || price === null) return null;
+    return { t: time, p: price };
+  }
+
+  /**
+   * Pointer → domain anchor with an UNSNAPPED time (continuous logical index
+   * → interpolated time) — the brush captures a SHAPE, not per-bar anchors,
+   * so freehand curves stay smooth instead of stepping bar to bar.
+   */
+  private domainAnchorUnsnapped(point: ScreenPoint): OryonDrawingAnchor | null {
+    const { conversions } = this.deps;
+    const logical = conversions.xToLogical(point.x);
+    const price = conversions.yToPrice(point.y);
+    if (logical === null || price === null) return null;
+    const time = conversions.logicalToTimeSec(logical);
+    if (time === null) return null;
     return { t: time, p: price };
   }
 

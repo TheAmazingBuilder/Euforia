@@ -319,7 +319,68 @@ export function fibExtLevelPrice(
   return priceC + (priceB - priceA) * level;
 }
 
+/**
+ * Arrow-mark glyph geometry (SCREEN px) — shared by the painter, the hit
+ * test and the properties editor so the drawn, hittable and described
+ * extents can never disagree. The TIP sits at the anchor; the tail extends
+ * toward the OPPOSITE of `dir` (an "up" arrow's tail is BELOW the tip —
+ * screen y grows downward).
+ */
+export const ARROW_MARK_SIZE = 14;
+
+/** Unit tail offset per direction (screen space, y down). */
+export const ARROW_TAIL_OFFSET: Record<"up" | "down" | "left" | "right", [number, number]> = {
+  up: [0, 1],
+  down: [0, -1],
+  left: [1, 0],
+  right: [-1, 0],
+};
+
 /** Clamp a value into a range. */
 export function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
+}
+
+/**
+ * Distance from point P to a POLYLINE (min over its segments) — the brush
+ * hit test. A degenerate single-point list measures the point distance.
+ */
+export function distanceToPolyline(
+  px: number,
+  py: number,
+  points: readonly ScreenPoint[],
+): number {
+  if (points.length === 0) return Infinity;
+  if (points.length === 1) {
+    return Math.hypot(px - points[0]!.x, py - points[0]!.y);
+  }
+  let min = Infinity;
+  for (let i = 0; i < points.length - 1; i += 1) {
+    const a = points[i]!;
+    const b = points[i + 1]!;
+    const d = distanceToSegment(px, py, a.x, a.y, b.x, b.y);
+    if (d < min) min = d;
+  }
+  return min;
+}
+
+/**
+ * Brush capture spacing filter — keeps a point only when it is at least
+ * `minPx` away (in whatever unit the caller projects; the controller passes
+ * SCREEN px) from the last KEPT point. First point always survives. Pure:
+ * the controller streams raw captures through this to keep strokes smooth
+ * AND the persisted payload bounded.
+ */
+export function filterPolylineBySpacing(
+  points: readonly ScreenPoint[],
+  minPx: number,
+): ScreenPoint[] {
+  const out: ScreenPoint[] = [];
+  for (const p of points) {
+    const last = out[out.length - 1];
+    if (last === undefined || Math.hypot(p.x - last.x, p.y - last.y) >= minPx) {
+      out.push(p);
+    }
+  }
+  return out;
 }

@@ -2,6 +2,8 @@ import type { OryonDrawing, OryonDrawingStyle, OryonLineDash } from "@cosmoz/sha
 
 import {
   HANDLE_RADIUS,
+  ARROW_MARK_SIZE,
+  ARROW_TAIL_OFFSET,
   type ScreenPoint,
   type ScreenRect,
   clipLineToRect,
@@ -54,7 +56,9 @@ export type ProjectedDrawing =
   | { kind: "position"; drawing: OryonDrawing & { type: "longpos" | "shortpos" }; a: ScreenPoint; b: ScreenPoint; state: DrawingVisualState; targetY: number | null; label: string | null }
   | { kind: "fib"; drawing: OryonDrawing & { type: "fib" }; a: ScreenPoint; b: ScreenPoint; levels: readonly FibLevelView[]; state: DrawingVisualState; digits: number }
   | { kind: "fibext"; drawing: OryonDrawing & { type: "fibext" }; a: ScreenPoint; b: ScreenPoint; c: ScreenPoint; levels: readonly FibLevelView[]; state: DrawingVisualState; digits: number }
-  | { kind: "text"; drawing: OryonDrawing & { type: "text" }; at: ScreenPoint; state: DrawingVisualState };
+  | { kind: "text"; drawing: OryonDrawing & { type: "text" }; at: ScreenPoint; state: DrawingVisualState }
+  | { kind: "brush"; drawing: OryonDrawing & { type: "brush" }; points: readonly ScreenPoint[]; state: DrawingVisualState }
+  | { kind: "arrowmark"; drawing: OryonDrawing & { type: "arrowmark" }; at: ScreenPoint; state: DrawingVisualState };
 
 /** Canvas draw context handed to every paint function (already DPR-scaled). */
 export interface PaintContext {
@@ -462,6 +466,56 @@ function paintText(paint: PaintContext, view: {
   });
 }
 
+/**
+ * Brush — the captured polyline stroked with the object style (color,
+ * width and dash all apply; no fill — a stroke is a stroke).
+ */
+function paintBrush(paint: PaintContext, points: readonly ScreenPoint[], style: OryonDrawingStyle): void {
+  if (points.length < 2) return;
+  applyStroke(paint, style);
+  paint.ctx.beginPath();
+  paint.ctx.moveTo(points[0]!.x, points[0]!.y);
+  for (let i = 1; i < points.length; i += 1) {
+    paint.ctx.lineTo(points[i]!.x, points[i]!.y);
+  }
+  paint.ctx.stroke();
+}
+
+/**
+ * Arrow mark — filled glyph whose TIP sits at the anchor, tail extending
+ * toward the opposite of `dir` (screen y down). Shaft = style width,
+ * head = fixed proportions of ARROW_MARK_SIZE. Color = style.color.
+ */
+function paintArrowMark(paint: PaintContext, at: ScreenPoint, dir: "up" | "down" | "left" | "right", style: OryonDrawingStyle): void {
+  const color = resolveColor(paint.palette, style.color, paint.accent);
+  const [tx, ty] = ARROW_TAIL_OFFSET[dir];
+  const tailX = at.x + tx * ARROW_MARK_SIZE;
+  const tailY = at.y + ty * ARROW_MARK_SIZE;
+  // Perpendicular unit vector for the head half-width.
+  const px = -ty;
+  const py = tx;
+  const head = ARROW_MARK_SIZE * 0.42;
+  const headBaseX = at.x + tx * head;
+  const headBaseY = at.y + ty * head;
+  paint.ctx.setLineDash([]);
+  paint.ctx.lineCap = "round";
+  // Shaft: tail → head base.
+  paint.ctx.strokeStyle = color;
+  paint.ctx.lineWidth = Math.max(1.5, style.width * 1.5);
+  paint.ctx.beginPath();
+  paint.ctx.moveTo(tailX, tailY);
+  paint.ctx.lineTo(headBaseX, headBaseY);
+  paint.ctx.stroke();
+  // Head: filled triangle tip at the anchor.
+  paint.ctx.fillStyle = color;
+  paint.ctx.beginPath();
+  paint.ctx.moveTo(at.x, at.y);
+  paint.ctx.lineTo(headBaseX + px * head, headBaseY + py * head);
+  paint.ctx.lineTo(headBaseX - px * head, headBaseY - py * head);
+  paint.ctx.closePath();
+  paint.ctx.fill();
+}
+
 /** Anchor handles — drawn ONLY for the selected object (spec §7 Tool 1). */
 export function paintHandles(paint: PaintContext, points: readonly ScreenPoint[]): void {
   paint.ctx.setLineDash([]);
@@ -563,6 +617,15 @@ export function paintProjectedDrawing(paint: PaintContext, view: ProjectedDrawin
         paint.ctx.beginPath();
         paint.ctx.arc(view.at.x, view.at.y, HANDLE_RADIUS + 3, 0, Math.PI * 2);
         paint.ctx.stroke();
+      }
+      break;
+    case "brush":
+      paintBrush(paint, view.points, style);
+      break;
+    case "arrowmark":
+      paintArrowMark(paint, view.at, view.drawing.dir, style);
+      if (state.selected) {
+        paintHandles(paint, [view.at]);
       }
       break;
   }

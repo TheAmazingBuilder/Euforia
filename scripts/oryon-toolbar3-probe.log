@@ -1,0 +1,44 @@
+=== oryon toolbar3 probe — 2026-10-12T00:42:51.603Z ===
+  PASS  drawings debug handle present (active layer bound)
+  PASS  start: 0 objects (got 0, want 0)
+  PASS  shapes flyout lists brush
+  PASS  annotations flyout lists text
+  PASS  annotations flyout lists arrow-up
+  PASS  annotations flyout lists arrow-down
+  PASS  annotations flyout lists arrow-left
+  PASS  annotations flyout lists arrow-right
+  PASS  annotations group header shows 'Annotations' (got "Annotations")
+  PASS  brush: 1 object after stroke (got 1, want 1)
+  PASS  brush: persisted ≥ 6 points
+  PASS  brush: single tap creates nothing (got 1, want 1)
+  PASS  brush: undo removes the stroke (got 0, want 0)
+  PASS  brush: redo restores it (got 1, want 1)
+  PASS  arrowmark: created by one click
+  PASS  arrowmark: preset dir=up (got up, want up)
+  PASS  trendline: created via Alt+T (got 1, want 1)
+  PASS  longpos: created by press-drag
+  PASS  longpos: rr absent → default 1 (got 1, want 1)
+  PASS  editor: opens on right-click
+  PASS  editor: bound to the trendline (got trend, want trend)
+  PASS  editor: right-click selected the object (got true, want true)
+  PASS  editor: color swatch persists loss token (got loss, want loss)
+  PASS  editor: width persists (got 3, want 3)
+  PASS  editor: dash persists (got dashed, want dashed)
+  PASS  editor: clone adds one object (got 5, want 5)
+  PASS  editor: clone count = 2 trends (got 2, want 2)
+  PASS  editor: clone shifted in time
+  PASS  editor: delete removes one object (got 4, want 4)
+  PASS  editor: Escape closes (got true, want true)
+  PASS  rr editor: opens on the longpos
+  PASS  rr: chip 3 persists rr=3 (got 3, want 3)
+  PASS  rr: free input persists 2.5 (got 2.5, want 2.5)
+  PASS  pre-reload: 5 objects incl. extended
+  PASS  LOADER FIX: all objects survive reload (got 5, want 5)
+  PASS  LOADER FIX: extended (v2 type) survives (got 1, want 1)
+  PASS  LOADER FIX: rr=2.5 survives (got 2.5, want 2.5)
+  PASS  LOADER FIX: edited style survives (got loss, want loss)
+  PASS  0 unexpected console errors (desktop) (got 0, want 0)
+  PASS  mobile 390: workspace renders
+  PASS  mobile 390: 0 console errors (got 0, want 0)
+
+=== 41 PASS / 0 FAIL ===

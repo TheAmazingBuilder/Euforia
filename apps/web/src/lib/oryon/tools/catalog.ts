@@ -91,13 +91,20 @@ export const ORYON_TOOL_GROUPS: readonly OryonToolGroup[] = [
     tools: [
       { tool: "rect", labelKey: "rect", shortcutKey: "shortcutRect", shortcut: "Alt+R" },
       { tool: "ellipse", labelKey: "ellipse" },
+      { tool: "brush", labelKey: "brush" },
     ],
   },
   {
     id: "text",
     labelKey: "groupText",
     representative: "text",
-    tools: [{ tool: "text", labelKey: "text" }],
+    tools: [
+      { tool: "text", labelKey: "text" },
+      { tool: "arrow-up", labelKey: "arrowUp" },
+      { tool: "arrow-down", labelKey: "arrowDown" },
+      { tool: "arrow-left", labelKey: "arrowLeft" },
+      { tool: "arrow-right", labelKey: "arrowRight" },
+    ],
   },
 ];
 

@@ -18,12 +18,13 @@
  */
 const path = require("path");
 const { chromium } = require("playwright");
+const { armTool, isToolArmed, navTo } = require("./oryon-probe-helpers.js");
 const fs = require("fs");
 
 const LOG = path.resolve(__dirname, "oryon-phase2-probe.log");
 fs.writeFileSync(LOG, `=== oryon phase2 probe — ${new Date().toISOString()} ===\n`);
 
-const BASE = process.env.BASE_URL || "http://localhost:3000";
+const BASE = process.env.BASE_URL || "http://localhost:3001";
 const OUT = path.resolve(__dirname, "shots");
 
 let pass = 0;
@@ -184,19 +185,29 @@ async function brightPixelRowNear(page, yRatio, xRatios) {
   ok("P2 — workspace rendu", await page.locator('[data-testid="oryon-workspace"]').isVisible());
 
   // ── 2. Tool rail — all tools armed and functional-looking ────────────────
-  const railTools = ["pointer", "trendline", "hline", "vline", "ray", "rect", "fib", "measure", "text"];
-  for (const tool of railTools) {
-    const btn = page.locator(`[data-testid="oryon-tool-${tool}"]`);
-    ok(`P2 — rail: outil ${tool} présent et actif`, (await btn.count()) === 1 && (await btn.isEnabled()));
+  // Toolbar v2/v3 rail: six GROUP controls (split icon+caret); the flat v1
+  // buttons are gone. Presence = every caret renders; tools live in flyouts.
+  const railGroups = ["cursors", "trend", "fib", "forecast", "shapes", "text"];
+  for (const group of railGroups) {
+    const caret = page.locator(`[data-testid="oryon-tool-caret-${group}"]`);
+    ok(`P2 — rail: groupe ${group} présent et actif`, (await caret.count()) === 1 && (await caret.isEnabled()));
+  }
+  for (const tool of ["trend", "hline", "fib", "measure", "text"]) {
+    await page.click(`[data-testid="oryon-tool-caret-${{ trend: "trend", hline: "trend", fib: "fib", measure: "forecast", text: "text" }[tool]}"]`);
+    await page.waitForSelector(`[data-testid="oryon-tool-item-${tool}"]`, { timeout: 5_000 });
+    ok(`P2 — rail: outil ${tool} listé dans son flyout`, (await page.locator(`[data-testid="oryon-tool-item-${tool}"]`).count()) === 1);
+    await page.keyboard.press("Escape");
+    await page.waitForTimeout(150);
   }
   ok("P2 — rail: undo désactivé à vide", await page.locator('[data-testid="oryon-drawing-undo"]').isDisabled());
   ok("P2 — rail: redo désactivé à vide", await page.locator('[data-testid="oryon-drawing-redo"]').isDisabled());
 
   // ── 3. Trend line — two-click creation ────────────────────────────────────
-  await page.locator('[data-testid="oryon-tool-trendline"]').click();
-  ok("P2 — outil trend armé (état actif)", (await page.locator('[data-testid="oryon-tool-trendline"]').getAttribute("data-active")) !== null);
+  await armTool(page, "trend");
+  ok("P2 — outil trend armé (état actif)", await isToolArmed(page, "trend"));
+  await armTool(page, "trend");
   await drawTrend(page, 0.3, 0.55, 0.62, 0.35);
-  ok("P2 — trend créé → outil désarmé (retour curseur)", (await page.locator('[data-testid="oryon-tool-trendline"]').getAttribute("data-active")) === null);
+  ok("P2 — trend créé → outil désarmé (retour curseur)", !(await isToolArmed(page, "trend")));
   ok("P2 — undo disponible après création", !(await page.locator('[data-testid="oryon-drawing-undo"]').isDisabled()));
 
   await openList(page);
@@ -213,7 +224,7 @@ async function brightPixelRowNear(page, yRatio, xRatios) {
   ok("P2 — redo restaure l'objet", (await listCount(page)) === 1);
 
   // ── 5. Hline — one-click + pixel alignment across a horizontal pan ────────
-  await page.locator('[data-testid="oryon-tool-hline"]').click();
+  await armTool(page, "hline");
   const box = await chartBox(page);
   const hlineY = 0.5;
   await page.mouse.click(box.x + box.width * 0.4, box.y + box.height * hlineY);
@@ -233,28 +244,28 @@ async function brightPixelRowNear(page, yRatio, xRatios) {
   ok("P2 — hline reste à son prix après pan (alignement)", lineAfterPan);
 
   // ── 6. One-click tools: vline, ray, rect, fib, measure, text ──────────────
-  await page.locator('[data-testid="oryon-tool-vline"]').click();
-  await page.mouse.click(box.x + box.width * 0.5, box.y + box.height * 0.6);
+  await armTool(page, "vline");
+  await page.mouse.click(box.x + box.width * 0.5, box.y + box.height * 0.3);
   await page.waitForTimeout(150);
   ok("P2 — vline créé", (await page.locator('[data-testid="oryon-drawing-row-vline"]').count()) === 1);
 
-  await page.locator('[data-testid="oryon-tool-ray"]').click();
-  await drawTrend(page, 0.35, 0.6, 0.55, 0.45);
+  await armTool(page, "ray");
+  await drawTrend(page, 0.35, 0.32, 0.55, 0.26);
   ok("P2 — ray créé", (await page.locator('[data-testid="oryon-drawing-row-ray"]').count()) === 1);
 
-  await page.locator('[data-testid="oryon-tool-rect"]').click();
-  await drawTrend(page, 0.6, 0.65, 0.75, 0.5);
+  await armTool(page, "rect");
+  await drawTrend(page, 0.6, 0.4, 0.75, 0.28);
   ok("P2 — rect créé", (await page.locator('[data-testid="oryon-drawing-row-rect"]').count()) === 1);
 
-  await page.locator('[data-testid="oryon-tool-fib"]').click();
-  await drawTrend(page, 0.2, 0.3, 0.45, 0.5);
+  await armTool(page, "fib");
+  await drawTrend(page, 0.2, 0.24, 0.45, 0.38);
   ok("P2 — fib créé", (await page.locator('[data-testid="oryon-drawing-row-fib"]').count()) === 1);
 
-  await page.locator('[data-testid="oryon-tool-measure"]').click();
-  await drawTrend(page, 0.5, 0.3, 0.62, 0.4);
+  await armTool(page, "measure");
+  await drawTrend(page, 0.5, 0.26, 0.62, 0.34);
   ok("P2 — measure créé", (await page.locator('[data-testid="oryon-drawing-row-measure"]').count()) === 1);
 
-  await page.locator('[data-testid="oryon-tool-text"]').click();
+  await armTool(page, "text");
   await page.mouse.click(box.x + box.width * 0.7, box.y + box.height * 0.25);
   await page.waitForSelector('[data-testid="oryon-text-editor"]', { timeout: 5_000 });
   await page.keyboard.type("Oryon note");
@@ -265,7 +276,7 @@ async function brightPixelRowNear(page, yRatio, xRatios) {
   if (textAfterEscape === 0) {
     ok("P2 — texte: Esc sans contenu ne laisse pas d'objet vide", true);
     // Re-create and COMMIT this time.
-    await page.locator('[data-testid="oryon-tool-text"]').click();
+    await armTool(page, "text");
     await page.mouse.click(box.x + box.width * 0.7, box.y + box.height * 0.25);
     await page.waitForSelector('[data-testid="oryon-text-editor"]', { timeout: 5_000 });
     await page.keyboard.type("Oryon note");

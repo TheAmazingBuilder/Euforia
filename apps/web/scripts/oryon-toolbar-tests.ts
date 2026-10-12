@@ -20,8 +20,13 @@
 import {
   ORYON_FIB_EXT_LEVELS,
   ORYON_POSITION_RR,
+  ORYON_POSITION_RR_MAX,
+  ORYON_POSITION_RR_MIN,
   oryonDrawingsFileSchema,
   oryonDrawingSchema,
+  oryonDrawingTypeSchema,
+  oryonFormatRr,
+  oryonPositionRr,
   oryonPositionTargetPrice,
   type OryonDrawing,
 } from "@cosmoz/shared";
@@ -29,7 +34,9 @@ import {
 import {
   clipLineToRect,
   distanceToLineClipped,
+  distanceToPolyline,
   fibExtLevelPrice,
+  filterPolylineBySpacing,
   hitEllipseEdge,
 } from "../src/lib/oryon/drawings/geometry";
 import {
@@ -49,6 +56,7 @@ import {
   shortcutMatches,
   toolGroupOf,
 } from "../src/lib/oryon/tools/catalog";
+import { RENDERABLE_DRAWING_TYPES } from "../src/lib/oryon/drawings/persistence";
 import { ORYON_TOOL_ICONS } from "../src/components/oryon/oryon-tool-icons";
 
 let passed = 0;
@@ -101,15 +109,18 @@ function makeDrawing(type: OryonDrawing["type"]): OryonDrawing {
     case "longpos": return { id: "x-long-0001", type, ...FRAME, a, b: { t: 1_700_000_600, p: 95 } };
     case "shortpos": return { id: "x-shrt-0001", type, ...FRAME, a, b: { t: 1_700_000_600, p: 105 } };
     case "ellipse": return { id: "x-ellp-0001", type, ...FRAME, a, b };
+    case "brush": return { id: "x-brsh-0001", type, ...FRAME, points: [a, { t: 1_700_000_300, p: 104 }, b] };
+    case "arrowmark": return { id: "x-arrw-0001", type, ...FRAME, at: a, dir: "up" as const };
   }
 }
 
-console.log("\n── Shared contracts — V3 types round-trip the persistence schema");
+console.log("\n── Shared contracts — V3+V4 types round-trip the persistence schema");
 const ALL_TYPES = [
   "trend", "hline", "vline", "ray", "rect", "text", "measure", "fib",
   "extended", "crossline", "fibext", "pricerange", "daterange", "longpos", "shortpos", "ellipse",
+  "brush", "arrowmark",
 ] as const;
-ok("16 drawing types in the schema enum", oryonDrawingSchema.options.length === 16);
+ok("18 drawing types in the schema enum", oryonDrawingSchema.options.length === 18);
 for (const type of ALL_TYPES) {
   const drawing = makeDrawing(type);
   const file = {
@@ -131,6 +142,36 @@ ok("invalid fibext (missing c) rejected", !oryonDrawingSchema.safeParse({ ...mak
 ok("position target helper: long 100/95 → 105", oryonPositionTargetPrice(100, 95) === 100 + (100 - 95) * ORYON_POSITION_RR);
 eq("position target helper: short 100/105 → 95", oryonPositionTargetPrice(100, 105), 95);
 eq("position target helper: 1:1 documented", ORYON_POSITION_RR, 1);
+
+console.log("\n── R:R — per-object ratio (property editor)");
+{
+  eq("target with rr=3: long 100/95 → 115", oryonPositionTargetPrice(100, 95, 3), 115);
+  eq("target with rr=0.5: short 100/105 → 97.5", oryonPositionTargetPrice(100, 105, 0.5), 97.5);
+  eq("oryonPositionRr: absent → 1", oryonPositionRr({}), 1);
+  eq("oryonPositionRr: explicit 2.5 → 2.5", oryonPositionRr({ rr: 2.5 }), 2.5);
+  eq("oryonPositionRr: non-finite → 1", oryonPositionRr({ rr: Number.NaN }), 1);
+  eq("oryonPositionRr: below bounds clamped", oryonPositionRr({ rr: 0.01 }), ORYON_POSITION_RR_MIN);
+  eq("oryonPositionRr: above bounds clamped", oryonPositionRr({ rr: 99 }), ORYON_POSITION_RR_MAX);
+  eq("oryonFormatRr: 1 → '1'", oryonFormatRr(1), "1");
+  eq("oryonFormatRr: 1.5 → '1.5'", oryonFormatRr(1.5), "1.5");
+  eq("oryonFormatRr: 2.5 → '2.5'", oryonFormatRr(2.5), "2.5");
+
+  // Schema bounds: rr optional, 0.1..10, rejects out-of-bounds.
+  ok("schema: longpos without rr loads (old records)", oryonDrawingSchema.safeParse(makeDrawing("longpos")).success);
+  ok("schema: longpos rr=3 valid", oryonDrawingSchema.safeParse({ ...makeDrawing("longpos"), rr: 3 }).success);
+  ok("schema: longpos rr=0 rejected", !oryonDrawingSchema.safeParse({ ...makeDrawing("longpos"), rr: 0 }).success);
+  ok("schema: longpos rr=11 rejected", !oryonDrawingSchema.safeParse({ ...makeDrawing("longpos"), rr: 11 }).success);
+  ok("schema: shortpos rr=2.5 valid", oryonDrawingSchema.safeParse({ ...makeDrawing("shortpos"), rr: 2.5 }).success);
+
+  // Readout at a custom rr — the label NEVER invents a stored target.
+  const pos3 = computePositionReadout({ t: 1, p: 100 }, { t: 2, p: 95 }, { digits: 2, pipSize: 0.01, rr: 3 });
+  ok("readout: rr=3 valid", pos3.valid);
+  eq("readout: rr=3 target 115", pos3.targetPrice, 115);
+  ok("readout: label carries 1:3", pos3.lines.join("|").includes("(1:3)"));
+  const posHalf = computePositionReadout({ t: 1, p: 100 }, { t: 2, p: 95 }, { digits: 2, pipSize: 0.01, rr: 0.5 });
+  ok("readout: label carries 1:0.5", posHalf.lines.join("|").includes("(1:0.5)"));
+  eq("readout: rr absent → 1:1", computePositionReadout({ t: 1, p: 100 }, { t: 2, p: 95 }, { digits: 2, pipSize: 0.01 }).targetPrice, 105);
+}
 
 console.log("\n── Geometry — extended line / ellipse / fibext");
 {
@@ -168,6 +209,36 @@ console.log("\n── Geometry — extended line / ellipse / fibext");
   eq("fibExtLevelPrice: level 1 = C + full swing", fibExtLevelPrice(100, 110, 104, 1), 114);
   eq("fibExtLevelPrice: level 1.618", fibExtLevelPrice(100, 110, 104, 1.618), 104 + 10 * 1.618);
   eq("ORYON_FIB_EXT_LEVELS includes golden ratio", ORYON_FIB_EXT_LEVELS.includes(1.618), true);
+}
+
+console.log("\n── Geometry — brush polyline (hit + capture spacing)");
+{
+  const pts = [
+    { x: 0, y: 0 },
+    { x: 10, y: 0 },
+    { x: 10, y: 10 },
+  ];
+  eq("distanceToPolyline: on first segment", distanceToPolyline(5, 0, pts), 0, 0.001);
+  eq("distanceToPolyline: on second segment", distanceToPolyline(10, 5, pts), 0, 0.001);
+  eq("distanceToPolyline: at corner", distanceToPolyline(11, 11, pts), Math.SQRT2, 0.001);
+  ok("distanceToPolyline: far miss", distanceToPolyline(50, 50, pts) > 30);
+  eq("distanceToPolyline: single point → point distance", distanceToPolyline(3, 4, [{ x: 0, y: 0 }]), 5);
+  ok("distanceToPolyline: empty → ∞", distanceToPolyline(0, 0, []) === Infinity);
+
+  // Capture spacing: 1px noise collapses, ≥3px gaps survive.
+  const raw = [
+    { x: 0, y: 0 },
+    { x: 1, y: 0.5 },
+    { x: 2, y: 0 },
+    { x: 6, y: 2 },
+    { x: 7, y: 2.5 },
+    { x: 12, y: 4 },
+  ];
+  const kept = filterPolylineBySpacing(raw, 3);
+  eq("filterPolylineBySpacing: kept count", kept.length, 3);
+  ok("filterPolylineBySpacing: first point survives", kept[0]!.x === 0 && kept[0]!.y === 0);
+  ok("filterPolylineBySpacing: last ≥3px point survives", kept[kept.length - 1]!.x === 12);
+  eq("filterPolylineBySpacing: empty input", filterPolylineBySpacing([], 3).length, 0);
 }
 
 console.log("\n── Readouts — price range / date range / position (honesty rules)");
@@ -224,7 +295,7 @@ console.log("\n── UI prefs — defaults, salvage, corrupt payloads");
 console.log("\n── Tool catalog — structural invariants");
 {
   const ids = ORYON_TOOL_IDS;
-  eq("catalog: 20 tools", ids.length, 20);
+  eq("catalog: 25 tools", ids.length, 25);
   eq("catalog: ids deduped", new Set(ids).size, ids.length);
 
   for (const group of ORYON_TOOL_GROUPS) {
@@ -262,6 +333,16 @@ console.log("\n── Tool catalog — structural invariants");
   eq("catalog: cursor-cross ∈ cursors group", toolGroupOf("cursor-cross")?.id, "cursors");
   eq("catalog: fibext ∈ fib group", toolGroupOf("fibext")?.id, "fib");
   eq("catalog: longpos ∈ forecast group", toolGroupOf("longpos")?.id, "forecast");
+  eq("catalog: brush ∈ shapes group", toolGroupOf("brush")?.id, "shapes");
+  eq("catalog: arrow-up ∈ text (annotations) group", toolGroupOf("arrow-up")?.id, "text");
+  eq("catalog: arrow-right ∈ text group", toolGroupOf("arrow-right")?.id, "text");
+
+  // Persistence loader: EVERY schema type is renderable (the hand-list
+  // staleness bug — v2 drawings were dropped on reload — can't regress).
+  for (const type of oryonDrawingTypeSchema.options) {
+    ok(`loader: type ${type} is renderable`, RENDERABLE_DRAWING_TYPES.has(type));
+  }
+  ok("loader: unknown type filtered", !RENDERABLE_DRAWING_TYPES.has("mystery"));
 
   ok("catalog: isCatalogToolId accepts 'eraser'", isCatalogToolId("eraser"));
   ok("catalog: isCatalogToolId rejects 'nope'", !isCatalogToolId("nope"));

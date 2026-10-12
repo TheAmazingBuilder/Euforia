@@ -11,7 +11,9 @@ import {
   TrendingUp,
   Minus,
   MoveVertical,
+  ArrowUp,
   ArrowUpRight,
+  Brush,
   MoveUpRight,
   Plus,
   Square,
@@ -30,6 +32,12 @@ import {
 import type { OryonDrawing, OryonDrawingStyle } from "@cosmoz/shared";
 
 import type { OryonDrawingStore } from "@/lib/oryon/drawings/store";
+import {
+  ORYON_COLOR_CHOICES,
+  ORYON_DASH_CHOICES,
+  ORYON_WIDTH_CHOICES,
+  drawingSupportsFill,
+} from "@/lib/oryon/tools/style-presets";
 import { useDict } from "@/i18n/i18n-provider";
 import { useOryonDrawings } from "@/components/oryon/oryon-drawings-context";
 import { OryonIconButton } from "@/components/oryon/oryon-icon-button";
@@ -65,22 +73,16 @@ const TYPE_ICONS: Record<OryonDrawing["type"], LucideIcon> = {
   fibext: AlignEndHorizontal,
   longpos: ArrowUpFromLine,
   shortpos: ArrowDownToLine,
+  brush: Brush,
+  arrowmark: ArrowUp,
 };
 
-/** Theme-token swatches for the style editor — NO raw hex inputs. */
-const COLOR_CHOICES: readonly { key: string; cssVar: string }[] = [
-  { key: "accent", cssVar: "--accent" },
-  { key: "profit", cssVar: "--profit" },
-  { key: "loss", cssVar: "--loss" },
-  { key: "warning", cssVar: "--warning" },
-  { key: "cat-0", cssVar: "--cat-ta" },
-  { key: "cat-1", cssVar: "--cat-strategies" },
-  { key: "cat-3", cssVar: "--cat-patterns" },
-  { key: "text-primary", cssVar: "--text-primary" },
-];
+/** Theme-token swatches live in the SHARED style presets (the right-click
+ *  property editor reads the same list — the two surfaces can't drift). */
+const COLOR_CHOICES = ORYON_COLOR_CHOICES;
 
-const WIDTH_CHOICES = [1, 2, 3] as const;
-const DASH_CHOICES: readonly OryonDrawingStyle["dash"][] = ["solid", "dashed", "dotted"];
+const WIDTH_CHOICES = ORYON_WIDTH_CHOICES;
+const DASH_CHOICES = ORYON_DASH_CHOICES;
 
 const EMPTY_SNAPSHOT = { drawings: [] as readonly OryonDrawing[], selectedId: null, version: 0 };
 const noopSubscribe = () => () => {};
@@ -266,6 +268,8 @@ const TYPE_LABEL_KEYS: Record<OryonDrawing["type"], keyof typeof import("@/i18n/
   fibext: "typeFibExt",
   longpos: "typeLongPos",
   shortpos: "typeShortPos",
+  brush: "typeBrush",
+  arrowmark: "typeArrowMark",
 };
 
 /** Compact style editor for the selected object (spec §11). */
@@ -287,7 +291,7 @@ function OryonDrawingStyleEditor({ drawing, store }: { drawing: OryonDrawing; st
     setTextDraft(null);
   };
 
-  const supportsFill = drawing.type === "rect" || drawing.type === "fib" || drawing.type === "measure";
+  const supportsFill = drawingSupportsFill(drawing.type);
 
   return (
     <div

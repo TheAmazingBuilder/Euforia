@@ -46,6 +46,12 @@ export type DraftOverlay =
       style: OryonDrawingStyle;
     }
   | {
+      /** Live freehand capture (brush) — the points captured so far. */
+      kind: "brush";
+      points: OryonDrawingAnchor[];
+      style: OryonDrawingStyle;
+    }
+  | {
       /** Move / anchor-edit preview — the modified object, not yet committed. */
       kind: "edit";
       drawing: OryonDrawing;

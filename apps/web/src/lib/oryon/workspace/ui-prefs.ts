@@ -54,13 +54,21 @@ export interface OryonUiPrefs {
 
 /** Documented defaults — a curated starter set (mirrors the TradingView
  *  floating bar: trend, hline, fib, position, measure) and the bar VISIBLE:
- *  the user asked for it, and an empty hidden bar would look broken. */
+ *  the user asked for it, and an empty hidden bar would look broken.
+ *  Position (96, 128) — chart-AREA coordinates (panel headers INCLUDED in
+ *  this container): the top-left column is BUSY by default — panel header
+ *  (~0..48) then the indicator legend (~52..116) then the event-marker
+ *  band (click line ≈120) — so the bar docks at y=128, BELOW all three.
+ *  The earlier defaults (120, then 64) floated INSIDE those interactive
+ *  zones and swallowed chart clicks there (P8 marker popover + P3 legend
+ *  chip regressions). Users drag the bar anywhere — the clamp keeps it
+ *  inside the chart area. */
 export const ORYON_UI_PREFS_DEFAULT: OryonUiPrefs = {
   favorites: ["trend", "hline", "fib", "longpos", "shortpos", "measure"],
   favoritesBar: {
     visible: true,
     x: 96,
-    y: 120,
+    y: 128,
   },
 };
 

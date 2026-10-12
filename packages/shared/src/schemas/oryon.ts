@@ -49,12 +49,17 @@ export const oryonDrawingTypeSchema = z.enum([
   "pricerange",
   /** Horizontal time ruler: elapsed duration + bars readout. */
   "daterange",
-  /** Long position tool: entry at a, stop at b.p, 1:1 target derived. */
+  /** Long position tool: entry at a, stop at b.p, target DERIVED at rr (default 1). */
   "longpos",
-  /** Short position tool: entry at a, stop at b.p, 1:1 target derived. */
+  /** Short position tool: entry at a, stop at b.p, target DERIVED at rr (default 1). */
   "shortpos",
   /** Ellipse inscribed in the a→b bounding rect. */
   "ellipse",
+  // ── V4 additions (property-editor iteration — additive) ──
+  /** Freehand brush — captured polyline, ≥2 anchors, unsnapped times. */
+  "brush",
+  /** One-click direction arrow whose TIP sits at the anchor. */
+  "arrowmark",
 ]);
 
 export type OryonDrawingType = z.infer<typeof oryonDrawingTypeSchema>;
@@ -207,16 +212,20 @@ export const oryonDateRangeDrawingSchema = z.object({
 
 /**
  * Position tool (long/short) — TWO anchors: a = entry (time + price),
- * b = stop corner (time + stop price). The TARGET is DERIVED at 1:1 R:R
- * (ORYON_POSITION_RR): target.p = entry.p + (entry.p − stop.p) — never
- * persisted (a stored value could silently disagree with the documented
- * ratio); the time span is a.t → b.t.
+ * b = stop corner (time + stop price). The TARGET stays DERIVED — never a
+ * stored price (a stored value could silently disagree with the drawn
+ * geometry): target.p = entry.p + (entry.p − stop.p) × rr, where the
+ * risk:reward ratio `rr` is an OPTIONAL per-object property (property
+ * editor, bounded 0.1..10; absent = ORYON_POSITION_RR = 1). The time span
+ * is a.t → b.t.
  */
 export const oryonLongPositionDrawingSchema = z.object({
   ...commonDrawingFields,
   type: z.literal("longpos"),
   a: oryonDrawingAnchorSchema,
   b: oryonDrawingAnchorSchema,
+  /** Risk:reward multiple for the DERIVED target (absent = 1). */
+  rr: z.number().finite().min(0.1).max(10).optional(),
 });
 
 export const oryonShortPositionDrawingSchema = z.object({
@@ -224,6 +233,7 @@ export const oryonShortPositionDrawingSchema = z.object({
   type: z.literal("shortpos"),
   a: oryonDrawingAnchorSchema,
   b: oryonDrawingAnchorSchema,
+  rr: z.number().finite().min(0.1).max(10).optional(),
 });
 
 /** Ellipse — inscribed in the a→b bounding rect. */
@@ -232,6 +242,38 @@ export const oryonEllipseDrawingSchema = z.object({
   type: z.literal("ellipse"),
   a: oryonDrawingAnchorSchema,
   b: oryonDrawingAnchorSchema,
+});
+
+/**
+ * Brush (freehand) — the captured polyline in CHART-DOMAIN anchors. Times
+ * are UNSNAPPED (interpolated between bars — the stroke is a shape, not a
+ * per-bar annotation) and replay through the same linear interpolation the
+ * capture used, so the path re-projects faithfully at the SAME interval;
+ * like every drawing it deforms across interval switches (documented).
+ * The point cap bounds the persisted payload (min-spacing capture keeps a
+ * realistic stroke far below it).
+ */
+export const oryonBrushDrawingSchema = z.object({
+  ...commonDrawingFields,
+  type: z.literal("brush"),
+  points: z.array(oryonDrawingAnchorSchema).min(2).max(800),
+});
+
+/**
+ * One-click arrow mark — the TIP sits at `at`, the glyph extends toward
+ * the OPPOSITE of `dir` (an "up" arrow points up FROM the anchor). Color
+ * = style.color; shaft thickness = style.width. Pure annotation: it has
+ * no time extent, never entered into any calculation.
+ */
+export const oryonArrowMarkDirectionSchema = z.enum(["up", "down", "left", "right"]);
+
+export type OryonArrowMarkDirection = z.infer<typeof oryonArrowMarkDirectionSchema>;
+
+export const oryonArrowMarkDrawingSchema = z.object({
+  ...commonDrawingFields,
+  type: z.literal("arrowmark"),
+  at: oryonDrawingAnchorSchema,
+  dir: oryonArrowMarkDirectionSchema,
 });
 
 export const oryonDrawingSchema = z.discriminatedUnion("type", [
@@ -251,6 +293,8 @@ export const oryonDrawingSchema = z.discriminatedUnion("type", [
   oryonLongPositionDrawingSchema,
   oryonShortPositionDrawingSchema,
   oryonEllipseDrawingSchema,
+  oryonBrushDrawingSchema,
+  oryonArrowMarkDrawingSchema,
 ]);
 
 export type OryonDrawing = z.infer<typeof oryonDrawingSchema>;
@@ -289,21 +333,46 @@ export const ORYON_FIB_LEVELS = [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1] as const
 export const ORYON_FIB_EXT_LEVELS = [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1, 1.618] as const;
 
 /**
- * Position tool risk:reward — DERIVED target ratio (documented constant;
- * a configurable ratio arrives with the property editor, never a silent
- * change of the drawn geometry).
+ * Position tool risk:reward — the DEFAULT DERIVED target ratio. A per-object
+ * `rr` (property editor, schema-bounded 0.1..10) overrides it; a missing
+ * `rr` on an old record reads as this constant (never a migration).
  */
 export const ORYON_POSITION_RR = 1 as const;
 
+/** Schema-bounded bounds for the per-object rr (mirrors the Zod limits). */
+export const ORYON_POSITION_RR_MIN = 0.1 as const;
+export const ORYON_POSITION_RR_MAX = 10 as const;
+
+/** Quick chips offered by the property editor (all inside the bounds). */
+export const ORYON_POSITION_RR_PRESETS = [0.5, 1, 1.5, 2, 2.5, 3, 4, 5] as const;
+
+/** Effective rr of a position drawing — the single `?? 1` normalization.
+ *  Accepts ANY drawing (unions include members without rr) — unknown
+ *  shapes and non-finite values read as the documented default. */
+export function oryonPositionRr(
+  drawing: unknown,
+): number {
+  const rr = (drawing as { rr?: unknown } | null | undefined)?.rr;
+  if (typeof rr !== "number" || !Number.isFinite(rr)) return ORYON_POSITION_RR;
+  return Math.min(ORYON_POSITION_RR_MAX, Math.max(ORYON_POSITION_RR_MIN, rr));
+}
+
 /** Derives the position-tool target price from entry/stop (pure, tested).
- *  target = entry + (entry − stop) × RR — works for BOTH directions: the
+ *  target = entry + (entry − stop) × rr — works for BOTH directions: the
  *  risk term is naturally positive for a long (stop below entry) and
- *  negative for a short (stop above entry). */
+ *  negative for a short (stop above entry). rr defaults to the documented
+ *  ORYON_POSITION_RR; the property editor passes the object's own value. */
 export function oryonPositionTargetPrice(
   entryPrice: number,
   stopPrice: number,
+  rr: number = ORYON_POSITION_RR,
 ): number {
-  return entryPrice + (entryPrice - stopPrice) * ORYON_POSITION_RR;
+  return entryPrice + (entryPrice - stopPrice) * rr;
+}
+
+/** Readout formatting for the rr multiple: 1 → "1", 1.5 → "1.5", 2.5 → "2.5". */
+export function oryonFormatRr(rr: number): string {
+  return String(Number(rr.toFixed(2)));
 }
 
 // ── Indicator contracts (Phase 3 — cahier des charges RF-05, jalon P2) ──────

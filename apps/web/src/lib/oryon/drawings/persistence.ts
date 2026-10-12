@@ -1,5 +1,6 @@
 import {
   oryonDrawingsFileSchema,
+  oryonDrawingTypeSchema,
   type OryonDrawing,
 } from "@cosmoz/shared";
 
@@ -25,18 +26,15 @@ import {
 const KEY_PREFIX = "euforia.oryon.drawings.v1";
 const SAVE_DEBOUNCE_MS = 300;
 
-/** Types the CURRENT renderer can draw. Others stay in the contract (schema)
- * but are filtered on load — never rendered as something they are not. */
-export const RENDERABLE_DRAWING_TYPES: ReadonlySet<string> = new Set([
-  "trend",
-  "hline",
-  "vline",
-  "ray",
-  "rect",
-  "text",
-  "measure",
-  "fib",
-]);
+/** Types the CURRENT renderer can draw — DERIVED from the shared schema's
+ * full type set. Every schema member ships with a renderer in the same
+ * build (the schema's own contract), so deriving removes the drift class
+ * entirely: a hand-maintained list here silently DROPPED every toolbar-v2
+ * drawing (extended/fibext/longpos/…) on reload — the exact bug this
+ * derivation fixes. The filter stays as the load-time safety net. */
+export const RENDERABLE_DRAWING_TYPES: ReadonlySet<string> = new Set(
+  oryonDrawingTypeSchema.options,
+);
 
 function storageKey(symbol: string): string {
   return `${KEY_PREFIX}:${symbol}`;

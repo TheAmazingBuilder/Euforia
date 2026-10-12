@@ -14,6 +14,7 @@ import {
 import type { OryonChartEngine } from "@/lib/charting/oryon-chart-engine";
 import {
   DrawingInteractionController,
+  ARROW_TOOL_DIR,
   type OryonDrawingTool,
 } from "@/lib/oryon/drawings/interaction";
 import { newDrawingId, type OryonDrawingStore } from "@/lib/oryon/drawings/store";
@@ -21,6 +22,7 @@ import type { ScreenPoint } from "@/lib/oryon/drawings/geometry";
 import { useDict } from "@/i18n/i18n-provider";
 import { useOryonDrawings } from "@/components/oryon/oryon-drawings-context";
 import { OryonDrawingObjectList } from "@/components/oryon/oryon-drawing-object-list";
+import { OryonDrawingPropertyEditor } from "@/components/oryon/oryon-drawing-editor";
 
 /**
  * Oryon drawing layer — the ONLY component wiring the engine, the primitive
@@ -78,6 +80,8 @@ export function OryonDrawingLayer({
   /** Editor state carries the symbol it opened under — a stale entry
    *  (instrument switched) is simply ignored, no reset render needed. */
   const [textEdit, setTextEdit] = React.useState<{ symbol: string; id: string; x: number; y: number } | null>(null);
+  /** Right-click property editor state (same symbol-scoping as textEdit). */
+  const [ctxEdit, setCtxEdit] = React.useState<{ symbol: string; id: string; x: number; y: number } | null>(null);
   const [, forceRender] = React.useReducer((n: number) => n + 1, 0);
   const textareaRef = React.useRef<HTMLTextAreaElement | null>(null);
 
@@ -88,6 +92,7 @@ export function OryonDrawingLayer({
       a: { t: number; p: number },
       b: { t: number; p: number } | null,
       c?: { t: number; p: number } | null,
+      points?: { t: number; p: number }[],
     ): OryonDrawing => {
       const now = Date.now();
       const id = newDrawingId();
@@ -128,6 +133,34 @@ export function OryonDrawingLayer({
             b: b ?? a,
             c: c ?? b ?? a,
           };
+        case "brush":
+          return {
+            id,
+            type: "brush",
+            visible: true,
+            locked: false,
+            label: null,
+            createdAt: now,
+            updatedAt: now,
+            style,
+            points: points !== undefined && points.length >= 2 ? points : [a, b ?? a],
+          };
+        case "arrow-up":
+        case "arrow-down":
+        case "arrow-left":
+        case "arrow-right":
+          return {
+            id,
+            type: "arrowmark",
+            visible: true,
+            locked: false,
+            label: null,
+            createdAt: now,
+            updatedAt: now,
+            style,
+            at: a,
+            dir: ARROW_TOOL_DIR[tool],
+          };
         case "hline":
           return { id, type: "hline", visible: true, locked: false, label: null, createdAt: now, updatedAt: now, style, price: a.p };
         case "vline":
@@ -144,6 +177,61 @@ export function OryonDrawingLayer({
       }
     },
     [],
+  );
+
+  // ── clone: same object shifted +4 bars (times UNSNAPPED — a translation,
+  //    not an anchor placement); fallback = identical anchors when the
+  //    original sits outside the loaded window. Locked clones arrive unlocked
+  //  (a clone is an edit surface by definition). ─────────────────
+  const cloneDrawing = React.useCallback(
+    (drawing: OryonDrawing): OryonDrawing | null => {
+      const now = Date.now();
+      const shift = (t: number): number => {
+        const logical = engine.conversions.timeSecToLogical(t);
+        if (logical === null) return t;
+        const shifted = engine.conversions.logicalToTimeSec(logical + 4);
+        return shifted ?? t;
+      };
+      const base = {
+        ...drawing,
+        id: newDrawingId(),
+        createdAt: now,
+        updatedAt: now,
+        locked: false,
+      };
+      switch (drawing.type) {
+        case "trend":
+        case "ray":
+        case "rect":
+        case "ellipse":
+        case "measure":
+        case "pricerange":
+        case "daterange":
+        case "fib":
+        case "extended":
+        case "longpos":
+        case "shortpos":
+          return { ...base, a: { ...drawing.a, t: shift(drawing.a.t) }, b: { ...drawing.b, t: shift(drawing.b.t) } } as OryonDrawing;
+        case "fibext":
+          return {
+            ...base,
+            a: { ...drawing.a, t: shift(drawing.a.t) },
+            b: { ...drawing.b, t: shift(drawing.b.t) },
+            c: { ...drawing.c, t: shift(drawing.c.t) },
+          } as OryonDrawing;
+        case "brush":
+          return { ...base, points: drawing.points.map((pt) => ({ ...pt, t: shift(pt.t) })) } as OryonDrawing;
+        case "vline":
+          return { ...base, time: shift(drawing.time) } as OryonDrawing;
+        case "crossline":
+        case "text":
+        case "arrowmark":
+          return { ...base, at: { ...drawing.at, t: shift(drawing.at.t) } } as OryonDrawing;
+        case "hline":
+          return base; // Price line — a time shift is meaningless.
+      }
+    },
+    [engine],
   );
 
   // ── primitive + controller wiring (per store — the store swaps when the
@@ -192,6 +280,10 @@ export function OryonDrawingLayer({
         onToolComplete: () => setActiveTool("cursor"),
         onTextEditRequest: (id, screen: ScreenPoint) => {
           setTextEdit({ symbol: symbolRef.current, id, x: screen.x, y: screen.y });
+        },
+        onDrawingContextMenu: (id, screen: ScreenPoint) => {
+          setTextEdit(null); // One editor at a time.
+          setCtxEdit({ symbol: symbolRef.current, id, x: screen.x, y: screen.y });
         },
         requestRedraw: () => primitive.requestRedraw(),
       },
@@ -345,6 +437,20 @@ export function OryonDrawingLayer({
         <div className="pointer-events-auto absolute right-2 top-2 z-20">
           <OryonDrawingObjectList store={store} />
         </div>
+      ) : null}
+
+      {ctxEdit !== null && ctxEdit.symbol === symbol ? (
+        <OryonDrawingPropertyEditor
+          store={store}
+          drawingId={ctxEdit.id}
+          x={ctxEdit.x}
+          y={ctxEdit.y}
+          onClone={(drawing) => {
+            const clone = cloneDrawing(drawing);
+            if (clone !== null) store.add(clone);
+          }}
+          onClose={() => setCtxEdit(null)}
+        />
       ) : null}
     </div>
   );

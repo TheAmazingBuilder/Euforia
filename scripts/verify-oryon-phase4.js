@@ -29,7 +29,7 @@ const fs = require("fs");
 const LOG = path.resolve(__dirname, "oryon-phase4-probe.log");
 fs.writeFileSync(LOG, `=== oryon phase4 probe — ${new Date().toISOString()} ===\n`);
 
-const BASE = process.env.BASE_URL || "http://localhost:3000";
+const BASE = process.env.BASE_URL || "http://localhost:3001";
 const OUT = path.resolve(__dirname, "shots");
 
 let pass = 0;
