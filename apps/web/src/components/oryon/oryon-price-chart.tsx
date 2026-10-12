@@ -213,6 +213,8 @@ export function OryonPriceChart({
         interval={interval}
         digits={digits}
         interactive={interactive}
+        chartType={chartType}
+        analysis={analysis}
         chartPrefs={chartPrefs}
         onChartPrefsChange={setChartPrefs}
       >

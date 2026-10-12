@@ -310,6 +310,21 @@ export const tradesDict = {
     tradeDeleted: "Trade deleted",
     screenshotAttached: "Screenshot attached",
     positionClosed: "Position closed — grade it when ready",
+    // Chart analyses (Phase 10 — Oryon bridge).
+    chartAnalysis: {
+      heading: "Chart analyses",
+      empty: "No Oryon chart analysis is linked to this trade yet — save one from the chart's right-click menu.",
+      openInOryon: "Open in Oryon",
+      unlink: "Unlink",
+      unlinkToast: "Analysis unlinked — the record stays in Oryon.",
+      delete: "Delete",
+      deleteConfirm: "Delete this analysis?",
+      deletedToast: "Analysis deleted",
+      snapshotBadge: "snapshot",
+      localNote:
+        "Saved from Oryon — analyses live in the browser that created them; snapshots live in the journal.",
+      reconstructedBadge: "reconstructed",
+    },
   },
 
   edit: {

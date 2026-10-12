@@ -1205,3 +1205,16 @@ Work Log:
 
 Stage Summary:
 - Phase 9 (Advanced Market Structure & Key Price Levels) LIVRÉE ET VERTE : 38/38 E2E + 60/60 unit. Aucun code nouveau nécessaire — la tâche suivante est un choix du owner (raffinements structure, autre feature).
+
+---
+Task ID: structure-refine-presets-phase10
+Agent: Super Z (main)
+Task: (a) Raffiner l'affichage structure (labels BOS/CHoCH sur le graphe, style des pivots) ; (b) presets de templates de couleurs ; (c) Phase 10 — Trade Journal Integration & Chart Annotation Workflow.
+
+Work Log:
+- AUDIT (code relu in extenso) : structure/pivots.ts + breaks.ts (BOS/CHoCH déjà calculés), rendu actuel = markers LWC uniquement (arrows/circles + texte nu) via engine.setStructureMarkers ; config partagée oryonPanelAnalysisSchema (v4 additive) ; UI = menu Analysis du panel-header ; settings dialog 4 onglets + chart-prefs v1 (localStorage) ; color-palette.ts + TV picker déjà livrés.
+- Audit journal (agent Explore) : Trade Prisma (uuid, instrumentId→Instrument.symbol, status PLANNED|OPEN|CLOSED|CANCELLED, direction BUY|SELL, entryPrice/entryAt/exit/pnlGross/pnlNet/rMultiple, accountId, notes/lessons) ; MSW mock-only (NEXT_PUBLIC_API_MOCKED défaut) ; API Nest NE COMPILE PAS (730 erreurs, dérive barrel/Prisma) → persistance serveur = dépendance manquante documentée ; POST /trades/:id/screenshots existe (data URL JSON, kind CHART, caption, magic-byte sniff, 6MB cap) ; trade-detail = DRAWER non adressable par URL (composition inline, pas de registre d'onglets) ; patterns éco-events (passthrough) et row-models relevés.
+- Audit Oryon : LWC 5.2.1 chart.takeScreenshot() DISPONIBLE (typings:1767) ; dessins persistés par symbole localStorage euforia.oryon.drawings.v1:{symbol} (schéma oryonDrawingsFileSchema) ; templates/layouts/prefs = enveloppes versionnées zod + salvage ; AUCUN deep-link ?analysis= ni ?symbol= ; primitive range-box = pattern à suivre pour les lignes de structure ; suites bun du worklog ABSENTES du disque (restore) → tests = sondes Playwright verify-*.js + tsc/eslint/build.
+
+Stage Summary:
+- Décisions : (1) lignes de structure BOS/CHoCH = NOUVELLE primitive canvas (pattern range-box), ligne pivot→break + label encadré ; (2) style pivots = whitelist schema additive avec .default() (anciens layouts v4 restent valides) ; (3) presets couleurs = liste curatée {up,down} appliquée au contrat appearance existant (chart-prefs v1 inchangé) ; (4) Phase 10 : analyses = enveloppe localStorage euforia.oryon.analyses.v1 (convention Oryon établie, limitation browser-local documentée), snapshots attachés aux trades via LE MÉCANISME EXISTANT POST screenshots (kind CHART), deep-link /oryon?analysis=<id>, section Chart Analysis dans le drawer journal, contrats zod prêts backend. Aucun doublon d'entité trade, aucune création de trade, aucune exécution.

@@ -1,23 +1,26 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
 
 import {
   AlarmPlus,
   Bookmark,
+  Camera,
   Copy,
   Crosshair,
   ListTree,
   Minus,
+  NotebookPen,
   RotateCcw,
   Settings2,
 } from "lucide-react";
 import { toast } from "sonner";
 
-import type { MarketInterval } from "@cosmoz/shared";
-import type { OryonDrawing } from "@cosmoz/shared";
+import type { MarketInterval, OryonDrawing, OryonPanelAnalysis } from "@cosmoz/shared";
 
 import { useDict } from "@/i18n/i18n-provider";
+import { oryonAnalyses } from "@/lib/oryon/journal/analyses";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -45,6 +48,10 @@ import {
   OryonConfigNameDialog,
 } from "@/components/oryon/oryon-config-dialogs";
 import { OryonChartSettingsDialog } from "@/components/oryon/oryon-chart-settings-dialog";
+import {
+  OryonSaveAnalysisDialog,
+  OryonSnapshotDialog,
+} from "@/components/oryon/oryon-trade-journal";
 import type { OryonConfigOpError } from "@/lib/oryon/workspace/layouts";
 
 /**
@@ -84,6 +91,8 @@ export function OryonChartContextMenu({
   interval,
   digits,
   interactive,
+  chartType,
+  analysis,
   chartPrefs,
   onChartPrefsChange,
   children,
@@ -96,6 +105,9 @@ export function OryonChartContextMenu({
   /** True while this panel is the workspace's active chart (level gating —
    *  mirrors the drawing tools' active-chart gate). */
   interactive: boolean;
+  /** Panel context for the journal flows (Save Analysis / Snapshot). */
+  chartType: "candles" | "line";
+  analysis: OryonPanelAnalysis;
   chartPrefs: OryonPanelChartPrefs;
   onChartPrefsChange: (next: OryonPanelChartPrefs) => void;
   /** The chart container — becomes the menu's trigger surface. */
@@ -103,6 +115,7 @@ export function OryonChartContextMenu({
 }) {
   const dict = useDict();
   const S = dict.oryon.contextMenu;
+  const router = useRouter();
 
   const { openCreate } = useOryonAlerts();
   const { registry: drawingRegistry } = useOryonDrawings();
@@ -117,8 +130,30 @@ export function OryonChartContextMenu({
   const [settingsOpen, setSettingsOpen] = React.useState(false);
   const [saveOpen, setSaveOpen] = React.useState(false);
   const [applyTarget, setApplyTarget] = React.useState<{ id: string; name: string } | null>(null);
+  const [saveAnalysisOpen, setSaveAnalysisOpen] = React.useState(false);
+  const [snapshotOpen, setSnapshotOpen] = React.useState(false);
+  /** Chart reference time captured when the menu OPENED (event-time read —
+   *  the journal dialogs store it with the analysis, distinct from save time). */
+  const [referenceTimeSec, setReferenceTimeSec] = React.useState<number | null>(null);
 
   const templatesList = useWorkspaceConfigSnapshot().templates;
+
+  /** This symbol's analyses that ARE linked to a journal trade — the
+   *  "open linked trade" entries (the journal record stays canonical; the
+   *  deep link /trades?trade=<id> opens the existing drawer). Subscribed
+   *  through the store snapshot so a save made minutes ago is visible
+   *  without a panel switch. */
+  const analysesSnapshot = React.useSyncExternalStore(
+    oryonAnalyses.subscribe,
+    oryonAnalyses.getSnapshot,
+  );
+  const linkedAnalyses = React.useMemo(
+    () =>
+      analysesSnapshot.analyses.filter(
+        (a) => a.symbol === dataSymbol && a.tradeId !== null,
+      ),
+    [analysesSnapshot, dataSymbol],
+  );
 
   const handleContextMenu = React.useCallback(
     (event: React.MouseEvent<HTMLDivElement>) => {
@@ -131,6 +166,7 @@ export function OryonChartContextMenu({
         price: mounted ? engine.conversions.yToPrice(y) : null,
         timeSec: mounted ? engine.conversions.xToSnappedTimeSec(x) : null,
       });
+      setReferenceTimeSec(mounted ? engine.lastCandleTime : null);
       // No preventDefault/stopPropagation — Radix owns opening + the browser
       // default is suppressed by the primitive itself, chart-native behavior
       // everywhere else in the app is untouched.
@@ -328,6 +364,55 @@ export function OryonChartContextMenu({
 
           <ContextMenuSeparator />
 
+          {/* ── Trade journal (Phase 10) ─────────────────────────────────── */}
+          <ContextMenuSub>
+            <ContextMenuSubTrigger data-testid="oryon-ctx-journal">
+              <NotebookPen aria-hidden />
+              {S.journal}
+            </ContextMenuSubTrigger>
+            <ContextMenuSubContent className="min-w-52">
+              <ContextMenuItem
+                data-testid="oryon-ctx-save-analysis"
+                onSelect={() => setSaveAnalysisOpen(true)}
+              >
+                <NotebookPen aria-hidden />
+                {S.saveAnalysis}
+              </ContextMenuItem>
+              <ContextMenuItem
+                data-testid="oryon-ctx-snapshot"
+                onSelect={() => setSnapshotOpen(true)}
+              >
+                <Camera aria-hidden />
+                {S.snapshotToTrade}
+              </ContextMenuItem>
+              {linkedAnalyses.length > 0 ? (
+                <>
+                  <ContextMenuSeparator />
+                  {linkedAnalyses.map((analysis) => (
+                    <ContextMenuItem
+                      key={analysis.id}
+                      data-testid={`oryon-ctx-open-trade-${analysis.id}`}
+                      onSelect={() => {
+                        if (analysis.tradeId === null) return;
+                        router.push(`/trades?trade=${analysis.tradeId}`);
+                      }}
+                      className="flex-col items-start gap-0.5"
+                    >
+                      <span className="text-xs font-medium text-foreground">
+                        {S.openLinkedTrade}
+                      </span>
+                      <span className="max-w-48 truncate text-[11px] text-muted-foreground">
+                        {analysis.title}
+                      </span>
+                    </ContextMenuItem>
+                  ))}
+                </>
+              ) : null}
+            </ContextMenuSubContent>
+          </ContextMenuSub>
+
+          <ContextMenuSeparator />
+
           {/* ── Templates + settings ──────────────────────────────────────── */}
           <ContextMenuSub>
             <ContextMenuSubTrigger data-testid="oryon-ctx-templates">
@@ -375,6 +460,37 @@ export function OryonChartContextMenu({
           </ContextMenuItem>
         </ContextMenuContent>
       </ContextMenu>
+
+      {/* Trade journal flows (Phase 10) — mounted per open so the drafts
+          seed from the CURRENT panel state. */}
+      {saveAnalysisOpen ? (
+        <OryonSaveAnalysisDialog
+          open
+          onOpenChange={(next) => {
+            if (!next) setSaveAnalysisOpen(false);
+          }}
+          symbol={dataSymbol}
+          interval={interval}
+          chartType={chartType}
+          analysis={analysis}
+          drawings={drawingRegistry.storeFor(dataSymbol).drawings}
+          referenceTimeSec={referenceTimeSec}
+        />
+      ) : null}
+      {snapshotOpen ? (
+        <OryonSnapshotDialog
+          open
+          onOpenChange={(next) => {
+            if (!next) setSnapshotOpen(false);
+          }}
+          engineRef={engineRef}
+          symbol={dataSymbol}
+          interval={interval}
+          chartType={chartType}
+          analysis={analysis}
+          drawings={drawingRegistry.storeFor(dataSymbol).drawings}
+        />
+      ) : null}
 
       {/* Settings — the four-section chart dialog (live-applied). Mounted
           per open so the draft + cancel snapshot start from CURRENT prefs
