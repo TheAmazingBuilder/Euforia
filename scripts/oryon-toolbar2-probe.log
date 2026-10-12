@@ -1,4 +1,4 @@
-=== oryon toolbar2 probe — 2026-10-12T00:42:07.558Z ===
+=== oryon toolbar2 probe — 2026-10-12T01:24:51.571Z ===
   PASS  rail visible (desktop)
   PASS  group button cursors present
   PASS  caret cursors present
@@ -12,11 +12,11 @@
   PASS  caret shapes present
   PASS  group button text present
   PASS  caret text present
-  PASS  top toolbar has no interval buttons (moved to bottom bar)
+  FAIL  top toolbar has no interval buttons (moved to bottom bar)
   PASS  bottom bar visible
   PASS  bottom bar interval count (1m→1D) (got 7, want 7)
-  PASS  bottom-bar 15m applied to the active panel
-  PASS  live clock renders (got "20:42:28 EDT")
+  FAIL  bottom-bar 15m applied to the active panel
+  PASS  live clock renders (got "21:25:42 EDT")
   PASS  timezone options (curated list) (got 16, want 16)
   PASS  timezone PATCH /me applied (got "Europe/London")
   PASS  trend flyout lists trend
@@ -52,4 +52,4 @@
   PASS  mobile: rail hidden (md+ only, documented)
   PASS  0 console/page errors
 
-=== 52 PASS / 0 FAIL ===
+=== 50 PASS / 2 FAIL ===

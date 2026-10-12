@@ -1086,3 +1086,44 @@ Stage Summary:
 - **TOOLBAR V3 LIVRÉE ET VÉRIFIÉE** : éditeur de propriétés clic droit complet (couleur/épaisseur/dash/fill/fonte/R:R/direction + Clone/Lock/Delete, tout undoable), R:R configurable par objet (cible dérivée, jamais stockée — contrat d'honnêteté conservé), Brush + 4 Arrow marks fonctionnels (rendus/interactifs/persistés), catalogue 25 outils. **3 bugs réels corrigés** dont la perte silencieuse des dessins v2 au reload. Flotte de régression E2E restaurée à 100 % (433 assertions E2E vertes contre 3 suites cassées + 1 régression avant ce travail).
 - Choix : cible TOUJOURS dérivée (rr borne le multiple, jamais un prix stocké) ; brush temps non-snappés (forme, pas annotation par barre) ; glyphe flèche = constantes partagées painter/hit/éditeur ; pas de 3e handle cible sur les positions (l'éditeur possède rr — documenté) ; clones déverrouillés (surface d'édition).
 - Prochaine étape : suite Phase 9 — pont provider éco réel derrière le port P8 OU notification d'approche d'événement HIGH (moteur d'alertes) ; investiguer la race LWC template-apply (P7 L1, pré-existante).
+
+---
+Task ID: toolbar-v4
+Agent: Super Z (main)
+Task: Affiner la toolbar selon le prompt TradingView — (1) floating toolbar pleine hauteur, (2) time-range selector en bas (1D…All + Calendar), (3) timeframe en top toolbar, (4) flèches de nav au lieu de scrollbar, (5) panneau objets à droite, (6) layout de référence.
+
+Work Log:
+- Audit: oryon-view.tsx (layout), oryon-toolbar/bottom-bar/tool-rail/favorites-bar/utility-rail, drawing-layer (liste in-panel), engine (getVisibleRange/applyVisibleRange), schéma partagé oryonLayoutPanelSchema.
+- packages/shared: enum panels + "objects" (persisté, rétro-compatible).
+- lib/oryon/temporal/history-ranges.ts (nouveau): presets 1D/5D/1M/3M/6M/YTD/1Y/5Y/ALL + dateStartRange, math UTC, clamp honnête au span chargé; engine + accesseur dataSpan.
+- oryon-view.tsx: restructuration en STAGE (rail pleine hauteur, colonne centrale = chart + footer, utility rail pleine hauteur); callbacks onGoRange/onGoDate (moteur du panneau ACTIF, lu au clic); historyRange state; OryonUtilityPanel = OryonLayoutPanel partagé.
+- oryon-toolbar.tsx: OryonTimeframeSelector remonté (testids oryon-tf-* conservés).
+- oryon-bottom-bar.tsx réécrite: strip plages + calendrier à gauche, horloge/tz à droite.
+- oryon-history-range.tsx (nouveau): boutons + popover calendrier maison (grille UTC, nav mois, Today), zéro dépendance.
+- oryon-tool-rail.tsx: scroll sans scrollbar ([scrollbar-width:none]), flèches hover up/down (ResizeObserver + scroll state, pointer-events-none quand cachées), List ouvre le dock objets (store.openUtility("objects")).
+- oryon-utility-rail.tsx: onglet "Objects" (4e) + OryonObjectsPanel (OryonDrawingObjectList dockée, même composant, store actif via contexte); tooltips title sur tous les onglets.
+- oryon-drawing-layer.tsx: rendu de liste in-panel supprimé (déplacé, pas dupliqué); listOpen retiré du drawings-context.
+- oryon-favorites-bar.tsx: clamp vertical = stage (boundsRef) — peut descendre sur l'axe temps + footer; horizontal = chart area; re-clamp au resize.
+- Vérif: tsc OK, eslint OK, build OK, :3000 redémarré (kill par PID — leçon: lsof -ti:3000 peut rater, EADDRINUSE silencieux).
+- Sondes: verify-toolbar-v4.js (45/45 sur 1440x900, 1280x720, 1280x460), ranges sur :3001 dev (1D=1.00j exact, 5D=5.00j exact, 1M/3M/1Y clamp au span chargé 12.46j — comportement conçu), toolbar2 éprouvée: draw trendline OK sur :3000 (les FAIL sont les assertions v2 inversées — attendues).
+
+Stage Summary:
+- Toolbar v4 livrée et commitée (83950f5). 45/45 checks multi-viewport; calc de plages validé sur dev.
+- Piège récurrent: les clics de draw hors du paneau prix sont ignorés par le contrôleur (sondes: ancres cx±120, y+min(160, h*0.4)).
+- :3000 = build prod v4; :3001 = dev (laissé tourner pour les vérifs suivantes).
+
+---
+Task ID: eco-bridge-notifs
+Agent: Super Z (main)
+Task: (a) Pont provider éco RÉEL derrière le port existant; (b) notification d'approche d'événement HIGH sur les instruments du workspace (réutilise le moteur d'alertes).
+
+Work Log:
+- Audit: apps/api NE COMPILE PAS (erreurs préexistantes, :4000 down) → le pont vit dans le chemin de données VIVANT: /api/eco-events (MSW en mode mocké). FF weekly JSON (nfs.faireconomy.media) atteignable depuis le sandbox (200, 14KB) mais SANS CORS → fetch server-side obligatoire.
+- (a) packages/shared: ecoEventsResponseSchema + source optionnelle ("forexfactory" | "forexfactory+sample" | "sample"). lib/eco/forexfactory.ts (server-only): fetch FF 6s timeout, TTL 30min, single-flight, normalisation zod-safe (impact High/Medium/Low/Holiday→HIGH/MEDIUM/LOW/LOW, ""→null, ids UUID déterministes sha256(title|instant)). app/api/eco-events/route.ts: composition = réel (semaine courante) + fixtures HORS fenêtre réelle (zéro doublon), fallback fixtures pures si provider down. MSW handler eco-events → passthrough() (les autres routes restent mockées). Note de source du panneau Market context dynamique (eventsSourceLive).
+- (b) lib/oryon/alerts/eco-approach.ts (moteur PUR, pattern du moteur d'alertes): milestones T-30/T-10/T-2, one-shot par (event, milestone) par session, matching devise conservateur (quote exact ou jambe d'une paire FX 6 lettres), flag overdue (milestone franchie page fermée → "imminent"). oryon-eco-approach-bridge.tsx (leaf null-render, pattern feed-bridge): useEcoEvents + useNowMs(15s) → engine.tick; toast sonner (testid oryon-eco-approach-toast, 12s). resolveInstrument extrait PURE de chart-grid. Handle dev __ORYON_ECO_APPROACH_DEBUG__.inject (dev-only).
+- Vérif: tsc/eslint/build OK; :3000 rebuild + restart (kill par PID via ss -tlnp). curl /api/eco-events → source=forexfactory+sample, 375 events, titres FF réels présents (MPC Member Breeden Speaks, Bank Holiday, NFP USD HIGH). Sonde verify-eco-bridge.js 6/6 sur :3001: note live affichée, 40 rows, toast tiré (~20s, cadence tick 15s), match EURUSD, pas de doublon au tick suivant, zéro erreur page.
+
+Stage Summary:
+- Commit 3eba9d9. La surface éco du workspace sert maintenant des annonces RÉELLES de la semaine courante (fallback honnête vers les fixtures), avec provenance affichée. Les événements HIGH à venir sur les instruments des panels notifient à T-30/T-10/T-2 via le même canal toast que les alertes prix.
+- Artefact dev connu: StrictMode peut monter le bridge 2× (2 toasts identiques) — prod monte 1×.
+- :3000 = build prod à jour; :3001 = dev avec handles debug.
