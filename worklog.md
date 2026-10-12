@@ -1170,3 +1170,25 @@ Stage Summary:
 - Persistance par panneau via chart-prefs (localStorage euforia.oryon.chart-prefs.v1) — survit aux reloads, respecte l'isolation multi-graphes.
 - Piège retenu: les handles __ORYON_*_DEBUG__ sont dev-only — les sondes prod assertent via DOM/testids.
 - À faire ensuite: commit puis (selon owner) raffinements menu (sous-menu alertes conditionnelles?) ou Phase 9.
+
+---
+Task ID: pos-handles-tv-picker
+Agent: Super Z (main)
+Task: (a) Position tool — ajuster la LONGUEUR du TP (vert) et du SL (rouge) en cliquant sur les côtés ; (b) Settings ▸ Symbol ▸ candles — sélecteur de couleurs style TradingView (image fournie) ; puis Phase 9.
+
+Work Log:
+- (a) SHARED : oryonPositionRrBetween(entry, stop, target) = inverse borné de oryonPositionTargetPrice (null si risque dégénéré, clamp 0.1..10).
+- (a) interaction.ts : positions = 4 handles à slots FIXES [a, b, TP, SL] (TP = ligne cible à midX → rr ; SL = ligne stop à midX → b.p SEUL) ; applyPositionHandleEdit : drag TP → rr = rrBetween(E,S,P) (stop fixe) ; drag SL → rr = rrBetween(E,P,T) avec T = cible courante — la cible NE BOUGE PAS quand on retaille le risque (indépendance TV) ; slot cible NaN si non projetable (jamais hittable, index stables).
+- (a) canvas-render : 4 handles peints à la sélection (le handle cible disparaît quand targetY est null — même condition que le contrôleur).
+- (b) lib/oryon/workspace/color-palette.ts (PUR) : grille TV 7×10 (rampe grise + 10 teintes vives + pastel/clair/riche/profond/sombre via hsl, L plafonnée à 92 — au-delà la teinte devient numb), hex↔hsl, composeHexAlpha/hexAlpha/hexBase, custom colors localStorage (dedup, cap 8, salvage).
+- (b) oryon-tv-color-picker.tsx : popover grille + customs + "+" (input color natif) + slider opacité (#RRGGBBAA) ; chart-prefs : regex hex élargie ADDITIVEMENT (6 OU 8 digits, version d'enveloppe inchangée) ; ColorRow du settings dialog remplacée (testids conservés) ; i18n addCustomColor/opacity.
+- BUG PRÉ-EXISTANT TROUVÉ PAR LA SONDE : store.commit() poussait l'historique MÊME sous batch → chaque drag = 2 entrées identiques = 2× Ctrl+Z pour un pas. Fix : commit() se tait quand history.isBatchOpen (le batch possède l'entrée) + régression bun (un drag = UN undo).
+- Vérif : bun 8 suites vertes (drawing 76, palette 45, toolbar 238, position 66, workspace 171, temporal 81, alerts 62, structure 60, levels 45, multichart 67, indicators 92, measure 33, crosshair 23) ; tsc 0 ; eslint 0 ; build OK ; :3000 rebuild+restart (kill par PID ss — leçon réappliquée, lsof rate encore).
+- Sonde verify-position-picker.js : 24/24 sur 1440×900 + 1280×720 — drag TP → rr 2.33 lu dans l'éditeur, drag SL → rr 1.4 (cible préservée), undo×2 → 1, grille 70 swatches, pick bleu live, opacité 40 % → #2962ff66 persistée, custom #123456 ajouté+appliqué+survit au reload, Escape ferme le POPOVER seul puis annule le dialog, 0 erreur page.
+- Régressions : verify-ctx-menu 34/34, toolbar3 41/41, P2 43/43. Captures scripts/position-handles.png + tv-color-picker.png.
+
+Stage Summary:
+- Commit d448477. Les zones TP/SL se retaillent directement (handles milieux de ligne) ; le contrat rr est respecté (cible dérivée, bornes saturées honnêtement). Le sélecteur TV est pixel-fidèle à la référence (grille 10×7, customs, opacité) et persiste en #RRGGBBAA que le moteur LWC consomme tel quel.
+- Bonus : correctif réel d'un bug d'historique ancien (drags = 2 undo). La sonde a mordu parce qu'elle asserte le comportement, pas l'implémentation.
+- Piège retenu : le popover Radix par-dessus les boutons du dialog — Playwright refuse le clic (hit-target) tant que la couche est ouverte ; un humain clique dehors (ferme la couche) puis clique. Sonde : Escape d'abord.
+- Suite : Phase 9 — Advanced Market Structure & Key Price Levels.
