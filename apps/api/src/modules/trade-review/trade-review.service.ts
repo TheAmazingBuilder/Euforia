@@ -418,7 +418,10 @@ export class TradeReviewService {
     for (const note of pendingNotes) {
       if (note.notes === null || note.notes.trim() === "") continue;
       entries.push({
-        id: `note-${note.id}`,
+        // The trade id is already a uuid — the contract's id field is a
+        // uuidSchema, so the note entry reuses it (unique within the library:
+        // a trade contributes at most one TRADE_NOTE entry).
+        id: note.id,
         source: "TRADE_NOTE",
         tradeId: note.id,
         date: dateKeyOf(note.tradingDate),
@@ -459,7 +462,8 @@ export class TradeReviewService {
 
     const distribution = { A: 0, B: 0, C: 0, D: 0, F: 0 };
     for (const summary of summaries) {
-      if (summary.executionGrade in distribution) {
+      // Partial reviews carry no grade — they stay out of the distribution.
+      if (summary.executionGrade !== null && summary.executionGrade in distribution) {
         distribution[summary.executionGrade as keyof typeof distribution] += 1;
       }
     }
@@ -474,10 +478,12 @@ export class TradeReviewService {
     );
     const streak = computeReviewStreak({ todayKey, reviewDayKeys });
 
-    const gradePoints: GradeDayPoint[] = summaries.map((summary) => ({
-      dayKey: tradingDateKey(summary.reviewedAt, timezone),
-      grade: summary.executionGrade,
-    }));
+    // Ungraded (partial) reviews have nothing to plot — skipped honestly.
+    const gradePoints: GradeDayPoint[] = summaries.flatMap((summary) =>
+      summary.executionGrade === null
+        ? []
+        : [{ dayKey: tradingDateKey(summary.reviewedAt, timezone), grade: summary.executionGrade }],
+    );
     const weeklyGradeTrend = computeWeeklyGradeTrend(gradePoints, todayKey);
 
     const lastImprovementNote =

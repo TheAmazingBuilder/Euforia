@@ -20,15 +20,18 @@ import { AccountsModule } from "../accounts/accounts.module";
 import { DisciplineModule } from "../discipline/discipline.module";
 import { IdentityModule } from "../identity/identity.module";
 import { TradesModule } from "../trades/trades.module";
-import { GoalsController, ReviewsController } from "./review.controller";
+import { GoalsController } from "./review.controller";
 import { ReviewRepository } from "./review.repository";
 import { GoalService } from "./goal.service";
 import { ReviewService } from "./review.service";
 
 @Module({
   imports: [PrismaModule, TradesModule, DisciplineModule, AccountsModule, IdentityModule],
-  controllers: [ReviewsController, GoalsController],
+  controllers: [GoalsController],
   providers: [ReviewRepository, GoalService, ReviewService],
+  // NOTE: the legacy ReviewsController (this module) is intentionally
+  // unwired — the Phase-6 TradeReviewModule owns the /reviews routes now
+  // (one route owner per path). Goals stay served here (ReviewRow gen).
   // Narrow contract: Playbook compliance reads review playbookMatch rows
   // from the owning context (§26).
   exports: [ReviewRepository],

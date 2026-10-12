@@ -54,6 +54,11 @@ CREATE TABLE "Trade" (
     "status" TEXT NOT NULL DEFAULT 'OPEN',
     "direction" TEXT NOT NULL,
     "source" TEXT NOT NULL DEFAULT 'MANUAL',
+    -- Phase-4 denormalized journal columns (reconciled — the trading module
+    -- reads them; every trade-writing path backfills symbol/currency).
+    "symbol" TEXT NOT NULL,
+    "currency" TEXT NOT NULL,
+    "closedQuantity" DECIMAL(18,8) NOT NULL DEFAULT 0,
     -- THE PLAN (decided BEFORE)
     "entryPrice" DECIMAL(18,8) NOT NULL,
     "entryAt" TIMESTAMP(3) NOT NULL,
@@ -110,6 +115,36 @@ CREATE INDEX "Trade_userId_deletedAt_idx" ON "Trade"("userId", "deletedAt");
 ALTER TABLE "Trade" ADD CONSTRAINT "Trade_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 ALTER TABLE "Trade" ADD CONSTRAINT "Trade_accountId_fkey" FOREIGN KEY ("accountId") REFERENCES "TradingAccount"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 ALTER TABLE "Trade" ADD CONSTRAINT "Trade_instrumentId_fkey" FOREIGN KEY ("instrumentId") REFERENCES "Instrument"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- ── TradeExecution (Phase-4 execution legs — moved here from trading_core,
+--    whose earlier Trade generation was superseded by THIS table) ──────────
+
+CREATE TABLE "TradeExecution" (
+    "id" UUID NOT NULL,
+    "tradeId" UUID NOT NULL,
+    "accountId" UUID NOT NULL,
+    "role" "ExecutionRole" NOT NULL,
+    "side" "Direction" NOT NULL,
+    "volume" DECIMAL(18,8) NOT NULL,
+    "price" DECIMAL(18,8),
+    "profit" DECIMAL(18,8),
+    "commission" DECIMAL(18,8),
+    "swap" DECIMAL(18,8),
+    "executedAt" TIMESTAMP(3) NOT NULL,
+    "reason" TEXT,
+    "note" TEXT,
+    "externalDealId" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "TradeExecution_pkey" PRIMARY KEY ("id")
+);
+
+CREATE INDEX "TradeExecution_tradeId_executedAt_idx" ON "TradeExecution"("tradeId", "executedAt");
+CREATE UNIQUE INDEX "TradeExecution_accountId_externalDealId_key" ON "TradeExecution"("accountId", "externalDealId");
+
+ALTER TABLE "TradeExecution" ADD CONSTRAINT "TradeExecution_tradeId_fkey" FOREIGN KEY ("tradeId") REFERENCES "Trade"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "TradeExecution" ADD CONSTRAINT "TradeExecution_accountId_fkey" FOREIGN KEY ("accountId") REFERENCES "TradingAccount"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- ── TradeExit (partial-exit legs — Phase 4 §18) ─────────────────────────────
 

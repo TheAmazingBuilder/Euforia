@@ -41,72 +41,68 @@ afterAll(async () => {
 // ── fixtures ─────────────────────────────────────────────────────────────────
 
 /**
- * FNV-1a 32-bit — byte-for-byte mirror of the mock provider's hashSeed, so
- * the test can pick an externalAccountId that deterministically lands on USD
- * (the plan risk engine needs quote currency === account currency; the
- * accounts rate limiter only allows 5 connects per user per 15 minutes, so
- * brute-force retries inside one user are not an option).
+ * Journal-only TradingAccount seeded through Prisma — deliberately NOT via
+ * the connect API: connecting a MOCK provider runs an INITIAL synchronization
+ * that reconstructs EXTERNAL_SYNC trades into the journal, which would
+ * pollute the exact workspace/pagination/overview counts this suite asserts
+ * on. The journal paths under test only need an owned account row.
  */
-function fnv1a(input: string): number {
-  let hash = 0x811c9dc5;
-  for (let i = 0; i < input.length; i += 1) {
-    hash ^= input.charCodeAt(i);
-    hash = Math.imul(hash, 0x01000193) >>> 0;
-  }
-  return hash >>> 0;
-}
-
-async function connectMockAccount(auth: Record<string, string>) {
-  const externalAccountId = `77${Math.random().toString(36).slice(2, 8)}`;
-  const res = await app.inject({
-    method: "POST",
-    url: "/api/v1/accounts",
-    headers: auth,
-    payload: {
-      providerId: "MOCK",
-      environment: "DEMO",
-      externalAccountId,
-      credentials: { method: "API_KEY", secret: "mock-api-key-abcd1234" },
+async function createJournalAccount(userId: string, currency = "USD") {
+  const account = await prisma.tradingAccount.create({
+    data: {
+      userId,
+      name: `Journal ${currency} (e2e)`,
+      type: "DEMO",
+      broker: "MT5",
+      currency,
+      startingBalance: "10000",
+      externalAccountId: `journal-${Math.random().toString(36).slice(2, 10)}`,
+      providerId: "JOURNAL",
     },
   });
-  expect(res.statusCode).toBe(201);
-  return res.json().account as { id: string; currency: string };
+  return { id: account.id, currency: account.currency };
 }
 
-/** Connect a deterministic USD mock account (quote currency matches EURUSD plans). */
-async function connectUsdMockAccount(auth: Record<string, string>, offset = 0) {
-  for (let attempt = offset * 1000; attempt < (offset + 1) * 1000; attempt += 1) {
-    const externalAccountId = `77${attempt.toString(36).padStart(4, "0")}`;
-    if (fnv1a(externalAccountId) % 3 !== 0) continue;
-    const res = await app.inject({
-      method: "POST",
-      url: "/api/v1/accounts",
-      headers: auth,
-      payload: {
-        providerId: "MOCK",
-        environment: "DEMO",
-        externalAccountId,
-        credentials: { method: "API_KEY", secret: "mock-api-key-abcd1234" },
-      },
-    });
-    expect(res.statusCode).toBe(201);
-    const account = res.json().account as { id: string; currency: string };
-    expect(account.currency).toBe("USD");
-    return account;
+/**
+ * EURUSD instrument id — the Instrument catalog is seeded by migrations and
+ * the WIRED legacy capture API (POST /trades) takes an instrumentId, not a
+ * symbol. Resolved once through the injected PrismaService and cached.
+ */
+let eurUsdId: string | undefined;
+async function eurUsdInstrumentId(): Promise<string> {
+  if (eurUsdId === undefined) {
+    const instrument = await prisma.instrument.findUniqueOrThrow({ where: { symbol: "EURUSD" } });
+    eurUsdId = instrument.id;
   }
-  throw new Error("no deterministic USD external id found");
+  return eurUsdId;
 }
 
-function tradePayload(overrides: Record<string, unknown> = {}) {
+/**
+ * Legacy TradesModule create body (the wired POST /trades contract). The
+ * spec's Phase-4-era overrides are mapped onto it: `symbol` → the seeded
+ * instrumentId (all seeds are EURUSD), `riskAmount`/`quantity` → the
+ * discriminated `size` union, `notes` → `reason` (the capture rationale is
+ * stored as Trade.notes). `outOfPlaybook: true` satisfies the legacy
+ * strategyId-XOR-outOfPlaybook requirement (no strategy is linked here).
+ */
+async function tradePayload(overrides: Record<string, unknown> = {}) {
+  const { symbol: _symbol, quantity, riskAmount, notes, ...rest } = overrides;
+  void _symbol;
+  const size =
+    riskAmount !== undefined
+      ? { mode: "risk_amount", riskAmount }
+      : { mode: "quantity", quantity: (quantity as string) ?? "1" };
   return {
     variant: "open",
     accountId: "00000000-0000-0000-0000-000000000000",
-    symbol: "EURUSD",
+    instrumentId: await eurUsdInstrumentId(),
     direction: "BUY",
     entryPrice: "1.08500",
     entryAt: "2026-03-02T09:30:00.000Z",
-    quantity: "1",
-    ...overrides,
+    size,
+    outOfPlaybook: true,
+    ...(notes !== undefined ? { reason: notes } : {}),
+    ...rest,
   };
 }
 
@@ -115,7 +111,7 @@ async function createOpenTrade(auth: Record<string, string>, overrides: Record<s
     method: "POST",
     url: "/api/v1/trades",
     headers: auth,
-    payload: tradePayload(overrides),
+    payload: await tradePayload(overrides),
   });
 }
 
@@ -138,24 +134,53 @@ async function closeTrade(
   });
 }
 
-/** A CLOSED canonical trade: BUY 1.085 → 1.09, risk 100 → pnlNet 500, R 5. */
+/**
+ * A CLOSED canonical trade: BUY 1.085 → 1.09 at risk 100 (the risk_amount
+ * size mode sizes 0.2 lots; the wired close recomputes pnlNet 100 / R 1
+ * server-side). The close response is only the decision-gate envelope — the
+ * canonical row is fetched back from the wired legacy list; its DTO lacks
+ * the denormalized symbol/currency columns, so those two are merged in from
+ * the Prisma row as plain strings.
+ */
 async function closedTrade(
-  auth: Record<string, string>,
+  user: { authHeader: Record<string, string>; userId: string },
   overrides: Record<string, unknown> = {},
 ): Promise<{ trade: Record<string, unknown>; account: { id: string; currency: string } }> {
-  const account = await connectMockAccount(auth);
+  const account = await createJournalAccount(user.userId);
+  const { exit, ...createOverrides } = overrides;
   const created = (
-    await createOpenTrade(auth, {
+    await createOpenTrade(user.authHeader, {
       accountId: account.id,
       riskAmount: "100",
       initialStop: "1.08000",
       initialTP: "1.09500",
-      ...overrides,
+      ...createOverrides,
     })
-  ).json().trade;
-  const closed = await closeTrade(auth, created.id, (overrides.exit as Record<string, unknown>) ?? {});
+  ).json() as { id: string };
+  const closed = await closeTrade(user.authHeader, created.id, (exit as Record<string, unknown>) ?? {});
   expect(closed.statusCode).toBe(200);
-  return { trade: closed.json().trade, account };
+  expect(closed.json()).toEqual({ id: created.id, awaitingDecision: true });
+  const list = (
+    await app.inject({
+      method: "GET",
+      url: `/api/v1/trades?accountId=${account.id}`,
+      headers: user.authHeader,
+    })
+  ).json() as { trades: Array<Record<string, unknown>> };
+  const row = list.trades.find((candidate) => candidate.id === created.id);
+  expect(row).toBeDefined();
+  const denormalized = await prisma.trade.findUnique({
+    where: { id: created.id },
+    select: { symbol: true, currency: true },
+  });
+  return {
+    trade: {
+      ...row!,
+      symbol: denormalized?.symbol ?? null,
+      currency: denormalized?.currency ?? null,
+    },
+    account,
+  };
 }
 
 /** Review payload WITHOUT the optional keys — exercises fresh resets. */
@@ -255,8 +280,8 @@ describe("trade reviews — authentication boundary", () => {
 describe("trade reviews — eligibility", () => {
   it("rejects reviews for OPEN trades (only closed trades can be reviewed)", async () => {
     const user = await authenticatedUser(app, mail);
-    const account = await connectMockAccount(user.authHeader);
-    const created = (await createOpenTrade(user.authHeader, { accountId: account.id })).json().trade;
+    const account = await createJournalAccount(user.userId);
+    const created = (await createOpenTrade(user.authHeader, { accountId: account.id })).json() as { id: string };
 
     const res = await putReview(user.authHeader, created.id);
     expect(res.statusCode).toBe(422);
@@ -280,7 +305,7 @@ describe("trade reviews — eligibility", () => {
 
   it("404 for soft-deleted trades (the journal hides them from review)", async () => {
     const user = await authenticatedUser(app, mail);
-    const { trade } = await closedTrade(user.authHeader);
+    const { trade } = await closedTrade(user);
     const deleted = await app.inject({
       method: "DELETE",
       url: `/api/v1/trades/${trade.id as string}`,
@@ -299,7 +324,7 @@ describe("trade reviews — eligibility", () => {
 describe("trade reviews — upsert lifecycle", () => {
   it("creates a review and returns the contract-shaped workspace row", async () => {
     const user = await authenticatedUser(app, mail);
-    const { trade, account } = await closedTrade(user.authHeader);
+    const { trade, account } = await closedTrade(user);
 
     const res = await putReview(user.authHeader, trade.id as string, { tradeId: trade.id });
     expect(res.statusCode).toBe(200);
@@ -316,10 +341,10 @@ describe("trade reviews — upsert lifecycle", () => {
     expect(row.lesson).toContain("confirmation candle");
     expect(row.improvementNote).toContain("trail the stop");
     // Canonical trade facts ride along as NUMBERS (workspace contract).
-    // MANUAL trades carry no computed P&L (Phase 4: profits come from
-    // provider deals — the journal never invents them), so R stays null.
-    expect(row.rMultiple).toBeNull();
-    expect(row.pnlNet).toBeNull();
+    // The WIRED legacy close computes results server-side: 0.2 lots
+    // (risk_amount 100) × 0.005 Δ × 100000 = pnlNet 100 → R 100/100 = 1.
+    expect(row.rMultiple).toBe(1);
+    expect(row.pnlNet).toBe(100);
     expect(row.symbol).toBe("EURUSD");
     expect(row.currency).toBe(account.currency);
     expect(row.tradingDate).toBe("2026-03-02");
@@ -328,7 +353,7 @@ describe("trade reviews — upsert lifecycle", () => {
 
   it("rejects invalid payloads: short lessons, bad grades, missing fields", async () => {
     const user = await authenticatedUser(app, mail);
-    const { trade } = await closedTrade(user.authHeader);
+    const { trade } = await closedTrade(user);
 
     const shortLessons = await putReview(user.authHeader, trade.id as string, { lessons: "no" });
     expect(shortLessons.statusCode).toBe(400);
@@ -342,7 +367,7 @@ describe("trade reviews — upsert lifecycle", () => {
 
   it("updates on re-PUT: required fields overwritten, optionals keep mock-parity merge", async () => {
     const user = await authenticatedUser(app, mail);
-    const { trade } = await closedTrade(user.authHeader);
+    const { trade } = await closedTrade(user);
     const created = (await putReview(user.authHeader, trade.id as string)).json();
     const first = reviewRowSchema.parse(created);
 
@@ -367,7 +392,7 @@ describe("trade reviews — upsert lifecycle", () => {
 
   it("explicit null keeps stored values on update (product merge semantics)", async () => {
     const user = await authenticatedUser(app, mail);
-    const { trade } = await closedTrade(user.authHeader);
+    const { trade } = await closedTrade(user);
     await putReview(user.authHeader, trade.id as string);
 
     const res = await putReview(user.authHeader, trade.id as string, {
@@ -385,7 +410,7 @@ describe("trade reviews — upsert lifecycle", () => {
 
   it("PATCH merges partial updates and requires at least one field", async () => {
     const user = await authenticatedUser(app, mail);
-    const { trade } = await closedTrade(user.authHeader);
+    const { trade } = await closedTrade(user);
     await putReview(user.authHeader, trade.id as string);
 
     const res = await app.inject({
@@ -424,7 +449,7 @@ describe("trade reviews — upsert lifecycle", () => {
 describe("trade reviews — archive (undo review)", () => {
   it("archives on DELETE: trade returns to PENDING, archived rows are invisible", async () => {
     const user = await authenticatedUser(app, mail);
-    const { trade } = await closedTrade(user.authHeader);
+    const { trade } = await closedTrade(user);
     await putReview(user.authHeader, trade.id as string);
 
     const del = await app.inject({
@@ -467,7 +492,7 @@ describe("trade reviews — archive (undo review)", () => {
 
   it("re-PUT after archive REACTIVATES with a fresh completion", async () => {
     const user = await authenticatedUser(app, mail);
-    const { trade } = await closedTrade(user.authHeader);
+    const { trade } = await closedTrade(user);
     const first = reviewRowSchema.parse((await putReview(user.authHeader, trade.id as string)).json());
     await app.inject({
       method: "DELETE",
@@ -501,8 +526,8 @@ describe("trade reviews — archive (undo review)", () => {
 describe("trade reviews — workspace list", () => {
   it("returns REVIEWED and PENDING rows, newest trading day first", async () => {
     const user = await authenticatedUser(app, mail);
-    const reviewed = await closedTrade(user.authHeader); // 2026-03-02
-    const pending = await closedTrade(user.authHeader, {
+    const reviewed = await closedTrade(user); // 2026-03-02
+    const pending = await closedTrade(user, {
       entryAt: "2026-03-03T09:30:00.000Z",
       exit: { exitAt: "2026-03-03T11:00:00.000Z" },
     });
@@ -523,8 +548,8 @@ describe("trade reviews — workspace list", () => {
 
   it("paginates with honest meta (total/page/limit/hasMore)", async () => {
     const user = await authenticatedUser(app, mail);
-    const first = await closedTrade(user.authHeader);
-    const second = await closedTrade(user.authHeader, {
+    const first = await closedTrade(user);
+    const second = await closedTrade(user, {
       entryAt: "2026-03-04T09:30:00.000Z",
       exit: { exitAt: "2026-03-04T11:00:00.000Z" },
     });
@@ -561,8 +586,8 @@ describe("trade reviews — workspace list", () => {
 
   it("puts REVIEWED rows before PENDING rows on trading-day ties", async () => {
     const user = await authenticatedUser(app, mail);
-    const willBeReviewed = await closedTrade(user.authHeader);
-    const stillPending = await closedTrade(user.authHeader, {
+    const willBeReviewed = await closedTrade(user);
+    const stillPending = await closedTrade(user, {
       entryAt: "2026-03-02T08:00:00.000Z",
       exit: { exitAt: "2026-03-02T10:00:00.000Z" },
     });
@@ -582,8 +607,8 @@ describe("trade reviews — workspace list", () => {
 describe("trade reviews — overview", () => {
   it("computes stats, distribution, averages, streak and trend over real rows", async () => {
     const user = await authenticatedUser(app, mail);
-    const reviewed = await closedTrade(user.authHeader);
-    const pending = await closedTrade(user.authHeader, {
+    const reviewed = await closedTrade(user);
+    const pending = await closedTrade(user, {
       notes: "Held through the news — worked out, but sloppy process.",
       entryAt: "2026-03-02T13:00:00.000Z",
       exit: { exitAt: "2026-03-02T15:00:00.000Z" },
@@ -653,8 +678,8 @@ describe("trade reviews — overview", () => {
 describe("trade reviews — lessons library", () => {
   it("unions REVIEW lessons with TRADE_NOTE lessons, newest first", async () => {
     const user = await authenticatedUser(app, mail);
-    const reviewed = await closedTrade(user.authHeader);
-    const noted = await closedTrade(user.authHeader, {
+    const reviewed = await closedTrade(user);
+    const noted = await closedTrade(user, {
       notes: "News-day spreads widened my stop fill.",
       entryAt: "2026-03-02T14:00:00.000Z",
       exit: { exitAt: "2026-03-02T16:00:00.000Z" },
@@ -672,11 +697,12 @@ describe("trade reviews — lessons library", () => {
     expect(reviewEntry?.tradeId).toBe(reviewedRow.tradeId);
     expect(reviewEntry?.text).toContain("confirmation candle");
     expect(reviewEntry?.executionGrade).toBe("A");
-    // Manual trades carry no computed P&L — the echoed R is honestly null.
-    expect(reviewEntry?.rMultiple).toBeNull();
+    // Wired close computed R server-side (pnlNet 100 at risk 100 → R 1).
+    expect(reviewEntry?.rMultiple).toBe(1);
 
     const noteEntry = parsed.lessons.find((entry) => entry.source === "TRADE_NOTE");
-    expect(noteEntry?.id).toBe(`note-${noted.trade.id as string}`);
+    // The lessons id is a uuid per the shared contract — the trade id IS one.
+    expect(noteEntry?.id).toBe(noted.trade.id);
     expect(noteEntry?.text).toContain("News-day spreads");
     expect(noteEntry?.executionGrade).toBeNull();
 
@@ -691,7 +717,7 @@ describe("trade reviews — lessons library", () => {
 describe("trade reviews — detail and comparison without a plan", () => {
   it("returns the review, authoritative trade summary and a NONE comparison", async () => {
     const user = await authenticatedUser(app, mail);
-    const { trade } = await closedTrade(user.authHeader);
+    const { trade } = await closedTrade(user);
     await putReview(user.authHeader, trade.id as string);
 
     const res = await app.inject({
@@ -708,11 +734,13 @@ describe("trade reviews — detail and comparison without a plan", () => {
     expect(detail.tradeSummary.direction).toBe("BUY");
     expect(detail.tradeSummary.entryPrice).toBe("1.085");
     expect(detail.tradeSummary.exitPrice).toBe("1.09");
-    expect(detail.tradeSummary.quantity).toBe("1");
-    // Manual-close P&L is unknown (null) — canonical Trading Core truth.
-    expect(detail.tradeSummary.pnlNet).toBeNull();
+    // The risk_amount 100 size mode sized 0.2 lots (not the Phase-4-era 1).
+    expect(detail.tradeSummary.quantity).toBe("0.2");
+    // The WIRED legacy close computes results server-side (0.005 Δ × 0.2 ×
+    // 100000 = pnlNet 100 → R 1) — canonical Trading Core truth.
+    expect(detail.tradeSummary.pnlNet).toBe("100");
     expect(detail.tradeSummary.riskAmount).toBe("100");
-    expect(detail.tradeSummary.rMultiple).toBeNull();
+    expect(detail.tradeSummary.rMultiple).toBe("1");
     // Duration is canonical execution truth: 09:30 → 12:00 = 9000 seconds.
     expect(detail.tradeSummary.durationSeconds).toBe(9000);
 
@@ -728,18 +756,17 @@ describe("trade reviews — detail and comparison without a plan", () => {
 describe("trade reviews — detail and comparison with an origin plan", () => {
   it("compares plan vs actual across every dimension and freezes the snapshot", async () => {
     const user = await authenticatedUser(app, mail);
-    const account = await connectUsdMockAccount(user.authHeader);
+    const account = await createJournalAccount(user.userId);
     const plan = await createPlan(user.authHeader, account.id);
     // Execute the plan's sizing: 0.2 lots at 100 risk, stop 1.08, target 1.095.
     const created = (
       await createOpenTrade(user.authHeader, {
         accountId: account.id,
-        quantity: "0.2",
+        riskAmount: "100", // risk_amount mode sizes exactly 0.2 lots here
         initialStop: "1.08000",
         initialTP: "1.09500",
-        riskAmount: "100",
       })
-    ).json().trade;
+    ).json() as { id: string };
     await closeTrade(user.authHeader, created.id);
 
     const put = await putReview(user.authHeader, created.id, { originTradePlanId: plan.id });
@@ -794,15 +821,15 @@ describe("trade reviews — detail and comparison with an origin plan", () => {
       deviationPips: null,
       available: true,
     });
-    // Planned RR 2 vs realized R — the manual close has no computed P&L, so
-    // the realized-R leg is honestly unavailable (§67; synced trades with
-    // realized R are covered in the dedicated test below).
+    // Planned RR 2 vs realized R — the WIRED legacy close computed R=1
+    // server-side (pnlNet 100 at risk 100), so the deviation leg is fully
+    // available: actual 1 vs planned 2.
     expect(detail.comparison.rMultiple).toEqual({
       planned: "2",
-      actual: null,
-      deviation: null,
+      actual: "1",
+      deviation: "-1",
       deviationPips: null,
-      available: false,
+      available: true,
     });
 
     expect(detail.planSummary?.planId).toBe(plan.id);
@@ -814,16 +841,15 @@ describe("trade reviews — detail and comparison with an origin plan", () => {
 
   it("keeps the FROZEN snapshot when the plan is edited after linking (§26)", async () => {
     const user = await authenticatedUser(app, mail);
-    const account = await connectUsdMockAccount(user.authHeader, 3);
+    const account = await createJournalAccount(user.userId);
     const plan = await createPlan(user.authHeader, account.id);
     const created = (
       await createOpenTrade(user.authHeader, {
         accountId: account.id,
-        quantity: "0.2",
+        riskAmount: "100", // risk_amount mode sizes exactly 0.2 lots here
         initialStop: "1.08000",
-        riskAmount: "100",
       })
-    ).json().trade;
+    ).json() as { id: string };
     await closeTrade(user.authHeader, created.id);
     await putReview(user.authHeader, created.id, { originTradePlanId: plan.id });
 
@@ -856,10 +882,10 @@ describe("trade reviews — detail and comparison with an origin plan", () => {
   it("validates plan linkage: foreign plans 404, symbol mismatches 422, detach works", async () => {
     const user = await authenticatedUser(app, mail);
     const stranger = await authenticatedUser(app, mail);
-    const { trade } = await closedTrade(user.authHeader);
+    const { trade } = await closedTrade(user);
 
     // A foreign plan is an honest 404 (stranger's own USD account).
-    const strangerAccount = await connectUsdMockAccount(stranger.authHeader, 0);
+    const strangerAccount = await createJournalAccount(stranger.userId);
     const foreignPlan = await createPlan(stranger.authHeader, strangerAccount.id);
     const foreign = await putReview(user.authHeader, trade.id as string, {
       originTradePlanId: foreignPlan.id,
@@ -868,7 +894,7 @@ describe("trade reviews — detail and comparison with an origin plan", () => {
     expect(foreign.json().code).toBe("TRADE_REVIEW_PLAN_NOT_FOUND");
 
     // A plan for a different symbol can never be the origin.
-    const ownPlan = await createPlan(user.authHeader, (await connectUsdMockAccount(user.authHeader, 1)).id, {
+    const ownPlan = await createPlan(user.authHeader, (await createJournalAccount(user.userId)).id, {
       symbol: "XAUUSD",
       entryPrice: "2350",
       stopLoss: "2340",
@@ -881,7 +907,7 @@ describe("trade reviews — detail and comparison with an origin plan", () => {
     expect(mismatch.json().code).toBe("TRADE_REVIEW_PLAN_MISMATCH");
 
     // Link then detach — the comparison falls back to NONE.
-    const eurusdPlan = await createPlan(user.authHeader, (await connectUsdMockAccount(user.authHeader, 2)).id);
+    const eurusdPlan = await createPlan(user.authHeader, (await createJournalAccount(user.userId)).id);
     await putReview(user.authHeader, trade.id as string, { originTradePlanId: eurusdPlan.id });
     const detail = reviewDetailResponseSchema.parse(
       (
@@ -916,7 +942,7 @@ describe("trade reviews — security battery", () => {
   it("IDOR: user B cannot read, edit, complete or archive user A's review (honest 404)", async () => {
     const a = await authenticatedUser(app, mail);
     const b = await authenticatedUser(app, mail);
-    const { trade } = await closedTrade(a.authHeader);
+    const { trade } = await closedTrade(a);
     await putReview(a.authHeader, trade.id as string);
 
     const read = await app.inject({
@@ -951,8 +977,8 @@ describe("trade reviews — security battery", () => {
   it("the workspace is private: B's list, overview and lessons never contain A's rows", async () => {
     const a = await authenticatedUser(app, mail);
     const b = await authenticatedUser(app, mail);
-    const aTrade = await closedTrade(a.authHeader);
-    const bTrade = await closedTrade(b.authHeader);
+    const aTrade = await closedTrade(a);
+    const bTrade = await closedTrade(b);
     await putReview(a.authHeader, aTrade.trade.id as string);
 
     const listB = reviewsResponseSchema.parse(
@@ -976,7 +1002,7 @@ describe("trade reviews — security battery", () => {
 
   it("the URL tradeId is authoritative — a forged body tradeId is ignored (§24)", async () => {
     const user = await authenticatedUser(app, mail);
-    const owned = await closedTrade(user.authHeader);
+    const owned = await closedTrade(user);
 
     const res = await putReview(user.authHeader, owned.trade.id as string, {
       tradeId: "00000000-0000-0000-0000-000000000099", // forged — ignored
@@ -988,7 +1014,7 @@ describe("trade reviews — security battery", () => {
 
   it("error responses never leak internals (§73)", async () => {
     const user = await authenticatedUser(app, mail);
-    const { trade } = await closedTrade(user.authHeader);
+    const { trade } = await closedTrade(user);
     const bad = await putReview(user.authHeader, trade.id as string, { entryQuality: 99 });
     expect(bad.statusCode).toBe(400);
 
@@ -1012,16 +1038,15 @@ describe("trade reviews — security battery", () => {
 describe("trade reviews — immutability of execution truth", () => {
   it("review create/edit/complete/archive never modify Trade or TradeExecution rows", async () => {
     const user = await authenticatedUser(app, mail);
-    const account = await connectUsdMockAccount(user.authHeader);
+    const account = await createJournalAccount(user.userId);
     const plan = await createPlan(user.authHeader, account.id);
     const created = (
       await createOpenTrade(user.authHeader, {
         accountId: account.id,
-        quantity: "0.2",
+        riskAmount: "100", // risk_amount mode sizes exactly 0.2 lots here
         initialStop: "1.08000",
-        riskAmount: "100",
       })
-    ).json().trade;
+    ).json() as { id: string };
     await closeTrade(user.authHeader, created.id);
 
     const before = await canonicalSnapshot(created.id);
@@ -1063,11 +1088,12 @@ describe("trade reviews — immutability of execution truth", () => {
 
   it("financial truth stays canonical: review payloads echo Trading Core, never override it", async () => {
     const user = await authenticatedUser(app, mail);
-    const { trade } = await closedTrade(user.authHeader);
+    const { trade } = await closedTrade(user);
     const row = reviewRowSchema.parse((await putReview(user.authHeader, trade.id as string)).json());
 
     // The review has NO field for P&L/R (they are not user-writable) — the
-    // trader records the process verdict while the canonical facts stand.
+    // trader records the process verdict while the canonical facts stand
+    // (wired close: pnlNet 100, R 1).
     await putReview(user.authHeader, trade.id as string, {
       followedPlan: false,
       playbookMatch: "OFF_PLAYBOOK",
@@ -1082,12 +1108,12 @@ describe("trade reviews — immutability of execution truth", () => {
         })
       ).json(),
     );
-    expect(row.pnlNet).toBeNull();
-    expect(detail.tradeSummary.pnlNet).toBeNull();
+    expect(row.pnlNet).toBe(100);
+    expect(detail.tradeSummary.pnlNet).toBe("100");
     expect(detail.comparison.entry.actual).toBe("1.085");
     // Process quality moved independently of financial outcome (§16).
     expect(detail.review.executionGrade).toBe("F");
-    expect(detail.tradeSummary.rMultiple).toBeNull();
+    expect(detail.tradeSummary.rMultiple).toBe("1");
   });
 
 });

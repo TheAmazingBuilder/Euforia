@@ -40,6 +40,7 @@ import {
 } from "./trade-aggregation.service";
 import {
   buildReconstructionPlan,
+  type ReconstructionDeal,
 } from "./trade-reconstruction.service";
 import type { TradeWithExecutions } from "./trading.repository";
 import { TradingRepository } from "./trading.repository";
@@ -132,6 +133,17 @@ export class TradingService {
     const account = await this.mustGetAccount(userId, input.accountId);
     const user = await this.loadUser(userId);
 
+    // The journal backfills the denormalized symbol column AND the
+    // instrumentId FK from the catalog — an unknown symbol is an honest 422,
+    // never an invented instrument row (§20).
+    const instrumentId = await this.repository.findInstrumentIdBySymbol(input.symbol);
+    if (instrumentId === null) {
+      throw new BusinessRuleError(
+        `Unknown instrument symbol "${input.symbol}".`,
+        TRADING_CORE_ERROR_CODES.INVALID_EXECUTION,
+      );
+    }
+
     const entryAt = input.entryAt !== undefined ? new Date(input.entryAt) : new Date();
     const executions: Array<{
       role: "ENTRY" | "EXIT";
@@ -188,6 +200,7 @@ export class TradingService {
     const row = await this.repository.createTradeWithExecutions({
       userId,
       accountId: account.id,
+      instrumentId,
       currency: account.currency,
       symbol: input.symbol,
       direction: input.direction,
@@ -482,13 +495,45 @@ export class TradingService {
       this.repository.listTradesByAccount(account.id),
     ]);
 
-    const plan = buildReconstructionPlan({ deals, positions, existingTrades });
+    // Boundary adapter (field-by-field, nothing invented): the Accounts row
+    // names the provider-side position reference `positionId`; the
+    // reconstruction engine's narrow deal shape calls it `externalPositionId`.
+    const reconstructionDeals: ReconstructionDeal[] = deals.map((deal) => ({
+      externalDealId: deal.externalDealId,
+      symbol: deal.symbol,
+      side: deal.side,
+      volume: deal.volume,
+      price: deal.price,
+      profit: deal.profit,
+      commission: deal.commission,
+      swap: deal.swap,
+      externalPositionId: deal.positionId,
+      executedAt: deal.executedAt,
+    }));
+
+    const plan = buildReconstructionPlan({ deals: reconstructionDeals, positions, existingTrades });
 
     // ── Enrich the plan with authoritative aggregates ──
     const timezone = user?.timezone;
     const tradesToCreate = [];
     let skippedUnpriced = 0;
+    // Journal writes backfill the instrumentId FK — resolve each planned
+    // symbol ONCE (reconciliation passes see the same symbols repeatedly).
+    const instrumentIdsBySymbol = new Map<string, string | null>();
+    let skippedUnknownSymbol = 0;
     for (const planned of plan.tradesToCreate) {
+      let instrumentId = instrumentIdsBySymbol.get(planned.symbol);
+      if (instrumentId === undefined) {
+        instrumentId = await this.repository.findInstrumentIdBySymbol(planned.symbol);
+        instrumentIdsBySymbol.set(planned.symbol, instrumentId);
+      }
+      if (instrumentId === null) {
+        // Unknown catalog symbol: journaling without an instrument row is
+        // impossible (FK) and inventing one is forbidden — skip honestly;
+        // the deals stay unjournaled and are re-planned on the next pass.
+        skippedUnknownSymbol += 1;
+        continue;
+      }
       const aggregates = aggregateExecutions(planned.executions, { riskAmount: null });
       if (aggregates.entryPrice === null || aggregates.entryAt === null) {
         // Pathological provider data: no priced entry at all — journal the
@@ -498,6 +543,7 @@ export class TradingService {
       }
       tradesToCreate.push({
         userId,
+        instrumentId,
         externalPositionId: planned.externalPositionId,
         direction: planned.direction,
         symbol: planned.symbol,
@@ -711,6 +757,7 @@ export class TradingService {
           attachments.reduce((sum, a) => sum + a.newExecutions.length, 0),
         executionsUpdated: plan.executionUpdates.length,
         skippedUnpriced,
+        skippedUnknownSymbol,
       },
       "journal reconciliation completed",
     );
@@ -737,6 +784,10 @@ export class TradingService {
 
     let imported = 0;
     let skippedDuplicates = 0;
+    // Journal writes backfill the instrumentId FK — resolve each distinct
+    // row symbol once; unknown catalog symbols skip honestly (logged below).
+    const instrumentIdsBySymbol = new Map<string, string | null>();
+    let skippedUnknownSymbol = 0;
     const tradeIds: string[] = [];
 
     for (const row of input.rows) {
@@ -750,6 +801,17 @@ export class TradingService {
       }
       const quantity = row.quantity ?? "1";
       const entryAt = new Date(row.entryAt);
+      let instrumentId = instrumentIdsBySymbol.get(row.symbol);
+      if (instrumentId === undefined) {
+        instrumentId = await this.repository.findInstrumentIdBySymbol(row.symbol);
+        instrumentIdsBySymbol.set(row.symbol, instrumentId);
+      }
+      if (instrumentId === null) {
+        // Unknown catalog symbol: the row cannot be journaled without an
+        // instrument row (FK) and inventing one is forbidden — skip honestly.
+        skippedUnknownSymbol += 1;
+        continue;
+      }
       const externalRef = importRowReference({
         broker: input.broker,
         symbol: row.symbol,
@@ -814,6 +876,7 @@ export class TradingService {
         const created = await this.repository.createTradeWithExecutions({
           userId,
           accountId: account.id,
+          instrumentId,
           currency: account.currency,
           symbol: row.symbol,
           direction: row.side,
@@ -852,7 +915,7 @@ export class TradingService {
     }
 
     this.logger?.info(
-      { userId, accountId: account.id, imported, skippedDuplicates },
+      { userId, accountId: account.id, imported, skippedDuplicates, skippedUnknownSymbol },
       "journal import completed",
     );
     return { imported, skippedDuplicates, tradeIds };

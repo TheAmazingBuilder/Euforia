@@ -38,7 +38,7 @@ export class PlaybookController {
   /** ONE aggregate for the module (§5) — server-computed, never client-side. */
   @Get("overview")
   overview(@CurrentUser() principal: AuthPrincipal): Promise<PlaybookOverviewResponse> {
-    return this.playbook.playbookOverview(principal.userId);
+    return this.playbook.overview(principal.userId);
   }
 
   @Get("templates")
@@ -57,7 +57,7 @@ export class PlaybookController {
 
   @Get("rules")
   rules(@CurrentUser() principal: AuthPrincipal): Promise<PlaybookRulesResponse> {
-    return this.playbook.listRules(principal.userId);
+    return this.playbook.listPlaybookRules(principal.userId);
   }
 
   @Post("rules")
@@ -65,7 +65,7 @@ export class PlaybookController {
     @CurrentUser() principal: AuthPrincipal,
     @Body(new ZodValidationPipe(createPlaybookRuleInputSchema)) payload: CreatePlaybookRuleInput,
   ): Promise<PlaybookRule> {
-    return this.playbook.createRule(principal.userId, payload);
+    return this.playbook.createPlaybookRule(principal.userId, payload);
   }
 
   @Patch("rules/:ruleId")
@@ -74,7 +74,7 @@ export class PlaybookController {
     @Param("ruleId") ruleId: string,
     @Body(new ZodValidationPipe(updatePlaybookRuleInputSchema)) payload: UpdatePlaybookRuleInput,
   ): Promise<PlaybookRule> {
-    return this.playbook.updateRule(principal.userId, uuidSchema.parse(ruleId), payload);
+    return this.playbook.updatePlaybookRule(principal.userId, uuidSchema.parse(ruleId), payload);
   }
 
   @Delete("rules/:ruleId")
@@ -82,6 +82,6 @@ export class PlaybookController {
     @CurrentUser() principal: AuthPrincipal,
     @Param("ruleId") ruleId: string,
   ): Promise<{ ok: true }> {
-    return this.playbook.deleteRule(principal.userId, uuidSchema.parse(ruleId));
+    return this.playbook.deletePlaybookRule(principal.userId, uuidSchema.parse(ruleId));
   }
 }

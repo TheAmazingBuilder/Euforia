@@ -21,7 +21,6 @@ import {
   analyticsFiltersSchema,
   type AnalyticsFilters,
   type AnalyticsSuiteResponse,
-  type StatsOverviewResponse,
 } from "../../shared/contracts";
 import { AnalyticsService } from "./analytics.service";
 
@@ -30,7 +29,8 @@ import { AnalyticsService } from "./analytics.service";
  * count. `sims` is a raw string here (query params are strings); the service
  * normalizes it with the contract's default-and-clamp semantics (default
  * 400, clamped 100–2000 by the engine — an unparsable value falls back to
- * the default instead of failing the whole dataset).
+ * the default instead of failing the whole dataset: the Phase-8 documented
+ * decision, pinned by analytics.e2e).
  */
 const analyticsSuiteQuerySchema = analyticsFiltersSchema.extend({
   sims: z.string().optional(),
@@ -57,9 +57,7 @@ export class AnalyticsController {
     );
   }
 
-  /** Dashboard/Session KPI aggregation (no filters — the global dataset). */
-  @Get("overview")
-  overview(@CurrentUser() principal: AuthPrincipal): Promise<StatsOverviewResponse> {
-    return this.analytics.getStatsOverview(principal.userId);
-  }
+  // NOTE (reconciliation): GET /stats/overview stays owned by the wired
+  // legacy StatsController (one route owner per path). The Phase-8 suite is
+  // this controller's surface.
 }

@@ -730,6 +730,7 @@ export class RecognitionService {
         requestId: response.requestId,
         contractVersion: response.contractVersion,
         processingStatus: response.processingStatus,
+        tradeCandidates: [],
         classification,
         fields: primaryFields,
         trades: mergedTrades,
@@ -1160,7 +1161,7 @@ export class RecognitionService {
           recognitionId: row.id,
           tradeIndex,
           accountId: input.accountId,
-          symbol: draft.symbol,
+          symbol: requireValue(draft.symbol),
           direction: draft.direction,
           entryPrice: requireValue(draft.entryPrice),
           exitPrice: draft.exitPrice,
@@ -1394,7 +1395,7 @@ export class RecognitionService {
     // the zone — it read zoomed pixels; everything else is preserved).
     const zoneFields = applyDomainValidation(response.fields.map(mapEngineField));
     const existingTrades =
-      row.result.trades !== undefined && row.result.trades.length > 0
+      row.result.trades !== undefined && row.result.trades !== null && row.result.trades.length > 0
         ? row.result.trades
         : [{ pageIndex: 0, fields: row.result.fields }];
     const fallbackTrade = existingTrades[0];
@@ -1999,7 +2000,7 @@ export class RecognitionService {
         const created = await this.trades.importTradeFromRecognition(userId, {
           recognitionId: `group:${group.id}`,
           accountId: input.accountId,
-          symbol: draft.symbol,
+          symbol: requireValue(draft.symbol),
           direction: draft.direction,
           entryPrice: requireValue(draft.entryPrice),
           exitPrice: draft.exitPrice,

@@ -102,12 +102,29 @@ export class BackupService {
         // and mint a fresh one when another user already owns it.
         const existing = await tx.trade.findUnique({ where: { id: trade.id } });
         const tradeId = existing === null ? trade.id : crypto.randomUUID();
+        // The denormalized journal columns are backfilled from their sources
+        // of truth (§ model Trade.symbol/currency): symbol from the global
+        // instrument catalog (the FK guarantees the row exists), currency
+        // from the account the trade lands on.
+        const instrument = await tx.instrument.findUnique({
+          where: { id: trade.instrumentId },
+          select: { symbol: true },
+        });
+        if (instrument === null) {
+          throw new ValidationError("Unknown instrument in backup payload.", [
+            { path: "trades", message: `Instrument ${trade.instrumentId} is not in the catalog` },
+          ]);
+        }
+        const targetAccountId = mappedAccountId(trade.accountId);
+        const targetAccount = accounts.find((a) => a.id === targetAccountId) ?? defaultAccount!;
         await tx.trade.create({
           data: {
             id: tradeId,
             userId,
-            accountId: mappedAccountId(trade.accountId),
+            accountId: targetAccountId,
             instrumentId: trade.instrumentId,
+            symbol: instrument.symbol,
+            currency: targetAccount.currency,
             strategyId: trade.strategyId,
             setupId: trade.setupId ?? null,
             strategyVersion: trade.strategyVersion ?? null,

@@ -32,6 +32,8 @@ export interface CatalogCourse {
   description: string;
   estimatedMinutes: number;
   quizId: string | null;
+  /** Attached from the QUIZZES catalog at module init (see the tail of this file). */
+  quiz?: CatalogQuiz;
   lessons: CatalogLesson[];
 }
 
@@ -269,4 +271,16 @@ export function courseCardOf(
     quizBestScore: quizBest.get(course.quizId ?? "") ?? null,
     completed: completedLessons === course.lessons.length,
   };
+}
+
+// ── Quiz attachment (reconciliation fix) ─────────────────────────────────────
+// Courses declare `quizId` (a string) while every consumer reads the nested
+// `quiz` object (courseCard, getQuiz, exams). Attach the catalog quizzes to
+// their courses once at module init — a missing id degrades to undefined and
+// the course simply has no quiz, never a fabricated one.
+const QUIZ_BY_ID = new Map(QUIZZES.map((quiz) => [quiz.id, quiz]));
+for (const course of COURSES) {
+  if (course.quizId !== null) {
+    course.quiz = QUIZ_BY_ID.get(course.quizId);
+  }
 }

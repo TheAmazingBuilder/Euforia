@@ -59,6 +59,23 @@ export class CalendarService {
     return { events: generateEcoEvents(new Date()) };
   }
 
+  /**
+   * Phase 13/14 freshness hook for the Calendar read port
+   * (CalendarQueriesService.listHubEvents) — TTL-throttled lazy eco-feed
+   * sync, semantically a cache refresh (never a caller-directed mutation).
+   *
+   * HONEST NO-OP: this service serves the DETERMINISTIC generator
+   * ({@link listEcoEvents} computes the window on the fly — fresh by
+   * construction) and NO external economic-data provider is configured
+   * (provider.port §4: none is assumed to exist), so there is nothing to
+   * synchronize. It deliberately does not fabricate CalendarSyncRun rows
+   * or pretend a sync happened; when a real provider adapter is wired
+   * into this service, the guarded sync-window check replaces this body.
+   */
+  async ensureFreshSync(): Promise<void> {
+    // No sync provider configured — the feed is always freshly generated.
+  }
+
   /** GET /calendar-blocks — marked days, chronological. */
   async listBlocks(userId: string): Promise<CalendarBlocksResponse> {
     const rows = await this.repository.listBlocks(userId);

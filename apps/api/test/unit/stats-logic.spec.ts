@@ -12,7 +12,6 @@ import {
 } from "../../src/shared/contracts";
 import type { AnalyticsFilters } from "../../src/shared/contracts";
 import {
-  computeMistakeLedger,
   niceStep,
   percentileOf,
   resolvePeriodRange,
@@ -193,13 +192,13 @@ describe("analytics suite", () => {
 
   it("filters by strategy none and by tag", () => {
     const ctx = baseContext();
-    ctx.trades[0].strategyId = uid(8001);
+    ctx.trades[0]!.strategyId = uid(8001);
     const filtered = analyticsSuiteResponseSchema.parse(
       computeAnalyticsSuite(ctx, { period: "ALL", strategyId: "none" } as AnalyticsFilters, 100),
     );
     expect(filtered.meta.closedTrades).toBe(4);
 
-    ctx.tradeTags.set(ctx.trades[1].id, new Set([uid(6001)]));
+    ctx.tradeTags.set(ctx.trades[1]!.id, new Set([uid(6001)]));
     const byTag = analyticsSuiteResponseSchema.parse(
       computeAnalyticsSuite(ctx, { period: "ALL", tagId: uid(6001) } as AnalyticsFilters, 100),
     );
@@ -209,7 +208,7 @@ describe("analytics suite", () => {
   it("multi-currency dataset nulls money figures and warns", () => {
     const ctx = baseContext();
     ctx.accounts.push({ id: "acc-2", name: "EU", currency: "EUR", startingBalance: "5000" });
-    ctx.trades[2].accountId = "acc-2";
+    ctx.trades[2]!.accountId = "acc-2";
     const out = analyticsSuiteResponseSchema.parse(
       computeAnalyticsSuite(ctx, { period: "ALL" } as AnalyticsFilters, 100),
     );

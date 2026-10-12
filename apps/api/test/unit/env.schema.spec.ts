@@ -7,6 +7,8 @@ const BASE_ENV = {
   AUTH_JWT_SECRET: "test-only-jwt-secret-0123456789abcdef0123456789",
   AUTH_MFA_ENCRYPTION_KEY: "h0mEbiEr05Qkg5f8Duz4PrOups2o69gGx+LIEdXAuvU=",
   ACCOUNTS_CREDENTIALS_ENCRYPTION_KEY: "Mck3U8lb0RHzT7eDlBd7hgmE5FpYm0ZOSJB3ZfA4GFo=",
+  // Integration Hub (B14) — webhook-secret vault key (base64, 32 bytes).
+  INTEGRATIONS_WEBHOOK_ENCRYPTION_KEY: "u4xveSMFK0EL4Wp6XsBmPWcimrrG7Tg9KxLFRnGzc1M=",
 } as const;
 
 describe("validateEnv", () => {

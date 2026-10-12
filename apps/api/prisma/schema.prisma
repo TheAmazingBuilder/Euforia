@@ -116,6 +116,9 @@ model User {
   ocrCorrectionPatterns OcrCorrectionPattern[]
   ocrSets           OcrSet[]
   ocrCollections    OcrCollection[]
+  ocrRecognitionGroups OcrRecognitionGroup[]
+  ocrCorrections    OcrCorrection[]
+  ocrEvents         OcrEvent[]
   trades            Trade[]
   savedTradeViews   SavedTradeView[]
   disciplineRows    DisciplineRow[]
@@ -130,6 +133,21 @@ model User {
   academyRows       AcademyRow[]
   integrationRows   IntegrationRow[]
   tagRows           TagRow[]
+  // ── Reconciliation generation (Phase 4/5/6/7 normalized models) ──
+  tradePlans        TradePlan[]
+  tradeReviews      TradeReview[]
+  replayRows        ReplayRow[]
+  calendarBlocks    CalendarBlock[]
+  dailyStats        DailyStat[]
+  userSettings      UserSettings?
+  integrationConnections  IntegrationConnection[]
+  integrationEvents       IntegrationEvent[]
+  integrationErrors       IntegrationError[]
+  integrationWebhookEndpoints IntegrationWebhookEndpoint[]
+  strategies        Strategy[]
+  setups            Setup[]
+  checklistTemplates ChecklistTemplate[]
+  playbookRules     PlaybookRule[]
 
   @@index([status])
 }
@@ -301,6 +319,11 @@ model TradingAccount {
   ocrRecognitions OcrRecognition[]
   /// OCR recognition SETS attached to this account (V2 multi-screenshot).
   ocrSets OcrSet[]
+  // ── Reconciliation generation ──
+  /// Phase-5 pre-trade plans attached to this account.
+  tradePlans TradePlan[]
+  /// Phase-4 execution legs booked on this account.
+  tradeExecutions TradeExecution[]
 
   @@unique([userId, providerId, externalAccountId])
   @@index([userId])
@@ -498,17 +521,25 @@ model OcrAsset {
   /// MIME determined by MAGIC-BYTE sniffing — never the client Content-Type (§7).
   mime           String
   sizeBytes      Int
-  width          Int
-  height         Int
+  /// V2 — null for PDF statements (pages carry the rendering).
+  width          Int?
+  height         Int?
   /// SHA-256 of the decoded binary — identity + integrity anchor (§6).
   checksumSha256 String
   /// 64-bit dHash perceptual fingerprint (hex, engine quality §2.1) —
   /// near-duplicate detection across the user's uploads. Nullable for rows
   /// created before this phase.
   phashHex String?
+  /// V2 — sidecar dHash of the ORIGINAL upload (duplicate verdict input).
+  perceptualHash String?
+  /// V2 — PDF statements: rendered page count (null for plain screenshots).
+  documentPageCount Int?
+  /// V3 §62 — a visually similar upload was already seen for this asset.
+  duplicateWarned Boolean @default(false)
   createdAt      DateTime @default(now())
 
   recognitions OcrRecognition[]
+  collectionAssets OcrCollectionAsset[]
 
   /// One stored binary per distinct image per user (§32 idempotency input).
   @@unique([userId, checksumSha256])
@@ -587,6 +618,26 @@ model OcrRecognition {
   setItem OcrSetItem?
   /// V2 §28 — collection memberships (a recognition may be in several).
   collectionItems OcrCollectionItem[]
+
+  /// V2 — platform the job was REQUESTED for ("AUTO" when unspecified).
+  requestedPlatform String  @default("AUTO")
+  /// V2 — requested recognition mode (AUTOMATIC in this build).
+  mode              String  @default("AUTOMATIC")
+  /// V2 §72 — stored draft for trade index 1 (V1 scalar mirror).
+  draft             Json?
+  /// V2 §72 — stored drafts keyed by 1-based trade index.
+  drafts            Json?
+  draftUpdatedAt    DateTime?
+  /// V2 §79 — FIRST imported trade id (the idempotent replay anchor).
+  importedTradeId   String? @db.Uuid
+  /// V2 §79 — every imported trade id, in confirmation order.
+  importedTradeIds  Json?
+  /// V3 §28 — deterministic quality score (persisted, additive evidence).
+  quality           Json?
+  /// V3 §45 — the job this row was explicitly reprocessed from.
+  reprocessedFromJobId String? @db.Uuid
+  /// V3 §71 — when the job was cancelled.
+  cancelledAt       DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -684,13 +735,18 @@ model OcrCollection {
   id        String   @id @default(uuid()) @db.Uuid
   userId    String   @db.Uuid
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  /// Display name — unique per owner, trimmed, 1..64 chars.
+  /// Display name — trimmed, 1..64 chars (V3 shape: not unique per owner).
   name      String
+  /// V3 — optional free-text description (≤280 chars).
+  description String?
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
+  /// V2 — recognitions collected by name (recognition-id based).
   items OcrCollectionItem[]
+  /// V3 — assets collected by id (asset-based, spec §41).
+  assets OcrCollectionAsset[]
 
-  @@unique([userId, name])
   @@index([userId, createdAt(sort: Desc)])
 }
 
@@ -814,6 +870,12 @@ model Trade {
   /// External mapping (§9/§44): one broker position = one journal trade.
   /// Null for MANUAL/IMPORT trades. Repeated syncs upsert on it (§27).
   externalPositionId String?
+  /// Phase-4 denormalized journal columns — the trading module reads them;
+  /// every trade-writing path backfills symbol/currency (union of
+  /// generations, one source of truth per column).
+  symbol            String
+  currency          String
+  closedQuantity    Decimal        @default(0) @db.Decimal(18, 8)
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -831,6 +893,11 @@ model Trade {
   /// V2 multi-screenshot — sets whose FUSED confirmation produced this trade
   /// through the same bridge (same one-way provenance discipline).
   ocrSets OcrSet[]
+  /// Phase-4 execution legs (manual partial fills/closes) — the trading
+  /// module's canonical journal representation.
+  executions TradeExecution[]
+  /// Phase-6 post-trade review (1:1, unique tradeId).
+  review TradeReview?
 
   /// Import idempotence (§27): one broker ref per account. PostgreSQL allows
   /// several (account, NULL) rows — MANUAL trades stay unconstrained.
@@ -1126,4 +1193,665 @@ model IntegrationRow {
 
   @@index([userId, kind])
   @@unique([userId, kind, refId])
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// RECONCILIATION (Phase 11 pre-work) — the migration chain created these
+// tables/enums (trading_core, trade_planning, trade_review, playbook,
+// session_live, calendar_economic_events, integrations_platform,
+// settings_preferences, replay_module, full_coverage_domains) but the Prisma
+// model layer never caught up. Models below mirror the committed migration
+// DDL verbatim. The two generations of a domain coexist ON PURPOSE (row-store
+// generation for the wired B-era modules + normalized generation for the
+// Phase 4/5/6/7 modules) — see the reconciliation notes in worklog.md.
+// ════════════════════════════════════════════════════════════════════════════
+
+/// Shared Postgres enums created by 20261003131801_trading_core — declared so
+/// the Prisma client can use typed filters; values MUST match the SQL types.
+enum TradeSource {
+  EXTERNAL_SYNC
+  MANUAL
+  IMPORT
+}
+
+enum TradeStatus {
+  PLANNED
+  OPEN
+  CLOSED
+  CANCELLED
+}
+
+enum Direction {
+  BUY
+  SELL
+}
+
+enum ExecutionRole {
+  ENTRY
+  EXIT
+}
+
+/// 20261003141559_trade_planning
+enum TradePlanStatus {
+  DRAFT
+  PLANNED
+  VALIDATED
+  CANCELLED
+  ABANDONED
+  EXECUTED
+}
+
+/// 20261003145823_trade_review
+enum TradeReviewStatus {
+  COMPLETED
+  ARCHIVED
+}
+
+enum ExecutionGrade {
+  A
+  B
+  C
+  D
+  F
+}
+
+enum PlaybookMatch {
+  MATCHED
+  PARTIAL
+  OFF_PLAYBOOK
+}
+
+/// 20261003202121_calendar_economic_events
+enum EcoImpact {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum EcoEventStatus {
+  SCHEDULED
+  RELEASED
+  UPDATED
+}
+
+enum CalendarBlockKind {
+  OFF
+  NEWS
+}
+
+/// 20261003213149_integrations_platform
+enum IntegrationStatus {
+  CONNECTED
+  SYNCING
+  DEGRADED
+  DISCONNECTED
+  AUTH_REQUIRED
+  ERROR
+}
+
+enum IntegrationAuthState {
+  OK
+  MISSING
+  EXPIRED
+}
+
+enum IntegrationErrorCode {
+  AUTH_FAILED
+  RATE_LIMITED
+  PROVIDER_OUTAGE
+  MALFORMED_RESPONSE
+  TIMEOUT
+  PARTIAL_SYNC
+  CREDENTIALS_EXPIRED
+  DUPLICATE_EVENT
+}
+
+enum IntegrationEventType {
+  CONNECTED
+  DISCONNECTED
+  TEST_OK
+  TEST_FAILED
+  SYNCED
+  SYNC_FAILED
+  DEGRADED
+  RECOVERED
+  CREDENTIAL_ROTATED
+  WEBHOOK_RECEIVED
+  WEBHOOK_REJECTED
+  WEBHOOK_DUPLICATE
+}
+
+enum WebhookEndpointStatus {
+  ACTIVE
+  PAUSED
+}
+
+/// Phase-4 denormalized journal columns + execution legs — the trading module
+/// reads these; the legacy journal module backfills symbol/currency at
+/// create time (union of generations, single source per column).
+model TradeExecution {
+  id             String        @id @default(uuid()) @db.Uuid
+  tradeId        String        @db.Uuid
+  trade          Trade         @relation(fields: [tradeId], references: [id], onDelete: Cascade)
+  accountId      String        @db.Uuid
+  account        TradingAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  /// ENTRY | EXIT (shared ExecutionRole).
+  role           ExecutionRole
+  /// BUY | SELL (shared Direction).
+  side           Direction
+  volume         Decimal       @db.Decimal(18, 8)
+  price          Decimal?      @db.Decimal(18, 8)
+  profit         Decimal?      @db.Decimal(18, 8)
+  commission     Decimal?      @db.Decimal(18, 8)
+  swap           Decimal?      @db.Decimal(18, 8)
+  executedAt     DateTime
+  reason         String?
+  note           String?
+  externalDealId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tradeId, executedAt])
+  @@unique([accountId, externalDealId])
+}
+
+/// 20261003141559_trade_planning — the Phase 5 pre-trade risk plan.
+model InstrumentSpecification {
+  id            String  @id @default(uuid()) @db.Uuid
+  symbol        String  @unique
+  name          String
+  assetClass    String
+  quoteCurrency String
+  pipSize       Decimal @db.Decimal(18, 8)
+  contractSize  Decimal @db.Decimal(18, 8)
+  minVolume     Decimal? @db.Decimal(18, 8)
+  maxVolume     Decimal? @db.Decimal(18, 8)
+  volumeStep    Decimal? @db.Decimal(18, 8)
+  digits        Int?
+  isActive      Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // NOTE: no relation to TradePlan — the risk engine looks the spec up by
+  // symbol at computation time (adapters/providers.ts); a dropped catalog
+  // row must not cascade into plan history.
+}
+
+model TradePlan {
+  id           String          @id @default(uuid()) @db.Uuid
+  userId       String          @db.Uuid
+  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accountId    String          @db.Uuid
+  account      TradingAccount  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  status       TradePlanStatus @default(DRAFT)
+  direction    Direction
+  /// MARKET | LIMIT (Phase 5 vocabulary).
+  entryType    String          @default("MARKET")
+  symbol       String
+  currency     String
+  timeframe    String?
+  strategyId   String?         @db.Uuid
+  entryPrice   Decimal         @db.Decimal(18, 8)
+  stopLoss     Decimal?        @db.Decimal(18, 8)
+  takeProfit   Decimal?        @db.Decimal(18, 8)
+  /// quantity | risk_percent | risk_amount.
+  sizeMode     String
+  sizeValue    Decimal         @db.Decimal(18, 8)
+  balanceSnapshot Decimal?     @db.Decimal(18, 8)
+  riskPercent  Decimal?        @db.Decimal(18, 8)
+  riskAmount   Decimal?        @db.Decimal(18, 8)
+  stopDistance Decimal?        @db.Decimal(18, 8)
+  stopPips     Decimal?        @db.Decimal(18, 8)
+  positionSize Decimal?        @db.Decimal(18, 8)
+  potentialProfit Decimal?     @db.Decimal(18, 8)
+  potentialLoss   Decimal?     @db.Decimal(18, 8)
+  rrRatio      Decimal?        @db.Decimal(18, 8)
+  rationale    String?
+  checklist    Json?
+  checklistComplete Boolean?
+  lastValidation Json?
+  validatedAt  DateTime?
+  cancelledAt  DateTime?
+  abandonedAt  DateTime?
+  clientRequestId String?     @db.Uuid
+  plannedAt    DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  reviews TradeReview[]
+  // NOTE: no relation to InstrumentSpecification — the risk engine looks the
+  // spec up by symbol at computation time (adapters/providers.ts), keeping
+  // the plan row valid even when the catalog later drops the symbol.
+
+  @@unique([userId, clientRequestId])
+  @@index([userId, status])
+  @@index([userId, plannedAt(sort: Desc)])
+  @@index([userId, accountId])
+  @@index([userId, symbol])
+  @@index([accountId, status])
+}
+
+/// 20261003145823_trade_review — the Phase 6 post-trade review.
+model TradeReview {
+  id             String           @id @default(uuid()) @db.Uuid
+  userId         String           @db.Uuid
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tradeId        String           @unique @db.Uuid
+  trade          Trade            @relation(fields: [tradeId], references: [id], onDelete: Cascade)
+  status         TradeReviewStatus @default(COMPLETED)
+  executionGrade ExecutionGrade?
+  followedPlan   Boolean?
+  playbookMatch  PlaybookMatch?
+  checklistResults Json?
+  entryQuality   Int?
+  exitQuality    Int?
+  riskManagement Int?
+  lessons        String?
+  improvementNote String?
+  /// Origin TradePlan (Phase 5) — values frozen into planSnapshot at save.
+  originTradePlanId String?      @db.Uuid
+  planSnapshot   Json?
+  reviewedAt     DateTime         @default(now())
+  archivedAt     DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  originTradePlan TradePlan? @relation(fields: [originTradePlanId], references: [id], onDelete: SetNull)
+
+  @@index([userId, status])
+  @@index([userId, reviewedAt(sort: Desc)])
+}
+
+/// 20261008093000_replay_module — kind-discriminated replay aggregate rows.
+model ReplayRow {
+  id     String @id @default(uuid()) @db.Uuid
+  userId String @db.Uuid
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// SESSION | TRADE | DECISION | NOTE
+  kind   String
+  data   Json
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, kind])
+}
+
+/// 20261003202121_calendar_economic_events — normalized macro calendar.
+model EconomicEvent {
+  id              String         @id @default(uuid()) @db.Uuid
+  title           String
+  /// ISO 4217 (3 chars).
+  currency        String         @db.Char(3)
+  impact          EcoImpact
+  scheduledAt     DateTime
+  actual          String?
+  forecast        String?
+  previous        String?
+  status          EcoEventStatus @default(SCHEDULED)
+  provider        String
+  providerEventId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([provider, providerEventId])
+  @@index([scheduledAt])
+  @@index([status])
+}
+
+model CalendarSyncRun {
+  id              String   @id @default(uuid()) @db.Uuid
+  provider        String
+  status          String
+  windowFrom      DateTime
+  windowTo        DateTime
+  eventsSeen      Int      @default(0)
+  eventsCreated   Int      @default(0)
+  eventsUpdated   Int      @default(0)
+  eventsUnchanged Int      @default(0)
+  eventsRejected  Int      @default(0)
+  durationMs      Int?
+  errorMessage    String?
+  startedAt       DateTime @default(now())
+  finishedAt      DateTime?
+}
+
+model CalendarBlock {
+  id     String           @id @default(uuid()) @db.Uuid
+  userId String           @db.Uuid
+  user   User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date   DateTime         @db.Date
+  kind   CalendarBlockKind
+  note   String           @default("")
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, date, kind])
+}
+
+/// 20261006150000_full_coverage_domains — DailyStat (calendar heatmap feed).
+model DailyStat {
+  id               String  @id @default(uuid()) @db.Uuid
+  userId           String  @db.Uuid
+  user             User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date             DateTime @db.Date
+  tradesCount      Int     @default(0)
+  winsCount        Int     @default(0)
+  lossesCount      Int     @default(0)
+  pnlNet           Decimal @default(0) @db.Decimal(18, 8)
+  rEarned          Decimal @default(0) @db.Decimal(18, 8)
+  disciplineScore  Decimal? @db.Decimal(6, 2)
+  mistakesCount    Int     @default(0)
+  violationsCount  Int     @default(0)
+  ghostTradesCount Int     @default(0)
+  savedR           Decimal? @db.Decimal(18, 8)
+  hesitatedR       Decimal? @db.Decimal(18, 8)
+  sleepHours       Decimal? @db.Decimal(4, 1)
+  moodPre          String?
+  payload          Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, date])
+  @@index([userId])
+}
+
+/// 20261004100000_settings_preferences — the settings-owned preferences doc.
+model UserSettings {
+  userId      String @id @db.Uuid
+  user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  preferences Json
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/// 20261003213149_integrations_platform — normalized integration hub.
+model IntegrationConnection {
+  id                      String             @id @default(uuid()) @db.Uuid
+  userId                  String             @db.Uuid
+  user                    User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  providerId              String
+  status                  IntegrationStatus  @default(DISCONNECTED)
+  authState               IntegrationAuthState @default(MISSING)
+  credentialsVaultRef     String?
+  credentialsHint         String?
+  credentialsLastRotatedAt DateTime?
+  connectedAt             DateTime?
+  lastCheckedAt           DateTime?
+  syncLastAttemptedAt     DateTime?
+  syncLastSuccessAt       DateTime?
+  syncLastDurationMs      Int?
+  syncRecordsProcessed    Int                @default(0)
+  syncRecordsFailed       Int                @default(0)
+  syncRetryCount          Int                @default(0)
+  syncRunCount            Int                @default(0)
+  syncCursor              String?
+  syncNextRetryAt         DateTime?
+  pairedOnce              Boolean            @default(false)
+  scenario                String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // NOTE: no Prisma relations between the Integration* tables — every
+  // repository query is (userId, providerId)-scoped directly, matching the
+  // platform migration's plain FK-by-column design.
+
+  @@unique([userId, providerId])
+  @@index([userId, status])
+}
+
+model IntegrationEvent {
+  id           String              @id @default(uuid()) @db.Uuid
+  userId       String              @db.Uuid
+  user         User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  providerId   String
+  providerName String
+  type         IntegrationEventType
+  message      String
+  occurredAt   DateTime            @default(now())
+
+  @@index([userId, occurredAt(sort: Desc)])
+}
+
+model IntegrationError {
+  id           String               @id @default(uuid()) @db.Uuid
+  userId       String               @db.Uuid
+  user         User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  providerId   String
+  code         IntegrationErrorCode
+  message      String
+  retryable    Boolean
+  actionHint   String
+  retryAfterMs Int?
+  occurredAt   DateTime             @default(now())
+  clearedAt    DateTime?
+
+  @@index([userId, occurredAt(sort: Desc)])
+  @@index([userId, providerId, clearedAt])
+}
+
+model IntegrationWebhookEndpoint {
+  id                 String                @id @default(uuid()) @db.Uuid
+  userId             String                @db.Uuid
+  user               User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  providerId         String
+  path               String
+  status             WebhookEndpointStatus @default(ACTIVE)
+  secretEnc          String
+  secretHint         String
+  lastAcceptedEventId String?
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
+
+  deliveries IntegrationWebhookDelivery[]
+
+  @@unique([path])
+  @@unique([userId, providerId])
+}
+
+model IntegrationWebhookDelivery {
+  id             String   @id @default(uuid()) @db.Uuid
+  endpointId     String   @db.Uuid
+  endpoint       IntegrationWebhookEndpoint @relation(fields: [endpointId], references: [id], onDelete: Cascade)
+  eventId        String
+  eventType      String
+  signatureValid Boolean
+  accepted       Boolean
+  duplicate      Boolean
+  message        String
+  receivedAt     DateTime @default(now())
+
+  @@unique([endpointId, eventId])
+  @@index([endpointId, receivedAt(sort: Desc)])
+}
+
+/// 20261003160138_playbook — the normalized playbook generation (Phase 7
+/// surface reads these shapes; the wired B10 module keeps PlaybookRow).
+model Strategy {
+  id          String  @id @default(uuid()) @db.Uuid
+  userId      String  @db.Uuid
+  user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status      String  @default("DRAFT")
+  name        String
+  description String
+  entryRules  Json
+  exitRules   Json
+  riskRules   Json
+  grade       String
+  color       String
+  version     Int     @default(1)
+  tags        Json
+  detailedDescription String?
+  marketProfile Json?
+  marketConditions Json?
+  entryConditions  Json?
+  confirmations    Json?
+  invalidations    Json?
+  risk             Json?
+  tradeManagement  Json?
+  exitPlan         Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  setups    Setup[]
+  snapshots StrategyVersionSnapshot[]
+  checklists ChecklistTemplate[]
+  rules     PlaybookRule[]
+
+  @@index([userId, status])
+  @@index([userId, updatedAt(sort: Desc)])
+}
+
+model StrategyVersionSnapshot {
+  id         String   @id @default(uuid()) @db.Uuid
+  strategyId String   @db.Uuid
+  strategy   Strategy @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+  version    Int
+  snapshot   Json
+  reason     String?
+
+  createdAt DateTime @default(now())
+
+  @@unique([strategyId, version])
+}
+
+model Setup {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String   @db.Uuid
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  strategyId  String   @db.Uuid
+  strategy    Strategy @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+  name        String
+  status      String   @default("ACTIVE")
+  description String
+  context     String?
+  marketCondition String?
+  trigger     String?
+  confirmation String?
+  entryModel  String?
+  stopModel   String?
+  targetModel String?
+  invalidation String?
+  notes       String?
+  tags        Json
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, strategyId])
+}
+
+model ChecklistTemplate {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String   @db.Uuid
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  strategyId String?  @db.Uuid
+  strategy   Strategy? @relation(fields: [strategyId], references: [id], onDelete: SetNull)
+  name       String
+  items      Json
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PlaybookRule {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String   @db.Uuid
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title      String
+  detail     String
+  category   String
+  scope      String
+  strategyId String?  @db.Uuid
+  strategy   Strategy? @relation(fields: [strategyId], references: [id], onDelete: SetNull)
+  evaluatable Boolean @default(false)
+  evaluationHint String?
+  active     Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, active])
+}
+
+/// 20261006090000_ocr_v3 — recognition groups (multi-screenshot fusion).
+model OcrRecognitionGroup {
+  id              String   @id @default(uuid()) @db.Uuid
+  userId          String   @db.Uuid
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// PROPOSED | ACTIVE | CONFIRMED | DISCARDED
+  status          String   @default("PROPOSED")
+  /// 2..8 job ids (uuid strings).
+  memberJobIds    Json
+  evidence        Json?
+  /// 0..100 — evidence-weighted fusion confidence.
+  fusionConfidence Float   @default(0) @db.DoublePrecision
+  autoConfirmed   Boolean  @default(false)
+  fusedDraft      Json?
+  /// Wire key → winning jobId.
+  fieldOrigins    Json?
+  conflicts       Json?
+  timeline        Json?
+  quality         Json?
+  importedTradeId String?  @db.Uuid
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, createdAt(sort: Desc)])
+}
+
+/// 20261006090000_ocr_v3 — asset-based collections (organization only).
+model OcrCollectionAsset {
+  collectionId String
+  collection   OcrCollection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  assetId      String
+  asset        OcrAsset      @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  addedAt      DateTime      @default(now())
+
+  @@id([collectionId, assetId])
+  @@index([assetId])
+}
+
+/// 20261006120000_ocr_v2 — the corrections memory (suggestions feed).
+model OcrCorrection {
+  id               String  @id @default(uuid()) @db.Uuid
+  userId           String  @db.Uuid
+  user             User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  field            String
+  platform         String
+  rawValue         String?
+  correctedValue   String
+  useCount         Int     @default(1)
+  lastRecognitionId String? @db.Uuid
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, field, rawValue, correctedValue])
+  @@index([userId, updatedAt(sort: Desc)])
+}
+
+/// 20261006120000_ocr_v2 — the recognition event ledger (funnel/analytics).
+model OcrEvent {
+  id            String   @id @default(uuid()) @db.Uuid
+  userId        String   @db.Uuid
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type          String
+  recognitionId String?  @db.Uuid
+  metadata      Json?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, type, createdAt(sort: Desc)])
+  @@index([userId, createdAt(sort: Desc)])
 }

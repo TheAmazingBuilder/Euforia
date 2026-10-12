@@ -34,12 +34,17 @@ import { AccountsModule } from "../accounts/accounts.module";
 import { IdentityModule } from "../identity/identity.module";
 import { TradingRepository } from "./trading.repository";
 import { TradingService } from "./trading.service";
-import { TradingController } from "./trading.controller";
 
 @Module({
   imports: [ConfigModule, LoggingModule, PrismaModule, EventsModule, IdentityModule, AccountsModule],
-  controllers: [TradingController],
+  // NOTE (reconciliation): TradingController is intentionally UNWIRED — its
+  // /trades routes collide with the wired legacy TradesModule (one route
+  // owner per path). The Phase-4 context serves the canonical aggregate
+  // reads/writes consumed by trade-planning / trade-review / analytics
+  // through its exported repository+service; route unification is the
+  // documented Phase-12 follow-up.
+  controllers: [],
   providers: [TradingRepository, TradingService],
-  exports: [TradingRepository],
+  exports: [TradingRepository, TradingService],
 })
 export class TradingModule {}

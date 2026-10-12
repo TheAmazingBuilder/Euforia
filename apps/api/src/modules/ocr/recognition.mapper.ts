@@ -221,7 +221,7 @@ export function buildTradeFields(
 /** Deterministic engine-warning → typed frontend warning mapping. */
 export function mapEngineWarnings(
   engineWarnings: string[],
-  fields: Record<RecognitionFieldKey, RecognizedField>,
+  fields: Partial<Record<RecognitionFieldKey, RecognizedField>>,
 ): RecognitionWarning[] {
   const warnings: RecognitionWarning[] = [];
   const push = (warning: RecognitionWarning) => {
@@ -260,6 +260,7 @@ export function mapEngineWarnings(
   // low-confidence values are surfaced even when the engine stayed silent.
   for (const key of PRIMARY_KEYS) {
     const field = fields[key];
+    if (field === undefined) continue;
     if (field.state === "NOT_FOUND") {
       push({
         code: "FIELD_NOT_DETECTED",
@@ -280,7 +281,7 @@ export function mapEngineWarnings(
 
 // ── Aggregates ───────────────────────────────────────────────────────────────
 
-function overallConfidenceOf(fields: Record<RecognitionFieldKey, RecognizedField>): number | null {
+function overallConfidenceOf(fields: Partial<Record<RecognitionFieldKey, RecognizedField>>): number | null {
   const relevant = PRIMARY_KEYS.map((key) => fields[key]?.confidence ?? null).filter(
     (c): c is number => c !== null,
   );
@@ -345,7 +346,7 @@ export function toRecognitionResult(row: OcrRecognitionRow): RecognitionResult |
   // V3 — recognition versioning (spec §44): how this result was produced,
   // echoed from the persisted engine metadata when available.
   const engineMeta = row.result.engine;
-  const versions =
+  const versions: RecognitionResult["versions"] =
     engineMeta !== null && engineMeta !== undefined
       ? {
           engine: `${engineMeta.name} ${engineMeta.engineVersion}`.slice(0, 64),
@@ -493,7 +494,7 @@ export function countCorrectedFields(row: OcrRecognitionRow): number {
 export function toHistoryItem(row: OcrRecognitionRow): RecognitionHistoryItem {
   const classification = (row.result?.classification ?? null) as OcrClassification | null;
   const hasResult = row.result !== null;
-  const quality = row.quality ?? null;
+  const quality = (row.quality as { overall: number } | null) ?? null;
   return {
     id: row.id,
     status: mapWireStatus(row.status),

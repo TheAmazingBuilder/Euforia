@@ -576,18 +576,51 @@ export function deriveIdempotencyKey(
     .digest("hex");
 }
 
-// ── Perceptual duplicate detection (engine quality §2.1) ────────────────────
+/** V2 §68 — job-scoped idempotency-key input (the V1 key + mode + job index). */
+export interface JobIdempotencyInput {
+  userId: string;
+  checksumSha256: string;
+  profile: string;
+  pipelineVersion: string;
+  /** Requested recognition mode — null normalizes to the pipeline default. */
+  mode: string | null;
+  /** 0 for the first job of an image; retries/reprocesses derive fresh keys. */
+  jobIndex: number;
+}
+
+/**
+ * V2 §68 — deterministic JOB idempotency key: the V1 key (§32) extended with
+ * the requested mode and the job index, so the FIRST job of an image owns
+ * the base key (jobIndex 0) while retries and reprocesses deliberately
+ * derive fresh keys (accidental duplicates stay impossible; intentional
+ * re-runs stay possible).
+ */
+export function deriveJobIdempotencyKey(input: JobIdempotencyInput): string {
+  const mode = input.mode ?? "AUTOMATIC";
+  return createHash("sha256")
+    .update(
+      `${input.userId}|${input.checksumSha256}|${input.profile}|${input.pipelineVersion}|${mode}|${input.jobIndex}`,
+    )
+    .digest("hex");
+}
+
+// ── Perceptual duplicate detection (engine quality §2.1, V2 contract) ───────
 
 /** Popcount per hex nibble — table lookup keeps the hot loop branch-free. */
 const NIBBLE_POPCOUNT = [0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4];
 
+/** A malformed anchor is treated as MAXIMALLY distant (64) — it can never
+ * match, and callers never need a null branch (V2 decision-layer contract). */
+export const HAMMING_MAX_DISTANCE = 64;
+
 /**
  * Hamming distance between two 64-bit dHash fingerprints given as 16-char
- * hex strings. Returns null when either input is malformed — callers treat
- * null as "cannot compare" (advisory signal, never a hard failure).
+ * lowercase hex strings. Malformed input (wrong shape, uppercase, empty)
+ * returns the maximal distance — the comparison is an advisory signal and a
+ * malformed anchor is simply never a near-duplicate of anything.
  */
-export function hammingDistance64(a: string, b: string): number | null {
-  if (!/^[0-9a-f]{16}$/.test(a) || !/^[0-9a-f]{16}$/.test(b)) return null;
+export function hammingDistance64(a: string, b: string): number {
+  if (!/^[0-9a-f]{16}$/.test(a) || !/^[0-9a-f]{16}$/.test(b)) return HAMMING_MAX_DISTANCE;
   let distance = 0;
   for (let i = 0; i < 16; i += 1) {
     const x = parseInt(a[i]!, 16) ^ parseInt(b[i]!, 16);
@@ -599,9 +632,47 @@ export function hammingDistance64(a: string, b: string): number | null {
 /**
  * Near-duplicate threshold (of 64 bits): dHash of the SAME panel reshot or
  * recompressed differs by a handful of bits; a different panel differs by
- * far more. 8 is the conservative middle — the flag is advisory anyway.
+ * far more. 6 is the V2 decision-layer value — tight enough that a visually
+ * different panel never flags, loose enough for recompression noise.
  */
-export const DUPLICATE_HAMMING_THRESHOLD = 8;
+export const DUPLICATE_HAMMING_THRESHOLD = 6;
+
+/** Perceptual near-duplicate candidate (asset + its 64-bit dHash anchor). */
+export interface PerceptualCandidate {
+  assetId: string;
+  perceptualHash: string;
+}
+
+/** The closest anchor within the threshold (null = no near-duplicate). */
+export interface PerceptualMatch {
+  assetId: string;
+  perceptualHash: string;
+  hammingDistance: number;
+}
+
+/**
+ * Closest-match duplicate probe (V2 §2.1): scan the user's recent hashed
+ * assets and return the CLOSEST anchor within the threshold — not the first
+ * one that happens to be inside it. Ties keep the earlier candidate.
+ */
+export function findPerceptualMatch(
+  queryHash: string,
+  candidates: readonly PerceptualCandidate[],
+): PerceptualMatch | null {
+  let best: PerceptualMatch | null = null;
+  for (const candidate of candidates) {
+    const distance = hammingDistance64(queryHash, candidate.perceptualHash);
+    if (distance > DUPLICATE_HAMMING_THRESHOLD) continue;
+    if (best === null || distance < best.hammingDistance) {
+      best = {
+        assetId: candidate.assetId,
+        perceptualHash: candidate.perceptualHash,
+        hammingDistance: distance,
+      };
+    }
+  }
+  return best;
+}
 
 /** Corrections-memory pattern key input (engine quality §2.3). */
 export interface CorrectionPatternEntry {
@@ -929,4 +1000,184 @@ export function tradeDuplicateEvidence(
     }
   }
   return evidence;
+}
+
+// ── V2 — corrections memory, recrop merge, suggestions, wire drafts ─────────
+
+import type {
+  RecognitionFieldKey,
+  RecognizedField,
+  TradeDraftRecord,
+} from "../../shared/contracts";
+
+/**
+ * Wire keys the corrections memory tracks. `platform` is deliberately
+ * excluded: the machine record always carries a NOT_FOUND platform field and
+ * the stored draft always carries the detected platform, so recording it
+ * would poison the suggestion memory with a non-correction.
+ */
+export const CORRECTION_TRACKED_KEYS = [
+  "symbol",
+  "direction",
+  "volume",
+  "entryPrice",
+  "exitPrice",
+  "stopLoss",
+  "takeProfit",
+  "profitLoss",
+  "openTime",
+  "closeTime",
+  "currency",
+  "positionId",
+  "orderId",
+  "accountBalance",
+  "accountEquity",
+] as const;
+
+/** One observed user correction (the corrections-memory observation shape). */
+export interface CorrectionObservation {
+  field: string;
+  rawValue: string | null;
+  correctedValue: string | null;
+}
+
+/**
+ * Diff the machine reads against the user's saved draft (V2 §21). Iterates
+ * the DRAFT's entries in draft order and reports only real changes:
+ *   - user value ≠ machine value → {rawValue: machine, correctedValue: user};
+ *   - user CLEARED a machine value → {rawValue: machine, correctedValue: null};
+ *   - both agree on missing → skipped;
+ *   - non-tracked keys (platform) are never observed.
+ */
+/** Structural minimum correctionDiff reads — full RecognizedField records fit. */
+export type CorrectionMachineRead = Partial<
+  Record<RecognitionFieldKey, Pick<RecognizedField, "value" | "state">>
+>;
+
+export function correctionDiff(
+  machine: CorrectionMachineRead,
+  draft: Record<string, string | null>,
+): CorrectionObservation[] {
+  const tracked = new Set<string>(CORRECTION_TRACKED_KEYS);
+  const observations: CorrectionObservation[] = [];
+  for (const [key, draftValue] of Object.entries(draft)) {
+    if (!tracked.has(key)) continue;
+    const machineValue = machine[key as RecognitionFieldKey]?.value ?? null;
+    if (draftValue !== null && draftValue !== machineValue) {
+      observations.push({ field: key, rawValue: machineValue, correctedValue: draftValue });
+    } else if (draftValue === null && machineValue !== null) {
+      observations.push({ field: key, rawValue: machineValue, correctedValue: null });
+    }
+  }
+  return observations;
+}
+
+/** A mergeable field read (machine fields and recrop zone reads share it). */
+export interface RecropMergeableField {
+  field: string;
+  rawValue: string | null;
+  normalizedValue: string | null;
+  confidence: number;
+  sourceRegion: { x: number; y: number; width: number; height: number } | null;
+  warnings: string[];
+}
+
+/**
+ * Merge recrop zone reads into the machine fields (V2 §24). Zone fields with
+ * a usable value REPLACE the same-key field (or append) and carry a "RECROP"
+ * warning; zone reads with no usable value are ignored entirely — a zoomed
+ * miss must never erase an existing read.
+ */
+export function mergeRecropFields(
+  existing: readonly RecropMergeableField[],
+  recrop: readonly RecropMergeableField[],
+): { fields: RecropMergeableField[]; replacedKeys: string[]; addedKeys: string[] } {
+  const fields = existing.map((entry) => ({ ...entry, warnings: [...entry.warnings] }));
+  const replacedKeys: string[] = [];
+  const addedKeys: string[] = [];
+
+  for (const zone of recrop) {
+    if (zone.normalizedValue === null) continue;
+    const withWarning: RecropMergeableField = {
+      ...zone,
+      warnings: zone.warnings.includes("RECROP") ? [...zone.warnings] : [...zone.warnings, "RECROP"],
+    };
+    const index = fields.findIndex((entry) => entry.field === zone.field);
+    if (index >= 0) {
+      fields[index] = withWarning;
+      replacedKeys.push(zone.field);
+    } else {
+      fields.push(withWarning);
+      addedKeys.push(zone.field);
+    }
+  }
+  return { fields, replacedKeys, addedKeys };
+}
+
+/** A ranked suggestion value (memory rows only — never invented). */
+export interface RankedSuggestion {
+  value: string;
+  count: number;
+  source: string;
+}
+
+export interface FieldSuggestion {
+  field: string;
+  values: RankedSuggestion[];
+}
+
+/**
+ * Rank the user's corrections memory into per-field suggestions (V2 §27):
+ * useCount DESC, capped at 3 values per field. `source` is the constant
+ * "MEMORY" — these come solely from past user corrections.
+ */
+export function rankSuggestions(
+  rows: readonly { field: string; correctedValue: string; useCount: number }[],
+): FieldSuggestion[] {
+  const byField = new Map<string, Array<{ value: string; count: number }>>();
+  for (const row of rows) {
+    if (row.correctedValue === "") continue;
+    const bucket = byField.get(row.field) ?? [];
+    bucket.push({ value: row.correctedValue, count: row.useCount });
+    byField.set(row.field, bucket);
+  }
+  const suggestions: FieldSuggestion[] = [];
+  for (const [field, values] of byField) {
+    values.sort((a, b) => b.count - a.count);
+    suggestions.push({
+      field,
+      values: values.slice(0, 3).map((entry) => ({ ...entry, source: "MEMORY" })),
+    });
+  }
+  return suggestions;
+}
+
+/**
+ * Build a draft-shaped record from the machine's wire field record — the
+ * straight overlay of recognized values (no normalization, no invention),
+ * used by the quality engine so coherence rules run on exactly what was read.
+ */
+export function draftFromRecognizedFields(
+  fields: Partial<Record<RecognitionFieldKey, RecognizedField>>,
+): TradeDraftRecord {
+  const read = (key: RecognitionFieldKey): string | null => fields[key]?.value ?? null;
+  const direction = read("direction");
+  return {
+    symbol: read("symbol"),
+    direction: direction === "BUY" || direction === "SELL" ? direction : null,
+    volume: read("volume"),
+    entryPrice: read("entryPrice"),
+    exitPrice: read("exitPrice"),
+    stopLoss: read("stopLoss"),
+    takeProfit: read("takeProfit"),
+    profitLoss: read("profitLoss"),
+    openTime: read("openTime"),
+    closeTime: read("closeTime"),
+    platform: read("platform"),
+    currency: read("currency"),
+    positionId: read("positionId"),
+    orderId: read("orderId"),
+    accountBalance: read("accountBalance"),
+    accountEquity: read("accountEquity"),
+  };
 }

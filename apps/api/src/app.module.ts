@@ -40,6 +40,11 @@ import { MonitoringModule } from "./modules/monitoring/monitoring.module";
 import { CalculatorsModule } from "./modules/calculators/calculators.module";
 import { OcrModule } from "./modules/ocr/ocr.module";
 import { IntegrationsModule } from "./modules/integrations/integrations.module";
+import { TradingModule } from "./modules/trading/trading.module";
+import { TradePlanningModule } from "./modules/trade-planning/trade-planning.module";
+import { TradeReviewModule } from "./modules/trade-review/trade-review.module";
+import { ReplayModule } from "./modules/replay/replay.module";
+import { AnalyticsModule } from "./modules/analytics/analytics.module";
 
 const globalExceptionFilterProvider: Provider = {
   provide: APP_FILTER,
@@ -152,6 +157,15 @@ const globalExceptionFilterProvider: Provider = {
     // (PROVIDER|WEBHOOK|EVENT|ERROR|ECO|NEWS|SEEN). The registry is static
     // catalog content; rows hold per-user runtime state only.
     IntegrationsModule,
+    // ── Phase 4/5/6/7/8 reconciliation (see worklog.md) ────────────────────
+    // Trading Core internals (provider-only — route owner stays the wired
+    // legacy TradesModule), then the planning → review → replay → analytics
+    // chain that consumes its public contracts.
+    TradingModule,
+    TradePlanningModule,
+    TradeReviewModule,
+    ReplayModule,
+    AnalyticsModule,
     // modules/reference … — added by their own phases.
   ],
   providers: [globalExceptionFilterProvider],

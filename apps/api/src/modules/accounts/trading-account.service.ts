@@ -34,6 +34,7 @@ import {
 import {
   TRADING_ERROR_CODES,
   type TradingAccountConnectInput,
+  type TradingAccountUpdateInput,
   type TradingProviderDescriptor,
   type TradingReconnectInput,
   type BrokerAccountSnapshot,
@@ -91,6 +92,35 @@ export class TradingAccountService {
         nowMs: Date.now(),
       }),
     };
+  }
+
+  /** GET /accounts — full details for every owned account (details-view shape). */
+  async listDetails(userId: string, nowMs: number): Promise<{ accounts: Array<ReturnType<typeof toAccountDetails>> }> {
+    const rows = await this.repository.listAccountsByUser(userId);
+    const accounts = await Promise.all(
+      rows.map(async (row) => {
+        const full = await this.loadFull(userId, row.id);
+        return toAccountDetails({ ...full, nowMs });
+      }),
+    );
+    return { accounts };
+  }
+
+  /**
+   * PATCH /accounts/:accountId — rename the journal label (the one documented
+   * journal-side edit; provider-anchored identity is never client-mutable).
+   */
+  async updateAccount(
+    userId: string,
+    accountId: string,
+    input: TradingAccountUpdateInput,
+  ): Promise<ReturnType<typeof toAccountDetails>> {
+    const { account } = await this.loadOwned(userId, accountId);
+    if (input.name !== undefined) {
+      await this.repository.renameAccount(account.id, userId, input.name);
+    }
+    const full = await this.loadFull(userId, accountId);
+    return toAccountDetails({ ...full, nowMs: Date.now() });
   }
 
   async getSnapshot(userId: string, accountId: string) {

@@ -1,5 +1,5 @@
 -- CreateTable
-CREATE TABLE "Rule" (
+CREATE TABLE IF NOT EXISTS "Rule" (
     "id" UUID NOT NULL,
     "userId" UUID NOT NULL,
     "type" TEXT NOT NULL,
@@ -13,7 +13,7 @@ CREATE TABLE "Rule" (
 );
 
 -- CreateTable
-CREATE TABLE "RuleViolation" (
+CREATE TABLE IF NOT EXISTS "RuleViolation" (
     "id" UUID NOT NULL,
     "userId" UUID NOT NULL,
     "ruleId" UUID NOT NULL,
@@ -28,7 +28,7 @@ CREATE TABLE "RuleViolation" (
 );
 
 -- CreateTable
-CREATE TABLE "Alert" (
+CREATE TABLE IF NOT EXISTS "Alert" (
     "id" UUID NOT NULL,
     "userId" UUID NOT NULL,
     "type" TEXT NOT NULL,
@@ -45,7 +45,7 @@ CREATE TABLE "Alert" (
 );
 
 -- CreateTable
-CREATE TABLE "DailyStat" (
+CREATE TABLE IF NOT EXISTS "DailyStat" (
     "id" UUID NOT NULL,
     "userId" UUID NOT NULL,
     "date" DATE NOT NULL,
@@ -70,7 +70,7 @@ CREATE TABLE "DailyStat" (
 );
 
 -- CreateTable
-CREATE TABLE "SkippedTrade" (
+CREATE TABLE IF NOT EXISTS "SkippedTrade" (
     "id" UUID NOT NULL,
     "userId" UUID NOT NULL,
     "instrumentId" UUID NOT NULL,
@@ -87,7 +87,7 @@ CREATE TABLE "SkippedTrade" (
 );
 
 -- CreateTable
-CREATE TABLE "Mistake" (
+CREATE TABLE IF NOT EXISTS "Mistake" (
     "id" UUID NOT NULL,
     "userId" UUID NOT NULL,
     "name" TEXT NOT NULL,
@@ -99,7 +99,7 @@ CREATE TABLE "Mistake" (
 );
 
 -- CreateTable
-CREATE TABLE "TradeMistake" (
+CREATE TABLE IF NOT EXISTS "TradeMistake" (
     "id" UUID NOT NULL,
     "userId" UUID NOT NULL,
     "tradeId" UUID NOT NULL,
@@ -113,7 +113,7 @@ CREATE TABLE "TradeMistake" (
 );
 
 -- CreateTable
-CREATE TABLE "Tag" (
+CREATE TABLE IF NOT EXISTS "Tag" (
     "id" UUID NOT NULL,
     "userId" UUID NOT NULL,
     "name" TEXT NOT NULL,
@@ -124,7 +124,7 @@ CREATE TABLE "Tag" (
 );
 
 -- CreateTable
-CREATE TABLE "TradeTag" (
+CREATE TABLE IF NOT EXISTS "TradeTag" (
     "userId" UUID NOT NULL,
     "tradeId" UUID NOT NULL,
     "tagId" UUID NOT NULL,
@@ -133,7 +133,7 @@ CREATE TABLE "TradeTag" (
 );
 
 -- CreateTable
-CREATE TABLE "SessionNote" (
+CREATE TABLE IF NOT EXISTS "SessionNote" (
     "id" UUID NOT NULL,
     "userId" UUID NOT NULL,
     "date" DATE NOT NULL,
@@ -145,7 +145,7 @@ CREATE TABLE "SessionNote" (
 );
 
 -- CreateTable
-CREATE TABLE "EcoEvent" (
+CREATE TABLE IF NOT EXISTS "EcoEvent" (
     "id" UUID NOT NULL,
     "title" TEXT NOT NULL,
     "currency" TEXT NOT NULL,
@@ -159,7 +159,7 @@ CREATE TABLE "EcoEvent" (
 );
 
 -- CreateTable
-CREATE TABLE "CalendarBlock" (
+CREATE TABLE IF NOT EXISTS "CalendarBlock" (
     "id" UUID NOT NULL,
     "userId" UUID NOT NULL,
     "date" DATE NOT NULL,
@@ -172,7 +172,7 @@ CREATE TABLE "CalendarBlock" (
 );
 
 -- CreateTable
-CREATE TABLE "Goal" (
+CREATE TABLE IF NOT EXISTS "Goal" (
     "id" UUID NOT NULL,
     "userId" UUID NOT NULL,
     "title" TEXT NOT NULL,
@@ -189,7 +189,7 @@ CREATE TABLE "Goal" (
 );
 
 -- CreateTable
-CREATE TABLE "ReviewEntry" (
+CREATE TABLE IF NOT EXISTS "ReviewEntry" (
     "id" UUID NOT NULL,
     "userId" UUID NOT NULL,
     "tradeId" UUID,
@@ -201,7 +201,7 @@ CREATE TABLE "ReviewEntry" (
 );
 
 -- CreateTable
-CREATE TABLE "ReviewLesson" (
+CREATE TABLE IF NOT EXISTS "ReviewLesson" (
     "id" UUID NOT NULL,
     "userId" UUID NOT NULL,
     "payload" JSONB NOT NULL,
@@ -212,7 +212,7 @@ CREATE TABLE "ReviewLesson" (
 );
 
 -- CreateTable
-CREATE TABLE "LiveSession" (
+CREATE TABLE IF NOT EXISTS "LiveSession" (
     "id" UUID NOT NULL,
     "userId" UUID NOT NULL,
     "status" TEXT NOT NULL DEFAULT 'ACTIVE',
@@ -226,7 +226,7 @@ CREATE TABLE "LiveSession" (
 );
 
 -- CreateTable
-CREATE TABLE "LiveAnalysis" (
+CREATE TABLE IF NOT EXISTS "LiveAnalysis" (
     "id" UUID NOT NULL,
     "userId" UUID NOT NULL,
     "sessionId" UUID,
@@ -238,7 +238,7 @@ CREATE TABLE "LiveAnalysis" (
 );
 
 -- CreateTable
-CREATE TABLE "LiveLevel" (
+CREATE TABLE IF NOT EXISTS "LiveLevel" (
     "id" UUID NOT NULL,
     "userId" UUID NOT NULL,
     "payload" JSONB NOT NULL,
@@ -249,7 +249,7 @@ CREATE TABLE "LiveLevel" (
 );
 
 -- CreateTable
-CREATE TABLE "Strategy" (
+CREATE TABLE IF NOT EXISTS "Strategy" (
     "id" UUID NOT NULL,
     "userId" UUID NOT NULL,
     "name" TEXT NOT NULL,
@@ -265,7 +265,7 @@ CREATE TABLE "Strategy" (
 );
 
 -- CreateTable
-CREATE TABLE "StrategyVersion" (
+CREATE TABLE IF NOT EXISTS "StrategyVersion" (
     "id" UUID NOT NULL,
     "userId" UUID NOT NULL,
     "strategyId" UUID NOT NULL,
@@ -277,7 +277,7 @@ CREATE TABLE "StrategyVersion" (
 );
 
 -- CreateTable
-CREATE TABLE "Setup" (
+CREATE TABLE IF NOT EXISTS "Setup" (
     "id" UUID NOT NULL,
     "userId" UUID NOT NULL,
     "strategyId" UUID,
@@ -290,7 +290,7 @@ CREATE TABLE "Setup" (
 );
 
 -- CreateTable
-CREATE TABLE "Checklist" (
+CREATE TABLE IF NOT EXISTS "Checklist" (
     "id" UUID NOT NULL,
     "userId" UUID NOT NULL,
     "name" TEXT NOT NULL,
@@ -302,7 +302,7 @@ CREATE TABLE "Checklist" (
 );
 
 -- CreateTable
-CREATE TABLE "PlaybookRule" (
+CREATE TABLE IF NOT EXISTS "PlaybookRule" (
     "id" UUID NOT NULL,
     "userId" UUID NOT NULL,
     "payload" JSONB NOT NULL,
@@ -313,7 +313,7 @@ CREATE TABLE "PlaybookRule" (
 );
 
 -- CreateTable
-CREATE TABLE "PlaybookTemplate" (
+CREATE TABLE IF NOT EXISTS "PlaybookTemplate" (
     "id" UUID NOT NULL,
     "ownerUserId" UUID,
     "payload" JSONB NOT NULL,
@@ -323,7 +323,7 @@ CREATE TABLE "PlaybookTemplate" (
 );
 
 -- CreateTable
-CREATE TABLE "NofyFolder" (
+CREATE TABLE IF NOT EXISTS "NofyFolder" (
     "id" UUID NOT NULL,
     "userId" UUID NOT NULL,
     "name" TEXT NOT NULL,
@@ -335,7 +335,7 @@ CREATE TABLE "NofyFolder" (
 );
 
 -- CreateTable
-CREATE TABLE "NofyTag" (
+CREATE TABLE IF NOT EXISTS "NofyTag" (
     "id" UUID NOT NULL,
     "userId" UUID NOT NULL,
     "name" TEXT NOT NULL,
@@ -346,7 +346,7 @@ CREATE TABLE "NofyTag" (
 );
 
 -- CreateTable
-CREATE TABLE "NofyTemplate" (
+CREATE TABLE IF NOT EXISTS "NofyTemplate" (
     "id" UUID NOT NULL,
     "userId" UUID NOT NULL,
     "name" TEXT NOT NULL,
@@ -357,7 +357,7 @@ CREATE TABLE "NofyTemplate" (
 );
 
 -- CreateTable
-CREATE TABLE "NofyNote" (
+CREATE TABLE IF NOT EXISTS "NofyNote" (
     "id" UUID NOT NULL,
     "userId" UUID NOT NULL,
     "folderId" UUID,
@@ -371,7 +371,7 @@ CREATE TABLE "NofyNote" (
 );
 
 -- CreateTable
-CREATE TABLE "AcademyProgress" (
+CREATE TABLE IF NOT EXISTS "AcademyProgress" (
     "userId" UUID NOT NULL,
     "payload" JSONB NOT NULL,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -380,7 +380,7 @@ CREATE TABLE "AcademyProgress" (
 );
 
 -- CreateTable
-CREATE TABLE "AcademyLessonNote" (
+CREATE TABLE IF NOT EXISTS "AcademyLessonNote" (
     "id" UUID NOT NULL,
     "userId" UUID NOT NULL,
     "lessonId" TEXT NOT NULL,
@@ -392,7 +392,7 @@ CREATE TABLE "AcademyLessonNote" (
 );
 
 -- CreateTable
-CREATE TABLE "AcademyQuizAttempt" (
+CREATE TABLE IF NOT EXISTS "AcademyQuizAttempt" (
     "id" UUID NOT NULL,
     "userId" UUID NOT NULL,
     "quizId" TEXT NOT NULL,
@@ -403,7 +403,7 @@ CREATE TABLE "AcademyQuizAttempt" (
 );
 
 -- CreateTable
-CREATE TABLE "AcademyExamAttempt" (
+CREATE TABLE IF NOT EXISTS "AcademyExamAttempt" (
     "id" UUID NOT NULL,
     "userId" UUID NOT NULL,
     "categoryId" TEXT NOT NULL,
@@ -414,7 +414,7 @@ CREATE TABLE "AcademyExamAttempt" (
 );
 
 -- CreateTable
-CREATE TABLE "AcademyBookmark" (
+CREATE TABLE IF NOT EXISTS "AcademyBookmark" (
     "id" UUID NOT NULL,
     "userId" UUID NOT NULL,
     "kind" TEXT NOT NULL,
@@ -426,7 +426,7 @@ CREATE TABLE "AcademyBookmark" (
 );
 
 -- CreateTable
-CREATE TABLE "AcademyPracticeLog" (
+CREATE TABLE IF NOT EXISTS "AcademyPracticeLog" (
     "id" UUID NOT NULL,
     "userId" UUID NOT NULL,
     "drill" TEXT NOT NULL,
@@ -437,7 +437,7 @@ CREATE TABLE "AcademyPracticeLog" (
 );
 
 -- CreateTable
-CREATE TABLE "AcademyEventRegistration" (
+CREATE TABLE IF NOT EXISTS "AcademyEventRegistration" (
     "id" UUID NOT NULL,
     "userId" UUID NOT NULL,
     "eventId" TEXT NOT NULL,
@@ -448,7 +448,7 @@ CREATE TABLE "AcademyEventRegistration" (
 );
 
 -- CreateTable
-CREATE TABLE "AcademyTask" (
+CREATE TABLE IF NOT EXISTS "AcademyTask" (
     "id" UUID NOT NULL,
     "userId" UUID NOT NULL,
     "done" BOOLEAN NOT NULL DEFAULT false,
@@ -459,260 +459,260 @@ CREATE TABLE "AcademyTask" (
 );
 
 -- CreateIndex
-CREATE INDEX "Rule_userId_isActive_idx" ON "Rule"("userId", "isActive");
+CREATE INDEX IF NOT EXISTS "Rule_userId_isActive_idx" ON "Rule"("userId", "isActive");
 
 -- CreateIndex
-CREATE INDEX "RuleViolation_userId_occurredAt_idx" ON "RuleViolation"("userId", "occurredAt");
+CREATE INDEX IF NOT EXISTS "RuleViolation_userId_occurredAt_idx" ON "RuleViolation"("userId", "occurredAt");
 
 -- CreateIndex
-CREATE INDEX "RuleViolation_ruleId_idx" ON "RuleViolation"("ruleId");
+CREATE INDEX IF NOT EXISTS "RuleViolation_ruleId_idx" ON "RuleViolation"("ruleId");
 
 -- CreateIndex
-CREATE INDEX "Alert_userId_createdAt_idx" ON "Alert"("userId", "createdAt");
+CREATE INDEX IF NOT EXISTS "Alert_userId_createdAt_idx" ON "Alert"("userId", "createdAt");
 
 -- CreateIndex
-CREATE INDEX "DailyStat_userId_idx" ON "DailyStat"("userId");
+CREATE INDEX IF NOT EXISTS "DailyStat_userId_idx" ON "DailyStat"("userId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "DailyStat_userId_date_key" ON "DailyStat"("userId", "date");
+CREATE UNIQUE INDEX IF NOT EXISTS "DailyStat_userId_date_key" ON "DailyStat"("userId", "date");
 
 -- CreateIndex
-CREATE INDEX "SkippedTrade_userId_seenAt_idx" ON "SkippedTrade"("userId", "seenAt");
+CREATE INDEX IF NOT EXISTS "SkippedTrade_userId_seenAt_idx" ON "SkippedTrade"("userId", "seenAt");
 
 -- CreateIndex
-CREATE INDEX "Mistake_userId_idx" ON "Mistake"("userId");
+CREATE INDEX IF NOT EXISTS "Mistake_userId_idx" ON "Mistake"("userId");
 
 -- CreateIndex
-CREATE INDEX "TradeMistake_tradeId_idx" ON "TradeMistake"("tradeId");
+CREATE INDEX IF NOT EXISTS "TradeMistake_tradeId_idx" ON "TradeMistake"("tradeId");
 
 -- CreateIndex
-CREATE INDEX "TradeMistake_userId_idx" ON "TradeMistake"("userId");
+CREATE INDEX IF NOT EXISTS "TradeMistake_userId_idx" ON "TradeMistake"("userId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Tag_userId_name_key" ON "Tag"("userId", "name");
+CREATE UNIQUE INDEX IF NOT EXISTS "Tag_userId_name_key" ON "Tag"("userId", "name");
 
 -- CreateIndex
-CREATE INDEX "TradeTag_userId_idx" ON "TradeTag"("userId");
+CREATE INDEX IF NOT EXISTS "TradeTag_userId_idx" ON "TradeTag"("userId");
 
 -- CreateIndex
-CREATE INDEX "SessionNote_userId_date_idx" ON "SessionNote"("userId", "date");
+DO $$ BEGIN CREATE INDEX IF NOT EXISTS "SessionNote_userId_date_idx" ON "SessionNote"("userId", "date"); EXCEPTION WHEN SQLSTATE '42703' THEN NULL; WHEN SQLSTATE '42P01' THEN NULL; WHEN duplicate_object THEN NULL; END $$;
 
 -- CreateIndex
-CREATE INDEX "EcoEvent_scheduledAt_idx" ON "EcoEvent"("scheduledAt");
+DO $$ BEGIN CREATE INDEX IF NOT EXISTS "EcoEvent_scheduledAt_idx" ON "EcoEvent"("scheduledAt"); EXCEPTION WHEN SQLSTATE '42703' THEN NULL; WHEN SQLSTATE '42P01' THEN NULL; WHEN duplicate_object THEN NULL; END $$;
 
 -- CreateIndex
-CREATE INDEX "CalendarBlock_userId_date_idx" ON "CalendarBlock"("userId", "date");
+DO $$ BEGIN CREATE INDEX IF NOT EXISTS "CalendarBlock_userId_date_idx" ON "CalendarBlock"("userId", "date"); EXCEPTION WHEN SQLSTATE '42703' THEN NULL; WHEN SQLSTATE '42P01' THEN NULL; WHEN duplicate_object THEN NULL; END $$;
 
 -- CreateIndex
-CREATE UNIQUE INDEX "CalendarBlock_userId_date_kind_key" ON "CalendarBlock"("userId", "date", "kind");
+DO $$ BEGIN CREATE UNIQUE INDEX IF NOT EXISTS "CalendarBlock_userId_date_kind_key" ON "CalendarBlock"("userId", "date", "kind"); EXCEPTION WHEN SQLSTATE '42703' THEN NULL; WHEN SQLSTATE '42P01' THEN NULL; WHEN duplicate_object THEN NULL; END $$;
 
 -- CreateIndex
-CREATE INDEX "Goal_userId_idx" ON "Goal"("userId");
+CREATE INDEX IF NOT EXISTS "Goal_userId_idx" ON "Goal"("userId");
 
 -- CreateIndex
-CREATE INDEX "ReviewEntry_userId_tradeId_idx" ON "ReviewEntry"("userId", "tradeId");
+CREATE INDEX IF NOT EXISTS "ReviewEntry_userId_tradeId_idx" ON "ReviewEntry"("userId", "tradeId");
 
 -- CreateIndex
-CREATE INDEX "ReviewLesson_userId_idx" ON "ReviewLesson"("userId");
+CREATE INDEX IF NOT EXISTS "ReviewLesson_userId_idx" ON "ReviewLesson"("userId");
 
 -- CreateIndex
-CREATE INDEX "LiveSession_userId_status_idx" ON "LiveSession"("userId", "status");
+CREATE INDEX IF NOT EXISTS "LiveSession_userId_status_idx" ON "LiveSession"("userId", "status");
 
 -- CreateIndex
-CREATE INDEX "LiveAnalysis_userId_idx" ON "LiveAnalysis"("userId");
+CREATE INDEX IF NOT EXISTS "LiveAnalysis_userId_idx" ON "LiveAnalysis"("userId");
 
 -- CreateIndex
-CREATE INDEX "LiveLevel_userId_idx" ON "LiveLevel"("userId");
+CREATE INDEX IF NOT EXISTS "LiveLevel_userId_idx" ON "LiveLevel"("userId");
 
 -- CreateIndex
-CREATE INDEX "Strategy_userId_idx" ON "Strategy"("userId");
+DO $$ BEGIN CREATE INDEX IF NOT EXISTS "Strategy_userId_idx" ON "Strategy"("userId"); EXCEPTION WHEN SQLSTATE '42703' THEN NULL; WHEN SQLSTATE '42P01' THEN NULL; WHEN duplicate_object THEN NULL; END $$;
 
 -- CreateIndex
-CREATE INDEX "StrategyVersion_userId_idx" ON "StrategyVersion"("userId");
+CREATE INDEX IF NOT EXISTS "StrategyVersion_userId_idx" ON "StrategyVersion"("userId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "StrategyVersion_strategyId_version_key" ON "StrategyVersion"("strategyId", "version");
+CREATE UNIQUE INDEX IF NOT EXISTS "StrategyVersion_strategyId_version_key" ON "StrategyVersion"("strategyId", "version");
 
 -- CreateIndex
-CREATE INDEX "Setup_userId_idx" ON "Setup"("userId");
+DO $$ BEGIN CREATE INDEX IF NOT EXISTS "Setup_userId_idx" ON "Setup"("userId"); EXCEPTION WHEN SQLSTATE '42703' THEN NULL; WHEN SQLSTATE '42P01' THEN NULL; WHEN duplicate_object THEN NULL; END $$;
 
 -- CreateIndex
-CREATE INDEX "Setup_strategyId_idx" ON "Setup"("strategyId");
+DO $$ BEGIN CREATE INDEX IF NOT EXISTS "Setup_strategyId_idx" ON "Setup"("strategyId"); EXCEPTION WHEN SQLSTATE '42703' THEN NULL; WHEN SQLSTATE '42P01' THEN NULL; WHEN duplicate_object THEN NULL; END $$;
 
 -- CreateIndex
-CREATE INDEX "Checklist_userId_idx" ON "Checklist"("userId");
+DO $$ BEGIN CREATE INDEX IF NOT EXISTS "Checklist_userId_idx" ON "Checklist"("userId"); EXCEPTION WHEN SQLSTATE '42703' THEN NULL; WHEN SQLSTATE '42P01' THEN NULL; WHEN duplicate_object THEN NULL; END $$;
 
 -- CreateIndex
-CREATE INDEX "PlaybookRule_userId_idx" ON "PlaybookRule"("userId");
+DO $$ BEGIN CREATE INDEX IF NOT EXISTS "PlaybookRule_userId_idx" ON "PlaybookRule"("userId"); EXCEPTION WHEN SQLSTATE '42703' THEN NULL; WHEN SQLSTATE '42P01' THEN NULL; WHEN duplicate_object THEN NULL; END $$;
 
 -- CreateIndex
-CREATE INDEX "PlaybookTemplate_ownerUserId_idx" ON "PlaybookTemplate"("ownerUserId");
+CREATE INDEX IF NOT EXISTS "PlaybookTemplate_ownerUserId_idx" ON "PlaybookTemplate"("ownerUserId");
 
 -- CreateIndex
-CREATE INDEX "NofyFolder_userId_idx" ON "NofyFolder"("userId");
+DO $$ BEGIN CREATE INDEX IF NOT EXISTS "NofyFolder_userId_idx" ON "NofyFolder"("userId"); EXCEPTION WHEN SQLSTATE '42703' THEN NULL; WHEN SQLSTATE '42P01' THEN NULL; WHEN duplicate_object THEN NULL; END $$;
 
 -- CreateIndex
-CREATE UNIQUE INDEX "NofyTag_userId_name_key" ON "NofyTag"("userId", "name");
+DO $$ BEGIN CREATE UNIQUE INDEX IF NOT EXISTS "NofyTag_userId_name_key" ON "NofyTag"("userId", "name"); EXCEPTION WHEN SQLSTATE '42703' THEN NULL; WHEN SQLSTATE '42P01' THEN NULL; WHEN duplicate_object THEN NULL; END $$;
 
 -- CreateIndex
-CREATE INDEX "NofyTemplate_userId_idx" ON "NofyTemplate"("userId");
+DO $$ BEGIN CREATE INDEX IF NOT EXISTS "NofyTemplate_userId_idx" ON "NofyTemplate"("userId"); EXCEPTION WHEN SQLSTATE '42703' THEN NULL; WHEN SQLSTATE '42P01' THEN NULL; WHEN duplicate_object THEN NULL; END $$;
 
 -- CreateIndex
-CREATE INDEX "NofyNote_userId_trashed_idx" ON "NofyNote"("userId", "trashed");
+DO $$ BEGIN CREATE INDEX IF NOT EXISTS "NofyNote_userId_trashed_idx" ON "NofyNote"("userId", "trashed"); EXCEPTION WHEN SQLSTATE '42703' THEN NULL; WHEN SQLSTATE '42P01' THEN NULL; WHEN duplicate_object THEN NULL; END $$;
 
 -- CreateIndex
-CREATE INDEX "NofyNote_folderId_idx" ON "NofyNote"("folderId");
+DO $$ BEGIN CREATE INDEX IF NOT EXISTS "NofyNote_folderId_idx" ON "NofyNote"("folderId"); EXCEPTION WHEN SQLSTATE '42703' THEN NULL; WHEN SQLSTATE '42P01' THEN NULL; WHEN duplicate_object THEN NULL; END $$;
 
 -- CreateIndex
-CREATE UNIQUE INDEX "AcademyLessonNote_userId_lessonId_key" ON "AcademyLessonNote"("userId", "lessonId");
+DO $$ BEGIN CREATE UNIQUE INDEX IF NOT EXISTS "AcademyLessonNote_userId_lessonId_key" ON "AcademyLessonNote"("userId", "lessonId"); EXCEPTION WHEN SQLSTATE '42703' THEN NULL; WHEN SQLSTATE '42P01' THEN NULL; WHEN duplicate_object THEN NULL; END $$;
 
 -- CreateIndex
-CREATE INDEX "AcademyQuizAttempt_userId_quizId_idx" ON "AcademyQuizAttempt"("userId", "quizId");
+DO $$ BEGIN CREATE INDEX IF NOT EXISTS "AcademyQuizAttempt_userId_quizId_idx" ON "AcademyQuizAttempt"("userId", "quizId"); EXCEPTION WHEN SQLSTATE '42703' THEN NULL; WHEN SQLSTATE '42P01' THEN NULL; WHEN duplicate_object THEN NULL; END $$;
 
 -- CreateIndex
-CREATE INDEX "AcademyExamAttempt_userId_categoryId_idx" ON "AcademyExamAttempt"("userId", "categoryId");
+DO $$ BEGIN CREATE INDEX IF NOT EXISTS "AcademyExamAttempt_userId_categoryId_idx" ON "AcademyExamAttempt"("userId", "categoryId"); EXCEPTION WHEN SQLSTATE '42703' THEN NULL; WHEN SQLSTATE '42P01' THEN NULL; WHEN duplicate_object THEN NULL; END $$;
 
 -- CreateIndex
-CREATE UNIQUE INDEX "AcademyBookmark_userId_kind_refId_key" ON "AcademyBookmark"("userId", "kind", "refId");
+DO $$ BEGIN CREATE UNIQUE INDEX IF NOT EXISTS "AcademyBookmark_userId_kind_refId_key" ON "AcademyBookmark"("userId", "kind", "refId"); EXCEPTION WHEN SQLSTATE '42703' THEN NULL; WHEN SQLSTATE '42P01' THEN NULL; WHEN duplicate_object THEN NULL; END $$;
 
 -- CreateIndex
-CREATE INDEX "AcademyPracticeLog_userId_drill_idx" ON "AcademyPracticeLog"("userId", "drill");
+CREATE INDEX IF NOT EXISTS "AcademyPracticeLog_userId_drill_idx" ON "AcademyPracticeLog"("userId", "drill");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "AcademyEventRegistration_userId_eventId_key" ON "AcademyEventRegistration"("userId", "eventId");
+CREATE UNIQUE INDEX IF NOT EXISTS "AcademyEventRegistration_userId_eventId_key" ON "AcademyEventRegistration"("userId", "eventId");
 
 -- CreateIndex
-CREATE INDEX "AcademyTask_userId_idx" ON "AcademyTask"("userId");
+CREATE INDEX IF NOT EXISTS "AcademyTask_userId_idx" ON "AcademyTask"("userId");
 
 -- AddForeignKey
-ALTER TABLE "Rule" ADD CONSTRAINT "Rule_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN ALTER TABLE "Rule" ADD CONSTRAINT "Rule_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- AddForeignKey
-ALTER TABLE "RuleViolation" ADD CONSTRAINT "RuleViolation_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN ALTER TABLE "RuleViolation" ADD CONSTRAINT "RuleViolation_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- AddForeignKey
-ALTER TABLE "RuleViolation" ADD CONSTRAINT "RuleViolation_ruleId_fkey" FOREIGN KEY ("ruleId") REFERENCES "Rule"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN ALTER TABLE "RuleViolation" ADD CONSTRAINT "RuleViolation_ruleId_fkey" FOREIGN KEY ("ruleId") REFERENCES "Rule"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- AddForeignKey
-ALTER TABLE "Alert" ADD CONSTRAINT "Alert_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN ALTER TABLE "Alert" ADD CONSTRAINT "Alert_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- AddForeignKey
-ALTER TABLE "DailyStat" ADD CONSTRAINT "DailyStat_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN ALTER TABLE "DailyStat" ADD CONSTRAINT "DailyStat_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- AddForeignKey
-ALTER TABLE "SkippedTrade" ADD CONSTRAINT "SkippedTrade_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN ALTER TABLE "SkippedTrade" ADD CONSTRAINT "SkippedTrade_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- AddForeignKey
-ALTER TABLE "Mistake" ADD CONSTRAINT "Mistake_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN ALTER TABLE "Mistake" ADD CONSTRAINT "Mistake_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- AddForeignKey
-ALTER TABLE "TradeMistake" ADD CONSTRAINT "TradeMistake_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN ALTER TABLE "TradeMistake" ADD CONSTRAINT "TradeMistake_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- AddForeignKey
-ALTER TABLE "TradeMistake" ADD CONSTRAINT "TradeMistake_tradeId_fkey" FOREIGN KEY ("tradeId") REFERENCES "Trade"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN ALTER TABLE "TradeMistake" ADD CONSTRAINT "TradeMistake_tradeId_fkey" FOREIGN KEY ("tradeId") REFERENCES "Trade"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- AddForeignKey
-ALTER TABLE "TradeMistake" ADD CONSTRAINT "TradeMistake_mistakeId_fkey" FOREIGN KEY ("mistakeId") REFERENCES "Mistake"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN ALTER TABLE "TradeMistake" ADD CONSTRAINT "TradeMistake_mistakeId_fkey" FOREIGN KEY ("mistakeId") REFERENCES "Mistake"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- AddForeignKey
-ALTER TABLE "Tag" ADD CONSTRAINT "Tag_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN ALTER TABLE "Tag" ADD CONSTRAINT "Tag_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- AddForeignKey
-ALTER TABLE "TradeTag" ADD CONSTRAINT "TradeTag_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN ALTER TABLE "TradeTag" ADD CONSTRAINT "TradeTag_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- AddForeignKey
-ALTER TABLE "TradeTag" ADD CONSTRAINT "TradeTag_tradeId_fkey" FOREIGN KEY ("tradeId") REFERENCES "Trade"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN ALTER TABLE "TradeTag" ADD CONSTRAINT "TradeTag_tradeId_fkey" FOREIGN KEY ("tradeId") REFERENCES "Trade"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- AddForeignKey
-ALTER TABLE "TradeTag" ADD CONSTRAINT "TradeTag_tagId_fkey" FOREIGN KEY ("tagId") REFERENCES "Tag"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN ALTER TABLE "TradeTag" ADD CONSTRAINT "TradeTag_tagId_fkey" FOREIGN KEY ("tagId") REFERENCES "Tag"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- AddForeignKey
-ALTER TABLE "SessionNote" ADD CONSTRAINT "SessionNote_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN ALTER TABLE "SessionNote" ADD CONSTRAINT "SessionNote_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- AddForeignKey
-ALTER TABLE "CalendarBlock" ADD CONSTRAINT "CalendarBlock_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN ALTER TABLE "CalendarBlock" ADD CONSTRAINT "CalendarBlock_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- AddForeignKey
-ALTER TABLE "Goal" ADD CONSTRAINT "Goal_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN ALTER TABLE "Goal" ADD CONSTRAINT "Goal_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- AddForeignKey
-ALTER TABLE "ReviewEntry" ADD CONSTRAINT "ReviewEntry_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN ALTER TABLE "ReviewEntry" ADD CONSTRAINT "ReviewEntry_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- AddForeignKey
-ALTER TABLE "ReviewLesson" ADD CONSTRAINT "ReviewLesson_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN ALTER TABLE "ReviewLesson" ADD CONSTRAINT "ReviewLesson_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- AddForeignKey
-ALTER TABLE "LiveSession" ADD CONSTRAINT "LiveSession_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN ALTER TABLE "LiveSession" ADD CONSTRAINT "LiveSession_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- AddForeignKey
-ALTER TABLE "LiveAnalysis" ADD CONSTRAINT "LiveAnalysis_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN ALTER TABLE "LiveAnalysis" ADD CONSTRAINT "LiveAnalysis_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- AddForeignKey
-ALTER TABLE "LiveAnalysis" ADD CONSTRAINT "LiveAnalysis_sessionId_fkey" FOREIGN KEY ("sessionId") REFERENCES "LiveSession"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+DO $$ BEGIN ALTER TABLE "LiveAnalysis" ADD CONSTRAINT "LiveAnalysis_sessionId_fkey" FOREIGN KEY ("sessionId") REFERENCES "LiveSession"("id") ON DELETE SET NULL ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- AddForeignKey
-ALTER TABLE "LiveLevel" ADD CONSTRAINT "LiveLevel_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN ALTER TABLE "LiveLevel" ADD CONSTRAINT "LiveLevel_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- AddForeignKey
-ALTER TABLE "Strategy" ADD CONSTRAINT "Strategy_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN ALTER TABLE "Strategy" ADD CONSTRAINT "Strategy_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- AddForeignKey
-ALTER TABLE "StrategyVersion" ADD CONSTRAINT "StrategyVersion_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN ALTER TABLE "StrategyVersion" ADD CONSTRAINT "StrategyVersion_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- AddForeignKey
-ALTER TABLE "StrategyVersion" ADD CONSTRAINT "StrategyVersion_strategyId_fkey" FOREIGN KEY ("strategyId") REFERENCES "Strategy"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN ALTER TABLE "StrategyVersion" ADD CONSTRAINT "StrategyVersion_strategyId_fkey" FOREIGN KEY ("strategyId") REFERENCES "Strategy"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- AddForeignKey
-ALTER TABLE "Setup" ADD CONSTRAINT "Setup_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN ALTER TABLE "Setup" ADD CONSTRAINT "Setup_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- AddForeignKey
-ALTER TABLE "Setup" ADD CONSTRAINT "Setup_strategyId_fkey" FOREIGN KEY ("strategyId") REFERENCES "Strategy"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+DO $$ BEGIN ALTER TABLE "Setup" ADD CONSTRAINT "Setup_strategyId_fkey" FOREIGN KEY ("strategyId") REFERENCES "Strategy"("id") ON DELETE SET NULL ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- AddForeignKey
-ALTER TABLE "Checklist" ADD CONSTRAINT "Checklist_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN ALTER TABLE "Checklist" ADD CONSTRAINT "Checklist_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- AddForeignKey
-ALTER TABLE "PlaybookRule" ADD CONSTRAINT "PlaybookRule_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN ALTER TABLE "PlaybookRule" ADD CONSTRAINT "PlaybookRule_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- AddForeignKey
-ALTER TABLE "PlaybookTemplate" ADD CONSTRAINT "PlaybookTemplate_ownerUserId_fkey" FOREIGN KEY ("ownerUserId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN ALTER TABLE "PlaybookTemplate" ADD CONSTRAINT "PlaybookTemplate_ownerUserId_fkey" FOREIGN KEY ("ownerUserId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- AddForeignKey
-ALTER TABLE "NofyFolder" ADD CONSTRAINT "NofyFolder_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN ALTER TABLE "NofyFolder" ADD CONSTRAINT "NofyFolder_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- AddForeignKey
-ALTER TABLE "NofyTag" ADD CONSTRAINT "NofyTag_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN ALTER TABLE "NofyTag" ADD CONSTRAINT "NofyTag_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- AddForeignKey
-ALTER TABLE "NofyTemplate" ADD CONSTRAINT "NofyTemplate_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN ALTER TABLE "NofyTemplate" ADD CONSTRAINT "NofyTemplate_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- AddForeignKey
-ALTER TABLE "NofyNote" ADD CONSTRAINT "NofyNote_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN ALTER TABLE "NofyNote" ADD CONSTRAINT "NofyNote_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- AddForeignKey
-ALTER TABLE "NofyNote" ADD CONSTRAINT "NofyNote_folderId_fkey" FOREIGN KEY ("folderId") REFERENCES "NofyFolder"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+DO $$ BEGIN ALTER TABLE "NofyNote" ADD CONSTRAINT "NofyNote_folderId_fkey" FOREIGN KEY ("folderId") REFERENCES "NofyFolder"("id") ON DELETE SET NULL ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- AddForeignKey
-ALTER TABLE "AcademyProgress" ADD CONSTRAINT "AcademyProgress_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN ALTER TABLE "AcademyProgress" ADD CONSTRAINT "AcademyProgress_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- AddForeignKey
-ALTER TABLE "AcademyLessonNote" ADD CONSTRAINT "AcademyLessonNote_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN ALTER TABLE "AcademyLessonNote" ADD CONSTRAINT "AcademyLessonNote_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- AddForeignKey
-ALTER TABLE "AcademyQuizAttempt" ADD CONSTRAINT "AcademyQuizAttempt_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN ALTER TABLE "AcademyQuizAttempt" ADD CONSTRAINT "AcademyQuizAttempt_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- AddForeignKey
-ALTER TABLE "AcademyExamAttempt" ADD CONSTRAINT "AcademyExamAttempt_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN ALTER TABLE "AcademyExamAttempt" ADD CONSTRAINT "AcademyExamAttempt_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- AddForeignKey
-ALTER TABLE "AcademyBookmark" ADD CONSTRAINT "AcademyBookmark_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN ALTER TABLE "AcademyBookmark" ADD CONSTRAINT "AcademyBookmark_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- AddForeignKey
-ALTER TABLE "AcademyPracticeLog" ADD CONSTRAINT "AcademyPracticeLog_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN ALTER TABLE "AcademyPracticeLog" ADD CONSTRAINT "AcademyPracticeLog_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- AddForeignKey
-ALTER TABLE "AcademyEventRegistration" ADD CONSTRAINT "AcademyEventRegistration_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN ALTER TABLE "AcademyEventRegistration" ADD CONSTRAINT "AcademyEventRegistration_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- AddForeignKey
-ALTER TABLE "AcademyTask" ADD CONSTRAINT "AcademyTask_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN ALTER TABLE "AcademyTask" ADD CONSTRAINT "AcademyTask_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 

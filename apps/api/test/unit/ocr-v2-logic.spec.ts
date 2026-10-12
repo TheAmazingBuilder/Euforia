@@ -68,10 +68,10 @@ describe("findPerceptualMatch", () => {
 
 describe("correctionDiff", () => {
   const machine = {
-    symbol: { value: "XAUUSD", state: "FOUND" },
-    volume: { value: "0.51", state: "FOUND" }, // engine misread 0.15
-    entryPrice: { value: "2345.60", state: "FOUND" },
-    currency: { value: null, state: "NOT_FOUND" },
+    symbol: { value: "XAUUSD", state: "FOUND" as const },
+    volume: { value: "0.51", state: "FOUND" as const }, // engine misread 0.15
+    entryPrice: { value: "2345.60", state: "FOUND" as const },
+    currency: { value: null, state: "NOT_FOUND" as const },
   };
 
   it("reports only the fields the user actually changed", () => {

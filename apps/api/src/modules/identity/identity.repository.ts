@@ -54,6 +54,31 @@ export interface SessionRow {
   revokedAt: Date | null;
 }
 
+/** Append-only audit event (model SecurityEvent — /security/overview feed). */
+export interface SecurityEventRow {
+  id: string;
+  userId: string | null;
+  at: Date;
+  type: string;
+  actor: string;
+  context: string;
+  outcome: string;
+}
+
+/** Append-only sign-in history row (model LoginRecord — /security/overview). */
+export interface LoginRecordRow {
+  id: string;
+  userId: string;
+  at: Date;
+  success: boolean;
+  device: string;
+  browser: string;
+  os: string;
+  ipMasked: string;
+  location: string;
+  reason: string | null;
+}
+
 @Injectable()
 export class IdentityRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -284,6 +309,65 @@ export class IdentityRepository {
       this.prisma.apiKey.count({ where: { userId } }),
     ]);
     return { sessions, apiKeys };
+  }
+
+  // ── Append-only audit writes (Phase 2 §30) ──────────────────────────────────
+  //
+  // The Security CENTER owns the reads of these tables (Phase 16); the
+  // identity-side SecurityEventService still records through THIS repository —
+  // append-only, never update, never delete (§30).
+
+  async appendSecurityEvent(data: {
+    userId: string | null;
+    type: string;
+    actor: string;
+    context: string;
+    outcome: "SUCCESS" | "FAILURE";
+  }): Promise<void> {
+    await this.prisma.securityEvent.create({ data });
+  }
+
+  async appendLoginRecord(data: {
+    userId: string;
+    success: boolean;
+    device: string;
+    browser: string;
+    os: string;
+    ipMasked: string;
+    location: string;
+    reason: string | null;
+  }): Promise<void> {
+    await this.prisma.loginRecord.create({ data });
+  }
+
+  // ── Security center reads (append-only audit tables) ────────────────────────
+  //
+  // Narrow row projections for /security/overview (Phase 16) — newest first,
+  // caller-scoped limit; no update, no delete (§30).
+
+  async listSecurityEvents(userId: string, limit: number): Promise<SecurityEventRow[]> {
+    const rows = await this.prisma.securityEvent.findMany({
+      where: { userId },
+      orderBy: { at: "desc" },
+      take: limit,
+    });
+    return rows as SecurityEventRow[];
+  }
+
+  async listLoginRecords(userId: string, limit: number): Promise<LoginRecordRow[]> {
+    const rows = await this.prisma.loginRecord.findMany({
+      where: { userId },
+      orderBy: { at: "desc" },
+      take: limit,
+    });
+    return rows as LoginRecordRow[];
+  }
+
+  /** Failed sign-ins inside the sliding window (protection check input). */
+  async countRecentFailedLogins(userId: string, since: Date): Promise<number> {
+    return this.prisma.loginRecord.count({
+      where: { userId, success: false, at: { gte: since } },
+    });
   }
 
   // ── Auth challenges (email verification / password reset) ──────────────────

@@ -14,11 +14,27 @@
  * Login history rows share the same metadata discipline (§31).
  */
 import { Injectable } from "@nestjs/common";
-import type { SecurityEventType } from "../../shared/contracts";
+import type { SecurityEventType as SharedSecurityEventType } from "../../shared/contracts";
 import { SecurityEventRepository, type LoginRecordRow, type SecurityEventRow } from "./security-event.repository";
 import { isoDateTime } from "../identity/mappers";
 
-export type { SecurityEventType };
+/**
+ * Recognition V1 backend additions to the shared audit catalog (§83): the
+ * recognition surface emits lifecycle facts (job created/cancelled, draft
+ * saved, journal import, retention sweep, fusion groups) that postdate the
+ * shared enum. Declared HERE — the shared contract stays frozen — in the
+ * SAME naming style, so every writer keeps going through THIS port and the
+ * append-only model is unchanged.
+ */
+export type OcrSecurityEventType =
+  | "OCR_JOB_CREATED"
+  | "OCR_JOB_CANCELLED"
+  | "OCR_RETENTION_SWEEP"
+  | "OCR_GROUP_CREATED"
+  | "TRADE_DRAFT_SAVED"
+  | "TRADE_IMPORTED";
+
+export type SecurityEventType = SharedSecurityEventType | OcrSecurityEventType;
 
 export interface RequestFingerprint {
   device: string;

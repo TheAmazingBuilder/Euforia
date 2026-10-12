@@ -37,6 +37,10 @@ export interface AppConfig {
     storageRoot: string;
     /** Screenshot retention window in days (0 disables, engine quality §4.2). */
     retentionDays: number;
+    /** Minimum delay between two lazy retention sweeps (recognition V1). */
+    retentionSweepMs: number;
+    /** Max decoded binary size accepted for one PDF statement upload (V2). */
+    pdfMaxBytes: number;
   };
   accounts: {
     /** AES-256-GCM key encrypting trading credentials at rest (§22). */
@@ -51,6 +55,16 @@ export interface AppConfig {
     screenshotsRoot: string;
     /** Max decoded binary size accepted for one trade screenshot. */
     screenshotMaxBytes: number;
+  };
+  calendar: {
+    /** Past half of the canonical eco sync window (§23) — Analytics correlation depth. */
+    windowPastDays: number;
+    /** Future half of the canonical eco sync window (§23) — planner/news-blocker horizon. */
+    windowFutureDays: number;
+  };
+  integrations: {
+    /** AES-256-GCM key encrypting webhook signing secrets at rest (§14). */
+    webhookEncryptionKey: Buffer;
   };
   auth: {
     jwtSecret: string;
@@ -98,6 +112,8 @@ function build(env: Env): AppConfig {
       engineMaxRetries: env.OCR_ENGINE_MAX_RETRIES,
       storageRoot: env.OCR_STORAGE_ROOT,
       retentionDays: env.OCR_RETENTION_DAYS,
+      retentionSweepMs: env.OCR_RETENTION_SWEEP_MS,
+      pdfMaxBytes: env.OCR_PDF_MAX_BYTES,
     },
     accounts: {
       credentialsEncryptionKey: Buffer.from(env.ACCOUNTS_CREDENTIALS_ENCRYPTION_KEY, "base64"),
@@ -110,6 +126,13 @@ function build(env: Env): AppConfig {
     trades: {
       screenshotsRoot: env.TRADES_SCREENSHOTS_ROOT,
       screenshotMaxBytes: env.TRADES_SCREENSHOT_MAX_BYTES,
+    },
+    calendar: {
+      windowPastDays: env.CALENDAR_WINDOW_PAST_DAYS,
+      windowFutureDays: env.CALENDAR_WINDOW_FUTURE_DAYS,
+    },
+    integrations: {
+      webhookEncryptionKey: Buffer.from(env.INTEGRATIONS_WEBHOOK_ENCRYPTION_KEY, "base64"),
     },
     auth: {
       jwtSecret: env.AUTH_JWT_SECRET,

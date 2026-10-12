@@ -303,12 +303,19 @@ export class IntegrationsRepository {
 
   // ── IntegrationWebhookEndpoint ─────────────────────────────────────────────
 
+  /**
+   * The user's inbound endpoint for a provider. The model's @@unique is
+   * (userId, providerId, path) — a provider may expose several paths — so
+   * this is an ownership-scoped scan (oldest first, listEndpoints order)
+   * rather than a compound-unique lookup.
+   */
   async findEndpointByUserAndProvider(
     userId: string,
     providerId: string,
   ): Promise<WebhookEndpointRow | null> {
-    const row = await this.prisma.integrationWebhookEndpoint.findUnique({
-      where: { userId_providerId: { userId, providerId } },
+    const row = await this.prisma.integrationWebhookEndpoint.findFirst({
+      where: { userId, providerId },
+      orderBy: { createdAt: "asc" },
     });
     return (row as WebhookEndpointRow) ?? null;
   }
@@ -367,16 +374,21 @@ export class IntegrationsRepository {
     endpointId: string,
     eventId: string,
   ): Promise<WebhookDeliveryRow | null> {
-    const row = await this.prisma.integrationWebhookDelivery.findUnique({
-      where: { endpointId_eventId: { endpointId, eventId } },
+    // No (endpointId, eventId) unique exists on the model — the guard is
+    // this lookup, so it takes the explicit findFirst path.
+    const row = await this.prisma.integrationWebhookDelivery.findFirst({
+      where: { endpointId, eventId },
     });
     return (row as WebhookDeliveryRow) ?? null;
   }
 
   /**
-   * One ledger row per (endpoint, event) — the upsert IS the idempotency
-   * write (§23): a replayed event updates its row instead of duplicating it,
-   * and the unique constraint races converge atomically.
+   * One ledger row per (endpoint, event) — the idempotency write (§23): a
+   * replayed event updates its row instead of duplicating it. The model has
+   * NO (endpointId, eventId) unique, so this is the explicit find-then-write
+   * path (the ocr null-unique-component branch pattern): the delivery route's
+   * per-endpoint serial processing plus the {@link findDelivery} guard are
+   * what keeps the ledger duplicate-free — no constraint race to converge.
    */
   async appendDelivery(
     endpointId: string,
@@ -391,12 +403,19 @@ export class IntegrationsRepository {
     tx?: TxHandle,
   ): Promise<void> {
     const client = tx ?? this.prisma;
-    await client.integrationWebhookDelivery.upsert({
-      where: {
-        endpointId_eventId: { endpointId, eventId: delivery.eventId },
-      },
-      create: { endpointId, ...delivery },
-      update: { ...delivery },
+    const existing = await client.integrationWebhookDelivery.findFirst({
+      where: { endpointId, eventId: delivery.eventId },
+      select: { id: true },
+    });
+    if (existing === null) {
+      await client.integrationWebhookDelivery.create({
+        data: { endpointId, ...delivery },
+      });
+      return;
+    }
+    await client.integrationWebhookDelivery.update({
+      where: { id: existing.id },
+      data: { ...delivery },
     });
   }
 

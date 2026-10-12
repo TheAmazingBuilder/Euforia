@@ -136,6 +136,65 @@ export class ImageValidationService {
       checksumSha256,
     };
   }
+
+  /**
+   * V2 — PDF statement branch of the upload gate: SAME envelope/size/magic
+   * discipline as validateDataUrl, with its own byte budget (config
+   * OCR_PDF_MAX_BYTES) and NO pixel-dimension parse — a document has no
+   * intrinsic pixels; the sidecar renders pages and the REAL dimensions land
+   * on the asset row through the engine render (§4.3), so the 1×1 placeholder
+   * matches the legacy PDF convention in validateDataUrl.
+   */
+  validateDocumentDataUrl(dataUrl: string, limits: { maxBytes: number }): ValidatedImage {
+    // 1. Strict envelope parse — PDFs only (declared type must be application/pdf).
+    const match = /^data:application\/pdf;base64,([A-Za-z0-9+/=\r\n]+)$/.exec(dataUrl);
+    if (match === null || match[1] === undefined) {
+      throw new ValidationError(
+        "The document payload must be a base64 data URL (application/pdf).",
+        [{ path: "imageDataUrl", message: "expected a data:application/pdf base64 URL" }],
+        "INVALID_IMAGE",
+      );
+    }
+    const base64 = match[1]!;
+
+    // 2. Size guard BEFORE decoding (cheap, deterministic — §8 discipline).
+    if (Math.floor((base64.length * 3) / 4) > limits.maxBytes) {
+      throw new ValidationError(
+        "The document is too large.",
+        [{ path: "imageDataUrl", message: `decoded document exceeds ${limits.maxBytes} bytes` }],
+        "IMAGE_TOO_LARGE",
+      );
+    }
+    const bytes = Buffer.from(base64, "base64");
+    if (bytes.length === 0 || bytes.length > limits.maxBytes) {
+      throw new ValidationError(
+        "The document is too large or empty.",
+        [{ path: "imageDataUrl", message: `decoded document must be 1..${limits.maxBytes} bytes` }],
+        "IMAGE_TOO_LARGE",
+      );
+    }
+
+    // 3. Magic bytes — the declared type must MATCH the binary (§7).
+    const actual = sniffImageMime(bytes);
+    if (actual !== "application/pdf") {
+      throw new ValidationError(
+        "Unsupported document format.",
+        [{ path: "imageDataUrl", message: "only PDF statements are supported on this endpoint" }],
+        "UNSUPPORTED_FORMAT",
+      );
+    }
+
+    // 4. Checksum — identity + integrity anchor (§6).
+    const checksumSha256 = createHash("sha256").update(bytes).digest("hex");
+    return {
+      bytes,
+      mime: "application/pdf",
+      sizeBytes: bytes.length,
+      width: 1,
+      height: 1,
+      checksumSha256,
+    };
+  }
 }
 
 /**

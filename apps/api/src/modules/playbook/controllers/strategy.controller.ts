@@ -38,8 +38,8 @@ export class StrategyController {
 
   /** Per-strategy aggregates — computed server-side (product contract). */
   @Get("stats")
-  stats(): Promise<StrategiesStatsResponse> {
-    return this.playbook.strategyStats();
+  stats(@CurrentUser() principal: AuthPrincipal): Promise<StrategiesStatsResponse> {
+    return this.playbook.strategyStats(principal.userId);
   }
 
   @Get()

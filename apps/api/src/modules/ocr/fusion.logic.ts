@@ -31,6 +31,12 @@ import type {
   OcrQualityScore,
   OcrTimelineEntry,
 } from "../../shared/contracts";
+import type {
+  CorrelationEvidence,
+  RecognitionFieldKey,
+  RecognizedTrade,
+  TradeDraftRecord,
+} from "../../shared/contracts";
 import {
   buildRecognitionTimeline,
   computeQualityScore,
@@ -254,4 +260,318 @@ export function buildFusedTimeline(input: {
     uploadedAt,
     confirmedAt: input.confirmedAt,
   });
+}
+
+// ── V3 — wire-level member fusion over RecognizedTrade ──────────────────────
+// The group pipeline fuses the WIRE trade fields of several jobs (not the
+// engine field arrays above). Same evidence discipline: agreement wins by
+// confidence, conflicts are recorded with provenance, nothing is invented.
+
+/** One fusable member: a job's recognized wire trade (null ⇒ unfusable). */
+export interface FusionMemberInput {
+  jobId: string;
+  screenshotName: string;
+  status: string;
+  trade: RecognizedTrade | null;
+  detectedPlatform: string | null;
+  /** Raw provider screenshot-type token (deliberately not an enum). */
+  screenshotType: string | null;
+  uploadedAt: string;
+}
+
+/** Wire trade keys the fusion engine reads (never platform — provenance only). */
+const FUSED_WIRE_KEYS = [
+  "symbol",
+  "direction",
+  "volume",
+  "entryPrice",
+  "exitPrice",
+  "stopLoss",
+  "takeProfit",
+  "profitLoss",
+  "openTime",
+  "closeTime",
+  "currency",
+  "positionId",
+  "orderId",
+  "accountBalance",
+  "accountEquity",
+] as const;
+
+/** Signed keys keep textual equality (profit sign is part of the value). */
+const FUSED_TEXTUAL_KEYS: ReadonlySet<string> = new Set(["profitLoss", "direction", "symbol", "openTime", "closeTime"]);
+
+function wireValuesEqual(key: string, a: string, b: string): boolean {
+  if (a === b) return true;
+  if (FUSED_TEXTUAL_KEYS.has(key)) return false;
+  try {
+    return new Prisma.Decimal(a).equals(new Prisma.Decimal(b));
+  } catch {
+    return false;
+  }
+}
+
+function readWireValue(trade: RecognizedTrade | null, key: RecognitionFieldKey): string | null {
+  const field = trade?.fields?.[key];
+  if (!field || field.value === undefined) return null;
+  return field.value;
+}
+
+function readWireConfidence(trade: RecognizedTrade | null, key: RecognitionFieldKey): number | null {
+  const field = trade?.fields?.[key];
+  return field?.confidence ?? null;
+}
+
+function typeKind(screenshotType: string | null): string | null {
+  if (screenshotType === null) return null;
+  if (screenshotType.endsWith("HISTORY")) return "HISTORY";
+  if (screenshotType.endsWith("OPEN_POSITION") || screenshotType.endsWith("POSITION")) return "POSITION";
+  if (screenshotType.endsWith("TRADE")) return "TRADE";
+  return null;
+}
+
+const COMPLEMENTARY_TYPE_KINDS: ReadonlySet<string> = new Set(["TRADE", "HISTORY", "POSITION"]);
+
+/** Correlate two members — evidence only, never invention (V3 §14). */
+export function correlatePair(a: FusionMemberInput, b: FusionMemberInput): CorrelationEvidence[] {
+  const evidence: CorrelationEvidence[] = [];
+
+  const symbolA = readWireValue(a.trade, "symbol");
+  const symbolB = readWireValue(b.trade, "symbol");
+  if (symbolA !== null && symbolB !== null) {
+    const equal = symbolA.toUpperCase() === symbolB.toUpperCase();
+    evidence.push({
+      kind: "SYMBOL",
+      score: equal ? 1 : 0,
+      detail: equal ? `symbol agreement (${symbolA})` : `symbol mismatch (${symbolA} vs ${symbolB})`,
+    });
+  }
+
+  const directionA = readWireValue(a.trade, "direction");
+  const directionB = readWireValue(b.trade, "direction");
+  if (directionA !== null && directionB !== null) {
+    const equal = directionA.toUpperCase() === directionB.toUpperCase();
+    evidence.push({
+      kind: "DIRECTION",
+      score: equal ? 1 : 0,
+      detail: equal ? `direction agreement (${directionA})` : `direction mismatch (${directionA} vs ${directionB})`,
+    });
+  }
+
+  const timeA = readWireValue(a.trade, "openTime");
+  const timeB = readWireValue(b.trade, "openTime");
+  const openA = timeA !== null ? Date.parse(timeA) : Number.NaN;
+  const openB = timeB !== null ? Date.parse(timeB) : Number.NaN;
+  if (!Number.isNaN(openA) && !Number.isNaN(openB)) {
+    const minutes = Math.abs(openA - openB) / 60_000;
+    if (minutes <= FUSION_TIME_WINDOW_MINUTES) {
+      evidence.push({
+        kind: "TIMESTAMP_PROXIMITY",
+        score: 1 - minutes / FUSION_TIME_WINDOW_MINUTES,
+        detail: `recognized opens ${Math.round(minutes)} min apart`,
+      });
+    }
+  }
+
+  const kindA = typeKind(a.screenshotType);
+  const kindB = typeKind(b.screenshotType);
+  if (kindA !== null && kindB !== null && COMPLEMENTARY_TYPE_KINDS.has(kindA) && COMPLEMENTARY_TYPE_KINDS.has(kindB)) {
+    const score = kindA === kindB ? 0.5 : 0.7;
+    evidence.push({
+      kind: "SCREENSHOT_TYPE",
+      score,
+      detail: score > 0.5 ? `complementary types (${kindA} + ${kindB})` : `identical types (${kindA})`,
+    });
+  }
+
+  const positionA = readWireValue(a.trade, "positionId");
+  const positionB = readWireValue(b.trade, "positionId");
+  if (positionA !== null && positionB !== null) {
+    const equal = positionA === positionB;
+    evidence.push({
+      kind: "POSITION_ID",
+      score: equal ? 1 : 0,
+      detail: equal ? `position id agreement (${positionA})` : "position id mismatch",
+    });
+  }
+
+  return evidence;
+}
+
+/** Timestamp correlation window (minutes) — 4 hours, documented (V3 §14). */
+export const FUSION_TIME_WINDOW_MINUTES = 240;
+
+/**
+ * Auto-confirm gate — a documented free parameter inside (40, 83.3]: the
+ * fully-agreeing fixture (SYMBOL 1 + DIRECTION 1 + type 0.5) aggregates to
+ * ≈83.3, a symbol mismatch is capped at 40, so 70 cleanly separates both.
+ */
+export const AUTO_CONFIRM_THRESHOLD = 70;
+
+/** Mean of evidence scores ×100, capped at 40 on a symbol mismatch. */
+export function aggregateEvidence(pairs: readonly CorrelationEvidence[][]): {
+  fusionConfidence: number;
+  autoConfirmed: boolean;
+} {
+  const flat = pairs.flat();
+  if (flat.length === 0) return { fusionConfidence: 0, autoConfirmed: false };
+
+  const overall =
+    (pairs.reduce((sum, pair) => {
+      if (pair.length === 0) return sum;
+      return sum + pair.reduce((s, e) => s + e.score, 0) / pair.length;
+    }, 0) /
+      pairs.length) *
+    100;
+
+  const symbolMismatch = flat.some((e) => e.kind === "SYMBOL" && e.score === 0);
+  const directionMismatch = flat.some((e) => e.kind === "DIRECTION" && e.score === 0);
+
+  const fusionConfidence = symbolMismatch ? Math.min(overall, 40) : overall;
+  const autoConfirmed = (
+    !symbolMismatch && !directionMismatch && fusionConfidence >= AUTO_CONFIRM_THRESHOLD
+  );
+  return { fusionConfidence, autoConfirmed };
+}
+
+export interface FusedGroupOutcome {
+  fusedDraft: TradeDraftRecord;
+  /** Winning member per wire key (field → jobId). */
+  fieldOrigins: Record<string, string>;
+  conflicts: Array<{
+    field: string;
+    values: Array<{ value: string; jobId: string }>;
+    selectedJobId: string;
+  }>;
+  timeline: Array<{ jobId: string; role: "ENTRY" | "EXIT" | "POSITION"; at: string | null }>;
+  evidence: CorrelationEvidence[];
+  fusionConfidence: number;
+  autoConfirmed: boolean;
+  /** Mean identity (symbol+direction) agreement across pairs, 0..100. */
+  consistency: number;
+}
+
+/**
+ * Fuse 2..8 members into one wire draft (V3 §31). Deterministic (§77): the
+ * same members always produce the same outcome — no clock, no I/O.
+ */
+export function fuseMembers(members: readonly FusionMemberInput[]): FusedGroupOutcome {
+  if (members.length < 2 || members.length > 8) {
+    throw new RangeError("fusion requires 2..8 members");
+  }
+
+  const fusedDraft: TradeDraftRecord = {
+    symbol: null,
+    direction: null,
+    volume: null,
+    entryPrice: null,
+    exitPrice: null,
+    stopLoss: null,
+    takeProfit: null,
+    profitLoss: null,
+    openTime: null,
+    closeTime: null,
+    platform: members[0]!.detectedPlatform,
+    currency: null,
+    positionId: null,
+    orderId: null,
+    accountBalance: null,
+    accountEquity: null,
+  };
+  const fieldOrigins: Record<string, string> = {};
+  const conflicts: FusedGroupOutcome["conflicts"] = [];
+
+  for (const key of FUSED_WIRE_KEYS) {
+    const readings = members
+      .map((member) => ({
+        jobId: member.jobId,
+        value: readWireValue(member.trade, key),
+        confidence: readWireConfidence(member.trade, key),
+      }))
+      .filter((reading): reading is { jobId: string; value: string; confidence: number | null } => reading.value !== null);
+
+    if (readings.length === 0) continue;
+
+    // Strongest confidence wins; ties keep the first member (member order).
+    const winner = readings.reduce((best, reading) =>
+      (reading.confidence ?? 0) > (best.confidence ?? 0) ? reading : best,
+    );
+    (fusedDraft as Record<string, unknown>)[key] = winner.value;
+    fieldOrigins[key] = winner.jobId;
+
+    const distinct: Array<{ value: string; jobId: string }> = [];
+    for (const reading of readings) {
+      const known = distinct.find((entry) => wireValuesEqual(key, entry.value, reading.value));
+      if (!known) distinct.push({ value: reading.value, jobId: reading.jobId });
+    }
+    if (distinct.length > 1) {
+      conflicts.push({ field: key, values: distinct, selectedJobId: winner.jobId });
+    }
+  }
+
+  // Draft direction must carry the wire enum (BUY|SELL) — never a guess.
+  if (fusedDraft.direction !== null && fusedDraft.direction !== "BUY" && fusedDraft.direction !== "SELL") {
+    fusedDraft.direction = null;
+    delete fieldOrigins.direction;
+  }
+
+  // All pairs' evidence (i<j, member order) — inputs to the aggregate gate.
+  const pairEvidence: CorrelationEvidence[][] = [];
+  for (let i = 0; i < members.length; i += 1) {
+    for (let j = i + 1; j < members.length; j += 1) {
+      pairEvidence.push(correlatePair(members[i]!, members[j]!));
+    }
+  }
+  const aggregate = aggregateEvidence(pairEvidence);
+
+  // Timeline: one entry per member; recognized stamp (openTime, else
+  // closeTime); timed entries ASC, untimed members last (at: null).
+  const roleOf = (screenshotType: string | null): "ENTRY" | "EXIT" | "POSITION" => {
+    const kind = typeKind(screenshotType);
+    if (kind === "HISTORY") return "EXIT";
+    if (kind === "POSITION") return "POSITION";
+    return "ENTRY";
+  };
+  const stamped = members.map((member) => {
+    const open = readWireValue(member.trade, "openTime");
+    const close = readWireValue(member.trade, "closeTime");
+    const stamp = [open, close].find((value) => value !== null && !Number.isNaN(Date.parse(value))) ?? null;
+    return {
+      jobId: member.jobId,
+      role: roleOf(member.screenshotType),
+      at: stamp !== null ? new Date(Date.parse(stamp)).toISOString() : null,
+    };
+  });
+  const timeline = [
+    ...stamped.filter((entry) => entry.at !== null).sort((a, b) => Date.parse(a.at!) - Date.parse(b.at!)),
+    ...stamped.filter((entry) => entry.at === null),
+  ];
+
+  // Consistency: mean identity agreement (SYMBOL + DIRECTION) over pairs,
+  // 0..100. Pairs without identity evidence do not penalize the mean.
+  const identityScores: number[] = [];
+  for (let i = 0; i < members.length; i += 1) {
+    for (let j = i + 1; j < members.length; j += 1) {
+      const pair = correlatePair(members[i]!, members[j]!);
+      const identity = pair.filter((e) => e.kind === "SYMBOL" || e.kind === "DIRECTION");
+      if (identity.length > 0) {
+        identityScores.push(identity.reduce((s, e) => s + e.score, 0) / identity.length);
+      }
+    }
+  }
+  const consistency =
+    identityScores.length === 0
+      ? 0
+      : Math.round((identityScores.reduce((s, score) => s + score, 0) / identityScores.length) * 100);
+
+  return {
+    fusedDraft,
+    fieldOrigins,
+    conflicts,
+    timeline,
+    evidence: pairEvidence.flat(),
+    fusionConfidence: aggregate.fusionConfidence,
+    autoConfirmed: aggregate.autoConfirmed,
+    consistency,
+  };
 }

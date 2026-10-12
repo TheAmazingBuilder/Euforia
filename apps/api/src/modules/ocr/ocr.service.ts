@@ -114,8 +114,9 @@ interface AssetMeta {
   userId: string;
   mime: string;
   sizeBytes: number;
-  width: number;
-  height: number;
+  /** V2 — null for PDF statements. */
+  width: number | null;
+  height: number | null;
   checksumSha256: string;
   storageKey: string;
 }
@@ -193,6 +194,8 @@ export class OcrService {
         extractionProfile: input.requestedProfile,
         pipelineVersion: OCR_PIPELINE_VERSION,
         idempotencyKey,
+        requestedPlatform: "AUTO",
+        mode: "AUTOMATIC",
         requestId: input.requestId,
         accountId,
       })
@@ -282,6 +285,8 @@ export class OcrService {
       idempotencyKey,
       requestId: null,
       accountId: row.accountId,
+      requestedPlatform: "AUTO",
+      mode: "AUTOMATIC",
     });
 
     await this.securityEvents.record({
@@ -326,6 +331,7 @@ export class OcrService {
     const created = await this.repository
       .createAsset(userId, {
         phashHex: null, // the engine computes the fingerprint during processing
+        perceptualHash: null,
         storageKey,
         originalName: `screenshot.${mimeExtension(image.mime)}`,
         mime: image.mime,
@@ -930,6 +936,8 @@ export class OcrService {
       );
     }
     if (
+      row.asset.width === null ||
+      row.asset.height === null ||
       region.x + region.width > row.asset.width ||
       region.y + region.height > row.asset.height
     ) {

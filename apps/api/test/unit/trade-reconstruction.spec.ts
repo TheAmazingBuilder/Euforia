@@ -166,6 +166,7 @@ describe("reconstructAccounts — P2002 race tolerance (finalization §31)", () 
       replaceExits: async () => undefined,
     };
     const accountsRepository = {
+      findAccountForUser: async () => ({ id: "00000000-0000-4000-8000-000000000001", currency: "USD" }),
       listDeals: async () => [
         deal({ externalDealId: "in1", side: "BUY", volume: new Prisma.Decimal("0.2"), price: new Prisma.Decimal("1.1"), executedAt: d(0) }),
         deal({ externalDealId: "out1", side: "SELL", volume: new Prisma.Decimal("0.2"), price: new Prisma.Decimal("1.1"), profit: new Prisma.Decimal("0"), executedAt: exitAt }),

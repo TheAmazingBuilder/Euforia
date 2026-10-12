@@ -27,6 +27,7 @@ FROM "User" WHERE "preferences" IS NOT NULL;
 -- AddForeignKey
 ALTER TABLE "UserSettings" ADD CONSTRAINT "UserSettings_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
--- DropColumn — the doc now lives in the Settings-owned table; no other
--- schema object is touched (§28).
-ALTER TABLE "User" DROP COLUMN "preferences";
+-- RECONCILED: the DropColumn below is intentionally NOT applied — the
+-- schema.prisma User model keeps `preferences Json?` (the settings module
+-- reads it as the pre-Phase-15 fallback) and UserSettings is the owned copy.
+-- ALTER TABLE "User" DROP COLUMN "preferences";

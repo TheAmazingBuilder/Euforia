@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest";
 import {
   collectCorrectionPatterns,
   DUPLICATE_HAMMING_THRESHOLD,
+  HAMMING_MAX_DISTANCE,
   hammingDistance64,
   suggestedTagsForImport,
 } from "../../src/modules/ocr/ocr.logic";
@@ -40,14 +41,14 @@ describe("hammingDistance64", () => {
     expect(hammingDistance64("ffffffffffffffff", "0000000000000000")).toBe(64);
   });
 
-  it("refuses malformed input (advisory signal, never a crash)", () => {
-    expect(hammingDistance64("xyz", "0123456789abcdef")).toBeNull();
-    expect(hammingDistance64("0123456789ABCDEF", "0123456789abcdef")).toBeNull(); // uppercase not allowed
-    expect(hammingDistance64("", "0123456789abcdef")).toBeNull();
+  it("treats malformed input as maximally distant (V2 contract — advisory signal, never a crash)", () => {
+    expect(hammingDistance64("xyz", "0123456789abcdef")).toBe(HAMMING_MAX_DISTANCE);
+    expect(hammingDistance64("0123456789ABCDEF", "0123456789abcdef")).toBe(HAMMING_MAX_DISTANCE); // uppercase not allowed
+    expect(hammingDistance64("", "0123456789abcdef")).toBe(HAMMING_MAX_DISTANCE);
   });
 
-  it("threshold is conservative (8 of 64 bits)", () => {
-    expect(DUPLICATE_HAMMING_THRESHOLD).toBe(8);
+  it("threshold is the V2 decision-layer value (6 of 64 bits)", () => {
+    expect(DUPLICATE_HAMMING_THRESHOLD).toBe(6);
   });
 });
 

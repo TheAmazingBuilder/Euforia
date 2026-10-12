@@ -234,7 +234,13 @@ export class TradesService {
     if (account === null) {
       throw new NotFoundError("Account not found", TRADING_ERROR.ACCOUNT_NOT_FOUND);
     }
-    const contractSize = await this.loadContractSize(input.instrumentId);
+    // The journal backfills the denormalized symbol/currency columns from
+    // their sources of truth: the instrument catalog and the account.
+    const instrument = await this.repository.findInstrument(input.instrumentId);
+    if (instrument === null) {
+      throw new BusinessRuleError("Unknown instrument", TRADING_ERROR.UNKNOWN_INSTRUMENT);
+    }
+    const contractSize = instrument.contractSize.toFixed();
 
     if (input.externalRef !== undefined) {
       const existing = await this.repository.findLiveTradeByExternalRef(
@@ -285,6 +291,8 @@ export class TradesService {
         userId,
         accountId: account.id,
         instrumentId: input.instrumentId,
+        symbol: instrument.symbol,
+        currency: account.currency,
         strategyId: strategyId ?? null,
         setupId: input.setupId ?? null,
         strategyVersion: input.strategyId !== undefined ? 1 : null,
@@ -330,6 +338,163 @@ export class TradesService {
     }
     // HARD CONTRACT: closing responds WITHOUT any P&L field (§12/§13).
     return { id: row.id, awaitingDecision: true };
+  }
+
+  // ── OCR confirmation bridge (Phase 21 §77 — the ONLY sanctioned path) ───────
+
+  /**
+   * Deterministic dedup handle for one recognition draft — mirrors the OCR
+   * context's convention: `ocr:<recognitionId>` for the single path and
+   * `ocr:<recognitionId>:<tradeIndex>` per grouped draft (§79 reuse of the
+   * external-ref mechanism).
+   */
+  private recognitionExternalRef(recognitionId: string, tradeIndex?: number): string {
+    return tradeIndex === undefined ? `ocr:${recognitionId}` : `ocr:${recognitionId}:${tradeIndex}`;
+  }
+
+  /**
+   * Resolve the canonical Trade already created from one recognition draft —
+   * the batch-retry idempotency anchor: a trade created before a partial
+   * failure is SKIPPED (its id is resolved, never imported twice, §79).
+   */
+  async findRecognitionImportTradeId(
+    userId: string,
+    recognitionId: string,
+    tradeIndex?: number,
+    accountId?: string,
+  ): Promise<string | null> {
+    const externalRef = this.recognitionExternalRef(recognitionId, tradeIndex);
+    if (accountId !== undefined) {
+      const found = await this.repository.findLiveTradeByExternalRef(accountId, externalRef);
+      return found?.id ?? null;
+    }
+    const found = await this.repository.findLiveTradeByExternalRefForUser(userId, externalRef);
+    return found?.id ?? null;
+  }
+
+  /**
+   * Create the canonical Trade from a USER-CONFIRMED recognition draft
+   * (§77): the values were validated by the OCR review flow; THIS service
+   * still owns the account check, the sizing math, the P&L recomputation
+   * and the external-ref dedup — there is no OCR-specific trade write path.
+   * Create-or-link semantics: a lost race against a concurrent confirm links
+   * the winning trade instead of conflicting (§51 house policy).
+   */
+  async importTradeFromRecognition(
+    userId: string,
+    input: {
+      recognitionId: string;
+      tradeIndex?: number;
+      accountId?: string;
+      symbol: string;
+      direction: string | null;
+      entryPrice: string;
+      exitPrice?: string | null;
+      volume?: string | null;
+      stopLoss?: string | null;
+      takeProfit?: string | null;
+      entryAt: string;
+      exitAt?: string | null;
+      profitLoss?: string | null;
+    },
+  ): Promise<{ tradeId: string }> {
+    void input.profitLoss; // recomputed server-side (§15) — the draft's own P&L is advisory only
+
+    // Human-in-the-loop gate: a trade without a side cannot exist (§6).
+    // Positive check — a bare `!==` pair cannot narrow the wide `string`.
+    const direction: "BUY" | "SELL" | null =
+      input.direction === "BUY" || input.direction === "SELL" ? input.direction : null;
+    if (direction === null) {
+      throw new BusinessRuleError(
+        "The confirmed trade draft has no usable direction.",
+        TRADE_ERROR_CODES.INVALID_TRADE_DATA,
+      );
+    }
+
+    // Symbol resolves against the instrument catalog ONLY (§50 — no alias
+    // tables; an unknown symbol is an honest refusal, never an invention).
+    const instrument = await this.repository.findInstrumentBySymbol(input.symbol);
+    if (instrument === null || !instrument.isActive) {
+      throw new BusinessRuleError(
+        `symbol ${input.symbol} is not in the instrument catalog`,
+        TRADE_ERROR_CODES.UNKNOWN_INSTRUMENT,
+      );
+    }
+
+    // Account — the explicit choice first, else the owner's persisted
+    // default (engine quality §3.1 semantics, same as the OCR import flow).
+    // findDefaultAccountIdForUser answers null when no account exists —
+    // normalized to undefined so the single guard below covers both shapes.
+    let accountId = input.accountId;
+    if (accountId === undefined) {
+      accountId = (await this.accounts.findDefaultAccountIdForUser(userId)) ?? undefined;
+    } else {
+      const chosen = await this.accounts.findAccountForUser(accountId, userId);
+      if (chosen === null) {
+        throw new NotFoundError("Account not found", TRADE_ERROR_CODES.ACCOUNT_NOT_FOUND);
+      }
+    }
+    if (accountId === undefined) {
+      throw new BusinessRuleError(
+        "no trading account is available for this import",
+        TRADE_ERROR_CODES.ACCOUNT_NOT_FOUND,
+      );
+    }
+
+    const externalRef = this.recognitionExternalRef(input.recognitionId, input.tradeIndex);
+    const closed = input.exitPrice !== null && input.exitPrice !== undefined && input.exitPrice !== "" &&
+      input.exitAt !== null && input.exitAt !== undefined && input.exitAt !== "";
+    // Quantity floor: the capture surface's quantity mode needs a positive
+    // decimal — a draft without a readable volume imports one unit (the
+    // review UI flags volume as a primary field before confirm).
+    const volume =
+      input.volume !== null && input.volume !== undefined && input.volume.trim() !== ""
+        ? input.volume
+        : "1";
+
+    const base = {
+      accountId,
+      instrumentId: instrument.id,
+      direction,
+      entryPrice: input.entryPrice,
+      entryAt: input.entryAt,
+      size: { mode: "quantity" as const, quantity: volume },
+      ...(input.stopLoss !== null && input.stopLoss !== undefined ? { initialStop: input.stopLoss } : {}),
+      ...(input.takeProfit !== null && input.takeProfit !== undefined ? { initialTP: input.takeProfit } : {}),
+      // Provenance (§82) + traceability: the recognition id rides in the notes.
+      reason: `Imported from screenshot recognition (${input.recognitionId.replace(/^ocr:/, "recognition ")})`,
+      externalRef,
+      source: "IMPORT" as const,
+      // An OCR import has no playbook context by definition.
+      outOfPlaybook: true as const,
+    };
+
+    try {
+      const created = await this.createTrade(
+        userId,
+        closed
+          ? {
+              variant: "closed",
+              ...base,
+              // exitPrice/exitAt are validated non-empty by `closed` above.
+              exitPrice: input.exitPrice as string,
+              exitAt: input.exitAt as string,
+              exitReason: "MANUAL" as const,
+            }
+          : { variant: "open", ...base },
+      );
+      return { tradeId: created.id };
+    } catch (error) {
+      // A concurrent confirmation could have won the creation race — link
+      // instead of conflicting (§51 house policy).
+      if (error instanceof ConflictError) {
+        const winner =
+          (await this.repository.findLiveTradeByExternalRef(accountId, externalRef)) ??
+          (await this.repository.findLiveTradeByExternalRefForUser(userId, externalRef));
+        if (winner !== null) return { tradeId: winner.id };
+      }
+      throw error;
+    }
   }
 
   async closeTrade(
@@ -796,6 +961,11 @@ export class TradesService {
     if (defaultAccountId === null) {
       throw new BusinessRuleError("No trading account found", TRADING_ERROR.ACCOUNT_NOT_FOUND);
     }
+    // The journal backfills the currency column from the receiving account.
+    const defaultAccount = await this.accounts.findAccountForUser(defaultAccountId, userId);
+    if (defaultAccount === null) {
+      throw new BusinessRuleError("No trading account found", TRADING_ERROR.ACCOUNT_NOT_FOUND);
+    }
     const catalog = await this.repository.listActiveInstruments();
     const byUpperSymbol = new Map(catalog.map((instrument) => [instrument.symbol.toUpperCase(), instrument]));
 
@@ -844,6 +1014,8 @@ export class TradesService {
           userId,
           accountId: defaultAccountId,
           instrumentId: instrument.id,
+          symbol: instrument.symbol,
+          currency: defaultAccount.currency,
           strategyId: input.strategyId ?? null,
           setupId: null,
           strategyVersion: input.strategyId !== undefined && input.strategyId !== null ? 1 : null,

@@ -8,7 +8,6 @@
  * feeds them — the backend never fabricates market outcomes.
  */
 import { Injectable } from "@nestjs/common";
-import { Prisma } from "@prisma/client";
 import { randomUUID } from "node:crypto";
 import { toDecimalString } from "../../shared/contracts";
 import { shiftDayKey } from "../stats/stats.helpers";
@@ -66,7 +65,7 @@ export class EcoCalendarService {
     await this.ensureEcoWindow();
     const from = new Date(Date.now() - PAST_DAYS * 86_400_000);
     const to = new Date(Date.now() + FUTURE_DAYS * 86_400_000);
-    const events = await this.prisma.ecoEvent.findMany({
+    const events = await this.prisma.economicEvent.findMany({
       where: { scheduledAt: { gte: from, lte: to } },
       orderBy: { scheduledAt: "asc" },
     });
@@ -107,17 +106,21 @@ export class EcoCalendarService {
         scheduledAt.setUTCDate(scheduledAt.getUTCDate() + daysAhead);
         scheduledAt.setUTCHours(template.hour, template.minute, 0, 0);
         if (scheduledAt < start || scheduledAt > end) continue;
-        const existing = await this.prisma.ecoEvent.findFirst({
+        const existing = await this.prisma.economicEvent.findFirst({
           where: { title: template.title, scheduledAt },
         });
         if (existing !== null) continue;
-        await this.prisma.ecoEvent.create({
+        await this.prisma.economicEvent.create({
           data: {
             id: randomUUID(),
             title: template.title,
             currency: template.currency,
             impact: template.impact,
             scheduledAt,
+            // Deterministic template identity — the (provider, providerEventId)
+            // unique keeps the lazy rolling-window generator idempotent.
+            provider: "ECO_TEMPLATE",
+            providerEventId: `${template.title}:${scheduledAt.toISOString()}`,
           },
         });
       }
@@ -141,8 +144,8 @@ export class EcoCalendarService {
       input.note ?? (input.kind === "OFF" ? "Planned day off" : "High-impact news");
     const block = await this.prisma.calendarBlock.upsert({
       where: { userId_date_kind: { userId, date, kind: input.kind } },
-      create: { id: randomUUID(), userId, date, kind: input.kind, payload: { note } },
-      update: { payload: { note } },
+      create: { id: randomUUID(), userId, date, kind: input.kind, note },
+      update: { note },
     });
     return { block: blockView(block) };
   }
@@ -163,7 +166,7 @@ export class EcoCalendarService {
     const today = new Date();
     const todayKey = today.toISOString().slice(0, 10);
     const horizon = new Date(today.getTime() + 13 * 86_400_000).toISOString().slice(0, 10);
-    const events = await this.prisma.ecoEvent.findMany({
+    const events = await this.prisma.economicEvent.findMany({
       where: { impact: "HIGH", scheduledAt: { gte: new Date(`${todayKey}T00:00:00.000Z`), lte: new Date(`${horizon}T23:59:59.999Z`) } },
       orderBy: { scheduledAt: "asc" },
     });
@@ -178,7 +181,7 @@ export class EcoCalendarService {
           userId,
           date: new Date(`${date}T00:00:00.000Z`),
           kind: "NEWS",
-          payload: { note: "High-impact releases (imported from the eco calendar)" },
+          note: "High-impact releases (imported from the eco calendar)",
         },
       });
       imported += 1;
@@ -202,7 +205,7 @@ export class EcoCalendarService {
         where: { userId, date: { gte: new Date(`${from}T00:00:00.000Z`), lte: new Date(`${to}T23:59:59.999Z`) } },
       }),
       this.prisma.calendarBlock.findMany({ where: { userId } }),
-      this.prisma.ecoEvent.findMany({
+      this.prisma.economicEvent.findMany({
         where: { scheduledAt: { gte: new Date(`${from}T00:00:00.000Z`), lte: new Date(`${to}T23:59:59.999Z`) } },
       }),
     ]);
@@ -277,14 +280,13 @@ function isoWeekNumber(weekMonday: Date): number {
 function blockView(row: {
   date: Date;
   kind: string;
-  payload: Prisma.JsonValue;
+  note: string;
   createdAt: Date;
 }): CalendarBlock {
-  const payload = (row.payload ?? {}) as { note?: string };
   return {
     date: row.date.toISOString().slice(0, 10),
     kind: row.kind as CalendarBlock["kind"],
-    note: payload.note ?? "",
+    note: row.note,
     createdAt: row.createdAt.toISOString(),
   };
 }

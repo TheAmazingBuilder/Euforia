@@ -158,10 +158,12 @@ export class TradingRepository {
       userId: filters.userId,
       deletedAt: null,
       accountId: filters.accountId,
-      status: filters.status as Prisma.EnumTradeStatusFilter["equals"],
+      // The Trade lifecycle columns are TEXT (no Prisma enums) — the filters
+      // pass through as plain strings.
+      status: filters.status,
       symbol: filters.symbol,
-      direction: filters.direction as Prisma.EnumDirectionFilter["equals"],
-      source: filters.source as Prisma.EnumTradeSourceFilter["equals"],
+      direction: filters.direction,
+      source: filters.source,
       entryAt: dateRange(filters.openedFrom, filters.openedTo),
       exitAt: dateRange(filters.closedFrom, filters.closedTo),
     };
@@ -323,9 +325,23 @@ export class TradingRepository {
 
   // ── Writes (transactions protect the trade+execution invariant, §54) ─────
 
+  /**
+   * Instrument catalog lookup by unique ticker (symbol). The journal write
+   * paths backfill the denormalized symbol column AND the instrumentId FK
+   * — an unknown symbol is an honest refusal (never an invented row, §20).
+   */
+  async findInstrumentIdBySymbol(symbol: string): Promise<string | null> {
+    const row = await this.prisma.instrument.findUnique({
+      where: { symbol },
+      select: { id: true },
+    });
+    return row?.id ?? null;
+  }
+
   async createTradeWithExecutions(data: {
     userId: string;
     accountId: string;
+    instrumentId: string;
     currency: string;
     symbol: string;
     direction: "BUY" | "SELL";
@@ -469,6 +485,7 @@ export class TradingRepository {
     plan: {
       tradesToCreate: Array<{
         userId: string;
+        instrumentId: string;
         externalPositionId: string | null;
         direction: "BUY" | "SELL";
         symbol: string;
@@ -566,6 +583,7 @@ export class TradingRepository {
           data: {
             userId: planned.userId,
             accountId,
+            instrumentId: planned.instrumentId,
             currency: planned.currency,
             source: "EXTERNAL_SYNC",
             symbol: planned.symbol,

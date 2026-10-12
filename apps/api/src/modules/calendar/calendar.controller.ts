@@ -4,7 +4,7 @@
  * body, uuid/ISO-validated params. Mirrors `mocks/handlers/eco.ts` (6
  * routes). The `from`/`to` window is validated in the service (422 parity).
  */
-import { Body, Controller, Delete, Get, Param, Post, Put, Query } from "@nestjs/common";
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Post, Put, Query } from "@nestjs/common";
 import {
   upsertCalendarBlockInputSchema,
   calendarBlocksResponseSchema,
@@ -65,6 +65,7 @@ export class CalendarBlocksController {
   }
 
   @Post("import-eco")
+  @HttpCode(HttpStatus.OK)
   async importEco(@CurrentUser() principal: AuthPrincipal) {
     return importEcoBlockersResponseSchema.parse(
       await this.calendar.importEcoBlockers(principal.userId),

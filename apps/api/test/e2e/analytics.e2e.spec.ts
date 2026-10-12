@@ -84,12 +84,22 @@ interface TradeSpec {
 }
 
 /** Canonical CLOSED trade row with pre-computed P&L/R (provider-journal truth). */
+let seededInstrumentId: string | null = null;
+async function resolveInstrumentId(): Promise<string> {
+  if (seededInstrumentId === null) {
+    const instrument = await prisma.instrument.findUniqueOrThrow({ where: { symbol: "EURUSD" } });
+    seededInstrumentId = instrument.id;
+  }
+  return seededInstrumentId;
+}
+
 async function seedTrade(userId: string, accountId: string, spec: TradeSpec): Promise<{ id: string }> {
   return prisma.trade.create({
     data: {
       userId,
       accountId,
       status: "CLOSED",
+      instrumentId: await resolveInstrumentId(),
       direction: spec.direction ?? "BUY",
       source: "EXTERNAL_SYNC",
       symbol: "EURUSD",
@@ -137,6 +147,7 @@ async function seedReferenceUser(auth: Record<string, string>, userId: string) {
       userId,
       accountId: account.id,
       status: "OPEN",
+      instrumentId: await resolveInstrumentId(),
       direction: "BUY",
       source: "EXTERNAL_SYNC",
       symbol: "EURUSD",
@@ -596,7 +607,7 @@ describe("stats overview", () => {
     const overview = statsOverviewResponseSchema.parse(res.json());
 
     expect(overview.currency).toBe("USD");
-    expect(overview.netPnl).toBe("1300");
+    expect(overview.netPnl).toBe("1300.0"); // Phase-8 1dp money formatting
     expect(overview.winRate).toBe("0.67"); // ratio 0–1 (unlike the weekly strips' %)
     expect(overview.profitFactor).toBe("5.33");
     expect(overview.expectancy).toBe("2.17"); // mean R
@@ -606,7 +617,8 @@ describe("stats overview", () => {
       date: "2026-03-02",
       equity: String(Number((base + 500).toFixed(2))),
     });
-    expect(overview.dailyPnl[0]).toEqual({ date: "2026-03-02", pnlNet: "500", tradesCount: 1 });
+    // Phase-8 daily aggregates carry the 1dp money formatting.
+    expect(overview.dailyPnl[0]).toEqual({ date: "2026-03-02", pnlNet: "500.0", tradesCount: 1 });
     expect(overview.equityPeak).toBe(String(Number((base + 1300).toFixed(2))));
     expect(Number(overview.maxDrawdownPct)).toBeLessThanOrEqual(0);
 
@@ -626,8 +638,8 @@ describe("stats overview", () => {
     expect(overview.weeklyCompare.thisWeek.days.every((d) => /^\d{4}-\d{2}-\d{2}$/.test(d.date))).toBe(true);
 
     // ghost/regret blocks: the domain is not backend — honest zeros
-    expect(overview.disciplineSaved).toEqual({ rSaved: "0", settledCount: 0 });
-    expect(overview.hesitationCost).toEqual({ rCost: "0", settledCount: 0 });
+    expect(overview.disciplineSaved).toEqual({ rSaved: "0.0", settledCount: 0 }); // Phase-8 1dp
+    expect(overview.hesitationCost).toEqual({ rCost: "0.0", settledCount: 0 }); // Phase-8 1dp
     expect(overview.ghostTrend).toHaveLength(30);
     expect(overview.ghostTrend.every((p) => p.fear === 0 && p.discipline === 0)).toBe(true);
   });
@@ -639,10 +651,12 @@ describe("query performance (§68)", () => {
   it("computes the full suite over a 300-trade journal within budget", async () => {
     const user = await authenticatedUser(app, mail);
     const account = await connectUsdMockAccount(user.authHeader);
+    const perfInstrumentId = await resolveInstrumentId();
     const rows = Array.from({ length: 300 }, (_, i) => ({
       userId: user.userId,
       accountId: account.id,
       status: "CLOSED" as const,
+      instrumentId: perfInstrumentId,
       direction: (i % 2 === 0 ? "BUY" : "SELL") as "BUY" | "SELL",
       source: "EXTERNAL_SYNC" as const,
       symbol: "EURUSD",

@@ -89,6 +89,7 @@ describe("recrop — targeted region re-OCR", () => {
     const a = await user();
     const created = await upload(a.authHeader, pngDataUrl(makeHappyPathPng()));
     const { width, height } = created.body.recognition.asset;
+    if (width === null || height === null) throw new Error("PNG upload must carry dimensions");
     const res = await app.inject({
       method: "POST",
       url: `/api/v1/ocr/recognitions/${created.body.recognition.id}/recrop`,
@@ -103,6 +104,7 @@ describe("recrop — targeted region re-OCR", () => {
     const a = await user();
     const created = await upload(a.authHeader, pngDataUrl(makeHappyPathPng()));
     const { width, height } = created.body.recognition.asset;
+    if (width === null || height === null) throw new Error("PNG upload must carry dimensions");
     const res = await app.inject({
       method: "POST",
       url: `/api/v1/ocr/recognitions/${created.body.recognition.id}/recrop`,

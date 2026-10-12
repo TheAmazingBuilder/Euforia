@@ -704,6 +704,9 @@ describe("trade plans — security battery", () => {
   it("planning never produces journal trades (§6/§30)", async () => {
     const user = await authenticatedUser(app, mail);
     const account = await connectUsdMockAccount(user.authHeader);
+    // The mock PROVIDER auto-syncs journal trades at connect time — the
+    // invariant under test is that PLANNING adds none of its own.
+    const before = await app.inject({ method: "GET", url: "/api/v1/trades", headers: user.authHeader });
     const plan = await createReadyPlan(user.authHeader, account.id);
     await app.inject({
       method: "POST",
@@ -712,6 +715,6 @@ describe("trade plans — security battery", () => {
       payload: {},
     });
     const trades = await app.inject({ method: "GET", url: "/api/v1/trades", headers: user.authHeader });
-    expect(trades.json().total).toBe(0);
+    expect(trades.json().total).toBe(before.json().total);
   });
 });

@@ -151,7 +151,18 @@ export class ReviewService {
       readModel.push(this.pendingRowFor(trade, symbols.get(trade.id) ?? null, currency));
     }
     readModel.sort((a, b) => b.tradingDate.localeCompare(a.tradingDate));
-    return { reviews: readModel, meta: { generatedAt: new Date().toISOString() } };
+    // Legacy goals-keeping read model — the endpoint returns the FULL list
+    // (no pagination), so the meta reports the served window honestly.
+    return {
+      reviews: readModel,
+      meta: {
+        total: readModel.length,
+        page: 1,
+        limit: readModel.length,
+        hasMore: false,
+        generatedAt: new Date().toISOString(),
+      },
+    };
   }
 
   private async symbolsFor(trades: TradeRow[]): Promise<Map<string, string>> {

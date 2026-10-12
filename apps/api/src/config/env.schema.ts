@@ -157,6 +157,12 @@ export const envSchema = z.object({
   /** Screenshot retention (engine quality §4.2): binaries of CONFIRMED/FAILED
    *  recognitions older than this are purged (0 disables retention). */
   OCR_RETENTION_DAYS: z.coerce.number().int().min(0).max(3650).default(30),
+  /** Minimum delay between two lazy retention sweeps (recognition V1 sweep
+   *  throttle) — a burst of requests must not fan out into a burst of sweeps. */
+  OCR_RETENTION_SWEEP_MS: z.coerce.number().int().min(1_000).max(86_400_000).default(900_000),
+  /** Max decoded binary size accepted for one PDF statement upload (V2 —
+   *  documents share the screenshot discipline with their own budget). */
+  OCR_PDF_MAX_BYTES: z.coerce.number().int().min(10_240).max(8_388_608).default(6_291_456),
 
   // ── Trading Core / Journal (Phase 4) ───────────────────────────────────────
   /** Local filesystem storage root for trade-screenshot binaries (§39) —
@@ -169,6 +175,32 @@ export const envSchema = z.object({
     .min(10_240)
     .max(8_000_000)
     .default(6_291_456),
+
+  // ── Calendar / Economic events (Phase 13) ─────────────────────────────────
+  /** Past half of the canonical eco-event sync window (§23) — the Analytics
+   *  correlation depth (the reference engine ships -92 days of history). */
+  CALENDAR_WINDOW_PAST_DAYS: z.coerce.number().int().min(1).max(365).default(92),
+  /** Future half of the canonical eco-event sync window (§23) — the planner
+   *  banner / news-blocker horizon (the reference engine ships +13 days). */
+  CALENDAR_WINDOW_FUTURE_DAYS: z.coerce.number().int().min(1).max(60).default(13),
+
+  // ── Integrations Hub (Phase 14) ───────────────────────────────────────────
+  /** AES-256-GCM key (base64, 32 bytes) encrypting webhook signing secrets
+   *  at rest (§14). Deliberately its OWN key — never the accounts credentials
+   *  key and never the identity MFA key (key separation). */
+  INTEGRATIONS_WEBHOOK_ENCRYPTION_KEY: z
+    .string()
+    .trim()
+    .refine(
+      (value) => {
+        try {
+          return Buffer.from(value, "base64").length === 32;
+        } catch {
+          return false;
+        }
+      },
+      "INTEGRATIONS_WEBHOOK_ENCRYPTION_KEY must be base64 encoding exactly 32 bytes",
+    ),
 
   // ── Authentication (Identity phase — REQUIRED, never defaulted) ────────────
   /** HS256 signing secret for short-lived access JWTs. ≥ 32 chars. */

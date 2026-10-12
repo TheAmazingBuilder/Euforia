@@ -17,6 +17,61 @@ export interface NofyRow {
   data: Record<string, unknown>;
 }
 
+/**
+ * JSONB `data` payload shapes of the row store, per kind
+ * (FOLDER | NOTE | TAG | TEMPLATE). Type-only exports derived from the
+ * mapper field accesses (nofy.mappers.ts) — the stored JSON is revivable,
+ * so timestamps surface as Date at this boundary.
+ */
+
+/** kind=FOLDER payload (mapper: toFolder — noteCount is the projection). */
+export interface NofyFolderData {
+  id: string;
+  name: string;
+  createdAt: Date;
+  noteCount: number;
+}
+
+/** kind=TAG payload (mapper: toTag — noteCount is the projection). */
+export interface NofyTagData {
+  id: string;
+  name: string;
+  noteCount: number;
+}
+
+/** kind=NOTE payload (mappers: toNote / toNoteRow — folderName/tagNames are
+ *  the per-read projections; lessonRef/blocks stay opaque JSON for the
+ *  defensive parsers in nofy-content). */
+export interface NofyNoteData {
+  id: string;
+  userId: string;
+  title: string;
+  icon: string | null;
+  folderId: string | null;
+  folderName: string | null;
+  tagIds: string[];
+  tagNames: string[];
+  favorite: boolean;
+  templateId: string | null;
+  lessonRef: unknown;
+  blocks: unknown;
+  createdAt: Date;
+  updatedAt: Date;
+  lastViewedAt: Date | null;
+  deletedAt: Date | null;
+}
+
+/** kind=TEMPLATE payload (mapper: toTemplate). */
+export interface NofyTemplateData {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  blocks: unknown;
+  builtIn: boolean;
+  createdAt: Date;
+}
+
 @Injectable()
 export class NofyRepository {
   constructor(private readonly prisma: PrismaService) {}

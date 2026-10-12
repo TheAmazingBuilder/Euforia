@@ -312,9 +312,10 @@ export class TradeReviewRepository {
   ): Promise<
     Array<{
       tradeId: string;
-      executionGrade: string;
-      followedPlan: boolean;
-      playbookMatch: string;
+      /** Nullable like the columns — partial reviews exist; consumers guard. */
+      executionGrade: ExecutionGrade | null;
+      followedPlan: boolean | null;
+      playbookMatch: PlaybookMatch | null;
       entryQuality: number | null;
       exitQuality: number | null;
       riskManagement: number | null;

@@ -155,7 +155,10 @@ export class ArbitratingOcrEngine implements OcrEngine {
       ...primary.info,
       name: `arbitrated(${primary.info.name}+${secondary.info.name})`,
     };
-    this.supportsDocuments = primary.supportsDocuments && secondary.supportsDocuments;
+    // `=== true` keeps the optional-flag semantics honest: an engine that
+    // omits the member simply does not support documents (undefined is falsy
+    // either way — this is a type-level narrowing, not a behavior change).
+    this.supportsDocuments = primary.supportsDocuments === true && secondary.supportsDocuments === true;
   }
 
   async recognize(request: EngineRecognizeRequest): Promise<EngineResponse> {

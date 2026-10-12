@@ -1,5 +1,5 @@
 -- CreateTable
-CREATE TABLE "OcrCollection" (
+CREATE TABLE IF NOT EXISTS "OcrCollection" (
     "id" UUID NOT NULL,
     "userId" UUID NOT NULL,
     "name" TEXT NOT NULL,
@@ -19,19 +19,21 @@ CREATE TABLE "OcrCollectionItem" (
 );
 
 -- CreateIndex
-CREATE INDEX "OcrCollection_userId_createdAt_idx" ON "OcrCollection"("userId", "createdAt" DESC);
+CREATE INDEX IF NOT EXISTS "OcrCollection_userId_createdAt_idx" ON "OcrCollection"("userId", "createdAt" DESC);
 
 -- CreateIndex
-CREATE UNIQUE INDEX "OcrCollection_userId_name_key" ON "OcrCollection"("userId", "name");
+CREATE UNIQUE INDEX IF NOT EXISTS "OcrCollection_userId_name_key" ON "OcrCollection"("userId", "name");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "OcrCollectionItem_recognitionId_key" ON "OcrCollectionItem"("recognitionId");
+CREATE UNIQUE INDEX IF NOT EXISTS "OcrCollectionItem_recognitionId_key" ON "OcrCollectionItem"("recognitionId");
 
 -- CreateIndex
-CREATE INDEX "OcrCollectionItem_collectionId_addedAt_idx" ON "OcrCollectionItem"("collectionId", "addedAt" DESC);
+CREATE INDEX IF NOT EXISTS "OcrCollectionItem_collectionId_addedAt_idx" ON "OcrCollectionItem"("collectionId", "addedAt" DESC);
 
 -- AddForeignKey
+DO $$ BEGIN
 ALTER TABLE "OcrCollection" ADD CONSTRAINT "OcrCollection_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- AddForeignKey
 ALTER TABLE "OcrCollectionItem" ADD CONSTRAINT "OcrCollectionItem_collectionId_fkey" FOREIGN KEY ("collectionId") REFERENCES "OcrCollection"("id") ON DELETE CASCADE ON UPDATE CASCADE;

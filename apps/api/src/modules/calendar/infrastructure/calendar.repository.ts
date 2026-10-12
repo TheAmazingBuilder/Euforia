@@ -215,7 +215,10 @@ export class CalendarRepository {
   /** Ref resolution (Nofy EVENT refs) — null when the pointer is stale. */
   async findEventById(id: string): Promise<EconomicEventRow | null> {
     const row = await this.prisma.economicEvent.findUnique({ where: { id } });
-    return row === null ? null : row;
+    // Row-boundary cast (same as listHubEvents): the Prisma EcoImpact/
+    // EcoEventStatus enums coincide with the domain vocabulary, and the
+    // provenance pair is only null for rows written outside the sync (§24).
+    return row === null ? null : (row as EconomicEventRow);
   }
 
   /** Full-event projection for Analytics (currency/impact join, §21). */
@@ -343,14 +346,18 @@ export class CalendarRepository {
   }
 
   async findBlockForUser(userId: string, date: string): Promise<CalendarBlockRow | null> {
-    const row = await this.prisma.calendarBlock.findUnique({
-      where: { userId_date: { userId, date: new Date(`${date}T00:00:00.000Z`) } },
+    // CalendarBlock's @@unique is (userId, date, kind) — a per-date read is
+    // a findFirst over the kinds, not a compound-unique lookup.
+    const row = await this.prisma.calendarBlock.findFirst({
+      where: { userId, date: new Date(`${date}T00:00:00.000Z`) },
       select: CalendarRepository.blockSelect,
     });
     return row === null ? null : CalendarRepository.toBlockRow(row);
   }
 
-  /** Upsert is a full replace (mock parity): note/kind overwritten, createdAt regenerated. */
+  /** Upsert is a full replace (mock parity): the where is scoped to the
+   *  kind being written (the model's @@unique is userId+date+kind), the
+   *  note is overwritten, createdAt regenerated on create. */
   async upsertBlock(
     userId: string,
     date: string,
@@ -358,9 +365,9 @@ export class CalendarRepository {
     note: string,
   ): Promise<CalendarBlockRow> {
     const row = await this.prisma.calendarBlock.upsert({
-      where: { userId_date: { userId, date: new Date(`${date}T00:00:00.000Z`) } },
+      where: { userId_date_kind: { userId, date: new Date(`${date}T00:00:00.000Z`), kind } },
       create: { userId, date: new Date(`${date}T00:00:00.000Z`), kind, note },
-      update: { kind, note },
+      update: { note },
       select: CalendarRepository.blockSelect,
     });
     return CalendarRepository.toBlockRow(row);

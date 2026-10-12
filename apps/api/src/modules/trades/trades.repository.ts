@@ -213,6 +213,23 @@ export class TradesRepository {
   }
 
   /**
+   * Owner-scoped external-ref lookup — the OCR bridge resolves an already-
+   * imported recognition WITHOUT knowing the account up front (the account
+   * is chosen at import time, possibly the persisted default). Same
+   * non-deleted semantics as findLiveTradeByExternalRef (§27).
+   */
+  async findLiveTradeByExternalRefForUser(
+    userId: string,
+    externalRef: string,
+  ): Promise<TradeRow | null> {
+    const row = await this.prisma.trade.findFirst({
+      where: { userId, externalRef, deletedAt: null },
+      orderBy: { createdAt: "asc" },
+    });
+    return (row as TradeRow) ?? null;
+  }
+
+  /**
    * Content-based trade duplicate candidates (V2 spec §4 — "different
    * screenshots representing the same trade"). Same owner only (§ IDOR),
    * same instrument + direction as PREREQUISITES; the entry-price /
@@ -284,6 +301,10 @@ export class TradesRepository {
       userId: string;
       accountId: string;
       instrumentId: string;
+      /** Denormalized journal columns (model Trade.symbol/currency) — backfilled
+       *  from their sources of truth (instrument catalog / account currency). */
+      symbol: string;
+      currency: string;
       strategyId: string | null;
       setupId: string | null;
       strategyVersion: number | null;

@@ -22,11 +22,17 @@ import { SettingsModule } from "../settings/settings.module";
 import { TradesModule } from "../trades/trades.module";
 import { CalendarBlocksController, CalendarViewController, EcoEventsController } from "./calendar.controller";
 import { CalendarRepository } from "./calendar.repository";
+import { CalendarRepository as NormalizedCalendarRepository } from "./infrastructure/calendar.repository";
+import { CalendarQueriesService } from "./calendar-queries.service";
 import { CalendarService } from "./calendar.service";
 
 @Module({
   imports: [PrismaModule, TradesModule, DisciplineModule, SettingsModule, AccountsModule, IdentityModule],
   controllers: [EcoEventsController, CalendarBlocksController, CalendarViewController],
-  providers: [CalendarRepository, CalendarService],
+  // The normalized read repository + Phase-13 query service serve the
+  // cross-context READ port (analytics phases, session-live counts, nofy refs);
+  // the wired write side stays the row-store generation.
+  providers: [CalendarRepository, CalendarService, NormalizedCalendarRepository, CalendarQueriesService],
+  exports: [CalendarQueriesService],
 })
 export class CalendarModule {}

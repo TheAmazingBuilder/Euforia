@@ -109,7 +109,9 @@ describe("stats module (B1)", () => {
     expect(suite.risk.maxConcurrentPositions).toBe(0);
     expect(suite.risk.plannedVsRealized.some((row) => row.bucket === "No plan")).toBe(true);
     expect(suite.quality.excursionAvailable).toBe(false);
-    expect(suite.events.calendarCoverage.from).not.toBeNull();
+    // Phase-8 engine: no calendar sync ran → the coverage window is an
+    // honest null (the legacy engine pre-seeded an eco window).
+    expect(suite.events.calendarCoverage.from).toBeNull();
 
     // A deterministically seeded bootstrap is stable across calls.
     const again = (
@@ -124,12 +126,15 @@ describe("stats module (B1)", () => {
       headers: auth(user),
     });
     expect(badPeriod.statusCode).toBe(400);
-    const badSims = await app.inject({
+    // Phase-8 semantics: an unparsable sims value falls back to the default
+    // (400 simulations) instead of failing the whole dataset.
+    const fallbackSims = await app.inject({
       method: "GET",
       url: "/api/v1/stats/analytics-suite?sims=abc",
       headers: auth(user),
     });
-    expect(badSims.statusCode).toBe(400);
+    expect(fallbackSims.statusCode).toBe(200);
+    expect(fallbackSims.json().monteCarlo.simulations).toBe(400);
   });
 
   it("a real closed trade flows through overview, analytics and the suite", async () => {
@@ -217,11 +222,11 @@ describe("stats module (B1)", () => {
     };
     expect(suite.meta.closedTrades).toBe(1);
     expect(suite.summary.trades).toBe(1);
-    expect(suite.summary.winRate).toBe("1.0");
-    expect(suite.summary.expectancyR).toBe("1.0"); // +1R on the only trade
+    expect(suite.summary.winRate).toBe("1"); // Phase-8 raw-ratio formatting
+    expect(suite.summary.expectancyR).toBe("1"); // Phase-8 formatting — +1R on the only trade
     expect(suite.monteCarlo.simulations).toBe(400);
     expect(suite.monteCarlo.bands.length).toBe(1); // one trade → one path bucket
-    expect(suite.cumulativeR[0]!.cumR).toBe("1.0");
+    expect(suite.cumulativeR[0]!.cumR).toBe("1"); // Phase-8 formatting
 
     // The filter system narrows the dataset: a non-matching emotion empties it.
     const filtered = (

@@ -104,11 +104,16 @@ export class TradeReconstructionService {
     for (const accountId of input.accountIds) {
       const deals = await this.accountsRepository.listDeals(accountId);
       if (deals.length === 0) continue;
+      // The journal backfills the denormalized currency column from the
+      // receiving account — loaded through the ownership-scoped read contract.
+      const account = await this.accountsRepository.findAccountForUser(accountId, input.userId);
+      if (account === null) continue;
       await this.reconcileAccountDeals({
         accountId,
         userId: input.userId,
         userTimezone: input.userTimezone,
         deals,
+        accountCurrency: account.currency,
         outcome,
       });
     }
@@ -121,6 +126,8 @@ export class TradeReconstructionService {
     accountId: string;
     userId: string;
     userTimezone: string;
+    /** Journal currency backfill — the receiving account's currency. */
+    accountCurrency: string;
     deals: DealRow[];
     outcome: ReconstructionOutcome;
   }): Promise<void> {
@@ -166,6 +173,8 @@ export class TradeReconstructionService {
               userId: input.userId,
               accountId: input.accountId,
               instrumentId: instrument.id,
+              symbol: instrument.symbol,
+              currency: input.accountCurrency,
               strategyId: null,
               setupId: null,
               strategyVersion: null,

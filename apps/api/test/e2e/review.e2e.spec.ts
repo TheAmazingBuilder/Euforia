@@ -120,16 +120,18 @@ describe("review workflow (B8)", () => {
     expect(reviewed.executionGrade).toBe("B");
     expect(reviewed.reviewedAt).not.toBeNull();
 
-    // The trade's written trace stays in sync (journal coherence).
-    const tradeReview = (
+    // Phase-6 reconciliation: the canonical Trade row is NEVER mutated by a
+    // review — the lesson lives on the review record itself (the trade's own
+    // notes stay whatever the capture wrote; reviews own their lessons).
+    const detail = (
       await app.inject({
         method: "GET",
-        url: `/api/v1/trades/${tradeId}/review`,
+        url: `/api/v1/reviews/${tradeId}`,
         headers: user.authHeader,
       })
-    ).json() as { trade: { lessons: string | null; followedPlan: boolean | null } };
-    expect(tradeReview.trade.lessons).toContain("patience paid");
-    expect(tradeReview.trade.followedPlan).toBe(true);
+    ).json() as { review: { lessons: string | null; followedPlan: boolean | null } };
+    expect(detail.review.lessons).toContain("patience paid");
+    expect(detail.review.followedPlan).toBe(true);
 
     // Lessons library: the REVIEW source carries the takeaway.
     const lessons = lessonsResponseSchema.parse(

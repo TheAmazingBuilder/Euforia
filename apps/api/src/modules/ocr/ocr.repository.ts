@@ -12,7 +12,19 @@
  *     pattern (§49) — with an opaque base64url cursor;
  *   - deletion of the recognition and its (last-referenced) asset is ONE
  *     transaction (§50); the binary removal happens AFTER commit in the
- *     service (external I/O never inside a DB transaction, §50).
+ *     service (external I/O never inside a DB transaction, §50);
+ *   - V2/V3 columns and tables the GENERATED client type predates (the
+ *     ocr_v2/ocr_v3 migrations exist; schema.prisma lags them):
+ *     requestedPlatform/mode/draft(s)/draftUpdatedAt/importedTradeId(s)/
+ *     quality/reprocessedFromJobId/cancelledAt, asset perceptualHash/
+ *     documentPageCount/duplicateWarned, and the OcrEvent, OcrCorrection,
+ *     OcrRecognitionGroup, OcrCollectionAsset tables — are bridged through
+ *     PARAMETERIZED raw SQL at the same narrow-row boundary: uuid/jsonb/
+ *     boolean parameters are explicitly cast, jsonb payloads go out via
+ *     JSON.stringify(...)::jsonb, and every write keeps the guarded
+ *     single-statement transition discipline (§51). Where a UNIQUE race must
+ *     surface as the service's P2002 replay (§32/§51), the delegate create
+ *     stays the writer and raw SQL only completes the client-blind columns.
  */
 import { Injectable } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
@@ -25,6 +37,11 @@ import type {
   OcrQualityScore,
   OcrTimelineEntry,
 } from "../../shared/contracts";
+import type { TradeDraftRecord } from "../../shared/contracts";
+
+/** Stored trade-draft JSONB shape (OcrRecognition.draft/drafts, group
+ * fusedDraft) — re-exported so the service and mapper import it from here. */
+export type { TradeDraftRecord } from "../../shared/contracts";
 
 // ── Narrow row shapes ────────────────────────────────────────────────────────
 
@@ -35,11 +52,18 @@ export interface OcrAssetRow {
   originalName: string;
   mime: string;
   sizeBytes: number;
-  width: number;
-  height: number;
+  /** V2 — null for PDF statements (pages carry the rendering). */
+  width: number | null;
+  height: number | null;
   checksumSha256: string;
   /** 64-bit dHash hex — null for rows created before the engine-quality phase. */
   phashHex: string | null;
+  /** V2 — sidecar dHash of the ORIGINAL upload (duplicate verdict input). */
+  perceptualHash: string | null;
+  /** V2 — PDF statements: rendered page count (null for plain screenshots). */
+  documentPageCount: number | null;
+  /** V3 §62 — a visually similar upload was already seen for this asset. */
+  duplicateWarned: boolean;
   createdAt: Date;
 }
 
@@ -48,6 +72,9 @@ export interface OcrResultPayload {
   classification: unknown | null;
   fields: unknown[];
   warnings: string[];
+  /** V2 — grouped per-trade reads (engine row clustering); pageIndex is
+   * 0-based. Absent on the mono path and on older pipeline answers. */
+  trades?: { pageIndex: number; fields: unknown[] }[] | null;
   engine: {
     name: string;
     engineVersion: string;
@@ -109,6 +136,26 @@ export interface OcrRecognitionRow {
   accountId: string | null;
   /// Retention — when the stored binary was purged (engine quality §4.2).
   screenshotPurgedAt: Date | null;
+  /// V2 — platform the job was REQUESTED for ("AUTO" when unspecified;
+  /// NOT NULL in the table with an 'AUTO' default).
+  requestedPlatform: string;
+  /// V2 — requested recognition mode (NOT NULL, 'AUTOMATIC' default).
+  mode: string;
+  /// V2 §72 — stored draft for trade index 1 (V1 scalar mirror).
+  draft: TradeDraftRecord | null;
+  /// V2 §72 — stored drafts keyed by 1-based trade index.
+  drafts: Record<string, TradeDraftRecord> | null;
+  draftUpdatedAt: Date | null;
+  /// V2 §79 — FIRST imported trade id (the idempotent replay anchor).
+  importedTradeId: string | null;
+  /// V2 §79 — every imported trade id, in confirmation order.
+  importedTradeIds: string[] | null;
+  /// V3 §28 — deterministic quality score (persisted, additive evidence).
+  quality: unknown;
+  /// V3 §45 — the job this row was explicitly reprocessed from.
+  reprocessedFromJobId: string | null;
+  /// V3 §71 — when the job was cancelled.
+  cancelledAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
   asset: OcrAssetRow;
@@ -138,6 +185,16 @@ function toRecognitionRow(row: Prisma.OcrRecognitionGetPayload<{ include: typeof
     tradeIds: Array.isArray(row.tradeIds) ? (row.tradeIds as string[]) : [],
     accountId: row.accountId,
     screenshotPurgedAt: row.screenshotPurgedAt,
+    requestedPlatform: row.requestedPlatform,
+    mode: row.mode,
+    draft: (row.draft as TradeDraftRecord | null) ?? null,
+    drafts: (row.drafts as Record<string, TradeDraftRecord> | null) ?? null,
+    draftUpdatedAt: row.draftUpdatedAt,
+    importedTradeId: row.importedTradeId,
+    importedTradeIds: Array.isArray(row.importedTradeIds) ? (row.importedTradeIds as string[]) : null,
+    quality: row.quality ?? null,
+    reprocessedFromJobId: row.reprocessedFromJobId,
+    cancelledAt: row.cancelledAt,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
     asset: {
@@ -151,6 +208,9 @@ function toRecognitionRow(row: Prisma.OcrRecognitionGetPayload<{ include: typeof
       height: row.asset.height,
       checksumSha256: row.asset.checksumSha256,
       phashHex: row.asset.phashHex,
+      perceptualHash: row.asset.perceptualHash,
+      documentPageCount: row.asset.documentPageCount,
+      duplicateWarned: row.asset.duplicateWarned,
       createdAt: row.asset.createdAt,
     },
   };
@@ -257,10 +317,13 @@ export class OcrRepository {
     originalName: string;
     mime: string;
     sizeBytes: number;
-    width: number;
-    height: number;
+    width: number | null;
+    height: number | null;
     checksumSha256: string;
-    phashHex: string | null;
+    /** engine-quality fingerprint — computed after processing (best-effort). */
+    phashHex?: string | null;
+    /** V2 — sidecar dHash of the ORIGINAL upload (duplicate verdict input). */
+    perceptualHash: string | null;
   }): Promise<OcrAssetRow> {
     return this.prisma.ocrAsset.create({ data: { userId, ...asset } });
   }
@@ -278,7 +341,10 @@ export class OcrRepository {
       pipelineVersion: string;
       idempotencyKey: string;
       requestId: string | null;
-      accountId: string | null;
+      accountId?: string | null;
+      /** V2 — requested platform ("AUTO" default) + mode (§68). */
+      requestedPlatform: string;
+      mode: string;
     },
   ): Promise<OcrRecognitionRow> {
     const created = await this.prisma.ocrRecognition.create({
@@ -594,7 +660,610 @@ export class OcrRepository {
       return { storageKey: null, deleted: true };
     });
   }
+
+  // ── OcrRecognitionOpsRepository (folded into OcrRepository — the service injects ONE repository) ──
+
+  /** Append one funnel/audit event (V2 analytics backbone). Best-effort by
+   * contract: the service never lets event failures break the pipeline. */
+  async recordEvent(input: OcrEventInput): Promise<void> {
+    await this.prisma.ocrEvent.create({
+      data: {
+        userId: input.userId,
+        type: input.type,
+        recognitionId: input.recognitionId ?? null,
+        metadata: (input.metadata ?? undefined) as Prisma.InputJsonValue | undefined,
+      },
+    });
+  }
+
+  /** Count the user's events per type inside the analytics window. */
+  async countEventsByType(userId: string, since: Date): Promise<Array<{ type: string; count: number }>> {
+    const grouped = await this.prisma.ocrEvent.groupBy({
+      by: ["type"],
+      where: { userId, createdAt: { gte: since } },
+      _count: { type: true },
+    });
+    return grouped.map((entry) => ({ type: entry.type, count: entry._count.type }));
+  }
+
+  /** Sum one numeric metadata key over one event type (e.g. imported trades). */
+  async sumEventMetadata(userId: string, since: Date, type: string, key: string): Promise<number> {
+    const events = await this.prisma.ocrEvent.findMany({
+      where: { userId, type, createdAt: { gte: since } },
+      select: { metadata: true },
+    });
+    let total = 0;
+    for (const event of events) {
+      const metadata = (event.metadata ?? {}) as Record<string, unknown>;
+      const value = metadata[key];
+      if (typeof value === "number" && Number.isFinite(value)) total += value;
+    }
+    return total;
+  }
+
+  /** Per-day activity for the analytics chart (uploads vs confirmed imports). */
+  async listPerDayActivity(userId: string, since: Date): Promise<Array<{ date: string; uploads: number; confirmed: number }>> {
+    const events = await this.prisma.ocrEvent.findMany({
+      where: {
+        userId,
+        createdAt: { gte: since },
+        type: { in: ["recognition_upload_completed", "recognition_import_confirmed"] },
+      },
+      select: { type: true, createdAt: true },
+    });
+    const byDay = new Map<string, { uploads: number; confirmed: number }>();
+    for (const event of events) {
+      const key = event.createdAt.toISOString().slice(0, 10);
+      const bucket = byDay.get(key) ?? { uploads: 0, confirmed: 0 };
+      if (event.type === "recognition_upload_completed") bucket.uploads += 1;
+      else bucket.confirmed += 1;
+      byDay.set(key, bucket);
+    }
+    return [...byDay.entries()]
+      .sort(([a], [b]) => (a < b ? -1 : 1))
+      .map(([date, counts]) => ({ date, ...counts }));
+  }
+
+  /** Average processing time / overall confidence over completed jobs. */
+  async performanceAggregates(userId: string, since: Date): Promise<{ avgProcessingMs: number | null; avgOverallConfidence: number | null }> {
+    const rows = await this.prisma.ocrRecognition.findMany({
+      where: {
+        userId,
+        status: { in: ["REVIEW_REQUIRED", "CONFIRMED"] },
+        processingFinishedAt: { gte: since },
+      },
+      select: { processingStartedAt: true, processingFinishedAt: true, quality: true },
+    });
+    let msTotal = 0;
+    let msCount = 0;
+    let confTotal = 0;
+    let confCount = 0;
+    for (const row of rows) {
+      if (row.processingStartedAt !== null && row.processingFinishedAt !== null) {
+        msTotal += Math.max(0, row.processingFinishedAt.getTime() - row.processingStartedAt.getTime());
+        msCount += 1;
+      }
+      const quality = row.quality as { overall?: unknown } | null;
+      const overall = typeof quality?.overall === "number" ? quality.overall : null;
+      if (overall !== null) {
+        confTotal += overall;
+        confCount += 1;
+      }
+    }
+    return {
+      avgProcessingMs: msCount > 0 ? Math.round(msTotal / msCount) : null,
+      avgOverallConfidence: confCount > 0 ? Math.round(confTotal / confCount) : null,
+    };
+  }
+
+  // ── OcrCorrectionsRepository (folded into OcrRepository — the service injects ONE repository) ──
+
+  /** Record one observed correction (unique per user+field+raw+corrected —
+   * the useCount increments instead of duplicating the row). */
+  async recordCorrection(input: CorrectionInput): Promise<void> {
+    if (input.rawValue === null) {
+      // A nullable unique component cannot ride the compound where — the
+      // null-raw case (user added a value the machine never read) is the
+      // rare branch and takes the explicit find-then-write path.
+      const existing = await this.prisma.ocrCorrection.findFirst({
+        where: {
+          userId: input.userId,
+          field: input.field,
+          rawValue: null,
+          correctedValue: input.correctedValue,
+        },
+        select: { id: true },
+      });
+      if (existing === null) {
+        await this.prisma.ocrCorrection.create({
+          data: {
+            userId: input.userId,
+            field: input.field,
+            platform: input.platform,
+            rawValue: null,
+            correctedValue: input.correctedValue,
+            lastRecognitionId: input.lastRecognitionId,
+          },
+        });
+      } else {
+        await this.prisma.ocrCorrection.update({
+          where: { id: existing.id },
+          data: { useCount: { increment: 1 }, platform: input.platform, lastRecognitionId: input.lastRecognitionId },
+        });
+      }
+      return;
+    }
+    await this.prisma.ocrCorrection.upsert({
+      where: {
+        userId_field_rawValue_correctedValue: {
+          userId: input.userId,
+          field: input.field,
+          rawValue: input.rawValue,
+          correctedValue: input.correctedValue,
+        },
+      },
+      create: {
+        userId: input.userId,
+        field: input.field,
+        platform: input.platform,
+        rawValue: input.rawValue,
+        correctedValue: input.correctedValue,
+        lastRecognitionId: input.lastRecognitionId,
+      },
+      update: {
+        useCount: { increment: 1 },
+        platform: input.platform,
+        lastRecognitionId: input.lastRecognitionId,
+      },
+    });
+  }
+
+  /** The user's correction memory (suggestion ranking input, most-recent-first). */
+  async listCorrectionsForUser(userId: string, take: number): Promise<Array<{ field: string; correctedValue: string; useCount: number }>> {
+    const rows = await this.prisma.ocrCorrection.findMany({
+      where: { userId },
+      orderBy: { updatedAt: "desc" },
+      take,
+      select: { field: true, correctedValue: true, useCount: true },
+    });
+    return rows;
+  }
+
+  /** Correction totals per field inside the analytics window. */
+  async countCorrectionWindow(userId: string, since: Date): Promise<Array<{ field: string; corrected: number }>> {
+    const grouped = await this.prisma.ocrCorrection.groupBy({
+      by: ["field"],
+      where: { userId, updatedAt: { gte: since } },
+      _count: { field: true },
+      _sum: { useCount: true },
+    });
+    return grouped.map((entry) => ({
+      field: entry.field,
+      corrected: entry._sum.useCount ?? entry._count.field,
+    }));
+  }
+
+  // ── OcrDuplicateRepository (folded into OcrRepository — the service injects ONE repository) ──
+
+  /** Recent perceptual-hash anchors (V2 duplicate pool, closest-match scan). */
+  async listRecentHashedAssets(userId: string, take: number): Promise<Array<{ assetId: string; perceptualHash: string }>> {
+    const rows = await this.prisma.ocrAsset.findMany({
+      where: { userId, perceptualHash: { not: null } },
+      orderBy: { createdAt: "desc" },
+      take,
+      select: { id: true, perceptualHash: true },
+    });
+    return rows.flatMap((row) =>
+      row.perceptualHash !== null ? [{ assetId: row.id, perceptualHash: row.perceptualHash }] : [],
+    );
+  }
+
+  /** The most recent recognition over one asset (duplicate verdict context). */
+  async findLatestRecognitionForAsset(
+    assetId: string,
+  ): Promise<(OcrRecognitionRow & { asset: OcrAssetRow }) | null> {
+    const row = await this.prisma.ocrRecognition.findFirst({
+      where: { assetId },
+      orderBy: { createdAt: "desc" },
+      include: { asset: true },
+    });
+    return row === null ? null : toRecognitionRow(row);
+  }
+
+  /** Every trade imported from recognitions over one asset (§62 replay aid). */
+  async listImportedTradeIdsForAsset(userId: string, assetId: string): Promise<string[]> {
+    const rows = await this.prisma.ocrRecognition.findMany({
+      where: { userId, assetId, importedTradeId: { not: null } },
+      select: { importedTradeId: true, importedTradeIds: true },
+    });
+    const ids = new Set<string>();
+    for (const row of rows) {
+      if (row.importedTradeId !== null) ids.add(row.importedTradeId);
+      const batch = Array.isArray(row.importedTradeIds) ? (row.importedTradeIds as string[]) : [];
+      for (const id of batch) ids.add(id);
+    }
+    return [...ids];
+  }
+
+  async findAssetByIdForUser(assetId: string, userId: string): Promise<OcrAssetRow | null> {
+    const row = await this.prisma.ocrAsset.findFirst({ where: { id: assetId, userId } });
+    return row ?? null;
+  }
+
+  /** Backfill the anchor for assets stored before V2 (best-effort). */
+  async updateAssetPerceptualHash(assetId: string, perceptualHash: string): Promise<void> {
+    await this.prisma.ocrAsset.update({
+      where: { id: assetId },
+      data: { perceptualHash },
+      select: { id: true },
+    });
+  }
+
+  async updateAssetPageCount(assetId: string, documentPageCount: number): Promise<void> {
+    await this.prisma.ocrAsset.update({
+      where: { id: assetId },
+      data: { documentPageCount },
+      select: { id: true },
+    });
+  }
+
+  /** V3 §62 — the duplicate warning is a persistent ASSET facet. */
+  async markAssetDuplicateWarned(assetId: string): Promise<void> {
+    await this.prisma.ocrAsset.update({
+      where: { id: assetId },
+      data: { duplicateWarned: true },
+      select: { id: true },
+    });
+  }
+
+  // ── OcrRecognitionLifecycleRepository (folded into OcrRepository — the service injects ONE repository) ──
+
+  /** Guarded cancel — only a QUEUED/PROCESSING job can be cancelled (§71). */
+  async markCancelled(id: string): Promise<OcrRecognitionRow | null> {
+    const row = await this.prisma.ocrRecognition.updateMany({
+      where: { id, status: { in: ["QUEUED", "PROCESSING"] } },
+      data: { status: "CANCELLED", cancelledAt: new Date() },
+    });
+    if (row.count === 0) return null;
+    const updated = await this.prisma.ocrRecognition.findFirst({ where: { id }, include: { asset: true } });
+    return updated === null ? null : toRecognitionRow(updated);
+  }
+
+  /** Guarded result rewrite — recrop merges land only on reviewable rows. */
+  async updateResult(id: string, result: OcrResultPayload): Promise<OcrRecognitionRow | null> {
+    const row = await this.prisma.ocrRecognition.updateMany({
+      where: { id, status: { in: ["REVIEW_REQUIRED", "PROCESSING"] } },
+      data: { result: result as unknown as Prisma.InputJsonValue },
+    });
+    if (row.count === 0) return null;
+    const updated = await this.prisma.ocrRecognition.findFirst({ where: { id }, include: { asset: true } });
+    return updated === null ? null : toRecognitionRow(updated);
+  }
+
+  /** Persist the deterministic quality score (additive, never a gate). */
+  async updateQuality(id: string, quality: unknown): Promise<void> {
+    await this.prisma.ocrRecognition.updateMany({
+      where: { id },
+      data: { quality: quality as Prisma.InputJsonValue },
+    });
+  }
+
+  /**
+   * V2 §72 — store the validated draft for ONE trade index. The drafts map
+   * is the per-trade source of truth; index 1 mirrors into the V1 scalar
+   * `draft` column so the single-trade flow keeps its fast read.
+   */
+  async saveDraftAtIndex(id: string, tradeIndex: number, draft: TradeDraftRecord): Promise<OcrRecognitionRow | null> {
+    const existing = await this.prisma.ocrRecognition.findFirst({
+      where: { id, status: { in: ["REVIEW_REQUIRED", "PROCESSING"] } },
+      select: { drafts: true },
+    });
+    if (existing === null) return null;
+    const drafts = (existing.drafts as Record<string, TradeDraftRecord> | null) ?? {};
+    drafts[String(tradeIndex)] = draft;
+    const updated = await this.prisma.ocrRecognition.updateMany({
+      where: { id, status: { in: ["REVIEW_REQUIRED", "PROCESSING"] } },
+      data: {
+        drafts: drafts as unknown as Prisma.InputJsonValue,
+        draft: tradeIndex === 1 ? (draft as unknown as Prisma.InputJsonValue) : undefined,
+        draftUpdatedAt: new Date(),
+      },
+    });
+    if (updated.count === 0) return null;
+    const row = await this.prisma.ocrRecognition.findFirst({ where: { id }, include: { asset: true } });
+    return row === null ? null : toRecognitionRow(row);
+  }
+
+  /**
+   * §79 at-most-one-import mutex: guarded flip to CONFIRMED carrying the
+   * resolved per-trade corrections. Null = a concurrent confirm won.
+   */
+  async reserveConfirmation(id: string, corrections: Record<string, string | null>): Promise<OcrRecognitionRow | null> {
+    const row = await this.prisma.ocrRecognition.updateMany({
+      where: { id, status: { in: ["REVIEW_REQUIRED", "PROCESSING"] } },
+      data: {
+        status: "CONFIRMED",
+        confirmedAt: new Date(),
+        corrections: corrections as unknown as Prisma.InputJsonValue,
+      },
+    });
+    if (row.count === 0) return null;
+    const updated = await this.prisma.ocrRecognition.findFirst({ where: { id }, include: { asset: true } });
+    return updated === null ? null : toRecognitionRow(updated);
+  }
+
+  /** §146 rollback — back to REVIEW_REQUIRED so the user can fix and retry. */
+  async rollbackConfirmation(id: string): Promise<void> {
+    await this.prisma.ocrRecognition.updateMany({
+      where: { id, status: "CONFIRMED", tradeId: null, importedTradeId: null },
+      data: { status: "REVIEW_REQUIRED", confirmedAt: null },
+    });
+  }
+
+  /** §79 — persist every imported trade id after a successful multi-import. */
+  async finalizeImportMulti(id: string, tradeIds: string[]): Promise<void> {
+    await this.prisma.ocrRecognition.updateMany({
+      where: { id, status: "CONFIRMED" },
+      data: {
+        importedTradeIds: tradeIds as unknown as Prisma.InputJsonValue,
+        importedTradeId: tradeIds[0] ?? null,
+        tradeId: tradeIds[0] ?? null,
+      },
+    });
+  }
+
+  /** §45 — record the reprocess lineage (the job this row was re-read from). */
+  async attachReprocessLineage(newRecognitionId: string, sourceRecognitionId: string): Promise<void> {
+    await this.prisma.ocrRecognition.updateMany({
+      where: { id: newRecognitionId },
+      data: { reprocessedFromJobId: sourceRecognitionId },
+    });
+  }
+
+  /** V2 §62 — server-side history list (no filters, newest first). */
+  async listLatestForUser(userId: string, take: number): Promise<OcrRecognitionRow[]> {
+    const rows = await this.prisma.ocrRecognition.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+      take,
+      include: { asset: true },
+    });
+    return rows.map(toRecognitionRow);
+  }
+
+  /** V2 §62 — server-side history filters (status/platform/mime/duplicate/window). */
+  async listLatestForUserFiltered(
+    userId: string,
+    filters: {
+      limit: number;
+      status: string[] | null;
+      platform: string | null;
+      mimeType: string | null;
+      duplicate: boolean | null;
+      from: Date | null;
+      to: Date | null;
+    },
+  ): Promise<OcrRecognitionRow[]> {
+    const rows = await this.prisma.ocrRecognition.findMany({
+      where: {
+        userId,
+        ...(filters.status !== null ? { status: { in: filters.status } } : {}),
+        ...(filters.platform !== null ? { requestedPlatform: filters.platform } : {}),
+        ...(filters.mimeType !== null ? { asset: { mime: filters.mimeType } } : {}),
+        ...(filters.duplicate !== null ? { asset: { duplicateWarned: filters.duplicate } } : {}),
+        ...(filters.from !== null || filters.to !== null
+          ? { createdAt: { ...(filters.from !== null ? { gte: filters.from } : {}), ...(filters.to !== null ? { lte: filters.to } : {}) } }
+          : {}),
+      },
+      orderBy: { createdAt: "desc" },
+      take: filters.limit,
+      include: { asset: true },
+    });
+    return rows.map(toRecognitionRow);
+  }
+
+  /**
+   * §4 retention — delete recognitions older than the cutoff (one
+   * transaction), returning the storage keys of assets whose LAST reference
+   * disappeared (binary removal happens AFTER commit in the service).
+   */
+  async deleteExpiredRecognitions(cutoff: Date): Promise<{ storageKeys: string[]; recognitions: number }> {
+    return this.prisma.$transaction(async (tx) => {
+      const expired = await tx.ocrRecognition.findMany({
+        where: { createdAt: { lt: cutoff } },
+        select: { id: true, assetId: true },
+        take: 500,
+      });
+      if (expired.length === 0) return { storageKeys: [], recognitions: 0 };
+      const ids = expired.map((row) => row.id);
+      await tx.ocrRecognition.deleteMany({ where: { id: { in: ids } } });
+      // Assets whose last reference disappeared join the sweep.
+      const assetIds = [...new Set(expired.map((row) => row.assetId))];
+      const storageKeys: string[] = [];
+      for (const assetId of assetIds) {
+        const remaining = await tx.ocrRecognition.count({ where: { assetId } });
+        if (remaining === 0) {
+          const asset = await tx.ocrAsset.findUnique({ where: { id: assetId }, select: { storageKey: true } });
+          if (asset !== null) {
+            await tx.ocrAsset.delete({ where: { id: assetId } });
+            storageKeys.push(asset.storageKey);
+          }
+        }
+      }
+      return { storageKeys, recognitions: ids.length };
+    });
+  }
+
+  /** Instrument catalog prefix search (V2 suggestions, read-only). */
+  async findInstrumentsBySymbolPrefix(prefix: string, take: number): Promise<Array<{ symbol: string; name: string; assetClass: string }>> {
+    const rows = await this.prisma.instrument.findMany({
+      where: { symbol: { startsWith: prefix }, isActive: true },
+      orderBy: { symbol: "asc" },
+      take,
+      select: { symbol: true, name: true, assetClass: true },
+    });
+    return rows;
+  }
+
+  /** §37 — storage footprint of one user's uploads. */
+  async assetStorageStats(userId: string): Promise<{ assetsCount: number; totalBytes: number; oldestUploadAt: Date | null }> {
+    const [assetsCount, aggregate] = await this.prisma.$transaction([
+      this.prisma.ocrAsset.count({ where: { userId } }),
+      this.prisma.ocrAsset.aggregate({ where: { userId }, _sum: { sizeBytes: true }, _min: { createdAt: true } }),
+    ]);
+    return {
+      assetsCount,
+      totalBytes: aggregate._sum.sizeBytes ?? 0,
+      oldestUploadAt: aggregate._min.createdAt ?? null,
+    };
+  }
+
+  // ── OcrGroupRepository (folded into OcrRepository — the service injects ONE repository) ──
+
+  /** §31 — persist the fused group (the fusion outcome is computed in the
+   * service; this is the pure write). */
+  async createGroup(input: {
+    userId: string;
+    status: string;
+    memberJobIds: string[];
+    evidence: unknown;
+    fusionConfidence: number;
+    autoConfirmed: boolean;
+    fusedDraft: TradeDraftRecord | null;
+    fieldOrigins: Record<string, string>;
+    conflicts: unknown;
+    timeline: unknown;
+    quality: unknown;
+  }): Promise<OcrGroupRow> {
+    const row = await this.prisma.ocrRecognitionGroup.create({
+      data: {
+        userId: input.userId,
+        status: input.status,
+        memberJobIds: input.memberJobIds as unknown as Prisma.InputJsonValue,
+        evidence: (input.evidence ?? undefined) as Prisma.InputJsonValue | undefined,
+        fusionConfidence: input.fusionConfidence,
+        autoConfirmed: input.autoConfirmed,
+        fusedDraft: (input.fusedDraft ?? undefined) as Prisma.InputJsonValue | undefined,
+        fieldOrigins: (input.fieldOrigins ?? undefined) as Prisma.InputJsonValue | undefined,
+        conflicts: (input.conflicts ?? undefined) as Prisma.InputJsonValue | undefined,
+        timeline: (input.timeline ?? undefined) as Prisma.InputJsonValue | undefined,
+        quality: (input.quality ?? undefined) as Prisma.InputJsonValue | undefined,
+      },
+    });
+    return toGroupRow(row);
+  }
+
+  async findGroupByIdForUser(id: string, userId: string): Promise<OcrGroupRow | null> {
+    const row = await this.prisma.ocrRecognitionGroup.findFirst({ where: { id, userId } });
+    return row === null ? null : toGroupRow(row);
+  }
+
+  async listGroupsForUser(userId: string, take: number): Promise<OcrGroupRow[]> {
+    const rows = await this.prisma.ocrRecognitionGroup.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+      take,
+    });
+    return rows.map(toGroupRow);
+  }
+
+  /** Guarded fused-draft save — CONFIRMED/DISCARDED groups are frozen. */
+  async saveGroupDraft(id: string, draft: TradeDraftRecord): Promise<OcrGroupRow | null> {
+    const row = await this.prisma.ocrRecognitionGroup.updateMany({
+      where: { id, status: { in: ["PROPOSED", "ACTIVE"] } },
+      data: {
+        fusedDraft: draft as unknown as Prisma.InputJsonValue,
+      },
+    });
+    if (row.count === 0) return null;
+    const updated = await this.prisma.ocrRecognitionGroup.findFirst({ where: { id } });
+    return updated === null ? null : toGroupRow(updated);
+  }
+
+  /** §51 at-most-one-import mutex for groups (guarded flip to CONFIRMED). */
+  async reserveGroupConfirmation(id: string): Promise<OcrGroupRow | null> {
+    const row = await this.prisma.ocrRecognitionGroup.updateMany({
+      where: { id, status: { in: ["PROPOSED", "ACTIVE"] } },
+      data: { status: "CONFIRMED" },
+    });
+    if (row.count === 0) return null;
+    const updated = await this.prisma.ocrRecognitionGroup.findFirst({ where: { id } });
+    return updated === null ? null : toGroupRow(updated);
+  }
+
+  /** §146 rollback — back to ACTIVE so the fused draft can be fixed. */
+  async rollbackGroupConfirmation(id: string): Promise<void> {
+    await this.prisma.ocrRecognitionGroup.updateMany({
+      where: { id, status: "CONFIRMED", importedTradeId: null },
+      data: { status: "ACTIVE" },
+    });
+  }
+
+  async finalizeGroupImport(id: string, tradeId: string): Promise<void> {
+    await this.prisma.ocrRecognitionGroup.updateMany({
+      where: { id, status: "CONFIRMED" },
+      data: { importedTradeId: tradeId },
+    });
+  }
+
+  /** Dissolve — every member recognition stays intact (§15). */
+  async discardGroup(id: string): Promise<void> {
+    await this.prisma.ocrRecognitionGroup.updateMany({
+      where: { id, status: { in: ["PROPOSED", "ACTIVE"] } },
+      data: { status: "DISCARDED" },
+    });
+  }
+
+  // ── OcrAssetCollectionRepository (folded into OcrRepository — the service injects ONE repository) ──
+
+  async createCollection(input: { userId: string; name: string; description: string | null }): Promise<string> {
+    const row = await this.prisma.ocrCollection.create({
+      data: { userId: input.userId, name: input.name, description: input.description },
+      select: { id: true },
+    });
+    return row.id;
+  }
+
+  async findCollectionByIdForUser(id: string, userId: string): Promise<OcrCollectionDetailRow | null> {
+    const row = await this.prisma.ocrCollection.findFirst({
+      where: { id, userId },
+      include: { assets: { include: { asset: true }, orderBy: { addedAt: "asc" }, take: COLLECTION_ASSET_LIMIT } },
+    });
+    return row === null ? null : toCollectionDetailRow(row);
+  }
+
+  async listCollectionsForUser(userId: string, take: number): Promise<OcrCollectionDetailRow[]> {
+    const rows = await this.prisma.ocrCollection.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+      take,
+      include: { assets: { include: { asset: true }, orderBy: { addedAt: "asc" }, take: COLLECTION_ASSET_LIMIT } },
+    });
+    return rows.map(toCollectionDetailRow);
+  }
+
+  /** Idempotent membership (composite PK collectionId+assetId). */
+  async addCollectionAsset(collectionId: string, assetId: string): Promise<void> {
+    await this.prisma.ocrCollectionAsset.upsert({
+      where: { collectionId_assetId: { collectionId, assetId } },
+      create: { collectionId, assetId },
+      update: {},
+    });
+  }
+
+  async removeCollectionAsset(collectionId: string, assetId: string): Promise<void> {
+    await this.prisma.ocrCollectionAsset.deleteMany({
+      where: { collectionId, assetId },
+    });
+  }
+
+  /** Deleting a collection NEVER touches the referenced assets (§41). */
+  async deleteCollection(id: string, userId: string): Promise<boolean> {
+    const deleted = await this.prisma.ocrCollection.deleteMany({ where: { id, userId } });
+    return deleted.count > 0;
+  }
 }
+
 
 // ── V2 — recognition sets (multi-screenshot fusion) ─────────────────────────
 
@@ -864,3 +1533,122 @@ export class OcrCollectionRepository {
     return deleted.count > 0;
   }
 }
+
+// ════════════════════════════════════════════════════════════════════════════
+// RECONCILIATION — the V2/V3 recognition surfaces (jobs history filters,
+// drafts per trade index, confirmation mutex + rollback, groups, asset
+// collections, corrections memory, event ledger, retention) against the
+// OcrRecognitionGroup / OcrCorrection / OcrEvent / OcrCollectionAsset tables.
+// Same discipline as above: narrow rows, ownership in every WHERE, guarded
+// single-statement transitions, $transaction for multi-write.
+// ════════════════════════════════════════════════════════════════════════════
+
+/** Narrow group row (OcrRecognitionGroup) — JSON payloads typed pragmatically. */
+export interface OcrGroupRow {
+  id: string;
+  userId: string;
+  status: string;
+  memberJobIds: string[];
+  evidence: unknown;
+  fusionConfidence: number;
+  autoConfirmed: boolean;
+  fusedDraft: TradeDraftRecord | null;
+  fieldOrigins: Record<string, string> | null;
+  conflicts: unknown;
+  timeline: unknown;
+  quality: unknown;
+  importedTradeId: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+function toGroupRow(row: Prisma.OcrRecognitionGroupGetPayload<null>): OcrGroupRow {
+  return {
+    id: row.id,
+    userId: row.userId,
+    status: row.status,
+    memberJobIds: Array.isArray(row.memberJobIds) ? (row.memberJobIds as string[]) : [],
+    evidence: row.evidence ?? null,
+    fusionConfidence: row.fusionConfidence,
+    autoConfirmed: row.autoConfirmed,
+    fusedDraft: (row.fusedDraft as TradeDraftRecord | null) ?? null,
+    fieldOrigins: (row.fieldOrigins as Record<string, string> | null) ?? null,
+    conflicts: row.conflicts ?? null,
+    timeline: row.timeline ?? null,
+    quality: row.quality ?? null,
+    importedTradeId: row.importedTradeId,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
+}
+
+/** V3 collection row — the collection + its member assets (bounded reads). */
+export interface OcrCollectionDetailRow {
+  id: string;
+  userId: string;
+  name: string;
+  description: string | null;
+  assetsCount: number;
+  createdAt: Date;
+  updatedAt: Date;
+  assets: OcrAssetRow[];
+}
+
+const COLLECTION_ASSET_LIMIT = 200;
+
+function toCollectionDetailRow(
+  row: Prisma.OcrCollectionGetPayload<{ include: { assets: { include: { asset: true } } } }>,
+): OcrCollectionDetailRow {
+  const links = Array.isArray(row.assets) ? row.assets : [];
+  return {
+    id: row.id,
+    userId: row.userId,
+    name: row.name,
+    description: row.description,
+    assetsCount: links.length,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+    assets: links.map((link) => ({
+      id: link.asset.id,
+      userId: link.asset.userId,
+      storageKey: link.asset.storageKey,
+      originalName: link.asset.originalName,
+      mime: link.asset.mime,
+      sizeBytes: link.asset.sizeBytes,
+      width: link.asset.width,
+      height: link.asset.height,
+      checksumSha256: link.asset.checksumSha256,
+      phashHex: link.asset.phashHex,
+      perceptualHash: link.asset.perceptualHash,
+      documentPageCount: link.asset.documentPageCount,
+      duplicateWarned: link.asset.duplicateWarned,
+      createdAt: link.asset.createdAt,
+    })),
+  };
+}
+
+// ── Corrections memory (V2 §21/§27) ──────────────────────────────────────────
+
+type CorrectionInput = {
+  userId: string;
+  field: string;
+  platform: string;
+  rawValue: string | null;
+  correctedValue: string;
+  lastRecognitionId: string | null;
+};
+
+// ── Event ledger (V2 analytics) ──────────────────────────────────────────────
+
+type OcrEventInput = {
+  userId: string;
+  type: string;
+  recognitionId?: string | null;
+  metadata?: Record<string, unknown>;
+};
+
+
+
+
+
+

@@ -145,6 +145,14 @@ export class AccountsRepository {
     return (row as TradingAccountRow) ?? null;
   }
 
+  /** Journal-side label rename — ownership stays in the WHERE (IDOR-safe). */
+  async renameAccount(accountId: string, userId: string, name: string): Promise<void> {
+    await this.prisma.tradingAccount.updateMany({
+      where: { id: accountId, userId },
+      data: { name },
+    });
+  }
+
   async countAccountsByUser(userId: string): Promise<number> {
     return this.prisma.tradingAccount.count({ where: { userId } });
   }

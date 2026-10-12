@@ -65,6 +65,9 @@ export default async function globalSetup(): Promise<void> {
   // Accounts (Phase 3) — test-only encryption key + fast provider timeout.
   process.env.ACCOUNTS_CREDENTIALS_ENCRYPTION_KEY =
     process.env.ACCOUNTS_CREDENTIALS_ENCRYPTION_KEY ?? "Mck3U8lb0RHzT7eDlBd7hgmE5FpYm0ZOSJB3ZfA4GFo=";
+  // Integration Hub (B14) — test-only webhook-secret vault key.
+  process.env.INTEGRATIONS_WEBHOOK_ENCRYPTION_KEY =
+    process.env.INTEGRATIONS_WEBHOOK_ENCRYPTION_KEY ?? "u4xveSMFK0EL4Wp6XsBmPWcimrrG7Tg9KxLFRnGzc1M=";
   process.env.ACCOUNTS_PROVIDER_TIMEOUT_MS = process.env.ACCOUNTS_PROVIDER_TIMEOUT_MS ?? "2000";
   process.env.WEB_APP_URL = process.env.WEB_APP_URL ?? "http://localhost:3000";
 }

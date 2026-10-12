@@ -2,7 +2,7 @@
   "name": "@cosmoz/api",
   "version": "0.1.0",
   "private": true,
-  "description": "Cosmoz backend — NestJS DDD Modular Monolith (Foundation)",
+  "description": "Cosmoz backend \u2014 NestJS DDD Modular Monolith (Foundation)",
   "engines": {
     "node": ">=22"
   },
@@ -30,6 +30,7 @@
     "@nestjs/throttler": "^6.4.0",
     "@node-rs/argon2": "^2.2.1",
     "@prisma/client": "^6.16.2",
+    "decimal.js": "^10.4.3",
     "nestjs-pino": "^4.4.0",
     "otpauth": "^9.5.2",
     "pino": "^9.9.2",
