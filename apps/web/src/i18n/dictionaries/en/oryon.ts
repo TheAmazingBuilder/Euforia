@@ -37,11 +37,21 @@ export const oryonDict = {
     alertHint: "Create price alert",
     gridHint: "Chart grid",
     syncHint: "Chart synchronization",
-    bottomBar: "Chart toolbar — timeframe and clock",
+    bottomBar: "Chart toolbar — historical range and clock",
     bottomTimezone: "Display timezone",
     bottomTimezoneHint: "Formats the clock; never moves market data",
     bottomTimezoneSaved: "Display timezone updated",
     bottomTimezoneError: "Timezone update failed — try again",
+    // ── Toolbar v4 — historical range strip (TradingView parity) ──
+    historyRange: "Historical range",
+    historyRangeHint:
+      "Sets how much history is visible — the bar timeframe stays on the top toolbar",
+    calendarJump: "Go to date",
+    calendarJumpHint: "Starts the visible range at the selected day and ends at the latest bar",
+    calendarNoData: "Load a chart first — the range follows the bars the chart actually holds.",
+    calendarPrevMonth: "Previous month",
+    calendarNextMonth: "Next month",
+    calendarToday: "Today",
   },
   grids: {
     label: "Chart grid",
@@ -237,6 +247,9 @@ export const oryonDict = {
     favoritesEmpty: "Star tools in the menus to pin them here.",
     favoritesBarLabel: "Favorite drawing tools",
     clearAllHint: "Remove objects — clears every drawing (undoable)",
+    // ── Toolbar v4 — rail scroll navigation (no scrollbar) ──
+    navUpHint: "Scroll to the tools above",
+    navDownHint: "Scroll to the tools below",
   },
   drawings: {
     title: "Drawing objects",
@@ -304,6 +317,9 @@ export const oryonDict = {
     calendarBody: "Session status and economic events for the active chart — the full day view stays in Events.",
     calendarEmpty: "No upcoming releases in the loaded window.",
     calendarLink: "Open Events",
+    // ── Toolbar v4 — objects dock (the drawing manager on the right rail) ──
+    objects: "Objects",
+    objectsBody: "Drawings of the symbol the ACTIVE chart displays — click a row to select it on the chart.",
   },
   lower: {
     title: "Open positions",

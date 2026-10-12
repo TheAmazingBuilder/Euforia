@@ -33,8 +33,11 @@ const TOOL_LABEL_KEYS: ReadonlyMap<OryonCatalogToolId, RailLabelKey> = new Map(
  * Placement contract (the user's explicit request): the bar renders at the
  * PERSISTED position and can be dragged anywhere by its grip — the grab
  * offset is kept so the grab point never jumps — and the position is
- * re-clamped INSIDE the chart area at every render + on drag end, so a
- * stored position from a larger viewport can never strand it off-screen.
+ * re-clamped at every render + on drag end. Toolbar v4 bounds: VERTICALLY
+ * the bar may travel the FULL stage height — down over the time axis and
+ * the footer strip (no restrictive overflow can clip it); horizontally it
+ * stays over the chart columns. A stored position from a larger viewport
+ * can never strand it off-screen (a window resize re-clamps too).
  *
  * Interaction isolation: the root carries `data-oryon-ui` — the drawing
  * interaction controller's capture-phase listeners ignore every event
@@ -45,7 +48,15 @@ const TOOL_LABEL_KEYS: ReadonlyMap<OryonCatalogToolId, RailLabelKey> = new Map(
  * validated ui-prefs envelope (debounced 300 ms, flushed on unmount).
  * Empty favorites → an honest hint, never an empty husk.
  */
-export function OryonFavoritesBar({ containerRef }: { containerRef: React.RefObject<HTMLElement | null> }) {
+export function OryonFavoritesBar({
+  containerRef,
+  boundsRef,
+}: {
+  /** The bar's coordinate parent (the chart-area wrapper). */
+  containerRef: React.RefObject<HTMLElement | null>;
+  /** Vertical travel bounds — the full stage incl. the footer strip. */
+  boundsRef?: React.RefObject<HTMLElement | null>;
+}) {
   const dict = useDict();
   const S = dict.oryon.rail;
   const {
@@ -60,18 +71,44 @@ export function OryonFavoritesBar({ containerRef }: { containerRef: React.RefObj
   const barRef = React.useRef<HTMLDivElement | null>(null);
   const dragRef = React.useRef<{ pointerId: number; offsetX: number; offsetY: number } | null>(null);
 
+  /**
+   * Clamp a bar position (container coordinates) into the allowed bounds:
+   * horizontal = the chart area, vertical = the bounds element (the full
+   * stage — the bar may extend down over the time axis + footer strip).
+   * Falls back to the container on every axis when no bounds are given.
+   */
+  const clampTo = React.useCallback(
+    (x: number, y: number, width: number, height: number): { x: number; y: number } => {
+      const container = containerRef.current;
+      if (container === null) return { x, y };
+      const cRect = container.getBoundingClientRect();
+      const bRect = boundsRef?.current?.getBoundingClientRect() ?? cRect;
+      const minX = bRect.left - cRect.left + 4;
+      const maxX = bRect.right - cRect.left - width - 4;
+      const minY = bRect.top - cRect.top + 4;
+      const maxY = bRect.bottom - cRect.top - height - 4;
+      return {
+        x: Math.min(Math.max(x, minX), Math.max(maxX, minX)),
+        y: Math.min(Math.max(y, minY), Math.max(maxY, minY)),
+      };
+    },
+    [containerRef, boundsRef],
+  );
+
   // Clamp the PERSISTED position against the current container (viewport
-  // changes, grid changes) — render-time reconciliation, no state churn.
+  // changes, grid changes) — render-time reconciliation + a resize hook,
+  // no state churn.
   const [clamped, setClamped] = React.useState(favoritesBarPos);
   React.useEffect(() => {
-    const container = containerRef.current;
-    if (container === null) return;
-    const rect = container.getBoundingClientRect();
-    const width = barRef.current?.offsetWidth ?? 0;
-    const x = Math.min(Math.max(favoritesBarPos.x, 4), Math.max(rect.width - width - 4, 4));
-    const y = Math.min(Math.max(favoritesBarPos.y, 4), Math.max(rect.height - 40, 4));
-    setClamped({ x, y });
-  }, [favoritesBarPos, containerRef]);
+    const reclamp = (): void => {
+      const width = barRef.current?.offsetWidth ?? 0;
+      const height = barRef.current?.offsetHeight ?? 40;
+      setClamped(clampTo(favoritesBarPos.x, favoritesBarPos.y, width, height));
+    };
+    reclamp();
+    window.addEventListener("resize", reclamp);
+    return () => window.removeEventListener("resize", reclamp);
+  }, [favoritesBarPos, containerRef, boundsRef, clampTo]);
 
   const onGripPointerDown = React.useCallback(
     (event: React.PointerEvent) => {
@@ -98,16 +135,11 @@ export function OryonFavoritesBar({ containerRef }: { containerRef: React.RefObj
       const container = containerRef.current;
       if (drag === null || drag.pointerId !== event.pointerId || bar === null || container === null) return;
       const containerRect = container.getBoundingClientRect();
-      const width = bar.offsetWidth;
-      const height = bar.offsetHeight;
       const x = event.clientX - containerRect.left - drag.offsetX;
       const y = event.clientY - containerRect.top - drag.offsetY;
-      setClamped({
-        x: Math.min(Math.max(x, 4), Math.max(containerRect.width - width - 4, 4)),
-        y: Math.min(Math.max(y, 4), Math.max(containerRect.height - height - 4, 4)),
-      });
+      setClamped(clampTo(x, y, bar.offsetWidth, bar.offsetHeight));
     },
-    [containerRef],
+    [containerRef, clampTo],
   );
 
   const onGripPointerUp = React.useCallback(

@@ -18,7 +18,7 @@ import {
   Activity,
 } from "lucide-react";
 
-import type { Instrument } from "@cosmoz/shared";
+import type { Instrument, MarketInterval } from "@cosmoz/shared";
 
 import { useDict } from "@/i18n/i18n-provider";
 
@@ -28,17 +28,19 @@ import { OryonInstrumentSelector } from "@/components/oryon/oryon-instrument-sel
 import { OryonLayoutsMenu } from "@/components/oryon/oryon-layouts-menu";
 import { OryonTemplatesMenu } from "@/components/oryon/oryon-templates-menu";
 import { OryonFeedStatus } from "@/components/oryon/oryon-feed-status";
+import { OryonTimeframeSelector } from "@/components/oryon/oryon-timeframe-selector";
 import type { OryonUtilityPanel } from "@/components/oryon/oryon-view";
 import type { OryonChartType } from "@/lib/charting/oryon-chart-engine";
 import { cn } from "@/lib/utils";
 
 /**
- * Oryon top toolbar — only controls this phase actually supports:
- * instrument selection (catalog + honest feed coverage), the current
- * instrument identity, timeframes (the shared interval contract), the
- * implemented chart types, indicator management (Phase 3), the live feed
- * status, return-to-latest, the lower-panel toggle, utility access, browser
- * full screen and the workspace exit. No buttons implying drawing or orders.
+ * Oryon top toolbar — instrument selection (catalog + honest feed
+ * coverage), the current instrument identity, the TIMEFRAME selector (the
+ * shared interval contract — bar duration, restored to the top toolbar;
+ * the bottom strip owns the historical RANGE, a different control), the
+ * implemented chart types, indicator management, the live feed status,
+ * return-to-latest, the lower-panel toggle, utility access, browser full
+ * screen and the workspace exit.
  */
 export function OryonToolbar({
   instruments,
@@ -46,6 +48,8 @@ export function OryonToolbar({
   covered,
   feedKnown,
   feedSymbols,
+  interval,
+  onIntervalChange,
   chartType,
   onChartTypeChange,
   magnet,
@@ -63,6 +67,9 @@ export function OryonToolbar({
   covered: boolean;
   feedKnown: boolean;
   feedSymbols: ReadonlySet<string>;
+  /** Bar duration of the ACTIVE panel — each candle's span. */
+  interval: MarketInterval;
+  onIntervalChange: (interval: MarketInterval) => void;
   chartType: OryonChartType;
   onChartTypeChange: (type: OryonChartType) => void;
   magnet: boolean;
@@ -127,9 +134,14 @@ export function OryonToolbar({
 
       <div className="h-6 w-px shrink-0 bg-border" aria-hidden />
 
-      {/* Timeframe selection moved to the BOTTOM BAR (TradingView parity) —
-          the canonical testids (oryon-tf-*) live there; per-panel strips
-          remain in the panel headers for multi-chart grids. */}
+      {/* Timeframe selector — BACK ON THE TOP TOOLBAR (TradingView
+          parity): bar duration belongs up here, the bottom strip owns the
+          historical RANGE. Canonical testids (oryon-tf-*) live here;
+          per-panel strips remain in the panel headers for multi-chart
+          grids. */}
+      <OryonTimeframeSelector value={interval} onChange={onIntervalChange} />
+
+      <div className="h-6 w-px shrink-0 bg-border" aria-hidden />
 
       <div
         role="group"

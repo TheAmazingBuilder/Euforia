@@ -976,6 +976,16 @@ export class OryonChartEngine {
   }
 
   /**
+   * The loaded data span (unix seconds, open of the FIRST and LAST bars) —
+   * the historical-range presets compute their windows against the span the
+   * chart ACTUALLY holds (never a fabricated wider history).
+   */
+  get dataSpan(): { first: number; last: number } | null {
+    if (this.candles.length === 0) return null;
+    return { first: this.candles[0]!.t / 1000, last: this.candles[this.candles.length - 1]!.t / 1000 };
+  }
+
+  /**
    * Dev-probe helper (Phase 8, dev builds only): the screen x of the FIRST
    * event marker plus its bar time — lets E2E probes CLICK a marker
    * without scraping the canvas. Null when nothing is projected.

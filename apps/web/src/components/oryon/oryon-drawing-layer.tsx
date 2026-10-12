@@ -21,7 +21,6 @@ import { newDrawingId, type OryonDrawingStore } from "@/lib/oryon/drawings/store
 import type { ScreenPoint } from "@/lib/oryon/drawings/geometry";
 import { useDict } from "@/i18n/i18n-provider";
 import { useOryonDrawings } from "@/components/oryon/oryon-drawings-context";
-import { OryonDrawingObjectList } from "@/components/oryon/oryon-drawing-object-list";
 import { OryonDrawingPropertyEditor } from "@/components/oryon/oryon-drawing-editor";
 
 /**
@@ -37,7 +36,7 @@ import { OryonDrawingPropertyEditor } from "@/components/oryon/oryon-drawing-edi
  * Active-panel gating: `interactive` marks this panel as the workspace's
  * active chart. The controller refuses to START interactions on inactive
  * panels (the first click activates — it never draws); keyboard shortcuts
- * and the object list run only here, so two panels can never both consume
+ * run only here, so two panels can never both consume
  * the same Ctrl+Z. In-progress gestures always complete.
  *
  * Lifecycle: engine.attachDrawings(primitive) re-attaches across chart-type
@@ -67,7 +66,7 @@ export function OryonDrawingLayer({
 }) {
   const dict = useDict();
   const S = dict.oryon.drawings;
-  const { activeTool, setActiveTool, listOpen, bindActiveStore } = useOryonDrawings();
+  const { activeTool, setActiveTool, bindActiveStore } = useOryonDrawings();
   const { resolvedTheme } = useTheme();
 
   const primitiveRef = React.useRef<OryonDrawingsPrimitive | null>(null);
@@ -430,12 +429,6 @@ export function OryonDrawingLayer({
           <p className="mt-1 text-[10px] text-muted-foreground">
             {S.textSave}: Ctrl+↵ · {S.textCancel}: Esc
           </p>
-        </div>
-      ) : null}
-
-      {listOpen && interactive ? (
-        <div className="pointer-events-auto absolute right-2 top-2 z-20">
-          <OryonDrawingObjectList store={store} />
         </div>
       ) : null}
 

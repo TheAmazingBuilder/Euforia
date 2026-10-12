@@ -4,7 +4,7 @@ import * as React from "react";
 
 import { toast } from "sonner";
 
-import type { Instrument, MarketInterval } from "@cosmoz/shared";
+import type { Instrument, MarketInterval, OryonLayoutPanel } from "@cosmoz/shared";
 
 import { useMarketServiceHealth } from "@/lib/realtime/market-health";
 import { useInstruments } from "@/lib/api/queries";
@@ -40,8 +40,18 @@ import {
 import { OryonSyncCoordinator } from "@/lib/oryon/sync/sync-engine";
 import type { OryonChartEngine } from "@/lib/charting/oryon-chart-engine";
 import { getLiveQuote } from "@/lib/realtime/market";
+import {
+  dateStartRange,
+  historyRangeSpan,
+  type OryonHistoryRangeId,
+} from "@/lib/oryon/temporal/history-ranges";
 
-export type OryonUtilityPanel = "notifications" | "alerts" | "calendar";
+/**
+ * The panels the right utility rail can show — the SHARED layout enum
+ * (persisted contract; single source of truth). "objects" docks the
+ * drawing manager on the right rail (Toolbar v4).
+ */
+export type OryonUtilityPanel = OryonLayoutPanel;
 
 /**
  * Oryon — the full-screen charting workspace (Phase 1 → Phase 7).
@@ -155,6 +165,9 @@ function OryonWorkspace() {
 
   /** Chart-area box — the floating favorites bar's coordinate reference. */
   const chartAreaRef = React.useRef<HTMLDivElement | null>(null);
+  /** Stage box — toolbar → viewport bottom; the favorites bar's VERTICAL
+   *  travel bounds (it may extend down over the footer strip, v4). */
+  const stageRef = React.useRef<HTMLDivElement | null>(null);
 
   // ── Sync coordinator (engine-level: time scale + crosshair) ───────────────
   // Created lazily on FIRST USE — an effect or a child's engine-ready
@@ -215,6 +228,44 @@ function OryonWorkspace() {
     if (panelId === undefined) return;
     enginesRef.current.get(panelId)?.goToLatest();
   }, [activePanel]);
+
+  // ── Historical range (Toolbar v4) — the footer strip targets the ACTIVE
+  // panel's engine too, read at click time; the span math is clamped to
+  // the bars the chart ACTUALLY holds (no fabricated history). A preset
+  // wider than the loaded span degrades honestly to the full span.
+  const [historyRange, setHistoryRange] = React.useState<OryonHistoryRangeId | null>(null);
+
+  const onGoRange = React.useCallback(
+    (id: OryonHistoryRangeId) => {
+      const panelId = activePanel?.id;
+      if (panelId === undefined) return;
+      const engine = enginesRef.current.get(panelId);
+      const span = engine?.dataSpan ?? null;
+      if (engine === undefined || span === null) return;
+      const range = historyRangeSpan(id, span);
+      if (range === null) return;
+      engine.applyVisibleRange(range);
+      setHistoryRange(id);
+    },
+    [activePanel],
+  );
+
+  /** Calendar jump — the visible range STARTS at the picked day (ends at
+   *  the latest bar); a custom range clears the preset highlight. */
+  const onGoDate = React.useCallback(
+    (dateMs: number) => {
+      const panelId = activePanel?.id;
+      if (panelId === undefined) return;
+      const engine = enginesRef.current.get(panelId);
+      const span = engine?.dataSpan ?? null;
+      if (engine === undefined || span === null) return;
+      const range = dateStartRange(dateMs, span);
+      if (range === null) return;
+      engine.applyVisibleRange(range);
+      setHistoryRange(null);
+    },
+    [activePanel],
+  );
 
   // Dev-probe handle (multi-chart, dev builds only — mirrors the single-
   // chart __ORYON_CHART_DEBUG__ convention): per-panel identity, sync
@@ -291,6 +342,10 @@ function OryonWorkspace() {
         covered={covered}
         feedKnown={feedSymbols.size > 0}
         feedSymbols={feedSymbols}
+        interval={activePanel?.interval ?? "5m"}
+        onIntervalChange={(next: MarketInterval) => {
+          if (activePanel !== null) store.setPanelInterval(activePanel.id, next);
+        }}
         chartType={activePanel?.chartType ?? "candles"}
         onChartTypeChange={(next) => {
           if (activePanel !== null) store.setPanelChartType(activePanel.id, next);
@@ -311,35 +366,57 @@ function OryonWorkspace() {
         }}
       />
 
-      <div className="flex min-h-0 flex-1">
-        <OryonToolRail />
+      {/* Stage — everything below the top toolbar. The LEFT rail spans
+          the FULL stage height (independent of the footer strip — v4);
+          the footer (historical range + clock) sits at the bottom of the
+          CENTER column; the favorites bar's vertical travel covers the
+          whole stage. */}
+      <div ref={stageRef} data-testid="oryon-stage" className="flex min-h-0 flex-1">
+        <OryonToolRail
+          objectsOpen={session.utilityOpen && session.utilityPanel === "objects"}
+          onOpenObjects={() => store.openUtility("objects")}
+        />
 
-        {/* Chart-area wrapper — the favorites bar floats INSIDE this box
-            (its persisted coordinates are relative to the chart area, and
-            its clamp bounds are exactly what the user sees as "the chart"). */}
-        <div ref={chartAreaRef} className="relative flex min-h-0 min-w-0 flex-1">
-          <OryonChartGrid grid={session.grid}>
-            {session.panels.map((panel, index) => (
-              <OryonChartGridPanel
-                key={panel.id}
-                panel={panel}
-                index={index}
-                multi={session.panels.length > 1}
-                active={panel.id === session.activePanelId}
-                magnet={session.magnet}
-                instruments={instruments}
-                feedSymbols={feedSymbols}
-                feedKnown={feedSymbols.size > 0}
-                onEngineReady={handleEngineReady}
-                onEngineGone={handleEngineGone}
-              />
-            ))}
-          </OryonChartGrid>
+        {/* Center column — the chart grid + the footer strip below it. */}
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+          {/* Chart-area wrapper — the floating favorites bar's coordinate
+              parent (its persisted coordinates stay relative to this box;
+              the clamp bounds extend to the stage via boundsRef). */}
+          <div ref={chartAreaRef} className="relative flex min-h-0 min-w-0 flex-1">
+            <OryonChartGrid grid={session.grid}>
+              {session.panels.map((panel, index) => (
+                <OryonChartGridPanel
+                  key={panel.id}
+                  panel={panel}
+                  index={index}
+                  multi={session.panels.length > 1}
+                  active={panel.id === session.activePanelId}
+                  magnet={session.magnet}
+                  instruments={instruments}
+                  feedSymbols={feedSymbols}
+                  feedKnown={feedSymbols.size > 0}
+                  onEngineReady={handleEngineReady}
+                  onEngineGone={handleEngineGone}
+                />
+              ))}
+            </OryonChartGrid>
 
-          <OryonFavoritesBar containerRef={chartAreaRef} />
+            <OryonFavoritesBar containerRef={chartAreaRef} boundsRef={stageRef} />
+          </div>
+
+          {/* Bottom bar — the ACTIVE panel's HISTORICAL RANGE strip
+              (1D…All + calendar — how much history is visible, never the
+              bar timeframe) + clock + display timezone (md+; below md the
+              panel headers own the timeframes). */}
+          <OryonBottomBar
+            historyRange={historyRange}
+            onRangeSelect={onGoRange}
+            onDateSelect={onGoDate}
+          />
         </div>
 
-        {/* Docked utility rail — lg+ only. */}
+        {/* Docked utility rail — lg+ only, FULL stage height (v4: it now
+            also hosts the drawing OBJECTS dock). */}
         {isDesktop ? (
           <OryonUtilityRail
             open={session.utilityOpen}
@@ -350,15 +427,6 @@ function OryonWorkspace() {
           />
         ) : null}
       </div>
-
-      {/* Bottom bar — the ACTIVE panel's timeframe strip + clock + display
-          timezone (md+; below md the panel headers own the timeframes). */}
-      <OryonBottomBar
-        interval={activePanel?.interval ?? "5m"}
-        onIntervalChange={(next: MarketInterval) => {
-          if (activePanel !== null) store.setPanelInterval(activePanel.id, next);
-        }}
-      />
 
       <OryonLowerPanel
         open={session.lowerOpen}

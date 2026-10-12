@@ -2,7 +2,7 @@
 
 import * as React from "react";
 
-import { Bell, BellRing, CalendarDays, X } from "lucide-react";
+import { Bell, BellRing, CalendarDays, List, X } from "lucide-react";
 
 import type { EcoEvent, Instrument } from "@cosmoz/shared";
 
@@ -35,10 +35,14 @@ import {
 import { useNowMs } from "@/lib/realtime/use-now";
 
 import { OryonAlertsPanel } from "@/components/oryon/oryon-alerts-panel";
+import { OryonDrawingObjectList } from "@/components/oryon/oryon-drawing-object-list";
+import { useOryonDrawings } from "@/components/oryon/oryon-drawings-context";
 import type { OryonUtilityPanel } from "@/components/oryon/oryon-view";
 
 /**
- * Oryon right utility rail — notifications + price alerts + eco calendar.
+ * Oryon right utility rail — notifications + price alerts + eco calendar +
+ * the drawing OBJECTS dock (Toolbar v4: the drawing manager moved from the
+ * in-chart overlay to this right-side rail — same component, one surface).
  *
  * lg+: docked aside, one panel visible at a time (tabs), closes without
  * eating chart space. Below lg: the SAME content opens in a Sheet overlay.
@@ -129,6 +133,7 @@ function OryonUtilityContent({
         <button
           type="button"
           aria-pressed={panel === "notifications"}
+          title={S.notifications}
           data-testid="oryon-utility-tab-notifications"
           onClick={() => onPanelChange("notifications")}
           className={cn(
@@ -144,6 +149,7 @@ function OryonUtilityContent({
         <button
           type="button"
           aria-pressed={panel === "alerts"}
+          title={S.alerts}
           data-testid="oryon-utility-tab-alerts"
           onClick={() => onPanelChange("alerts")}
           className={cn(
@@ -159,6 +165,7 @@ function OryonUtilityContent({
         <button
           type="button"
           aria-pressed={panel === "calendar"}
+          title={S.calendar}
           data-testid="oryon-utility-tab-calendar"
           onClick={() => onPanelChange("calendar")}
           className={cn(
@@ -170,6 +177,22 @@ function OryonUtilityContent({
         >
           <CalendarDays className="size-3.5" aria-hidden />
           {S.calendar}
+        </button>
+        <button
+          type="button"
+          aria-pressed={panel === "objects"}
+          title={S.objects}
+          data-testid="oryon-utility-tab-objects"
+          onClick={() => onPanelChange("objects")}
+          className={cn(
+            "inline-flex h-7 items-center gap-1.5 rounded-md px-2 text-xs font-medium transition-colors",
+            panel === "objects"
+              ? "bg-surface-raised text-foreground"
+              : "text-muted-foreground hover:bg-surface-raised hover:text-foreground",
+          )}
+        >
+          <List className="size-3.5" aria-hidden />
+          {S.objects}
         </button>
         <button
           type="button"
@@ -186,6 +209,8 @@ function OryonUtilityContent({
         <OryonNotificationsPanel />
       ) : panel === "alerts" ? (
         <OryonAlertsPanel />
+      ) : panel === "objects" ? (
+        <OryonObjectsPanel />
       ) : (
         <OryonMarketContextPanel instrument={activeInstrument} />
       )}
@@ -204,6 +229,32 @@ function OryonNotificationsPanel() {
       <Button asChild variant="outline" size="sm" className="w-fit">
         <a href="/nofy">{S.notificationsLink}</a>
       </Button>
+    </div>
+  );
+}
+
+/**
+ * Objects dock (Toolbar v4) — the drawing manager the rail's list toggle
+ * opens. ONE instance on the right rail (moved, not duplicated): it binds
+ * the ACTIVE chart's per-symbol drawing store through the drawings
+ * context, so selection/locking/style edits target exactly the chart the
+ * user is looking at (the pre-v4 floating card's contract, unchanged).
+ */
+function OryonObjectsPanel() {
+  const dict = useDict();
+  const S = dict.oryon.utility;
+  const { activeStore } = useOryonDrawings();
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col gap-2 p-3" data-testid="oryon-panel-objects">
+      <p className="text-xs text-muted-foreground">{S.objectsBody}</p>
+      {activeStore === null ? (
+        <p className="min-h-0 flex-1 text-xs text-muted-foreground" data-testid="oryon-objects-waiting">
+          {dict.oryon.states.pickInstrument}
+        </p>
+      ) : (
+        <OryonDrawingObjectList />
+      )}
     </div>
   );
 }

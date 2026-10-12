@@ -6,19 +6,17 @@ import { toast } from "sonner";
 
 import { ChevronDown, Globe } from "lucide-react";
 
-import type { MarketInterval } from "@cosmoz/shared";
-
 import { useDict } from "@/i18n/i18n-provider";
 import { cn } from "@/lib/utils";
 
 import { useUpdateProfile } from "@/lib/api/queries/profile";
-import { ORYON_INTERVALS } from "@/lib/charting/oryon-intervals";
 import {
   isValidIanaZone,
   zoneAbbreviation,
 } from "@/lib/oryon/temporal/display";
 import { useDisplayTimezone } from "@/lib/oryon/temporal/use-display-timezone";
 import { TIMEZONE_OPTIONS } from "@/components/settings/settings-primitives";
+import type { OryonHistoryRangeId } from "@/lib/oryon/temporal/history-ranges";
 
 import {
   DropdownMenu,
@@ -28,12 +26,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+import { OryonHistoryRange } from "@/components/oryon/oryon-history-range";
+
 /**
  * Oryon bottom bar — the TradingView-style chart footer (desktop md+):
- * LEFT: the timeframe strip of the ACTIVE panel (exactly the shared
- * MarketInterval enum — a selectable timeframe is always a servable one,
- * 1m → 1D); RIGHT: the live clock in the display timezone + the timezone
- * selector.
+ * LEFT: the HISTORICAL RANGE strip (1D · 5D · 1M · 3M · 6M · YTD · 1Y ·
+ * 5Y · All · calendar) of the ACTIVE panel — how much history is visible,
+ * never the bar timeframe (that selector lives on the TOP toolbar);
+ * RIGHT: the live clock in the display timezone + the timezone selector.
  *
  * Timezone semantics (repo convention, kept): Profile.timezone is the
  * SINGLE source of truth — the selector PATCHes /me through the same
@@ -41,17 +41,18 @@ import {
  * forks the trading-day conventions. Display-only by construction: it
  * formats the clock, it never moves a candle, a session or an event.
  *
- * Active-panel binding: the strip targets the ACTIVE panel exactly like
- * the top toolbar's other per-chart controls (multi-chart consistent).
- * The panel headers keep their own per-panel strips (needed in multi-chart
- * grids); this bar is the workspace-level control.
+ * Active-panel binding: the range targets the ACTIVE panel exactly like
+ * the top toolbar's per-chart controls (multi-chart consistent).
  */
 export function OryonBottomBar({
-  interval,
-  onIntervalChange,
+  historyRange,
+  onRangeSelect,
+  onDateSelect,
 }: {
-  interval: MarketInterval;
-  onIntervalChange: (interval: MarketInterval) => void;
+  /** The last applied range preset (null = custom/calendar view). */
+  historyRange: OryonHistoryRangeId | null;
+  onRangeSelect: (id: OryonHistoryRangeId) => void;
+  onDateSelect: (dateMs: number) => void;
 }) {
   const dict = useDict();
   const S = dict.oryon.toolbar;
@@ -99,34 +100,7 @@ export function OryonBottomBar({
       aria-label={S.bottomBar}
       className="hidden h-9 shrink-0 items-center gap-1 border-t border-border bg-surface px-2 md:flex"
     >
-      <div
-        role="group"
-        aria-label={S.timeframes}
-        data-testid="oryon-timeframes"
-        className="flex items-center gap-0.5"
-      >
-        {ORYON_INTERVALS.map((tf) => {
-          const active = tf === interval;
-          return (
-            <button
-              key={tf}
-              type="button"
-              aria-pressed={active}
-              aria-label={`${S.timeframes} ${tf}`}
-              data-testid={`oryon-tf-${tf}`}
-              onClick={() => onIntervalChange(tf)}
-              className={cn(
-                "min-w-8 rounded-md px-1.5 py-1 font-mono text-[11px] font-semibold leading-none transition-colors",
-                active
-                  ? "bg-primary/12 text-primary"
-                  : "text-muted-foreground hover:bg-surface-raised hover:text-foreground",
-              )}
-            >
-              {tf}
-            </button>
-          );
-        })}
-      </div>
+      <OryonHistoryRange active={historyRange} onSelect={onRangeSelect} onSelectDate={onDateSelect} />
 
       <div className="ml-auto flex items-center gap-2">
         <DropdownMenu>

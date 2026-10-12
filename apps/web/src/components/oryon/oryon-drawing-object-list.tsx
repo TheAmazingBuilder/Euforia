@@ -47,6 +47,11 @@ import { cn } from "@/lib/utils";
  * Oryon drawing object list — management UI (spec §10) + compact style
  * editor (spec §11) for the selected object.
  *
+ * Toolbar v4: the list is DOCKED on the right utility rail's "Objects"
+ * panel (moved from the in-chart floating card — same component, same
+ * store contract, no duplicate surface). It fills the rail panel and
+ * follows the ACTIVE chart's store through the drawings context.
+ *
  * Synchronization: the list subscribes to the drawing store directly
  * (useSyncExternalStore) — commits are rare (drag end, toggle, style),
  * pointer drags never re-render this panel.
@@ -108,7 +113,7 @@ export function OryonDrawingObjectList({ store: storeOverride }: { store?: Oryon
   return (
     <div
       data-testid="oryon-drawing-list"
-      className="flex max-h-[60%] w-64 flex-col overflow-hidden rounded-lg border border-border bg-background/95 shadow-lg backdrop-blur"
+      className="flex min-h-0 w-full flex-1 flex-col overflow-hidden rounded-lg border border-border bg-background"
     >
       <header className="flex shrink-0 items-center justify-between border-b border-border px-3 py-2">
         <span className="font-heading text-xs font-semibold text-foreground">

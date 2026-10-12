@@ -591,8 +591,10 @@ export type OryonAlertsFile = z.infer<typeof oryonAlertsFileSchema>;
 // engine adds a `charts` array alongside these fields in a NEW schema
 // version instead of overloading this one.
 
-/** The panels the utility rail can show (mirrors the rail's tab model). */
-export const oryonLayoutPanelSchema = z.enum(["notifications", "alerts", "calendar"]);
+/** The panels the utility rail can show (mirrors the rail's tab model).
+ *  "objects" — the drawing object manager, docked on the right rail
+ *  (moved from the in-chart overlay; same component, new dock). */
+export const oryonLayoutPanelSchema = z.enum(["notifications", "alerts", "calendar", "objects"]);
 
 export type OryonLayoutPanel = z.infer<typeof oryonLayoutPanelSchema>;
 

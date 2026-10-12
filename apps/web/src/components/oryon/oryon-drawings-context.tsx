@@ -112,8 +112,6 @@ export interface OryonDrawingsContextValue {
   bindActiveStore: (store: OryonDrawingStore | null) => void;
   activeTool: OryonDrawingTool;
   setActiveTool: (tool: OryonDrawingTool) => void;
-  listOpen: boolean;
-  setListOpen: (open: boolean) => void;
   // ── Toolbar v2 — favorites (catalog-validated, persisted) ───────────────
   favorites: readonly OryonCatalogToolId[];
   toggleFavorite: (tool: OryonDrawingTool) => void;
@@ -133,7 +131,6 @@ export function OryonDrawingsProvider({ children }: { children: React.ReactNode 
 
   const [activeStore, setActiveStore] = React.useState<OryonDrawingStore | null>(null);
   const [activeTool, setActiveTool] = React.useState<OryonDrawingTool>("cursor");
-  const [listOpen, setListOpen] = React.useState(false);
 
   // ── Toolbar v2 — favorites + floating bar (validated, debounced save) ────
   const [prefs, setPrefs] = React.useState<OryonUiPrefs>(() => loadUiPrefs());
@@ -227,8 +224,6 @@ export function OryonDrawingsProvider({ children }: { children: React.ReactNode 
       bindActiveStore: setActiveStore,
       activeTool,
       setActiveTool,
-      listOpen,
-      setListOpen,
       favorites: prefs.favorites,
       toggleFavorite,
       isFavorite,
@@ -237,7 +232,7 @@ export function OryonDrawingsProvider({ children }: { children: React.ReactNode 
       favoritesBarPos: { x: prefs.favoritesBar.x, y: prefs.favoritesBar.y },
       setFavoritesBarPos,
     }),
-    [registry, activeStore, activeTool, listOpen, prefs, toggleFavorite, isFavorite, setFavoritesBarVisible, setFavoritesBarPos],
+    [registry, activeStore, activeTool, prefs, toggleFavorite, isFavorite, setFavoritesBarVisible, setFavoritesBarPos],
   );
 
   return <OryonDrawingsContext.Provider value={value}>{children}</OryonDrawingsContext.Provider>;
