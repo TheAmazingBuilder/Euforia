@@ -1192,3 +1192,16 @@ Stage Summary:
 - Bonus : correctif réel d'un bug d'historique ancien (drags = 2 undo). La sonde a mordu parce qu'elle asserte le comportement, pas l'implémentation.
 - Piège retenu : le popover Radix par-dessus les boutons du dialog — Playwright refuse le clic (hit-target) tant que la couche est ouverte ; un humain clique dehors (ferme la couche) puis clique. Sonde : Escape d'abord.
 - Suite : Phase 9 — Advanced Market Structure & Key Price Levels.
+
+---
+Task ID: phase9-verification
+Agent: Super Z (main)
+Task: « on enchaîne sur la Phase 9 (Market Structure) » — vérifier l'état réel de la Phase 9.
+
+Work Log:
+- Audit : le moteur existe DÉJÀ (session antérieure) — structure/pivots.ts (swings confirmed/provisional, sémantique fractale stricte, jamais d'un-confirm, modes wick/close, filtres bruit minDistancePips/minSeparationBars), structure/breaks.ts (BOS), charting/oryon-key-levels.ts (PDH/PDL/PWH/PWL depuis la série 1D partagée, open/close opt-in), oryon-session-overlay.ts (Phase 8), opening range (session-scoped, zéros honnêtes), toggles par panneau + persistance v4.
+- La mention « Phase 9 à faire » du récapitulatif de session était PÉRIMÉE.
+- Vérification post-changements du jour : verify-oryon-phase9.js sur :3001 (dev, MS :3003) → 38 PASS / 0 FAIL ; bun structure-tests 60/60.
+
+Stage Summary:
+- Phase 9 (Advanced Market Structure & Key Price Levels) LIVRÉE ET VERTE : 38/38 E2E + 60/60 unit. Aucun code nouveau nécessaire — la tâche suivante est un choix du owner (raffinements structure, autre feature).
