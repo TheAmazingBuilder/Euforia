@@ -6,6 +6,7 @@ import { RotateCcw } from "lucide-react";
 
 import type { OryonChartAppearance, OryonStatusLinePrefs } from "@/lib/oryon/workspace/chart-prefs";
 import { ORYON_PANEL_CHART_PREFS_DEFAULT, type OryonPanelChartPrefs } from "@/lib/oryon/workspace/chart-prefs";
+import { ORYON_COLOR_PRESETS } from "@/lib/oryon/workspace/color-presets";
 
 import { useDict } from "@/i18n/i18n-provider";
 import { OryonTvColorPicker } from "@/components/oryon/oryon-tv-color-picker";
@@ -20,6 +21,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cn } from "@/lib/utils";
 
 /**
  * Oryon chart settings dialog (chart context-menu → Settings…) — four
@@ -138,6 +140,48 @@ export function OryonChartSettingsDialog({
 
           {/* ── Symbol ─────────────────────────────────────────────────────── */}
           <TabsContent value="symbol" className="mt-3 flex flex-col gap-4">
+            <section className="flex flex-col gap-2">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                {S.colorPresets}
+              </p>
+              <div
+                className="flex flex-wrap gap-1.5"
+                data-testid="oryon-settings-color-presets"
+              >
+                {ORYON_COLOR_PRESETS.map((preset) => {
+                  const active =
+                    draft.appearance.upColor?.toLowerCase() === preset.up.toLowerCase() &&
+                    draft.appearance.downColor?.toLowerCase() === preset.down.toLowerCase();
+                  return (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      title={preset.name}
+                      aria-pressed={active}
+                      data-testid={`oryon-settings-preset-${preset.id}`}
+                      onClick={() =>
+                        patchAppearance({ upColor: preset.up, downColor: preset.down })
+                      }
+                      className={cn(
+                        "flex items-center gap-1.5 rounded-md border px-2 py-1.5 transition-colors",
+                        active
+                          ? "border-accent bg-accent/10"
+                          : "border-border bg-surface-raised/50 hover:border-accent/50",
+                      )}
+                    >
+                      {/* Mini candle pair — the preset's own colors. */}
+                      <svg width="22" height="16" viewBox="0 0 22 16" aria-hidden>
+                        <line x1="6" y1="1" x2="6" y2="15" stroke={preset.up} strokeWidth="1" />
+                        <rect x="3" y="5" width="6" height="6" fill={preset.up} rx="0.5" />
+                        <line x1="16" y1="1" x2="16" y2="15" stroke={preset.down} strokeWidth="1" />
+                        <rect x="13" y="5" width="6" height="6" fill={preset.down} rx="0.5" />
+                      </svg>
+                      <span className="text-[11px] text-foreground">{preset.name}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
             <section className="flex flex-col gap-3">
               <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                 {S.candlesSection}
