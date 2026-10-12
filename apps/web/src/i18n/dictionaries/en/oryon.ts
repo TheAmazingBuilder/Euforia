@@ -144,9 +144,13 @@ export const oryonDict = {
     labels: "HH / LH / HL / LL labels",
     provisional: "Provisional pivots",
     breaks: "BOS / CHoCH annotations",
+    breakLines: "Break structure lines",
     breakMode: "Break confirmation",
     breakModeClose: "Candle close",
     breakModeWick: "Wick touch",
+    pivotStyle: "Pivot markers",
+    pivotStyleArrows: "Arrows",
+    pivotStyleCircles: "Dots",
     pivotLeft: "Left confirmation bars",
     pivotRight: "Right confirmation bars",
     levelsTitle: "Key levels",
@@ -554,6 +558,57 @@ export const oryonDict = {
     errorCapacity: "The template limit is reached.",
     errorNotFound: "This template no longer exists.",
   },
+  restore: {
+    // Deep-link restore (/oryon?analysis=<id> — Phase 10).
+    notFoundToast: "This analysis no longer exists in this browser.",
+    unknownSymbolToast: "Cannot restore — this symbol is not in the instrument catalog:",
+    noPanelToast: "No chart panel to restore the analysis into.",
+    reconstructedBadge: "reconstructed view",
+    reconstructedNote: "live candles + saved annotations — not a historical replay.",
+    dismiss: "Dismiss",
+    replaceTitle: "Replace existing drawings?",
+    replaceBody:
+      "Applying this analysis replaces the current working drawings on",
+    replaceConfirm: "Replace drawings",
+  },
+  journal: {
+    // Trade selector (shared by both flows).
+    tradeSearchPlaceholder: "Search symbol or trade id…",
+    statusFilter: "Status filter",
+    tradeEmpty: "No journal trade matches this search.",
+    tradeRefine: "Refine the search — only the first 50 trades are shown.",
+    // Instrument mismatch guard.
+    mismatchTitle: "Instrument mismatch",
+    mismatchBody: "This chart shows",
+    mismatchConfirm: "Link anyway (explicit cross-instrument association)",
+    // Save analysis.
+    saveTitle: "Save chart analysis",
+    saveBody:
+      "Preserves this chart's context, annotations and settings in this browser, optionally linked to a journal trade.",
+    titleLabel: "Title",
+    notesLabel: "Notes",
+    notesPlaceholder: "What does this analysis show?",
+    tradeLinkLabel: "Link to journal trade (optional)",
+    localNote:
+      "Analyses are stored in this browser (not synced to other devices). The linked trade record stays untouched in the journal.",
+    saveSubmit: "Save analysis",
+    saveFailed: "The analysis could not be saved — nothing was written.",
+    savedToast: "Analysis saved",
+    linkedTo: "linked to",
+    // Snapshot.
+    snapshotTitle: "Attach chart snapshot to a trade",
+    snapshotBody:
+      "The chart image is captured now and attached through the journal's screenshot mechanism.",
+    snapshotAlt: "Chart snapshot preview",
+    snapshotUnavailable: "The snapshot could not be captured — nothing will be attached.",
+    snapshotTradeLabel: "Attach to trade",
+    alsoAnalysis: "Also save a linked analysis record",
+    snapshotNote:
+      "Capture time and the chart's reference time are stored separately — the image is evidence, not market history.",
+    snapshotAttach: "Attach snapshot",
+    snapshotAttachedToast: "Snapshot attached to the trade",
+    snapshotAttachFailed: "The snapshot could not be attached.",
+  },
   contextMenu: {
     // Price actions.
     copyPrice: "Copy price",
@@ -570,6 +625,11 @@ export const oryonDict = {
     // Display + navigation.
     resetView: "Reset chart view",
     objectTree: "Object tree",
+    // Trade journal (Phase 10).
+    journal: "Trade journal",
+    saveAnalysis: "Save analysis…",
+    snapshotToTrade: "Attach snapshot to trade…",
+    openLinkedTrade: "Open linked trade",
     templates: "Chart template",
     templatesEmpty: "No saved templates yet — save the current setup first.",
     settings: "Settings…",
@@ -582,6 +642,7 @@ export const oryonDict = {
     tabScales: "Scales and lines",
     tabCanvas: "Canvas",
     // Symbol tab.
+    colorPresets: "Color presets",
     candlesSection: "Candles",
     structureSection: "Structure",
     bullishColor: "Bullish",

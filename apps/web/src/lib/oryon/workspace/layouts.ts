@@ -203,6 +203,8 @@ function panelAnalysisEqual(a: OryonPanelAnalysis, b: OryonPanelAnalysis): boole
     s.minSeparationBars === t.minSeparationBars &&
     s.breaksEnabled === t.breaksEnabled &&
     s.breakMode === t.breakMode &&
+    s.pivotStyle === t.pivotStyle &&
+    s.showBreakLines === t.showBreakLines &&
     l.prevDayHighLow === m.prevDayHighLow &&
     l.prevDayOpenClose === m.prevDayOpenClose &&
     l.prevWeekHighLow === m.prevWeekHighLow &&

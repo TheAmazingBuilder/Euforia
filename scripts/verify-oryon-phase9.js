@@ -327,20 +327,28 @@ async function switchDefaultLayout(app) {
 
   // ── D. BOS/CHoCH — modes close/wick ─────────────────────────────────────
   console.log("— D. BOS/CHoCH (close puis wick)");
+  // REFINEMENT (structure-lines): breaks render as pivot→break LINES with
+  // boxed labels (structureLines counter) — the bare break circle markers
+  // are suppressed while lines are ON (the line owns the annotation).
   await toggleAnalysis(page, 0, "breaks");
-  const breaksClose = await waitForPanelState(page, 0, (p) => p.structureMarkers > withProvisional.structureMarkers);
+  const breaksClose = await waitForPanelState(page, 0, (p) => (p.structureLines ?? 0) >= 1);
   ok(
-    `breaks ON (close) → marqueurs de cassure ajoutés (got ${breaksClose?.structureMarkers})`,
-    (breaksClose?.structureMarkers ?? 0) > withProvisional.structureMarkers,
+    `breaks ON (close) → lignes de structure rendues (got ${breaksClose?.structureLines})`,
+    (breaksClose?.structureLines ?? 0) >= 1,
   );
   await pickAnalysisRadio(page, 0, "break-wick");
-  const breaksWick = await waitForPanelState(page, 0, (p) => true);
+  const breaksWick = await waitForPanelState(page, 0, (p) => (p.structureLines ?? 0) >= (breaksClose?.structureLines ?? 1));
   ok(
-    `mode wick ⊇ mode close (${breaksWick?.structureMarkers} ≥ ${breaksClose?.structureMarkers})`,
-    (breaksWick?.structureMarkers ?? 0) >= (breaksClose?.structureMarkers ?? 0),
+    `mode wick ⊇ mode close (${breaksWick?.structureLines} ≥ ${breaksClose?.structureLines})`,
+    (breaksWick?.structureLines ?? 0) >= (breaksClose?.structureLines ?? 0),
   );
   await pickAnalysisRadio(page, 0, "break-close");
   await toggleAnalysis(page, 0, "breaks");
+  const breaksOff = await waitForPanelState(page, 0, (p) => (p.structureLines ?? 0) === 0);
+  ok(
+    `breaks OFF → lignes retirées (got ${breaksOff?.structureLines})`,
+    (breaksOff?.structureLines ?? -1) === 0,
+  );
 
   // ── E. Key levels (série 1D partagée) ───────────────────────────────────
   console.log("— E. Key levels (PDH/L + PWH/L)");
@@ -375,6 +383,10 @@ async function switchDefaultLayout(app) {
   await setPanelInterval(page, 0, "15m");
 
   // Crypto → sessions non applicables → pas d'OR (honnête).
+  // NOTE (environment): this check depends on the market service's BTCUSDT
+  // 1D series — Binance currently answers 418 (sandbox IP rate-limited),
+  // so the daily series cannot load and key levels honestly stay empty.
+  // The assertion stays; it passes again when the provider unblocks.
   await setPanelSymbol(page, 0, "BTCUSDT");
   const cryptoGate = await waitForPanelState(page, 0, (p) => p.orBoxes === 0 && p.keyLevelLines >= 4);
   ok("BTCUSDT : OR = 0 boîte (sessions non applicables)", (cryptoGate?.orBoxes ?? -1) === 0);

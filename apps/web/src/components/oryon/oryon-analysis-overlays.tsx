@@ -9,6 +9,7 @@ import { useCandles } from "@/lib/realtime/market";
 import type { OryonChartEngine, OryonStructureMarkerSpec } from "@/lib/charting/oryon-chart-engine";
 import type { OryonKeyLevelSpec } from "@/lib/charting/oryon-key-levels";
 import type { OryonRangeBoxSpec } from "@/lib/charting/oryon-range-box-overlay";
+import type { OryonStructureLineSpec } from "@/lib/charting/oryon-structure-lines";
 import { intervalToMs, isIntraday } from "@/lib/charting/oryon-intervals";
 import {
   classifyPivots,
@@ -111,7 +112,13 @@ export function OryonAnalysisOverlaysBridge({
         id: `pivot-${pivot.id}`,
         timeSec: pivot.timeSec,
         position: pivot.kind === "high" ? "aboveBar" : "belowBar",
-        shape: pivot.provisional ? "circle" : pivot.kind === "high" ? "arrowDown" : "arrowUp",
+        shape: pivot.provisional
+          ? "circle"
+          : s.pivotStyle === "circles"
+            ? "circle"
+            : pivot.kind === "high"
+              ? "arrowDown"
+              : "arrowUp",
         colorToken: pivot.provisional ? "text-muted" : pivot.kind === "high" ? "cat-ta" : "cat-pa",
         size: pivot.provisional ? 0.8 : 1,
         text: label ?? (pivot.provisional ? "prov" : undefined),
@@ -124,18 +131,23 @@ export function OryonAnalysisOverlaysBridge({
         rightBars: s.rightBars,
         mode: s.breakMode,
       });
-      for (const brk of breaks) {
-        specs.push({
-          id: `break-${brk.id}`,
-          timeSec: brk.timeSec,
-          // Bullish breaks mark under the candle, bearish above — the
-          // direction is encoded by position AND shape, never color alone.
-          position: brk.direction === "bullish" ? "belowBar" : "aboveBar",
-          shape: "circle",
-          colorToken: brk.type === "CHoCH" ? "warning" : "cat-strategies",
-          size: 1.4,
-          text: brk.type,
-        });
+      // With structure LINES on, the line + boxed label own the break
+      // annotation end-to-end (which swing, when, what type) — the bare
+      // circle markers would only duplicate it on every break candle.
+      if (!s.showBreakLines) {
+        for (const brk of breaks) {
+          specs.push({
+            id: `break-${brk.id}`,
+            timeSec: brk.timeSec,
+            // Bullish breaks mark under the candle, bearish above — the
+            // direction is encoded by position AND shape, never color alone.
+            position: brk.direction === "bullish" ? "belowBar" : "aboveBar",
+            shape: "circle",
+            colorToken: brk.type === "CHoCH" ? "warning" : "cat-strategies",
+            size: 1.4,
+            text: brk.type,
+          });
+        }
       }
     }
     return specs;
@@ -147,6 +159,58 @@ export function OryonAnalysisOverlaysBridge({
     if (engine === null) return;
     engine.setStructureMarkers(structureSpecs);
   }, [mounted, structureSpecs, engineRef]);
+
+  // ── structure break LINES (refinement) — pivot→break segments ─────────
+  const structureLineSpecs = React.useMemo((): OryonStructureLineSpec[] => {
+    const s = analysis.structure;
+    if (!s.enabled || !s.breaksEnabled || !s.showBreakLines || candles.length === 0) return [];
+    const pivots = detectPivots({
+      candles,
+      config: {
+        leftBars: s.leftBars,
+        rightBars: s.rightBars,
+        minDistancePips: s.minDistancePips,
+        minSeparationBars: s.minSeparationBars,
+      },
+      pipSize: pipSizeNum,
+    });
+    const pivotById = new Map(pivots.map((pivot) => [pivot.id, pivot]));
+    const breaks = detectStructureBreaks({
+      candles,
+      pivots,
+      rightBars: s.rightBars,
+      mode: s.breakMode,
+    });
+    const lines: OryonStructureLineSpec[] = [];
+    for (const brk of breaks) {
+      const pivot = pivotById.get(brk.pivotId);
+      if (pivot === undefined) continue;
+      lines.push({
+        id: `sline-${brk.id}`,
+        startSec: pivot.timeSec,
+        endSec: brk.timeSec,
+        level: brk.level,
+        type: brk.type,
+        direction: brk.direction,
+        // Direction colors for BOS (the TV convention — bullish break
+        // green, bearish red); CHoCH keeps its dedicated warning token.
+        colorToken:
+          brk.type === "CHoCH"
+            ? "warning"
+            : brk.direction === "bullish"
+              ? "profit"
+              : "loss",
+      });
+    }
+    return lines;
+  }, [analysis, candles, pipSizeNum]);
+
+  React.useEffect(() => {
+    if (!mounted) return;
+    const engine = engineRef.current;
+    if (engine === null) return;
+    engine.setStructureLines(structureLineSpecs);
+  }, [mounted, structureLineSpecs, engineRef]);
 
   // ── key levels (previous day / week from the SHARED daily series) ─────
   const daily = useCandles(dataSymbol, "1D");

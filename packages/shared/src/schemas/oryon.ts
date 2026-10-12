@@ -974,6 +974,15 @@ export const oryonPanelAnalysisSchema = z.object({
     /** BOS/CHoCH annotations — implemented with tested semantics (§4.4). */
     breaksEnabled: z.boolean(),
     breakMode: oryonBreakModeSchema,
+    /** Pivot marker style (refinement — additive, old layouts default to
+     *  "arrows" so a persisted v4 record parses unchanged). "circles" = the
+     *  compact dot look for both kinds (shape ≠ color alone). */
+    pivotStyle: z.enum(["arrows", "circles"]).default("arrows"),
+    /** BOS/CHoCH structure LINES (refinement — additive, default ON): the
+     *  broken swing is drawn as a pivot→break segment with a boxed event
+     *  label. When ON, the break circle markers are suppressed (the line
+     *  + label own the break annotation). */
+    showBreakLines: z.boolean().default(true),
   }),
   levels: z.object({
     prevDayHighLow: z.boolean(),
@@ -1012,6 +1021,8 @@ export const ORYON_DEFAULT_PANEL_ANALYSIS: OryonPanelAnalysis = {
     minSeparationBars: null,
     breaksEnabled: false,
     breakMode: "close",
+    pivotStyle: "arrows",
+    showBreakLines: true,
   },
   levels: {
     prevDayHighLow: false,
@@ -1049,3 +1060,83 @@ export const oryonLayoutsFileV4Schema = z.object({
 });
 
 export type OryonLayoutsFileV4 = z.infer<typeof oryonLayoutsFileV4Schema>;
+
+// ── Trade Journal chart-analysis bridge (Phase 10) ──────────────────────────
+//
+// Connects Oryon's chart analysis to the Euphoria journal WITHOUT touching
+// the canonical trade model: an analysis is a SEPARATE browser-local record
+// that OPTIONALLY references an authorized journal trade by its canonical
+// UUID. The trade record is never copied, never mutated, and a broker
+// position is never turned into a trade by this contract.
+//
+// Persistence scope — the SAME audited product decision as layouts/
+// templates (persistence.ts header): this deployment serves data from the
+// in-memory MSW mock store, so routing analyses through it would pretend a
+// server contract while storing less durably than localStorage. Analyses
+// therefore persist in this browser under the SAME versioned/validated
+// conventions as every other Oryon record, and the UI says so in plain
+// copy. The zod contract below is the shape a future backend module would
+// serve (schemaVersion field included for that migration).
+
+/** Reference to a chart snapshot attached to a trade through the journal's
+ *  EXISTING screenshot mechanism (POST /trades/:id/screenshots, kind CHART).
+ *  The attachment record lives in the journal — the analysis only points at
+ *  it, never owns a second copy of the image. */
+export const oryonAnalysisSnapshotSchema = z.object({
+  /** The journal trade the snapshot was attached to. */
+  tradeId: z.string().uuid(),
+  /** The journal TradeScreenshot id (canonical attachment identity). */
+  screenshotId: z.string().uuid(),
+  /** Image capture instant (unix ms — capture time, NOT a market time). */
+  capturedAt: z.number().finite().int(),
+});
+
+export type OryonAnalysisSnapshot = z.infer<typeof oryonAnalysisSnapshotSchema>;
+
+export const oryonChartAnalysisSchema = z.object({
+  id: z.string().min(8).max(64),
+  /** Creation / modification timestamps, unix ms (repo convention). */
+  createdAt: z.number().finite().int(),
+  updatedAt: z.number().finite().int(),
+  /** Canonical market symbol the analysis was made on (feed identity). */
+  symbol: z.string().min(1).max(32),
+  interval: marketIntervalSchema,
+  chartType: oryonLayoutChartTypeSchema,
+  /** User-editable title (uniqueness NOT enforced — unlike templates). */
+  title: z.string().min(1).max(80),
+  notes: z.string().max(4000).nullable(),
+  /** Optional link to an AUTHORIZED journal trade (canonical UUID). */
+  tradeId: z.string().uuid().nullable(),
+  /** Snapshot reference — present only when an image was captured and
+   *  attached to the linked trade. */
+  snapshot: oryonAnalysisSnapshotSchema.nullable(),
+  /** The panel's analysis configuration at save time (structure/levels). */
+  analysis: oryonPanelAnalysisSchema,
+  /** Annotations captured with the analysis — the SAME canonical drawing
+   *  schema (never a second, journal-specific one). */
+  drawings: z.array(oryonDrawingSchema).max(500),
+  /** Open time of the LAST candle in the window at save time (unix sec) —
+   *  the chart's reference time, distinct from createdAt (save time). */
+  referenceTimeSec: z.number().finite().nullable(),
+  /** Serialized contract version — future migrations key on this. */
+  schemaVersion: z.literal(1),
+});
+
+export type OryonChartAnalysis = z.infer<typeof oryonChartAnalysisSchema>;
+
+/** Payload accepted from the UI — identity + timestamps are store-assigned. */
+export const createOryonChartAnalysisInputSchema = oryonChartAnalysisSchema
+  .omit({ id: true, createdAt: true, updatedAt: true, schemaVersion: true });
+
+export type CreateOryonChartAnalysisInput = z.infer<typeof createOryonChartAnalysisInputSchema>;
+
+/** Versioned persistence envelope — ONE browser-local file (same pattern as
+ *  the layouts/templates envelopes; 200 analyses max, the store prunes the
+ *  OLDEST when the cap is hit). */
+export const oryonAnalysesFileSchema = z.object({
+  version: z.literal(1),
+  savedAt: z.number().finite().int(),
+  analyses: z.array(oryonChartAnalysisSchema).max(200),
+});
+
+export type OryonAnalysesFile = z.infer<typeof oryonAnalysesFileSchema>;

@@ -268,6 +268,14 @@ export function OryonPanelHeader({
             >
               {A.breaks}
             </DropdownMenuCheckboxItem>
+            <DropdownMenuCheckboxItem
+              checked={structure.showBreakLines}
+              disabled={!structure.enabled || !structure.breaksEnabled}
+              data-testid={`${prefix}-analysis-break-lines`}
+              onCheckedChange={(checked) => patchStructure({ showBreakLines: checked === true })}
+            >
+              {A.breakLines}
+            </DropdownMenuCheckboxItem>
             <DropdownMenuLabel className="text-[11px] font-normal text-muted-foreground">
               {A.breakMode}
             </DropdownMenuLabel>
@@ -290,6 +298,30 @@ export function OryonPanelHeader({
                 data-testid={`${prefix}-analysis-break-wick`}
               >
                 {A.breakModeWick}
+              </DropdownMenuRadioItem>
+            </DropdownMenuRadioGroup>
+            <DropdownMenuLabel className="text-[11px] font-normal text-muted-foreground">
+              {A.pivotStyle}
+            </DropdownMenuLabel>
+            <DropdownMenuRadioGroup
+              value={structure.pivotStyle}
+              onValueChange={(value) =>
+                patchStructure({ pivotStyle: value as OryonPanelAnalysis["structure"]["pivotStyle"] })
+              }
+            >
+              <DropdownMenuRadioItem
+                value="arrows"
+                disabled={!structure.enabled}
+                data-testid={`${prefix}-analysis-pstyle-arrows`}
+              >
+                {A.pivotStyleArrows}
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem
+                value="circles"
+                disabled={!structure.enabled}
+                data-testid={`${prefix}-analysis-pstyle-circles`}
+              >
+                {A.pivotStyleCircles}
               </DropdownMenuRadioItem>
             </DropdownMenuRadioGroup>
             <DropdownMenuLabel className="text-[11px] font-normal text-muted-foreground">

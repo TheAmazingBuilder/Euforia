@@ -20,6 +20,7 @@ import { OryonToolRail } from "@/components/oryon/oryon-tool-rail";
 import { OryonUtilityRail } from "@/components/oryon/oryon-utility-rail";
 import { OryonDrawingsProvider } from "@/components/oryon/oryon-drawings-context";
 import { OryonEcoApproachBridge } from "@/components/oryon/oryon-eco-approach-bridge";
+import { OryonAnalysisRestoreBridge } from "@/components/oryon/oryon-analysis-restore";
 import { OryonIndicatorDialog } from "@/components/oryon/oryon-indicator-dialog";
 import { OryonAlertDialog } from "@/components/oryon/oryon-alerts-dialog";
 import {
@@ -296,6 +297,7 @@ function OryonWorkspace() {
           symbol: panel.symbol,
           interval: panel.interval,
           chartType: panel.chartType,
+          analysis: panel.analysis,
           active: snap.session.activePanelId === panel.id,
           grid: snap.session.grid,
           sync: snap.session.sync,
@@ -312,6 +314,7 @@ function OryonWorkspace() {
           firstMarker: engine?.firstEventMarkerScreen() ?? null,
           // Phase 9 structural counters (dev probes only).
           structureMarkers: stats?.structureMarkers ?? 0,
+          structureLines: stats?.structureLines ?? 0,
           keyLevelLines: stats?.keyLevelLines ?? 0,
           orBoxes: stats?.orBoxes ?? 0,
         };
@@ -460,6 +463,11 @@ function OryonWorkspace() {
         feedSymbols={feedSymbols}
         panelSymbols={panelSymbols}
       />
+
+      {/* Analysis deep-link restore (/oryon?analysis=<id> — Phase 10):
+          applies the saved analysis to the ACTIVE panel + reconstructed-
+          view banner. Null unless a link was consumed. */}
+      <OryonAnalysisRestoreBridge instruments={instruments} />
 
       {/* Screen-reader summary of the workspace purpose (a11y). */}
       <p className="sr-only">

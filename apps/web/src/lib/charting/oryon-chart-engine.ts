@@ -30,6 +30,10 @@ import {
   OryonRangeBoxManager,
   type OryonRangeBoxSpec,
 } from "@/lib/charting/oryon-range-box-overlay";
+import {
+  OryonStructureLineManager,
+  type OryonStructureLineSpec,
+} from "@/lib/charting/oryon-structure-lines";
 
 import type { Candle, OryonIndicatorInstance } from "@cosmoz/shared";
 
@@ -249,6 +253,10 @@ export class OryonChartEngine {
   /** Opening-range boxes (Phase 9) — "bottom" zOrder primitive. */
   private rangeBoxes: OryonRangeBoxManager | null = null;
   private rangeBoxColors = createSessionColorResolver();
+  /** Structure break lines (Phase 9 refinement) — "top" zOrder primitive:
+   *  pivot→break segments with boxed BOS/CHoCH labels. */
+  private structureLines: OryonStructureLineManager | null = null;
+  private structureLineColors = createSessionColorResolver();
   /** Structure markers (Phase 9) — SECOND markers plugin instance: the
    *  Phase 8 event-marker set stays identity-stable and untouched. */
   private structurePlugin: ISeriesMarkersPluginApi<UTCTimestamp> | null = null;
@@ -321,6 +329,12 @@ export class OryonChartEngine {
       conversions: this.conversions,
     });
     this.rangeBoxes.attach(this.candleSeries);
+    this.structureLines = new OryonStructureLineManager({
+      getColor: this.structureLineColors.resolve,
+      getMonoFont: () => getChartTheme().monoFont,
+      conversions: this.conversions,
+    });
+    this.structureLines.attach(this.candleSeries);
     this.attachDrawingsToActiveSeries();
     this.chart.subscribeCrosshairMove(this.handleCrosshairMove);
     this.chart.timeScale().subscribeVisibleTimeRangeChange(this.handleVisibleRangeChange);
@@ -370,6 +384,8 @@ export class OryonChartEngine {
     this.keyLevels = null;
     this.rangeBoxes?.destroy();
     this.rangeBoxes = null;
+    this.structureLines?.destroy();
+    this.structureLines = null;
     this.detachStructurePlugin();
     this.structureSpecs = [];
     this.lastStructureInput = [];
@@ -422,6 +438,7 @@ export class OryonChartEngine {
     this.sessionColors.invalidate();
     this.rangeBoxColors.invalidate();
     this.structureColors.invalidate();
+    this.structureLineColors.invalidate();
     if (this.structurePlugin !== null) {
       this.structurePlugin.setMarkers(this.toStructureSeriesMarkers(this.structureSpecs));
     }
@@ -542,6 +559,7 @@ export class OryonChartEngine {
     // Key levels + range boxes are series-bound — re-home and re-attach.
     this.keyLevels?.setSeries(currentSeries);
     if (this.rangeBoxes !== null && currentSeries !== null) this.rangeBoxes.attach(currentSeries);
+    if (this.structureLines !== null && currentSeries !== null) this.structureLines.attach(currentSeries);
     // The markers plugins are series-bound: re-create them on the new series.
     this.recreateStructurePlugin();
     this.recreateMarkersPlugin();
@@ -763,6 +781,18 @@ export class OryonChartEngine {
     this.rangeBoxes.setBoxes(boxes);
   }
 
+  /**
+   * Replaces the structure break lines (BOS/CHoCH pivot→break segments).
+   * Diff-free like the range boxes: the primitive reads the array at paint
+   * time — a visibility toggle never recreates the chart (§14). Specs are
+   * remembered across series rebuilds (chart-type switch) and replayed by
+   * the manager's re-attach.
+   */
+  setStructureLines(lines: readonly OryonStructureLineSpec[]): void {
+    if (this.structureLines === null) return;
+    this.structureLines.setLines(lines);
+  }
+
   private toStructureSeriesMarkers(specs: readonly OryonStructureMarkerSpec[]): SeriesMarker<UTCTimestamp>[] {
     return specs.map((spec) => ({
       id: spec.id,
@@ -805,6 +835,38 @@ export class OryonChartEngine {
   goToLatest(): void {
     if (this.chart === null) return;
     this.chart.timeScale().scrollToRealTime();
+  }
+
+  /**
+   * Captures the chart's CURRENT visual state as a PNG data URL (Phase 10
+   * snapshot workflow) through the library's DOCUMENTED takeScreenshot()
+   * API — candles, overlays, primitives and panes as rendered. The result
+   * is bounded: a capture wider than `maxWidth` is downscaled proportionally
+   * on an offscreen canvas so a snapshot can never be a multi-megabyte
+   * payload. Null when the chart is not mounted or the export throws —
+   * never a blank or misleading image.
+   *
+   * Capture time (Date.now() at the call site) and chart reference time
+   * (lastCandleTime) are DISTINCT concepts — callers store both explicitly.
+   */
+  captureSnapshot(maxWidth = 1600): string | null {
+    if (this.chart === null) return null;
+    try {
+      const source = this.chart.takeScreenshot();
+      if (source.width === 0 || source.height === 0) return null;
+      if (source.width <= maxWidth) return source.toDataURL("image/png");
+      const scale = maxWidth / source.width;
+      const target = document.createElement("canvas");
+      target.width = maxWidth;
+      target.height = Math.max(1, Math.round(source.height * scale));
+      const context = target.getContext("2d");
+      if (context === null) return null;
+      context.drawImage(source, 0, 0, target.width, target.height);
+      return target.toDataURL("image/png");
+    } catch {
+      // Export unsupported (e.g. tainted canvas) — reported, never faked.
+      return null;
+    }
   }
 
   // ── synchronization surface (Phase 7 — coordinator adapter) ────────────
@@ -978,6 +1040,7 @@ export class OryonChartEngine {
     structureMarkers: number;
     keyLevelLines: number;
     orBoxes: number;
+    structureLines: number;
   } | null {
     if (this.chart === null) return null;
     const main = (this.candleSeries !== null ? 1 : 0) + (this.lineSeries !== null ? 1 : 0);
@@ -992,6 +1055,7 @@ export class OryonChartEngine {
       structureMarkers: this.structureSpecs.length,
       keyLevelLines: this.keyLevels?.count ?? 0,
       orBoxes: this.rangeBoxes?.count ?? 0,
+      structureLines: this.structureLines?.count ?? 0,
     };
   }
 
