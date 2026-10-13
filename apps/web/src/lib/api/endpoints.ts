@@ -117,6 +117,7 @@ export const apiPaths = {
   tradingAccountDeals: (accountId: string) => `/trading-accounts/${accountId}/deals`,
   tradingAccountTest: (accountId: string) => `/trading-accounts/${accountId}/test`,
   tradingAccountSync: (accountId: string) => `/trading-accounts/${accountId}/sync`,
+  tradingAccountSyncRuns: (accountId: string) => `/trading-accounts/${accountId}/sync-runs`,
   tradingAccountReconnect: (accountId: string) => `/trading-accounts/${accountId}/reconnect`,
   integrationsOverview: "/integrations/overview",
   integrationConnect: (providerId: string) => `/integrations/providers/${providerId}/connect`,

@@ -34,11 +34,11 @@
 import type { TradingProviderDescriptor } from "../../../../shared/contracts";
 import { capabilitySupportLevel, currencySchema } from "../../../../shared/contracts";
 import type {
+  DealsSyncResult,
   NormalizedAccountInfo,
-  NormalizedDeal,
   NormalizedOrder,
-  NormalizedPosition,
   NormalizedSnapshot,
+  PositionsSyncResult,
   ProviderCredentials,
   ProviderRequestContext,
   TradingProviderAdapter,
@@ -47,9 +47,12 @@ import { ProviderError } from "../../provider.types";
 import {
   accountInfoFromSummary,
   dealsFromTransactions,
+  maxTransactionId,
   oandaOrdersResponseSchema,
   oandaSummarySchema,
   oandaTradesResponseSchema,
+  oandaTransactionsPagesSchema,
+  type OandaTransactionRow,
   oandaTransactionsResponseSchema,
   ordersFromPending,
   positionsFromTrades,
@@ -60,9 +63,19 @@ import {
 const OANDA_PRACTICE_HOST = "https://api-fxpractice.oanda.com";
 const OANDA_LIVE_HOST = "https://api-fxtrade.oanda.com";
 
-/** Full-refresh page size for /transactions (v20 maximum page; U2 governs
- * any future depth decision — Phase 04 owns cursors if ever required). */
+/** Page size for the initial time-based /transactions query (v20 page max). */
 const TRANSACTIONS_PAGE_SIZE = 1000;
+/** Full-refresh page size for /trades and /pendingOrders (v20 documented
+ * maximum — the ENDPOINT default is 50, which silently truncated the open
+ * set; fixed in Phase 05 per spec §8.1). */
+const LIST_PAGE_SIZE = 500;
+/** Safety caps — bounded page/row budgets (spec §20: no unbounded pulls).
+ * Hitting a cap yields an honestly INCOMPLETE result, never a silent guess:
+ * positions closure is skipped and the deals checkpoint does not advance
+ * past the rows actually observed. */
+const MAX_LIST_PAGES = 20; // 20 × 500 = 10 000 trades/orders per run
+const MAX_DEALS_PAGES = 5; // initial pull: 5 idrange pages per run
+const MAX_DEAL_ROWS = 10_000; // incremental pull: rows processed per run
 
 function capability(capabilities: TradingProviderDescriptor["capabilities"], key: Parameters<typeof capabilitySupportLevel>[1]) {
   return capabilitySupportLevel(capabilities, key);
@@ -197,12 +210,14 @@ export class OandaRestProviderAdapter implements TradingProviderAdapter {
    * One authenticated v20 call. Status-mapped to ProviderError codes; the
    * response body is parsed as JSON and validated by the CALLER's schema
    * (a shape-broken payload is INVALID_PROVIDER_RESPONSE, never a guess).
+   * Returns the parsed body PLUS the documented Link rel="next" pagination
+   * link when present (Phase 05 pagination, same-origin guarded downstream).
    */
-  private async request<T>(
+  private async requestWithMeta<T>(
     context: ProviderRequestContext,
     path: string,
     schema: { safeParse(value: unknown): { success: boolean; data?: T } },
-  ): Promise<T> {
+  ): Promise<{ data: T; linkNext: string | null }> {
     // Resolved OUTSIDE the try — an environment rejection (PROP_FIRM) is an
     // honest UNSUPPORTED_ACCOUNT, never a swallowed network error.
     const url = `${this.baseUrl(context)}${path}`;
@@ -234,6 +249,8 @@ export class OandaRestProviderAdapter implements TradingProviderAdapter {
       throw await statusToProviderError(response);
     }
 
+    const linkNext = parseNextLink(response.headers.get("link"));
+
     let body: unknown;
     try {
       body = await response.json();
@@ -244,7 +261,15 @@ export class OandaRestProviderAdapter implements TradingProviderAdapter {
     if (!parsed.success || parsed.data === undefined) {
       throw new ProviderError("INVALID_PROVIDER_RESPONSE", "The trading provider returned an unexpected response.");
     }
-    return parsed.data;
+    return { data: parsed.data, linkNext };
+  }
+
+  private async request<T>(
+    context: ProviderRequestContext,
+    path: string,
+    schema: { safeParse(value: unknown): { success: boolean; data?: T } },
+  ): Promise<T> {
+    return (await this.requestWithMeta(context, path, schema)).data;
   }
 
   /** Guard — the operation must be declared SUPPORTED before any call (doc A §4.3). */
@@ -298,34 +323,168 @@ export class OandaRestProviderAdapter implements TradingProviderAdapter {
     return snapshotFromSummary(summary);
   }
 
-  async fetchPositions(context: ProviderRequestContext): Promise<NormalizedPosition[]> {
+  async fetchPositions(context: ProviderRequestContext): Promise<PositionsSyncResult> {
     this.assertSupported("openPositions");
-    const payload = await this.request(
+    // count=500 (documented maximum — the endpoint default is 50) + follow
+    // the documented Link rel="next" pagination until exhausted (spec §8.1:
+    // never assume the first response is the full dataset). A page or cap
+    // boundary yields complete=false → the orchestrator skips closure.
+    const trades = await this.followPaginatedList(
       context,
-      `/v3/accounts/${encodeURIComponent(context.externalAccountId)}/trades?state=OPEN`,
+      `/v3/accounts/${encodeURIComponent(context.externalAccountId)}/trades?state=OPEN&count=${LIST_PAGE_SIZE}`,
       oandaTradesResponseSchema,
+      (payload) => payload.trades,
+      MAX_LIST_PAGES,
     );
-    return positionsFromTrades(payload.trades);
+    return {
+      positions: positionsFromTrades(trades.rows),
+      complete: trades.complete,
+    };
   }
 
   async fetchOrders(context: ProviderRequestContext): Promise<NormalizedOrder[]> {
     this.assertSupported("orders");
-    const payload = await this.request(
+    const orders = await this.followPaginatedList(
       context,
-      `/v3/accounts/${encodeURIComponent(context.externalAccountId)}/pendingOrders`,
+      `/v3/accounts/${encodeURIComponent(context.externalAccountId)}/pendingOrders?count=${LIST_PAGE_SIZE}`,
       oandaOrdersResponseSchema,
+      (payload) => payload.orders,
+      MAX_LIST_PAGES,
     );
-    return ordersFromPending(payload.orders).orders;
+    // Upsert-only resource: no closure decision depends on completeness
+    // (an order absent from the pending set has a terminal state — filled
+    // vs cancelled — that the pending listing does not expose; correlation
+    // is a documented DEFERRED item, never guessed).
+    return ordersFromPending(orders.rows).orders;
   }
 
-  async fetchDeals(context: ProviderRequestContext): Promise<NormalizedDeal[]> {
+  /**
+   * Deals with documented incremental checkpoint semantics (Phase 05, spec
+   * §8 — OANDA v20 verified 2026-10-13):
+   *
+   *   cursor present → GET /transactions/sinceid?id={cursor} — "return all
+   *     Transactions newer than the TransactionID" (rows inline).
+   *   no cursor      → GET /transactions?pageSize=1000 — the time-based
+   *     listing returns PAGE URLS (idrange), not rows; follow up to
+   *     MAX_DEALS_PAGES of them in order.
+   *
+   * observedThrough = max transaction id OBSERVED (ALL rows — including the
+   * bookkeeping classes the deal mapping filters out — otherwise a run over
+   * an all-bookkeeping page could never advance the checkpoint). Bounded:
+   * page caps + a row cap; exceeding one returns complete=false with the
+   * rows observed so far, and the checkpoint covers exactly those rows.
+   */
+  async fetchDeals(context: ProviderRequestContext): Promise<DealsSyncResult> {
     this.assertSupported("deals");
-    const payload = await this.request(
+    const cursor = context.dealsCursor ?? null;
+
+    if (cursor !== null) {
+      // Incremental: the documented sinceid cursor. Validate the cursor
+      // shape BEFORE building the request — a corrupted checkpoint is an
+      // INVALID_PROVIDER_RESPONSE-class input error, never a silently
+      // wrong query (§8.2: treat cursors as provider-specific data).
+      if (!/^\d{1,15}$/.test(cursor)) {
+        throw new ProviderError(
+          "INVALID_PROVIDER_RESPONSE",
+          "The stored synchronization checkpoint is not usable. Reconnect or run a full refresh.",
+        );
+      }
+      const payload = await this.request(
+        context,
+        `/v3/accounts/${encodeURIComponent(context.externalAccountId)}/transactions/sinceid?id=${cursor}`,
+        oandaTransactionsResponseSchema,
+      );
+      const rows = payload.transactions;
+      if (rows.length <= MAX_DEAL_ROWS) {
+        return {
+          deals: dealsFromTransactions(rows),
+          observedThrough: maxTransactionId(rows.map((row) => row.id)),
+          complete: true,
+        };
+      }
+      // Row cap hit: process the FIRST MAX_DEAL_ROWS rows in provider order,
+      // keep the checkpoint strictly inside what was observed/persistable.
+      const kept = rows.slice(0, MAX_DEAL_ROWS);
+      return {
+        deals: dealsFromTransactions(kept),
+        observedThrough: maxTransactionId(kept.map((row) => row.id)),
+        complete: false,
+      };
+    }
+
+    // Initial pull (no checkpoint): the time-based listing default window is
+    // account-creation → now (documented). The response carries page URLs —
+    // never rows. Follow the FIRST MAX_DEALS_PAGES pages in order; if more
+    // pages exist the run is honestly incomplete AND the checkpoint covers
+    // exactly the observed rows — the next scheduled run resumes from there
+    // (sinceid) and catch-up progresses run over run without unbounded pulls.
+    const listing = await this.request(
       context,
       `/v3/accounts/${encodeURIComponent(context.externalAccountId)}/transactions?pageSize=${TRANSACTIONS_PAGE_SIZE}`,
-      oandaTransactionsResponseSchema,
+      oandaTransactionsPagesSchema,
     );
-    return dealsFromTransactions(payload.transactions);
+    if (listing.pages.length === 0) {
+      return { deals: [], observedThrough: null, complete: true };
+    }
+    const rows: OandaTransactionRow[] = [];
+    let visited = 0;
+    let complete = true;
+    for (const pageUrl of listing.pages) {
+      if (visited >= MAX_DEALS_PAGES) {
+        complete = false;
+        break;
+      }
+      const path = safeProviderPagePath(pageUrl, this.baseUrl(context));
+      const page = await this.request(context, path, oandaTransactionsResponseSchema);
+      visited += 1;
+      for (const row of page.transactions) {
+        if (rows.length >= MAX_DEAL_ROWS) {
+          complete = false;
+          break;
+        }
+        rows.push(row);
+      }
+      if (!complete) break;
+    }
+    complete = complete && visited >= listing.pages.length;
+    return {
+      deals: dealsFromTransactions(rows),
+      observedThrough: maxTransactionId(rows.map((row) => row.id)),
+      complete,
+    };
+  }
+
+  /**
+   * Follow a v20 list endpoint's documented Link rel="next" pagination
+   * (developer.oanda.com: "A link to the next page ... if the results were
+   * paginated"). Stops at `maxPages` — a cap boundary is an honest
+   * complete=false, never a silent truncation presented as the full set.
+   */
+  private async followPaginatedList<TPayload,TRow>(
+    context: ProviderRequestContext,
+    firstPath: string,
+    schema: { safeParse(value: unknown): { success: boolean; data?: TPayload } },
+    rowsOf: (payload: TPayload) => TRow[],
+    maxPages: number,
+  ): Promise<{ rows: TRow[]; complete: boolean }> {
+    const rows: TRow[] = [];
+    let path: string | null = firstPath;
+    let visited = 0;
+    while (path !== null) {
+      if (visited >= maxPages) {
+        return { rows, complete: false };
+      }
+      const result: { data: TPayload; linkNext: string | null } = await this.requestWithMeta(
+        context,
+        path,
+        schema,
+      );
+      rows.push(...rowsOf(result.data));
+      visited += 1;
+      const next: string | null = result.linkNext;
+      path = next === null ? null : safeProviderPagePath(next, this.baseUrl(context));
+    }
+    return { rows, complete: true };
   }
 }
 
@@ -337,6 +496,38 @@ const oandaAccountsListSchema = { safeParse(value: unknown) {
   ) ? { success: true as const, data: value as { accounts: unknown[] } }
     : { success: false as const, data: undefined as never };
 } };
+
+/**
+ * Parse the documented Link pagination header: `<url>; rel="next"`.
+ * Returns ONLY the rel="next" target; anything else is ignored (absence of
+ * the header/link = last page — the documented end-of-pagination signal).
+ */
+export function parseNextLink(linkHeader: string | null): string | null {
+  if (linkHeader === null) return null;
+  const match = /<([^>]+)>;\s*rel="next"/.exec(linkHeader);
+  return match?.[1] ?? null;
+}
+
+/**
+ * Same-origin guard for provider-issued pagination URLs (Link header and
+ * ListTransactions `pages`). Provider pages point at idrange queries on the
+ * SAME configured host; anything else (different host, non-http(s), no
+ * /v3/ path) is refused — we never fetch a provider-supplied URL outside
+ * the configured endpoint (SSRF posture, spec §14).
+ */
+export function safeProviderPagePath(pageUrl: string, baseUrl: string): string {
+  let parsed: URL;
+  try {
+    parsed = new URL(pageUrl, baseUrl);
+  } catch {
+    throw new ProviderError("INVALID_PROVIDER_RESPONSE", "The trading provider returned an unexpected response.");
+  }
+  const base = new URL(baseUrl);
+  if (parsed.protocol !== base.protocol || parsed.host !== base.host || !parsed.pathname.startsWith("/v3/")) {
+    throw new ProviderError("INVALID_PROVIDER_RESPONSE", "The trading provider returned an unexpected response.");
+  }
+  return `${parsed.pathname}${parsed.search}`;
+}
 
 function summaryPath(context: ProviderRequestContext): string {
   return `/v3/accounts/${encodeURIComponent(context.externalAccountId)}/summary`;

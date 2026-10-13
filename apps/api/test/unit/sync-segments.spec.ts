@@ -60,6 +60,11 @@ function recordingRepository() {
     dealsUpserted: 0,
     errorCode: null,
     requestId: null,
+    snapshotAt: null,
+    positionsAt: null,
+    ordersAt: null,
+    dealsAt: null,
+    dealsCheckpoint: null,
   };
   const repository = {
     createSyncRun: async (): Promise<SyncRunRow> => runRow,

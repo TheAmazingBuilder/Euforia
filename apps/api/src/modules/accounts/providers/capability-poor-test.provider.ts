@@ -21,10 +21,10 @@
 import type { TradingProviderDescriptor } from "../../../shared/contracts";
 import { capabilitySupportLevel } from "../../../shared/contracts";
 import type {
+  DealsSyncResult,
   NormalizedAccountInfo,
-  NormalizedDeal,
+  PositionsSyncResult,
   NormalizedOrder,
-  NormalizedPosition,
   NormalizedSnapshot,
   ProviderCredentials,
   ProviderRequestContext,
@@ -103,12 +103,14 @@ export class CapabilityPoorTestProviderAdapter implements TradingProviderAdapter
     };
   }
 
-  async fetchPositions(context: ProviderRequestContext): Promise<NormalizedPosition[]> {
+  async fetchPositions(context: ProviderRequestContext): Promise<PositionsSyncResult> {
     this.assertSupported("openPositions");
     const h = hashSeed(context.externalAccountId);
-    if (h % 2 === 0) return [];
-    return [
-      {
+    if (h % 2 === 0) return { positions: [], complete: true };
+    return {
+      complete: true,
+      positions: [
+        {
         externalPositionId: `${context.externalAccountId}-pos-1`,
         symbol: "EURUSD",
         side: "BUY",
@@ -121,8 +123,9 @@ export class CapabilityPoorTestProviderAdapter implements TradingProviderAdapter
         swap: null,
         commission: null,
         openedAt: new Date(Date.UTC(2026, 0, 8, 14, 0, 0)).toISOString(),
-      },
-    ];
+        },
+      ],
+    };
   }
 
   /** UNSUPPORTED enforcement — the operation exists, the capability does not. */
@@ -132,7 +135,7 @@ export class CapabilityPoorTestProviderAdapter implements TradingProviderAdapter
   }
 
   /** UNKNOWN blocks with an honest error — never silent emptiness (doc A §4.4). */
-  async fetchDeals(_context: ProviderRequestContext): Promise<NormalizedDeal[]> {
+  async fetchDeals(_context: ProviderRequestContext): Promise<DealsSyncResult> {
     void _context;
     throw new ProviderError(
       "UNSUPPORTED_CAPABILITY",

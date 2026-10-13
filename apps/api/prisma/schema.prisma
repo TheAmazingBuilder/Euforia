@@ -356,6 +356,12 @@ model TradingConnection {
   lastConnectedAt DateTime?
   /// Last SUCCESSFUL synchronization completion (UTC).
   lastSyncAt      DateTime?
+  /// Phase 05 — provider-issued incremental deals cursor (opaque to the
+  /// domain): everything ≤ this transaction id was OBSERVED and every
+  /// supported row of it persisted. Advanced ONLY after the covered rows
+  /// are persisted (checkpoint safety §8.4). Null = next run does the
+  /// documented bounded initial pull. Never exposed on the wire.
+  dealsCheckpoint String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -413,6 +419,16 @@ model TradingPosition {
   openedAt           DateTime
   /// When Cosmoz last refreshed this row from the provider (UTC).
   syncedAt           DateTime       @default(now())
+  /// Phase 05 reconciliation — OPEN = present in the provider's latest
+  /// complete open-position response; CLOSED = absent from a demonstrably
+  /// complete response (documented full-list semantics of the provider's
+  /// open-state listing + a fully-paginated, untruncated, successful
+  /// positions segment). Rows are NEVER deleted (§6.4).
+  state              String         @default("OPEN")
+  /// When Cosmoz OBSERVED the closure (retrieval time — the provider does
+  /// not report a per-position close event in this listing; the provider
+  /// event time is explicitly unavailable, §11).
+  closedAt           DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -487,7 +503,7 @@ model TradingSyncRun {
   accountId         String         @db.Uuid
   account           TradingAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
   status            String         @default("RUNNING")
-  /// INITIAL | MANUAL.
+  /// INITIAL | MANUAL | SCHEDULED (Phase 05).
   trigger           String
   startedAt         DateTime       @default(now())
   finishedAt        DateTime?
@@ -507,6 +523,10 @@ model TradingSyncRun {
   positionsAt       DateTime?
   ordersAt          DateTime?
   dealsAt           DateTime?
+  /// Phase 05 — the deals checkpoint value AFTER this run (checkpoint
+  /// progress observability, §10); null when the deals segment did not run
+  /// or the checkpoint did not advance.
+  dealsCheckpoint   String?
 
   @@index([accountId, startedAt(sort: Desc)])
 }

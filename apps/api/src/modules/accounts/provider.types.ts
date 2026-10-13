@@ -38,6 +38,11 @@ export interface ProviderCredentials {
  * endpoint WITHOUT widening the 6-method port (doc A §4.3). Adapters that
  * do not care (mock) ignore it. PROP_FIRM arrives for providers that serve
  * prop-firm entities; OANDA rejects it honestly (UNSUPPORTED_ACCOUNT).
+ *
+ * `dealsCursor` (Phase 05) — the provider-issued incremental checkpoint
+ * stored on the connection (opaque to the domain, spec §8.2). Present = the
+ * adapter resumes retrieval strictly AFTER that point; absent/null = a
+ * bounded initial pull. Adapters without incremental semantics ignore it.
  */
 export interface ProviderRequestContext {
   credentials: ProviderCredentials;
@@ -45,6 +50,8 @@ export interface ProviderRequestContext {
   externalAccountId: string;
   /** Account environment (TradingAccount.type) — endpoint routing input. */
   environment: "DEMO" | "LIVE" | "PROP_FIRM";
+  /** Provider-issued deals checkpoint to resume from (Phase 05, optional). */
+  dealsCursor?: string | null;
 }
 
 /** Normalized provider account metadata (fetchAccountInfo). */
@@ -118,6 +125,32 @@ export interface NormalizedDeal {
 }
 
 /**
+ * Positions fetch result (Phase 05) — the completeness FACT drives the
+ * closure reconciliation (§13.2): an absent position may be marked CLOSED
+ * only when the adapter guarantees the response represented ALL currently
+ * open positions (fully paginated, untruncated, no page failure).
+ */
+export interface PositionsSyncResult {
+  positions: NormalizedPosition[];
+  /** true = the provider confirmed this IS the complete open set. */
+  complete: boolean;
+}
+
+/**
+ * Deals fetch result (Phase 05) — incremental checkpoint semantics (§8):
+ * `observedThrough` marks that EVERYTHING up to that provider-issued point
+ * was OBSERVED (including rows filtered out of the deal mapping); the
+ * orchestrator may persist it as the new checkpoint ONLY AFTER the returned
+ * deals are persisted (§8.4 — a checkpoint never covers unpersisted data).
+ * `complete` = no further rows exist beyond `observedThrough` at fetch time.
+ */
+export interface DealsSyncResult {
+  deals: NormalizedDeal[];
+  observedThrough: string | null;
+  complete: boolean;
+}
+
+/**
  * Normalized provider failure. `code` is one of the stable TRADING_ERROR_CODES
  * provider codes; the message is SANITIZED — it must be safe to expose and
  * must never contain credentials or raw provider internals (§23/§36).
@@ -167,14 +200,18 @@ export interface TradingProviderAdapter {
   /** Current balance/equity/margin snapshot. Throws ProviderError on failure. */
   fetchSnapshot(context: ProviderRequestContext): Promise<NormalizedSnapshot>;
 
-  /** Open positions (empty array = none). Throws ProviderError on failure. */
-  fetchPositions(context: ProviderRequestContext): Promise<NormalizedPosition[]>;
+  /** Open positions (empty array = none) + completeness fact for reconciliation. */
+  fetchPositions(context: ProviderRequestContext): Promise<PositionsSyncResult>;
 
   /** Pending orders (empty array = none). Throws ProviderError on failure. */
   fetchOrders(context: ProviderRequestContext): Promise<NormalizedOrder[]>;
 
-  /** Recent completed deals (empty array = none). Throws ProviderError on failure. */
-  fetchDeals(context: ProviderRequestContext): Promise<NormalizedDeal[]>;
+  /**
+   * Completed deals with incremental checkpoint semantics (Phase 05).
+   * Honors `context.dealsCursor` when the provider supports a documented
+   * cursor; empty array = none. Throws ProviderError on failure.
+   */
+  fetchDeals(context: ProviderRequestContext): Promise<DealsSyncResult>;
 }
 
 /**

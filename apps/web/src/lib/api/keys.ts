@@ -51,6 +51,8 @@ export const queryKeys = {
   tradingAccountOrders: (accountId: string) =>
     ["trading-accounts", accountId, "orders"] as const,
   tradingAccountDeals: (accountId: string) => ["trading-accounts", accountId, "deals"] as const,
+  tradingAccountSyncRuns: (accountId: string) =>
+    ["trading-accounts", accountId, "sync-runs"] as const,
   integrations: ["integrations"] as const,
   security: ["security"] as const,
   monitoring: ["monitoring"] as const,

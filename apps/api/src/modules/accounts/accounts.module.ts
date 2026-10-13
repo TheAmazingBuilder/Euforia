@@ -37,6 +37,7 @@ import { OandaRestProviderAdapter } from "./providers/oanda/oanda-rest.provider"
 import { TradingAccountService } from "./trading-account.service";
 import { TradingSyncService } from "./trading-sync.service";
 import { AccountsRateLimiterService } from "./accounts-rate-limiter.service";
+import { AccountsSyncSchedulerService } from "./accounts-sync-scheduler.service";
 import { AccountsController } from "./accounts.controller";
 import { TradingAccountsController } from "./trading-accounts.controller";
 import { BrokerController } from "./broker.controller";
@@ -90,6 +91,10 @@ const providerRegistryProvider: Provider = {
     TradingSyncService,
     TradingAccountService,
     AccountsRateLimiterService,
+    // Phase 05 — scheduled synchronization + stale-run recovery (§9/§15).
+    // The timer itself is config-gated (ACCOUNTS_SYNC_SCHEDULER, default
+    // off); the recovery sweep runs once at init regardless.
+    AccountsSyncSchedulerService,
   ],
   exports: [AccountsRepository],
 })

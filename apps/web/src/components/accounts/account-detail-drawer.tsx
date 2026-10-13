@@ -4,7 +4,7 @@ import * as React from "react";
 import { KeyRound, LifeBuoy, Pencil, RefreshCcw, ShieldQuestion } from "lucide-react";
 import { toast } from "sonner";
 
-import type { TradingConnectionTestResponse } from "@cosmoz/shared";
+import type { TradingAccountDetails, TradingConnectionTestResponse } from "@cosmoz/shared";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -32,6 +32,7 @@ import {
   useTradingAccountDetails,
   useTradingAccountOrders,
   useTradingAccountPositions,
+  useTradingAccountSyncRuns,
 } from "@/lib/api/queries";
 import { useDict } from "@/i18n/i18n-provider";
 
@@ -55,6 +56,41 @@ import {
  * (requireTyped confirmation). Nothing else — no close, no modify, no
  * cancel: read-only by construction.
  */
+
+/** Run status → the badge vocabulary (CANCELLED renders as its own neutral). */
+function mapRunStatusToBadge(status: string): "COMPLETED" | "PARTIAL" | "FAILED" | "CANCELLED" | "RUNNING" {
+  return status === "COMPLETED" || status === "PARTIAL" || status === "FAILED" || status === "CANCELLED" || status === "RUNNING"
+    ? status
+    : "FAILED";
+}
+
+/**
+ * Phase 05 — per-resource freshness line (§11.1): explicit, timestamp-derived
+ * state shown where the resource is consumed. Never "real-time": freshness
+ * is the last SUCCESSFUL refresh of that resource, per the server rules.
+ */
+function ResourceFreshnessLine({
+  resources,
+  resource,
+  D,
+}: {
+  resources: TradingAccountDetails["synchronization"]["resources"] | undefined;
+  resource: "positions" | "orders" | "deals";
+  D: Record<string, string>;
+}) {
+  if (!resources) return null;
+  const entry = resources[resource];
+  const label =
+    entry.state === "FRESH" ? D.freshnessFresh : entry.state === "STALE" ? D.freshnessStale : D.freshnessNever;
+  const at = entry.at ? entry.at.slice(0, 16).replace("T", " ") + " UTC" : null;
+  return (
+    <p className="mb-2 flex items-center gap-2 text-xs text-muted-foreground" data-testid={`resource-freshness-${resource}`}>
+      <span>
+        {D.freshnessAsOf} {at ?? "—"} · <span className="font-medium">{label}</span>
+      </span>
+    </p>
+  );
+}
 
 function DetailRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -207,6 +243,7 @@ export function AccountDetailDrawer({
   const positions = useTradingAccountPositions(open ? accountId : null);
   const orders = useTradingAccountOrders(open ? accountId : null);
   const deals = useTradingAccountDeals(open ? accountId : null);
+  const syncRuns = useTradingAccountSyncRuns(open ? accountId : null);
   const rename = useRenameTradingAccount();
   const disconnect = useDisconnectTradingAccount();
   const sync = useSyncTradingAccount();
@@ -405,11 +442,46 @@ export function AccountDetailDrawer({
                 ) : null}
               </dl>
             </div>
+
+            {/* Phase 05 — synchronization history: manual AND scheduled runs,
+                newest first. The honest audit trail of what the backend did. */}
+            <div className="rounded-lg border border-border p-3" data-testid="account-sync-history">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{D.historySection}</p>
+              {syncRuns.data && syncRuns.data.runs.length > 0 ? (
+                <ul className="mt-2 grid gap-1.5">
+                  {syncRuns.data.runs.slice(0, 8).map((run) => (
+                    <li
+                      key={run.id}
+                      className="flex items-center justify-between gap-3 rounded-md border border-border/60 px-2.5 py-1.5 text-xs"
+                      data-testid="account-sync-history-row"
+                    >
+                      <span className="flex min-w-0 items-center gap-2">
+                        <SyncStatusBadge status={mapRunStatusToBadge(run.status)} testId={`account-history-status-${run.id}`} />
+                        <span className="font-mono text-[11px] text-muted-foreground">
+                          {run.trigger === "MANUAL" ? D.historyTriggerManual : run.trigger === "SCHEDULED" ? D.historyTriggerScheduled : D.historyTriggerInitial}
+                        </span>
+                      </span>
+                      <span className="flex shrink-0 items-center gap-3 text-muted-foreground">
+                        <span className="font-mono text-[11px]">
+                          P {run.positionsUpserted} · O {run.ordersUpserted} · D {run.dealsUpserted}
+                        </span>
+                        <span>{run.startedAt.slice(0, 16).replace("T", " ")}</span>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-2 text-xs text-muted-foreground" data-testid="account-sync-history-empty">
+                  {syncRuns.isPending ? dict.common.loading : D.historyEmpty}
+                </p>
+              )}
+            </div>
           </>
         ) : null}
       </TabsContent>
 
       <TabsContent value="positions" className="mt-4" data-testid="account-detail-positions">
+        <ResourceFreshnessLine resources={account?.synchronization.resources} resource="positions" D={D} />
         {positions.data ? (
           <ExternalPositionsTable
             positions={positions.data.positions}
@@ -422,6 +494,7 @@ export function AccountDetailDrawer({
       </TabsContent>
 
       <TabsContent value="orders" className="mt-4" data-testid="account-detail-orders">
+        <ResourceFreshnessLine resources={account?.synchronization.resources} resource="orders" D={D} />
         {orders.data ? (
           <ExternalOrdersTable orders={orders.data.orders} />
         ) : (
@@ -430,6 +503,7 @@ export function AccountDetailDrawer({
       </TabsContent>
 
       <TabsContent value="deals" className="mt-4" data-testid="account-detail-deals">
+        <ResourceFreshnessLine resources={account?.synchronization.resources} resource="deals" D={D} />
         {deals.data ? (
           <ExternalDealsTable deals={deals.data.deals} currency={account?.currency ?? "USD"} />
         ) : (

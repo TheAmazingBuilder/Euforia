@@ -53,6 +53,16 @@ export interface AppConfig {
     oandaEnabled: boolean;
     /** OANDA REST base-URL override (tests/region edge); null = route by environment. */
     oandaRestUrlOverride: string | null;
+    /** Phase 05 — background sync scheduler gate (never on by default, §57). */
+    syncSchedulerEnabled: boolean;
+    /** Phase 05 — base interval between scheduler sweeps (jittered per tick). */
+    syncIntervalMs: number;
+    /** Phase 05 — bounded concurrency across connections per sweep (§9.1). */
+    syncMaxConcurrency: number;
+    /** Phase 05 — RUNNING runs older than this are CANCELLED (§15 recovery). */
+    syncStaleRunMs: number;
+    /** Phase 05 — bounded retries per segment for transient failures (§15). */
+    syncSegmentRetries: number;
   };
   trades: {
     /** Local filesystem storage root for trade-screenshot binaries (§39). */
@@ -128,6 +138,11 @@ function build(env: Env): AppConfig {
           : env.NODE_ENV !== "production",
       oandaEnabled: env.ACCOUNTS_OANDA_PROVIDER === "enabled",
       oandaRestUrlOverride: env.ACCOUNTS_OANDA_REST_URL ?? null,
+      syncSchedulerEnabled: env.ACCOUNTS_SYNC_SCHEDULER === "enabled",
+      syncIntervalMs: env.ACCOUNTS_SYNC_INTERVAL_MS,
+      syncMaxConcurrency: env.ACCOUNTS_SYNC_MAX_CONCURRENCY,
+      syncStaleRunMs: env.ACCOUNTS_SYNC_STALE_RUN_MS,
+      syncSegmentRetries: env.ACCOUNTS_SYNC_SEGMENT_RETRIES,
     },
     trades: {
       screenshotsRoot: env.TRADES_SCREENSHOTS_ROOT,

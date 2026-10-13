@@ -254,6 +254,7 @@ export {
   useTradingAccountPositions,
   useTradingAccountOrders,
   useTradingAccountDeals,
+  useTradingAccountSyncRuns,
   useConnectTradingAccount,
   useRenameTradingAccount,
   useTestTradingConnection,

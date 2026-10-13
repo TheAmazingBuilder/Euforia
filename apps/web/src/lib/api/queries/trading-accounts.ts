@@ -12,6 +12,7 @@ import type {
   TradingPositionsResponse,
   TradingProviderListResponse,
   TradingReconnectInput,
+  TradingSyncRunsResponse,
 } from "@cosmoz/shared";
 
 import { apiRequest } from "@/lib/api/client";
@@ -101,6 +102,24 @@ export function useTradingAccountDeals(accountId: string | null) {
     queryKey: queryKeys.tradingAccountDeals(accountId ?? "none"),
     queryFn: () =>
       apiRequest<TradingDealsResponse>(apiPaths.tradingAccountDeals(accountId ?? "")),
+    enabled: accountId !== null,
+  });
+}
+
+/**
+ * GET /trading-accounts/:id/sync-runs — bounded synchronization history
+ * (Phase 05): newest first, keyset-paginated. Manual AND scheduled runs
+ * appear here — the honest audit trail of what the backend actually did.
+ */
+export function useTradingAccountSyncRuns(accountId: string | null, limit = 10) {
+  return useQuery({
+    queryKey: queryKeys.tradingAccountSyncRuns(`${accountId ?? "none"}:${limit}`),
+    queryFn: () => {
+      const params = new URLSearchParams({ limit: String(limit) });
+      return apiRequest<TradingSyncRunsResponse>(
+        `${apiPaths.tradingAccountSyncRuns(accountId ?? "")}?${params.toString()}`,
+      );
+    },
     enabled: accountId !== null,
   });
 }

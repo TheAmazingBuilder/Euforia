@@ -21,7 +21,9 @@
  */
 import type { TradingProviderDescriptor } from "../../../shared/contracts";
 import type {
+  DealsSyncResult,
   NormalizedAccountInfo,
+  PositionsSyncResult,
   NormalizedDeal,
   NormalizedOrder,
   NormalizedPosition,
@@ -164,7 +166,7 @@ export class MockTradingProviderAdapter implements TradingProviderAdapter {
     };
   }
 
-  async fetchPositions(context: ProviderRequestContext): Promise<NormalizedPosition[]> {
+  async fetchPositions(context: ProviderRequestContext): Promise<PositionsSyncResult> {
     await this.guard(context.credentials.secret);
     const h = hashSeed(context.externalAccountId);
     const count = h % 3; // 0–2 open positions
@@ -190,7 +192,9 @@ export class MockTradingProviderAdapter implements TradingProviderAdapter {
         openedAt: new Date(BASE_POSITION_MS + i * 3_600_000).toISOString(),
       });
     }
-    return positions;
+    // The mock serves its generated set as the complete open set (fixture
+    // semantics — reconciliation closure exercises against this).
+    return { positions, complete: true };
   }
 
   async fetchOrders(context: ProviderRequestContext): Promise<NormalizedOrder[]> {
@@ -214,7 +218,7 @@ export class MockTradingProviderAdapter implements TradingProviderAdapter {
     ];
   }
 
-  async fetchDeals(context: ProviderRequestContext): Promise<NormalizedDeal[]> {
+  async fetchDeals(context: ProviderRequestContext): Promise<DealsSyncResult> {
     await this.guard(context.credentials.secret);
     const h = hashSeed(context.externalAccountId);
 
@@ -316,11 +320,14 @@ export class MockTradingProviderAdapter implements TradingProviderAdapter {
       cursorMs += 86_400_000;
     }
 
-    return drafts
+    const deals = drafts
       .sort((a, b) => a.executedAtMs - b.executedAtMs)
       .map((draft) => ({
         ...draft.deal,
         executedAt: new Date(draft.executedAtMs).toISOString(),
       }));
+    // Fixture semantics: the generated window IS the full deal history —
+    // complete, no checkpoint (observedThrough null = nothing to resume).
+    return { deals, observedThrough: null, complete: true };
   }
 }

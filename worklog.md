@@ -1476,3 +1476,25 @@ Stage Summary:
 - Phase 04 COMPLETE selon la spec master: 1 provider réel (OANDA), auth documentée, validation compte réelle (fixtures+live-bridge), annulation transport ajoutée, zéro changement de contrat wire, zéro dépendance
 - Live hop api-fxpractice: DEFERRED U2 (token utilisateur, runbook Phase 03 §8 inchangé) — aucune prétention de vérification live
 - Décision owner requise: suppression de .wip-quarantine-2026-10-13/ après revue
+
+---
+Task ID: accounts-phase05
+Agent: main (Super Z)
+Task: Phase 05 (master spec uploadé) — Trading Account Data Synchronization, Reconciliation, and Freshness Management
+
+Work Log:
+- §4 AUDIT exécuté: git clean HEAD f89d0b6 (commit système UUID 1174 fichiers — 433 fichiers .wip-quarantine désormais TRACKÉS, rien supprimé, documenté); rapports Phase 00-04 relus; connecteur OANDA vérifié
+- DOCS OFFICIELS fetchés 2026-10-13 (developer.oanda.com): ListTrades/ListOrders count [default=50, maximum=500] + Link rel="next"; ListTransactions (time-based) → body { from,to,pageSize,count,pages:[idrange URLs],lastTransactionID } — PAS de transactions inline (30 req/s); /transactions/idrange from&to inclusifs; /transactions/sinceid?id= → transactions inline + lastTransactionID (120 req/s); max range 365 jours
+- 2 BUGS LATENTS réels découverts (le saut live U2 les aurait révélés): fetchPositions/fetchOrders sans count → tronqués à 50 (défaut v20); fetchDeals attend `transactions` inline alors que l'API réelle renvoie des URLs de pages → INVALID_PROVIDER_RESPONSE systématique
+- Inventory capacités construit (SUPPORTED/PARTIAL/UNSUPPORTED) — rate limit DOCUMENTÉ (120/30 req/s) réduit l'inconnue U2
+- IMPLÉMENTATION (ordre spec §21): contrats shared additifs (+SCHEDULED/+CANCELLED/run view segment ts/resourceFreshness/sync-runs schema) → migration additive 20261013221500 (position.state/closedAt, connection.dealsCheckpoint, run.dealsCheckpoint) déployée sur cosmoz+cosmoz_test → adapter OANDA (requestWithMeta Link rel=next, count=500, garde same-origin safeProviderPagePath, deals = pages→idrange initial borné + sinceid incrémental, caps honnêtes complete=false, parseNextLink/maxTransactionId) → repository (listSyncRuns keyset, cancelStaleRunningRuns, listSchedulableConnections, latestResourceTimestamps aggregate _max, closure atomique dans persistPositionsSegment + réouverture sur re-report, checkpoint atomique dans persistDealsSegment, listPositions → OPEN only) → orchestration (runScheduledSync, retries transitoires bornés sync-retry.ts avec Retry-After floor capé 5s, checkpoint/closure params) → scheduler (timer in-process jitter ±10%, éligibilité CONNECTED+creds+provider+environment, pool concurrency, cooldown 429, recovery stale→CANCELLED au boot même scheduler off) → API GET /trading-accounts/:id/sync-runs (keyset, borne 50, zod) → web (useTradingAccountSyncRuns, drawer history + freshness lines, MSW engine mirror + handler, dict EN)
+- PIÈGES: DATABASE_URL=file: shell override → toujours DATABASE_URL explicite pour migrate; kill "next start" laisse next-server v16 zombie → pkill next-server ou kill PID exact; .env.local live-bridge cuit au build → swap .env.local pour le mode MSW puis restore+rebuild+restart (pattern Phase 02)
+- BUGS LATENTS RÉELS corrigés: fetchPositions/Orders tronqués à 50 (défaut v20); fetchDeals cassé vs API réelle (ListTransactions renvoie des URLs de pages, pas de rows) — jamais exposés car le saut live est U2
+- VERIFIÉ (commandes réelles): tsc api+web 0, eslint 0 (4 warnings _locale préexistants), vitest 1159/1159 (83 fichiers, 38 nouveaux), builds api+web OK (2 modes web), migrations déployées ×2 DB, sondes MSW 25/25 (mode mocké), live-bridge 14/14 (bridge restauré), curl live des 2 nouvelles surfaces (sync-runs + resources FRESH), bun moteur 74/74
+- Rapport: docs/backend/PHASE-05-SYNC-FRESHNESS-REPORT.md (27 sections, A/B/C distingués, U2 inchangé, rate limits 120/30 req/s documentés réduisent l'unknown)
+
+Stage Summary:
+- Phase 05 COMPLETE selon la spec master: sync fiable = pagination documentée + checkpoint sinceid + réconciliation positions (complétude prouvée only) + scheduler opt-in + recovery + retries bornés + fraîcheur par ressource + history API + UI honnête
+- Honnêteté: aucune prétention de connectivité live (U2); ordres = états terminaux jamais inventés (corrélation DEFERRED documentée); CANCELLED jamais un résultat provider
+- Porté: U2 (token practice — valide maintenant le flow pagination/cursor sur l'hôte réel), U3 (découverte), décision quarantine (433 fichiers trackés par le sweep système, hors builds)
+- Next: STOP Phase 05 honoré — cTrader (roadmap figée) attend approbation explicite du owner

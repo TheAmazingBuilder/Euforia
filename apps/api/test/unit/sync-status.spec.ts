@@ -3,7 +3,11 @@
  * Connection lifecycle and synchronization lifecycle are ORTHOGONAL axes.
  */
 import { describe, expect, it } from "vitest";
-import { deriveSynchronizationStatus } from "../../src/modules/accounts/mappers";
+import {
+  deriveResourceFreshness,
+  deriveSynchronizationStatus,
+  toResourceFreshnessView,
+} from "../../src/modules/accounts/mappers";
 import type { SyncRunRow } from "../../src/modules/accounts/accounts.repository";
 
 const NOW = Date.UTC(2026, 0, 10, 12, 0, 0);
@@ -23,6 +27,11 @@ function run(overrides: Partial<SyncRunRow> = {}): SyncRunRow {
     dealsUpserted: 0,
     errorCode: null,
     requestId: null,
+    snapshotAt: null,
+    positionsAt: null,
+    ordersAt: null,
+    dealsAt: null,
+    dealsCheckpoint: null,
     ...overrides,
   };
 }
@@ -92,5 +101,42 @@ describe("deriveSynchronizationStatus", () => {
     // deriveSynchronizationStatus has no connection parameter by design.
     const failed = run({ status: "FAILED", errorCode: "INVALID_CREDENTIALS" });
     expect(deriveSynchronizationStatus(new Date(NOW - MINUTE), failed, NOW)).toBe("LIVE");
+  });
+});
+
+// ── Phase 05 — per-resource freshness rules (§11) ─────────────────────────────
+
+describe("deriveResourceFreshness", () => {
+  it("NEVER when the resource never persisted", () => {
+    expect(deriveResourceFreshness(null, NOW)).toEqual({ at: null, state: "NEVER" });
+  });
+
+  it("FRESH within the TTL, STALE beyond it", () => {
+    const at = new Date(NOW - 5 * MINUTE);
+    expect(deriveResourceFreshness(at, NOW).state).toBe("FRESH");
+    const old = new Date(NOW - 16 * MINUTE);
+    expect(deriveResourceFreshness(old, NOW).state).toBe("STALE");
+    expect(deriveResourceFreshness(old, NOW).at).toBeTruthy();
+  });
+
+  it("the TTL boundary itself is FRESH (age == TTL)", () => {
+    const at = new Date(NOW - 15 * MINUTE);
+    expect(deriveResourceFreshness(at, NOW).state).toBe("FRESH");
+  });
+
+  it("each resource derives INDEPENDENTLY (one failed segment never backdates another)", () => {
+    const view = toResourceFreshnessView(
+      {
+        snapshotAt: new Date(NOW - MINUTE),
+        positionsAt: null,
+        ordersAt: new Date(NOW - 60 * MINUTE),
+        dealsAt: new Date(NOW - MINUTE),
+      },
+      NOW,
+    );
+    expect(view.snapshot.state).toBe("FRESH");
+    expect(view.positions.state).toBe("NEVER");
+    expect(view.orders.state).toBe("STALE");
+    expect(view.deals.state).toBe("FRESH");
   });
 });

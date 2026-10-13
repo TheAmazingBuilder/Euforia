@@ -16,7 +16,8 @@ import {
   tradingProviderDescriptorSchema,
   TRADING_ERROR_CODES,
 } from "../../src/shared/contracts";
-import { OandaRestProviderAdapter } from "../../src/modules/accounts/providers/oanda/oanda-rest.provider";
+import { maxTransactionId } from "../../src/modules/accounts/providers/oanda/oanda-mapping";
+import { OandaRestProviderAdapter, parseNextLink, safeProviderPagePath } from "../../src/modules/accounts/providers/oanda/oanda-rest.provider";
 import {
   dealsFromTransactions,
   leverageFromMarginRate,
@@ -250,7 +251,9 @@ describe("OandaRestProviderAdapter — fetchPositions (open trades)", () => {
       },
     }));
     const adapter = new OandaRestProviderAdapter();
-    const positions = await adapter.fetchPositions(ctx());
+    const result = await adapter.fetchPositions(ctx());
+    expect(result.complete).toBe(true); // single page, no Link header → documented complete set
+    const positions = result.positions;
     expect(positions).toHaveLength(2);
     expect(positions[0]).toMatchObject({
       externalPositionId: "2344",
@@ -363,10 +366,26 @@ describe("OandaRestProviderAdapter — fetchOrders (pending)", () => {
 // ── Deals (transactions) ─────────────────────────────────────────────────────
 
 describe("OandaRestProviderAdapter — fetchDeals (transactions)", () => {
-  it("maps ORDER_FILL with the provider-side trade link and TRANSFER_FUNDS as balance op; excludes bookkeeping", async () => {
-    stubFetch(() => ({
-      body: {
-        transactions: [
+  it("maps ORDER_FILL with the provider-side trade link and TRANSFER_FUNDS as balance op; excludes bookkeeping (documented pages → idrange flow)", async () => {
+    // Phase 05: the time-based ListTransactions returns PAGE URLS (never
+    // rows — verified developer.oanda.com 2026-10-13); the adapter follows
+    // the idrange pages, which carry the transactions inline.
+    stubFetch((url) => {
+      if (url.includes("/transactions?pageSize=")) {
+        return {
+          body: {
+            pages: [
+              `https://api-fxpractice.oanda.com/v3/accounts/${ACCOUNT_ID}/transactions/idrange?from=2340&to=2360`,
+            ],
+            count: 3,
+            lastTransactionID: "2360",
+          },
+        };
+      }
+      if (url.includes("/transactions/idrange")) {
+        return {
+          body: {
+            transactions: [
           {
             type: "ORDER_FILL",
             id: "2346",
@@ -416,12 +435,20 @@ describe("OandaRestProviderAdapter — fetchDeals (transactions)", () => {
             time: "2026-01-09T00:00:00.000000000Z",
             accountID: ACCOUNT_ID,
           },
-        ],
-        lastTransactionID: "2360",
-      },
-    }));
+            ],
+            lastTransactionID: "2360",
+          },
+        };
+      }
+      throw new Error(`unexpected fetch ${url}`);
+    });
     const adapter = new OandaRestProviderAdapter();
-    const deals = await adapter.fetchDeals(ctx());
+    const result = await adapter.fetchDeals(ctx());
+    expect(result.complete).toBe(true);
+    // The bookkeeping row (2360) counts for the checkpoint even though it is
+    // filtered from the deals — observedThrough = max OBSERVED transaction id.
+    expect(result.observedThrough).toBe("2360");
+    const deals = result.deals;
     expect(deals).toHaveLength(3); // margin-call bookkeeping excluded
     expect(deals[0]).toMatchObject({
       externalDealId: "2346",
@@ -451,11 +478,27 @@ describe("OandaRestProviderAdapter — fetchDeals (transactions)", () => {
     });
   });
 
-  it("bounds the full-refresh window to the v20 page maximum (pageSize=1000)", async () => {
-    const fetchMock = stubFetch(() => ({ body: { transactions: [], lastTransactionID: "1" } }));
+  it("bounds the full-refresh window to the v20 page maximum (pageSize=1000) and follows the documented idrange pages", async () => {
+    // Phase 05: the listing returns page URLs; the bound assertion moves to
+    // the initial listing call, and the adapter follows the idrange page.
+    const fetchMock = stubFetch((url) => {
+      if (url.includes("/transactions?pageSize=")) {
+        return {
+          body: {
+            pages: [
+              `https://api-fxpractice.oanda.com/v3/accounts/${ACCOUNT_ID}/transactions/idrange?from=1&to=1`,
+            ],
+            count: 0,
+            lastTransactionID: "1",
+          },
+        };
+      }
+      return { body: { transactions: [], lastTransactionID: "1" } };
+    });
     const adapter = new OandaRestProviderAdapter();
     await adapter.fetchDeals(ctx());
     expect(String(fetchMock.mock.calls[0]?.[0])).toContain("/transactions?pageSize=1000");
+    expect(String(fetchMock.mock.calls[1]?.[0])).toContain("/transactions/idrange");
   });
 });
 
@@ -696,5 +739,176 @@ describe("OandaRestProviderAdapter — transport cancellation backstop", () => {
     await expect(withProviderTimeout(pending, 20)).rejects.toMatchObject({
       code: "CONNECTION_TIMEOUT",
     });
+  });
+});
+
+// ── Phase 05 — pagination, completeness, and the documented checkpoint ──────
+
+describe("OandaRestProviderAdapter — pagination (Phase 05)", () => {
+  const HOST = "https://api-fxpractice.oanda.com";
+  const trade = (id: string) => ({
+    id,
+    instrument: "EUR_USD",
+    price: "1.11338",
+    openTime: "2026-01-07T09:12:04.057358072Z",
+    state: "OPEN",
+    currentUnits: "100",
+    unrealizedPL: "1.0000",
+  });
+
+  it("passes the documented maximum count and follows Link rel=next to the end (complete=true)", async () => {
+    const fetchMock = stubFetch((url) => {
+      if (url.includes("&next=")) {
+        return { body: { trades: [trade("2")], lastTransactionID: "2" } };
+      }
+      return {
+        headers: { link: `<${HOST}/v3/accounts/${ACCOUNT_ID}/trades?state=OPEN&count=500&next=1>; rel="next"` },
+        body: { trades: [trade("1")], lastTransactionID: "1" },
+      };
+    });
+    const adapter = new OandaRestProviderAdapter();
+    const result = await adapter.fetchPositions(ctx());
+    expect(fetchMock.mock.calls[0]?.[0]).toContain("trades?state=OPEN&count=500");
+    expect(result.complete).toBe(true);
+    expect(result.positions.map((p) => p.externalPositionId)).toEqual(["1", "2"]);
+  });
+
+  it("a page budget boundary is an honest complete=false (never a silent truncation)", async () => {
+    // Every page advertises a next link — the adapter stops at its cap and
+    // reports incomplete; the orchestrator then SKIPS closure (§13.2).
+    stubFetch(() => ({
+      headers: { link: `<${HOST}/v3/accounts/${ACCOUNT_ID}/trades?state=OPEN&count=500&next=1>; rel="next"` },
+      body: { trades: [trade("7")], lastTransactionID: "7" },
+    }));
+    const adapter = new OandaRestProviderAdapter();
+    const result = await adapter.fetchPositions(ctx());
+    expect(result.complete).toBe(false);
+    expect(result.positions.length).toBeGreaterThan(0);
+  });
+
+  it("REFUSES a cross-origin pagination link (same-origin guard, §14)", async () => {
+    stubFetch(() => ({
+      headers: { link: `<https://evil.example.com/v3/accounts/${ACCOUNT_ID}/trades?steal=1>; rel="next"` },
+      body: { trades: [trade("1")], lastTransactionID: "1" },
+    }));
+    const adapter = new OandaRestProviderAdapter();
+    await expect(adapter.fetchPositions(ctx())).rejects.toMatchObject({
+      code: "INVALID_PROVIDER_RESPONSE",
+    });
+  });
+
+  it("no Link header = the documented end-of-pagination signal", async () => {
+    stubFetch(() => ({ body: { trades: [], lastTransactionID: "0" } }));
+    const adapter = new OandaRestProviderAdapter();
+    const result = await adapter.fetchPositions(ctx());
+    expect(result.complete).toBe(true);
+    expect(result.positions).toHaveLength(0);
+  });
+});
+
+describe("OandaRestProviderAdapter — incremental deals checkpoint (Phase 05)", () => {
+  const fill = (id: string) => ({
+    type: "ORDER_FILL",
+    id,
+    time: "2026-01-08T09:00:00.000000000Z",
+    accountID: ACCOUNT_ID,
+    instrument: "EUR_USD",
+    units: "100",
+    price: "1.11338",
+    pl: "0.0000",
+  });
+  const bookkeeping = (id: string) => ({
+    type: "ORDER_CANCEL",
+    id,
+    time: "2026-01-08T09:00:00.000000000Z",
+    accountID: ACCOUNT_ID,
+  });
+
+  it("resumes through the documented sinceid endpoint when a checkpoint exists", async () => {
+    const fetchMock = stubFetch(() => ({
+      body: { transactions: [fill("2400"), bookkeeping("2401")], lastTransactionID: "2401" },
+    }));
+    const adapter = new OandaRestProviderAdapter();
+    const result = await adapter.fetchDeals(ctx({ dealsCursor: "2340" }));
+    expect(String(fetchMock.mock.calls[0]?.[0])).toContain("/transactions/sinceid?id=2340");
+    expect(result.complete).toBe(true);
+    // observedThrough counts ALL observed rows — including the excluded
+    // bookkeeping class — so an all-bookkeeping page can never stall the cursor.
+    expect(result.observedThrough).toBe("2401");
+    expect(result.deals).toHaveLength(1);
+  });
+
+  it("an empty incremental answer is complete with no observed rows", async () => {
+    stubFetch(() => ({ body: { transactions: [], lastTransactionID: "2401" } }));
+    const adapter = new OandaRestProviderAdapter();
+    const result = await adapter.fetchDeals(ctx({ dealsCursor: "2401" }));
+    expect(result).toEqual({ deals: [], observedThrough: null, complete: true });
+  });
+
+  it("a corrupted checkpoint is an honest INVALID_PROVIDER_RESPONSE — no fetch, no guess", async () => {
+    const fetchMock = stubFetch(() => ({ body: { transactions: [], lastTransactionID: "1" } }));
+    const adapter = new OandaRestProviderAdapter();
+    await expect(adapter.fetchDeals(ctx({ dealsCursor: "12; DROP TABLE" }))).rejects.toMatchObject({
+      code: "INVALID_PROVIDER_RESPONSE",
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("the initial pull follows the documented idrange pages and never invents rows", async () => {
+    const HOST = "https://api-fxpractice.oanda.com";
+    stubFetch((url) => {
+      if (url.includes("/transactions?pageSize=")) {
+        return {
+          body: {
+            pages: [
+              `${HOST}/v3/accounts/${ACCOUNT_ID}/transactions/idrange?from=1&to=2`,
+              `${HOST}/v3/accounts/${ACCOUNT_ID}/transactions/idrange?from=3&to=4`,
+            ],
+            count: 3,
+            lastTransactionID: "4",
+          },
+        };
+      }
+      if (url.includes("idrange?from=1")) {
+        return { body: { transactions: [fill("1"), bookkeeping("2")], lastTransactionID: "4" } };
+      }
+      return { body: { transactions: [fill("3"), fill("4")], lastTransactionID: "4" } };
+    });
+    const adapter = new OandaRestProviderAdapter();
+    const result = await adapter.fetchDeals(ctx());
+    expect(result.complete).toBe(true);
+    expect(result.observedThrough).toBe("4");
+    expect(result.deals).toHaveLength(3); // the bookkeeping row is filtered
+  });
+});
+
+describe("OANDA pagination helpers (pure, Phase 05)", () => {
+  it("parseNextLink extracts ONLY the rel=next target", () => {
+    expect(parseNextLink(null)).toBeNull();
+    expect(parseNextLink("")).toBeNull();
+    expect(
+      parseNextLink('<https://a.example/x>; rel="prev", <https://a.example/y>; rel="next"'),
+    ).toBe("https://a.example/y");
+    expect(parseNextLink('<https://a.example/x>; rel="prev"')).toBeNull();
+  });
+
+  it("safeProviderPagePath accepts same-origin /v3/ paths and rejects everything else", () => {
+    const base = "https://api-fxpractice.oanda.com";
+    expect(safeProviderPagePath(`${base}/v3/accounts/1/transactions/idrange?from=1&to=2`, base)).toBe(
+      "/v3/accounts/1/transactions/idrange?from=1&to=2",
+    );
+    expect(safeProviderPagePath("/v3/accounts/1/trades?count=500", base)).toBe(
+      "/v3/accounts/1/trades?count=500",
+    );
+    expect(() => safeProviderPagePath("https://evil.example/v3/x", base)).toThrow();
+    expect(() => safeProviderPagePath("ftp://api-fxpractice.oanda.com/v3/x", base)).toThrow();
+    expect(() => safeProviderPagePath("https://api-fxpractice.oanda.com/other/x", base)).toThrow();
+    expect(() => safeProviderPagePath("::not a url::", base)).toThrow();
+  });
+
+  it("maxTransactionId compares numerically and refuses non-numeric ids", () => {
+    expect(maxTransactionId(["9", "10", "2"])).toBe("10");
+    expect(maxTransactionId([])).toBeNull();
+    expect(maxTransactionId(["1", "abc"])).toBeNull(); // refuse to guess → no checkpoint advance
   });
 });

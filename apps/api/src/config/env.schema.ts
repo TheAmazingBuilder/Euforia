@@ -136,6 +136,34 @@ export const envSchema = z.object({
     .optional()
     .or(z.literal("").transform(() => undefined)),
 
+  // ── Phase 05 — scheduled synchronization, freshness, recovery ─────────────
+  /**
+   * Background sync scheduler gate (Phase 05 §9). Like every real-provider
+   * automation it is NEVER on by default: explicit opt-in per deployment
+   * (§57 posture). Disabled ⇒ no timer runs, no automatic provider calls;
+   * manual/initial synchronization keep working exactly as before.
+   */
+  ACCOUNTS_SYNC_SCHEDULER: z.enum(["enabled", "disabled"]).optional(),
+  /** Base interval between scheduler sweeps (±10% jitter per tick). */
+  ACCOUNTS_SYNC_INTERVAL_MS: z.coerce
+    .number()
+    .int()
+    .min(60_000, "ACCOUNTS_SYNC_INTERVAL_MS must be at least one minute")
+    .max(86_400_000)
+    .default(900_000),
+  /** Max connections synchronized in parallel per sweep (bounded concurrency, §9.1). */
+  ACCOUNTS_SYNC_MAX_CONCURRENCY: z.coerce.number().int().min(1).max(10).default(3),
+  /** A RUNNING run older than this cannot be alive (watchdog bounds every
+   * segment) — the recovery sweep marks it CANCELLED (§15 safe restart). */
+  ACCOUNTS_SYNC_STALE_RUN_MS: z.coerce
+    .number()
+    .int()
+    .min(30_000)
+    .max(3_600_000)
+    .default(120_000),
+  /** Bounded retries per segment for TRANSIENT provider failures (§15). */
+  ACCOUNTS_SYNC_SEGMENT_RETRIES: z.coerce.number().int().min(0).max(5).default(2),
+
   // ── OCR / Screenshot Recognition (Phase 19) ───────────────────────────────
   /**
    * FastAPI OCR sidecar base URL (e.g. http://127.0.0.1:3004). When unset the

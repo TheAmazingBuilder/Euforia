@@ -9,6 +9,7 @@ import type {
   TradingAccountDetails,
   TradingConnectionView,
   TradingProviderDescriptor,
+  TradingResourceFreshness,
   TradingSynchronizationView,
   TradingSyncRunView,
   TradingAccountSnapshotView,
@@ -65,6 +66,12 @@ export function toSyncRunView(row: SyncRunRow): TradingSyncRunView {
     ordersUpserted: row.ordersUpserted,
     dealsUpserted: row.dealsUpserted,
     errorCode: row.errorCode,
+    // Phase 05 — per-segment observation timestamps (the run rows carry
+    // them since the Phase 03 migration; the wire exposes them additively).
+    snapshotAt: row.snapshotAt ? isoDateTime(row.snapshotAt) : null,
+    positionsAt: row.positionsAt ? isoDateTime(row.positionsAt) : null,
+    ordersAt: row.ordersAt ? isoDateTime(row.ordersAt) : null,
+    dealsAt: row.dealsAt ? isoDateTime(row.dealsAt) : null,
   };
 }
 
@@ -121,6 +128,46 @@ export function toSnapshotView(row: SnapshotRow | null): TradingAccountSnapshotV
   };
 }
 
+/**
+ * Per-RESOURCE freshness rule (Phase 05 §11, documented and explicit):
+ *   null timestamp              → NEVER
+ *   age ≤ freshnessTtlMs        → FRESH
+ *   age > freshnessTtlMs        → STALE
+ * The account-level failure/flow semantics (SYNCING/DELAYED/ERROR) stay on
+ * the synchronization status axis — a resource is never "FAILED": a failed
+ * segment simply never advances its timestamp, so the resource ages into
+ * STALE while the status axis carries the failure story.
+ */
+export function deriveResourceFreshness(
+  at: Date | null,
+  nowMs: number,
+  freshnessTtlMs = 15 * 60 * 1000,
+): { at: string | null; state: "FRESH" | "STALE" | "NEVER" } {
+  if (at === null) return { at: null, state: "NEVER" };
+  return {
+    at: isoDateTime(at),
+    state: nowMs - at.getTime() <= freshnessTtlMs ? "FRESH" : "STALE",
+  };
+}
+
+export function toResourceFreshnessView(
+  timestamps: {
+    snapshotAt: Date | null;
+    positionsAt: Date | null;
+    ordersAt: Date | null;
+    dealsAt: Date | null;
+  },
+  nowMs: number,
+  freshnessTtlMs = 15 * 60 * 1000,
+): TradingResourceFreshness {
+  return {
+    snapshot: deriveResourceFreshness(timestamps.snapshotAt, nowMs, freshnessTtlMs),
+    positions: deriveResourceFreshness(timestamps.positionsAt, nowMs, freshnessTtlMs),
+    orders: deriveResourceFreshness(timestamps.ordersAt, nowMs, freshnessTtlMs),
+    deals: deriveResourceFreshness(timestamps.dealsAt, nowMs, freshnessTtlMs),
+  };
+}
+
 /** Full details view — identity + connection + synchronization + snapshot. */
 export function toAccountDetails(input: {
   account: TradingAccountRow;
@@ -128,9 +175,16 @@ export function toAccountDetails(input: {
   connection: TradingConnectionRow | null;
   snapshot: SnapshotRow | null;
   latestRun: SyncRunRow | null;
+  /** Phase 05 — per-resource last successful refresh timestamps. */
+  resourceTimestamps: {
+    snapshotAt: Date | null;
+    positionsAt: Date | null;
+    ordersAt: Date | null;
+    dealsAt: Date | null;
+  };
   nowMs: number;
 }): TradingAccountDetails {
-  const { account, descriptor, connection, snapshot, latestRun, nowMs } = input;
+  const { account, descriptor, connection, snapshot, latestRun, resourceTimestamps, nowMs } = input;
   const connectionView = connection
     ? ({
         status: connection.status as TradingConnectionView["status"],
@@ -157,7 +211,10 @@ export function toAccountDetails(input: {
     externalAccountId: account.externalAccountId,
     provider: descriptor,
     connection: connectionView,
-    synchronization: toSynchronizationView(connection?.lastSyncAt ?? null, latestRun, nowMs),
+    synchronization: {
+      ...toSynchronizationView(connection?.lastSyncAt ?? null, latestRun, nowMs),
+      resources: toResourceFreshnessView(resourceTimestamps, nowMs),
+    },
     snapshot: toSnapshotView(snapshot),
     createdAt: isoDateTime(account.createdAt),
     updatedAt: isoDateTime(account.updatedAt),

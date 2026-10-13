@@ -41,6 +41,8 @@ export interface TradingConnectionRow {
   lastError: string | null;
   lastConnectedAt: Date | null;
   lastSyncAt: Date | null;
+  /** Phase 05 — provider-issued incremental deals checkpoint (opaque). */
+  dealsCheckpoint: string | null;
 }
 
 export interface SnapshotRow {
@@ -121,6 +123,13 @@ export interface SyncRunRow {
   dealsUpserted: number;
   errorCode: string | null;
   requestId: string | null;
+  // ── Per-segment observation timestamps (Phase 03 migration) ──
+  snapshotAt: Date | null;
+  positionsAt: Date | null;
+  ordersAt: Date | null;
+  dealsAt: Date | null;
+  /** Phase 05 — deals checkpoint progress after this run (§10). */
+  dealsCheckpoint: string | null;
 }
 
 @Injectable()
@@ -141,6 +150,19 @@ export class AccountsRepository {
   async findAccountForUser(accountId: string, userId: string): Promise<TradingAccountRow | null> {
     const row = await this.prisma.tradingAccount.findFirst({
       where: { id: accountId, userId },
+    });
+    return (row as TradingAccountRow) ?? null;
+  }
+
+  /**
+   * Account row by id WITHOUT a user scope — the scheduler's internal path
+   * (Phase 05 §9). The scheduler never receives client input: it iterates
+   * connection rows loaded server-side, and the sync service re-derives the
+   * owner from the row for events/logs. Not exposed to any controller.
+   */
+  async findAccountById(accountId: string): Promise<TradingAccountRow | null> {
+    const row = await this.prisma.tradingAccount.findUnique({
+      where: { id: accountId },
     });
     return (row as TradingAccountRow) ?? null;
   }
@@ -341,6 +363,57 @@ export class AccountsRepository {
   }
 
   /**
+   * Bounded synchronization history for one account (Phase 05 §16) —
+   * keyset-paginated, newest first. `before` (exclusive startedAt upper
+   * bound) is the previous page's nextCursor.
+   */
+  async listSyncRuns(
+    accountId: string,
+    opts: { take: number; before: Date | null },
+  ): Promise<SyncRunRow[]> {
+    const rows = await this.prisma.tradingSyncRun.findMany({
+      where: {
+        accountId,
+        ...(opts.before === null ? {} : { startedAt: { lt: opts.before } }),
+      },
+      orderBy: { startedAt: "desc" },
+      take: opts.take,
+    });
+    return rows as SyncRunRow[];
+  }
+
+  /**
+   * Stale-run recovery (Phase 05, spec §15 "safe restart after process
+   * termination"): a run left RUNNING by a crashed/restarted process would
+   * otherwise hold the per-account single-RUNNING invariant (partial unique
+   * index) FOREVER, blocking manual and scheduled synchronization. Runs that
+   * are still RUNNING after `staleBefore` cannot be alive (the orchestrator
+   * watchdog bounds every segment) — they are marked CANCELLED, the honest
+   * representation of "never completed, not a provider result".
+   */
+  async cancelStaleRunningRuns(staleBefore: Date): Promise<number> {
+    const result = await this.prisma.tradingSyncRun.updateMany({
+      where: { status: "RUNNING", startedAt: { lt: staleBefore } },
+      data: { status: "CANCELLED", finishedAt: new Date() },
+    });
+    return result.count;
+  }
+
+  /**
+   * Connections ELIGIBLE for scheduled synchronization (Phase 05 §9.1):
+   * CONNECTED lifecycle AND non-wiped credentials. Disconnected/revoked
+   * connections are never scheduled; auth-class ERROR connections are
+   * reconnected manually (retrying broken credentials on a timer would
+   * hammer the provider with guaranteed failures).
+   */
+  async listSchedulableConnections(): Promise<TradingConnectionRow[]> {
+    const rows = await this.prisma.tradingConnection.findMany({
+      where: { status: "CONNECTED", credentialsEnc: { not: "" } },
+    });
+    return rows as TradingConnectionRow[];
+  }
+
+  /**
    * Recent sync runs across ALL of the user's accounts — the canonical
    * provider/sync health source consumed by the Monitoring module (Phase 17
    * §26: Monitoring reads the owning domain's state, never a duplicate).
@@ -421,6 +494,11 @@ export class AccountsRepository {
     accountId: string;
     positions: Array<Record<string, unknown>>;
     syncedAt: Date;
+    /** Phase 05 reconciliation: non-null ONLY when the adapter confirmed a
+     * complete open set (§13.2) — ids absent from the list are CLOSED in the
+     * SAME transaction (atomic with the upserts; no observer can see a
+     * persisted-but-unreconciled state). Rows are never deleted. */
+    completeExternalIds?: string[] | null;
   }): Promise<void> {
     await this.prisma.$transaction(async (tx) => {
       for (const position of data.positions) {
@@ -452,6 +530,11 @@ export class AccountsRepository {
           commission: p.commission === null ? null : new Prisma.Decimal(p.commission),
           openedAt: p.openedAt,
           syncedAt: data.syncedAt,
+          // The provider reports this position as open NOW — a previously
+          // CLOSED row reopens (a re-reported external id is a provider fact,
+          // not a duplicate; the closure observation is superseded).
+          state: "OPEN",
+          closedAt: null,
         };
         await tx.tradingPosition.upsert({
           where: {
@@ -462,6 +545,19 @@ export class AccountsRepository {
           },
           create: { accountId: data.accountId, ...row },
           update: row,
+        });
+      }
+      // Closure reconciliation (§13.2): only on a demonstrably complete,
+      // untruncated, successful open-position response. Absent = closed at
+      // OBSERVATION time; the row (history) is preserved, never deleted.
+      if (data.completeExternalIds !== null && data.completeExternalIds !== undefined) {
+        await tx.tradingPosition.updateMany({
+          where: {
+            accountId: data.accountId,
+            state: "OPEN",
+            externalPositionId: { notIn: data.completeExternalIds },
+          },
+          data: { state: "CLOSED", closedAt: data.syncedAt },
         });
       }
       await tx.tradingSyncRun.update({
@@ -527,6 +623,12 @@ export class AccountsRepository {
     accountId: string;
     deals: Array<Record<string, unknown>>;
     syncedAt: Date;
+    /** Phase 05 checkpoint (§8.4): a string = everything ≤ that provider id
+     * was observed AND is persisted by THIS transaction — advance both the
+     * run's progress record and the connection's live checkpoint atomically.
+     * undefined/null = nothing observed → the existing checkpoint is NEVER
+     * moved backward or wiped. */
+    checkpoint?: string | null;
   }): Promise<void> {
     await this.prisma.$transaction(async (tx) => {
       for (const deal of data.deals) {
@@ -566,9 +668,21 @@ export class AccountsRepository {
           update: row,
         });
       }
+      if (typeof data.checkpoint === "string" && data.checkpoint.length > 0) {
+        await tx.tradingConnection.update({
+          where: { accountId: data.accountId },
+          data: { dealsCheckpoint: data.checkpoint },
+        });
+      }
       await tx.tradingSyncRun.update({
         where: { id: data.runId },
-        data: { dealsAt: data.syncedAt, dealsUpserted: data.deals.length },
+        data: {
+          dealsAt: data.syncedAt,
+          dealsUpserted: data.deals.length,
+          ...(typeof data.checkpoint === "string" && data.checkpoint.length > 0
+            ? { dealsCheckpoint: data.checkpoint }
+            : {}),
+        },
       });
     });
   }
@@ -602,9 +716,39 @@ export class AccountsRepository {
     return (row as SnapshotRow) ?? null;
   }
 
+  /**
+   * Per-RESOURCE last successful refresh timestamps (Phase 05 §11) — the
+   * max over the account's runs of each segment's observation timestamp
+   * (null = that resource never persisted). ONE aggregate query; a failed
+   * or skipped segment never backdates a resource.
+   */
+  async latestResourceTimestamps(accountId: string): Promise<{
+    snapshotAt: Date | null;
+    positionsAt: Date | null;
+    ordersAt: Date | null;
+    dealsAt: Date | null;
+  }> {
+    const agg = await this.prisma.tradingSyncRun.aggregate({
+      where: { accountId },
+      _max: { snapshotAt: true, positionsAt: true, ordersAt: true, dealsAt: true },
+    });
+    return {
+      snapshotAt: agg._max.snapshotAt ?? null,
+      positionsAt: agg._max.positionsAt ?? null,
+      ordersAt: agg._max.ordersAt ?? null,
+      dealsAt: agg._max.dealsAt ?? null,
+    };
+  }
+
+  /**
+   * CURRENT open positions (Phase 05): rows the provider's latest complete
+   * response still reports as open. CLOSED rows are reconciliation history
+   * — preserved (§6.4) but not "current positions"; they never appear in
+   * this listing (the resource means OPEN, per the provider semantics).
+   */
   async listPositions(accountId: string): Promise<PositionRow[]> {
     const rows = await this.prisma.tradingPosition.findMany({
-      where: { accountId },
+      where: { accountId, state: "OPEN" },
       orderBy: { openedAt: "asc" },
     });
     return rows as PositionRow[];

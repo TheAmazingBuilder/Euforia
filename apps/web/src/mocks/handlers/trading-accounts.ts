@@ -133,6 +133,24 @@ export const tradingAccountsHandlers = [
     }
   }),
 
+  // Phase 05 — bounded synchronization history (newest first, keyset cursor).
+  http.get(endpoint(apiPaths.tradingAccountSyncRuns(":accountId")), async ({ request, params }) => {
+    await latency();
+    try {
+      const userId = requireUserId(request);
+      const accountId = uuidSchema.parse(pathParam(params, "accountId"));
+      const url = new URL(request.url);
+      const limitRaw = url.searchParams.get("limit");
+      const limit = limitRaw === null ? 20 : Math.min(Math.max(Number.parseInt(limitRaw, 10) || 20, 1), 50);
+      const before = url.searchParams.get("before");
+      return HttpResponse.json(
+        tradingAccountsEngine.syncRuns(userId, accountId, limit, before),
+      );
+    } catch (error) {
+      return toErrorResponse(error);
+    }
+  }),
+
   http.post(endpoint(apiPaths.tradingAccountTest(":accountId")), async ({ request, params }) => {
     await latency();
     try {

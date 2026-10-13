@@ -37,6 +37,7 @@ import {
   type TradingAccountUpdateInput,
   type TradingProviderDescriptor,
   type TradingReconnectInput,
+  type TradingSyncRunsResponse,
   type BrokerAccountSnapshot,
   type BrokerPosition,
   type BrokerOrder,
@@ -52,7 +53,7 @@ import { ProviderRegistryService } from "./provider-registry.service";
 import { TradingSyncService } from "./trading-sync.service";
 import { SecurityEventService } from "../security/security-event.service";
 import type { UserRow } from "../identity/identity.repository";
-import { toAccountDetails, toJournalAccount, toSnapshotView, toSynchronizationView, isoDateTime } from "./mappers";
+import { toAccountDetails, toJournalAccount, toSnapshotView, toSynchronizationView, toSyncRunView, isoDateTime } from "./mappers";
 
 @Injectable()
 export class TradingAccountService {
@@ -80,7 +81,7 @@ export class TradingAccountService {
   }
 
   async getDetails(userId: string, accountId: string): Promise<{ account: ReturnType<typeof toAccountDetails> }> {
-    const { account, descriptor, connection, snapshot, latestRun } =
+    const { account, descriptor, connection, snapshot, latestRun, resourceTimestamps } =
       await this.loadFull(userId, accountId);
     return {
       account: toAccountDetails({
@@ -89,6 +90,7 @@ export class TradingAccountService {
         connection,
         snapshot,
         latestRun,
+        resourceTimestamps,
         nowMs: Date.now(),
       }),
     };
@@ -530,6 +532,33 @@ export class TradingAccountService {
     });
   }
 
+  /**
+   * Bounded synchronization history (Phase 05 §16) — keyset-paginated,
+   * newest first. Ownership is enforced by loadOwned (foreign ids → 404,
+   * IDOR-safe); the page size is server-bounded (max 50); the cursor is the
+   * previous page's nextCursor (an ISO timestamp, strictly `<`).
+   */
+  async listSyncHistory(input: {
+    userId: string;
+    accountId: string;
+    limit: number;
+    before: Date | null;
+  }): Promise<TradingSyncRunsResponse> {
+    const { account } = await this.loadOwned(input.userId, input.accountId);
+    const take = Math.min(Math.max(input.limit, 1), 50);
+    const runs = await this.repository.listSyncRuns(account.id, {
+      take: take + 1,
+      before: input.before,
+    });
+    const hasMore = runs.length > take;
+    const page = hasMore ? runs.slice(0, take) : runs;
+    const oldest = page.length > 0 ? page[page.length - 1] : undefined;
+    return {
+      runs: page.map((row) => toSyncRunView(row)),
+      nextCursor: hasMore && oldest ? isoDateTime(oldest.startedAt) : null,
+    };
+  }
+
   // ── Broker session (Session-Live panel contract) ───────────────────────────
 
   /**
@@ -644,9 +673,11 @@ export class TradingAccountService {
   /** Full aggregate for the details view, with the provider descriptor. */
   private async loadFull(userId: string, accountId: string) {
     const { account, connection } = await this.loadOwned(userId, accountId);
-    const [snapshot, latestRun] = await Promise.all([
+    const [snapshot, latestRun, resourceTimestamps] = await Promise.all([
       this.repository.latestSnapshot(account.id),
       this.repository.latestSyncRun(account.id),
+      // Phase 05 — per-resource freshness anchor (§11).
+      this.repository.latestResourceTimestamps(account.id),
     ]);
     return {
       account,
@@ -654,6 +685,7 @@ export class TradingAccountService {
       descriptor: this.descriptorFor(account),
       snapshot,
       latestRun,
+      resourceTimestamps,
     };
   }
 

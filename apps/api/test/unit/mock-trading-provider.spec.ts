@@ -53,9 +53,9 @@ describe("MockTradingProviderAdapter — deterministic normalization", () => {
       const positions = await adapter.fetchPositions(ctxOf(login));
       const orders = await adapter.fetchOrders(ctxOf(login));
       const deals = await adapter.fetchDeals(ctxOf(login));
-      expect(normalizedPositionsSchema.safeParse(positions).success).toBe(true);
+      expect(normalizedPositionsSchema.safeParse(positions.positions).success).toBe(true);
       expect(normalizedOrdersSchema.safeParse(orders).success).toBe(true);
-      expect(normalizedDealsSchema.safeParse(deals).success).toBe(true);
+      expect(normalizedDealsSchema.safeParse(deals.deals).success).toBe(true);
     }
   });
 

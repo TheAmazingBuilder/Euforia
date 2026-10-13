@@ -15,9 +15,11 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Req,
 } from "@nestjs/common";
 import type { FastifyRequest } from "fastify";
+import { z } from "zod";
 import {
   tradingAccountConnectInputSchema,
   tradingAccountDetailsResponseSchema,
@@ -25,7 +27,9 @@ import {
   tradingConnectionTestResponseSchema,
   tradingDisconnectResponseSchema,
   tradingReconnectInputSchema,
+  tradingSyncRunsResponseSchema,
   uuidSchema,
+  isoDateTimeSchema,
 } from "../../shared/contracts";
 import type {
   TradingAccountConnectInput,
@@ -90,7 +94,6 @@ export class TradingAccountsController {
   positions(@CurrentUser() principal: AuthPrincipal, @Param("accountId") accountId: string) {
     return this.accounts.getPositions(principal.userId, uuidSchema.parse(accountId));
   }
-
   @Get(":accountId/orders")
   orders(@CurrentUser() principal: AuthPrincipal, @Param("accountId") accountId: string) {
     return this.accounts.getOrders(principal.userId, uuidSchema.parse(accountId));
@@ -99,6 +102,36 @@ export class TradingAccountsController {
   @Get(":accountId/deals")
   deals(@CurrentUser() principal: AuthPrincipal, @Param("accountId") accountId: string) {
     return this.accounts.getDeals(principal.userId, uuidSchema.parse(accountId));
+  }
+
+  /**
+   * Bounded synchronization history (Phase 05 §16) — newest first,
+   * keyset-paginated via `before` (the previous page's nextCursor). Inputs
+   * are schema-validated; ownership is enforced in the service (loadOwned).
+   */
+  @Get(":accountId/sync-runs")
+  async syncRuns(
+    @CurrentUser() principal: AuthPrincipal,
+    @Param("accountId") accountId: string,
+    @Query("limit") limit?: string,
+    @Query("before") before?: string,
+  ) {
+    const parsedLimit =
+      limit === undefined || limit === ""
+        ? 20
+        : z.coerce.number().int().min(1).max(50).parse(limit);
+    const parsedBefore =
+      before === undefined || before === ""
+        ? null
+        : new Date(isoDateTimeSchema.parse(before));
+    return tradingSyncRunsResponseSchema.parse(
+      await this.accounts.listSyncHistory({
+        userId: principal.userId,
+        accountId: uuidSchema.parse(accountId),
+        limit: parsedLimit,
+        before: parsedBefore,
+      }),
+    );
   }
 
   @Post(":accountId/test")

@@ -24,7 +24,10 @@ import {
   tradingOrdersResponseSchema,
   tradingPositionsResponseSchema,
   tradingProviderListResponseSchema,
+  tradingSyncRunsResponseSchema,
 } from "../../src/shared/contracts";
+import { PrismaService } from "../../src/infrastructure/prisma/prisma.service";
+import { AccountsSyncSchedulerService } from "../../src/modules/accounts/accounts-sync-scheduler.service";
 import { buildTestApp } from "../helpers/build-app";
 import { authenticatedUser, captureMail, type MailCapture } from "../helpers/identity";
 
@@ -37,9 +40,62 @@ interface FixtureState {
   failOrdersWith429: boolean;
   /** When armed, every route answers 401 (credential-rejection scenario). */
   rejectAllWith401: boolean;
+  /** Phase 05 reconciliation: when armed, the open-trades listing is EMPTY
+   * (the previously open trade 2344 disappeared at the provider). */
+  noOpenTrades: boolean;
+  /** Phase 05 incremental: transaction rows returned by sinceid AFTER the
+   * initial checkpoint (new provider activity the next run must pick up). */
+  newerTransactions: Array<Record<string, unknown>>;
 }
 
-const state: FixtureState = { failOrdersWith429: false, rejectAllWith401: false };
+const state: FixtureState = {
+  failOrdersWith429: false,
+  rejectAllWith401: false,
+  noOpenTrades: false,
+  newerTransactions: [],
+};
+
+/** The initial-history transaction rows (what the idrange pages serve). */
+const initialTransactions: Array<Record<string, unknown>> = [
+  {
+    type: "TRANSFER_FUNDS",
+    id: "2340",
+    time: "2026-01-01T00:00:00.000000000Z",
+    accountID: OANDA_ACCOUNT_ID,
+    amount: "10000.0000",
+    fundingReason: "ACCOUNT_TRANSFER",
+    accountBalance: "10000.0000",
+  },
+  {
+    type: "ORDER_FILL",
+    id: "2346",
+    time: "2026-01-07T09:12:05.057358072Z",
+    accountID: OANDA_ACCOUNT_ID,
+    instrument: "EUR_USD",
+    units: "100",
+    price: "1.11338",
+    pl: "0.0000",
+    financing: "-0.0070",
+    commission: "0.0434",
+    accountBalance: "10482.5512",
+    tradeOpened: { tradeID: "2344", units: "100", price: "1.11338" },
+  },
+  {
+    type: "ORDER_FILL",
+    id: "2355",
+    time: "2026-01-08T09:00:00.000000000Z",
+    accountID: OANDA_ACCOUNT_ID,
+    instrument: "EUR_USD",
+    units: "-100",
+    price: "1.12000",
+    pl: "6.6200",
+    commission: "0.0434",
+    financing: "0.0000",
+    tradeClosed: [{ tradeID: "2344", units: "-100", realizedPL: "6.6200", price: "1.12000" }],
+  },
+];
+
+const LAST_INITIAL_TXN_ID = "2355";
 
 function oandaJson(res: import("node:http").ServerResponse, status: number, body: unknown, headers: Record<string, string> = {}) {
   res.writeHead(status, { "content-type": "application/json", ...headers });
@@ -90,20 +146,22 @@ function startOandaFixture(): Promise<Server> {
     }
     if (url.startsWith(`/v3/accounts/${encodeURIComponent(OANDA_ACCOUNT_ID)}/trades`)) {
       oandaJson(res, 200, {
-        trades: [
-          {
-            id: "2344",
-            instrument: "EUR_USD",
-            price: "1.11338",
-            openTime: "2026-01-07T09:12:04.057358072Z",
-            state: "OPEN",
-            currentUnits: "100",
-            realizedPL: "0.0000",
-            financing: "0.0000",
-            unrealizedPL: "-0.0540",
-            marginUsed: "55.4210",
-          },
-        ],
+        trades: state.noOpenTrades
+          ? []
+          : [
+              {
+                id: "2344",
+                instrument: "EUR_USD",
+                price: "1.11338",
+                openTime: "2026-01-07T09:12:04.057358072Z",
+                state: "OPEN",
+                currentUnits: "100",
+                realizedPL: "0.0000",
+                financing: "0.0000",
+                unrealizedPL: "-0.0540",
+                marginUsed: "55.4210",
+              },
+            ],
         lastTransactionID: "2355",
       });
       return;
@@ -133,47 +191,41 @@ function startOandaFixture(): Promise<Server> {
       });
       return;
     }
-    if (url.startsWith(`/v3/accounts/${encodeURIComponent(OANDA_ACCOUNT_ID)}/transactions`)) {
+    // Phase 05 — the time-based listing returns PAGE URLS (idrange), never
+    // rows (verified developer.oanda.com/rest-live-v20/transaction-ep,
+    // 2026-10-13). The rows come from the idrange page(s).
+    if (url.startsWith(`/v3/accounts/${encodeURIComponent(OANDA_ACCOUNT_ID)}/transactions?pageSize=`)) {
+      const base = `http://${req.headers.host ?? "127.0.0.1"}`;
       oandaJson(res, 200, {
-        transactions: [
-          {
-            type: "TRANSFER_FUNDS",
-            id: "2340",
-            time: "2026-01-01T00:00:00.000000000Z",
-            accountID: OANDA_ACCOUNT_ID,
-            amount: "10000.0000",
-            fundingReason: "ACCOUNT_TRANSFER",
-            accountBalance: "10000.0000",
-          },
-          {
-            type: "ORDER_FILL",
-            id: "2346",
-            time: "2026-01-07T09:12:05.057358072Z",
-            accountID: OANDA_ACCOUNT_ID,
-            instrument: "EUR_USD",
-            units: "100",
-            price: "1.11338",
-            pl: "0.0000",
-            financing: "-0.0070",
-            commission: "0.0434",
-            accountBalance: "10482.5512",
-            tradeOpened: { tradeID: "2344", units: "100", price: "1.11338" },
-          },
-          {
-            type: "ORDER_FILL",
-            id: "2355",
-            time: "2026-01-08T09:00:00.000000000Z",
-            accountID: OANDA_ACCOUNT_ID,
-            instrument: "EUR_USD",
-            units: "-100",
-            price: "1.12000",
-            pl: "6.6200",
-            commission: "0.0434",
-            financing: "0.0000",
-            tradeClosed: [{ tradeID: "2344", units: "-100", realizedPL: "6.6200", price: "1.12000" }],
-          },
+        from: "2026-01-01T00:00:00Z",
+        to: "2026-01-09T00:00:00Z",
+        pageSize: 1000,
+        count: initialTransactions.length,
+        pages: [
+          `${base}/v3/accounts/${encodeURIComponent(OANDA_ACCOUNT_ID)}/transactions/idrange?from=2340&to=${LAST_INITIAL_TXN_ID}`,
         ],
-        lastTransactionID: "2355",
+        lastTransactionID: LAST_INITIAL_TXN_ID,
+      });
+      return;
+    }
+    if (url.includes("/transactions/idrange")) {
+      oandaJson(res, 200, {
+        transactions: initialTransactions,
+        lastTransactionID: LAST_INITIAL_TXN_ID,
+      });
+      return;
+    }
+    // The documented incremental cursor: everything NEWER than ?id=.
+    if (url.includes("/transactions/sinceid")) {
+      const since = Number(new URL(`http://x${url}`, "http://x").searchParams.get("id") ?? "0");
+      const newer = state.newerTransactions.filter((tx) => Number((tx as { id: string }).id) > since);
+      const lastId = [
+        ...initialTransactions.map((t) => Number((t as { id: string }).id)),
+        ...state.newerTransactions.map((t) => Number((t as { id: string }).id)),
+      ].reduce((a, b) => Math.max(a, b), 0);
+      oandaJson(res, 200, {
+        transactions: newer,
+        lastTransactionID: String(lastId),
       });
       return;
     }
@@ -399,5 +451,283 @@ describe("oanda-v20 over the fixture server — credential rejection", () => {
     } finally {
       state.rejectAllWith401 = false;
     }
+  });
+});
+
+// ── Phase 05 — incremental checkpoint, reconciliation, scheduler, history ────
+
+describe("oanda-v20 over the fixture server — Phase 05 incremental checkpoint", () => {
+  let accountId: string;
+
+  beforeAll(async () => {
+    const list = await app.inject({ method: "GET", url: "/api/v1/trading-accounts", headers: auth });
+    const body = list.json() as { accounts: Array<{ id: string }> };
+    accountId = body.accounts[0]?.id ?? "";
+    // The credential-rejection scenario above deliberately left the shared
+    // account's connection in ERROR (auth-class) — restore it: the Phase 05
+    // scenarios exercise sync behavior, not the revocation lifecycle.
+    const prisma = app.get(PrismaService);
+    await prisma.tradingConnection.update({
+      where: { accountId },
+      data: { status: "CONNECTED", lastError: null },
+    });
+  });
+
+  it("the initial pull followed the documented pages and recorded the checkpoint", async () => {
+    const prisma = app.get(PrismaService);
+    const connection = await prisma.tradingConnection.findUnique({ where: { accountId } });
+    expect(connection?.dealsCheckpoint).toBe(LAST_INITIAL_TXN_ID);
+    // The INITIAL run performed the documented pages → idrange pull; later
+    // runs (e.g. the credential-rejection FAILED run) legitimately carry a
+    // null progress field — the checkpoint belongs to the run that observed.
+    const run = await prisma.tradingSyncRun.findFirst({
+      where: { accountId, trigger: "INITIAL" },
+    });
+    expect(run?.dealsCheckpoint).toBe(LAST_INITIAL_TXN_ID);
+  });
+
+  it("the next sync resumes from the checkpoint and fetches ONLY newer transactions", async () => {
+    state.newerTransactions = [
+      {
+        type: "ORDER_FILL",
+        id: "2360",
+        time: "2026-01-09T10:00:00.000000000Z",
+        accountID: OANDA_ACCOUNT_ID,
+        instrument: "EUR_USD",
+        units: "-50",
+        price: "1.13000",
+        pl: "2.5000",
+        commission: "0.0200",
+        financing: "0.0000",
+        tradeClosed: [{ tradeID: "2344", units: "-50", realizedPL: "2.5000", price: "1.13000" }],
+      },
+    ];
+    try {
+      const res = await app.inject({ method: "POST", url: `/api/v1/accounts/${accountId}/sync`, headers: auth });
+      expect(res.statusCode).toBe(200);
+      const parsed = tradingAccountSyncResponseSchema.parse(res.json());
+      expect(parsed.run.status).toBe("COMPLETED");
+      // Incremental: exactly ONE new deal (the pre-checkpoint rows are not
+      // re-fetched — the documented sinceid cursor).
+      expect(parsed.run.dealsUpserted).toBe(1);
+      const prisma = app.get(PrismaService);
+      const run = await prisma.tradingSyncRun.findUnique({ where: { id: parsed.run.id } });
+      expect(run?.dealsCheckpoint).toBe("2360");
+      const deals = await app.inject({ method: "GET", url: `/api/v1/accounts/${accountId}/deals`, headers: auth });
+      const parsedDeals = tradingDealsResponseSchema.parse(deals.json());
+      expect(parsedDeals.deals).toHaveLength(4); // 3 initial + 1 new
+    } finally {
+      state.newerTransactions = [];
+    }
+  });
+
+  it("a sync with no new provider activity observes nothing and keeps the checkpoint", async () => {
+    const res = await app.inject({ method: "POST", url: `/api/v1/accounts/${accountId}/sync`, headers: auth });
+    const parsed = tradingAccountSyncResponseSchema.parse(res.json());
+    expect(parsed.run.status).toBe("COMPLETED");
+    expect(parsed.run.dealsUpserted).toBe(0);
+    const prisma = app.get(PrismaService);
+    const connection = await prisma.tradingConnection.findUnique({ where: { accountId } });
+    expect(connection?.dealsCheckpoint).toBe("2360");
+  });
+});
+
+describe("oanda-v20 over the fixture server — Phase 05 position reconciliation", () => {
+  let accountId: string;
+
+  beforeAll(async () => {
+    const list = await app.inject({ method: "GET", url: "/api/v1/trading-accounts", headers: auth });
+    const body = list.json() as { accounts: Array<{ id: string }> };
+    accountId = body.accounts[0]?.id ?? "";
+    // The credential-rejection scenario above deliberately left the shared
+    // account's connection in ERROR (auth-class) — restore it: the Phase 05
+    // scenarios exercise sync behavior, not the revocation lifecycle.
+    const prisma = app.get(PrismaService);
+    await prisma.tradingConnection.update({
+      where: { accountId },
+      data: { status: "CONNECTED", lastError: null },
+    });
+  });
+
+  it("a position absent from a COMPLETE open listing is CLOSED (row preserved, never deleted)", async () => {
+    state.noOpenTrades = true;
+    try {
+      const res = await app.inject({ method: "POST", url: `/api/v1/accounts/${accountId}/sync`, headers: auth });
+      expect(res.statusCode).toBe(200);
+      const parsed = tradingAccountSyncResponseSchema.parse(res.json());
+      expect(parsed.run.status).toBe("COMPLETED");
+      // The current-positions surface reports the honest open set (empty).
+      const positions = await app.inject({ method: "GET", url: `/api/v1/accounts/${accountId}/positions`, headers: auth });
+      expect(tradingPositionsResponseSchema.parse(positions.json()).positions).toHaveLength(0);
+
+      // History is preserved: the row remains, marked CLOSED with an
+      // observation timestamp — never deleted (§6.4).
+      const prisma = app.get(PrismaService);
+      const row = await prisma.tradingPosition.findUnique({
+        where: { accountId_externalPositionId: { accountId, externalPositionId: "2344" } },
+      });
+      expect(row).not.toBeNull();
+      expect(row?.state).toBe("CLOSED");
+      expect(row?.closedAt).not.toBeNull();
+    } finally {
+      state.noOpenTrades = false;
+    }
+  });
+
+  it("a re-reported position reopens (provider fact supersedes the closure observation)", async () => {
+    const res = await app.inject({ method: "POST", url: `/api/v1/accounts/${accountId}/sync`, headers: auth });
+    expect(res.statusCode).toBe(200);
+    const positions = await app.inject({ method: "GET", url: `/api/v1/accounts/${accountId}/positions`, headers: auth });
+    const parsed = tradingPositionsResponseSchema.parse(positions.json());
+    expect(parsed.positions).toHaveLength(1);
+    expect(parsed.positions[0]).toMatchObject({ id: "2344" });
+    const prisma = app.get(PrismaService);
+    const row = await prisma.tradingPosition.findUnique({
+      where: { accountId_externalPositionId: { accountId, externalPositionId: "2344" } },
+    });
+    expect(row?.state).toBe("OPEN");
+    expect(row?.closedAt).toBeNull();
+  });
+});
+
+describe("oanda-v20 over the fixture server — Phase 05 scheduler + recovery", () => {
+  let accountId: string;
+
+  beforeAll(async () => {
+    const list = await app.inject({ method: "GET", url: "/api/v1/trading-accounts", headers: auth });
+    const body = list.json() as { accounts: Array<{ id: string }> };
+    accountId = body.accounts[0]?.id ?? "";
+    // The credential-rejection scenario above deliberately left the shared
+    // account's connection in ERROR (auth-class) — restore it: the Phase 05
+    // scenarios exercise sync behavior, not the revocation lifecycle.
+    const prisma = app.get(PrismaService);
+    await prisma.tradingConnection.update({
+      where: { accountId },
+      data: { status: "CONNECTED", lastError: null },
+    });
+  });
+
+  it("a stale RUNNING run from a crashed process blocks synchronization first (invariant proof)", async () => {
+    const prisma = app.get(PrismaService);
+    await prisma.tradingSyncRun.create({
+      data: {
+        accountId,
+        trigger: "MANUAL",
+        status: "RUNNING",
+        startedAt: new Date(Date.now() - 10 * 60_000), // 10 min old — past any watchdog
+      },
+    });
+    const res = await app.inject({ method: "POST", url: `/api/v1/accounts/${accountId}/sync`, headers: auth });
+    expect(res.statusCode).toBe(409);
+    expect(res.json().code).toBe("SYNC_ALREADY_RUNNING");
+  });
+
+  it("the recovery sweep CANCELLED the stale run and the scheduler ran a SCHEDULED sync", async () => {
+    const scheduler = app.get(AccountsSyncSchedulerService);
+    const outcome = await scheduler.runDueSynchronizations();
+    expect(outcome.cancelledStale).toBeGreaterThanOrEqual(1);
+    expect(outcome.started).toBeGreaterThanOrEqual(1);
+
+    const history = await app.inject({
+      method: "GET",
+      url: `/api/v1/trading-accounts/${accountId}/sync-runs?limit=5`,
+      headers: auth,
+    });
+    expect(history.statusCode).toBe(200);
+    const parsed = tradingSyncRunsResponseSchema.parse(history.json());
+    expect(parsed.runs.length).toBeGreaterThan(0);
+    const scheduled = parsed.runs.find((run) => run.trigger === "SCHEDULED");
+    expect(scheduled).toBeDefined();
+    expect(scheduled?.status).toBe("COMPLETED");
+    // No run is left RUNNING (the stale one was CANCELLED, the new one finished).
+    for (const run of parsed.runs) {
+      expect(run.status).not.toBe("RUNNING");
+    }
+  });
+
+  it("the cancelled stale run shows as CANCELLED in the bounded history", async () => {
+    const history = await app.inject({
+      method: "GET",
+      url: `/api/v1/trading-accounts/${accountId}/sync-runs?limit=50`,
+      headers: auth,
+    });
+    const parsed = tradingSyncRunsResponseSchema.parse(history.json());
+    expect(parsed.runs.some((run) => run.status === "CANCELLED")).toBe(true);
+    // The run views carry the per-segment timestamps (Phase 05 wire extension).
+    const withSegments = parsed.runs.find((run) => run.status === "COMPLETED");
+    expect(withSegments?.snapshotAt).toBeTruthy();
+    expect(withSegments?.dealsAt).toBeTruthy();
+  });
+});
+
+describe("oanda-v20 over the fixture server — Phase 05 history endpoint contract", () => {
+  let accountId: string;
+
+  beforeAll(async () => {
+    const list = await app.inject({ method: "GET", url: "/api/v1/trading-accounts", headers: auth });
+    const body = list.json() as { accounts: Array<{ id: string }> };
+    accountId = body.accounts[0]?.id ?? "";
+    // The credential-rejection scenario above deliberately left the shared
+    // account's connection in ERROR (auth-class) — restore it: the Phase 05
+    // scenarios exercise sync behavior, not the revocation lifecycle.
+    const prisma = app.get(PrismaService);
+    await prisma.tradingConnection.update({
+      where: { accountId },
+      data: { status: "CONNECTED", lastError: null },
+    });
+  });
+
+  it("keyset pagination: bounded pages, newest first, cursor walks backward", async () => {
+    const first = await app.inject({
+      method: "GET",
+      url: `/api/v1/trading-accounts/${accountId}/sync-runs?limit=2`,
+      headers: auth,
+    });
+    expect(first.statusCode).toBe(200);
+    const firstPage = tradingSyncRunsResponseSchema.parse(first.json());
+    expect(firstPage.runs).toHaveLength(2);
+    if (firstPage.nextCursor !== null) {
+      const times = firstPage.runs.map((run) => run.startedAt);
+      expect([...times].sort().reverse()).toEqual(times); // newest first
+      const second = await app.inject({
+        method: "GET",
+        url: `/api/v1/trading-accounts/${accountId}/sync-runs?limit=2&before=${encodeURIComponent(firstPage.nextCursor)}`,
+        headers: auth,
+      });
+      const secondPage = tradingSyncRunsResponseSchema.parse(second.json());
+      // The cursor page is strictly OLDER than the first page's tail.
+      expect(Date.parse(secondPage.runs[0]?.startedAt ?? "")).toBeLessThan(
+        Date.parse(firstPage.runs[1]?.startedAt ?? ""),
+      );
+    }
+  });
+
+  it("input validation: a bad limit is a 400, a bad cursor is a 400 (never a silent guess)", async () => {
+    const badLimit = await app.inject({
+      method: "GET",
+      url: `/api/v1/trading-accounts/${accountId}/sync-runs?limit=9999`,
+      headers: auth,
+    });
+    expect(badLimit.statusCode).toBe(400);
+    const badCursor = await app.inject({
+      method: "GET",
+      url: `/api/v1/trading-accounts/${accountId}/sync-runs?before=not-a-date`,
+      headers: auth,
+    });
+    expect(badCursor.statusCode).toBe(400);
+  });
+
+  it("ownership: another user's account id is a 404; unauthenticated is a 401", async () => {
+    const foreign = await app.inject({
+      method: "GET",
+      url: `/api/v1/trading-accounts/00000000-0000-4000-8000-000000000000/sync-runs`,
+      headers: auth,
+    });
+    expect(foreign.statusCode).toBe(404);
+    const anon = await app.inject({
+      method: "GET",
+      url: `/api/v1/trading-accounts/${accountId}/sync-runs`,
+    });
+    expect(anon.statusCode).toBe(401);
   });
 });

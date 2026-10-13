@@ -70,11 +70,16 @@ export const tradingSyncRunStatusSchema = z.enum([
   "COMPLETED",
   "PARTIAL",
   "FAILED",
+  /** Phase 05: a run left RUNNING by a crashed/restarted process — marked
+   * during the stale-run recovery sweep so the per-account single-RUNNING
+   * invariant (partial unique index) unblocks without human intervention. */
+  "CANCELLED",
 ]);
 export type TradingSyncRunStatus = z.infer<typeof tradingSyncRunStatusSchema>;
 
-/** What started the run. */
-export const tradingSyncTriggerSchema = z.enum(["INITIAL", "MANUAL"]);
+/** What started the run. SCHEDULED (Phase 05) = the background scheduler's
+ * periodic refresh of an eligible connection. */
+export const tradingSyncTriggerSchema = z.enum(["INITIAL", "MANUAL", "SCHEDULED"]);
 export type TradingSyncTrigger = z.infer<typeof tradingSyncTriggerSchema>;
 
 // ── Connection methods / permissions ─────────────────────────────────────────
@@ -298,7 +303,10 @@ export const tradingConnectionViewSchema = z.object({
 });
 export type TradingConnectionView = z.infer<typeof tradingConnectionViewSchema>;
 
-/** One synchronization run — observability record (§50). */
+/** One synchronization run — observability record (§50). The per-segment
+ * timestamps (Phase 05) are the per-RESOURCE freshness anchor: a non-null
+ * timestamp = that segment ran and persisted during THIS run (null = failed
+ * or capability-skipped). They extend the run view additively. */
 export const tradingSyncRunViewSchema = z.object({
   id: uuidSchema,
   status: tradingSyncRunStatusSchema,
@@ -310,15 +318,53 @@ export const tradingSyncRunViewSchema = z.object({
   ordersUpserted: z.number().int(),
   dealsUpserted: z.number().int(),
   errorCode: z.string().nullable(),
+  // ── Phase 05: per-segment observation timestamps (additive, optional to
+  // keep the wire compatible with the already-shipped consumers) ──
+  snapshotAt: isoDateTimeSchema.nullable().optional(),
+  positionsAt: isoDateTimeSchema.nullable().optional(),
+  ordersAt: isoDateTimeSchema.nullable().optional(),
+  dealsAt: isoDateTimeSchema.nullable().optional(),
 });
 export type TradingSyncRunView = z.infer<typeof tradingSyncRunViewSchema>;
+
+/**
+ * Per-RESOURCE freshness (Phase 05 §11): one timestamp does not describe
+ * every synchronized resource — each segment carries its own last successful
+ * refresh time. State is derived server-side from explicit rules:
+ *   FRESH  ≤ freshness TTL · STALE > TTL · NEVER = no successful refresh yet.
+ * Account-level failure semantics stay on the synchronization status axis.
+ */
+export const resourceFreshnessSchema = z.object({
+  at: isoDateTimeSchema.nullable(),
+  state: z.enum(["FRESH", "STALE", "NEVER"]),
+});
+export type ResourceFreshness = z.infer<typeof resourceFreshnessSchema>;
+
+export const tradingResourceFreshnessSchema = z.object({
+  snapshot: resourceFreshnessSchema,
+  positions: resourceFreshnessSchema,
+  orders: resourceFreshnessSchema,
+  deals: resourceFreshnessSchema,
+});
+export type TradingResourceFreshness = z.infer<typeof tradingResourceFreshnessSchema>;
 
 export const tradingSynchronizationViewSchema = z.object({
   status: synchronizationStatusSchema,
   lastSyncAt: isoDateTimeSchema.nullable(),
   lastRun: tradingSyncRunViewSchema.nullable(),
+  /** Per-resource freshness (Phase 05, additive optional). */
+  resources: tradingResourceFreshnessSchema.optional(),
 });
 export type TradingSynchronizationView = z.infer<typeof tradingSynchronizationViewSchema>;
+
+/** Bounded synchronization-history list (Phase 05 §16) — keyset-paginated,
+ * newest first. `nextCursor` is the oldest returned run's startedAt; pass it
+ * as `before` to fetch the previous page. null = end of history. */
+export const tradingSyncRunsResponseSchema = z.object({
+  runs: z.array(tradingSyncRunViewSchema),
+  nextCursor: isoDateTimeSchema.nullable(),
+});
+export type TradingSyncRunsResponse = z.infer<typeof tradingSyncRunsResponseSchema>;
 
 /** Latest account snapshot (mutable external state — §25). */
 export const tradingAccountSnapshotViewSchema = z.object({

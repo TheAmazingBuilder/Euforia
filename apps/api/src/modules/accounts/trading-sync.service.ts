@@ -44,6 +44,10 @@ import { CredentialsEncryptionService } from "./credentials-encryption.service";
 import { ProviderRegistryService } from "./provider-registry.service";
 import { SecurityEventService } from "../security/security-event.service";
 import { toSyncRunView, toSynchronizationView } from "./mappers";
+import {
+  DEFAULT_SEGMENT_RETRY_OPTIONS,
+  withSegmentRetries,
+} from "./sync-retry";
 
 /** Provider failure codes that mean "the stored credentials stopped working".
  * Exported for the Monitoring module's connection-health mapping (Phase 17). */
@@ -158,6 +162,31 @@ export class TradingSyncService {
     });
   }
 
+  /**
+   * Scheduled synchronization (Phase 05 §9) — the scheduler's per-connection
+   * entry point. Same orchestration, SCHEDULED trigger: the run record keeps
+   * the trigger provenance (§10) and the frontend can distinguish automatic
+   * refreshes from user actions. Concurrency (one RUNNING run per account)
+   * is enforced by startRun exactly as for MANUAL — the scheduler treats a
+   * 409 as "already running" and skips. Failures propagate: the scheduler
+   * isolates them per connection (§9.1: one user's failing connection never
+   * blocks another).
+   */
+  async runScheduledSync(input: {
+    userId: string;
+    account: TradingAccountRow;
+    connection: TradingConnectionRow;
+  }): Promise<void> {
+    const run = await this.startRun(input.account.id, "SCHEDULED", null);
+    await this.executeSync({
+      account: input.account,
+      connection: input.connection,
+      runId: run.id,
+      trigger: "SCHEDULED",
+      userId: input.userId,
+    });
+  }
+
   /** Rate limiting for the MANUAL vector (§37) — service-owned, keyed by user. */
   checkSyncRateLimit(limiter: { check(scope: string, key: string): { allowed: boolean; retryAfterSeconds: number } }, userId: string): void {
     const check = limiter.check("sync", userId);
@@ -174,7 +203,7 @@ export class TradingSyncService {
 
   private async startRun(
     accountId: string,
-    trigger: "INITIAL" | "MANUAL",
+    trigger: "INITIAL" | "MANUAL" | "SCHEDULED",
     requestId: string | null,
   ): Promise<SyncRunRow> {
     try {
@@ -217,7 +246,7 @@ export class TradingSyncService {
     account: TradingAccountRow;
     connection: TradingConnectionRow;
     runId: string;
-    trigger: "INITIAL" | "MANUAL";
+    trigger: "INITIAL" | "MANUAL" | "SCHEDULED";
     userId: string;
     credentialsOverride?: ProviderCredentials;
   }): Promise<void> {
@@ -229,8 +258,20 @@ export class TradingSyncService {
       credentials,
       externalAccountId: input.account.externalAccountId,
       environment: input.account.type as ProviderRequestContext["environment"],
+      // Phase 05 — the incremental deals checkpoint (opaque to the domain;
+      // the adapter maps it onto the provider's documented cursor).
+      dealsCursor: input.connection.dealsCheckpoint ?? null,
     };
     const timeoutMs = this.config.accounts.providerTimeoutMs;
+    // Phase 05 — bounded transient retries (spec §15). Sleep is real here;
+    // tests inject their own timing. The config value is defensively
+    // coalesced: an env-sourced config always carries it (schema default),
+    // and an unbounded retry loop must be structurally impossible.
+    const retryOptions: Parameters<typeof withSegmentRetries>[1] = {
+      ...DEFAULT_SEGMENT_RETRY_OPTIONS,
+      maxRetries:
+        this.config.accounts.syncSegmentRetries ?? DEFAULT_SEGMENT_RETRY_OPTIONS.maxRetries,
+    };
 
     type SegmentName = "snapshot" | "positions" | "orders" | "deals";
     type CapabilityKeyForSegment = "balanceEquity" | "openPositions" | "orders" | "deals";
@@ -272,7 +313,10 @@ export class TradingSyncService {
       try {
         switch (segment) {
           case "snapshot": {
-            const raw = await withProviderTimeout(adapter.fetchSnapshot(context), timeoutMs);
+            const raw = await withSegmentRetries(
+              () => withProviderTimeout(adapter.fetchSnapshot(context), timeoutMs),
+              retryOptions,
+            );
             const safe = parseOrInvalid(normalizedSnapshotSchema, raw);
             const syncedAt = new Date();
             await this.repository.persistSnapshotSegment({
@@ -288,18 +332,29 @@ export class TradingSyncService {
             break;
           }
           case "positions": {
-            const raw = await withProviderTimeout(adapter.fetchPositions(context), timeoutMs);
-            const safe = parseOrInvalid(normalizedPositionsSchema, raw);
+            const result = await withSegmentRetries(
+              () => withProviderTimeout(adapter.fetchPositions(context), timeoutMs),
+              retryOptions,
+            );
+            const safe = parseOrInvalid(normalizedPositionsSchema, result.positions);
             await this.repository.persistPositionsSegment({
               runId: input.runId,
               accountId: input.account.id,
               positions: safe.map((p) => ({ ...p, openedAt: new Date(p.openedAt) })),
               syncedAt: new Date(),
+              // Reconciliation (§13.2): closure ONLY on the adapter's
+              // completeness fact — a capped/failed page never closes.
+              completeExternalIds: result.complete
+                ? safe.map((p) => p.externalPositionId)
+                : null,
             });
             break;
           }
           case "orders": {
-            const raw = await withProviderTimeout(adapter.fetchOrders(context), timeoutMs);
+            const raw = await withSegmentRetries(
+              () => withProviderTimeout(adapter.fetchOrders(context), timeoutMs),
+              retryOptions,
+            );
             const safe = parseOrInvalid(normalizedOrdersSchema, raw);
             await this.repository.persistOrdersSegment({
               runId: input.runId,
@@ -310,13 +365,20 @@ export class TradingSyncService {
             break;
           }
           case "deals": {
-            const raw = await withProviderTimeout(adapter.fetchDeals(context), timeoutMs);
-            const safe = parseOrInvalid(normalizedDealsSchema, raw);
+            const result = await withSegmentRetries(
+              () => withProviderTimeout(adapter.fetchDeals(context), timeoutMs),
+              retryOptions,
+            );
+            const safe = parseOrInvalid(normalizedDealsSchema, result.deals);
             await this.repository.persistDealsSegment({
               runId: input.runId,
               accountId: input.account.id,
               deals: safe.map((d) => ({ ...d, executedAt: new Date(d.executedAt) })),
               syncedAt: new Date(),
+              // §8.4 — the checkpoint advances ONLY through the persistence
+              // transaction and ONLY over observed+persisted rows; null/
+              // undefined leaves the existing checkpoint untouched.
+              checkpoint: result.observedThrough,
             });
             break;
           }

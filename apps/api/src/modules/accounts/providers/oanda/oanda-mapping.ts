@@ -241,6 +241,47 @@ export const oandaTransactionsResponseSchema = z.object({
   transactions: z.array(oandaTransactionSchema),
 });
 
+/** One raw v20 transaction row (adapter-internal accumulator type). */
+export type OandaTransactionRow = z.output<typeof oandaTransactionSchema>;
+
+/**
+ * The TIME-BASED ListTransactions response (developer.oanda.com
+ * /rest-live-v20/transaction-ep/, verified 2026-10-13) does NOT carry the
+ * rows inline: it carries `pages` — "The list of URLs that represent idrange
+ * queries providing the data for each page in the query results" — plus the
+ * count and the account's lastTransactionID. The rows themselves come from
+ * each idrange URL (same shape as oandaTransactionsResponseSchema) or from
+ * the documented /transactions/sinceid cursor endpoint (same row shape).
+ */
+export const oandaTransactionsPagesSchema = z.object({
+  pages: z.array(z.string().min(1)),
+  count: z.number().int().nonnegative(),
+  lastTransactionID: z.string().min(1),
+});
+
+/**
+ * Numeric comparison of provider transaction ids (they are sequential
+ * integer strings per the documented idrange/sinceid semantics; realistic
+ * ids are far below 2^53, so Number comparison is exact).
+ */
+export function maxTransactionId(ids: readonly string[]): string | null {
+  let best: string | null = null;
+  let bestValue = -1;
+  for (const id of ids) {
+    const value = Number(id);
+    if (!Number.isSafeInteger(value) || value < 0) {
+      // A non-numeric id breaks the documented cursor semantics — refuse to
+      // guess: the caller then does NOT advance the checkpoint (§8.4).
+      return null;
+    }
+    if (value > bestValue) {
+      bestValue = value;
+      best = id;
+    }
+  }
+  return best;
+}
+
 export function dealsFromTransactions(
   transactions: Array<z.output<typeof oandaTransactionSchema>>,
 ): NormalizedDeal[] {

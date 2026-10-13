@@ -320,6 +320,20 @@ function deriveSynchronizationStatus(
   return nowMs - lastSyncMs <= FRESHNESS_TTL_MS ? "LIVE" : "STALE";
 }
 
+/** Phase 05 — per-resource freshness from run segment timestamps (max). */
+function resourceFreshnessOf(
+  record: AccountRecord,
+  key: "snapshotAt" | "positionsAt" | "ordersAt" | "dealsAt",
+  nowMs: number,
+): { at: string | null; state: "FRESH" | "STALE" | "NEVER" } {
+  const latest = record.runs.find((run) => run[key])?.[key] ?? null;
+  if (!latest) return { at: null, state: "NEVER" };
+  return {
+    at: latest,
+    state: nowMs - Date.parse(latest) <= FRESHNESS_TTL_MS ? "FRESH" : "STALE",
+  };
+}
+
 function detailsOf(record: AccountRecord, nowMs = Date.now()): TradingAccountDetails {
   const latestRun = record.runs[0] ?? null;
   return {
@@ -349,6 +363,13 @@ function detailsOf(record: AccountRecord, nowMs = Date.now()): TradingAccountDet
       status: deriveSynchronizationStatus(record, nowMs),
       lastSyncAt: record.connection?.lastSyncAt ?? null,
       lastRun: latestRun,
+      // Phase 05 — mirror of the backend's per-resource freshness rules.
+      resources: {
+        snapshot: resourceFreshnessOf(record, "snapshotAt", nowMs),
+        positions: resourceFreshnessOf(record, "positionsAt", nowMs),
+        orders: resourceFreshnessOf(record, "ordersAt", nowMs),
+        deals: resourceFreshnessOf(record, "dealsAt", nowMs),
+      },
     },
     snapshot: record.snapshot,
     createdAt: record.createdAt,
@@ -434,6 +455,10 @@ function runSynchronization(record: AccountRecord, trigger: "INITIAL" | "MANUAL"
     run.positionsUpserted = data.positions.length;
     run.ordersUpserted = data.orders.length;
     run.dealsUpserted = data.deals.length;
+    run.snapshotAt = record.snapshot.syncedAt;
+    run.positionsAt = isoNow();
+    run.ordersAt = isoNow();
+    run.dealsAt = isoNow();
     run.status = "COMPLETED";
     record.connection.lastSyncAt = isoNow();
     record.connection.lastError = null;
@@ -579,6 +604,20 @@ export const tradingAccountsEngine = {
 
   deals(userId: string, accountId: string): { deals: TradingDeal[] } {
     return { deals: owned(userId, accountId).deals };
+  },
+
+  /** Phase 05 — bounded sync history (newest first, keyset-paginated). */
+  syncRuns(userId: string, accountId: string, limit: number, before: string | null): { runs: TradingSyncRunView[]; nextCursor: string | null } {
+    const record = owned(userId, accountId);
+    const filtered = before
+      ? record.runs.filter((run) => run.startedAt < before)
+      : [...record.runs];
+    const page = filtered.slice(0, limit);
+    const oldest = page.length > 0 ? page[page.length - 1] : null;
+    return {
+      runs: page,
+      nextCursor: filtered.length > limit && oldest ? oldest.startedAt : null,
+    };
   },
 
   test(userId: string, accountId: string): TradingConnectionTestResponse {
