@@ -24,7 +24,7 @@ import {
   ordersFromPending,
   positionsFromTrades,
 } from "../../src/modules/accounts/providers/oanda/oanda-mapping";
-import { ProviderError } from "../../src/modules/accounts/provider.types";
+import { ProviderError, withProviderTimeout } from "../../src/modules/accounts/provider.types";
 import { normalizeProviderError } from "../../src/modules/accounts/trading-sync.service";
 import { BusinessRuleError, RateLimitError } from "../../src/shared/errors/app-error";
 
@@ -638,5 +638,63 @@ describe("normalizeProviderError — UNSUPPORTED_CAPABILITY + Retry-After", () =
       new ProviderError("RATE_LIMITED", "The trading provider asked us to slow down."),
     );
     expect((appError as RateLimitError).retryAfterSeconds).toBe(60);
+  });
+});
+
+// ── Transport cancellation backstop (Phase 04 — spec §6.1) ───────────────────
+
+describe("OandaRestProviderAdapter — transport cancellation backstop", () => {
+  /**
+   * A fetch that NEVER settles on its own but honors the abort signal —
+   * the shape of a hung socket. The adapter must pass an abort signal when
+   * constructed with requestTimeoutMs, the abort must actually fire, and the
+   * surfaced error must be the honest CONNECTION_TIMEOUT class.
+   */
+  function stubHangingFetch() {
+    const observed: Array<{ aborted: () => boolean }> = [];
+    const fetchMock = vi.fn(
+      (_url: string | URL, init: RequestInit = {}) =>
+        new Promise<Response>((_resolve, reject) => {
+          const signal = init.signal as AbortSignal | undefined;
+          observed.push({ aborted: () => signal?.aborted ?? false });
+          if (!signal) {
+            return; // never settles — the pre-Phase-04 leak shape
+          }
+          signal.addEventListener("abort", () => {
+            // AbortSignal.timeout aborts with a TimeoutError DOMException.
+            reject(new DOMException("The operation was aborted due to timeout", "TimeoutError"));
+          });
+        }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    return { fetchMock, observed };
+  }
+
+  it("aborts a hung request at the configured backstop and surfaces CONNECTION_TIMEOUT", async () => {
+    vi.useFakeTimers();
+    try {
+      const { observed } = stubHangingFetch();
+      const adapter = new OandaRestProviderAdapter({ requestTimeoutMs: 5_000 });
+      const pending = adapter.fetchSnapshot(ctx());
+      const assertion = expect(pending).rejects.toMatchObject({ code: "CONNECTION_TIMEOUT" });
+      await vi.advanceTimersByTimeAsync(5_001);
+      await assertion;
+      expect(observed[0]?.aborted()).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("without requestTimeoutMs no signal is passed (orchestrator watchdog semantics unchanged)", async () => {
+    const { fetchMock } = stubHangingFetch();
+    const adapter = new OandaRestProviderAdapter();
+    const pending = adapter.fetchSnapshot(ctx());
+    pending.catch(() => undefined); // a hung transport must never become an unhandled rejection
+    // No signal reaches the transport — the adapter does not time it itself.
+    expect(fetchMock.mock.calls[0]?.[1]?.signal).toBeUndefined();
+    // The orchestrator watchdog remains the bounding mechanism (§16):
+    await expect(withProviderTimeout(pending, 20)).rejects.toMatchObject({
+      code: "CONNECTION_TIMEOUT",
+    });
   });
 });

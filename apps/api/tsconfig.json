@@ -32,6 +32,7 @@
   ],
   "exclude": [
     "../../packages/shared/src/schemas/settingsDefaults.ts",
-    "../../packages/shared/src/schemas/security-center.ts"
+    "../../packages/shared/src/schemas/security-center.ts",
+    "src/modules/reviews"
   ]
 }

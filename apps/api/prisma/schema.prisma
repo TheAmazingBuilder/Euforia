@@ -1826,10 +1826,10 @@ model OcrRecognitionGroup {
 
 /// 20261006090000_ocr_v3 — asset-based collections (organization only).
 model OcrCollectionAsset {
-  collectionId String
+  collectionId String    @db.Uuid
   collection   OcrCollection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
-  assetId      String
-  asset        OcrAsset      @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  assetId      String    @db.Uuid
+  asset        OcrAsset  @relation(fields: [assetId], references: [id], onDelete: Cascade)
   addedAt      DateTime      @default(now())
 
   @@id([collectionId, assetId])

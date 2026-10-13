@@ -1435,3 +1435,44 @@ Stage Summary:
 - Décisions figées: positions←trades (identité stable §7.4), GSLO exclus documentés, filtre transactions documenté, environment sur le contexte (port intact), UNSUPPORTED_CAPABILITY jamais un échec de run, devise hors-vocabulaire → UNSUPPORTED_ACCOUNT, event sécurité sur tout-fail seulement, PARTIAL→DELAYED des deux côtés.
 - Portés: U2 (token/rate-limits réels), U3 (découverte UNKNOWN déclaré), snapshot-history (Phase 07), overrides connection-scoped (schéma prêt, producteur différé).
 - Next: Phase 04 (scheduler + freshness engine) — dépendance: Phase 03 ✓; aucune autre blocker.
+
+---
+Task ID: recover-2026-10-13b
+Agent: main (Super Z)
+Task: Reconstruction environnement après restart sandbox (perte .localpg + download/), puis démarrage Phase 04 (spec uploadée)
+
+Work Log:
+- Constat: apps/api/.localpg/ DISPARUE + download/ vidé (archives DB/extras perdues); git OK jusqu'à ddf7ca5 (Phase 03); node_modules OK
+- Bundle v2 recréé: download/oryon-git-2026-10-13-v2.bundle (219M, historique complet → ddf7ca5, verify OK)
+- apps/api/.env reconstruit (clés neuves: AUTH_JWT_SECRET, AUTH_MFA_ENCRYPTION_KEY, ACCOUNTS_CREDENTIALS_ENCRYPTION_KEY, INTEGRATIONS_WEBHOOK_ENCRYPTION_KEY); root .env purgé du piège file:; apps/web/.env.local (live bridge)
+- PG: node scripts/dev-db.mjs up → cluster neuf, DB cosmoz + cosmoz_test créées
+- MIGRATIONS: migrate deploy a échoué (dérive historique: 20261003145823_trade_review attend Trade; doubles ocr_v2/ocr_v3 post-datées) → stratégie baseline: db push après CORRECTION schema.prisma (OcrCollectionAsset.collectionId/assetId avaient perdu @db.Uuid — confirmé UUID dans migration 20261006090000_ocr_v3 L51-52) puis migrate resolve --applied ×37 sur les 2 bases → "Database schema is up to date!"
+- BUILD API: échec tsc sur src/modules/reviews/ (UNTRACKED, mort — ReviewsModule jamais importé; référence Prisma.Goal inexistant) → exclude "src/modules/reviews" ajouté dans tsconfig.json (hérité par tsconfig.build.json) — fichiers user préservés
+- PIÈGE shell confirmé: DATABASE_URL=file: persistant dans la session bash → toujours lancer l'API avec DATABASE_URL explicite
+- API :4000 UP (build Phase 03); user démo trader@cosmoz.app recréé + emailVerifiedAt/status ACTIVE (register puis UPDATE SQL — pas de seed script)
+
+Stage Summary:
+- Environnement 100% opérationnel: PG:5433 (frais, baseline 37 migrations), API:4000, login démo OK
+- NOTE: ancienne clé vault perdue avec l'ancienne DB — cohérence neuve (DB vide)
+- Correctifs hygiene (documentés, hors-scope Phase 04 mais nécessaires): schema.prisma @db.Uuid ×2, tsconfig exclude reviews WIP
+- Prochaine étape: Phase 04 — gap analysis adapter OANDA vs spec uploadée (le repo a déjà un OANDA v20 réel depuis sa Phase 03)
+
+---
+Task ID: phase-04-provider-connector
+Agent: main (Super Z)
+Task: Phase 04 (master plan) — first real trading provider connector: pre-implementation review, feasibility re-verification, gap closure, full verification
+
+Work Log:
+- Pré-implémentation: audit code réel — le connecteur OANDA v20 réel EXISTE (repo Phase 03, commit ddf7ca5): adapter 6 méthodes read-only, Bearer PAT, vault AES-256-GCM, capability V2, lifecycle segmenté, concurrence §38 (index unique partiel), tests 55+
+- G2: vérification docs officielles developer.oanda.com (2026-10-13): intro/authentication (Bearer, hosts fxpractice/fxtrade, token individuel, Manage API Access), account-ep (GET /v3/accounts, /summary), trade-ep (trades, state default OPEN), order-ep (pendingOrders), transaction-ep (transactions, pageSize); endpoints d'écriture présents dans l'API mais JAMAIS référencés par l'adapter; PAS de chiffre public de rate limit (posture 429+Retry-After conservée, chiffres restent U2)
+- G1 (seul vrai gap): withProviderTimeout ne provoquait PAS l'abort du fetch sous-jacent → AbortSignal.timeout(requestTimeoutMs) dans l'adapter (options requestTimeoutMs; factory = ACCOUNTS_PROVIDER_TIMEOUT_MS + 2000ms grace — le watchdog orchestrateur reste la classe d'erreur authoritative), abort → CONNECTION_TIMEOUT honnête; +2 tests unitaires (abort réel via fake timers + absence de signal si non configuré)
+- Reconstruction env (cf. recover-2026-10-13b): db push + baseline 37 migrations, seeds référence (Instrument/InstrumentSpecification 7+7), index partiel TradingSyncRun_accountId_running_key re-appliqué (Prisma ne l'exprime pas — attrapé par le test §38), schema.prisma @db.Uuid ×2 (OcrCollectionAsset), tsconfig exclude reviews WIP mort
+- Quarantaine réversible .wip-quarantine-2026-10-13/ des sources résurrectes non trackées qui cassaient next build (collision /oryon vs (app)/oryon, pdfmake, exports périmés useChartTokens/marketFetch...) — RIEN supprimé, RIEN de tracké modifié par la quarantaine
+- Vérifications RÉELLES: tsc api 0, eslint 0, vitest 1121/1121 (82 fichiers), build api OK, build web OK 50 routes, :4000 redémarré (401 sans token ✓), :3000 next start 200, sondes verify-accounts-live 14/14 (login→connect 201→sync init→snapshot £10,878.78→deals 8→rename→sync manuel→test connexion→disconnect (credentials wiped)→reconnect→0 erreur page)
+- Rapport: docs/backend/PHASE-04-PROVIDER-CONNECTOR-REPORT.md (26 sections, A/B/C distingués, U2 disclosed)
+- Backups: download/oryon-git-2026-10-13-v2.bundle (code), oryon-localpg-2026-10-13b.tar.gz (DB CHECKPOINT+tar 31M), oryon-extras-2026-10-13b.tar.gz (.env×3+worklog+SAVEPOINT+SQL récup)
+
+Stage Summary:
+- Phase 04 COMPLETE selon la spec master: 1 provider réel (OANDA), auth documentée, validation compte réelle (fixtures+live-bridge), annulation transport ajoutée, zéro changement de contrat wire, zéro dépendance
+- Live hop api-fxpractice: DEFERRED U2 (token utilisateur, runbook Phase 03 §8 inchangé) — aucune prétention de vérification live
+- Décision owner requise: suppression de .wip-quarantine-2026-10-13/ après revue

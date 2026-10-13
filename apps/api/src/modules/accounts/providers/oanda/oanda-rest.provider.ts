@@ -71,6 +71,16 @@ function capability(capabilities: TradingProviderDescriptor["capabilities"], key
 export interface OandaAdapterOptions {
   /** Base-URL override (tests/fixture server, region edge); null = by environment. */
   restUrlOverride?: string | null;
+  /**
+   * Transport-level abort backstop (ms) — Phase 04 hardening (spec §6.1
+   * "safe timeout and cancellation behavior"). Each request carries an
+   * `AbortSignal.timeout(ms)` so a hung socket is ACTUALLY released, not
+   * merely abandoned. Deliberately set ABOVE the orchestrator watchdog
+   * (withProviderTimeout → CONNECTION_TIMEOUT): the watchdog stays the
+   * authoritative error class; this backstop only guarantees the underlying
+   * fetch settles when the caller stopped observing it.
+   */
+  requestTimeoutMs?: number;
 }
 
 export class OandaRestProviderAdapter implements TradingProviderAdapter {
@@ -160,9 +170,11 @@ export class OandaRestProviderAdapter implements TradingProviderAdapter {
   };
 
   private readonly restUrlOverride: string | null;
+  private readonly requestTimeoutMs: number | undefined;
 
   constructor(options: OandaAdapterOptions = {}) {
     this.restUrlOverride = options.restUrlOverride ?? null;
+    this.requestTimeoutMs = options.requestTimeoutMs;
   }
 
   /** Endpoint host per account environment (practice vs live). */
@@ -194,6 +206,11 @@ export class OandaRestProviderAdapter implements TradingProviderAdapter {
     // Resolved OUTSIDE the try — an environment rejection (PROP_FIRM) is an
     // honest UNSUPPORTED_ACCOUNT, never a swallowed network error.
     const url = `${this.baseUrl(context)}${path}`;
+    // Transport backstop (Phase 04): the abort signal releases a hung socket;
+    // an abort here surfaces as CONNECTION_TIMEOUT (the same class the
+    // orchestrator's watchdog would report — never a fake success).
+    const signal =
+      this.requestTimeoutMs === undefined ? undefined : AbortSignal.timeout(this.requestTimeoutMs);
     let response: Response;
     try {
       response = await fetch(url, {
@@ -202,8 +219,13 @@ export class OandaRestProviderAdapter implements TradingProviderAdapter {
           Authorization: `Bearer ${context.credentials.secret}`,
           "Accept-Datetime-Format": "RFC3339",
         },
+        signal,
       });
-    } catch {
+    } catch (error) {
+      if (error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError")) {
+        // Our own transport abort — sanitized, honest timeout class.
+        throw new ProviderError("CONNECTION_TIMEOUT", "The trading provider did not respond in time.");
+      }
       // Network/DNS failure — sanitized; timeouts stay the orchestrator's.
       throw new ProviderError("PROVIDER_UNAVAILABLE", "The trading provider is currently unavailable.");
     }

@@ -41,6 +41,14 @@ import { AccountsController } from "./accounts.controller";
 import { TradingAccountsController } from "./trading-accounts.controller";
 import { BrokerController } from "./broker.controller";
 
+/**
+ * Phase 04: the transport abort backstop fires ABOVE the orchestrator
+ * watchdog (providerTimeoutMs → CONNECTION_TIMEOUT) so the watchdog stays
+ * the authoritative error class while the socket is still guaranteed to be
+ * released. The 2 s grace keeps the two timers from racing on slow responses.
+ */
+const TRANSPORT_ABORT_GRACE_MS = 2_000;
+
 const providerRegistryProvider: Provider = {
   provide: ProviderRegistryService,
   useFactory: (config: AppConfig): ProviderRegistryService => {
@@ -53,7 +61,12 @@ const providerRegistryProvider: Provider = {
       // (a real provider is never enabled by default). No credential lives
       // here: the adapter receives the vault-decrypted token per request.
       ...(config.accounts.oandaEnabled
-        ? [new OandaRestProviderAdapter({ restUrlOverride: config.accounts.oandaRestUrlOverride })]
+        ? [
+            new OandaRestProviderAdapter({
+              restUrlOverride: config.accounts.oandaRestUrlOverride,
+              requestTimeoutMs: config.accounts.providerTimeoutMs + TRANSPORT_ABORT_GRACE_MS,
+            }),
+          ]
         : []),
     ];
     return new ProviderRegistryService(adapters);
