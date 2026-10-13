@@ -1309,3 +1309,27 @@ Work Log:
 Stage Summary:
 - Phase 11 前端交付：plan = 文档化推理（绝不创建/修改 trade、levels 标注假设性、概率标注主观、comparison 缺失即 "—"、失效必录原因、评审 process-over-outcome）。诚实契约与 Phase 10 一致；server 是唯一权威（MSW 镜像其语义）。未做（记录为决策）：analysisId UI 选择器（web analyses 仍 browser-local，服务端 registry 为空，传本地 id 必 404——待 analyses 服务端同步后开放）；无列表页/筛选器（drawer 按需组已覆盖 §workflow/§history 的最小连贯面）。
 - Commits: 见下一条（phase11-frontend commit）。
+
+---
+Task ID: backup-2026-10-13
+Agent: Super Z (main)
+Task: Commit + backup complet avant restart sandbox de minuit (préserver tout le travail Oryon Phase 9/10/11)
+
+Work Log:
+- Vérifié l'état git : working tree clean, 15 commits depuis savepoint/2026-10-12 (sidebar auto-collapse, barrel reconciliation, API reconciliation, Phase 10→serveur + Phase 11 backend, Phase 11 web), aucun remote configuré
+- Constaté que download/ avait été vidé (anciens backups 2026-10-12 disparus) → recréation complète
+- Découvert le changement d'architecture DB : SQLite db/custom.db supprimé → PostgreSQL embarqué @embedded-postgres/linux-x64@17.5.0-beta.15, data dir apps/api/.localpg (95M), port 5433
+- Constaté l'absence de pg_dump/psql dans le package embedded-postgres → stratégie crash-consistent : CHECKPOINT SQL puis tar brut du data dir
+- Piège détourné : DATABASE_URL=file:... exporté dans le shell écrase apps/api/.env pour la CLI Prisma → contourné via prisma db execute --url (mutuellement exclusif avec --schema)
+- Sanity-check DB via script scripts/db-sanity-counts.js (PrismaClient absolu) : 1 User, 2 OryonAnalysis, tables métier vides → backup data dir suffisant, schéma dans git
+- Créé tag savepoint/2026-10-13 sur HEAD
+- Créé download/oryon-localpg-2026-10-13.tar.gz (22M, PG_VERSION + pg_wal inclus, socket ignoré)
+- Créé download/oryon-git-2026-10-13.bundle (--all, 219M, verify = complete history)
+- Réécrit SAVEPOINT.md : nouvelles instructions de restauration Postgres, nouveaux pièges (DATABASE_URL shell override, pg_dump absent), contenu Phase 9/10/11
+- Créé download/oryon-extras-2026-10-13.tar.gz (.env racine, apps/api/.env, apps/api/.data OCR 767 screenshots, worklog, SAVEPOINT)
+- Commit final : script sanity + SAVEPOINT.md + worklog, puis re-création du bundle pour inclure le commit final
+
+Stage Summary:
+- 3 fichiers de sauvegarde dans download/ : oryon-git-2026-10-13.bundle (code+historique, 219M), oryon-localpg-2026-10-13.tar.gz (DB Postgres, 22M), oryon-extras-2026-10-13.tar.gz (env+OCR, ~12M)
+- Tag savepoint/2026-10-13 = point de reprise officiel ; SAVEPOINT.md documente 3 chemins de restauration
+- ACTION UTILISATEUR : télécharger les 3 fichiers depuis download/ AVANT le restart de minuit
