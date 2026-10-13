@@ -19,6 +19,7 @@ import { tradeReviewHandlers } from "./tradeReview";
 import { planHandlers } from "./plans";
 import { academyHandlers } from "./academy";
 import { nofyHandlers } from "./nofy";
+import { tradingAccountsHandlers } from "./trading-accounts";
 
 /** Full §12 endpoint matrix, one file per domain. */
 export const handlers = [
@@ -43,4 +44,5 @@ export const handlers = [
   ...securityHandlers,
   ...academyHandlers,
   ...nofyHandlers,
+  ...tradingAccountsHandlers,
 ];

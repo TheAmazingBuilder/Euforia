@@ -9,6 +9,7 @@ import {
   GraduationCap,
   HeartPulse,
   House,
+  Landmark,
   LayoutDashboard,
   List,
   LockKeyhole,
@@ -59,6 +60,13 @@ export const SIDEBAR_ITEMS: NavItem[] = [
     icon: NotebookPen,
     description:
       "Review every executed trade and hold your goals against reality: plan vs. actual, execution grades and the lesson you keep.",
+  },
+  {
+    href: "/accounts",
+    label: "Accounts",
+    icon: Landmark,
+    description:
+      "Your connected trading accounts: balances, positions and history read from the provider — read-only, synced on demand, never traded through.",
   },
   {
     href: "/playbook",
@@ -185,7 +193,7 @@ export type NavSection = {
 export const NAV_SECTIONS: NavSection[] = [
   {
     title: "Trading",
-    hrefs: ["/trades", "/oryon", "/journal", "/playbook"],
+    hrefs: ["/trades", "/oryon", "/journal", "/accounts", "/playbook"],
   },
   // Goals lives inside Trade Review (/journal?tab=goals) — /goals redirects there.
   {

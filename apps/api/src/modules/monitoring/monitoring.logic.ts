@@ -227,6 +227,38 @@ export function mapBrokerStatus(facts: ConnectionHealthFacts): BrokerConnectionS
   }
 }
 
+// ── Job ledger status mapping (Trading-sync runs → job runs) ────────────────
+
+/**
+ * Map an Accounts sync-run status onto the coarse job-run ledger vocabulary
+ * (`jobRunStatusSchema` = RUNNING | SUCCESS | FAILED). The trading-sync job
+ * has no scheduler in this build and its runs are written as
+ * RUNNING | COMPLETED | FAILED (PARTIAL is reserved, Phase 03), while the
+ * shared job contract speaks SUCCESS/FAILED — the same boundary mapping the
+ * email-dispatch job applies to SENT/FAILED. Mapping:
+ *   RUNNING   → RUNNING   (a run is in flight)
+ *   COMPLETED → SUCCESS   (all segments persisted)
+ *   FAILED    → FAILED
+ *   PARTIAL   → FAILED    (failures existed — conservative health view; the
+ *                         accounts domain preserves the finer status and the
+ *                         errorCode travels in the job run's error field.
+ *                         Revisit if PARTIAL production ships, Phase 03.)
+ * Unknown values never pass through unchecked — they land on FAILED so the
+ * board never mistakes an unrecognized status for a healthy one.
+ */
+export function toJobRunStatus(
+  syncRunStatus: string,
+): "RUNNING" | "SUCCESS" | "FAILED" {
+  switch (syncRunStatus) {
+    case "RUNNING":
+      return "RUNNING";
+    case "COMPLETED":
+      return "SUCCESS";
+    default:
+      return "FAILED";
+  }
+}
+
 // ── Alert evaluation (§37/§38/§39) — conditions only; episodes live in the
 //    service. Only rules with REAL server-side signals evaluate here.
 

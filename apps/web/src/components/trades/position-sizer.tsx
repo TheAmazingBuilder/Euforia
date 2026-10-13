@@ -6,6 +6,7 @@ import type { TradeSizeModeValue } from "@/lib/utils/trade-draft";
 import { formatPercent } from "@cosmoz/shared";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/i18n/i18n-provider";
+import { DemoDataChip } from "@/components/demo-data-chip";
 
 /**
  * Position sizer (spec §4, the signature detail): Risk % ↔ Size respond to
@@ -104,8 +105,11 @@ export function PositionSizer(props: PositionSizerProps) {
   return (
     <div className="rounded-lg border border-border bg-background p-3">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground" id={id}>
+        <span className="inline-flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground" id={id}>
           {T.title}
+          {/* Chain-A hygiene (Phase 02): the sizer balance is fixture-derived
+             in mock mode — never render it without the demo marker. */}
+          <DemoDataChip testId="sizer-demo-chip" />
         </span>
         <div className="flex rounded-md border border-border p-0.5" role="tablist" aria-label={T.modeAria}>
           {MODES.map((modeValue) => (

@@ -37,6 +37,7 @@ import { TradingAccountService } from "./trading-account.service";
 import { TradingSyncService } from "./trading-sync.service";
 import { AccountsRateLimiterService } from "./accounts-rate-limiter.service";
 import { AccountsController } from "./accounts.controller";
+import { TradingAccountsController } from "./trading-accounts.controller";
 import { BrokerController } from "./broker.controller";
 
 const providerRegistryProvider: Provider = {
@@ -55,7 +56,13 @@ const providerRegistryProvider: Provider = {
 
 @Module({
   imports: [ConfigModule, LoggingModule, PrismaModule, SecurityEventModule, IdentityModule],
-  controllers: [AccountsController, BrokerController],
+  // Phase 02 hygiene (Phase 00 "register-or-delete" decision): the rich
+  // /trading-accounts surface (list-with-details + PATCH rename) is now
+  // REGISTERED and consumed by the Accounts UI. GET /accounts remains the
+  // journal identity list; the canonical documented surface stays
+  // accounts.controller.ts (doc C §2.1) — /trading-accounts adds the two
+  // routes /accounts lacks instead of duplicating them silently.
+  controllers: [AccountsController, TradingAccountsController, BrokerController],
   providers: [
     AccountsRepository,
     CredentialsEncryptionService,

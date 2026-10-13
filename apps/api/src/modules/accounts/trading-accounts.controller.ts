@@ -149,9 +149,18 @@ export class TradingAccountsController {
     @Body(new ZodValidationPipe(tradingAccountUpdateInputSchema))
     input: TradingAccountUpdateInput,
   ) {
-    return tradingAccountDetailsResponseSchema.parse(
-      await this.accounts.updateAccount(principal.userId, uuidSchema.parse(accountId), input),
-    );
+    // Phase 02 hygiene: updateAccount returns the details object itself —
+    // wrap it in the standard `{ account }` response envelope (same shape
+    // as connect/reconnect) before the contract re-validation. The
+    // previously-dead controller parsed the unwrapped object against the
+    // envelope and could only ever answer 400.
+    return tradingAccountDetailsResponseSchema.parse({
+      account: await this.accounts.updateAccount(
+        principal.userId,
+        uuidSchema.parse(accountId),
+        input,
+      ),
+    });
   }
 
   @Delete(":accountId")

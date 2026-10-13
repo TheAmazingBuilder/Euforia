@@ -244,3 +244,24 @@ export {
   useResetPasswordMutation,
   useVerifyEmailMutation,
 } from "./auth";
+
+// Accounts & Trading Connectivity (Phase 02) — read-only surfaces over the
+// trading-accounts Nest module; presentation mapping helpers travel with it.
+export {
+  useTradingAccounts,
+  useTradingAccountProviders,
+  useTradingAccountDetails,
+  useTradingAccountPositions,
+  useTradingAccountOrders,
+  useTradingAccountDeals,
+  useConnectTradingAccount,
+  useRenameTradingAccount,
+  useTestTradingConnection,
+  useReconnectTradingAccount,
+  useDisconnectTradingAccount,
+  useSyncTradingAccount,
+  connectionIsHealthy,
+  connectionStatusMeta,
+  environmentStamp,
+  syncStatusMeta,
+} from "./trading-accounts";

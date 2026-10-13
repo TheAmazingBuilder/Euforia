@@ -1385,3 +1385,26 @@ Stage Summary:
 - Key decisions frozen: connection=separate aggregate; port read-only 6 methods; capability 3-state SUPPORTED/UNSUPPORTED/UNKNOWN; no result envelope (normative outcome table instead); no universal mapping table; raw payloads not persisted; monolith stays
 - User blockers carried: U1 MT5 path, U2/U3 OANDA practice token + discovery, provider priority confirmation
 - Next: Phase 02 = Accounts UI + hygiene (backend complete, no blockers)
+
+---
+Task ID: accounts-phase02-ui
+Agent: Super Z (main)
+Task: Phase 02 Accounts — Premium Frontend UX/UI + hygiene (spec 23 sections; roadmap doc E Phase 02)
+
+Work Log:
+- STAGE A audit: 2 Explore agents (frontend conventions + backend surface) + verification orchestrator des claims critiques. Découvertes clés: GET /accounts = liste JOURNAL (contrat switcher), liste connectivité + PATCH rename uniquement sur le contrôleur NON enregistré; wire shapes positions/orders/deals = schémas Session-Live verbatim (direction/unrealizedPnl, pas de status/positionId wire — le code fait foi sur la prose doc B).
+- HYGIENE API (Phase 00 register): ① monitoring SUCCESS→COMPLETED via fonction pure toJobRunStatus (monitoring.logic.ts, mapping COMPLETED→SUCCESS/échecs→FAILED, pattern email SENT→SUCCESS existant) + 2 tests régression; ② register TradingAccountsController (reco doc C §2.2) → 1er exercice du code mort = bug latent trouvé: PATCH parsait les détails non-emballés contre l'enveloppe { account } → ne pouvait répondre que 400. Fix enveloppe + 2 e2e nouveaux (list shape, rename, ownership 401/404); ③ dead links /accounts illuminées par la nouvelle page.
+- PLUMBING: apiPaths.trading* (11), queryKeys.trading* (6, root prefix-match pour invalidation), queries/trading-accounts.ts (6 queries + 6 mutations + mapping présentation pur), barrel. Invalidation: tradingAccounts root + brokerSession.
+- MSW: trading-accounts-engine.ts (miroir Nest: connect atomique, sync idempotente déterministe FNV-1a, scénarios fail-*, machine à états doc B — ERROR uniquement sur échec auth-class, outages ne touchent pas la connexion, disconnect préserve l'historique, _testRotateSecret miroir du re-encrypt e2e backend) + handlers/trading-accounts.ts (12 routes, envelope codée { error, message, code }).
+- i18n: dict.accounts.* (~90 strings, EN, voix honnête: read-only par construction, "Fresh" jamais "real-time", planned providers non connectables).
+- UI: page (app)/accounts + AccountsView (header, stat-strip SANS total cross-currency + note monnaies mixtes, cartes, empty/loading/error), ConnectAccountDialog (wizard 3 étapes, registre réel, planned rows, secret password input), AccountDetailDrawer (Dialog↔Sheet useIsDesktop, Overview + 3 tabs ACTIVITÉ SÉPARÉES, rename/test 4-checks/reconnect/disconnect requireTyped/sync), badges présentation (connection/sync/simulated/env).
+- DEMO MARKERS: DemoDataChip conditionnel API_MOCKED (disparaît en live — honnête dans les 2 sens) sur chains A (sizer), B (monitoring brokers), AccountSwitcher; SimulatedProviderBadge partout où provider.isMock rend.
+- NAV: /accounts dans SIDEBAR_ITEMS (Trading, Landmark) + NAV_SECTIONS.
+- TESTS: accounts-tests.ts (bun) 74/74 (mapping présentation + règles honnêteté moteur); verify-accounts.js (Playwright MSW) 25/25; verify-accounts-live.js (live bridge :4000) 14/14 — login JWT réel, connect 201 (vault AES réel), PATCH rename (route nouvellement enregistrée), sync, test, disconnect, reconnect.
+- PIÈGES (documentés pour SAVEPOINT): next start du boot sert l'ANCIEN build (probe 1 crash sur lien absent → rebuild+restore en fin); 2 dev servers Next 16 interdits sur le même dir; DATABASE_URL=file: exporté au boot détruit --env-file-if-exists → relancer l'API avec override explicite; pnpm --filter web dev -- -p X avale le flag (utiliser ./node_modules/.bin/next dev -p X); badge CSS uppercase → innerText uppercase (ré-observé).
+- VERIFIÉ: vitest API 1056/1056 (79 fichiers), tsc api+web 0, eslint web 0 erreur (4 warnings _locale préexistants), build web OK 33 pages (/accounts inclus), :3000 restauré en next start (GET /accounts 200).
+
+Stage Summary:
+- Commits: voir suite (hygiene+UI+tests+rapport). Rapport 21 sections: docs/backend/PHASE-02-ACCOUNTS-UI-REPORT.md.
+- Acceptance doc E: ① both transports ✅ ② hygiene cleared/dispositioned ✅ ③ demo markers ✅ ④ suites+tsc+lint+build ✅. STOP Phase 03 honoré — U2/U3 (token OANDA practice) restent les blockers de validation Phase 03.
+- Backend deps documentées (pas contournées): runs?limit (P04), pagination deals (P04), capability V2 (P03).

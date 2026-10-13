@@ -103,6 +103,21 @@ export const apiPaths = {
   disciplineEmotionMatrix: "/discipline/emotion-matrix",
   mistakesLedger: "/mistakes/ledger",
   brokerSession: "/broker/session",
+  // Accounts & Trading Connectivity (Phase 02) — the rich /trading-accounts
+  // surface (list-with-details + PATCH rename) the Accounts UI consumes.
+  // GET /accounts above stays the journal identity list (AccountSwitcher).
+  // Mirrors apps/api trading-accounts.controller.ts route-for-route; the
+  // contracts are @cosmoz/shared trading-account.ts, verbatim.
+  tradingAccounts: "/trading-accounts",
+  tradingAccountProviders: "/trading-accounts/providers",
+  tradingAccountConnect: "/trading-accounts/connect",
+  tradingAccount: (accountId: string) => `/trading-accounts/${accountId}`,
+  tradingAccountPositions: (accountId: string) => `/trading-accounts/${accountId}/positions`,
+  tradingAccountOrders: (accountId: string) => `/trading-accounts/${accountId}/orders`,
+  tradingAccountDeals: (accountId: string) => `/trading-accounts/${accountId}/deals`,
+  tradingAccountTest: (accountId: string) => `/trading-accounts/${accountId}/test`,
+  tradingAccountSync: (accountId: string) => `/trading-accounts/${accountId}/sync`,
+  tradingAccountReconnect: (accountId: string) => `/trading-accounts/${accountId}/reconnect`,
   integrationsOverview: "/integrations/overview",
   integrationConnect: (providerId: string) => `/integrations/providers/${providerId}/connect`,
   integrationDisconnect: (providerId: string) => `/integrations/providers/${providerId}/disconnect`,

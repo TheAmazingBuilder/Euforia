@@ -16,6 +16,7 @@ import {
   accountSchema,
   brokerSessionResponseSchema,
   tradingAccountDetailsResponseSchema,
+  tradingAccountDetailsSchema,
   tradingAccountSyncResponseSchema,
   tradingConnectionTestResponseSchema,
   tradingDisconnectResponseSchema,
@@ -810,5 +811,78 @@ describe("accounts — audit events (§39)", () => {
     for (const event of tradingEvents) {
       expect(event.context).toMatch(/^((?!(api-)?key|secret|credential value).)*$/is);
     }
+  });
+});
+
+// ── Rich surface (Phase 02 — registered TradingAccountsController) ──────────
+
+describe("trading-accounts — registered rich surface (Phase 02 hygiene)", () => {
+  it("serves the details-list and rename (PATCH) routes the UI consumes", async () => {
+    const user = await authenticatedUser(app, mail);
+    const connected = await connectAccount(user.authHeader, { externalAccountId: "RICH-1" });
+    const { account } = tradingAccountDetailsResponseSchema.parse(connected.json());
+
+    // GET /trading-accounts — the connectivity list (details shape per account).
+    const list = await app.inject({
+      method: "GET",
+      url: "/api/v1/trading-accounts",
+      headers: user.authHeader,
+    });
+    expect(list.statusCode).toBe(200);
+    const listed = list.json();
+    expect(Array.isArray(listed.accounts)).toBe(true);
+    expect(listed.accounts).toHaveLength(1);
+    const rich = tradingAccountDetailsSchema.parse(listed.accounts[0]);
+    expect(rich.id).toBe(account.id);
+    expect(rich.provider.providerId).toBe("MOCK");
+    expect(rich.connection?.status).toBe("CONNECTED");
+
+    // PATCH /trading-accounts/:id — rename (label only).
+    const renamed = await app.inject({
+      method: "PATCH",
+      url: `/api/v1/trading-accounts/${account.id}`,
+      headers: user.authHeader,
+      payload: { name: "Renamed Rich Account" },
+    });
+    expect(renamed.statusCode).toBe(200);
+    const parsed = tradingAccountDetailsResponseSchema.parse(renamed.json());
+    expect(parsed.account.name).toBe("Renamed Rich Account");
+    // Provider-anchored identity untouched by the rename.
+    expect(parsed.account.externalAccountId).toBe(account.externalAccountId);
+    expect(parsed.account.connection?.status).toBe("CONNECTED");
+
+    // Validation: empty name → 422 (schema min(1)); foreign id → 404.
+    const invalid = await app.inject({
+      method: "PATCH",
+      url: `/api/v1/trading-accounts/${account.id}`,
+      headers: user.authHeader,
+      payload: { name: "   " },
+    });
+    expect(invalid.statusCode).toBe(400);
+  });
+
+  it("keeps ownership and auth on the rich surface (401 / 404 foreign)", async () => {
+    const noAuth = await app.inject({ method: "GET", url: "/api/v1/trading-accounts" });
+    expect(noAuth.statusCode).toBe(401);
+
+    const { a, b } = await userAandB();
+    const connected = await connectAccount(a.authHeader, { externalAccountId: "RICH-2" });
+    const { account } = tradingAccountDetailsResponseSchema.parse(connected.json());
+
+    const foreign = await app.inject({
+      method: "PATCH",
+      url: `/api/v1/trading-accounts/${account.id}`,
+      headers: b.authHeader,
+      payload: { name: "Stolen Label" },
+    });
+    expect(foreign.statusCode).toBe(404);
+
+    const foreignList = await app.inject({
+      method: "GET",
+      url: "/api/v1/trading-accounts",
+      headers: b.authHeader,
+    });
+    expect(foreignList.statusCode).toBe(200);
+    expect(foreignList.json().accounts).toHaveLength(0);
   });
 });

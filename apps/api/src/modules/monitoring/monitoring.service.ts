@@ -57,6 +57,7 @@ import {
   mapBrokerStatus,
   mergeThresholdPatch,
   SLOW_QUERY_MS,
+  toJobRunStatus,
   type EpisodeState,
 } from "./monitoring.logic";
 
@@ -322,7 +323,11 @@ export class MonitoringService {
     connection: Awaited<ReturnType<AccountsRepository["findConnectionByAccountId"]>>,
     runs: Array<{ id: string; status: string; startedAt: Date; durationMs: number | null; errorCode: string | null }>,
   ): BrokerConnection {
-    const successful = runs.find((run) => run.status === "SUCCESS");
+    // Sync runs are COMPLETED (never "SUCCESS" — that was the Phase 00 defect:
+    // a filter on a status the repository never writes, permanently zeroing
+    // latency/reporting). PARTIAL is not a success (§8.2): only fully
+    // completed runs report adapter latency and coverage.
+    const successful = runs.find((run) => run.status === "COMPLETED");
     const failed = runs.find((run) => run.status === "FAILED");
     const status = connection
       ? mapBrokerStatus({
@@ -380,13 +385,13 @@ export class MonitoringService {
             jobId: "trading-sync",
             startedAt: iso(syncRuns[0].startedAt),
             durationMs: syncRuns[0].durationMs,
-            status: syncRuns[0].status as "RUNNING" | "SUCCESS" | "FAILED",
+            status: toJobRunStatus(syncRuns[0].status),
             attempts: 1,
             error: syncRuns[0].errorCode,
             trigger: syncRuns[0].trigger === "MANUAL" ? ("MANUAL" as const) : ("SYSTEM" as const),
           }
         : null,
-      successCount: syncRuns.filter((run) => run.status === "SUCCESS").length,
+      successCount: syncRuns.filter((run) => run.status === "COMPLETED").length,
       failureCount: syncRuns.filter((run) => run.status === "FAILED").length,
       retryCount: 0,
       queued: syncRuns.filter((run) => run.status === "RUNNING").length,

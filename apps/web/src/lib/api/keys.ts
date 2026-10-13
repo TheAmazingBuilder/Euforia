@@ -41,6 +41,16 @@ export const queryKeys = {
   sessionTimeline: ["session-timeline"] as const,
   sessionNotes: ["session-notes"] as const,
   brokerSession: ["broker-session"] as const,
+  // Accounts & Trading Connectivity (Phase 02). NOTE: `accounts` (above) is
+  // the journal identity list — trading keys are namespaced `trading-*`.
+  tradingAccounts: ["trading-accounts"] as const,
+  tradingAccount: (accountId: string) => ["trading-accounts", "detail", accountId] as const,
+  tradingAccountProviders: ["trading-accounts", "providers"] as const,
+  tradingAccountPositions: (accountId: string) =>
+    ["trading-accounts", accountId, "positions"] as const,
+  tradingAccountOrders: (accountId: string) =>
+    ["trading-accounts", accountId, "orders"] as const,
+  tradingAccountDeals: (accountId: string) => ["trading-accounts", accountId, "deals"] as const,
   integrations: ["integrations"] as const,
   security: ["security"] as const,
   monitoring: ["monitoring"] as const,

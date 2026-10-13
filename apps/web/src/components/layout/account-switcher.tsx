@@ -4,6 +4,7 @@ import * as React from "react";
 import { Check, ChevronDown, Wallet } from "lucide-react";
 
 import { useAccounts } from "@/lib/api/queries";
+import { DemoDataChip } from "@/components/demo-data-chip";
 import type { Account } from "@cosmoz/shared";
 import { Button } from "@/components/ui/button";
 import {
@@ -82,7 +83,14 @@ export function AccountSwitcher() {
         })}
         {accounts.length === 0 ? (
           <DropdownMenuItem disabled>No accounts yet</DropdownMenuItem>
-        ) : null}
+        ) : (
+          <DropdownMenuSeparator />
+        )}
+        <div className="flex items-center justify-between px-2 py-1.5">
+          <span className="text-[11px] text-muted-foreground">Journal accounts</span>
+          {/* Phase 02: fixture catalog in mock mode — explicitly marked. */}
+          <DemoDataChip testId="account-switcher-demo-chip" />
+        </div>
       </DropdownMenuContent>
     </DropdownMenu>
   );

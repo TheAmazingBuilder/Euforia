@@ -15,6 +15,7 @@ import {
   mapBrokerStatus,
   mergeThresholdPatch,
   percentile,
+  toJobRunStatus,
 } from "../../src/modules/monitoring/monitoring.logic";
 import type { SystemEvent } from "../../src/shared/contracts";
 
@@ -132,6 +133,26 @@ describe("mapBrokerStatus (Accounts facts → Monitoring status)", () => {
       mapBrokerStatus({ status: "ERROR", lastError: "timeout", lastFailedRunErrorCode: "CONNECTION_TIMEOUT" }),
     ).toBe("DEGRADED");
     expect(mapBrokerStatus({ status: "SOMETHING_NEW", lastError: null, lastFailedRunErrorCode: null })).toBe("DISCONNECTED");
+  });
+});
+
+describe("toJobRunStatus (Accounts sync-run status → job ledger status)", () => {
+  it("maps the statuses the repository actually writes (RUNNING/COMPLETED/FAILED)", () => {
+    // Regression: the board filtered on "SUCCESS" — a status the accounts
+    // repository never writes — so successCount/latency were permanently
+    // zero/null (Phase 00 defect). The mapping must recognize the REAL
+    // written values: RUNNING | COMPLETED | FAILED.
+    expect(toJobRunStatus("RUNNING")).toBe("RUNNING");
+    expect(toJobRunStatus("COMPLETED")).toBe("SUCCESS");
+    expect(toJobRunStatus("FAILED")).toBe("FAILED");
+  });
+
+  it("never mistakes an unknown or partial status for a healthy one", () => {
+    // PARTIAL (reserved, Phase 03) carries failures — conservative FAILED.
+    // Unknown future values land on FAILED, never on SUCCESS.
+    expect(toJobRunStatus("PARTIAL")).toBe("FAILED");
+    expect(toJobRunStatus("SOMETHING_NEW")).toBe("FAILED");
+    expect(toJobRunStatus("SUCCESS")).toBe("FAILED");
   });
 });
 

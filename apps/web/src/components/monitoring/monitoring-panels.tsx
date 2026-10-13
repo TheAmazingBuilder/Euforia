@@ -42,6 +42,7 @@ import {
   statusVariant,
   useNowClock,
 } from "./monitoring-primitives";
+import { DemoDataChip } from "@/components/demo-data-chip";
 
 /**
  * Monitoring panels, part 1 (MASTER PROMPT §4–§8): Overview, System Health,
@@ -462,6 +463,10 @@ export function BrokersPanel({ brokers }: { brokers: BrokerConnection[] }) {
   const nowMs = useNowClock();
   return (
     <div className="space-y-4" data-testid="monitoring-brokers">
+      {/* Chain-B hygiene (Phase 02): broker telemetry derives from the
+         simulated Integration Hub engine in mock mode — marked, never
+         indistinguishable from real provider telemetry. */}
+      {brokers.length > 0 ? <DemoDataChip testId="monitoring-brokers-demo-chip" /> : null}
       {brokers.length === 0 ? (
         <PanelCard icon={Database} title="Broker connections" description="No trading account is connected through the Integration Hub.">
           <Button asChild variant="outline" size="sm" className="gap-1">
