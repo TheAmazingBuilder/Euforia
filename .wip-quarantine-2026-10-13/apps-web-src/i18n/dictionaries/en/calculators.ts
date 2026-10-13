@@ -1,0 +1,295 @@
+/**
+ * Calculators dict — FEATURES module (Lot Size + Compounding, frontend-only
+ * V1). All visible copy flows through this namespace; error codes from
+ * lib/calculators/schemas.ts map through the `validation` groups so stable
+ * codes never leak into the UI.
+ */
+
+export const calculatorsDict = {
+  shared: {
+    currencyLabel: "Currency",
+    currencyAria: "Account and display currency",
+    presetsLabel: "Quick presets",
+    disclaimerIconAria: "Information",
+  },
+
+  lotSize: {
+    subtitle:
+      "Position sizing from account risk, stop distance and instrument specifications. Transparent math — every step of the calculation stays visible.",
+    inputsTitle: "Inputs",
+    // Form
+    instrumentLabel: "Instrument",
+    instrumentAria: "Trading instrument",
+    instrumentCustom: "Custom",
+    assetClassAria: "Asset class",
+    directionLabel: "Direction",
+    directionLong: "Long",
+    directionShort: "Short",
+    directionLongAria: "Long direction — stop loss below entry",
+    directionShortAria: "Short direction — stop loss above entry",
+    balanceLabel: "Account Balance",
+    riskLabel: "Risk %",
+    riskAria: "Risk percentage of the account",
+    entryLabel: "Entry Price",
+    stopLossLabel: "Stop Loss",
+    takeProfitLabel: "Take Profit",
+    takeProfitOptional: "optional",
+    calculate: "Calculate",
+    calculateAria: "Calculate the recommended position size",
+    // Advanced parameters
+    advancedTitle: "Advanced Parameters",
+    advancedContractSize: "Contract Size",
+    advancedPipSize: "Pip Size",
+    advancedPipValue: "Pip Value / Lot",
+    advancedPipValueHint: "in account currency — overrides the automatic value",
+    advancedNote:
+      "Instrument specifications vary by broker. Verify contract and tick specifications before placing a trade.",
+    // Trading costs (V1.1) — optional broker-cost inputs
+    costsTitle: "Trading Costs (optional)",
+    costsAria: "Trading costs — commission and spread",
+    costsCommissionLabel: "Commission / Lot",
+    costsCommissionHint: "(round turn, account currency)",
+    costsCommissionAria: "Round-turn commission per lot in the account currency",
+    costsSpreadLabel: "Spread",
+    costsSpreadHint: "(in price units)",
+    costsSpreadAria: "Bid-ask spread in price units",
+    costsNote:
+      "The spread widens the effective stop distance in both directions, and the commission is charged per lot round turn. Sizing accounts for both, so the true risk stays within your budget.",
+    effectiveStopLabel: "Effective Stop Distance",
+    spreadCostPerLotLabel: "Spread Cost / Lot",
+    actualRiskCostsHint: "including spread and commission",
+    // Breakdown — costs
+    breakdownEffectiveStop: "Effective Stop Distance",
+    breakdownSpread: "Spread",
+    breakdownCommission: "Commission / Lot",
+    breakdownRiskWithCosts: "Risk / Lot (incl. costs)",
+    breakdownSpreadCost: "Spread Cost at Size",
+    breakdownCommissionCost: "Commission at Size",
+    breakdownTotalCosts: "Total Costs at Size",
+    // Result
+    resultTitle: "Recommended Position Size",
+    resultAria: "Recommended position size",
+    resultEmpty: "Enter your trade parameters and calculate to see the recommended size.",
+    resultError: "Cannot calculate yet",
+    lotsSuffix: "Lots",
+    unitsLabel: "Units",
+    riskAmountLabel: "Risk Amount",
+    riskPercentLabel: "Risk",
+    stopDistanceLabel: "Stop Distance",
+    stopPipsLabel: "Stop Distance (pips)",
+    pipValueLabel: "Pip Value / Lot",
+    pipValueDerived: "derived from the contract size",
+    pipValueConverted: "converted at the entry price",
+    pipValueOverride: "manual override",
+    riskPerLotLabel: "Risk / Lot",
+    actualRiskLabel: "Actual Risk at Size",
+    zeroSizeNote: "The computed size rounds below the 0.01 lot step — the risk of one lot exceeds your risk budget.",
+    // Risk / reward
+    rrTitle: "Risk / Reward",
+    rrAria: "Risk reward ratio",
+    rrEmpty: "Add a take profit to see the risk/reward ratio.",
+    // Breakdown
+    breakdownTitle: "Calculation Breakdown",
+    breakdownAria: "Step-by-step calculation breakdown",
+    breakdownBalance: "Account Balance",
+    breakdownRisk: "Risk",
+    breakdownRiskAmount: "Risk Amount",
+    breakdownStopDistance: "Stop Distance",
+    breakdownStopPips: "Stop Distance (pips)",
+    breakdownPipValue: "Pip Value / Lot",
+    breakdownRiskPerLot: "Risk / Lot",
+    breakdownLotSize: "Calculated Lot Size",
+    breakdownExact: "exact",
+    breakdownTradable: "tradable (floored to 0.01)",
+    // Copy
+    copyLotSize: "Copy Lot Size",
+    copyCalculation: "Copy Calculation",
+    toastLotCopied: "Lot size copied",
+    toastCalcCopied: "Calculation copied",
+    copyFailed: "Could not copy — your browser blocked clipboard access.",
+    // Disclaimer
+    disclaimer:
+      "Calculator results are estimates based on the parameters provided. Instrument specifications may vary by broker. Verify contract, tick and pip values before executing a trade.",
+    // Validation codes
+    validation: {
+      REQUIRED: "This field is required.",
+      INVALID_DECIMAL: "Enter a valid decimal number.",
+      POSITIVE_REQUIRED: "The value must be greater than zero.",
+      RISK_PERCENT_RANGE: "Risk must be between 0.01% and 100%.",
+      ENTRY_STOP_IDENTICAL: "Stop Loss must be different from Entry Price.",
+      ZERO_STOP_DISTANCE: "Stop Loss must be different from Entry Price.",
+      STOP_WRONG_SIDE: "For a long, the Stop Loss must be below the entry — for a short, above it.",
+      TP_WRONG_SIDE: "For a long, the Take Profit must be above the entry — for a short, below it.",
+      INSTRUMENT_REQUIRED: "Select an instrument.",
+      PIP_PARAMS_REQUIRED: "Advanced parameters must be greater than zero when provided.",
+      INVALID_PIP_SIZE: "The pip size must be greater than zero — check the advanced parameters.",
+      PIP_VALUE_REQUIRED:
+        "The pip value cannot be derived for this account currency — fill the Pip Value / Lot in the advanced parameters.",
+      NON_POSITIVE_RISK_PER_LOT:
+        "These parameters do not allow a positive position size — check the balance, risk and stop distance.",
+    },
+  },
+
+  compounding: {
+    subtitle:
+      "Project account growth across multiple periods using a defined return per period. A mathematical projection — not a performance promise.",
+    inputsTitle: "Inputs",
+    // Form
+    startingBalanceLabel: "Starting Balance",
+    startingBalanceAria: "Starting balance",
+    periodsLabel: "Periods",
+    periodsAria: "Number of periods (1 to 200)",
+    gainLabel: "Gain per Period (%)",
+    gainAria: "Return applied once per period",
+    depositLabel: "Deposit per Period",
+    depositHint: "(optional)",
+    depositAria: "Deposit added at the end of each period",
+    depositNote:
+      "Deposits land at the END of each period, after that period's gain — they compound from the next period on.",
+    withdrawalLabel: "Withdrawal per Period",
+    withdrawalHint: "(optional)",
+    withdrawalAria: "Withdrawal taken at the end of each period",
+    flowsNote:
+      "Deposits and withdrawals land at the END of each period, after that period's gain — they compound from the next one on. Money withdrawn is never counted as a loss.",
+    // Variable-return scenarios (V1.2)
+    scenariosTitle: "Scenarios",
+    scenariosHint: "(optional)",
+    scenarioPessimistic: "Pessimistic gain (%)",
+    scenarioPessimisticAria: "Pessimistic gain used for the comparison projection",
+    scenarioOptimistic: "Optimistic gain (%)",
+    scenarioOptimisticAria: "Optimistic gain used for the comparison projection",
+    scenariosNote:
+      "The same projection run under other gains, expressed in the active rate mode. The chart adds dashed comparison lines and the results show all three endpoints.",
+    // Rate mode (V1.1) — per-period vs annual
+    modeLabel: "Rate",
+    modeAria: "How the return is expressed",
+    modePerPeriod: "Rate per Period",
+    modePerPeriodAria: "The gain is applied once per period",
+    modeAnnual: "Annual Rate",
+    modeAnnualAria: "A yearly rate converted into an equivalent per-period rate",
+    unitLabel: "Period Length",
+    unitAria: "Calendar length of one period",
+    unitDaily: "Daily",
+    unitWeekly: "Weekly",
+    unitMonthly: "Monthly",
+    unitQuarterly: "Quarterly",
+    unitYearly: "Yearly",
+    annualGainLabel: "Annual Rate (%)",
+    annualGainAria: "Yearly return, converted per period",
+    effectiveRateNote: "Effective {rate} % per period",
+    durationTemplate: "{count} {unit} periods ≈ {years} years",
+    liveNote: "Results update automatically as you type.",
+    // Summary
+    summaryTitle: "Results",
+    summaryInitial: "Initial Balance",
+    summaryFinal: "Final Balance",
+    summaryDeposits: "Total Deposits",
+    summaryWithdrawals: "Total Withdrawals",
+    summaryEffective: "Effective Rate / Period",
+    summaryScenarioPessimistic: "Pessimistic",
+    summaryScenarioBase: "Base projection",
+    summaryScenarioOptimistic: "Optimistic",
+    summaryProfit: "Total Profit",
+    summaryGain: "Total Gain",
+    summaryEmpty: "Enter a starting balance, a number of periods and a gain per period.",
+    // Chart
+    chartTitle: "Account Growth",
+    chartAria: "Account growth across periods",
+    chartXLabel: "Period",
+    chartYLabel: "Balance",
+    // Table
+    tableTitle: "Period-by-period results",
+    tableAria: "Period-by-period compounding results",
+    colPeriod: "Period",
+    colStarting: "Starting Balance",
+    colDeposit: "Deposit",
+    colWithdrawal: "Withdrawal",
+    colEnding: "Ending Balance",
+    colProfit: "Total Profit",
+    colGain: "Total Gain",
+    tableEmpty: "The results table appears once the inputs are valid.",
+    // Explanation
+    howTitle: "How it works",
+    howBody:
+      "Each period's gain is added to the account balance. The next period calculates its gain from the updated balance. This creates compound growth because gains are reinvested. Optional deposits and withdrawals land at the end of each period and compound from the next one on — money withdrawn is returned to you, never counted as a loss. In Annual Rate mode, the yearly rate is converted into an equivalent per-period rate — (1 + annual)^(1/periods-per-year) − 1 — so the projection stays compound-consistent. Scenarios run the same projection under a pessimistic and an optimistic gain. Total Profit and Total Gain stay EARNED figures — deposits are never counted as profit.",
+    // Copy
+    copySummary: "Copy Summary",
+    toastSummaryCopied: "Summary copied",
+    copyFailed: "Could not copy — your browser blocked clipboard access.",
+    // Disclaimer
+    disclaimer:
+      "Projected growth assumes the specified return occurs consistently and does not account for fees, slippage or losses beyond the modeled figures. Scenarios are illustrative, not predictions. It is not a promise of performance.",
+    // Validation codes
+    validation: {
+      REQUIRED: "This field is required.",
+      INVALID_DECIMAL: "Enter a valid decimal number.",
+      POSITIVE_REQUIRED: "The value must be greater than zero.",
+      PERIODS_RANGE: "Periods must be a whole number between 1 and 200.",
+      GAIN_RANGE: "Gain per period must be between −100% and 100%.",
+      ANNUAL_GAIN_RANGE: "The annual rate must be between −100% and 100%.",
+      SCENARIO_GAIN_RANGE: "The scenario gain must be between −100% and 100%.",
+      SCENARIO_ORDER: "Scenarios must respect the order: pessimistic ≤ base ≤ optimistic.",
+    },
+  },
+
+  pipValue: {
+    subtitle:
+      "Know what one pip and one tick are worth on any instrument, per lot and for the whole position, in your account currency.",
+    inputsTitle: "Inputs",
+    liveNote: "Results update automatically as you type.",
+    instrumentLabel: "Instrument",
+    instrumentAria: "Instrument preset",
+    instrumentCustom: "Custom instrument",
+    lotsLabel: "Lots",
+    lotsAria: "Position size in lots",
+    priceLabel: "Price",
+    priceHint: "(conversion)",
+    priceAria: "Instrument price used for the currency conversion",
+    priceNote:
+      "Used only when your account currency is the instrument's BASE currency (e.g. a USD account on USDJPY) — the quote-currency pip value is converted at this price.",
+    advancedTitle: "Advanced parameters",
+    advancedTickSize: "Tick size",
+    advancedTickHint: "(default: pip ÷ 10)",
+    advancedTickAria: "Smallest price increment, in price units",
+    advancedPipValue: "Pip value / lot (override)",
+    advancedPipValueAria: "Pip value per lot in the account currency, overriding the derivation",
+    howTitle: "How it works",
+    howBody:
+      "Pip value = pip size × contract size when the instrument is quoted in your account currency. When your account currency is the base currency, the value is converted at the price you enter. One tick is the smallest price increment — it defaults to one tenth of a pip and can be overridden. Values are declared with their source so nothing is mysterious.",
+    resultsTitle: "Pip & Tick Values",
+    resultsEmpty: "Enter a lot size to see the pip and tick values.",
+    resultPipPerLot: "Pip Value / Lot",
+    resultTickPerLot: "Tick Value / Lot",
+    resultPipPosition: "Pip Value (Position)",
+    resultTickPosition: "Tick Value (Position)",
+    detailsTickSize: "Tick size used",
+    detailsUnits: "Position units",
+    detailsSource: "Pip value source",
+    sourceDerived: "Derived (quote = account)",
+    sourceConverted: "Converted at price",
+    sourceOverride: "Manual override",
+    enginePipValueRequired:
+      "This pair needs a conversion — enter the current price, or override the pip value in Advanced.",
+    engineInvalidTick: "The tick size must be greater than zero.",
+    engineGeneric: "These parameters cannot be computed — check the advanced values.",
+    copyInstrument: "Instrument",
+    copyLots: "Lots",
+    copyPipPerLot: "Pip Value / Lot",
+    copyTickPerLot: "Tick Value / Lot",
+    copyPipPosition: "Pip Value (Position)",
+    copyTickPosition: "Tick Value (Position)",
+    copySummary: "Copy Summary",
+    toastCopied: "Summary copied",
+    copyFailed: "Could not copy — your browser blocked clipboard access.",
+    disclaimer:
+      "Standard vanilla contract specifications are used — symbols can carry different specifications between brokers. Override the parameters in Advanced when your broker differs. Educational tool, not investment advice.",
+    validation: {
+      REQUIRED: "This field is required.",
+      INVALID_DECIMAL: "Enter a valid decimal number.",
+      POSITIVE_REQUIRED: "The value must be greater than zero.",
+      PIP_PARAMS_REQUIRED: "Advanced parameters must be greater than zero when provided.",
+    },
+  },
+} as const;
+
+export type CalculatorsDict = typeof calculatorsDict;

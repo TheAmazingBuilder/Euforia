@@ -6,8 +6,8 @@
 - **Date du savepoint** : 2026-10-13
 - **Commit validé** : voir `git log -1` (Phase 11 web — Trade Planning / Scenarios / Post-Trade Review)
 - **Tag git** : `savepoint/2026-10-13` (créé sur ce commit) — précédent : `savepoint/2026-10-12`
-- **Bundle git** : `download/oryon-git-2026-10-13-v2.bundle` (historique git COMPLET, cloneable, 219M, vérifié « complete history »)
-- **Archive DB** : `download/oryon-localpg-2026-10-13-v2.tar.gz` (data dir Postgres brut, 22M, WAL inclus)
+- **Bundle git** : `download/oryon-git-2026-10-13-v3.bundle` (historique git COMPLET, cloneable, 219M, vérifié « complete history »)
+- **Archive DB** : `download/oryon-localpg-2026-10-13b.tar.gz` (data dir Postgres brut, 22M, WAL inclus)
 - **Archive extras** : `download/oryon-extras-2026-10-13.tar.gz` (.env ×2, données OCR, worklog, SAVEPOINT)
 
 ---
@@ -21,7 +21,7 @@
 - Connexion : `postgresql://cosmoz@127.0.0.1:5433/cosmoz` (voir `apps/api/.env`)
 - Schéma Prisma : `apps/api/prisma/schema.prisma` (74K) + 36 migrations `apps/api/prisma/migrations/`
 - PID/socket : `apps/api/.localpg/sockets` (port 5433)
-- Le data dir est **hors git** (gitignore) → sauvegardé dans `oryon-localpg-2026-10-13-v2.tar.gz`
+- Le data dir est **hors git** (gitignore) → sauvegardé dans `oryon-localpg-2026-10-13b.tar.gz`
 
 ---
 
@@ -38,7 +38,7 @@ pnpm install
 ### Option B — tout a disparu (nouveau sandbox)
 ```bash
 # 1. Restaurer le code depuis le bundle (historique git complet) :
-git clone /home/z/my-project/download/oryon-git-2026-10-13-v2.bundle /home/z/my-project
+git clone /home/z/my-project/download/oryon-git-2026-10-13-v3.bundle /home/z/my-project
 cd /home/z/my-project && git checkout main
 
 # 2. Dépendances (réinstalle @embedded-postgres/linux-x64@17.5.0-beta.15 — binaire pinné par pnpm-lock)
@@ -48,7 +48,7 @@ pnpm install
 tar -xzf download/oryon-extras-2026-10-13.tar.gz -C /home/z/my-project
 
 # 4. Restaurer la base Postgres :
-tar -xzf download/oryon-localpg-2026-10-13-v2.tar.gz -C /home/z/my-project/apps/api/
+tar -xzf download/oryon-localpg-2026-10-13b.tar.gz -C /home/z/my-project/apps/api/
 
 # 5. Lancer l'API (elle démarre le Postgres embarqué automatiquement) puis le web :
 pnpm --filter api dev     # API :4000, PG :5433

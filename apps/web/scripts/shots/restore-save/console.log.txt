@@ -1,0 +1,817 @@
+[log] [HMR] connected
+[log] %cDocumentation: %chttps://mswjs.io/docs font-weight:bold font-weight:normal
+[log] Found an issue? https://github.com/mswjs/msw/issues
+[log] Worker script URL: http://localhost:3000/sw.js
+[log] Worker scope: http://localhost:3000/
+[log] Client ID: %s (%s) 0ae676c3-9688-4024-89d9-59e4554a5562 top-level
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"trades":[{"id":"fdc92a46-d929-4743-b7f8-cdf98cab…s":null,"deletedAt":null,"tagIds":[]}],"total":2}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"accounts":[{"id":"2c8b3f33-1115-4368-8946-8ba38c…g":null,"createdAt":"2026-05-31T00:00:00.000Z"}]}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"alerts":[{"id":"2fbddf30-8a36-468a-a7ac-c3d80a27…At":"2026-09-16T20:00:00.000Z"}],"unreadCount":7}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"id":"217f56cd-ea44-49ea-a27d-eac80afe09d8","emai…timezone":"America/Toronto","baseCurrency":"USD"}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"trades":[{"id":"aee76656-627e-46b8-b008-fe614857…s":null,"deletedAt":null,"tagIds":[]}],"total":7}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"instruments":[{"id":"22768901-5b28-4f44-9210-984…,"digits":2,"contractSize":"1","isActive":true}]}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"currency":"USD","netPnl":"1131.45","winRate":"0.…7.24","-7.24","-7.24","-7.24","-7.24","-7.24"]}}}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"date":"2026-09-28","accountId":null,"tradesToday…"severity":"LOCK","limit":"2","current":"0.99"}]}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"trades":[{"id":"2424f132-0c20-47de-9b2f-6ea2d4fa…":null,"deletedAt":null,"tagIds":[]}],"total":52}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"strategies":[{"id":"3e9fc6b6-5c15-410f-8088-8d5a…FBBF24","createdAt":"2026-06-10T00:00:00.000Z"}]}}
+[endGroup] console.groupEnd
+[log] [ECharts] Specified `grid.containLabel` but no `use(LegacyGridContainLabel)`;use `grid.outerBounds` instead.
+[log] [HMR] connected
+[log] %cDocumentation: %chttps://mswjs.io/docs font-weight:bold font-weight:normal
+[log] Found an issue? https://github.com/mswjs/msw/issues
+[log] Worker script URL: http://localhost:3000/sw.js
+[log] Worker scope: http://localhost:3000/
+[log] Client ID: %s (%s) 2c74d242-c926-4ce4-b705-ef943b36b75c top-level
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"trades":[{"id":"fdc92a46-d929-4743-b7f8-cdf98cab…s":null,"deletedAt":null,"tagIds":[]}],"total":2}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"accounts":[{"id":"2c8b3f33-1115-4368-8946-8ba38c…g":null,"createdAt":"2026-05-31T00:00:00.000Z"}]}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"alerts":[{"id":"2fbddf30-8a36-468a-a7ac-c3d80a27…At":"2026-09-16T20:00:00.000Z"}],"unreadCount":7}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"id":"217f56cd-ea44-49ea-a27d-eac80afe09d8","emai…timezone":"America/Toronto","baseCurrency":"USD"}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"trades":[{"id":"aee76656-627e-46b8-b008-fe614857…s":null,"deletedAt":null,"tagIds":[]}],"total":7}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"instruments":[{"id":"22768901-5b28-4f44-9210-984…,"digits":2,"contractSize":"1","isActive":true}]}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"currency":"USD","netPnl":"1131.45","winRate":"0.…7.24","-7.24","-7.24","-7.24","-7.24","-7.24"]}}}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"date":"2026-09-28","accountId":null,"tradesToday…"severity":"LOCK","limit":"2","current":"0.99"}]}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"trades":[{"id":"2424f132-0c20-47de-9b2f-6ea2d4fa…":null,"deletedAt":null,"tagIds":[]}],"total":52}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"strategies":[{"id":"3e9fc6b6-5c15-410f-8088-8d5a…FBBF24","createdAt":"2026-06-10T00:00:00.000Z"}]}}
+[endGroup] console.groupEnd
+[log] [ECharts] Specified `grid.containLabel` but no `use(LegacyGridContainLabel)`;use `grid.outerBounds` instead.
+[log] [HMR] connected
+[log] %cDocumentation: %chttps://mswjs.io/docs font-weight:bold font-weight:normal
+[log] Found an issue? https://github.com/mswjs/msw/issues
+[log] Worker script URL: http://localhost:3000/sw.js
+[log] Worker scope: http://localhost:3000/
+[log] Client ID: %s (%s) f8e37a18-43a3-43e9-aaed-523137f5f69f top-level
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"trades":[{"id":"fdc92a46-d929-4743-b7f8-cdf98cab…s":null,"deletedAt":null,"tagIds":[]}],"total":2}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"accounts":[{"id":"2c8b3f33-1115-4368-8946-8ba38c…g":null,"createdAt":"2026-05-31T00:00:00.000Z"}]}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"alerts":[{"id":"2fbddf30-8a36-468a-a7ac-c3d80a27…At":"2026-09-16T20:00:00.000Z"}],"unreadCount":7}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"id":"217f56cd-ea44-49ea-a27d-eac80afe09d8","emai…timezone":"America/Toronto","baseCurrency":"USD"}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"trades":[{"id":"aee76656-627e-46b8-b008-fe614857…s":null,"deletedAt":null,"tagIds":[]}],"total":7}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"instruments":[{"id":"22768901-5b28-4f44-9210-984…,"digits":2,"contractSize":"1","isActive":true}]}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"categories":[{"id":"cat-fundamentals","slug":"fu…ing","lessonIds":["les-a-system-statistics"]}]}]}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"trades":[{"id":"2424f132-0c20-47de-9b2f-6ea2d4fa…":null,"deletedAt":null,"tagIds":[]}],"total":52}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"strategies":[{"id":"3e9fc6b6-5c15-410f-8088-8d5a…FBBF24","createdAt":"2026-06-10T00:00:00.000Z"}]}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"currency":"USD","netPnl":"1131.45","winRate":"0.…7.24","-7.24","-7.24","-7.24","-7.24","-7.24"]}}}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"lessonsCompleted":5,"lessonsTotal":45,"coursesCo…":false}],"updatedAt":"2026-09-28T13:02:00.934Z"}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"recommendations":[{"id":"reco-0-course-strategie…computedAt":"2026-09-28T13:02:00.940Z","total":3}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"course":{"id":"course-candles","categoryId":"cat…ssonId":"les-c-single-candle","completedCount":2}}
+[endGroup] console.groupEnd
+[log] [HMR] connected
+[log] %cDocumentation: %chttps://mswjs.io/docs font-weight:bold font-weight:normal
+[log] Found an issue? https://github.com/mswjs/msw/issues
+[log] Worker script URL: http://localhost:3000/sw.js
+[log] Worker scope: http://localhost:3000/
+[log] Client ID: %s (%s) ae21c757-4f57-4a1d-ba5b-b2e8f2241fa5 top-level
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"trades":[{"id":"fdc92a46-d929-4743-b7f8-cdf98cab…s":null,"deletedAt":null,"tagIds":[]}],"total":2}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"accounts":[{"id":"2c8b3f33-1115-4368-8946-8ba38c…g":null,"createdAt":"2026-05-31T00:00:00.000Z"}]}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"alerts":[{"id":"2fbddf30-8a36-468a-a7ac-c3d80a27…At":"2026-09-16T20:00:00.000Z"}],"unreadCount":7}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"id":"217f56cd-ea44-49ea-a27d-eac80afe09d8","emai…timezone":"America/Toronto","baseCurrency":"USD"}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"trades":[{"id":"aee76656-627e-46b8-b008-fe614857…s":null,"deletedAt":null,"tagIds":[]}],"total":7}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"instruments":[{"id":"22768901-5b28-4f44-9210-984…,"digits":2,"contractSize":"1","isActive":true}]}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"categories":[{"id":"cat-fundamentals","slug":"fu…ing","lessonIds":["les-a-system-statistics"]}]}]}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"lessonsCompleted":5,"lessonsTotal":45,"coursesCo…":false}],"updatedAt":"2026-09-28T13:02:03.209Z"}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"trades":[{"id":"2424f132-0c20-47de-9b2f-6ea2d4fa…":null,"deletedAt":null,"tagIds":[]}],"total":52}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"strategies":[{"id":"3e9fc6b6-5c15-410f-8088-8d5a…FBBF24","createdAt":"2026-06-10T00:00:00.000Z"}]}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"currency":"USD","netPnl":"1131.45","winRate":"0.…7.24","-7.24","-7.24","-7.24","-7.24","-7.24"]}}}}
+[endGroup] console.groupEnd
+[log] [HMR] connected
+[log] %cDocumentation: %chttps://mswjs.io/docs font-weight:bold font-weight:normal
+[log] Found an issue? https://github.com/mswjs/msw/issues
+[log] Worker script URL: http://localhost:3000/sw.js
+[log] Worker scope: http://localhost:3000/
+[log] Client ID: %s (%s) e3adc17c-783f-4810-87da-03e62b5f4101 top-level
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"trades":[{"id":"fdc92a46-d929-4743-b7f8-cdf98cab…s":null,"deletedAt":null,"tagIds":[]}],"total":2}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"accounts":[{"id":"2c8b3f33-1115-4368-8946-8ba38c…g":null,"createdAt":"2026-05-31T00:00:00.000Z"}]}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"alerts":[{"id":"2fbddf30-8a36-468a-a7ac-c3d80a27…At":"2026-09-16T20:00:00.000Z"}],"unreadCount":7}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"id":"217f56cd-ea44-49ea-a27d-eac80afe09d8","emai…timezone":"America/Toronto","baseCurrency":"USD"}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"trades":[{"id":"aee76656-627e-46b8-b008-fe614857…s":null,"deletedAt":null,"tagIds":[]}],"total":7}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"instruments":[{"id":"22768901-5b28-4f44-9210-984…,"digits":2,"contractSize":"1","isActive":true}]}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"currency":"USD","cards":{"winRate":"0.46","profi…09","-0.87","1.8","0.69","2.35","2.21","0.55"]}]}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"trades":[{"id":"2424f132-0c20-47de-9b2f-6ea2d4fa…":null,"deletedAt":null,"tagIds":[]}],"total":52}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"strategies":[{"id":"3e9fc6b6-5c15-410f-8088-8d5a…FBBF24","createdAt":"2026-06-10T00:00:00.000Z"}]}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"currency":"USD","netPnl":"1131.45","winRate":"0.…7.24","-7.24","-7.24","-7.24","-7.24","-7.24"]}}}}
+[endGroup] console.groupEnd
+[log] [HMR] connected
+[log] %cDocumentation: %chttps://mswjs.io/docs font-weight:bold font-weight:normal
+[log] Found an issue? https://github.com/mswjs/msw/issues
+[log] Worker script URL: http://localhost:3000/sw.js
+[log] Worker scope: http://localhost:3000/
+[log] Client ID: %s (%s) 202c1a26-56c3-43bd-8fed-e24a0682f9fb top-level
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"trades":[{"id":"fdc92a46-d929-4743-b7f8-cdf98cab…s":null,"deletedAt":null,"tagIds":[]}],"total":2}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"accounts":[{"id":"2c8b3f33-1115-4368-8946-8ba38c…g":null,"createdAt":"2026-05-31T00:00:00.000Z"}]}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"alerts":[{"id":"2fbddf30-8a36-468a-a7ac-c3d80a27…At":"2026-09-16T20:00:00.000Z"}],"unreadCount":7}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"id":"217f56cd-ea44-49ea-a27d-eac80afe09d8","emai…timezone":"America/Toronto","baseCurrency":"USD"}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"trades":[{"id":"aee76656-627e-46b8-b008-fe614857…s":null,"deletedAt":null,"tagIds":[]}],"total":7}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"instruments":[{"id":"22768901-5b28-4f44-9210-984…,"digits":2,"contractSize":"1","isActive":true}]}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"sectionId":"risk","currency":"USD","sampleTrades…pe and Sortino are per-trade, not annualized."}]}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"currency":"USD","cards":{"winRate":"0.46","profi…09","-0.87","1.8","0.69","2.35","2.21","0.55"]}]}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"strategies":[{"id":"3e9fc6b6-5c15-410f-8088-8d5a…FBBF24","createdAt":"2026-06-10T00:00:00.000Z"}]}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"stats":[{"strategyId":"3e9fc6b6-5c15-410f-8088-8… NY","last20Expectancy":"-0.16","sampleSize":18}}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"trades":[{"id":"2424f132-0c20-47de-9b2f-6ea2d4fa…":null,"deletedAt":null,"tagIds":[]}],"total":52}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"currency":"USD","netPnl":"1131.45","winRate":"0.…7.24","-7.24","-7.24","-7.24","-7.24","-7.24"]}}}}
+[endGroup] console.groupEnd
+[log] [HMR] connected
+[log] %cDocumentation: %chttps://mswjs.io/docs font-weight:bold font-weight:normal
+[log] Found an issue? https://github.com/mswjs/msw/issues
+[log] Worker script URL: http://localhost:3000/sw.js
+[log] Worker scope: http://localhost:3000/
+[log] Client ID: %s (%s) b6ec9f1d-407c-4e7e-b786-8216dd788f55 top-level
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"trades":[{"id":"fdc92a46-d929-4743-b7f8-cdf98cab…s":null,"deletedAt":null,"tagIds":[]}],"total":2}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"accounts":[{"id":"2c8b3f33-1115-4368-8946-8ba38c…g":null,"createdAt":"2026-05-31T00:00:00.000Z"}]}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"alerts":[{"id":"2fbddf30-8a36-468a-a7ac-c3d80a27…At":"2026-09-16T20:00:00.000Z"}],"unreadCount":7}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"id":"217f56cd-ea44-49ea-a27d-eac80afe09d8","emai…timezone":"America/Toronto","baseCurrency":"USD"}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"trades":[{"id":"aee76656-627e-46b8-b008-fe614857…s":null,"deletedAt":null,"tagIds":[]}],"total":7}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"instruments":[{"id":"22768901-5b28-4f44-9210-984…,"digits":2,"contractSize":"1","isActive":true}]}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"integrations":[{"id":"int_deriv","name":"Deriv A…Demo build: service worker + IndexedDB queue."}]}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"trades":[{"id":"2424f132-0c20-47de-9b2f-6ea2d4fa…":null,"deletedAt":null,"tagIds":[]}],"total":52}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"strategies":[{"id":"3e9fc6b6-5c15-410f-8088-8d5a…FBBF24","createdAt":"2026-06-10T00:00:00.000Z"}]}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"currency":"USD","netPnl":"1131.45","winRate":"0.…7.24","-7.24","-7.24","-7.24","-7.24","-7.24"]}}}}
+[endGroup] console.groupEnd
+[log] [HMR] connected
+[log] %cDocumentation: %chttps://mswjs.io/docs font-weight:bold font-weight:normal
+[log] Found an issue? https://github.com/mswjs/msw/issues
+[log] Worker script URL: http://localhost:3000/sw.js
+[log] Worker scope: http://localhost:3000/
+[log] Client ID: %s (%s) fb3ea4e7-8e2a-428b-9ae9-799848fe8461 top-level
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"trades":[{"id":"fdc92a46-d929-4743-b7f8-cdf98cab…s":null,"deletedAt":null,"tagIds":[]}],"total":2}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"accounts":[{"id":"2c8b3f33-1115-4368-8946-8ba38c…g":null,"createdAt":"2026-05-31T00:00:00.000Z"}]}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"alerts":[{"id":"2fbddf30-8a36-468a-a7ac-c3d80a27…At":"2026-09-16T20:00:00.000Z"}],"unreadCount":7}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"id":"217f56cd-ea44-49ea-a27d-eac80afe09d8","emai…timezone":"America/Toronto","baseCurrency":"USD"}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"trades":[{"id":"aee76656-627e-46b8-b008-fe614857…s":null,"deletedAt":null,"tagIds":[]}],"total":7}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"instruments":[{"id":"22768901-5b28-4f44-9210-984…,"digits":2,"contractSize":"1","isActive":true}]}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"currency":"USD","totals":{"balance":"116131.45",…desPct":"32","pnlNet":"329.3","winRate":"0.56"}]}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"connections":[{"id":"bc_f940d0","userId":"217f56…T13:02:13.173Z","accountName":"FTMO Challenge"}]}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"batches":[{"id":"batch_f940d0","userId":"217f56c…T13:02:13.173Z","accountName":"FTMO Challenge"}]}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"trades":[{"id":"2424f132-0c20-47de-9b2f-6ea2d4fa…":null,"deletedAt":null,"tagIds":[]}],"total":52}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"strategies":[{"id":"3e9fc6b6-5c15-410f-8088-8d5a…FBBF24","createdAt":"2026-06-10T00:00:00.000Z"}]}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"currency":"USD","netPnl":"1131.45","winRate":"0.…7.24","-7.24","-7.24","-7.24","-7.24","-7.24"]}}}}
+[endGroup] console.groupEnd
+[log] [HMR] connected
+[log] %cDocumentation: %chttps://mswjs.io/docs font-weight:bold font-weight:normal
+[log] Found an issue? https://github.com/mswjs/msw/issues
+[log] Worker script URL: http://localhost:3000/sw.js
+[log] Worker scope: http://localhost:3000/
+[log] Client ID: %s (%s) f2c72d54-7282-4cb0-b3b0-be3106189b08 top-level
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"trades":[{"id":"fdc92a46-d929-4743-b7f8-cdf98cab…s":null,"deletedAt":null,"tagIds":[]}],"total":2}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"accounts":[{"id":"2c8b3f33-1115-4368-8946-8ba38c…g":null,"createdAt":"2026-05-31T00:00:00.000Z"}]}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"alerts":[{"id":"2fbddf30-8a36-468a-a7ac-c3d80a27…At":"2026-09-16T20:00:00.000Z"}],"unreadCount":7}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"id":"217f56cd-ea44-49ea-a27d-eac80afe09d8","emai…timezone":"America/Toronto","baseCurrency":"USD"}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"trades":[{"id":"aee76656-627e-46b8-b008-fe614857…s":null,"deletedAt":null,"tagIds":[]}],"total":7}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"instruments":[{"id":"22768901-5b28-4f44-9210-984…,"digits":2,"contractSize":"1","isActive":true}]}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"trades":[{"id":"2424f132-0c20-47de-9b2f-6ea2d4fa…":null,"deletedAt":null,"tagIds":[]}],"total":52}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"strategies":[{"id":"3e9fc6b6-5c15-410f-8088-8d5a…FBBF24","createdAt":"2026-06-10T00:00:00.000Z"}]}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"currency":"USD","netPnl":"1131.45","winRate":"0.…7.24","-7.24","-7.24","-7.24","-7.24","-7.24"]}}}}
+[endGroup] console.groupEnd
+[log] [HMR] connected
+[log] %cDocumentation: %chttps://mswjs.io/docs font-weight:bold font-weight:normal
+[log] Found an issue? https://github.com/mswjs/msw/issues
+[log] Worker script URL: http://localhost:3000/sw.js
+[log] Worker scope: http://localhost:3000/
+[log] Client ID: %s (%s) 7c7bdb91-5ad8-42c7-936f-6116b81b24d3 top-level
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"trades":[{"id":"fdc92a46-d929-4743-b7f8-cdf98cab…s":null,"deletedAt":null,"tagIds":[]}],"total":2}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"accounts":[{"id":"2c8b3f33-1115-4368-8946-8ba38c…g":null,"createdAt":"2026-05-31T00:00:00.000Z"}]}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"alerts":[{"id":"2fbddf30-8a36-468a-a7ac-c3d80a27…At":"2026-09-16T20:00:00.000Z"}],"unreadCount":7}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"id":"217f56cd-ea44-49ea-a27d-eac80afe09d8","emai…timezone":"America/Toronto","baseCurrency":"USD"}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"trades":[{"id":"aee76656-627e-46b8-b008-fe614857…s":null,"deletedAt":null,"tagIds":[]}],"total":7}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"instruments":[{"id":"22768901-5b28-4f44-9210-984…,"digits":2,"contractSize":"1","isActive":true}]}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"currency":"USD","netPnl":"1131.45","winRate":"0.…7.24","-7.24","-7.24","-7.24","-7.24","-7.24"]}}}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"date":"2026-09-28","accountId":null,"tradesToday…"severity":"LOCK","limit":"2","current":"0.99"}]}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"trades":[{"id":"2424f132-0c20-47de-9b2f-6ea2d4fa…":null,"deletedAt":null,"tagIds":[]}],"total":52}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"strategies":[{"id":"3e9fc6b6-5c15-410f-8088-8d5a…FBBF24","createdAt":"2026-06-10T00:00:00.000Z"}]}}
+[endGroup] console.groupEnd
+[log] [ECharts] Specified `grid.containLabel` but no `use(LegacyGridContainLabel)`;use `grid.outerBounds` instead.
+[log] [HMR] connected
+[log] %cDocumentation: %chttps://mswjs.io/docs font-weight:bold font-weight:normal
+[log] Found an issue? https://github.com/mswjs/msw/issues
+[log] Worker script URL: http://localhost:3000/sw.js
+[log] Worker scope: http://localhost:3000/
+[log] Client ID: %s (%s) 714f329f-ac82-4636-a83f-f3fd07b18f3d top-level
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"trades":[{"id":"fdc92a46-d929-4743-b7f8-cdf98cab…s":null,"deletedAt":null,"tagIds":[]}],"total":2}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"accounts":[{"id":"2c8b3f33-1115-4368-8946-8ba38c…g":null,"createdAt":"2026-05-31T00:00:00.000Z"}]}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"alerts":[{"id":"2fbddf30-8a36-468a-a7ac-c3d80a27…At":"2026-09-16T20:00:00.000Z"}],"unreadCount":7}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"id":"217f56cd-ea44-49ea-a27d-eac80afe09d8","emai…timezone":"America/Toronto","baseCurrency":"USD"}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"trades":[{"id":"aee76656-627e-46b8-b008-fe614857…s":null,"deletedAt":null,"tagIds":[]}],"total":7}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"instruments":[{"id":"22768901-5b28-4f44-9210-984…,"digits":2,"contractSize":"1","isActive":true}]}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"currency":"USD","netPnl":"1131.45","winRate":"0.…7.24","-7.24","-7.24","-7.24","-7.24","-7.24"]}}}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"date":"2026-09-28","accountId":null,"tradesToday…"severity":"LOCK","limit":"2","current":"0.99"}]}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"trades":[{"id":"2424f132-0c20-47de-9b2f-6ea2d4fa…":null,"deletedAt":null,"tagIds":[]}],"total":52}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"strategies":[{"id":"3e9fc6b6-5c15-410f-8088-8d5a…FBBF24","createdAt":"2026-06-10T00:00:00.000Z"}]}}
+[endGroup] console.groupEnd
+[log] [ECharts] Specified `grid.containLabel` but no `use(LegacyGridContainLabel)`;use `grid.outerBounds` instead.
+[log] [HMR] connected
+[log] %cDocumentation: %chttps://mswjs.io/docs font-weight:bold font-weight:normal
+[log] Found an issue? https://github.com/mswjs/msw/issues
+[log] Worker script URL: http://localhost:3000/sw.js
+[log] Worker scope: http://localhost:3000/
+[log] Client ID: %s (%s) e0813988-b036-4bf4-b6aa-8a484c5b4a3f top-level
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"trades":[{"id":"fdc92a46-d929-4743-b7f8-cdf98cab…s":null,"deletedAt":null,"tagIds":[]}],"total":2}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"accounts":[{"id":"2c8b3f33-1115-4368-8946-8ba38c…g":null,"createdAt":"2026-05-31T00:00:00.000Z"}]}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"alerts":[{"id":"2fbddf30-8a36-468a-a7ac-c3d80a27…At":"2026-09-16T20:00:00.000Z"}],"unreadCount":7}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"id":"217f56cd-ea44-49ea-a27d-eac80afe09d8","emai…timezone":"America/Toronto","baseCurrency":"USD"}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"trades":[{"id":"aee76656-627e-46b8-b008-fe614857…s":null,"deletedAt":null,"tagIds":[]}],"total":7}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"instruments":[{"id":"22768901-5b28-4f44-9210-984…,"digits":2,"contractSize":"1","isActive":true}]}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"categories":[{"id":"cat-fundamentals","slug":"fu…ing","lessonIds":["les-a-system-statistics"]}]}]}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"trades":[{"id":"2424f132-0c20-47de-9b2f-6ea2d4fa…":null,"deletedAt":null,"tagIds":[]}],"total":52}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"strategies":[{"id":"3e9fc6b6-5c15-410f-8088-8d5a…FBBF24","createdAt":"2026-06-10T00:00:00.000Z"}]}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"currency":"USD","netPnl":"1131.45","winRate":"0.…7.24","-7.24","-7.24","-7.24","-7.24","-7.24"]}}}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"lessonsCompleted":5,"lessonsTotal":45,"coursesCo…":false}],"updatedAt":"2026-09-28T13:02:23.599Z"}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"recommendations":[{"id":"reco-0-course-strategie…computedAt":"2026-09-28T13:02:23.605Z","total":3}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"course":{"id":"course-candles","categoryId":"cat…ssonId":"les-c-single-candle","completedCount":2}}
+[endGroup] console.groupEnd
+[log] [HMR] connected
+[log] %cDocumentation: %chttps://mswjs.io/docs font-weight:bold font-weight:normal
+[log] Found an issue? https://github.com/mswjs/msw/issues
+[log] Worker script URL: http://localhost:3000/sw.js
+[log] Worker scope: http://localhost:3000/
+[log] Client ID: %s (%s) f47689c0-2533-4e21-86b4-d874ad603e73 top-level
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"trades":[{"id":"fdc92a46-d929-4743-b7f8-cdf98cab…s":null,"deletedAt":null,"tagIds":[]}],"total":2}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"accounts":[{"id":"2c8b3f33-1115-4368-8946-8ba38c…g":null,"createdAt":"2026-05-31T00:00:00.000Z"}]}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"alerts":[{"id":"2fbddf30-8a36-468a-a7ac-c3d80a27…At":"2026-09-16T20:00:00.000Z"}],"unreadCount":7}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"id":"217f56cd-ea44-49ea-a27d-eac80afe09d8","emai…timezone":"America/Toronto","baseCurrency":"USD"}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"trades":[{"id":"aee76656-627e-46b8-b008-fe614857…s":null,"deletedAt":null,"tagIds":[]}],"total":7}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"instruments":[{"id":"22768901-5b28-4f44-9210-984…,"digits":2,"contractSize":"1","isActive":true}]}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"sectionId":"risk","currency":"USD","sampleTrades…pe and Sortino are per-trade, not annualized."}]}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"currency":"USD","cards":{"winRate":"0.46","profi…09","-0.87","1.8","0.69","2.35","2.21","0.55"]}]}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"strategies":[{"id":"3e9fc6b6-5c15-410f-8088-8d5a…FBBF24","createdAt":"2026-06-10T00:00:00.000Z"}]}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"stats":[{"strategyId":"3e9fc6b6-5c15-410f-8088-8… NY","last20Expectancy":"-0.16","sampleSize":18}}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"trades":[{"id":"2424f132-0c20-47de-9b2f-6ea2d4fa…":null,"deletedAt":null,"tagIds":[]}],"total":52}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"currency":"USD","netPnl":"1131.45","winRate":"0.…7.24","-7.24","-7.24","-7.24","-7.24","-7.24"]}}}}
+[endGroup] console.groupEnd
+[log] [HMR] connected
+[log] %cDocumentation: %chttps://mswjs.io/docs font-weight:bold font-weight:normal
+[log] Found an issue? https://github.com/mswjs/msw/issues
+[log] Worker script URL: http://localhost:3000/sw.js
+[log] Worker scope: http://localhost:3000/
+[log] Client ID: %s (%s) 9190be63-1078-44a4-9fd4-3f0d3d586e8f top-level
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"trades":[{"id":"fdc92a46-d929-4743-b7f8-cdf98cab…s":null,"deletedAt":null,"tagIds":[]}],"total":2}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"accounts":[{"id":"2c8b3f33-1115-4368-8946-8ba38c…g":null,"createdAt":"2026-05-31T00:00:00.000Z"}]}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"alerts":[{"id":"2fbddf30-8a36-468a-a7ac-c3d80a27…At":"2026-09-16T20:00:00.000Z"}],"unreadCount":7}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"id":"217f56cd-ea44-49ea-a27d-eac80afe09d8","emai…timezone":"America/Toronto","baseCurrency":"USD"}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"trades":[{"id":"aee76656-627e-46b8-b008-fe614857…s":null,"deletedAt":null,"tagIds":[]}],"total":7}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"instruments":[{"id":"22768901-5b28-4f44-9210-984…,"digits":2,"contractSize":"1","isActive":true}]}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"currency":"USD","netPnl":"1131.45","winRate":"0.…7.24","-7.24","-7.24","-7.24","-7.24","-7.24"]}}}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"date":"2026-09-28","accountId":null,"tradesToday…"severity":"LOCK","limit":"2","current":"0.99"}]}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"trades":[{"id":"2424f132-0c20-47de-9b2f-6ea2d4fa…":null,"deletedAt":null,"tagIds":[]}],"total":52}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"strategies":[{"id":"3e9fc6b6-5c15-410f-8088-8d5a…FBBF24","createdAt":"2026-06-10T00:00:00.000Z"}]}}
+[endGroup] console.groupEnd
+[log] [ECharts] Specified `grid.containLabel` but no `use(LegacyGridContainLabel)`;use `grid.outerBounds` instead.
+[log] [HMR] connected
+[log] %cDocumentation: %chttps://mswjs.io/docs font-weight:bold font-weight:normal
+[log] Found an issue? https://github.com/mswjs/msw/issues
+[log] Worker script URL: http://localhost:3000/sw.js
+[log] Worker scope: http://localhost:3000/
+[log] Client ID: %s (%s) 8fd2c49b-b5e0-4442-a46a-a8017caa6c98 top-level
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"trades":[{"id":"fdc92a46-d929-4743-b7f8-cdf98cab…s":null,"deletedAt":null,"tagIds":[]}],"total":2}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"accounts":[{"id":"2c8b3f33-1115-4368-8946-8ba38c…g":null,"createdAt":"2026-05-31T00:00:00.000Z"}]}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"alerts":[{"id":"2fbddf30-8a36-468a-a7ac-c3d80a27…At":"2026-09-16T20:00:00.000Z"}],"unreadCount":7}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"id":"217f56cd-ea44-49ea-a27d-eac80afe09d8","emai…timezone":"America/Toronto","baseCurrency":"USD"}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"trades":[{"id":"aee76656-627e-46b8-b008-fe614857…s":null,"deletedAt":null,"tagIds":[]}],"total":7}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"instruments":[{"id":"22768901-5b28-4f44-9210-984…,"digits":2,"contractSize":"1","isActive":true}]}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"categories":[{"id":"cat-fundamentals","slug":"fu…ing","lessonIds":["les-a-system-statistics"]}]}]}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"trades":[{"id":"2424f132-0c20-47de-9b2f-6ea2d4fa…":null,"deletedAt":null,"tagIds":[]}],"total":52}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"strategies":[{"id":"3e9fc6b6-5c15-410f-8088-8d5a…FBBF24","createdAt":"2026-06-10T00:00:00.000Z"}]}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"currency":"USD","netPnl":"1131.45","winRate":"0.…7.24","-7.24","-7.24","-7.24","-7.24","-7.24"]}}}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"lessonsCompleted":5,"lessonsTotal":45,"coursesCo…":false}],"updatedAt":"2026-09-28T13:02:28.978Z"}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"recommendations":[{"id":"reco-0-course-strategie…computedAt":"2026-09-28T13:02:28.985Z","total":3}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"course":{"id":"course-candles","categoryId":"cat…ssonId":"les-c-single-candle","completedCount":2}}
+[endGroup] console.groupEnd
+[log] [HMR] connected
+[log] %cDocumentation: %chttps://mswjs.io/docs font-weight:bold font-weight:normal
+[log] Found an issue? https://github.com/mswjs/msw/issues
+[log] Worker script URL: http://localhost:3000/sw.js
+[log] Worker scope: http://localhost:3000/
+[log] Client ID: %s (%s) 4219adc3-2536-4e2a-bc25-ecfe5952c361 top-level
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"trades":[{"id":"fdc92a46-d929-4743-b7f8-cdf98cab…s":null,"deletedAt":null,"tagIds":[]}],"total":2}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"accounts":[{"id":"2c8b3f33-1115-4368-8946-8ba38c…g":null,"createdAt":"2026-05-31T00:00:00.000Z"}]}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"alerts":[{"id":"2fbddf30-8a36-468a-a7ac-c3d80a27…At":"2026-09-16T20:00:00.000Z"}],"unreadCount":7}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"id":"217f56cd-ea44-49ea-a27d-eac80afe09d8","emai…timezone":"America/Toronto","baseCurrency":"USD"}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"trades":[{"id":"aee76656-627e-46b8-b008-fe614857…s":null,"deletedAt":null,"tagIds":[]}],"total":7}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"instruments":[{"id":"22768901-5b28-4f44-9210-984…,"digits":2,"contractSize":"1","isActive":true}]}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"currency":"USD","cards":{"winRate":"0.46","profi…09","-0.87","1.8","0.69","2.35","2.21","0.55"]}]}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"trades":[{"id":"2424f132-0c20-47de-9b2f-6ea2d4fa…":null,"deletedAt":null,"tagIds":[]}],"total":52}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"strategies":[{"id":"3e9fc6b6-5c15-410f-8088-8d5a…FBBF24","createdAt":"2026-06-10T00:00:00.000Z"}]}}
+[endGroup] console.groupEnd
+[log] Request {url: URL, method: GET, headers: Object, body: }
+[log] Handler: HttpHandler
+[log] Response {status: 200, statusText: OK, headers: Object, body: {"currency":"USD","netPnl":"1131.45","winRate":"0.…7.24","-7.24","-7.24","-7.24","-7.24","-7.24"]}}}}
+[endGroup] console.groupEnd

@@ -1,0 +1,67 @@
+{
+  "desktop_clicks": {
+    "/": {
+      "ok": true,
+      "landed": "/"
+    },
+    "/session": {
+      "ok": true,
+      "landed": "/session"
+    },
+    "/trades": {
+      "ok": false,
+      "landed": "/"
+    },
+    "/journal": {
+      "ok": true,
+      "landed": "/journal"
+    },
+    "/analytics": {
+      "ok": true,
+      "landed": "/analytics"
+    },
+    "/playbook": {
+      "ok": true,
+      "landed": "/playbook"
+    },
+    "/calendar": {
+      "ok": true,
+      "landed": "/calendar"
+    },
+    "/reports": {
+      "ok": true,
+      "landed": "/reports"
+    },
+    "/risk": {
+      "ok": true,
+      "landed": "/risk"
+    },
+    "/academy": {
+      "ok": true,
+      "landed": "/academy"
+    },
+    "/discipline": {
+      "ok": true,
+      "landed": "/discipline"
+    },
+    "/integrations": {
+      "ok": true,
+      "landed": "/integrations"
+    },
+    "/settings": {
+      "ok": true,
+      "landed": "/settings"
+    }
+  },
+  "mobile_sheet": {
+    "navigated": true,
+    "sheet_closed": true,
+    "landed": "/trades"
+  },
+  "palette": {
+    "missing": [],
+    "stale_entries": [
+      "Coach"
+    ]
+  }
+}

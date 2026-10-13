@@ -1,0 +1,27 @@
+{
+  "steps": [
+    "shot 01-desktop-light-overview",
+    "OK overview matrix rows=15, telegram=DISCONNECTED, discord=CONNECTED, slack=DISCONNECTED",
+    "shot 02-desktop-light-communication",
+    "OK communication-tab providers=3, alert contract + pipeline visible",
+    "shot 03-desktop-light-connect-telegram",
+    "OK connect-telegram status -> CONNECTED",
+    "shot 04-desktop-light-communication-after-connect",
+    "shot 05-desktop-light-test-discord",
+    "OK test-discord checks rendered=4",
+    "shot 06-desktop-light-notifications-relay",
+    "OK notifications-relay channels=2 (email + webhook push only)",
+    "shot 07-desktop-dark-overview",
+    "shot 08-desktop-dark-communication",
+    "OK dark-mode overview + communication captured",
+    "shot 09-mobile-communication",
+    "OK mobile-390 no horizontal overflow on Communication tab",
+    "shot 10-mobile-communication-flow",
+    "OK mobile-flow-390 tab navigation usable at 390px"
+  ],
+  "console": [],
+  "overflow": {
+    "communication-390": false,
+    "overview-to-communication-390": false
+  }
+}
