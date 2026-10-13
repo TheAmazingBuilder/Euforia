@@ -1360,3 +1360,28 @@ Stage Summary:
 - Reco: Phase 01 = UI Accounts + 3 fix hygiène (monitoring SUCCESS→COMPLETED, register-or-delete TradingAccountsController, dead links /accounts) — zéro dep/zéro schéma/zéro credentials
 - 4 questions ouvertes utilisateur (§17): chemin MT5, priorité providers, historique snapshots équité, credentials sandbox runtime
 - DÉFAUTS CONFIRMÉS à fixer en Phase 01: monitoring.service.ts:325,383,389 ("SUCCESS"→"COMPLETED"); accounts.module.ts:58 (enregistrer TradingAccountsController); oryon-lower-panel.tsx:396 + recognition-success.tsx:85 (liens morts /accounts)
+
+---
+Task ID: accounts-phase01-architecture
+Agent: Super Z (main)
+Task: Phase 01 Accounts & Trading Connectivity — Target Architecture and Domain Contracts (mandate: 1500-line spec, architecture/contract design only, STOP after Phase 01)
+
+Work Log:
+- STEP ZERO: audit Phase 00 located (docs/audits/PHASE-00-ACCOUNTS-CONNECTIVITY-AUDIT.md, 399 lines read in full); git tree clean at HEAD 3d25c29
+- Reconciliation audit↔repo: 6 load-bearing claims re-verified at HEAD — 6/6 match (accounts.module.ts:58, mappers.ts:92-96, provider.types.ts port, trading-account.ts 367 lines + zero web imports, normalization.ts, Prisma models)
+- 5 deliverables written in docs/architecture/ (new focused dir):
+  * A. accounts-connectivity-target-architecture.md (~380 lines, 16 sections, 2 mermaid, boundary table 12 concepts, threat model 10 threats)
+  * B. accounts-connectivity-domain-contracts.md (~388 lines, 14 sections, 12/14 contracts EXISTS + capability V2 & outcome-table PROPOSED-design, state machines, 8 JSONC examples)
+  * C. accounts-connectivity-api-proposal.md (100 lines, 8 sections, existing 14-route surface + 4 additions only, execution red line)
+  * D. accounts-connectivity-provider-feasibility.md (141 lines, 9 sections, TradingView=UNSUPPORTED, MT5=decision-gated, unknowns U1-U7)
+  * E. accounts-connectivity-phase-roadmap.md (152 lines, Phases 02-07 frozen: 02=UI+hygiene, 03=OANDA+capability V2, 04=scheduler, 05=cTrader OAuth, 06=MT5, 07=Deriv)
+- Phase numbering aligned across all 5 docs (grep cross-check, 2 residual fixes: OANDA=Phase 03, hygiene=Phase 02)
+- Mandate §19 decision: DOCUMENTATION-ONLY (no shared-contract code) — existing trading-account.ts covers 12/14 roles; extensions unconsumed until first real adapter; frozen zod designs in doc B §4 for Phase 03
+- Documentation validation: scripts/validate-phase01-docs.py → JSONC examples 8/8 valid; NO runtime-test claims (no code changed, mandate §21)
+- Final report: docs/architecture/PHASE-01-REPORT.md (22 mandated sections, verdict: Phase 01 COMPLETE, Phase 02 READY)
+
+Stage Summary:
+- Verdict: Phase 01 COMPLETE (checklist §23: 10/10 ✅; #9 N/A-by-design with rationale)
+- Key decisions frozen: connection=separate aggregate; port read-only 6 methods; capability 3-state SUPPORTED/UNSUPPORTED/UNKNOWN; no result envelope (normative outcome table instead); no universal mapping table; raw payloads not persisted; monolith stays
+- User blockers carried: U1 MT5 path, U2/U3 OANDA practice token + discovery, provider priority confirmation
+- Next: Phase 02 = Accounts UI + hygiene (backend complete, no blockers)
