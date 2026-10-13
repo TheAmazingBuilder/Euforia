@@ -1498,3 +1498,19 @@ Stage Summary:
 - Honnêteté: aucune prétention de connectivité live (U2); ordres = états terminaux jamais inventés (corrélation DEFERRED documentée); CANCELLED jamais un résultat provider
 - Porté: U2 (token practice — valide maintenant le flow pagination/cursor sur l'hôte réel), U3 (découverte), décision quarantine (433 fichiers trackés par le sweep système, hors builds)
 - Next: STOP Phase 05 honoré — cTrader (roadmap figée) attend approbation explicite du owner
+
+---
+Task ID: backup-2026-10-13-phase05
+Agent: main (Super Z)
+Task: Sauvegarde post-Phase 05 (exigence permanente « ne rien perdre »)
+
+Work Log:
+- Commit f7d9366 (Phase 05) + tag savepoint/2026-10-13b; tree clean
+- download/oryon-git-2026-10-13-v4.bundle (300M, --all, verify "complete history", clone-test OK jusqu'à f7d9366, tags savepoint 10-12/10-13/10-13b)
+- download/oryon-localpg-2026-10-13c.tar.gz (40M, CHECKPOINT + tar data dir, inclut la migration Phase 05)
+- download/oryon-extras-2026-10-13c.tar.gz (.env ×3 + worklog + SAVEPOINT)
+- Anciennes archives b/v3 conservées (jamais supprimées)
+
+Stage Summary:
+- 3 fichiers de sauvegarde à jour dans download/ ; API :4000 (401 sans token ✓) et web :3000 (200 ✓) sur les builds Phase 05
+- ACTION UTILISATEUR : télécharger v4 + 13c avant tout restart
