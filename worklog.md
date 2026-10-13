@@ -1333,3 +1333,30 @@ Stage Summary:
 - 3 fichiers de sauvegarde dans download/ : oryon-git-2026-10-13.bundle (code+historique, 219M), oryon-localpg-2026-10-13.tar.gz (DB Postgres, 22M), oryon-extras-2026-10-13.tar.gz (env+OCR, ~12M)
 - Tag savepoint/2026-10-13 = point de reprise officiel ; SAVEPOINT.md documente 3 chemins de restauration
 - ACTION UTILISATEUR : télécharger les 3 fichiers depuis download/ AVANT le restart de minuit
+
+---
+Task ID: accounts-phase00-audit
+Agent: Super Z (main)
+Task: Phase 00 Accounts & Trading Connectivity — audit technique complet READ-ONLY (spec §0-§26, aucun code/migration/dep/commit)
+
+Work Log:
+- §4 Safety check: tree clean (HEAD 5f82266 = tag savepoint/2026-10-13), aucun travail à préserver
+- 3 agents d'audit parallèles (backend NestJS, frontend web, Prisma+security) → rapports avec preuves path:symbol:line
+- Vérification orchestrator des claims critiques AVANT acceptation:
+  * CONFIRMÉ: monitoring.service.ts:325/389 filtre status "SUCCESS" jamais écrit (writer: RUNNING/COMPLETED/FAILED, accounts.repository.ts:314/331/530) → successCount=0, latencyMs=null permanents
+  * CONFIRMÉ: TradingAccountsController (/trading-accounts*) implémenté mais non enregistré (accounts.module.ts:58 = [AccountsController, BrokerController] seulement)
+  * CONFIRMÉ: Hub Intégrations → secrets démo plaintext dans IntegrationRow.data pendant que WebhookSecretService (AES-GCM) est orphelin/zéro-import
+  * CONFIRMÉ (runtime): TradingDeal.externalPositionId en DB mais absent de schema.prisma (dérive); 42 tables non-modélisées 0-rows; accounts domain 0 rows (User:1, Instrument:7)
+  * RÉFUTÉ après investigation: prétendue erreur de syntaxe accounts.e2e.spec.ts:742 — le canal d'affichage bash avale les séquences littérales "[m" (sanitizeur ANSI zélé); comptage byte-exact: OCC_CLEAN=3, OCC_BROKEN=0, HAS_ESC=0. Leçon: Read tool > echo bash pour ces séquences; trancher par comptages, pas par texte echoé
+- §16 Tests réellement exécutés: unit 81/81 (6 fichiers: mock-trading-provider 12, integrations-hub 29, trade-reconstruction 7, error-mapper 19, aes-gcm 5, sync-status 9) + e2e accounts 35/35 (vraie DB de test migrée, 2 runs) + vitest list OK
+- §9 Recherche providers 2026-10-13 (docs officielles fetchées): OANDA v20 portal (developer.oanda.com), cTrader Open API OAuth2 (help.ctrader.com), Deriv API (api.deriv.com: "real-time pricing, trade execution, portfolio data"), MT5 Python module officiel (mql5.com: account_info/positions_get/orders_get/history_deals_get/order_send, quick-start Windows), MetaApi 3rd-party (metaapi.cloud), IC Markets = Raw Trading Ltd multi-plateformes (ic.com), TradingView = pas d'API compte officielle trouvée (tradingview.com/brokers = annuaire partenaires)
+- Rapport final écrit: docs/audits/PHASE-00-ACCOUNTS-CONNECTIVITY-AUDIT.md (398 lignes, 20 sections spec §26, classification KEEP/REUSE/IMPROVE/MISSING/MOCKED/UNSUPPORTED/DEFER, roadmap 6 phases, open questions)
+- Copie de sûreté: download/PHASE-00-ACCOUNTS-AUDIT-2026-10-13.md
+- AUCUN commit (règle Phase 00 §4) — fichier rapport non-tracké laissé à la décision utilisateur
+
+Stage Summary:
+- Verdict global: backend Phase 3 Accounts = complet, honnête, read-only par construction, e2e vert (35/35) + unit (81/81) VERIFIED BY TEST; frontend = AUCUNE UI Accounts (backend non câblé, MSW fixtures non-marquées en UI risque = risque HIGH); connectivité réelle = zéro (par design, aucun SDK/HTTP client/scheduler); Hub Intégrations = contexte simulé séparé avec dette de secrets plaintext + dead code orphelin
+- Matrice faisabilité: OANDA=feasible (chemin officiel le plus propre), cTrader=feasible (OAuth2 officiel; extension supportedConnectionMethods requise), Deriv=feasible, MT5=feasible-with-constraints (terminal/bridge — OPEN QUESTION utilisateur), IC Markets=via plateformes seulement, TradingView=UNSUPPORTED pour account sync
+- Reco: Phase 01 = UI Accounts + 3 fix hygiène (monitoring SUCCESS→COMPLETED, register-or-delete TradingAccountsController, dead links /accounts) — zéro dep/zéro schéma/zéro credentials
+- 4 questions ouvertes utilisateur (§17): chemin MT5, priorité providers, historique snapshots équité, credentials sandbox runtime
+- DÉFAUTS CONFIRMÉS à fixer en Phase 01: monitoring.service.ts:325,383,389 ("SUCCESS"→"COMPLETED"); accounts.module.ts:58 (enregistrer TradingAccountsController); oryon-lower-panel.tsx:396 + recognition-success.tsx:85 (liens morts /accounts)
