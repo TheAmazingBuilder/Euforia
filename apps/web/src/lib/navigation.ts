@@ -175,7 +175,12 @@ export const SIDEBAR_ITEMS: NavItem[] = [
   },
 ];
 
-/** Desktop sidebar order: Dashboard first, then the New Trade action, then the rest. */
+/**
+ * Desktop sidebar order: Accounts pinned at the very top (brought above
+ * Dashboard, with a subtle separator below it), then Dashboard, then the
+ * sectioned navigation.
+ */
+export const SIDEBAR_ACCOUNTS_FIRST = getNavItem("/accounts");
 export const SIDEBAR_FIRST_ITEM = SIDEBAR_ITEMS[0];
 export const SIDEBAR_REST_ITEMS = SIDEBAR_ITEMS.slice(1);
 
@@ -192,8 +197,11 @@ export type NavSection = {
 
 export const NAV_SECTIONS: NavSection[] = [
   {
+    // /accounts is NOT here anymore — it is pinned at the very top of the
+    // sidebar (above Dashboard) as SIDEBAR_ACCOUNTS_FIRST with a subtle
+    // separator; keeping it in this section would render it twice.
     title: "Trading",
-    hrefs: ["/trades", "/oryon", "/journal", "/accounts", "/playbook"],
+    hrefs: ["/trades", "/oryon", "/journal", "/playbook"],
   },
   // Goals lives inside Trade Review (/journal?tab=goals) — /goals redirects there.
   {

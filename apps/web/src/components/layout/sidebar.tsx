@@ -11,6 +11,7 @@ import { EuforiaLogo } from "@/components/brand/euforia-logo";
 import { openGhostModal } from "@/lib/hooks/use-ghost-modal";
 import { useAuth } from "@/components/auth/auth-provider";
 import {
+  SIDEBAR_ACCOUNTS_FIRST,
   SIDEBAR_FIRST_ITEM,
   NAV_SECTIONS,
   getNavItem,
@@ -80,12 +81,25 @@ export function SidebarNav({
   };
 
   const first = SIDEBAR_FIRST_ITEM;
+  const pinnedAccounts = SIDEBAR_ACCOUNTS_FIRST;
 
   return (
     <nav
       aria-label="Main navigation"
       className={cn("flex flex-col gap-1 p-2", collapsed && "items-center")}
     >
+      {/* Accounts — pinned at the very top, above Dashboard, with a subtle
+          separator (deliberate placement, pulled out of the Trading section). */}
+      {renderItem(pinnedAccounts)}
+      {collapsed ? (
+        <div
+          aria-hidden="true"
+          className="my-2 h-px w-6 self-center bg-border"
+        />
+      ) : (
+        <div aria-hidden="true" className="my-1.5 h-px bg-border" />
+      )}
+
       {first ? renderItem(first) : null}
 
       {/* Ghost capture (spec §3, entry point #3) — deliberately discreet */}
