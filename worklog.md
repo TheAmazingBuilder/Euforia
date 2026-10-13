@@ -1514,3 +1514,23 @@ Work Log:
 Stage Summary:
 - 3 fichiers de sauvegarde à jour dans download/ ; API :4000 (401 sans token ✓) et web :3000 (200 ✓) sur les builds Phase 05
 - ACTION UTILISATEUR : télécharger v4 + 13c avant tout restart
+
+---
+Task ID: accounts-final-audit-prep
+Agent: main (Super Z)
+Task: Remontée UI Accounts au-dessus de Dashboard (demande utilisateur) + reconstruction env post-restart + sauvegardes v5 — pré-requis avant l'audit final read-only du module Accounts (master prompt 10 étapes / 15 sections)
+
+Work Log:
+- UI: /accounts épinglé TOUT EN HAUT de la sidebar (au-dessus de Dashboard) avec séparateur subtil — navigation.ts (SIDEBAR_ACCOUNTS_FIRST via getNavItem("/accounts"); /accounts retiré de NAV_SECTIONS Trading pour éviter le doublon) + sidebar.tsx (renderItem en tête + hairline my-1.5 h-px bg-border en mode étendu, w-6 self-center en mode collapsé); command-palette (SIDEBAR_ITEMS flat) et sonde verify-accounts.js (a[href="/accounts"] .first) non impactés
+- Vérifié: tsc --noEmit web 0 erreur; eslint web 0 erreur (90 warnings préexistants, aucun sur les fichiers touchés); commit 1d7c357; tag savepoint/2026-10-14; tree clean
+- Constat post-restart: download/ VIDÉ (bundle v4 + localpg 13c + extras 13c perdus), .localpg DISPARUE, apps/api/.env + apps/web/.env.local manquants; node_modules OK
+- Bundle v5: download/oryon-git-2026-10-14-v5.bundle (301M, --all, verify OK, clone-test OK: 255 commits, HEAD 1d7c357, tags 10-12/10-13/10-13b/10-14 + backup/modifs-du-29-sept)
+- Env reconstruit via scripts/rebuild-env-2026-10-14.sh (persisté): apps/api/.env régénéré (jeu de clés neuf cohérent, chmod 600, valeurs jamais loggées), PG17 :5433 up (cluster neuf), db push cosmoz+cosmoz_test, migrate resolve --applied ×38 ×2, index partiel TradingSyncRun_accountId_running_key réappliqué ×2, migrate status "up to date" ×2
+- Backups: download/oryon-localpg-2026-10-14.tar.gz (CHECKPOINT + tar data dir) + download/oryon-extras-2026-10-14.tar.gz (root .env + apps/api/.env + worklog + SAVEPOINT)
+- NOTE: DB fraîche = SANS données utilisateur (ancien cluster + ses archives perdus au restart; seeds Instrument/InstrumentSpecification + user démo trader@cosmoz.app NON recréés — à refaire après audit si besoin); apps/web/.env.local volontairement NON recréé (mode MSW par défaut; ne pas cuire le live bridge dans le build pendant l'audit)
+
+Stage Summary:
+- Code sécurisé: bundle v5 inclut Phases 00→05 + commit UI 1d7c357; clone-test OK
+- Env opérationnel: PG:5433 up-to-date ×2 DB; serveurs API/web volontairement NON démarrés (audit read-only ensuite)
+- Phases 06/07/08 Accounts: NON implémentées (vérifié via git log --grep) — l'audit final doit le documenter
+- Prochaine étape: AUDIT FINAL read-only (aucune modification repo à partir d'ici) — rapport → download/ACCOUNTS-MODULE-FINAL-AUDIT-2026-10-14.md
