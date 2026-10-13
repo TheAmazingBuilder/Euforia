@@ -21,6 +21,12 @@ export const queryKeys = {
   // Trade module upgrades
   tradeViews: ["trade-views"] as const,
   sessionSeries: (tradeId: string) => ["session-series", tradeId] as const,
+  // Trade Plans (Phase 11) — list keyed by filters, detail carries the
+  // plan-vs-actual comparison (refetched after every lifecycle mutation).
+  plans: (params: { tradeId?: string; status?: string; symbol?: string }) =>
+    ["plans", params] as const,
+  plansRoot: ["plans"] as const,
+  planDetail: (planId: string) => ["plans", "detail", planId] as const,
   review: (tradeId: string) => ["review", tradeId] as const,
   reviewRoot: ["review"] as const,
   alerts: ["alerts"] as const,

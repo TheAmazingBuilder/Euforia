@@ -4641,7 +4641,13 @@ export function createMockStore() {
         .map(pendingRowForTrade),
     ];
     rows.sort((a, b) => b.tradingDate.localeCompare(a.tradingDate));
-    return { reviews: rows, meta: { generatedAt: nowIso() } };
+    // Phase 6 pagination meta — mirrors the Nest list (page default 1,
+    // DEFAULT_PAGE_SIZE 200; the mock returns everything it has).
+    const limit = 200;
+    return {
+      reviews: rows.slice(0, limit),
+      meta: { generatedAt: nowIso(), total: rows.length, page: 1, limit, hasMore: limit < rows.length },
+    };
   }
 
   function upsertReview(input: UpsertReviewInput): ReviewRow {

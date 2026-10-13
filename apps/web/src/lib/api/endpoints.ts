@@ -49,6 +49,16 @@ export const apiPaths = {
   tradesBulk: "/trades/bulk",
   tradesImport: "/trades/import",
   tradeSessionSeries: (tradeId: string) => `/trades/${tradeId}/session-series`,
+  // Trade Plans (Phase 11 — documented reasoning, never execution). The plan
+  // lifecycle actions mirror the Nest contract exactly: state-machine
+  // transitions live server-side, the client only requests them.
+  plans: "/plans",
+  plan: (planId: string) => `/plans/${planId}`,
+  planActivate: (planId: string) => `/plans/${planId}/activate`,
+  planInvalidate: (planId: string) => `/plans/${planId}/invalidate`,
+  planComplete: (planId: string) => `/plans/${planId}/complete`,
+  planArchive: (planId: string) => `/plans/${planId}/archive`,
+  planLinkTrade: (planId: string) => `/plans/${planId}/link-trade`,
   sessionTimeline: "/session/timeline",
   sessionNotes: "/session/notes",
   sessionNote: (noteId: string) => `/session/notes/${noteId}`,

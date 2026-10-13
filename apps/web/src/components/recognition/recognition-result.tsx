@@ -193,6 +193,51 @@ export function RecognitionResult({
       <span className="stamp stamp-ink !text-[10px]" data-testid="recognition-mode-badge">{dict.result.mode.trade}</span>
     );
 
+  /**
+   * V2 §10/§55 — source-region overlays mapped from REAL pixel coordinates
+   * onto the letterboxed display box. PDFs (and any asset with unknown dims)
+   * carry null width/height: there is no mapping without a source size, so
+   * the overlays render nothing instead of dividing by null.
+   */
+  const renderRegionOverlays = () => {
+    const assetWidth = recognition.asset.width;
+    const assetHeight = recognition.asset.height;
+    if (!showBoxes || imageBox === null || assetWidth === null || assetHeight === null) {
+      return [] as Array<{
+        field: string;
+        active: boolean;
+        left: number;
+        top: number;
+        width: number;
+        height: number;
+        label: string;
+        onHover: () => void;
+        onClick: () => void;
+      }>;
+    }
+    const scale = Math.min(imageBox.width / assetWidth, imageBox.height / assetHeight);
+    const renderedWidth = assetWidth * scale;
+    const renderedHeight = assetHeight * scale;
+    const offsetX = (imageBox.width - renderedWidth) / 2;
+    const offsetY = (imageBox.height - renderedHeight) / 2;
+    return regionsWithFields.map(({ field, region }) => ({
+      field: field.field,
+      active: activeField === field.field,
+      left: offsetX + region.x * scale,
+      top: offsetY + region.y * scale,
+      width: Math.max(6, region.width * scale),
+      height: Math.max(6, region.height * scale),
+      label: recognitionFieldLabel(dict, field.field as FieldKey),
+      onHover: () => setActiveField(field.field),
+      onClick: () => {
+        setActiveField(field.field);
+        document
+          .querySelector(`[data-field-row="${field.field}"]`)
+          ?.scrollIntoView({ behavior: "smooth", block: "center" });
+      },
+    }));
+  };
+
   return (
     <div className="flex flex-col gap-4" data-testid="recognition-result">
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
@@ -358,48 +403,31 @@ export function RecognitionResult({
                     setImageBox({ width: rect.width, height: rect.height });
                   }}
                 />
-                {/* V2 §10/§55 — source-region overlays (real-pixel → display mapping). */}
-                {showBoxes && imageBox
-                  ? regionsWithFields.map(({ field, region }) => {
-                      const scale = Math.min(
-                        imageBox.width / recognition.asset.width,
-                        imageBox.height / recognition.asset.height,
-                      );
-                      const renderedWidth = recognition.asset.width * scale;
-                      const renderedHeight = recognition.asset.height * scale;
-                      const offsetX = (imageBox.width - renderedWidth) / 2;
-                      const offsetY = (imageBox.height - renderedHeight) / 2;
-                      const active = activeField === field.field;
-                      return (
-                        <button
-                          key={field.field}
-                          type="button"
-                          className={cn(
-                            "pointer-events-auto absolute rounded-sm border-2 transition-colors",
-                            active
-                              ? "border-accent bg-accent/20"
-                              : "border-accent/50 bg-accent/[0.08] hover:bg-accent/20",
-                          )}
-                          style={{
-                            left: offsetX + region.x * scale,
-                            top: offsetY + region.y * scale,
-                            width: Math.max(6, region.width * scale),
-                            height: Math.max(6, region.height * scale),
-                          }}
-                          onMouseEnter={() => setActiveField(field.field)}
-                          onFocus={() => setActiveField(field.field)}
-                          onClick={() => {
-                            setActiveField(field.field);
-                            document
-                              .querySelector(`[data-field-row="${field.field}"]`)
-                              ?.scrollIntoView({ behavior: "smooth", block: "center" });
-                          }}
-                          aria-label={`${recognitionFieldLabel(dict, field.field as FieldKey)} — ${dict.boxes.toggle}`}
-                          data-testid={`recognition-box-${field.field}`}
-                        />
-                      );
-                    })
-                  : null}
+                {/* V2 §10/§55 — source-region overlays (real-pixel → display mapping).
+                    PDFs (and unknown-dim assets) carry null dims — no mapping, no overlays. */}
+                {renderRegionOverlays().map((box) => (
+                  <button
+                    key={box.field}
+                    type="button"
+                    className={cn(
+                      "pointer-events-auto absolute rounded-sm border-2 transition-colors",
+                      box.active
+                        ? "border-accent bg-accent/20"
+                        : "border-accent/50 bg-accent/[0.08] hover:bg-accent/20",
+                    )}
+                    style={{
+                      left: box.left,
+                      top: box.top,
+                      width: box.width,
+                      height: box.height,
+                    }}
+                    onMouseEnter={box.onHover}
+                    onFocus={box.onHover}
+                    onClick={box.onClick}
+                    aria-label={`${box.label} — ${dict.boxes.toggle}`}
+                    data-testid={`recognition-box-${box.field}`}
+                  />
+                ))}
                 {cropRect && imageBox ? (
                   <div
                     className="pointer-events-none absolute border-2 border-accent bg-accent/10"
@@ -420,7 +448,7 @@ export function RecognitionResult({
             )}
             <div className="flex items-center justify-between gap-3 border-t border-border px-3 py-2 font-mono text-[11px] tabular-nums text-muted-foreground">
               <span>
-                {recognition.asset.width} × {recognition.asset.height} ·{" "}
+                {recognition.asset.width ?? "—"} × {recognition.asset.height ?? "—"} ·{" "}
                 {(recognition.asset.sizeBytes / 1024).toFixed(0)} KB
               </span>
               {cropMode && cropRect && cropRect.width > 8 && cropRect.height > 8 ? (
@@ -430,7 +458,12 @@ export function RecognitionResult({
                   className="min-h-7"
                   disabled={recrop?.pending}
                   onClick={() => {
-                    if (cropRect && imageBox) {
+                    if (
+                      cropRect &&
+                      imageBox &&
+                      recognition.asset.width !== null &&
+                      recognition.asset.height !== null
+                    ) {
                       // Map the display-box rectangle onto REAL pixel
                       // coordinates of the stored asset (the <img> letterboxes).
                       const scale = Math.min(

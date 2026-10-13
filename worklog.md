@@ -1272,3 +1272,40 @@ Work Log:
 Stage Summary:
 - Commits 32cfe4d (shared) + 44fdeef (api). Le « maillon manquant » est levé : l'API Nest sert désormais réellement — la base pour le journal multi-device (analyses côté serveur) et la Phase 11.
 - Limites documentées : TradingModule provider-only (routes unifiées = Phase 12) ; éco-calendar non câblé (compile) ; tables générations non consommées présentes en DB non modélisées (aucun code ne les touche — tsc le prouve) ; FK bénignes (ChecklistTemplate/PlaybookRule/TradeReview.originTradePlanId) absentes en DB.
+
+---
+Task ID: phase11-backend
+Agent: Super Z (main)
+Task: Phase 11 后端 — Oryon analyses 服务端化 + Trade Plans API（会话在写 worklog 前中断，此处补记；对应 commit 314d5dc）。
+
+Work Log:
+- Prisma: OryonAnalysis + AnalysisPlan 模型（clientRequestId unique）+ migration 20261013220000 部署（36/36 可部署链保持）。
+- shared: schemas/plans.ts（PLAN_TRANSITIONS 状态机表、plan/scenario/compare/response 契约、PLAN_ERROR_CODES、中性 process tags）+ /oryon/analyses 信封（与 localStorage store 的 unix-ms 时间戳对齐）。
+- API: /plans 全 CRUD + activate/invalidate/complete/archive/link-trade；激活门（无 invalidation criteria 拒绝）、编辑窗口（仅 DRAFT/ACTIVE）、link 校验 ownership + symbol mismatch 需显式 confirm、plan-vs-actual 只读 canonical trade facts、缺失值诚实 null、clientRequestId 幂等。/oryon/analyses CRUD（payload 不可变、仅 metadata PATCH）。
+- OryonModule/PlansModule 接线；TradesService 暴露 ownership-scoped 读端口 getTradeRowForUser。
+- e2e: plans.e2e 13/13（生命周期、激活门、IDOR 组、绝不创建 trade 不变量、comparison）+ oryon-analyses.e2e 6/6。
+- VERIFIÉ（该次会话）: vitest 1052/1052（79 文件）、tsc 0、eslint 0。
+
+Stage Summary:
+- Commit 314d5dc。Phase 11 的服务端完成；前端为下一任务。遗漏：worklog 条目（本条补记）。
+
+---
+Task ID: phase11-frontend
+Agent: Super Z (main)
+Task: Phase 11 前端 — Trade Planning / Analysis Scenarios / Post-Trade Review 全工作流（审计 → 管道 → mock → UI → 验证）。
+
+Work Log:
+- AUDIT（Explore agent + 人工复核）: drawer = Dialog(桌面)/Sheet(移动) 双面; hooks 模式 react-query + apiRequest + invalidate; MSW handlers 薄层 + store 逻辑; i18n en-only 静态字典; ?trade= deep-link 已存在; Phase 10 图分析区 trade-chart-analysis.tsx 是 section 挂载先例。
+- 管道: apiPaths.plans*（6 路径）+ queryKeys.plans/plansRoot/planDetail + queries/plans.ts 11 hooks（useUpdatePlan 更名 useUpdateAnalysisPlan——barrel 与 legacy trades useUpdatePlan 冲突）。
+- MSW: plan-engine.ts 逐条镜像 Nest PlanService（状态机表、激活门、编辑窗口、失效原因、完成评审、link 校验、诚实 null comparison、clientRequestId 幂等、ownership-safe 404）+ handlers/plans.ts 11 路由 + 注册。mock 限制如实注释：fixture trade 的 userId 是随机 uuid，与 auth demo id 永不相等 → findTrade 的 ownership 比较在此不可满足（与其它 mock 域一致仅 requireAuth；真实 API 由 e2e IDOR 组覆盖）。
+- UI: components/trades/trade-plan.tsx —— drawer 新 section（linked 组 + unlinked-on-symbol 组 + Link/mismatch-confirm 流）；详情 dialog（thesis/失效标准/假设性 levels 徽章/场景（角色徽章+主观概率）/生命周期轨迹/完成评审/planned-vs-actual 表（"—" 诚实缺失 + direction planned="Scenarios" 诚实空）/按状态的动作页脚）；编辑 dialog（create+edit 共用，thesis/criteria/levels(逗号分隔 targets)/场景编辑器（role/title/if-then/subjective %）/nonce 重水化）；invalidate dialog（原因必填 + 快捷原因 chips）；complete dialog（中性 process tags 多选）。全部 max-h-[85dvh]（Phase 10 教训）。
+- i18n: dict.trades.plans 完整命名空间（状态/角色/process tags/错误回退）。
+- 顺手修复三类既有破坏（32cfe4d/314d5dc 只 typecheck 了 API）：recognition-result.tsx V2 PDF null dims 的 8 处 overlay 除法（render helper + 守卫 + "—" 尺寸显示）；mocks/store.ts listReviews 补 Phase 6 分页 meta（Nest DEFAULT_PAGE_SIZE 200 对齐）；两个 stale 探针（verify-trade-details、verify-trades-upgrades）补 ensureLogin + 去 networkidle。
+- BUGS RÉELS CORRIGÉS: ① 编辑器 render-time 重水化 key "create" 跨会话陈旧 → 第二个 create 静默继承第一个 plan 的全部字段（激活门因此假通过）——session nonce 修复；② plan-engine 挂 PlanRecord{wire, clientRequestId}（wire 契约不含幂等键）；③ 卡片 delete 门从 DRAFT/ACTIVE 放宽到 !ARCHIVED（INVALIDATED/COMPLETED 的清理路径；DELETE API 本就不限状态）。
+- SONDE scripts/verify-phase11.js 31/31 @1440（:3000 prod）：空态、创建（预填 symbol、假设 levels、场景+主观概率）、link、详情断言、激活门 422（PLAN_ACTIVATION_INCOMPLETE）+ 修复后激活、失效原因必填+快捷 chips、完成评审（notes+Followed plan tag）、planned-vs-actual（"—"/direction=SELL 读自 canonical trade）、归档 terminal、unlink+delete、0 页面错误。探针工程教训：sonner toast 是 React 管理的 DOM——evaluate 删除节点 → 下一 commit insertBefore NotFoundError 崩 drawer（改用 el.click() JS 点击绕 hit-target）；badge CSS uppercase → innerText 大写比较；详情 query 先服务缓存再 refetch → 状态敏感断言必须 waitForFunction 到预期状态/内容。
+- RÉGRESSIONS: phase10 20/20、trade-details 11/11（复活）、oryon-collapse 11/11、trades-upgrades 37/39（2 FAIL 为保存视图/CSV 导入的 toast 断言被 demo 周期性 NOFY 目标 toast 污染——与 plans 无关的既有环境噪音）。
+- VERIFIÉ: tsc 0（web 全量）、eslint 0 错误（4 个既有 _locale 警告）、build OK 32 页、:3000 rebuild+restart（kill by PID ss）。
+
+Stage Summary:
+- Phase 11 前端交付：plan = 文档化推理（绝不创建/修改 trade、levels 标注假设性、概率标注主观、comparison 缺失即 "—"、失效必录原因、评审 process-over-outcome）。诚实契约与 Phase 10 一致；server 是唯一权威（MSW 镜像其语义）。未做（记录为决策）：analysisId UI 选择器（web analyses 仍 browser-local，服务端 registry 为空，传本地 id 必 404——待 analyses 服务端同步后开放）；无列表页/筛选器（drawer 按需组已覆盖 §workflow/§history 的最小连贯面）。
+- Commits: 见下一条（phase11-frontend commit）。

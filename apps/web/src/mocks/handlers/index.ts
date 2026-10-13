@@ -16,6 +16,7 @@ import { statsHandlers } from "./stats";
 import { tradeHandlers } from "./trades";
 import { backupHandlers } from "./backup";
 import { tradeReviewHandlers } from "./tradeReview";
+import { planHandlers } from "./plans";
 import { academyHandlers } from "./academy";
 import { nofyHandlers } from "./nofy";
 
@@ -27,6 +28,7 @@ export const handlers = [
   ...playbookHandlers,
   ...tradeHandlers,
   ...tradeReviewHandlers,
+  ...planHandlers,
   ...disciplineHandlers,
   ...ghostHandlers,
   ...statsHandlers,

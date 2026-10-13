@@ -23,8 +23,20 @@ const BASE = "http://localhost:3000";
   const check = (name, ok, extra = "") =>
     results.push(`${ok ? "PASS" : "FAIL"} — ${name}${extra ? ` (${extra})` : ""}`);
 
-  await page.goto(`${BASE}/trades`, { waitUntil: "networkidle" });
+  // socket.io never goes idle — domcontentloaded + fixed waits (house rule).
+  await page.goto(`${BASE}/trades`, { waitUntil: "domcontentloaded" });
   await page.waitForTimeout(1500);
+  // Fresh Playwright profiles carry no session — log in when redirected.
+  const sidebar = page.locator('nav[aria-label="Main navigation"]');
+  if ((await sidebar.count()) === 0 || !(await sidebar.isVisible().catch(() => false))) {
+    await page.locator("#login-email").waitFor({ state: "visible", timeout: 20000 });
+    await page.locator("#login-email").fill("trader@cosmoz.app");
+    await page.locator("#login-password").fill("cosmoz-demo-2026");
+    await page.locator('[data-testid="login-submit"]').click();
+    await sidebar.waitFor({ state: "visible", timeout: 20000 });
+    await page.goto(`${BASE}/trades`, { waitUntil: "domcontentloaded" });
+    await page.waitForTimeout(1500);
+  }
 
   // Open the first trade's details (click the first row of the ledger).
   const firstRow = page.locator("tbody tr").first();
@@ -83,8 +95,23 @@ const BASE = "http://localhost:3000";
 
   // ── Mobile 390: the sheet stays full width ───────────────────────────────
   const mobile = await browser.newPage({ viewport: { width: 390, height: 844 } });
-  await mobile.goto(`${BASE}/trades`, { waitUntil: "networkidle" });
-  await mobile.waitForTimeout(1200);
+  await mobile.goto(`${BASE}/trades`, { waitUntil: "domcontentloaded" });
+  await mobile.waitForTimeout(1500);
+  const mobileSidebar = mobile.locator('nav[aria-label="Main navigation"]');
+  if (
+    (await mobileSidebar.count()) === 0 ||
+    !(await mobileSidebar.isVisible().catch(() => false))
+  ) {
+    await mobile.locator("#login-email").waitFor({ state: "visible", timeout: 20000 });
+    await mobile.locator("#login-email").fill("trader@cosmoz.app");
+    await mobile.locator("#login-password").fill("cosmoz-demo-2026");
+    await mobile.locator('[data-testid="login-submit"]').click();
+    // Mobile uses the bottom nav — the desktop rail stays hidden. Wait for
+    // the ledger instead.
+    await mobile.waitForSelector('[data-testid="trades-table"]', { timeout: 20000 });
+    await mobile.goto(`${BASE}/trades`, { waitUntil: "domcontentloaded" });
+    await mobile.waitForTimeout(1500);
+  }
   await mobile.locator("tbody tr").first().click();
   await mobile.waitForTimeout(700);
   const sheet = mobile.locator('[data-testid="trade-detail-drawer"]');

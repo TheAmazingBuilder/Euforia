@@ -46,7 +46,18 @@ const slug = (name) => name.replace(/[^a-z0-9]+/gi, "-").toLowerCase();
     }
   };
 
-  await page.goto(`${BASE}/trades`, { waitUntil: "networkidle", timeout: 60_000 });
+  await page.goto(`${BASE}/trades`, { waitUntil: "domcontentloaded", timeout: 60_000 });
+  await page.waitForTimeout(1500);
+  const sidebar = page.locator('nav[aria-label="Main navigation"]');
+  if ((await sidebar.count()) === 0 || !(await sidebar.isVisible().catch(() => false))) {
+    await page.locator("#login-email").waitFor({ state: "visible", timeout: 20000 });
+    await page.locator("#login-email").fill("trader@cosmoz.app");
+    await page.locator("#login-password").fill("cosmoz-demo-2026");
+    await page.locator('[data-testid="login-submit"]').click();
+    await sidebar.waitFor({ state: "visible", timeout: 20000 });
+    await page.goto(`${BASE}/trades`, { waitUntil: "domcontentloaded", timeout: 60_000 });
+    await page.waitForTimeout(1500);
+  }
   await page.waitForSelector('[data-testid="trades-row"]', { timeout: 30_000 });
   await page.waitForTimeout(600);
 
@@ -242,7 +253,18 @@ const slug = (name) => name.replace(/[^a-z0-9]+/gi, "-").toLowerCase();
   // ── 9. Mobile 390 ──────────────────────────────────────────────────────────
   const mobile = await browser.newPage({ viewport: { width: 390, height: 844 } });
   mobile.on("pageerror", (err) => errors.push(`mobile: ${err}`));
-  await mobile.goto(`${BASE}/trades`, { waitUntil: "networkidle", timeout: 60_000 });
+  await mobile.goto(`${BASE}/trades`, { waitUntil: "domcontentloaded", timeout: 60_000 });
+  await mobile.waitForTimeout(1500);
+  const mobileSidebar = mobile.locator('nav[aria-label="Main navigation"]');
+  if ((await mobileSidebar.count()) === 0 || !(await mobileSidebar.isVisible().catch(() => false))) {
+    await mobile.locator("#login-email").waitFor({ state: "visible", timeout: 20000 });
+    await mobile.locator("#login-email").fill("trader@cosmoz.app");
+    await mobile.locator("#login-password").fill("cosmoz-demo-2026");
+    await mobile.locator('[data-testid="login-submit"]').click();
+    await mobile.waitForSelector('[data-testid="trades-table"]', { timeout: 20000 });
+    await mobile.goto(`${BASE}/trades`, { waitUntil: "domcontentloaded", timeout: 60_000 });
+    await mobile.waitForTimeout(1500);
+  }
   await mobile.waitForSelector('[data-testid="trades-row"]', { timeout: 30_000 });
   await mobile.waitForTimeout(800);
   const overflow = await mobile.evaluate(

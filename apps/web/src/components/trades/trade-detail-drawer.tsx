@@ -32,6 +32,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { TradeSessionChart } from "@/components/trades/trade-session-chart";
 import { TradeChartAnalysisSection } from "@/components/trades/trade-chart-analysis";
+import { TradePlanSection } from "@/components/trades/trade-plan";
 import {
   useAddScreenshot,
   useCloseTrade,
@@ -422,6 +423,7 @@ export function TradeDetailDrawer({
       {verdictSection}
       <TradeSessionChart tradeId={trade.id} open={open} />
       <TradeChartAnalysisSection trade={trade} open={open} />
+      <TradePlanSection trade={trade} />
       <div className={cn("grid gap-5", "lg:grid-cols-2")}>
         <div className="space-y-5">
           {strategySection}
