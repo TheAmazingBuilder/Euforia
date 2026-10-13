@@ -61,8 +61,11 @@ describe("session timeline (B5)", () => {
     expect(before.events).toHaveLength(0);
 
     // One full lifecycle today (recent timestamps, mood taps included).
-    const entryAt = new Date(Date.now() - 60 * 60_000).toISOString();
-    const exitAt = new Date(Date.now() - 30 * 60_000).toISOString();
+    // Date-string anchors INSIDE today (00:01/00:02 UTC) — immune to the
+    // midnight boundary that once emptied the "today" timeline mid-run.
+    const today = new Date().toISOString().slice(0, 10);
+    const entryAt = `${today}T00:01:00.000Z`;
+    const exitAt = `${today}T00:02:00.000Z`;
     const created = await app.inject({
       method: "POST",
       url: "/api/v1/trades",

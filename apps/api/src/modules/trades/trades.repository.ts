@@ -24,6 +24,10 @@ export interface TradeRow {
   status: string;
   direction: string;
   source: string;
+  /** Phase-4 denormalized journal columns (backfilled at every write). */
+  symbol: string;
+  currency: string;
+  closedQuantity: Prisma.Decimal;
 
   entryPrice: Prisma.Decimal;
   entryAt: Date;

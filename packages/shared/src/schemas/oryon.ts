@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { marketIntervalSchema } from "./market";
+import { uuidSchema } from "./primitives";
 
 /**
  * Oryon drawing contracts — cahier des charges §8.3 (RF-04, RF-09).
@@ -1140,3 +1141,35 @@ export const oryonAnalysesFileSchema = z.object({
 });
 
 export type OryonAnalysesFile = z.infer<typeof oryonAnalysesFileSchema>;
+
+// ── Phase 10 → serveur — the /oryon/analyses API envelopes (multi-device) ────
+
+/** GET /oryon/analyses — the user's saved analyses, newest update first. */
+export const oryonAnalysesListResponseSchema = z.object({
+  analyses: z.array(oryonChartAnalysisSchema),
+});
+export type OryonAnalysesListResponse = z.infer<typeof oryonAnalysesListResponseSchema>;
+
+export const oryonAnalysisMutatedResponseSchema = z.object({
+  analysis: oryonChartAnalysisSchema,
+});
+export type OryonAnalysisMutatedResponse = z.infer<typeof oryonAnalysisMutatedResponseSchema>;
+
+/** PATCH /oryon/analyses/:id — metadata-only edits (title/notes/link); the
+ * analysis payload is immutable after save (a re-save creates a new record). */
+export const patchOryonAnalysisInputSchema = z
+  .object({
+    title: z.string().trim().min(1).max(80).optional(),
+    notes: z.string().max(4000).nullable().optional(),
+    tradeId: uuidSchema.nullable().optional(),
+  })
+  .refine((value) => Object.keys(value).length > 0, {
+    message: "Provide at least one field to update.",
+  });
+export type PatchOryonAnalysisInput = z.infer<typeof patchOryonAnalysisInputSchema>;
+
+export const ORYON_ANALYSIS_ERROR_CODES = {
+  ORYON_ANALYSIS_NOT_FOUND: "ORYON_ANALYSIS_NOT_FOUND",
+  ORYON_ANALYSIS_TRADE_NOT_FOUND: "ORYON_ANALYSIS_TRADE_NOT_FOUND",
+  ORYON_ANALYSIS_SYMBOL_MISMATCH: "ORYON_ANALYSIS_SYMBOL_MISMATCH",
+} as const;

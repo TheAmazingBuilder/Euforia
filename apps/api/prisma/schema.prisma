@@ -145,6 +145,8 @@ model User {
   integrationErrors       IntegrationError[]
   integrationWebhookEndpoints IntegrationWebhookEndpoint[]
   strategies        Strategy[]
+  oryonAnalyses     OryonAnalysis[]
+  analysisPlans     AnalysisPlan[]
   setups            Setup[]
   checklistTemplates ChecklistTemplate[]
   playbookRules     PlaybookRule[]
@@ -898,6 +900,10 @@ model Trade {
   executions TradeExecution[]
   /// Phase-6 post-trade review (1:1, unique tradeId).
   review TradeReview?
+  /// Phase 10 — Oryon chart analyses referencing this trade (link cleared on delete).
+  oryonAnalyses OryonAnalysis[]
+  /// Phase 11 — trade plans referencing this trade (link cleared on delete).
+  analysisPlans AnalysisPlan[]
 
   /// Import idempotence (§27): one broker ref per account. PostgreSQL allows
   /// several (account, NULL) rows — MANUAL trades stay unconstrained.
@@ -1854,4 +1860,101 @@ model OcrEvent {
 
   @@index([userId, type, createdAt(sort: Desc)])
   @@index([userId, createdAt(sort: Desc)])
+}
+
+/// Phase 10 → serveur — the Oryon chart analysis (multi-device journal).
+/// Mirrors the shared oryonChartAnalysisSchema 1:1; the tradeId link is the
+/// CANONICAL journal trade (never copied, never mutated by this domain).
+model OryonAnalysis {
+  id           String  @id @default(uuid()) @db.Uuid
+  userId       String  @db.Uuid
+  user         User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  symbol       String
+  /// Market interval (shared marketIntervalSchema vocabulary).
+  interval     String
+  /// Oryon chart type (oryonLayoutChartTypeSchema vocabulary).
+  chartType    String
+  title        String
+  notes        String?
+  /// Optional link to the canonical journal trade — ON DELETE SET NULL: the
+  /// analysis survives a trade delete with the link honestly cleared.
+  tradeId      String? @db.Uuid
+  trade        Trade?  @relation(fields: [tradeId], references: [id], onDelete: SetNull)
+  /// Snapshot reference {tradeId, screenshotId, capturedAt} — points at the
+  /// journal attachment, never owns a copy of the image.
+  snapshot     Json?
+  /// Panel analysis config (structure/levels) — validated by the shared schema.
+  analysis     Json
+  /// Restored drawings (oryonDrawingSchema[]).
+  drawings     Json
+  /// Last candle open time (unix SECONDS) of the analyzed chart state.
+  referenceTimeSec BigInt?
+  schemaVersion Int    @default(1)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  analysisPlans AnalysisPlan[]
+
+  @@index([userId, updatedAt(sort: Desc)])
+  @@index([userId, symbol])
+}
+
+/// Phase 11 — the Trade Plan (documented market reasoning). Distinct from the
+/// Phase-5 risk-engine TradePlan: this is the thesis/scenarios/review record.
+/// Lifecycle: DRAFT → ACTIVE → (INVALIDATED | COMPLETED) → ARCHIVED.
+enum AnalysisPlanStatus {
+  DRAFT
+  ACTIVE
+  INVALIDATED
+  COMPLETED
+  ARCHIVED
+}
+
+model AnalysisPlan {
+  id           String            @id @default(uuid()) @db.Uuid
+  userId       String            @db.Uuid
+  user         User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status       AnalysisPlanStatus @default(DRAFT)
+  symbol       String
+  timeframe    String?
+  title        String
+  /// The thesis — what the user expected to happen, in their own words.
+  thesis       String
+  /// Optional canonical journal trade link (ownership validated server-side).
+  tradeId      String?           @db.Uuid
+  trade        Trade?            @relation(fields: [tradeId], references: [id], onDelete: SetNull)
+  /// Optional Oryon chart-analysis reference (Phase 10 integration).
+  analysisId   String?           @db.Uuid
+  analysis     OryonAnalysis?    @relation(fields: [analysisId], references: [id], onDelete: SetNull)
+  /// What would falsify the thesis (user-defined, never auto-evaluated).
+  invalidationCriteria String?
+  invalidatedAt  DateTime?
+  invalidationReason String?
+  /// Post-trade review — process-focused, never a P&L judgment.
+  reviewNotes  String?
+  /// Optional process tags (followed_plan | deviated | invalidated | not_executed | insufficient_evidence).
+  processTags  Json?
+  reviewedAt   DateTime?
+  completedAt  DateTime?
+  /// Hypothetical levels — explicitly SEPARATE from actual execution facts.
+  plannedEntry  Decimal? @db.Decimal(18, 8)
+  plannedStop   Decimal? @db.Decimal(18, 8)
+  /// Array of decimal-string targets.
+  plannedTargets Json?
+  /// Chart reference time (unix SECONDS) when the plan was written.
+  referenceTimeSec BigInt?
+  /// Alternative scenarios (validated nested schema — stable ids).
+  scenarios    Json?
+  schemaVersion Int      @default(1)
+  /// Optimistic client idempotency — a double submit collapses to one row.
+  clientRequestId String? @db.Uuid
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, clientRequestId])
+  @@index([userId, status])
+  @@index([userId, symbol])
+  @@index([tradeId])
 }

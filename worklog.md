@@ -1238,3 +1238,37 @@ Stage Summary:
 - Contrat d'honnêteté Phase 10 : le trade du journal reste CANONIQUE (jamais copié, jamais muté, jamais créé) ; analyses browser-local documenté dans l'UI ; snapshots = preuve attachée au journal, PAS de l'historique de marché ; le view restauré est étiqueté "reconstructed view — not a historical replay" ; mismatch d'instrument explicite + confirmation ; aucune exécution, aucun ordre.
 - Limitations documentées : persistance serveur (Nest) = dépendance manquante (API non compilable) — les schémas sont prêts ; screenshots MSW in-memory → disparaisent au reload (limite du mode mock, la sonde navigue client-side pour vérifier) ; BTCUSDT 1D indisponible (Binance 418).
 - Prochaine étape suggérée : réconcilier le barrel partagé + client Prisma pour faire compiler l'API Nest, puis servir les analyses côté serveur (le contrat zod est prêt).
+
+---
+Task ID: oryon-auto-collapse
+Agent: Super Z (main)
+Task: Clic sur l'onglet Oryon → collapse automatique de la sidebar en mode icônes (au lieu du toggle manuel).
+
+Work Log:
+- Audit : collapse = store externe cosmoz:sidebar-collapsed (src/lib/utils/sidebar.ts) consommé via useSyncExternalStore dans app-shell.tsx ; seul point d'entrée = bouton topbar (sidebar-toggle). Aucun précédent route-driven.
+- Implémentation : sidebar.ts gagne collapseSidebarForRoute()/restoreSidebarAfterRoute() + flag session autoCollapsedForRoute (jamais persisté, effacé par tout toggle manuel) ; AppShell = effet route-driven (pathname === "/oryon" → collapse, sinon restore) — couvre clic sidebar, palette ⌘K et deep-links. Import inutilisé toggleSidebarCollapsed nettoyé.
+- Sonde scripts/verify-oryon-collapse.js : 11/11 @1440 (:3000 rebuild+restart, kill par PID ss) — baseline 240px, clic Oryon → 72px + padding wrapper 72px + storage "1", retour → 240px/"0", deep-link → 72px, reload → 72px, toggle manuel pendant Oryon → choix respecté après sortie. (1er run 10/11 : la sonde mesurait main au lieu du wrapper — corrigé.)
+- tsc 0, eslint 0, build OK.
+
+Stage Summary:
+- Commit 8d4063d. Oryon s'ouvre désormais plein écran automatiquement ; le choix manuel de l'utilisateur prime toujours (flag session, pas de persistance du caractère "auto").
+
+---
+Task ID: api-reconciliation
+Agent: Super Z (main)
+Task: ② Réconcilier le barrel partagé + client Prisma → API Nest recompilée, servie, testée.
+
+Work Log:
+- AUDIT : 730 erreurs tsc — 5 couches de dérive (barrel sans exports, contrats jamais écrits, modèles Prisma jamais modélisés, dérive services/repos, migrations jamais déployables). Deux générations par domaine coexistent (row-store B-era câblée + normalisée Phase 4-7 jamais compilée).
+- SHARED : barrel + exports (trade-planning, replay+engine, trading-core, goal) avec dé-dup tradeSource → ./trade ; contrats authorés : revue Phase 6 (pagination meta, patchReview ≥1 champ, reviewPlanSnapshot, PlanVsActual, ReviewDetail, TRADE_REVIEW_ERROR_CODES, originTradePlanId), TradingAccountUpdateInput, famille OCR recognition v2/v3 complète (~60 symboles) + validateDraftCoherence.
+- PRISMA : ~25 modèles/énumères ajoutés fidèles aux migrations (TradePlan, InstrumentSpecification, TradeReview+Trade.review, TradeExecution+colonnes dénormalisées Trade.symbol/currency/closedQuantity, ReplayRow, EconomicEvent/CalendarSyncRun/CalendarBlock, DailyStat, UserSettings, Integration×5, playbook normalisé×5, OcrRecognitionGroup/OcrCorrection/OcrEvent/OcrCollectionAsset, colonnes v2/v3 sur OcrRecognition/OcrAsset dims nullables) ; prisma generate OK.
+- MIGRATIONS réparées (jamais déployables) : trading_core = enums seuls, TradeExecution déplacée dans trade_journal_core avec les 3 colonnes, ocr_v2 renommée AVANT le drop d'index v3, trade_review renommée après Trade, full_coverage gardée (IF NOT EXISTS + FK/index protégés), settings garde User.preferences, doublon ocr_v3 idempotent → déploiement 36/36 sur DB vierge.
+- OCR : 42 méthodes de repository (ledger événements, mémoire de corrections, ancres doublons closest-match, drafts par index, mutex de confirmation + rollback, groupes, collections d'assets, sweep rétention, agrégations analytics) ; seuil hamming 6 / malformed=64 (contrat V2, spec engine-quality mise à jour) ; TRADE_NOTE lessons = uuid contrat.
+- GÉNÉRATIONS tranchées : modules/reviews (blob) SUPPRIMÉ ; review module réduit à /goals ; TradeReviewModule (Phase 6) possède /reviews ; TradesModule legacy garde /trades (contrat frontend), TradingModule Phase-4 en providers-only (collision de routes documentée, unification = reco Phase 12) ; AnalyticsController possède /stats/analytics-suite (fallback sims Phase-8 épinglé par son spec).
+- WIRING : AppModule + Trading(provider-only)+TradePlanning+TradeReview+Replay+Analytics ; CalendarModule exporte CalendarQueriesService (repo normalisé) ; playbook attribution reads pour analytics/nofy ; quiz attaché aux cours.
+- SPECS e2e adaptées aux surfaces câblées (seeds legacy, uuid contrat, discipline trade.closed, calendar-block PUT body, clés templates, routes academy plurielles, formats monétaires Phase-8) — AUCUNE assertion sémantique affaiblie.
+- VERIFIÉ : vitest 1033/1033 (77 fichiers) ; tsc 0 ; eslint 0 ; build OK ; migrations 36/36 sur DB vierge ; boot :4000 (dev env) + login/verify email + smoke 200 sur trades/reviews/trade-plans/replay/stats/playbook/academy/instruments/accounts.
+
+Stage Summary:
+- Commits 32cfe4d (shared) + 44fdeef (api). Le « maillon manquant » est levé : l'API Nest sert désormais réellement — la base pour le journal multi-device (analyses côté serveur) et la Phase 11.
+- Limites documentées : TradingModule provider-only (routes unifiées = Phase 12) ; éco-calendar non câblé (compile) ; tables générations non consommées présentes en DB non modélisées (aucun code ne les touche — tsc le prouve) ; FK bénignes (ChecklistTemplate/PlaybookRule/TradeReview.originTradePlanId) absentes en DB.

@@ -1339,4 +1339,14 @@ export class TradesService {
       parentId: row.data.parentId,
     };
   }
+
+  // ── Reconciliation read port (Phase 10/11 cross-context links) ────────────
+  /**
+   * Ownership-scoped canonical trade row for cross-context links (Oryon
+   * analyses, trade plans). Returns the raw repository row (denormalized
+   * symbol included) or null — a foreign id is an honest null, never a leak.
+   */
+  async getTradeRowForUser(tradeId: string, userId: string) {
+    return this.repository.findTradeForUser(tradeId, userId);
+  }
 }

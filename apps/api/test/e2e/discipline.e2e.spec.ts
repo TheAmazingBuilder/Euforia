@@ -186,9 +186,14 @@ describe("discipline evaluation pipeline (B4)", () => {
 
     // Trade 1: fine. Trade 2: breaches the 1-trade limit (same trading day,
     // timestamps anchored on NOW so the "today" aggregate sees them).
-    const dayOffsets = [90, 60]; // minutes before now
-    for (const offset of dayOffsets) {
-      const entryAt = new Date(Date.now() - offset * 60_000).toISOString();
+    // Date-string anchors INSIDE today (00:01/00:02 UTC) — immune to the
+    // midnight boundary that once zeroed the "today" aggregates mid-run.
+    const today = new Date().toISOString().slice(0, 10);
+    const dayOffsets: Array<[string, string]> = [
+      [`${today}T00:01:00.000Z`, `${today}T00:05:00.000Z`],
+      [`${today}T00:02:00.000Z`, `${today}T00:06:00.000Z`],
+    ];
+    for (const [entryAt, exitAt] of dayOffsets) {
       const open = await app.inject({
         method: "POST",
         url: "/api/v1/trades",
@@ -213,7 +218,7 @@ describe("discipline evaluation pipeline (B4)", () => {
         payload: {
           mode: "single",
           exitPrice: "1.0800",
-          exitAt: new Date(Date.now() - (offset - 20) * 60_000).toISOString(),
+          exitAt,
           exitReason: "SL",
         },
       });

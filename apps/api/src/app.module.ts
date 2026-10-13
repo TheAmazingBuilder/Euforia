@@ -45,6 +45,8 @@ import { TradePlanningModule } from "./modules/trade-planning/trade-planning.mod
 import { TradeReviewModule } from "./modules/trade-review/trade-review.module";
 import { ReplayModule } from "./modules/replay/replay.module";
 import { AnalyticsModule } from "./modules/analytics/analytics.module";
+import { OryonModule } from "./modules/oryon/oryon.module";
+import { PlansModule } from "./modules/plans/plans.module";
 
 const globalExceptionFilterProvider: Provider = {
   provide: APP_FILTER,
@@ -166,6 +168,9 @@ const globalExceptionFilterProvider: Provider = {
     TradeReviewModule,
     ReplayModule,
     AnalyticsModule,
+    // Phase 10 → serveur (Oryon analyses) + Phase 11 (trade plans).
+    OryonModule,
+    PlansModule,
     // modules/reference … — added by their own phases.
   ],
   providers: [globalExceptionFilterProvider],

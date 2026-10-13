@@ -54,6 +54,7 @@ export * from "./schemas/trading-core";
 export * from "./schemas/trade-planning";
 export * from "./schemas/replay";
 export * from "./replay/engine";
+export * from "./schemas/plans";
 
 // ── Pure utils ───────────────────────────────────────────────────────────────
 export * from "./utils/money";
