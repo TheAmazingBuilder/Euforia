@@ -33,6 +33,7 @@ import { AccountsRepository } from "./accounts.repository";
 import { CredentialsEncryptionService } from "./credentials-encryption.service";
 import { ProviderRegistryService } from "./provider-registry.service";
 import { MockTradingProviderAdapter } from "./providers/mock-trading.provider";
+import { OandaRestProviderAdapter } from "./providers/oanda/oanda-rest.provider";
 import { TradingAccountService } from "./trading-account.service";
 import { TradingSyncService } from "./trading-sync.service";
 import { AccountsRateLimiterService } from "./accounts-rate-limiter.service";
@@ -48,6 +49,12 @@ const providerRegistryProvider: Provider = {
       // cTrader, …) register here when their integrations actually exist —
       // never before (§56: do not fake real connectivity).
       ...(config.accounts.mockProviderEnabled ? [new MockTradingProviderAdapter()] : []),
+      // Phase 03: the FIRST real adapter — explicit opt-in per deployment
+      // (a real provider is never enabled by default). No credential lives
+      // here: the adapter receives the vault-decrypted token per request.
+      ...(config.accounts.oandaEnabled
+        ? [new OandaRestProviderAdapter({ restUrlOverride: config.accounts.oandaRestUrlOverride })]
+        : []),
     ];
     return new ProviderRegistryService(adapters);
   },

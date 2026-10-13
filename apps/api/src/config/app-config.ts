@@ -49,6 +49,10 @@ export interface AppConfig {
     providerTimeoutMs: number;
     /** Whether the mock trading provider may be registered (§57). */
     mockProviderEnabled: boolean;
+    /** Whether the real OANDA v20 REST adapter is registered (Phase 03). */
+    oandaEnabled: boolean;
+    /** OANDA REST base-URL override (tests/region edge); null = route by environment. */
+    oandaRestUrlOverride: string | null;
   };
   trades: {
     /** Local filesystem storage root for trade-screenshot binaries (§39). */
@@ -122,6 +126,8 @@ function build(env: Env): AppConfig {
         env.ACCOUNTS_MOCK_PROVIDER !== undefined
           ? env.ACCOUNTS_MOCK_PROVIDER === "enabled"
           : env.NODE_ENV !== "production",
+      oandaEnabled: env.ACCOUNTS_OANDA_PROVIDER === "enabled",
+      oandaRestUrlOverride: env.ACCOUNTS_OANDA_REST_URL ?? null,
     },
     trades: {
       screenshotsRoot: env.TRADES_SCREENSHOTS_ROOT,

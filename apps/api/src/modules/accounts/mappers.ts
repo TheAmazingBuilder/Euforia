@@ -84,9 +84,10 @@ export function toSynchronizationView(
  * Derive the synchronization status (§15) from observable facts:
  *  - never synchronized            → UNKNOWN
  *  - a run is RUNNING              → SYNCING
- *  - the latest run FAILED         → ERROR
+ *  - the latest run FAILED         → ERROR (no prior success) / LIVE (recent success)
+ *  - the latest run PARTIAL        → DELAYED — partial ≠ success in freshness,
+ *    never LIVE until a full run completes (doc B §8.2/§9)
  *  - last success within freshness → LIVE, otherwise STALE
- * DELAYED is reserved for future per-object freshness granularity.
  * Connection state does NOT alter this axis (orthogonal lifecycles).
  */
 export function deriveSynchronizationStatus(
@@ -98,6 +99,7 @@ export function deriveSynchronizationStatus(
   if (latestRun && latestRun.status === "RUNNING") return "SYNCING";
   if (latestRun && latestRun.status === "FAILED" && !lastSyncAt) return "ERROR";
   if (!lastSyncAt) return "UNKNOWN";
+  if (latestRun && latestRun.status === "PARTIAL") return "DELAYED";
   if (latestRun && latestRun.status === "FAILED" && nowMs - lastSyncAt.getTime() <= freshnessTtlMs) {
     // Recent failure AFTER a recent success — the last good state is still fresh.
     return "LIVE";

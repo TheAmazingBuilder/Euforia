@@ -61,6 +61,27 @@ describe("deriveSynchronizationStatus", () => {
     expect(deriveSynchronizationStatus(new Date(NOW - 60 * MINUTE), failed, NOW)).toBe("STALE");
   });
 
+  // ── Phase 03 (doc B §8.2/§9): partial ≠ success in freshness ─────────────
+
+  it("a PARTIAL run reads DELAYED even while its snapshot is inside the window", () => {
+    const partial = run({ status: "PARTIAL", errorCode: "RATE_LIMITED" });
+    expect(deriveSynchronizationStatus(new Date(NOW - MINUTE), partial, NOW)).toBe("DELAYED");
+  });
+
+  it("a PARTIAL run with an old snapshot still reads DELAYED (never degrades to STALE silence)", () => {
+    const partial = run({ status: "PARTIAL", errorCode: "INVALID_PROVIDER_RESPONSE" });
+    expect(deriveSynchronizationStatus(new Date(NOW - 30 * MINUTE), partial, NOW)).toBe("DELAYED");
+  });
+
+  it("a PARTIAL run with no persisted snapshot reads UNKNOWN (nothing fresh exists)", () => {
+    const partial = run({ status: "PARTIAL", errorCode: "PROVIDER_UNAVAILABLE" });
+    expect(deriveSynchronizationStatus(null, partial, NOW)).toBe("UNKNOWN");
+  });
+
+  it("a later full COMPLETED run returns the freshness axis to normal", () => {
+    expect(deriveSynchronizationStatus(new Date(NOW - MINUTE), run(), NOW)).toBe("LIVE");
+  });
+
   it("respects a custom freshness TTL", () => {
     expect(
       deriveSynchronizationStatus(new Date(NOW - 2 * MINUTE), run(), NOW, MINUTE),

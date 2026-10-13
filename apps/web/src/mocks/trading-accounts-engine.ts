@@ -314,6 +314,8 @@ function deriveSynchronizationStatus(
   if (latestRun?.status === "RUNNING") return "SYNCING";
   if (latestRun?.status === "FAILED" && !lastSyncMs) return "ERROR";
   if (!lastSyncMs) return "UNKNOWN";
+  // Phase 03 parity: a PARTIAL run is never LIVE-fresh (doc B §8.2/§9).
+  if (latestRun?.status === "PARTIAL") return "DELAYED";
   if (latestRun?.status === "FAILED" && nowMs - lastSyncMs <= FRESHNESS_TTL_MS) return "LIVE";
   return nowMs - lastSyncMs <= FRESHNESS_TTL_MS ? "LIVE" : "STALE";
 }

@@ -499,6 +499,14 @@ model TradingSyncRun {
   errorCode         String?
   /// Request correlation id (§50).
   requestId         String?
+  // ── Phase 03 (doc B §8.2): per-segment observation timestamps ──
+  /// A non-null timestamp = the segment RAN and PERSISTED (0 rows is a
+  /// legitimate outcome); null = failed or capability-skipped. Counts alone
+  /// cannot make that distinction.
+  snapshotAt        DateTime?
+  positionsAt       DateTime?
+  ordersAt          DateTime?
+  dealsAt           DateTime?
 
   @@index([accountId, startedAt(sort: Desc)])
 }

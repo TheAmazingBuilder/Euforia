@@ -238,6 +238,7 @@ export class TradingAccountService {
       const context: ProviderRequestContext = {
         credentials,
         externalAccountId: input.payload.externalAccountId,
+        environment: input.payload.environment,
       };
       accountInfo = await withProviderTimeout(adapter.fetchAccountInfo(context), timeoutMs);
       snapshot = await withProviderTimeout(adapter.fetchSnapshot(context), timeoutMs);
@@ -352,6 +353,7 @@ export class TradingAccountService {
     const context: ProviderRequestContext = {
       credentials,
       externalAccountId: account.externalAccountId,
+      environment: account.type as ProviderRequestContext["environment"],
     };
 
     const checks: Array<{ name: string; ok: boolean; detail: string }> = [];
@@ -433,7 +435,11 @@ export class TradingAccountService {
       const timeoutMs = this.config.accounts.providerTimeoutMs;
       await withProviderTimeout(adapter.testConnection(credentials), timeoutMs);
       await withProviderTimeout(
-        adapter.fetchAccountInfo({ credentials, externalAccountId: account.externalAccountId }),
+        adapter.fetchAccountInfo({
+          credentials,
+          externalAccountId: account.externalAccountId,
+          environment: account.type as ProviderRequestContext["environment"],
+        }),
         timeoutMs,
       );
     } catch (error) {

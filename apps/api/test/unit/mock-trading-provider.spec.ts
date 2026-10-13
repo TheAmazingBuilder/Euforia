@@ -17,7 +17,7 @@ const adapter = new MockTradingProviderAdapter();
 const credentials = { method: "API_KEY" as const, secret: "super-secret-api-key-4242" };
 
 function ctxOf(externalAccountId: string) {
-  return { credentials, externalAccountId };
+  return { credentials, externalAccountId, environment: "DEMO" as const };
 }
 
 describe("MockTradingProviderAdapter — descriptor", () => {
@@ -102,6 +102,7 @@ describe("MockTradingProviderAdapter — controlled failure scenarios (§55)", (
     const snapshot = await adapter.fetchSnapshot({
       credentials: { method: "API_KEY", secret: "fail-malformed" },
       externalAccountId: "50417788",
+      environment: "DEMO",
     });
     expect(normalizedSnapshotSchema.safeParse(snapshot).success).toBe(false);
   });

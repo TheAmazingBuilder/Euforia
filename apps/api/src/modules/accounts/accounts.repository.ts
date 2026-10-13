@@ -358,14 +358,21 @@ export class AccountsRepository {
   // ── Synchronized state ─────────────────────────────────────────────────────
 
   /**
-   * The full write-set of a successful sync is ONE transaction (§62): the
-   * database never shows a new snapshot with stale positions (or vice versa).
+   * Phase 03 (doc B §8.2): per-SEGMENT persistence. Each segment commits in
+   * its own transaction — a failing deals segment must not roll back already
+   * persisted positions (PARTIAL runs keep what persisted). Segment presence
+   * is recorded on the run (segment observation timestamps): a null segment
+   * timestamp = not persisted (failed or skipped), which counts alone cannot
+   * express (0 legitimately persisted rows ≡ 0-persisted-by-failure).
+   * connection.lastSyncAt advances ONLY when the snapshot segment persisted
+   * — the freshness axis is snapshot-anchored (doc B §9); the activity
+   * segments carry their own per-row syncedAt provenance.
    */
-  async persistSyncResult(data: {
+
+  async persistSnapshotSegment(data: {
     runId: string;
     accountId: string;
     currency: string;
-    durationMs: number;
     snapshot: {
       balance: string | null;
       equity: string | null;
@@ -375,9 +382,6 @@ export class AccountsRepository {
       marginLevel: string | null;
       syncedAt: Date;
     };
-    positions: Array<Record<string, unknown>>;
-    orders: Array<Record<string, unknown>>;
-    deals: Array<Record<string, unknown>>;
   }): Promise<void> {
     await this.prisma.$transaction(async (tx) => {
       const snapshotData = {
@@ -401,7 +405,24 @@ export class AccountsRepository {
         create: { accountId: data.accountId, ...snapshotData },
         update: snapshotData,
       });
+      await tx.tradingConnection.update({
+        where: { accountId: data.accountId },
+        data: { lastSyncAt: data.snapshot.syncedAt },
+      });
+      await tx.tradingSyncRun.update({
+        where: { id: data.runId },
+        data: { snapshotAt: data.snapshot.syncedAt },
+      });
+    });
+  }
 
+  async persistPositionsSegment(data: {
+    runId: string;
+    accountId: string;
+    positions: Array<Record<string, unknown>>;
+    syncedAt: Date;
+  }): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
       for (const position of data.positions) {
         const p = position as {
           externalPositionId: string;
@@ -430,7 +451,7 @@ export class AccountsRepository {
           swap: p.swap === null ? null : new Prisma.Decimal(p.swap),
           commission: p.commission === null ? null : new Prisma.Decimal(p.commission),
           openedAt: p.openedAt,
-          syncedAt: data.snapshot.syncedAt,
+          syncedAt: data.syncedAt,
         };
         await tx.tradingPosition.upsert({
           where: {
@@ -443,7 +464,20 @@ export class AccountsRepository {
           update: row,
         });
       }
+      await tx.tradingSyncRun.update({
+        where: { id: data.runId },
+        data: { positionsAt: data.syncedAt, positionsUpserted: data.positions.length },
+      });
+    });
+  }
 
+  async persistOrdersSegment(data: {
+    runId: string;
+    accountId: string;
+    orders: Array<Record<string, unknown>>;
+    syncedAt: Date;
+  }): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
       for (const order of data.orders) {
         const o = order as {
           externalOrderId: string;
@@ -468,7 +502,7 @@ export class AccountsRepository {
           status: o.status,
           providerCreatedAt: o.createdAt === null ? null : new Date(o.createdAt),
           providerUpdatedAt: o.updatedAt === null ? null : new Date(o.updatedAt),
-          syncedAt: data.snapshot.syncedAt,
+          syncedAt: data.syncedAt,
         };
         await tx.tradingOrder.upsert({
           where: {
@@ -481,7 +515,20 @@ export class AccountsRepository {
           update: row,
         });
       }
+      await tx.tradingSyncRun.update({
+        where: { id: data.runId },
+        data: { ordersAt: data.syncedAt, ordersUpserted: data.orders.length },
+      });
+    });
+  }
 
+  async persistDealsSegment(data: {
+    runId: string;
+    accountId: string;
+    deals: Array<Record<string, unknown>>;
+    syncedAt: Date;
+  }): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
       for (const deal of data.deals) {
         const d = deal as {
           externalDealId: string;
@@ -506,7 +553,7 @@ export class AccountsRepository {
           swap: d.swap === null ? null : new Prisma.Decimal(d.swap),
           positionId: d.positionId,
           executedAt: d.executedAt,
-          syncedAt: data.snapshot.syncedAt,
+          syncedAt: data.syncedAt,
         };
         await tx.tradingDeal.upsert({
           where: {
@@ -519,23 +566,32 @@ export class AccountsRepository {
           update: row,
         });
       }
-
-      await tx.tradingConnection.update({
-        where: { accountId: data.accountId },
-        data: { lastSyncAt: data.snapshot.syncedAt },
-      });
       await tx.tradingSyncRun.update({
         where: { id: data.runId },
-        data: {
-          status: "COMPLETED",
-          finishedAt: new Date(),
-          durationMs: data.durationMs,
-          errorCode: null,
-          positionsUpserted: data.positions.length,
-          ordersUpserted: data.orders.length,
-          dealsUpserted: data.deals.length,
-        },
+        data: { dealsAt: data.syncedAt, dealsUpserted: data.deals.length },
       });
+    });
+  }
+
+  /**
+   * Close the run with its final status (COMPLETED or PARTIAL — the FAILED
+   * path stays failSyncRun). errorCode records the FIRST failing segment's
+   * code for PARTIAL runs (doc B §8.2); null for full success.
+   */
+  async finalizeSyncRun(data: {
+    runId: string;
+    status: "COMPLETED" | "PARTIAL";
+    errorCode: string | null;
+    durationMs: number;
+  }): Promise<void> {
+    await this.prisma.tradingSyncRun.update({
+      where: { id: data.runId },
+      data: {
+        status: data.status,
+        finishedAt: new Date(),
+        durationMs: data.durationMs,
+        errorCode: data.errorCode,
+      },
     });
   }
 

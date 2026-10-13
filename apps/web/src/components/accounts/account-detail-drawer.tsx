@@ -252,11 +252,19 @@ export function AccountDetailDrawer({
     if (!account) return;
     sync.mutate(account.id, {
       onSuccess: (response) => {
-        toast.success(
-          response.run.status === "COMPLETED"
-            ? `${D.syncNow} — ${response.run.dealsUpserted + response.run.ordersUpserted + response.run.positionsUpserted} records`
-            : dict.accounts.status.syncError,
-        );
+        if (response.run.status === "COMPLETED") {
+          toast.success(
+            `${D.syncNow} — ${response.run.dealsUpserted + response.run.ordersUpserted + response.run.positionsUpserted} records`,
+          );
+        } else if (response.run.status === "PARTIAL") {
+          // Phase 03: a partial run is an honest outcome, not an error toast —
+          // the run view carries the failing segment's code.
+          toast.warning(
+            `${D.syncPartial} — ${response.run.dealsUpserted + response.run.ordersUpserted + response.run.positionsUpserted} records (${response.run.errorCode ?? "partial"})`,
+          );
+        } else {
+          toast.error(dict.accounts.status.syncError);
+        }
       },
       onError: (error) => {
         const code = apiErrorCode(error);
@@ -389,6 +397,11 @@ export function AccountDetailDrawer({
                   <DetailRow label={D.runError}>
                     <span className="font-mono text-xs text-loss">{account.synchronization.lastRun.errorCode}</span>
                   </DetailRow>
+                ) : null}
+                {account.synchronization.lastRun?.status === "PARTIAL" ? (
+                  <p className="rounded-lg border border-warning/40 bg-warning/10 p-3 text-xs text-warning" data-testid="account-run-partial-note">
+                    {D.runPartialNote}
+                  </p>
                 ) : null}
               </dl>
             </div>

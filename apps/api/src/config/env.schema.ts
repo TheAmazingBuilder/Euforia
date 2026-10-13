@@ -116,6 +116,25 @@ export const envSchema = z.object({
    * an explicit value always wins.
    */
   ACCOUNTS_MOCK_PROVIDER: z.enum(["enabled", "disabled"]).optional(),
+  /**
+   * OANDA v20 REST adapter gate (Phase 03). A real adapter is NEVER enabled
+   * by default — explicit opt-in per deployment (§57 policy applied to real
+   * providers: enabled ⇒ the registry exposes oanda-v20 and connect calls
+   * the real OANDA hosts with the user's stored token).
+   */
+  ACCOUNTS_OANDA_PROVIDER: z.enum(["enabled", "disabled"]).optional(),
+  /**
+   * OANDA REST base-URL override (tests/fixture server, region edge).
+   * When unset the adapter routes by account environment:
+   * DEMO → https://api-fxpractice.oanda.com, LIVE → https://api-fxtrade.oanda.com.
+   * Never committed with credentials; the token itself stays in the vault.
+   */
+  ACCOUNTS_OANDA_REST_URL: z
+    .string()
+    .trim()
+    .url("ACCOUNTS_OANDA_REST_URL must be a valid URL when provided")
+    .optional()
+    .or(z.literal("").transform(() => undefined)),
 
   // ── OCR / Screenshot Recognition (Phase 19) ───────────────────────────────
   /**

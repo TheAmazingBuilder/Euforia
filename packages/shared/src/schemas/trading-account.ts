@@ -61,7 +61,10 @@ export const synchronizationStatusSchema = z.enum([
 ]);
 export type SynchronizationStatus = z.infer<typeof synchronizationStatusSchema>;
 
-/** One synchronization attempt over one account. */
+/** One synchronization attempt over one account.
+ * PARTIAL (Phase 03): ≥1 supported segment succeeded AND ≥1 failed — the
+ * segment-level semantics live in the sync domain (doc B §8.2); the wire
+ * carries the final status only. */
 export const tradingSyncRunStatusSchema = z.enum([
   "RUNNING",
   "COMPLETED",
@@ -96,7 +99,10 @@ export const tradingProviderPermissionSchema = z.enum([
 ]);
 export type TradingProviderPermission = z.infer<typeof tradingProviderPermissionSchema>;
 
-/** Explicit provider capabilities (§45) — adapters declare what they support. */
+/** Explicit provider capabilities (§45) — adapters declare what they support.
+ * V1 (6 booleans) remains the shape of adapters that have not migrated yet;
+ * helpers below read BOTH shapes during the per-adapter migration
+ * (adapters migrate one by one — doc B §4.2). */
 export const tradingProviderCapabilitiesSchema = z.object({
   account: z.boolean(),
   snapshot: z.boolean(),
@@ -107,6 +113,119 @@ export const tradingProviderCapabilitiesSchema = z.object({
 });
 export type TradingProviderCapabilities = z.infer<typeof tradingProviderCapabilitiesSchema>;
 
+// ── Capability model V2 (Phase 03 — frozen design doc B §4.2) ───────────────
+
+/** Three-state support level. UNKNOWN is never coerced to true or false
+ * (doc A §4.4) — it blocks the corresponding operation path with an honest
+ * error until evidence resolves it. */
+export const capabilitySupportSchema = z.enum(["SUPPORTED", "UNSUPPORTED", "UNKNOWN"]);
+export type CapabilitySupport = z.infer<typeof capabilitySupportSchema>;
+
+/** One capability declaration — support level plus honest metadata. */
+export const providerCapabilitySchema = z.object({
+  support: capabilitySupportSchema,
+  /** How the capability is exercised, when SUPPORTED. */
+  retrieval: z.enum(["POLL", "STREAM", "POLL_AND_STREAM", "ON_CONNECT"]).optional(),
+  /** Required connection-level permissions, e.g. ["READ_POSITIONS"]. */
+  requiresPermissions: z.array(z.string()).optional(),
+  /** Evidence anchor: official docs section or Phase 00 audit reference. */
+  evidence: z.string().optional(),
+  /** Honest limitation text shown by the UI when relevant. */
+  limitation: z.string().optional(),
+});
+export type ProviderCapability = z.infer<typeof providerCapabilitySchema>;
+
+/**
+ * Capability V2 — replaces the 6 booleans for adapters that consume it.
+ * The 13 keys are the domain's capability vocabulary: sync segments gate on
+ * balanceEquity / openPositions / orders / deals; the rest is metadata the
+ * UI may render honestly. TEMPORARILY_UNAVAILABLE is an operational state
+ * on the SYNC axis and deliberately has NO entry here (doc B §4.2).
+ */
+export const tradingProviderCapabilitiesV2Schema = z.object({
+  accountDiscovery: providerCapabilitySchema,
+  accountMetadata: providerCapabilitySchema,
+  balanceEquity: providerCapabilitySchema,
+  marginInfo: providerCapabilitySchema,
+  openPositions: providerCapabilitySchema,
+  orders: providerCapabilitySchema,
+  deals: providerCapabilitySchema,
+  /** Historical records scope (depth/breadth) — distinct from the deals feed. */
+  historyDepth: providerCapabilitySchema,
+  streamingAccountUpdates: providerCapabilitySchema,
+  streamingPositions: providerCapabilitySchema,
+  streamingOrderDealUpdates: providerCapabilitySchema,
+  connectionValidation: providerCapabilitySchema,
+  credentialRevocation: providerCapabilitySchema,
+});
+export type TradingProviderCapabilitiesV2 = z.infer<typeof tradingProviderCapabilitiesV2Schema>;
+
+/** All V2 capability keys, in declaration order — enforcement iterates these. */
+export const CAPABILITY_KEYS = Object.keys(
+  tradingProviderCapabilitiesV2Schema.shape,
+) as Array<keyof TradingProviderCapabilitiesV2>;
+export type CapabilityKey = (typeof CAPABILITY_KEYS)[number];
+
+/**
+ * Connection-scoped (NOT global) capability override — conditions like
+ * region, subscription, or account permissions attach HERE, per mandate §9.3.
+ * The schema lands in Phase 03 with the enforcement path; the first
+ * connection-scoped producer arrives when a real provider restriction
+ * justifies one (no speculative storage — mandate §8.10).
+ */
+export const connectionCapabilityOverrideSchema = z.object({
+  capability: z.enum(CAPABILITY_KEYS as [CapabilityKey, ...CapabilityKey[]]),
+  support: capabilitySupportSchema,
+  /** Why this connection differs from the global declaration. */
+  reason: z.string().min(1),
+});
+export type ConnectionCapabilityOverride = z.infer<typeof connectionCapabilityOverrideSchema>;
+
+/** The descriptor accepts either capabilities shape during the migration. */
+export const tradingProviderCapabilitiesAnySchema = z.union([
+  tradingProviderCapabilitiesV2Schema,
+  tradingProviderCapabilitiesSchema,
+]);
+export type TradingProviderCapabilitiesAny = z.infer<typeof tradingProviderCapabilitiesAnySchema>;
+
+/** Type guard — true when the descriptor declares the V2 shape. */
+export function isCapabilitiesV2(
+  capabilities: TradingProviderCapabilitiesAny,
+): capabilities is TradingProviderCapabilitiesV2 {
+  return "balanceEquity" in capabilities;
+}
+
+/**
+ * Read one capability's support level from EITHER shape (migration bridge).
+ * V1 booleans map to SUPPORTED/UNSUPPORTED — V1 cannot express UNKNOWN, so
+ * a V1 descriptor answers UNKNOWN for any key outside its 6 booleans.
+ */
+export function capabilitySupportLevel(
+  capabilities: TradingProviderCapabilitiesAny,
+  key: CapabilityKey,
+): CapabilitySupport {
+  if (isCapabilitiesV2(capabilities)) return capabilities[key].support;
+  const v1 = capabilities as TradingProviderCapabilities;
+  switch (key) {
+    case "accountMetadata":
+      return v1.account ? "SUPPORTED" : "UNSUPPORTED";
+    case "balanceEquity":
+      return v1.snapshot ? "SUPPORTED" : "UNSUPPORTED";
+    case "openPositions":
+      return v1.positions ? "SUPPORTED" : "UNSUPPORTED";
+    case "orders":
+      return v1.orders ? "SUPPORTED" : "UNSUPPORTED";
+    case "deals":
+      return v1.deals ? "SUPPORTED" : "UNSUPPORTED";
+    case "historyDepth":
+      return v1.history ? "SUPPORTED" : "UNSUPPORTED";
+    default:
+      // accountDiscovery / marginInfo / streaming* / connectionValidation /
+      // credentialRevocation have no V1 equivalent — honest UNKNOWN.
+      return "UNKNOWN";
+  }
+}
+
 /** Provider registry descriptor (§44) — metadata only, no secrets. */
 export const tradingProviderDescriptorSchema = z.object({
   providerId: z.string().min(1),
@@ -116,7 +235,7 @@ export const tradingProviderDescriptorSchema = z.object({
   supportedEnvironments: z.array(accountTypeSchema).min(1),
   supportedConnectionMethods: z.array(tradingConnectionMethodSchema).min(1),
   supportedPermissions: z.array(tradingProviderPermissionSchema),
-  capabilities: tradingProviderCapabilitiesSchema,
+  capabilities: tradingProviderCapabilitiesAnySchema,
   /** Mock providers are visibly labeled and gated per environment (§57). */
   isMock: z.boolean(),
 });
@@ -329,6 +448,9 @@ export const TRADING_ERROR_CODES = {
   CONNECTION_TIMEOUT: "CONNECTION_TIMEOUT",
   /** Provider cannot serve this account (e.g. unsupported account type → 502). */
   UNSUPPORTED_ACCOUNT: "UNSUPPORTED_ACCOUNT",
+  /** The operation is not part of this provider's declared capabilities
+   * (capability gating, Phase 03 — doc B §10: client-pickable → 422). */
+  UNSUPPORTED_CAPABILITY: "UNSUPPORTED_CAPABILITY",
   /** providerId is not in the registry (client-fixable → 422). */
   UNSUPPORTED_PROVIDER: "UNSUPPORTED_PROVIDER",
   /** Provider refused access for this principal (→ 502). */

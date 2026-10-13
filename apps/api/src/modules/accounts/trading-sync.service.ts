@@ -1,11 +1,15 @@
 /**
- * Synchronization orchestration (Phase 3 §16–§18, §37–§38, §46, §50).
+ * Synchronization orchestration (Phase 3 §16–§18, §37–§38, §46, §50;
+ * Phase 03 — segment-based execution with PARTIAL semantics, doc B §8.2).
  *
  *   connection (validated credentials)
- *        ↓ provider adapter (read-only, timeout-guarded)
+ *        ↓ provider adapter (read-only, timeout-guarded, capability-gated)
  *        ↓ normalization boundary (schema-validated)
- *        ↓ ONE transaction: snapshot + positions + orders + deals + run + lastSyncAt
- *        ↓ observable run record (status, counts, duration, error code)
+ *        ↓ per-SEGMENT transactions: snapshot / positions / orders / deals
+ *          (each segment persists independently — a failing segment never
+ *           rolls back persisted siblings; run keeps per-segment timestamps)
+ *        ↓ observable run record (COMPLETED | PARTIAL | FAILED, counts,
+ *          duration, FIRST failing segment's error code)
  *
  * Concurrency (§38): at most ONE RUNNING run per account — enforced inside a
  * transaction and backed by a partial unique index; a second trigger gets
@@ -25,7 +29,7 @@ import {
 } from "../../shared/errors/app-error";
 import { ExternalProviderError } from "../../shared/errors/app-error";
 import { BusinessRuleError } from "../../shared/errors/app-error";
-import { TRADING_ERROR_CODES } from "../../shared/contracts";
+import { TRADING_ERROR_CODES, capabilitySupportLevel } from "../../shared/contracts";
 import {
   normalizedDealsSchema,
   normalizedOrdersSchema,
@@ -51,11 +55,15 @@ export function normalizeProviderError(error: unknown): AppError {
     switch (error.code) {
       case "INVALID_CREDENTIALS":
         return new BusinessRuleError(error.message, TRADING_ERROR_CODES.INVALID_CREDENTIALS);
+      case "UNSUPPORTED_CAPABILITY":
+        // Phase 03 (doc B §10): the operation is outside the provider's
+        // declared capabilities — client-pickable → 422.
+        return new BusinessRuleError(error.message, TRADING_ERROR_CODES.UNSUPPORTED_CAPABILITY);
       case "RATE_LIMITED":
         return new RateLimitError(
           "The trading provider asked us to slow down.",
           TRADING_ERROR_CODES.RATE_LIMITED,
-          60,
+          error.retryAfterSeconds ?? 60,
         );
       case "CONNECTION_TIMEOUT":
       case "PROVIDER_UNAVAILABLE":
@@ -183,6 +191,28 @@ export class TradingSyncService {
     }
   }
 
+  /**
+   * Segment-based orchestration (Phase 03 — doc B §8.2).
+   *
+   * The four port reads are SEGMENTS, each gated by the adapter's declared
+   * capability and persisted independently:
+   *
+   *   for each segment (snapshot → positions → orders → deals):
+   *     - capability gate BEFORE the call: a segment whose capability is not
+   *       SUPPORTED is a capability FACT — skipped, never a failure (§8.2).
+   *     - call (timeout-guarded) → normalize (zod boundary) → persist segment.
+   *     - a failing segment records its code and lets the others continue.
+   *   afterwards:
+   *     - 0 failed segments                    → COMPLETED
+   *     - ≥1 succeeded AND ≥1 failed           → PARTIAL + first error code
+   *     - every supported segment failed       → FAILED (historical path:
+   *       failSyncRun + auth-class connection ERROR + security event + throw)
+   *
+   * lastSyncAt advances only when the SNAPSHOT segment persisted (doc B §9 —
+   * the freshness axis is snapshot-anchored); the run keeps per-segment
+   * observation timestamps so a 0-count segment is distinguishable from a
+   * failed one.
+   */
   private async executeSync(input: {
     account: TradingAccountRow;
     connection: TradingConnectionRow;
@@ -198,47 +228,151 @@ export class TradingSyncService {
     const context: ProviderRequestContext = {
       credentials,
       externalAccountId: input.account.externalAccountId,
+      environment: input.account.type as ProviderRequestContext["environment"],
     };
+    const timeoutMs = this.config.accounts.providerTimeoutMs;
 
-    try {
-      const timeoutMs = this.config.accounts.providerTimeoutMs;
-      const snapshot = await withProviderTimeout(
-        adapter.fetchSnapshot(context),
-        timeoutMs,
-      );
-      const positions = await withProviderTimeout(
-        adapter.fetchPositions(context),
-        timeoutMs,
-      );
-      const orders = await withProviderTimeout(
-        adapter.fetchOrders(context),
-        timeoutMs,
-      );
-      const deals = await withProviderTimeout(
-        adapter.fetchDeals(context),
-        timeoutMs,
-      );
+    type SegmentName = "snapshot" | "positions" | "orders" | "deals";
+    type CapabilityKeyForSegment = "balanceEquity" | "openPositions" | "orders" | "deals";
+    const plan: Array<{ segment: SegmentName; capabilityKey: CapabilityKeyForSegment }> = [
+      { segment: "snapshot", capabilityKey: "balanceEquity" },
+      { segment: "positions", capabilityKey: "openPositions" },
+      { segment: "orders", capabilityKey: "orders" },
+      { segment: "deals", capabilityKey: "deals" },
+    ];
 
-      // Normalization boundary — a type-broken provider response never enters the DB.
-      const safeSnapshot = parseOrInvalid(normalizedSnapshotSchema, snapshot);
-      const safePositions = parseOrInvalid(normalizedPositionsSchema, positions);
-      const safeOrders = parseOrInvalid(normalizedOrdersSchema, orders);
-      const safeDeals = parseOrInvalid(normalizedDealsSchema, deals);
+    interface SegmentOutcome {
+      ok: boolean;
+      skipped: boolean;
+      errorCode: string | null;
+    }
+    const outcomes = new Map<SegmentName, SegmentOutcome>();
+    const failedInPlanOrder: Array<{ segment: SegmentName; code: string; error: unknown }> = [];
+    let authClassFailure = false;
 
-      const syncedAt = new Date();
-      await this.repository.persistSyncResult({
+    for (const { segment, capabilityKey } of plan) {
+      // Capability gate BEFORE the call (doc A §4.4): not-SUPPORTED = the
+      // segment cannot run — a capability fact, not a run failure (§8.2).
+      if (capabilitySupportLevel(adapter.descriptor.capabilities, capabilityKey) !== "SUPPORTED") {
+        outcomes.set(segment, { ok: false, skipped: true, errorCode: null });
+        this.logger?.info(
+          {
+            userId: input.userId,
+            accountId: input.account.id,
+            provider: input.connection.providerId,
+            syncRunId: input.runId,
+            segment,
+            capability: capabilityKey,
+          },
+          "trading-account sync segment skipped (capability)",
+        );
+        continue;
+      }
+
+      try {
+        switch (segment) {
+          case "snapshot": {
+            const raw = await withProviderTimeout(adapter.fetchSnapshot(context), timeoutMs);
+            const safe = parseOrInvalid(normalizedSnapshotSchema, raw);
+            const syncedAt = new Date();
+            await this.repository.persistSnapshotSegment({
+              runId: input.runId,
+              accountId: input.account.id,
+              currency: input.account.currency,
+              snapshot: {
+                ...safe,
+                unrealizedPnl: deriveUnrealizedPnl(safe.balance, safe.equity),
+                syncedAt,
+              },
+            });
+            break;
+          }
+          case "positions": {
+            const raw = await withProviderTimeout(adapter.fetchPositions(context), timeoutMs);
+            const safe = parseOrInvalid(normalizedPositionsSchema, raw);
+            await this.repository.persistPositionsSegment({
+              runId: input.runId,
+              accountId: input.account.id,
+              positions: safe.map((p) => ({ ...p, openedAt: new Date(p.openedAt) })),
+              syncedAt: new Date(),
+            });
+            break;
+          }
+          case "orders": {
+            const raw = await withProviderTimeout(adapter.fetchOrders(context), timeoutMs);
+            const safe = parseOrInvalid(normalizedOrdersSchema, raw);
+            await this.repository.persistOrdersSegment({
+              runId: input.runId,
+              accountId: input.account.id,
+              orders: safe,
+              syncedAt: new Date(),
+            });
+            break;
+          }
+          case "deals": {
+            const raw = await withProviderTimeout(adapter.fetchDeals(context), timeoutMs);
+            const safe = parseOrInvalid(normalizedDealsSchema, raw);
+            await this.repository.persistDealsSegment({
+              runId: input.runId,
+              accountId: input.account.id,
+              deals: safe.map((d) => ({ ...d, executedAt: new Date(d.executedAt) })),
+              syncedAt: new Date(),
+            });
+            break;
+          }
+        }
+        outcomes.set(segment, { ok: true, skipped: false, errorCode: null });
+      } catch (error) {
+        // Adapter-level enforcement backstop: an UNSUPPORTED_CAPABILITY thrown
+        // by the adapter itself is STILL a capability fact (§8.2) — skip.
+        if (error instanceof ProviderError && error.code === "UNSUPPORTED_CAPABILITY") {
+          outcomes.set(segment, { ok: false, skipped: true, errorCode: null });
+          this.logger?.info(
+            {
+              userId: input.userId,
+              accountId: input.account.id,
+              provider: input.connection.providerId,
+              syncRunId: input.runId,
+              segment,
+            },
+            "trading-account sync segment skipped (adapter capability refusal)",
+          );
+          continue;
+        }
+        const code =
+          error instanceof ProviderError
+            ? TRADING_ERROR_CODES[error.code]
+            : TRADING_ERROR_CODES.SYNC_FAILED;
+        outcomes.set(segment, { ok: false, skipped: false, errorCode: code });
+        failedInPlanOrder.push({ segment, code, error });
+        if (error instanceof ProviderError && AUTH_CLASS_CODES.has(error.code)) {
+          authClassFailure = true;
+        }
+        this.logger?.warn(
+          {
+            userId: input.userId,
+            accountId: input.account.id,
+            provider: input.connection.providerId,
+            syncRunId: input.runId,
+            segment,
+            errorCode: code,
+          },
+          "trading-account sync segment failed",
+        );
+      }
+    }
+
+    const succeeded = plan.filter(({ segment }) => outcomes.get(segment)?.ok === true);
+    const failed = failedInPlanOrder;
+
+    if (failed.length === 0) {
+      // Full success — or the all-skipped edge (nothing supported, nothing
+      // failed): COMPLETED with the segments that actually ran.
+      await this.repository.finalizeSyncRun({
         runId: input.runId,
-        accountId: input.account.id,
-        currency: input.account.currency,
+        status: "COMPLETED",
+        errorCode: null,
         durationMs: Date.now() - startedAt,
-        snapshot: {
-          ...safeSnapshot,
-          unrealizedPnl: deriveUnrealizedPnl(safeSnapshot.balance, safeSnapshot.equity),
-          syncedAt,
-        },
-        positions: safePositions.map((p) => ({ ...p, openedAt: new Date(p.openedAt) })),
-        orders: safeOrders,
-        deals: safeDeals.map((d) => ({ ...d, executedAt: new Date(d.executedAt) })),
       });
       this.logger?.info(
         {
@@ -248,20 +382,27 @@ export class TradingSyncService {
           syncRunId: input.runId,
           trigger: input.trigger,
           durationMs: Date.now() - startedAt,
-          positions: safePositions.length,
-          orders: safeOrders.length,
-          deals: safeDeals.length,
         },
         "trading-account sync completed",
       );
-    } catch (error) {
-      const code =
-        error instanceof ProviderError
-          ? TRADING_ERROR_CODES[error.code]
-          : TRADING_ERROR_CODES.SYNC_FAILED;
-      await this.repository.failSyncRun(input.runId, code);
-      if (error instanceof ProviderError && AUTH_CLASS_CODES.has(error.code)) {
-        await this.repository.setConnectionError(input.account.id, error.message);
+      return;
+    }
+
+    const firstFailure = failed[0];
+    if (firstFailure === undefined) {
+      // Unreachable (failed.length === 0 returned above) — kept as an honest
+      // guard instead of a non-null assertion.
+      return;
+    }
+
+    if (succeeded.length === 0) {
+      // Every supported segment failed — the historical FAILED path (§16).
+      await this.repository.failSyncRun(input.runId, firstFailure.code);
+      if (authClassFailure) {
+        const message = firstFailure.error instanceof ProviderError
+          ? firstFailure.error.message
+          : "The trading provider could not be synchronized.";
+        await this.repository.setConnectionError(input.account.id, message);
       }
       this.logger?.warn(
         {
@@ -271,7 +412,7 @@ export class TradingSyncService {
           syncRunId: input.runId,
           trigger: input.trigger,
           durationMs: Date.now() - startedAt,
-          errorCode: code,
+          errorCode: firstFailure.code,
         },
         "trading-account sync failed",
       );
@@ -279,11 +420,40 @@ export class TradingSyncService {
         userId: input.userId,
         type: "TRADING_ACCOUNT_SYNC_FAILED",
         actor: "system",
-        context: `Sync failed for provider ${input.connection.providerId} (code ${code}).`,
+        context: `Sync failed for provider ${input.connection.providerId} (code ${firstFailure.code}).`,
         outcome: "FAILURE",
       });
-      throw normalizeProviderError(error);
+      throw normalizeProviderError(firstFailure.error);
     }
+
+    // PARTIAL (doc B §8.2): ≥1 succeeded AND ≥1 failed. Throws nothing — the
+    // honest representation IS the run row (status PARTIAL + first error).
+    await this.repository.finalizeSyncRun({
+      runId: input.runId,
+      status: "PARTIAL",
+      errorCode: firstFailure.code,
+      durationMs: Date.now() - startedAt,
+    });
+    if (authClassFailure) {
+      const message = firstFailure.error instanceof ProviderError
+        ? firstFailure.error.message
+        : "The trading provider could not be synchronized.";
+      await this.repository.setConnectionError(input.account.id, message);
+    }
+    this.logger?.warn(
+      {
+        userId: input.userId,
+        accountId: input.account.id,
+        provider: input.connection.providerId,
+        syncRunId: input.runId,
+        trigger: input.trigger,
+        durationMs: Date.now() - startedAt,
+        errorCode: firstFailure.code,
+        failedSegments: failed.map((f) => f.segment),
+        succeededSegments: succeeded.map((s) => s.segment),
+      },
+      "trading-account sync partial",
+    );
   }
 
   /** Decrypt stored credentials; a corrupted blob is an INVALID_CREDENTIALS state. */

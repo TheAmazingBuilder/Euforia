@@ -129,3 +129,13 @@ EOF
   3. `DATABASE_URL=file:...` exporté au boot bat `--env-file-if-exists` → lancer l'API avec `DATABASE_URL='postgresql://cosmoz@127.0.0.1:5433/cosmoz'` explicite.
   4. `pnpm --filter web dev -- -p 3001` avale le flag → utiliser `apps/web/node_modules/.bin/next dev -p 3001`.
   5. L'API reboot doit être rebuildée (`corepack pnpm --filter api build`) — le dist du boot précède toute session.
+
+## Addendum 2026-10-13 (Phase 03 — OANDA + capability model)
+
+- Tag `savepoint/2026-10-13` déplacé sur le commit Phase 03 (voir worklog accounts-phase03). Bundle/DB à régénérer (v3) si un nouveau savepoint est demandé.
+- Migration `20261013070000_accounts_sync_segments` = 4 colonnes nullable (snapshotAt/positionsAt/ordersAt/dealsAt) sur TradingSyncRun. **APPLIQUÉE sur cosmoz ET cosmoz_test.**
+- NOUVEAU PIÈGE CRITIQUE (Phase 03) :
+  1. `prisma migrate dev` est INUTILISABLE sur ce repo — l'historique contient une dérive de type préexistante (FK OcrCollectionAsset text/uuid) + un nom de migration post-daté (20261013220000_phase11_analyses_plans) → le replay shadow échoue et `migrate dev` génère une migration de drift DESTRUCTRICE (drops Academy/Nofy/…). Ne pas l'exécuter.
+  2. Discipline correcte : migration ADDITIVE écrite à la main + `npx prisma migrate deploy` (dev via .env ; test via `DATABASE_URL='postgresql://cosmoz@127.0.0.1:5433/cosmoz_test' npx prisma migrate deploy` depuis apps/api).
+  3. Un `migrate dev` raté laisse un enregistrement FAILED dans `_prisma_migrations` qui bloque tout deploy suivant → purger la ligne via `prisma db execute` (le DDL transactionnel Postgres a rollbacké le partiel — données intactes, vérifié).
+  4. Adapter OANDA : `ACCOUNTS_OANDA_PROVIDER=enabled` requis (jamais actif par défaut — vrai provider). Validation live (token practice réel) = U2, runbook dans docs/backend/PHASE-03-OANDA-CAPABILITY-REPORT.md §8.

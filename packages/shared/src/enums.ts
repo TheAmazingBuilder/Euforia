@@ -36,6 +36,7 @@ export const brokerSchema = z.enum([
   "DERIV",
   "BINANCE",
   "CTRADER",
+  "OANDA",
   "OTHER",
 ]);
 export type Broker = z.infer<typeof brokerSchema>;

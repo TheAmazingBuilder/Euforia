@@ -32,11 +32,19 @@ export interface ProviderCredentials {
  * Request context for data-fetching calls: WHICH external account to read.
  * Euforia owns the mapping account↔externalAccountId (persisted on connect);
  * adapters receive it as input, never guess it.
+ *
+ * `environment` (Phase 03) — the account's declared environment, so adapters
+ * that route per environment (OANDA practice vs live hosts) resolve the
+ * endpoint WITHOUT widening the 6-method port (doc A §4.3). Adapters that
+ * do not care (mock) ignore it. PROP_FIRM arrives for providers that serve
+ * prop-firm entities; OANDA rejects it honestly (UNSUPPORTED_ACCOUNT).
  */
 export interface ProviderRequestContext {
   credentials: ProviderCredentials;
   /** The provider-side account identifier stored on the TradingAccount. */
   externalAccountId: string;
+  /** Account environment (TradingAccount.type) — endpoint routing input. */
+  environment: "DEMO" | "LIVE" | "PROP_FIRM";
 }
 
 /** Normalized provider account metadata (fetchAccountInfo). */
@@ -113,6 +121,10 @@ export interface NormalizedDeal {
  * Normalized provider failure. `code` is one of the stable TRADING_ERROR_CODES
  * provider codes; the message is SANITIZED — it must be safe to expose and
  * must never contain credentials or raw provider internals (§23/§36).
+ *
+ * UNSUPPORTED_CAPABILITY (Phase 03): an operation outside the adapter's
+ * declared capabilities throws it — the sync orchestration treats it as a
+ * capability FACT (skipped segment, doc B §8.2), never a run failure.
  */
 export class ProviderError extends Error {
   constructor(
@@ -121,15 +133,20 @@ export class ProviderError extends Error {
       | "PROVIDER_UNAVAILABLE"
       | "CONNECTION_TIMEOUT"
       | "UNSUPPORTED_ACCOUNT"
+      | "UNSUPPORTED_CAPABILITY"
       | "UNAUTHORIZED_PROVIDER_ACCESS"
       | "RATE_LIMITED"
       | "INVALID_PROVIDER_RESPONSE",
     message: string,
-    options?: { cause?: unknown },
+    options?: { cause?: unknown; /** Provider-advertised retry delay (RATE_LIMITED Retry-After). */ retryAfterSeconds?: number },
   ) {
     super(message, options ? { cause: options.cause } : undefined);
     this.name = "ProviderError";
+    this.retryAfterSeconds = options?.retryAfterSeconds;
   }
+
+  /** Seconds the provider asked us to wait (RATE_LIMITED only, else undefined). */
+  readonly retryAfterSeconds?: number;
 }
 
 /** The ONLY provider contract the application layer depends on. */
