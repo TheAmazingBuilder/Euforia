@@ -6,8 +6,8 @@
 - **Date du savepoint** : 2026-10-13
 - **Commit validé** : voir `git log -1` (Phase 11 web — Trade Planning / Scenarios / Post-Trade Review)
 - **Tag git** : `savepoint/2026-10-13` (créé sur ce commit) — précédent : `savepoint/2026-10-12`
-- **Bundle git** : `download/oryon-git-2026-10-13.bundle` (historique git COMPLET, cloneable, 219M, vérifié « complete history »)
-- **Archive DB** : `download/oryon-localpg-2026-10-13.tar.gz` (data dir Postgres brut, 22M, WAL inclus)
+- **Bundle git** : `download/oryon-git-2026-10-13-v2.bundle` (historique git COMPLET, cloneable, 219M, vérifié « complete history »)
+- **Archive DB** : `download/oryon-localpg-2026-10-13-v2.tar.gz` (data dir Postgres brut, 22M, WAL inclus)
 - **Archive extras** : `download/oryon-extras-2026-10-13.tar.gz` (.env ×2, données OCR, worklog, SAVEPOINT)
 
 ---
@@ -21,7 +21,7 @@
 - Connexion : `postgresql://cosmoz@127.0.0.1:5433/cosmoz` (voir `apps/api/.env`)
 - Schéma Prisma : `apps/api/prisma/schema.prisma` (74K) + 36 migrations `apps/api/prisma/migrations/`
 - PID/socket : `apps/api/.localpg/sockets` (port 5433)
-- Le data dir est **hors git** (gitignore) → sauvegardé dans `oryon-localpg-2026-10-13.tar.gz`
+- Le data dir est **hors git** (gitignore) → sauvegardé dans `oryon-localpg-2026-10-13-v2.tar.gz`
 
 ---
 
@@ -38,7 +38,7 @@ pnpm install
 ### Option B — tout a disparu (nouveau sandbox)
 ```bash
 # 1. Restaurer le code depuis le bundle (historique git complet) :
-git clone /home/z/my-project/download/oryon-git-2026-10-13.bundle /home/z/my-project
+git clone /home/z/my-project/download/oryon-git-2026-10-13-v2.bundle /home/z/my-project
 cd /home/z/my-project && git checkout main
 
 # 2. Dépendances (réinstalle @embedded-postgres/linux-x64@17.5.0-beta.15 — binaire pinné par pnpm-lock)
@@ -48,7 +48,7 @@ pnpm install
 tar -xzf download/oryon-extras-2026-10-13.tar.gz -C /home/z/my-project
 
 # 4. Restaurer la base Postgres :
-tar -xzf download/oryon-localpg-2026-10-13.tar.gz -C /home/z/my-project/apps/api/
+tar -xzf download/oryon-localpg-2026-10-13-v2.tar.gz -C /home/z/my-project/apps/api/
 
 # 5. Lancer l'API (elle démarre le Postgres embarqué automatiquement) puis le web :
 pnpm --filter api dev     # API :4000, PG :5433
@@ -116,3 +116,16 @@ EOF
 - `savepoint/2026-09-29` → commit `4af9dab` (sidebar v2)
 - `savepoint/2026-10-12` → commit `9515b2f` (toolbar v4 + pont éco réel)
 - `savepoint/2026-10-13` → head principal (Phase 11 complète) ← **vous êtes ici**
+
+
+## Addendum 2026-10-13 (Phase 02)
+
+- Tag `savepoint/2026-10-13` déplacé sur `45abb23` (Phase 02 Accounts UI + hygiene).
+- Bundle v2 = historique complet incluant Phase 01 (1685ac6) + Phase 02 (45abb23). Le bundle v1 (02:09) est PÉRIMÉ (s'arrête à 5f82266).
+- DB v2 = snapshot après Phase 02 (compte live-probe présent; l'écran Accounts fonctionne dessus).
+- Nouveaux pièges découverts Phase 02 (détails dans worklog.md, entrée accounts-phase02-ui):
+  1. Le `next start` du boot sert l'ANCIEN build — après un pull/restore, rebuild avant de sonder.
+  2. Next 16 refuse un 2e `next dev` sur le même dossier projet.
+  3. `DATABASE_URL=file:...` exporté au boot bat `--env-file-if-exists` → lancer l'API avec `DATABASE_URL='postgresql://cosmoz@127.0.0.1:5433/cosmoz'` explicite.
+  4. `pnpm --filter web dev -- -p 3001` avale le flag → utiliser `apps/web/node_modules/.bin/next dev -p 3001`.
+  5. L'API reboot doit être rebuildée (`corepack pnpm --filter api build`) — le dist du boot précède toute session.
