@@ -1,0 +1,67 @@
+# Deriv APIs Documentation
+
+> Documentation for Deriv APIs
+
+## Guides: Getting Started
+- [Getting started with Deriv APIs](https://doc-deriv.readme.io/docs/getting-started.md): This page will help you get started with Deriv APIs. You'll be up and running in no time!
+- [Account setup](https://doc-deriv.readme.io/docs/account-setup.md): This section will guide you through creating your Deriv account and seamlessly registering your application.
+- [Authentication](https://doc-deriv.readme.io/docs/authentication.md): Secure access for your users.
+- [Understanding APIs](https://doc-deriv.readme.io/docs/understanding-apis.md): Discover the full potential of our APIs
+  - [MT5 APIs](https://doc-deriv.readme.io/docs/mt5.md)
+  - [P2P APIs](https://doc-deriv.readme.io/docs/p2p.md)
+  - [Application APIs](https://doc-deriv.readme.io/docs/application-apis.md)
+  - [Account APIs](https://doc-deriv.readme.io/docs/account-apis.md)
+  - [Market Data APIs](https://doc-deriv.readme.io/docs/market-data-apis.md)
+  - [Cashier APIs](https://doc-deriv.readme.io/docs/cashier-apis.md)
+  - [Reports APIs](https://doc-deriv.readme.io/docs/reports-apis.md)
+  - [Trading APIs](https://doc-deriv.readme.io/docs/trading-apis.md)
+  - [Utilities APIs](https://doc-deriv.readme.io/docs/utilities-apis.md)
+  - [Payment Agent](https://doc-deriv.readme.io/docs/payment-agent.md)
+
+## Guides: Additional  Resources
+- [WebSockets](https://doc-deriv.readme.io/docs/websockets.md)
+- [Functions of API Calls](https://doc-deriv.readme.io/docs/functions-of-api-calls.md)
+- [OAuth](https://doc-deriv.readme.io/docs/oauth.md)
+- [Mark-up](https://doc-deriv.readme.io/docs/mark-up.md)
+- [Error codes](https://doc-deriv.readme.io/docs/error-codes.md)
+- [Country list](https://doc-deriv.readme.io/docs/country-list.md): Supported countries
+- [Currency](https://doc-deriv.readme.io/docs/currency.md): Supported Currency
+- [Copy trading](https://doc-deriv.readme.io/docs/copy-trading.md)
+- [Affiliates](https://doc-deriv.readme.io/docs/affiliates.md): Partner with us and earn industry-leading commissions with transparent plans and instant withdrawals.
+
+## Guides: Contribute
+- [How to contribute to our docs](https://doc-deriv.readme.io/docs/how-to-contribute-to-our-docs.md)
+
+## Guides: FAQs
+- [Frequently Asked Questions](https://doc-deriv.readme.io/docs/frequently-asked-questions.md)
+
+## Guides: How-to
+- [Create account using API](https://doc-deriv.readme.io/docs/create-account-using-api.md)
+- [Trade Options](https://doc-deriv.readme.io/docs/trade-using-accumalators.md)
+  - [Digital Options](https://doc-deriv.readme.io/docs/digital-options.md)
+    - [Rise/Fall](https://doc-deriv.readme.io/docs/risefall.md)
+    - [Higher/Lower](https://doc-deriv.readme.io/docs/higherlower.md)
+    - [Ends Between](https://doc-deriv.readme.io/docs/ends-between.md)
+    - [Stays Between](https://doc-deriv.readme.io/docs/stays-between.md)
+    - [Lookbacks](https://doc-deriv.readme.io/docs/lookbacks.md)
+    - [Touch/No Touch](https://doc-deriv.readme.io/docs/touchno-touch.md)
+    - [Only Ups/Only Downs](https://doc-deriv.readme.io/docs/only-upsonly-downs.md)
+    - [Highest/Lowest Tick](https://doc-deriv.readme.io/docs/highestlowest-tick.md)
+    - [Reset Call/Put](https://doc-deriv.readme.io/docs/reset-callput.md)
+    - [Asian Up/Down](https://doc-deriv.readme.io/docs/asian-updown.md)
+    - [Digit Matches/Differs](https://doc-deriv.readme.io/docs/digit-matchesdiffers.md)
+    - [Digit Even/Odd](https://doc-deriv.readme.io/docs/digit-evenodd.md)
+    - [Digit Over/Under](https://doc-deriv.readme.io/docs/digit-overunder.md)
+  - [Accumulator Options](https://doc-deriv.readme.io/docs/accumulator-options.md)
+  - [Vanilla Options](https://doc-deriv.readme.io/docs/vanilla-options.md)
+  - [Turbo Options](https://doc-deriv.readme.io/docs/turbo-options.md)
+  - [Multipliers](https://doc-deriv.readme.io/docs/multipliers.md)
+- [Keep connection live](https://doc-deriv.readme.io/docs/keep-connection-live.md)
+- [Check website status](https://doc-deriv.readme.io/docs/check-website-status.md)
+- [Get contracts for a symbol](https://doc-deriv.readme.io/docs/get-contracts-for-a-symbol.md)
+
+## Pages
+- [Getting started with Flutter Deriv Chart](https://doc-deriv.readme.io/page/getting-started-with-flutter-deriv-chart.md)
+
+## Changelog
+- [Welcome to Deriv APIs](https://doc-deriv.readme.io/changelog/welcome-to-deriv-apis.md)

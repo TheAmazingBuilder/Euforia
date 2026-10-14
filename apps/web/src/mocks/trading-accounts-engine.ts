@@ -32,6 +32,10 @@
  * branches on `apiErrorCode()` identically over MSW and the live bridge.
  */
 import type {
+  BrokerCatalogEntry,
+  BrokerCatalogResponse,
+  BrokerIdentification,
+  BrokerIdentifyInput,
   BrokerOrder,
   BrokerPosition,
   TradingAccountDetails,
@@ -42,6 +46,8 @@ import type {
   TradingProviderDescriptor,
   TradingSyncRunView,
 } from "@cosmoz/shared";
+
+import { isCapabilitiesV2 } from "@cosmoz/shared";
 
 import { MockError } from "@/mocks/store";
 
@@ -68,6 +74,42 @@ const MOCK_DESCRIPTOR: TradingProviderDescriptor = {
   isMock: true,
 };
 
+/**
+ * Phase 07 mirror — the Deriv descriptor (V2 capabilities, verbatim from the
+ * backend adapter). The MSW engine simulates a deployment where deriv-ws is
+ * ENABLED; the "orders" capability stays honestly UNSUPPORTED and its sync
+ * segment is skipped as a capability fact, exactly like the real pipeline.
+ */
+const DERIV_DESCRIPTOR: TradingProviderDescriptor = {
+  providerId: "deriv-ws",
+  providerName: "Deriv WebSocket API",
+  platform: "DERIV",
+  supportedEnvironments: ["DEMO", "LIVE"],
+  supportedConnectionMethods: ["API_KEY"],
+  supportedPermissions: ["READ_ACCOUNT", "READ_BALANCE", "READ_POSITIONS", "READ_DEALS", "READ_HISTORY"],
+  capabilities: {
+    accountDiscovery: { support: "UNKNOWN" },
+    accountMetadata: { support: "SUPPORTED", retrieval: "POLL" },
+    balanceEquity: { support: "SUPPORTED", retrieval: "POLL" },
+    marginInfo: { support: "UNSUPPORTED" },
+    openPositions: { support: "SUPPORTED", retrieval: "POLL" },
+    orders: { support: "UNSUPPORTED" },
+    deals: { support: "SUPPORTED", retrieval: "POLL" },
+    historyDepth: { support: "UNKNOWN" },
+    streamingAccountUpdates: { support: "UNSUPPORTED" },
+    streamingPositions: { support: "UNSUPPORTED" },
+    streamingOrderDealUpdates: { support: "UNSUPPORTED" },
+    connectionValidation: { support: "SUPPORTED", retrieval: "ON_CONNECT" },
+    credentialRevocation: { support: "SUPPORTED", retrieval: "POLL" },
+  },
+  isMock: false,
+};
+
+const PROVIDER_DESCRIPTORS: Record<string, TradingProviderDescriptor> = {
+  [MOCK_DESCRIPTOR.providerId]: MOCK_DESCRIPTOR,
+  [DERIV_DESCRIPTOR.providerId]: DERIV_DESCRIPTOR,
+};
+
 // ── Error helpers (live envelope shape) ─────────────────────────────────────
 
 function coded(status: number, code: string, message: string): MockError {
@@ -79,6 +121,168 @@ function coded(status: number, code: string, message: string): MockError {
 function notOwned(): MockError {
   // Ownership-safe: a foreign id is indistinguishable from a missing one.
   return coded(404, "NOT_FOUND", "Account not found.");
+}
+
+// ── Phase 07 — universal broker layer mirror ─────────────────────────────────
+
+/** Catalog mirror — same 17 entries as the backend broker-catalog.ts. */
+const BROKER_CATALOG_MIRROR: Array<Omit<BrokerCatalogEntry, "connectorStatus"> & { connectorProviderId: string | null }> = [
+  { brokerId: "deriv", displayName: "Deriv", platforms: ["DERIV"], providerId: "deriv-ws", connectorProviderId: "deriv-ws", aliases: ["Binary.com", "binary.com"], notes: "Connected through the official Deriv WebSocket API with a Read-scope API token." },
+  { brokerId: "oanda", displayName: "OANDA", platforms: ["OANDA"], providerId: "oanda-v20", connectorProviderId: "oanda-v20", aliases: ["OANDA Corporation", "fxTrade"], notes: "Connected through the official OANDA v20 REST API with a personal access token." },
+  { brokerId: "icmarkets", displayName: "IC Markets", platforms: ["MT4", "MT5", "CTRADER"], providerId: null, connectorProviderId: null, aliases: ["IC Markets Global", "ICMarkets", "Raw Trading Ltd"], notes: "Access paths are MT4/MT5/cTrader platform integrations — no dedicated retail REST API; gated on the MT5 decision (U1) and the cTrader decision." },
+  { brokerId: "pepperstone", displayName: "Pepperstone", platforms: ["MT4", "MT5", "CTRADER"], providerId: null, connectorProviderId: null, aliases: ["Pepperstone Group"], notes: "Access paths are MT4/MT5/cTrader platform integrations — gated on the MT5 decision (U1) and the cTrader decision." },
+  { brokerId: "exness", displayName: "Exness", platforms: ["MT4", "MT5"], providerId: null, connectorProviderId: null, aliases: ["Exness Group"], notes: "Access path is the MT4/MT5 platform integration — gated on the MT5 decision (U1)." },
+  { brokerId: "xm", displayName: "XM", platforms: ["MT4", "MT5"], providerId: null, connectorProviderId: null, aliases: ["XM Global", "Trading Point"], notes: "Access path is the MT4/MT5 platform integration — gated on the MT5 decision (U1)." },
+  { brokerId: "fxtm", displayName: "FXTM (ForexTime)", platforms: ["MT4", "MT5"], providerId: null, connectorProviderId: null, aliases: ["ForexTime"], notes: "Access path is the MT4/MT5 platform integration — gated on the MT5 decision (U1)." },
+  { brokerId: "fpmarkets", displayName: "FP Markets", platforms: ["MT4", "MT5", "CTRADER"], providerId: null, connectorProviderId: null, aliases: ["First Prudential Markets"], notes: "Access paths are MT4/MT5/cTrader platform integrations." },
+  { brokerId: "avatrade", displayName: "AvaTrade", platforms: ["MT4", "MT5"], providerId: null, connectorProviderId: null, aliases: ["Ava Trade"], notes: "Access path is the MT4/MT5 platform integration — gated on the MT5 decision (U1)." },
+  { brokerId: "vantage", displayName: "Vantage", platforms: ["MT4", "MT5"], providerId: null, connectorProviderId: null, aliases: ["Vantage FX", "Vantage International"], notes: "Access path is the MT4/MT5 platform integration — gated on the MT5 decision (U1)." },
+  { brokerId: "eightcap", displayName: "Eightcap", platforms: ["MT4", "MT5"], providerId: null, connectorProviderId: null, aliases: ["Eightcap Global"], notes: "Access path is the MT4/MT5 platform integration — gated on the MT5 decision (U1)." },
+  { brokerId: "interactivebrokers", displayName: "Interactive Brokers", platforms: ["OTHER"], providerId: null, connectorProviderId: null, aliases: ["IBKR", "Interactive Brokers LLC"], notes: "Official Client Portal Web API exists but requires individual account configuration and approval steps — not part of the current connector roadmap." },
+  { brokerId: "binance", displayName: "Binance", platforms: ["BINANCE"], providerId: null, connectorProviderId: null, aliases: ["Binance.com"], notes: "Public exchange REST API exists; an exchange connector is a separate product decision outside the Accounts roadmap scope." },
+  { brokerId: "metatrader-platform", displayName: "MetaTrader (MT4/MT5)", platforms: ["MT4", "MT5"], providerId: null, connectorProviderId: null, aliases: ["MetaQuotes", "MT4", "MT5"], notes: "The MetaQuotes terminal/gateway integration is gated on decision U1 (self-hosted bridge vs cloud gateway vs documented defer) — broker entries above list per-broker access." },
+  { brokerId: "ctrader-platform", displayName: "cTrader", platforms: ["CTRADER"], providerId: null, connectorProviderId: null, aliases: ["Spotware", "cTrader Open API"], notes: "cTrader Open API (OAuth 2.0 + protobuf over WebSocket) — implementation stopped pending explicit owner approval." },
+  { brokerId: "tradingview", displayName: "TradingView", platforms: ["OTHER"], providerId: null, connectorProviderId: null, aliases: ["TradingView Inc."], notes: "No account-data interface exists — chart embedding is not brokerage-account access (documented verdict, doc D)." },
+  { brokerId: "plus500", displayName: "Plus500", platforms: ["OTHER"], providerId: null, connectorProviderId: null, aliases: ["Plus500 Ltd"], notes: "Proprietary platform without a public retail account-data API." },
+  { brokerId: "etoro", displayName: "eToro", platforms: ["OTHER"], providerId: null, connectorProviderId: null, aliases: ["eToro Group"], notes: "Proprietary platform without a public retail account-data API." },
+];
+
+const BROKER_CATALOG_MIRROR_VERSION = "2026-10.1";
+
+/**
+ * Connect-time identification mirror — same ladder as the backend service:
+ * provider-reported identity (Deriv landing company) wins, then documented
+ * id patterns, then registry platform knowledge.
+ */
+function identifyAtConnectMirror(providerId: string, externalAccountId: string): BrokerIdentification {
+  const now = isoNow();
+  if (providerId === "deriv-ws") {
+    return {
+      brokerId: "deriv",
+      displayName: "Deriv (SVG) Corp",
+      platform: "DERIV",
+      confidence: "PROVIDER_REPORTED",
+      connectorStatus: "CONNECTOR_AVAILABLE",
+      providerId,
+      signals: [
+        "provider-reported broker identity: Deriv (SVG) Corp",
+        "provider-reported account class: from the virtual/real loginid",
+      ],
+      identifiedAt: now,
+    };
+  }
+  // Rules mirror: OANDA / Deriv id shapes, then registry platform knowledge.
+  if (/^\d{1,4}-\d{1,3}-\d{6,8}(-\d{2,3})?$/.test(externalAccountId)) {
+    return {
+      brokerId: "oanda",
+      displayName: "OANDA",
+      platform: "OANDA",
+      confidence: "PATTERN_MATCH",
+      connectorStatus: "CONNECTOR_NOT_IMPLEMENTED",
+      providerId: "oanda-v20",
+      signals: ["account id matches the OANDA v20 format (hyphen-separated segments)"],
+      identifiedAt: now,
+    };
+  }
+  if (/^(CR|MRT|MVT|VRTC)\d{4,}$/.test(externalAccountId)) {
+    return {
+      brokerId: "deriv",
+      displayName: "Deriv",
+      platform: "DERIV",
+      confidence: "PATTERN_MATCH",
+      connectorStatus: "CONNECTOR_AVAILABLE",
+      providerId: "deriv-ws",
+      signals: ["loginid matches the Deriv account format (CR/VRTC/MRT/MVT prefix)"],
+      identifiedAt: now,
+    };
+  }
+  const descriptor = PROVIDER_DESCRIPTORS[providerId];
+  if (descriptor) {
+    const platformEntry =
+      descriptor.platform === "MT5"
+        ? BROKER_CATALOG_MIRROR.find((entry) => entry.brokerId === "metatrader-platform")
+        : undefined;
+    return {
+      brokerId: platformEntry?.brokerId ?? "unknown",
+      displayName: platformEntry?.displayName ?? "Unknown broker",
+      platform: descriptor.platform,
+      confidence: "PLATFORM_KNOWN",
+      connectorStatus: "CONNECTOR_AVAILABLE",
+      providerId,
+      signals: [`provider "${descriptor.providerId}" is registered (platform ${descriptor.platform})`],
+      identifiedAt: now,
+    };
+  }
+  return {
+    brokerId: "unknown",
+    displayName: "Unknown broker",
+    platform: "OTHER",
+    confidence: "UNKNOWN",
+    connectorStatus: "CONNECTOR_NOT_IMPLEMENTED",
+    providerId: null,
+    signals: ["external account id matched no documented catalog pattern"],
+    identifiedAt: now,
+  };
+}
+
+function brokerCatalogMirror(): BrokerCatalogResponse {
+  // The engine simulates a deployment where deriv-ws is registered; the
+  // oanda adapter stays env-gated OFF (matching the deriv fixture e2e).
+  return {
+    catalogVersion: BROKER_CATALOG_MIRROR_VERSION,
+    brokers: BROKER_CATALOG_MIRROR.map((entry) => ({
+      brokerId: entry.brokerId,
+      displayName: entry.displayName,
+      platforms: [...entry.platforms],
+      connectorStatus:
+        entry.connectorProviderId && PROVIDER_DESCRIPTORS[entry.connectorProviderId]
+          ? "CONNECTOR_AVAILABLE"
+          : "CONNECTOR_NOT_IMPLEMENTED",
+      providerId: entry.providerId,
+      aliases: [...entry.aliases],
+      notes: entry.notes,
+    })),
+  };
+}
+
+function identifyBrokerMirror(hints: BrokerIdentifyInput): BrokerIdentification {
+  if (hints.endpoint) {
+    if (/^api-fx(practice|trade)\.oanda\.com$/.test(hints.endpoint)) {
+      return {
+        brokerId: "oanda", displayName: "OANDA", platform: "OANDA", confidence: "PATTERN_MATCH",
+        connectorStatus: "CONNECTOR_NOT_IMPLEMENTED", providerId: "oanda-v20",
+        signals: ["endpoint host is a documented OANDA v20 REST host"], identifiedAt: isoNow(),
+      };
+    }
+    if (/^(ws|api)\.(derivws|binaryws)\.com$/.test(hints.endpoint) || /^app\.deriv\.com$/.test(hints.endpoint)) {
+      return {
+        brokerId: "deriv", displayName: "Deriv", platform: "DERIV", confidence: "PATTERN_MATCH",
+        connectorStatus: "CONNECTOR_AVAILABLE", providerId: "deriv-ws",
+        signals: ["endpoint host is a documented Deriv API gateway"], identifiedAt: isoNow(),
+      };
+    }
+  }
+  if (hints.externalAccountId) {
+    return identifyAtConnectMirror(hints.providerId ?? "", hints.externalAccountId);
+  }
+  if (hints.providerId && PROVIDER_DESCRIPTORS[hints.providerId]) {
+    const descriptor = PROVIDER_DESCRIPTORS[hints.providerId];
+    return {
+      brokerId: descriptor.platform === "MT5" ? "metatrader-platform" : descriptor.platform === "DERIV" ? "deriv" : "unknown",
+      displayName: descriptor.platform === "MT5" ? "MetaTrader (MT4/MT5)" : descriptor.platform === "DERIV" ? "Deriv" : "Unknown broker",
+      platform: descriptor.platform,
+      confidence: "PLATFORM_KNOWN",
+      connectorStatus: "CONNECTOR_AVAILABLE",
+      providerId: descriptor.providerId,
+      signals: [`provider "${descriptor.providerId}" is registered (platform ${descriptor.platform})`],
+      identifiedAt: isoNow(),
+    };
+  }
+  return {
+    brokerId: "unknown", displayName: "Unknown broker", platform: "OTHER", confidence: "UNKNOWN",
+    connectorStatus: "CONNECTOR_NOT_IMPLEMENTED", providerId: null,
+    signals: ["no hint matched the broker catalog"], identifiedAt: isoNow(),
+  };
 }
 
 // ── Deterministic provider data (mirrors MockTradingProviderAdapter) ────────
@@ -282,6 +486,8 @@ interface AccountRecord {
   isDefault: boolean;
   externalAccountId: string;
   providerId: string;
+  /** Phase 07 — connect-time broker identification mirror. */
+  brokerIdentification: BrokerIdentification | null;
   connection: ConnectionRecord | null;
   snapshot: TradingAccountSnapshotView | null;
   positions: BrokerPosition[];
@@ -347,7 +553,8 @@ function detailsOf(record: AccountRecord, nowMs = Date.now()): TradingAccountDet
     isDefault: record.isDefault,
     propConfig: null,
     externalAccountId: record.externalAccountId,
-    provider: MOCK_DESCRIPTOR,
+    provider: PROVIDER_DESCRIPTORS[record.providerId] ?? MOCK_DESCRIPTOR,
+    brokerIdentification: record.brokerIdentification,
     connection: record.connection
       ? {
           status: record.connection.status,
@@ -442,10 +649,17 @@ function runSynchronization(record: AccountRecord, trigger: "INITIAL" | "MANUAL"
     }
     guardSecret(record.connection.secret);
     // fail-malformed never reaches here: guardSecret throws 502 first.
+    const descriptor = PROVIDER_DESCRIPTORS[record.providerId] ?? MOCK_DESCRIPTOR;
+    // Capability gate (Phase 07 mirror): a V2 UNSUPPORTED capability is a
+    // capability FACT — the segment is skipped (ordersAt null), never a
+    // failure, never an empty success.
+    const derivCaps = descriptor.capabilities as { orders?: { support?: string } };
+    const ordersUnsupported =
+      isCapabilitiesV2(descriptor.capabilities) && derivCaps.orders?.support === "UNSUPPORTED";
     const data = providerData(record.externalAccountId);
     record.currency = data.currency;
     record.positions = data.positions;
-    record.orders = data.orders;
+    record.orders = ordersUnsupported ? [] : data.orders;
     record.deals = data.deals;
     record.snapshot = {
       ...data.snapshot,
@@ -453,11 +667,11 @@ function runSynchronization(record: AccountRecord, trigger: "INITIAL" | "MANUAL"
       syncedAt: isoNow(),
     };
     run.positionsUpserted = data.positions.length;
-    run.ordersUpserted = data.orders.length;
+    run.ordersUpserted = ordersUnsupported ? 0 : data.orders.length;
     run.dealsUpserted = data.deals.length;
     run.snapshotAt = record.snapshot.syncedAt;
     run.positionsAt = isoNow();
-    run.ordersAt = isoNow();
+    run.ordersAt = ordersUnsupported ? null : isoNow();
     run.dealsAt = isoNow();
     run.status = "COMPLETED";
     record.connection.lastSyncAt = isoNow();
@@ -495,7 +709,19 @@ export const tradingAccountsEngine = {
   },
 
   listProviders(): { providers: TradingProviderDescriptor[] } {
-    return { providers: [MOCK_DESCRIPTOR] };
+    // Phase 07 mirror: the engine simulates a deployment with mock + deriv-ws
+    // enabled (oanda stays env-gated OFF, exactly like the fixture e2e).
+    return { providers: [MOCK_DESCRIPTOR, DERIV_DESCRIPTOR] };
+  },
+
+  /** Phase 07 — universal broker catalog mirror (honest connector status). */
+  listBrokers(): BrokerCatalogResponse {
+    return brokerCatalogMirror();
+  },
+
+  /** Phase 07 — rule-based identification mirror (no secrets involved). */
+  identifyBroker(hints: BrokerIdentifyInput): { identification: BrokerIdentification } {
+    return { identification: identifyBrokerMirror(hints) };
   },
 
   connect(
@@ -509,12 +735,13 @@ export const tradingAccountsEngine = {
     },
   ): { account: TradingAccountDetails } {
     // registry.require — unknown provider ids never connect.
-    if (input.providerId !== MOCK_DESCRIPTOR.providerId) {
+    const descriptor = PROVIDER_DESCRIPTORS[input.providerId];
+    if (!descriptor) {
       throw coded(422, "UNSUPPORTED_PROVIDER", "This trading provider is not supported.");
     }
     // Provider validation BEFORE persisting anything (§17 step order).
     guardSecret(input.credentials.secret);
-    if (!MOCK_DESCRIPTOR.supportedEnvironments.includes(input.environment as "DEMO" | "LIVE")) {
+    if (!descriptor.supportedEnvironments.includes(input.environment as "DEMO" | "LIVE")) {
       throw coded(502, "UNSUPPORTED_ACCOUNT", "The provider does not support this account environment.");
     }
     const duplicate = [...accounts.values()].find(
@@ -527,27 +754,32 @@ export const tradingAccountsEngine = {
       throw coded(409, "DUPLICATE_ACCOUNT", "This trading account is already connected.");
     }
 
+    // Phase 07 — connect-time broker identification, same ladder as the
+    // backend: provider-reported (Deriv landing company) > rules.
+    const brokerIdentification = identifyAtConnectMirror(input.providerId, input.externalAccountId);
+
     const data = providerData(input.externalAccountId);
     const now = isoNow();
     const count = [...accounts.values()].filter((record) => record.userId === userId).length;
     const record: AccountRecord = {
       id: uuid(),
       userId,
-      name: input.displayName ?? `${MOCK_DESCRIPTOR.providerName} ${input.environment}`,
+      name: input.displayName ?? `${descriptor.providerName} ${input.environment}`,
       type: input.environment as AccountRecord["type"],
-      broker: MOCK_DESCRIPTOR.platform,
+      broker: descriptor.platform,
       currency: data.currency,
       // Provider-reported balance at connect is the journal anchor (§25).
       startingBalance: data.snapshot.balance,
       isDefault: count === 0,
       externalAccountId: input.externalAccountId,
-      providerId: MOCK_DESCRIPTOR.providerId,
+      providerId: descriptor.providerId,
+      brokerIdentification,
       connection: {
         status: "CONNECTED",
         method: "API_KEY",
         secret: input.credentials.secret,
         credentialsHint: hintOf(input.credentials.secret),
-        permissions: [...MOCK_DESCRIPTOR.supportedPermissions],
+        permissions: [...descriptor.supportedPermissions],
         lastConnectedAt: now,
         lastSyncAt: null,
         lastError: null,

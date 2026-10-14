@@ -2,7 +2,7 @@
   "name": "@cosmoz/api",
   "version": "0.1.0",
   "private": true,
-  "description": "Cosmoz backend \u2014 NestJS DDD Modular Monolith (Foundation)",
+  "description": "Cosmoz backend — NestJS DDD Modular Monolith (Foundation)",
   "engines": {
     "node": ">=22"
   },
@@ -37,12 +37,14 @@
     "pino-http": "^10.4.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
+    "ws": "^8.21.3",
     "zod": "^3.25.76"
   },
   "devDependencies": {
     "@nestjs/testing": "^11.1.6",
     "@swc/core": "^1.16.13",
     "@types/node": "^24.5.2",
+    "@types/ws": "^8.18.2",
     "@typescript-eslint/eslint-plugin": "^8.44.0",
     "@typescript-eslint/parser": "^8.44.0",
     "embedded-postgres": "17.5.0-beta.15",

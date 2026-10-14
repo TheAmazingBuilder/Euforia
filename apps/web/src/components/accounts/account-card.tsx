@@ -146,6 +146,15 @@ export function AccountCard({
           <p className="mt-1 truncate text-xs text-muted-foreground">
             {account.provider.providerName} · {account.broker} · {account.externalAccountId} ·{" "}
             {account.currency}
+            {account.brokerIdentification &&
+            account.brokerIdentification.confidence !== "UNKNOWN" ? (
+              <span
+                className="text-foreground/70"
+                data-testid="account-card-broker-detected"
+              >
+                {" "}· {account.brokerIdentification.displayName}
+              </span>
+            ) : null}
           </p>
         </div>
         <ConnectionStatusBadge

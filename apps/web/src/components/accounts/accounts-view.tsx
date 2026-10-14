@@ -10,6 +10,7 @@ import { useNowMs } from "@/lib/realtime/use-now";
 import {
   useTradingAccountProviders,
   useTradingAccounts,
+  useTradingBrokerCatalog,
   useSyncTradingAccount,
 } from "@/lib/api/queries";
 import { useDict } from "@/i18n/i18n-provider";
@@ -43,6 +44,7 @@ export function AccountsView() {
   const nowMs = useNowMs(1000);
   const accounts = useTradingAccounts();
   const providers = useTradingAccountProviders();
+  const brokerCatalog = useTradingBrokerCatalog();
   const sync = useSyncTradingAccount();
 
   const [connectOpen, setConnectOpen] = React.useState(false);
@@ -167,6 +169,7 @@ export function AccountsView() {
           open={connectOpen}
           onOpenChange={setConnectOpen}
           providers={providers.data?.providers ?? []}
+          brokers={brokerCatalog.data?.brokers ?? []}
           onConnected={openDetail}
         />
         <AccountDetailDrawer

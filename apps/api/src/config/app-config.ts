@@ -53,6 +53,12 @@ export interface AppConfig {
     oandaEnabled: boolean;
     /** OANDA REST base-URL override (tests/region edge); null = route by environment. */
     oandaRestUrlOverride: string | null;
+    /** Whether the real Deriv WS adapter is registered (Phase 07). */
+    derivEnabled: boolean;
+    /** Deriv WS endpoint override (tests/fixture server); null = official endpoint. */
+    derivWsUrlOverride: string | null;
+    /** Deriv application id (developers.deriv.com registration; dev default documented). */
+    derivAppId: string;
     /** Phase 05 — background sync scheduler gate (never on by default, §57). */
     syncSchedulerEnabled: boolean;
     /** Phase 05 — base interval between scheduler sweeps (jittered per tick). */
@@ -138,6 +144,11 @@ function build(env: Env): AppConfig {
           : env.NODE_ENV !== "production",
       oandaEnabled: env.ACCOUNTS_OANDA_PROVIDER === "enabled",
       oandaRestUrlOverride: env.ACCOUNTS_OANDA_REST_URL ?? null,
+      derivEnabled: env.ACCOUNTS_DERIV_PROVIDER === "enabled",
+      derivWsUrlOverride: env.ACCOUNTS_DERIV_WS_URL ?? null,
+      // Deriv's public example app id — development/verification only (see
+      // env.schema.ts); real deployments register their own application id.
+      derivAppId: env.ACCOUNTS_DERIV_APP_ID ?? "1089",
       syncSchedulerEnabled: env.ACCOUNTS_SYNC_SCHEDULER === "enabled",
       syncIntervalMs: env.ACCOUNTS_SYNC_INTERVAL_MS,
       syncMaxConcurrency: env.ACCOUNTS_SYNC_MAX_CONCURRENCY,

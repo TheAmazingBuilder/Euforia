@@ -32,8 +32,10 @@ import type { AppConfig } from "../../config/app-config";
 import { AccountsRepository } from "./accounts.repository";
 import { CredentialsEncryptionService } from "./credentials-encryption.service";
 import { ProviderRegistryService } from "./provider-registry.service";
+import { BrokerIdentificationService } from "./broker-identification.service";
 import { MockTradingProviderAdapter } from "./providers/mock-trading.provider";
 import { OandaRestProviderAdapter } from "./providers/oanda/oanda-rest.provider";
+import { DerivWsProviderAdapter } from "./providers/deriv/deriv-ws.provider";
 import { TradingAccountService } from "./trading-account.service";
 import { TradingSyncService } from "./trading-sync.service";
 import { AccountsRateLimiterService } from "./accounts-rate-limiter.service";
@@ -69,6 +71,19 @@ const providerRegistryProvider: Provider = {
             }),
           ]
         : []),
+      // Phase 07: the SECOND real adapter — same §57 opt-in posture. One
+      // documented dependency install (ws, the official WS client), a
+      // deployment-owned app id, and the user's Read-scope API token; the
+      // adapter never holds a credential and never sends a write verb.
+      ...(config.accounts.derivEnabled
+        ? [
+            new DerivWsProviderAdapter({
+              wsUrlOverride: config.accounts.derivWsUrlOverride,
+              appId: config.accounts.derivAppId,
+              requestTimeoutMs: config.accounts.providerTimeoutMs + TRANSPORT_ABORT_GRACE_MS,
+            }),
+          ]
+        : []),
     ];
     return new ProviderRegistryService(adapters);
   },
@@ -88,6 +103,9 @@ const providerRegistryProvider: Provider = {
     AccountsRepository,
     CredentialsEncryptionService,
     providerRegistryProvider,
+    // Phase 07 — universal broker layer: catalog + connect-time
+    // identification ("which broker is this?"). Depends only on the registry.
+    BrokerIdentificationService,
     TradingSyncService,
     TradingAccountService,
     AccountsRateLimiterService,

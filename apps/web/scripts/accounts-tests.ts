@@ -75,14 +75,40 @@ eq("environmentStamp DEMO", environmentStamp("DEMO"), "DEMO");
 
 const USER = "user-1";
 const USER2 = "user-2";
+// Dedicated principal for the Phase 07 deriv probe — the scoping assertions
+// below count USER/USER2 accounts and must stay untouched by it.
+const USER3 = "user-3";
 
 tradingAccountsEngine.reset();
 
-// Registry: only the MOCK provider, visibly a mock.
+// Registry: MOCK (visibly a mock) + deriv-ws (Phase 07 — real, isMock false).
 const registry = tradingAccountsEngine.listProviders();
-eq("registry has exactly one provider", registry.providers.length, 1);
-eq("registry provider is MOCK", registry.providers[0]?.providerId, "MOCK");
-eq("registry provider isMock", registry.providers[0]?.isMock, true);
+eq("registry has two providers (MOCK + deriv-ws)", registry.providers.length, 2);
+eq("registry provider MOCK first", registry.providers[0]?.providerId, "MOCK");
+eq("registry provider MOCK isMock", registry.providers[0]?.isMock, true);
+const derivDescriptor = registry.providers.find((p) => p.providerId === "deriv-ws");
+ok("registry exposes deriv-ws as a REAL provider", derivDescriptor !== undefined && derivDescriptor.isMock === false && derivDescriptor.platform === "DERIV");
+
+// Phase 07 — broker catalog mirror + identification rules.
+const catalog = tradingAccountsEngine.listBrokers();
+const derivCatalogEntry = catalog.brokers.find((b) => b.brokerId === "deriv");
+const icmarketsEntry = catalog.brokers.find((b) => b.brokerId === "icmarkets");
+ok("catalog marks deriv CONNECTOR_AVAILABLE", derivCatalogEntry?.connectorStatus === "CONNECTOR_AVAILABLE");
+ok("catalog marks icmarkets NOT_IMPLEMENTED", icmarketsEntry?.connectorStatus === "CONNECTOR_NOT_IMPLEMENTED");
+const identified = tradingAccountsEngine.identifyBroker({ externalAccountId: "101-004-7192958-001" });
+eq("identify OANDA id → oanda (pattern match)", identified.identification.brokerId, "oanda");
+eq("identify OANDA id → PATTERN_MATCH", identified.identification.confidence, "PATTERN_MATCH");
+const identifiedUnknown = tradingAccountsEngine.identifyBroker({ externalAccountId: "XYZ-777-unknown" });
+eq("identify unknown id → UNKNOWN", identifiedUnknown.identification.confidence, "UNKNOWN");
+const derivConnectProbe = tradingAccountsEngine.connect(USER3, {
+  providerId: "deriv-ws",
+  environment: "DEMO",
+  externalAccountId: "VRTC9876543",
+  displayName: "Deriv Probe",
+  credentials: { method: "API_KEY", secret: "good-key-deriv" },
+});
+ok("deriv connect carries PROVIDER_REPORTED identification", derivConnectProbe.account.brokerIdentification?.confidence === "PROVIDER_REPORTED" && derivConnectProbe.account.brokerIdentification?.displayName === "Deriv (SVG) Corp");
+ok("deriv orders segment skipped as capability fact", derivConnectProbe.account.synchronization.lastRun?.ordersAt === null && derivConnectProbe.account.synchronization.lastRun?.status === "COMPLETED");
 
 // Unknown provider ids never connect (422 UNSUPPORTED_PROVIDER).
 let threwUnsupported = false;

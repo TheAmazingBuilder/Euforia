@@ -250,6 +250,8 @@ export {
 export {
   useTradingAccounts,
   useTradingAccountProviders,
+  useTradingBrokerCatalog,
+  useIdentifyBroker,
   useTradingAccountDetails,
   useTradingAccountPositions,
   useTradingAccountOrders,

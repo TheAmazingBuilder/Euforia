@@ -305,6 +305,12 @@ model TradingAccount {
   externalAccountId String
   /// Provider registry key (e.g. "MOCK" — real adapters register their own).
   providerId        String
+  /// Phase 07 — connect-time broker identification snapshot
+  /// (shared brokerIdentificationSchema): which broker this is, the evidence
+  /// signals, and the confidence level. Null for pre-Phase-07 rows. The
+  /// snapshot is recorded once at connect; it is NOT recomputed on read
+  /// (the catalog may evolve — the stored value preserves what was detected).
+  brokerIdentity    Json?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

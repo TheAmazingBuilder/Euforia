@@ -21,6 +21,15 @@ export const normalizedAccountInfoSchema = z.object({
   currency: currencySchema,
   leverage: z.string().nullable(),
   server: z.string().nullable(),
+  // Phase 07 — provider-reported broker identity (additive optional: adapters
+  // that do not report one omit the field; the boundary tolerates both).
+  brokerIdentity: z
+    .object({
+      brokerName: z.string().nullable(),
+      accountClass: z.enum(["REAL", "DEMO"]).nullable(),
+    })
+    .nullable()
+    .optional(),
 });
 
 export const normalizedSnapshotSchema = z.object({

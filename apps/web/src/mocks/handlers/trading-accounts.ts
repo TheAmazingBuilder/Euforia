@@ -1,5 +1,6 @@
 import { http, HttpResponse } from "msw";
 import {
+  brokerIdentifyInputSchema,
   tradingAccountConnectInputSchema,
   tradingAccountUpdateInputSchema,
   tradingReconnectInputSchema,
@@ -40,6 +41,32 @@ export const tradingAccountsHandlers = [
     try {
       requireUserId(request);
       return HttpResponse.json(tradingAccountsEngine.listProviders());
+    } catch (error) {
+      return toErrorResponse(error);
+    }
+  }),
+
+  // Phase 07 — the universal broker catalog (identity metadata, honest
+  // connector status). Same auth boundary as every accounts route.
+  http.get(endpoint(apiPaths.tradingAccountBrokers), async ({ request }) => {
+    await latency();
+    try {
+      requireUserId(request);
+      return HttpResponse.json(tradingAccountsEngine.listBrokers());
+    } catch (error) {
+      return toErrorResponse(error);
+    }
+  }),
+
+  // Phase 07 — rule-based broker identification. The body is validated
+  // against the shared hints schema (NO secrets accepted); unknown brokers
+  // answer honestly (UNKNOWN), never a guess.
+  http.post(endpoint(apiPaths.tradingAccountBrokerIdentify), async ({ request }) => {
+    await latency();
+    try {
+      requireUserId(request);
+      const body = parseBody(brokerIdentifyInputSchema, await readJson(request));
+      return HttpResponse.json(tradingAccountsEngine.identifyBroker(body));
     } catch (error) {
       return toErrorResponse(error);
     }

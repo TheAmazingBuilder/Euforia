@@ -108,8 +108,8 @@ const CONSOLE_NOISE = [
   await mockRow.waitFor({ state: "visible", timeout: 10_000 });
   check("MOCK provider listed as connectable", (await mockRow.count()) > 0);
   check(
-    "planned providers marked not connectable",
-    (await page.locator('[data-testid="connect-provider-planned-oanda"]').innerText()).toUpperCase().includes("PLANNED"),
+    "recognized brokers marked not connectable (catalog)",
+    (await page.locator('[data-testid="connect-provider-recognized-oanda"]').innerText()).toUpperCase().includes("RECOGNIZED"),
   );
   await mockRow.click();
   await page.locator('[data-testid="connect-next"]').click();

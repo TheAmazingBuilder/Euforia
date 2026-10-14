@@ -33,6 +33,9 @@ import {
 } from "../../shared/errors/app-error";
 import {
   TRADING_ERROR_CODES,
+  type BrokerCatalogResponse,
+  type BrokerIdentifyInput,
+  type BrokerIdentifyResponse,
   type TradingAccountConnectInput,
   type TradingAccountUpdateInput,
   type TradingProviderDescriptor,
@@ -50,6 +53,7 @@ import { AccountsRepository } from "./accounts.repository";
 import type { TradingAccountRow, TradingConnectionRow } from "./accounts.repository";
 import { CredentialsEncryptionService } from "./credentials-encryption.service";
 import { ProviderRegistryService } from "./provider-registry.service";
+import { BrokerIdentificationService } from "./broker-identification.service";
 import { TradingSyncService } from "./trading-sync.service";
 import { SecurityEventService } from "../security/security-event.service";
 import type { UserRow } from "../identity/identity.repository";
@@ -63,6 +67,7 @@ export class TradingAccountService {
     private readonly credentials: CredentialsEncryptionService,
     private readonly sync: TradingSyncService,
     private readonly events: SecurityEventService,
+    private readonly brokerIdentification: BrokerIdentificationService,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
     @Optional() @Inject(ROOT_LOGGER) private readonly logger?: RootLogger,
   ) {}
@@ -72,6 +77,24 @@ export class TradingAccountService {
   /** Provider registry listing (metadata only — §44). */
   listProviders(): { providers: TradingProviderDescriptor[] } {
     return { providers: this.registry.list() };
+  }
+
+  /**
+   * Phase 07 — the universal broker catalog: every known broker/platform
+   * with HONEST connector status (resolved against the registry). Identity
+   * metadata only — no capability claims for brokers without a connector.
+   */
+  listBrokers(): BrokerCatalogResponse {
+    return this.brokerIdentification.catalogForClient();
+  }
+
+  /**
+   * Phase 07 — rule-based broker identification from hints. NO provider
+   * call, NO secrets accepted: the answer is "which broker does this look
+   * like", with evidence signals and an honest UNKNOWN when nothing matches.
+   */
+  identifyBroker(hints: BrokerIdentifyInput): BrokerIdentifyResponse {
+    return { identification: this.brokerIdentification.identify(hints) };
   }
 
   /** Journal identity contract — exactly the shared accountSchema list. */
@@ -270,6 +293,15 @@ export class TradingAccountService {
       const name =
         input.payload.displayName ??
         `${adapter.descriptor.providerName} ${input.payload.environment}`;
+      // Phase 07 — identify the broker AT CONNECTION TIME (owner requirement:
+      // "which broker is this?"). Provider-reported identity (e.g. Deriv
+      // landing company) wins; catalog patterns + registry platform fall
+      // through. The snapshot is persisted with its evidence signals.
+      const brokerIdentification = this.brokerIdentification.identifyAtConnect({
+        providerId: adapter.descriptor.providerId,
+        externalAccountId: input.payload.externalAccountId,
+        providerReported: safeInfo.brokerIdentity ?? null,
+      });
       const { account } = await this.repository.createAccountWithConnection({
         account: {
           userId: input.userId,
@@ -282,6 +314,7 @@ export class TradingAccountService {
           isDefault: count === 0,
           externalAccountId: input.payload.externalAccountId,
           providerId: adapter.descriptor.providerId,
+          brokerIdentity: brokerIdentification,
         },
         connection: {
           method: "API_KEY",
@@ -296,7 +329,7 @@ export class TradingAccountService {
         userId: input.userId,
         type: "TRADING_ACCOUNT_CONNECTED",
         actor: input.user.email,
-        context: `Connected ${adapter.descriptor.providerName} account ${input.payload.externalAccountId} (${input.payload.environment}), read-only.`,
+        context: `Connected ${adapter.descriptor.providerName} account ${input.payload.externalAccountId} (${input.payload.environment}), read-only. Broker identified: ${brokerIdentification.displayName} (${brokerIdentification.confidence}).`,
       });
 
       // Initial synchronization — failures never invalidate the registration.

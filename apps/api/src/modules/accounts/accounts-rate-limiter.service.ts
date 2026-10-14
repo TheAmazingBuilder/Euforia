@@ -20,6 +20,9 @@ export const ACCOUNT_RATE_LIMITS: Record<string, number> = {
   connect: 5,
   reconnect: 5,
   sync: 20,
+  /** Phase 07 — broker-identification probes (rule-based, no provider call,
+   * but still a user-triggered computation: bounded per user). */
+  identify: 30,
 };
 
 @Injectable()

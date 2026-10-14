@@ -28,10 +28,14 @@ import {
   tradingDisconnectResponseSchema,
   tradingReconnectInputSchema,
   tradingSyncRunsResponseSchema,
+  brokerCatalogResponseSchema,
+  brokerIdentifyInputSchema,
+  brokerIdentifyResponseSchema,
   uuidSchema,
   isoDateTimeSchema,
 } from "../../shared/contracts";
 import type {
+  BrokerIdentifyInput,
   TradingAccountConnectInput,
   TradingAccountUpdateInput,
   TradingReconnectInput,
@@ -41,7 +45,11 @@ import { CurrentUser, type AuthPrincipal } from "../../shared/auth/current-user.
 import { TradingAccountService } from "./trading-account.service";
 import { AccountsRateLimiterService } from "./accounts-rate-limiter.service";
 import { IdentityRepository } from "../identity/identity.repository";
-import { UnauthorizedError } from "../../shared/errors/app-error";
+import {
+  RateLimitError,
+  UnauthorizedError,
+} from "../../shared/errors/app-error";
+import { TRADING_ERROR_CODES } from "../../shared/contracts";
 
 function requestIdOf(request: FastifyRequest): string | null {
   const raw = (request as { id?: unknown }).id;
@@ -59,6 +67,40 @@ export class TradingAccountsController {
   @Get("providers")
   providers() {
     return this.accounts.listProviders();
+  }
+
+  /**
+   * Phase 07 — the universal broker catalog (GET /trading-accounts/brokers).
+   * Static identity metadata + honest connector status; declared BEFORE the
+   * :accountId routes so "brokers" is never captured as an account id.
+   */
+  @Get("brokers")
+  brokers() {
+    return brokerCatalogResponseSchema.parse(this.accounts.listBrokers());
+  }
+
+  /**
+   * Phase 07 — rule-based broker identification
+   * (POST /trading-accounts/brokers/identify). No secrets accepted, no
+   * provider call; rate-limited per user (30 / 15 min).
+   */
+  @Post("brokers/identify")
+  @HttpCode(HttpStatus.OK)
+  identifyBroker(
+    @CurrentUser() principal: AuthPrincipal,
+    @Body(new ZodValidationPipe(brokerIdentifyInputSchema))
+    hints: BrokerIdentifyInput,
+  ) {
+    const check = this.limiter.check("identify", principal.userId);
+    if (!check.allowed) {
+      throw new RateLimitError(
+        "Too many identification attempts. Please wait before trying again.",
+        TRADING_ERROR_CODES.RATE_LIMITED,
+        check.retryAfterSeconds,
+      );
+    }
+    this.limiter.hit("identify", principal.userId);
+    return brokerIdentifyResponseSchema.parse(this.accounts.identifyBroker(hints));
   }
 
   @Post("connect")

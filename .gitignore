@@ -40,3 +40,9 @@ tool-results/
 # Oryon Phase 4 — quarantined restore-glitch zombies (see .quarantine-phase4/README.md)
 .quarantine-phase4/
 .worktree-headcheck/
+scripts/deriv-*.html
+scripts/deriv-*.md
+scripts/deriv-llms.txt
+scripts/research-deriv-*.json
+scripts/baseline-api-test.log
+scripts/web-start-3000.log

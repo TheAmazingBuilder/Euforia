@@ -110,6 +110,9 @@ export const apiPaths = {
   // contracts are @cosmoz/shared trading-account.ts, verbatim.
   tradingAccounts: "/trading-accounts",
   tradingAccountProviders: "/trading-accounts/providers",
+  // Phase 07 — the universal broker catalog + identification probe.
+  tradingAccountBrokers: "/trading-accounts/brokers",
+  tradingAccountBrokerIdentify: "/trading-accounts/brokers/identify",
   tradingAccountConnect: "/trading-accounts/connect",
   tradingAccount: (accountId: string) => `/trading-accounts/${accountId}`,
   tradingAccountPositions: (accountId: string) => `/trading-accounts/${accountId}/positions`,

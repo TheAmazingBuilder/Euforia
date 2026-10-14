@@ -15,7 +15,7 @@ import type {
   TradingAccountSnapshotView,
   SynchronizationStatus,
 } from "../../shared/contracts";
-import { accountSchema } from "../../shared/contracts";
+import { accountSchema, brokerIdentificationSchema } from "../../shared/contracts";
 import type { z } from "zod";
 import type {
   SnapshotRow,
@@ -27,6 +27,19 @@ import type {
 /** Decimal → decimal-string without exponent notation (shared wire format). */
 function decimalString(value: Prisma.Decimal | null): string | null {
   return value === null ? null : value.toFixed();
+}
+
+/**
+ * Phase 07 — stored connect-time broker identification, re-validated at the
+ * read boundary. A stored value that no longer satisfies the shared schema
+ * (catalog/schema evolution) degrades to null — never a broken wire shape.
+ */
+export function toBrokerIdentificationView(
+  stored: unknown,
+): TradingAccountDetails["brokerIdentification"] {
+  if (stored === null || stored === undefined) return null;
+  const parsed = brokerIdentificationSchema.safeParse(stored);
+  return parsed.success ? parsed.data : null;
 }
 
 /** UTC ISO-8601 with Z suffix (shared isoDateTimeSchema wire format). */
@@ -210,6 +223,7 @@ export function toAccountDetails(input: {
     propConfig: (account.propConfig ?? null) as TradingAccountDetails["propConfig"],
     externalAccountId: account.externalAccountId,
     provider: descriptor,
+    brokerIdentification: toBrokerIdentificationView(account.brokerIdentity),
     connection: connectionView,
     synchronization: {
       ...toSynchronizationView(connection?.lastSyncAt ?? null, latestRun, nowMs),

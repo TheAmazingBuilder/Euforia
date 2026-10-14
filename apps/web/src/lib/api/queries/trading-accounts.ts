@@ -1,5 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
+  BrokerCatalogResponse,
+  BrokerIdentification,
   TradingAccountConnectInput,
   TradingAccountDetails,
   TradingAccountDetailsResponse,
@@ -63,6 +65,36 @@ export function useTradingAccountProviders() {
     queryFn: () => apiRequest<TradingProviderListResponse>(apiPaths.tradingAccountProviders),
     // The registry is code-defined — it only changes with a deploy.
     staleTime: 5 * 60 * 1000,
+  });
+}
+
+/**
+ * GET /trading-accounts/brokers — the universal broker catalog (Phase 07):
+ * every known broker/platform with its HONEST connector status. Powers the
+ * "any broker" picker: connectable entries come from the provider registry,
+ * recognized-but-unimplemented entries render a truthful locked state.
+ */
+export function useTradingBrokerCatalog() {
+  return useQuery({
+    queryKey: queryKeys.tradingAccountBrokers,
+    queryFn: () => apiRequest<BrokerCatalogResponse>(apiPaths.tradingAccountBrokers),
+    // The catalog is code-defined — it only changes with a deploy.
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+/**
+ * POST /trading-accounts/brokers/identify — rule-based broker identification
+ * (Phase 07). No secrets are sent: only id/endpoint hints. Debounced callers
+ * stay far below the 30/15-min rate limit.
+ */
+export function useIdentifyBroker() {
+  return useMutation({
+    mutationFn: (hints: { providerId?: string; externalAccountId?: string; endpoint?: string }) =>
+      apiRequest<{ identification: BrokerIdentification }>(apiPaths.tradingAccountBrokerIdentify, {
+        method: "POST",
+        body: JSON.stringify(hints),
+      }),
   });
 }
 

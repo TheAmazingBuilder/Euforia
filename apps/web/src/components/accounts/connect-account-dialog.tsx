@@ -4,7 +4,7 @@ import * as React from "react";
 import { Check, ChevronLeft, Lock, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 
-import type { TradingProviderDescriptor } from "@cosmoz/shared";
+import type { BrokerCatalogEntry, BrokerIdentification, TradingProviderDescriptor } from "@cosmoz/shared";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -18,35 +18,31 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { apiErrorCode } from "@/lib/api/client";
-import { useConnectTradingAccount } from "@/lib/api/queries";
+import { useConnectTradingAccount, useIdentifyBroker } from "@/lib/api/queries";
 import { useDict } from "@/i18n/i18n-provider";
 import { cn } from "@/lib/utils";
 
 import { SimulatedProviderBadge } from "./account-badges";
 
 /**
- * The add-account entry point (Phase 02 Step Six). Capability-driven and
- * honest: the connectable list comes from the REAL provider registry — the
- * mock provider is selectable and stamped "Simulated provider", while
- * planned providers render an explicit "Planned — not connectable yet"
- * state instead of a fake setup path. No simulated success screen exists:
- * the dialog closes on the backend's 201 and the new account appears in the
- * list. The initial sync runs server-side; its failure is visible on the
- * account, never hidden.
+ * The add-account entry point (Phase 02 Step Six; Phase 07 universal layer).
+ * Capability-driven and honest:
+ *  - the connectable list comes from the REAL provider registry (the mock is
+ *    stamped "Simulated provider");
+ *  - the RECOGNIZED list comes from the universal broker catalog — every
+ *    known broker/platform stays visible with its truthful connector status,
+ *    never a fake setup path;
+ *  - while the user types the account number, the identity step calls the
+ *    rule-based identify endpoint (debounced, rate-limited, NO secrets sent)
+ *    and answers the owner's question "WHICH broker is this?" in real time.
+ * No simulated success screen exists: the dialog closes on the backend's 201
+ * and the new account appears in the list. The initial sync runs server-side.
  *
  * Out of scope by design (spec §11.3): OAuth, provider-side account
  * discovery, credential storage beyond the backend vault — the secret is
  * typed once, sent to the backend, never mirrored into any client store,
  * URL, or log.
  */
-
-const PLANNED_PROVIDERS: Array<{ id: string; name: string; note: string }> = [
-  { id: "oanda", name: "OANDA", note: "Official v20 REST API — adapter phase next." },
-  { id: "ctrader", name: "cTrader", note: "Open API over OAuth 2.0 — covers IC Markets cTrader accounts." },
-  { id: "mt5", name: "MetaTrader 5", note: "Requires a terminal bridge — decision pending." },
-  { id: "deriv", name: "Deriv", note: "Official WebSocket API — later phase." },
-  { id: "tradingview", name: "TradingView", note: "No account-data interface exists — not plannable." },
-];
 
 type WizardStep = "provider" | "environment" | "identity";
 
@@ -56,17 +52,21 @@ export function ConnectAccountDialog({
   open,
   onOpenChange,
   providers,
+  brokers,
   onConnected,
 }: {
   open: boolean;
   onOpenChange: (next: boolean) => void;
   /** Registry descriptors — the parent owns the providers query. */
   providers: TradingProviderDescriptor[];
+  /** Universal broker catalog (Phase 07) — the parent owns the catalog query. */
+  brokers: BrokerCatalogEntry[];
   onConnected: (accountId: string) => void;
 }) {
   const dict = useDict();
   const C = dict.accounts.connect;
   const connect = useConnectTradingAccount();
+  const identifyBroker = useIdentifyBroker();
 
   const [step, setStep] = React.useState<WizardStep>("provider");
   const [provider, setProvider] = React.useState<TradingProviderDescriptor | null>(null);
@@ -74,6 +74,16 @@ export function ConnectAccountDialog({
   const [externalAccountId, setExternalAccountId] = React.useState("");
   const [displayName, setDisplayName] = React.useState("");
   const [secret, setSecret] = React.useState("");
+  /** Identification result tagged with the hint pair it belongs to — derived
+   * visibility (no sync setState in the effect): the UI shows a result only
+   * while it matches the CURRENT provider + account number. */
+  const [identification, setIdentification] = React.useState<{
+    key: string;
+    value: BrokerIdentification;
+  } | null>(null);
+  const identificationKey = `${provider?.providerId ?? ""}:${externalAccountId.trim()}`;
+  const shownIdentification =
+    identification && identification.key === identificationKey ? identification.value : null;
 
   const reset = React.useCallback(() => {
     setStep("provider");
@@ -82,7 +92,34 @@ export function ConnectAccountDialog({
     setExternalAccountId("");
     setDisplayName("");
     setSecret("");
+    setIdentification(null);
   }, []);
+
+  // Phase 07 — live broker identification while the account number is typed.
+  // Debounced 600 ms; the hint payload contains NO secret (rule-based probe,
+  // 30/15-min server rate limit — far above this cadence). Stale results are
+  // filtered by the derived key comparison above, not by sync setState.
+  React.useEffect(() => {
+    if (step !== "identity" || !provider) {
+      return;
+    }
+    const id = externalAccountId.trim();
+    if (id.length < 5) {
+      return;
+    }
+    const timer = setTimeout(() => {
+      identifyBroker.mutate(
+        { providerId: provider.providerId, externalAccountId: id },
+        {
+          onSuccess: (response) =>
+            setIdentification({ key: `${provider.providerId}:${id}`, value: response.identification }),
+          onError: () => {},
+        },
+      );
+    }, 600);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, provider?.providerId, externalAccountId]);
 
   const handleOpenChange = (next: boolean) => {
     if (!next) reset();
@@ -213,25 +250,52 @@ export function ConnectAccountDialog({
                 </span>
               </button>
             ))}
-            {PLANNED_PROVIDERS.map((planned) => (
-              <div
-                key={planned.id}
-                className="flex items-start gap-3 rounded-lg border border-dashed border-border p-3 opacity-70"
-                data-testid={`connect-provider-planned-${planned.id}`}
-                aria-label={`${planned.name} — ${C.providerPlanned}`}
-              >
-                <Lock className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-medium text-muted-foreground">{planned.name}</span>
-                    <span className="rounded-sm bg-muted px-1 py-0.5 font-mono text-[10px] uppercase leading-none tracking-wide text-muted-foreground">
-                      {C.providerPlanned}
-                    </span>
+            {/* Phase 07 — the universal broker catalog: every known broker
+                stays visible with its honest connector status. Entries whose
+                connector IS available already render as radio cards above.
+                The recognized list is scroll-compact so the connectable
+                cards stay in view — 17+ catalog entries would otherwise
+                bury them. */}
+            {brokers.filter((entry) => entry.connectorStatus !== "CONNECTOR_AVAILABLE").length >
+            0 ? (
+              <div className="rounded-lg border border-border/60 bg-muted/20">
+                <p className="px-3 pt-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                  {C.providerRecognizedSection}
+                </p>
+                <div
+                  className="max-h-52 overflow-y-auto px-3 pb-2 pt-1"
+                  data-testid="connect-recognized-brokers"
+                >
+                  <div className="grid gap-1.5">
+                    {brokers
+                      .filter((entry) => entry.connectorStatus !== "CONNECTOR_AVAILABLE")
+                      .map((entry) => (
+                        <div
+                          key={entry.brokerId}
+                          className="flex items-start gap-2.5 rounded-md border border-dashed border-border bg-surface p-2.5 opacity-80"
+                          data-testid={`connect-provider-recognized-${entry.brokerId}`}
+                          aria-label={`${entry.displayName} — ${C.providerRecognized}`}
+                        >
+                          <Lock className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" aria-hidden />
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="text-sm font-medium text-muted-foreground">
+                                {entry.displayName}
+                              </span>
+                              <span className="rounded-sm bg-muted px-1 py-0.5 font-mono text-[9px] uppercase leading-none tracking-wide text-muted-foreground">
+                                {C.providerRecognized}
+                              </span>
+                            </div>
+                            <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
+                              {entry.notes}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
                   </div>
-                  <p className="mt-1 text-xs text-muted-foreground">{planned.note}</p>
                 </div>
               </div>
-            ))}
+            ) : null}
           </div>
         ) : null}
 
@@ -278,6 +342,19 @@ export function ConnectAccountDialog({
                 data-testid="connect-external-id"
               />
               <p className="text-xs text-muted-foreground">{C.externalIdHint}</p>
+              {shownIdentification ? (
+                <p
+                  className="flex items-start gap-1.5 rounded-md border border-border bg-muted/40 px-2 py-1.5 text-xs text-muted-foreground"
+                  data-testid="connect-broker-identification"
+                >
+                  <span className="font-medium text-foreground">{C.detectedBroker}:</span>
+                  <span>
+                    {shownIdentification.displayName}
+                    {" · "}
+                    {C.detectedConfidence[shownIdentification.confidence]}
+                  </span>
+                </p>
+              ) : null}
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor="connect-display-name">{C.displayNameLabel}</Label>

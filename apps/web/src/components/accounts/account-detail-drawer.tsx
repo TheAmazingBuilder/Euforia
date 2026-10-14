@@ -92,9 +92,20 @@ function ResourceFreshnessLine({
   );
 }
 
-function DetailRow({ label, children }: { label: string; children: React.ReactNode }) {
+function DetailRow({
+  label,
+  children,
+  testId,
+}: {
+  label: string;
+  children: React.ReactNode;
+  testId?: string;
+}) {
   return (
-    <div className="flex items-baseline justify-between gap-4 border-b border-border/60 py-2 last:border-0">
+    <div
+      className="flex items-baseline justify-between gap-4 border-b border-border/60 py-2 last:border-0"
+      data-testid={testId}
+    >
       <dt className="text-xs text-muted-foreground">{label}</dt>
       <dd className="text-right text-sm">{children}</dd>
     </div>
@@ -375,6 +386,19 @@ export function AccountDetailDrawer({
               <dl className="mt-2">
                 <DetailRow label={D.provider}>{account.provider.providerName}</DetailRow>
                 <DetailRow label={D.platform}>{account.provider.platform}</DetailRow>
+                {account.brokerIdentification ? (
+                  <DetailRow label={D.detectedBroker} testId="account-detail-broker-detected">
+                    {account.brokerIdentification.displayName}
+                    {" · "}
+                    {account.brokerIdentification.confidence === "PROVIDER_REPORTED"
+                      ? "provider-reported"
+                      : account.brokerIdentification.confidence === "PATTERN_MATCH"
+                        ? "pattern match"
+                        : account.brokerIdentification.confidence === "PLATFORM_KNOWN"
+                          ? "platform known"
+                          : "unknown"}
+                  </DetailRow>
+                ) : null}
                 <DetailRow label={D.environment}>{account.type === "PROP_FIRM" ? "PROP" : account.type}</DetailRow>
                 <DetailRow label={D.externalId}>
                   <span className="font-mono">{account.externalAccountId}</span>

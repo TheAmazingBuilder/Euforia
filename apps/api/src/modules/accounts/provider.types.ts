@@ -61,6 +61,19 @@ export interface NormalizedAccountInfo {
   leverage: string | null;
   /** Provider-side server/platform label (e.g. "ICMarketsSC-MT5"). */
   server: string | null;
+  /**
+   * Phase 07 — broker identity as REPORTED BY THE PROVIDER itself (e.g.
+   * Deriv `landing_company_full_name`), when the provider states it.
+   * Adapters that do not report a broker identity omit the field entirely —
+   * the identification layer then falls back to catalog patterns. Never
+   * guessed by adapters: absent ≠ unknown-entity claim.
+   */
+  brokerIdentity?: {
+    /** Provider-reported broker/landing-company label (e.g. "Deriv SVG"). */
+    brokerName: string | null;
+    /** Provider-reported account class, when reliably exposed. */
+    accountClass: "REAL" | "DEMO" | null;
+  } | null;
 }
 
 /** Normalized account snapshot (fetchSnapshot) — nullable = not available, never invented. */

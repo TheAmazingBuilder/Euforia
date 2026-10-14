@@ -46,6 +46,8 @@ export const queryKeys = {
   tradingAccounts: ["trading-accounts"] as const,
   tradingAccount: (accountId: string) => ["trading-accounts", "detail", accountId] as const,
   tradingAccountProviders: ["trading-accounts", "providers"] as const,
+  // Phase 07 — universal broker catalog (identity metadata, honest status).
+  tradingAccountBrokers: ["trading-accounts", "brokers"] as const,
   tradingAccountPositions: (accountId: string) =>
     ["trading-accounts", accountId, "positions"] as const,
   tradingAccountOrders: (accountId: string) =>

@@ -25,6 +25,8 @@ export interface TradingAccountRow {
   propConfig: unknown;
   externalAccountId: string;
   providerId: string;
+  /** Phase 07 — connect-time broker identification snapshot (JSONB, schema-validated on read). */
+  brokerIdentity: unknown;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -232,6 +234,8 @@ export class AccountsRepository {
       isDefault: boolean;
       externalAccountId: string;
       providerId: string;
+      /** Phase 07 — connect-time broker identification snapshot (already schema-validated upstream). */
+      brokerIdentity?: unknown;
     };
     connection: {
       method: string;
@@ -252,6 +256,9 @@ export class AccountsRepository {
           startingBalance: new Prisma.Decimal(data.account.startingBalance),
           isDefault: data.account.isDefault,
           externalAccountId: data.account.externalAccountId,
+          ...(data.account.brokerIdentity !== undefined
+            ? { brokerIdentity: data.account.brokerIdentity as Prisma.InputJsonValue }
+            : {}),
           providerId: data.account.providerId,
         },
       });

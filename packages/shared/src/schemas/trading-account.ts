@@ -286,6 +286,104 @@ export const tradingReconnectInputSchema = z.object({
 });
 export type TradingReconnectInput = z.infer<typeof tradingReconnectInputSchema>;
 
+// ── Broker identification (Phase 07 — universal broker layer) ────────────────
+
+/**
+ * HOW a broker was identified — honest confidence ladder (strongest first):
+ *  PROVIDER_REPORTED: the provider's own response stated the broker identity
+ *    (e.g. Deriv `landing_company_name`). Strongest evidence.
+ *  PATTERN_MATCH: the external account id / endpoint matched a documented
+ *    catalog pattern (e.g. OANDA "101-004-…" id format).
+ *  PLATFORM_KNOWN: only the provider/platform is known (from the registry
+ *    descriptor); the broker entity behind it is NOT claimed.
+ *  UNKNOWN: nothing could be identified — never fabricated.
+ */
+export const brokerIdentificationConfidenceSchema = z.enum([
+  "PROVIDER_REPORTED",
+  "PATTERN_MATCH",
+  "PLATFORM_KNOWN",
+  "UNKNOWN",
+]);
+export type BrokerIdentificationConfidence = z.infer<typeof brokerIdentificationConfidenceSchema>;
+
+/** Whether (and how) this broker can be connected through Euforia today. */
+export const brokerConnectorStatusSchema = z.enum([
+  "CONNECTOR_AVAILABLE",
+  "CONNECTOR_NOT_IMPLEMENTED",
+  "MANUAL_ONLY",
+]);
+export type BrokerConnectorStatus = z.infer<typeof brokerConnectorStatusSchema>;
+
+/**
+ * Connect-time broker identification (Phase 07). Produced by the broker
+ * identification layer, persisted on the TradingAccount at connect time, and
+ * served read-only afterwards. `signals` carries the exact evidence strings;
+ * nothing here is ever inferred from the account NAME (user-editable label).
+ */
+export const brokerIdentificationSchema = z.object({
+  /** Catalog slug ("oanda", "deriv", …) — "unknown" when unmatched. */
+  brokerId: z.string().min(1).max(64),
+  displayName: z.string().min(1).max(128),
+  platform: brokerSchema,
+  confidence: brokerIdentificationConfidenceSchema,
+  connectorStatus: brokerConnectorStatusSchema,
+  /** Registry providerId when a connector exists, else null. */
+  providerId: z.string().max(64).nullable(),
+  /** Human-readable evidence strings (no secrets, no raw payloads). */
+  signals: z.array(z.string().min(1).max(256)).max(16),
+  identifiedAt: isoDateTimeSchema,
+});
+export type BrokerIdentification = z.infer<typeof brokerIdentificationSchema>;
+
+/** One catalog entry — identity metadata ONLY, no capability claims. */
+export const brokerCatalogEntrySchema = z.object({
+  brokerId: z.string().min(1).max(64),
+  displayName: z.string().min(1).max(128),
+  /** Platform families this broker operates on (Cosmoz broker vocabulary). */
+  platforms: z.array(brokerSchema).min(1),
+  connectorStatus: brokerConnectorStatusSchema,
+  providerId: z.string().max(64).nullable(),
+  /** Well-known aliases used by identification (display only). */
+  aliases: z.array(z.string().min(1).max(64)).max(8),
+  /** Honest one-line note (e.g. why no connector exists yet). */
+  notes: z.string().max(256),
+});
+export type BrokerCatalogEntry = z.infer<typeof brokerCatalogEntrySchema>;
+
+/**
+ * The broker catalog (Phase 07): the universal "any broker" registry.
+ * `catalogVersion` identifies the catalog snapshot that served the response —
+ * connect-time identifications reference the version that produced them.
+ */
+export const brokerCatalogResponseSchema = z.object({
+  catalogVersion: z.string().min(1).max(32),
+  brokers: z.array(brokerCatalogEntrySchema),
+});
+export type BrokerCatalogResponse = z.infer<typeof brokerCatalogResponseSchema>;
+
+/**
+ * Identification hints (POST /trading-accounts/brokers/identify). No secrets
+ * are accepted — identification is rule-based, makes NO outbound call, and
+ * never uses the values beyond catalog matching (SSRF-safe by construction).
+ */
+export const brokerIdentifyInputSchema = z
+  .object({
+    providerId: z.string().trim().min(1).max(64).optional(),
+    externalAccountId: z.string().trim().min(1).max(64).optional(),
+    /** Provider endpoint/server hint (host or server name) — matched, never dialed. */
+    endpoint: z.string().trim().min(1).max(253).optional(),
+    environment: accountTypeSchema.optional(),
+  })
+  .refine((value) => Object.values(value).some((v) => v !== undefined), {
+    message: "At least one identification hint is required",
+  });
+export type BrokerIdentifyInput = z.infer<typeof brokerIdentifyInputSchema>;
+
+export const brokerIdentifyResponseSchema = z.object({
+  identification: brokerIdentificationSchema,
+});
+export type BrokerIdentifyResponse = z.infer<typeof brokerIdentifyResponseSchema>;
+
 // ── Views ────────────────────────────────────────────────────────────────────
 
 /**
@@ -396,6 +494,8 @@ export const tradingAccountDetailsSchema = z.object({
   propConfig: propFirmConfigSchema.nullable(),
   externalAccountId: z.string().min(1),
   provider: tradingProviderDescriptorSchema,
+  /** Phase 07 — connect-time broker identification (absent for legacy rows). */
+  brokerIdentification: brokerIdentificationSchema.nullable().optional(),
   connection: tradingConnectionViewSchema.nullable(),
   synchronization: tradingSynchronizationViewSchema,
   snapshot: tradingAccountSnapshotViewSchema.nullable(),

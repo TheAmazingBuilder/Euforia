@@ -135,6 +135,34 @@ export const envSchema = z.object({
     .url("ACCOUNTS_OANDA_REST_URL must be a valid URL when provided")
     .optional()
     .or(z.literal("").transform(() => undefined)),
+  /**
+   * Deriv WebSocket API adapter gate (Phase 07 — second real provider). Same
+   * §57 policy as every real adapter: NEVER enabled by default — explicit
+   * opt-in per deployment. Enabled ⇒ the registry exposes deriv-ws and
+   * connect calls the official Deriv WS endpoint with the user's stored
+   * read-scope API token.
+   */
+  ACCOUNTS_DERIV_PROVIDER: z.enum(["enabled", "disabled"]).optional(),
+  /**
+   * Deriv WebSocket endpoint override (tests/fixture server). When unset the
+   * adapter uses the official documented endpoint (wss://ws.derivws.com/
+   * websockets/v3?app_id=…). Never committed with credentials; the token
+   * itself stays in the vault.
+   */
+  ACCOUNTS_DERIV_WS_URL: z
+    .string()
+    .trim()
+    .url("ACCOUNTS_DERIV_WS_URL must be a valid URL when provided")
+    .optional()
+    .or(z.literal("").transform(() => undefined)),
+  /**
+   * Deriv application id (developers.deriv.com dashboard registration —
+   * official docs require every API call to carry the registering app's id).
+   * Defaults to Deriv's public example app id 1089, which is suitable for
+   * development/verification only; production deployments MUST register
+   * their own application and set this variable (Phase 07 report §7).
+   */
+  ACCOUNTS_DERIV_APP_ID: z.string().trim().min(1).max(32).optional(),
 
   // ── Phase 05 — scheduled synchronization, freshness, recovery ─────────────
   /**
