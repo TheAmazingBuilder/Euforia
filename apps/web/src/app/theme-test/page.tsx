@@ -31,7 +31,7 @@ export default function ThemeTestPage() {
         {/* Header */}
         <header className="flex flex-wrap items-start justify-between gap-4">
           <div className="space-y-2">
-            <h1 className="font-heading text-3xl font-bold tracking-tight">
+            <h1 className="font-heading text-3xl font-extrabold tracking-tight">
               Theme test
             </h1>
             <p className="max-w-xl text-sm text-muted-foreground">

@@ -143,7 +143,7 @@ export function ResetPasswordForm() {
       ) : (
         <>
           <header className="flex flex-col gap-1.5">
-            <h1 className="font-heading text-xl font-semibold">
+            <h1 className="font-heading text-xl font-extrabold">
               {auth.reset.title}
             </h1>
             <p className="text-sm text-muted-foreground">{auth.reset.subtitle}</p>

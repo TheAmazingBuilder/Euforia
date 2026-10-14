@@ -259,7 +259,7 @@ export function SecurityCenterView() {
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
       <header className="space-y-2">
-        <h1 className="font-heading text-2xl font-bold tracking-tight sm:text-3xl">
+        <h1 className="font-heading text-2xl font-extrabold tracking-tight sm:text-3xl">
           Security
         </h1>
         <p className="max-w-2xl text-sm text-muted-foreground">

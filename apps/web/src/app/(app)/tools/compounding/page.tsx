@@ -22,7 +22,7 @@ export default function CompoundingPage() {
   return (
     <section aria-label={nav.label} className="flex flex-col">
       <header className="mb-4 sm:mb-5">
-        <h1 className="font-heading text-2xl font-bold tracking-tight sm:text-3xl">{nav.label}</h1>
+        <h1 className="font-heading text-2xl font-extrabold tracking-tight sm:text-3xl">{nav.label}</h1>
         <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{nav.description}</p>
       </header>
       <CompoundingCalculator />

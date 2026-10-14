@@ -184,7 +184,7 @@ export function LessonReader({
         </span>
         <div className="flex flex-wrap items-start justify-between gap-3 px-5 py-4">
           <div className="min-w-0">
-            <h1 className="font-heading text-xl font-bold tracking-tight sm:text-2xl">{lesson.title}</h1>
+            <h1 className="font-heading text-xl font-extrabold tracking-tight sm:text-2xl">{lesson.title}</h1>
             <p className="mt-1 max-w-3xl text-sm text-muted-foreground">{lesson.summary}</p>
             <p className="mt-2 flex flex-wrap items-center gap-3 font-mono text-[11px] tabular-nums text-muted-foreground">
               <span className="inline-flex items-center gap-1.5">

@@ -511,7 +511,7 @@ export function TradingCalendarView() {
       {/* Header + view switch */}
       <div className="flex flex-wrap items-center gap-2">
         <div>
-          <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground">Trading calendar</h1>
+          <h1 className="font-heading text-2xl font-extrabold tracking-tight text-foreground">Trading calendar</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             P&amp;L, discipline and blockers on every day — planned rest stays out of the stats.
           </p>

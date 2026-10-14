@@ -527,7 +527,7 @@ function TradesModule() {
       {/* Header — identity + capture / import / views actions */}
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div className="space-y-1">
-          <h1 className="font-heading text-2xl font-semibold tracking-tight text-foreground">
+          <h1 className="font-heading text-2xl font-extrabold tracking-tight text-foreground">
             {T.table.title}
           </h1>
           <p className="text-sm text-muted-foreground">

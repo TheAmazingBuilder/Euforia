@@ -350,7 +350,7 @@ export function ProfileView() {
   return (
     <div className="mx-auto w-full max-w-5xl space-y-5 sm:space-y-6" data-testid="profile-view">
       <header className="space-y-1">
-        <h1 className="font-heading text-2xl font-bold tracking-tight sm:text-3xl">Profile</h1>
+        <h1 className="font-heading text-2xl font-extrabold tracking-tight sm:text-3xl">Profile</h1>
         <p className="text-sm text-muted-foreground">
           Your identity, account, security and notification preferences — one place.
         </p>
@@ -386,7 +386,7 @@ export function ProfileView() {
 
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2.5">
-              <h2 className="truncate font-heading text-2xl font-bold tracking-tight" data-testid="profile-hero-name">
+              <h2 className="truncate font-heading text-2xl font-extrabold tracking-tight" data-testid="profile-hero-name">
                 {data.name}
               </h2>
               <span

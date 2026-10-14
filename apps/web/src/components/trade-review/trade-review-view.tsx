@@ -83,7 +83,7 @@ export function TradeReviewView() {
       <header className="relative overflow-hidden rounded-xl border bg-gradient-to-r from-violet-600/15 via-fuchsia-500/10 to-cyan-500/15 px-4 py-5 sm:px-6" data-testid="review-header">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h1 className="flex items-center gap-2 font-heading text-2xl font-bold tracking-tight sm:text-3xl">
+            <h1 className="flex items-center gap-2 font-heading text-2xl font-extrabold tracking-tight sm:text-3xl">
               <NotebookPen className="size-6 text-violet-400 sm:size-7" aria-hidden="true" />
               Trade Review
             </h1>

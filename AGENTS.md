@@ -9,7 +9,7 @@ packages/shared: Zod schemas, types, enums, pure calculation utils (no React)
 Data fetching: TanStack Query v5 + custom typed API client in src/lib/api
 Mocks: MSW v2 (enabled when NEXT_PUBLIC_API_MOCKED=true). The NestJS APIwill replace mocks later — component code must never know about MSW.
 Charts: ECharts (analytics) + TradingView Lightweight Charts free version (price charts)
-Fonts: next/font/google — Space Grotesk (headings), Inter (UI), JetBrainsMono (ALL numbers)
+Fonts: next/font/google — Schibsted Grotesk (headings; page titles render ExtraBold 800 per brand reference), Inter (UI), JetBrainsMono (ALL numbers)
 Golden Rules — violating any of these fails the task
 NO hardcoded colors anywhere. Only semantic tokens (bg-surface,text-muted, text-profit...). They map to CSS variables for the 3 themes.Profit green / loss red are for P&L semantics ONLY, never for UI accents.
 NO floating-point math on money or prices in components. Amounts travelas strings, parsing/formatting goes through packages/shared formatters(Intl.NumberFormat). Client-side math only for live form estimates,using shared decimal helpers.
@@ -125,7 +125,7 @@ globals.css — les 3 thèmes + mapping Tailwind v4 + shadcn :
   --color-primary: var(--accent);
   --color-destructive: var(--loss);
   --color-ring: var(--ring);
-  --font-heading: "Space Grotesk", sans-serif;
+  --font-heading: "Schibsted Grotesk", sans-serif;
   --font-sans: "Inter", sans-serif;
   --font-mono: "JetBrains Mono", monospace;
 }
@@ -135,7 +135,7 @@ globals.css — les 3 thèmes + mapping Tailwind v4 + shadcn :
 
 app/layout.tsx — Provider + fonts :
 
-import { Space_Grotesk, Inter, JetBrains_Mono } from "next/font/google";
+import { Schibsted_Grotesk, Inter, JetBrains_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/layout/theme-provider";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

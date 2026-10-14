@@ -234,7 +234,7 @@ export function NotePrintDialog({
               <p className="font-mono text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
                 {P.sheetLabel}
               </p>
-              <h1 className="mt-1 truncate font-heading text-2xl font-bold tracking-tight text-foreground">
+              <h1 className="mt-1 truncate font-heading text-2xl font-extrabold tracking-tight text-foreground">
                 {note.icon ? `${note.icon} ` : ""}
                 {note.title === "" ? N.shared.untitledNote : note.title}
               </h1>

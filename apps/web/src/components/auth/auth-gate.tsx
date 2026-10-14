@@ -73,7 +73,7 @@ function VerificationRequiredScreen() {
             <ShieldAlert className="size-5 text-accent" aria-hidden="true" />
           </span>
           <div className="flex flex-col gap-1.5">
-            <h1 className="font-heading text-lg font-semibold">
+            <h1 className="font-heading text-lg font-extrabold">
               {auth.gate.verificationTitle}
             </h1>
             <p className="text-sm text-muted-foreground">
@@ -139,7 +139,7 @@ function AccountStatusScreen({ status }: { status: "SUSPENDED" | "DEACTIVATED" }
             <ShieldOff className="size-5 text-destructive" aria-hidden="true" />
           </span>
           <div className="flex flex-col gap-1.5">
-            <h1 className="font-heading text-lg font-semibold">
+            <h1 className="font-heading text-lg font-extrabold">
               {auth.gate.blockedTitle}
             </h1>
             <p className="text-sm text-muted-foreground">{auth.gate.blockedBody}</p>

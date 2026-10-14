@@ -196,7 +196,7 @@ export function LoginForm() {
   return (
     <div className="flex flex-col gap-6" data-testid="login-form">
       <header className="flex flex-col gap-1.5">
-        <h1 className="font-heading text-xl font-semibold">
+        <h1 className="font-heading text-xl font-extrabold">
           {auth.login.title}
         </h1>
         <p className="text-sm text-muted-foreground">{auth.login.subtitle}</p>

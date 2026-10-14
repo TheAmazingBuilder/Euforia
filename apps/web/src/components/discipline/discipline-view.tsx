@@ -103,7 +103,7 @@ export function DisciplineView() {
     <div className="mx-auto w-full max-w-7xl space-y-4 sm:space-y-6">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-heading text-2xl font-bold tracking-tight sm:text-3xl">Discipline</h1>
+          <h1 className="font-heading text-2xl font-extrabold tracking-tight sm:text-3xl">Discipline</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             The engine that watches your process: rules, violations and the Euforia score.
           </p>

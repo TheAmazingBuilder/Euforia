@@ -114,7 +114,7 @@ export function RegisterForm() {
           <span className="grid size-11 place-items-center rounded-xl border border-border bg-surface">
             <MailCheck className="size-5 text-accent" aria-hidden="true" />
           </span>
-          <h1 className="font-heading text-xl font-semibold">
+          <h1 className="font-heading text-xl font-extrabold">
             {auth.register.pendingTitle}
           </h1>
           <p className="text-sm text-muted-foreground">
@@ -174,7 +174,7 @@ export function RegisterForm() {
   return (
     <div className="flex flex-col gap-6" data-testid="register-form">
       <header className="flex flex-col gap-1.5">
-        <h1 className="font-heading text-xl font-semibold">
+        <h1 className="font-heading text-xl font-extrabold">
           {auth.register.title}
         </h1>
         <p className="text-sm text-muted-foreground">{auth.register.subtitle}</p>

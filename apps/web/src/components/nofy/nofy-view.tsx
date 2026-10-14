@@ -176,7 +176,7 @@ export function NofyView() {
         <div className="px-4 py-5 sm:px-6">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
-              <h1 className="flex items-center gap-2 font-heading text-2xl font-bold tracking-tight sm:text-3xl">
+              <h1 className="flex items-center gap-2 font-heading text-2xl font-extrabold tracking-tight sm:text-3xl">
                 <NotebookText className="size-6 text-accent sm:size-7" aria-hidden="true" />
                 Nofy
               </h1>

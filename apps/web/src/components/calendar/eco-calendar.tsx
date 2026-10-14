@@ -234,7 +234,7 @@ export function EcoCalendarView() {
     <div className="space-y-5" data-testid="eco-calendar">
       {/* Header */}
       <div>
-        <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground">
+        <h1 className="font-heading text-2xl font-extrabold tracking-tight text-foreground">
           Economic calendar
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">

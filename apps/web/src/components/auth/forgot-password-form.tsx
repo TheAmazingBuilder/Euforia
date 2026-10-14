@@ -75,7 +75,7 @@ export function ForgotPasswordForm() {
           <span className="grid size-11 place-items-center rounded-xl border border-border bg-surface">
             <MailQuestion className="size-5 text-accent" aria-hidden="true" />
           </span>
-          <h1 className="font-heading text-xl font-semibold">
+          <h1 className="font-heading text-xl font-extrabold">
             {auth.forgot.sentTitle}
           </h1>
           <p className="text-sm text-muted-foreground">{auth.forgot.sentBody}</p>
@@ -119,7 +119,7 @@ export function ForgotPasswordForm() {
   return (
     <div className="flex flex-col gap-6" data-testid="forgot-form">
       <header className="flex flex-col gap-1.5">
-        <h1 className="font-heading text-xl font-semibold">
+        <h1 className="font-heading text-xl font-extrabold">
           {auth.forgot.title}
         </h1>
         <p className="text-sm text-muted-foreground">{auth.forgot.subtitle}</p>
