@@ -19,6 +19,7 @@ import {
   Settings,
   ShieldCheck,
   SquareKanban,
+  Target,
   TrendingUp,
   type LucideIcon,
 } from "lucide-react";
@@ -146,6 +147,13 @@ export const SIDEBAR_ITEMS: NavItem[] = [
       "Project account growth across compounding periods — period by period, with the full schedule and growth curve.",
   },
   {
+    href: "/tools/risk-reward",
+    label: "Risk Reward",
+    icon: Target,
+    description:
+      "The expectancy workspace: risk % or fixed risk, reward multiples and the color-coded win rate cheat sheet — every cell shows the exact theoretical outcome.",
+  },
+  {
     href: "/monitoring",
     label: "Monitoring",
     icon: HeartPulse,
@@ -214,7 +222,7 @@ export const NAV_SECTIONS: NavSection[] = [
   },
   {
     title: "Tools",
-    hrefs: ["/tools/lot-size", "/tools/compounding"],
+    hrefs: ["/tools/lot-size", "/tools/compounding", "/tools/risk-reward"],
   },
   {
     title: "System",

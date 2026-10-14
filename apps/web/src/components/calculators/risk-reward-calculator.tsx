@@ -97,6 +97,7 @@ function ModeToggle<T extends string>({
               key={option.value}
               type="button"
               aria-pressed={active}
+              data-testid={`${name}-mode-${option.value}`}
               onClick={() => onChange(option.value)}
               className={cn(
                 "flex-1 rounded-md border px-2.5 py-1.5 text-xs font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
@@ -131,6 +132,7 @@ function MatrixCell({
   labels: {
     outcomes: Record<RRExpectancyResult["outcome"], string>;
     detail: {
+      title: string;
       wins: string;
       losses: string;
       grossProfit: string;
@@ -280,7 +282,10 @@ export function RiskRewardCalculator() {
       prev.includes(ratio) ? prev.filter((r) => r !== ratio) : [...prev, ratio],
     );
 
-  const ratioLabel = (ratio: number) => formatNumber(ratio, ratio % 1 === 0 ? 0 : 2);
+  const ratioLabel = React.useCallback(
+    (ratio: number) => formatNumber(ratio, ratio % 1 === 0 ? 0 : 2),
+    [],
+  );
 
   const copyPayload = React.useMemo(() => {
     if (!model || !data) return "";
@@ -291,8 +296,7 @@ export function RiskRewardCalculator() {
       `Risk of balance: ${formatPercent(model.riskPercentOfBalance, 2)} · Reward of balance: ${formatPercent(model.rewardPercentOfBalance, 2)}`,
       T.matrix.assumption,
     ].join("\n");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [model, data, currency, T]);
+  }, [model, data, currency, T, ratioLabel]);
 
   return (
     <div className="flex flex-col gap-5">
@@ -355,6 +359,14 @@ export function RiskRewardCalculator() {
                 </Select>
               </div>
             </div>
+
+            <PresetChips
+              label={T.form.balance}
+              presets={BALANCE_PRESETS.map((value) => ({ label: formatNumber(Number(value), 0), value }))}
+              activeValue={values.balance}
+              onSelect={set("balance")}
+              ariaLabel={T.form.balance}
+            />
 
             <ModeToggle
               name="rr-risk"
