@@ -1534,3 +1534,25 @@ Stage Summary:
 - Env opérationnel: PG:5433 up-to-date ×2 DB; serveurs API/web volontairement NON démarrés (audit read-only ensuite)
 - Phases 06/07/08 Accounts: NON implémentées (vérifié via git log --grep) — l'audit final doit le documenter
 - Prochaine étape: AUDIT FINAL read-only (aucune modification repo à partir d'ici) — rapport → download/ACCOUNTS-MODULE-FINAL-AUDIT-2026-10-14.md
+
+---
+Task ID: accounts-phase07
+Agent: main (Super Z)
+Task: Phase 07 (master prompt re-fourni) — Multi-Provider Expansion: second real connector + EXIGENCE OWNER AJOUTÉE: accueillir n'importe quel broker + identification du broker lors de la connexion
+
+Work Log:
+- Step Zero: git clean HEAD 8f085c1; baseline API 1159/1159 (83 fichiers) enregistrée AVANT toute modification (scripts/baseline-api-test.log)
+- FEASIBILITY GATE documenté (docs officielles fetchées 2026-10-14, snapshots commités docs/providers/deriv-docs-2026-10-14/): Deriv WS v3 SÉLECTIONNÉ (endpoint wss://ws.derivws.com/websockets/v3?app_id=; authorize/balance/portfolio/profit_table; scope Read = "view market data and account information"; profit_table pagination default 50 MAX 500/call; erreurs InvalidToken/RateLimitExceeded/PermissionDenied/InvalidAppID); MT5 (terminal/gateway, U1), cTrader (OAuth+protobuf, approval), IC Markets (broker≠plateforme), TradingView (verdict doc D) rejetés avec raisons
+- ADAPTATEUR deriv-ws: session WS courte par appel (authorize→work→close, hard timer qui détruit le socket), whitelist READ REQUEST NAMES {authorize,balance,portfolio,profit_table,statement,ping,website_status,logout} (red-line testée + spy fixture: 0 violation), echo loginid + is_virtual↔environnement (mismatch→UNSUPPORTED_ACCOUNT), nulls honnêtes (equity/margin/leverage), mapping direction fail-loud (famille inconnue→INVALID_PROVIDER_RESPONSE, jamais inventée), profit_table 500/page ×10 pages max, checkpoint sell_time avec sémantique FLOOR (observedThrough avance au plus récent observé; cap→plus ancien observé+complete:false; ties>=cursor re-upsert idempotent)
+- COUCHE UNIVERSELLE (demande owner): broker-catalog.ts 17 brokers (méta-identité SEULEMENT, patterns documentés OANDA ids/CR-VRTC-MRT loginids/hosts, notes honnêtes ex TradingView "no account-data interface"), BrokerIdentificationService (échelle PROVIDER_REPORTED>PATTERN_MATCH>PLATFORM_KNOWN>UNKNOWN), NormalizedAccountInfo.brokerIdentity? (optionnel additif), endpoints GET /trading-accounts/brokers + POST /brokers/identify (aucun secret, aucun appel sortant, rate-limit identify 30/15min), identification persistée à la connexion (TradingAccount.brokerIdentity JSONB — migration additive 20261014014149 déployée ×2 DB, re-validation zod à la lecture)
+- FRONTEND: PLANNED_PROVIDERS supprimé → catalogue-driven picker (tous les brokers visibles, "Recognized — connector not yet available" compact scrollable — 17 entrées), détection live debouncée 600ms pendant la saisie du numéro de compte (résultats staleness filtrés par clé dérivée — react-compiler clean), badge broker détecté card+drawer, miroir MSW complet (descripteur deriv-ws V2, orders skippé comme capability fact, handlers catalog/identify, identification PROVIDER_REPORTED sur connect deriv)
+- ENV: ACCOUNTS_DERIV_PROVIDER/_WS_URL/_APP_ID (défaut 1089 = app exemple publique Deriv, dev-only documenté; prod enregistre sa propre app); deps: ws@8.21.3 (première dépendance WS documentée, anticipée par le roadmap)
+- BUGS CORRIGÉS EN COURS: sémantique checkpoint inversée (observedThrough avançait pas — test e2e l'a attrapé), payload fixture wire format Deriv (params FRÈRES de la clé d'appel), codedByCode perdu par édition, inversion !isCapabilitiesV2 dans le miroir MSW (sonde 82 l'a attrapée), dialogue trop long avec 17 catalog entries (liste scrollable)
+- VERIFIÉ (commandes réelles): suite API 1212/1212 (86 fichiers, +53 nouveaux: 25 unit adapter vs fixture ws RÉELLE + 14 unit identification + 14 e2e lifecycle complet), tsc ×3 (shared/api/web) 0, eslint 0 erreur (90 warnings préexistants web), builds api+web OK, sonde moteur 82/82, sonde navigateur MSW 25/25 (serveur prod reconstruit après kill PID exact 1432/23109 — piège next-server zombie honoré)
+- Rapport: docs/backend/PHASE-07-MULTI-PROVIDER-REPORT.md (29 sections) + copie download/PHASE-07-MULTI-PROVIDER-REPORT-2026-10-14.md
+
+Stage Summary:
+- Phase 07 COMPLETE (scope): 2 connecteurs réels (OANDA v20 + deriv-ws) sur UNE seule pipeline, architecture zéro changement orchestrateur, red-line lecture-seule intacte
+- EXIGENCE OWNER LIVRÉE: Euforia identifie le broker à la connexion (preuve provider > pattern > plateforme > inconnu, persisté avec signaux) et affiche N'IMPORTE QUEL broker connu avec statut honnête — l'ajout du broker N+1 = entrée catalogue + adaptateur 6-méthodes + 1 ligne registre
+- U4 (nouveau): validation live Deriv = runbook §22 du rapport (compte virtuel gratuit, app PAT, token Read) — AUCUNE prétention de connectivité live, comme U2 pour OANDA
+- U2/U3/U1/cTrader inchangés; Phase 08 NON commencée (hard stop honoré); commits 6570a4e (code) + e74ab5a (rapport); artefacts de recherche hors git (.gitignore), snapshots doc officiels dans docs/providers/
