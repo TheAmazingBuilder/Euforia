@@ -18,6 +18,7 @@ import { formatMoney, formatNumber } from "@cosmoz/shared";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAuth } from "@/components/auth/auth-provider";
 import { AlertsFeed } from "@/components/dashboard/alerts-feed";
 import { BestWorstCard } from "@/components/dashboard/best-worst-card";
 import { CalendarHeatmap } from "@/components/dashboard/calendar-heatmap";
@@ -234,6 +235,24 @@ function WidgetTools({
   );
 }
 
+/** Fresh-account window: an account created less than 48 hours ago is
+ * greeted as a first arrival ("Welcome") instead of a returning trader
+ * ("Welcome back"). Derived from the REAL signup timestamp — no fake
+ * persistence, self-expires. */
+const FRESH_ACCOUNT_WINDOW_MS = 48 * 60 * 60 * 1000;
+
+function useDashboardGreeting(): string {
+  const { user } = useAuth();
+  const name = user?.name?.trim() || "trader";
+  // Captured once (lazy-init pattern shared with notification-center) — a 48 h
+  // window makes per-render clock drift irrelevant, no ticker needed.
+  const [nowMs] = React.useState(() => Date.now());
+  const createdAt = user?.createdAt ? new Date(user.createdAt).getTime() : Number.NaN;
+  const isFreshAccount =
+    Number.isFinite(createdAt) && nowMs - createdAt < FRESH_ACCOUNT_WINDOW_MS;
+  return `${isFreshAccount ? "Welcome" : "Welcome back"}, ${name}`;
+}
+
 interface DashboardViewProps {
   title: string;
   description: string;
@@ -246,7 +265,8 @@ interface DashboardViewProps {
  * the move buttons. Density COMFORTABLE keeps the designed rhythm;
  * COMPACT tightens it per the stored appearance preference.
  */
-export function DashboardView({ title, description }: DashboardViewProps) {
+export function DashboardView({ description }: DashboardViewProps) {
+  const greeting = useDashboardGreeting();
   const overview = useStatsOverview();
   const rules = useRulesStatus();
   const alerts = useAlerts();
@@ -342,7 +362,12 @@ export function DashboardView({ title, description }: DashboardViewProps) {
     >
       <header className="flex flex-wrap items-end justify-between gap-x-4 gap-y-3">
         <div className="space-y-1">
-          <h1 className="font-heading text-2xl font-extrabold tracking-tight sm:text-3xl">{title}</h1>
+          <h1
+            data-testid="dashboard-welcome"
+            className="font-heading text-2xl font-extrabold tracking-tight sm:text-3xl"
+          >
+            {greeting}
+          </h1>
           <p className="text-sm text-muted-foreground">{description}</p>
         </div>
         <div className="flex items-center gap-2">

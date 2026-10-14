@@ -149,6 +149,60 @@ function jarWrite(value: string | null): void {
 
 export const REFRESH_COOKIE_NAME = "cosmoz_rt";
 
+/**
+ * Registered-account persistence (mock seam — same family as the refresh jar
+ * above).
+ *
+ * Observed platform behavior: the post-login redirect to " /" crosses layout
+ * groups and Next.js performs a FULL document navigation; the whole mock
+ * engine (handlers run per document) is rebuilt from scratch. The demo
+ * account is re-seeded by the constructor, but an account created through
+ * the REAL sign-up journey would vanish mid-flow: register → verify →
+ * sign-in could never survive the reload. Registered records therefore ride
+ * sessionStorage (per-tab — no cross-user leakage, gone when the tab closes)
+ * and are rehydrated on every engine boot.
+ */
+const MOCK_USERS_KEY = "cosmoz.mock.registered-users";
+
+type PersistedAuthUser = Pick<
+  AuthUserRecord,
+  "id" | "email" | "name" | "password" | "status" | "emailVerifiedAt" | "createdAt"
+> & { demo: false };
+
+const PERSISTED_USER_LIMIT = 5;
+
+function persistRegisteredUser(record: AuthUserRecord): void {
+  try {
+    const raw = sessionStorage.getItem(MOCK_USERS_KEY);
+    const list: PersistedAuthUser[] = raw ? (JSON.parse(raw) as PersistedAuthUser[]) : [];
+    const next = [
+      ...list.filter((user) => user.id !== record.id),
+      {
+        id: record.id,
+        email: record.email,
+        name: record.name,
+        password: record.password,
+        status: record.status,
+        emailVerifiedAt: record.emailVerifiedAt,
+        createdAt: record.createdAt,
+        demo: false as const,
+      },
+    ].slice(-PERSISTED_USER_LIMIT);
+    sessionStorage.setItem(MOCK_USERS_KEY, JSON.stringify(next));
+  } catch {
+    // Storage unavailable — the journey still works within a single document.
+  }
+}
+
+function rehydrateRegisteredUsers(): PersistedAuthUser[] {
+  try {
+    const raw = sessionStorage.getItem(MOCK_USERS_KEY);
+    return raw ? (JSON.parse(raw) as PersistedAuthUser[]) : [];
+  } catch {
+    return [];
+  }
+}
+
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 const nowMs = (): number => Date.now();
@@ -273,6 +327,13 @@ class AuthEngine {
     };
     this.users.set(demoUser.id, demoUser);
     this.userIdByEmail.set("trader@cosmoz.app", demoUser.id);
+
+    // Registered-account rehydration — see MOCK_USERS_KEY above.
+    for (const user of rehydrateRegisteredUsers()) {
+      if (this.userIdByEmail.has(user.email)) continue;
+      this.users.set(user.id, { ...user, demo: false });
+      this.userIdByEmail.set(user.email, user.id);
+    }
   }
 
   // ── Lookups ────────────────────────────────────────────────────────────────
@@ -476,6 +537,9 @@ class AuthEngine {
       demo: false,
     });
     this.userIdByEmail.set(email, id);
+    // The record must survive the post-login full-document navigation —
+    // see MOCK_USERS_KEY above.
+    persistRegisteredUser(this.users.get(id)!);
 
     const verificationToken = `vrf_${randomId(24)}`;
     this.verificationTokens.set(verificationToken, {
@@ -924,6 +988,7 @@ class AuthEngine {
     record.used = true;
     user.emailVerifiedAt = nowIso();
     user.status = "ACTIVE";
+    persistRegisteredUser(user);
     securityEngine.recordAuthEvent(
       "EMAIL_VERIFIED",
       user.email,
