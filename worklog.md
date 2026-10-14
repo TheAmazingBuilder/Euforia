@@ -1556,3 +1556,43 @@ Stage Summary:
 - EXIGENCE OWNER LIVRÉE: Euforia identifie le broker à la connexion (preuve provider > pattern > plateforme > inconnu, persisté avec signaux) et affiche N'IMPORTE QUEL broker connu avec statut honnête — l'ajout du broker N+1 = entrée catalogue + adaptateur 6-méthodes + 1 ligne registre
 - U4 (nouveau): validation live Deriv = runbook §22 du rapport (compte virtuel gratuit, app PAT, token Read) — AUCUNE prétention de connectivité live, comme U2 pour OANDA
 - U2/U3/U1/cTrader inchangés; Phase 08 NON commencée (hard stop honoré); commits 6570a4e (code) + e74ab5a (rapport); artefacts de recherche hors git (.gitignore), snapshots doc officiels dans docs/providers/
+
+---
+Task ID: 2-font-titles
+Agent: Super Z (main)
+Date: 2026-10-14 (session 06:00-07:30 UTC)
+
+Task: Identifier la police de la capture "The platform for Francophone Talent" et l'appliquer aux titres de l'app
+
+Work Log:
+- Crop/zoom 3x-4x de la capture + planche comparative de 13 candidates (Google Fonts, scripts/font_compare*.py)
+- Verdict letterforms (a à queue courbe, t à coupe oblique, apertures fermées, r retombant, x-height haute) = Schibsted Grotesk ExtraBold ~800 — déjà la famille font-heading de l'app, mais rendue 600/700
+- Application: h1 font-bold/font-semibold → font-extrabold sur 30 fichiers tsx + hero name profil; AGENTS.md corrigé (Space Grotesk → Schibsted Grotesk)
+- Lint web: 0 erreur; commit e3ee1d4
+
+Stage Summary:
+- Les titres rendent maintenant comme la capture (poids 800 + tracking-tight existant); famille inchangée (déjà correcte)
+- Artefacts d'analyse hors git (scripts/font-*.py/png, font-cache/)
+
+---
+Task ID: 3-risk-reward-module
+Agent: Super Z (main)
+Date: 2026-10-14 (session 06:00-07:30 UTC)
+
+Task: Créer le module Risk Reward dans la section TOOLS (spec client 18 sections, 885 lignes)
+
+Work Log:
+- Moteur pur packages/shared/src/utils/risk-reward.ts: computeRiskPerTrade (renommé, collision avec utils/risk.ts computeRiskAmount), computeRewardAmount, computeRewardMultiple, computeBreakEvenWinRate (1/(1+R)), computeExpectancy (P = N×L×[pR−(1−p)], W non arrondi), buildRiskRewardMatrix; caps documentés, tolérance breakeven 1e-9
+- 28 tests unitaires (spec A–L + edges) — Test E de la spec incohérent (R=2 annoncé, montants R=3): moteur gardé correct (−$800 pour R=2), Test E' reproduit le vecteur littéral −$400 (R=3), documenté
+- Modèle Zod risk-reward-model.ts (9 codes d'erreur stables) + UI risk-reward-calculator.tsx: calculateur réactif sans bouton Calculate, modes %/fixe et multiple/montants SL-TP, résumé live 6 métriques, matrice 5R×10WR cellules indépendantes + tooltips Radix (wins/losses/gross/net/marge vs seuil), rangées extra 1:6/8/10, Reset, Copy
+- Primitives CSS .rr-* dans globals.css (color-mix sur tokens loss/profit/warning — zéro hex en tsx, 3 thèmes)
+- Nav: Target icon + /tools/risk-reward dans Tools; dictionnaire tools.riskReward; page (app)/tools/risk-reward; AuthGate héritée
+- RÉPARATION INFRA TESTS: cosmoz_test en état P3018 + ordre de migrations inversé (trade_review 3 oct référence Trade créée par trade_journal_core 4 oct — artefact recovery). scripts/baseline-test-db.js: drop/recreate + prisma db push + 39 migrations marquées appliquées (baselining Prisma standard, aucun fichier migration touché)
+- Vérifs: 28/28 nouveaux tests, 765/765 suite API, tsc shared+web, build prod OK (/tools/risk-reward prérendu), lint 0 erreur, sonde Playwright scripts/verify-risk-reward.js ALL PASS 23/23 (vecteurs E'/F/G, tooltip, live recompute, modes, reset, validation)
+-NOTE: serveur web :3000 = next start; les processus bash meurent entre commandes (sandbox) → redémarrer via (next start &) dans la même commande que le probe; ChunkLoadError si plusieurs instances
+- Rapport final §18: docs/TOOLS-RISK-REWARD-REPORT.md; commits e50d429 (module) + 80220d5 (rapport)
+
+Stage Summary:
+- Module Risk Reward COMPLET (DoD §17: 17/17) — planification, jamais une promesse de performance
+- Le baseline-test-db débloque TOUTE la suite API (765 tests) pour les sessions futures
+- U2 (OANDA practice token) et U4 (validation Deriv live) toujours en attente côté owner
