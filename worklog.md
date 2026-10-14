@@ -1596,3 +1596,25 @@ Stage Summary:
 - Module Risk Reward COMPLET (DoD §17: 17/17) — planification, jamais une promesse de performance
 - Le baseline-test-db débloque TOUTE la suite API (765 tests) pour les sessions futures
 - U2 (OANDA practice token) et U4 (validation Deriv live) toujours en attente côté owner
+
+---
+Task ID: 4-connect-modal-welcome
+Agent: Super Z (main)
+Date: 2026-10-15
+
+Task: (1) Redesign du modal Connect Accounts (trop long, débordait, "on ne voit presque rien") ; (2) message de bienvenue sur le dashboard après création de compte/login ("Welcome Dev Trader")
+
+Work Log:
+- Reprise d'un WIP de session précédente sur connect-account-dialog.tsx (shell grid-rows-[auto_minmax(0,1fr)_auto] max-h-[92dvh]) : complété + polish — cartes provider/environnement avec tuiles icônes (Landmark/FlaskConical/Briefcase/Trophy), ring accent sur sélection, descriptions honnêtes par environnement (dict: environmentDemo/Live/PropFirm), step rail épinglé, brokers reconnus en liste interne compacte scrollable (max-h-52)
+- Dashboard: h1 remplacé par useDashboardGreeting() — "Welcome, {user.name}" si compte < 48h (createdAt réel, aucun flag persisté) sinon "Welcome back, {name}"; testid dashboard-welcome; pattern useState(()=>Date.now()) pour la règle react-hooks/purity (React Compiler)
+- BUG PRÉ-EXISTANT TROUVÉ + CORRIGÉ (mocks/auth-engine.ts): le redirect post-login traverse les layout groups → Next.js fait une FULL document navigation → l'engine MSW (in-memory par document) est reconstruit → le compte fraîchement enregistré disparaissait (/auth/refresh 401 "no longer valid", reboucle sur /login). La démo survit car re-seedée au constructeur. Fix: persistance sessionStorage (clé cosmoz.mock.registered-users, cap 5, per-tab) des comptes enregistrés (register + verifyEmail) + réhydratation au boot engine
+- Sonde apps/web/scripts/verify-connect-redesign.js (+ scripts/verify-connect-redesign-run.sh: build prod + next start + probe dans la même commande): 32 checks — [A] greeting démo, [C] dialog desktop 3 étapes (containment viewport, footer épinglé, rail, descriptions), [B] scénario propriétaire verbatim register "Dev Trader" → verify mock → login → "Welcome, Dev Trader", [D] Sheet mobile 390×844 containment. 32/32 PASS
+- Régression: verify-accounts.js 25/25 PASS après redesign (connect→detail→rename→disconnect→reconnect)
+- Pièges rencontrés: ancien next-server zombie servait le vieux build (ChunkLoadError 500 sur chunks — kill -9 next-server avant tout run); mobile = drawer sidebar caché (ensureLogin incompatible → login direct + goto /accounts)
+- Screenshots: download/connect-modal-redesign/ (8 PNG: dialog 3 étapes desktop, sheet mobile ×2, dashboard welcome-back + fresh-account)
+- Vérifs: tsc web 0, eslint 0 erreur (4 warnings préexistants), build prod OK, commit unique
+
+Stage Summary:
+- Les 2 demandes owner livrées et vérifiées e2e (32/32 + régression 25/25)
+- BONUS: le parcours création de compte (register→verify→login) fonctionne désormais en mode mocké — il était silencieusement cassé avant (aucune sonde ne le couvrait)
+- Le greeting utilise le NOM RÉEL du compte: un compte "Dev Trader" affiche "Welcome, Dev Trader"
