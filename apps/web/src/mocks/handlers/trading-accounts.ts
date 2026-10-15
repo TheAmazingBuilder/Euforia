@@ -211,4 +211,30 @@ export const tradingAccountsHandlers = [
       return toErrorResponse(error);
     }
   }),
+
+  // Phase 08 — the owner-only MT5 bridge pairing sheet. Non-bridge accounts
+  // answer 422 (UNSUPPORTED_CAPABILITY), mirroring the backend exactly.
+  http.get(endpoint(apiPaths.tradingAccountBridgePairing(":accountId")), async ({ request, params }) => {
+    await latency();
+    try {
+      const userId = requireUserId(request);
+      const accountId = uuidSchema.parse(pathParam(params, "accountId"));
+      return HttpResponse.json(tradingAccountsEngine.bridgePairing(userId, accountId));
+    } catch (error) {
+      return toErrorResponse(error);
+    }
+  }),
+
+  // Phase 08 — rotate the bridge secret: invalidates the previous terminal
+  // configuration, mints a fresh sheet delivered in the response only.
+  http.post(endpoint(apiPaths.tradingAccountBridgeRotate(":accountId")), async ({ request, params }) => {
+    await latency();
+    try {
+      const userId = requireUserId(request);
+      const accountId = uuidSchema.parse(pathParam(params, "accountId"));
+      return HttpResponse.json(tradingAccountsEngine.rotateBridgeSecret(userId, accountId));
+    } catch (error) {
+      return toErrorResponse(error);
+    }
+  }),
 ];

@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
+  BridgePairing,
   BrokerCatalogResponse,
   BrokerIdentification,
   TradingAccountConnectInput,
@@ -239,6 +240,44 @@ export function useSyncTradingAccount() {
       apiRequest<TradingAccountSyncResponse>(apiPaths.tradingAccountSync(accountId), {
         method: "POST",
       }),
+    onSettled: async () => {
+      await Promise.all(invalidateTradingAccounts(queryClient));
+    },
+  });
+}
+
+/**
+ * GET /trading-accounts/:id/bridge/pairing — the MT5 terminal pairing sheet
+ * (Phase 08, owner-only). The ONLY surface where the bridge secret is
+ * re-readable: details views never carry it (leak-checked server-side).
+ * Non-bridge accounts answer 422 — the caller must gate on
+ * connection.method === "PLATFORM_BRIDGE".
+ */
+export function useBridgePairing(accountId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.tradingAccountBridgePairing(accountId ?? "none"),
+    queryFn: () =>
+      apiRequest<{ pairing: BridgePairing }>(
+        apiPaths.tradingAccountBridgePairing(accountId ?? ""),
+      ),
+    enabled: accountId !== null,
+  });
+}
+
+/**
+ * POST /trading-accounts/:id/bridge/rotate — mint a fresh bridge secret and
+ * invalidate the previous terminal configuration (Phase 08). The response is
+ * the full details view PLUS the new pairing sheet (the one-shot delivery of
+ * the new secret, same contract as connect).
+ */
+export function useRotateBridgeSecret() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (accountId: string) =>
+      apiRequest<TradingAccountDetailsResponse>(
+        apiPaths.tradingAccountBridgeRotate(accountId),
+        { method: "POST" },
+      ),
     onSettled: async () => {
       await Promise.all(invalidateTradingAccounts(queryClient));
     },

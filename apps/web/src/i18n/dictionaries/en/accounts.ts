@@ -168,6 +168,19 @@ export const accountsDict = {
     secretLabel: "Read-only credential",
     secretHint:
       "Sent once over an encrypted channel, stored server-side with AES-256-GCM, and never displayed or returned again — only a masked hint stays visible.",
+    // Phase 08 — PLATFORM_BRIDGE providers (MT5 terminal bridge): no client
+    // secret exists. Euforia generates the bridge secret server-side; the
+    // broker password never leaves the user's terminal.
+    bridge: {
+      explainer:
+        "Euforia generates the bridge secret — your broker password never leaves your terminal.",
+      identityNote:
+        "No API key or password to type here. After connecting, a pairing sheet shows how to attach the MT5 Expert Advisor.",
+      successTitle: "Terminal pairing",
+      successBody:
+        "Keep this sheet open, attach the Expert Advisor in your MT5 terminal — data starts flowing with the first push.",
+      done: "Done",
+    },
     successTitle: "Account connected",
     successBody:
       "The initial synchronization ran — balances and history are readable in the account details. Data refreshes when you sync; nothing is live-streamed.",
@@ -178,6 +191,47 @@ export const accountsDict = {
       invalidCredentials: "The provider rejected these credentials.",
       rateLimited: "Too many attempts — wait a moment and retry.",
       generic: "The connection could not be established.",
+    },
+  },
+
+  /**
+   * Phase 08 — MT5 terminal bridge. One namespace serves BOTH pairing
+   * surfaces: the connect-time sheet (connect-account-dialog) and the
+   * account-detail pairing dialog. The secret is re-readable here BY
+   * DESIGN (unlike API-key credentials) — rotating it invalidates the
+   * previous terminal configuration.
+   */
+  bridge: {
+    sectionTitle: "MT5 bridge",
+    statusConnecting: "Waiting for the first push — attach the EA in your MT5 terminal.",
+    statusConnected: "Terminal connected — data is current as of the last push.",
+    pairingButton: "Pairing sheet",
+    rotateButton: "Rotate secret",
+    rotatePending: "Rotating…",
+    rotateWarning:
+      "The previous terminal configuration was invalidated — re-enter the new key and secret in the EA.",
+    rotateToast: "Secret rotated — the old terminal configuration no longer works.",
+    downloadButton: "Download EA",
+    panelTitle: "MT5 terminal pairing",
+    panelIntro:
+      "One-time configuration for the EuforiaBridge Expert Advisor. Keep this sheet until the terminal is attached.",
+    ingestUrlLabel: "Ingest URL",
+    bridgeKeyLabel: "Bridge key",
+    secretLabel: "Bridge secret",
+    secretReveal: "Reveal",
+    secretHide: "Hide",
+    secretOnceWarning:
+      "Shown only here — you can view it again from this account's MT5 bridge card.",
+    copy: "Copy",
+    copied: "Copied",
+    eaLabel: "Expert Advisor",
+    eaVersion: "version",
+    stepsTitle: "Setup — 4 steps",
+    steps: {
+      one: "Download the EA and drop it into your terminal's MQL5/Experts folder (File → Open Data Folder).",
+      two: "In MT5, allow WebRequest for the ingest URL above (Tools → Options → Expert Advisors).",
+      three: "Attach EuforiaBridge to any chart of this account and paste the bridge key and secret into the EA inputs.",
+      four: "Keep the terminal running — the EA pushes a signed snapshot every 30 seconds.",
     },
   },
 
@@ -221,5 +275,7 @@ export const accountsDict = {
     reconnect: "The reconnection failed.",
     sync: "The synchronization failed.",
     test: "The connection test failed.",
+    pairing: "The pairing sheet could not be loaded.",
+    rotate: "The secret could not be rotated.",
   },
 } as const;

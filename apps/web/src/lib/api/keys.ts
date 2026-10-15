@@ -55,6 +55,9 @@ export const queryKeys = {
   tradingAccountDeals: (accountId: string) => ["trading-accounts", accountId, "deals"] as const,
   tradingAccountSyncRuns: (accountId: string) =>
     ["trading-accounts", accountId, "sync-runs"] as const,
+  // Phase 08 — MT5 terminal bridge pairing sheet (owner-only view).
+  tradingAccountBridgePairing: (accountId: string) =>
+    ["trading-accounts", accountId, "bridge-pairing"] as const,
   integrations: ["integrations"] as const,
   security: ["security"] as const,
   monitoring: ["monitoring"] as const,

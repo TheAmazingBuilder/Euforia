@@ -2,11 +2,12 @@
  * Trading-accounts mock engine (Phase 02) — MSW parity with the Nest
  * trading-accounts surface (apps/api/src/modules/accounts).
  *
- * This is a MOCK, visibly and honestly: the only provider it serves is the
- * "MOCK" descriptor (isMock: true) and every account it creates carries that
- * provider stamp, so the UI can never present simulated data as a real
- * broker connection (Phase 02 spec §4.2/§15.3 — no fake connectivity, no
- * fake success).
+ * This is a MOCK, visibly and honestly: every account it creates carries its
+ * registry provider stamp, so the UI can never present simulated data as a
+ * real broker connection (Phase 02 spec §4.2/§15.3 — no fake connectivity, no
+ * fake success). Registry mirrors: MOCK (isMock), deriv-ws, and the Phase 08
+ * MT5 terminal bridge (mt5-bridge) — bridge connections start CONNECTING and
+ * no handler ever fakes the first terminal push that would flip CONNECTED.
  *
  * Semantics mirrored from the backend, deliberately:
  *  - connect is atomic (test → metadata → persist → initial sync); failed
@@ -32,18 +33,21 @@
  * branches on `apiErrorCode()` identically over MSW and the live bridge.
  */
 import type {
+  BridgePairing,
   BrokerCatalogEntry,
   BrokerCatalogResponse,
   BrokerIdentification,
   BrokerIdentifyInput,
   BrokerOrder,
   BrokerPosition,
+  TradingAccountConnectInput,
   TradingAccountDetails,
   TradingAccountSnapshotView,
   TradingConnectionTestResponse,
   TradingConnectionView,
   TradingDeal,
   TradingProviderDescriptor,
+  TradingReconnectInput,
   TradingSyncRunView,
 } from "@cosmoz/shared";
 
@@ -105,9 +109,43 @@ const DERIV_DESCRIPTOR: TradingProviderDescriptor = {
   isMock: false,
 };
 
+/**
+ * Phase 08 mirror — the MT5 terminal bridge descriptor (verbatim from the
+ * backend adapter). PLATFORM_BRIDGE = an Expert Advisor inside the user's
+ * MT5 terminal pushes signed events to the ingest endpoint; the connection
+ * starts CONNECTING and flips CONNECTED only with the first terminal push
+ * (never simulated here — a browser mock cannot host an MT5 terminal, so
+ * bridge accounts honestly stay CONNECTING with no data).
+ */
+const MT5_BRIDGE_DESCRIPTOR: TradingProviderDescriptor = {
+  providerId: "mt5-bridge",
+  providerName: "MT5 Terminal Bridge",
+  platform: "MT5",
+  supportedEnvironments: ["DEMO", "LIVE", "PROP_FIRM"],
+  supportedConnectionMethods: ["PLATFORM_BRIDGE"],
+  supportedPermissions: [...ALL_READ_PERMISSIONS],
+  capabilities: {
+    accountDiscovery: { support: "UNSUPPORTED" },
+    accountMetadata: { support: "SUPPORTED", retrieval: "POLL" },
+    balanceEquity: { support: "SUPPORTED", retrieval: "POLL" },
+    marginInfo: { support: "SUPPORTED", retrieval: "POLL" },
+    openPositions: { support: "SUPPORTED", retrieval: "POLL" },
+    orders: { support: "SUPPORTED", retrieval: "POLL" },
+    deals: { support: "SUPPORTED", retrieval: "POLL" },
+    historyDepth: { support: "SUPPORTED", retrieval: "POLL" },
+    streamingAccountUpdates: { support: "UNSUPPORTED" },
+    streamingPositions: { support: "UNSUPPORTED" },
+    streamingOrderDealUpdates: { support: "UNSUPPORTED" },
+    connectionValidation: { support: "SUPPORTED", retrieval: "ON_CONNECT" },
+    credentialRevocation: { support: "SUPPORTED", retrieval: "POLL" },
+  },
+  isMock: false,
+};
+
 const PROVIDER_DESCRIPTORS: Record<string, TradingProviderDescriptor> = {
   [MOCK_DESCRIPTOR.providerId]: MOCK_DESCRIPTOR,
   [DERIV_DESCRIPTOR.providerId]: DERIV_DESCRIPTOR,
+  [MT5_BRIDGE_DESCRIPTOR.providerId]: MT5_BRIDGE_DESCRIPTOR,
 };
 
 // ── Error helpers (live envelope shape) ─────────────────────────────────────
@@ -463,10 +501,14 @@ function providerData(externalAccountId: string): ProviderData {
 
 interface ConnectionRecord {
   status: "CONNECTED" | "CONNECTING" | "DISCONNECTED" | "ERROR";
-  method: "API_KEY";
-  /** The stored secret — mock-only simulation of the encrypted vault. */
+  method: "API_KEY" | "PLATFORM_BRIDGE";
+  /** The stored secret — mock-only simulation of the encrypted vault.
+   * PLATFORM_BRIDGE connections keep this null: the bridge secret lives in
+   * the pairing sheet below, generated server-side, never user-supplied. */
   secret: string | null;
   credentialsHint: string | null;
+  /** Phase 08 — the terminal pairing sheet (bridge connections only). */
+  pairing: BridgePairing | null;
   permissions: TradingConnectionView["permissions"];
   lastConnectedAt: string | null;
   lastSyncAt: string | null;
@@ -510,6 +552,39 @@ function isoNow(): string {
 
 /** Freshness TTL — the same 15-min derivation as the backend mapper. */
 const FRESHNESS_TTL_MS = 15 * 60 * 1000;
+
+/**
+ * Phase 08 — mint a bridge pairing sheet. The demo secret carries the
+ * "bks_demo_" prefix so it can never be mistaken for a production bridge
+ * secret; each call passes a nonce so rotations produce a DIFFERENT one.
+ * Shape mirrors the backend BridgePairing (ingestPath/headers/serialization
+ * are the live contract strings, not inventions).
+ */
+let bridgeKeyCounter = 0;
+function bridgePairingFor(externalAccountId: string, nonce: number = bridgeKeyCounter++): BridgePairing {
+  const seed = hashSeed(`${externalAccountId}:${nonce}:${Date.now()}`);
+  const hex = (value: number, length: number): string =>
+    value.toString(16).padStart(length, "0").slice(-length);
+  const secret = `bks_demo_${hex(seed, 8)}${hex(hashSeed(`s:${seed}:${nonce}`), 8)}${hex(hashSeed(`t:${seed}:${nonce}`), 8)}${hex(hashSeed(`u:${seed}:${nonce}`), 8)}`;
+  return {
+    bridgeKeyId: `bk_${hex(seed, 12)}`,
+    secret,
+    ingestPath: "/api/v1/trading-accounts/bridge/ingest",
+    headers: {
+      key: "X-Bridge-Key",
+      timestamp: "X-Bridge-Timestamp",
+      signature: "X-Bridge-Signature",
+      eventId: "X-Bridge-Event-Id",
+    },
+    serialization: "${timestamp}.${JSON.stringify({eventId,kind,payload})}",
+    pushIntervalSeconds: 30,
+    ea: {
+      fileName: "EuforiaBridge.mq5",
+      downloadPath: "/bridge/EuforiaBridge.mq5",
+      version: "1.0.0",
+    },
+  };
+}
 
 function deriveSynchronizationStatus(
   record: AccountRecord,
@@ -709,9 +784,10 @@ export const tradingAccountsEngine = {
   },
 
   listProviders(): { providers: TradingProviderDescriptor[] } {
-    // Phase 07 mirror: the engine simulates a deployment with mock + deriv-ws
-    // enabled (oanda stays env-gated OFF, exactly like the fixture e2e).
-    return { providers: [MOCK_DESCRIPTOR, DERIV_DESCRIPTOR] };
+    // Phase 07/08 mirror: the engine simulates a deployment with mock +
+    // deriv-ws + mt5-bridge enabled (oanda stays env-gated OFF, exactly
+    // like the fixture e2e).
+    return { providers: [MOCK_DESCRIPTOR, DERIV_DESCRIPTOR, MT5_BRIDGE_DESCRIPTOR] };
   },
 
   /** Phase 07 — universal broker catalog mirror (honest connector status). */
@@ -724,24 +800,31 @@ export const tradingAccountsEngine = {
     return { identification: identifyBrokerMirror(hints) };
   },
 
-  connect(
-    userId: string,
-    input: {
-      providerId: string;
-      environment: string;
-      externalAccountId: string;
-      displayName?: string;
-      credentials: { method: "API_KEY"; secret: string };
-    },
-  ): { account: TradingAccountDetails } {
+  connect(userId: string, input: TradingAccountConnectInput): { account: TradingAccountDetails } {
     // registry.require — unknown provider ids never connect.
     const descriptor = PROVIDER_DESCRIPTORS[input.providerId];
     if (!descriptor) {
       throw coded(422, "UNSUPPORTED_PROVIDER", "This trading provider is not supported.");
     }
+    // Phase 08 — connection-method shape check (mirrors the backend service
+    // layer): API_KEY providers REQUIRE credentials; bridge providers REFUSE
+    // them (the secret is generated server-side, never user-supplied).
+    const isBridge = descriptor.supportedConnectionMethods.includes("PLATFORM_BRIDGE");
+    if (isBridge && input.credentials !== undefined) {
+      throw coded(
+        422,
+        "INVALID_CREDENTIALS",
+        "Bridge connections take no client credentials — Euforia generates the secret.",
+      );
+    }
+    if (!isBridge && input.credentials === undefined) {
+      throw coded(422, "INVALID_CREDENTIALS", "This provider requires API-key credentials.");
+    }
     // Provider validation BEFORE persisting anything (§17 step order).
-    guardSecret(input.credentials.secret);
-    if (!descriptor.supportedEnvironments.includes(input.environment as "DEMO" | "LIVE")) {
+    if (input.credentials !== undefined) {
+      guardSecret(input.credentials.secret);
+    }
+    if (!descriptor.supportedEnvironments.includes(input.environment as "DEMO" | "LIVE" | "PROP_FIRM")) {
       throw coded(502, "UNSUPPORTED_ACCOUNT", "The provider does not support this account environment.");
     }
     const duplicate = [...accounts.values()].find(
@@ -758,7 +841,6 @@ export const tradingAccountsEngine = {
     // backend: provider-reported (Deriv landing company) > rules.
     const brokerIdentification = identifyAtConnectMirror(input.providerId, input.externalAccountId);
 
-    const data = providerData(input.externalAccountId);
     const now = isoNow();
     const count = [...accounts.values()].filter((record) => record.userId === userId).length;
     const record: AccountRecord = {
@@ -767,23 +849,41 @@ export const tradingAccountsEngine = {
       name: input.displayName ?? `${descriptor.providerName} ${input.environment}`,
       type: input.environment as AccountRecord["type"],
       broker: descriptor.platform,
-      currency: data.currency,
+      // Bridge accounts have NOTHING reported yet — the first push brings
+      // the real currency/balance. Values stay honest nulls/zeroes until then.
+      currency: isBridge ? "USD" : providerData(input.externalAccountId).currency,
       // Provider-reported balance at connect is the journal anchor (§25).
-      startingBalance: data.snapshot.balance,
+      startingBalance: isBridge ? "0.00" : providerData(input.externalAccountId).snapshot.balance,
       isDefault: count === 0,
       externalAccountId: input.externalAccountId,
       providerId: descriptor.providerId,
       brokerIdentification,
-      connection: {
-        status: "CONNECTED",
-        method: "API_KEY",
-        secret: input.credentials.secret,
-        credentialsHint: hintOf(input.credentials.secret),
-        permissions: [...descriptor.supportedPermissions],
-        lastConnectedAt: now,
-        lastSyncAt: null,
-        lastError: null,
-      },
+      connection: isBridge
+        ? {
+            // Phase 08 — a bridge connection starts CONNECTING: it flips
+            // CONNECTED only with the first signed terminal push. No initial
+            // sync runs (there is nothing to pull — the terminal pushes).
+            status: "CONNECTING",
+            method: "PLATFORM_BRIDGE",
+            secret: null,
+            credentialsHint: null,
+            pairing: bridgePairingFor(input.externalAccountId),
+            permissions: [...descriptor.supportedPermissions],
+            lastConnectedAt: null,
+            lastSyncAt: null,
+            lastError: null,
+          }
+        : {
+            status: "CONNECTED",
+            method: "API_KEY",
+            secret: input.credentials!.secret,
+            credentialsHint: hintOf(input.credentials!.secret),
+            pairing: null,
+            permissions: [...descriptor.supportedPermissions],
+            lastConnectedAt: now,
+            lastSyncAt: null,
+            lastError: null,
+          },
       snapshot: null,
       positions: [],
       orders: [],
@@ -795,9 +895,41 @@ export const tradingAccountsEngine = {
     accounts.set(record.id, record);
 
     // Initial synchronization — failures never invalidate the registration
-    // (best-effort, exactly like the backend connect use case).
-    runSynchronization(record, "INITIAL");
-    return { account: detailsOf(record) };
+    // (best-effort, exactly like the backend connect use case). Bridge
+    // connections skip it deliberately: data arrives with the first push.
+    if (!isBridge) {
+      runSynchronization(record, "INITIAL");
+    }
+    // Leak-check parity with the backend: the details view NEVER carries the
+    // pairing sheet — it is delivered ONLY on connect (right here) and via
+    // GET /bridge/pairing + /bridge/rotate.
+    const deliveredPairing = record.connection?.pairing ?? null;
+    return { account: { ...detailsOf(record), pairing: deliveredPairing } };
+  },
+
+  /** Phase 08 — the owner-only pairing sheet (422 for non-bridge accounts). */
+  bridgePairing(userId: string, accountId: string): { pairing: BridgePairing } {
+    const record = owned(userId, accountId);
+    const pairing = record.connection?.pairing ?? null;
+    if (pairing === null) {
+      throw coded(422, "UNSUPPORTED_CAPABILITY", "This account is not an MT5 bridge connection.");
+    }
+    return { pairing };
+  },
+
+  /**
+   * Phase 08 — rotate the bridge secret: the old terminal configuration is
+   * invalidated (the EA must be re-fed), the response carries the NEW sheet
+   * exactly like connect did.
+   */
+  rotateBridgeSecret(userId: string, accountId: string): { account: TradingAccountDetails } {
+    const record = owned(userId, accountId);
+    if (record.connection?.method !== "PLATFORM_BRIDGE" || record.connection.pairing === null) {
+      throw coded(422, "UNSUPPORTED_CAPABILITY", "This account is not an MT5 bridge connection.");
+    }
+    record.connection.pairing = bridgePairingFor(record.externalAccountId);
+    record.updatedAt = isoNow();
+    return { account: { ...detailsOf(record), pairing: record.connection.pairing } };
   },
 
   list(userId: string): { accounts: TradingAccountDetails[] } {
@@ -856,6 +988,37 @@ export const tradingAccountsEngine = {
     const record = owned(userId, accountId);
     const secret = record.connection?.secret ?? null;
     const authOk = secret !== null && scenarioOf(secret) === null;
+    // Phase 08 — bridge connections validate ON_CONNECT with the terminal,
+    // not by pulling the provider: authentication is the server-held bridge
+    // secret, and the "provider response" is the first terminal push.
+    if (record.connection?.method === "PLATFORM_BRIDGE") {
+      const pushing = record.connection.status === "CONNECTED";
+      const checks = [
+        {
+          name: "authentication" as const,
+          ok: true,
+          detail: "The bridge secret is held server-side — the terminal signs every push with it.",
+        },
+        {
+          name: "connectivity" as const,
+          ok: true,
+          detail: "The ingest endpoint answered within the timeout budget.",
+        },
+        {
+          name: "providerResponse" as const,
+          ok: pushing,
+          detail: pushing
+            ? "The terminal payload was readable."
+            : "No terminal payload received yet — attach the EA and wait for the first push.",
+        },
+        {
+          name: "permissions" as const,
+          ok: true,
+          detail: `Read scope granted: ${record.connection.permissions.length} READ permissions.`,
+        },
+      ];
+      return { ok: checks.every((check) => check.ok), checks };
+    }
     return {
       ok: authOk,
       checks: [
@@ -893,7 +1056,7 @@ export const tradingAccountsEngine = {
   reconnect(
     userId: string,
     accountId: string,
-    input: { credentials: { method: "API_KEY"; secret: string } },
+    input: TradingReconnectInput,
   ): { account: TradingAccountDetails } {
     const record = owned(userId, accountId);
     if (record.connection?.status === "CONNECTED") {
@@ -905,6 +1068,7 @@ export const tradingAccountsEngine = {
       method: "API_KEY",
       secret: input.credentials.secret,
       credentialsHint: hintOf(input.credentials.secret),
+      pairing: null,
       permissions: [...MOCK_DESCRIPTOR.supportedPermissions],
       lastConnectedAt: isoNow(),
       lastSyncAt: record.connection?.lastSyncAt ?? null,
@@ -920,11 +1084,13 @@ export const tradingAccountsEngine = {
     historyPreserved: true;
   } {
     const record = owned(userId, accountId);
-    // Disconnect wipes the credentials, keeps every historical row (§52).
+    // Disconnect wipes the credentials (and the bridge pairing sheet), keeps
+    // every historical row (§52).
     if (record.connection) {
       record.connection.status = "DISCONNECTED";
       record.connection.secret = null;
       record.connection.credentialsHint = null;
+      record.connection.pairing = null;
       record.connection.lastError = null;
     }
     record.updatedAt = isoNow();

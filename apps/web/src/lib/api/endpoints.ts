@@ -122,6 +122,13 @@ export const apiPaths = {
   tradingAccountSync: (accountId: string) => `/trading-accounts/${accountId}/sync`,
   tradingAccountSyncRuns: (accountId: string) => `/trading-accounts/${accountId}/sync-runs`,
   tradingAccountReconnect: (accountId: string) => `/trading-accounts/${accountId}/reconnect`,
+  // Phase 08 — MT5 terminal bridge: the pairing sheet is owner-only (422 for
+  // non-bridge accounts); rotate mints a fresh secret and invalidates the
+  // previous terminal configuration.
+  tradingAccountBridgePairing: (accountId: string) =>
+    `/trading-accounts/${accountId}/bridge/pairing`,
+  tradingAccountBridgeRotate: (accountId: string) =>
+    `/trading-accounts/${accountId}/bridge/rotate`,
   integrationsOverview: "/integrations/overview",
   integrationConnect: (providerId: string) => `/integrations/providers/${providerId}/connect`,
   integrationDisconnect: (providerId: string) => `/integrations/providers/${providerId}/disconnect`,

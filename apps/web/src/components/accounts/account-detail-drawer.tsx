@@ -1,10 +1,21 @@
 "use client";
 
 import * as React from "react";
-import { KeyRound, LifeBuoy, Pencil, RefreshCcw, ShieldQuestion } from "lucide-react";
+import {
+  Cable,
+  CheckCircle2,
+  Download,
+  KeyRound,
+  LifeBuoy,
+  Loader2,
+  Pencil,
+  RefreshCcw,
+  ShieldQuestion,
+  TriangleAlert,
+} from "lucide-react";
 import { toast } from "sonner";
 
-import type { TradingAccountDetails, TradingConnectionTestResponse } from "@cosmoz/shared";
+import type { BridgePairing, TradingAccountDetails, TradingConnectionTestResponse } from "@cosmoz/shared";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -23,9 +34,11 @@ import { useIsDesktop } from "@/lib/hooks/use-media-query";
 import { ConfirmDialog } from "@/components/settings/settings-primitives";
 import { apiErrorCode, apiErrorMessage } from "@/lib/api/client";
 import {
+  useBridgePairing,
   useDisconnectTradingAccount,
   useReconnectTradingAccount,
   useRenameTradingAccount,
+  useRotateBridgeSecret,
   useSyncTradingAccount,
   useTestTradingConnection,
   useTradingAccountDeals,
@@ -38,6 +51,7 @@ import { useDict } from "@/i18n/i18n-provider";
 
 import { ConnectionStatusBadge, SimulatedProviderBadge, SyncStatusBadge } from "./account-badges";
 import { AccountMoneyValue } from "./account-card";
+import { BridgePairingPanel } from "./bridge-pairing-panel";
 import {
   ExternalDealsTable,
   ExternalOrdersTable,
@@ -238,6 +252,76 @@ function ReconnectDialog({
   );
 }
 
+/**
+ * Phase 08 — the MT5 bridge card. Rendered ONLY when connection.method is
+ * PLATFORM_BRIDGE. The status line is honest about the two bridge states:
+ * CONNECTING = no terminal push received yet (amber/info treatment, tokens
+ * only); CONNECTED = the terminal is pushing. The three actions are exactly
+ * what the backend serves: the owner-only pairing sheet, the secret rotation
+ * (invalidates the previous terminal config), and the static EA download.
+ */
+function BridgeSection({
+  account,
+  downloadHref,
+  onOpenPairing,
+  onRotate,
+  rotating,
+}: {
+  account: TradingAccountDetails;
+  /** Static EA asset path from the pairing sheet — null while it loads. */
+  downloadHref: string | null;
+  onOpenPairing: () => void;
+  onRotate: () => void;
+  rotating: boolean;
+}) {
+  const dict = useDict();
+  const B = dict.accounts.bridge;
+  const connecting = account.connection?.status === "CONNECTING";
+  return (
+    <div className="rounded-lg border border-border p-3" data-testid="account-bridge-section">
+      <p className="flex items-center justify-between gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        <span className="inline-flex items-center gap-1.5">
+          <Cable className="size-3.5" aria-hidden />
+          {B.sectionTitle}
+        </span>
+        <ConnectionStatusBadge status={account.connection?.status ?? "DISCONNECTED"} testId="account-bridge-status" />
+      </p>
+      <p
+        className={
+          connecting
+            ? "mt-2 flex items-start gap-2 rounded-md border border-warning/40 bg-warning/10 p-2.5 text-xs leading-relaxed text-warning"
+            : "mt-2 flex items-start gap-2 rounded-md border border-accent/30 bg-accent/10 p-2.5 text-xs leading-relaxed text-accent"
+        }
+        data-testid="account-bridge-status-note"
+        data-bridge-status={account.connection?.status ?? "DISCONNECTED"}
+      >
+        {connecting ? (
+          <Loader2 className="mt-0.5 size-3.5 shrink-0 animate-spin" aria-hidden />
+        ) : (
+          <CheckCircle2 className="mt-0.5 size-3.5 shrink-0" aria-hidden />
+        )}
+        {connecting ? B.statusConnecting : B.statusConnected}
+      </p>
+      <div className="mt-2.5 flex flex-wrap items-center gap-2">
+        <Button variant="outline" size="xs" onClick={onOpenPairing} data-testid="account-bridge-pairing">
+          {B.pairingButton}
+        </Button>
+        <Button variant="outline" size="xs" onClick={onRotate} disabled={rotating} data-testid="account-bridge-rotate">
+          {rotating ? B.rotatePending : B.rotateButton}
+        </Button>
+        {downloadHref ? (
+          <Button variant="outline" size="xs" asChild>
+            <a href={downloadHref} download data-testid="account-bridge-download">
+              <Download className="size-3.5" aria-hidden />
+              {B.downloadButton}
+            </a>
+          </Button>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 export function AccountDetailDrawer({
   accountId,
   open,
@@ -263,7 +347,18 @@ export function AccountDetailDrawer({
   const [disconnectOpen, setDisconnectOpen] = React.useState(false);
   const [reconnectOpen, setReconnectOpen] = React.useState(false);
 
+  // Phase 08 — MT5 bridge surface. The pairing sheet has two entry paths:
+  // the owner-only GET ("Pairing sheet" button) and the rotate response
+  // (the ONE-SHOT delivery of the fresh secret). The GET query doubles as
+  // the download href source for the section button.
+  const rotate = useRotateBridgeSecret();
+  const [bridgePairingOpen, setBridgePairingOpen] = React.useState(false);
+  const [rotatedPairing, setRotatedPairing] = React.useState<BridgePairing | null>(null);
+
   const account = details.data?.account ?? null;
+  const isBridgeAccount = account?.connection?.method === "PLATFORM_BRIDGE";
+  const bridgePairing = useBridgePairing(open && isBridgeAccount ? accountId : null);
+  const activeBridgePairing = rotatedPairing ?? bridgePairing.data?.pairing ?? null;
 
   if (accountId === null) return null;
 
@@ -326,6 +421,69 @@ export function AccountDetailDrawer({
       },
     });
   };
+
+  const openBridgePairing = () => {
+    setRotatedPairing(null);
+    setBridgePairingOpen(true);
+  };
+
+  const submitRotateBridgeSecret = () => {
+    if (!account) return;
+    rotate.mutate(account.id, {
+      onSuccess: (response) => {
+        // The fresh secret arrives ONLY here — open the sheet on top of it
+        // and say plainly that the old terminal configuration is dead.
+        setRotatedPairing(response.account.pairing ?? null);
+        setBridgePairingOpen(true);
+        toast.warning(dict.accounts.bridge.rotateToast);
+      },
+      onError: (error) => toast.error(apiErrorMessage(error, dict.accounts.errors.rotate)),
+    });
+  };
+
+  const handleBridgePairingOpenChange = (next: boolean) => {
+    setBridgePairingOpen(next);
+    if (!next) setRotatedPairing(null);
+  };
+
+  const bridgePairingDialog = isBridgeAccount ? (
+    <Dialog open={bridgePairingOpen} onOpenChange={handleBridgePairingOpenChange}>
+      <DialogContent
+        className="max-h-[85dvh] max-w-lg overflow-y-auto bg-surface"
+        data-testid="bridge-pairing-dialog"
+      >
+        <DialogHeader>
+          <DialogTitle className="font-heading">{dict.accounts.bridge.panelTitle}</DialogTitle>
+          <DialogDescription>{dict.accounts.bridge.panelIntro}</DialogDescription>
+        </DialogHeader>
+        {rotatedPairing ? (
+          <p
+            className="flex items-start gap-2 rounded-md border border-warning/40 bg-warning/10 p-3 text-xs leading-relaxed text-warning"
+            data-testid="bridge-rotate-warning"
+          >
+            <TriangleAlert className="mt-0.5 size-3.5 shrink-0" aria-hidden />
+            {dict.accounts.bridge.rotateWarning}
+          </p>
+        ) : null}
+        {activeBridgePairing ? (
+          <BridgePairingPanel pairing={activeBridgePairing} testIdPrefix="detail-bridge-pairing" />
+        ) : (
+          <p className="py-6 text-center text-sm text-muted-foreground" role="status" data-testid="bridge-pairing-loading">
+            {bridgePairing.isError ? dict.accounts.errors.pairing : dict.common.loading}
+          </p>
+        )}
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => handleBridgePairingOpenChange(false)}
+            data-testid="bridge-pairing-close"
+          >
+            {dict.common.close}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  ) : null;
 
   const body = (
     <Tabs defaultValue="overview" className="mt-4">
@@ -428,6 +586,18 @@ export function AccountDetailDrawer({
                 ) : null}
               </dl>
             </div>
+
+            {/* Phase 08 — MT5 bridge card: push-based status + the three
+                bridge actions. Only for PLATFORM_BRIDGE connections. */}
+            {isBridgeAccount ? (
+              <BridgeSection
+                account={account}
+                downloadHref={activeBridgePairing?.ea.downloadPath ?? null}
+                onOpenPairing={openBridgePairing}
+                onRotate={submitRotateBridgeSecret}
+                rotating={rotate.isPending}
+              />
+            ) : null}
 
             <TestChecksPanel accountId={account.id} />
 
@@ -549,16 +719,18 @@ export function AccountDetailDrawer({
         <RefreshCcw className={["size-3.5", sync.isPending ? "animate-spin" : ""].join(" ").trim()} aria-hidden />
         {sync.isPending ? D.syncNow + "…" : D.syncNow}
       </Button>
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => setReconnectOpen(true)}
-        disabled={account.connection?.status === "CONNECTED"}
-        data-testid="account-detail-reconnect"
-      >
-        <KeyRound className="size-3.5" aria-hidden />
-        {D.reconnect}
-      </Button>
+      {account.connection?.method !== "PLATFORM_BRIDGE" ? (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setReconnectOpen(true)}
+          disabled={account.connection?.status === "CONNECTED"}
+          data-testid="account-detail-reconnect"
+        >
+          <KeyRound className="size-3.5" aria-hidden />
+          {D.reconnect}
+        </Button>
+      ) : null}
       <Button variant="outline" size="sm" onClick={() => setRenameOpen(true)} data-testid="account-detail-rename">
         <Pencil className="size-3.5" aria-hidden />
         {D.rename}
@@ -615,6 +787,7 @@ export function AccountDetailDrawer({
               onSubmit={submitRename}
             />
             <ReconnectDialog accountId={accountId} open={reconnectOpen} onOpenChange={setReconnectOpen} />
+            {bridgePairingDialog}
             <ConfirmDialog
               open={disconnectOpen}
               onOpenChange={setDisconnectOpen}
@@ -658,6 +831,7 @@ export function AccountDetailDrawer({
             onSubmit={submitRename}
           />
           <ReconnectDialog accountId={accountId} open={reconnectOpen} onOpenChange={setReconnectOpen} />
+          {bridgePairingDialog}
           <ConfirmDialog
             open={disconnectOpen}
             onOpenChange={setDisconnectOpen}

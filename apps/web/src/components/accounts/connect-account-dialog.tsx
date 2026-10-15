@@ -14,7 +14,12 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-import type { BrokerCatalogEntry, BrokerIdentification, TradingProviderDescriptor } from "@cosmoz/shared";
+import type {
+  BridgePairing,
+  BrokerCatalogEntry,
+  BrokerIdentification,
+  TradingProviderDescriptor,
+} from "@cosmoz/shared";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -40,6 +45,7 @@ import { useDict } from "@/i18n/i18n-provider";
 import { cn } from "@/lib/utils";
 
 import { SimulatedProviderBadge } from "./account-badges";
+import { BridgePairingPanel } from "./bridge-pairing-panel";
 
 /**
  * The add-account entry point (Phase 02 Step Six; Phase 07 universal layer).
@@ -52,17 +58,18 @@ import { SimulatedProviderBadge } from "./account-badges";
  *  - while the user types the account number, the identity step calls the
  *    rule-based identify endpoint (debounced, rate-limited, NO secrets sent)
  *    and answers the owner's question "WHICH broker is this?" in real time.
- * No simulated success screen exists: the dialog closes on the backend's 201
+ * No simulated success screen exists: on the backend's 201 the dialog closes
  * and the new account appears in the list. The initial sync runs server-side.
- *
- * Out of scope by design (spec §11.3): OAuth, provider-side account
- * discovery, credential storage beyond the backend vault — the secret is
- * typed once, sent to the backend, never mirrored into any client store,
- * URL, or log.
+ * EXCEPTION (Phase 08): PLATFORM_BRIDGE providers (mt5-bridge) carry NO
+ * client credential — the identity step hides the secret field behind an
+ * honest explainer ("Euforia generates the bridge secret"), the submit body
+ * omits `credentials`, and a 201 whose account carries a `pairing` sheet
+ * keeps the dialog open on the BridgePairingPanel (ingest URL / key /
+ * secret / EA download). Done closes and hands the account to the parent.
  *
  * Layout (overflow fix): the wizard is a PINNED-HEADER / SCROLLABLE-BODY /
  * PINNED-FOOTER shell — `grid-rows-[auto_minmax(0,1fr)_auto]` under a hard
- * `max-h-[92dvh]`, so the dialog can never grow past the viewport (the 17+
+ * `max-h-[85dvh]`, so the dialog can never grow past the viewport (the 17+
  * broker catalog on step 1 used to push it off-screen). Only the step body
  * scrolls; the title, the step rail and the actions always stay visible.
  * Desktop renders the wide dialog; mobile renders the canonical bottom
@@ -118,6 +125,12 @@ export function ConnectAccountDialog({
   const [externalAccountId, setExternalAccountId] = React.useState("");
   const [displayName, setDisplayName] = React.useState("");
   const [secret, setSecret] = React.useState("");
+  /** Phase 08 — the connect-time MT5 pairing sheet. When the 201 response
+   * carries account.pairing (PLATFORM_BRIDGE providers), the wizard stays
+   * open on a dedicated pairing view instead of closing — the secret is
+   * handed over right where the user is. onConnected fires on Done so the
+   * detail drawer never covers the sheet. */
+  const [completed, setCompleted] = React.useState<{ accountId: string; pairing: BridgePairing } | null>(null);
   /** Identification result tagged with the hint pair it belongs to — derived
    * visibility (no sync setState in the effect): the UI shows a result only
    * while it matches the CURRENT provider + account number. */
@@ -137,6 +150,7 @@ export function ConnectAccountDialog({
     setDisplayName("");
     setSecret("");
     setIdentification(null);
+    setCompleted(null);
   }, []);
 
   // Phase 07 — live broker identification while the account number is typed.
@@ -170,11 +184,15 @@ export function ConnectAccountDialog({
     onOpenChange(next);
   };
 
+  /** Phase 08 — bridge providers carry NO client credential: the submit body
+   * omits `credentials` entirely and the backend generates the bridge secret. */
+  const isBridgeProvider = provider?.supportedConnectionMethods.includes("PLATFORM_BRIDGE") ?? false;
+
   const canSubmit =
     provider !== null &&
     environment !== null &&
     externalAccountId.trim().length > 0 &&
-    secret.trim().length > 0;
+    (isBridgeProvider || secret.trim().length > 0);
 
   const submit = () => {
     if (!provider || !environment) return;
@@ -184,10 +202,17 @@ export function ConnectAccountDialog({
         environment: environment as "DEMO" | "LIVE" | "PROP_FIRM",
         externalAccountId: externalAccountId.trim(),
         ...(displayName.trim() ? { displayName: displayName.trim() } : {}),
-        credentials: { method: "API_KEY", secret: secret.trim() },
+        ...(isBridgeProvider ? {} : { credentials: { method: "API_KEY", secret: secret.trim() } }),
       },
       {
         onSuccess: (response) => {
+          const pairing = response.account.pairing ?? null;
+          if (pairing) {
+            // Bridge flow — render the pairing sheet instead of closing.
+            toast.success(C.bridge.successTitle, { description: C.bridge.successBody });
+            setCompleted({ accountId: response.account.id, pairing });
+            return;
+          }
           toast.success(C.successTitle, { description: C.successBody });
           handleOpenChange(false);
           onConnected(response.account.id);
@@ -468,32 +493,66 @@ export function ConnectAccountDialog({
             />
             <p className="text-xs text-muted-foreground">{C.displayNameHint}</p>
           </div>
-          <div className="grid gap-1.5">
-            <Label htmlFor="connect-secret">
-              <span className="inline-flex items-center gap-1.5">
-                <ShieldCheck className="size-3.5" aria-hidden />
-                {C.secretLabel}
-              </span>
-            </Label>
-            <Input
-              id="connect-secret"
-              type="password"
-              value={secret}
-              onChange={(event) => setSecret(event.target.value)}
-              autoComplete="new-password"
-              data-testid="connect-secret"
-            />
-            <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
-              <Lock className="mt-0.5 size-3 shrink-0" aria-hidden />
-              {C.secretHint}
-            </p>
-          </div>
+          {isBridgeProvider ? (
+            // Phase 08 — PLATFORM_BRIDGE: no credential input exists. The
+            // honest explainer replaces the API-key/secret field.
+            <div className="grid gap-2" data-testid="connect-bridge-explainer">
+              <p className="flex items-start gap-2 rounded-md border border-accent/30 bg-accent/10 p-3 text-xs leading-relaxed text-accent">
+                <ShieldCheck className="mt-0.5 size-3.5 shrink-0" aria-hidden />
+                {C.bridge.explainer}
+              </p>
+              <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
+                <Lock className="mt-0.5 size-3 shrink-0" aria-hidden />
+                {C.bridge.identityNote}
+              </p>
+            </div>
+          ) : (
+            <div className="grid gap-1.5">
+              <Label htmlFor="connect-secret">
+                <span className="inline-flex items-center gap-1.5">
+                  <ShieldCheck className="size-3.5" aria-hidden />
+                  {C.secretLabel}
+                </span>
+              </Label>
+              <Input
+                id="connect-secret"
+                type="password"
+                value={secret}
+                onChange={(event) => setSecret(event.target.value)}
+                autoComplete="new-password"
+                data-testid="connect-secret"
+              />
+              <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
+                <Lock className="mt-0.5 size-3 shrink-0" aria-hidden />
+                {C.secretHint}
+              </p>
+            </div>
+          )}
         </div>
       ) : null}
     </>
   );
 
-  const footerActions = (
+  /** Phase 08 — leave the pairing view: close (resets) THEN hand the fresh
+   * account to the parent, so the detail drawer never covers the sheet. */
+  const finishPairing = () => {
+    const accountId = completed?.accountId ?? null;
+    handleOpenChange(false);
+    if (accountId) onConnected(accountId);
+  };
+
+  const pairingView =
+    completed !== null ? (
+      <div className="grid gap-4" data-testid="connect-bridge-pairing-view">
+        <BridgePairingPanel pairing={completed.pairing} testIdPrefix="connect-bridge-pairing" />
+      </div>
+    ) : null;
+
+  const footerActions = completed !== null ? (
+    <Button type="button" onClick={finishPairing} data-testid="connect-bridge-done">
+      {C.bridge.done}
+    </Button>
+  ) : (
     <>
       <Button type="button" variant="ghost" onClick={goBack} data-testid="connect-back">
         <ChevronLeft className="size-4" aria-hidden />
@@ -527,24 +586,24 @@ export function ConnectAccountDialog({
     return (
       <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogContent
-          className="grid-rows-[auto_minmax(0,1fr)_auto] max-h-[92dvh] overflow-hidden bg-surface sm:max-w-xl"
+          className="grid-rows-[auto_minmax(0,1fr)_auto] max-h-[85dvh] overflow-hidden bg-surface sm:max-w-xl"
           data-testid="connect-account-dialog"
           aria-describedby="connect-account-description"
         >
           <DialogHeader className="-mx-4 -mt-4 gap-2 border-b border-border px-4 pb-3 pt-4">
             <div className="pr-8">
               <DialogTitle className="font-heading text-lg font-semibold text-foreground">
-                {C.title}
+                {completed !== null ? C.bridge.successTitle : C.title}
               </DialogTitle>
               <DialogDescription id="connect-account-description" className="text-xs leading-relaxed">
-                {stepBody}
+                {completed !== null ? C.bridge.successBody : stepBody}
               </DialogDescription>
             </div>
-            {stepRail}
+            {completed === null ? stepRail : null}
           </DialogHeader>
 
           <div className="-mx-4 min-h-0 overflow-y-auto px-4" data-testid="connect-body">
-            {stepContent}
+            {completed !== null ? pairingView : stepContent}
           </div>
 
           <div className="-mx-4 -mb-4 flex flex-col-reverse gap-2 rounded-b-xl border-t bg-muted/50 p-4 sm:flex-row sm:items-center sm:justify-between">
@@ -565,16 +624,16 @@ export function ConnectAccountDialog({
       >
         <SheetHeader className="gap-1.5 border-b border-border pb-3">
           <SheetTitle className="font-heading text-lg font-semibold text-foreground">
-            {C.title}
+            {completed !== null ? C.bridge.successTitle : C.title}
           </SheetTitle>
           <SheetDescription id="connect-account-description" className="text-xs leading-relaxed">
-            {stepBody}
+            {completed !== null ? C.bridge.successBody : stepBody}
           </SheetDescription>
-          {stepRail}
+          {completed === null ? stepRail : null}
         </SheetHeader>
 
         <div className="min-h-0 overflow-y-auto overscroll-contain px-4 py-4" data-testid="connect-body">
-          {stepContent}
+          {completed !== null ? pairingView : stepContent}
         </div>
 
         <div className="flex items-center justify-between gap-2 border-t bg-muted/50 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
