@@ -47,10 +47,10 @@ describe("persistence adapter", () => {
       ],
     });
     const payload = preferencesFromSnapshot(snapshot);
-    // widgetOrder is derived from the ACTIVE layout (visible types in order,
-    // completed to the canonical set for legacy readers).
-    expect(payload.widgetOrder[0]).toBe("PNL_BAND");
-    expect([...payload.widgetOrder].sort()).toEqual([...DASHBOARD_WIDGET_KEYS].sort());
+    // widgetOrder is derived from the ACTIVE layout's VISIBLE types in
+    // order — exactly what the user sees, nothing invented (Phase 02:
+    // opt-in widgets never leak into the stored order).
+    expect(payload.widgetOrder).toEqual(["PNL_BAND"]);
     expect(payload.activeLayoutId).toBe("a");
     expect(payload.layouts).toHaveLength(2);
     const reread = readStoredCustomization(payload);

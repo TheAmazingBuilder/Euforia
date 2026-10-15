@@ -30,8 +30,14 @@ export function useAnalytics() {
  * GET /stats/analytics-suite — the Analytics module dataset. The filter set
  * IS part of the query key: every filter change refetches from the server
  * (the client never re-derives aggregates — one dataset definition §5).
+ * `options.enabled` lets consumers opt out (e.g. dashboard widgets that are
+ * not on the current layout — no fetch, no wasted Monte Carlo runs).
  */
-export function useAnalyticsSuite(filters: AnalyticsFilters, sims = 400) {
+export function useAnalyticsSuite(
+  filters: AnalyticsFilters,
+  sims = 400,
+  options?: { enabled?: boolean },
+) {
   const params = new URLSearchParams();
   if (filters.period) params.set("period", filters.period);
   if (filters.customFrom) params.set("customFrom", filters.customFrom);
@@ -51,5 +57,6 @@ export function useAnalyticsSuite(filters: AnalyticsFilters, sims = 400) {
     queryKey: queryKeys.analyticsSuite(queryString),
     queryFn: () =>
       apiRequest<AnalyticsSuiteResponse>(`${apiPaths.statsAnalyticsSuite}?${queryString}`),
+    enabled: options?.enabled ?? true,
   });
 }

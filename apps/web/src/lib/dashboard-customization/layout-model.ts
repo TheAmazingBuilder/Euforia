@@ -1,5 +1,6 @@
 import {
   DASHBOARD_WIDGET_KEYS,
+  DEFAULT_LAYOUT_WIDGET_KEYS,
   type DashboardLayoutDocument,
   type DashboardWidgetKey,
   type DashboardWidgetItem,
@@ -7,6 +8,7 @@ import {
 
 import { WIDGET_REGISTRY, getWidgetDefinition } from "./registry";
 import type { CustomizationSnapshot } from "./types";
+import { configEquals, resolveWidgetConfig } from "./widget-configs";
 
 /**
  * Layout model — pure operations on dashboard layouts (Phase 01 §4/§10/§17).
@@ -59,12 +61,16 @@ function normalizeWidget(raw: unknown): DashboardWidgetItem | null {
     typeof candidate.instanceId === "string" && candidate.instanceId.trim() !== ""
       ? candidate.instanceId.slice(0, 64)
       : newWidgetInstanceId(def.type);
+  // Config: validate/migrate/repair through the config system — an invalid
+  // or future-versioned config never reaches a renderer (Phase 02 §5/§15).
+  const resolution = resolveWidgetConfig(def.type, candidate.config);
   return {
     instanceId,
     type: def.type,
     visible: candidate.visible !== false,
     w: clampW(def.type, Number(candidate.w ?? def.defaultW)),
     h: clampH(def.type, Number(candidate.h ?? def.defaultH)),
+    ...(resolution.status === "ok" ? { config: resolution.config } : {}),
   };
 }
 
@@ -113,19 +119,21 @@ export function normalizeLayout(raw: unknown): DashboardLayoutDocument | null {
 }
 
 /**
- * The shipped default collection: ONE "Default" layout in canonical order.
+ * The shipped default collection: ONE "Default" layout with the DESIGNED
+ * arrangement (Phase 01 canonical order — the Phase 02 analytics widgets
+ * are opt-in via the library, the default never grows under the user).
  * `order` (a legacy flat widgetOrder) only re-orders the default layout —
- * missing keys are appended, unknown keys dropped, exactly like the
+ * missing DESIGN keys are appended, unknown keys dropped, exactly like the
  * pre-customization merge behavior.
  */
 export function createDefaultLayouts(order?: readonly string[]): DashboardLayoutDocument[] {
-  let types: DashboardWidgetKey[] = [...DASHBOARD_WIDGET_KEYS];
+  let types: DashboardWidgetKey[] = [...DEFAULT_LAYOUT_WIDGET_KEYS];
   if (order && order.length > 0) {
     const valid = order.filter((key): key is DashboardWidgetKey =>
       (DASHBOARD_WIDGET_KEYS as readonly string[]).includes(key),
     );
     const unique = [...new Set(valid)];
-    types = [...unique, ...DASHBOARD_WIDGET_KEYS.filter((key) => !unique.includes(key))];
+    types = [...unique, ...DEFAULT_LAYOUT_WIDGET_KEYS.filter((key) => !unique.includes(key))];
   }
   const widgets = types.map((type) => {
     const def = WIDGET_REGISTRY[type];
@@ -183,11 +191,16 @@ export function readStoredCustomization(
   return { layouts: createDefaultLayouts(stored?.widgetOrder), activeLayoutId: DEFAULT_LAYOUT_ID };
 }
 
-/** Visible widget types in display order (the legacy widgetOrder view). */
+/**
+ * Visible widget types in display order — the legacy widgetOrder view.
+ * Derived ONLY from the layout's actual visible instances: opt-in widgets
+ * (Phase 02 analytics) the user never added must NOT leak into the stored
+ * order, and removed ones must stay removed through a backup/restore
+ * round-trip. Completeness of the SHIPPED default is the default-layout
+ * builder's job (createDefaultLayouts), not the derived order's.
+ */
 export function widgetOrderOf(layout: DashboardLayoutDocument): DashboardWidgetKey[] {
-  const order = layout.widgets.filter((w) => w.visible).map((w) => w.type);
-  // Defensive: append any canonical type missing from the layout.
-  return [...order, ...DASHBOARD_WIDGET_KEYS.filter((key) => !order.includes(key))];
+  return layout.widgets.filter((w) => w.visible).map((w) => w.type);
 }
 
 /** Deep copy with a NEW layout id and fresh instance ids (§10.3 independence). */
@@ -341,6 +354,41 @@ export function validateLayoutName(
   return null;
 }
 
+/**
+ * Replace one instance's per-widget configuration (Phase 02 §6). The config
+ * is validated first — an invalid payload is a no-op, never a corrupted
+ * layout. Returns the layout unchanged when the instance does not exist.
+ */
+export function setWidgetConfig(
+  layout: DashboardLayoutDocument,
+  instanceId: string,
+  config: DashboardWidgetItem["config"],
+): DashboardLayoutDocument {
+  const target = layout.widgets.find((widget) => widget.instanceId === instanceId);
+  if (!target) return layout;
+  if (config !== undefined) {
+    const resolution = resolveWidgetConfig(target.type, config);
+    if (resolution.status !== "ok") return layout; // invalid payload — never persist it
+  }
+  if (configEquals(target.config, config)) return layout; // no-op — identical content
+  const widgets = layout.widgets.map((widget) => {
+    if (widget.instanceId !== instanceId) return widget;
+    if (config === undefined) {
+      // Drop the optional key entirely so stored documents stay minimal.
+      const next: DashboardWidgetItem = {
+        instanceId: widget.instanceId,
+        type: widget.type,
+        visible: widget.visible,
+        w: widget.w,
+        h: widget.h,
+      };
+      return next;
+    }
+    return { ...widget, config };
+  });
+  return { ...layout, widgets, updatedAt: new Date().toISOString() };
+}
+
 /** Deep structural equality for widget config arrays (dirty tracking). */
 export function widgetsEqual(
   a: readonly DashboardWidgetItem[],
@@ -354,7 +402,8 @@ export function widgetsEqual(
       widget.type === other.type &&
       widget.visible === other.visible &&
       widget.w === other.w &&
-      widget.h === other.h
+      widget.h === other.h &&
+      configEquals(widget.config, other.config)
     );
   });
 }

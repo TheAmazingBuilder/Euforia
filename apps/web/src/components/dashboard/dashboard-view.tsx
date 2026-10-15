@@ -20,15 +20,21 @@ import { DashboardGrid } from "@/components/dashboard/customization/dashboard-gr
 import { EditToolbar } from "@/components/dashboard/customization/edit-toolbar";
 import { LayoutsManagerDialog } from "@/components/dashboard/customization/layouts-manager-dialog";
 import { WidgetLibraryDialog } from "@/components/dashboard/customization/widget-library-dialog";
+import {
+  WidgetSettingsDialog,
+} from "@/components/dashboard/customization/widget-settings-dialog";
 import type { DashboardWidgetData } from "@/components/dashboard/customization/widgets-renderer";
 import { useDashboardCustomization } from "@/lib/hooks/use-dashboard-customization";
 import {
   useAlerts,
+  useAnalyticsSuite,
   usePreferences,
   useRulesStatus,
   useStatsOverview,
 } from "@/lib/api/queries";
 import { DASHBOARD_TEMPLATES } from "@/lib/dashboard-customization/templates";
+import { WIDGET_REGISTRY } from "@/lib/dashboard-customization/registry";
+import type { DashboardWidgetConfig } from "@cosmoz/shared";
 import { openTradeModal } from "@/lib/hooks/use-trade-modal";
 
 /** Fresh-account window: an account created less than 48 hours ago is
@@ -36,6 +42,11 @@ import { openTradeModal } from "@/lib/hooks/use-trade-modal";
  * ("Welcome back"). Derived from the REAL signup timestamp — no fake
  * persistence, self-expires. */
 const FRESH_ACCOUNT_WINDOW_MS = 48 * 60 * 60 * 1000;
+
+/** Widget types fed by the dashboard-level analytics-suite fetch (ALL
+ * window). METRICS_CARD manages its OWN per-period fetches — it is
+ * deliberately NOT in this list (no double fetch, §14). */
+const SUITE_WIDGET_TYPES = new Set(["STRATEGY_COMPARE", "LONG_SHORT", "ACTIVITY_HEATMAP"]);
 
 function useDashboardGreeting(): string {
   const { user } = useAuth();
@@ -174,6 +185,17 @@ export function DashboardView({ description }: DashboardViewProps) {
   const [libraryOpen, setLibraryOpen] = React.useState(false);
   const [layoutsOpen, setLayoutsOpen] = React.useState(false);
   const [confirm, setConfirm] = React.useState<ConfirmIntent | null>(null);
+  const [settingsInstanceId, setSettingsInstanceId] = React.useState<string | null>(null);
+
+  // The analytics-suite aggregates for the comparison widgets — fetched
+  // only when the displayed layout actually hosts one of them (§17: no
+  // speculative requests; sims kept low, the widgets use no Monte Carlo).
+  const displayedTypes = React.useMemo(
+    () => new Set(c.displayedLayout.widgets.filter((widget) => widget.visible).map((widget) => widget.type)),
+    [c.displayedLayout.widgets],
+  );
+  const needsSuite = [...SUITE_WIDGET_TYPES].some((type) => displayedTypes.has(type as never));
+  const suiteQuery = useAnalyticsSuite({ period: "ALL" }, 50, { enabled: needsSuite });
 
   const compactSpacing = compact; // named for the className below
   const isLoading = overview.isLoading || rules.isLoading || alerts.isLoading || c.prefsLoading;
@@ -188,11 +210,41 @@ export function DashboardView({ description }: DashboardViewProps) {
 
   const widgetData: DashboardWidgetData | null =
     overview.data && rules.data && alerts.data
-      ? { overview: overview.data, rulesStatus: rules.data, alerts: alerts.data }
+      ? {
+          overview: overview.data,
+          rulesStatus: rules.data,
+          alerts: alerts.data,
+          suite: needsSuite ? (suiteQuery.data ?? null) : null,
+        }
       : null;
 
   const editing = c.editing;
   const actionsDisabled = isLoading || isError || isEmpty;
+
+  /** Per-widget settings (Phase 02 §6): the dialog validates, the hook
+   * routes (draft in edit mode, immediate persist in view mode). */
+  const settingsWidget = React.useMemo(
+    () =>
+      settingsInstanceId
+        ? c.displayedLayout.widgets.find((widget) => widget.instanceId === settingsInstanceId) ?? null
+        : null,
+    [settingsInstanceId, c.displayedLayout.widgets],
+  );
+  const handleConfirmSettings = React.useCallback(
+    (config: DashboardWidgetConfig) => {
+      if (!settingsInstanceId) return;
+      c.setWidgetConfig(settingsInstanceId, config);
+    },
+    [settingsInstanceId, c],
+  );
+  const handleConfigRange = React.useCallback(
+    (instanceId: string, range: 7 | 30 | 90) => {
+      const widget = c.displayedLayout.widgets.find((candidate) => candidate.instanceId === instanceId);
+      if (!widget || widget.config?.kind !== "PNL_BAND") return;
+      c.setWidgetConfig(instanceId, { ...widget.config, range });
+    },
+    [c],
+  );
 
   const handleCancel = React.useCallback(() => {
     if (c.dirty) setConfirm({ kind: "cancelEdit" });
@@ -292,7 +344,8 @@ export function DashboardView({ description }: DashboardViewProps) {
         <>
           <p className="text-xs text-muted-foreground" data-testid="dashboard-edit-hint">
             Drag a widget by its grip, resize it from its edges — or use the tools on each
-            card. Nothing is saved until you press Save.
+            card (the gear opens a widget&apos;s own settings). Nothing is saved until you press
+            Save.
           </p>
           <EditToolbar
             layoutName={c.activeLayout.name}
@@ -328,6 +381,8 @@ export function DashboardView({ description }: DashboardViewProps) {
             onResize={c.resizeWidget}
             onHide={(instanceId) => c.setWidgetVisible(instanceId, false)}
             onRemove={c.removeWidget}
+            onOpenSettings={setSettingsInstanceId}
+            onConfigRange={handleConfigRange}
           />
         </>
       ) : null}
@@ -385,6 +440,21 @@ export function DashboardView({ description }: DashboardViewProps) {
               break;
           }
         }}
+      />
+
+      <WidgetSettingsDialog
+        open={settingsInstanceId !== null && settingsWidget !== null}
+        onOpenChange={(open) => {
+          if (!open) setSettingsInstanceId(null);
+        }}
+        widgetType={settingsWidget?.type ?? "PNL_BAND"}
+        widgetName={
+          settingsWidget
+            ? (WIDGET_REGISTRY[settingsWidget.type]?.name ?? settingsWidget.type)
+            : ""
+        }
+        config={settingsWidget?.config}
+        onConfirm={handleConfirmSettings}
       />
     </div>
   );

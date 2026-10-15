@@ -310,6 +310,9 @@ export type AppearancePreferencesInput = z.infer<typeof appearancePreferencesInp
 /**
  * Dashboard widget types. Keys map 1:1 to the widget registry in the web
  * app; every customization document references these canonical keys only.
+ * Phase 02 adds the performance-analytics widgets (metrics card, strategy
+ * comparison, long-vs-short, activity heatmap) — all fed by the EXISTING
+ * server analytics-suite aggregates (the client never re-derives metrics).
  */
 export const DASHBOARD_WIDGET_KEYS = [
   "PNL_BAND",
@@ -319,27 +322,194 @@ export const DASHBOARD_WIDGET_KEYS = [
   "HEATMAP",
   "BEST_WORST",
   "ALERTS",
+  "METRICS_CARD",
+  "STRATEGY_COMPARE",
+  "LONG_SHORT",
+  "ACTIVITY_HEATMAP",
 ] as const;
 export type DashboardWidgetKey = (typeof DASHBOARD_WIDGET_KEYS)[number];
 
 export const dashboardWidgetKeySchema = z.enum(DASHBOARD_WIDGET_KEYS);
+
+// ── Per-widget instance configuration (Phase 02) ───────────────────────────
+
+/** Config document version — bump on breaking shape changes; readers
+ * migrate or fall back per widget instance instead of crashing. */
+export const WIDGET_CONFIG_VERSION = 1;
+export const dashboardWidgetConfigVersionSchema = z.literal(WIDGET_CONFIG_VERSION);
+
+/** Ranges the P&L charts already support (period chips contract). */
+export const dashboardPnlRangeSchema = z.union([
+  z.literal(7),
+  z.literal(30),
+  z.literal(90),
+]);
+
+/**
+ * PNL_BAND — the twin P&L charts. Every field drives REAL rendering:
+ * range = period window, cumulativeType = the left chart's ECharts series
+ * shape, the toggles = end marker / average mark line / zero baseline.
+ */
+export const pnlBandWidgetConfigSchema = z.object({
+  kind: z.literal("PNL_BAND"),
+  v: dashboardWidgetConfigVersionSchema,
+  range: dashboardPnlRangeSchema,
+  cumulativeType: z.enum(["AREA", "LINE", "BAR"]),
+  showAvgLine: z.boolean(),
+  showEndMarker: z.boolean(),
+  showZeroLine: z.boolean(),
+});
+
+/** HEATMAP — the monthly calendar. Toggling cell text off declutters small
+ * spans; the tint scale itself is fixed by the design system. */
+export const heatmapWidgetConfigSchema = z.object({
+  kind: z.literal("HEATMAP"),
+  v: dashboardWidgetConfigVersionSchema,
+  showCellValues: z.boolean(),
+});
+
+/**
+ * Period presets the METRICS_CARD may aggregate over. CUSTOM requires the
+ * date keys below (inclusive, trading-day keys resolved server-side).
+ * Comparisons vs the previous equivalent period are available only for the
+ * presets the SERVER resolves natively (TODAY/THIS_WEEK/THIS_MONTH — see
+ * PREVIOUS_PERIOD mapping in the web layer); other presets render an
+ * explicit "comparison unavailable" state instead of a fake baseline.
+ */
+export const metricsCardPeriodSchema = z.enum([
+  "TODAY",
+  "YESTERDAY",
+  "THIS_WEEK",
+  "LAST_WEEK",
+  "THIS_MONTH",
+  "LAST_MONTH",
+  "THIS_QUARTER",
+  "THIS_YEAR",
+  "LAST_30",
+  "LAST_90",
+  "YTD",
+  "ALL",
+  "CUSTOM",
+]);
+
+/** METRICS_CARD — configurable performance metric cards (KPI selection,
+ * period, optional previous-period comparison, presentation formatting).
+ * The CUSTOM-period date requirement is enforced at the ITEM level (see
+ * dashboardWidgetItemSchema) — discriminated-union members must stay plain
+ * objects in zod v3. */
+export const metricsCardWidgetConfigSchema = z.object({
+  kind: z.literal("METRICS_CARD"),
+  v: dashboardWidgetConfigVersionSchema,
+  period: metricsCardPeriodSchema,
+  /** Required when period = CUSTOM (trading-date keys, inclusive). */
+  customFrom: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  customTo: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  /** Selected metric ids from the shared metric catalog (order = display
+   * order), 1–12 entries, unique. Unknown ids fail validation. */
+  metrics: z.array(z.string().min(1).max(40)).min(1).max(12),
+  /** OFF hides comparisons; PREVIOUS shows the previous equivalent period
+   * when the server can resolve one (presets mapped in the web layer). */
+  comparison: z.enum(["OFF", "PREVIOUS"]),
+  /** Money presentation — full or compact notation. */
+  notation: z.enum(["STANDARD", "COMPACT"]),
+  /** Decimal digits for numbers/percents (money follows currency rules). */
+  decimals: z.union([z.literal(0), z.literal(1), z.literal(2)]),
+});
+
+/** STRATEGY_COMPARE — which playbook strategies (or the out-of-playbook
+ * population "none") to compare side by side, 1–6 entries, unique. */
+export const strategyCompareWidgetConfigSchema = z.object({
+  kind: z.literal("STRATEGY_COMPARE"),
+  v: dashboardWidgetConfigVersionSchema,
+  strategyIds: z.array(z.union([uuidSchema, z.literal("none")])).min(1).max(6),
+});
+
+/** LONG_SHORT — metric visibility over the server's BUY/SELL rows. */
+export const longShortWidgetConfigSchema = z.object({
+  kind: z.literal("LONG_SHORT"),
+  v: dashboardWidgetConfigVersionSchema,
+  metrics: z
+    .array(z.enum(["TRADES", "NET_PNL", "WIN_RATE", "PROFIT_FACTOR", "EXPECTANCY_R", "AVG_DURATION"]))
+    .min(1)
+    .max(6),
+});
+
+/** ACTIVITY_HEATMAP — weekday × hour-bucket grid, server-computed cells.
+ * metric: avgR (signed, profit/loss ink) or trades (volume, accent scale). */
+export const activityHeatmapWidgetConfigSchema = z.object({
+  kind: z.literal("ACTIVITY_HEATMAP"),
+  v: dashboardWidgetConfigVersionSchema,
+  metric: z.enum(["AVG_R", "TRADES"]),
+});
+
+/**
+ * The per-instance config union — a discriminated union on `kind` so each
+ * widget owns its own shape (a chart, a KPI card and a comparison table
+ * never share irrelevant fields) and future widgets slot in without
+ * redesigning the schema. `kind` must match the item's `type`.
+ */
+export const dashboardWidgetConfigSchema = z.discriminatedUnion("kind", [
+  pnlBandWidgetConfigSchema,
+  heatmapWidgetConfigSchema,
+  metricsCardWidgetConfigSchema,
+  strategyCompareWidgetConfigSchema,
+  longShortWidgetConfigSchema,
+  activityHeatmapWidgetConfigSchema,
+]);
+
+export type DashboardWidgetConfig = z.infer<typeof dashboardWidgetConfigSchema>;
+export type PnlBandWidgetConfig = z.infer<typeof pnlBandWidgetConfigSchema>;
+export type HeatmapWidgetConfig = z.infer<typeof heatmapWidgetConfigSchema>;
+export type MetricsCardWidgetConfig = z.infer<typeof metricsCardWidgetConfigSchema>;
+export type StrategyCompareWidgetConfig = z.infer<typeof strategyCompareWidgetConfigSchema>;
+export type LongShortWidgetConfig = z.infer<typeof longShortWidgetConfigSchema>;
+export type ActivityHeatmapWidgetConfig = z.infer<typeof activityHeatmapWidgetConfigSchema>;
 
 /**
  * One widget INSTANCE placed on a layout. The instance id is stable and
  * unique WITHIN its layout (never the widget type, never an array index):
  * removing one instance never touches other instances of the same type.
  */
-export const dashboardWidgetItemSchema = z.object({
-  instanceId: z.string().min(1).max(64),
-  type: dashboardWidgetKeySchema,
-  /** Hidden instances keep their full configuration (hide ≠ remove). */
-  visible: z.boolean(),
-  /** Width span on the 12-column desktop grid (mobile is single-column). */
-  w: z.number().int().min(1).max(12),
-  /** Height level: 1 = natural content height, higher = taller minimum.
-   * Semantics are min-height — content may always grow past the level. */
-  h: z.number().int().min(1).max(4),
-});
+export const dashboardWidgetItemSchema = z
+  .object({
+    instanceId: z.string().min(1).max(64),
+    type: dashboardWidgetKeySchema,
+    /** Hidden instances keep their full configuration (hide ≠ remove). */
+    visible: z.boolean(),
+    /** Width span on the 12-column desktop grid (mobile is single-column). */
+    w: z.number().int().min(1).max(12),
+    /** Height level: 1 = natural content height, higher = taller minimum.
+     * Semantics are min-height — content may always grow past the level. */
+    h: z.number().int().min(1).max(4),
+    /** Per-instance presentation config (Phase 02) — OPTIONAL and additive:
+     * documents stored before it keep validating unchanged (schemaVersion
+     * stays 1). Absent config = the widget's defaults; a config whose kind
+     * does not match the item type is invalid and dropped on read. */
+    config: dashboardWidgetConfigSchema.optional(),
+  })
+  .superRefine((item, ctx) => {
+    if (item.config && item.config.kind !== item.type) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["config"],
+        message: `Config kind "${item.config.kind}" does not match widget type "${item.type}"`,
+      });
+    }
+    if (
+      item.config &&
+      item.config.kind === "METRICS_CARD" &&
+      item.config.period === "CUSTOM" &&
+      (item.config.customFrom === undefined ||
+        item.config.customTo === undefined ||
+        item.config.customFrom > item.config.customTo)
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["config"],
+        message: "CUSTOM period requires customFrom and customTo (from ≤ to)",
+      });
+    }
+  });
 export type DashboardWidgetItem = z.infer<typeof dashboardWidgetItemSchema>;
 
 /**
@@ -382,8 +552,26 @@ export type DashboardPreferences = z.infer<typeof dashboardPreferencesSchema>;
 export const dashboardPreferencesInputSchema = dashboardPreferencesSchema;
 export type DashboardPreferencesInput = z.infer<typeof dashboardPreferencesInputSchema>;
 
+/**
+ * The SHIPPED default arrangement — the designed ledger layout (Phase 01
+ * canonical order). The Phase 02 analytics widgets are OPT-IN through the
+ * widget library: they extend the canon without silently growing every
+ * user's default view (existing dashboards never change under their feet,
+ * and Reset restores exactly this designed arrangement).
+ */
+export const DEFAULT_LAYOUT_WIDGET_KEYS = [
+  "PNL_BAND",
+  "EQUITY_ROW",
+  "GOALS_PACE",
+  "WEEK_COMPARE",
+  "HEATMAP",
+  "BEST_WORST",
+  "ALERTS",
+] as const;
+export type DefaultLayoutWidgetKey = (typeof DEFAULT_LAYOUT_WIDGET_KEYS)[number];
+
 /** Deterministic instance ids for the shipped default layout. */
-const DEFAULT_DASHBOARD_WIDGETS: DashboardWidgetItem[] = DASHBOARD_WIDGET_KEYS.map(
+const DEFAULT_DASHBOARD_WIDGETS: DashboardWidgetItem[] = DEFAULT_LAYOUT_WIDGET_KEYS.map(
   (type) => ({ instanceId: `win_${type.toLowerCase()}`, type, visible: true, w: 12, h: 1 }),
 );
 
@@ -677,15 +865,7 @@ export const DEFAULT_USER_PREFERENCES: UserPreferencesDefaults = {
     pnlDisplay: "CURRENCY",
   },
   dashboard: {
-    widgetOrder: [
-      "PNL_BAND",
-      "EQUITY_ROW",
-      "GOALS_PACE",
-      "WEEK_COMPARE",
-      "HEATMAP",
-      "BEST_WORST",
-      "ALERTS",
-    ],
+    widgetOrder: [...DEFAULT_LAYOUT_WIDGET_KEYS],
     activeLayoutId: DEFAULT_DASHBOARD_LAYOUT.id,
     layouts: [DEFAULT_DASHBOARD_LAYOUT],
   },

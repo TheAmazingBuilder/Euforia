@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   DASHBOARD_WIDGET_KEYS,
+  DEFAULT_LAYOUT_WIDGET_KEYS,
   type DashboardLayoutDocument,
   type DashboardWidgetItem,
 } from "@cosmoz/shared";
@@ -21,9 +22,10 @@ import {
   readStoredCustomization,
   removeWidget,
   resizeWidget,
+  setWidgetConfig,
   setWidgetVisible,
   validateLayoutName,
-  widgetOrderOf,
+  widgetsEqual,
 } from "../layout-model";
 import { WIDGET_REGISTRY } from "../registry";
 
@@ -34,12 +36,15 @@ function widgetAt(layout: DashboardLayoutDocument, index: number): DashboardWidg
 }
 
 describe("layout creation", () => {
-  it("creates the default collection with the canonical order", () => {
+  it("creates the default collection with the DESIGNED arrangement", () => {
     const [layout] = defaultLayouts();
     expect(layout!.id).toBe(DEFAULT_LAYOUT_ID);
     expect(layout!.schemaVersion).toBe(1);
-    expect(layout!.widgets.map((w) => w.type)).toEqual([...DASHBOARD_WIDGET_KEYS]);
-    expect(layout!.widgets.every((w) => w.visible && w.w === 12 && w.h === 1)).toBe(true);
+    // The shipped default = the designed 7-widget ledger; the Phase 02
+    // analytics widgets are opt-in via the library, never auto-injected.
+    expect(layout!.widgets.map((w) => w.type)).toEqual([...DEFAULT_LAYOUT_WIDGET_KEYS]);
+    expect(layout!.widgets.every((w) => w.visible && w.h === 1)).toBe(true);
+    expect(layout!.widgets.every((w) => w.w === WIDGET_REGISTRY[w.type].defaultW)).toBe(true);
   });
 
   it("builds ids that are unique across instances and never array indexes", () => {
@@ -53,14 +58,11 @@ describe("layout creation", () => {
 
   it("merges a legacy saved order: valid keys kept, unknown dropped, missing appended", () => {
     const [layout] = createDefaultLayouts(["HEATMAP", "BOGUS", "ALERTS", "HEATMAP"]);
+    // The requested order first, then every DESIGNED key missing from it.
     expect(layout!.widgets.map((w) => w.type)).toEqual([
       "HEATMAP",
       "ALERTS",
-      "PNL_BAND",
-      "EQUITY_ROW",
-      "GOALS_PACE",
-      "WEEK_COMPARE",
-      "BEST_WORST",
+      ...DEFAULT_LAYOUT_WIDGET_KEYS.filter((key) => key !== "HEATMAP" && key !== "ALERTS"),
     ]);
   });
 });
@@ -90,7 +92,7 @@ describe("widget instance operations", () => {
     const victim = layout.widgets.find((w) => w.type === "HEATMAP")!;
     layout = removeWidget(layout, victim.instanceId);
     expect(hasWidgetType(layout, "HEATMAP")).toBe(false);
-    expect(layout.widgets).toHaveLength(DASHBOARD_WIDGET_KEYS.length - 1);
+    expect(layout.widgets).toHaveLength(DEFAULT_LAYOUT_WIDGET_KEYS.length - 1);
   });
 
   it("hides without deleting configuration and restores it intact", () => {
@@ -109,14 +111,14 @@ describe("widget instance operations", () => {
     const base = createDefaultLayouts()[0]!;
     const first = widgetAt(base, 0)!.instanceId; // PNL_BAND
     let layout = moveWidgetTo(base, first, 3);
-    expect(widgetOrderOf(layout)[3]).toBe("PNL_BAND");
+    expect(layout.widgets[3]!.type).toBe("PNL_BAND");
     layout = moveWidgetByOffset(layout, first, 1);
-    expect(widgetOrderOf(layout)[4]).toBe("PNL_BAND");
-    // Out-of-bounds moves are clamped, not dropped.
+    expect(layout.widgets[4]!.type).toBe("PNL_BAND");
+    // Reaching the tail: further offsets stay clamped on the last index.
+    layout = moveWidgetTo(layout, first, layout.widgets.length - 1);
+    expect(layout.widgets.at(-1)!.type).toBe("PNL_BAND");
     layout = moveWidgetByOffset(layout, first, 1);
-    expect(widgetOrderOf(layout)[5]).toBe("PNL_BAND");
-    layout = moveWidgetByOffset(layout, first, 1);
-    expect(widgetOrderOf(layout).at(-1)).toBe("PNL_BAND");
+    expect(layout.widgets.at(-1)!.type).toBe("PNL_BAND");
   });
 });
 
@@ -285,5 +287,93 @@ describe("legacy migration", () => {
     });
     expect(snapshot.activeLayoutId).toBe("mine");
     expect(snapshot.layouts[0]!.widgets[0]!.w).toBe(6);
+  });
+});
+
+describe("per-widget configuration (Phase 02)", () => {
+  const VALID_METRICS_CONFIG = {
+    kind: "METRICS_CARD" as const,
+    v: 1 as const,
+    period: "THIS_WEEK" as const,
+    metrics: ["NET_PNL", "WIN_RATE"],
+    comparison: "PREVIOUS" as const,
+    notation: "COMPACT" as const,
+    decimals: 1 as const,
+  };
+
+  it("normalizeLayout preserves a valid config and drops an invalid one", () => {
+    const raw = {
+      id: "lay_cfg",
+      name: "Configured",
+      schemaVersion: 1,
+      widgets: [
+        { instanceId: "w1", type: "METRICS_CARD", visible: true, w: 12, h: 1, config: VALID_METRICS_CONFIG },
+        { instanceId: "w2", type: "PNL_BAND", visible: true, w: 12, h: 1, config: { kind: "PNL_BAND", v: 1, range: 999, cumulativeType: "NOPE", showAvgLine: true, showEndMarker: true, showZeroLine: true } },
+      ],
+    };
+    const layout = normalizeLayout(raw)!;
+    expect(layout).not.toBeNull();
+    expect(layout.widgets[0]!.config).toEqual(VALID_METRICS_CONFIG);
+    // Invalid config dropped on read — the renderer falls back to defaults.
+    expect(layout.widgets[1]!.config).toBeUndefined();
+  });
+
+  it("normalizeLayout drops a config whose kind does not match the item type", () => {
+    const layout = normalizeLayout({
+      id: "lay_kind",
+      name: "Mismatch",
+      schemaVersion: 1,
+      widgets: [
+        { instanceId: "w1", type: "HEATMAP", visible: true, w: 12, h: 1, config: VALID_METRICS_CONFIG },
+      ],
+    })!;
+    expect(layout.widgets[0]!.config).toBeUndefined();
+  });
+
+  it("cloneLayout keeps the config content with FRESH instance ids", () => {
+    const [source] = createDefaultLayouts();
+    const withMetrics = addWidget(source!, "METRICS_CARD")!;
+    const metricsId = withMetrics.widgets.at(-1)!.instanceId;
+    const configured = setWidgetConfig(withMetrics, metricsId, VALID_METRICS_CONFIG);
+    const copy = cloneLayout(configured, { name: "Copy" });
+    const copyMetrics = copy.widgets.find((w) => w.type === "METRICS_CARD")!;
+    expect(copyMetrics.config).toEqual(VALID_METRICS_CONFIG);
+    // Fresh random instance ids — never the donor's.
+    expect(copyMetrics.instanceId).not.toBe(metricsId);
+  });
+
+  it("setWidgetConfig replaces the config, drops it on undefined, and ignores invalid payloads", () => {
+    let layout = addWidget(createDefaultLayouts()[0]!, "METRICS_CARD")!;
+    const id = layout.widgets.at(-1)!.instanceId;
+    layout = setWidgetConfig(layout, id, VALID_METRICS_CONFIG);
+    expect(layout.widgets.find((w) => w.instanceId === id)!.config).toEqual(VALID_METRICS_CONFIG);
+
+    // Invalid payload is a no-op — never a corrupted layout.
+    const INVALID: unknown = { kind: "METRICS_CARD", v: 1, period: "BOGUS", metrics: [], comparison: "OFF", notation: "STANDARD", decimals: 2 };
+    const invalid = setWidgetConfig(layout, id, INVALID as DashboardWidgetItem["config"]);
+    expect(invalid).toBe(layout);
+
+    // Dropping the config removes the optional key entirely.
+    const cleared = setWidgetConfig(layout, id, undefined);
+    expect(cleared.widgets.find((w) => w.instanceId === id)).not.toHaveProperty("config");
+
+    // Unknown instance ids change nothing.
+    expect(setWidgetConfig(layout, "ghost", VALID_METRICS_CONFIG)).toBe(layout);
+  });
+
+  it("setWidgetConfig is a no-op when the content is identical (no dirty churn)", () => {
+    const layout = addWidget(createDefaultLayouts()[0]!, "METRICS_CARD")!;
+    const id = layout.widgets.at(-1)!.instanceId;
+    const configured = setWidgetConfig(layout, id, VALID_METRICS_CONFIG);
+    expect(setWidgetConfig(configured, id, { ...VALID_METRICS_CONFIG, notation: "COMPACT" })).toBe(configured);
+  });
+
+  it("widgetsEqual and layoutsEqual are config-sensitive", () => {
+    const a = addWidget(createDefaultLayouts()[0]!, "METRICS_CARD")!;
+    const id = a.widgets.at(-1)!.instanceId;
+    const b = setWidgetConfig(a, id, VALID_METRICS_CONFIG);
+    expect(widgetsEqual(a.widgets, b.widgets)).toBe(false);
+    expect(layoutsEqual(a, b)).toBe(false);
+    expect(layoutsEqual(b, setWidgetConfig(b, id, { ...VALID_METRICS_CONFIG }))).toBe(true);
   });
 });

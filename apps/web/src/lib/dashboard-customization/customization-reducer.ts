@@ -1,4 +1,4 @@
-import type { DashboardLayoutDocument, DashboardWidgetKey } from "@cosmoz/shared";
+import type { DashboardLayoutDocument, DashboardWidgetItem, DashboardWidgetKey } from "@cosmoz/shared";
 
 import {
   addWidget,
@@ -10,6 +10,7 @@ import {
   moveWidgetTo,
   removeWidget,
   resizeWidget,
+  setWidgetConfig,
   setWidgetVisible,
   validateLayoutName,
   widgetOrderOf,
@@ -72,6 +73,9 @@ export type CustomizationAction =
   | { type: "draftMoveTo"; instanceId: string; toIndex: number }
   | { type: "draftMoveBy"; instanceId: string; direction: -1 | 1 }
   | { type: "draftResize"; instanceId: string; patch: { w?: number; h?: number } }
+  /** Replace one draft widget's per-instance config (Phase 02 §6) — the
+   * payload is validated by the model layer; invalid configs are no-ops. */
+  | { type: "draftSetConfig"; instanceId: string; config: DashboardWidgetItem["config"] }
   /** Reset the DRAFT to the shipped default configuration (§12). */
   | { type: "draftResetToDefault" }
   // ── Layout collection operations (view mode — persisted immediately) ─────
@@ -80,7 +84,10 @@ export type CustomizationAction =
   | { type: "layoutSwitched"; layoutId: string }
   | { type: "layoutRenamed"; layoutId: string; name: string }
   | { type: "layoutDuplicated"; layoutId: string }
-  | { type: "layoutDeleted"; layoutId: string };
+  | { type: "layoutDeleted"; layoutId: string }
+  /** View-mode per-widget config change (persisted immediately by the
+   * hook's collection-op path — same channel as switch/rename). */
+  | { type: "widgetConfigSet"; layoutId: string; instanceId: string; config: DashboardWidgetItem["config"] };
 
 /** Does the draft differ from the saved active layout? */
 export function isDirty(state: CustomizationState): boolean {
@@ -206,6 +213,11 @@ export function customizationReducer(
       return { ...state, draft: resizeWidget(state.draft, action.instanceId, action.patch) };
     }
 
+    case "draftSetConfig": {
+      if (!state.draft) return state;
+      return { ...state, draft: setWidgetConfig(state.draft, action.instanceId, action.config) };
+    }
+
     case "draftResetToDefault": {
       if (!state.draft) return state;
       const [defaultLayout] = createDefaultLayouts();
@@ -265,6 +277,20 @@ export function customizationReducer(
       const activeLayoutId =
         state.activeLayoutId === action.layoutId ? remaining[0]!.id : state.activeLayoutId;
       return { ...state, layouts: remaining, activeLayoutId };
+    }
+
+    case "widgetConfigSet": {
+      // View-mode op: never touch a live draft — the edit session owns the
+      // displayed layout until Save/Cancel (§10.2 same rule as collection ops).
+      if (state.draft) return state;
+      return {
+        ...state,
+        layouts: state.layouts.map((layout) =>
+          layout.id === action.layoutId
+            ? setWidgetConfig(layout, action.instanceId, action.config)
+            : layout,
+        ),
+      };
     }
 
     default:

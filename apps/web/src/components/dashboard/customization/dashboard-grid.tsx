@@ -6,11 +6,13 @@ import {
   ChevronUp,
   EyeOff,
   GripVertical,
+  Settings2,
   Trash2,
 } from "lucide-react";
 import type { DashboardLayoutDocument, DashboardWidgetItem } from "@cosmoz/shared";
 
 import { WIDGET_REGISTRY } from "@/lib/dashboard-customization/registry";
+import { isConfigurable } from "@/lib/dashboard-customization/widget-configs";
 import { cn } from "@/lib/utils";
 
 import { widgetIcon } from "./widget-icons";
@@ -67,6 +69,10 @@ interface DashboardGridProps {
   onResize: (instanceId: string, patch: { w?: number; h?: number }) => void;
   onHide: (instanceId: string) => void;
   onRemove: (instanceId: string) => void;
+  /** Open the per-widget settings dialog (Phase 02 §6). */
+  onOpenSettings: (instanceId: string) => void;
+  /** Config-aware range changes (PNL_BAND chips write the widget config). */
+  onConfigRange?: (instanceId: string, range: 7 | 30 | 90) => void;
 }
 
 export function DashboardGrid({
@@ -78,6 +84,8 @@ export function DashboardGrid({
   onResize,
   onHide,
   onRemove,
+  onOpenSettings,
+  onConfigRange,
 }: DashboardGridProps) {
   const widgets = layout.widgets;
   const visible = widgets.filter((widget) => widget.visible);
@@ -148,6 +156,7 @@ export function DashboardGrid({
         );
         const widthLocked = def.minW === def.maxW;
         const heightLocked = def.minH === def.maxH || !def.resizable;
+        const configurable = isConfigurable(widget.type);
         return (
           <section
             key={widget.instanceId}
@@ -167,7 +176,7 @@ export function DashboardGrid({
               // widgets with decorative negative-inset bleeds (risk gauge
               // tick, heatmap rail) would widen the section past its column
               // and inflate the page scroll width on mobile.
-              "relative min-w-0 rounded-xl",
+              "group/section relative min-w-0 rounded-xl",
               SPAN_CLASSES[widget.w] ?? "lg:col-span-12",
               HEIGHT_CLASSES[widget.h] ?? "",
               draggingId === widget.instanceId && "opacity-45",
@@ -182,11 +191,25 @@ export function DashboardGrid({
                 count={displayedVisible.length}
                 widthLocked={widthLocked}
                 heightLocked={heightLocked}
+                configurable={configurable}
                 onMoveBy={onMoveBy}
                 onResize={onResize}
                 onHide={onHide}
                 onRemove={onRemove}
+                onOpenSettings={onOpenSettings}
               />
+            )}
+            {!editing && configurable && (
+              <button
+                type="button"
+                aria-label={`Configure ${def.name}`}
+                title={`Configure ${def.name}`}
+                data-testid={`dashboard-widget-settings-${widget.type.toLowerCase()}`}
+                onClick={() => onOpenSettings(widget.instanceId)}
+                className="absolute right-2 top-2 z-10 rounded-md border border-border bg-background/95 p-1.5 text-muted-foreground opacity-0 shadow-sm backdrop-blur transition-opacity hover:text-foreground focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring group-hover/section:opacity-100 sm:opacity-60 sm:hover:opacity-100"
+              >
+                <Settings2 className="size-3.5" aria-hidden="true" />
+              </button>
             )}
             {editing && !widthLocked && (
               <ResizeHandle
@@ -212,7 +235,16 @@ export function DashboardGrid({
                 }}
               />
             )}
-            <WidgetContent type={widget.type} data={data} />
+            <WidgetContent
+              type={widget.type}
+              data={data}
+              config={widget.config}
+              onRangeChange={
+                onConfigRange && widget.type === "PNL_BAND"
+                  ? (range) => onConfigRange(widget.instanceId, range)
+                  : undefined
+              }
+            />
             {editing && (
               <span className="pointer-events-none absolute -top-3 left-4 z-10 inline-flex items-center gap-1 rounded-md border border-border bg-background/95 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground shadow-sm backdrop-blur">
                 <Icon className="size-3" aria-hidden="true" />
@@ -245,10 +277,12 @@ function WidgetEditTools({
   count,
   widthLocked,
   heightLocked,
+  configurable,
   onMoveBy,
   onResize,
   onHide,
   onRemove,
+  onOpenSettings,
 }: {
   widget: DashboardWidgetItem;
   label: string;
@@ -256,10 +290,12 @@ function WidgetEditTools({
   count: number;
   widthLocked: boolean;
   heightLocked: boolean;
+  configurable: boolean;
   onMoveBy: (instanceId: string, direction: -1 | 1) => void;
   onResize: (instanceId: string, patch: { w?: number; h?: number }) => void;
   onHide: (instanceId: string) => void;
   onRemove: (instanceId: string) => void;
+  onOpenSettings: (instanceId: string) => void;
 }) {
   const def = WIDGET_REGISTRY[widget.type];
   const key = widget.type.toLowerCase();
@@ -352,6 +388,18 @@ function WidgetEditTools({
         </>
       )}
       <span className="mx-0.5 h-4 w-px bg-border" aria-hidden="true" />
+      {configurable && (
+        <button
+          type="button"
+          aria-label={`Configure ${label}`}
+          title="Configure this widget"
+          data-testid={`dashboard-widget-settings-${key}`}
+          onClick={() => onOpenSettings(widget.instanceId)}
+          className={toolButton}
+        >
+          <Settings2 className="size-3.5" aria-hidden="true" />
+        </button>
+      )}
       <button
         type="button"
         aria-label={`Hide ${label}`}

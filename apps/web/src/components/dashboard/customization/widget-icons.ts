@@ -1,9 +1,13 @@
 import {
   Activity,
+  ArrowLeftRight,
   BarChart3,
   BellRing,
   CalendarDays,
   CalendarRange,
+  Gauge,
+  GitCompareArrows,
+  Grid3x3,
   Target,
   Trophy,
   type LucideIcon,
@@ -21,6 +25,10 @@ const WIDGET_ICONS: Record<string, LucideIcon> = {
   heatmap: CalendarDays,
   bestworst: Trophy,
   alerts: BellRing,
+  metrics: Gauge,
+  strategies: GitCompareArrows,
+  longshort: ArrowLeftRight,
+  activity: Grid3x3,
 };
 
 export function widgetIcon(iconId: string): LucideIcon {

@@ -21,6 +21,7 @@ import { buildTestApp } from "../helpers/build-app";
 import { authenticatedUser, captureMail, type MailCapture } from "../helpers/identity";
 import {
   DEFAULT_USER_PREFERENCES,
+  DASHBOARD_WIDGET_KEYS,
   userPreferencesSchema,
   type UserPreferences,
 } from "../../src/shared/contracts";
@@ -423,7 +424,11 @@ describe("dashboard widget order (Phase 15 §19)", () => {
     const parsed = userPreferencesSchema.parse(ok.json()) as UserPreferences;
     expect(parsed.dashboard.widgetOrder).toEqual(reversed);
 
-    const oversized = await patchDomain(ctx.authHeader, "dashboard", { widgetOrder: [...keys, keys[0]] });
+    // The canon grew with Phase 02 (11 widget types) — an oversized order
+    // must exceed max(DASHBOARD_WIDGET_KEYS.length) to be rejected.
+    const oversized = await patchDomain(ctx.authHeader, "dashboard", {
+      widgetOrder: [...keys, ...keys].slice(0, DASHBOARD_WIDGET_KEYS.length + 1),
+    });
     expectValidationError(oversized.statusCode, oversized.json());
   });
 });

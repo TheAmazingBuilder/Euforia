@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { toast } from "sonner";
-import type { DashboardWidgetKey } from "@cosmoz/shared";
+import type { DashboardWidgetKey, DashboardWidgetItem } from "@cosmoz/shared";
 
 import { apiErrorMessage } from "@/lib/api/client";
 import { usePreferences, useUpdatePreferencesDomain } from "@/lib/api/queries";
@@ -154,6 +154,28 @@ export function useDashboardCustomization() {
       dispatch({ type: "draftResize", instanceId, patch }),
     [],
   );
+  /**
+   * Per-widget config (Phase 02 §6): edit mode routes into the draft
+   * transaction (nothing persists before Save); view mode applies the
+   * validated change to the active layout and persists immediately — the
+   * same channel as the other view-mode collection operations.
+   */
+  const setWidgetConfig = React.useCallback(
+    (instanceId: string, config: DashboardWidgetItem["config"]) => {
+      const current = stateRef.current;
+      if (current.draft) {
+        dispatch({ type: "draftSetConfig", instanceId, config });
+        return;
+      }
+      applyCollectionAction({
+        type: "widgetConfigSet",
+        layoutId: current.activeLayoutId,
+        instanceId,
+        config,
+      });
+    },
+    [applyCollectionAction],
+  );
   const resetDraftToDefault = React.useCallback(
     () => dispatch({ type: "draftResetToDefault" }),
     [],
@@ -236,6 +258,7 @@ export function useDashboardCustomization() {
     moveWidgetTo,
     moveWidgetBy,
     resizeWidget,
+    setWidgetConfig,
     resetDraftToDefault,
     replaceDraftWithTemplate,
     switchLayout,

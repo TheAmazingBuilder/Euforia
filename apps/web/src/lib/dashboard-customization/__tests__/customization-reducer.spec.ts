@@ -61,18 +61,21 @@ describe("edit session (draft transaction)", () => {
 
   it("adding and removing widgets follow the singleton rule and never touch data", () => {
     const started = customizationReducer(idleState(), { type: "editStarted" });
-    const withoutAlerts = customizationReducer(started, {
+    // Remove and re-add THE SAME singleton type — the guard counts hidden
+    // AND still-present instances, so a different type would be a no-op.
+    const removedType = started.draft!.widgets.at(-1)!.type;
+    const withoutLast = customizationReducer(started, {
       type: "draftRemoveWidget", instanceId: started.draft!.widgets.at(-1)!.instanceId,
     });
-    expect(withoutAlerts.draft!.widgets).toHaveLength(started.draft!.widgets.length - 1);
+    expect(withoutLast.draft!.widgets).toHaveLength(started.draft!.widgets.length - 1);
 
-    const added = customizationReducer(withoutAlerts, { type: "draftAddWidget", widgetType: "ALERTS" });
-    expect(added.draft!.widgets).toHaveLength(withoutAlerts.draft!.widgets.length + 1);
-    const alertsInstance = added.draft!.widgets.at(-1)!;
-    expect(alertsInstance.type).toBe("ALERTS");
+    const added = customizationReducer(withoutLast, { type: "draftAddWidget", widgetType: removedType });
+    expect(added.draft!.widgets).toHaveLength(withoutLast.draft!.widgets.length + 1);
+    const addedInstance = added.draft!.widgets.at(-1)!;
+    expect(addedInstance.type).toBe(removedType);
 
     // Second add of the same singleton is a no-op.
-    const again = customizationReducer(added, { type: "draftAddWidget", widgetType: "ALERTS" });
+    const again = customizationReducer(added, { type: "draftAddWidget", widgetType: removedType });
     expect(again.draft!.widgets).toHaveLength(added.draft!.widgets.length);
   });
 
@@ -265,5 +268,55 @@ describe("helpers", () => {
   it("template builder returns null for unknown template ids", () => {
     expect(buildLayoutFromTemplate("ghost")).toBeNull();
     expect(buildLayoutFromTemplate("risk_management")).not.toBeNull();
+  });
+});
+
+describe("per-widget configuration (Phase 02)", () => {
+  const VALID_CONFIG = {
+    kind: "PNL_BAND" as const,
+    v: 1 as const,
+    range: 7 as const,
+    cumulativeType: "BAR" as const,
+    showAvgLine: false,
+    showEndMarker: true,
+    showZeroLine: true,
+  };
+
+  it("draftSetConfig edits the draft only — the saved layout is untouched until commit", () => {
+    const started = customizationReducer(idleState(), { type: "editStarted" });
+    const id = firstInstanceId(started); // PNL_BAND
+    const dirtied = customizationReducer(started, { type: "draftSetConfig", instanceId: id, config: VALID_CONFIG });
+    expect(dirtied.draft!.widgets.find((w) => w.instanceId === id)!.config).toEqual(VALID_CONFIG);
+    expect(activeLayoutOf(dirtied).widgets.find((w) => w.instanceId === id)!.config).toBeUndefined();
+    expect(isDirty(dirtied)).toBe(true);
+  });
+
+  it("draftSetConfig on a non-configurable widget or invalid payload is a no-op", () => {
+    const started = customizationReducer(idleState(), { type: "editStarted" });
+    const goals = started.draft!.widgets.find((w) => w.type === "GOALS_PACE")!;
+    const unchanged = customizationReducer(started, {
+      type: "draftSetConfig", instanceId: goals.instanceId, config: VALID_CONFIG, // wrong kind for this widget
+    });
+    expect(unchanged.draft).toBe(started.draft);
+    expect(isDirty(unchanged)).toBe(false);
+  });
+
+  it("widgetConfigSet (view mode) mutates the ACTIVE layout for immediate persistence", () => {
+    const state = idleState();
+    const activeId = state.activeLayoutId;
+    const id = firstInstanceId(state);
+    const next = customizationReducer(state, { type: "widgetConfigSet", layoutId: activeId, instanceId: id, config: VALID_CONFIG });
+    expect(next.layouts.find((layout) => layout.id === activeId)!.widgets.find((w) => w.instanceId === id)!.config).toEqual(VALID_CONFIG);
+  });
+
+  it("widgetConfigSet never stomps a live edit session (draft owns the display)", () => {
+    const started = customizationReducer(idleState(), { type: "editStarted" });
+    const id = firstInstanceId(started);
+    const ignored = customizationReducer(started, {
+      type: "widgetConfigSet", layoutId: started.activeLayoutId, instanceId: id, config: VALID_CONFIG,
+    });
+    // The draft still shows the OLD config; the saved layouts are untouched.
+    expect(ignored.draft).toBe(started.draft);
+    expect(ignored.layouts).toBe(started.layouts);
   });
 });

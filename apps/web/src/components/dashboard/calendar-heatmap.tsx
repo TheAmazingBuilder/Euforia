@@ -47,9 +47,11 @@ function shiftMonth(cursor: { year: number; month: number }, offset: number) {
 interface CalendarHeatmapProps {
   dailyPnl: DailyPnlPoint[];
   currency: Currency;
+  /** Phase 02 widget config — hide the per-day P&L text for compact spans. */
+  showCellValues?: boolean;
 }
 
-export function CalendarHeatmap({ dailyPnl, currency }: CalendarHeatmapProps) {
+export function CalendarHeatmap({ dailyPnl, currency, showCellValues = true }: CalendarHeatmapProps) {
   const { resolvedTheme } = useTheme();
   const [cursor, setCursor] = React.useState(() => {
     const now = new Date();
@@ -190,7 +192,7 @@ export function CalendarHeatmap({ dailyPnl, currency }: CalendarHeatmapProps) {
                         </span>
                       ) : null}
                     </div>
-                    {point ? (
+                    {point && showCellValues ? (
                       <p
                         className="mt-1 truncate font-mono text-[11px] font-semibold tabular-nums"
                         style={{
@@ -201,6 +203,7 @@ export function CalendarHeatmap({ dailyPnl, currency }: CalendarHeatmapProps) {
                                 ? theme.loss
                                 : theme.textMuted,
                         }}
+                        data-testid="heatmap-cell-value"
                       >
                         {formatMoneyCompact(point.pnlNet, currency)}
                       </p>

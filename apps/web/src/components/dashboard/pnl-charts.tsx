@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useTheme } from "next-themes";
-import type { StatsOverviewResponse } from "@cosmoz/shared";
+import type { PnlBandWidgetConfig, StatsOverviewResponse } from "@cosmoz/shared";
 import { formatMoneyCompact, formatSignedMoney } from "@cosmoz/shared";
 import type { EChartsCoreOption } from "echarts/core";
 import { graphic } from "echarts/core";
@@ -51,10 +51,25 @@ function PnlCardHeader({
 /**
  * Cumulative P&L — accent line over a soft gradient area with a zero
  * baseline, mono end-label on the last point. Range = period chips (URL).
+ * Phase 02: when a widget config is provided the range comes from it and
+ * the chips update the widget's own configuration instead of the URL.
  */
-export function CumulativePnlCard({ overview }: { overview: StatsOverviewResponse }) {
+export function CumulativePnlCard({
+  overview,
+  chartConfig,
+  onRangeChange,
+}: {
+  overview: StatsOverviewResponse;
+  chartConfig?: PnlBandWidgetConfig;
+  onRangeChange?: (range: RangeDays) => void;
+}) {
   const { resolvedTheme } = useTheme();
-  const [range, setRange] = useRangeParam();
+  const [urlRange, setUrlRange] = useRangeParam();
+  const range: RangeDays = chartConfig ? chartConfig.range : urlRange;
+  const setRange = chartConfig && onRangeChange ? onRangeChange : setUrlRange;
+  const chartType = chartConfig?.cumulativeType ?? "AREA";
+  const showEndMarker = chartConfig?.showEndMarker ?? true;
+  const showZeroLine = chartConfig?.showZeroLine ?? true;
 
   // resolvedTheme is an intentional dependency even though tokens are read
   // from the DOM: the memo re-runs on theme switch (design-tokens.md §8).
@@ -82,6 +97,107 @@ export function CumulativePnlCard({ overview }: { overview: StatsOverviewRespons
     const max = Math.max(0, ...series.map((point) => point.value));
     const pad = Math.max((max - min) * 0.08, 1);
 
+    const seriesBase = {
+      id: "cumulative-pnl",
+      data: series,
+      smooth: 0.25,
+      symbol: "none" as const,
+      markPoint:
+        showEndMarker && last !== undefined
+          ? {
+              silent: true,
+              symbol: "circle",
+              symbolSize: 8,
+              itemStyle: {
+                color: theme.accent,
+                borderColor: theme.surfaceRaised,
+                borderWidth: 2,
+                shadowColor: withAlpha(theme.accent, 0.55),
+                shadowBlur: 9,
+              },
+              label: { show: false },
+              data: [{ coord: [last.date, last.value] }],
+            }
+          : undefined,
+      markLine:
+        showZeroLine && min < 0
+          ? {
+              silent: true,
+              symbol: "none",
+              label: { show: false },
+              lineStyle: { color: theme.border, type: "dashed", width: 1 },
+              data: [{ yAxis: 0 }],
+            }
+          : undefined,
+      endLabel: {
+        show: showEndMarker && last !== undefined,
+        precision: 0,
+        formatter: () => formatSignedMoney(last?.raw ?? 0, overview.currency, { digits: 0 }),
+        color: (last?.raw ?? 0) >= 0 ? theme.profit : theme.loss,
+        fontFamily: theme.monoFont,
+        fontSize: 11,
+        fontWeight: "bold",
+        offset: [6, 0],
+      },
+    };
+
+    if (chartType === "BAR") {
+      return {
+        grid: { left: 8, right: 44, top: 14, bottom: 8, containLabel: true },
+        tooltip: barTooltip(theme, overview.currency),
+        xAxis: categoryAxis(series.map((point) => point.date), theme),
+        yAxis: valueAxis(min, max, pad, overview.currency, theme),
+        series: [
+          {
+            ...seriesBase,
+            type: "bar" as const,
+            barMaxWidth: 18,
+            itemStyle: {
+              borderRadius: 3,
+              color: (params: { dataIndex: number }) => {
+                const raw = series[params.dataIndex]?.raw ?? 0;
+                return raw >= 0 ? theme.profit : theme.loss;
+              },
+            },
+          },
+        ],
+      } satisfies EChartsCoreOption;
+    }
+
+    if (chartType === "LINE") {
+      return {
+        grid: { left: 8, right: 44, top: 14, bottom: 8, containLabel: true },
+        tooltip: {
+          trigger: "axis",
+          axisPointer: { type: "line", lineStyle: { color: theme.border } },
+          backgroundColor: theme.surfaceRaised,
+          borderColor: theme.border,
+          textStyle: { color: theme.textPrimary, fontFamily: theme.monoFont, fontSize: 12 },
+          formatter: (params: unknown) => {
+            const typed = params as { name: string; data: { raw: number } }[];
+            const point = typed?.[0];
+            if (!point) return "";
+            return `${point.name}<br/><b>${formatSignedMoney(point.data.raw, overview.currency)}</b>`;
+          },
+        },
+        xAxis: categoryAxis(series.map((point) => point.date), theme, true),
+        yAxis: valueAxis(min, max, pad, overview.currency, theme),
+        series: [
+          {
+            ...seriesBase,
+            type: "line" as const,
+            lineStyle: {
+              color: theme.accent,
+              width: 2.5,
+              shadowColor: withAlpha(theme.accent, 0.45),
+              shadowBlur: 10,
+              shadowOffsetY: 5,
+            },
+          },
+        ],
+      } satisfies EChartsCoreOption;
+    }
+
     return {
       grid: { left: 8, right: 44, top: 14, bottom: 8, containLabel: true },
       tooltip: {
@@ -97,33 +213,12 @@ export function CumulativePnlCard({ overview }: { overview: StatsOverviewRespons
           return `${point.name}<br/><b>${formatSignedMoney(point.data.raw, overview.currency)}</b>`;
         },
       },
-      xAxis: {
-        type: "category",
-        data: series.map((point) => point.date),
-        boundaryGap: false,
-        axisLine: { lineStyle: { color: theme.border } },
-        axisTick: { show: false },
-        axisLabel: { color: theme.textMuted, fontSize: 10, fontFamily: theme.monoFont, hideOverlap: true },
-      },
-      yAxis: {
-        type: "value",
-        min: Math.floor((min - pad) * 100) / 100,
-        max: Math.ceil((max + pad) * 100) / 100,
-        splitLine: { lineStyle: { color: theme.border, type: "dashed" } },
-        axisLabel: {
-          color: theme.textMuted,
-          fontSize: 10,
-          fontFamily: theme.monoFont,
-          formatter: (value: number) => formatMoneyCompact(value, overview.currency),
-        },
-      },
+      xAxis: categoryAxis(series.map((point) => point.date), theme, true),
+      yAxis: valueAxis(min, max, pad, overview.currency, theme),
       series: [
         {
-          id: "cumulative-pnl",
-          type: "line",
-          data: series,
-          smooth: 0.25,
-          symbol: "none",
+          ...seriesBase,
+          type: "line" as const,
           lineStyle: {
             color: theme.accent,
             width: 2.5,
@@ -142,50 +237,13 @@ export function CumulativePnlCard({ overview }: { overview: StatsOverviewRespons
               ],
             },
           },
-          markPoint:
-            last !== undefined
-              ? {
-                  silent: true,
-                  symbol: "circle",
-                  symbolSize: 8,
-                  itemStyle: {
-                    color: theme.accent,
-                    borderColor: theme.surfaceRaised,
-                    borderWidth: 2,
-                    shadowColor: withAlpha(theme.accent, 0.55),
-                    shadowBlur: 9,
-                  },
-                  label: { show: false },
-                  data: [{ coord: [last.date, last.value] }],
-                }
-              : undefined,
-          markLine:
-            min < 0
-              ? {
-                  silent: true,
-                  symbol: "none",
-                  label: { show: false },
-                  lineStyle: { color: theme.border, type: "dashed", width: 1 },
-                  data: [{ yAxis: 0 }],
-                }
-              : undefined,
-          endLabel: {
-            show: last !== undefined,
-            precision: 0,
-            formatter: () => formatSignedMoney(last?.raw ?? 0, overview.currency, { digits: 0 }),
-            color: (last?.raw ?? 0) >= 0 ? theme.profit : theme.loss,
-            fontFamily: theme.monoFont,
-            fontSize: 11,
-            fontWeight: "bold",
-            offset: [6, 0],
-          },
         },
       ],
-    };
-  }, [overview, range, theme]);
+    } satisfies EChartsCoreOption;
+  }, [overview, range, theme, chartType, showEndMarker, showZeroLine]);
 
   return (
-    <Card className="bg-surface" data-testid="cumulative-pnl-card">
+    <Card className="bg-surface" data-testid="cumulative-pnl-card" data-range={range} data-chart={chartType.toLowerCase()}>
       <PnlCardHeader
         title="Cumulative P&L"
         description={`Net result over the last ${range} trading days`}
@@ -205,11 +263,23 @@ export function CumulativePnlCard({ overview }: { overview: StatsOverviewRespons
 
 /**
  * Daily P&L — per-day bars, profit/loss ink by sign, tooltip with the
- * signed amount and the number of trades behind the day.
+ * signed amount and the number of trades behind the day. The average
+ * mark line is widget-configurable (Phase 02).
  */
-export function DailyPnlCard({ overview }: { overview: StatsOverviewResponse }) {
+export function DailyPnlCard({
+  overview,
+  chartConfig,
+  onRangeChange,
+}: {
+  overview: StatsOverviewResponse;
+  chartConfig?: PnlBandWidgetConfig;
+  onRangeChange?: (range: RangeDays) => void;
+}) {
   const { resolvedTheme } = useTheme();
-  const [range, setRange] = useRangeParam();
+  const [urlRange, setUrlRange] = useRangeParam();
+  const range: RangeDays = chartConfig ? chartConfig.range : urlRange;
+  const setRange = chartConfig && onRangeChange ? onRangeChange : setUrlRange;
+  const showAvgLine = chartConfig?.showAvgLine ?? true;
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const theme = React.useMemo<ChartTheme>(() => getChartTheme(), [resolvedTheme]);
@@ -288,7 +358,7 @@ export function DailyPnlCard({ overview }: { overview: StatsOverviewResponse }) 
           }),
           barMaxWidth: 22,
           markLine:
-            values.length > 1
+            showAvgLine && values.length > 1
               ? {
                   silent: true,
                   symbol: "none",
@@ -315,10 +385,10 @@ export function DailyPnlCard({ overview }: { overview: StatsOverviewResponse }) 
         },
       ],
     };
-  }, [overview, range, theme]);
+  }, [overview, range, theme, showAvgLine]);
 
   return (
-    <Card className="bg-surface" data-testid="daily-pnl-card">
+    <Card className="bg-surface" data-testid="daily-pnl-card" data-range={range}>
       <PnlCardHeader
         title="Daily P&L"
         description={`Result per trading day — last ${range} days`}
@@ -334,4 +404,48 @@ export function DailyPnlCard({ overview }: { overview: StatsOverviewResponse }) 
       </CardContent>
     </Card>
   );
+}
+
+// ── Shared axis/tooltip builders (chart-config variants) ──────────────────
+
+function categoryAxis(labels: string[], theme: ChartTheme, boundaryGapFree = false) {
+  return {
+    type: "category" as const,
+    data: labels,
+    boundaryGap: !boundaryGapFree ? undefined : false,
+    axisLine: { lineStyle: { color: theme.border } },
+    axisTick: { show: false },
+    axisLabel: { color: theme.textMuted, fontSize: 10, fontFamily: theme.monoFont, hideOverlap: true },
+  };
+}
+
+function valueAxis(min: number, max: number, pad: number, currency: StatsOverviewResponse["currency"], theme: ChartTheme) {
+  return {
+    type: "value" as const,
+    min: Math.floor((min - pad) * 100) / 100,
+    max: Math.ceil((max + pad) * 100) / 100,
+    splitLine: { lineStyle: { color: theme.border, type: "dashed" } },
+    axisLabel: {
+      color: theme.textMuted,
+      fontSize: 10,
+      fontFamily: theme.monoFont,
+      formatter: (value: number) => formatMoneyCompact(value, currency),
+    },
+  };
+}
+
+function barTooltip(theme: ChartTheme, currency: StatsOverviewResponse["currency"]) {
+  return {
+    trigger: "axis" as const,
+    axisPointer: { type: "shadow" as const, shadowStyle: { color: withAlpha(theme.textPrimary, 0.06) } },
+    backgroundColor: theme.surfaceRaised,
+    borderColor: theme.border,
+    textStyle: { color: theme.textPrimary, fontFamily: theme.monoFont, fontSize: 12 },
+    formatter: (params: unknown) => {
+      const typed = params as { name: string; data: { raw: number } }[];
+      const point = typed?.[0];
+      if (!point) return "";
+      return `${point.name}<br/><b>${formatSignedMoney(point.data.raw, currency)}</b>`;
+    },
+  };
 }

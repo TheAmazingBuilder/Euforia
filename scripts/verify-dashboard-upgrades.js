@@ -57,6 +57,19 @@ const BASE = "http://localhost:3000";
   const run = async () => {
   // ── 1. Canonical widget order ────────────────────────────────────────────
   await page.goto(`${BASE}/`, { waitUntil: "networkidle", timeout: 60000 });
+  // Fresh browsers have no session — sign in with the demo account first
+  // (same preamble as the other dashboard probes).
+  if (page.url().includes("/login")) {
+    const fillDemo = page.locator('[data-testid="fill-demo"]');
+    if (await fillDemo.isVisible().catch(() => false)) {
+      await fillDemo.click();
+    } else {
+      await page.locator("#login-email").fill("trader@cosmoz.app");
+      await page.locator("#login-password").fill("cosmoz-demo-2026");
+    }
+    await page.getByRole("button", { name: /Sign in/ }).click();
+    await page.waitForFunction(() => window.location.pathname === "/", null, { timeout: 15000 });
+  }
   await page.locator('[data-testid="dashboard-goals-pace"]').waitFor({ state: "visible", timeout: 20000 });
   const canonical = ["PNL_BAND", "EQUITY_ROW", "GOALS_PACE", "WEEK_COMPARE", "HEATMAP", "BEST_WORST", "ALERTS"];
   const order0 = await widgetOrder();
@@ -65,6 +78,8 @@ const BASE = "http://localhost:3000";
   check("Edit toolbar renders", await page.locator('[data-testid="dashboard-customize"]').isVisible());
 
   // ── 2. Goals on pace — counters + clickable at-risk counter ─────────────
+  // The goals query resolves async — wait it out instead of racing isVisible.
+  await page.locator('[data-testid="dashboard-goals-counters"]').waitFor({ state: "visible", timeout: 10000 }).catch(() => {});
   check("Goals card header renders", await page.locator('[data-testid="dashboard-goals-pace"]').isVisible());
   check("Counters grid renders", await page.locator('[data-testid="dashboard-goals-counters"]').isVisible());
   check("At-risk counter visible", await page.locator('[data-testid="dashboard-goals-atrisk"]').isVisible());
@@ -224,6 +239,18 @@ const BASE = "http://localhost:3000";
   const mobile = await browser.newPage({ viewport: { width: 390, height: 844 } });
   mobile.on("pageerror", (err) => errors.push(`mobile: ${err}`));
   await mobile.goto(`${BASE}/`, { waitUntil: "networkidle", timeout: 60000 });
+  // Same fresh-session preamble as the desktop page.
+  if (mobile.url().includes("/login")) {
+    const mobileFill = mobile.locator('[data-testid="fill-demo"]');
+    if (await mobileFill.isVisible().catch(() => false)) {
+      await mobileFill.click();
+    } else {
+      await mobile.locator("#login-email").fill("trader@cosmoz.app");
+      await mobile.locator("#login-password").fill("cosmoz-demo-2026");
+    }
+    await mobile.getByRole("button", { name: /Sign in/ }).click();
+    await mobile.waitForFunction(() => window.location.pathname === "/", null, { timeout: 15000 });
+  }
   await mobile.waitForTimeout(1400);
   const overflow = await mobile.evaluate(
     () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
@@ -236,9 +263,14 @@ const BASE = "http://localhost:3000";
   await mobile.screenshot({ path: "scripts/shots/dashboard-upgrades-mobile.png" });
   await mobile.close();
 
-  // ── Console health (socket.io 404 + candles 400 = market-service noise) ──
+  // ── Console health: known market-service noise + expected pre-login
+  // auth 401 probes are excluded; everything else must be silent. ──────────
   const noise = errors.filter(
-    (e) => e.includes("socket.io") || (e.includes("404") && e.includes("candles")),
+    (e) =>
+      e.includes("socket.io") ||
+      (e.includes("404") && e.includes("candles")) ||
+      (e.includes("401") && e.includes("/api/auth/")) ||
+      (e.includes("Failed to load resource") && e.includes("401")),
   );
   check("Zero console errors (known market-service noise excluded)", errors.length - noise.length === 0, errors.slice(0, 3).join(" | "));
 

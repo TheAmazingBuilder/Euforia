@@ -1,10 +1,18 @@
 "use client";
 
 import * as React from "react";
-import type { DashboardWidgetKey, StatsOverviewResponse } from "@cosmoz/shared";
+import type {
+  AnalyticsSuiteResponse,
+  DashboardWidgetConfig,
+  DashboardWidgetKey,
+  StatsOverviewResponse,
+} from "@cosmoz/shared";
 import { formatMoney, formatNumber } from "@cosmoz/shared";
 
 import { useAlerts, useRulesStatus } from "@/lib/api/queries";
+import type { RangeDays } from "@/components/dashboard/period-chips";
+import { defaultWidgetConfig } from "@/lib/dashboard-customization/widget-configs";
+import { ActivityHeatmapWidget } from "@/components/dashboard/activity-heatmap-card";
 import { AlertsFeed } from "@/components/dashboard/alerts-feed";
 import { BestWorstCard } from "@/components/dashboard/best-worst-card";
 import { CalendarHeatmap } from "@/components/dashboard/calendar-heatmap";
@@ -12,18 +20,22 @@ import { CoachInsights } from "@/components/dashboard/coach-insights";
 import { DisciplineSavedCard } from "@/components/dashboard/discipline-saved-card";
 import { EquityConstellation } from "@/components/dashboard/equity-constellation";
 import { GoalsPaceCard } from "@/components/dashboard/goals-pace-card";
+import { LongShortWidget } from "@/components/dashboard/long-short-card";
+import { MetricsCardWidget } from "@/components/dashboard/metrics-card";
 import { OpenPositionsCard } from "@/components/dashboard/open-positions-card";
 import { CumulativePnlCard, DailyPnlCard } from "@/components/dashboard/pnl-charts";
 import { RiskBudgetCard } from "@/components/dashboard/risk-budget-card";
+import { StrategyCompareWidget } from "@/components/dashboard/strategy-compare-card";
 import { WeekCompareCard } from "@/components/dashboard/week-compare-card";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 /**
- * Widget renderer map (Phase 01 §4.3) — the RUNTIME counterpart of the
- * widget registry. Persisted layouts reference `type` keys only; this
- * layer resolves them to the real components with the real data props.
- * Nothing here is serialized, and unknown types never reach this map
- * (the model layer drops them on read).
+ * Widget renderer map (Phase 01 §4.3, extended by Phase 02) — the RUNTIME
+ * counterpart of the widget registry. Persisted layouts reference `type`
+ * keys only; this layer resolves them to the real components with the real
+ * data props and the instance's resolved configuration. Nothing here is
+ * serialized, and unknown types never reach this map (the model layer drops
+ * them on read).
  */
 
 export type RulesStatusData = NonNullable<Awaited<ReturnType<typeof useRulesStatus>>["data"]> & object;
@@ -33,6 +45,9 @@ export interface DashboardWidgetData {
   overview: StatsOverviewResponse;
   rulesStatus: RulesStatusData;
   alerts: AlertsData;
+  /** Analytics-suite aggregates for the server-computed widgets (null while
+   * the dashboard-level fetch is not needed / not resolved). */
+  suite: AnalyticsSuiteResponse | null;
 }
 
 function HeroChip({ label, value }: { label: string; value: string }) {
@@ -44,30 +59,40 @@ function HeroChip({ label, value }: { label: string; value: string }) {
   );
 }
 
-/** One widget instance's content — moved verbatim from the previous
- * inline registry in dashboard-view (same markup, same data wiring). */
-export function WidgetContent({
-  type,
-  data,
-}: {
+export interface WidgetContentProps {
   type: DashboardWidgetKey;
   data: DashboardWidgetData;
-}) {
+  /** The instance's RESOLVED config (undefined = widget defaults). */
+  config?: DashboardWidgetConfig;
+  /** Config-aware range changes (PNL_BAND period chips → widget config). */
+  onRangeChange?: (range: RangeDays) => void;
+}
+
+/** One widget instance's content — moved verbatim from the previous
+ * inline registry in dashboard-view (same markup, same data wiring). */
+export function WidgetContent({ type, data, config, onRangeChange }: WidgetContentProps) {
   const insights = React.useMemo(
     () => data.alerts.alerts.filter((alert) => alert.type === "STRATEGY_DECAY"),
     [data.alerts.alerts],
   );
+  // The config the component renders with: the instance's stored config when
+  // valid, otherwise the widget's defaults — a FRESHLY ADDED instance has no
+  // stored config yet and must still render (never a blank card).
+  const resolvedConfig =
+    config?.kind === type ? config : (defaultWidgetConfig(type) ?? undefined);
 
   switch (type) {
-    case "PNL_BAND":
+    case "PNL_BAND": {
+      const pnlConfig = resolvedConfig?.kind === "PNL_BAND" ? resolvedConfig : undefined;
       return (
         <React.Suspense fallback={<div className="h-72 animate-pulse rounded-xl bg-muted" />}>
           <div className="grid gap-3 sm:gap-4 lg:grid-cols-2">
-            <CumulativePnlCard overview={data.overview} />
-            <DailyPnlCard overview={data.overview} />
+            <CumulativePnlCard overview={data.overview} chartConfig={pnlConfig} onRangeChange={onRangeChange} />
+            <DailyPnlCard overview={data.overview} chartConfig={pnlConfig} onRangeChange={onRangeChange} />
           </div>
         </React.Suspense>
       );
+    }
     case "EQUITY_ROW":
       return (
         <div className="grid gap-3 sm:gap-4 lg:grid-cols-5">
@@ -109,7 +134,13 @@ export function WidgetContent({
         <WeekCompareCard weeklyCompare={data.overview.weeklyCompare} currency={data.overview.currency} />
       );
     case "HEATMAP":
-      return <CalendarHeatmap dailyPnl={data.overview.dailyPnl} currency={data.overview.currency} />;
+      return (
+        <CalendarHeatmap
+          dailyPnl={data.overview.dailyPnl}
+          currency={data.overview.currency}
+          showCellValues={resolvedConfig?.kind === "HEATMAP" ? resolvedConfig.showCellValues : true}
+        />
+      );
     case "BEST_WORST":
       return (
         <div className="grid gap-3 sm:gap-4 lg:grid-cols-2">
@@ -122,6 +153,14 @@ export function WidgetContent({
       );
     case "ALERTS":
       return <AlertsFeed alerts={data.alerts.alerts} unreadCount={data.alerts.unreadCount} />;
+    case "METRICS_CARD":
+      return resolvedConfig?.kind === "METRICS_CARD" ? <MetricsCardWidget config={resolvedConfig} /> : null;
+    case "STRATEGY_COMPARE":
+      return resolvedConfig?.kind === "STRATEGY_COMPARE" ? <StrategyCompareWidget config={resolvedConfig} /> : null;
+    case "LONG_SHORT":
+      return resolvedConfig?.kind === "LONG_SHORT" ? <LongShortWidget config={resolvedConfig} /> : null;
+    case "ACTIVITY_HEATMAP":
+      return resolvedConfig?.kind === "ACTIVITY_HEATMAP" ? <ActivityHeatmapWidget config={resolvedConfig} /> : null;
     default:
       return null;
   }
