@@ -211,6 +211,70 @@ describe("timeline assembly", () => {
     expect(events[0]?.kind).toBe("ENTRY");
     expect(events[1]?.kind).toBe("EXIT");
   });
+
+  // ── mood strip (seam closure — Trade psychology columns are real) ──────────
+
+  it("builds NO moods when the trades carry no psychology data", () => {
+    const { moods } = assembleTimeline({ trades: [timelineTrade()] });
+    expect(moods).toEqual([]);
+  });
+
+  it("derives BEFORE @ entryAt from emotionBefore, with confidence when present", () => {
+    const { moods } = assembleTimeline({
+      trades: [timelineTrade({ emotionBefore: "CALM", confidence: 4 })],
+    });
+    expect(moods).toHaveLength(1);
+    expect(moods[0]).toEqual({
+      at: "2026-10-03T10:00:00Z",
+      emotion: "CALM",
+      phase: "BEFORE",
+      tradeId: "0f0e1d2c-3b4a-4f5e-8d7c-6b5a4938271",
+      confidence: 4,
+    });
+  });
+
+  it("derives AFTER @ exitAt for closed trades and @ updatedAt for open ones", () => {
+    const closed = assembleTimeline({
+      trades: [timelineTrade({ emotionAfter: "RELIEVED", emotionBefore: "CONFIDENT", confidence: 3 })],
+    }).moods;
+    expect(closed).toHaveLength(2);
+    expect(closed[0]).toMatchObject({ phase: "BEFORE", at: "2026-10-03T10:00:00Z" });
+    expect(closed[1]).toMatchObject({ phase: "AFTER", at: "2026-10-03T11:00:00Z", emotion: "RELIEVED" });
+
+    const open = assembleTimeline({
+      trades: [
+        timelineTrade({
+          status: "OPEN",
+          exitAt: null,
+          exitReason: null,
+          emotionBefore: "CONFIDENT",
+          emotionAfter: "EUPHORIC",
+          updatedAt: new Date("2026-10-03T10:30:00Z"),
+        }),
+      ],
+    }).moods;
+    expect(open).toHaveLength(2);
+    expect(open[1]).toMatchObject({ phase: "AFTER", at: "2026-10-03T10:30:00Z" });
+  });
+
+  it("sorts moods chronologically across trades", () => {
+    const { moods } = assembleTimeline({
+      trades: [
+        timelineTrade({
+          id: "0f0e1d2c-3b4a-4f5e-8d7c-6b5a4938272",
+          entryAt: new Date("2026-10-03T11:30:00Z"),
+          exitAt: new Date("2026-10-03T12:00:00Z"),
+          emotionBefore: "ANXIOUS",
+        }),
+        timelineTrade({ emotionAfter: "FOMO", emotionBefore: null }),
+      ],
+    });
+    expect(moods.map((mood) => mood.phase)).toEqual(["AFTER", "BEFORE"]);
+    expect(moods.map((mood) => mood.at)).toEqual([
+      "2026-10-03T11:00:00Z",
+      "2026-10-03T11:30:00Z",
+    ]);
+  });
 });
 
 describe("prettyDecimal", () => {

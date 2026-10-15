@@ -7,15 +7,18 @@ import { useI18n } from "@/i18n/i18n-provider";
 
 /**
  * Screenshot capture (spec §4/§10): file picker + paste (Ctrl+V) + previews.
- * Client-side only for this phase — real uploads arrive with the API.
- * Files live in component state and are intentionally NOT persisted to the
- * localStorage draft (binary payloads don't belong in storage).
+ * Picked files stay in component state (binary payloads don't belong in the
+ * localStorage draft) and are UPLOADED by the owning flow (capture submit /
+ * reflect submit) as data URLs through POST /trades/:id/screenshots —
+ * `draftToDataUrl` is the shared encoder.
  */
 
 export interface DraftScreenshot {
   id: string;
   name: string;
   url: string;
+  /** The picked/pasted file — encoded to a data URL at upload time. */
+  file: File;
 }
 
 let screenshotCounter = 0;
@@ -26,7 +29,18 @@ function makeEntry(file: File): DraftScreenshot {
     id: `shot-${screenshotCounter}-${file.name}`,
     name: file.name === "" ? "pasted-image" : file.name,
     url: URL.createObjectURL(file),
+    file,
   };
+}
+
+/** Encode a picked file to the data URL the screenshot endpoints accept. */
+export function draftToDataUrl(shot: DraftScreenshot): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(reader.error ?? new Error("screenshot read failed"));
+    reader.onload = () => resolve(String(reader.result));
+    reader.readAsDataURL(shot.file);
+  });
 }
 
 export interface ScreenshotPickerProps {

@@ -6,9 +6,11 @@
  *   - netPnl sums realized P&L of trades CLOSED inside the window
  *     (pnlNet ?? pnlGross — the mock's canonical fallback order);
  *   - avgR averages rMultiple of those closed trades when computable;
- *   - violationsCount / ecoEventsCount come from Discipline / Calendar —
- *     bounded contexts that do NOT exist in the backend yet → the service
- *     passes explicit zeros (documented honest seams, never fabricated).
+ *   - violationsCount comes from the Discipline domain (in-window VIOLATION
+ *     rows, auto-evaluated on trade.closed — wired in the service) and
+ *     ecoEventsCount from the deterministic eco calendar generator; both are
+ *     SERVICE-PROVIDED counters, passed through verbatim (0 stays 0-honest,
+ *     never fabricated).
  */
 export interface SummaryTradeRow {
   symbol: string;
@@ -30,9 +32,9 @@ export interface SessionSummaryInput {
   windowTrades: SummaryTradeRow[];
   notesCount: number;
   analysesCount: number;
-  /** Discipline domain — absent backend (Phase 10 audit) → 0. */
+  /** Discipline VIOLATION rows inside the window (service-counted). */
   violationsCount: number;
-  /** Eco calendar — absent backend (Phase 10 audit) → 0. */
+  /** Eco events overlapping the window (deterministic calendar generator). */
   ecoEventsCount: number;
 }
 

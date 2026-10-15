@@ -284,6 +284,68 @@ export function TradeDetailDrawer({
     </section>
   );
 
+  // Psychology — honest read-out of the trade's own columns (emotions,
+  // confidence, plan adherence). Hidden entirely when nothing was logged.
+  const hasPsychology =
+    trade.emotionBefore !== null ||
+    trade.emotionAfter !== null ||
+    trade.confidence !== null ||
+    trade.followedPlan !== null;
+
+  const psychologySection = hasPsychology ? (
+    <section data-testid="trade-psychology">
+      <p className="mb-1.5 text-[11px] font-semibold tracking-wider uppercase text-muted-foreground">
+        {T.psychologyHeading}
+      </p>
+      <div className="flex flex-wrap items-center gap-1.5">
+        {trade.emotionBefore !== null ? (
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-2.5 py-1 text-xs">
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+              {dict.trades.form.emotionBefore}
+            </span>
+            <span className="font-medium text-foreground" data-testid="trade-emotion-before">
+              {dict.trades.emotions[trade.emotionBefore]}
+            </span>
+          </span>
+        ) : null}
+        {trade.emotionAfter !== null ? (
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-2.5 py-1 text-xs">
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+              {dict.trades.reflect.emotionAfter}
+            </span>
+            <span className="font-medium text-foreground" data-testid="trade-emotion-after">
+              {dict.trades.emotions[trade.emotionAfter]}
+            </span>
+          </span>
+        ) : null}
+        {trade.confidence !== null ? (
+          <span
+            data-testid="trade-confidence"
+            className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-2.5 py-1 text-xs"
+          >
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+              {T.confidenceLabel}
+            </span>
+            <span className="font-mono font-medium tabular-nums text-foreground">
+              {trade.confidence}/5
+            </span>
+          </span>
+        ) : null}
+        {trade.followedPlan !== null ? (
+          <span
+            data-testid="trade-followed-plan"
+            className={cn(
+              "rounded-full border px-2.5 py-1 text-xs",
+              trade.followedPlan ? "border-accent/50 text-accent" : "border-warning/40 text-warning",
+            )}
+          >
+            {trade.followedPlan ? dict.trades.judgment.planYes : dict.trades.judgment.planNo}
+          </span>
+        ) : null}
+      </div>
+    </section>
+  ) : null;
+
   const tagsSection = (
     <section>
       <p className="mb-1.5 text-[11px] font-semibold tracking-wider uppercase text-muted-foreground">
@@ -427,6 +489,7 @@ export function TradeDetailDrawer({
       <div className={cn("grid gap-5", "lg:grid-cols-2")}>
         <div className="space-y-5">
           {strategySection}
+          {psychologySection}
           {tagsSection}
           {notesSection}
         </div>

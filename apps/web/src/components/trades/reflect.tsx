@@ -1,13 +1,22 @@
 "use client";
 
 import * as React from "react";
+import { toast } from "sonner";
 import { Check, CircleSmall, Plus, TriangleAlert, X } from "lucide-react";
-import type { Emotion, Instrument, ReviewResponse, Tag, Trade } from "@cosmoz/shared";
+import type {
+  Emotion,
+  Instrument,
+  PsychologyUpdateInput,
+  ReviewResponse,
+  Tag,
+  Trade,
+} from "@cosmoz/shared";
 
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  useAddScreenshot,
   useCreateTag,
   useInstruments,
   useResolveMistake,
@@ -16,8 +25,11 @@ import {
   useUpdatePsychology,
   useUpdateReview,
 } from "@/lib/api/queries";
+import { apiErrorMessage } from "@/lib/api/client";
 import { ScreenshotPicker, type DraftScreenshot } from "@/components/trades/screenshot-picker";
+import { ConfidencePicker } from "@/components/trades/confidence-picker";
 import { EMOTION_OPTIONS } from "@/components/trades/emotion-picker";
+import { uploadDraftsSequentially } from "@/lib/utils/screenshot-upload";
 import { cn } from "@/lib/utils";
 import { closeJudgmentFlow } from "@/lib/hooks/use-judgment-flow";
 import { useI18n } from "@/i18n/i18n-provider";
@@ -25,8 +37,11 @@ import { useI18n } from "@/i18n/i18n-provider";
 /**
  * ACT 3 — Reflect (trade-entry-ux.md §6): optional, one minute, ALL skippable.
  * Detected mistakes (confirm/dismiss via PATCH), emotion-after (1-tap),
- * MFE/MAE user-observed prices, tags (+ inline creation), the lesson and
- * screenshots. The flow ends with [Finish] — or Esc at any time.
+ * confidence (1–5), MFE/MAE user-observed prices, tags (+ inline creation),
+ * the lesson and screenshots. The flow ends with [Finish] — or Esc at any
+ * time. [Finish] also persists the deferred pieces: the psychology patch
+ * (emotion-after / confidence deltas) and the picked screenshots (uploaded
+ * sequentially — failures are toasted, never blocking).
  */
 
 /** Rotate through the hourly slots — labels come from dict.trades.reflect. */
@@ -53,6 +68,7 @@ export function Reflect({ tradeId }: ReflectProps) {
   const updatePsychology = useUpdatePsychology();
   const updateReview = useUpdateReview();
   const createTag = useCreateTag();
+  const addScreenshot = useAddScreenshot();
 
   const data: ReviewResponse | undefined = review.data;
   const trade: Trade | null = data?.trade ?? null;
@@ -70,8 +86,10 @@ export function Reflect({ tradeId }: ReflectProps) {
   const [selectedTagIds, setSelectedTagIds] = React.useState<string[]>([]);
   const [newTagName, setNewTagName] = React.useState("");
   const [emotion, setEmotion] = React.useState<Emotion | null>(null);
+  const [confidence, setConfidence] = React.useState<number | null>(null);
   const [screenshots, setScreenshots] = React.useState<DraftScreenshot[]>([]);
   const [savedNote, setSavedNote] = React.useState<"idle" | "saving" | "saved">("idle");
+  const [finishing, setFinishing] = React.useState(false);
 
   // Adjust-state-on-props pattern (react.dev/learn/you-might-not-need-an-effect):
   // seed the fields once per trade, during render, not from an effect.
@@ -82,6 +100,7 @@ export function Reflect({ tradeId }: ReflectProps) {
     setLesson(data.trade.lessons ?? "");
     setSelectedTagIds(data.tagIds);
     setEmotion(data.trade.emotionAfter);
+    setConfidence(data.trade.confidence ?? null);
   }
 
   const tags: Tag[] = tagsData?.tags ?? [];
@@ -109,6 +128,7 @@ export function Reflect({ tradeId }: ReflectProps) {
   };
 
   const finish = () => {
+    if (finishing) return;
     const fields: Record<string, string | string[]> = {};
     if (mfePrice.trim() !== "" && Number(normalizeDecimalInput(mfePrice)) > 0) {
       fields.mfePrice = normalizeDecimalInput(mfePrice);
@@ -120,21 +140,68 @@ export function Reflect({ tradeId }: ReflectProps) {
     if (JSON.stringify(selectedTagIds) !== JSON.stringify(data?.tagIds ?? [])) {
       fields.tagIds = selectedTagIds;
     }
-    if (Object.keys(fields).length === 0) {
+    // Psychology deltas — the schema requires at least one field, and a
+    // deselect is a local undo (never a null PATCH).
+    const psychologyInput: PsychologyUpdateInput = {};
+    if (emotion !== null && emotion !== (data?.trade.emotionAfter ?? null)) {
+      psychologyInput.emotionAfter = emotion;
+    }
+    if (confidence !== null && confidence !== (data?.trade.confidence ?? null)) {
+      psychologyInput.confidence = confidence;
+    }
+    const hasPsychology = Object.keys(psychologyInput).length > 0;
+    const hasReviewFields = Object.keys(fields).length > 0;
+    const pickedShots = [...screenshots];
+    if (!hasReviewFields && !hasPsychology && pickedShots.length === 0) {
       closeJudgmentFlow();
       return;
     }
+    setFinishing(true);
     setSavedNote("saving");
-    updateReview.mutate(
-      { tradeId, input: fields },
-      {
-        onSuccess: () => {
-          setSavedNote("saved");
-          closeJudgmentFlow();
-        },
-        onError: () => setSavedNote("idle"),
-      },
-    );
+
+    const finishFlow = async () => {
+      // The review patch keeps its strict semantics: failure keeps the flow
+      // open so the trader can retry (decorations below stay non-blocking).
+      if (hasReviewFields) {
+        try {
+          await updateReview.mutateAsync({ tradeId, input: fields });
+        } catch {
+          setSavedNote("idle");
+          setFinishing(false);
+          return;
+        }
+      }
+      if (hasPsychology) {
+        try {
+          await updatePsychology.mutateAsync({ tradeId, input: psychologyInput });
+        } catch (error) {
+          toast.error(apiErrorMessage(error, dict.trades.errors.psychologySave));
+        }
+      }
+      if (pickedShots.length > 0) {
+        const { uploaded, failed } = await uploadDraftsSequentially(
+          tradeId,
+          pickedShots,
+          addScreenshot.mutateAsync,
+        );
+        if (failed.length > 0) {
+          toast.error(dict.trades.errors.screenshotUpload, {
+            description: `${failed.length} / ${pickedShots.length}`,
+          });
+        }
+        // Drop the uploaded drafts from the picker (retry-safe); keep the
+        // failures so the trader can remove or re-pick them.
+        const uploadedIds = new Set(uploaded.map((shot) => shot.id));
+        if (uploadedIds.size > 0) {
+          for (const shot of uploaded) URL.revokeObjectURL(shot.url);
+          setScreenshots((previous) => previous.filter((shot) => !uploadedIds.has(shot.id)));
+        }
+      }
+      setSavedNote("saved");
+      setFinishing(false);
+      closeJudgmentFlow();
+    };
+    void finishFlow();
   };
 
   return (
@@ -258,6 +325,17 @@ export function Reflect({ tradeId }: ReflectProps) {
         </div>
       </section>
 
+      {/* Confidence — optional 1–5 self-rating (post-trade psychology) */}
+      <section className="space-y-2" aria-labelledby="reflect-confidence">
+        <div className="flex items-baseline justify-between">
+          <h3 id="reflect-confidence" className="font-heading text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            {T.confidence}
+          </h3>
+          <span className="text-[11px] text-muted-foreground">{dict.trades.shared.optionalSingleTap}</span>
+        </div>
+        <ConfidencePicker value={confidence} onChange={setConfidence} />
+      </section>
+
       {/* MFE / MAE — user-observed prices; R is recomputed server-side */}
       <section className="space-y-2" aria-labelledby="reflect-excursion">
         <h3 id="reflect-excursion" className="font-heading text-sm font-semibold uppercase tracking-wide text-muted-foreground">
@@ -364,7 +442,8 @@ export function Reflect({ tradeId }: ReflectProps) {
         />
       </section>
 
-      {/* Screenshots — same client-only picker as capture (uploads come later) */}
+      {/* Screenshots — picked here, uploaded on [Finish] alongside the
+          psychology patch (failures toasted, never blocking). */}
       <section className="space-y-2" aria-labelledby="reflect-screenshots">
         <h3 id="reflect-screenshots" className="font-heading text-sm font-semibold uppercase tracking-wide text-muted-foreground">
           {dict.trades.detail.screenshotsWord}
@@ -376,7 +455,13 @@ export function Reflect({ tradeId }: ReflectProps) {
         <p className="font-mono text-[11px] text-muted-foreground" data-testid="reflect-save-state">
           {savedNote === "saving" ? dict.common.saving : savedNote === "saved" ? T.savedState : T.escToSkip}
         </p>
-        <Button type="button" onClick={finish} className="h-11 px-6" disabled={updateReview.isPending}>
+        <Button
+          type="button"
+          onClick={finish}
+          className="h-11 px-6"
+          disabled={finishing || updateReview.isPending}
+          data-testid="reflect-finish"
+        >
           <Check className="size-4" aria-hidden="true" />
           {dict.trades.shared.finish}
         </Button>

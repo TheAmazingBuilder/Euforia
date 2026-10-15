@@ -34,6 +34,8 @@ export interface TradeDraftValues {
   reason: string;
   fees: string;
   emotionBefore: Emotion | null;
+  /** 1–5 pre-trade conviction (psychology column; null = not rated). */
+  confidence: number | null;
   tagIds: string[];
   notes: string;
 }

@@ -5,14 +5,18 @@
  * "Use domain/event data where available. Do not fabricate historical
  * events": the backend emits ENTRY/EXIT rows from canonical journal trades
  * (Trade.tradingDate — the server-computed trading day). SL/TP modification
- * events and ALERT rows have NO backend source yet (no trade-event table, no
- * alerts domain) and are NEVER synthesized; moods require emotion columns
- * Trade does not carry → always []. These are documented honest seams.
+ * events and ALERT rows have NO backend source in this assembly (no
+ * trade-event bridge, no alerts domain here) and are NEVER synthesized.
+ * The mood strip, however, IS real: Trade carries the emotionBefore /
+ * emotionAfter / confidence psychology columns, so moods are derived from
+ * the loaded trades when those columns are populated (mirroring the B5
+ * session service) — an empty strip means "nothing logged", never "hidden".
  *
  * Derived ids are RFC-4122 v5 uuids (`entry:<tradeId>` / `exit:<tradeId>`)
  * — contract-valid AND stable across reads (idempotency §63) without
  * persisting derived rows.
  */
+import type { SessionLiveMood } from "../../../shared/contracts";
 import { uuidV5, SESSION_LIVE_DERIVED_UUID_NAMESPACE } from "../../../shared/ids/uuid-v5";
 
 export interface TimelineTradeRow {
@@ -26,6 +30,14 @@ export interface TimelineTradeRow {
   entryAt: Date;
   exitAt: Date | null;
   exitReason: string | null;
+  /** Psychology columns (Phase 10 seam closure — optional: callers pass
+   * them when they load the trades; absent → no mood is derived). */
+  emotionBefore?: string | null;
+  emotionAfter?: string | null;
+  /** 1–5 self-rated conviction, when the trader logged it. */
+  confidence?: number | null;
+  /** Last update — timestamps the AFTER mood of an OPEN trade (in-trade tap). */
+  updatedAt?: Date | null;
 }
 
 export interface TimelineEvent {
@@ -36,6 +48,10 @@ export interface TimelineEvent {
   detail: string | null;
   severity: null;
 }
+
+/** Mood strip row — the shared additive contract (emotion + phase + tradeId
+ * + confidence when present). */
+export type TimelineMood = SessionLiveMood;
 
 /** Decimal wire string → trimmed presentation string ("0.10000000" → "0.1"). */
 export function prettyDecimal(value: string): string {
@@ -50,7 +66,15 @@ export interface TimelineAssemblyInput {
   trades: TimelineTradeRow[];
 }
 
-export function assembleTimeline(input: TimelineAssemblyInput): { events: TimelineEvent[]; moods: [] } {
+/** Wire ISO format — identical to the event timestamps. */
+function isoDateTime(date: Date): string {
+  return date.toISOString().replace(/\.\d{3}Z$/, "Z");
+}
+
+export function assembleTimeline(input: TimelineAssemblyInput): {
+  events: TimelineEvent[];
+  moods: TimelineMood[];
+} {
   const events: TimelineEvent[] = [];
 
   for (const trade of input.trades) {
@@ -78,7 +102,39 @@ export function assembleTimeline(input: TimelineAssemblyInput): { events: Timeli
   // equal timestamps — the mock's insertion-order semantics).
   events.sort((a, b) => (a.at < b.at ? -1 : a.at > b.at ? 1 : 0));
 
-  // Moods: Trade carries no emotion columns in the backend (Phase 8 audit
-  // seam) — honest empty list, never fabricated.
-  return { events, moods: [] };
+  // Mood strip — derived from the trades' psychology columns (B5 session
+  // service parity): the entry emotion belongs to the trade's own session
+  // row (BEFORE @ entryAt); an in-trade/exit tap rides the trade too
+  // (AFTER @ exitAt for closed trades, updatedAt for open ones). The
+  // confidence (1–5) rides along when the trader logged it. Nothing is
+  // fabricated for trades without psychology data.
+  const moods: TimelineMood[] = [];
+  for (const trade of input.trades) {
+    const confidence = trade.confidence ?? null;
+    if (trade.emotionBefore != null) {
+      moods.push({
+        at: isoDateTime(trade.entryAt),
+        emotion: trade.emotionBefore as TimelineMood["emotion"],
+        phase: "BEFORE",
+        tradeId: trade.id,
+        confidence,
+      });
+    }
+    if (trade.emotionAfter != null) {
+      const at =
+        trade.status === "OPEN"
+          ? (trade.updatedAt ?? trade.entryAt)
+          : (trade.exitAt ?? trade.updatedAt ?? trade.entryAt);
+      moods.push({
+        at: isoDateTime(at),
+        emotion: trade.emotionAfter as TimelineMood["emotion"],
+        phase: "AFTER",
+        tradeId: trade.id,
+        confidence,
+      });
+    }
+  }
+  moods.sort((a, b) => (a.at < b.at ? -1 : a.at > b.at ? 1 : 0));
+
+  return { events, moods };
 }

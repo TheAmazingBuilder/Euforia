@@ -55,11 +55,28 @@ No backtesting controllers, services, database models, engine, Python
 microservice or historical simulation infrastructure exists — and none may be
 created until the frontend/product module defines its requirements.
 
-## Known deferred seams (documented honesty, Phase 8/10 audits)
+## Known deferred seams (documented honesty — Phase 8/10 audits, updated by task 2-seams-close)
 
-- Discipline backend (violations/mistakes/emotions) — Session Live summary
-  reports `violationsCount: 0` honestly; timeline emits no SL/TP-modification
-  or ALERT rows; moods are always `[]` (Trade carries no emotion columns).
-- Eco Calendar backend — Session Live summary reports `ecoEventsCount: 0`.
+Closed since those audits (kept here so the history reads honestly):
+
+- Discipline backend EXISTS (violations/mistakes/emotions; served under
+  `/rules`, `/violations`, `/discipline/score`, `/discipline/emotion-matrix`,
+  `/mistakes/ledger`) — the Session Live summary's `violationsCount` is wired
+  to real in-window VIOLATION rows (auto-evaluated on trade.closed).
+- Trade carries `emotionBefore` / `emotionAfter` / `confidence`; the
+  Session Live timeline assembly now builds the mood strip from those
+  columns (previously hard-coded `[]` with a stale "no emotion columns"
+  comment — fixed by task 2-seams-close; `sessionLiveMoodSchema` is the
+  additive shared shape).
+
+Genuinely remaining:
+
+- Session-live timeline SL/TP-modification and ALERT rows — still not
+  synthesized there (no trade-event/alerts bridge in that assembly; the B5
+  `GET /session/timeline` endpoint DOES emit both from TradeEvents and
+  Discipline ALERT rows).
+- Eco calendar overlay counts — the Session Live summary counts events from
+  the deterministic synthetic generator (`generateEcoEvents`), not from the
+  canonical synced calendar rows (Phase 13 provider layer).
 - Trade attribution columns (Trade.strategyId) — attribution currently flows
   Trade → review.originTradePlanId → TradePlan.strategyId.

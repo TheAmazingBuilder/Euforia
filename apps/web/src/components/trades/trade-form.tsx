@@ -32,6 +32,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { DisciplineBanner } from "@/components/trades/discipline-banner";
 import { DirectionSegmented } from "@/components/trades/direction-segmented";
+import { ConfidencePicker } from "@/components/trades/confidence-picker";
 import { EmotionPicker } from "@/components/trades/emotion-picker";
 import { InstrumentCombobox } from "@/components/trades/instrument-combobox";
 import {
@@ -46,6 +47,7 @@ import {
 import { StrategyPicker } from "@/components/trades/strategy-picker";
 import {
   useAccounts,
+  useAddScreenshot,
   useCreateTrade,
   useCurrentBalance,
   useInstruments,
@@ -55,6 +57,7 @@ import {
   useTags,
   useTrades,
 } from "@/lib/api/queries";
+import { uploadDraftsSequentially } from "@/lib/utils/screenshot-upload";
 import { isoToLocalInput, localInputToISO, nowLocalInput } from "@/lib/utils/datetime";
 import { sizeUnitLabel } from "@/lib/utils/instrument";
 import { cn } from "@/lib/utils";
@@ -112,6 +115,7 @@ function freshValues(): TradeDraftValues {
     reason: "",
     fees: "0",
     emotionBefore: null,
+    confidence: null,
     tagIds: [],
     notes: "",
   };
@@ -153,6 +157,7 @@ export function TradeForm({ seed }: TradeFormProps) {
   const rulesStatus = useRulesStatus(null);
   const balanceInfo = useCurrentBalance();
   const createTrade = useCreateTrade();
+  const addScreenshot = useAddScreenshot();
   const { data: prefsData } = usePreferences();
 
   const instruments: Instrument[] = instrumentsData?.instruments ?? [];
@@ -173,7 +178,13 @@ export function TradeForm({ seed }: TradeFormProps) {
     }
     const draft = loadTradeDraft();
     if (draft !== null) {
-      return { values: { ...freshValues(), ...draft.values }, fromDraft: true, seeded: true };
+      // `confidence` was added after the first draft version — old drafts
+      // restore without it.
+      return {
+        values: { ...freshValues(), ...draft.values, confidence: draft.values.confidence ?? null },
+        fromDraft: true,
+        seeded: true,
+      };
     }
     return { values: freshValues(), fromDraft: false, seeded: false };
   });
@@ -388,6 +399,7 @@ export function TradeForm({ seed }: TradeFormProps) {
         ? { fees: normalizeDecimalInput(values.fees) }
         : {}),
       ...(values.emotionBefore !== null ? { emotionBefore: values.emotionBefore } : {}),
+      ...(values.confidence !== null ? { confidence: values.confidence } : {}),
       ...(values.outOfPlaybook ? { outOfPlaybook: true as const } : { strategyId: values.strategyId! }),
     };
     if (!closed) {
@@ -405,25 +417,50 @@ export function TradeForm({ seed }: TradeFormProps) {
   };
 
   // ── Submit flows ────────────────────────────────────────────────────────
+  /**
+   * Evidence ride-along (Livrable 4): picked screenshots are uploaded AFTER
+   * the trade exists — sequentially, each failure toasted, NEVER blocking
+   * the hand-off (the modal/gate continue regardless of upload outcomes).
+   * Runs post-unmount-safe: react-query mutations outlive the component.
+   */
+  const uploadEvidence = (tradeId: string, shots: DraftScreenshot[]) => {
+    if (shots.length === 0) return;
+    void uploadDraftsSequentially(tradeId, shots, addScreenshot.mutateAsync).then(
+      ({ failed }) => {
+        if (failed.length > 0) {
+          toast.error(dict.trades.errors.screenshotUpload, {
+            description: `${failed.length} / ${shots.length}`,
+          });
+        }
+      },
+    );
+  };
+
   const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!canSubmit) return;
     const payload = buildPayload();
     if (payload === null) return;
+    const pickedShots = [...screenshots];
     createTrade.mutate(payload, {
       onSuccess: (response) => {
         clearTradeDraft();
+        // Picker cleared immediately — the modal is going away either way.
+        for (const shot of pickedShots) URL.revokeObjectURL(shot.url);
+        setScreenshots([]);
+        const tradeId = response.id;
         if ("awaitingDecision" in response) {
           // Hard contract (§13): closed → { id, awaitingDecision: true }, NO P&L.
           // ACT 2 starts immediately: the Judgment Gate opens over the app.
           closeTradeModal();
-          openGate(response.id);
+          openGate(tradeId);
         } else {
           toast.success(T.savedOpenTitle, {
             description: `${instrument?.symbol ?? ""} ${direction} @ ${entry}`,
           });
           closeTradeModal();
         }
+        uploadEvidence(tradeId, pickedShots);
       },
       onError: (error) => {
         toast.error(dict.trades.errors.tradeSave, {
@@ -691,6 +728,18 @@ export function TradeForm({ seed }: TradeFormProps) {
           <span className="text-[11px] text-muted-foreground">{dict.trades.shared.optionalSingleTap}</span>
         </div>
         <EmotionPicker value={values.emotionBefore} onChange={(emotionBefore) => patch({ emotionBefore })} />
+      </div>
+
+      {/* Confidence — optional 1–5 pre-trade conviction (psychology column) */}
+      <div className="space-y-1.5">
+        <div className="flex items-baseline justify-between">
+          <Label>{T.confidence}</Label>
+          <span className="text-[11px] text-muted-foreground">{T.confidenceHint}</span>
+        </div>
+        <ConfidencePicker
+          value={values.confidence}
+          onChange={(confidence) => patch({ confidence })}
+        />
       </div>
 
       {/* Live calculation bar — mono, updated live */}

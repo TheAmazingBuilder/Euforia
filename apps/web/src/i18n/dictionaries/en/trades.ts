@@ -31,6 +31,7 @@ export const tradesDict = {
     notesSave: "Could not save notes",
     tagsUpdate: "Could not update tags",
     screenshotUpload: "Upload failed",
+    psychologySave: "Could not save the psychology log",
     positionClose: "Could not close the position",
     ghostLog: "Could not log the skipped setup",
     import: "Import failed",
@@ -171,6 +172,8 @@ export const tradesDict = {
     strategy: "Strategy",
     strategyHint: "recommended — one tap",
     emotionBefore: "Emotion before",
+    confidence: "Confidence",
+    confidenceHint: "1 = guessing · 5 = certain",
     addDetails: "Add details",
     detailsHint: "tags · notes · screenshots",
     tags: "Tags",
@@ -265,6 +268,10 @@ export const tradesDict = {
     emotionBeforeAria: "Emotion before entry",
   },
 
+  confidencePicker: {
+    aria: "Confidence level, 1 to 5",
+  },
+
   strategyPicker: {
     aria: "Strategy",
     riskBadge: "RISK",
@@ -272,7 +279,7 @@ export const tradesDict = {
 
   screenshotPicker: {
     add: "Add screenshots",
-    pasteHint: "or paste (Ctrl+V) — stored locally for now",
+    pasteHint: "or paste (Ctrl+V) — attached to the trade",
     previewsAria: "Screenshot previews",
     previewAlt: "Screenshot preview:",
     removeAria: "Remove screenshot",
@@ -291,6 +298,8 @@ export const tradesDict = {
     fees: "Fees",
     strategyHeading: "Strategy",
     tagsHeading: "Tags",
+    psychologyHeading: "Psychology",
+    confidenceLabel: "Confidence",
     savingChip: "saving…",
     notesHeading: "Notes",
     notesPlaceholder: "What did you see, do, and learn?",
@@ -619,6 +628,7 @@ export const tradesDict = {
     confirm: "Confirm",
     dismiss: "Dismiss",
     emotionAfter: "Emotion after",
+    confidence: "Confidence",
     excursion: "MFE / MAE — how far it went for / against you",
     mfeLabel: "MFE price (max favorable)",
     maeLabel: "MAE price (max adverse)",

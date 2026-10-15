@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { emotionSchema } from "../enums";
 import { marketIntervalSchema } from "./market";
 import { isoDateTimeSchema, uuidSchema } from "./primitives";
 
@@ -125,6 +126,26 @@ export const sessionSummarySchema = z.object({
   analysesCount: z.number().int().min(0),
 });
 export type SessionSummary = z.infer<typeof sessionSummarySchema>;
+
+// ── Session timeline mood strip (additive seam closure) ─────────────────────
+
+/**
+ * One logged emotion on a session timeline mood strip — derived from the
+ * journal Trade's psychology columns (emotionBefore / emotionAfter /
+ * confidence), never fabricated. Shape mirrors the B5 `sessionMoodSchema`
+ * (api.ts) with an ADDITIVE optional `confidence` so existing wire payloads
+ * stay valid.
+ */
+export const sessionLiveMoodSchema = z.object({
+  at: isoDateTimeSchema,
+  emotion: emotionSchema,
+  /** BEFORE = at entry; AFTER = in-trade / exit quick-log. */
+  phase: z.enum(["BEFORE", "AFTER"]),
+  tradeId: uuidSchema.nullable(),
+  /** 1–5 when the trader logged it — absent on older payloads. */
+  confidence: z.number().int().min(1).max(5).nullable().optional(),
+});
+export type SessionLiveMood = z.infer<typeof sessionLiveMoodSchema>;
 
 // ── Key levels (§20 — trader documentation) ──────────────────────────────────
 
