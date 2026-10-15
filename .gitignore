@@ -46,3 +46,4 @@ scripts/deriv-llms.txt
 scripts/research-deriv-*.json
 scripts/baseline-api-test.log
 scripts/web-start-3000.log
+scripts/api-run.log
