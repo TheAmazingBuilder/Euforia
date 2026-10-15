@@ -1132,7 +1132,7 @@ describe("trading-accounts — MT5 bridge ingest (public, HMAC)", () => {
               price: "28.56000",
               profit: "30.00000",
               commission: "-1.76000",
-              swap: "0.00000",
+              swap: "-0.25000",
               positionId: "700123",
               executedAt: "2026-10-14T10:45:00Z",
             },
@@ -1188,7 +1188,9 @@ describe("trading-accounts — MT5 bridge ingest (public, HMAC)", () => {
       direction: "BUY",
       status: "CLOSED",
     });
-    // Net P&L = profit + commissions + swap across the position's legs.
-    expect(Number(trade.pnlNet)).toBeCloseTo(30 - 1.75 - 1.76, 2);
+    // Net P&L = profit − |commissions| − swap-cost across the position's
+    // legs (the MT5 signed swap −0.25 is a COST → stored swap 0.25).
+    expect(Number(trade.pnlNet)).toBeCloseTo(30 - 1.75 - 1.76 - 0.25, 2);
+    expect(Number(trade.swap)).toBeCloseTo(0.25, 5);
   });
 });

@@ -351,6 +351,13 @@ export function reconstructCycle(cycle: PositionCycle): ReconstructedTrade {
   const totalProfit = sumDecimals(deals.map((deal) => deal.profit));
   const totalCommission = sumDecimals(deals.map((deal) => deal.commission));
   const totalSwap = sumDecimals(deals.map((deal) => deal.swap));
+  // Canonical cost convention (computeTradeResults §46 — ONE authoritative
+  // definition): the stored `swap` column is a COST MAGNITUDE (positive =
+  // cost, net = gross − fees − swap). MT5 DEAL_SWAP is SIGNED (negative =
+  // cost) — the reconstruction negates the signed provider sum so the stored
+  // column honors that definition (a signed −0.5 swap-cost stores 0.5; a
+  // rare signed credit stores a negative cost and RAISES the net).
+  const swapCost = totalSwap === null ? null : totalSwap.negated();
   const fees = totalCommission !== null && totalCommission.isNegative()
     ? wire(totalCommission.abs())
     : "0";
@@ -361,7 +368,7 @@ export function reconstructCycle(cycle: PositionCycle): ReconstructedTrade {
       : wire(
           totalProfit
             .minus(totalCommission !== null && totalCommission.isNegative() ? totalCommission.abs() : 0)
-            .minus(totalSwap ?? 0),
+            .minus(swapCost ?? 0),
         );
 
   return {
@@ -373,7 +380,7 @@ export function reconstructCycle(cycle: PositionCycle): ReconstructedTrade {
     exitPrice: exitPrice === null ? null : wire(exitPrice, 8),
     exitAt,
     fees,
-    swap: wire(totalSwap ?? 0),
+    swap: wire(swapCost ?? 0),
     pnlGross,
     pnlNet,
     openedAt: first.executedAt,
