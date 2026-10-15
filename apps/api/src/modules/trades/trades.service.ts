@@ -336,6 +336,10 @@ export class TradesService {
     if (!closed) {
       return toTradeView(row);
     }
+    // Domain fact (B4): a capture journaled already-closed is a closed fact
+    // the same way a manual close is — Discipline must evaluate its rules
+    // against it too (§46: every closed-trade write path publishes).
+    this.events.publish("trade.closed", { userId, tradeId: row.id, accountId: account.id });
     // HARD CONTRACT: closing responds WITHOUT any P&L field (§12/§13).
     return { id: row.id, awaitingDecision: true };
   }
@@ -1053,6 +1057,17 @@ export class TradesService {
         exits: [],
       });
       tradeIds.push(created.id);
+      // Domain fact (B4): imported rows are journal facts — closed ones feed
+      // the Discipline rules exactly like a manual close (§46: every
+      // closed-trade write path publishes; idempotent re-imports skip
+      // duplicates so no event is re-fired for the same trade).
+      if (isClosed) {
+        this.events.publish("trade.closed", {
+          userId,
+          tradeId: created.id,
+          accountId: defaultAccountId,
+        });
+      }
     }
 
     return {

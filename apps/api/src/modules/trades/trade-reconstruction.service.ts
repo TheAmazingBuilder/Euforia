@@ -30,6 +30,7 @@ import { Inject, Injectable } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
 import type { RootLogger } from "../../infrastructure/logging/logger.factory";
 import { ROOT_LOGGER } from "../../infrastructure/logging/logger.factory";
+import { DomainEventsService } from "../../infrastructure/events/domain-events.module";
 import { AccountsRepository, type DealRow } from "../accounts/accounts.repository";
 import { TradesRepository } from "./trades.repository";
 import {
@@ -78,6 +79,7 @@ export class TradeReconstructionService {
   constructor(
     private readonly tradesRepository: TradesRepository,
     private readonly accountsRepository: AccountsRepository,
+    private readonly events: DomainEventsService,
     @Inject(ROOT_LOGGER) private readonly logger?: RootLogger,
   ) {}
 
@@ -168,7 +170,7 @@ export class TradeReconstructionService {
 
       if (existing === null) {
         try {
-          await this.tradesRepository.createTradeWithLegs({
+          const createdTrade = await this.tradesRepository.createTradeWithLegs({
             trade: {
               userId: input.userId,
               accountId: input.accountId,
@@ -217,6 +219,16 @@ export class TradeReconstructionService {
             },
             exits: reconstructed.exits.map((exit) => ({ ...exit, note: null })),
           });
+          // Domain fact (B4): a position reconstructed already-closed is a
+          // closed journal fact — Discipline must evaluate its rules against
+          // it (§46: every closed-trade write path publishes).
+          if (reconstructed.status === "CLOSED") {
+            this.events.publish("trade.closed", {
+              userId: input.userId,
+              tradeId: createdTrade.id,
+              accountId: input.accountId,
+            });
+          }
           input.outcome.created += 1;
           continue;
         } catch (error) {
@@ -285,6 +297,17 @@ export class TradeReconstructionService {
           existing.id,
           reconstructed.exits.map((exit) => ({ ...exit, note: null })),
         );
+      }
+      // Domain fact (B4): the §28 reconciliation — a position that closed
+      // since the last pass flips its trade OPEN → CLOSED. That flip is a
+      // close fact: Discipline must evaluate its rules exactly once for it
+      // (the guard keeps every later unchanged refresh silent).
+      if (existing.status !== "CLOSED" && reconstructed.status === "CLOSED") {
+        this.events.publish("trade.closed", {
+          userId: input.userId,
+          tradeId: existing.id,
+          accountId: input.accountId,
+        });
       }
       input.outcome.updated += 1;
     }

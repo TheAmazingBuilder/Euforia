@@ -118,10 +118,11 @@ describe("reconstructCycle — §17 execution aggregation", () => {
       ],
     });
     expect(trade.fees).toBe("4");
-    expect(trade.swap).toBe("-1");
+    // Signed provider swap sum (−1) is stored as a COST MAGNITUDE (+1) —
+    // net = gross − fees − swap = 1000 − 4 − 1 (§46 canonical convention).
+    expect(trade.swap).toBe("1");
     expect(trade.pnlGross).toBe("1000");
-    // net = gross − fees − swap_signed = 1000 − 4 − (−1) = 997.
-    expect(trade.pnlNet).toBe("997");
+    expect(trade.pnlNet).toBe("995");
   });
 });
 
@@ -174,10 +175,11 @@ describe("reconstructAccounts — P2002 race tolerance (finalization §31)", () 
       listPositions: async () => [],
     };
 
+    const events = { published: [] as Array<{ event: string; payload: unknown }>, publish(event: string, payload: unknown) { this.published.push({ event, payload }); } };
     const service = new TradeReconstructionService(
       tradesRepository as never,
       accountsRepository as never,
-      undefined,
+      events as never,
     );
     const outcome = await service.reconstructAccounts({
       userId: crypto.randomUUID(),
@@ -189,5 +191,101 @@ describe("reconstructAccounts — P2002 race tolerance (finalization §31)", () 
     expect(outcome.created).toBe(0);
     expect(outcome.unchanged).toBe(1);
     expect(outcome.updated).toBe(0);
+    // The adopted row was never written by THIS pass — no close fact published.
+    expect(events.published).toHaveLength(0);
+  });
+
+  it("publishes trade.closed for a position reconstructed already-closed (§46 discipline seam)", async () => {
+    const { TradeReconstructionService } = await import("../../src/modules/trades/trade-reconstruction.service");
+
+    const instrument = { id: crypto.randomUUID(), contractSize: new Prisma.Decimal("100000") };
+    let createdId: string | null = null;
+    const tradesRepository = {
+      findInstrumentBySymbol: async () => instrument,
+      findTradeByExternalPosition: async () => null,
+      createTradeWithLegs: async () => {
+        createdId = crypto.randomUUID();
+        return { id: createdId };
+      },
+      updateTradeFields: async () => undefined,
+      replaceExits: async () => undefined,
+    };
+    const accountsRepository = {
+      findAccountForUser: async () => ({ id: "00000000-0000-4000-8000-000000000001", currency: "USD" }),
+      listDeals: async () => [
+        deal({ externalDealId: "in1", side: "BUY", volume: new Prisma.Decimal("0.2"), price: new Prisma.Decimal("1.1"), executedAt: d(0) }),
+        deal({ externalDealId: "out1", side: "SELL", volume: new Prisma.Decimal("0.2"), price: new Prisma.Decimal("1.1"), profit: new Prisma.Decimal("0"), executedAt: d(60) }),
+      ],
+      listPositions: async () => [],
+    };
+    const events = { published: [] as Array<{ event: string; payload: { userId: string; tradeId: string; accountId: string } }>, publish(event: string, payload: { userId: string; tradeId: string; accountId: string }) { this.published.push({ event, payload }); } };
+    const service = new TradeReconstructionService(
+      tradesRepository as never,
+      accountsRepository as never,
+      events as never,
+    );
+    const userId = crypto.randomUUID();
+    const outcome = await service.reconstructAccounts({
+      userId,
+      userTimezone: "UTC",
+      accountIds: ["00000000-0000-4000-8000-000000000001"],
+    });
+
+    expect(outcome.created).toBe(1);
+    expect(events.published).toHaveLength(1);
+    expect(events.published[0]?.event).toBe("trade.closed");
+    expect(events.published[0]?.payload.tradeId).toBe(createdId);
+    expect(events.published[0]?.payload.userId).toBe(userId);
+    expect(events.published[0]?.payload.accountId).toBe("00000000-0000-4000-8000-000000000001");
+  });
+
+  it("publishes trade.closed exactly once on the OPEN → CLOSED reconciliation flip (§28)", async () => {
+    const { TradeReconstructionService } = await import("../../src/modules/trades/trade-reconstruction.service");
+
+    const instrument = { id: crypto.randomUUID(), contractSize: new Prisma.Decimal("100000") };
+    const openRow = {
+      id: crypto.randomUUID(),
+      status: "OPEN",
+      direction: "BUY",
+      instrumentId: instrument.id,
+      entryPrice: new Prisma.Decimal("1.1"),
+      exitPrice: null,
+      quantity: new Prisma.Decimal("0.2"),
+      fees: new Prisma.Decimal("0"),
+      swap: new Prisma.Decimal("0"),
+      pnlGross: null,
+      pnlNet: null,
+      riskAmount: null,
+      exitAt: null,
+    };
+    const tradesRepository = {
+      findInstrumentBySymbol: async () => instrument,
+      findTradeByExternalPosition: async () => openRow,
+      createTradeWithLegs: async () => { throw new Error("must not create — row exists"); },
+      updateTradeFields: async () => undefined,
+      replaceExits: async () => undefined,
+    };
+    const accountsRepository = {
+      findAccountForUser: async () => ({ id: "00000000-0000-4000-8000-000000000001", currency: "USD" }),
+      listDeals: async () => [
+        deal({ externalDealId: "in1", side: "BUY", volume: new Prisma.Decimal("0.2"), price: new Prisma.Decimal("1.1"), executedAt: d(0) }),
+        deal({ externalDealId: "out1", side: "SELL", volume: new Prisma.Decimal("0.2"), price: new Prisma.Decimal("1.1"), profit: new Prisma.Decimal("0"), executedAt: d(60) }),
+      ],
+      listPositions: async () => [],
+    };
+    const events = { published: [] as unknown[], publish(event: string, payload: unknown) { this.published.push({ event, payload }); } };
+    const service = new TradeReconstructionService(
+      tradesRepository as never,
+      accountsRepository as never,
+      events as never,
+    );
+    await service.reconstructAccounts({
+      userId: crypto.randomUUID(),
+      userTimezone: "UTC",
+      accountIds: ["00000000-0000-4000-8000-000000000001"],
+    });
+
+    // Exactly ONE close fact for the flip — later unchanged refreshes stay silent.
+    expect(events.published).toHaveLength(1);
   });
 });
