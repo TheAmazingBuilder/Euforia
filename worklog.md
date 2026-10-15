@@ -1640,3 +1640,26 @@ Stage Summary:
 - Le pont MT5 est câblé de bout en bout côté UI : connexion sans aucun secret utilisateur (le mot de passe broker ne quitte jamais le terminal), fiche de pairage honnête réutilisable (URL ingest absolue/clé/secret masqué révéliable/download EA + 4 étapes), drawer avec état CONNECTING franc (pas de CONNECTED inventé), rotation qui invalide l'ancienne config, miroir MSW complet pour les sondes
 - Aucune touche apps/api ni packages/shared ; aucun commit (repos au owner) ; serveurs tués
 - Déviations: (1) i18n = EN seule (le pack FR a été retiré du projet — décision config.ts, "follow exactly what exists") ; (2) bouton Reconnect masqué pour les comptes bridge (cohérence, hors lettre du task) ; (3) test() MSW bridge-aware pour rester honnête sur le panneau de checks du drawer ; (4) dialog desktop 92→85dvh conformément à la consigne, containment re-prouvé
+
+---
+Task ID: 5-discipline-seam-closure
+Agent: Super Z (main)
+Date: 2026-10-15 (session 09:00-10:00 UTC)
+
+Task: Suite du plan owner 4 livrables (ICMarkets bridge / seed+CSV / émotions+violations / screenshots) — audit de l'état réel puis fermeture du dernier seam discipline
+
+Work Log:
+- AUDIT ÉTAT: les 4 livrables du plan owner étaient déjà BÂTIS dans les commits 42ec125→b41544f (sessions antérieures, entrées worklog manquantes): [1] pont MT5 backend+EA v1.0.1+UI+sim (Livrable 1), [2] seed trader@cosmoz.app + CSV MT5 64 trades via POST /trades/import idempotent (Livrable 2, commit 29fbecd), [3] émotions persistées (Trade.emotionBefore/After/confidence + session-live mood strip réel, commit eca8709), [4] screenshots capture+reflect (même commit)
+- VÉRIFICATION LIVE (serveur API relancé avec env -u DATABASE_URL — le sandbox exporte un DATABASE_URL SQLite qui écrase le .env, Node --env-file n'écrase pas les vars existantes): bridge-e2e-sim 23/23 (boucle terminal→bridge→journal PROUVÉE pour le compte IC Markets démo 52988790), seed-demo-data 12/12 (64 trades importés, pass 2 dédupe 64/64, total journal 199)
+- SEAM TROUVÉ (le vrai reste du Livrable 3): l'événement domaine trade.closed n'était publié que par closeTrade (fermeture manuelle UI) — les 4 autres chemins d'écriture de trades CLOSED ne publiaient RIEN: createTrade variant closed, importTrades (CSV), importTradeFromRecognition (OCR, délègue à createTrade), reconcileAccountDeals (pont MT5: création CLOSED + flip OPEN→CLOSED) → les règles discipline (MAX_TRADES_PER_DAY / MAX_LOSSES_PER_DAY / MAX_RISK_PCT_PER_TRADE) ne se déclenchaient JAMAIS sur le workflow réel de l'owner (import CSV + sync pont) — exactement l'écart produit/promesse signalé
+- FIX (commit 3b73941): publish trade.closed dans createTrade (branche closed), importTrades (par trade fermé, idempotent car les ré-imports skip), reconstruction (création CLOSED + flip OPEN→CLOSED gardé par existing.status) ; DomainEventsService injecté dans TradeReconstructionService ; test unitaire P2002 mis à jour (stub events) + 2 NOUVEAUX tests (publish à la création CLOSED, publish exactement une fois au flip)
+- BONUS: assertion swap périmée corrigée dans trade-reconstruction.spec (rouge PRÉ-EXISTANT au HEAD: le test attendait swap signé −1 alors que la convention §46 stocke une magnitude de coût +1, net 995) — flake OANDA recovery-sweep constaté AUSSI au HEAD (pre-existing, hors scope, non touché)
+- SONDE LIVE scripts/live-discipline-probe.mjs 14/14: règle breach (2 pertes/jour) → violation persistée avec contexte gelé {"limit":2,"lossesToday":2} → acknowledge persisté → emotion-matrix sert des vraies lignes (clé = emotionBefore, heatmap entrée→résultat par design) → emotionAfter reflété sur le trade (PATCH /trades/:id/psychology) → cleanup soft-delete (violations orphelines gardent leur contexte gelé §57)
+- PIEGE SONDE: DELETE avec header Content-Type + body vide → 400 "Body cannot be empty" (helper api() corrigé : Content-Type seulement si body)
+- VERIFIÉ (commandes réelles): tsc api 0, eslint 0, suite API 1250/1251 (86+1 fichiers — 1 échec = flake OANDA pré-existant au HEAD), accounts e2e 42/42, reconstruction unit 9/9, bridge sim 23/23, seed 12/12, sonde live 14/14
+
+Stage Summary:
+- Les 4 livrables du plan owner sont TERMINÉS ET VÉRIFIÉS en boucle réelle: pont MT5 (sim EA byte-exact, compte 52988790), seed+CSV (199 trades, idempotent), émotions+violations EN BASE (le seam est FERMÉ pour de vrai — plus aucun chemin d'écriture ne contourne les règles), screenshots capture+reflect
+- Le seul truc que le code ne peut pas faire: lancer le vrai terminal MT5 de l'owner — runbook: télécharger EuforiaBridge.mq5 (v1.0.1) depuis l'app, attacher au graphique du compte démo IC Markets (login 52988790, le mot de passe broker ne quitte JAMAIS le terminal), coller URL+clé+secret de la fiche de pairage, la première poussée connecte le compte
+- Flake OANDA recovery-sweep à suivre (rouge au HEAD avant mes changements, timeout 30s dans runDueSynchronizations)
+- Démo locale: trader@cosmoz.app / Cosmoz!Demo2026 ; API :4000 relancée proprement (env -u DATABASE_URL), PG embarqué :5433 intact
