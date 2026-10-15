@@ -305,14 +305,11 @@ export type AppearancePreferences = z.infer<typeof appearancePreferencesSchema>;
 export const appearancePreferencesInputSchema = appearancePreferencesSchema;
 export type AppearancePreferencesInput = z.infer<typeof appearancePreferencesInputSchema>;
 
-// ── Dashboard preferences (personalized widget layout) ─────────────────────
+// ── Dashboard preferences (customizable widget workspace) ───────────────────
 
 /**
- * Reorderable dashboard sections. Keys map 1:1 to the widget registry in
- * the dashboard view; the order is edited inline (drag or move buttons)
- * and persisted server-side via PATCH /me/preferences/dashboard.
- * Forward-compatible: the client merges a saved order with the canonical
- * registry, so widgets added later appear without a migration.
+ * Dashboard widget types. Keys map 1:1 to the widget registry in the web
+ * app; every customization document references these canonical keys only.
  */
 export const DASHBOARD_WIDGET_KEYS = [
   "PNL_BAND",
@@ -327,14 +324,77 @@ export type DashboardWidgetKey = (typeof DASHBOARD_WIDGET_KEYS)[number];
 
 export const dashboardWidgetKeySchema = z.enum(DASHBOARD_WIDGET_KEYS);
 
+/**
+ * One widget INSTANCE placed on a layout. The instance id is stable and
+ * unique WITHIN its layout (never the widget type, never an array index):
+ * removing one instance never touches other instances of the same type.
+ */
+export const dashboardWidgetItemSchema = z.object({
+  instanceId: z.string().min(1).max(64),
+  type: dashboardWidgetKeySchema,
+  /** Hidden instances keep their full configuration (hide ≠ remove). */
+  visible: z.boolean(),
+  /** Width span on the 12-column desktop grid (mobile is single-column). */
+  w: z.number().int().min(1).max(12),
+  /** Height level: 1 = natural content height, higher = taller minimum.
+   * Semantics are min-height — content may always grow past the level. */
+  h: z.number().int().min(1).max(4),
+});
+export type DashboardWidgetItem = z.infer<typeof dashboardWidgetItemSchema>;
+
+/**
+ * One saved dashboard workspace. Display order = array order; hidden
+ * widgets keep their slot configuration so showing them again restores
+ * their place. Layout ids are stable strings (never array indexes).
+ */
+export const dashboardLayoutDocumentSchema = z.object({
+  id: z.string().min(1).max(64),
+  name: z.string().min(1).max(60),
+  description: z.string().max(200).optional(),
+  /** Bump on breaking widget-config shape changes; clients migrate or fall
+   * back per layout instead of discarding the whole collection. */
+  schemaVersion: z.literal(1),
+  widgets: z.array(dashboardWidgetItemSchema).max(30),
+  createdAt: isoDateTimeSchema.optional(),
+  updatedAt: isoDateTimeSchema.optional(),
+  /** Present when the layout was created from a template preset. */
+  templateId: z.string().max(40).optional(),
+});
+export type DashboardLayoutDocument = z.infer<typeof dashboardLayoutDocumentSchema>;
+
+/**
+ * The dashboard domain carries BOTH the legacy flat order and the layout
+ * collection:
+ *  - `widgetOrder` stays REQUIRED and client-derived from the active
+ *    layout, so pre-customization documents, older backups and the
+ *    §19 order-bound contract keep validating unchanged;
+ *  - `layouts` + `activeLayoutId` are OPTIONAL: documents stored before
+ *    the customization phase carry `widgetOrder` only, and readers
+ *    synthesize the default collection from it (never a hard failure).
+ */
 export const dashboardPreferencesSchema = z.object({
-  /** Widget ids in display order; unknown/missing ids are merged client-side. */
   widgetOrder: z.array(dashboardWidgetKeySchema).max(DASHBOARD_WIDGET_KEYS.length),
+  activeLayoutId: z.string().min(1).max(64).optional(),
+  layouts: z.array(dashboardLayoutDocumentSchema).max(20).optional(),
 });
 
 export type DashboardPreferences = z.infer<typeof dashboardPreferencesSchema>;
 export const dashboardPreferencesInputSchema = dashboardPreferencesSchema;
 export type DashboardPreferencesInput = z.infer<typeof dashboardPreferencesInputSchema>;
+
+/** Deterministic instance ids for the shipped default layout. */
+const DEFAULT_DASHBOARD_WIDGETS: DashboardWidgetItem[] = DASHBOARD_WIDGET_KEYS.map(
+  (type) => ({ instanceId: `win_${type.toLowerCase()}`, type, visible: true, w: 12, h: 1 }),
+);
+
+/** The single shipped "Default" layout — canonical order, full width. */
+export const DEFAULT_DASHBOARD_LAYOUT: DashboardLayoutDocument = {
+  id: "layout_default",
+  name: "Default",
+  description: "The designed dashboard — every widget, full width.",
+  schemaVersion: 1,
+  widgets: DEFAULT_DASHBOARD_WIDGETS,
+};
 
 // ── Academy preferences (module provisioned — arrives in a later phase) ─────
 
@@ -626,6 +686,8 @@ export const DEFAULT_USER_PREFERENCES: UserPreferencesDefaults = {
       "BEST_WORST",
       "ALERTS",
     ],
+    activeLayoutId: DEFAULT_DASHBOARD_LAYOUT.id,
+    layouts: [DEFAULT_DASHBOARD_LAYOUT],
   },
   academy: {
     enabled: true,

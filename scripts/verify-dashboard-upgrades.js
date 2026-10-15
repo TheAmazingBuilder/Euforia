@@ -5,13 +5,14 @@
  *  2. « Goals on pace »: counters render; the at-risk counter is clickable
  *     → lands on /journal?tab=goals (Goals tab)
  *  3. « Week vs week »: two labeled rows, 7+7 day bands, delta pill
- *  4. Edit layout: tools render, move-down reorders (PATCH /me/preferences/
- *     dashboard fired), order SURVIVES SPA navigation (server persisted)
- *  5. Native drag & drop: dragstart/dragover/dragend reorders + PATCH
- *  6. Reset layout → canonical order restored (POST /me/preferences/reset)
- *  7. Density COMPACT (Settings → Appearance): dashboard-scoped tightening
+ *  4. Edit layout: draft transaction — tools render, move-down reorders the
+ *     DRAFT (no PATCH), Save commits (PATCH /me/preferences/dashboard)
+ *  5. Native drag & drop reorders the draft → Save fires the PATCH
+ *  6. Saved order SURVIVES SPA navigation (server persisted)
+ *  7. Cancel-with-changes asks + restores; Reset → draft = canonical → Save
+ *  8. Density COMPACT (Settings → Appearance): dashboard-scoped tightening
  *     (descriptions hidden) — then back to COMFORTABLE
- *  8. Light theme + mobile 390 no overflow; zero unexpected console errors
+ *  9. Light theme + mobile 390 no overflow; zero unexpected console errors
  */
 const { chromium } = require("playwright");
 
@@ -83,34 +84,40 @@ const BASE = "http://localhost:3000";
   check("14 day bands (7 per week)", bandCount === 14, `${bandCount} bands`);
   check("Delta pill renders", await page.locator('[data-testid="dashboard-week-delta"]').isVisible());
 
-  // ── 4. Edit layout — move down + server persistence ──────────────────────
+  // ── 4. Edit layout — draft transaction: reorder stays local until Save ───
   await page.locator('[data-testid="dashboard-customize"]').click();
   await page.waitForTimeout(400);
   check("Edit hint appears", await page.locator('[data-testid="dashboard-edit-hint"]').isVisible());
+  check("Edit toolbar renders", await page.locator('[data-testid="dashboard-edit-toolbar"]').isVisible());
+  check("Save disabled before edits (clean draft)", await page.locator('[data-testid="dashboard-toolbar-save"]').isDisabled());
   const toolCount = await page.locator('[data-testid^="dashboard-widget-tools-"]').count();
   check("7 widget tool chips in edit mode", toolCount === 7, `${toolCount} tools`);
 
   await page.locator('[data-testid="dashboard-widget-down-pnl_band"]').click();
-  await page.waitForTimeout(900);
+  await page.waitForTimeout(400);
   const order1 = await widgetOrder();
-  check("Move down reorders (PNL_BAND → 2nd)", order1[0] === "EQUITY_ROW" && order1[1] === "PNL_BAND", order1.join(","));
-  check("PATCH /me/preferences/dashboard fired", patchCount >= 1, `${patchCount} patch(es)`);
+  check("Move down reorders the DRAFT (PNL_BAND → 2nd)", order1[0] === "EQUITY_ROW" && order1[1] === "PNL_BAND", order1.join(","));
+  check("No PATCH while drafting (transaction)", patchCount === 0, `${patchCount} patch(es)`);
 
-  // ── 5. Native drag & drop ────────────────────────────────────────────────
+  // ── 5. Native drag & drop (still draft-local) → Save commits both ────────
   await fireDrag("EQUITY_ROW", "dragstart");
   await page.waitForTimeout(200);
   await fireDrag("GOALS_PACE", "dragover");
   await page.waitForTimeout(200);
   await fireDrag("EQUITY_ROW", "dragend");
-  await page.waitForTimeout(900);
+  await page.waitForTimeout(400);
   const order3 = await widgetOrder();
   check(
-    "Drag & drop reorders (EQUITY_ROW → GOALS_PACE slot)",
+    "Drag & drop reorders the DRAFT (EQUITY_ROW → GOALS_PACE slot)",
     order3.join() === ["PNL_BAND", "GOALS_PACE", "EQUITY_ROW", "WEEK_COMPARE", "HEATMAP", "BEST_WORST", "ALERTS"].join(),
     order3.join(","),
   );
-  check("Drag reorder PATCH fired too", patchCount >= 2, `${patchCount} patch(es)`);
+  check("Still no PATCH before Save", patchCount === 0, `${patchCount} patch(es)`);
   await page.screenshot({ path: "scripts/shots/dashboard-upgrades-edit-mode.png", fullPage: false });
+  await page.locator('[data-testid="dashboard-toolbar-save"]').click();
+  await page.waitForTimeout(1200);
+  check("Save fires PATCH /me/preferences/dashboard", patchCount >= 1, `${patchCount} patch(es)`);
+  check("Save exits edit mode (toolbar gone)", (await page.locator('[data-testid="dashboard-edit-toolbar"]').count()) === 0);
 
   // ── 6. Server persistence — SPA away and back; the refetch must return
   // the saved order. NOTE: navigating remounts the view, so edit mode is
@@ -138,19 +145,31 @@ const BASE = "http://localhost:3000";
   const order2 = await widgetOrder();
   check("Layout persists across SPA navigation (server)", persisted, order2.join(","));
 
-  // ── 7. Reset layout (edit mode again — the remount reset it) ────────────
+  // ── 7. Cancel + Reset (edit mode again — the remount reset it) ───────────
   await page.locator('[data-testid="dashboard-customize"]').click();
   await page.waitForTimeout(400);
-  await page.locator('[data-testid="dashboard-layout-reset"]').click();
-  await page.waitForTimeout(900);
+  // Cancel with a dirty draft asks for confirmation, then restores.
+  await page.locator('[data-testid="dashboard-widget-down-pnl_band"]').click();
+  await page.waitForTimeout(300);
+  await page.locator('[data-testid="dashboard-toolbar-cancel"]').click();
+  await page.waitForTimeout(300);
+  await page.locator('[data-testid="dashboard-confirm-accept"]').click();
+  await page.waitForTimeout(600);
+  check("Cancel with dirty draft discards and exits", (await page.locator('[data-testid="dashboard-edit-toolbar"]').count()) === 0);
+  await page.locator('[data-testid="dashboard-customize"]').click();
+  await page.waitForTimeout(400);
+  await page.locator('[data-testid="dashboard-toolbar-reset"]').click();
+  await page.waitForTimeout(300);
+  await page.locator('[data-testid="dashboard-confirm-accept"]').click();
+  await page.waitForTimeout(400);
   const order4 = await widgetOrder();
-  check("Reset restores canonical order", order4.join() === canonical.join(), order4.join(","));
-  check("Reset endpoint called", resetCount >= 1, `${resetCount} reset(s)`);
+  check("Reset restores canonical order in the draft", order4.join() === canonical.join(), order4.join(","));
+  await page.locator('[data-testid="dashboard-toolbar-save"]').click();
+  await page.waitForTimeout(1200);
+  check("Reset committed with a PATCH (no legacy reset endpoint)", patchCount >= 2, `${patchCount} patch(es)`);
 
-  await page.locator('[data-testid="dashboard-customize"]').click();
-  await page.waitForTimeout(400);
   const toolsAfter = await page.locator('[data-testid^="dashboard-widget-tools-"]').count();
-  check("Done hides the tools", toolsAfter === 0, `${toolsAfter} left`);
+  check("Save hides the tools", toolsAfter === 0, `${toolsAfter} left`);
 
   // ── 8. Density COMPACT — dashboard-scoped tightening ─────────────────────
   await page.locator('aside nav a[href="/settings"]').click();

@@ -1,0 +1,128 @@
+"use client";
+
+import * as React from "react";
+import type { DashboardWidgetKey, StatsOverviewResponse } from "@cosmoz/shared";
+import { formatMoney, formatNumber } from "@cosmoz/shared";
+
+import { useAlerts, useRulesStatus } from "@/lib/api/queries";
+import { AlertsFeed } from "@/components/dashboard/alerts-feed";
+import { BestWorstCard } from "@/components/dashboard/best-worst-card";
+import { CalendarHeatmap } from "@/components/dashboard/calendar-heatmap";
+import { CoachInsights } from "@/components/dashboard/coach-insights";
+import { DisciplineSavedCard } from "@/components/dashboard/discipline-saved-card";
+import { EquityConstellation } from "@/components/dashboard/equity-constellation";
+import { GoalsPaceCard } from "@/components/dashboard/goals-pace-card";
+import { OpenPositionsCard } from "@/components/dashboard/open-positions-card";
+import { CumulativePnlCard, DailyPnlCard } from "@/components/dashboard/pnl-charts";
+import { RiskBudgetCard } from "@/components/dashboard/risk-budget-card";
+import { WeekCompareCard } from "@/components/dashboard/week-compare-card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+
+/**
+ * Widget renderer map (Phase 01 §4.3) — the RUNTIME counterpart of the
+ * widget registry. Persisted layouts reference `type` keys only; this
+ * layer resolves them to the real components with the real data props.
+ * Nothing here is serialized, and unknown types never reach this map
+ * (the model layer drops them on read).
+ */
+
+export type RulesStatusData = NonNullable<Awaited<ReturnType<typeof useRulesStatus>>["data"]> & object;
+export type AlertsData = NonNullable<Awaited<ReturnType<typeof useAlerts>>["data"]>;
+
+export interface DashboardWidgetData {
+  overview: StatsOverviewResponse;
+  rulesStatus: RulesStatusData;
+  alerts: AlertsData;
+}
+
+function HeroChip({ label, value }: { label: string; value: string }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-md border border-border bg-surface-raised px-2 py-1 text-xs text-muted-foreground">
+      {label}
+      <span className="font-mono font-medium tabular-nums text-foreground">{value}</span>
+    </span>
+  );
+}
+
+/** One widget instance's content — moved verbatim from the previous
+ * inline registry in dashboard-view (same markup, same data wiring). */
+export function WidgetContent({
+  type,
+  data,
+}: {
+  type: DashboardWidgetKey;
+  data: DashboardWidgetData;
+}) {
+  const insights = React.useMemo(
+    () => data.alerts.alerts.filter((alert) => alert.type === "STRATEGY_DECAY"),
+    [data.alerts.alerts],
+  );
+
+  switch (type) {
+    case "PNL_BAND":
+      return (
+        <React.Suspense fallback={<div className="h-72 animate-pulse rounded-xl bg-muted" />}>
+          <div className="grid gap-3 sm:gap-4 lg:grid-cols-2">
+            <CumulativePnlCard overview={data.overview} />
+            <DailyPnlCard overview={data.overview} />
+          </div>
+        </React.Suspense>
+      );
+    case "EQUITY_ROW":
+      return (
+        <div className="grid gap-3 sm:gap-4 lg:grid-cols-5">
+          <Card className="bg-surface lg:col-span-3">
+            <CardHeader>
+              <CardTitle className="font-heading text-base font-semibold">
+                Equity trajectory
+              </CardTitle>
+              <CardDescription>
+                Each star is a trading day — the plotted line of your decisions, drawdown
+                zones shaded in loss ink.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="mb-3 flex flex-wrap gap-2">
+                <HeroChip
+                  label="Peak"
+                  value={formatMoney(data.overview.equityPeak, data.overview.currency)}
+                />
+                <HeroChip
+                  label="Max drawdown"
+                  value={`${formatNumber(data.overview.maxDrawdownPct, 1)} %`}
+                />
+              </div>
+              <EquityConstellation points={data.overview.equityCurve} currency={data.overview.currency} />
+            </CardContent>
+          </Card>
+          <div className="space-y-3 sm:space-y-4 lg:col-span-2">
+            <OpenPositionsCard />
+            <RiskBudgetCard status={data.rulesStatus} />
+            <CoachInsights insights={insights} />
+          </div>
+        </div>
+      );
+    case "GOALS_PACE":
+      return <GoalsPaceCard />;
+    case "WEEK_COMPARE":
+      return (
+        <WeekCompareCard weeklyCompare={data.overview.weeklyCompare} currency={data.overview.currency} />
+      );
+    case "HEATMAP":
+      return <CalendarHeatmap dailyPnl={data.overview.dailyPnl} currency={data.overview.currency} />;
+    case "BEST_WORST":
+      return (
+        <div className="grid gap-3 sm:gap-4 lg:grid-cols-2">
+          <BestWorstCard />
+          <DisciplineSavedCard
+            rSaved={data.overview.disciplineSaved.rSaved}
+            settledCount={data.overview.disciplineSaved.settledCount}
+          />
+        </div>
+      );
+    case "ALERTS":
+      return <AlertsFeed alerts={data.alerts.alerts} unreadCount={data.alerts.unreadCount} />;
+    default:
+      return null;
+  }
+}

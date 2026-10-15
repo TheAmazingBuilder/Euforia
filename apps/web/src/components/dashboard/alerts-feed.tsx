@@ -84,7 +84,11 @@ export function AlertsFeed({ alerts, unreadCount }: AlertsFeedProps) {
                   />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start gap-2">
-                      <p className="min-w-0 flex-1 truncate text-sm font-medium">
+                      {/* relative: sr-only "(unread)" is position:absolute —
+                          without a positioned parent its static position
+                          lands past the truncated text and bleeds ~9px of
+                          horizontal scroll on narrow viewports. */}
+                      <p className="relative min-w-0 flex-1 truncate text-sm font-medium">
                         {alert.title}
                         {unread ? (
                           <span className="sr-only"> (unread)</span>

@@ -49,8 +49,8 @@ function localDayKey(date = new Date()) {
   if (await fillDemo.isVisible().catch(() => false)) {
     await fillDemo.click();
   } else {
-    await page.locator("#login-email").fill("alex@cosmoz.app");
-    await page.locator("#login-password").fill("cosmoz123");
+    await page.locator("#login-email").fill("trader@cosmoz.app");
+    await page.locator("#login-password").fill("cosmoz-demo-2026");
   }
   await page.getByRole("button", { name: /Sign in/ }).click();
   await page.waitForFunction(
@@ -232,8 +232,8 @@ function localDayKey(date = new Date()) {
   if (await mobileDemo.isVisible().catch(() => false)) {
     await mobileDemo.click();
   } else {
-    await mobile.locator("#login-email").fill("alex@cosmoz.app");
-    await mobile.locator("#login-password").fill("cosmoz123");
+    await mobile.locator("#login-email").fill("trader@cosmoz.app");
+    await mobile.locator("#login-password").fill("cosmoz-demo-2026");
   }
   await mobile.getByRole("button", { name: /Sign in/ }).click();
   await mobile.locator('[data-testid="performance-strip"]').waitFor({ timeout: 20000 });
