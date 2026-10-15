@@ -507,7 +507,7 @@ export class TradingAccountService {
       ea: {
         fileName: "EuforiaBridge.mq5",
         downloadPath: "/bridge/EuforiaBridge.mq5",
-        version: "1.0.0",
+        version: "1.0.1",
       },
     };
   }

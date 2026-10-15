@@ -886,3 +886,309 @@ describe("trading-accounts — registered rich surface (Phase 02 hygiene)", () =
     expect(foreignList.json().accounts).toHaveLength(0);
   });
 });
+
+// ── MT5 terminal bridge — public ingest route (Phase 08, EA-parity E2E) ──────
+//
+// The bridge is the ONLY public (JWT-free) route of the trading-accounts
+// surface. These tests push EXACTLY what docs/bridge/EuforiaBridge.mq5
+// v1.0.x sends: envelope {eventId, kind, payload} with decimals as strings,
+// canonical `${ts}.${JSON.stringify({eventId, kind, payload})}` signed
+// HMAC-SHA256, headers x-bridge-key/timestamp/signature/event-id. The
+// timestamp cases cover BOTH EA generations: v1.0.0 sends epoch SECONDS
+// ((long)TimeGMT()), v1.0.1+ sends MILLISECONDS — both must authenticate
+// (magnitude detection), while stale/replayed timestamps must not.
+
+import { createHmac } from "node:crypto";
+
+describe("trading-accounts — MT5 bridge ingest (public, HMAC)", () => {
+  function signEnvelope(
+    secret: string,
+    timestamp: number | string,
+    envelope: Record<string, unknown>,
+  ): string {
+    return createHmac("sha256", secret)
+      .update(`${timestamp}.${JSON.stringify(envelope)}`)
+      .digest("hex");
+  }
+
+  async function pairedBridgeAccount(externalAccountId = "52988790") {
+    const user = await authenticatedUser(app, mail);
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/v1/trading-accounts/connect",
+      headers: user.authHeader,
+      payload: { providerId: "mt5-bridge", environment: "DEMO", externalAccountId },
+    });
+    expect(res.statusCode).toBe(201);
+    const { account } = res.json() as {
+      account: { id: string; externalAccountId: string; pairing: { bridgeKeyId: string; secret: string } };
+    };
+    expect(account.pairing.bridgeKeyId).toMatch(/^brg_/);
+    expect(account.pairing.secret).toMatch(/^bks_/);
+    return { user, account, pairing: account.pairing };
+  }
+
+  async function push(input: {
+    keyId: string;
+    secret: string;
+    timestamp: number;
+    envelope: Record<string, unknown>;
+  }) {
+    return app.inject({
+      method: "POST",
+      url: "/api/v1/trading-accounts/bridge/ingest",
+      headers: {
+        "content-type": "application/json",
+        "x-bridge-key": input.keyId,
+        "x-bridge-timestamp": String(input.timestamp),
+        "x-bridge-signature": signEnvelope(input.secret, input.timestamp, input.envelope),
+        "x-bridge-event-id": String(input.envelope.eventId),
+      },
+      payload: input.envelope,
+    });
+  }
+
+  it("401 BRIDGE_HEADER_MISSING when any bridge header is absent", async () => {
+    const { pairing } = await pairedBridgeAccount(`88${Math.random().toString().slice(2, 8)}`);
+    const envelope = {
+      eventId: "ea-e2e-missing-hdr-1",
+      kind: "ACCOUNT_INFO",
+      payload: { externalAccountId: "52988790", currency: "USD" },
+    };
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/v1/trading-accounts/bridge/ingest",
+      headers: {
+        "content-type": "application/json",
+        "x-bridge-key": pairing.bridgeKeyId,
+        "x-bridge-signature": signEnvelope(pairing.secret, Date.now(), envelope),
+        "x-bridge-event-id": envelope.eventId,
+        // x-bridge-timestamp deliberately absent
+      },
+      payload: envelope,
+    });
+    expect(res.statusCode).toBe(401);
+    expect(res.json().code).toBe("BRIDGE_HEADER_MISSING");
+  });
+
+  it("401 BRIDGE_STALE_TIMESTAMP on an out-of-window timestamp", async () => {
+    const { pairing } = await pairedBridgeAccount(`88${Math.random().toString().slice(2, 8)}`);
+    const envelope = {
+      eventId: "ea-e2e-stale-1",
+      kind: "ACCOUNT_INFO",
+      payload: { externalAccountId: "52988790", currency: "USD" },
+    };
+    const staleMs = Date.now() - 6 * 60 * 1000; // beyond the ±5 min window
+    const res = await push({
+      keyId: pairing.bridgeKeyId,
+      secret: pairing.secret,
+      timestamp: staleMs,
+      envelope,
+    });
+    expect(res.statusCode).toBe(401);
+    expect(res.json().code).toBe("BRIDGE_STALE_TIMESTAMP");
+  });
+
+  it("accepts EA v1.0.0 epoch-SECONDS timestamps (magnitude detection) and activates the pairing", async () => {
+    const { pairing } = await pairedBridgeAccount(`88${Math.random().toString().slice(2, 8)}`);
+    const envelope = {
+      eventId: "ea-e2e-seconds-1",
+      kind: "ACCOUNT_INFO",
+      payload: {
+        externalAccountId: "52988790",
+        currency: "USD",
+        leverage: "500",
+        server: "ICMarketsSC-MT5",
+        brokerName: "IC Markets (SC) Global",
+        accountClass: "DEMO",
+      },
+    };
+    const seconds = Math.floor(Date.now() / 1000); // exactly what v1.0.0 sends
+    const res = await push({
+      keyId: pairing.bridgeKeyId,
+      secret: pairing.secret,
+      timestamp: seconds,
+      envelope,
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toMatchObject({ accepted: true, duplicate: false, state: "CONNECTED" });
+    // Replay (same event id) dedupes but stays accepted.
+    const replay = await push({
+      keyId: pairing.bridgeKeyId,
+      secret: pairing.secret,
+      timestamp: seconds,
+      envelope,
+    });
+    expect(replay.statusCode).toBe(200);
+    expect(replay.json()).toMatchObject({ accepted: true, duplicate: true, state: "CONNECTED" });
+  });
+
+  it("401 BRIDGE_BAD_SIGNATURE when the secret differs", async () => {
+    const { pairing } = await pairedBridgeAccount(`88${Math.random().toString().slice(2, 8)}`);
+    const envelope = {
+      eventId: "ea-e2e-badsig-1",
+      kind: "ACCOUNT_INFO",
+      payload: { externalAccountId: "52988790", currency: "USD" },
+    };
+    const res = await push({
+      keyId: pairing.bridgeKeyId,
+      secret: "bks_wrong_secret_entirely",
+      timestamp: Date.now(),
+      envelope,
+    });
+    expect(res.statusCode).toBe(401);
+    expect(res.json().code).toBe("BRIDGE_BAD_SIGNATURE");
+  });
+
+  it("full loop — pushes → sync → journal trades (EA-parity payloads, balance ops excluded)", async () => {
+    const { user, account, pairing } = await pairedBridgeAccount(
+      `88${Math.random().toString().slice(2, 8)}`,
+    );
+
+    // The reconstruction maps deals to journal trades THROUGH the Instrument
+    // table — seed the bridged symbol the way the dev seed does.
+    const symbol = "XAGEUR";
+    await app.get(PrismaService).instrument.upsert({
+      where: { symbol },
+      create: {
+        symbol,
+        name: "Silver vs Euro",
+        assetClass: "METAL",
+        quoteCurrency: "EUR",
+        pipSize: "0.001",
+        digits: 3,
+        contractSize: "5000",
+      },
+      update: {},
+    });
+
+    // 1) ACCOUNT_INFO (EA v1.0.1 — ms epoch) → activates + identifies broker.
+    const info = await push({
+      keyId: pairing.bridgeKeyId,
+      secret: pairing.secret,
+      timestamp: Date.now(),
+      envelope: {
+        eventId: "ea-e2e-loop-info-1",
+        kind: "ACCOUNT_INFO",
+        payload: {
+          externalAccountId: account.externalAccountId,
+          currency: "USD",
+          leverage: "200",
+          server: "ICMarketsSC-MT5",
+          brokerName: "IC Markets (SC) Global",
+          accountClass: "DEMO",
+        },
+      },
+    });
+    expect(info.statusCode).toBe(200);
+    expect(info.json().state).toBe("CONNECTED");
+
+    // 2) SNAPSHOT — decimals as strings (EA JDec semantics).
+    const snap = await push({
+      keyId: pairing.bridgeKeyId,
+      secret: pairing.secret,
+      timestamp: Date.now(),
+      envelope: {
+        eventId: "ea-e2e-loop-snap-1",
+        kind: "SNAPSHOT",
+        payload: {
+          balance: "10000.00000",
+          equity: "10020.00000",
+          margin: "120.00000",
+          freeMargin: "9900.00000",
+          marginLevel: "8350.00000",
+        },
+      },
+    });
+    expect(snap.statusCode).toBe(200);
+
+    // 3) DEALS — one netting position (IN + OUT), one balance op (excluded).
+    const deals = await push({
+      keyId: pairing.bridgeKeyId,
+      secret: pairing.secret,
+      timestamp: Date.now(),
+      envelope: {
+        eventId: "ea-e2e-loop-deals-1",
+        kind: "DEALS",
+        payload: {
+          deals: [
+            {
+              externalDealId: "900001",
+              symbol: "XAGEUR",
+              side: "BUY",
+              volume: "0.50000",
+              price: "28.50000",
+              profit: "0.00000",
+              commission: "-1.75000",
+              swap: "0.00000",
+              positionId: "700123",
+              executedAt: "2026-10-14T09:30:00Z",
+            },
+            {
+              externalDealId: "900002",
+              symbol: "XAGEUR",
+              side: "SELL",
+              volume: "0.50000",
+              price: "28.56000",
+              profit: "30.00000",
+              commission: "-1.76000",
+              swap: "0.00000",
+              positionId: "700123",
+              executedAt: "2026-10-14T10:45:00Z",
+            },
+            {
+              externalDealId: "900003",
+              symbol: null,
+              side: "BUY",
+              volume: "0.00000",
+              price: null,
+              profit: "5000.00000",
+              commission: "0.00000",
+              swap: "0.00000",
+              positionId: null,
+              executedAt: "2026-10-14T08:00:00Z",
+            },
+          ],
+          observedThrough: "1760436300",
+          complete: true,
+        },
+      },
+    });
+    expect(deals.statusCode).toBe(200);
+
+    // 4) Account sync — the pull orchestrator reads the persisted events.
+    const sync = await app.inject({
+      method: "POST",
+      url: `/api/v1/trading-accounts/${account.id}/sync`,
+      headers: user.authHeader,
+      payload: {},
+    });
+    expect(sync.statusCode).toBe(200);
+
+    // 5) Journal reconciliation is LAZY: GET /trades re-reconciles the
+    //    account's latest synchronized activity before serving the list
+    //    (trades.service listTrades — idempotent by external position). The
+    //    balance operation (symbol null) never becomes a trade.
+    const list = await app.inject({
+      method: "GET",
+      url: `/api/v1/trades?accountId=${account.id}`,
+      headers: user.authHeader,
+    });
+    expect(list.statusCode).toBe(200);
+    const trades = list.json().trades as Array<Record<string, unknown>>;
+    expect(trades).toHaveLength(1);
+    const [trade] = trades;
+    if (!trade) throw new Error("expected the reconstructed trade");
+    // The wire carries instrumentId — resolve it back to the bridged symbol.
+    const instrument = await app
+      .get(PrismaService)
+      .instrument.findUnique({ where: { id: String(trade.instrumentId) }, select: { symbol: true } });
+    expect(instrument?.symbol).toBe("XAGEUR");
+    expect(trade).toMatchObject({
+      direction: "BUY",
+      status: "CLOSED",
+    });
+    // Net P&L = profit + commissions + swap across the position's legs.
+    expect(Number(trade.pnlNet)).toBeCloseTo(30 - 1.75 - 1.76, 2);
+  });
+});

@@ -160,9 +160,16 @@ export class Mt5BridgeIngestService implements OnModuleDestroy {
     }
 
     const now = Date.now();
+    // Freshness is compared in MILLISECONDS. The EA v1.0.0 sends epoch
+    // SECONDS ((long)TimeGMT()); ms-capable terminals send ms. Detect by
+    // magnitude (ms epochs exceed 1e12 since 2001-09-09) — the SIGNATURE
+    // still binds the raw string the terminal sent (canonical uses the
+    // un-converted value), so this can never widen who can authenticate.
+    const rawTimestamp = input.timestampMs;
+    const timestampMs = Math.abs(rawTimestamp) >= 1e12 ? rawTimestamp : rawTimestamp * 1000;
     if (
-      !Number.isFinite(input.timestampMs) ||
-      Math.abs(now - input.timestampMs) > TIMESTAMP_TOLERANCE_MS
+      !Number.isFinite(rawTimestamp) ||
+      Math.abs(now - timestampMs) > TIMESTAMP_TOLERANCE_MS
     ) {
       throw new UnauthorizedError(
         "The bridge timestamp is outside the accepted window.",

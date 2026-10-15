@@ -1,6 +1,6 @@
 //+------------------------------------------------------------------+
 //|                                             EuforiaBridge.mq5    |
-//|         Euforia trading journal — MT5 terminal bridge (v1.0.0)   |
+//|         Euforia trading journal — MT5 terminal bridge (v1.0.1)   |
 //|                                                                  |
 //| WHAT IT DOES                                                     |
 //|   Reads the account attached to THIS terminal (account info,     |
@@ -22,7 +22,7 @@
 //|   5. Keep the terminal open: data is as fresh as the last push.  |
 //+------------------------------------------------------------------+
 #property copyright "Euforia / Cosmoz"
-#property version   "1.00"
+#property version   "1.01"
 #property strict
 
 //--- inputs
@@ -167,7 +167,7 @@ string HmacSha256Hex(const string key, const string message)
 bool PushEvent(const string kind, const string payloadJson)
   {
    string eventId = MakeEventId();
-   long   ts      = (long)TimeGMT();
+   long   ts      = ((long)TimeGMT()) * 1000; // MILLISECOND epoch — the ingest freshness window is ±5 min of ms (v1.0.0 sent seconds; the server tolerates both, ms is canonical).
 
    // Canonical serialization — MUST match the server byte-for-byte:
    //   `${timestampMs}.${JSON.stringify({eventId, kind, payload})}`
@@ -396,7 +396,7 @@ bool PushDeals()
 void DrawStatus(const string state)
   {
    Comment(StringFormat(
-      "Euforia Bridge v1.0.0\naccount: %I64d (%s)\nstate: %s\npushes: %d  failures: %d\nlast push: %s\nlast error: %s\nhistory from: %s",
+      "Euforia Bridge v1.0.1\naccount: %I64d (%s)\nstate: %s\npushes: %d  failures: %d\nlast push: %s\nlast error: %s\nhistory from: %s",
       AccountInfoInteger(ACCOUNT_LOGIN),
       AccountInfoString(ACCOUNT_SERVER),
       state,
