@@ -261,6 +261,9 @@ export class TradingSyncService {
       // Phase 05 — the incremental deals checkpoint (opaque to the domain;
       // the adapter maps it onto the provider's documented cursor).
       dealsCursor: input.connection.dealsCheckpoint ?? null,
+      // Phase 08 — bridge connections route their pull-adapter to the
+      // server-persisted ingest cache through this key (null otherwise).
+      bridgeKeyId: input.connection.bridgeKeyId ?? null,
     };
     const timeoutMs = this.config.accounts.providerTimeoutMs;
     // Phase 05 — bounded transient retries (spec §15). Sleep is real here;
@@ -527,7 +530,10 @@ export class TradingSyncService {
         "The stored credentials could not be used. Please reconnect the account.",
       );
     }
-    return { method: "API_KEY", secret };
+    return {
+      method: connection.method === "PLATFORM_BRIDGE" ? "PLATFORM_BRIDGE" : "API_KEY",
+      secret,
+    };
   }
 }
 

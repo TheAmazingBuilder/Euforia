@@ -97,9 +97,12 @@ export const BROKER_CATALOG: ReadonlyArray<BrokerCatalogEntryDef> = [
     brokerId: "icmarkets",
     displayName: "IC Markets",
     platforms: ["MT4", "MT5", "CTRADER"],
-    connectorProviderId: null,
+    // Phase 08 — reachable through the MT5 terminal bridge (the EA runs in
+    // the user's own terminal; broker credentials never leave it). MT4 and
+    // cTrader paths stay gated on their own decisions.
+    connectorProviderId: "mt5-bridge",
     aliases: ["IC Markets Global", "ICMarkets", "Raw Trading Ltd"],
-    notes: "Access paths are MT4/MT5/cTrader platform integrations — no dedicated retail REST API; gated on the MT5 decision (U1) and the cTrader decision.",
+    notes: "Connects through the MT5 Terminal Bridge (EuforiaBridge EA in your own terminal). MT4/cTrader paths are separate decisions.",
     patterns: [
       {
         kind: "ENDPOINT",

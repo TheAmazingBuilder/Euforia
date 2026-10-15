@@ -34,7 +34,18 @@ export type OcrSecurityEventType =
   | "TRADE_DRAFT_SAVED"
   | "TRADE_IMPORTED";
 
-export type SecurityEventType = SharedSecurityEventType | OcrSecurityEventType;
+/**
+ * Accounts bridge additions (Phase 08 — MT5 terminal bridge): the rotation
+ * of a bridge secret is a security-relevant credential lifecycle fact. The
+ * activation path reuses TRADING_ACCOUNT_CONNECTED (pairing IS a connection
+ * fact); only the rotation needs its own type.
+ */
+export type BridgeSecurityEventType = "TRADING_ACCOUNT_BRIDGE_ROTATED";
+
+export type SecurityEventType =
+  | SharedSecurityEventType
+  | OcrSecurityEventType
+  | BridgeSecurityEventType;
 
 export interface RequestFingerprint {
   device: string;

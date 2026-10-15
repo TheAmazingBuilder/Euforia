@@ -45,6 +45,8 @@ export interface TradingConnectionRow {
   lastSyncAt: Date | null;
   /** Phase 05 — provider-issued incremental deals checkpoint (opaque). */
   dealsCheckpoint: string | null;
+  /** Phase 08 — public bridge routing key (PLATFORM_BRIDGE only, else null). */
+  bridgeKeyId: string | null;
 }
 
 export interface SnapshotRow {
@@ -243,6 +245,9 @@ export class AccountsRepository {
       credentialsHint: string;
       permissions: string[];
       lastConnectedAt: Date;
+      /** Phase 08 — PLATFORM_BRIDGE connections boot as CONNECTING (awaiting first push). */
+      status?: string;
+      bridgeKeyId?: string | null;
     };
   }): Promise<{ account: TradingAccountRow; connection: TradingConnectionRow }> {
     const [account, connection] = await this.prisma.$transaction(async (tx) => {
@@ -270,10 +275,13 @@ export class AccountsRepository {
           credentialsEnc: data.connection.credentialsEnc,
           credentialsHint: data.connection.credentialsHint,
           permissions: data.connection.permissions,
-          status: "CONNECTED",
+          status: data.connection.status ?? "CONNECTED",
           lastConnectedAt: data.connection.lastConnectedAt,
           lastSyncAt: null,
           lastError: null,
+          ...(data.connection.bridgeKeyId !== undefined
+            ? { bridgeKeyId: data.connection.bridgeKeyId }
+            : {}),
         },
       });
       return [account, connection] as const;
@@ -306,7 +314,8 @@ export class AccountsRepository {
 
   /**
    * Disconnect (§52): credentials are DESTROYED (not kept), the row and all
-   * synchronized history stay. Journal data is untouched.
+   * synchronized history stay. Journal data is untouched. The bridge routing
+   * key is destroyed WITH the credentials — a reconnected bridge pairs anew.
    */
   async disconnectConnection(accountId: string): Promise<TradingConnectionRow> {
     const row = await this.prisma.tradingConnection.update({
@@ -315,6 +324,7 @@ export class AccountsRepository {
         status: "DISCONNECTED",
         credentialsEnc: "",
         credentialsHint: "",
+        bridgeKeyId: null,
         lastError: null,
       },
     });
@@ -334,6 +344,122 @@ export class AccountsRepository {
       where: { accountId },
       data: { lastSyncAt: at },
     });
+  }
+
+  // ── Phase 08 — MT5 terminal bridge ─────────────────────────────────────────
+
+  /** Ingest-side lookup: the routing key IS the credential envelope locator. */
+  async findConnectionByBridgeKeyId(bridgeKeyId: string): Promise<TradingConnectionRow | null> {
+    const row = await this.prisma.tradingConnection.findUnique({
+      where: { bridgeKeyId },
+    });
+    return (row as TradingConnectionRow) ?? null;
+  }
+
+  /** Rotate: the old secret dies with the old key — pairing restarts cleanly. */
+  async rotateBridgeKey(accountId: string, bridgeKeyId: string): Promise<void> {
+    await this.prisma.tradingConnection.update({
+      where: { accountId },
+      data: { bridgeKeyId },
+    });
+  }
+
+  /** Rotation re-keys the encrypted secret together with the routing key. */
+  async rotateBridgeCredentials(
+    accountId: string,
+    data: { credentialsEnc: string; credentialsHint: string },
+  ): Promise<void> {
+    await this.prisma.tradingConnection.update({
+      where: { accountId },
+      data,
+    });
+  }
+
+  /**
+   * Idempotency ledger insert. Returns duplicate=true when (bridgeKeyId,
+   * eventId) already exists — the caller ACKNOWLEDGES the replay (never
+   * re-applies it). Never throws on replays.
+   */
+  async insertBridgeEvent(data: {
+    bridgeKeyId: string;
+    eventId: string;
+    kind: string;
+    payload: unknown;
+  }): Promise<{ duplicate: boolean }> {
+    try {
+      await this.prisma.tradingBridgeEvent.create({
+        data: {
+          bridgeKeyId: data.bridgeKeyId,
+          eventId: data.eventId,
+          kind: data.kind,
+          payload: data.payload as Prisma.InputJsonValue,
+        },
+      });
+      return { duplicate: false };
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+        return { duplicate: true };
+      }
+      throw error;
+    }
+  }
+
+  /** The pull-adapter's data source: latest cached event of one kind. */
+  async latestBridgeEvent(
+    bridgeKeyId: string,
+    kind: string,
+  ): Promise<{ payload: unknown; receivedAt: Date } | null> {
+    const row = await this.prisma.tradingBridgeEvent.findFirst({
+      where: { bridgeKeyId, kind },
+      orderBy: { receivedAt: "desc" },
+      select: { payload: true, receivedAt: true },
+    });
+    return row ?? null;
+  }
+
+  /** First accepted push: CONNECTING → CONNECTED (pairing IS the validation). */
+  async activateBridgeConnection(accountId: string): Promise<TradingConnectionRow> {
+    const row = await this.prisma.tradingConnection.update({
+      where: { accountId },
+      data: { status: "CONNECTED", lastConnectedAt: new Date(), lastError: null },
+    });
+    return row as TradingConnectionRow;
+  }
+
+  /** ACCOUNT_INFO pushes refresh the journal anchor facts (currency + identity). */
+  async setBridgeAccountIdentity(
+    accountId: string,
+    data: { currency?: string; brokerIdentity?: unknown },
+  ): Promise<void> {
+    await this.prisma.tradingAccount.update({
+      where: { id: accountId },
+      data: {
+        ...(data.currency ? { currency: data.currency } : {}),
+        ...(data.brokerIdentity !== undefined
+          ? { brokerIdentity: data.brokerIdentity as Prisma.InputJsonValue }
+          : {}),
+      },
+    });
+  }
+
+  /** Bounded log: the adapter only ever reads the LATEST event per kind. */
+  async pruneBridgeEvents(bridgeKeyId: string, keepPerKind = 50): Promise<void> {
+    const kinds = ["ACCOUNT_INFO", "SNAPSHOT", "POSITIONS", "ORDERS", "DEALS"];
+    for (const kind of kinds) {
+      const keep = await this.prisma.tradingBridgeEvent.findMany({
+        where: { bridgeKeyId, kind },
+        orderBy: { receivedAt: "desc" },
+        take: keepPerKind,
+        select: { id: true },
+      });
+      await this.prisma.tradingBridgeEvent.deleteMany({
+        where: {
+          bridgeKeyId,
+          kind,
+          id: { notIn: keep.map((row) => row.id) },
+        },
+      });
+    }
   }
 
   // ── Synchronization runs ───────────────────────────────────────────────────

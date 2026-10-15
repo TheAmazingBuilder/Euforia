@@ -18,6 +18,7 @@
  *  - a disconnected account cannot be tested or synchronized (422
  *    NOT_CONNECTED) and cannot reconnect while CONNECTED (409).
  */
+import { randomBytes } from "node:crypto";
 import { Inject, Injectable, Optional } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
 import { z, type ZodTypeAny } from "zod";
@@ -33,6 +34,7 @@ import {
 } from "../../shared/errors/app-error";
 import {
   TRADING_ERROR_CODES,
+  type BridgePairing,
   type BrokerCatalogResponse,
   type BrokerIdentifyInput,
   type BrokerIdentifyResponse,
@@ -249,6 +251,21 @@ export class TradingAccountService {
     input.limiter.hit("connect", input.userId);
 
     const adapter = this.registry.require(input.payload.providerId);
+
+    // Phase 08 — PLATFORM_BRIDGE connections pair instead of validating
+    // credentials: the terminal is external, the secret is SERVER-generated,
+    // and the first accepted push IS the validation. Broker credentials
+    // never reach Euforia (feasibility doc §credentials — MT5 paths).
+    if (adapter.descriptor.supportedConnectionMethods.includes("PLATFORM_BRIDGE")) {
+      return this.connectBridge(input, adapter);
+    }
+
+    if (!input.payload.credentials?.secret) {
+      throw new BusinessRuleError(
+        "A secret is required for this provider.",
+        TRADING_ERROR_CODES.INVALID_CREDENTIALS,
+      );
+    }
     const credentials: ProviderCredentials = {
       method: "API_KEY",
       secret: input.payload.credentials.secret,
@@ -366,6 +383,187 @@ export class TradingAccountService {
     }
   }
 
+  // ── Phase 08 — MT5 terminal bridge (PLATFORM_BRIDGE lifecycle) ─────────────
+
+  /**
+   * Bridge pairing connect: register the account + connection in CONNECTING
+   * state, generate the bridge secret SERVER-SIDE, and return the pairing
+   * sheet (shown once in the UI; re-viewable through the dedicated endpoint;
+   * rotatable). No provider call is possible yet — the EA may not exist.
+   * The journal anchor facts (currency, balance) are corrected by the first
+   * ACCOUNT_INFO/SNAPSHOT pushes.
+   */
+  private async connectBridge(
+    input: {
+      userId: string;
+      user: UserRow;
+      payload: TradingAccountConnectInput;
+      requestId: string | null;
+    },
+    adapter: { readonly descriptor: TradingProviderDescriptor },
+  ): Promise<ReturnType<typeof toAccountDetails>> {
+    if (input.payload.credentials?.secret) {
+      throw new BusinessRuleError(
+        "A bridge account does not take a secret here — Euforia generates one for the terminal.",
+        TRADING_ERROR_CODES.INVALID_CREDENTIALS,
+      );
+    }
+    // MT5 logins are numeric (4–12 digits documented convention).
+    if (!/^\d{4,12}$/.test(input.payload.externalAccountId)) {
+      throw new BusinessRuleError(
+        "An MT5 login is a numeric account number (e.g. 52988790).",
+        TRADING_ERROR_CODES.INVALID_CREDENTIALS,
+      );
+    }
+    const duplicate = await this.repository.findAccountByExternal(
+      input.userId,
+      adapter.descriptor.providerId,
+      input.payload.externalAccountId,
+    );
+    if (duplicate) {
+      throw new ConflictError(
+        "This trading account is already connected.",
+        TRADING_ERROR_CODES.DUPLICATE_ACCOUNT,
+      );
+    }
+
+    const count = await this.repository.countAccountsByUser(input.userId);
+    const name =
+      input.payload.displayName ??
+      `${adapter.descriptor.providerName} ${input.payload.environment}`;
+    const { keyId, secret } = this.generateBridgeKey();
+    // Journal anchor placeholders, corrected by the first pushes: "USD" is
+    // the terminal-side default the pairing guide mandates; the connection
+    // stays CONNECTING and the snapshot null until real data arrives — the
+    // pending state is always visible in the UI.
+    const { account } = await this.repository.createAccountWithConnection({
+      account: {
+        userId: input.userId,
+        name,
+        type: input.payload.environment,
+        broker: adapter.descriptor.platform,
+        currency: "USD",
+        startingBalance: "0",
+        isDefault: count === 0,
+        externalAccountId: input.payload.externalAccountId,
+        providerId: adapter.descriptor.providerId,
+        brokerIdentity: {
+          brokerId: "unknown",
+          displayName: "Unknown broker",
+          platform: adapter.descriptor.platform,
+          confidence: "UNKNOWN",
+          connectorStatus: "CONNECTOR_AVAILABLE",
+          providerId: adapter.descriptor.providerId,
+          signals: [
+            "terminal platform MT5 — the broker is identified from the terminal's own report on first push",
+          ],
+          identifiedAt: isoDateTime(new Date()),
+        },
+      },
+      connection: {
+        method: "PLATFORM_BRIDGE",
+        credentialsEnc: this.credentials.encrypt(secret),
+        credentialsHint: CredentialsEncryptionService.hint(secret),
+        permissions: [...adapter.descriptor.supportedPermissions],
+        lastConnectedAt: new Date(),
+        status: "CONNECTING",
+        bridgeKeyId: keyId,
+      },
+    });
+
+    await this.events.record({
+      userId: input.userId,
+      type: "TRADING_ACCOUNT_CONNECTED",
+      actor: input.user.email,
+      context: `MT5 bridge pairing created for account ${input.payload.externalAccountId} (${input.payload.environment}) — awaiting first terminal push.`,
+    });
+
+    const details = await this.getDetails(input.userId, account.id);
+    return { ...details.account, pairing: this.buildPairing(keyId, secret) };
+  }
+
+  /** Fresh routing key + secret (secret shown only in pairing views, §22). */
+  private generateBridgeKey(): { keyId: string; secret: string } {
+    return {
+      keyId: `brg_${randomBytes(8).toString("hex")}`,
+      secret: `bks_${randomBytes(32).toString("base64url")}`,
+    };
+  }
+
+  private buildPairing(keyId: string, secret: string): BridgePairing {
+    return {
+      bridgeKeyId: keyId,
+      secret,
+      ingestPath: "/api/v1/trading-accounts/bridge/ingest",
+      headers: {
+        key: "X-Bridge-Key",
+        timestamp: "X-Bridge-Timestamp",
+        signature: "X-Bridge-Signature",
+        eventId: "X-Bridge-Event-Id",
+      },
+      serialization:
+        'signature = HMAC_SHA256(secret, `${timestampMs}.${JSON.stringify({eventId, kind, payload})}`)',
+      pushIntervalSeconds: 30,
+      ea: {
+        fileName: "EuforiaBridge.mq5",
+        downloadPath: "/bridge/EuforiaBridge.mq5",
+        version: "1.0.0",
+      },
+    };
+  }
+
+  /** Pairing sheet re-view (owner-only; the EA setup may need it again). */
+  async getBridgePairing(userId: string, accountId: string): Promise<{ pairing: BridgePairing }> {
+    const { connection } = await this.loadOwned(userId, accountId);
+    if (!connection || connection.method !== "PLATFORM_BRIDGE" || !connection.bridgeKeyId) {
+      throw new BusinessRuleError(
+        "This account is not a terminal bridge connection.",
+        TRADING_ERROR_CODES.UNSUPPORTED_PROVIDER,
+      );
+    }
+    const secret = this.credentials.decrypt(connection.credentialsEnc);
+    if (!secret) {
+      throw new BusinessRuleError(
+        "The bridge secret was destroyed. Rotate it to pair the terminal again.",
+        TRADING_ERROR_CODES.INVALID_CREDENTIALS,
+      );
+    }
+    return { pairing: this.buildPairing(connection.bridgeKeyId, secret) };
+  }
+
+  /** Rotate the bridge secret: the old terminal configuration stops working. */
+  async rotateBridgeSecret(userId: string, user: UserRow, accountId: string) {
+    const { connection } = await this.loadOwned(userId, accountId);
+    if (!connection || connection.method !== "PLATFORM_BRIDGE") {
+      throw new BusinessRuleError(
+        "This account is not a terminal bridge connection.",
+        TRADING_ERROR_CODES.UNSUPPORTED_PROVIDER,
+      );
+    }
+    const { keyId, secret } = this.generateBridgeKey();
+    await this.repository.rotateBridgeKey(accountId, keyId);
+    await this.prismaPatchConnectionCredentials(accountId, secret);
+    await this.events.record({
+      userId,
+      type: "TRADING_ACCOUNT_BRIDGE_ROTATED",
+      actor: user.email,
+      context: `Bridge secret rotated for account ${connection.bridgeKeyId ? "(paired terminal)" : accountId} — the previous terminal configuration is invalidated.`,
+    });
+    const pairing = this.buildPairing(keyId, secret);
+    const details = await this.getDetails(userId, accountId);
+    return { account: { ...details.account, pairing } };
+  }
+
+  /** Rotation also re-keys the encrypted secret (single write, repository path). */
+  private async prismaPatchConnectionCredentials(accountId: string, secret: string): Promise<void> {
+    // Credentials + key rotate together; the status stays as-is (the next
+    // accepted push re-proves the terminal against the new secret).
+    await this.repository.rotateBridgeCredentials(accountId, {
+      credentialsEnc: this.credentials.encrypt(secret),
+      credentialsHint: CredentialsEncryptionService.hint(secret),
+    });
+  }
+
   /** Connection health check — 200 with per-check results, honest booleans. */
   async testConnection(userId: string, accountId: string) {
     const { account, connection, descriptor } = await this.loadFull(userId, accountId);
@@ -376,6 +574,58 @@ export class TradingAccountService {
       );
     }
     const adapter = this.registry.require(connection.providerId);
+
+    // Phase 08 — bridge health is answered from the PAIRING FACTS (there is
+    // no provider to dial): secret presence, first-push state, cache reads.
+    if (connection.method === "PLATFORM_BRIDGE") {
+      const secret = this.credentials.decrypt(connection.credentialsEnc);
+      const bridgeContext: ProviderRequestContext = {
+        credentials: { method: "PLATFORM_BRIDGE", secret: secret ?? "" },
+        externalAccountId: account.externalAccountId,
+        environment: account.type as ProviderRequestContext["environment"],
+        bridgeKeyId: connection.bridgeKeyId,
+      };
+      const checks: Array<{ name: string; ok: boolean; detail: string }> = [];
+      checks.push({
+        name: "authentication",
+        ok: Boolean(secret) && Boolean(connection.bridgeKeyId),
+        detail:
+          secret && connection.bridgeKeyId
+            ? "Bridge secret present and keyed."
+            : "The bridge secret is missing. Rotate it to pair again.",
+      });
+      const awaiting = connection.status !== "CONNECTED";
+      checks.push({
+        name: "connectivity",
+        ok: !awaiting,
+        detail: awaiting
+          ? "Awaiting the first push from the terminal (attach the EuforiaBridge EA)."
+          : "The terminal bridge has pushed at least one accepted event.",
+      });
+      try {
+        const snap = await adapter.fetchSnapshot(bridgeContext);
+        assertValid(normalizedSnapshotSchema, snap);
+        checks.push({
+          name: "providerResponse",
+          ok: true,
+          detail: "Cached bridge snapshot validated.",
+        });
+      } catch (error) {
+        checks.push({ name: "providerResponse", ok: false, detail: providerDetail(error) });
+      }
+      const readPermissions = descriptor.supportedPermissions.filter((p) => p.startsWith("READ_"));
+      checks.push({
+        name: "permissions",
+        ok: readPermissions.length > 0,
+        detail:
+          readPermissions.length > 0
+            ? `Read-only permission set granted: ${readPermissions.join(", ")}.`
+            : "The provider granted no read permissions.",
+      });
+      const ok = checks.every((check) => check.ok);
+      return { ok, checks: checks as typeof checks };
+    }
+
     const secret = this.credentials.decrypt(connection.credentialsEnc);
     if (!secret) {
       throw new BusinessRuleError(
@@ -459,6 +709,14 @@ export class TradingAccountService {
       throw new ConflictError(
         "This account is already connected. Disconnect it first.",
         TRADING_ERROR_CODES.ALREADY_CONNECTED,
+      );
+    }
+    // Phase 08 — bridge connections hold no user-supplied credential to
+    // refresh: rotation replaces the secret, the next push re-proves it.
+    if (connection.method === "PLATFORM_BRIDGE") {
+      throw new BusinessRuleError(
+        "A terminal bridge connection does not reconnect with credentials — rotate the bridge secret instead.",
+        TRADING_ERROR_CODES.UNSUPPORTED_PROVIDER,
       );
     }
     const adapter = this.registry.require(connection.providerId);

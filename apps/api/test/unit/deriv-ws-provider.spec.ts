@@ -268,8 +268,8 @@ describe("deriv-ws — financial normalization", () => {
       stopLoss: null,
       takeProfit: null,
     });
-    expect(call.openedAt).toBe(new Date(1760000000 * 1000).toISOString());
-    const put = result.positions[1];
+    expect(call?.openedAt).toBe(new Date(1760000000 * 1000).toISOString());
+    const put = result.positions[1]!;
     expect(put.side).toBe("SELL");
     expect(put.symbol).toBe("frxEURUSD");
     expect(put.currentPrice).toBeNull(); // not reported → honest null
@@ -332,7 +332,7 @@ describe("deriv-ws — profit table pagination and checkpoint semantics", () => 
       volume: "1",
       positionId: expect.any(String),
     });
-    expect(first.executedAt).toBe(new Date(1760003600 * 1000).toISOString());
+    expect(first?.executedAt).toBe(new Date(1760003600 * 1000).toISOString());
     // The whitelist only: profit_table + authorize were the outbound names.
     const names = fixture.state.requests.map((r) => r.name);
     expect(names).toContain("profit_table");

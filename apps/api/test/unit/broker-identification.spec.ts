@@ -60,7 +60,7 @@ describe("broker catalog integrity", () => {
   });
 
   it("connector-bearing entries reference real provider ids, and no other entry claims one", () => {
-    const knownProviders = new Set(["deriv-ws", "oanda-v20"]);
+    const knownProviders = new Set(["deriv-ws", "oanda-v20", "mt5-bridge"]);
     for (const entry of BROKER_CATALOG) {
       if (entry.connectorProviderId) {
         expect(knownProviders.has(entry.connectorProviderId)).toBe(true);
@@ -176,8 +176,10 @@ describe("catalogForClient", () => {
     expect(deriv?.connectorStatus).toBe("CONNECTOR_AVAILABLE");
     expect(deriv?.providerId).toBe("deriv-ws");
     const icmarkets = catalog.brokers.find((b) => b.brokerId === "icmarkets");
+    // Phase 08 — icmarkets now carries the mt5-bridge connector id; the
+    // status stays honest against the registry this service was built with.
     expect(icmarkets?.connectorStatus).toBe("CONNECTOR_NOT_IMPLEMENTED");
-    expect(icmarkets?.providerId).toBeNull();
+    expect(icmarkets?.providerId).toBe("mt5-bridge");
     // Every broker without a connector stays honestly marked.
     const available = catalog.brokers.filter((b) => b.connectorStatus === "CONNECTOR_AVAILABLE");
     expect(available.map((b) => b.brokerId).sort()).toEqual(["deriv", "oanda"]);

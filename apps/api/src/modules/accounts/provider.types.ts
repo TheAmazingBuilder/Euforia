@@ -22,9 +22,12 @@ import type {
   TradingProviderDescriptor,
 } from "../../shared/contracts";
 
-/** Normalized credentials view handed to adapters — decrypted, never logged. */
+/** Normalized credentials view handed to adapters — decrypted, never logged.
+ * API_KEY: the user-supplied provider token. PLATFORM_BRIDGE (Phase 08): the
+ * bridge secret Euforia generated at connect time (the adapter never receives
+ * broker credentials — those never leave the user's terminal). */
 export interface ProviderCredentials {
-  method: "API_KEY";
+  method: "API_KEY" | "PLATFORM_BRIDGE";
   secret: string;
 }
 
@@ -52,6 +55,12 @@ export interface ProviderRequestContext {
   environment: "DEMO" | "LIVE" | "PROP_FIRM";
   /** Provider-issued deals checkpoint to resume from (Phase 05, optional). */
   dealsCursor?: string | null;
+  /**
+   * Phase 08 — the connection's public bridge routing key (PLATFORM_BRIDGE
+   * only). Push-based adapters use it to locate their server-persisted
+   * ingest cache; pull adapters never read it. Null for API_KEY methods.
+   */
+  bridgeKeyId?: string | null;
 }
 
 /** Normalized provider account metadata (fetchAccountInfo). */

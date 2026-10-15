@@ -42,7 +42,9 @@ import type {
 } from "../../shared/contracts";
 import { ZodValidationPipe } from "../../shared/http/zod-validation.pipe";
 import { CurrentUser, type AuthPrincipal } from "../../shared/auth/current-user.decorator";
+import { Public } from "../../shared/auth/public.decorator";
 import { TradingAccountService } from "./trading-account.service";
+import { Mt5BridgeIngestService, bridgeIngestEnvelopeSchema } from "./mt5-bridge-ingest.service";
 import { AccountsRateLimiterService } from "./accounts-rate-limiter.service";
 import { IdentityRepository } from "../identity/identity.repository";
 import {
@@ -60,9 +62,65 @@ function requestIdOf(request: FastifyRequest): string | null {
 export class TradingAccountsController {
   constructor(
     private readonly accounts: TradingAccountService,
+    private readonly bridgeIngest: Mt5BridgeIngestService,
     private readonly limiter: AccountsRateLimiterService,
     private readonly identity: IdentityRepository,
   ) {}
+
+  /**
+   * Phase 08 — the ONLY public route of the accounts surface: the MT5
+   * terminal bridge ingest. Authentication is per-event HMAC (key locator +
+   * timestamp + signature + event id — see Mt5BridgeIngestService); no JWT
+   * exists on the terminal. Declared before the :accountId routes.
+   */
+  @Public()
+  @Post("bridge/ingest")
+  @HttpCode(HttpStatus.OK)
+  async bridgeIngestPost(
+    @Req() request: FastifyRequest,
+    @Body(new ZodValidationPipe(bridgeIngestEnvelopeSchema))
+    envelope: unknown,
+  ) {
+    const headers = request.headers as Record<string, string | string[] | undefined>;
+    const header = (name: string): string => {
+      const value = headers[name];
+      if (typeof value !== "string" || value.length === 0) {
+        throw new UnauthorizedError(
+          `The ${name} header is required.`,
+          "BRIDGE_HEADER_MISSING",
+        );
+      }
+      return value;
+    };
+    const result = await this.bridgeIngest.ingest({
+      keyId: header("x-bridge-key"),
+      timestampMs: Number(header("x-bridge-timestamp")),
+      signatureHex: header("x-bridge-signature"),
+      envelope: envelope as Parameters<typeof this.bridgeIngest.ingest>[0]["envelope"],
+    });
+    return result;
+  }
+
+  /** Phase 08 — re-view the pairing sheet (owner-only). */
+  @Get(":accountId/bridge/pairing")
+  async bridgePairing(
+    @CurrentUser() principal: AuthPrincipal,
+    @Param("accountId") accountId: string,
+  ) {
+    const user = await this.loadUser(principal.userId);
+    return this.accounts.getBridgePairing(user.id, accountId);
+  }
+
+  /** Phase 08 — rotate the bridge secret (invalidates the old terminal config). */
+  @Post(":accountId/bridge/rotate")
+  @HttpCode(HttpStatus.OK)
+  async bridgeRotate(
+    @CurrentUser() principal: AuthPrincipal,
+    @Param("accountId") accountId: string,
+  ) {
+    const user = await this.loadUser(principal.userId);
+    return this.accounts.rotateBridgeSecret(user.id, user, accountId);
+  }
 
   @Get("providers")
   providers() {

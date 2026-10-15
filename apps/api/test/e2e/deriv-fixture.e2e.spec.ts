@@ -75,6 +75,9 @@ beforeAll(async () => {
   process.env.ACCOUNTS_DERIV_PROVIDER = "enabled";
   process.env.ACCOUNTS_DERIV_WS_URL = fixture.url;
   process.env.ACCOUNTS_MOCK_PROVIDER = "enabled";
+  // Phase 08 — this fixture is scoped to deriv-ws: pin the bridge gate OFF
+  // so the registry contents never depend on the developer 's local .env.
+  process.env.ACCOUNTS_MT5_BRIDGE_PROVIDER = "disabled";
   app = await buildTestApp();
   mail = captureMail(app);
   const user = await authenticatedUser(app, mail);
@@ -88,6 +91,7 @@ afterAll(async () => {
   await fixture.close();
   delete process.env.ACCOUNTS_DERIV_PROVIDER;
   delete process.env.ACCOUNTS_DERIV_WS_URL;
+  delete process.env.ACCOUNTS_MT5_BRIDGE_PROVIDER;
 });
 
 const CONNECT = {
@@ -128,7 +132,11 @@ describe("deriv-ws over the fixture — registry and universal broker layer", ()
     const deriv = parsed.brokers.find((b) => b.brokerId === "deriv");
     expect(deriv?.connectorStatus).toBe("CONNECTOR_AVAILABLE");
     const icmarkets = parsed.brokers.find((b) => b.brokerId === "icmarkets");
+    // Phase 08 — icmarkets carries the mt5-bridge connector; with only the
+    // deriv adapter registered in this fixture the honest status stays
+    // CONNECTOR_NOT_IMPLEMENTED, and the providerId is now declared.
     expect(icmarkets?.connectorStatus).toBe("CONNECTOR_NOT_IMPLEMENTED");
+    expect(icmarkets?.providerId).toBe("mt5-bridge");
     const tradingview = parsed.brokers.find((b) => b.brokerId === "tradingview");
     expect(tradingview?.connectorStatus).toBe("CONNECTOR_NOT_IMPLEMENTED");
     const notes = parsed.brokers.find((b) => b.brokerId === "tradingview")?.notes ?? "";
@@ -230,7 +238,7 @@ describe("deriv-ws — connect → initial sync → reads → broker identificat
     expect(dealsRes.statusCode).toBe(200);
     const deals = tradingDealsResponseSchema.parse(dealsRes.json()).deals;
     expect(deals).toHaveLength(2);
-    expect(deals[0].externalDealId).toMatch(/^TXN-/);
+    expect(deals[0]?.externalDealId).toMatch(/^TXN-/);
     // Every persisted deal carries its provider identity (idempotency key).
     expect(deals.every((d) => d.externalDealId.length > 0)).toBe(true);
 
@@ -239,10 +247,10 @@ describe("deriv-ws — connect → initial sync → reads → broker identificat
     const runsRes = await app.inject({ method: "GET", url: `/api/v1/trading-accounts/${accountId}/sync-runs?limit=5`, headers: auth });
     expect(runsRes.statusCode).toBe(200);
     const runs = tradingSyncRunsResponseSchema.parse(runsRes.json());
-    expect(runs.runs[0].status).toBe("COMPLETED");
-    expect(runs.runs[0].ordersUpserted).toBe(0);
-    expect(runs.runs[0].ordersAt ?? null).toBeNull();
-    expect(runs.runs[0].dealsUpserted).toBe(2);
+    expect(runs.runs[0]?.status).toBe("COMPLETED");
+    expect(runs.runs[0]?.ordersUpserted).toBe(0);
+    expect(runs.runs[0]?.ordersAt ?? null).toBeNull();
+    expect(runs.runs[0]?.dealsUpserted).toBe(2);
   });
 
   it("repeated synchronization does not duplicate records (boundary tie re-upserts idempotently)", async () => {

@@ -36,6 +36,8 @@ import { BrokerIdentificationService } from "./broker-identification.service";
 import { MockTradingProviderAdapter } from "./providers/mock-trading.provider";
 import { OandaRestProviderAdapter } from "./providers/oanda/oanda-rest.provider";
 import { DerivWsProviderAdapter } from "./providers/deriv/deriv-ws.provider";
+import { Mt5BridgeProviderAdapter } from "./providers/mt5-bridge/mt5-bridge.provider";
+import { Mt5BridgeIngestService } from "./mt5-bridge-ingest.service";
 import { TradingAccountService } from "./trading-account.service";
 import { TradingSyncService } from "./trading-sync.service";
 import { AccountsRateLimiterService } from "./accounts-rate-limiter.service";
@@ -54,7 +56,10 @@ const TRANSPORT_ABORT_GRACE_MS = 2_000;
 
 const providerRegistryProvider: Provider = {
   provide: ProviderRegistryService,
-  useFactory: (config: AppConfig): ProviderRegistryService => {
+  useFactory: (
+    config: AppConfig,
+    repository: AccountsRepository,
+  ): ProviderRegistryService => {
     const adapters = [
       // V1: mock adapter only (§55/§57). Real adapters (MT5 bridge, Deriv,
       // cTrader, …) register here when their integrations actually exist —
@@ -84,10 +89,18 @@ const providerRegistryProvider: Provider = {
             }),
           ]
         : []),
+      // Phase 08: the THIRD real adapter — the FIRST push-based one. Same
+      // §57 opt-in posture. No outbound dependency at all: the user's MT5
+      // terminal (EuforiaBridge EA) pushes signed events to the ingest
+      // endpoint; the adapter serves the server-persisted log back to the
+      // pull orchestrator. Broker credentials never leave the terminal.
+      ...(config.accounts.mt5BridgeEnabled
+        ? [new Mt5BridgeProviderAdapter(repository)]
+        : []),
     ];
     return new ProviderRegistryService(adapters);
   },
-  inject: [APP_CONFIG],
+  inject: [APP_CONFIG, AccountsRepository],
 };
 
 @Module({
@@ -108,6 +121,8 @@ const providerRegistryProvider: Provider = {
     BrokerIdentificationService,
     TradingSyncService,
     TradingAccountService,
+    // Phase 08 — the public bridge ingest (HMAC + idempotency + activation).
+    Mt5BridgeIngestService,
     AccountsRateLimiterService,
     // Phase 05 — scheduled synchronization + stale-run recovery (§9/§15).
     // The timer itself is config-gated (ACCOUNTS_SYNC_SCHEDULER, default

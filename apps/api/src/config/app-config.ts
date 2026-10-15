@@ -59,6 +59,8 @@ export interface AppConfig {
     derivWsUrlOverride: string | null;
     /** Deriv application id (developers.deriv.com registration; dev default documented). */
     derivAppId: string;
+    /** Whether the MT5 terminal bridge adapter is registered (Phase 08). */
+    mt5BridgeEnabled: boolean;
     /** Phase 05 — background sync scheduler gate (never on by default, §57). */
     syncSchedulerEnabled: boolean;
     /** Phase 05 — base interval between scheduler sweeps (jittered per tick). */
@@ -149,6 +151,7 @@ function build(env: Env): AppConfig {
       // Deriv's public example app id — development/verification only (see
       // env.schema.ts); real deployments register their own application id.
       derivAppId: env.ACCOUNTS_DERIV_APP_ID ?? "1089",
+      mt5BridgeEnabled: env.ACCOUNTS_MT5_BRIDGE_PROVIDER === "enabled",
       syncSchedulerEnabled: env.ACCOUNTS_SYNC_SCHEDULER === "enabled",
       syncIntervalMs: env.ACCOUNTS_SYNC_INTERVAL_MS,
       syncMaxConcurrency: env.ACCOUNTS_SYNC_MAX_CONCURRENCY,

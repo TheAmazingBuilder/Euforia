@@ -368,11 +368,33 @@ model TradingConnection {
   /// are persisted (checkpoint safety §8.4). Null = next run does the
   /// documented bounded initial pull. Never exposed on the wire.
   dealsCheckpoint String?
+  /// Phase 08 — public, non-secret routing key for PLATFORM_BRIDGE
+  /// connections. The MT5 terminal sends it in a header so the ingest
+  /// endpoint can locate the connection WITHOUT any JWT; the bridge SECRET
+  /// stays in credentialsEnc. Null for API_KEY connections.
+  bridgeKeyId     String? @unique
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([providerId, status])
+}
+
+/// Phase 08 — MT5 terminal bridge ingest log. One row per accepted (or
+/// replayed) push from the terminal bridge. Events are the pull-adapter's
+/// data source: fetch* methods read the LATEST event of each kind for the
+/// connection. Idempotency: (bridgeKeyId, eventId) unique — a replayed
+/// event is acknowledged with duplicate=true, never double-applied.
+model TradingBridgeEvent {
+  id          String   @id @default(uuid()) @db.Uuid
+  bridgeKeyId String
+  eventId     String
+  kind        String
+  payload     Json
+  receivedAt  DateTime @default(now())
+
+  @@unique([bridgeKeyId, eventId])
+  @@index([bridgeKeyId, kind, receivedAt])
 }
 
 /// Mutable external state (balance/equity/margin) — the LATEST snapshot per

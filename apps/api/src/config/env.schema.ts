@@ -164,6 +164,16 @@ export const envSchema = z.object({
    */
   ACCOUNTS_DERIV_APP_ID: z.string().trim().min(1).max(32).optional(),
 
+  // ── Phase 08 — MT5 terminal bridge (PLATFORM_BRIDGE) ─────────────────────
+  /**
+   * MT5 terminal bridge gate (same §57 opt-in posture as every real
+   * provider). When enabled, the bridge adapter registers and the accounts
+   * surface accepts PLATFORM_BRIDGE pairings: the ingest endpoint becomes
+   * reachable and the adapter serves data from the server-persisted push
+   * log. No outbound call ever happens — the terminal pushes to us.
+   */
+  ACCOUNTS_MT5_BRIDGE_PROVIDER: z.enum(["enabled", "disabled"]).optional(),
+
   // ── Phase 05 — scheduled synchronization, freshness, recovery ─────────────
   /**
    * Background sync scheduler gate (Phase 05 §9). Like every real-provider

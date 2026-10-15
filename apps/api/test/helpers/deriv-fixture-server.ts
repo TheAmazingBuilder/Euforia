@@ -108,8 +108,8 @@ export function startDerivFixture(state: DerivFixtureState): Promise<DerivFixtur
     socket.send(JSON.stringify(body));
   };
 
-  wss.on("connection", (socket: WebSocket) => {
-    socket.on("message", (raw: WebSocket.RawData) => {
+  wss.on("connection", (socket: InstanceType<typeof import("ws").WebSocket>) => {
+    socket.on("message", (raw: unknown) => {
       let message: Record<string, unknown>;
       try {
         message = JSON.parse(String(raw));
