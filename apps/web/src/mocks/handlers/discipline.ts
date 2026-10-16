@@ -142,4 +142,15 @@ export const disciplineHandlers = [
       return toErrorResponse(error);
     }
   }),
+
+  // PATCH /alerts/:id/dismiss — archive WITHOUT deleting (Phase 07 §8)
+  http.patch(endpoint(apiPaths.alertDismiss(":alertId")), async ({ request, params }) => {
+    await latency();
+    try {
+      requireAuth(request);
+      return HttpResponse.json(mockStore.dismissAlert(pathParam(params, "alertId")));
+    } catch (error) {
+      return toErrorResponse(error);
+    }
+  }),
 ];

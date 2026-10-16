@@ -153,4 +153,18 @@ export class AlertsController {
     const id = uuidSchema.parse(alertId);
     return this.discipline.markAlertRead(principal.userId, id);
   }
+
+  /**
+   * PATCH /alerts/:id/dismiss — archive an alert WITHOUT deleting it
+   * (Phase 07 §8: dismissal keeps the audit history; the row remains in
+   * the archive tab and in the persisted inbox).
+   */
+  @Patch(":alertId/dismiss")
+  async dismiss(
+    @CurrentUser() principal: AuthPrincipal,
+    @Param("alertId") alertId: string,
+  ) {
+    const id = uuidSchema.parse(alertId);
+    return this.discipline.dismissAlert(principal.userId, id);
+  }
 }

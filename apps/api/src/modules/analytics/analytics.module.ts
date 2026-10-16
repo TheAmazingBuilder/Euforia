@@ -62,6 +62,9 @@ import { AnalyticsService } from "./analytics.service";
   ],
   controllers: [AnalyticsController],
   providers: [AnalyticsService],
-  exports: [],
+  // Narrow contract (§26/§69): the Phase-07 metric-alerts engine consumes
+  // the suite as the authoritative per-scope metric source — the alert
+  // engine computes no financial math of its own.
+  exports: [AnalyticsService],
 })
 export class AnalyticsModule {}

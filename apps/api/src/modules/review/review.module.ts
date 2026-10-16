@@ -33,7 +33,9 @@ import { ReviewService } from "./review.service";
   // unwired — the Phase-6 TradeReviewModule owns the /reviews routes now
   // (one route owner per path). Goals stay served here (ReviewRow gen).
   // Narrow contract: Playbook compliance reads review playbookMatch rows
-  // from the owning context (§26).
-  exports: [ReviewRepository],
+  // from the owning context (§26); the Phase-07 metric-alerts engine
+  // consumes GoalService as the ONLY goal-status authority (no second
+  // goal calculation engine, spec §10).
+  exports: [ReviewRepository, GoalService],
 })
 export class ReviewModule {}

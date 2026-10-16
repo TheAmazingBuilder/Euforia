@@ -19,6 +19,7 @@
  * Monitoring) stay with their owners.
  */
 import { Injectable, OnModuleInit } from "@nestjs/common";
+import { Prisma } from "@prisma/client";
 import type { z } from "zod";
 import {
   toTradingDateKey,
@@ -679,6 +680,78 @@ export class DisciplineService implements OnModuleInit {
     if (data.readAt === null) data.readAt = this.nowIso();
     await this.repository.updateRowData(row.id, data as unknown as JsonInput);
     return this.toAlertView({ ...row, data: data as unknown as Record<string, unknown> });
+  }
+
+  /**
+   * Dismiss an alert — the delivery-state transition the schema already
+   * models (`dismissedAt`) and the archive tab already renders. Dismissal
+   * NEVER deletes the row: the audit history stays (spec §8/§9 — no
+   * silent deletion).
+   */
+  async dismissAlert(
+    userId: string,
+    alertId: string,
+  ): Promise<{ id: string; userId: string } & AlertData> {
+    const row = await this.repository.findRowForUser(userId, "ALERT", alertId);
+    if (row === null) {
+      throw new NotFoundError("Alert not found", TRADING_ERROR.TRADE_NOT_FOUND);
+    }
+    const data = row.data as unknown as AlertData;
+    if (data.dismissedAt === null) data.dismissedAt = this.nowIso();
+    await this.repository.updateRowData(row.id, data as unknown as JsonInput);
+    return this.toAlertView({ ...row, data: data as unknown as Record<string, unknown> });
+  }
+
+  /**
+   * Publish an inbox alert on behalf of an owner domain (Phase 07 metric
+   * alerts; the documented bridge point — "alert bridges stay with their
+   * owner domains"). The caller owns the payload shape and supplies a
+   * DETERMINISTIC event id (uuid-v5 over a stable trigger key): a replayed
+   * publish collides on the primary key and is swallowed as a no-op —
+   * idempotency at the storage layer, not by pre-checks.
+   *
+   * Returns true when this call INSERTED the event, false when the
+   * deterministic id already existed (replay) — producers count only real
+   * insertions in their diagnostics.
+   */
+  async publishAlert(
+    userId: string,
+    input: {
+      id: string;
+      type: string;
+      severity: string;
+      title: string;
+      message: string;
+      payload: Record<string, unknown> | null;
+      tradeId?: string | null;
+    },
+  ): Promise<boolean> {
+    const now = this.nowIso();
+    const data: AlertData = {
+      type: input.type,
+      severity: input.severity,
+      title: input.title,
+      message: input.message,
+      payload: input.payload,
+      tradeId: input.tradeId ?? null,
+      readAt: null,
+      dismissedAt: null,
+      createdAt: now,
+    };
+    try {
+      await this.repository.insertRowWithId(
+        userId,
+        "ALERT",
+        input.id,
+        data as unknown as JsonInput,
+      );
+      return true;
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+        return false; // replayed trigger — the event already exists, stay quiet
+      }
+      throw error;
+    }
   }
 
   private toAlertView(row: DisciplineRow): { id: string; userId: string } & AlertData {

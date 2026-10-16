@@ -80,4 +80,22 @@ export class DisciplineRepository {
     });
     return row as unknown as DisciplineRow;
   }
+
+  /**
+   * Insert with a caller-supplied deterministic id — the idempotency
+   * mechanism for producer domains that derive event ids (uuid-v5) from
+   * stable trigger keys: a replayed publish hits the primary key and is a
+   * no-op at the caller's discretion (P2002).
+   */
+  async insertRowWithId(
+    userId: string,
+    kind: string,
+    id: string,
+    data: Prisma.InputJsonValue,
+  ): Promise<DisciplineRow> {
+    const row = await this.prisma.disciplineRow.create({
+      data: { userId, kind, id, data },
+    });
+    return row as unknown as DisciplineRow;
+  }
 }

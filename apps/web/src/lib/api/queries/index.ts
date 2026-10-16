@@ -23,6 +23,15 @@ export {
   useViolations,
 } from "./discipline";
 export {
+  useAlertRuleEvents,
+  useAlertRules,
+  useCreateAlertRule,
+  useDeleteAlertRule,
+  useDismissAlert,
+  useEvaluateAlertRules,
+  useUpdateAlertRule,
+} from "./metric-alerts";
+export {
   useAddScreenshot,
   useBulkTrades,
   useCloseTrade,

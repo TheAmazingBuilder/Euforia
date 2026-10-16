@@ -4,6 +4,7 @@ import { ocrHandlers } from "./ocr";
 import { catalogHandlers } from "./catalogs";
 import { preferencesHandlers } from "./preferences";
 import { disciplineHandlers } from "./discipline";
+import { metricAlertHandlers } from "./metric-alerts";
 import { ecoHandlers } from "./eco";
 import { integrationHandlers } from "./integrations";
 import { monitoringHandlers } from "./monitoring";
@@ -31,6 +32,7 @@ export const handlers = [
   ...tradeReviewHandlers,
   ...planHandlers,
   ...disciplineHandlers,
+  ...metricAlertHandlers,
   ...ghostHandlers,
   ...statsHandlers,
   ...sessionHandlers,

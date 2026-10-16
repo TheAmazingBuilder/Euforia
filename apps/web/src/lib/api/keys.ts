@@ -30,6 +30,9 @@ export const queryKeys = {
   review: (tradeId: string) => ["review", tradeId] as const,
   reviewRoot: ["review"] as const,
   alerts: ["alerts"] as const,
+  // Metric alert rules (Dashboard Customization Phase 07)
+  alertRules: ["alert-rules"] as const,
+  alertRuleEvents: (ruleId: string) => ["alert-rules", "events", ruleId] as const,
   ecoEvents: ["eco-events"] as const,
   // Calendar module upgrades
   calendarView: (from: string, to: string) => ["calendar-view", from, to] as const,

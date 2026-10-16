@@ -14,7 +14,9 @@ import {
   History,
   Info,
   Layers,
+  LineChart,
   ShieldAlert,
+  SlidersHorizontal,
   Target,
   TrendingDown,
   type LucideIcon,
@@ -22,8 +24,11 @@ import {
 import type { Alert } from "@cosmoz/shared";
 
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { useAlerts, useMarkAlertRead } from "@/lib/api/queries";
+import { AlertRulesManager } from "@/components/notifications/alert-rules-manager";
+import { useAlerts, useDismissAlert, useMarkAlertRead } from "@/lib/api/queries";
+import { alertEventObservation } from "@/lib/notifications/alert-rule-summary";
 import { cn } from "@/lib/utils";
 
 /**
@@ -31,7 +36,10 @@ import { cn } from "@/lib/utils";
  * discipline engine (GET /alerts). Module upgrades: alerts GROUP BY TYPE
  * with counters (noise control), an ARCHIVE tab (read + dismissed history,
  * beyond the 20 active rows) and goal alerts DEEP-LINK to the Goals tab
- * filtered on the goal. Same severity palette as the dashboard feed.
+ * filtered on the goal. Phase 07: METRIC_THRESHOLD events (user-defined
+ * alert rules) ride the same inbox with a unit-formatted observation
+ * detail, a DISMISS row action (audit history kept) and an entry point to
+ * the alert-rules manager. Same severity palette as the dashboard feed.
  */
 
 /** Alert type → icon (discipline semantics, not P&L). */
@@ -43,6 +51,7 @@ const TYPE_ICON: Record<Alert["type"], LucideIcon> = {
   STREAK: Bell,
   DISCIPLINE_WIN: Award,
   GOAL_STATUS: Target,
+  METRIC_THRESHOLD: LineChart,
   SYSTEM: Info,
 };
 
@@ -55,6 +64,7 @@ const TYPE_LABEL: Record<Alert["type"], string> = {
   STREAK: "Streaks",
   DISCIPLINE_WIN: "Discipline wins",
   GOAL_STATUS: "Goals",
+  METRIC_THRESHOLD: "Metric alerts",
   SYSTEM: "System",
 };
 
@@ -77,42 +87,65 @@ function relativeTime(iso: string, now: number): string {
   return `${Math.floor(hours / 24)}d`;
 }
 
-/** Machine-readable goal link from a GOAL_STATUS payload (defensive). */
+/** Machine-readable goal link from a GOAL_STATUS / METRIC_THRESHOLD payload
+ * (defensive) — goal alerts deep-link to the Goals tab (spec §8). */
 function goalIdOf(alert: Alert): string | null {
-  if (alert.type !== "GOAL_STATUS" || alert.payload === null) return null;
-  if (typeof alert.payload === "object" && "goalId" in alert.payload) {
+  if (alert.type !== "GOAL_STATUS" && alert.type !== "METRIC_THRESHOLD") return null;
+  if (alert.payload === null || typeof alert.payload !== "object") return null;
+  if ("goalId" in alert.payload) {
     const value = (alert.payload as Record<string, unknown>).goalId;
     return typeof value === "string" ? value : null;
   }
   return null;
 }
 
+/** Unit-formatted observation of a METRIC_THRESHOLD payload (defensive). */
+function metricObservationOf(alert: Alert): string | null {
+  if (alert.type !== "METRIC_THRESHOLD" || alert.payload === null) return null;
+  if (typeof alert.payload !== "object") return null;
+  const payload = alert.payload as Record<string, unknown>;
+  return alertEventObservation({
+    observedValue: typeof payload.observedValue === "number" ? payload.observedValue : null,
+    threshold: typeof payload.threshold === "number" ? payload.threshold : null,
+    unit: typeof payload.unit === "string" ? payload.unit : null,
+  });
+}
+
 interface AlertRowProps {
   alert: Alert;
   now: number;
   onRead: (id: string) => void;
+  onDismiss: (id: string) => void;
   onOpen: (alert: Alert) => void;
   readPending: boolean;
 }
 
-function AlertRow({ alert, now, onRead, onOpen, readPending }: AlertRowProps) {
+function AlertRow({ alert, now, onRead, onDismiss, onOpen, readPending }: AlertRowProps) {
   const isUnread = alert.readAt === null;
   const Icon = TYPE_ICON[alert.type];
   const goalId = goalIdOf(alert);
+  const observation = metricObservationOf(alert);
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
       data-testid="notification-item"
       onClick={() => {
         if (isUnread && !readPending) onRead(alert.id);
         onOpen(alert);
       }}
-      disabled={readPending}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          if (isUnread && !readPending) onRead(alert.id);
+          onOpen(alert);
+        }
+      }}
       aria-label={
         isUnread ? `Mark "${alert.title}" as read` : alert.title
       }
       className={cn(
-        "flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-surface focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring",
+        "flex w-full cursor-pointer items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-surface focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring",
         isUnread && "bg-accent/[0.04]",
       )}
     >
@@ -153,6 +186,11 @@ function AlertRow({ alert, now, onRead, onOpen, readPending }: AlertRowProps) {
         <span className="mt-0.5 line-clamp-2 block text-xs leading-relaxed text-muted-foreground">
           {alert.message}
         </span>
+        {observation !== null && (
+          <span className="mt-1 block font-mono text-[11px] tabular-nums text-foreground/80">
+            {observation}
+          </span>
+        )}
         {goalId !== null && (
           <span className="mt-1 inline-flex items-center gap-1 text-[10px] font-medium text-accent">
             <Target className="size-3" aria-hidden="true" />
@@ -160,10 +198,25 @@ function AlertRow({ alert, now, onRead, onOpen, readPending }: AlertRowProps) {
           </span>
         )}
       </span>
-      {isUnread ? (
-        <span aria-hidden="true" className="mt-2 size-1.5 shrink-0 rounded-full bg-accent" />
-      ) : null}
-    </button>
+      {alert.dismissedAt === null ? (
+        <button
+          type="button"
+          aria-label={`Dismiss "${alert.title}"`}
+          data-testid="notification-dismiss"
+          onClick={(event) => {
+            event.stopPropagation();
+            onDismiss(alert.id);
+          }}
+          className="mt-1 shrink-0 rounded-md p-1 text-muted-foreground/60 transition-colors hover:bg-surface hover:text-foreground focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
+        >
+          <BellOff className="size-3.5" aria-hidden="true" />
+        </button>
+      ) : (
+        <Badge variant="outline" className="mt-1 shrink-0 text-[10px]">
+          dismissed
+        </Badge>
+      )}
+    </div>
   );
 }
 
@@ -173,9 +226,11 @@ export function NotificationCenter() {
   const router = useRouter();
   const { data } = useAlerts();
   const markRead = useMarkAlertRead();
+  const dismissAlert = useDismissAlert();
   const [open, setOpen] = React.useState(false);
   const [mode, setMode] = React.useState<InboxMode>("active");
   const [collapsed, setCollapsed] = React.useState<Set<Alert["type"]>>(new Set());
+  const [rulesOpen, setRulesOpen] = React.useState(false);
 
   // Goal-status toasts — GOAL_STATUS alerts arriving MID-SESSION surface as a
   // toast (warning for slipping, success for back-on-track / achieved). The
@@ -298,6 +353,20 @@ export function NotificationCenter() {
           <Button
             variant="ghost"
             size="sm"
+            className="h-7 gap-1.5 px-2 text-xs text-muted-foreground hover:text-foreground"
+            aria-label="Manage alert rules"
+            data-testid="notification-rules"
+            onClick={() => {
+              setOpen(false);
+              setRulesOpen(true);
+            }}
+          >
+            <SlidersHorizontal className="size-3.5" aria-hidden="true" />
+            Rules
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
             className="h-7 gap-1.5 px-2 text-xs text-accent hover:text-accent"
             onClick={markAllRead}
             disabled={unread.length === 0 || markRead.isPending}
@@ -343,7 +412,7 @@ export function NotificationCenter() {
             <ul className="max-h-[min(24rem,55dvh)] divide-y divide-border overflow-y-auto overscroll-contain">
               {live.slice(0, 20).map((alert) => (
                 <li key={alert.id}>
-                  <AlertRow alert={alert} now={now} onRead={(id) => markRead.mutate(id)} onOpen={openAlert} readPending={markRead.isPending} />
+                  <AlertRow alert={alert} now={now} onRead={(id) => markRead.mutate(id)} onDismiss={(id) => dismissAlert.mutate(id)} onOpen={openAlert} readPending={markRead.isPending} />
                 </li>
               ))}
             </ul>
@@ -385,7 +454,7 @@ export function NotificationCenter() {
                       <ul className="divide-y divide-border border-t border-border/60">
                         {bucket.slice(0, 5).map((alert) => (
                           <li key={alert.id}>
-                            <AlertRow alert={alert} now={now} onRead={(id) => markRead.mutate(id)} onOpen={openAlert} readPending={markRead.isPending} />
+                            <AlertRow alert={alert} now={now} onRead={(id) => markRead.mutate(id)} onDismiss={(id) => dismissAlert.mutate(id)} onOpen={openAlert} readPending={markRead.isPending} />
                           </li>
                         ))}
                       </ul>
@@ -416,13 +485,16 @@ export function NotificationCenter() {
             <ul className="max-h-[min(24rem,55dvh)] divide-y divide-border overflow-y-auto overscroll-contain" data-testid="inbox-history">
               {archived.map((alert) => (
                 <li key={alert.id}>
-                  <AlertRow alert={alert} now={now} onRead={(id) => markRead.mutate(id)} onOpen={openAlert} readPending={markRead.isPending} />
+                  <AlertRow alert={alert} now={now} onRead={(id) => markRead.mutate(id)} onDismiss={(id) => dismissAlert.mutate(id)} onOpen={openAlert} readPending={markRead.isPending} />
                 </li>
               ))}
             </ul>
           )
         ) : null}
       </PopoverContent>
+
+      {/* Alert-rules manager — opened from the inbox header (spec §5). */}
+      <AlertRulesManager open={rulesOpen} onOpenChange={setRulesOpen} />
     </Popover>
   );
 }

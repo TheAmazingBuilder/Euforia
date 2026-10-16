@@ -47,6 +47,7 @@ import { ReplayModule } from "./modules/replay/replay.module";
 import { AnalyticsModule } from "./modules/analytics/analytics.module";
 import { OryonModule } from "./modules/oryon/oryon.module";
 import { PlansModule } from "./modules/plans/plans.module";
+import { MetricAlertsModule } from "./modules/metric-alerts/metric-alerts.module";
 
 const globalExceptionFilterProvider: Provider = {
   provide: APP_FILTER,
@@ -171,6 +172,11 @@ const globalExceptionFilterProvider: Provider = {
     // Phase 10 → serveur (Oryon analyses) + Phase 11 (trade plans).
     OryonModule,
     PlansModule,
+    // Metric alerts (Dashboard Customization Phase 07) — user-defined
+    // threshold rules over the analytics-suite summary + goals, evaluated
+    // after closed-trade writes (debounced) and on manual trigger; events
+    // land in the EXISTING discipline inbox (one notification system).
+    MetricAlertsModule,
     // modules/reference … — added by their own phases.
   ],
   providers: [globalExceptionFilterProvider],

@@ -48,6 +48,7 @@ export * from "./schemas/calculators";
 export * from "./schemas/ocr";
 export * from "./schemas/oryon";
 export * from "./schemas/goal";
+export * from "./schemas/metricAlerts";
 // Phase 4/5/7+ domain contracts consumed by the NestJS API through
 // src/shared/contracts (relative source re-export — see that file).
 export * from "./schemas/trading-core";

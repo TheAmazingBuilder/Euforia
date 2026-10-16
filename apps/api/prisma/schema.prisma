@@ -150,6 +150,7 @@ model User {
   setups            Setup[]
   checklistTemplates ChecklistTemplate[]
   playbookRules     PlaybookRule[]
+  metricAlertRules  MetricAlertRuleRow[]
 
   @@index([status])
 }
@@ -1085,6 +1086,23 @@ model DisciplineRow {
   updatedAt DateTime @updatedAt
 
   @@index([userId, kind])
+}
+
+/// Metric alert rules (Dashboard Customization Phase 07) — user-defined
+/// threshold monitoring over the analytics-suite summary + goals. The rule
+/// document (shared metricAlertRuleSchema JSON, including the server-managed
+/// evaluation state) lives in `data`; triggered events are ALERT rows in the
+/// discipline inbox (type METRIC_THRESHOLD) — one notification system.
+model MetricAlertRuleRow {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Shared-contract JSON (metricAlertRuleSchema).
+  data      Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
 }
 
 /// Trade sub-resources owned by other contexts — mistake links, trade↔tag

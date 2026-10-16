@@ -85,6 +85,12 @@ export const apiPaths = {
   skippedTradeSettle: (skippedId: string) => `/skipped-trades/${skippedId}/settle`,
   alerts: "/alerts",
   alertRead: (alertId: string) => `/alerts/${alertId}/read`,
+  alertDismiss: (alertId: string) => `/alerts/${alertId}/dismiss`,
+  // Metric alert rules (Dashboard Customization Phase 07)
+  alertRules: "/alert-rules",
+  alertRule: (ruleId: string) => `/alert-rules/${ruleId}`,
+  alertRuleEvents: (ruleId: string) => `/alert-rules/${ruleId}/events`,
+  alertRulesEvaluate: "/alert-rules/evaluate",
   ecoEvents: "/eco-events",
   calendarView: "/calendar-view",
   calendarBlocks: "/calendar-blocks",

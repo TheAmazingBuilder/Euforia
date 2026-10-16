@@ -204,6 +204,7 @@ export const alertTypeSchema = z.enum([
   "STREAK",
   "DISCIPLINE_WIN",
   "GOAL_STATUS",
+  "METRIC_THRESHOLD",
   "SYSTEM",
 ]);
 export type AlertType = z.infer<typeof alertTypeSchema>;

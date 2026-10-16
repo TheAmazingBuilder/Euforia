@@ -517,6 +517,14 @@ export function createMockStore() {
     return alert;
   }
 
+  /** Dismiss WITHOUT deleting — the audit history stays (Phase 07 §8). */
+  function dismissAlert(alertId: string): Alert {
+    const alert = data.alerts.find((a) => a.id === alertId);
+    if (!alert) throw new MockError(404, "Alert not found");
+    if (alert.dismissedAt === null) alert.dismissedAt = nowIso();
+    return alert;
+  }
+
   /**
    * Monitoring → inbox bridge (module upgrade): a NEW raised monitoring rule
    * reaches the user's bell as a SYSTEM alert. Deduped per rule while the
@@ -4930,6 +4938,7 @@ export function createMockStore() {
     exportBackup,
     importBackup,
     markAlertRead,
+    dismissAlert,
     listSkippedTrades,
     createTrade,
     closeTrade,
