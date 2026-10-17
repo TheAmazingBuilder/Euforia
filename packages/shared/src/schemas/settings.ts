@@ -4,7 +4,8 @@ import {
   currencySchema,
   directionSchema,
 } from "../enums";
-import { decimalStringSchema, isoDateTimeSchema, uuidSchema } from "./primitives";
+import { dateKeySchema, decimalStringSchema, isoDateTimeSchema, uuidSchema } from "./primitives";
+import { analyticsPeriodSchema } from "./api";
 
 /**
  * Structured user preferences — the Settings module contract.
@@ -542,10 +543,88 @@ export type DashboardLayoutDocument = z.infer<typeof dashboardLayoutDocumentSche
  *    the customization phase carry `widgetOrder` only, and readers
  *    synthesize the default collection from it (never a hard failure).
  */
+/**
+ * Phase 03 — the authoritative global dashboard filter model.
+ *
+ * A deliberately SMALL, single-value-per-dimension subset of the analytics
+ * suite contract (the existing application convention — the Analytics
+ * FilterBar and the `analyticsFiltersSchema` suite query are single-select):
+ * absent field = the dimension imposes no restriction. Multi-value OR
+ * semantics are NOT offered in v1 — the suite API is scalar per dimension
+ * and inventing array params here would fake a capability the authoritative
+ * calculation layer does not provide.
+ *
+ * Dimensions intentionally EXCLUDED from the dashboard bar:
+ *  - `emotion` / `tagId` (honest no-op seams in the suite engine — always
+ *    filter to empty),
+ *  - trade status (the suite aggregates CLOSED trades only — an open/
+ *    planned/cancelled filter would be a lie; documented limitation),
+ *  - assetClass/session (kept as widget-level/Analytics-page concerns for
+ *    now — addable later without breaking stored views since the schema is
+ *    versioned per view).
+ */
+export const dashboardFiltersSchema = z
+  .object({
+    /** Named date preset resolved SERVER-SIDE against the user's trading-day
+     * clock (never client date math). Default = no date restriction. */
+    period: analyticsPeriodSchema.default("ALL"),
+    /** Required together when period = CUSTOM (trading-date keys, inclusive). */
+    customFrom: dateKeySchema.optional(),
+    customTo: dateKeySchema.optional(),
+    accountId: uuidSchema.optional(),
+    /** Catalog instrument id OR the deterministic v5 group id used by the
+     * suite for uncataloged symbols. */
+    instrumentId: uuidSchema.optional(),
+    /** Strategy uuid, or the literal "none" = out-of-playbook trades. The
+     * analytics attribution chain (review → plan → strategy) applies. */
+    strategyId: uuidSchema.or(z.literal("none")).optional(),
+    direction: directionSchema.optional(),
+  })
+  .superRefine((filters, ctx) => {
+    if (filters.period === "CUSTOM") {
+      if (filters.customFrom === undefined || filters.customTo === undefined) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["customFrom"],
+          message: "CUSTOM period requires customFrom and customTo",
+        });
+      } else if (filters.customFrom > filters.customTo) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["customTo"],
+          message: "customFrom must be ≤ customTo",
+        });
+      }
+    }
+  });
+export type DashboardFilters = z.infer<typeof dashboardFiltersSchema>;
+
+/**
+ * Phase 03 — one saved analytical view: a NAME + a validated filter context.
+ * Strictly separate from layouts (widget arrangement) and per-widget configs
+ * (presentation): applying a view never moves widgets, switching layouts
+ * never changes filters (spec §11). Store shape mirrors the layout document
+ * conventions (stable ids, schemaVersion, timestamps).
+ */
+export const dashboardSavedViewSchema = z.object({
+  id: z.string().min(1).max(64),
+  name: z.string().min(1).max(60),
+  description: z.string().max(200).optional(),
+  schemaVersion: z.literal(1),
+  filters: dashboardFiltersSchema,
+  createdAt: isoDateTimeSchema.optional(),
+  updatedAt: isoDateTimeSchema.optional(),
+});
+export type DashboardSavedView = z.infer<typeof dashboardSavedViewSchema>;
+
 export const dashboardPreferencesSchema = z.object({
   widgetOrder: z.array(dashboardWidgetKeySchema).max(DASHBOARD_WIDGET_KEYS.length),
   activeLayoutId: z.string().min(1).max(64).optional(),
   layouts: z.array(dashboardLayoutDocumentSchema).max(20).optional(),
+  /** Phase 03 — saved analytical views (global dashboard filters). OPTIONAL
+   * and additive: documents stored before it keep validating unchanged.
+   * Views are filter contexts ONLY — never layouts, never widget configs. */
+  savedViews: z.array(dashboardSavedViewSchema).max(30).optional(),
 });
 
 export type DashboardPreferences = z.infer<typeof dashboardPreferencesSchema>;
