@@ -1762,3 +1762,20 @@ Stage Summary:
 - Local: chaîne complète prouvée (install→env→DB embarquée→migrations→API→web→tests); le guide couvre Windows/macOS/Linux avec classification honnête des items non testés ici (Docker, 1er run GitHub, OCR run réel, chemin LOG du seed)
 - Commits: f08ad68 (postinstall prisma + ci.yml), 4970571 (migrations tombestones + bridge tests auto-contenus), guide dans le commit à venir
 - Prochaine étape naturelle: owner pousse sur GitHub (§7 du guide) et constate le 1er run vert → puis R3 (limiteur composite compte+IP + régressions e2e) → puis onboarding GSAP
+
+---
+Task ID: 10-dashboard-roadmap-restore
+Agent: Super Z (main)
+Date: 2026-10-17
+
+Task: Directive owner — (a) « on a déjà fait l'onboarding GSAP » (à vérifier honnêtement) ; (b) la série Dashboard Customization specs phases 1→11 avait disparu des suivis — la restaurer.
+
+Work Log:
+- GSAP onboarding vérifié aux preuves : AUCUNE dépendance gsap/@gsap/react (apps/web, apps/api, racine), aucun composant onboarding/tour, aucun commit onboarding|gsap sur --all, aucune entrée worklog d'implémentation ; seule occurrence « onboarding » dans apps/web/src = donnée mock (tasky-view) → VERDICT : spec reçue (15 sections, session antérieure) mais implémentation JAMAIS commencée — statut corrigé honnêtement auprès de l'owner, la phase reste en file
+- Série Dashboard Customization reconstituée depuis les preuves du repo (worklog 6/7/8-dashboard-customization-*, commits 81513e1/e3b773a/1da3d75, §A du rapport Phase 07) : phases 01/02/07 DONE, 04 = système goals pré-existant, 03/05/06 NOT IMPLEMENTED (titres vérifiés), 08→11 = specs owner perdues avec les sessions → placeholders SANS invention, re-upload demandé
+- Nouveau doc : docs/audits/DASHBOARD-CUSTOMIZATION-ROADMAP-PHASES-01-11.md (table de statut complète 01→11 avec preuves, résumés des phases livrées, prérequis Phase 08 mis à jour — dette bridge/scheduler RÉSOLUE depuis 4970571 : suite 1293/1293, ordre de reprise proposé, section honnêteté GSAP)
+
+Stage Summary:
+- La série 11 phases est de nouveau au registre avec statuts prouvés ; noms 08→11 volontairement NON inventés (règle anti-fabrication)
+- Statut GSAP onboarding corrigé : spec OUI / code NON — l'owner peut fournir une preuve contraire si elle existe
+- Prochaines actions owner : re-uploader specs manquantes (03/05/06 + 08→11) OU commander l'ordre de reprise ; file globale : dashboard 03/05/06 → 08→11 → R3 → onboarding GSAP (implémentation)
