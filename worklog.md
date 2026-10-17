@@ -1738,3 +1738,27 @@ Stage Summary:
 - Phase 07 LIVRÉE ET PROUVÉE: règles d'alerte seuil+goals sur métriques fiables, évaluation par transitions avec déduplication à l'identité déterministe (zéro doublon possible au niveau stockage), CAS sur triggerCount (pas de perte ni régression sous concurrence), événements dans l'inbox EXISTANTE (un seul système de notification), dismiss sans suppression (historique d'audit), intégration goals par l'autorité GoalService (jamais de statut fabriqué), découplage total des layouts/workspaces, aucune capacité d'exécution de trades (les seuls écritures du moteur: un doc d'état + une ligne d'inbox)
 - Politique documentée honnêtement: PAS de temps réel — évaluation après écritures de trades fermés (débounce 1s) + endpoint manuel; pas de scheduler
 - Prochaine étape naturelle: Phase 03/05/06 de la série si le owner les commande, OU tri de la dette de tests pré-existante (bridge HMAC + guards scheduler) avant la Phase 08
+
+---
+Task ID: 9-cicd-redis-local-guide
+Agent: Super Z (main)
+Date: 2026-10-17
+
+Task: Directive owner — (1) vérifier que le CI/CD GitHub Actions est fonctionnel pour l'app, (2) vérifier Redis et le gérer si KO, (3) garantir que tout tourne en local AVANT push GitHub/prod, (4) produire le guide complet de configuration/installation locale → déposé dans docs/audits/GUIDE-INSTALLATION-LOCALE.md (demande explicite: .md dans docs/audits)
+
+Work Log:
+- CI: .github/workflows/ci.yml trouvé (2 jobs: api lint/typecheck/build/test, web typecheck/build; push main + PR; pnpm via packageManager, Node 24) — vérification STATIQUE puis PREUVE par simulation: clone git frais du HEAD + exécution des commandes du CI dans l'ordre exact
+- DÉFAUT #1 prouvé (TYPECHECK exit 1 sur clone frais): le client Prisma généré n'était jamais committé ni régénéré — le repo ne tournait que par un `prisma generate` manuel ancien. FIX f08ad68: "postinstall": "prisma generate" dans apps/api/package.json (validé: fonctionne sans DATABASE_URL, 564ms; "apps/api postinstall: ✔ Generated Prisma Client" visible lors du pnpm install de clone frais) + annotation ci.yml
+- DÉFAUT #2 prouvé (P3018 sur cosmoz_test fraîche — exactement ce que reçoit le CI): rejeu des migrations cassé depuis la réécriture historique des migrations 3 oct (Trade créée le 4 oct mais FK dès le 3 oct) + ocr_v2 byte-dupliqué le même jour. Le sandbox masquait tout (DB incrémentale ancienne). FIX 4970571: reconciliation empirique itérative sur DB scratch (replay-1→4) — 20261003145823_trade_review et 20261006120000_ocr_v2 en tombestones vides (même pattern que la réconciliation documentée de trading_core) → rejeu 41/41 OK + `migrate diff` analysé (drift legacy préexistant identique des deux côtés)
+- DÉFAUT #3 prouvé: 5 tests e2e bridge MT5 ("pré-existants au HEAD" documentés, connect→422) NON auto-contenus — dépendaient d'un apps/api/.env local portant ACCOUNTS_MT5_BRIDGE_PROVIDER=enabled, perdu au restore du 16 oct. FIX 4970571: le describe boote SON app (gate explicite + captureMail dédiée + resetAppConfigCache() — la config mémoïsée était déjà chauffée gate-off par l'app partagée; le helper resetAppConfigCache existait déjà dans app-config.ts)
+- RÉSULTAT: suite API 1293/1293 (au lieu de 1288/5) sur base fraîchement migrée; simulation CI complète sur clone frais: 7/7 étapes vertes (install/lint/typecheck/build/test1293/tc shared+web/next build) — logs scripts/ci-sim/final-*.log
+- Redis: VERDICT N-A — zéro dep redis/ioredis/bullmq dans tout le monorepo, zéro variable REDIS*, zéro service compose, code commenté "no BullMQ/Redis in this build" (ocr.module.ts, ocr-retention). Rate-limit en mémoire = R4 (ouvert). Redis n'entrera qu'avec un scale-out multi-instances. Rien à réparer.
+- Guide: docs/audits/GUIDE-INSTALLATION-LOCALE.md NOUVEAU (11 sections, français): résumé exécutif classé PASS/PARTIAL/N-A/À VALIDER, architecture, verdict Redis détaillé, contenu+preuve CI, prérequis (Node 24/corepack/zéro Docker requis), 11 étapes d'installation (env API+web, 2 chemins DB, migrations, MSW vs LIVE bridge, seed démo trader@cosmoz.app/Cosmoz!Demo2026 avec adaptation du chemin LOG documentée, OCR sidecar optionnel, smoke tests), troubleshooting (14 cas dont P3009/.localpg/drift migrate dev), push GitHub + CI (zéro secret requis), checklist prod honnête (R1✅ R2✅ R3/R4 ouverts, docker NON testé — pas de démon dans le sandbox), annexes env+commandes, traçabilité commits/logs
+- Nettoyage: clone .ci-sim supprimé, DB scratch cosmoz_replay droppée, cosmoz_test laissée sur le schéma fraîchement migré (état désormais ≡ CI); rebuild-env-2026-10-14.sh obsolète (son workaround db push+migrate resolve n'est plus nécessaire)
+
+Stage Summary:
+- CI/CD PROUVÉ FONCTIONNEL en simulation clone frais (3 défauts réels trouvés, compris, corrigés avec preuve de bout en bout); suite 1293/1293 — les 7 "échecs pré-existants" au HEAD sont résolus (5 bridge corrigés + 2 flakes scheduler passés)
+- Redis: N-A documenté honnêtement (rien à installer; scénario d'introduction future = R4 scale-out)
+- Local: chaîne complète prouvée (install→env→DB embarquée→migrations→API→web→tests); le guide couvre Windows/macOS/Linux avec classification honnête des items non testés ici (Docker, 1er run GitHub, OCR run réel, chemin LOG du seed)
+- Commits: f08ad68 (postinstall prisma + ci.yml), 4970571 (migrations tombestones + bridge tests auto-contenus), guide dans le commit à venir
+- Prochaine étape naturelle: owner pousse sur GitHub (§7 du guide) et constate le 1er run vert → puis R3 (limiteur composite compte+IP + régressions e2e) → puis onboarding GSAP
