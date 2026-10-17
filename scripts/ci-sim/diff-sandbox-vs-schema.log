@@ -1,0 +1,346 @@
+
+[+] Added enums
+  - TradeReviewStatus
+  - ExecutionGrade
+  - PlaybookMatch
+  - EcoImpact
+  - EcoEventStatus
+  - CalendarBlockKind
+  - IntegrationStatus
+  - IntegrationAuthState
+  - IntegrationErrorCode
+  - IntegrationEventType
+  - WebhookEndpointStatus
+  - AnalysisPlanStatus
+
+[+] Added tables
+  - MonitoringSetting
+  - TradingBridgeEvent
+  - OcrAsset
+  - OcrRecognition
+  - OcrCorrectionPattern
+  - OcrSet
+  - OcrSetItem
+  - OcrCollection
+  - OcrCollectionItem
+  - Instrument
+  - Trade
+  - TradeExit
+  - TradeEvent
+  - TradeScreenshot
+  - SavedTradeView
+  - DisciplineRow
+  - MetricAlertRuleRow
+  - TradeSubRow
+  - SessionNoteRow
+  - SkippedTradeRow
+  - CalendarBlockRow
+  - ReviewRow
+  - SessionLiveRow
+  - PlaybookRow
+  - NofyRow
+  - AcademyRow
+  - TagRow
+  - IntegrationRow
+  - TradeExecution
+  - TradeReview
+  - ReplayRow
+  - EconomicEvent
+  - CalendarSyncRun
+  - CalendarBlock
+  - DailyStat
+  - UserSettings
+  - IntegrationConnection
+  - IntegrationEvent
+  - IntegrationError
+  - IntegrationWebhookEndpoint
+  - IntegrationWebhookDelivery
+  - Strategy
+  - StrategyVersionSnapshot
+  - Setup
+  - ChecklistTemplate
+  - PlaybookRule
+  - OcrRecognitionGroup
+  - OcrCollectionAsset
+  - OcrCorrection
+  - OcrEvent
+  - OryonAnalysis
+  - AnalysisPlan
+
+[*] Changed the `AcademyRow` table
+  [+] Added index on columns (userId, kind)
+  [+] Added foreign key on columns (userId)
+
+[*] Changed the `AnalysisPlan` table
+  [+] Added index on columns (userId, status)
+  [+] Added index on columns (userId, symbol)
+  [+] Added index on columns (tradeId)
+  [+] Added unique index on columns (userId, clientRequestId)
+  [+] Added foreign key on columns (userId)
+  [+] Added foreign key on columns (tradeId)
+  [+] Added foreign key on columns (analysisId)
+
+[*] Changed the `CalendarBlock` table
+  [+] Added unique index on columns (userId, date, kind)
+  [+] Added foreign key on columns (userId)
+
+[*] Changed the `CalendarBlockRow` table
+  [+] Added index on columns (userId, date)
+  [+] Added foreign key on columns (userId)
+
+[*] Changed the `ChecklistTemplate` table
+  [+] Added foreign key on columns (userId)
+  [+] Added foreign key on columns (strategyId)
+
+[*] Changed the `DailyStat` table
+  [+] Added index on columns (userId)
+  [+] Added unique index on columns (userId, date)
+  [+] Added foreign key on columns (userId)
+
+[*] Changed the `DisciplineRow` table
+  [+] Added index on columns (userId, kind)
+  [+] Added foreign key on columns (userId)
+
+[*] Changed the `EconomicEvent` table
+  [+] Added index on columns (scheduledAt)
+  [+] Added index on columns (status)
+  [+] Added unique index on columns (provider, providerEventId)
+
+[*] Changed the `Instrument` table
+  [+] Added unique index on columns (symbol)
+
+[*] Changed the `IntegrationConnection` table
+  [+] Added index on columns (userId, status)
+  [+] Added unique index on columns (userId, providerId)
+  [+] Added foreign key on columns (userId)
+
+[*] Changed the `IntegrationError` table
+  [+] Added index on columns (userId, occurredAt)
+  [+] Added index on columns (userId, providerId, clearedAt)
+  [+] Added foreign key on columns (userId)
+
+[*] Changed the `IntegrationEvent` table
+  [+] Added index on columns (userId, occurredAt)
+  [+] Added foreign key on columns (userId)
+
+[*] Changed the `IntegrationRow` table
+  [+] Added index on columns (userId, kind)
+  [+] Added unique index on columns (userId, kind, refId)
+  [+] Added foreign key on columns (userId)
+
+[*] Changed the `IntegrationWebhookDelivery` table
+  [+] Added index on columns (endpointId, receivedAt)
+  [+] Added unique index on columns (endpointId, eventId)
+  [+] Added foreign key on columns (endpointId)
+
+[*] Changed the `IntegrationWebhookEndpoint` table
+  [+] Added unique index on columns (path)
+  [+] Added unique index on columns (userId, providerId)
+  [+] Added foreign key on columns (userId)
+
+[*] Changed the `MetricAlertRuleRow` table
+  [+] Added index on columns (userId)
+  [+] Added foreign key on columns (userId)
+
+[*] Changed the `MonitoringSetting` table
+  [+] Added foreign key on columns (userId)
+
+[*] Changed the `NofyRow` table
+  [+] Added index on columns (userId, kind)
+  [+] Added foreign key on columns (userId)
+
+[*] Changed the `OcrAsset` table
+  [+] Added unique index on columns (storageKey)
+  [+] Added index on columns (userId, createdAt)
+  [+] Added unique index on columns (userId, checksumSha256)
+  [+] Added foreign key on columns (userId)
+
+[*] Changed the `OcrCollection` table
+  [+] Added index on columns (userId, createdAt)
+  [+] Added foreign key on columns (userId)
+
+[*] Changed the `OcrCollectionAsset` table
+  [+] Added index on columns (assetId)
+  [+] Added foreign key on columns (collectionId)
+  [+] Added foreign key on columns (assetId)
+
+[*] Changed the `OcrCollectionItem` table
+  [+] Added unique index on columns (recognitionId)
+  [+] Added index on columns (collectionId, addedAt)
+  [+] Added foreign key on columns (collectionId)
+  [+] Added foreign key on columns (recognitionId)
+
+[*] Changed the `OcrCorrection` table
+  [+] Added index on columns (userId, updatedAt)
+  [+] Added unique index on columns (userId, field, rawValue, correctedValue)
+  [+] Added foreign key on columns (userId)
+
+[*] Changed the `OcrCorrectionPattern` table
+  [+] Added index on columns (userId, fieldKey, rawValue)
+  [+] Added unique index on columns (userId, fieldKey, rawValue, correctedValue)
+  [+] Added foreign key on columns (userId)
+
+[*] Changed the `OcrEvent` table
+  [+] Added index on columns (userId, type, createdAt)
+  [+] Added index on columns (userId, createdAt)
+  [+] Added foreign key on columns (userId)
+
+[*] Changed the `OcrRecognition` table
+  [+] Added index on columns (userId, createdAt)
+  [+] Added index on columns (userId, status)
+  [+] Added index on columns (tradeId)
+  [+] Added index on columns (accountId)
+  [+] Added unique index on columns (userId, idempotencyKey)
+  [+] Added foreign key on columns (userId)
+  [+] Added foreign key on columns (assetId)
+  [+] Added foreign key on columns (tradeId)
+  [+] Added foreign key on columns (accountId)
+
+[*] Changed the `OcrRecognitionGroup` table
+  [+] Added index on columns (userId, createdAt)
+  [+] Added foreign key on columns (userId)
+
+[*] Changed the `OcrSet` table
+  [+] Added index on columns (userId, createdAt)
+  [+] Added index on columns (tradeId)
+  [+] Added index on columns (accountId)
+  [+] Added foreign key on columns (userId)
+  [+] Added foreign key on columns (tradeId)
+  [+] Added foreign key on columns (accountId)
+
+[*] Changed the `OcrSetItem` table
+  [+] Added unique index on columns (recognitionId)
+  [+] Added index on columns (setId, order)
+  [+] Added foreign key on columns (setId)
+  [+] Added foreign key on columns (recognitionId)
+
+[*] Changed the `OryonAnalysis` table
+  [+] Added index on columns (userId, updatedAt)
+  [+] Added index on columns (userId, symbol)
+  [+] Added foreign key on columns (userId)
+  [+] Added foreign key on columns (tradeId)
+
+[*] Changed the `PlaybookRow` table
+  [+] Added index on columns (userId, kind)
+  [+] Added foreign key on columns (userId)
+
+[*] Changed the `PlaybookRule` table
+  [+] Added index on columns (userId, active)
+  [+] Added foreign key on columns (userId)
+  [+] Added foreign key on columns (strategyId)
+
+[*] Changed the `ReplayRow` table
+  [+] Added index on columns (userId, kind)
+  [+] Added foreign key on columns (userId)
+
+[*] Changed the `ReviewRow` table
+  [+] Added index on columns (userId, kind)
+  [+] Added foreign key on columns (userId)
+
+[*] Changed the `SavedTradeView` table
+  [+] Added index on columns (userId)
+  [+] Added unique index on columns (userId, name)
+  [+] Added foreign key on columns (userId)
+
+[*] Changed the `SessionLiveRow` table
+  [+] Added index on columns (userId, kind)
+  [+] Added foreign key on columns (userId)
+
+[*] Changed the `SessionNoteRow` table
+  [+] Added index on columns (userId)
+  [+] Added foreign key on columns (userId)
+
+[*] Changed the `Setup` table
+  [+] Added index on columns (userId, strategyId)
+  [+] Added foreign key on columns (userId)
+  [+] Added foreign key on columns (strategyId)
+
+[*] Changed the `SkippedTradeRow` table
+  [+] Added index on columns (userId)
+  [+] Added foreign key on columns (userId)
+
+[*] Changed the `Strategy` table
+  [+] Added index on columns (userId, status)
+  [+] Added index on columns (userId, updatedAt)
+  [+] Added foreign key on columns (userId)
+
+[*] Changed the `StrategyVersionSnapshot` table
+  [+] Added unique index on columns (strategyId, version)
+  [+] Added foreign key on columns (strategyId)
+
+[*] Changed the `TagRow` table
+  [+] Added index on columns (userId)
+  [+] Added foreign key on columns (userId)
+
+[*] Changed the `Trade` table
+  [+] Added index on columns (userId, tradingDate)
+  [+] Added index on columns (userId, status)
+  [+] Added index on columns (accountId, status)
+  [+] Added index on columns (userId, deletedAt)
+  [+] Added unique index on columns (accountId, externalRef)
+  [+] Added unique index on columns (accountId, externalPositionId)
+  [+] Added foreign key on columns (userId)
+  [+] Added foreign key on columns (accountId)
+  [+] Added foreign key on columns (instrumentId)
+
+[*] Changed the `TradeEvent` table
+  [+] Added index on columns (tradeId, createdAt)
+  [+] Added foreign key on columns (tradeId)
+
+[*] Changed the `TradeExecution` table
+  [+] Added index on columns (tradeId, executedAt)
+  [+] Added unique index on columns (accountId, externalDealId)
+  [+] Added foreign key on columns (tradeId)
+  [+] Added foreign key on columns (accountId)
+
+[*] Changed the `TradeExit` table
+  [+] Added index on columns (tradeId, exitedAt)
+  [+] Added foreign key on columns (tradeId)
+
+[*] Changed the `TradeReview` table
+  [+] Added unique index on columns (tradeId)
+  [+] Added index on columns (userId, status)
+  [+] Added index on columns (userId, reviewedAt)
+  [+] Added foreign key on columns (userId)
+  [+] Added foreign key on columns (tradeId)
+  [+] Added foreign key on columns (originTradePlanId)
+
+[*] Changed the `TradeScreenshot` table
+  [+] Added index on columns (tradeId, createdAt)
+  [+] Added foreign key on columns (tradeId)
+
+[*] Changed the `TradeSubRow` table
+  [+] Added index on columns (userId, tradeId, kind)
+  [+] Added foreign key on columns (userId)
+
+[*] Changed the `TradingAccount` table
+  [+] Added column `brokerIdentity`
+
+[*] Changed the `TradingBridgeEvent` table
+  [+] Added index on columns (bridgeKeyId, kind, receivedAt)
+  [+] Added unique index on columns (bridgeKeyId, eventId)
+
+[*] Changed the `TradingConnection` table
+  [+] Added column `bridgeKeyId`
+  [+] Added column `dealsCheckpoint`
+  [+] Added unique index on columns (bridgeKeyId)
+
+[*] Changed the `TradingDeal` table
+  [-] Removed index on columns (accountId, externalPositionId)
+  [-] Removed column `externalPositionId`
+  [+] Added column `positionId`
+  [+] Added index on columns (accountId, positionId)
+
+[*] Changed the `TradingPosition` table
+  [+] Added column `closedAt`
+  [+] Added column `state`
+
+[*] Changed the `TradingSyncRun` table
+  [+] Added column `dealsAt`
+  [+] Added column `dealsCheckpoint`
+  [+] Added column `ordersAt`
+  [+] Added column `positionsAt`
+  [+] Added column `snapshotAt`
+
+[*] Changed the `UserSettings` table
+  [+] Added foreign key on columns (userId)

@@ -1,0 +1,14 @@
+Scope: all 4 workspace projects
+✓ Lockfile passes supply-chain policies (verified 19m ago)
+Lockfile is up to date, resolution step is skipped
+Packages are hard linked from the content-addressable store to the virtual store.
+  Content-addressable store is at: /home/z/.local/share/pnpm/store/v11
+  Virtual store is at:             node_modules/.pnpm
+Packages: +924
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Progress: resolved 924, reused 924, downloaded 0, added 924, done
+
+devDependencies:
++ turbo 2.10.13
+
+Done in 1.5s using pnpm v12.4.2

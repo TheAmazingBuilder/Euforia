@@ -1,0 +1,11 @@
+Prisma schema loaded from prisma/schema.prisma
+Datasource "db": PostgreSQL database "cosmoz_replay", schema "public" at "127.0.0.1:5433"
+
+41 migrations found in prisma/migrations
+
+Error: P3009
+
+migrate found failed migrations in the target database, new migrations will not be applied. Read more about how to resolve migration issues in a production database: https://pris.ly/d/migrate-resolve
+The `20261003145823_trade_review` migration started at 2026-10-17 12:50:00.214891 UTC failed
+
+

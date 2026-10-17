@@ -1,0 +1,42 @@
+$ vitest run
+
+ RUN  v3.2.7 /home/z/my-project/.ci-sim/apps/api
+
+No test files found, exiting with code 1
+
+include: test/**/*.spec.ts
+exclude:  **/node_modules/**, **/dist/**, **/cypress/**, **/.{idea,git,cache,output,temp}/**, **/{karma,rollup,webpack,vite,vitest,jest,ava,babel,nyc,cypress,tsup,build,eslint,prettier}.config.*
+
+
+⎯⎯⎯⎯⎯⎯ Unhandled Error ⎯⎯⎯⎯⎯⎯⎯
+Error: Command failed: /usr/bin/node /home/z/my-project/.ci-sim/node_modules/.pnpm/prisma@6.19.3_typescript@5.9.3/node_modules/prisma/build/index.js migrate deploy
+Error: P3009
+
+migrate found failed migrations in the target database, new migrations will not be applied. Read more about how to resolve migration issues in a production database: https://pris.ly/d/migrate-resolve
+The `20261003145823_trade_review` migration started at 2026-10-17 12:47:25.132940 UTC failed
+
+
+
+ ❯ genericNodeError node:internal/errors:986:15
+ ❯ wrappedFn node:internal/errors:540:14
+ ❯ checkExecSyncError node:child_process:942:11
+ ❯ execFileSync node:child_process:978:15
+ ❯ Object.globalSetup [as setup] test/global-setup.ts:31:41
+     29|     for (let i = 0; i < 5; i += 1) {
+     30|       const candidate = path.join(dir, "build", "index.js");
+     31|       if (fs.existsSync(candidate)) return candidate;
+       |                                         ^
+     32|       dir = path.dirname(dir);
+     33|     }
+ ❯ process.processTicksAndRejections node:internal/process/task_queues:104:5
+ ❯ TestProject._initializeGlobalSetup ../../node_modules/.pnpm/vitest@3.2.7_@types+node@24.19.1_jiti@2.7.0_lightningcss@1.32.0_msw@2.15.0_@types+node@_956e47dd573e0e0fbfe5430efb9f42f9/node_modules/vitest/dist/chunks/cli-api.DVe0nWUx.js:7084:21
+ ❯ Vitest.initializeGlobalSetup ../../node_modules/.pnpm/vitest@3.2.7_@types+node@24.19.1_jiti@2.7.0_lightningcss@1.32.0_msw@2.15.0_@types+node@_956e47dd573e0e0fbfe5430efb9f42f9/node_modules/vitest/dist/chunks/cli-api.DVe0nWUx.js:9734:35
+ ❯ ../../node_modules/.pnpm/vitest@3.2.7_@types+node@24.19.1_jiti@2.7.0_lightningcss@1.32.0_msw@2.15.0_@types+node@_956e47dd573e0e0fbfe5430efb9f42f9/node_modules/vitest/dist/chunks/cli-api.DVe0nWUx.js:9646:5
+ ❯ Vitest.runFiles ../../node_modules/.pnpm/vitest@3.2.7_@types+node@24.19.1_jiti@2.7.0_lightningcss@1.32.0_msw@2.15.0_@types+node@_956e47dd573e0e0fbfe5430efb9f42f9/node_modules/vitest/dist/chunks/cli-api.DVe0nWUx.js:9676:10
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { status: 1, signal: null, output: [ null, 'Prisma schema loaded from prisma/schema.prisma\nDatasource "db": PostgreSQL database "cosmoz_test", schema "public" at "127.0.0.1:5433"\n\n41 migrations found in prisma/migrations\n\n', 'Error: P3009\n\nmigrate found failed migrations in the target database, new migrations will not be applied. Read more about how to resolve migration issues in a production database: https://pris.ly/d/migrate-resolve\nThe `20261003145823_trade_review` migration started at 2026-10-17 12:47:25.132940 UTC failed\n\n\n' ], pid: 3312, stdout: 'Prisma schema loaded from prisma/schema.prisma\nDatasource "db": PostgreSQL database "cosmoz_test", schema "public" at "127.0.0.1:5433"\n\n41 migrations found in prisma/migrations\n\n', stderr: 'Error: P3009\n\nmigrate found failed migrations in the target database, new migrations will not be applied. Read more about how to resolve migration issues in a production database: https://pris.ly/d/migrate-resolve\nThe `20261003145823_trade_review` migration started at 2026-10-17 12:47:25.132940 UTC failed\n\n\n' }
+
+
+
+[ELIFECYCLE] Test failed. See above for more details.

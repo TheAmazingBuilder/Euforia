@@ -1,0 +1,80 @@
+$ vitest run
+
+ RUN  v3.2.7 /home/z/my-project/.ci-sim/apps/api
+
+[dev-db] initializing cluster in /home/z/my-project/.ci-sim/apps/api/.localpg/data (trust auth, localhost only)
+The files belonging to this database system will be owned by user "z".
+This user must also own the server process.
+
+The database cluster will be initialized with locale "C".
+The default text search configuration will be set to "english".
+
+Data page checksums are disabled.
+
+creating directory /home/z/my-project/.ci-sim/apps/api/.localpg/data ... ok
+creating subdirectories ... ok
+selecting dynamic shared memory implementation ... posix
+selecting default "max_connections" ... 100
+selecting default "shared_buffers" ... 128MB
+selecting default time zone ... Etc/UTC
+creating configuration files ... ok
+running bootstrap script ... ok
+performing post-bootstrap initialization ... ok
+syncing data to disk ... ok
+
+Success. You can now start the database server using:
+
+    '/home/z/my-project/.ci-sim/node_modules/.pnpm/@embedded-postgres+linux-x64@17.5.0-beta.15/node_modules/@embedded-postgres/linux-x64/native/bin/pg_ctl' -D /home/z/my-project/.ci-sim/apps/api/.localpg/data -l logfile start
+
+[dev-db] starting PostgreSQL 17 on 127.0.0.1:5433
+waiting for server to start.... done
+server started
+[dev-db] cluster started
+[dev-db] created database "cosmoz"
+[dev-db] created database "cosmoz_test"
+No test files found, exiting with code 1
+
+include: test/**/*.spec.ts
+exclude:  **/node_modules/**, **/dist/**, **/cypress/**, **/.{idea,git,cache,output,temp}/**, **/{karma,rollup,webpack,vite,vitest,jest,ava,babel,nyc,cypress,tsup,build,eslint,prettier}.config.*
+
+
+⎯⎯⎯⎯⎯⎯ Unhandled Error ⎯⎯⎯⎯⎯⎯⎯
+Error: Command failed: /usr/bin/node /home/z/my-project/.ci-sim/node_modules/.pnpm/prisma@6.19.3_typescript@5.9.3/node_modules/prisma/build/index.js migrate deploy
+Error: P3018
+
+A migration failed to apply. New migrations cannot be applied before the error is recovered from. Read more about how to resolve migration issues in a production database: https://pris.ly/d/migrate-resolve
+
+Migration name: 20261003145823_trade_review
+
+Database error code: 42P01
+
+Database error:
+ERROR: relation "Trade" does not exist
+
+DbError { severity: "ERROR", parsed_severity: Some(Error), code: SqlState(E42P01), message: "relation \"Trade\" does not exist", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("namespace.c"), line: Some(639), routine: Some("RangeVarGetRelidExtended") }
+
+
+
+ ❯ genericNodeError node:internal/errors:986:15
+ ❯ wrappedFn node:internal/errors:540:14
+ ❯ checkExecSyncError node:child_process:942:11
+ ❯ execFileSync node:child_process:978:15
+ ❯ Object.globalSetup [as setup] test/global-setup.ts:31:41
+     29|     for (let i = 0; i < 5; i += 1) {
+     30|       const candidate = path.join(dir, "build", "index.js");
+     31|       if (fs.existsSync(candidate)) return candidate;
+       |                                         ^
+     32|       dir = path.dirname(dir);
+     33|     }
+ ❯ process.processTicksAndRejections node:internal/process/task_queues:104:5
+ ❯ TestProject._initializeGlobalSetup ../../node_modules/.pnpm/vitest@3.2.7_@types+node@24.19.1_jiti@2.7.0_lightningcss@1.32.0_msw@2.15.0_@types+node@_956e47dd573e0e0fbfe5430efb9f42f9/node_modules/vitest/dist/chunks/cli-api.DVe0nWUx.js:7084:21
+ ❯ Vitest.initializeGlobalSetup ../../node_modules/.pnpm/vitest@3.2.7_@types+node@24.19.1_jiti@2.7.0_lightningcss@1.32.0_msw@2.15.0_@types+node@_956e47dd573e0e0fbfe5430efb9f42f9/node_modules/vitest/dist/chunks/cli-api.DVe0nWUx.js:9734:35
+ ❯ ../../node_modules/.pnpm/vitest@3.2.7_@types+node@24.19.1_jiti@2.7.0_lightningcss@1.32.0_msw@2.15.0_@types+node@_956e47dd573e0e0fbfe5430efb9f42f9/node_modules/vitest/dist/chunks/cli-api.DVe0nWUx.js:9646:5
+ ❯ Vitest.runFiles ../../node_modules/.pnpm/vitest@3.2.7_@types+node@24.19.1_jiti@2.7.0_lightningcss@1.32.0_msw@2.15.0_@types+node@_956e47dd573e0e0fbfe5430efb9f42f9/node_modules/vitest/dist/chunks/cli-api.DVe0nWUx.js:9676:10
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { status: 1, signal: null, output: [ null, 'Prisma schema loaded from prisma/schema.prisma\nDatasource "db": PostgreSQL database "cosmoz_test", schema "public" at "127.0.0.1:5433"\n\n41 migrations found in prisma/migrations\n\nApplying migration `20261003105600_identity_auth`\nApplying migration `20261003112422_session_previous_hash`\nApplying migration `20261003115414_accounts_connectivity`\nApplying migration `20261003131801_trading_core`\nApplying migration `20261003141559_trade_planning`\nApplying migration `20261003145823_trade_review`\n', 'Error: P3018\n\nA migration failed to apply. New migrations cannot be applied before the error is recovered from. Read more about how to resolve migration issues in a production database: https://pris.ly/d/migrate-resolve\n\nMigration name: 20261003145823_trade_review\n\nDatabase error code: 42P01\n\nDatabase error:\nERROR: relation "Trade" does not exist\n\nDbError { severity: "ERROR", parsed_severity: Some(Error), code: SqlState(E42P01), message: "relation \"Trade\" does not exist", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("namespace.c"), line: Some(639), routine: Some("RangeVarGetRelidExtended") }\n\n\n' ], pid: 2384, stdout: 'Prisma schema loaded from prisma/schema.prisma\nDatasource "db": PostgreSQL database "cosmoz_test", schema "public" at "127.0.0.1:5433"\n\n41 migrations found in prisma/migrations\n\nApplying migration `20261003105600_identity_auth`\nApplying migration `20261003112422_session_previous_hash`\nApplying migration `20261003115414_accounts_connectivity`\nApplying migration `20261003131801_trading_core`\nApplying migration `20261003141559_trade_planning`\nApplying migration `20261003145823_trade_review`\n', stderr: 'Error: P3018\n\nA migration failed to apply. New migrations cannot be applied before the error is recovered from. Read more about how to resolve migration issues in a production database: https://pris.ly/d/migrate-resolve\n\nMigration name: 20261003145823_trade_review\n\nDatabase error code: 42P01\n\nDatabase error:\nERROR: relation "Trade" does not exist\n\nDbError { severity: "ERROR", parsed_severity: Some(Error), code: SqlState(E42P01), message: "relation \"Trade\" does not exist", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("namespace.c"), line: Some(639), routine: Some("RangeVarGetRelidExtended") }\n\n\n' }
+
+
+
+[ELIFECYCLE] Test failed. See above for more details.
