@@ -33,6 +33,9 @@ jobs:
           cache: pnpm
 
       - name: Install dependencies
+        # apps/api has a "postinstall": "prisma generate" — fresh clones don't
+        # ship a generated Prisma client (verified 2026-10-17: a clean clone
+        # failed the Typecheck step without it).
         run: corepack pnpm install --frozen-lockfile
 
       - name: Lint
