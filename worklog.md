@@ -1795,3 +1795,19 @@ Stage Summary:
 - Toutes les specs disponibles de la série sont désormais DANS le repo — plus aucune dépendance aux sessions perdues
 - Ordre d'exécution déduit des specs elles-mêmes : 03 → 05 → 06 (08→11 attendues)
 - Prochain : audit obligatoire §2 de la Phase 03 puis implémentation (filtres globaux + saved analytical views)
+
+---
+Task ID: 12-phase03-step1
+Agent: Super Z (main)
+Date: 2026-10-17
+
+Task: Phase 03 Dashboard Customization — étape 1/3 : contrats partagés + couche modèle pur (audit §2 effectué via Explore agent).
+
+Work Log:
+- AUDIT §2 (Explore, très thorough): pipeline serveur de filtres DÉJÀ COMPLET (GET /stats/analytics-suite + analyticsFiltersSchema: 13 presets résolus serveur sur User.timezone, accountId/instrumentId/assetClass/strategyId "none"/direction/session/emotion/exitReason/tagId; moteur filtre les trades CLOSED) — la barre dashboard = NOUVEAU CONSOMMATEUR, pas un nouveau backend. Saved views pré-existantes: /trade-views (scopes TRADES|ANALYTICS, SavedTradeView) — collision de nom à éviter. 4 widgets déjà suite-backed (METRICS_CARD/STRATEGY_COMPARE/LONG_SHORT/ACTIVITY_HEATMAP); KPI row + PNL_BAND/HEATMAP/WEEK_COMPARE/EQUITY_ROW sur useStatsOverview() SANS filtres → marqués "unaffected" (pas de rewrite). Emotion/tagId = no-op seams; strategy attribution = review→plan→strategy (jamais Trade.strategyId); multi-devises → meta.singleCurrency/s_warnings à afficher; pas de datepicker (inputs date natifs, convention); persistance 2 mécanismes (User.preferences JSON câblé vs UserSettings row-lock non câblé)
+- DÉCISIONS: (1) v1 single-select par dimension (convention existante — la spec §6 autorise "unless an existing application convention requires otherwise"); (2) vues persistées dans le domaine dashboard (clé additive optionnelle savedViews max 30, pattern layouts Phase 01) — PAS de 3e scope /trade-views ni de nouvelle table; rename gratuit via PATCH domaine; (3) widgets non-affectés indiqués honnêtement; METRICS_CARD garde son override de période widget-level (documenté); (4) émotion/tagId/status exclus avec raisons documentées dans le schéma
+- IMPLÉMENTÉ: shared settings.ts +dashboardFiltersSchema (superRefine CUSTOM from≤to) +dashboardSavedViewSchema +savedViews optionnel (max 30) — schemaVersion inchangée (documents legacy valident); web lib/dashboard-customization/filters.ts (normalize salvage champ-par-champ, égalité stable, chips, mapping identité suite, presets OFFERTS = presets RÉELS — pas de LAST_7 inventé) + saved-views.ts (create/rename/duplicate deep-copy/delete/findActive/divergence; noms uniques CI, cap 30, invalides droppés individuellement)
+- TESTS: 22 nouveaux vitest web (10 filters + 12 saved-views) — suite web 120/120; shared tsc 0; commit a48fa7b
+
+Stage Summary:
+- Étape 1/3 FAITE: contrats + logique pure prouvés (22 tests). Reste: étape 2 = reducer/persistence + registry filter-capability metadata + MSW defaults; étape 3 = FilterBar UI + câblage dashboard-view (suite filter-aware) + e2e API (domaine accepte savedViews) + sonde Playwright + rapport final
