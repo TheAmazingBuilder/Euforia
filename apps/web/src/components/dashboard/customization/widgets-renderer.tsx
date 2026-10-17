@@ -3,6 +3,7 @@
 import * as React from "react";
 import type {
   AnalyticsSuiteResponse,
+  DashboardFilters,
   DashboardWidgetConfig,
   DashboardWidgetKey,
   StatsOverviewResponse,
@@ -64,13 +65,17 @@ export interface WidgetContentProps {
   data: DashboardWidgetData;
   /** The instance's RESOLVED config (undefined = widget defaults). */
   config?: DashboardWidgetConfig;
+  /** The authoritative global filter context (Phase 03 §7) — only the
+   * suite-fed widgets consume it (registry filterSupport FULL); the others
+   * render their normal data and the grid badges them instead. */
+  globalFilters?: DashboardFilters;
   /** Config-aware range changes (PNL_BAND period chips → widget config). */
   onRangeChange?: (range: RangeDays) => void;
 }
 
 /** One widget instance's content — moved verbatim from the previous
  * inline registry in dashboard-view (same markup, same data wiring). */
-export function WidgetContent({ type, data, config, onRangeChange }: WidgetContentProps) {
+export function WidgetContent({ type, data, config, globalFilters, onRangeChange }: WidgetContentProps) {
   const insights = React.useMemo(
     () => data.alerts.alerts.filter((alert) => alert.type === "STRATEGY_DECAY"),
     [data.alerts.alerts],
@@ -154,7 +159,9 @@ export function WidgetContent({ type, data, config, onRangeChange }: WidgetConte
     case "ALERTS":
       return <AlertsFeed alerts={data.alerts.alerts} unreadCount={data.alerts.unreadCount} />;
     case "METRICS_CARD":
-      return resolvedConfig?.kind === "METRICS_CARD" ? <MetricsCardWidget config={resolvedConfig} /> : null;
+      return resolvedConfig?.kind === "METRICS_CARD" ? (
+        <MetricsCardWidget config={resolvedConfig} globalFilters={globalFilters} />
+      ) : null;
     case "STRATEGY_COMPARE":
       return resolvedConfig?.kind === "STRATEGY_COMPARE" ? <StrategyCompareWidget config={resolvedConfig} /> : null;
     case "LONG_SHORT":

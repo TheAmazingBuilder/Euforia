@@ -1,14 +1,8 @@
 import type { DashboardFilters, DashboardSavedView } from "@cosmoz/shared";
 
 import { DEFAULT_DASHBOARD_FILTERS, filtersEqual, normalizeDashboardFilters } from "./filters";
-import {
-  createSavedView,
-  deleteSavedView,
-  duplicateSavedView,
-  normalizeSavedViews,
-  renameSavedView,
-  type SavedViewError,
-} from "./saved-views";
+import { normalizeSavedViews } from "./saved-views";
+import type { SavedViewError } from "./saved-views";
 import type { PersistenceStatus } from "./types";
 
 /**
@@ -67,14 +61,19 @@ export type FiltersAction =
   | { type: "filtersCleared" }
   /** Apply a saved view — filters = the view's definition, re-validated. */
   | { type: "viewApplied"; viewId: string }
-  /** Create a view from the CURRENT filters (§10.2). The reducer runs the
-   * pure model op so the state and the error surface stay consistent. */
-  | { type: "viewCreateRequested"; name: string; description?: string; now: string }
-  | { type: "viewRenameRequested"; viewId: string; name: string; now: string }
-  /** Duplicate — new id + deep independent copy (§10.5). */
-  | { type: "viewDuplicateRequested"; viewId: string; now: string }
-  /** Delete — removes ONLY the view (§10.6); filters stay as they are. */
-  | { type: "viewDeleteRequested"; viewId: string }
+  /** Saved-view collection mutations carry PRE-COMPUTED collections (the
+   * saved-views model runs in the HOOK, never inside the reducer): the
+   * reducer must stay a pure, replay-safe function of (state, action) —
+   * id generation inside it would break under React's reducer re-runs
+   * (apply-path id ≠ committed id → an orphaned anchor). Same contract as
+   * the Phase 01 layout machine (layoutCreated carries a built layout). */
+  | { type: "viewCreated"; views: DashboardSavedView[]; activeViewId: string }
+  | { type: "viewRenamed"; views: DashboardSavedView[] }
+  | { type: "viewDuplicated"; views: DashboardSavedView[] }
+  | { type: "viewDeleted"; views: DashboardSavedView[] }
+  /** A model op failed (NAME_TAKEN / LIMIT_REACHED / …) — surfaced near
+   * the controls; the collection is untouched. */
+  | { type: "viewOpFailed"; error: SavedViewError }
   | { type: "saveStarted" }
   | { type: "saveCommitted"; filters: DashboardFilters; views: DashboardSavedView[] }
   | { type: "saveFailed"; message: string };
@@ -123,40 +122,27 @@ export function filtersReducer(state: FiltersState, action: FiltersAction): Filt
       };
     }
 
-    case "viewCreateRequested": {
-      const result = createSavedView(
-        state.views,
-        { name: action.name, description: action.description, filters: state.filters },
-        action.now,
-      );
-      if (!result.ok) return { ...state, error: result.error };
-      const created = result.value[result.value.length - 1]!;
-      return { ...state, views: result.value, activeViewId: created.id, error: null };
-    }
+    case "viewCreated":
+      // The hook computed the collection through the model; the anchor is
+      // the NEW view (created from the current filters — never diverged).
+      return { ...state, views: action.views, activeViewId: action.activeViewId, error: null };
 
-    case "viewRenameRequested": {
-      const result = renameSavedView(state.views, action.viewId, action.name, action.now);
-      return result.ok
-        ? { ...state, views: result.value, error: null }
-        : { ...state, error: result.error };
-    }
+    case "viewRenamed":
+    case "viewDuplicated":
+      return { ...state, views: action.views, error: null };
 
-    case "viewDuplicateRequested": {
-      const result = duplicateSavedView(state.views, action.viewId, action.now);
-      return result.ok
-        ? { ...state, views: result.value, error: null }
-        : { ...state, error: result.error };
-    }
-
-    case "viewDeleteRequested": {
-      const result = deleteSavedView(state.views, action.viewId);
-      if (!result.ok) return { ...state, error: result.error };
+    case "viewDeleted": {
+      // Deleting a view never resets filters (§10.6); the anchor survives
+      // only if the deleted view was NOT the selected one.
       const activeViewId =
-        state.activeViewId !== null && result.value.some((v) => v.id === state.activeViewId)
+        state.activeViewId !== null && action.views.some((v) => v.id === state.activeViewId)
           ? state.activeViewId
           : null;
-      return { ...state, views: result.value, activeViewId, error: null };
+      return { ...state, views: action.views, activeViewId, error: null };
     }
+
+    case "viewOpFailed":
+      return { ...state, error: action.error };
 
     case "saveStarted":
       return { ...state, persistence: "saving", error: null };

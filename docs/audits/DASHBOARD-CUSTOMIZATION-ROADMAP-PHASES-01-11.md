@@ -30,7 +30,7 @@ projet (uniquement des faits prouvés, jamais d'invention), ce document :
 |---|---|---|---|
 | **01** | Customization foundation (edit mode, widget registry, layouts, templates) | **DONE** | commit `81513e1` · worklog `6-dashboard-customization-phase01` · sonde `verify-dashboard-customize.js` |
 | **02** | Widget customization & performance analytics | **DONE** | commit `e3b773a` · worklog `7-dashboard-customization-phase02` · sondes widgets + upgrades 35/35 |
-| **03** | Saved analytical views | **NOT IMPLEMENTED — spec restaurée** | spec verbatim : `docs/specs/dashboard-customization/PHASE-03-GLOBAL-FILTERS-AND-SAVED-ANALYTICAL-VIEWS.md` (935 lignes, reçue owner 2026-10-17) |
+| **03** | Global dashboard filters & saved analytical views | **DONE** | commits `a48fa7b` / `686d821` / step 3 · rapport complet `docs/audits/DASHBOARD-CUSTOMIZATION-PHASE-03-REPORT.md` · web 145/145 · e2e API 25/25 (Postgres réel) · sonde Playwright 28/28 · spec verbatim : `docs/specs/dashboard-customization/PHASE-03-GLOBAL-FILTERS-AND-SAVED-ANALYTICAL-VIEWS.md` |
 | **04** | Performance goals | **PRÉ-EXISTANT (le système existait avant la série)** | `GoalService` (`apps/api/src/modules/review/goal.service.ts`) : CRUD `/goals` + progression serveur (8 métriques, statuts PENDING/ACHIEVED/ON_TRACK/AT_RISK/BEHIND) ; widget GOALS_PACE au dashboard. Aucun travail « Phase 04 » phase-spécifique |
 | **05** | Performance insights & pattern analysis | **NOT IMPLEMENTED — spec restaurée** | spec verbatim : `docs/specs/dashboard-customization/PHASE-05-PERFORMANCE-INSIGHTS-PATTERN-ANALYSIS.md` (reçue owner 2026-10-17) |
 | **06** | Workspace management | **NOT IMPLEMENTED — spec restaurée** | spec verbatim : `docs/specs/dashboard-customization/PHASE-06-WORKSPACE-MANAGEMENT-LAYOUT-COLLECTIONS-TEMPLATES.md` (reçue owner 2026-10-17) |
@@ -110,7 +110,7 @@ Le §G du rapport Phase 07 fixait trois prérequis. État actuel :
 | # | Élément | Condition |
 |---|---|---|
 | 1 | ~~Re-upload specs 03/05/06~~ | **FAIT** — restaurées verbatim le 2026-10-17 dans `docs/specs/dashboard-customization/` |
-| 2 | **Phase 03 — Global dashboard filters & saved analytical views** | Spec complète reçue → prêt à implémenter (ordre de dépendance : 05 §10 exige Phase 03 vérifiée) |
+| 2 | **Phase 03 — Global dashboard filters & saved analytical views** | **DONE** (rapport §I : COMPLETE dans le périmètre v1 documenté — barre globale + vues sauvegardées + métadonnées §8 ; limites honnêtes listées dans le rapport §H) |
 | 3 | Phase 05 — Performance insights & pattern analysis | Après Phase 03 implémentée et vérifiée (spec §10) |
 | 4 | Phase 06 — Workspace management, layout collections & templates | Après Phases 01–05 vérifiées (spec §2) |
 | 5 | Phases 08 → 11 | Specs toujours attendues de l'owner (placeholders §2) |

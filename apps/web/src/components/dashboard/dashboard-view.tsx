@@ -16,6 +16,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/components/auth/auth-provider";
 import { KpiRow } from "@/components/dashboard/kpi-row";
 import { ConfirmDialog } from "@/components/dashboard/customization/confirm-dialog";
+import { DashboardFilterBar } from "@/components/dashboard/customization/filter-bar";
 import { DashboardGrid } from "@/components/dashboard/customization/dashboard-grid";
 import { EditToolbar } from "@/components/dashboard/customization/edit-toolbar";
 import { LayoutsManagerDialog } from "@/components/dashboard/customization/layouts-manager-dialog";
@@ -25,6 +26,8 @@ import {
 } from "@/components/dashboard/customization/widget-settings-dialog";
 import type { DashboardWidgetData } from "@/components/dashboard/customization/widgets-renderer";
 import { useDashboardCustomization } from "@/lib/hooks/use-dashboard-customization";
+import { useDashboardFilters } from "@/lib/hooks/use-dashboard-filters";
+import { useAccounts, useInstruments, useStrategies } from "@/lib/api/queries/catalogs";
 import {
   useAlerts,
   useAnalyticsSuite,
@@ -33,6 +36,8 @@ import {
   useStatsOverview,
 } from "@/lib/api/queries";
 import { DASHBOARD_TEMPLATES } from "@/lib/dashboard-customization/templates";
+import { activeFilterCount, filtersToSuiteFilters } from "@/lib/dashboard-customization/filters";
+import { activeViewOf, isDivergedFromView } from "@/lib/dashboard-customization/filters-state";
 import { WIDGET_REGISTRY } from "@/lib/dashboard-customization/registry";
 import type { DashboardWidgetConfig } from "@cosmoz/shared";
 import { openTradeModal } from "@/lib/hooks/use-trade-modal";
@@ -179,8 +184,15 @@ export function DashboardView({ description }: DashboardViewProps) {
   const queryClient = useQueryClient();
 
   const c = useDashboardCustomization();
+  const f = useDashboardFilters();
   const { data: prefs } = usePreferences();
   const compact = (prefs?.appearance.density ?? "COMFORTABLE") === "COMPACT";
+
+  // Catalogs for the filter bar (same source as the Analytics page — the
+  // user's OWN accounts/instruments/strategies, never a fabricated list).
+  const accounts = useAccounts();
+  const instruments = useInstruments();
+  const strategies = useStrategies();
 
   const [libraryOpen, setLibraryOpen] = React.useState(false);
   const [layoutsOpen, setLayoutsOpen] = React.useState(false);
@@ -188,16 +200,23 @@ export function DashboardView({ description }: DashboardViewProps) {
   const [settingsInstanceId, setSettingsInstanceId] = React.useState<string | null>(null);
 
   // The analytics-suite aggregates for the comparison widgets — fetched
-  // only when the displayed layout actually hosts one of them (§17: no
-  // speculative requests; sims kept low, the widgets use no Monte Carlo).
+  // with the AUTHORITATIVE global filter context (Phase 03 §7: one shared
+  // query per filter combination; the filter set IS the query key, so a
+  // change refetches and stale responses cannot cross key boundaries).
+  // METRICS_CARD manages its OWN per-period fetches — it is deliberately
+  // NOT in this list (no double fetch, §14) — it merges the global filters
+  // itself.
   const displayedTypes = React.useMemo(
     () => new Set(c.displayedLayout.widgets.filter((widget) => widget.visible).map((widget) => widget.type)),
     [c.displayedLayout.widgets],
   );
   const needsSuite = [...SUITE_WIDGET_TYPES].some((type) => displayedTypes.has(type as never));
-  const suiteQuery = useAnalyticsSuite({ period: "ALL" }, 50, { enabled: needsSuite });
+  const suiteQuery = useAnalyticsSuite(filtersToSuiteFilters(f.filters), 50, { enabled: needsSuite });
 
   const compactSpacing = compact; // named for the className below
+  const activeView = activeViewOf(f.state);
+  const diverged = isDivergedFromView(f.state);
+  const filterCount = activeFilterCount(f.filters);
   const isLoading = overview.isLoading || rules.isLoading || alerts.isLoading || c.prefsLoading;
   const isError = overview.isError || rules.isError || alerts.isError;
   const isEmpty =
@@ -361,6 +380,32 @@ export function DashboardView({ description }: DashboardViewProps) {
         </>
       )}
 
+      {/* Phase 03 — the global filter bar: ONE authoritative filter context
+          above the grid. Visible in view AND edit mode (filters are
+          orthogonal to layout editing, §11). */}
+      {!isError && (
+        <DashboardFilterBar
+          filters={f.filters}
+          views={f.views}
+          activeView={activeView}
+          diverged={diverged}
+          saving={f.saving}
+          viewError={f.viewError}
+          catalogs={{
+            accounts: (accounts.data?.accounts ?? []).map((account) => ({ id: account.id, name: account.name })),
+            instruments: (instruments.data?.instruments ?? []).map((instrument) => ({ id: instrument.id, symbol: instrument.symbol })),
+            strategies: (strategies.data?.strategies ?? []).map((strategy) => ({ id: strategy.id, name: strategy.name })),
+          }}
+          onPatch={f.patchFilter}
+          onClear={f.clearFilters}
+          onApplyView={f.applyView}
+          onCreate={f.createView}
+          onRename={f.renameView}
+          onDuplicate={f.duplicateView}
+          onDelete={f.deleteView}
+        />
+      )}
+
       {isLoading ? (
         <DashboardSkeleton />
       ) : isError ? (
@@ -376,6 +421,8 @@ export function DashboardView({ description }: DashboardViewProps) {
             layout={c.displayedLayout}
             data={widgetData}
             editing={editing}
+            globalFilters={filtersToSuiteFilters(f.filters)}
+            showUnfilteredBadges={filterCount > 0}
             onMoveTo={c.moveWidgetTo}
             onMoveBy={c.moveWidgetBy}
             onResize={c.resizeWidget}

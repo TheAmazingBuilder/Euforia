@@ -14,7 +14,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import type { DashboardFilters } from "@cosmoz/shared";
 import { useAnalyticsSuite } from "@/lib/api/queries";
+import { isDefaultFilters } from "@/lib/dashboard-customization/filters";
 import { cn } from "@/lib/utils";
 import {
   compareMetric,
@@ -54,13 +56,36 @@ const PERIOD_LABELS: Record<MetricsCardWidgetConfig["period"], string> = {
 
 interface MetricsCardWidgetProps {
   config: MetricsCardWidgetConfig;
+  /** The authoritative global filter context (Phase 03 §7/§8 — the
+   * registry note in full): when the global bar restricts the DATE
+   * dimension, it wins over this widget's own period setting (the global
+   * bar is the authoritative context); the widget-level period applies
+   * only while the global period is ALL. Account/instrument/strategy/
+   * direction always merge on top of the widget's query. */
+  globalFilters?: DashboardFilters;
 }
 
-export function MetricsCardWidget({ config }: MetricsCardWidgetProps) {
-  const filters = filtersForPeriod(config);
-  const previous = previousPeriodFilters(config);
+export function MetricsCardWidget({ config, globalFilters }: MetricsCardWidgetProps) {
+  const globalActive = globalFilters !== undefined && !isDefaultFilters(globalFilters);
+  // Global non-date dimensions merge on top; the date dimension follows the
+  // documented precedence (global set → global wins; else widget's own).
+  const baseFilters = globalActive
+    ? (() => {
+        const { period, customFrom, customTo, ...dimensions } = globalFilters!;
+        const own = filtersForPeriod(config);
+        const dateGlobal = period !== "ALL";
+        return {
+          ...(dateGlobal ? { period, customFrom, customTo } : own),
+          ...dimensions,
+        };
+      })()
+    : filtersForPeriod(config);
+  // The previous-period baseline is a WIDGET-level feature: under global
+  // filters the "previous equivalent" of a server-resolved preset is not
+  // derived client-side — the comparison is disabled rather than faked.
+  const previous = globalActive ? null : previousPeriodFilters(config);
 
-  const current = useAnalyticsSuite({ period: filters.period, customFrom: filters.customFrom, customTo: filters.customTo }, 50);
+  const current = useAnalyticsSuite(baseFilters, 50);
   const previousQuery = useAnalyticsSuite(
     previous
       ? { period: previous.period, customFrom: previous.customFrom, customTo: previous.customTo }
@@ -86,12 +111,23 @@ export function MetricsCardWidget({ config }: MetricsCardWidgetProps) {
         <div className="min-w-0 space-y-1">
           <CardTitle className="font-heading text-base font-semibold">Performance metrics</CardTitle>
           <CardDescription className="text-xs">
-            {config.period === "CUSTOM" && config.customFrom && config.customTo
-              ? `${config.customFrom} → ${config.customTo}`
-              : PERIOD_LABELS[config.period]}
-            {config.comparison === "PREVIOUS" && previous
-              ? ` · vs ${PERIOD_LABELS[previous.period]}`
-              : ""}
+            {globalActive ? (
+              <span data-testid="metrics-card-global-note">
+                Global filters applied
+                {baseFilters.period !== "ALL" ? ` · ${PERIOD_LABELS[baseFilters.period] ?? baseFilters.period}` : ""}
+                {baseFilters.customFrom && baseFilters.customTo ? ` · ${baseFilters.customFrom} → ${baseFilters.customTo}` : ""}
+                {" · widget period ignored while the global date range is set"}
+              </span>
+            ) : (
+              <>
+                {config.period === "CUSTOM" && config.customFrom && config.customTo
+                  ? `${config.customFrom} → ${config.customTo}`
+                  : PERIOD_LABELS[config.period]}
+                {config.comparison === "PREVIOUS" && previous
+                  ? ` · vs ${PERIOD_LABELS[previous.period]}`
+                  : ""}
+              </>
+            )}
           </CardDescription>
         </div>
       </CardHeader>

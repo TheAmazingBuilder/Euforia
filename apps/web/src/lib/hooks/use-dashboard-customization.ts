@@ -2,9 +2,11 @@
 
 import * as React from "react";
 import { toast } from "sonner";
-import type { DashboardWidgetKey, DashboardWidgetItem } from "@cosmoz/shared";
+import { useQueryClient } from "@tanstack/react-query";
+import type { DashboardWidgetKey, DashboardWidgetItem, UserPreferences } from "@cosmoz/shared";
 
 import { apiErrorMessage } from "@/lib/api/client";
+import { queryKeys } from "@/lib/api/keys";
 import { usePreferences, useUpdatePreferencesDomain } from "@/lib/api/queries";
 import {
   activeLayoutOf,
@@ -19,15 +21,18 @@ import {
   type CustomizationAction,
 } from "@/lib/dashboard-customization/customization-reducer";
 import {
+  activeFiltersFromPreferences,
+  dashboardDomainWithFilters,
   preferencesFromSnapshot,
+  savedViewsFromPreferences,
   snapshotFromPreferences,
 } from "@/lib/dashboard-customization/persistence";
 import type { CustomizationSnapshot } from "@/lib/dashboard-customization/types";
 
 /**
- * Dashboard customization hook (Phase 01) — wires the pure customization
- * state machine to the existing persistence architecture (PATCH
- * /me/preferences/dashboard via TanStack Query with optimistic cache).
+ * Dashboard customization hook (Phase 01, Phase 03-aware) — wires the pure
+ * customization state machine to the existing persistence architecture
+ * (PATCH /me/preferences/dashboard via TanStack Query with optimistic cache).
  *
  * Transaction model (§5): entering edit mode snapshots the active layout
  * into a draft; draft mutations stay local until Save commits (and exits)
@@ -37,10 +42,17 @@ import type { CustomizationSnapshot } from "@/lib/dashboard-customization/types"
  * persist immediately through the same PATCH — they are separate objects
  * from the edited draft; while editing, active-changing ops are disabled
  * by the UI so a live draft is never silently discarded (§10.2).
+ *
+ * Phase 03: the dashboard domain is replaced WHOLESALE by the server, so
+ * EVERY layout PATCH carries the current filter half (saved analytical
+ * views + active filters) merged from the freshest preferences cache — a
+ * layout save can never wipe the global filter context (the filters hook
+ * merges this machine's layouts the same way, in reverse).
  */
 export function useDashboardCustomization() {
   const { data: prefs, isLoading: prefsLoading } = usePreferences();
   const updateDashboard = useUpdatePreferencesDomain("dashboard");
+  const queryClient = useQueryClient();
 
   const [state, dispatch] = React.useReducer(customizationReducer, initialCustomizationState);
 
@@ -72,15 +84,29 @@ export function useDashboardCustomization() {
     dispatch({ type: "sync", snapshot });
   }, [storedSignature]);
 
+  /** Layout payload + the CURRENT filter half from the freshest cache —
+   * the domain PATCH replaces everything, both halves always travel. */
+  const fullDomainPayload = React.useCallback(
+    (snapshot: CustomizationSnapshot) => {
+      const stored = queryClient.getQueryData<UserPreferences>(queryKeys.preferences);
+      return dashboardDomainWithFilters(
+        preferencesFromSnapshot(snapshot),
+        activeFiltersFromPreferences(stored?.dashboard),
+        savedViewsFromPreferences(stored?.dashboard),
+      );
+    },
+    [queryClient],
+  );
+
   const persist = React.useCallback(
     (snapshot: CustomizationSnapshot) => {
-      updateDashboard.mutate(preferencesFromSnapshot(snapshot), {
+      updateDashboard.mutate(fullDomainPayload(snapshot), {
         onError: (error) => {
           toast.error(apiErrorMessage(error, "Could not save your dashboard layout."));
         },
       });
     },
-    [updateDashboard],
+    [updateDashboard, fullDomainPayload],
   );
 
   /** View-mode collection op: apply via the pure reducer, then persist. */
@@ -111,7 +137,7 @@ export function useDashboardCustomization() {
       activeLayoutId: current.activeLayoutId,
     };
     dispatch({ type: "saveStarted" });
-    updateDashboard.mutate(preferencesFromSnapshot(target), {
+    updateDashboard.mutate(fullDomainPayload(target), {
       onSuccess: () => {
         dispatch({ type: "saveCommitted", snapshot: target });
         toast.success("Layout saved.");
@@ -123,7 +149,7 @@ export function useDashboardCustomization() {
         });
       },
     });
-  }, [updateDashboard]);
+  }, [updateDashboard, fullDomainPayload]);
 
   // ── Draft mutations (edit mode) ────────────────────────────────────────────
   const addWidget = React.useCallback(

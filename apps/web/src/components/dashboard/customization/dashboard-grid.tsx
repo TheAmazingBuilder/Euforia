@@ -13,6 +13,7 @@ import type { DashboardLayoutDocument, DashboardWidgetItem } from "@cosmoz/share
 
 import { WIDGET_REGISTRY } from "@/lib/dashboard-customization/registry";
 import { isConfigurable } from "@/lib/dashboard-customization/widget-configs";
+import type { DashboardFilters } from "@cosmoz/shared";
 import { cn } from "@/lib/utils";
 
 import { widgetIcon } from "./widget-icons";
@@ -64,6 +65,12 @@ interface DashboardGridProps {
   layout: DashboardLayoutDocument;
   data: DashboardWidgetData;
   editing: boolean;
+  /** The authoritative global filter context (Phase 03 §7) — forwarded to
+   * the suite-fed widget renderers. */
+  globalFilters?: DashboardFilters;
+  /** True when at least one global filter is active — unaffected widgets
+   * get an honest "not filtered" badge (Phase 03 §8, never a fake result). */
+  showUnfilteredBadges?: boolean;
   onMoveTo: (instanceId: string, toIndex: number) => void;
   onMoveBy: (instanceId: string, direction: -1 | 1) => void;
   onResize: (instanceId: string, patch: { w?: number; h?: number }) => void;
@@ -79,6 +86,8 @@ export function DashboardGrid({
   layout,
   data,
   editing,
+  globalFilters,
+  showUnfilteredBadges = false,
   onMoveTo,
   onMoveBy,
   onResize,
@@ -235,10 +244,21 @@ export function DashboardGrid({
                 }}
               />
             )}
+            {showUnfilteredBadges && !editing && def.filterSupport.support === "UNAFFECTED" && (
+              <span
+                className="absolute left-2 top-2 z-10 inline-flex items-center gap-1 rounded-md border border-border bg-background/95 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground shadow-sm backdrop-blur"
+                data-testid={`dashboard-widget-unfiltered-${widget.type.toLowerCase()}`}
+                title={def.filterSupport.reason}
+              >
+                <EyeOff className="size-3" aria-hidden="true" />
+                Not filtered
+              </span>
+            )}
             <WidgetContent
               type={widget.type}
               data={data}
               config={widget.config}
+              globalFilters={globalFilters}
               onRangeChange={
                 onConfigRange && widget.type === "PNL_BAND"
                   ? (range) => onConfigRange(widget.instanceId, range)

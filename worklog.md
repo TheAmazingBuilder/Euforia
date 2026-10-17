@@ -1811,3 +1811,21 @@ Work Log:
 
 Stage Summary:
 - Étape 1/3 FAITE: contrats + logique pure prouvés (22 tests). Reste: étape 2 = reducer/persistence + registry filter-capability metadata + MSW defaults; étape 3 = FilterBar UI + câblage dashboard-view (suite filter-aware) + e2e API (domaine accepte savedViews) + sonde Playwright + rapport final
+
+---
+Task ID: 13-phase03-steps2-3
+Agent: Super Z (main)
+Date: 2026-10-18
+
+Task: Phase 03 Dashboard Customization — étapes 2/3 et 3/3 (state machine → intégration complète) puis vérification de bout en bout.
+
+Work Log:
+- Étape 2/3 (commit 686d821): filtres-state.ts (réducteur pur : sync stale-guard pendant save, patches revalidés, clear-all, apply view, statut persistance) ; persistence.ts étendu (savedViewsFromPreferences salvage par item, activeFiltersFromPreferences dégradation sûre, dashboardDomainWithFilters merge wholesale) ; registry §8 filterSupport (4 widgets suite-fed FULL ×5 dimensions, 7 UNAFFECTED avec raisons honnêtes, note METRICS_CARD sur l'override de période) ; shared : clé additive optionnelle activeFilters ; FIX régression étape 1 (filters.spec.ts:88 — web tsc n'avait pas tourné en étape 1) ; 25 tests web nouveaux (145/145)
+- Étape 3/3 : use-dashboard-filters.ts (machine ↔ cache prefs optimistic, model ops DANS le hook — jamais dans le reducer : randomId dans un reducer cassait sous les re-runs React (id appliqué ≠ id committé → ancre orpheline) — attrapé par la sonde, corrigé en payload pré-calculés, contrat Phase 01) ; filter-bar.tsx (presets réels, comptes/instruments/stratégies depuis les catalogues owner, chips, vues save/manage rename/duplicate/delete+confirm, badge divergé « modified — apply again ») ; dashboard-view (suite fetch = filtres autoritaires, clé=query, catalogs) ; metrics-card merge priorité documentée (date globale > période widget ; baseline précédente désactivée sous filtres globaux — jamais faussée) ; dashboard-grid badges « Not filtered » (§8) ; e2e API settings +5 tests (round-trip savedViews+activeFilters, merge wholesale préserve layouts, rejet malformed + domaine intact, isolation par user, reset) ; sonde Playwright scripts/probe-dashboard-filters.js 28/28
+- DEUX bugs réels trouvés par la sonde et corrigés avant livraison : (1) cross-talk PATCH — un save de layout écrasait savedViews/activeFilters (domaine remplacé wholesale) → les DEUX hooks mergent désormais la moitié de l'autre depuis le cache le plus frais ; (2) re-sélection de la vue déjà sélectionnée impossible (Radix onValueChange ne re-fire pas) → badge divergé devenu bouton « apply again » (§10.7)
+- Gates exécutés : web vitest 145/145 · web tsc 0 · eslint 0 (fichiers changés) · next build ✓ exit 0 · shared tsc 0 · api typecheck 0 · api lint 0 · settings e2e 25/25 (Postgres réel, base fraîche) · sonde 28/28 (mock preview next dev, zero page errors, mobile 390px sans overflow)
+- Rapport final : docs/audits/DASHBOARD-CUSTOMIZATION-PHASE-03-REPORT.md (sections A–I spec §20, verdict COMPLETE périmètre v1 documenté, 7 limites honnêtes §H) ; roadmap : Phase 03 → DONE
+
+Stage Summary:
+- PHASE 03 LIVRÉE : barre de filtres globale (5 dimensions, sémantique documentée), vues analytiques sauvegardées (CRUD + divergence), contexte partagé pour les 4 widgets suite-fed, badges honnêtes pour les 7 non-affectés, persistance wholesale-merge prouvée des deux côtés
+- Prochaine : Phase 05 (spec §10 exigeait Phase 03 vérifiée — fait) ; puis 06 ; specs 08→11 toujours attendues

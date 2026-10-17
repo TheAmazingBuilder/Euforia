@@ -433,6 +433,104 @@ describe("dashboard widget order (Phase 15 §19)", () => {
   });
 });
 
+// ── dashboard saved analytical views + active filters (Phase 03 §10/§12) ─────
+
+describe("dashboard saved views & active filters (Phase 03 §10/§12)", () => {
+  const VIEW = {
+    id: "view_e2e_gold",
+    name: "Gold longs",
+    schemaVersion: 1,
+    filters: { period: "THIS_MONTH", accountId: "0b8f6e1e-7d2a-4c1b-9a2a-00000000e2e1", direction: "BUY" },
+  };
+
+  it("persists savedViews + activeFilters and echoes them back validated", async () => {
+    const ctx = await authenticatedUser(app, mail);
+    const doc = userPreferencesSchema.parse((await getPrefs(ctx.authHeader)).json()) as UserPreferences;
+
+    const patched = await patchDomain(ctx.authHeader, "dashboard", {
+      ...doc.dashboard,
+      savedViews: [VIEW, { ...VIEW, id: "view_e2e_none", name: "Out of playbook", filters: { period: "ALL", strategyId: "none" } }],
+      activeFilters: VIEW.filters,
+    });
+    expect(patched.statusCode).toBe(200);
+    const parsed = userPreferencesSchema.parse(patched.json()) as UserPreferences;
+    expect(parsed.dashboard.savedViews).toHaveLength(2);
+    expect(parsed.dashboard.savedViews?.[0]?.name).toBe("Gold longs");
+    expect(parsed.dashboard.savedViews?.[1]?.filters).toEqual({ period: "ALL", strategyId: "none" });
+    expect(parsed.dashboard.activeFilters).toEqual(VIEW.filters);
+
+    // Round-trip through a fresh GET (persisted, not just echoed).
+    const reread = userPreferencesSchema.parse((await getPrefs(ctx.authHeader)).json()) as UserPreferences;
+    expect(reread.dashboard.savedViews).toHaveLength(2);
+    expect(reread.dashboard.activeFilters).toEqual(VIEW.filters);
+  });
+
+  it("keeps layouts intact when a filter-only PATCH carries them (wholesale domain)", async () => {
+    const ctx = await authenticatedUser(app, mail);
+    const doc = userPreferencesSchema.parse((await getPrefs(ctx.authHeader)).json()) as UserPreferences;
+    // A filter save built from the CURRENT domain (client convention) — the
+    // layout collection must survive unchanged.
+    const patched = await patchDomain(ctx.authHeader, "dashboard", {
+      ...doc.dashboard,
+      savedViews: [VIEW],
+      activeFilters: { period: "LAST_30" },
+    });
+    expect(patched.statusCode).toBe(200);
+    const parsed = userPreferencesSchema.parse(patched.json()) as UserPreferences;
+    expect(parsed.dashboard.layouts).toEqual(doc.dashboard.layouts);
+    expect(parsed.dashboard.widgetOrder).toEqual(doc.dashboard.widgetOrder);
+    expect(parsed.dashboard.savedViews).toHaveLength(1);
+  });
+
+  it("rejects a malformed view and a CUSTOM range without bounds (4xx, domain untouched)", async () => {
+    const ctx = await authenticatedUser(app, mail);
+    const doc = userPreferencesSchema.parse((await getPrefs(ctx.authHeader)).json()) as UserPreferences;
+
+    const badView = await patchDomain(ctx.authHeader, "dashboard", {
+      ...doc.dashboard,
+      savedViews: [{ ...VIEW, name: "" }], // empty name violates min(1)
+    });
+    expectValidationError(badView.statusCode, badView.json());
+
+    const badRange = await patchDomain(ctx.authHeader, "dashboard", {
+      ...doc.dashboard,
+      activeFilters: { period: "CUSTOM" }, // CUSTOM requires both bounds
+    });
+    expectValidationError(badRange.statusCode, badRange.json());
+
+    // The stored document was never poisoned by a failed PATCH (whole-domain
+    // replace happens ONLY after the schema passes).
+    const reread = userPreferencesSchema.parse((await getPrefs(ctx.authHeader)).json()) as UserPreferences;
+    expect(reread.dashboard.savedViews).toBeUndefined();
+    expect(reread.dashboard.activeFilters).toBeUndefined();
+  });
+
+  it("isolates views per user — another account never sees them", async () => {
+    const ctxA = await authenticatedUser(app, mail);
+    const docA = userPreferencesSchema.parse((await getPrefs(ctxA.authHeader)).json()) as UserPreferences;
+    await patchDomain(ctxA.authHeader, "dashboard", {
+      ...docA.dashboard,
+      savedViews: [VIEW],
+      activeFilters: VIEW.filters,
+    });
+
+    const ctxB = await authenticatedUser(app, mail);
+    const docB = userPreferencesSchema.parse((await getPrefs(ctxB.authHeader)).json()) as UserPreferences;
+    expect(docB.dashboard.savedViews).toBeUndefined();
+    expect(docB.dashboard.activeFilters).toBeUndefined();
+  });
+
+  it("reset restores the defaults: no views, no active filters, layouts back", async () => {
+    const ctx = await authenticatedUser(app, mail);
+    const reset = await resetDomain(ctx.authHeader, "dashboard");
+    expect(reset.statusCode).toBe(200);
+    const parsed = userPreferencesSchema.parse(reset.json()) as UserPreferences;
+    expect(parsed.dashboard.savedViews).toBeUndefined();
+    expect(parsed.dashboard.activeFilters).toBeUndefined();
+    expect(parsed.dashboard.widgetOrder).toEqual(DEFAULT_USER_PREFERENCES.dashboard.widgetOrder);
+  });
+});
+
 // ── financial integrity (§17/§39) ────────────────────────────────────────────
 
 describe("settings never mutate financial truth (Phase 15 §17/§39)", () => {
