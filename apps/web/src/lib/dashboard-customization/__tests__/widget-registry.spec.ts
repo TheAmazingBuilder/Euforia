@@ -61,3 +61,58 @@ describe("widget registry", () => {
     expect(getWidgetDefinition("ALERTS")!.type).toBe("ALERTS");
   });
 });
+
+describe("widget registry — filter capability metadata (Phase 03 §8)", () => {
+  const SUITE_FED = new Set(["METRICS_CARD", "STRATEGY_COMPARE", "LONG_SHORT", "ACTIVITY_HEATMAP"]);
+
+  it("declares filter support for EVERY registered widget", () => {
+    for (const key of DASHBOARD_WIDGET_KEYS) {
+      const def = WIDGET_REGISTRY[key];
+      expect(def.filterSupport, `${key} filterSupport`).toBeDefined();
+      if (def.filterSupport.support === "UNAFFECTED") {
+        // An honest, non-empty reason is mandatory for unaffected widgets.
+        expect(def.filterSupport.reason.length).toBeGreaterThan(10);
+      } else {
+        expect(def.filterSupport.dimensions.length).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it("marks exactly the suite-fed widgets as FULL with all five dimensions", () => {
+    for (const key of DASHBOARD_WIDGET_KEYS) {
+      const support = WIDGET_REGISTRY[key].filterSupport;
+      if (SUITE_FED.has(key)) {
+        expect(support.support, key).toBe("FULL");
+        if (support.support === "FULL") {
+          expect(support.dimensions).toEqual([
+            "period",
+            "account",
+            "instrument",
+            "strategy",
+            "direction",
+          ]);
+        }
+      } else {
+        expect(support.support, key).toBe("UNAFFECTED");
+      }
+    }
+  });
+
+  it("documents the METRICS_CARD period-override interaction honestly", () => {
+    const support = WIDGET_REGISTRY.METRICS_CARD.filterSupport;
+    expect(support.support).toBe("FULL");
+    if (support.support === "FULL") {
+      expect(support.note).toContain("period");
+    }
+  });
+
+  it("never claims a filtered result for overview-aggregate widgets", () => {
+    for (const key of ["PNL_BAND", "EQUITY_ROW", "HEATMAP", "WEEK_COMPARE"] as const) {
+      const support = WIDGET_REGISTRY[key].filterSupport;
+      expect(support.support).toBe("UNAFFECTED");
+      if (support.support === "UNAFFECTED") {
+        expect(support.reason).toMatch(/overview aggregate/);
+      }
+    }
+  });
+});

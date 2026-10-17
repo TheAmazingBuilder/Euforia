@@ -27,6 +27,39 @@ export const WIDGET_CATEGORY_LABELS: Record<WidgetCategory, string> = {
 };
 
 /**
+ * Global filter dimensions offered by the Phase 03 dashboard filter bar
+ * (the single-select subset of the analytics suite contract).
+ */
+export const FILTER_DIMENSIONS = [
+  "period",
+  "account",
+  "instrument",
+  "strategy",
+  "direction",
+] as const;
+export type FilterDimension = (typeof FILTER_DIMENSIONS)[number];
+
+/**
+ * Filter compatibility metadata (Phase 03 §8): every widget DECLARES how the
+ * shared filter context affects it — the UI renders filtered widgets and
+ * "unaffected" widgets differently and never claims a filtered result for a
+ * widget that ignores the filters.
+ *  - FULL: the widget's data query receives the global filters (all five
+ *    dimensions — the suite contract is scalar and takes them all).
+ *  - UNAFFECTED: the widget's data source has no filter parameters today;
+ *    `reason` is an honest, short product explanation (rendered once, in
+ *    the widget's contextual detail — not repeated banner text).
+ */
+export type WidgetFilterSupport =
+  | { support: "FULL"; dimensions: readonly FilterDimension[]; note?: string }
+  | { support: "UNAFFECTED"; reason: string };
+
+/** Convenience: the FULL support for a widget fed by the suite endpoint. */
+export function suiteBacked(note?: string): WidgetFilterSupport {
+  return { support: "FULL", dimensions: FILTER_DIMENSIONS, note };
+}
+
+/**
  * One widget definition in the registry — the single source of truth for
  * availability and supported behavior. Metadata only: no React component
  * references (renderers live in the UI layer), no serialized config.
@@ -49,6 +82,8 @@ export interface WidgetDefinition {
   removable: boolean;
   /** Width/height editing is exposed for this widget. */
   resizable: boolean;
+  /** Phase 03 §8 — how the shared filter context affects this widget. */
+  filterSupport: WidgetFilterSupport;
 }
 
 /** Widget data props are owned by the UI renderer layer (exact query types). */

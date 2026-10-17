@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { DashboardFilters } from "@cosmoz/shared";
 
 import {
   DEFAULT_DASHBOARD_FILTERS,
@@ -83,9 +84,10 @@ describe("period options", () => {
 
 describe("filtersEqual / isDefaultFilters", () => {
   it("is order-insensitive and treats absent as undefined", () => {
-    const a = { period: "ALL", accountId: "0b8f6e1e-7d2a-4c1b-9a2a-000000000003" };
-    const b = { accountId: "0b8f6e1e-7d2a-4c1b-9a2a-000000000003", period: "ALL" };
-    expect(filtersEqual(a, b as typeof a)).toBe(true);
+    const accountId = "0b8f6e1e-7d2a-4c1b-9a2a-000000000003";
+    const a: DashboardFilters = { period: "ALL", accountId };
+    const b: DashboardFilters = { accountId, period: "ALL" };
+    expect(filtersEqual(a, b)).toBe(true);
   });
 
   it("detects divergence on any dimension", () => {

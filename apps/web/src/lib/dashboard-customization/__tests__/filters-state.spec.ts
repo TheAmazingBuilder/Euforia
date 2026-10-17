@@ -1,0 +1,261 @@
+import { describe, expect, it } from "vitest";
+import type { DashboardSavedView } from "@cosmoz/shared";
+
+import {
+  activeViewOf,
+  filtersReducer,
+  initialFiltersState,
+  isDivergedFromView,
+  type FiltersState,
+} from "../filters-state";
+import { createSavedView } from "../saved-views";
+
+const NOW = "2026-10-17T12:00:00.000Z";
+const ACCOUNT_A = "0b8f6e1e-7d2a-4c1b-9a2a-00000000000a";
+const ACCOUNT_B = "0b8f6e1e-7d2a-4c1b-9a2a-00000000000b";
+
+/** Seed one view through the REAL model op (never hand-built documents).
+ * The state's active filters are set to the same context — i.e. the user
+ * filtered first, then saved. */
+function seedView(state: FiltersState, name: string, filters: FiltersState["filters"]): FiltersState {
+  const withFilters: FiltersState = { ...state, filters };
+  const result = createSavedView(withFilters.views, { name, filters }, NOW);
+  if (!result.ok) throw new Error(`seed failed: ${result.error}`);
+  const created = result.value[result.value.length - 1]!;
+  return { ...state, filters, views: result.value, activeViewId: created.id };
+}
+
+describe("filtersReducer — sync", () => {
+  it("normalizes an untrusted stored document (second gate)", () => {
+    const next = filtersReducer(initialFiltersState, {
+      type: "sync",
+      filters: { period: "SOMEDAY", accountId: ACCOUNT_A }, // invalid period
+      views: "garbage",
+    });
+    // Full-parse failure degrades the DATE dimension, keeps valid ones.
+    expect(next.filters).toEqual({ period: "ALL", accountId: ACCOUNT_A });
+    expect(next.views).toEqual([]);
+  });
+
+  it("salvages valid dimensions and drops malformed views individually", () => {
+    const valid: DashboardSavedView = {
+      id: "view_1",
+      name: "Gold only",
+      schemaVersion: 1,
+      filters: { period: "ALL", accountId: ACCOUNT_A },
+      createdAt: NOW,
+      updatedAt: NOW,
+    };
+    const next = filtersReducer(initialFiltersState, {
+      type: "sync",
+      filters: { period: "CUSTOM", accountId: ACCOUNT_A }, // CUSTOM w/o bounds → degrade
+      views: [valid, { id: "bad", name: "", schemaVersion: 1, filters: { period: "ALL" } }],
+    });
+    expect(next.filters).toEqual({ period: "ALL", accountId: ACCOUNT_A });
+    expect(next.views).toHaveLength(1);
+    expect(next.views[0]!.name).toBe("Gold only");
+  });
+
+  it("ignores sync while a save is in flight (stale-response guard)", () => {
+    const saving: FiltersState = {
+      ...seedView(initialFiltersState, "XAU", { period: "THIS_MONTH" }),
+      persistence: "saving",
+    };
+    const next = filtersReducer(saving, {
+      type: "sync",
+      filters: { period: "ALL" },
+      views: [],
+    });
+    expect(next).toBe(saving); // same reference — server truth did not stomp
+  });
+});
+
+describe("filtersReducer — filter edits", () => {
+  it("patches one dimension and re-validates the merged document", () => {
+    const patched = filtersReducer(initialFiltersState, {
+      type: "filtersPatched",
+      patch: { period: "THIS_MONTH", accountId: ACCOUNT_A },
+    });
+    expect(patched.filters).toEqual({ period: "THIS_MONTH", accountId: ACCOUNT_A });
+  });
+
+  it("degrades an invalid patch instead of poisoning the state", () => {
+    const base = filtersReducer(initialFiltersState, {
+      type: "filtersPatched",
+      patch: { accountId: ACCOUNT_A },
+    });
+    const next = filtersReducer(base, {
+      type: "filtersPatched",
+      patch: { period: "CUSTOM" }, // CUSTOM without bounds → whole doc invalid
+    });
+    expect(next.filters).toEqual({ period: "ALL", accountId: ACCOUNT_A });
+  });
+
+  it("clear-all restores the default and never deletes views", () => {
+    const withView = seedView(initialFiltersState, "Active view", { period: "TODAY" });
+    const cleared = filtersReducer(withView, { type: "filtersCleared" });
+    expect(cleared.filters).toEqual({ period: "ALL" });
+    expect(cleared.views).toHaveLength(1);
+    expect(cleared.activeViewId).toBe(withView.activeViewId); // unlink is DERIVED
+    expect(isDivergedFromView(cleared)).toBe(true);
+  });
+});
+
+describe("filtersReducer — saved view lifecycle", () => {
+  it("applies a view: filters = the view definition, re-validated", () => {
+    const seeded = seedView(initialFiltersState, "Gold", {
+      period: "ALL",
+      accountId: ACCOUNT_A,
+      direction: "BUY",
+    });
+    const edited = filtersReducer(seeded, {
+      type: "filtersPatched",
+      patch: { period: "LAST_30" },
+    });
+    const applied = filtersReducer(edited, {
+      type: "viewApplied",
+      viewId: seeded.activeViewId!,
+    });
+    expect(applied.filters).toEqual({ period: "ALL", accountId: ACCOUNT_A, direction: "BUY" });
+    expect(isDivergedFromView(applied)).toBe(false);
+  });
+
+  it("marks divergence after manual edits without overwriting the view", () => {
+    const seeded = seedView(initialFiltersState, "Gold", { period: "THIS_MONTH" });
+    expect(isDivergedFromView(seeded)).toBe(false);
+    const edited = filtersReducer(seeded, {
+      type: "filtersPatched",
+      patch: { accountId: ACCOUNT_B },
+    });
+    expect(isDivergedFromView(edited)).toBe(true);
+    // The saved definition is untouched — the user chose to keep it.
+    expect(seeded.views[0]!.filters).toEqual({ period: "THIS_MONTH" });
+  });
+
+  it("creates a view from the CURRENT filters and selects it", () => {
+    const withFilters = filtersReducer(initialFiltersState, {
+      type: "filtersPatched",
+      patch: { period: "THIS_MONTH", strategyId: "none" },
+    });
+    const created = filtersReducer(withFilters, {
+      type: "viewCreateRequested",
+      name: "This month — out of playbook",
+      now: NOW,
+    });
+    expect(created.views).toHaveLength(1);
+    expect(created.views[0]!.filters).toEqual(withFilters.filters);
+    expect(created.activeViewId).toBe(created.views[0]!.id);
+    expect(isDivergedFromView(created)).toBe(false);
+  });
+
+  it("surfaces create errors without mutating the collection", () => {
+    const seeded = seedView(initialFiltersState, "Taken", { period: "ALL" });
+    const failed = filtersReducer(seeded, {
+      type: "viewCreateRequested",
+      name: "taken", // case-insensitive collision
+      now: NOW,
+    });
+    expect(failed.views).toBe(seeded.views);
+    expect(failed.error).toBe("NAME_TAKEN");
+    expect(failed.activeViewId).toBe(seeded.activeViewId);
+  });
+
+  it("renames preserving the filter definition", () => {
+    const seeded = seedView(initialFiltersState, "Old name", { period: "TODAY" });
+    const renamed = filtersReducer(seeded, {
+      type: "viewRenameRequested",
+      viewId: seeded.activeViewId!,
+      name: "New name",
+      now: NOW,
+    });
+    expect(renamed.views[0]!.name).toBe("New name");
+    expect(renamed.views[0]!.filters).toEqual({ period: "TODAY" });
+    expect(renamed.views[0]!.updatedAt).toBe(NOW);
+  });
+
+  it("duplicates into an independent deep copy", () => {
+    const seeded = seedView(initialFiltersState, "Source", { period: "THIS_MONTH", accountId: ACCOUNT_A });
+    const dup = filtersReducer(seeded, {
+      type: "viewDuplicateRequested",
+      viewId: seeded.activeViewId!,
+      now: NOW,
+    });
+    expect(dup.views).toHaveLength(2);
+    expect(dup.views[1]!.name).toBe("Source copy");
+    expect(dup.views[1]!.id).not.toBe(dup.views[0]!.id);
+    // Mutating the copy's document would not affect the source (deep copy
+    // proven by reference inequality of the filters objects).
+    expect(dup.views[1]!.filters).not.toBe(dup.views[0]!.filters);
+    expect(dup.views[1]!.filters).toEqual(dup.views[0]!.filters);
+  });
+
+  it("deletes only the view and unlinks it if it was selected", () => {
+    const seeded = seedView(initialFiltersState, "Doomed", { period: "TODAY" });
+    const deleted = filtersReducer(seeded, {
+      type: "viewDeleteRequested",
+      viewId: seeded.activeViewId!,
+    });
+    expect(deleted.views).toEqual([]);
+    expect(deleted.activeViewId).toBeNull();
+    // Filters are NOT reset by a delete (§10.6 — data safety).
+    expect(deleted.filters).toEqual(seeded.filters);
+  });
+
+  it("keeps the anchor when a NON-selected view is deleted", () => {
+    const first = seedView(initialFiltersState, "Keep me", { period: "TODAY" });
+    const second = seedView(first, "Delete me", { period: "ALL" });
+    // Re-anchor to the FIRST view (seedView selects the newest — simulate
+    // the user re-applying "Keep me" before deleting the other one).
+    const anchored: FiltersState = {
+      ...second,
+      activeViewId: first.activeViewId,
+    };
+    const deleted = filtersReducer(anchored, {
+      type: "viewDeleteRequested",
+      viewId: second.views.find((v) => v.name === "Delete me")!.id,
+    });
+    expect(deleted.views).toHaveLength(1);
+    expect(deleted.views[0]!.name).toBe("Keep me");
+    expect(deleted.activeViewId).toBe(first.activeViewId);
+  });
+
+  it("reports NOT_FOUND for unknown view ids without changing state", () => {
+    const failed = filtersReducer(initialFiltersState, {
+      type: "viewDeleteRequested",
+      viewId: "missing",
+    });
+    expect(failed.error).toBe("NOT_FOUND");
+    expect(failed.views).toEqual([]);
+  });
+});
+
+describe("filtersReducer — persistence status", () => {
+  it("mirrors the save transaction and survives a failure", () => {
+    const started = filtersReducer(initialFiltersState, { type: "saveStarted" });
+    expect(started.persistence).toBe("saving");
+    const failed = filtersReducer(started, {
+      type: "saveFailed",
+      message: "network down",
+    });
+    expect(failed.persistence).toBe("error");
+    // Local state (filters + views) is intact for retry.
+    expect(failed.filters).toEqual(initialFiltersState.filters);
+    const committed = filtersReducer(started, {
+      type: "saveCommitted",
+      filters: { period: "LAST_30" },
+      views: [],
+    });
+    expect(committed.persistence).toBe("idle");
+    expect(committed.filters).toEqual({ period: "LAST_30" });
+  });
+});
+
+describe("filters state — selectors", () => {
+  it("activeViewOf resolves the anchor or null", () => {
+    const seeded = seedView(initialFiltersState, "Anchor", { period: "ALL" });
+    expect(activeViewOf(seeded)?.id).toBe(seeded.activeViewId);
+    const broken: FiltersState = { ...seeded, activeViewId: "vanished" };
+    expect(activeViewOf(broken)).toBeNull();
+    expect(isDivergedFromView(broken)).toBe(false); // no anchor → not diverged
+  });
+});

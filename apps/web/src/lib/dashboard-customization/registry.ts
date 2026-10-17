@@ -1,6 +1,7 @@
 import { DASHBOARD_WIDGET_KEYS, type DashboardWidgetKey } from "@cosmoz/shared";
 
 import {
+  suiteBacked,
   WIDGET_CATEGORY_KEYS,
   type WidgetCategory,
   type WidgetDefinition,
@@ -16,6 +17,12 @@ import {
  *  - metadata only — renderers live in the UI layer, nothing here is
  *    serialized into layouts (layouts reference `type` keys only);
  *  - dimension bounds drive resize clamping (layout-model) and UI affordances.
+ *
+ * Phase 03 §8: every definition also declares `filterSupport` — how the
+ * shared global filter context affects the widget. FULL = the widget's data
+ * query receives the global filters; UNAFFECTED = its data source has no
+ * filter parameters today, with an honest reason (never a fake filtered
+ * result). The UI layer renders the distinction; nothing here is serialized.
  *
  * Width bounds reflect each widget's internal layout: composite sections
  * (EQUITY_ROW's 3+2 split, BEST_WORST's two-card grid) keep a locked
@@ -39,6 +46,7 @@ export const WIDGET_REGISTRY: Record<DashboardWidgetKey, WidgetDefinition> = {
     singleton: true,
     removable: true,
     resizable: true,
+    filterSupport: { support: "UNAFFECTED", reason: "Reads the overview aggregate (/stats/overview), which has no filter parameters yet." },
   },
   EQUITY_ROW: {
     type: "EQUITY_ROW",
@@ -56,6 +64,7 @@ export const WIDGET_REGISTRY: Record<DashboardWidgetKey, WidgetDefinition> = {
     singleton: true,
     removable: true,
     resizable: true,
+    filterSupport: { support: "UNAFFECTED", reason: "Reads the live overview aggregate — account/equity state, not a filterable trade population." },
   },
   GOALS_PACE: {
     type: "GOALS_PACE",
@@ -72,6 +81,7 @@ export const WIDGET_REGISTRY: Record<DashboardWidgetKey, WidgetDefinition> = {
     singleton: true,
     removable: true,
     resizable: true,
+    filterSupport: { support: "UNAFFECTED", reason: "Goals progress comes from the goals engine — independent of trade filters." },
   },
   WEEK_COMPARE: {
     type: "WEEK_COMPARE",
@@ -88,6 +98,7 @@ export const WIDGET_REGISTRY: Record<DashboardWidgetKey, WidgetDefinition> = {
     singleton: true,
     removable: true,
     resizable: true,
+    filterSupport: { support: "UNAFFECTED", reason: "Reads the overview aggregate (/stats/overview), which has no filter parameters yet." },
   },
   HEATMAP: {
     type: "HEATMAP",
@@ -104,6 +115,7 @@ export const WIDGET_REGISTRY: Record<DashboardWidgetKey, WidgetDefinition> = {
     singleton: true,
     removable: true,
     resizable: true,
+    filterSupport: { support: "UNAFFECTED", reason: "Reads the overview aggregate (/stats/overview), which has no filter parameters yet." },
   },
   BEST_WORST: {
     type: "BEST_WORST",
@@ -121,6 +133,7 @@ export const WIDGET_REGISTRY: Record<DashboardWidgetKey, WidgetDefinition> = {
     singleton: true,
     removable: true,
     resizable: true,
+    filterSupport: { support: "UNAFFECTED", reason: "Reads the raw trade ledger; server filter semantics are not applied client-side in v1." },
   },
   ALERTS: {
     type: "ALERTS",
@@ -137,6 +150,7 @@ export const WIDGET_REGISTRY: Record<DashboardWidgetKey, WidgetDefinition> = {
     singleton: true,
     removable: true,
     resizable: true,
+    filterSupport: { support: "UNAFFECTED", reason: "The alerts feed is coach-generated — not a trade-filtered dataset." },
   },
   METRICS_CARD: {
     type: "METRICS_CARD",
@@ -153,6 +167,9 @@ export const WIDGET_REGISTRY: Record<DashboardWidgetKey, WidgetDefinition> = {
     singleton: true,
     removable: true,
     resizable: true,
+    filterSupport: suiteBacked(
+      "The widget-level period override applies only while the global period is ALL — an active global date range wins (the global bar is authoritative)."
+    ),
   },
   STRATEGY_COMPARE: {
     type: "STRATEGY_COMPARE",
@@ -169,6 +186,7 @@ export const WIDGET_REGISTRY: Record<DashboardWidgetKey, WidgetDefinition> = {
     singleton: true,
     removable: true,
     resizable: true,
+    filterSupport: suiteBacked(),
   },
   LONG_SHORT: {
     type: "LONG_SHORT",
@@ -185,6 +203,9 @@ export const WIDGET_REGISTRY: Record<DashboardWidgetKey, WidgetDefinition> = {
     singleton: true,
     removable: true,
     resizable: true,
+    filterSupport: suiteBacked(
+      "A global direction filter narrows the comparison to one side — the other renders its empty state."
+    ),
   },
   ACTIVITY_HEATMAP: {
     type: "ACTIVITY_HEATMAP",
@@ -201,6 +222,7 @@ export const WIDGET_REGISTRY: Record<DashboardWidgetKey, WidgetDefinition> = {
     singleton: true,
     removable: true,
     resizable: true,
+    filterSupport: suiteBacked(),
   },
 };
 

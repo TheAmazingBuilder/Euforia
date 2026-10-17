@@ -625,6 +625,12 @@ export const dashboardPreferencesSchema = z.object({
    * and additive: documents stored before it keep validating unchanged.
    * Views are filter contexts ONLY — never layouts, never widget configs. */
   savedViews: z.array(dashboardSavedViewSchema).max(30).optional(),
+  /** Phase 03 — the last applied ACTIVE filter context (spec §16: filter
+   * state survives reload "according to the persistence design"; the design
+   * here = the dashboard domain, same mechanism as saved views). Readers
+   * normalize it defensively (invalid → default ALL), so a stale or
+   * malformed document can never lock the dashboard into a broken filter. */
+  activeFilters: dashboardFiltersSchema.optional(),
 });
 
 export type DashboardPreferences = z.infer<typeof dashboardPreferencesSchema>;
