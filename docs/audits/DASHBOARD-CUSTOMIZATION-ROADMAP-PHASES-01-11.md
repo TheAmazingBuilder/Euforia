@@ -30,22 +30,22 @@ projet (uniquement des faits prouvés, jamais d'invention), ce document :
 |---|---|---|---|
 | **01** | Customization foundation (edit mode, widget registry, layouts, templates) | **DONE** | commit `81513e1` · worklog `6-dashboard-customization-phase01` · sonde `verify-dashboard-customize.js` |
 | **02** | Widget customization & performance analytics | **DONE** | commit `e3b773a` · worklog `7-dashboard-customization-phase02` · sondes widgets + upgrades 35/35 |
-| **03** | Saved analytical views | **NOT IMPLEMENTED** | audit §A du rapport Phase 07 : aucun code, aucun commit, aucune entrée worklog ; `dashboardPreferencesSchema` sans champs de vues/filtres |
+| **03** | Saved analytical views | **NOT IMPLEMENTED — spec restaurée** | spec verbatim : `docs/specs/dashboard-customization/PHASE-03-GLOBAL-FILTERS-AND-SAVED-ANALYTICAL-VIEWS.md` (935 lignes, reçue owner 2026-10-17) |
 | **04** | Performance goals | **PRÉ-EXISTANT (le système existait avant la série)** | `GoalService` (`apps/api/src/modules/review/goal.service.ts`) : CRUD `/goals` + progression serveur (8 métriques, statuts PENDING/ACHIEVED/ON_TRACK/AT_RISK/BEHIND) ; widget GOALS_PACE au dashboard. Aucun travail « Phase 04 » phase-spécifique |
-| **05** | Performance insights & pattern analysis | **NOT IMPLEMENTED** | audit §A du rapport Phase 07 : aucun code insight/pattern au-delà des playbook setup insights pré-existants |
-| **06** | Workspace management | **NOT IMPLEMENTED** | audit §A du rapport Phase 07 : la collection de layouts (Phase 01) existe ; aucune couche workspaces-au-dessus-des-layouts |
+| **05** | Performance insights & pattern analysis | **NOT IMPLEMENTED — spec restaurée** | spec verbatim : `docs/specs/dashboard-customization/PHASE-05-PERFORMANCE-INSIGHTS-PATTERN-ANALYSIS.md` (reçue owner 2026-10-17) |
+| **06** | Workspace management | **NOT IMPLEMENTED — spec restaurée** | spec verbatim : `docs/specs/dashboard-customization/PHASE-06-WORKSPACE-MANAGEMENT-LAYOUT-COLLECTIONS-TEMPLATES.md` (reçue owner 2026-10-17) |
 | **07** | Alerts, threshold monitoring & event history | **DONE** | commit `1da3d75` · rapport complet `docs/audits/DASHBOARD-CUSTOMIZATION-PHASE-07-ALERTS-REPORT.md` · 24 unit + 18 e2e + 80 adjacentes · sonde live 18/18 · sonde UI 12/12 |
 | **08** | *Spec owner — texte perdu des sessions* | **À RÉ-UPLOADER (aucun contenu inventé)** | mentionnée comme « next » dans le §G du rapport Phase 07 ; le texte de la spec n'existe ni dans le repo ni dans les sessions actives |
 | **09** | *Spec owner — texte perdu des sessions* | **À RÉ-UPLOADER (aucun contenu inventé)** | — |
 | **10** | *Spec owner — texte perdu des sessions* | **À RÉ-UPLOADER (aucun contenu inventé)** | — |
 | **11** | *Spec owner — texte perdu des sessions* | **À RÉ-UPLOADER (aucun contenu inventé)** | — |
 
-> **Note d'honnêteté** : les titres des phases 01 → 07 sont vérifiés par les preuves du
-> repo (commits, worklog, rapports). Les phases 08 → 11 existent bien dans la série
-> fournie par l'owner (11 phases au total, déclaration owner), mais leur texte exact a
-> été perdu avec les sessions — elles sont listées en placeholders **sans aucune
-> invention de titre ni de contenu**. Dès ré-upload, elles seront restaurées verbatim
-> dans `docs/specs/dashboard-customization/` et liées depuis ce document.
+> **Note d'honnêteté (mise à jour 2026-10-17)** : les specs des phases **03, 05 et 06**
+> ont été re-fournies par l'owner et sont désormais restaurées **verbatim** dans
+> `docs/specs/dashboard-customization/` (plus aucune dépendance aux sessions perdues).
+> Les phases **08 → 11** restent attendues : leur texte exact n'existe ni dans le repo
+> ni dans les sessions actives — placeholders **sans aucune invention**. Dès ré-upload,
+> elles seront restaurées verbatim au même endroit et liées ici.
 
 ---
 
@@ -109,11 +109,11 @@ Le §G du rapport Phase 07 fixait trois prérequis. État actuel :
 
 | # | Élément | Condition |
 |---|---|---|
-| 1 | Re-upload des specs manquantes (03/05/06 si texte disponible, 08 → 11) | Owner — restauration verbatim ensuite dans `docs/specs/dashboard-customization/` |
-| 2 | Phase 03 — Saved analytical views | Prêt dès que l'owner commande (titre vérifié ; spec exacte à ré-uploader si elle existe) |
-| 3 | Phase 05 — Performance insights & pattern analysis | Idem |
-| 4 | Phase 06 — Workspace management | Idem |
-| 5 | Phases 08 → 11 | Dès specs restaurées + prérequis §4.1 couverts |
+| 1 | ~~Re-upload specs 03/05/06~~ | **FAIT** — restaurées verbatim le 2026-10-17 dans `docs/specs/dashboard-customization/` |
+| 2 | **Phase 03 — Global dashboard filters & saved analytical views** | Spec complète reçue → prêt à implémenter (ordre de dépendance : 05 §10 exige Phase 03 vérifiée) |
+| 3 | Phase 05 — Performance insights & pattern analysis | Après Phase 03 implémentée et vérifiée (spec §10) |
+| 4 | Phase 06 — Workspace management, layout collections & templates | Après Phases 01–05 vérifiées (spec §2) |
+| 5 | Phases 08 → 11 | Specs toujours attendues de l'owner (placeholders §2) |
 | 6 | R3 — limiteur composite compte+IP + régressions e2e | Hors série, en file (sécurité) |
 | 7 | Onboarding GSAP — **implémentation** (la spec 15 sections a été reçue ; aucun code commité — voir §6) | En file après la série / R3 selon priorité owner |
 

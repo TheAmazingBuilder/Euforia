@@ -1779,3 +1779,19 @@ Stage Summary:
 - La série 11 phases est de nouveau au registre avec statuts prouvés ; noms 08→11 volontairement NON inventés (règle anti-fabrication)
 - Statut GSAP onboarding corrigé : spec OUI / code NON — l'owner peut fournir une preuve contraire si elle existe
 - Prochaines actions owner : re-uploader specs manquantes (03/05/06 + 08→11) OU commander l'ordre de reprise ; file globale : dashboard 03/05/06 → 08→11 → R3 → onboarding GSAP (implémentation)
+
+---
+Task ID: 11-specs-restore-03-05-06
+Agent: Super Z (main)
+Date: 2026-10-17
+
+Task: Owner a re-fourni les specs Phase 03 (fichier uploadé), Phase 05 et Phase 06 (collées en conversation) — restauration verbatim + mise à jour roadmap.
+
+Work Log:
+- docs/specs/dashboard-customization/ créé : PHASE-03-GLOBAL-FILTERS-AND-SAVED-ANALYTICAL-VIEWS.md (copie verbatim du fichier owner, 935 lignes), PHASE-05-PERFORMANCE-INSIGHTS-PATTERN-ANALYSIS.md, PHASE-06-WORKSPACE-MANAGEMENT-LAYOUT-COLLECTIONS-TEMPLATES.md (retranscription verbatim du message owner)
+- Roadmap mise à jour : lignes 03/05/06 → « spec restaurée » avec liens ; §5 ordre de reprise actualisé (dépendances : 05 §10 exige Phase 03 vérifiée ; 06 §2 exige 01–05 vérifiées) ; 08→11 toujours en placeholder (aucune invention)
+
+Stage Summary:
+- Toutes les specs disponibles de la série sont désormais DANS le repo — plus aucune dépendance aux sessions perdues
+- Ordre d'exécution déduit des specs elles-mêmes : 03 → 05 → 06 (08→11 attendues)
+- Prochain : audit obligatoire §2 de la Phase 03 puis implémentation (filtres globaux + saved analytical views)
