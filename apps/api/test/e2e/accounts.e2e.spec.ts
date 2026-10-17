@@ -29,6 +29,7 @@ import { buildTestApp } from "../helpers/build-app";
 import { authenticatedUser, captureMail, uniqueEmail, type MailCapture } from "../helpers/identity";
 import { PrismaService } from "../../src/infrastructure/prisma/prisma.service";
 import { CredentialsEncryptionService } from "../../src/modules/accounts/credentials-encryption.service";
+import { resetAppConfigCache } from "../../src/config/app-config";
 
 let app: NestFastifyApplication;
 let mail: MailCapture;
@@ -901,6 +902,29 @@ describe("trading-accounts — registered rich surface (Phase 02 hygiene)", () =
 import { createHmac } from "node:crypto";
 
 describe("trading-accounts — MT5 bridge ingest (public, HMAC)", () => {
+  // The MT5 bridge adapter sits behind an OPT-IN real-provider gate (§57 —
+  // never default-on). These tests boot THEIR OWN app with the gate
+  // explicitly enabled instead of depending on a local .env that may or may
+  // not enable it — the suite must be self-contained (identical behavior on
+  // a dev machine, in CI, and anywhere else).
+  let bridgeApp: Awaited<ReturnType<typeof buildTestApp>>;
+  let bridgeMail: MailCapture;
+
+  beforeAll(async () => {
+    process.env.ACCOUNTS_MT5_BRIDGE_PROVIDER = "enabled";
+    // loadAppConfig is memoized ("validate exactly once at boot") and the
+    // shared module-level app already warmed the cache with the gate off —
+    // reset it so THIS app boots with the bridge adapter registered.
+    resetAppConfigCache();
+    bridgeApp = await buildTestApp();
+    bridgeMail = captureMail(bridgeApp);
+  });
+
+  afterAll(async () => {
+    delete process.env.ACCOUNTS_MT5_BRIDGE_PROVIDER;
+    await bridgeApp?.close();
+  });
+
   function signEnvelope(
     secret: string,
     timestamp: number | string,
@@ -912,8 +936,8 @@ describe("trading-accounts — MT5 bridge ingest (public, HMAC)", () => {
   }
 
   async function pairedBridgeAccount(externalAccountId = "52988790") {
-    const user = await authenticatedUser(app, mail);
-    const res = await app.inject({
+    const user = await authenticatedUser(bridgeApp, bridgeMail);
+    const res = await bridgeApp.inject({
       method: "POST",
       url: "/api/v1/trading-accounts/connect",
       headers: user.authHeader,
@@ -934,7 +958,7 @@ describe("trading-accounts — MT5 bridge ingest (public, HMAC)", () => {
     timestamp: number;
     envelope: Record<string, unknown>;
   }) {
-    return app.inject({
+    return bridgeApp.inject({
       method: "POST",
       url: "/api/v1/trading-accounts/bridge/ingest",
       headers: {
@@ -955,7 +979,7 @@ describe("trading-accounts — MT5 bridge ingest (public, HMAC)", () => {
       kind: "ACCOUNT_INFO",
       payload: { externalAccountId: "52988790", currency: "USD" },
     };
-    const res = await app.inject({
+    const res = await bridgeApp.inject({
       method: "POST",
       url: "/api/v1/trading-accounts/bridge/ingest",
       headers: {
@@ -1048,7 +1072,7 @@ describe("trading-accounts — MT5 bridge ingest (public, HMAC)", () => {
     // The reconstruction maps deals to journal trades THROUGH the Instrument
     // table — seed the bridged symbol the way the dev seed does.
     const symbol = "XAGEUR";
-    await app.get(PrismaService).instrument.upsert({
+    await bridgeApp.get(PrismaService).instrument.upsert({
       where: { symbol },
       create: {
         symbol,
@@ -1157,7 +1181,7 @@ describe("trading-accounts — MT5 bridge ingest (public, HMAC)", () => {
     expect(deals.statusCode).toBe(200);
 
     // 4) Account sync — the pull orchestrator reads the persisted events.
-    const sync = await app.inject({
+    const sync = await bridgeApp.inject({
       method: "POST",
       url: `/api/v1/trading-accounts/${account.id}/sync`,
       headers: user.authHeader,
@@ -1169,7 +1193,7 @@ describe("trading-accounts — MT5 bridge ingest (public, HMAC)", () => {
     //    account's latest synchronized activity before serving the list
     //    (trades.service listTrades — idempotent by external position). The
     //    balance operation (symbol null) never becomes a trade.
-    const list = await app.inject({
+    const list = await bridgeApp.inject({
       method: "GET",
       url: `/api/v1/trades?accountId=${account.id}`,
       headers: user.authHeader,
@@ -1180,7 +1204,7 @@ describe("trading-accounts — MT5 bridge ingest (public, HMAC)", () => {
     const [trade] = trades;
     if (!trade) throw new Error("expected the reconstructed trade");
     // The wire carries instrumentId — resolve it back to the bridged symbol.
-    const instrument = await app
+    const instrument = await bridgeApp
       .get(PrismaService)
       .instrument.findUnique({ where: { id: String(trade.instrumentId) }, select: { symbol: true } });
     expect(instrument?.symbol).toBe("XAGEUR");

@@ -1,48 +1,15 @@
--- CreateEnum
-CREATE TYPE "TradeReviewStatus" AS ENUM ('COMPLETED', 'ARCHIVED');
-
--- CreateEnum
-CREATE TYPE "ExecutionGrade" AS ENUM ('A', 'B', 'C', 'D', 'F');
-
--- CreateEnum
-CREATE TYPE "PlaybookMatch" AS ENUM ('MATCHED', 'PARTIAL', 'OFF_PLAYBOOK');
-
--- CreateTable
-CREATE TABLE "TradeReview" (
-    "id" UUID NOT NULL,
-    "userId" UUID NOT NULL,
-    "tradeId" UUID NOT NULL,
-    "status" "TradeReviewStatus" NOT NULL DEFAULT 'COMPLETED',
-    "executionGrade" "ExecutionGrade" NOT NULL,
-    "followedPlan" BOOLEAN NOT NULL,
-    "playbookMatch" "PlaybookMatch" NOT NULL,
-    "checklistResults" JSONB,
-    "entryQuality" INTEGER,
-    "exitQuality" INTEGER,
-    "riskManagement" INTEGER,
-    "lessons" TEXT NOT NULL,
-    "improvementNote" TEXT,
-    "originTradePlanId" UUID,
-    "planSnapshot" JSONB,
-    "reviewedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "archivedAt" TIMESTAMP(3),
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "TradeReview_pkey" PRIMARY KEY ("id")
-);
-
--- CreateIndex
-CREATE UNIQUE INDEX "TradeReview_tradeId_key" ON "TradeReview"("tradeId");
-
--- CreateIndex
-CREATE INDEX "TradeReview_userId_status_idx" ON "TradeReview"("userId", "status");
-
--- CreateIndex
-CREATE INDEX "TradeReview_userId_reviewedAt_idx" ON "TradeReview"("userId", "reviewedAt" DESC);
-
--- AddForeignKey
-ALTER TABLE "TradeReview" ADD CONSTRAINT "TradeReview_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "TradeReview" ADD CONSTRAINT "TradeReview_tradeId_fkey" FOREIGN KEY ("tradeId") REFERENCES "Trade"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+-- Trade Review — SUPERSEDED (reconciled 2026-10-17).
+--
+-- This migration originally created the TradeReview enums + table and its
+-- foreign keys to "User" and "Trade". It was byte-duplicated one day later by
+-- 20261004130000_trade_review, and the "Trade" table it referenced moved to
+-- 20261004120000_trade_journal_core (the canonical journal generation). A
+-- fresh `prisma migrate deploy` therefore failed here on the missing
+-- "Trade" relation (P3018 / 42P01), and even without it the next day's
+-- identical migration would fail on the duplicate types/table.
+--
+-- Reconciliation (same pattern as 20261003131801_trading_core): this file is
+-- now intentionally EMPTY of DDL. The live TradeReview generation lives in
+-- 20261004130000_trade_review, which applies AFTER Trade exists.
+-- Databases that already applied the original content are unaffected:
+-- `prisma migrate deploy` skips migrations already recorded by name.
