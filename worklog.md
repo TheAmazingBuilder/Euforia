@@ -1829,3 +1829,22 @@ Work Log:
 Stage Summary:
 - PHASE 03 LIVRÉE : barre de filtres globale (5 dimensions, sémantique documentée), vues analytiques sauvegardées (CRUD + divergence), contexte partagé pour les 4 widgets suite-fed, badges honnêtes pour les 7 non-affectés, persistance wholesale-merge prouvée des deux côtés
 - Prochaine : Phase 05 (spec §10 exigeait Phase 03 vérifiée — fait) ; puis 06 ; specs 08→11 toujours attendues
+
+---
+Task ID: 14-restore-incident-recovery
+Agent: Super Z (main)
+Date: 2026-10-19
+
+Task: Vérification d'état post-restore — LE SANDBOX A ROLLBACKÉ LE GIT à Phase 03 COMPLETE. Session précédente croyait HEAD=afb8c4a (Phase 09 COMPLETE).
+
+Work Log:
+- ÉTAT RÉEL vérifié : HEAD = 7b83374 (Phase 03 COMPLETE, 2026-10-18), tree propre. Les commits e6c0774 (Phase 06), 8d012ad (Phase 08), afb8c4a (Phase 09) N'EXISTENT PAS dans l'object store (git cat-file fatal). Reflog s'arrête à 7b83374. Phases 05/06/08/09 implémentées dans les sessions perdues = EFFACÉES.
+- Récupération tentée : remote (aucun), bundles (aucun), stash (vide), fsck --lost-found → 8 dangling commits Oct 3-15 (WIP OCR/accounts/anciens) — AUCUN ne contient les phases dashboard 05/06/08/09. PERTE DÉFINITIVE côté git.
+- RÉCUPÉRÉ depuis upload/ (survit aux restores) : Pasted Content_1792289702544.txt = paste ORIGINAL owner phases 03+05+06 (backup → docs/specs/dashboard-customization/PHASE-05-06-ORIGINAL-PASTE-BACKUP.txt). Spécifications 05/06 déjà transposées verbatim on-disk (tâche 11) — tail upload confirme « Implement Phase 06 now », tailles 17.6K+17.7K ≈ 36.4K paste cohérent.
+- NOUVEAUTÉS trouvées dans upload/ (jamais archivées) : 2 specs MASTER app-level → docs/specs/master/ : MASTER-TESTING-QA-MOCK-REMOVAL-PRODUCTION-CLEANUP.md (20 sections, QA/mock removal/production cleanup) + MASTER-FULLSTACK-AUDIT-SECURITY-INTEGRATION-VALIDATION.md (18 sections, stages 1-12). À traiter APRÈS la série dashboard (hors périmètre courant).
+- Toujours PERDUS (pas dans upload/) : specs dashboard 08/09/10/11 (reçues en conversation uniquement) + leurs implémentations. Il reste de la conversation perdue : Phase 08/09 = performance & data-fetching consistency (memoization, keepPreviousData, stale times, invalidation gaps corrigés, FreshnessChip) ; Phase 10 = UX/Accessibility/Interaction consistency (WCAG 2.2 AA cible, P&L non red-green only, focus/keyboard, loading/empty/error states, thèmes) ; Phase 11 = Integration & E2E validation (12 features classées implemented/partial/mock-only, scénarios A–K, matrice PASS/PARTIAL/BLOCKED/FAIL).
+
+Stage Summary:
+- DÉCISION D'EXÉCUTION (user « continu » + règle evidence-only) : reconstruire dans l'ordre des dépendances réelles — Phase 05 → Phase 06 (specs verbatim ON DISK = contrat) ; puis Phase 10 → Phase 11 selon les condensés de conversation (documenté HONNÊTEMENT comme specs perdues, condensés seulement) ; contenu connu 08/09 absorbé dans 10/11. Si l'owner re-fournit les specs 08–11 originales, re-conformité évaluée.
+- RÈGLE RENFORCÉE : commit immédiat après chaque livrable (déjà verrouillée) + worklog à jour à chaque tâche — c'est ce qui a permis cette reprise.
+- Prochain : Phase 05 rebuild (audit §2 puis implémentation).
