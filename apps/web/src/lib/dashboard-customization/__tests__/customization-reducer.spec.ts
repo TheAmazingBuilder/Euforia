@@ -106,6 +106,8 @@ describe("edit session (draft transaction)", () => {
           layout.id === dirtied.draft!.id ? dirtied.draft! : layout,
         ),
         activeLayoutId: dirtied.activeLayoutId,
+        defaultLayoutId: null,
+        userTemplates: [],
       },
     });
     expect(committed.draft).toBeNull();
@@ -132,6 +134,8 @@ describe("edit session (draft transaction)", () => {
       snapshot: {
         layouts: reset.layouts.map((layout) => (layout.id === reset.draft!.id ? reset.draft! : layout)),
         activeLayoutId: reset.activeLayoutId,
+        defaultLayoutId: null,
+        userTemplates: [],
       },
     });
     expect(activeLayoutOf(committed).widgets).toHaveLength(createDefaultLayouts()[0]!.widgets.length);
@@ -148,7 +152,7 @@ describe("edit session (draft transaction)", () => {
     const started = customizationReducer(idleState(), { type: "editStarted" });
     const synced = customizationReducer(started, {
       type: "sync",
-      snapshot: { layouts: createDefaultLayouts(["ALERTS"]), activeLayoutId: "layout_default" },
+      snapshot: { layouts: createDefaultLayouts(["ALERTS"]), activeLayoutId: "layout_default", defaultLayoutId: null, userTemplates: [] },
     });
     expect(synced.draft).toEqual(started.draft);
   });
@@ -217,7 +221,7 @@ describe("saved layout collection", () => {
     const idle = idleState();
     const next = customizationReducer(idle, {
       type: "snapshotApplied",
-      snapshot: { layouts: createDefaultLayouts(["ALERTS"]), activeLayoutId: "layout_default" },
+      snapshot: { layouts: createDefaultLayouts(["ALERTS"]), activeLayoutId: "layout_default", defaultLayoutId: null, userTemplates: [] },
     });
     expect(next.layouts[0]!.widgets[0]!.type).toBe("ALERTS");
     expect(next.activeLayoutId).toBe("layout_default");

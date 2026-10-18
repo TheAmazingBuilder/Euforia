@@ -532,6 +532,84 @@ describe("dashboard saved views & active filters (Phase 03 §10/§12)", () => {
   });
 });
 
+// ── dashboard workspaces: default flag + user templates (Phase 06 §4/§6/§10) ─
+
+describe("dashboard workspaces (Phase 06 §4/§6/§10)", () => {
+  it("persists defaultLayoutId + userTemplates and echoes them back validated", async () => {
+    const ctx = await authenticatedUser(app, mail);
+    const doc = userPreferencesSchema.parse((await getPrefs(ctx.authHeader)).json()) as UserPreferences;
+    const layoutId = doc.dashboard.layouts?.[0]?.id ?? "layout_default";
+
+    const TEMPLATE = {
+      id: "utpl_e2e_1",
+      name: "E2E snapshot",
+      schemaVersion: 1 as const,
+      layout: doc.dashboard.layouts![0]!,
+    };
+
+    const patched = await patchDomain(ctx.authHeader, "dashboard", {
+      ...doc.dashboard,
+      defaultLayoutId: layoutId,
+      userTemplates: [TEMPLATE],
+    });
+    expect(patched.statusCode).toBe(200);
+    const parsed = userPreferencesSchema.parse(patched.json()) as UserPreferences;
+    expect(parsed.dashboard.defaultLayoutId).toBe(layoutId);
+    expect(parsed.dashboard.userTemplates).toHaveLength(1);
+    expect(parsed.dashboard.userTemplates?.[0]?.name).toBe("E2E snapshot");
+    expect(parsed.dashboard.userTemplates?.[0]?.layout.id).toBe(TEMPLATE.layout.id);
+
+    // Round-trip through a fresh GET (persisted, not just echoed).
+    const reread = userPreferencesSchema.parse((await getPrefs(ctx.authHeader)).json()) as UserPreferences;
+    expect(reread.dashboard.defaultLayoutId).toBe(layoutId);
+    expect(reread.dashboard.userTemplates).toHaveLength(1);
+  });
+
+  it("rejects an oversized template collection and a malformed template (4xx, domain untouched)", async () => {
+    const ctx = await authenticatedUser(app, mail);
+    const doc = userPreferencesSchema.parse((await getPrefs(ctx.authHeader)).json()) as UserPreferences;
+    const base = doc.dashboard.layouts![0]!;
+
+    const oversize = await patchDomain(ctx.authHeader, "dashboard", {
+      ...doc.dashboard,
+      userTemplates: Array.from({ length: 11 }, (_, index) => ({
+        id: `utpl_e2e_${index}`,
+        name: `T${index}`,
+        schemaVersion: 1 as const,
+        layout: base,
+      })),
+    });
+    expectValidationError(oversize.statusCode, oversize.json());
+
+    const malformed = await patchDomain(ctx.authHeader, "dashboard", {
+      ...doc.dashboard,
+      userTemplates: [{ id: "utpl_bad", name: "", schemaVersion: 1, layout: base }],
+    });
+    expectValidationError(malformed.statusCode, malformed.json());
+
+    const reread = userPreferencesSchema.parse((await getPrefs(ctx.authHeader)).json()) as UserPreferences;
+    expect(reread.dashboard.userTemplates).toBeUndefined();
+    expect(reread.dashboard.defaultLayoutId).toBeUndefined();
+  });
+
+  it("isolates workspace data per user — another account never sees templates or the default flag", async () => {
+    const ctxA = await authenticatedUser(app, mail);
+    const docA = userPreferencesSchema.parse((await getPrefs(ctxA.authHeader)).json()) as UserPreferences;
+    await patchDomain(ctxA.authHeader, "dashboard", {
+      ...docA.dashboard,
+      defaultLayoutId: docA.dashboard.layouts![0]!.id,
+      userTemplates: [
+        { id: "utpl_iso", name: "Private", schemaVersion: 1 as const, layout: docA.dashboard.layouts![0]! },
+      ],
+    });
+
+    const ctxB = await authenticatedUser(app, mail);
+    const docB = userPreferencesSchema.parse((await getPrefs(ctxB.authHeader)).json()) as UserPreferences;
+    expect(docB.dashboard.defaultLayoutId).toBeUndefined();
+    expect(docB.dashboard.userTemplates).toBeUndefined();
+  });
+});
+
 // ── financial integrity (§17/§39) ────────────────────────────────────────────
 
 describe("settings never mutate financial truth (Phase 15 §17/§39)", () => {

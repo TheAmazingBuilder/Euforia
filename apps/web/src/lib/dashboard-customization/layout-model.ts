@@ -8,6 +8,7 @@ import {
 
 import { WIDGET_REGISTRY, getWidgetDefinition } from "./registry";
 import type { CustomizationSnapshot } from "./types";
+import { normalizeUserTemplates, resolveActiveLayoutId } from "./workspaces";
 import { configEquals, resolveWidgetConfig } from "./widget-configs";
 
 /**
@@ -164,6 +165,7 @@ export function createDefaultLayouts(order?: readonly string[]): DashboardLayout
 export function normalizeCustomization(
   layouts: readonly unknown[],
   activeLayoutId: unknown,
+  options?: { defaultLayoutId?: unknown; userTemplates?: unknown },
 ): CustomizationSnapshot {
   const byId = new Map<string, DashboardLayoutDocument>();
   for (const raw of layouts) {
@@ -173,22 +175,42 @@ export function normalizeCustomization(
   let collection = [...byId.values()];
   if (collection.length === 0) collection = createDefaultLayouts();
 
-  const activeId =
-    typeof activeLayoutId === "string" && byId.has(activeLayoutId)
-      ? activeLayoutId
-      : collection[0]!.id;
-  return { layouts: collection, activeLayoutId: activeId };
+  // Phase 06 fallback chain: stored active → explicit default → first.
+  const storedDefault =
+    typeof options?.defaultLayoutId === "string" && byId.has(options.defaultLayoutId)
+      ? options.defaultLayoutId
+      : null;
+  const activeId = resolveActiveLayoutId(collection, typeof activeLayoutId === "string" ? activeLayoutId : undefined, storedDefault);
+  return {
+    layouts: collection,
+    activeLayoutId: activeId,
+    defaultLayoutId: storedDefault,
+    userTemplates: normalizeUserTemplates(options?.userTemplates),
+  };
 }
 
 /** Read + migrate a stored dashboard domain document into a safe snapshot. */
 export function readStoredCustomization(
-  stored: Pick<import("@cosmoz/shared").DashboardPreferences, "layouts" | "activeLayoutId" | "widgetOrder"> | undefined,
+  stored:
+    | Pick<
+        import("@cosmoz/shared").DashboardPreferences,
+        "layouts" | "activeLayoutId" | "widgetOrder" | "defaultLayoutId" | "userTemplates"
+      >
+    | undefined,
 ): CustomizationSnapshot {
   if (stored?.layouts && stored.layouts.length > 0) {
-    return normalizeCustomization(stored.layouts, stored.activeLayoutId);
+    return normalizeCustomization(stored.layouts, stored.activeLayoutId, {
+      defaultLayoutId: stored.defaultLayoutId,
+      userTemplates: stored.userTemplates,
+    });
   }
   // Legacy document (widgetOrder only) — synthesize the default collection.
-  return { layouts: createDefaultLayouts(stored?.widgetOrder), activeLayoutId: DEFAULT_LAYOUT_ID };
+  return {
+    layouts: createDefaultLayouts(stored?.widgetOrder),
+    activeLayoutId: DEFAULT_LAYOUT_ID,
+    defaultLayoutId: null,
+    userTemplates: normalizeUserTemplates(stored?.userTemplates),
+  };
 }
 
 /**

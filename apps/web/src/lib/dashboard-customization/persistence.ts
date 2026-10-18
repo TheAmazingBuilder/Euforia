@@ -42,6 +42,10 @@ export function preferencesFromSnapshot(
     widgetOrder: widgetOrderOf(active!),
     activeLayoutId: active!.id,
     layouts: snapshot.layouts,
+    // Phase 06 — workspace layer keys travel with every domain PATCH (the
+    // dashboard domain is replaced wholesale; omitted keys would be wiped).
+    ...(snapshot.defaultLayoutId ? { defaultLayoutId: snapshot.defaultLayoutId } : {}),
+    ...(snapshot.userTemplates.length > 0 ? { userTemplates: snapshot.userTemplates } : {}),
   };
 }
 

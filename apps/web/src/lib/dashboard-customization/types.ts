@@ -1,4 +1,4 @@
-import type { DashboardLayoutDocument, DashboardWidgetKey } from "@cosmoz/shared";
+import type { DashboardLayoutDocument, DashboardUserTemplate, DashboardWidgetKey } from "@cosmoz/shared";
 
 /**
  * Dashboard customization — shared types (Phase 01).
@@ -12,6 +12,7 @@ export type {
   DashboardLayoutDocument,
   DashboardPreferences,
   DashboardPreferencesInput,
+  DashboardUserTemplate,
   DashboardWidgetItem,
   DashboardWidgetKey,
 } from "@cosmoz/shared";
@@ -96,6 +97,10 @@ export interface WidgetDefinition {
 export interface CustomizationSnapshot {
   layouts: DashboardLayoutDocument[];
   activeLayoutId: string;
+  /** Phase 06 — the user's default workspace (null = none explicit). */
+  defaultLayoutId: string | null;
+  /** Phase 06 — user-created templates (frozen workspace snapshots). */
+  userTemplates: DashboardUserTemplate[];
 }
 
 /** Persistence status of the customization state machine. */

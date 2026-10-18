@@ -112,7 +112,7 @@ Le §G du rapport Phase 07 fixait trois prérequis. État actuel :
 | 1 | ~~Re-upload specs 03/05/06~~ | **FAIT** — restaurées verbatim le 2026-10-17 dans `docs/specs/dashboard-customization/` |
 | 2 | **Phase 03 — Global dashboard filters & saved analytical views** | **DONE** (rapport §I : COMPLETE dans le périmètre v1 documenté — barre globale + vues sauvegardées + métadonnées §8 ; limites honnêtes listées dans le rapport §H) |
 | 3 | **Phase 05 — Performance insights, pattern analysis & trading behavior** | **DONE** (2026-10-19 — moteur déterministe partagé `@cosmoz/shared/analytics/insights` + sections suite `durations`/`streakProfile`/`insights` + 4 widgets opt-in PERFORMANCE_BREAKDOWN/BEHAVIORAL_INSIGHTS/LOSS_STREAKS/PERFORMANCE_TREND + câblage filtres §10 des widgets suite-fed corrigé ; rapport `DASHBOARD-CUSTOMIZATION-PHASE-05-REPORT.md`, limites §F) |
-| 4 | Phase 06 — Workspace management, layout collections & templates | Après Phases 01–05 vérifiées (spec §2) — **la condition est remplie** |
+| 4 | **Phase 06 — Workspace management, layout collections & templates** | **DONE** (2026-10-19 — espaces de travail = collection de layouts existante étendue: defaultLayoutId + chaîne de repli documentée, templates utilisateur figés max 10 avec badges built-in/yours, clonage indépendant prouvé; rapport `DASHBOARD-CUSTOMIZATION-PHASE-06-REPORT.md`, limites §E) |
 | 5 | Phases 08 → 11 | Specs toujours attendues de l'owner (placeholders §2) |
 | 6 | R3 — limiteur composite compte+IP + régressions e2e | Hors série, en file (sécurité) |
 | 7 | Onboarding GSAP — **implémentation** (la spec 15 sections a été reçue ; aucun code commité — voir §6) | En file après la série / R3 selon priorité owner |

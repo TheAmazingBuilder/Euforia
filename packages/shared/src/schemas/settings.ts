@@ -636,6 +636,27 @@ export const dashboardSavedViewSchema = z.object({
 });
 export type DashboardSavedView = z.infer<typeof dashboardSavedViewSchema>;
 
+/**
+ * Phase 06 — one USER-CREATED workspace template: a frozen deep copy of one
+ * of the user's own layouts, reusable to spawn independent workspaces.
+ * Strictly separate from built-in templates (owner-classified in the UI);
+ * never shared across users (the domain is per-user JSON, ownership enforced
+ * by the preferences PATCH). The embedded layout is validated by the SAME
+ * dashboardLayoutDocumentSchema — an unknown widget type inside a template
+ * degrades exactly like an unknown type inside a layout (dropped on read).
+ */
+export const dashboardUserTemplateSchema = z.object({
+  id: z.string().min(1).max(64),
+  name: z.string().min(1).max(60),
+  description: z.string().max(200).optional(),
+  schemaVersion: z.literal(1),
+  /** Frozen snapshot — applying a template CLONES it (fresh layout id +
+   * fresh instance ids); the stored copy is never mutated by use. */
+  layout: dashboardLayoutDocumentSchema,
+  createdAt: isoDateTimeSchema.optional(),
+});
+export type DashboardUserTemplate = z.infer<typeof dashboardUserTemplateSchema>;
+
 export const dashboardPreferencesSchema = z.object({
   widgetOrder: z.array(dashboardWidgetKeySchema).max(DASHBOARD_WIDGET_KEYS.length),
   activeLayoutId: z.string().min(1).max(64).optional(),
@@ -650,6 +671,14 @@ export const dashboardPreferencesSchema = z.object({
    * normalize it defensively (invalid → default ALL), so a stale or
    * malformed document can never lock the dashboard into a broken filter. */
   activeFilters: dashboardFiltersSchema.optional(),
+  /** Phase 06 — the user's default workspace (falls back here when the
+   * active layout id no longer resolves). OPTIONAL additive key; null/
+   * missing = no explicit default (the first layout wins). */
+  defaultLayoutId: z.string().min(1).max(64).optional(),
+  /** Phase 06 — user-created templates (frozen layout snapshots). OPTIONAL
+   * additive key, capped at 10; each item validated by its own schema so
+   * one malformed template never destroys the collection. */
+  userTemplates: z.array(dashboardUserTemplateSchema).max(10).optional(),
 });
 
 export type DashboardPreferences = z.infer<typeof dashboardPreferencesSchema>;

@@ -1884,3 +1884,21 @@ Work Log:
 Stage Summary:
 - PHASE 05 LIVRÉE (rebuild from verbatim spec après le restore): UN moteur déterministe partagé API+mock (parité inviolable), 3 sections suite additives, 4 widgets opt-in, câblage filtres §10 fermé pour les 7 widgets suite-fed
 - Prochaine: Phase 06 (workspace management, layout collections & templates — spec verbatim on disk, condition §2 remplie) — PUIS Phase 10/11 selon l'instruction owner (specs perdues, condensés de conversation documentés)
+
+---
+Task ID: 17-phase06
+Agent: Super Z (main)
+Date: 2026-10-19
+
+Task: Phase 06 Dashboard Customization — workspace management, layout collections & templates (rebuild from verbatim spec on disk après le restore).
+
+Work Log:
+- AUDIT §2: Phase 01-05 vérifiées présentes; workspace = le layout document existant (ZÉRO second modèle — mandat anti-duplication du spec); manquait: default workspace, templates utilisateur, distinction built-in/yours, nommage UI
+- IMPLÉMENTÉ: shared dashboardUserTemplateSchema (layout figé, per-item validé) + 2 clés ADDITIVES au domaine (defaultLayoutId, userTemplates max 10 — documents legacy valident inchangés); workspaces.ts (normalizeUserTemplates salvage per-item + dedupe id + cap; resolveActiveLayoutId chaîne stored-active → default → first; layoutToUserTemplate structuredClone; validateUserTemplateName unique CI ≤60); readStoredCustomization/normalizeCustomization lisent+salvent; preferencesFromSnapshot émet les 2 clés à CHAQUE PATCH (wholesale: clé omise = effacée); reducer: defaultLayoutSet/userTemplateSaved/userTemplateDeleted + layoutDeleted CLEARE le flag default (jamais de re-pointage silencieux); hook: setDefaultLayout/deleteUserTemplate/saveWorkspaceAsTemplate (view-mode seulement, cap+nom validés)/createWorkspaceFromUserTemplate (cloneLayout = fresh layout id + fresh instanceIds) + applyCollectionAction/saveEdit persistent le snapshot COMPLET (leçon cross-talk Phase 03 généralisée); manager retitré « Workspaces » (testids Phase 01 inchangés) avec badge Default + star, section « Your templates » (Yours badge, apply/delete), section save-as-template inline; en-tête bouton Layouts → Workspaces
+- Pièges: réduction snapshot CustomizationSnapshot a cassé 4 usines de specs (defaultLayoutId/userTemplates requis) — patchées; cloneLayout importé du bon module (layout-model pas reducer); sonde: le dialog manager reste OUVERT après apply (pas de rouvrir — overlay intercepte), la suppression passe par ConfirmDialog (accept requis)
+- Gates: web vitest 161/161 (+9 workspaces.spec), api 1319/1319 (+3 e2e settings: round-trip fresh GET, 400 cap 11/malformed + domaine intact, isolation per-user), tsc×3 0, eslint 0, build exit 0; sonde probe-dashboard-workspaces.js 16/16 (rename, duplicate, default badge, save-as-template Yours, apply → workspace actif indépendant, delete template, suppression du default → badge disparu); régressions insights 21/21 + filters 28/28
+- Rapport docs/audits/DASHBOARD-CUSTOMIZATION-PHASE-06-REPORT.md (A–G, COMPLETE, limites §E: pas d'archive (convention delete existante), description non editable, snapshots complets seulement, last-write-wins inchangé); roadmap Phase 06 → DONE
+
+Stage Summary:
+- PHASE 06 LIVRÉE: la série dashboard 01/02/03/05/06/07 est au complet dans le repo; restent 08/09/10/11 (specs perdues — condensés de conversation seulement, documentés)
+- Prochaine: Phase 10 (UX/Accessibility consistency pass selon le condensé) puis Phase 11 (Integration & E2E validation) — specs originales attendues de l'owner si re-upload

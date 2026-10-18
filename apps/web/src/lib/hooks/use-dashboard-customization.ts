@@ -20,6 +20,7 @@ import {
   makeEmptyLayout,
   type CustomizationAction,
 } from "@/lib/dashboard-customization/customization-reducer";
+import { cloneLayout } from "@/lib/dashboard-customization/layout-model";
 import {
   activeFiltersFromPreferences,
   dashboardDomainWithFilters,
@@ -28,6 +29,12 @@ import {
   snapshotFromPreferences,
 } from "@/lib/dashboard-customization/persistence";
 import type { CustomizationSnapshot } from "@/lib/dashboard-customization/types";
+import {
+  MAX_USER_TEMPLATES,
+  layoutToUserTemplate,
+  newUserTemplateId,
+  validateUserTemplateName,
+} from "@/lib/dashboard-customization/workspaces";
 
 /**
  * Dashboard customization hook (Phase 01, Phase 03-aware) — wires the pure
@@ -109,13 +116,20 @@ export function useDashboardCustomization() {
     [updateDashboard, fullDomainPayload],
   );
 
-  /** View-mode collection op: apply via the pure reducer, then persist. */
+  /** View-mode collection op: apply via the pure reducer, then persist the
+   * FULL snapshot (layouts + active + Phase 06 workspace keys — the domain
+   * is replaced wholesale, every half always travels). */
   const applyCollectionAction = React.useCallback(
     (action: CustomizationAction) => {
       const next = customizationReducer(stateRef.current, action);
       if (next === stateRef.current) return;
       dispatch(action);
-      persist({ layouts: next.layouts, activeLayoutId: next.activeLayoutId });
+      persist({
+        layouts: next.layouts,
+        activeLayoutId: next.activeLayoutId,
+        defaultLayoutId: next.defaultLayoutId,
+        userTemplates: next.userTemplates,
+      });
     },
     [persist],
   );
@@ -135,6 +149,8 @@ export function useDashboardCustomization() {
         layout.id === current.draft!.id ? current.draft! : layout,
       ),
       activeLayoutId: current.activeLayoutId,
+      defaultLayoutId: current.defaultLayoutId,
+      userTemplates: current.userTemplates,
     };
     dispatch({ type: "saveStarted" });
     updateDashboard.mutate(fullDomainPayload(target), {
@@ -265,6 +281,58 @@ export function useDashboardCustomization() {
     [applyCollectionAction],
   );
 
+  // ── Phase 06 — workspace layer (default flag + user templates) ────────────
+
+  const setDefaultLayout = React.useCallback(
+    (layoutId: string) => applyCollectionAction({ type: "defaultLayoutSet", layoutId }),
+    [applyCollectionAction],
+  );
+
+  const deleteUserTemplate = React.useCallback(
+    (templateId: string) => applyCollectionAction({ type: "userTemplateDeleted", templateId }),
+    [applyCollectionAction],
+  );
+
+  /** Freeze the ACTIVE workspace's current saved state into a user-owned
+   * template (view mode only — a live draft is not a saved workspace).
+   * Returns false when the name is invalid/clashing or the cap is reached. */
+  const saveWorkspaceAsTemplate = React.useCallback(
+    (name: string, description?: string): boolean => {
+      const current = stateRef.current;
+      if (current.draft) return false;
+      if (current.userTemplates.length >= MAX_USER_TEMPLATES) return false;
+      const check = validateUserTemplateName(name, current.userTemplates);
+      if (!check.ok) return false;
+      const source = current.layouts.find((layout) => layout.id === current.activeLayoutId);
+      if (!source) return false;
+      const template = layoutToUserTemplate(source, newUserTemplateId(), name.trim(), description);
+      applyCollectionAction({ type: "userTemplateSaved", template });
+      toast.success(`Template "${template.name}" saved.`);
+      return true;
+    },
+    [applyCollectionAction],
+  );
+
+  /** Create a NEW independent workspace from a user template — the stored
+   * template is a frozen snapshot; the clone gets a fresh layout id and
+   * fresh instance ids, so edits never leak back (spec §6). */
+  const createWorkspaceFromUserTemplate = React.useCallback(
+    (templateId: string): boolean => {
+      const current = stateRef.current;
+      const template = current.userTemplates.find((candidate) => candidate.id === templateId);
+      if (!template) return false;
+      if (current.layouts.length >= 20) return false;
+      const layout = cloneLayout(template.layout, {
+        name: template.name,
+        templateId: template.id,
+      });
+      applyCollectionAction({ type: "layoutCreated", layout });
+      toast.success(`"${layout.name}" workspace created.`);
+      return true;
+    },
+    [applyCollectionAction],
+  );
+
   return {
     /** Local customization state (saved collection + draft + persistence). */
     state,
@@ -293,6 +361,10 @@ export function useDashboardCustomization() {
     deleteLayout,
     createLayoutFromTemplate,
     createEmptyLayout,
+    setDefaultLayout,
+    deleteUserTemplate,
+    saveWorkspaceAsTemplate,
+    createWorkspaceFromUserTemplate,
   };
 }
 

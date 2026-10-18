@@ -358,7 +358,7 @@ export function DashboardView({ description }: DashboardViewProps) {
               disabled={actionsDisabled}
             >
               <LayoutGrid className="size-4" aria-hidden="true" />
-              Layouts
+              Workspaces
             </Button>
             <Button
               variant="outline"
@@ -474,6 +474,12 @@ export function DashboardView({ description }: DashboardViewProps) {
             "this template";
           handleApplyTemplate(templateId, name);
         }}
+        defaultLayoutId={c.state.defaultLayoutId}
+        userTemplates={c.state.userTemplates}
+        onSetDefault={c.setDefaultLayout}
+        onSaveAsTemplate={(name) => c.saveWorkspaceAsTemplate(name)}
+        onDeleteUserTemplate={c.deleteUserTemplate}
+        onApplyUserTemplate={(templateId) => c.createWorkspaceFromUserTemplate(templateId)}
       />
 
       <ConfirmDialog

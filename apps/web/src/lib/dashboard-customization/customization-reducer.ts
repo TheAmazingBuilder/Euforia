@@ -17,6 +17,7 @@ import {
 } from "./layout-model";
 import { getTemplate, layoutFromTemplate } from "./templates";
 import type { CustomizationSnapshot, PersistenceStatus } from "./types";
+import type { DashboardUserTemplate } from "./types";
 
 /**
  * Customization state machine (Phase 01 §5/§10/§17) — a pure reducer that
@@ -45,6 +46,8 @@ export interface CustomizationState extends CustomizationSnapshot {
 export const initialCustomizationState: CustomizationState = {
   layouts: createDefaultLayouts(),
   activeLayoutId: "layout_default",
+  defaultLayoutId: null,
+  userTemplates: [],
   draft: null,
   persistence: "idle",
   saveError: null,
@@ -85,6 +88,13 @@ export type CustomizationAction =
   | { type: "layoutRenamed"; layoutId: string; name: string }
   | { type: "layoutDuplicated"; layoutId: string }
   | { type: "layoutDeleted"; layoutId: string }
+  /** Phase 06 — mark one workspace as the user's default (no-op when the
+   * id does not resolve). */
+  | { type: "defaultLayoutSet"; layoutId: string }
+  /** Phase 06 — save a frozen deep copy of the active workspace as a
+   * user-owned template (cap enforced by the model layer). */
+  | { type: "userTemplateSaved"; template: DashboardUserTemplate }
+  | { type: "userTemplateDeleted"; templateId: string }
   /** View-mode per-widget config change (persisted immediately by the
    * hook's collection-op path — same channel as switch/rename). */
   | { type: "widgetConfigSet"; layoutId: string; instanceId: string; config: DashboardWidgetItem["config"] };
@@ -276,7 +286,29 @@ export function customizationReducer(
       if (remaining.length === state.layouts.length) return state;
       const activeLayoutId =
         state.activeLayoutId === action.layoutId ? remaining[0]!.id : state.activeLayoutId;
-      return { ...state, layouts: remaining, activeLayoutId };
+      // The deleted workspace cannot stay the default (spec §4) — the flag
+      // clears rather than silently re-pointing at an arbitrary layout.
+      const defaultLayoutId =
+        state.defaultLayoutId === action.layoutId ? null : state.defaultLayoutId;
+      return { ...state, layouts: remaining, activeLayoutId, defaultLayoutId };
+    }
+
+    case "defaultLayoutSet": {
+      if (!state.layouts.some((layout) => layout.id === action.layoutId)) return state;
+      if (state.defaultLayoutId === action.layoutId) return state;
+      return { ...state, defaultLayoutId: action.layoutId };
+    }
+
+    case "userTemplateSaved": {
+      const exists = state.userTemplates.some((template) => template.id === action.template.id);
+      if (exists) return state;
+      return { ...state, userTemplates: [...state.userTemplates, action.template] };
+    }
+
+    case "userTemplateDeleted": {
+      const userTemplates = state.userTemplates.filter((template) => template.id !== action.templateId);
+      if (userTemplates.length === state.userTemplates.length) return state;
+      return { ...state, userTemplates };
     }
 
     case "widgetConfigSet": {
