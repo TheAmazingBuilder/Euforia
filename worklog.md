@@ -1963,3 +1963,22 @@ Stage Summary:
 - CAMPAGNE MASTER LIVRÉE: 4 défets corrigés avec régression, contrat OCR V2 restauré et exercé RÉELLEMENT (la limite "sidecar inexercé" de la Phase 11 est levée), mock-hygiene §14 implémentée et CI-guardée, intégration live prouvée de bout en bout
 - État: api 1325/1325 · web 169/169 · pytest 97/97 · 9 advisories dev-only · verdicts: READY FOR STAGING VALIDATION (QA) / READY FOR STAGING (audit)
 - Prochaines actions owner (§N des rapports): provisioning staging (Postgres réel, OCR_SERVICE_URL+TOKEN, transport mail, CORS), vérification brokers réels, load tests, décision route unification TradingController
+
+---
+Task ID: 21
+Agent: main (Z.ai)
+Task: Sauvegarde d'urgence avant restart sandbox 00h00 — commit + préservation totale du travail Oryon
+
+Work Log:
+- État vérifié : working tree git PROPRE, HEAD fc24210 (master-specs QA/mock-removal + audit fullstack), 303 commits, 2 branches (main, backup/modifs-du-29-sept) — tout le code Oryon était DÉJÀ commité
+- Constat critique : AUCUN remote configuré (git remote -v vide) ; aucun token GitHub dans l'environnement → push externe impossible
+- Fichiers hors-git identifiés : .env racine, apps/api/.env, apps/api/.data/ocr-storage (screenshots OCR), apps/api/.localpg (Postgres embarqué 127 Mo)
+- Créé download/oryon-git-history-2026-10-19.bundle (311 Mo) — bundle git --all, vérifié "complete history"
+- Créé download/oryon-full-workspace-backup-2026-10-19.tar.gz (618 Mo, 13 109 fichiers) — workspace complet incluant .git, .env×2, .data OCR, .localpg/data, docs/specs/master, 39 audits, worklog ; exclus : node_modules/.next/dist/.turbo (régénérables)
+- Intégrité vérifiée : tar contient .git/HEAD, .env, apps/api/.env, ocr-storage/, .localpg/data/, docs/specs/master/, worklog.md, 39 fichiers docs/audits/
+- Créé download/BACKUP-MANIFEST-2026-10-19.md (contenu + 2 procédures de restauration)
+
+Stage Summary:
+- HEAD fc24210 = état final Oryon (303 commits) — rien à committer de plus, arbre propre
+- Sauvegardes dans download/ : bundle git 311 Mo + tarball 618 Mo + manifest
+- LIMITE HONNÊTE : download/ non garanti contre un rollback sandbox ; seule garantie absolue = push GitHub (en attente URL+token de l'owner, déjà noté dans les sessions précédentes)
