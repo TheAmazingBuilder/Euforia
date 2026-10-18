@@ -56,6 +56,9 @@ export * from "./schemas/trade-planning";
 export * from "./schemas/replay";
 export * from "./replay/engine";
 export * from "./schemas/plans";
+// Phase 05 — deterministic performance-insights engine (API suite + MSW
+// mirror share the ONE implementation so mock parity can never drift).
+export * from "./analytics/insights";
 
 // ── Pure utils ───────────────────────────────────────────────────────────────
 export * from "./utils/money";

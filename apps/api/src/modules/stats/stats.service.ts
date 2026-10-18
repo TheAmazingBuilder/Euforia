@@ -38,6 +38,10 @@ import {
   ANALYTICS_HOUR_BUCKETS,
   ANALYTICS_WEEKDAYS,
   EMOTION_LABELS,
+  type InsightsEngineRow,
+  computeDurations,
+  computeStreakProfile,
+  deriveInsights,
 } from "../../shared/contracts";
 import { AccountsRepository } from "../accounts/accounts.repository";
 import { PlaybookService } from "../playbook/playbook.service";
@@ -1520,6 +1524,21 @@ export class StatsService {
       }
     }
 
+    // ── Phase 05 — insights/durations/streak profile (shared engine) ──────
+    const insightsRows: InsightsEngineRow[] = closed.map((t) => ({
+      id: t.id,
+      instrumentSymbol: instrumentById.get(t.instrumentId)?.symbol ?? t.instrumentId,
+      assetClass: instrumentById.get(t.instrumentId)?.assetClass ?? "?",
+      strategyId: t.strategyId,
+      direction: t.direction,
+      tradingDate: t.tradingDate,
+      entryAtMs: new Date(t.entryAt).getTime(),
+      exitAtMs: t.exitAt === null ? null : new Date(t.exitAt).getTime(),
+      pnlNet: t.pnlNet,
+      rMultiple: t.rMultiple ?? 0,
+      riskMoney: t.riskAmount !== null && t.riskAmount > 0 ? t.riskAmount : null,
+    }));
+
     return {
       meta: {
         resolvedFrom: from,
@@ -1562,6 +1581,9 @@ export class StatsService {
       advanced,
       monteCarlo,
       reports,
+      durations: computeDurations(insightsRows, singleCurrency),
+      streakProfile: computeStreakProfile(insightsRows),
+      insights: deriveInsights(insightsRows, { singleCurrency }),
     };
   }
 

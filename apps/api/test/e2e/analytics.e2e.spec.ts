@@ -470,6 +470,34 @@ describe("analytics-suite contract", () => {
     const second = (await getSuite(user.authHeader)).json();
     expect(first).toEqual(second);
   });
+
+  it("ships the Phase 05 sections (durations, streakProfile, insights) in the same payload", async () => {
+    const user = await authenticatedUser(app, mail);
+    await seedReferenceUser(user.authHeader, user.userId);
+    const suite = analyticsSuiteResponseSchema.parse((await getSuite(user.authHeader)).json());
+
+    // Durations — every closed trade has an exit timestamp; nothing excluded;
+    // single-currency scope → per-bucket money is computed, never nulled.
+    expect(suite.durations.buckets).toHaveLength(6);
+    expect(suite.durations.buckets.reduce((sum, bucket) => sum + bucket.trades, 0)).toBe(
+      suite.meta.closedTrades,
+    );
+    expect(suite.durations.excludedMissingTimestamp).toBe(0);
+    expect(suite.durations.buckets.every((bucket) => bucket.netPnl !== null)).toBe(true);
+
+    // Streak profile — the reference journal has a single 1-loss run; the
+    // documented breakeven rule travels with the payload.
+    expect(suite.streakProfile.rule).toContain("Breakeven trades");
+    expect(suite.streakProfile.currentLossStreak).toBe(0);
+    expect(suite.streakProfile.distribution).toEqual([{ length: 1, occurrences: 1 }]);
+    expect(suite.streakProfile.afterStreak.trades).toBe(0); // no ≥3-loss streak
+
+    // Insights — 6 trades sit below every documented minimum-sample
+    // threshold: honest silence, never small-sample conclusions. The
+    // methodology rules still ship so the UI can explain the thresholds.
+    expect(suite.insights.insights).toEqual([]);
+    expect(suite.insights.methodology.length).toBeGreaterThanOrEqual(5);
+  });
 });
 
 // ── filter bag (§8: only filters backed by real domain data) ─────────────────

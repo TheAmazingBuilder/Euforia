@@ -21,6 +21,10 @@ import {
   type AnalyticsFilters,
   type AnalyticsSuiteResponse,
   type Currency,
+  type InsightsEngineRow,
+  computeDurations,
+  computeStreakProfile,
+  deriveInsights,
 } from "../../../shared/contracts";
 import type { AnalyticsAccountRow, AnalyticsTradeRow } from "./analytics-input";
 import {
@@ -893,6 +897,28 @@ export function computeAnalyticsSuite(
     }
   }
 
+  // ── Phase 05 — performance insights, pattern analysis & trading behavior ──
+  // ONE deterministic engine lives in @cosmoz/shared (the MSW mirror calls
+  // the same functions, so mock parity cannot drift). The suite's already-
+  // filtered, chronologically-sorted `closed` rows are mapped onto the
+  // engine input — no second read, no N+1 (spec §11).
+  const insightsRows: InsightsEngineRow[] = closed.map((trade) => ({
+    id: trade.id,
+    instrumentSymbol: trade.instrumentSymbol,
+    assetClass: trade.assetClass,
+    strategyId: trade.strategyId,
+    direction: trade.direction,
+    tradingDate: trade.tradingDate,
+    entryAtMs: trade.entryAtMs,
+    exitAtMs: trade.exitAtMs,
+    pnlNet: trade.pnlNet,
+    rMultiple: trade.rMultiple,
+    riskMoney: trade.riskMoney,
+  }));
+  const insightDurations = computeDurations(insightsRows, singleCurrency);
+  const streakProfile = computeStreakProfile(insightsRows);
+  const insights = deriveInsights(insightsRows, { singleCurrency });
+
   return {
     meta: {
       resolvedFrom: from === ALL_FROM ? (closed[0]?.tradingDate ?? from) : from,
@@ -1006,6 +1032,9 @@ export function computeAnalyticsSuite(
         .sort(([a], [b]) => a.localeCompare(b))
         .map(([key, group]) => reportRow(key, group)),
     },
+    durations: insightDurations,
+    streakProfile,
+    insights,
   };
 }
 

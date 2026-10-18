@@ -1,5 +1,10 @@
 import { z } from "zod";
 import {
+  analyticsDurationsSchema,
+  analyticsInsightsSchema,
+  analyticsStreakProfileSchema,
+} from "../analytics/insights";
+import {
   assetClassSchema,
   currencySchema,
   directionSchema,
@@ -1600,6 +1605,11 @@ export const analyticsSuiteResponseSchema = z.object({
     weekly: z.array(analyticsReportRowSchema),
     monthly: z.array(analyticsReportRowSchema),
   }),
+  // Phase 05 — performance insights, pattern analysis & trading behavior
+  // (deterministic engine shared with the MSW mirror; see analytics/insights).
+  durations: analyticsDurationsSchema,
+  streakProfile: analyticsStreakProfileSchema,
+  insights: analyticsInsightsSchema,
 });
 export type AnalyticsSuiteResponse = z.infer<typeof analyticsSuiteResponseSchema>;
 

@@ -27,6 +27,10 @@ import {
   type AnalyticsReportRow,
   type AnalyticsSymbolRow,
   type AnalyticsSuiteResponse,
+  type InsightsEngineRow,
+  computeDurations,
+  computeStreakProfile,
+  deriveInsights,
   type CloseTradeInput,
   type CreateRuleInput,
   type CreateSkippedTradeInput,
@@ -3507,6 +3511,23 @@ export function createMockStore() {
       }
     }
 
+    // ── Phase 05 — insights/durations/streak profile (SHARED engine — the
+    // same deterministic functions the API suite calls, so mock parity can
+    // never drift) ────────────────────────────────────────────────────────
+    const insightsRows: InsightsEngineRow[] = closed.map((t) => ({
+      id: t.id,
+      instrumentSymbol: instrumentById.get(t.instrumentId)?.symbol ?? t.instrumentId,
+      assetClass: instrumentById.get(t.instrumentId)?.assetClass ?? "?",
+      strategyId: t.strategyId,
+      direction: t.direction,
+      tradingDate: t.tradingDate,
+      entryAtMs: new Date(t.entryAt).getTime(),
+      exitAtMs: t.exitAt === null ? null : new Date(t.exitAt).getTime(),
+      pnlNet: pnlOf(t),
+      rMultiple: rOf(t),
+      riskMoney: t.riskAmount !== null && Number(t.riskAmount) > 0 ? Number(t.riskAmount) : null,
+    }));
+
     return {
       meta: {
         resolvedFrom: from === "0000-01-01" ? (closed[0]?.tradingDate ?? from) : from,
@@ -3620,6 +3641,9 @@ export function createMockStore() {
         weekly: [...weeklyGroups.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([key, group]) => reportRow(key, group)),
         monthly: [...monthlyGroups.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([key, group]) => reportRow(key, group)),
       },
+      durations: computeDurations(insightsRows, singleCurrency),
+      streakProfile: computeStreakProfile(insightsRows),
+      insights: deriveInsights(insightsRows, { singleCurrency }),
     };
   }
 

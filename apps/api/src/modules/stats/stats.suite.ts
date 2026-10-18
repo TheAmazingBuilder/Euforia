@@ -15,6 +15,12 @@ import type {
   TiltPoint,
 } from "../../shared/contracts";
 import {
+  type InsightsEngineRow,
+  computeDurations,
+  computeStreakProfile,
+  deriveInsights,
+} from "../../shared/contracts";
+import {
   bucketOf,
   dayDiff,
   hourBucketIndex,
@@ -899,6 +905,21 @@ export function computeAnalyticsSuite(
     }
   }
 
+  // ── Phase 05 — insights/durations/streak profile (shared engine) ───────
+  const insightsRows: InsightsEngineRow[] = closed.map((t) => ({
+    id: t.id,
+    instrumentSymbol: ctx.instruments.get(t.instrumentId)?.symbol ?? t.instrumentId,
+    assetClass: ctx.instruments.get(t.instrumentId)?.assetClass ?? "?",
+    strategyId: t.strategyId,
+    direction: t.direction,
+    tradingDate: t.tradingDate,
+    entryAtMs: new Date(t.entryAt).getTime(),
+    exitAtMs: t.exitAt === null ? null : new Date(t.exitAt).getTime(),
+    pnlNet: num(t.pnlNet),
+    rMultiple: num(t.rMultiple),
+    riskMoney: t.riskAmount !== null && Number(t.riskAmount) > 0 ? Number(t.riskAmount) : null,
+  }));
+
   return {
     meta: {
       resolvedFrom: from === "0000-01-01" ? (closed[0]?.tradingDate ?? from) : from,
@@ -1012,5 +1033,9 @@ export function computeAnalyticsSuite(
       weekly: [...weeklyGroups.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([key, group]) => reportRow(key, group)),
       monthly: [...monthlyGroups.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([key, group]) => reportRow(key, group)),
     },
+    // ── Phase 05 — insights/durations/streak profile (shared engine) ─────
+    durations: computeDurations(insightsRows, singleCurrency),
+    streakProfile: computeStreakProfile(insightsRows),
+    insights: deriveInsights(insightsRows, { singleCurrency }),
   };
 }
