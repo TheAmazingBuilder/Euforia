@@ -298,6 +298,8 @@ function SaveAsTemplateSection({
           maxLength={60}
           placeholder="e.g. My research layout"
           disabled={editing || atCap}
+          aria-invalid={error !== null}
+          aria-describedby={error !== null ? "dashboard-save-as-template-error" : undefined}
           data-testid="dashboard-save-as-template-input"
         />
         <Button type="submit" variant="outline" size="sm" disabled={editing || atCap}>
@@ -305,7 +307,7 @@ function SaveAsTemplateSection({
         </Button>
       </div>
       {error && (
-        <p className="mt-1.5 text-xs text-loss" role="alert">
+        <p id="dashboard-save-as-template-error" className="mt-1.5 text-xs text-loss" role="alert">
           {error}
         </p>
       )}

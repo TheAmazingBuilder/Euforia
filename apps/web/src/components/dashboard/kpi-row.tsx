@@ -62,6 +62,9 @@ function DeltaMark({
       )}
     >
       <Icon className="size-3" aria-hidden="true" />
+      {/* The arrow is decorative for assistive tech — the direction must
+          also be spoken (Phase 10: color/shape cues are never the ONLY cue). */}
+      <span className="sr-only">{up ? "Up" : "Down"} vs previous period: </span>
       {format(delta.value)}
     </span>
   );

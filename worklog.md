@@ -1902,3 +1902,20 @@ Work Log:
 Stage Summary:
 - PHASE 06 LIVRÉE: la série dashboard 01/02/03/05/06/07 est au complet dans le repo; restent 08/09/10/11 (specs perdues — condensés de conversation seulement, documentés)
 - Prochaine: Phase 10 (UX/Accessibility consistency pass selon le condensé) puis Phase 11 (Integration & E2E validation) — specs originales attendues de l'owner si re-upload
+
+---
+Task ID: 18-phase10
+Agent: Super Z (main)
+Date: 2026-10-19
+
+Task: Phase 10 Dashboard Customization — UX, accessibility & interaction consistency (SPEC ORIGINALE PERDUE — exécutée depuis le condensé de conversation, documenté honnêtement dans le rapport).
+
+Work Log:
+- Audit direct (l'agent d'audit a été interrompu par l'owner — audit refait en main propre avec preuves file:line): thèmes Encre/Carbone/Papier VÉRIFIÉS présents (globals.css:31/65/85); ZÉRO couleur hard-codée dans les composants dashboard; P&L signés partout où la couleur encode le résultat (formatR toujours signé, formatSignedMoney pour le live, deltas KPI signés); chips delta = flèche + valeur signée (+ sr-only sur metrics-card); boutons icon-only TOUS avec aria-label (scan automatisé → que des faux positifs); charts avec ariaLabel + tooltips numériques; erreurs de formulaire role=alert; touch targets icon-sm 28px / icon-xs 24px (≥ WCAG 2.5.8); confirmations destructives via ConfirmDialog; états loading/empty/error cohérents via suiteStatus
+- 2 RÉELLES LACUNES trouvés et corrigés: (1) chips delta kpi-row + week-compare: flèche aria-hidden SANS alternative texte → les lecteurs d'écran n'entendaient pas la direction — ajout sr-only « Up/Down vs previous period » / « Up/Down/Unchanged vs last week » (formulation factuelle, pas de jugement); (2) input save-as-template: erreur role=alert mais non LIÉE au champ — ajout aria-invalid + aria-describedby
+- Gates: tsc 0, eslint 0 (3 fichiers), web vitest 161/161, sondes régression après modification: workspaces 16/16 (dialog modifié), insights 21/21, filters 28/28 — zéro page errors
+- Rapport docs/audits/DASHBOARD-CUSTOMIZATION-PHASE-10-REPORT.md (A–G) avec note d'honnêteté en tête: spec originale perdue, condensé seul, PAS de claim de conformité AA globale (surface dashboard seulement), pas de session lecteur d'écran (sr-only vérifiés dans le DOM)
+
+Stage Summary:
+- PHASE 10 LIVRÉE (périmètre ciblé): pass de cohérence/renforcement, ZÉRO dépendance nouvelle, zéro token changé, zéro changement métier
+- Reste: Phase 11 (Integration & E2E validation — condensé de conversation, scénarios A–K) — puis série au complet

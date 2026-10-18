@@ -204,6 +204,11 @@ export function WeekCompareCard({
               ) : (
                 <Minus className="size-3" aria-hidden="true" />
               )}
+              {/* Direction spoken for assistive tech — the arrow is
+                  aria-hidden, color must never be the only cue (Phase 10). */}
+              <span className="sr-only">
+                {delta > 0 ? "Up" : delta < 0 ? "Down" : "Unchanged"} vs last week: 
+              </span>
               {`${Math.abs(delta).toFixed(1)} %`}
             </span>
           )}
