@@ -24,7 +24,7 @@ import {
   Upload,
 } from "lucide-react";
 import type { Currency, Grade, SavedTradeView, SavedTradeViewFilters, Trade, TradeColumnKey } from "@cosmoz/shared";
-import { formatR, formatSignedMoney } from "@cosmoz/shared";
+import { csvCell, formatR, formatSignedMoney } from "@cosmoz/shared";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -102,10 +102,9 @@ function SortIcon({ column, state }: { column: SortKey; state: { sortKey: SortKe
 }
 
 function CSVCell(value: string | number | null): string {
-  const raw = value === null ? "" : String(value);
-  return raw.includes(",") || raw.includes("\"") || raw.includes("\n")
-    ? `"${raw.replace(/"/g, "\"\"")}"`
-    : raw;
+  // Shared definition (Phase 12): structural escape + CSV formula-injection
+  // guard for user-controlled text (notes/strategies/tags), numbers exempt.
+  return csvCell(value);
 }
 
 // ── Ledger column registry (saved views persist the visible subset) ─────────

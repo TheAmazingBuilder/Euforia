@@ -16,6 +16,7 @@ import {
   Siren as SirenIcon,
   Timer,
 } from "lucide-react";
+import { csvCell } from "@cosmoz/shared";
 import type { MonitoringOverviewResponse } from "@cosmoz/shared";
 import type { AlertRule } from "@cosmoz/shared";
 
@@ -425,7 +426,9 @@ export function EventsPanel({
 
   /** Export the FULL event ledger (system + integration) as CSV. */
   const exportLedgerCsv = () => {
-    const escape = (value: string): string => `"${value.replaceAll("\"", "\"\"")}"`;
+    // Shared csvCell (Phase 12): structural escape + formula-injection guard
+    // — provider names are user-controlled free text.
+    const escape = (value: string): string => csvCell(value);
     const rows: string[] = [
       "at,log,source,type,level,message",
       ...data.events.map((event) =>

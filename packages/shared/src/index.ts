@@ -69,6 +69,7 @@ export * from "./utils/format";
 export * from "./utils/dates";
 export * from "./utils/rules";
 export * from "./utils/integrations";
+export * from "./utils/csv";
 
 // Academy content — the single source of truth for the pedagogical corpus
 // (categories, courses, lessons, quizzes, glossary, pattern exemplars,

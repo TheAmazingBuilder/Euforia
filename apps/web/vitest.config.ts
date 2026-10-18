@@ -18,6 +18,7 @@ export default defineConfig({
       "src/lib/notifications/__tests__/**/*.spec.ts",
       "src/lib/api/__tests__/**/*.spec.ts",
       "src/lib/onboarding/__tests__/**/*.spec.ts",
+      "src/lib/__tests__/**/*.spec.ts",
     ],
   },
   resolve: {

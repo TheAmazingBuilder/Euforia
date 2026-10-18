@@ -2006,3 +2006,24 @@ Stage Summary:
 - ONBOARDING GSAP LIVRÉ: spec 15 sections exécutée de bout en bout — éligibilité fiable (jamais aux existants, jamais sur échec de statut), écritures réelles via endpoints existants, liens /accounts + /integrations sans duplication, skip/pause/resume/versioning conformes, a11y Radix + reduced-motion, zéro donnée fabriquée, zéro broker claim
 - État: api 1336/1336 · web 192/192 · probe 26/26 · build/lint/tsc/guard verts
 - Reste optionnel: run E2E navigateur contre build production + API réelle (persistance reload multi-session en conditions staging) ; R3 limiteur composite toujours en file
+
+---
+Task ID: 23
+Agent: main (Z.ai)
+Task: Phase 12 — EUFORIA FINAL AUDIT, TESTING & PRODUCTION READINESS (audit, stabilisation, release-readiness — zéro nouvelle feature)
+
+Work Log:
+- BASELINE RE-VÉRIFIÉE (pas déduite des rapports): tsc×3 OK, lint api/web 0 erreur (92 warnings web pré-existants), api vitest 1336/1336 (92 fichiers, 194s, Postgres embarqué réel), web vitest 192/192, pytest OCR 97/97, next build exit 0, api build OK
+- DÉFET #1 CORRIGÉ (CI): la garde mock-leakage était invoquée `node scripts/check-prod-mock-leakage.mjs` depuis la racine alors que le script vit à apps/web/scripts/ et résout src/public/.next depuis cwd → reproduction MODULE_NOT_FOUND exit 1 (la CI GitHub n'a JAMAIS tourné: aucun remote, seules simulations locales antérieures à la garde) → fix ci.yml: working-directory apps/web + chemin correct + commentaire; garde re-exécutée avec sémantique CI exacte → PASS
+- DÉFET #2 CORRIGÉ (sécurité MEDIUM-HIGH): injection de formule CSV — les 3 exports client (trades-table, panels-behavior, monitoring-panels-data) échappaient la structure mais pas les débuts `=`/`+`/`-`/`@`/TAB/CR; fix: csvCell() partagée unique (packages/shared/src/utils/csv.ts) — RFC 4180 + préfixe ' OWASP, numéros purs EXEMPTS (-50/-1.5 intacts), exportée via index.ts; 10 tests de régression (csv-cell.spec.ts) + include vitest étendu
+- PREUVE FINANCIÈRE LIVE (API réelle :4000, utilisateur éphémère dédié): register→verify (token log dev seulement)→login→account MOCK/DEMO→trade EURUSD BUY 0.10@1.0850 stop 1.0800 (riskAmount=50 = 0.005×0.10×100000 ✓)→close single (awaitingDecision, zéro leak P&L)→decision → pnlNet=50, rMultiple=1 (attendus calculés INDÉPENDAMMENT avant appel) ; validations 400 actives observées (strategyId/mode/grade); re-décision protégée
+- PREUVE BOUT-EN-BOUT CSV: note =HYPERLINK("http://evil.example","click") persistée via PATCH /trades/:id/notes puis EXPORT CSV depuis le build production réel (:3005) → cellule exportée "'=HYPERLINK(""http://evil.example"",""click"")" — texte, pas formule; session navigateur complète login→dashboard→trades (+1.00R/+$50 affiché)→analytics→monitoring ZÉRO page error; bouton Export CSV désactivé à liste vide (honnête)
+- AUDITS CODE (file:line): garde JWT globale APP_GUARD (identity.module.ts:93), 12 @Public/39 contrôleurs, cookie cosmoz_rt HttpOnly+Lax+secure prod (auth.service.ts:660-668), CORS '*' rejeté prod (env.schema.ts:29-32), isolation userId spot-checks (trades.repository.ts:191-192, settings, alerts CAS triggerCount JSON path + uuid-v5 P2002), pino redact + pretty dev-gated, zéro secret tracké (scan motifs), pnpm audit 9 advisories TOUTES dev-only (z-ai-web-dev-sdk jamais importé — vérifié src + chunks), 41 migrations up-to-date (prisma migrate status), goals 3 branches sans div/0, matrice R:R re-dérivée (P=N·L·[pR−(1−p)], break-even 1/(1+R)) + spec shared-risk-reward dans la batterie
+- MESURES: bundle client 5,4 Mo/72 chunks (max 724K, ECharts/lw-charts/GSAP), zéro warning build; PDF export = NOT IMPLEMENTED (honnête, phases 08 perdues jamais reconstruites)
+- BATTERIE FINALE post-fix: tsc×3 OK, web 202/202 (+10), lint 0 err, build exit 0, garde PASS; API non modifiée (git diff = preuve) → baseline 1336/1336 tient
+- RAPPORT: docs/audits/PHASE-12-FINAL-AUDIT-REPORT.md (A–K: exec summary, inventaire 12 features classées avec preuves, rapport financier, sécurité, fiabilité/performance, tableau testing F, fichiers G, checklist H, bloquants I, verdict J, handoff K)
+
+Stage Summary:
+- VERDICT: READY FOR STAGING (pas production-ready: CI GitHub jamais tournée = pas de remote, Docker jamais exécuté ici, brokers/feed réels non validés, rollback non documenté — tout listé MEDIUM/BLOCKED sans atténuation)
+- 2 défets corrigés avec régression; zéro migration, zéro dépendance nouvelle, zéro fichier API touché; programme 12 phases CONCLUS, aucune Phase 13
+- Prochaines actions owner (§K.6): remote GitHub + premier push CI réel, staging provisioning + rollback runbook, acceptation formelle advisories, brokers/feed réels

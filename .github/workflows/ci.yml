@@ -94,6 +94,10 @@ jobs:
       # browser")` never executes. We assert the guard TEST (mode.spec) and
       # grep the built client chunks for an unconditional worker start.
       - name: Mock-leakage guard (production build)
+        # The guard resolves src/, public/ and .next/ from process.cwd() —
+        # it lives in apps/web and must run from there (Phase 12 audit: the
+        # original root-relative invocation failed with MODULE_NOT_FOUND).
+        working-directory: apps/web
         run: node scripts/check-prod-mock-leakage.mjs
 
   ocr-service:

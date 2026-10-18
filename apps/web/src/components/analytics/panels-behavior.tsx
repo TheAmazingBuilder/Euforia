@@ -29,6 +29,8 @@ import { cn } from "@/lib/utils";
  * composition stays in the component (the dict.* pattern).
  */
 
+import { csvCell } from "@cosmoz/shared";
+
 type Suite = AnalyticsSuiteResponse;
 
 /** CSV export of the filtered dataset (§26 — export where the app supports it). */
@@ -37,9 +39,9 @@ function exportCsv(suite: Suite): void {
   const rows = suite.cumulativeR.map((point) => [
     String(point.index + 1),
     point.date,
-    point.symbol,
-    point.r,
-    point.cumR,
+    csvCell(point.symbol),
+    csvCell(point.r),
+    csvCell(point.cumR),
   ]);
   const csv = [header, ...rows].map((row) => row.join(",")).join("\n");
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
