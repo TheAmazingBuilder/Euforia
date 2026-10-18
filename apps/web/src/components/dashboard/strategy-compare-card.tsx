@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { RefreshCcw } from "lucide-react";
-import type { Currency, StrategyCompareWidgetConfig } from "@cosmoz/shared";
+import type { AnalyticsSuiteResponse, Currency, StrategyCompareWidgetConfig } from "@cosmoz/shared";
 import {
   formatMoney,
   formatNumber,
@@ -13,7 +13,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useAnalyticsSuite, useStrategies } from "@/lib/api/queries";
+import { useStrategies } from "@/lib/api/queries";
+import type { SuiteStatus } from "@/lib/dashboard-customization/insights-view";
 import {
   getMetricDefinition,
   strategyMetricValue,
@@ -36,10 +37,19 @@ const COLUMNS: readonly { metricId: string; label: string }[] = [
   { metricId: "AVG_DURATION", label: "Avg time" },
 ];
 
-export function StrategyCompareWidget({ config }: { config: StrategyCompareWidgetConfig }) {
-  const suite = useAnalyticsSuite({ period: "ALL" }, 50);
+export function StrategyCompareWidget({
+  config,
+  suite,
+  status,
+}: {
+  config: StrategyCompareWidgetConfig;
+  suite: AnalyticsSuiteResponse | null;
+  status: SuiteStatus;
+}) {
+  // Phase 05 §10: the dashboard-level, filter-aware suite fetch IS the data
+  // source (the previous ALL-window fetch ignored the global filters).
   const strategies = useStrategies();
-  const currency = suite.data?.currency;
+  const currency = suite?.currency;
 
 
   // Resolve configured ids against BOTH sources: the playbook catalog for
@@ -50,7 +60,7 @@ export function StrategyCompareWidget({ config }: { config: StrategyCompareWidge
       strategyId === "none"
         ? "Out of playbook"
         : (strategies.data?.strategies.find((strategy) => strategy.id === strategyId)?.name ?? "Unknown strategy");
-    const row = suite.data?.strategies.find((candidate) =>
+    const row = suite?.strategies.find((candidate) =>
       strategyId === "none" ? candidate.strategyId === null : candidate.strategyId === strategyId,
     );
     return { strategyId, name, row };
@@ -62,21 +72,21 @@ export function StrategyCompareWidget({ config }: { config: StrategyCompareWidge
         <div className="min-w-0 space-y-1">
           <CardTitle className="font-heading text-base font-semibold">Strategy comparison</CardTitle>
           <CardDescription className="text-xs">
-            All-time playbook populations — factual rows, no ranking.
+            Playbook populations under the active filters — factual rows, no ranking.
           </CardDescription>
         </div>
       </CardHeader>
       <CardContent>
-        {suite.isLoading || strategies.isLoading ? (
+        {status.isLoading || strategies.isLoading ? (
           <div className="space-y-2" aria-busy="true" aria-label="Loading strategy comparison">
             {config.strategyIds.slice(0, 4).map((id) => (
               <Skeleton key={id} className="h-10 rounded-lg" />
             ))}
           </div>
-        ) : suite.isError ? (
+        ) : status.isError ? (
           <div className="flex flex-col items-center gap-2 py-6 text-center">
             <p className="text-sm text-muted-foreground">The comparison could not load.</p>
-            <Button variant="outline" size="sm" onClick={() => void suite.refetch()}>
+            <Button variant="outline" size="sm" onClick={() => status.refetch()}>
               <RefreshCcw className="size-3.5" aria-hidden="true" />
               Retry
             </Button>

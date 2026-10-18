@@ -256,6 +256,9 @@ function selectValueOf(config: DashboardWidgetConfig, key: string): string | num
     case "ACTIVITY_HEATMAP":
       if (key === "metric") return config.metric;
       return null;
+    case "PERFORMANCE_BREAKDOWN":
+      if (key === "dimension") return config.dimension;
+      return null;
     default:
       return null;
   }

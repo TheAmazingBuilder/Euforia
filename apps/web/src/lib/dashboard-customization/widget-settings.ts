@@ -62,6 +62,18 @@ const HEATMAP_METRIC_OPTIONS = [
   { value: "TRADES", label: "Trade count (volume ink)" },
 ];
 
+/** PERFORMANCE_BREAKDOWN dimensions — kept in sync with
+ * performanceBreakdownWidgetConfigSchema. */
+const BREAKDOWN_DIMENSION_OPTIONS = [
+  { value: "STRATEGY", label: "Strategy (playbook attribution)" },
+  { value: "INSTRUMENT", label: "Instrument" },
+  { value: "DIRECTION", label: "Direction (long vs short)" },
+  { value: "WEEKDAY", label: "Weekday (user-timezone trading day)" },
+  { value: "HOUR", label: "Entry hour (UTC buckets)" },
+  { value: "DURATION", label: "Holding duration" },
+  { value: "ASSET_CLASS", label: "Asset class" },
+];
+
 /** Long/short metric ids — kept in sync with longShortWidgetConfigSchema. */
 export const LONG_SHORT_METRIC_OPTIONS: readonly { value: string; label: string }[] = [
   { value: "TRADES", label: "Closed trades" },
@@ -160,6 +172,15 @@ export function settingsGroupsFor(type: DashboardWidgetKey): SettingsGroup[] | n
           title: "Data",
           fields: [
             { kind: "select", key: "metric", label: "Cell metric", description: "What each weekday × hour cell colors by.", options: HEATMAP_METRIC_OPTIONS },
+          ],
+        },
+      ];
+    case "PERFORMANCE_BREAKDOWN":
+      return [
+        {
+          title: "Breakdown",
+          fields: [
+            { kind: "select", key: "dimension", label: "Dimension", description: "Which server-computed breakdown the table shows. Rows always carry their sample sizes.", options: BREAKDOWN_DIMENSION_OPTIONS },
           ],
         },
       ];

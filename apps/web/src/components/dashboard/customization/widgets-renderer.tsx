@@ -13,8 +13,10 @@ import { formatMoney, formatNumber } from "@cosmoz/shared";
 import { useAlerts, useRulesStatus } from "@/lib/api/queries";
 import type { RangeDays } from "@/components/dashboard/period-chips";
 import { defaultWidgetConfig } from "@/lib/dashboard-customization/widget-configs";
+import type { SuiteStatus } from "@/lib/dashboard-customization/insights-view";
 import { ActivityHeatmapWidget } from "@/components/dashboard/activity-heatmap-card";
 import { AlertsFeed } from "@/components/dashboard/alerts-feed";
+import { BehavioralInsightsWidget } from "@/components/dashboard/behavioral-insights-card";
 import { BestWorstCard } from "@/components/dashboard/best-worst-card";
 import { CalendarHeatmap } from "@/components/dashboard/calendar-heatmap";
 import { CoachInsights } from "@/components/dashboard/coach-insights";
@@ -22,8 +24,11 @@ import { DisciplineSavedCard } from "@/components/dashboard/discipline-saved-car
 import { EquityConstellation } from "@/components/dashboard/equity-constellation";
 import { GoalsPaceCard } from "@/components/dashboard/goals-pace-card";
 import { LongShortWidget } from "@/components/dashboard/long-short-card";
+import { LossStreaksWidget } from "@/components/dashboard/loss-streaks-card";
 import { MetricsCardWidget } from "@/components/dashboard/metrics-card";
 import { OpenPositionsCard } from "@/components/dashboard/open-positions-card";
+import { PerformanceBreakdownWidget } from "@/components/dashboard/performance-breakdown-card";
+import { PerformanceTrendWidget } from "@/components/dashboard/performance-trend-card";
 import { CumulativePnlCard, DailyPnlCard } from "@/components/dashboard/pnl-charts";
 import { RiskBudgetCard } from "@/components/dashboard/risk-budget-card";
 import { StrategyCompareWidget } from "@/components/dashboard/strategy-compare-card";
@@ -49,6 +54,9 @@ export interface DashboardWidgetData {
   /** Analytics-suite aggregates for the server-computed widgets (null while
    * the dashboard-level fetch is not needed / not resolved). */
   suite: AnalyticsSuiteResponse | null;
+  /** The shared fetch's status — suite-fed widgets render loading/error
+   * states from THIS (Phase 05 §10: one shared query, one source of truth). */
+  suiteStatus: SuiteStatus;
 }
 
 function HeroChip({ label, value }: { label: string; value: string }) {
@@ -163,11 +171,27 @@ export function WidgetContent({ type, data, config, globalFilters, onRangeChange
         <MetricsCardWidget config={resolvedConfig} globalFilters={globalFilters} />
       ) : null;
     case "STRATEGY_COMPARE":
-      return resolvedConfig?.kind === "STRATEGY_COMPARE" ? <StrategyCompareWidget config={resolvedConfig} /> : null;
+      return resolvedConfig?.kind === "STRATEGY_COMPARE" ? (
+        <StrategyCompareWidget config={resolvedConfig} suite={data.suite} status={data.suiteStatus} />
+      ) : null;
     case "LONG_SHORT":
-      return resolvedConfig?.kind === "LONG_SHORT" ? <LongShortWidget config={resolvedConfig} /> : null;
+      return resolvedConfig?.kind === "LONG_SHORT" ? (
+        <LongShortWidget config={resolvedConfig} suite={data.suite} status={data.suiteStatus} />
+      ) : null;
     case "ACTIVITY_HEATMAP":
-      return resolvedConfig?.kind === "ACTIVITY_HEATMAP" ? <ActivityHeatmapWidget config={resolvedConfig} /> : null;
+      return resolvedConfig?.kind === "ACTIVITY_HEATMAP" ? (
+        <ActivityHeatmapWidget config={resolvedConfig} suite={data.suite} status={data.suiteStatus} />
+      ) : null;
+    case "PERFORMANCE_BREAKDOWN":
+      return resolvedConfig?.kind === "PERFORMANCE_BREAKDOWN" ? (
+        <PerformanceBreakdownWidget config={resolvedConfig} suite={data.suite} status={data.suiteStatus} />
+      ) : null;
+    case "BEHAVIORAL_INSIGHTS":
+      return <BehavioralInsightsWidget suite={data.suite} status={data.suiteStatus} />;
+    case "LOSS_STREAKS":
+      return <LossStreaksWidget suite={data.suite} status={data.suiteStatus} />;
+    case "PERFORMANCE_TREND":
+      return <PerformanceTrendWidget suite={data.suite} status={data.suiteStatus} />;
     default:
       return null;
   }

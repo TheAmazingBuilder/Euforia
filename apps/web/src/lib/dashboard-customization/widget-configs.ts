@@ -8,6 +8,7 @@ import {
   type LongShortWidgetConfig,
   type MetricsCardWidgetConfig,
   type PnlBandWidgetConfig,
+  type PerformanceBreakdownWidgetConfig,
   type StrategyCompareWidgetConfig,
   WIDGET_CONFIG_VERSION,
 } from "@cosmoz/shared";
@@ -77,6 +78,12 @@ export const DEFAULT_ACTIVITY_HEATMAP_CONFIG: ActivityHeatmapWidgetConfig = {
   metric: "AVG_R",
 };
 
+export const DEFAULT_PERFORMANCE_BREAKDOWN_CONFIG: PerformanceBreakdownWidgetConfig = {
+  kind: "PERFORMANCE_BREAKDOWN",
+  v: WIDGET_CONFIG_VERSION,
+  dimension: "STRATEGY",
+};
+
 /**
  * Default config per widget type. Non-configurable widgets return null.
  * A fresh STRATEGY_COMPARE starts empty: the settings dialog is where the
@@ -97,6 +104,8 @@ export function defaultWidgetConfig(type: DashboardWidgetKey): DashboardWidgetCo
       return { ...DEFAULT_LONG_SHORT_CONFIG, metrics: [...DEFAULT_LONG_SHORT_CONFIG.metrics] };
     case "ACTIVITY_HEATMAP":
       return { ...DEFAULT_ACTIVITY_HEATMAP_CONFIG };
+    case "PERFORMANCE_BREAKDOWN":
+      return { ...DEFAULT_PERFORMANCE_BREAKDOWN_CONFIG };
     default:
       return null;
   }

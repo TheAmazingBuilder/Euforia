@@ -327,6 +327,13 @@ export const DASHBOARD_WIDGET_KEYS = [
   "STRATEGY_COMPARE",
   "LONG_SHORT",
   "ACTIVITY_HEATMAP",
+  // Phase 05 — performance insights, pattern analysis & trading behavior
+  // (opt-in through the widget library — the default arrangement never
+  // grows under existing dashboards).
+  "PERFORMANCE_BREAKDOWN",
+  "BEHAVIORAL_INSIGHTS",
+  "LOSS_STREAKS",
+  "PERFORMANCE_TREND",
 ] as const;
 export type DashboardWidgetKey = (typeof DASHBOARD_WIDGET_KEYS)[number];
 
@@ -443,6 +450,16 @@ export const activityHeatmapWidgetConfigSchema = z.object({
   metric: z.enum(["AVG_R", "TRADES"]),
 });
 
+/** PERFORMANCE_BREAKDOWN — one factual breakdown table (Phase 05 §9A) over
+ * the analytics-suite dimension rows. The dimension is the only choice:
+ * the rows themselves are server-computed with their sample sizes — the
+ * widget never re-derives or ranks. */
+export const performanceBreakdownWidgetConfigSchema = z.object({
+  kind: z.literal("PERFORMANCE_BREAKDOWN"),
+  v: dashboardWidgetConfigVersionSchema,
+  dimension: z.enum(["STRATEGY", "INSTRUMENT", "DIRECTION", "WEEKDAY", "HOUR", "DURATION", "ASSET_CLASS"]),
+});
+
 /**
  * The per-instance config union — a discriminated union on `kind` so each
  * widget owns its own shape (a chart, a KPI card and a comparison table
@@ -456,6 +473,7 @@ export const dashboardWidgetConfigSchema = z.discriminatedUnion("kind", [
   strategyCompareWidgetConfigSchema,
   longShortWidgetConfigSchema,
   activityHeatmapWidgetConfigSchema,
+  performanceBreakdownWidgetConfigSchema,
 ]);
 
 export type DashboardWidgetConfig = z.infer<typeof dashboardWidgetConfigSchema>;
@@ -465,6 +483,7 @@ export type MetricsCardWidgetConfig = z.infer<typeof metricsCardWidgetConfigSche
 export type StrategyCompareWidgetConfig = z.infer<typeof strategyCompareWidgetConfigSchema>;
 export type LongShortWidgetConfig = z.infer<typeof longShortWidgetConfigSchema>;
 export type ActivityHeatmapWidgetConfig = z.infer<typeof activityHeatmapWidgetConfigSchema>;
+export type PerformanceBreakdownWidgetConfig = z.infer<typeof performanceBreakdownWidgetConfigSchema>;
 
 /**
  * One widget INSTANCE placed on a layout. The instance id is stable and

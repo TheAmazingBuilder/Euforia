@@ -2,13 +2,13 @@
 
 import * as React from "react";
 import { RefreshCcw } from "lucide-react";
-import type { Currency, LongShortWidgetConfig } from "@cosmoz/shared";
+import type { AnalyticsSuiteResponse, Currency, LongShortWidgetConfig } from "@cosmoz/shared";
 import { formatMoney, formatNumber, formatPercent, formatR } from "@cosmoz/shared";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useAnalyticsSuite } from "@/lib/api/queries";
+import type { SuiteStatus } from "@/lib/dashboard-customization/insights-view";
 import { cn } from "@/lib/utils";
 import {
   directionMetricValue,
@@ -21,10 +21,20 @@ import {
  * renders "—" with an explicit note — never a fabricated zero.
  */
 
-export function LongShortWidget({ config }: { config: LongShortWidgetConfig }) {
-  const suite = useAnalyticsSuite({ period: "ALL" }, 50);
-  const currency = suite.data?.currency;
-  const directions = suite.data?.directions ?? [];
+export function LongShortWidget({
+  config,
+  suite,
+  status,
+}: {
+  config: LongShortWidgetConfig;
+  suite: AnalyticsSuiteResponse | null;
+  status: SuiteStatus;
+}) {
+  // Phase 05 §10: the dashboard-level fetch IS the data source — one shared,
+  // filter-aware suite query (the widget's previous ALL-window fetch ignored
+  // the global filter context; that wiring gap is closed).
+  const currency = suite?.currency;
+  const directions = suite?.directions ?? [];
   const longRow = directions.find((row) => row.direction === "BUY");
   const shortRow = directions.find((row) => row.direction === "SELL");
 
@@ -33,19 +43,19 @@ export function LongShortWidget({ config }: { config: LongShortWidgetConfig }) {
       <CardHeader className="flex-row items-start justify-between space-y-0">
         <div className="min-w-0 space-y-1">
           <CardTitle className="font-heading text-base font-semibold">Long vs short</CardTitle>
-          <CardDescription className="text-xs">All-time BUY and SELL populations, side by side.</CardDescription>
+          <CardDescription className="text-xs">BUY and SELL populations under the active filters, side by side.</CardDescription>
         </div>
       </CardHeader>
       <CardContent>
-        {suite.isLoading ? (
+        {status.isLoading ? (
           <div className="grid gap-3 sm:grid-cols-2" aria-busy="true" aria-label="Loading long-short comparison">
             <Skeleton className="h-28 rounded-lg" />
             <Skeleton className="h-28 rounded-lg" />
           </div>
-        ) : suite.isError ? (
+        ) : status.isError ? (
           <div className="flex flex-col items-center gap-2 py-6 text-center">
             <p className="text-sm text-muted-foreground">The comparison could not load.</p>
-            <Button variant="outline" size="sm" onClick={() => void suite.refetch()}>
+            <Button variant="outline" size="sm" onClick={() => status.refetch()}>
               <RefreshCcw className="size-3.5" aria-hidden="true" />
               Retry
             </Button>

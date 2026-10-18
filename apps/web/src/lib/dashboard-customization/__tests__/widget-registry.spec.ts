@@ -63,7 +63,18 @@ describe("widget registry", () => {
 });
 
 describe("widget registry — filter capability metadata (Phase 03 §8)", () => {
-  const SUITE_FED = new Set(["METRICS_CARD", "STRATEGY_COMPARE", "LONG_SHORT", "ACTIVITY_HEATMAP"]);
+  const SUITE_FED = new Set([
+    "METRICS_CARD",
+    "STRATEGY_COMPARE",
+    "LONG_SHORT",
+    "ACTIVITY_HEATMAP",
+    // Phase 05 widgets are suite-fed too (spec §9/§10 — the shared filter-
+    // aware dashboard fetch is their only data source).
+    "PERFORMANCE_BREAKDOWN",
+    "BEHAVIORAL_INSIGHTS",
+    "LOSS_STREAKS",
+    "PERFORMANCE_TREND",
+  ]);
 
   it("declares filter support for EVERY registered widget", () => {
     for (const key of DASHBOARD_WIDGET_KEYS) {

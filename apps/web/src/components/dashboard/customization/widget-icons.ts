@@ -8,7 +8,11 @@ import {
   Gauge,
   GitCompareArrows,
   Grid3x3,
+  Lightbulb,
+  LineChart,
+  PieChart,
   Target,
+  TrendingDown,
   Trophy,
   type LucideIcon,
 } from "lucide-react";
@@ -29,6 +33,10 @@ const WIDGET_ICONS: Record<string, LucideIcon> = {
   strategies: GitCompareArrows,
   longshort: ArrowLeftRight,
   activity: Grid3x3,
+  breakdown: PieChart,
+  insights: Lightbulb,
+  streaks: TrendingDown,
+  trend: LineChart,
 };
 
 export function widgetIcon(iconId: string): LucideIcon {

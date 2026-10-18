@@ -48,10 +48,20 @@ import { openTradeModal } from "@/lib/hooks/use-trade-modal";
  * persistence, self-expires. */
 const FRESH_ACCOUNT_WINDOW_MS = 48 * 60 * 60 * 1000;
 
-/** Widget types fed by the dashboard-level analytics-suite fetch (ALL
- * window). METRICS_CARD manages its OWN per-period fetches — it is
- * deliberately NOT in this list (no double fetch, §14). */
-const SUITE_WIDGET_TYPES = new Set(["STRATEGY_COMPARE", "LONG_SHORT", "ACTIVITY_HEATMAP"]);
+/** Widget types fed by the dashboard-level analytics-suite fetch (filter-
+ * aware — Phase 05 §10 closed the gap where the comparison widgets fetched
+ * their own ALL window and ignored the global filter context). METRICS_CARD
+ * manages its OWN per-period fetches — it is deliberately NOT in this list
+ * (no double fetch, §14). */
+const SUITE_WIDGET_TYPES = new Set([
+  "STRATEGY_COMPARE",
+  "LONG_SHORT",
+  "ACTIVITY_HEATMAP",
+  "PERFORMANCE_BREAKDOWN",
+  "BEHAVIORAL_INSIGHTS",
+  "LOSS_STREAKS",
+  "PERFORMANCE_TREND",
+]);
 
 function useDashboardGreeting(): string {
   const { user } = useAuth();
@@ -234,6 +244,11 @@ export function DashboardView({ description }: DashboardViewProps) {
           rulesStatus: rules.data,
           alerts: alerts.data,
           suite: needsSuite ? (suiteQuery.data ?? null) : null,
+          suiteStatus: {
+            isLoading: needsSuite ? suiteQuery.isPending || suiteQuery.isLoading : false,
+            isError: needsSuite ? Boolean(suiteQuery.isError) : false,
+            refetch: () => void suiteQuery.refetch(),
+          },
         }
       : null;
 

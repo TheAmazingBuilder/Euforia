@@ -424,10 +424,11 @@ describe("dashboard widget order (Phase 15 §19)", () => {
     const parsed = userPreferencesSchema.parse(ok.json()) as UserPreferences;
     expect(parsed.dashboard.widgetOrder).toEqual(reversed);
 
-    // The canon grew with Phase 02 (11 widget types) — an oversized order
-    // must exceed max(DASHBOARD_WIDGET_KEYS.length) to be rejected.
+    // The canon grew with Phase 02 (11) and Phase 05 (15 widget types) —
+    // an oversized order must exceed max(DASHBOARD_WIDGET_KEYS.length) to be
+    // rejected, so the generator repeats the 7 canonical keys enough times.
     const oversized = await patchDomain(ctx.authHeader, "dashboard", {
-      widgetOrder: [...keys, ...keys].slice(0, DASHBOARD_WIDGET_KEYS.length + 1),
+      widgetOrder: [...keys, ...keys, ...keys].slice(0, DASHBOARD_WIDGET_KEYS.length + 1),
     });
     expectValidationError(oversized.statusCode, oversized.json());
   });

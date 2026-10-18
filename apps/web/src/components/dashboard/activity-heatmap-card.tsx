@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useTheme } from "next-themes";
 import { RefreshCcw } from "lucide-react";
-import type { ActivityHeatmapWidgetConfig } from "@cosmoz/shared";
+import type { ActivityHeatmapWidgetConfig, AnalyticsSuiteResponse } from "@cosmoz/shared";
 import { ANALYTICS_HOUR_BUCKETS, formatNumber, formatR, parseDecimal } from "@cosmoz/shared";
 import type { EChartsCoreOption } from "echarts/core";
 
@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EChart } from "@/components/charts/echart";
-import { useAnalyticsSuite } from "@/lib/api/queries";
+import type { SuiteStatus } from "@/lib/dashboard-customization/insights-view";
 import { getChartTheme } from "@/lib/utils/chart-theme";
 import { withAlpha } from "@/lib/utils/color";
 
@@ -32,13 +32,22 @@ const WEEKDAY_ROWS = [
   { index: 6, label: "SAT" },
 ];
 
-export function ActivityHeatmapWidget({ config }: { config: ActivityHeatmapWidgetConfig }) {
+export function ActivityHeatmapWidget({
+  config,
+  suite,
+  status,
+}: {
+  config: ActivityHeatmapWidgetConfig;
+  suite: AnalyticsSuiteResponse | null;
+  status: SuiteStatus;
+}) {
   const { resolvedTheme } = useTheme();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const theme = React.useMemo(() => getChartTheme(), [resolvedTheme]);
 
-  const suite = useAnalyticsSuite({ period: "ALL" }, 50);
-  const heatmapCells = suite.data?.heatmap;
+  // Phase 05 §10: the dashboard-level, filter-aware suite fetch IS the data
+  // source (the previous ALL-window fetch ignored the global filters).
+  const heatmapCells = suite?.heatmap;
   const cells = React.useMemo(() => heatmapCells ?? [], [heatmapCells]);
 
   const option = React.useMemo<EChartsCoreOption | null>(() => {
@@ -217,12 +226,12 @@ export function ActivityHeatmapWidget({ config }: { config: ActivityHeatmapWidge
         </div>
       </CardHeader>
       <CardContent>
-        {suite.isLoading ? (
+        {status.isLoading ? (
           <Skeleton className="h-56 w-full rounded-lg" aria-busy="true" aria-label="Loading heatmap" />
-        ) : suite.isError ? (
+        ) : status.isError ? (
           <div className="flex flex-col items-center gap-2 py-6 text-center">
             <p className="text-sm text-muted-foreground">The heatmap could not load.</p>
-            <Button variant="outline" size="sm" onClick={() => void suite.refetch()}>
+            <Button variant="outline" size="sm" onClick={() => status.refetch()}>
               <RefreshCcw className="size-3.5" aria-hidden="true" />
               Retry
             </Button>

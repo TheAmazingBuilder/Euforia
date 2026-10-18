@@ -1848,3 +1848,39 @@ Stage Summary:
 - DÉCISION D'EXÉCUTION (user « continu » + règle evidence-only) : reconstruire dans l'ordre des dépendances réelles — Phase 05 → Phase 06 (specs verbatim ON DISK = contrat) ; puis Phase 10 → Phase 11 selon les condensés de conversation (documenté HONNÊTEMENT comme specs perdues, condensés seulement) ; contenu connu 08/09 absorbé dans 10/11. Si l'owner re-fournit les specs 08–11 originales, re-conformité évaluée.
 - RÈGLE RENFORCÉE : commit immédiat après chaque livrable (déjà verrouillée) + worklog à jour à chaque tâche — c'est ce qui a permis cette reprise.
 - Prochain : Phase 05 rebuild (audit §2 puis implémentation).
+
+---
+Task ID: 15-phase05-step1
+Agent: Super Z (main)
+Date: 2026-10-19
+
+Task: Phase 05 Dashboard Customization — étape 1/3 : moteur d'insights déterministe (shared) + sections suite + miroir MSW (audit §2 fait via Explore agent très thorough).
+
+Work Log:
+- AUDIT §2 (Explore): suite = analytics-suite.ts (AnalyticsModule, route propriétaire) + 2 builders legacy parité (stats.service/stats.suite); sections existantes couvrent déjà strategies/symbols/directions/weekdays/hours/heatmap/psychology.tilt/advanced.streaks/anomalies(TAIL_LOSS|OVERTRADING|LOSS_STREAK); analyticsTradeRow DROPS emotion/confidence/tags (seam honnête); TROUVÉ ÉCART RÉEL: les 3 widgets suite-fed (STRATEGY_COMPARE/LONG_SHORT/ACTIVITY_HEATMAP) ignorent data.suite (fetch propre {period:ALL}) — registre ment vs implémentation, à corriger étape 3 (spec §10)
+- IMPLÉMENTÉ (commit 141a247): packages/shared/src/analytics/insights.ts — UN moteur pur consommé par l'API ET le mock (parité inviolable); schemas additifs (durations/streakProfile/insights) dans analyticsSuiteResponseSchema; 3 sites API branchés (routed + 2 legacy) depuis les rows déjà triées — zéro relecture, zéro N+1 (§11)
+- Pièges rencontrés: collision `durations` (histogramme existant) → insightDurations; MultiEdit non-atomique a corrompu le bloc meta de stats.suite.ts (restauré + vérifié par tsc); tests initiaux faux (bucket index, streak fermée par un win) corrigés — 17/17
+- MÉTHODE: breakeven (pnlNet=0) n'extend ni ne break une streak — convention advanced.streaks reprise verbatim; findings < 5 obs/groupe SUPPRIMÉS; labels fiabilité = bandes d'observations (jamais « confiance statistique »); money null si multi-devise (R/count/rate survivent)
+
+Stage Summary:
+- Étape 1/3 FAITE: moteur + contrats + 2 consommateurs prouvés (api unit 17/17, e2e analytics 15/15, tsc shared/api/web 0).
+- Reste: étape 2 = clés widgets shared + registry + 4 composants (PERFORMANCE_BREAKDOWN/BEHAVIORAL_INSIGHTS/LOSS_STREAKS/PERFORMANCE_TREND); étape 3 = câblage filtres des widgets suite-fed (fix l'écart §10) + tests web + sonde + rapport A–H + roadmap.
+
+---
+Task ID: 16-phase05-steps2-3
+Agent: Super Z (main)
+Date: 2026-10-19
+
+Task: Phase 05 Dashboard Customization — étapes 2/3 et 3/3 (widgets + intégration filtres) puis vérification de bout en bout et rapport.
+
+Work Log:
+- Étape 2/3: shared settings += 4 clés widgets (PERFORMANCE_BREAKDOWN/BEHAVIORAL_INSIGHTS/LOSS_STREAKS/PERFORMANCE_TREND, opt-in via library — DEFAULT_LAYOUT_WIDGET_KEYS intouché) + performanceBreakdownWidgetConfigSchema (dimension 7 valeurs); registry 4 entrées (suiteBacked, catégorie PERFORMANCE); widget-configs (défaut), widget-settings (groupe Breakdown), dialog selectValueOf, 4 icônes Lucide; composants: performance-breakdown-card (table factuelle 7 colonnes, cap 8 honnête + « +N more », bannière multi-devise), behavioral-insights-card (findings + chips fiabilité + n + période + methodology <details>, empty state explicite), loss-streaks-card (trio + barres distribution + afterStreak + règle breakeven verbatim), performance-trend-card (6 semaines ISO + ΔR vs semaine précédente + footnote « not a forecast »); insights-view.ts (view-models purs: projections verbatim, tri présentation, formatage typé)
+- Étape 3/3 (fix de l'écart §10 trouvé à l'audit): SUITE_WIDGET_TYPES += 4; les 3 widgets Phase 02 refactorés pour consommer data.suite/suiteStatus (leur fetch {period:ALL} propre qui ignorait les filtres globaux est SUPPRIMÉ — registre mentait); descriptions mises à jour (« under the active filters »); dashboard-view fournit suiteStatus {isLoading, isError, refetch}
+- Tests: insights-view.spec.ts 8 tests; widget-registry.spec.ts SUITE_FED mis à jour; settings e2e: le générateur d'ordre oversized du test (7 clés dupliquées = 14 ≤ 15) ne dépassait plus le bound après le passage à 15 clés — le TEST est corrigé (3× duplication), le bound max(DASHBOARD_WIDGET_KEYS.length) est inchangé et correct
+- Sonde Playwright scripts/probe-dashboard-insights.js 21/21 après 3 vraies corrections de sonde (attente hydration login; dashboard-customize n'existe qu'en view mode → session d'édition unique pour les 4 ajouts; gear view-mode dans le wrapper de section grid, pas dans la Card). SONDE A TROUVÉ 4 FINDINGS réels sur le dataset mock + 6 semaines de trend + règle breakeven rendue
+- Régression: probe-dashboard-filters 28/28; suite API complète 1316/1316 (2 fails initiaux = le même test settings oversized-order, corrigé); web vitest 152/152; tsc shared/api/web 0; eslint 0 fichiers changés; next build exit 0
+- Rapport docs/audits/DASHBOARD-CUSTOMIZATION-PHASE-05-REPORT.md (A–H, verdict COMPLETE périmètre v1, limites §F honnêtes: emotion/tags indisponibles, RISK_BEHAVIOR désactivé multi-devise, pas de drill-down faute de contrat deep-link); roadmap: Phase 05 → DONE, condition Phase 06 remplie
+
+Stage Summary:
+- PHASE 05 LIVRÉE (rebuild from verbatim spec après le restore): UN moteur déterministe partagé API+mock (parité inviolable), 3 sections suite additives, 4 widgets opt-in, câblage filtres §10 fermé pour les 7 widgets suite-fed
+- Prochaine: Phase 06 (workspace management, layout collections & templates — spec verbatim on disk, condition §2 remplie) — PUIS Phase 10/11 selon l'instruction owner (specs perdues, condensés de conversation documentés)
