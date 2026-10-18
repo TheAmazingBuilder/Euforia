@@ -806,6 +806,88 @@ export type LocalizationPreferences = z.infer<typeof localizationPreferencesSche
 export const localizationPreferencesInputSchema = localizationPreferencesSchema;
 export type LocalizationPreferencesInput = z.infer<typeof localizationPreferencesInputSchema>;
 
+// ── Onboarding (first-run experience lifecycle) ─────────────────────────────
+/**
+ * The onboarding domain stores ONLY the lifecycle of the first-run experience
+ * (progress pointer + terminal state). It deliberately carries NO trading or
+ * display preferences: the preferences step of the tour writes through the
+ * EXISTING domains (trading via PATCH /me/preferences/trading, timezone via
+ * PATCH /me), keeping one source of truth per setting.
+ *
+ * Backward-compatibility contract (deliberate deviation from the other nine
+ * domains): `onboarding` is OPTIONAL in the root document. `undefined` means
+ * "the user's preferences doc predates onboarding" — such users are NEVER
+ * auto-shown the first-run experience (the tour must not be retro-forced on
+ * existing users). Fresh documents (lazily provisioned after this contract
+ * ships) always carry the NOT_STARTED default, so every genuinely new user
+ * is eligible exactly once.
+ */
+export const ONBOARDING_VERSION = 1;
+
+export const onboardingStatusSchema = z.enum([
+  "NOT_STARTED",
+  "IN_PROGRESS",
+  "COMPLETED",
+  "SKIPPED",
+]);
+export type OnboardingStatus = z.infer<typeof onboardingStatusSchema>;
+
+export const onboardingStepIdSchema = z.enum([
+  "welcome",
+  "tour",
+  "preferences",
+  "accounts",
+  "personalize",
+  "ready",
+]);
+export type OnboardingStepId = z.infer<typeof onboardingStepIdSchema>;
+
+export const onboardingPreferencesSchema = z
+  .object({
+    status: onboardingStatusSchema,
+    /** Writer version — a future revision reads this to avoid re-forcing the tour. */
+    version: z.number().int().min(1),
+    /** Resume pointer — null once the flow reached a terminal state. */
+    currentStep: onboardingStepIdSchema.nullable(),
+    startedAt: isoDateTimeSchema.nullable(),
+    completedAt: isoDateTimeSchema.nullable(),
+    skippedAt: isoDateTimeSchema.nullable(),
+    /**
+     * Meaningful milestones only (steps the user confirmed) — never transient
+     * animation/progress state (§ persistence rule: no animation frames on
+     * the wire).
+     */
+    stepsDone: z.array(onboardingStepIdSchema),
+  })
+  .superRefine((value, ctx) => {
+    const addIssue = (path: string, message: string) =>
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: [path], message });
+    const isTerminal = value.status === "COMPLETED" || value.status === "SKIPPED";
+
+    if (isTerminal && value.currentStep !== null) {
+      addIssue("currentStep", "currentStep must be null once onboarding is COMPLETED or SKIPPED.");
+    }
+    if (!isTerminal && (value.completedAt !== null || value.skippedAt !== null)) {
+      addIssue("completedAt", "Terminal timestamps are only allowed on COMPLETED or SKIPPED.");
+    }
+    if (value.status === "COMPLETED" && value.completedAt === null) {
+      addIssue("completedAt", "completedAt is required when status is COMPLETED.");
+    }
+    if (value.status === "SKIPPED" && value.skippedAt === null) {
+      addIssue("skippedAt", "skippedAt is required when status is SKIPPED.");
+    }
+    if (value.status === "IN_PROGRESS" && value.startedAt === null) {
+      addIssue("startedAt", "startedAt is required when status is IN_PROGRESS.");
+    }
+    if (new Set(value.stepsDone).size !== value.stepsDone.length) {
+      addIssue("stepsDone", "stepsDone must not contain duplicates.");
+    }
+  });
+
+export type OnboardingPreferences = z.infer<typeof onboardingPreferencesSchema>;
+export const onboardingPreferencesInputSchema = onboardingPreferencesSchema;
+export type OnboardingPreferencesInput = z.infer<typeof onboardingPreferencesInputSchema>;
+
 // ── Root document ────────────────────────────────────────────────────────────
 
 export const userPreferencesSchema = z.object({
@@ -819,6 +901,13 @@ export const userPreferencesSchema = z.object({
   academy: academyPreferencesSchema,
   privacy: privacyPreferencesSchema,
   localization: localizationPreferencesSchema,
+  /**
+   * OPTIONAL by contract — see the onboarding section above: docs stored
+   * before the first-run experience shipped carry no onboarding key, and
+   * that absence is the "predates onboarding" marker (never re-force the
+   * tour on existing users).
+   */
+  onboarding: onboardingPreferencesSchema.optional(),
   updatedAt: isoDateTimeSchema,
 });
 
@@ -835,6 +924,7 @@ export const preferenceDomainSchema = z.enum([
   "academy",
   "privacy",
   "localization",
+  "onboarding",
 ]);
 export type PreferenceDomain = z.infer<typeof preferenceDomainSchema>;
 
@@ -878,8 +968,13 @@ export type RequestAccountDeletionResponse = z.infer<typeof requestAccountDeleti
 
 // ── Defaults (safe, conservative — MASTER PROMPT §Validation) ───────────────
 
-/** Preference defaults without the server-managed envelope fields. */
-export type UserPreferencesDefaults = Omit<UserPreferences, "userId" | "updatedAt">;
+/** Preference defaults without the server-managed envelope fields.
+ * The onboarding domain is REQUIRED at the defaults level (fresh documents
+ * always carry it — that is how new users become eligible exactly once)
+ * even though it stays OPTIONAL on the wire for backward compatibility. */
+export type UserPreferencesDefaults = Omit<UserPreferences, "userId" | "updatedAt"> & {
+  onboarding: OnboardingPreferences;
+};
 
 /**
  * Safe defaults for every domain — deep-frozen intent, mutable shape (the
@@ -1028,5 +1123,14 @@ export const DEFAULT_USER_PREFERENCES: UserPreferencesDefaults = {
     numberFormat: "LOCALE",
     currencyDisplay: "CODE",
     weekStart: "MONDAY",
+  },
+  onboarding: {
+    status: "NOT_STARTED",
+    version: ONBOARDING_VERSION,
+    currentStep: null,
+    startedAt: null,
+    completedAt: null,
+    skippedAt: null,
+    stepsDone: [],
   },
 };

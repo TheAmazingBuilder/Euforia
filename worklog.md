@@ -1982,3 +1982,27 @@ Stage Summary:
 - HEAD fc24210 = état final Oryon (303 commits) — rien à committer de plus, arbre propre
 - Sauvegardes dans download/ : bundle git 311 Mo + tarball 618 Mo + manifest
 - LIMITE HONNÊTE : download/ non garanti contre un rollback sandbox ; seule garantie absolue = push GitHub (en attente URL+token de l'owner, déjà noté dans les sessions précédentes)
+
+---
+Task ID: 22
+Agent: main (Z.ai)
+Task: Onboarding GSAP — implémentation complète de l'expérience de première utilisation (spec 15 sections, roadmap §5 ligne 7 + §6)
+
+Work Log:
+- PHASE A DISCOVERY: architecture vérifiée (AuthGate/AuthProvider machine initializing→authenticated, 9 domaines de préférences PATCH /me/preferences/:domain, vitest web node-only + sondes Playwright comme infra UI établie, thèmes Encre/Carbone/Papier, i18n EN-only dictionnaire typé, navigation réelle 20 modules)
+- CONTRAT PARTAGÉ (packages/shared/schemas/settings.ts): domaine `onboarding` OPTIONNEL dans userPreferencesSchema — absence = utilisateur antérieur (jamais de tour rétro-forcé, zéro migration) ; défauts avec NOT_STARTED (provisioning paresseux des nouveaux = éligibles exactement une fois) ; superRefine invariants (currentStep null si terminal, completedAt/skippedAt réservés au terminal et requis, startedAt requis en IN_PROGRESS, stepsDone dédupliqués, version int ≥ 1) ; ONBOARDING_VERSION=1 ; UserPreferencesDefaults durci (onboarding requis au niveau défauts)
+- API: entrée onboarding dans les 2 cartes PREFERENCE_DOMAIN_SCHEMAS (service + domain/settings-rules, imposée par le compilateur) ; ZÉRO migration, ZÉRO route nouvelle ; e2e onboarding.e2e.spec.ts 11/11 sur Postgres réel (provisioning, doc legacy sans clé, persistance pointeur, complétion + re-parse contrat complet, 9 rejets 400, strip envelope, skip sans complétion fabriquée, reset domaine seul, 401, isolation Alice/Bob)
+- WEB LIB PURE (lib/onboarding/): steps.ts (ordre + normalizeStepId ghost→welcome), state.ts (resolveOnboardingEligibility — fetch en échec = error JAMAIS eligible ; resolveResumeStep — pointer/ghost/version étrangère ; builders start/step/complete/skip — skip ne fabrique rien ; overlays trading/appearance whole-domain), 23 tests unitaires PASS
+- WEB HOOK (use-onboarding.ts): contrôleur TanStack — completions/skip/savePreferences/saveLayout en mutateAsync attendus (rollback cache en échec, jamais de faux succès) ; timezone via PATCH /me (miroir resynchronisé), devise+session via domaine trading (ne touche JAMAIS la devise de compte) ; mirrorTimezone exposé
+- WEB UI (components/onboarding/): overlay Radix Dialog full-screen (focus trap, blocage pointeurs, ESC/outside = pause + toast, focus titre par étape, aria-live step X/6) ; open DÉRIVÉ (eligible && !paused) + init d'épisode pendant le render (pattern React documenté, lint set-state-in-effect respecté) ; 6 étapes (welcome/tour/preferences/accounts/personalize/ready) ; progress bar GSAP scaleX ; OnboardingStatusError (reprise délibérée, jamais eligible par défaut) ; i18n dict complet
+- GSAP: gsap@3.15 + @gsap/react@2.1.2 installés (seules anims du web) ; motion.ts useGSAP scoppé auto-revert StrictMode-safe ; gsap.from partout (échec d'anim = écran statique fonctionnel) ; sorties avec latch one-shot + fallback 450ms ; usePrefersReducedMotion (matchMedia listener) → zéro mouvement
+- MSW PARITÉ: carte domaines du store mock étendue ; provisioning mock hérite des défauts (nouveau domaine servi automatiquement)
+- INCIDENT RÉSOLU: serveur dev longue-date (turbopack, up depuis 19:48) servait un module graph périmé du layout (watcher miss) → overlay jamais montée ; diagnostic par chunks + logs instrumentés (supprimés), résolu par restart ; scripts debug supprimés
+- SONDE scripts/probe-onboarding.js: 26/26 PASS (parcours complet, écritures relues COMPLETED+EUR+PERFORMANCE_FIRST, skip SKIPPED sans complétion, pause IN_PROGRESS au pointer tour, suppression in-session SPA, focus/Tab/refocus, 390px sans overflow, reduced-motion, ZÉRO page error sur 6 contextes) ; fetchPrefs corrigé /api (préfixe dev mock)
+- BATTERIE FINALE: api 1336/1336 (92 fichiers) · web 192/192 · tsc×3 OK · eslint 0 erreur · next build exit 0 · garde mock-leakage PASS
+- RAPPORT: docs/audits/ONBOARDING-GSAP-REPORT.md (A–J, verdict COMPLETE, limites honnêtes §H: persistance post-reload prouvée côté serveur (e2e Postgres réel) + unitaires de reprise + pointeur écrit en UI réelle — run navigateur production+API réelle restant optionnel pour un runbook staging) ; roadmap §5 ligne 7 → DONE, §6 clôturée
+
+Stage Summary:
+- ONBOARDING GSAP LIVRÉ: spec 15 sections exécutée de bout en bout — éligibilité fiable (jamais aux existants, jamais sur échec de statut), écritures réelles via endpoints existants, liens /accounts + /integrations sans duplication, skip/pause/resume/versioning conformes, a11y Radix + reduced-motion, zéro donnée fabriquée, zéro broker claim
+- État: api 1336/1336 · web 192/192 · probe 26/26 · build/lint/tsc/guard verts
+- Reste optionnel: run E2E navigateur contre build production + API réelle (persistance reload multi-session en conditions staging) ; R3 limiteur composite toujours en file

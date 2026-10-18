@@ -154,6 +154,7 @@ import {
   academyPreferencesSchema,
   privacyPreferencesSchema,
   localizationPreferencesSchema,
+  onboardingPreferencesSchema,
 } from "@cosmoz/shared";
 
 import { buildFixtureData, USER_TZ, type FixtureData } from "./fixtures";
@@ -173,6 +174,7 @@ const PREFERENCE_DOMAIN_SCHEMAS = {
   academy: academyPreferencesSchema,
   privacy: privacyPreferencesSchema,
   localization: localizationPreferencesSchema,
+  onboarding: onboardingPreferencesSchema,
 } as const;
 
 /**

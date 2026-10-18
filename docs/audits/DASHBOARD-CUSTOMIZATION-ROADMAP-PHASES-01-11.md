@@ -115,11 +115,11 @@ Le §G du rapport Phase 07 fixait trois prérequis. État actuel :
 | 4 | **Phase 06 — Workspace management, layout collections & templates** | **DONE** (2026-10-19 — espaces de travail = collection de layouts existante étendue: defaultLayoutId + chaîne de repli documentée, templates utilisateur figés max 10 avec badges built-in/yours, clonage indépendant prouvé; rapport `DASHBOARD-CUSTOMIZATION-PHASE-06-REPORT.md`, limites §E) |
 | 5 | **Phases 10 → 11** | **DONE** (2026-10-19 — specs originales perdues au restore, exécutées depuis les condensés de conversation documentés honnêtement: Phase 10 pass UX/a11y ciblé `90f8750` + rapport A–G; Phase 11 validation intégration avec matrice A–K PASS + classification 12 features `DASHBOARD-CUSTOMIZATION-PHASE-11-REPORT.md`. Phases 08/09: specs ET implémentations perdues, condensés absorbés dans 10/11 — re-upload owner = re-conformité) |
 | 6 | R3 — limiteur composite compte+IP + régressions e2e | Hors série, en file (sécurité) |
-| 7 | Onboarding GSAP — **implémentation** (la spec 15 sections a été reçue ; aucun code commité — voir §6) | En file après la série / R3 selon priorité owner |
+| 7 | Onboarding GSAP — **implémentation** (la spec 15 sections a été reçue ; aucun code commité — voir §6) | **DONE** (2026-10-19 — spec ré-exécutée intégralement : domaine `onboarding` du document de préférences optionnel + rétro-compat contrat, 6 étapes GSAP scoppées + reduced-motion, écritures réelles via endpoints existants (PATCH /me, domaines trading/appearance), liens vers /accounts et /integrations sans duplication, skip/pause/resume/versioning documentés ; e2e API 11/11 sur Postgres réel + 23 unitaires web + sonde Playwright 26/26 ; rapport `ONBOARDING-GSAP-REPORT.md` — voir §6) |
 
 ---
 
-## 6. Note sur l'onboarding GSAP (correction de statut)
+## 6. Note sur l'onboarding GSAP (correction de statut → clôture)
 
 Le sujet a été raised par l'owner (« on a déjà fait l'onboarding GSAP »). Vérification
 faite le 2026-10-17, evidence complète :
@@ -132,9 +132,10 @@ faite le 2026-10-17, evidence complète :
   worklog d'implémentation. La seule occurrence « onboarding » dans `apps/web/src`
   est une carte de données mock (tasky-view, « Redesign onboarding flow »).
 
-Statut honnête : **spec faite, implémentation non commencée** — la phase reste en
-file (§5, ligne 7). Si l'owner a une preuve contraire (capture, repo distant), elle
-sera vérifiée immédiatement.
+**CLÔTURE (2026-10-19)** : la spec (re-fournie verbatim par l'owner) a été exécutée
+intégralement — implémentation + tests + rapport, verdict COMPLETE (limites
+honnêtes §H du rapport, aucune claim production). `gsap@3.15` + `@gsap/react@2.1.2`
+sont désormais les seules libs d'animation du web. La ligne 7 du §5 est passée DONE.
 
 ---
 
