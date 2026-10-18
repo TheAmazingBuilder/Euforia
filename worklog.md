@@ -1919,3 +1919,21 @@ Work Log:
 Stage Summary:
 - PHASE 10 LIVRÉE (périmètre ciblé): pass de cohérence/renforcement, ZÉRO dépendance nouvelle, zéro token changé, zéro changement métier
 - Reste: Phase 11 (Integration & E2E validation — condensé de conversation, scénarios A–K) — puis série au complet
+
+---
+Task ID: 19-phase11
+Agent: Super Z (main)
+Date: 2026-10-19
+
+Task: Phase 11 Dashboard Customization — Integration & E2E validation (SPEC ORIGINALE PERDUE — condensé de conversation, documenté honnêtement).
+
+Work Log:
+- Inventaire des 12 features avec preuves (modules API + handlers MSW + fichiers e2e): 9 Implemented (customization 01, configs 02, filtres/vues 03, goals 04, insights 05, workspaces 06, alerts 07, suite backend, backup 12 via backup.e2e) ; 3 PARTIAL/mock-only HONNÊTES: bridge MT5 (sim-verified seulement, pas de broker réel ici), OCR (pipeline+e2e déterministes, sidecar vision inexercé), Oryon market feed (client MSW par défaut; analyses API e2e; bridge live opt-in non validé contre un vrai feed)
+- Batterie complète dans l'ordre prescrit: API unit 812/812 (49 fichiers) → API e2e 507/507 (41 fichiers, Postgres réel) → web vitest 161/161 → probes régression 16/16+21/21+28/28 (zéro page errors) → tsc×3 OK → eslint OK → build exit 0
+- Matrice scénarios A–K: PASS partout avec evidence mappée (A filtres=e2e suite battery+query-key identity; B/C vues+workspaces=settings e2e isolation+wholesale merge; D configs=repair suites; E goals; F insights; G alerts; H exports=backup.e2e; I immutabilité=determinism e2e+structuredClone tests; J races=clé=query-string+serveur stateless+CAS alerts (documenté comme preuve architecturale, PAS un harness de timing); K thèmes/responsive/a11y=probes+audit Phase 10)
+- ZÉRO nouveau défaut reproduit; les défauts trouvés pendant le cycle (gap §10, générateur e2e oversized-order) étaient corrigés aux phases 05/06 — référencés
+- Rapport docs/audits/DASHBOARD-CUSTOMIZATION-PHASE-11-REPORT.md (A–J, note d'honnêteté en tête: spec perdue, condensé seul; jamais de claim d'intégration production pour bridge/OCR/feed); roadmap: 10/11 → DONE avec la note 08/09 (specs+implémentations perdues, condensés absorbés)
+
+Stage Summary:
+- SÉRIE DASHBOARD CUSTOMIZATION AU COMPLET dans le repo: 01/02/03/05/06/07/10/11 DONE avec rapports; 08/09 perdus (condensés absorbés dans 10/11, note roadmap); état final: api 1319/1319, web 161/161, probes 65/65, builds verts
+- Prochaine (owner): re-upload éventuel des specs 08-11 originales pour re-conformité; ou les 2 specs MASTER app-level trouvées dans upload/ (testing/QA + fullstack-audit) constituent la feuille de route suivante naturelle
