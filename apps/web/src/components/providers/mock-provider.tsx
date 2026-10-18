@@ -6,12 +6,13 @@ import { API_MOCKED } from "@/lib/api/mode";
 
 /**
  * Boots the MSW worker before rendering children — but ONLY when mocking is
- * active. Mocking is the DEFAULT (the canonical preview needs zero env); the
- * two ways to leave mock mode:
- *   - NEXT_PUBLIC_API_LIVE=true (the live bridge — explicit opt-in)
- *   - NEXT_PUBLIC_API_MOCKED=false (explicit legacy switch)
- * When neither applies this provider is a transparent passthrough and the
- * real NestJS API serves the same contract.
+ * active per the canonical mode check (lib/api/mode.ts):
+ *   - NEXT_PUBLIC_API_MOCKED=true (explicit opt-in — demo/preview), or
+ *   - zero-env development (next dev).
+ * Production builds default to the REAL API and cannot accidentally
+ * activate the mock layer (MASTER QA spec §14.9). When mocking is off this
+ * provider is a transparent passthrough and the real NestJS API serves the
+ * same contract.
  *
  * The start promise is a module-level singleton: React Strict Mode
  * double-invokes effects in dev, and MSW throws when started twice.

@@ -8,10 +8,16 @@ from __future__ import annotations
 import base64
 import hashlib
 import io
+import os
 
 from PIL import Image, ImageDraw, ImageFont
 
 TOKEN = "test-internal-token-0123456789abcdef"  # >= 32 chars
+
+# app.config reads OCR_SERVICE_TOKEN ONCE at import (fail-fast §27). Set it
+# here, at conftest import — BEFORE any test module imports app.main — so
+# every file works standalone AND in any pytest ordering.
+os.environ.setdefault("OCR_SERVICE_TOKEN", TOKEN)
 
 
 def _font(size: int = 28):

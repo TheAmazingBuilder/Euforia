@@ -18,7 +18,10 @@ import {
   EngineTransientError,
   EngineUnprocessableError,
   OCR_CONTRACT_VERSION,
+  engineDocumentResponseSchema,
   engineResponseSchema,
+  type EngineDocumentRecognizeRequest,
+  type EngineDocumentRecognizeResponse,
   type EngineRecognizeRequest,
   type EngineResponse,
   type OcrEngine,
@@ -36,7 +39,34 @@ export class FastApiOcrEngine implements OcrEngine {
 
   constructor(private readonly config: AppConfig) {}
 
+  /** Document (PDF statement) capability — the sidecar serves /v1/recognitions/document. */
+  readonly supportsDocuments = true;
+
   async recognize(request: EngineRecognizeRequest): Promise<EngineResponse> {
+    return this.post(
+      "/v1/recognitions",
+      request,
+      engineResponseSchema,
+    ) as Promise<EngineResponse>;
+  }
+
+  async recognizeDocument(
+    request: EngineDocumentRecognizeRequest,
+  ): Promise<EngineDocumentRecognizeResponse> {
+    return this.post(
+      "/v1/recognitions/document",
+      request,
+      engineDocumentResponseSchema,
+    ) as Promise<EngineDocumentRecognizeResponse>;
+  }
+
+  /** Shared HTTP discipline (§34): mapped status errors, strict parse,
+   * request-id/contract echo check — identical for both routes. */
+  private async post<Req extends { requestId: string; contractVersion: string }, Parsed extends { requestId: string; contractVersion: string }>(
+    path: string,
+    request: Req,
+    schema: { safeParse(payload: unknown): { success: boolean; data?: Parsed } },
+  ): Promise<Parsed> {
     const { serviceUrl, serviceToken } = this.config.ocr;
     if (!serviceUrl || !serviceToken) {
       // The factory never registers this adapter without both values — this
@@ -46,7 +76,7 @@ export class FastApiOcrEngine implements OcrEngine {
 
     let response: Response;
     try {
-      response = await fetch(`${serviceUrl.replace(/\/+$/, "")}/v1/recognitions`, {
+      response = await fetch(`${serviceUrl.replace(/\/+$/, "")}${path}`, {
         method: "POST",
         headers: {
           "content-type": "application/json",
@@ -64,10 +94,10 @@ export class FastApiOcrEngine implements OcrEngine {
     }
 
     if (response.status === 413) {
-      throw new EngineUnprocessableError("RESOURCE_LIMIT", "The image exceeds the sidecar payload limit.");
+      throw new EngineUnprocessableError("RESOURCE_LIMIT", "The payload exceeds the sidecar limit.");
     }
     if (response.status === 422 || response.status === 415 || response.status === 400) {
-      throw new EngineUnprocessableError("SCREENSHOT_UNSUPPORTED", "The sidecar rejected the image payload.");
+      throw new EngineUnprocessableError("SCREENSHOT_UNSUPPORTED", "The sidecar rejected the payload.");
     }
     if (!response.ok) {
       throw new EngineTransientError(`OCR sidecar answered HTTP ${response.status}`);
@@ -80,8 +110,8 @@ export class FastApiOcrEngine implements OcrEngine {
       throw new EngineMalformedResponseError("OCR sidecar returned a non-JSON payload");
     }
 
-    const parsed = engineResponseSchema.safeParse(payload);
-    if (!parsed.success) {
+    const parsed = schema.safeParse(payload);
+    if (!parsed.success || !parsed.data) {
       throw new EngineMalformedResponseError("OCR sidecar payload failed contract validation");
     }
 

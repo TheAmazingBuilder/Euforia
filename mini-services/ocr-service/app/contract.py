@@ -103,6 +103,12 @@ class EngineRequest(BaseModel):
     # the image is cropped to this region BEFORE preprocessing. Owner-side
     # (NestJS) validates the region against the asset dimensions.
     crop: Optional[SourceRegion] = None
+    # V2 §24 — pixel-rect re-read of a user-selected zone on the MAIN route
+    # (mirrors ocr-engine.port.ts cropRegion). Distinct from `crop` (the
+    # dedicated /v1/recrops route): this one rides the full recognition
+    # contract and reports sourceRegion values OFFSET by the region origin
+    # so every box lands in ORIGINAL-asset coordinates.
+    cropRegion: Optional[SourceRegion] = None
 
 
 class EngineField(BaseModel):
@@ -145,6 +151,11 @@ class EngineProcessingMetadata(BaseModel):
     documentHeight: Optional[int] = None
 
 
+class EngineFailure(BaseModel):
+    category: str
+    message: str = Field(max_length=256)
+
+
 class EngineTradeCandidate(BaseModel):
     """One multi-trade draft grouped from an account-history screenshot.
     Fields only — grouping is evidence, never a created trade (§21)."""
@@ -152,9 +163,61 @@ class EngineTradeCandidate(BaseModel):
     fields: List[EngineField] = Field(default_factory=list, max_length=16)
 
 
-class EngineFailure(BaseModel):
-    category: str
-    message: str = Field(max_length=256)
+class EngineTrade(BaseModel):
+    """One grouped trade read by the engine's row clustering (V2 §2.2,
+    mirrors engineTradeSchema on the Nest side): the pageIndex keeps the
+    0-based screenshot/page provenance (documents merge pages)."""
+
+    pageIndex: int = Field(ge=0)
+    fields: List[EngineField] = Field(default_factory=list, max_length=64)
+
+
+class EngineDocumentMetadata(BaseModel):
+    """Document metadata — mirrors the Nest document request (NO width/
+    height: PDFs carry no intrinsic pixel size; the sidecar learns the
+    rendered dims and reports them back via processingMetadata)."""
+
+    mime: str
+    sizeBytes: int = Field(ge=0)
+    checksumSha256: str
+
+
+class EngineDocumentRequest(BaseModel):
+    """PDF statement recognition (V2 document pipeline) — mirrors
+    EngineDocumentRecognizeRequest on the Nest side. The checksum member is
+    accepted for wire parity but NOT verified here: the document integrity
+    check IS the render pipeline (undecodable/corrupt PDFs are rejected by
+    the renderer); the strict checksum discipline stays on the image route
+    where the bytes are the fingerprint subject."""
+
+    requestId: str = Field(min_length=1, max_length=128)
+    contractVersion: str = Field(min_length=1, max_length=8)
+    documentBase64: str = Field(min_length=16)
+    metadata: EngineDocumentMetadata
+    extractionProfile: Profile = "TRADE_SUMMARY"
+    deadlineMs: int = Field(default=60_000, ge=1_000, le=120_000)
+
+
+class EngineDocumentPage(BaseModel):
+    """One rendered page of a document recognition (per-page extraction —
+    the Nest side owns the cross-page merge, the sidecar answers page-wise)."""
+
+    pageIndex: int = Field(ge=0)
+    classification: Optional[EngineClassification] = None
+    fields: List[EngineField] = Field(default_factory=list, max_length=64)
+    trades: List[EngineTrade] = Field(default_factory=list, max_length=20)
+    warnings: List[str] = Field(default_factory=list, max_length=16)
+
+
+class EngineDocumentResponse(BaseModel):
+    requestId: str
+    contractVersion: str
+    processingStatus: ProcessingStatus
+    pages: List[EngineDocumentPage] = Field(default_factory=list, max_length=1000)
+    warnings: List[str] = Field(default_factory=list, max_length=16)
+    perceptualHash: Optional[str] = None
+    processingMetadata: EngineProcessingMetadata
+    failure: Optional[EngineFailure] = None
 
 
 class EngineResponse(BaseModel):
@@ -163,6 +226,10 @@ class EngineResponse(BaseModel):
     processingStatus: ProcessingStatus
     classification: Optional[EngineClassification] = None
     fields: List[EngineField] = Field(default_factory=list, max_length=64)
+    # V2 — grouped trades from row clustering ( pageIndex provenance). The
+    # flat `fields` stay populated (back-compat: they mirror the primary
+    # trade) — the review UI renders trades when present, else the flat set.
+    trades: Optional[List[EngineTrade]] = Field(default=None, max_length=20)
     # Multi-trade drafts (account-history screenshots) — empty for the
     # mono-trade path (UI keeps a single review card).
     tradeCandidates: List[EngineTradeCandidate] = Field(default_factory=list, max_length=20)

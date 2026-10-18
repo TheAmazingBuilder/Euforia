@@ -30,6 +30,8 @@ non-destructive: originals stay upstream in COSMOZ storage (§11).
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 import numpy as np
 from PIL import Image, ImageFilter
 
@@ -219,3 +221,94 @@ def dhash(gray: Image.Image) -> str:
     diff = arr[:, 1:] > arr[:, :-1]  # 8 bits per row × 8 rows = 64 bits
     bits = np.packbits(diff.flatten())
     return "".join(format(byte, "02x") for byte in bits)
+
+
+# ── Quality wrapper (V2 meta-reporting path) ─────────────────────────────────
+
+# Denoise applies only to small panels — above this the median-filter cost
+# outweighs the speckle win and the upscale re-sharpens anyway (module doc).
+_DENOISE_MAX_PIXELS = 1_000_000
+# Small-panel target magnification (300px panel → 900px, "capped" in tests).
+_ENHANCE_TARGET_SCALE = 3
+
+
+@dataclass(frozen=True)
+class EnhanceMeta:
+    """What enhance() actually did to the image — reported so callers/tests
+    can assert on the quality path without pixel-peeping. Field names follow
+    the recognition-contract camelCase style."""
+
+    engine: str
+    upscaleScale: int
+    clahe: bool
+    denoised: bool
+    deskewAngle: float
+
+
+def _clahe_preserving_size(gray: Image.Image, tiles: int = 8) -> Image.Image:
+    """clahe_equalize WITHOUT the remainder crop — the input is padded to a
+    tile-grid multiple (edge-replicated), equalized, then cut back to the
+    original geometry, so enhance() output keeps the upscaled size exactly
+    (width × scale). The live pipeline keeps using clahe_equalize directly."""
+    pad_w = (-gray.width) % tiles
+    pad_h = (-gray.height) % tiles
+    if pad_w == 0 and pad_h == 0:
+        return clahe_equalize(gray, tiles=tiles)
+    padded = Image.new("L", (gray.width + pad_w, gray.height + pad_h))
+    padded.paste(gray, (0, 0))
+    if pad_w:
+        edge = gray.crop((gray.width - 1, 0, gray.width, gray.height))
+        padded.paste(edge.resize((pad_w, gray.height), Image.Resampling.NEAREST),
+                     (gray.width, 0))
+    if pad_h:
+        edge = padded.crop((0, gray.height - 1, padded.width, gray.height))
+        padded.paste(edge.resize((padded.width, pad_h), Image.Resampling.NEAREST),
+                     (0, gray.height))
+    return clahe_equalize(padded, tiles=tiles).crop(
+        (0, 0, gray.width, gray.height)
+    )
+
+
+def enhance(
+    gray: Image.Image, pixel_budget: int = _MAX_WORKING_PIXELS
+) -> tuple[Image.Image, EnhanceMeta]:
+    """The module-doc quality path: denoise → deskew → ×3-capped upscale →
+    CLAHE, returning the enhanced image plus an EnhanceMeta report.
+
+    Self-contained composition driven directly by the V2 quality tests; the
+    request pipeline in main.py deliberately drives upscale() /
+    clahe_equalize() / binarize() itself (its dual-pass arbitration needs the
+    UN-equalized binarized alternate view). Deterministic; engine label is
+    truthful — this module is numpy + Pillow only (no OpenCV dependency).
+    """
+    small_panel = gray.width * gray.height <= _DENOISE_MAX_PIXELS
+    working = denoise(gray) if small_panel else gray
+
+    angle = estimate_skew(working)
+    if angle:
+        working = working.rotate(
+            angle, resample=Image.Resampling.BILINEAR, fillcolor=0, expand=False
+        )
+
+    scale = _ENHANCE_TARGET_SCALE
+    while (
+        scale > 1
+        and working.width * scale * working.height * scale
+        > min(pixel_budget, _MAX_WORKING_PIXELS)
+    ):
+        scale -= 1
+    if scale > 1:
+        resized = working.resize(
+            (working.width * scale, working.height * scale), Image.Resampling.LANCZOS
+        )
+        working = resized.filter(
+            ImageFilter.UnsharpMask(radius=1, percent=70, threshold=2)
+        )
+
+    return _clahe_preserving_size(working), EnhanceMeta(
+        engine="numpy+pillow",
+        upscaleScale=scale,
+        clahe=True,
+        denoised=small_panel,
+        deskewAngle=angle,
+    )

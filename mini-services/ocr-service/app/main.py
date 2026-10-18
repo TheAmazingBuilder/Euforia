@@ -44,14 +44,18 @@ from .contract import (
     EngineResponse,
     EngineProcessingMetadata,
     EngineFailure,
+    EngineTrade,
     EngineTradeCandidate,
+    EngineDocumentPage,
+    EngineDocumentRequest,
+    EngineDocumentResponse,
     SourceRegion,
 )
-from .extraction import ENGINE_NAME, extract_fields, extract_trade_candidates, run_ocr, tesseract_version
+from .extraction import ENGINE_NAME, extract_fields, extract_trade_candidates, extract_trades, run_ocr, tesseract_version
 from .pdf import PDF_MIME, PdfRejected, looks_like_pdf, render_pdf_pages
 from .templates import choose_template
-from .validation import ChecksumMismatch, ImageRejected, validate_and_prepare
-from .preprocessing import binarize, clahe_equalize, upscale as upscale_image
+from .validation import ChecksumMismatch, ImageRejected, prepare_gray, validate_and_prepare
+from .preprocessing import binarize, clahe_equalize, dhash as compute_dhash, upscale as upscale_image
 
 logger = logging.getLogger("ocr-service")
 logging.basicConfig(level=logging.INFO, format="%(message)s")
@@ -98,6 +102,7 @@ def _respond(
     document_pages: Optional[int] = None,
     document_width: Optional[int] = None,
     document_height: Optional[int] = None,
+    trades: Optional[list] = None,
 ) -> JSONResponse:
     body = EngineResponse(
         requestId=request_id,
@@ -105,6 +110,7 @@ def _respond(
         processingStatus=processing_status,  # type: ignore[arg-type]
         classification=classification,
         fields=fields,
+        trades=trades or None,
         tradeCandidates=trade_candidates or [],
         warnings=warnings,
         perceptualHash=perceptual_hash,
@@ -123,6 +129,91 @@ def _respond(
         failure=failure,
     )
     return JSONResponse(status_code=200, content=body.model_dump(mode="json"))
+
+
+def _respond_document(
+    request_id: str,
+    processing_status: str,
+    pages: list,
+    perceptual_hash: Optional[str],
+    failure: Optional[EngineFailure],
+    durations: dict,
+    warnings: Optional[list] = None,
+    document_pages: Optional[int] = None,
+    document_width: Optional[int] = None,
+    document_height: Optional[int] = None,
+) -> JSONResponse:
+    body = EngineDocumentResponse(
+        requestId=request_id,
+        contractVersion=CONTRACT_VERSION,
+        processingStatus=processing_status,  # type: ignore[arg-type]
+        pages=pages,
+        perceptualHash=perceptual_hash,
+        processingMetadata=EngineProcessingMetadata(
+            engine=ENGINE_NAME,
+            engineVersion=ENGINE_VERSION,
+            pipelineVersion=PIPELINE_VERSION,
+            durationsMs=durations,
+            passes=list(PASS_NAMES),
+            documentPages=document_pages,
+            documentWidth=document_width,
+            documentHeight=document_height,
+        ),
+        warnings=warnings or [],
+        failure=failure,
+    )
+    return JSONResponse(status_code=200, content=body.model_dump(mode="json"))
+
+
+def _intersect_region(region: SourceRegion, width: int, height: int) -> Optional[SourceRegion]:
+    """Clip a requested region against the image bounds. Returns None when
+    the region lies ENTIRELY outside the image — a caller-side mistake that
+    must surface as UNPROCESSABLE/RESOURCE_LIMIT (never silently clamped to
+    a strip the user did not select)."""
+    if region.x >= width or region.y >= height:
+        return None
+    left = max(0, region.x)
+    top = max(0, region.y)
+    right = min(width, region.x + region.width)
+    bottom = min(height, region.y + region.height)
+    if right <= left or bottom <= top:
+        return None
+    return SourceRegion(x=left, y=top, width=right - left, height=bottom - top)
+
+
+def _rescale_regions(fields: list, scale: int, offset_x: int = 0, offset_y: int = 0) -> None:
+    """Map OCR word boxes from the UPSCALED working copy back to ORIGINAL
+    coordinates (÷ scale, + crop origin) — §18: the review UI highlight must
+    point at the real asset pixels. Mutates the EngineField list in place."""
+    if scale <= 1 and offset_x == 0 and offset_y == 0:
+        return
+    for field in fields:
+        region = field.sourceRegion
+        if region is None:
+            continue
+        field.sourceRegion = SourceRegion(
+            x=offset_x + region.x // scale,
+            y=offset_y + region.y // scale,
+            width=max(1, region.width // scale),
+            height=max(1, region.height // scale),
+        )
+
+
+def _rescale_result_regions(
+    fields: list,
+    candidates: Optional[list],
+    trades: Optional[list],
+    scale: int,
+    offset_x: int = 0,
+    offset_y: int = 0,
+) -> None:
+    """Rescale every region of one recognition result (flat fields, candidate
+    groups, grouped trades) — one consistent coordinate story (§18)."""
+    _rescale_regions(fields, scale, offset_x, offset_y)
+    for group in candidates or []:
+        _rescale_regions(group.fields, scale, offset_x, offset_y)
+    for trade in trades or []:
+        _rescale_regions(trade.fields, scale, offset_x, offset_y)
 
 
 def _crop_bytes(image_bytes: bytes, region: SourceRegion):
@@ -185,7 +276,6 @@ def _recognize_pdf(request: EngineRequest, image_bytes: bytes, started: float) -
 
     first_page = pages[0]
     first_gray = ImageOps.grayscale(first_page)
-    from .preprocessing import dhash as compute_dhash
 
     doc_hash = compute_dhash(first_gray)
 
@@ -362,15 +452,46 @@ def recognize(request: EngineRequest) -> JSONResponse:
     # Deadline honoring between heavy stages (soft — best effort, §26).
     deadline_seconds = request.deadlineMs / 1000.0
 
+    # V2 §24 — pixel-rect zone re-read on the main route: the pipeline runs
+    # on the CROP (the Nest side validated the region against the asset
+    # dims; the sidecar still rejects a fully-outside region instead of
+    # silently reading something the user did not select). Reported regions
+    # are offset by the crop origin so every box stays in ORIGINAL-asset
+    # coordinates (§18).
+    crop_offset_x = 0
+    crop_offset_y = 0
+    working = prepared
+    if request.cropRegion is not None:
+        clipped = _intersect_region(request.cropRegion, prepared.width, prepared.height)
+        if clipped is None:
+            return _respond(
+                request_id,
+                processing_status="UNPROCESSABLE",
+                classification=None,
+                fields=[],
+                warnings=[],
+                failure=EngineFailure(
+                    category="RESOURCE_LIMIT",
+                    message="crop region lies entirely outside the image bounds",
+                ),
+                durations=durations(),
+            )
+        zone_gray = prepared.gray.crop(
+            (clipped.x, clipped.y, clipped.x + clipped.width, clipped.y + clipped.height)
+        )
+        working = prepare_gray(zone_gray, settings.max_pixels)
+        crop_offset_x = clipped.x
+        crop_offset_y = clipped.y
+
     ocr_started = time.perf_counter()
     try:
         # Pass A — block segmentation over the full preprocessing chain.
-        lines = run_ocr(prepared.main, settings.tesseract_lang)
+        lines = run_ocr(working.main, settings.tesseract_lang)
         # Pass B — sparse segmentation over the Otsu-binarized variant
         # (arbitration challenger; failures degrade to single-pass, never
         # fail the request — the primary pass is the contract).
         try:
-            sparse_lines = run_sparse_pass(prepared.alternate, settings.tesseract_lang)
+            sparse_lines = run_sparse_pass(working.alternate, settings.tesseract_lang)
             passes_ran = list(PASS_NAMES)
         except (RuntimeError, OSError):
             sparse_lines = []
@@ -414,13 +535,13 @@ def recognize(request: EngineRequest) -> JSONResponse:
                 message="no readable text found in this screenshot",
             ),
             durations=durations(),
-            perceptual_hash=prepared.dhash_hex,
+            perceptual_hash=None if request.cropRegion is not None else prepared.dhash_hex,
             passes=passes_ran,
-            deskew_deg=prepared.skew_deg,
+            deskew_deg=working.skew_deg,
         )
 
     classification = classify(text_joined)
-    template = choose_template(classification.type, prepared.width, prepared.height, classification.platform)
+    template = choose_template(classification.type, working.width, working.height, classification.platform)
 
     # Profile routing (Account & Chart V1.1): the OCR passes are shared, the
     # FIELD GRAMMAR is profile-specific. Each branch arbitrates its own
@@ -439,6 +560,7 @@ def recognize(request: EngineRequest) -> JSONResponse:
         # candidate draft for grouped confirmation (evidence, never a trade).
         candidates = extract_trade_candidates(lines, template)
         trade_candidates = [EngineTradeCandidate(fields=group) for group in candidates]
+        trades = [EngineTrade(pageIndex=0, fields=group) for group in candidates]
     elif profile == "CHART_ANALYSIS":
         fields = extract_chart_fields(lines)
         if sparse_lines:
@@ -448,6 +570,7 @@ def recognize(request: EngineRequest) -> JSONResponse:
         else:
             warnings = ["SECOND_PASS_UNAVAILABLE"]
         trade_candidates = []
+        trades = []
     else:
         fields = extract_fields(lines, template)
 
@@ -464,6 +587,21 @@ def recognize(request: EngineRequest) -> JSONResponse:
         # (never merged into one fake trade; empty for the mono-trade path).
         candidates = extract_trade_candidates(lines, template)
         trade_candidates = [EngineTradeCandidate(fields=group) for group in candidates]
+        # The response-level trade read: clustered trades when grouping found
+        # order rows, else the V1 flat extraction as one trade — the review
+        # card never disappears just because clustering found no row.
+        trades = extract_trades(lines, template)
+
+    # Regions live in UPSCALED working-copy coordinates — map them back to
+    # the ORIGINAL asset (÷ scale, + crop origin) for every member (§18).
+    _rescale_result_regions(
+        fields,
+        trade_candidates,
+        trades,
+        working.scale,
+        crop_offset_x,
+        crop_offset_y,
+    )
 
     logger.info(
         "recognition request_id=%s bytes=%d lines=%d fields=%d candidates=%d template=%s ocr_ms=%d total_ms=%d",
@@ -486,10 +624,11 @@ def recognize(request: EngineRequest) -> JSONResponse:
         failure=None,
         durations={"totalMs": durations()["totalMs"], "ocrMs": ocr_ms},
         trade_candidates=trade_candidates,
-        perceptual_hash=prepared.dhash_hex,
+        perceptual_hash=None if request.cropRegion is not None else prepared.dhash_hex,
         passes=passes_ran,
         layout_template=template.name,
-        deskew_deg=prepared.skew_deg,
+        deskew_deg=working.skew_deg,
+        trades=trades,
     )
 
 
@@ -548,12 +687,10 @@ def recrop(request: EngineRequest) -> JSONResponse:
 
     # Minimal preparation of the crop (no full re-validation — the source
     # was already validated at upload; region coordinates were checked).
-    from .preprocessing import binarize, clahe_equalize, upscale
-
     gray = ImageOps.grayscale(cropped)
-    scaled, _ = upscale(gray, settings.max_pixels)
-    main = clahe_equalize(scaled)
-    alternate = binarize(scaled)
+    zone = prepare_gray(gray, settings.max_pixels)
+    main = zone.main
+    alternate = zone.alternate
 
     try:
         lines = run_ocr(main, settings.tesseract_lang)
@@ -588,7 +725,7 @@ def recrop(request: EngineRequest) -> JSONResponse:
         )
 
     classification = classify(text_joined)
-    template = choose_template(classification.type, cropped.width, cropped.height, classification.platform)
+    template = choose_template(classification.type, zone.width, zone.height, classification.platform)
 
     # Same profile routing as the main route (Account & Chart V1.1): a
     # region re-scan on an account snapshot re-reads the ACCOUNT grammar,
@@ -614,6 +751,11 @@ def recrop(request: EngineRequest) -> JSONResponse:
         # path used to fail the whole request when the sparse pass failed).
         recrop_warnings = ["SECOND_PASS_UNAVAILABLE"]
 
+    # Region coordinates are zone-local and upscaled — report them in the
+    # zone's ORIGINAL pixel space (÷ scale; no offset: recrop answers are
+    # zone-scoped by contract, the Nest side knows the region).
+    _rescale_regions(fields, zone.scale)
+
     logger.info(
         "recrop request_id=%s region=%dx%d+%d+%d fields=%d total_ms=%d",
         request_id,
@@ -636,4 +778,207 @@ def recrop(request: EngineRequest) -> JSONResponse:
         perceptual_hash=None,
         passes=list(PASS_NAMES),
         layout_template=template.name,
+    )
+
+
+@app.post("/v1/recognitions/document")
+def recognize_document(request: EngineDocumentRequest) -> JSONResponse:
+    """Multi-page PDF statement recognition (V2 document pipeline).
+
+    Mirrors EngineDocumentRecognizeRequest/Response on the Nest side: the
+    sidecar answers PAGE-WISE (per-page classification, fields, grouped
+    trades) and the Nest side owns the cross-page merge. The checksum member
+    is accepted for wire parity but not verified here — the render pipeline
+    IS the integrity check (undecodable/corrupt documents are rejected as
+    UNPROCESSABLE, never guessed through).
+
+    Per-page pipeline = the SAME chain as a screenshot (prepare_gray → two
+    OCR passes → arbitrage → profile grammar → clustered trades); the soft
+    deadline is honored BETWEEN pages — an overrun stops further pages and
+    carries an explicit PDF_DEADLINE_PARTIAL warning (never a silent
+    truncation). Region coordinates are reported in the page's rendered
+    pixel space (÷ upscale scale, §18).
+    """
+    if request.contractVersion != CONTRACT_VERSION:
+        raise HTTPException(status_code=400, detail="unsupported contractVersion")
+
+    started = time.perf_counter()
+    request_id = request.requestId
+
+    def durations() -> dict:
+        return {"totalMs": int((time.perf_counter() - started) * 1000)}
+
+    if len(request.documentBase64) > settings.max_bytes * 1.4:
+        return JSONResponse(
+            status_code=413,
+            content={"error": "ResourceLimit", "message": "document payload exceeds the sidecar limit"},
+        )
+    try:
+        document_bytes = base64.b64decode(request.documentBase64, validate=True)
+    except (binascii.Error, ValueError):
+        raise HTTPException(status_code=400, detail="documentBase64 is not valid base64")
+
+    deadline_seconds = request.deadlineMs / 1000.0
+
+    if not looks_like_pdf(document_bytes):
+        return _respond_document(
+            request_id,
+            "UNPROCESSABLE",
+            [],
+            None,
+            EngineFailure(category="SCREENSHOT_UNSUPPORTED", message="the payload is not a PDF document"),
+            durations(),
+        )
+    try:
+        pages = render_pdf_pages(document_bytes, settings.max_pixels)
+    except PdfRejected as exc:
+        return _respond_document(
+            request_id,
+            "UNPROCESSABLE",
+            [],
+            None,
+            EngineFailure(category="SCREENSHOT_UNSUPPORTED", message=str(exc)),
+            durations(),
+        )
+    except ValueError as exc:
+        return _respond_document(
+            request_id,
+            "UNPROCESSABLE",
+            [],
+            None,
+            EngineFailure(category="RESOURCE_LIMIT", message=str(exc)),
+            durations(),
+        )
+
+    doc_hash = compute_dhash(ImageOps.grayscale(pages[0]))
+
+    page_results: list[EngineDocumentPage] = []
+    partial = False
+    processed_pages = 0
+
+    for index, page in enumerate(pages):
+        if time.perf_counter() - started > deadline_seconds:
+            partial = True
+            break
+        gray = ImageOps.grayscale(page)
+        prep = prepare_gray(gray, settings.max_pixels)
+        try:
+            lines = run_ocr(prep.main, settings.tesseract_lang)
+            try:
+                sparse_lines = run_sparse_pass(prep.alternate, settings.tesseract_lang)
+            except (RuntimeError, OSError):
+                sparse_lines = []
+        except (RuntimeError, OSError):
+            return _respond_document(
+                request_id,
+                "FAILED",
+                [],
+                doc_hash,
+                EngineFailure(category="OCR_UNAVAILABLE", message="tesseract engine failed"),
+                durations(),
+                document_pages=len(pages),
+                document_width=pages[0].width,
+                document_height=pages[0].height,
+            )
+
+        text_joined = " ".join(line.text for line in lines)
+        page_classification = classify(text_joined) if text_joined.strip() else None
+        page_fields = []
+        page_trades: list[EngineTrade] = []
+        if page_classification is not None:
+            template = choose_template(
+                page_classification.type, prep.width, prep.height, page_classification.platform
+            )
+            if request.extractionProfile == "ACCOUNT_POSITION":
+                page_fields = extract_account_fields(lines)
+                if sparse_lines:
+                    page_fields, _ = arbitrate_fields(
+                        page_fields, extract_account_fields(sparse_lines)
+                    )
+                for group in extract_trade_candidates(lines, template):
+                    if len(page_trades) >= 20:
+                        break
+                    page_trades.append(EngineTrade(pageIndex=index, fields=group))
+            elif request.extractionProfile == "CHART_ANALYSIS":
+                page_fields = extract_chart_fields(lines)
+                if sparse_lines:
+                    page_fields, _ = arbitrate_fields(
+                        page_fields, extract_chart_fields(sparse_lines)
+                    )
+            else:
+                page_fields = extract_fields(lines, template)
+                if sparse_lines:
+                    page_fields, _ = arbitrate_fields(
+                        page_fields, extract_fields(sparse_lines, template)
+                    )
+                page_trades = extract_trades(lines, template)
+                for trade in page_trades:
+                    trade.pageIndex = index
+
+            # Regions live in the UPSCALED working copy — map them back to
+            # the rendered page pixels (÷ scale, §18).
+            _rescale_regions(page_fields, prep.scale)
+            for trade in page_trades:
+                _rescale_regions(trade.fields, prep.scale)
+
+        page_results.append(
+            EngineDocumentPage(
+                pageIndex=index,
+                classification=page_classification,
+                fields=page_fields,
+                trades=page_trades,
+                warnings=[],
+            )
+        )
+        processed_pages += 1
+
+    # Nothing readable on ANY page — an explicit UNPROCESSABLE, never an
+    # empty pretend-result (§20/§21).
+    if not page_results or all(
+        not page.fields and not page.trades and page.classification is None
+        for page in page_results
+    ):
+        return _respond_document(
+            request_id,
+            "UNPROCESSABLE",
+            [],
+            doc_hash,
+            EngineFailure(
+                category="SCREENSHOT_UNSUPPORTED",
+                message="no readable text found in this document",
+            ),
+            durations(),
+            document_pages=len(pages),
+            document_width=pages[0].width,
+            document_height=pages[0].height,
+        )
+
+    warnings: list[str] = []
+    if partial:
+        warnings.append(f"PDF_DEADLINE_PARTIAL:{processed_pages}")
+    # Statement PDFs are TRADE-vocabulary documents (Account & Chart V1.1):
+    # the extraction stays on the trade path and the answer says so honestly.
+    if request.extractionProfile != "TRADE_SUMMARY":
+        warnings.append("PROFILE_PDF_TRADE_ONLY")
+
+    logger.info(
+        "document recognition request_id=%s pages=%d/%d pages_with_results=%d total_ms=%d",
+        request_id,
+        processed_pages,
+        len(pages),
+        len(page_results),
+        durations()["totalMs"],
+    )
+
+    return _respond_document(
+        request_id,
+        "COMPLETED",
+        page_results,
+        doc_hash,
+        None,
+        {"totalMs": durations()["totalMs"]},
+        warnings=warnings,
+        document_pages=len(pages),
+        document_width=pages[0].width,
+        document_height=pages[0].height,
     )

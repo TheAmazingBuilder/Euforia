@@ -148,3 +148,28 @@ sera vérifiée immédiatement.
 - Mise à jour dette tests : commit `4970571` ; guide
   `docs/audits/GUIDE-INSTALLATION-LOCALE.md`.
 - Ce document : restauré à la demande de l'owner le 2026-10-17 ; commit dédié.
+
+---
+
+## 8. Série MASTER (post-dashboard) — 2026-10-19
+
+Après l'achèvement de la série dashboard (01–07, 10, 11 — 08/09 perdus au
+restore, condensés absorbés), l'owner a enchaîné sur les deux specs MASTER
+archivées dans `docs/specs/master/` :
+
+- `MASTER-TESTING-QA-MOCK-REMOVAL-PRODUCTION-CLEANUP.md` → rapport
+  `docs/qa/MASTER-QA-MOCK-REMOVAL-REPORT.md` (A–P, verdict
+  `READY FOR STAGING VALIDATION`).
+- `MASTER-FULLSTACK-AUDIT-SECURITY-INTEGRATION-VALIDATION.md` → rapport
+  `docs/audits/MASTER-FULLSTACK-AUDIT-REPORT.md` (A–P, verdict
+  `READY FOR STAGING`).
+
+Campagne exécutée en une passe intégrée (base d'évidence partagée) :
+baseline complète, 4 défets corrigés avec tests de régression (contrat V2 du
+sidecar OCR restauré — pytest 97/97 ; mode mock web → API réelle par défaut
+en production avec garde CI ; next 16.3.8 + fastify 5.12.7 ; capability
+document de l'adaptateur FastAPI), preuve d'intégration réelle 24/24 + 2/2
+(y compris OCR end-to-end RÉEL via tesseract et persistance après restart),
+session navigateur en mode production réelle, batterie finale :
+api 1325/1325 · web 169/169 · pytest 97/97 · build exit 0 · audit deps
+23→9 (dev-only).

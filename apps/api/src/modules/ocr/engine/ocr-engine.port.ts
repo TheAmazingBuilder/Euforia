@@ -138,6 +138,32 @@ export const engineResponseSchema = z.object({
 });
 export type EngineResponse = z.infer<typeof engineResponseSchema>;
 
+/** Strict parse of the sidecar's per-page document answer (§54 — untrusted). */
+export const engineDocumentResponseSchema = z.object({
+  requestId: z.string().min(1).max(128),
+  contractVersion: z.string().min(1).max(8),
+  processingStatus: z.enum(["COMPLETED", "UNPROCESSABLE", "FAILED"]),
+  pages: z
+    .array(
+      z.object({
+        pageIndex: z.number().int().nonnegative(),
+        classification: engineResponseSchema.shape.classification,
+        fields: z.array(engineFieldSchema).max(64),
+        trades: z.array(engineTradeSchema).max(20),
+        warnings: z.array(z.string().max(256)).max(16),
+      }),
+    )
+    .max(1000),
+  warnings: z.array(z.string().max(256)).max(16),
+  perceptualHash: z
+    .string()
+    .regex(/^[0-9a-f]{16}$/)
+    .nullable(),
+  processingMetadata: engineResponseSchema.shape.processingMetadata,
+  failure: engineResponseSchema.shape.failure,
+});
+export type ParsedEngineDocumentResponse = z.infer<typeof engineDocumentResponseSchema>;
+
 export type EngineEngineInfo = {
   name: string;
   engineVersion: string;

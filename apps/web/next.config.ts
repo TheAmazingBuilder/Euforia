@@ -9,16 +9,17 @@ import type { NextConfig } from "next";
 const MARKET_SERVICE = "http://localhost:3003";
 
 /**
- * COSMOZ API proxy — the live bridge (Phase C). When the frontend runs in
- * live mode (NEXT_PUBLIC_API_LIVE=true), API calls go to the SAME origin
- * under /api/v1 and this rewrite forwards them to the NestJS backend,
- * avoiding any cross-origin CORS/cookie configuration entirely: the
- * HttpOnly refresh cookie (cosmoz_rt) stays first-party, fetch needs no
+ * COSMOZ API proxy — real mode. When the frontend serves the REAL backend
+ * (production zero-env per lib/api/mode.ts, or explicit
+ * NEXT_PUBLIC_API_MOCKED=false), API calls go to the SAME origin under
+ * /api/v1 and this rewrite forwards them to the NestJS backend, avoiding
+ * any cross-origin CORS/cookie configuration entirely: the HttpOnly
+ * refresh cookie (cosmoz_rt) stays first-party, fetch needs no
  * credentials:"include", and the API's CORS allowlist is never engaged.
  *
- * The rewrite is inert in the default mocked mode — the browser only ever
- * requests /api/… there (MSW intercepts before the network), and nothing
- * calls /api/v1.
+ * The rewrite is inert in mocked mode — the browser only ever requests
+ * /api/… there (MSW intercepts before the network), and nothing calls
+ * /api/v1.
  */
 const API_PROXY_TARGET = process.env.API_PROXY_TARGET ?? "http://localhost:4000";
 

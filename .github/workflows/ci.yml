@@ -54,7 +54,7 @@ jobs:
         run: corepack pnpm test
 
   web:
-    name: web (regression — typecheck + build)
+    name: web (regression — typecheck + unit + build + mock-leakage guard)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -74,9 +74,47 @@ jobs:
           corepack pnpm --filter @cosmoz/shared exec tsc -p tsconfig.json --noEmit
           corepack pnpm --filter web exec tsc --noEmit
 
+      - name: Unit tests (logic + API-mode matrix)
+        run: corepack pnpm --filter web exec vitest run
+
       # `next build` was blocked at prerendering /login (useSearchParams
       # without a Suspense boundary — pre-existing since Phase 1, documented
       # in the Phase 1 report). Fixed during the finalization mission; the
       # build now runs in CI as a full frontend regression guard.
       - name: Build
         run: corepack pnpm --filter web exec next build
+
+      # MASTER QA spec §14.10 — automated guard against accidental mock
+      # activation in production: a production bundle must NOT contain the
+      # MSW worker bootstrap reachable from the default mode (the canonical
+      # mode matrix keeps zero-env production on the real API; the explicit
+      # demo opt-in compiles mocks in, so this guard checks the DEFAULT
+      # build). The client build inlines NODE_ENV=production → API_MOCKED
+      # must statically resolve to false → the dynamic `import("@/mocks/
+      # browser")` never executes. We assert the guard TEST (mode.spec) and
+      # grep the built client chunks for an unconditional worker start.
+      - name: Mock-leakage guard (production build)
+        run: node scripts/check-prod-mock-leakage.mjs
+
+  ocr-service:
+    name: ocr-service (pytest — sidecar pipeline)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install tesseract (system binary + English data)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y tesseract-ocr tesseract-ocr-eng
+
+      - name: Install Python dependencies
+        working-directory: mini-services/ocr-service
+        run: pip install -r requirements.txt -r requirements-dev.txt
+
+      - name: Pytest (sidecar pipeline, V1+V2 contract)
+        working-directory: mini-services/ocr-service
+        run: python3 -m pytest tests/ -q

@@ -78,6 +78,52 @@ class PreparedImage:
         return self.main
 
 
+def prepare_gray(gray: Image.Image, max_pixels: int) -> PreparedImage:
+    """The advanced preprocessing chain (steps 1–6) over ONE grayscale image.
+
+    Shared by the full-image path (validate_and_prepare), the cropRegion
+    re-read and the document route — ONE chain, no drift. width/height are
+    the INPUT dims; `scale` is the applied upscale factor — OCR word boxes
+    live in UPSCALED coordinates, so callers MUST divide by `scale` (and add
+    any crop origin) before reporting sourceRegion to the caller (§18).
+    """
+    # 1. Denoise — small panels only (the upscale re-sharpens anyway).
+    if min(gray.width, gray.height) < 1200:
+        denoised = denoise(gray)
+    else:
+        denoised = gray
+
+    # 2. Deskew — projection-profile estimate, applied ≥ 0.35° only.
+    skew = estimate_skew(denoised)
+    if abs(skew) >= 0.35:
+        denoised = denoised.rotate(
+            skew, resample=Image.Resampling.BILINEAR, fillcolor=None, expand=False
+        )
+
+    # 3. Upscale — LANCZOS ×2 floor, budget-capped, unsharp-masked.
+    scaled, _scale_used = upscale(denoised, max_pixels)
+
+    # 4. CLAHE — dark-theme text lift (replaces global autocontrast).
+    main = clahe_equalize(scaled)
+
+    # 5. Alternate view — Otsu binarized (pass B input).
+    alternate = binarize(scaled)
+
+    # 6. Perceptual fingerprint — dHash over the reference grayscale.
+    dhash_hex = dhash(gray)
+
+    return PreparedImage(
+        gray=gray,
+        main=main,
+        alternate=alternate,
+        width=gray.width,
+        height=gray.height,
+        dhash_hex=dhash_hex,
+        skew_deg=skew,
+        scale=_scale_used,
+    )
+
+
 def validate_and_prepare(data: bytes, metadata: EngineMetadata, max_pixels: int) -> tuple[str, PreparedImage]:
     """Validate the binary against the declared metadata and prepare variants.
 
@@ -113,40 +159,6 @@ def validate_and_prepare(data: bytes, metadata: EngineMetadata, max_pixels: int)
     with Image.open(io.BytesIO(data)) as img:
         img.load()
         gray = ImageOps.grayscale(img.convert("RGB"))
+        prepared = prepare_gray(gray, max_pixels)
 
-        # ── Advanced chain (engine quality phase) ────────────────────────
-        # 1. Denoise — small panels only (the upscale re-sharpens anyway).
-        if min(gray.width, gray.height) < 1200:
-            denoised = denoise(gray)
-        else:
-            denoised = gray
-
-        # 2. Deskew — projection-profile estimate, applied ≥ 0.35° only.
-        skew = estimate_skew(denoised)
-        if abs(skew) >= 0.35:
-            denoised = denoised.rotate(
-                skew, resample=Image.Resampling.BILINEAR, fillcolor=None, expand=False
-            )
-
-        # 3. Upscale — LANCZOS ×2 floor, budget-capped, unsharp-masked.
-        scaled, _scale_used = upscale(denoised, max_pixels)
-
-        # 4. CLAHE — dark-theme text lift (replaces global autocontrast).
-        main = clahe_equalize(scaled)
-
-        # 5. Alternate view — Otsu binarized (pass B input).
-        alternate = binarize(scaled)
-
-        # 6. Perceptual fingerprint — dHash over the reference grayscale.
-        dhash_hex = dhash(gray)
-
-    return actual_mime, PreparedImage(
-        gray=gray,
-        main=main,
-        alternate=alternate,
-        width=width,
-        height=height,
-        dhash_hex=dhash_hex,
-        skew_deg=skew,
-        scale=_scale_used,
-    )
+    return actual_mime, prepared

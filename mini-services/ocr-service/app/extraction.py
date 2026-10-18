@@ -28,7 +28,7 @@ from typing import Dict, List, Optional
 import pytesseract
 from pytesseract import Output
 
-from .contract import EngineField, SourceRegion
+from .contract import EngineField, EngineTrade, SourceRegion
 from .extraction_types import OcrLine, OcrWord  # re-exported for compat
 from .normalization import (
     Normalized,
@@ -54,7 +54,7 @@ from .templates import (
     volume_plausible,
 )
 
-__all__ = ["ENGINE_NAME", "OcrLine", "OcrWord", "extract_fields", "extract_trade_candidates", "run_ocr", "tesseract_version"]
+__all__ = ["ENGINE_NAME", "OcrLine", "OcrWord", "extract_fields", "extract_trade_candidates", "extract_trades", "run_ocr", "tesseract_version"]
 
 ENGINE_NAME = "fastapi-tesseract"
 
@@ -399,6 +399,8 @@ def extract_fields(
 
 MAX_TRADE_CANDIDATES = 20
 
+_GENERIC_TEMPLATE = LayoutTemplate(name=GENERIC, volume_min=0.01, volume_max=1000.0, trailing_profit=False, shape_bonus=0.0)
+
 
 def extract_trade_candidates(
     lines: List[OcrLine], template: Optional[LayoutTemplate] = None
@@ -562,7 +564,25 @@ def extract_trade_candidates(
     return candidates
 
 
-_GENERIC_TEMPLATE = LayoutTemplate(name=GENERIC, volume_min=0.01, volume_max=1000.0, trailing_profit=False, shape_bonus=0.0)
+def extract_trades(
+    lines: List[OcrLine], template: Optional[LayoutTemplate] = None
+) -> List["EngineTrade"]:
+    """The response-level trade read (V2): clustered trades when the row
+    grouping finds order rows, else the V1 flat extraction surfaced as ONE
+    trade (single direction line → the V1 global path must be kept — the
+    mono review card never disappears just because clustering found no row).
+
+    Returns [] only when NOTHING was read (no fields at all) — an empty
+    list, never an invented trade (§20/§21).
+    """
+    template = template or _GENERIC_TEMPLATE
+    groups = extract_trade_candidates(lines, template)
+    if groups:
+        return [EngineTrade(pageIndex=0, fields=list(group)) for group in groups]
+    flat = extract_fields(lines, template)
+    if flat:
+        return [EngineTrade(pageIndex=0, fields=flat)]
+    return []
 
 
 def _region_in(line: OcrLine, word: OcrWord) -> SourceRegion:

@@ -18,3 +18,15 @@ allowBuilds:
   esbuild: true
   # SWC native binding (vitest decorator-metadata plugin).
   "@swc/core": true
+  '@embedded-postgres/darwin-arm64': set this to true or false
+  '@embedded-postgres/darwin-x64': set this to true or false
+  '@embedded-postgres/linux-arm': set this to true or false
+  '@embedded-postgres/linux-arm64': set this to true or false
+  '@embedded-postgres/linux-ia32': set this to true or false
+  '@embedded-postgres/linux-ppc64': set this to true or false
+  '@embedded-postgres/windows-x64': set this to true or false
+
+# Security pin (MASTER QA audit): the patched fastify 5.x everywhere — the
+# advisory class is header-validation / auth bypass (GHSA high, in-range fix).
+overrides:
+  fastify: 5.12.7

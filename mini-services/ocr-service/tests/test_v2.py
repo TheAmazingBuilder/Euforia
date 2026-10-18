@@ -73,12 +73,14 @@ def test_dhash_survives_png_reencode():
 # ── Preprocessing (V2 quality) ──────────────────────────────────────────────
 
 
-def test_enhance_reports_opencv_path_and_upscale():
+def test_enhance_reports_engine_and_upscale():
     png, w, _h = render_mt5_screenshot()
     with Image.open(io.BytesIO(png)) as img:
         gray = img.convert("L")
     enhanced, meta = enhance(gray)
-    assert meta.engine == "opencv+pillow"
+    # Truthful engine label — this module is numpy+Pillow; OpenCV was never a
+    # declared dependency (requirements.txt) and never existed in history.
+    assert meta.engine == "numpy+pillow"
     assert enhanced.width >= meta.upscaleScale  # always ≥ original scale 1
     assert meta.upscaleScale >= 1
     assert meta.clahe is True

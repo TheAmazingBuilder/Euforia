@@ -1937,3 +1937,29 @@ Work Log:
 Stage Summary:
 - SÉRIE DASHBOARD CUSTOMIZATION AU COMPLET dans le repo: 01/02/03/05/06/07/10/11 DONE avec rapports; 08/09 perdus (condensés absorbés dans 10/11, note roadmap); état final: api 1319/1319, web 161/161, probes 65/65, builds verts
 - Prochaine (owner): re-upload éventuel des specs 08-11 originales pour re-conformité; ou les 2 specs MASTER app-level trouvées dans upload/ (testing/QA + fullstack-audit) constituent la feuille de route suivante naturelle
+
+---
+Task ID: 20-master-specs
+Agent: Super Z (main)
+Date: 2026-10-19
+
+Task: Exécuter les 2 specs MASTER archivées (QA/mock-removal + fullstack audit) — campagne intégrée, deux rapports A–P, verdicts distincts.
+
+Work Log:
+- DISCOVERY/BASELINE: monorepo pnpm (web/api/shared) + mini-services (ocr-service FastAPI/pytesseract, market-service Bun/socket.io) ; baseline: api 1319/1319, web 161/161, tsc×3, lint, build OK ; pytest ocr-service BLOQUÉ (ImportError réel) ; pnpm audit 23 vulns (3 critical)
+- FIX D1 (sidecar OCR): test_v2 importait `enhance` jamais existant (git -S vide) + 6 échecs = contrat V2 non câblé → implémenté EnhanceMeta+enhance()+CLAHE préservant la taille, `trades` (clustering + fallback V1), `cropRegion` (régions offsetées en coords ORIGINALES — bug §18 corrigé via prepare_gray partagé + rescale ÷scale), route /v1/recognitions/document (pipeline par page, rejet non-PDF honnête) ; conftest token bootstrap avant import ; label test "opencv+pillow"→"numpy+pillow" (honnêteté) ; pytest 97/97
+- FIX D2 (mock par défaut — P1): zero-env production servait des données mock comme réelles → matrice canonique mode.ts (explicit true/false ; dev zero-env=mock, PROD zero-env=API RÉELLE), urls.ts dérive API_BASE de la même source (?? → || pour env vide), .env.example/docs mis à jour, 8 tests de matrice + garde CI mock-leakage (scripts/check-prod-mock-leakage.mjs : SW passthrough + start-sites client) — preview sandbox :3000 restaurée à l'identique (next dev zero-env = mock)
+- FIX D3 (deps): next 16.3.5→16.3.8 (CRITICAL RCE next/og + SSRF), fastify 5.11.3→5.12.7 (2 HIGH) via override pnpm-workspace.yaml (pnpm 12 ignore pnpm.overrides de package.json — appris en le constatant) ; audit 23→9 (restantes = chaînes dev-only : vitest/tinypool, braces/shadcn, deepmerge-ts/prisma CLI, sharp, MCP sdk)
+- FIX D4 (adaptateur): FastApiOcrEngine sans recognizeDocument/supportsDocuments (capability morte) → implémenté + engineDocumentResponseSchema Zod + 6 tests unitaires (mock fetch : mapping §34, parse §54, echo check)
+- PREUVE LIVE (24/24 + 2/2): scripts/live-integration-evidence.mjs contre les services réels — register/verify (token JAMAIS dans la réponse, log dev seulement)/login/rotation (reuse→401 + RÉVOCATION DE FAMILLE vérifiée)/trade lifecycle (pnlNet=50 INDPÉENDANT Δ0.005×0.1×100000, close sans leak P&L, re-décision 409)/stats/IDOR 404/OCR BOUT-EN-BOUT RÉEL via tesseract sidecar (XAUUSD BUY 0.15 → confirm → journal source=IMPORT)/persistance après restart API ; pièges corrigés dans le script: token par EMAIL (log accumulé), famille de tokens révoquée par le test de reuse (sessions fraîches ensuite), confirm mono sans `batches`, GET /trades/:id inexistant (TradingController volontairement débranché — note reconciliation l.40)
+- NAVIGATEUR RÉEL: build production zero-env sur :3002 → mode API réel PAR DÉFAUT (preuve §14.1/§14.9) ; login UI → dashboard → /trades → /analytics, tous les /api/v1/* 200 via proxy same-origin, zéro page error ; captures scripts/evidence-*.png
+- SÉCURITÉ: CORS prod rejette "*", helmet, cookies HttpOnly vérifiés live, mailer redactActionUrl=isProduction, 0 secret tracké/historique, gates ACCOUNTS_MOCK_PROVIDER/OCR_MOCK_ENGINE hors production par défaut, AES-GCM 3 clés séparées, argon2+TOTP
+- INVENTAIRES: mocks classés A–F (éco-events = B honnête avec source dans le contrat ; aucune donnée fake runtime non labellisée) ; seeders 1–6 (catalogue Instrument = D essentiel ; reset-test-db garde fail-fast ; zéro seeder obsolète, zéro donnée fabriquée pour un nouvel utilisateur — vérifié live)
+- CI: job ocr-service (tesseract+pytest) ajouté, web + vitest unit, garde mock-leakage
+- BATTERIE FINALE: api 1325/1325 (91 fichiers) · web 169/169 (13) · pytest 97/97 · tsc×3 · lint · build exit 0 · garde PASS · live 24/24 re-confirmé
+- RAPPORTS: docs/qa/MASTER-QA-MOCK-REMOVAL-REPORT.md (A–P, verdict READY FOR STAGING VALIDATION) + docs/audits/MASTER-FULLSTACK-AUDIT-REPORT.md (A–P, Mermaid, verdict READY FOR STAGING) — jamais de claim production/broker/feed ; roadmap §8 ajoutée
+
+Stage Summary:
+- CAMPAGNE MASTER LIVRÉE: 4 défets corrigés avec régression, contrat OCR V2 restauré et exercé RÉELLEMENT (la limite "sidecar inexercé" de la Phase 11 est levée), mock-hygiene §14 implémentée et CI-guardée, intégration live prouvée de bout en bout
+- État: api 1325/1325 · web 169/169 · pytest 97/97 · 9 advisories dev-only · verdicts: READY FOR STAGING VALIDATION (QA) / READY FOR STAGING (audit)
+- Prochaines actions owner (§N des rapports): provisioning staging (Postgres réel, OCR_SERVICE_URL+TOKEN, transport mail, CORS), vérification brokers réels, load tests, décision route unification TradingController
