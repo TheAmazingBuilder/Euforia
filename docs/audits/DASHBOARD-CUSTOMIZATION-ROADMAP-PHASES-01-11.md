@@ -36,7 +36,7 @@ projet (uniquement des faits prouvés, jamais d'invention), ce document :
 | **06** | Workspace management | **NOT IMPLEMENTED — spec restaurée** | spec verbatim : `docs/specs/dashboard-customization/PHASE-06-WORKSPACE-MANAGEMENT-LAYOUT-COLLECTIONS-TEMPLATES.md` (reçue owner 2026-10-17) |
 | **07** | Alerts, threshold monitoring & event history | **DONE** | commit `1da3d75` · rapport complet `docs/audits/DASHBOARD-CUSTOMIZATION-PHASE-07-ALERTS-REPORT.md` · 24 unit + 18 e2e + 80 adjacentes · sonde live 18/18 · sonde UI 12/12 |
 | **08** | Reporting, data exports & performance snapshots | **DONE (re-conforme 2026-10-19 — spec owner re-uploadée)** | rapport complet `docs/audits/DASHBOARD-CUSTOMIZATION-PHASE-08-REPORT.md` (A–G) · e2e 11/11 Postgres réel (exactitude financière indépendante + immutabilité + IDOR) · web 219/219 · 42 migrations up-to-date · moteur de comparaison pur partagé + miroir MSW même moteur |
-| **09** | Performance optimization & data freshness | **EN COURS (spec owner re-uploadée 2026-10-19 — implémentation après la 08)** | — |
+| **09** | Performance optimization & data freshness | **DONE (re-conforme 2026-10-19 — spec owner re-uploadée)** | rapport complet `docs/audits/DASHBOARD-CUSTOMIZATION-PHASE-09-REPORT.md` (A–G + checklist acceptance) · baseline/after sonde reproductible dev+prod · invalidation suite après mutation trade (+ contrat de test) · signal forwarding · mémoïsation widgetData · web 223/223 · API zéro fichier touché |
 | **10** | *Spec owner — texte perdu des sessions* | **À RÉ-UPLOADER (aucun contenu inventé)** | — |
 | **11** | *Spec owner — texte perdu des sessions* | **À RÉ-UPLOADER (aucun contenu inventé)** | — |
 
