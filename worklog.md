@@ -2148,3 +2148,23 @@ Stage Summary:
 - Couverture 100% de l'état irremplaçable: code+histoire (bundle), secrets/configs (.env tarball), données runtime (DB+OCR), redondance croisée entre les 4 artefacts
 - Seule garantie ABSOLUE restante = owner télécharge les fichiers download/ sur sa machine MAINTENANT, ou fournit URL+token GitHub pour push (aucun token dans l'environnement)
 - État repo inchangé: HEAD 80bfef7, tree propre, aucun commit nouveau (rien à committer), aucun fichier source modifié pendant la sauvegarde
+
+---
+Task ID: 29
+Agent: Z.ai (main)
+Task: Récupération post-restart + nettoyage 185 Mo + DB vide + guide installation locale (MD+PDF)
+
+Work Log:
+- RESTART INCIDENT: sandbox restauré à 7b83374 (Phase 03, 17 oct) — download/ vidé (backups 311M+678M perdus), objets git récents absents
+- RÉCUPÉRATION TOTALE via /home/sync/repo.tar (557M, montage OSS persistant créé au boot 02:59): .git/refs/heads/main = 26e39b9 confirmé avant extraction; restauration intégrale (worklog 2150 lignes, audits P1+P2, Phases 04-09) — swap préservant upload/download/skills
+- Leçon validée: /home/sync EST persistant (survit aux restarts); download/ NON
+- CLEANUP: git rm 2038 fichiers = 185 Mo (shots web 104M + root 75M, font-cache 5.7M, .wip-quarantine 433 fichiers, logs/, dev-server.log, bun.lock stale, agent-ctx/) — zéro dépendance runtime vérifiée rg, CI inchangée; commit 8b9269c; arbre ≈156M hors .git
+- ENV reconstruits: apps/api/.env (4 clés CSPRNG fraîches + DATABASE_URL trust 5433 conforme dev-db.mjs), apps/web/.env.local (NEXT_PUBLIC_API_MOCKED=false — mode réel forcé, zéro mock)
+- BATTERIE DU JOUR (arbre nettoyé): tsc --noEmit ×3 = 0 erreur · web vitest 223/223 · API vitest 1351/1351 (94 fichiers, Postgres embarquée auto-provisionnée depuis zéro = preuve DB vide fonctionnelle, flake oanda PASS cette fois) · check-prod-mock-leakage PASS (depuis apps/web, après next build) · check-tracked-secrets PASS (2054 fichiers, 8 patterns) · pnpm audit --prod = 0 vulnérabilité · next build exit 0
+- DB VIDE GARANTIE: aucun seed dans le repo (aucune clé prisma.seed), 42 migrations = structure seule; .localpg/.data supprimés de la livraison — l'owner remplit avec ses données via /register
+- GUIDE: docs/audits/GUIDE-INSTALLATION-CONFIGURATION-LOCALE-ORYON.md (14 sections: prerequis pnpm 12.4.2, récupération, env, DB vide A/B, lancement, premier compte, vérifications, OCR/market, build prod, arborescence, dépannage, sécurité) + version HTML (pipeline creative-flow, cover 720x1020, ≤5 couleurs, 2 polices) + PDF vectoriel 517.7 Ko via html2pdf-next.js --nopaged (pagedjs absent, fallback Chromium natif), pdf_qa WARN mineurs seulement, métadonnées Z.ai posées; note: cover_validate.js = faux positifs sur document fluide (outil cover-only par spec skill)
+
+Stage Summary:
+- Projet restauré à 100% (26e39b9) puis nettoyé (-185 Mo) puis re-vérifié intégralement: TOUT EST FONCTIONNEL, DB vide, zéro mock, secrets frais
+- Livraison: commit 209ba80 (guide) — bundle git + tarball clé en main copiés sur /home/sync/ (PERSISTANT) ET download/
+- Le propriétaire doit télécharger le kit et suivre le guide; pnpm 12.4.2 requis (corepack)
