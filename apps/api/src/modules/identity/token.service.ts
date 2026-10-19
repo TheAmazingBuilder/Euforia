@@ -33,14 +33,21 @@ export class TokenService {
       {
         secret: this.config.auth.jwtSecret,
         expiresIn: this.config.auth.accessTtlSeconds,
+        // Issuer/audience pinning (security-audit 2026-10-19 §1.8): a token
+        // minted for another issuer/audience sharing this secret is rejected.
+        issuer: this.config.auth.jwtIssuer,
+        audience: this.config.auth.jwtAudience,
       },
     );
-    return { token, expiresAt };
+    return { token, expiresAt: expiresAt };
   }
 
   async verifyAccessToken(token: string): Promise<{ sub: string; sid: string }> {
     const payload = await this.jwt.verifyAsync<{ sub?: string; sid?: string }>(token, {
       secret: this.config.auth.jwtSecret,
+      // Same pins as signing — signature alone is not the full contract.
+      issuer: this.config.auth.jwtIssuer,
+      audience: this.config.auth.jwtAudience,
     });
     if (typeof payload.sub !== "string" || typeof payload.sid !== "string") {
       throw new Error("malformed access token payload");

@@ -308,6 +308,11 @@ export const envSchema = z.object({
       },
       "AUTH_MFA_ENCRYPTION_KEY must be base64 encoding exactly 32 bytes",
     ),
+  /** JWT issuer/audience pinning (security-audit 2026-10-19 §1.8): access
+   *  tokens carry iss/aud and verification REJECTS any mismatch. Defaults
+   *  keep zero-config parity; override only for multi-deploy secrets. */
+  AUTH_JWT_ISSUER: z.string().trim().min(1).max(128).default("cosmoz-api"),
+  AUTH_JWT_AUDIENCE: z.string().trim().min(1).max(128).default("cosmoz-web"),
   AUTH_ACCESS_TTL_SECONDS: z.coerce.number().int().min(60).max(3_600).default(900),
   AUTH_REFRESH_REMEMBER_DAYS: z.coerce.number().int().min(1).max(90).default(30),
   AUTH_REFRESH_SESSION_HOURS: z.coerce.number().int().min(1).max(24 * 7).default(12),

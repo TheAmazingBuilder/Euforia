@@ -23,8 +23,32 @@ const MARKET_SERVICE = "http://localhost:3003";
  */
 const API_PROXY_TARGET = process.env.API_PROXY_TARGET ?? "http://localhost:4000";
 
+/**
+ * Security headers (security-audit 2026-10-19, checklist §2.4/§2.5).
+ *
+ * The API already ships helmet defaults; the WEB app shipped none — a
+ * UI-redress (clickjacking) surface and a nosniff gap. These headers are
+ * deliberately minimal and non-breaking:
+ *   - CSP `frame-ancestors 'none'` + X-Frame-Options DENY → clickjacking off
+ *     (no script/style directives: a strict CSP needs nonce plumbing across
+ *     Next's inline runtime — out of scope here, documented in the audit).
+ *   - nosniff, referrer-policy, permissions-policy → defense in depth.
+ * The API proxy paths keep their own upstream responses; headers apply to
+ * every document/asset route Next serves directly.
+ */
+const SECURITY_HEADERS = [
+  { key: "X-Frame-Options", value: "DENY" },
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+  { key: "Content-Security-Policy", value: "frame-ancestors 'none'" },
+];
+
 const nextConfig: NextConfig = {
   transpilePackages: ["@cosmoz/shared"],
+  async headers() {
+    return [{ source: "/:path*", headers: SECURITY_HEADERS }];
+  },
   async rewrites() {
     return [
       { source: "/api/v1/:path*", destination: `${API_PROXY_TARGET}/api/v1/:path*` },

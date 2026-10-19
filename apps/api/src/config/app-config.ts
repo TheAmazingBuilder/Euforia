@@ -90,6 +90,8 @@ export interface AppConfig {
   };
   auth: {
     jwtSecret: string;
+    jwtIssuer: string;
+    jwtAudience: string;
     mfaEncryptionKey: Buffer;
     accessTtlSeconds: number;
     refreshRememberDays: number;
@@ -171,6 +173,8 @@ function build(env: Env): AppConfig {
     },
     auth: {
       jwtSecret: env.AUTH_JWT_SECRET,
+      jwtIssuer: env.AUTH_JWT_ISSUER,
+      jwtAudience: env.AUTH_JWT_AUDIENCE,
       mfaEncryptionKey: Buffer.from(env.AUTH_MFA_ENCRYPTION_KEY, "base64"),
       accessTtlSeconds: env.AUTH_ACCESS_TTL_SECONDS,
       refreshRememberDays: env.AUTH_REFRESH_REMEMBER_DAYS,

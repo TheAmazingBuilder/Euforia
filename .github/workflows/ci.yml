@@ -11,6 +11,11 @@
 
 name: ci
 
+# Least-privilege pipelines (security-audit 2026-10-19 §2.20): the CI only
+# reads the repository — no write scope is ever granted.
+permissions:
+  contents: read
+
 on:
   push:
     branches:
@@ -99,6 +104,14 @@ jobs:
         # original root-relative invocation failed with MODULE_NOT_FOUND).
         working-directory: apps/web
         run: node scripts/check-prod-mock-leakage.mjs
+
+      # Security-audit 2026-10-19 §2.20 — tracked-secrets scan of the whole
+      # working tree (git ls-files; history is out of scope by design, see
+      # the audit report). Runs in the web job because that job already
+      # carries the repo-wide guard scripts; zero dependencies.
+      - name: Tracked-secrets guard (working tree)
+        working-directory: apps/web
+        run: node scripts/check-tracked-secrets.mjs
 
   ocr-service:
     name: ocr-service (pytest — sidecar pipeline)
