@@ -222,6 +222,8 @@ export function DashboardView({ description }: DashboardViewProps) {
   );
   const needsSuite = [...SUITE_WIDGET_TYPES].some((type) => displayedTypes.has(type as never));
   const suiteQuery = useAnalyticsSuite(filtersToSuiteFilters(f.filters), 50, { enabled: needsSuite });
+  // Destructured for the memoized bundle below (stable dep list, no lint warning).
+  const { data: suiteData, isPending: suitePending, isLoading: suiteLoading, isError: suiteError, refetch: suiteRefetch } = suiteQuery;
 
   const compactSpacing = compact; // named for the className below
   const activeView = activeViewOf(f.state);
@@ -237,20 +239,26 @@ export function DashboardView({ description }: DashboardViewProps) {
     void queryClient.refetchQueries({ type: "active" });
   }, [queryClient]);
 
-  const widgetData: DashboardWidgetData | null =
-    overview.data && rules.data && alerts.data
-      ? {
-          overview: overview.data,
-          rulesStatus: rules.data,
-          alerts: alerts.data,
-          suite: needsSuite ? (suiteQuery.data ?? null) : null,
-          suiteStatus: {
-            isLoading: needsSuite ? suiteQuery.isPending || suiteQuery.isLoading : false,
-            isError: needsSuite ? Boolean(suiteQuery.isError) : false,
-            refetch: () => void suiteQuery.refetch(),
-          },
-        }
-      : null;
+  // Phase 09 — the bundle is memoized so suite-fed widgets and the grid
+  // receive a STABLE object + refetch identity across unrelated re-renders
+  // (filter-bar state churn no longer rebuilds the widget-data contract).
+  const widgetData: DashboardWidgetData | null = React.useMemo(
+    () =>
+      overview.data && rules.data && alerts.data
+        ? {
+            overview: overview.data,
+            rulesStatus: rules.data,
+            alerts: alerts.data,
+            suite: needsSuite ? (suiteData ?? null) : null,
+            suiteStatus: {
+              isLoading: needsSuite ? suitePending || suiteLoading : false,
+              isError: needsSuite ? Boolean(suiteError) : false,
+              refetch: () => void suiteRefetch(),
+            },
+          }
+        : null,
+    [overview.data, rules.data, alerts.data, needsSuite, suiteData, suitePending, suiteLoading, suiteError, suiteRefetch],
+  );
 
   const editing = c.editing;
   const actionsDisabled = isLoading || isError || isEmpty;

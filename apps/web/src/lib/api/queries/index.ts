@@ -86,7 +86,7 @@ export {
   useCreateSessionNote,
   useDeleteSessionNote,
 } from "./session";
-export { useAnalytics, useAnalyticsSuite, useStatsOverview } from "./stats";
+export { useAnalyticsSuite, useStatsOverview } from "./stats";
 export {
   useCalendarBlocks,
   useCalendarView,

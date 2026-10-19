@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import type {
   AnalyticsFilters,
-  AnalyticsResponse,
   AnalyticsSuiteResponse,
   StatsOverviewResponse,
 } from "@cosmoz/shared";
@@ -18,13 +17,9 @@ export function useStatsOverview() {
   });
 }
 
-/** GET /stats/analytics — the full analytics suite aggregate (Phase 9). */
-export function useAnalytics() {
-  return useQuery({
-    queryKey: queryKeys.statsAnalytics,
-    queryFn: () => apiRequest<AnalyticsResponse>(apiPaths.statsAnalytics),
-  });
-}
+// NOTE (Phase 09): the legacy `useAnalytics()` hook (GET /stats/analytics)
+// was REMOVED — zero consumers in src/ (audit-verified dead code) and the
+// controller deliberately does not implement the legacy shape anymore.
 
 /**
  * GET /stats/analytics-suite — the Analytics module dataset. The filter set
@@ -55,8 +50,14 @@ export function useAnalyticsSuite(
   const queryString = params.toString();
   return useQuery({
     queryKey: queryKeys.analyticsSuite(queryString),
-    queryFn: () =>
-      apiRequest<AnalyticsSuiteResponse>(`${apiPaths.statsAnalyticsSuite}?${queryString}`),
+    // Phase 09 — TanStack's signal is forwarded to fetch: a filter change or
+    // unmount ABORTS the in-flight request for the superseded key instead of
+    // orphaning it (apiRequest already supports signal passthrough). Key
+    // scoping still guarantees stale responses can never overwrite newer ones.
+    queryFn: ({ signal }) =>
+      apiRequest<AnalyticsSuiteResponse>(`${apiPaths.statsAnalyticsSuite}?${queryString}`, {
+        signal,
+      }),
     enabled: options?.enabled ?? true,
   });
 }

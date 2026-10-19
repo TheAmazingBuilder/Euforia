@@ -49,8 +49,11 @@ export interface TradesParams {
 export function useTrades(params: TradesParams = {}) {
   return useQuery({
     queryKey: queryKeys.trades(params),
-    queryFn: () =>
+    // Phase 09 — signal forwarding: switching account/status aborts the
+    // superseded in-flight request instead of orphaning it.
+    queryFn: ({ signal }) =>
       apiRequest<TradesListResponse>(apiPaths.trades, {
+        signal,
         query: {
           status: params.status,
           graded: params.graded,

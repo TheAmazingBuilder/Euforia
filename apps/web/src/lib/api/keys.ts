@@ -40,7 +40,6 @@ export const queryKeys = {
   calendarView: (from: string, to: string) => ["calendar-view", from, to] as const,
   calendarBlocks: ["calendar-blocks"] as const,
   statsOverview: ["stats-overview"] as const,
-  statsAnalytics: ["stats-analytics"] as const,
   analyticsSuite: (filters: string) => ["analytics-suite", filters] as const,
   skippedTrades: ["skipped-trades"] as const,
   sessionTimeline: ["session-timeline"] as const,
@@ -154,6 +153,13 @@ export const queryKeys = {
  * Root keys invalidated by any trade mutation. The discipline banner
  * (rules-status) refetches after EACH mutation per trade-entry-ux.md §12,
  * and the Session Live timeline is rebuilt from trades/events/alerts.
+ *
+ * Phase 09 (data freshness): `analyticsSuiteRoot` joined the bundle — a
+ * single-trade create/edit/close/decision/delete changes every derived
+ * aggregate (dashboard comparison widgets consume the sims=50 suite; the
+ * Analytics page refetches on mount after navigation because its cached
+ * entry is stale). Bulk-tag and CSV-import already invalidated it — the
+ * single-trade path was the gap (audit finding #1, evidence-ranked).
  */
 export const tradeMutationInvalidations = [
   queryKeys.tradesRoot,
@@ -161,4 +167,5 @@ export const tradeMutationInvalidations = [
   queryKeys.alerts,
   queryKeys.statsOverview,
   queryKeys.sessionTimeline,
+  queryKeys.analyticsSuiteRoot,
 ] as const;
