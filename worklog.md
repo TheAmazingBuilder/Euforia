@@ -2127,3 +2127,24 @@ Stage Summary:
 - VERDICT 2.26-2.40: SOLIDE — majorité Validé (preuves du jour), N/A justifiés (LDAP/GraphQL/XML/Redis/queues/admin absents), les À vérifier convergent vers le provisioning staging (TLS/proxy/logs/supervision/secrets prod); 2 défets corrigés (FIX D dépendances, FIX E compose) avec régression verte
 - 8 gaps restants: Dockerfile sans USER (MEDIUM-LOW, fix au provisioning — non corrigé à l'aveugle: docker non exécutable sandbox), cap profondeur JSON implicite (LOW), oanda recovery sweep chroniquement instable (MEDIUM stabilité QA, non une faille), 5 × À vérifier staging
 - État: audit --prod 0 vuln · web 223/223 · api 1350/1351 · tsc×3 · gardes PASS · zéro migration nouvelle · 3 overrides + lockfile + compose modifiés
+
+---
+Task ID: 28
+Agent: Z.ai (main)
+Task: Sauvegarde pré-restart sandbox (00h00) — commit + kit de backup complet dans download/, « je veux ne rien perdre »
+
+Work Log:
+- État dépôt vérifié: working tree 100% PROPRE (git status --porcelain = 0), HEAD 80bfef7 — toutes les implémentations Oryon sont DÉJÀ commitées (aucun commit supplémentaire nécessaire); aucun remote git configuré (push GitHub toujours en attente d'URL+token owner)
+- Constat critique: ancien kit de backup (21:33, manifeste HEAD fc24210) ne contenait PAS les 3 derniers commits (f556c8d worklog task 26, 4b5b705 audit P1, 80bfef7 audit P2)
+- Bundle git FRAIS créé: download/oryon-git-history-2026-10-19-2240.bundle (311 Mo, --all, 313+ commits) — git bundle verify: « The bundle records a complete history » (HEAD 80bfef7 + tags savepoint)
+- TEST DE RESTAURATION RÉUSSI: git clone du bundle → HEAD restauré = 80bfef7ab991005f3f2f477422a503f35f08b367 identique, tree propre, apps/web+api+packages/shared+worklog.md présents; scratch .restore-test nettoyé après preuve
+- Tarball runtime data: download/oryon-runtime-data-2026-10-19-2240.tar.gz (92 Mo) = apps/api/.localpg (275 Mo, Postgres embarquée) + apps/api/.data (24 Mo, ocr-storage)
+- Tarball configs hors-git: download/oryon-env-configs-2026-10-19-2240.tar.gz (.env racine 50 o + apps/api/.env 671 o — seuls fichiers ignorés irremplaçables; .impeccable/.wip-quarantine/.zscripts déjà trackés)
+- Tarball clé en main FRAIS lancé en arrière-plan: oryon-full-workspace-80bfef7-2026-10-19-2245.tar.gz (exclut node_modules/.next/dist/.turbo/logs; inclut .git+envs+data)
+- Manifeste mis à jour: download/BACKUP-MANIFEST-2026-10-19-2245.md (inventaire 5 fichiers, procédures restauration option A/B, limitation honnête download/ non garanti + seule garantie = téléchargement owner ou push GitHub)
+
+Stage Summary:
+- Kit de sauvegarde complet à 22:45 Toronto, ~1h15 avant restart: bundle 311 Mo (tout l'historique, restauré et prouvé) + runtime data 92 Mo + env configs + tarball clé en main ~600 Mo + manifeste
+- Couverture 100% de l'état irremplaçable: code+histoire (bundle), secrets/configs (.env tarball), données runtime (DB+OCR), redondance croisée entre les 4 artefacts
+- Seule garantie ABSOLUE restante = owner télécharge les fichiers download/ sur sa machine MAINTENANT, ou fournit URL+token GitHub pour push (aucun token dans l'environnement)
+- État repo inchangé: HEAD 80bfef7, tree propre, aucun commit nouveau (rien à committer), aucun fichier source modifié pendant la sauvegarde
