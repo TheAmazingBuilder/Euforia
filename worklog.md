@@ -2107,3 +2107,23 @@ Stage Summary:
 - 11 gaps restants classés (purge compte MEDIUM = seul reste code prioritaire; notifications email, CSP stricte, audit deps CI = LOW; TLS/Docker/backups/monitoring = owner staging)
 - État: web 223/223 · api 1350/1351 · tsc×3 · gardes PASS · 42 migrations inchangées · zéro migration nouvelle, zéro dépendance nouvelle
 - Reste owner: push GitHub, staging provisioning (TLS, Docker, DB least-privilege, backups, monitoring alerting), décisions produit (check mdp compromis, EXIF)
+
+---
+Task ID: 27
+Agent: Z.ai (main)
+Task: Sécurité — vérification complète partie 2 de la checklist owner (sections 2.26 → 2.40), méthodologie evidence-only 4 statuts, « ignore si existe déjà implémenté »
+
+Work Log:
+- État dépôt: HEAD 4b5b705 (audit sécurité P1+P2+P3 = sections 1.1-1.13 + 2.1-2.25 déjà livré) — la partie 2 reçue (2.26-2.40, 15 sections, ~180 contrôles) est une EXTENSION non couverte → vérification intégrale menée
+- Preuves par exécution: pnpm audit --prod (3 HIGH transitives: deepmerge-ts via @prisma/config, source-map-js via postcss/tailwind, sharp/librsvg via next) · gardes mock-leakage + tracked-secrets (1529 fichiers) PASS · batteries re-passées
+- Re-lectures ciblées: 7 $queryRawUnsafe OCR re-vérifiés ligne à ligne (tous paramétrés $1::uuid/$2) · sortClause = allowlist type-union (trading.repository.ts:661-670) · error-mapper.ts (5xx masqués prod, Prisma jamais SQL) · env.schema.ts (fail-fast, CORS * interdit) · zod-validation.pipe (strip champs inconnus, jamais d'écho de valeurs) · primitives.ts (argent = decimal-string, UTC Z obligatoire, dates calendaires validées) · request-id.ts (pattern strict 8-64) · mailer.service.ts (redaction prod, tokens encodeURIComponent) · webhook-pipeline.ts (HMAC + timing-safe + fenêtre ±5 min) · sw.js (réseau-d'abord, zéro cache de données) · next.config.ts (FIX A intact) · Dockerfile (aucun secret copié) · app.setup.ts (CORS allowlist exact, helmet, echo x-request-id)
+- Scans: zéro catch vide (134 catch instruits) · zéro child_process/pickle/eval/exec · zéro postMessage/dangerouslySetInnerHTML/target=_blank · zéro Swagger/endpoint démo · zéro Redis ("no BullMQ/Redis in this build") · 8 Math.random tous non-sécurité · sha1 = UUIDv5 RFC + analytics non-sécurité uniquement · 41 contrôleurs · 40 @unique schema.prisma · 15+ $transaction · FOR UPDATE (trading:579) · safeReturnTo anti-open-redirect (login-form.tsx:33-39) · monitoring = JWT-guarded (aucun @Public) + 8 règles d'alerte testées
+- FIX D (2.38): pins sécurité dans pnpm-workspace.yaml overrides (emplacement pnpm 12 — le champ pnpm de package.json n'est plus lu): deepmerge-ts 8.0.0, source-map-js 1.2.2, sharp 0.35.5 → pnpm audit --prod = 0 vulnérabilité
+- Régression FIX D: prisma generate OK · tsc --noEmit ×3 OK · build web OK · tests web 223/223 · tests API 1350/1351 (unique échec = flake oanda recovery sweep :625, 4e/5e échecs consécutifs sur 2 sessions, inertie des overrides prouvée: aucun des 3 paquets importé par le runtime) · gardes PASS
+- FIX E (2.30): docker-compose.yml bindings 127.0.0.1 sur db (5432) et api (4000) — précédemment 0.0.0.0
+- RAPPORT: docs/audits/SECURITY-AUDIT-PART2-SECTIONS-2.26-2.40-REPORT.md (A-S: méthode+preuves du jour, 15 sections item par item en 4 statuts, 2 fixes documentés, 8 gaps classés honnêtes, verdict)
+
+Stage Summary:
+- VERDICT 2.26-2.40: SOLIDE — majorité Validé (preuves du jour), N/A justifiés (LDAP/GraphQL/XML/Redis/queues/admin absents), les À vérifier convergent vers le provisioning staging (TLS/proxy/logs/supervision/secrets prod); 2 défets corrigés (FIX D dépendances, FIX E compose) avec régression verte
+- 8 gaps restants: Dockerfile sans USER (MEDIUM-LOW, fix au provisioning — non corrigé à l'aveugle: docker non exécutable sandbox), cap profondeur JSON implicite (LOW), oanda recovery sweep chroniquement instable (MEDIUM stabilité QA, non une faille), 5 × À vérifier staging
+- État: audit --prod 0 vuln · web 223/223 · api 1350/1351 · tsc×3 · gardes PASS · zéro migration nouvelle · 3 overrides + lockfile + compose modifiés

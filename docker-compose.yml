@@ -18,7 +18,9 @@ services:
       POSTGRES_PASSWORD: cosmoz
       POSTGRES_DB: cosmoz
     ports:
-      - "5432:5432"
+      # Loopback-only binding (security audit 2026-10-19 partie 2 §2.30): the
+      # dev database must never be reachable from the LAN.
+      - "127.0.0.1:5432:5432"
     volumes:
       - cosmoz-pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -40,7 +42,8 @@ services:
       CORS_ORIGINS: http://localhost:3000
       LOG_LEVEL: info
     ports:
-      - "4000:4000"
+      # Loopback-only binding (security audit 2026-10-19 partie 2 §2.30).
+      - "127.0.0.1:4000:4000"
     depends_on:
       db:
         condition: service_healthy

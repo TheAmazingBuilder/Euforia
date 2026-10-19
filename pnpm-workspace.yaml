@@ -26,7 +26,13 @@ allowBuilds:
   '@embedded-postgres/linux-ppc64': set this to true or false
   '@embedded-postgres/windows-x64': set this to true or false
 
-# Security pin (MASTER QA audit): the patched fastify 5.x everywhere — the
-# advisory class is header-validation / auth bypass (GHSA high, in-range fix).
+# Security pins (MASTER QA audit + security audit 2026-10-19 partie 2 §2.38):
+# every line forces the patched version of a known advisory, transitive or not.
 overrides:
   fastify: 5.12.7
+  # GHSA-v888 (deepmerge-ts stack exhaustion) — transitive via @prisma/config.
+  deepmerge-ts: 8.0.0
+  # GHSA-68fv (source-map-js event-loop DoS) — transitive via postcss/tailwind.
+  source-map-js: 1.2.2
+  # GHSA-wq5f (sharp librsvg CVE-2026-96889) — transitive via next.
+  sharp: 0.35.5
