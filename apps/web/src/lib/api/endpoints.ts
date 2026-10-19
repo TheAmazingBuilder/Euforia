@@ -91,6 +91,9 @@ export const apiPaths = {
   alertRule: (ruleId: string) => `/alert-rules/${ruleId}`,
   alertRuleEvents: (ruleId: string) => `/alert-rules/${ruleId}/events`,
   alertRulesEvaluate: "/alert-rules/evaluate",
+  // Performance snapshots (Dashboard Customization Phase 08)
+  snapshots: "/snapshots",
+  snapshot: (snapshotId: string) => `/snapshots/${snapshotId}`,
   ecoEvents: "/eco-events",
   calendarView: "/calendar-view",
   calendarBlocks: "/calendar-blocks",

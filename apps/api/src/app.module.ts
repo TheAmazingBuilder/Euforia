@@ -48,6 +48,7 @@ import { AnalyticsModule } from "./modules/analytics/analytics.module";
 import { OryonModule } from "./modules/oryon/oryon.module";
 import { PlansModule } from "./modules/plans/plans.module";
 import { MetricAlertsModule } from "./modules/metric-alerts/metric-alerts.module";
+import { SnapshotsModule } from "./modules/snapshots/snapshots.module";
 
 const globalExceptionFilterProvider: Provider = {
   provide: APP_FILTER,
@@ -177,6 +178,10 @@ const globalExceptionFilterProvider: Provider = {
     // after closed-trade writes (debounced) and on manual trigger; events
     // land in the EXISTING discipline inbox (one notification system).
     MetricAlertsModule,
+    // Performance snapshots (Dashboard Customization Phase 08) — frozen
+    // point-in-time analytics-suite summary captures (create/list/patch
+    // metadata/delete); comparison is the pure shared engine client-side.
+    SnapshotsModule,
     // modules/reference … — added by their own phases.
   ],
   providers: [globalExceptionFilterProvider],

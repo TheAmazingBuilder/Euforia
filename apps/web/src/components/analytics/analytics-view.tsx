@@ -227,7 +227,7 @@ export function AnalyticsView() {
               <MonteCarloTab suite={data} />
             </TabsContent>
             <TabsContent value="reports" className="mt-4">
-              <ReportsTab suite={data} />
+              <ReportsTab suite={data} filters={filters} />
             </TabsContent>
           </>
         )}

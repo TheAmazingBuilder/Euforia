@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import type { AnalyticsSuiteResponse } from "@cosmoz/shared";
+import type { AnalyticsFilters, AnalyticsSuiteResponse } from "@cosmoz/shared";
 import { formatMoney, formatNumber, formatPercent, formatR, formatSignedMoney } from "@cosmoz/shared";
 import { CalendarClock, Download, FileDown, Gauge, Sigma, Timer } from "lucide-react";
 
@@ -16,6 +16,8 @@ import { MetricCard, MethodNote } from "@/components/analytics/metric-card";
 import { useOcrAnalytics } from "@/lib/api/queries";
 import { ExcursionScatter, HistogramChart, MonteCarloChart } from "@/components/analytics/panels-charts";
 import { QuarterlyReportDialog } from "@/components/analytics/quarterly-report-dialog";
+import { ExportCenter } from "@/components/analytics/export-center";
+import { SnapshotsPanel } from "@/components/analytics/snapshots-panel";
 import type { AnalyticsDict } from "@/i18n/dictionaries/en/analytics";
 import { recognitionFieldLabel } from "@/i18n/dictionaries/en/recognition";
 import { useI18n } from "@/i18n/i18n-provider";
@@ -574,7 +576,13 @@ export function MonteCarloTab({ suite }: { suite: Suite }) {
   );
 }
 
-export function ReportsTab({ suite }: { suite: Suite }) {
+export function ReportsTab({
+  suite,
+  filters,
+}: {
+  suite: Suite;
+  filters: AnalyticsFilters;
+}) {
   const { dict } = useI18n();
   const T: AnalyticsDict["behavior"]["reports"] = dict.analytics.behavior.reports;
   const money = suite.meta.singleCurrency;
@@ -690,6 +698,11 @@ export function ReportsTab({ suite }: { suite: Suite }) {
       </Card>
 
       <QuarterlyReportDialog open={reportOpen} onOpenChange={setReportOpen} suite={suite} />
+
+      {/* Dashboard Customization Phase 08 — export center + snapshots. Both
+          render from the SAME filtered server dataset (one truth). */}
+      <ExportCenter suite={suite} />
+      <SnapshotsPanel suite={suite} filters={filters} />
     </div>
   );
 }

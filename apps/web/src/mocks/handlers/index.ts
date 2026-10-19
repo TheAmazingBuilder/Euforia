@@ -5,6 +5,7 @@ import { catalogHandlers } from "./catalogs";
 import { preferencesHandlers } from "./preferences";
 import { disciplineHandlers } from "./discipline";
 import { metricAlertHandlers } from "./metric-alerts";
+import { snapshotHandlers } from "./snapshots";
 import { ecoHandlers } from "./eco";
 import { integrationHandlers } from "./integrations";
 import { monitoringHandlers } from "./monitoring";
@@ -33,6 +34,7 @@ export const handlers = [
   ...planHandlers,
   ...disciplineHandlers,
   ...metricAlertHandlers,
+  ...snapshotHandlers,
   ...ghostHandlers,
   ...statsHandlers,
   ...sessionHandlers,

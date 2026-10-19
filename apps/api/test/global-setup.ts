@@ -38,6 +38,23 @@ function prismaCliPath(): string {
 export default async function globalSetup(): Promise<void> {
   process.env.NODE_ENV = "test";
 
+  // 0. HERMETIC ENGINE PINNING — the e2e suite documents and asserts the
+  // DETERMINISTIC engine's scenario buckets (fixture nonces are calibrated
+  // against fnv1a32(checksum|profile) % 50). A dev .env that carries
+  // OCR_SERVICE_URL(+TOKEN) would silently switch the whole suite onto the
+  // real FastAPI sidecar (the factory prefers it), making every upload a
+  // network call to a service that may not be running — non-hermetic,
+  // environment-dependent results. The harness therefore strips the sidecar
+  // config and pins the mock engine for TEST RUNS ONLY (the dev .env file
+  // itself is untouched — live sidecar testing stays available to dev runs).
+  // Empty URL is contract-valid ("" → undefined). The token's schema has an
+  // unconditional min(32) when the string is present, so the test provides a
+  // throwaway 32-char value that NEVER reaches an engine: with no serviceUrl
+  // the FastAPI adapter is not registered at all.
+  process.env.OCR_SERVICE_URL = "";
+  process.env.OCR_SERVICE_TOKEN = "test-harness-unused-token-000000000000";
+  process.env.OCR_MOCK_ENGINE = "enabled";
+
   // 1. Cluster up (idempotent — reuses a running one).
   await ensureDevDb();
 

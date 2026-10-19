@@ -351,7 +351,9 @@ export function QuarterlyReportDialog({
           </div>
 
           <footer className="mt-5 border-t pt-2 text-center text-[9px] text-muted-foreground">
-            {T.footer}
+            <p>
+              {T.generatedAt} {new Date().toISOString().slice(0, 16).replace("T", " ")} UTC · {T.footer}
+            </p>
           </footer>
         </div>
       </DialogContent>
