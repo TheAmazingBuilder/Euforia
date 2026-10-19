@@ -2068,3 +2068,21 @@ Stage Summary:
 - État final : api 1346/1347 (1 flake pré-existant prouvé stash) · web 223/223 · pytest 97/97 · tsc×3 · lint/garde/build verts · 42 migrations
 - Snapshots : capture serveur depuis le moteur autoritaire unique, immuabilité structurelle, comparaison pure partagée, IDOR prouvé — zéro donnée fabriquée, zéro claim broker/feed/production
 - Reste owner : push GitHub (URL+token), re-upload specs 10/11 si re-conformité souhaitée, staging (CI GitHub jamais tournée, brokers/feed réels)
+
+---
+Task ID: 26
+Agent: main (Z.ai)
+Task: Réactivation sandbox + validation Phase 8 (consigne « si c'est déjà fait, valide juste ») + audit des tests unitaires
+
+Work Log:
+- SANDBOX RÉACTIVÉE et intacte : HEAD 527b208 (313 commits), arbre propre, branche main ; backups download/ présents (bundle 311 Mo + tarball 618 Mo + manifest) ; worklog tasks 22-25 relus — phases 08+09 déjà livrées (18c2519, 595a6c4) → passage en mode VALIDATION conformément à la consigne owner
+- VALIDATION PHASE 8 (REPORTING, DATA EXPORTS & PERFORMANCE SNAPSHOTS) — livrables tous présents sur disque : rapport docs/audits/DASHBOARD-CUSTOMIZATION-PHASE-08-REPORT.md (statut COMPLETE, limites honnêtes §E) + rapport Phase 09 ; module API apps/api/src/modules/snapshots/ (controller/module/repository/service) ; migration 20261019100000_performance_snapshots (42ᵉ) ; contrat partagé packages/shared/src/schemas/performanceSnapshots.ts + utils/csv.ts ; web lib/export/builders.ts + components/analytics/export-center.tsx — VERDICT : DÉJÀ IMPLÉMENTÉE ET VALIDÉE (aucun travail requis)
+- AUDIT TESTS UNITAIRES — WEB : pnpm vitest run → 223/223 PASS en 7,17 s (18 fichiers) = baseline exacte task 25, zéro échec
+- AUDIT TESTS UNITAIRES — API (Postgres embarqué réel) : run 1 = 1345/1347 (2 échecs) ; runs 2-3 complets = 1346/1347 = baseline exacte. Seul échec reproductible = flake documenté PRÉ-EXISTANT « oanda recovery sweep » (test/e2e/oanda-fixture.e2e.spec.ts:625, timeout 30 s sur timing scheduler, preuve stash à la task 25) ; le 2ᵉ échec du run 1 (assertion tronquée à la capture, fichier non identifié) ne s'est PAS reproduit sur 2 runs complets consécutifs → classé flake transitoire timing, aucune régression introduite (aucun commit code depuis 595a6c4)
+- GATES COMPLÉMENTAIRES : tsc ×3 (packages/shared, apps/api, apps/web) = 0 erreur ; garde mock-leakage (apps/web/scripts/check-prod-mock-leakage.mjs, sémantique CI exacte) = PASS — production ne peut pas activer la couche démo
+
+Stage Summary:
+- Phase 8 custom dashboard : VALIDÉE — COMPLETE avec preuves (rapport A–G, snapshots serveur immuables, export center, migration 42) ; aucune action requise
+- Audit tests unitaires : web 223/223 · api 1346/1347 (1 flake oanda pré-existant documenté, non-contourné) · tsc×3 verts · garde PASS — baseline task 25 reproductible à l'identique après restart sandbox
+- État dépôt inchangé : zéro fichier code modifié, zéro migration, zéro dépendance ; HEAD 527b208 + ce commit worklog
+- Reste owner (inchangé) : push GitHub (URL+token), staging (CI jamais tournée, brokers/feed réels), éventuel upload specs 10/11
