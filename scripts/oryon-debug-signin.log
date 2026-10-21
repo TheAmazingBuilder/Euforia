@@ -1,0 +1,19 @@
+=== signin debug 2026-10-10T02:34:41.938Z ===
+after goto / — url: http://localhost:3000/
+after 2s — url: http://localhost:3000/login?returnTo=%2F
+login form visible: true
+demo hint button count: 1
+clicked demo fill button
+clicked login-submit
+after submit — url: http://localhost:3000/
+mfa step visible: false
+login error visible: false
+final url: http://localhost:3000/
+title: Dashboard — Euforia
+oryon links: 1
+nav sample: ["/","/","/trades","/oryon","/journal","/playbook","/analytics","/recognition","/calendar","/discipline","/academy","/nofy","/events","/tasky","/tools/lot-size","/tools/compounding","/monitoring","/settings","/integrations","/security","/profile","/analytics","/analytics","/journal?tab=goals"]
+body head: Euforia Dashboard Setup seen, not taken TRADING Trades Oryon Trade Review Playbook INSIGHTS Analytics Recognition Calendar Discipline ACADEMY Academy Nofy Events Tasky TOOLS Lot Interest SYSTEM Monitoring Settings Integrations Security Log out Dashboard Search
+ERRORS (2):
+  CONSOLE: Failed to load resource: the server responded with a status of 401 (Unauthorized)
+  CONSOLE: Failed to load resource: the server responded with a status of 401 (Unauthorized)
+=== done ===

@@ -1,0 +1,27 @@
+Prisma schema loaded from prisma/schema.prisma
+Datasource "db": PostgreSQL database "cosmoz_replay", schema "public" at "127.0.0.1:5433"
+
+PostgreSQL database cosmoz_replay created at 127.0.0.1:5433
+
+41 migrations found in prisma/migrations
+
+Applying migration `20261003105600_identity_auth`
+Applying migration `20261003112422_session_previous_hash`
+Applying migration `20261003115414_accounts_connectivity`
+Applying migration `20261003131801_trading_core`
+Applying migration `20261003141559_trade_planning`
+Applying migration `20261003145823_trade_review`
+Error: P3018
+
+A migration failed to apply. New migrations cannot be applied before the error is recovered from. Read more about how to resolve migration issues in a production database: https://pris.ly/d/migrate-resolve
+
+Migration name: 20261003145823_trade_review
+
+Database error code: 42P01
+
+Database error:
+ERROR: relation "Trade" does not exist
+
+DbError { severity: "ERROR", parsed_severity: Some(Error), code: SqlState(E42P01), message: "relation \"Trade\" does not exist", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("namespace.c"), line: Some(639), routine: Some("RangeVarGetRelidExtended") }
+
+

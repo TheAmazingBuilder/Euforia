@@ -1,0 +1,14 @@
+-- OCR V2 — SUPERSEDED DUPLICATE (reconciled 2026-10-17).
+--
+-- This file is byte-identical to 20261006085000_ocr_v2 (multi-trade drafts,
+-- perceptual hashes, corrections memory, quality analytics events). A fresh
+-- `prisma migrate deploy` failed here on `column "perceptualHash" of
+-- relation "OcrAsset" already exists` (P3018 / 42701) because the earlier
+-- 08:50 generation had just added the same columns.
+--
+-- Reconciliation (same pattern as 20261003131801_trading_core /
+-- 20261003145823_trade_review): this file is now intentionally EMPTY of DDL.
+-- The live OCR V2 generation is 20261006085000_ocr_v2; the V3 generation is
+-- idempotent-guarded (IF NOT EXISTS) in both 20261006090000 and 20261006130000.
+-- Databases that already applied this migration by name are unaffected:
+-- `prisma migrate deploy` skips recorded migrations without re-reading them.

@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base { html, body { margin: 0; padding: 0; } body { overscroll-behavior: none; } main > :first-child { margin-top: 0 !important; } main > :last-child { margin-bottom: 0 !important; } } ::-webkit-scrollbar { display: none; }</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "on-background": "#dce2f6", "tertiary-fixed-dim": "#ffb3b0", "on-secondary-container": "#00452e", "outline": "#8f8fa0", "on-primary": "#000fa3", "inverse-on-surface": "#2a3040", "inverse-primary": "#424ed2", "on-surface": "#dce2f6", "surface-tint": "#bdc2ff", "surface-container-highest": "#2e3544", "surface-container-low": "#151b2a", "secondary": "#45dfa4", "surface-bright": "#323949", "on-error-container": "#ffdad6", "tertiary-fixed": "#ffdad8", "primary-fixed-dim": "#bdc2ff", "primary-container": "#7985ff", "inverse-surface": "#dce2f6", "surface-dim": "#0c1321", "secondary-container": "#00bd85", "on-primary-container": "#000c90", "error": "#ffb4ab", "on-tertiary-fixed": "#410006", "surface-container": "#19202e", "primary-fixed": "#e0e0ff", "surface-container-lowest": "#070e1c", "on-tertiary": "#670211", "on-tertiary-fixed-variant": "#881d24", "error-container": "#93000a", "on-primary-fixed": "#000668", "on-surface-variant": "#c6c5d6", "on-secondary-fixed-variant": "#005137", "secondary-fixed": "#68fcbf", "on-secondary": "#003825", "secondary-fixed-dim": "#45dfa4", "surface-container-high": "#232a39", "background": "#0c1321", "surface": "#0c1321", "primary": "#bdc2ff", "on-secondary-fixed": "#002114", "outline-variant": "#454654", "tertiary": "#ffb3b0", "on-primary-fixed-variant": "#2632b9", "on-error": "#690005", "tertiary-container": "#ea6767", "on-tertiary-container": "#5b000d", "surface-variant": "#2e3544" }, "borderRadius": { "DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem" }, "spacing": { "gutter-mobile": "0.75rem", "margin-mobile": "1rem", "space-sm": "0.5rem", "space-xl": "2rem", "space-xs": "0.25rem", "margin": "2rem", "gutter": "1.25rem", "space-lg": "1.5rem", "space-md": "1rem" }, "fontFamily": { "headline-sm": ["Space Grotesk"], "headline-md": ["Space Grotesk"], "label-lg": ["Inter"], "headline-lg-mobile": ["Space Grotesk"], "body-md": ["Inter"], "label-md": ["Inter"], "data-md": ["JetBrains Mono"], "data-lg": ["JetBrains Mono"], "body-lg": ["Inter"], "display": ["Space Grotesk"], "headline-lg": ["Space Grotesk"], "data-sm": ["JetBrains Mono"], "body-sm": ["Inter"] }, "fontSize": { "headline-sm": ["18px", { "lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "500" }], "headline-md": ["22px", { "lineHeight": "28px", "letterSpacing": "-0.015em", "fontWeight": "600" }], "label-lg": ["14px", { "lineHeight": "20px", "fontWeight": "500" }], "headline-lg-mobile": ["26px", { "lineHeight": "34px", "letterSpacing": "-0.02em", "fontWeight": "600" }], "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }], "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" }], "data-md": ["14px", { "lineHeight": "18px", "fontWeight": "500" }], "data-lg": ["20px", { "lineHeight": "26px", "letterSpacing": "-0.02em", "fontWeight": "600" }], "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }], "display": ["44px", { "lineHeight": "52px", "letterSpacing": "-0.03em", "fontWeight": "700" }], "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "600" }], "data-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }], "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }] } } } };</script></head><body class="bg-background font-body-md text-on-surface antialiased min-h-screen"><aside class="fixed left-0 top-0 h-full w-60 bg-surface-container-lowest z-50 flex flex-col justify-between shadow-[0_1px_8px_rgba(0,0,0,0.4)]"><div class="flex flex-col"><div class="h-16 px-space-md flex items-center justify-between bg-surface-container-lowest"><div class="flex items-center gap-space-sm"><img alt="Cosmoz Constellation Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1VGGi1_rJbXNPyDb0xfP8Ff0pWFjs2jb4qAyUMWSSBYqB_iFVN9wAF-ldb5-r_NNTuQfNeXjp_jGDmzoUl5n4eNHIQmH6RhEKwgFdbkmDmmeU-6Tn3SEN-jKTh3qG1aQhb0MfRzrzGlkMVdJpVxJsTlc5XOOn85CC_Ds0HdEEwslq2ANn5xr8oebB-kRufYogIDRwPISLYbinaSo71K1hdpWUF_7Gis39Z1ZFhM4wQSI4poylaqb870iNU"/><div class="flex flex-col"><span class="font-headline-sm text-headline-sm text-on-surface tracking-tight leading-none">Cosmoz</span><span class="font-data-sm text-data-sm text-primary tracking-widest leading-none mt-1 uppercase text-[9px]">BEHAVIORAL TERMINAL</span></div></div><button aria-label="Collapse navigation" class="p-space-xs text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded transition-colors" type="button"><span class="material-symbols-outlined text-[18px]">dock_to_left</span></button></div><div class="px-space-md pt-space-md pb-space-xs"><span class="font-label-md text-label-md uppercase tracking-wider text-outline text-[10px]">Navigation</span></div><nav class="flex flex-col gap-space-xs px-space-sm" data-active-classes="bg-primary-container text-on-primary-container font-semibold rounded shadow-[0_0_16px_rgba(110,123,255,0.35)]"><a aria-current="page" class="group flex items-center justify-between px-space-md py-space-sm transition-all bg-primary-container text-on-primary-container font-semibold rounded shadow-[0_0_16px_rgba(110,123,255,0.35)]" data-path="dashboard" href="#"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[20px]">space_dashboard</span><span>Dashboard</span></div></a><a class="group flex items-center justify-between px-space-md py-space-sm rounded font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="new-trade" href="#"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[20px]">add_circle</span><span>New Trade</span></div><span class="bg-primary font-data-sm text-data-sm text-on-primary px-space-xs py-0.5 rounded text-[10px] font-semibold leading-none">+</span></a><a class="group flex items-center justify-between px-space-md py-space-sm rounded font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="session-live" href="#"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[20px]">radar</span><span>Session Live</span></div><div class="flex items-center gap-1.5"><span class="relative flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-secondary opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-secondary"></span></span><span class="font-data-sm text-data-sm text-secondary text-[10px] tracking-wider">LIVE</span></div></a><a class="group flex items-center px-space-md py-space-sm rounded font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="playbook" href="#"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[20px]">menu_book</span><span>Playbook</span></div></a><a class="group flex items-center px-space-md py-space-sm rounded font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="analytics" href="#"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[20px]">monitoring</span><span>Analytics</span></div></a><a class="group flex items-center px-space-md py-space-sm rounded font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="calendar" href="#"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[20px]">calendar_today</span><span>Calendar</span></div></a><a class="group flex items-center px-space-md py-space-sm rounded font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="journal" href="#"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[20px]">edit_note</span><span>Journal</span></div></a><a class="group flex items-center justify-between px-space-md py-space-sm rounded font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="discipline" href="#"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[20px]">psychology</span><span>Discipline</span></div><span class="bg-surface-container-high font-data-sm text-data-sm text-secondary px-space-xs py-0.5 rounded text-[11px] font-medium leading-none">94%</span></a><a class="group flex items-center px-space-md py-space-sm rounded font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="goals" href="#"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[20px]">flag</span><span>Goals</span></div></a></nav></div><div class="p-space-sm"><nav class="flex flex-col" data-active-classes="bg-primary-container text-on-primary-container font-semibold rounded"><a class="group flex items-center px-space-md py-space-sm rounded font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="settings" href="#"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[20px]">settings</span><span>Settings</span></div></a></nav></div></aside><div class="pl-60"><header class="fixed top-0 left-60 right-0 h-16 bg-surface-container-lowest/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.3)] z-40 flex items-center justify-between px-space-lg"><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-xs font-label-md text-label-md text-on-surface-variant"><span class="material-symbols-outlined text-[16px] text-primary">terminal</span><span class="font-headline-sm text-headline-sm text-on-surface tracking-tight">Trading Command &amp; Performance Terminal</span></div><div class="h-4 w-[1px] bg-surface-container-highest"></div><div class="relative flex items-center"><select aria-label="Active Trading Account" class="appearance-none bg-surface-container-high font-data-sm text-data-sm text-on-surface py-1 pl-space-sm pr-7 rounded cursor-pointer hover:bg-surface-bright focus:outline-none"><option selected="">Prop Firm Alpha - $100k Live</option><option>Apex Trader - $50k Live</option><option>FXCM Personal - $25k</option><option>Paper Trading Beta</option></select><span class="material-symbols-outlined absolute right-1.5 pointer-events-none text-[16px] text-on-surface-variant">expand_more</span></div></div><div class="flex items-center gap-space-md"><div class="hidden xl:flex items-center gap-space-xs bg-surface-container-low px-space-sm py-1 rounded"><span class="h-2 w-2 rounded-full bg-secondary"></span><span class="font-data-sm text-data-sm text-on-surface-variant text-[11px]">London / NY Overlap Session - <span class="text-secondary font-medium">Open</span></span></div><a class="flex items-center gap-1.5 bg-surface-container-high hover:bg-surface-bright px-space-sm py-1 rounded transition-colors" data-path="journal" href="#"><span class="h-2 w-2 rounded-full bg-tertiary-container"></span><span class="font-label-md text-label-md text-tertiary font-medium">3 to grade</span><span class="material-symbols-outlined text-[14px] text-tertiary">chevron_right</span></a><button class="flex items-center gap-space-xs bg-primary hover:bg-primary-container text-on-primary hover:text-on-primary-container font-label-md text-label-md px-space-md py-1.5 rounded transition-all shadow-[0_0_16px_rgba(110,123,255,0.35)]" type="button"><span class="material-symbols-outlined text-[16px]">add</span><span>Log Execution</span></button><div class="relative flex items-center"><button aria-label="Alerts" class="p-space-xs text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded transition-colors" type="button"><span class="material-symbols-outlined text-[20px]">notifications</span></button><span class="absolute top-0 right-0 flex h-4 w-4 items-center justify-center rounded-full bg-error text-[9px] font-data-sm text-on-error font-bold">2</span></div><div class="h-6 w-[1px] bg-surface-container-highest"></div><div class="flex items-center gap-space-sm"><div class="relative"><img alt="Profile" class="w-8 h-8 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAsfHHxPO8hEW5kWdtozD3uACYHDoJt-P69UkGnHZVciT2oZbImkVrHPPkfPFQ6pyq2SSZ4bjP9-tlM6i1upyNDojnWCU4FbdHWOzhgOjZE3BaNBmSK82c3IMZd-Vs3ebOLmwts_25e9X5fcntxsKchQk7mdkSvQog6kZXfl98IFf842ZzIp8mQCF_3u-ieJOuhlJGaAFcxm2Z4w-xqk4rse8gh0qof_Gka3FkEhjtRanvM0NPSTia6"/><span class="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-secondary ring-2 ring-surface-container-lowest"></span></div><div class="flex flex-col"><span class="font-label-md text-label-md text-on-surface font-semibold leading-tight">Elena R. (Pro)</span><span class="font-data-sm text-data-sm text-primary text-[10px] leading-tight">PRO TRADER</span></div></div></div></header><main class="w-full pt-16 px-space-lg pb-space-xl bg-background"><div class="flex flex-col w-full relative min-h-[calc(100vh-4rem)] items-center justify-start py-space-xl">
+<!-- Dynamic Ambient Background Glows -->
+<div class="absolute -top-12 left-1/2 -translate-x-1/2 w-[700px] h-[360px] bg-gradient-to-b from-primary/15 via-secondary/10 to-transparent blur-3xl pointer-events-none -z-10"></div>
+<div class="absolute top-1/3 left-1/4 w-[420px] h-[420px] bg-primary/10 rounded-full blur-[110px] pointer-events-none -z-10"></div>
+<div class="absolute top-1/2 right-1/4 w-[380px] h-[380px] bg-secondary/10 rounded-full blur-[100px] pointer-events-none -z-10"></div>
+<!-- Centered Reveal & Reflection Modal Card -->
+<div class="w-full max-w-[760px] bg-surface-container-low/95 backdrop-blur-xl rounded-full shadow-[0_24px_60px_-12px_rgba(3,7,18,0.7),0_0_32px_rgba(189,194,255,0.08)] flex flex-col overflow-hidden transition-all duration-300">
+<!-- Card Upper Header / Constellation Aura -->
+<div class="relative px-space-xl pt-space-xl pb-space-lg flex flex-col items-center text-center bg-gradient-to-b from-surface-container-high/40 via-surface-container-low to-surface-container-low">
+<!-- Top Micro Bar: Status + Quick Actions -->
+<div class="w-full flex items-center justify-between pb-space-md">
+<div class="flex items-center gap-space-xs bg-surface-container-highest/60 px-space-sm py-1 rounded-full text-secondary">
+<span class="material-symbols-outlined text-[15px]">verified</span>
+<span class="font-data-sm text-data-sm tracking-wide font-medium">JUDGMENT GATE CLEARED</span>
+</div>
+<div class="flex items-center gap-space-xs">
+<span class="font-data-sm text-data-sm text-outline tracking-wider">TICKET #88241</span>
+<button class="text-outline hover:text-on-surface p-1 rounded transition-colors" title="Export Execution Log" type="button">
+<span class="material-symbols-outlined text-[18px]">share</span>
+</button>
+</div>
+</div>
+<!-- Radiant Constellation Emblem -->
+<div class="relative my-space-sm flex items-center justify-center">
+<!-- Ambient Orbit Ring -->
+<div class="absolute w-28 h-28 rounded-full bg-primary/10 animate-pulse blur-md"></div>
+<div class="relative w-24 h-24 flex items-center justify-center">
+<svg class="w-full h-full" fill="none" viewbox="0 0 100 100">
+<!-- Outer Dashed Ring -->
+<circle class="text-outline-variant" cx="50" cy="50" opacity="0.8" r="44" stroke="currentColor" stroke-dasharray="5 5" stroke-width="2.5"></circle>
+<!-- Inner Concentric Coordinate Guide -->
+<circle class="text-primary-container" cx="50" cy="50" opacity="0.4" r="28" stroke="currentColor" stroke-width="1.2"></circle>
+<!-- Star Graph Web -->
+<line class="text-primary" stroke="currentColor" stroke-linecap="round" stroke-width="2" x1="50" x2="50" y1="50" y2="14"></line>
+<line class="text-primary" stroke="currentColor" stroke-linecap="round" stroke-width="2" x1="50" x2="80" y1="50" y2="38"></line>
+<line class="text-secondary" stroke="currentColor" stroke-linecap="round" stroke-width="2.5" x1="50" x2="69" y1="50" y2="76"></line>
+<line class="text-primary" stroke="currentColor" stroke-linecap="round" stroke-width="2" x1="50" x2="31" y1="50" y2="76"></line>
+<line class="text-primary" stroke="currentColor" stroke-linecap="round" stroke-width="2" x1="50" x2="20" y1="50" y2="38"></line>
+<!-- Polygon Boundary Ring -->
+<polygon class="text-primary-container" fill="none" opacity="0.75" points="50,14 80,38 69,76 31,76 20,38" stroke="currentColor" stroke-width="2"></polygon>
+<!-- Nodes with Semantic Accents -->
+<circle class="fill-on-surface" cx="50" cy="14" r="3.5"></circle>
+<circle class="fill-primary" cx="80" cy="38" r="5"></circle>
+<circle class="fill-secondary shadow-[0_0_12px_#45dfa4]" cx="69" cy="76" r="6"></circle>
+<circle class="fill-primary" cx="31" cy="76" r="5"></circle>
+<circle class="fill-primary" cx="20" cy="38" r="5"></circle>
+<!-- Central Gateway Core -->
+<circle class="fill-surface-container-high" cx="50" cy="50" r="8"></circle>
+<circle class="fill-primary-container" cx="50" cy="50" r="4.5"></circle>
+</svg>
+</div>
+</div>
+<!-- Trade Metadata Capsule -->
+<div class="mt-space-xs flex flex-wrap items-center justify-center gap-space-xs">
+<span class="bg-surface-container-highest/70 text-on-surface px-space-sm py-0.5 rounded font-data-md text-data-md font-semibold tracking-wider">EURUSD</span>
+<span class="bg-tertiary-container/20 text-tertiary px-space-sm py-0.5 rounded font-label-md text-label-md font-semibold tracking-wider">SHORT</span>
+<span class="bg-surface-container-high text-on-surface-variant px-space-sm py-0.5 rounded font-data-sm text-data-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px]">schedule</span>2h 14m
+        </span>
+<span class="bg-surface-container-high text-primary px-space-sm py-0.5 rounded font-label-md text-label-md">Breakout NY</span>
+<span class="bg-surface-container-high text-on-surface-variant px-space-sm py-0.5 rounded font-data-sm text-data-sm">1.50 Lots</span>
+</div>
+<!-- Hero Outcome: Massive P&L & R-Multiple -->
+<div class="mt-space-lg flex flex-col items-center gap-0">
+<div class="flex items-baseline gap-space-sm">
+<span class="font-data-lg text-[52px] leading-tight font-bold tracking-tight text-secondary drop-shadow-[0_0_24px_rgba(69,223,164,0.35)]">+0.8 R</span>
+</div>
+<div class="flex items-center gap-space-sm mt-space-xs">
+<span class="font-data-lg text-data-lg font-semibold text-secondary-fixed tracking-tight">+$82.00 net</span>
+<span class="bg-secondary-container/20 text-secondary px-space-sm py-0.5 rounded-full font-label-md text-label-md font-medium flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">flag</span>Take-Profit Hit · Clean Execution
+          </span>
+</div>
+</div>
+<!-- Micro Sparkline / Execution Trajectory -->
+<div class="w-full max-w-sm h-7 mt-space-md opacity-80 flex items-center justify-center">
+<svg class="w-full h-full overflow-visible" fill="none" viewbox="0 0 240 24">
+<path class="text-secondary" d="M 0,16 Q 30,19 60,14 T 120,8 T 180,5 L 240,2" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2.2"></path>
+<path d="M 0,16 Q 30,19 60,14 T 120,8 T 180,5 L 240,2 L 240,24 L 0,24 Z" fill="url(#sparkGradient)" opacity="0.25"></path>
+<circle class="fill-secondary" cx="240" cy="2" r="3.5"></circle>
+<defs>
+<lineargradient gradientunits="userSpaceOnUse" id="sparkGradient" x1="0" x2="0" y1="0" y2="24">
+<stop stop-color="#45dfa4"></stop>
+<stop offset="1" stop-color="#45dfa4" stop-opacity="0"></stop>
+</lineargradient>
+</defs>
+</svg>
+</div>
+</div>
+<!-- AI Coach Editorial Quotation -->
+<div class="px-space-xl py-space-md bg-surface-container/70 mx-space-lg rounded-xl flex items-start gap-space-md shadow-sm">
+<div class="h-10 w-10 shrink-0 rounded-full bg-primary-container/25 text-primary flex items-center justify-center shadow-[0_0_12px_rgba(121,133,255,0.3)]">
+<span class="material-symbols-outlined text-[20px]">psychology</span>
+</div>
+<div class="flex flex-col flex-1 min-w-0">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md text-primary font-semibold tracking-wide uppercase text-[11px]">Behavioral Guardian Analysis</span>
+<span class="bg-surface-container-highest px-space-xs py-0.5 rounded font-data-sm text-data-sm text-secondary font-medium">Grade: B (Solid)</span>
+</div>
+<p class="font-headline-sm text-headline-sm italic text-on-surface mt-1 tracking-tight">
+          “Solid process, deserved result. Retest was respected and position size conformed strictly to 1% account risk rules. Keep going.”
+        </p>
+<div class="mt-space-xs flex items-center gap-space-md text-on-surface-variant font-data-sm text-data-sm">
+<span>Process integrity: <strong class="text-on-surface font-semibold">100%</strong></span>
+<span>•</span>
+<span>Slippage: <strong class="text-secondary font-semibold">0.1 pip</strong></span>
+<span>•</span>
+<span>Emotional Bias: <strong class="text-secondary font-semibold">None detected</strong></span>
+</div>
+</div>
+</div>
+<!-- Telemetry Stats Strip -->
+<div class="px-space-xl py-space-md grid grid-cols-1 md:grid-cols-3 gap-space-sm mt-space-md">
+<!-- Item 1: Discipline Defense -->
+<div class="bg-surface-container-high/60 px-space-md py-space-sm rounded-lg flex flex-col justify-between shadow-sm">
+<span class="font-label-md text-label-md text-outline flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-secondary">shield</span>FOMO Neutralized
+        </span>
+<div class="mt-1 flex items-baseline justify-between">
+<span class="font-data-md text-data-md font-bold text-on-surface">2 setups avoided</span>
+<span class="font-data-sm text-data-sm text-secondary font-medium">+1.4R saved</span>
+</div>
+</div>
+<!-- Item 2: Risk Envelope -->
+<div class="bg-surface-container-high/60 px-space-md py-space-sm rounded-lg flex flex-col justify-between shadow-sm">
+<span class="font-label-md text-label-md text-outline flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-primary">pie_chart</span>Daily Risk Buffer
+        </span>
+<div class="mt-1 flex items-baseline justify-between">
+<span class="font-data-md text-data-md font-bold text-on-surface">1.2% remaining</span>
+<span class="font-data-sm text-data-sm text-on-surface-variant">2 trades left</span>
+</div>
+</div>
+<!-- Item 3: Discipline Index -->
+<div class="bg-surface-container-high/60 px-space-md py-space-sm rounded-lg flex flex-col justify-between shadow-sm">
+<span class="font-label-md text-label-md text-outline flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-secondary">trending_up</span>Session Discipline
+        </span>
+<div class="mt-1 flex items-baseline justify-between">
+<span class="font-data-md text-data-md font-bold text-on-surface">95 / 100</span>
+<span class="font-data-sm text-data-sm text-secondary font-medium">+1 today</span>
+</div>
+</div>
+</div>
+<!-- Quick Action Triggers (Finish vs Next Trade) -->
+<div class="px-space-xl pt-space-xs pb-space-md flex items-center justify-between gap-space-md">
+<button class="group flex items-center justify-center gap-space-sm flex-1 bg-surface-container-high hover:bg-surface-bright text-on-surface font-label-lg text-label-lg py-2.5 px-space-lg rounded-xl transition-all shadow-sm" type="button">
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant group-hover:text-on-surface transition-colors">add_circle</span>
+<span>New Trade</span>
+<kbd class="ml-1 bg-surface-container-lowest text-outline font-data-sm text-[10px] px-1.5 py-0.5 rounded font-semibold">N</kbd>
+</button>
+<button class="group flex items-center justify-center gap-space-sm flex-1 bg-primary hover:bg-primary-container text-on-primary hover:text-on-primary-container font-label-lg text-label-lg font-semibold py-2.5 px-space-lg rounded-xl transition-all shadow-[0_0_20px_rgba(189,194,255,0.35)]" type="button">
+<span class="material-symbols-outlined text-[18px]">check_circle</span>
+<span>Finish &amp; Lock Log</span>
+<kbd class="ml-1 bg-on-primary/20 text-on-primary group-hover:text-on-primary-container font-data-sm text-[10px] px-1.5 py-0.5 rounded font-semibold">⌘↵</kbd>
+</button>
+</div>
+<!-- Expandable Reflection & Behavioral Diagnostics Drawer -->
+<div class="mx-space-lg mb-space-lg bg-surface-container/50 rounded-xl overflow-hidden shadow-inner">
+<!-- Collapsible Header -->
+<button class="w-full px-space-lg py-space-sm flex items-center justify-between hover:bg-surface-container-high/40 transition-colors" id="reflectionToggle" type="button">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-[18px] text-primary">auto_fix_high</span>
+<span class="font-headline-sm text-[15px] font-semibold text-on-surface">Post-Trade Reflection &amp; Edge Diagnostics</span>
+<span class="bg-tertiary-container/30 text-tertiary font-data-sm text-[11px] px-2 py-0.5 rounded font-medium">2 Flags to Confirm</span>
+</div>
+<div class="flex items-center gap-space-xs text-on-surface-variant">
+<span class="font-label-md text-label-md text-outline" id="toggleLabel">Collapse</span>
+<span class="material-symbols-outlined text-[20px] transition-transform duration-200" id="toggleIcon">expand_less</span>
+</div>
+</button>
+<!-- Reflection Content Container -->
+<div class="px-space-lg pb-space-lg pt-space-xs flex flex-col gap-space-md" id="reflectionContent">
+<!-- Detected Deviations / Mistake Telemetry -->
+<div class="flex flex-col gap-space-xs">
+<span class="font-label-md text-label-md uppercase tracking-wider text-outline text-[11px]">System Flagged Micro-Frictions</span>
+<div class="flex flex-col gap-space-xs">
+<!-- Flag 1 -->
+<div class="flex items-center justify-between bg-surface-container-high/80 px-space-md py-2 rounded-lg transition-all" id="flag-1">
+<div class="flex items-center gap-space-sm min-w-0">
+<span class="material-symbols-outlined text-[18px] text-tertiary">warning</span>
+<span class="font-body-md text-body-md text-on-surface truncate">
+                  Stop moved to break-even prematurely <span class="text-tertiary font-data-sm text-data-sm">(-0.20R friction cost)</span>
+</span>
+</div>
+<div class="flex items-center gap-space-xs shrink-0">
+<button class="px-2 py-1 bg-surface-container hover:bg-secondary/20 hover:text-secondary text-on-surface-variant font-label-md text-[11px] rounded transition-colors flex items-center gap-1" onclick="confirmFlag('flag-1')" type="button">
+<span class="material-symbols-outlined text-[13px]">check</span>Confirm
+                </button>
+<button class="px-2 py-1 bg-surface-container hover:bg-surface-bright text-outline hover:text-on-surface font-label-md text-[11px] rounded transition-colors flex items-center gap-1" onclick="dismissFlag('flag-1')" type="button">
+<span class="material-symbols-outlined text-[13px]">close</span>Dismiss
+                </button>
+</div>
+</div>
+<!-- Flag 2 -->
+<div class="flex items-center justify-between bg-surface-container-high/80 px-space-md py-2 rounded-lg transition-all" id="flag-2">
+<div class="flex items-center gap-space-sm min-w-0">
+<span class="material-symbols-outlined text-[18px] text-primary">schedule</span>
+<span class="font-body-md text-body-md text-on-surface truncate">
+                  Trade entered outside prime NY session overlap window (11:42 AM EST)
+                </span>
+</div>
+<div class="flex items-center gap-space-xs shrink-0">
+<button class="px-2 py-1 bg-surface-container hover:bg-secondary/20 hover:text-secondary text-on-surface-variant font-label-md text-[11px] rounded transition-colors flex items-center gap-1" onclick="confirmFlag('flag-2')" type="button">
+<span class="material-symbols-outlined text-[13px]">check</span>Confirm
+                </button>
+<button class="px-2 py-1 bg-surface-container hover:bg-surface-bright text-outline hover:text-on-surface font-label-md text-[11px] rounded transition-colors flex items-center gap-1" onclick="dismissFlag('flag-2')" type="button">
+<span class="material-symbols-outlined text-[13px]">close</span>Dismiss
+                </button>
+</div>
+</div>
+</div>
+</div>
+<!-- Quantitative Execution Diagnostics (MAE / MFE) -->
+<div class="grid grid-cols-3 gap-space-sm py-1">
+<div class="bg-surface-container-lowest/70 p-space-sm rounded-lg flex flex-col">
+<span class="font-label-md text-label-md text-outline text-[11px]">MAE (Max Adverse)</span>
+<span class="font-data-md text-data-md font-semibold text-tertiary mt-0.5">-2.4 pips</span>
+<span class="font-data-sm text-data-sm text-outline mt-0.5">-0.12 R</span>
+</div>
+<div class="bg-surface-container-lowest/70 p-space-sm rounded-lg flex flex-col">
+<span class="font-label-md text-label-md text-outline text-[11px]">MFE (Max Favorable)</span>
+<span class="font-data-md text-data-md font-semibold text-secondary mt-0.5">+26.8 pips</span>
+<span class="font-data-sm text-data-sm text-outline mt-0.5">+1.12 R</span>
+</div>
+<div class="bg-surface-container-lowest/70 p-space-sm rounded-lg flex flex-col">
+<span class="font-label-md text-label-md text-outline text-[11px]">Exit Capture Efficiency</span>
+<span class="font-data-md text-data-md font-semibold text-primary mt-0.5">88.2%</span>
+<span class="font-data-sm text-data-sm text-secondary mt-0.5">Optimal Exit</span>
+</div>
+</div>
+<!-- Post-Trade Emotional State Matrix -->
+<div class="flex flex-col gap-space-xs">
+<span class="font-label-md text-label-md uppercase tracking-wider text-outline text-[11px]">Post-Trade Psychological State</span>
+<div class="flex flex-wrap items-center gap-space-xs" id="emotionChips">
+<button class="emotion-pill px-space-md py-1.5 rounded-full font-label-md text-label-md transition-all bg-primary text-on-primary shadow-[0_0_12px_rgba(189,194,255,0.4)] font-semibold" data-state="Relieved" type="button">
+              😌 Relieved
+            </button>
+<button class="emotion-pill px-space-md py-1.5 rounded-full font-label-md text-label-md transition-all bg-surface-container-high text-on-surface-variant hover:bg-surface-bright hover:text-on-surface" data-state="Satisfied" type="button">
+              ✨ Satisfied
+            </button>
+<button class="emotion-pill px-space-md py-1.5 rounded-full font-label-md text-label-md transition-all bg-surface-container-high text-on-surface-variant hover:bg-surface-bright hover:text-on-surface" data-state="Greedy" type="button">
+              🦈 Greedy
+            </button>
+<button class="emotion-pill px-space-md py-1.5 rounded-full font-label-md text-label-md transition-all bg-surface-container-high text-on-surface-variant hover:bg-surface-bright hover:text-on-surface" data-state="Frustrated" type="button">
+              ⚡ Frustrated
+            </button>
+<button class="emotion-pill px-space-md py-1.5 rounded-full font-label-md text-label-md transition-all bg-surface-container-high text-on-surface-variant hover:bg-surface-bright hover:text-on-surface" data-state="Neutral" type="button">
+              🧘 Stoic / Neutral
+            </button>
+</div>
+</div>
+<!-- Private Execution Journal / Qualitative Notes -->
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<label class="font-label-md text-label-md uppercase tracking-wider text-outline text-[11px]" for="tradeNotes">Journal Reflection Notes</label>
+<span class="font-data-sm text-data-sm text-outline">Auto-saved to Vault</span>
+</div>
+<textarea class="w-full bg-surface-container-lowest text-on-surface font-body-md text-body-md rounded-lg p-space-sm placeholder-outline/60 focus:outline-none focus:ring-1 focus:ring-primary transition-all resize-none" id="tradeNotes" placeholder="Add qualitative remarks..." rows="2">Clean retest of the London breaker on the 5-min chart. Didn't panic during the 15-minute post-entry stall, respected stop loss placement.</textarea>
+</div>
+</div>
+</div>
+</div>
+<!-- Bottom Terminal Footprint -->
+<div class="mt-space-md flex items-center justify-center gap-space-md text-outline font-data-sm text-data-sm">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">lock</span>
+<span>Behavioral Vault Encrypted</span>
+</div>
+<span>•</span>
+<span>Cosmoz Sync: Synced 4s ago</span>
+<span>•</span>
+<span class="text-secondary font-medium">Session Win Streak: 4</span>
+</div>
+</div>
+<script>
+  // Collapsible toggle handler for reflection drawer
+  const toggleBtn = document.getElementById('reflectionToggle');
+  const content = document.getElementById('reflectionContent');
+  const toggleIcon = document.getElementById('toggleIcon');
+  const toggleLabel = document.getElementById('toggleLabel');
+
+  if (toggleBtn && content) {
+    toggleBtn.addEventListener('click', () => {
+      const isHidden = content.classList.contains('hidden');
+      if (isHidden) {
+        content.classList.remove('hidden');
+        toggleIcon.textContent = 'expand_less';
+        toggleLabel.textContent = 'Collapse';
+      } else {
+        content.classList.add('hidden');
+        toggleIcon.textContent = 'expand_more';
+        toggleLabel.textContent = 'Expand';
+      }
+    });
+  }
+
+  // Emotion Pill Multi-state Selection
+  const emotionPills = document.querySelectorAll('.emotion-pill');
+  emotionPills.forEach(pill => {
+    pill.addEventListener('click', () => {
+      emotionPills.forEach(p => {
+        p.classList.remove('bg-primary', 'text-on-primary', 'shadow-[0_0_12px_rgba(189,194,255,0.4)]', 'font-semibold');
+        p.classList.add('bg-surface-container-high', 'text-on-surface-variant');
+      });
+      pill.classList.remove('bg-surface-container-high', 'text-on-surface-variant');
+      pill.classList.add('bg-primary', 'text-on-primary', 'shadow-[0_0_12px_rgba(189,194,255,0.4)]', 'font-semibold');
+    });
+  });
+
+  // Flag action helpers
+  function confirmFlag(id) {
+    const el = document.getElementById(id);
+    if (el) {
+      el.classList.add('opacity-40', 'pointer-events-none');
+      el.innerHTML = '<span class="text-secondary font-data-sm text-data-sm flex items-center gap-1"><span class="material-symbols-outlined text-[15px]">check_circle</span> Deviation verified and logged to discipline stats</span>';
+    }
+  }
+
+  function dismissFlag(id) {
+    const el = document.getElementById(id);
+    if (el) {
+      el.classList.add('opacity-30', 'pointer-events-none');
+      el.innerHTML = '<span class="text-outline font-data-sm text-data-sm flex items-center gap-1"><span class="material-symbols-outlined text-[15px]">cancel</span> Flag dismissed by trader</span>';
+    }
+  }
+
+  // Global hotkeys (Enter for finish, N for new trade)
+  document.addEventListener('keydown', (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+      // Primary submit simulated feedback
+      const finishBtn = document.querySelector('button kbd');
+      if (finishBtn) finishBtn.parentElement.classList.add('scale-95');
+      setTimeout(() => {
+        if (finishBtn) finishBtn.parentElement.classList.remove('scale-95');
+      }, 150);
+    }
+  });
+</script></main></div></body></html>

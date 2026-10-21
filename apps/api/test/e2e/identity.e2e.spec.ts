@@ -1,0 +1,415 @@
+/**
+ * e2e — Identity & Authentication (Phase 2 §41–§44 negative testing).
+ * Register → verify → login → refresh (rotation + reuse) → logout,
+ * password reset, status gates, anti-enumeration, rate limits.
+ */
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import type { NestFastifyApplication } from "@nestjs/platform-fastify";
+import { buildTestApp } from "../helpers/build-app";
+import {
+  authenticatedUser,
+  captureMail,
+  cookieHeader,
+  PASSWORD,
+  refreshCookieOf,
+  uniqueEmail,
+  type MailCapture,
+} from "../helpers/identity";
+
+let app: NestFastifyApplication;
+let mail: MailCapture;
+
+beforeAll(async () => {
+  app = await buildTestApp();
+  mail = captureMail(app);
+});
+
+afterAll(async () => {
+  await app?.close();
+});
+
+describe("registration & email verification", () => {
+  it("registers a user — PENDING_VERIFICATION, no token leaked, delivery EMAIL", async () => {
+    mail.clear();
+    const email = uniqueEmail();
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/register",
+      payload: { name: "Ada Trader", email, password: PASSWORD },
+    });
+    expect(res.statusCode).toBe(201);
+    const body = res.json();
+    expect(body.status).toBe("PENDING_VERIFICATION");
+    expect(body.delivery).toBe("EMAIL");
+    // SECURITY: the real backend NEVER returns verificationToken (§10).
+    expect(body.verificationToken).toBeUndefined();
+    // The email WAS sent through the transport (captured in test).
+    expect(mail.messages.some((m) => m.kind === "EMAIL_VERIFICATION" && m.to === email)).toBe(true);
+    expect(body.user.email).toBe(email);
+    expect(body.user.roles).toEqual(["TRADER"]);
+    expect(JSON.stringify(body)).not.toContain("passwordHash");
+  });
+
+  it("rejects weak passwords at the contract level", async () => {
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/register",
+      payload: { name: "Shorty", email: uniqueEmail(), password: "short" },
+    });
+    expect(res.statusCode).toBe(400);
+    expect(res.json().error).toBe("ValidationError");
+  });
+
+  it("rejects duplicate email with 409 EMAIL_ALREADY_USED", async () => {
+    const email = uniqueEmail();
+    await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/register",
+      payload: { name: "First", email, password: PASSWORD },
+    });
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/register",
+      payload: { name: "Second", email, password: PASSWORD },
+    });
+    expect(res.statusCode).toBe(409);
+    expect(res.json().code).toBe("EMAIL_ALREADY_USED");
+  });
+
+  it("blocks login before verification (403 EMAIL_NOT_VERIFIED)", async () => {
+    const email = uniqueEmail();
+    await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/register",
+      payload: { name: "Pending", email, password: PASSWORD },
+    });
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/login",
+      payload: { email, password: PASSWORD, remember: true },
+    });
+    expect(res.statusCode).toBe(403);
+    expect(res.json().code).toBe("EMAIL_NOT_VERIFIED");
+  });
+
+  it("verifies the email exactly once (replay → TOKEN_ALREADY_USED, garbage → INVALID_TOKEN)", async () => {
+    mail.clear();
+    const email = uniqueEmail();
+    await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/register",
+      payload: { name: "Once", email, password: PASSWORD },
+    });
+    const token = mail.lastVerificationToken();
+    const first = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/email/verify",
+      payload: { token },
+    });
+    expect(first.statusCode).toBe(200);
+    expect(first.json().user.status).toBe("ACTIVE");
+
+    const replay = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/email/verify",
+      payload: { token },
+    });
+    expect(replay.statusCode).toBe(400);
+    expect(replay.json().code).toBe("TOKEN_ALREADY_USED");
+
+    const garbage = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/email/verify",
+      payload: { token: "totally-invalid-token-value" },
+    });
+    expect(garbage.statusCode).toBe(400);
+    expect(garbage.json().code).toBe("INVALID_TOKEN");
+  });
+
+  it("resend: pending user gets a new mail; verified/unknown emails are indistinguishable", async () => {
+    const pendingEmail = uniqueEmail();
+    await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/register",
+      payload: { name: "Pending", email: pendingEmail, password: PASSWORD },
+    });
+    mail.clear();
+    const pending = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/email/resend",
+      payload: { email: pendingEmail },
+    });
+    expect(pending.statusCode).toBe(202);
+    expect(pending.json().verificationToken).toBeUndefined();
+    expect(pending.json().verificationExpiresAt).not.toBeNull();
+
+    const unknown = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/email/resend",
+      payload: { email: uniqueEmail() },
+    });
+    expect(unknown.statusCode).toBe(202);
+    expect(unknown.json().verificationExpiresAt).toBeNull();
+  });
+});
+
+describe("login & anti-enumeration", () => {
+  it("unknown email and wrong password produce IDENTICAL 401 responses", async () => {
+    const email = uniqueEmail();
+    await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/register",
+      payload: { name: "Known", email, password: PASSWORD },
+    });
+
+    const unknown = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/login",
+      payload: { email: "who-is-this@test.cosmoz.dev", password: PASSWORD, remember: false },
+    });
+    const wrong = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/login",
+      payload: { email, password: "wrong-password-999", remember: false },
+    });
+    expect(unknown.statusCode).toBe(401);
+    expect(wrong.statusCode).toBe(401);
+    expect(unknown.json().code).toBe("INVALID_CREDENTIALS");
+    expect(wrong.json().code).toBe("INVALID_CREDENTIALS");
+    // Identical envelope minus the per-request correlation id (§11).
+    const strip = (body: { error?: string; code?: string; message?: string }) =>
+      JSON.stringify({ error: body.error, code: body.code, message: body.message });
+    expect(strip(unknown.json())).toBe(strip(wrong.json()));
+  });
+
+  it("login issues an HttpOnly refresh cookie + access token + session", async () => {
+    const ctx = await authenticatedUser(app, mail, { remember: false });
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/login",
+      payload: { email: ctx.email, password: ctx.password, remember: true },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.outcome).toBe("AUTHENTICATED");
+    expect(body.accessToken.length).toBeGreaterThan(20);
+    expect(body.session.current).toBe(true);
+    const rawCookie = String(res.headers["set-cookie"]);
+    expect(rawCookie).toContain("cosmoz_rt=");
+    expect(rawCookie).toContain("HttpOnly");
+    expect(rawCookie).toContain("SameSite=Lax");
+    expect(rawCookie).toContain("Max-Age=");
+    expect(body.session.ipMasked).toMatch(/^127\.0\.0\.x$|^unknown$/);
+  });
+});
+
+describe("me / refresh rotation / reuse detection / logout", () => {
+  it("/auth/me requires a bearer token and returns user+session", async () => {
+    const ctx = await authenticatedUser(app, mail);
+    const anon = await app.inject({ method: "GET", url: "/api/v1/auth/me" });
+    expect(anon.statusCode).toBe(401);
+    expect(anon.json().code).toBe("INVALID_TOKEN");
+
+    const me = await app.inject({
+      method: "GET",
+      url: "/api/v1/auth/me",
+      headers: ctx.authHeader,
+    });
+    expect(me.statusCode).toBe(200);
+    expect(me.json().user.id).toBe(ctx.userId);
+    expect(me.json().session.current).toBe(true);
+  });
+
+  it("refresh rotates the cookie; reusing the OLD token revokes ALL sessions", async () => {
+    const ctx = await authenticatedUser(app, mail);
+    const refreshed = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/refresh",
+      headers: cookieHeader(ctx.refreshCookie),
+    });
+    expect(refreshed.statusCode).toBe(200);
+    const newCookie = refreshCookieOf(refreshed);
+    expect(newCookie).not.toBe(ctx.refreshCookie);
+    expect(refreshed.json().user.id).toBe(ctx.userId);
+
+    // REUSE of the pre-rotation token → everything revoked (§13).
+    const reuse = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/refresh",
+      headers: cookieHeader(ctx.refreshCookie),
+    });
+    expect(reuse.statusCode).toBe(401);
+    expect(reuse.json().code).toBe("INVALID_TOKEN");
+
+    // The post-rotation token is dead too — the family was revoked.
+    const afterReuse = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/refresh",
+      headers: cookieHeader(newCookie),
+    });
+    expect(afterReuse.statusCode).toBe(401);
+
+    // And the access token no longer authenticates (session revoked).
+    const me = await app.inject({
+      method: "GET",
+      url: "/api/v1/auth/me",
+      headers: ctx.authHeader,
+    });
+    expect(me.statusCode).toBe(401);
+  });
+
+  it("logout revokes the session server-side and clears the cookie", async () => {
+    const ctx = await authenticatedUser(app, mail);
+    const out = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/logout",
+      headers: cookieHeader(ctx.refreshCookie),
+    });
+    expect(out.statusCode).toBe(200);
+    expect(out.json()).toEqual({ loggedOut: true });
+    expect(String(out.headers["set-cookie"])).toContain("Max-Age=0");
+
+    const refresh = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/refresh",
+      headers: cookieHeader(ctx.refreshCookie),
+    });
+    expect(refresh.statusCode).toBe(401);
+
+    // Logout without a cookie still succeeds (contract §15).
+    const anon = await app.inject({ method: "POST", url: "/api/v1/auth/logout" });
+    expect(anon.statusCode).toBe(200);
+  });
+
+  it("garbage refresh cookies are rejected", async () => {
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/refresh",
+      headers: cookieHeader("not-a-token"),
+    });
+    expect(res.statusCode).toBe(401);
+    const missing = await app.inject({ method: "POST", url: "/api/v1/auth/refresh" });
+    expect(missing.statusCode).toBe(401);
+    expect(missing.json().code).toBe("INVALID_TOKEN");
+  });
+});
+
+describe("password reset (§22)", () => {
+  it("forgot: known email sends mail; unknown email is indistinguishable", async () => {
+    const ctx = await authenticatedUser(app, mail);
+    mail.clear();
+    const known = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/password/forgot",
+      payload: { email: ctx.email },
+    });
+    expect(known.statusCode).toBe(202);
+    expect(known.json().sent).toBe(true);
+    expect(known.json().resetToken).toBeUndefined();
+    expect(mail.messages.some((m) => m.kind === "PASSWORD_RESET")).toBe(true);
+
+    mail.clear();
+    const unknown = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/password/forgot",
+      payload: { email: "ghost@test.cosmoz.dev" },
+    });
+    expect(unknown.statusCode).toBe(202);
+    expect(unknown.json().resetExpiresAt).toBeNull();
+    expect(mail.messages.length).toBe(0);
+  });
+
+  it("reset changes the password, revokes sessions, and allows re-login", async () => {
+    const ctx = await authenticatedUser(app, mail);
+    mail.clear();
+    await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/password/forgot",
+      payload: { email: ctx.email },
+    });
+    const newPassword = "brand-new-password-42";
+    const reset = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/password/reset",
+      payload: { token: mail.lastResetToken(), password: newPassword },
+    });
+    expect(reset.statusCode).toBe(200);
+    expect(reset.json().resetAt).toBeTruthy();
+
+    // Old refresh chain revoked (defense in depth).
+    const oldRefresh = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/refresh",
+      headers: cookieHeader(ctx.refreshCookie),
+    });
+    expect(oldRefresh.statusCode).toBe(401);
+
+    // Old password rejected; new password accepted.
+    const oldLogin = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/login",
+      payload: { email: ctx.email, password: ctx.password, remember: false },
+    });
+    expect(oldLogin.statusCode).toBe(401);
+    const newLogin = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/login",
+      payload: { email: ctx.email, password: newPassword, remember: false },
+    });
+    expect(newLogin.statusCode).toBe(200);
+  });
+});
+
+describe("brute-force protection (§36)", () => {
+  it("6th failed login within the window → 429 RATE_LIMITED + Retry-After", async () => {
+    const email = uniqueEmail();
+    await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/register",
+      payload: { name: "Locked Out", email, password: PASSWORD },
+    });
+    for (let i = 0; i < 5; i += 1) {
+      const bad = await app.inject({
+        method: "POST",
+        url: "/api/v1/auth/login",
+        payload: { email, password: "definitely-wrong-pass", remember: false },
+      });
+      expect(bad.statusCode).toBe(401);
+    }
+    const sixth = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/login",
+      payload: { email, password: PASSWORD, remember: false },
+    });
+    expect(sixth.statusCode).toBe(429);
+    expect(sixth.json().code).toBe("RATE_LIMITED");
+    expect(Number(sixth.headers["retry-after"])).toBeGreaterThan(0);
+  });
+});
+
+describe("security events & login history are recorded (§30–§31)", () => {
+  it("successful and failed logins land in the overview log", async () => {
+    const ctx = await authenticatedUser(app, mail);
+    // one deliberate failure
+    await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/login",
+      payload: { email: ctx.email, password: "nope-nope-nope-nope", remember: false },
+    });
+    const overview = await app.inject({
+      method: "GET",
+      url: "/api/v1/security/overview",
+      headers: ctx.authHeader,
+    });
+    expect(overview.statusCode).toBe(200);
+    const body = overview.json();
+    expect(body.logins.some((l: { success: boolean }) => l.success)).toBe(true);
+    expect(body.logins.some((l: { success: boolean }) => !l.success)).toBe(true);
+    expect(body.events.some((e: { type: string }) => e.type === "LOGIN_SUCCESS")).toBe(true);
+    expect(body.events.some((e: { type: string }) => e.type === "LOGIN_FAILED")).toBe(true);
+    // No secrets in events (§30).
+    const serialized = JSON.stringify(body).toLowerCase();
+    expect(serialized).not.toContain(ctx.password);
+    expect(serialized).not.toContain("passwordhash");
+  });
+});

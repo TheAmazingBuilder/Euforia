@@ -1,0 +1,219 @@
+{"level":30,"time":1791063952914,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"NestFactory","msg":"Starting Nest application..."}
+{"level":30,"time":1791063952914,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"InstanceLoader","msg":"ConfigModule dependencies initialized"}
+{"level":30,"time":1791063952914,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"InstanceLoader","msg":"AppModule dependencies initialized"}
+{"level":30,"time":1791063952914,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"InstanceLoader","msg":"LoggingModule dependencies initialized"}
+{"level":30,"time":1791063952914,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"InstanceLoader","msg":"EventsModule dependencies initialized"}
+{"level":30,"time":1791063952914,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"InstanceLoader","msg":"ThrottlerModule dependencies initialized"}
+{"level":30,"time":1791063952914,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"InstanceLoader","msg":"JwtModule dependencies initialized"}
+{"level":30,"time":1791063952914,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"InstanceLoader","msg":"PrismaModule dependencies initialized"}
+{"level":30,"time":1791063952914,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"InstanceLoader","msg":"RateLimitModule dependencies initialized"}
+{"level":30,"time":1791063952914,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"InstanceLoader","msg":"HealthModule dependencies initialized"}
+{"level":30,"time":1791063952914,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"InstanceLoader","msg":"TradingModule dependencies initialized"}
+{"level":30,"time":1791063952914,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"InstanceLoader","msg":"TradePlanningModule dependencies initialized"}
+{"level":30,"time":1791063952914,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"InstanceLoader","msg":"TradeReviewModule dependencies initialized"}
+{"level":30,"time":1791063952914,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"InstanceLoader","msg":"PlaybookModule dependencies initialized"}
+{"level":30,"time":1791063952914,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"InstanceLoader","msg":"AcademyModule dependencies initialized"}
+{"level":30,"time":1791063952914,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"InstanceLoader","msg":"CalendarModule dependencies initialized"}
+{"level":30,"time":1791063952914,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"InstanceLoader","msg":"SessionLiveModule dependencies initialized"}
+{"level":30,"time":1791063952914,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"InstanceLoader","msg":"IntegrationsModule dependencies initialized"}
+{"level":30,"time":1791063952914,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"InstanceLoader","msg":"AnalyticsModule dependencies initialized"}
+{"level":30,"time":1791063952914,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"InstanceLoader","msg":"AccountsModule dependencies initialized"}
+{"level":30,"time":1791063952914,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"InstanceLoader","msg":"IdentityModule dependencies initialized"}
+{"level":30,"time":1791063952914,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"InstanceLoader","msg":"NofyModule dependencies initialized"}
+{"level":40,"time":1791063952914,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"LegacyRouteConverter","msg":"Unsupported route path: \"health/(.*)\". In previous versions, the symbols ?, *, and + were used to denote optional or repeating path parameters. The latest version of \"path-to-regexp\" now requires the use of named parameters. For example, instead of using a route like /users/* to capture all routes starting with \"/users\", you should use /users/*path. For more details, refer to the migration guide. Attempting to auto-convert to \"health/{*path}\"..."}
+{"level":30,"time":1791063952914,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RoutesResolver","msg":"HealthController {/api/health} (version: Neutral):"}
+{"level":30,"time":1791063952914,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/health, GET} (version: Neutral) route"}
+{"level":30,"time":1791063952914,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/health/live, GET} (version: Neutral) route"}
+{"level":30,"time":1791063952915,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/health/ready, GET} (version: Neutral) route"}
+{"level":30,"time":1791063952915,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RoutesResolver","msg":"AuthController {/api/auth} (version: 1):"}
+{"level":30,"time":1791063952915,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/auth/register, POST} (version: 1) route"}
+{"level":30,"time":1791063952915,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/auth/login, POST} (version: 1) route"}
+{"level":30,"time":1791063952915,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/auth/mfa/challenge, POST} (version: 1) route"}
+{"level":30,"time":1791063952915,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/auth/mfa/recover, POST} (version: 1) route"}
+{"level":30,"time":1791063952915,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/auth/me, GET} (version: 1) route"}
+{"level":30,"time":1791063952915,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/auth/refresh, POST} (version: 1) route"}
+{"level":30,"time":1791063952915,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/auth/logout, POST} (version: 1) route"}
+{"level":30,"time":1791063952915,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/auth/email/verify, POST} (version: 1) route"}
+{"level":30,"time":1791063952915,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/auth/email/resend, POST} (version: 1) route"}
+{"level":30,"time":1791063952915,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/auth/password/forgot, POST} (version: 1) route"}
+{"level":30,"time":1791063952915,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/auth/password/reset, POST} (version: 1) route"}
+{"level":30,"time":1791063952915,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RoutesResolver","msg":"SecurityController {/api/security} (version: 1):"}
+{"level":30,"time":1791063952915,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/security/overview, GET} (version: 1) route"}
+{"level":30,"time":1791063952915,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/security/reauth, POST} (version: 1) route"}
+{"level":30,"time":1791063952915,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/security/password, POST} (version: 1) route"}
+{"level":30,"time":1791063952915,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/security/2fa/enable, POST} (version: 1) route"}
+{"level":30,"time":1791063952915,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/security/2fa/confirm, POST} (version: 1) route"}
+{"level":30,"time":1791063952915,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/security/2fa/disable, POST} (version: 1) route"}
+{"level":30,"time":1791063952915,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/security/2fa/recovery/regenerate, POST} (version: 1) route"}
+{"level":30,"time":1791063952915,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/security/api-keys, POST} (version: 1) route"}
+{"level":30,"time":1791063952915,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/security/api-keys/:keyId/revoke, POST} (version: 1) route"}
+{"level":30,"time":1791063952915,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/security/sessions/revoke, POST} (version: 1) route"}
+{"level":30,"time":1791063952915,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RoutesResolver","msg":"MeController {/api/me} (version: 1):"}
+{"level":30,"time":1791063952915,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/me, GET} (version: 1) route"}
+{"level":30,"time":1791063952915,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/me, PATCH} (version: 1) route"}
+{"level":30,"time":1791063952915,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/me/preferences, GET} (version: 1) route"}
+{"level":30,"time":1791063952915,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/me/preferences/:domain, PATCH} (version: 1) route"}
+{"level":30,"time":1791063952915,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/me/preferences/reset, POST} (version: 1) route"}
+{"level":30,"time":1791063952915,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/me/deactivate, POST} (version: 1) route"}
+{"level":30,"time":1791063952915,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/me/delete, POST} (version: 1) route"}
+{"level":30,"time":1791063952915,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RoutesResolver","msg":"AccountsController {/api/accounts} (version: 1):"}
+{"level":30,"time":1791063952915,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/accounts, GET} (version: 1) route"}
+{"level":30,"time":1791063952915,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/accounts/providers, GET} (version: 1) route"}
+{"level":30,"time":1791063952915,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/accounts/:accountId, GET} (version: 1) route"}
+{"level":30,"time":1791063952915,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/accounts/:accountId/snapshot, GET} (version: 1) route"}
+{"level":30,"time":1791063952915,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/accounts/:accountId/positions, GET} (version: 1) route"}
+{"level":30,"time":1791063952915,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/accounts/:accountId/orders, GET} (version: 1) route"}
+{"level":30,"time":1791063952915,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/accounts/:accountId/deals, GET} (version: 1) route"}
+{"level":30,"time":1791063952915,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/accounts, POST} (version: 1) route"}
+{"level":30,"time":1791063952915,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/accounts/:accountId/connection/test, POST} (version: 1) route"}
+{"level":30,"time":1791063952915,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/accounts/:accountId/connection, POST} (version: 1) route"}
+{"level":30,"time":1791063952915,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/accounts/:accountId/connection, DELETE} (version: 1) route"}
+{"level":30,"time":1791063952915,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/accounts/:accountId/sync, POST} (version: 1) route"}
+{"level":30,"time":1791063952915,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/accounts/:accountId/sync, GET} (version: 1) route"}
+{"level":30,"time":1791063952915,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RoutesResolver","msg":"BrokerController {/api/broker} (version: 1):"}
+{"level":30,"time":1791063952915,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/broker/session, GET} (version: 1) route"}
+{"level":30,"time":1791063952915,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RoutesResolver","msg":"TradingController {/api/trades} (version: 1):"}
+{"level":30,"time":1791063952915,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/trades, GET} (version: 1) route"}
+{"level":30,"time":1791063952915,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/trades/sync, POST} (version: 1) route"}
+{"level":30,"time":1791063952915,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/trades/import, POST} (version: 1) route"}
+{"level":30,"time":1791063952915,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/trades/:tradeId, GET} (version: 1) route"}
+{"level":30,"time":1791063952915,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/trades, POST} (version: 1) route"}
+{"level":30,"time":1791063952915,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/trades/:tradeId/close, POST} (version: 1) route"}
+{"level":30,"time":1791063952915,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/trades/:tradeId, PATCH} (version: 1) route"}
+{"level":30,"time":1791063952915,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/trades/:tradeId, DELETE} (version: 1) route"}
+{"level":30,"time":1791063952915,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RoutesResolver","msg":"TradePlanController {/api/trade-plans} (version: 1):"}
+{"level":30,"time":1791063952915,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/trade-plans, GET} (version: 1) route"}
+{"level":30,"time":1791063952915,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/trade-plans, POST} (version: 1) route"}
+{"level":30,"time":1791063952915,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/trade-plans/:planId, GET} (version: 1) route"}
+{"level":30,"time":1791063952915,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/trade-plans/:planId, PATCH} (version: 1) route"}
+{"level":30,"time":1791063952915,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/trade-plans/:planId/commit, POST} (version: 1) route"}
+{"level":30,"time":1791063952915,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/trade-plans/:planId/validate, POST} (version: 1) route"}
+{"level":30,"time":1791063952915,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/trade-plans/:planId/cancel, POST} (version: 1) route"}
+{"level":30,"time":1791063952915,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/trade-plans/:planId/abandon, POST} (version: 1) route"}
+{"level":30,"time":1791063952915,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/trade-plans/:planId/recalculate, POST} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RoutesResolver","msg":"TradeReviewController {/api/reviews} (version: 1):"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/reviews/overview, GET} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/reviews/lessons, GET} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/reviews, GET} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/reviews/:tradeId, GET} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/reviews/:tradeId, PUT} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/reviews/:tradeId, PATCH} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/reviews/:tradeId, DELETE} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RoutesResolver","msg":"StrategyController {/api/strategies} (version: 1):"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/strategies/stats, GET} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/strategies, GET} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/strategies, POST} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/strategies/:strategyId, PATCH} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/strategies/:strategyId, DELETE} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/strategies/:strategyId/duplicate, POST} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/strategies/:strategyId/versions, GET} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RoutesResolver","msg":"SetupController {/api/setups} (version: 1):"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/setups/insights, GET} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/setups, GET} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/setups, POST} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/setups/:setupId, PATCH} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/setups/:setupId, DELETE} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RoutesResolver","msg":"ChecklistController {/api/checklists} (version: 1):"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/checklists, GET} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/checklists, POST} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/checklists/:checklistId, PATCH} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/checklists/:checklistId, DELETE} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RoutesResolver","msg":"PlaybookController {/api/playbook} (version: 1):"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/playbook/overview, GET} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/playbook/templates, GET} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/playbook/templates/instantiate, POST} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/playbook/rules, GET} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/playbook/rules, POST} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/playbook/rules/:ruleId, PATCH} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/playbook/rules/:ruleId, DELETE} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RoutesResolver","msg":"AnalyticsController {/api/stats} (version: 1):"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/stats/analytics-suite, GET} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/stats/overview, GET} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RoutesResolver","msg":"CalendarController {/api} (version: 1):"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/eco-events, GET} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/calendar-view, GET} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/calendar-blocks, GET} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/calendar-blocks, PUT} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/calendar-blocks/:date, DELETE} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/calendar-blocks/import-eco, POST} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RoutesResolver","msg":"SessionLiveController {/api/session-live} (version: 1):"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/session-live/sessions, GET} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/session-live/sessions, POST} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/session-live/sessions/:sessionId, PATCH} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/session-live/sessions/:sessionId/end, POST} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/session-live/sessions/:sessionId/cancel, POST} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/session-live/analyses, GET} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/session-live/analyses, POST} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/session-live/analyses/:analysisId, DELETE} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/session-live/levels, GET} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/session-live/levels, POST} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/session-live/levels/:levelId, PATCH} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/session-live/levels/:levelId, DELETE} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RoutesResolver","msg":"SessionWorkspaceController {/api/session} (version: 1):"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/session/timeline, GET} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/session/notes, GET} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/session/notes, POST} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/session/notes/:noteId, DELETE} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RoutesResolver","msg":"AcademyController {/api/academy} (version: 1):"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/academy/catalog, GET} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/academy/overview, GET} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/academy/progress, GET} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/academy/glossary, GET} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/academy/search, GET} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/academy/scenarios, GET} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/academy/bookmarks, GET} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/academy/bookmarks, POST} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/academy/practice/log, POST} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/academy/practice/pattern-drill, GET} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/academy/practice/sr-drill, GET} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/academy/practice/position-drill, GET} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/academy/practice/zone-drill, GET} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/academy/practice/stats, GET} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/academy/flashcards, GET} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/academy/flashcards/review, POST} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/academy/certifications, GET} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/academy/exams/:categoryId, GET} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/academy/exams/:categoryId/attempts, POST} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/academy/milestones, GET} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/academy/suggestions, GET} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/academy/quizzes/:quizId, GET} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/academy/quizzes/:quizId/attempts, POST} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/academy/courses/:courseId, GET} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/academy/lessons/:lessonId, GET} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/academy/lessons/:lessonId/complete, POST} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/academy/lessons/:lessonId/checkpoint, POST} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/academy/lessons/:lessonId/notes, PUT} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RoutesResolver","msg":"NofyController {/api/nofy} (version: 1):"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/nofy/overview, GET} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/nofy/notes, GET} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/nofy/notes, POST} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/nofy/notes/:noteId, GET} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/nofy/notes/:noteId, PATCH} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/nofy/notes/:noteId, DELETE} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/nofy/notes/:noteId/duplicate, POST} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/nofy/notes/:noteId/restore, POST} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/nofy/notes/:noteId/permanent, DELETE} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/nofy/notes/:noteId/versions, GET} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/nofy/notes/:noteId/versions/:versionId, GET} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/nofy/notes/:noteId/versions/:versionId/restore, POST} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/nofy/folders, GET} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/nofy/folders, POST} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/nofy/folders/:folderId, PATCH} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/nofy/folders/:folderId, DELETE} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/nofy/tags, GET} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/nofy/tags, POST} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/nofy/templates, GET} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/nofy/templates, POST} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/nofy/templates/instantiate, POST} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/nofy/search, GET} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/nofy/refs, GET} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RoutesResolver","msg":"IntegrationsController {/api/integrations} (version: 1):"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/integrations/overview, GET} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/integrations/providers/:providerId/connect, POST} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/integrations/providers/:providerId/disconnect, POST} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/integrations/providers/:providerId/test, POST} (version: 1) route"}
+{"level":30,"time":1791063952916,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/integrations/providers/:providerId/sync, POST} (version: 1) route"}
+{"level":30,"time":1791063952917,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"RouterExplorer","msg":"Mapped {/api/integrations/webhooks/:endpointId/simulate, POST} (version: 1) route"}
+{"level":30,"time":1791063952917,"service":"cosmoz-api","env":"test","name":"cosmoz-api","context":"NestApplication","msg":"Nest application successfully started"}
+{"level":30,"time":1791063952917,"service":"cosmoz-api","env":"test","name":"cosmoz-api","port":4100,"env":"test","corsOrigins":["http://localhost:3000"],"msg":"cosmoz-api listening"}
+{"level":30,"time":1791063953364,"service":"cosmoz-api","env":"test","name":"cosmoz-api","mail":{"kind":"EMAIL_VERIFICATION","to":"smoke14-1791063953333@cosmoz.test","subject":"Verify your Cosmoz email address","actionUrl":"http://localhost:3000/verify-email?token=iMgH022j0EAldUQBxWZuItApOD4A-PSV","expiresIn":"24 hours"},"msg":"[mailer] Verify your Cosmoz email address → smoke14-1791063953333@cosmoz.test"}

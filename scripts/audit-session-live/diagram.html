@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #ffffff; font-family: 'Liberation Sans', 'DejaVu Sans', sans-serif; }
+  #diagram {
+    width: 900px; height: 664px; padding: 20px 24px;
+    background: #ffffff; position: relative;
+  }
+  .row { display: flex; gap: 16px; justify-content: center; }
+  .node {
+    border: 1.5px solid #2d7ab3; border-radius: 8px; background: #eef3fa;
+    padding: 10px 16px; text-align: center;
+  }
+  .node .t { font-size: 24px; font-weight: 700; color: #142840; }
+  .node .d { font-size: 18px; color: #5a7a96; margin-top: 4px; line-height: 1.3; }
+  .node.src { background: #f5f8fc; }
+  .node.svc { background: #1a4a7a; border-color: #1a4a7a; width: 560px; }
+  .node.svc .t { color: #ffffff; }
+  .node.svc .d { color: #c0d0e2; }
+  .node.band { border-style: dashed; border-color: #5a7a96; background: #f5f8fc; }
+  .band-label { font-size: 15px; color: #5a7a96; letter-spacing: 2px; text-transform: uppercase; text-align: center; margin-bottom: 6px; }
+  .abs { position: absolute; left: 24px; }
+</style>
+</head>
+<body>
+<div id="diagram">
+  <!-- Row A : sources -->
+  <div class="abs" style="top: 20px; width: 852px;">
+    <div class="row">
+      <div class="node src" style="width: 380px;">
+        <div class="t">Binance WS</div>
+        <div class="d">source réelle — ticks crypto</div>
+      </div>
+      <div class="node src" style="width: 380px;">
+        <div class="t">SimulatedProvider</div>
+        <div class="d">forex &amp; synthétiques — étiqueté SIM</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SVG arrows -->
+  <svg width="852" height="572" style="position:absolute; top:20px; left:24px; pointer-events:none;">
+    <defs>
+      <marker id="ah" markerWidth="9" markerHeight="8" refX="7.5" refY="4" orient="auto">
+        <path d="M0,0 L8,4 L0,8 Z" fill="#2d7ab3"/>
+      </marker>
+    </defs>
+    <!-- A1/A2 -> B (entry points 33% / 67% of node B top edge) -->
+    <line x1="328" y1="98" x2="410" y2="134" stroke="#2d7ab3" stroke-width="1.6" marker-end="url(#ah)"/>
+    <line x1="524" y1="98" x2="444" y2="134" stroke="#2d7ab3" stroke-width="1.6" marker-end="url(#ah)"/>
+    <!-- B -> C -->
+    <line x1="426" y1="218" x2="426" y2="254" stroke="#2d7ab3" stroke-width="1.6" marker-end="url(#ah)"/>
+    <!-- C -> D -->
+    <line x1="426" y1="310" x2="426" y2="346" stroke="#2d7ab3" stroke-width="1.6" marker-end="url(#ah)"/>
+    <!-- D -> E -->
+    <line x1="426" y1="412" x2="426" y2="448" stroke="#2d7ab3" stroke-width="1.6" marker-end="url(#ah)"/>
+  </svg>
+
+  <!-- Row B : service -->
+  <div class="abs" style="top: 134px; width: 852px; display:flex; justify-content:center;">
+    <div class="node svc">
+      <div class="t">market-service · port 3003</div>
+      <div class="d">HTTP /candles · /prices · /health + push WS — contrat MarketDataProvider</div>
+    </div>
+  </div>
+
+  <!-- Row C : gateway -->
+  <div class="abs" style="top: 254px; width: 852px; display:flex; justify-content:center;">
+    <div class="node" style="width: 520px;">
+      <div class="t">next.config.ts — rewrites /broker</div>
+      <div class="d">proxy Next.js vers le mini-service</div>
+    </div>
+  </div>
+
+  <!-- Row D : client realtime -->
+  <div class="abs" style="top: 346px; width: 852px; display:flex; justify-content:center;">
+    <div class="node" style="width: 620px;">
+      <div class="t">lib/realtime/market.ts</div>
+      <div class="d">WS client de prix · STALE_MS 8 s · phases LIVE / SIM / STALE / RECONNECTING</div>
+    </div>
+  </div>
+
+  <!-- Row E : UI -->
+  <div class="abs" style="top: 448px; width: 852px; display:flex; justify-content:center;">
+    <div class="node" style="width: 780px;">
+      <div class="t">Session UI — read only</div>
+      <div class="d">toolbar &amp; badges · chart ECharts + overlays Entry/SL/TP · broker panel · positions</div>
+    </div>
+  </div>
+
+  <!-- Bottom band : transverse -->
+  <div class="abs" style="top: 566px; width: 852px;">
+    <div class="band-label">couches transverses</div>
+    <div class="row">
+      <div class="node band" style="width: 418px;">
+        <div class="d" style="margin-top:0;">packages/shared/schemas/broker.ts — contrats Zod read-only</div>
+      </div>
+      <div class="node band" style="width: 418px;">
+        <div class="d" style="margin-top:0;">MSW — mocks dev only (flag NEXT_PUBLIC_API_MOCKED)</div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

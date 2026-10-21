@@ -1,0 +1,20 @@
+# COSMOZ ocr-service — Python dependencies (FastAPI sidecar).
+#
+# Install:  pip install -r requirements.txt
+# Runtime:  uvicorn app.main:app (see README section in the repo docs)
+# External: the `tesseract-ocr` system binary (+ English language data,
+#           e.g. `apt-get install tesseract-ocr tesseract-ocr-eng`) is
+#           required at runtime — it cannot be declared here.
+#
+# Versions are floor-constrained (no upper pin): the service is stateless
+# and has a public contract version ("1") enforced at the API boundary.
+
+fastapi>=0.110,<1
+uvicorn>=0.29,<1
+pydantic>=2.6,<3
+pytesseract>=0.3.10,<0.4
+Pillow>=10.2,<12
+# Hard runtime dependencies that were missing from this manifest (V2 audit
+# §10 — a clean `pip install -r requirements.txt` deploy must not crash):
+numpy>=1.26,<3          # preprocessing (CLAHE tile blend, projection profiles)
+pypdfium2>=4.30,<5      # PDF statement rendering (pdf.py)

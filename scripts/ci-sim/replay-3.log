@@ -1,0 +1,40 @@
+Prisma schema loaded from prisma/schema.prisma
+Datasource "db": PostgreSQL database "cosmoz_replay", schema "public" at "127.0.0.1:5433"
+
+Applying migration `20261003105600_identity_auth`
+Applying migration `20261003112422_session_previous_hash`
+Applying migration `20261003115414_accounts_connectivity`
+Applying migration `20261003131801_trading_core`
+Applying migration `20261003141559_trade_planning`
+Applying migration `20261003145823_trade_review`
+Applying migration `20261003160138_playbook`
+Applying migration `20261003180600_session_live`
+Applying migration `20261003185226_academy`
+Applying migration `20261003193122_nofy_knowledge`
+Applying migration `20261003202121_calendar_economic_events`
+Applying migration `20261003213149_integrations_platform`
+Applying migration `20261004015123_ocr_screenshot_recognition`
+Applying migration `20261004090000_monitoring_settings`
+Applying migration `20261004100000_settings_preferences`
+Applying migration `20261004120000_trade_journal_core`
+Applying migration `20261004130000_trade_review`
+Applying migration `20261005090000_ocr_recognition_jobs`
+Applying migration `20261006035123_module_upgrade_contexts`
+Applying migration `20261006040003_tag_catalog`
+Applying migration `20261006085000_ocr_v2`
+Applying migration `20261006090000_ocr_v3`
+Applying migration `20261006120000_ocr_v2`
+Error: P3018
+
+A migration failed to apply. New migrations cannot be applied before the error is recovered from. Read more about how to resolve migration issues in a production database: https://pris.ly/d/migrate-resolve
+
+Migration name: 20261006120000_ocr_v2
+
+Database error code: 42701
+
+Database error:
+ERROR: column "perceptualHash" of relation "OcrAsset" already exists
+
+DbError { severity: "ERROR", parsed_severity: Some(Error), code: SqlState(E42701), message: "column \"perceptualHash\" of relation \"OcrAsset\" already exists", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("tablecmds.c"), line: Some(7481), routine: Some("check_for_column_name_collision") }
+
+

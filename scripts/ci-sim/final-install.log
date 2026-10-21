@@ -1,0 +1,25 @@
+Scope: all 4 workspace projects
+✓ Lockfile passes supply-chain policies (verified 44m ago)
+Lockfile is up to date, resolution step is skipped
+Packages are hard linked from the content-addressable store to the virtual store.
+  Content-addressable store is at: /home/z/.local/share/pnpm/store/v11
+  Virtual store is at:             node_modules/.pnpm
+Progress: resolved 512, reused 512, downloaded 0, added 509
+Packages: +924
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Progress: resolved 924, reused 924, downloaded 0, added 924, done
+apps/api postinstall$ prisma generate
+apps/api postinstall: Prisma schema loaded from prisma/schema.prisma
+apps/api postinstall: 
+apps/api postinstall: ✔ Generated Prisma Client (v6.19.3) to ./../../node_modules/.pnpm/@prisma+client@6.19.3_prisma@6.19.3_typescript@5.9.3__typescript@5.9.3/node_modules/@prisma/client in 551ms
+apps/api postinstall: 
+apps/api postinstall: Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+apps/api postinstall: 
+apps/api postinstall: Tip: Interested in query caching in just a few lines of code? Try Accelerate today! https://pris.ly/tip-3-accelerate
+apps/api postinstall: 
+apps/api postinstall: Done
+
+devDependencies:
++ turbo 2.10.13
+
+Done in 4.6s using pnpm v12.4.2

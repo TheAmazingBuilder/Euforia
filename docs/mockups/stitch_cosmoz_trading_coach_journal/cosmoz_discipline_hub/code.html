@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base { html, body { margin: 0; padding: 0; } body { overscroll-behavior: none; } main > :first-child { margin-top: 0 !important; } main > :last-child { margin-bottom: 0 !important; } } ::-webkit-scrollbar { display: none; }</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "on-background": "#dce2f6", "tertiary-fixed-dim": "#ffb3b0", "on-secondary-container": "#00452e", "outline": "#8f8fa0", "on-primary": "#000fa3", "inverse-on-surface": "#2a3040", "inverse-primary": "#424ed2", "on-surface": "#dce2f6", "surface-tint": "#bdc2ff", "surface-container-highest": "#2e3544", "surface-container-low": "#151b2a", "secondary": "#45dfa4", "surface-bright": "#323949", "on-error-container": "#ffdad6", "tertiary-fixed": "#ffdad8", "primary-fixed-dim": "#bdc2ff", "primary-container": "#7985ff", "inverse-surface": "#dce2f6", "surface-dim": "#0c1321", "secondary-container": "#00bd85", "on-primary-container": "#000c90", "error": "#ffb4ab", "on-tertiary-fixed": "#410006", "surface-container": "#19202e", "primary-fixed": "#e0e0ff", "surface-container-lowest": "#070e1c", "on-tertiary": "#670211", "on-tertiary-fixed-variant": "#881d24", "error-container": "#93000a", "on-primary-fixed": "#000668", "on-surface-variant": "#c6c5d6", "on-secondary-fixed-variant": "#005137", "secondary-fixed": "#68fcbf", "on-secondary": "#003825", "secondary-fixed-dim": "#45dfa4", "surface-container-high": "#232a39", "background": "#0c1321", "surface": "#0c1321", "primary": "#bdc2ff", "on-secondary-fixed": "#002114", "outline-variant": "#454654", "tertiary": "#ffb3b0", "on-primary-fixed-variant": "#2632b9", "on-error": "#690005", "tertiary-container": "#ea6767", "on-tertiary-container": "#5b000d", "surface-variant": "#2e3544" }, "borderRadius": { "DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem" }, "spacing": { "gutter-mobile": "0.75rem", "margin-mobile": "1rem", "space-sm": "0.5rem", "space-xl": "2rem", "space-xs": "0.25rem", "margin": "2rem", "gutter": "1.25rem", "space-lg": "1.5rem", "space-md": "1rem" }, "fontFamily": { "headline-sm": ["Space Grotesk"], "headline-md": ["Space Grotesk"], "label-lg": ["Inter"], "headline-lg-mobile": ["Space Grotesk"], "body-md": ["Inter"], "label-md": ["Inter"], "data-md": ["JetBrains Mono"], "data-lg": ["JetBrains Mono"], "body-lg": ["Inter"], "display": ["Space Grotesk"], "headline-lg": ["Space Grotesk"], "data-sm": ["JetBrains Mono"], "body-sm": ["Inter"] }, "fontSize": { "headline-sm": ["18px", { "lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "500" }], "headline-md": ["22px", { "lineHeight": "28px", "letterSpacing": "-0.015em", "fontWeight": "600" }], "label-lg": ["14px", { "lineHeight": "20px", "fontWeight": "500" }], "headline-lg-mobile": ["26px", { "lineHeight": "34px", "letterSpacing": "-0.02em", "fontWeight": "600" }], "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }], "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" }], "data-md": ["14px", { "lineHeight": "18px", "fontWeight": "500" }], "data-lg": ["20px", { "lineHeight": "26px", "letterSpacing": "-0.02em", "fontWeight": "600" }], "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }], "display": ["44px", { "lineHeight": "52px", "letterSpacing": "-0.03em", "fontWeight": "700" }], "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "600" }], "data-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }], "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }] } } } };</script></head><body class="bg-background font-body-md text-on-surface antialiased min-h-screen"><aside class="fixed left-0 top-0 h-full w-60 bg-surface-container-lowest z-50 flex flex-col justify-between shadow-[0_1px_8px_rgba(0,0,0,0.4)]"><div class="flex flex-col"><div class="h-16 px-space-md flex items-center justify-between bg-surface-container-lowest"><div class="flex items-center gap-space-sm"><img alt="Cosmoz Constellation Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1VGGi1_rJbXNPyDb0xfP8Ff0pWFjs2jb4qAyUMWSSBYqB_iFVN9wAF-ldb5-r_NNTuQfNeXjp_jGDmzoUl5n4eNHIQmH6RhEKwgFdbkmDmmeU-6Tn3SEN-jKTh3qG1aQhb0MfRzrzGlkMVdJpVxJsTlc5XOOn85CC_Ds0HdEEwslq2ANn5xr8oebB-kRufYogIDRwPISLYbinaSo71K1hdpWUF_7Gis39Z1ZFhM4wQSI4poylaqb870iNU"/><div class="flex flex-col"><span class="font-headline-sm text-headline-sm text-on-surface tracking-tight leading-none">Cosmoz</span><span class="font-data-sm text-data-sm text-primary tracking-widest leading-none mt-1 uppercase text-[9px]">BEHAVIORAL TERMINAL</span></div></div><button aria-label="Collapse navigation" class="p-space-xs text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded transition-colors" type="button"><span class="material-symbols-outlined text-[18px]">dock_to_left</span></button></div><div class="px-space-md pt-space-md pb-space-xs"><span class="font-label-md text-label-md uppercase tracking-wider text-outline text-[10px]">Navigation</span></div><nav class="flex flex-col gap-space-xs px-space-sm" data-active-classes="bg-primary-container text-on-primary-container font-semibold rounded shadow-[0_0_16px_rgba(110,123,255,0.35)]"><a aria-current="page" class="group flex items-center justify-between px-space-md py-space-sm transition-all bg-primary-container text-on-primary-container font-semibold rounded shadow-[0_0_16px_rgba(110,123,255,0.35)]" data-path="dashboard" href="#"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[20px]">space_dashboard</span><span>Dashboard</span></div></a><a class="group flex items-center justify-between px-space-md py-space-sm rounded font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="new-trade" href="#"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[20px]">add_circle</span><span>New Trade</span></div><span class="bg-primary font-data-sm text-data-sm text-on-primary px-space-xs py-0.5 rounded text-[10px] font-semibold leading-none">+</span></a><a class="group flex items-center justify-between px-space-md py-space-sm rounded font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="session-live" href="#"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[20px]">radar</span><span>Session Live</span></div><div class="flex items-center gap-1.5"><span class="relative flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-secondary opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-secondary"></span></span><span class="font-data-sm text-data-sm text-secondary text-[10px] tracking-wider">LIVE</span></div></a><a class="group flex items-center px-space-md py-space-sm rounded font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="playbook" href="#"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[20px]">menu_book</span><span>Playbook</span></div></a><a class="group flex items-center px-space-md py-space-sm rounded font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="analytics" href="#"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[20px]">monitoring</span><span>Analytics</span></div></a><a class="group flex items-center px-space-md py-space-sm rounded font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="calendar" href="#"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[20px]">calendar_today</span><span>Calendar</span></div></a><a class="group flex items-center px-space-md py-space-sm rounded font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="journal" href="#"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[20px]">edit_note</span><span>Journal</span></div></a><a class="group flex items-center justify-between px-space-md py-space-sm rounded font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="discipline" href="#"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[20px]">psychology</span><span>Discipline</span></div><span class="bg-surface-container-high font-data-sm text-data-sm text-secondary px-space-xs py-0.5 rounded text-[11px] font-medium leading-none">94%</span></a><a class="group flex items-center px-space-md py-space-sm rounded font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="goals" href="#"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[20px]">flag</span><span>Goals</span></div></a></nav></div><div class="p-space-sm"><nav class="flex flex-col" data-active-classes="bg-primary-container text-on-primary-container font-semibold rounded"><a class="group flex items-center px-space-md py-space-sm rounded font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="settings" href="#"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[20px]">settings</span><span>Settings</span></div></a></nav></div></aside><div class="pl-60"><header class="fixed top-0 left-60 right-0 h-16 bg-surface-container-lowest/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.3)] z-40 flex items-center justify-between px-space-lg"><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-xs font-label-md text-label-md text-on-surface-variant"><span class="material-symbols-outlined text-[16px] text-primary">terminal</span><span class="font-headline-sm text-headline-sm text-on-surface tracking-tight">Trading Command &amp; Performance Terminal</span></div><div class="h-4 w-[1px] bg-surface-container-highest"></div><div class="relative flex items-center"><select aria-label="Active Trading Account" class="appearance-none bg-surface-container-high font-data-sm text-data-sm text-on-surface py-1 pl-space-sm pr-7 rounded cursor-pointer hover:bg-surface-bright focus:outline-none"><option selected="">Prop Firm Alpha - $100k Live</option><option>Apex Trader - $50k Live</option><option>FXCM Personal - $25k</option><option>Paper Trading Beta</option></select><span class="material-symbols-outlined absolute right-1.5 pointer-events-none text-[16px] text-on-surface-variant">expand_more</span></div></div><div class="flex items-center gap-space-md"><div class="hidden xl:flex items-center gap-space-xs bg-surface-container-low px-space-sm py-1 rounded"><span class="h-2 w-2 rounded-full bg-secondary"></span><span class="font-data-sm text-data-sm text-on-surface-variant text-[11px]">London / NY Overlap Session - <span class="text-secondary font-medium">Open</span></span></div><a class="flex items-center gap-1.5 bg-surface-container-high hover:bg-surface-bright px-space-sm py-1 rounded transition-colors" data-path="journal" href="#"><span class="h-2 w-2 rounded-full bg-tertiary-container"></span><span class="font-label-md text-label-md text-tertiary font-medium">3 to grade</span><span class="material-symbols-outlined text-[14px] text-tertiary">chevron_right</span></a><button class="flex items-center gap-space-xs bg-primary hover:bg-primary-container text-on-primary hover:text-on-primary-container font-label-md text-label-md px-space-md py-1.5 rounded transition-all shadow-[0_0_16px_rgba(110,123,255,0.35)]" type="button"><span class="material-symbols-outlined text-[16px]">add</span><span>Log Execution</span></button><div class="relative flex items-center"><button aria-label="Alerts" class="p-space-xs text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded transition-colors" type="button"><span class="material-symbols-outlined text-[20px]">notifications</span></button><span class="absolute top-0 right-0 flex h-4 w-4 items-center justify-center rounded-full bg-error text-[9px] font-data-sm text-on-error font-bold">2</span></div><div class="h-6 w-[1px] bg-surface-container-highest"></div><div class="flex items-center gap-space-sm"><div class="relative"><img alt="Profile" class="w-8 h-8 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAsfHHxPO8hEW5kWdtozD3uACYHDoJt-P69UkGnHZVciT2oZbImkVrHPPkfPFQ6pyq2SSZ4bjP9-tlM6i1upyNDojnWCU4FbdHWOzhgOjZE3BaNBmSK82c3IMZd-Vs3ebOLmwts_25e9X5fcntxsKchQk7mdkSvQog6kZXfl98IFf842ZzIp8mQCF_3u-ieJOuhlJGaAFcxm2Z4w-xqk4rse8gh0qof_Gka3FkEhjtRanvM0NPSTia6"/><span class="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-secondary ring-2 ring-surface-container-lowest"></span></div><div class="flex flex-col"><span class="font-label-md text-label-md text-on-surface font-semibold leading-tight">Elena R. (Pro)</span><span class="font-data-sm text-data-sm text-primary text-[10px] leading-tight">PRO TRADER</span></div></div></div></header><main class="w-full pt-16 px-space-lg pb-space-xl bg-background"><div class="flex flex-col w-full gap-space-lg">
+<script>
+    (function () {
+      const disciplineLinks = document.querySelectorAll('aside nav a[data-path="discipline"]');
+      disciplineLinks.forEach((link) => {
+        link.className = "group flex items-center justify-between px-space-md py-space-sm rounded font-label-lg text-label-lg bg-primary-container text-on-primary-container font-semibold shadow-[0_0_16px_rgba(110,123,255,0.35)] transition-all";
+        const badge = link.querySelector("span:last-child");
+        if (badge) {
+          badge.className = "bg-primary text-on-primary font-data-sm text-data-sm px-space-xs py-0.5 rounded text-[11px] font-bold leading-none";
+          badge.textContent = "78%";
+        }
+      });
+    })();
+  </script>
+<!-- 1. HEADER / CONTEXT BAR -->
+<header class="flex flex-col xl:flex-row xl:items-center justify-between gap-space-md bg-surface-container p-space-lg rounded-xl shadow-md">
+<div class="flex flex-col gap-space-xs">
+<div class="flex flex-wrap items-center gap-space-sm">
+<h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight leading-none">
+          Discipline Engine &amp; Behavioral Governance
+        </h1>
+<span class="px-space-xs py-0.5 rounded bg-primary-container text-on-primary-container font-data-sm text-data-sm tracking-wider uppercase font-semibold">
+          v3.2 SENTINEL
+        </span>
+<span class="flex items-center gap-1.5 px-2 py-0.5 rounded bg-surface-container-high font-data-sm text-data-sm text-secondary font-medium">
+<span class="h-1.5 w-1.5 rounded-full bg-secondary"></span>
+          REAL-TIME INTERCEPTOR ACTIVE
+        </span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-4xl">
+        Algorithmic enforcement of execution boundaries, behavioral friction mitigation, and process integrity scoring.
+      </p>
+</div>
+<div class="flex flex-wrap items-center gap-space-sm">
+<div class="flex items-center gap-space-xs bg-surface-container-lowest px-space-md py-2 rounded">
+<span class="material-symbols-outlined text-[16px] text-primary">calendar_month</span>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface-variant text-[10px] uppercase">Audit Period</span>
+<span class="font-data-sm text-data-sm text-on-surface font-semibold">Oct 2024 (Active)</span>
+</div>
+</div>
+<div class="flex items-center gap-space-xs bg-surface-container-lowest px-space-md py-2 rounded">
+<span class="material-symbols-outlined text-[16px] text-secondary">verified_user</span>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface-variant text-[10px] uppercase">Strictness</span>
+<span class="font-data-sm text-data-sm text-secondary font-semibold">Prop Firm Safeguard</span>
+</div>
+</div>
+<button class="flex items-center gap-space-xs bg-surface-container-high hover:bg-surface-bright text-on-surface px-space-md py-2.5 rounded font-label-md text-label-md transition-all" type="button">
+<span class="material-symbols-outlined text-[16px]">add_circle</span>
+<span>+ Create Custom Rule</span>
+</button>
+<button class="flex items-center gap-space-xs bg-error-container hover:bg-error text-on-error-container hover:text-on-error px-space-md py-2.5 rounded font-label-md text-label-md font-semibold transition-all shadow-[0_0_12px_rgba(234,103,103,0.3)]" type="button">
+<span class="material-symbols-outlined text-[18px]">lock</span>
+<span>Lock Trading Permissions</span>
+</button>
+</div>
+</header>
+<!-- 2. TOP SECTION: THE DISCIPLINE SCORE HUB -->
+<section class="grid grid-cols-1 lg:grid-cols-12 gap-space-md">
+<!-- Score Gauge & Primary Identity -->
+<div class="lg:col-span-4 flex flex-col justify-between bg-surface-container p-space-lg rounded-xl shadow-md relative overflow-hidden">
+<div class="absolute -right-8 -top-8 w-44 h-44 rounded-full bg-primary/10 blur-2xl pointer-events-none"></div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary text-[20px]">psychology_alt</span>
+<span class="font-headline-sm text-headline-sm text-on-surface">Execution Integrity</span>
+</div>
+<span class="px-space-sm py-1 rounded bg-secondary-container text-on-secondary-container font-label-md text-label-md font-semibold">
+          Grade: B+ (Solid Defense)
+        </span>
+</div>
+<div class="flex items-center justify-center my-space-md">
+<div class="relative flex items-center justify-center w-52 h-52">
+<svg class="w-full h-full -rotate-90 transform" viewbox="0 0 140 140">
+<circle class="text-surface-container-high" cx="70" cy="70" fill="transparent" r="58" stroke="currentColor" stroke-width="9"></circle>
+<circle class="text-primary-container drop-shadow-[0_0_8px_rgba(121,133,255,0.6)]" cx="70" cy="70" fill="transparent" r="58" stroke="currentColor" stroke-dasharray="364.4" stroke-dashoffset="80.1" stroke-linecap="round" stroke-width="10"></circle>
+<circle class="text-outline-variant" cx="70" cy="70" fill="transparent" r="46" stroke="currentColor" stroke-dasharray="4 6" stroke-width="2"></circle>
+</svg>
+<div class="absolute flex flex-col items-center justify-center text-center">
+<div class="flex items-baseline">
+<span class="font-display text-display text-on-surface font-bold tracking-tighter leading-none">78</span>
+<span class="font-data-md text-data-md text-on-surface-variant font-medium">/100</span>
+</div>
+<span class="font-data-sm text-data-sm text-primary uppercase tracking-widest mt-1">DISCIPLINE SCORE</span>
+</div>
+</div>
+</div>
+<div class="flex items-center justify-between bg-surface-container-lowest px-space-md py-space-sm rounded">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-secondary text-[18px]">trending_up</span>
+<span class="font-data-sm text-data-sm text-on-surface font-medium">+4 pts vs September</span>
+</div>
+<span class="font-label-md text-label-md text-on-surface-variant">Drawdown resilience improving</span>
+</div>
+</div>
+<!-- Breakdown Metrics & Stoic Philosophy Banner -->
+<div class="lg:col-span-8 flex flex-col justify-between gap-space-md bg-surface-container p-space-lg rounded-xl shadow-md">
+<!-- High Impact Behavioral Quote -->
+<div class="flex items-start gap-space-md bg-surface-container-low p-space-md rounded-lg">
+<div class="p-space-xs rounded bg-primary-container/20 text-primary mt-0.5">
+<span class="material-symbols-outlined text-[22px]">format_quote</span>
+</div>
+<div class="flex flex-col">
+<p class="font-headline-sm text-headline-sm text-on-surface font-medium italic">
+            “Score measures process, not profit — you can be disciplined in a losing week. Alpha is the downstream consequence of execution hygiene.”
+          </p>
+<span class="font-label-md text-label-md text-outline tracking-wider uppercase mt-1">
+            Cosmoz Core Behavioral Tenant #01 · Sentinel Terminal
+          </span>
+</div>
+</div>
+<!-- 4 Pillars Grid -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-space-md">
+<!-- Metric 1 -->
+<div class="bg-surface-container-lowest p-space-md rounded-lg flex flex-col justify-between gap-space-sm">
+<div class="flex items-center justify-between">
+<span class="font-label-lg text-label-lg text-on-surface-variant font-medium">Plan Adherence</span>
+<span class="px-space-xs py-0.5 rounded bg-tertiary-container/20 text-tertiary font-data-sm text-data-sm font-semibold">
+              Warning · -8% gap
+            </span>
+</div>
+<div class="flex items-baseline justify-between">
+<span class="font-headline-lg text-headline-lg text-on-surface font-bold">82%</span>
+<span class="font-data-sm text-data-sm text-outline">Target: ≥90%</span>
+</div>
+<div class="w-full h-2 rounded bg-surface-container-highest overflow-hidden">
+<div class="h-full bg-tertiary-container rounded" style="width: 82%;"></div>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant">19 of 23 executed trades matched predefined playbook setups.</span>
+</div>
+<!-- Metric 2 -->
+<div class="bg-surface-container-lowest p-space-md rounded-lg flex flex-col justify-between gap-space-sm">
+<div class="flex items-center justify-between">
+<span class="font-label-lg text-label-lg text-on-surface-variant font-medium">Checklist Completion</span>
+<span class="px-space-xs py-0.5 rounded bg-primary-container/20 text-primary font-data-sm text-data-sm font-semibold">
+              Needs Focus
+            </span>
+</div>
+<div class="flex items-baseline justify-between">
+<span class="font-headline-lg text-headline-lg text-on-surface font-bold">71%</span>
+<span class="font-data-sm text-data-sm text-outline">17 / 24 Trades</span>
+</div>
+<div class="w-full h-2 rounded bg-surface-container-highest overflow-hidden">
+<div class="h-full bg-primary rounded" style="width: 71%;"></div>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Pre-flight checklist submitted prior to order transmission.</span>
+</div>
+<!-- Metric 3 -->
+<div class="bg-surface-container-lowest p-space-md rounded-lg flex flex-col justify-between gap-space-sm">
+<div class="flex items-center justify-between">
+<span class="font-label-lg text-label-lg text-on-surface-variant font-medium">Rule Violations</span>
+<span class="px-space-xs py-0.5 rounded bg-error-container text-on-error-container font-data-sm text-data-sm font-bold">
+              -12 pts impact
+            </span>
+</div>
+<div class="flex items-baseline justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="font-headline-lg text-headline-lg text-error font-bold">2</span>
+<span class="font-body-md text-body-md text-on-surface-variant">breaches</span>
+</div>
+<span class="font-data-sm text-data-sm text-outline">Tolerance: 0</span>
+</div>
+<div class="w-full h-2 rounded bg-surface-container-highest overflow-hidden">
+<div class="h-full bg-error rounded" style="width: 35%;"></div>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Max daily trade cap + over-leverage attempts flagged.</span>
+</div>
+<!-- Metric 4 -->
+<div class="bg-surface-container-lowest p-space-md rounded-lg flex flex-col justify-between gap-space-sm">
+<div class="flex items-center justify-between">
+<span class="font-label-lg text-label-lg text-on-surface-variant font-medium">Journaling Consistency</span>
+<span class="px-space-xs py-0.5 rounded bg-secondary-container/20 text-secondary font-data-sm text-data-sm font-semibold">
+              Optimal
+            </span>
+</div>
+<div class="flex items-baseline justify-between">
+<span class="font-headline-lg text-headline-lg text-secondary font-bold">90%</span>
+<span class="font-data-sm text-data-sm text-outline">Target: ≥85%</span>
+</div>
+<div class="w-full h-2 rounded bg-surface-container-highest overflow-hidden">
+<div class="h-full bg-secondary rounded" style="width: 90%;"></div>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Post-trade reviews submitted within 2 hours of trade close.</span>
+</div>
+</div>
+</div>
+</section>
+<!-- 3. MIDDLE SECTION: ACTIVE RULES & EXECUTION GATES -->
+<section class="flex flex-col gap-space-md bg-surface-container p-space-lg rounded-xl shadow-md">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-primary text-[22px]">gavel</span>
+<h2 class="font-headline-md text-headline-md text-on-surface tracking-tight">Active Rules &amp; Execution Gates</h2>
+<span class="px-space-xs py-0.5 rounded bg-surface-container-high font-data-sm text-data-sm text-on-surface-variant">
+          6 Enforced · 1 In Review
+        </span>
+</div>
+<div class="flex items-center gap-space-md bg-surface-container-lowest px-space-md py-1.5 rounded">
+<div class="flex items-center gap-space-xs">
+<span class="h-2 w-2 rounded-full bg-secondary animate-pulse"></span>
+<span class="font-data-sm text-data-sm text-on-surface font-medium">Auto-Liquidation on Critical Breach:</span>
+<span class="font-data-sm text-data-sm text-secondary font-bold">ENABLED</span>
+</div>
+<button class="text-on-surface-variant hover:text-on-surface transition-colors" title="Configure Guardrails" type="button">
+<span class="material-symbols-outlined text-[18px]">tune</span>
+</button>
+</div>
+</div>
+<!-- Rules Container -->
+<div class="flex flex-col gap-space-md">
+<!-- Card 1: EXPANDED DETAIL CARD (Max 3 Trades / Day) -->
+<article class="flex flex-col bg-surface-container-low rounded-lg p-space-md shadow-sm">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-space-sm">
+<div class="flex items-center gap-space-md">
+<div class="p-2.5 rounded bg-tertiary-container/20 text-tertiary">
+<span class="material-symbols-outlined text-[20px]">filter_3</span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-space-xs">
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-semibold">Max 3 Trades / Day</h3>
+<span class="px-space-xs py-0.5 rounded bg-tertiary-container text-on-tertiary-container font-data-sm text-data-sm font-bold uppercase text-[10px]">
+                  WARN / SOFT GATE
+                </span>
+<span class="px-space-xs py-0.5 rounded bg-error-container text-on-error-container font-data-sm text-data-sm font-bold">
+                  1 violation
+                </span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
+                Restricts overtrading by locking order submissions when 3 filled orders are registered in a 24-hour cycle.
+              </p>
+</div>
+</div>
+<div class="flex items-center gap-space-md self-end md:self-auto">
+<span class="font-data-sm text-data-sm text-secondary font-semibold">GATE ARMED</span>
+<label class="relative inline-flex items-center cursor-pointer">
+<input aria-label="Toggle Max 3 Trades Rule" checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-secondary"></div>
+</label>
+</div>
+</div>
+<!-- Inline Config / Stepper Editor -->
+<div class="mt-space-md pt-space-md bg-surface-container-lowest p-space-md rounded flex flex-col lg:flex-row lg:items-center justify-between gap-space-md">
+<div class="flex flex-wrap items-center gap-space-lg">
+<!-- Parameter 1 -->
+<div class="flex flex-col gap-1">
+<label class="font-label-md text-label-md text-outline">Max Executions (24h Window)</label>
+<div class="flex items-center bg-surface-container-high rounded px-space-xs py-1">
+<button class="w-6 h-6 flex items-center justify-center text-on-surface hover:bg-surface-bright rounded transition-colors font-bold" type="button">-</button>
+<input aria-label="Max executions count" class="w-10 bg-transparent text-center font-data-md text-data-md text-on-surface focus:outline-none font-bold" readonly="" type="text" value="3"/>
+<button class="w-6 h-6 flex items-center justify-center text-on-surface hover:bg-surface-bright rounded transition-colors font-bold" type="button">+</button>
+<span class="font-body-sm text-body-sm text-outline-variant mr-space-xs">trades</span>
+</div>
+</div>
+<!-- Parameter 2 -->
+<div class="flex flex-col gap-1">
+<label class="font-label-md text-label-md text-outline">Cooling Period Before Reset</label>
+<div class="flex items-center bg-surface-container-high rounded px-space-xs py-1">
+<button class="w-6 h-6 flex items-center justify-center text-on-surface hover:bg-surface-bright rounded transition-colors font-bold" type="button">-</button>
+<input aria-label="Cooldown minutes" class="w-12 bg-transparent text-center font-data-md text-data-md text-on-surface focus:outline-none font-bold" readonly="" type="text" value="45"/>
+<button class="w-6 h-6 flex items-center justify-center text-on-surface hover:bg-surface-bright rounded transition-colors font-bold" type="button">+</button>
+<span class="font-body-sm text-body-sm text-outline-variant mr-space-xs">mins</span>
+</div>
+</div>
+<!-- Mode Selector -->
+<div class="flex flex-col gap-1">
+<label class="font-label-md text-label-md text-outline">Intervention Action</label>
+<div class="flex items-center bg-surface-container-high p-0.5 rounded">
+<button class="px-space-sm py-1 bg-surface-bright rounded font-label-md text-label-md text-on-surface font-medium shadow-sm" type="button">
+                  Warn on Terminal
+                </button>
+<button class="px-space-sm py-1 hover:text-on-surface font-label-md text-label-md text-on-surface-variant transition-colors" type="button">
+                  Hard Lock API
+                </button>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-space-xs self-end lg:self-auto">
+<button class="px-space-sm py-1.5 rounded bg-surface-container hover:bg-surface-bright text-on-surface font-label-md text-label-md transition-all" type="button">
+              Revert
+            </button>
+<button class="px-space-md py-1.5 rounded bg-primary hover:bg-primary-container text-on-primary hover:text-on-primary-container font-label-md text-label-md font-semibold transition-all" type="button">
+              Save Param
+            </button>
+</div>
+</div>
+<!-- Inline Violation Mini-Timeline -->
+<div class="mt-space-sm flex flex-col gap-1.5 pt-space-xs">
+<span class="font-label-md text-label-md text-outline uppercase tracking-wider text-[10px]">Rule Telemetry · October Log</span>
+<div class="flex flex-col sm:flex-row gap-space-sm">
+<div class="flex items-center gap-space-xs bg-surface-container-lowest/80 px-space-sm py-1.5 rounded flex-1">
+<span class="h-2 w-2 rounded-full bg-error shrink-0"></span>
+<span class="font-data-sm text-data-sm text-tertiary shrink-0">Oct 18 · 14:10 EST</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">4th trade executed on EURUSD (Triggered soft lock for 45m · -$82 net)</span>
+</div>
+<div class="flex items-center gap-space-xs bg-surface-container-lowest/80 px-space-sm py-1.5 rounded flex-1">
+<span class="h-2 w-2 rounded-full bg-secondary shrink-0"></span>
+<span class="font-data-sm text-data-sm text-secondary shrink-0">Oct 04 · 11:22 EST</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Near breach — 3rd trade completed at 11:20 EST (Cooldown obeyed cleanly)</span>
+</div>
+</div>
+</div>
+</article>
+<!-- Card 2: Stop After 2 Consecutive Losses -->
+<article class="flex flex-col md:flex-row md:items-center justify-between gap-space-sm bg-surface-container-low rounded-lg p-space-md shadow-sm">
+<div class="flex items-center gap-space-md">
+<div class="p-2.5 rounded bg-tertiary-container/20 text-tertiary">
+<span class="material-symbols-outlined text-[20px]">pause_circle</span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-space-xs">
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-semibold">Stop After 2 Consecutive Losses</h3>
+<span class="px-space-xs py-0.5 rounded bg-tertiary text-on-tertiary font-data-sm text-data-sm font-bold uppercase text-[10px]">
+                ALERT / COOLDOWN
+              </span>
+<span class="px-space-xs py-0.5 rounded bg-secondary-container/20 text-secondary font-data-sm text-data-sm font-semibold">
+                0 violations
+              </span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
+              Forces a mandatory 2-hour platform cooldown after two back-to-back stopped positions to mitigate emotional revenge entries.
+            </p>
+</div>
+</div>
+<div class="flex items-center gap-space-md self-end md:self-auto">
+<span class="font-data-sm text-data-sm text-secondary font-semibold">STANDBY</span>
+<label class="relative inline-flex items-center cursor-pointer">
+<input aria-label="Toggle Consecutive Losses Rule" checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-secondary"></div>
+</label>
+</div>
+</article>
+<!-- Card 3: Max 2% Risk Per Trade -->
+<article class="flex flex-col md:flex-row md:items-center justify-between gap-space-sm bg-surface-container-low rounded-lg p-space-md shadow-sm">
+<div class="flex items-center gap-space-md">
+<div class="p-2.5 rounded bg-error-container text-on-error-container">
+<span class="material-symbols-outlined text-[20px]">shield_lock</span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-space-xs">
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-semibold">Max 2% Risk Per Trade</h3>
+<span class="flex items-center gap-1 px-space-xs py-0.5 rounded bg-error text-on-error font-data-sm text-data-sm font-bold uppercase text-[10px]">
+<span class="material-symbols-outlined text-[12px]">lock</span>
+                LOCK / HARD GATE
+              </span>
+<span class="px-space-xs py-0.5 rounded bg-error-container text-on-error-container font-data-sm text-data-sm font-bold">
+                1 violation
+              </span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
+              Automated pre-flight lot size rejection if stop loss distance implies &gt;2.0% Net Asset Value (NAV) exposure. Attempted 2.2% size spike on Oct 18 was intercepted.
+            </p>
+</div>
+</div>
+<div class="flex items-center gap-space-md self-end md:self-auto">
+<span class="px-space-xs py-0.5 rounded bg-surface-container-high font-data-sm text-data-sm text-primary font-bold">
+            LOCKED BY SENTINEL
+          </span>
+<div class="w-11 h-6 bg-secondary/40 rounded-full flex items-center justify-end px-1 cursor-not-allowed" title="Prop firm compliance requires permanent enforcement">
+<div class="h-4 w-4 bg-on-surface rounded-full"></div>
+</div>
+</div>
+</article>
+<!-- Card 4: No Entries Outside Session Windows -->
+<article class="flex flex-col md:flex-row md:items-center justify-between gap-space-sm bg-surface-container-low rounded-lg p-space-md shadow-sm">
+<div class="flex items-center gap-space-md">
+<div class="p-2.5 rounded bg-primary-container/20 text-primary">
+<span class="material-symbols-outlined text-[20px]">schedule</span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-space-xs">
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-semibold">No Entries Outside Session Windows</h3>
+<span class="px-space-xs py-0.5 rounded bg-surface-container-highest text-on-surface-variant font-data-sm text-data-sm font-semibold uppercase text-[10px]">
+                WARN
+              </span>
+<span class="px-space-xs py-0.5 rounded bg-secondary-container/20 text-secondary font-data-sm text-data-sm font-semibold">
+                0 violations
+              </span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
+              Entries restricted to defined liquid windows: London (07:00-11:30 UTC) and NY Overlap (13:30-16:00 UTC). Rejects low-probability chop.
+            </p>
+</div>
+</div>
+<div class="flex items-center gap-space-md self-end md:self-auto">
+<span class="font-data-sm text-data-sm text-secondary font-semibold">GATE ARMED</span>
+<label class="relative inline-flex items-center cursor-pointer">
+<input aria-label="Toggle Session Windows Rule" checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-secondary"></div>
+</label>
+</div>
+</article>
+</div>
+</section>
+<!-- 4. BOTTOM SECTION: VIOLATION AUDIT TRAIL & MISTAKE LEDGER -->
+<section class="grid grid-cols-1 lg:grid-cols-12 gap-space-md">
+<!-- LEFT COLUMN: Violation Audit Trail (65% -> 8 cols) -->
+<div class="lg:col-span-8 flex flex-col justify-between gap-space-md bg-surface-container p-space-lg rounded-xl shadow-md">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-tertiary text-[22px]">history_toggle_off</span>
+<h2 class="font-headline-md text-headline-md text-on-surface tracking-tight">Violation Audit Trail</h2>
+</div>
+<div class="flex items-center gap-1 bg-surface-container-lowest p-1 rounded font-label-md text-label-md">
+<button class="px-space-sm py-1 rounded bg-surface-bright text-on-surface font-semibold" type="button">
+            All Violations (2)
+          </button>
+<button class="px-space-sm py-1 rounded text-on-surface-variant hover:text-on-surface transition-colors" type="button">
+            Acknowledged (1)
+          </button>
+<button class="px-space-sm py-1 rounded text-on-surface-variant hover:text-on-surface transition-colors" type="button">
+            Pending Review (1)
+          </button>
+</div>
+</div>
+<!-- Institutional Table -->
+<div class="overflow-x-auto rounded bg-surface-container-lowest">
+<table class="w-full text-left font-body-sm text-body-sm">
+<thead class="bg-surface-container-high text-outline uppercase font-label-md text-[11px] tracking-wider">
+<tr>
+<th class="py-space-sm px-space-md">Date &amp; Time</th>
+<th class="py-space-sm px-space-md">Rule Breached</th>
+<th class="py-space-sm px-space-md">Context / Telemetry</th>
+<th class="py-space-sm px-space-md">Ticket</th>
+<th class="py-space-sm px-space-md">Cost Impact</th>
+<th class="py-space-sm px-space-md text-right">Status</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-container-high font-data-sm text-data-sm">
+<tr class="hover:bg-primary-container/5 transition-colors">
+<td class="py-space-md px-space-md text-on-surface whitespace-nowrap">
+                Oct 18, 14:10 <span class="text-outline text-[11px]">EST</span>
+</td>
+<td class="py-space-md px-space-md font-semibold text-tertiary whitespace-nowrap">
+                Max 3 trades/day
+              </td>
+<td class="py-space-md px-space-md text-on-surface-variant font-body-sm text-body-sm max-w-xs truncate">
+                4th trade executed during NY afternoon drift (lack of catalyst).
+              </td>
+<td class="py-space-md px-space-md text-primary font-bold whitespace-nowrap">
+                #88241 <span class="text-outline text-[11px]">EURUSD</span>
+</td>
+<td class="py-space-md px-space-md text-error font-bold whitespace-nowrap">
+                -0.65 R friction
+              </td>
+<td class="py-space-md px-space-md text-right whitespace-nowrap">
+<span class="inline-flex items-center gap-1 px-space-xs py-0.5 rounded bg-secondary-container/20 text-secondary text-[11px] font-semibold">
+<span class="material-symbols-outlined text-[13px]">done</span> Acknowledged
+                </span>
+</td>
+</tr>
+<tr class="hover:bg-primary-container/5 transition-colors bg-surface-container-low/40">
+<td class="py-space-md px-space-md text-on-surface whitespace-nowrap">
+                Oct 18, 09:54 <span class="text-outline text-[11px]">EST</span>
+</td>
+<td class="py-space-md px-space-md font-semibold text-error whitespace-nowrap">
+                Max 2% risk per trade
+              </td>
+<td class="py-space-md px-space-md text-on-surface-variant font-body-sm text-body-sm max-w-xs truncate">
+                Calculated lot size 2.2x above written playbook sizing.
+              </td>
+<td class="py-space-md px-space-md text-primary font-bold whitespace-nowrap">
+                #88238 <span class="text-outline text-[11px]">GBPUSD</span>
+</td>
+<td class="py-space-md px-space-md text-error font-bold whitespace-nowrap">
+                -1.20 R loss
+              </td>
+<td class="py-space-md px-space-md text-right whitespace-nowrap">
+<button class="inline-flex items-center gap-1 px-space-sm py-1 rounded bg-tertiary-container hover:bg-tertiary text-on-tertiary-container hover:text-on-tertiary font-label-md text-label-md font-semibold transition-all shadow-[0_0_12px_rgba(234,103,103,0.4)] animate-pulse" type="button">
+<span>Review &amp; Acknowledge</span>
+<span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="flex items-center justify-between text-outline text-body-sm pt-space-xs">
+<span>Displaying 2 of 2 logged behavioral breaches</span>
+<a class="text-primary hover:underline flex items-center gap-1 font-label-md" href="#">
+          Export Audit Cryptographic Proof
+          <span class="material-symbols-outlined text-[14px]">download</span>
+</a>
+</div>
+</div>
+<!-- RIGHT COLUMN: Mistake Ledger & Taxonomy (35% -> 4 cols) -->
+<div class="lg:col-span-4 flex flex-col justify-between gap-space-md bg-surface-container p-space-lg rounded-xl shadow-md">
+<div class="flex flex-col gap-1">
+<div class="flex items-center justify-between">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Mistake Taxonomy</h2>
+<span class="font-data-sm text-data-sm text-error font-bold bg-error-container/30 px-space-xs py-0.5 rounded">
+            -6.2 R Total Friction
+          </span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+          Cumulative behavioral drag for October 2024.
+        </p>
+</div>
+<!-- Frequency Bar Charts -->
+<div class="flex flex-col gap-space-md">
+<!-- Item 1 -->
+<div class="flex flex-col gap-1">
+<div class="flex items-center justify-between">
+<span class="font-body-md text-body-md text-on-surface font-medium">Moved stop loss wider</span>
+<div class="flex items-center gap-space-xs">
+<span class="font-data-sm text-data-sm text-outline">14 times</span>
+<span class="font-data-sm text-data-sm text-error font-semibold">-3.8 R</span>
+</div>
+</div>
+<div class="w-full h-2 rounded bg-surface-container-lowest overflow-hidden">
+<div class="h-full bg-error rounded" style="width: 65%;"></div>
+</div>
+</div>
+<!-- Item 2 -->
+<div class="flex flex-col gap-1">
+<div class="flex items-center justify-between">
+<span class="font-body-md text-body-md text-on-surface font-medium">Premature early exit (Paper hands)</span>
+<div class="flex items-center gap-space-xs">
+<span class="font-data-sm text-data-sm text-outline">9 times</span>
+<span class="font-data-sm text-data-sm text-tertiary font-semibold">-1.8 R</span>
+</div>
+</div>
+<div class="w-full h-2 rounded bg-surface-container-lowest overflow-hidden">
+<div class="h-full bg-tertiary-container rounded" style="width: 40%;"></div>
+</div>
+</div>
+<!-- Item 3 -->
+<div class="flex flex-col gap-1">
+<div class="flex items-center justify-between">
+<span class="font-body-md text-body-md text-on-surface font-medium">Entered outside overlap window</span>
+<div class="flex items-center gap-space-xs">
+<span class="font-data-sm text-data-sm text-outline">4 times</span>
+<span class="font-data-sm text-data-sm text-outline-variant font-semibold">-0.6 R</span>
+</div>
+</div>
+<div class="w-full h-2 rounded bg-surface-container-lowest overflow-hidden">
+<div class="h-full bg-outline-variant rounded" style="width: 20%;"></div>
+</div>
+</div>
+<!-- Item 4 (Saved) -->
+<div class="flex flex-col gap-1">
+<div class="flex items-center justify-between">
+<span class="font-body-md text-body-md text-on-surface font-medium">Revenge entry within 10m of stop</span>
+<div class="flex items-center gap-space-xs">
+<span class="font-data-sm text-data-sm text-secondary">Sentinel blocked</span>
+<span class="font-data-sm text-data-sm text-secondary font-bold">+1.5 R saved</span>
+</div>
+</div>
+<div class="w-full h-2 rounded bg-surface-container-lowest overflow-hidden">
+<div class="h-full bg-secondary rounded" style="width: 28%;"></div>
+</div>
+</div>
+</div>
+<!-- Cosmoz AI Summary Advice Card -->
+<div class="bg-surface-container-low p-space-md rounded-lg flex items-start gap-space-sm mt-space-xs">
+<div class="p-space-xs rounded bg-primary-container text-on-primary-container shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[18px]">auto_awesome</span>
+</div>
+<div class="flex flex-col gap-1">
+<span class="font-label-md text-label-md text-primary font-semibold uppercase tracking-wider text-[11px]">
+            Cosmoz Behavioral Intelligence
+          </span>
+<p class="font-body-sm text-body-sm text-on-surface leading-relaxed">
+            Eliminating “Stop Widening” alone elevates your monthly expectancy from 
+            <span class="font-data-sm text-data-sm text-primary font-bold">+0.78R</span> to 
+            <span class="font-data-sm text-data-sm text-secondary font-bold">+1.12R</span>. 
+            Your technical edge is mathematically sound; discretionary risk drift is your single leakage point.
+          </p>
+</div>
+</div>
+</div>
+</section>
+</div></main></div></body></html>

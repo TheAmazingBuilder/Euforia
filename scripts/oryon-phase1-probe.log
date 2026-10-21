@@ -1,0 +1,42 @@
+=== oryon phase1 probe — 2026-10-10T03:00:18.981Z ===
+signIn: after goto — http://localhost:3000/
+signIn: login form visible
+signIn: submitted — http://localhost:3000/login?returnTo=%2F
+signIn: after settle — http://localhost:3000/
+  PASS  Oryon — workspace rendu
+  PASS  Oryon — toolbar présente
+  PASS  Oryon — 7 timeframes
+  PASS  Oryon — instrument sélectionné (non vide)
+  PASS  Oryon — canvas du moteur présent
+  PASS  Oryon — légende symbole
+  PASS  Oryon — légende intervalle = 5m
+  PASS  Oryon — badge source honnête (SIM/REAL)
+  PASS  Oryon — légende OHLC peuplée
+  PASS  Oryon — statut de flux visible
+  PASS  Oryon — 1H appliqué (légende)
+  PASS  Oryon — canvas toujours unique après 1H
+  PASS  Oryon — type line sans erreur
+  PASS  Oryon — rail d'outils visible (md+)
+  PASS  Oryon — tous les outils du rail désactivés (honnête)
+  PASS  Oryon — panneau bas replié par défaut
+  PASS  Oryon — panneau bas : copie honnête (pas de positions fabriquées)
+  PASS  Oryon — panneau bas se referme
+  PASS  Oryon — notifications : état reporté honnête
+  PASS  Oryon — panneau calendrier rendu
+  PASS  Oryon — rail utilité se referme
+  PASS  Oryon — option BTCUSDT présente et active
+  PASS  Oryon — légende = BTCUSDT
+  PASS  Oryon — badge REAL pour BTCUSDT
+  PASS  Oryon — canvas BTCUSDT unique
+  PASS  Oryon — 0 erreur console (desktop)
+signIn: after goto — http://localhost:3000/
+signIn: login form visible
+signIn: submitted — http://localhost:3000/login?returnTo=%2F
+signIn: after settle — http://localhost:3000/
+  PASS  Mobile — workspace rendu
+  PASS  Mobile — rail d'outils caché
+  PASS  Mobile — canvas présent
+  PASS  Mobile — utilités en overlay (Sheet)
+  PASS  Mobile — 0 erreur console
+
+=== ORYON PHASE 1 — 31 PASS / 0 FAIL ===

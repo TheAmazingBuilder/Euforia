@@ -1,0 +1,251 @@
+
+[-] Removed enums
+  - AcademyBookmarkKind
+  - AcademyDrill
+  - DrawingKind
+  - IndicatorKind
+  - KeyLevelKind
+  - MarketBias
+  - SessionLiveEventKind
+  - TradingSessionStatus
+  - TradingWindow
+
+[-] Removed tables
+  - AcademyActivityDay
+  - AcademyBookmark
+  - AcademyEventRegistration
+  - AcademyExamAttempt
+  - AcademyFlashcardState
+  - AcademyLessonCompletion
+  - AcademyLessonNote
+  - AcademyLessonView
+  - AcademyPracticeAttempt
+  - AcademyPracticeLog
+  - AcademyProgress
+  - AcademyQuizAttempt
+  - AcademyTask
+  - Alert
+  - Checklist
+  - EcoEvent
+  - Goal
+  - KeyLevel
+  - LiveAnalysis
+  - LiveLevel
+  - LiveSession
+  - Mistake
+  - NofyFolder
+  - NofyNote
+  - NofyNoteTag
+  - NofyTag
+  - NofyTemplate
+  - NofyVersion
+  - PlaybookTemplate
+  - ReviewEntry
+  - ReviewLesson
+  - Rule
+  - RuleViolation
+  - SavedAnalysis
+  - SessionNote
+  - SkippedTrade
+  - StrategyVersion
+  - Tag
+  - TradeMistake
+  - TradeTag
+  - TradingSession
+  - TradingSessionEvent
+
+[*] Changed the `AcademyActivityDay` table
+  [-] Removed foreign key on columns (userId)
+
+[*] Changed the `AcademyBookmark` table
+  [-] Removed foreign key on columns (userId)
+
+[*] Changed the `AcademyEventRegistration` table
+  [-] Removed foreign key on columns (userId)
+
+[*] Changed the `AcademyExamAttempt` table
+  [-] Removed foreign key on columns (userId)
+
+[*] Changed the `AcademyFlashcardState` table
+  [-] Removed foreign key on columns (userId)
+
+[*] Changed the `AcademyLessonCompletion` table
+  [-] Removed foreign key on columns (userId)
+
+[*] Changed the `AcademyLessonNote` table
+  [-] Removed foreign key on columns (userId)
+
+[*] Changed the `AcademyLessonView` table
+  [-] Removed foreign key on columns (userId)
+
+[*] Changed the `AcademyPracticeAttempt` table
+  [-] Removed foreign key on columns (userId)
+
+[*] Changed the `AcademyPracticeLog` table
+  [-] Removed foreign key on columns (userId)
+
+[*] Changed the `AcademyProgress` table
+  [-] Removed foreign key on columns (userId)
+
+[*] Changed the `AcademyQuizAttempt` table
+  [-] Removed foreign key on columns (userId)
+
+[*] Changed the `AcademyTask` table
+  [-] Removed foreign key on columns (userId)
+
+[*] Changed the `Alert` table
+  [-] Removed foreign key on columns (userId)
+
+[*] Changed the `CalendarBlock` table
+  [-] Removed index on columns (userId, date)
+  [-] Removed unique index on columns (userId, date)
+
+[*] Changed the `CalendarSyncRun` table
+  [-] Removed index on columns (provider, startedAt)
+
+[*] Changed the `Checklist` table
+  [-] Removed foreign key on columns (userId)
+
+[*] Changed the `ChecklistTemplate` table
+  [-] Removed foreign key on columns (strategyId)
+  [-] Removed index on columns (strategyId)
+  [-] Removed index on columns (userId)
+  [+] Added foreign key on columns (strategyId)
+
+[*] Changed the `Goal` table
+  [-] Removed foreign key on columns (userId)
+
+[*] Changed the `KeyLevel` table
+  [-] Removed foreign key on columns (userId)
+
+[*] Changed the `LiveAnalysis` table
+  [-] Removed foreign key on columns (sessionId)
+  [-] Removed foreign key on columns (userId)
+
+[*] Changed the `LiveLevel` table
+  [-] Removed foreign key on columns (userId)
+
+[*] Changed the `LiveSession` table
+  [-] Removed foreign key on columns (userId)
+
+[*] Changed the `MetricAlertRuleRow` table
+  [*] Altered column `id` (default changed from `Some(DbGenerated(Some("gen_random_uuid()")))` to `None`)
+
+[*] Changed the `Mistake` table
+  [-] Removed foreign key on columns (userId)
+
+[*] Changed the `NofyFolder` table
+  [-] Removed foreign key on columns (userId)
+
+[*] Changed the `NofyNote` table
+  [-] Removed foreign key on columns (folderId)
+  [-] Removed foreign key on columns (userId)
+
+[*] Changed the `NofyNoteTag` table
+  [-] Removed foreign key on columns (noteId)
+  [-] Removed foreign key on columns (tagId)
+
+[*] Changed the `NofyTag` table
+  [-] Removed foreign key on columns (userId)
+
+[*] Changed the `NofyTemplate` table
+  [-] Removed foreign key on columns (userId)
+
+[*] Changed the `NofyVersion` table
+  [-] Removed foreign key on columns (noteId)
+
+[*] Changed the `OcrCollection` table
+  [-] Removed unique index on columns (userId, name)
+
+[*] Changed the `PlaybookRule` table
+  [-] Removed foreign key on columns (strategyId)
+  [-] Removed index on columns (strategyId)
+  [-] Removed index on columns (userId)
+  [-] Removed index on columns (userId, scope)
+  [+] Added index on columns (userId, active)
+  [+] Added foreign key on columns (strategyId)
+
+[*] Changed the `PlaybookTemplate` table
+  [-] Removed foreign key on columns (ownerUserId)
+
+[*] Changed the `ReviewEntry` table
+  [-] Removed foreign key on columns (userId)
+
+[*] Changed the `ReviewLesson` table
+  [-] Removed foreign key on columns (userId)
+
+[*] Changed the `Rule` table
+  [-] Removed foreign key on columns (userId)
+
+[*] Changed the `RuleViolation` table
+  [-] Removed foreign key on columns (ruleId)
+  [-] Removed foreign key on columns (userId)
+
+[*] Changed the `SavedAnalysis` table
+  [-] Removed foreign key on columns (sessionId)
+  [-] Removed foreign key on columns (userId)
+
+[*] Changed the `SessionNote` table
+  [-] Removed foreign key on columns (userId)
+
+[*] Changed the `Setup` table
+  [-] Removed index on columns (strategyId)
+  [-] Removed index on columns (userId)
+  [*] Altered column `description` (changed from Nullable to Required)
+  [*] Altered column `tags` (changed from Nullable to Required)
+
+[*] Changed the `SkippedTrade` table
+  [-] Removed foreign key on columns (userId)
+
+[*] Changed the `Strategy` table
+  [-] Removed index on columns (userId)
+  [*] Altered column `description` (changed from Nullable to Required)
+  [*] Column `entryRules` would be dropped and recreated (changed from Nullable to Required, type changed)
+  [*] Column `exitRules` would be dropped and recreated (changed from Nullable to Required, type changed)
+  [*] Column `riskRules` would be dropped and recreated (changed from Nullable to Required, type changed)
+  [*] Altered column `grade` (changed from Nullable to Required)
+  [*] Altered column `color` (changed from Nullable to Required)
+  [*] Altered column `tags` (changed from Nullable to Required)
+
+[*] Changed the `StrategyVersion` table
+  [-] Removed foreign key on columns (strategyId)
+  [-] Removed foreign key on columns (userId)
+
+[*] Changed the `StrategyVersionSnapshot` table
+  [-] Removed index on columns (strategyId, version)
+
+[*] Changed the `Tag` table
+  [-] Removed foreign key on columns (userId)
+
+[*] Changed the `TradeMistake` table
+  [-] Removed foreign key on columns (mistakeId)
+  [-] Removed foreign key on columns (tradeId)
+  [-] Removed foreign key on columns (userId)
+
+[*] Changed the `TradeReview` table
+  [*] Altered column `executionGrade` (changed from Required to Nullable)
+  [*] Altered column `followedPlan` (changed from Required to Nullable)
+  [*] Altered column `playbookMatch` (changed from Required to Nullable)
+  [*] Altered column `lessons` (changed from Required to Nullable)
+  [+] Added foreign key on columns (originTradePlanId)
+
+[*] Changed the `TradeTag` table
+  [-] Removed foreign key on columns (tagId)
+  [-] Removed foreign key on columns (tradeId)
+  [-] Removed foreign key on columns (userId)
+
+[*] Changed the `TradingDeal` table
+  [-] Removed index on columns (accountId, externalPositionId)
+  [-] Removed column `externalPositionId`
+
+[*] Changed the `TradingSession` table
+  [-] Removed foreign key on columns (userId)
+
+[*] Changed the `TradingSessionEvent` table
+  [-] Removed foreign key on columns (sessionId)
+
+[*] Changed the `User` table
+  [-] Removed column `company`
+  [-] Removed column `jobTitle`
+  [-] Removed column `location`
+  [-] Removed column `phone`
