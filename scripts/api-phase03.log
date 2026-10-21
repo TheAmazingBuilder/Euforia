@@ -1,0 +1,378 @@
+[07:19:25.130] [32mINFO[39m (cosmoz-api): [36mStarting Nest application...[39m [90m{"service":"cosmoz-api","env":"development","context":"NestFactory"}[39m
+[07:19:25.130] [32mINFO[39m (cosmoz-api): [36mConfigModule dependencies initialized[39m [90m{"service":"cosmoz-api","env":"development","context":"InstanceLoader"}[39m
+[07:19:25.130] [32mINFO[39m (cosmoz-api): [36mDomainEventsModule dependencies initialized[39m [90m{"service":"cosmoz-api","env":"development","context":"InstanceLoader"}[39m
+[07:19:25.130] [32mINFO[39m (cosmoz-api): [36mAppModule dependencies initialized[39m [90m{"service":"cosmoz-api","env":"development","context":"InstanceLoader"}[39m
+[07:19:25.130] [32mINFO[39m (cosmoz-api): [36mCalculatorsModule dependencies initialized[39m [90m{"service":"cosmoz-api","env":"development","context":"InstanceLoader"}[39m
+[07:19:25.130] [32mINFO[39m (cosmoz-api): [36mLoggingModule dependencies initialized[39m [90m{"service":"cosmoz-api","env":"development","context":"InstanceLoader"}[39m
+[07:19:25.130] [32mINFO[39m (cosmoz-api): [36mEventsModule dependencies initialized[39m [90m{"service":"cosmoz-api","env":"development","context":"InstanceLoader"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mThrottlerModule dependencies initialized[39m [90m{"service":"cosmoz-api","env":"development","context":"InstanceLoader"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mJwtModule dependencies initialized[39m [90m{"service":"cosmoz-api","env":"development","context":"InstanceLoader"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mPrismaModule dependencies initialized[39m [90m{"service":"cosmoz-api","env":"development","context":"InstanceLoader"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mRateLimitModule dependencies initialized[39m [90m{"service":"cosmoz-api","env":"development","context":"InstanceLoader"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mHealthModule dependencies initialized[39m [90m{"service":"cosmoz-api","env":"development","context":"InstanceLoader"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mSecurityEventModule dependencies initialized[39m [90m{"service":"cosmoz-api","env":"development","context":"InstanceLoader"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mTradingModule dependencies initialized[39m [90m{"service":"cosmoz-api","env":"development","context":"InstanceLoader"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mMonitoringModule dependencies initialized[39m [90m{"service":"cosmoz-api","env":"development","context":"InstanceLoader"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mReplayModule dependencies initialized[39m [90m{"service":"cosmoz-api","env":"development","context":"InstanceLoader"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mGhostsModule dependencies initialized[39m [90m{"service":"cosmoz-api","env":"development","context":"InstanceLoader"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mBackupModule dependencies initialized[39m [90m{"service":"cosmoz-api","env":"development","context":"InstanceLoader"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mSessionModule dependencies initialized[39m [90m{"service":"cosmoz-api","env":"development","context":"InstanceLoader"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mSessionLiveModule dependencies initialized[39m [90m{"service":"cosmoz-api","env":"development","context":"InstanceLoader"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mPlaybookModule dependencies initialized[39m [90m{"service":"cosmoz-api","env":"development","context":"InstanceLoader"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mDisciplineModule dependencies initialized[39m [90m{"service":"cosmoz-api","env":"development","context":"InstanceLoader"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mTradePlanningModule dependencies initialized[39m [90m{"service":"cosmoz-api","env":"development","context":"InstanceLoader"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mTradeReviewModule dependencies initialized[39m [90m{"service":"cosmoz-api","env":"development","context":"InstanceLoader"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mIntegrationsModule dependencies initialized[39m [90m{"service":"cosmoz-api","env":"development","context":"InstanceLoader"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mSettingsModule dependencies initialized[39m [90m{"service":"cosmoz-api","env":"development","context":"InstanceLoader"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mTradesModule dependencies initialized[39m [90m{"service":"cosmoz-api","env":"development","context":"InstanceLoader"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mStatsModule dependencies initialized[39m [90m{"service":"cosmoz-api","env":"development","context":"InstanceLoader"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mIdentityModule dependencies initialized[39m [90m{"service":"cosmoz-api","env":"development","context":"InstanceLoader"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mNofyModule dependencies initialized[39m [90m{"service":"cosmoz-api","env":"development","context":"InstanceLoader"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mAcademyModule dependencies initialized[39m [90m{"service":"cosmoz-api","env":"development","context":"InstanceLoader"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mOryonModule dependencies initialized[39m [90m{"service":"cosmoz-api","env":"development","context":"InstanceLoader"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mPlansModule dependencies initialized[39m [90m{"service":"cosmoz-api","env":"development","context":"InstanceLoader"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mReviewModule dependencies initialized[39m [90m{"service":"cosmoz-api","env":"development","context":"InstanceLoader"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mAccountsModule dependencies initialized[39m [90m{"service":"cosmoz-api","env":"development","context":"InstanceLoader"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mCalendarModule dependencies initialized[39m [90m{"service":"cosmoz-api","env":"development","context":"InstanceLoader"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mSecurityModule dependencies initialized[39m [90m{"service":"cosmoz-api","env":"development","context":"InstanceLoader"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mAnalyticsModule dependencies initialized[39m [90m{"service":"cosmoz-api","env":"development","context":"InstanceLoader"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mOcrModule dependencies initialized[39m [90m{"service":"cosmoz-api","env":"development","context":"InstanceLoader"}[39m
+[07:19:25.131] [33mWARN[39m (cosmoz-api): [36mUnsupported route path: "health/(.*)". In previous versions, the symbols ?, *, and + were used to denote optional or repeating path parameters. The latest version of "path-to-regexp" now requires the use of named parameters. For example, instead of using a route like /users/* to capture all routes starting with "/users", you should use /users/*path. For more details, refer to the migration guide. Attempting to auto-convert to "health/{*path}"...[39m [90m{"service":"cosmoz-api","env":"development","context":"LegacyRouteConverter"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mHealthController {/api/health} (version: Neutral):[39m [90m{"service":"cosmoz-api","env":"development","context":"RoutesResolver"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mMapped {/health, GET} (version: Neutral) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mMapped {/health/live, GET} (version: Neutral) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mMapped {/health/ready, GET} (version: Neutral) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mAuthController {/api/auth} (version: 1):[39m [90m{"service":"cosmoz-api","env":"development","context":"RoutesResolver"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mMapped {/api/auth/register, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mMapped {/api/auth/login, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mMapped {/api/auth/mfa/challenge, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mMapped {/api/auth/mfa/recover, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mMapped {/api/auth/me, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mMapped {/api/auth/refresh, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mMapped {/api/auth/logout, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mMapped {/api/auth/email/verify, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mMapped {/api/auth/email/resend, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mMapped {/api/auth/password/forgot, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mMapped {/api/auth/password/reset, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mMeController {/api/me} (version: 1):[39m [90m{"service":"cosmoz-api","env":"development","context":"RoutesResolver"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mMapped {/api/me, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mMapped {/api/me, PATCH} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mMapped {/api/me/deactivate, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mMapped {/api/me/delete, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mAccountsController {/api/accounts} (version: 1):[39m [90m{"service":"cosmoz-api","env":"development","context":"RoutesResolver"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mMapped {/api/accounts, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mMapped {/api/accounts/providers, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mMapped {/api/accounts/:accountId, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mMapped {/api/accounts/:accountId/snapshot, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mMapped {/api/accounts/:accountId/positions, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mMapped {/api/accounts/:accountId/orders, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mMapped {/api/accounts/:accountId/deals, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mMapped {/api/accounts, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mMapped {/api/accounts/:accountId/connection/test, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mMapped {/api/accounts/:accountId/connection, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mMapped {/api/accounts/:accountId/connection, DELETE} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mMapped {/api/accounts/:accountId/sync, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mMapped {/api/accounts/:accountId/sync, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mTradingAccountsController {/api/trading-accounts} (version: 1):[39m [90m{"service":"cosmoz-api","env":"development","context":"RoutesResolver"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mMapped {/api/trading-accounts/providers, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mMapped {/api/trading-accounts/connect, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mMapped {/api/trading-accounts, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mMapped {/api/trading-accounts/:accountId, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mMapped {/api/trading-accounts/:accountId/positions, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mMapped {/api/trading-accounts/:accountId/orders, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mMapped {/api/trading-accounts/:accountId/deals, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mMapped {/api/trading-accounts/:accountId/test, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mMapped {/api/trading-accounts/:accountId/sync, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mMapped {/api/trading-accounts/:accountId/reconnect, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mMapped {/api/trading-accounts/:accountId, PATCH} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mMapped {/api/trading-accounts/:accountId, DELETE} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mBrokerController {/api/broker} (version: 1):[39m [90m{"service":"cosmoz-api","env":"development","context":"RoutesResolver"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mMapped {/api/broker/session, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mSettingsController {/api/me/preferences} (version: 1):[39m [90m{"service":"cosmoz-api","env":"development","context":"RoutesResolver"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mMapped {/api/me/preferences, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mMapped {/api/me/preferences/:domain, PATCH} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mMapped {/api/me/preferences/reset, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mInstrumentsController {/api/instruments} (version: 1):[39m [90m{"service":"cosmoz-api","env":"development","context":"RoutesResolver"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mMapped {/api/instruments, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mTradesController {/api/trades} (version: 1):[39m [90m{"service":"cosmoz-api","env":"development","context":"RoutesResolver"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mMapped {/api/trades, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mMapped {/api/trades/:tradeId/review, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mMapped {/api/trades/:tradeId/screenshots, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mMapped {/api/trades, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mMapped {/api/trades/:tradeId/close, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.131] [32mINFO[39m (cosmoz-api): [36mMapped {/api/trades/:tradeId/decision, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/trades/:tradeId/session-series, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/trades/:tradeId/mistakes/:mistakeId, PATCH} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/trades/import, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/trades/bulk, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/trades/:tradeId/review, PATCH} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/trades/:tradeId/plan, PATCH} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/trades/:tradeId/psychology, PATCH} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/trades/:tradeId/notes, PATCH} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/trades/:tradeId, PATCH} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/trades/:tradeId, DELETE} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/trades/:tradeId/screenshots, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/trades/:tradeId/screenshots/:screenshotId, DELETE} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mTradeViewsController {/api/trade-views} (version: 1):[39m [90m{"service":"cosmoz-api","env":"development","context":"RoutesResolver"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/trade-views, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/trade-views, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/trade-views/:viewId, DELETE} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mTagsController {/api/tags} (version: 1):[39m [90m{"service":"cosmoz-api","env":"development","context":"RoutesResolver"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/tags, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/tags, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mGhostsController {/api/skipped-trades} (version: 1):[39m [90m{"service":"cosmoz-api","env":"development","context":"RoutesResolver"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/skipped-trades, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/skipped-trades, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/skipped-trades/:skippedId/settle, PATCH} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mDisciplineRulesController {/api/rules} (version: 1):[39m [90m{"service":"cosmoz-api","env":"development","context":"RoutesResolver"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/rules/status, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/rules, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/rules, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/rules/:ruleId, PATCH} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/rules/:ruleId, DELETE} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mViolationsController {/api/violations} (version: 1):[39m [90m{"service":"cosmoz-api","env":"development","context":"RoutesResolver"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/violations, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/violations/:violationId/acknowledge, PATCH} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mDisciplineController {/api/discipline} (version: 1):[39m [90m{"service":"cosmoz-api","env":"development","context":"RoutesResolver"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/discipline/score, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/discipline/emotion-matrix, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMistakesLedgerController {/api/mistakes} (version: 1):[39m [90m{"service":"cosmoz-api","env":"development","context":"RoutesResolver"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/mistakes/ledger, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mAlertsController {/api/alerts} (version: 1):[39m [90m{"service":"cosmoz-api","env":"development","context":"RoutesResolver"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/alerts, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/alerts/:alertId/read, PATCH} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mSessionTimelineController {/api/session} (version: 1):[39m [90m{"service":"cosmoz-api","env":"development","context":"RoutesResolver"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/session/timeline, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mSessionNotesController {/api/session/notes} (version: 1):[39m [90m{"service":"cosmoz-api","env":"development","context":"RoutesResolver"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/session/notes, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/session/notes, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/session/notes/:noteId, DELETE} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mEcoEventsController {/api/eco-events} (version: 1):[39m [90m{"service":"cosmoz-api","env":"development","context":"RoutesResolver"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/eco-events, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mCalendarBlocksController {/api/calendar-blocks} (version: 1):[39m [90m{"service":"cosmoz-api","env":"development","context":"RoutesResolver"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/calendar-blocks, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/calendar-blocks, PUT} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/calendar-blocks/:date, DELETE} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/calendar-blocks/import-eco, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mCalendarViewController {/api/calendar-view} (version: 1):[39m [90m{"service":"cosmoz-api","env":"development","context":"RoutesResolver"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/calendar-view, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mGoalsController {/api/goals} (version: 1):[39m [90m{"service":"cosmoz-api","env":"development","context":"RoutesResolver"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/goals, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/goals, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/goals/:goalId, PATCH} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/goals/:goalId, DELETE} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mSessionLiveSessionsController {/api/session-live/sessions} (version: 1):[39m [90m{"service":"cosmoz-api","env":"development","context":"RoutesResolver"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/session-live/sessions, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/session-live/sessions, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/session-live/sessions/:sessionId, PATCH} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/session-live/sessions/:sessionId/end, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/session-live/sessions/:sessionId/cancel, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mSessionLiveAnalysesController {/api/session-live/analyses} (version: 1):[39m [90m{"service":"cosmoz-api","env":"development","context":"RoutesResolver"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/session-live/analyses, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/session-live/analyses, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/session-live/analyses/:analysisId, DELETE} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mSessionLiveLevelsController {/api/session-live/levels} (version: 1):[39m [90m{"service":"cosmoz-api","env":"development","context":"RoutesResolver"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/session-live/levels, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/session-live/levels, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/session-live/levels/:levelId, PATCH} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/session-live/levels/:levelId, DELETE} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mPlaybookMetaController {/api/playbook} (version: 1):[39m [90m{"service":"cosmoz-api","env":"development","context":"RoutesResolver"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/playbook/overview, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/playbook/templates, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/playbook/templates/instantiate, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mStrategiesController {/api/strategies} (version: 1):[39m [90m{"service":"cosmoz-api","env":"development","context":"RoutesResolver"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/strategies/stats, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/strategies, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/strategies, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/strategies/:strategyId/duplicate, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/strategies/:strategyId/versions, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/strategies/:strategyId, PATCH} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/strategies/:strategyId, DELETE} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mSetupsController {/api/setups} (version: 1):[39m [90m{"service":"cosmoz-api","env":"development","context":"RoutesResolver"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/setups/insights, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/setups, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/setups, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/setups/:setupId, PATCH} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/setups/:setupId, DELETE} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mChecklistsController {/api/checklists} (version: 1):[39m [90m{"service":"cosmoz-api","env":"development","context":"RoutesResolver"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/checklists, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/checklists, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/checklists/:checklistId, PATCH} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/checklists/:checklistId, DELETE} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mPlaybookRulesController {/api/playbook/rules} (version: 1):[39m [90m{"service":"cosmoz-api","env":"development","context":"RoutesResolver"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/playbook/rules, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/playbook/rules, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/playbook/rules/:ruleId, PATCH} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mMapped {/api/playbook/rules/:ruleId, DELETE} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.132] [32mINFO[39m (cosmoz-api): [36mNofyController {/api/nofy} (version: 1):[39m [90m{"service":"cosmoz-api","env":"development","context":"RoutesResolver"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mMapped {/api/nofy/overview, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mMapped {/api/nofy/notes, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mMapped {/api/nofy/notes, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mMapped {/api/nofy/notes/:noteId, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mMapped {/api/nofy/notes/:noteId, PATCH} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mMapped {/api/nofy/notes/:noteId, DELETE} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mMapped {/api/nofy/notes/:noteId/duplicate, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mMapped {/api/nofy/notes/:noteId/restore, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mMapped {/api/nofy/notes/:noteId/permanent, DELETE} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mMapped {/api/nofy/notes/:noteId/versions, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mMapped {/api/nofy/notes/:noteId/versions/:versionId, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mMapped {/api/nofy/notes/:noteId/versions/:versionId/restore, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mMapped {/api/nofy/folders, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mMapped {/api/nofy/folders, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mMapped {/api/nofy/folders/:folderId, PATCH} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mMapped {/api/nofy/folders/:folderId, DELETE} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mMapped {/api/nofy/tags, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mMapped {/api/nofy/tags, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mMapped {/api/nofy/templates, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mMapped {/api/nofy/templates, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mMapped {/api/nofy/templates/instantiate, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mMapped {/api/nofy/search, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mMapped {/api/nofy/refs, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mAcademyController {/api/academy} (version: 1):[39m [90m{"service":"cosmoz-api","env":"development","context":"RoutesResolver"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mMapped {/api/academy/catalog, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mMapped {/api/academy/overview, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mMapped {/api/academy/progress, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mMapped {/api/academy/courses/:courseId, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mMapped {/api/academy/lessons/:lessonId, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mMapped {/api/academy/lessons/:lessonId/complete, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mMapped {/api/academy/lessons/:lessonId/checkpoint, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mMapped {/api/academy/lessons/:lessonId/notes, PUT} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mMapped {/api/academy/quizzes/:quizId, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mMapped {/api/academy/quizzes/:quizId/attempts, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mMapped {/api/academy/glossary, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mMapped {/api/academy/search, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mMapped {/api/academy/bookmarks, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mMapped {/api/academy/bookmarks, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mMapped {/api/academy/practice/log, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mMapped {/api/academy/practice/pattern-drill, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mMapped {/api/academy/practice/sr-drill, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mMapped {/api/academy/practice/position-drill, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mMapped {/api/academy/practice/zone-drill, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mMapped {/api/academy/practice/stats, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mMapped {/api/academy/scenarios, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mMapped {/api/academy/flashcards, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mMapped {/api/academy/flashcards/review, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mMapped {/api/academy/certifications, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mMapped {/api/academy/exams/:categoryId, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mMapped {/api/academy/exams/:categoryId/attempts, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mMapped {/api/academy/milestones, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mMapped {/api/academy/suggestions, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mMapped {/api/academy/events, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mMapped {/api/academy/events/register, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mMapped {/api/academy/tasks, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mMapped {/api/academy/tasks, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mMapped {/api/academy/tasks/toggle, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mMapped {/api/academy/tasks/delete, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mStatsController {/api/stats} (version: 1):[39m [90m{"service":"cosmoz-api","env":"development","context":"RoutesResolver"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mMapped {/api/stats/overview, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mMapped {/api/stats/analytics, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mBackupController {/api} (version: 1):[39m [90m{"service":"cosmoz-api","env":"development","context":"RoutesResolver"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mMapped {/api/export/backup, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mMapped {/api/import/backup, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mSecurityCenterController {/api/security} (version: 1):[39m [90m{"service":"cosmoz-api","env":"development","context":"RoutesResolver"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mMapped {/api/security/overview, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mMapped {/api/security/events, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mMapped {/api/security/logins, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mMapped {/api/security/reauth, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mMapped {/api/security/password, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.133] [32mINFO[39m (cosmoz-api): [36mMapped {/api/security/2fa/enable, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.136] [32mINFO[39m (cosmoz-api): [36mMapped {/api/security/2fa/confirm, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.136] [32mINFO[39m (cosmoz-api): [36mMapped {/api/security/2fa/disable, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.136] [32mINFO[39m (cosmoz-api): [36mMapped {/api/security/2fa/recovery/regenerate, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.136] [32mINFO[39m (cosmoz-api): [36mMapped {/api/security/api-keys, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/security/api-keys/:keyId/revoke, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/security/sessions/revoke, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMonitoringController {/api/monitoring} (version: 1):[39m [90m{"service":"cosmoz-api","env":"development","context":"RoutesResolver"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/monitoring/overview, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/monitoring/thresholds, PATCH} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/monitoring/jobs/:jobId/run, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mCalculatorsController {/api/calculators} (version: 1):[39m [90m{"service":"cosmoz-api","env":"development","context":"RoutesResolver"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/calculators/lot-size, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/calculators/compounding, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mOcrController {/api/ocr} (version: 1):[39m [90m{"service":"cosmoz-api","env":"development","context":"RoutesResolver"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/ocr/recognitions, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/ocr/recognitions, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/ocr/recognitions/:id, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/ocr/recognitions/:id/image, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/ocr/recognitions/:id/confirm, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/ocr/recognitions/:id/recrop, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/ocr/recognitions/:id/events, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/ocr/analytics, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/ocr/storage, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/ocr/recognitions/:id/reprocess, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/ocr/collections, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/ocr/collections, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/ocr/collections/:id, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/ocr/collections/:id/items, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/ocr/collections/:id/items/:recognitionId, DELETE} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/ocr/collections/:id, DELETE} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/ocr/sets, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/ocr/sets, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/ocr/sets/:id, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/ocr/sets/:id/confirm, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/ocr/sets/:id, DELETE} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/ocr/recognitions/:id, DELETE} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mIntegrationsController {/api/integrations} (version: 1):[39m [90m{"service":"cosmoz-api","env":"development","context":"RoutesResolver"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/integrations/overview, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/integrations/providers/:providerId/connect, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/integrations/providers/:providerId/disconnect, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/integrations/providers/:providerId/test, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/integrations/providers/:providerId/sync, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/integrations/webhooks/:endpointId/simulate, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mTradePlanController {/api/trade-plans} (version: 1):[39m [90m{"service":"cosmoz-api","env":"development","context":"RoutesResolver"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/trade-plans, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/trade-plans, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/trade-plans/:planId, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/trade-plans/:planId, PATCH} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/trade-plans/:planId/commit, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/trade-plans/:planId/validate, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/trade-plans/:planId/cancel, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/trade-plans/:planId/abandon, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/trade-plans/:planId/recalculate, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mTradeReviewController {/api/reviews} (version: 1):[39m [90m{"service":"cosmoz-api","env":"development","context":"RoutesResolver"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/reviews/overview, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/reviews/lessons, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/reviews, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/reviews/:tradeId, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/reviews/:tradeId, PUT} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/reviews/:tradeId, PATCH} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/reviews/:tradeId, DELETE} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mReplayController {/api/replay} (version: 1):[39m [90m{"service":"cosmoz-api","env":"development","context":"RoutesResolver"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/replay/overview, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/replay/sessions, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/replay/sessions, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/replay/sessions/:sessionId, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/replay/sessions/:sessionId, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/replay/sessions/:sessionId/advance, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/replay/sessions/:sessionId/complete, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/replay/sessions/:sessionId/archive, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/replay/sessions/:sessionId, DELETE} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/replay/sessions/:sessionId/trades, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/replay/sessions/:sessionId/trades/:tradeId/close, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/replay/sessions/:sessionId/trades/:tradeId, DELETE} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/replay/sessions/:sessionId/decisions, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/replay/sessions/:sessionId/decisions/:decisionId, DELETE} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/replay/sessions/:sessionId/notes, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/replay/sessions/:sessionId/notes/:noteId, DELETE} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mAnalyticsController {/api/stats} (version: 1):[39m [90m{"service":"cosmoz-api","env":"development","context":"RoutesResolver"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/stats/analytics-suite, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mOryonAnalysisController {/api/oryon/analyses} (version: 1):[39m [90m{"service":"cosmoz-api","env":"development","context":"RoutesResolver"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/oryon/analyses, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/oryon/analyses, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/oryon/analyses/:analysisId, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/oryon/analyses/:analysisId, PUT} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/oryon/analyses/:analysisId, DELETE} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mPlanController {/api/plans} (version: 1):[39m [90m{"service":"cosmoz-api","env":"development","context":"RoutesResolver"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/plans, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/plans, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/plans/:planId, GET} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/plans/:planId, PATCH} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/plans/:planId/activate, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/plans/:planId/invalidate, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/plans/:planId/complete, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/plans/:planId/archive, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/plans/:planId/link-trade, POST} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/plans/:planId/link-trade, DELETE} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mMapped {/api/plans/:planId, DELETE} (version: 1) route[39m [90m{"service":"cosmoz-api","env":"development","context":"RouterExplorer"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mNest application successfully started[39m [90m{"service":"cosmoz-api","env":"development","context":"NestApplication"}[39m
+[07:19:25.137] [32mINFO[39m (cosmoz-api): [36mcosmoz-api listening[39m [90m{"service":"cosmoz-api","env":"development","port":4000,"corsOrigins":["http://localhost:3000"]}[39m

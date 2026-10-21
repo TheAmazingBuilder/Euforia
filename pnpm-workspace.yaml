@@ -1,0 +1,29 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+
+allowBuilds:
+  # msw's postinstall only installs its CLI helper — not needed at runtime
+  # (msw is consumed as a library by the browser worker).
+  msw: false
+  sharp: false
+  unrs-resolver: true
+  # Prisma engine download + client postinstall generation (apps/api).
+  prisma: true
+  "@prisma/engines": true
+  "@prisma/client": true
+  # esbuild binary setup (vitest).
+  esbuild: true
+  # SWC native binding (vitest decorator-metadata plugin).
+  "@swc/core": true
+
+# Security pins (MASTER QA audit + security audit 2026-10-19 partie 2 §2.38):
+# every line forces the patched version of a known advisory, transitive or not.
+overrides:
+  fastify: 5.12.7
+  # GHSA-v888 (deepmerge-ts stack exhaustion) — transitive via @prisma/config.
+  deepmerge-ts: 8.0.0
+  # GHSA-68fv (source-map-js event-loop DoS) — transitive via postcss/tailwind.
+  source-map-js: 1.2.2
+  # GHSA-wq5f (sharp librsvg CVE-2026-96889) — transitive via next.
+  sharp: 0.35.5

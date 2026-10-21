@@ -1,0 +1,422 @@
+{
+  "pages": [
+    {
+      "name": "dashboard",
+      "path": "/",
+      "scrollWidth": 1440,
+      "innerWidth": 1440,
+      "overflow": false,
+      "title": "Dashboard",
+      "ok": true
+    },
+    {
+      "name": "session",
+      "path": "/session",
+      "scrollWidth": 1440,
+      "innerWidth": 1440,
+      "overflow": false,
+      "title": "Session Live — Cosmoz",
+      "ok": true
+    },
+    {
+      "name": "playbook",
+      "path": "/playbook",
+      "scrollWidth": 1440,
+      "innerWidth": 1440,
+      "overflow": false,
+      "title": "Playbook — Cosmoz",
+      "ok": true
+    },
+    {
+      "name": "analytics",
+      "path": "/analytics",
+      "scrollWidth": 1440,
+      "innerWidth": 1440,
+      "overflow": false,
+      "title": "Analytics — Cosmoz",
+      "ok": true
+    },
+    {
+      "name": "calendar",
+      "path": "/calendar",
+      "scrollWidth": 1440,
+      "innerWidth": 1440,
+      "overflow": false,
+      "title": "Calendar — Cosmoz",
+      "ok": true
+    },
+    {
+      "name": "trades",
+      "path": "/trades",
+      "scrollWidth": 1440,
+      "innerWidth": 1440,
+      "overflow": false,
+      "title": "Trades — Cosmoz",
+      "ok": true
+    },
+    {
+      "name": "journal",
+      "path": "/journal",
+      "scrollWidth": 1440,
+      "innerWidth": 1440,
+      "overflow": false,
+      "title": "Journal — Cosmoz",
+      "ok": true
+    },
+    {
+      "name": "discipline",
+      "path": "/discipline",
+      "scrollWidth": 1440,
+      "innerWidth": 1440,
+      "overflow": false,
+      "title": "Discipline — Cosmoz",
+      "ok": true
+    },
+    {
+      "name": "coach",
+      "path": "/coach",
+      "scrollWidth": 1440,
+      "innerWidth": 1440,
+      "overflow": false,
+      "title": "Coach — Cosmoz",
+      "ok": true
+    },
+    {
+      "name": "goals",
+      "path": "/goals",
+      "scrollWidth": 1440,
+      "innerWidth": 1440,
+      "overflow": false,
+      "title": "Goals — Cosmoz",
+      "ok": true
+    },
+    {
+      "name": "settings",
+      "path": "/settings",
+      "scrollWidth": 1440,
+      "innerWidth": 1440,
+      "overflow": false,
+      "title": "Settings — Cosmoz",
+      "ok": true
+    },
+    {
+      "name": "profile",
+      "path": "/profile",
+      "scrollWidth": 1440,
+      "innerWidth": 1440,
+      "overflow": false,
+      "title": "Profile — Cosmoz",
+      "ok": true
+    }
+  ],
+  "nav_clicks": [
+    {
+      "target": "/session",
+      "ok": true,
+      "landed": "http://localhost:3000/session"
+    },
+    {
+      "target": "/playbook",
+      "ok": true,
+      "landed": "http://localhost:3000/playbook"
+    },
+    {
+      "target": "/analytics",
+      "ok": true,
+      "landed": "http://localhost:3000/analytics"
+    },
+    {
+      "target": "/calendar",
+      "ok": true,
+      "landed": "http://localhost:3000/calendar"
+    },
+    {
+      "target": "/trades",
+      "ok": true,
+      "landed": "http://localhost:3000/trades"
+    },
+    {
+      "target": "/journal",
+      "ok": true,
+      "landed": "http://localhost:3000/journal"
+    },
+    {
+      "target": "/discipline",
+      "ok": true,
+      "landed": "http://localhost:3000/discipline"
+    },
+    {
+      "target": "/coach",
+      "ok": true,
+      "landed": "http://localhost:3000/coach"
+    },
+    {
+      "target": "/goals",
+      "ok": true,
+      "landed": "http://localhost:3000/goals"
+    },
+    {
+      "target": "/settings",
+      "ok": true,
+      "landed": "http://localhost:3000/settings"
+    },
+    {
+      "target": "/profile",
+      "ok": true,
+      "landed": "http://localhost:3000/profile"
+    }
+  ],
+  "theme": {
+    "before": "",
+    "after": "",
+    "changed": false,
+    "light_checks": [
+      {
+        "name": "dashboard",
+        "overflow": false,
+        "sw": 1440
+      },
+      {
+        "name": "trades",
+        "overflow": false,
+        "sw": 1440
+      },
+      {
+        "name": "analytics",
+        "overflow": false,
+        "sw": 1440
+      },
+      {
+        "name": "session",
+        "overflow": false,
+        "sw": 1440
+      }
+    ],
+    "restored": ""
+  },
+  "palette": {
+    "opens": true,
+    "navigates_to": "http://localhost:3000/trades?q=trades",
+    "ok": true
+  },
+  "mobile": [
+    {
+      "name": "dashboard",
+      "path": "/",
+      "scrollWidth": 390,
+      "innerWidth": 390,
+      "overflow": false,
+      "ok": true
+    },
+    {
+      "name": "trades",
+      "path": "/trades",
+      "scrollWidth": 961,
+      "innerWidth": 961,
+      "overflow": false,
+      "ok": true
+    },
+    {
+      "name": "playbook",
+      "path": "/playbook",
+      "scrollWidth": 390,
+      "innerWidth": 390,
+      "overflow": false,
+      "ok": true
+    },
+    {
+      "name": "analytics",
+      "path": "/analytics",
+      "scrollWidth": 390,
+      "innerWidth": 390,
+      "overflow": false,
+      "ok": true
+    },
+    {
+      "name": "session",
+      "path": "/session",
+      "scrollWidth": 390,
+      "innerWidth": 390,
+      "overflow": false,
+      "ok": true
+    },
+    {
+      "name": "coach",
+      "path": "/coach",
+      "scrollWidth": 390,
+      "innerWidth": 390,
+      "overflow": false,
+      "ok": true
+    },
+    {
+      "name": "discipline",
+      "path": "/discipline",
+      "scrollWidth": 390,
+      "innerWidth": 390,
+      "overflow": false,
+      "ok": true
+    }
+  ],
+  "errors_summary": {
+    "console_errors": [
+      {
+        "page": "desktop",
+        "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      },
+      {
+        "page": "desktop",
+        "text": "Failed to load resource: the server responded with a status of 400 (Bad Request)"
+      },
+      {
+        "page": "desktop",
+        "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      },
+      {
+        "page": "desktop",
+        "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      },
+      {
+        "page": "desktop",
+        "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      },
+      {
+        "page": "desktop",
+        "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      },
+      {
+        "page": "desktop",
+        "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      },
+      {
+        "page": "desktop",
+        "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      },
+      {
+        "page": "desktop",
+        "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      },
+      {
+        "page": "desktop",
+        "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      },
+      {
+        "page": "desktop",
+        "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      },
+      {
+        "page": "desktop",
+        "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      },
+      {
+        "page": "desktop",
+        "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      },
+      {
+        "page": "desktop",
+        "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      },
+      {
+        "page": "desktop",
+        "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      },
+      {
+        "page": "desktop",
+        "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      },
+      {
+        "page": "desktop",
+        "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      },
+      {
+        "page": "desktop",
+        "text": "Failed to load resource: the server responded with a status of 400 (Bad Request)"
+      },
+      {
+        "page": "desktop",
+        "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      },
+      {
+        "page": "desktop",
+        "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      },
+      {
+        "page": "desktop",
+        "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      },
+      {
+        "page": "desktop",
+        "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      },
+      {
+        "page": "mobile",
+        "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      },
+      {
+        "page": "mobile",
+        "text": "Failed to load resource: the server responded with a status of 400 (Bad Request)"
+      },
+      {
+        "page": "mobile",
+        "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      },
+      {
+        "page": "mobile",
+        "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      },
+      {
+        "page": "mobile",
+        "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      },
+      {
+        "page": "mobile",
+        "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      },
+      {
+        "page": "mobile",
+        "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      }
+    ],
+    "console_errors_count": 29,
+    "console_warnings": [],
+    "console_warnings_count": 0,
+    "pageerrors": [],
+    "pageerrors_count": 0,
+    "reqfailed": [
+      {
+        "page": "mobile",
+        "url": "http://localhost:3000/api/tags",
+        "failure": "net::ERR_ABORTED"
+      },
+      {
+        "page": "mobile",
+        "url": "http://localhost:3000/_next/static/chunks/apps_web_src_components_1cbgjab._.js",
+        "failure": "net::ERR_ABORTED"
+      },
+      {
+        "page": "mobile",
+        "url": "http://localhost:3000/__nextjs_font/geist-latin.woff2",
+        "failure": "net::ERR_ABORTED"
+      },
+      {
+        "page": "mobile",
+        "url": "http://localhost:3000/api/strategies/stats",
+        "failure": "net::ERR_ABORTED"
+      }
+    ],
+    "reqfailed_count": 4
+  },
+  "mobile_bottom_nav": [
+    {
+      "target": "/trades",
+      "ok": true
+    },
+    {
+      "target": "/playbook",
+      "ok": true
+    },
+    {
+      "target": "/analytics",
+      "ok": true
+    }
+  ]
+}

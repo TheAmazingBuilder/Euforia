@@ -1,0 +1,67 @@
+=== oryon phase6 probe — 2026-10-12T00:32:39.061Z ===
+  PASS  A1 déclencheur layouts présent
+  PASS  A2 nom actif = Default layout
+  PASS  A3 pas de pastille dirty
+  PASS  A4 état vide honnête dans le menu
+  PASS  A5 radio défaut présent
+  PASS  B1 layout actif nommé
+  PASS  B2 pas de dirty juste après création
+  PASS  B3 enveloppe persistée (1 layout + pointeur)
+  PASS  B4 arrangement capturé (15m/line/lower/utility)
+  PASS  B5 pastille dirty honnête après changement
+  PASS  B6 save changes → dirty disparue
+  PASS  B7 interval sauvegardé = 1H
+  PASS  C1 retour défaut → nom
+  PASS  C2 interval réinitialisé à 5m
+  PASS  C3 interval restauré (1H)
+  PASS  C4 type restauré (line)
+  PASS  C5 panneau bas restauré
+  PASS  C6 rail utilité restauré (docked)
+  PASS  D1 rename pré-rempli
+  PASS  D2 nom renommé partout
+  PASS  D3 copie créée « (copy) »
+  PASS  D4 la copie n'est pas activée
+  PASS  D5 doublon insensible à la casse rejeté inline
+  PASS  E1 dirty affichée
+  PASS  E2 garde affichée au switch dirty
+  PASS  E3 discard → défaut actif
+  PASS  E4 discard → interval 5m appliqué
+  PASS  E5 la sauvegarde du layout précédent est INTACTE (1H)
+  PASS  E6 dirty après changement de type
+  PASS  E7 save & switch → copie active
+  PASS  E8 l'original a bien été sauvé (candles)
+  PASS  E9 dirty résorbée
+  PASS  F1 layout supprimé
+  PASS  F2 défaut redevenu actif
+  PASS  F3 arrangement vivant préservé (candles)
+  PASS  F4 restore default → 5m
+  PASS  F5 restore GARDE les layouts sauvegardés
+  PASS  G1 état vide honnête (templates)
+  PASS  G2 le dialogue décrit honnêtement le périmètre
+  PASS  G3 template persisté
+  PASS  G4 le template capture type + intervalle
+  PASS  G5 le template capture la pile d'indicateurs (taille exacte)
+  PASS  G6 application confirmée quand une pile vivante existe
+  PASS  G7 pile restaurée (compteur exact)
+  PASS  G8 type restauré (line)
+  PASS  G9 interval restauré (1D)
+  PASS  G10 ids stables : pile vivante == pile du template (zéro doublon)
+  PASS  G11 ré-application idempotente (aucun doublon)
+  PASS  G12 moteur stable (panes/series cohérents, pas de fuite)
+  PASS  H1 template renommé
+  PASS  H2 template supprimé
+  PASS  H3 dessins et alertes INTACTS (isolation structurelle)
+  PASS  I1 reload → layout actif restauré
+  PASS  I2 reload → interval restauré (15m)
+  PASS  I3 reload → templates restaurés
+  PASS  J1 moteur vivant (série principale)
+  PASS  J2 panes indicateurs présents
+  PASS  J3 panneau positions fonctionne
+  PASS  J4 bascule type de chart sans régression
+  PASS  J5 0 erreur console
+  PASS  K1 déclencheur layouts visible sur mobile
+  PASS  K2 menu layouts ouvert sur mobile
+  PASS  K3 dialogue nom accessible sur mobile
+  PASS  K4 0 erreur console mobile
+
+=== 64 PASS / 0 FAIL ===

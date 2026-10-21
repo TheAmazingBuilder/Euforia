@@ -1,0 +1,78 @@
+=== oryon phase7 probe — 2026-10-12T00:38:16.531Z ===
+  PASS  A1 grille single (data-grid)
+  PASS  A2 un seul panneau, actif
+  PASS  A3 déclencheur sync présent sans état actif
+  PASS  A4 sync : 4 fonctionnalités indépendantes désactivées (aria-checked)
+  PASS  A5 menu grille : les 4 arrangements
+  PASS  B1 side-by-side → 2 panneaux
+  PASS  B2 quad → 4 panneaux, canvas du panneau 1 NON recréé
+  PASS  B3 empilé → les 4 configurations survivent (rangée implicite)
+  PASS  B4 single → seul le panneau ACTIF survit
+  PASS  B5 retour side-by-side → 2 moteurs vivants
+  PASS  B6 instruments distincts posés (EURUSD / XAUUSD)
+  PASS  C1 activation explicite du panneau 2
+  PASS  C2 badge actif présent sur le panneau 2 seul
+  PASS  C3 premier clic sur panneau inactif → activation SANS dessin
+  PASS  C4 clics suivants → la tendance appartient à EURUSD
+  PASS  C5 isolation dessins : XAUUSD reste vide
+  PASS  D1 sync off → le pan de A ne se propage pas
+  PASS  D2 timeScale activé (aria-checked)
+  PASS  D3 pan sur A → B aligné (plage propagée)
+  PASS  D4 timeScale désactivé → inertie totale
+  PASS  E1 hover A → B suit le timestamp (ou reste honnêtement vide)
+  PASS  E2 hover A (autre barre) → B suit le nouveau timestamp
+  PASS  E3 crosshair désactivé → B ne suit plus A
+  PASS  F1 sans lien : A=EURUSD, B=GBPUSD indépendants
+  PASS  F2 lien instrument → le changement de A se propage à B
+  PASS  F3 lien timeframe → A et B passent à 15m
+  PASS  F4 timeframe désactivé → B garde 15m (A repasse à 5m)
+  PASS  F5 instrument désactivé → B garde son symbole
+  PASS  F6 l'activation d'un canal n'active jamais l'autre (timeScale off, crosshair off)
+  PASS  G1 dupliquer → 3 panneaux, copie indépendante et active
+  PASS  G2 retirer la copie → retour à 2 panneaux
+  PASS  G3 dernier retrait → grille single, 1 panneau
+  PASS  G4 panneau unique : l'action retirer est désactivée
+  PASS  H1 layout sauvegardé (pointeur actif)
+  PASS  H2 v2 : grille quad + 4 panneaux avec symboles capturés
+  PASS  H3 retour au défaut → single
+  PASS  H4 re-switch → 4 panneaux, symboles + intervalles restaurés
+  PASS  H5 reload → l'arrangement multi-panneaux est restauré
+  PASS  H6 le pointeur actif survit au reload
+  PASS  H7 activation seule → PAS de pastille dirty
+  PASS  H8 mutation d'arrangement → pastille dirty honnête
+  PASS  H9 save → pastille disparue
+  PASS  I1 indicateur ajouté au panneau ACTIF seul
+  PASS  I2 template capturé (pile d'indicateurs du panneau actif)
+pageerror-stack: Error: Value is null
+pageerror-stack: Error: Value is null
+pageerror-stack: Error: Value is null
+pageerror-stack: Error: Value is null
+pageerror-stack: Error: Value is null
+  PASS  I3 application → le panneau actif reçoit la pile, l'autre garde la sienne
+pageerror-stack: Error: Value is null
+pageerror-stack: Error: Value is null
+pageerror-stack: Error: Value is null
+pageerror-stack: Error: Value is null
+pageerror-stack: Error: Value is null
+  PASS  I4 ré-application idempotente (zéro doublon)
+  PASS  J1 alerte GBPUSD → seule la ligne du panneau GBPUSD
+  PASS  J2 positions du carnet (EURUSD) → ligne uniquement sur EURUSD
+  PASS  J3 positions XAUUSD → ligne sur le panneau XAUUSD
+  PASS  J4 les 4 panneaux rendent toujours leurs séries
+  PASS  K1 les 4 panneaux restent rendus
+  PASS  K2 pile verticale : panneaux hauts, pas de débordement horizontal
+  PASS  K3 déclencheurs grille + sync accessibles
+  FAIL  L1 zéro erreur console (hors bruit filtré)
+console errors:
+Error: Value is null
+Error: Value is null
+Error: Value is null
+Error: Value is null
+Error: Value is null
+Error: Value is null
+Error: Value is null
+Error: Value is null
+Error: Value is null
+Error: Value is null
+
+53 PASS / 1 FAIL

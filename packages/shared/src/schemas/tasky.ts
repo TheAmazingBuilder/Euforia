@@ -1,0 +1,90 @@
+import { z } from "zod";
+
+/**
+ * Tasky contracts — the independent kanban module (Academy section).
+ * A five-column sprint board: BACKLOG → TODO → IN_PROGRESS → IN_REVIEW →
+ * DONE. Cards carry a category tag, a priority pill, an assignee avatar and
+ * an optional due date; the mock engine keeps per-session in-memory state so
+ * a real NestJS module can replace it 1:1.
+ */
+
+export const taskyColumnSchema = z.enum([
+  "BACKLOG",
+  "TODO",
+  "IN_PROGRESS",
+  "IN_REVIEW",
+  "DONE",
+]);
+export type TaskyColumn = z.infer<typeof taskyColumnSchema>;
+
+export const taskyPrioritySchema = z.enum(["URGENT", "HIGH", "MEDIUM", "LOW"]);
+export type TaskyPriority = z.infer<typeof taskyPrioritySchema>;
+
+/** Column chrome — the client maps `accent` to a semantic CSS token. */
+export type TaskyColumnMeta = {
+  id: TaskyColumn;
+  label: string;
+  accent: "muted" | "violet" | "accent" | "warning" | "profit";
+};
+
+export type TaskyTask = {
+  id: string;
+  title: string;
+  /** Neutral bordered chip — work type (Feature/Bug/Risk/...). */
+  tag: string;
+  priority: TaskyPriority;
+  /** Avatar initials (2–3 chars) — null renders a placeholder dot. */
+  assignee: string | null;
+  /** ISO date (yyyy-mm-dd) — null means "no due date". */
+  dueAt: string | null;
+  column: TaskyColumn;
+  /** Stable position inside the column (0 = top). */
+  order: number;
+};
+
+export type TaskyBoardResponse = {
+  columns: TaskyColumnMeta[];
+  tasks: TaskyTask[];
+};
+
+export const taskyCreateInputSchema = z.object({
+  title: z.string().min(1).max(140),
+  column: taskyColumnSchema,
+  tag: z.string().min(1).max(24).optional(),
+  priority: taskyPrioritySchema.optional(),
+  dueAt: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "dueAt must be an ISO date (yyyy-mm-dd)")
+    .nullable()
+    .optional(),
+  assignee: z.string().min(2).max(3).nullable().optional(),
+});
+export type TaskyCreateInput = z.infer<typeof taskyCreateInputSchema>;
+
+/** Move a card within/between columns; the engine renumbers `order`. */
+export const taskyMoveInputSchema = z.object({
+  taskId: z.string().min(1),
+  column: taskyColumnSchema,
+  /** Target index in the destination column; omitted = append to the end. */
+  index: z.number().int().min(0).optional(),
+});
+export type TaskyMoveInput = z.infer<typeof taskyMoveInputSchema>;
+
+export const taskyUpdateInputSchema = z.object({
+  taskId: z.string().min(1),
+  title: z.string().min(1).max(140).optional(),
+  tag: z.string().min(1).max(24).nullable().optional(),
+  priority: taskyPrioritySchema.optional(),
+  dueAt: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "dueAt must be an ISO date (yyyy-mm-dd)")
+    .nullable()
+    .optional(),
+  assignee: z.string().min(2).max(3).nullable().optional(),
+});
+export type TaskyUpdateInput = z.infer<typeof taskyUpdateInputSchema>;
+
+export const taskyDeleteInputSchema = z.object({
+  taskId: z.string().min(1),
+});
+export type TaskyDeleteInput = z.infer<typeof taskyDeleteInputSchema>;

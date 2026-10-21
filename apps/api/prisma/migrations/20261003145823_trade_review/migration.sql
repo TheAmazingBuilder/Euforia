@@ -1,0 +1,15 @@
+-- Trade Review — SUPERSEDED (reconciled 2026-10-17).
+--
+-- This migration originally created the TradeReview enums + table and its
+-- foreign keys to "User" and "Trade". It was byte-duplicated one day later by
+-- 20261004130000_trade_review, and the "Trade" table it referenced moved to
+-- 20261004120000_trade_journal_core (the canonical journal generation). A
+-- fresh `prisma migrate deploy` therefore failed here on the missing
+-- "Trade" relation (P3018 / 42P01), and even without it the next day's
+-- identical migration would fail on the duplicate types/table.
+--
+-- Reconciliation (same pattern as 20261003131801_trading_core): this file is
+-- now intentionally EMPTY of DDL. The live TradeReview generation lives in
+-- 20261004130000_trade_review, which applies AFTER Trade exists.
+-- Databases that already applied the original content are unaffected:
+-- `prisma migrate deploy` skips migrations already recorded by name.

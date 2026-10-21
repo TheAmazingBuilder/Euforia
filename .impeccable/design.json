@@ -1,0 +1,86 @@
+{
+  "version": "1.0.0",
+  "name": "cosmoz-le-registre",
+  "world": "le-registre",
+  "mode": "operate",
+  "themes": {
+    "dark-blue": {
+      "background": "#0E1116",
+      "surface": "#141920",
+      "surface-raised": "#1A2029",
+      "border": "#262E3A",
+      "text-primary": "#E9ECEF",
+      "text-muted": "#99A2AD",
+      "accent": "#4E6EE0",
+      "accent-hover": "#6280EA",
+      "profit": "#3EBE8C",
+      "loss": "#E05B5B",
+      "warning": "#D9A03F"
+    },
+    "dark": {
+      "background": "#0B0B0D",
+      "surface": "#131316",
+      "surface-raised": "#191A1E",
+      "border": "#28292E",
+      "text-primary": "#EDEDEF",
+      "text-muted": "#9BA0A8",
+      "accent": "#5578E6",
+      "accent-hover": "#6B8AEC",
+      "profit": "#41C393",
+      "loss": "#E26363",
+      "warning": "#DCA748"
+    },
+    "light": {
+      "background": "#F5F4F0",
+      "surface": "#FDFCF9",
+      "surface-raised": "#EEEDE7",
+      "border": "#D9D6CD",
+      "text-primary": "#1B1C1E",
+      "text-muted": "#5F646C",
+      "accent": "#2E4FC4",
+      "accent-hover": "#2744AF",
+      "profit": "#12805C",
+      "loss": "#C03E3E",
+      "warning": "#8F6418"
+    }
+  },
+  "defaultTheme": "dark-blue",
+  "radius": {
+    "base": "8px",
+    "sm": "4px",
+    "md": "6px",
+    "lg": "8px",
+    "xl": "10px"
+  },
+  "typography": {
+    "display": "Schibsted Grotesk",
+    "text": "Inter",
+    "data": "JetBrains Mono"
+  },
+  "primitives": [
+    "stat-strip",
+    "stat-cell",
+    "ledger-label",
+    "stamp",
+    "stamp-win",
+    "stamp-loss",
+    "stamp-warn",
+    "stamp-ink",
+    "stamp-accent",
+    "chart-paper",
+    "rule-double",
+    "reveal-stagger",
+    "animate-reveal-fade-up",
+    "animate-reveal-star"
+  ],
+  "bans": [
+    "gradient text",
+    "glass decoration",
+    "colored left borders >1px",
+    "zero-offset halos",
+    "kicker labels",
+    "icon tiles above headings",
+    "monospace as costume",
+    "nested cards"
+  ]
+}

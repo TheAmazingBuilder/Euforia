@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base { html, body { margin: 0; padding: 0; } body { overscroll-behavior: none; } main > :first-child { margin-top: 0 !important; } main > :last-child { margin-bottom: 0 !important; } } ::-webkit-scrollbar { display: none; }</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "on-background": "#dce2f6", "tertiary-fixed-dim": "#ffb3b0", "on-secondary-container": "#00452e", "outline": "#8f8fa0", "on-primary": "#000fa3", "inverse-on-surface": "#2a3040", "inverse-primary": "#424ed2", "on-surface": "#dce2f6", "surface-tint": "#bdc2ff", "surface-container-highest": "#2e3544", "surface-container-low": "#151b2a", "secondary": "#45dfa4", "surface-bright": "#323949", "on-error-container": "#ffdad6", "tertiary-fixed": "#ffdad8", "primary-fixed-dim": "#bdc2ff", "primary-container": "#7985ff", "inverse-surface": "#dce2f6", "surface-dim": "#0c1321", "secondary-container": "#00bd85", "on-primary-container": "#000c90", "error": "#ffb4ab", "on-tertiary-fixed": "#410006", "surface-container": "#19202e", "primary-fixed": "#e0e0ff", "surface-container-lowest": "#070e1c", "on-tertiary": "#670211", "on-tertiary-fixed-variant": "#881d24", "error-container": "#93000a", "on-primary-fixed": "#000668", "on-surface-variant": "#c6c5d6", "on-secondary-fixed-variant": "#005137", "secondary-fixed": "#68fcbf", "on-secondary": "#003825", "secondary-fixed-dim": "#45dfa4", "surface-container-high": "#232a39", "background": "#0c1321", "surface": "#0c1321", "primary": "#bdc2ff", "on-secondary-fixed": "#002114", "outline-variant": "#454654", "tertiary": "#ffb3b0", "on-primary-fixed-variant": "#2632b9", "on-error": "#690005", "tertiary-container": "#ea6767", "on-tertiary-container": "#5b000d", "surface-variant": "#2e3544" }, "borderRadius": { "DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem" }, "spacing": { "gutter-mobile": "0.75rem", "margin-mobile": "1rem", "space-sm": "0.5rem", "space-xl": "2rem", "space-xs": "0.25rem", "margin": "2rem", "gutter": "1.25rem", "space-lg": "1.5rem", "space-md": "1rem" }, "fontFamily": { "headline-sm": ["Space Grotesk"], "headline-md": ["Space Grotesk"], "label-lg": ["Inter"], "headline-lg-mobile": ["Space Grotesk"], "body-md": ["Inter"], "label-md": ["Inter"], "data-md": ["JetBrains Mono"], "data-lg": ["JetBrains Mono"], "body-lg": ["Inter"], "display": ["Space Grotesk"], "headline-lg": ["Space Grotesk"], "data-sm": ["JetBrains Mono"], "body-sm": ["Inter"] }, "fontSize": { "headline-sm": ["18px", { "lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "500" }], "headline-md": ["22px", { "lineHeight": "28px", "letterSpacing": "-0.015em", "fontWeight": "600" }], "label-lg": ["14px", { "lineHeight": "20px", "fontWeight": "500" }], "headline-lg-mobile": ["26px", { "lineHeight": "34px", "letterSpacing": "-0.02em", "fontWeight": "600" }], "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }], "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" }], "data-md": ["14px", { "lineHeight": "18px", "fontWeight": "500" }], "data-lg": ["20px", { "lineHeight": "26px", "letterSpacing": "-0.02em", "fontWeight": "600" }], "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }], "display": ["44px", { "lineHeight": "52px", "letterSpacing": "-0.03em", "fontWeight": "700" }], "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "600" }], "data-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }], "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }] } } } };</script></head><body class="bg-background font-body-md text-on-surface antialiased min-h-screen"><aside class="fixed left-0 top-0 h-full w-60 bg-surface-container-lowest z-50 flex flex-col justify-between shadow-[0_1px_8px_rgba(0,0,0,0.4)]"><div class="flex flex-col"><div class="h-16 px-space-md flex items-center justify-between bg-surface-container-lowest"><div class="flex items-center gap-space-sm"><img alt="Cosmoz Constellation Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1VGGi1_rJbXNPyDb0xfP8Ff0pWFjs2jb4qAyUMWSSBYqB_iFVN9wAF-ldb5-r_NNTuQfNeXjp_jGDmzoUl5n4eNHIQmH6RhEKwgFdbkmDmmeU-6Tn3SEN-jKTh3qG1aQhb0MfRzrzGlkMVdJpVxJsTlc5XOOn85CC_Ds0HdEEwslq2ANn5xr8oebB-kRufYogIDRwPISLYbinaSo71K1hdpWUF_7Gis39Z1ZFhM4wQSI4poylaqb870iNU"/><div class="flex flex-col"><span class="font-headline-sm text-headline-sm text-on-surface tracking-tight leading-none">Cosmoz</span><span class="font-data-sm text-data-sm text-primary tracking-widest leading-none mt-1 uppercase text-[9px]">BEHAVIORAL TERMINAL</span></div></div><button aria-label="Collapse navigation" class="p-space-xs text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded transition-colors" type="button"><span class="material-symbols-outlined text-[18px]">dock_to_left</span></button></div><div class="px-space-md pt-space-md pb-space-xs"><span class="font-label-md text-label-md uppercase tracking-wider text-outline text-[10px]">Navigation</span></div><nav class="flex flex-col gap-space-xs px-space-sm" data-active-classes="bg-primary-container text-on-primary-container font-semibold rounded shadow-[0_0_16px_rgba(110,123,255,0.35)]"><a aria-current="page" class="group flex items-center justify-between px-space-md py-space-sm transition-all bg-primary-container text-on-primary-container font-semibold rounded shadow-[0_0_16px_rgba(110,123,255,0.35)]" data-path="dashboard" href="#"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[20px]">space_dashboard</span><span>Dashboard</span></div></a><a class="group flex items-center justify-between px-space-md py-space-sm rounded font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="new-trade" href="#"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[20px]">add_circle</span><span>New Trade</span></div><span class="bg-primary font-data-sm text-data-sm text-on-primary px-space-xs py-0.5 rounded text-[10px] font-semibold leading-none">+</span></a><a class="group flex items-center justify-between px-space-md py-space-sm rounded font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="session-live" href="#"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[20px]">radar</span><span>Session Live</span></div><div class="flex items-center gap-1.5"><span class="relative flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-secondary opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-secondary"></span></span><span class="font-data-sm text-data-sm text-secondary text-[10px] tracking-wider">LIVE</span></div></a><a class="group flex items-center px-space-md py-space-sm rounded font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="playbook" href="#"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[20px]">menu_book</span><span>Playbook</span></div></a><a class="group flex items-center px-space-md py-space-sm rounded font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="analytics" href="#"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[20px]">monitoring</span><span>Analytics</span></div></a><a class="group flex items-center px-space-md py-space-sm rounded font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="calendar" href="#"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[20px]">calendar_today</span><span>Calendar</span></div></a><a class="group flex items-center px-space-md py-space-sm rounded font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="journal" href="#"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[20px]">edit_note</span><span>Journal</span></div></a><a class="group flex items-center justify-between px-space-md py-space-sm rounded font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="discipline" href="#"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[20px]">psychology</span><span>Discipline</span></div><span class="bg-surface-container-high font-data-sm text-data-sm text-secondary px-space-xs py-0.5 rounded text-[11px] font-medium leading-none">94%</span></a><a class="group flex items-center px-space-md py-space-sm rounded font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="goals" href="#"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[20px]">flag</span><span>Goals</span></div></a></nav></div><div class="p-space-sm"><nav class="flex flex-col" data-active-classes="bg-primary-container text-on-primary-container font-semibold rounded"><a class="group flex items-center px-space-md py-space-sm rounded font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="settings" href="#"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[20px]">settings</span><span>Settings</span></div></a></nav></div></aside><div class="pl-60"><header class="fixed top-0 left-60 right-0 h-16 bg-surface-container-lowest/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.3)] z-40 flex items-center justify-between px-space-lg"><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-xs font-label-md text-label-md text-on-surface-variant"><span class="material-symbols-outlined text-[16px] text-primary">terminal</span><span class="font-headline-sm text-headline-sm text-on-surface tracking-tight">Trading Command &amp; Performance Terminal</span></div><div class="h-4 w-[1px] bg-surface-container-highest"></div><div class="relative flex items-center"><select aria-label="Active Trading Account" class="appearance-none bg-surface-container-high font-data-sm text-data-sm text-on-surface py-1 pl-space-sm pr-7 rounded cursor-pointer hover:bg-surface-bright focus:outline-none"><option selected="">Prop Firm Alpha - $100k Live</option><option>Apex Trader - $50k Live</option><option>FXCM Personal - $25k</option><option>Paper Trading Beta</option></select><span class="material-symbols-outlined absolute right-1.5 pointer-events-none text-[16px] text-on-surface-variant">expand_more</span></div></div><div class="flex items-center gap-space-md"><div class="hidden xl:flex items-center gap-space-xs bg-surface-container-low px-space-sm py-1 rounded"><span class="h-2 w-2 rounded-full bg-secondary"></span><span class="font-data-sm text-data-sm text-on-surface-variant text-[11px]">London / NY Overlap Session - <span class="text-secondary font-medium">Open</span></span></div><a class="flex items-center gap-1.5 bg-surface-container-high hover:bg-surface-bright px-space-sm py-1 rounded transition-colors" data-path="journal" href="#"><span class="h-2 w-2 rounded-full bg-tertiary-container"></span><span class="font-label-md text-label-md text-tertiary font-medium">3 to grade</span><span class="material-symbols-outlined text-[14px] text-tertiary">chevron_right</span></a><button class="flex items-center gap-space-xs bg-primary hover:bg-primary-container text-on-primary hover:text-on-primary-container font-label-md text-label-md px-space-md py-1.5 rounded transition-all shadow-[0_0_16px_rgba(110,123,255,0.35)]" type="button"><span class="material-symbols-outlined text-[16px]">add</span><span>Log Execution</span></button><div class="relative flex items-center"><button aria-label="Alerts" class="p-space-xs text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded transition-colors" type="button"><span class="material-symbols-outlined text-[20px]">notifications</span></button><span class="absolute top-0 right-0 flex h-4 w-4 items-center justify-center rounded-full bg-error text-[9px] font-data-sm text-on-error font-bold">2</span></div><div class="h-6 w-[1px] bg-surface-container-highest"></div><div class="flex items-center gap-space-sm"><div class="relative"><img alt="Profile" class="w-8 h-8 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAsfHHxPO8hEW5kWdtozD3uACYHDoJt-P69UkGnHZVciT2oZbImkVrHPPkfPFQ6pyq2SSZ4bjP9-tlM6i1upyNDojnWCU4FbdHWOzhgOjZE3BaNBmSK82c3IMZd-Vs3ebOLmwts_25e9X5fcntxsKchQk7mdkSvQog6kZXfl98IFf842ZzIp8mQCF_3u-ieJOuhlJGaAFcxm2Z4w-xqk4rse8gh0qof_Gka3FkEhjtRanvM0NPSTia6"/><span class="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-secondary ring-2 ring-surface-container-lowest"></span></div><div class="flex flex-col"><span class="font-label-md text-label-md text-on-surface font-semibold leading-tight">Elena R. (Pro)</span><span class="font-data-sm text-data-sm text-primary text-[10px] leading-tight">PRO TRADER</span></div></div></div></header><main class="w-full pt-16 px-space-lg pb-space-xl bg-background"><div class="flex flex-col w-full">
+<!-- Interactive Script: Tab Switching, Simulator Toggle Micro-Interactions, and Active Sidebar Sync -->
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Ensure Analytics link in sidebar is visually highlighted
+      const navLinks = document.querySelectorAll('aside nav a');
+      navLinks.forEach(link => {
+        if (link.getAttribute('data-path') === 'analytics') {
+          link.classList.add('bg-primary-container', 'text-on-primary-container', 'font-semibold', 'shadow-[0_0_16px_rgba(110,123,255,0.35)]');
+          link.classList.remove('text-on-surface-variant');
+        }
+      });
+
+      // Simulator filter chips toggling
+      const simToggles = document.querySelectorAll('[data-sim-toggle]');
+      const counterfactualDelta = document.getElementById('cf-delta-r');
+      const counterfactualPct = document.getElementById('cf-delta-pct');
+      const simPath = document.getElementById('simulated-equity-path');
+      const simGlow = document.getElementById('simulated-equity-glow');
+      const simPoint = document.getElementById('sim-endpoint');
+
+      const simStates = {
+        noFriday: true,
+        strictSetups: true,
+        noWidening: true,
+        noAfternoon: false,
+        maxTrades: false
+      };
+
+      const baseR = 96.4;
+      const contributions = {
+        noFriday: 18.4,
+        strictSetups: 9.2,
+        noWidening: 4.2,
+        noAfternoon: 7.8,
+        maxTrades: 3.5
+      };
+
+      function updateSimulator() {
+        let addedR = 0;
+        simToggles.forEach(btn => {
+          const key = btn.getAttribute('data-sim-toggle');
+          if (btn.getAttribute('data-active') === 'true') {
+            addedR += contributions[key] || 0;
+          }
+        });
+
+        const totalSimR = (baseR + addedR).toFixed(1);
+        const diffR = addedR.toFixed(1);
+        const pctDiff = ((addedR / baseR) * 100).toFixed(1);
+
+        if (counterfactualDelta) counterfactualDelta.textContent = `+${diffR} R`;
+        if (counterfactualPct) counterfactualPct.textContent = `(+${pctDiff}%)`;
+
+        // SVG curve recalculation visualization
+        if (simPath && simGlow && simPoint) {
+          const factor = Math.min(1.4, Math.max(0.9, (baseR + addedR) / 100));
+          const yEnd = 160 - (factor * 95);
+          const newD = `M 24 165 C 100 155, 180 148, 260 130 C 350 115, 420 102, 510 82 C 600 68, 700 ${yEnd + 25}, 800 ${yEnd}`;
+          simPath.setAttribute('d', newD);
+          simGlow.setAttribute('d', newD);
+          simPoint.setAttribute('cy', yEnd);
+        }
+      }
+
+      simToggles.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const isActive = btn.getAttribute('data-active') === 'true';
+          const nextState = !isActive;
+          btn.setAttribute('data-active', nextState ? 'true' : 'false');
+          
+          if (nextState) {
+            btn.classList.remove('bg-surface-container-high', 'text-on-surface-variant');
+            btn.classList.add('bg-primary-container', 'text-on-primary-container', 'shadow-[0_0_12px_rgba(121,133,255,0.4)]');
+            const check = btn.querySelector('.check-icon');
+            if (check) check.textContent = 'check';
+          } else {
+            btn.classList.remove('bg-primary-container', 'text-on-primary-container', 'shadow-[0_0_12px_rgba(121,133,255,0.4)]');
+            btn.classList.add('bg-surface-container-high', 'text-on-surface-variant');
+            const check = btn.querySelector('.check-icon');
+            if (check) check.textContent = 'add';
+          }
+          updateSimulator();
+        });
+      });
+    });
+  </script>
+<!-- PAGE HEADER & SUBTITLE -->
+<div class="flex flex-col xl:flex-row xl:items-start justify-between gap-space-md mb-space-lg">
+<div class="flex flex-col max-w-4xl">
+<div class="flex items-center gap-space-sm mb-space-xs">
+<span class="inline-flex items-center px-space-xs py-0.5 rounded bg-surface-container-high text-primary font-data-sm text-data-sm text-[11px] font-semibold tracking-wide uppercase">Institutional Diagnostics</span>
+<span class="inline-flex items-center gap-1 px-space-xs py-0.5 rounded bg-surface-container-high text-secondary font-data-sm text-data-sm text-[11px]">
+<span class="h-1.5 w-1.5 rounded-full bg-secondary"></span>
+          Sample Validated (n=248)
+        </span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight">Performance Analytics &amp; Behavioral Diagnostics</h1>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1 leading-relaxed">Multi-variate edge attribution, psychological friction correlation, and counterfactual equity modeling. Statistical significance (n) strictly enforced.</p>
+</div>
+<!-- TOP ACTION & QUANT FILTER TOOLBAR -->
+<div class="flex flex-wrap items-center gap-space-xs bg-surface-container-lowest p-space-xs rounded-xl shadow-md">
+<div class="relative flex items-center">
+<select aria-label="Account Filter" class="appearance-none bg-surface-container font-data-sm text-data-sm text-on-surface py-1.5 pl-space-sm pr-7 rounded cursor-pointer hover:bg-surface-bright focus:outline-none">
+<option selected="">Prop Firm Alpha - $100k Live</option>
+<option>Apex Trader - $50k Live</option>
+<option>FXCM Personal - $25k</option>
+</select>
+<span class="material-symbols-outlined absolute right-1.5 pointer-events-none text-[16px] text-on-surface-variant">expand_more</span>
+</div>
+<div class="relative flex items-center">
+<select aria-label="Time Horizon" class="appearance-none bg-surface-container font-data-sm text-data-sm text-on-surface py-1.5 pl-space-sm pr-7 rounded cursor-pointer hover:bg-surface-bright focus:outline-none">
+<option selected="">Horizon: Last 90 Days (248 Trades)</option>
+<option>Horizon: Current Month (64 Trades)</option>
+<option>Horizon: Year to Date (512 Trades)</option>
+<option>Horizon: All-Time Execution Archive</option>
+</select>
+<span class="material-symbols-outlined absolute right-1.5 pointer-events-none text-[16px] text-on-surface-variant">expand_more</span>
+</div>
+<div class="relative flex items-center">
+<select aria-label="Risk Metric" class="appearance-none bg-surface-container font-data-sm text-data-sm text-primary py-1.5 pl-space-sm pr-7 rounded cursor-pointer hover:bg-surface-bright focus:outline-none font-medium">
+<option selected="">Model: R-Multiple Normalization</option>
+<option>Model: Net USD ($) P&amp;L</option>
+<option>Model: Account % Basis</option>
+</select>
+<span class="material-symbols-outlined absolute right-1.5 pointer-events-none text-[16px] text-primary">expand_more</span>
+</div>
+<div class="h-6 w-[1px] bg-surface-container-highest mx-0.5"></div>
+<div class="flex items-center gap-1 bg-surface-container px-space-sm py-1.5 rounded">
+<span class="material-symbols-outlined text-secondary text-[16px]">verified</span>
+<span class="font-data-sm text-data-sm text-on-surface-variant text-[11px]">95% CI Active</span>
+</div>
+<button class="flex items-center gap-1 bg-surface-container-high hover:bg-surface-bright text-on-surface font-label-md text-label-md px-space-sm py-1.5 rounded transition-colors" title="Download clean quant telemetry" type="button">
+<span class="material-symbols-outlined text-[16px]">download</span>
+<span>Export CSV</span>
+</button>
+</div>
+</div>
+<!-- QUANT TAB NAVIGATION -->
+<div class="flex items-center gap-space-xs overflow-x-auto pb-space-xs mb-space-lg">
+<button class="flex items-center gap-space-xs px-space-md py-2 rounded font-label-lg text-label-lg bg-primary text-on-primary font-semibold shadow-[0_0_16px_rgba(110,123,255,0.35)]" type="button">
+<span class="material-symbols-outlined text-[18px]">insights</span>
+<span>Overview</span>
+</button>
+<button class="flex items-center gap-space-xs px-space-md py-2 rounded font-label-lg text-label-lg bg-surface-container-low text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]">layers</span>
+<span>By Strategy</span>
+<span class="font-data-sm text-data-sm px-1.5 py-0.2 rounded bg-surface-container-highest text-on-surface text-[11px]">5</span>
+</button>
+<button class="flex items-center gap-space-xs px-space-md py-2 rounded font-label-lg text-label-lg bg-surface-container-low text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]">schedule</span>
+<span>By Time &amp; Sessions</span>
+</button>
+<button class="flex items-center gap-space-xs px-space-md py-2 rounded font-label-lg text-label-lg bg-surface-container-low text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]">psychology</span>
+<span>By Psychology &amp; Biases</span>
+<span class="h-2 w-2 rounded-full bg-secondary animate-pulse"></span>
+</button>
+<button class="flex items-center gap-space-xs px-space-md py-2 rounded font-label-lg text-label-lg bg-surface-container-low text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]">warning</span>
+<span>Mistakes &amp; Friction</span>
+<span class="font-data-sm text-data-sm px-1.5 py-0.2 rounded bg-error-container text-on-error-container text-[11px] font-semibold">-4.6R drag</span>
+</button>
+<button class="flex items-center gap-space-xs px-space-md py-2 rounded font-label-lg text-label-lg bg-surface-container-low text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]">model_training</span>
+<span>What-If Simulator</span>
+<span class="font-data-sm text-data-sm px-1.5 py-0.2 rounded bg-surface-tint text-on-primary font-bold text-[10px] tracking-wider uppercase">Sandbox</span>
+</button>
+</div>
+<!-- ================================================================= -->
+<!-- SECTION 1: OVERVIEW & PERFORMANCE TELEMETRY -->
+<!-- ================================================================= -->
+<section class="flex flex-col gap-space-lg mb-space-xl">
+<!-- TOP METRIC CARDS GRID -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-space-md">
+<!-- 1. Win Rate -->
+<div class="flex flex-col justify-between p-space-md rounded-xl bg-surface-container-low shadow-sm">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md uppercase tracking-wider text-outline text-[11px]">Win Rate</span>
+<span class="font-data-sm text-data-sm text-secondary bg-surface-container px-1.5 py-0.5 rounded text-[11px] font-semibold">+3.2%</span>
+</div>
+<div class="my-space-sm">
+<span class="font-data-lg text-display text-on-surface leading-none font-bold">64.1%</span>
+</div>
+<div class="flex flex-col gap-0.5">
+<div class="flex justify-between items-center font-data-sm text-data-sm text-on-surface-variant text-[11px]">
+<span>159W / 89L</span>
+<span class="text-secondary font-medium">p &lt; 0.01 (High)</span>
+</div>
+<div class="w-full h-1.5 rounded-full bg-surface-container-highest overflow-hidden flex mt-1">
+<div class="bg-secondary h-full" style="width: 64.1%"></div>
+<div class="bg-error h-full" style="width: 35.9%"></div>
+</div>
+</div>
+</div>
+<!-- 2. Profit Factor -->
+<div class="flex flex-col justify-between p-space-md rounded-xl bg-surface-container-low shadow-sm">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md uppercase tracking-wider text-outline text-[11px]">Profit Factor</span>
+<span class="font-data-sm text-data-sm text-secondary bg-surface-container px-1.5 py-0.5 rounded text-[11px]">Optimal &gt;2.0</span>
+</div>
+<div class="my-space-sm">
+<span class="font-data-lg text-display text-secondary leading-none font-bold">2.42</span>
+</div>
+<div class="flex flex-col font-data-sm text-data-sm text-on-surface-variant text-[11px]">
+<span class="text-on-surface">Gross Win: $48,400</span>
+<span>Gross Loss: $19,980</span>
+</div>
+</div>
+<!-- 3. Expectancy -->
+<div class="flex flex-col justify-between p-space-md rounded-xl bg-surface-container-low shadow-sm">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md uppercase tracking-wider text-outline text-[11px]">Expectancy / Trade</span>
+<span class="material-symbols-outlined text-primary text-[18px]">trending_up</span>
+</div>
+<div class="my-space-sm">
+<span class="font-data-lg text-display text-primary leading-none font-bold">+0.78 R</span>
+</div>
+<div class="flex flex-col font-data-sm text-data-sm text-on-surface-variant text-[11px]">
+<span class="text-secondary">Avg Win: +1.42 R</span>
+<span class="text-error">Avg Loss: -0.68 R</span>
+</div>
+</div>
+<!-- 4. Payoff Ratio -->
+<div class="flex flex-col justify-between p-space-md rounded-xl bg-surface-container-low shadow-sm">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md uppercase tracking-wider text-outline text-[11px]">Payoff Ratio</span>
+<span class="font-data-sm text-data-sm text-on-surface-variant text-[11px]">R:R Realized</span>
+</div>
+<div class="my-space-sm">
+<span class="font-data-lg text-display text-on-surface leading-none font-bold">2.09 <span class="font-headline-sm text-headline-sm text-outline">: 1</span></span>
+</div>
+<div class="flex flex-col font-data-sm text-data-sm text-on-surface-variant text-[11px]">
+<span>Win Mean: +$304.40</span>
+<span>Loss Mean: -$145.80</span>
+</div>
+</div>
+<!-- 5. Max Drawdown -->
+<div class="flex flex-col justify-between p-space-md rounded-xl bg-surface-container-low shadow-sm">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md uppercase tracking-wider text-outline text-[11px]">Max Drawdown</span>
+<span class="font-data-sm text-data-sm text-primary bg-surface-container px-1.5 py-0.5 rounded text-[11px]">Calmar: 4.8</span>
+</div>
+<div class="my-space-sm">
+<span class="font-data-lg text-display text-tertiary leading-none font-bold">-4.2 R</span>
+</div>
+<div class="flex flex-col font-data-sm text-data-sm text-on-surface-variant text-[11px]">
+<span class="text-tertiary">-$2,100 (2.1% NAV)</span>
+<span>Recovery: 6 sessions (Fast)</span>
+</div>
+</div>
+</div>
+<!-- MAIN INTERACTIVE EQUITY CURVE & REGIME RIBBON -->
+<div class="flex flex-col p-space-lg rounded-xl bg-surface-container-low shadow-sm relative overflow-hidden">
+<!-- Glow ambient backdrop -->
+<div class="absolute -right-20 -top-20 w-96 h-96 rounded-full bg-primary/5 blur-3xl pointer-events-none"></div>
+<!-- Header & Segmented Chart Controls -->
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-space-md mb-space-md z-10">
+<div class="flex flex-col">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary text-[20px]">show_chart</span>
+<h2 class="font-headline-md text-headline-md text-on-surface tracking-tight">Portfolio R-Multiple Cumulative Drift (90D)</h2>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant">248 closed positions plotted sequentially. High statistical reliability threshold enforced.</span>
+</div>
+<div class="flex items-center gap-2 bg-surface-container-lowest p-1 rounded-xl">
+<button class="px-space-sm py-1 rounded font-label-md text-label-md bg-surface-container-high text-on-surface font-medium shadow-sm" type="button">Cumulative R</button>
+<button class="px-space-sm py-1 rounded font-label-md text-label-md text-on-surface-variant hover:text-on-surface transition-colors" type="button">Net $ P&amp;L</button>
+<button class="px-space-sm py-1 rounded font-label-md text-label-md text-on-surface-variant hover:text-on-surface transition-colors" type="button">Underwater DD</button>
+</div>
+</div>
+<!-- Cumulative Chart SVG Representation with Regime Background -->
+<div class="relative w-full h-80 bg-surface-container-lowest rounded-xl p-space-md overflow-hidden flex flex-col justify-between">
+<!-- Background Grid Guidelines -->
+<div class="absolute inset-0 flex flex-col justify-between p-space-md opacity-20 pointer-events-none">
+<div class="w-full h-[1px] bg-outline-variant"></div>
+<div class="w-full h-[1px] bg-outline-variant"></div>
+<div class="w-full h-[1px] bg-outline-variant"></div>
+<div class="w-full h-[1px] bg-outline-variant"></div>
+<div class="w-full h-[1px] bg-outline-variant"></div>
+</div>
+<!-- Regime Highlights in the background -->
+<div class="absolute inset-0 flex pointer-events-none opacity-30">
+<div class="w-[35%] h-full bg-secondary-container/10 flex items-end p-space-xs">
+<span class="font-data-sm text-data-sm text-secondary text-[10px] uppercase tracking-wider">London/NY Expansion</span>
+</div>
+<div class="w-[28%] h-full bg-surface-container-highest/30 flex items-end p-space-xs">
+<span class="font-data-sm text-data-sm text-outline text-[10px] uppercase tracking-wider">Low Volatility Chop</span>
+</div>
+<div class="w-[37%] h-full bg-primary-container/15 flex items-end p-space-xs">
+<span class="font-data-sm text-data-sm text-primary text-[10px] uppercase tracking-wider">Post-FOMC Expansion</span>
+</div>
+</div>
+<!-- SVG Line Curve -->
+<svg class="w-full h-full relative z-10" fill="none" preserveaspectratio="none" viewbox="0 0 1000 240">
+<defs>
+<lineargradient id="curveGradient" x1="0%" x2="0%" y1="0%" y2="100%">
+<stop offset="0%" stop-color="#bdc2ff" stop-opacity="0.35"></stop>
+<stop offset="100%" stop-color="#bdc2ff" stop-opacity="0.0"></stop>
+</lineargradient>
+<filter height="140%" id="equityGlow" width="140%" x="-20%" y="-20%">
+<fedropshadow dx="0" dy="0" flood-color="#7985ff" flood-opacity="0.6" stddeviation="4"></fedropshadow>
+</filter>
+</defs>
+<!-- Area under curve -->
+<path d="M 10 210 L 80 198 L 140 185 L 200 170 L 260 175 L 320 150 L 370 142 L 410 162 L 470 138 L 530 115 L 590 120 L 660 88 L 730 72 L 790 85 L 850 48 L 920 32 L 990 18 L 990 230 L 10 230 Z" fill="url(#curveGradient)"></path>
+<!-- Main Equity Line -->
+<path d="M 10 210 L 80 198 L 140 185 L 200 170 L 260 175 L 320 150 L 370 142 L 410 162 L 470 138 L 530 115 L 590 120 L 660 88 L 730 72 L 790 85 L 850 48 L 920 32 L 990 18" filter="url(#equityGlow)" stroke="#bdc2ff" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"></path>
+<!-- Data End Point -->
+<circle cx="990" cy="18" fill="#45dfa4" r="5" stroke="#0c1321" stroke-width="2"></circle>
+</svg>
+<!-- Overlay Callout Pins on Chart -->
+<div class="absolute top-24 left-[39%] z-20 hidden md:flex flex-col items-center pointer-events-none">
+<div class="px-2 py-1 rounded bg-error-container text-on-error-container font-data-sm text-data-sm text-[10px] font-bold shadow-lg">
+            Stop Widening Breach (-1.8R)
+          </div>
+<div class="w-1.5 h-1.5 bg-error rounded-full mt-1"></div>
+</div>
+<div class="absolute top-10 right-[15%] z-20 hidden md:flex flex-col items-center pointer-events-none">
+<div class="px-2 py-1 rounded bg-secondary-container text-on-secondary-container font-data-sm text-data-sm text-[10px] font-bold shadow-lg">
+            A+ Setup Cluster (+14.2R)
+          </div>
+<div class="w-1.5 h-1.5 bg-secondary rounded-full mt-1"></div>
+</div>
+<!-- Terminal Status Strip inside chart bottom -->
+<div class="relative z-10 flex flex-wrap items-center justify-between font-data-sm text-data-sm text-outline text-[11px] pt-2">
+<div class="flex items-center gap-space-md">
+<span>Trade #1 (0.0 R)</span>
+<span>Trade #68 (+24.1 R)</span>
+<span>Trade #142 (+52.8 R)</span>
+<span>Trade #248 (Current: <strong class="text-secondary font-semibold">+96.4 R</strong>)</span>
+</div>
+<div class="flex items-center gap-space-xs text-primary">
+<span class="material-symbols-outlined text-[14px]">auto_graph</span>
+<span>Monte Carlo Edge Survival: 99.8%</span>
+</div>
+</div>
+</div>
+</div>
+<!-- DAY-OF-WEEK x TIME-OF-DAY PERFORMANCE HEATMAP (STATISTICAL HONESTY) -->
+<div class="flex flex-col p-space-lg rounded-xl bg-surface-container-low shadow-sm">
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-space-sm mb-space-md">
+<div>
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-secondary text-[20px]">calendar_view_week</span>
+<h2 class="font-headline-md text-headline-md text-on-surface tracking-tight">Temporal Edge Heatmap — Average R per Execution Window</h2>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Cells colored by net expectancy. Low sample size (&lt;10 trades) flagged with warning indicator to suppress recency confirmation bias.</p>
+</div>
+<!-- Heatmap Legend -->
+<div class="flex flex-wrap items-center gap-space-sm font-data-sm text-data-sm text-[11px]">
+<div class="flex items-center gap-1.5">
+<span class="h-3 w-3 rounded bg-secondary-container"></span>
+<span class="text-on-surface">Significant Win (&gt;+0.8R)</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="h-3 w-3 rounded bg-surface-container-high"></span>
+<span class="text-on-surface-variant">Moderate / Neutral</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="h-3 w-3 rounded bg-error-container"></span>
+<span class="text-error">Loss (&lt;-0.5R)</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="h-3 w-3 rounded bg-surface-container-highest border-dashed"></span>
+<span class="text-tertiary">n&lt;10 (Unreliable)</span>
+</div>
+</div>
+</div>
+<!-- Matrix Heatmap Table -->
+<div class="w-full overflow-x-auto">
+<table class="w-full text-left border-collapse min-w-[760px]">
+<thead>
+<tr class="text-on-surface-variant font-label-md text-label-md bg-surface-container-lowest">
+<th class="p-space-sm font-semibold">Trading Day</th>
+<th class="p-space-sm text-center">02:00–05:00<br/><span class="font-normal text-[10px] text-outline">Asian / London Pre</span></th>
+<th class="p-space-sm text-center">07:00–09:30<br/><span class="font-normal text-[10px] text-outline">London Open</span></th>
+<th class="p-space-sm text-center">09:30–11:30<br/><span class="font-normal text-[10px] text-outline">NY Open Prime</span></th>
+<th class="p-space-sm text-center">11:30–13:30<br/><span class="font-normal text-[10px] text-outline">NY Midday Chop</span></th>
+<th class="p-space-sm text-center">13:30–16:00<br/><span class="font-normal text-[10px] text-outline">NY Close</span></th>
+</tr>
+</thead>
+<tbody class="font-data-md text-data-md divide-y divide-transparent">
+<!-- MONDAY -->
+<tr class="hover:bg-surface-container/50 transition-colors">
+<td class="p-space-sm font-label-md font-semibold text-on-surface">Monday</td>
+<td class="p-space-xs">
+<div class="p-space-sm rounded bg-surface-container flex flex-col items-center">
+<span class="text-on-surface-variant">+0.12 R</span>
+<span class="text-outline text-[10px]">n=14</span>
+</div>
+</td>
+<td class="p-space-xs">
+<div class="p-space-sm rounded bg-surface-container-high flex flex-col items-center">
+<span class="text-secondary font-semibold">+0.88 R</span>
+<span class="text-on-surface-variant text-[10px]">n=24</span>
+</div>
+</td>
+<td class="p-space-xs">
+<div class="p-space-sm rounded bg-secondary-container/20 flex flex-col items-center">
+<span class="text-secondary font-bold">+1.42 R</span>
+<span class="text-secondary text-[10px]">n=31</span>
+</div>
+</td>
+<td class="p-space-xs">
+<div class="p-space-sm rounded bg-surface-container flex flex-col items-center">
+<span class="text-error">-0.24 R</span>
+<span class="text-outline text-[10px]">n=12</span>
+</div>
+</td>
+<td class="p-space-xs">
+<div class="p-space-sm rounded bg-surface-container flex flex-col items-center">
+<span class="text-on-surface-variant">+0.05 R</span>
+<span class="text-outline text-[10px]">n=11</span>
+</div>
+</td>
+</tr>
+<!-- TUESDAY -->
+<tr class="hover:bg-surface-container/50 transition-colors">
+<td class="p-space-sm font-label-md font-semibold text-on-surface">Tuesday</td>
+<td class="p-space-xs">
+<div class="p-space-sm rounded bg-surface-container flex flex-col items-center">
+<span class="text-on-surface-variant">+0.22 R</span>
+<span class="text-outline text-[10px]">n=12</span>
+</div>
+</td>
+<td class="p-space-xs">
+<div class="p-space-sm rounded bg-secondary-container/25 flex flex-col items-center">
+<span class="text-secondary font-bold">+1.65 R</span>
+<span class="text-secondary text-[10px]">n=29</span>
+</div>
+</td>
+<td class="p-space-xs">
+<div class="p-space-sm rounded bg-secondary-container/30 flex flex-col items-center">
+<span class="text-secondary font-bold">+1.94 R</span>
+<span class="text-secondary text-[10px]">n=38</span>
+</div>
+</td>
+<td class="p-space-xs">
+<div class="p-space-sm rounded bg-surface-container flex flex-col items-center">
+<span class="text-outline">+0.08 R</span>
+<span class="text-outline text-[10px]">n=15</span>
+</div>
+</td>
+<td class="p-space-xs">
+<div class="p-space-sm rounded bg-surface-container flex flex-col items-center">
+<span class="text-secondary">+0.45 R</span>
+<span class="text-outline text-[10px]">n=14</span>
+</div>
+</td>
+</tr>
+<!-- WEDNESDAY -->
+<tr class="hover:bg-surface-container/50 transition-colors">
+<td class="p-space-sm font-label-md font-semibold text-on-surface">Wednesday</td>
+<td class="p-space-xs">
+<div class="p-space-sm rounded bg-surface-container-highest/50 flex flex-col items-center">
+<span class="text-outline">-0.05 R</span>
+<span class="text-outline text-[10px]">n=7 <span class="text-tertiary">[low n]</span></span>
+</div>
+</td>
+<td class="p-space-xs">
+<div class="p-space-sm rounded bg-secondary-container/20 flex flex-col items-center">
+<span class="text-secondary font-bold">+1.28 R</span>
+<span class="text-secondary text-[10px]">n=22</span>
+</div>
+</td>
+<td class="p-space-xs">
+<div class="p-space-sm rounded bg-secondary-container/25 flex flex-col items-center">
+<span class="text-secondary font-bold">+1.55 R</span>
+<span class="text-secondary text-[10px]">n=34</span>
+</div>
+</td>
+<td class="p-space-xs">
+<div class="p-space-sm rounded bg-error-container/20 flex flex-col items-center">
+<span class="text-error font-semibold">-0.48 R</span>
+<span class="text-outline text-[10px]">n=19</span>
+</div>
+</td>
+<td class="p-space-xs">
+<div class="p-space-sm rounded bg-surface-container flex flex-col items-center">
+<span class="text-secondary">+0.32 R</span>
+<span class="text-outline text-[10px]">n=16</span>
+</div>
+</td>
+</tr>
+<!-- THURSDAY -->
+<tr class="hover:bg-surface-container/50 transition-colors">
+<td class="p-space-sm font-label-md font-semibold text-on-surface">Thursday</td>
+<td class="p-space-xs">
+<div class="p-space-sm rounded bg-surface-container flex flex-col items-center">
+<span class="text-on-surface-variant">+0.18 R</span>
+<span class="text-outline text-[10px]">n=10</span>
+</div>
+</td>
+<td class="p-space-xs">
+<div class="p-space-sm rounded bg-secondary-container/20 flex flex-col items-center">
+<span class="text-secondary font-bold">+1.10 R</span>
+<span class="text-secondary text-[10px]">n=25</span>
+</div>
+</td>
+<td class="p-space-xs">
+<div class="p-space-sm rounded bg-secondary-container/20 flex flex-col items-center">
+<span class="text-secondary font-bold">+1.18 R</span>
+<span class="text-secondary text-[10px]">n=30</span>
+</div>
+</td>
+<td class="p-space-xs">
+<div class="p-space-sm rounded bg-surface-container flex flex-col items-center">
+<span class="text-error">-0.15 R</span>
+<span class="text-outline text-[10px]">n=13</span>
+</div>
+</td>
+<td class="p-space-xs">
+<div class="p-space-sm rounded bg-surface-container flex flex-col items-center">
+<span class="text-secondary">+0.25 R</span>
+<span class="text-outline text-[10px]">n=12</span>
+</div>
+</td>
+</tr>
+<!-- FRIDAY (EXPOSING FRICTION) -->
+<tr class="hover:bg-surface-container/50 transition-colors">
+<td class="p-space-sm font-label-md font-semibold text-tertiary flex items-center gap-1">
+<span>Friday</span>
+<span class="material-symbols-outlined text-[14px] text-tertiary" title="Friction zone identified">priority_high</span>
+</td>
+<td class="p-space-xs">
+<div class="p-space-sm rounded bg-surface-container flex flex-col items-center">
+<span class="text-outline">-0.10 R</span>
+<span class="text-outline text-[10px]">n=8 <span class="text-tertiary">[low n]</span></span>
+</div>
+</td>
+<td class="p-space-xs">
+<div class="p-space-sm rounded bg-surface-container flex flex-col items-center">
+<span class="text-secondary">+0.35 R</span>
+<span class="text-outline text-[10px]">n=15</span>
+</div>
+</td>
+<td class="p-space-xs">
+<div class="p-space-sm rounded bg-surface-container flex flex-col items-center">
+<span class="text-on-surface-variant">+0.15 R</span>
+<span class="text-outline text-[10px]">n=18</span>
+</div>
+</td>
+<td class="p-space-xs">
+<div class="p-space-sm rounded bg-error-container/40 flex flex-col items-center">
+<span class="text-error font-bold">-0.92 R</span>
+<span class="text-error text-[10px]">n=14 [LEAK]</span>
+</div>
+</td>
+<td class="p-space-xs">
+<div class="p-space-sm rounded bg-error-container/60 flex flex-col items-center">
+<span class="text-error font-bold">-1.15 R</span>
+<span class="text-tertiary text-[10px]">n=8 [low n]</span>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Diagnostic Insight Note -->
+<div class="mt-space-md p-space-sm rounded-xl bg-surface-container flex items-start gap-space-sm">
+<span class="material-symbols-outlined text-tertiary text-[20px] shrink-0 mt-0.5">report</span>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-tertiary font-semibold">Actionable Friction Identified: Friday Afternoon Fatigue Leak</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Friday executions past 11:30 EST generate a net drag of <strong class="text-error font-medium">-18.4 R</strong> across the quarter. Disabling execution rights after 11:30 EST on Fridays increases baseline expectancy from +0.78R to +0.94R.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- ================================================================= -->
+<!-- SECTION 2: PSYCHOLOGY & BEHAVIORAL CORRELATION ENGINE -->
+<!-- ================================================================= -->
+<section class="flex flex-col gap-space-md mb-space-xl">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-primary text-[24px]">psychology_alt</span>
+<div>
+<h2 class="font-headline-md text-headline-md text-on-surface tracking-tight">Psychological Friction Attribution Engine v3.1</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Quantitative mapping between biometric telemetry, logged mindset states, and capital execution fidelity.</p>
+</div>
+</div>
+<span class="px-space-sm py-1 rounded bg-surface-container text-primary font-data-sm text-data-sm text-[11px] font-semibold">Continuous Algorithmic Auditing</span>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-space-md">
+<!-- CARD A: Pre-Trade Emotional State vs Expectancy -->
+<div class="flex flex-col p-space-md rounded-xl bg-surface-container-low shadow-sm justify-between">
+<div>
+<div class="flex items-center justify-between mb-space-sm">
+<span class="font-label-md text-label-md uppercase tracking-wider text-outline text-[11px]">Attribution Matrix</span>
+<span class="material-symbols-outlined text-primary text-[18px]">sentiment_satisfied</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-semibold mb-space-sm">Pre-Trade Emotional State vs. Average R</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-space-md">Self-reported mindset captured at order pre-flight check.</p>
+<!-- Horizontal Bar Distributions -->
+<div class="flex flex-col gap-space-sm font-data-sm text-data-sm">
+<!-- Focused -->
+<div class="flex flex-col gap-1">
+<div class="flex justify-between items-center text-[12px]">
+<span class="text-on-surface flex items-center gap-1.5"><span class="text-[14px]">🧘</span> Focused / Stoic (92t)</span>
+<span class="text-secondary font-bold">+1.65 R</span>
+</div>
+<div class="w-full h-2 rounded bg-surface-container overflow-hidden">
+<div class="bg-secondary h-full rounded" style="width: 85%"></div>
+</div>
+</div>
+<!-- Calm -->
+<div class="flex flex-col gap-1">
+<div class="flex justify-between items-center text-[12px]">
+<span class="text-on-surface flex items-center gap-1.5"><span class="text-[14px]">😌</span> Calm &amp; Grounded (74t)</span>
+<span class="text-secondary font-bold">+1.12 R</span>
+</div>
+<div class="w-full h-2 rounded bg-surface-container overflow-hidden">
+<div class="bg-secondary h-full rounded" style="width: 65%"></div>
+</div>
+</div>
+<!-- Confident -->
+<div class="flex flex-col gap-1">
+<div class="flex justify-between items-center text-[12px]">
+<span class="text-on-surface flex items-center gap-1.5"><span class="text-[14px]">🎯</span> Confident / Sharp (46t)</span>
+<span class="text-primary font-bold">+0.88 R</span>
+</div>
+<div class="w-full h-2 rounded bg-surface-container overflow-hidden">
+<div class="bg-primary h-full rounded" style="width: 52%"></div>
+</div>
+</div>
+<!-- Tired -->
+<div class="flex flex-col gap-1">
+<div class="flex justify-between items-center text-[12px]">
+<span class="text-tertiary flex items-center gap-1.5"><span class="text-[14px]">🥱</span> Tired / Fatigued (18t)</span>
+<span class="text-tertiary font-bold">-0.45 R</span>
+</div>
+<div class="w-full h-2 rounded bg-surface-container overflow-hidden">
+<div class="bg-tertiary h-full rounded" style="width: 32%"></div>
+</div>
+</div>
+<!-- Anxious -->
+<div class="flex flex-col gap-1">
+<div class="flex justify-between items-center text-[12px]">
+<span class="text-error flex items-center gap-1.5"><span class="text-[14px]">⚡</span> Anxious / Rushed (12t)</span>
+<span class="text-error font-bold">-0.82 R</span>
+</div>
+<div class="w-full h-2 rounded bg-surface-container overflow-hidden">
+<div class="bg-error h-full rounded" style="width: 50%"></div>
+</div>
+</div>
+<!-- FOMO -->
+<div class="flex flex-col gap-1">
+<div class="flex justify-between items-center text-[12px]">
+<span class="text-error font-semibold flex items-center gap-1.5"><span class="text-[14px]">🔥</span> FOMO / Revenge (6t)</span>
+<span class="text-error font-bold">-1.74 R</span>
+</div>
+<div class="w-full h-2 rounded bg-surface-container overflow-hidden">
+<div class="bg-error h-full rounded" style="width: 90%"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="mt-space-md p-space-xs rounded bg-surface-container text-center">
+<span class="font-data-sm text-data-sm text-tertiary text-[11px]">Tired + Anxious states account for <strong>78%</strong> of negative drawdown.</span>
+</div>
+</div>
+<!-- CARD B: Sleep Duration & HRV vs Session P&L -->
+<div class="flex flex-col p-space-md rounded-xl bg-surface-container-low shadow-sm justify-between">
+<div>
+<div class="flex items-center justify-between mb-space-sm">
+<span class="font-label-md text-label-md uppercase tracking-wider text-outline text-[11px]">Biometric Correlation</span>
+<div class="flex items-center gap-1 text-secondary font-data-sm text-data-sm text-[10px]">
+<span class="h-1.5 w-1.5 rounded-full bg-secondary"></span>
+              WHOOP Synced
+            </div>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-semibold mb-space-sm">Sleep Duration &amp; HRV vs. Session P&amp;L</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-space-md">Recovery score directly modulates risk capacity and impulse resistance.</p>
+<!-- Grouped Telemetry Rows -->
+<div class="flex flex-col gap-space-md font-data-sm text-data-sm">
+<!-- Group 1 -->
+<div class="p-space-sm rounded-xl bg-surface-container flex flex-col gap-1">
+<div class="flex items-center justify-between">
+<span class="font-semibold text-error text-[12px] flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">bedtime_off</span>
+                  &lt; 6.0 Hours Sleep
+                </span>
+<span class="font-bold text-error">-0.52 R Avg</span>
+</div>
+<div class="flex justify-between text-outline text-[11px]">
+<span>14 Sessions logged</span>
+<span class="text-tertiary">-$4,200 Aggregate Drag</span>
+</div>
+</div>
+<!-- Group 2 -->
+<div class="p-space-sm rounded-xl bg-surface-container flex flex-col gap-1">
+<div class="flex items-center justify-between">
+<span class="font-semibold text-on-surface text-[12px] flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">bedtime</span>
+                  6.0 – 7.5 Hours Sleep
+                </span>
+<span class="font-bold text-secondary">+0.38 R Avg</span>
+</div>
+<div class="flex justify-between text-outline text-[11px]">
+<span>24 Sessions logged</span>
+<span class="text-on-surface-variant">Neutral baseline</span>
+</div>
+</div>
+<!-- Group 3 -->
+<div class="p-space-sm rounded-xl bg-surface-container flex flex-col gap-1">
+<div class="flex items-center justify-between">
+<span class="font-semibold text-secondary text-[12px] flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">nights_stay</span>
+                  &gt; 7.5 Hours Sleep (Optimal)
+                </span>
+<span class="font-bold text-secondary">+1.48 R Avg</span>
+</div>
+<div class="flex justify-between text-outline text-[11px]">
+<span>Peak Win Rate: 76.2%</span>
+<span class="text-secondary">Optimal HRV &gt; 65ms</span>
+</div>
+</div>
+</div>
+</div>
+<div class="mt-space-md p-space-xs rounded bg-surface-container-high text-center">
+<span class="font-data-sm text-data-sm text-primary text-[11px]">8.2h avg sleep precedes <strong>100%</strong> of recorded +3R outlier sessions.</span>
+</div>
+</div>
+<!-- CARD C: Decision Grade vs Actual Outcome -->
+<div class="flex flex-col p-space-md rounded-xl bg-surface-container-low shadow-sm justify-between">
+<div>
+<div class="flex items-center justify-between mb-space-sm">
+<span class="font-label-md text-label-md uppercase tracking-wider text-outline text-[11px]">Blind Review Audit</span>
+<span class="material-symbols-outlined text-primary text-[18px]">verified</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-semibold mb-space-sm">Decision Quality Grade vs. Outcome</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-space-sm">Post-session grades assigned blind to outcome P&amp;L.</p>
+<!-- Table Matrix -->
+<div class="w-full overflow-hidden">
+<table class="w-full text-left font-data-sm text-data-sm text-[12px]">
+<thead>
+<tr class="text-outline border-b border-surface-container-highest">
+<th class="pb-1 font-medium">Grade</th>
+<th class="pb-1 text-center font-medium">Win %</th>
+<th class="pb-1 text-right font-medium">Avg R</th>
+<th class="pb-1 text-right font-medium">Net R</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-container">
+<tr>
+<td class="py-1.5 font-bold text-secondary">A (Exemplary)</td>
+<td class="py-1.5 text-center text-on-surface">78.4%</td>
+<td class="py-1.5 text-right text-secondary">+2.10 R</td>
+<td class="py-1.5 text-right font-bold text-secondary">+107.1 R</td>
+</tr>
+<tr>
+<td class="py-1.5 font-bold text-primary">B (Solid)</td>
+<td class="py-1.5 text-center text-on-surface">64.8%</td>
+<td class="py-1.5 text-right text-primary">+1.02 R</td>
+<td class="py-1.5 text-right font-bold text-primary">+110.2 R</td>
+</tr>
+<tr>
+<td class="py-1.5 font-bold text-on-surface-variant">C (Average)</td>
+<td class="py-1.5 text-center text-on-surface">48.0%</td>
+<td class="py-1.5 text-right text-on-surface">+0.08 R</td>
+<td class="py-1.5 text-right font-bold text-on-surface">+4.0 R</td>
+</tr>
+<tr>
+<td class="py-1.5 font-bold text-tertiary">D (Sloppy)</td>
+<td class="py-1.5 text-center text-on-surface">33.3%</td>
+<td class="py-1.5 text-right text-tertiary">-0.65 R</td>
+<td class="py-1.5 text-right font-bold text-tertiary">-15.6 R</td>
+</tr>
+<tr>
+<td class="py-1.5 font-bold text-error">F (Impulsive)</td>
+<td class="py-1.5 text-center text-on-surface">13.3%</td>
+<td class="py-1.5 text-right text-error">-1.45 R</td>
+<td class="py-1.5 text-right font-bold text-error">-21.8 R</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="mt-space-md p-space-xs rounded bg-surface-container text-center">
+<span class="font-data-sm text-data-sm text-secondary text-[11px] font-semibold">Correlation coefficient r = 0.89 (Very Strong Edge Validation)</span>
+</div>
+</div>
+</div>
+<!-- CARD D: TILT CASCADE & POSITION SIZE ANOMALY TIMELINE -->
+<div class="flex flex-col p-space-lg rounded-xl bg-surface-container-low shadow-sm">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-space-sm mb-space-md">
+<div>
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-tertiary text-[20px]">warning_amber</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-semibold">Tilt Cascade &amp; Execution Anomaly Audit Strip</h3>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Chronological behavioral detection identifying escalation sequences and rule breaches.</p>
+</div>
+<div class="flex items-center gap-space-sm bg-surface-container px-space-md py-1.5 rounded-xl">
+<span class="font-label-md text-label-md text-on-surface-variant">Tilt Resistance Index:</span>
+<span class="font-data-lg text-data-lg text-secondary font-bold">88 / 100</span>
+<span class="font-data-sm text-data-sm text-secondary bg-surface-container-high px-1.5 py-0.5 rounded text-[10px]">14 Days Clean</span>
+</div>
+</div>
+<!-- Chronological Incident Replay Bar -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-space-md">
+<!-- Event 1 -->
+<div class="flex flex-col p-space-md rounded-xl bg-surface-container">
+<div class="flex items-center justify-between mb-space-xs">
+<span class="font-data-sm text-data-sm text-outline text-[11px]">Oct 18 · 09:42 EST</span>
+<span class="px-1.5 py-0.2 rounded bg-surface-container-high text-on-surface text-[10px] font-data-sm">Trigger Event</span>
+</div>
+<span class="font-label-lg text-label-lg font-semibold text-tertiary">EURUSD -1.0R Normal Stop Loss</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Valid setup invalidated by liquidity sweep. Plan executed cleanly.</p>
+</div>
+<!-- Event 2 (Tilt Spike) -->
+<div class="flex flex-col p-space-md rounded-xl bg-error-container/20">
+<div class="flex items-center justify-between mb-space-xs">
+<span class="font-data-sm text-data-sm text-error text-[11px]">Oct 18 · 09:54 EST (+12 min)</span>
+<span class="px-1.5 py-0.2 rounded bg-error-container text-on-error-container text-[10px] font-data-sm font-bold uppercase">Size Spike 2.2x</span>
+</div>
+<span class="font-label-lg text-label-lg font-semibold text-error">GBPUSD Unconfirmed Scalp (-2.2R)</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Impulsive entry without 5-min structure confirmation. Revenge pattern flagged.</p>
+</div>
+<!-- Event 3 (System Sentinel Intercept) -->
+<div class="flex flex-col p-space-md rounded-xl bg-primary-container/20">
+<div class="flex items-center justify-between mb-space-xs">
+<span class="font-data-sm text-data-sm text-primary text-[11px]">Oct 18 · 10:01 EST</span>
+<span class="px-1.5 py-0.2 rounded bg-primary text-on-primary text-[10px] font-data-sm font-semibold">Automated Gate</span>
+</div>
+<span class="font-label-lg text-label-lg font-semibold text-primary">Sentinel Terminal Lock Engaged</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Cooldown enforced for 45 minutes. Saved estimated -3.4R subsequent drawdown.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- ================================================================= -->
+<!-- SECTION 3: WHAT-IF COUNTERFACTUAL SIMULATOR (SANDBOX) -->
+<!-- ================================================================= -->
+<section class="flex flex-col p-space-lg rounded-xl bg-surface-container-low shadow-lg relative overflow-hidden">
+<div class="absolute -left-20 -bottom-20 w-96 h-96 rounded-full bg-secondary/5 blur-3xl pointer-events-none"></div>
+<div class="flex flex-col xl:flex-row xl:items-center justify-between gap-space-md mb-space-lg z-10">
+<div>
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary text-[22px]">model_training</span>
+<h2 class="font-headline-md text-headline-md text-on-surface tracking-tight">Counterfactual Synthesis Engine — Edge Sandbox</h2>
+<span class="px-space-xs py-0.5 rounded bg-primary-container text-on-primary-container font-data-sm text-data-sm text-[10px] uppercase font-bold tracking-widest">Active Simulator</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Toggle institutional discipline constraints to recalculate historical equity curves without human error.</p>
+</div>
+<!-- Action Lock Button -->
+<div class="flex items-center gap-space-xs">
+<button class="flex items-center gap-1.5 bg-surface-container-high hover:bg-surface-bright text-on-surface font-label-md text-label-md px-space-md py-2 rounded transition-all" type="button">
+<span class="material-symbols-outlined text-[16px]">save</span>
+<span>Apply to Pre-Flight Gate</span>
+</button>
+<button class="flex items-center gap-1.5 bg-primary hover:bg-primary-container text-on-primary hover:text-on-primary-container font-label-md text-label-md px-space-md py-2 rounded transition-all shadow-[0_0_16px_rgba(110,123,255,0.35)] font-semibold" type="button">
+<span class="material-symbols-outlined text-[16px]">lock</span>
+<span>Lock Rules into Live Terminal</span>
+</button>
+</div>
+</div>
+<!-- Filter Chips Controls (Toggleable) -->
+<div class="flex flex-wrap items-center gap-space-xs mb-space-lg z-10">
+<span class="font-label-md text-label-md text-outline mr-1 text-[12px] uppercase tracking-wider">Hypothetical Rules:</span>
+<button class="flex items-center gap-1.5 px-space-md py-1.5 rounded-full font-label-md text-label-md bg-primary-container text-on-primary-container shadow-[0_0_12px_rgba(121,133,255,0.4)] transition-all" data-active="true" data-sim-toggle="noFriday" type="button">
+<span class="material-symbols-outlined text-[16px] check-icon">check</span>
+<span>Eliminate Friday PM Trades (+18.4R)</span>
+</button>
+<button class="flex items-center gap-1.5 px-space-md py-1.5 rounded-full font-label-md text-label-md bg-primary-container text-on-primary-container shadow-[0_0_12px_rgba(121,133,255,0.4)] transition-all" data-active="true" data-sim-toggle="strictSetups" type="button">
+<span class="material-symbols-outlined text-[16px] check-icon">check</span>
+<span>A &amp; A+ Setups Only (+9.2R)</span>
+</button>
+<button class="flex items-center gap-1.5 px-space-md py-1.5 rounded-full font-label-md text-label-md bg-primary-container text-on-primary-container shadow-[0_0_12px_rgba(121,133,255,0.4)] transition-all" data-active="true" data-sim-toggle="noWidening" type="button">
+<span class="material-symbols-outlined text-[16px] check-icon">check</span>
+<span>Zero Stop Widening (+4.2R)</span>
+</button>
+<button class="flex items-center gap-1.5 px-space-md py-1.5 rounded-full font-label-md text-label-md bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-all" data-active="false" data-sim-toggle="noAfternoon" type="button">
+<span class="material-symbols-outlined text-[16px] check-icon">add</span>
+<span>No Trades After 13:00 EST (+7.8R)</span>
+</button>
+<button class="flex items-center gap-1.5 px-space-md py-1.5 rounded-full font-label-md text-label-md bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-all" data-active="false" data-sim-toggle="maxTrades" type="button">
+<span class="material-symbols-outlined text-[16px] check-icon">add</span>
+<span>Max 2 Trades Per Day (+3.5R)</span>
+</button>
+</div>
+<!-- DUAL EQUITY CURVE VISUALIZATION -->
+<div class="relative w-full h-72 bg-surface-container-lowest rounded-xl p-space-md overflow-hidden flex flex-col justify-between mb-space-md">
+<!-- Background Guide Lines -->
+<div class="absolute inset-0 flex flex-col justify-between p-space-md opacity-20 pointer-events-none">
+<div class="w-full h-[1px] bg-outline-variant"></div>
+<div class="w-full h-[1px] bg-outline-variant"></div>
+<div class="w-full h-[1px] bg-outline-variant"></div>
+<div class="w-full h-[1px] bg-outline-variant"></div>
+</div>
+<!-- Chart Curve SVGs -->
+<svg class="w-full h-full relative z-10" fill="none" preserveaspectratio="none" viewbox="0 0 820 180">
+<defs>
+<filter height="140%" id="simGlowFilter" width="140%" x="-20%" y="-20%">
+<fedropshadow dx="0" dy="0" flood-color="#45dfa4" flood-opacity="0.8" stddeviation="3"></fedropshadow>
+</filter>
+</defs>
+<!-- Baseline Actual Curve (Muted Slate, Dashed) -->
+<path d="M 24 165 C 100 160, 180 152, 260 140 C 350 128, 420 120, 510 105 C 600 95, 700 80, 800 68" stroke="#454654" stroke-dasharray="4 4" stroke-linecap="round" stroke-width="2"></path>
+<circle cx="800" cy="68" fill="#8f8fa0" r="4"></circle>
+<!-- Simulated Counterfactual Curve (Vibrant Cyan / Emerald Glow) -->
+<path d="M 24 165 C 100 155, 180 148, 260 130 C 350 115, 420 102, 510 82 C 600 68, 700 55, 800 32" id="simulated-equity-glow" stroke="#45dfa4" stroke-linecap="round" stroke-opacity="0.25" stroke-width="5"></path>
+<path d="M 24 165 C 100 155, 180 148, 260 130 C 350 115, 420 102, 510 82 C 600 68, 700 55, 800 32" filter="url(#simGlowFilter)" id="simulated-equity-path" stroke="#45dfa4" stroke-linecap="round" stroke-width="2.5"></path>
+<circle cx="800" cy="32" fill="#45dfa4" id="sim-endpoint" r="5" stroke="#0c1321" stroke-width="2"></circle>
+</svg>
+<!-- Chart Legend Inset -->
+<div class="relative z-10 flex items-center justify-between font-data-sm text-data-sm text-[11px]">
+<div class="flex items-center gap-space-md">
+<div class="flex items-center gap-2">
+<span class="w-4 h-0.5 bg-outline border-dashed"></span>
+<span class="text-on-surface-variant">Actual Realized Equity (+96.4 R)</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-4 h-1 bg-secondary shadow-[0_0_8px_rgba(69,223,164,0.6)]"></span>
+<span class="text-secondary font-semibold">Simulated Frictionless Equity (+128.2 R)</span>
+</div>
+</div>
+<div class="text-on-surface-variant">
+          Statistical Delta: <span class="text-secondary font-bold">+31.8 R Alpha</span>
+</div>
+</div>
+</div>
+<!-- DELTA SUMMARY BANNER -->
+<div class="p-space-md rounded-xl bg-surface-container flex flex-col md:flex-row md:items-center justify-between gap-space-md">
+<div class="flex flex-col">
+<div class="flex items-center gap-space-xs">
+<span class="font-data-lg text-headline-lg text-secondary font-bold leading-none" id="cf-delta-r">+31.8 R</span>
+<span class="font-data-sm text-data-sm text-secondary bg-surface-container-high px-space-xs py-0.5 rounded font-semibold" id="cf-delta-pct">(+33.0%)</span>
+<span class="font-headline-sm text-headline-sm text-on-surface ml-space-xs">Counterfactual Alpha over 90 Days</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant mt-1">Capital you produced in market edge but surrendered back due to protocol failure.</span>
+</div>
+<!-- Breakdown Pills -->
+<div class="flex flex-wrap items-center gap-space-xs font-data-sm text-data-sm text-[11px]">
+<span class="px-space-sm py-1 rounded bg-surface-container-high text-on-surface">
+<strong class="text-secondary">+18.4 R</strong> No Fridays
+        </span>
+<span class="px-space-sm py-1 rounded bg-surface-container-high text-on-surface">
+<strong class="text-secondary">+9.2 R</strong> Setup Discipline
+        </span>
+<span class="px-space-sm py-1 rounded bg-surface-container-high text-on-surface">
+<strong class="text-secondary">+4.2 R</strong> Clean Stops
+        </span>
+</div>
+</div>
+</section>
+</div></main></div></body></html>

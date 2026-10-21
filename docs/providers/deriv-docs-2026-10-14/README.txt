@@ -1,0 +1,3 @@
+Deriv official documentation snapshots fetched 2026-10-14 during Phase 07 feasibility gate (doc-deriv.readme.io llms.txt mirror — .md versions of the API docs).
+Sources: developers.deriv.com (new REST+OTP API), doc-deriv.readme.io (legacy v3 WebSocket API used by the connector), legacy-api.deriv.com/api-explorer (schemas).
+Key facts used: ws endpoint wss://ws.derivws.com/websockets/v3?app_id=; authorize/balance/portfolio/profit_table/statement scopes; Read scope = view market data and account information; profit_table pagination default 50 max 500/call; session 2-min inactivity timeout; error codes InvalidToken/AuthorizationRequired/RateLimitExceeded/PermissionDenied/InvalidAppID.

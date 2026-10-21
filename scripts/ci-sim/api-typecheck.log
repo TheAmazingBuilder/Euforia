@@ -1,0 +1,680 @@
+$ tsc -p tsconfig.json --noEmit
+src/infrastructure/prisma/prisma.constants.ts(1,15): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+src/infrastructure/prisma/prisma.service.ts(8,10): error TS2305: Module '"@prisma/client"' has no exported member 'PrismaClient'.
+src/infrastructure/prisma/prisma.service.ts(9,15): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+src/infrastructure/prisma/prisma.service.ts(41,16): error TS2339: Property '$connect' does not exist on type 'PrismaService'.
+src/infrastructure/prisma/prisma.service.ts(45,16): error TS2339: Property '$disconnect' does not exist on type 'PrismaService'.
+src/infrastructure/prisma/prisma.service.ts(55,18): error TS2339: Property '$queryRaw' does not exist on type 'PrismaService'.
+src/modules/academy/academy.repository.ts(9,10): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+src/modules/academy/academy.repository.ts(24,36): error TS2339: Property 'academyRow' does not exist on type 'PrismaService'.
+src/modules/academy/academy.repository.ts(32,35): error TS2339: Property 'academyRow' does not exist on type 'PrismaService'.
+src/modules/academy/academy.repository.ts(39,35): error TS2339: Property 'academyRow' does not exist on type 'PrismaService'.
+src/modules/academy/academy.repository.ts(46,35): error TS2339: Property 'academyRow' does not exist on type 'PrismaService'.
+src/modules/academy/academy.repository.ts(53,23): error TS2339: Property 'academyRow' does not exist on type 'PrismaService'.
+src/modules/academy/academy.repository.ts(57,23): error TS2339: Property 'academyRow' does not exist on type 'PrismaService'.
+src/modules/accounts/accounts.repository.ts(11,10): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+src/modules/accounts/accounts.repository.ts(146,36): error TS2339: Property 'tradingAccount' does not exist on type 'PrismaService'.
+src/modules/accounts/accounts.repository.ts(155,35): error TS2339: Property 'tradingAccount' does not exist on type 'PrismaService'.
+src/modules/accounts/accounts.repository.ts(168,35): error TS2339: Property 'tradingAccount' does not exist on type 'PrismaService'.
+src/modules/accounts/accounts.repository.ts(176,23): error TS2339: Property 'tradingAccount' does not exist on type 'PrismaService'.
+src/modules/accounts/accounts.repository.ts(183,24): error TS2339: Property 'tradingAccount' does not exist on type 'PrismaService'.
+src/modules/accounts/accounts.repository.ts(193,35): error TS2339: Property 'tradingAccount' does not exist on type 'PrismaService'.
+src/modules/accounts/accounts.repository.ts(206,35): error TS2339: Property 'tradingAccount' does not exist on type 'PrismaService'.
+src/modules/accounts/accounts.repository.ts(221,35): error TS2339: Property 'tradingConnection' does not exist on type 'PrismaService'.
+src/modules/accounts/accounts.repository.ts(253,53): error TS2339: Property '$transaction' does not exist on type 'PrismaService'.
+src/modules/accounts/accounts.repository.ts(253,73): error TS7006: Parameter 'tx' implicitly has an 'any' type.
+src/modules/accounts/accounts.repository.ts(304,35): error TS2339: Property 'tradingConnection' does not exist on type 'PrismaService'.
+src/modules/accounts/accounts.repository.ts(321,35): error TS2339: Property 'tradingConnection' does not exist on type 'PrismaService'.
+src/modules/accounts/accounts.repository.ts(336,23): error TS2339: Property 'tradingConnection' does not exist on type 'PrismaService'.
+src/modules/accounts/accounts.repository.ts(343,23): error TS2339: Property 'tradingConnection' does not exist on type 'PrismaService'.
+src/modules/accounts/accounts.repository.ts(353,35): error TS2339: Property 'tradingConnection' does not exist on type 'PrismaService'.
+src/modules/accounts/accounts.repository.ts(361,23): error TS2339: Property 'tradingConnection' does not exist on type 'PrismaService'.
+src/modules/accounts/accounts.repository.ts(372,23): error TS2339: Property 'tradingConnection' does not exist on type 'PrismaService'.
+src/modules/accounts/accounts.repository.ts(390,25): error TS2339: Property 'tradingBridgeEvent' does not exist on type 'PrismaService'.
+src/modules/accounts/accounts.repository.ts(400,68): error TS18046: 'error' is of type 'unknown'.
+src/modules/accounts/accounts.repository.ts(412,35): error TS2339: Property 'tradingBridgeEvent' does not exist on type 'PrismaService'.
+src/modules/accounts/accounts.repository.ts(422,35): error TS2339: Property 'tradingConnection' does not exist on type 'PrismaService'.
+src/modules/accounts/accounts.repository.ts(434,23): error TS2339: Property 'tradingAccount' does not exist on type 'PrismaService'.
+src/modules/accounts/accounts.repository.ts(449,38): error TS2339: Property 'tradingBridgeEvent' does not exist on type 'PrismaService'.
+src/modules/accounts/accounts.repository.ts(455,25): error TS2339: Property 'tradingBridgeEvent' does not exist on type 'PrismaService'.
+src/modules/accounts/accounts.repository.ts(459,34): error TS7006: Parameter 'row' implicitly has an 'any' type.
+src/modules/accounts/accounts.repository.ts(468,35): error TS2339: Property 'tradingSyncRun' does not exist on type 'PrismaService'.
+src/modules/accounts/accounts.repository.ts(479,35): error TS2339: Property 'tradingSyncRun' does not exist on type 'PrismaService'.
+src/modules/accounts/accounts.repository.ts(484,23): error TS2339: Property 'tradingSyncRun' does not exist on type 'PrismaService'.
+src/modules/accounts/accounts.repository.ts(491,35): error TS2339: Property 'tradingSyncRun' does not exist on type 'PrismaService'.
+src/modules/accounts/accounts.repository.ts(507,36): error TS2339: Property 'tradingSyncRun' does not exist on type 'PrismaService'.
+src/modules/accounts/accounts.repository.ts(528,38): error TS2339: Property 'tradingSyncRun' does not exist on type 'PrismaService'.
+src/modules/accounts/accounts.repository.ts(543,36): error TS2339: Property 'tradingConnection' does not exist on type 'PrismaService'.
+src/modules/accounts/accounts.repository.ts(556,36): error TS2339: Property 'tradingSyncRun' does not exist on type 'PrismaService'.
+src/modules/accounts/accounts.repository.ts(592,23): error TS2339: Property '$transaction' does not exist on type 'PrismaService'.
+src/modules/accounts/accounts.repository.ts(592,43): error TS7006: Parameter 'tx' implicitly has an 'any' type.
+src/modules/accounts/accounts.repository.ts(636,23): error TS2339: Property '$transaction' does not exist on type 'PrismaService'.
+src/modules/accounts/accounts.repository.ts(636,43): error TS7006: Parameter 'tx' implicitly has an 'any' type.
+src/modules/accounts/accounts.repository.ts(709,23): error TS2339: Property '$transaction' does not exist on type 'PrismaService'.
+src/modules/accounts/accounts.repository.ts(709,43): error TS7006: Parameter 'tx' implicitly has an 'any' type.
+src/modules/accounts/accounts.repository.ts(766,23): error TS2339: Property '$transaction' does not exist on type 'PrismaService'.
+src/modules/accounts/accounts.repository.ts(766,43): error TS7006: Parameter 'tx' implicitly has an 'any' type.
+src/modules/accounts/accounts.repository.ts(834,23): error TS2339: Property 'tradingSyncRun' does not exist on type 'PrismaService'.
+src/modules/accounts/accounts.repository.ts(846,35): error TS2339: Property 'tradingAccountSnapshot' does not exist on type 'PrismaService'.
+src/modules/accounts/accounts.repository.ts(864,35): error TS2339: Property 'tradingSyncRun' does not exist on type 'PrismaService'.
+src/modules/accounts/accounts.repository.ts(883,36): error TS2339: Property 'tradingPosition' does not exist on type 'PrismaService'.
+src/modules/accounts/accounts.repository.ts(891,36): error TS2339: Property 'tradingOrder' does not exist on type 'PrismaService'.
+src/modules/accounts/accounts.repository.ts(899,36): error TS2339: Property 'tradingDeal' does not exist on type 'PrismaService'.
+src/modules/accounts/accounts.repository.ts(921,19): error TS2339: Property 'tradingAccount' does not exist on type 'PrismaService'.
+src/modules/accounts/accounts.repository.ts(922,19): error TS2339: Property 'tradingPosition' does not exist on type 'PrismaService'.
+src/modules/accounts/accounts.repository.ts(923,19): error TS2339: Property 'tradingOrder' does not exist on type 'PrismaService'.
+src/modules/accounts/accounts.repository.ts(924,19): error TS2339: Property 'tradingDeal' does not exist on type 'PrismaService'.
+src/modules/accounts/accounts.repository.ts(925,19): error TS2339: Property 'tradingSyncRun' does not exist on type 'PrismaService'.
+src/modules/accounts/mappers.ts(7,10): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+src/modules/accounts/trading-account.service.ts(23,10): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+src/modules/accounts/trading-sync.service.ts(19,10): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+src/modules/accounts/trading-sync.service.ts(80,64): error TS18046: 'error' is of type 'unknown'.
+src/modules/accounts/trading-sync.service.ts(213,68): error TS18046: 'error' is of type 'unknown'.
+src/modules/backup/backup.service.ts(12,10): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+src/modules/backup/backup.service.ts(32,19): error TS2339: Property 'tagRow' does not exist on type 'PrismaService'.
+src/modules/backup/backup.service.ts(37,16): error TS7006: Parameter 'row' implicitly has an 'any' type.
+src/modules/backup/backup.service.ts(38,13): error TS7006: Parameter 'row' implicitly has an 'any' type.
+src/modules/backup/backup.service.ts(40,31): error TS7006: Parameter 'row' implicitly has an 'any' type.
+src/modules/backup/backup.service.ts(52,42): error TS7006: Parameter 'row' implicitly has an 'any' type.
+src/modules/backup/backup.service.ts(72,39): error TS2339: Property 'tagRow' does not exist on type 'PrismaService'.
+src/modules/backup/backup.service.ts(73,49): error TS7006: Parameter 'row' implicitly has an 'any' type.
+src/modules/backup/backup.service.ts(78,40): error TS2339: Property 'tradingAccount' does not exist on type 'PrismaService'.
+src/modules/backup/backup.service.ts(85,43): error TS7006: Parameter 'a' implicitly has an 'any' type.
+src/modules/backup/backup.service.ts(86,51): error TS7006: Parameter 'a' implicitly has an 'any' type.
+src/modules/backup/backup.service.ts(91,23): error TS2339: Property '$transaction' does not exist on type 'PrismaService'.
+src/modules/backup/backup.service.ts(91,43): error TS7006: Parameter 'tx' implicitly has an 'any' type.
+src/modules/backup/backup.service.ts(119,46): error TS7006: Parameter 'a' implicitly has an 'any' type.
+src/modules/backup/backup.service.ts(178,20): error TS7006: Parameter 'row' implicitly has an 'any' type.
+src/modules/backup/backup.service.ts(186,45): error TS2339: Property 'playbookRow' does not exist on type 'PrismaService'.
+src/modules/backup/backup.service.ts(204,45): error TS2339: Property 'tagRow' does not exist on type 'PrismaService'.
+src/modules/backup/backup.service.ts(206,25): error TS2339: Property 'tagRow' does not exist on type 'PrismaService'.
+src/modules/calculators/compounding.logic.ts(24,10): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+src/modules/calculators/lot-size.logic.ts(21,10): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+src/modules/calendar/calendar.repository.ts(7,10): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+src/modules/calendar/calendar.repository.ts(29,36): error TS2339: Property 'calendarBlockRow' does not exist on type 'PrismaService'.
+src/modules/calendar/calendar.repository.ts(37,35): error TS2339: Property 'calendarBlockRow' does not exist on type 'PrismaService'.
+src/modules/calendar/calendar.repository.ts(50,25): error TS2339: Property 'calendarBlockRow' does not exist on type 'PrismaService'.
+src/modules/calendar/calendar.repository.ts(56,35): error TS2339: Property 'calendarBlockRow' does not exist on type 'PrismaService'.
+src/modules/calendar/calendar.repository.ts(63,23): error TS2339: Property 'calendarBlockRow' does not exist on type 'PrismaService'.
+src/modules/calendar/infrastructure/calendar.repository.ts(20,10): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+src/modules/calendar/infrastructure/calendar.repository.ts(114,40): error TS2339: Property 'economicEvent' does not exist on type 'PrismaService'.
+src/modules/calendar/infrastructure/calendar.repository.ts(132,49): error TS7006: Parameter 'row' implicitly has an 'any' type.
+src/modules/calendar/infrastructure/calendar.repository.ts(159,9): error TS18047: 'current' is possibly 'null'.
+src/modules/calendar/infrastructure/calendar.repository.ts(159,17): error TS2339: Property 'title' does not exist on type '{}'.
+src/modules/calendar/infrastructure/calendar.repository.ts(160,9): error TS18047: 'current' is possibly 'null'.
+src/modules/calendar/infrastructure/calendar.repository.ts(160,17): error TS2339: Property 'currency' does not exist on type '{}'.
+src/modules/calendar/infrastructure/calendar.repository.ts(161,9): error TS18047: 'current' is possibly 'null'.
+src/modules/calendar/infrastructure/calendar.repository.ts(161,17): error TS2339: Property 'impact' does not exist on type '{}'.
+src/modules/calendar/infrastructure/calendar.repository.ts(162,9): error TS18047: 'current' is possibly 'null'.
+src/modules/calendar/infrastructure/calendar.repository.ts(162,17): error TS2339: Property 'scheduledAt' does not exist on type '{}'.
+src/modules/calendar/infrastructure/calendar.repository.ts(163,9): error TS18047: 'current' is possibly 'null'.
+src/modules/calendar/infrastructure/calendar.repository.ts(163,17): error TS2339: Property 'actual' does not exist on type '{}'.
+src/modules/calendar/infrastructure/calendar.repository.ts(164,9): error TS18047: 'current' is possibly 'null'.
+src/modules/calendar/infrastructure/calendar.repository.ts(164,17): error TS2339: Property 'forecast' does not exist on type '{}'.
+src/modules/calendar/infrastructure/calendar.repository.ts(165,9): error TS18047: 'current' is possibly 'null'.
+src/modules/calendar/infrastructure/calendar.repository.ts(165,17): error TS2339: Property 'previous' does not exist on type '{}'.
+src/modules/calendar/infrastructure/calendar.repository.ts(166,9): error TS18047: 'current' is possibly 'null'.
+src/modules/calendar/infrastructure/calendar.repository.ts(166,17): error TS2339: Property 'status' does not exist on type '{}'.
+src/modules/calendar/infrastructure/calendar.repository.ts(172,13): error TS18047: 'current' is possibly 'null'.
+src/modules/calendar/infrastructure/calendar.repository.ts(172,21): error TS2339: Property 'id' does not exist on type '{}'.
+src/modules/calendar/infrastructure/calendar.repository.ts(186,23): error TS2339: Property '$transaction' does not exist on type 'PrismaService'.
+src/modules/calendar/infrastructure/calendar.repository.ts(186,43): error TS7006: Parameter 'tx' implicitly has an 'any' type.
+src/modules/calendar/infrastructure/calendar.repository.ts(200,36): error TS2339: Property 'economicEvent' does not exist on type 'PrismaService'.
+src/modules/calendar/infrastructure/calendar.repository.ts(210,24): error TS2339: Property 'economicEvent' does not exist on type 'PrismaService'.
+src/modules/calendar/infrastructure/calendar.repository.ts(217,35): error TS2339: Property 'economicEvent' does not exist on type 'PrismaService'.
+src/modules/calendar/infrastructure/calendar.repository.ts(228,24): error TS2339: Property 'economicEvent' does not exist on type 'PrismaService'.
+src/modules/calendar/infrastructure/calendar.repository.ts(237,24): error TS2339: Property 'economicEvent' does not exist on type 'PrismaService'.
+src/modules/calendar/infrastructure/calendar.repository.ts(251,36): error TS2339: Property 'economicEvent' does not exist on type 'PrismaService'.
+src/modules/calendar/infrastructure/calendar.repository.ts(273,35): error TS2339: Property 'calendarSyncRun' does not exist on type 'PrismaService'.
+src/modules/calendar/infrastructure/calendar.repository.ts(281,35): error TS2339: Property 'calendarSyncRun' does not exist on type 'PrismaService'.
+src/modules/calendar/infrastructure/calendar.repository.ts(289,35): error TS2339: Property 'calendarSyncRun' does not exist on type 'PrismaService'.
+src/modules/calendar/infrastructure/calendar.repository.ts(310,23): error TS2339: Property 'calendarSyncRun' does not exist on type 'PrismaService'.
+src/modules/calendar/infrastructure/calendar.repository.ts(351,35): error TS2339: Property 'calendarBlock' does not exist on type 'PrismaService'.
+src/modules/calendar/infrastructure/calendar.repository.ts(367,35): error TS2339: Property 'calendarBlock' does not exist on type 'PrismaService'.
+src/modules/calendar/infrastructure/calendar.repository.ts(380,23): error TS2339: Property 'calendarBlock' does not exist on type 'PrismaService'.
+src/modules/calendar/infrastructure/calendar.repository.ts(385,36): error TS2339: Property 'calendarBlock' does not exist on type 'PrismaService'.
+src/modules/calendar/infrastructure/calendar.repository.ts(390,22): error TS7006: Parameter 'row' implicitly has an 'any' type.
+src/modules/calendar/infrastructure/calendar.repository.ts(394,36): error TS2339: Property 'calendarBlock' does not exist on type 'PrismaService'.
+src/modules/calendar/infrastructure/calendar.repository.ts(402,22): error TS7006: Parameter 'row' implicitly has an 'any' type.
+src/modules/calendar/infrastructure/calendar.repository.ts(408,36): error TS2339: Property 'calendarBlock' does not exist on type 'PrismaService'.
+src/modules/calendar/infrastructure/calendar.repository.ts(415,30): error TS7006: Parameter 'row' implicitly has an 'any' type.
+src/modules/discipline/discipline.repository.ts(8,10): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+src/modules/discipline/discipline.repository.ts(25,36): error TS2339: Property 'disciplineRow' does not exist on type 'PrismaService'.
+src/modules/discipline/discipline.repository.ts(33,35): error TS2339: Property 'disciplineRow' does not exist on type 'PrismaService'.
+src/modules/discipline/discipline.repository.ts(40,35): error TS2339: Property 'disciplineRow' does not exist on type 'PrismaService'.
+src/modules/discipline/discipline.repository.ts(47,23): error TS2339: Property 'disciplineRow' does not exist on type 'PrismaService'.
+src/modules/discipline/discipline.repository.ts(51,23): error TS2339: Property 'disciplineRow' does not exist on type 'PrismaService'.
+src/modules/discipline/discipline.repository.ts(59,36): error TS2339: Property 'disciplineRow' does not exist on type 'PrismaService'.
+src/modules/discipline/discipline.repository.ts(67,35): error TS2339: Property 'disciplineRow' does not exist on type 'PrismaService'.
+src/modules/discipline/discipline.repository.ts(78,35): error TS2339: Property 'disciplineRow' does not exist on type 'PrismaService'.
+src/modules/discipline/discipline.repository.ts(96,35): error TS2339: Property 'disciplineRow' does not exist on type 'PrismaService'.
+src/modules/discipline/discipline.service.ts(22,10): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+src/modules/discipline/discipline.service.ts(750,68): error TS18046: 'error' is of type 'unknown'.
+src/modules/eco-calendar/eco-calendar.service.ts(68,38): error TS2339: Property 'economicEvent' does not exist on type 'PrismaService'.
+src/modules/eco-calendar/eco-calendar.service.ts(73,27): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/modules/eco-calendar/eco-calendar.service.ts(109,44): error TS2339: Property 'economicEvent' does not exist on type 'PrismaService'.
+src/modules/eco-calendar/eco-calendar.service.ts(113,27): error TS2339: Property 'economicEvent' does not exist on type 'PrismaService'.
+src/modules/eco-calendar/eco-calendar.service.ts(134,36): error TS2339: Property 'calendarBlock' does not exist on type 'PrismaService'.
+src/modules/eco-calendar/eco-calendar.service.ts(145,37): error TS2339: Property 'calendarBlock' does not exist on type 'PrismaService'.
+src/modules/eco-calendar/eco-calendar.service.ts(155,40): error TS2339: Property 'calendarBlock' does not exist on type 'PrismaService'.
+src/modules/eco-calendar/eco-calendar.service.ts(159,23): error TS2339: Property 'calendarBlock' does not exist on type 'PrismaService'.
+src/modules/eco-calendar/eco-calendar.service.ts(169,38): error TS2339: Property 'economicEvent' does not exist on type 'PrismaService'.
+src/modules/eco-calendar/eco-calendar.service.ts(173,43): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/modules/eco-calendar/eco-calendar.service.ts(176,42): error TS2339: Property 'calendarBlock' does not exist on type 'PrismaService'.
+src/modules/eco-calendar/eco-calendar.service.ts(178,25): error TS2339: Property 'calendarBlock' does not exist on type 'PrismaService'.
+src/modules/eco-calendar/eco-calendar.service.ts(191,7): error TS2322: Type 'unknown[]' is not assignable to type 'string[]'.
+  Type 'unknown' is not assignable to type 'string'.
+src/modules/eco-calendar/eco-calendar.service.ts(204,19): error TS2339: Property 'dailyStat' does not exist on type 'PrismaService'.
+src/modules/eco-calendar/eco-calendar.service.ts(207,19): error TS2339: Property 'calendarBlock' does not exist on type 'PrismaService'.
+src/modules/eco-calendar/eco-calendar.service.ts(208,19): error TS2339: Property 'economicEvent' does not exist on type 'PrismaService'.
+src/modules/eco-calendar/eco-calendar.service.ts(212,43): error TS7006: Parameter 's' implicitly has an 'any' type.
+src/modules/eco-calendar/eco-calendar.service.ts(213,45): error TS7006: Parameter 'b' implicitly has an 'any' type.
+src/modules/eco-calendar/eco-calendar.service.ts(229,28): error TS2339: Property 'tradesCount' does not exist on type '{}'.
+src/modules/eco-calendar/eco-calendar.service.ts(230,29): error TS2339: Property 'pnlNet' does not exist on type '{}'.
+src/modules/eco-calendar/eco-calendar.service.ts(231,30): error TS2339: Property 'rEarned' does not exist on type '{}'.
+src/modules/eco-calendar/eco-calendar.service.ts(232,32): error TS2339: Property 'disciplineScore' does not exist on type '{}'.
+src/modules/eco-calendar/eco-calendar.service.ts(232,55): error TS2339: Property 'disciplineScore' does not exist on type '{}'.
+src/modules/eco-calendar/eco-calendar.service.ts(233,32): error TS2339: Property 'violationsCount' does not exist on type '{}'.
+src/modules/eco-calendar/eco-calendar.service.ts(236,34): error TS2345: Argument of type '{}' is not assignable to parameter of type '{ date: Date; kind: string; note: string; createdAt: Date; }'.
+  Type '{}' is missing the following properties from type '{ date: Date; kind: string; note: string; createdAt: Date; }': date, kind, note, createdAt
+src/modules/eco-calendar/eco-calendar.service.ts(237,35): error TS2339: Property 'kind' does not exist on type '{}'.
+src/modules/ghosts/ghosts.repository.ts(6,10): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+src/modules/ghosts/ghosts.repository.ts(33,36): error TS2339: Property 'skippedTradeRow' does not exist on type 'PrismaService'.
+src/modules/ghosts/ghosts.repository.ts(41,35): error TS2339: Property 'skippedTradeRow' does not exist on type 'PrismaService'.
+src/modules/ghosts/ghosts.repository.ts(48,35): error TS2339: Property 'skippedTradeRow' does not exist on type 'PrismaService'.
+src/modules/ghosts/ghosts.repository.ts(53,23): error TS2339: Property 'skippedTradeRow' does not exist on type 'PrismaService'.
+src/modules/ghosts/ghosts.service.ts(9,10): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+src/modules/identity/identity.repository.ts(9,15): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+src/modules/identity/identity.repository.ts(100,35): error TS2339: Property 'user' does not exist on type 'PrismaService'.
+src/modules/identity/identity.repository.ts(107,35): error TS2339: Property 'user' does not exist on type 'PrismaService'.
+src/modules/identity/identity.repository.ts(112,37): error TS2339: Property 'user' does not exist on type 'PrismaService'.
+src/modules/identity/identity.repository.ts(119,37): error TS2339: Property 'user' does not exist on type 'PrismaService'.
+src/modules/identity/identity.repository.ts(131,35): error TS2339: Property 'user' does not exist on type 'PrismaService'.
+src/modules/identity/identity.repository.ts(166,35): error TS2339: Property 'user' does not exist on type 'PrismaService'.
+src/modules/identity/identity.repository.ts(180,35): error TS2339: Property 'user' does not exist on type 'PrismaService'.
+src/modules/identity/identity.repository.ts(192,37): error TS2339: Property '$transaction' does not exist on type 'PrismaService'.
+src/modules/identity/identity.repository.ts(193,19): error TS2339: Property 'user' does not exist on type 'PrismaService'.
+src/modules/identity/identity.repository.ts(197,19): error TS2339: Property 'user' does not exist on type 'PrismaService'.
+src/modules/identity/identity.repository.ts(205,35): error TS2339: Property 'session' does not exist on type 'PrismaService'.
+src/modules/identity/identity.repository.ts(212,35): error TS2339: Property 'session' does not exist on type 'PrismaService'.
+src/modules/identity/identity.repository.ts(217,36): error TS2339: Property 'session' does not exist on type 'PrismaService'.
+src/modules/identity/identity.repository.ts(235,35): error TS2339: Property 'session' does not exist on type 'PrismaService'.
+src/modules/identity/identity.repository.ts(244,40): error TS2339: Property 'session' does not exist on type 'PrismaService'.
+src/modules/identity/identity.repository.ts(245,35): error TS2339: Property 'session' does not exist on type 'PrismaService'.
+src/modules/identity/identity.repository.ts(258,35): error TS2339: Property 'session' does not exist on type 'PrismaService'.
+src/modules/identity/identity.repository.ts(265,23): error TS2339: Property 'session' does not exist on type 'PrismaService'.
+src/modules/identity/identity.repository.ts(272,23): error TS2339: Property 'session' does not exist on type 'PrismaService'.
+src/modules/identity/identity.repository.ts(280,38): error TS2339: Property 'session' does not exist on type 'PrismaService'.
+src/modules/identity/identity.repository.ts(288,38): error TS2339: Property 'session' does not exist on type 'PrismaService'.
+src/modules/identity/identity.repository.ts(308,19): error TS2339: Property 'session' does not exist on type 'PrismaService'.
+src/modules/identity/identity.repository.ts(309,19): error TS2339: Property 'apiKey' does not exist on type 'PrismaService'.
+src/modules/identity/identity.repository.ts(327,23): error TS2339: Property 'securityEvent' does not exist on type 'PrismaService'.
+src/modules/identity/identity.repository.ts(340,23): error TS2339: Property 'loginRecord' does not exist on type 'PrismaService'.
+src/modules/identity/identity.repository.ts(349,36): error TS2339: Property 'securityEvent' does not exist on type 'PrismaService'.
+src/modules/identity/identity.repository.ts(358,36): error TS2339: Property 'loginRecord' does not exist on type 'PrismaService'.
+src/modules/identity/identity.repository.ts(368,24): error TS2339: Property 'loginRecord' does not exist on type 'PrismaService'.
+src/modules/identity/identity.repository.ts(381,23): error TS2339: Property '$transaction' does not exist on type 'PrismaService'.
+src/modules/identity/identity.repository.ts(384,19): error TS2339: Property 'authChallenge' does not exist on type 'PrismaService'.
+src/modules/identity/identity.repository.ts(387,19): error TS2339: Property 'authChallenge' does not exist on type 'PrismaService'.
+src/modules/identity/identity.repository.ts(392,24): error TS2339: Property 'authChallenge' does not exist on type 'PrismaService'.
+src/modules/identity/identity.repository.ts(398,23): error TS2339: Property 'authChallenge' does not exist on type 'PrismaService'.
+src/modules/identity/identity.repository.ts(410,23): error TS2339: Property '$transaction' does not exist on type 'PrismaService'.
+src/modules/identity/identity.repository.ts(411,19): error TS2339: Property 'recoveryCode' does not exist on type 'PrismaService'.
+src/modules/identity/identity.repository.ts(413,21): error TS2339: Property 'recoveryCode' does not exist on type 'PrismaService'.
+src/modules/identity/identity.repository.ts(420,23): error TS2339: Property 'recoveryCode' does not exist on type 'PrismaService'.
+src/modules/identity/identity.repository.ts(428,23): error TS2339: Property 'recoveryCode' does not exist on type 'PrismaService'.
+src/modules/identity/identity.repository.ts(435,24): error TS2339: Property 'recoveryCode' does not exist on type 'PrismaService'.
+src/modules/identity/identity.repository.ts(441,24): error TS2339: Property 'recoveryCode' does not exist on type 'PrismaService'.
+src/modules/identity/identity.repository.ts(447,23): error TS2339: Property 'recoveryCode' does not exist on type 'PrismaService'.
+src/modules/identity/identity.repository.ts(464,24): error TS2339: Property 'apiKey' does not exist on type 'PrismaService'.
+src/modules/identity/identity.repository.ts(468,24): error TS2339: Property 'apiKey' does not exist on type 'PrismaService'.
+src/modules/identity/identity.repository.ts(475,24): error TS2339: Property 'apiKey' does not exist on type 'PrismaService'.
+src/modules/identity/identity.repository.ts(479,23): error TS2339: Property 'apiKey' does not exist on type 'PrismaService'.
+src/modules/identity/security.service.ts(93,31): error TS7006: Parameter 'k' implicitly has an 'any' type.
+src/modules/identity/security.service.ts(96,30): error TS7006: Parameter 'k' implicitly has an 'any' type.
+src/modules/identity/security.service.ts(130,31): error TS7006: Parameter 'session' implicitly has an 'any' type.
+src/modules/identity/security.service.ts(131,29): error TS7006: Parameter 'key' implicitly has an 'any' type.
+src/modules/integrations/infrastructure/integrations.repository.ts(21,10): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+src/modules/integrations/infrastructure/integrations.repository.ts(138,35): error TS2339: Property 'integrationConnection' does not exist on type 'PrismaService'.
+src/modules/integrations/infrastructure/integrations.repository.ts(145,36): error TS2339: Property 'integrationConnection' does not exist on type 'PrismaService'.
+src/modules/integrations/infrastructure/integrations.repository.ts(214,36): error TS2339: Property 'integrationEvent' does not exist on type 'PrismaService'.
+src/modules/integrations/infrastructure/integrations.repository.ts(232,23): error TS2339: Property 'integrationEvent' does not exist on type 'PrismaService'.
+src/modules/integrations/infrastructure/integrations.repository.ts(266,36): error TS2339: Property 'integrationError' does not exist on type 'PrismaService'.
+src/modules/integrations/infrastructure/integrations.repository.ts(316,35): error TS2339: Property 'integrationWebhookEndpoint' does not exist on type 'PrismaService'.
+src/modules/integrations/infrastructure/integrations.repository.ts(328,35): error TS2339: Property 'integrationWebhookEndpoint' does not exist on type 'PrismaService'.
+src/modules/integrations/infrastructure/integrations.repository.ts(343,35): error TS2339: Property 'integrationWebhookEndpoint' does not exist on type 'PrismaService'.
+src/modules/integrations/infrastructure/integrations.repository.ts(351,36): error TS2339: Property 'integrationWebhookEndpoint' does not exist on type 'PrismaService'.
+src/modules/integrations/infrastructure/integrations.repository.ts(379,35): error TS2339: Property 'integrationWebhookDelivery' does not exist on type 'PrismaService'.
+src/modules/integrations/infrastructure/integrations.repository.ts(423,36): error TS2339: Property 'integrationWebhookDelivery' does not exist on type 'PrismaService'.
+src/modules/integrations/integrations.repository.ts(3,15): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+src/modules/integrations/integrations.repository.ts(42,36): error TS2339: Property 'integrationRow' does not exist on type 'PrismaService'.
+src/modules/integrations/integrations.repository.ts(46,22): error TS7006: Parameter 'row' implicitly has an 'any' type.
+src/modules/integrations/integrations.repository.ts(51,36): error TS2339: Property 'integrationRow' does not exist on type 'PrismaService'.
+src/modules/integrations/integrations.repository.ts(56,22): error TS7006: Parameter 'row' implicitly has an 'any' type.
+src/modules/integrations/integrations.repository.ts(60,35): error TS2339: Property 'integrationRow' does not exist on type 'PrismaService'.
+src/modules/integrations/integrations.repository.ts(72,23): error TS2339: Property 'integrationRow' does not exist on type 'PrismaService'.
+src/modules/integrations/integrations.repository.ts(81,35): error TS2339: Property 'integrationRow' does not exist on type 'PrismaService'.
+src/modules/integrations/integrations.repository.ts(89,23): error TS2339: Property 'integrationRow' does not exist on type 'PrismaService'.
+src/modules/integrations/integrations.repository.ts(93,23): error TS2339: Property 'integrationRow' does not exist on type 'PrismaService'.
+src/modules/integrations/integrations.repository.ts(100,36): error TS2339: Property 'integrationRow' does not exist on type 'PrismaService'.
+src/modules/integrations/integrations.repository.ts(107,25): error TS2339: Property 'integrationRow' does not exist on type 'PrismaService'.
+src/modules/integrations/integrations.repository.ts(107,82): error TS7006: Parameter 'row' implicitly has an 'any' type.
+src/modules/integrations/integrations.repository.ts(112,37): error TS2339: Property 'integrationRow' does not exist on type 'PrismaService'.
+src/modules/integrations/integrations.service.ts(3,15): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+src/modules/metric-alerts/metric-alerts.repository.ts(10,10): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+src/modules/metric-alerts/metric-alerts.repository.ts(26,36): error TS2339: Property 'metricAlertRuleRow' does not exist on type 'PrismaService'.
+src/modules/metric-alerts/metric-alerts.repository.ts(34,35): error TS2339: Property 'metricAlertRuleRow' does not exist on type 'PrismaService'.
+src/modules/metric-alerts/metric-alerts.repository.ts(50,35): error TS2339: Property 'metricAlertRuleRow' does not exist on type 'PrismaService'.
+src/modules/metric-alerts/metric-alerts.repository.ts(57,23): error TS2339: Property 'metricAlertRuleRow' does not exist on type 'PrismaService'.
+src/modules/metric-alerts/metric-alerts.repository.ts(61,23): error TS2339: Property 'metricAlertRuleRow' does not exist on type 'PrismaService'.
+src/modules/metric-alerts/metric-alerts.service.ts(32,10): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+src/modules/metric-alerts/metric-alerts.service.ts(550,23): error TS2339: Property 'metricAlertRuleRow' does not exist on type 'PrismaService'.
+src/modules/monitoring/monitoring.repository.ts(27,35): error TS2339: Property 'monitoringSetting' does not exist on type 'PrismaService'.
+src/modules/monitoring/monitoring.repository.ts(32,23): error TS2339: Property 'monitoringSetting' does not exist on type 'PrismaService'.
+src/modules/nofy/nofy.repository.ts(10,10): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+src/modules/nofy/nofy.repository.ts(80,36): error TS2339: Property 'nofyRow' does not exist on type 'PrismaService'.
+src/modules/nofy/nofy.repository.ts(88,35): error TS2339: Property 'nofyRow' does not exist on type 'PrismaService'.
+src/modules/nofy/nofy.repository.ts(95,35): error TS2339: Property 'nofyRow' does not exist on type 'PrismaService'.
+src/modules/nofy/nofy.repository.ts(102,23): error TS2339: Property 'nofyRow' does not exist on type 'PrismaService'.
+src/modules/nofy/nofy.repository.ts(106,23): error TS2339: Property 'nofyRow' does not exist on type 'PrismaService'.
+src/modules/ocr/fusion.logic.ts(23,10): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+src/modules/ocr/ocr-ops.service.ts(32,44): error TS2339: Property 'ocrRecognition' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr-ops.service.ts(38,26): error TS7006: Parameter 'group' implicitly has an 'any' type.
+src/modules/ocr/ocr-ops.service.ts(40,42): error TS7006: Parameter 'total' implicitly has an 'any' type.
+src/modules/ocr/ocr-ops.service.ts(40,49): error TS7006: Parameter 'group' implicitly has an 'any' type.
+src/modules/ocr/ocr-ops.service.ts(48,44): error TS2339: Property '$queryRawUnsafe' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr-ops.service.ts(61,45): error TS2339: Property 'ocrCorrectionPattern' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr-ops.service.ts(67,13): error TS7006: Parameter 'group' implicitly has an 'any' type.
+src/modules/ocr/ocr-ops.service.ts(72,14): error TS7006: Parameter 'a' implicitly has an 'any' type.
+src/modules/ocr/ocr-ops.service.ts(72,17): error TS7006: Parameter 'b' implicitly has an 'any' type.
+src/modules/ocr/ocr-ops.service.ts(76,46): error TS2339: Property '$queryRawUnsafe' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr-ops.service.ts(90,44): error TS2339: Property '$queryRawUnsafe' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr-ops.service.ts(100,45): error TS2339: Property '$queryRawUnsafe' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr-ops.service.ts(113,45): error TS2339: Property '$queryRawUnsafe' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr-ops.service.ts(129,44): error TS2339: Property '$queryRawUnsafe' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr-ops.service.ts(141,40): error TS2339: Property '$queryRawUnsafe' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr-ops.service.ts(170,47): error TS7006: Parameter 'row' implicitly has an 'any' type.
+src/modules/ocr/ocr-ops.service.ts(174,39): error TS7006: Parameter 'row' implicitly has an 'any' type.
+src/modules/ocr/ocr-ops.service.ts(184,37): error TS2339: Property 'ocrAsset' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr-ops.service.ts(187,46): error TS2339: Property 'ocrRecognition' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr-ops.service.ts(192,50): error TS7006: Parameter 'group' implicitly has an 'any' type.
+src/modules/ocr/ocr-ops.service.ts(195,45): error TS2339: Property 'ocrAsset' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr-ops.service.ts(199,46): error TS2339: Property 'ocrAsset' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.logic.ts(20,10): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+src/modules/ocr/ocr.repository.ts(30,10): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+src/modules/ocr/ocr.repository.ts(248,35): error TS2339: Property 'ocrAsset' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(256,23): error TS2339: Property 'ocrAsset' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(272,36): error TS2339: Property 'ocrAsset' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(282,26): error TS7006: Parameter 'row' implicitly has an 'any' type.
+src/modules/ocr/ocr.repository.ts(294,35): error TS2339: Property 'ocrRecognition' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(303,35): error TS2339: Property 'ocrRecognition' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(328,24): error TS2339: Property 'ocrAsset' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(350,39): error TS2339: Property 'ocrRecognition' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(368,35): error TS2339: Property 'ocrRecognition' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(377,35): error TS2339: Property 'ocrRecognition' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(386,24): error TS2339: Property 'ocrRecognition' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(421,36): error TS2339: Property 'ocrRecognition' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(438,38): error TS2339: Property 'ocrRecognition' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(443,35): error TS2339: Property 'ocrRecognition' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(449,37): error TS2339: Property 'ocrRecognition' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(458,35): error TS2339: Property 'ocrRecognition' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(464,23): error TS2339: Property 'ocrRecognition' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(474,35): error TS2339: Property 'ocrRecognition' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(487,24): error TS2339: Property '$transaction' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(487,44): error TS7006: Parameter 'tx' implicitly has an 'any' type.
+src/modules/ocr/ocr.repository.ts(513,24): error TS2339: Property '$transaction' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(513,44): error TS7006: Parameter 'tx' implicitly has an 'any' type.
+src/modules/ocr/ocr.repository.ts(538,36): error TS2339: Property 'ocrRecognition' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(551,22): error TS7006: Parameter 'row' implicitly has an 'any' type.
+src/modules/ocr/ocr.repository.ts(560,38): error TS2339: Property 'ocrRecognition' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(569,23): error TS2339: Property 'ocrRecognition' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(577,23): error TS2339: Property 'ocrAsset' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(591,25): error TS2339: Property 'ocrCorrectionPattern' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(622,36): error TS2339: Property 'ocrCorrectionPattern' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(648,24): error TS2339: Property '$transaction' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(648,44): error TS7006: Parameter 'tx' implicitly has an 'any' type.
+src/modules/ocr/ocr.repository.ts(669,23): error TS2339: Property 'ocrEvent' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(681,39): error TS2339: Property 'ocrEvent' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(686,25): error TS7006: Parameter 'entry' implicitly has an 'any' type.
+src/modules/ocr/ocr.repository.ts(691,38): error TS2339: Property 'ocrEvent' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(706,38): error TS2339: Property 'ocrEvent' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(729,36): error TS2339: Property 'ocrRecognition' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(768,42): error TS2339: Property 'ocrCorrection' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(778,27): error TS2339: Property 'ocrCorrection' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(789,27): error TS2339: Property 'ocrCorrection' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(796,23): error TS2339: Property 'ocrCorrection' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(823,36): error TS2339: Property 'ocrCorrection' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(834,39): error TS2339: Property 'ocrCorrection' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(840,25): error TS7006: Parameter 'entry' implicitly has an 'any' type.
+src/modules/ocr/ocr.repository.ts(850,36): error TS2339: Property 'ocrAsset' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(856,26): error TS7006: Parameter 'row' implicitly has an 'any' type.
+src/modules/ocr/ocr.repository.ts(865,35): error TS2339: Property 'ocrRecognition' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(875,36): error TS2339: Property 'ocrRecognition' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(889,35): error TS2339: Property 'ocrAsset' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(895,23): error TS2339: Property 'ocrAsset' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(903,23): error TS2339: Property 'ocrAsset' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(912,23): error TS2339: Property 'ocrAsset' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(923,35): error TS2339: Property 'ocrRecognition' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(928,39): error TS2339: Property 'ocrRecognition' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(934,35): error TS2339: Property 'ocrRecognition' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(939,39): error TS2339: Property 'ocrRecognition' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(945,23): error TS2339: Property 'ocrRecognition' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(957,40): error TS2339: Property 'ocrRecognition' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(964,39): error TS2339: Property 'ocrRecognition' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(973,35): error TS2339: Property 'ocrRecognition' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(982,35): error TS2339: Property 'ocrRecognition' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(991,39): error TS2339: Property 'ocrRecognition' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(997,23): error TS2339: Property 'ocrRecognition' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(1005,23): error TS2339: Property 'ocrRecognition' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(1017,23): error TS2339: Property 'ocrRecognition' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(1025,36): error TS2339: Property 'ocrRecognition' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(1047,36): error TS2339: Property 'ocrRecognition' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(1071,24): error TS2339: Property '$transaction' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(1071,44): error TS7006: Parameter 'tx' implicitly has an 'any' type.
+src/modules/ocr/ocr.repository.ts(1078,32): error TS7006: Parameter 'row' implicitly has an 'any' type.
+src/modules/ocr/ocr.repository.ts(1081,49): error TS7006: Parameter 'row' implicitly has an 'any' type.
+src/modules/ocr/ocr.repository.ts(1099,36): error TS2339: Property 'instrument' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(1110,56): error TS2339: Property '$transaction' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(1111,19): error TS2339: Property 'ocrAsset' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(1112,19): error TS2339: Property 'ocrAsset' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(1138,35): error TS2339: Property 'ocrRecognitionGroup' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(1157,35): error TS2339: Property 'ocrRecognitionGroup' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(1162,36): error TS2339: Property 'ocrRecognitionGroup' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(1172,35): error TS2339: Property 'ocrRecognitionGroup' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(1179,39): error TS2339: Property 'ocrRecognitionGroup' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(1185,35): error TS2339: Property 'ocrRecognitionGroup' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(1190,39): error TS2339: Property 'ocrRecognitionGroup' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(1196,23): error TS2339: Property 'ocrRecognitionGroup' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(1203,23): error TS2339: Property 'ocrRecognitionGroup' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(1211,23): error TS2339: Property 'ocrRecognitionGroup' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(1220,35): error TS2339: Property 'ocrCollection' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(1228,35): error TS2339: Property 'ocrCollection' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(1236,36): error TS2339: Property 'ocrCollection' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(1247,23): error TS2339: Property 'ocrCollectionAsset' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(1255,23): error TS2339: Property 'ocrCollectionAsset' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(1262,39): error TS2339: Property 'ocrCollection' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(1308,27): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/modules/ocr/ocr.repository.ts(1341,35): error TS2339: Property '$transaction' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(1341,55): error TS7006: Parameter 'tx' implicitly has an 'any' type.
+src/modules/ocr/ocr.repository.ts(1356,35): error TS2339: Property 'ocrSet' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(1365,36): error TS2339: Property 'ocrRecognition' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(1378,36): error TS2339: Property 'ocrSet' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(1399,23): error TS2339: Property 'ocrSet' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(1419,24): error TS2339: Property '$transaction' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(1419,44): error TS7006: Parameter 'tx' implicitly has an 'any' type.
+src/modules/ocr/ocr.repository.ts(1440,23): error TS2339: Property 'ocrSet' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(1445,39): error TS2339: Property 'ocrSet' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(1477,27): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/modules/ocr/ocr.repository.ts(1489,35): error TS2339: Property 'ocrCollection' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(1494,35): error TS2339: Property 'ocrCollection' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(1499,35): error TS2339: Property 'ocrCollection' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(1504,36): error TS2339: Property 'ocrCollection' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(1515,23): error TS2339: Property 'ocrCollectionItem' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(1517,15): error TS7006: Parameter 'error' implicitly has an 'any' type.
+src/modules/ocr/ocr.repository.ts(1524,39): error TS2339: Property 'ocrCollectionItem' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(1532,39): error TS2339: Property 'ocrCollection' does not exist on type 'PrismaService'.
+src/modules/ocr/ocr.repository.ts(1611,24): error TS7006: Parameter 'link' implicitly has an 'any' type.
+src/modules/ocr/ocr.service.ts(25,10): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+src/modules/ocr/recognition.service.ts(35,10): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+src/modules/ocr/trade-import.logic.ts(25,10): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+src/modules/oryon/oryon-analysis.repository.ts(9,10): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+src/modules/oryon/oryon-analysis.repository.ts(49,35): error TS2339: Property 'oryonAnalysis' does not exist on type 'PrismaService'.
+src/modules/oryon/oryon-analysis.repository.ts(68,35): error TS2339: Property 'oryonAnalysis' does not exist on type 'PrismaService'.
+src/modules/oryon/oryon-analysis.repository.ts(73,24): error TS2339: Property 'oryonAnalysis' does not exist on type 'PrismaService'.
+src/modules/oryon/oryon-analysis.repository.ts(85,35): error TS2339: Property 'oryonAnalysis' does not exist on type 'PrismaService'.
+src/modules/oryon/oryon-analysis.repository.ts(90,39): error TS2339: Property 'oryonAnalysis' does not exist on type 'PrismaService'.
+src/modules/oryon/oryon-analysis.repository.ts(95,39): error TS2339: Property 'oryonAnalysis' does not exist on type 'PrismaService'.
+src/modules/oryon/oryon-analysis.repository.ts(100,35): error TS2339: Property 'oryonAnalysis' does not exist on type 'PrismaService'.
+src/modules/plans/plan.repository.ts(7,10): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+src/modules/plans/plan.repository.ts(57,35): error TS2339: Property 'analysisPlan' does not exist on type 'PrismaService'.
+src/modules/plans/plan.repository.ts(80,35): error TS2339: Property 'analysisPlan' does not exist on type 'PrismaService'.
+src/modules/plans/plan.repository.ts(97,45): error TS2339: Property '$transaction' does not exist on type 'PrismaService'.
+src/modules/plans/plan.repository.ts(98,19): error TS2339: Property 'analysisPlan' does not exist on type 'PrismaService'.
+src/modules/plans/plan.repository.ts(104,19): error TS2339: Property 'analysisPlan' does not exist on type 'PrismaService'.
+src/modules/plans/plan.repository.ts(110,24): error TS2339: Property 'analysisPlan' does not exist on type 'PrismaService'.
+src/modules/plans/plan.repository.ts(118,38): error TS2339: Property 'analysisPlan' does not exist on type 'PrismaService'.
+src/modules/plans/plan.repository.ts(123,35): error TS2339: Property 'analysisPlan' does not exist on type 'PrismaService'.
+src/modules/plans/plan.repository.ts(128,38): error TS2339: Property 'analysisPlan' does not exist on type 'PrismaService'.
+src/modules/plans/plan.repository.ts(133,35): error TS2339: Property 'analysisPlan' does not exist on type 'PrismaService'.
+src/modules/plans/plan.repository.ts(138,39): error TS2339: Property 'analysisPlan' does not exist on type 'PrismaService'.
+src/modules/plans/plan.repository.ts(143,35): error TS2339: Property 'analysisPlan' does not exist on type 'PrismaService'.
+src/modules/plans/plan.repository.ts(156,37): error TS2339: Property 'analysisPlan' does not exist on type 'PrismaService'.
+src/modules/plans/plan.repository.ts(161,35): error TS2339: Property 'analysisPlan' does not exist on type 'PrismaService'.
+src/modules/plans/plan.repository.ts(166,37): error TS2339: Property 'analysisPlan' does not exist on type 'PrismaService'.
+src/modules/plans/plan.repository.ts(171,35): error TS2339: Property 'analysisPlan' does not exist on type 'PrismaService'.
+src/modules/plans/plan.repository.ts(177,35): error TS2339: Property 'oryonAnalysis' does not exist on type 'PrismaService'.
+src/modules/plans/plan.service.ts(10,10): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+src/modules/playbook/playbook.mappers.ts(6,10): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+src/modules/playbook/playbook.repository.ts(8,10): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+src/modules/playbook/playbook.repository.ts(148,36): error TS2339: Property 'playbookRow' does not exist on type 'PrismaService'.
+src/modules/playbook/playbook.repository.ts(156,35): error TS2339: Property 'playbookRow' does not exist on type 'PrismaService'.
+src/modules/playbook/playbook.repository.ts(163,35): error TS2339: Property 'playbookRow' does not exist on type 'PrismaService'.
+src/modules/playbook/playbook.repository.ts(170,23): error TS2339: Property 'playbookRow' does not exist on type 'PrismaService'.
+src/modules/playbook/playbook.repository.ts(174,23): error TS2339: Property 'playbookRow' does not exist on type 'PrismaService'.
+src/modules/replay/replay.repository.ts(7,10): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+src/modules/replay/replay.repository.ts(29,36): error TS2339: Property 'replayRow' does not exist on type 'PrismaService'.
+src/modules/replay/replay.repository.ts(37,36): error TS2339: Property 'replayRow' does not exist on type 'PrismaService'.
+src/modules/replay/replay.repository.ts(45,35): error TS2339: Property 'replayRow' does not exist on type 'PrismaService'.
+src/modules/replay/replay.repository.ts(52,35): error TS2339: Property 'replayRow' does not exist on type 'PrismaService'.
+src/modules/replay/replay.repository.ts(59,23): error TS2339: Property 'replayRow' does not exist on type 'PrismaService'.
+src/modules/replay/replay.repository.ts(63,23): error TS2339: Property 'replayRow' does not exist on type 'PrismaService'.
+src/modules/replay/replay.repository.ts(68,42): error TS2339: Property 'instrument' does not exist on type 'PrismaService'.
+src/modules/review/review.repository.ts(7,10): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+src/modules/review/review.repository.ts(23,36): error TS2339: Property 'reviewRow' does not exist on type 'PrismaService'.
+src/modules/review/review.repository.ts(40,35): error TS2339: Property 'reviewRow' does not exist on type 'PrismaService'.
+src/modules/review/review.repository.ts(51,35): error TS2339: Property 'reviewRow' does not exist on type 'PrismaService'.
+src/modules/review/review.repository.ts(59,35): error TS2339: Property 'reviewRow' does not exist on type 'PrismaService'.
+src/modules/review/review.repository.ts(66,23): error TS2339: Property 'reviewRow' does not exist on type 'PrismaService'.
+src/modules/review/review.repository.ts(70,23): error TS2339: Property 'reviewRow' does not exist on type 'PrismaService'.
+src/modules/security/security-center.service.ts(107,31): error TS7006: Parameter 'k' implicitly has an 'any' type.
+src/modules/security/security-center.service.ts(110,30): error TS7006: Parameter 'k' implicitly has an 'any' type.
+src/modules/security/security-center.service.ts(144,31): error TS7006: Parameter 'session' implicitly has an 'any' type.
+src/modules/security/security-center.service.ts(145,29): error TS7006: Parameter 'key' implicitly has an 'any' type.
+src/modules/security/security-event.repository.ts(20,15): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+src/modules/security/security-event.repository.ts(101,23): error TS2339: Property 'securityEvent' does not exist on type 'PrismaService'.
+src/modules/security/security-event.repository.ts(114,23): error TS2339: Property 'loginRecord' does not exist on type 'PrismaService'.
+src/modules/security/security-event.repository.ts(129,19): error TS2339: Property 'securityEvent' does not exist on type 'PrismaService'.
+src/modules/security/security-event.repository.ts(130,19): error TS2339: Property 'loginRecord' does not exist on type 'PrismaService'.
+src/modules/security/security-event.repository.ts(138,36): error TS2339: Property 'securityEvent' does not exist on type 'PrismaService'.
+src/modules/security/security-event.repository.ts(147,36): error TS2339: Property 'loginRecord' does not exist on type 'PrismaService'.
+src/modules/security/security-event.repository.ts(156,24): error TS2339: Property 'loginRecord' does not exist on type 'PrismaService'.
+src/modules/security/security-event.repository.ts(182,37): error TS2339: Property 'securityEvent' does not exist on type 'PrismaService'.
+src/modules/security/security-event.repository.ts(213,37): error TS2339: Property 'loginRecord' does not exist on type 'PrismaService'.
+src/modules/session-live/session-live.mappers.ts(11,15): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+src/modules/session-live/session-live.repository.ts(7,10): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+src/modules/session-live/session-live.repository.ts(106,36): error TS2339: Property 'sessionLiveRow' does not exist on type 'PrismaService'.
+src/modules/session-live/session-live.repository.ts(114,35): error TS2339: Property 'sessionLiveRow' does not exist on type 'PrismaService'.
+src/modules/session-live/session-live.repository.ts(121,35): error TS2339: Property 'sessionLiveRow' does not exist on type 'PrismaService'.
+src/modules/session-live/session-live.repository.ts(128,23): error TS2339: Property 'sessionLiveRow' does not exist on type 'PrismaService'.
+src/modules/session-live/session-live.repository.ts(132,23): error TS2339: Property 'sessionLiveRow' does not exist on type 'PrismaService'.
+src/modules/session/session.repository.ts(6,10): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+src/modules/session/session.repository.ts(20,36): error TS2339: Property 'sessionNoteRow' does not exist on type 'PrismaService'.
+src/modules/session/session.repository.ts(28,35): error TS2339: Property 'sessionNoteRow' does not exist on type 'PrismaService'.
+src/modules/session/session.repository.ts(35,35): error TS2339: Property 'sessionNoteRow' does not exist on type 'PrismaService'.
+src/modules/session/session.repository.ts(40,23): error TS2339: Property 'sessionNoteRow' does not exist on type 'PrismaService'.
+src/modules/settings/infrastructure/settings.repository.ts(17,15): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+src/modules/settings/infrastructure/settings.repository.ts(36,35): error TS2339: Property 'userSettings' does not exist on type 'PrismaService'.
+src/modules/settings/infrastructure/settings.repository.ts(41,35): error TS2339: Property 'userSettings' does not exist on type 'PrismaService'.
+src/modules/settings/infrastructure/settings.repository.ts(56,35): error TS2339: Property '$transaction' does not exist on type 'PrismaService'.
+src/modules/settings/infrastructure/settings.repository.ts(56,55): error TS7006: Parameter 'tx' implicitly has an 'any' type.
+src/modules/trade-planning/adapters/providers.ts(32,35): error TS2339: Property 'instrumentSpecification' does not exist on type 'PrismaService'.
+src/modules/trade-planning/adapters/providers.ts(53,36): error TS2339: Property 'instrumentSpecification' does not exist on type 'PrismaService'.
+src/modules/trade-planning/trade-plan.mappers.ts(6,10): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+src/modules/trade-planning/trade-plan.repository.ts(19,10): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+src/modules/trade-planning/trade-plan.repository.ts(140,35): error TS2339: Property 'tradePlan' does not exist on type 'PrismaService'.
+src/modules/trade-planning/trade-plan.repository.ts(152,35): error TS2339: Property 'tradePlan' does not exist on type 'PrismaService'.
+src/modules/trade-planning/trade-plan.repository.ts(171,45): error TS2339: Property '$transaction' does not exist on type 'PrismaService'.
+src/modules/trade-planning/trade-plan.repository.ts(172,19): error TS2339: Property 'tradePlan' does not exist on type 'PrismaService'.
+src/modules/trade-planning/trade-plan.repository.ts(179,19): error TS2339: Property 'tradePlan' does not exist on type 'PrismaService'.
+src/modules/trade-planning/trade-plan.repository.ts(194,24): error TS2339: Property 'tradePlan' does not exist on type 'PrismaService'.
+src/modules/trade-planning/trade-plan.repository.ts(224,35): error TS2339: Property 'tradePlan' does not exist on type 'PrismaService'.
+src/modules/trade-planning/trade-plan.repository.ts(279,38): error TS2339: Property 'tradePlan' does not exist on type 'PrismaService'.
+src/modules/trade-planning/trade-plan.repository.ts(335,38): error TS2339: Property 'tradePlan' does not exist on type 'PrismaService'.
+src/modules/trade-planning/trade-plan.repository.ts(364,38): error TS2339: Property 'tradePlan' does not exist on type 'PrismaService'.
+src/modules/trade-planning/trade-plan.repository.ts(385,24): error TS2339: Property 'tradePlan' does not exist on type 'PrismaService'.
+src/modules/trade-planning/trade-plan.service.ts(20,10): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+src/modules/trade-planning/trade-plan.service.ts(238,9): error TS18046: 'error' is of type 'unknown'.
+src/modules/trade-review/trade-review.mappers.ts(13,10): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+src/modules/trade-review/trade-review.repository.ts(19,10): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+src/modules/trade-review/trade-review.repository.ts(19,18): error TS2305: Module '"@prisma/client"' has no exported member 'ExecutionGrade'.
+src/modules/trade-review/trade-review.repository.ts(19,34): error TS2305: Module '"@prisma/client"' has no exported member 'PlaybookMatch'.
+src/modules/trade-review/trade-review.repository.ts(19,49): error TS2305: Module '"@prisma/client"' has no exported member 'TradeReviewStatus'.
+src/modules/trade-review/trade-review.repository.ts(141,35): error TS2339: Property 'tradeReview' does not exist on type 'PrismaService'.
+src/modules/trade-review/trade-review.repository.ts(150,35): error TS2339: Property 'tradeReview' does not exist on type 'PrismaService'.
+src/modules/trade-review/trade-review.repository.ts(159,35): error TS2339: Property 'tradeReview' does not exist on type 'PrismaService'.
+src/modules/trade-review/trade-review.repository.ts(176,35): error TS2339: Property 'tradeReview' does not exist on type 'PrismaService'.
+src/modules/trade-review/trade-review.repository.ts(210,39): error TS2339: Property 'tradeReview' does not exist on type 'PrismaService'.
+src/modules/trade-review/trade-review.repository.ts(238,35): error TS2339: Property 'tradeReview' does not exist on type 'PrismaService'.
+src/modules/trade-review/trade-review.repository.ts(247,39): error TS2339: Property 'tradeReview' does not exist on type 'PrismaService'.
+src/modules/trade-review/trade-review.repository.ts(258,36): error TS2339: Property 'tradeReview' does not exist on type 'PrismaService'.
+src/modules/trade-review/trade-review.repository.ts(264,22): error TS7006: Parameter 'row' implicitly has an 'any' type.
+src/modules/trade-review/trade-review.repository.ts(271,24): error TS2339: Property 'tradeReview' does not exist on type 'PrismaService'.
+src/modules/trade-review/trade-review.repository.ts(293,36): error TS2339: Property 'trade' does not exist on type 'PrismaService'.
+src/modules/trade-review/trade-review.repository.ts(303,24): error TS2339: Property 'trade' does not exist on type 'PrismaService'.
+src/modules/trade-review/trade-review.repository.ts(330,24): error TS2339: Property 'tradeReview' does not exist on type 'PrismaService'.
+src/modules/trade-review/trade-review.repository.ts(350,24): error TS2339: Property 'trade' does not exist on type 'PrismaService'.
+src/modules/trade-review/trade-review.repository.ts(368,36): error TS2339: Property 'trade' does not exist on type 'PrismaService'.
+src/modules/trade-review/trade-review.service.ts(22,10): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+src/modules/trade-review/trade-review.service.ts(166,73): error TS18046: 'error' is of type 'unknown'.
+src/modules/trades/trade-calculations.ts(17,10): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+src/modules/trades/trade-reconstruction.service.ts(30,10): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+src/modules/trades/trade-reconstruction.service.ts(242,15): error TS18046: 'error' is of type 'unknown'.
+src/modules/trades/trades.repository.ts(11,10): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+src/modules/trades/trades.repository.ts(170,35): error TS2339: Property 'instrument' does not exist on type 'PrismaService'.
+src/modules/trades/trades.repository.ts(175,35): error TS2339: Property 'instrument' does not exist on type 'PrismaService'.
+src/modules/trades/trades.repository.ts(180,36): error TS2339: Property 'instrument' does not exist on type 'PrismaService'.
+src/modules/trades/trades.repository.ts(191,35): error TS2339: Property 'trade' does not exist on type 'PrismaService'.
+src/modules/trades/trades.repository.ts(202,35): error TS2339: Property 'trade' does not exist on type 'PrismaService'.
+src/modules/trades/trades.repository.ts(213,35): error TS2339: Property 'trade' does not exist on type 'PrismaService'.
+src/modules/trades/trades.repository.ts(229,35): error TS2339: Property 'trade' does not exist on type 'PrismaService'.
+src/modules/trades/trades.repository.ts(253,36): error TS2339: Property 'trade' does not exist on type 'PrismaService'.
+src/modules/trades/trades.repository.ts(284,36): error TS2339: Property 'trade' does not exist on type 'PrismaService'.
+src/modules/trades/trades.repository.ts(348,35): error TS2339: Property '$transaction' does not exist on type 'PrismaService'.
+src/modules/trades/trades.repository.ts(348,55): error TS7006: Parameter 'tx' implicitly has an 'any' type.
+src/modules/trades/trades.repository.ts(401,35): error TS2339: Property 'trade' does not exist on type 'PrismaService'.
+src/modules/trades/trades.repository.ts(411,23): error TS2339: Property 'trade' does not exist on type 'PrismaService'.
+src/modules/trades/trades.repository.ts(419,38): error TS2339: Property 'trade' does not exist on type 'PrismaService'.
+src/modules/trades/trades.repository.ts(432,38): error TS2339: Property 'trade' does not exist on type 'PrismaService'.
+src/modules/trades/trades.repository.ts(442,36): error TS2339: Property 'tradeExit' does not exist on type 'PrismaService'.
+src/modules/trades/trades.repository.ts(455,23): error TS2339: Property '$transaction' does not exist on type 'PrismaService'.
+src/modules/trades/trades.repository.ts(455,43): error TS7006: Parameter 'tx' implicitly has an 'any' type.
+src/modules/trades/trades.repository.ts(464,36): error TS2339: Property 'tradeEvent' does not exist on type 'PrismaService'.
+src/modules/trades/trades.repository.ts(473,36): error TS2339: Property 'tradeEvent' does not exist on type 'PrismaService'.
+src/modules/trades/trades.repository.ts(486,35): error TS2339: Property 'tradeEvent' does not exist on type 'PrismaService'.
+src/modules/trades/trades.repository.ts(493,36): error TS2339: Property 'tradeScreenshot' does not exist on type 'PrismaService'.
+src/modules/trades/trades.repository.ts(504,35): error TS2339: Property 'tradeScreenshot' does not exist on type 'PrismaService'.
+src/modules/trades/trades.repository.ts(520,35): error TS2339: Property 'tradeScreenshot' does not exist on type 'PrismaService'.
+src/modules/trades/trades.repository.ts(531,23): error TS2339: Property 'tradeScreenshot' does not exist on type 'PrismaService'.
+src/modules/trades/trades.repository.ts(537,36): error TS2339: Property 'savedTradeView' does not exist on type 'PrismaService'.
+src/modules/trades/trades.repository.ts(545,35): error TS2339: Property 'savedTradeView' does not exist on type 'PrismaService'.
+src/modules/trades/trades.repository.ts(552,35): error TS2339: Property 'savedTradeView' does not exist on type 'PrismaService'.
+src/modules/trades/trades.repository.ts(568,35): error TS2339: Property 'savedTradeView' does not exist on type 'PrismaService'.
+src/modules/trades/trades.repository.ts(581,23): error TS2339: Property 'savedTradeView' does not exist on type 'PrismaService'.
+src/modules/trades/trades.repository.ts(587,36): error TS2339: Property 'tagRow' does not exist on type 'PrismaService'.
+src/modules/trades/trades.repository.ts(598,23): error TS2339: Property 'tagRow' does not exist on type 'PrismaService'.
+src/modules/trades/trades.repository.ts(604,35): error TS2339: Property 'tagRow' does not exist on type 'PrismaService'.
+src/modules/trades/trades.repository.ts(613,36): error TS2339: Property 'tradeSubRow' does not exist on type 'PrismaService'.
+src/modules/trades/trades.repository.ts(626,36): error TS2339: Property 'tradeSubRow' does not exist on type 'PrismaService'.
+src/modules/trades/trades.repository.ts(634,36): error TS2339: Property 'tradeSubRow' does not exist on type 'PrismaService'.
+src/modules/trades/trades.repository.ts(647,35): error TS2339: Property 'tradeSubRow' does not exist on type 'PrismaService'.
+src/modules/trades/trades.repository.ts(659,35): error TS2339: Property 'tradeSubRow' does not exist on type 'PrismaService'.
+src/modules/trades/trades.repository.ts(669,23): error TS2339: Property 'tradeSubRow' does not exist on type 'PrismaService'.
+src/modules/trades/trades.repository.ts(678,23): error TS2339: Property '$transaction' does not exist on type 'PrismaService'.
+src/modules/trades/trades.repository.ts(678,43): error TS7006: Parameter 'tx' implicitly has an 'any' type.
+src/modules/trades/trades.repository.ts(694,35): error TS2339: Property 'trade' does not exist on type 'PrismaService'.
+src/modules/trades/trades.service.ts(22,10): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+src/modules/trading/trade-aggregation.service.ts(33,10): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+src/modules/trading/trade-reconstruction.service.ts(37,10): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+src/modules/trading/trading.mappers.ts(7,10): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+src/modules/trading/trading.repository.ts(13,10): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+src/modules/trading/trading.repository.ts(149,35): error TS2339: Property 'trade' does not exist on type 'PrismaService'.
+src/modules/trading/trading.repository.ts(170,45): error TS2339: Property '$transaction' does not exist on type 'PrismaService'.
+src/modules/trading/trading.repository.ts(171,19): error TS2339: Property 'trade' does not exist on type 'PrismaService'.
+src/modules/trading/trading.repository.ts(178,19): error TS2339: Property 'trade' does not exist on type 'PrismaService'.
+src/modules/trading/trading.repository.ts(184,36): error TS2339: Property 'trade' does not exist on type 'PrismaService'.
+src/modules/trading/trading.repository.ts(204,36): error TS2339: Property 'trade' does not exist on type 'PrismaService'.
+src/modules/trading/trading.repository.ts(214,24): error TS2339: Property 'trade' does not exist on type 'PrismaService'.
+src/modules/trading/trading.repository.ts(232,24): error TS2339: Property 'trade' does not exist on type 'PrismaService'.
+src/modules/trading/trading.repository.ts(270,36): error TS2339: Property 'trade' does not exist on type 'PrismaService'.
+src/modules/trading/trading.repository.ts(308,36): error TS2339: Property 'trade' does not exist on type 'PrismaService'.
+src/modules/trading/trading.repository.ts(334,35): error TS2339: Property 'instrument' does not exist on type 'PrismaService'.
+src/modules/trading/trading.repository.ts(383,35): error TS2339: Property '$transaction' does not exist on type 'PrismaService'.
+src/modules/trading/trading.repository.ts(383,55): error TS7006: Parameter 'tx' implicitly has an 'any' type.
+src/modules/trading/trading.repository.ts(427,23): error TS2339: Property '$transaction' does not exist on type 'PrismaService'.
+src/modules/trading/trading.repository.ts(427,43): error TS7006: Parameter 'tx' implicitly has an 'any' type.
+src/modules/trading/trading.repository.ts(460,23): error TS2339: Property '$transaction' does not exist on type 'PrismaService'.
+src/modules/trading/trading.repository.ts(460,43): error TS7006: Parameter 'tx' implicitly has an 'any' type.
+src/modules/trading/trading.repository.ts(472,23): error TS2339: Property 'trade' does not exist on type 'PrismaService'.
+src/modules/trading/trading.repository.ts(577,23): error TS2339: Property '$transaction' does not exist on type 'PrismaService'.
+src/modules/trading/trading.repository.ts(577,43): error TS7006: Parameter 'tx' implicitly has an 'any' type.
+src/modules/trading/trading.service.ts(16,10): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+src/modules/trading/trading.service.ts(732,68): error TS18046: 'error' is of type 'unknown'.
+src/modules/trading/trading.service.ts(909,70): error TS18046: 'error' is of type 'unknown'.
+test/e2e/accounts.e2e.spec.ts(319,18): error TS2339: Property 'tradingSyncRun' does not exist on type 'PrismaService'.
+test/e2e/accounts.e2e.spec.ts(357,18): error TS2339: Property 'tradingConnection' does not exist on type 'PrismaService'.
+test/e2e/accounts.e2e.spec.ts(796,33): error TS2339: Property 'securityEvent' does not exist on type 'PrismaService'.
+test/e2e/accounts.e2e.spec.ts(800,31): error TS7006: Parameter 'e' implicitly has an 'any' type.
+test/e2e/accounts.e2e.spec.ts(809,42): error TS7006: Parameter 'e' implicitly has an 'any' type.
+test/e2e/accounts.e2e.spec.ts(1051,34): error TS2339: Property 'instrument' does not exist on type 'PrismaService'.
+test/e2e/accounts.e2e.spec.ts(1185,8): error TS2339: Property 'instrument' does not exist on type 'PrismaService'.
+test/e2e/analytics.e2e.spec.ts(70,30): error TS2339: Property 'tradingAccount' does not exist on type 'PrismaService'.
+test/e2e/analytics.e2e.spec.ts(90,37): error TS2339: Property 'instrument' does not exist on type 'PrismaService'.
+test/e2e/analytics.e2e.spec.ts(93,3): error TS2322: Type 'string | null' is not assignable to type 'string'.
+  Type 'null' is not assignable to type 'string'.
+test/e2e/analytics.e2e.spec.ts(97,17): error TS2339: Property 'trade' does not exist on type 'PrismaService'.
+test/e2e/analytics.e2e.spec.ts(145,16): error TS2339: Property 'trade' does not exist on type 'PrismaService'.
+test/e2e/analytics.e2e.spec.ts(386,31): error TS2339: Property 'instrumentSpecification' does not exist on type 'PrismaService'.
+test/e2e/analytics.e2e.spec.ts(457,36): error TS2339: Property 'trade' does not exist on type 'PrismaService'.
+test/e2e/analytics.e2e.spec.ts(462,70): error TS7006: Parameter 't' implicitly has an 'any' type.
+test/e2e/analytics.e2e.spec.ts(463,64): error TS7006: Parameter 'sum' implicitly has an 'any' type.
+test/e2e/analytics.e2e.spec.ts(463,69): error TS7006: Parameter 't' implicitly has an 'any' type.
+test/e2e/analytics.e2e.spec.ts(531,31): error TS2339: Property 'instrumentSpecification' does not exist on type 'PrismaService'.
+test/e2e/analytics.e2e.spec.ts(679,18): error TS2339: Property 'trade' does not exist on type 'PrismaService'.
+test/e2e/full-coverage.e2e.spec.ts(221,35): error TS2339: Property 'trade' does not exist on type 'PrismaService'.
+test/e2e/oanda-fixture.e2e.spec.ts(470,18): error TS2339: Property 'tradingConnection' does not exist on type 'PrismaService'.
+test/e2e/oanda-fixture.e2e.spec.ts(478,37): error TS2339: Property 'tradingConnection' does not exist on type 'PrismaService'.
+test/e2e/oanda-fixture.e2e.spec.ts(483,30): error TS2339: Property 'tradingSyncRun' does not exist on type 'PrismaService'.
+test/e2e/oanda-fixture.e2e.spec.ts(514,32): error TS2339: Property 'tradingSyncRun' does not exist on type 'PrismaService'.
+test/e2e/oanda-fixture.e2e.spec.ts(530,37): error TS2339: Property 'tradingConnection' does not exist on type 'PrismaService'.
+test/e2e/oanda-fixture.e2e.spec.ts(546,18): error TS2339: Property 'tradingConnection' does not exist on type 'PrismaService'.
+test/e2e/oanda-fixture.e2e.spec.ts(566,32): error TS2339: Property 'tradingPosition' does not exist on type 'PrismaService'.
+test/e2e/oanda-fixture.e2e.spec.ts(585,30): error TS2339: Property 'tradingPosition' does not exist on type 'PrismaService'.
+test/e2e/oanda-fixture.e2e.spec.ts(604,18): error TS2339: Property 'tradingConnection' does not exist on type 'PrismaService'.
+test/e2e/oanda-fixture.e2e.spec.ts(612,18): error TS2339: Property 'tradingSyncRun' does not exist on type 'PrismaService'.
+test/e2e/oanda-fixture.e2e.spec.ts(674,18): error TS2339: Property 'tradingConnection' does not exist on type 'PrismaService'.
+test/e2e/ocr-account-chart.e2e.spec.ts(108,33): error TS2339: Property 'trade' does not exist on type 'PrismaService'.
+test/e2e/ocr-engine-quality.e2e.spec.ts(216,18): error TS2339: Property 'ocrRecognition' does not exist on type 'PrismaService'.
+test/e2e/ocr-engine-quality.e2e.spec.ts(256,35): error TS2339: Property 'ocrCorrectionPattern' does not exist on type 'PrismaService'.
+test/e2e/ocr-engine-quality.e2e.spec.ts(310,18): error TS2339: Property 'ocrRecognition' does not exist on type 'PrismaService'.
+test/e2e/ocr-ops.e2e.spec.ts(136,18): error TS2339: Property 'ocrRecognition' does not exist on type 'PrismaService'.
+test/e2e/ocr-v2.e2e.spec.ts(245,18): error TS2339: Property 'ocrRecognition' does not exist on type 'PrismaService'.
+test/e2e/ocr.e2e.spec.ts(387,33): error TS2339: Property 'securityEvent' does not exist on type 'PrismaService'.
+test/e2e/ocr.e2e.spec.ts(392,39): error TS7006: Parameter 'e' implicitly has an 'any' type.
+test/e2e/ocr.e2e.spec.ts(427,32): error TS2339: Property 'ocrAsset' does not exist on type 'PrismaService'.
+test/e2e/oryon-analyses.e2e.spec.ts(154,30): error TS2339: Property 'trade' does not exist on type 'PrismaService'.
+test/e2e/plans.e2e.spec.ts(256,33): error TS2339: Property 'trade' does not exist on type 'PrismaService'.
+test/e2e/plans.e2e.spec.ts(269,32): error TS2339: Property 'trade' does not exist on type 'PrismaService'.
+test/e2e/trade-reviews.e2e.spec.ts(51,32): error TS2339: Property 'tradingAccount' does not exist on type 'PrismaService'.
+test/e2e/trade-reviews.e2e.spec.ts(74,37): error TS2339: Property 'instrument' does not exist on type 'PrismaService'.
+test/e2e/trade-reviews.e2e.spec.ts(77,3): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+test/e2e/trade-reviews.e2e.spec.ts(172,37): error TS2339: Property 'trade' does not exist on type 'PrismaService'.
+test/e2e/trade-reviews.e2e.spec.ts(251,30): error TS2339: Property 'trade' does not exist on type 'PrismaService'.
+test/e2e/trade-reviews.e2e.spec.ts(252,35): error TS2339: Property 'tradeExecution' does not exist on type 'PrismaService'.
+test/e2e/trade-reviews.e2e.spec.ts(1054,20): error TS2339: Property 'tradePlan' does not exist on type 'PrismaService'.
+test/e2e/trade-reviews.e2e.spec.ts(1084,20): error TS2339: Property 'tradePlan' does not exist on type 'PrismaService'.
+test/e2e/trades.e2e.spec.ts(307,30): error TS2339: Property 'trade' does not exist on type 'PrismaService'.
+test/e2e/trades.e2e.spec.ts(395,33): error TS2339: Property 'trade' does not exist on type 'PrismaService'.
+test/e2e/trades.e2e.spec.ts(396,18): error TS2339: Property 'trade' does not exist on type 'PrismaService'.
+test/e2e/trades.e2e.spec.ts(408,18): error TS2339: Property 'trade' does not exist on type 'PrismaService'.
+test/e2e/trades.e2e.spec.ts(505,30): error TS2339: Property 'trade' does not exist on type 'PrismaService'.
+test/e2e/trades.e2e.spec.ts(587,30): error TS2339: Property 'trade' does not exist on type 'PrismaService'.
+test/unit/sync-segments.spec.ts(9,10): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+test/unit/trade-aggregation.spec.ts(9,10): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+test/unit/trade-calculations.spec.ts(7,10): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+test/unit/trade-reconstruction.spec.ts(6,10): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+[ELIFECYCLE] Command failed with exit code 2.
+Error: ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL
+
+  × "pnpm recursive run" failed in /home/z/my-project/.ci-sim/apps/api
+

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="112" fill="#0D1424"/>
+  <rect width="512" height="512" rx="112" fill="url(#g)" opacity="0.9"/>
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#6E7BFF"/>
+      <stop offset="1" stop-color="#4050E0"/>
+    </linearGradient>
+  </defs>
+  <!-- Cosmoz constellation: equity curve as connected stars -->
+  <polyline points="104,352 208,240 288,288 408,160" fill="none" stroke="#FFFFFF" stroke-width="28" stroke-linecap="round" stroke-linejoin="round" opacity="0.95"/>
+  <circle cx="104" cy="352" r="30" fill="#FFFFFF"/>
+  <circle cx="208" cy="240" r="24" fill="#FFFFFF"/>
+  <circle cx="288" cy="288" r="24" fill="#FFFFFF"/>
+  <circle cx="408" cy="160" r="34" fill="#FFFFFF"/>
+  <circle cx="408" cy="160" r="16" fill="#6E7BFF"/>
+</svg>

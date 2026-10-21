@@ -1,0 +1,54 @@
+# COSMOZ — development/deployment compose (Foundation).
+#
+#   docker compose up db            → PostgreSQL only (web + api run via pnpm)
+#   docker compose --profile full up → PostgreSQL + API container
+#
+# The web app keeps its own dev workflow (pnpm dev) and is intentionally not
+# containerized in Foundation — revisit at deployment phase.
+#
+# NOTE: this compose file is an OPTIONAL containerized workflow, exercised
+# only in environments that have Docker. The default development setup uses
+# an externally installed PostgreSQL (see apps/api/README.md and
+# apps/api/.env.example — DATABASE_URL / TEST_DATABASE_URL); the embedded
+# PostgreSQL bundle and its scripts were removed from the repository.
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: cosmoz
+      POSTGRES_PASSWORD: cosmoz
+      POSTGRES_DB: cosmoz
+    ports:
+      # Loopback-only binding (security audit 2026-10-19 partie 2 §2.30): the
+      # dev database must never be reachable from the LAN.
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - cosmoz-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cosmoz -d cosmoz"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    profiles: ["full"]
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      DATABASE_URL: postgresql://cosmoz:cosmoz@db:5432/cosmoz
+      # The Next.js dev server origin — tighten for real deployments.
+      CORS_ORIGINS: http://localhost:3000
+      LOG_LEVEL: info
+    ports:
+      # Loopback-only binding (security audit 2026-10-19 partie 2 §2.30).
+      - "127.0.0.1:4000:4000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  cosmoz-pgdata:
