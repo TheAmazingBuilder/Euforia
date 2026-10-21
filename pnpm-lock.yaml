@@ -528,30 +528,6 @@ packages:
   '@dotenvx/primitives@0.8.0':
     resolution: {integrity: sha512-VYJy0uhFm9zTJ1TxBaW/pA8bjbOM/OttaNMwZ1RHG4JKyRG7DhSdiqD1ipQoAyoD22olUtxbP78W9xY3Wd11bg==}
 
-  '@embedded-postgres/darwin-x64@17.5.0-beta.15':
-    resolution: {integrity: sha512-GNQPnpfzQlrrABH6f15+GY32A6ucKxxUXqJjLqpDd6cUekJqytNdjLbkLF3OjXGgmFk7dg6eqw1yb5ZVP0zwcQ==}
-    engines: {node: '>=16'}
-    cpu: [x64]
-    os: [darwin]
-
-  '@embedded-postgres/linux-arm@17.5.0-beta.15':
-    resolution: {integrity: sha512-w6iImxNwBqRxKjTqQG5bYbpP6+61/bWJiLHswO/gT2FH3J1OhxSP7UlD7i8ig7UURubvC3yTs3WPecZUY6iZdw==}
-    engines: {node: '>=16'}
-    cpu: [arm]
-    os: [linux]
-
-  '@embedded-postgres/linux-ppc64@17.5.0-beta.15':
-    resolution: {integrity: sha512-uZ72FSmKNM2KbFzaWub35e36XyH4GL6N+GiODTy7ZhUxQmyBa4K3JubPAR8R3MTRrjzpCgiXhqC3Wg7mG+KtYg==}
-    engines: {node: '>=16'}
-    cpu: [ppc64]
-    os: [linux]
-
-  '@embedded-postgres/windows-x64@17.5.0-beta.15':
-    resolution: {integrity: sha512-R+tJFzc1K7Ua3LCh25IgdH09pe+wa0saR+ysny2l7dmFXfGYAhHN9atTEgHsP9V3Mp4lI5WB5sN58XtsLKc3gA==}
-    engines: {node: '>=16'}
-    cpu: [x64]
-    os: [win32]
-
   '@emnapi/core@1.10.0':
     resolution: {integrity: sha512-yq6OkJ4p82CAfPl0u9mQebQHKPJkY7WrIuk205cTYnYe+k2Z8YBh11FrbRG/H6ihirqcacOgl2BIO8oyMQLeXw==}
 
