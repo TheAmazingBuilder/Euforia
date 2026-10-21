@@ -16,12 +16,10 @@ every future bounded context must follow.
 # 1. Install (workspace root)
 corepack pnpm install
 
-# 2. Start the local development database (embedded PostgreSQL 17 — no Docker
-#    needed; portable binaries, trust auth on 127.0.0.1 ONLY)
-pnpm api:db:up
-
+# 2. Configure PostgreSQL 18 (or another supported local PostgreSQL instance).
+#    Create euforia_local_dev and euforia_test manually; tests never create/drop DBs.
 # 3. Configure
-cp apps/api/.env.example apps/api/.env     # defaults match db:up
+cp apps/api/.env.example apps/api/.env     # set DATABASE_URL and TEST_DATABASE_URL
 
 # 4. Run
 pnpm api:dev          # watch mode (tsc-watch → node)
@@ -50,8 +48,7 @@ The API listens on **http://localhost:4000**:
 | `pnpm start` | Run compiled output |
 | `pnpm typecheck` | `tsc --noEmit` (src + test) |
 | `pnpm lint` | ESLint (flat config) |
-| `pnpm test` | vitest — unit + e2e (boots the embedded test DB automatically) |
-| `pnpm db:up` / `db:status` / `db:down` | Embedded dev PostgreSQL lifecycle |
+| `pnpm test` | vitest — unit + e2e (requires external TEST_DATABASE_URL) |
 | `pnpm prisma:generate` | Regenerate the Prisma client after schema edits |
 | `pnpm db:migrate -- --name X` | Create + apply a migration (dev) |
 | `pnpm db:deploy` | Apply committed migrations (CI/prod) |
@@ -81,23 +78,24 @@ secrets into `.env.example`; `.env*` files are gitignored.
 
 ## Database
 
-- PostgreSQL 17 + Prisma 6. Schema: `prisma/schema.prisma`.
+- External PostgreSQL (local development may use PostgreSQL 18) + Prisma 6. Schema: `prisma/schema.prisma`.
 - **Foundation has an intentionally EMPTY schema — no business models.** Each
   future phase adds its own models + migration following `data-model.md`.
 - Migrations are versioned, reviewable files in `prisma/migrations/` (created
   by `db:migrate`, applied by `db:deploy`). Never reset a non-test database.
-- Dev/test databases run from **portable binaries** (`scripts/dev-db.mjs`,
-  data dir `apps/api/.localpg/`, gitignored) because the dev sandbox has no
-  Docker: `cosmoz` (dev) and `cosmoz_test` (tests) on port `5433`, trust auth,
-  localhost only. Real deployments use `docker-compose.yml` / managed PG.
+- Development and test databases are managed externally. Configure `DATABASE_URL`
+  for `euforia_local_dev` and `TEST_DATABASE_URL` for the separate `euforia_test`
+  database in `apps/api/.env`. The test harness applies migrations only; it never
+  creates, resets, drops, or truncates databases. Real deployments use managed PostgreSQL
+  or the optional `docker-compose.yml` environment.
 
 ### Test database safety (binding)
 
-Tests refuse to run against anything but `cosmoz_test`:
+Tests refuse to run against anything but `euforia_test`:
 
-1. `test/global-setup.ts` starts the cluster, creates `cosmoz_test`, applies
-   migrations and exports `DATABASE_URL` for every worker.
-2. `test/setup.ts` re-asserts `NODE_ENV=test` and `DATABASE_URL → /cosmoz_test`
+1. `test/global-setup.ts` requires `TEST_DATABASE_URL`, validates the `euforia_test`
+   database and applies migrations before exporting it as `DATABASE_URL`.
+2. `test/setup.ts` re-asserts `NODE_ENV=test` and `DATABASE_URL → /euforia_test`
    inside each worker (fail-fast, defense in depth).
 
 ## Error contract (API envelope)
