@@ -125,6 +125,11 @@ async function waitForPort(port, host, timeoutMs = 30_000) {
 async function ensureRunning() {
   if (await isPortOpen(PORT, HOST)) return "already-running";
 
+  const pidFile = path.join(DATA_DIR, "postmaster.pid");
+  if (fs.existsSync(pidFile)) {
+    try { fs.unlinkSync(pidFile); } catch {}
+  }
+
   fs.mkdirSync(path.dirname(DATA_DIR), { recursive: true });
   if (!fs.existsSync(path.join(DATA_DIR, "PG_VERSION"))) {
     console.log(`[dev-db] initializing cluster in ${DATA_DIR} (trust auth, localhost only)`);
@@ -146,7 +151,7 @@ async function ensureRunning() {
     "-D", DATA_DIR,
     "-l", LOG_FILE,
     "-o", `-p ${PORT} -k ${SOCKET_DIR}`,
-    "-w", "-t", "30",
+    "-w", "-t", "60",
     "start",
   ]);
   if (start.status !== 0) {
@@ -192,6 +197,17 @@ async function main() {
     ensureDatabases();
     console.log(`[dev-db] DEV : ${DEV_DB_URL}`);
     console.log(`[dev-db] TEST: ${TEST_DB_URL}`);
+    if (process.argv.includes("--watch") || process.argv.includes("--foreground")) {
+      console.log("[dev-db] running in foreground (Ctrl+C to stop)...");
+      const cleanup = () => {
+        run(bin("pg_ctl"), ["-D", DATA_DIR, "-m", "fast", "stop"]);
+        process.exit(0);
+      };
+      process.on("SIGINT", cleanup);
+      process.on("SIGTERM", cleanup);
+      setInterval(() => {}, 1000 * 60 * 60);
+      await new Promise(() => {});
+    }
     return;
   }
   if (command === "status") {

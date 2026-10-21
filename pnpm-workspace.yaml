@@ -18,13 +18,13 @@ allowBuilds:
   esbuild: true
   # SWC native binding (vitest decorator-metadata plugin).
   "@swc/core": true
-  '@embedded-postgres/darwin-arm64': set this to true or false
-  '@embedded-postgres/darwin-x64': set this to true or false
-  '@embedded-postgres/linux-arm': set this to true or false
-  '@embedded-postgres/linux-arm64': set this to true or false
-  '@embedded-postgres/linux-ia32': set this to true or false
-  '@embedded-postgres/linux-ppc64': set this to true or false
-  '@embedded-postgres/windows-x64': set this to true or false
+  "@embedded-postgres/darwin-arm64": true
+  "@embedded-postgres/darwin-x64": true
+  "@embedded-postgres/linux-arm": true
+  "@embedded-postgres/linux-arm64": true
+  "@embedded-postgres/linux-ia32": true
+  "@embedded-postgres/linux-ppc64": true
+  "@embedded-postgres/windows-x64": true
 
 # Security pins (MASTER QA audit + security audit 2026-10-19 partie 2 §2.38):
 # every line forces the patched version of a known advisory, transitive or not.

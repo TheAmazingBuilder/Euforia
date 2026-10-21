@@ -127,13 +127,16 @@ export class IdentityRepository {
     name: string;
     passwordHash: string;
     preferences: unknown;
+    status?: "PENDING_VERIFICATION" | "ACTIVE";
+    emailVerifiedAt?: Date | null;
   }): Promise<UserRow> {
     const row = await this.prisma.user.create({
       data: {
         email: data.email.toLowerCase(),
         name: data.name,
         passwordHash: data.passwordHash,
-        status: "PENDING_VERIFICATION",
+        status: data.status ?? "PENDING_VERIFICATION",
+        emailVerifiedAt: data.emailVerifiedAt ?? null,
         preferences: data.preferences as Prisma.InputJsonValue,
       },
     });

@@ -2,10 +2,10 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: {
-    template: "%s — Euforia",
+    template: "%s - Euforia",
     default: "Euforia",
   },
-  description: "Sign in to Euforia — the trading journal that coaches you.",
+  description: "Sign in to Euforia - the trading journal that coaches you.",
 };
 
 /**

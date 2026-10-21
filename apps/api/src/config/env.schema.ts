@@ -328,6 +328,11 @@ export const envSchema = z.object({
     .default("http://localhost:3000"),
   /** From-header for transactional emails. */
   EMAIL_FROM: z.string().trim().min(3).default("Euforia <no-reply@cosmoz.app>"),
+  /** Whether email verification is required before signing in (can be paused/disabled in dev). */
+  AUTH_REQUIRE_EMAIL_VERIFICATION: z
+    .enum(["true", "false"])
+    .default("true")
+    .transform((value) => value === "true"),
 });
 
 export type Env = z.infer<typeof envSchema>;

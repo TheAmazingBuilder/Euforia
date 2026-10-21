@@ -22,6 +22,7 @@ import {
   AuthField,
   FormError,
   FormInfo,
+  FormSuccess,
   PasswordField,
   SubmitButton,
 } from "@/components/auth/auth-primitives";
@@ -53,6 +54,8 @@ export function LoginForm() {
 
   const returnTo = safeReturnTo(searchParams.get("returnTo"));
   const reason = searchParams.get("reason");
+  const registered = searchParams.get("registered") === "true";
+  const emailParam = searchParams.get("email");
 
   // Already signed in? Straight to the destination (no re-auth dance).
   React.useEffect(() => {
@@ -60,7 +63,7 @@ export function LoginForm() {
   }, [user, returnTo, router]);
 
   const [step, setStep] = React.useState<Step>("credentials");
-  const [email, setEmail] = React.useState("");
+  const [email, setEmail] = React.useState(emailParam ?? "");
   const [password, setPassword] = React.useState("");
   const [remember, setRemember] = React.useState(true);
   const [formError, setFormError] = React.useState<{ body: string; hint?: string } | null>(null);
@@ -207,6 +210,14 @@ export function LoginForm() {
           title={auth.reasons[reason]!.title}
           body={auth.reasons[reason]!.body}
           testId={`login-reason-${reason}`}
+        />
+      ) : null}
+
+      {registered ? (
+        <FormSuccess
+          title="Compte créé avec succès !"
+          body="Votre compte est actif. Vous pouvez vous connecter dès maintenant."
+          testId="login-registered-success"
         />
       ) : null}
 

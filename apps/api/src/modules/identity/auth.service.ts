@@ -100,15 +100,22 @@ export class AuthService {
       );
     }
 
+    const requireEmail = this.config.auth.requireEmailVerification;
+
     const passwordHash = await this.hasher.hash(input.password);
     const user = await this.repository.createUser({
       email: input.email,
       name: input.name,
       passwordHash,
       preferences: null, // created lazily on first preferences read
+      status: requireEmail ? "PENDING_VERIFICATION" : "ACTIVE",
+      emailVerifiedAt: requireEmail ? null : new Date(),
     });
 
-    const expiresAt = await this.issueVerificationChallenge(user, user.email);
+    const expiresAt = requireEmail
+      ? await this.issueVerificationChallenge(user, user.email)
+      : new Date(Date.now() + 86_400_000).toISOString();
+
     return {
       user: toAuthUser(user),
       status: user.status,
@@ -220,6 +227,13 @@ export class AuthService {
     }
     if (user.status === "DEACTIVATED") {
       throw new ForbiddenError("This account is deactivated.", "ACCOUNT_DEACTIVATED");
+    }
+    if (!this.config.auth.requireEmailVerification && user.status === "PENDING_VERIFICATION") {
+      user.status = "ACTIVE";
+      await this.repository.updateUser(user.id, {
+        status: "ACTIVE",
+        emailVerifiedAt: new Date(),
+      });
     }
     if (user.status !== "ACTIVE") {
       throw new ForbiddenError(

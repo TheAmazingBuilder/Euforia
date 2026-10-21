@@ -102,6 +102,7 @@ export interface AppConfig {
     reauthMinutes: number;
     webAppUrl: string;
     emailFrom: string;
+    requireEmailVerification: boolean;
   };
 }
 
@@ -185,6 +186,7 @@ function build(env: Env): AppConfig {
       reauthMinutes: env.AUTH_REAUTH_MINUTES,
       webAppUrl: env.WEB_APP_URL,
       emailFrom: env.EMAIL_FROM,
+      requireEmailVerification: env.AUTH_REQUIRE_EMAIL_VERIFICATION,
     },
   };
 }

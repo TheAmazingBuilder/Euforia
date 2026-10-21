@@ -66,6 +66,10 @@ export function RegisterForm() {
 
     register.mutate(parsed.data, {
       onSuccess: (response) => {
+        if (response.status === "ACTIVE") {
+          router.push(`/login?registered=true&email=${encodeURIComponent(response.user.email)}`);
+          return;
+        }
         setPending(response);
       },
       onError: (error) => {

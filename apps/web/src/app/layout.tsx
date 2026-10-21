@@ -19,8 +19,8 @@ const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jetbrains-mo
 
 export const metadata: Metadata = {
   title: {
-    default: "Euforia — Trade smarter. Grow faster.",
-    template: "%s — Euforia",
+    default: "Euforia - Trade smarter. Grow faster.",
+    template: "%s - Euforia",
   },
   description:
     "The trading journal that coaches you: capture, grade and review every decision.",
