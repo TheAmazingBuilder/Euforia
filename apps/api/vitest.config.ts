@@ -12,9 +12,8 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["test/**/*.spec.ts"],
-    // global-setup: boots the embedded dev/test PostgreSQL if needed, creates
-    // the dedicated `cosmoz_test` database, applies Prisma migrations, and
-    // exports the test DATABASE_URL so no test can ever target another DB.
+    // global-setup validates TEST_DATABASE_URL for the dedicated external
+    // `euforia_test` database, applies migrations, and exports DATABASE_URL.
     globalSetup: ["test/global-setup.ts"],
     // setup: fail-fast guard asserting the process env is the TEST database
     // (defense in depth on top of global-setup).
