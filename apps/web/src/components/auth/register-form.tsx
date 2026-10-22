@@ -12,6 +12,8 @@ import { Input } from "@/components/ui/input";
 import { useRegisterMutation, useResendVerificationMutation } from "@/lib/api/queries/auth";
 import { apiErrorMessage, apiErrorCode } from "@/lib/api/client";
 import { API_MOCKED } from "@/lib/api/mode";
+import { setAccessToken } from "@/lib/auth/token-store";
+import { useAuth } from "@/components/auth/auth-provider";
 import { useDict } from "@/i18n/i18n-provider";
 import {
   AuthField,
@@ -33,6 +35,7 @@ export function RegisterForm() {
   const router = useRouter();
   const register = useRegisterMutation();
   const resend = useResendVerificationMutation();
+  const { setAuthenticated } = useAuth();
 
   const [name, setName] = React.useState("");
   const [email, setEmail] = React.useState("");
@@ -66,6 +69,16 @@ export function RegisterForm() {
 
     register.mutate(parsed.data, {
       onSuccess: (response) => {
+        // Auto-login path (real backend, email gate OFF): the server opened a
+        // session on sign-up — fold it into auth state exactly like the login
+        // form does, then land straight in the app. No bounce back to /login.
+        const auto = response as Extract<RegisterResponse, { status: "ACTIVE" }>;
+        if (auto.autoLogin === true && auto.accessToken) {
+          setAccessToken(auto.accessToken, auto.accessTokenExpiresAt ?? "");
+          setAuthenticated(auto.user, auto.session ?? null);
+          router.replace("/dashboard");
+          return;
+        }
         if (response.status === "ACTIVE") {
           router.push(`/login?registered=true&email=${encodeURIComponent(response.user.email)}`);
           return;

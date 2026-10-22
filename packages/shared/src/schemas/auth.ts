@@ -96,15 +96,36 @@ export type RegisterInput = z.infer<typeof registerInputSchema>;
  * so the one-time verification token rides along with an explicit
  * `delivery: "MOCKED"` marker (same precedent as the 2FA demoCode). A real
  * backend never returns `verificationToken`.
+ *
+ * Auto-login affordance: when the email gate is OFF, a real backend opens a
+ * session immediately on sign-up (`autoLogin: true` + the same fields a
+ * login success carries) so the client lands in the app instead of bouncing
+ * back to /login. The PENDING path keeps `verificationSentAt` required.
  */
-export const registerResponseSchema = z.object({
-  user: authUserSchema,
-  status: accountStatusSchema,
-  verificationSentAt: isoDateTimeSchema,
-  delivery: z.enum(["EMAIL", "MOCKED"]),
-  verificationToken: z.string().min(10).optional(),
-  verificationExpiresAt: isoDateTimeSchema.nullable(),
-});
+export const registerResponseSchema = z.union([
+  z.object({
+    user: authUserSchema,
+    status: z.literal("PENDING_VERIFICATION"),
+    verificationSentAt: isoDateTimeSchema,
+    delivery: z.enum(["EMAIL", "MOCKED"]),
+    verificationToken: z.string().min(10).optional(),
+    verificationExpiresAt: isoDateTimeSchema.nullable(),
+  }),
+  z.object({
+    user: authUserSchema,
+    status: z.enum(["ACTIVE", "SUSPENDED", "DEACTIVATED"]),
+    verificationSentAt: isoDateTimeSchema.optional(),
+    delivery: z.enum(["EMAIL", "MOCKED"]).optional(),
+    verificationToken: z.string().min(10).optional(),
+    verificationExpiresAt: isoDateTimeSchema.nullable().optional(),
+    // Auto-login fields (mirror authSuccessSchema; absent in mocks that
+    // always return PENDING_VERIFICATION).
+    autoLogin: z.literal(true).optional(),
+    accessToken: z.string().min(10).optional(),
+    accessTokenExpiresAt: isoDateTimeSchema.optional(),
+    session: authSessionSchema.optional(),
+  }),
+]);
 export type RegisterResponse = z.infer<typeof registerResponseSchema>;
 
 // ── Login (§14, §25) ─────────────────────────────────────────────────────────

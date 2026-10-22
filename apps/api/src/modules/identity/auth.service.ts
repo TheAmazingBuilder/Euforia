@@ -77,13 +77,26 @@ export class AuthService {
 
   async register(
     input: { name: string; email: string; password: string },
-  ): Promise<{
-    user: ReturnType<typeof toAuthUser>;
-    status: string;
-    verificationSentAt: string;
-    delivery: "EMAIL";
-    verificationExpiresAt: string;
-  }> {
+    request: RequestLike,
+    reply: FastifyReply,
+  ): Promise<
+    | {
+        user: ReturnType<typeof toAuthUser>;
+        status: string;
+        verificationSentAt: string;
+        delivery: "EMAIL";
+        verificationExpiresAt: string;
+      }
+    | {
+        outcome: "AUTHENTICATED";
+        autoLogin: true;
+        user: ReturnType<typeof toAuthUser>;
+        status: "ACTIVE";
+        accessToken: string;
+        accessTokenExpiresAt: string;
+        session: ReturnType<typeof toAuthSession>;
+      }
+  > {
     const check = this.limiter.check("register", input.email);
     if (!check.allowed) {
       throw new RateLimitError("Too many attempts. Please wait before trying again.", "RATE_LIMITED", check.retryAfterSeconds);
@@ -112,9 +125,22 @@ export class AuthService {
       emailVerifiedAt: requireEmail ? null : new Date(),
     });
 
-    const expiresAt = requireEmail
-      ? await this.issueVerificationChallenge(user, user.email)
-      : new Date(Date.now() + 86_400_000).toISOString();
+    if (!requireEmail) {
+      // Auto-login (UX): registration already yields an ACTIVE account when
+      // the email gate is off — open a real session right away so the client
+      // lands on the app instead of bouncing back to /login. The refresh
+      // cookie rides on this response exactly like POST /auth/login does.
+      const login = await this.completeLogin(
+        user,
+        false,
+        reply,
+        fingerprintOf(request),
+        "Signed up and signed in with email and password.",
+      );
+      return { ...login, status: "ACTIVE" as const, autoLogin: true as const };
+    }
+
+    const expiresAt = await this.issueVerificationChallenge(user, user.email);
 
     return {
       user: toAuthUser(user),

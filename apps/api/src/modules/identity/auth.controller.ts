@@ -34,8 +34,10 @@ export class AuthController {
   @Post("register")
   async register(
     @Body(new ZodValidationPipe(registerInputSchema)) input: RegisterInput,
+    @Req() request: FastifyRequest,
+    @Res({ passthrough: true }) reply: FastifyReply,
   ) {
-    return this.auth.register(input);
+    return this.auth.register(input, request, reply);
   }
 
   @Public()
