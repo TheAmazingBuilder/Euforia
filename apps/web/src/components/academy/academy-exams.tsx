@@ -147,7 +147,7 @@ function ExamRunner({ categoryId }: { categoryId: string }) {
           <div>
             <p className="flex items-center gap-2 font-heading text-lg font-semibold">
               <Award className={cn("size-5", result.passed ? "text-warning" : "text-muted-foreground")} aria-hidden="true" />
-              {result.score}/{result.total} — {result.tier === "NONE" ? V.notYetCertified : `${result.tier}${V.tierSuffix}`}
+              {result.score}/{result.total} - {result.tier === "NONE" ? V.notYetCertified : `${result.tier}${V.tierSuffix}`}
             </p>
             <p className="mt-0.5 text-xs text-muted-foreground">
               {V.bestAcrossPrefix}

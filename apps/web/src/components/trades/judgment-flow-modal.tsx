@@ -28,7 +28,7 @@ import { useCurrentBalance } from "@/lib/api/queries";
 const STAGE_COPY: Record<JudgmentStage, { title: string; description: string }> = {
   gate: {
     title: "Judgment Gate",
-    description: "Grade the decision — based only on what you knew at entry.",
+    description: "Grade the decision - based only on what you knew at entry.",
   },
   reveal: {
     title: "The Reveal",
@@ -36,7 +36,7 @@ const STAGE_COPY: Record<JudgmentStage, { title: string; description: string }> 
   },
   reflect: {
     title: "Reflect",
-    description: "Optional — train your detector while it's fresh.",
+    description: "Optional - train your detector while it's fresh.",
   },
 };
 

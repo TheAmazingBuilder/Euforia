@@ -38,17 +38,17 @@ import type { RRExpectancyResult } from "@cosmoz/shared";
 import { CalculatorField, CopyButton, PresetChips, ToolCard } from "./calculator-shared";
 
 /**
- * Risk/Reward Calculator & Win Rate Cheat Sheet (TOOLS section) — spec-driven
+ * Risk/Reward Calculator & Win Rate Cheat Sheet (TOOLS section) - spec-driven
  * expectancy workspace. Everything computes LIVE on every input change (§9)
  * through the shared risk-reward engine: no Calculate button, no backend.
  *
- * Section A — reactive calculator (balance, % / fixed risk, R multiple or
+ * Section A - reactive calculator (balance, % / fixed risk, R multiple or
  *   monetary SL/TP amounts, trade count) with a nine-metric live summary.
- * Section B — the color-coded win-rate matrix: rows = reward multiples,
+ * Section B - the color-coded win-rate matrix: rows = reward multiples,
  *   columns = win rates, every cell independently computed (classification +
  *   exact theoretical net result) with an accessible detail tooltip.
  *
- * Fixed-risk, non-compounding, cost-free model — stated in the UI, never
+ * Fixed-risk, non-compounding, cost-free model - stated in the UI, never
  * presented as a performance promise.
  */
 
@@ -156,7 +156,7 @@ function MatrixCell({
   const detail = (
     <div className="min-w-56 space-y-1.5 text-left" data-testid={`rr-detail-${rewardMultiple}-${winRatePercent}`}>
       <p className="font-mono text-[11px] font-semibold uppercase tracking-wide">
-        {labels.detail.title} — {winRatePercent}% · 1:{formatNumber(rewardMultiple, rewardMultiple % 1 === 0 ? 0 : 2)}
+        {labels.detail.title} - {winRatePercent}% · 1:{formatNumber(rewardMultiple, rewardMultiple % 1 === 0 ? 0 : 2)}
       </p>
       <div className="grid grid-cols-2 gap-x-4 gap-y-1 font-mono text-[11px] tabular-nums">
         <span className="text-muted-foreground">{labels.detail.wins}</span>
@@ -196,7 +196,7 @@ function MatrixCell({
         <button
           type="button"
           data-testid={`rr-cell-${rewardMultiple}-${winRatePercent}`}
-          aria-label={`${T.detail.title}: ${T.matrix.winRate} ${winRatePercent}%, ${T.matrix.ratio} 1:${formatNumber(rewardMultiple, rewardMultiple % 1 === 0 ? 0 : 2)} — ${labels.outcomes[outcome]}`}
+          aria-label={`${T.detail.title}: ${T.matrix.winRate} ${winRatePercent}%, ${T.matrix.ratio} 1:${formatNumber(rewardMultiple, rewardMultiple % 1 === 0 ? 0 : 2)} - ${labels.outcomes[outcome]}`}
           className={cn("rr-cell w-full", `rr-cell-${outcome}`)}
         >
           <span className="rr-cell-label">{labels.outcomes[outcome]}</span>
@@ -264,7 +264,7 @@ export function RiskRewardCalculator() {
   const set = (field: keyof RiskRewardFormValues) => (value: string) =>
     setValues((prev) => ({ ...prev, [field]: value }));
 
-  // Live derivation — every keystroke revalidates and recomputes (§9).
+  // Live derivation - every keystroke revalidates and recomputes (§9).
   const derived = React.useMemo(
     () => validateRiskRewardForm(values, extraRatios),
     [values, extraRatios],
@@ -290,7 +290,7 @@ export function RiskRewardCalculator() {
   const copyPayload = React.useMemo(() => {
     if (!model || !data) return "";
     return [
-      `Risk/Reward — ${formatMoney(data.balance, currency)} · risk ${formatMoney(model.riskAmount, currency)} · 1:${ratioLabel(model.rewardMultiple)} · ${model.trades} trades`,
+      `Risk/Reward - ${formatMoney(data.balance, currency)} · risk ${formatMoney(model.riskAmount, currency)} · 1:${ratioLabel(model.rewardMultiple)} · ${model.trades} trades`,
       `Reward per winner: ${formatMoney(model.rewardAmount, currency)}`,
       `Break-even win rate: ${formatPercent(model.breakEvenWinRate, 2)}`,
       `Risk of balance: ${formatPercent(model.riskPercentOfBalance, 2)} · Reward of balance: ${formatPercent(model.rewardPercentOfBalance, 2)}`,
@@ -637,7 +637,7 @@ export function RiskRewardCalculator() {
                           </td>
                         ) : (
                           <td key={`${row.rewardMultiple}-${cell.winRatePercent}`} className="rr-cell text-muted-foreground">
-                            —
+                            -
                           </td>
                         ),
                       )}

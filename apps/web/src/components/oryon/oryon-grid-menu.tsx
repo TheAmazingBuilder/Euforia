@@ -139,7 +139,7 @@ export function OryonSyncMenu() {
           type="button"
           variant="ghost"
           size="icon"
-          aria-label={`${T.syncHint} — ${anyOn ? S.on : S.off}`}
+          aria-label={`${T.syncHint} - ${anyOn ? S.on : S.off}`}
           data-testid="oryon-sync-trigger"
           data-active={anyOn || undefined}
           className={cn(

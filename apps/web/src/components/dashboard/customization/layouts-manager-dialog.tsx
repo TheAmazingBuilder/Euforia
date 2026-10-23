@@ -89,7 +89,7 @@ export function LayoutsManagerDialog({
           <DialogTitle className="font-heading">Workspaces</DialogTitle>
           <DialogDescription>
             {editing
-              ? "You are editing — save or cancel first to switch or duplicate. Templates replace your draft."
+              ? "You are editing - save or cancel first to switch or duplicate. Templates replace your draft."
               : "Switch workspaces, or create one from scratch, from a template, or from one of your saved snapshots."}
           </DialogDescription>
         </DialogHeader>
@@ -145,7 +145,7 @@ export function LayoutsManagerDialog({
               </h3>
               {userTemplates.length === 0 ? (
                 <p className="rounded-lg border border-dashed border-border p-3 text-xs text-muted-foreground">
-                  No saved templates yet — freeze one of your workspaces above and spawn new
+                  No saved templates yet - freeze one of your workspaces above and spawn new
                   dashboards from it. Templates are private to your account.
                 </p>
               ) : (
@@ -182,7 +182,7 @@ export function LayoutsManagerDialog({
                         variant="ghost"
                         size="icon-sm"
                         aria-label={`Delete template ${template.name}`}
-                        title="Delete template — workspaces already created from it are untouched"
+                        title="Delete template - workspaces already created from it are untouched"
                         data-testid={`dashboard-user-template-delete-${template.id}`}
                         onClick={() => onDeleteUserTemplate(template.id)}
                         className="hover:text-loss"
@@ -241,7 +241,7 @@ export function LayoutsManagerDialog({
             </div>
             {editing && (
               <p className="text-xs text-muted-foreground">
-                Applying a template replaces your current draft — save to keep it.
+                Applying a template replaces your current draft - save to keep it.
               </p>
             )}
           </TabsContent>
@@ -274,7 +274,7 @@ function SaveAsTemplateSection({
     } else {
       setError(
         atCap
-          ? "Template limit reached (10) — delete one first."
+          ? "Template limit reached (10) - delete one first."
           : name.trim().length === 0
             ? "Give the template a name."
             : "That name is unavailable or too long.",
@@ -288,7 +288,7 @@ function SaveAsTemplateSection({
         Save current workspace as a template
       </Label>
       <p className="mt-0.5 text-xs text-muted-foreground">
-        A frozen copy of this workspace — widgets, sizes and settings at the moment you save.
+        A frozen copy of this workspace - widgets, sizes and settings at the moment you save.
       </p>
       <div className="mt-2 flex items-center gap-2">
         <Input

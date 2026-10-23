@@ -65,7 +65,7 @@ function PositionRow({ trade, instrument, currency, lastPrice, live }: PositionR
       </span>
 
       <span className="w-24 shrink-0 font-heading text-sm font-semibold text-foreground">
-        {instrument?.symbol ?? "—"}
+        {instrument?.symbol ?? "-"}
       </span>
 
       <span className="hidden flex-col text-[11px] text-muted-foreground sm:flex">
@@ -98,7 +98,7 @@ function PositionRow({ trade, instrument, currency, lastPrice, live }: PositionR
           )}
         </span>
         <span className="font-mono text-[11px] tabular-nums text-muted-foreground">
-          {liveR !== null ? `${liveR >= 0 ? "+" : ""}${formatNumber(liveR, 2)} R` : "—"}
+          {liveR !== null ? `${liveR >= 0 ? "+" : ""}${formatNumber(liveR, 2)} R` : "-"}
           {lastPrice !== null ? (
             <>
               {" · "}last <span className="text-foreground">{formatNumber(lastPrice, 2)}</span>
@@ -161,13 +161,13 @@ export function OpenPositionsCard() {
             ) : null}
           </CardTitle>
           <CardDescription className="text-xs">
-            Unrealized P&L — last price in real time
+            Unrealized P&L - last price in real time
             <span
               className={cn(
                 "ml-1.5 inline-flex items-center gap-1",
                 connected ? "text-profit" : "text-muted-foreground",
               )}
-              title={connected ? "Market websocket connected" : "Reconnecting — polling fallback"}
+              title={connected ? "Market websocket connected" : "Reconnecting - polling fallback"}
             >
               <span
                 aria-hidden="true"
@@ -204,7 +204,7 @@ export function OpenPositionsCard() {
             <Activity className="size-6 text-muted-foreground" aria-hidden="true" />
             <p className="text-sm font-medium text-foreground">Flat</p>
             <p className="text-xs text-muted-foreground">
-              No open positions — enjoy the quiet or capture the next setup.
+              No open positions - enjoy the quiet or capture the next setup.
             </p>
           </div>
         ) : (

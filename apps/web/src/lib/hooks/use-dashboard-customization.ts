@@ -161,7 +161,7 @@ export function useDashboardCustomization() {
       onError: (error) => {
         dispatch({
           type: "saveFailed",
-          message: apiErrorMessage(error, "The layout could not be saved. Your edits are kept — try again."),
+          message: apiErrorMessage(error, "The layout could not be saved. Your edits are kept - try again."),
         });
       },
     });

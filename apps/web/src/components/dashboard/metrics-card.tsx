@@ -148,13 +148,13 @@ export function MetricsCardWidget({ config, globalFilters }: MetricsCardWidgetPr
           </div>
         ) : empty ? (
           <p className="py-6 text-center text-sm text-muted-foreground" data-testid="metrics-card-empty">
-            No closed trades in this period — nothing to measure yet.
+            No closed trades in this period - nothing to measure yet.
           </p>
         ) : data ? (
           <>
             {multiCurrency && (
               <p className="mb-3 rounded-md border border-warning/40 bg-warning/10 px-2.5 py-1.5 text-xs text-warning">
-                Multi-currency dataset — money metrics are unavailable; R-based and rate metrics still compare cleanly.
+                Multi-currency dataset - money metrics are unavailable; R-based and rate metrics still compare cleanly.
               </p>
             )}
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" data-testid="metrics-card-grid">
@@ -299,10 +299,10 @@ function formatMetricValue(
   notation: MetricsCardWidgetConfig["notation"],
   decimals: MetricsCardWidgetConfig["decimals"],
 ): string {
-  if (value === null || !Number.isFinite(value)) return "—";
+  if (value === null || !Number.isFinite(value)) return "-";
   switch (metric.unit) {
     case "MONEY": {
-      if (!currency) return "—";
+      if (!currency) return "-";
       const digits = decimals;
       return metric.signed
         ? formatSigned(value, (amount) =>

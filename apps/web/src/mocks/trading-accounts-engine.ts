@@ -167,20 +167,20 @@ function notOwned(): MockError {
 const BROKER_CATALOG_MIRROR: Array<Omit<BrokerCatalogEntry, "connectorStatus"> & { connectorProviderId: string | null }> = [
   { brokerId: "deriv", displayName: "Deriv", platforms: ["DERIV"], providerId: "deriv-ws", connectorProviderId: "deriv-ws", aliases: ["Binary.com", "binary.com"], notes: "Connected through the official Deriv WebSocket API with a Read-scope API token." },
   { brokerId: "oanda", displayName: "OANDA", platforms: ["OANDA"], providerId: "oanda-v20", connectorProviderId: "oanda-v20", aliases: ["OANDA Corporation", "fxTrade"], notes: "Connected through the official OANDA v20 REST API with a personal access token." },
-  { brokerId: "icmarkets", displayName: "IC Markets", platforms: ["MT4", "MT5", "CTRADER"], providerId: null, connectorProviderId: null, aliases: ["IC Markets Global", "ICMarkets", "Raw Trading Ltd"], notes: "Access paths are MT4/MT5/cTrader platform integrations — no dedicated retail REST API; gated on the MT5 decision (U1) and the cTrader decision." },
-  { brokerId: "pepperstone", displayName: "Pepperstone", platforms: ["MT4", "MT5", "CTRADER"], providerId: null, connectorProviderId: null, aliases: ["Pepperstone Group"], notes: "Access paths are MT4/MT5/cTrader platform integrations — gated on the MT5 decision (U1) and the cTrader decision." },
-  { brokerId: "exness", displayName: "Exness", platforms: ["MT4", "MT5"], providerId: null, connectorProviderId: null, aliases: ["Exness Group"], notes: "Access path is the MT4/MT5 platform integration — gated on the MT5 decision (U1)." },
-  { brokerId: "xm", displayName: "XM", platforms: ["MT4", "MT5"], providerId: null, connectorProviderId: null, aliases: ["XM Global", "Trading Point"], notes: "Access path is the MT4/MT5 platform integration — gated on the MT5 decision (U1)." },
-  { brokerId: "fxtm", displayName: "FXTM (ForexTime)", platforms: ["MT4", "MT5"], providerId: null, connectorProviderId: null, aliases: ["ForexTime"], notes: "Access path is the MT4/MT5 platform integration — gated on the MT5 decision (U1)." },
+  { brokerId: "icmarkets", displayName: "IC Markets", platforms: ["MT4", "MT5", "CTRADER"], providerId: null, connectorProviderId: null, aliases: ["IC Markets Global", "ICMarkets", "Raw Trading Ltd"], notes: "Access paths are MT4/MT5/cTrader platform integrations - no dedicated retail REST API; gated on the MT5 decision (U1) and the cTrader decision." },
+  { brokerId: "pepperstone", displayName: "Pepperstone", platforms: ["MT4", "MT5", "CTRADER"], providerId: null, connectorProviderId: null, aliases: ["Pepperstone Group"], notes: "Access paths are MT4/MT5/cTrader platform integrations - gated on the MT5 decision (U1) and the cTrader decision." },
+  { brokerId: "exness", displayName: "Exness", platforms: ["MT4", "MT5"], providerId: null, connectorProviderId: null, aliases: ["Exness Group"], notes: "Access path is the MT4/MT5 platform integration - gated on the MT5 decision (U1)." },
+  { brokerId: "xm", displayName: "XM", platforms: ["MT4", "MT5"], providerId: null, connectorProviderId: null, aliases: ["XM Global", "Trading Point"], notes: "Access path is the MT4/MT5 platform integration - gated on the MT5 decision (U1)." },
+  { brokerId: "fxtm", displayName: "FXTM (ForexTime)", platforms: ["MT4", "MT5"], providerId: null, connectorProviderId: null, aliases: ["ForexTime"], notes: "Access path is the MT4/MT5 platform integration - gated on the MT5 decision (U1)." },
   { brokerId: "fpmarkets", displayName: "FP Markets", platforms: ["MT4", "MT5", "CTRADER"], providerId: null, connectorProviderId: null, aliases: ["First Prudential Markets"], notes: "Access paths are MT4/MT5/cTrader platform integrations." },
-  { brokerId: "avatrade", displayName: "AvaTrade", platforms: ["MT4", "MT5"], providerId: null, connectorProviderId: null, aliases: ["Ava Trade"], notes: "Access path is the MT4/MT5 platform integration — gated on the MT5 decision (U1)." },
-  { brokerId: "vantage", displayName: "Vantage", platforms: ["MT4", "MT5"], providerId: null, connectorProviderId: null, aliases: ["Vantage FX", "Vantage International"], notes: "Access path is the MT4/MT5 platform integration — gated on the MT5 decision (U1)." },
-  { brokerId: "eightcap", displayName: "Eightcap", platforms: ["MT4", "MT5"], providerId: null, connectorProviderId: null, aliases: ["Eightcap Global"], notes: "Access path is the MT4/MT5 platform integration — gated on the MT5 decision (U1)." },
-  { brokerId: "interactivebrokers", displayName: "Interactive Brokers", platforms: ["OTHER"], providerId: null, connectorProviderId: null, aliases: ["IBKR", "Interactive Brokers LLC"], notes: "Official Client Portal Web API exists but requires individual account configuration and approval steps — not part of the current connector roadmap." },
+  { brokerId: "avatrade", displayName: "AvaTrade", platforms: ["MT4", "MT5"], providerId: null, connectorProviderId: null, aliases: ["Ava Trade"], notes: "Access path is the MT4/MT5 platform integration - gated on the MT5 decision (U1)." },
+  { brokerId: "vantage", displayName: "Vantage", platforms: ["MT4", "MT5"], providerId: null, connectorProviderId: null, aliases: ["Vantage FX", "Vantage International"], notes: "Access path is the MT4/MT5 platform integration - gated on the MT5 decision (U1)." },
+  { brokerId: "eightcap", displayName: "Eightcap", platforms: ["MT4", "MT5"], providerId: null, connectorProviderId: null, aliases: ["Eightcap Global"], notes: "Access path is the MT4/MT5 platform integration - gated on the MT5 decision (U1)." },
+  { brokerId: "interactivebrokers", displayName: "Interactive Brokers", platforms: ["OTHER"], providerId: null, connectorProviderId: null, aliases: ["IBKR", "Interactive Brokers LLC"], notes: "Official Client Portal Web API exists but requires individual account configuration and approval steps - not part of the current connector roadmap." },
   { brokerId: "binance", displayName: "Binance", platforms: ["BINANCE"], providerId: null, connectorProviderId: null, aliases: ["Binance.com"], notes: "Public exchange REST API exists; an exchange connector is a separate product decision outside the Accounts roadmap scope." },
-  { brokerId: "metatrader-platform", displayName: "MetaTrader (MT4/MT5)", platforms: ["MT4", "MT5"], providerId: null, connectorProviderId: null, aliases: ["MetaQuotes", "MT4", "MT5"], notes: "The MetaQuotes terminal/gateway integration is gated on decision U1 (self-hosted bridge vs cloud gateway vs documented defer) — broker entries above list per-broker access." },
-  { brokerId: "ctrader-platform", displayName: "cTrader", platforms: ["CTRADER"], providerId: null, connectorProviderId: null, aliases: ["Spotware", "cTrader Open API"], notes: "cTrader Open API (OAuth 2.0 + protobuf over WebSocket) — implementation stopped pending explicit owner approval." },
-  { brokerId: "tradingview", displayName: "TradingView", platforms: ["OTHER"], providerId: null, connectorProviderId: null, aliases: ["TradingView Inc."], notes: "No account-data interface exists — chart embedding is not brokerage-account access (documented verdict, doc D)." },
+  { brokerId: "metatrader-platform", displayName: "MetaTrader (MT4/MT5)", platforms: ["MT4", "MT5"], providerId: null, connectorProviderId: null, aliases: ["MetaQuotes", "MT4", "MT5"], notes: "The MetaQuotes terminal/gateway integration is gated on decision U1 (self-hosted bridge vs cloud gateway vs documented defer) - broker entries above list per-broker access." },
+  { brokerId: "ctrader-platform", displayName: "cTrader", platforms: ["CTRADER"], providerId: null, connectorProviderId: null, aliases: ["Spotware", "cTrader Open API"], notes: "cTrader Open API (OAuth 2.0 + protobuf over WebSocket) - implementation stopped pending explicit owner approval." },
+  { brokerId: "tradingview", displayName: "TradingView", platforms: ["OTHER"], providerId: null, connectorProviderId: null, aliases: ["TradingView Inc."], notes: "No account-data interface exists - chart embedding is not brokerage-account access (documented verdict, doc D)." },
   { brokerId: "plus500", displayName: "Plus500", platforms: ["OTHER"], providerId: null, connectorProviderId: null, aliases: ["Plus500 Ltd"], notes: "Proprietary platform without a public retail account-data API." },
   { brokerId: "etoro", displayName: "eToro", platforms: ["OTHER"], providerId: null, connectorProviderId: null, aliases: ["eToro Group"], notes: "Proprietary platform without a public retail account-data API." },
 ];
@@ -373,7 +373,7 @@ interface ProviderData {
 }
 
 /**
- * The provider's answer for an external account — a pure function of the id,
+ * The provider's answer for an external account - a pure function of the id,
  * byte-identical across calls (idempotent upserts, §18 of the backend spec).
  */
 function providerData(externalAccountId: string): ProviderData {
@@ -814,7 +814,7 @@ export const tradingAccountsEngine = {
       throw coded(
         422,
         "INVALID_CREDENTIALS",
-        "Bridge connections take no client credentials — Euforia generates the secret.",
+        "Bridge connections take no client credentials - Euforia generates the secret.",
       );
     }
     if (!isBridge && input.credentials === undefined) {
@@ -997,7 +997,7 @@ export const tradingAccountsEngine = {
         {
           name: "authentication" as const,
           ok: true,
-          detail: "The bridge secret is held server-side — the terminal signs every push with it.",
+          detail: "The bridge secret is held server-side - the terminal signs every push with it.",
         },
         {
           name: "connectivity" as const,
@@ -1009,7 +1009,7 @@ export const tradingAccountsEngine = {
           ok: pushing,
           detail: pushing
             ? "The terminal payload was readable."
-            : "No terminal payload received yet — attach the EA and wait for the first push.",
+            : "No terminal payload received yet - attach the EA and wait for the first push.",
         },
         {
           name: "permissions" as const,
@@ -1039,14 +1039,14 @@ export const tradingAccountsEngine = {
           ok: authOk,
           detail: authOk
             ? "The provider returned a readable account payload."
-            : "No readable payload — authentication failed first.",
+            : "No readable payload - authentication failed first.",
         },
         {
           name: "permissions",
           ok: record.connection !== null,
           detail:
             record.connection === null
-              ? "No stored permissions — connect the account first."
+              ? "No stored permissions - connect the account first."
               : `Read scope granted: ${record.connection.permissions.length} READ permissions.`,
         },
       ],

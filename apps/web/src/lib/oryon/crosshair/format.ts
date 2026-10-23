@@ -2,7 +2,7 @@
  * Oryon crosshair legend formatting — PURE helpers (Phase 5 spec §5).
  *
  * The legend may only show what the data ACTUALLY carries: the timestamp is
- * rendered in UTC (the chart's time axis domain — Lightweight Charts renders
+ * rendered in UTC (the chart's time axis domain - Lightweight Charts renders
  * UTCTimestamps; a legend time in another zone would contradict the axis),
  * and the volume is displayed ONLY for a valid positive value — the forming
  * candle carries v = 0 until the server refetch merges real volume, and a

@@ -305,7 +305,7 @@ export function connectionIsHealthy(status: string): boolean {
 
 /**
  * Freshness presentation for the sync axis. LIVE here means "the last
- * successful sync completed within the backend freshness TTL" — never
+ * successful sync completed within the backend freshness TTL" - never
  * "real-time": polling providers do not stream. The label pair keeps color
  * non-authoritative (spec: never color alone).
  */

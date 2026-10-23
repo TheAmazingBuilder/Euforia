@@ -102,7 +102,7 @@ export function ReviewDialog({ row, open, onOpenChange }: ReviewDialogProps) {
     if (improvementNote.trim() !== "") {
       blocks.push({ id: blockId(), type: "todo", text: improvementNote.trim(), checked: false });
     }
-    createNofyNote.mutate({ title: `${row.symbol} ${row.tradingDate} — review notes`, blocks });
+    createNofyNote.mutate({ title: `${row.symbol} ${row.tradingDate} - review notes`, blocks });
   };
 
   if (!row) return null;
@@ -112,7 +112,7 @@ export function ReviewDialog({ row, open, onOpenChange }: ReviewDialogProps) {
   const submit = () => {
     if (lessons.trim().length < 3) {
       toast.error("Capture the lesson first", {
-        description: "The review exists for the lesson — one sentence is enough.",
+        description: "The review exists for the lesson - one sentence is enough.",
       });
       return;
     }
@@ -132,7 +132,7 @@ export function ReviewDialog({ row, open, onOpenChange }: ReviewDialogProps) {
       {
         onSuccess: () => {
           toast.success(row.reviewStatus === "PENDING" ? "Trade reviewed" : "Review updated", {
-            description: `${row.symbol} — execution graded ${executionGrade}.`,
+            description: `${row.symbol} - execution graded ${executionGrade}.`,
           });
           onOpenChange(false);
         },
@@ -149,7 +149,7 @@ export function ReviewDialog({ row, open, onOpenChange }: ReviewDialogProps) {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <NotebookPen className="size-5 text-violet-400" aria-hidden="true" />
-            {row.reviewStatus === "PENDING" ? "Review trade" : "Edit review"} — {row.symbol}
+            {row.reviewStatus === "PENDING" ? "Review trade" : "Edit review"} - {row.symbol}
           </DialogTitle>
           <DialogDescription>
             {row.tradingDate} · {row.direction} · {row.strategyName ?? "Off playbook"}
@@ -167,7 +167,7 @@ export function ReviewDialog({ row, open, onOpenChange }: ReviewDialogProps) {
           </div>
           <div className="text-right">
             <p className="text-xs text-muted-foreground">Decision grade (pre-reveal)</p>
-            <p className="font-mono text-sm font-semibold">{row.decisionGrade ?? "—"}</p>
+            <p className="font-mono text-sm font-semibold">{row.decisionGrade ?? "-"}</p>
           </div>
         </div>
 
@@ -176,7 +176,7 @@ export function ReviewDialog({ row, open, onOpenChange }: ReviewDialogProps) {
           <div>
             <Label className="text-sm font-medium">Execution grade</Label>
             <p className="mb-2 text-xs text-muted-foreground">
-              Your post-trade verdict — did the execution deserve the result?
+              Your post-trade verdict - did the execution deserve the result?
             </p>
             <div className="flex gap-2" data-testid="execution-grade-picker">
               {GRADES.map((grade) => (
@@ -336,7 +336,7 @@ export function ReviewDialog({ row, open, onOpenChange }: ReviewDialogProps) {
                 data-testid="review-reuse-note"
               >
                 <History className="size-3 shrink-0" aria-hidden="true" />
-                <span className="truncate">Reuse from your last review — “{lastImprovementNote}”</span>
+                <span className="truncate">Reuse from your last review - “{lastImprovementNote}”</span>
               </button>
             ) : null}
           </div>

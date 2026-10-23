@@ -37,7 +37,7 @@ import { sessionDefinitionById } from "@/lib/oryon/sessions/definitions";
  * useCandles(symbol, "1D") TanStack query — one cache entry per symbol for
  * the whole workspace (panels showing the same instrument share it, and a
  * panel charted on 1D reuses its own history query verbatim). Structure
- * calculations run on the panel's OWN loaded candles — never another
+ * calculations run on the panel's OWN loaded candles - never another
  * panel's data (§9.3 isolation is structural).
  *
  * Honesty: markers anchor to the pivot/break candle's real open time; key

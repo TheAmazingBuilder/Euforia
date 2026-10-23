@@ -175,7 +175,7 @@ class IntegrationEngine {
         marketData: null,
         licensing: {
           verified: true,
-          note: "Official Deriv API — personal journaling scope, redistribution not permitted.",
+          note: "Official Deriv API - personal journaling scope, redistribution not permitted.",
         },
         status: "CONNECTED",
         authState: "OK",
@@ -198,7 +198,7 @@ class IntegrationEngine {
       },
       {
         id: "mt5-bridge",
-        name: "MT5 — Local Bridge",
+        name: "MT5 - Local Bridge",
         kind: "BROKER",
         tagline: "MetaTrader 5 through a local companion process",
         description:
@@ -208,7 +208,7 @@ class IntegrationEngine {
         marketData: null,
         licensing: {
           verified: true,
-          note: "Local bridge over your own terminal — no third-party redistribution.",
+          note: "Local bridge over your own terminal - no third-party redistribution.",
         },
         status: "DISCONNECTED",
         authState: "MISSING",
@@ -236,7 +236,7 @@ class IntegrationEngine {
         marketData: null,
         licensing: {
           verified: true,
-          note: "Spotware Open API — read-only personal scope.",
+          note: "Spotware Open API - read-only personal scope.",
         },
         status: "DISCONNECTED",
         authState: "MISSING",
@@ -258,7 +258,7 @@ class IntegrationEngine {
         kind: "EXCHANGE",
         tagline: "Spot account monitoring via REST + WebSocket",
         description:
-          "Exchange accounts differ from brokers: custody, API scopes and rate limits are provider-specific. This registration reads balances and executions only — withdrawal scopes are refused by policy.",
+          "Exchange accounts differ from brokers: custody, API scopes and rate limits are provider-specific. This registration reads balances and executions only - withdrawal scopes are refused by policy.",
         docsUrl: "https://binance-docs.github.io",
         capabilities: ["READ_ACCOUNT", "READ_EXECUTIONS"],
         marketData: null,
@@ -292,7 +292,7 @@ class IntegrationEngine {
         marketData: { tick: true, ohlc: true, volume: true, spread: false, sessions: false },
         licensing: {
           verified: true,
-          note: "Public market data — attribution required, storage limited to the retention window.",
+          note: "Public market data - attribution required, storage limited to the retention window.",
         },
         status: "CONNECTED",
         authState: "OK",
@@ -314,13 +314,13 @@ class IntegrationEngine {
         kind: "MARKET_DATA",
         tagline: "Deterministic offline fallback",
         description:
-          "The offline-safe price source for demos and tests. Deliberately narrower than real providers — no OHLC history, no volume — so capability differences stay visible.",
+          "The offline-safe price source for demos and tests. Deliberately narrower than real providers - no OHLC history, no volume - so capability differences stay visible.",
         docsUrl: null,
         capabilities: ["READ_MARKET_DATA"],
         marketData: { tick: true, ohlc: false, volume: false, spread: false, sessions: true },
         licensing: {
           verified: true,
-          note: "Generated locally — no external licensing.",
+          note: "Generated locally - no external licensing.",
         },
         status: "CONNECTED",
         authState: "OK",
@@ -342,13 +342,13 @@ class IntegrationEngine {
         kind: "ECONOMIC",
         tagline: "Provider-shaped macro calendar, normalized on ingest",
         description:
-          "The economic pipeline stands in for a licensed macro provider: a raw provider payload is normalized (previous / forecast / actual / impact / status) and upserted idempotently by provider key. Production requires a licensed provider that passes review — until then this feed is clearly labelled sample.",
+          "The economic pipeline stands in for a licensed macro provider: a raw provider payload is normalized (previous / forecast / actual / impact / status) and upserted idempotently by provider key. Production requires a licensed provider that passes review - until then this feed is clearly labelled sample.",
         docsUrl: null,
         capabilities: ["READ_ECONOMIC_DATA", "WEBHOOK_INBOUND"],
         marketData: null,
         licensing: {
           verified: false,
-          note: "Sample dataset for development — a licensed provider must pass §29 review before production use.",
+          note: "Sample dataset for development - a licensed provider must pass §29 review before production use.",
         },
         status: "CONNECTED",
         authState: "OK",
@@ -368,7 +368,7 @@ class IntegrationEngine {
         id: "news-wire",
         name: "Market News Wire",
         kind: "NEWS",
-        tagline: "Headlines pipeline — awaiting a licensed provider",
+        tagline: "Headlines pipeline - awaiting a licensed provider",
         description:
           "The news architecture (headline, source, category, related symbols, importance) is provider-ready. Redistribution rights are verified BEFORE connecting: no publicly accessible feed is assumed licensable.",
         docsUrl: null,
@@ -396,7 +396,7 @@ class IntegrationEngine {
         id: "tradingview",
         name: "TradingView",
         kind: "CHARTING",
-        tagline: "Chart visualization — never the source of truth",
+        tagline: "Chart visualization - never the source of truth",
         description:
           "TradingView renders market display and chart interaction. Positions, executions and account state remain owned by the broker adapter; the chart layer can never write them.",
         docsUrl: "https://www.tradingview.com/widget-docs/",
@@ -404,7 +404,7 @@ class IntegrationEngine {
         marketData: null,
         licensing: {
           verified: true,
-          note: "Widget terms — visualization only, no data redistribution.",
+          note: "Widget terms - visualization only, no data redistribution.",
         },
         status: "CONNECTED",
         authState: "OK",
@@ -432,7 +432,7 @@ class IntegrationEngine {
         marketData: null,
         licensing: {
           verified: true,
-          note: "Your own sending provider — no third-party data.",
+          note: "Your own sending provider - no third-party data.",
         },
         status: "DISCONNECTED",
         authState: "MISSING",
@@ -460,7 +460,7 @@ class IntegrationEngine {
         marketData: null,
         licensing: {
           verified: true,
-          note: "Standard web push — no third-party data.",
+          note: "Standard web push - no third-party data.",
         },
         status: "DISCONNECTED",
         authState: "MISSING",
@@ -482,13 +482,13 @@ class IntegrationEngine {
         kind: "EXTERNAL",
         tagline: "Push journal events to your own automations",
         description:
-          "Signed outbound webhooks (HMAC, timestamped, retried with backoff) toward endpoints you own — spreadsheets, pipelines, home dashboards.",
+          "Signed outbound webhooks (HMAC, timestamped, retried with backoff) toward endpoints you own - spreadsheets, pipelines, home dashboards.",
         docsUrl: null,
         capabilities: [],
         marketData: null,
         licensing: {
           verified: true,
-          note: "Your own endpoints — no third-party data.",
+          note: "Your own endpoints - no third-party data.",
         },
         status: "DISCONNECTED",
         authState: "MISSING",
@@ -675,7 +675,7 @@ class IntegrationEngine {
         providerId: "deriv",
         providerName: "Deriv",
         accountIdentifier: "Deriv Live · Standard",
-        accountType: "CFD — forex & synthetic indices",
+        accountType: "CFD - forex & synthetic indices",
         currency: "USD",
         // §6 honesty: numbers arrive with the broker adapter sync — never invented.
         balance: null,
@@ -692,11 +692,11 @@ class IntegrationEngine {
     const iso = (ms: number): string => new Date(ms).toISOString();
     const entries: Array<[string, string, IntegrationEvent["type"], string]> = [
       ["deriv", "Deriv", "CONNECTED", "Read-only connection established (market data + account scope)"],
-      ["binance-market", "Binance Market Data", "CONNECTED", "Public streams attached — attribution recorded"],
+      ["binance-market", "Binance Market Data", "CONNECTED", "Public streams attached - attribution recorded"],
       ["simulated-feed", "Simulated Feed", "CONNECTED", "Offline fallback registered"],
-      ["macro-sample", "Macro Calendar (sample feed)", "CONNECTED", "Sample feed attached — production requires a licensed provider"],
+      ["macro-sample", "Macro Calendar (sample feed)", "CONNECTED", "Sample feed attached - production requires a licensed provider"],
       ["tradingview", "TradingView", "CONNECTED", "Charting layer attached (visualization only)"],
-      ["macro-sample", "Macro Calendar (sample feed)", "SYNCED", "Incremental sync — batch-7, 61 records"],
+      ["macro-sample", "Macro Calendar (sample feed)", "SYNCED", "Incremental sync - batch-7, 61 records"],
     ];
     this.events = entries.map(([providerId, providerName, type, message], index) => ({
       id: uuid(mulberry32(0x1d7a + index)),
@@ -769,11 +769,11 @@ class IntegrationEngine {
           retryAfterMs,
         },
       );
-      this.logEvent(provider, "SYNC_FAILED", "Rate limited — quota window exhausted");
+      this.logEvent(provider, "SYNC_FAILED", "Rate limited - quota window exhausted");
       return fail(
         429,
         "RATE_LIMITED",
-        `Rate limit reached for ${provider.name} — retry after the quota window`,
+        `Rate limit reached for ${provider.name} - retry after the quota window`,
         retryAfterMs,
       );
     }
@@ -785,13 +785,13 @@ class IntegrationEngine {
     // Status is the source of truth — several connected data feeds (market
     // data, economic sample, charting) operate without stored credentials.
     if (provider.status === "DISCONNECTED") {
-      return fail(409, "NOT_CONNECTED", `${provider.name} is not connected — connect it first`);
+      return fail(409, "NOT_CONNECTED", `${provider.name} is not connected - connect it first`);
     }
     if (provider.status === "AUTH_REQUIRED") {
       return fail(
         409,
         "AUTH_REQUIRED",
-        `${provider.name} needs reauthorization — rotate the key and reconnect`,
+        `${provider.name} needs reauthorization - rotate the key and reconnect`,
       );
     }
     return null;
@@ -892,8 +892,8 @@ class IntegrationEngine {
       provider,
       provider.status === "AUTH_REQUIRED" ? "TEST_FAILED" : "CONNECTED",
       provider.status === "AUTH_REQUIRED"
-        ? "Paired, but the stored credential is expired — reauthorization required"
-        : `Connected via ${input.vaultRef} — read-only scope`,
+        ? "Paired, but the stored credential is expired - reauthorization required"
+        : `Connected via ${input.vaultRef} - read-only scope`,
     );
     return ok(this.publicView(provider));
   }
@@ -915,7 +915,7 @@ class IntegrationEngine {
     this.logEvent(
       provider,
       "DISCONNECTED",
-      "Disconnected — synced history retained, credentials revoked from the vault",
+      "Disconnected - synced history retained, credentials revoked from the vault",
     );
     return ok({ providerId, status: provider.status, historyPreserved: true });
   }
@@ -933,8 +933,8 @@ class IntegrationEngine {
         detail: authOk
           ? "Vault credential accepted"
           : provider.credentials === null
-            ? "No credential stored — connect the provider first"
-            : "Stored credential is expired — rotate the key and reconnect",
+            ? "No credential stored - connect the provider first"
+            : "Stored credential is expired - rotate the key and reconnect",
       },
       {
         name: "permissions",
@@ -942,7 +942,7 @@ class IntegrationEngine {
         detail:
           provider.capabilities.length > 0
             ? `Scoped: ${provider.capabilities.join(", ")}`
-            : "No data permissions — visualization only",
+            : "No data permissions - visualization only",
       },
       {
         name: "connectivity",
@@ -950,14 +950,14 @@ class IntegrationEngine {
         detail:
           provider.latencyMs === null
             ? "Endpoint unreachable until credentials are valid"
-            : `Reachable — ${provider.latencyMs} ms round trip`,
+            : `Reachable - ${provider.latencyMs} ms round trip`,
       },
       {
         name: "providerResponse",
         ok: authOk,
         detail: authOk
           ? "Schema-valid response against the provider contract"
-          : "Rejected — the provider answered with an auth error",
+          : "Rejected - the provider answered with an auth error",
       },
     ];
 
@@ -968,7 +968,7 @@ class IntegrationEngine {
       if (provider.status === "AUTH_REQUIRED" || provider.status === "ERROR") {
         provider.status = "CONNECTED";
         provider.authState = "OK";
-        this.logEvent(provider, "RECOVERED", "Connection test passed — provider recovered");
+        this.logEvent(provider, "RECOVERED", "Connection test passed - provider recovered");
       } else {
         this.logEvent(provider, "TEST_OK", "Connection test passed (auth, permissions, connectivity)");
       }
@@ -979,7 +979,7 @@ class IntegrationEngine {
         retryable: true,
         actionHint: "Rotate the key in the Security vault, then reconnect",
       });
-      this.logEvent(provider, "TEST_FAILED", "Connection test failed — credentials expired");
+      this.logEvent(provider, "TEST_FAILED", "Connection test failed - credentials expired");
     }
     return ok({ ok: allOk, checks });
   }
@@ -1019,9 +1019,9 @@ class IntegrationEngine {
       provider.status = "DEGRADED";
       this.logError(provider, "PARTIAL_SYNC", "Incremental sync completed with 1 failed record", {
         retryable: true,
-        actionHint: "Retry the sync — the cursor resumes where it stopped",
+        actionHint: "Retry the sync - the cursor resumes where it stopped",
       });
-      this.logEvent(provider, "DEGRADED", "Partial sync — 1 record failed, cursor retained");
+      this.logEvent(provider, "DEGRADED", "Partial sync - 1 record failed, cursor retained");
     } else {
       provider.sync.lastSuccessAt = nowIso();
       provider.sync.retryCount = 0;
@@ -1031,12 +1031,12 @@ class IntegrationEngine {
       provider.authState = "OK";
       if (wasDegraded) {
         this.clearError(providerId);
-        this.logEvent(provider, "RECOVERED", "Sync healthy again — provider fully operational");
+        this.logEvent(provider, "RECOVERED", "Sync healthy again - provider fully operational");
       } else {
         this.logEvent(
           provider,
           "SYNCED",
-          `Incremental sync ok — ${processed} record(s) in ${durationMs} ms (cursor ${provider.sync.cursor ?? "n/a"})`,
+          `Incremental sync ok - ${processed} record(s) in ${durationMs} ms (cursor ${provider.sync.cursor ?? "n/a"})`,
         );
       }
     }
@@ -1149,34 +1149,34 @@ class IntegrationEngine {
         accepted: false,
         duplicate: false,
         signatureValid: true,
-        message: "Rejected — timestamp outside the replay window",
+        message: "Rejected - timestamp outside the replay window",
       });
     }
     // Pipeline step 2 — signature verification.
     if (providedSignature !== signature) {
       this.recordDelivery(hook, input.eventType, false, false, false, "Rejected: invalid signature");
-      this.logEvent(this.providers.get(hook.providerId)!, "WEBHOOK_REJECTED", "Webhook rejected — invalid signature");
+      this.logEvent(this.providers.get(hook.providerId)!, "WEBHOOK_REJECTED", "Webhook rejected - invalid signature");
       return ok({
         accepted: false,
         duplicate: false,
         signatureValid: false,
-        message: "Rejected — invalid signature",
+        message: "Rejected - invalid signature",
       });
     }
     // Pipeline step 3 — idempotency (§14).
     const key = idempotencyKey(hook.providerId, eventId);
     if (this.seenKeys.has(key) && !replay) {
       this.recordDelivery(hook, input.eventType, true, false, false, "Accepted but already processed");
-      return ok({ accepted: false, duplicate: false, signatureValid: true, message: "Duplicate event — ignored" });
+      return ok({ accepted: false, duplicate: false, signatureValid: true, message: "Duplicate event - ignored" });
     }
     if (replay) {
       this.recordDelivery(hook, input.eventType, true, true, true, "Duplicate delivery ignored (idempotent)");
-      this.logEvent(this.providers.get(hook.providerId)!, "WEBHOOK_DUPLICATE", "Replayed delivery ignored — idempotency held");
+      this.logEvent(this.providers.get(hook.providerId)!, "WEBHOOK_DUPLICATE", "Replayed delivery ignored - idempotency held");
       return ok({
         accepted: false,
         duplicate: true,
         signatureValid: true,
-        message: "Duplicate — the event was already processed",
+        message: "Duplicate - the event was already processed",
       });
     }
 
@@ -1191,13 +1191,13 @@ class IntegrationEngine {
       target.actual = String(payload.actual);
       target.status = "UPDATED";
     }
-    this.recordDelivery(hook, input.eventType, true, true, false, "Signature verified — event applied");
-    this.logEvent(this.providers.get(hook.providerId)!, "WEBHOOK_RECEIVED", `Webhook accepted — ${input.eventType} applied in real time`);
+    this.recordDelivery(hook, input.eventType, true, true, false, "Signature verified - event applied");
+    this.logEvent(this.providers.get(hook.providerId)!, "WEBHOOK_RECEIVED", `Webhook accepted - ${input.eventType} applied in real time`);
     return ok({
       accepted: true,
       duplicate: false,
       signatureValid: true,
-      message: "Accepted — event applied",
+      message: "Accepted - event applied",
     });
   }
 

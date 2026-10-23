@@ -85,9 +85,9 @@ export function OryonAlertsProvider({ children }: { children: React.ReactNode })
         event.alert.condition === "crosses_above" ? S.triggerAbove : S.triggerBelow;
       const label =
         event.alert.label !== null && event.alert.label.trim().length > 0
-          ? `${event.alert.label.trim()} — `
+          ? `${event.alert.label.trim()} - `
           : "";
-      toast(`${S.triggerToastTitle} — ${event.alert.symbol}`, {
+      toast(`${S.triggerToastTitle} - ${event.alert.symbol}`, {
         description: `${label}${crossed} ${event.price}`,
       });
     });
@@ -134,7 +134,7 @@ export function OryonAlertsProvider({ children }: { children: React.ReactNode })
   const toggleAlert = React.useCallback((id: string) => store.toggleEnabled(id), [store]);
   const rearmAlert = React.useCallback(
     (id: string) => {
-      engine.rearm(id); // re-prime the runtime FIRST — no stale anchor.
+      engine.rearm(id); // re-prime the runtime FIRST - no stale anchor.
       store.rearm(id);
     },
     [engine, store],

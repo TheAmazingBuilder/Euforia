@@ -25,7 +25,7 @@ export function DemoDataChip({ className, testId }: { className?: string; testId
         className,
       )}
       data-testid={testId ?? "demo-data-chip"}
-      title="Mock-mode fixture data — not real account values"
+      title="Mock-mode fixture data - not real account values"
     >
       <FlaskConical className="size-2.5" aria-hidden />
       Demo data

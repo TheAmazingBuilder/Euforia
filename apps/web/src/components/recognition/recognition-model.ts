@@ -247,7 +247,7 @@ export function validateFieldValue(field: string, raw: string): FieldValidation 
   if (field === "symbol") {
     const symbol = value.toUpperCase();
     if (!/^[A-Z0-9._-]{3,20}$/.test(symbol)) {
-      return { ok: false, messageKey: "invalid", message: "3–20 characters — letters, digits, . _ -" };
+      return { ok: false, messageKey: "invalid", message: "3–20 characters - letters, digits, . _ -" };
     }
     return { ok: true, value: symbol };
   }
@@ -263,9 +263,9 @@ export function validateFieldValue(field: string, raw: string): FieldValidation 
     if (!pattern.test(value)) {
       const hint: Record<string, string> = {
         accountLogin: "A 4–12 digit account number",
-        accountCurrency: "A 3-letter currency code — e.g. USD",
-        accountLeverage: "A leverage ratio — e.g. 1:500",
-        chartTimeframe: "A timeframe — e.g. M5, H1, D1",
+        accountCurrency: "A 3-letter currency code - e.g. USD",
+        accountLeverage: "A leverage ratio - e.g. 1:500",
+        chartTimeframe: "A timeframe - e.g. M5, H1, D1",
       };
       return { ok: false, messageKey: "invalid", message: hint[field] ?? "Invalid value" };
     }
@@ -274,11 +274,11 @@ export function validateFieldValue(field: string, raw: string): FieldValidation 
   if (DECIMAL_FIELDS.has(field)) {
     const normalized = value.replace(/\s/g, "").replace(",", ".");
     if (!/^[+-]?\d+(\.\d+)?$/.test(normalized)) {
-      return { ok: false, messageKey: "invalid", message: "A decimal number — e.g. 2645.32" };
+      return { ok: false, messageKey: "invalid", message: "A decimal number - e.g. 2645.32" };
     }
     const numeric = Number(normalized);
     if (!Number.isFinite(numeric)) {
-      return { ok: false, messageKey: "invalid", message: "A decimal number — e.g. 2645.32" };
+      return { ok: false, messageKey: "invalid", message: "A decimal number - e.g. 2645.32" };
     }
     if (POSITIVE_FIELDS.has(field) && numeric <= 0) {
       return { ok: false, messageKey: "invalid", message: "Volume must be positive" };

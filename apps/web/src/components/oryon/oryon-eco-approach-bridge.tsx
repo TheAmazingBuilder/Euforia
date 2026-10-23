@@ -87,7 +87,7 @@ export function OryonEcoApproachBridge({
       const when = notice.overdue
         ? S.ecoToastImminent
         : S.ecoToastIn.replace("{m}", String(notice.milestoneMinutes));
-      const description = `${notice.event.title} — ${notice.event.currency} · ${when} · ${S.ecoToastInstruments} ${notice.symbols.join(", ")}`;
+      const description = `${notice.event.title} - ${notice.event.currency} · ${when} · ${S.ecoToastInstruments} ${notice.symbols.join(", ")}`;
       toast(`${S.ecoToastTitle} · ${when}`, {
         description,
         testId: "oryon-eco-approach-toast",

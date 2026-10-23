@@ -125,7 +125,7 @@ function blocksToMarkdown(
       case "numbered": lines.push(`1. ${block.text}`); break;
       case "todo": lines.push(`- [${block.checked ? "x" : " "}] ${block.text}`); break;
       case "quote": lines.push(`> ${block.text}`, ""); break;
-      case "callout": lines.push(`> **${(block.tone ?? "info").toUpperCase()}** — ${block.text}`, ""); break;
+      case "callout": lines.push(`> **${(block.tone ?? "info").toUpperCase()}** - ${block.text}`, ""); break;
       case "code": lines.push("```", block.text, "```", ""); break;
       case "divider": lines.push("---", ""); break;
       case "image": {
@@ -148,7 +148,7 @@ function blocksToMarkdown(
         if (block.ref) {
           const kindLabel = copy.refLabel(block.ref.kind);
           const label = block.ref.label ?? kindLabel;
-          lines.push(`> **${kindLabel}** — ${label}${block.ref.href ? ` (${block.ref.href})` : ""}`, "");
+          lines.push(`> **${kindLabel}** - ${label}${block.ref.href ? ` (${block.ref.href})` : ""}`, "");
         }
         break;
       }

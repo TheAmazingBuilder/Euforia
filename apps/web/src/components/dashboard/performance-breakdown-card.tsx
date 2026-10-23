@@ -20,7 +20,7 @@ import {
  * server-computed suite rows of the configured dimension. The widget never
  * re-derives metrics, never ranks populations: display order is "busiest
  * first", every rate ships with its sample size, and mixed-currency scopes
- * show "—" for money with an explanatory note instead of a raw sum.
+ * show "-" for money with an explanatory note instead of a raw sum.
  */
 
 interface Row {
@@ -56,16 +56,16 @@ export function PerformanceBreakdownWidget({
     return model.rows.map((row) => ({
       label: row.label,
       trades: formatNumber(row.trades, 0),
-      winRate: row.winRate === null ? "—" : formatPercent(row.winRate, 1),
-      profitFactor: row.profitFactor === null ? "—" : formatNumber(row.profitFactor, 2),
-      avgR: row.avgR === null ? "—" : formatR(row.avgR),
+      winRate: row.winRate === null ? "-" : formatPercent(row.winRate, 1),
+      profitFactor: row.profitFactor === null ? "-" : formatNumber(row.profitFactor, 2),
+      avgR: row.avgR === null ? "-" : formatR(row.avgR),
       netPnl:
         row.netPnl === null || suite === null || !suite.meta.singleCurrency
-          ? "—"
+          ? "-"
           : formatMoney(row.netPnl, suite.currency),
       avgDuration:
         row.avgDurationMin === null
-          ? "—"
+          ? "-"
           : row.avgDurationMin >= 60
             ? `${formatNumber(row.avgDurationMin / 60, 1)} h`
             : `${formatNumber(row.avgDurationMin, 0)} min`,
@@ -78,7 +78,7 @@ export function PerformanceBreakdownWidget({
         <div className="min-w-0 space-y-1">
           <CardTitle className="font-heading text-base font-semibold">Performance breakdown</CardTitle>
           <CardDescription className="text-xs">
-            {BREAKDOWN_DIMENSION_LABELS[config.dimension]} populations under the active filters — factual
+            {BREAKDOWN_DIMENSION_LABELS[config.dimension]} populations under the active filters - factual
             rows, no ranking.
           </CardDescription>
         </div>
@@ -100,7 +100,7 @@ export function PerformanceBreakdownWidget({
           </div>
         ) : !model || model.rows.length === 0 ? (
           <p className="py-6 text-center text-sm text-muted-foreground" data-testid="performance-breakdown-empty">
-            No closed trades in this scope yet — the breakdown fills in as the journal grows.
+            No closed trades in this scope yet - the breakdown fills in as the journal grows.
           </p>
         ) : (
           <>
@@ -154,7 +154,7 @@ export function PerformanceBreakdownWidget({
             {model.truncated > 0 && (
               <p className="mt-2 text-xs text-muted-foreground">
                 +{model.truncated} more {model.truncated === 1 ? "row" : "rows"} beyond the {BREAKDOWN_MAX_ROWS} displayed
-                — available in the Analytics module.
+                - available in the Analytics module.
               </p>
             )}
           </>

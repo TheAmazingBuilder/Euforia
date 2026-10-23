@@ -227,7 +227,7 @@ export function OryonDrawingLayer({
         case "arrowmark":
           return { ...base, at: { ...drawing.at, t: shift(drawing.at.t) } } as OryonDrawing;
         case "hline":
-          return base; // Price line — a time shift is meaningless.
+          return base; // Price line - a time shift is meaningless.
       }
     },
     [engine],

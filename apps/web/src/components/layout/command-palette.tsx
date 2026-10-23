@@ -247,7 +247,7 @@ export function CommandPalette() {
     // with one keystroke; entries carry the card's own search keywords.
     const settingsItems: PaletteItem[] = SETTINGS_FINDER_META.map((category) => ({
       id: `settings-${category.id}`,
-      label: `Settings — ${dict.settings.categories[category.id]?.label ?? category.label}`,
+      label: `Settings - ${dict.settings.categories[category.id]?.label ?? category.label}`,
       keywords: `settings preferences ${category.description} ${category.keywords}`,
       icon: category.icon,
       group: "Settings" as const,
@@ -257,7 +257,7 @@ export function CommandPalette() {
     const academyTabs: PaletteItem[] = [
       {
         id: "academy-tab-courses",
-        label: "Academy — Courses",
+        label: "Academy - Courses",
         keywords: "academy courses curriculum learn study lessons",
         icon: BookOpen,
         group: "Academy" as const,
@@ -265,7 +265,7 @@ export function CommandPalette() {
       },
       {
         id: "academy-tab-practice",
-        label: "Academy — Practice",
+        label: "Academy - Practice",
         keywords: "academy practice drills flashcards scenarios quiz training",
         icon: GraduationCap,
         group: "Academy" as const,
@@ -273,7 +273,7 @@ export function CommandPalette() {
       },
       {
         id: "academy-tab-glossary",
-        label: "Academy — Glossary",
+        label: "Academy - Glossary",
         keywords: "academy glossary terms definitions vocabulary",
         icon: Library,
         group: "Academy" as const,

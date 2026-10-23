@@ -77,7 +77,7 @@ export function TradingCard() {
     { value: "", label: L.noDefault },
     ...(instruments.data?.instruments ?? []).map((instrument) => ({
       value: instrument.id,
-      label: `${instrument.symbol} — ${instrument.assetClass}`,
+      label: `${instrument.symbol} - ${instrument.assetClass}`,
     })),
   ];
 

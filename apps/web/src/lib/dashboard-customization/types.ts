@@ -49,7 +49,7 @@ export type FilterDimension = (typeof FILTER_DIMENSIONS)[number];
  *    dimensions — the suite contract is scalar and takes them all).
  *  - UNAFFECTED: the widget's data source has no filter parameters today;
  *    `reason` is an honest, short product explanation (rendered once, in
- *    the widget's contextual detail — not repeated banner text).
+ *    the widget's contextual detail - not repeated banner text).
  */
 export type WidgetFilterSupport =
   | { support: "FULL"; dimensions: readonly FilterDimension[]; note?: string }

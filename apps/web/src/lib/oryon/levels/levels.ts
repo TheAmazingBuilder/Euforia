@@ -9,7 +9,7 @@ import { normalizeCandles } from "@/lib/oryon/structure/pivots";
  * DATA SOURCE (an explicit, documented convention — spec §5.4): the levels
  * are computed from the DAILY candle series the market service itself
  * serves (`interval: "1D"`), i.e. the datafeed's OWN day buckets. A
- * calendar day here is therefore the datafeed's UTC-midnight bucket — the
+ * calendar day here is therefore the datafeed's UTC-midnight bucket - the
  * authoritative convention of this repo's market data. The browser's local
  * timezone is NEVER consulted (§5.4 critical rule), and no exchange-local
  * session boundary is invented (§5.4: a calendar day is not a trading
@@ -17,7 +17,7 @@ import { normalizeCandles } from "@/lib/oryon/structure/pivots";
  * datafeed convention, disclosed in the UI source note).
  *
  * WEEK CONVENTION (documented, spec §5.4 "define period boundaries
- * explicitly"): weeks are ISO weeks — Monday 00:00 UTC to Sunday 24:00 UTC
+ * explicitly"): weeks are ISO weeks - Monday 00:00 UTC to Sunday 24:00 UTC
  * — over the daily series. The CURRENT (partial) week never produces
  * levels; the previous week with available candles does.
  *
@@ -30,7 +30,7 @@ import { normalizeCandles } from "@/lib/oryon/structure/pivots";
  *  - `null` results mean "unavailable" — the UI shows an explicit state,
  *    never a guessed price (§11);
  *  - symbol isolation is structural: the engine sees one candle array for
- *    one symbol (the caller's query key guarantees it — §9.3).
+ *    one symbol (the caller's query key guarantees it - §9.3).
  */
 
 export interface OryonPeriodLevels {

@@ -18,7 +18,7 @@ import {
 /**
  * Long-vs-short widget (Phase 02 §12.2) — the server's BUY/SELL populations
  * side by side. Each side carries its own sample size; an empty population
- * renders "—" with an explicit note — never a fabricated zero.
+ * renders "-" with an explicit note — never a fabricated zero.
  */
 
 export function LongShortWidget({
@@ -113,7 +113,7 @@ function DirectionColumn({
       </div>
       {empty ? (
         <p className="py-3 text-xs text-muted-foreground">
-          No eligible closed trades in this direction — nothing to compare.
+          No eligible closed trades in this direction - nothing to compare.
         </p>
       ) : (
         <dl className="space-y-1.5">
@@ -135,7 +135,7 @@ function DirectionColumn({
 
 function formatDirectionValue(metricId: string, value: number | null, currency: Currency | undefined): string {
   const metric = getMetricDefinition(metricId);
-  if (!metric || value === null) return "—";
+  if (!metric || value === null) return "-";
   switch (metric.unit) {
     case "MONEY":
       return currency ? formatMoney(value, currency, { digits: 0 }) : formatNumber(value, 0);

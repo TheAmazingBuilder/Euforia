@@ -92,7 +92,7 @@ export function StrategyTable({ stats, strategies }: StrategyTableProps) {
                     last20 === null ? "text-muted-foreground" : last20 >= 0 ? "text-profit" : "text-loss",
                   )}
                 >
-                  {last20 === null ? "—" : formatR(stat.last20Expectancy)}
+                  {last20 === null ? "-" : formatR(stat.last20Expectancy)}
                 </td>
               </tr>
             );

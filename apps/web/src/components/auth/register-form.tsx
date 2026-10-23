@@ -72,14 +72,15 @@ export function RegisterForm() {
         // Auto-login path (real backend, email gate OFF): the server opened a
         // session on sign-up — fold it into auth state exactly like the login
         // form does, then land straight in the app. No bounce back to /login.
-        const auto = response as Extract<RegisterResponse, { status: "ACTIVE" }>;
-        if (auto.autoLogin === true && auto.accessToken) {
-          setAccessToken(auto.accessToken, auto.accessTokenExpiresAt ?? "");
-          setAuthenticated(auto.user, auto.session ?? null);
+        // Narrowing helper: the union's second arm is the only one whose
+        // `status` can be a non-PENDING value.
+        if ("autoLogin" in response && response.autoLogin === true && response.accessToken) {
+          setAccessToken(response.accessToken, response.accessTokenExpiresAt ?? "");
+          setAuthenticated(response.user, response.session ?? null);
           router.replace("/dashboard");
           return;
         }
-        if (response.status === "ACTIVE") {
+        if (response.status !== "PENDING_VERIFICATION") {
           router.push(`/login?registered=true&email=${encodeURIComponent(response.user.email)}`);
           return;
         }

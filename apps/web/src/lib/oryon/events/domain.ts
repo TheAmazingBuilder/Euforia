@@ -79,7 +79,7 @@ export function eventMatchesCurrency(event: EcoEvent, currency: string | null): 
 }
 
 /**
- * Events relevant to a chart's loaded candle span — the marker input
+ * Events relevant to a chart's loaded candle span - the marker input
  * (spec §8): markers appear only within the displayed time range, so the
  * span is the candle domain padded by one bucket on each side. The caller
  * still applies its importance/currency rules; relevance to an INSTRUMENT

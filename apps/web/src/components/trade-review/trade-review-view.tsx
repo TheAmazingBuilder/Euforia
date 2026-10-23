@@ -89,7 +89,7 @@ export function TradeReviewView() {
             </h1>
             <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
               Grade execution against the playbook, capture the lesson, and hold your goals against what you actually
-              do. Targets are set by you; progress is computed from real trades — you cannot cheat the bar.
+              do. Targets are set by you; progress is computed from real trades - you cannot cheat the bar.
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -110,8 +110,8 @@ export function TradeReviewView() {
                   className="gap-1.5 border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-amber-500"
                   title={
                     overview.streak.frozenDays > 0
-                      ? `Includes ${overview.streak.frozenDays} frozen grace day${overview.streak.frozenDays === 1 ? "" : "s"} — one per week, honestly reported.`
-                      : "Consecutive review days — one grace day per week is forgiven, honestly reported."
+                      ? `Includes ${overview.streak.frozenDays} frozen grace day${overview.streak.frozenDays === 1 ? "" : "s"} - one per week, honestly reported.`
+                      : "Consecutive review days - one grace day per week is forgiven, honestly reported."
                   }
                   data-testid="header-streak"
                 >

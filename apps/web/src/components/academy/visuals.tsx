@@ -247,7 +247,7 @@ const S: Record<string, StructureSpec> = {
   },
   "liquidity-sweep": {
     points: [[6, 40], [24, 62], [40, 46], [56, 62], [72, 62.5], [78, 30], [94, 16]],
-    lines: [{ y: 62, label: "equal lows — resting stops", tone: "loss" }],
+    lines: [{ y: 62, label: "equal lows - resting stops", tone: "loss" }],
     labels: [{ x: 74, y: 44, text: "sweep", tone: "warning" }],
   },
   hhhl: {

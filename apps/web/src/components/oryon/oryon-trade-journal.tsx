@@ -45,7 +45,7 @@ import { cn } from "@/lib/utils";
  *    saved as a linked analysis.
  *
  * Association discipline (Phase 10 spec §4.2/§4.3/§5.3):
- *  - the trade is selected from the journal's OWN list (GET /trades) — the
+ *  - the trade is selected from the journal's OWN list (GET /trades) - the
  *    journal record stays canonical, nothing is copied;
  *  - a chart/trade instrument MISMATCH is surfaced explicitly and requires
  *    an affirmative confirmation — never a silent cross-instrument link
@@ -105,7 +105,7 @@ function TradeRow({
           !closed ? "text-muted-foreground" : Number(trade.pnlNet) >= 0 ? "text-profit" : "text-loss",
         )}
       >
-        {closed ? formatSignedMoney(trade.pnlNet, "USD", { digits: 2 }) : "—"}
+        {closed ? formatSignedMoney(trade.pnlNet, "USD", { digits: 2 }) : "-"}
       </span>
     </button>
   );
@@ -298,7 +298,7 @@ export function OryonSaveAnalysisDialog({
 
   const defaultTitle = React.useMemo(() => {
     const date = new Date().toISOString().slice(0, 10);
-    return `${symbol} ${interval} — ${date}`;
+    return `${symbol} ${interval} - ${date}`;
   }, [symbol, interval]);
 
   const [title, setTitle] = React.useState(defaultTitle);
@@ -496,7 +496,7 @@ export function OryonSnapshotDialog({
               symbol,
               interval,
               chartType,
-              title: `${symbol} ${interval} — ${new Date(capturedAt).toISOString().slice(0, 10)}`,
+              title: `${symbol} ${interval} - ${new Date(capturedAt).toISOString().slice(0, 10)}`,
               notes: null,
               tradeId: trade.id,
               snapshot: { tradeId: trade.id, screenshotId: screenshot.id, capturedAt },

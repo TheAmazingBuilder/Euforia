@@ -111,7 +111,7 @@ function RuleEventsList({ ruleId }: { ruleId: string }) {
   if (events.length === 0) {
     return (
       <p className="px-3 pb-3 text-xs text-muted-foreground">
-        No events yet — the rule fires when its condition turns true.
+        No events yet - the rule fires when its condition turns true.
       </p>
     );
   }
@@ -323,7 +323,7 @@ export function AlertRuleFormDialog({
             {rule === null ? "New alert rule" : "Edit alert rule"}
           </DialogTitle>
           <DialogDescription>
-            Watch a metric Euforia computes from your journal — the alert lands in your inbox when
+            Watch a metric Euforia computes from your journal - the alert lands in your inbox when
             the condition turns true.
           </DialogDescription>
         </DialogHeader>
@@ -483,7 +483,7 @@ export function AlertRuleFormDialog({
                 </Select>
                 {(goals.data?.goals ?? []).length === 0 && (
                   <p className="text-[11px] text-muted-foreground">
-                    No goals yet — create one on the Journal&apos;s Goals tab first.
+                    No goals yet - create one on the Journal&apos;s Goals tab first.
                   </p>
                 )}
               </div>
@@ -578,7 +578,7 @@ export function AlertRulesManager({
     evaluate.mutate(undefined, {
       onSuccess: (result) => {
         toast.success(
-          `Evaluation done — ${result.triggeredEvents} alert${result.triggeredEvents === 1 ? "" : "s"} fired`,
+          `Evaluation done - ${result.triggeredEvents} alert${result.triggeredEvents === 1 ? "" : "s"} fired`,
           {
             description:
               result.skippedNoData > 0

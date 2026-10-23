@@ -39,7 +39,7 @@ export function rangesEqual(a: SyncRange, b: SyncRange): boolean {
 /**
  * Finds the candle that CONTAINS `timeSec` (a bar whose [t, t+interval)
  * bucket covers the time). Returns null when the time falls between bars
- * (session gap), before the first bar, or past the last bar's bucket —
+ * (session gap), before the first bar, or past the last bar's bucket -
  * the honest "this chart cannot represent that timestamp" answer.
  * `candles` MUST be sorted by `t` ascending (the engine's invariant).
  */

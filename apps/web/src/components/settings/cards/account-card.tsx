@@ -130,7 +130,7 @@ export function AccountCard() {
             <div className="flex items-center justify-between gap-3 sm:block">
               <dt className="text-xs text-muted-foreground">{S.username}</dt>
               <dd className="font-mono text-[13px] font-medium">
-                {profile.username ?? "—"}
+                {profile.username ?? "-"}
               </dd>
             </div>
             <div className="flex items-center justify-between gap-3 sm:block">

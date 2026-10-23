@@ -283,7 +283,7 @@ export function sessionStateIdentical(
  *    trim — a third or fourth configured panel wraps onto an implicit CSS
  *    row (auto-placement), so switching quad → side-by-side loses nothing;
  *  - `quad` fills up to four (the workspace capacity).
- * Added panels take the app's default instrument — never an invented
+ * Added panels take the app's default instrument - never an invented
  * symbol. The active pointer is normalized to a surviving panel.
  */
 export function panelsForGrid(
@@ -415,7 +415,7 @@ export function migrateLayoutV2toV4(layout: OryonWorkspaceLayoutV2): OryonWorksp
 /**
  * Migrates a Phase 6 single-chart layout record directly to the v4 shape:
  * the flat arrangement becomes the ONE panel of a `single` grid, sync is
- * all-off, the panel's indicator stack is `null` — a v1 layout never
+ * all-off, the panel's indicator stack is `null` - a v1 layout never
  * managed analysis stacks, so applying the migrated layout must leave them
  * untouched (honest "not managed" semantics, never a silent wipe) — and
  * the context/analysis prefs take the documented defaults.

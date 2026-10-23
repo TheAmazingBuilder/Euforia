@@ -34,7 +34,7 @@ export function PerformanceTrendWidget({
         <div className="min-w-0 space-y-1">
           <CardTitle className="font-heading text-base font-semibold">Weekly performance trend</CardTitle>
           <CardDescription className="text-xs">
-            Recent weekly rollups under the active filters — labeled dates, identical metric definitions.
+            Recent weekly rollups under the active filters - labeled dates, identical metric definitions.
           </CardDescription>
         </div>
       </CardHeader>
@@ -55,13 +55,13 @@ export function PerformanceTrendWidget({
           </div>
         ) : !model || model.rows.length === 0 ? (
           <p className="py-6 text-center text-sm text-muted-foreground" data-testid="performance-trend-empty">
-            No completed week in this scope yet — the trend fills in as weeks close.
+            No completed week in this scope yet - the trend fills in as weeks close.
           </p>
         ) : (
           <>
             {multiCurrency && (
               <p className="mb-2 rounded-md border border-border bg-surface-raised px-2 py-1.5 text-xs text-muted-foreground" role="note">
-                Mixed-currency scope — money is unavailable; R, counts and rates stay computed.
+                Mixed-currency scope - money is unavailable; R, counts and rates stay computed.
               </p>
             )}
             <div className="overflow-x-auto" data-testid="performance-trend-table">
@@ -94,14 +94,14 @@ export function PerformanceTrendWidget({
                       <td className="py-2 pr-3 text-sm font-medium">{row.key}</td>
                       <td className="py-2 pr-3 text-right font-mono text-sm tabular-nums">{formatNumber(row.trades, 0)}</td>
                       <td className="py-2 pr-3 text-right font-mono text-sm tabular-nums">
-                        {multiCurrency || row.netPnl === null ? "—" : formatMoney(row.netPnl, model.currency)}
+                        {multiCurrency || row.netPnl === null ? "-" : formatMoney(row.netPnl, model.currency)}
                       </td>
                       <td className="py-2 pr-3 text-right font-mono text-sm tabular-nums">{formatR(row.r)}</td>
                       <td className="py-2 pr-3 text-right font-mono text-sm tabular-nums">
-                        {row.rDelta === null ? "—" : formatR(row.rDelta)}
+                        {row.rDelta === null ? "-" : formatR(row.rDelta)}
                       </td>
                       <td className="py-2 text-right font-mono text-sm tabular-nums">
-                        {row.winRate === null ? "—" : formatPercent(row.winRate, 1)}
+                        {row.winRate === null ? "-" : formatPercent(row.winRate, 1)}
                       </td>
                     </tr>
                   ))}
@@ -109,7 +109,7 @@ export function PerformanceTrendWidget({
               </table>
             </div>
             <p className="mt-2 text-[11px] text-muted-foreground">
-              Measured history, not a forecast — past weekly sequences do not predict future ones.
+              Measured history, not a forecast - past weekly sequences do not predict future ones.
             </p>
           </>
         )}

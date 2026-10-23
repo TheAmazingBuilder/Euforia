@@ -100,7 +100,7 @@ function ResourceFreshnessLine({
   return (
     <p className="mb-2 flex items-center gap-2 text-xs text-muted-foreground" data-testid={`resource-freshness-${resource}`}>
       <span>
-        {D.freshnessAsOf} {at ?? "—"} · <span className="font-medium">{label}</span>
+        {D.freshnessAsOf} {at ?? "-"} · <span className="font-medium">{label}</span>
       </span>
     </p>
   );
@@ -397,13 +397,13 @@ export function AccountDetailDrawer({
       onSuccess: (response) => {
         if (response.run.status === "COMPLETED") {
           toast.success(
-            `${D.syncNow} — ${response.run.dealsUpserted + response.run.ordersUpserted + response.run.positionsUpserted} records`,
+            `${D.syncNow} - ${response.run.dealsUpserted + response.run.ordersUpserted + response.run.positionsUpserted} records`,
           );
         } else if (response.run.status === "PARTIAL") {
           // Phase 03: a partial run is an honest outcome, not an error toast —
           // the run view carries the failing segment's code.
           toast.warning(
-            `${D.syncPartial} — ${response.run.dealsUpserted + response.run.ordersUpserted + response.run.positionsUpserted} records (${response.run.errorCode ?? "partial"})`,
+            `${D.syncPartial} - ${response.run.dealsUpserted + response.run.ordersUpserted + response.run.positionsUpserted} records (${response.run.errorCode ?? "partial"})`,
           );
         } else {
           toast.error(dict.accounts.status.syncError);
@@ -531,7 +531,7 @@ export function AccountDetailDrawer({
               </dl>
               <p className="mt-2 text-xs text-muted-foreground">
                 {account.snapshot
-                  ? `Snapshot taken ${account.snapshot.syncedAt.slice(0, 16).replace("T", " ")} UTC — values are the last synced state, not live.`
+                  ? `Snapshot taken ${account.snapshot.syncedAt.slice(0, 16).replace("T", " ")} UTC - values are the last synced state, not live.`
                   : D.positionsNeverSynced}
               </p>
             </div>
@@ -565,7 +565,7 @@ export function AccountDetailDrawer({
                 <DetailRow label={D.startingBalance}>
                   <span className="font-mono tabular-nums">{account.startingBalance}</span>
                 </DetailRow>
-                <DetailRow label={D.method}>{account.connection?.method ?? "—"}</DetailRow>
+                <DetailRow label={D.method}>{account.connection?.method ?? "-"}</DetailRow>
                 <DetailRow label="Credential">
                   {account.connection?.credentialsHint ? (
                     <span className="inline-flex items-center gap-1.5 font-mono text-xs">
@@ -573,7 +573,7 @@ export function AccountDetailDrawer({
                       {account.connection.credentialsHint}
                     </span>
                   ) : (
-                    "—"
+                    "-"
                   )}
                 </DetailRow>
                 <DetailRow label={D.permissions}>
@@ -587,7 +587,7 @@ export function AccountDetailDrawer({
               </dl>
             </div>
 
-            {/* Phase 08 — MT5 bridge card: push-based status + the three
+            {/* Phase 08 - MT5 bridge card: push-based status + the three
                 bridge actions. Only for PLATFORM_BRIDGE connections. */}
             {isBridgeAccount ? (
               <BridgeSection
@@ -607,22 +607,22 @@ export function AccountDetailDrawer({
                 <DetailRow label={D.lastSyncAt}>
                   {account.synchronization.lastSyncAt
                     ? account.synchronization.lastSyncAt.slice(0, 16).replace("T", " ") + " UTC"
-                    : "—"}
+                    : "-"}
                 </DetailRow>
                 <DetailRow label={D.lastRun}>
                   {account.synchronization.lastRun
                     ? `${account.synchronization.lastRun.status} · ${account.synchronization.lastRun.trigger}`
-                    : "—"}
+                    : "-"}
                 </DetailRow>
                 <DetailRow label={D.runDuration}>
                   {account.synchronization.lastRun?.durationMs != null
                     ? `${account.synchronization.lastRun.durationMs} ms`
-                    : "—"}
+                    : "-"}
                 </DetailRow>
                 <DetailRow label={D.runCounts}>
                   {account.synchronization.lastRun
                     ? `P ${account.synchronization.lastRun.positionsUpserted} · O ${account.synchronization.lastRun.ordersUpserted} · D ${account.synchronization.lastRun.dealsUpserted}`
-                    : "—"}
+                    : "-"}
                 </DetailRow>
                 {account.synchronization.lastRun?.errorCode ? (
                   <DetailRow label={D.runError}>
@@ -637,7 +637,7 @@ export function AccountDetailDrawer({
               </dl>
             </div>
 
-            {/* Phase 05 — synchronization history: manual AND scheduled runs,
+            {/* Phase 05 - synchronization history: manual AND scheduled runs,
                 newest first. The honest audit trail of what the backend did. */}
             <div className="rounded-lg border border-border p-3" data-testid="account-sync-history">
               <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{D.historySection}</p>

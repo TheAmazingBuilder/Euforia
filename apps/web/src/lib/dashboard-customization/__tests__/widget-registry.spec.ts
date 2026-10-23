@@ -62,7 +62,7 @@ describe("widget registry", () => {
   });
 });
 
-describe("widget registry — filter capability metadata (Phase 03 §8)", () => {
+describe("widget registry - filter capability metadata (Phase 03 §8)", () => {
   const SUITE_FED = new Set([
     "METRICS_CARD",
     "STRATEGY_COMPARE",

@@ -114,7 +114,7 @@ export function AccountsView() {
                     aria-hidden
                   />
                   <span className="font-medium text-foreground">{provider.providerName}</span>
-                  <span>— connectable now ({provider.isMock ? "simulated" : provider.platform})</span>
+                  <span>- connectable now ({provider.isMock ? "simulated" : provider.platform})</span>
                 </li>
               ))}
               <li className="flex items-center gap-2 text-muted-foreground">

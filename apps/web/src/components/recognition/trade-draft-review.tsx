@@ -99,7 +99,7 @@ function DraftCard({ index, total, fields, effectiveValues, include, onToggle, d
             type="button"
             role="checkbox"
             aria-checked={include}
-            aria-label={`${dict.multi.include} — ${dict.multi.draft} ${index + 1}`}
+            aria-label={`${dict.multi.include} - ${dict.multi.draft} ${index + 1}`}
             onClick={() => onToggle(!include)}
             className="flex items-center gap-2 text-sm"
             data-testid={`recognition-draft-include-${index}`}
@@ -309,7 +309,7 @@ export function TradeDraftReview({
         <p className="flex items-start gap-2 text-sm text-muted-foreground">
           <ShieldCheck className="mt-0.5 size-4 shrink-0 text-accent" strokeWidth={1.5} aria-hidden="true" />
           {isMulti
-            ? `${dict.multi.confirmedCount} — ${includedCount}/${draftStates!.length}`
+            ? `${dict.multi.confirmedCount} - ${includedCount}/${draftStates!.length}`
             : dict.draft.confirmHint}
         </p>
         <div className="flex shrink-0 items-center gap-2">
@@ -327,9 +327,9 @@ export function TradeDraftReview({
         </div>
       </div>
 
-      {/* V2 §60 — the explicit confirmation dialog: everything looks correct?
+      {/* V2 §60 - the explicit confirmation dialog: everything looks correct?
           [Confirm Trade] / [Continue Editing] / [Cancel]. The dialog also
-          shows the USER_CORRECTED fields (V2 §59 — recognized vs confirmed). */}
+          shows the USER_CORRECTED fields (V2 §59 - recognized vs confirmed). */}
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>

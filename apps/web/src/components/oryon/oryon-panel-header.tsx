@@ -137,7 +137,7 @@ export function OryonPanelHeader({
           active ? "text-foreground" : "text-muted-foreground",
         )}
       >
-        {instrument?.symbol ?? "—"}
+        {instrument?.symbol ?? "-"}
       </span>
       <span
         data-testid={`${prefix}-identity-interval`}
@@ -195,9 +195,9 @@ export function OryonPanelHeader({
       ) : null}
 
       <div className="ml-auto flex shrink-0 items-center">
-        {/* Analysis menu (Phase 9 §7) — per-panel structure + key-level
+        {/* Analysis menu (Phase 9 §7) - per-panel structure + key-level
             config. Grouped, whitelist-validated values (radios over bounded
-            vocabularies — no free numeric input can produce an invalid
+            vocabularies - no free numeric input can produce an invalid
             calculation parameter). */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -452,7 +452,7 @@ export function OryonPanelHeader({
             </DropdownMenuLabel>
           </DropdownMenuContent>
         </DropdownMenu>
-        {/* Temporal-context menu (Phase 8 §12) — per-panel display prefs.
+        {/* Temporal-context menu (Phase 8 §12) - per-panel display prefs.
             Session shading and event markers toggle INDEPENDENTLY; the
             importance threshold only ever widens/narrows the marker set. */}
         <DropdownMenu>

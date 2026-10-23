@@ -49,7 +49,7 @@ describe("API_MOCKED resolution matrix", () => {
     expect(await loadMode(undefined, "development")).toBe(true);
   });
 
-  it("zero-env PRODUCTION defaults to the REAL API — the accidental-mock-activation guard", async () => {
+  it("zero-env PRODUCTION defaults to the REAL API - the accidental-mock-activation guard", async () => {
     expect(await loadMode(undefined, "production")).toBe(false);
   });
 

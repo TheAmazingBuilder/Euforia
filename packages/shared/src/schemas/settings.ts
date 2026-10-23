@@ -21,7 +21,7 @@ import { analyticsPeriodSchema } from "./api";
  * - Auth, passwords and broker credentials NEVER live here (Security /
  *   Integrations own them).
  * - System health / service status NEVER lives here (Monitoring owns it).
- * - The user's timezone has ONE source of truth: Profile (PATCH /me) —
+ * - The user's timezone has ONE source of truth: Profile (PATCH /me) -
  *   the Localization domain mirrors it in the UI but writes through /me,
  *   because the trading-day key is computed server-side from it.
  * - Risk preferences are DEFAULTS for the Rules Engine (docs/specs/
@@ -712,7 +712,7 @@ const DEFAULT_DASHBOARD_WIDGETS: DashboardWidgetItem[] = DEFAULT_LAYOUT_WIDGET_K
 export const DEFAULT_DASHBOARD_LAYOUT: DashboardLayoutDocument = {
   id: "layout_default",
   name: "Default",
-  description: "The designed dashboard — every widget, full width.",
+  description: "The designed dashboard - every widget, full width.",
   schemaVersion: 1,
   widgets: DEFAULT_DASHBOARD_WIDGETS,
 };

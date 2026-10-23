@@ -453,7 +453,7 @@ function simulateProfileFields(
       return {
         field: field as SimulatedField["field"], rawValue: null, normalizedValue: null,
         confidence: 0, confidenceBand: "UNKNOWN", validationStatus: "MISSING", sourceRegion: null,
-        warnings: ["Not found in the recognized text — enter it manually if it applies."],
+        warnings: ["Not found in the recognized text - enter it manually if it applies."],
       };
     }
     if (roll > 0.88 && optionalFields.has(field)) {
@@ -470,7 +470,7 @@ function simulateProfileFields(
   });
   const missing = fields.filter((f) => f.validationStatus === "MISSING").map((f) => f.field);
   const warnings: string[] = [];
-  if (missing.length >= 3) warnings.push("The screenshot appears incomplete — several fields could not be read.");
+  if (missing.length >= 3) warnings.push("The screenshot appears incomplete - several fields could not be read.");
   return { fields, warnings };
 }
 
@@ -540,7 +540,7 @@ function simulateExtraction(
         field, rawValue: null, normalizedValue: null, confidence: 0, confidenceBand: "UNKNOWN",
         validationStatus: "MISSING", sourceRegion: null,
         warnings: OPTIONAL_FIELDS.has(field)
-          ? ["Not found in the recognized text — enter it manually if it applies."]
+          ? ["Not found in the recognized text - enter it manually if it applies."]
           : ["No matching token found in the recognized text."],
       };
     }
@@ -548,7 +548,7 @@ function simulateExtraction(
       return {
         field, rawValue: null, normalizedValue: null, confidence: 0, confidenceBand: "UNKNOWN",
         validationStatus: "MISSING", sourceRegion: null,
-        warnings: ["Not found in the recognized text — enter it manually if it applies."],
+        warnings: ["Not found in the recognized text - enter it manually if it applies."],
       };
     }
     const normalizedValue = normalizeMockValue(field, rawValue);
@@ -556,7 +556,7 @@ function simulateExtraction(
       return {
         field, rawValue, normalizedValue, confidence, confidenceBand,
         validationStatus: "AMBIGUOUS", sourceRegion: region,
-        warnings: ["Multiple interpretations possible — review before confirming."],
+        warnings: ["Multiple interpretations possible - review before confirming."],
       };
     }
     if (confidence < 0.7) {
@@ -571,9 +571,9 @@ function simulateExtraction(
 
   const missing = fields.filter((f) => f.validationStatus === "MISSING").map((f) => f.field);
   const warnings: string[] = [];
-  if (missing.includes("exitPrice")) warnings.push("Exit price was not detected — the trade may still be open.");
+  if (missing.includes("exitPrice")) warnings.push("Exit price was not detected - the trade may still be open.");
   if (missing.includes("closeTime")) warnings.push("Close time was not detected.");
-  if (missing.length >= 3) warnings.push("The screenshot appears incomplete — several fields could not be read.");
+  if (missing.length >= 3) warnings.push("The screenshot appears incomplete - several fields could not be read.");
 
   return { fields, warnings };
 }
@@ -609,14 +609,14 @@ type SeedSpec = {
 };
 
 const SEED_SPECS: SeedSpec[] = [
-  { label: "XAUUSD BUY 0.10 — MT5 summary", file: "xauusd_mt5_0931.png", status: "CONFIRMED", ageMinutes: 4 * 60, confirmed: true },
-  { label: "EURUSD BUY 0.50 — MT5 summary", file: "eurusd_mt5_0812.png", status: "REVIEW_REQUIRED", ageMinutes: 35, tradeDuplicate: true },
-  { label: "BTCUSD BUY 0.25 — partial screenshot", file: "btcusd_mt5_1102.png", status: "REVIEW_REQUIRED", ageMinutes: 3 * 60 },
-  { label: "NAS100 SELL 1.00 — MT5 summary", file: "nas100_mt5_1530.png", status: "CONFIRMED", ageMinutes: 26 * 60, confirmed: true },
-  { label: "US30 SELL 0.40 — unreadable crop", file: "us30_crop_2210.png", status: "FAILED", ageMinutes: 27 * 60 },
-  { label: "History panel — 2 trades (grouped draft)", file: "history_multi_1030.png", status: "REVIEW_REQUIRED", ageMinutes: 90, multi: true },
-  { label: "MT5 account snapshot — 1 open position", file: "account_snapshot_1410.png", status: "REVIEW_REQUIRED", ageMinutes: 55, profile: "ACCOUNT_POSITION" },
-  { label: "TradingView chart — XAUUSD M15", file: "chart_xauusd_m15.png", status: "CONFIRMED", ageMinutes: 5 * 60, confirmed: true, profile: "CHART_ANALYSIS" },
+  { label: "XAUUSD BUY 0.10 - MT5 summary", file: "xauusd_mt5_0931.png", status: "CONFIRMED", ageMinutes: 4 * 60, confirmed: true },
+  { label: "EURUSD BUY 0.50 - MT5 summary", file: "eurusd_mt5_0812.png", status: "REVIEW_REQUIRED", ageMinutes: 35, tradeDuplicate: true },
+  { label: "BTCUSD BUY 0.25 - partial screenshot", file: "btcusd_mt5_1102.png", status: "REVIEW_REQUIRED", ageMinutes: 3 * 60 },
+  { label: "NAS100 SELL 1.00 - MT5 summary", file: "nas100_mt5_1530.png", status: "CONFIRMED", ageMinutes: 26 * 60, confirmed: true },
+  { label: "US30 SELL 0.40 - unreadable crop", file: "us30_crop_2210.png", status: "FAILED", ageMinutes: 27 * 60 },
+  { label: "History panel - 2 trades (grouped draft)", file: "history_multi_1030.png", status: "REVIEW_REQUIRED", ageMinutes: 90, multi: true },
+  { label: "MT5 account snapshot - 1 open position", file: "account_snapshot_1410.png", status: "REVIEW_REQUIRED", ageMinutes: 55, profile: "ACCOUNT_POSITION" },
+  { label: "TradingView chart - XAUUSD M15", file: "chart_xauusd_m15.png", status: "CONFIRMED", ageMinutes: 5 * 60, confirmed: true, profile: "CHART_ANALYSIS" },
 ];
 
 function buildSeed(spec: SeedSpec, index: number): StoredRecognition {

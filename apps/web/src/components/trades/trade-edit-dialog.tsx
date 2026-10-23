@@ -206,7 +206,7 @@ export function TradeEditDialog({ trade, open, onOpenChange }: TradeEditDialogPr
                 id="edit-stop"
                 value={initialStop}
                 onChange={(event) => setInitialStop(event.target.value)}
-                placeholder="—"
+                placeholder="-"
                 inputMode="decimal"
                 className={inputClasses}
               />
@@ -217,7 +217,7 @@ export function TradeEditDialog({ trade, open, onOpenChange }: TradeEditDialogPr
                 id="edit-tp"
                 value={initialTP}
                 onChange={(event) => setInitialTP(event.target.value)}
-                placeholder="—"
+                placeholder="-"
                 inputMode="decimal"
                 className={inputClasses}
               />

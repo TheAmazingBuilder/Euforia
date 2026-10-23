@@ -79,7 +79,7 @@ function writeNow(alerts: readonly OryonAlert[]): void {
     // would not survive its own load is a bug caught here.
     const check = oryonAlertsFileSchema.safeParse(file);
     if (!check.success) {
-      console.warn("[oryon] alerts save skipped — payload invalid.");
+      console.warn("[oryon] alerts save skipped - payload invalid.");
       return;
     }
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(check.data));

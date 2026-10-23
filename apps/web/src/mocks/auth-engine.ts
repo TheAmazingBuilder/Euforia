@@ -63,7 +63,7 @@ type RefreshPayload = {
 /**
  * Self-describing access-token payload (sandbox seam). The token STRING is
  * opaque to the client, but a separate resource server (today: the market
- * service) must verify it WITHOUT access to this engine's in-memory map —
+ * service) must verify it WITHOUT access to this engine's in-memory map -
  * the same stateless model a signed JWT gives a real NestJS backend. The
  * payload is base64url JSON + a mock checksum signature; ONLY the expiry and
  * subject are carried — never roles, permissions or credentials (§75).
@@ -551,7 +551,7 @@ class AuthEngine {
     securityEngine.recordAuthEvent(
       "SENSITIVE_SETTINGS_CHANGED",
       email,
-      "Account registered — verification email queued (mock delivery).",
+      "Account registered - verification email queued (mock delivery).",
     );
 
     return {
@@ -581,7 +581,7 @@ class AuthEngine {
     if (gate !== "blocked") {
       securityEngine.recordLogin({
         success: false,
-        reason: "Too many attempts — rate limited.",
+        reason: "Too many attempts - rate limited.",
         ...describeDevice(),
       });
       return {
@@ -610,7 +610,7 @@ class AuthEngine {
       securityEngine.recordAuthEvent(
         "LOGIN_FAILED",
         record === null ? "Unknown email" : record.email,
-        "Failed sign-in — invalid credentials.",
+        "Failed sign-in - invalid credentials.",
         "FAILURE",
       );
       // Anti-enumeration: identical message for unknown email and wrong
@@ -729,7 +729,7 @@ class AuthEngine {
         ok: false,
         status: 401,
         code: "INVALID_CHALLENGE",
-        message: "This challenge expired — start again with your password.",
+        message: "This challenge expired - start again with your password.",
       };
     }
     const record = this.findUser(challenge.userId);
@@ -738,7 +738,7 @@ class AuthEngine {
         ok: false,
         status: 401,
         code: "INVALID_CHALLENGE",
-        message: "This challenge is no longer valid — start again.",
+        message: "This challenge is no longer valid - start again.",
       };
     }
 
@@ -758,14 +758,14 @@ class AuthEngine {
       securityEngine.recordAuthEvent(
         "TFA_CHALLENGE_FAILED",
         record.email,
-        "Authenticator challenge failed at sign-in — code rejected.",
+        "Authenticator challenge failed at sign-in - code rejected.",
         "FAILURE",
       );
       return {
         ok: false,
         status: 401,
         code: "INVALID_MFA_CODE",
-        message: "That code does not match — check your authenticator and try again.",
+        message: "That code does not match - check your authenticator and try again.",
       };
     }
 
@@ -781,7 +781,7 @@ class AuthEngine {
         ok: false,
         status: 401,
         code: "INVALID_CHALLENGE",
-        message: "This challenge expired — start again with your password.",
+        message: "This challenge expired - start again with your password.",
       };
     }
     const record = this.findUser(challenge.userId);
@@ -790,7 +790,7 @@ class AuthEngine {
         ok: false,
         status: 401,
         code: "INVALID_CHALLENGE",
-        message: "This challenge is no longer valid — start again.",
+        message: "This challenge is no longer valid - start again.",
       };
     }
 
@@ -810,7 +810,7 @@ class AuthEngine {
       securityEngine.recordAuthEvent(
         "TFA_CHALLENGE_FAILED",
         record.email,
-        "Recovery-code sign-in failed — code rejected.",
+        "Recovery-code sign-in failed - code rejected.",
         "FAILURE",
       );
       return {
@@ -842,7 +842,7 @@ class AuthEngine {
         ok: false,
         status: 401,
         code: "INVALID_TOKEN",
-        message: "No active session — sign in again.",
+        message: "No active session - sign in again.",
       };
     }
     const payload = decodeRefreshToken(raw);
@@ -851,7 +851,7 @@ class AuthEngine {
         ok: false,
         status: 401,
         code: "INVALID_TOKEN",
-        message: "This session is no longer valid — sign in again.",
+        message: "This session is no longer valid - sign in again.",
       };
     }
     const record = this.findUser(payload.uid);
@@ -860,7 +860,7 @@ class AuthEngine {
         ok: false,
         status: 401,
         code: "INVALID_TOKEN",
-        message: "This session is no longer valid — sign in again.",
+        message: "This session is no longer valid - sign in again.",
       };
     }
 
@@ -872,13 +872,13 @@ class AuthEngine {
       securityEngine.recordAuthEvent(
         "SESSION_REVOKED",
         record.email,
-        "Refresh-token reuse detected — all sessions revoked.",
+        "Refresh-token reuse detected - all sessions revoked.",
       );
       return {
         ok: false,
         status: 401,
         code: "INVALID_TOKEN",
-        message: "This session was revoked — sign in again.",
+        message: "This session was revoked - sign in again.",
       };
     }
     // Adopt statelessly after a reload (mock seam — documented at the top).
@@ -915,7 +915,7 @@ class AuthEngine {
           securityEngine.recordAuthEvent(
             "LOGOUT",
             record.email,
-            "Signed out — refresh token revoked.",
+            "Signed out - refresh token revoked.",
           );
         }
         this.refreshGeneration.delete(payload.uid);
@@ -963,7 +963,7 @@ class AuthEngine {
         ok: false,
         status: 400,
         code: "TOKEN_ALREADY_USED",
-        message: "This verification link was already used — try signing in.",
+        message: "This verification link was already used - try signing in.",
       };
     }
     if (record.expiresAt <= nowMs()) {
@@ -971,7 +971,7 @@ class AuthEngine {
         ok: false,
         status: 400,
         code: "EXPIRED_TOKEN",
-        message: "This verification link expired — request a new email.",
+        message: "This verification link expired - request a new email.",
       };
     }
 
@@ -1101,7 +1101,7 @@ class AuthEngine {
         ok: false,
         status: 400,
         code: "TOKEN_ALREADY_USED",
-        message: "This reset link was already used — request a new one.",
+        message: "This reset link was already used - request a new one.",
       };
     }
     if (record.expiresAt <= nowMs()) {
@@ -1109,7 +1109,7 @@ class AuthEngine {
         ok: false,
         status: 400,
         code: "EXPIRED_TOKEN",
-        message: "This reset link expired — request a new email.",
+        message: "This reset link expired - request a new email.",
       };
     }
 

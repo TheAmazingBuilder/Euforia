@@ -96,7 +96,7 @@ export type CustomizationAction =
   | { type: "userTemplateSaved"; template: DashboardUserTemplate }
   | { type: "userTemplateDeleted"; templateId: string }
   /** View-mode per-widget config change (persisted immediately by the
-   * hook's collection-op path — same channel as switch/rename). */
+   * hook's collection-op path - same channel as switch/rename). */
   | { type: "widgetConfigSet"; layoutId: string; instanceId: string; config: DashboardWidgetItem["config"] };
 
 /** Does the draft differ from the saved active layout? */

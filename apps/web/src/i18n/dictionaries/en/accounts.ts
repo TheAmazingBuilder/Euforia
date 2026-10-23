@@ -18,7 +18,7 @@ export const accountsDict = {
   page: {
     title: "Accounts",
     subtitle:
-      "Connect the trading accounts you trade elsewhere and read them here — balances, positions and history, synced from the provider. Euforia never places, modify or closes orders on your behalf.",
+      "Connect the trading accounts you trade elsewhere and read them here - balances, positions and history, synced from the provider. Euforia never places, modify or closes orders on your behalf.",
     add: "Connect account",
     count: "accounts connected",
   },
@@ -29,10 +29,10 @@ export const accountsDict = {
     emptyBody:
       "Accounts connect read-only: Euforia reads balances, positions and history from your provider and never trades. Connect your first account to bring it into the workspace.",
     emptyProvidersNote:
-      "Live broker integrations are rolling out phase by phase. What you can connect today is listed below — anything marked planned is not connectable yet.",
+      "Live broker integrations are rolling out phase by phase. What you can connect today is listed below - anything marked planned is not connectable yet.",
     errorTitle: "Accounts could not be loaded",
-    errorBody: "The platform could not reach the accounts service. Your data is untouched — retry when ready.",
-    staleCacheNote: "Showing the last successfully loaded data — the refresh failed.",
+    errorBody: "The platform could not reach the accounts service. Your data is untouched - retry when ready.",
+    staleCacheNote: "Showing the last successfully loaded data - the refresh failed.",
   },
 
   summary: {
@@ -41,7 +41,7 @@ export const accountsDict = {
     attention: "Needs attention",
     openPositions: "Open positions",
     mixedCurrenciesHint:
-      "Accounts use different currencies — totals are not aggregated. Each account reads in its own currency.",
+      "Accounts use different currencies - totals are not aggregated. Each account reads in its own currency.",
   },
 
   card: {
@@ -89,7 +89,7 @@ export const accountsDict = {
     runDuration: "Duration",
     runCounts: "Records upserted",
     runError: "Reported error",
-    runPartialNote: "Some segments failed — the persisted segments stay; sync again for a full run.",
+    runPartialNote: "Some segments failed - the persisted segments stay; sync again for a full run.",
     // Phase 05 — synchronization history + per-resource freshness
     historySection: "Sync history",
     historyEmpty: "No synchronization has run yet.",
@@ -109,10 +109,10 @@ export const accountsDict = {
     renameTitle: "Rename account",
     renameLabel: "Display name",
     renameHint:
-      "The label is yours — the provider, environment and external account id are anchored to the connection and never editable here.",
+      "The label is yours - the provider, environment and external account id are anchored to the connection and never editable here.",
     disconnectTitle: "Disconnect this account?",
     disconnectBody:
-      "The stored credential is destroyed and the connection closes. Journal history stays — every imported record remains in your trades. You can reconnect later with fresh credentials.",
+      "The stored credential is destroyed and the connection closes. Journal history stays - every imported record remains in your trades. You can reconnect later with fresh credentials.",
     disconnectConfirmLabel: "Disconnect account",
     positionsEmpty: "No open positions reported by the provider.",
     ordersEmpty: "No pending orders reported by the provider.",
@@ -120,11 +120,11 @@ export const accountsDict = {
     positionsNeverSynced:
       "Positions appear after the first successful synchronization.",
     simulatedNote:
-      "This account runs on the Euforia mock provider — every value on this page is simulated data for development.",
+      "This account runs on the Euforia mock provider - every value on this page is simulated data for development.",
     reconnectTitle: "Reconnect with fresh credentials",
     reconnectLabel: "API key / secret",
     reconnectHint:
-      "The stored credential was rejected or the connection closed. Enter the current credential to re-authenticate — it is encrypted server-side and never displayed again.",
+      "The stored credential was rejected or the connection closed. Enter the current credential to re-authenticate - it is encrypted server-side and never displayed again.",
     unsupportedNote: "This provider does not report this activity.",
   },
 
@@ -143,53 +143,53 @@ export const accountsDict = {
     providerBody:
       "Only providers with a working connection path are selectable. Every known broker stays visible, honestly labeled.",
     providerAvailable: "Connectable",
-    providerPlanned: "Planned — not connectable yet",
-    providerRecognized: "Recognized — connector not yet available",
+    providerPlanned: "Planned - not connectable yet",
+    providerRecognized: "Recognized - connector not yet available",
     providerRecognizedSection: "Recognized brokers (no connector yet)",
     providerMockNote:
-      "Development provider — simulates a read-only MT5-style broker. Every value it produces is synthetic.",
+      "Development provider - simulates a read-only MT5-style broker. Every value it produces is synthetic.",
     detectedBroker: "Detected broker",
     detectedConfidence: {
       PROVIDER_REPORTED: "confirmed by the provider",
       PATTERN_MATCH: "matched a documented account format",
       PLATFORM_KNOWN: "provider platform",
-      UNKNOWN: "no match yet — the broker is confirmed when the connection is validated",
+      UNKNOWN: "no match yet - the broker is confirmed when the connection is validated",
     },
     environmentTitle: "Account environment",
-    environmentBody: "The provider serves only the environments listed here — pick the one this account trades on.",
-    environmentDemo: "Practice account — simulated funds, nothing real at risk.",
-    environmentLive: "Real account — trades execute with your own funds.",
-    environmentPropFirm: "Funded evaluation — trade the firm's capital under its risk rules.",
+    environmentBody: "The provider serves only the environments listed here - pick the one this account trades on.",
+    environmentDemo: "Practice account - simulated funds, nothing real at risk.",
+    environmentLive: "Real account - trades execute with your own funds.",
+    environmentPropFirm: "Funded evaluation - trade the firm's capital under its risk rules.",
     identityTitle: "Identify the account",
     externalIdLabel: "Account number at the provider",
-    externalIdHint: "The login or account id your provider shows — e.g. an MT5 login number.",
+    externalIdHint: "The login or account id your provider shows - e.g. an MT5 login number.",
     displayNameLabel: "Display name (optional)",
     displayNameHint: "Defaults to the provider name and environment.",
     secretLabel: "Read-only credential",
     secretHint:
-      "Sent once over an encrypted channel, stored server-side with AES-256-GCM, and never displayed or returned again — only a masked hint stays visible.",
+      "Sent once over an encrypted channel, stored server-side with AES-256-GCM, and never displayed or returned again - only a masked hint stays visible.",
     // Phase 08 — PLATFORM_BRIDGE providers (MT5 terminal bridge): no client
     // secret exists. Euforia generates the bridge secret server-side; the
     // broker password never leaves the user's terminal.
     bridge: {
       explainer:
-        "Euforia generates the bridge secret — your broker password never leaves your terminal.",
+        "Euforia generates the bridge secret - your broker password never leaves your terminal.",
       identityNote:
         "No API key or password to type here. After connecting, a pairing sheet shows how to attach the MT5 Expert Advisor.",
       successTitle: "Terminal pairing",
       successBody:
-        "Keep this sheet open, attach the Expert Advisor in your MT5 terminal — data starts flowing with the first push.",
+        "Keep this sheet open, attach the Expert Advisor in your MT5 terminal - data starts flowing with the first push.",
       done: "Done",
     },
     successTitle: "Account connected",
     successBody:
-      "The initial synchronization ran — balances and history are readable in the account details. Data refreshes when you sync; nothing is live-streamed.",
+      "The initial synchronization ran - balances and history are readable in the account details. Data refreshes when you sync; nothing is live-streamed.",
     errors: {
       unsupportedProvider: "This provider is not supported yet.",
       unsupportedAccount: "The provider does not serve this account environment.",
       duplicate: "This account is already connected.",
       invalidCredentials: "The provider rejected these credentials.",
-      rateLimited: "Too many attempts — wait a moment and retry.",
+      rateLimited: "Too many attempts - wait a moment and retry.",
       generic: "The connection could not be established.",
     },
   },
@@ -203,14 +203,14 @@ export const accountsDict = {
    */
   bridge: {
     sectionTitle: "MT5 bridge",
-    statusConnecting: "Waiting for the first push — attach the EA in your MT5 terminal.",
-    statusConnected: "Terminal connected — data is current as of the last push.",
+    statusConnecting: "Waiting for the first push - attach the EA in your MT5 terminal.",
+    statusConnected: "Terminal connected - data is current as of the last push.",
     pairingButton: "Pairing sheet",
     rotateButton: "Rotate secret",
     rotatePending: "Rotating…",
     rotateWarning:
-      "The previous terminal configuration was invalidated — re-enter the new key and secret in the EA.",
-    rotateToast: "Secret rotated — the old terminal configuration no longer works.",
+      "The previous terminal configuration was invalidated - re-enter the new key and secret in the EA.",
+    rotateToast: "Secret rotated - the old terminal configuration no longer works.",
     downloadButton: "Download EA",
     panelTitle: "MT5 terminal pairing",
     panelIntro:
@@ -221,29 +221,29 @@ export const accountsDict = {
     secretReveal: "Reveal",
     secretHide: "Hide",
     secretOnceWarning:
-      "Shown only here — you can view it again from this account's MT5 bridge card.",
+      "Shown only here - you can view it again from this account's MT5 bridge card.",
     copy: "Copy",
     copied: "Copied",
     eaLabel: "Expert Advisor",
     eaVersion: "version",
-    stepsTitle: "Setup — 4 steps",
+    stepsTitle: "Setup - 4 steps",
     steps: {
       one: "Download the EA and drop it into your terminal's MQL5/Experts folder (File → Open Data Folder).",
       two: "In MT5, allow WebRequest for the ingest URL above (Tools → Options → Expert Advisors).",
       three: "Attach EuforiaBridge to any chart of this account and paste the bridge key and secret into the EA inputs.",
-      four: "Keep the terminal running — the EA pushes a signed snapshot every 30 seconds.",
+      four: "Keep the terminal running - the EA pushes a signed snapshot every 30 seconds.",
     },
   },
 
   test: {
     title: "Connection health",
     subtitle:
-      "Four named checks run against the stored credential — results are honest per check, never all-or-nothing.",
+      "Four named checks run against the stored credential - results are honest per check, never all-or-nothing.",
     run: "Run checks",
     running: "Running checks…",
     rerun: "Run again",
     allGood: "All checks passed.",
-    someFailed: "Some checks failed — the failing check explains what to do.",
+    someFailed: "Some checks failed - the failing check explains what to do.",
     checks: {
       authentication: "Authentication",
       connectivity: "Connectivity",
@@ -264,7 +264,7 @@ export const accountsDict = {
     syncError: "Sync error",
     neverSynced: "Never synced",
     freshnessNote:
-      "Fresh means the last successful sync completed within the freshness window — polling providers are never real-time.",
+      "Fresh means the last successful sync completed within the freshness window - polling providers are never real-time.",
   },
 
   errors: {

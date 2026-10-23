@@ -122,7 +122,7 @@ export function AcademyProgressPanel() {
             {V.longestPrefix}
             <span className="font-mono tabular-nums">{progress.streak.longestDays}</span>
             {V.lastActivityPrefix}
-            <span className="font-mono tabular-nums">{progress.streak.lastActivityDate ?? "—"}</span>
+            <span className="font-mono tabular-nums">{progress.streak.lastActivityDate ?? "-"}</span>
           </p>
         </div>
         <div className="stat-cell stat-kpi">
@@ -137,7 +137,7 @@ export function AcademyProgressPanel() {
             <p className="ledger-label">{V.quizAverage}</p>
             <HueChip hue="var(--cat-strategies)" icon={Trophy} />
           </div>
-          <p className="mt-1.5 font-mono text-xl font-semibold tabular-nums">{progress.quizAverage !== null ? `${progress.quizAverage}%` : "—"}</p>
+          <p className="mt-1.5 font-mono text-xl font-semibold tabular-nums">{progress.quizAverage !== null ? `${progress.quizAverage}%` : "-"}</p>
         </div>
         <div className="stat-cell stat-kpi">
           <div className="flex items-start justify-between gap-2">
@@ -151,7 +151,7 @@ export function AcademyProgressPanel() {
             <p className="ledger-label">{V.drillAccuracy}</p>
             <HueChip hue="var(--profit)" icon={CircleCheck} />
           </div>
-          <p className="mt-1.5 font-mono text-xl font-semibold tabular-nums">{drillAccuracy !== null ? `${drillAccuracy}%` : "—"}</p>
+          <p className="mt-1.5 font-mono text-xl font-semibold tabular-nums">{drillAccuracy !== null ? `${drillAccuracy}%` : "-"}</p>
         </div>
       </div>
 

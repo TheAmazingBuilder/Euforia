@@ -14,7 +14,7 @@ import { apiPaths } from "@/lib/api/endpoints";
 import { queryKeys } from "@/lib/api/keys";
 
 /**
- * Integration Hub hooks. The overview is the hub's single aggregate —
+ * Integration Hub hooks. The overview is the hub's single aggregate -
  * every mutation invalidates it plus the eco calendar (economic events flow
  * through the provider pipeline) and the broker session (lifecycle parity).
  */

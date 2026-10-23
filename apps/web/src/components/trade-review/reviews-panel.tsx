@@ -101,7 +101,7 @@ function ReviewRowItem({ row, onReview, onUndo }: { row: ReviewRow; onReview: (r
             className="h-7 px-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-loss"
             onClick={() => onUndo(row)}
             aria-label="Undo review"
-            title="Undo review — the trade returns to the queue"
+            title="Undo review - the trade returns to the queue"
           >
             <RefreshCcw className="size-3" aria-hidden="true" />
           </Button>
@@ -130,7 +130,7 @@ export function ReviewsPanel() {
   const undoReview = (row: ReviewRow) => {
     deleteReview.mutate(row.tradeId, {
       onSuccess: () => toast.success("Review undone", { description: `${row.symbol} is back in the queue.` }),
-      onError: (error) => toast.error("Could not undo the review", { description: apiErrorMessage(error, "Unexpected error — try again.") }),
+      onError: (error) => toast.error("Could not undo the review", { description: apiErrorMessage(error, "Unexpected error - try again.") }),
     });
   };
 
@@ -160,7 +160,7 @@ export function ReviewsPanel() {
           <Card className="border-dashed">
             <CardContent className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
               <CheckCircle2 className="size-4 text-emerald-500" aria-hidden="true" />
-              Queue clear — every closed trade has been reviewed.
+              Queue clear - every closed trade has been reviewed.
             </CardContent>
           </Card>
         ) : (
@@ -180,7 +180,7 @@ export function ReviewsPanel() {
           </Badge>
         </h2>
         {reviewed.length === 0 ? (
-          <p className="py-4 text-sm text-muted-foreground">Nothing reviewed yet — the first verdict is one click away.</p>
+          <p className="py-4 text-sm text-muted-foreground">Nothing reviewed yet - the first verdict is one click away.</p>
         ) : (
           <div className="space-y-2">
             {reviewed.map((row) => (

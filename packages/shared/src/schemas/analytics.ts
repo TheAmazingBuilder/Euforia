@@ -7,7 +7,7 @@ import { dateKeySchema, decimalStringSchema, isoDateTimeSchema, uuidSchema } fro
  * Dashboard band payloads (Phase 11) — the server-computed aggregates behind
  * the account band, the monthly goal strip, the month highlights card and
  * the product band. Every money/R/ratio field travels as a decimal string;
- * counts stay numbers. Honest at zero: nulls render as "—", never as fake
+ * counts stay numbers. Honest at zero: nulls render as "-", never as fake
  * confidence.
  */
 

@@ -165,8 +165,8 @@ function PrintBlock({ block }: { block: NofyBlock }) {
           <span className="font-semibold uppercase tracking-wider" style={{ color: meta.hue }}>
             {N.refKinds[refKindKey(block.ref.kind)]}
           </span>
-          {" — "}
-          <span className="font-medium text-foreground">{block.ref.label ?? "—"}</span>
+          {" - "}
+          <span className="font-medium text-foreground">{block.ref.label ?? "-"}</span>
           {block.ref.meta ? <span className="text-muted-foreground"> · {block.ref.meta}</span> : null}
         </p>
       );

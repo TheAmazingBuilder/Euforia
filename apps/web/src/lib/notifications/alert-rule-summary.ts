@@ -41,7 +41,7 @@ export function alertEventObservation(payload: {
 }): string {
   const unit = (payload.unit ?? "COUNT") as Parameters<typeof formatMetricAlertValue>[0];
   const observed =
-    payload.observedValue === null ? "—" : formatMetricAlertValue(unit, payload.observedValue);
+    payload.observedValue === null ? "-" : formatMetricAlertValue(unit, payload.observedValue);
   const threshold =
     payload.threshold === null
       ? ""

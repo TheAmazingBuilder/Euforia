@@ -39,7 +39,7 @@ export function OryonToolFlyout({
   return (
     <Popover open={open} onOpenChange={onOpenChange}>
       <PopoverTrigger
-        aria-label={`${S[group.labelKey]} — ${dict.oryon.panels.menuHint}`}
+        aria-label={`${S[group.labelKey]} - ${dict.oryon.panels.menuHint}`}
         data-testid={`oryon-tool-caret-${group.id}`}
         className="flex h-3.5 w-8 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-surface-raised hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
       >

@@ -148,7 +148,7 @@ export function resolveWidgetConfig(
   if (candidate.v !== WIDGET_CONFIG_VERSION) {
     return {
       status: "repaired",
-      reason: `Config version ${String(candidate.v)} is not supported — defaults applied`,
+      reason: `Config version ${String(candidate.v)} is not supported - defaults applied`,
       config: fallback,
     };
   }
@@ -156,14 +156,14 @@ export function resolveWidgetConfig(
   if (!parsed.success) {
     return {
       status: "repaired",
-      reason: parsed.error.issues[0]?.message ?? "Invalid configuration — defaults applied",
+      reason: parsed.error.issues[0]?.message ?? "Invalid configuration - defaults applied",
       config: fallback,
     };
   }
   if (parsed.data.kind !== type) {
     return {
       status: "repaired",
-      reason: `Config belongs to "${parsed.data.kind}", not "${type}" — defaults applied`,
+      reason: `Config belongs to "${parsed.data.kind}", not "${type}" - defaults applied`,
       config: fallback,
     };
   }
@@ -175,7 +175,7 @@ export function resolveWidgetConfig(
     if (unknown.length > 0) {
       return {
         status: "repaired",
-        reason: `Unknown metric id(s): ${unknown.join(", ")} — defaults applied`,
+        reason: `Unknown metric id(s): ${unknown.join(", ")} - defaults applied`,
         config: fallback,
       };
     }
@@ -184,7 +184,7 @@ export function resolveWidgetConfig(
       if (!customFrom || !customTo || customFrom > customTo) {
         return {
           status: "repaired",
-          reason: "CUSTOM period requires customFrom and customTo (from ≤ to) — defaults applied",
+          reason: "CUSTOM period requires customFrom and customTo (from ≤ to) - defaults applied",
           config: fallback,
         };
       }
@@ -363,7 +363,7 @@ export const METRIC_CATALOG: readonly MetricDefinition[] = [
   {
     id: "WORST_R",
     label: "Worst trade (R)",
-    description: "Lowest realized R in the period — closer to zero is better.",
+    description: "Lowest realized R in the period - closer to zero is better.",
     unit: "R",
     higherIsBetter: true,
     signed: true,
@@ -398,7 +398,7 @@ export const METRIC_CATALOG: readonly MetricDefinition[] = [
   {
     id: "AVG_LOSS_R",
     label: "Average loss (R)",
-    description: "Mean R of losing trades (positive magnitude) — lower is better.",
+    description: "Mean R of losing trades (positive magnitude) - lower is better.",
     unit: "R",
     higherIsBetter: false,
     summaryField: "avgLossR",
@@ -433,7 +433,7 @@ export const METRIC_CATALOG: readonly MetricDefinition[] = [
   {
     id: "RECOVERY_FACTOR",
     label: "Recovery factor",
-    description: "Net P&L over the worst drawdown — higher recovers faster.",
+    description: "Net P&L over the worst drawdown - higher recovers faster.",
     unit: "R",
     higherIsBetter: true,
     summaryField: "recoveryFactor",
@@ -457,7 +457,7 @@ export const METRIC_CATALOG: readonly MetricDefinition[] = [
   {
     id: "SQN",
     label: "SQN",
-    description: "System Quality Number — mean(R) ÷ std(R) × √n.",
+    description: "System Quality Number - mean(R) ÷ std(R) × √n.",
     unit: "R",
     higherIsBetter: true,
     summaryField: "sqn",

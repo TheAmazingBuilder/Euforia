@@ -24,7 +24,7 @@ import { en, type Dictionary } from "@/i18n/dictionaries/en";
 const PACKS: Record<Locale, Dictionary> = { en };
 
 /**
- * Locale as an EXTERNAL STORE (the app's established pattern — see
+ * Locale as an EXTERNAL STORE (the app's established pattern - see
  * lib/utils/preferences.ts): module state + useSyncExternalStore. The boot
  * mirror read happens lazily inside getSnapshot — hydration renders the EN
  * server snapshot, then React switches to the client snapshot WITHOUT a

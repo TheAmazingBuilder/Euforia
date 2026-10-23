@@ -28,7 +28,7 @@ mockStore.registerSecurityReminderCheck(() => securityEngine.twoFactorReminder()
 /**
  * Security endpoints (MASTER PROMPT §5–§19). Inputs are Zod-validated, engine
  * results map to HTTP statuses; rate-limit failures carry Retry-After. The
- * overview is the module's single aggregate — every mutation invalidates it.
+ * overview is the module's single aggregate - every mutation invalidates it.
  */
 export const securityHandlers = [
   /** GET /security/overview — one aggregate for the whole center. */
@@ -97,7 +97,7 @@ export const securityHandlers = [
       const body = await request.json().catch(() => null) as { reauthToken?: string } | null;
       if (body === null || typeof body.reauthToken !== "string") {
         return HttpResponse.json(
-          { error: "Re-authentication required — confirm your password first.", code: "INVALID_REAUTH_TOKEN" },
+          { error: "Re-authentication required - confirm your password first.", code: "INVALID_REAUTH_TOKEN" },
           { status: 401 },
         );
       }
@@ -142,7 +142,7 @@ export const securityHandlers = [
       const body = await request.json().catch(() => null) as { reauthToken?: string } | null;
       if (body === null || typeof body.reauthToken !== "string") {
         return HttpResponse.json(
-          { error: "Re-authentication required — confirm your password first.", code: "INVALID_REAUTH_TOKEN" },
+          { error: "Re-authentication required - confirm your password first.", code: "INVALID_REAUTH_TOKEN" },
           { status: 401 },
         );
       }
@@ -166,7 +166,7 @@ export const securityHandlers = [
       const body = await request.json().catch(() => null) as { reauthToken?: string } | null;
       if (body === null || typeof body.reauthToken !== "string") {
         return HttpResponse.json(
-          { error: "Re-authentication required — confirm your password first.", code: "INVALID_REAUTH_TOKEN" },
+          { error: "Re-authentication required - confirm your password first.", code: "INVALID_REAUTH_TOKEN" },
           { status: 401 },
         );
       }
@@ -212,7 +212,7 @@ export const securityHandlers = [
       const body = await request.json().catch(() => null) as { reauthToken?: string } | null;
       if (body === null || typeof body.reauthToken !== "string") {
         return HttpResponse.json(
-          { error: "Re-authentication required — confirm your password first.", code: "INVALID_REAUTH_TOKEN" },
+          { error: "Re-authentication required - confirm your password first.", code: "INVALID_REAUTH_TOKEN" },
           { status: 401 },
         );
       }

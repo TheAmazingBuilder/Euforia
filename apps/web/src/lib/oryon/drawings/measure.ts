@@ -226,7 +226,7 @@ export interface PositionReadout {
 
 /**
  * Position tool labels: Entry / Stop / Target prices (target DERIVED via
- * the shared oryonPositionTargetPrice helper at the object's OWN rr — the
+ * the shared oryonPositionTargetPrice helper at the object's OWN rr - the
  * property editor's per-object risk:reward, defaulting to the documented
  * ORYON_POSITION_RR) + the risk in pips. Invalid inputs omit the label —
  * no fabricated levels.

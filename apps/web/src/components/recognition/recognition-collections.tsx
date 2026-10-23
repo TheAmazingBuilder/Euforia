@@ -549,7 +549,7 @@ function CollectionMemberRow({
         </span>
         <span className="truncate text-xs">{platformLabel(dict, recognition.classification)}</span>
         <span className="font-mono text-[11px] tabular-nums text-muted-foreground">
-          {recognition.status === "FAILED" ? "—" : `${recognitionConfidence(recognition.fields) ?? 0}%`}
+          {recognition.status === "FAILED" ? "-" : `${recognitionConfidence(recognition.fields) ?? 0}%`}
         </span>
         <span className="hidden font-mono text-[11px] tabular-nums text-muted-foreground sm:inline">
           {formatRelative(recognition.createdAt)}

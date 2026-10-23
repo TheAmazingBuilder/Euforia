@@ -35,7 +35,7 @@ import { useOryonIndicators } from "@/components/oryon/oryon-indicators-context"
  *  - saving a LAYOUT = capture every panel's stack through the store's
  *    capture hook; switching/restoring a layout = apply the record's
  *    per-panel stacks through the same registry (null = "not managed by
- *    this layout" — the live stack is left untouched).
+ *    this layout" - the live stack is left untouched).
  *
  * The store hydrates from browser-local persistence in a mount effect —
  * server render and first client render stay identical (no hydration

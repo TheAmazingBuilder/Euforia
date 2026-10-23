@@ -242,8 +242,8 @@ export function LocalizationCard() {
             value={draft.timeFormat}
             onChange={(value) => patch({ timeFormat: value as UserPreferences["localization"]["timeFormat"] })}
             options={[
-              { value: "H24", label: "24 h — 14:30" },
-              { value: "H12", label: "12 h — 02:30 PM" },
+              { value: "H24", label: "24 h - 14:30" },
+              { value: "H12", label: "12 h - 02:30 PM" },
             ]}
             testid="settings-localization-time"
           />

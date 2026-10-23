@@ -38,7 +38,7 @@ import {
  * Purity contract: the saved-views MODEL (create/rename/duplicate/delete)
  * runs HERE, never inside the reducer — ids and timestamps are generated
  * once per user action and the reducer only applies pre-computed
- * collections (replay-safe under React's reducer re-runs — the same
+ * collections (replay-safe under React's reducer re-runs - the same
  * contract as the Phase 01 layout machine).
  *
  * Stale-response safety: `sync` is ignored while a save is in flight; the

@@ -69,13 +69,13 @@ export function loadIndicators(): LoadedIndicators {
   try {
     parsed = JSON.parse(raw);
   } catch {
-    console.warn("[oryon] indicators: corrupt JSON dropped — default template restored.");
+    console.warn("[oryon] indicators: corrupt JSON dropped - default template restored.");
     return fallback();
   }
 
   const file = oryonIndicatorsFileSchema.safeParse(parsed);
   if (!file.success) {
-    console.warn("[oryon] indicators: invalid payload dropped — default template restored.");
+    console.warn("[oryon] indicators: invalid payload dropped - default template restored.");
     return fallback();
   }
 
@@ -83,7 +83,7 @@ export function loadIndicators(): LoadedIndicators {
   for (const instance of file.data.indicators) {
     if (indicatorRuleError(instance) !== null) {
       console.warn(
-        `[oryon] indicators: instance "${instance.id}" (${instance.type}) violates business rules — dropped.`,
+        `[oryon] indicators: instance "${instance.id}" (${instance.type}) violates business rules - dropped.`,
       );
       continue;
     }
@@ -134,7 +134,7 @@ function writeIndicators(indicators: readonly OryonIndicatorInstance[]): void {
     };
     const check = oryonIndicatorsFileSchema.safeParse(file);
     if (!check.success) {
-      console.warn("[oryon] indicators save skipped — payload invalid.");
+      console.warn("[oryon] indicators save skipped - payload invalid.");
       return;
     }
     window.localStorage.setItem(KEY, JSON.stringify(check.data));

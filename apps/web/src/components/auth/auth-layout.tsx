@@ -28,7 +28,7 @@ export function AuthLayout({
         aria-hidden="true"
         className="relative hidden flex-col justify-between overflow-hidden border-r border-border bg-surface p-10 lg:flex xl:p-14"
       >
-        {/* Ribbon motif — the brand mark, oversized and faint. Single
+        {/* Ribbon motif - the brand mark, oversized and faint. Single
             decorative element, deliberately quiet (§45). */}
         <EuforiaLogo
           variant="mark"
@@ -78,7 +78,7 @@ export function AuthLayout({
         </div>
 
         <p className="relative text-xs text-muted-foreground/70">
-          Euforia — trading journal &amp; behavioral coach
+          Euforia - trading journal &amp; behavioral coach
         </p>
       </aside>
 

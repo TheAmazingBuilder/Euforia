@@ -20,7 +20,7 @@ export const brokerHandlers = [
       connected: false,
       state: "NOT_CONFIGURED",
       reason:
-        "No broker account is linked to this workspace. Read-only monitoring (positions, pending orders, account) activates once a provider is configured in Settings — Phase 2 of the Session Live.",
+        "No broker account is linked to this workspace. Read-only monitoring (positions, pending orders, account) activates once a provider is configured in Settings - Phase 2 of the Session Live.",
       account: null,
       positions: [],
       orders: [],

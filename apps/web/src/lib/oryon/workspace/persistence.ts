@@ -123,7 +123,7 @@ export function loadLayouts(): LoadedLayouts {
   try {
     parsed = JSON.parse(raw);
   } catch {
-    console.warn("[oryon] layouts: corrupt JSON dropped — default layout in use.");
+    console.warn("[oryon] layouts: corrupt JSON dropped - default layout in use.");
     return fallback;
   }
 
@@ -135,7 +135,7 @@ export function loadLayouts(): LoadedLayouts {
       envelope.data.version !== 3 &&
       envelope.data.version !== 4)
   ) {
-    console.warn("[oryon] layouts: invalid or outdated payload dropped — default layout in use.");
+    console.warn("[oryon] layouts: invalid or outdated payload dropped - default layout in use.");
     return fallback;
   }
 
@@ -192,7 +192,7 @@ function writeLayouts(layouts: readonly OryonWorkspaceLayoutV4[], activeLayoutId
     };
     const check = oryonLayoutsFileV4Schema.safeParse(file);
     if (!check.success) {
-      console.warn("[oryon] layouts save skipped — payload invalid.");
+      console.warn("[oryon] layouts save skipped - payload invalid.");
       return;
     }
     window.localStorage.setItem(LAYOUTS_KEY, JSON.stringify(check.data));
@@ -287,13 +287,13 @@ export function loadTemplates(): LoadedTemplates {
   try {
     parsed = JSON.parse(raw);
   } catch {
-    console.warn("[oryon] templates: corrupt JSON dropped — starting empty.");
+    console.warn("[oryon] templates: corrupt JSON dropped - starting empty.");
     return fallback;
   }
 
   const envelope = rawTemplatesEnvelopeSchema.safeParse(parsed);
   if (!envelope.success || envelope.data.version !== 1) {
-    console.warn("[oryon] templates: invalid or outdated payload dropped — starting empty.");
+    console.warn("[oryon] templates: invalid or outdated payload dropped - starting empty.");
     return fallback;
   }
 
@@ -319,7 +319,7 @@ function writeTemplates(templates: readonly OryonChartTemplate[]): void {
     };
     const check = oryonChartTemplatesFileSchema.safeParse(file);
     if (!check.success) {
-      console.warn("[oryon] templates save skipped — payload invalid.");
+      console.warn("[oryon] templates save skipped - payload invalid.");
       return;
     }
     window.localStorage.setItem(TEMPLATES_KEY, JSON.stringify(check.data));

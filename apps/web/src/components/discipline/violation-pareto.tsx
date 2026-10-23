@@ -55,7 +55,7 @@ export function ViolationPareto({ violations }: { violations: RuleViolationView[
         </CardHeader>
         <CardContent>
           <p className="py-4 text-center text-sm text-muted-foreground">
-            No violations in the window — nothing to rank. The Pareto appears with the first breach.
+            No violations in the window - nothing to rank. The Pareto appears with the first breach.
           </p>
         </CardContent>
       </Card>
@@ -76,7 +76,7 @@ export function ViolationPareto({ violations }: { violations: RuleViolationView[
       </CardHeader>
       <CardContent className="space-y-2">
         <p className="text-[11px] leading-relaxed text-muted-foreground">
-          Ranked by frequency — the highlighted rows are the « vital few » that carry 80% of the
+          Ranked by frequency - the highlighted rows are the « vital few » that carry 80% of the
           breaches. Click a type to drill through to its trades.
         </p>
         {entries.map((entry) => {

@@ -99,7 +99,7 @@ export function CalendarHeatmap({ dailyPnl, currency, showCellValues = true }: C
           Performance heatmap
         </CardTitle>
         <CardDescription>
-          Daily net P&L — intensity follows magnitude.{" "}
+          Daily net P&L - intensity follows magnitude.{" "}
           <span className="font-mono tabular-nums">
             {profitableDays} profit · {lossDays} loss
           </span>{" "}

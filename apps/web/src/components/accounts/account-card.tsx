@@ -25,7 +25,7 @@ import {
  * environment stamp + the two financial metrics that matter at a glance
  * (balance, equity) + both status axes + freshness. Every value renders from
  * the details response; nothing is derived client-side, and a null metric
- * renders "—" with its "Not reported" label — never a fabricated zero.
+ * renders "-" with its "Not reported" label — never a fabricated zero.
  */
 
 export function AccountMoneyValue({
@@ -42,7 +42,7 @@ export function AccountMoneyValue({
   if (amount === null || amount === undefined) {
     return (
       <span className="font-mono text-sm tabular-nums text-muted-foreground" data-testid={testId}>
-        —
+        -
       </span>
     );
   }

@@ -127,7 +127,7 @@ export function OverviewPanel({
                     )}
                     data-testid="compliance-score"
                   >
-                    {compliance.scorePct === null ? "—" : `${compliance.scorePct.toFixed(0)}%`}
+                    {compliance.scorePct === null ? "-" : `${compliance.scorePct.toFixed(0)}%`}
                   </span>
                   <span className="pb-1 text-xs text-muted-foreground">
                     {compliance.matched} {V.matchedOf} {compliance.reviewed} {V.reviewedTail}
@@ -195,15 +195,15 @@ export function OverviewPanel({
                   <SummaryLine label={V.statClosedTrades} value={String(performanceSummary.trades)} />
                   <SummaryLine
                     label={V.statWinRate}
-                    value={performanceSummary.winRate === null ? "—" : `${performanceSummary.winRate.toFixed(1)}%`}
+                    value={performanceSummary.winRate === null ? "-" : `${performanceSummary.winRate.toFixed(1)}%`}
                   />
                   <SummaryLine
                     label={V.statExpectancy}
-                    value={performanceSummary.expectancyR === null ? "—" : Number(performanceSummary.expectancyR).toFixed(2)}
+                    value={performanceSummary.expectancyR === null ? "-" : Number(performanceSummary.expectancyR).toFixed(2)}
                   />
                   <SummaryLine
                     label={V.statPlanFollowed}
-                    value={performanceSummary.followedPlanPct === null ? "—" : `${performanceSummary.followedPlanPct.toFixed(0)}%`}
+                    value={performanceSummary.followedPlanPct === null ? "-" : `${performanceSummary.followedPlanPct.toFixed(0)}%`}
                   />
                 </dl>
               </>
@@ -336,7 +336,7 @@ function SummaryLine({ label, value }: { label: string; value: string }) {
 }
 
 function shortDate(iso: string | null): string {
-  if (iso === null) return "—";
+  if (iso === null) return "-";
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return iso;
   return new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" }).format(date);

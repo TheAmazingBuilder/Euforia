@@ -166,7 +166,7 @@ export function LessonReader({
       {/* Reading progress — thin ink bar that rides just under the topbar */}
       <ReadingProgress hue={hue} />
 
-      {/* Title band — opens with the course concept vignette: side card on
+      {/* Title band - opens with the course concept vignette: side card on
           desktop, full-width banner on mobile (the chart this lesson teaches). */}
       <header className="overflow-hidden rounded-lg border bg-surface" data-testid="academy-lesson-header">
         <span className="relative block md:hidden">
@@ -219,7 +219,7 @@ export function LessonReader({
               onClick={() =>
                 lesson &&
                 createNofyNote.mutate({
-                  title: `${lesson.title} — my notes`,
+                  title: `${lesson.title} - my notes`,
                   lessonRef: {
                     courseId: lesson.courseId,
                     courseTitle: lesson.courseTitle,

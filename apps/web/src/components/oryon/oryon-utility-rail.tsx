@@ -274,7 +274,7 @@ function OryonObjectsPanel() {
  * Honesty: sessions are an INDICATIVE reference (no verified holiday
  * calendar exists — stated in plain copy); events come from the
  * deterministic sample provider (stated in plain copy); missing
- * actual/forecast/previous render as "—", never fabricated zeros (§6.1).
+ * actual/forecast/previous render as "-", never fabricated zeros (§6.1).
  */
 function OryonMarketContextPanel({ instrument }: { instrument: Instrument | null }) {
   const dict = useDict();
@@ -372,7 +372,7 @@ function OryonMarketContextPanel({ instrument }: { instrument: Instrument | null
                             ? S.sessionClosesAt.replace("{t}", formatTimeInZone(status.transitionMs, def.ianaZone))
                             : S.sessionOpensAt.replace("{t}", formatTimeInZone(status.transitionMs, def.ianaZone))
                         }`
-                      : "—"}
+                      : "-"}
                   </span>
                 </span>
                 <span
@@ -519,7 +519,7 @@ function OryonMarketContextPanel({ instrument }: { instrument: Instrument | null
                     ).map(([label, value]) => (
                       <div key={label} className="rounded-sm bg-surface-raised px-1.5 py-0.5">
                         <dt className="text-[9px] uppercase tracking-wide text-muted-foreground">{label}</dt>
-                        <dd className="tabular-nums text-foreground">{value ?? "—"}</dd>
+                        <dd className="tabular-nums text-foreground">{value ?? "-"}</dd>
                       </div>
                     ))}
                   </dl>

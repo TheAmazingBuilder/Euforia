@@ -376,7 +376,7 @@ function DateRangeField({
           value={from}
           max={to || undefined}
           onChange={(event) => onChange(event.target.value, to)}
-          aria-label={`${label} — from`}
+          aria-label={`${label} - from`}
           data-testid="widget-settings-date-from"
           className="w-full"
         />
@@ -386,7 +386,7 @@ function DateRangeField({
           value={to}
           min={from || undefined}
           onChange={(event) => onChange(from, event.target.value)}
-          aria-label={`${label} — to`}
+          aria-label={`${label} - to`}
           data-testid="widget-settings-date-to"
           className="w-full"
         />
@@ -431,7 +431,7 @@ function MetricsListField({
 
       {draft.metrics.length === 0 && (
         <p className="rounded-md border border-dashed border-border px-3 py-2 text-xs text-muted-foreground">
-          No metric selected yet — add at least one below.
+          No metric selected yet - add at least one below.
         </p>
       )}
 
@@ -544,7 +544,7 @@ function StrategyListField({
 
       {selected.length === 0 ? (
         <p className="rounded-md border border-dashed border-border px-3 py-2 text-xs text-muted-foreground">
-          No strategy selected — the widget will wait for a selection.
+          No strategy selected - the widget will wait for a selection.
         </p>
       ) : (
         <ul className="flex flex-wrap gap-1.5">

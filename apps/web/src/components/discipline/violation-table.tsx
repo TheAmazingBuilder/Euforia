@@ -60,7 +60,7 @@ export function ViolationTable({
   if (violations.length === 0) {
     return (
       <p className="px-1 py-6 text-center text-sm text-muted-foreground">
-        No violations recorded — the discipline engine watches every trade.
+        No violations recorded - the discipline engine watches every trade.
       </p>
     );
   }

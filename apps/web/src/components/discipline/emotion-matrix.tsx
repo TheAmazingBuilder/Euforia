@@ -25,7 +25,7 @@ export function EmotionMatrix({ matrix }: { matrix: DisciplineEmotionMatrixRespo
       <CardContent className="space-y-3">
         {matrix.rows.length === 0 ? (
           <p className="py-4 text-center text-sm text-muted-foreground">
-            No emotion logged in the window yet — tap a feeling at capture and the pattern appears.
+            No emotion logged in the window yet - tap a feeling at capture and the pattern appears.
           </p>
         ) : (
           <div className="overflow-x-auto">
@@ -60,7 +60,7 @@ export function EmotionMatrix({ matrix }: { matrix: DisciplineEmotionMatrixRespo
                           cellTone(row.winRatePct),
                         )}
                       >
-                        {row.winRatePct === null ? "—" : `${row.winRatePct.toFixed(0)}%`}
+                        {row.winRatePct === null ? "-" : `${row.winRatePct.toFixed(0)}%`}
                       </span>
                     </td>
                     <td className="pl-2 py-2 text-right">
@@ -70,7 +70,7 @@ export function EmotionMatrix({ matrix }: { matrix: DisciplineEmotionMatrixRespo
                           rTone(row.avgR),
                         )}
                       >
-                        {row.avgR === null ? "—" : `${row.avgR > 0 ? "+" : ""}${row.avgR.toFixed(2)}R`}
+                        {row.avgR === null ? "-" : `${row.avgR > 0 ? "+" : ""}${row.avgR.toFixed(2)}R`}
                       </span>
                     </td>
                   </tr>
@@ -80,7 +80,7 @@ export function EmotionMatrix({ matrix }: { matrix: DisciplineEmotionMatrixRespo
           </div>
         )}
         <p className="border-t border-border pt-2 text-[11px] leading-relaxed text-muted-foreground">
-          Window starting {matrix.windowStart} · correlational, not causal — the grid shows
+          Window starting {matrix.windowStart} · correlational, not causal - the grid shows
           patterns, it doesn&apos;t explain them.
           {matrix.excluded > 0 ? ` ${matrix.excluded} trade${matrix.excluded === 1 ? "" : "s"} without an emotion logged are not judged.` : ""}
         </p>

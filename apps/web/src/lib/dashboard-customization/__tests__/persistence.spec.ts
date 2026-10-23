@@ -68,7 +68,7 @@ describe("persistence adapter", () => {
   });
 });
 
-describe("persistence adapter — Phase 03 filter domain", () => {
+describe("persistence adapter - Phase 03 filter domain", () => {
   const ACCOUNT = "0b8f6e1e-7d2a-4c1b-9a2a-00000000000c";
 
   it("reads saved views with per-item salvage (one bad view never wins)", () => {

@@ -36,7 +36,7 @@ function layout(id: string, name = id): DashboardLayoutDocument {
 }
 
 describe("normalizeUserTemplates", () => {
-  it("validates items individually — one malformed template never destroys the rest", () => {
+  it("validates items individually - one malformed template never destroys the rest", () => {
     const good = layoutToUserTemplate(layout("l1"), "utpl_1", "Good one");
     const templates = normalizeUserTemplates([
       { id: "bad", name: "no layout" }, // missing layout
@@ -79,7 +79,7 @@ describe("resolveActiveLayoutId", () => {
 });
 
 describe("template freezing and application", () => {
-  it("freezes a DEEP copy — later workspace edits never leak into the template", () => {
+  it("freezes a DEEP copy - later workspace edits never leak into the template", () => {
     const source = createDefaultLayouts(["PNL_BAND", "HEATMAP"])[0]!;
     const template = layoutToUserTemplate(source, "utpl_x", "Snapshot");
     source.widgets[0]!.w = 4;

@@ -43,10 +43,10 @@ import {
 } from "./calculator-shared";
 
 /**
- * Lot Size Calculator (TOOLS section) — risk-budget position sizing with the
+ * Lot Size Calculator (TOOLS section) - risk-budget position sizing with the
  * broker-step model: balance × risk% → size floored to the volume step, with
  * the full breakdown (§16) and an explicit status (§17, nothing clamps
- * silently). Pure client math through calculator-model + shared risk utils —
+ * silently). Pure client math through calculator-model + shared risk utils -
  * no backend, no execution.
  */
 
@@ -114,7 +114,7 @@ export function LotSizeCalculator() {
   const digits = priceDigits(values);
   const unitLabel = Number(values.contractSize) >= 100 ? T.result.lotsUnit : T.result.unitsUnit;
 
-  // Live derivation — validation errors surface per-field once the field has
+  // Live derivation - validation errors surface per-field once the field has
   // content or a calculate attempt happened (no aggressive empty-state noise).
   const derived = React.useMemo(() => {
     const validation = validateLotSizeForm(values);
@@ -138,7 +138,7 @@ export function LotSizeCalculator() {
   const copyPayload = React.useMemo(() => {
     if (!result) return "";
     const lines = [
-      `Lot Size — ${isCustom ? "Custom" : values.instrument} (${values.direction === "BUY" ? "Long" : "Short"})`,
+      `Lot Size - ${isCustom ? "Custom" : values.instrument} (${values.direction === "BUY" ? "Long" : "Short"})`,
       `Balance ${formatMoney(values.balance, currency)} · Risk ${formatPercent(Number(values.riskPercent) / 100, 2)} (${formatMoney(result.riskAmount, currency)})`,
       `Entry ${formatPrice(values.entryPrice, digits)} · Stop ${formatPrice(values.stopLoss, digits)}`,
       `Position size: ${result.positionSize} ${unitLabel}`,
@@ -214,7 +214,7 @@ export function LotSizeCalculator() {
                   {INSTRUMENT_PRESETS.map((preset) => (
                     <SelectItem key={preset.symbol} value={preset.symbol}>
                       <span className="font-mono">{preset.symbol}</span>
-                      <span className="text-muted-foreground"> — {preset.name}</span>
+                      <span className="text-muted-foreground"> - {preset.name}</span>
                     </SelectItem>
                   ))}
                   <SelectSeparator />
@@ -498,7 +498,7 @@ export function LotSizeCalculator() {
                         ) : null}
                       </>
                     ) : (
-                      <p className="mt-1.5 font-mono text-xl tabular-nums text-muted-foreground">—</p>
+                      <p className="mt-1.5 font-mono text-xl tabular-nums text-muted-foreground">-</p>
                     )}
                   </div>
                 </div>
@@ -519,7 +519,7 @@ export function LotSizeCalculator() {
             <BreakdownLedger rows={breakdownRows} ariaLabel={T.breakdown.title} />
             {equivalence ? (
               <p className="mt-3 text-[11px] text-muted-foreground">
-                {T.breakdown.equivalent} — {equivalence}
+                {T.breakdown.equivalent} - {equivalence}
               </p>
             ) : null}
           </ToolCard>

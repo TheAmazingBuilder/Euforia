@@ -215,7 +215,7 @@ export const MISTAKE_DEFS: readonly MistakeDef[] = [
     key: "moved_stop",
     category: "MANAGEMENT",
     label: "Stop moved against you",
-    description: "Stop widened after entry — risk exceeded the plan.",
+    description: "Stop widened after entry - risk exceeded the plan.",
     severity: 4,
     detectionHint: null,
   },
@@ -224,7 +224,7 @@ export const MISTAKE_DEFS: readonly MistakeDef[] = [
     category: "BEHAVIOR",
     label: "Revenge trade",
     description:
-      "Bigger-than-usual size shortly after a loss — emotional re-entry.",
+      "Bigger-than-usual size shortly after a loss - emotional re-entry.",
     severity: 5,
     detectionHint: null,
   },

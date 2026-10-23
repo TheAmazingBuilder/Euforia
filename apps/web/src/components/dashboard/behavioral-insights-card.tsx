@@ -38,7 +38,7 @@ export function BehavioralInsightsWidget({
         <div className="min-w-0 space-y-1">
           <CardTitle className="font-heading text-base font-semibold">Behavioral insights</CardTitle>
           <CardDescription className="text-xs">
-            Rule-based observations over the filtered journal — measured facts, never diagnoses or predictions.
+            Rule-based observations over the filtered journal - measured facts, never diagnoses or predictions.
           </CardDescription>
         </div>
       </CardHeader>

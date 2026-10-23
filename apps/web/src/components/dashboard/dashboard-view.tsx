@@ -136,7 +136,7 @@ function EmptyDashboard() {
         </svg>
         <h2 className="mt-6 font-heading text-xl font-semibold">Your record starts here</h2>
         <p className="mt-2 max-w-sm text-sm leading-relaxed text-muted-foreground">
-          Every trade you log becomes an entry in your book of record — and every decision
+          Every trade you log becomes an entry in your book of record - and every decision
           gets graded by your coach. Capture your first execution to open the ledger.
         </p>
         <Button className="mt-6" onClick={() => openTradeModal()}>
@@ -385,7 +385,7 @@ export function DashboardView({ description }: DashboardViewProps) {
       {editing && (
         <>
           <p className="text-xs text-muted-foreground" data-testid="dashboard-edit-hint">
-            Drag a widget by its grip, resize it from its edges — or use the tools on each
+            Drag a widget by its grip, resize it from its edges - or use the tools on each
             card (the gear opens a widget&apos;s own settings). Nothing is saved until you press
             Save.
           </p>
@@ -403,7 +403,7 @@ export function DashboardView({ description }: DashboardViewProps) {
         </>
       )}
 
-      {/* Phase 03 — the global filter bar: ONE authoritative filter context
+      {/* Phase 03 - the global filter bar: ONE authoritative filter context
           above the grid. Visible in view AND edit mode (filters are
           orthogonal to layout editing, §11). */}
       {!isError && (
@@ -437,7 +437,7 @@ export function DashboardView({ description }: DashboardViewProps) {
         <EmptyDashboard />
       ) : contentReady && widgetData ? (
         <>
-          {/* The KPI band stays fixed above the customizable grid — the
+          {/* The KPI band stays fixed above the customizable grid - the
               designed ledger header is not a Phase 01 widget. */}
           <KpiRow overview={overview.data!} />
           <DashboardGrid

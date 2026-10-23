@@ -120,7 +120,7 @@ export function OryonToolbar({
 
       <div aria-live="polite" data-testid="oryon-instrument-identity" className="ml-1 mr-1 hidden min-w-0 shrink-0 flex-col justify-center sm:flex">
         <span className="truncate font-heading text-xs font-semibold leading-tight text-foreground">
-          {instrument?.name ?? "—"}
+          {instrument?.name ?? "-"}
         </span>
         <span className="flex items-center gap-1.5 text-[10px] leading-tight text-muted-foreground">
           <span className="font-mono">{instrument?.quoteCurrency ?? ""}</span>
@@ -134,7 +134,7 @@ export function OryonToolbar({
 
       <div className="h-6 w-px shrink-0 bg-border" aria-hidden />
 
-      {/* Timeframe selector — BACK ON THE TOP TOOLBAR (TradingView
+      {/* Timeframe selector - BACK ON THE TOP TOOLBAR (TradingView
           parity): bar duration belongs up here, the bottom strip owns the
           historical RANGE. Canonical testids (oryon-tf-*) live here;
           per-panel strips remain in the panel headers for multi-chart

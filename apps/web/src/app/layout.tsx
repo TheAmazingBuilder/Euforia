@@ -49,7 +49,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             {/* MockProvider mounts the (mocked) API before anything consumes
                 it; I18nProvider is auth-independent (pure runtime state) and
                 must wrap AuthProvider so auth surfaces localize too. The
-                runtime language default is EN — <html lang> follows the
+                runtime language default is EN - <html lang> follows the
                 active locale (i18n provider). */}
             <MockProvider>
               <I18nProvider>

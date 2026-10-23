@@ -252,7 +252,7 @@ export function AccountSnapshotView({
                               column === "symbol" && "font-medium",
                               column === "direction" && "text-xs",
                             )}>
-                              {value === null ? "—" : formatFinancial(value)}
+                              {value === null ? "-" : formatFinancial(value)}
                             </span>
                           </td>
                         );
@@ -320,12 +320,12 @@ export function ChartReadingView({
       <div className="chart-paper flex flex-col gap-3 rounded-xl border border-border bg-surface px-5 py-4" data-testid="recognition-chart-quote">
         <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
           <div className="flex items-center gap-3">
-            <span className="font-heading text-xl font-semibold tracking-tight">{symbol ?? "—"}</span>
+            <span className="font-heading text-xl font-semibold tracking-tight">{symbol ?? "-"}</span>
             {timeframe ? <span className="stamp stamp-accent !text-[10px]">{timeframe}</span> : null}
           </div>
           <div className="flex items-baseline gap-3">
             <span className="font-mono text-2xl font-medium tabular-nums">
-              {formatFinancial(price) || "—"}
+              {formatFinancial(price) || "-"}
             </span>
             {change !== null && change !== "" ? (
               <span className={cn("flex items-center gap-0.5 font-mono text-sm tabular-nums", changeTone ?? "text-muted-foreground")}>

@@ -72,7 +72,7 @@ function ruleLimit(rule: Rule | undefined): string {
     const limit = (params as Record<string, unknown>).limit;
     if (typeof limit === "number") return String(limit);
   }
-  return "—";
+  return "-";
 }
 
 export function RiskCard() {

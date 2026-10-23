@@ -154,7 +154,7 @@ export function SetWorkspace({ dict }: { dict: RecognitionDict }) {
                   type="button"
                   className="text-muted-foreground hover:text-foreground"
                   onClick={() => removeFile(index)}
-                  aria-label={`${file.name} — remove`}
+                  aria-label={`${file.name} - remove`}
                 >
                   ×
                 </button>
@@ -217,7 +217,7 @@ export function SetWorkspace({ dict }: { dict: RecognitionDict }) {
                     {dict.sets.member} {member.order + 1}
                   </span>
                   <span className="font-mono text-[11px] tabular-nums">
-                    {recognitionConfidence(member.recognition.fields) ?? "—"}%
+                    {recognitionConfidence(member.recognition.fields) ?? "-"}%
                   </span>
                 </span>
               ))}

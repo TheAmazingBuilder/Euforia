@@ -20,7 +20,7 @@ import { useI18n } from "@/i18n/i18n-provider";
 import { cn } from "@/lib/utils";
 
 /**
- * Operating rules (§24): the playbook's own rule library — GLOBAL rules and
+ * Operating rules (§24): the playbook's own rule library - GLOBAL rules and
  * strategy-scoped ones. Distinct from the discipline Rules Engine: this is
  * the SOURCE the engine could evaluate where technical (evaluatable flag).
  */

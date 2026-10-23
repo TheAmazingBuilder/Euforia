@@ -378,7 +378,7 @@ function MoveDialog({ note, onClose }: { note: NofyNoteRow | null; onClose: () =
         <DialogHeader>
           <DialogTitle>{N.notes.moveTitle}</DialogTitle>
           <DialogDescription>
-            {note ? `“${note.title === "" ? N.shared.untitledNote : note.title}” — ${N.notes.movePickWhere}` : ""}
+            {note ? `“${note.title === "" ? N.shared.untitledNote : note.title}” - ${N.notes.movePickWhere}` : ""}
           </DialogDescription>
         </DialogHeader>
         <Select value={folderId} onValueChange={setFolderId}>

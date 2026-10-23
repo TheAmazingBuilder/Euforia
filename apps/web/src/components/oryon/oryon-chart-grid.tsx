@@ -194,7 +194,7 @@ export function OryonChartGridPanel({
   return (
     <section
       role="group"
-      aria-label={`${S.groupLabel}: ${instrument?.symbol ?? "—"} ${panel.interval}`}
+      aria-label={`${S.groupLabel}: ${instrument?.symbol ?? "-"} ${panel.interval}`}
       data-testid="oryon-panel"
       data-panel-id={panel.id}
       data-panel-index={index}

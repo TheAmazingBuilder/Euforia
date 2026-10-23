@@ -442,7 +442,7 @@ export function Reflect({ tradeId }: ReflectProps) {
         />
       </section>
 
-      {/* Screenshots — picked here, uploaded on [Finish] alongside the
+      {/* Screenshots - picked here, uploaded on [Finish] alongside the
           psychology patch (failures toasted, never blocking). */}
       <section className="space-y-2" aria-labelledby="reflect-screenshots">
         <h3 id="reflect-screenshots" className="font-heading text-sm font-semibold uppercase tracking-wide text-muted-foreground">

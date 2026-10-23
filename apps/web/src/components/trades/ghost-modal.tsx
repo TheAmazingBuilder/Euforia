@@ -52,7 +52,7 @@ const DIRECTIONS: readonly {
 }[] = [
   { value: "BUY", labelKey: "long", glyph: "▲" },
   { value: "SELL", labelKey: "short", glyph: "▼" },
-  { value: null, labelKey: "undecided", glyph: "—" },
+  { value: null, labelKey: "undecided", glyph: "-" },
 ];
 
 function GhostForm() {

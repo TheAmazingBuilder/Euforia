@@ -28,7 +28,7 @@ import { useIndicatorSnapshot, useOryonIndicators } from "./oryon-indicators-con
  * path) — this leaf is the ONLY component that re-renders on the tick path
  * (≤ feed rate), the workspace tree stays still. While the crosshair
  * INSPECTS a bar (Phase 5), the chips show that bar's readings via the
- * engine's exact-time lookup — never an interpolation; when the inspected
+ * engine's exact-time lookup - never an interpolation; when the inspected
  * time has no computed value the chip simply shows nothing new. Quick
  * actions: chip body opens settings, eye toggles visibility, X removes.
  * Hidden instances stay listed (muted, eye-off) so the state is
@@ -134,7 +134,7 @@ function IndicatorChip({
       <button
         type="button"
         onClick={onOpen}
-        title={`${indicatorLabel(instance)} — settings`}
+        title={`${indicatorLabel(instance)} - settings`}
         data-testid="oryon-indicator-chip-open"
         className="inline-flex items-center gap-1 rounded-sm text-foreground transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
       >

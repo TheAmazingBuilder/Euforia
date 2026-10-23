@@ -9,7 +9,7 @@ export function formatIndicatorValue(
   value: number,
   instance: OryonIndicatorInstance,
 ): string {
-  if (!Number.isFinite(value)) return "—";
+  if (!Number.isFinite(value)) return "-";
   switch (instance.type) {
     case "rsi":
       return trim(value.toFixed(2));

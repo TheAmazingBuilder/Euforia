@@ -537,7 +537,7 @@ export function TradeForm({ seed }: TradeFormProps) {
             autoComplete="off"
             value={values.entryPrice}
             onChange={(event) => patch({ entryPrice: event.target.value })}
-            placeholder={instrument !== null ? instrument.digits > 2 ? "1.08420" : "9820.00" : "—"}
+            placeholder={instrument !== null ? instrument.digits > 2 ? "1.08420" : "9820.00" : "-"}
             className={inputClasses}
             autoFocus
           />

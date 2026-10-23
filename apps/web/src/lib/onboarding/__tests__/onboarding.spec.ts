@@ -169,7 +169,7 @@ describe("resolveOnboardingEligibility", () => {
     ).toBe("not_required");
   });
 
-  it("resolves a status fetch failure to error — never assumes a new user", () => {
+  it("resolves a status fetch failure to error - never assumes a new user", () => {
     expect(
       resolveOnboardingEligibility({
         authStatus: "authenticated",

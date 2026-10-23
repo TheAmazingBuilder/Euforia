@@ -214,7 +214,7 @@ export function FirstRunOnboarding() {
           </header>
 
           {/* Polite step announcements (the ONLY place meaning is conveyed
-              textually — never by animation alone). */}
+              textually - never by animation alone). */}
           <p aria-live="polite" className="sr-only">
             {liveAnnouncement}
           </p>

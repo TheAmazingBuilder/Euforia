@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
  * Trade-detail "Chart analyses" section (Phase 10 — Trade Journal bridge).
  *
  * Lists the Oryon chart analyses LINKED to this trade (the analysis record
- * carries the trade's canonical id — the journal trade itself is never
+ * carries the trade's canonical id - the journal trade itself is never
  * copied or mutated). Per record: open the reconstructed view in Oryon
  * (deep link `/oryon?analysis=<id>`), unlink the association, or delete
  * the analysis (journal screenshot attachments are NOT touched — they are

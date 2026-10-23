@@ -21,7 +21,7 @@ export function MistakeLedger({ entries }: { entries: MistakeLedgerResponse["ent
   if (entries.length === 0) {
     return (
       <p className="py-6 text-center text-sm text-muted-foreground">
-        No mistakes tagged in this window — either a clean month or an unlabeled one.
+        No mistakes tagged in this window - either a clean month or an unlabeled one.
       </p>
     );
   }

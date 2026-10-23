@@ -49,15 +49,15 @@ const SETUP_SEEDS: SetupSeed[] = [
     status: "ACTIVE",
     description: "The bread-and-butter variant: enter on the retest of the broken level, never on the impulse candle.",
     context:
-      "Use when the NY open drives price through a level that held at least twice. The level must be obvious on the 15m — if you have to look for it, it is not a level.",
+      "Use when the NY open drives price through a level that held at least twice. The level must be obvious on the 15m - if you have to look for it, it is not a level.",
     marketCondition: "EXPANSION",
     trigger: "15m candle body closes beyond the level, then pulls back to touch it within 6 candles.",
     confirmation: "Retest candle closes back in the breakout direction (no deep wick through the level).",
     entryModel: "Market order on the retest candle close, or limit at the level with a 2-candle validity window.",
-    stopModel: "Beyond the retest extreme + 0.2 × ATR(14) — never inside the range of the level.",
+    stopModel: "Beyond the retest extreme + 0.2 × ATR(14) - never inside the range of the level.",
     targetModel: "First target at 1.5R (partial 50%), runner trails the 15m structure.",
-    invalidation: "Candle body closes back through the level before the retest — the breakout failed, stand down.",
-    notes: "Best samples came from days when the pre-market was quiet — violent opens tend to run without retesting.",
+    invalidation: "Candle body closes back through the level before the retest - the breakout failed, stand down.",
+    notes: "Best samples came from days when the pre-market was quiet - violent opens tend to run without retesting.",
     tags: ["retest", "ny-open", "a-plus"],
   },
   {
@@ -71,7 +71,7 @@ const SETUP_SEEDS: SetupSeed[] = [
     confirmation: "Next candle makes a lower low than the breakout candle (trap confirmed).",
     entryModel: "Market on confirmation candle close; target the opposite side of the range.",
     stopModel: "Above the failed breakout extreme.",
-    targetModel: "Range midpoint at 1R, range edge at 2R — flat beyond that.",
+    targetModel: "Range midpoint at 1R, range edge at 2R - flat beyond that.",
     invalidation: "Price re-accepts beyond the level (2 consecutive closes outside).",
     notes: null,
     tags: ["reversal", "trap"],
@@ -80,16 +80,16 @@ const SETUP_SEEDS: SetupSeed[] = [
     strategyName: "Breakout NY",
     name: "Momentum Breakout",
     status: "DRAFT",
-    description: "Direct entry on expansion candles — drafted, NOT validated yet. Needs 20 paper samples before going live.",
-    context: "High-volatility regimes only (news-driven expansion). Currently a draft — the stop model is not defined.",
+    description: "Direct entry on expansion candles - drafted, NOT validated yet. Needs 20 paper samples before going live.",
+    context: "High-volatility regimes only (news-driven expansion). Currently a draft - the stop model is not defined.",
     marketCondition: "HIGH_VOLATILITY",
     trigger: "Two consecutive expansion candles close beyond the level.",
     confirmation: "Volume on the second candle ≥ 1.5 × 20-candle average.",
-    entryModel: "Market on the second candle close — no chase beyond 0.3 × ATR.",
+    entryModel: "Market on the second candle close - no chase beyond 0.3 × ATR.",
     stopModel: null,
     targetModel: null,
     invalidation: "First pullback that reclaims the pre-breakout consolidation.",
-    notes: "Stop + target models intentionally left undefined while the setup is a draft — completeness check should flag it.",
+    notes: "Stop + target models intentionally left undefined while the setup is a draft - completeness check should flag it.",
     tags: ["draft", "momentum"],
   },
   {
@@ -112,7 +112,7 @@ const SETUP_SEEDS: SetupSeed[] = [
     strategyName: "S&R Inversion",
     name: "Inversion + News Filter",
     status: "PAUSED",
-    description: "Same inversion but only outside the news window — paused until the news filter is proven on paper.",
+    description: "Same inversion but only outside the news window - paused until the news filter is proven on paper.",
     context: "Identical to Clean Inversion, with an additional news gate.",
     marketCondition: "RANGING",
     trigger: "Clean Inversion trigger AND no high-impact event within ±15 minutes.",
@@ -121,7 +121,7 @@ const SETUP_SEEDS: SetupSeed[] = [
     stopModel: "Clean Inversion stop model.",
     targetModel: "Clean Inversion target model.",
     invalidation: "Clean Inversion invalidation, plus: news hits inside the trade → flatten at market.",
-    notes: "Paused on purpose — the news gate is evaluated by the Rules Engine before this reactivates.",
+    notes: "Paused on purpose - the news gate is evaluated by the Rules Engine before this reactivates.",
     tags: ["paused", "news"],
   },
   {
@@ -129,14 +129,14 @@ const SETUP_SEEDS: SetupSeed[] = [
     name: "Range Edge Fade",
     status: "ACTIVE",
     description: "Fade the edges of a mature range, scalp-size only.",
-    context: "Range must show ≥ 3 alternations of edges on the 5m. Dead ranges only — no expanding ranges.",
+    context: "Range must show ≥ 3 alternations of edges on the 5m. Dead ranges only - no expanding ranges.",
     marketCondition: "RANGING",
     trigger: "Wick rejection at the edge with no follow-through candle.",
     confirmation: "Next candle closes back inside the range body.",
     entryModel: "Market on confirmation close.",
     stopModel: "Beyond the edge wick + spread.",
-    targetModel: "Range midpoint — always. No runner.",
-    invalidation: "Candle body closes beyond the edge — the range may be breaking, exit immediately.",
+    targetModel: "Range midpoint - always. No runner.",
+    invalidation: "Candle body closes beyond the edge - the range may be breaking, exit immediately.",
     notes: null,
     tags: ["scalp", "fade"],
   },
@@ -145,7 +145,7 @@ const SETUP_SEEDS: SetupSeed[] = [
     name: "Compression Squeeze Entry",
     status: "DRAFT",
     description: "Draft: enter the range break after a compression at the edge.",
-    context: "Needs a compression definition first — draft on purpose.",
+    context: "Needs a compression definition first - draft on purpose.",
     marketCondition: "COMPRESSION",
     trigger: null,
     confirmation: null,
@@ -181,7 +181,7 @@ const CHECKLIST_SEEDS: ChecklistSeed[] = [
   },
   {
     strategyName: "Breakout NY",
-    name: "Breakout NY — pre-flight",
+    name: "Breakout NY - pre-flight",
     items: [
       { label: "Level held at least twice before today", required: true },
       { label: "NY-open direction matches the higher-timeframe bias", required: true },
@@ -193,7 +193,7 @@ const CHECKLIST_SEEDS: ChecklistSeed[] = [
   },
   {
     strategyName: "S&R Inversion",
-    name: "S&R Inversion — pre-flight",
+    name: "S&R Inversion - pre-flight",
     items: [
       { label: "Prior level produced a reaction in the last 20 sessions", required: true },
       { label: "Sweep wick ≥ 2× candle body", required: true },
@@ -204,12 +204,12 @@ const CHECKLIST_SEEDS: ChecklistSeed[] = [
   },
   {
     strategyName: "Range Scalping",
-    name: "Range Scalping — pre-flight",
+    name: "Range Scalping - pre-flight",
     items: [
       { label: "Range mature: ≥ 3 edge alternations on the 5m", required: true },
       { label: "No expansion candles inside the range", required: true },
       { label: "Scalp size only (≤ half normal risk)", required: true },
-      { label: "Target is the midpoint — no runner agreed with yourself", required: true },
+      { label: "Target is the midpoint - no runner agreed with yourself", required: true },
     ],
   },
 ];
@@ -251,7 +251,7 @@ const RULE_SEEDS: RuleSeed[] = [
     strategyName: null,
     title: "Journal every trade before the session closes",
     detail:
-      "Every executed trade is journaled (notes + feeling) before the trading session is closed. A trade without notes is an unfinished trade — the review gate stays open until it is written.",
+      "Every executed trade is journaled (notes + feeling) before the trading session is closed. A trade without notes is an unfinished trade - the review gate stays open until it is written.",
     category: "BEHAVIOR",
     evaluatable: false,
     evaluationHint: null,
@@ -261,7 +261,7 @@ const RULE_SEEDS: RuleSeed[] = [
     strategyName: null,
     title: "Cooldown after a full-loss trade",
     detail:
-      "After a trade closes at −1R or worse, the next entry waits at least 15 minutes. The point is not to punish a loss — it is to keep the revenge trade out of the same tape.",
+      "After a trade closes at −1R or worse, the next entry waits at least 15 minutes. The point is not to punish a loss - it is to keep the revenge trade out of the same tape.",
     category: "BEHAVIOR",
     evaluatable: true,
     evaluationHint: "Evaluatable against the last closed trade outcome.",
@@ -271,7 +271,7 @@ const RULE_SEEDS: RuleSeed[] = [
     strategyName: "Breakout NY",
     title: "Breakout NY: only inside the NY-open window",
     detail:
-      "This strategy trades 14:30–16:30 UTC only. A breakout signal outside the window is NOT this strategy — journal it as out-of-playbook instead of bending the rule.",
+      "This strategy trades 14:30–16:30 UTC only. A breakout signal outside the window is NOT this strategy - journal it as out-of-playbook instead of bending the rule.",
     category: "SESSION",
     evaluatable: true,
     evaluationHint: "Evaluatable against session windows.",
@@ -281,7 +281,7 @@ const RULE_SEEDS: RuleSeed[] = [
     strategyName: "Range Scalping",
     title: "Range Scalping: skip when volatility dies",
     detail:
-      "When ATR(14) on the 5m drops under 60% of its 20-day average, the range is too dead to pay the spread — skip the session.",
+      "When ATR(14) on the 5m drops under 60% of its 20-day average, the range is too dead to pay the spread - skip the session.",
     category: "CUSTOM",
     evaluatable: false,
     evaluationHint: null,
@@ -306,7 +306,7 @@ const TEMPLATE_SEEDS: TemplateSeed[] = [
     payload: {
       description: "Direct breakout of tested levels.",
       detailedDescription:
-        "Define the level (held ≥ 2×), the expansion window, and the maximum chase distance before the entry is allowed. Created from the Euforia template library — make it yours before trading it.",
+        "Define the level (held ≥ 2×), the expansion window, and the maximum chase distance before the entry is allowed. Created from the Euforia template library - make it yours before trading it.",
       tags: ["breakout", "template"],
       marketConditions: ["EXPANSION", "HIGH_VOLATILITY"],
       marketProfile: { assetClass: null, symbols: [], market: null, accountLabel: null, timeframe: "15m", tradingStyle: "INTRADAY", sessions: ["NEW_YORK"], tradingDays: ["MON", "TUE", "WED", "THU", "FRI"] },
@@ -326,7 +326,7 @@ const TEMPLATE_SEEDS: TemplateSeed[] = [
     payload: {
       description: "Breakout entry on the retest, not the impulse.",
       detailedDescription:
-        "Wait for the break, then the pullback to the level. The retest candle must hold. Created from the Euforia template library — make it yours before trading it.",
+        "Wait for the break, then the pullback to the level. The retest candle must hold. Created from the Euforia template library - make it yours before trading it.",
       tags: ["breakout", "retest", "template"],
       marketConditions: ["EXPANSION"],
       marketProfile: { assetClass: null, symbols: [], market: null, accountLabel: null, timeframe: "15m", tradingStyle: "INTRADAY", sessions: ["NEW_YORK"], tradingDays: ["MON", "TUE", "WED", "THU", "FRI"] },
@@ -349,7 +349,7 @@ const TEMPLATE_SEEDS: TemplateSeed[] = [
     payload: {
       description: "Trade with the prevailing structure, exit on structure break.",
       detailedDescription:
-        "Define the higher-timeframe trend, the pullback depth you accept, and the structure break that ends the trade. Created from the Euforia template library — make it yours before trading it.",
+        "Define the higher-timeframe trend, the pullback depth you accept, and the structure break that ends the trade. Created from the Euforia template library - make it yours before trading it.",
       tags: ["trend", "template"],
       marketConditions: ["TRENDING"],
       marketProfile: { assetClass: null, symbols: [], market: null, accountLabel: null, timeframe: "4H", tradingStyle: "SWING", sessions: [], tradingDays: ["MON", "TUE", "WED", "THU", "FRI"] },
@@ -369,7 +369,7 @@ const TEMPLATE_SEEDS: TemplateSeed[] = [
     payload: {
       description: "Enter on controlled pullbacks inside a trend.",
       detailedDescription:
-        "Define the trend (structure or moving average), the pullback zone, and the trigger that resumes the trend. Created from the Euforia template library — make it yours before trading it.",
+        "Define the trend (structure or moving average), the pullback zone, and the trigger that resumes the trend. Created from the Euforia template library - make it yours before trading it.",
       tags: ["pullback", "template"],
       marketConditions: ["TRENDING"],
       marketProfile: { assetClass: null, symbols: [], market: null, accountLabel: null, timeframe: "15m", tradingStyle: "INTRADAY", sessions: [], tradingDays: ["MON", "TUE", "WED", "THU", "FRI"] },
@@ -389,13 +389,13 @@ const TEMPLATE_SEEDS: TemplateSeed[] = [
     payload: {
       description: "Fade statistical extremes back to the mean.",
       detailedDescription:
-        "Define what 'stretched' means (distance from average, bands, RSI) and the average you fade to. Never fade a trending tape. Created from the Euforia template library — make it yours before trading it.",
+        "Define what 'stretched' means (distance from average, bands, RSI) and the average you fade to. Never fade a trending tape. Created from the Euforia template library - make it yours before trading it.",
       tags: ["reversion", "template"],
       marketConditions: ["RANGING", "LOW_VOLATILITY"],
       marketProfile: { assetClass: null, symbols: [], market: null, accountLabel: null, timeframe: "15m", tradingStyle: "INTRADAY", sessions: [], tradingDays: ["MON", "TUE", "WED", "THU", "FRI"] },
       entryConditions: [{ id: "t1", category: "INDICATOR", text: "Price stretched ≥ 2σ from the mean, no trend context.", group: null }],
       confirmations: [{ id: "t1", type: "MOMENTUM_CONFIRMATION", note: "Momentum stalls at the extreme." }],
-      invalidations: ["Expansion continues — one more leg away from the mean."],
+      invalidations: ["Expansion continues - one more leg away from the mean."],
       risk: { defaultRiskPct: 0.5, maxRiskPct: 1, fixedRiskAmount: null, stopMethodology: "Beyond the stretch extreme", targetMethodology: "The mean", minRR: 1, maxConcurrentTrades: 1, maxCorrelatedExposure: 1, dailyRiskRestriction: null, newsRestriction: null },
     },
   },
@@ -409,7 +409,7 @@ const TEMPLATE_SEEDS: TemplateSeed[] = [
     payload: {
       description: "Join momentum bursts with strict invalidation.",
       detailedDescription:
-        "Define the momentum trigger (volume, range expansion) and the exact invalidation — momentum dies fast. Created from the Euforia template library — make it yours before trading it.",
+        "Define the momentum trigger (volume, range expansion) and the exact invalidation - momentum dies fast. Created from the Euforia template library - make it yours before trading it.",
       tags: ["momentum", "template"],
       marketConditions: ["EXPANSION"],
       marketProfile: { assetClass: null, symbols: [], market: null, accountLabel: null, timeframe: "5m", tradingStyle: "SCALPING", sessions: [], tradingDays: ["MON", "TUE", "WED", "THU", "FRI"] },
@@ -429,7 +429,7 @@ const TEMPLATE_SEEDS: TemplateSeed[] = [
     payload: {
       description: "Trade the edges of a defined range.",
       detailedDescription:
-        "The range must be mature (≥ 3 alternations). Fade edges toward the midpoint; stop beyond the edge; never argue with a body close outside. Created from the Euforia template library — make it yours before trading it.",
+        "The range must be mature (≥ 3 alternations). Fade edges toward the midpoint; stop beyond the edge; never argue with a body close outside. Created from the Euforia template library - make it yours before trading it.",
       tags: ["range", "template"],
       marketConditions: ["RANGING"],
       marketProfile: { assetClass: null, symbols: [], market: null, accountLabel: null, timeframe: "5m", tradingStyle: "INTRADAY", sessions: [], tradingDays: ["MON", "TUE", "WED", "THU", "FRI"] },
@@ -449,7 +449,7 @@ const TEMPLATE_SEEDS: TemplateSeed[] = [
     payload: {
       description: "Trade reactions at respected levels.",
       detailedDescription:
-        "A level only exists if it produced a reaction before. Define reaction quality (wick/body), the invalidation, and what you do when the level breaks. Created from the Euforia template library — make it yours before trading it.",
+        "A level only exists if it produced a reaction before. Define reaction quality (wick/body), the invalidation, and what you do when the level breaks. Created from the Euforia template library - make it yours before trading it.",
       tags: ["levels", "template"],
       marketConditions: ["RANGING"],
       marketProfile: { assetClass: null, symbols: [], market: null, accountLabel: null, timeframe: "4H", tradingStyle: "SWING", sessions: [], tradingDays: ["MON", "TUE", "WED", "THU", "FRI"] },
@@ -469,7 +469,7 @@ const TEMPLATE_SEEDS: TemplateSeed[] = [
     payload: {
       description: "High-frequency small-target execution.",
       detailedDescription:
-        "Scalping lives and dies on costs and discipline: define the spread ceiling, the minimum R:R after fees, and the daily stop. Created from the Euforia template library — make it yours before trading it.",
+        "Scalping lives and dies on costs and discipline: define the spread ceiling, the minimum R:R after fees, and the daily stop. Created from the Euforia template library - make it yours before trading it.",
       tags: ["scalp", "template"],
       marketConditions: ["EXPANSION"],
       marketProfile: { assetClass: null, symbols: [], market: null, accountLabel: null, timeframe: "1m", tradingStyle: "SCALPING", sessions: [], tradingDays: ["MON", "TUE", "WED", "THU", "FRI"] },
@@ -489,7 +489,7 @@ const TEMPLATE_SEEDS: TemplateSeed[] = [
     payload: {
       description: "Multi-day swing positions managed on structure.",
       detailedDescription:
-        "Define the swing context (daily structure), the entry timing, the overnight risk rules and the structural exit. Created from the Euforia template library — make it yours before trading it.",
+        "Define the swing context (daily structure), the entry timing, the overnight risk rules and the structural exit. Created from the Euforia template library - make it yours before trading it.",
       tags: ["swing", "template"],
       marketConditions: ["TRENDING"],
       marketProfile: { assetClass: null, symbols: [], market: null, accountLabel: null, timeframe: "1D", tradingStyle: "POSITION", sessions: [], tradingDays: ["MON", "TUE", "WED"] },

@@ -230,7 +230,7 @@ export function NotificationsCard() {
                                 setEventChannel(category.key, eventKey, key, checked)
                               }
                               disabled={!current.enabled}
-                              aria-label={`${meta.events[eventKey]} — ${channelLabels[key]}`}
+                              aria-label={`${meta.events[eventKey]} - ${channelLabels[key]}`}
                               data-testid={`settings-notifications-${category.key}-${eventKey}-${key}`}
                             />
                           </span>

@@ -249,7 +249,7 @@ export type NotesUpdateResponse = z.infer<typeof notesUpdateResponseSchema>;
 // ── Session Live (GET /session/timeline, trade-entry-ux.md §9) ────────────
 
 /**
- * One row of today's session event timeline — computed SERVER-SIDE from
+ * One row of today's session event timeline - computed SERVER-SIDE from
  * trades, server-forged TradeEvents and alerts; the client never assembles
  * it (the trading date comes from the API, never computed client-side).
  */
@@ -438,7 +438,7 @@ export const strategyStatSchema = z.object({
   /** Cumulative-R equity sparkline, chronological, decimal strings. */
   sparkline: z.array(decimalStringSchema),
   /**
-   * Average R over the strategy's LAST 20 closed trades — the decay
+   * Average R over the strategy's LAST 20 closed trades - the decay
    * detector window. null when the strategy has no closed trades.
    */
   last20Expectancy: decimalStringSchema.nullable(),
@@ -1265,7 +1265,7 @@ export type AnalyticsDatasetMeta = z.infer<typeof analyticsDatasetMetaSchema>;
 
 /**
  * Summary band (§6/§8). Every ratio can be null when the sample cannot
- * support it — the client renders "—" with the n, never a fake zero.
+ * support it — the client renders "-" with the n, never a fake zero.
  * `sharpeNote`/`sortinoNote` carry the exact methodology (§8: never present a
  * Sharpe without explaining how it was computed).
  */

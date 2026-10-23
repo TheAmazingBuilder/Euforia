@@ -88,7 +88,7 @@ export function SidebarNav({
       aria-label="Main navigation"
       className={cn("flex flex-col gap-1 p-2", collapsed && "items-center")}
     >
-      {/* Accounts — pinned at the very top, above Dashboard, with a subtle
+      {/* Accounts - pinned at the very top, above Dashboard, with a subtle
           separator (deliberate placement, pulled out of the Trading section). */}
       {renderItem(pinnedAccounts)}
       {collapsed ? (
@@ -135,7 +135,7 @@ export function SidebarNav({
         </div>
       ))}
 
-      {/* Sign-out — real logout: POST /auth/logout, local teardown, redirect.
+      {/* Sign-out - real logout: POST /auth/logout, local teardown, redirect.
           Destructive on hover (the only red affordance of the rail). */}
       {collapsed ? (
         <div aria-hidden="true" className="my-2 h-px w-6 self-center bg-border" />
@@ -174,7 +174,7 @@ export function SidebarBrand({ collapsed }: { collapsed: boolean }) {
         "flex h-14 shrink-0 items-center border-b border-border bg-surface",
         collapsed ? "justify-center px-0" : "gap-2.5 px-4",
       )}
-      aria-label="Euforia — Dashboard"
+      aria-label="Euforia - Dashboard"
     >
       {collapsed ? (
         <EuforiaLogo variant="mark" tone="auto" size="md" className="size-7" />

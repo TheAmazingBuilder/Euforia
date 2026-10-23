@@ -456,8 +456,8 @@ export function CsvImportDialog({
                         <td className="px-2.5 py-1.5 text-muted-foreground">{row.entryAt.slice(0, 16).replace("T", " ")}</td>
                         <td className="px-2.5 py-1.5 text-right tabular-nums">{row.entryPrice}</td>
                         <td className="px-2.5 py-1.5 text-right tabular-nums">{row.exitPrice ?? T.openValue}</td>
-                        <td className="px-2.5 py-1.5 text-right tabular-nums">{row.quantity ?? "—"}</td>
-                        <td className="px-2.5 py-1.5 text-right tabular-nums">{row.pnl ?? "—"}</td>
+                        <td className="px-2.5 py-1.5 text-right tabular-nums">{row.quantity ?? "-"}</td>
+                        <td className="px-2.5 py-1.5 text-right tabular-nums">{row.pnl ?? "-"}</td>
                       </tr>
                     ))}
                   </tbody>

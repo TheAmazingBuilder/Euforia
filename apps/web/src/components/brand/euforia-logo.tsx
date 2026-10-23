@@ -24,7 +24,7 @@ import { cn } from "@/lib/utils";
  *  - "white" → monochrome white ribbons, no tile
  *  - "black" → monochrome navy-black ribbons, no tile
  *  - "auto"  → navy tile + gradient mark (theme-invariant, like the
- *    favicon), wordmark inherits the app's foreground token — use for
+ *    favicon), wordmark inherits the app's foreground token - use for
  *    in-app lockups that must follow the active theme.
  *
  * Theme-invariant on purpose (like the favicon): the mark keeps its own

@@ -107,7 +107,7 @@ export function EvidenceNote({ children }: { children: React.ReactNode }) {
 
 /** Age in human form from epoch ms — "320 ms ago", "4 s ago", "2 min ago". */
 export function ageLabel(ageMs: number | null): string {
-  if (ageMs === null) return "—";
+  if (ageMs === null) return "-";
   if (ageMs < 1_000) return `${Math.max(0, Math.round(ageMs))} ms ago`;
   if (ageMs < 60_000) return `${Math.floor(ageMs / 1_000)} s ago`;
   if (ageMs < 3_600_000) return `${Math.floor(ageMs / 60_000)} min ago`;
@@ -136,7 +136,7 @@ export function useNowClock(): number | null {
 
 /** Duration in human form. */
 export function durationLabel(msValue: number | null): string {
-  if (msValue === null) return "—";
+  if (msValue === null) return "-";
   if (msValue < 1_000) return `${Math.round(msValue)} ms`;
   if (msValue < 60_000) return `${(msValue / 1_000).toFixed(1)} s`;
   return `${Math.floor(msValue / 60_000)} min ${Math.round((msValue % 60_000) / 1_000)} s`;

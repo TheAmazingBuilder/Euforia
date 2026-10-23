@@ -119,7 +119,7 @@ export function GoalFormDialog({ open, onOpenChange, editTarget }: GoalFormDialo
             toast.success("Goal updated", { description: title.trim() });
             onOpenChange(false);
           },
-          onError: (error) => toast.error("Could not update the goal", { description: apiErrorMessage(error, "Unexpected error — try again.") }),
+          onError: (error) => toast.error("Could not update the goal", { description: apiErrorMessage(error, "Unexpected error - try again.") }),
         },
       );
     } else {
@@ -128,11 +128,11 @@ export function GoalFormDialog({ open, onOpenChange, editTarget }: GoalFormDialo
         {
           onSuccess: (created) => {
             toast.success("Goal created", {
-              description: `${created.goal.title} — progress is tracked against real trades from now on.`,
+              description: `${created.goal.title} - progress is tracked against real trades from now on.`,
             });
             onOpenChange(false);
           },
-          onError: (error) => toast.error("Could not create the goal", { description: apiErrorMessage(error, "Unexpected error — try again.") }),
+          onError: (error) => toast.error("Could not create the goal", { description: apiErrorMessage(error, "Unexpected error - try again.") }),
         },
       );
     }
@@ -146,7 +146,7 @@ export function GoalFormDialog({ open, onOpenChange, editTarget }: GoalFormDialo
         <DialogHeader>
           <DialogTitle>{editTarget ? "Edit goal" : "New goal"}</DialogTitle>
           <DialogDescription>
-            Pick what to hold yourself to — Euforia compares it with your real trading behavior over the period.
+            Pick what to hold yourself to - Euforia compares it with your real trading behavior over the period.
           </DialogDescription>
         </DialogHeader>
 

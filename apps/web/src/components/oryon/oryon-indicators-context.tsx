@@ -29,7 +29,7 @@ import {
  * which also keeps honest bounds on local storage.
  *
  * The TOOLBAR dialog (add/settings) and template save/apply resolve the
- * ACTIVE panel's store through the workspace config context — the dialog
+ * ACTIVE panel's store through the workspace config context - the dialog
  * is modal, so the target cannot change while it is open.
  *
  * Re-render discipline: consuming components subscribe to their store

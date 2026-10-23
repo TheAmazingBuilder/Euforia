@@ -219,7 +219,7 @@ export function comparePerformanceSnapshots(
   const sameSchema = a.schemaVersion === b.schemaVersion;
   if (!sameSchema) {
     warnings.push(
-      `Schema versions differ (A v${a.schemaVersion} / B v${b.schemaVersion}) — metric definitions may not be comparable.`,
+      `Schema versions differ (A v${a.schemaVersion} / B v${b.schemaVersion}) - metric definitions may not be comparable.`,
     );
   }
 
@@ -229,11 +229,11 @@ export function comparePerformanceSnapshots(
   const moneyComparable = bothSingle && sameCurrency;
   if (bothSingle && !sameCurrency) {
     warnings.push(
-      `Currencies differ (A ${a.currency} / B ${b.currency}) — money metrics are NOT comparable without a conversion; only ratio/R/count rows are shown.`,
+      `Currencies differ (A ${a.currency} / B ${b.currency}) - money metrics are NOT comparable without a conversion; only ratio/R/count rows are shown.`,
     );
   } else if (!bothSingle) {
     warnings.push(
-      "At least one snapshot spans multiple currencies — money metrics are unavailable; only ratio/R/count rows are shown.",
+      "At least one snapshot spans multiple currencies - money metrics are unavailable; only ratio/R/count rows are shown.",
     );
   }
 

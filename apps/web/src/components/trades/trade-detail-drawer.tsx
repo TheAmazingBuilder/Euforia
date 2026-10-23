@@ -81,7 +81,7 @@ function Readout({
           (!tone || tone === "muted") && "text-foreground",
         )}
       >
-        {value ?? "—"}
+        {value ?? "-"}
       </p>
     </div>
   );
@@ -244,27 +244,27 @@ export function TradeDetailDrawer({
     <section className="grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-8">
       <Readout
         label={T.netPnl}
-        value={trade.pnlNet === null ? "—" : formatSignedMoney(trade.pnlNet, currency, { digits: 2 })}
+        value={trade.pnlNet === null ? "-" : formatSignedMoney(trade.pnlNet, currency, { digits: 2 })}
         tone={trade.pnlNet === null ? "muted" : Number(trade.pnlNet) >= 0 ? "profit" : "loss"}
       />
       <Readout
         label={T.rMultiple}
-        value={trade.rMultiple === null ? "—" : formatR(trade.rMultiple)}
+        value={trade.rMultiple === null ? "-" : formatR(trade.rMultiple)}
         tone={trade.rMultiple === null ? "muted" : Number(trade.rMultiple) >= 0 ? "profit" : "loss"}
       />
       <Readout label={T.entry} value={formatNumber(trade.entryPrice, priceDigits)} />
-      <Readout label={T.exit} value={trade.exitPrice === null ? "—" : formatNumber(trade.exitPrice, priceDigits)} />
+      <Readout label={T.exit} value={trade.exitPrice === null ? "-" : formatNumber(trade.exitPrice, priceDigits)} />
       <Readout
         label={T.initialStop}
-        value={trade.initialStop === null ? "—" : formatNumber(trade.initialStop, priceDigits)}
+        value={trade.initialStop === null ? "-" : formatNumber(trade.initialStop, priceDigits)}
       />
       <Readout
         label={T.takeProfit}
-        value={trade.initialTP === null ? "—" : formatNumber(trade.initialTP, priceDigits)}
+        value={trade.initialTP === null ? "-" : formatNumber(trade.initialTP, priceDigits)}
       />
       <Readout
         label={T.risked}
-        value={trade.riskAmount === null ? "—" : formatNumber(trade.riskAmount, 2)}
+        value={trade.riskAmount === null ? "-" : formatNumber(trade.riskAmount, 2)}
       />
       <Readout label={T.fees} value={formatNumber(trade.fees, 2)} />
     </section>

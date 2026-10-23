@@ -53,7 +53,7 @@ type ProfileExtras = {
   jobTitle: string;
   company: string;
   location: string;
-  joinedAt: string; // ISO date — rendered "Joined March 2023".
+  joinedAt: string; // ISO date - rendered "Joined March 2023".
 };
 
 type ProfilePrefs = {
@@ -262,7 +262,7 @@ export function ProfileView() {
       return;
     }
     if (file.size > 450_000) {
-      toast.error("Image too large — pick one under 450 KB");
+      toast.error("Image too large - pick one under 450 KB");
       return;
     }
     const reader = new FileReader();
@@ -352,7 +352,7 @@ export function ProfileView() {
       <header className="space-y-1">
         <h1 className="font-heading text-2xl font-extrabold tracking-tight sm:text-3xl">Profile</h1>
         <p className="text-sm text-muted-foreground">
-          Your identity, account, security and notification preferences — one place.
+          Your identity, account, security and notification preferences - one place.
         </p>
       </header>
 
@@ -782,7 +782,7 @@ export function ProfileView() {
               disabled={deleteConfirm !== "DELETE"}
               onClick={() => {
                 setDeleteOpen(false);
-                toast.info("Demo build — the deletion request was simulated");
+                toast.info("Demo build - the deletion request was simulated");
               }}
               data-testid="profile-delete-confirm"
               className="border border-loss/30 bg-loss/15 text-loss hover:bg-loss/25 hover:text-loss"

@@ -53,7 +53,7 @@ describe("defaults per widget type", () => {
   });
 });
 
-describe("resolveWidgetConfig — validate → migrate → repair", () => {
+describe("resolveWidgetConfig - validate → migrate → repair", () => {
   it("keeps a valid stored config as-is", () => {
     const stored: PnlBandWidgetConfig = {
       kind: "PNL_BAND",
@@ -164,7 +164,7 @@ describe("metric catalog", () => {
     }
   });
 
-  it("keeps the finance semantics honest — drawdowns closer to zero are better", () => {
+  it("keeps the finance semantics honest - drawdowns closer to zero are better", () => {
     expect(getMetricDefinition("MAX_DRAWDOWN_R")?.higherIsBetter).toBe(true);
     expect(getMetricDefinition("GROSS_LOSS")?.higherIsBetter).toBe(false);
     expect(getMetricDefinition("NET_PNL")?.higherIsBetter).toBe(true);
@@ -246,7 +246,7 @@ describe("period filters and previous-period mapping", () => {
   });
 });
 
-describe("compareMetric — metric-aware comparison semantics", () => {
+describe("compareMetric - metric-aware comparison semantics", () => {
   const netPnl = getMetricDefinition("NET_PNL")!;
   const grossLoss = getMetricDefinition("GROSS_LOSS")!;
   const drawdown = getMetricDefinition("MAX_DRAWDOWN_R")!;

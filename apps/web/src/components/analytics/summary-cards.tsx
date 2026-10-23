@@ -37,7 +37,7 @@ function buildCards(cards: AnalyticsCards, T: AnalyticsDict["summary"], S: strin
     },
     {
       label: T.profitFactor,
-      value: cards.profitFactor === null ? "—" : formatNumber(cards.profitFactor, 2),
+      value: cards.profitFactor === null ? "-" : formatNumber(cards.profitFactor, 2),
       valueClassName:
         cards.profitFactor !== null && Number(cards.profitFactor) >= 1.5 ? "text-profit" : undefined,
       subs: [{ label: T.healthy, value: "≥ 1.50" }, { label: T.optimal, value: "≥ 2.00" }],
@@ -50,7 +50,7 @@ function buildCards(cards: AnalyticsCards, T: AnalyticsDict["summary"], S: strin
     },
     {
       label: T.payoffRatio,
-      value: cards.payoffRatio === null ? "—" : formatNumber(cards.payoffRatio, 2),
+      value: cards.payoffRatio === null ? "-" : formatNumber(cards.payoffRatio, 2),
       subs: [{ label: T.avgWinR, value: T.avgLossR }],
     },
     {

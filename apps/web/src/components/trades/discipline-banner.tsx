@@ -116,7 +116,7 @@ export function DisciplineBanner({ className }: { className?: string }) {
         </span>
         <Segment
           label={T.riskBudget}
-          value={`${riskSpent}/${riskLimitValue !== null ? `${riskLimitValue}%` : "—"}`}
+          value={`${riskSpent}/${riskLimitValue !== null ? `${riskLimitValue}%` : "-"}`}
           limit={null}
           ratio={riskRatio}
         />

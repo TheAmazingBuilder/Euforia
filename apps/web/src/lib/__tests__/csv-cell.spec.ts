@@ -59,7 +59,7 @@ describe("csvCell (shared CSV export definition)", () => {
     expect(csvCell("\rcmd")).toBe("\"'\rcmd\"");
   });
 
-  it("NEVER touches plain numeric strings — negative financial values stay intact", () => {
+  it("NEVER touches plain numeric strings - negative financial values stay intact", () => {
     expect(csvCell("-50")).toBe("-50");
     expect(csvCell("-1.5")).toBe("-1.5");
     expect(csvCell("50")).toBe("50");

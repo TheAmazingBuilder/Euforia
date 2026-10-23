@@ -119,7 +119,7 @@ const JOB_DEFS: JobDef[] = [
     name: "Integration sync",
     queue: "providers",
     schedule: "PERIODIC",
-    description: "Incremental provider synchronization with cursors — run from the Integration Hub (Sync action).",
+    description: "Incremental provider synchronization with cursors - run from the Integration Hub (Sync action).",
     manualRunnable: false,
   },
   {
@@ -237,7 +237,7 @@ export class MonitoringEngine {
         source: `job:${run.jobId}`,
         type: "JOB_FAILURE",
         level: "ERROR",
-        message: `Job "${run.jobId}" failed — ${run.error ?? "unknown error"}`,
+        message: `Job "${run.jobId}" failed - ${run.error ?? "unknown error"}`,
         correlationKey: `job:${run.jobId}`,
       });
     }
@@ -458,7 +458,7 @@ export class MonitoringEngine {
         id: "database",
         label: "Journal store",
         status: "OPERATIONAL",
-        evidence: "In-memory demo store serving reads — entity counts on the Database tab.",
+        evidence: "In-memory demo store serving reads - entity counts on the Database tab.",
         source: "engine",
         tab: "database",
       },
@@ -466,7 +466,7 @@ export class MonitoringEngine {
         id: "market-data",
         label: "Market data",
         status: "UNKNOWN",
-        evidence: "Observed client-side from the live quote feed — see the Market Data tab.",
+        evidence: "Observed client-side from the live quote feed - see the Market Data tab.",
         source: "client-observed",
         tab: "market-data",
       },
@@ -474,7 +474,7 @@ export class MonitoringEngine {
         id: "websocket",
         label: "Quote stream",
         status: "UNKNOWN",
-        evidence: "Observed client-side (socket.io / polling transport) — see the WebSockets tab.",
+        evidence: "Observed client-side (socket.io / polling transport) - see the WebSockets tab.",
         source: "client-observed",
         tab: "websockets",
       },
@@ -584,7 +584,7 @@ export class MonitoringEngine {
           { label: "Layer", value: "None server-side" },
           { label: "Client cache", value: "TanStack Query" },
         ],
-        evidence: "No server cache exists in this build — status stays Unknown instead of a fake green.",
+        evidence: "No server cache exists in this build - status stays Unknown instead of a fake green.",
       },
       {
         id: "storage",
@@ -615,7 +615,7 @@ export class MonitoringEngine {
           { label: "Cron", value: "Not wired (demo)" },
           { label: "Providers sync", value: "On demand / app-driven" },
         ],
-        evidence: "No scheduler process exists in this build — periodic jobs run when the app triggers them.",
+        evidence: "No scheduler process exists in this build - periodic jobs run when the app triggers them.",
       },
       {
         id: "queue",
@@ -635,7 +635,7 @@ export class MonitoringEngine {
           { label: "Feed", value: "socket.io + polling fallback" },
           { label: "Market service", value: ":3003 (gateway)" },
         ],
-        evidence: "Connection observed client-side — see the WebSockets tab for live counters.",
+        evidence: "Connection observed client-side - see the WebSockets tab for live counters.",
       },
     ];
     return { rows, sessionUptimeMs: uptime };
@@ -664,7 +664,7 @@ export class MonitoringEngine {
         : Math.round(readDurations.reduce((sum, value) => sum + value, 0) / readDurations.length);
 
     return {
-      kind: "In-memory demo store — no credentials, pool or host exposed (§10/§19)",
+      kind: "In-memory demo store - no credentials, pool or host exposed (§10/§19)",
       status: "OPERATIONAL",
       entities: [
         { label: "Trades", count: count("trades") },
@@ -682,8 +682,8 @@ export class MonitoringEngine {
       avgReadMs,
       slowQueries: api.endpoints.filter((endpoint) => endpoint.key.startsWith("GET") && endpoint.p95Ms > 250).length,
       unavailable: [
-        "Connection pool & storage size — no infrastructure in the demo sandbox",
-        "Replication / durability — in-memory store reseeds on reload (stated, not hidden)",
+        "Connection pool & storage size - no infrastructure in the demo sandbox",
+        "Replication / durability - in-memory store reseeds on reload (stated, not hidden)",
       ],
     };
   }
@@ -744,7 +744,7 @@ export class MonitoringEngine {
         failed: 0,
         queued: 0,
         retrying: 0,
-        evidence: "No email provider wired in this build — no fake delivery counts.",
+        evidence: "No email provider wired in this build - no fake delivery counts.",
       },
       {
         channel: "PUSH",
@@ -753,7 +753,7 @@ export class MonitoringEngine {
         failed: 0,
         queued: 0,
         retrying: 0,
-        evidence: "No push provider wired in this build — no fake delivery counts.",
+        evidence: "No push provider wired in this build - no fake delivery counts.",
       },
     ];
 
@@ -993,7 +993,7 @@ export class MonitoringEngine {
         message:
           def === undefined
             ? "Unknown job."
-            : `"${def.name}" is ${def.schedule.toLowerCase()} and driven by the app in this build — no synthetic run is fabricated.`,
+            : `"${def.name}" is ${def.schedule.toLowerCase()} and driven by the app in this build - no synthetic run is fabricated.`,
       };
     }
     const runId = this.startJob(jobId, "MANUAL");
@@ -1008,7 +1008,7 @@ export class MonitoringEngine {
       return { accepted: true, message: `"${def.name}" completed.` };
     } catch (error) {
       this.finishJob(runId, "FAILED", Date.now() - startedAt, error instanceof Error ? error.message : String(error));
-      return { accepted: true, message: `"${def.name}" failed — see the ledger.` };
+      return { accepted: true, message: `"${def.name}" failed - see the ledger.` };
     }
   }
 }

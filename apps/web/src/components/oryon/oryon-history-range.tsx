@@ -23,7 +23,7 @@ import {
  * HISTORICAL span of the chart; it never touches the bar timeframe (the
  * interval selector lives on the top toolbar). The resolution happens at
  * the workspace level (onSelectRange / onSelectDate read the ACTIVE
- * panel's engine at click time) — this component is a pure control strip.
+ * panel's engine at click time) - this component is a pure control strip.
  *
  * Calendar: a dependency-free month grid (no new packages). Picking a day
  * starts the visible range at that day's UTC midnight and ends at the

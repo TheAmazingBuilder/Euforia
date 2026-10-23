@@ -134,8 +134,8 @@ export function IntegrationsHubView() {
         onSuccess: (provider) => {
           toast.success(
             provider.status === "AUTH_REQUIRED"
-              ? `${provider.name} paired — but the stored credential failed the test. Reconnect after rotating the key.`
-              : `${provider.name} connected — read-only scope`,
+              ? `${provider.name} paired - but the stored credential failed the test. Reconnect after rotating the key.`
+              : `${provider.name} connected - read-only scope`,
           );
           setConnectId(null);
           setVaultRef("");
@@ -149,7 +149,7 @@ export function IntegrationsHubView() {
     if (disconnectId === null) return;
     disconnect.mutate(disconnectId, {
       onSuccess: (result) => {
-        toast.success(`${result.providerId} disconnected — synced history preserved`);
+        toast.success(`${result.providerId} disconnected - synced history preserved`);
         setDisconnectId(null);
       },
       onError: (error) => toast.error(apiErrorMessage(error, "Could not disconnect")),
@@ -163,11 +163,11 @@ export function IntegrationsHubView() {
           toast.success(`${provider.name}: connection test passed (auth, permissions, connectivity)`);
           setLastTest((previous) => ({
             ...previous,
-            [provider.id]: { ok: true, summary: "auth · permissions · connectivity · provider response — all passed", at: new Date().toISOString() },
+            [provider.id]: { ok: true, summary: "auth · permissions · connectivity · provider response - all passed", at: new Date().toISOString() },
           }));
         } else {
           const failed = result.checks.filter((check) => !check.ok).map((check) => check.detail);
-          toast.error(`${provider.name}: test failed — ${failed.join(" · ")}`);
+          toast.error(`${provider.name}: test failed - ${failed.join(" · ")}`);
           setLastTest((previous) => ({
             ...previous,
             [provider.id]: { ok: false, summary: failed.join(" · "), at: new Date().toISOString() },
@@ -188,8 +188,8 @@ export function IntegrationsHubView() {
         onSuccess: (result) => {
           toast.success(
             result.status === "AUTH_REQUIRED"
-              ? `${result.name} re-paired — but the credential still fails the test. Rotate the key in the provider console.`
-              : `${result.name} reconnected — ${result.status.toLowerCase()}`,
+              ? `${result.name} re-paired - but the credential still fails the test. Rotate the key in the provider console.`
+              : `${result.name} reconnected - ${result.status.toLowerCase()}`,
           );
         },
         onError: (error) => toast.error(apiErrorMessage(error, "Reconnect failed")),
@@ -201,7 +201,7 @@ export function IntegrationsHubView() {
     sync.mutate(provider.id, {
       onSuccess: (result) => {
         toast.success(
-          `${provider.name}: sync ${result.status === "DEGRADED" ? "partial" : "ok"} — ${result.sync.recordsProcessed.toLocaleString("en-US")} record(s)`,
+          `${provider.name}: sync ${result.status === "DEGRADED" ? "partial" : "ok"} - ${result.sync.recordsProcessed.toLocaleString("en-US")} record(s)`,
         );
       },
       onError: (error) => toast.error(apiErrorMessage(error, "Sync failed")),
@@ -224,7 +224,7 @@ export function IntegrationsHubView() {
           Integrations
         </h1>
         <p className="max-w-2xl text-sm text-muted-foreground">
-          The platform layer between Euforia and the outside world — brokers,
+          The platform layer between Euforia and the outside world - brokers,
           exchanges, market data, economic feeds, news, charting and delivery
           channels. One contract, many adapters; read-only by design.
         </p>
@@ -305,7 +305,7 @@ export function IntegrationsHubView() {
           }}
           onDisconnect={(provider) => setDisconnectId(provider.id)}
           busy={connect.isPending || disconnect.isPending || test.isPending || sync.isPending}
-          footnote="Exchanges differ from brokers: custody, API scopes and limits are provider-specific. Withdrawal scopes are refused by policy — Euforia journals, it never trades."
+          footnote="Exchanges differ from brokers: custody, API scopes and limits are provider-specific. Withdrawal scopes are refused by policy - Euforia journals, it never trades."
         />
       )}
       {activeTab === "market-data" && (
@@ -352,7 +352,7 @@ export function IntegrationsHubView() {
           }}
           onDisconnect={(provider) => setDisconnectId(provider.id)}
           busy={connect.isPending || disconnect.isPending || test.isPending || sync.isPending}
-          footnote="TradingView renders market display and chart interaction. Positions, executions and account state stay owned by the broker adapter — the chart layer can never write them."
+          footnote="TradingView renders market display and chart interaction. Positions, executions and account state stay owned by the broker adapter - the chart layer can never write them."
         />
       )}
       {activeTab === "notifications" && (
@@ -368,7 +368,7 @@ export function IntegrationsHubView() {
           }}
           onDisconnect={(provider) => setDisconnectId(provider.id)}
           busy={connect.isPending || disconnect.isPending || test.isPending || sync.isPending}
-          footnote="The in-app alert engine is already live — your notification preferences (Settings → Notifications) route every alert. These providers add the email and push channels on top."
+          footnote="The in-app alert engine is already live - your notification preferences (Settings → Notifications) route every alert. These providers add the email and push channels on top."
         />
       )}
       {activeTab === "external" && (
@@ -388,7 +388,7 @@ export function IntegrationsHubView() {
           onSimulate={(mode) => {
             const released = overview.ecoEvents.find((event) => event.status === "RELEASED");
             if (released === undefined) {
-              toast.error("No released macro event to update — run an economic sync first");
+              toast.error("No released macro event to update - run an economic sync first");
               return;
             }
             simulateWebhook.mutate(
@@ -427,7 +427,7 @@ export function IntegrationsHubView() {
             </DialogTitle>
             <DialogDescription>
               Paste the vault reference of the credential you stored in
-              Security. The secret itself never reaches the hub — only this
+              Security. The secret itself never reaches the hub - only this
               reference does.
             </DialogDescription>
           </DialogHeader>
@@ -462,7 +462,7 @@ export function IntegrationsHubView() {
           if (!open) setDisconnectId(null);
         }}
         title={`Disconnect ${disconnectTarget?.name ?? "provider"}?`}
-        description="The connection is revoked and its credentials removed from the vault. Everything already synced stays in your journal — disconnecting never deletes history."
+        description="The connection is revoked and its credentials removed from the vault. Everything already synced stays in your journal - disconnecting never deletes history."
         confirmLabel="Disconnect"
         destructive
         onConfirm={onConfirmDisconnect}
@@ -565,7 +565,7 @@ function ProviderCard({
             <span className="font-medium text-foreground">
               {provider.licensing.verified ? "License verified" : "License review required"}
             </span>{" "}
-            — {provider.licensing.note}
+            - {provider.licensing.note}
           </span>
         </div>
 
@@ -736,7 +736,7 @@ function OverviewPanel({
             All integrations
           </CardTitle>
           <CardDescription>
-            Sorted by attention needed — errors first, healthy connections last.
+            Sorted by attention needed - errors first, healthy connections last.
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-2">
@@ -794,7 +794,7 @@ function OverviewPanel({
         <CardHeader>
           <CardTitle className="font-heading text-base font-semibold">Sync journal</CardTitle>
           <CardDescription>
-            Last import per provider — records processed, records REJECTED and the retry posture.
+            Last import per provider - records processed, records REJECTED and the retry posture.
             Rejected lines never enter your journal silently.
           </CardDescription>
         </CardHeader>
@@ -842,14 +842,14 @@ function OverviewPanel({
             <CardTitle className="font-heading text-base font-semibold">
               Recent activity
             </CardTitle>
-            <CardDescription>The §24 audit trail — every connection event.</CardDescription>
+            <CardDescription>The §24 audit trail - every connection event.</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-1.5" data-testid="hub-events">
             {overview.events.slice(0, 8).map((event) => (
               <div key={event.id} className="flex items-baseline justify-between gap-3 text-xs">
                 <span className="truncate text-muted-foreground">
                   <span className="font-medium text-foreground">{event.providerName}</span>{" "}
-                  — {event.message}
+                  - {event.message}
                 </span>
                 <span className="shrink-0 font-mono tabular-nums text-muted-foreground">
                   {event.occurredAt.slice(11, 19)} UTC
@@ -866,7 +866,7 @@ function OverviewPanel({
               Data retention
             </CardTitle>
             <CardDescription>
-              Enforced per policy — provider licensing and storage rights respected.
+              Enforced per policy - provider licensing and storage rights respected.
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-1.5 font-mono text-xs tabular-nums">
@@ -934,7 +934,7 @@ function AccountsPanel({ overview }: { overview: Overview }) {
                   Open positions
                 </span>
                 <span className="text-foreground">
-                  {account.positionsOpen === null ? "—" : account.positionsOpen}
+                  {account.positionsOpen === null ? "-" : account.positionsOpen}
                 </span>
               </div>
               <div className="flex justify-between gap-4">
@@ -967,7 +967,7 @@ function AccountsPanel({ overview }: { overview: Overview }) {
           </CardTitle>
           <CardDescription>
             Balance, equity and positions stream from the broker adapter once
-            it connects — Euforia never invents account figures (the honesty
+            it connects - Euforia never invents account figures (the honesty
             rule the Session Live broker panel already follows). The normalized
             contract (<span className="font-mono text-xs">brokerSessionResponseSchema</span>)
             is stable; only the answer changes when the adapter lands.
@@ -1020,7 +1020,7 @@ function MarketDataPanel({ overview, ...actions }: ProviderActions & { overview:
             Capability matrix
           </CardTitle>
           <CardDescription>
-            Market data is independent from broker accounts — and no two
+            Market data is independent from broker accounts - and no two
             providers supply identical data. Declared honestly per source.
           </CardDescription>
         </CardHeader>
@@ -1091,7 +1091,7 @@ function EconomicPanel({ overview, ...actions }: ProviderActions & { overview: O
             Normalized event feed
           </CardTitle>
           <CardDescription>
-            Previous / forecast / actual / impact / status — normalized from the
+            Previous / forecast / actual / impact / status - normalized from the
             provider payload and upserted idempotently by provider key. The
             Calendar module reads this pipeline; real-time webhook updates land
             here directly.
@@ -1117,10 +1117,10 @@ function EconomicPanel({ overview, ...actions }: ProviderActions & { overview: O
                   <td className="whitespace-nowrap py-2 pr-3">{utc(event.scheduledAt)}</td>
                   <td className="py-2 pr-3 font-sans">{event.country}</td>
                   <td className="py-2 pr-3 font-sans">{event.title}</td>
-                  <td className="py-2 pr-3 text-right">{event.previous ?? "—"}</td>
-                  <td className="py-2 pr-3 text-right">{event.forecast ?? "—"}</td>
+                  <td className="py-2 pr-3 text-right">{event.previous ?? "-"}</td>
+                  <td className="py-2 pr-3 text-right">{event.forecast ?? "-"}</td>
                   <td className="py-2 pr-3 text-right" data-testid={`eco-actual-${event.providerKey}`}>
-                    {event.actual ?? "—"}
+                    {event.actual ?? "-"}
                   </td>
                   <td className="py-2 pr-3">
                     <Badge
@@ -1166,7 +1166,7 @@ function NewsPanel({ overview }: { overview: Overview }) {
             <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-background/60 px-3 py-2 text-xs text-muted-foreground">
               <AlertTriangle className="mt-0.5 size-3.5 shrink-0 text-destructive" aria-hidden="true" />
               <span>
-                <span className="font-medium text-foreground">Licensing gate (§29)</span> —{" "}
+                <span className="font-medium text-foreground">Licensing gate (§29)</span> -{" "}
                 {provider.licensing.note} The pipeline below is provider-ready;
                 the sample items are generated locally and never redistributed.
               </span>
@@ -1182,7 +1182,7 @@ function NewsPanel({ overview }: { overview: Overview }) {
           </CardTitle>
           <CardDescription>
             Headline · source · category · publication time · related
-            symbols/currencies · importance — exactly what a licensed provider
+            symbols/currencies · importance - exactly what a licensed provider
             will deliver.
           </CardDescription>
         </CardHeader>
@@ -1197,7 +1197,7 @@ function NewsPanel({ overview }: { overview: Overview }) {
                 <p className="truncate text-sm font-medium">{item.headline}</p>
                 <p className="font-mono text-xs tabular-nums text-muted-foreground">
                   {item.source} · {utc(item.publishedAt)} ·{" "}
-                  {item.relatedSymbols.join(", ") || "—"}
+                  {item.relatedSymbols.join(", ") || "-"}
                 </p>
               </div>
               <div className="flex items-center gap-1.5">
@@ -1251,7 +1251,7 @@ function ExternalPanel({
             <div className="space-y-1.5">
               <CardTitle className="flex items-center gap-2 font-heading text-base font-semibold">
                 <Webhook className="size-4 text-accent" aria-hidden="true" />
-                Inbound webhook — {hook.providerId}
+                Inbound webhook - {hook.providerId}
               </CardTitle>
               <CardDescription>
                 <span className="font-mono text-xs">{hook.path}</span> · secret{" "}
@@ -1302,7 +1302,7 @@ function ExternalPanel({
             <div className="grid gap-1.5" data-testid="webhook-deliveries">
               {hook.deliveries.length === 0 && (
                 <p className="text-xs text-muted-foreground">
-                  No deliveries yet — run one of the pipeline tests above.
+                  No deliveries yet - run one of the pipeline tests above.
                 </p>
               )}
               {hook.deliveries.map((delivery) => (
@@ -1325,7 +1325,7 @@ function ExternalPanel({
         </Card>
       ))}
 
-      {/* Outgoing webhooks (module upgrade) — documented contract with a
+      {/* Outgoing webhooks (module upgrade) - documented contract with a
           sample JSON payload Euforia DELIVERS to customer endpoints. */}
       <Card className="border-border bg-surface" data-testid="outgoing-webhooks">
         <CardHeader className="flex-row items-start justify-between space-y-0">
@@ -1335,7 +1335,7 @@ function ExternalPanel({
               Outgoing webhooks
             </CardTitle>
             <CardDescription>
-              Euforia POSTs journal events to your endpoints — HMAC-SHA256 signed, retried with
+              Euforia POSTs journal events to your endpoints - HMAC-SHA256 signed, retried with
               backoff. The sample payload below documents the contract.
             </CardDescription>
           </div>
@@ -1390,7 +1390,7 @@ X-Euforia-Delivery: <unique-uuid>
             <p className="text-xs leading-relaxed text-muted-foreground">
               Verification: recompute the HMAC over the raw body with your endpoint secret
               (vault-stored, masked in this UI). Deliveries retry 5× with exponential backoff;
-              duplicates carry the same <span className="font-mono">X-Euforia-Delivery</span> id —
+              duplicates carry the same <span className="font-mono">X-Euforia-Delivery</span> id -
               dedupe on it. Respond 2xx within 10 s to acknowledge.
             </p>
           </CardContent>

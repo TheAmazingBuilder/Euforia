@@ -74,7 +74,7 @@ export function RHeatmap({ cells, className }: RHeatmapProps) {
           label: {
             show: true,
             formatter: () => {
-              if (trades === 0) return "—";
+              if (trades === 0) return "-";
               const rLine = `{r|${formatR(avgR ?? 0)}}`;
               const nLine = lowN ? `{lowN|n=${trades}}` : `{n|n=${trades}}`;
               return `${rLine}\n${nLine}`;
@@ -118,7 +118,7 @@ export function RHeatmap({ cells, className }: RHeatmapProps) {
           if (!raw || raw.trades === 0) return H.noTrades;
           const day = ANALYTICS_WEEKDAYS[typed!.data.value[1]!]?.label ?? "";
           const bucketLabel = ANALYTICS_HOUR_BUCKETS[typed!.data.value[0]!]?.label ?? "";
-          const rText = raw.avgR === null ? "—" : formatR(raw.avgR);
+          const rText = raw.avgR === null ? "-" : formatR(raw.avgR);
           const lowNote =
             raw.trades < LOW_N_THRESHOLD
               ? `<div style="color:${t.warning};margin-top:2px">${S.lowSample}</div>`

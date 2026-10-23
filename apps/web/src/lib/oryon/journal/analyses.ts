@@ -59,7 +59,7 @@ function loadAnalyses(): OryonChartAnalysis[] {
   try {
     parsed = JSON.parse(raw);
   } catch {
-    console.warn("[oryon] analyses: corrupt JSON dropped — empty store.");
+    console.warn("[oryon] analyses: corrupt JSON dropped - empty store.");
     return [];
   }
 
@@ -69,7 +69,7 @@ function loadAnalyses(): OryonChartAnalysis[] {
     parsed === null ||
     !Array.isArray((parsed as { analyses?: unknown }).analyses)
   ) {
-    console.warn("[oryon] analyses: invalid envelope dropped — empty store.");
+    console.warn("[oryon] analyses: invalid envelope dropped - empty store.");
     return [];
   }
   const records: unknown[] = (parsed as { analyses: unknown[] }).analyses;
@@ -163,7 +163,7 @@ class OryonAnalysesStore {
     };
     const check = oryonChartAnalysisSchema.safeParse(candidate);
     if (!check.success) {
-      console.warn("[oryon] analyses: create rejected — payload invalid.");
+      console.warn("[oryon] analyses: create rejected - payload invalid.");
       return null;
     }
     // 200-cap: prune the OLDEST records to make room (never the new one).
@@ -188,7 +188,7 @@ class OryonAnalysesStore {
     const candidate: OryonChartAnalysis = { ...current, ...patch, updatedAt: Date.now() };
     const check = oryonChartAnalysisSchema.safeParse(candidate);
     if (!check.success) {
-      console.warn("[oryon] analyses: update rejected — payload invalid.");
+      console.warn("[oryon] analyses: update rejected - payload invalid.");
       return null;
     }
     this.commit(this.all.map((analysis) => (analysis.id === id ? check.data : analysis)));
@@ -228,7 +228,7 @@ class OryonAnalysesStore {
       };
       const check = oryonAnalysesFileSchema.safeParse(file);
       if (!check.success) {
-        console.warn("[oryon] analyses save skipped — payload invalid.");
+        console.warn("[oryon] analyses save skipped - payload invalid.");
         return;
       }
       window.localStorage.setItem(ANALYSES_KEY, JSON.stringify(check.data));

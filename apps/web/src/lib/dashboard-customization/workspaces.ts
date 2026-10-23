@@ -96,7 +96,7 @@ export interface UserTemplateNameCheck {
 }
 
 /** Template name rules: non-empty after trim, ≤ 60 chars, unique within the
- * user's template pool (case-insensitive — same rule as workspace names). */
+ * user's template pool (case-insensitive - same rule as workspace names). */
 export function validateUserTemplateName(
   name: string,
   existing: readonly DashboardUserTemplate[],

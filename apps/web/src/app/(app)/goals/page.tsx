@@ -7,7 +7,7 @@ import { redirect } from "next/navigation";
  */
 export const metadata: Metadata = {
   title: "Goals",
-  description: "Redirected — goal setting and progress tracking now live inside Trade Review.",
+  description: "Redirected - goal setting and progress tracking now live inside Trade Review.",
 };
 
 export default function GoalsPage() {

@@ -173,7 +173,7 @@ export function WeekCompareCard({
       <CardHeader>
         <CardTitle className="font-heading text-base font-semibold">This week vs last week</CardTitle>
         <CardDescription>
-          Daily net P&L bands over the same 7-day window as the KPI arrows — both strips scaled to
+          Daily net P&L bands over the same 7-day window as the KPI arrows - both strips scaled to
           the biggest absolute day.
         </CardDescription>
         <CardAction>
@@ -204,7 +204,7 @@ export function WeekCompareCard({
               ) : (
                 <Minus className="size-3" aria-hidden="true" />
               )}
-              {/* Direction spoken for assistive tech — the arrow is
+              {/* Direction spoken for assistive tech - the arrow is
                   aria-hidden, color must never be the only cue (Phase 10). */}
               <span className="sr-only">
                 {delta > 0 ? "Up" : delta < 0 ? "Down" : "Unchanged"} vs last week: 

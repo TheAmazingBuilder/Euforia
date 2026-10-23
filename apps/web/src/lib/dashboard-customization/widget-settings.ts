@@ -36,9 +36,9 @@ const RANGE_OPTIONS = [
 ];
 
 const CUMULATIVE_TYPE_OPTIONS = [
-  { value: "AREA", label: "Area — gradient under the curve" },
-  { value: "LINE", label: "Line — plain trajectory" },
-  { value: "BAR", label: "Bars — one per day" },
+  { value: "AREA", label: "Area - gradient under the curve" },
+  { value: "LINE", label: "Line - plain trajectory" },
+  { value: "BAR", label: "Bars - one per day" },
 ];
 
 const NOTATION_OPTIONS = [

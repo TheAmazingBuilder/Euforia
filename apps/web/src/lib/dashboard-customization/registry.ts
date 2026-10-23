@@ -34,7 +34,7 @@ export const WIDGET_REGISTRY: Record<DashboardWidgetKey, WidgetDefinition> = {
   PNL_BAND: {
     type: "PNL_BAND",
     name: "P&L charts",
-    description: "Cumulative and daily P&L side by side — the profit story at a glance.",
+    description: "Cumulative and daily P&L side by side - the profit story at a glance.",
     category: "PERFORMANCE",
     iconId: "pnl",
     defaultW: 12,
@@ -64,12 +64,12 @@ export const WIDGET_REGISTRY: Record<DashboardWidgetKey, WidgetDefinition> = {
     singleton: true,
     removable: true,
     resizable: true,
-    filterSupport: { support: "UNAFFECTED", reason: "Reads the live overview aggregate — account/equity state, not a filterable trade population." },
+    filterSupport: { support: "UNAFFECTED", reason: "Reads the live overview aggregate - account/equity state, not a filterable trade population." },
   },
   GOALS_PACE: {
     type: "GOALS_PACE",
     name: "Goals on pace",
-    description: "Goal progress counters with urgency ordering — what needs attention now.",
+    description: "Goal progress counters with urgency ordering - what needs attention now.",
     category: "OVERVIEW",
     iconId: "goals",
     defaultW: 12,
@@ -81,12 +81,12 @@ export const WIDGET_REGISTRY: Record<DashboardWidgetKey, WidgetDefinition> = {
     singleton: true,
     removable: true,
     resizable: true,
-    filterSupport: { support: "UNAFFECTED", reason: "Goals progress comes from the goals engine — independent of trade filters." },
+    filterSupport: { support: "UNAFFECTED", reason: "Goals progress comes from the goals engine - independent of trade filters." },
   },
   WEEK_COMPARE: {
     type: "WEEK_COMPARE",
     name: "Week vs week",
-    description: "This week against the previous ones — momentum, per weekday.",
+    description: "This week against the previous ones - momentum, per weekday.",
     category: "PERFORMANCE",
     iconId: "weeks",
     defaultW: 12,
@@ -103,7 +103,7 @@ export const WIDGET_REGISTRY: Record<DashboardWidgetKey, WidgetDefinition> = {
   HEATMAP: {
     type: "HEATMAP",
     name: "Consistency heatmap",
-    description: "Daily P&L calendar — streaks and slumps in one grid.",
+    description: "Daily P&L calendar - streaks and slumps in one grid.",
     category: "PERFORMANCE",
     iconId: "heatmap",
     defaultW: 12,
@@ -150,7 +150,7 @@ export const WIDGET_REGISTRY: Record<DashboardWidgetKey, WidgetDefinition> = {
     singleton: true,
     removable: true,
     resizable: true,
-    filterSupport: { support: "UNAFFECTED", reason: "The alerts feed is coach-generated — not a trade-filtered dataset." },
+    filterSupport: { support: "UNAFFECTED", reason: "The alerts feed is coach-generated - not a trade-filtered dataset." },
   },
   METRICS_CARD: {
     type: "METRICS_CARD",
@@ -168,7 +168,7 @@ export const WIDGET_REGISTRY: Record<DashboardWidgetKey, WidgetDefinition> = {
     removable: true,
     resizable: true,
     filterSupport: suiteBacked(
-      "The widget-level period override applies only while the global period is ALL — an active global date range wins (the global bar is authoritative)."
+      "The widget-level period override applies only while the global period is ALL - an active global date range wins (the global bar is authoritative)."
     ),
   },
   STRATEGY_COMPARE: {
@@ -204,13 +204,13 @@ export const WIDGET_REGISTRY: Record<DashboardWidgetKey, WidgetDefinition> = {
     removable: true,
     resizable: true,
     filterSupport: suiteBacked(
-      "A global direction filter narrows the comparison to one side — the other renders its empty state."
+      "A global direction filter narrows the comparison to one side - the other renders its empty state."
     ),
   },
   ACTIVITY_HEATMAP: {
     type: "ACTIVITY_HEATMAP",
     name: "Activity heatmap",
-    description: "Weekday × hour performance grid — when your edge lives.",
+    description: "Weekday × hour performance grid - when your edge lives.",
     category: "PERFORMANCE",
     iconId: "activity",
     defaultW: 6,
@@ -229,7 +229,7 @@ export const WIDGET_REGISTRY: Record<DashboardWidgetKey, WidgetDefinition> = {
     type: "PERFORMANCE_BREAKDOWN",
     name: "Performance breakdown",
     description:
-      "One factual breakdown table across the dimension you pick — server-computed rows, every rate with its sample size.",
+      "One factual breakdown table across the dimension you pick - server-computed rows, every rate with its sample size.",
     category: "PERFORMANCE",
     iconId: "breakdown",
     defaultW: 6,
@@ -242,14 +242,14 @@ export const WIDGET_REGISTRY: Record<DashboardWidgetKey, WidgetDefinition> = {
     removable: true,
     resizable: true,
     filterSupport: suiteBacked(
-      "Rows come from the analytics suite under the active global filters — scope changes recompute the table.",
+      "Rows come from the analytics suite under the active global filters - scope changes recompute the table.",
     ),
   },
   BEHAVIORAL_INSIGHTS: {
     type: "BEHAVIORAL_INSIGHTS",
     name: "Behavioral insights",
     description:
-      "Deterministic, rule-based findings with sample sizes and reliability labels — no AI, no predictions, small samples stay silent.",
+      "Deterministic, rule-based findings with sample sizes and reliability labels - no AI, no predictions, small samples stay silent.",
     category: "PERFORMANCE",
     iconId: "insights",
     defaultW: 6,
@@ -287,7 +287,7 @@ export const WIDGET_REGISTRY: Record<DashboardWidgetKey, WidgetDefinition> = {
     type: "PERFORMANCE_TREND",
     name: "Weekly performance trend",
     description:
-      "Recent weekly rollups side by side — trades, net P&L, R and win rate with clearly labeled dates. Measured history, not a forecast.",
+      "Recent weekly rollups side by side - trades, net P&L, R and win rate with clearly labeled dates. Measured history, not a forecast.",
     category: "PERFORMANCE",
     iconId: "trend",
     defaultW: 6,

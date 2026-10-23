@@ -123,7 +123,7 @@ function OryonWorkspace() {
   );
 
   /**
-   * Active panel's instrument — DERIVED, no effect: the panel's symbol wins
+   * Active panel's instrument - DERIVED, no effect: the panel's symbol wins
    * (resolved through the catalog), then the first active catalog
    * instrument the market feed actually covers (health.symbols is the
    * provider's own list), then the first active one. No hardcoded symbol,
@@ -231,7 +231,7 @@ function OryonWorkspace() {
   );
 
   /** "Return to latest" lives in the toolbar; the engine is the ACTIVE
-   *  panel's — read at click time, never stale. */
+   *  panel's - read at click time, never stale. */
   const onGoLatest = React.useCallback(() => {
     const panelId = activePanel?.id;
     if (panelId === undefined) return;
@@ -377,8 +377,8 @@ function OryonWorkspace() {
         }}
       />
 
-      {/* Stage — everything below the top toolbar. The LEFT rail spans
-          the FULL stage height (independent of the footer strip — v4);
+      {/* Stage - everything below the top toolbar. The LEFT rail spans
+          the FULL stage height (independent of the footer strip - v4);
           the footer (historical range + clock) sits at the bottom of the
           CENTER column; the favorites bar's vertical travel covers the
           whole stage. */}
@@ -390,7 +390,7 @@ function OryonWorkspace() {
 
         {/* Center column — the chart grid + the footer strip below it. */}
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-          {/* Chart-area wrapper — the floating favorites bar's coordinate
+          {/* Chart-area wrapper - the floating favorites bar's coordinate
               parent (its persisted coordinates stay relative to this box;
               the clamp bounds extend to the stage via boundsRef). */}
           <div ref={chartAreaRef} className="relative flex min-h-0 min-w-0 flex-1">
@@ -415,8 +415,8 @@ function OryonWorkspace() {
             <OryonFavoritesBar containerRef={chartAreaRef} boundsRef={stageRef} />
           </div>
 
-          {/* Bottom bar — the ACTIVE panel's HISTORICAL RANGE strip
-              (1D…All + calendar — how much history is visible, never the
+          {/* Bottom bar - the ACTIVE panel's HISTORICAL RANGE strip
+              (1D…All + calendar - how much history is visible, never the
               bar timeframe) + clock + display timezone (md+; below md the
               panel headers own the timeframes). */}
           <OryonBottomBar
@@ -426,7 +426,7 @@ function OryonWorkspace() {
           />
         </div>
 
-        {/* Docked utility rail — lg+ only, FULL stage height (v4: it now
+        {/* Docked utility rail - lg+ only, FULL stage height (v4: it now
             also hosts the drawing OBJECTS dock). */}
         {isDesktop ? (
           <OryonUtilityRail
@@ -456,7 +456,7 @@ function OryonWorkspace() {
       />
 
       {/* Eco-approach notifications (HIGH-impact events on the instruments
-          the workspace panels display) — a null-rendering leaf in the
+          the workspace panels display) - a null-rendering leaf in the
           alerts engine's pattern; the toast is the only channel. */}
       <OryonEcoApproachBridge
         instruments={instruments}
@@ -464,7 +464,7 @@ function OryonWorkspace() {
         panelSymbols={panelSymbols}
       />
 
-      {/* Analysis deep-link restore (/oryon?analysis=<id> — Phase 10):
+      {/* Analysis deep-link restore (/oryon?analysis=<id> - Phase 10):
           applies the saved analysis to the ACTIVE panel + reconstructed-
           view banner. Null unless a link was consumed. */}
       <OryonAnalysisRestoreBridge instruments={instruments} />

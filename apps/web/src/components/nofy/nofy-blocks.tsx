@@ -299,7 +299,7 @@ export function NofyBlockRow({
         />
       ) : null}
 
-      {/* Gutter — drag handle + block menu, visible on hover/focus */}
+      {/* Gutter - drag handle + block menu, visible on hover/focus */}
       {!compactGutter ? (
         <div className="flex w-6 shrink-0 flex-col items-center pt-1 opacity-0 transition-opacity group-hover/row:opacity-100 focus-within:opacity-100">
           <button
@@ -387,7 +387,7 @@ export function NofyBlockRow({
 
 // ── Block menu (turn into / duplicate / move / delete) ───────────────────────
 
-/** Machine types offered by "Turn into" — display labels resolve via blockTypes (i18n). */
+/** Machine types offered by "Turn into" - display labels resolve via blockTypes (i18n). */
 const TURN_INTO: readonly NofyBlock["type"][] = [
   "paragraph", "h1", "h2", "h3", "bullet", "numbered", "todo", "quote", "callout", "code",
 ];
@@ -448,7 +448,7 @@ function isTextLike(type: NofyBlock["type"]): boolean {
 
 // ── Callout ──────────────────────────────────────────────────────────────────
 
-/** Machine tones + identity — display labels resolve through blocks.tones (i18n). */
+/** Machine tones + identity - display labels resolve through blocks.tones (i18n). */
 const CALLOUT_TONES: { tone: NonNullable<NofyBlock["tone"]>; icon: typeof Info; hue: string }[] = [
   { tone: "info", icon: Info, hue: "var(--accent)" },
   { tone: "tip", icon: Lightbulb, hue: "var(--profit)" },
@@ -567,7 +567,7 @@ function ImageBody({ block, ops }: { block: NofyBlock; ops: NofyBlockOps }) {
   return (
     <figure className="overflow-hidden rounded-md border border-border" data-testid="nofy-image">
       {/* Remote URLs are only ever self-seeded data URLs / user-provided image srcs
-          rendered as an <img> — never injected HTML (spec §49). */}
+          rendered as an <img> - never injected HTML (spec §49). */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={block.src} alt={block.alt ?? block.caption ?? N.blocks.noteImageAlt} className="max-h-96 w-full object-contain bg-muted/30" />
       <figcaption className="flex items-center gap-2 border-t border-border bg-surface px-2 py-1.5">

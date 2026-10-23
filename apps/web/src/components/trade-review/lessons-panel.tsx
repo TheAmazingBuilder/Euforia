@@ -102,7 +102,7 @@ export function LessonsPanel() {
       <div>
         <h2 className="font-heading text-lg font-semibold">Lessons library</h2>
         <p className="text-sm text-muted-foreground">
-          {lessons.length} captured lessons — the residue of every review, note and journal entry. Read one before the
+          {lessons.length} captured lessons - the residue of every review, note and journal entry. Read one before the
           session; it is cheaper than relearning it.
         </p>
       </div>
@@ -160,7 +160,7 @@ export function LessonsPanel() {
       {filtered.length === 0 ? (
         <Card className="border-dashed">
           <CardContent className="py-8 text-center text-sm text-muted-foreground" data-testid="lessons-empty">
-            No lesson matches these filters — broaden the search or review a trade from the queue.
+            No lesson matches these filters - broaden the search or review a trade from the queue.
           </CardContent>
         </Card>
       ) : (

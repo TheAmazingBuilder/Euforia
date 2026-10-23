@@ -27,7 +27,7 @@ export class ApiError extends Error {
 
 /**
  * User-facing message from a thrown error — prefers the server's
- * `error` field (e.g. "This strategy has trades attached — pause or
+ * `error` field (e.g. "This strategy has trades attached - pause or
  * retire it instead.") over the generic transport message.
  */
 export function apiErrorMessage(error: unknown, fallback: string): string {

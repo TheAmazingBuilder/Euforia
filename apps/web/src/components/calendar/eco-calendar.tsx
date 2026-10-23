@@ -170,7 +170,7 @@ export function EcoCalendarView() {
   const events = React.useMemo(() => data?.events ?? [], [data]);
   const todayKey = React.useMemo(
     () => dayKey(new Date().toISOString()),
-    [], // stable per mount — the calendar is a day-scoped screen
+    [], // stable per mount - the calendar is a day-scoped screen
   );
   const [selectedKey, setSelectedKey] = React.useState(todayKey);
   const [impactFilter, setImpactFilter] = React.useState<"ALL" | Impact>("ALL");
@@ -225,7 +225,7 @@ export function EcoCalendarView() {
   if (isError) {
     return (
       <div className="rounded-xl border border-border bg-surface p-8 text-center text-sm text-muted-foreground">
-        Unable to load the economic calendar — please retry.
+        Unable to load the economic calendar - please retry.
       </div>
     );
   }
@@ -238,7 +238,7 @@ export function EcoCalendarView() {
           Economic calendar
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Macro releases that move your instruments — plan the volatility, don&apos;t react to it.
+          Macro releases that move your instruments - plan the volatility, don&apos;t react to it.
         </p>
       </div>
 
@@ -393,10 +393,10 @@ export function EcoCalendarView() {
                 .slice(0, 2)
                 .map(
                   (event) =>
-                    `${event.title} — ${timeFormatter.format(new Date(event.scheduledAt))}`,
+                    `${event.title} - ${timeFormatter.format(new Date(event.scheduledAt))}`,
                 )
                 .join(" · ")}
-              . Expect volatility: widen no stop, halve the size, or stand aside — that is the plan.
+              . Expect volatility: widen no stop, halve the size, or stand aside - that is the plan.
             </p>
           </div>
         </div>
@@ -414,7 +414,7 @@ export function EcoCalendarView() {
           <CalendarDays className="size-6 text-muted-foreground" aria-hidden="true" />
           <p className="text-sm font-medium text-foreground">No releases match the filters</p>
           <p className="text-xs text-muted-foreground">
-            Weekends are quiet — try another day or widen the impact filter.
+            Weekends are quiet - try another day or widen the impact filter.
           </p>
         </div>
       ) : (
@@ -488,7 +488,7 @@ export function EcoCalendarView() {
                       Forecast
                     </p>
                     <p className="font-mono text-sm tabular-nums text-muted-foreground">
-                      {event.forecast ?? "—"}
+                      {event.forecast ?? "-"}
                     </p>
                   </div>
                   <div className="text-right">
@@ -496,7 +496,7 @@ export function EcoCalendarView() {
                       Previous
                     </p>
                     <p className="font-mono text-sm tabular-nums text-muted-foreground">
-                      {event.previous ?? "—"}
+                      {event.previous ?? "-"}
                     </p>
                   </div>
                 </div>
@@ -517,7 +517,7 @@ export function EcoCalendarView() {
       {/* Footer note */}
       <p className="text-[11px] leading-relaxed text-muted-foreground">
         All times are Toronto time. Beat/miss colouring compares the released value with the
-        forecast — green above, red below. Mocked dataset in this build.
+        forecast - green above, red below. Mocked dataset in this build.
       </p>
     </div>
   );

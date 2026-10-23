@@ -352,11 +352,11 @@ export function ConnectAccountDialog({
               </span>
             </button>
           ))}
-          {/* Phase 07 — the universal broker catalog: every known broker
+          {/* Phase 07 - the universal broker catalog: every known broker
               stays visible with its honest connector status. Entries whose
               connector IS available already render as radio cards above.
               The recognized list is scroll-compact so the connectable
-              cards stay in view — 17+ catalog entries would otherwise
+              cards stay in view - 17+ catalog entries would otherwise
               bury them. */}
           {brokers.filter((entry) => entry.connectorStatus !== "CONNECTOR_AVAILABLE").length >
           0 ? (
@@ -376,7 +376,7 @@ export function ConnectAccountDialog({
                         key={entry.brokerId}
                         className="flex items-start gap-2.5 rounded-md border border-dashed border-border bg-surface p-2.5 opacity-80"
                         data-testid={`connect-provider-recognized-${entry.brokerId}`}
-                        aria-label={`${entry.displayName} — ${C.providerRecognized}`}
+                        aria-label={`${entry.displayName} - ${C.providerRecognized}`}
                       >
                         <Lock className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" aria-hidden />
                         <div className="min-w-0 flex-1">
@@ -448,7 +448,7 @@ export function ConnectAccountDialog({
             );
           })}
           <p className="text-xs leading-relaxed text-muted-foreground">
-            {provider.providerName} serves {provider.supportedEnvironments.join(" and ")} accounts — other
+            {provider.providerName} serves {provider.supportedEnvironments.join(" and ")} accounts - other
             environments are refused by the provider.
           </p>
         </div>

@@ -218,7 +218,7 @@ function OryonDrawingRow({
         <button
           type="button"
           onClick={onSelect}
-          aria-label={`${typeLabel}${drawing.label !== null ? ` — ${drawing.label}` : ""}`}
+          aria-label={`${typeLabel}${drawing.label !== null ? ` - ${drawing.label}` : ""}`}
           className="flex min-w-0 flex-1 items-center gap-2 text-left"
         >
           <Icon className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />

@@ -115,7 +115,7 @@ export function WidgetContent({ type, data, config, globalFilters, onRangeChange
                 Equity trajectory
               </CardTitle>
               <CardDescription>
-                Each star is a trading day — the plotted line of your decisions, drawdown
+                Each star is a trading day - the plotted line of your decisions, drawdown
                 zones shaded in loss ink.
               </CardDescription>
             </CardHeader>

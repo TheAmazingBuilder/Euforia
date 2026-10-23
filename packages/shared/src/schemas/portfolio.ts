@@ -11,7 +11,7 @@ import { decimalStringSchema, isoDateTimeSchema, uuidSchema } from "./primitives
 import { accountSchema, propFirmConfigSchema } from "./account";
 
 /**
- * Multi-portfolio domain — data-model.md "Domaine 2 — Comptes, Marchés & Imports".
+ * Multi-portfolio domain — data-model.md "Domaine 2 - Comptes, Marchés & Imports".
  * A BrokerConnection links a journal account to a broker feed (API or bridge);
  * every pull (manual sync or auto-import) records an ImportBatch. Trades born
  * from a sync carry the batch id + a per-account unique externalRef, so

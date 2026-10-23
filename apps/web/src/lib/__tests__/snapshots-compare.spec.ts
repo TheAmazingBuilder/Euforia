@@ -53,7 +53,7 @@ function withMetrics(
   return { ...base, metrics: { ...base.metrics, ...metrics } };
 }
 
-describe("comparePerformanceSnapshots — money + ratio rows", () => {
+describe("comparePerformanceSnapshots - money + ratio rows", () => {
   const a = snapshot();
   const b = withMetrics(snapshot({ id: "22222222-2222-4222-8222-222222222222", name: "B" }), {
     netPnl: "350",
@@ -104,7 +104,7 @@ describe("comparePerformanceSnapshots — money + ratio rows", () => {
   });
 });
 
-describe("comparePerformanceSnapshots — currency honesty (§8)", () => {
+describe("comparePerformanceSnapshots - currency honesty (§8)", () => {
   it("refuses money rows across different currencies + warns; keeps ratio/R rows", () => {
     const eur = snapshot({ currency: "EUR" });
     const result = comparePerformanceSnapshots(eur, snapshot());
@@ -127,7 +127,7 @@ describe("comparePerformanceSnapshots — currency honesty (§8)", () => {
   });
 });
 
-describe("comparePerformanceSnapshots — schema-version guard (§9)", () => {
+describe("comparePerformanceSnapshots - schema-version guard (§9)", () => {
   it("marks the comparison incompatible + warns when versions differ", () => {
     const older = snapshot({ schemaVersion: SNAPSHOT_SCHEMA_VERSION - 1 });
     const result = comparePerformanceSnapshots(older, snapshot());
@@ -141,7 +141,7 @@ describe("comparePerformanceSnapshots — schema-version guard (§9)", () => {
   });
 });
 
-describe("comparePerformanceSnapshots — missing metrics (null honesty)", () => {
+describe("comparePerformanceSnapshots - missing metrics (null honesty)", () => {
   it("marks rows not comparable when a value was unavailable at capture", () => {
     const noProfitFactor = withMetrics(snapshot(), { profitFactor: null });
     const result = comparePerformanceSnapshots(noProfitFactor, snapshot());

@@ -44,10 +44,10 @@ export function PublicStatusDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 font-heading">
             <Globe className="size-5 text-accent" aria-hidden="true" />
-            status.cosmoz.com — public view
+            status.cosmoz.com - public view
           </DialogTitle>
           <DialogDescription>
-            Simulated public status page in client demo mode — the high-level subset a visitor
+            Simulated public status page in client demo mode - the high-level subset a visitor
             would see. Latencies, providers and internals stay private to the Monitoring center.
           </DialogDescription>
         </DialogHeader>
@@ -67,8 +67,8 @@ export function PublicStatusDialog({
               {data.overview.overall === "OPERATIONAL"
                 ? "All systems operational"
                 : data.overview.overall === "DOWN"
-                  ? "Service disruption — engineers engaged"
-                  : "Partial degradation — some services affected"}
+                  ? "Service disruption - engineers engaged"
+                  : "Partial degradation - some services affected"}
             </p>
             <p className="mt-0.5 text-xs text-muted-foreground">
               Updated {new Date(data.overview.generatedAt).toUTCString()} · {data.overview.counts.operational}/
@@ -101,7 +101,7 @@ export function PublicStatusDialog({
                       <Badge variant="destructive" className="text-[10px]">ONGOING</Badge>
                     </div>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      {incident.symptoms[0] ?? "Investigating"} — started{" "}
+                      {incident.symptoms[0] ?? "Investigating"} - started{" "}
                       {ageLabel(ageFromIso(incident.startedAt, nowMs))} ago.
                     </p>
                   </div>
@@ -111,7 +111,7 @@ export function PublicStatusDialog({
                     <div className="flex items-center justify-between gap-2">
                       <span className="font-mono text-xs">{incident.service}</span>
                       <Badge variant="outline" className="text-[10px]">
-                        RESOLVED · {incident.durationMs === null ? "—" : `${Math.round(incident.durationMs / 60_000)} min`}
+                        RESOLVED · {incident.durationMs === null ? "-" : `${Math.round(incident.durationMs / 60_000)} min`}
                       </Badge>
                     </div>
                     <p className="mt-1 text-xs text-muted-foreground">{incident.resolution ?? "Resolved."}</p>
@@ -122,7 +122,7 @@ export function PublicStatusDialog({
           </div>
 
           <p className="mt-4 border-t border-border pt-3 text-center text-[10px] text-muted-foreground">
-            Demo mode — this page mirrors the demo instance only. Subscribe to updates from the real
+            Demo mode - this page mirrors the demo instance only. Subscribe to updates from the real
             status page in production.
           </p>
         </div>

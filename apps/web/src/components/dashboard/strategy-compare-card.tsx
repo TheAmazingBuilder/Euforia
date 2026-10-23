@@ -72,7 +72,7 @@ export function StrategyCompareWidget({
         <div className="min-w-0 space-y-1">
           <CardTitle className="font-heading text-base font-semibold">Strategy comparison</CardTitle>
           <CardDescription className="text-xs">
-            Playbook populations under the active filters — factual rows, no ranking.
+            Playbook populations under the active filters - factual rows, no ranking.
           </CardDescription>
         </div>
       </CardHeader>
@@ -93,7 +93,7 @@ export function StrategyCompareWidget({
           </div>
         ) : rows.length === 0 ? (
           <p className="py-6 text-center text-sm text-muted-foreground" data-testid="strategy-compare-empty">
-            No strategy selected yet — open the widget settings to pick populations.
+            No strategy selected yet - open the widget settings to pick populations.
           </p>
         ) : (
           <div className="overflow-x-auto" data-testid="strategy-compare-table">
@@ -145,7 +145,7 @@ export function StrategyCompareWidget({
 function formatStrategyCell(metricId: string, row: Parameters<typeof strategyMetricValue>[0], currency: Currency | undefined): string {
   const metric = getMetricDefinition(metricId);
   const value = strategyMetricValue(row, metricId);
-  if (!metric || value === null) return "—";
+  if (!metric || value === null) return "-";
   switch (metric.unit) {
     case "MONEY":
       return currency ? formatMoney(value, currency) : formatNumber(value, 2);

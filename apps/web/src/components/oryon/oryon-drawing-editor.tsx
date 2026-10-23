@@ -371,7 +371,7 @@ export function OryonDrawingPropertyEditor({
           className="flex items-center gap-1 rounded-sm px-1.5 py-1 text-[10px] text-muted-foreground hover:bg-surface-raised hover:text-foreground"
         >
           {locked ? <LockOpen className="size-3" aria-hidden /> : <Lock className="size-3" aria-hidden />}
-          {locked ? S.unlockHint : S.lockHint.split(" — ")[0]}
+          {locked ? S.unlockHint : S.lockHint.split(" - ")[0]}
         </button>
         <button
           type="button"

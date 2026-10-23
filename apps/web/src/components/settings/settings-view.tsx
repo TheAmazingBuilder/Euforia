@@ -265,7 +265,7 @@ export function SettingsView() {
         </p>
       </header>
 
-      {/* Search — filters categories by label, description and keywords.
+      {/* Search - filters categories by label, description and keywords.
           ⌘K opens the GLOBAL palette, which now carries a Settings group. */}
       <div className="relative">
         <Search

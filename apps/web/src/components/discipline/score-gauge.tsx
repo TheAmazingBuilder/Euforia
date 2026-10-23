@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 /**
  * Euforia Discipline Score (Phase 8) — large circular SVG gauge in the
  * accent color + the four process components + the product note, verbatim:
- * "Score measures process, not profit — you can be disciplined in a losing
+ * "Score measures process, not profit - you can be disciplined in a losing
  * week." The value comes from GET /discipline/score (server-computed).
  */
 
@@ -19,7 +19,7 @@ const STROKE = 10;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
 function pct(value: string | null): string {
-  if (value === null) return "—";
+  if (value === null) return "-";
   return `${formatNumber(value, 0)}%`;
 }
 
@@ -46,7 +46,7 @@ export function ScoreGauge({ score, isLoading }: ScoreGaugeProps) {
     },
     {
       label: "Rule violations",
-      value: score ? String(score.violationsCount) : "—",
+      value: score ? String(score.violationsCount) : "-",
       tone: score !== undefined && score.violationsCount > 0 ? "loss" : undefined,
     },
     {
@@ -86,7 +86,7 @@ export function ScoreGauge({ score, isLoading }: ScoreGaugeProps) {
               <Skeleton className="h-8 w-16" />
             ) : (
               <span className="font-mono text-3xl font-bold tabular-nums text-foreground">
-                {value === null ? "—" : formatNumber(value, 0)}
+                {value === null ? "-" : formatNumber(value, 0)}
               </span>
             )}
             <span className="font-mono text-[11px] tabular-nums text-muted-foreground">/ 100</span>
@@ -99,7 +99,7 @@ export function ScoreGauge({ score, isLoading }: ScoreGaugeProps) {
               Euforia Discipline Score
             </h2>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              Rolling 30 days — four process components, one index.
+              Rolling 30 days - four process components, one index.
             </p>
           </div>
           <dl className="grid gap-2 sm:grid-cols-2">
@@ -121,7 +121,7 @@ export function ScoreGauge({ score, isLoading }: ScoreGaugeProps) {
             ))}
           </dl>
           <p className="text-xs italic leading-relaxed text-muted-foreground">
-            Score measures process, not profit — you can be disciplined in a losing week.
+            Score measures process, not profit - you can be disciplined in a losing week.
           </p>
         </div>
       </div>

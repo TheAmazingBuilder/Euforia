@@ -106,22 +106,22 @@ export function StrategyCard({ strategy, stat, onOpen }: StrategyCardProps) {
         <div className="grid grid-cols-4 gap-2 font-mono text-xs tabular-nums">
           <div>
             <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">{V.statTrades}</span>
-            <span className="text-foreground">{stat ? String(stat.trades) : "—"}</span>
+            <span className="text-foreground">{stat ? String(stat.trades) : "-"}</span>
           </div>
           <div>
             <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">{V.statWinRate}</span>
-            <span className="text-foreground">{stat ? formatPercent(stat.winRate, 0) : "—"}</span>
+            <span className="text-foreground">{stat ? formatPercent(stat.winRate, 0) : "-"}</span>
           </div>
           <div>
             <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">{V.statAvgR}</span>
             <span className={cn(avgR === null ? "text-foreground" : avgR >= 0 ? "text-profit" : "text-loss")}>
-              {stat ? formatR(stat.avgR) : "—"}
+              {stat ? formatR(stat.avgR) : "-"}
             </span>
           </div>
           <div>
             <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">{V.statExpectancy}</span>
             <span className={cn(avgR === null ? "text-foreground" : avgR >= 0 ? "text-profit" : "text-loss")}>
-              {stat ? formatR(stat.last20Expectancy ?? stat.avgR) : "—"}
+              {stat ? formatR(stat.last20Expectancy ?? stat.avgR) : "-"}
             </span>
           </div>
         </div>

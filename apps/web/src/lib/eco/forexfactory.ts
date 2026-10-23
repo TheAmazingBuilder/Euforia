@@ -79,7 +79,7 @@ function normalizeRow(row: FfRow): EcoEvent | null {
     currency,
     impact,
     scheduledAt: scheduled.toISOString(),
-    actual: null, // The weekly feed carries no released actuals — honest null.
+    actual: null, // The weekly feed carries no released actuals - honest null.
     forecast: text(row.forecast),
     previous: text(row.previous),
   };

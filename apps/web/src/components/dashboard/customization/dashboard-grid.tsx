@@ -423,7 +423,7 @@ function WidgetEditTools({
       <button
         type="button"
         aria-label={`Hide ${label}`}
-        title="Hide — keeps its place and settings"
+        title="Hide - keeps its place and settings"
         data-testid={`dashboard-widget-hide-${key}`}
         onClick={() => onHide(widget.instanceId)}
         className={toolButton}

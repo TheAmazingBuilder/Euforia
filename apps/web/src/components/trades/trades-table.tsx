@@ -201,7 +201,7 @@ function TradesModule() {
 
   const symbolOf = React.useMemo(() => {
     const map = new Map(instruments.map((instrument) => [instrument.id, instrument.symbol]));
-    return (id: string) => map.get(id) ?? "—";
+    return (id: string) => map.get(id) ?? "-";
   }, [instruments]);
   const strategyNameOf = React.useMemo(() => {
     const map = new Map(strategies.map((strategy) => [strategy.id, strategy.name]));
@@ -829,7 +829,7 @@ function TradesModule() {
               pageRows.map((trade) => {
                 const win = trade.pnlNet !== null && (Number(trade.pnlNet) ?? 0) >= 0;
                 const duration =
-                  trade.exitAt !== null ? formatDuration(trade.entryAt, trade.exitAt) : "—";
+                  trade.exitAt !== null ? formatDuration(trade.entryAt, trade.exitAt) : "-";
                 const tradeTags = (trade.tagIds ?? [])
                   .map(tagNameOf)
                   .filter((name): name is string => name !== null);
@@ -855,7 +855,7 @@ function TradesModule() {
                     <span className="italic opacity-70">{T.shared.outOfPlaybook}</span>
                   ),
                   duration,
-                  r: trade.rMultiple === null ? "—" : formatR(trade.rMultiple),
+                  r: trade.rMultiple === null ? "-" : formatR(trade.rMultiple),
                   pnl: (
                     <span
                       className={cn(
@@ -863,7 +863,7 @@ function TradesModule() {
                       )}
                     >
                       {trade.pnlNet === null
-                        ? "—"
+                        ? "-"
                         : formatSignedMoney(trade.pnlNet, currency, { digits: 2 })}
                     </span>
                   ),

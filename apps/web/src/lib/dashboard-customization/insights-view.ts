@@ -64,7 +64,7 @@ export function breakdownModelOf(
 ): BreakdownModel {
   const moneyNote =
     suite.meta.singleCurrency === false
-      ? "Mixed-currency scope — money columns are unavailable; R, counts and rates stay computed."
+      ? "Mixed-currency scope - money columns are unavailable; R, counts and rates stay computed."
       : null;
   let rows: BreakdownRow[];
   switch (dimension) {
@@ -219,12 +219,12 @@ export function reliabilityCopy(reliability: TradingInsightReliability): { label
 /** Format one typed insight metric for display. Money needs the scope
  * currency; the engine already nulled it under multi-currency. */
 export function insightMetricText(metric: TradingInsightMetric, currency: Currency | null): string {
-  if (metric.value === null) return "—";
+  if (metric.value === null) return "-";
   switch (metric.kind) {
     case "R":
       return formatR(metric.value);
     case "MONEY":
-      return currency ? formatMoney(metric.value, currency) : "—";
+      return currency ? formatMoney(metric.value, currency) : "-";
     case "PERCENT":
       return formatPercent(metric.value, 1);
     case "COUNT":
@@ -235,4 +235,4 @@ export function insightMetricText(metric: TradingInsightMetric, currency: Curren
 /** The widget's empty state must explain WHY it is empty — never a fake
  * finding (spec §3/§9D). */
 export const INSIGHTS_EMPTY_COPY =
-  "No finding met the reporting thresholds for this scope yet. Comparisons need at least 5 observations per group — small samples stay silent instead of becoming conclusions.";
+  "No finding met the reporting thresholds for this scope yet. Comparisons need at least 5 observations per group - small samples stay silent instead of becoming conclusions.";

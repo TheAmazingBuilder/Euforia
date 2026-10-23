@@ -75,7 +75,7 @@ function suite(overrides: Partial<AnalyticsSuiteResponse> = {}): AnalyticsSuiteR
   return { ...base, ...overrides } as AnalyticsSuiteResponse;
 }
 
-describe("suiteSummaryCsv — summary export", () => {
+describe("suiteSummaryCsv - summary export", () => {
   it("exports stable columns, scope echo and one row per metric", () => {
     const csv = suiteSummaryCsv(suite());
     const lines = csv.split(CSV_EOL);
@@ -100,7 +100,7 @@ describe("suiteSummaryCsv — summary export", () => {
   });
 });
 
-describe("suiteStrategiesCsv / suiteSymbolsCsv — breakdown exports", () => {
+describe("suiteStrategiesCsv / suiteSymbolsCsv - breakdown exports", () => {
   it("exports one row per strategy with money columns in single currency", () => {
     const withStrategy = suite();
     (withStrategy as { strategies: unknown[] }).strategies = [
@@ -176,7 +176,7 @@ describe("suiteStrategiesCsv / suiteSymbolsCsv — breakdown exports", () => {
   });
 });
 
-describe("suiteReportsCsv — rollup exports", () => {
+describe("suiteReportsCsv - rollup exports", () => {
   it("exports monthly rollup rows with bucket label", () => {
     const csv = suiteReportsCsv(suite(), "monthly");
     const lines = csv.split(CSV_EOL).filter((line) => line.length > 0);
@@ -185,7 +185,7 @@ describe("suiteReportsCsv — rollup exports", () => {
   });
 });
 
-describe("suiteSymbolsCsv — symbol breakdown export", () => {
+describe("suiteSymbolsCsv - symbol breakdown export", () => {
   it("exports one row per symbol with the scope echo", () => {
     const withSymbols = suite();
     (withSymbols as { symbols: unknown[] }).symbols = [
@@ -211,7 +211,7 @@ describe("suiteSymbolsCsv — symbol breakdown export", () => {
   });
 });
 
-describe("accountsCsv — account-level summary", () => {
+describe("accountsCsv - account-level summary", () => {
   it("exports one row per account with currency and default flag", () => {
     const csv = accountsCsv([
       {
@@ -229,7 +229,7 @@ describe("accountsCsv — account-level summary", () => {
   });
 });
 
-describe("snapshotCsv — frozen capture export", () => {
+describe("snapshotCsv - frozen capture export", () => {
   it("exports the capture context block + metric rows", () => {
     const snapshot = {
       id: "11111111-1111-4111-8111-111111111111",

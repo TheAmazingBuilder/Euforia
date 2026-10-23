@@ -66,7 +66,7 @@ import {
  * Persistence model: layout/template mutations schedule debounced writes;
  * session-only changes (moving a timeframe, toggling a panel) NEVER touch
  * storage — saving is always an explicit user action. Switching layouts
- * applies the target's SAVED configuration (unsaved changes are discarded —
+ * applies the target's SAVED configuration (unsaved changes are discarded -
  * the UI prompts first; a reload re-applies the saved layout, both
  * behaviors documented in the interface).
  *
@@ -233,7 +233,7 @@ export class OryonWorkspaceConfigStore {
   }
 
   /**
-   * Replaces ONE panel's temporal-context preferences (Phase 8 §12) —
+   * Replaces ONE panel's temporal-context preferences (Phase 8 §12) -
    * a per-panel display setting, never propagated to linked charts
    * (spec §11: per-chart visibility preferences remain independent).
    * Null-safe on an unknown panel id (stale menu after a removal). */
@@ -246,7 +246,7 @@ export class OryonWorkspaceConfigStore {
   }
 
   /**
-   * Replaces ONE panel's analysis preferences (Phase 9 §9) — a per-panel
+   * Replaces ONE panel's analysis preferences (Phase 9 §9) - a per-panel
    * setting, never propagated to linked charts (§9.3 multi-chart
    * isolation). Null-safe on an unknown panel id (stale menu after a
    * removal). The configuration arrives pre-validated (shared schema
@@ -514,7 +514,7 @@ export class OryonWorkspaceConfigStore {
 
   /**
    * Switches to a saved layout by applying its SAVED configuration. The
-   * unsaved-changes prompt is the UI's responsibility — by the time this
+   * unsaved-changes prompt is the UI's responsibility - by the time this
    * runs, the user has confirmed the discard (or saved) decision. The
    * PROVIDER applies the record's per-panel indicator stacks afterwards
    * (the store owns the session, the registry owns the stacks).

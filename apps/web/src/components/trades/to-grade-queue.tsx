@@ -51,7 +51,7 @@ export function ToGradeQueue({ open, onOpenChange }: ToGradeQueueProps) {
         <div className="max-h-[55vh] overflow-y-auto p-2" data-testid="to-grade-queue">
           {trades.length === 0 ? (
             <p className="px-3 py-8 text-center text-sm text-muted-foreground">
-              Nothing to grade — every closed trade has its decision recorded.
+              Nothing to grade - every closed trade has its decision recorded.
             </p>
           ) : (
             <ul className="space-y-1">
@@ -75,7 +75,7 @@ export function ToGradeQueue({ open, onOpenChange }: ToGradeQueueProps) {
                       )}
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-sm font-medium text-foreground">
-                          {instrument?.symbol ?? "—"}
+                          {instrument?.symbol ?? "-"}
                           <span className="ml-2 font-normal text-muted-foreground">
                             {trade.direction}
                           </span>
@@ -84,7 +84,7 @@ export function ToGradeQueue({ open, onOpenChange }: ToGradeQueueProps) {
                           {isoToLocalInput(trade.entryAt).replace("T", " ")}
                         </span>
                       </span>
-                      {/* Decorative chip — the row itself is the button (no
+                      {/* Decorative chip - the row itself is the button (no
                           nested <button>, invalid HTML / hydration error). */}
                       <span
                         aria-hidden="true"

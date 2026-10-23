@@ -137,7 +137,7 @@ export function ReAuthDialog({
           <DialogTitle className="font-heading">Confirm it&apos;s you</DialogTitle>
           <DialogDescription>
             <span className="font-medium text-foreground">{actionLabel}</span>{" "}
-            is a sensitive action — re-enter your account password to
+            is a sensitive action - re-enter your account password to
             authorize it. The confirmation is valid for one action and a few
             minutes.
           </DialogDescription>
@@ -159,7 +159,7 @@ export function ReAuthDialog({
             data-testid={`${testid}-password`}
           />
           <p className="rounded-md border border-border bg-background/60 px-2.5 py-1.5 text-xs text-muted-foreground">
-            Demo environment — the account password is{" "}
+            Demo environment - the account password is{" "}
             <span className="font-mono text-foreground">{DEMO_PASSWORD_HINT}</span>.
           </p>
           {error !== null && (
@@ -253,7 +253,7 @@ export function SecretOnceDialog({
             <p className="text-xs text-muted-foreground">
               For security, {secret !== undefined ? "this secret is" : "these codes are"}{" "}
               displayed <span className="font-medium text-foreground">only once</span>.
-              Euforia stores just a masked prefix and a fingerprint — nobody can
+              Euforia stores just a masked prefix and a fingerprint - nobody can
               retrieve it later, not even support.
             </p>
           </div>
@@ -314,7 +314,7 @@ export function SecretOnceDialog({
             disabled={!canClose}
             data-testid={`${testid}-done`}
           >
-            {secret !== undefined ? "Done — I saved it" : "Done"}
+            {secret !== undefined ? "Done - I saved it" : "Done"}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -403,8 +403,8 @@ export function RecognitionResult({
                     setImageBox({ width: rect.width, height: rect.height });
                   }}
                 />
-                {/* V2 §10/§55 — source-region overlays (real-pixel → display mapping).
-                    PDFs (and unknown-dim assets) carry null dims — no mapping, no overlays. */}
+                {/* V2 §10/§55 - source-region overlays (real-pixel → display mapping).
+                    PDFs (and unknown-dim assets) carry null dims - no mapping, no overlays. */}
                 {renderRegionOverlays().map((box) => (
                   <button
                     key={box.field}
@@ -424,7 +424,7 @@ export function RecognitionResult({
                     onMouseEnter={box.onHover}
                     onFocus={box.onHover}
                     onClick={box.onClick}
-                    aria-label={`${box.label} — ${dict.boxes.toggle}`}
+                    aria-label={`${box.label} - ${dict.boxes.toggle}`}
                     data-testid={`recognition-box-${box.field}`}
                   />
                 ))}
@@ -448,7 +448,7 @@ export function RecognitionResult({
             )}
             <div className="flex items-center justify-between gap-3 border-t border-border px-3 py-2 font-mono text-[11px] tabular-nums text-muted-foreground">
               <span>
-                {recognition.asset.width ?? "—"} × {recognition.asset.height ?? "—"} ·{" "}
+                {recognition.asset.width ?? "-"} × {recognition.asset.height ?? "-"} ·{" "}
                 {(recognition.asset.sizeBytes / 1024).toFixed(0)} KB
               </span>
               {cropMode && cropRect && cropRect.width > 8 && cropRect.height > 8 ? (
@@ -535,7 +535,7 @@ export function RecognitionResult({
           ) : null}
         </div>
 
-        {/* Extracted fields — one ruled list, never cards-in-cards.
+        {/* Extracted fields - one ruled list, never cards-in-cards.
             Account & Chart profiles render their dedicated surfaces. */}
         <div className="flex flex-col gap-4">
           {metaKey === "account" ? (

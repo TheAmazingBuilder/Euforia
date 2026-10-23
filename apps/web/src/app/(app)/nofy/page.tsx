@@ -10,7 +10,7 @@ const nav = getNavItem("/nofy");
 export const metadata: Metadata = {
   title: nav.label,
   description:
-    "Nofy — the personal trading knowledge workspace: notes, ideas, research and documentation, connected to your trades, strategies and Academy lessons.",
+    "Nofy - the personal trading knowledge workspace: notes, ideas, research and documentation, connected to your trades, strategies and Academy lessons.",
 };
 
 export default function NofyPage() {

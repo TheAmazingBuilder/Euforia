@@ -14,7 +14,7 @@ import type { AnalyticsSuiteResponse, PerformanceSnapshot } from "@cosmoz/shared
  *   - Money columns carry the currency in a dedicated column; a suite
  *     spanning multiple currencies exports NO money values at all (same
  *     honesty as the UI: no misleading combined totals).
- *   - Numbers are exported as the server's decimal strings — no client-side
+ *   - Numbers are exported as the server's decimal strings - no client-side
  *     rounding, no locale formatting. Every metric here is REALIZED; the
  *     suite excludes open positions (stated in the dedicated
  *     `open_trades_excluded` meta row).

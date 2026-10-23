@@ -32,7 +32,7 @@ export function UserAvatar({ className }: { className?: string }) {
     <Link
       href="/profile"
       data-testid="user-avatar"
-      aria-label={`Profile — ${name}`}
+      aria-label={`Profile - ${name}`}
       title="Your profile"
       className={cn(
         "grid size-8 shrink-0 place-items-center overflow-hidden rounded-full font-heading text-[11px] font-bold text-white shadow-sm ring-1 ring-border transition-transform hover:scale-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",

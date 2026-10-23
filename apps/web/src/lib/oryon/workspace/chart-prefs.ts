@@ -123,13 +123,13 @@ export function loadPanelChartPrefs(panelId: string): OryonPanelChartPrefs {
   try {
     parsed = JSON.parse(raw);
   } catch {
-    console.warn("[oryon] chart prefs: corrupt JSON dropped — defaults in use.");
+    console.warn("[oryon] chart prefs: corrupt JSON dropped - defaults in use.");
     return defaultPrefs();
   }
 
   const envelope = oryonChartPrefsSchema.safeParse(parsed);
   if (!envelope.success) {
-    console.warn("[oryon] chart prefs: invalid payload dropped — defaults in use.");
+    console.warn("[oryon] chart prefs: invalid payload dropped - defaults in use.");
     return defaultPrefs();
   }
   const panel = envelope.data.panels[panelId];
@@ -159,7 +159,7 @@ function writePrefs(panelId: string, prefs: OryonPanelChartPrefs): void {
     const envelope = readEnvelope();
     const check = panelPrefsSchema.safeParse(prefs);
     if (!check.success) {
-      console.warn("[oryon] chart prefs save skipped — payload invalid.");
+      console.warn("[oryon] chart prefs save skipped - payload invalid.");
       return;
     }
     envelope.panels[panelId] = check.data;

@@ -36,7 +36,7 @@ export function CoachInsights({ insights }: CoachInsightsProps) {
       <CardContent className="py-0">
         {cards.length === 0 ? (
           <p className="py-3 text-sm text-muted-foreground">
-            No insights yet — the coach needs a few more trades to spot patterns.
+            No insights yet - the coach needs a few more trades to spot patterns.
           </p>
         ) : (
           <ul className="divide-y divide-border">

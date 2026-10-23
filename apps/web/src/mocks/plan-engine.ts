@@ -358,7 +358,7 @@ export const planEngine = {
     const record = requireRow(userId, planId);
     if (record.wire.tradeId !== null && record.wire.tradeId !== input.tradeId) {
       throw rule(
-        "This plan is already linked to another trade — detach it first.",
+        "This plan is already linked to another trade - detach it first.",
         PLAN_ERROR_CODES.PLAN_TRADE_ALREADY_LINKED,
       );
     }

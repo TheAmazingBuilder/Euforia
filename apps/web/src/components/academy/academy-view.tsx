@@ -85,7 +85,7 @@ export function AcademyView() {
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-4 sm:space-y-6" data-testid="academy-view">
-      {/* Identity band — solid surface, hairline frame, crowned by the 12-hue
+      {/* Identity band - solid surface, hairline frame, crowned by the 12-hue
           prism keyline: one color per teaching track (tokens, not chrome). */}
       <header className="overflow-hidden rounded-xl border bg-surface" data-testid="academy-header">
         <div className="flex h-1.5" aria-hidden="true">

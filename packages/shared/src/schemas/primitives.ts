@@ -79,7 +79,7 @@ export type UuidString = z.infer<typeof uuidSchema>;
 // ── JSON columns ─────────────────────────────────────────────────────────────
 
 /**
- * Mirror of Prisma's `Json` column type — strictly typed, no `any`.
+ * Mirror of Prisma's `Json` column type - strictly typed, no `any`.
  * Used for columns the spec leaves schema-free: `checklistSnap`, `params`,
  * `payload`, `context`, `detectionHint`, `annotations`, `errorLog`.
  */

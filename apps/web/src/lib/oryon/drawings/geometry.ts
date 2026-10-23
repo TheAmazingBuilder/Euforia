@@ -323,7 +323,7 @@ export function fibExtLevelPrice(
  * Arrow-mark glyph geometry (SCREEN px) — shared by the painter, the hit
  * test and the properties editor so the drawn, hittable and described
  * extents can never disagree. The TIP sits at the anchor; the tail extends
- * toward the OPPOSITE of `dir` (an "up" arrow's tail is BELOW the tip —
+ * toward the OPPOSITE of `dir` (an "up" arrow's tail is BELOW the tip -
  * screen y grows downward).
  */
 export const ARROW_MARK_SIZE = 14;

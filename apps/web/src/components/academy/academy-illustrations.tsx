@@ -217,7 +217,7 @@ function ArtFrame({
 
 function MarketsArt({ hue }: { hue: string }) {
   return (
-    <ArtFrame hue={hue} label="instruments" title="Markets and instruments — three quote sparklines">
+    <ArtFrame hue={hue} label="instruments" title="Markets and instruments - three quote sparklines">
       <line x1={18} x2={302} y1={57} y2={57} style={{ stroke: BORDER, strokeWidth: 0.6 }} />
       <line x1={18} x2={302} y1={95} y2={95} style={{ stroke: BORDER, strokeWidth: 0.6 }} />
       <Label x={18} y={34}>EUR·USD</Label>
@@ -235,7 +235,7 @@ function MarketsArt({ hue }: { hue: string }) {
 
 function AccountArt({ hue }: { hue: string }) {
   return (
-    <ArtFrame hue={hue} label="leverage" title="Account mechanics — equity funds a leveraged position">
+    <ArtFrame hue={hue} label="leverage" title="Account mechanics - equity funds a leveraged position">
       <line x1={40} x2={280} y1={126} y2={126} style={{ stroke: MUTED, strokeWidth: 0.8 }} />
       {Array.from({ length: 21 }).map((_, i) => (
         <line key={i} x1={40 + i * 12} x2={40 + i * 12} y1={126} y2={i % 5 === 0 ? 121 : 123.5} style={{ stroke: MUTED, strokeWidth: 0.7 }} />
@@ -257,7 +257,7 @@ function AccountArt({ hue }: { hue: string }) {
 
 function RiskBasicsArt({ hue }: { hue: string }) {
   return (
-    <ArtFrame hue={hue} label="risk per trade" title="Risk fundamentals — one unit risked against two units of reward">
+    <ArtFrame hue={hue} label="risk per trade" title="Risk fundamentals - one unit risked against two units of reward">
       <Label x={20} y={28} color={hue}>risk 1% = $100</Label>
       <line x1={20} x2={302} y1={76} y2={76} style={{ stroke: MUTED, strokeWidth: 0.9, strokeDasharray: "5 4" }} />
       <Label x={22} y={71}>entry</Label>
@@ -275,7 +275,7 @@ function RiskBasicsArt({ hue }: { hue: string }) {
 
 function DrawdownArt({ hue }: { hue: string }) {
   return (
-    <ArtFrame hue={hue} label="drawdown math" title="Drawdown — the fall from an equity peak and the larger recovery it demands">
+    <ArtFrame hue={hue} label="drawdown math" title="Drawdown - the fall from an equity peak and the larger recovery it demands">
       <rect x={182} y={46} width={62} height={54} style={{ fill: tint(LOSS, 12) }} />
       <line x1={20} x2={302} y1={46} y2={46} style={{ stroke: PROFIT, strokeWidth: 0.8, strokeDasharray: "5 4", opacity: 0.7 }} />
       <line x1={20} x2={302} y1={100} y2={100} style={{ stroke: LOSS, strokeWidth: 0.8, strokeDasharray: "5 4", opacity: 0.7 }} />
@@ -297,7 +297,7 @@ function DrawdownArt({ hue }: { hue: string }) {
 
 function LevelsArt({ hue }: { hue: string }) {
   return (
-    <ArtFrame hue={hue} label="key levels" title="Support and resistance — price reacts at bands, not lines">
+    <ArtFrame hue={hue} label="key levels" title="Support and resistance - price reacts at bands, not lines">
       <Zone y1={28} y2={40} color={LOSS} />
       <Zone y1={106} y2={118} color={PROFIT} />
       <line x1={18} x2={302} y1={34} y2={34} style={{ stroke: LOSS, strokeWidth: 1, strokeDasharray: "5 4", opacity: 0.85 }} />
@@ -321,7 +321,7 @@ function LevelsArt({ hue }: { hue: string }) {
 
 function BreakoutArt({ hue }: { hue: string }) {
   return (
-    <ArtFrame hue={hue} label="breakout · retest" title="Breakout and retest — the range breaks, comes back, then continues">
+    <ArtFrame hue={hue} label="breakout · retest" title="Breakout and retest - the range breaks, comes back, then continues">
       <rect x={24} y={48} width={156} height={56} rx={3} style={{ fill: "none", stroke: BORDER, strokeWidth: 0.9, strokeDasharray: "4 4" }} />
       <line x1={24} x2={302} y1={48} y2={48} style={{ stroke: hue, strokeWidth: 1, strokeDasharray: "5 4", opacity: 0.9 }} />
       <Line
@@ -339,7 +339,7 @@ function BreakoutArt({ hue }: { hue: string }) {
 
 function PriceBehaviorArt({ hue }: { hue: string }) {
   return (
-    <ArtFrame hue={hue} label="impulse · correction" title="Price behavior — steep impulses separated by shallow corrections">
+    <ArtFrame hue={hue} label="impulse · correction" title="Price behavior - steep impulses separated by shallow corrections">
       <Line d={[[20, 112], [64, 40]]} color={PROFIT} width={2} />
       <Line d={[[64, 40], [86, 58]]} color={MUTED} width={1.4} dash="4 3" />
       <Line d={[[86, 58], [130, 30]]} color={PROFIT} width={2} />
@@ -358,7 +358,7 @@ function PriceBehaviorArt({ hue }: { hue: string }) {
 
 function SmcArt({ hue }: { hue: string }) {
   return (
-    <ArtFrame hue={hue} label="supply · demand · fvg" title="Liquidity and SMC — a displacement leg leaves a fair value gap above an order block">
+    <ArtFrame hue={hue} label="supply · demand · fvg" title="Liquidity and SMC - a displacement leg leaves a fair value gap above an order block">
       <Zone y1={18} y2={32} color={LOSS} />
       <Zone y1={112} y2={126} color={PROFIT} />
       <line x1={18} x2={302} y1={25} y2={25} style={{ stroke: LOSS, strokeWidth: 0.9, strokeDasharray: "5 4", opacity: 0.8 }} />
@@ -381,7 +381,7 @@ function SmcArt({ hue }: { hue: string }) {
 
 function SingleCandleArt({ hue }: { hue: string }) {
   return (
-    <ArtFrame hue={hue} label="anatomy" title="Candle anatomy — open, high, low and close on three single candles">
+    <ArtFrame hue={hue} label="anatomy" title="Candle anatomy - open, high, low and close on three single candles">
       <Candle x={116} high={30} low={110} bodyTop={62} bodyBottom={98} bullish filled={false} color={PROFIT} bodyW={16} />
       <Candle x={170} high={42} low={102} bodyTop={69} bodyBottom={71} bullish color={INK} bodyW={16} />
       <Candle x={224} high={40} low={120} bodyTop={72} bodyBottom={106} bullish={false} color={LOSS} bodyW={16} />
@@ -411,7 +411,7 @@ function MultiCandleArt({ hue }: { hue: string }) {
     { x: 260, high: 34, low: 56, top: 38, bottom: 52, bull: true },
   ];
   return (
-    <ArtFrame hue={hue} label="formations" title="Multi-candle patterns — a morning star turns the decline around">
+    <ArtFrame hue={hue} label="formations" title="Multi-candle patterns - a morning star turns the decline around">
       <rect x={104} y={68} width={90} height={42} rx={6} style={{ fill: tint(hue, 10), stroke: hue, strokeWidth: 1, strokeDasharray: "4 3" }} />
       {series.map((c) => (
         <Candle
@@ -453,7 +453,7 @@ function ReversalPatternsArt({ hue }: { hue: string }) {
 
 function ContinuationPatternsArt({ hue }: { hue: string }) {
   return (
-    <ArtFrame hue={hue} label="bull flag" title="Bull flag continuation — pole, consolidation channel, breakout">
+    <ArtFrame hue={hue} label="bull flag" title="Bull flag continuation - pole, consolidation channel, breakout">
       <Line d={[[30, 118], [78, 38]]} color={PROFIT} width={2.2} />
       <Line d={[[78, 42], [148, 60]]} color={hue} width={1} dash="4 3" />
       <Line d={[[78, 58], [148, 76]]} color={hue} width={1} dash="4 3" />
@@ -473,7 +473,7 @@ function ContinuationPatternsArt({ hue }: { hue: string }) {
 function TrendMomentumArt({ hue }: { hue: string }) {
   const macdBars = [-7, -9, -6, -3, 3, 6, 9, 11, 8, 5, 7, 10, 13, 10, 7, 4, 6, 8, 10];
   return (
-    <ArtFrame hue={hue} label="sma · ema · macd" title="Trend and momentum indicators — price with two moving averages above a MACD histogram">
+    <ArtFrame hue={hue} label="sma · ema · macd" title="Trend and momentum indicators - price with two moving averages above a MACD histogram">
       <Line d={[[24, 80], [52, 60], [80, 70], [108, 48], [136, 58], [168, 38], [200, 48], [232, 30], [264, 40], [298, 22]]} color={INK} smooth />
       <Line d={[[24, 90], [56, 78], [92, 72], [128, 64], [164, 58], [200, 52], [236, 46], [268, 42], [298, 38]]} color={hue} smooth />
       <Line d={[[24, 86], [56, 70], [92, 66], [128, 54], [164, 50], [200, 44], [236, 36], [268, 33], [298, 30]]} color={PROFIT} smooth />
@@ -511,7 +511,7 @@ function VolVolumeArt({ hue }: { hue: string }) {
   const lower: P[] = [[24, 94], [60, 88], [100, 94], [140, 86], [180, 90], [220, 80], [260, 84], [296, 76]];
   const bandPath = `${smooth(upper)} L ${lower[lower.length - 1][0]} ${lower[lower.length - 1][1]} ${smooth([...lower].reverse()).replace(/^M/, "L")} Z`;
   return (
-    <ArtFrame hue={hue} label="volatility · volume" title="Volatility and volume — Bollinger bands around price over a volume pane">
+    <ArtFrame hue={hue} label="volatility · volume" title="Volatility and volume - Bollinger bands around price over a volume pane">
       <path d={bandPath} style={{ fill: tint(hue, 9) }} />
       <Line d={upper} color={hue} width={1.1} smooth />
       <Line d={mid} color={MUTED} width={0.9} dash="4 3" smooth />
@@ -532,7 +532,7 @@ function VolVolumeArt({ hue }: { hue: string }) {
 
 function StrategyCoreArt({ hue }: { hue: string }) {
   return (
-    <ArtFrame hue={hue} label="entry · stop · target" title="Strategy core — a pullback setup with entry, stop and target">
+    <ArtFrame hue={hue} label="entry · stop · target" title="Strategy core - a pullback setup with entry, stop and target">
       <line x1={140} x2={300} y1={96} y2={96} style={{ stroke: LOSS, strokeWidth: 1, strokeDasharray: "5 4" }} />
       <line x1={140} x2={300} y1={28} y2={28} style={{ stroke: PROFIT, strokeWidth: 1, strokeDasharray: "5 4" }} />
       <Label x={298} y={92} anchor="end" color={LOSS}>stop</Label>
@@ -547,7 +547,7 @@ function StrategyCoreArt({ hue }: { hue: string }) {
 
 function MeanReversionArt({ hue }: { hue: string }) {
   return (
-    <ArtFrame hue={hue} label="mean reversion" title="Mean reversion — fading the extremes of an oscillating range">
+    <ArtFrame hue={hue} label="mean reversion" title="Mean reversion - fading the extremes of an oscillating range">
       <line x1={20} x2={300} y1={72} y2={72} style={{ stroke: MUTED, strokeWidth: 0.9, strokeDasharray: "5 4" }} />
       <Label x={22} y={66}>mean</Label>
       <Line
@@ -569,7 +569,7 @@ function MeanReversionArt({ hue }: { hue: string }) {
 
 function TradeMgmtArt({ hue }: { hue: string }) {
   return (
-    <ArtFrame hue={hue} label="trailing · partials" title="Trade management — a trailing stop stepping up under a winning position">
+    <ArtFrame hue={hue} label="trailing · partials" title="Trade management - a trailing stop stepping up under a winning position">
       <line x1={20} x2={140} y1={96} y2={96} style={{ stroke: MUTED, strokeWidth: 0.9, strokeDasharray: "5 4" }} />
       <Label x={22} y={108}>entry</Label>
       <Line d={[[24, 96], [56, 74], [88, 80], [120, 60], [152, 66], [184, 46], [216, 52], [248, 36], [280, 40], [300, 30]]} color={INK} smooth />
@@ -593,7 +593,7 @@ function TradeMgmtArt({ hue }: { hue: string }) {
 
 function PsychologyArt({ hue }: { hue: string }) {
   return (
-    <ArtFrame hue={hue} label="the emotional ledger" title="Trading psychology — the emotional wave between fear and greed">
+    <ArtFrame hue={hue} label="the emotional ledger" title="Trading psychology - the emotional wave between fear and greed">
       <line x1={20} x2={300} y1={36} y2={36} style={{ stroke: MUTED, strokeWidth: 0.8, strokeDasharray: "5 4", opacity: 0.8 }} />
       <line x1={20} x2={300} y1={112} y2={112} style={{ stroke: MUTED, strokeWidth: 0.8, strokeDasharray: "5 4", opacity: 0.8 }} />
       <line x1={20} x2={300} y1={74} y2={74} style={{ stroke: hue, strokeWidth: 0.9, strokeDasharray: "3 4", opacity: 0.9 }} />
@@ -617,7 +617,7 @@ function PsychologyArt({ hue }: { hue: string }) {
 
 function StructureArt({ hue }: { hue: string }) {
   return (
-    <ArtFrame hue={hue} label="hh · hl · bos" title="Market structure — higher highs and higher lows breaking above the prior swing">
+    <ArtFrame hue={hue} label="hh · hl · bos" title="Market structure - higher highs and higher lows breaking above the prior swing">
       <line x1={124} x2={214} y1={32} y2={32} style={{ stroke: hue, strokeWidth: 1, strokeDasharray: "5 4" }} />
       <Line
         d={[[24, 108], [56, 72], [44, 84], [92, 48], [76, 62], [128, 32], [112, 46], [168, 26], [152, 40], [212, 20], [200, 30], [258, 14], [298, 22]]}
@@ -639,7 +639,7 @@ function StructureArt({ hue }: { hue: string }) {
 
 function SystematicArt({ hue }: { hue: string }) {
   return (
-    <ArtFrame hue={hue} label="backtest · expectancy" title="Systematic trading — an equity curve over a fixed sample of trades">
+    <ArtFrame hue={hue} label="backtest · expectancy" title="Systematic trading - an equity curve over a fixed sample of trades">
       <Label x={24} y={30} color={hue} size={9}>n = 240</Label>
       <Label x={24} y={42}>WR 54% · PF 1.6</Label>
       <Line
@@ -661,7 +661,7 @@ function SystematicArt({ hue }: { hue: string }) {
 function ExecutionArt({ hue }: { hue: string }) {
   const bars = [-14, -8, -3, 5, 10, 16, 22, 18, 12, 6, -2, -6, -12];
   return (
-    <ArtFrame hue={hue} label="r distribution" title="Execution quality — the distribution of trade outcomes in R multiples">
+    <ArtFrame hue={hue} label="r distribution" title="Execution quality - the distribution of trade outcomes in R multiples">
       <line x1={22} x2={300} y1={100} y2={100} style={{ stroke: MUTED, strokeWidth: 0.8, strokeDasharray: "4 3" }} />
       {bars.map((h, i) => (
         <rect

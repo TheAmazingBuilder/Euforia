@@ -51,7 +51,7 @@ export function WidgetLibraryDialog({
         <DialogHeader>
           <DialogTitle className="font-heading">Widget library</DialogTitle>
           <DialogDescription>
-            Everything you can put on this layout. Widgets marked Added are already here —
+            Everything you can put on this layout. Widgets marked Added are already here -
             hidden ones keep their place and settings.
           </DialogDescription>
         </DialogHeader>

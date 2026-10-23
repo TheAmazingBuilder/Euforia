@@ -286,7 +286,7 @@ describe("per-widget configuration (Phase 02)", () => {
     showZeroLine: true,
   };
 
-  it("draftSetConfig edits the draft only — the saved layout is untouched until commit", () => {
+  it("draftSetConfig edits the draft only - the saved layout is untouched until commit", () => {
     const started = customizationReducer(idleState(), { type: "editStarted" });
     const id = firstInstanceId(started); // PNL_BAND
     const dirtied = customizationReducer(started, { type: "draftSetConfig", instanceId: id, config: VALID_CONFIG });

@@ -80,7 +80,7 @@ export function CompoundingCalculator() {
   const copyPayload = React.useMemo(() => {
     if (!schedule) return "";
     return [
-      `Compounding — ${formatMoney(schedule.startingBalance, currency)} · ${schedule.periods} periods · ${formatPercent(Number(schedule.gainPerPeriodPercent) / 100, 2)} / period`,
+      `Compounding - ${formatMoney(schedule.startingBalance, currency)} · ${schedule.periods} periods · ${formatPercent(Number(schedule.gainPerPeriodPercent) / 100, 2)} / period`,
       `Initial: ${formatMoney(schedule.startingBalance, currency)}`,
       `Final: ${formatMoney(schedule.finalBalance, currency)}`,
       `Total profit: ${formatSignedMoney(schedule.totalProfit, currency)}`,
@@ -298,7 +298,7 @@ export function CompoundingCalculator() {
                   )}
                 >
                   {totalGainRatio !== null && totalGainRatio >= 0 ? "+" : ""}
-                  {totalGainRatio !== null ? formatPercent(totalGainRatio, 2) : "—"}
+                  {totalGainRatio !== null ? formatPercent(totalGainRatio, 2) : "-"}
                 </p>
               </div>
             </div>
@@ -326,7 +326,7 @@ export function CompoundingCalculator() {
           <div className="chart-paper px-2 py-4 sm:px-4">
             <EChart
               option={chartOption!}
-              ariaLabel={`${T.chart.title} — ${T.chart.xLabel}: ${T.chart.yLabel}`}
+              ariaLabel={`${T.chart.title} - ${T.chart.xLabel}: ${T.chart.yLabel}`}
               className="h-72 w-full sm:h-80"
             />
           </div>

@@ -307,7 +307,7 @@ export function createMockStore() {
     },
     {
       id: crypto.randomUUID(),
-      name: "Losses — last 30d",
+      name: "Losses - last 30d",
       scope: "TRADES",
       analyticsFilters: null,
       filters: {
@@ -323,7 +323,7 @@ export function createMockStore() {
       // ANALYTICS-scope preset in the SAME unified library — Analytics reads
       // and writes this store, Trades keeps seeing only the TRADES scope.
       id: crypto.randomUUID(),
-      name: "Revenge review — last 90d",
+      name: "Revenge review - last 90d",
       scope: "ANALYTICS",
       analyticsFilters: { period: "LAST_90", emotion: "REVENGE" },
       filters: {
@@ -435,7 +435,7 @@ export function createMockStore() {
       userId: user.id,
       type: "SYSTEM",
       severity: "NOTIFY",
-      title: `Discipline weekly report — week of ${prevWeekStart}`,
+      title: `Discipline weekly report - week of ${prevWeekStart}`,
       message:
         `Last week (${prevWeekStart} → ${prevWeekEnd}): ${weekTrades.length} trade${weekTrades.length === 1 ? "" : "s"}, ` +
         `${weekViolations.length} rule violation${weekViolations.length === 1 ? "" : "s"}, ` +
@@ -443,7 +443,7 @@ export function createMockStore() {
         `${rSum >= 0 ? "+" : ""}${rSum.toFixed(1)}R.` +
         (leakType !== null
           ? ` Biggest leak: ${leakType.replaceAll("_", " ").toLowerCase()} (${leakCount}×).`
-          : " No rule breached — keep the bar."),
+          : " No rule breached - keep the bar."),
       payload: { kind: "WEEKLY_DISCIPLINE_REPORT", weekStart },
       tradeId: null,
       readAt: null,
@@ -495,7 +495,7 @@ export function createMockStore() {
           userId: user.id,
           type: "SYSTEM",
           severity: "WARN",
-          title: "Security reminder — two-factor is off",
+          title: "Security reminder - two-factor is off",
           message: reminder.message,
           payload: { kind: "TWO_FACTOR_OFF", days: reminder.days },
           tradeId: null,
@@ -553,7 +553,7 @@ export function createMockStore() {
       userId: user.id,
       type: "SYSTEM",
       severity: input.severity === "CRITICAL" ? "ALERT" : input.severity === "WARNING" ? "WARN" : "NOTIFY",
-      title: `Monitoring — ${input.ruleId}`,
+      title: `Monitoring - ${input.ruleId}`,
       message: input.message,
       payload: { ruleId: input.ruleId },
       tradeId: null,
@@ -578,7 +578,7 @@ export function createMockStore() {
   calendarBlocks.set(dateKeyOffset(-11), {
     date: dateKeyOffset(-11),
     kind: "OFF",
-    note: "Planned day off — long weekend",
+    note: "Planned day off - long weekend",
     createdAt: nowIso(),
   });
 
@@ -635,7 +635,7 @@ export function createMockStore() {
       dates,
       message:
         imported === 0
-          ? "Nothing to import — the next two weeks are already marked or clear."
+          ? "Nothing to import - the next two weeks are already marked or clear."
           : `${imported} high-impact day${imported === 1 ? "" : "s"} imported as news blockers over the next two weeks.`,
     };
   }
@@ -1699,7 +1699,7 @@ export function createMockStore() {
     // the playbook evolves but the journal stays true (data-model.md V2 note).
     const used = data.trades.some((t) => t.strategyId === strategyId);
     if (used) {
-      throw new MockError(409, "This strategy has trades attached — pause or retire it instead.");
+      throw new MockError(409, "This strategy has trades attached - pause or retire it instead.");
     }
     // The playbook children of a deleted strategy have no reason to dangle.
     for (let i = setups.length - 1; i >= 0; i -= 1) {
@@ -1781,7 +1781,7 @@ export function createMockStore() {
     const index = setups.findIndex((s) => s.id === setupId);
     if (index === -1) throw new MockError(404, "Setup not found");
     const used = data.trades.some((t) => t.setupId === setupId);
-    if (used) throw new MockError(409, "This setup has trades attached — pause it instead.");
+    if (used) throw new MockError(409, "This setup has trades attached - pause it instead.");
     setups.splice(index, 1);
     return { ok: true };
   }
@@ -2620,7 +2620,7 @@ export function createMockStore() {
 
   /**
    * Resolve a named period preset into [from, to] trading-date keys using the
-   * SERVER's trading-day clock (the client never derives "today" — same rule
+   * SERVER's trading-day clock (the client never derives "today" - same rule
    * as the session timeline). CUSTOM falls back to ALL when bounds are absent.
    */
   function resolvePeriodRange(filters: AnalyticsFilters): { from: string; to: string } {
@@ -2880,7 +2880,7 @@ export function createMockStore() {
       sharpeNote:
         "Sharpe = mean daily ΣR ÷ stdev(daily ΣR) × √252, risk-free = 0. Daily series spans the full filter window (0R on no-trade days); null below 10 days.",
       sortinoNote:
-        "Sortino uses the same daily ΣR series with downside deviation (√mean(min(0,d)²)), annualized √252 — penalizes only negative volatility.",
+        "Sortino uses the same daily ΣR series with downside deviation (√mean(min(0,d)²)), annualized √252 - penalizes only negative volatility.",
     };
 
     // ── Cumulative R + rolling (window 10) (§7/§9) ─────────────────────────
@@ -3812,7 +3812,7 @@ export function createMockStore() {
       trade.tradingDate = toTradingDateKey(input.entryAt, USER_TZ);
     }
     if (input.exitPrice !== undefined || input.exitAt !== undefined || input.exitReason !== undefined) {
-      if (trade.status !== "CLOSED") throw new MockError(409, "Trade is not closed — close it first");
+      if (trade.status !== "CLOSED") throw new MockError(409, "Trade is not closed - close it first");
       if (input.exitPrice !== undefined) trade.exitPrice = input.exitPrice;
       if (input.exitAt !== undefined) trade.exitAt = input.exitAt;
       if (input.exitReason !== undefined) trade.exitReason = input.exitReason;
@@ -4103,7 +4103,7 @@ export function createMockStore() {
       price: toDecimalString(Number(price.toFixed(digits))),
     }));
     return {
-      symbol: instrument?.symbol ?? "—",
+      symbol: instrument?.symbol ?? "-",
       digits,
       direction: trade.direction,
       from: points[0]!.t,
@@ -4410,7 +4410,7 @@ export function createMockStore() {
         ? "floor"
         : "target";
     const detail = current.actual === null
-      ? `No data yet this ${goal.period.toLowerCase()} — the sample is empty`
+      ? `No data yet this ${goal.period.toLowerCase()} - the sample is empty`
       : `${fmt(current.actual)} vs ${fmt(goal.target)} ${targetWord}`;
 
     return {
@@ -4534,7 +4534,7 @@ export function createMockStore() {
 
       if (slipping) {
         const severity = p.status === "BEHIND" ? "ALERT" : "WARN";
-        const title = p.status === "BEHIND" ? `Goal off pace — ${goal.title}` : `Goal at risk — ${goal.title}`;
+        const title = p.status === "BEHIND" ? `Goal off pace - ${goal.title}` : `Goal at risk - ${goal.title}`;
         const message = `${p.detail}.${pacing}`;
         if (slipAlert) {
           // Same episode, status moved — rewrite the live alert in place.
@@ -4568,7 +4568,7 @@ export function createMockStore() {
           userId: goal.userId,
           type: "GOAL_STATUS",
           severity: "NOTIFY",
-          title: `Goal back on track — ${goal.title}`,
+          title: `Goal back on track - ${goal.title}`,
           message: `${p.detail}.${pacing}`,
           payload: { goalId: goal.id, kind: "ACHIEVED", periodStart: p.periodStart },
           tradeId: null,
@@ -4588,7 +4588,7 @@ export function createMockStore() {
           userId: goal.userId,
           type: "GOAL_STATUS",
           severity: "NOTIFY",
-          title: `Goal achieved — ${goal.title}`,
+          title: `Goal achieved - ${goal.title}`,
           message: `${p.detail}. Target reached with ${daysLeft} ${dayWord} left in the ${goal.period.toLowerCase()}.`,
           payload: { goalId: goal.id, kind: "ACHIEVED", periodStart: p.periodStart },
           tradeId: null,
@@ -4610,7 +4610,7 @@ export function createMockStore() {
     if (!trade) throw new MockError(500, "Review references a missing trade");
     return {
       tradeId: review.tradeId,
-      symbol: instrumentById.get(trade.instrumentId)?.symbol ?? "—",
+      symbol: instrumentById.get(trade.instrumentId)?.symbol ?? "-",
       direction: trade.direction,
       tradingDate: trade.tradingDate,
       reviewStatus: "REVIEWED",
@@ -4636,7 +4636,7 @@ export function createMockStore() {
   function pendingRowForTrade(trade: Trade): ReviewRow {
     return {
       tradeId: trade.id,
-      symbol: instrumentById.get(trade.instrumentId)?.symbol ?? "—",
+      symbol: instrumentById.get(trade.instrumentId)?.symbol ?? "-",
       direction: trade.direction,
       tradingDate: trade.tradingDate,
       reviewStatus: "PENDING",

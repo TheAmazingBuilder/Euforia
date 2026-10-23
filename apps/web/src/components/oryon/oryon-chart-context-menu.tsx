@@ -461,7 +461,7 @@ export function OryonChartContextMenu({
         </ContextMenuContent>
       </ContextMenu>
 
-      {/* Trade journal flows (Phase 10) — mounted per open so the drafts
+      {/* Trade journal flows (Phase 10) - mounted per open so the drafts
           seed from the CURRENT panel state. */}
       {saveAnalysisOpen ? (
         <OryonSaveAnalysisDialog
@@ -492,7 +492,7 @@ export function OryonChartContextMenu({
         />
       ) : null}
 
-      {/* Settings — the four-section chart dialog (live-applied). Mounted
+      {/* Settings - the four-section chart dialog (live-applied). Mounted
           per open so the draft + cancel snapshot start from CURRENT prefs
           (no open-transition effect, no stale state). */}
       {settingsOpen ? (

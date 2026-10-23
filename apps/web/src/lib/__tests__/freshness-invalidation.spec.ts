@@ -11,7 +11,7 @@ import { queryKeys, tradeMutationInvalidations } from "@/lib/api/keys";
  * This spec pins the bundle: adding a derived dataset later WITHOUT adding
  * its root here now fails this test instead of shipping stale aggregates.
  */
-describe("tradeMutationInvalidations — freshness contract", () => {
+describe("tradeMutationInvalidations - freshness contract", () => {
   it("invalidates every trade-derived root", () => {
     expect(tradeMutationInvalidations).toContain(queryKeys.tradesRoot);
     expect(tradeMutationInvalidations).toContain(queryKeys.rulesStatusRoot);

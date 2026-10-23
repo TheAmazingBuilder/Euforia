@@ -90,7 +90,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {/* Global capture modal + "?" shortcuts overlay (N / ? hotkeys) */}
       <TradeModalHost />
 
-      {/* Acts 2 & 3 — the Gate → Reveal → Reflect flow (opens after a save
+      {/* Acts 2 & 3 - the Gate → Reveal → Reflect flow (opens after a save
           or from the to-grade queue) */}
       <JudgmentFlowModal />
 

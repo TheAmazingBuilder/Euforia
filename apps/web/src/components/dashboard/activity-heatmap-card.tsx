@@ -244,7 +244,7 @@ export function ActivityHeatmapWidget({
           />
         ) : (
           <p className="py-6 text-center text-sm text-muted-foreground" data-testid="activity-heatmap-empty">
-            No closed trades yet — the grid lights up as you journal.
+            No closed trades yet - the grid lights up as you journal.
           </p>
         )}
       </CardContent>

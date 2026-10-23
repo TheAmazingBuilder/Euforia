@@ -172,7 +172,7 @@ class SecurityEngine {
     },
     {
       id: "ses-iphone",
-      device: "iPhone 14 — Euforia PWA",
+      device: "iPhone 14 - Euforia PWA",
       browser: "Euforia PWA",
       os: "iOS 18",
       ipMasked: "99.42.•••.••",
@@ -231,13 +231,13 @@ class SecurityEngine {
 
     pushEvent("EMAIL_VERIFIED", 62, 4, "trader@cosmoz.app", "Email address verified via confirmation link.");
     pushEvent("INTEGRATION_CONNECTED", 30, 6, "trader@cosmoz.app", "Deriv connected with read-only scope (account data + market data).");
-    pushEvent("LOGIN_SUCCESS", 21, 1, "iPhone 14 — Euforia PWA", "Sign-in from Toronto, CA (approximate).");
+    pushEvent("LOGIN_SUCCESS", 21, 1, "iPhone 14 - Euforia PWA", "Sign-in from Toronto, CA (approximate).");
     pushEvent("PASSWORD_CHANGED", 34, 2, "trader@cosmoz.app", "Password changed from an authenticated session. Other sessions stayed signed in.");
     pushEvent("API_KEY_CREATED", 12, 5, "trader@cosmoz.app", "API key “Journal export script” created with scopes read:trades, read:analytics. Secret shown once.");
     pushEvent("LOGIN_SUCCESS", 7, 3, "MacBook Pro", "Sign-in from Toronto, CA (approximate).");
-    pushEvent("LOGIN_FAILED", 1, 5, "Unknown device", "Failed sign-in — wrong password. Rate limit recorded the attempt.", "FAILURE");
+    pushEvent("LOGIN_FAILED", 1, 5, "Unknown device", "Failed sign-in - wrong password. Rate limit recorded the attempt.", "FAILURE");
     pushEvent("LOGIN_SUCCESS", 0, 0.8, "This device", "Sign-in from Toronto, CA (approximate).");
-    pushEvent("SENSITIVE_SETTINGS_CHANGED", 5, 8, "trader@cosmoz.app", "Profile timezone updated — sensitive setting change confirmed by re-authentication.");
+    pushEvent("SENSITIVE_SETTINGS_CHANGED", 5, 8, "trader@cosmoz.app", "Profile timezone updated - sensitive setting change confirmed by re-authentication.");
 
     const login = (
       daysBack: number,
@@ -264,12 +264,12 @@ class SecurityEngine {
     };
 
     login(0, 0.8, true, "This device", "Current browser", "This OS", "24.114.•••.••", "Toronto, CA");
-    login(1, 5, false, "Unknown device", "Chrome 130", "Windows 11", "203.0.•••.••", "Frankfurt, DE", "Wrong password — attempt rate-limited and logged.");
+    login(1, 5, false, "Unknown device", "Chrome 130", "Windows 11", "203.0.•••.••", "Frankfurt, DE", "Wrong password - attempt rate-limited and logged.");
     login(6, 3, true, "MacBook Pro", "Safari 18", "macOS 15", "24.114.•••.••", "Toronto, CA");
     login(12, 9, true, "This device", "Current browser", "This OS", "24.114.•••.••", "Toronto, CA");
-    login(13, 2, true, "iPhone 14 — Euforia PWA", "Euforia PWA", "iOS 18", "99.42.•••.••", "Toronto, CA");
+    login(13, 2, true, "iPhone 14 - Euforia PWA", "Euforia PWA", "iOS 18", "99.42.•••.••", "Toronto, CA");
     login(19, 4, true, "MacBook Pro", "Safari 18", "macOS 15", "24.114.•••.••", "Toronto, CA");
-    login(26, 6, true, "iPhone 14 — Euforia PWA", "Euforia PWA", "iOS 18", "99.42.•••.••", "Toronto, CA");
+    login(26, 6, true, "iPhone 14 - Euforia PWA", "Euforia PWA", "iOS 18", "99.42.•••.••", "Toronto, CA");
   }
 
   // ── Event log (§18 — append-only) ─────────────────────────────────────────
@@ -308,7 +308,7 @@ class SecurityEngine {
           : "not paired",
         permissions: provider.capabilities,
         lastSyncAt: provider.sync.lastSuccessAt,
-        credentialHint: provider.credentials?.maskedHint ?? "— none stored —",
+        credentialHint: provider.credentials?.maskedHint ?? "- none stored -",
       }));
 
     const failed24h = this.events.filter(
@@ -328,8 +328,8 @@ class SecurityEngine {
         id: "two-factor",
         label: "Two-factor authentication",
         detail: this.twoFactor.enabled
-          ? `On — authenticator app, verified ${this.twoFactor.lastVerifiedAt === null ? "recently" : this.twoFactor.lastVerifiedAt.slice(0, 10)}.`
-          : "Off — a second factor is not required yet.",
+          ? `On - authenticator app, verified ${this.twoFactor.lastVerifiedAt === null ? "recently" : this.twoFactor.lastVerifiedAt.slice(0, 10)}.`
+          : "Off - a second factor is not required yet.",
         pass: this.twoFactor.enabled,
         methodology: "Passes once the authenticator challenge has been confirmed after enrollment.",
       },
@@ -354,7 +354,7 @@ class SecurityEngine {
       {
         id: "password-freshness",
         label: "Password freshness",
-        detail: `Changed ${passwordAgeDays} day(s) ago — rotation recommended every ${PASSWORD_MAX_AGE_DAYS}.`,
+        detail: `Changed ${passwordAgeDays} day(s) ago - rotation recommended every ${PASSWORD_MAX_AGE_DAYS}.`,
         pass: passwordAgeDays <= PASSWORD_MAX_AGE_DAYS,
         methodology: `Passes while the password is younger than ${PASSWORD_MAX_AGE_DAYS} days.`,
       },
@@ -363,7 +363,7 @@ class SecurityEngine {
         label: "API key hygiene",
         detail: activeKeys.length === 0
           ? "No active API keys."
-          : `${activeKeys.length} active key(s), all scoped${activeKeys.every((key) => key.expiresAt !== null) ? " and expiring" : " — some never expire"}.`,
+          : `${activeKeys.length} active key(s), all scoped${activeKeys.every((key) => key.expiresAt !== null) ? " and expiring" : " - some never expire"}.`,
         pass: activeKeys.every((key) => key.expiresAt !== null),
         methodology: "Passes while every active key carries an expiration date.",
       },
@@ -379,7 +379,7 @@ class SecurityEngine {
         label: "Failed sign-ins (24 h)",
         detail: failed24h === 0
           ? "None recorded in the last 24 hours."
-          : `${failed24h} failed attempt(s) — monitored by the rate limiter.`,
+          : `${failed24h} failed attempt(s) - monitored by the rate limiter.`,
         pass: failed24h <= 2,
         methodology: "Passes while failed sign-ins stay at or below 2 per 24 h.",
       },
@@ -457,7 +457,7 @@ class SecurityEngine {
     return {
       active: true,
       days,
-      message: `Two-factor authentication has been OFF for ${days} days. An authenticator app adds a second barrier in front of your journal — enable it from Security → Two-factor.`,
+      message: `Two-factor authentication has been OFF for ${days} days. An authenticator app adds a second barrier in front of your journal - enable it from Security → Two-factor.`,
     };
   }
 
@@ -479,13 +479,13 @@ class SecurityEngine {
       this.logEvent(
         "REAUTH_FAILED",
         "This device",
-        "Re-authentication refused — too many recent failures (rate limited).",
+        "Re-authentication refused - too many recent failures (rate limited).",
         "FAILURE",
       );
       return fail(
         429,
         "RATE_LIMITED",
-        `Too many attempts — re-authentication is locked for about ${Math.ceil(retryAfterMs / MINUTE_MS)} min.`,
+        `Too many attempts - re-authentication is locked for about ${Math.ceil(retryAfterMs / MINUTE_MS)} min.`,
         retryAfterMs,
       );
     }
@@ -495,13 +495,13 @@ class SecurityEngine {
       this.logEvent(
         "REAUTH_FAILED",
         "This device",
-        `Re-authentication failed — wrong password (attempt ${this.reauthFailures.length} of ${REAUTH_MAX_FAILURES}).`,
+        `Re-authentication failed - wrong password (attempt ${this.reauthFailures.length} of ${REAUTH_MAX_FAILURES}).`,
         "FAILURE",
       );
       return fail(
         401,
         "INVALID_CREDENTIALS",
-        `Wrong password — ${REAUTH_MAX_FAILURES - this.reauthFailures.length} attempt(s) left before a temporary lock.`,
+        `Wrong password - ${REAUTH_MAX_FAILURES - this.reauthFailures.length} attempt(s) left before a temporary lock.`,
       );
     }
 
@@ -519,11 +519,11 @@ class SecurityEngine {
   ): Result<{ action: string }> {
     const expiresAt = this.reauthTokens.get(token);
     if (expiresAt === undefined) {
-      return fail(401, "INVALID_REAUTH_TOKEN", "Re-authentication required — confirm your password first.");
+      return fail(401, "INVALID_REAUTH_TOKEN", "Re-authentication required - confirm your password first.");
     }
     this.reauthTokens.delete(token);
     if (Date.now() > expiresAt) {
-      return fail(401, "REAUTH_TOKEN_EXPIRED", "Re-authentication expired — confirm your password again.");
+      return fail(401, "REAUTH_TOKEN_EXPIRED", "Re-authentication expired - confirm your password again.");
     }
     return ok({ action: token });
   }
@@ -588,10 +588,10 @@ class SecurityEngine {
       this.logEvent(
         "TFA_CHALLENGE_FAILED",
         "This device",
-        "Authenticator challenge failed — code rejected.",
+        "Authenticator challenge failed - code rejected.",
         "FAILURE",
       );
-      return fail(422, "INVALID_CODE", "That code does not match — check your authenticator and try again.");
+      return fail(422, "INVALID_CODE", "That code does not match - check your authenticator and try again.");
     }
 
     this.pendingEnrollment = null;
@@ -652,7 +652,7 @@ class SecurityEngine {
     this.logEvent(
       "RECOVERY_CODES_REGENERATED",
       "This device",
-      "New recovery codes generated — previous set invalidated.",
+      "New recovery codes generated - previous set invalidated.",
     );
     return ok({ recoveryCodes });
   }
@@ -738,10 +738,10 @@ class SecurityEngine {
       "SESSION_REVOKED",
       "This device",
       input.scope === "one"
-        ? "One session revoked — its device is signed out immediately."
+        ? "One session revoked - its device is signed out immediately."
         : input.scope === "others"
-          ? `All other sessions revoked (${revokedCount}) — those devices are signed out.`
-          : `All sessions revoked (${revokedCount}) — in production the current session ends too (demo keeps it).`,
+          ? `All other sessions revoked (${revokedCount}) - those devices are signed out.`
+          : `All sessions revoked (${revokedCount}) - in production the current session ends too (demo keeps it).`,
     );
     return ok({ revokedCount, currentSessionAffected: currentAffected });
   }

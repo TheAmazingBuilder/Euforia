@@ -257,7 +257,7 @@ async function pollOnce(): Promise<void> {
 
 /**
  * Authenticated fetch for the market service surface (polling snapshot +
- * candles). Mirrors the API client's contract — Bearer injection, then on
+ * candles). Mirrors the API client's contract - Bearer injection, then on
  * 401 ONE single-flight refresh and ONE retry — without routing through
  * MSW (these paths bypass the mock worker on purpose).
  */

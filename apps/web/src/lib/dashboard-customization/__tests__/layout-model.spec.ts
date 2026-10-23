@@ -213,7 +213,7 @@ describe("layout validation", () => {
     expect(malformed.layouts[0]!.id).toBe("ok");
   });
 
-  it("skips only the malformed layout — valid siblings survive", () => {
+  it("skips only the malformed layout - valid siblings survive", () => {
     const snapshot = normalizeCustomization(
       [
         { id: "bad", name: "Bad", schemaVersion: 7, widgets: [] },

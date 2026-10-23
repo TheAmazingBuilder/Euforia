@@ -915,7 +915,7 @@ export class OryonChartEngine {
    * Moves the crosshair onto the bar CONTAINING `timeSec` (timestamp-based
    * alignment — never pixel positions). The vertical line lands on that
    * bar; the horizontal line sits at the bar's CLOSE (a real value of this
-   * chart's data — never a fabricated level). False = the timestamp falls
+   * chart's data - never a fabricated level). False = the timestamp falls
    * in a session gap or outside the loaded span: nothing moved (the caller
    * decides whether to clear — the coordinator does).
    */

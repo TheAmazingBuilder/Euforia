@@ -545,7 +545,7 @@ function WorkspaceInner() {
 
   return (
     <div className="flex flex-col gap-6" data-testid="recognition-overview">
-      {/* Upload hero — the entry point IS the product (§10), console redesign:
+      {/* Upload hero - the entry point IS the product (§10), console redesign:
           the dropzone wears viewfinder corners; modes are numbered columns. */}
       {items.length === 0 ? (
         <div className="flex flex-col gap-6">

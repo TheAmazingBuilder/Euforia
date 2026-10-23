@@ -268,7 +268,7 @@ export interface OryonSessionBand {
 }
 
 /**
- * Bands for a SET of definitions over the chart's UTC window (spec §5) —
+ * Bands for a SET of definitions over the chart's UTC window (spec §5) -
  * the chart overlay input. Intervals stay per-session (overlapping
  * sessions compose visually through alpha compositing, the restrained
  * style §5 requires); sorted by start for a stable draw order.

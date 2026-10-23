@@ -131,7 +131,7 @@ export function AcademyOverviewPanel({
               <HueChip hue="var(--cat-pa)" icon={Trophy} />
             </div>
             <p className="mt-1.5 font-mono text-xl font-semibold tabular-nums" data-testid="academy-stat-quiz">
-              {overview.progress.quizAverage !== null ? `${overview.progress.quizAverage}%` : "—"}
+              {overview.progress.quizAverage !== null ? `${overview.progress.quizAverage}%` : "-"}
             </p>
           </div>
           <div className="stat-cell stat-kpi">
@@ -142,7 +142,7 @@ export function AcademyOverviewPanel({
             <p className="mt-1.5 font-mono text-xl font-semibold tabular-nums" data-testid="academy-stat-practice">
               {overview.progress.practiceAttempts > 0
                 ? `${Math.round((overview.progress.practiceCorrect / overview.progress.practiceAttempts) * 100)}%`
-                : "—"}
+                : "-"}
             </p>
           </div>
         </div>
@@ -468,7 +468,7 @@ function ContinueLearning({
           </Button>
         </div>
       )}
-      {/* Resume reading — the unfinished lesson you last had open, when it
+      {/* Resume reading - the unfinished lesson you last had open, when it
           differs from the curriculum's next-up pointer (no duplicate rows). */}
       {data.resume && item && data.resume.lessonId !== item.lessonId ? (
         <div

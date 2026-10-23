@@ -126,7 +126,7 @@ export function Reveal({ reveal, currency, decision }: RevealProps) {
       ? coachingCopy[reveal.coachingKey as keyof typeof coachingCopy]
       : coachingCopy.loss_ab;
   const durationText =
-    trade !== null ? formatDuration(trade.entryAt, trade.exitAt ?? trade.entryAt) : "—";
+    trade !== null ? formatDuration(trade.entryAt, trade.exitAt ?? trade.entryAt) : "-";
   const animClass = (enabled: boolean) => (playing && enabled ? "animate-reveal-fade-up" : "");
 
   return (
@@ -135,9 +135,9 @@ export function Reveal({ reveal, currency, decision }: RevealProps) {
       <div className="flex flex-col items-center gap-3">
         <RevealStar animated={animationEnabled} ariaLabel={T.reveal.constellationAria} />
         <div className="flex flex-wrap items-center justify-center gap-1.5 font-mono text-xs text-muted-foreground">
-          <span className="font-semibold text-foreground">{instrument?.symbol ?? "—"}</span>
+          <span className="font-semibold text-foreground">{instrument?.symbol ?? "-"}</span>
           <span className="rounded-sm border border-border px-1.5 py-0.5 font-semibold text-foreground">
-            {trade?.direction ?? "—"}
+            {trade?.direction ?? "-"}
           </span>
           <span aria-hidden="true">·</span>
           <span>{durationText}</span>
@@ -204,7 +204,7 @@ export function Reveal({ reveal, currency, decision }: RevealProps) {
         <div className="rounded-lg border border-border bg-surface p-3">
           <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{T.reveal.rSaved}</p>
           <p className="mt-1 font-mono text-xl font-semibold tabular-nums text-profit">
-            {reveal.savedRToday !== null ? formatR(reveal.savedRToday) : "—"}
+            {reveal.savedRToday !== null ? formatR(reveal.savedRToday) : "-"}
           </p>
         </div>
       </div>

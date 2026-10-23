@@ -117,7 +117,7 @@ export function JudgmentGate({ tradeId, onGraded }: JudgmentGateProps) {
         className="flex flex-wrap items-center gap-x-2.5 gap-y-1 rounded-lg border border-border bg-surface px-3 py-2.5 font-mono text-xs text-muted-foreground"
         data-testid="gate-context"
       >
-        <span className="font-semibold text-foreground">{instrument?.symbol ?? "—"}</span>
+        <span className="font-semibold text-foreground">{instrument?.symbol ?? "-"}</span>
         <span
           className="inline-flex items-center gap-1 rounded-sm border border-border px-1.5 py-0.5 font-semibold text-foreground"
         >
@@ -126,7 +126,7 @@ export function JudgmentGate({ tradeId, onGraded }: JudgmentGateProps) {
           ) : (
             <ArrowUpRight className="size-3" aria-hidden="true" />
           )}
-          {trade?.direction ?? "—"}
+          {trade?.direction ?? "-"}
         </span>
         <span aria-hidden="true">·</span>
         <span>{strategy?.name ?? T.shared.outOfPlaybook}</span>
@@ -192,7 +192,7 @@ export function JudgmentGate({ tradeId, onGraded }: JudgmentGateProps) {
                 type="button"
                 role="radio"
                 aria-checked={selected}
-                aria-label={`${T.shared.gradeWord} ${option} — ${T.reveal.gradeTag[option]}`}
+                aria-label={`${T.shared.gradeWord} ${option} - ${T.reveal.gradeTag[option]}`}
                 onClick={() => setGrade(option)}
                 className={cn(
                   "flex flex-col items-center gap-0.5 rounded-lg border py-3 outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",

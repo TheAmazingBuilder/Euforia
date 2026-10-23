@@ -15,7 +15,7 @@ import { useDict } from "@/i18n/i18n-provider";
  * execution control exists anywhere (there is no close/modify/cancel action
  * in this file, by construction).
  *
- * Nullable provider fields render "—" (unavailable ≠ zero). Side/direction
+ * Nullable provider fields render "-" (unavailable ≠ zero). Side/direction
  * keeps its sign on the value itself, color never travels alone.
  */
 
@@ -89,13 +89,13 @@ export function ExternalPositionsTable({
           <td className="px-3 py-2 text-right font-mono tabular-nums">{position.volume}</td>
           <td className="px-3 py-2 text-right font-mono tabular-nums">{position.entryPrice}</td>
           <td className="px-3 py-2 text-right font-mono tabular-nums">
-            {position.currentPrice ?? "—"}
+            {position.currentPrice ?? "-"}
           </td>
-          <td className="px-3 py-2 text-right font-mono tabular-nums">{position.stopLoss ?? "—"}</td>
-          <td className="px-3 py-2 text-right font-mono tabular-nums">{position.takeProfit ?? "—"}</td>
+          <td className="px-3 py-2 text-right font-mono tabular-nums">{position.stopLoss ?? "-"}</td>
+          <td className="px-3 py-2 text-right font-mono tabular-nums">{position.takeProfit ?? "-"}</td>
           <td className="px-3 py-2 text-right font-mono tabular-nums">
             {position.unrealizedPnl === null ? (
-              "—"
+              "-"
             ) : (
               <span
                 className={cn(
@@ -129,8 +129,8 @@ export function ExternalOrdersTable({ orders }: { orders: BrokerOrder[] }) {
           <td className="px-3 py-2 font-mono text-xs">{order.type}</td>
           <td className="px-3 py-2 text-right font-mono tabular-nums">{order.volume}</td>
           <td className="px-3 py-2 text-right font-mono tabular-nums">{order.price}</td>
-          <td className="px-3 py-2 text-right font-mono tabular-nums">{order.stopLoss ?? "—"}</td>
-          <td className="px-3 py-2 text-right font-mono tabular-nums">{order.takeProfit ?? "—"}</td>
+          <td className="px-3 py-2 text-right font-mono tabular-nums">{order.stopLoss ?? "-"}</td>
+          <td className="px-3 py-2 text-right font-mono tabular-nums">{order.takeProfit ?? "-"}</td>
           <td className="px-3 py-2 text-right font-mono text-xs tabular-nums text-muted-foreground last:pr-0">
             {order.createdAt.slice(0, 16).replace("T", " ")}
           </td>
@@ -165,10 +165,10 @@ export function ExternalDealsTable({
           </td>
           <td className={cn("px-3 py-2 font-mono text-xs", DIRECTION_CLASSES(deal.side))}>{deal.side}</td>
           <td className="px-3 py-2 text-right font-mono tabular-nums">{deal.volume}</td>
-          <td className="px-3 py-2 text-right font-mono tabular-nums">{deal.price ?? "—"}</td>
+          <td className="px-3 py-2 text-right font-mono tabular-nums">{deal.price ?? "-"}</td>
           <td className="px-3 py-2 text-right font-mono tabular-nums">
             {deal.profit === null ? (
-              "—"
+              "-"
             ) : (
               <span className={cn(deal.profit.trim().startsWith("-") ? "text-loss" : "text-profit")}>
                 {formatSignedMoney(deal.profit, currency)}
@@ -176,10 +176,10 @@ export function ExternalDealsTable({
             )}
           </td>
           <td className="px-3 py-2 text-right font-mono tabular-nums">
-            {deal.commission === null ? "—" : formatMoney(deal.commission, currency)}
+            {deal.commission === null ? "-" : formatMoney(deal.commission, currency)}
           </td>
           <td className="px-3 py-2 text-right font-mono tabular-nums">
-            {deal.swap === null ? "—" : formatMoney(deal.swap, currency)}
+            {deal.swap === null ? "-" : formatMoney(deal.swap, currency)}
           </td>
           <td className="px-3 py-2 text-right font-mono text-xs tabular-nums text-muted-foreground last:pr-0">
             {deal.executedAt.slice(0, 16).replace("T", " ")}

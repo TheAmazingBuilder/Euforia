@@ -14,13 +14,13 @@ import {
  */
 
 const SHORTCUTS: readonly { keys: string; action: string }[] = [
-  { keys: "⌘K", action: "Command palette — search everything" },
-  { keys: "N", action: "New trade — from anywhere" },
+  { keys: "⌘K", action: "Command palette - search everything" },
+  { keys: "N", action: "New trade - from anywhere" },
   { keys: "B / S", action: "Direction Buy / Sell (while capturing, outside inputs)" },
   { keys: "← / →", action: "Direction on the segmented control" },
   { keys: "Tab", action: "Logical order: entry → exit → size" },
   { keys: "Enter", action: "Submit the capture" },
-  { keys: "Esc", action: "Close — draft saved, always" },
+  { keys: "Esc", action: "Close - draft saved, always" },
   { keys: "?", action: "This overlay" },
 ];
 

@@ -150,7 +150,7 @@ export function createDefaultLayouts(order?: readonly string[]): DashboardLayout
     {
       id: DEFAULT_LAYOUT_ID,
       name: "Default",
-      description: "The designed dashboard — every widget, full width.",
+      description: "The designed dashboard - every widget, full width.",
       schemaVersion: LAYOUT_SCHEMA_VERSION,
       widgets,
     },

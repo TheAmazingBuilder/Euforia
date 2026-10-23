@@ -22,13 +22,13 @@ export interface LiveCalcBarProps {
 export function LiveCalcBar({ rr, riskAmount, riskPct, estimatedPnl, currency }: LiveCalcBarProps) {
   const { dict } = useI18n();
   const T = dict.trades.liveCalc;
-  const rrLabel = rr !== null ? `1:${rr >= 10 ? rr.toFixed(0) : rr.toFixed(1)}` : "—";
+  const rrLabel = rr !== null ? `1:${rr >= 10 ? rr.toFixed(0) : rr.toFixed(1)}` : "-";
   const riskLabel =
     riskAmount !== null
       ? `${formatMoney(riskAmount, currency, { digits: riskPct !== null && riskPct < 1 ? 2 : 0 })}${
           riskPct !== null ? ` (${formatPercentLabel(riskPct)})` : ""
         }`
-      : "—";
+      : "-";
   const pnlLabel = estimatedPnl !== null ? formatMoney(estimatedPnl, currency, { digits: 0 }) : null;
 
   return (

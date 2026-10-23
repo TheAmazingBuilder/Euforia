@@ -531,7 +531,7 @@ export function TemplatesPanel({
                     ) : block.type === "todo" ? (
                       `☐ ${block.text}`
                     ) : block.type === "divider" ? (
-                      "—"
+                      "-"
                     ) : block.type === "table" ? (
                       TP.tablePreview
                     ) : block.text === "" ? (

@@ -33,7 +33,7 @@ function roundTo(value: number, decimals: number): number {
  * SELL: risk = stop − entry, reward = entry − target.
  * Returns null when the stop is on the wrong side of entry (risk ≤ 0) or an
  * input is unparsable. The reward may be ≤ 0 (bad setup) — that is returned
- * as a negative ratio so the form can flag it ("R:R 1:0.3 — intended?").
+ * as a negative ratio so the form can flag it ("R:R 1:0.3 - intended?").
  */
 export function computeRR(
   entry: NumericInput,

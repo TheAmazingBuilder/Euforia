@@ -102,13 +102,13 @@ export function QuarterlyReportDialog({
 
   const kpis: { label: string; value: string; loss?: boolean }[] = [
     { label: T.kpis.closedTrades, value: String(s.trades) },
-    { label: T.kpis.netPnl, value: money ? formatSignedMoney(s.netPnl, currency) : "—", loss: true },
-    { label: T.kpis.winRate, value: s.winRate === null ? "—" : formatPercent(s.winRate, 0) },
-    { label: T.kpis.profitFactor, value: s.profitFactor === null ? "—" : formatNumber(s.profitFactor, 2) },
+    { label: T.kpis.netPnl, value: money ? formatSignedMoney(s.netPnl, currency) : "-", loss: true },
+    { label: T.kpis.winRate, value: s.winRate === null ? "-" : formatPercent(s.winRate, 0) },
+    { label: T.kpis.profitFactor, value: s.profitFactor === null ? "-" : formatNumber(s.profitFactor, 2) },
     { label: T.kpis.expectancy, value: `${formatR(s.expectancyR)} ${T.perTradeSuffix}` },
-    { label: T.kpis.maxDD, value: `${formatR(s.maxDrawdownR)} · ${s.maxDrawdownPct === null ? "—" : `${formatNumber(s.maxDrawdownPct, 1)} %`}`, loss: true },
-    { label: T.kpis.sharpe, value: s.sharpe === null ? "—" : formatNumber(s.sharpe, 2) },
-    { label: T.kpis.sqn, value: s.sqn === null ? "—" : formatNumber(s.sqn, 2) },
+    { label: T.kpis.maxDD, value: `${formatR(s.maxDrawdownR)} · ${s.maxDrawdownPct === null ? "-" : `${formatNumber(s.maxDrawdownPct, 1)} %`}`, loss: true },
+    { label: T.kpis.sharpe, value: s.sharpe === null ? "-" : formatNumber(s.sharpe, 2) },
+    { label: T.kpis.sqn, value: s.sqn === null ? "-" : formatNumber(s.sqn, 2) },
   ];
 
   return (
@@ -206,14 +206,14 @@ export function QuarterlyReportDialog({
                         <td className="py-1 pr-3 font-mono">{row.key}</td>
                         <td className="py-1 pr-3 font-mono tabular-nums">{row.trades}</td>
                         <td className="py-1 pr-3 font-mono tabular-nums">
-                          {row.winRate === null ? "—" : formatPercent(row.winRate, 0)}
+                          {row.winRate === null ? "-" : formatPercent(row.winRate, 0)}
                         </td>
                         <td className={cn("py-1 pr-3 font-mono tabular-nums", Number(row.r) >= 0 ? "text-profit" : "text-loss")}>
                           {formatR(row.r)}
                         </td>
                         {money && (
                           <td className={cn("py-1 font-mono tabular-nums", Number(row.netPnl) >= 0 ? "text-profit" : "text-loss")}>
-                            {row.netPnl === null ? "—" : formatSignedMoney(row.netPnl, currency)}
+                            {row.netPnl === null ? "-" : formatSignedMoney(row.netPnl, currency)}
                           </td>
                         )}
                       </tr>
@@ -246,15 +246,15 @@ export function QuarterlyReportDialog({
                         <td className="py-1 pr-3">{row.name}</td>
                         <td className="py-1 pr-3 font-mono tabular-nums">{row.trades}</td>
                         <td className="py-1 pr-3 font-mono tabular-nums">
-                          {row.winRate === null ? "—" : formatPercent(row.winRate, 0)}
+                          {row.winRate === null ? "-" : formatPercent(row.winRate, 0)}
                         </td>
                         <td className={cn("py-1 pr-3 font-mono tabular-nums", row.expectancyR === null ? "" : Number(row.expectancyR) >= 0 ? "text-profit" : "text-loss")}>
-                          {row.expectancyR === null ? "—" : formatR(row.expectancyR)}
+                          {row.expectancyR === null ? "-" : formatR(row.expectancyR)}
                         </td>
                         <td className="py-1 pr-3 font-mono tabular-nums text-loss">{formatR(row.maxDrawdownR)}</td>
                         {money && (
                           <td className={cn("py-1 font-mono tabular-nums", row.netPnl === null ? "" : Number(row.netPnl) >= 0 ? "text-profit" : "text-loss")}>
-                            {row.netPnl === null ? "—" : formatSignedMoney(row.netPnl, currency)}
+                            {row.netPnl === null ? "-" : formatSignedMoney(row.netPnl, currency)}
                           </td>
                         )}
                       </tr>
@@ -273,10 +273,10 @@ export function QuarterlyReportDialog({
                 <ul className="space-y-1">
                   {(
                     [
-                      [T.riskRows.riskDeviation, suite.risk.riskDeviationPct === null ? "—" : `${formatNumber(suite.risk.riskDeviationPct, 1)} %`],
-                      [T.riskRows.maxDailyRisk, money && suite.risk.maxDailyRisk !== null ? formatSignedMoney(suite.risk.maxDailyRisk, currency) : "—"],
+                      [T.riskRows.riskDeviation, suite.risk.riskDeviationPct === null ? "-" : `${formatNumber(suite.risk.riskDeviationPct, 1)} %`],
+                      [T.riskRows.maxDailyRisk, money && suite.risk.maxDailyRisk !== null ? formatSignedMoney(suite.risk.maxDailyRisk, currency) : "-"],
                       [T.riskRows.maxConcurrent, String(suite.risk.maxConcurrentPositions)],
-                      [T.riskRows.recoveryFactor, s.recoveryFactor === null ? "—" : formatNumber(s.recoveryFactor, 2)],
+                      [T.riskRows.recoveryFactor, s.recoveryFactor === null ? "-" : formatNumber(s.recoveryFactor, 2)],
                     ] as const
                   ).map(([label, value]) => (
                     <li key={label} className="flex items-center justify-between border-b border-dashed pb-1">

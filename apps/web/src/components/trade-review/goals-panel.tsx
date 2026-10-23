@@ -73,7 +73,7 @@ export function GoalsPanel() {
     if (!window.confirm(`Delete "${row.goal.title}"? Progress history leaves with it.`)) return;
     deleteGoal.mutate(row.goal.id, {
       onSuccess: () => toast.success("Goal deleted", { description: row.goal.title }),
-      onError: (error) => toast.error("Could not delete the goal", { description: apiErrorMessage(error, "Unexpected error — try again.") }),
+      onError: (error) => toast.error("Could not delete the goal", { description: apiErrorMessage(error, "Unexpected error - try again.") }),
     });
   };
 
@@ -83,7 +83,7 @@ export function GoalsPanel() {
         <div>
           <h2 className="font-heading text-lg font-semibold">Goals vs. real behavior</h2>
           <p className="text-sm text-muted-foreground">
-            Targets are yours; the actual numbers are computed from your closed trades and daily stats — you cannot
+            Targets are yours; the actual numbers are computed from your closed trades and daily stats - you cannot
             cheat the progress bar.
           </p>
           <p
@@ -91,7 +91,7 @@ export function GoalsPanel() {
             data-testid="goals-alerts-hint"
           >
             <BellRing className="size-3 text-accent" aria-hidden="true" />
-            A goal that slips to “At risk” raises an alert in your notification inbox — tune it in Settings →
+            A goal that slips to “At risk” raises an alert in your notification inbox - tune it in Settings →
             Notifications → Goals.
           </p>
         </div>
@@ -114,7 +114,7 @@ export function GoalsPanel() {
             <div>
               <p className="font-medium">No goals yet</p>
               <p className="mx-auto max-w-sm text-sm text-muted-foreground">
-                Set your first target — win rate, R earned, discipline, trade limits — and track it against what you
+                Set your first target - win rate, R earned, discipline, trade limits - and track it against what you
                 actually do.
               </p>
             </div>
@@ -168,7 +168,7 @@ export function GoalsPanel() {
                 <CardContent className="space-y-3">
                   <div className="flex items-baseline justify-between gap-2">
                     <p className="font-mono text-2xl font-bold tabular-nums" data-testid="goal-actual">
-                      {progress.actual === null ? "—" : formatGoalUnit(progress.actual, progress.unit)}
+                      {progress.actual === null ? "-" : formatGoalUnit(progress.actual, progress.unit)}
                     </p>
                     <p className="font-mono text-xs text-muted-foreground">
                       target {formatGoalUnit(goal.target, progress.unit)}

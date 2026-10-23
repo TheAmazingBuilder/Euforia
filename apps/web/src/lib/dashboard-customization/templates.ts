@@ -25,7 +25,7 @@ export const DASHBOARD_TEMPLATES: readonly DashboardTemplate[] = [
   {
     id: "general_trading",
     name: "General trading overview",
-    description: "The full designed dashboard — performance, risk and coaching in one place.",
+    description: "The full designed dashboard - performance, risk and coaching in one place.",
     widgets: [
       { type: "PNL_BAND" },
       { type: "EQUITY_ROW" },
@@ -39,7 +39,7 @@ export const DASHBOARD_TEMPLATES: readonly DashboardTemplate[] = [
   {
     id: "performance_focus",
     name: "Performance focus",
-    description: "Charts and comparisons first — for traders tuning execution quality.",
+    description: "Charts and comparisons first - for traders tuning execution quality.",
     widgets: [
       { type: "PNL_BAND" },
       { type: "WEEK_COMPARE", w: 6 },
@@ -51,7 +51,7 @@ export const DASHBOARD_TEMPLATES: readonly DashboardTemplate[] = [
   {
     id: "risk_management",
     name: "Risk management",
-    description: "Equity, live risk and alerts up top — discipline over dopamine.",
+    description: "Equity, live risk and alerts up top - discipline over dopamine.",
     widgets: [
       { type: "EQUITY_ROW" },
       { type: "ALERTS", w: 6 },
@@ -62,7 +62,7 @@ export const DASHBOARD_TEMPLATES: readonly DashboardTemplate[] = [
   {
     id: "minimal",
     name: "Minimal",
-    description: "Just the essentials — P&L and best/worst, nothing else.",
+    description: "Just the essentials - P&L and best/worst, nothing else.",
     widgets: [{ type: "PNL_BAND" }, { type: "BEST_WORST" }],
   },
 ];

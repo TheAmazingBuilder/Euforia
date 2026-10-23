@@ -269,7 +269,7 @@ function DayPanel({
         >
           <Target className={cn("mt-0.5 size-3.5 shrink-0", limitBreached ? "text-loss" : "text-accent")} aria-hidden="true" />
           <div className="min-w-0 flex-1 text-xs">
-            <p className="font-semibold text-foreground">Objectif du jour — stay inside the loss limit</p>
+            <p className="font-semibold text-foreground">Objectif du jour - stay inside the loss limit</p>
             <p className="mt-0.5 leading-relaxed text-muted-foreground">
               Max loss: <span className="font-mono tabular-nums">{dailyLossLimitPct} %</span> of balance
               {lossLimitMoney !== null && (
@@ -277,7 +277,7 @@ function DayPanel({
                   {" "}≈ <span className="font-mono tabular-nums text-loss">−{formatNumber(lossLimitMoney, 0)} {currency}</span>
                 </>
               )}
-              . {limitBreached ? "Breached today — stop trading, journal the day." : "Today is inside the guard line."}
+              . {limitBreached ? "Breached today - stop trading, journal the day." : "Today is inside the guard line."}
             </p>
           </div>
           {limitBreached ? <XCircle className="size-4 shrink-0 text-loss" aria-hidden="true" /> : <CheckCircle2 className="size-4 shrink-0 text-profit" aria-hidden="true" />}
@@ -288,7 +288,7 @@ function DayPanel({
           <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Weekly goals in progress</p>
           {weeklyGoals.length === 0 ? (
             <p className="text-xs text-muted-foreground">
-              No weekly goal set — <Link href="/goals" className="text-accent hover:underline">create one in Goals</Link>.
+              No weekly goal set - <Link href="/goals" className="text-accent hover:underline">create one in Goals</Link>.
             </p>
           ) : (
             weeklyGoals.slice(0, 3).map(({ goal, progress }) => (
@@ -304,7 +304,7 @@ function DayPanel({
                   />
                 </div>
                 <span className="w-10 shrink-0 text-right font-mono text-[10px] tabular-nums text-muted-foreground">
-                  {progress.progressPct === null ? "—" : `${Math.round(progress.progressPct)}%`}
+                  {progress.progressPct === null ? "-" : `${Math.round(progress.progressPct)}%`}
                 </span>
               </div>
             ))
@@ -406,7 +406,7 @@ function SemesterView({
               <div className="mt-2.5">
                 {monthlyGoal === null ? (
                   <p className="text-[11px] text-muted-foreground">
-                    No monthly target — <Link href="/goals" className="text-accent hover:underline">set one in Goals</Link>
+                    No monthly target - <Link href="/goals" className="text-accent hover:underline">set one in Goals</Link>
                   </p>
                 ) : (
                   <>
@@ -421,7 +421,7 @@ function SemesterView({
                               : `${target} ${monthlyGoal.goal.metric.toLowerCase().replaceAll("_", " ")}`}
                         </span>
                       </span>
-                      <span className="font-mono tabular-nums">{targetPct === null ? "—" : `${Math.round(targetPct)}%`}</span>
+                      <span className="font-mono tabular-nums">{targetPct === null ? "-" : `${Math.round(targetPct)}%`}</span>
                     </div>
                     <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-muted">
                       <span
@@ -447,7 +447,7 @@ function SemesterView({
         })}
       </div>
       <p className="text-[11px] text-muted-foreground">
-        Days marked off are excluded from every figure above — planned rest is not trading data.
+        Days marked off are excluded from every figure above - planned rest is not trading data.
         {monthShortFormatter && " "}Click a month to open it in the month view.
       </p>
     </div>
@@ -513,7 +513,7 @@ export function TradingCalendarView() {
         <div>
           <h1 className="font-heading text-2xl font-extrabold tracking-tight text-foreground">Trading calendar</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            P&amp;L, discipline and blockers on every day — planned rest stays out of the stats.
+            P&amp;L, discipline and blockers on every day - planned rest stays out of the stats.
           </p>
         </div>
         <div className="ml-auto flex flex-wrap items-center gap-2">
@@ -638,7 +638,7 @@ export function TradingCalendarView() {
       <p className="flex items-center gap-1.5 text-[11px] leading-relaxed text-muted-foreground">
         <CalendarDays className="size-3.5" aria-hidden="true" />
         Every figure comes from the server (daily stats + the eco feed). Marking a day off immediately
-        removes it from the range aggregates — the audit trail lives in the block note.
+        removes it from the range aggregates - the audit trail lives in the block note.
       </p>
     </div>
   );

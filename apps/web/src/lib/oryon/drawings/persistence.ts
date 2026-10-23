@@ -84,7 +84,7 @@ export function loadDrawingsForSymbol(symbol: string): OryonDrawing[] {
   const renderable = file.data.drawings.filter((drawing) => {
     if (RENDERABLE_DRAWING_TYPES.has(drawing.type)) return true;
     console.warn(
-      `[oryon] drawings for ${symbol}: type "${drawing.type}" has no renderer — dropped.`,
+      `[oryon] drawings for ${symbol}: type "${drawing.type}" has no renderer - dropped.`,
     );
     return false;
   });
@@ -123,7 +123,7 @@ export function saveDrawingsForSymbol(
       // that would not survive its own load is a bug caught here.
       const check = oryonDrawingsFileSchema.safeParse(file);
       if (!check.success) {
-        console.warn("[oryon] drawings save skipped — payload invalid.");
+        console.warn("[oryon] drawings save skipped - payload invalid.");
         return;
       }
       window.localStorage.setItem(storageKey(symbol), JSON.stringify(check.data));

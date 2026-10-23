@@ -35,7 +35,7 @@ export function nofyRelativeTime(
   iso: string | null | undefined,
   time: Dictionary["nofy"]["time"],
 ): string {
-  if (!iso) return "—";
+  if (!iso) return "-";
   const then = new Date(iso).getTime();
   const diff = Date.now() - then;
   const ago = (value: number, unit: string): string =>

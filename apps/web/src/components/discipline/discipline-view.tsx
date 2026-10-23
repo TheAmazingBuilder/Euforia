@@ -138,7 +138,7 @@ export function DisciplineView() {
                     <ShieldCheck className="size-8 text-muted-foreground" aria-hidden="true" />
                     <h3 className="mt-3 font-heading text-base font-semibold">No rules yet</h3>
                     <p className="mt-2 max-w-xs text-sm leading-relaxed text-muted-foreground">
-                      Add your first guardrail — max trades per day, loss limits, cooldowns. The
+                      Add your first guardrail - max trades per day, loss limits, cooldowns. The
                       engine enforces them on every capture.
                     </p>
                     <Button variant="outline" className="mt-5" onClick={() => setFormOpen(true)}>
@@ -171,7 +171,7 @@ export function DisciplineView() {
                   Mistake Ledger
                 </h2>
                 <p className="text-xs text-muted-foreground">
-                  Frequency and R cost per mistake — window starting {windowStart !== "" ? formatDateKeyShort(windowStart) : "—"}.
+                  Frequency and R cost per mistake - window starting {windowStart !== "" ? formatDateKeyShort(windowStart) : "-"}.
                 </p>
               </header>
               <div className="p-4">
@@ -195,7 +195,7 @@ export function DisciplineView() {
                   Violation log
                 </h2>
                 <p className="text-xs text-muted-foreground">
-                  Every breach with its frozen context —{" "}
+                  Every breach with its frozen context -{" "}
                   <span className="font-mono tabular-nums">
                     {violationsQuery.data?.windowCount ?? 0}
                   </span>{" "}

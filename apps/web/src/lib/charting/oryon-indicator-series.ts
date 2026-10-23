@@ -193,7 +193,7 @@ export class OryonIndicatorSeriesManager {
   }
 
   /**
-   * Tick-path update (called from the engine's applyTick — ≤2 Hz): recompute
+   * Tick-path update (called from the engine's applyTick - ≤2 Hz): recompute
    * (pure, cheap) then push ONLY the last point per output through
    * series.update — no setData, no flicker, no React render.
    */
@@ -254,7 +254,7 @@ export class OryonIndicatorSeriesManager {
 
   /**
    * Indicator readings AT one bar-open time, unix seconds (Phase 5 crosshair
-   * §5). Exact-time lookup on the calculation's own `times` — the crosshair
+   * §5). Exact-time lookup on the calculation's own `times` - the crosshair
    * always reports a loaded bar's open time, so an exact match is the honest
    * contract; anything else (uncomputed bar, warm-up nulls) yields NO value
    * for that output rather than an interpolation. Never throws.

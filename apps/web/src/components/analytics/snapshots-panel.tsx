@@ -271,7 +271,7 @@ export function SnapshotsPanel({ suite, filters }: { suite: Suite; filters: Anal
               aria-label={`${T.compare} A`}
               data-testid="compare-select-a"
             >
-              <option value="">A — {T.compareSelect}</option>
+              <option value="">A - {T.compareSelect}</option>
               {snapshots.map((snapshot) => (
                 <option key={snapshot.id} value={snapshot.id}>
                   {snapshot.name} ({snapshot.capturedAt.slice(0, 10)})
@@ -285,7 +285,7 @@ export function SnapshotsPanel({ suite, filters }: { suite: Suite; filters: Anal
               aria-label={`${T.compare} B`}
               data-testid="compare-select-b"
             >
-              <option value="">B — {T.compareSelect}</option>
+              <option value="">B - {T.compareSelect}</option>
               {snapshots.map((snapshot) => (
                 <option key={snapshot.id} value={snapshot.id}>
                   {snapshot.name} ({snapshot.capturedAt.slice(0, 10)})
@@ -472,7 +472,7 @@ export function SnapshotsPanel({ suite, filters }: { suite: Suite; filters: Anal
                         <td className="py-1.5">{T.metricNames[metric] ?? metric}</td>
                         <td className="py-1.5 text-right font-mono tabular-nums">
                           {value === null
-                            ? "—"
+                            ? "-"
                             : metric === "trades"
                               ? String(value)
                               : metric === "netPnl" && detail.currency !== null

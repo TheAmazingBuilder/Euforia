@@ -31,7 +31,7 @@ import { recognitionFieldLabel, type RecognitionDict } from "@/i18n/dictionaries
  * (PROMPT 3 §20/§21).
  *
  * States (§19/§64): FOUND (editable value + confidence), MISSING ("not
- * detected" — still editable, the user can enter the value manually),
+ * detected" - still editable, the user can enter the value manually),
  * UNCERTAIN (AMBIGUOUS/LOW_CONFIDENCE — ochre "please verify" ink + the
  * engine's per-field warnings). Display is exact: financial values keep
  * their decimals (§47), extracted timestamps render in the user's locale

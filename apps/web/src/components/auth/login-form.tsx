@@ -364,7 +364,7 @@ export function LoginForm() {
         </Link>
       </footer>
 
-      {/* Mocked-environment affordance — seeded demo credentials (§49: no fake
+      {/* Mocked-environment affordance - seeded demo credentials (§49: no fake
           data presented as real; this panel is explicit about being a demo). */}
       {mocked && step === "credentials" ? (
         <div

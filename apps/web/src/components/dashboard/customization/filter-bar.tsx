@@ -242,7 +242,7 @@ export function DashboardFilterBar({
                       {viewError === "NAME_TAKEN"
                         ? "A view with this name already exists."
                         : viewError === "LIMIT_REACHED"
-                          ? "The saved-view limit (30) is reached — delete one first."
+                          ? "The saved-view limit (30) is reached - delete one first."
                           : viewError === "INVALID_NAME"
                             ? "Names must be 1–60 characters."
                             : "This view no longer exists."}
@@ -335,10 +335,10 @@ export function DashboardFilterBar({
               type="button"
               className="rounded-md border border-accent/50 bg-accent/10 px-2 py-0.5 text-[11px] text-accent hover:bg-accent/20"
               data-testid="dashboard-view-diverged"
-              title="The active filters differ from this saved view. Click to restore the view's filters — or save the current combination as a new view."
+              title="The active filters differ from this saved view. Click to restore the view's filters - or save the current combination as a new view."
               onClick={() => onApplyView(activeView.id)}
             >
-              {activeView.name} · modified — apply again
+              {activeView.name} · modified - apply again
             </button>
           )}
 
@@ -497,7 +497,7 @@ export function DashboardFilterBar({
               </label>
               {!filters.customFrom || !filters.customTo ? (
                 <span className="text-[11px] text-muted-foreground" role="status">
-                  Pick both bounds — until then the period stays unfiltered.
+                  Pick both bounds - until then the period stays unfiltered.
                 </span>
               ) : null}
             </div>

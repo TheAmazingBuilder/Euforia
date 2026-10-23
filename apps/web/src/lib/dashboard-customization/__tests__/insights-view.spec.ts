@@ -72,7 +72,7 @@ describe("breakdownModelOf", () => {
     expect(direction.rows.map((row) => row.label)).toEqual(["Long (BUY)", "Short (SELL)"]);
 
     const weekday = breakdownModelOf(suite, "WEEKDAY");
-    expect(weekday.rows[0]!.profitFactor).toBeNull(); // bucket rows have no PF — never fabricated
+    expect(weekday.rows[0]!.profitFactor).toBeNull(); // bucket rows have no PF - never fabricated
     expect(weekday.rows[0]!.avgR).toBe(0.3);
 
     const duration = breakdownModelOf(suite, "DURATION");
@@ -111,7 +111,7 @@ describe("breakdownModelOf", () => {
       "INSTRUMENT",
     );
     expect(multi.moneyNote).toContain("Mixed-currency");
-    expect(multi.rows[0]!.netPnl).toBe(300); // server already nulled money — projection keeps the payload's truth
+    expect(multi.rows[0]!.netPnl).toBe(300); // server already nulled money - projection keeps the payload's truth
   });
 });
 
@@ -133,7 +133,7 @@ describe("insight presentation", () => {
     expect(insightMetricText({ label: "x", kind: "MONEY", value: 1234.5 }, "USD")).toContain("1");
     expect(insightMetricText({ label: "x", kind: "PERCENT", value: 0.55 }, null)).toContain("55");
     expect(insightMetricText({ label: "x", kind: "COUNT", value: 7 }, null)).toBe("7");
-    expect(insightMetricText({ label: "x", kind: "MONEY", value: null }, "USD")).toBe("—");
+    expect(insightMetricText({ label: "x", kind: "MONEY", value: null }, "USD")).toBe("-");
   });
 
   it("maps reliability labels to neutral copy (never statistical confidence)", () => {

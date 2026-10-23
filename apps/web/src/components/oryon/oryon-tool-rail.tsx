@@ -160,7 +160,7 @@ export function OryonToolRail({
     const locked = activeStore.getSnapshot().drawings.filter((d) => d.locked).length;
     activeStore.clearAll();
     setConfirmClear(false);
-    toast.success(`${S.clearAllHint} — ${count}`, {
+    toast.success(`${S.clearAllHint} - ${count}`, {
       testId: "oryon-drawings-clear-toast",
     });
     if (locked > 0) {
@@ -174,7 +174,7 @@ export function OryonToolRail({
       data-testid="oryon-tool-rail"
       className="group/rail relative hidden w-11 shrink-0 flex-col border-r border-border bg-surface md:flex"
     >
-      {/* Scroll body — scrollbar deliberately hidden; the hover arrows
+      {/* Scroll body - scrollbar deliberately hidden; the hover arrows
           below are the ONLY navigation chrome (TradingView parity). */}
       <div
         ref={scrollRef}
@@ -237,7 +237,7 @@ export function OryonToolRail({
                 onClick={onClearAll}
                 className="rounded-sm bg-loss/15 px-1 py-0.5 text-[9px] font-semibold leading-none text-loss hover:bg-loss/25"
               >
-                {dict.oryon.drawings.deleteAllConfirm.split("—")[0]?.trim() ?? "Confirm"}
+                {dict.oryon.drawings.deleteAllConfirm.split("-")[0]?.trim() ?? "Confirm"}
               </button>
               <button
                 type="button"
@@ -259,7 +259,7 @@ export function OryonToolRail({
         </div>
       </div>
 
-      {/* Hover navigation arrows — only the direction that can actually
+      {/* Hover navigation arrows - only the direction that can actually
           scroll, only while the pointer is over the rail. */}
       <RailNavArrow
         direction="up"

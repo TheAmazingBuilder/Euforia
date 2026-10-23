@@ -199,7 +199,7 @@ function RowButton({
 
 /** Compact local time — the established app convention (formatOpenedAt). */
 function formatAlertTime(ts: number): string {
-  if (!Number.isFinite(ts)) return "—";
+  if (!Number.isFinite(ts)) return "-";
   return new Intl.DateTimeFormat(undefined, {
     month: "short",
     day: "2-digit",

@@ -153,7 +153,7 @@ export function RecognitionHistory({
           </Button>
         ))}
         <span className="mx-1 h-5 w-px bg-border" aria-hidden="true" />
-        {/* V2 §28 — "by collection" filter (members of the selected
+        {/* V2 §28 - "by collection" filter (members of the selected
             collection, over the loaded pages). */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -254,7 +254,7 @@ export function RecognitionHistory({
                     ) : null}
                   </td>
                   <td className="px-3 py-2 font-mono text-sm tabular-nums">
-                    {item.status === "FAILED" ? "—" : `${recognitionConfidence(item.fields) ?? 0}%`}
+                    {item.status === "FAILED" ? "-" : `${recognitionConfidence(item.fields) ?? 0}%`}
                   </td>
                   <td className="px-3 py-2 text-sm text-muted-foreground">{formatRelative(item.createdAt)}</td>
                   <td className="px-3 py-2">
@@ -335,7 +335,7 @@ export function RecognitionHistory({
                     <span className="font-mono text-[11px] tabular-nums text-muted-foreground">
                       {modeStampLabel(item.extractionProfile, dict)}
                       {" · "}
-                      {item.status === "FAILED" ? "—" : `${recognitionConfidence(item.fields) ?? 0}%`}
+                      {item.status === "FAILED" ? "-" : `${recognitionConfidence(item.fields) ?? 0}%`}
                       {" · "}
                       {formatRelative(item.createdAt)}
                     </span>
@@ -421,7 +421,7 @@ export function RecognitionHistory({
         </DialogContent>
       </Dialog>
 
-      {/* V2 §28 — the collections surface (panel + its dialogs), sibling of
+      {/* V2 §28 - the collections surface (panel + its dialogs), sibling of
           the ledger: list, expand, create, delete, per-member open/remove. */}
       <CollectionsPanel dict={dict} items={items} onOpen={onOpen} />
     </div>

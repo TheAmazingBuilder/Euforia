@@ -567,7 +567,7 @@ function recommendations(): AcademyRecommendation[] {
     picks.push({
       courseId: course.id,
       title: course.title,
-      reason: `In progress — ${card.completedLessons}/${card.lessonCount} lessons done.`,
+      reason: `In progress - ${card.completedLessons}/${card.lessonCount} lessons done.`,
       categoryId: course.categoryId,
     });
   }
@@ -579,7 +579,7 @@ function recommendations(): AcademyRecommendation[] {
       picks.push({
         courseId: next.course.id,
         title: next.course.title,
-        reason: "Foundation track — recommended next for your level.",
+        reason: "Foundation track - recommended next for your level.",
         categoryId,
       });
     }
@@ -590,7 +590,7 @@ function recommendations(): AcademyRecommendation[] {
     picks.push({
       courseId: advanced.course.id,
       title: advanced.course.title,
-      reason: "Advanced track — when the foundations hold.",
+      reason: "Advanced track - when the foundations hold.",
       categoryId: advanced.course.categoryId,
     });
   }
@@ -906,8 +906,8 @@ export function srDrill(): AcademySrDrill {
   pushCandle(price, c, Math.random() * 0.4, Math.random() * 0.4);
 
   const options = shuffle([
-    { id: "support", label: "Support — buyers defended the level, price bounced" },
-    { id: "resistance", label: "Resistance — sellers capped the level, price turned down" },
+    { id: "support", label: "Support - buyers defended the level, price bounced" },
+    { id: "resistance", label: "Resistance - sellers capped the level, price turned down" },
   ]);
   const answerId = support ? "support" : "resistance";
   return {
@@ -918,8 +918,8 @@ export function srDrill(): AcademySrDrill {
     options,
     answer: options.findIndex((option) => option.id === answerId),
     explanation: support
-      ? "Price descended into the level, probed below with wicks, and closed back above before bouncing — the footprint of buyers defending support. A level is a zone of interest, never a guarantee: the reaction is the evidence, and invalidation sits below the retest low."
-      : "Price rallied into the level, probed above with wicks, and closed back below before turning down — the footprint of sellers capping resistance. A level is a zone of interest, never a guarantee: the reaction is the evidence, and invalidation sits above the retest high.",
+      ? "Price descended into the level, probed below with wicks, and closed back above before bouncing - the footprint of buyers defending support. A level is a zone of interest, never a guarantee: the reaction is the evidence, and invalidation sits below the retest low."
+      : "Price rallied into the level, probed above with wicks, and closed back below before turning down - the footprint of sellers capping resistance. A level is a zone of interest, never a guarantee: the reaction is the evidence, and invalidation sits above the retest high.",
   };
 }
 
@@ -945,7 +945,7 @@ export function positionDrill(): AcademyPositionDrill {
     unit: "units",
     answer,
     tolerance: 0.03,
-    explanation: `Risk budget = $${accountBalance.toLocaleString("en-US")} × ${riskPercent}% = $${riskBudget.toLocaleString("en-US", { maximumFractionDigits: 2 })}. Stop distance = ${entry} − ${stop} = ${stopDistance}. Size = budget ÷ distance = ${riskBudget.toLocaleString("en-US", { maximumFractionDigits: 2 })} ÷ ${stopDistance} = ${answer} units. Confidence never sizes a position — the stop distance and the account rule do.`,
+    explanation: `Risk budget = $${accountBalance.toLocaleString("en-US")} × ${riskPercent}% = $${riskBudget.toLocaleString("en-US", { maximumFractionDigits: 2 })}. Stop distance = ${entry} − ${stop} = ${stopDistance}. Size = budget ÷ distance = ${riskBudget.toLocaleString("en-US", { maximumFractionDigits: 2 })} ÷ ${stopDistance} = ${answer} units. Confidence never sizes a position - the stop distance and the account rule do.`,
   };
 }
 
@@ -1007,11 +1007,11 @@ export function zoneDrill(): AcademyZoneDrill {
     candles,
     zones,
     context: "Daily chart, trending leg followed by a pullback. Bands mark prior reaction areas.",
-    prompt: "Which band is the demand zone — the area where buyers previously stepped in with displacement?",
+    prompt: "Which band is the demand zone - the area where buyers previously stepped in with displacement?",
     options,
     answer: demandTag === "A" ? 0 : 1,
     explanation:
-      "Demand is where aggressive buying originated: the strong rally away from the lower band is displacement — the footprint of unfilled interest. Supply sits where the rally stalled and rolled over. Price returning toward a demand zone is where buyers may defend again — potential, never a promise.",
+      "Demand is where aggressive buying originated: the strong rally away from the lower band is displacement - the footprint of unfilled interest. Supply sits where the rally stalled and rolled over. Price returning toward a demand zone is where buyers may defend again - potential, never a promise.",
   };
 }
 
@@ -1052,7 +1052,7 @@ function buildFlashcardDeck(): DeckCard[] {
         deck.push({
           id: `fc-take-${lesson.id}-${index}`,
           kind: "TAKEAWAY",
-          front: `${lesson.title} — key takeaway`,
+          front: `${lesson.title} - key takeaway`,
           back: item,
           source: lesson.title,
           categoryId: course.categoryId,
@@ -1291,7 +1291,7 @@ export function academySuggestions(): AcademySuggestionsResponse {
     rules.push({
       courseId: "crs-trademgmt",
       weight: givenBack,
-      reason: `${givenBack} of your closed trades traveled +2R but finished below +1R — managing winners is the gap the Trade Management track closes.`,
+      reason: `${givenBack} of your closed trades traveled +2R but finished below +1R - managing winners is the gap the Trade Management track closes.`,
     });
   }
 
@@ -1301,7 +1301,7 @@ export function academySuggestions(): AcademySuggestionsResponse {
     rules.push({
       courseId: "crs-risk-fundamentals",
       weight: fullLosses,
-      reason: `${fullLosses} closed trades hit −1R or worse — worth revisiting stop placement and position sizing in Risk Management.`,
+      reason: `${fullLosses} closed trades hit −1R or worse - worth revisiting stop placement and position sizing in Risk Management.`,
     });
   }
 
@@ -1313,7 +1313,7 @@ export function academySuggestions(): AcademySuggestionsResponse {
     rules.push({
       courseId: "crs-psychology",
       weight: emotional,
-      reason: `${emotional} trades carry an emotional exit tag — Trading Psychology covers the routine that makes discipline cheap.`,
+      reason: `${emotional} trades carry an emotional exit tag - Trading Psychology covers the routine that makes discipline cheap.`,
     });
   }
 
@@ -1323,7 +1323,7 @@ export function academySuggestions(): AcademySuggestionsResponse {
     rules.push({
       courseId: "crs-strategies-core",
       weight: noStrategy,
-      reason: `${noStrategy} trades sat outside your playbook — the 13-field strategy template turns loose setups into testable systems.`,
+      reason: `${noStrategy} trades sat outside your playbook - the 13-field strategy template turns loose setups into testable systems.`,
     });
   }
 
@@ -1333,7 +1333,7 @@ export function academySuggestions(): AcademySuggestionsResponse {
     rules.push({
       courseId: "crs-advanced-execution",
       weight: planDrift,
-      reason: `${planDrift} trades planned ≥2R but closed red — Advanced Execution covers the entry-to-exit gap.`,
+      reason: `${planDrift} trades planned ≥2R but closed red - Advanced Execution covers the entry-to-exit gap.`,
     });
   }
 

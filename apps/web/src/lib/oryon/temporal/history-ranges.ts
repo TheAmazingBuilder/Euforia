@@ -8,7 +8,7 @@ import type { SyncRange } from "@/lib/oryon/sync/alignment";
  * HISTORY is visible — they never touch the bar timeframe (the interval).
  *
  * Math discipline: durations are computed on UTC calendar math over the
- * LAST loaded bar's open time (candle opens are UTC epochs — display-time
+ * LAST loaded bar's open time (candle opens are UTC epochs - display-time
  * zones never move a range). The result is clamped to the actually loaded
  * span: a preset wider than the loaded history resolves to the full span
  * (honest — the chart cannot show data it does not have).
@@ -86,7 +86,7 @@ export function historyRangeSpan(
 
 /**
  * `dateMs` (any instant of the picked day) → visible range STARTING at that
- * day's UTC midnight, ending at the last bar — the calendar jump. Clamped
+ * day's UTC midnight, ending at the last bar - the calendar jump. Clamped
  * to the loaded span exactly like the presets.
  */
 export function dateStartRange(dateMs: number, span: OryonDataSpan): SyncRange | null {

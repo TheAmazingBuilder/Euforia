@@ -391,7 +391,7 @@ export function DailyPnlCard({
     <Card className="bg-surface" data-testid="daily-pnl-card" data-range={range}>
       <PnlCardHeader
         title="Daily P&L"
-        description={`Result per trading day — last ${range} days`}
+        description={`Result per trading day - last ${range} days`}
         range={range}
         onRangeChange={setRange}
       />

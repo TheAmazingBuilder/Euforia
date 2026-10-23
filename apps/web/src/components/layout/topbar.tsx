@@ -89,7 +89,7 @@ export function Topbar({ onMenuClick }: TopbarProps) {
         <Menu className="size-5" aria-hidden="true" />
       </Button>
 
-      {/* Desktop sidebar toggle — the collapse icon lives in the header
+      {/* Desktop sidebar toggle - the collapse icon lives in the header
           (reference: panel glyph before the breadcrumb, separated by a
           hairline). Visible affordance only on lg+, where the rail exists. */}
       <Button

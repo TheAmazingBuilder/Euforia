@@ -14,7 +14,7 @@ import type { SuiteStatus } from "@/lib/dashboard-customization/insights-view";
  * Loss-streak analysis widget (Phase 05 §9E) — current and historical
  * loss-streak information straight from the suite's streakProfile section.
  * The breakeven rule (breakeven neither extends nor breaks a run) is the
- * engine's documented convention and travels with the payload — the widget
+ * engine's documented convention and travels with the payload - the widget
  * renders it verbatim so the definition is always visible next to the data.
  */
 
@@ -71,7 +71,7 @@ export function LossStreaksWidget({
               <div className="rounded-lg border border-border bg-surface-raised p-2.5 text-center">
                 <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Average</p>
                 <p className="font-mono text-xl font-semibold tabular-nums">
-                  {profile.averageLossStreak === null ? "—" : formatNumber(profile.averageLossStreak, 1)}
+                  {profile.averageLossStreak === null ? "-" : formatNumber(profile.averageLossStreak, 1)}
                 </p>
               </div>
             </div>
@@ -118,13 +118,13 @@ export function LossStreaksWidget({
                   <span className="text-sm">
                     <span className="mr-1.5 text-[11px] uppercase tracking-wide text-muted-foreground">Win rate</span>
                     <span className="font-mono font-medium tabular-nums">
-                      {profile.afterStreak.winRate === null ? "—" : formatPercent(profile.afterStreak.winRate, 1)}
+                      {profile.afterStreak.winRate === null ? "-" : formatPercent(profile.afterStreak.winRate, 1)}
                     </span>
                   </span>
                   <span className="text-sm">
                     <span className="mr-1.5 text-[11px] uppercase tracking-wide text-muted-foreground">Avg R</span>
                     <span className="font-mono font-medium tabular-nums">
-                      {profile.afterStreak.avgR === null ? "—" : formatR(profile.afterStreak.avgR)}
+                      {profile.afterStreak.avgR === null ? "-" : formatR(profile.afterStreak.avgR)}
                     </span>
                   </span>
                 </div>

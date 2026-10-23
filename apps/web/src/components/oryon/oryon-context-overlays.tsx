@@ -154,7 +154,7 @@ export function OryonContextOverlaysBridge({
  * scheduled inside the clicked bar's bucket (multiple releases at the
  * same slot stack in one card — no overlapping labels), and shows only
  * what the source actually provides. Missing actual/forecast/previous
- * values render as honest "—" placeholders, never zeros (§6.1).
+ * values render as honest "-" placeholders, never zeros (§6.1).
  */
 export function OryonEventPopover({
   engineRef,
@@ -298,7 +298,7 @@ export function OryonEventPopover({
                     <div key={label} className="rounded-sm bg-surface-raised px-1.5 py-1">
                       <dt className="text-[9px] uppercase tracking-wide text-muted-foreground">{label}</dt>
                       <dd className="tabular-nums text-foreground" data-testid={`oryon-event-${label.toLowerCase()}`}>
-                        {value ?? "—"}
+                        {value ?? "-"}
                       </dd>
                     </div>
                   ))}

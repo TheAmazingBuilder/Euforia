@@ -102,13 +102,13 @@ export function loadUiPrefs(): OryonUiPrefs {
   try {
     parsed = JSON.parse(raw);
   } catch {
-    console.warn("[oryon] ui prefs: corrupt JSON dropped — defaults in use.");
+    console.warn("[oryon] ui prefs: corrupt JSON dropped - defaults in use.");
     return { ...ORYON_UI_PREFS_DEFAULT };
   }
 
   const envelope = rawEnvelopeSchema.safeParse(parsed);
   if (!envelope.success || envelope.data.version !== 1) {
-    console.warn("[oryon] ui prefs: invalid payload dropped — defaults in use.");
+    console.warn("[oryon] ui prefs: invalid payload dropped - defaults in use.");
     return { ...ORYON_UI_PREFS_DEFAULT };
   }
 
@@ -146,7 +146,7 @@ function writePrefs(prefs: OryonUiPrefs): void {
       favoritesBar: { ...prefs.favoritesBar },
     });
     if (!check.success) {
-      console.warn("[oryon] ui prefs save skipped — payload invalid.");
+      console.warn("[oryon] ui prefs save skipped - payload invalid.");
       return;
     }
     window.localStorage.setItem(UI_PREFS_KEY, JSON.stringify(check.data));

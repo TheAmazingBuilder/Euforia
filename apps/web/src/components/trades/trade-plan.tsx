@@ -60,7 +60,7 @@ const DECIMAL_RE = /^-?\d+(\.\d+)?$/;
  *  a plan is written reasoning — it never creates or mutates a trade, its
  *  levels are hypothetical (explicitly labeled), its probabilities are
  *  subjective (labeled as entered), and the planned-vs-actual comparison
- *  shows "—" for anything the canonical record does not provide. */
+ *  shows "-" for anything the canonical record does not provide. */
 
 // ── Small shared pieces ──────────────────────────────────────────────────────
 
@@ -91,14 +91,14 @@ function roleBadgeClass(role: PlanScenario["role"]): string {
 }
 
 function formatStamp(iso: string | null): string {
-  if (iso === null) return "—";
+  if (iso === null) return "-";
   const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return "—";
+  if (Number.isNaN(date.getTime())) return "-";
   return date.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
 }
 
 function decimalOrDash(value: string | null): string {
-  return value ?? "—";
+  return value ?? "-";
 }
 
 interface ComparisonLegProps {
@@ -351,7 +351,7 @@ export function TradePlanSection({ trade }: TradePlanSectionProps) {
           <DialogHeader>
             <DialogTitle>{T.linkMismatchTitle}</DialogTitle>
             <DialogDescription>
-              {T.linkMismatchBody.replace("{planSymbol}", mismatchFor?.symbol ?? "—").replace(
+              {T.linkMismatchBody.replace("{planSymbol}", mismatchFor?.symbol ?? "-").replace(
                 "{tradeSymbol}",
                 tradeSymbol,
               )}
@@ -506,7 +506,7 @@ function PlanDetailDialog({
         <DialogContent className="sm:max-w-md" data-testid="trade-plan-detail-dialog">
           <DialogHeader>
             <DialogTitle>{T.heading}</DialogTitle>
-            <DialogDescription>{isLoading ? dict.common.loading : "—"}</DialogDescription>
+            <DialogDescription>{isLoading ? dict.common.loading : "-"}</DialogDescription>
           </DialogHeader>
         </DialogContent>
       </Dialog>
@@ -631,7 +631,7 @@ function PlanDetailDialog({
                   <p data-testid="trade-plan-detail-targets">
                     {plan.plannedTargets !== null && plan.plannedTargets.length > 0
                       ? plan.plannedTargets.join(", ")
-                      : "—"}
+                      : "-"}
                   </p>
                 </div>
               </div>
@@ -763,7 +763,7 @@ function PlanDetailDialog({
                       className="text-right font-mono text-xs tabular-nums"
                       data-testid="trade-plan-comparison-direction"
                     >
-                      {comparison.direction.actual ?? "—"}
+                      {comparison.direction.actual ?? "-"}
                     </span>
                   </div>
                   <ComparisonLegRow
@@ -1220,7 +1220,7 @@ function PlanEditorDialog({
                   id="plan-entry"
                   value={plannedEntry}
                   onChange={(event) => setPlannedEntry(event.target.value)}
-                  placeholder="—"
+                  placeholder="-"
                   inputMode="decimal"
                   className={inputClasses}
                   data-testid="trade-plan-entry"
@@ -1232,7 +1232,7 @@ function PlanEditorDialog({
                   id="plan-stop"
                   value={plannedStop}
                   onChange={(event) => setPlannedStop(event.target.value)}
-                  placeholder="—"
+                  placeholder="-"
                   inputMode="decimal"
                   className={inputClasses}
                   data-testid="trade-plan-stop"
