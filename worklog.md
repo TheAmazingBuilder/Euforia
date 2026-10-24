@@ -2168,3 +2168,20 @@ Stage Summary:
 - Projet restauré à 100% (26e39b9) puis nettoyé (-185 Mo) puis re-vérifié intégralement: TOUT EST FONCTIONNEL, DB vide, zéro mock, secrets frais
 - Livraison: commit 209ba80 (guide) — bundle git + tarball clé en main copiés sur /home/sync/ (PERSISTANT) ET download/
 - Le propriétaire doit télécharger le kit et suivre le guide; pnpm 12.4.2 requis (corepack)
+
+---
+Task ID: 30
+Agent: Z.ai (main, sandbox collaboration)
+Task: Mise en place du pont de commit GitHub (sandbox -> branche work/euforia-collaboration)
+
+Work Log:
+- Clonage du repo sur la branche work/euforia-collaboration (HEAD 96db17c, 335 commits, arbre propre)
+- Authentification HTTPS configuree via credential store (PAT fine-grained, scope Contents: read/write, repo Euforia uniquement)
+- Identite de commit: Euforia Agent <euforia-agent@users.noreply.github.com> (distincte de l'owner pour tracer les commits d'agent)
+- Validation du token via API GitHub (HTTP 200 sur /repos/TheAmazingBuilder/Euforia)
+- Commit de test: cette entree worklog — si vous lisez ceci sur GitHub, le pont fonctionne
+
+Stage Summary:
+- Pont operationnel: les modifications de la sandbox sont poussees directement sur origin/work/euforia-collaboration
+- Workflow: chaque modification = commit atomique + push immediate (convention demande par l'owner)
+- Token revoquable: GitHub > Settings > Developer settings > Fine-grained tokens
