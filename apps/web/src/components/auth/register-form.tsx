@@ -5,13 +5,15 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { MailCheck } from "lucide-react";
 
-import type { RegisterResponse } from "@cosmoz/shared";
+import type { RegisterInput, RegisterResponse } from "@cosmoz/shared";
 import { registerInputSchema } from "@cosmoz/shared";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useRegisterMutation, useResendVerificationMutation } from "@/lib/api/queries/auth";
+import { useLoginMutation, useRegisterMutation, useResendVerificationMutation } from "@/lib/api/queries/auth";
 import { apiErrorMessage, apiErrorCode } from "@/lib/api/client";
 import { API_MOCKED } from "@/lib/api/mode";
+import { setAccessToken } from "@/lib/auth/token-store";
+import { useAuth } from "@/components/auth/auth-provider";
 import { useDict } from "@/i18n/i18n-provider";
 import {
   AuthField,
@@ -24,14 +26,20 @@ import {
 } from "@/components/auth/auth-primitives";
 
 /**
- * Registration (spec §15, §16) — Zod-validated through the SHARED contract
+ * Registration (spec §15, §16) - Zod-validated through the SHARED contract
  * schema (client validation is UX; server validation stays authoritative).
- * Success lands on a deliberate verification-pending state (§17).
+ * Success lands on a deliberate verification-pending state (§17). When the
+ * account is immediately ACTIVE (backend configured without email
+ * verification), the session is established right away: silent sign-in with
+ * the credentials already in hand, then straight to the dashboard - the
+ * user never bounces back to the login form they just graduated from.
  */
 export function RegisterForm() {
   const auth = useDict().auth;
   const router = useRouter();
+  const { setAuthenticated } = useAuth();
   const register = useRegisterMutation();
+  const login = useLoginMutation();
   const resend = useResendVerificationMutation();
 
   const [name, setName] = React.useState("");
@@ -42,8 +50,41 @@ export function RegisterForm() {
   const [formError, setFormError] = React.useState<string | null>(null);
   const [pending, setPending] = React.useState<RegisterResponse | null>(null);
   const [resent, setResent] = React.useState(false);
+  const [signingIn, setSigningIn] = React.useState(false);
 
   const mocked = API_MOCKED;
+
+  /**
+   * Account created ACTIVE → establish the session immediately. The
+   * credentials are still in memory (never persisted), so a single login
+   * call turns "account created" into "signed in" without a round-trip
+   * through the login form. Any failure degrades to the classic
+   * "account created, sign in" flow instead of blocking the user.
+   */
+  function signInAfterRegistration(credentials: RegisterInput) {
+    setSigningIn(true);
+    login.mutate(
+      { email: credentials.email, password: credentials.password, remember: true },
+      {
+        onSuccess: (data) => {
+          if (data.outcome === "MFA_REQUIRED") {
+            // Unreachable for a fresh account (no MFA enrolled yet), but a
+            // clean fallback beats a dead end if the contract ever changes.
+            router.push(`/login?registered=true&email=${encodeURIComponent(credentials.email)}`);
+            return;
+          }
+          setAccessToken(data.accessToken, data.accessTokenExpiresAt);
+          setAuthenticated(data.user, data.session);
+          router.replace("/");
+        },
+        onError: () => {
+          // The account EXISTS (register succeeded) - send the user to the
+          // sign-in form with the email pre-filled, never an error wall.
+          router.push(`/login?registered=true&email=${encodeURIComponent(credentials.email)}`);
+        },
+      },
+    );
+  }
 
   function submit(event: React.FormEvent) {
     event.preventDefault();
@@ -67,7 +108,7 @@ export function RegisterForm() {
     register.mutate(parsed.data, {
       onSuccess: (response) => {
         if (response.status === "ACTIVE") {
-          router.push(`/login?registered=true&email=${encodeURIComponent(response.user.email)}`);
+          signInAfterRegistration(parsed.data);
           return;
         }
         setPending(response);
@@ -242,7 +283,7 @@ export function RegisterForm() {
         </AuthField>
 
         <SubmitButton
-          pending={register.isPending}
+          pending={register.isPending || signingIn}
           label={auth.register.submit}
           pendingLabel={auth.register.submitting}
           testId="register-submit"
