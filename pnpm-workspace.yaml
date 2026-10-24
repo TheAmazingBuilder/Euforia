@@ -17,8 +17,25 @@ allowBuilds:
   # SWC native binding (vitest decorator-metadata plugin).
   "@swc/core": true
 
-# Security pins (MASTER QA audit + security audit 2026-10-19 partie 2 §2.38):
-# every line forces the patched version of a known advisory, transitive or not.
+# Supply-chain freshness policy: pnpm's minimumReleaseAge gates packages
+# younger than the policy window. next@16.4.3 (and its lockstep companions)
+# shipped 2026-10-23 and are deliberately exempted so the security bump that
+# patches GHSA-2464-fhr4-w9xw / GHSA-673q-mjm6-r5xr / GHSA-p3m5-59mp-jv5r
+# installs immediately instead of waiting out the freshness window.
+minimumReleaseAgeExclude:
+  - '@next/env@16.4.3'
+  - '@next/eslint-plugin-next@16.4.3'
+  - '@next/swc-darwin-arm64@16.4.3'
+  - '@next/swc-darwin-x64@16.4.3'
+  - '@next/swc-linux-arm64-gnu@16.4.3'
+  - '@next/swc-linux-arm64-musl@16.4.3'
+  - '@next/swc-linux-x64-gnu@16.4.3'
+  - '@next/swc-linux-x64-musl@16.4.3'
+  - '@next/swc-win32-arm64-msvc@16.4.3'
+  - '@next/swc-win32-x64-msvc@16.4.3'
+  - eslint-config-next@16.4.3
+  - next@16.4.3
+
 overrides:
   fastify: 5.12.7
   # GHSA-v888 (deepmerge-ts stack exhaustion) — transitive via @prisma/config.
