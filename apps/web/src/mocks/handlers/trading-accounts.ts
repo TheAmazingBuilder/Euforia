@@ -14,7 +14,7 @@ import { authEngine } from "@/mocks/auth-engine";
 import { endpoint, latency, parseBody, pathParam, readJson, toErrorResponse } from "./utils";
 
 /**
- * Authenticated principal — mirrors the Nest @CurrentUser() decorator: the
+ * Authenticated principal - mirrors the Nest @CurrentUser() decorator: the
  * userId always comes from the verified token, never from the client payload.
  */
 function requireUserId(request: Request): string {
@@ -24,7 +24,7 @@ function requireUserId(request: Request): string {
 }
 
 /**
- * Trading-accounts MSW handlers (Phase 02) — route-for-route parity with the
+ * Trading-accounts MSW handlers (Phase 02) - route-for-route parity with the
  * registered Nest TradingAccountsController. The auth boundary mirrors the
  * global JWT guard: the verified token provides the principal before any
  * store access. Error envelopes carry the stable TRADING_ERROR_CODES `code`
@@ -32,7 +32,7 @@ function requireUserId(request: Request): string {
  *
  * Mock honesty: the only provider this engine serves is the MOCK descriptor
  * (isMock: true). No handler can ever produce a non-mock provider, a live
- * connection claim, or an execution action (none of those routes exist —
+ * connection claim, or an execution action (none of those routes exist -
  * mirroring the backend's execution red line).
  */
 export const tradingAccountsHandlers = [
@@ -46,7 +46,7 @@ export const tradingAccountsHandlers = [
     }
   }),
 
-  // Phase 07 — the universal broker catalog (identity metadata, honest
+  // Phase 07 - the universal broker catalog (identity metadata, honest
   // connector status). Same auth boundary as every accounts route.
   http.get(endpoint(apiPaths.tradingAccountBrokers), async ({ request }) => {
     await latency();
@@ -58,7 +58,7 @@ export const tradingAccountsHandlers = [
     }
   }),
 
-  // Phase 07 — rule-based broker identification. The body is validated
+  // Phase 07 - rule-based broker identification. The body is validated
   // against the shared hints schema (NO secrets accepted); unknown brokers
   // answer honestly (UNKNOWN), never a guess.
   http.post(endpoint(apiPaths.tradingAccountBrokerIdentify), async ({ request }) => {
@@ -160,7 +160,7 @@ export const tradingAccountsHandlers = [
     }
   }),
 
-  // Phase 05 — bounded synchronization history (newest first, keyset cursor).
+  // Phase 05 - bounded synchronization history (newest first, keyset cursor).
   http.get(endpoint(apiPaths.tradingAccountSyncRuns(":accountId")), async ({ request, params }) => {
     await latency();
     try {
@@ -212,7 +212,7 @@ export const tradingAccountsHandlers = [
     }
   }),
 
-  // Phase 08 — the owner-only MT5 bridge pairing sheet. Non-bridge accounts
+  // Phase 08 - the owner-only MT5 bridge pairing sheet. Non-bridge accounts
   // answer 422 (UNSUPPORTED_CAPABILITY), mirroring the backend exactly.
   http.get(endpoint(apiPaths.tradingAccountBridgePairing(":accountId")), async ({ request, params }) => {
     await latency();
@@ -225,7 +225,7 @@ export const tradingAccountsHandlers = [
     }
   }),
 
-  // Phase 08 — rotate the bridge secret: invalidates the previous terminal
+  // Phase 08 - rotate the bridge secret: invalidates the previous terminal
   // configuration, mints a fresh sheet delivered in the response only.
   http.post(endpoint(apiPaths.tradingAccountBridgeRotate(":accountId")), async ({ request, params }) => {
     await latency();

@@ -1,12 +1,12 @@
 /**
- * Trading-accounts mock engine (Phase 02) — MSW parity with the Nest
+ * Trading-accounts mock engine (Phase 02) - MSW parity with the Nest
  * trading-accounts surface (apps/api/src/modules/accounts).
  *
  * This is a MOCK, visibly and honestly: every account it creates carries its
  * registry provider stamp, so the UI can never present simulated data as a
- * real broker connection (Phase 02 spec §4.2/§15.3 — no fake connectivity, no
+ * real broker connection (Phase 02 spec §4.2/§15.3 - no fake connectivity, no
  * fake success). Registry mirrors: MOCK (isMock), deriv-ws, and the Phase 08
- * MT5 terminal bridge (mt5-bridge) — bridge connections start CONNECTING and
+ * MT5 terminal bridge (mt5-bridge) - bridge connections start CONNECTING and
  * no handler ever fakes the first terminal push that would flip CONNECTED.
  *
  * Semantics mirrored from the backend, deliberately:
@@ -23,7 +23,7 @@
  *      fail-timeout → CONNECTION_TIMEOUT   · fail-malformed → INVALID_PROVIDER_RESPONSE
  *
  * NOT mirrored (server infrastructure, documented gaps):
- *  - per-user rate limits (connect 5 / reconnect 5 / sync 20 per 15 min) —
+ *  - per-user rate limits (connect 5 / reconnect 5 / sync 20 per 15 min) -
  *    enforced by the API's in-memory limiter, not reproducible meaningfully
  *    in a browser worker;
  *  - the SecurityEvent audit ledger (server-side concern);
@@ -79,7 +79,7 @@ const MOCK_DESCRIPTOR: TradingProviderDescriptor = {
 };
 
 /**
- * Phase 07 mirror — the Deriv descriptor (V2 capabilities, verbatim from the
+ * Phase 07 mirror - the Deriv descriptor (V2 capabilities, verbatim from the
  * backend adapter). The MSW engine simulates a deployment where deriv-ws is
  * ENABLED; the "orders" capability stays honestly UNSUPPORTED and its sync
  * segment is skipped as a capability fact, exactly like the real pipeline.
@@ -110,11 +110,11 @@ const DERIV_DESCRIPTOR: TradingProviderDescriptor = {
 };
 
 /**
- * Phase 08 mirror — the MT5 terminal bridge descriptor (verbatim from the
+ * Phase 08 mirror - the MT5 terminal bridge descriptor (verbatim from the
  * backend adapter). PLATFORM_BRIDGE = an Expert Advisor inside the user's
  * MT5 terminal pushes signed events to the ingest endpoint; the connection
  * starts CONNECTING and flips CONNECTED only with the first terminal push
- * (never simulated here — a browser mock cannot host an MT5 terminal, so
+ * (never simulated here - a browser mock cannot host an MT5 terminal, so
  * bridge accounts honestly stay CONNECTING with no data).
  */
 const MT5_BRIDGE_DESCRIPTOR: TradingProviderDescriptor = {
@@ -161,26 +161,26 @@ function notOwned(): MockError {
   return coded(404, "NOT_FOUND", "Account not found.");
 }
 
-// ── Phase 07 — universal broker layer mirror ─────────────────────────────────
+// ── Phase 07 - universal broker layer mirror ─────────────────────────────────
 
-/** Catalog mirror — same 17 entries as the backend broker-catalog.ts. */
+/** Catalog mirror - same 17 entries as the backend broker-catalog.ts. */
 const BROKER_CATALOG_MIRROR: Array<Omit<BrokerCatalogEntry, "connectorStatus"> & { connectorProviderId: string | null }> = [
   { brokerId: "deriv", displayName: "Deriv", platforms: ["DERIV"], providerId: "deriv-ws", connectorProviderId: "deriv-ws", aliases: ["Binary.com", "binary.com"], notes: "Connected through the official Deriv WebSocket API with a Read-scope API token." },
   { brokerId: "oanda", displayName: "OANDA", platforms: ["OANDA"], providerId: "oanda-v20", connectorProviderId: "oanda-v20", aliases: ["OANDA Corporation", "fxTrade"], notes: "Connected through the official OANDA v20 REST API with a personal access token." },
-  { brokerId: "icmarkets", displayName: "IC Markets", platforms: ["MT4", "MT5", "CTRADER"], providerId: null, connectorProviderId: null, aliases: ["IC Markets Global", "ICMarkets", "Raw Trading Ltd"], notes: "Access paths are MT4/MT5/cTrader platform integrations — no dedicated retail REST API; gated on the MT5 decision (U1) and the cTrader decision." },
-  { brokerId: "pepperstone", displayName: "Pepperstone", platforms: ["MT4", "MT5", "CTRADER"], providerId: null, connectorProviderId: null, aliases: ["Pepperstone Group"], notes: "Access paths are MT4/MT5/cTrader platform integrations — gated on the MT5 decision (U1) and the cTrader decision." },
-  { brokerId: "exness", displayName: "Exness", platforms: ["MT4", "MT5"], providerId: null, connectorProviderId: null, aliases: ["Exness Group"], notes: "Access path is the MT4/MT5 platform integration — gated on the MT5 decision (U1)." },
-  { brokerId: "xm", displayName: "XM", platforms: ["MT4", "MT5"], providerId: null, connectorProviderId: null, aliases: ["XM Global", "Trading Point"], notes: "Access path is the MT4/MT5 platform integration — gated on the MT5 decision (U1)." },
-  { brokerId: "fxtm", displayName: "FXTM (ForexTime)", platforms: ["MT4", "MT5"], providerId: null, connectorProviderId: null, aliases: ["ForexTime"], notes: "Access path is the MT4/MT5 platform integration — gated on the MT5 decision (U1)." },
+  { brokerId: "icmarkets", displayName: "IC Markets", platforms: ["MT4", "MT5", "CTRADER"], providerId: null, connectorProviderId: null, aliases: ["IC Markets Global", "ICMarkets", "Raw Trading Ltd"], notes: "Access paths are MT4/MT5/cTrader platform integrations - no dedicated retail REST API; gated on the MT5 decision (U1) and the cTrader decision." },
+  { brokerId: "pepperstone", displayName: "Pepperstone", platforms: ["MT4", "MT5", "CTRADER"], providerId: null, connectorProviderId: null, aliases: ["Pepperstone Group"], notes: "Access paths are MT4/MT5/cTrader platform integrations - gated on the MT5 decision (U1) and the cTrader decision." },
+  { brokerId: "exness", displayName: "Exness", platforms: ["MT4", "MT5"], providerId: null, connectorProviderId: null, aliases: ["Exness Group"], notes: "Access path is the MT4/MT5 platform integration - gated on the MT5 decision (U1)." },
+  { brokerId: "xm", displayName: "XM", platforms: ["MT4", "MT5"], providerId: null, connectorProviderId: null, aliases: ["XM Global", "Trading Point"], notes: "Access path is the MT4/MT5 platform integration - gated on the MT5 decision (U1)." },
+  { brokerId: "fxtm", displayName: "FXTM (ForexTime)", platforms: ["MT4", "MT5"], providerId: null, connectorProviderId: null, aliases: ["ForexTime"], notes: "Access path is the MT4/MT5 platform integration - gated on the MT5 decision (U1)." },
   { brokerId: "fpmarkets", displayName: "FP Markets", platforms: ["MT4", "MT5", "CTRADER"], providerId: null, connectorProviderId: null, aliases: ["First Prudential Markets"], notes: "Access paths are MT4/MT5/cTrader platform integrations." },
-  { brokerId: "avatrade", displayName: "AvaTrade", platforms: ["MT4", "MT5"], providerId: null, connectorProviderId: null, aliases: ["Ava Trade"], notes: "Access path is the MT4/MT5 platform integration — gated on the MT5 decision (U1)." },
-  { brokerId: "vantage", displayName: "Vantage", platforms: ["MT4", "MT5"], providerId: null, connectorProviderId: null, aliases: ["Vantage FX", "Vantage International"], notes: "Access path is the MT4/MT5 platform integration — gated on the MT5 decision (U1)." },
-  { brokerId: "eightcap", displayName: "Eightcap", platforms: ["MT4", "MT5"], providerId: null, connectorProviderId: null, aliases: ["Eightcap Global"], notes: "Access path is the MT4/MT5 platform integration — gated on the MT5 decision (U1)." },
-  { brokerId: "interactivebrokers", displayName: "Interactive Brokers", platforms: ["OTHER"], providerId: null, connectorProviderId: null, aliases: ["IBKR", "Interactive Brokers LLC"], notes: "Official Client Portal Web API exists but requires individual account configuration and approval steps — not part of the current connector roadmap." },
+  { brokerId: "avatrade", displayName: "AvaTrade", platforms: ["MT4", "MT5"], providerId: null, connectorProviderId: null, aliases: ["Ava Trade"], notes: "Access path is the MT4/MT5 platform integration - gated on the MT5 decision (U1)." },
+  { brokerId: "vantage", displayName: "Vantage", platforms: ["MT4", "MT5"], providerId: null, connectorProviderId: null, aliases: ["Vantage FX", "Vantage International"], notes: "Access path is the MT4/MT5 platform integration - gated on the MT5 decision (U1)." },
+  { brokerId: "eightcap", displayName: "Eightcap", platforms: ["MT4", "MT5"], providerId: null, connectorProviderId: null, aliases: ["Eightcap Global"], notes: "Access path is the MT4/MT5 platform integration - gated on the MT5 decision (U1)." },
+  { brokerId: "interactivebrokers", displayName: "Interactive Brokers", platforms: ["OTHER"], providerId: null, connectorProviderId: null, aliases: ["IBKR", "Interactive Brokers LLC"], notes: "Official Client Portal Web API exists but requires individual account configuration and approval steps - not part of the current connector roadmap." },
   { brokerId: "binance", displayName: "Binance", platforms: ["BINANCE"], providerId: null, connectorProviderId: null, aliases: ["Binance.com"], notes: "Public exchange REST API exists; an exchange connector is a separate product decision outside the Accounts roadmap scope." },
-  { brokerId: "metatrader-platform", displayName: "MetaTrader (MT4/MT5)", platforms: ["MT4", "MT5"], providerId: null, connectorProviderId: null, aliases: ["MetaQuotes", "MT4", "MT5"], notes: "The MetaQuotes terminal/gateway integration is gated on decision U1 (self-hosted bridge vs cloud gateway vs documented defer) — broker entries above list per-broker access." },
-  { brokerId: "ctrader-platform", displayName: "cTrader", platforms: ["CTRADER"], providerId: null, connectorProviderId: null, aliases: ["Spotware", "cTrader Open API"], notes: "cTrader Open API (OAuth 2.0 + protobuf over WebSocket) — implementation stopped pending explicit owner approval." },
-  { brokerId: "tradingview", displayName: "TradingView", platforms: ["OTHER"], providerId: null, connectorProviderId: null, aliases: ["TradingView Inc."], notes: "No account-data interface exists — chart embedding is not brokerage-account access (documented verdict, doc D)." },
+  { brokerId: "metatrader-platform", displayName: "MetaTrader (MT4/MT5)", platforms: ["MT4", "MT5"], providerId: null, connectorProviderId: null, aliases: ["MetaQuotes", "MT4", "MT5"], notes: "The MetaQuotes terminal/gateway integration is gated on decision U1 (self-hosted bridge vs cloud gateway vs documented defer) - broker entries above list per-broker access." },
+  { brokerId: "ctrader-platform", displayName: "cTrader", platforms: ["CTRADER"], providerId: null, connectorProviderId: null, aliases: ["Spotware", "cTrader Open API"], notes: "cTrader Open API (OAuth 2.0 + protobuf over WebSocket) - implementation stopped pending explicit owner approval." },
+  { brokerId: "tradingview", displayName: "TradingView", platforms: ["OTHER"], providerId: null, connectorProviderId: null, aliases: ["TradingView Inc."], notes: "No account-data interface exists - chart embedding is not brokerage-account access (documented verdict, doc D)." },
   { brokerId: "plus500", displayName: "Plus500", platforms: ["OTHER"], providerId: null, connectorProviderId: null, aliases: ["Plus500 Ltd"], notes: "Proprietary platform without a public retail account-data API." },
   { brokerId: "etoro", displayName: "eToro", platforms: ["OTHER"], providerId: null, connectorProviderId: null, aliases: ["eToro Group"], notes: "Proprietary platform without a public retail account-data API." },
 ];
@@ -188,7 +188,7 @@ const BROKER_CATALOG_MIRROR: Array<Omit<BrokerCatalogEntry, "connectorStatus"> &
 const BROKER_CATALOG_MIRROR_VERSION = "2026-10.1";
 
 /**
- * Connect-time identification mirror — same ladder as the backend service:
+ * Connect-time identification mirror - same ladder as the backend service:
  * provider-reported identity (Deriv landing company) wins, then documented
  * id patterns, then registry platform knowledge.
  */
@@ -325,7 +325,7 @@ function identifyBrokerMirror(hints: BrokerIdentifyInput): BrokerIdentification 
 
 // ── Deterministic provider data (mirrors MockTradingProviderAdapter) ────────
 
-/** FNV-1a 32-bit — same primitive the backend adapter uses. */
+/** FNV-1a 32-bit - same primitive the backend adapter uses. */
 function hashSeed(input: string): number {
   let hash = 0x811c9dc5;
   for (let i = 0; i < input.length; i += 1) {
@@ -352,7 +352,7 @@ function money(value: number): string {
   return (Math.round(value * 100) / 100).toFixed(2);
 }
 
-/** Masked hint — same rule as CredentialsEncryptionService.hint. */
+/** Masked hint - same rule as CredentialsEncryptionService.hint. */
 function hintOf(secret: string): string {
   return secret.length <= 4 ? "••••" : `••••${secret.slice(-4)}`;
 }
@@ -373,7 +373,7 @@ interface ProviderData {
 }
 
 /**
- * The provider's answer for an external account — a pure function of the id,
+ * The provider's answer for an external account - a pure function of the id,
  * byte-identical across calls (idempotent upserts, §18 of the backend spec).
  */
 function providerData(externalAccountId: string): ProviderData {
@@ -418,7 +418,7 @@ function providerData(externalAccountId: string): ProviderData {
     });
   }
 
-  // Deals — coherent netting cycles + balance operations, compacted from the
+  // Deals - coherent netting cycles + balance operations, compacted from the
   // adapter's generator (same invariants: exit volume mirrors entries, the
   // last exit carries the cycle profit, deposits have no symbol/position).
   const bases = [1.0865, 2385.0, 61240.0, 9820.0, 8340.0] as const;
@@ -497,17 +497,17 @@ function providerData(externalAccountId: string): ProviderData {
   };
 }
 
-// ── Store (module-singleton — one browser session) ──────────────────────────
+// ── Store (module-singleton - one browser session) ──────────────────────────
 
 interface ConnectionRecord {
   status: "CONNECTED" | "CONNECTING" | "DISCONNECTED" | "ERROR";
   method: "API_KEY" | "PLATFORM_BRIDGE";
-  /** The stored secret — mock-only simulation of the encrypted vault.
+  /** The stored secret - mock-only simulation of the encrypted vault.
    * PLATFORM_BRIDGE connections keep this null: the bridge secret lives in
    * the pairing sheet below, generated server-side, never user-supplied. */
   secret: string | null;
   credentialsHint: string | null;
-  /** Phase 08 — the terminal pairing sheet (bridge connections only). */
+  /** Phase 08 - the terminal pairing sheet (bridge connections only). */
   pairing: BridgePairing | null;
   permissions: TradingConnectionView["permissions"];
   lastConnectedAt: string | null;
@@ -528,7 +528,7 @@ interface AccountRecord {
   isDefault: boolean;
   externalAccountId: string;
   providerId: string;
-  /** Phase 07 — connect-time broker identification mirror. */
+  /** Phase 07 - connect-time broker identification mirror. */
   brokerIdentification: BrokerIdentification | null;
   connection: ConnectionRecord | null;
   snapshot: TradingAccountSnapshotView | null;
@@ -550,11 +550,11 @@ function isoNow(): string {
   return new Date().toISOString().replace(/\.\d{3}Z$/, "Z");
 }
 
-/** Freshness TTL — the same 15-min derivation as the backend mapper. */
+/** Freshness TTL - the same 15-min derivation as the backend mapper. */
 const FRESHNESS_TTL_MS = 15 * 60 * 1000;
 
 /**
- * Phase 08 — mint a bridge pairing sheet. The demo secret carries the
+ * Phase 08 - mint a bridge pairing sheet. The demo secret carries the
  * "bks_demo_" prefix so it can never be mistaken for a production bridge
  * secret; each call passes a nonce so rotations produce a DIFFERENT one.
  * Shape mirrors the backend BridgePairing (ingestPath/headers/serialization
@@ -601,7 +601,7 @@ function deriveSynchronizationStatus(
   return nowMs - lastSyncMs <= FRESHNESS_TTL_MS ? "LIVE" : "STALE";
 }
 
-/** Phase 05 — per-resource freshness from run segment timestamps (max). */
+/** Phase 05 - per-resource freshness from run segment timestamps (max). */
 function resourceFreshnessOf(
   record: AccountRecord,
   key: "snapshotAt" | "positionsAt" | "ordersAt" | "dealsAt",
@@ -645,7 +645,7 @@ function detailsOf(record: AccountRecord, nowMs = Date.now()): TradingAccountDet
       status: deriveSynchronizationStatus(record, nowMs),
       lastSyncAt: record.connection?.lastSyncAt ?? null,
       lastRun: latestRun,
-      // Phase 05 — mirror of the backend's per-resource freshness rules.
+      // Phase 05 - mirror of the backend's per-resource freshness rules.
       resources: {
         snapshot: resourceFreshnessOf(record, "snapshotAt", nowMs),
         positions: resourceFreshnessOf(record, "positionsAt", nowMs),
@@ -685,7 +685,7 @@ function codedByCode(code: string, message: string): MockError {
   return coded(statusForCode(code), code, message);
 }
 
-/** The provider's verdict for a secret — mirrors the adapter's guard. */
+/** The provider's verdict for a secret - mirrors the adapter's guard. */
 function guardSecret(secret: string): void {
   const scenario = scenarioOf(secret);
   if (scenario === null) return;
@@ -726,7 +726,7 @@ function runSynchronization(record: AccountRecord, trigger: "INITIAL" | "MANUAL"
     // fail-malformed never reaches here: guardSecret throws 502 first.
     const descriptor = PROVIDER_DESCRIPTORS[record.providerId] ?? MOCK_DESCRIPTOR;
     // Capability gate (Phase 07 mirror): a V2 UNSUPPORTED capability is a
-    // capability FACT — the segment is skipped (ordersAt null), never a
+    // capability FACT - the segment is skipped (ordersAt null), never a
     // failure, never an empty success.
     const derivCaps = descriptor.capabilities as { orders?: { support?: string } };
     const ordersUnsupported =
@@ -759,7 +759,7 @@ function runSynchronization(record: AccountRecord, trigger: "INITIAL" | "MANUAL"
         : "SYNC_FAILED";
     run.errorCode = code;
     // Only auth-class failures move the connection out of CONNECTED (doc B
-    // §3.1) — provider outages degrade the sync axis, nothing else.
+    // §3.1) - provider outages degrade the sync axis, nothing else.
     if (code === "INVALID_CREDENTIALS" || code === "UNAUTHORIZED_PROVIDER_ACCESS") {
       if (record.connection) {
         record.connection.status = "ERROR";
@@ -790,23 +790,23 @@ export const tradingAccountsEngine = {
     return { providers: [MOCK_DESCRIPTOR, DERIV_DESCRIPTOR, MT5_BRIDGE_DESCRIPTOR] };
   },
 
-  /** Phase 07 — universal broker catalog mirror (honest connector status). */
+  /** Phase 07 - universal broker catalog mirror (honest connector status). */
   listBrokers(): BrokerCatalogResponse {
     return brokerCatalogMirror();
   },
 
-  /** Phase 07 — rule-based identification mirror (no secrets involved). */
+  /** Phase 07 - rule-based identification mirror (no secrets involved). */
   identifyBroker(hints: BrokerIdentifyInput): { identification: BrokerIdentification } {
     return { identification: identifyBrokerMirror(hints) };
   },
 
   connect(userId: string, input: TradingAccountConnectInput): { account: TradingAccountDetails } {
-    // registry.require — unknown provider ids never connect.
+    // registry.require - unknown provider ids never connect.
     const descriptor = PROVIDER_DESCRIPTORS[input.providerId];
     if (!descriptor) {
       throw coded(422, "UNSUPPORTED_PROVIDER", "This trading provider is not supported.");
     }
-    // Phase 08 — connection-method shape check (mirrors the backend service
+    // Phase 08 - connection-method shape check (mirrors the backend service
     // layer): API_KEY providers REQUIRE credentials; bridge providers REFUSE
     // them (the secret is generated server-side, never user-supplied).
     const isBridge = descriptor.supportedConnectionMethods.includes("PLATFORM_BRIDGE");
@@ -814,7 +814,7 @@ export const tradingAccountsEngine = {
       throw coded(
         422,
         "INVALID_CREDENTIALS",
-        "Bridge connections take no client credentials — Euforia generates the secret.",
+        "Bridge connections take no client credentials - Euforia generates the secret.",
       );
     }
     if (!isBridge && input.credentials === undefined) {
@@ -837,7 +837,7 @@ export const tradingAccountsEngine = {
       throw coded(409, "DUPLICATE_ACCOUNT", "This trading account is already connected.");
     }
 
-    // Phase 07 — connect-time broker identification, same ladder as the
+    // Phase 07 - connect-time broker identification, same ladder as the
     // backend: provider-reported (Deriv landing company) > rules.
     const brokerIdentification = identifyAtConnectMirror(input.providerId, input.externalAccountId);
 
@@ -849,7 +849,7 @@ export const tradingAccountsEngine = {
       name: input.displayName ?? `${descriptor.providerName} ${input.environment}`,
       type: input.environment as AccountRecord["type"],
       broker: descriptor.platform,
-      // Bridge accounts have NOTHING reported yet — the first push brings
+      // Bridge accounts have NOTHING reported yet - the first push brings
       // the real currency/balance. Values stay honest nulls/zeroes until then.
       currency: isBridge ? "USD" : providerData(input.externalAccountId).currency,
       // Provider-reported balance at connect is the journal anchor (§25).
@@ -860,9 +860,9 @@ export const tradingAccountsEngine = {
       brokerIdentification,
       connection: isBridge
         ? {
-            // Phase 08 — a bridge connection starts CONNECTING: it flips
+            // Phase 08 - a bridge connection starts CONNECTING: it flips
             // CONNECTED only with the first signed terminal push. No initial
-            // sync runs (there is nothing to pull — the terminal pushes).
+            // sync runs (there is nothing to pull - the terminal pushes).
             status: "CONNECTING",
             method: "PLATFORM_BRIDGE",
             secret: null,
@@ -894,20 +894,20 @@ export const tradingAccountsEngine = {
     };
     accounts.set(record.id, record);
 
-    // Initial synchronization — failures never invalidate the registration
+    // Initial synchronization - failures never invalidate the registration
     // (best-effort, exactly like the backend connect use case). Bridge
     // connections skip it deliberately: data arrives with the first push.
     if (!isBridge) {
       runSynchronization(record, "INITIAL");
     }
     // Leak-check parity with the backend: the details view NEVER carries the
-    // pairing sheet — it is delivered ONLY on connect (right here) and via
+    // pairing sheet - it is delivered ONLY on connect (right here) and via
     // GET /bridge/pairing + /bridge/rotate.
     const deliveredPairing = record.connection?.pairing ?? null;
     return { account: { ...detailsOf(record), pairing: deliveredPairing } };
   },
 
-  /** Phase 08 — the owner-only pairing sheet (422 for non-bridge accounts). */
+  /** Phase 08 - the owner-only pairing sheet (422 for non-bridge accounts). */
   bridgePairing(userId: string, accountId: string): { pairing: BridgePairing } {
     const record = owned(userId, accountId);
     const pairing = record.connection?.pairing ?? null;
@@ -918,7 +918,7 @@ export const tradingAccountsEngine = {
   },
 
   /**
-   * Phase 08 — rotate the bridge secret: the old terminal configuration is
+   * Phase 08 - rotate the bridge secret: the old terminal configuration is
    * invalidated (the EA must be re-fed), the response carries the NEW sheet
    * exactly like connect did.
    */
@@ -970,7 +970,7 @@ export const tradingAccountsEngine = {
     return { deals: owned(userId, accountId).deals };
   },
 
-  /** Phase 05 — bounded sync history (newest first, keyset-paginated). */
+  /** Phase 05 - bounded sync history (newest first, keyset-paginated). */
   syncRuns(userId: string, accountId: string, limit: number, before: string | null): { runs: TradingSyncRunView[]; nextCursor: string | null } {
     const record = owned(userId, accountId);
     const filtered = before
@@ -988,7 +988,7 @@ export const tradingAccountsEngine = {
     const record = owned(userId, accountId);
     const secret = record.connection?.secret ?? null;
     const authOk = secret !== null && scenarioOf(secret) === null;
-    // Phase 08 — bridge connections validate ON_CONNECT with the terminal,
+    // Phase 08 - bridge connections validate ON_CONNECT with the terminal,
     // not by pulling the provider: authentication is the server-held bridge
     // secret, and the "provider response" is the first terminal push.
     if (record.connection?.method === "PLATFORM_BRIDGE") {
@@ -997,7 +997,7 @@ export const tradingAccountsEngine = {
         {
           name: "authentication" as const,
           ok: true,
-          detail: "The bridge secret is held server-side — the terminal signs every push with it.",
+          detail: "The bridge secret is held server-side - the terminal signs every push with it.",
         },
         {
           name: "connectivity" as const,
@@ -1009,7 +1009,7 @@ export const tradingAccountsEngine = {
           ok: pushing,
           detail: pushing
             ? "The terminal payload was readable."
-            : "No terminal payload received yet — attach the EA and wait for the first push.",
+            : "No terminal payload received yet - attach the EA and wait for the first push.",
         },
         {
           name: "permissions" as const,
@@ -1039,14 +1039,14 @@ export const tradingAccountsEngine = {
           ok: authOk,
           detail: authOk
             ? "The provider returned a readable account payload."
-            : "No readable payload — authentication failed first.",
+            : "No readable payload - authentication failed first.",
         },
         {
           name: "permissions",
           ok: record.connection !== null,
           detail:
             record.connection === null
-              ? "No stored permissions — connect the account first."
+              ? "No stored permissions - connect the account first."
               : `Read scope granted: ${record.connection.permissions.length} READ permissions.`,
         },
       ],
@@ -1110,7 +1110,7 @@ export const tradingAccountsEngine = {
       throw coded(409, "SYNC_ALREADY_RUNNING", "A synchronization is already running for this account.");
     }
     const run = runSynchronization(record, "MANUAL");
-    // The failed run is RECORDED, then the error is rethrown — the HTTP
+    // The failed run is RECORDED, then the error is rethrown - the HTTP
     // response is the error envelope exactly like the backend (POST /sync
     // answers 422/502; the run stays visible in the details view).
     if (run.status === "FAILED" && run.errorCode) {
@@ -1129,7 +1129,7 @@ export const tradingAccountsEngine = {
   },
 
   /**
-   * Test-only credential rotation — mirrors what the backend e2e does by
+   * Test-only credential rotation - mirrors what the backend e2e does by
    * re-encrypting a scenario secret directly in the DB (accounts.e2e.spec.ts
    * "provider auth failure during sync flips the connection to ERROR").
    * Never called by handlers; exists so the mock parity tests can reproduce

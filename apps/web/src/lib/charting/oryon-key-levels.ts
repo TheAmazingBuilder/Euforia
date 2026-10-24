@@ -8,7 +8,7 @@ import {
 import type { ChartTheme } from "@/lib/utils/chart-theme";
 
 /**
- * Oryon key-level overlay manager (Phase 9 spec §6) — previous-day /
+ * Oryon key-level overlay manager (Phase 9 spec §6) - previous-day /
  * previous-week / opening-range reference levels rendered as native
  * Lightweight Charts v5 price lines on the ACTIVE series.
  *
@@ -16,12 +16,12 @@ import type { ChartTheme } from "@/lib/utils/chart-theme";
  *   - stable keys (`kind[:period]`) → lines UPDATE IN PLACE (no churn, no
  *     duplicates after repeated syncs);
  *   - `setSeries` re-homes the overlay after a series rebuild (chart-type
- *     switch destroys the host series and its price lines — the manager
+ *     switch destroys the host series and its price lines - the manager
  *     replays its current specs onto the new series);
  *   - `clear()` removes everything the manager owns and nothing else;
- *   - theme changes restyle in place (resolved tokens only — never hex).
+ *   - theme changes restyle in place (resolved tokens only - never hex).
  *
- * Visual hierarchy (spec §6.3): one restrained style per level family —
+ * Visual hierarchy (spec §6.3): one restrained style per level family -
  * previous-day = solid accent, previous-week = dotted categorical,
  * opening-range = dashed categorical, open/close = muted dashed with no
  * axis label (secondary reference). Meaning is NEVER color-only: every
@@ -42,10 +42,10 @@ export type OryonKeyLevelKind =
   | "ORL";
 
 export interface OryonKeyLevelSpec {
-  /** Stable identity — kind + period key (e.g. "PDH:2026-10-09"). */
+  /** Stable identity - kind + period key (e.g. "PDH:2026-10-09"). */
   readonly key: string;
   readonly kind: OryonKeyLevelKind;
-  /** The level price — a REAL aggregated candle value (never fabricated). */
+  /** The level price - a REAL aggregated candle value (never fabricated). */
   readonly price: number;
   /** Short code painted on the line (titles, never color-only, §6.3). */
   readonly title: string;
@@ -94,7 +94,7 @@ export class OryonKeyLevelsOverlayManager {
     return this.lines.size;
   }
 
-  /** Re-homes the overlay onto a (new) active series — full replay. */
+  /** Re-homes the overlay onto a (new) active series - full replay. */
   setSeries(series: ISeriesApi<"Candlestick"> | ISeriesApi<"Line"> | null): void {
     this.series = series;
     this.lines.clear();
@@ -103,7 +103,7 @@ export class OryonKeyLevelsOverlayManager {
     }
   }
 
-  /** Structural sync — small diff (≤10 lines): create/update/remove. */
+  /** Structural sync - small diff (≤10 lines): create/update/remove. */
   sync(specs: readonly OryonKeyLevelSpec[], theme: ChartTheme): void {
     this.theme = theme;
     const next = new Map(specs.map((spec) => [spec.key, spec]));
@@ -112,7 +112,7 @@ export class OryonKeyLevelsOverlayManager {
         try {
           this.series?.removePriceLine(line);
         } catch {
-          // Host series already gone (rebuild) — the map reset covers it.
+          // Host series already gone (rebuild) - the map reset covers it.
         }
         this.lines.delete(key);
       }

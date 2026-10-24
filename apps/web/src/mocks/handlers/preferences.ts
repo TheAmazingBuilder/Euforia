@@ -11,7 +11,7 @@ import { mockStore } from "@/mocks/store";
 import { endpoint, latency, parseBody, readJson, toErrorResponse } from "./utils";
 
 /**
- * Preferences domain (Settings module) — one GET for the whole document,
+ * Preferences domain (Settings module) - one GET for the whole document,
  * PATCH / reset PER DOMAIN so unrelated settings are never saved together.
  * Every PATCH body is validated with the shared zod schema (server-side
  * validation even in mock mode) and merged only after it passes.
@@ -52,7 +52,7 @@ export const preferencesHandlers = [
     }
   }),
 
-  // ── Account actions (dangerous — typed confirmation payloads) ─────────────
+  // ── Account actions (dangerous - typed confirmation payloads) ─────────────
 
   http.post(endpoint(apiPaths.accountDeactivate), async ({ request }) => {
     await latency();

@@ -9,9 +9,9 @@ import { cn } from "@/lib/utils";
 
 import type { OnboardingStepProps } from "./step-types";
 
-/** Mini CSS schematic — clearly labeled "illustrative", never user data. */
+/** Mini CSS schematic - clearly labeled "illustrative", never user data. */
 function LayoutSchematic({ layout }: { layout: DashboardLayout }) {
-  // Section order per layout — pure presentation, no data.
+  // Section order per layout - pure presentation, no data.
   const stacks: Record<DashboardLayout, string[]> = {
     COACH_FIRST: ["w-3/4", "w-full", "w-5/6"],
     RISK_FIRST: ["w-2/3", "w-full", "w-4/5"],
@@ -33,7 +33,7 @@ function LayoutSchematic({ layout }: { layout: DashboardLayout }) {
 }
 
 /**
- * Step 5 — Personalize. Writes ONE real setting: the appearance domain's
+ * Step 5 - Personalize. Writes ONE real setting: the appearance domain's
  * defaultDashboardLayout (a supported dashboard emphasis in the existing
  * data model). The schematics are labeled illustrative previews. "Keep the
  * default layout" performs NO write. Selecting is never color-only: the
@@ -50,7 +50,7 @@ export function PersonalizeStep({ controller, dict, onAdvance, onBack }: Onboard
     setError(null);
     setPending(true);
     if (selected === currentLayout) {
-      // Nothing to persist — the choice already matches the stored value.
+      // Nothing to persist - the choice already matches the stored value.
       onAdvance();
       return;
     }

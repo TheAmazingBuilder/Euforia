@@ -1,5 +1,5 @@
 /**
- * Nofy HTTP surface (B11) — 23 routes mirroring the MSW handlers 1:1:
+ * Nofy HTTP surface (B11) - 23 routes mirroring the MSW handlers 1:1:
  * overview, note lists (scope + linked-entity + search), note CRUD with
  * soft-delete/restore/purge, duplicate, version history (list / get /
  * restore), folders, tags, templates (library / create / instantiate)
@@ -41,14 +41,14 @@ const nofyTagCreateInputSchema = z.object({ name: z.string().max(80) });
 export class NofyController {
   constructor(private readonly nofy: NofyService) {}
 
-  /** GET /nofy/overview — knowledge workspace aggregates. */
+  /** GET /nofy/overview - knowledge workspace aggregates. */
   @Get("overview")
   async overview(@CurrentUser() principal: AuthPrincipal) {
     return this.nofy.nofyOverview(principal.userId);
   }
 
   /**
-   * GET /nofy/notes?view=&folderId=&tagId=&q=&sort= — filtered note lists.
+   * GET /nofy/notes?view=&folderId=&tagId=&q=&sort= - filtered note lists.
    * ?refKind=&refId= instead returns the notes linked to an app entity
    * (the Playbook / Trade Review integration surface).
    */
@@ -69,7 +69,7 @@ export class NofyController {
     return this.nofy.listNotes(principal.userId, scope, { q: query.q, sort: query.sort });
   }
 
-  /** POST /nofy/notes — create (optionally from a template). */
+  /** POST /nofy/notes - create (optionally from a template). */
   @Post("notes")
   @HttpCode(HttpStatus.CREATED)
   async createNote(
@@ -79,13 +79,13 @@ export class NofyController {
     return this.nofy.createNote(principal.userId, payload as z.infer<typeof nofyNoteCreateInputSchema>);
   }
 
-  /** GET /nofy/notes/:noteId — full note (refs re-resolved, view tracked). */
+  /** GET /nofy/notes/:noteId - full note (refs re-resolved, view tracked). */
   @Get("notes/:noteId")
   async getNote(@CurrentUser() principal: AuthPrincipal, @Param("noteId") noteId: string) {
     return this.nofy.getNote(principal.userId, uuidSchema.parse(noteId), { touchViewed: true });
   }
 
-  /** PATCH /nofy/notes/:noteId — autosave + metadata (version snapshots inside). */
+  /** PATCH /nofy/notes/:noteId - autosave + metadata (version snapshots inside). */
   @Patch("notes/:noteId")
   async updateNote(
     @CurrentUser() principal: AuthPrincipal,
@@ -99,7 +99,7 @@ export class NofyController {
     );
   }
 
-  /** DELETE /nofy/notes/:noteId — soft delete → Trash. */
+  /** DELETE /nofy/notes/:noteId - soft delete → Trash. */
   @Delete("notes/:noteId")
   async trashNote(@CurrentUser() principal: AuthPrincipal, @Param("noteId") noteId: string) {
     return this.nofy.trashNote(principal.userId, uuidSchema.parse(noteId));
@@ -120,25 +120,25 @@ export class NofyController {
     );
   }
 
-  /** POST /nofy/notes/:noteId/restore — out of the trash. */
+  /** POST /nofy/notes/:noteId/restore - out of the trash. */
   @Post("notes/:noteId/restore")
   async restoreNote(@CurrentUser() principal: AuthPrincipal, @Param("noteId") noteId: string) {
     return this.nofy.restoreNote(principal.userId, uuidSchema.parse(noteId));
   }
 
-  /** DELETE /nofy/notes/:noteId/permanent — irreversible purge from trash. */
+  /** DELETE /nofy/notes/:noteId/permanent - irreversible purge from trash. */
   @Delete("notes/:noteId/permanent")
   async purgeNote(@CurrentUser() principal: AuthPrincipal, @Param("noteId") noteId: string) {
     return this.nofy.purgeNote(principal.userId, uuidSchema.parse(noteId));
   }
 
-  /** GET /nofy/notes/:noteId/versions — version history list. */
+  /** GET /nofy/notes/:noteId/versions - version history list. */
   @Get("notes/:noteId/versions")
   async listVersions(@CurrentUser() principal: AuthPrincipal, @Param("noteId") noteId: string) {
     return this.nofy.listVersions(principal.userId, uuidSchema.parse(noteId));
   }
 
-  /** GET /nofy/notes/:noteId/versions/:versionId — one version's blocks. */
+  /** GET /nofy/notes/:noteId/versions/:versionId - one version's blocks. */
   @Get("notes/:noteId/versions/:versionId")
   async getVersion(
     @CurrentUser() principal: AuthPrincipal,
@@ -148,7 +148,7 @@ export class NofyController {
     return this.nofy.getVersion(principal.userId, uuidSchema.parse(noteId), uuidSchema.parse(versionId));
   }
 
-  /** POST /nofy/notes/:noteId/versions/:versionId/restore — roll back. */
+  /** POST /nofy/notes/:noteId/versions/:versionId/restore - roll back. */
   @Post("notes/:noteId/versions/:versionId/restore")
   async restoreVersion(
     @CurrentUser() principal: AuthPrincipal,
@@ -158,7 +158,7 @@ export class NofyController {
     return this.nofy.restoreVersion(principal.userId, uuidSchema.parse(noteId), uuidSchema.parse(versionId));
   }
 
-  /** GET /nofy/folders — folders with live note counts. */
+  /** GET /nofy/folders - folders with live note counts. */
   @Get("folders")
   async listFolders(@CurrentUser() principal: AuthPrincipal) {
     return this.nofy.listFolders(principal.userId);
@@ -174,7 +174,7 @@ export class NofyController {
     return this.nofy.createFolder(principal.userId, payload);
   }
 
-  /** PATCH /nofy/folders/:folderId — rename. */
+  /** PATCH /nofy/folders/:folderId - rename. */
   @Patch("folders/:folderId")
   async updateFolder(
     @CurrentUser() principal: AuthPrincipal,
@@ -184,19 +184,19 @@ export class NofyController {
     return this.nofy.updateFolder(principal.userId, uuidSchema.parse(folderId), payload);
   }
 
-  /** DELETE /nofy/folders/:folderId — notes fall back to "No folder". */
+  /** DELETE /nofy/folders/:folderId - notes fall back to "No folder". */
   @Delete("folders/:folderId")
   async deleteFolder(@CurrentUser() principal: AuthPrincipal, @Param("folderId") folderId: string) {
     return this.nofy.deleteFolder(principal.userId, uuidSchema.parse(folderId));
   }
 
-  /** GET /nofy/tags — tags with live note counts. */
+  /** GET /nofy/tags - tags with live note counts. */
   @Get("tags")
   async listTags(@CurrentUser() principal: AuthPrincipal) {
     return this.nofy.listTags(principal.userId);
   }
 
-  /** POST /nofy/tags — create-or-return (idempotent by name). */
+  /** POST /nofy/tags - create-or-return (idempotent by name). */
   @Post("tags")
   @HttpCode(HttpStatus.CREATED)
   async createTag(
@@ -206,13 +206,13 @@ export class NofyController {
     return this.nofy.createTag(principal.userId, payload.name);
   }
 
-  /** GET /nofy/templates — built-in + user templates. */
+  /** GET /nofy/templates - built-in + user templates. */
   @Get("templates")
   async listTemplates(@CurrentUser() principal: AuthPrincipal) {
     return this.nofy.listTemplates(principal.userId);
   }
 
-  /** POST /nofy/templates — capture a reusable structure. */
+  /** POST /nofy/templates - capture a reusable structure. */
   @Post("templates")
   @HttpCode(HttpStatus.CREATED)
   async createTemplate(
@@ -222,7 +222,7 @@ export class NofyController {
     return this.nofy.createTemplate(principal.userId, payload);
   }
 
-  /** POST /nofy/templates/instantiate — new note from a template. */
+  /** POST /nofy/templates/instantiate - new note from a template. */
   @Post("templates/instantiate")
   @HttpCode(HttpStatus.CREATED)
   async instantiateTemplate(
@@ -232,7 +232,7 @@ export class NofyController {
     return this.nofy.instantiateTemplate(principal.userId, payload);
   }
 
-  /** GET /nofy/search?q= — full-text across title/content/tags/folder. */
+  /** GET /nofy/search?q= - full-text across title/content/tags/folder. */
   @Get("search")
   async search(
     @CurrentUser() principal: AuthPrincipal,
@@ -241,7 +241,7 @@ export class NofyController {
     return this.nofy.searchNofy(principal.userId, query.q ?? "");
   }
 
-  /** GET /nofy/refs?q=&kind= — the entity picker's source. */
+  /** GET /nofy/refs?q=&kind= - the entity picker's source. */
   @Get("refs")
   async listRefs(
     @CurrentUser() principal: AuthPrincipal,

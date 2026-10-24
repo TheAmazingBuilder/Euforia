@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 };
 
 /**
- * /tools/lot-size — Lot (TOOLS section). The page opens with the standard
+ * /tools/lot-size - Lot (TOOLS section). The page opens with the standard
  * module header (title + description, same typography as every other
  * module) before the calculator (inputs → calculate → result → breakdown).
  * Frontend-only deterministic math through the shared live-estimate layer;

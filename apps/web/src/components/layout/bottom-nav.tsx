@@ -40,7 +40,7 @@ function GhostFab() {
 }
 
 /**
- * Bottom navigation — mobile only (hidden from lg up).
+ * Bottom navigation - mobile only (hidden from lg up).
  * Home | Trades | [+ FAB] | Playbook | Stats, with active states mirroring the sidebar.
  */
 export function BottomNav() {

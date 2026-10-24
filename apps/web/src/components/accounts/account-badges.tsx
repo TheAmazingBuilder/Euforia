@@ -20,7 +20,7 @@ import { connectionStatusMeta, syncStatusMeta } from "@/lib/api/queries";
 /**
  * Presentation mapping for the two status axes (Phase 02). Domain values are
  * backend-owned; these components only translate them into label + icon +
- * tone. Icon + text always travel together — color is never the only signal.
+ * tone. Icon + text always travel together - color is never the only signal.
  */
 
 export type Tone = "positive" | "warning" | "negative" | "muted" | "info";
@@ -98,7 +98,7 @@ export function SyncStatusBadge({
 }
 
 /**
- * The simulated-provider stamp — rendered on EVERY surface backed by a
+ * The simulated-provider stamp - rendered on EVERY surface backed by a
  * provider with isMock: true. Financial data must never read as real while
  * the mock adapter produced it (Phase 02 acceptance: no fixture balance
  * renders without a visible demo marker).
@@ -116,7 +116,7 @@ export function SimulatedProviderBadge({ className }: { className?: string }) {
   );
 }
 
-/** Environment stamp — Demo / Live / Prop (AccountSwitcher convention). */
+/** Environment stamp - Demo / Live / Prop (AccountSwitcher convention). */
 export function EnvironmentStamp({ environment }: { environment: string }) {
   const label = environment === "PROP_FIRM" ? "PROP" : environment;
   return (

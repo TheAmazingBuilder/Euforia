@@ -1,5 +1,5 @@
 /**
- * Nofy service (B11) — the knowledge workspace's server-side brain.
+ * Nofy service (B11) - the knowledge workspace's server-side brain.
  *
  * Owns per-user Nofy state (notes composed of ordered blocks, folders,
  * tags, templates, version history) in the nofyRow bounded context.
@@ -10,7 +10,7 @@
  * Cross-context reads are contract-narrow: TradesService (journal facts +
  * instruments), PlaybookService (strategies/setups/rules), and the
  * deterministic eco generator (calendar). Academy lessons have no rows in
- * this backend yet — LESSON pointers stay stored and resolve as
+ * this backend yet - LESSON pointers stay stored and resolve as
  * "Unresolved reference" until B12 lands.
  */
 import { Injectable } from "@nestjs/common";
@@ -48,13 +48,13 @@ const TEXT_BEARING = new Set<NofyBlock["type"]>([
   "paragraph", "h1", "h2", "h3", "bullet", "numbered", "todo", "quote", "callout", "code",
 ]);
 
-/** Plain-text projection of a block list — search, excerpt and word count. */
+/** Plain-text projection of a block list - search, excerpt and word count. */
 function textOfBlocks(blocks: NofyBlock[]): string {
   const parts: string[] = [];
   for (const block of blocks) {
     if (TEXT_BEARING.has(block.type) && block.text.trim() !== "") parts.push(block.text.trim());
     if (block.type === "table" && block.rows) {
-      for (const row of block.rows) parts.push(row.join(" — "));
+      for (const row of block.rows) parts.push(row.join(" - "));
     }
     if (block.type === "image" && block.caption) parts.push(block.caption);
   }
@@ -136,7 +136,7 @@ export class NofyService {
   }
 
   /**
-   * Lazy per-user seed — the demo workspace appears on first read, with
+   * Lazy per-user seed - the demo workspace appears on first read, with
    * reference blocks pointing at the user's REAL entities when available.
    */
   private async ensureSeed(userId: string): Promise<void> {
@@ -174,7 +174,7 @@ export class NofyService {
       await this.repository.insert(userId, "TAG", tag.id, tag as unknown as never);
     }
     for (const template of seed.templates) {
-      // Built-in template ids are slug ids (tpl-…), not uuids — the row id
+      // Built-in template ids are slug ids (tpl-…), not uuids - the row id
       // column requires a uuid, so the row id is derived while the slug id
       // stays inside the payload.
       await this.repository.insert(
@@ -199,7 +199,7 @@ export class NofyService {
           const trade = trades.find((t) => t.id === id);
           if (!trade) return null;
           const { instruments } = await this.trades.listInstruments();
-          const symbol = instruments.find((i) => i.id === trade.instrumentId)?.symbol ?? "—";
+          const symbol = instruments.find((i) => i.id === trade.instrumentId)?.symbol ?? "-";
           const r = Number(trade.rMultiple ?? 0);
           const meta = trade.status === "CLOSED"
             ? `${symbol} ${trade.direction} · ${trade.status} · ${r >= 0 ? "+" : ""}${r.toFixed(2)}R`
@@ -225,7 +225,7 @@ export class NofyService {
           return { kind, id, label: rule.title, meta: "Playbook rule", href: "/playbook?tab=rules" };
         }
         case "LESSON": {
-          // Academy rows do not exist in this backend yet (B12 pending) —
+          // Academy rows do not exist in this backend yet (B12 pending) -
           // the pointer stays stored and renders as unresolved.
           return null;
         }
@@ -371,7 +371,7 @@ export class NofyService {
     return { notes: sorted.map((note) => this.toRow(note, folders, tags)), total: sorted.length };
   }
 
-  /** Notes linked to an app entity — the Playbook / Trade Review integration. */
+  /** Notes linked to an app entity - the Playbook / Trade Review integration. */
   async listNotesLinkedTo(userId: string, kind: NofyRefKind, id: string) {
     await this.ensureSeed(userId);
     const [all, folders, tags] = await Promise.all([this.notes(userId), this.folders(userId), this.tags(userId)]);
@@ -428,7 +428,7 @@ export class NofyService {
     return { results, total: results.length };
   }
 
-  /** Entity picker — referenceable entities across the whole app. */
+  /** Entity picker - referenceable entities across the whole app. */
   async listRefs(userId: string, q: string, kind?: string) {
     const query = q.trim().toLowerCase();
     const ALL_KINDS: NofyRefKind[] = ["TRADE", "STRATEGY", "SETUP", "RULE", "LESSON", "EVENT", "SYMBOL", "NOTE"];
@@ -456,7 +456,7 @@ export class NofyService {
       const { rules } = await this.playbook.listPlaybookRules(userId).catch(() => ({ rules: [] as Array<{ id: string }> }));
       for (const rule of rules) await push("RULE", rule.id);
     }
-    // LESSON: no Academy rows yet (B12 pending) — nothing to list.
+    // LESSON: no Academy rows yet (B12 pending) - nothing to list.
     if (kinds.includes("EVENT")) {
       for (const event of generateEcoEvents(new Date()).slice(0, 40)) await push("EVENT", event.id);
     }
@@ -674,7 +674,7 @@ export class NofyService {
     const note = row.data as unknown as NofyNote;
     if (note.deletedAt === null) throw new NotFoundError("Note not found", TRADING_ERROR.TRADE_NOT_FOUND);
     await this.repository.deleteRow(row.id);
-    // Purge also drops the version history (mock parity) — VERSION rows are
+    // Purge also drops the version history (mock parity) - VERSION rows are
     // matched by their embedded noteId (the row id IS the version id).
     for (const versionRow of await this.repository.listByKind(userId, "VERSION")) {
       if ((versionRow.data as { noteId?: string }).noteId === id) {

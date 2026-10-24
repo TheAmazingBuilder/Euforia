@@ -11,9 +11,9 @@ import { mockStore } from "@/mocks/store";
 import { endpoint, latency, parseBody, pathParam, readJson, requireAuth, toErrorResponse } from "./utils";
 
 /**
- * Metric alert rules (Dashboard Customization Phase 07) — MSW mirror of the
+ * Metric alert rules (Dashboard Customization Phase 07) - MSW mirror of the
  * NestJS module: rule CRUD (validated by the SAME shared schemas), the
- * manual evaluate stub (deterministic evaluation is a SERVER capability —
+ * manual evaluate stub (deterministic evaluation is a SERVER capability -
  * the mock reports an honest zero-trigger pass) and per-rule event history
  * read from the shared mock inbox (payload.ruleId).
  */
@@ -21,7 +21,7 @@ import { endpoint, latency, parseBody, pathParam, readJson, requireAuth, toError
 /** In-memory rule documents (session-scoped, like every mock collection). */
 const rules: MetricAlertRule[] = [];
 
-/** The mock store is single-user — a stable stand-in owner id. */
+/** The mock store is single-user - a stable stand-in owner id. */
 const MOCK_USER_ID = "00000000-0000-4000-8000-00000000d07f";
 
 function initialRuleState(): MetricAlertRule["state"] {
@@ -51,12 +51,12 @@ export const metricAlertHandlers = [
     }
   }),
 
-  // POST /alert-rules/evaluate — declared BEFORE :ruleId routes
+  // POST /alert-rules/evaluate - declared BEFORE :ruleId routes
   http.post(endpoint(apiPaths.alertRulesEvaluate), async ({ request }) => {
     await latency();
     try {
       requireAuth(request);
-      // Honest mock semantics: no journal-wide evaluation engine here — the
+      // Honest mock semantics: no journal-wide evaluation engine here - the
       // real API evaluates after closed-trade writes and on this endpoint.
       return HttpResponse.json({
         evaluatedRules: 0,
@@ -114,7 +114,7 @@ export const metricAlertHandlers = [
     }
   }),
 
-  // GET /alert-rules/:ruleId/events — inbox rows referencing the rule
+  // GET /alert-rules/:ruleId/events - inbox rows referencing the rule
   http.get(endpoint(apiPaths.alertRuleEvents(":ruleId")), async ({ request, params }) => {
     await latency();
     try {

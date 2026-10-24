@@ -33,7 +33,7 @@ export class MfaService {
     private readonly events: SecurityEventService,
   ) {}
 
-  /** POST /security/2fa/enable — returns the one-time enrollment payload. */
+  /** POST /security/2fa/enable - returns the one-time enrollment payload. */
   async enable(
     user: UserRow,
     reauthToken: string | undefined,
@@ -57,13 +57,13 @@ export class MfaService {
       userId: user.id,
       type: "SENSITIVE_SETTINGS_CHANGED",
       actor: user.email,
-      context: "Two-factor enrollment started — awaiting confirmation.",
+      context: "Two-factor enrollment started - awaiting confirmation.",
     });
     void updated;
     return { secret, recoveryCodes: plainCodes };
   }
 
-  /** POST /security/2fa/confirm — activates the pending enrollment (no reauth: the TOTP code IS the proof). */
+  /** POST /security/2fa/confirm - activates the pending enrollment (no reauth: the TOTP code IS the proof). */
   async confirm(user: UserRow, code: string): Promise<TwoFactorState> {
     if (user.mfaEnabledAt) {
       throw new ConflictError("Two-factor authentication is already enabled.", "TFA_ALREADY_ON");
@@ -74,7 +74,7 @@ export class MfaService {
     }
     const secret = this.totp.decryptSecret(pending);
     if (!secret || !this.totp.verify(secret, user.email, code)) {
-      throw new BusinessRuleError("That code didn't match — check your authenticator app.", "INVALID_CODE");
+      throw new BusinessRuleError("That code didn't match - check your authenticator app.", "INVALID_CODE");
     }
 
     const now = new Date();
@@ -94,7 +94,7 @@ export class MfaService {
     return this.state(updated);
   }
 
-  /** POST /security/2fa/disable — sensitive: reauth required, codes destroyed. */
+  /** POST /security/2fa/disable - sensitive: reauth required, codes destroyed. */
   async disable(user: UserRow, reauthToken: string | undefined): Promise<TwoFactorState> {
     await this.reauth.consume(reauthToken, user.id);
     if (!user.mfaEnabledAt) {
@@ -113,12 +113,12 @@ export class MfaService {
       userId: user.id,
       type: "TFA_DISABLED",
       actor: user.email,
-      context: "Two-factor authentication disabled — recovery codes invalidated.",
+      context: "Two-factor authentication disabled - recovery codes invalidated.",
     });
     return this.state(updated);
   }
 
-  /** POST /security/2fa/recovery/regenerate — replaces the whole set. */
+  /** POST /security/2fa/recovery/regenerate - replaces the whole set. */
   async regenerateCodes(
     user: UserRow,
     reauthToken: string | undefined,
@@ -136,7 +136,7 @@ export class MfaService {
       userId: user.id,
       type: "RECOVERY_CODES_REGENERATED",
       actor: user.email,
-      context: "Recovery codes regenerated — previous set invalidated.",
+      context: "Recovery codes regenerated - previous set invalidated.",
     });
     return { recoveryCodes: plainCodes };
   }

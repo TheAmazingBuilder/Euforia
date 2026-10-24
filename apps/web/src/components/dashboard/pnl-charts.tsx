@@ -49,7 +49,7 @@ function PnlCardHeader({
 }
 
 /**
- * Cumulative P&L — accent line over a soft gradient area with a zero
+ * Cumulative P&L - accent line over a soft gradient area with a zero
  * baseline, mono end-label on the last point. Range = period chips (URL).
  * Phase 02: when a widget config is provided the range comes from it and
  * the chips update the widget's own configuration instead of the URL.
@@ -262,7 +262,7 @@ export function CumulativePnlCard({
 }
 
 /**
- * Daily P&L — per-day bars, profit/loss ink by sign, tooltip with the
+ * Daily P&L - per-day bars, profit/loss ink by sign, tooltip with the
  * signed amount and the number of trades behind the day. The average
  * mark line is widget-configurable (Phase 02).
  */
@@ -338,7 +338,7 @@ export function DailyPnlCard({
           data: values.map((value) => {
             const positive = value >= 0;
             const color = positive ? theme.profit : theme.loss;
-            // Vertical gradient — saturated at the bar's extremity, fading
+            // Vertical gradient - saturated at the bar's extremity, fading
             // toward the zero line (direction-aware for losses).
             return {
               value,
@@ -391,7 +391,7 @@ export function DailyPnlCard({
     <Card className="bg-surface" data-testid="daily-pnl-card" data-range={range}>
       <PnlCardHeader
         title="Daily P&L"
-        description={`Result per trading day — last ${range} days`}
+        description={`Result per trading day - last ${range} days`}
         range={range}
         onRangeChange={setRange}
       />

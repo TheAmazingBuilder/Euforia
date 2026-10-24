@@ -1,5 +1,5 @@
 /**
- * OCR retention (engine quality §4.2) — auto-purge of stored screenshot
+ * OCR retention (engine quality §4.2) - auto-purge of stored screenshot
  * binaries after the configured window.
  *
  * Discipline:
@@ -9,15 +9,15 @@
  *     purged and the DTO reports `asset.purged`.
  *   - CONFIRMED and FAILED rows are purge-eligible after `retentionDays`;
  *     REVIEW_REQUIRED keeps a 2× grace window (the user may still need the
- *     screenshot to finish the review) — then it purges too. QUEUED/
+ *     screenshot to finish the review) - then it purges too. QUEUED/
  *     PROCESSING rows are never touched (live pipeline state).
  *   - The binary removal goes through the SAME storage port as everything
- *     else (§6) and happens AFTER the row stamp — a crash between the two
+ *     else (§6) and happens AFTER the row stamp - a crash between the two
  *     leaves an orphan FILE, never a lying metadata row (§50 discipline).
  *   - 0 disables retention entirely (documented contract of the env var).
  *
  * Scheduling: a plain in-process interval (6 h cadence, first pass after
- * 1 min) — the same house tradeoff as the rate limiters (single-instance
+ * 1 min) - the same house tradeoff as the rate limiters (single-instance
  * monolith; no BullMQ/Redis in this build). Cleanup is idempotent, so a
  * restart re-running an interval is harmless.
  */
@@ -61,7 +61,7 @@ export class OcrRetentionService implements OnModuleInit, OnModuleDestroy {
   }
 
   /**
-   * One purge pass — idempotent, batched, best-effort per row. Exposed as a
+   * One purge pass - idempotent, batched, best-effort per row. Exposed as a
    * public method so tests and the runtime verification script can drive it
    * deterministically.
    */
@@ -79,7 +79,7 @@ export class OcrRetentionService implements OnModuleInit, OnModuleDestroy {
       if (rows.length === 0) break;
       for (const row of rows) {
         const stamped = await this.repository.markScreenshotPurged(row.id);
-        if (!stamped) continue; // concurrent transition won — leave it be
+        if (!stamped) continue; // concurrent transition won - leave it be
         // AFTER the row stamp (§50): a storage failure here leaves an orphan
         // file, never a metadata row claiming a binary it no longer has.
         if (row.storageKey) {

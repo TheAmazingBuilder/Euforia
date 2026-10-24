@@ -61,7 +61,7 @@ import { buildEcoEvents } from "./eco-events";
  */
 
 export const SEED = 20260917;
-/** Fixture user timezone — matches the sandbox session owner. */
+/** Fixture user timezone - matches the sandbox session owner. */
 export const USER_TZ = "America/Toronto";
 const DAYS = 90;
 const DAY_MS = 86_400_000;
@@ -74,7 +74,7 @@ export interface FixtureUser {
   baseCurrency: "USD";
   timezone: string;
   theme: "DARK_BLUE";
-  /** Settings module — profile extras (nullable until the user sets them). */
+  /** Settings module - profile extras (nullable until the user sets them). */
   username: string | null;
   bio: string | null;
   avatarUrl: string | null;
@@ -222,7 +222,7 @@ export function buildFixtureData(): FixtureData {
     userId,
     name: def.name,
     description: def.description,
-    entryRules: `1. Wait for the ${def.name} precondition.\n2. Enter on the confirmation candle.\n3. Never chase — skip if gone.`,
+    entryRules: `1. Wait for the ${def.name} precondition.\n2. Enter on the confirmation candle.\n3. Never chase - skip if gone.`,
     exitRules: "Stop to breakeven at +1R; scale out 50% at 1.5R; trail the rest.",
     riskRules: "Max 1% risk per trade. Max 2 concurrent positions.",
     grade: def.grade,
@@ -527,7 +527,7 @@ export function buildFixtureData(): FixtureData {
           mistakeId: mistakeByKey.get("revenge_trade")!.id,
           detectedBy: "AUTO",
           userConfirmed: revengeIndex === 2 ? true : null,
-          note: revengeIndex === 2 ? "Confirmed — I saw it live and logged it." : null,
+          note: revengeIndex === 2 ? "Confirmed - I saw it live and logged it." : null,
           createdAt: exitAt,
         });
       }
@@ -601,7 +601,7 @@ export function buildFixtureData(): FixtureData {
         mistakeId: mistakeByKey.get("moved_stop")!.id,
         detectedBy: "AUTO",
         userConfirmed: movedStopCount === 1 ? false : null,
-        note: movedStopCount === 1 ? "Contested — it was a legitimate trailing stop." : null,
+        note: movedStopCount === 1 ? "Contested - it was a legitimate trailing stop." : null,
         createdAt: trade.exitAt ?? trade.entryAt,
       });
     }
@@ -617,11 +617,11 @@ export function buildFixtureData(): FixtureData {
   // carries one. Deterministic; recent trades stay unwritten (today's
   // reflections are not written yet).
   const LESSON_POOL: readonly string[] = [
-    "Waited for the confirmation candle instead of anticipating — keep this.",
+    "Waited for the confirmation candle instead of anticipating - keep this.",
     "Size felt right, but I checked the news window after entry. Checklist next time.",
     "Trailed too late; the plan said breakeven at +1R.",
     "Clean execution of the playbook entry. Nothing to fix.",
-    "Hesitated 10 minutes before pulling the trigger — setup was valid.",
+    "Hesitated 10 minutes before pulling the trigger - setup was valid.",
     "Stopped out on the retest wick. Entry was fine, stop was tight.",
   ];
   for (const trade of trades) {
@@ -728,7 +728,7 @@ export function buildFixtureData(): FixtureData {
   const ghostSpecs = [
     { offset: 27, reason: "DISCIPLINE", outcome: "WOULD_HAVE_LOST", r: -0.8, dir: "BUY", notes: "Valid breakout, risk budget exhausted." },
     { offset: 18, reason: "FEAR", outcome: "WOULD_HAVE_WON", r: 1.1, dir: "SELL", notes: null },
-    { offset: 10, reason: "DISCIPLINE", outcome: "WOULD_HAVE_LOST", r: -0.5, dir: "BUY", notes: "Chased price last time — skipped correctly." },
+    { offset: 10, reason: "DISCIPLINE", outcome: "WOULD_HAVE_LOST", r: -0.5, dir: "BUY", notes: "Chased price last time - skipped correctly." },
     { offset: 6, reason: "NO_SETUP", outcome: "WOULD_HAVE_LOST", r: -1.2, dir: "SELL", notes: null },
     { offset: 3, reason: "FEAR", outcome: "WOULD_HAVE_WON", r: 0.7, dir: "BUY", notes: "Hesitated at the retest." },
     { offset: 1, reason: "OUT_OF_PLAYBOOK", outcome: null, r: null, dir: "SELL", notes: null },
@@ -756,7 +756,7 @@ export function buildFixtureData(): FixtureData {
 
   // ── Alerts (6 + settlement reminders) ──
   // Pending ghost trades older than 1 day trigger a soft "how did it play
-  // out?" reminder (trade-entry-ux.md §8) — SYSTEM/NOTIFY, unread, feeding
+  // out?" reminder (trade-entry-ux.md §8) - SYSTEM/NOTIFY, unread, feeding
   // both the alerts feed and the Session Live settlement queue.
   const settlementReminders: Alert[] = skippedTrades
     .filter((ghost) => ghost.outcomeGuess === null)
@@ -770,7 +770,7 @@ export function buildFixtureData(): FixtureData {
         type: "SYSTEM" as const,
         severity: "NOTIFY" as const,
         title: "Ghost check-in",
-        message: `Your ${weekday} ${symbol} — how did it play out? Two taps to settle it (would have won / lost).`,
+        message: `Your ${weekday} ${symbol} - how did it play out? Two taps to settle it (would have won / lost).`,
         payload: { skippedTradeId: ghost.id },
         tradeId: null,
         readAt: null,
@@ -816,7 +816,7 @@ export function buildFixtureData(): FixtureData {
       severity: "NOTIFY",
       title: "Execution strength detected",
       message:
-        "You respected stops on 100% of synthetic and FX trades this week — an estimated $2,150 in runaway slippage prevented.",
+        "You respected stops on 100% of synthetic and FX trades this week - an estimated $2,150 in runaway slippage prevented.",
       payload: { stopCompliancePct: 100 },
       tradeId: null,
       readAt: null,
@@ -829,7 +829,7 @@ export function buildFixtureData(): FixtureData {
       type: "RULE_VIOLATION",
       severity: "ALERT",
       title: "Max trades per day reached",
-      message: "3 trades logged today (limit 3). Every extra trade is a rule breach — consider stopping here.",
+      message: "3 trades logged today (limit 3). Every extra trade is a rule breach - consider stopping here.",
       payload: { tradesToday: 3, limit: 3 },
       tradeId: todayLastTrade?.id ?? null,
       readAt: null,
@@ -855,7 +855,7 @@ export function buildFixtureData(): FixtureData {
       type: "TILT_WARNING",
       severity: "WARN",
       title: "Bigger-size re-entry after a loss",
-      message: "A larger-than-planned position was opened minutes after a loss — classic tilt pattern. Review the session before continuing.",
+      message: "A larger-than-planned position was opened minutes after a loss - classic tilt pattern. Review the session before continuing.",
       payload: { pattern: "revenge", minutes: 30 },
       tradeId: revengeSecondTradeIds[0]?.id ?? null,
       readAt: null,
@@ -868,7 +868,7 @@ export function buildFixtureData(): FixtureData {
       type: "STREAK",
       severity: "WARN",
       title: "4 wins in a row",
-      message: "Four consecutive wins — watch for overconfidence sizing on the next entries.",
+      message: "Four consecutive wins - watch for overconfidence sizing on the next entries.",
       payload: { streak: 4 },
       tradeId: findTradeOnDay(9, false)?.id ?? null,
       readAt: isoAt(9, 22),
@@ -966,7 +966,7 @@ export function buildFixtureData(): FixtureData {
   // ── Rule violations: faithful replay of the discipline engine ──────────
   // Same predicates as MockStore.evaluateDiscipline, applied to the seeded
   // history so the violation log always agrees with the trade list. One row
-  // per (trading day, rule) — the first breach of the day. Older rows are
+  // per (trading day, rule) - the first breach of the day. Older rows are
   // mostly acknowledged; the recent ones stay pending for the UI.
   const ruleViolations: RuleViolation[] = [];
   {
@@ -1032,7 +1032,7 @@ export function buildFixtureData(): FixtureData {
           occurredAt: trade.entryAt,
           context,
           acknowledgedAt: acknowledge ? new Date(occurredMs + 26 * 3_600_000).toISOString() : null,
-          userNote: acknowledge && firedPerDay.size % 3 === 0 ? "Seen — slipping on process that day." : null,
+          userNote: acknowledge && firedPerDay.size % 3 === 0 ? "Seen - slipping on process that day." : null,
         });
       }
     }

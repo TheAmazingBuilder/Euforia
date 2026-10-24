@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 /**
- * Tasky contracts — the independent kanban module (Academy section).
+ * Tasky contracts - the independent kanban module (Academy section).
  * A five-column sprint board: BACKLOG → TODO → IN_PROGRESS → IN_REVIEW →
  * DONE. Cards carry a category tag, a priority pill, an assignee avatar and
  * an optional due date; the mock engine keeps per-session in-memory state so
@@ -20,7 +20,7 @@ export type TaskyColumn = z.infer<typeof taskyColumnSchema>;
 export const taskyPrioritySchema = z.enum(["URGENT", "HIGH", "MEDIUM", "LOW"]);
 export type TaskyPriority = z.infer<typeof taskyPrioritySchema>;
 
-/** Column chrome — the client maps `accent` to a semantic CSS token. */
+/** Column chrome - the client maps `accent` to a semantic CSS token. */
 export type TaskyColumnMeta = {
   id: TaskyColumn;
   label: string;
@@ -30,12 +30,12 @@ export type TaskyColumnMeta = {
 export type TaskyTask = {
   id: string;
   title: string;
-  /** Neutral bordered chip — work type (Feature/Bug/Risk/...). */
+  /** Neutral bordered chip - work type (Feature/Bug/Risk/...). */
   tag: string;
   priority: TaskyPriority;
-  /** Avatar initials (2–3 chars) — null renders a placeholder dot. */
+  /** Avatar initials (2–3 chars) - null renders a placeholder dot. */
   assignee: string | null;
-  /** ISO date (yyyy-mm-dd) — null means "no due date". */
+  /** ISO date (yyyy-mm-dd) - null means "no due date". */
   dueAt: string | null;
   column: TaskyColumn;
   /** Stable position inside the column (0 = top). */

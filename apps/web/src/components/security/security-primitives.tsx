@@ -24,7 +24,7 @@ import { useReauth } from "@/lib/api/queries";
  * sensitive actions (§13), the one-time secret/code reveal (§8, §6, §16) and
  * the event-type presentation registry (§10).
  *
- * NOTE: the demo hint mirrors DEMO_PASSWORD inside mocks/security-engine.ts —
+ * NOTE: the demo hint mirrors DEMO_PASSWORD inside mocks/security-engine.ts -
  * this environment has no real authentication, so the hint keeps both the
  * success and the failure paths demonstrable.
  */
@@ -56,7 +56,7 @@ export const EVENT_TYPE_META: Record<SecurityEventType, { label: string }> = {
   ACCOUNT_DELETION_REQUESTED: { label: "Deletion request" },
   // Trading-connectivity lifecycle facts emitted by the Accounts context
   // through the same append-only log (backend Phase 3; catalog reconciled
-  // in Phase 16) — rendered like any other event in the audit trail.
+  // in Phase 16) - rendered like any other event in the audit trail.
   TRADING_ACCOUNT_CONNECTED: { label: "Trading account connected" },
   TRADING_ACCOUNT_CONNECTION_FAILED: { label: "Connection failed" },
   TRADING_ACCOUNT_DISCONNECTED: { label: "Trading account disconnected" },
@@ -65,7 +65,7 @@ export const EVENT_TYPE_META: Record<SecurityEventType, { label: string }> = {
   OCR_PROCESSING_FAILED: { label: "Screenshot processing failed" },
   OCR_RESULT_CONFIRMED: { label: "Recognition confirmed" },
   OCR_RESULT_DELETED: { label: "Recognition deleted" },
-  // Phase 21 — the confirmation→journal bridge audit facts.
+  // Phase 21 - the confirmation→journal bridge audit facts.
   OCR_TRADE_IMPORTED: { label: "Trade imported from screenshot" },
   OCR_TRADE_IMPORT_SKIPPED: { label: "Screenshot import skipped" },
   OCR_REPROCESSED: { label: "Screenshot reprocessed" },
@@ -90,7 +90,7 @@ export function ReAuthDialog({
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /** What the token will authorize — shown in the dialog copy. */
+  /** What the token will authorize - shown in the dialog copy. */
   actionLabel: string;
   onAuthenticated: (token: string) => void;
   testid: string;
@@ -137,7 +137,7 @@ export function ReAuthDialog({
           <DialogTitle className="font-heading">Confirm it&apos;s you</DialogTitle>
           <DialogDescription>
             <span className="font-medium text-foreground">{actionLabel}</span>{" "}
-            is a sensitive action — re-enter your account password to
+            is a sensitive action - re-enter your account password to
             authorize it. The confirmation is valid for one action and a few
             minutes.
           </DialogDescription>
@@ -159,7 +159,7 @@ export function ReAuthDialog({
             data-testid={`${testid}-password`}
           />
           <p className="rounded-md border border-border bg-background/60 px-2.5 py-1.5 text-xs text-muted-foreground">
-            Demo environment — the account password is{" "}
+            Demo environment - the account password is{" "}
             <span className="font-mono text-foreground">{DEMO_PASSWORD_HINT}</span>.
           </p>
           {error !== null && (
@@ -194,11 +194,11 @@ export function ReAuthDialog({
   );
 }
 
-// ── One-time reveal (§8, §6 — never shown again) ─────────────────────────────
+// ── One-time reveal (§8, §6 - never shown again) ─────────────────────────────
 
 /**
  * The ONLY surface where a secret or recovery codes are ever rendered. Once
- * closed, the data is gone — the list views only ever show prefix +
+ * closed, the data is gone - the list views only ever show prefix +
  * fingerprint (§16).
  */
 export function SecretOnceDialog({
@@ -253,7 +253,7 @@ export function SecretOnceDialog({
             <p className="text-xs text-muted-foreground">
               For security, {secret !== undefined ? "this secret is" : "these codes are"}{" "}
               displayed <span className="font-medium text-foreground">only once</span>.
-              Euforia stores just a masked prefix and a fingerprint — nobody can
+              Euforia stores just a masked prefix and a fingerprint - nobody can
               retrieve it later, not even support.
             </p>
           </div>
@@ -314,7 +314,7 @@ export function SecretOnceDialog({
             disabled={!canClose}
             data-testid={`${testid}-done`}
           >
-            {secret !== undefined ? "Done — I saved it" : "Done"}
+            {secret !== undefined ? "Done - I saved it" : "Done"}
           </Button>
         </DialogFooter>
       </DialogContent>

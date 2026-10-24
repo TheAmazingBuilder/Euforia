@@ -22,7 +22,7 @@ const prismaLoggerOptionsProvider: Provider = {
     config: AppConfig,
     rootLogger?: { debug: (obj: object, msg?: string) => void },
   ): PrismaLoggerOptions => ({
-    // Query diagnostics in development/test only — never in production logs.
+    // Query diagnostics in development/test only - never in production logs.
     log:
       config.isDevelopment || config.env === "test"
         ? [

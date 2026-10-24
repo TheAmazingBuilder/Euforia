@@ -1,5 +1,5 @@
 /**
- * Academy catalog — a compact but complete static curriculum served by the
+ * Academy catalog - a compact but complete static curriculum served by the
  * API. The mock keeps a larger demo catalog; the live backend owns this one
  * (content parity between modes is a data concern, not a contract one).
  * Quiz/exam answers stay server-side and are never serialized.
@@ -76,11 +76,11 @@ export const COURSES: CatalogCourse[] = [
         summary: "Order flow, liquidity and the auction between buyers and sellers.",
         minutes: 12,
         blocks: [
-          { kind: "text", body: "Prices move because of imbalanced order flow. When market buy orders outpace resting sell liquidity, price rises — and the reverse." },
+          { kind: "text", body: "Prices move because of imbalanced order flow. When market buy orders outpace resting sell liquidity, price rises - and the reverse." },
           { kind: "list", items: [
-            "Information — new data repricing fair value.",
-            "Liquidity — how much size is resting at each level.",
-            "Leverage — forced flows from stops and margin calls.",
+            "Information - new data repricing fair value.",
+            "Liquidity - how much size is resting at each level.",
+            "Leverage - forced flows from stops and margin calls.",
           ] },
         ] as AcademyBlock[],
         checkpoint: q("cp-101-1", "MC", "What does resting liquidity do to a fast market?", ["Absorbs orders and slows the move", "Guarantees continuation", "Forces gaps"], 0, "Deep resting liquidity absorbs incoming orders, slowing or stopping the move."),
@@ -88,10 +88,10 @@ export const COURSES: CatalogCourse[] = [
       {
         id: "les-101-2",
         title: "Reading a candlestick",
-        summary: "Open, high, low, close — and the story they tell in context.",
+        summary: "Open, high, low, close - and the story they tell in context.",
         minutes: 10,
         blocks: [
-          { kind: "text", body: "Each candle compresses a timeframe of battle into four numbers. Context — where the candle forms — matters more than its shape." },
+          { kind: "text", body: "Each candle compresses a timeframe of battle into four numbers. Context - where the candle forms - matters more than its shape." },
         ] as AcademyBlock[],
         checkpoint: null,
       },
@@ -101,9 +101,9 @@ export const COURSES: CatalogCourse[] = [
         summary: "Ranges are negotiations, breakouts are failed or successful auctions.",
         minutes: 11,
         blocks: [
-          { kind: "text", body: "A range is a repeated auction looking for fair value. A breakout is the auction finding new value — or being rejected back into range." },
+          { kind: "text", body: "A range is a repeated auction looking for fair value. A breakout is the auction finding new value - or being rejected back into range." },
         ] as AcademyBlock[],
-        checkpoint: q("cp-101-3", "TF", "A failed breakout can be information about the next directional move.", ["True", "False"], true, "Failed auctions often fuel the move in the opposite direction — trapped traders must unwind."),
+        checkpoint: q("cp-101-3", "TF", "A failed breakout can be information about the next directional move.", ["True", "False"], true, "Failed auctions often fuel the move in the opposite direction - trapped traders must unwind."),
       },
     ],
   },
@@ -128,7 +128,7 @@ export const COURSES: CatalogCourse[] = [
       {
         id: "les-201-2",
         title: "Stop placement logic",
-        summary: "Invalidation first, then position size — never the reverse.",
+        summary: "Invalidation first, then position size - never the reverse.",
         minutes: 12,
         blocks: [
           { kind: "text", body: "The stop belongs where the idea is invalidated. Size is then derived from the distance to that invalidation and the account risk budget." },
@@ -167,7 +167,7 @@ export const QUIZZES: CatalogQuiz[] = [
     title: "Risk & Sizing check",
     passMark: 70,
     questions: [
-      q("q1", "MC", "Position size is derived from…", ["The invalidation distance and risk budget", "How confident you feel", "The broker's maximum lot"], 0, "Invalidation first, then sizing — never the reverse."),
+      q("q1", "MC", "Position size is derived from…", ["The invalidation distance and risk budget", "How confident you feel", "The broker's maximum lot"], 0, "Invalidation first, then sizing - never the reverse."),
       q("q2", "TF", "A fixed fractional risk per trade scales exposure down automatically during drawdowns.", ["True", "False"], true, "The fixed fraction of a smaller account is a smaller amount."),
     ],
   },
@@ -198,7 +198,7 @@ export const SCENARIOS: AcademyScenario[] = [
           { id: "o3", label: "Nothing" },
         ],
         correctOptionId: "o1",
-        feedback: "A close back inside signals rejection — trapped breakout buyers must unwind.",
+        feedback: "A close back inside signals rejection - trapped breakout buyers must unwind.",
       },
       {
         id: "s2",
@@ -219,7 +219,7 @@ export const FLASHCARDS: AcademyFlashcard[] = [
   { id: "fc-1", kind: "TAKEAWAY", front: "What is an R multiple?", back: "Profit or loss expressed in units of initial risk taken.", source: "Risk & Position Sizing", categoryId: "cat-risk" },
   { id: "fc-2", kind: "TERM", front: "Role of resting liquidity?", back: "Absorbs incoming orders; deep liquidity slows moves.", source: "Market Basics", categoryId: "cat-basics" },
   { id: "fc-3", kind: "TAKEAWAY", front: "Fixed fractional risk?", back: "Risking a fixed percent of the account per trade.", source: "Risk & Position Sizing", categoryId: "cat-risk" },
-  { id: "fc-4", kind: "TAKEAWAY", front: "Where does the stop belong?", back: "At the invalidation of the idea — sizing comes after.", source: "Risk & Position Sizing", categoryId: "cat-risk" },
+  { id: "fc-4", kind: "TAKEAWAY", front: "Where does the stop belong?", back: "At the invalidation of the idea - sizing comes after.", source: "Risk & Position Sizing", categoryId: "cat-risk" },
   { id: "fc-5", kind: "TERM", front: "Define expectancy.", back: "Average R per trade over a sample.", source: "Glossary", categoryId: "cat-risk" },
   { id: "fc-6", kind: "TERM", front: "What is a failed auction?", back: "A breakout rejected back into the prior value area.", source: "Market Basics", categoryId: "cat-basics" },
 ];
@@ -276,7 +276,7 @@ export function courseCardOf(
 // ── Quiz attachment (reconciliation fix) ─────────────────────────────────────
 // Courses declare `quizId` (a string) while every consumer reads the nested
 // `quiz` object (courseCard, getQuiz, exams). Attach the catalog quizzes to
-// their courses once at module init — a missing id degrades to undefined and
+// their courses once at module init - a missing id degrades to undefined and
 // the course simply has no quiz, never a fabricated one.
 const QUIZ_BY_ID = new Map(QUIZZES.map((quiz) => [quiz.id, quiz]));
 for (const course of COURSES) {

@@ -1,10 +1,10 @@
 /**
- * Trading Core controller (Phase 4 §33) — thin HTTP boundary over the
+ * Trading Core controller (Phase 4 §33) - thin HTTP boundary over the
  * trading application service. Validation → authentication (global guard) →
  * application use case → response. No domain logic, no Prisma, no provider
  * logic here.
  *
- * All routes require authentication (global JwtAuthGuard — no @Public here).
+ * All routes require authentication (global JwtAuthGuard - no @Public here).
  * Ownership is enforced inside the service: the userId always comes from the
  * auth principal, never from the client (§23/§24). No execution capability
  * exists anywhere in this API (§47 red line).
@@ -53,7 +53,7 @@ function requestIdOf(request: FastifyRequest): string | null {
 export class TradingController {
   constructor(private readonly trading: TradingService) {}
 
-  /** List journal trades — filters + server-side sorting + pagination (§34–§36). */
+  /** List journal trades - filters + server-side sorting + pagination (§34–§36). */
   @Get()
   list(@CurrentUser() principal: AuthPrincipal, @Query(new ZodValidationPipe(journalTradesQuerySchema)) query: JournalTradesQuery) {
     return this.trading.list(principal.userId, query);
@@ -96,7 +96,7 @@ export class TradingController {
     return this.trading.createManual(principal.userId, payload);
   }
 
-  /** Close a MANUAL open trade — single or partial exit legs (§10/§18). */
+  /** Close a MANUAL open trade - single or partial exit legs (§10/§18). */
   @Post(":tradeId/close")
   @HttpCode(HttpStatus.OK)
   async close(
@@ -119,7 +119,7 @@ export class TradingController {
     return this.trading.update(principal.userId, id, payload);
   }
 
-  /** Soft delete (§57) — history is archived, never destroyed. */
+  /** Soft delete (§57) - history is archived, never destroyed. */
   @Delete(":tradeId")
   async delete(
     @CurrentUser() principal: AuthPrincipal,

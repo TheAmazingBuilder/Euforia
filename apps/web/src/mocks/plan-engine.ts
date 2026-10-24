@@ -20,7 +20,7 @@ import {
 import { mockStore, MockError } from "@/mocks/store";
 
 /**
- * Trade Plan mock engine (Phase 11) — mirrors apps/api PlanService semantics
+ * Trade Plan mock engine (Phase 11) - mirrors apps/api PlanService semantics
  * 1:1 so the UI exercises the same rules in mocked mode:
  *
  *   - lifecycle transitions ONLY through the shared PLAN_TRANSITIONS table;
@@ -29,15 +29,15 @@ import { mockStore, MockError } from "@/mocks/store";
  *   - invalidation requires a reason; completion carries the review;
  *   - canonical-trade linkage validates symbol (mismatch = explicit confirm);
  *   - the plan-vs-actual comparison reads trade facts read-only and emits
- *     honest nulls — nothing is ever fabricated;
+ *     honest nulls - nothing is ever fabricated;
  *   - clientRequestId idempotency collapses retries.
  *
- * Storage is in-memory and reseeds on full page load — the SAME documented
+ * Storage is in-memory and reseeds on full page load - the SAME documented
  * limitation as every other mock domain (screenshots, reviews). The Nest API
  * (apps/api, :4000) is the durable implementation.
  */
 
-/** Millisecond-stripped ISO — byte-parity with the Nest wire format. */
+/** Millisecond-stripped ISO - byte-parity with the Nest wire format. */
 function isoNow(): string {
   return new Date().toISOString().replace(/\.\d{3}Z$/, "Z");
 }
@@ -53,12 +53,12 @@ function rule(message: string, code: string): MockError {
 interface PlanRecord {
   /** The wire plan (what the API would return). */
   wire: AnalysisPlan;
-  /** Server-side idempotency key — stored, never exposed on the wire
+  /** Server-side idempotency key - stored, never exposed on the wire
    *  (byte-parity with the Nest toWire projection). */
   clientRequestId: string | null;
 }
 
-/** Module-level store — reseeds with the rest of the mock domain. */
+/** Module-level store - reseeds with the rest of the mock domain. */
 const plans = new Map<string, PlanRecord>();
 
 function sorted(): PlanRecord[] {
@@ -86,7 +86,7 @@ function assertTransition(from: PlanStatus, to: PlanStatus): void {
   }
 }
 
-/** The mock trade facts port — mirrors TradesService.getTradeRowForUser.
+/** The mock trade facts port - mirrors TradesService.getTradeRowForUser.
  *  Symbol is resolved through the instrument catalog (the mock Trade row is
  *  instrument-keyed, exactly like the canonical journal row). */
 function findTrade(
@@ -100,7 +100,7 @@ function findTrade(
   // cannot equal the auth engine's fixed demo id, so a real ownership
   // comparison is unsatisfiable here (every other mock domain relies on
   // requireAuth only). The Nest API enforces ownership for real (e2e IDOR
-  // battery) — the mock mirrors the 404 for MISSING trades only.
+  // battery) - the mock mirrors the 404 for MISSING trades only.
   if (trade === null) return null;
   const symbol =
     mockStore.listInstruments().find((instrument) => instrument.id === trade.instrumentId)
@@ -148,7 +148,7 @@ function buildComparison(
       exitAt: comparisonTrade.exitAt,
     },
     direction: {
-      // Plans carry scenarios, not a single direction field — honest null.
+      // Plans carry scenarios, not a single direction field - honest null.
       planned: null,
       actual: comparisonTrade.direction,
       match: null,
@@ -211,7 +211,7 @@ export const planEngine = {
       );
     }
 
-    // NOTE: no tradeId in the create contract — a plan starts unlinked (§4.2).
+    // NOTE: no tradeId in the create contract - a plan starts unlinked (§4.2).
     // The analysis reference validates against the SERVER's analyses; the web
     // keeps analyses browser-local, so the UI never sends one (documented).
     const now = isoNow();
@@ -281,7 +281,7 @@ export const planEngine = {
     if (input.referenceTimeSec !== undefined) next.referenceTimeSec = input.referenceTimeSec;
     if (input.scenarios !== undefined) next.scenarios = input.scenarios;
     // analysisId validation is intentionally absent: the mock registry holds no
-    // server analyses, so any reference would 404 — the UI sends none.
+    // server analyses, so any reference would 404 - the UI sends none.
     next.updatedAt = isoNow();
     record.wire = analysisPlanMutatedResponseSchema.shape.plan.parse(next);
     return { plan: record.wire };
@@ -291,7 +291,7 @@ export const planEngine = {
     const record = requireRow(userId, planId);
     assertTransition(record.wire.status, "ACTIVE");
     // Activation gate (§5.4): a plan claiming readiness must say what would
-    // falsify it — no criteria, no activation.
+    // falsify it - no criteria, no activation.
     if (
       record.wire.invalidationCriteria === null ||
       record.wire.invalidationCriteria.trim() === ""
@@ -358,7 +358,7 @@ export const planEngine = {
     const record = requireRow(userId, planId);
     if (record.wire.tradeId !== null && record.wire.tradeId !== input.tradeId) {
       throw rule(
-        "This plan is already linked to another trade — detach it first.",
+        "This plan is already linked to another trade - detach it first.",
         PLAN_ERROR_CODES.PLAN_TRADE_ALREADY_LINKED,
       );
     }
@@ -426,7 +426,7 @@ export const planEngine = {
   },
 };
 
-/** Test/debug seam — the mock store exposes reset hooks for full reloads. */
+/** Test/debug seam - the mock store exposes reset hooks for full reloads. */
 export function resetPlanEngine(): void {
   plans.clear();
 }

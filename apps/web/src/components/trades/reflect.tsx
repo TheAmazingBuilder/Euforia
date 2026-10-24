@@ -35,16 +35,16 @@ import { closeJudgmentFlow } from "@/lib/hooks/use-judgment-flow";
 import { useI18n } from "@/i18n/i18n-provider";
 
 /**
- * ACT 3 — Reflect (trade-entry-ux.md §6): optional, one minute, ALL skippable.
+ * ACT 3 - Reflect (trade-entry-ux.md §6): optional, one minute, ALL skippable.
  * Detected mistakes (confirm/dismiss via PATCH), emotion-after (1-tap),
  * confidence (1–5), MFE/MAE user-observed prices, tags (+ inline creation),
- * the lesson and screenshots. The flow ends with [Finish] — or Esc at any
+ * the lesson and screenshots. The flow ends with [Finish] - or Esc at any
  * time. [Finish] also persists the deferred pieces: the psychology patch
  * (emotion-after / confidence deltas) and the picked screenshots (uploaded
- * sequentially — failures are toasted, never blocking).
+ * sequentially - failures are toasted, never blocking).
  */
 
-/** Rotate through the hourly slots — labels come from dict.trades.reflect. */
+/** Rotate through the hourly slots - labels come from dict.trades.reflect. */
 function rotatePlaceholder(placeholders: readonly string[]): string {
   const slot = Math.floor(Date.now() / 3_600_000);
   return placeholders[slot % placeholders.length] ?? placeholders[0]!;
@@ -78,7 +78,7 @@ export function Reflect({ tradeId }: ReflectProps) {
   const digits = instrument?.digits ?? 5;
   const pricePlaceholder = digits > 2 ? "1.08xxx" : "98xx.xx";
 
-  // ── Local field state — hydrated from the review payload when it arrives.
+  // ── Local field state - hydrated from the review payload when it arrives.
   const [hydratedFor, setHydratedFor] = React.useState<string | null>(null);
   const [mfePrice, setMfePrice] = React.useState("");
   const [maePrice, setMaePrice] = React.useState("");
@@ -140,7 +140,7 @@ export function Reflect({ tradeId }: ReflectProps) {
     if (JSON.stringify(selectedTagIds) !== JSON.stringify(data?.tagIds ?? [])) {
       fields.tagIds = selectedTagIds;
     }
-    // Psychology deltas — the schema requires at least one field, and a
+    // Psychology deltas - the schema requires at least one field, and a
     // deselect is a local undo (never a null PATCH).
     const psychologyInput: PsychologyUpdateInput = {};
     if (emotion !== null && emotion !== (data?.trade.emotionAfter ?? null)) {
@@ -210,7 +210,7 @@ export function Reflect({ tradeId }: ReflectProps) {
         {T.intro}
       </p>
 
-      {/* Detected mistakes — confirm/dismiss in 1 tap (spec §6) */}
+      {/* Detected mistakes - confirm/dismiss in 1 tap (spec §6) */}
       {mistakes.length > 0 ? (
         <section className="space-y-2" aria-labelledby="reflect-mistakes">
           <h3 id="reflect-mistakes" className="font-heading text-sm font-semibold uppercase tracking-wide text-muted-foreground">
@@ -285,7 +285,7 @@ export function Reflect({ tradeId }: ReflectProps) {
         </section>
       ) : null}
 
-      {/* Emotion after — the reaction to the result, 1 tap */}
+      {/* Emotion after - the reaction to the result, 1 tap */}
       <section className="space-y-2" aria-labelledby="reflect-emotion">
         <div className="flex items-baseline justify-between">
           <h3 id="reflect-emotion" className="font-heading text-sm font-semibold uppercase tracking-wide text-muted-foreground">
@@ -305,7 +305,7 @@ export function Reflect({ tradeId }: ReflectProps) {
                 onClick={() => {
                   const next: Emotion | null = selected ? null : option;
                   setEmotion(next);
-                  // The schema requires at least one field — only PATCH on
+                  // The schema requires at least one field - only PATCH on
                   // selection (deselect is a local undo, no round-trip).
                   if (next !== null) {
                     updatePsychology.mutate({ tradeId, input: { emotionAfter: next } });
@@ -325,7 +325,7 @@ export function Reflect({ tradeId }: ReflectProps) {
         </div>
       </section>
 
-      {/* Confidence — optional 1–5 self-rating (post-trade psychology) */}
+      {/* Confidence - optional 1–5 self-rating (post-trade psychology) */}
       <section className="space-y-2" aria-labelledby="reflect-confidence">
         <div className="flex items-baseline justify-between">
           <h3 id="reflect-confidence" className="font-heading text-sm font-semibold uppercase tracking-wide text-muted-foreground">
@@ -336,7 +336,7 @@ export function Reflect({ tradeId }: ReflectProps) {
         <ConfidencePicker value={confidence} onChange={setConfidence} />
       </section>
 
-      {/* MFE / MAE — user-observed prices; R is recomputed server-side */}
+      {/* MFE / MAE - user-observed prices; R is recomputed server-side */}
       <section className="space-y-2" aria-labelledby="reflect-excursion">
         <h3 id="reflect-excursion" className="font-heading text-sm font-semibold uppercase tracking-wide text-muted-foreground">
           {T.excursion}
@@ -371,7 +371,7 @@ export function Reflect({ tradeId }: ReflectProps) {
         </div>
       </section>
 
-      {/* Tags — existing chips + inline creation */}
+      {/* Tags - existing chips + inline creation */}
       <section className="space-y-2" aria-labelledby="reflect-tags">
         <h3 id="reflect-tags" className="font-heading text-sm font-semibold uppercase tracking-wide text-muted-foreground">
           {dict.trades.form.tags}
@@ -426,7 +426,7 @@ export function Reflect({ tradeId }: ReflectProps) {
         </div>
       </section>
 
-      {/* Note / lesson — one textarea, rotating placeholder */}
+      {/* Note / lesson - one textarea, rotating placeholder */}
       <section className="space-y-2" aria-labelledby="reflect-lesson">
         <h3 id="reflect-lesson" className="font-heading text-sm font-semibold uppercase tracking-wide text-muted-foreground">
           {T.lessonHeading}
@@ -442,7 +442,7 @@ export function Reflect({ tradeId }: ReflectProps) {
         />
       </section>
 
-      {/* Screenshots — picked here, uploaded on [Finish] alongside the
+      {/* Screenshots - picked here, uploaded on [Finish] alongside the
           psychology patch (failures toasted, never blocking). */}
       <section className="space-y-2" aria-labelledby="reflect-screenshots">
         <h3 id="reflect-screenshots" className="font-heading text-sm font-semibold uppercase tracking-wide text-muted-foreground">

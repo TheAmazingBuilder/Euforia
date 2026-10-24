@@ -118,7 +118,7 @@ interface LedgerColumn {
 }
 
 // Key + class definitions stay static at module scope; the user-facing labels
-// resolve through the active dictionary inside the component (i18n — hooks
+// resolve through the active dictionary inside the component (i18n - hooks
 // cannot run at module scope).
 const LEDGER_COLUMN_DEFS: readonly Omit<LedgerColumn, "label">[] = [
   { key: "date", cellClass: "whitespace-nowrap px-3 py-2.5 font-mono text-xs tabular-nums text-muted-foreground" },
@@ -201,7 +201,7 @@ function TradesModule() {
 
   const symbolOf = React.useMemo(() => {
     const map = new Map(instruments.map((instrument) => [instrument.id, instrument.symbol]));
-    return (id: string) => map.get(id) ?? "—";
+    return (id: string) => map.get(id) ?? "-";
   }, [instruments]);
   const strategyNameOf = React.useMemo(() => {
     const map = new Map(strategies.map((strategy) => [strategy.id, strategy.name]));
@@ -384,7 +384,7 @@ function TradesModule() {
     });
   };
 
-  // ── Saved views (named filters + columns + sort) — TRADES scope of the
+  // ── Saved views (named filters + columns + sort) - TRADES scope of the
   // unified preset library (ANALYTICS presets live in the same store) ────────
   const { data: viewsData } = useTradeViews();
   const createView = useCreateTradeView();
@@ -523,7 +523,7 @@ function TradesModule() {
 
   return (
     <div className="space-y-4">
-      {/* Header — identity + capture / import / views actions */}
+      {/* Header - identity + capture / import / views actions */}
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div className="space-y-1">
           <h1 className="font-heading text-2xl font-extrabold tracking-tight text-foreground">
@@ -534,7 +534,7 @@ function TradesModule() {
           </p>
         </div>
         <div className="flex flex-wrap items-center justify-end gap-2">
-          {/* Saved views — named filters + columns + sort */}
+          {/* Saved views - named filters + columns + sort */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -647,7 +647,7 @@ function TradesModule() {
 
       <TradesFilters state={state} patch={patch} />
 
-      {/* Bulk bar — tag / grade / delete in one round-trip */}
+      {/* Bulk bar - tag / grade / delete in one round-trip */}
       {selectedIds.size > 0 ? (
         <div
           data-testid="trades-bulk-bar"
@@ -829,7 +829,7 @@ function TradesModule() {
               pageRows.map((trade) => {
                 const win = trade.pnlNet !== null && (Number(trade.pnlNet) ?? 0) >= 0;
                 const duration =
-                  trade.exitAt !== null ? formatDuration(trade.entryAt, trade.exitAt) : "—";
+                  trade.exitAt !== null ? formatDuration(trade.entryAt, trade.exitAt) : "-";
                 const tradeTags = (trade.tagIds ?? [])
                   .map(tagNameOf)
                   .filter((name): name is string => name !== null);
@@ -855,7 +855,7 @@ function TradesModule() {
                     <span className="italic opacity-70">{T.shared.outOfPlaybook}</span>
                   ),
                   duration,
-                  r: trade.rMultiple === null ? "—" : formatR(trade.rMultiple),
+                  r: trade.rMultiple === null ? "-" : formatR(trade.rMultiple),
                   pnl: (
                     <span
                       className={cn(
@@ -863,7 +863,7 @@ function TradesModule() {
                       )}
                     >
                       {trade.pnlNet === null
-                        ? "—"
+                        ? "-"
                         : formatSignedMoney(trade.pnlNet, currency, { digits: 2 })}
                     </span>
                   ),
@@ -878,7 +878,7 @@ function TradesModule() {
                         {trade.decisionGrade}
                       </span>
                     ) : (
-                      <span className="text-muted-foreground">—</span>
+                      <span className="text-muted-foreground">-</span>
                     ),
                   tags: (
                     <div className="flex max-w-32 flex-wrap gap-1">
@@ -1030,7 +1030,7 @@ function TradesModule() {
         </div>
       </div>
 
-      {/* Save view dialog — snapshots current filters + columns + sort */}
+      {/* Save view dialog - snapshots current filters + columns + sort */}
       <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
         <DialogContent className="sm:max-w-md" data-testid="trades-view-dialog">
           <DialogHeader>

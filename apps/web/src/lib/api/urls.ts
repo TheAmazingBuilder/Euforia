@@ -1,5 +1,5 @@
 /**
- * Single source of truth for API URL building — used by BOTH the fetch
+ * Single source of truth for API URL building - used by BOTH the fetch
  * client (lib/api/client.ts) and the MSW handlers (src/mocks/handlers) so
  * registered handler URLs always match requested URLs.
  */
@@ -7,13 +7,13 @@
 import { API_MOCKED } from "./mode";
 
 /**
- * Base URL of the COSMOZ API — DERIVED FROM THE CANONICAL MODE (lib/api/
+ * Base URL of the COSMOZ API - DERIVED FROM THE CANONICAL MODE (lib/api/
  * mode.ts) so the URL and the active data source can never disagree:
  *
  * - Mocked (explicit NEXT_PUBLIC_API_MOCKED=true, or zero-env dev): the
- *   same-origin "/api" — MSW intercepts before the network.
+ *   same-origin "/api" - MSW intercepts before the network.
  * - Real API (production zero-env, explicit false, or the former live
- *   bridge): same-origin "/api/v1" — the NestJS backend serves the
+ *   bridge): same-origin "/api/v1" - the NestJS backend serves the
  *   versioned prefix and next.config.ts proxies /api/v1 to it, keeping
  *   every request first-party (cookies, no CORS).
  * - NEXT_PUBLIC_API_URL always wins when set (direct cross-origin pointing;

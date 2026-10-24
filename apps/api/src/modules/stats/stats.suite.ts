@@ -1,5 +1,5 @@
 /**
- * GET /stats/analytics-suite — the Analytics module's single dataset
+ * GET /stats/analytics-suite - the Analytics module's single dataset
  * definition, ported 1:1 from the mock store. Every tab renders the SAME
  * filtered closed-trade set; every aggregate is computed here so the client
  * only formats (product rule). Open positions are excluded from performance
@@ -250,7 +250,7 @@ export function computeAnalyticsSuite(
     sharpeNote:
       "Sharpe = mean daily ΣR ÷ stdev(daily ΣR) × √252, risk-free = 0. Daily series spans the full filter window (0R on no-trade days); null below 10 days.",
     sortinoNote:
-      "Sortino uses the same daily ΣR series with downside deviation (√mean(min(0,d)²)), annualized √252 — penalizes only negative volatility.",
+      "Sortino uses the same daily ΣR series with downside deviation (√mean(min(0,d)²)), annualized √252 - penalizes only negative volatility.",
   };
 
   // ── Cumulative R + rolling (window 10) (§7/§9) ────────────────────────────
@@ -406,7 +406,7 @@ export function computeAnalyticsSuite(
         r: toDecimalString(round2(rOf(trade))),
       });
     }
-    if (inDrawdown) flush(null, null, null); // still under water — honest nulls
+    if (inDrawdown) flush(null, null, null); // still under water - honest nulls
     drawdowns.sort((a, b) => Number(a.drawdownR) - Number(b.drawdownR));
   }
 
@@ -457,7 +457,7 @@ export function computeAnalyticsSuite(
     },
   ];
 
-  // ── Strategy rows (§12) — factual comparisons, no ranking verdict ─────────
+  // ── Strategy rows (§12) - factual comparisons, no ranking verdict ─────────
   const strategyGroup = (id: string | null): StatsTradeRow[] =>
     closed.filter((t) => (id === null ? t.strategyId === null : t.strategyId === id));
   const strategyIds = [...new Set(closed.map((t) => t.strategyId))];
@@ -789,7 +789,7 @@ export function computeAnalyticsSuite(
   if (currentWin > 0) winStreaks.push(currentWin);
   if (currentLoss > 0) lossStreaks.push(currentLoss);
 
-  // ── Monte Carlo (§25) — bootstrap of the filtered R list ──────────────────
+  // ── Monte Carlo (§25) - bootstrap of the filtered R list ──────────────────
   const rng = mulberry32(20260930);
   const simulationCount = Math.max(100, Math.min(2000, sims));
   const finals: number[] = [];
@@ -846,7 +846,7 @@ export function computeAnalyticsSuite(
   // ── Server-detected anomalies (measured facts, never verdicts) ────────────
   const anomalies: AnalyticsSuiteResponse["meta"]["anomalies"] = [];
   if (closed.length >= 10) {
-    // TAIL_LOSS — the worst 5 % of losing trades vs the total loss mass (R).
+    // TAIL_LOSS - the worst 5 % of losing trades vs the total loss mass (R).
     const lossR = closed.map(rOf).filter((r) => r < 0).sort((a, b) => a - b);
     const totalLossAbs = lossR.reduce((sum, r) => sum + Math.abs(r), 0);
     if (lossR.length >= 5 && totalLossAbs > 0) {
@@ -863,7 +863,7 @@ export function computeAnalyticsSuite(
       }
     }
 
-    // OVERTRADING — unusually busy days whose average daily R underperforms.
+    // OVERTRADING - unusually busy days whose average daily R underperforms.
     const dayCounts = [...dailyGroups.values()].map((group) => group.length).sort((a, b) => a - b);
     if (dayCounts.length >= 8) {
       const medianCount = dayCounts[Math.floor(dayCounts.length / 2)]!;
@@ -884,7 +884,7 @@ export function computeAnalyticsSuite(
       }
     }
 
-    // LOSS_STREAK — longest consecutive losing run in chronological order.
+    // LOSS_STREAK - longest consecutive losing run in chronological order.
     let streak = 0;
     let worstStreak = 0;
     for (const trade of closed) {
@@ -905,7 +905,7 @@ export function computeAnalyticsSuite(
     }
   }
 
-  // ── Phase 05 — insights/durations/streak profile (shared engine) ───────
+  // ── Phase 05 - insights/durations/streak profile (shared engine) ───────
   const insightsRows: InsightsEngineRow[] = closed.map((t) => ({
     id: t.id,
     instrumentSymbol: ctx.instruments.get(t.instrumentId)?.symbol ?? t.instrumentId,
@@ -1033,7 +1033,7 @@ export function computeAnalyticsSuite(
       weekly: [...weeklyGroups.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([key, group]) => reportRow(key, group)),
       monthly: [...monthlyGroups.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([key, group]) => reportRow(key, group)),
     },
-    // ── Phase 05 — insights/durations/streak profile (shared engine) ─────
+    // ── Phase 05 - insights/durations/streak profile (shared engine) ─────
     durations: computeDurations(insightsRows, singleCurrency),
     streakProfile: computeStreakProfile(insightsRows),
     insights: deriveInsights(insightsRows, { singleCurrency }),

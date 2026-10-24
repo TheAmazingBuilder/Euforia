@@ -16,7 +16,7 @@ import { brokerOrderSchema, brokerPositionSchema } from "./broker";
 import { propFirmConfigSchema } from "./account";
 
 /**
- * Accounts module contracts — the ACCOUNT-CENTRIC view of trading
+ * Accounts module contracts - the ACCOUNT-CENTRIC view of trading
  * connectivity (prompt §27: connection status ≠ synchronization status).
  *
  * Boundary: the Integration Hub (/integrations) owns PROVIDER connections
@@ -25,7 +25,7 @@ import { propFirmConfigSchema } from "./account";
  * with which environment, permissions, snapshot and synchronized data.
  *
  * READ-ONLY invariant: no schema here models order submission, modification
- * or position closing — same red line as schemas/broker.ts.
+ * or position closing - same red line as schemas/broker.ts.
  */
 
 /** Connection lifecycle of one trading account (prompt §27). */
@@ -39,7 +39,7 @@ export type AccountConnectionState = z.infer<typeof accountConnectionStateSchema
 
 /**
  * Synchronization health of one trading account (prompt §26). LIVE must be
- * EARNED by a recent lastSyncedAt — never claimed because the account was
+ * EARNED by a recent lastSyncedAt - never claimed because the account was
  * once connected.
  */
 export const accountSyncStatusSchema = z.enum([
@@ -53,11 +53,11 @@ export const accountSyncStatusSchema = z.enum([
 ]);
 export type AccountSyncStatus = z.infer<typeof accountSyncStatusSchema>;
 
-/** Environment of a connection — Demo uses virtual funds, Live real capital. */
+/** Environment of a connection - Demo uses virtual funds, Live real capital. */
 export const accountEnvironmentSchema = z.enum(["DEMO", "LIVE"]);
 export type AccountEnvironment = z.infer<typeof accountEnvironmentSchema>;
 
-/** Provider platform — the wizard's step-1 choice (prompt §12). */
+/** Provider platform - the wizard's step-1 choice (prompt §12). */
 export const accountProviderPlatformSchema = z.enum([
   "MT5",
   "MT4",
@@ -68,7 +68,7 @@ export const accountProviderPlatformSchema = z.enum([
 ]);
 export type AccountProviderPlatform = z.infer<typeof accountProviderPlatformSchema>;
 
-/** Catalog availability — Coming Soon providers are never connectable. */
+/** Catalog availability - Coming Soon providers are never connectable. */
 export const accountProviderAvailabilitySchema = z.enum([
   "AVAILABLE",
   "COMING_SOON",
@@ -89,7 +89,7 @@ export const accountCredentialFieldSchema = z.object({
 export type AccountCredentialField = z.infer<typeof accountCredentialFieldSchema>;
 
 /**
- * Connection method — comes from PROVIDER METADATA, never hardcoded
+ * Connection method - comes from PROVIDER METADATA, never hardcoded
  * username+password (prompt §15).
  */
 export const accountConnectionMethodSchema = z.object({
@@ -102,7 +102,7 @@ export const accountConnectionMethodSchema = z.object({
 export type AccountConnectionMethod = z.infer<typeof accountConnectionMethodSchema>;
 
 /**
- * Trading provider — provider-agnostic catalog entry (prompt §10). The UI
+ * Trading provider - provider-agnostic catalog entry (prompt §10). The UI
  * renders from this metadata; no `if (provider === …)` branches in screens.
  */
 export const accountProviderSchema = z.object({
@@ -114,14 +114,14 @@ export const accountProviderSchema = z.object({
   availability: accountProviderAvailabilitySchema,
   environments: z.array(accountEnvironmentSchema),
   methods: z.array(accountConnectionMethodSchema),
-  /** Permissions a successful connection grants — READ_* only. */
+  /** Permissions a successful connection grants - READ_* only. */
   capabilities: z.array(integrationPermissionSchema),
   tagline: z.string().nullable(),
 });
 export type AccountProvider = z.infer<typeof accountProviderSchema>;
 
 /**
- * Account snapshot — mutable financial state SEPARATED from account
+ * Account snapshot - mutable financial state SEPARATED from account
  * identity (prompt §37). Every metric nullable: unavailable ≠ invented
  * (same honesty rule as brokerAccountSnapshotSchema).
  */
@@ -145,7 +145,7 @@ export const tradingAccountConnectionSchema = z.object({
   methodId: z.string().nullable(),
   methodLabel: z.string().nullable(),
   server: z.string().nullable(),
-  /** Masked credential hint, e.g. "••••5678" — never the secret. */
+  /** Masked credential hint, e.g. "••••5678" - never the secret. */
   credentialsHint: z.string().nullable(),
   connectedAt: isoDateTimeSchema.nullable(),
   /** Human-readable, credential-free explanation of a failed state. */
@@ -165,10 +165,10 @@ export const tradingAccountSyncSchema = z.object({
 export type TradingAccountSync = z.infer<typeof tradingAccountSyncSchema>;
 
 /**
- * Permission scope of a connection — REUSES the Integration Hub permission
+ * Permission scope of a connection - REUSES the Integration Hub permission
  * vocabulary so the whole app speaks one permission language. V1 invariant:
  * read-only always; execution is structurally impossible (`readOnly: true`
- * literal — widening requires a dedicated guarded contract, cf. broker.ts).
+ * literal - widening requires a dedicated guarded contract, cf. broker.ts).
  */
 export const tradingAccountPermissionsSchema = z.object({
   granted: z.array(integrationPermissionSchema),
@@ -194,7 +194,7 @@ export const connectedAccountViewSchema = z.object({
   startingBalance: decimalStringSchema,
   isDefault: z.boolean(),
   propConfig: propFirmConfigSchema.nullable(),
-  /** Masked account number, e.g. "••••••5678" — full number never leaves the mock adapter. */
+  /** Masked account number, e.g. "••••••5678" - full number never leaves the mock adapter. */
   accountNumberMasked: z.string().nullable(),
   server: z.string().nullable(),
   connection: tradingAccountConnectionSchema,
@@ -205,12 +205,12 @@ export const connectedAccountViewSchema = z.object({
 });
 export type ConnectedAccountView = z.infer<typeof connectedAccountViewSchema>;
 
-/** History entry kinds — orders, executions/deals, balance operations are DISTINCT concepts (prompt §25). */
+/** History entry kinds - orders, executions/deals, balance operations are DISTINCT concepts (prompt §25). */
 export const accountHistoryKindSchema = z.enum(["DEAL", "ORDER", "BALANCE"]);
 export type AccountHistoryKind = z.infer<typeof accountHistoryKindSchema>;
 
 /**
- * Normalized history entry — one shape for deals, orders and balance
+ * Normalized history entry - one shape for deals, orders and balance
  * operations; nullable fields adapt per kind. Read-only.
  */
 export const tradingAccountHistoryEntrySchema = z.object({
@@ -275,9 +275,9 @@ export type AccountProvidersResponse = z.infer<typeof accountProvidersResponseSc
 // ── Connect flow (wizard) ────────────────────────────────────────────────────
 
 /**
- * POST /accounts/test — connection validation BEFORE creating anything.
+ * POST /accounts/test - connection validation BEFORE creating anything.
  * Credentials travel once, to the (mock) backend boundary, and are NEVER
- * persisted — the engine keeps only a masked hint.
+ * persisted - the engine keeps only a masked hint.
  */
 export const accountTestInputSchema = z.object({
   providerId: z.string().min(1),
@@ -311,7 +311,7 @@ export const accountTestResponseSchema = z.object({
 export type AccountTestResponse = z.infer<typeof accountTestResponseSchema>;
 
 /**
- * POST /accounts/connect — creates the journal Account AND its connection.
+ * POST /accounts/connect - creates the journal Account AND its connection.
  * The engine returns the created view; the wizard then polls the detail
  * endpoint through CONNECTING → SYNCING → LIVE.
  */
@@ -320,7 +320,7 @@ export const accountConnectInputSchema = z.object({
   methodId: z.string().min(1),
   environment: accountEnvironmentSchema,
   credentials: z.record(z.string()),
-  /** Display name — auto-suggested from provider + environment when omitted. */
+  /** Display name - auto-suggested from provider + environment when omitted. */
   name: z.string().min(1).max(60).optional(),
 });
 export type AccountConnectInput = z.infer<typeof accountConnectInputSchema>;
@@ -340,7 +340,7 @@ export const accountActionResponseSchema = z.object({
 });
 export type AccountActionResponse = z.infer<typeof accountActionResponseSchema>;
 
-/** PATCH /accounts/:id — rename / set default (prompt §30). */
+/** PATCH /accounts/:id - rename / set default (prompt §30). */
 export const accountUpdateInputSchema = z.object({
   name: z.string().min(1).max(60).optional(),
   isDefault: z.boolean().optional(),
@@ -348,7 +348,7 @@ export const accountUpdateInputSchema = z.object({
 export type AccountUpdateInput = z.infer<typeof accountUpdateInputSchema>;
 
 /**
- * DELETE semantics of POST /accounts/:id/disconnect — the response carries
+ * DELETE semantics of POST /accounts/:id/disconnect - the response carries
  * the data-retention note (prompt §31/§32): Cosmoz journal data survives.
  */
 export const accountDisconnectResponseSchema = z.object({

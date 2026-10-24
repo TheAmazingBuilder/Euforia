@@ -11,14 +11,14 @@ import { stageFromElapsed } from "@/components/recognition/recognition-model";
 import type { RecognitionDict } from "@/i18n/dictionaries/en/recognition";
 
 /**
- * RecognitionProgress — the staged processing screen (PROMPT 3 §15/§55).
+ * RecognitionProgress - the staged processing screen (PROMPT 3 §15/§55).
  *
  * The PIPELINE is server-side (the mock settles the job time-based; a real
  * orchestrator will emit the same states). This view only maps status +
- * elapsed wall-clock onto the display timeline — no setTimeout-driven fake
+ * elapsed wall-clock onto the display timeline - no setTimeout-driven fake
  * processing. aria-live announces step changes for screen readers.
  * "Cancel analysis" performs a real DELETE (the contract's cancellation
- * path) — it never merely hides a loader.
+ * path) - it never merely hides a loader.
  */
 
 const STAGE_KEYS: Array<keyof RecognitionDict["progress"]["steps"]> = [
@@ -67,7 +67,7 @@ export function RecognitionProgress({
         <p className="text-sm text-muted-foreground">{dict.progress.subtitle}</p>
       </header>
 
-      {/* Thin pipeline meter — stage completion, honest (no fake tweening). */}
+      {/* Thin pipeline meter - stage completion, honest (no fake tweening). */}
       <div className="meter" role="presentation" data-testid="recognition-progress-meter">
         <span style={{ width: `${progressPct}%` }} />
       </div>

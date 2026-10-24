@@ -1,7 +1,7 @@
 import type { Currency } from "../enums";
 
 /**
- * Money formatting helpers — pure, deterministic, Intl-based.
+ * Money formatting helpers - pure, deterministic, Intl-based.
  *
  * These are DISPLAY helpers (AGENTS.md golden rule: no floating-point math on
  * money in components; parsing/formatting goes through this module). The
@@ -18,7 +18,7 @@ export const MONEY_PLACEHOLDER = "-";
 /**
  * Safe string → number for display math. Accepts ONLY plain decimals
  * (optionally signed): no exponent, no separators, no whitespace junk.
- * Returns `null` for anything unparsable — never throws, never NaN.
+ * Returns `null` for anything unparsable - never throws, never NaN.
  */
 export function parseDecimal(
   value: string | number | null | undefined,

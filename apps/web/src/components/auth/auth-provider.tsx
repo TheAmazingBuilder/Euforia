@@ -14,11 +14,11 @@ import { registerDevAuthHooks } from "@/lib/auth/dev-hooks";
 import { useI18n } from "@/i18n/i18n-provider";
 
 /**
- * Centralized authentication state (spec §3, §8, §32) — the SINGLE source of
+ * Centralized authentication state (spec §3, §8, §32) - the SINGLE source of
  * truth for "is the user authenticated, who are they, and what may they see".
  *
  * Explicit status machine: `initializing` is distinct from `unauthenticated`
- * — a null user during boot NEVER means logged out (§8). All other surfaces
+ * - a null user during boot NEVER means logged out (§8). All other surfaces
  * consume this context; no page owns private auth state (§3).
  */
 
@@ -48,7 +48,7 @@ export function useAuth(): AuthContextValue {
 
 /**
  * Roles + permissions for authorization-aware UI. Frontend authorization is
- * UX only — the backend remains the security boundary (§32).
+ * UX only - the backend remains the security boundary (§32).
  */
 export function usePermissions() {
   const { user } = useAuth();
@@ -72,7 +72,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const meQuery = useAuthMeQuery();
   const logoutMutation = useLogoutMutation();
 
-  // Dev/test affordances (mocked builds only — see dev-hooks.ts).
+  // Dev/test affordances (mocked builds only - see dev-hooks.ts).
   React.useEffect(() => {
     registerDevAuthHooks({
       refetchGuarded: async () => {
@@ -106,10 +106,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const setAuthenticated = React.useCallback(
     (user: AuthUser, session: AuthSession | null) => {
-      // Fresh identity — drop any cached data from a previous session.
+      // Fresh identity - drop any cached data from a previous session.
       queryClient.clear();
       queryClient.setQueryData(queryKeys.authMe, { user, session });
-      // Lifecycle broadcast (login + MFA completion funnel through here) —
+      // Lifecycle broadcast (login + MFA completion funnel through here) -
       // lets the market feed (re)bind its authenticated socket without any
       // component wiring. No secrets in events (§51).
       emitAuthEvent({ type: "AUTHENTICATED" });
@@ -122,7 +122,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // disappears (§66: no private data after logout).
     emitAuthEvent({ type: "LOGGED_OUT" });
     clearAccessToken();
-    // Wipe ALL private application state (§66 — no private data after
+    // Wipe ALL private application state (§66 - no private data after
     // logout): every module query belongs to the signed-out world now.
     queryClient.clear();
     queryClient.setQueryData(queryKeys.authMe, null);
@@ -136,7 +136,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Broadcast before teardown: the market feed disconnects its socket
       // immediately instead of streaming while the session ends (§76).
       emitAuthEvent({ type: "LOGGED_OUT" });
-      // The backend revokes the refresh chain FIRST (§21 — never rely on
+      // The backend revokes the refresh chain FIRST (§21 - never rely on
       // frontend state deletion alone); local teardown happens regardless.
       try {
         await logoutMutation.mutateAsync();

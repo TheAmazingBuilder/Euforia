@@ -16,30 +16,30 @@ import {
 import { normalizeStepId, ONBOARDING_STEP_ORDER, type OnboardingStepId } from "./steps";
 
 /**
- * Onboarding state machine — PURE logic, unit-tested in isolation
+ * Onboarding state machine - PURE logic, unit-tested in isolation
  * (web vitest = node, no DOM). The React hook (use-onboarding.ts) only wires
  * this to TanStack Query; every decision lives here.
  */
 
 export type OnboardingEligibility =
-  | /** identity or onboarding state not resolved yet — render nothing */
+  | /** identity or onboarding state not resolved yet - render nothing */
   "loading"
   /** the first-run experience must NOT run (done, skipped, predates it, or not applicable) */
   | "not_required"
   /** the authenticated user should see the first-run experience */
   | "eligible"
-  /** eligibility could not be determined — deliberate recovery, never "assume new user" */
+  /** eligibility could not be determined - deliberate recovery, never "assume new user" */
   | "error";
 
 export type AuthStatusLike = "initializing" | "authenticated" | "unauthenticated";
 
 export type OnboardingEligibilityInput = {
   authStatus: AuthStatusLike;
-  /** user?.status — only an ACTIVE trader account may run the tour. */
+  /** user?.status - only an ACTIVE trader account may run the tour. */
   userStatus?: string;
   /** TanStack Query status for the preferences document. */
   preferencesStatus: "pending" | "error" | "success";
-  /** preferences.onboarding — undefined = the doc predates onboarding. */
+  /** preferences.onboarding - undefined = the doc predates onboarding. */
   onboarding?: OnboardingPreferences;
 };
 
@@ -47,7 +47,7 @@ export type OnboardingEligibilityInput = {
  * Eligibility rules (spec §3): show the tour ONLY when the identity is
  * resolved, the preferences document is loaded, and the persisted state is
  * NOT_STARTED / IN_PROGRESS. Any failure to DETERMINE eligibility resolves
- * to "error" — never to "eligible" (a status fetch failure must not present
+ * to "error" - never to "eligible" (a status fetch failure must not present
  * the tour to an existing user).
  */
 export function resolveOnboardingEligibility(input: OnboardingEligibilityInput): OnboardingEligibility {
@@ -75,7 +75,7 @@ export function isTerminalOnboardingStatus(status: OnboardingStatus): boolean {
  * still a live step; fall back to the FIRST step for a null/ghost pointer;
  * a different onboarding version restarts the CURRENT sequence from its
  * first step (an interrupted user never completed the tour, and the current
- * revision is what they should see — this is a documented, explicit policy,
+ * revision is what they should see - this is a documented, explicit policy,
  * not an accident); terminal states never resume.
  */
 export function resolveResumeStep(onboarding: OnboardingPreferences | undefined): OnboardingStepId | null {
@@ -101,7 +101,7 @@ function baseDomain(current: OnboardingPreferences | undefined): OnboardingPrefe
   };
 }
 
-/** "Get started" — the tour enters IN_PROGRESS at the first step. Never
+/** "Get started" - the tour enters IN_PROGRESS at the first step. Never
  * wipes prior milestones: re-entering an interrupted flow keeps its history
  * (stepsDone is empty anyway on a genuine first start). */
 export function onboardingStartInput(
@@ -122,7 +122,7 @@ export function onboardingStartInput(
 }
 
 /**
- * Step navigation — persists the resume pointer at every MEANINGFUL step
+ * Step navigation - persists the resume pointer at every MEANINGFUL step
  * change (never per animation frame). `markDone` records the milestone the
  * user just confirmed; entering a step never marks it done.
  */
@@ -147,7 +147,7 @@ export function onboardingStepInput(
   };
 }
 
-/** Completion — only persisted once the backend CONFIRMS (no optimistic
+/** Completion - only persisted once the backend CONFIRMS (no optimistic
  * completion): currentStep null, completedAt set, milestones preserved. */
 export function onboardingCompleteInput(
   current: OnboardingPreferences | undefined,
@@ -166,7 +166,7 @@ export function onboardingCompleteInput(
 
 /**
  * Skip policy: skipping the introduction NEVER fabricates completion (no
- * completedAt, no invented milestones) — it only marks SKIPPED so the
+ * completedAt, no invented milestones) - it only marks SKIPPED so the
  * automatic display is suppressed.
  */
 export function onboardingSkipInput(
@@ -195,7 +195,7 @@ export type TradingPreferencesOverlay = {
  * Build the WHOLE trading domain for the preferences step: the overlay is
  * applied over the user's CURRENT domain (or the safe defaults when the doc
  * has not been provisioned) so sibling fields never change. Only DISPLAY
- * preferences are touched — a trading account's base currency is a property
+ * preferences are touched - a trading account's base currency is a property
  * of the account and is never written here.
  */
 export function tradingDomainWithOverlay(

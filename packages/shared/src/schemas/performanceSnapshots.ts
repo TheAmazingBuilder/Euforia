@@ -1,21 +1,21 @@
 /**
- * Performance snapshots (Dashboard Customization Phase 08) — point-in-time
+ * Performance snapshots (Dashboard Customization Phase 08) - point-in-time
  * captures of the analytics-suite summary for a named scope + period.
  *
  * Rules pinned by the spec (§6–§9):
  *   - A snapshot is captured SERVER-SIDE from the ONE authoritative analytics
- *     engine (computeAnalyticsSuite via AnalyticsService) — never recomputed
+ *     engine (computeAnalyticsSuite via AnalyticsService) - never recomputed
  *     from mutable trade rows after capture, never edited.
  *   - Captured metric values are IMMUTABLE. Only name/notes metadata may be
- *     patched (updatePerformanceSnapshotInputSchema has no metric field —
+ *     patched (updatePerformanceSnapshotInputSchema has no metric field -
  *     the shape itself is the guarantee).
  *   - Every snapshot carries SCHEMA_VERSION so a future metric-definition
  *     change is detectable at comparison time (never silently reinterpreted).
  *   - Money metrics are null when the scope spans multiple currencies
- *     (singleCurrency false → currency null) — the same honesty rule as the
+ *     (singleCurrency false → currency null) - the same honesty rule as the
  *     analytics suite. Comparisons refuse money rows across currency
  *     contexts and WARN instead of inventing a conversion.
- *   - Duplicate names are rejected (409 SNAPSHOT_NAME_TAKEN) — a clear,
+ *   - Duplicate names are rejected (409 SNAPSHOT_NAME_TAKEN) - a clear,
  *     consistent product rule; each POST creates a NEW record and never
  *     overwrites an existing snapshot.
  */
@@ -33,7 +33,7 @@ import {
 export const SNAPSHOT_SCHEMA_VERSION = 1;
 
 /**
- * Stable snapshot error-code registry — values ride the existing AppError
+ * Stable snapshot error-code registry - values ride the existing AppError
  * envelope (`{ error, code, message, issues?, requestId? }`), same pattern
  * as TRADE_ERROR_CODES. Ownership access is SNAPSHOT_NOT_FOUND (404) per
  * the repository-wide "foreign = not found" IDOR convention.
@@ -64,7 +64,7 @@ export const snapshotScopeSchema = z.object({
 });
 export type SnapshotScope = z.infer<typeof snapshotScopeSchema>;
 
-/** Frozen captured metrics — units are documented per field, never implied. */
+/** Frozen captured metrics - units are documented per field, never implied. */
 export const snapshotMetricsSchema = z.object({
   /** Realized net P&L in `currency` (null when multi-currency scope). */
   netPnl: decimalStringSchema.nullable(),
@@ -90,7 +90,7 @@ export const performanceSnapshotSchema = z.object({
   id: uuidSchema,
   name: z.string().min(1).max(80),
   notes: z.string().max(500),
-  /** Server capture instant (ISO) — the "as of" truth. */
+  /** Server capture instant (ISO) - the "as of" truth. */
   capturedAt: isoDateTimeSchema,
   /** Original period preset (ALL, YTD, CUSTOM, …) kept for context only. */
   period: z.string().min(1),
@@ -114,7 +114,7 @@ export const performanceSnapshotsResponseSchema = z.object({
 });
 export type PerformanceSnapshotsResponse = z.infer<typeof performanceSnapshotsResponseSchema>;
 
-/** POST /snapshots — capture the CURRENT analytics scope as a snapshot. */
+/** POST /snapshots - capture the CURRENT analytics scope as a snapshot. */
 export const createPerformanceSnapshotInputSchema = z.object({
   name: z.string().trim().min(1).max(80),
   notes: z.string().max(500).default(""),
@@ -123,7 +123,7 @@ export const createPerformanceSnapshotInputSchema = z.object({
 });
 export type CreatePerformanceSnapshotInput = z.infer<typeof createPerformanceSnapshotInputSchema>;
 
-/** PATCH /snapshots/:id — METADATA ONLY. Metrics/scope/period are absent by construction. */
+/** PATCH /snapshots/:id - METADATA ONLY. Metrics/scope/period are absent by construction. */
 export const updatePerformanceSnapshotInputSchema = z
   .object({
     name: z.string().trim().min(1).max(80).optional(),
@@ -151,7 +151,7 @@ export type SnapshotMetricKey = z.infer<typeof snapshotMetricKeySchema>;
 /**
  * One comparison row. `absoluteDiff` = b − a in the metric's own unit.
  * `relativeDiffPct` = (b − a)/|a| × 100 ONLY when mathematically meaningful
- * (both values present AND a ≠ 0) — winRate uses percentage points instead,
+ * (both values present AND a ≠ 0) - winRate uses percentage points instead,
  * trade counts are absolute only. `higherIsBetter` carries the metric's
  * DIRECTION so the UI never paints a bigger drawdown as an improvement (§8).
  */
@@ -219,7 +219,7 @@ export function comparePerformanceSnapshots(
   const sameSchema = a.schemaVersion === b.schemaVersion;
   if (!sameSchema) {
     warnings.push(
-      `Schema versions differ (A v${a.schemaVersion} / B v${b.schemaVersion}) — metric definitions may not be comparable.`,
+      `Schema versions differ (A v${a.schemaVersion} / B v${b.schemaVersion}) - metric definitions may not be comparable.`,
     );
   }
 
@@ -229,11 +229,11 @@ export function comparePerformanceSnapshots(
   const moneyComparable = bothSingle && sameCurrency;
   if (bothSingle && !sameCurrency) {
     warnings.push(
-      `Currencies differ (A ${a.currency} / B ${b.currency}) — money metrics are NOT comparable without a conversion; only ratio/R/count rows are shown.`,
+      `Currencies differ (A ${a.currency} / B ${b.currency}) - money metrics are NOT comparable without a conversion; only ratio/R/count rows are shown.`,
     );
   } else if (!bothSingle) {
     warnings.push(
-      "At least one snapshot spans multiple currencies — money metrics are unavailable; only ratio/R/count rows are shown.",
+      "At least one snapshot spans multiple currencies - money metrics are unavailable; only ratio/R/count rows are shown.",
     );
   }
 
@@ -260,7 +260,7 @@ export function comparePerformanceSnapshots(
     const numA = Number(rawA);
     const numB = Number(rawB);
     const absoluteDiff = round(numB - numA);
-    // Relative % only when mathematically meaningful (base ≠ 0) — and never
+    // Relative % only when mathematically meaningful (base ≠ 0) - and never
     // for winRate (percentage-point space) or counts (absolute meaning).
     const allowRelative =
       metric !== "winRate" && metric !== "trades" && numA !== 0;

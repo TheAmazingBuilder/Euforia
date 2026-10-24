@@ -1,5 +1,5 @@
 /**
- * Ghost Trades data access (B6) — the ONLY place the ghosts context touches
+ * Ghost Trades data access (B6) - the ONLY place the ghosts context touches
  * Prisma (§46 house pattern). Narrow row projections out, nothing else.
  */
 import { Injectable } from "@nestjs/common";

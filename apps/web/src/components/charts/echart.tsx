@@ -18,7 +18,7 @@ import { CanvasRenderer } from "echarts/renderers";
 import { useTheme } from "next-themes";
 import type { EChartsCoreOption } from "echarts/core";
 
-// Tree-shaken registration — line (equity/sparklines), bar (time buckets,
+// Tree-shaken registration - line (equity/sparklines), bar (time buckets,
 // histograms), scatter (sleep/tilt), heatmap (Overview grid) and candlestick
 // (Session Live price chart) + the components those series consume.
 echarts.use([
@@ -43,7 +43,7 @@ echarts.use([
  * Factory for chart instances OUTSIDE the React bridge (Session Live price
  * chart manages its own lifecycle: merge-mode setOption per tick keeps the
  * user's zoom, which the bridge's notMerge:true would reset). All runtime
- * echarts usage in the app stays funneled through THIS module — one shared
+ * echarts usage in the app stays funneled through THIS module - one shared
  * echarts/zrender instance with every needed piece registered above;
  * a second runtime copy would throw "Renderer 'undefined' is not imported".
  */
@@ -54,7 +54,7 @@ export function createChartInstance(container: HTMLElement): echarts.ECharts {
 /**
  * Group binding for multi-chart synchronization (Session Live multi-chart):
  * charts sharing a group mirror tooltip/crosshair + dataZoom actions.
- * Passing null detaches the chart (single-chart layouts stay independent —
+ * Passing null detaches the chart (single-chart layouts stay independent -
  * syncing a lone chart would only add action overhead).
  */
 export function bindChartGroup(chart: echarts.ECharts, group: string | null): void {
@@ -77,7 +77,7 @@ interface EChartProps {
  * dispose, and a FULL re-init whenever useTheme().resolvedTheme changes so
  * canvas pixels always match the active tokens (design-tokens.md §8).
  * Options must be rebuilt with fresh getChartTheme() values on the same
- * dependency — see components/dashboard/*.
+ * dependency - see components/dashboard/*.
  */
 export function EChart({ option, className, ariaLabel }: EChartProps) {
   const containerRef = React.useRef<HTMLDivElement | null>(null);

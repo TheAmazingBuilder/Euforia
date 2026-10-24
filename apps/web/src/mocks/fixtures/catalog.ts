@@ -9,9 +9,9 @@ import type {
 
 /**
  * Static fixture catalog definitions. "Base" prices are anchors for the
- * 90-day deterministic drift — realistic magnitudes per asset class, and
+ * 90-day deterministic drift - realistic magnitudes per asset class, and
  * specs (pipSize/digits/contractSize) matching the instrument's conventions.
- * NO constants about sizing live in app code — only here, as data.
+ * NO constants about sizing live in app code - only here, as data.
  */
 
 export interface InstrumentDef {
@@ -215,7 +215,7 @@ export const MISTAKE_DEFS: readonly MistakeDef[] = [
     key: "moved_stop",
     category: "MANAGEMENT",
     label: "Stop moved against you",
-    description: "Stop widened after entry — risk exceeded the plan.",
+    description: "Stop widened after entry - risk exceeded the plan.",
     severity: 4,
     detectionHint: null,
   },
@@ -224,7 +224,7 @@ export const MISTAKE_DEFS: readonly MistakeDef[] = [
     category: "BEHAVIOR",
     label: "Revenge trade",
     description:
-      "Bigger-than-usual size shortly after a loss — emotional re-entry.",
+      "Bigger-than-usual size shortly after a loss - emotional re-entry.",
     severity: 5,
     detectionHint: null,
   },

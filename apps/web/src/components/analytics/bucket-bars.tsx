@@ -13,8 +13,8 @@ import { withAlpha } from "@/lib/utils/color";
 
 /**
  * Generic grouped-bars chart for the analytics suite (hour buckets, weekdays,
- * sessions, emotions — all share the AnalyticsBucket shape). Bar = average R
- * (profit/loss by sign); EVERY bar carries its n — a rate without its count
+ * sessions, emotions - all share the AnalyticsBucket shape). Bar = average R
+ * (profit/loss by sign); EVERY bar carries its n - a rate without its count
  * is never shown. Buckets below LOW_SAMPLE_N get a warning-tinted n.
  */
 
@@ -132,8 +132,8 @@ export function BucketBars({ buckets, ariaLabel, height = 260, showN = true, cla
           const typed = (Array.isArray(params) ? params[0] : params) as TooltipParam | undefined;
           const bucket = typed ? buckets[typed.dataIndex] : undefined;
           if (!bucket) return "";
-          const winRate = bucket.winRate === null ? "—" : formatPercent(bucket.winRate, 0);
-          const avgR = bucket.avgR === null ? "—" : formatR(bucket.avgR);
+          const winRate = bucket.winRate === null ? "-" : formatPercent(bucket.winRate, 0);
+          const avgR = bucket.avgR === null ? "-" : formatR(bucket.avgR);
           const lowNote =
             bucket.trades > 0 && bucket.trades < LOW_SAMPLE_N
               ? `<div style="color:${t.warning};margin-top:2px">${S.lowSample}</div>`

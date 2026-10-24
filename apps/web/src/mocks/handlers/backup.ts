@@ -5,9 +5,9 @@ import { apiPaths } from "@/lib/api/endpoints";
 import { mockStore } from "@/mocks/store";
 import { endpoint, latency, parseBody, readJson, toErrorResponse } from "./utils";
 
-/** Backup export/import — features 12 (Priorité 3). */
+/** Backup export/import - features 12 (Priorité 3). */
 export const backupHandlers = [
-  // GET /export/backup — full authored-data snapshot
+  // GET /export/backup - full authored-data snapshot
   http.get(endpoint(apiPaths.exportBackup), async () => {
     await latency();
     try {
@@ -17,7 +17,7 @@ export const backupHandlers = [
     }
   }),
 
-  // POST /import/backup — validate + merge a backup payload
+  // POST /import/backup - validate + merge a backup payload
   http.post(endpoint(apiPaths.importBackup), async ({ request }) => {
     await latency();
     try {

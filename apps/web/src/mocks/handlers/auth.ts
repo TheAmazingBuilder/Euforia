@@ -24,7 +24,7 @@ import { endpoint, latency, parseBody, toErrorResponse } from "./utils";
 
 /**
  * Application authentication endpoints (spec §79). The engine owns state and
- * contract fidelity; these handlers translate engine results into HTTP —
+ * contract fidelity; these handlers translate engine results into HTTP -
  * including the `Set-Cookie` header that carries the rotating refresh token
  * (never the response body) and the `Retry-After` header on rate limits.
  */
@@ -45,7 +45,7 @@ function respond<T>(result: EngineResult<T>): Response {
     return response;
   }
   // T is a JSON-serializable contract body by construction.
-  // NOTE: the Set-Cookie header MUST ride on the response-init — MSW
+  // NOTE: the Set-Cookie header MUST ride on the response-init - MSW
   // captures response cookies from init headers at construction time
   // (HttpResponse decorators) and persists them via document.cookie.
   const response = HttpResponse.json(
@@ -61,7 +61,7 @@ function respond<T>(result: EngineResult<T>): Response {
 }
 
 export const authHandlers = [
-  /** POST /auth/register — creates a PENDING_VERIFICATION account. */
+  /** POST /auth/register - creates a PENDING_VERIFICATION account. */
   http.post(endpoint(apiPaths.authRegister), async ({ request }) => {
     await latency();
     try {
@@ -75,7 +75,7 @@ export const authHandlers = [
     }
   }),
 
-  /** POST /auth/login — credentials → AUTHENTICATED | MFA_REQUIRED. */
+  /** POST /auth/login - credentials → AUTHENTICATED | MFA_REQUIRED. */
   http.post(endpoint(apiPaths.authLogin), async ({ request }) => {
     await latency();
     try {
@@ -89,7 +89,7 @@ export const authHandlers = [
     }
   }),
 
-  /** POST /auth/mfa/challenge — 6-digit authenticator code. */
+  /** POST /auth/mfa/challenge - 6-digit authenticator code. */
   http.post(endpoint(apiPaths.authMfaChallenge), async ({ request }) => {
     await latency();
     try {
@@ -103,7 +103,7 @@ export const authHandlers = [
     }
   }),
 
-  /** POST /auth/mfa/recover — one-time recovery code. */
+  /** POST /auth/mfa/recover - one-time recovery code. */
   http.post(endpoint(apiPaths.authMfaRecover), async ({ request }) => {
     await latency();
     try {
@@ -117,18 +117,18 @@ export const authHandlers = [
     }
   }),
 
-  /** POST /auth/refresh — cookie-carried rotating refresh token. */
+  /** POST /auth/refresh - cookie-carried rotating refresh token. */
   http.post(endpoint(apiPaths.authRefresh), async ({ request }) => {
     await latency();
     return respond(authEngine.refresh(request.headers.get("cookie")));
   }),
 
-  /** POST /auth/logout — revokes the refresh chain, clears the cookie. */
+  /** POST /auth/logout - revokes the refresh chain, clears the cookie. */
   http.post(endpoint(apiPaths.authLogout), async ({ request }) => {
     return respond(authEngine.logout(request.headers.get("cookie")));
   }),
 
-  /** GET /auth/me — Bearer access token → current user + session. */
+  /** GET /auth/me - Bearer access token → current user + session. */
   http.get(endpoint(apiPaths.authMe), async ({ request }) => {
     const auth = authEngine.authenticate(request.headers.get("authorization"));
     if (!auth) {
@@ -142,7 +142,7 @@ export const authHandlers = [
     return respond(authEngine.me(auth.user));
   }),
 
-  /** POST /auth/email/verify — one-time verification token. */
+  /** POST /auth/email/verify - one-time verification token. */
   http.post(endpoint(apiPaths.authEmailVerify), async ({ request }) => {
     await latency();
     try {
@@ -156,7 +156,7 @@ export const authHandlers = [
     }
   }),
 
-  /** POST /auth/email/resend — anti-enumeration, rate limited. */
+  /** POST /auth/email/resend - anti-enumeration, rate limited. */
   http.post(endpoint(apiPaths.authEmailResend), async ({ request }) => {
     await latency();
     try {
@@ -176,7 +176,7 @@ export const authHandlers = [
     }
   }),
 
-  /** POST /auth/password/forgot — generic success, rate limited. */
+  /** POST /auth/password/forgot - generic success, rate limited. */
   http.post(endpoint(apiPaths.authPasswordForgot), async ({ request }) => {
     await latency();
     try {
@@ -190,7 +190,7 @@ export const authHandlers = [
     }
   }),
 
-  /** POST /auth/password/reset — one-time reset token + new password. */
+  /** POST /auth/password/reset - one-time reset token + new password. */
   http.post(endpoint(apiPaths.authPasswordReset), async ({ request }) => {
     await latency();
     try {

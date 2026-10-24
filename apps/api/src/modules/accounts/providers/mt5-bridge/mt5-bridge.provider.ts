@@ -1,7 +1,7 @@
 /**
- * MT5 terminal bridge adapter (Phase 08) — the FIRST push-based connector.
+ * MT5 terminal bridge adapter (Phase 08) - the FIRST push-based connector.
  *
- * MECHANISM (documented decision — U1 resolved as "terminal bridge"):
+ * MECHANISM (documented decision - U1 resolved as "terminal bridge"):
  *   MT5/IC Markets expose NO official cloud REST API (feasibility doc,
  *   verified 2026-10-14). The only honest paths are platform-resident
  *   bridges. This connector pairs with an MQL5 Expert Advisor the user
@@ -11,7 +11,7 @@
  *   NEVER leave the terminal; Euforia never sees them.
  *
  * ARCHITECTURE (why a pull adapter): the sync orchestrator and capability
- * gates are pull-shaped (§60 — "nothing else changes"). The bridge adapter
+ * gates are pull-shaped (§60 - "nothing else changes"). The bridge adapter
  * therefore reads the SERVER-PERSISTED ingest log (TradingBridgeEvent):
  *   terminal ──push──▶ ingest endpoint ──persist──▶ TradingBridgeEvent
  *   orchestrator ──fetch*──▶ latest event per kind (this adapter)
@@ -46,12 +46,12 @@ function bridgeLimitation(): string {
   return "Data is as fresh as the last push from the MT5 terminal bridge (default every 30 s while the terminal runs).";
 }
 
-/** Capability V2 descriptor — one honest limitation covers every key. */
+/** Capability V2 descriptor - one honest limitation covers every key. */
 const BRIDGE_CAPABILITIES: TradingProviderCapabilitiesV2 = {
   accountDiscovery: {
     support: "UNSUPPORTED",
     evidence:
-      "docs/architecture/accounts-connectivity-provider-feasibility.md — MT5 has no account-discovery API; the user types their login",
+      "docs/architecture/accounts-connectivity-provider-feasibility.md - MT5 has no account-discovery API; the user types their login",
   },
   accountMetadata: {
     support: "SUPPORTED",
@@ -115,7 +115,7 @@ const BRIDGE_CAPABILITIES: TradingProviderCapabilitiesV2 = {
     retrieval: "ON_CONNECT",
     evidence:
       "Pairing IS the validation: the first accepted signed push flips CONNECTING → CONNECTED",
-    limitation: "No pre-push validation is possible — the terminal is external by design",
+    limitation: "No pre-push validation is possible - the terminal is external by design",
   },
   credentialRevocation: {
     support: "SUPPORTED",
@@ -161,7 +161,7 @@ export class Mt5BridgeProviderAdapter implements TradingProviderAdapter {
 
   /**
    * Bridge "validation" cannot dial a terminal (there is nothing to dial at
-   * connect time — the EA may not be installed yet). The REAL validation is
+   * connect time - the EA may not be installed yet). The REAL validation is
    * the first accepted signed push (capability connectionValidation,
    * retrieval ON_CONNECT). The connect flow for PLATFORM_BRIDGE therefore
    * never calls this; the connection-health endpoint answers from the
@@ -236,7 +236,7 @@ export class Mt5BridgeProviderAdapter implements TradingProviderAdapter {
     };
     if (!Array.isArray(payload.deals)) throw this.invalidResponse("DEALS");
     // The EA's incremental window is its own checkpoint; observedThrough and
-    // completeness travel WITH the event (§8 semantics — never invented here).
+    // completeness travel WITH the event (§8 semantics - never invented here).
     return {
       deals: payload.deals,
       observedThrough: payload.observedThrough ?? null,

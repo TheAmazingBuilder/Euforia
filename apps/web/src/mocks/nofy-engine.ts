@@ -28,7 +28,7 @@ import { COURSES } from "./academy/catalog";
 import { MockError, mockStore } from "./store";
 
 /**
- * Nofy engine — the knowledge workspace's server-side brain.
+ * Nofy engine - the knowledge workspace's server-side brain.
  *
  * Owns per-user Nofy state (notes composed of ordered blocks, folders,
  * tags, templates, version history) exactly like the Academy engine owns
@@ -79,7 +79,7 @@ const daysAgoIso = (days: number, hourOffset = 0): string =>
 let blockCounter = 0;
 const newBlockId = (): string => `nb-${Date.now().toString(36)}-${(blockCounter++).toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
 
-/** Authoring helper — keeps seed blocks terse. */
+/** Authoring helper - keeps seed blocks terse. */
 function blk(type: NofyBlock["type"], text: string, extra: Partial<NofyBlock> = {}): NofyBlock {
   return { id: newBlockId(), type, text, ...extra };
 }
@@ -88,13 +88,13 @@ const TEXT_BEARING = new Set<NofyBlock["type"]>([
   "paragraph", "h1", "h2", "h3", "bullet", "numbered", "todo", "quote", "callout", "code",
 ]);
 
-/** Plain-text projection of a block list — search, excerpt and word count. */
+/** Plain-text projection of a block list - search, excerpt and word count. */
 function textOfBlocks(blocks: NofyBlock[]): string {
   const parts: string[] = [];
   for (const block of blocks) {
     if (TEXT_BEARING.has(block.type) && block.text.trim() !== "") parts.push(block.text.trim());
     if (block.type === "table" && block.rows) {
-      for (const row of block.rows) parts.push(row.join(" — "));
+      for (const row of block.rows) parts.push(row.join(" - "));
     }
     if (block.type === "image" && block.caption) parts.push(block.caption);
   }
@@ -125,7 +125,7 @@ function resolveRef(kind: NofyRefKind, id: string): NofyRefResolved | null {
         const trade = mockStore.data.trades.find((t) => t.id === id);
         if (!trade) return null;
         const instrument = mockStore.data.instruments.find((i) => i.id === trade.instrumentId);
-        const symbol = instrument?.symbol ?? "—";
+        const symbol = instrument?.symbol ?? "-";
         const meta = trade.status === "CLOSED"
           ? `${symbol} ${trade.direction} · ${trade.status} · ${Number(trade.rMultiple ?? 0) >= 0 ? "+" : ""}${Number(trade.rMultiple ?? 0).toFixed(2)}R`
           : `${symbol} ${trade.direction} · ${trade.status}`;
@@ -250,7 +250,7 @@ const FOLDER_SEEDS = [
 
 const TAG_SEEDS = ["XAUUSD", "NASDAQ", "Forex", "Breakout", "Liquidity", "Psychology", "RiskManagement", "LondonSession", "CPI", "StrategyIdea"];
 
-/** Built-in templates — the spec §23 set, authored as real block lists. */
+/** Built-in templates - the spec §23 set, authored as real block lists. */
 function builtInTemplates(): NofyTemplate[] {
   const at = daysAgoIso(30);
   const template = (name: string, description: string, icon: string, blocks: NofyBlock[]): NofyTemplate => ({
@@ -300,8 +300,8 @@ function builtInTemplates(): NofyTemplate[] {
         blk("bullet", "Level one"),
         blk("bullet", "Level two"),
         blk("h2", "Scenarios"),
-        blk("callout", "Bullish case — what confirms it.", { tone: "tip" }),
-        blk("callout", "Bearish case — what confirms it.", { tone: "warn" }),
+        blk("callout", "Bullish case - what confirms it.", { tone: "tip" }),
+        blk("callout", "Bearish case - what confirms it.", { tone: "warn" }),
         blk("h2", "Invalidation"),
         blk("paragraph", "The read is wrong if…"),
       ],
@@ -370,7 +370,7 @@ function builtInTemplates(): NofyTemplate[] {
 }
 
 /**
- * Seed once — professional demo content whose references point at REAL
+ * Seed once - professional demo content whose references point at REAL
  * entities of the running journal (trades, strategies, setups, lessons,
  * economic events, symbols), resolved at seed time by id.
  */
@@ -407,7 +407,7 @@ function ensureSeed(): void {
   state.notes = [
     note({
       id: crypto.randomUUID(),
-      title: "XAUUSD London Breakout — observations",
+      title: "XAUUSD London Breakout - observations",
       icon: "📈",
       folderId: folder("Market Analysis"),
       tagIds: [tag("XAUUSD"), tag("LondonSession"), tag("Breakout")],
@@ -416,7 +416,7 @@ function ensureSeed(): void {
       lessonRef: null,
       blocks: [
         blk("h2", "Session behaviour"),
-        blk("paragraph", "Gold tends to sweep the Asian range in the first 15 minutes of London, then rotate. The sweep is tradeable only when the reclaim holds on the 5m close — otherwise it is continuation, not reversal."),
+        blk("paragraph", "Gold tends to sweep the Asian range in the first 15 minutes of London, then rotate. The sweep is tradeable only when the reclaim holds on the 5m close - otherwise it is continuation, not reversal."),
         blk("paragraph", "Three weeks of journaling the same window: **11 qualified sweeps, 7 reclaimed**. The edge is the reclaim, never the sweep itself."),
         blk("h2", "Qualification checklist"),
         blk("todo", "Asian range defined (≥ 6 candles, clean highs/lows)", { checked: true }),
@@ -429,10 +429,10 @@ function ensureSeed(): void {
             ["Condition", "Observation", "Result"],
             ["London open + clean range", "Liquidity sweep then reclaim", "Valid"],
             ["NY open, no range", "No confirmation, mid-range chop", "Invalid"],
-            ["CPI day", "Sweep ignored — spreads widened", "Skipped"],
+            ["CPI day", "Sweep ignored - spreads widened", "Skipped"],
           ],
         }),
-        blk("callout", "The sweep is bait. The reclaim is the setup — wait for it, every time.", { tone: "warn" }),
+        blk("callout", "The sweep is bait. The reclaim is the setup - wait for it, every time.", { tone: "warn" }),
       ],
       createdAt: daysAgoIso(16, 2),
       updatedAt: daysAgoIso(1, 3),
@@ -458,7 +458,7 @@ function ensureSeed(): void {
         strategy ? blk("ref", "", { ref: { kind: "STRATEGY", id: strategy.id } }) : blk("paragraph", ""),
         blk("h2", "Action items"),
         blk("todo", "Write the confirmation rule at the top of the pre-session checklist", { checked: true }),
-        blk("todo", "Journal every entry where confirmation was missing — 10 sessions", { checked: false }),
+        blk("todo", "Journal every entry where confirmation was missing - 10 sessions", { checked: false }),
       ],
       createdAt: daysAgoIso(9, 5),
       updatedAt: daysAgoIso(2, 1),
@@ -476,13 +476,13 @@ function ensureSeed(): void {
       lessonRef: null,
       blocks: [
         blk("h2", "Working definition"),
-        blk("paragraph", "A liquidity sweep is a push through a visible swing high/low that does not hold — engineered to fill larger orders. It fails as a breakout within one to three candles."),
+        blk("paragraph", "A liquidity sweep is a push through a visible swing high/low that does not hold - engineered to fill larger orders. It fails as a breakout within one to three candles."),
         blk("h2", "What makes it exploitable"),
         blk("numbered", "A clean prior level everyone can see"),
         blk("numbered", "Momentum into the level, not a slow drift"),
-        blk("numbered", "Fast rejection — the reclaim candle is the tell"),
+        blk("numbered", "Fast rejection - the reclaim candle is the tell"),
         blk("h2", "What it is NOT"),
-        blk("bullet", "A guaranteed reversal — sweeps fail constantly in trend"),
+        blk("bullet", "A guaranteed reversal - sweeps fail constantly in trend"),
         blk("bullet", "A reason to skip the confirmation candle"),
         blk("callout", "Counter-trend by nature. Grade it against the higher-timeframe structure before anything else.", { tone: "info" }),
         blk("h2", "Coursework"),
@@ -503,10 +503,10 @@ function ensureSeed(): void {
       templateId: null,
       lessonRef: null,
       blocks: [
-        blk("paragraph", "Studying how gold reacts to US CPI releases — the goal is not to trade the release, it is to understand the post-release range so the second move can be traded safely."),
+        blk("paragraph", "Studying how gold reacts to US CPI releases - the goal is not to trade the release, it is to understand the post-release range so the second move can be traded safely."),
         highImpactEvent ? blk("ref", "", { ref: { kind: "EVENT", id: highImpactEvent.id } }) : blk("paragraph", ""),
         blk("h2", "Observations"),
-        blk("bullet", "First move is noise — spreads widen, both sides get wicked"),
+        blk("bullet", "First move is noise - spreads widen, both sides get wicked"),
         blk("bullet", "The tradeable move is usually the second impulse, 5–15 minutes after the release"),
         blk("bullet", "Initial spike range becomes the day's high or low surprisingly often"),
         blk("callout", "No entries inside the first five minutes. Ever.", { tone: "risk" }),
@@ -558,7 +558,7 @@ function ensureSeed(): void {
         blk("todo", "Daily loss limit re-read out loud", { checked: true }),
         blk("todo", "Economic calendar scanned for the session window", { checked: true }),
         blk("todo", "Higher-timeframe bias written in one sentence", { checked: false }),
-        blk("todo", "Maximum 2 trades planned — count them", { checked: false }),
+        blk("todo", "Maximum 2 trades planned - count them", { checked: false }),
         blk("callout", "If the checklist cannot be completed, the session does not start.", { tone: "warn" }),
       ],
       createdAt: daysAgoIso(18, 1),
@@ -568,7 +568,7 @@ function ensureSeed(): void {
     }),
     note({
       id: crypto.randomUUID(),
-      title: "Position sizing — my notes",
+      title: "Position sizing - my notes",
       icon: "📚",
       folderId: folder("Learning"),
       tagIds: [tag("RiskManagement"), tag("Forex")],
@@ -578,11 +578,11 @@ function ensureSeed(): void {
         ? { courseId: lessonCourse.id, courseTitle: lessonCourse.title, lessonId: lesson.id, lessonTitle: lesson.title }
         : null,
       blocks: [
-        blk("paragraph", "Personal consolidation of the Academy lesson on position sizing — written in my own words so it sticks."),
+        blk("paragraph", "Personal consolidation of the Academy lesson on position sizing - written in my own words so it sticks."),
         blk("h2", "The core arithmetic"),
-        blk("paragraph", "Risk amount = balance × risk %. Position size = risk amount ÷ (stop distance × value per unit). The stop distance is GIVEN by the structure — sizing adapts to it, never the other way around."),
+        blk("paragraph", "Risk amount = balance × risk %. Position size = risk amount ÷ (stop distance × value per unit). The stop distance is GIVEN by the structure - sizing adapts to it, never the other way around."),
         blk("h2", "What I keep getting wrong"),
-        blk("bullet", "Widening the stop to keep the size — that is risk denial, not sizing"),
+        blk("bullet", "Widening the stop to keep the size - that is risk denial, not sizing"),
         blk("bullet", "Forgetting the spread on wide instruments like gold"),
         blk("h2", "Application"),
         blk("todo", "Compute size by hand on the next 5 trades before checking the sizer", { checked: false }),
@@ -594,7 +594,7 @@ function ensureSeed(): void {
     }),
     note({
       id: crypto.randomUUID(),
-      title: "Weekly review — what the data says",
+      title: "Weekly review - what the data says",
       icon: "🧾",
       folderId: folder("Strategies"),
       tagIds: [tag("XAUUSD"), tag("Breakout")],
@@ -632,14 +632,14 @@ function ensureSeed(): void {
   state.notes.push(
     note({
       id: crypto.randomUUID(),
-      title: "Random itch — scalp the open",
+      title: "Random itch - scalp the open",
       icon: "🗑️",
       folderId: null,
       tagIds: [],
       favorite: false,
       templateId: null,
       lessonRef: null,
-      blocks: [blk("paragraph", "Impulse idea written mid-session, deleted on review — kept in trash as a reminder.")],
+      blocks: [blk("paragraph", "Impulse idea written mid-session, deleted on review - kept in trash as a reminder.")],
       createdAt: daysAgoIso(3, 2),
       updatedAt: daysAgoIso(3, 1),
       lastViewedAt: null,
@@ -687,7 +687,7 @@ export function listNotes(scope: NofyListScope, query?: { q?: string; sort?: str
 }
 
 /**
- * Notes linked to an app entity — the Playbook / Trade Review side of the
+ * Notes linked to an app entity - the Playbook / Trade Review side of the
  * integration. A note is "linked" when it carries a ref block pointing at
  * the entity; rows are the same projection the browser shows.
  */
@@ -796,7 +796,7 @@ export function searchNofy(q: string): NofySearchResponse {
   return { results, total: results.length };
 }
 
-/** Entity picker — referenceable entities across the whole app. */
+/** Entity picker - referenceable entities across the whole app. */
 export function listRefs(q: string, kind?: string): NofyRefsResponse {
   const query = q.trim().toLowerCase();
   const ALL_KINDS: NofyRefKind[] = ["TRADE", "STRATEGY", "SETUP", "RULE", "LESSON", "EVENT", "SYMBOL", "NOTE"];
@@ -1120,7 +1120,7 @@ export function restoreVersion(noteId: string, versionId: string): { note: NofyN
   return { note, folderName: folderNameOf(note.folderId), tagNames: tagNamesOf(note.tagIds) };
 }
 
-// ── Mock errors — subclasses of store.MockError so handlers map status ───────
+// ── Mock errors - subclasses of store.MockError so handlers map status ───────
 
 export class MockNotFoundError extends MockError {
   constructor(message = "Not found") {

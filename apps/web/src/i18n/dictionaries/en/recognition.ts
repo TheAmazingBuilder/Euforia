@@ -1,13 +1,13 @@
 import type { Dictionary } from "@/i18n/dictionaries/en";
 
 /**
- * EN dictionary — IMPORT & RECOGNITION namespace (canonical; FR mirrors it
+ * EN dictionary - IMPORT & RECOGNITION namespace (canonical; FR mirrors it
  * when the French pack returns). Grouped by screen concern. Values are
- * STATIC strings — components compose dynamic parts themselves (the dict.*
+ * STATIC strings - components compose dynamic parts themselves (the dict.*
  * pattern, no {var} templates).
  *
  * Terminology contract (spec §18/§37): confidence is "Recognition
- * confidence" — never accuracy/guarantee. The engine DRAFTS, the user
+ * confidence" - never accuracy/guarantee. The engine DRAFTS, the user
  * CONFIRMS (§21): confirm copy never implies the machine was right.
  */
 
@@ -64,15 +64,15 @@ export const recognitionDict = {
   },
 
   overview: {
-    subtitle: "Turn any trading screenshot into a verified journal entry — the engine drafts, you confirm.",
+    subtitle: "Turn any trading screenshot into a verified journal entry - the engine drafts, you confirm.",
     uploadCta: "Upload screenshot",
     heroKicker: "Screenshot pipeline",
     heroTitle: "Import your trading screenshots",
     heroBody:
-      "Euforia reads the trade, the account and the chart straight from the image — every value carries its recognition confidence, and nothing enters the journal until you confirm it.",
+      "Euforia reads the trade, the account and the chart straight from the image - every value carries its recognition confidence, and nothing enters the journal until you confirm it.",
     heroPlatforms: "Supports MT5 · TradingView · cTrader · PDF statements",
     heroModesTitle: "Three recognition modes",
-    heroModesHint: "Pick a mode after uploading — the engine adapts what it reads.",
+    heroModesHint: "Pick a mode after uploading - the engine adapts what it reads.",
     privacy: "Your screenshot is processed securely and is only visible to you.",
     stats: {
       analyzed: "Screenshots analyzed",
@@ -82,12 +82,12 @@ export const recognitionDict = {
     },
     recentTitle: "Recent imports",
     openHistory: "Open history",
-    recentEmpty: "No imports yet — your first screenshot starts above.",
+    recentEmpty: "No imports yet - your first screenshot starts above.",
   },
 
   uploader: {
     dropTitle: "Drag your screenshot here",
-    dropSubtitle: "or click to browse — PNG, JPG, WEBP or PDF statement, up to 6 MB",
+    dropSubtitle: "or click to browse - PNG, JPG, WEBP or PDF statement, up to 6 MB",
     dragging: "Drop to import",
     rejected: "This file can't be imported",
     browse: "Choose a file",
@@ -103,9 +103,9 @@ export const recognitionDict = {
     format: "Format",
     size: "Size",
     errEmpty: "This image file is empty.",
-    errType: "This format isn't supported — use PNG, JPG, WEBP or a PDF statement.",
-    errSize: "This file is too large — screenshots must stay under 6 MB.",
-    errRead: "We couldn't read this file — try re-exporting the screenshot.",
+    errType: "This format isn't supported - use PNG, JPG, WEBP or a PDF statement.",
+    errSize: "This file is too large - screenshots must stay under 6 MB.",
+    errRead: "We couldn't read this file - try re-exporting the screenshot.",
   },
 
   settings: {
@@ -123,7 +123,7 @@ export const recognitionDict = {
     platformDeriv: "Deriv",
     platformOther: "Unknown platform",
     profile: "Recognition mode",
-    profileHint: "Three engines over the same pixels — pick what this screenshot shows.",
+    profileHint: "Three engines over the same pixels - pick what this screenshot shows.",
     profileTrade: "Trade details",
     profileTradeHint: "Symbol, direction, volume, prices, SL/TP, result and times.",
     profileAccount: "Account / position",
@@ -156,12 +156,12 @@ export const recognitionDict = {
     },
     done: "Done",
     elapsed: "Elapsed",
-    cancelled: "Analysis cancelled — the screenshot was discarded.",
+    cancelled: "Analysis cancelled - the screenshot was discarded.",
   },
 
   result: {
     title: "Recognition result",
-    subtitle: "Every value carries its recognition confidence — review before confirming.",
+    subtitle: "Every value carries its recognition confidence - review before confirming.",
     screenshot: "Original screenshot",
     detectedTitle: "Detected trade",
     detectedEmpty: "No trade was detected",
@@ -228,7 +228,7 @@ export const recognitionDict = {
       cancel: "Cancel",
       notFound: "Not found",
       uncertain: "Please verify",
-      missing: "Not detected — enter it manually",
+      missing: "Not detected - enter it manually",
       raw: "As read",
     },
     directionBuy: "BUY",
@@ -246,18 +246,18 @@ export const recognitionDict = {
 
   warnings: {
     title: "Review recommended",
-    multipleTrades: "Multiple trades may be present — V1 imports one at a time.",
+    multipleTrades: "Multiple trades may be present - V1 imports one at a time.",
     incomplete: "The screenshot appears incomplete.",
     lowConfidence: "Low confidence on {field}.",
   },
 
   draft: {
     title: "Review trade",
-    subtitle: "One last look before this enters the journal — sections mirror the trade form.",
+    subtitle: "One last look before this enters the journal - sections mirror the trade form.",
     titleAccount: "Review account snapshot",
-    subtitleAccount: "One last look before this becomes the authoritative snapshot — sections mirror the account panel.",
+    subtitleAccount: "One last look before this becomes the authoritative snapshot - sections mirror the account panel.",
     titleChart: "Review chart reading",
-    subtitleChart: "One last look before this becomes the authoritative reading — sections mirror the chart legend.",
+    subtitleChart: "One last look before this becomes the authoritative reading - sections mirror the chart legend.",
     sections: {
       basic: "Basic information",
       execution: "Execution",
@@ -285,13 +285,13 @@ export const recognitionDict = {
     title: "Import confirmed",
     body: "The reviewed values are now the authoritative record of this recognition.",
     titleAccount: "Snapshot confirmed",
-    bodyAccount: "The reviewed account snapshot is saved with this recognition — open positions are kept as evidence, nothing is written to the journal.",
+    bodyAccount: "The reviewed account snapshot is saved with this recognition - open positions are kept as evidence, nothing is written to the journal.",
     titleChart: "Reading confirmed",
-    bodyChart: "The reviewed chart reading is saved with this recognition — the journal only ever receives trades you confirm in Trade details mode.",
+    bodyChart: "The reviewed chart reading is saved with this recognition - the journal only ever receives trades you confirm in Trade details mode.",
     viewTrades: "Open the journal",
     viewAccounts: "Open accounts",
     importAnother: "Import another screenshot",
-    toast: "Recognition confirmed — the reviewed values are saved.",
+    toast: "Recognition confirmed - the reviewed values are saved.",
     toastAccount: "Account snapshot confirmed and saved.",
     toastChart: "Chart reading confirmed and saved.",
     importedCount: "trade(s) imported",
@@ -314,7 +314,7 @@ export const recognitionDict = {
     modeAccount: "Account",
     modeChart: "Chart",
     oneTrade: "1 trade",
-    noTrade: "—",
+    noTrade: "-",
     filters: {
       all: "All",
       review: "Needs review",
@@ -337,10 +337,10 @@ export const recognitionDict = {
       back: "Back to history",
     },
     empty: {
-      all: "No imports yet — upload your first screenshot from the overview.",
+      all: "No imports yet - upload your first screenshot from the overview.",
       review: "Nothing is waiting for review.",
       confirmed: "No confirmed imports yet.",
-      failed: "No failed recognitions — good.",
+      failed: "No failed recognitions - good.",
     },
     delete: "Delete",
     deleted: "Recognition deleted.",
@@ -348,7 +348,7 @@ export const recognitionDict = {
 
   engine: {
     dualPass: "Dual-pass recognition",
-    dualPassHint: "Two independent reads of the pixels — values they agree on are marked as verified.",
+    dualPassHint: "Two independent reads of the pixels - values they agree on are marked as verified.",
     layout: "Layout",
     layoutDesktop: "MT5 desktop history",
     layoutMobile: "MT5 mobile summary",
@@ -360,7 +360,7 @@ export const recognitionDict = {
 
   duplicate: {
     title: "Already imported",
-    body: "This screenshot looks like one you imported earlier — check it before confirming another copy.",
+    body: "This screenshot looks like one you imported earlier - check it before confirming another copy.",
     open: "Review existing",
     anyway: "Import anyway",
     dismissed: "You chose to proceed despite the duplicate warning.",
@@ -368,7 +368,7 @@ export const recognitionDict = {
 
   tradeDuplicate: {
     title: "Possible duplicate trade",
-    body: "A different screenshot of yours appears to show this same trade. You can still import it — or open the existing trade first.",
+    body: "A different screenshot of yours appears to show this same trade. You can still import it - or open the existing trade first.",
     open: "Review existing trade",
     anyway: "Import anyway",
     dismissed: "You chose to proceed despite the duplicate warning.",
@@ -387,21 +387,21 @@ export const recognitionDict = {
 
   issues: {
     title: "What to look at",
-    hint: "Signals from the recognition — each one explains what needs your attention.",
-    LOW_OCR_CONFIDENCE: "Low reading confidence — double-check this value.",
-    UNKNOWN_PLATFORM: "The platform could not be identified — check the values carefully.",
-    UNKNOWN_SYMBOL: "This symbol is not in the instrument catalog — the import will need a matching symbol.",
-    AMBIGUOUS_DIRECTION: "Conflicting buy/sell readings — resolve the trade side.",
-    AMBIGUOUS_NUMBER: "Ambiguous number format — verify the value.",
+    hint: "Signals from the recognition - each one explains what needs your attention.",
+    LOW_OCR_CONFIDENCE: "Low reading confidence - double-check this value.",
+    UNKNOWN_PLATFORM: "The platform could not be identified - check the values carefully.",
+    UNKNOWN_SYMBOL: "This symbol is not in the instrument catalog - the import will need a matching symbol.",
+    AMBIGUOUS_DIRECTION: "Conflicting buy/sell readings - resolve the trade side.",
+    AMBIGUOUS_NUMBER: "Ambiguous number format - verify the value.",
     INVALID_PRICE_RELATIONSHIP: "This price contradicts the trade direction (SL/TP geometry).",
     INVALID_TIMESTAMP: "This timestamp contradicts the other one (close before open).",
-    MISSING_REQUIRED_FIELD: "A required field was not found — enter it manually.",
-    CONFLICTING_FIELDS: "Screenshots disagree on this value — pick the right one.",
-    UNSUPPORTED_SCREENSHOT: "The screenshot type is unknown — verify everything before importing.",
+    MISSING_REQUIRED_FIELD: "A required field was not found - enter it manually.",
+    CONFLICTING_FIELDS: "Screenshots disagree on this value - pick the right one.",
+    UNSUPPORTED_SCREENSHOT: "The screenshot type is unknown - verify everything before importing.",
     POSSIBLE_DUPLICATE: "This screenshot was already imported.",
     POSSIBLE_TRADE_DUPLICATE: "This trade may already exist in your journal.",
-    PROFILE_TYPE_MISMATCH: "This screenshot does not look like what this mode reads — double-check the recognition mode.",
-    empty: "No signals — everything reads cleanly.",
+    PROFILE_TYPE_MISMATCH: "This screenshot does not look like what this mode reads - double-check the recognition mode.",
+    empty: "No signals - everything reads cleanly.",
   },
 
   confirmDialog: {
@@ -435,14 +435,14 @@ export const recognitionDict = {
     fusedTitle: "Fused trade draft",
     fusedHint: "Values the screenshots agree on are strengthened; conflicts are kept for you to resolve.",
     coherentOk: "The screenshots agree on symbol and direction.",
-    coherentWarning: "These screenshots may show DIFFERENT trades — verify the symbol and direction.",
+    coherentWarning: "These screenshots may show DIFFERENT trades - verify the symbol and direction.",
     conflictsTitle: "Conflicting values",
     conflictValues: "Readings",
     reviewTitle: "Review the fused draft",
     confirmTitle: "Confirm & import fused trade",
     confirmedCount: "trade(s) imported from the set",
     delete: "Discard set",
-    deleted: "Set discarded — individual recognitions kept.",
+    deleted: "Set discarded - individual recognitions kept.",
   },
 
   collections: {
@@ -458,19 +458,19 @@ export const recognitionDict = {
     empty: "No collections yet.",
     inCollections: "Collections",
     created: "Collection created.",
-    deleted: "Collection deleted — its screenshots stay in the history.",
+    deleted: "Collection deleted - its screenshots stay in the history.",
     deleteTitle: "Delete collection",
     deleteBody: "The collection is removed; the screenshots it held remain in the history.",
     membersTitle: "Screenshots in this collection",
-    menuEmpty: "No collections yet — create one first.",
+    menuEmpty: "No collections yet - create one first.",
     allCollections: "All collections",
   },
 
   reprocess: {
     action: "Re-run recognition",
-    hint: "Runs the current engine over the stored screenshot again — the original stays untouched.",
+    hint: "Runs the current engine over the stored screenshot again - the original stays untouched.",
     running: "Re-running…",
-    done: "Recognition re-run — review the fresh result.",
+    done: "Recognition re-run - review the fresh result.",
     purged: "The screenshot was purged and can no longer be re-processed.",
   },
 
@@ -502,17 +502,17 @@ export const recognitionDict = {
     scanning: "Scanning…",
     clear: "Clear selection",
     results: "Region readings",
-    resultsEmpty: "No readable text in this region — try a wider frame.",
+    resultsEmpty: "No readable text in this region - try a wider frame.",
     applyField: "Use value",
     failed: "The region scan found nothing usable.",
   },
 
   multi: {
     reviewTitle: "Grouped confirmation",
-    reviewSubtitle: "This screenshot contains several trades — review each draft, then import the ones you keep.",
+    reviewSubtitle: "This screenshot contains several trades - review each draft, then import the ones you keep.",
     draft: "Draft",
     include: "Import this trade",
-    excluded: "Excluded — will not be imported",
+    excluded: "Excluded - will not be imported",
     confirmedCount: "trade(s) imported",
   },
 
@@ -528,7 +528,7 @@ export const recognitionDict = {
 
   tags: {
     title: "Suggested playbook tags",
-    hint: "Based on when and what you traded — apply them in the journal.",
+    hint: "Based on when and what you traded - apply them in the journal.",
   },
 
   analytics: {
@@ -558,8 +558,8 @@ export const recognitionDict = {
     unsupported: "This image format isn't supported.",
     recognitionFailed: "We couldn't recognize enough information from this screenshot.",
     partial: "Some trade information was detected, but several fields require review.",
-    network: "Connection lost — check your network and try again.",
-    server: "Recognition service temporarily unavailable — try again in a moment.",
+    network: "Connection lost - check your network and try again.",
+    server: "Recognition service temporarily unavailable - try again in a moment.",
     notFound: "This recognition no longer exists.",
   },
 } as const;

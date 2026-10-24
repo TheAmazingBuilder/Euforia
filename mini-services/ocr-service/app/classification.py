@@ -1,6 +1,6 @@
 """Deterministic screenshot classification (Phase 19 §9 + V2 spec §18/§19).
 
-Two independent, keyword-weighted detectors over the recognized text —
+Two independent, keyword-weighted detectors over the recognized text -
 no ML, no vision models (V2 §5):
 
   detect_platform()        → MT5 | MT4 | TRADINGVIEW | CTRADER |
@@ -9,7 +9,7 @@ no ML, no vision models (V2 §5):
                              TRADE_DETAIL | ACCOUNT_SUMMARY | CHART |
                              POSITION_DETAIL
 
-UNKNOWN is an explicit outcome for both — never a guess. Confidence is a
+UNKNOWN is an explicit outcome for both - never a guess. Confidence is a
 transparent function of matched keyword weights (score / (score + 2)),
 bounded, monotonic in the evidence, and documented here so every number
 the review UI shows can be explained (V2 §27/§77).
@@ -23,7 +23,7 @@ from typing import Dict, List, Tuple
 from .contract import ClassificationCandidate, EngineClassification
 
 # ── Platform evidence (V2 §18) ───────────────────────────────────────────────
-# (keyword, weight) — deterministic, explainable. A platform needs STRONG
+# (keyword, weight) - deterministic, explainable. A platform needs STRONG
 # vocabulary (its own name/product terms); generic trade words (S/L, profit)
 # belong to the TYPE detector, not to a platform claim.
 PLATFORM_KEYWORDS: Dict[str, Tuple[Tuple[str, float], ...]] = {
@@ -67,7 +67,7 @@ PLATFORM_KEYWORDS: Dict[str, Tuple[Tuple[str, float], ...]] = {
 
 # ── Screenshot-type evidence (V2 §19) ────────────────────────────────────────
 # Weighted vocabulary per type. Structural adjustments (row counts, account
-# vs trade vocabulary) are applied afterwards — all deterministic.
+# vs trade vocabulary) are applied afterwards - all deterministic.
 TYPE_KEYWORDS: Dict[str, Tuple[Tuple[str, float], ...]] = {
     "TRADE_HISTORY": (
         (r"\baccount history\b", 1.2),
@@ -113,19 +113,19 @@ TYPE_KEYWORDS: Dict[str, Tuple[Tuple[str, float], ...]] = {
     ),
 }
 
-# Risk/profit labels — the vocabulary of a single-trade detail card (used as
+# Risk/profit labels - the vocabulary of a single-trade detail card (used as
 # structural evidence for TRADE_DETAIL, matching the extraction labels).
 _TRADE_LABELS = re.compile(r"\bs[./]?l\b|\bt[./]?p\b|\bprofit\b", re.IGNORECASE)
 _DIRECTION_OCCURRENCE = re.compile(r"\b(?:buy|sell|long|short)\b", re.IGNORECASE)
 
 _WORD = re.compile(r"[a-z]+")
 
-# Platforms whose screenshots are charts by nature — platform evidence alone
+# Platforms whose screenshots are charts by nature - platform evidence alone
 # lifts the CHART type (TradingView windows are charts even with sparse text).
 _CHART_BY_PLATFORM = {"TRADINGVIEW"}
 
 # Minimum normalized confidence to claim anything at all (V2 §18: UNKNOWN is
-# explicit — below this the answer is UNKNOWN, never the best guess).
+# explicit - below this the answer is UNKNOWN, never the best guess).
 _CLAIM_THRESHOLD = 0.2
 
 
@@ -167,7 +167,7 @@ def detect_screenshot_type(text: str, platform: str) -> Tuple[str, float]:
     for type_name, keywords in TYPE_KEYWORDS.items():
         scores[type_name] = sum(weight for pattern, weight in keywords if re.search(pattern, haystack))
 
-    # Structural adjustments — explainable deltas, never fabricated evidence.
+    # Structural adjustments - explainable deltas, never fabricated evidence.
     if direction_count >= 2 and scores.get("TRADE_HISTORY", 0.0) > 0.0:
         scores["TRADE_HISTORY"] += 0.4
     if direction_count == 1 and has_trade_labels:

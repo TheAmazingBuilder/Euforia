@@ -1,13 +1,13 @@
 /**
- * Oryon crosshair legend formatting — PURE helpers (Phase 5 spec §5).
+ * Oryon crosshair legend formatting - PURE helpers (Phase 5 spec §5).
  *
  * The legend may only show what the data ACTUALLY carries: the timestamp is
- * rendered in UTC (the chart's time axis domain — Lightweight Charts renders
+ * rendered in UTC (the chart's time axis domain - Lightweight Charts renders
  * UTCTimestamps; a legend time in another zone would contradict the axis),
- * and the volume is displayed ONLY for a valid positive value — the forming
+ * and the volume is displayed ONLY for a valid positive value - the forming
  * candle carries v = 0 until the server refetch merges real volume, and a
  * fabricated "0" would read as an observation, not the placeholder it is.
- * Indicator values are looked up by the manager (valuesAtTime) — a missing
+ * Indicator values are looked up by the manager (valuesAtTime) - a missing
  * reading is omitted, never interpolated or guessed.
  */
 
@@ -30,7 +30,7 @@ const INTRADAY_FORMAT = new Intl.DateTimeFormat("en-CA", {
 });
 
 /**
- * Candle timestamp (epoch ms) → legend label, UTC — aligned with the chart
+ * Candle timestamp (epoch ms) → legend label, UTC - aligned with the chart
  * time axis. Intraday intervals show date + time; "1D" shows the date only.
  * Returns null for a non-finite timestamp (nothing honest to show).
  */
@@ -47,7 +47,7 @@ const VOLUME_FORMAT = new Intl.NumberFormat("en", {
 });
 
 /**
- * Legend volume text — null when the value is missing, non-finite or ≤ 0
+ * Legend volume text - null when the value is missing, non-finite or ≤ 0
  * (the locally-merged forming candle reports 0 volume: omit, never fake).
  */
 export function formatLegendVolume(v: number | null | undefined): string | null {

@@ -1,11 +1,11 @@
 /**
- * Broker catalog (Phase 07 — the universal "any broker" layer).
+ * Broker catalog (Phase 07 - the universal "any broker" layer).
  *
  * A static, versioned identity registry of KNOWN brokers/platforms. Purpose:
- * answer "WHICH broker is this?" during a connection, for ANY broker —
+ * answer "WHICH broker is this?" during a connection, for ANY broker -
  * whether or not Euforia ships a connector for it today.
  *
- * STRICT SCOPE (no fabrication): entries carry IDENTITY metadata only —
+ * STRICT SCOPE (no fabrication): entries carry IDENTITY metadata only -
  * display names, platform families, and documented identification signals
  * (account-id shapes, endpoint hosts, server-name prefixes). NO capability
  * claims, NO API endpoints, NO authentication facts for brokers without a
@@ -15,7 +15,7 @@
  *
  * Identification signals are REGEX SOURCES (compiled lazily, unit-tested):
  *  - EXTERNAL_ID: tested against the user-supplied external account id.
- *  - ENDPOINT: tested against an endpoint/server hint (matched only — the
+ *  - ENDPOINT: tested against an endpoint/server hint (matched only - the
  *    identify flow NEVER dials a client-supplied string, SSRF-safe).
  * A pattern is added ONLY for publicly documented identifier shapes.
  */
@@ -23,7 +23,7 @@ export type BrokerCatalogPatternKind = "EXTERNAL_ID" | "ENDPOINT";
 
 export interface BrokerCatalogPattern {
   kind: BrokerCatalogPatternKind;
-  /** Regex source — tested case-sensitively against the raw hint string. */
+  /** Regex source - tested case-sensitively against the raw hint string. */
   regexSource: string;
   /** Human-readable evidence string recorded in the identification result. */
   signal: string;
@@ -43,14 +43,14 @@ export interface BrokerCatalogEntryDef {
   patterns: ReadonlyArray<BrokerCatalogPattern>;
 }
 
-/** Catalog snapshot version — recorded in every connect-time identification. */
+/** Catalog snapshot version - recorded in every connect-time identification. */
 export const BROKER_CATALOG_VERSION = "2026-10.1";
 
 /**
  * OANDA v20 account ids: "101-004-1234567-001" / "101-004-1234567"
- * (developer.oanda.com — three hyphen-separated segments).
+ * (developer.oanda.com - three hyphen-separated segments).
  * Deriv loginids: CR… (real), VRTC… (virtual/demo), MRT/MVT… (Deriv MT5
- * real/virtual) — api.deriv.com account conventions.
+ * real/virtual) - api.deriv.com account conventions.
  */
 export const BROKER_CATALOG: ReadonlyArray<BrokerCatalogEntryDef> = [
   {
@@ -97,7 +97,7 @@ export const BROKER_CATALOG: ReadonlyArray<BrokerCatalogEntryDef> = [
     brokerId: "icmarkets",
     displayName: "IC Markets",
     platforms: ["MT4", "MT5", "CTRADER"],
-    // Phase 08 — reachable through the MT5 terminal bridge (the EA runs in
+    // Phase 08 - reachable through the MT5 terminal bridge (the EA runs in
     // the user's own terminal; broker credentials never leave it). MT4 and
     // cTrader paths stay gated on their own decisions.
     connectorProviderId: "mt5-bridge",
@@ -117,7 +117,7 @@ export const BROKER_CATALOG: ReadonlyArray<BrokerCatalogEntryDef> = [
     platforms: ["MT4", "MT5", "CTRADER"],
     connectorProviderId: null,
     aliases: ["Pepperstone Group"],
-    notes: "Access paths are MT4/MT5/cTrader platform integrations — gated on the MT5 decision (U1) and the cTrader decision.",
+    notes: "Access paths are MT4/MT5/cTrader platform integrations - gated on the MT5 decision (U1) and the cTrader decision.",
     patterns: [
       {
         kind: "ENDPOINT",
@@ -132,7 +132,7 @@ export const BROKER_CATALOG: ReadonlyArray<BrokerCatalogEntryDef> = [
     platforms: ["MT4", "MT5"],
     connectorProviderId: null,
     aliases: ["Exness Group"],
-    notes: "Access path is the MT4/MT5 platform integration — gated on the MT5 decision (U1).",
+    notes: "Access path is the MT4/MT5 platform integration - gated on the MT5 decision (U1).",
     patterns: [
       {
         kind: "ENDPOINT",
@@ -147,7 +147,7 @@ export const BROKER_CATALOG: ReadonlyArray<BrokerCatalogEntryDef> = [
     platforms: ["MT4", "MT5"],
     connectorProviderId: null,
     aliases: ["XM Global", "Trading Point"],
-    notes: "Access path is the MT4/MT5 platform integration — gated on the MT5 decision (U1).",
+    notes: "Access path is the MT4/MT5 platform integration - gated on the MT5 decision (U1).",
     patterns: [
       {
         kind: "ENDPOINT",
@@ -162,7 +162,7 @@ export const BROKER_CATALOG: ReadonlyArray<BrokerCatalogEntryDef> = [
     platforms: ["MT4", "MT5"],
     connectorProviderId: null,
     aliases: ["ForexTime"],
-    notes: "Access path is the MT4/MT5 platform integration — gated on the MT5 decision (U1).",
+    notes: "Access path is the MT4/MT5 platform integration - gated on the MT5 decision (U1).",
     patterns: [
       {
         kind: "ENDPOINT",
@@ -186,7 +186,7 @@ export const BROKER_CATALOG: ReadonlyArray<BrokerCatalogEntryDef> = [
     platforms: ["MT4", "MT5"],
     connectorProviderId: null,
     aliases: ["Ava Trade"],
-    notes: "Access path is the MT4/MT5 platform integration — gated on the MT5 decision (U1).",
+    notes: "Access path is the MT4/MT5 platform integration - gated on the MT5 decision (U1).",
     patterns: [],
   },
   {
@@ -195,7 +195,7 @@ export const BROKER_CATALOG: ReadonlyArray<BrokerCatalogEntryDef> = [
     platforms: ["MT4", "MT5"],
     connectorProviderId: null,
     aliases: ["Vantage FX", "Vantage International"],
-    notes: "Access path is the MT4/MT5 platform integration — gated on the MT5 decision (U1).",
+    notes: "Access path is the MT4/MT5 platform integration - gated on the MT5 decision (U1).",
     patterns: [],
   },
   {
@@ -204,7 +204,7 @@ export const BROKER_CATALOG: ReadonlyArray<BrokerCatalogEntryDef> = [
     platforms: ["MT4", "MT5"],
     connectorProviderId: null,
     aliases: ["Eightcap Global"],
-    notes: "Access path is the MT4/MT5 platform integration — gated on the MT5 decision (U1).",
+    notes: "Access path is the MT4/MT5 platform integration - gated on the MT5 decision (U1).",
     patterns: [],
   },
   {
@@ -213,7 +213,7 @@ export const BROKER_CATALOG: ReadonlyArray<BrokerCatalogEntryDef> = [
     platforms: ["OTHER"],
     connectorProviderId: null,
     aliases: ["IBKR", "Interactive Brokers LLC"],
-    notes: "Official Client Portal Web API exists but requires individual account configuration and approval steps — not part of the current connector roadmap.",
+    notes: "Official Client Portal Web API exists but requires individual account configuration and approval steps - not part of the current connector roadmap.",
     patterns: [
       {
         kind: "ENDPOINT",
@@ -243,7 +243,7 @@ export const BROKER_CATALOG: ReadonlyArray<BrokerCatalogEntryDef> = [
     platforms: ["MT4", "MT5"],
     connectorProviderId: null,
     aliases: ["MetaQuotes", "MT4", "MT5"],
-    notes: "The MetaQuotes terminal/gateway integration is gated on decision U1 (self-hosted bridge vs cloud gateway vs documented defer) — broker entries above list per-broker access.",
+    notes: "The MetaQuotes terminal/gateway integration is gated on decision U1 (self-hosted bridge vs cloud gateway vs documented defer) - broker entries above list per-broker access.",
     patterns: [],
   },
   {
@@ -252,7 +252,7 @@ export const BROKER_CATALOG: ReadonlyArray<BrokerCatalogEntryDef> = [
     platforms: ["CTRADER"],
     connectorProviderId: null,
     aliases: ["Spotware", "cTrader Open API"],
-    notes: "cTrader Open API (OAuth 2.0 + protobuf over WebSocket) — implementation stopped pending explicit owner approval.",
+    notes: "cTrader Open API (OAuth 2.0 + protobuf over WebSocket) - implementation stopped pending explicit owner approval.",
     patterns: [],
   },
   {
@@ -261,7 +261,7 @@ export const BROKER_CATALOG: ReadonlyArray<BrokerCatalogEntryDef> = [
     platforms: ["OTHER"],
     connectorProviderId: null,
     aliases: ["TradingView Inc."],
-    notes: "No account-data interface exists — chart embedding is not brokerage-account access (documented verdict, doc D).",
+    notes: "No account-data interface exists - chart embedding is not brokerage-account access (documented verdict, doc D).",
     patterns: [],
   },
   {

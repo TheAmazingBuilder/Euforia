@@ -1,9 +1,9 @@
 /**
- * Integrations data access (Phase 14) — the ONLY place in the context that
+ * Integrations data access (Phase 14) - the ONLY place in the context that
  * touches Prisma. Narrow row projections, no Prisma types cross into
  * services or controllers (Phase 1 §10 boundary).
  *
- * Ownership (§7/§38 — only what the product needs):
+ * Ownership (§7/§38 - only what the product needs):
  *   - IntegrationConnection      per-user connection state (vault REFERENCE,
  *                                never secret material)
  *   - IntegrationEvent           Hub activity feed (sanitized messages)
@@ -12,7 +12,7 @@
  *   - IntegrationWebhookDelivery delivery ledger; (endpointId, eventId) IS
  *                                the idempotency guard (§23)
  *
- * Multi-step writes run in one transaction (§25/§27) — e.g. a connect writes
+ * Multi-step writes run in one transaction (§25/§27) - e.g. a connect writes
  * the connection patch + the feed event atomically. User scoping: the
  * principal's userId is part of EVERY where-clause (§35/§40).
  */
@@ -282,7 +282,7 @@ export class IntegrationsRepository {
     return rows as IntegrationErrorRow[];
   }
 
-  /** Clear by codes (null code = all) — mock clearError parity. */
+  /** Clear by codes (null code = all) - mock clearError parity. */
   async clearErrors(
     userId: string,
     providerId: string,
@@ -305,7 +305,7 @@ export class IntegrationsRepository {
 
   /**
    * The user's inbound endpoint for a provider. The model's @@unique is
-   * (userId, providerId, path) — a provider may expose several paths — so
+   * (userId, providerId, path) - a provider may expose several paths - so
    * this is an ownership-scoped scan (oldest first, listEndpoints order)
    * rather than a compound-unique lookup.
    */
@@ -320,7 +320,7 @@ export class IntegrationsRepository {
     return (row as WebhookEndpointRow) ?? null;
   }
 
-  /** Ownership-scoped lookup — foreign endpoint ids are simply not found. */
+  /** Ownership-scoped lookup - foreign endpoint ids are simply not found. */
   async findEndpointForUser(
     userId: string,
     endpointId: string,
@@ -369,12 +369,12 @@ export class IntegrationsRepository {
 
   // ── IntegrationWebhookDelivery ─────────────────────────────────────────────
 
-  /** Idempotency lookup (§23) — a stored row means the event was processed. */
+  /** Idempotency lookup (§23) - a stored row means the event was processed. */
   async findDelivery(
     endpointId: string,
     eventId: string,
   ): Promise<WebhookDeliveryRow | null> {
-    // No (endpointId, eventId) unique exists on the model — the guard is
+    // No (endpointId, eventId) unique exists on the model - the guard is
     // this lookup, so it takes the explicit findFirst path.
     const row = await this.prisma.integrationWebhookDelivery.findFirst({
       where: { endpointId, eventId },
@@ -383,12 +383,12 @@ export class IntegrationsRepository {
   }
 
   /**
-   * One ledger row per (endpoint, event) — the idempotency write (§23): a
+   * One ledger row per (endpoint, event) - the idempotency write (§23): a
    * replayed event updates its row instead of duplicating it. The model has
    * NO (endpointId, eventId) unique, so this is the explicit find-then-write
    * path (the ocr null-unique-component branch pattern): the delivery route's
    * per-endpoint serial processing plus the {@link findDelivery} guard are
-   * what keeps the ledger duplicate-free — no constraint race to converge.
+   * what keeps the ledger duplicate-free - no constraint race to converge.
    */
   async appendDelivery(
     endpointId: string,

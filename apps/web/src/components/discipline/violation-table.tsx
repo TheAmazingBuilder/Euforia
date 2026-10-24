@@ -60,7 +60,7 @@ export function ViolationTable({
   if (violations.length === 0) {
     return (
       <p className="px-1 py-6 text-center text-sm text-muted-foreground">
-        No violations recorded — the discipline engine watches every trade.
+        No violations recorded - the discipline engine watches every trade.
       </p>
     );
   }
@@ -116,7 +116,7 @@ export function ViolationTable({
                       </Link>
                     </Button>
                   ) : (
-                    <span className="text-xs text-muted-foreground">—</span>
+                    <span className="text-xs text-muted-foreground">-</span>
                   )}
                 </td>
                 <td className="py-2.5 text-right">

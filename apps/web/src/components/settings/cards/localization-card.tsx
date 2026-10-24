@@ -24,7 +24,7 @@ import { apiErrorMessage } from "@/lib/api/client";
 import { useI18n } from "@/i18n/i18n-provider";
 
 /**
- * Localization — formats and the timezone MIRROR. The timezone select
+ * Localization - formats and the timezone MIRROR. The timezone select
  * writes through PATCH /me (single source of truth for trading-day keys);
  * every other field saves with the localization domain. The preview line
  * renders one sample through the exact Intl pipeline the app uses.
@@ -46,7 +46,7 @@ function previewFor(localization: UserPreferences["localization"]): {
     localization.dateFormat === "LONG" ? "long" : localization.dateFormat === "ISO" ? "iso" : undefined;
   let date: string;
   if (dateStyle === "iso") {
-    // YYYY-MM-DD in the user's timezone — the trading-day key format.
+    // YYYY-MM-DD in the user's timezone - the trading-day key format.
     const parts = new Intl.DateTimeFormat("en-CA", {
       timeZone: localization.timezone,
       year: "numeric",
@@ -94,7 +94,7 @@ function previewFor(localization: UserPreferences["localization"]): {
  * Intl parts so the decimal separator preference keeps applying: the
  * grouping symbol is swapped AFTER the locale formats the sample.
  * Conflict rule: when the decimal separator is a comma, "1,234.50" grouping
- * would be ambiguous — the sample falls back to space grouping instead.
+ * would be ambiguous - the sample falls back to space grouping instead.
  */
 function formatNumberSample(
   numberFormat: UserPreferences["localization"]["numberFormat"],
@@ -122,7 +122,7 @@ function formatNumberSample(
     .map((part) => {
       if (part.type !== "group") return part.value;
       if (numberFormat === "NONE") return "";
-      // SPACE — and the COMMA-on-comma-decimal conflict fallback.
+      // SPACE - and the COMMA-on-comma-decimal conflict fallback.
       if (numberFormat === "SPACE" || (numberFormat === "COMMA" && decimalIsComma)) return "\u202F";
       return part.value; // LOCALE (and COMMA when the locale already groups with commas)
     })
@@ -147,7 +147,7 @@ export function LocalizationCard() {
     setDraft((previous) => (previous ? { ...previous, ...changes } : previous));
 
   /**
-   * Timezone writes through the PROFILE endpoint — the server computes
+   * Timezone writes through the PROFILE endpoint - the server computes
    * trading-day keys from it. The mock keeps the localization mirror in
    * sync, so this card re-hydrates after the mutation lands.
    */
@@ -242,8 +242,8 @@ export function LocalizationCard() {
             value={draft.timeFormat}
             onChange={(value) => patch({ timeFormat: value as UserPreferences["localization"]["timeFormat"] })}
             options={[
-              { value: "H24", label: "24 h — 14:30" },
-              { value: "H12", label: "12 h — 02:30 PM" },
+              { value: "H24", label: "24 h - 14:30" },
+              { value: "H12", label: "12 h - 02:30 PM" },
             ]}
             testid="settings-localization-time"
           />

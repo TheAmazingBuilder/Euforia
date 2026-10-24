@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 /**
  * Mistake Ledger panel (Phase 8): each mistake with its frequency bar and
  * R cost, computed server-side from trade_mistakes over the rolling
- * window — e.g. "Stop moved against you: 3 times, −4.1R".
+ * window - e.g. "Stop moved against you: 3 times, −4.1R".
  */
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -21,7 +21,7 @@ export function MistakeLedger({ entries }: { entries: MistakeLedgerResponse["ent
   if (entries.length === 0) {
     return (
       <p className="py-6 text-center text-sm text-muted-foreground">
-        No mistakes tagged in this window — either a clean month or an unlabeled one.
+        No mistakes tagged in this window - either a clean month or an unlabeled one.
       </p>
     );
   }

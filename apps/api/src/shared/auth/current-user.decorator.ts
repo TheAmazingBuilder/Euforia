@@ -4,7 +4,7 @@ import { createParamDecorator, type ExecutionContext } from "@nestjs/common";
 export interface AuthPrincipal {
   /** Authenticated user id (from the access-token subject). */
   userId: string;
-  /** Active session id (from the access token) — "current session". */
+  /** Active session id (from the access token) - "current session". */
   sessionId: string;
 }
 

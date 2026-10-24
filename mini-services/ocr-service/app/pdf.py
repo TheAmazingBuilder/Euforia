@@ -1,9 +1,9 @@
-"""PDF statement support (ops review §4.3 — multi-page import).
+"""PDF statement support (ops review §4.3 - multi-page import).
 
 MT5 account statements arrive as PDF reports; a single document can carry
 DOZENS of closed trades. The sidecar renders each page to a raster with
 pypdfium2 (self-contained, no poppler system dependency) and the normal
-pipeline runs per page — every page contributes its own field set and its
+pipeline runs per page - every page contributes its own field set and its
 own multi-trade candidates.
 
 Honest limits (documented, enforced):
@@ -27,7 +27,7 @@ except ImportError:  # pragma: no cover - dependency declared in requirements
     pdfium = None  # type: ignore[assignment]
 
 PDF_MIME = "application/pdf"
-# %PDF- magic — the declared MIME is still validated upstream; this is the
+# %PDF- magic - the declared MIME is still validated upstream; this is the
 # sidecar's own belt-and-braces check (§7 untrusted input discipline).
 PDF_MAGIC = b"%PDF-"
 
@@ -50,7 +50,7 @@ def render_pdf_pages(data: bytes, max_pixels: int) -> List[Image.Image]:
 
     Raises PdfRejected for undecodable documents; raises ResourceLimit
     (ValueError message) when the page budget or the pixel budget would be
-    exceeded — the caller maps both to stable failure categories.
+    exceeded - the caller maps both to stable failure categories.
     """
     if pdfium is None:  # pragma: no cover
         raise PdfRejected("pdf rendering is not available in this deployment")
@@ -84,7 +84,7 @@ def render_pdf_pages(data: bytes, max_pixels: int) -> List[Image.Image]:
 
 
 def first_page_dimensions(data: bytes) -> Optional[tuple[int, int]]:
-    """(width, height) of the first rendered page — PDFs carry no intrinsic
+    """(width, height) of the first rendered page - PDFs carry no intrinsic
     pixel size, so the Nest side learns the dimensions from here."""
     if not looks_like_pdf(data):
         return None

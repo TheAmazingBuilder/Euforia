@@ -15,13 +15,13 @@ import {
 
 /**
  * Mounts the capture modal, the ghost modal ("Setup seen, not taken") and the
- * "?" shortcuts overlay, and owns the global hotkeys (custom listener — no
+ * "?" shortcuts overlay, and owns the global hotkeys (custom listener - no
  * library, per phase brief):
  * - N opens the trade modal from anywhere (except while typing). While the
  *   modal is already open, N is left to the form (fast loop after a save);
  *   mid-capture it must NOT wipe the form.
  * - G opens the ghost-capture modal (spec §3, entry point #3).
- * - ? toggles the shortcuts overlay (shared store — also fired from the
+ * - ? toggles the shortcuts overlay (shared store - also fired from the
  *   command palette so both entry points stay in sync).
  * - Esc is handled by the Dialog/Sheet primitives (draft is always saved).
  */

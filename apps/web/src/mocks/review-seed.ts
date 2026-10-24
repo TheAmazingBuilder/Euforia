@@ -1,15 +1,15 @@
 import type { Goal, Trade, TradeReview } from "@cosmoz/shared";
 
 /**
- * Trade Review module — deterministic seed.
+ * Trade Review module - deterministic seed.
  *
  * GOALS are target definitions (the trader's intent); every progress number
- * is computed server-side from real trading behavior in the store — the seed
+ * is computed server-side from real trading behavior in the store - the seed
  * never fabricates progress.
  *
  * REVIEWS are seeded on the most recent graded closed trades so the review
  * workflow, the lessons library and the streak are alive on first paint.
- * Older closed trades stay PENDING — there is honest work waiting in the
+ * Older closed trades stay PENDING - there is honest work waiting in the
  * queue, which is exactly what the module is for.
  */
 
@@ -49,36 +49,36 @@ export function buildGoalSeed(userId: string): Goal[] {
 // ── Reviews ───────────────────────────────────────────────────────────────────
 
 const LESSONS_WIN_CLEAN = [
-  "Setup matched the playbook exactly — waited for the confirmation candle instead of anticipating. Let the runner work instead of grabbing the first target.",
+  "Setup matched the playbook exactly - waited for the confirmation candle instead of anticipating. Let the runner work instead of grabbing the first target.",
   "Textbook execution: level held twice, retest was clean, stop never in danger. Nothing to fix, everything to repeat.",
   "Entered on the retest close as written. The patience before the entry is where this trade was won.",
 ];
 
 const LESSONS_WIN_FRICTION = [
-  "Profitable, but I cut the move earlier than the plan called for. The edge allows more room — trail the structure, don't fix a target out of fear.",
-  "Win on the board, yet the entry was early — the candle had not closed beyond the level. Being paid for a broken rule is how bad habits get funded.",
+  "Profitable, but I cut the move earlier than the plan called for. The edge allows more room - trail the structure, don't fix a target out of fear.",
+  "Win on the board, yet the entry was early - the candle had not closed beyond the level. Being paid for a broken rule is how bad habits get funded.",
   "Followed the setup but sized up slightly after two green trades. The plan sets size, not the streak.",
 ];
 
 const LESSONS_LOSS_PLANNED = [
-  "Stopped out on the retest wick — entry was valid, stop was one tick inside the noise. Place the stop beyond the structure extreme, not at a round number.",
+  "Stopped out on the retest wick - entry was valid, stop was one tick inside the noise. Place the stop beyond the structure extreme, not at a round number.",
   "Clean loss: setup valid, risk respected, thesis invalidated as written. This is the cost of doing business, not a mistake.",
-  "Plan was right, timing was off — entered before the session trigger fired. The calendar matters as much as the chart.",
+  "Plan was right, timing was off - entered before the session trigger fired. The calendar matters as much as the chart.",
 ];
 
 const LESSONS_LOSS_BROKEN = [
-  "Chased the move after the first signal failed. The playbook demands the retest — the impulse was never the entry. Cost me 1R to relearn it.",
+  "Chased the move after the first signal failed. The playbook demands the retest - the impulse was never the entry. Cost me 1R to relearn it.",
   "Traded outside the playbook on a boredom signal: no setup, no stop model, no edge. This trade does not get to happen again.",
-  "Moved the stop to give it room. The invalidation was hit — the trade was over the moment the level broke. Widening a stop only widens the loss.",
+  "Moved the stop to give it room. The invalidation was hit - the trade was over the moment the level broke. Widening a stop only widens the loss.",
 ];
 
 const IMPROVEMENT_NOTES = [
   "Next time: screenshot the setup before entry and check every checklist item out loud.",
-  "Next time: set a hard rule — if the first signal fails, wait for the full retest before considering entry.",
+  "Next time: set a hard rule - if the first signal fails, wait for the full retest before considering entry.",
   "Next time: journal the invalidation level at entry and treat its break as the exit, not a suggestion.",
 ];
 
-/** The seeded review band — recent closed graded trades get a review. */
+/** The seeded review band - recent closed graded trades get a review. */
 const REVIEW_BAND_SIZE = 16;
 
 export function buildReviewSeed(userId: string, trades: Trade[]): TradeReview[] {

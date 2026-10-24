@@ -1,17 +1,17 @@
 /**
- * OCR recognition SETS (V2 spec §1/§2/§14/§15/§18) — the multi-screenshot
+ * OCR recognition SETS (V2 spec §1/§2/§14/§15/§18) - the multi-screenshot
  * orchestration service.
  *
  * Architectural position (§27/§36):
  *   - each member screenshot runs the FULL single-image pipeline (validation
- *     → storage → engine → domain validation) through OcrService — the set
+ *     → storage → engine → domain validation) through OcrService - the set
  *     NEVER re-implements recognition, it GROUPS it;
- *   - the FUSED draft is evidence (agreement boosts, conflicts recorded) —
+ *   - the FUSED draft is evidence (agreement boosts, conflicts recorded) -
  *     the user review remains the authority (V2 §103) and confirmation goes
  *     through the SAME Trading Core bridge as the single path (§77);
- *   - member recognitions are NEVER destroyed by fusion (V2 §15) — the set
+ *   - member recognitions are NEVER destroyed by fusion (V2 §15) - the set
  *     references them, deletes of the set leave them intact;
- *   - idempotency: the fused import ref is `ocr:set:<setId>` — deterministic,
+ *   - idempotency: the fused import ref is `ocr:set:<setId>` - deterministic,
  *     replay-safe through Trading Core's external-ref dedup (§79).
  */
 import { Injectable } from "@nestjs/common";
@@ -64,7 +64,7 @@ export class OcrSetService {
     private readonly limiter: OcrRateLimiterService,
   ) {}
 
-  // ── Creation (V2 §1/§2 — one session, N screenshots, reading order) ──────
+  // ── Creation (V2 §1/§2 - one session, N screenshots, reading order) ──────
 
   async createSet(input: {
     userId: string;
@@ -82,7 +82,7 @@ export class OcrSetService {
     }
 
     // Each member runs the full single-image pipeline (validation, storage,
-    // engine, domain validation) — and consumes one upload-rate slot per
+    // engine, domain validation) - and consumes one upload-rate slot per
     // image, the same discipline as individual uploads (documented, honest).
     const memberDtos: OcrRecognition[] = [];
     for (const imageDataUrl of input.imageDataUrls) {
@@ -99,7 +99,7 @@ export class OcrSetService {
       );
     }
 
-    // One recognition belongs to AT MOST ONE set position — the same bytes
+    // One recognition belongs to AT MOST ONE set position - the same bytes
     // twice would collapse onto the same row (idempotency, §32). An honest
     // 400 beats a constraint violation (V2 §2: grouping is explicit).
     const distinctIds = new Set(memberDtos.map((dto) => dto.id));
@@ -128,7 +128,7 @@ export class OcrSetService {
     return this.getSet({ userId: input.userId, id: set.id });
   }
 
-  // ── Reads (V2 §62 — sets live in the history surface) ────────────────────
+  // ── Reads (V2 §62 - sets live in the history surface) ────────────────────
 
   async getSet(input: { userId: string; id: string }): Promise<OcrSetDto> {
     const row = await this.sets.findForUser(input.id, input.userId);
@@ -149,7 +149,7 @@ export class OcrSetService {
     return { items: items.map((dto) => dto.set), nextCursor: page.nextCursor };
   }
 
-  // ── Confirmation (V2 §18/§20/§58 — fused draft → canonical Trade) ────────
+  // ── Confirmation (V2 §18/§20/§58 - fused draft → canonical Trade) ────────
 
   async confirmSet(input: {
     userId: string;
@@ -190,7 +190,7 @@ export class OcrSetService {
       );
     }
 
-    // V2 §58 — the duplicate warnings are blocking at confirmation.
+    // V2 §58 - the duplicate warnings are blocking at confirmation.
     const anyMemberDuplicate = members.some(
       (member) => member.duplicateOf !== null,
     );
@@ -222,7 +222,7 @@ export class OcrSetService {
     );
 
     // Re-derive the fused payload from the MERGED fields (the stored result
-    // reflects what the user actually confirmed — V2 §33 discipline).
+    // reflects what the user actually confirmed - V2 §33 discipline).
     const duplicateDetection = await this.tradeImport
       .detectTradeDuplicate({ userId: input.userId, fields: mergedFields })
       .catch(() => ({ symbolInCatalog: false, duplicate: null }));
@@ -281,13 +281,13 @@ export class OcrSetService {
       accountId: input.accountId !== undefined ? input.accountId : undefined,
     });
     if (!updated) {
-      // A concurrent confirmation won (§51) — replay the same policy.
+      // A concurrent confirmation won (§51) - replay the same policy.
       const winner = await this.sets.findForUser(row.id, input.userId);
       if (winner?.status === "CONFIRMED") return this.toSetDto(winner);
       throw new ConflictError("This recognition set is already confirmed.", OCR_ERROR_CODES.ALREADY_CONFIRMED);
     }
 
-    // Corrections memory — the fused corrections are the user's declaration
+    // Corrections memory - the fused corrections are the user's declaration
     // (engine quality §2.3 semantics, advisory only).
     const machineFused = storedFused?.fields ?? [];
     const memoryEntries = collectCorrectionPatterns(machineFused, canonicalCorrections);
@@ -312,7 +312,7 @@ export class OcrSetService {
     return this.toSetDto(updated);
   }
 
-  // ── Deletion (V2 §15 — fusion never destroys individual results) ─────────
+  // ── Deletion (V2 §15 - fusion never destroys individual results) ─────────
 
   async deleteSet(input: { userId: string; id: string }): Promise<{ deleted: true; id: string }> {
     const row = await this.sets.findForUser(input.id, input.userId);
@@ -334,7 +334,7 @@ export class OcrSetService {
   /** Recognize once, then combine the members' machine fields into a draft. */
   private async fuseAndPersist(userId: string, set: OcrSetRow): Promise<void> {
     const members = await this.loadMembers(set);
-    if (members.length < 2) return; // defensive — the contract enforces 2..6
+    if (members.length < 2) return; // defensive - the contract enforces 2..6
 
     const fusionMembers: FusionMember[] = members.map((member) => ({
       recognitionId: member.id,

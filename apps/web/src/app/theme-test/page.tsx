@@ -12,7 +12,7 @@ import {
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 
 export const metadata = {
-  title: "Euforia — Theme test",
+  title: "Euforia - Theme test",
   description:
     "QA page for the COSMOZ 3-theme system: tokens, typography and P&L semantics.",
 };
@@ -36,7 +36,7 @@ export default function ThemeTestPage() {
             </h1>
             <p className="max-w-xl text-sm text-muted-foreground">
               QA page for the COSMOZ design tokens. Every color below comes from
-              a semantic CSS variable mapped in globals.css — switch between
+              a semantic CSS variable mapped in globals.css - switch between
               dark-blue, dark and light with the toggle and confirm that all
               surfaces, text and P&amp;L semantics update without a flash.
             </p>
@@ -57,10 +57,10 @@ export default function ThemeTestPage() {
           <CardContent className="space-y-4">
             <div className="rounded-lg border border-border bg-surface-raised p-4">
               <p className="text-sm font-medium">
-                Raised panel — text-primary on surface-raised
+                Raised panel - text-primary on surface-raised
               </p>
               <p className="mt-1 text-sm text-muted-foreground">
-                Muted paragraph — text-muted-foreground, for secondary
+                Muted paragraph - text-muted-foreground, for secondary
                 descriptions and captions across the app.
               </p>
             </div>
@@ -69,7 +69,7 @@ export default function ThemeTestPage() {
               <Badge variant="secondary">Secondary</Badge>
               <Badge variant="outline">Outline</Badge>
               <span className="text-sm text-warning">
-                Warning — daily loss limit at 87%
+                Warning - daily loss limit at 87%
               </span>
             </div>
           </CardContent>
@@ -163,7 +163,7 @@ export default function ThemeTestPage() {
         </section>
 
         <footer className="pb-4 text-center font-mono text-xs tabular-nums text-muted-foreground">
-          cosmoz v{COSMOZ_VERSION} — foundation build · default theme:
+          cosmoz v{COSMOZ_VERSION} - foundation build · default theme:
           dark-blue
         </footer>
       </div>

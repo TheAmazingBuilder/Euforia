@@ -3,12 +3,12 @@ import type { DashboardWidgetKey, MetricsCardWidgetConfig } from "@cosmoz/shared
 import { METRICS_CARD_PERIODS } from "./widget-configs";
 
 /**
- * Settings-panel descriptors (Phase 02 §6) — WHAT each widget's settings
+ * Settings-panel descriptors (Phase 02 §6) - WHAT each widget's settings
  * dialog shows, as pure data. The dialog component owns the controls and
  * the typed draft updates; this module keeps the copy/labels testable and
  * co-located with the config system.
  *
- * Only REAL controls appear here — every field maps a config key with an
+ * Only REAL controls appear here - every field maps a config key with an
  * actual rendering effect (spec: no placeholder options).
  */
 
@@ -36,9 +36,9 @@ const RANGE_OPTIONS = [
 ];
 
 const CUMULATIVE_TYPE_OPTIONS = [
-  { value: "AREA", label: "Area — gradient under the curve" },
-  { value: "LINE", label: "Line — plain trajectory" },
-  { value: "BAR", label: "Bars — one per day" },
+  { value: "AREA", label: "Area - gradient under the curve" },
+  { value: "LINE", label: "Line - plain trajectory" },
+  { value: "BAR", label: "Bars - one per day" },
 ];
 
 const NOTATION_OPTIONS = [
@@ -62,7 +62,7 @@ const HEATMAP_METRIC_OPTIONS = [
   { value: "TRADES", label: "Trade count (volume ink)" },
 ];
 
-/** PERFORMANCE_BREAKDOWN dimensions — kept in sync with
+/** PERFORMANCE_BREAKDOWN dimensions - kept in sync with
  * performanceBreakdownWidgetConfigSchema. */
 const BREAKDOWN_DIMENSION_OPTIONS = [
   { value: "STRATEGY", label: "Strategy (playbook attribution)" },
@@ -74,7 +74,7 @@ const BREAKDOWN_DIMENSION_OPTIONS = [
   { value: "ASSET_CLASS", label: "Asset class" },
 ];
 
-/** Long/short metric ids — kept in sync with longShortWidgetConfigSchema. */
+/** Long/short metric ids - kept in sync with longShortWidgetConfigSchema. */
 export const LONG_SHORT_METRIC_OPTIONS: readonly { value: string; label: string }[] = [
   { value: "TRADES", label: "Closed trades" },
   { value: "NET_PNL", label: "Net P&L" },
@@ -84,7 +84,7 @@ export const LONG_SHORT_METRIC_OPTIONS: readonly { value: string; label: string 
   { value: "AVG_DURATION", label: "Avg holding time" },
 ];
 
-/** Periods that support a server-resolved previous equivalent — the
+/** Periods that support a server-resolved previous equivalent - the
  * comparison select disables the others (with an explanatory hint). */
 export function comparisonAvailable(period: MetricsCardWidgetConfig["period"]): boolean {
   return period === "TODAY" || period === "THIS_WEEK" || period === "THIS_MONTH";
@@ -185,7 +185,7 @@ export function settingsGroupsFor(type: DashboardWidgetKey): SettingsGroup[] | n
         },
       ];
     default:
-      // Not configurable — the settings entry point is hidden by the registry.
+      // Not configurable - the settings entry point is hidden by the registry.
       return null;
   }
 }

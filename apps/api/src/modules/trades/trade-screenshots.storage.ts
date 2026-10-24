@@ -6,7 +6,7 @@
  * discipline) and PostgreSQL keeps only metadata + the storage reference:
  * raw payloads are isolated, restricted to this adapter, never exposed as
  * file paths (§39). The mapper re-serves the binary as a data URL so the
- * existing frontend renders screenshots unchanged — the swap to signed
+ * existing frontend renders screenshots unchanged - the swap to signed
  * object-storage URLs is a deployment concern, documented in the report.
  *
  * Validation: MIME comes from MAGIC BYTES (never the client), the payload
@@ -61,7 +61,7 @@ export class TradeScreenshotStorage {
     }
     const mime = sniffImageMime(decoded.bytes);
     if (mime === null || mime !== decoded.declaredMime) {
-      // The declared and sniffed types must agree — mismatched payloads are
+      // The declared and sniffed types must agree - mismatched payloads are
       // exactly how disguised uploads slip through naive receivers.
       throw new InvalidScreenshotError("The screenshot content does not match an accepted image format.");
     }
@@ -93,11 +93,11 @@ export class TradeScreenshotStorage {
     try {
       await unlink(this.absolutePathOf(storageKey));
     } catch {
-      // Removing a missing binary is idempotent — the row is the authority.
+      // Removing a missing binary is idempotent - the row is the authority.
     }
   }
 
-  /** Resolve a RELATIVE storage key under the root — absolute paths and
+  /** Resolve a RELATIVE storage key under the root - absolute paths and
    * traversal inputs are rejected before touching the filesystem. */
   private absolutePathOf(storageKey: string): string {
     if (storageKey.includes("..") || path.isAbsolute(storageKey)) {

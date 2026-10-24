@@ -13,7 +13,7 @@ import { DemoDataChip } from "@/components/demo-data-chip";
  * each other. Entry + stop + Risk % → size computed automatically via the
  * @cosmoz/shared risk utils and the instrument specs; inverse mode derives
  * risk from the entered size. The planned size becomes the discipline
- * reference — the sizer IS a discipline sensor.
+ * reference - the sizer IS a discipline sensor.
  */
 
 export interface SizerSpecs {
@@ -39,7 +39,7 @@ export interface PositionSizerProps {
 }
 
 // Mode values stay structural at module scope; labels resolve through the
-// active dictionary inside the component (i18n — hooks cannot run at module scope).
+// active dictionary inside the component (i18n - hooks cannot run at module scope).
 const MODES: readonly TradeSizeModeValue[] = ["risk_percent", "quantity"];
 
 export interface SizerDerived {
@@ -108,7 +108,7 @@ export function PositionSizer(props: PositionSizerProps) {
         <span className="inline-flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground" id={id}>
           {T.title}
           {/* Chain-A hygiene (Phase 02): the sizer balance is fixture-derived
-             in mock mode — never render it without the demo marker. */}
+             in mock mode - never render it without the demo marker. */}
           <DemoDataChip testId="sizer-demo-chip" />
         </span>
         <div className="flex rounded-md border border-border p-0.5" role="tablist" aria-label={T.modeAria}>
@@ -152,7 +152,7 @@ export function PositionSizer(props: PositionSizerProps) {
             </div>
             <div className="space-y-1.5">
               <label htmlFor={`${id}-size-auto`} className="text-xs font-medium text-muted-foreground">
-                {T.size} ({unitLabel}) — {T.auto}
+                {T.size} ({unitLabel}) - {T.auto}
               </label>
               <output
                 id={`${id}-size-auto`}
@@ -162,7 +162,7 @@ export function PositionSizer(props: PositionSizerProps) {
                   derived.suggestedQuantity !== null ? "text-foreground" : "text-muted-foreground",
                 )}
               >
-                {needsStop ? T.addStop : (derived.suggestedQuantity ?? "—")}
+                {needsStop ? T.addStop : (derived.suggestedQuantity ?? "-")}
               </output>
             </div>
           </>
@@ -186,7 +186,7 @@ export function PositionSizer(props: PositionSizerProps) {
             <div className="space-y-1.5">
               <span className="text-xs font-medium text-muted-foreground">{T.riskDerived}</span>
               <div className="flex h-10 items-center rounded-md border border-dashed border-border bg-surface px-3 font-mono text-sm tabular-nums text-foreground">
-                {derived.riskPct !== null ? formatPercent(derived.riskPct / 100, 2) : "—"}
+                {derived.riskPct !== null ? formatPercent(derived.riskPct / 100, 2) : "-"}
               </div>
             </div>
           </>

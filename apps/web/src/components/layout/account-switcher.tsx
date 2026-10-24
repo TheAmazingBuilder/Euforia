@@ -21,7 +21,7 @@ const kindLabel = (type: Account["type"]): string =>
   type === "PROP_FIRM" ? "PROP" : type;
 
 /**
- * Account switcher — fed by the accounts API (useAccounts).
+ * Account switcher - fed by the accounts API (useAccounts).
  * Selection is local state only; real account-scoped data arrives later.
  */
 export function AccountSwitcher() {
@@ -88,7 +88,7 @@ export function AccountSwitcher() {
         )}
         <div className="flex items-center justify-between px-2 py-1.5">
           <span className="text-[11px] text-muted-foreground">Journal accounts</span>
-          {/* Phase 02: fixture catalog in mock mode — explicitly marked. */}
+          {/* Phase 02: fixture catalog in mock mode - explicitly marked. */}
           <DemoDataChip testId="account-switcher-demo-chip" />
         </div>
       </DropdownMenuContent>

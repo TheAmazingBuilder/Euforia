@@ -8,10 +8,10 @@
  *
  * Invariants enforced here (§35):
  *  - every lookup is ownership-scoped (userId from the auth principal, never
- *    from the client) — foreign ids are 404, never leaky;
+ *    from the client) - foreign ids are 404, never leaky;
  *  - the provider must be registered (422 UNSUPPORTED_PROVIDER otherwise);
  *  - the environment is explicit (validated by the shared input schema);
- *  - permissions come ONLY from the provider descriptor — the client can
+ *  - permissions come ONLY from the provider descriptor - the client can
  *    never grant them;
  *  - credentials are validated with the provider BEFORE persistence,
  *    encrypted at rest, never returned;
@@ -76,22 +76,22 @@ export class TradingAccountService {
 
   // ── Reads ──────────────────────────────────────────────────────────────────
 
-  /** Provider registry listing (metadata only — §44). */
+  /** Provider registry listing (metadata only - §44). */
   listProviders(): { providers: TradingProviderDescriptor[] } {
     return { providers: this.registry.list() };
   }
 
   /**
-   * Phase 07 — the universal broker catalog: every known broker/platform
+   * Phase 07 - the universal broker catalog: every known broker/platform
    * with HONEST connector status (resolved against the registry). Identity
-   * metadata only — no capability claims for brokers without a connector.
+   * metadata only - no capability claims for brokers without a connector.
    */
   listBrokers(): BrokerCatalogResponse {
     return this.brokerIdentification.catalogForClient();
   }
 
   /**
-   * Phase 07 — rule-based broker identification from hints. NO provider
+   * Phase 07 - rule-based broker identification from hints. NO provider
    * call, NO secrets accepted: the answer is "which broker does this look
    * like", with evidence signals and an honest UNKNOWN when nothing matches.
    */
@@ -99,7 +99,7 @@ export class TradingAccountService {
     return { identification: this.brokerIdentification.identify(hints) };
   }
 
-  /** Journal identity contract — exactly the shared accountSchema list. */
+  /** Journal identity contract - exactly the shared accountSchema list. */
   async list(userId: string): Promise<{ accounts: ReturnType<typeof toJournalAccount>[] }> {
     const rows = await this.repository.listAccountsByUser(userId);
     return { accounts: rows.map(toJournalAccount) };
@@ -121,7 +121,7 @@ export class TradingAccountService {
     };
   }
 
-  /** GET /accounts — full details for every owned account (details-view shape). */
+  /** GET /accounts - full details for every owned account (details-view shape). */
   async listDetails(userId: string, nowMs: number): Promise<{ accounts: Array<ReturnType<typeof toAccountDetails>> }> {
     const rows = await this.repository.listAccountsByUser(userId);
     const accounts = await Promise.all(
@@ -134,7 +134,7 @@ export class TradingAccountService {
   }
 
   /**
-   * PATCH /accounts/:accountId — rename the journal label (the one documented
+   * PATCH /accounts/:accountId - rename the journal label (the one documented
    * journal-side edit; provider-anchored identity is never client-mutable).
    */
   async updateAccount(
@@ -252,10 +252,10 @@ export class TradingAccountService {
 
     const adapter = this.registry.require(input.payload.providerId);
 
-    // Phase 08 — PLATFORM_BRIDGE connections pair instead of validating
+    // Phase 08 - PLATFORM_BRIDGE connections pair instead of validating
     // credentials: the terminal is external, the secret is SERVER-generated,
     // and the first accepted push IS the validation. Broker credentials
-    // never reach Euforia (feasibility doc §credentials — MT5 paths).
+    // never reach Euforia (feasibility doc §credentials - MT5 paths).
     if (adapter.descriptor.supportedConnectionMethods.includes("PLATFORM_BRIDGE")) {
       return this.connectBridge(input, adapter);
     }
@@ -284,7 +284,7 @@ export class TradingAccountService {
       };
       accountInfo = await withProviderTimeout(adapter.fetchAccountInfo(context), timeoutMs);
       snapshot = await withProviderTimeout(adapter.fetchSnapshot(context), timeoutMs);
-      // Normalization boundary — unknown currency shapes are provider failures.
+      // Normalization boundary - unknown currency shapes are provider failures.
       const safeInfo = assertValid(normalizedAccountInfoSchema, accountInfo);
       assertValid(normalizedSnapshotSchema, snapshot);
       if (!adapter.descriptor.supportedEnvironments.includes(input.payload.environment)) {
@@ -310,7 +310,7 @@ export class TradingAccountService {
       const name =
         input.payload.displayName ??
         `${adapter.descriptor.providerName} ${input.payload.environment}`;
-      // Phase 07 — identify the broker AT CONNECTION TIME (owner requirement:
+      // Phase 07 - identify the broker AT CONNECTION TIME (owner requirement:
       // "which broker is this?"). Provider-reported identity (e.g. Deriv
       // landing company) wins; catalog patterns + registry platform fall
       // through. The snapshot is persisted with its evidence signals.
@@ -349,7 +349,7 @@ export class TradingAccountService {
         context: `Connected ${adapter.descriptor.providerName} account ${input.payload.externalAccountId} (${input.payload.environment}), read-only. Broker identified: ${brokerIdentification.displayName} (${brokerIdentification.confidence}).`,
       });
 
-      // Initial synchronization — failures never invalidate the registration.
+      // Initial synchronization - failures never invalidate the registration.
       const connection = await this.repository.findConnectionByAccountId(account.id);
       if (connection) {
         try {
@@ -383,13 +383,13 @@ export class TradingAccountService {
     }
   }
 
-  // ── Phase 08 — MT5 terminal bridge (PLATFORM_BRIDGE lifecycle) ─────────────
+  // ── Phase 08 - MT5 terminal bridge (PLATFORM_BRIDGE lifecycle) ─────────────
 
   /**
    * Bridge pairing connect: register the account + connection in CONNECTING
    * state, generate the bridge secret SERVER-SIDE, and return the pairing
    * sheet (shown once in the UI; re-viewable through the dedicated endpoint;
-   * rotatable). No provider call is possible yet — the EA may not exist.
+   * rotatable). No provider call is possible yet - the EA may not exist.
    * The journal anchor facts (currency, balance) are corrected by the first
    * ACCOUNT_INFO/SNAPSHOT pushes.
    */
@@ -404,7 +404,7 @@ export class TradingAccountService {
   ): Promise<ReturnType<typeof toAccountDetails>> {
     if (input.payload.credentials?.secret) {
       throw new BusinessRuleError(
-        "A bridge account does not take a secret here — Euforia generates one for the terminal.",
+        "A bridge account does not take a secret here - Euforia generates one for the terminal.",
         TRADING_ERROR_CODES.INVALID_CREDENTIALS,
       );
     }
@@ -434,7 +434,7 @@ export class TradingAccountService {
     const { keyId, secret } = this.generateBridgeKey();
     // Journal anchor placeholders, corrected by the first pushes: "USD" is
     // the terminal-side default the pairing guide mandates; the connection
-    // stays CONNECTING and the snapshot null until real data arrives — the
+    // stays CONNECTING and the snapshot null until real data arrives - the
     // pending state is always visible in the UI.
     const { account } = await this.repository.createAccountWithConnection({
       account: {
@@ -455,7 +455,7 @@ export class TradingAccountService {
           connectorStatus: "CONNECTOR_AVAILABLE",
           providerId: adapter.descriptor.providerId,
           signals: [
-            "terminal platform MT5 — the broker is identified from the terminal's own report on first push",
+            "terminal platform MT5 - the broker is identified from the terminal's own report on first push",
           ],
           identifiedAt: isoDateTime(new Date()),
         },
@@ -475,7 +475,7 @@ export class TradingAccountService {
       userId: input.userId,
       type: "TRADING_ACCOUNT_CONNECTED",
       actor: input.user.email,
-      context: `MT5 bridge pairing created for account ${input.payload.externalAccountId} (${input.payload.environment}) — awaiting first terminal push.`,
+      context: `MT5 bridge pairing created for account ${input.payload.externalAccountId} (${input.payload.environment}) - awaiting first terminal push.`,
     });
 
     const details = await this.getDetails(input.userId, account.id);
@@ -547,7 +547,7 @@ export class TradingAccountService {
       userId,
       type: "TRADING_ACCOUNT_BRIDGE_ROTATED",
       actor: user.email,
-      context: `Bridge secret rotated for account ${connection.bridgeKeyId ? "(paired terminal)" : accountId} — the previous terminal configuration is invalidated.`,
+      context: `Bridge secret rotated for account ${connection.bridgeKeyId ? "(paired terminal)" : accountId} - the previous terminal configuration is invalidated.`,
     });
     const pairing = this.buildPairing(keyId, secret);
     const details = await this.getDetails(userId, accountId);
@@ -564,7 +564,7 @@ export class TradingAccountService {
     });
   }
 
-  /** Connection health check — 200 with per-check results, honest booleans. */
+  /** Connection health check - 200 with per-check results, honest booleans. */
   async testConnection(userId: string, accountId: string) {
     const { account, connection, descriptor } = await this.loadFull(userId, accountId);
     if (!connection || connection.status === "DISCONNECTED" || !connection.credentialsEnc) {
@@ -575,7 +575,7 @@ export class TradingAccountService {
     }
     const adapter = this.registry.require(connection.providerId);
 
-    // Phase 08 — bridge health is answered from the PAIRING FACTS (there is
+    // Phase 08 - bridge health is answered from the PAIRING FACTS (there is
     // no provider to dial): secret presence, first-push state, cache reads.
     if (connection.method === "PLATFORM_BRIDGE") {
       const secret = this.credentials.decrypt(connection.credentialsEnc);
@@ -668,11 +668,11 @@ export class TradingAccountService {
         checks.push({ name: "providerResponse", ok: false, detail: providerDetail(error) });
       }
     } else {
-      checks.push({ name: "connectivity", ok: false, detail: "Skipped — authentication failed." });
-      checks.push({ name: "providerResponse", ok: false, detail: "Skipped — authentication failed." });
+      checks.push({ name: "connectivity", ok: false, detail: "Skipped - authentication failed." });
+      checks.push({ name: "providerResponse", ok: false, detail: "Skipped - authentication failed." });
     }
 
-    // Permissions are static descriptor facts (§24) — read-only by construction.
+    // Permissions are static descriptor facts (§24) - read-only by construction.
     const readPermissions = descriptor.supportedPermissions.filter((p) => p.startsWith("READ_"));
     const permissionsOk = readPermissions.length > 0;
     checks.push({
@@ -693,7 +693,7 @@ export class TradingAccountService {
     return { ok, checks: checks as typeof checks };
   }
 
-  /** Reconnect with FRESH credentials — only for non-CONNECTED connections. */
+  /** Reconnect with FRESH credentials - only for non-CONNECTED connections. */
   async reconnect(input: {
     userId: string;
     user: UserRow;
@@ -711,11 +711,11 @@ export class TradingAccountService {
         TRADING_ERROR_CODES.ALREADY_CONNECTED,
       );
     }
-    // Phase 08 — bridge connections hold no user-supplied credential to
+    // Phase 08 - bridge connections hold no user-supplied credential to
     // refresh: rotation replaces the secret, the next push re-proves it.
     if (connection.method === "PLATFORM_BRIDGE") {
       throw new BusinessRuleError(
-        "A terminal bridge connection does not reconnect with credentials — rotate the bridge secret instead.",
+        "A terminal bridge connection does not reconnect with credentials - rotate the bridge secret instead.",
         TRADING_ERROR_CODES.UNSUPPORTED_PROVIDER,
       );
     }
@@ -780,7 +780,7 @@ export class TradingAccountService {
 
   /**
    * Disconnect (§52): destroys credentials, preserves every piece of Euforia
-   * data (account, history, runs). Deletion is NOT offered in V1 — removal
+   * data (account, history, runs). Deletion is NOT offered in V1 - removal
    * semantics (soft/hard/anonymization) are an explicit product decision.
    */
   async disconnect(userId: string, user: UserRow, accountId: string) {
@@ -799,7 +799,7 @@ export class TradingAccountService {
     };
   }
 
-  /** Provider trigger endpoint — delegates with rate limiting (§37). */
+  /** Provider trigger endpoint - delegates with rate limiting (§37). */
   async synchronize(input: {
     userId: string;
     accountId: string;
@@ -824,7 +824,7 @@ export class TradingAccountService {
   }
 
   /**
-   * Bounded synchronization history (Phase 05 §16) — keyset-paginated,
+   * Bounded synchronization history (Phase 05 §16) - keyset-paginated,
    * newest first. Ownership is enforced by loadOwned (foreign ids → 404,
    * IDOR-safe); the page size is server-bounded (max 50); the cursor is the
    * previous page's nextCursor (an ISO timestamp, strictly `<`).
@@ -853,7 +853,7 @@ export class TradingAccountService {
   // ── Broker session (Session-Live panel contract) ───────────────────────────
 
   /**
-   * GET /broker/session — the read-only Session-Live aggregate. Account
+   * GET /broker/session - the read-only Session-Live aggregate. Account
    * selection: the default CONNECTED account, else the most recent CONNECTED,
    * else an ERROR account (honest state), else NOT_CONFIGURED.
    */
@@ -950,7 +950,7 @@ export class TradingAccountService {
 
   // ── internals ──────────────────────────────────────────────────────────────
 
-  /** Ownership-scoped account load — foreign/unknown ids are 404 (IDOR-safe). */
+  /** Ownership-scoped account load - foreign/unknown ids are 404 (IDOR-safe). */
   private async loadOwned(
     userId: string,
     accountId: string,
@@ -967,7 +967,7 @@ export class TradingAccountService {
     const [snapshot, latestRun, resourceTimestamps] = await Promise.all([
       this.repository.latestSnapshot(account.id),
       this.repository.latestSyncRun(account.id),
-      // Phase 05 — per-resource freshness anchor (§11).
+      // Phase 05 - per-resource freshness anchor (§11).
       this.repository.latestResourceTimestamps(account.id),
     ]);
     return {
@@ -1008,7 +1008,7 @@ export class TradingAccountService {
   }
 }
 
-/** Validate a normalized payload — provider-shape failures become ProviderError. */
+/** Validate a normalized payload - provider-shape failures become ProviderError. */
 function assertValid<S extends ZodTypeAny>(schema: S, value: unknown): z.output<S> {
   const result = schema.safeParse(value);
   if (!result.success) {
@@ -1020,7 +1020,7 @@ function assertValid<S extends ZodTypeAny>(schema: S, value: unknown): z.output<
   return result.data;
 }
 
-/** Sanitized check detail — stable text for ProviderError, generic otherwise. */
+/** Sanitized check detail - stable text for ProviderError, generic otherwise. */
 function providerDetail(error: unknown): string {
   if (error instanceof ProviderError) return error.message;
   return "The trading provider could not be reached.";

@@ -7,7 +7,7 @@ import { API_MOCKED } from "@/lib/api/mode";
  * Playwright harness to exercise the 401 → single-flight refresh → retry
  * path without waiting for the real 15-minute access-token TTL.
  *
- * Gated twice: mocked API builds AND non-production — production builds
+ * Gated twice: mocked API builds AND non-production - production builds
  * never register anything, and no credential material passes through here.
  */
 export function registerDevAuthHooks(hooks: {

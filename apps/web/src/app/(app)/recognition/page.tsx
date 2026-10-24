@@ -12,12 +12,12 @@ export const metadata: Metadata = {
 };
 
 /**
- * /recognition — Recognition (Insights section, between Analytics and
+ * /recognition - Recognition (Insights section, between Analytics and
  * Calendar). Standard module header (title + description, same typography
  * as every other module) before the workspace (upload → configure →
  * processing → result → review → confirm → success), with history one tab
  * away (?tab=history) and URL-carried job context (?job=<id>,
- * refresh-safe — spec §44).
+ * refresh-safe - spec §44).
  *
  * `<Suspense>` boundary: RecognitionWorkspace reads useSearchParams(), which
  * triggers a CSR bailout during prerendering without it (same pattern as

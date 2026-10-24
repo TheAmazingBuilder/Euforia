@@ -2,7 +2,7 @@
  * Identity data access (infrastructure).
  *
  * The ONLY place in the identity context that touches Prisma. All methods
- * return contract-shaped data or narrow row projections — no Prisma type
+ * return contract-shaped data or narrow row projections - no Prisma type
  * crosses into services or controllers (Phase 1 §10 boundary).
  */
 import { Injectable } from "@nestjs/common";
@@ -54,7 +54,7 @@ export interface SessionRow {
   revokedAt: Date | null;
 }
 
-/** Append-only audit event (model SecurityEvent — /security/overview feed). */
+/** Append-only audit event (model SecurityEvent - /security/overview feed). */
 export interface SecurityEventRow {
   id: string;
   userId: string | null;
@@ -65,7 +65,7 @@ export interface SecurityEventRow {
   outcome: string;
 }
 
-/** Append-only sign-in history row (model LoginRecord — /security/overview). */
+/** Append-only sign-in history row (model LoginRecord - /security/overview). */
 export interface LoginRecordRow {
   id: string;
   userId: string;
@@ -83,7 +83,7 @@ export interface LoginRecordRow {
 export class IdentityRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  // ── Hashing helpers (token/challenge storage — SHA-256 is enough here: the
+  // ── Hashing helpers (token/challenge storage - SHA-256 is enough here: the
   //    inputs are high-entropy random values, not user-chosen secrets).
 
   static hashToken(raw: string): string {
@@ -173,7 +173,7 @@ export class IdentityRepository {
     return row as UserRow;
   }
 
-  // ── Preferences (narrow Settings contract — Phase 15 §32) ──────────────────
+  // ── Preferences (narrow Settings contract - Phase 15 §32) ──────────────────
   // The Settings bounded context persists its JSON document through THESE
   // methods only: explicit, mass-assignment-safe field sets instead of the
   // generic updateUser patch. `updatePreferencesWithTimezone` keeps the
@@ -299,7 +299,7 @@ export class IdentityRepository {
   //
   // The append-only SecurityEvent log and the LoginRecord history are owned by
   // the Security context (Phase 16 bounded-context extraction): Identity never
-  // reads or writes those tables directly — it records through the
+  // reads or writes those tables directly - it records through the
   // SecurityEventService port. These counts cover ONLY Identity-owned tables
   // and are the narrow read contract Monitoring consumes (Phase 20 §39).
 
@@ -317,7 +317,7 @@ export class IdentityRepository {
   // ── Append-only audit writes (Phase 2 §30) ──────────────────────────────────
   //
   // The Security CENTER owns the reads of these tables (Phase 16); the
-  // identity-side SecurityEventService still records through THIS repository —
+  // identity-side SecurityEventService still records through THIS repository -
   // append-only, never update, never delete (§30).
 
   async appendSecurityEvent(data: {
@@ -345,7 +345,7 @@ export class IdentityRepository {
 
   // ── Security center reads (append-only audit tables) ────────────────────────
   //
-  // Narrow row projections for /security/overview (Phase 16) — newest first,
+  // Narrow row projections for /security/overview (Phase 16) - newest first,
   // caller-scoped limit; no update, no delete (§30).
 
   async listSecurityEvents(userId: string, limit: number): Promise<SecurityEventRow[]> {
@@ -426,7 +426,7 @@ export class IdentityRepository {
     });
   }
 
-  /** Disable without deleting — the audit trail keeps counts honest. */
+  /** Disable without deleting - the audit trail keeps counts honest. */
   async deactivateRecoveryCodes(userId: string): Promise<void> {
     await this.prisma.recoveryCode.updateMany({
       where: { userId },

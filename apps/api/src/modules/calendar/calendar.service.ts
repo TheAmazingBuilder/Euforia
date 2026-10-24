@@ -1,5 +1,5 @@
 /**
- * Calendar application service (B7) — the trading-calendar overlay:
+ * Calendar application service (B7) - the trading-calendar overlay:
  * eco events (deterministic synthetic provider), marked blocks (day
  * offs / news pauses) and the per-day server-computed view. Days marked
  * OFF are EXCLUDED from every aggregate (planned rest is not trading
@@ -54,18 +54,18 @@ export class CalendarService {
     return date.toISOString().slice(0, 10);
   }
 
-  /** GET /eco-events — deterministic synthetic macro schedule. */
+  /** GET /eco-events - deterministic synthetic macro schedule. */
   async listEcoEvents(): Promise<EcoEventsResponse> {
     return { events: generateEcoEvents(new Date()) };
   }
 
   /**
    * Phase 13/14 freshness hook for the Calendar read port
-   * (CalendarQueriesService.listHubEvents) — TTL-throttled lazy eco-feed
+   * (CalendarQueriesService.listHubEvents) - TTL-throttled lazy eco-feed
    * sync, semantically a cache refresh (never a caller-directed mutation).
    *
    * HONEST NO-OP: this service serves the DETERMINISTIC generator
-   * ({@link listEcoEvents} computes the window on the fly — fresh by
+   * ({@link listEcoEvents} computes the window on the fly - fresh by
    * construction) and NO external economic-data provider is configured
    * (provider.port §4: none is assumed to exist), so there is nothing to
    * synchronize. It deliberately does not fabricate CalendarSyncRun rows
@@ -73,10 +73,10 @@ export class CalendarService {
    * into this service, the guarded sync-window check replaces this body.
    */
   async ensureFreshSync(): Promise<void> {
-    // No sync provider configured — the feed is always freshly generated.
+    // No sync provider configured - the feed is always freshly generated.
   }
 
-  /** GET /calendar-blocks — marked days, chronological. */
+  /** GET /calendar-blocks - marked days, chronological. */
   async listBlocks(userId: string): Promise<CalendarBlocksResponse> {
     const rows = await this.repository.listBlocks(userId);
     return {
@@ -84,7 +84,7 @@ export class CalendarService {
     };
   }
 
-  /** PUT /calendar-blocks — mark a day off / news blocked (upsert). */
+  /** PUT /calendar-blocks - mark a day off / news blocked (upsert). */
   async upsertBlock(
     userId: string,
     input: z.infer<typeof upsertCalendarBlockInputSchema>,
@@ -99,7 +99,7 @@ export class CalendarService {
     return { block: data };
   }
 
-  /** DELETE /calendar-blocks/:date — unmark a day. */
+  /** DELETE /calendar-blocks/:date - unmark a day. */
   async deleteBlock(
     userId: string,
     date: string,
@@ -109,7 +109,7 @@ export class CalendarService {
     return { block: existing?.data ?? null, deleted: true };
   }
 
-  /** POST /calendar-blocks/import-eco — HIGH-impact days ahead → NEWS blocks. */
+  /** POST /calendar-blocks/import-eco - HIGH-impact days ahead → NEWS blocks. */
   async importEcoBlockers(userId: string): Promise<{
     imported: number;
     dates: string[];
@@ -143,13 +143,13 @@ export class CalendarService {
       dates: highDates,
       message:
         imported === 0
-          ? "Nothing to import — the next two weeks are already marked or clear."
+          ? "Nothing to import - the next two weeks are already marked or clear."
           : `${imported} high-impact day${imported === 1 ? "" : "s"} imported as news blockers over the next two weeks.`,
     };
   }
 
   /**
-   * GET /calendar-view?from&to — day rows + aggregates. Every row is
+   * GET /calendar-view?from&to - day rows + aggregates. Every row is
    * server-computed from the journal + discipline facts + eco events +
    * blocks; OFF days are excluded from the aggregates.
    */

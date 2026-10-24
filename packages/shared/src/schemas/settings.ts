@@ -8,20 +8,20 @@ import { dateKeySchema, decimalStringSchema, isoDateTimeSchema, uuidSchema } fro
 import { analyticsPeriodSchema } from "./api";
 
 /**
- * Structured user preferences — the Settings module contract.
+ * Structured user preferences - the Settings module contract.
  *
  * Architecture (MASTER PROMPT §Architecture): User → Preferences →
  * domain-specific settings. One JSON document per user, edited ONE DOMAIN
  * AT A TIME (PATCH /me/preferences/:domain) so unrelated settings are never
  * saved together. Every domain has a strict zod schema with safe defaults
- * (DEFAULT_USER_PREFERENCES) — the server validates before merging and the
+ * (DEFAULT_USER_PREFERENCES) - the server validates before merging and the
  * client hydrates from the same source of truth.
  *
  * Boundary rules:
  * - Auth, passwords and broker credentials NEVER live here (Security /
  *   Integrations own them).
  * - System health / service status NEVER lives here (Monitoring owns it).
- * - The user's timezone has ONE source of truth: Profile (PATCH /me) —
+ * - The user's timezone has ONE source of truth: Profile (PATCH /me) -
  *   the Localization domain mirrors it in the UI but writes through /me,
  *   because the trading-day key is computed server-side from it.
  * - Risk preferences are DEFAULTS for the Rules Engine (docs/specs/
@@ -31,7 +31,7 @@ import { analyticsPeriodSchema } from "./api";
 
 // ── Shared primitives ────────────────────────────────────────────────────────
 
-/** Valid IANA timezone identifier — validated against Intl at runtime. */
+/** Valid IANA timezone identifier - validated against Intl at runtime. */
 export const ianaTimezoneSchema = z.string().min(1).superRefine((value, ctx) => {
   try {
     new Intl.DateTimeFormat("en-US", { timeZone: value });
@@ -45,10 +45,10 @@ export const ianaTimezoneSchema = z.string().min(1).superRefine((value, ctx) => 
 
 export type IanaTimezone = z.infer<typeof ianaTimezoneSchema>;
 
-/** Percent config value (e.g. 1.5 = 1.5%) — plain number like rule params. */
+/** Percent config value (e.g. 1.5 = 1.5%) - plain number like rule params. */
 const percentConfigSchema = z.number().min(0).max(100);
 
-/** Per-event channel matrix — the three delivery channels Cosmoz supports. */
+/** Per-event channel matrix - the three delivery channels Cosmoz supports. */
 export const notificationChannelsSchema = z.object({
   inApp: z.boolean(),
   email: z.boolean(),
@@ -62,7 +62,7 @@ export type NotificationChannels = z.infer<typeof notificationChannelsSchema>;
 export const timeframeSchema = z.enum(["M1", "M5", "M15", "M30", "H1", "H4", "D1", "W1"]);
 export type Timeframe = z.infer<typeof timeframeSchema>;
 
-/** Renamed from tradingSessionSchema — the Session Live module owns the
+/** Renamed from tradingSessionSchema - the Session Live module owns the
  * "Trading Session" entity name (schemas/sessionLive.ts). */
 export const marketSessionSchema = z.enum(["ASIA", "LONDON", "NEW_YORK", "LONDON_NY_OVERLAP"]);
 export type MarketSession = z.infer<typeof marketSessionSchema>;
@@ -94,12 +94,12 @@ export const tradingPreferencesSchema = z.object({
     showGrid: z.boolean(),
   }),
   /**
-   * Session Live duration cap in minutes (15–600) — when the session timer
+   * Session Live duration cap in minutes (15–600) - when the session timer
    * runs past it, Cosmoz raises a « max duration » alert. null = no cap.
    */
   sessionMaxDurationMin: z.number().int().min(15).max(600).nullable(),
   /**
-   * Guardrail — soft-lock the capture form after N rule violations TODAY.
+   * Guardrail - soft-lock the capture form after N rule violations TODAY.
    * The lock is a deliberate two-step acknowledgment, never a hard block.
    * null = guardrail off.
    */
@@ -125,7 +125,7 @@ export const riskPreferencesSchema = z
   .object({
     /** Comfort default proposed by the trade form / position sizer. */
     defaultRiskPerTradePct: percentConfigSchema,
-    /** Hard ceiling — the Rules Engine seeds MAX_RISK_PCT_PER_TRADE with it. */
+    /** Hard ceiling - the Rules Engine seeds MAX_RISK_PCT_PER_TRADE with it. */
     maxRiskPerTradePct: percentConfigSchema,
     dailyLossLimitPct: percentConfigSchema,
     weeklyLossLimitPct: percentConfigSchema,
@@ -136,7 +136,7 @@ export const riskPreferencesSchema = z
     /** Total account exposure cap, percent of account. */
     maxAccountExposurePct: percentConfigSchema,
     sizingMethod: positionSizingMethodSchema,
-    /** Fixed-currency risk amount — required when sizingMethod = FIXED_AMOUNT. */
+    /** Fixed-currency risk amount - required when sizingMethod = FIXED_AMOUNT. */
     fixedRiskAmount: decimalStringSchema.nullable(),
     /** Whether new rule defaults propagate to the Rules Engine on save. */
     syncWithRulesEngine: z.boolean(),
@@ -254,7 +254,7 @@ export const notificationPreferencesSchema = z.object({
   system: z.object({ enabled: z.boolean(), events: systemEventsSchema }),
   reports: z.object({ enabled: z.boolean(), events: reportsEventsSchema }),
   /**
-   * Quiet hours (module upgrade) — OUT-OF-BAND channels only (push/email).
+   * Quiet hours (module upgrade) - OUT-OF-BAND channels only (push/email).
    * In-app is never silenced: the inbox is the system of record. "HH:MM"
    * 24h keys; a window crossing midnight is supported by the engine.
    */
@@ -312,7 +312,7 @@ export type AppearancePreferencesInput = z.infer<typeof appearancePreferencesInp
  * Dashboard widget types. Keys map 1:1 to the widget registry in the web
  * app; every customization document references these canonical keys only.
  * Phase 02 adds the performance-analytics widgets (metrics card, strategy
- * comparison, long-vs-short, activity heatmap) — all fed by the EXISTING
+ * comparison, long-vs-short, activity heatmap) - all fed by the EXISTING
  * server analytics-suite aggregates (the client never re-derives metrics).
  */
 export const DASHBOARD_WIDGET_KEYS = [
@@ -327,8 +327,8 @@ export const DASHBOARD_WIDGET_KEYS = [
   "STRATEGY_COMPARE",
   "LONG_SHORT",
   "ACTIVITY_HEATMAP",
-  // Phase 05 — performance insights, pattern analysis & trading behavior
-  // (opt-in through the widget library — the default arrangement never
+  // Phase 05 - performance insights, pattern analysis & trading behavior
+  // (opt-in through the widget library - the default arrangement never
   // grows under existing dashboards).
   "PERFORMANCE_BREAKDOWN",
   "BEHAVIORAL_INSIGHTS",
@@ -341,7 +341,7 @@ export const dashboardWidgetKeySchema = z.enum(DASHBOARD_WIDGET_KEYS);
 
 // ── Per-widget instance configuration (Phase 02) ───────────────────────────
 
-/** Config document version — bump on breaking shape changes; readers
+/** Config document version - bump on breaking shape changes; readers
  * migrate or fall back per widget instance instead of crashing. */
 export const WIDGET_CONFIG_VERSION = 1;
 export const dashboardWidgetConfigVersionSchema = z.literal(WIDGET_CONFIG_VERSION);
@@ -354,7 +354,7 @@ export const dashboardPnlRangeSchema = z.union([
 ]);
 
 /**
- * PNL_BAND — the twin P&L charts. Every field drives REAL rendering:
+ * PNL_BAND - the twin P&L charts. Every field drives REAL rendering:
  * range = period window, cumulativeType = the left chart's ECharts series
  * shape, the toggles = end marker / average mark line / zero baseline.
  */
@@ -368,7 +368,7 @@ export const pnlBandWidgetConfigSchema = z.object({
   showZeroLine: z.boolean(),
 });
 
-/** HEATMAP — the monthly calendar. Toggling cell text off declutters small
+/** HEATMAP - the monthly calendar. Toggling cell text off declutters small
  * spans; the tint scale itself is fixed by the design system. */
 export const heatmapWidgetConfigSchema = z.object({
   kind: z.literal("HEATMAP"),
@@ -380,7 +380,7 @@ export const heatmapWidgetConfigSchema = z.object({
  * Period presets the METRICS_CARD may aggregate over. CUSTOM requires the
  * date keys below (inclusive, trading-day keys resolved server-side).
  * Comparisons vs the previous equivalent period are available only for the
- * presets the SERVER resolves natively (TODAY/THIS_WEEK/THIS_MONTH — see
+ * presets the SERVER resolves natively (TODAY/THIS_WEEK/THIS_MONTH - see
  * PREVIOUS_PERIOD mapping in the web layer); other presets render an
  * explicit "comparison unavailable" state instead of a fake baseline.
  */
@@ -400,10 +400,10 @@ export const metricsCardPeriodSchema = z.enum([
   "CUSTOM",
 ]);
 
-/** METRICS_CARD — configurable performance metric cards (KPI selection,
+/** METRICS_CARD - configurable performance metric cards (KPI selection,
  * period, optional previous-period comparison, presentation formatting).
  * The CUSTOM-period date requirement is enforced at the ITEM level (see
- * dashboardWidgetItemSchema) — discriminated-union members must stay plain
+ * dashboardWidgetItemSchema) - discriminated-union members must stay plain
  * objects in zod v3. */
 export const metricsCardWidgetConfigSchema = z.object({
   kind: z.literal("METRICS_CARD"),
@@ -418,13 +418,13 @@ export const metricsCardWidgetConfigSchema = z.object({
   /** OFF hides comparisons; PREVIOUS shows the previous equivalent period
    * when the server can resolve one (presets mapped in the web layer). */
   comparison: z.enum(["OFF", "PREVIOUS"]),
-  /** Money presentation — full or compact notation. */
+  /** Money presentation - full or compact notation. */
   notation: z.enum(["STANDARD", "COMPACT"]),
   /** Decimal digits for numbers/percents (money follows currency rules). */
   decimals: z.union([z.literal(0), z.literal(1), z.literal(2)]),
 });
 
-/** STRATEGY_COMPARE — which playbook strategies (or the out-of-playbook
+/** STRATEGY_COMPARE - which playbook strategies (or the out-of-playbook
  * population "none") to compare side by side, 1–6 entries, unique. */
 export const strategyCompareWidgetConfigSchema = z.object({
   kind: z.literal("STRATEGY_COMPARE"),
@@ -432,7 +432,7 @@ export const strategyCompareWidgetConfigSchema = z.object({
   strategyIds: z.array(z.union([uuidSchema, z.literal("none")])).min(1).max(6),
 });
 
-/** LONG_SHORT — metric visibility over the server's BUY/SELL rows. */
+/** LONG_SHORT - metric visibility over the server's BUY/SELL rows. */
 export const longShortWidgetConfigSchema = z.object({
   kind: z.literal("LONG_SHORT"),
   v: dashboardWidgetConfigVersionSchema,
@@ -442,7 +442,7 @@ export const longShortWidgetConfigSchema = z.object({
     .max(6),
 });
 
-/** ACTIVITY_HEATMAP — weekday × hour-bucket grid, server-computed cells.
+/** ACTIVITY_HEATMAP - weekday × hour-bucket grid, server-computed cells.
  * metric: avgR (signed, profit/loss ink) or trades (volume, accent scale). */
 export const activityHeatmapWidgetConfigSchema = z.object({
   kind: z.literal("ACTIVITY_HEATMAP"),
@@ -450,9 +450,9 @@ export const activityHeatmapWidgetConfigSchema = z.object({
   metric: z.enum(["AVG_R", "TRADES"]),
 });
 
-/** PERFORMANCE_BREAKDOWN — one factual breakdown table (Phase 05 §9A) over
+/** PERFORMANCE_BREAKDOWN - one factual breakdown table (Phase 05 §9A) over
  * the analytics-suite dimension rows. The dimension is the only choice:
- * the rows themselves are server-computed with their sample sizes — the
+ * the rows themselves are server-computed with their sample sizes - the
  * widget never re-derives or ranks. */
 export const performanceBreakdownWidgetConfigSchema = z.object({
   kind: z.literal("PERFORMANCE_BREAKDOWN"),
@@ -461,7 +461,7 @@ export const performanceBreakdownWidgetConfigSchema = z.object({
 });
 
 /**
- * The per-instance config union — a discriminated union on `kind` so each
+ * The per-instance config union - a discriminated union on `kind` so each
  * widget owns its own shape (a chart, a KPI card and a comparison table
  * never share irrelevant fields) and future widgets slot in without
  * redesigning the schema. `kind` must match the item's `type`.
@@ -499,9 +499,9 @@ export const dashboardWidgetItemSchema = z
     /** Width span on the 12-column desktop grid (mobile is single-column). */
     w: z.number().int().min(1).max(12),
     /** Height level: 1 = natural content height, higher = taller minimum.
-     * Semantics are min-height — content may always grow past the level. */
+     * Semantics are min-height - content may always grow past the level. */
     h: z.number().int().min(1).max(4),
-    /** Per-instance presentation config (Phase 02) — OPTIONAL and additive:
+    /** Per-instance presentation config (Phase 02) - OPTIONAL and additive:
      * documents stored before it keep validating unchanged (schemaVersion
      * stays 1). Absent config = the widget's defaults; a config whose kind
      * does not match the item type is invalid and dropped on read. */
@@ -563,23 +563,23 @@ export type DashboardLayoutDocument = z.infer<typeof dashboardLayoutDocumentSche
  *    synthesize the default collection from it (never a hard failure).
  */
 /**
- * Phase 03 — the authoritative global dashboard filter model.
+ * Phase 03 - the authoritative global dashboard filter model.
  *
  * A deliberately SMALL, single-value-per-dimension subset of the analytics
- * suite contract (the existing application convention — the Analytics
+ * suite contract (the existing application convention - the Analytics
  * FilterBar and the `analyticsFiltersSchema` suite query are single-select):
  * absent field = the dimension imposes no restriction. Multi-value OR
- * semantics are NOT offered in v1 — the suite API is scalar per dimension
+ * semantics are NOT offered in v1 - the suite API is scalar per dimension
  * and inventing array params here would fake a capability the authoritative
  * calculation layer does not provide.
  *
  * Dimensions intentionally EXCLUDED from the dashboard bar:
- *  - `emotion` / `tagId` (honest no-op seams in the suite engine — always
+ *  - `emotion` / `tagId` (honest no-op seams in the suite engine - always
  *    filter to empty),
- *  - trade status (the suite aggregates CLOSED trades only — an open/
+ *  - trade status (the suite aggregates CLOSED trades only - an open/
  *    planned/cancelled filter would be a lie; documented limitation),
  *  - assetClass/session (kept as widget-level/Analytics-page concerns for
- *    now — addable later without breaking stored views since the schema is
+ *    now - addable later without breaking stored views since the schema is
  *    versioned per view).
  */
 export const dashboardFiltersSchema = z
@@ -619,7 +619,7 @@ export const dashboardFiltersSchema = z
 export type DashboardFilters = z.infer<typeof dashboardFiltersSchema>;
 
 /**
- * Phase 03 — one saved analytical view: a NAME + a validated filter context.
+ * Phase 03 - one saved analytical view: a NAME + a validated filter context.
  * Strictly separate from layouts (widget arrangement) and per-widget configs
  * (presentation): applying a view never moves widgets, switching layouts
  * never changes filters (spec §11). Store shape mirrors the layout document
@@ -637,12 +637,12 @@ export const dashboardSavedViewSchema = z.object({
 export type DashboardSavedView = z.infer<typeof dashboardSavedViewSchema>;
 
 /**
- * Phase 06 — one USER-CREATED workspace template: a frozen deep copy of one
+ * Phase 06 - one USER-CREATED workspace template: a frozen deep copy of one
  * of the user's own layouts, reusable to spawn independent workspaces.
  * Strictly separate from built-in templates (owner-classified in the UI);
  * never shared across users (the domain is per-user JSON, ownership enforced
  * by the preferences PATCH). The embedded layout is validated by the SAME
- * dashboardLayoutDocumentSchema — an unknown widget type inside a template
+ * dashboardLayoutDocumentSchema - an unknown widget type inside a template
  * degrades exactly like an unknown type inside a layout (dropped on read).
  */
 export const dashboardUserTemplateSchema = z.object({
@@ -650,7 +650,7 @@ export const dashboardUserTemplateSchema = z.object({
   name: z.string().min(1).max(60),
   description: z.string().max(200).optional(),
   schemaVersion: z.literal(1),
-  /** Frozen snapshot — applying a template CLONES it (fresh layout id +
+  /** Frozen snapshot - applying a template CLONES it (fresh layout id +
    * fresh instance ids); the stored copy is never mutated by use. */
   layout: dashboardLayoutDocumentSchema,
   createdAt: isoDateTimeSchema.optional(),
@@ -661,21 +661,21 @@ export const dashboardPreferencesSchema = z.object({
   widgetOrder: z.array(dashboardWidgetKeySchema).max(DASHBOARD_WIDGET_KEYS.length),
   activeLayoutId: z.string().min(1).max(64).optional(),
   layouts: z.array(dashboardLayoutDocumentSchema).max(20).optional(),
-  /** Phase 03 — saved analytical views (global dashboard filters). OPTIONAL
+  /** Phase 03 - saved analytical views (global dashboard filters). OPTIONAL
    * and additive: documents stored before it keep validating unchanged.
-   * Views are filter contexts ONLY — never layouts, never widget configs. */
+   * Views are filter contexts ONLY - never layouts, never widget configs. */
   savedViews: z.array(dashboardSavedViewSchema).max(30).optional(),
-  /** Phase 03 — the last applied ACTIVE filter context (spec §16: filter
+  /** Phase 03 - the last applied ACTIVE filter context (spec §16: filter
    * state survives reload "according to the persistence design"; the design
    * here = the dashboard domain, same mechanism as saved views). Readers
    * normalize it defensively (invalid → default ALL), so a stale or
    * malformed document can never lock the dashboard into a broken filter. */
   activeFilters: dashboardFiltersSchema.optional(),
-  /** Phase 06 — the user's default workspace (falls back here when the
+  /** Phase 06 - the user's default workspace (falls back here when the
    * active layout id no longer resolves). OPTIONAL additive key; null/
    * missing = no explicit default (the first layout wins). */
   defaultLayoutId: z.string().min(1).max(64).optional(),
-  /** Phase 06 — user-created templates (frozen layout snapshots). OPTIONAL
+  /** Phase 06 - user-created templates (frozen layout snapshots). OPTIONAL
    * additive key, capped at 10; each item validated by its own schema so
    * one malformed template never destroys the collection. */
   userTemplates: z.array(dashboardUserTemplateSchema).max(10).optional(),
@@ -686,7 +686,7 @@ export const dashboardPreferencesInputSchema = dashboardPreferencesSchema;
 export type DashboardPreferencesInput = z.infer<typeof dashboardPreferencesInputSchema>;
 
 /**
- * The SHIPPED default arrangement — the designed ledger layout (Phase 01
+ * The SHIPPED default arrangement - the designed ledger layout (Phase 01
  * canonical order). The Phase 02 analytics widgets are OPT-IN through the
  * widget library: they extend the canon without silently growing every
  * user's default view (existing dashboards never change under their feet,
@@ -708,16 +708,16 @@ const DEFAULT_DASHBOARD_WIDGETS: DashboardWidgetItem[] = DEFAULT_LAYOUT_WIDGET_K
   (type) => ({ instanceId: `win_${type.toLowerCase()}`, type, visible: true, w: 12, h: 1 }),
 );
 
-/** The single shipped "Default" layout — canonical order, full width. */
+/** The single shipped "Default" layout - canonical order, full width. */
 export const DEFAULT_DASHBOARD_LAYOUT: DashboardLayoutDocument = {
   id: "layout_default",
   name: "Default",
-  description: "The designed dashboard — every widget, full width.",
+  description: "The designed dashboard - every widget, full width.",
   schemaVersion: 1,
   widgets: DEFAULT_DASHBOARD_WIDGETS,
 };
 
-// ── Academy preferences (module provisioned — arrives in a later phase) ─────
+// ── Academy preferences (module provisioned - arrives in a later phase) ─────
 
 export const academyDifficultySchema = z.enum(["BEGINNER", "INTERMEDIATE", "ADVANCED"]);
 export type AcademyDifficulty = z.infer<typeof academyDifficultySchema>;
@@ -727,7 +727,7 @@ export const academyPreferencesSchema = z.object({
   difficulty: academyDifficultySchema,
   showProgressOnDashboard: z.boolean(),
   autoplayLessons: z.boolean(),
-  /** Learning notifications — in-app alerts when new lessons/drills land. */
+  /** Learning notifications - in-app alerts when new lessons/drills land. */
   newContentNotifications: z.boolean(),
   weeklyReminder: reminderFrequencySchema,
   /** Weekly learning goal in minutes (0–600). */
@@ -789,7 +789,7 @@ export type WeekStart = z.infer<typeof weekStartSchema>;
 export const localizationPreferencesSchema = z.object({
   language: languageSchema,
   /**
-   * MIRROR of Profile.timezone (single source of truth: PATCH /me — the
+   * MIRROR of Profile.timezone (single source of truth: PATCH /me - the
    * server computes trading-day keys from it). The settings UI writes this
    * field through the profile endpoint, never directly here.
    */
@@ -816,7 +816,7 @@ export type LocalizationPreferencesInput = z.infer<typeof localizationPreference
  *
  * Backward-compatibility contract (deliberate deviation from the other nine
  * domains): `onboarding` is OPTIONAL in the root document. `undefined` means
- * "the user's preferences doc predates onboarding" — such users are NEVER
+ * "the user's preferences doc predates onboarding" - such users are NEVER
  * auto-shown the first-run experience (the tour must not be retro-forced on
  * existing users). Fresh documents (lazily provisioned after this contract
  * ships) always carry the NOT_STARTED default, so every genuinely new user
@@ -845,15 +845,15 @@ export type OnboardingStepId = z.infer<typeof onboardingStepIdSchema>;
 export const onboardingPreferencesSchema = z
   .object({
     status: onboardingStatusSchema,
-    /** Writer version — a future revision reads this to avoid re-forcing the tour. */
+    /** Writer version - a future revision reads this to avoid re-forcing the tour. */
     version: z.number().int().min(1),
-    /** Resume pointer — null once the flow reached a terminal state. */
+    /** Resume pointer - null once the flow reached a terminal state. */
     currentStep: onboardingStepIdSchema.nullable(),
     startedAt: isoDateTimeSchema.nullable(),
     completedAt: isoDateTimeSchema.nullable(),
     skippedAt: isoDateTimeSchema.nullable(),
     /**
-     * Meaningful milestones only (steps the user confirmed) — never transient
+     * Meaningful milestones only (steps the user confirmed) - never transient
      * animation/progress state (§ persistence rule: no animation frames on
      * the wire).
      */
@@ -902,7 +902,7 @@ export const userPreferencesSchema = z.object({
   privacy: privacyPreferencesSchema,
   localization: localizationPreferencesSchema,
   /**
-   * OPTIONAL by contract — see the onboarding section above: docs stored
+   * OPTIONAL by contract - see the onboarding section above: docs stored
    * before the first-run experience shipped carry no onboarding key, and
    * that absence is the "predates onboarding" marker (never re-force the
    * tour on existing users).
@@ -941,7 +941,7 @@ export const SETTINGS_ERROR_CODES = {
 } as const;
 export type SettingsErrorCode = (typeof SETTINGS_ERROR_CODES)[keyof typeof SETTINGS_ERROR_CODES];
 
-// ── Account actions (dangerous — explicit typed confirmation) ───────────────
+// ── Account actions (dangerous - explicit typed confirmation) ───────────────
 
 export const deactivateAccountInputSchema = z.object({
   confirmation: z.literal("DEACTIVATE"),
@@ -961,23 +961,23 @@ export type DeactivateAccountResponse = z.infer<typeof deactivateAccountResponse
 
 export const requestAccountDeletionResponseSchema = z.object({
   status: z.literal("SCHEDULED"),
-  /** Grace period end — the user can cancel until this moment. */
+  /** Grace period end - the user can cancel until this moment. */
   scheduledFor: isoDateTimeSchema,
 });
 export type RequestAccountDeletionResponse = z.infer<typeof requestAccountDeletionResponseSchema>;
 
-// ── Defaults (safe, conservative — MASTER PROMPT §Validation) ───────────────
+// ── Defaults (safe, conservative - MASTER PROMPT §Validation) ───────────────
 
 /** Preference defaults without the server-managed envelope fields.
  * The onboarding domain is REQUIRED at the defaults level (fresh documents
- * always carry it — that is how new users become eligible exactly once)
+ * always carry it - that is how new users become eligible exactly once)
  * even though it stays OPTIONAL on the wire for backward compatibility. */
 export type UserPreferencesDefaults = Omit<UserPreferences, "userId" | "updatedAt"> & {
   onboarding: OnboardingPreferences;
 };
 
 /**
- * Safe defaults for every domain — deep-frozen intent, mutable shape (the
+ * Safe defaults for every domain - deep-frozen intent, mutable shape (the
  * mock store clones it). Risk values follow the discipline conventions:
  * 1 % comfort default, 2 % hard ceiling, 3 % daily stop.
  */

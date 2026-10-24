@@ -1,4 +1,4 @@
-"""OCR sidecar test fixtures — synthetic MT5-style screenshots rendered with
+"""OCR sidecar test fixtures - synthetic MT5-style screenshots rendered with
 Pillow. Clean rendered text is OCR-friendly and DETERMINISTIC on a fixed
 Tesseract version, which the assertions rely on.
 """
@@ -15,7 +15,7 @@ from PIL import Image, ImageDraw, ImageFont
 TOKEN = "test-internal-token-0123456789abcdef"  # >= 32 chars
 
 # app.config reads OCR_SERVICE_TOKEN ONCE at import (fail-fast §27). Set it
-# here, at conftest import — BEFORE any test module imports app.main — so
+# here, at conftest import - BEFORE any test module imports app.main - so
 # every file works standalone AND in any pytest ordering.
 os.environ.setdefault("OCR_SERVICE_TOKEN", TOKEN)
 
@@ -37,7 +37,7 @@ def _font(size: int = 28):
 def render_mt5_screenshot() -> tuple[bytes, int, int]:
     """A minimal MT5 trade-history panel with one closed BUY trade.
 
-    Dark text on a LIGHT background — tesseract's optimum — with generous
+    Dark text on a LIGHT background - tesseract's optimum - with generous
     monospace spacing so columns stay in one reading line.
     """
     width, height = 1150, 420
@@ -68,7 +68,7 @@ def render_mt5_with_exit_price() -> tuple[bytes, int, int]:
     """A MT5-style mobile trade card with an explicit EXIT PRICE label.
 
     The exit-price extractor (V2 §11) requires the explicit
-    "exit price" / "close price" / "closed:" label shapes — the bare word
+    "exit price" / "close price" / "closed:" label shapes - the bare word
     "close" in a history row is an order TYPE, never a price label.
     """
     width, height = 700, 500
@@ -122,7 +122,7 @@ def to_request(image: bytes, width: int, height: int, request_id: str = "req-1")
             "sizeBytes": len(image),
             "width": width,
             "height": height,
-            # The REAL checksum — the sidecar verifies it (V2 §20).
+            # The REAL checksum - the sidecar verifies it (V2 §20).
             "checksumSha256": hashlib.sha256(image).hexdigest(),
         },
         "extractionProfile": "TRADE_SUMMARY",
@@ -138,7 +138,7 @@ def render_mt5_history_multi() -> tuple[bytes, int, int]:
     """A landscape MT5 account-history panel with THREE trade rows.
 
     Desktop-history shape: one order row per trade, S/L stacked under the
-    first, trailing signed profits on closed rows — the multi-trade
+    first, trailing signed profits on closed rows - the multi-trade
     candidates fixture.
     """
     width, height = 1400, 480
@@ -168,7 +168,7 @@ def render_mt5_history_multi() -> tuple[bytes, int, int]:
 def render_mt5_pdf() -> tuple[bytes, int, int]:
     """A TWO-PAGE PDF statement whose pages carry the MT5 fixture content.
 
-    Pillow writes raster PDFs; pypdfium2 renders them back — a closed loop
+    Pillow writes raster PDFs; pypdfium2 renders them back - a closed loop
     that exercises the multi-page statement pipeline deterministically.
     Returns (bytes, first_page_width, first_page_height).
     """
@@ -177,7 +177,7 @@ def render_mt5_pdf() -> tuple[bytes, int, int]:
         second = Image.new("RGB", (width, height), (248, 249, 251))
         draw = ImageDraw.Draw(second)
         draw.text((24, 16), "MetaTrader 5", font=_font(30), fill=(24, 26, 32))
-        draw.text((24, 64), "History page 2 — no trade rows", font=_font(26), fill=(110, 116, 128))
+        draw.text((24, 64), "History page 2 - no trade rows", font=_font(26), fill=(110, 116, 128))
         buffer = io.BytesIO()
         page_img.convert("RGB").save(
             buffer, format="PDF", save_all=True, append_images=[second], resolution=72

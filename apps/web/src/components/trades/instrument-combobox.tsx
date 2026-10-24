@@ -14,7 +14,7 @@ import { useI18n } from "@/i18n/i18n-provider";
  * Search-first instrument combobox (spec §4): matches symbol AND name
  * ("eur" → EURUSD, "vol75" → VOL75(1s)), recents chips persisted in
  * localStorage (max 5). Search goes through GET /instruments?q= like the
- * future API — the component never filters a private copy of the catalog.
+ * future API - the component never filters a private copy of the catalog.
  */
 
 const RECENTS_KEY = "cosmoz.recent-instruments.v1";
@@ -45,7 +45,7 @@ export function InstrumentCombobox({ value, onChange }: InstrumentComboboxProps)
   const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState("");
   const [debouncedQuery, setDebouncedQuery] = React.useState("");
-  // Client-only mount (inside the modal) — localStorage is safe to read here.
+  // Client-only mount (inside the modal) - localStorage is safe to read here.
   const [recents, setRecents] = React.useState<string[]>(() => loadRecents());
 
   React.useEffect(() => {

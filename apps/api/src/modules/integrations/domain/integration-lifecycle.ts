@@ -1,10 +1,10 @@
 /**
- * Integration connection lifecycle (Phase 14 §16/§18/§24) — PURE domain
+ * Integration connection lifecycle (Phase 14 §16/§18/§24) - PURE domain
  * decisions, framework-free, clock-free (callers pass `now`). The mock
  * engine (`apps/web/src/mocks/integration-engine.ts`) is the audited
  * behavioural spec; these functions port its decision logic verbatim so
  * the backend and the mock stay behaviourally identical (§9 of the shared
- * contract header: provider vs connection stays distinct — a CONNECTION
+ * contract header: provider vs connection stays distinct - a CONNECTION
  * is user state, the PROVIDER is the registry entry).
  *
  * Every produced message is secret-free by construction: credentials are
@@ -26,7 +26,7 @@ export const EXPIRED_CREDENTIALS_SCENARIO = "expired-credentials";
 /** Provider kind subset that drives the incremental-sync surface (§13). */
 export type SyncKind = ProviderCatalogEntry["kind"];
 
-// ── Connect (§25 — vault reference, never secret material) ───────────────────
+// ── Connect (§25 - vault reference, never secret material) ───────────────────
 
 export interface ConnectOutcome {
   readonly status: IntegrationStatus;
@@ -74,7 +74,7 @@ export function buildConnectOutcome(
       pairedOnce: true,
       scenario: EXPIRED_CREDENTIALS_SCENARIO,
       eventType: "TEST_FAILED",
-      eventMessage: "Paired, but the stored credential is expired — reauthorization required",
+      eventMessage: "Paired, but the stored credential is expired - reauthorization required",
       clearErrorCodes: ["CREDENTIALS_EXPIRED"],
     };
   }
@@ -91,23 +91,23 @@ export function buildConnectOutcome(
     pairedOnce: true,
     scenario: null,
     eventType: "CONNECTED",
-    eventMessage: `Connected via ${vaultRef} — read-only scope`,
+    eventMessage: `Connected via ${vaultRef} - read-only scope`,
     clearErrorCodes: ["CREDENTIALS_EXPIRED"],
   };
 }
 
-// ── Disconnect (§26 — history preserved) ─────────────────────────────────────
+// ── Disconnect (§26 - history preserved) ─────────────────────────────────────
 
 export interface DisconnectOutcome {
   readonly status: IntegrationStatus;
   readonly authState: IntegrationAuthState;
   readonly connectedAt: null;
-  /** Credentials are detached — the vault keeps its entry, the Hub forgets the ref. */
+  /** Credentials are detached - the vault keeps its entry, the Hub forgets the ref. */
   readonly credentials: null;
   readonly scenario: null;
   readonly syncNextRetryAt: null;
   readonly eventType: "DISCONNECTED";
-  readonly eventMessage: "Disconnected — synced history retained, credentials revoked from the vault";
+  readonly eventMessage: "Disconnected - synced history retained, credentials revoked from the vault";
   /** ALL errors of the provider are cleared on disconnect (mock parity). */
   readonly clearAllErrors: true;
 }
@@ -122,12 +122,12 @@ export function buildDisconnectOutcome(): DisconnectOutcome {
     syncNextRetryAt: null,
     eventType: "DISCONNECTED",
     eventMessage:
-      "Disconnected — synced history retained, credentials revoked from the vault",
+      "Disconnected - synced history retained, credentials revoked from the vault",
     clearAllErrors: true,
   };
 }
 
-// ── Connection test (§18 — safe, never trades) ───────────────────────────────
+// ── Connection test (§18 - safe, never trades) ───────────────────────────────
 
 export interface TestOutcome {
   readonly response: IntegrationTestResponse;
@@ -161,8 +161,8 @@ export function buildTestOutcome(
       detail: authOk
         ? "Vault credential accepted"
         : !hasCredentials
-          ? "No credential stored — connect the provider first"
-          : "Stored credential is expired — rotate the key and reconnect",
+          ? "No credential stored - connect the provider first"
+          : "Stored credential is expired - rotate the key and reconnect",
     },
     {
       name: "permissions",
@@ -170,7 +170,7 @@ export function buildTestOutcome(
       detail:
         provider.capabilities.length > 0
           ? `Scoped: ${provider.capabilities.join(", ")}`
-          : "No data permissions — visualization only",
+          : "No data permissions - visualization only",
     },
     {
       name: "connectivity",
@@ -178,14 +178,14 @@ export function buildTestOutcome(
       detail:
         provider.latencyMs === null
           ? "Endpoint unreachable until credentials are valid"
-          : `Reachable — ${provider.latencyMs} ms round trip`,
+          : `Reachable - ${provider.latencyMs} ms round trip`,
     },
     {
       name: "providerResponse",
       ok: authOk,
       detail: authOk
         ? "Schema-valid response against the provider contract"
-        : "Rejected — the provider answered with an auth error",
+        : "Rejected - the provider answered with an auth error",
     },
   ];
 
@@ -211,7 +211,7 @@ export function buildTestOutcome(
     authState: "EXPIRED",
     lastCheckedAt: now.toISOString(),
     eventType: "TEST_FAILED",
-    eventMessage: "Connection test failed — credentials expired",
+    eventMessage: "Connection test failed - credentials expired",
     error: {
       code: "CREDENTIALS_EXPIRED",
       message: "Connection test failed: stored credential expired",
@@ -233,9 +233,9 @@ export function testEventTypeFor(
 }
 
 /** Message parity for the recovery event (mock §18). */
-export const RECOVERED_EVENT_MESSAGE = "Connection test passed — provider recovered";
+export const RECOVERED_EVENT_MESSAGE = "Connection test passed - provider recovered";
 
-// ── Synchronization (§13/§16/§17 — bounded, cursor-based) ────────────────────
+// ── Synchronization (§13/§16/§17 - bounded, cursor-based) ────────────────────
 
 /** Deterministic simulated duration (mock parity): 320 + (n*137) mod 640 ms. */
 export function syncDurationMs(syncCounter: number): number {
@@ -248,7 +248,7 @@ export function partialSyncDue(kind: SyncKind, syncCounter: number): boolean {
 }
 
 /**
- * Incremental surface per kind (§13 cursor + §14 idempotency — mock §13
+ * Incremental surface per kind (§13 cursor + §14 idempotency - mock §13
  * parity). Records are COUNTED, never invented: market ticks are deduped
  * by cursor and never stored raw; snapshots count 1; nulls stay nulls.
  */
@@ -320,12 +320,12 @@ export function buildSyncOutcome(params: {
       status: "DEGRADED",
       authState: "OK",
       eventType: "DEGRADED",
-      eventMessage: "Partial sync — 1 record failed, cursor retained",
+      eventMessage: "Partial sync - 1 record failed, cursor retained",
       error: {
         code: "PARTIAL_SYNC",
         message: "Incremental sync completed with 1 failed record",
         retryable: true,
-        actionHint: "Retry the sync — the cursor resumes where it stopped",
+        actionHint: "Retry the sync - the cursor resumes where it stopped",
       },
       clearAllErrors: false,
     };
@@ -344,8 +344,8 @@ export function buildSyncOutcome(params: {
     authState: "OK",
     eventType: wasDegraded ? "RECOVERED" : "SYNCED",
     eventMessage: wasDegraded
-      ? "Sync healthy again — provider fully operational"
-      : `Incremental sync ok — ${processed} record(s) in ${durationMs} ms (cursor ${cursor ?? "n/a"})`,
+      ? "Sync healthy again - provider fully operational"
+      : `Incremental sync ok - ${processed} record(s) in ${durationMs} ms (cursor ${cursor ?? "n/a"})`,
     error: null,
     clearAllErrors: wasDegraded,
   };

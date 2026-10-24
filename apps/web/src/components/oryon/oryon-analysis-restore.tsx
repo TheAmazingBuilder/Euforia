@@ -22,19 +22,19 @@ import {
 import { oryonAnalyses } from "@/lib/oryon/journal/analyses";
 
 /**
- * Oryon analysis deep-link restore (Phase 10) — `/oryon?analysis=<id>`.
+ * Oryon analysis deep-link restore (Phase 10) - `/oryon?analysis=<id>`.
  *
  * The journal's trade-detail section links here; this bridge applies the
  * saved analysis to the ACTIVE panel: symbol, timeframe, chart type and
  * the analysis configuration, then the saved ANNOTATIONS into the per-
- * symbol drawing store (the canonical store — isolated by instrument, so
+ * symbol drawing store (the canonical store - isolated by instrument, so
  * other symbols' working drawings are never touched).
  *
  * Isolation + honesty rules (Phase 10 spec §9.2/§10.3):
  *  - restoring drawings that would REPLACE the symbol's current working
  *    collection asks for an explicit confirmation first;
  *  - the restored view is labeled a RECONSTRUCTED analysis: candles come
- *    from the live feed, NOT a historical replay — the banner says so;
+ *    from the live feed, NOT a historical replay - the banner says so;
  *  - an unknown id / unknown symbol degrades to an honest toast, the
  *    workspace stays exactly as it was;
  *  - the query parameter is consumed once (URL stripped after apply).
@@ -52,7 +52,7 @@ export function OryonAnalysisRestoreBridge({ instruments }: { instruments: Instr
   const [banner, setBanner] = React.useState<OryonChartAnalysis | null>(null);
   const [confirmReplace, setConfirmReplace] = React.useState<OryonChartAnalysis | null>(null);
 
-  /** Consumes the query parameter (external-system write — an effect). */
+  /** Consumes the query parameter (external-system write - an effect). */
   const stripUrl = React.useCallback(() => {
     const params = new URLSearchParams(window.location.search);
     if (!params.has("analysis")) return;
@@ -94,7 +94,7 @@ export function OryonAnalysisRestoreBridge({ instruments }: { instruments: Instr
         store.setPanelAnalysis(target.id, structuredClone(analysis.analysis));
         const drawingStore = registry.storeFor(analysis.symbol);
         if (analysis.drawings.length > 0 && drawingStore.drawings.length > 0) {
-          // Would replace working annotations — an explicit user decision.
+          // Would replace working annotations - an explicit user decision.
           setConfirmReplace(analysis);
         } else {
           applyDrawings(analysis);
@@ -109,7 +109,7 @@ export function OryonAnalysisRestoreBridge({ instruments }: { instruments: Instr
 
   // URL strip AFTER the router transition commits: a client-side push
   // (journal → Oryon) may re-write the address bar after the render-time
-  // replaceState — the effect re-runs it once the new route is settled.
+  // replaceState - the effect re-runs it once the new route is settled.
   // Idempotent (no param → no-op).
   React.useEffect(() => {
     if (appliedId === null) return;

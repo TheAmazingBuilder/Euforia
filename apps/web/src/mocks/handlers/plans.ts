@@ -15,13 +15,13 @@ import { MockError } from "@/mocks/store";
 import { endpoint, latency, parseBody, pathParam, readJson, toErrorResponse } from "./utils";
 
 /**
- * Trade Plan handlers (Phase 11) — thin transport over planEngine, which
+ * Trade Plan handlers (Phase 11) - thin transport over planEngine, which
  * mirrors the Nest PlanService semantics exactly (state machine, activation
  * gate, ownership-safe 404s, honest-null comparison). Auth guard first, like
  * every private domain: the plan list never leaves the mock without a token.
  */
 
-/** The mock session's user id — the same single-user convention as the store. */
+/** The mock session's user id - the same single-user convention as the store. */
 function requireUserId(request: Request): string {
   const principal = authEngine.authenticate(request.headers.get("authorization"));
   if (principal === null) throw new MockError(401, "Authentication required");
@@ -29,7 +29,7 @@ function requireUserId(request: Request): string {
 }
 
 export const planHandlers = [
-  // GET /plans — list with filters (status, symbol, tradeId) + pagination
+  // GET /plans - list with filters (status, symbol, tradeId) + pagination
   http.get(endpoint(apiPaths.plans), async ({ request }) => {
     await latency();
     try {
@@ -43,7 +43,7 @@ export const planHandlers = [
     }
   }),
 
-  // POST /plans — create (DRAFT default, activate:true opt-in), idempotent
+  // POST /plans - create (DRAFT default, activate:true opt-in), idempotent
   http.post(endpoint(apiPaths.plans), async ({ request }) => {
     await latency();
     try {
@@ -55,7 +55,7 @@ export const planHandlers = [
     }
   }),
 
-  // GET /plans/:id — detail + planned-vs-actual comparison
+  // GET /plans/:id - detail + planned-vs-actual comparison
   http.get(endpoint(apiPaths.plan(":planId")), async ({ request, params }) => {
     await latency();
     try {
@@ -66,7 +66,7 @@ export const planHandlers = [
     }
   }),
 
-  // PATCH /plans/:id — editable in DRAFT/ACTIVE only (engine enforces)
+  // PATCH /plans/:id - editable in DRAFT/ACTIVE only (engine enforces)
   http.patch(endpoint(apiPaths.plan(":planId")), async ({ request, params }) => {
     await latency();
     try {
@@ -78,7 +78,7 @@ export const planHandlers = [
     }
   }),
 
-  // POST /plans/:id/activate — DRAFT → ACTIVE (gate: invalidation criteria)
+  // POST /plans/:id/activate - DRAFT → ACTIVE (gate: invalidation criteria)
   http.post(endpoint(apiPaths.planActivate(":planId")), async ({ request, params }) => {
     await latency();
     try {
@@ -89,7 +89,7 @@ export const planHandlers = [
     }
   }),
 
-  // POST /plans/:id/invalidate — ACTIVE → INVALIDATED (reason required)
+  // POST /plans/:id/invalidate - ACTIVE → INVALIDATED (reason required)
   http.post(endpoint(apiPaths.planInvalidate(":planId")), async ({ request, params }) => {
     await latency();
     try {
@@ -103,7 +103,7 @@ export const planHandlers = [
     }
   }),
 
-  // POST /plans/:id/complete — ACTIVE → COMPLETED (process-focused review)
+  // POST /plans/:id/complete - ACTIVE → COMPLETED (process-focused review)
   http.post(endpoint(apiPaths.planComplete(":planId")), async ({ request, params }) => {
     await latency();
     try {
@@ -117,7 +117,7 @@ export const planHandlers = [
     }
   }),
 
-  // POST /plans/:id/archive — terminal (non-destructive) transition
+  // POST /plans/:id/archive - terminal (non-destructive) transition
   http.post(endpoint(apiPaths.planArchive(":planId")), async ({ request, params }) => {
     await latency();
     try {
@@ -128,7 +128,7 @@ export const planHandlers = [
     }
   }),
 
-  // POST /plans/:id/link-trade — canonical-trade association (validated)
+  // POST /plans/:id/link-trade - canonical-trade association (validated)
   http.post(endpoint(apiPaths.planLinkTrade(":planId")), async ({ request, params }) => {
     await latency();
     try {
@@ -142,7 +142,7 @@ export const planHandlers = [
     }
   }),
 
-  // DELETE /plans/:id/link-trade — association only; the trade is untouched
+  // DELETE /plans/:id/link-trade - association only; the trade is untouched
   http.delete(endpoint(apiPaths.planLinkTrade(":planId")), async ({ request, params }) => {
     await latency();
     try {
@@ -153,7 +153,7 @@ export const planHandlers = [
     }
   }),
 
-  // DELETE /plans/:id — hard delete of the plan document
+  // DELETE /plans/:id - hard delete of the plan document
   http.delete(endpoint(apiPaths.plan(":planId")), async ({ request, params }) => {
     await latency();
     try {

@@ -1,10 +1,10 @@
 /**
- * Trade aggregation (Phase 4 §12/§20/§46) — THE authoritative financial
+ * Trade aggregation (Phase 4 §12/§20/§46) - THE authoritative financial
  * implementation for the journal domain.
  *
- * Every derived number on a Cosmoz Trade — weighted average entry/exit,
+ * Every derived number on a Cosmoz Trade - weighted average entry/exit,
  * quantity totals, gross P&L, fees, swap, net P&L, R-multiple, lifecycle
- * status — is computed HERE and only here. Controllers, services, the
+ * status - is computed HERE and only here. Controllers, services, the
  * frontend and future analytics consume these results; none of them may
  * recompute or duplicate this logic (§46).
  *
@@ -18,7 +18,7 @@
  *   fees           = −Σ commissions over ALL executions (positive cost;
  *                    provider-signed commissions are negative costs)
  *   swap           = Σ signed swap over ALL executions
- *   pnlGross       = Σ profits over ALL executions — null only when EVERY
+ *   pnlGross       = Σ profits over ALL executions - null only when EVERY
  *                    execution profit is unknown (null = unknown ≠ 0; one
  *                    known value makes the sum meaningful for MT5-style data
  *                    where entry deals legitimately contribute zero)
@@ -26,13 +26,13 @@
  *   status         = CLOSED when at least one EXIT execution exists, else OPEN
  *   rMultiple      = pnlNet / riskAmount when a positive riskAmount exists
  *
- * All arithmetic uses Prisma.Decimal (exact decimal, no floats — §16/§65).
+ * All arithmetic uses Prisma.Decimal (exact decimal, no floats - §16/§65).
  * Currency semantics: every value is denominated in the trade's currency
  * (the account currency); no conversion is ever performed here (§21).
  */
 import { Prisma } from "@prisma/client";
 
-/** Narrow execution input — satisfied by both DB rows and plan-level specs. */
+/** Narrow execution input - satisfied by both DB rows and plan-level specs. */
 export interface AggregationExecution {
   role: "ENTRY" | "EXIT";
   volume: Prisma.Decimal | string;
@@ -125,7 +125,7 @@ export function aggregateExecutions(
     if (exitAt === null || exit.executedAt > exitAt) exitAt = exit.executedAt;
   }
 
-  // Fees = −Σ commissions (a null commission contributes nothing — MT5 entry
+  // Fees = −Σ commissions (a null commission contributes nothing - MT5 entry
   // legs legitimately carry none; unknown ≠ an invented cost, §20).
   let fees = ZERO;
   let swap = ZERO;
@@ -160,7 +160,7 @@ export function aggregateExecutions(
   }
 
   // Lifecycle (§10/§18): the trade is CLOSED only when exits have consumed
-  // the full entered volume. A partial close keeps the trade OPEN — closure
+  // the full entered volume. A partial close keeps the trade OPEN - closure
   // must reflect actual execution state, never the mere presence of an exit.
   const closed =
     exits.length > 0 && closedQuantity.greaterThanOrEqualTo(quantity);
@@ -185,7 +185,7 @@ export function aggregateExecutions(
 
 /**
  * The user's local trading day for a UTC instant (data-model.md Domaine 3:
- * tradingDate is computed SERVER-side from the user's timezone — never in
+ * tradingDate is computed SERVER-side from the user's timezone - never in
  * the browser). Invalid/unknown timezones fall back to UTC deterministically.
  */
 export function tradingDateKey(instant: Date, timezone: string | null | undefined): string {
@@ -198,10 +198,10 @@ export function tradingDateKey(instant: Date, timezone: string | null | undefine
         month: "2-digit",
         day: "2-digit",
       }).format(instant);
-      // en-CA yields YYYY-MM-DD — assert the shape defensively.
+      // en-CA yields YYYY-MM-DD - assert the shape defensively.
       if (/^\d{4}-\d{2}-\d{2}$/.test(formatted)) return formatted;
     } catch {
-      // Invalid timezone identifier — fall through to the next candidate.
+      // Invalid timezone identifier - fall through to the next candidate.
     }
   }
   return instant.toISOString().slice(0, 10);

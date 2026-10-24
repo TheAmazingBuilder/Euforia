@@ -1,5 +1,5 @@
 /**
- * MT5 terminal bridge — ingest service (Phase 08).
+ * MT5 terminal bridge - ingest service (Phase 08).
  *
  * The ONLY public (JWT-free) route of the accounts module. Authentication is
  * per-event HMAC-SHA256 over a canonical serialization, mirroring the
@@ -10,13 +10,13 @@
  *
  * The terminal sends: X-Bridge-Key (public routing key), X-Bridge-Timestamp,
  * X-Bridge-Signature, X-Bridge-Event-Id. The service re-serializes the
- * PARSED wrapper ({eventId, kind, payload}) — JSON.parse preserves property
+ * PARSED wrapper ({eventId, kind, payload}) - JSON.parse preserves property
  * order, so the canonical string is byte-identical to what the EA signed
- * (decimals travel as strings to keep this stable — EA + guide mandate it).
+ * (decimals travel as strings to keep this stable - EA + guide mandate it).
  *
  * Trust model: the routing key locates the connection; the SECRET proves the
  * terminal; the timestamp bounds replay; the event id dedupes. The first
- * accepted push flips the pairing (CONNECTING → CONNECTED) — pairing IS the
+ * accepted push flips the pairing (CONNECTING → CONNECTED) - pairing IS the
  * validation for an external terminal (capability connectionValidation,
  * ON_CONNECT). Account identity facts (currency, broker identification from
  * the EA-reported company/server) refresh on ACCOUNT_INFO pushes.
@@ -36,7 +36,7 @@ import {
   normalizedPositionSchema,
 } from "./normalization";
 
-/** Ingest envelope kinds — one zod payload schema per kind. */
+/** Ingest envelope kinds - one zod payload schema per kind. */
 export const bridgeEventKindSchema = z.enum([
   "ACCOUNT_INFO",
   "SNAPSHOT",
@@ -56,7 +56,7 @@ export const bridgeAccountInfoPayloadSchema = z.object({
   accountClass: z.enum(["REAL", "DEMO"]).nullable().optional(),
 });
 
-/** Balance/equity/margin snapshot — decimals as strings, nullable = unknown. */
+/** Balance/equity/margin snapshot - decimals as strings, nullable = unknown. */
 export const bridgeSnapshotPayloadSchema = z.object({
   balance: z.string().nullable().optional(),
   equity: z.string().nullable().optional(),
@@ -105,7 +105,7 @@ export const bridgeIngestEnvelopeSchema = z
   });
 export type BridgeIngestEnvelope = z.infer<typeof bridgeIngestEnvelopeSchema>;
 
-/** ±5 minutes — the SAME replay window as the integrations webhook pipeline. */
+/** ±5 minutes - the SAME replay window as the integrations webhook pipeline. */
 const TIMESTAMP_TOLERANCE_MS = 5 * 60 * 1000;
 
 /** Ingest rate bound: generous (a 5 s cadence ≈ 12/min), bounded (≤ 120/min). */
@@ -114,7 +114,7 @@ const INGEST_MAX_PER_WINDOW = 120;
 
 @Injectable()
 export class Mt5BridgeIngestService implements OnModuleDestroy {
-  /** In-memory sliding window per routing key (bounded map — keys rotate). */
+  /** In-memory sliding window per routing key (bounded map - keys rotate). */
   private readonly ingestWindows = new Map<string, number[]>();
 
   constructor(
@@ -162,7 +162,7 @@ export class Mt5BridgeIngestService implements OnModuleDestroy {
     const now = Date.now();
     // Freshness is compared in MILLISECONDS. The EA v1.0.0 sends epoch
     // SECONDS ((long)TimeGMT()); ms-capable terminals send ms. Detect by
-    // magnitude (ms epochs exceed 1e12 since 2001-09-09) — the SIGNATURE
+    // magnitude (ms epochs exceed 1e12 since 2001-09-09) - the SIGNATURE
     // still binds the raw string the terminal sent (canonical uses the
     // un-converted value), so this can never widen who can authenticate.
     const rawTimestamp = input.timestampMs;
@@ -185,7 +185,7 @@ export class Mt5BridgeIngestService implements OnModuleDestroy {
       );
     }
 
-    // Canonical serialization — identical bytes to what the terminal signed.
+    // Canonical serialization - identical bytes to what the terminal signed.
     const canonical = `${input.timestampMs}.${JSON.stringify({
       eventId: input.envelope.eventId,
       kind: input.envelope.kind,
@@ -210,7 +210,7 @@ export class Mt5BridgeIngestService implements OnModuleDestroy {
 
     if (!duplicate) {
       if (connection.status !== "CONNECTED") {
-        // Pairing IS the validation — the first accepted push activates.
+        // Pairing IS the validation - the first accepted push activates.
         await this.repository.activateBridgeConnection(connection.accountId);
         state = "CONNECTED";
         const account = await this.repository.findAccountById(connection.accountId);
@@ -218,7 +218,7 @@ export class Mt5BridgeIngestService implements OnModuleDestroy {
           userId: account?.userId ?? "unknown",
           type: "TRADING_ACCOUNT_CONNECTED",
           actor: "mt5-bridge",
-          context: `First bridge push accepted for account ${account?.externalAccountId ?? connection.accountId} — pairing complete (PLATFORM_BRIDGE).`,
+          context: `First bridge push accepted for account ${account?.externalAccountId ?? connection.accountId} - pairing complete (PLATFORM_BRIDGE).`,
         });
       }
       if (input.envelope.kind === "ACCOUNT_INFO") {
@@ -250,7 +250,7 @@ export class Mt5BridgeIngestService implements OnModuleDestroy {
 
     // Identification: runs at the first ACCOUNT_INFO push (the connect-time
     // placeholder is confidence UNKNOWN) and UPGRADES from UNKNOWN. An
-    // already-resolved identity is a frozen snapshot — never re-guessed.
+    // already-resolved identity is a frozen snapshot - never re-guessed.
     const stored = account.brokerIdentity as { confidence?: string } | null;
     let brokerIdentity: unknown = undefined;
     if (!account.brokerIdentity || stored?.confidence === "UNKNOWN") {
@@ -276,7 +276,7 @@ export class Mt5BridgeIngestService implements OnModuleDestroy {
     });
   }
 
-  /** Timing-safe HMAC-SHA256 (hex) — same construction as integrations. */
+  /** Timing-safe HMAC-SHA256 (hex) - same construction as integrations. */
   private signatureMatches(
     secret: string,
     _timestampMs: number,

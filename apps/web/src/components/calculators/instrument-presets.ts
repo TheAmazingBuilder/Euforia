@@ -1,13 +1,13 @@
 import type { AssetClass } from "@cosmoz/shared";
 
 /**
- * Instrument presets for the Lot Size Calculator — EDITABLE TYPICAL SPECS.
+ * Instrument presets for the Lot Size Calculator - EDITABLE TYPICAL SPECS.
  *
  * Rule of the codebase (schemas/instrument.ts): "Specs live per instrument;
  * there are NO per-asset-class constants in code." These presets are the
  * calculator's convenience layer: every value is standard textbook
  * convention, rendered openly in the form's Advanced parameters and editable
- * per trade — never presented as universally correct across brokers. The
+ * per trade - never presented as universally correct across brokers. The
  * pipSize/contractSize/digits values mirror the mock instrument catalog
  * (mocks/fixtures/catalog.ts) wherever an instrument exists there.
  */
@@ -22,7 +22,7 @@ export interface InstrumentPreset {
   digits: number;
   /** Units per lot/contract, e.g. "100000" EURUSD, "100" XAUUSD. */
   contractSize: string;
-  /** Broker volume increment — the repo default "0.01" (micro-lot). */
+  /** Broker volume increment - the repo default "0.01" (micro-lot). */
   volumeStep: string;
 }
 
@@ -83,7 +83,7 @@ export const INSTRUMENT_PRESETS: readonly InstrumentPreset[] = [
   },
 ];
 
-/** The CUSTOM sentinel — reveals empty advanced fields the trader fills in. */
+/** The CUSTOM sentinel - reveals empty advanced fields the trader fills in. */
 export const CUSTOM_INSTRUMENT = "__custom__";
 
 export function findInstrumentPreset(symbol: string): InstrumentPreset | null {

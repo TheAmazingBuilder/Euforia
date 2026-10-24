@@ -1,20 +1,20 @@
 /**
- * Discipline application service (B4 — data-model.md "Domaine 7", the
+ * Discipline application service (B4 - data-model.md "Domaine 7", the
  * Discipline Engine). Owns the rule CRUD, the violation log, the alert
  * inbox and the server-side aggregates (score, emotion matrix, mistakes
  * ledger). Everything is computed from the OWNED rows + the Trades
- * context's narrow read contract (facts are consumed, never duplicated —
+ * context's narrow read contract (facts are consumed, never duplicated -
  * §26/§39/§46).
  *
  * Rule evaluation timing: Trades PUBLISHES `trade.closed` on the domain
  * event bus (infrastructure/events); this service SUBSCRIBES and freezes
  * the breach context at time T (data-model.md "Domaine 7"). Dedupe key =
- * (tradeId, ruleId) — idempotent across replays, exactly like the mock.
+ * (tradeId, ruleId) - idempotent across replays, exactly like the mock.
  *
  * Deliberate scope (mock-parity): only the rules computable from journal
  * facts auto-evaluate (MAX_TRADES_PER_DAY, MAX_LOSSES_PER_DAY,
  * MAX_RISK_PCT_PER_TRADE). The remaining rule types are user-defined
- * guardrails acknowledged via the log — they never fake breaches. The
+ * guardrails acknowledged via the log - they never fake breaches. The
  * alert bridges owned by other domains (Goals → B8, Security reminders,
  * Monitoring) stay with their owners.
  */
@@ -39,7 +39,7 @@ import { DisciplineRepository, type DisciplineRow } from "./discipline.repositor
 
 const TRADING_ERROR = TRADE_ERROR_CODES;
 
-/** Prisma JSON column input — the service hands over plain JSON objects. */
+/** Prisma JSON column input - the service hands over plain JSON objects. */
 type JsonInput = Parameters<DisciplineRepository["insertRule"]>[1];
 
 /** System catalog iteration source for the ledger (stable, fixed ids). */
@@ -166,7 +166,7 @@ export class DisciplineService implements OnModuleInit {
     return starting + closedPnl;
   }
 
-  // ── GET /rules/status — today's banner aggregate ──────────────────────────
+  // ── GET /rules/status - today's banner aggregate ──────────────────────────
 
   async rulesStatus(
     userId: string,
@@ -227,7 +227,7 @@ export class DisciplineService implements OnModuleInit {
       });
     }
 
-    // Guardrail input — rule breaches that happened TODAY (any rule).
+    // Guardrail input - rule breaches that happened TODAY (any rule).
     const violations = await this.repository.listByKind(userId, "VIOLATION");
     const violationsToday = violations.filter((row) => {
       const data = row.data as unknown as ViolationData;
@@ -414,7 +414,7 @@ export class DisciplineService implements OnModuleInit {
     ).length;
 
     // Journaling consistency: % of the window's trading days with at least
-    // one written reflection (lesson or note) — V1 trace of daily_journal.
+    // one written reflection (lesson or note) - V1 trace of daily_journal.
     const tradingDays = new Set(windowClosed.map((t) => dateKeyOf(t.tradingDate)));
     const journaledDays = new Set(
       windowClosed
@@ -432,7 +432,7 @@ export class DisciplineService implements OnModuleInit {
           100
         : 0;
 
-    // Per-day Euforia Index (mock formula) averaged over SCORED days —
+    // Per-day Euforia Index (mock formula) averaged over SCORED days -
     // computed from live facts instead of persisted daily stats.
     const scores = await this.perDayScores(userId);
     const score =
@@ -457,7 +457,7 @@ export class DisciplineService implements OnModuleInit {
     return [...scores.values()].filter((value): value is number => value !== null);
   }
 
-  /** RULE_VIOLATION count per day over a window — public for the calendar. */
+  /** RULE_VIOLATION count per day over a window - public for the calendar. */
   async violationsByDay(
     userId: string,
     window: { from: string; to: string },
@@ -479,7 +479,7 @@ export class DisciplineService implements OnModuleInit {
   }
 
   /**
-   * Per-day Euforia Index over a date window — PUBLIC contract for consumers
+   * Per-day Euforia Index over a date window - PUBLIC contract for consumers
    * (calendar overlay). A day with closed but ungraded trades scores null.
    */
   async dailyScores(
@@ -595,7 +595,7 @@ export class DisciplineService implements OnModuleInit {
         lastSeenAt,
       });
     }
-    // Most expensive first — cost dominates, then frequency.
+    // Most expensive first - cost dominates, then frequency.
     entries.sort(
       (a, b) =>
         Math.abs(Number(b.rCost)) - Math.abs(Number(a.rCost)) || b.count - a.count,
@@ -642,7 +642,7 @@ export class DisciplineService implements OnModuleInit {
           totalR: group.length > 0 ? this.round2(rSum) : null,
         };
       })
-      // Busiest emotions first — the heatmap reads top-down.
+      // Busiest emotions first - the heatmap reads top-down.
       .sort((a, b) => b.trades - a.trades);
     return {
       windowStart: since,
@@ -683,9 +683,9 @@ export class DisciplineService implements OnModuleInit {
   }
 
   /**
-   * Dismiss an alert — the delivery-state transition the schema already
+   * Dismiss an alert - the delivery-state transition the schema already
    * models (`dismissedAt`) and the archive tab already renders. Dismissal
-   * NEVER deletes the row: the audit history stays (spec §8/§9 — no
+   * NEVER deletes the row: the audit history stays (spec §8/§9 - no
    * silent deletion).
    */
   async dismissAlert(
@@ -704,14 +704,14 @@ export class DisciplineService implements OnModuleInit {
 
   /**
    * Publish an inbox alert on behalf of an owner domain (Phase 07 metric
-   * alerts; the documented bridge point — "alert bridges stay with their
+   * alerts; the documented bridge point - "alert bridges stay with their
    * owner domains"). The caller owns the payload shape and supplies a
    * DETERMINISTIC event id (uuid-v5 over a stable trigger key): a replayed
-   * publish collides on the primary key and is swallowed as a no-op —
+   * publish collides on the primary key and is swallowed as a no-op -
    * idempotency at the storage layer, not by pre-checks.
    *
    * Returns true when this call INSERTED the event, false when the
-   * deterministic id already existed (replay) — producers count only real
+   * deterministic id already existed (replay) - producers count only real
    * insertions in their diagnostics.
    */
   async publishAlert(
@@ -748,7 +748,7 @@ export class DisciplineService implements OnModuleInit {
       return true;
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
-        return false; // replayed trigger — the event already exists, stay quiet
+        return false; // replayed trigger - the event already exists, stay quiet
       }
       throw error;
     }
@@ -797,7 +797,7 @@ export class DisciplineService implements OnModuleInit {
       }
       if (!breached) continue;
 
-      // Dedupe key (tradeId, ruleId) — the mock's alreadyAlerted check.
+      // Dedupe key (tradeId, ruleId) - the mock's alreadyAlerted check.
       const alerts = await this.repository.listByKind(event.userId, "ALERT");
       const alreadyAlerted = alerts.some((candidate) => {
         const data = candidate.data as unknown as AlertData;
@@ -809,7 +809,7 @@ export class DisciplineService implements OnModuleInit {
       });
       if (alreadyAlerted) continue;
 
-      // rule_violations row — the durable record the discipline screen's log
+      // rule_violations row - the durable record the discipline screen's log
       // reads (alerts stay the V1 response channel). Context freezes values
       // at time T (data-model.md "Domaine 7").
       const violation: ViolationRowData = {

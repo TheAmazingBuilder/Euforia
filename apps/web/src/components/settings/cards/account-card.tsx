@@ -31,7 +31,7 @@ import { exportBackupWithToasts } from "@/lib/utils/backup-export";
 import { useI18n } from "@/i18n/i18n-provider";
 
 /**
- * Account — identity summary, plan, connected trading accounts and the
+ * Account - identity summary, plan, connected trading accounts and the
  * DANGEROUS actions. Deactivation pauses the journal; deletion schedules a
  * 14-day grace period and requires typing DELETE. Both send typed
  * confirmation payloads the API validates server-side.
@@ -130,7 +130,7 @@ export function AccountCard() {
             <div className="flex items-center justify-between gap-3 sm:block">
               <dt className="text-xs text-muted-foreground">{S.username}</dt>
               <dd className="font-mono text-[13px] font-medium">
-                {profile.username ?? "—"}
+                {profile.username ?? "-"}
               </dd>
             </div>
             <div className="flex items-center justify-between gap-3 sm:block">
@@ -141,7 +141,7 @@ export function AccountCard() {
 
           <Separator />
 
-          {/* Connected trading accounts — summary only, managed elsewhere. */}
+          {/* Connected trading accounts - summary only, managed elsewhere. */}
           <div className="grid gap-3" data-testid="settings-account-connected">
             <div className="flex items-center gap-2">
               <Wallet className="size-4 text-muted-foreground" aria-hidden="true" />
@@ -196,7 +196,7 @@ export function AccountCard() {
           </div>
         </div>
 
-        {/* Danger zone — explicit, typed confirmations. */}
+        {/* Danger zone - explicit, typed confirmations. */}
         <div
           className="grid gap-4 rounded-xl border border-loss/40 p-4 sm:p-5"
           data-testid="settings-account-danger"
@@ -246,7 +246,7 @@ export function AccountCard() {
           </div>
         </div>
 
-        {/* Sign out — same shell-level stub as before the module existed. */}
+        {/* Sign out - same shell-level stub as before the module existed. */}
         <div className="flex justify-end">
           <Button variant="outline" asChild>
             <Link href="/login" data-testid="settings-account-signout">

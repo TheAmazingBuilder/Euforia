@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 /**
- * COSMOZ enums — source of truth: docs/specs/data-model.md §2.
+ * COSMOZ enums - source of truth: docs/specs/data-model.md §2.
  * One zod enum + one inferred TS type per spec enum.
  * Values are SCREAMING_SNAKE_CASE exactly as stored by the API (Prisma).
  */
@@ -221,7 +221,7 @@ export const periodSchema = z.enum([
 export type Period = z.infer<typeof periodSchema>;
 
 // NOTE: the Goal enums live in schemas/tradeReview.ts (computed progress,
-// server-derived direction/unit) — the placeholder versions that used to sit
+// server-derived direction/unit) - the placeholder versions that used to sit
 // here were dead code and are superseded by that contract.
 
 export const insightKindSchema = z.enum([

@@ -3,7 +3,7 @@
  *
  * Every payload coming OUT of a provider adapter is validated against these
  * schemas before it may enter the domain or the database. A type-broken
- * provider response becomes INVALID_PROVIDER_RESPONSE — never a corrupted
+ * provider response becomes INVALID_PROVIDER_RESPONSE - never a corrupted
  * row, never a raw provider error at the API surface.
  *
  * These are backend-internal schemas (adapter → domain boundary); the
@@ -21,7 +21,7 @@ export const normalizedAccountInfoSchema = z.object({
   currency: currencySchema,
   leverage: z.string().nullable(),
   server: z.string().nullable(),
-  // Phase 07 — provider-reported broker identity (additive optional: adapters
+  // Phase 07 - provider-reported broker identity (additive optional: adapters
   // that do not report one omit the field; the boundary tolerates both).
   brokerIdentity: z
     .object({
@@ -81,7 +81,7 @@ export const normalizedDealSchema = z.object({
   profit: decimalStringSchema.nullable(),
   commission: decimalStringSchema.nullable(),
   swap: decimalStringSchema.nullable(),
-  /** Provider-side position identifier — nullable (balance ops have none). */
+  /** Provider-side position identifier - nullable (balance ops have none). */
   positionId: z.string().min(1).nullable(),
   executedAt: isoDateTimeSchema,
 });

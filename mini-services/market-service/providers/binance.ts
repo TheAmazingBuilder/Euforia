@@ -1,5 +1,5 @@
 /**
- * BinanceProvider — REAL market data (mission §33/§34).
+ * BinanceProvider - REAL market data (mission §33/§34).
  *
  * Source: Binance public market-data endpoints (no API key, read-only):
  *   - REST  https://data-api.binance.vision/api/v3  (klines, 24h ticker)
@@ -53,7 +53,7 @@ export class BinanceProvider implements MarketDataProvider {
   private restFailures = 0;
   private started = false;
 
-  /** Kline cache — one upstream call per (symbol, interval) per 15s max. */
+  /** Kline cache - one upstream call per (symbol, interval) per 15s max. */
   private klineCache = new Map<string, { at: number; candles: Candle[] }>();
   private readonly KLINE_TTL_MS = 15_000;
 
@@ -110,12 +110,12 @@ export class BinanceProvider implements MarketDataProvider {
           this.emit({
             symbol: internal,
             price: Number(payload.data.c),
-            prevClose: Number(payload.data.o), // 24h open — honest change % base
+            prevClose: Number(payload.data.o), // 24h open - honest change % base
             ts: Date.now(),
             source: "real",
           });
         } catch {
-          // Malformed frame — ignore, the next tick repairs the state.
+          // Malformed frame - ignore, the next tick repairs the state.
         }
       };
       ws.onclose = () => {
@@ -199,7 +199,7 @@ export class BinanceProvider implements MarketDataProvider {
     if (hit !== undefined && Date.now() - hit.at < this.KLINE_TTL_MS) return hit.candles;
 
     // Ranged klines (session replay): Binance serves historical windows
-    // natively — startTime/endTime with the standard 1000-row ceiling.
+    // natively - startTime/endTime with the standard 1000-row ceiling.
     const params = new URLSearchParams({
       symbol: remote,
       interval: INTERVAL_MAP[interval],
@@ -225,7 +225,7 @@ export class BinanceProvider implements MarketDataProvider {
     });
     this.klineCache.set(cacheKey, { at: Date.now(), candles });
     if (this.klineCache.size > 64) {
-      // Keep the cache bounded — drop the oldest entry.
+      // Keep the cache bounded - drop the oldest entry.
       const oldest = this.klineCache.keys().next().value;
       if (oldest !== undefined) this.klineCache.delete(oldest);
     }

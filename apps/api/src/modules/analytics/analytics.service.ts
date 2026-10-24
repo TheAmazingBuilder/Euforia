@@ -1,8 +1,8 @@
 /**
- * Analytics application service (Phase 8) — orchestration + resolution.
+ * Analytics application service (Phase 8) - orchestration + resolution.
  *
  * Analytics is a CONSUMER of domain truth (Phase 8 §2): this service reads
- * every source through its owning context's PUBLIC contract — Trading Core
+ * every source through its owning context's PUBLIC contract - Trading Core
  * (canonical trades), Trade Review (verdicts + frozen plan snapshots), Trade
  * Planning (canonical planned RR + instrument catalog), Playbook (strategy
  * names), Accounts (scope currencies + starting balances), Identity (the
@@ -11,16 +11,16 @@
  *
  * Attribution rules (documented seams, §21/§22):
  *   - strategy: Trade → review.originTradePlanId → TradePlan.strategyId.
- *     Trades without that explicit chain are OUT OF PLAYBOOK — attribution
+ *     Trades without that explicit chain are OUT OF PLAYBOOK - attribution
  *     never resolves against the latest strategy state.
  *   - plannedRR: review.planSnapshot.rrRatio (FROZEN at review time) ?? the
- *     origin plan's canonical rrRatio — never recomputed (no second engine).
+ *     origin plan's canonical rrRatio - never recomputed (no second engine).
  *   - instrumentId: InstrumentSpecification catalog match by symbol, else a
  *     deterministic v5 group id derived from the raw symbol (stable group
- *     identity for uncataloged tickers — a display id, not a DB reference).
+ *     identity for uncataloged tickers - a display id, not a DB reference).
  *
  * Honest gaps (§8/§34/§54): emotions/confidence/tags/mistakes/eco-calendar/
- * intratrade excursions are NOT journal fields backend yet — those blocks
+ * intratrade excursions are NOT journal fields backend yet - those blocks
  * ship empty/null (never fabricated), flagged in the report.
  */
 import { Inject, Injectable } from "@nestjs/common";
@@ -92,7 +92,7 @@ export class AnalyticsService {
 
   /**
    * The Analytics module's single dataset endpoint. Every tab renders the
-   * SAME filtered set — the filter bag is validated by the shared schema
+   * SAME filtered set - the filter bag is validated by the shared schema
    * before this method runs.
    */
   async getAnalyticsSuite(userId: string, filters: AnalyticsFilters, sims: number): Promise<AnalyticsSuiteResponse> {
@@ -102,7 +102,7 @@ export class AnalyticsService {
 
     const suite = computeAnalyticsSuite(environment, filters, sims);
 
-    // Structured telemetry (§67) — counters and ids only, never payloads.
+    // Structured telemetry (§67) - counters and ids only, never payloads.
     this.logger.info(
       {
         event: "analytics.suite_computed",
@@ -163,7 +163,7 @@ export class AnalyticsService {
   private async requireUser(userId: string): Promise<{ timezone: string }> {
     const user = await this.identity.findUserById(userId);
     if (user === null) {
-      // The principal comes from the JWT guard — a vanished user is an
+      // The principal comes from the JWT guard - a vanished user is an
       // honest 404, never a silent empty dataset.
       throw new NotFoundError("User not found.");
     }
@@ -184,7 +184,7 @@ export class AnalyticsService {
 
     // Instrument resolution by symbol (catalog id ?? deterministic group id).
     // quoteCurrency rides along for the Phase 13 §21 economic-event join
-    // (null for uncataloged symbols — they never correlate, honest).
+    // (null for uncataloged symbols - they never correlate, honest).
     const specBySymbol = new Map(specRows.map((spec) => [spec.symbol, spec]));
     const instrumentBySymbol = new Map<
       string,
@@ -216,10 +216,10 @@ export class AnalyticsService {
         ? planById.get(review.originTradePlanId)
         : undefined;
       const strategyId = originPlan?.strategyId ?? null;
-      // Canonical planned RR — frozen snapshot first, then the live plan
+      // Canonical planned RR - frozen snapshot first, then the live plan
       // (plans stay mutable in DRAFT/PLANNED; the snapshot preserves what
       // the review actually compared against, §22/§26). A corrupted snapshot
-      // degrades to the live plan / "No plan" — never poisons the dataset.
+      // degrades to the live plan / "No plan" - never poisons the dataset.
       const snapshot = safeParseSnapshot(review?.planSnapshot);
       const plannedRR =
         parseNumber(snapshot?.rrRatio ?? null) ?? toNumber(originPlan?.rrRatio ?? null);
@@ -239,7 +239,7 @@ export class AnalyticsService {
       isDefault: row.isDefault,
     }));
 
-    // Phase 13 §21 — canonical economic events over the sync window; the
+    // Phase 13 §21 - canonical economic events over the sync window; the
     // pure engine performs the correlation (no second event store here).
     const calendarEvents: SuiteCalendarEvent[] = (
       await this.calendarQueries.listSyncWindowEventsForCorrelation()
@@ -262,7 +262,7 @@ export class AnalyticsService {
 
   /**
    * Canonical trade row → engine row. The overview path passes EMPTY maps
-   * (no review/plan context needed there — followedPlan/plannedRR feed the
+   * (no review/plan context needed there - followedPlan/plannedRR feed the
    * suite blocks only; the overview has no such block).
    */
   private toEngineRow(
@@ -303,7 +303,7 @@ export class AnalyticsService {
       exitAtIso: row.exitAt === null ? null : row.exitAt.toISOString(),
       entryAtMs: row.entryAt.getTime(),
       exitAtMs: row.exitAt === null ? null : row.exitAt.getTime(),
-      // tradingDate is a @db.Date column — Prisma returns UTC midnight of the
+      // tradingDate is a @db.Date column - Prisma returns UTC midnight of the
       // stored key; the key itself is the canonical trading day.
       tradingDate: row.tradingDate.toISOString().slice(0, 10),
       pnlNet: toNumber(row.pnlNet) ?? 0,

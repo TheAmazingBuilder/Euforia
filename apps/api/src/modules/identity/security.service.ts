@@ -2,10 +2,10 @@
  * Security & account-protection application service (shared security.ts).
  *
  * - /security/overview: server-computed aggregate of REAL state (protection
- *   checks state hard facts with their methodology — no invented score).
+ *   checks state hard facts with their methodology - no invented score).
  * - Password change: reauth + revoke-other-sessions (§23) + event.
  * - Session revocation: ownership-checked (IDOR-safe), scopes one/others/all.
- * - API keys: prefix + fingerprint + hash — the secret is shown exactly once.
+ * - API keys: prefix + fingerprint + hash - the secret is shown exactly once.
  */
 import { Injectable } from "@nestjs/common";
 import { createHash, randomBytes } from "node:crypto";
@@ -83,7 +83,7 @@ export class SecurityService {
         detail:
           passwordAgeDays < PASSWORD_MAX_AGE_DAYS
             ? `Changed ${passwordAgeDays} day(s) ago.`
-            : `Changed ${passwordAgeDays} day(s) ago — consider rotating it.`,
+            : `Changed ${passwordAgeDays} day(s) ago - consider rotating it.`,
         pass: passwordAgeDays < PASSWORD_MAX_AGE_DAYS,
         methodology: `Password younger than ${PASSWORD_MAX_AGE_DAYS} days.`,
       },
@@ -92,7 +92,7 @@ export class SecurityService {
         label: "API key hygiene",
         detail: apiKeys.some((k) => !k.revokedAt)
           ? "Review keys you no longer use and revoke them."
-          : "No active API keys — nothing to review.",
+          : "No active API keys - nothing to review.",
         pass: !apiKeys.some((k) => !k.revokedAt && k.lastUsedAt === null && daysSince(k.createdAt) > 30),
         methodology: "No active key unused for more than 30 days.",
       },
@@ -139,7 +139,7 @@ export class SecurityService {
         expiresAt: key.expiresAt ? iso(key.expiresAt) : null,
         revoked: key.revokedAt !== null,
       })),
-      // Integrations are a later bounded context — honestly empty here.
+      // Integrations are a later bounded context - honestly empty here.
       connectedAccounts: [],
       events: events.map(toSecurityEvent),
       logins: logins.map(toLoginRecord),
@@ -218,7 +218,7 @@ export class SecurityService {
         throw new ConflictError("A session id is required for scope \"one\".", "MISSING_SESSION");
       }
       const target = sessions.find((session) => session.id === input.sessionId);
-      // Ownership check — another user's session id is simply not found (404).
+      // Ownership check - another user's session id is simply not found (404).
       if (!target) {
         throw new NotFoundError("That session does not exist.", "SESSION_NOT_FOUND");
       }
@@ -247,7 +247,7 @@ export class SecurityService {
         context:
           input.scope === "others"
             ? `All other sessions revoked (${targets.length}).`
-            : `All sessions revoked (${targets.length}) — including the current one.`,
+            : `All sessions revoked (${targets.length}) - including the current one.`,
       });
     }
     return {

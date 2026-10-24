@@ -2,19 +2,19 @@
  * Plan-vs-actual comparison engine (Phase 6 §12/§54/§55/§27/§28).
  *
  * A pure domain function: given the comparison-relevant values of a
- * TradePlan (from the frozen snapshot — or the live plan row defensively)
+ * TradePlan (from the frozen snapshot - or the live plan row defensively)
  * and the canonical Trade aggregates, produce structured objective
  * deviations. It computes FACTS, never judgments:
  *
  *   - No quality scores, no tolerance labels, no "discipline" number
- *     (§55/§56 — the trader's interpretation is user-reported data:
+ *     (§55/§56 - the trader's interpretation is user-reported data:
  *     followedPlan / playbookMatch / checklistResults).
  *   - No new risk math: planned R is the plan's canonical rrRatio (reward:risk
  *     at target, Phase 5 engine), actual R is the canonical rMultiple owned
  *     by Trading Core (§28). Both are reported; the deviation is their
  *     difference, clearly labeled as planned-RR vs realized-R.
  *   - Missing legs (no plan, no stop, sync trade without riskAmount…) are
- *     unavailable=true with null deviations — never fabricated (§67).
+ *     unavailable=true with null deviations - never fabricated (§67).
  *   - Pips require the instrument catalog (Phase 5); unknown symbols get
  *     null pips but keep price-space deviations.
  *
@@ -39,7 +39,7 @@ export interface ComparisonPlanInput {
   rrRatio: string | null;
 }
 
-/** Comparison-relevant canonical trade values (Trading Core — read-only). */
+/** Comparison-relevant canonical trade values (Trading Core - read-only). */
 export interface ComparisonTradeInput {
   direction: "BUY" | "SELL";
   /** Volume-weighted average entry price (canonical aggregate). */
@@ -50,12 +50,12 @@ export interface ComparisonTradeInput {
   riskAmount: string | null;
   /** Filled quantity (Σ entry volumes). */
   quantity: string;
-  /** Realized R (pnlNet / riskAmount) — null when riskAmount unknown. */
+  /** Realized R (pnlNet / riskAmount) - null when riskAmount unknown. */
   rMultiple: string | null;
 }
 
 export interface ComparisonSpecsInput {
-  /** Price increment of one pip, e.g. "0.0001" — null when catalog misses the symbol. */
+  /** Price increment of one pip, e.g. "0.0001" - null when catalog misses the symbol. */
   pipSize: string | null;
 }
 
@@ -83,7 +83,7 @@ export interface PlanVsActualResult {
   target: ComparisonLeg;
   risk: ComparisonLeg;
   size: ComparisonLeg;
-  /** Planned reward:risk vs realized R — both canonical (§28). */
+  /** Planned reward:risk vs realized R - both canonical (§28). */
   rMultiple: ComparisonLeg;
 }
 
@@ -124,7 +124,7 @@ function leg(
   };
 }
 
-/** Price-space legs only — pips are meaningless for money/size/R legs. */
+/** Price-space legs only - pips are meaningless for money/size/R legs. */
 function priceLeg(
   planned: Decimal | null,
   actual: Decimal | null,
@@ -142,7 +142,7 @@ function scalarLeg(planned: Decimal | null, actual: Decimal | null): ComparisonL
  * Compare a plan against the canonical trade. When `basedOn` is NONE the
  * plan legs stay null/unavailable while the actual legs still echo the
  * canonical trade facts (the detail response remains useful without a
- * plan — §67 "no plan: the review must still function").
+ * plan - §67 "no plan: the review must still function").
  */
 export function comparePlanAgainstTrade(
   plan: ComparisonPlanInput | null,

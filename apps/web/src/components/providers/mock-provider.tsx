@@ -5,9 +5,9 @@ import * as React from "react";
 import { API_MOCKED } from "@/lib/api/mode";
 
 /**
- * Boots the MSW worker before rendering children — but ONLY when mocking is
+ * Boots the MSW worker before rendering children - but ONLY when mocking is
  * active per the canonical mode check (lib/api/mode.ts):
- *   - NEXT_PUBLIC_API_MOCKED=true (explicit opt-in — demo/preview), or
+ *   - NEXT_PUBLIC_API_MOCKED=true (explicit opt-in - demo/preview), or
  *   - zero-env development (next dev).
  * Production builds default to the REAL API and cannot accidentally
  * activate the mock layer (MASTER QA spec §14.9). When mocking is off this
@@ -23,7 +23,7 @@ function startWorkerOnce(): Promise<void> {
   workerStartPromise ??= import("@/mocks/browser")
     .then(({ worker, SW_URL }) =>
       // The composed /sw.js hosts both the mock layer and the PWA offline
-      // fallback — one registration at scope "/" (see public/sw.js).
+      // fallback - one registration at scope "/" (see public/sw.js).
       worker.start({
         serviceWorker: { url: SW_URL },
         onUnhandledRequest: "bypass",

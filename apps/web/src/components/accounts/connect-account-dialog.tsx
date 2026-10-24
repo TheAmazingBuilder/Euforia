@@ -52,7 +52,7 @@ import { BridgePairingPanel } from "./bridge-pairing-panel";
  * Capability-driven and honest:
  *  - the connectable list comes from the REAL provider registry (the mock is
  *    stamped "Simulated provider");
- *  - the RECOGNIZED list comes from the universal broker catalog — every
+ *  - the RECOGNIZED list comes from the universal broker catalog - every
  *    known broker/platform stays visible with its truthful connector status,
  *    never a fake setup path;
  *  - while the user types the account number, the identity step calls the
@@ -61,14 +61,14 @@ import { BridgePairingPanel } from "./bridge-pairing-panel";
  * No simulated success screen exists: on the backend's 201 the dialog closes
  * and the new account appears in the list. The initial sync runs server-side.
  * EXCEPTION (Phase 08): PLATFORM_BRIDGE providers (mt5-bridge) carry NO
- * client credential — the identity step hides the secret field behind an
+ * client credential - the identity step hides the secret field behind an
  * honest explainer ("Euforia generates the bridge secret"), the submit body
  * omits `credentials`, and a 201 whose account carries a `pairing` sheet
  * keeps the dialog open on the BridgePairingPanel (ingest URL / key /
  * secret / EA download). Done closes and hands the account to the parent.
  *
  * Layout (overflow fix): the wizard is a PINNED-HEADER / SCROLLABLE-BODY /
- * PINNED-FOOTER shell — `grid-rows-[auto_minmax(0,1fr)_auto]` under a hard
+ * PINNED-FOOTER shell - `grid-rows-[auto_minmax(0,1fr)_auto]` under a hard
  * `max-h-[85dvh]`, so the dialog can never grow past the viewport (the 17+
  * broker catalog on step 1 used to push it off-screen). Only the step body
  * scrolls; the title, the step rail and the actions always stay visible.
@@ -81,7 +81,7 @@ type WizardStep = "provider" | "environment" | "identity";
 
 const STEP_ORDER: WizardStep[] = ["provider", "environment", "identity"];
 
-/** Environment presentation — icon + honest one-liner per capability value.
+/** Environment presentation - icon + honest one-liner per capability value.
  * Keys mirror `supportedEnvironments` (DEMO | LIVE | PROP_FIRM). */
 const ENVIRONMENT_META: Record<string, { icon: LucideIcon; noteKey: "environmentDemo" | "environmentLive" | "environmentPropFirm" }> = {
   DEMO: { icon: FlaskConical, noteKey: "environmentDemo" },
@@ -107,9 +107,9 @@ export function ConnectAccountDialog({
 }: {
   open: boolean;
   onOpenChange: (next: boolean) => void;
-  /** Registry descriptors — the parent owns the providers query. */
+  /** Registry descriptors - the parent owns the providers query. */
   providers: TradingProviderDescriptor[];
-  /** Universal broker catalog (Phase 07) — the parent owns the catalog query. */
+  /** Universal broker catalog (Phase 07) - the parent owns the catalog query. */
   brokers: BrokerCatalogEntry[];
   onConnected: (accountId: string) => void;
 }) {
@@ -125,13 +125,13 @@ export function ConnectAccountDialog({
   const [externalAccountId, setExternalAccountId] = React.useState("");
   const [displayName, setDisplayName] = React.useState("");
   const [secret, setSecret] = React.useState("");
-  /** Phase 08 — the connect-time MT5 pairing sheet. When the 201 response
+  /** Phase 08 - the connect-time MT5 pairing sheet. When the 201 response
    * carries account.pairing (PLATFORM_BRIDGE providers), the wizard stays
-   * open on a dedicated pairing view instead of closing — the secret is
+   * open on a dedicated pairing view instead of closing - the secret is
    * handed over right where the user is. onConnected fires on Done so the
    * detail drawer never covers the sheet. */
   const [completed, setCompleted] = React.useState<{ accountId: string; pairing: BridgePairing } | null>(null);
-  /** Identification result tagged with the hint pair it belongs to — derived
+  /** Identification result tagged with the hint pair it belongs to - derived
    * visibility (no sync setState in the effect): the UI shows a result only
    * while it matches the CURRENT provider + account number. */
   const [identification, setIdentification] = React.useState<{
@@ -153,9 +153,9 @@ export function ConnectAccountDialog({
     setCompleted(null);
   }, []);
 
-  // Phase 07 — live broker identification while the account number is typed.
+  // Phase 07 - live broker identification while the account number is typed.
   // Debounced 600 ms; the hint payload contains NO secret (rule-based probe,
-  // 30/15-min server rate limit — far above this cadence). Stale results are
+  // 30/15-min server rate limit - far above this cadence). Stale results are
   // filtered by the derived key comparison above, not by sync setState.
   React.useEffect(() => {
     if (step !== "identity" || !provider) {
@@ -184,7 +184,7 @@ export function ConnectAccountDialog({
     onOpenChange(next);
   };
 
-  /** Phase 08 — bridge providers carry NO client credential: the submit body
+  /** Phase 08 - bridge providers carry NO client credential: the submit body
    * omits `credentials` entirely and the backend generates the bridge secret. */
   const isBridgeProvider = provider?.supportedConnectionMethods.includes("PLATFORM_BRIDGE") ?? false;
 
@@ -208,7 +208,7 @@ export function ConnectAccountDialog({
         onSuccess: (response) => {
           const pairing = response.account.pairing ?? null;
           if (pairing) {
-            // Bridge flow — render the pairing sheet instead of closing.
+            // Bridge flow - render the pairing sheet instead of closing.
             toast.success(C.bridge.successTitle, { description: C.bridge.successBody });
             setCompleted({ accountId: response.account.id, pairing });
             return;
@@ -251,7 +251,7 @@ export function ConnectAccountDialog({
     setStep(STEP_ORDER[STEP_ORDER.indexOf(step) + 1]!);
   };
 
-  /** Pinned step rail — compact chips joined by hairline segments; a filled
+  /** Pinned step rail - compact chips joined by hairline segments; a filled
    * segment marks the path already walked (token colors only). */
   const stepRail = (
     <ol
@@ -296,7 +296,7 @@ export function ConnectAccountDialog({
   const stepBody =
     step === "provider" ? C.providerBody : step === "environment" ? C.environmentBody : C.identityTitle;
 
-  /** The scrollable step content — the ONLY region that scrolls. */
+  /** The scrollable step content - the ONLY region that scrolls. */
   const stepContent = (
     <>
       {step === "provider" ? (
@@ -352,11 +352,11 @@ export function ConnectAccountDialog({
               </span>
             </button>
           ))}
-          {/* Phase 07 — the universal broker catalog: every known broker
+          {/* Phase 07 - the universal broker catalog: every known broker
               stays visible with its honest connector status. Entries whose
               connector IS available already render as radio cards above.
               The recognized list is scroll-compact so the connectable
-              cards stay in view — 17+ catalog entries would otherwise
+              cards stay in view - 17+ catalog entries would otherwise
               bury them. */}
           {brokers.filter((entry) => entry.connectorStatus !== "CONNECTOR_AVAILABLE").length >
           0 ? (
@@ -376,7 +376,7 @@ export function ConnectAccountDialog({
                         key={entry.brokerId}
                         className="flex items-start gap-2.5 rounded-md border border-dashed border-border bg-surface p-2.5 opacity-80"
                         data-testid={`connect-provider-recognized-${entry.brokerId}`}
-                        aria-label={`${entry.displayName} — ${C.providerRecognized}`}
+                        aria-label={`${entry.displayName} - ${C.providerRecognized}`}
                       >
                         <Lock className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" aria-hidden />
                         <div className="min-w-0 flex-1">
@@ -448,7 +448,7 @@ export function ConnectAccountDialog({
             );
           })}
           <p className="text-xs leading-relaxed text-muted-foreground">
-            {provider.providerName} serves {provider.supportedEnvironments.join(" and ")} accounts — other
+            {provider.providerName} serves {provider.supportedEnvironments.join(" and ")} accounts - other
             environments are refused by the provider.
           </p>
         </div>
@@ -494,7 +494,7 @@ export function ConnectAccountDialog({
             <p className="text-xs text-muted-foreground">{C.displayNameHint}</p>
           </div>
           {isBridgeProvider ? (
-            // Phase 08 — PLATFORM_BRIDGE: no credential input exists. The
+            // Phase 08 - PLATFORM_BRIDGE: no credential input exists. The
             // honest explainer replaces the API-key/secret field.
             <div className="grid gap-2" data-testid="connect-bridge-explainer">
               <p className="flex items-start gap-2 rounded-md border border-accent/30 bg-accent/10 p-3 text-xs leading-relaxed text-accent">
@@ -533,7 +533,7 @@ export function ConnectAccountDialog({
     </>
   );
 
-  /** Phase 08 — leave the pairing view: close (resets) THEN hand the fresh
+  /** Phase 08 - leave the pairing view: close (resets) THEN hand the fresh
    * account to the parent, so the detail drawer never covers the sheet. */
   const finishPairing = () => {
     const accountId = completed?.accountId ?? null;

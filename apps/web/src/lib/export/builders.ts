@@ -2,11 +2,11 @@ import { csvCell } from "@cosmoz/shared";
 import type { AnalyticsSuiteResponse, PerformanceSnapshot } from "@cosmoz/shared";
 
 /**
- * CSV export builders (Dashboard Customization Phase 08) — the ONE place
+ * CSV export builders (Dashboard Customization Phase 08) - the ONE place
  * every export payload is serialized. Pure (string in → CSV string out),
  * deterministic, and safe by construction: every cell goes through the
  * shared csvCell (RFC 4180 structural escaping + OWASP formula-injection
- * guard — the Phase 12 fix, applied to every new dataset from day one).
+ * guard - the Phase 12 fix, applied to every new dataset from day one).
  *
  * Documented conventions (spec §4A):
  *   - Stable, snake_case column headers; datasets are versionless documents.
@@ -14,7 +14,7 @@ import type { AnalyticsSuiteResponse, PerformanceSnapshot } from "@cosmoz/shared
  *   - Money columns carry the currency in a dedicated column; a suite
  *     spanning multiple currencies exports NO money values at all (same
  *     honesty as the UI: no misleading combined totals).
- *   - Numbers are exported as the server's decimal strings — no client-side
+ *   - Numbers are exported as the server's decimal strings - no client-side
  *     rounding, no locale formatting. Every metric here is REALIZED; the
  *     suite excludes open positions (stated in the dedicated
  *     `open_trades_excluded` meta row).
@@ -25,7 +25,7 @@ import type { AnalyticsSuiteResponse, PerformanceSnapshot } from "@cosmoz/shared
 
 type Suite = AnalyticsSuiteResponse;
 
-/** RFC 4180 line ending (CRLF) — one constant so tests pin the format. */
+/** RFC 4180 line ending (CRLF) - one constant so tests pin the format. */
 export const CSV_EOL = "\r\n";
 
 function row(cells: Array<string | number | null | undefined>): string {
@@ -33,7 +33,7 @@ function row(cells: Array<string | number | null | undefined>): string {
 }
 
 /**
- * Performance summary — the suite's KPI band + dataset meta. Explicit about
+ * Performance summary - the suite's KPI band + dataset meta. Explicit about
  * scope (descriptor, resolved window, currency) per spec §3.
  */
 export function suiteSummaryCsv(suite: Suite): string {
@@ -82,7 +82,7 @@ export function suiteSummaryCsv(suite: Suite): string {
   return lines.join(CSV_EOL) + CSV_EOL;
 }
 
-/** Strategy-level summary — the suite's per-strategy breakdown. */
+/** Strategy-level summary - the suite's per-strategy breakdown. */
 export function suiteStrategiesCsv(suite: Suite): string {
   const money = suite.meta.singleCurrency;
   const header = [
@@ -125,7 +125,7 @@ export function suiteStrategiesCsv(suite: Suite): string {
   return lines.join(CSV_EOL) + CSV_EOL;
 }
 
-/** Symbol-level summary — the suite's per-instrument breakdown. */
+/** Symbol-level summary - the suite's per-instrument breakdown. */
 export function suiteSymbolsCsv(suite: Suite): string {
   const money = suite.meta.singleCurrency;
   const header = [
@@ -158,7 +158,7 @@ export function suiteSymbolsCsv(suite: Suite): string {
   return lines.join(CSV_EOL) + CSV_EOL;
 }
 
-/** Report rollups (daily / weekly / monthly aggregates) — one file each. */
+/** Report rollups (daily / weekly / monthly aggregates) - one file each. */
 export function suiteReportsCsv(suite: Suite, bucket: "daily" | "weekly" | "monthly"): string {
   const money = suite.meta.singleCurrency;
   const header = [
@@ -187,7 +187,7 @@ export function suiteReportsCsv(suite: Suite, bucket: "daily" | "weekly" | "mont
   return lines.join(CSV_EOL) + CSV_EOL;
 }
 
-/** Account-level summary — balances are the provider-of-record values. */
+/** Account-level summary - balances are the provider-of-record values. */
 export function accountsCsv(
   accounts: Array<{
     name: string;
@@ -224,7 +224,7 @@ export function accountsCsv(
 }
 
 /**
- * One snapshot as CSV — the frozen capture (its own export type: values are
+ * One snapshot as CSV - the frozen capture (its own export type: values are
  * historical facts, never recomputed). Includes the full context block
  * (capture timestamp, resolved window, scope descriptor, schema version).
  */
@@ -255,7 +255,7 @@ export function snapshotCsv(snapshot: PerformanceSnapshot): string {
   return [...context, ...metrics].join(CSV_EOL) + CSV_EOL;
 }
 
-/** Browser download helper — safe filename + honest content type. */
+/** Browser download helper - safe filename + honest content type. */
 export function downloadTextFile(filename: string, content: string, mime = "text/csv"): void {
   const blob = new Blob([content], { type: `${mime};charset=utf-8;` });
   const url = URL.createObjectURL(blob);

@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 /**
- * Oryon chart color presets — curated candle-color themes (Symbol tab).
+ * Oryon chart color presets - curated candle-color themes (Symbol tab).
  *
  * A preset is a DOCUMENTED { up, down } pair applied to the EXISTING
  * appearance contract (OryonChartAppearance.upColor / downColor). It is
@@ -9,9 +9,9 @@ import { z } from "zod";
  * fields the TradingView-style picker writes, so presets ride the existing
  * per-panel chart-prefs persistence and honor "Theme" (null) clearing.
  *
- * PURE module — no storage, no React. The hex values are DISPLAY overrides
+ * PURE module - no storage, no React. The hex values are DISPLAY overrides
  * resolved directly by the chart engine (the engine accepts literal hex for
- * series colors — the "never hardcode hex" golden rule applies to THEME
+ * series colors - the "never hardcode hex" golden rule applies to THEME
  * token lookups in chart code; a user-chosen palette value is data, not a
  * theme lookup).
  */
@@ -27,7 +27,7 @@ export const oryonColorPresetSchema = z.object({
 
 export type OryonColorPreset = z.infer<typeof oryonColorPresetSchema>;
 
-/** Curated presets — first entry is the TradingView reference palette. */
+/** Curated presets - first entry is the TradingView reference palette. */
 export const ORYON_COLOR_PRESETS: readonly OryonColorPreset[] = [
   { id: "tradingview", name: "TradingView", up: "#089981", down: "#f23645" },
   { id: "classic", name: "Classic", up: "#26a69a", down: "#ef5350" },
@@ -38,7 +38,7 @@ export const ORYON_COLOR_PRESETS: readonly OryonColorPreset[] = [
   { id: "gold", name: "Gold", up: "#d4a017", down: "#5c6bc0" },
 ] as const;
 
-/** Finds a preset by id — null when unknown (never a silent fallback). */
+/** Finds a preset by id - null when unknown (never a silent fallback). */
 export function colorPresetById(id: string): OryonColorPreset | null {
   return ORYON_COLOR_PRESETS.find((preset) => preset.id === id) ?? null;
 }

@@ -3,18 +3,18 @@ import { z } from "zod";
 import { isoDateTimeSchema, uuidSchema } from "./primitives";
 
 /**
- * Application authentication contract (COSMOZ — FRONTEND AUTHENTICATION
+ * Application authentication contract (COSMOZ - FRONTEND AUTHENTICATION
  * SYSTEM spec §6, §7, §79, §80).
  *
  * Design rules:
  * - This is the CANONICAL auth contract shared between the Next.js frontend
  *   and the future NestJS backend. The MSW mock engine implements it exactly,
  *   so swapping the mock for NestJS requires zero frontend restructuring.
- * - Account status drives dedicated UI states (§7) — the frontend never
+ * - Account status drives dedicated UI states (§7) - the frontend never
  *   invents administrative reasons the backend does not send.
  * - Tokens: short-lived JWT-style access token (returned in the body, held
  *   in memory only) + rotating refresh token delivered as an HttpOnly
- *   cookie — the response NEVER carries the refresh token (§9, §10, §11).
+ *   cookie - the response NEVER carries the refresh token (§9, §10, §11).
  * - Security strings are centralized for i18n on the frontend side; the
  *   wire contract itself stays English-canonical.
  */
@@ -59,7 +59,7 @@ export const authUserSchema = z.object({
 });
 export type AuthUser = z.infer<typeof authUserSchema>;
 
-// ── Session metadata (§22, §23 — backend-provided only, no invented geo) ─────
+// ── Session metadata (§22, §23 - backend-provided only, no invented geo) ─────
 
 export const authSessionSchema = z.object({
   id: z.string().min(1),
@@ -144,7 +144,7 @@ export const loginResponseSchema = z.discriminatedUnion("outcome", [
 ]);
 export type LoginResponse = z.infer<typeof loginResponseSchema>;
 
-// ── MFA challenge (§25) — TOTP code or recovery code ─────────────────────────
+// ── MFA challenge (§25) - TOTP code or recovery code ─────────────────────────
 
 export const mfaChallengeInputSchema = z.object({
   challengeToken: z.string().min(10),
@@ -162,12 +162,12 @@ export const mfaRecoveryInputSchema = z.object({
 });
 export type MfaRecoveryInput = z.infer<typeof mfaRecoveryInputSchema>;
 
-// ── Refresh (§9, §10) — cookie-carried, never in the body ────────────────────
+// ── Refresh (§9, §10) - cookie-carried, never in the body ────────────────────
 
 export const refreshResponseSchema = authSuccessSchema;
 export type RefreshResponse = z.infer<typeof refreshResponseSchema>;
 
-// ── Current user (§9 P0.9 — GET /auth/me) ────────────────────────────────────
+// ── Current user (§9 P0.9 - GET /auth/me) ────────────────────────────────────
 
 export const authMeResponseSchema = z.object({
   user: authUserSchema,
@@ -207,7 +207,7 @@ export type ForgotPasswordInput = z.infer<typeof forgotPasswordInputSchema>;
 
 /**
  * Generic anti-enumeration shape: always `sent: true` for well-formed
- * requests — whether or not the account exists is never revealed (§18).
+ * requests - whether or not the account exists is never revealed (§18).
  */
 export const forgotPasswordResponseSchema = z.object({
   sent: z.literal(true),
@@ -230,7 +230,7 @@ export const resetPasswordResponseSchema = z.object({
 });
 export type ResetPasswordResponse = z.infer<typeof resetPasswordResponseSchema>;
 
-// ── Error payloads (§38 — normalized, non-sensitive) ─────────────────────────
+// ── Error payloads (§38 - normalized, non-sensitive) ─────────────────────────
 
 export const authErrorCodeSchema = z.enum([
   "INVALID_CREDENTIALS",

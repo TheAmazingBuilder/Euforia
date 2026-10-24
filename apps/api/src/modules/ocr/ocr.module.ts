@@ -5,33 +5,33 @@
  *   - the ingestion + orchestration layer for trade screenshots: upload
  *     validation, storage, recognition job lifecycle, human review and
  *     confirmation;
- *   - the NestJS half of the Nest↔FastAPI boundary — NestJS stays
+ *   - the NestJS half of the Nest↔FastAPI boundary - NestJS stays
  *     authoritative (auth, ownership, persistence, audit, rate limiting,
  *     user-facing errors) while the FastAPI sidecar owns ONLY specialized
  *     image/OCR processing (§4).
  *
- * What OCR is NOT (§59 — architecture review):
+ * What OCR is NOT (§59 - architecture review):
  *   - not a second Trade entity: Trading Core owns the canonical Trade. The
  *     ONLY sanctioned OCR→Trade path is the Phase 21 confirmation bridge
- *     (OcrTradeImportService), which CALLS TradesService.createTrade — the
- *     canonical application service — and never writes a Trade row itself
+ *     (OcrTradeImportService), which CALLS TradesService.createTrade - the
+ *     canonical application service - and never writes a Trade row itself
  *     (§77); deleting a recognition never deletes the imported Trade.
  *   - not a second storage system (storage lives behind one port; the
  *     local-disk adapter ships in this build, MinIO/S3 can replace it);
  *   - not a second queue (processing is request-scoped, the Accounts-sync
- *     house pattern — no BullMQ/Redis in this build);
+ *     house pattern - no BullMQ/Redis in this build);
  *   - not a second audit system (SecurityEventService shared port, §48);
  *   - not a monitoring system (Phase 17 owns observability).
  *
  * Dependency graph (acyclic):
- *   OcrModule → TradesModule (canonical Trade creation — Phase 21 bridge)
+ *   OcrModule → TradesModule (canonical Trade creation - Phase 21 bridge)
  *             → AccountsModule (persisted default account resolution)
  *             → SecurityEventModule (shared event port)
  *             → PrismaModule (global), ConfigModule (global)
  *   Shared infrastructure: JwtAuthGuard, ThrottlerGuard, ZodValidationPipe,
  *   shared contracts barrel. The engine is resolved by factory:
  *     FastAPI sidecar (when OCR_SERVICE_URL + token are configured)
- *     else deterministic mock (when allowed — §57: never in production)
+ *     else deterministic mock (when allowed - §57: never in production)
  *     else an explicit unavailable adapter → OCR_UNAVAILABLE (honest
  *     degradation, never a fake result).
  */

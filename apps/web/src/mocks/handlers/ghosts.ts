@@ -9,11 +9,11 @@ import { mockStore } from "@/mocks/store";
 import { endpoint, latency, parseBody, pathParam, readJson, toErrorResponse } from "./utils";
 
 /**
- * Ghost trades domain (Registre des Regrets) — 10-second capture + deferred
+ * Ghost trades domain (Registre des Regrets) - 10-second capture + deferred
  * settlement feeding Discipline Saved / Hesitation Cost.
  */
 export const ghostHandlers = [
-  // GET /skipped-trades — list (feed of regrets)
+  // GET /skipped-trades - list (feed of regrets)
   http.get(endpoint(apiPaths.skippedTrades), async () => {
     await latency();
     try {
@@ -23,7 +23,7 @@ export const ghostHandlers = [
     }
   }),
 
-  // POST /skipped-trades — 10-second ghost capture
+  // POST /skipped-trades - 10-second ghost capture
   http.post(endpoint(apiPaths.skippedTrades), async ({ request }) => {
     await latency();
     try {
@@ -34,7 +34,7 @@ export const ghostHandlers = [
     }
   }),
 
-  // PATCH /skipped-trades/:id/settle — would have won / lost / unknown (+ R)
+  // PATCH /skipped-trades/:id/settle - would have won / lost / unknown (+ R)
   http.patch(endpoint(apiPaths.skippedTradeSettle(":skippedId")), async ({ request, params }) => {
     await latency();
     try {

@@ -6,10 +6,10 @@ import { mockStore } from "@/mocks/store";
 import { endpoint, latency, pathParam, parseBody, readJson, toErrorResponse } from "./utils";
 
 /**
- * Economic calendar — GET /eco-events.
+ * Economic calendar - GET /eco-events.
  *
  * Toolbar/eco bridge: this surface now PASSES THROUGH to the Next server
- * route (app/api/eco-events) — the REAL ForexFactory provider answers
+ * route (app/api/eco-events) - the REAL ForexFactory provider answers
  * behind the existing port, with the deterministic fixtures as the
  * honest fallback when the provider is unreachable. MSW stops mocking
  * this ONE route: a browser-side fetch of the real feed is impossible
@@ -22,7 +22,7 @@ export const ecoHandlers = [
 
   // ── Calendar module upgrades: trading overlay / day-offs / eco blockers ──
 
-  // GET /calendar-view?from&to — day rows + aggregates (days OFF excluded)
+  // GET /calendar-view?from&to - day rows + aggregates (days OFF excluded)
   http.get(endpoint(apiPaths.calendarView), async ({ request }) => {
     await latency();
     try {
@@ -38,7 +38,7 @@ export const ecoHandlers = [
     }
   }),
 
-  // GET /calendar-blocks — marked days
+  // GET /calendar-blocks - marked days
   http.get(endpoint(apiPaths.calendarBlocks), async () => {
     await latency();
     try {
@@ -48,7 +48,7 @@ export const ecoHandlers = [
     }
   }),
 
-  // PUT /calendar-blocks — mark a day off / news blocked
+  // PUT /calendar-blocks - mark a day off / news blocked
   http.put(endpoint(apiPaths.calendarBlocks), async ({ request }) => {
     await latency();
     try {
@@ -59,7 +59,7 @@ export const ecoHandlers = [
     }
   }),
 
-  // DELETE /calendar-blocks/:date — unmark a day
+  // DELETE /calendar-blocks/:date - unmark a day
   http.delete(endpoint(apiPaths.calendarBlock(":date")), async ({ params }) => {
     await latency();
     try {
@@ -69,7 +69,7 @@ export const ecoHandlers = [
     }
   }),
 
-  // POST /calendar-blocks/import-eco — HIGH-impact days ahead → NEWS blocks
+  // POST /calendar-blocks/import-eco - HIGH-impact days ahead → NEWS blocks
   http.post(endpoint(apiPaths.calendarBlocksImportEco), async () => {
     await latency();
     try {

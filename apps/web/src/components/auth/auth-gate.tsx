@@ -14,12 +14,12 @@ import { API_MOCKED } from "@/lib/api/mode";
 import { useDict } from "@/i18n/i18n-provider";
 
 /**
- * Centralized protected-route mechanism (spec §34, §36, §7) — applied ONCE
+ * Centralized protected-route mechanism (spec §34, §36, §7) - applied ONCE
  * at the (app) layout, never per page. Handles the full state machine:
  * initializing (splash), unauthenticated (redirect with returnTo), and the
  * account-status gates (PENDING_VERIFICATION / SUSPENDED / DEACTIVATED).
  *
- * This is UX protection only — the backend remains the security boundary
+ * This is UX protection only - the backend remains the security boundary
  * (§32): hiding a page never equals enforcing authorization.
  */
 

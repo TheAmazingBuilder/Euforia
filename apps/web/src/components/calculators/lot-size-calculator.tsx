@@ -43,10 +43,10 @@ import {
 } from "./calculator-shared";
 
 /**
- * Lot Size Calculator (TOOLS section) — risk-budget position sizing with the
+ * Lot Size Calculator (TOOLS section) - risk-budget position sizing with the
  * broker-step model: balance × risk% → size floored to the volume step, with
  * the full breakdown (§16) and an explicit status (§17, nothing clamps
- * silently). Pure client math through calculator-model + shared risk utils —
+ * silently). Pure client math through calculator-model + shared risk utils -
  * no backend, no execution.
  */
 
@@ -114,7 +114,7 @@ export function LotSizeCalculator() {
   const digits = priceDigits(values);
   const unitLabel = Number(values.contractSize) >= 100 ? T.result.lotsUnit : T.result.unitsUnit;
 
-  // Live derivation — validation errors surface per-field once the field has
+  // Live derivation - validation errors surface per-field once the field has
   // content or a calculate attempt happened (no aggressive empty-state noise).
   const derived = React.useMemo(() => {
     const validation = validateLotSizeForm(values);
@@ -138,7 +138,7 @@ export function LotSizeCalculator() {
   const copyPayload = React.useMemo(() => {
     if (!result) return "";
     const lines = [
-      `Lot Size — ${isCustom ? "Custom" : values.instrument} (${values.direction === "BUY" ? "Long" : "Short"})`,
+      `Lot Size - ${isCustom ? "Custom" : values.instrument} (${values.direction === "BUY" ? "Long" : "Short"})`,
       `Balance ${formatMoney(values.balance, currency)} · Risk ${formatPercent(Number(values.riskPercent) / 100, 2)} (${formatMoney(result.riskAmount, currency)})`,
       `Entry ${formatPrice(values.entryPrice, digits)} · Stop ${formatPrice(values.stopLoss, digits)}`,
       `Position size: ${result.positionSize} ${unitLabel}`,
@@ -214,7 +214,7 @@ export function LotSizeCalculator() {
                   {INSTRUMENT_PRESETS.map((preset) => (
                     <SelectItem key={preset.symbol} value={preset.symbol}>
                       <span className="font-mono">{preset.symbol}</span>
-                      <span className="text-muted-foreground"> — {preset.name}</span>
+                      <span className="text-muted-foreground"> - {preset.name}</span>
                     </SelectItem>
                   ))}
                   <SelectSeparator />
@@ -246,7 +246,7 @@ export function LotSizeCalculator() {
             </div>
           </div>
 
-          {/* Direction — segmented control (sizer pattern) */}
+          {/* Direction - segmented control (sizer pattern) */}
           <div className="space-y-1.5">
             <span className="text-xs font-medium text-muted-foreground">{T.form.direction}</span>
             <div className="grid grid-cols-2 gap-2" role="group" aria-label={T.form.direction}>
@@ -342,7 +342,7 @@ export function LotSizeCalculator() {
             />
           </div>
 
-          {/* Advanced parameters — collapsible */}
+          {/* Advanced parameters - collapsible */}
           <div className="rounded-lg border border-border">
             <button
               type="button"
@@ -401,7 +401,7 @@ export function LotSizeCalculator() {
             ) : null}
           </div>
 
-          {/* Calculate — the explicit sizing step; afterwards results stay live */}
+          {/* Calculate - the explicit sizing step; afterwards results stay live */}
           <button
             type="button"
             onClick={() => setAttempted(true)}
@@ -415,7 +415,7 @@ export function LotSizeCalculator() {
 
       {/* ── Results ────────────────────────────────────────────────────── */}
       <div className="flex flex-col gap-5 lg:col-span-7">
-        {/* Hero result — announced politely to screen readers */}
+        {/* Hero result - announced politely to screen readers */}
         <section
           className="rounded-xl border border-border bg-surface"
           data-testid="lotsize-result"
@@ -460,7 +460,7 @@ export function LotSizeCalculator() {
                   </p>
                 ) : null}
 
-                {/* Stat band — the ruled 12-column ledger */}
+                {/* Stat band - the ruled 12-column ledger */}
                 <div className="stat-strip">
                   <div className="stat-cell stat-kpi">
                     <p className="ledger-label">{T.result.riskAmount}</p>
@@ -498,7 +498,7 @@ export function LotSizeCalculator() {
                         ) : null}
                       </>
                     ) : (
-                      <p className="mt-1.5 font-mono text-xl tabular-nums text-muted-foreground">—</p>
+                      <p className="mt-1.5 font-mono text-xl tabular-nums text-muted-foreground">-</p>
                     )}
                   </div>
                 </div>
@@ -513,19 +513,19 @@ export function LotSizeCalculator() {
           </div>
         </section>
 
-        {/* Breakdown — how the result was obtained */}
+        {/* Breakdown - how the result was obtained */}
         {result ? (
           <ToolCard title={T.breakdown.title}>
             <BreakdownLedger rows={breakdownRows} ariaLabel={T.breakdown.title} />
             {equivalence ? (
               <p className="mt-3 text-[11px] text-muted-foreground">
-                {T.breakdown.equivalent} — {equivalence}
+                {T.breakdown.equivalent} - {equivalence}
               </p>
             ) : null}
           </ToolCard>
         ) : null}
 
-        {/* Disclaimer — compact, factual */}
+        {/* Disclaimer - compact, factual */}
         <p className="flex items-start gap-2 text-[11px] leading-relaxed text-muted-foreground">
           <Info className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
           {T.disclaimer}

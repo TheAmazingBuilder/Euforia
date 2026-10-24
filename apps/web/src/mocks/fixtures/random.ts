@@ -1,6 +1,6 @@
 /**
  * Tiny deterministic PRNG utilities for the seeded fixture generator.
- * mulberry32 — 32-bit state, good enough for fixture realism, fully
+ * mulberry32 - 32-bit state, good enough for fixture realism, fully
  * reproducible: same seed → same data on every reload (no Math.random).
  */
 

@@ -44,14 +44,14 @@ import { openTradeModal } from "@/lib/hooks/use-trade-modal";
 
 /** Fresh-account window: an account created less than 48 hours ago is
  * greeted as a first arrival ("Welcome") instead of a returning trader
- * ("Welcome back"). Derived from the REAL signup timestamp — no fake
+ * ("Welcome back"). Derived from the REAL signup timestamp - no fake
  * persistence, self-expires. */
 const FRESH_ACCOUNT_WINDOW_MS = 48 * 60 * 60 * 1000;
 
 /** Widget types fed by the dashboard-level analytics-suite fetch (filter-
- * aware — Phase 05 §10 closed the gap where the comparison widgets fetched
+ * aware - Phase 05 §10 closed the gap where the comparison widgets fetched
  * their own ALL window and ignored the global filter context). METRICS_CARD
- * manages its OWN per-period fetches — it is deliberately NOT in this list
+ * manages its OWN per-period fetches - it is deliberately NOT in this list
  * (no double fetch, §14). */
 const SUITE_WIDGET_TYPES = new Set([
   "STRATEGY_COMPARE",
@@ -66,7 +66,7 @@ const SUITE_WIDGET_TYPES = new Set([
 function useDashboardGreeting(): string {
   const { user } = useAuth();
   const name = user?.name?.trim() || "trader";
-  // Captured once (lazy-init pattern shared with notification-center) — a 48 h
+  // Captured once (lazy-init pattern shared with notification-center) - a 48 h
   // window makes per-render clock drift irrelevant, no ticker needed.
   const [nowMs] = React.useState(() => Date.now());
   const createdAt = user?.createdAt ? new Date(user.createdAt).getTime() : Number.NaN;
@@ -136,7 +136,7 @@ function EmptyDashboard() {
         </svg>
         <h2 className="mt-6 font-heading text-xl font-semibold">Your record starts here</h2>
         <p className="mt-2 max-w-sm text-sm leading-relaxed text-muted-foreground">
-          Every trade you log becomes an entry in your book of record — and every decision
+          Every trade you log becomes an entry in your book of record - and every decision
           gets graded by your coach. Capture your first execution to open the ledger.
         </p>
         <Button className="mt-6" onClick={() => openTradeModal()}>
@@ -166,7 +166,7 @@ function ErrorDashboard({ onRetry }: { onRetry: () => void }) {
   );
 }
 
-/** Confirmation intents — one ConfirmDialog instance serves every flow. */
+/** Confirmation intents - one ConfirmDialog instance serves every flow. */
 type ConfirmIntent =
   | { kind: "cancelEdit" }
   | { kind: "resetDraft" }
@@ -179,7 +179,7 @@ interface DashboardViewProps {
 }
 
 /**
- * Dashboard (Phase 01 — customizable workspace): KPI band → a draggable,
+ * Dashboard (Phase 01 - customizable workspace): KPI band → a draggable,
  * resizable, hide-able widget grid driven by saved layouts. Layout
  * configuration lives in the `dashboard` preferences domain (PATCH
  * /me/preferences/dashboard) and is edited as an explicit draft
@@ -198,7 +198,7 @@ export function DashboardView({ description }: DashboardViewProps) {
   const { data: prefs } = usePreferences();
   const compact = (prefs?.appearance.density ?? "COMFORTABLE") === "COMPACT";
 
-  // Catalogs for the filter bar (same source as the Analytics page — the
+  // Catalogs for the filter bar (same source as the Analytics page - the
   // user's OWN accounts/instruments/strategies, never a fabricated list).
   const accounts = useAccounts();
   const instruments = useInstruments();
@@ -209,12 +209,12 @@ export function DashboardView({ description }: DashboardViewProps) {
   const [confirm, setConfirm] = React.useState<ConfirmIntent | null>(null);
   const [settingsInstanceId, setSettingsInstanceId] = React.useState<string | null>(null);
 
-  // The analytics-suite aggregates for the comparison widgets — fetched
+  // The analytics-suite aggregates for the comparison widgets - fetched
   // with the AUTHORITATIVE global filter context (Phase 03 §7: one shared
   // query per filter combination; the filter set IS the query key, so a
   // change refetches and stale responses cannot cross key boundaries).
-  // METRICS_CARD manages its OWN per-period fetches — it is deliberately
-  // NOT in this list (no double fetch, §14) — it merges the global filters
+  // METRICS_CARD manages its OWN per-period fetches - it is deliberately
+  // NOT in this list (no double fetch, §14) - it merges the global filters
   // itself.
   const displayedTypes = React.useMemo(
     () => new Set(c.displayedLayout.widgets.filter((widget) => widget.visible).map((widget) => widget.type)),
@@ -239,7 +239,7 @@ export function DashboardView({ description }: DashboardViewProps) {
     void queryClient.refetchQueries({ type: "active" });
   }, [queryClient]);
 
-  // Phase 09 — the bundle is memoized so suite-fed widgets and the grid
+  // Phase 09 - the bundle is memoized so suite-fed widgets and the grid
   // receive a STABLE object + refetch identity across unrelated re-renders
   // (filter-bar state churn no longer rebuilds the widget-data contract).
   const widgetData: DashboardWidgetData | null = React.useMemo(
@@ -385,7 +385,7 @@ export function DashboardView({ description }: DashboardViewProps) {
       {editing && (
         <>
           <p className="text-xs text-muted-foreground" data-testid="dashboard-edit-hint">
-            Drag a widget by its grip, resize it from its edges — or use the tools on each
+            Drag a widget by its grip, resize it from its edges - or use the tools on each
             card (the gear opens a widget&apos;s own settings). Nothing is saved until you press
             Save.
           </p>
@@ -403,7 +403,7 @@ export function DashboardView({ description }: DashboardViewProps) {
         </>
       )}
 
-      {/* Phase 03 — the global filter bar: ONE authoritative filter context
+      {/* Phase 03 - the global filter bar: ONE authoritative filter context
           above the grid. Visible in view AND edit mode (filters are
           orthogonal to layout editing, §11). */}
       {!isError && (
@@ -437,7 +437,7 @@ export function DashboardView({ description }: DashboardViewProps) {
         <EmptyDashboard />
       ) : contentReady && widgetData ? (
         <>
-          {/* The KPI band stays fixed above the customizable grid — the
+          {/* The KPI band stays fixed above the customizable grid - the
               designed ledger header is not a Phase 01 widget. */}
           <KpiRow overview={overview.data!} />
           <DashboardGrid

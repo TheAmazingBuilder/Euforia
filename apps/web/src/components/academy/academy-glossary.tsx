@@ -13,7 +13,7 @@ import { useAcademyGlossary, useAcademySearch, useToggleBookmark } from "@/lib/a
 import { useI18n } from "@/i18n/i18n-provider";
 
 /**
- * Glossary panel — the searchable vocabulary (spec §19, §31). Server-side
+ * Glossary panel - the searchable vocabulary (spec §19, §31). Server-side
  * search across term + simple + professional + related; each entry shows the
  * layered explanation (SIMPLE / PROFESSIONAL / EXAMPLE / RELATED) and can be
  * bookmarked. A bookmarked-term strip appears when ?term= deep-links in.

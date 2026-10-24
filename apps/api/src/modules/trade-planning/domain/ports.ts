@@ -1,7 +1,7 @@
 /**
  * Trade Planning domain ports (Phase 5 §15/§16/§22).
  *
- * Pure TypeScript interfaces the DOMAIN depends on — implementations live in
+ * Pure TypeScript interfaces the DOMAIN depends on - implementations live in
  * the module's infrastructure adapters and are wired by the application layer.
  * The domain imports NO NestJS, NO Prisma, NO HTTP: the risk engine consumes
  * plain data + these port TYPES, which keeps §59's dependency direction
@@ -12,7 +12,7 @@ import { Decimal } from "decimal.js";
 
 /**
  * Provider/instrument parameters the risk engine needs (§15). Values come
- * from an authoritative source (catalog table / provider configuration) —
+ * from an authoritative source (catalog table / provider configuration) -
  * NEVER from constants inside business logic.
  */
 export interface InstrumentSpecification {
@@ -26,13 +26,13 @@ export interface InstrumentSpecification {
   pipSize: Decimal;
   /** Units per lot/contract (e.g. 100000 EURUSD, 100 XAUUSD, 1 indices). */
   contractSize: Decimal;
-  /** Broker/provider volume constraints — null = unconstrained. */
+  /** Broker/provider volume constraints - null = unconstrained. */
   minVolume: Decimal | null;
   maxVolume: Decimal | null;
   volumeStep: Decimal | null;
 }
 
-/** Resolution seam for instrument specifications (§15 — injectable). */
+/** Resolution seam for instrument specifications (§15 - injectable). */
 export interface InstrumentSpecificationProvider {
   /** Exact symbol match; null when the catalog has no active row. */
   findSpecification(symbol: string): Promise<InstrumentSpecification | null>;
@@ -50,7 +50,7 @@ export interface InstrumentSpecificationProvider {
  * Currency conversion seam (§16). The architecture makes the dependency
  * explicit: when a plan's instrument quote currency differs from the account
  * currency, monetary risk requires a rate. Implementations must NEVER
- * fabricate rates — returning null surfaces CURRENCY_CONVERSION_UNAVAILABLE
+ * fabricate rates - returning null surfaces CURRENCY_CONVERSION_UNAVAILABLE
  * instead of a fake number.
  */
 export interface FxRateProvider {
@@ -63,7 +63,7 @@ export interface FxRateProvider {
 }
 
 /**
- * Account-level risk limits seam (§22). Phase 5 invents NO portfolio rules —
+ * Account-level risk limits seam (§22). Phase 5 invents NO portfolio rules -
  * the default provider returns no limits; a future Portfolio/Account Risk
  * bounded context plugs in here without changing the planner.
  */

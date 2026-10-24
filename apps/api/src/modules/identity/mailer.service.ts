@@ -2,10 +2,10 @@
  * Transactional email infrastructure (Phase 2 mandate §46).
  *
  * A MINIMAL port: exactly three message kinds (verification, password reset,
- * email change). The transport is infrastructure behind this service —
+ * email change). The transport is infrastructure behind this service -
  * the sandbox/dev transport renders the email to the structured log
  * (including the action link) so flows are testable end-to-end without a
- * provider; a provider adapter (SMTP/Resend/SES — Phase 0 open question #1)
+ * provider; a provider adapter (SMTP/Resend/SES - Phase 0 open question #1)
  * plugs in by implementing MailTransport. No marketing email system.
  */
 import { Inject, Injectable, Optional } from "@nestjs/common";
@@ -29,7 +29,7 @@ export interface MailTransport {
   send(message: MailMessage): Promise<void>;
 }
 
-/** Operational delivery record (Phase 17 telemetry) — NO recipient, NO URL:
+/** Operational delivery record (Phase 17 telemetry) - NO recipient, NO URL:
  * only the message kind and the outcome, data-minimal by design (§18). */
 export interface MailDeliveryRecord {
   id: string;
@@ -41,15 +41,15 @@ export interface MailDeliveryRecord {
 export interface MailDeliveryTelemetry {
   sent: number;
   failed: number;
-  /** Latest deliveries first — bounded ring (50). */
+  /** Latest deliveries first - bounded ring (50). */
   recent: MailDeliveryRecord[];
 }
 
-/** Dev/sandbox transport: structured log output — honest and inspectable.
+/** Dev/sandbox transport: structured log output - honest and inspectable.
  *
  * SECURITY (finalization §46/§51): the action link embeds a one-time token.
  * In development the link is logged verbatim so flows are testable without
- * a mail provider; in PRODUCTION the link is ALWAYS redacted — a real
+ * a mail provider; in PRODUCTION the link is ALWAYS redacted - a real
  * transport (SMTP/Resend/SES) must be plugged via `useTransport`, and a
  * token must never land in persistent logs.
  */
@@ -67,7 +67,7 @@ export class ConsoleMailTransport implements MailTransport {
           kind: message.kind,
           to: message.to,
           subject: message.subject,
-          actionUrl: this.redactActionUrl ? "[REDACTED — configure a real mail transport for production]" : message.actionUrl,
+          actionUrl: this.redactActionUrl ? "[REDACTED - configure a real mail transport for production]" : message.actionUrl,
           expiresIn: message.expiresIn,
         },
       },
@@ -79,7 +79,7 @@ export class ConsoleMailTransport implements MailTransport {
 @Injectable()
 export class MailerService {
   private transport: MailTransport;
-  /** Phase 17 — bounded operational telemetry (never user content). */
+  /** Phase 17 - bounded operational telemetry (never user content). */
   private readonly deliveries: MailDeliveryRecord[] = [];
   private sentCount = 0;
   private failedCount = 0;
@@ -88,7 +88,7 @@ export class MailerService {
     @Inject(APP_CONFIG) private readonly config: AppConfig,
     @Optional() @Inject(ROOT_LOGGER) private readonly logger?: RootLogger,
   ) {
-    // Never log one-time email tokens in production (§46 — tokens are
+    // Never log one-time email tokens in production (§46 - tokens are
     // redacted); the dev transport keeps the link for local testability.
     this.transport = new ConsoleMailTransport(this.logger ?? this.fallbackLogger(), {
       redactActionUrl: this.config.isProduction,
@@ -159,7 +159,7 @@ export class MailerService {
   }
 
   private fallbackLogger(): RootLogger {
-    // Logger may be absent in exotic boot orders — never lose the mail.
+    // Logger may be absent in exotic boot orders - never lose the mail.
     const sink = (obj: object, msg: string) => console.info(msg, JSON.stringify(obj));
     return { info: sink, error: sink, warn: sink, debug: sink } as unknown as RootLogger;
   }

@@ -29,7 +29,7 @@ import {
 
 /**
  * Only same-origin, relative destinations survive returnTo validation
- * (spec §35 — open-redirect prevention).
+ * (spec §35 - open-redirect prevention).
  */
 function safeReturnTo(raw: string | null): string {
   if (!raw) return "/";
@@ -77,7 +77,7 @@ export function LoginForm() {
   const mfaChallenge = useMfaChallengeMutation();
   const mfaRecovery = useMfaRecoveryMutation();
 
-  // Canonical mode check (mode.ts) — the zero-env canonical preview is
+  // Canonical mode check (mode.ts) - the zero-env canonical preview is
   // mocked, so the demo affordances must be visible there too.
   const mocked = API_MOCKED;
 
@@ -126,7 +126,7 @@ export function LoginForm() {
   }
 
   function onAuthenticated(success: AuthSuccess) {
-    // Hold the short-lived access token in memory ONLY (spec §9, §11) —
+    // Hold the short-lived access token in memory ONLY (spec §9, §11) -
     // the refresh credential lives in the HttpOnly cookie the backend set.
     setAccessToken(success.accessToken, success.accessTokenExpiresAt);
     setAuthenticated(success.user, success.session);
@@ -186,7 +186,7 @@ export function LoginForm() {
   }
 
   async function fillDemo() {
-    // Dynamic import — engines stay out of the initial bundle (mock-provider
+    // Dynamic import - engines stay out of the initial bundle (mock-provider
     // code-splits them); the constant is a seeded demo value, not a secret.
     const { DEMO_PASSWORD } = await import("@/mocks/security-engine");
     setEmail("trader@cosmoz.app");
@@ -364,7 +364,7 @@ export function LoginForm() {
         </Link>
       </footer>
 
-      {/* Mocked-environment affordance — seeded demo credentials (§49: no fake
+      {/* Mocked-environment affordance - seeded demo credentials (§49: no fake
           data presented as real; this panel is explicit about being a demo). */}
       {mocked && step === "credentials" ? (
         <div

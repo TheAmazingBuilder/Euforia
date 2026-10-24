@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 };
 
 /**
- * /tools/compounding — Interest (TOOLS section). Standard module header
+ * /tools/compounding - Interest (TOOLS section). Standard module header
  * (title + description, same typography as every other module) over the
  * live projection: inputs → summary stat band → growth chart →
  * period-by-period results. Frontend-only deterministic math through the

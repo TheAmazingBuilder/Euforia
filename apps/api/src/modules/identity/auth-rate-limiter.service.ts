@@ -1,7 +1,7 @@
 /**
  * Per-vector authentication rate limiting (Phase 2 mandate §36).
  *
- * Sliding-window counters keyed by `scope:email` — matching the mock
+ * Sliding-window counters keyed by `scope:email` - matching the mock
  * engine's vectors exactly (the frontend declares these limits in the
  * Security center and its error copy expects 429 + Retry-After):
  *

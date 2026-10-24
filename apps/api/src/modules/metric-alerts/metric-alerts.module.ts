@@ -1,22 +1,22 @@
 /**
- * Metric alerts bounded context (Dashboard Customization Phase 07) —
+ * Metric alerts bounded context (Dashboard Customization Phase 07) -
  * user-defined threshold monitoring over the analytics-suite summary and
  * the goal engine, with triggered events delivered through the EXISTING
- * discipline alert inbox (type METRIC_THRESHOLD — one notification system,
+ * discipline alert inbox (type METRIC_THRESHOLD - one notification system,
  * spec §2).
  *
  * Dependency graph (acyclic):
- *   MetricAlertsModule → MetricAlertRepository (own Prisma boundary —
+ *   MetricAlertsModule → MetricAlertRepository (own Prisma boundary -
  *                        metricAlertRuleRow)
- *                      → AnalyticsModule (the authoritative suite — the
+ *                      → AnalyticsModule (the authoritative suite - the
  *                        alert engine computes no financial math)
- *                      → ReviewModule (GoalService — the only goal-status
+ *                      → ReviewModule (GoalService - the only goal-status
  *                        authority, spec §10)
- *                      → DisciplineModule (inbox publish + event reads —
+ *                      → DisciplineModule (inbox publish + event reads -
  *                        the alert-row owner, §26)
  *                      → AccountsModule / PlaybookModule (scope-reference
  *                        validation on write)
- *   Rule evaluation subscribes to the `trade.closed` domain event —
+ *   Rule evaluation subscribes to the `trade.closed` domain event -
  *   Trades never imports this module (no cycle).
  *
  * Security: routes are all authenticated (global guard), ownership is

@@ -1,5 +1,5 @@
 /**
- * Trade Review bounded context (Phase 6) — the post-trade review workflow.
+ * Trade Review bounded context (Phase 6) - the post-trade review workflow.
  *
  * Core domain (Phase 0 §I): flat application-service + one-repository +
  * thin-controllers discipline, matching the established contexts.
@@ -7,7 +7,7 @@
  * Reuse over reinvention (§5): error taxonomy, ZodValidationPipe, auth guard
  * + principal decorator come from the Foundation / Identity; the canonical
  * Trade is consumed through Trading Core's PUBLIC contract (TradingRepository,
- * read-only) and the origin plan through Trade Planning's public repository —
+ * read-only) and the origin plan through Trade Planning's public repository -
  * NO second trade/plan/tag/attachment/audit system is created here (§78).
  * Instrument specs come from the Trade Planning catalog port (pip deviations).
  *
@@ -38,7 +38,7 @@ import { TradeReviewService } from "./trade-review.service";
   providers: [TradeReviewRepository, TradeReviewService],
   // Phase 7 (additive): the Playbook context reads review verdicts
   // (playbookMatch) through this public contract for the live compliance
-  // read model — read-only, no ownership transfer (Phase 4/6 precedent).
+  // read model - read-only, no ownership transfer (Phase 4/6 precedent).
   exports: [TradeReviewRepository],
 })
 export class TradeReviewModule {}

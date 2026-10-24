@@ -16,12 +16,12 @@ import { mockStore } from "@/mocks/store";
 import { endpoint, latency, parseBody, pathParam, readJson, toErrorResponse } from "./utils";
 
 /**
- * Professional Playbook domain — strategy CRUD (with server-side versioning),
+ * Professional Playbook domain - strategy CRUD (with server-side versioning),
  * setups, checklist templates, operating rules, duplicate, template library
  * and the ONE aggregate overview endpoint for the module.
  */
 export const playbookHandlers = [
-  // GET /playbook/overview — counts, recency, performance summary, health.
+  // GET /playbook/overview - counts, recency, performance summary, health.
   http.get(endpoint(apiPaths.playbookOverview), async () => {
     await latency();
     try {
@@ -31,7 +31,7 @@ export const playbookHandlers = [
     }
   }),
 
-  // GET /strategies/stats — per-strategy aggregates + decay banner target.
+  // GET /strategies/stats - per-strategy aggregates + decay banner target.
   // Registered before GET /strategies for clarity; paths match exactly anyway.
   http.get(endpoint(apiPaths.strategyStats), async () => {
     await latency();
@@ -42,7 +42,7 @@ export const playbookHandlers = [
     }
   }),
 
-  // GET /playbook/templates — starting-point library (never performance claims).
+  // GET /playbook/templates - starting-point library (never performance claims).
   http.get(endpoint(apiPaths.playbookTemplates), async () => {
     await latency();
     try {
@@ -52,7 +52,7 @@ export const playbookHandlers = [
     }
   }),
 
-  // POST /playbook/templates/instantiate — DRAFT strategy from a template.
+  // POST /playbook/templates/instantiate - DRAFT strategy from a template.
   http.post(endpoint(apiPaths.playbookTemplateInstantiate), async ({ request }) => {
     await latency();
     try {
@@ -63,7 +63,7 @@ export const playbookHandlers = [
     }
   }),
 
-  // POST /strategies/:id/duplicate — fresh DRAFT copy (quick action §5).
+  // POST /strategies/:id/duplicate - fresh DRAFT copy (quick action §5).
   http.post(endpoint(apiPaths.strategyDuplicate(":strategyId")), async ({ params }) => {
     await latency();
     try {
@@ -76,7 +76,7 @@ export const playbookHandlers = [
     }
   }),
 
-  // POST /strategies — create a playbook entry
+  // POST /strategies - create a playbook entry
   http.post(endpoint(apiPaths.strategies), async ({ request }) => {
     await latency();
     try {
@@ -87,7 +87,7 @@ export const playbookHandlers = [
     }
   }),
 
-  // PATCH /strategies/:id — edit a playbook entry (server bumps the version)
+  // PATCH /strategies/:id - edit a playbook entry (server bumps the version)
   http.patch(endpoint(apiPaths.strategy(":strategyId")), async ({ request, params }) => {
     await latency();
     try {
@@ -100,7 +100,7 @@ export const playbookHandlers = [
     }
   }),
 
-  // DELETE /strategies/:id — 409 while trades are attached (pause instead)
+  // DELETE /strategies/:id - 409 while trades are attached (pause instead)
   http.delete(endpoint(apiPaths.strategy(":strategyId")), async ({ params }) => {
     await latency();
     try {
@@ -120,7 +120,7 @@ export const playbookHandlers = [
     }
   }),
 
-  // GET /setups/insights — light 90d backtest + market heuristics per setup.
+  // GET /setups/insights - light 90d backtest + market heuristics per setup.
   // Registered BEFORE /setups/:id-style paths; /setups/insights is exact anyway.
   http.get(endpoint(apiPaths.setupInsights), async () => {
     await latency();
@@ -131,7 +131,7 @@ export const playbookHandlers = [
     }
   }),
 
-  // GET /strategies/:id/versions — history for the visual diff.
+  // GET /strategies/:id/versions - history for the visual diff.
   http.get(endpoint(apiPaths.strategyVersions(":strategyId")), async ({ params }) => {
     await latency();
     try {
@@ -205,7 +205,7 @@ export const playbookHandlers = [
     }
   }),
 
-  // ── Operating rules (§24) — distinct from the discipline Rules Engine ─────
+  // ── Operating rules (§24) - distinct from the discipline Rules Engine ─────
   http.get(endpoint(apiPaths.playbookRules), async () => {
     await latency();
     try {

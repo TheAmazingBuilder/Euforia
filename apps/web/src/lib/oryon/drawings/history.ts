@@ -1,9 +1,9 @@
 /**
- * Oryon drawing history — multi-level undo/redo (RF-04: ≥ 50 levels).
+ * Oryon drawing history - multi-level undo/redo (RF-04: ≥ 50 levels).
  *
  * Snapshot-based: a drawing collection is tiny (≤ 500 objects of a few
  * dozen bytes), so immutable full snapshots are simpler and safer than
- * inverse patches — undo/redo can never drift into an invalid state.
+ * inverse patches - undo/redo can never drift into an invalid state.
  *
  * Batch discipline (spec §12): a pointer drag records ONE entry. The
  * interaction controller opens a batch before the first mutation and
@@ -23,27 +23,27 @@ export class DrawingHistory<T> {
     this.redoStack = []; // New mutations clear the obsolete redo branch.
   }
 
-  /** Opens a batch — capture the pre-mutation snapshot. */
+  /** Opens a batch - capture the pre-mutation snapshot. */
   beginBatch(preState: T): void {
     this.batchPreState = preState;
     this.batchDepth += 1;
   }
 
   /**
-   * Closes a batch — records the pre-state as one undo entry only when the
+   * Closes a batch - records the pre-state as one undo entry only when the
    * state actually changed (reference compare by the caller's own means:
    * the store passes its immutable array reference, so changed content
    * always means a different reference).
    */
   endBatch(postState: T): void {
     this.batchDepth = Math.max(0, this.batchDepth - 1);
-    if (this.batchDepth > 0) return; // Nested batch — outermost one commits.
+    if (this.batchDepth > 0) return; // Nested batch - outermost one commits.
     if (this.batchPreState === null) return;
     if (this.batchPreState !== postState) this.push(this.batchPreState);
     this.batchPreState = null;
   }
 
-  /** Aborts a batch (pointer cancel) — drops the pre-state, no history. */
+  /** Aborts a batch (pointer cancel) - drops the pre-state, no history. */
   abortBatch(): void {
     this.batchDepth = Math.max(0, this.batchDepth - 1);
     this.batchPreState = null;

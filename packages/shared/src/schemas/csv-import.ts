@@ -10,10 +10,10 @@ import {
 } from "./primitives";
 
 /**
- * Broker CSV import — Phase 10. Two-step contract mirroring a real API:
- *  1. POST /import/csv/preview — raw CSV + broker hint → parsed rows with
+ * Broker CSV import - Phase 10. Two-step contract mirroring a real API:
+ *  1. POST /import/csv/preview - raw CSV + broker hint → parsed rows with
  *     per-row status, deduped against existing externalRefs, preview id.
- *  2. POST /import/csv — commit the previewed batch (idempotent by
+ *  2. POST /import/csv - commit the previewed batch (idempotent by
  *     externalRef). Unresolved symbols become new instruments.
  */
 
@@ -24,7 +24,7 @@ export type CsvBroker = z.infer<typeof csvBrokerSchema>;
 // ── Preview ──────────────────────────────────────────────────────────────────
 
 export const csvImportPreviewRequestSchema = z.object({
-  /** Raw CSV text — max 2 MB, ~90 days of daily statements is far below this. */
+  /** Raw CSV text - max 2 MB, ~90 days of daily statements is far below this. */
   csv: z.string().min(1).max(2_000_000),
   broker: csvBrokerSchema,
   /** First line is a header row (MT4/MT5/Deriv exports always have one). */
@@ -33,11 +33,11 @@ export const csvImportPreviewRequestSchema = z.object({
 
 export type CsvImportPreviewRequest = z.infer<typeof csvImportPreviewRequestSchema>;
 
-/** Per-row outcome of the server-side parse — the preview table's data. */
+/** Per-row outcome of the server-side parse - the preview table's data. */
 export const csvParsedRowSchema = z.object({
   /** 0-based index within the CSV data rows (stable for React keys). */
   index: z.number().int().min(0),
-  /** Broker-side ticket/position id — idempotence key (may be null on GENERIC). */
+  /** Broker-side ticket/position id - idempotence key (may be null on GENERIC). */
   externalRef: z.string().nullable(),
   symbol: z.string().min(1),
   /** Instrument id when the symbol matched the catalog, else null → new instrument at commit. */
@@ -54,16 +54,16 @@ export const csvParsedRowSchema = z.object({
   /** Broker net P&L as signed decimal string (informational, recomputed API-side at commit). */
   pnlNet: decimalStringSchema.nullable(),
   status: z.enum(["OK", "WARNING", "ERROR"]),
-  /** Human-readable, one per problem — e.g. "Unknown symbol XYZ — new instrument will be created". */
+  /** Human-readable, one per problem - e.g. "Unknown symbol XYZ - new instrument will be created". */
   issues: z.array(z.string()),
-  /** Already in the journal (same externalRef) — skipped at commit. */
+  /** Already in the journal (same externalRef) - skipped at commit. */
   duplicate: z.boolean(),
 });
 
 export type CsvParsedRow = z.infer<typeof csvParsedRowSchema>;
 
 export const csvImportPreviewResponseSchema = z.object({
-  /** Opaque id of the staged batch — present it at commit. */
+  /** Opaque id of the staged batch - present it at commit. */
   batchId: uuidSchema,
   detected: z.object({
     broker: csvBrokerSchema,
@@ -77,9 +77,9 @@ export const csvImportPreviewResponseSchema = z.object({
   }),
   rows: z.array(csvParsedRowSchema),
   importable: z.number().int().min(0),
-  /** ERROR rows — unusable without fixing the source file. */
+  /** ERROR rows - unusable without fixing the source file. */
   skipped: z.number().int().min(0),
-  /** Duplicate externalRefs — harmless, skipped at commit. */
+  /** Duplicate externalRefs - harmless, skipped at commit. */
   duplicates: z.number().int().min(0),
 });
 
@@ -110,7 +110,7 @@ export const csvImportCommitResponseSchema = z.object({
 
 export type CsvImportCommitResponse = z.infer<typeof csvImportCommitResponseSchema>;
 
-// ── One-shot import flow (POST /trades/import — trades module dialog) ────────
+// ── One-shot import flow (POST /trades/import - trades module dialog) ────────
 
 /** A mapped row produced client-side and shipped to the import endpoint. */
 export const importTradeRowSchema = z.object({
@@ -129,7 +129,7 @@ export const importTradeRowSchema = z.object({
   fees: nonNegativeDecimalStringSchema.optional(),
   swap: decimalStringSchema.optional(),
   exitReason: exitReasonSchema.nullable(),
-  /** Informational broker-reported P&L — the journal recomputes its own. */
+  /** Informational broker-reported P&L - the journal recomputes its own. */
   brokerPnl: decimalStringSchema.nullable(),
   notes: z.string().nullable(),
 });

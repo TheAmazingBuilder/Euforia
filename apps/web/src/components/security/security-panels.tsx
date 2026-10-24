@@ -58,7 +58,7 @@ import { EventBadge, EventOutcomeIcon, utc } from "./security-primitives";
  * Tab panels of the Security center (MASTER PROMPT §3):
  * Overview · Authentication · Sessions · Two-Factor · API Keys ·
  * Connected Accounts · Security Events · Login History · Active Devices.
- * Presentation only — every mutation and re-auth flow lives in the parent.
+ * Presentation only - every mutation and re-auth flow lives in the parent.
  */
 
 type Overview = SecurityOverviewResponse;
@@ -119,7 +119,7 @@ export function OverviewPanel({
           </CardTitle>
           <CardDescription>
             Every check is a hard fact about the account, evaluated with the stated methodology.
-            The score is derived from those same checks — real state, never vibes.
+            The score is derived from those same checks - real state, never vibes.
           </CardDescription>
         </CardHeader>
         {/* Real-state score banner (module upgrade) */}
@@ -136,9 +136,9 @@ export function OverviewPanel({
           >
             <p className="font-mono text-3xl font-bold tabular-nums">{overview.securityScore.score}</p>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold">{overview.securityScore.rating} — {overview.securityScore.passed}/{overview.securityScore.total} checks pass</p>
+              <p className="text-sm font-semibold">{overview.securityScore.rating} - {overview.securityScore.passed}/{overview.securityScore.total} checks pass</p>
               <p className="text-xs text-muted-foreground">
-                Fix the ACTION items below to raise the score — it recomputes from the live engine state on every read.
+                Fix the ACTION items below to raise the score - it recomputes from the live engine state on every read.
               </p>
             </div>
             <div className="h-2 w-28 overflow-hidden rounded-full bg-muted">
@@ -238,7 +238,7 @@ export function OverviewPanel({
   );
 }
 
-// ── §5 Authentication — the Password card design is preserved ────────────────
+// ── §5 Authentication - the Password card design is preserved ────────────────
 
 export function AuthenticationPanel({
   overview,
@@ -276,7 +276,7 @@ export function AuthenticationPanel({
               Password
             </CardTitle>
             <CardDescription>
-              Change it any time — journal data stays untouched.
+              Change it any time - journal data stays untouched.
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-3">
@@ -348,7 +348,7 @@ export function AuthenticationPanel({
               Account &amp; verification
             </CardTitle>
             <CardDescription>
-              Identity basics — verified email, password policy, throttling.
+              Identity basics - verified email, password policy, throttling.
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-2 text-sm">
@@ -357,7 +357,7 @@ export function AuthenticationPanel({
                 <p className="font-medium">{overview.auth.email}</p>
                 <p className="text-xs text-muted-foreground">
                   {overview.auth.emailVerified
-                    ? "Verified — confirmation link used."
+                    ? "Verified - confirmation link used."
                     : "Not verified yet."}
                 </p>
               </div>
@@ -370,7 +370,7 @@ export function AuthenticationPanel({
               <p className="text-xs text-muted-foreground">
                 Minimum length{" "}
                 <span className="font-mono tabular-nums">{overview.auth.passwordMinLength}</span>{" "}
-                characters — changes require re-authentication and are logged.
+                characters - changes require re-authentication and are logged.
               </p>
             </div>
             <div className="rounded-lg border border-border bg-background/60 px-3 py-2.5">
@@ -494,7 +494,7 @@ export function SessionsPanel({
         title={confirmScope === "all" ? "Logout all sessions?" : "Logout other sessions?"}
         description={
           confirmScope === "all"
-            ? "Every device is signed out — including this one. In production the current session ends immediately; the demo keeps you signed in."
+            ? "Every device is signed out - including this one. In production the current session ends immediately; the demo keeps you signed in."
             : "All other devices are signed out immediately. Unsaved work on those devices is lost."
         }
         confirmLabel={confirmScope === "all" ? "Logout all" : "Logout others"}
@@ -510,7 +510,7 @@ export function SessionsPanel({
   );
 }
 
-// ── §6 Two-Factor — the 2FA card design is preserved ────────────────────────
+// ── §6 Two-Factor - the 2FA card design is preserved ────────────────────────
 
 export function TwoFactorPanel({
   overview,
@@ -521,7 +521,7 @@ export function TwoFactorPanel({
 }: {
   overview: Overview;
   onEnable: () => void;
-  /** Disable goes through a confirm first — the parent owns both steps. */
+  /** Disable goes through a confirm first - the parent owns both steps. */
   onDisable: () => void;
   onRegenerate: () => void;
   pending: boolean;
@@ -553,7 +553,7 @@ export function TwoFactorPanel({
           <>
             <p>
               You are asked for a rotating code at each new sign-in. Recovery
-              codes were shown once at setup — they are never displayed again.
+              codes were shown once at setup - they are never displayed again.
             </p>
             <div className="grid gap-1.5 rounded-lg border border-border bg-background/60 px-3 py-2.5 font-mono text-xs tabular-nums">
               <span>method · authenticator app</span>
@@ -578,10 +578,10 @@ export function TwoFactorPanel({
             </div>
           </>
         ) : twoFactor.pending ? (
-          <p>Setup in progress — confirm the authenticator challenge to activate 2FA.</p>
+          <p>Setup in progress - confirm the authenticator challenge to activate 2FA.</p>
         ) : (
           <p>
-            Recommended — an authenticator app is all it takes. Setup issues 10
+            Recommended - an authenticator app is all it takes. Setup issues 10
             recovery codes, shown once, then stored only as a count.
           </p>
         )}
@@ -609,7 +609,7 @@ export function ApiKeysPanel({
   const [expiresInDays, setExpiresInDays] = React.useState<number | null>(90);
   const [revokeTarget, setRevokeTarget] = React.useState<ApiKeyView | null>(null);
 
-  // Snapshot once per mount — expiry display only, recomputed on next visit.
+  // Snapshot once per mount - expiry display only, recomputed on next visit.
   const [nowMs] = React.useState(() => Date.now());
 
   const submitCreate = () => {
@@ -704,7 +704,7 @@ export function ApiKeysPanel({
         })}
         {overview.apiKeys.length === 0 && (
           <p className="rounded-lg border border-dashed border-border px-3 py-6 text-center text-sm text-muted-foreground">
-            No API keys yet — create a scoped key instead of sharing your password.
+            No API keys yet - create a scoped key instead of sharing your password.
           </p>
         )}
       </CardContent>
@@ -769,7 +769,7 @@ export function ApiKeysPanel({
               >
                 <option value="30">30 days</option>
                 <option value="60">60 days</option>
-                <option value="90">90 days — recommended</option>
+                <option value="90">90 days - recommended</option>
                 <option value="never">Never expires (weakens the protection score)</option>
               </select>
             </div>
@@ -783,7 +783,7 @@ export function ApiKeysPanel({
               disabled={name.trim().length === 0 || scopes.length === 0}
               data-testid="api-key-dialog-create"
             >
-              Continue — confirm identity
+              Continue - confirm identity
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -818,7 +818,7 @@ export function ConnectedAccountsPanel({ overview }: { overview: Overview }) {
           Connected accounts
         </CardTitle>
         <CardDescription>
-          Security&apos;s view over Integrations — derived live from the hub.
+          Security&apos;s view over Integrations - derived live from the hub.
           Passwords, private keys and secret tokens are never shown here: only
           masked hints from the vault.
         </CardDescription>
@@ -998,7 +998,7 @@ export function LoginHistoryPanel({ overview }: { overview: Overview }) {
           Login history
         </CardTitle>
         <CardDescription>
-          Sign-in attempts on the account. IP addresses are partially masked —
+          Sign-in attempts on the account. IP addresses are partially masked -
           full addresses never reach the client. Retention:{" "}
           <span className="font-mono tabular-nums">
             {overview.retention.loginHistoryDays} days
@@ -1057,7 +1057,7 @@ export function DevicesPanel({
             </div>
           ) : (
             <p className="text-sm text-muted-foreground">
-              The current session was revoked — in production it would end now.
+              The current session was revoked - in production it would end now.
             </p>
           )}
         </CardContent>
@@ -1070,7 +1070,7 @@ export function DevicesPanel({
             Previously active devices
           </CardTitle>
           <CardDescription>
-            Other devices holding a valid session — revoke to sign them out.
+            Other devices holding a valid session - revoke to sign them out.
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-2">
@@ -1101,7 +1101,7 @@ export function DevicesPanel({
           ))}
           {others.length === 0 && (
             <p className="rounded-lg border border-dashed border-border px-3 py-6 text-center text-sm text-muted-foreground">
-              No other active devices — only this session is signed in.
+              No other active devices - only this session is signed in.
             </p>
           )}
         </CardContent>

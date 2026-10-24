@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 
 /**
  * By-Strategy stats table (Phase 9): the playbook aggregate rendered as a
- * sortable-by-nothing dense table — every rate ships with its trade count,
+ * sortable-by-nothing dense table - every rate ships with its trade count,
  * and the last-20 column exposes the decay window the coach watches.
  */
 
@@ -92,7 +92,7 @@ export function StrategyTable({ stats, strategies }: StrategyTableProps) {
                     last20 === null ? "text-muted-foreground" : last20 >= 0 ? "text-profit" : "text-loss",
                   )}
                 >
-                  {last20 === null ? "—" : formatR(stat.last20Expectancy)}
+                  {last20 === null ? "-" : formatR(stat.last20Expectancy)}
                 </td>
               </tr>
             );

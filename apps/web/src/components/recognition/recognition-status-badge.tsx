@@ -6,8 +6,8 @@ import type { OcrRecognitionStatus } from "@cosmoz/shared";
 import type { RecognitionDict } from "@/i18n/dictionaries/en/recognition";
 
 /**
- * RecognitionStatusBadge — the rubber-stamp of a recognition lifecycle
- * (Le Registre #6: outcomes get stamped — bordered uppercase mono, ±2°
+ * RecognitionStatusBadge - the rubber-stamp of a recognition lifecycle
+ * (Le Registre #6: outcomes get stamped - bordered uppercase mono, ±2°
  * rotation for the struck-by-hand feel).
  */
 export function RecognitionStatusBadge({

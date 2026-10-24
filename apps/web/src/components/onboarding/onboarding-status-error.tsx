@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 
 /**
  * Deliberate recovery path when the onboarding STATUS could not be
- * determined (spec §11 — a failed status request never assumes the user is
+ * determined (spec §11 - a failed status request never assumes the user is
  * new). The dashboard stays fully usable; this small notice offers a retry
  * and a session-only dismissal. Never blocks, never fabricates eligibility.
  */
@@ -48,7 +48,7 @@ export function OnboardingStatusError({
               onClick={() => {
                 setRetrying(true);
                 onRetry();
-                // The query settles asynchronously — release the control so
+                // The query settles asynchronously - release the control so
                 // a second retry stays possible if the refetch failed again.
                 window.setTimeout(() => setRetrying(false), 800);
               }}

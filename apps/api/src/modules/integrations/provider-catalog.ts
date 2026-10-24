@@ -1,10 +1,10 @@
 import type { IntegrationEcoEvent, IntegrationPermission, NewsItem } from "../../shared/contracts";
 
 /**
- * Integration Hub — the static provider REGISTRY (MASTER PROMPT §5–§10).
+ * Integration Hub - the static provider REGISTRY (MASTER PROMPT §5–§10).
  *
  * Registry entries are PLATFORM CONTENT (capabilities, licensing posture,
- * demo defaults), identical for every user — exactly like the mock's
+ * demo defaults), identical for every user - exactly like the mock's
  * `seedProviders`. Per-user runtime state (connection lifecycle, credentials
  * view, sync progress, scenario flags) lives in IntegrationRow persistence
  * and is layered over this catalog by IntegrationsService.
@@ -36,7 +36,7 @@ export interface ProviderCatalogEntry {
   latencyMs: number | null;
   connectedDaysAgo: number | null;
   seedSync: ProviderSeedSync;
-  /** Fresh-user credentials — only Deriv ships a vault reference by default. */
+  /** Fresh-user credentials - only Deriv ships a vault reference by default. */
   seedCredentials: { vaultRef: string; maskedHint: string; rotatedDaysAgo: number } | null;
   secret: string | null;
   rateLimit: { limitPerWindow: number; windowMs: number };
@@ -57,7 +57,7 @@ export const PROVIDER_CATALOG: ProviderCatalogEntry[] = [
     marketData: null,
     licensing: {
       verified: true,
-      note: "Official Deriv API — personal journaling scope, redistribution not permitted.",
+      note: "Official Deriv API - personal journaling scope, redistribution not permitted.",
     },
     readOnly: true,
     status: "CONNECTED",
@@ -72,7 +72,7 @@ export const PROVIDER_CATALOG: ProviderCatalogEntry[] = [
   },
   {
     id: "mt5-bridge",
-    name: "MT5 — Local Bridge",
+    name: "MT5 - Local Bridge",
     kind: "BROKER",
     tagline: "MetaTrader 5 through a local companion process",
     description:
@@ -82,7 +82,7 @@ export const PROVIDER_CATALOG: ProviderCatalogEntry[] = [
     marketData: null,
     licensing: {
       verified: true,
-      note: "Local bridge over your own terminal — no third-party redistribution.",
+      note: "Local bridge over your own terminal - no third-party redistribution.",
     },
     readOnly: true,
     status: "DISCONNECTED",
@@ -107,7 +107,7 @@ export const PROVIDER_CATALOG: ProviderCatalogEntry[] = [
     marketData: null,
     licensing: {
       verified: true,
-      note: "Spotware Open API — read-only personal scope.",
+      note: "Spotware Open API - read-only personal scope.",
     },
     readOnly: true,
     status: "DISCONNECTED",
@@ -126,7 +126,7 @@ export const PROVIDER_CATALOG: ProviderCatalogEntry[] = [
     kind: "EXCHANGE",
     tagline: "Spot account monitoring via REST + WebSocket",
     description:
-      "Exchange accounts differ from brokers: custody, API scopes and rate limits are provider-specific. This registration reads balances and executions only — withdrawal scopes are refused by policy.",
+      "Exchange accounts differ from brokers: custody, API scopes and rate limits are provider-specific. This registration reads balances and executions only - withdrawal scopes are refused by policy.",
     docsUrl: "https://binance-docs.github.io",
     capabilities: ["READ_ACCOUNT", "READ_EXECUTIONS"],
     marketData: null,
@@ -157,7 +157,7 @@ export const PROVIDER_CATALOG: ProviderCatalogEntry[] = [
     marketData: { tick: true, ohlc: true, volume: true, spread: false, sessions: false },
     licensing: {
       verified: true,
-      note: "Public market data — attribution required, storage limited to the retention window.",
+      note: "Public market data - attribution required, storage limited to the retention window.",
     },
     readOnly: true,
     status: "CONNECTED",
@@ -176,13 +176,13 @@ export const PROVIDER_CATALOG: ProviderCatalogEntry[] = [
     kind: "MARKET_DATA",
     tagline: "Deterministic offline fallback",
     description:
-      "The offline-safe price source for demos and tests. Deliberately narrower than real providers — no OHLC history, no volume — so capability differences stay visible.",
+      "The offline-safe price source for demos and tests. Deliberately narrower than real providers - no OHLC history, no volume - so capability differences stay visible.",
     docsUrl: null,
     capabilities: ["READ_MARKET_DATA"],
     marketData: { tick: true, ohlc: false, volume: false, spread: false, sessions: true },
     licensing: {
       verified: true,
-      note: "Generated locally — no external licensing.",
+      note: "Generated locally - no external licensing.",
     },
     readOnly: true,
     status: "CONNECTED",
@@ -201,13 +201,13 @@ export const PROVIDER_CATALOG: ProviderCatalogEntry[] = [
     kind: "ECONOMIC",
     tagline: "Provider-shaped macro calendar, normalized on ingest",
     description:
-      "The economic pipeline stands in for a licensed macro provider: a raw provider payload is normalized (previous / forecast / actual / impact / status) and upserted idempotently by provider key. Production requires a licensed provider that passes review — until then this feed is clearly labelled sample.",
+      "The economic pipeline stands in for a licensed macro provider: a raw provider payload is normalized (previous / forecast / actual / impact / status) and upserted idempotently by provider key. Production requires a licensed provider that passes review - until then this feed is clearly labelled sample.",
     docsUrl: null,
     capabilities: ["READ_ECONOMIC_DATA", "WEBHOOK_INBOUND"],
     marketData: null,
     licensing: {
       verified: false,
-      note: "Sample dataset for development — a licensed provider must pass §29 review before production use.",
+      note: "Sample dataset for development - a licensed provider must pass §29 review before production use.",
     },
     readOnly: true,
     status: "CONNECTED",
@@ -224,7 +224,7 @@ export const PROVIDER_CATALOG: ProviderCatalogEntry[] = [
     id: "news-wire",
     name: "Market News Wire",
     kind: "NEWS",
-    tagline: "Headlines pipeline — awaiting a licensed provider",
+    tagline: "Headlines pipeline - awaiting a licensed provider",
     description:
       "The news architecture (headline, source, category, related symbols, importance) is provider-ready. Redistribution rights are verified BEFORE connecting: no publicly accessible feed is assumed licensable.",
     docsUrl: null,
@@ -249,7 +249,7 @@ export const PROVIDER_CATALOG: ProviderCatalogEntry[] = [
     id: "tradingview",
     name: "TradingView",
     kind: "CHARTING",
-    tagline: "Chart visualization — never the source of truth",
+    tagline: "Chart visualization - never the source of truth",
     description:
       "TradingView renders market display and chart interaction. Positions, executions and account state remain owned by the broker adapter; the chart layer can never write them.",
     docsUrl: "https://www.tradingview.com/widget-docs/",
@@ -257,7 +257,7 @@ export const PROVIDER_CATALOG: ProviderCatalogEntry[] = [
     marketData: null,
     licensing: {
       verified: true,
-      note: "Widget terms — visualization only, no data redistribution.",
+      note: "Widget terms - visualization only, no data redistribution.",
     },
     readOnly: true,
     status: "CONNECTED",
@@ -282,7 +282,7 @@ export const PROVIDER_CATALOG: ProviderCatalogEntry[] = [
     marketData: null,
     licensing: {
       verified: true,
-      note: "Your own sending provider — no third-party data.",
+      note: "Your own sending provider - no third-party data.",
     },
     readOnly: true,
     status: "DISCONNECTED",
@@ -307,7 +307,7 @@ export const PROVIDER_CATALOG: ProviderCatalogEntry[] = [
     marketData: null,
     licensing: {
       verified: true,
-      note: "Standard web push — no third-party data.",
+      note: "Standard web push - no third-party data.",
     },
     readOnly: true,
     status: "DISCONNECTED",
@@ -326,13 +326,13 @@ export const PROVIDER_CATALOG: ProviderCatalogEntry[] = [
     kind: "EXTERNAL",
     tagline: "Push journal events to your own automations",
     description:
-      "Signed outbound webhooks (HMAC, timestamped, retried with backoff) toward endpoints you own — spreadsheets, pipelines, home dashboards.",
+      "Signed outbound webhooks (HMAC, timestamped, retried with backoff) toward endpoints you own - spreadsheets, pipelines, home dashboards.",
     docsUrl: null,
     capabilities: [],
     marketData: null,
     licensing: {
       verified: true,
-      note: "Your own endpoints — no third-party data.",
+      note: "Your own endpoints - no third-party data.",
     },
     readOnly: true,
     status: "DISCONNECTED",
@@ -354,12 +354,12 @@ export const INTEGRATION_RETENTION = {
   syncLogsDays: 14,
 } as const;
 
-/** §6 honesty — numbers arrive with the broker adapter sync, never invented. */
+/** §6 honesty - numbers arrive with the broker adapter sync, never invented. */
 export const DEMO_ACCOUNT_VIEW = {
   providerId: "deriv",
   providerName: "Deriv",
   accountIdentifier: "Deriv Live · Standard",
-  accountType: "CFD — forex & synthetic indices",
+  accountType: "CFD - forex & synthetic indices",
   currency: "USD",
   balance: null,
   equity: null,
@@ -447,12 +447,12 @@ const NEWS_SAMPLES: Array<Omit<NewsItem, "id" | "sample">> = [
   },
 ];
 
-/** News publishedAt offsets (ms before seed time) — the retention window eats
+/** News publishedAt offsets (ms before seed time) - the retention window eats
  * the oldest sample exactly like the mock's `pruneRetention`. */
 export const NEWS_AGE_MS = [2 * 3_600_000, 5 * 3_600_000, 8 * 3_600_000, 86_400_000 + 3_600_000, 86_400_000 + 7 * 3_600_000, 2 * 86_400_000] as const;
 
 /** Deterministic v4-format UUID from a string seed (same shape as the
- * calendar module's uuidFrom — ids must satisfy the shared uuid format). */
+ * calendar module's uuidFrom - ids must satisfy the shared uuid format). */
 function uuidFrom(seed: string): string {
   let hash1 = 0x811c9dc5;
   let hash2 = 0x01000193;
@@ -481,11 +481,11 @@ export const SEED_EVENT_LOG: Array<{
   message: string;
 }> = [
   { providerId: "deriv", providerName: "Deriv", type: "CONNECTED", message: "Read-only connection established (market data + account scope)" },
-  { providerId: "binance-market", providerName: "Binance Market Data", type: "CONNECTED", message: "Public streams attached — attribution recorded" },
+  { providerId: "binance-market", providerName: "Binance Market Data", type: "CONNECTED", message: "Public streams attached - attribution recorded" },
   { providerId: "simulated-feed", providerName: "Simulated Feed", type: "CONNECTED", message: "Offline fallback registered" },
-  { providerId: "macro-sample", providerName: "Macro Calendar (sample feed)", type: "CONNECTED", message: "Sample feed attached — production requires a licensed provider" },
+  { providerId: "macro-sample", providerName: "Macro Calendar (sample feed)", type: "CONNECTED", message: "Sample feed attached - production requires a licensed provider" },
   { providerId: "tradingview", providerName: "TradingView", type: "CONNECTED", message: "Charting layer attached (visualization only)" },
-  { providerId: "macro-sample", providerName: "Macro Calendar (sample feed)", type: "SYNCED", message: "Incremental sync — batch-7, 61 records" },
+  { providerId: "macro-sample", providerName: "Macro Calendar (sample feed)", type: "SYNCED", message: "Incremental sync - batch-7, 61 records" },
 ];
 
 /** The countries map used by the §9 normalization layer in the mock seed. */

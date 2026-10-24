@@ -6,7 +6,7 @@ import { mockStore } from "@/mocks/store";
 import { endpoint, latency, toErrorResponse } from "./utils";
 
 /**
- * Session Live domain (trade-entry-ux.md §9) — today's event timeline +
+ * Session Live domain (trade-entry-ux.md §9) - today's event timeline +
  * mood strip, assembled server-side for the server's trading date, plus
  * the session logbook (timestamped in-session notes).
  */

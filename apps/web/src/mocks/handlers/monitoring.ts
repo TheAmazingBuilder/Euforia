@@ -13,7 +13,7 @@ import { mockStore } from "@/mocks/store";
 import { endpoint, latency, parseBody, pathParam, readJson, toErrorResponse } from "./utils";
 
 /**
- * Module upgrade — monitoring alerts reach the USER's inbox, not just the
+ * Module upgrade - monitoring alerts reach the USER's inbox, not just the
  * board: a newly raised rule pushes a SYSTEM alert into the store (deduped
  * while unread). Wired once at handler-module init.
  */
@@ -23,7 +23,7 @@ monitoringEngine.onAlertRaised = (alert) => mockStore.pushMonitoringAlert(alert)
  * Monitoring endpoints (MASTER PROMPT §3, §14). The overview is a single
  * aggregate of OBSERVED state; thresholds are configurable via PATCH; manual
  * job runs only succeed for jobs with real work in this build (honest 409
- * otherwise — no synthetic runs are fabricated).
+ * otherwise - no synthetic runs are fabricated).
  */
 
 export const monitoringHandlers = [

@@ -12,10 +12,10 @@ import { mockStore, MockError } from "@/mocks/store";
 import { endpoint, latency, parseBody, pathParam, readJson, requireAuth, toErrorResponse } from "./utils";
 
 /**
- * Performance snapshots (Dashboard Customization Phase 08) — MSW mirror of
+ * Performance snapshots (Dashboard Customization Phase 08) - MSW mirror of
  * the NestJS module. Capture semantics are HONEST: the mock computes the
  * SAME analytics-suite engine the mock /stats/analytics-suite route serves
- * (mockStore.analyticsSuite) and freezes its summary — no fabricated
+ * (mockStore.analyticsSuite) and freezes its summary - no fabricated
  * metrics, same contract parse as the API. Captured values are immutable
  * (PATCH merges name/notes only); names are unique per user
  * (case-insensitive → 409), matching the API's SNAPSHOT_NAME_TAKEN rule.
@@ -31,7 +31,7 @@ function nowIso(): string {
   return new Date().toISOString();
 }
 
-/** Non-period half of the filter bag — the frozen scope (mirrors the API). */
+/** Non-period half of the filter bag - the frozen scope (mirrors the API). */
 function scopeOfFilters(filters: ReturnType<typeof analyticsFiltersSchema.parse>): PerformanceSnapshot["scope"] {
   const scope: PerformanceSnapshot["scope"] = {};
   if (filters.accountId !== undefined) scope.accountId = filters.accountId;
@@ -47,7 +47,7 @@ function scopeOfFilters(filters: ReturnType<typeof analyticsFiltersSchema.parse>
 }
 
 export const snapshotHandlers = [
-  // GET /snapshots — newest first
+  // GET /snapshots - newest first
   http.get(endpoint(apiPaths.snapshots), async ({ request }) => {
     await latency();
     try {
@@ -60,7 +60,7 @@ export const snapshotHandlers = [
     }
   }),
 
-  // POST /snapshots — capture the CURRENT mock analytics scope
+  // POST /snapshots - capture the CURRENT mock analytics scope
   http.post(endpoint(apiPaths.snapshots), async ({ request }) => {
     await latency();
     try {
@@ -70,7 +70,7 @@ export const snapshotHandlers = [
       if (snapshots.some((snapshot) => snapshot.name.toLowerCase() === nameKey)) {
         throw new MockError(409, "A snapshot with this name already exists");
       }
-      // Re-parse through the SAME filter schema the API embeds — restores
+      // Re-parse through the SAME filter schema the API embeds - restores
       // the `.default("ALL")` output semantics (parseBody infers the input
       // type where period is optional) and validates with contract parity.
       const filters = analyticsFiltersSchema.parse(input.filters);
@@ -122,7 +122,7 @@ export const snapshotHandlers = [
     }
   }),
 
-  // PATCH /snapshots/:snapshotId — metadata only (name/notes)
+  // PATCH /snapshots/:snapshotId - metadata only (name/notes)
   http.patch(endpoint(apiPaths.snapshot(":snapshotId")), async ({ request, params }) => {
     await latency();
     try {

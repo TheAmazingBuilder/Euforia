@@ -26,20 +26,20 @@ const TOOL_LABEL_KEYS: ReadonlyMap<OryonCatalogToolId, RailLabelKey> = new Map(
 );
 
 /**
- * Oryon floating favorites bar — the TradingView-style draggable toolbar
+ * Oryon floating favorites bar - the TradingView-style draggable toolbar
  * OVER the chart grid (workspace-level: one instance, always above the
  * ACTIVE chart's interactions).
  *
  * Placement contract (the user's explicit request): the bar renders at the
- * PERSISTED position and can be dragged anywhere by its grip — the grab
- * offset is kept so the grab point never jumps — and the position is
+ * PERSISTED position and can be dragged anywhere by its grip - the grab
+ * offset is kept so the grab point never jumps - and the position is
  * re-clamped at every render + on drag end. Toolbar v4 bounds: VERTICALLY
- * the bar may travel the FULL stage height — down over the time axis and
+ * the bar may travel the FULL stage height - down over the time axis and
  * the footer strip (no restrictive overflow can clip it); horizontally it
  * stays over the chart columns. A stored position from a larger viewport
  * can never strand it off-screen (a window resize re-clamps too).
  *
- * Interaction isolation: the root carries `data-oryon-ui` — the drawing
+ * Interaction isolation: the root carries `data-oryon-ui` - the drawing
  * interaction controller's capture-phase listeners ignore every event
  * inside (no accidental drawings), and the grip stops pointerdown
  * propagation so charts beneath never activate mid-drag.
@@ -54,7 +54,7 @@ export function OryonFavoritesBar({
 }: {
   /** The bar's coordinate parent (the chart-area wrapper). */
   containerRef: React.RefObject<HTMLElement | null>;
-  /** Vertical travel bounds — the full stage incl. the footer strip. */
+  /** Vertical travel bounds - the full stage incl. the footer strip. */
   boundsRef?: React.RefObject<HTMLElement | null>;
 }) {
   const dict = useDict();
@@ -74,7 +74,7 @@ export function OryonFavoritesBar({
   /**
    * Clamp a bar position (container coordinates) into the allowed bounds:
    * horizontal = the chart area, vertical = the bounds element (the full
-   * stage — the bar may extend down over the time axis + footer strip).
+   * stage - the bar may extend down over the time axis + footer strip).
    * Falls back to the container on every axis when no bounds are given.
    */
   const clampTo = React.useCallback(
@@ -96,7 +96,7 @@ export function OryonFavoritesBar({
   );
 
   // Clamp the PERSISTED position against the current container (viewport
-  // changes, grid changes) — render-time reconciliation + a resize hook,
+  // changes, grid changes) - render-time reconciliation + a resize hook,
   // no state churn.
   const [clamped, setClamped] = React.useState(favoritesBarPos);
   React.useEffect(() => {
@@ -117,7 +117,7 @@ export function OryonFavoritesBar({
       event.preventDefault();
       event.stopPropagation();
       const barRect = bar.getBoundingClientRect();
-      // Exact grab offset — the bar follows the pointer 1:1, no jump.
+      // Exact grab offset - the bar follows the pointer 1:1, no jump.
       dragRef.current = {
         pointerId: event.pointerId,
         offsetX: event.clientX - barRect.left,
@@ -151,7 +151,7 @@ export function OryonFavoritesBar({
       try {
         bar?.releasePointerCapture(event.pointerId);
       } catch {
-        // Pointer already released — the commit below is unaffected.
+        // Pointer already released - the commit below is unaffected.
       }
       // Commit the FINAL position (the clamped state is the truth).
       setFavoritesBarPos(clamped);

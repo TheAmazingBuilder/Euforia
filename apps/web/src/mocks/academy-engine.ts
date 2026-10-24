@@ -53,16 +53,16 @@ import { SCENARIOS } from "./academy/scenarios";
 import { mockStore } from "./store";
 
 /**
- * Academy engine — the learning domain's server-side brain.
+ * Academy engine - the learning domain's server-side brain.
  *
  * Owns per-user learning state (lesson completion, quiz attempts, bookmarks,
  * practice log, daily activity) and serves the catalog authored in
  * mocks/academy/*. Quiz answers and pattern-drill answers NEVER leave the
- * engine ungraded — the client receives public questions only.
+ * engine ungraded - the client receives public questions only.
  *
  * The mock is single-user, but state is shaped behind a `userKey` so a
  * multi-user backend can drop in real scoping without contract changes
- * (spec §43 — progress must never leak between accounts).
+ * (spec §43 - progress must never leak between accounts).
  */
 
 // ── State ────────────────────────────────────────────────────────────────────
@@ -82,21 +82,21 @@ type AcademyState = {
   practiceCorrect: number;
   /** UTC dates (YYYY-MM-DD) with any learning activity. */
   activityDates: Set<string>;
-  /** lessonId of the most recent completion — drives Continue Learning. */
+  /** lessonId of the most recent completion - drives Continue Learning. */
   lastActivityLessonId: string | null;
   /** lessonId → last time the user opened the lesson (Resume Reading). */
   viewedLessons: Map<string, string>;
   /** lessonId → personal note. */
   notes: Map<string, AcademyLessonNote>;
-  /** Practice ledger — per-attempt rows (drill, outcome, time). */
+  /** Practice ledger - per-attempt rows (drill, outcome, time). */
   drillLog: { drill: string; correct: boolean; at: string }[];
-  /** Patterns the learner missed — resurface with priority until cleared. */
+  /** Patterns the learner missed - resurface with priority until cleared. */
   wrongPatternIds: string[];
   /** Flashcard SRS state (Leitner boxes). */
   flashcardStates: Map<string, { box: number; due: string; reviews: number }>;
   flashcardDay: string;
   flashcardReviewedToday: number;
-  /** Category exam attempts — the certification ladder. */
+  /** Category exam attempts - the certification ladder. */
   examAttempts: Map<string, ExamAttempt>;
 };
 
@@ -304,7 +304,7 @@ export function academyLesson(lessonId: string): AcademyLessonResponse | null {
   return null;
 }
 
-/** Stable string hash — deterministic checkpoint picks per lesson + day. */
+/** Stable string hash - deterministic checkpoint picks per lesson + day. */
 function hashString(input: string): number {
   let hash = 0;
   for (let i = 0; i < input.length; i += 1) {
@@ -314,7 +314,7 @@ function hashString(input: string): number {
 }
 
 /**
- * Mid-lesson checkpoint — long lessons (≥ 6 blocks) in quiz-bearing courses
+ * Mid-lesson checkpoint - long lessons (≥ 6 blocks) in quiz-bearing courses
  * get ONE question from the course bank, picked deterministically from
  * lessonId + UTC day (rotates daily; same pick for serving and grading).
  * Answers never leave the engine.
@@ -552,7 +552,7 @@ function continueLearning(): AcademyOverviewResponse["continueLearning"] {
 }
 
 /**
- * Rule-based recommendations — deliberately simple (spec §35). The mapping
+ * Rule-based recommendations - deliberately simple (spec §35). The mapping
  * point for a future engine is HERE: feed weakness signals from Analytics
  * (mistake ledger, discipline scores) into course suggestions without
  * touching contracts or the UI.
@@ -567,7 +567,7 @@ function recommendations(): AcademyRecommendation[] {
     picks.push({
       courseId: course.id,
       title: course.title,
-      reason: `In progress — ${card.completedLessons}/${card.lessonCount} lessons done.`,
+      reason: `In progress - ${card.completedLessons}/${card.lessonCount} lessons done.`,
       categoryId: course.categoryId,
     });
   }
@@ -579,7 +579,7 @@ function recommendations(): AcademyRecommendation[] {
       picks.push({
         courseId: next.course.id,
         title: next.course.title,
-        reason: "Foundation track — recommended next for your level.",
+        reason: "Foundation track - recommended next for your level.",
         categoryId,
       });
     }
@@ -590,7 +590,7 @@ function recommendations(): AcademyRecommendation[] {
     picks.push({
       courseId: advanced.course.id,
       title: advanced.course.title,
-      reason: "Advanced track — when the foundations hold.",
+      reason: "Advanced track - when the foundations hold.",
       categoryId: advanced.course.categoryId,
     });
   }
@@ -598,7 +598,7 @@ function recommendations(): AcademyRecommendation[] {
   return picks.slice(0, 3);
 }
 
-/** The unfinished lesson the user last had open — distinct from the
+/** The unfinished lesson the user last had open - distinct from the
  *  curriculum's next-up pointer (continueLearning). null → nothing to resume. */
 function resumeLearning(): AcademyResume {
   const viewed = [...state.viewedLessons.entries()]
@@ -768,7 +768,7 @@ export function logPractice(input: AcademyPracticeLogInput): AcademyPracticeLogR
   return { practiceAttempts: state.practiceAttempts, practiceCorrect: state.practiceCorrect };
 }
 
-/** One honest row in the practice ledger — shared by drills and checkpoints. */
+/** One honest row in the practice ledger - shared by drills and checkpoints. */
 function recordAttempt(drill: string, correct: boolean, refId?: string): void {
   state.practiceAttempts += 1;
   if (correct) state.practiceCorrect += 1;
@@ -810,7 +810,7 @@ export function practiceStats(): AcademyPracticeStats {
   };
 }
 
-/** Shuffle helper — deterministic-enough for drills; no crypto needs here. */
+/** Shuffle helper - deterministic-enough for drills; no crypto needs here. */
 function shuffle<T>(items: T[]): T[] {
   const copy = [...items];
   for (let i = copy.length - 1; i > 0; i -= 1) {
@@ -851,7 +851,7 @@ export function patternDrill(): AcademyPatternDrill | null {
 
 const round2 = (value: number): number => Math.round(value * 100) / 100;
 
-/** Support/Resistance — a shaped random walk: approach, prior touch, retest,
+/** Support/Resistance - a shaped random walk: approach, prior touch, retest,
  *  reaction. The learner reads which side the level is serving. */
 export function srDrill(): AcademySrDrill {
   const support = Math.random() < 0.5;
@@ -889,7 +889,7 @@ export function srDrill(): AcademySrDrill {
     const c = price + drift + (Math.random() - 0.5) * vol;
     pushCandle(price, c, Math.random() * vol * 0.5, Math.random() * vol * 0.5);
   }
-  // The retest under examination — wicks probe the level.
+  // The retest under examination - wicks probe the level.
   for (let i = 0; i < 2; i += 1) {
     if (support) {
       const l = level - Math.random() * 1.2;
@@ -906,8 +906,8 @@ export function srDrill(): AcademySrDrill {
   pushCandle(price, c, Math.random() * 0.4, Math.random() * 0.4);
 
   const options = shuffle([
-    { id: "support", label: "Support — buyers defended the level, price bounced" },
-    { id: "resistance", label: "Resistance — sellers capped the level, price turned down" },
+    { id: "support", label: "Support - buyers defended the level, price bounced" },
+    { id: "resistance", label: "Resistance - sellers capped the level, price turned down" },
   ]);
   const answerId = support ? "support" : "resistance";
   return {
@@ -918,12 +918,12 @@ export function srDrill(): AcademySrDrill {
     options,
     answer: options.findIndex((option) => option.id === answerId),
     explanation: support
-      ? "Price descended into the level, probed below with wicks, and closed back above before bouncing — the footprint of buyers defending support. A level is a zone of interest, never a guarantee: the reaction is the evidence, and invalidation sits below the retest low."
-      : "Price rallied into the level, probed above with wicks, and closed back below before turning down — the footprint of sellers capping resistance. A level is a zone of interest, never a guarantee: the reaction is the evidence, and invalidation sits above the retest high.",
+      ? "Price descended into the level, probed below with wicks, and closed back above before bouncing - the footprint of buyers defending support. A level is a zone of interest, never a guarantee: the reaction is the evidence, and invalidation sits below the retest low."
+      : "Price rallied into the level, probed above with wicks, and closed back below before turning down - the footprint of sellers capping resistance. A level is a zone of interest, never a guarantee: the reaction is the evidence, and invalidation sits above the retest high.",
   };
 }
 
-/** Position sizing — the arithmetic that keeps traders solvent, randomized. */
+/** Position sizing - the arithmetic that keeps traders solvent, randomized. */
 export function positionDrill(): AcademyPositionDrill {
   const balances = [5000, 10000, 25000, 50000];
   const percents = [0.5, 1, 1.5, 2];
@@ -945,11 +945,11 @@ export function positionDrill(): AcademyPositionDrill {
     unit: "units",
     answer,
     tolerance: 0.03,
-    explanation: `Risk budget = $${accountBalance.toLocaleString("en-US")} × ${riskPercent}% = $${riskBudget.toLocaleString("en-US", { maximumFractionDigits: 2 })}. Stop distance = ${entry} − ${stop} = ${stopDistance}. Size = budget ÷ distance = ${riskBudget.toLocaleString("en-US", { maximumFractionDigits: 2 })} ÷ ${stopDistance} = ${answer} units. Confidence never sizes a position — the stop distance and the account rule do.`,
+    explanation: `Risk budget = $${accountBalance.toLocaleString("en-US")} × ${riskPercent}% = $${riskBudget.toLocaleString("en-US", { maximumFractionDigits: 2 })}. Stop distance = ${entry} − ${stop} = ${stopDistance}. Size = budget ÷ distance = ${riskBudget.toLocaleString("en-US", { maximumFractionDigits: 2 })} ÷ ${stopDistance} = ${answer} units. Confidence never sizes a position - the stop distance and the account rule do.`,
   };
 }
 
-/** Supply/Demand — two bands, one displacement origin. The learner reads
+/** Supply/Demand - two bands, one displacement origin. The learner reads
  *  which band buyers (or sellers) built. Identity is never on the wire. */
 export function zoneDrill(): AcademyZoneDrill {
   const vol = 1.2;
@@ -1007,11 +1007,11 @@ export function zoneDrill(): AcademyZoneDrill {
     candles,
     zones,
     context: "Daily chart, trending leg followed by a pullback. Bands mark prior reaction areas.",
-    prompt: "Which band is the demand zone — the area where buyers previously stepped in with displacement?",
+    prompt: "Which band is the demand zone - the area where buyers previously stepped in with displacement?",
     options,
     answer: demandTag === "A" ? 0 : 1,
     explanation:
-      "Demand is where aggressive buying originated: the strong rally away from the lower band is displacement — the footprint of unfilled interest. Supply sits where the rally stalled and rolled over. Price returning toward a demand zone is where buyers may defend again — potential, never a promise.",
+      "Demand is where aggressive buying originated: the strong rally away from the lower band is displacement - the footprint of unfilled interest. Supply sits where the rally stalled and rolled over. Price returning toward a demand zone is where buyers may defend again - potential, never a promise.",
   };
 }
 
@@ -1021,7 +1021,7 @@ export function academyScenarios(): AcademyScenariosResponse {
   return { scenarios: SCENARIOS satisfies AcademyScenario[] };
 }
 
-// ── Flashcards — Leitner boxes over glossary + lesson takeaways ────────────
+// ── Flashcards - Leitner boxes over glossary + lesson takeaways ────────────
 
 const FLASH_INTERVALS = [1, 2, 4, 8, 15]; // days per box
 const FLASHCARD_DAILY_CAP = 10;
@@ -1052,7 +1052,7 @@ function buildFlashcardDeck(): DeckCard[] {
         deck.push({
           id: `fc-take-${lesson.id}-${index}`,
           kind: "TAKEAWAY",
-          front: `${lesson.title} — key takeaway`,
+          front: `${lesson.title} - key takeaway`,
           back: item,
           source: lesson.title,
           categoryId: course.categoryId,
@@ -1076,7 +1076,7 @@ export function flashcards(): AcademyFlashcardsResponse {
   const remaining = Math.max(0, FLASHCARD_DAILY_CAP - reviewedToday);
   const queue = dueCards.slice(0, remaining).map((card) => ({ ...card, extra: false }));
   if (queue.length === 0) {
-    // Nothing due — free practice keeps the deck warm without touching caps.
+    // Nothing due - free practice keeps the deck warm without touching caps.
     const free = shuffle(deck).slice(0, 5).map((card) => ({ ...card, extra: true }));
     return { due: free, dueCount: dueCards.length, reviewedToday, totalCards: deck.length };
   }
@@ -1115,7 +1115,7 @@ export function reviewFlashcard(input: AcademyFlashcardReviewInput): AcademyFlas
   return { reviewedToday: state.flashcardReviewedToday, dueRemaining };
 }
 
-// ── Category certifications — exams over the category's question pool ─────
+// ── Category certifications - exams over the category's question pool ─────
 
 const EXAM_SIZE = 20;
 
@@ -1206,7 +1206,7 @@ export function certifications(): AcademyCertificationsResponse {
   };
 }
 
-// ── Milestones — sober, computed from real state ─────────────────────────
+// ── Milestones - sober, computed from real state ─────────────────────────
 
 export function milestones(): AcademyMilestonesResponse {
   const completedCount = state.completedLessons.size;
@@ -1262,13 +1262,13 @@ export function milestones(): AcademyMilestonesResponse {
 
 type AcademyMilestoneResponse = AcademyMilestonesResponse["milestones"][number];
 
-// ── Journal → Academy — evidence-based lesson suggestions ──────────────
+// ── Journal → Academy - evidence-based lesson suggestions ──────────────
 
 const num = (value: string | null): number | null => (value === null ? null : Number(value));
 
 /**
  * Reads the journal's closed trades and maps observed weakness patterns to
- * the course that addresses them. Rules are deliberately readable — the
+ * the course that addresses them. Rules are deliberately readable - the
  * Analytics-driven engine can replace them later at the same seam.
  */
 export function academySuggestions(): AcademySuggestionsResponse {
@@ -1291,7 +1291,7 @@ export function academySuggestions(): AcademySuggestionsResponse {
     rules.push({
       courseId: "crs-trademgmt",
       weight: givenBack,
-      reason: `${givenBack} of your closed trades traveled +2R but finished below +1R — managing winners is the gap the Trade Management track closes.`,
+      reason: `${givenBack} of your closed trades traveled +2R but finished below +1R - managing winners is the gap the Trade Management track closes.`,
     });
   }
 
@@ -1301,7 +1301,7 @@ export function academySuggestions(): AcademySuggestionsResponse {
     rules.push({
       courseId: "crs-risk-fundamentals",
       weight: fullLosses,
-      reason: `${fullLosses} closed trades hit −1R or worse — worth revisiting stop placement and position sizing in Risk Management.`,
+      reason: `${fullLosses} closed trades hit −1R or worse - worth revisiting stop placement and position sizing in Risk Management.`,
     });
   }
 
@@ -1313,7 +1313,7 @@ export function academySuggestions(): AcademySuggestionsResponse {
     rules.push({
       courseId: "crs-psychology",
       weight: emotional,
-      reason: `${emotional} trades carry an emotional exit tag — Trading Psychology covers the routine that makes discipline cheap.`,
+      reason: `${emotional} trades carry an emotional exit tag - Trading Psychology covers the routine that makes discipline cheap.`,
     });
   }
 
@@ -1323,7 +1323,7 @@ export function academySuggestions(): AcademySuggestionsResponse {
     rules.push({
       courseId: "crs-strategies-core",
       weight: noStrategy,
-      reason: `${noStrategy} trades sat outside your playbook — the 13-field strategy template turns loose setups into testable systems.`,
+      reason: `${noStrategy} trades sat outside your playbook - the 13-field strategy template turns loose setups into testable systems.`,
     });
   }
 
@@ -1333,7 +1333,7 @@ export function academySuggestions(): AcademySuggestionsResponse {
     rules.push({
       courseId: "crs-advanced-execution",
       weight: planDrift,
-      reason: `${planDrift} trades planned ≥2R but closed red — Advanced Execution covers the entry-to-exit gap.`,
+      reason: `${planDrift} trades planned ≥2R but closed red - Advanced Execution covers the entry-to-exit gap.`,
     });
   }
 

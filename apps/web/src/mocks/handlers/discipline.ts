@@ -9,9 +9,9 @@ import { apiPaths } from "@/lib/api/endpoints";
 import { mockStore } from "@/mocks/store";
 import { endpoint, latency, parseBody, pathParam, readJson, requireAuth, toErrorResponse } from "./utils";
 
-/** Discipline domain — banner aggregate, alerts inbox, rules engine + log. */
+/** Discipline domain - banner aggregate, alerts inbox, rules engine + log. */
 export const disciplineHandlers = [
-  // GET /rules/status?accountId= — today's aggregate; refetched after each mutation
+  // GET /rules/status?accountId= - today's aggregate; refetched after each mutation
   http.get(endpoint(apiPaths.rulesStatus), async ({ request }) => {
     await latency();
     try {
@@ -23,9 +23,9 @@ export const disciplineHandlers = [
     }
   }),
 
-  // ── Phase 8 — rules CRUD ────────────────────────────────────────────────
+  // ── Phase 8 - rules CRUD ────────────────────────────────────────────────
 
-  // GET /rules — the discipline screen's rule cards
+  // GET /rules - the discipline screen's rule cards
   http.get(endpoint(apiPaths.rules), async () => {
     await latency();
     try {
@@ -35,7 +35,7 @@ export const disciplineHandlers = [
     }
   }),
 
-  // POST /rules — create a rule
+  // POST /rules - create a rule
   http.post(endpoint(apiPaths.rules), async ({ request }) => {
     await latency();
     try {
@@ -46,7 +46,7 @@ export const disciplineHandlers = [
     }
   }),
 
-  // PATCH /rules/:id — params / severity / active toggle
+  // PATCH /rules/:id - params / severity / active toggle
   http.patch(endpoint(apiPaths.rule(":ruleId")), async ({ request, params }) => {
     await latency();
     try {
@@ -67,9 +67,9 @@ export const disciplineHandlers = [
     }
   }),
 
-  // ── Phase 8 — violation log + acknowledge ───────────────────────────────
+  // ── Phase 8 - violation log + acknowledge ───────────────────────────────
 
-  // GET /violations — joined log, newest first, with the month aggregate
+  // GET /violations - joined log, newest first, with the month aggregate
   http.get(endpoint(apiPaths.violations), async () => {
     await latency();
     try {
@@ -79,7 +79,7 @@ export const disciplineHandlers = [
     }
   }),
 
-  // PATCH /violations/:id/acknowledge — row action
+  // PATCH /violations/:id/acknowledge - row action
   http.patch(endpoint(apiPaths.violationAcknowledge(":violationId")), async ({ request, params }) => {
     await latency();
     try {
@@ -92,7 +92,7 @@ export const disciplineHandlers = [
     }
   }),
 
-  // GET /discipline/score — Euforia Discipline Score + month components
+  // GET /discipline/score - Euforia Discipline Score + month components
   http.get(endpoint(apiPaths.disciplineScore), async () => {
     await latency();
     try {
@@ -102,7 +102,7 @@ export const disciplineHandlers = [
     }
   }),
 
-  // GET /discipline/emotion-matrix — emotion → outcome heatmap rows
+  // GET /discipline/emotion-matrix - emotion → outcome heatmap rows
   http.get(endpoint(apiPaths.disciplineEmotionMatrix), async () => {
     await latency();
     try {
@@ -112,7 +112,7 @@ export const disciplineHandlers = [
     }
   }),
 
-  // GET /mistakes/ledger — per-mistake frequency + R cost this month
+  // GET /mistakes/ledger - per-mistake frequency + R cost this month
   http.get(endpoint(apiPaths.mistakesLedger), async () => {
     await latency();
     try {
@@ -122,7 +122,7 @@ export const disciplineHandlers = [
     }
   }),
 
-  // GET /alerts — inbox + unread count for the bell badge
+  // GET /alerts - inbox + unread count for the bell badge
   http.get(endpoint(apiPaths.alerts), async ({ request }) => {
     await latency();
     try {
@@ -133,7 +133,7 @@ export const disciplineHandlers = [
     }
   }),
 
-  // PATCH /alerts/:id/read — mark an alert as read (inbox row action)
+  // PATCH /alerts/:id/read - mark an alert as read (inbox row action)
   http.patch(endpoint(apiPaths.alertRead(":alertId")), async ({ params }) => {
     await latency();
     try {
@@ -143,7 +143,7 @@ export const disciplineHandlers = [
     }
   }),
 
-  // PATCH /alerts/:id/dismiss — archive WITHOUT deleting (Phase 07 §8)
+  // PATCH /alerts/:id/dismiss - archive WITHOUT deleting (Phase 07 §8)
   http.patch(endpoint(apiPaths.alertDismiss(":alertId")), async ({ request, params }) => {
     await latency();
     try {

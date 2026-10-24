@@ -21,10 +21,10 @@ import { cn } from "@/lib/utils";
 
 /**
  * Strategy / Market / Time / Psychology tabs (MASTER PROMPT §12, §13, §14,
- * §15, §19). Comparisons are FACTUAL — the module never declares a "best
+ * §15, §19). Comparisons are FACTUAL - the module never declares a "best
  * strategy" and psychology wording stays correlational ("observed in this
  * dataset"), never causal (§19). Labels resolve through dict.analytics.*
- * (the dict.* pattern) — machine composition stays in the component.
+ * (the dict.* pattern) - machine composition stays in the component.
  */
 
 type Suite = AnalyticsSuiteResponse;
@@ -81,10 +81,10 @@ export function StrategyTab({ suite, onDrillToStrategy }: RowClickProps & { suit
                       <td className="py-2.5 pr-3 text-xs font-medium">{row.name}</td>
                       <td className="py-2.5 pr-3 font-mono text-xs tabular-nums">{row.trades}</td>
                       <td className="py-2.5 pr-3 font-mono text-xs tabular-nums">
-                        {row.winRate === null ? "—" : formatPercent(row.winRate, 0)}
+                        {row.winRate === null ? "-" : formatPercent(row.winRate, 0)}
                       </td>
                       <td className="py-2.5 pr-3 font-mono text-xs tabular-nums">
-                        {row.profitFactor === null ? "—" : formatNumber(row.profitFactor, 2)}
+                        {row.profitFactor === null ? "-" : formatNumber(row.profitFactor, 2)}
                       </td>
                       <td
                         className={cn(
@@ -92,7 +92,7 @@ export function StrategyTab({ suite, onDrillToStrategy }: RowClickProps & { suit
                           row.expectancyR === null ? "" : Number(row.expectancyR) >= 0 ? "text-profit" : "text-loss",
                         )}
                       >
-                        {row.expectancyR === null ? "—" : formatR(row.expectancyR)}
+                        {row.expectancyR === null ? "-" : formatR(row.expectancyR)}
                       </td>
                       <td
                         className={cn(
@@ -100,20 +100,20 @@ export function StrategyTab({ suite, onDrillToStrategy }: RowClickProps & { suit
                           row.netPnl === null ? "" : Number(row.netPnl) >= 0 ? "text-profit" : "text-loss",
                         )}
                       >
-                        {row.netPnl === null ? "—" : formatSignedMoney(row.netPnl, suite.currency)}
+                        {row.netPnl === null ? "-" : formatSignedMoney(row.netPnl, suite.currency)}
                       </td>
                       <td className="py-2.5 pr-3 font-mono text-xs tabular-nums text-loss">
                         {formatR(row.maxDrawdownR)}
                       </td>
                       <td className="py-2.5 pr-3 font-mono text-xs tabular-nums">
                         {row.avgDurationMin === null
-                          ? "—"
+                          ? "-"
                           : row.avgDurationMin < 60
                             ? `${row.avgDurationMin}m`
                             : `${Math.round(row.avgDurationMin / 60)}h`}
                       </td>
                       <td className="py-2.5 font-mono text-xs tabular-nums">
-                        {row.followedPlanPct === null ? "—" : formatPercent(row.followedPlanPct, 0)}
+                        {row.followedPlanPct === null ? "-" : formatPercent(row.followedPlanPct, 0)}
                       </td>
                     </tr>
                   ))}
@@ -178,10 +178,10 @@ export function MarketTab({ suite, onDrillToSymbol }: RowClickProps & { suite: S
                         {row.trades}
                       </td>
                       <td className="py-2.5 pr-3 font-mono text-xs tabular-nums">
-                        {row.winRate === null ? "—" : formatPercent(row.winRate, 0)}
+                        {row.winRate === null ? "-" : formatPercent(row.winRate, 0)}
                       </td>
                       <td className="py-2.5 pr-3 font-mono text-xs tabular-nums">
-                        {row.profitFactor === null ? "—" : formatNumber(row.profitFactor, 2)}
+                        {row.profitFactor === null ? "-" : formatNumber(row.profitFactor, 2)}
                       </td>
                       <td
                         className={cn(
@@ -189,7 +189,7 @@ export function MarketTab({ suite, onDrillToSymbol }: RowClickProps & { suite: S
                           row.avgR === null ? "" : Number(row.avgR) >= 0 ? "text-profit" : "text-loss",
                         )}
                       >
-                        {row.avgR === null ? "—" : formatR(row.avgR)}
+                        {row.avgR === null ? "-" : formatR(row.avgR)}
                       </td>
                       <td
                         className={cn(
@@ -197,7 +197,7 @@ export function MarketTab({ suite, onDrillToSymbol }: RowClickProps & { suite: S
                           row.netPnl === null ? "" : Number(row.netPnl) >= 0 ? "text-profit" : "text-loss",
                         )}
                       >
-                        {row.netPnl === null ? "—" : formatSignedMoney(row.netPnl, suite.currency)}
+                        {row.netPnl === null ? "-" : formatSignedMoney(row.netPnl, suite.currency)}
                       </td>
                     </tr>
                   ))}
@@ -232,11 +232,11 @@ export function MarketTab({ suite, onDrillToSymbol }: RowClickProps & { suite: S
                       row.netPnl === null ? "text-muted-foreground" : Number(row.netPnl) >= 0 ? "text-profit" : "text-loss",
                     )}
                   >
-                    {row.netPnl === null ? "—" : formatSignedMoney(row.netPnl, suite.currency)}
+                    {row.netPnl === null ? "-" : formatSignedMoney(row.netPnl, suite.currency)}
                   </p>
                   <p className="font-mono text-[11px] tabular-nums text-muted-foreground">
-                    {row.winRate === null ? "—" : formatPercent(row.winRate, 0)} {SH.winSuffix} ·{" "}
-                    {row.avgR === null ? "—" : formatR(row.avgR)} {SH.avgLower}
+                    {row.winRate === null ? "-" : formatPercent(row.winRate, 0)} {SH.winSuffix} ·{" "}
+                    {row.avgR === null ? "-" : formatR(row.avgR)} {SH.avgLower}
                   </p>
                 </div>
               ))}
@@ -259,7 +259,7 @@ function BucketPanel({ title, description, buckets }: { title: string; descripti
       <CardContent>
         <BucketBars
           buckets={buckets}
-          ariaLabel={`${title} — ${dict.analytics.dimensions.time.bucketAriaTail}`.replace(/\s+/g, " ").trim()}
+          ariaLabel={`${title} - ${dict.analytics.dimensions.time.bucketAriaTail}`.replace(/\s+/g, " ").trim()}
           height={220}
         />
       </CardContent>
@@ -341,7 +341,7 @@ export function PsychologyTab({ suite }: { suite: Suite }) {
                 </p>
                 <p className="mt-1 font-mono text-xl font-semibold tabular-nums">{band.trades}</p>
                 <p className="font-mono text-xs tabular-nums text-muted-foreground">
-                  {band.winRate === null ? "—" : formatPercent(band.winRate, 0)} {SH.winSuffix}
+                  {band.winRate === null ? "-" : formatPercent(band.winRate, 0)} {SH.winSuffix}
                 </p>
                 <p
                   className={cn(
@@ -349,7 +349,7 @@ export function PsychologyTab({ suite }: { suite: Suite }) {
                     band.avgR === null ? "text-muted-foreground" : Number(band.avgR) >= 0 ? "text-profit" : "text-loss",
                   )}
                 >
-                  {band.avgR === null ? "—" : formatR(band.avgR)} {SH.avgLower}
+                  {band.avgR === null ? "-" : formatR(band.avgR)} {SH.avgLower}
                 </p>
               </div>
             ))}

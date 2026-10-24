@@ -12,7 +12,7 @@ import { queryKeys } from "@/lib/api/keys";
 
 /**
  * Monitoring hooks. The overview is one aggregate of observed state, polled
- * lightly (§18) — 12 s interval, no focus refetch storms. Threshold updates
+ * lightly (§18) - 12 s interval, no focus refetch storms. Threshold updates
  * and manual job runs invalidate the aggregate onSettled (failures change
  * the engine state too: failed runs land in the job ledger).
  */

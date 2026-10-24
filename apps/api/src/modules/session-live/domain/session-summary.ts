@@ -1,13 +1,13 @@
 /**
- * Session summary engine (Phase 10 §43) — pure, deterministic.
+ * Session summary engine (Phase 10 §43) - pure, deterministic.
  *
  * "only metrics supported by real data; unavailable stays null/0-honest":
  *   - tradeCount counts journal trades OPENED in the session window;
  *   - netPnl sums realized P&L of trades CLOSED inside the window
- *     (pnlNet ?? pnlGross — the mock's canonical fallback order);
+ *     (pnlNet ?? pnlGross - the mock's canonical fallback order);
  *   - avgR averages rMultiple of those closed trades when computable;
  *   - violationsCount comes from the Discipline domain (in-window VIOLATION
- *     rows, auto-evaluated on trade.closed — wired in the service) and
+ *     rows, auto-evaluated on trade.closed - wired in the service) and
  *     ecoEventsCount from the deterministic eco calendar generator; both are
  *     SERVICE-PROVIDED counters, passed through verbatim (0 stays 0-honest,
  *     never fabricated).
@@ -17,10 +17,10 @@ export interface SummaryTradeRow {
   status: string;
   entryAt: Date;
   exitAt: Date | null;
-  /** Decimal wire strings — null when never computed (never invented). */
+  /** Decimal wire strings - null when never computed (never invented). */
   pnlNet: string | null;
   pnlGross: string | null;
-  /** Decimal wire string — null when no computable risk amount. */
+  /** Decimal wire string - null when no computable risk amount. */
   rMultiple: string | null;
 }
 
@@ -71,7 +71,7 @@ export function computeSessionSummary(input: SessionSummaryInput): SessionSummar
     .map((value) => Number(value))
     .filter((value) => Number.isFinite(value));
 
-  // Deterministic order (entryAt asc) — the mock's store order is
+  // Deterministic order (entryAt asc) - the mock's store order is
   // insertion-based; the backend must be reproducible across restarts.
   const markets = [
     ...new Set(
@@ -80,7 +80,7 @@ export function computeSessionSummary(input: SessionSummaryInput): SessionSummar
         .map((trade) => trade.symbol),
     ),
   ];
-  if (markets.length === 0 && input.primarySymbol !== "—") markets.push(input.primarySymbol);
+  if (markets.length === 0 && input.primarySymbol !== "-") markets.push(input.primarySymbol);
 
   return {
     durationMinutes: Math.max(

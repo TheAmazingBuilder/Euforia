@@ -1,8 +1,8 @@
 /**
  * Client-observed API telemetry (Monitoring MASTER PROMPT §9, §21).
  *
- * The typed fetch wrapper records every real request it makes — method,
- * path, status and duration as the BROWSER observed it — into bounded rings.
+ * The typed fetch wrapper records every real request it makes - method,
+ * path, status and duration as the BROWSER observed it - into bounded rings.
  * The monitoring engine (mocks side) aggregates these observations at read
  * time, so the API tab shows real traffic from the running session instead
  * of hardcoded status values. Direction of dependency: mocks → lib (the app

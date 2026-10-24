@@ -1,17 +1,17 @@
 /**
- * Discipline bounded context (B4 — data-model.md "Domaine 7", the
+ * Discipline bounded context (B4 - data-model.md "Domaine 7", the
  * Discipline Engine): rules CRUD, violation log (context frozen at time T),
  * alert inbox and the server-side process aggregates (Euforia Discipline
  * Score, emotion → outcome matrix, mistakes ledger).
  *
  * Dependency graph (acyclic):
- *   DisciplineModule → DisciplineRepository (own Prisma boundary — RULE |
+ *   DisciplineModule → DisciplineRepository (own Prisma boundary - RULE |
  *                      VIOLATION | ALERT rows in disciplineRow)
- *                    → TradesModule (TradesRepository — journal facts the
+ *                    → TradesModule (TradesRepository - journal facts the
  *                      aggregates consume + TradeSubRow MISTAKE joins)
- *                    → AccountsModule (AccountsRepository — balances)
+ *                    → AccountsModule (AccountsRepository - balances)
  *                    → IdentityModule (user timezone for trading-day keys)
- *   Rule evaluation subscribes to the `trade.closed` domain event —
+ *   Rule evaluation subscribes to the `trade.closed` domain event -
  *   Trades never imports Discipline (no cycle).
  *
  * Security: routes are all authenticated (global guard), ownership is

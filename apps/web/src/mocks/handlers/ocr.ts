@@ -26,18 +26,18 @@ import {
 import { apiPaths } from "@/lib/api/endpoints";
 import { endpoint, latency, parseBody, pathParam, readJson, requireAuth, toErrorResponse } from "./utils";
 /**
- * OCR & screenshot recognition handlers — the mocked mirror of the NestJS
+ * OCR & screenshot recognition handlers - the mocked mirror of the NestJS
  * OcrController (Phase 19 contract), rebuilt for PROMPT 3.
  *
  * What changed vs the V0 mock:
  * - Recognition is now ASYNCHRONOUS: POST returns PROCESSING and the job
  *   advances through a deterministic time-based pipeline on subsequent GETs
  *   (UPLOADING → … → NORMALIZATION → REVIEW_REQUIRED). The UI polls; no
- *   setTimeout lives in React — real progress events can replace this later
+ *   setTimeout lives in React - real progress events can replace this later
  *   without touching the views (spec §15).
  * - The store is seeded with realistic history (spec §60): coherent trades
- *   (XAUUSD BUY, EURUSD BUY, NAS100 SELL, BTCUSD BUY) across all statuses —
- *   CONFIRMED, REVIEW_REQUIRED, FAILED — so History, stats and details are
+ *   (XAUUSD BUY, EURUSD BUY, NAS100 SELL, BTCUSD BUY) across all statuses -
+ *   CONFIRMED, REVIEW_REQUIRED, FAILED - so History, stats and details are
  *   populated on first visit.
  * - A deterministic FAILURE path exists for QA: images whose smallest side
  *   is under 200px cannot carry a readable MT5 summary and fail with
@@ -46,13 +46,13 @@ import { endpoint, latency, parseBody, pathParam, readJson, requireAuth, toError
  * House rules honored: every route is auth-guarded, unknown fields are
  * stripped by the shared schemas, financial values travel as decimal
  * strings, and the mock NEVER creates a Trade (recognition + confirmation
- * only — Trading Core owns the canonical journal).
+ * only - Trading Core owns the canonical journal).
  */
 
-/** Session-scoped store — recognition id → persisted aggregate (+ upload bytes for session uploads). */
+/** Session-scoped store - recognition id → persisted aggregate (+ upload bytes for session uploads). */
 /**
  * V2 fields (issues / qualityScore / timeline / possibleTradeDuplicate /
- * reprocessedFrom) are DERIVED at read time by publicBody — the same
+ * reprocessedFrom) are DERIVED at read time by publicBody - the same
  * read-time-derivation discipline as the NestJS DTO (confirmed rows never
  * mutate, V2 §33). The stored shape keeps only the evidence.
  */
@@ -64,11 +64,11 @@ type StoredRecognition = Omit<
   /** Simulated trade-duplicate flag (V2 §4) for the seeded demo. */
   storedTradeDuplicate?: NonNullable<OcrRecognition["possibleTradeDuplicate"]> | null;
 };
-/** Corrections-memory ledger (engine quality §2.3) — per-user patterns. */
+/** Corrections-memory ledger (engine quality §2.3) - per-user patterns. */
 const patternStore = new Map<string, Map<string, { value: string; occurrences: number }>>();
 const store = new Map<string, StoredRecognition>();
 
-/** V2 sets (§18) + collections (§28) — mock-side state. */
+/** V2 sets (§18) + collections (§28) - mock-side state. */
 type MockSet = {
   id: string;
   status: "REVIEW_REQUIRED" | "CONFIRMED" | "FAILED";
@@ -140,7 +140,7 @@ async function createMockRecognition(
 
 /**
  * Mock fusion (V2 §18): per-field agreement/conflict over the members'
- * machine fields — same semantics as the Nest fusion engine, simplified.
+ * machine fields - same semantics as the Nest fusion engine, simplified.
  */
 function fuseMockMembers(members: StoredRecognition[]): MockSet["result"] {
   const keys: string[] = [];
@@ -280,7 +280,7 @@ function sha256Hex(bytes: Uint8Array): Promise<string> {
   );
 }
 
-/** Minimal PNG IHDR / JPEG SOF dimension probe — real headers, no libs. */
+/** Minimal PNG IHDR / JPEG SOF dimension probe - real headers, no libs. */
 function imageDimensions(bytes: Uint8Array, mime: string): { width: number; height: number } {
   try {
     if (mime === "image/png" && bytes.length > 24 && bytes[12] === 0x49 && bytes[13] === 0x48 && bytes[14] === 0x44 && bytes[15] === 0x52) {
@@ -318,7 +318,7 @@ function seededRandom(seed: number): () => number {
  * Coherent fictional template trades (spec §60): every field belongs to the
  * SAME position, so the review screen reads like a real MT5 summary. The
  * checksum picks the template; per-field rolls decide what the engine could
- * and could not read (spec §19 — honest uncertainty, nothing guessed).
+ * and could not read (spec §19 - honest uncertainty, nothing guessed).
  */
 type TemplateTrade = {
   label: string;
@@ -372,7 +372,7 @@ const FIELD_KEYS = [
 
 // ── Account & Chart mock templates (Recognition V1.1) ───────────────────────
 
-/** ACCOUNT_POSITION — one coherent account snapshot + ONE open position. */
+/** ACCOUNT_POSITION - one coherent account snapshot + ONE open position. */
 const ACCOUNT_TEMPLATE: {
   label: string;
   classification: OcrRecognition["classification"];
@@ -407,7 +407,7 @@ const ACCOUNT_POSITION_CANDIDATE: NonNullable<OcrRecognition["candidates"]> = [
   },
 ];
 
-/** CHART_ANALYSIS — one coherent chart reading (legend + indicators). */
+/** CHART_ANALYSIS - one coherent chart reading (legend + indicators). */
 const CHART_TEMPLATE: {
   label: string;
   classification: OcrRecognition["classification"];
@@ -453,7 +453,7 @@ function simulateProfileFields(
       return {
         field: field as SimulatedField["field"], rawValue: null, normalizedValue: null,
         confidence: 0, confidenceBand: "UNKNOWN", validationStatus: "MISSING", sourceRegion: null,
-        warnings: ["Not found in the recognized text — enter it manually if it applies."],
+        warnings: ["Not found in the recognized text - enter it manually if it applies."],
       };
     }
     if (roll > 0.88 && optionalFields.has(field)) {
@@ -470,7 +470,7 @@ function simulateProfileFields(
   });
   const missing = fields.filter((f) => f.validationStatus === "MISSING").map((f) => f.field);
   const warnings: string[] = [];
-  if (missing.length >= 3) warnings.push("The screenshot appears incomplete — several fields could not be read.");
+  if (missing.length >= 3) warnings.push("The screenshot appears incomplete - several fields could not be read.");
   return { fields, warnings };
 }
 
@@ -540,7 +540,7 @@ function simulateExtraction(
         field, rawValue: null, normalizedValue: null, confidence: 0, confidenceBand: "UNKNOWN",
         validationStatus: "MISSING", sourceRegion: null,
         warnings: OPTIONAL_FIELDS.has(field)
-          ? ["Not found in the recognized text — enter it manually if it applies."]
+          ? ["Not found in the recognized text - enter it manually if it applies."]
           : ["No matching token found in the recognized text."],
       };
     }
@@ -548,7 +548,7 @@ function simulateExtraction(
       return {
         field, rawValue: null, normalizedValue: null, confidence: 0, confidenceBand: "UNKNOWN",
         validationStatus: "MISSING", sourceRegion: null,
-        warnings: ["Not found in the recognized text — enter it manually if it applies."],
+        warnings: ["Not found in the recognized text - enter it manually if it applies."],
       };
     }
     const normalizedValue = normalizeMockValue(field, rawValue);
@@ -556,7 +556,7 @@ function simulateExtraction(
       return {
         field, rawValue, normalizedValue, confidence, confidenceBand,
         validationStatus: "AMBIGUOUS", sourceRegion: region,
-        warnings: ["Multiple interpretations possible — review before confirming."],
+        warnings: ["Multiple interpretations possible - review before confirming."],
       };
     }
     if (confidence < 0.7) {
@@ -571,14 +571,14 @@ function simulateExtraction(
 
   const missing = fields.filter((f) => f.validationStatus === "MISSING").map((f) => f.field);
   const warnings: string[] = [];
-  if (missing.includes("exitPrice")) warnings.push("Exit price was not detected — the trade may still be open.");
+  if (missing.includes("exitPrice")) warnings.push("Exit price was not detected - the trade may still be open.");
   if (missing.includes("closeTime")) warnings.push("Close time was not detected.");
-  if (missing.length >= 3) warnings.push("The screenshot appears incomplete — several fields could not be read.");
+  if (missing.length >= 3) warnings.push("The screenshot appears incomplete - several fields could not be read.");
 
   return { fields, warnings };
 }
 
-// ── Seeded history (spec §60 — realistic, all statuses) ─────────────────────
+// ── Seeded history (spec §60 - realistic, all statuses) ─────────────────────
 
 function fakeChecksum(label: string): string {
   let hash = 0x811c9dc5;
@@ -602,21 +602,21 @@ type SeedSpec = {
   confirmed?: boolean;
   /** Seed carries grouped multi-trade drafts (engine quality §2.2). */
   multi?: boolean;
-  /** V2 §4 — seeded content-based trade duplicate flag for the review demo. */
+  /** V2 §4 - seeded content-based trade duplicate flag for the review demo. */
   tradeDuplicate?: boolean;
-  /** Account & Chart V1.1 — non-trade seeds. */
+  /** Account & Chart V1.1 - non-trade seeds. */
   profile?: OcrRecognition["extractionProfile"];
 };
 
 const SEED_SPECS: SeedSpec[] = [
-  { label: "XAUUSD BUY 0.10 — MT5 summary", file: "xauusd_mt5_0931.png", status: "CONFIRMED", ageMinutes: 4 * 60, confirmed: true },
-  { label: "EURUSD BUY 0.50 — MT5 summary", file: "eurusd_mt5_0812.png", status: "REVIEW_REQUIRED", ageMinutes: 35, tradeDuplicate: true },
-  { label: "BTCUSD BUY 0.25 — partial screenshot", file: "btcusd_mt5_1102.png", status: "REVIEW_REQUIRED", ageMinutes: 3 * 60 },
-  { label: "NAS100 SELL 1.00 — MT5 summary", file: "nas100_mt5_1530.png", status: "CONFIRMED", ageMinutes: 26 * 60, confirmed: true },
-  { label: "US30 SELL 0.40 — unreadable crop", file: "us30_crop_2210.png", status: "FAILED", ageMinutes: 27 * 60 },
-  { label: "History panel — 2 trades (grouped draft)", file: "history_multi_1030.png", status: "REVIEW_REQUIRED", ageMinutes: 90, multi: true },
-  { label: "MT5 account snapshot — 1 open position", file: "account_snapshot_1410.png", status: "REVIEW_REQUIRED", ageMinutes: 55, profile: "ACCOUNT_POSITION" },
-  { label: "TradingView chart — XAUUSD M15", file: "chart_xauusd_m15.png", status: "CONFIRMED", ageMinutes: 5 * 60, confirmed: true, profile: "CHART_ANALYSIS" },
+  { label: "XAUUSD BUY 0.10 - MT5 summary", file: "xauusd_mt5_0931.png", status: "CONFIRMED", ageMinutes: 4 * 60, confirmed: true },
+  { label: "EURUSD BUY 0.50 - MT5 summary", file: "eurusd_mt5_0812.png", status: "REVIEW_REQUIRED", ageMinutes: 35, tradeDuplicate: true },
+  { label: "BTCUSD BUY 0.25 - partial screenshot", file: "btcusd_mt5_1102.png", status: "REVIEW_REQUIRED", ageMinutes: 3 * 60 },
+  { label: "NAS100 SELL 1.00 - MT5 summary", file: "nas100_mt5_1530.png", status: "CONFIRMED", ageMinutes: 26 * 60, confirmed: true },
+  { label: "US30 SELL 0.40 - unreadable crop", file: "us30_crop_2210.png", status: "FAILED", ageMinutes: 27 * 60 },
+  { label: "History panel - 2 trades (grouped draft)", file: "history_multi_1030.png", status: "REVIEW_REQUIRED", ageMinutes: 90, multi: true },
+  { label: "MT5 account snapshot - 1 open position", file: "account_snapshot_1410.png", status: "REVIEW_REQUIRED", ageMinutes: 55, profile: "ACCOUNT_POSITION" },
+  { label: "TradingView chart - XAUUSD M15", file: "chart_xauusd_m15.png", status: "CONFIRMED", ageMinutes: 5 * 60, confirmed: true, profile: "CHART_ANALYSIS" },
 ];
 
 function buildSeed(spec: SeedSpec, index: number): StoredRecognition {
@@ -653,7 +653,7 @@ function buildSeed(spec: SeedSpec, index: number): StoredRecognition {
       ? { category: "EXTRACTION_FAILED", message: "We couldn't recognize enough information from this screenshot." }
       : null,
     corrections: null,
-    // The mocked backend never creates journal trades — no linked trade id.
+    // The mocked backend never creates journal trades - no linked trade id.
     tradeId: null,
     tradeIds: [],
     candidates: profile === "ACCOUNT_POSITION" ? ACCOUNT_POSITION_CANDIDATE : null,
@@ -667,7 +667,7 @@ function buildSeed(spec: SeedSpec, index: number): StoredRecognition {
   };
   if (spec.tradeDuplicate) {
     // A deterministic pseudo-trade the review banner can point at (the mock
-    // never touches the real journal — the trade id is demo-only).
+    // never touches the real journal - the trade id is demo-only).
     base.storedTradeDuplicate = {
       tradeId: "d4e5f6a7-b8c9-4d0e-9f1a-2b3c4d5e6f70",
       matchedOn: ["SYMBOL", "DIRECTION", "ENTRY_PRICE"],
@@ -699,7 +699,7 @@ function buildSeed(spec: SeedSpec, index: number): StoredRecognition {
     base.status = "CONFIRMED";
     base.confirmedAt = new Date(Date.now() - (spec.ageMinutes * 60_000 - 120_000)).toISOString();
     base.updatedAt = base.confirmedAt;
-    // Confirmed seeds read cleanly — stamp every field valid so the history
+    // Confirmed seeds read cleanly - stamp every field valid so the history
     // view shows a coherent, fully-reviewed outcome.
     base.fields = base.fields.map((field) => ({
       ...field,
@@ -753,7 +753,7 @@ function requiredFor(profile: OcrRecognition["extractionProfile"]): Set<string> 
 }
 
 /**
- * Read-time derivation of the V2 decision layer (§15/§16/§23/§32/§4) —
+ * Read-time derivation of the V2 decision layer (§15/§16/§23/§32/§4) -
  * a simplified mirror of the NestJS pure functions so the mock answers the
  * EXACT contract the real backend answers.
  */
@@ -803,7 +803,7 @@ function deriveV2(
     issues.push({ code: "POSSIBLE_TRADE_DUPLICATE", field: null, detail: possibleTradeDuplicate.tradeId });
   }
 
-  // Quality score (V2 §15 — documented weights, deterministic).
+  // Quality score (V2 §15 - documented weights, deterministic).
   const readable = body.fields.filter((f) => f.validationStatus !== "MISSING");
   let qualityScore: OcrRecognition["qualityScore"] = null;
   if (readable.length > 0) {
@@ -830,7 +830,7 @@ function deriveV2(
     };
   }
 
-  // Timeline (V2 §23 — only real evidence, wall-clock preserved).
+  // Timeline (V2 §23 - only real evidence, wall-clock preserved).
   const byKey = new Map(body.fields.map((f) => [f.field, f]));
   const timeline: OcrRecognition["timeline"] = [];
   if (byKey.get("openTime")?.normalizedValue) {
@@ -1049,7 +1049,7 @@ export const ocrHandlers = [
         ocrConfirmInputSchema,
         await readJson(request),
       );
-      // V2 §58 — the duplicate warnings are blocking at confirmation: the
+      // V2 §58 - the duplicate warnings are blocking at confirmation: the
       // user must acknowledge them explicitly ([Import Anyway] is a decision).
       if (found.duplicateOf && input.acknowledgeDuplicateScreenshot !== true) {
         return HttpResponse.json(
@@ -1085,9 +1085,9 @@ export const ocrHandlers = [
       patternStore.set("demo-user", patterns);
 
       // Grouped confirmation: canonical batches land in the stored aggregate
-      // (the mock never creates journal trades — § house rule).
+      // (the mock never creates journal trades - § house rule).
       // Non-trade profiles (Account & Chart V1.1): the confirmed values are
-      // NOT trade facts — an explicit skip warning mirrors the Nest bridge.
+      // NOT trade facts - an explicit skip warning mirrors the Nest bridge.
       if (found.extractionProfile !== "TRADE_SUMMARY") {
         found.warnings = [...found.warnings, "TRADE_IMPORT_SKIPPED_PROFILE"].slice(0, 16);
       } else if (input.batches) {
@@ -1117,7 +1117,7 @@ export const ocrHandlers = [
     }
   }),
 
-  // Re-OCR by crop (engine quality §2.4) — returns the overlapping fields
+  // Re-OCR by crop (engine quality §2.4) - returns the overlapping fields
   // of the stored result shifted by the region origin (mock-grade guidance).
   http.post(endpoint(apiPaths.ocrRecognitionRecrop(":id")), async ({ request, params }) => {
     try {
@@ -1157,7 +1157,7 @@ export const ocrHandlers = [
     }
   }),
 
-  // OCR quality analytics (engine quality §3.2) — derived from the store.
+  // OCR quality analytics (engine quality §3.2) - derived from the store.
   http.get(endpoint(apiPaths.ocrAnalytics), async ({ request }) => {
     try {
       requireAuth(request);
@@ -1197,7 +1197,7 @@ export const ocrHandlers = [
         avgDurationMs: durations.length > 0
           ? Math.round(durations.reduce((total, value) => total + value, 0) / durations.length)
           : null,
-        // V2 §30 — correction rate + distributions (derived from the store).
+        // V2 §30 - correction rate + distributions (derived from the store).
         correctionRate:
           confirmed > 0
             ? Math.round(
@@ -1247,7 +1247,7 @@ export const ocrHandlers = [
     }
   }),
 
-  // ── V2 §32/§39 — reprocess: a FRESH recognition from the same asset ──────
+  // ── V2 §32/§39 - reprocess: a FRESH recognition from the same asset ──────
   http.post(endpoint(apiPaths.ocrRecognitionReprocess(":id")), async ({ request, params }) => {
     try {
       requireAuth(request);
@@ -1281,7 +1281,7 @@ export const ocrHandlers = [
     }
   }),
 
-  // ── V2 §1/§2/§18 — multi-screenshot recognition sets ──────────────────────
+  // ── V2 §1/§2/§18 - multi-screenshot recognition sets ──────────────────────
   http.post(endpoint(apiPaths.ocrSets), async ({ request }) => {
     try {
       requireAuth(request);
@@ -1407,7 +1407,7 @@ export const ocrHandlers = [
     }
   }),
 
-  // ── V2 §28 — screenshot collections ──────────────────────────────────────
+  // ── V2 §28 - screenshot collections ──────────────────────────────────────
   http.post(endpoint(apiPaths.ocrCollections), async ({ request }) => {
     try {
       requireAuth(request);

@@ -48,13 +48,13 @@ import {
 import { endpoint, latency, parseBody, pathParam, readJson, toErrorResponse } from "./utils";
 
 /**
- * Nofy endpoints — the knowledge workspace's API surface. All reads serve
+ * Nofy endpoints - the knowledge workspace's API surface. All reads serve
  * the engine's per-user state; writes are Zod-validated. Reference blocks
  * are re-resolved server-side on every read so entity labels/deep links
  * stay fresh (spec §24).
  */
 export const nofyHandlers = [
-  /** GET /nofy/overview — knowledge workspace aggregates. */
+  /** GET /nofy/overview - knowledge workspace aggregates. */
   http.get(endpoint(apiPaths.nofyOverview), async () => {
     await latency();
     try {
@@ -64,7 +64,7 @@ export const nofyHandlers = [
     }
   }),
 
-  /** GET /nofy/notes?view=&folderId=&tagId=&q=&sort= — filtered note lists.
+  /** GET /nofy/notes?view=&folderId=&tagId=&q=&sort= - filtered note lists.
    *  ?refKind=&refId= instead returns the notes linked to an app entity
    *  (the Playbook / Trade Review integration surface). */
   http.get(endpoint(apiPaths.nofyNotes), async ({ request }) => {
@@ -91,7 +91,7 @@ export const nofyHandlers = [
     }
   }),
 
-  /** POST /nofy/notes — create (optionally from a template). */
+  /** POST /nofy/notes - create (optionally from a template). */
   http.post(endpoint(apiPaths.nofyNotes), async ({ request }) => {
     await latency();
     try {
@@ -102,7 +102,7 @@ export const nofyHandlers = [
     }
   }),
 
-  /** GET /nofy/notes/:noteId — full note (refs re-resolved, view tracked). */
+  /** GET /nofy/notes/:noteId - full note (refs re-resolved, view tracked). */
   http.get(endpoint(apiPaths.nofyNote(":noteId")), async ({ params }) => {
     await latency();
     try {
@@ -112,7 +112,7 @@ export const nofyHandlers = [
     }
   }),
 
-  /** PATCH /nofy/notes/:noteId — autosave + metadata (version snapshots inside). */
+  /** PATCH /nofy/notes/:noteId - autosave + metadata (version snapshots inside). */
   http.patch(endpoint(apiPaths.nofyNote(":noteId")), async ({ params, request }) => {
     await latency();
     try {
@@ -123,7 +123,7 @@ export const nofyHandlers = [
     }
   }),
 
-  /** DELETE /nofy/notes/:noteId — soft delete → Trash. */
+  /** DELETE /nofy/notes/:noteId - soft delete → Trash. */
   http.delete(endpoint(apiPaths.nofyNote(":noteId")), async ({ params }) => {
     await latency();
     try {
@@ -145,7 +145,7 @@ export const nofyHandlers = [
     }
   }),
 
-  /** POST /nofy/notes/:noteId/restore — out of the trash. */
+  /** POST /nofy/notes/:noteId/restore - out of the trash. */
   http.post(endpoint(apiPaths.nofyNoteRestore(":noteId")), async ({ params }) => {
     await latency();
     try {
@@ -155,7 +155,7 @@ export const nofyHandlers = [
     }
   }),
 
-  /** DELETE /nofy/notes/:noteId/permanent — irreversible purge from trash. */
+  /** DELETE /nofy/notes/:noteId/permanent - irreversible purge from trash. */
   http.delete(endpoint(apiPaths.nofyNotePermanent(":noteId")), async ({ params }) => {
     await latency();
     try {
@@ -165,7 +165,7 @@ export const nofyHandlers = [
     }
   }),
 
-  /** GET /nofy/notes/:noteId/versions — version history list. */
+  /** GET /nofy/notes/:noteId/versions - version history list. */
   http.get(endpoint(apiPaths.nofyNoteVersions(":noteId")), async ({ params }) => {
     await latency();
     try {
@@ -175,7 +175,7 @@ export const nofyHandlers = [
     }
   }),
 
-  /** GET /nofy/notes/:noteId/versions/:versionId — one version's blocks. */
+  /** GET /nofy/notes/:noteId/versions/:versionId - one version's blocks. */
   http.get(endpoint(apiPaths.nofyNoteVersion(":noteId", ":versionId")), async ({ params }) => {
     await latency();
     try {
@@ -185,7 +185,7 @@ export const nofyHandlers = [
     }
   }),
 
-  /** POST /nofy/notes/:noteId/versions/:versionId/restore — roll back. */
+  /** POST /nofy/notes/:noteId/versions/:versionId/restore - roll back. */
   http.post(endpoint(apiPaths.nofyNoteVersionRestore(":noteId", ":versionId")), async ({ params }) => {
     await latency();
     try {
@@ -195,7 +195,7 @@ export const nofyHandlers = [
     }
   }),
 
-  /** GET /nofy/folders — folders with live note counts. */
+  /** GET /nofy/folders - folders with live note counts. */
   http.get(endpoint(apiPaths.nofyFolders), async () => {
     await latency();
     try {
@@ -216,7 +216,7 @@ export const nofyHandlers = [
     }
   }),
 
-  /** PATCH /nofy/folders/:folderId — rename. */
+  /** PATCH /nofy/folders/:folderId - rename. */
   http.patch(endpoint(apiPaths.nofyFolder(":folderId")), async ({ params, request }) => {
     await latency();
     try {
@@ -227,7 +227,7 @@ export const nofyHandlers = [
     }
   }),
 
-  /** DELETE /nofy/folders/:folderId — notes fall back to "No folder". */
+  /** DELETE /nofy/folders/:folderId - notes fall back to "No folder". */
   http.delete(endpoint(apiPaths.nofyFolder(":folderId")), async ({ params }) => {
     await latency();
     try {
@@ -237,7 +237,7 @@ export const nofyHandlers = [
     }
   }),
 
-  /** GET /nofy/tags — tags with live note counts. */
+  /** GET /nofy/tags - tags with live note counts. */
   http.get(endpoint(apiPaths.nofyTags), async () => {
     await latency();
     try {
@@ -247,7 +247,7 @@ export const nofyHandlers = [
     }
   }),
 
-  /** POST /nofy/tags — create-or-return (idempotent by name). */
+  /** POST /nofy/tags - create-or-return (idempotent by name). */
   http.post(endpoint(apiPaths.nofyTags), async ({ request }) => {
     await latency();
     try {
@@ -259,7 +259,7 @@ export const nofyHandlers = [
     }
   }),
 
-  /** GET /nofy/templates — built-in + user templates. */
+  /** GET /nofy/templates - built-in + user templates. */
   http.get(endpoint(apiPaths.nofyTemplates), async () => {
     await latency();
     try {
@@ -269,7 +269,7 @@ export const nofyHandlers = [
     }
   }),
 
-  /** POST /nofy/templates — capture a reusable structure. */
+  /** POST /nofy/templates - capture a reusable structure. */
   http.post(endpoint(apiPaths.nofyTemplates), async ({ request }) => {
     await latency();
     try {
@@ -280,7 +280,7 @@ export const nofyHandlers = [
     }
   }),
 
-  /** POST /nofy/templates/instantiate — new note from a template. */
+  /** POST /nofy/templates/instantiate - new note from a template. */
   http.post(endpoint(apiPaths.nofyTemplatesInstantiate), async ({ request }) => {
     await latency();
     try {
@@ -291,7 +291,7 @@ export const nofyHandlers = [
     }
   }),
 
-  /** GET /nofy/search?q= — full-text across title/content/tags/folder. */
+  /** GET /nofy/search?q= - full-text across title/content/tags/folder. */
   http.get(endpoint(apiPaths.nofySearch), async ({ request }) => {
     await latency();
     try {
@@ -302,7 +302,7 @@ export const nofyHandlers = [
     }
   }),
 
-  /** GET /nofy/refs?q=&kind= — the entity picker's source. */
+  /** GET /nofy/refs?q=&kind= - the entity picker's source. */
   http.get(endpoint(apiPaths.nofyRefs), async ({ request }) => {
     await latency();
     try {

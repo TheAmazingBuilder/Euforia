@@ -15,12 +15,12 @@ import type { OryonChartEngine, OryonChartType } from "@/lib/charting/oryon-char
 import type { OryonIndicatorStore } from "@/lib/oryon/indicators/store";
 
 /**
- * Oryon chart panel — owns the HISTORY query state and renders the honest
+ * Oryon chart panel - owns the HISTORY query state and renders the honest
  * state machine around the chart: waiting for an instrument, loading
  * history, load failure with retry, empty history, then the live chart.
  * Every state preserves the surrounding workspace (the shell stays put).
  *
- * Phase 7: each panel instance is INDEPENDENT — its own history query
+ * Phase 7: each panel instance is INDEPENDENT - its own history query
  * (TanStack deduplicates identical symbol+interval requests across panels),
  * its own indicator stack and its own drawing set. `interactive` gates the
  * drawing layer; the engine handle surfaces through onEngineReady.
@@ -38,22 +38,22 @@ export function OryonChartPanel({
   onEngineReady,
   onEngineGone,
 }: {
-  /** STABLE panel identity — chart prefs (context-menu Settings) key on it. */
+  /** STABLE panel identity - chart prefs (context-menu Settings) key on it. */
   panelId: string;
   instrument: Instrument | null;
   interval: MarketInterval;
   chartType: OryonChartType;
   magnet: boolean;
-  /** THIS panel's indicator stack (per panel id — Phase 7). */
+  /** THIS panel's indicator stack (per panel id - Phase 7). */
   indicatorStore: OryonIndicatorStore;
-  /** THIS panel's temporal-context prefs (per panel id — Phase 8). */
+  /** THIS panel's temporal-context prefs (per panel id - Phase 8). */
   context: OryonPanelContext;
-  /** THIS panel's analysis prefs (per panel id — Phase 9). */
+  /** THIS panel's analysis prefs (per panel id - Phase 9). */
   analysis: OryonPanelAnalysis;
   /** True while this panel is the workspace's active chart. */
   interactive: boolean;
   onEngineReady?: (engine: OryonChartEngine) => void;
-  /** Engine destroyed (chart unmounted) — mirrors onEngineReady. */
+  /** Engine destroyed (chart unmounted) - mirrors onEngineReady. */
   onEngineGone?: () => void;
 }) {
   const dict = useDict();
@@ -77,7 +77,7 @@ export function OryonChartPanel({
   // keepPreviousData window (instrument/timeframe switch) the chart STAYS
   // mounted showing the previous window: the legend keeps labeling the data
   // ACTUALLY displayed (dataSymbol), live ticks are paused, and an explicit
-  // chip announces the incoming load — nothing is ever mislabeled.
+  // chip announces the incoming load - nothing is ever mislabeled.
   if (history.isPending) {
     return (
       <CenterState testid="oryon-state-loading" spinner message={S.loadingHistory}>
@@ -88,7 +88,7 @@ export function OryonChartPanel({
     );
   }
 
-  // History failed — honest error + retry, workspace stays intact.
+  // History failed - honest error + retry, workspace stays intact.
   if (history.isError) {
     return (
       <CenterState
@@ -158,7 +158,7 @@ export function OryonChartPanel({
   );
 }
 
-/** Full-area honest state (loading / error / empty) — never a blank canvas. */
+/** Full-area honest state (loading / error / empty) - never a blank canvas. */
 function CenterState({
   testid,
   message,

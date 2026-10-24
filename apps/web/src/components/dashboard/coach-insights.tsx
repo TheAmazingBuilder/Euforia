@@ -13,12 +13,12 @@ import {
 } from "@/components/ui/card";
 
 interface CoachInsightsProps {
-  /** STRATEGY_DECAY alerts — the coach's behavioral readings. */
+  /** STRATEGY_DECAY alerts - the coach's behavioral readings. */
   insights: Alert[];
 }
 
 /**
- * "Coach insights" — two behavioral pattern cards picked by the discipline
+ * "Coach insights" - two behavioral pattern cards picked by the discipline
  * engine, each linking to the full analysis on /analytics.
  */
 export function CoachInsights({ insights }: CoachInsightsProps) {
@@ -36,7 +36,7 @@ export function CoachInsights({ insights }: CoachInsightsProps) {
       <CardContent className="py-0">
         {cards.length === 0 ? (
           <p className="py-3 text-sm text-muted-foreground">
-            No insights yet — the coach needs a few more trades to spot patterns.
+            No insights yet - the coach needs a few more trades to spot patterns.
           </p>
         ) : (
           <ul className="divide-y divide-border">

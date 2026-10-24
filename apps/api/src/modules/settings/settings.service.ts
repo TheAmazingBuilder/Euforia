@@ -1,13 +1,13 @@
 /**
- * Settings application service (Phase 15) — the 9-domain user preferences
+ * Settings application service (Phase 15) - the 9-domain user preferences
  * document.
  *
  * Bounded context (Phase 15 §3): Settings owns HOW the user prefers Euforia
  * to behave/display information. It does NOT own identity (Profile), auth,
  * trading accounts (it only holds a validated reference, §21), integrations
- * or system configuration (§6 — no GET /settings/config exists here).
+ * or system configuration (§6 - no GET /settings/config exists here).
  *
- * Persistence reuses the existing `User.preferences` JSON column (§28 —
+ * Persistence reuses the existing `User.preferences` JSON column (§28 -
  * evolve, don't duplicate): IdentityRepository stays the ONLY writer of the
  * User table; this service goes through its narrow preferences contract.
  *
@@ -46,7 +46,7 @@ import {
 } from "./settings.logic";
 
 /**
- * Per-domain input schemas — single source of truth: @cosmoz/shared
+ * Per-domain input schemas - single source of truth: @cosmoz/shared
  * (each `<domain>PreferencesSchema` is its own input schema per settings.ts).
  */
 const PREFERENCE_DOMAIN_SCHEMAS: Record<PreferenceDomain, z.ZodTypeAny> = {
@@ -70,14 +70,14 @@ export class SettingsService {
     private readonly events: SecurityEventService,
   ) {}
 
-  /** Full preferences doc — lazily provisioned from safe defaults. */
+  /** Full preferences doc - lazily provisioned from safe defaults. */
   async getPreferences(userId: string): Promise<UserPreferences> {
     const { doc } = await this.loadDoc(userId);
     return doc;
   }
 
   /**
-   * PATCH /me/preferences/:domain — the client sends the WHOLE domain object
+   * PATCH /me/preferences/:domain - the client sends the WHOLE domain object
    * (frontend contract); only that domain changes, siblings are carried over
    * verbatim (§39 invariants).
    */
@@ -91,7 +91,7 @@ export class SettingsService {
       stripServerManagedKeys(input),
     ) as Record<string, unknown>;
 
-    // §21 — a default trading account is a REFERENCE, not ownership: verify
+    // §21 - a default trading account is a REFERENCE, not ownership: verify
     // the referenced account exists and belongs to the authenticated user
     // before persisting (foreign = not found, repo-wide IDOR convention).
     if (domain === "trading") {
@@ -110,7 +110,7 @@ export class SettingsService {
     const next = mergeDomainIntoDoc(doc, domain, parsed);
     userPreferencesSchema.parse(next); // full-doc invariant before persisting
 
-    // §15 — the Localization domain mirrors Profile.timezone (ONE source of
+    // §15 - the Localization domain mirrors Profile.timezone (ONE source of
     // truth); the write-through is atomic with the document persist (§29.6).
     const timezone = timezoneWriteThroughOf(domain, parsed);
     if (timezone !== null) {
@@ -119,7 +119,7 @@ export class SettingsService {
       await this.repository.updatePreferences(userId, next);
     }
 
-    // §33 — only security/audit-relevant preference changes hit the shared
+    // §33 - only security/audit-relevant preference changes hit the shared
     // ledger; cosmetic UI preferences stay noise-free (§40).
     if (domain === "privacy") {
       const before = (doc.privacy as { profileVisibility?: string }).profileVisibility;
@@ -138,7 +138,7 @@ export class SettingsService {
   }
 
   /**
-   * POST /me/preferences/reset — restores ONE domain's defaults (§37). The
+   * POST /me/preferences/reset - restores ONE domain's defaults (§37). The
    * localization reset keeps the mock-parity behavior: the mirrored
    * Profile.timezone follows the domain default (documented product
    * divergence from the UI copy, see PHASE-15-SETTINGS.md).
@@ -181,7 +181,7 @@ export class SettingsService {
 }
 
 /**
- * §31/§32 defense-in-depth — envelope fields are server-managed: strip them
+ * §31/§32 defense-in-depth - envelope fields are server-managed: strip them
  * from ANY incoming payload before validation so they can never be planted
  * into the document (Zod already strips unknown keys; this makes the
  * invariant explicit and independent of schema evolution).

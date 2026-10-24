@@ -3,7 +3,7 @@ import { ecoEventSchema, type EcoEvent } from "@cosmoz/shared";
 import { mulberry32, uuid, type Rng } from "./random";
 
 /**
- * Economic-calendar fixtures — deterministic per UTC day (same seed rule as
+ * Economic-calendar fixtures - deterministic per UTC day (same seed rule as
  * buildFixtureData), anchored to the current day: a rolling window of
  * [-92 .. +13] days: the released-history span now covers the full 90-day
  * trade fixture window so the Analytics economic-event context can classify
@@ -11,7 +11,7 @@ import { mulberry32, uuid, type Rng } from "./random";
  * slots: US data 8:30/10:00 ET, FOMC 14:00 ET, ECB 8:15 CET.
  */
 
-/** Event template — times are the usual Toronto-time slot (24h). */
+/** Event template - times are the usual Toronto-time slot (24h). */
 interface EcoTemplate {
   title: string;
   currency: "USD" | "EUR" | "GBP" | "CAD";

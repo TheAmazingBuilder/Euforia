@@ -16,9 +16,9 @@ import type { z } from "zod";
 import { IntegrationsService, type Fail } from "./integrations.service";
 
 /**
- * Integration Hub controller (B14) — HTTP surface over the platform layer.
+ * Integration Hub controller (B14) - HTTP surface over the platform layer.
  * Mirrors `mocks/handlers/integrations.ts` exactly (6 routes). Provider ids
- * are catalog SLUGS ("deriv", "wh-macro") — deliberately NOT uuids, matching
+ * are catalog SLUGS ("deriv", "wh-macro") - deliberately NOT uuids, matching
  * the shared contract.
  */
 
@@ -31,7 +31,7 @@ function toFailure(fail: Fail): never {
 export class IntegrationsController {
   constructor(private readonly integrations: IntegrationsService) {}
 
-  /** GET /integrations/overview — the hub's single aggregate. */
+  /** GET /integrations/overview - the hub's single aggregate. */
   @Get("overview")
   async overview(@CurrentUser() principal: AuthPrincipal) {
     const result = await this.integrations.overview(principal.userId);

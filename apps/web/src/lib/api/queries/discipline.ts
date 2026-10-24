@@ -20,7 +20,7 @@ import { apiRequest } from "@/lib/api/client";
 import { apiPaths } from "@/lib/api/endpoints";
 import { queryKeys } from "@/lib/api/keys";
 
-/** Discipline domain hooks — banner aggregate + alerts inbox + rules engine. */
+/** Discipline domain hooks - banner aggregate + alerts inbox + rules engine. */
 
 export function useRulesStatus(accountId: string | null = null) {
   return useQuery({
@@ -36,13 +36,13 @@ export function useAlerts() {
   return useQuery({
     queryKey: queryKeys.alerts,
     queryFn: () => apiRequest<AlertsResponse>(apiPaths.alerts),
-    // Notification inbox — gentle background refresh so goal-status and
+    // Notification inbox - gentle background refresh so goal-status and
     // discipline alerts reach the bell without requiring a navigation.
     refetchInterval: 60_000,
   });
 }
 
-/** GET /eco-events — economic calendar (Priorité 3, feature 10). */
+/** GET /eco-events - economic calendar (Priorité 3, feature 10). */
 export function useEcoEvents() {
   return useQuery({
     queryKey: queryKeys.ecoEvents,
@@ -50,7 +50,7 @@ export function useEcoEvents() {
   });
 }
 
-/** PATCH /alerts/:id/read — dashboard inbox "mark as read" row action. */
+/** PATCH /alerts/:id/read - dashboard inbox "mark as read" row action. */
 export function useMarkAlertRead() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -62,7 +62,7 @@ export function useMarkAlertRead() {
   });
 }
 
-// ── Phase 8 — discipline screen: rules CRUD, violations, score, ledger ──────
+// ── Phase 8 - discipline screen: rules CRUD, violations, score, ledger ──────
 
 export function useRules() {
   return useQuery({
@@ -85,7 +85,7 @@ export function useDisciplineScore() {
   });
 }
 
-/** GET /discipline/emotion-matrix — emotion → outcome heatmap rows. */
+/** GET /discipline/emotion-matrix - emotion → outcome heatmap rows. */
 export function useEmotionMatrix() {
   return useQuery({
     queryKey: queryKeys.emotionMatrix,
@@ -100,7 +100,7 @@ export function useMistakesLedger() {
   });
 }
 
-/** POST /rules — create a discipline rule (the banner reflects it via rules-status). */
+/** POST /rules - create a discipline rule (the banner reflects it via rules-status). */
 export function useCreateRule() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -113,7 +113,7 @@ export function useCreateRule() {
   });
 }
 
-/** PATCH /rules/:id — param editor + severity + active toggle. */
+/** PATCH /rules/:id - param editor + severity + active toggle. */
 export function useUpdateRule() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -140,7 +140,7 @@ export function useDeleteRule() {
   });
 }
 
-/** PATCH /violations/:id/acknowledge — log row action (score refetches). */
+/** PATCH /violations/:id/acknowledge - log row action (score refetches). */
 export function useAcknowledgeViolation() {
   const queryClient = useQueryClient();
   return useMutation({

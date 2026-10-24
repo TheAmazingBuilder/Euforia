@@ -9,7 +9,7 @@ import {
 } from "./weeklyReport";
 
 /**
- * PeriodReport — the premium multi-period report (GET /stats/report).
+ * PeriodReport - the premium multi-period report (GET /stats/report).
  * Entirely SERVER-CALCULATED from closed trades over a week / month /
  * quarter window: the client only picks the granularity and an anchor
  * date, never derives aggregates. Reuses the weekly-report row shapes
@@ -21,7 +21,7 @@ export type ReportGranularity = z.infer<typeof reportGranularitySchema>;
 
 /**
  * One slice of the period: a trading day (week / month) or a week bucket
- * (quarter). `equity` is the cumulative net P&L INSIDE the period — the
+ * (quarter). `equity` is the cumulative net P&L INSIDE the period - the
  * fuel for the equity curve, not the account balance.
  */
 export const reportPointSchema = z.object({
@@ -33,7 +33,7 @@ export const reportPointSchema = z.object({
 });
 export type ReportPoint = z.infer<typeof reportPointSchema>;
 
-/** Same-granularity previous period — the honest comparison base. */
+/** Same-granularity previous period - the honest comparison base. */
 export const reportComparisonSchema = z.object({
   periodStart: dateKeySchema,
   periodEnd: dateKeySchema,
@@ -45,7 +45,7 @@ export const reportComparisonSchema = z.object({
 export type ReportComparison = z.infer<typeof reportComparisonSchema>;
 
 /**
- * Pro metrics — the numbers professionals ask for first. Profit factor is
+ * Pro metrics - the numbers professionals ask for first. Profit factor is
  * null when the period holds no losing trade (undefined math, displayed
  * honestly as "∞" by the UI); expectancy is per-trade R.
  */
@@ -67,7 +67,7 @@ export type ReportProMetrics = z.infer<typeof reportProMetricsSchema>;
 export const reportRBucketSchema = z.object({
   label: z.string().min(1),
   count: z.number().int().min(0),
-  /** Buckets on the loss side — drives the bar ink client-side. */
+  /** Buckets on the loss side - drives the bar ink client-side. */
   negative: z.boolean(),
 });
 export type ReportRBucket = z.infer<typeof reportRBucketSchema>;

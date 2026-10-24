@@ -1,5 +1,5 @@
 /**
- * COSMOZ API — error mapping (pure functions, unit-testable without HTTP).
+ * COSMOZ API - error mapping (pure functions, unit-testable without HTTP).
  *
  * Maps ANY thrown value to a stable API response:
  *   `{ error: <category>, code?, message?, issues?, requestId? }`
@@ -19,7 +19,7 @@ import { HttpException, HttpStatus } from "@nestjs/common";
 import { AppError, ValidationError } from "../errors/app-error";
 import type { ErrorCategory } from "../errors/app-error";
 
-/** Minimal structural types — avoids coupling this module to fastify/prisma. */
+/** Minimal structural types - avoids coupling this module to fastify/prisma. */
 interface ErrLike {
   message?: unknown;
   stack?: string;
@@ -134,7 +134,7 @@ function fromFrameworkError(err: ErrLike): MappedError | undefined {
   return { status, body, sanitized: false };
 }
 
-/** Prisma known request errors — mapped conservatively, never leaking SQL. */
+/** Prisma known request errors - mapped conservatively, never leaking SQL. */
 function fromPrismaError(err: ErrLike): MappedError | undefined {
   const code = typeof err.code === "string" ? err.code : undefined;
   if (!code || !/^P\d{4}$/.test(code)) return undefined;
@@ -165,7 +165,7 @@ function fromUnknown(err: ErrLike, isDevelopment: boolean): MappedError {
   const status = fallbackStatus ?? 500;
   const category = STATUS_TO_CATEGORY[status] ?? "InternalError";
   const body: MappedError["body"] = { error: category };
-  // Unknown thrower — the original message may contain internals (stack,
+  // Unknown thrower - the original message may contain internals (stack,
   // SQL, provider payloads) and is NEVER forwarded.
   body.message = "An unexpected error occurred.";
   return { status, body, sanitized: status >= 500 };

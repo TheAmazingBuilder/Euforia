@@ -46,18 +46,18 @@ import {
 import type { OryonDrawingConversions } from "./oryon-chart-engine";
 
 /**
- * Oryon drawing primitive — the rendering half of the drawing engine.
+ * Oryon drawing primitive - the rendering half of the drawing engine.
  *
  * WHY a series primitive (spec §4D): Lightweight Charts calls
- * updateAllViews() + the pane renderer before EVERY internal repaint —
+ * updateAllViews() + the pane renderer before EVERY internal repaint -
  * pan, zoom, autoscale, resize (autoSize), data updates and live ticks.
  * The overlay therefore cannot drift from the candles: alignment is
  * maintained by the library's own paint loop instead of a parallel
  * subscription web. This is the sanctioned v5 extension point
- * (series.attachPrimitive — verified against the installed 5.2.1 typings).
+ * (series.attachPrimitive - verified against the installed 5.2.1 typings).
  *
  * Coordinates: everything is projected through the engine's conversion
- * facade (logical-index pipeline — see oryon-chart-engine.ts) into CSS px
+ * facade (logical-index pipeline - see oryon-chart-engine.ts) into CSS px
  * relative to the pane, then painted on the bitmap canvas scaled by the
  * device pixel ratios (fancy-canvas contract).
  *
@@ -67,7 +67,7 @@ import type { OryonDrawingConversions } from "./oryon-chart-engine";
  */
 
 /**
- * Live draft geometry contract lives in the drawing domain (draft.ts) —
+ * Live draft geometry contract lives in the drawing domain (draft.ts) -
  * this primitive is a pure renderer of committed + draft state.
  */
 
@@ -101,7 +101,7 @@ class OryonDrawingsPaneRenderer implements IPrimitivePaneRenderer {
   draw(target: { useBitmapCoordinateSpace: (cb: (scope: { context: CanvasRenderingContext2D; horizontalPixelRatio: number; verticalPixelRatio: number }) => void) => void }): void {
     target.useBitmapCoordinateSpace((scope) => {
       const { context, horizontalPixelRatio, verticalPixelRatio } = scope;
-      // Paint in CSS px — the transform applies the device pixel ratios.
+      // Paint in CSS px - the transform applies the device pixel ratios.
       context.setTransform(horizontalPixelRatio, 0, 0, verticalPixelRatio, 0, 0);
       const paintContext: PaintContext = { ...this.paint, ctx: context };
       for (const view of this.views) {
@@ -151,7 +151,7 @@ export class OryonDrawingsPrimitive implements ISeriesPrimitive<UTCTimestamp> {
     this.requestUpdateFn?.();
   }
 
-  /** Plot bounds in CSS px (pane-relative) — shared with the controller. */
+  /** Plot bounds in CSS px (pane-relative) - shared with the controller. */
   plotRect(): ScreenRect | null {
     if (this.chart === null) return null;
     const size = this.chart.paneSize();
@@ -171,7 +171,7 @@ export class OryonDrawingsPrimitive implements ISeriesPrimitive<UTCTimestamp> {
     },
   };
 
-  /** Handles ride ABOVE the series (zOrder top) — never hidden under candles. */
+  /** Handles ride ABOVE the series (zOrder top) - never hidden under candles. */
   private handlePaneView: IPrimitivePaneView = {
     zOrder: () => "top",
     renderer: () => {
@@ -198,7 +198,7 @@ export class OryonDrawingsPrimitive implements ISeriesPrimitive<UTCTimestamp> {
   /**
    * Projects the committed collection + the live draft into screen space.
    * Anchors that cannot be projected (no data, degenerate scale) SKIP the
-   * drawing entirely — no arbitrary substitutes (spec §6).
+   * drawing entirely - no arbitrary substitutes (spec §6).
    */
   private projectAll(): {
     views: ProjectedDrawing[];
@@ -362,13 +362,13 @@ export class OryonDrawingsPrimitive implements ISeriesPrimitive<UTCTimestamp> {
         } else {
           const a = this.projectAnchor(draft.a);
           if (a !== null) {
-            // First anchor placed — render a marker so the user sees the start.
+            // First anchor placed - render a marker so the user sees the start.
             handles.push(a);
           }
         }
       } else if (draft.kind === "create3") {
         // fibext stages: A alone → start dot; A+B → leg preview (levels
-        // appear only once C exists — the extension is undefined before).
+        // appear only once C exists - the extension is undefined before).
         if (draft.b !== null && draft.c !== null) {
           const preview = {
             id: "__draft__",
@@ -392,7 +392,7 @@ export class OryonDrawingsPrimitive implements ISeriesPrimitive<UTCTimestamp> {
             if (b !== null) handles.push(b);
             const aPt = this.projectAnchor(draft.a);
             if (aPt !== null && b !== null) {
-              // Leg preview via a degenerate trend view (screen-only — the
+              // Leg preview via a degenerate trend view (screen-only - the
               // frame fields below are never persisted or hit-tested).
               views.push({
                 kind: "trend",
@@ -416,7 +416,7 @@ export class OryonDrawingsPrimitive implements ISeriesPrimitive<UTCTimestamp> {
           }
         }
       } else if (draft.kind === "brush") {
-        // Live freehand preview — projected directly (no store object yet).
+        // Live freehand preview - projected directly (no store object yet).
         const points: { x: number; y: number }[] = [];
         let ok = true;
         for (const anchor of draft.points) {
@@ -466,7 +466,7 @@ export class OryonDrawingsPrimitive implements ISeriesPrimitive<UTCTimestamp> {
     return { x, y };
   }
 
-  /** Fibonacci level positions (screen) — null when any level fails to project. */
+  /** Fibonacci level positions (screen) - null when any level fails to project. */
   private fibLevels(drawing: TwoAnchorDrawing): readonly FibLevelView[] | null {
     const priceToY = this.deps.conversions.priceToY;
     const levels: FibLevelView[] = [];
@@ -480,7 +480,7 @@ export class OryonDrawingsPrimitive implements ISeriesPrimitive<UTCTimestamp> {
   }
 
   /**
-   * Measure readout (Phase 5) — delegated to the PURE measure module
+   * Measure readout (Phase 5) - delegated to the PURE measure module
    * (lib/oryon/drawings/measure.ts): start/end prices, direction, Δprice,
    * Δ%, pips, bars and elapsed time from the ACTUAL anchor timestamps.
    * Only the bar count is computed here (the chart's logical pipeline);
@@ -526,8 +526,8 @@ export class OryonDrawingsPrimitive implements ISeriesPrimitive<UTCTimestamp> {
     return readout.lines.join("\n");
   }
 
-  /** Position tool label — Entry/Stop/Target (target DERIVED at the object's
-   *  own rr — the property editor's per-object risk:reward, never stored). */
+  /** Position tool label - Entry/Stop/Target (target DERIVED at the object's
+   *  own rr - the property editor's per-object risk:reward, never stored). */
   private positionLabel(drawing: TwoAnchorDrawing): string | null {
     const readout = computePositionReadout(drawing.a, drawing.b, {
       digits: this.deps.getDigits(),
@@ -538,7 +538,7 @@ export class OryonDrawingsPrimitive implements ISeriesPrimitive<UTCTimestamp> {
     return readout.lines.join("\n");
   }
 
-  /** Fib extension level positions — null when ANY level fails to project. */
+  /** Fib extension level positions - null when ANY level fails to project. */
   private fibExtLevels(drawing: ThreeAnchorDrawing): readonly FibLevelView[] | null {
     const priceToY = this.deps.conversions.priceToY;
     const levels: FibLevelView[] = [];

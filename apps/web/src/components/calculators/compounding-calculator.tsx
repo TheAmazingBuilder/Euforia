@@ -37,7 +37,7 @@ import {
 } from "./calculator-shared";
 
 /**
- * Compounding Calculator (TOOLS section) — period-by-period growth projection
+ * Compounding Calculator (TOOLS section) - period-by-period growth projection
  * (A = P × (1+r)ⁿ per period), computed LIVE on every input change (spec §19)
  * through the shared projection layer. Summary stat band → growth chart
  * (existing ECharts bridge, theme-token driven) → full results table.
@@ -65,7 +65,7 @@ export function CompoundingCalculator() {
   const set = (field: CompoundingField) => (value: string) =>
     setValues((prev) => ({ ...prev, [field]: value }));
 
-  // Live derivation — every keystroke revalidates and recomputes (§19).
+  // Live derivation - every keystroke revalidates and recomputes (§19).
   const derived = React.useMemo(() => validateCompoundingForm(values), [values]);
   const errors: CompoundingFieldErrors = derived.ok ? {} : derived.errors;
   const schedule = derived.ok ? derived.schedule : null;
@@ -80,7 +80,7 @@ export function CompoundingCalculator() {
   const copyPayload = React.useMemo(() => {
     if (!schedule) return "";
     return [
-      `Compounding — ${formatMoney(schedule.startingBalance, currency)} · ${schedule.periods} periods · ${formatPercent(Number(schedule.gainPerPeriodPercent) / 100, 2)} / period`,
+      `Compounding - ${formatMoney(schedule.startingBalance, currency)} · ${schedule.periods} periods · ${formatPercent(Number(schedule.gainPerPeriodPercent) / 100, 2)} / period`,
       `Initial: ${formatMoney(schedule.startingBalance, currency)}`,
       `Final: ${formatMoney(schedule.finalBalance, currency)}`,
       `Total profit: ${formatSignedMoney(schedule.totalProfit, currency)}`,
@@ -88,7 +88,7 @@ export function CompoundingCalculator() {
     ].join("\n");
   }, [schedule, currency]);
 
-  // Chart option — rebuilt on schedule AND theme so canvas tokens stay fresh.
+  // Chart option - rebuilt on schedule AND theme so canvas tokens stay fresh.
   const chartOption = React.useMemo(() => {
     if (!schedule) return null;
     const theme = getChartTheme();
@@ -154,7 +154,7 @@ export function CompoundingCalculator() {
         },
       ],
     };
-    // resolvedTheme is an intentional dependency — the canvas re-init needs
+    // resolvedTheme is an intentional dependency - the canvas re-init needs
     // freshly resolved tokens (design-tokens.md §8), same as the dashboard.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [schedule, resolvedTheme, currency, T]);
@@ -239,7 +239,7 @@ export function CompoundingCalculator() {
           </div>
         </ToolCard>
 
-        {/* ── Summary — the ruled stat band ────────────────────────────── */}
+        {/* ── Summary - the ruled stat band ────────────────────────────── */}
         <section
           className="rounded-xl border border-border bg-surface lg:col-span-7"
           data-testid="comp-summary"
@@ -277,7 +277,7 @@ export function CompoundingCalculator() {
                   {formatNumber(schedule.periods, 0)} × {formatPercent(Number(schedule.gainPerPeriodPercent) / 100, 2)}
                 </p>
               </div>
-              {/* Row 2 opens at column 1 — drop the duplicated frame hairline */}
+              {/* Row 2 opens at column 1 - drop the duplicated frame hairline */}
               <div className="stat-cell stat-hero !border-l-0">
                 <p className="ledger-label">{T.summary.totalProfit}</p>
                 <p
@@ -298,7 +298,7 @@ export function CompoundingCalculator() {
                   )}
                 >
                   {totalGainRatio !== null && totalGainRatio >= 0 ? "+" : ""}
-                  {totalGainRatio !== null ? formatPercent(totalGainRatio, 2) : "—"}
+                  {totalGainRatio !== null ? formatPercent(totalGainRatio, 2) : "-"}
                 </p>
               </div>
             </div>
@@ -326,7 +326,7 @@ export function CompoundingCalculator() {
           <div className="chart-paper px-2 py-4 sm:px-4">
             <EChart
               option={chartOption!}
-              ariaLabel={`${T.chart.title} — ${T.chart.xLabel}: ${T.chart.yLabel}`}
+              ariaLabel={`${T.chart.title} - ${T.chart.xLabel}: ${T.chart.yLabel}`}
               className="h-72 w-full sm:h-80"
             />
           </div>
@@ -465,7 +465,7 @@ export function CompoundingCalculator() {
         </ToolCard>
       ) : null}
 
-      {/* ── How it works + disclaimer — compact, never dominant ───────── */}
+      {/* ── How it works + disclaimer - compact, never dominant ───────── */}
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
         {schedule ? (
           <ToolCard title={T.how.title}>

@@ -15,11 +15,11 @@ import { endpoint, latency, parseBody, pathParam, toErrorResponse } from "./util
 /**
  * Integration Hub endpoints (MASTER PROMPT §5–§27). Every action validates
  * its input against the shared Zod contract and maps engine results to HTTP
- * statuses — the engine itself stays transport-free.
+ * statuses - the engine itself stays transport-free.
  */
 
 export const integrationHandlers = [
-  /** GET /integrations/overview — the hub's single aggregate. */
+  /** GET /integrations/overview - the hub's single aggregate. */
   http.get(endpoint(apiPaths.integrationsOverview), async () => {
     await latency();
     try {
@@ -48,7 +48,7 @@ export const integrationHandlers = [
     }
   }),
 
-  /** POST /integrations/providers/:id/disconnect (§26 — history preserved). */
+  /** POST /integrations/providers/:id/disconnect (§26 - history preserved). */
   http.post(endpoint(apiPaths.integrationDisconnect(":providerId")), async ({ params }) => {
     await latency();
     try {
@@ -63,7 +63,7 @@ export const integrationHandlers = [
     }
   }),
 
-  /** POST /integrations/providers/:id/test (§27 — safe, never trades). */
+  /** POST /integrations/providers/:id/test (§27 - safe, never trades). */
   http.post(endpoint(apiPaths.integrationTest(":providerId")), async ({ params }) => {
     await latency();
     try {
@@ -100,7 +100,7 @@ export const integrationHandlers = [
     }
   }),
 
-  /** POST /integrations/webhooks/:endpointId/simulate — §12 pipeline test. */
+  /** POST /integrations/webhooks/:endpointId/simulate - §12 pipeline test. */
   http.post(endpoint(apiPaths.integrationWebhookSimulate(":endpointId")), async ({ params, request }) => {
     try {
       const endpointId = pathParam(params, "endpointId");

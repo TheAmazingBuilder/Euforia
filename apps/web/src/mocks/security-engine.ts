@@ -19,7 +19,7 @@ import type {
 import { integrationEngine } from "@/mocks/integration-engine";
 
 /**
- * Security engine — the account-protection domain (MASTER PROMPT §1–§21).
+ * Security engine - the account-protection domain (MASTER PROMPT §1–§21).
  *
  * Responsibilities:
  * - append-only security event log (§18): no method can edit or erase an
@@ -29,7 +29,7 @@ import { integrationEngine } from "@/mocks/integration-engine";
  * - one-time secret disclosure: API keys and recovery codes are returned
  *   exactly once, then only ever referenced by prefix/fingerprint (§8, §16);
  * - session lifecycle (revoke one / others / all) (§7, §12);
- * - connected accounts derived LIVE from the Integration engine — Security
+ * - connected accounts derived LIVE from the Integration engine - Security
  *   is a consumer of Integrations state, never a second copy of it (§9).
  *
  * The engine is transport-free: MSW handlers map the discriminated results
@@ -58,7 +58,7 @@ const fail = (
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
-/** The mock account password — surfaced as a demo hint in the re-auth dialog. */
+/** The mock account password - surfaced as a demo hint in the re-auth dialog. */
 export const DEMO_PASSWORD = "cosmoz-demo-2026";
 
 const REAUTH_TOKEN_TTL_MS = 5 * 60 * 1000;
@@ -76,12 +76,12 @@ const MAX_LOGINS_RETURNED = 15;
 const MINUTE_MS = 60 * 1000;
 const HOUR_MS = 60 * MINUTE_MS;
 const DAY_MS = 24 * HOUR_MS;
-/** Inbox reminder threshold — 2FA off for more than a week is actionable. */
+/** Inbox reminder threshold - 2FA off for more than a week is actionable. */
 const TWO_FACTOR_REMINDER_AFTER_DAYS = 7;
 
 const nowIso = (): string => new Date().toISOString();
 
-/** Small synchronous fingerprint — stand-in for the server-side SHA-256. */
+/** Small synchronous fingerprint - stand-in for the server-side SHA-256. */
 function fingerprint(secret: string): string {
   let h1 = 0xdeadbeef;
   let h2 = 0x41c6ce57;
@@ -136,15 +136,15 @@ class SecurityEngine {
     recoveryCodesRemaining: 0,
   };
 
-  /** Pending enrollment — the only place the demo TOTP code exists. */
+  /** Pending enrollment - the only place the demo TOTP code exists. */
   private pendingEnrollment: TwoFactorEnrollment | null = null;
 
-  // ── Auth-engine integration surface (ADDITIVE — application auth reads
+  // ── Auth-engine integration surface (ADDITIVE - application auth reads
   // the two-factor/password domain from here; the Security center stays the
   // single owner of these secrets and state) ──
   /** Code currently accepted by the mocked authenticator while 2FA is on. */
   private activeDemoCode: string | null = null;
-  /** Unused recovery codes — consumed at login when 2FA is unreachable. */
+  /** Unused recovery codes - consumed at login when 2FA is unreachable. */
   private recoveryCodes: string[] = [];
 
   private sessions: SecuritySession[] = [
@@ -172,7 +172,7 @@ class SecurityEngine {
     },
     {
       id: "ses-iphone",
-      device: "iPhone 14 — Euforia PWA",
+      device: "iPhone 14 - Euforia PWA",
       browser: "Euforia PWA",
       os: "iOS 18",
       ipMasked: "99.42.•••.••",
@@ -231,13 +231,13 @@ class SecurityEngine {
 
     pushEvent("EMAIL_VERIFIED", 62, 4, "trader@cosmoz.app", "Email address verified via confirmation link.");
     pushEvent("INTEGRATION_CONNECTED", 30, 6, "trader@cosmoz.app", "Deriv connected with read-only scope (account data + market data).");
-    pushEvent("LOGIN_SUCCESS", 21, 1, "iPhone 14 — Euforia PWA", "Sign-in from Toronto, CA (approximate).");
+    pushEvent("LOGIN_SUCCESS", 21, 1, "iPhone 14 - Euforia PWA", "Sign-in from Toronto, CA (approximate).");
     pushEvent("PASSWORD_CHANGED", 34, 2, "trader@cosmoz.app", "Password changed from an authenticated session. Other sessions stayed signed in.");
     pushEvent("API_KEY_CREATED", 12, 5, "trader@cosmoz.app", "API key “Journal export script” created with scopes read:trades, read:analytics. Secret shown once.");
     pushEvent("LOGIN_SUCCESS", 7, 3, "MacBook Pro", "Sign-in from Toronto, CA (approximate).");
-    pushEvent("LOGIN_FAILED", 1, 5, "Unknown device", "Failed sign-in — wrong password. Rate limit recorded the attempt.", "FAILURE");
+    pushEvent("LOGIN_FAILED", 1, 5, "Unknown device", "Failed sign-in - wrong password. Rate limit recorded the attempt.", "FAILURE");
     pushEvent("LOGIN_SUCCESS", 0, 0.8, "This device", "Sign-in from Toronto, CA (approximate).");
-    pushEvent("SENSITIVE_SETTINGS_CHANGED", 5, 8, "trader@cosmoz.app", "Profile timezone updated — sensitive setting change confirmed by re-authentication.");
+    pushEvent("SENSITIVE_SETTINGS_CHANGED", 5, 8, "trader@cosmoz.app", "Profile timezone updated - sensitive setting change confirmed by re-authentication.");
 
     const login = (
       daysBack: number,
@@ -264,15 +264,15 @@ class SecurityEngine {
     };
 
     login(0, 0.8, true, "This device", "Current browser", "This OS", "24.114.•••.••", "Toronto, CA");
-    login(1, 5, false, "Unknown device", "Chrome 130", "Windows 11", "203.0.•••.••", "Frankfurt, DE", "Wrong password — attempt rate-limited and logged.");
+    login(1, 5, false, "Unknown device", "Chrome 130", "Windows 11", "203.0.•••.••", "Frankfurt, DE", "Wrong password - attempt rate-limited and logged.");
     login(6, 3, true, "MacBook Pro", "Safari 18", "macOS 15", "24.114.•••.••", "Toronto, CA");
     login(12, 9, true, "This device", "Current browser", "This OS", "24.114.•••.••", "Toronto, CA");
-    login(13, 2, true, "iPhone 14 — Euforia PWA", "Euforia PWA", "iOS 18", "99.42.•••.••", "Toronto, CA");
+    login(13, 2, true, "iPhone 14 - Euforia PWA", "Euforia PWA", "iOS 18", "99.42.•••.••", "Toronto, CA");
     login(19, 4, true, "MacBook Pro", "Safari 18", "macOS 15", "24.114.•••.••", "Toronto, CA");
-    login(26, 6, true, "iPhone 14 — Euforia PWA", "Euforia PWA", "iOS 18", "99.42.•••.••", "Toronto, CA");
+    login(26, 6, true, "iPhone 14 - Euforia PWA", "Euforia PWA", "iOS 18", "99.42.•••.••", "Toronto, CA");
   }
 
-  // ── Event log (§18 — append-only) ─────────────────────────────────────────
+  // ── Event log (§18 - append-only) ─────────────────────────────────────────
 
   private logEvent(
     type: SecurityEventType,
@@ -308,7 +308,7 @@ class SecurityEngine {
           : "not paired",
         permissions: provider.capabilities,
         lastSyncAt: provider.sync.lastSuccessAt,
-        credentialHint: provider.credentials?.maskedHint ?? "— none stored —",
+        credentialHint: provider.credentials?.maskedHint ?? "- none stored -",
       }));
 
     const failed24h = this.events.filter(
@@ -328,8 +328,8 @@ class SecurityEngine {
         id: "two-factor",
         label: "Two-factor authentication",
         detail: this.twoFactor.enabled
-          ? `On — authenticator app, verified ${this.twoFactor.lastVerifiedAt === null ? "recently" : this.twoFactor.lastVerifiedAt.slice(0, 10)}.`
-          : "Off — a second factor is not required yet.",
+          ? `On - authenticator app, verified ${this.twoFactor.lastVerifiedAt === null ? "recently" : this.twoFactor.lastVerifiedAt.slice(0, 10)}.`
+          : "Off - a second factor is not required yet.",
         pass: this.twoFactor.enabled,
         methodology: "Passes once the authenticator challenge has been confirmed after enrollment.",
       },
@@ -354,7 +354,7 @@ class SecurityEngine {
       {
         id: "password-freshness",
         label: "Password freshness",
-        detail: `Changed ${passwordAgeDays} day(s) ago — rotation recommended every ${PASSWORD_MAX_AGE_DAYS}.`,
+        detail: `Changed ${passwordAgeDays} day(s) ago - rotation recommended every ${PASSWORD_MAX_AGE_DAYS}.`,
         pass: passwordAgeDays <= PASSWORD_MAX_AGE_DAYS,
         methodology: `Passes while the password is younger than ${PASSWORD_MAX_AGE_DAYS} days.`,
       },
@@ -363,7 +363,7 @@ class SecurityEngine {
         label: "API key hygiene",
         detail: activeKeys.length === 0
           ? "No active API keys."
-          : `${activeKeys.length} active key(s), all scoped${activeKeys.every((key) => key.expiresAt !== null) ? " and expiring" : " — some never expire"}.`,
+          : `${activeKeys.length} active key(s), all scoped${activeKeys.every((key) => key.expiresAt !== null) ? " and expiring" : " - some never expire"}.`,
         pass: activeKeys.every((key) => key.expiresAt !== null),
         methodology: "Passes while every active key carries an expiration date.",
       },
@@ -379,7 +379,7 @@ class SecurityEngine {
         label: "Failed sign-ins (24 h)",
         detail: failed24h === 0
           ? "None recorded in the last 24 hours."
-          : `${failed24h} failed attempt(s) — monitored by the rate limiter.`,
+          : `${failed24h} failed attempt(s) - monitored by the rate limiter.`,
         pass: failed24h <= 2,
         methodology: "Passes while failed sign-ins stay at or below 2 per 24 h.",
       },
@@ -443,7 +443,7 @@ class SecurityEngine {
 
   /**
    * 2FA-off reminder state (module upgrade): while 2FA stays disabled for
-   * more than 7 days, the inbox pushes a proactive reminder — dismissed with
+   * more than 7 days, the inbox pushes a proactive reminder - dismissed with
    * the alert, re-raised only after the state changes (engine-owned truth).
    */
   twoFactorReminder(): { active: boolean; days: number; message: string } {
@@ -457,7 +457,7 @@ class SecurityEngine {
     return {
       active: true,
       days,
-      message: `Two-factor authentication has been OFF for ${days} days. An authenticator app adds a second barrier in front of your journal — enable it from Security → Two-factor.`,
+      message: `Two-factor authentication has been OFF for ${days} days. An authenticator app adds a second barrier in front of your journal - enable it from Security → Two-factor.`,
     };
   }
 
@@ -468,7 +468,7 @@ class SecurityEngine {
   ): Result<{ token: string; expiresAt: string }> {
     const nowMs = Date.now();
 
-    // Window cleanup — failures older than the window stop counting.
+    // Window cleanup - failures older than the window stop counting.
     this.reauthFailures = this.reauthFailures.filter(
       (at) => nowMs - at < REAUTH_WINDOW_MS,
     );
@@ -479,13 +479,13 @@ class SecurityEngine {
       this.logEvent(
         "REAUTH_FAILED",
         "This device",
-        "Re-authentication refused — too many recent failures (rate limited).",
+        "Re-authentication refused - too many recent failures (rate limited).",
         "FAILURE",
       );
       return fail(
         429,
         "RATE_LIMITED",
-        `Too many attempts — re-authentication is locked for about ${Math.ceil(retryAfterMs / MINUTE_MS)} min.`,
+        `Too many attempts - re-authentication is locked for about ${Math.ceil(retryAfterMs / MINUTE_MS)} min.`,
         retryAfterMs,
       );
     }
@@ -495,13 +495,13 @@ class SecurityEngine {
       this.logEvent(
         "REAUTH_FAILED",
         "This device",
-        `Re-authentication failed — wrong password (attempt ${this.reauthFailures.length} of ${REAUTH_MAX_FAILURES}).`,
+        `Re-authentication failed - wrong password (attempt ${this.reauthFailures.length} of ${REAUTH_MAX_FAILURES}).`,
         "FAILURE",
       );
       return fail(
         401,
         "INVALID_CREDENTIALS",
-        `Wrong password — ${REAUTH_MAX_FAILURES - this.reauthFailures.length} attempt(s) left before a temporary lock.`,
+        `Wrong password - ${REAUTH_MAX_FAILURES - this.reauthFailures.length} attempt(s) left before a temporary lock.`,
       );
     }
 
@@ -519,11 +519,11 @@ class SecurityEngine {
   ): Result<{ action: string }> {
     const expiresAt = this.reauthTokens.get(token);
     if (expiresAt === undefined) {
-      return fail(401, "INVALID_REAUTH_TOKEN", "Re-authentication required — confirm your password first.");
+      return fail(401, "INVALID_REAUTH_TOKEN", "Re-authentication required - confirm your password first.");
     }
     this.reauthTokens.delete(token);
     if (Date.now() > expiresAt) {
-      return fail(401, "REAUTH_TOKEN_EXPIRED", "Re-authentication expired — confirm your password again.");
+      return fail(401, "REAUTH_TOKEN_EXPIRED", "Re-authentication expired - confirm your password again.");
     }
     return ok({ action: token });
   }
@@ -561,14 +561,14 @@ class SecurityEngine {
     const guard = this.consumeToken(token);
     if (!guard.ok) return guard;
 
-    // Fresh enrollment each time the flow (re)starts — old pending codes die.
+    // Fresh enrollment each time the flow (re)starts - old pending codes die.
     const enrollment: TwoFactorEnrollment = {
       secret: `COSM-${randomHex(4).toUpperCase()}-${randomHex(4).toUpperCase()}-${randomHex(4).toUpperCase()}`,
       demoCode: String(100000 + Math.floor(Math.random() * 900000)),
       recoveryCodes: generateRecoveryCodes(),
     };
     this.pendingEnrollment = enrollment;
-    // demoCode became optional in the shared schema (Phase 2) — coerce to the
+    // demoCode became optional in the shared schema (Phase 2) - coerce to the
     // mock's internal `string | null` representation.
     this.activeDemoCode = enrollment.demoCode ?? null;
     this.recoveryCodes = [...enrollment.recoveryCodes];
@@ -588,10 +588,10 @@ class SecurityEngine {
       this.logEvent(
         "TFA_CHALLENGE_FAILED",
         "This device",
-        "Authenticator challenge failed — code rejected.",
+        "Authenticator challenge failed - code rejected.",
         "FAILURE",
       );
-      return fail(422, "INVALID_CODE", "That code does not match — check your authenticator and try again.");
+      return fail(422, "INVALID_CODE", "That code does not match - check your authenticator and try again.");
     }
 
     this.pendingEnrollment = null;
@@ -652,7 +652,7 @@ class SecurityEngine {
     this.logEvent(
       "RECOVERY_CODES_REGENERATED",
       "This device",
-      "New recovery codes generated — previous set invalidated.",
+      "New recovery codes generated - previous set invalidated.",
     );
     return ok({ recoveryCodes });
   }
@@ -738,17 +738,17 @@ class SecurityEngine {
       "SESSION_REVOKED",
       "This device",
       input.scope === "one"
-        ? "One session revoked — its device is signed out immediately."
+        ? "One session revoked - its device is signed out immediately."
         : input.scope === "others"
-          ? `All other sessions revoked (${revokedCount}) — those devices are signed out.`
-          : `All sessions revoked (${revokedCount}) — in production the current session ends too (demo keeps it).`,
+          ? `All other sessions revoked (${revokedCount}) - those devices are signed out.`
+          : `All sessions revoked (${revokedCount}) - in production the current session ends too (demo keeps it).`,
     );
     return ok({ revokedCount, currentSessionAffected: currentAffected });
   }
 
   // ── Privacy surfaces (§19) ────────────────────────────────────────────────
 
-  /** Declared retention — informational, enforced server-side in production. */
+  /** Declared retention - informational, enforced server-side in production. */
   retention(): SecurityOverviewResponse["retention"] {
     return {
       securityEventsDays: EVENTS_RETENTION_DAYS,
@@ -788,7 +788,7 @@ class SecurityEngine {
     return this.activeDemoCode;
   }
 
-  /** Consume a recovery code at login — one-time use, decrements the counter. */
+  /** Consume a recovery code at login - one-time use, decrements the counter. */
   consumeRecoveryCode(code: string): boolean {
     const index = this.recoveryCodes.indexOf(code);
     if (index === -1) return false;
@@ -810,7 +810,7 @@ class SecurityEngine {
     this.logEvent(type, actor, context, outcome);
   }
 
-  /** Append a login-history row (§11 — backend-provided metadata only). */
+  /** Append a login-history row (§11 - backend-provided metadata only). */
   recordLogin(record: {
     success: boolean;
     reason: string | null;
@@ -834,5 +834,5 @@ class SecurityEngine {
   }
 }
 
-/** Singleton — the MSW layer mutates state through this instance only. */
+/** Singleton - the MSW layer mutates state through this instance only. */
 export const securityEngine = new SecurityEngine();

@@ -32,7 +32,7 @@ export type NavItem = {
   description: string;
 };
 
-/** Main sidebar navigation — grouped by NAV_SECTIONS below. */
+/** Main sidebar navigation - grouped by NAV_SECTIONS below. */
 export const SIDEBAR_ITEMS: NavItem[] = [
   {
     href: "/",
@@ -67,7 +67,7 @@ export const SIDEBAR_ITEMS: NavItem[] = [
     label: "Accounts",
     icon: Landmark,
     description:
-      "Your connected trading accounts: balances, positions and history read from the provider — read-only, synced on demand, never traded through.",
+      "Your connected trading accounts: balances, positions and history read from the provider - read-only, synced on demand, never traded through.",
   },
   {
     href: "/playbook",
@@ -88,7 +88,7 @@ export const SIDEBAR_ITEMS: NavItem[] = [
     label: "Recognition",
     icon: FileScan,
     description:
-      "Import a trading screenshot, review what the engine recognized — every field carries its confidence — and confirm what enters the journal.",
+      "Import a trading screenshot, review what the engine recognized - every field carries its confidence - and confirm what enters the journal.",
   },
   {
     href: "/calendar",
@@ -109,49 +109,49 @@ export const SIDEBAR_ITEMS: NavItem[] = [
     label: "Academy",
     icon: GraduationCap,
     description:
-      "The learning hub: structured courses, drills, quizzes and a searchable glossary — from market fundamentals to advanced execution.",
+      "The learning hub: structured courses, drills, quizzes and a searchable glossary - from market fundamentals to advanced execution.",
   },
   {
     href: "/nofy",
     label: "Nofy",
     icon: NotebookText,
     description:
-      "Your personal trading knowledge workspace: notes, ideas, research and documentation — connected to your trades, strategies and lessons.",
+      "Your personal trading knowledge workspace: notes, ideas, research and documentation - connected to your trades, strategies and lessons.",
   },
   {
     href: "/events",
     label: "Events",
     icon: CalendarRange,
     description:
-      "Your trading calendar: sessions, economic events and personal deadlines across the calendars you define — drag, filter and plan month by month.",
+      "Your trading calendar: sessions, economic events and personal deadlines across the calendars you define - drag, filter and plan month by month.",
   },
   {
     href: "/tasky",
     label: "Tasky",
     icon: SquareKanban,
     description:
-      "Your trading kanban: plan the work around your edge — studies, routines, reviews — and drag each card from backlog to done.",
+      "Your trading kanban: plan the work around your edge - studies, routines, reviews - and drag each card from backlog to done.",
   },
   {
     href: "/tools/lot-size",
     label: "Lot",
     icon: Scale,
     description:
-      "Size positions from your risk budget: balance, risk %, entry, stop and the instrument's specifications — with the full calculation breakdown.",
+      "Size positions from your risk budget: balance, risk %, entry, stop and the instrument's specifications - with the full calculation breakdown.",
   },
   {
     href: "/tools/compounding",
     label: "Interest",
     icon: TrendingUp,
     description:
-      "Project account growth across compounding periods — period by period, with the full schedule and growth curve.",
+      "Project account growth across compounding periods - period by period, with the full schedule and growth curve.",
   },
   {
     href: "/tools/risk-reward",
     label: "Risk Reward",
     icon: Target,
     description:
-      "The expectancy workspace: risk % or fixed risk, reward multiples and the color-coded win rate cheat sheet — every cell shows the exact theoretical outcome.",
+      "The expectancy workspace: risk % or fixed risk, reward multiples and the color-coded win rate cheat sheet - every cell shows the exact theoretical outcome.",
   },
   {
     href: "/monitoring",
@@ -165,7 +165,7 @@ export const SIDEBAR_ITEMS: NavItem[] = [
     label: "Integrations",
     icon: Cable,
     description:
-      "Connect your brokers and data providers — Deriv, MT5, cTrader, Binance.",
+      "Connect your brokers and data providers - Deriv, MT5, cTrader, Binance.",
   },
   {
     href: "/security",
@@ -193,25 +193,25 @@ export const SIDEBAR_FIRST_ITEM = SIDEBAR_ITEMS[0];
 export const SIDEBAR_REST_ITEMS = SIDEBAR_ITEMS.slice(1);
 
 /**
- * Sidebar SECTIONS — the navigation is grouped, with the SYSTEM section
+ * Sidebar SECTIONS - the navigation is grouped, with the SYSTEM section
  * regrouping the platform surfaces (Monitoring, Settings, Integrations,
  * Security) apart from the trading/journal surfaces.
  */
 export type NavSection = {
   title: string;
-  /** Hrefs in display order — resolved against SIDEBAR_ITEMS. */
+  /** Hrefs in display order - resolved against SIDEBAR_ITEMS. */
   hrefs: string[];
 };
 
 export const NAV_SECTIONS: NavSection[] = [
   {
-    // /accounts is NOT here anymore — it is pinned at the very top of the
+    // /accounts is NOT here anymore - it is pinned at the very top of the
     // sidebar (above Dashboard) as SIDEBAR_ACCOUNTS_FIRST with a subtle
     // separator; keeping it in this section would render it twice.
     title: "Trading",
     hrefs: ["/trades", "/oryon", "/journal", "/playbook"],
   },
-  // Goals lives inside Trade Review (/journal?tab=goals) — /goals redirects there.
+  // Goals lives inside Trade Review (/journal?tab=goals) - /goals redirects there.
   {
     title: "Insights",
     hrefs: ["/analytics", "/recognition", "/calendar", "/discipline"],
@@ -273,7 +273,7 @@ export function getBreadcrumb(pathname: string): { href: string; label: string }
   return crumbs;
 }
 
-/** Single source of truth for a screen's copy — throws on unknown href. */
+/** Single source of truth for a screen's copy - throws on unknown href. */
 export function getNavItem(href: string): NavItem {
   const item = SIDEBAR_ITEMS.find((nav) => nav.href === href);
   if (!item) {

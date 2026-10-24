@@ -1,11 +1,11 @@
 import type { Candle } from "@cosmoz/shared";
 
 /**
- * Oryon market-structure engine — swing detection (Phase 9 spec §4.1/§4.2).
+ * Oryon market-structure engine - swing detection (Phase 9 spec §4.1/§4.2).
  *
  * PURE, framework-free, deterministic: the same candles + configuration
  * always produce the same pivots. No React, no chart engine, no timezones
- * (indexes and candle open times only — the chart layer snaps to the same
+ * (indexes and candle open times only - the chart layer snaps to the same
  * bars it renders).
  *
  * Definition implemented (spec §4.1, verbatim semantics):
@@ -14,14 +14,14 @@ import type { Candle } from "@cosmoz/shared";
  *   - A swing LOW   is a candle whose LOW  is strictly lower than the lows
  *     of the same neighborhoods.
  *   - STRICT comparisons: an equal high/low is NOT a pivot (equal highs and
- *     lows are explicitly handled — they simply do not qualify, spec §4.4).
+ *     lows are explicitly handled - they simply do not qualify, spec §4.4).
  *
- * Confirmation policy (spec §4.2 — the repainting contract):
+ * Confirmation policy (spec §4.2 - the repainting contract):
  *   - A pivot anchored at index i is CONFIRMED only when all `rightBars`
  *     candles after it exist in the data. Confirmation depends exclusively
  *     on candles ≤ i + rightBars, so once confirmed against a window, a
  *     pivot NEVER un-confirms when later candles arrive (a longer window
- *     re-derives the identical pivot — verified by tests).
+ *     re-derives the identical pivot - verified by tests).
  *   - Anchors near the right edge whose confirmation window is not fully
  *     loaded may be reported as PROVISIONAL candidates (opt-in display):
  *     they satisfy the condition on the bars available today and may be
@@ -30,13 +30,13 @@ import type { Candle } from "@cosmoz/shared";
  *     chart layer renders them differently (spec §6.1).
  *
  * Optional noise filters (both null-safe, applied against ACCEPTED pivots
- * of the same kind only — a rejected candidate never mutates history):
- *   - `minDistancePips` — the candidate's pivot price must sit at least
+ * of the same kind only - a rejected candidate never mutates history):
+ *   - `minDistancePips` - the candidate's pivot price must sit at least
  *     this far (pips × pipSize) from the previous accepted SAME-KIND pivot.
- *   - `minSeparationBars` — at least this many bars since the previous
+ *   - `minSeparationBars` - at least this many bars since the previous
  *     accepted SAME-KIND pivot.
  *
- * Stable identity (spec §4.4): `id = kind letter + open time (sec)` —
+ * Stable identity (spec §4.4): `id = kind letter + open time (sec)` -
  * derived from the source candles and the rule kind, nothing else.
  */
 
@@ -57,7 +57,7 @@ export interface OryonPivot {
   readonly kind: "high" | "low";
   /** Candle index in the analyzed window (the PIVOT bar, not a break). */
   readonly index: number;
-  /** Open time of the pivot bar (unix seconds) — chart anchor. */
+  /** Open time of the pivot bar (unix seconds) - chart anchor. */
   readonly timeSec: number;
   /** The extreme price (high for a swing high, low for a swing low). */
   readonly price: number;
@@ -75,7 +75,7 @@ export interface OryonClassifiedPivot extends OryonPivot {
 }
 
 /** Rejects candles the engines must never aggregate (documented policy):
- *  non-finite fields or an inverted range. A zero price stays VALID —
+ *  non-finite fields or an inverted range. A zero price stays VALID -
  *  a missing value is an absent candle, never a zero (spec §5.4). */
 export function isValidCandle(candle: Candle): boolean {
   return (
@@ -105,7 +105,7 @@ export function normalizeCandles(candles: readonly Candle[]): Candle[] {
 interface DetectInput {
   readonly candles: readonly Candle[];
   readonly config: OryonStructureDetectConfig;
-  /** Price of one pip (instrument contract) — needed only when
+  /** Price of one pip (instrument contract) - needed only when
    *  `minDistancePips` is set. */
   readonly pipSize: number;
 }
@@ -169,7 +169,7 @@ export function detectPivots({ candles, config, pipSize }: DetectInput): OryonPi
   };
 
   // Forward pass: at bar i, the anchor i-right has just completed its right
-  // confirmation window — confirmation causally depends on bars ≤ i only.
+  // confirmation window - confirmation causally depends on bars ≤ i only.
   for (let i = left + right; i < n; i += 1) {
     const anchor = i - right;
     if (isPivotHigh(anchor)) {
@@ -202,7 +202,7 @@ export function detectPivots({ candles, config, pipSize }: DetectInput): OryonPi
 
   // Provisional candidates: tail anchors whose right window extends past the
   // data. They compare against the left window (always available) and the
-  // bars that DO exist on the right — never against future data.
+  // bars that DO exist on the right - never against future data.
   for (let anchor = Math.max(n - right, left); anchor < n; anchor += 1) {
     const price = data[anchor]!.h;
     let candidate = true;
@@ -250,11 +250,11 @@ export function detectPivots({ candles, config, pipSize }: DetectInput): OryonPi
 }
 
 /**
- * HH/LH/HL/LL classification (spec §4.3) — compares consecutive CONFIRMED
+ * HH/LH/HL/LL classification (spec §4.3) - compares consecutive CONFIRMED
  * pivots of the SAME kind in chronological order. The first pivot of a kind
  * has no comparison point and receives NO label (§4.3: never classify an
  * isolated pivot). Provisional pivots are never classified and never serve
- * as comparison points — they are not structure yet.
+ * as comparison points - they are not structure yet.
  */
 export function classifyPivots(pivots: readonly OryonPivot[]): OryonClassifiedPivot[] {
   const result: OryonClassifiedPivot[] = pivots.map((pivot) => ({ ...pivot }));

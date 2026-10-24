@@ -20,21 +20,21 @@ import { DEMO_PASSWORD, securityEngine } from "./security-engine";
  * `@cosmoz/shared/schemas/auth.ts`).
  *
  * Contract fidelity notes (spec §9–§11, §66, §79, §81):
- * - ACCESS TOKEN — short-lived (15 min), returned in the body, stored
+ * - ACCESS TOKEN - short-lived (15 min), returned in the body, stored
  *   in-memory on the client ONLY. Never in a cookie, never persisted.
- * - REFRESH TOKEN — rotating, delivered as an `HttpOnly` cookie by the
+ * - REFRESH TOKEN - rotating, delivered as an `HttpOnly` cookie by the
  *   handlers. The engine never returns it in a body. In the mock environment
  *   MSW persists cookies via `document.cookie` (the HttpOnly flag is a no-op
- *   there — a real NestJS deployment owns the real cookie jar).
- * - ROTATION — every refresh invalidates the presented refresh token and
+ *   there - a real NestJS deployment owns the real cookie jar).
+ * - ROTATION - every refresh invalidates the presented refresh token and
  *   issues the next generation; presenting a superseded token is treated as
  *   token reuse and revokes the user's sessions (spec test §68).
  * - The engine is intentionally STATELESS-ACROSS-RELOADS for the demo user
  *   (the refresh cookie is self-validating with a mock checksum) so the
  *   demo account survives full page reloads, while keeping strict
  *   within-session rotation semantics. Registered users live for the
- *   worker session only — consistent with the whole in-memory mock store.
- * - NO cryptographic authority lives here — this is a mock. JWT signing,
+ *   worker session only - consistent with the whole in-memory mock store.
+ * - NO cryptographic authority lives here - this is a mock. JWT signing,
  *   Argon2id, TOTP secret generation belong to the NestJS backend (§81).
  */
 
@@ -63,10 +63,10 @@ type RefreshPayload = {
 /**
  * Self-describing access-token payload (sandbox seam). The token STRING is
  * opaque to the client, but a separate resource server (today: the market
- * service) must verify it WITHOUT access to this engine's in-memory map —
+ * service) must verify it WITHOUT access to this engine's in-memory map -
  * the same stateless model a signed JWT gives a real NestJS backend. The
  * payload is base64url JSON + a mock checksum signature; ONLY the expiry and
- * subject are carried — never roles, permissions or credentials (§75).
+ * subject are carried - never roles, permissions or credentials (§75).
  */
 type AccessTokenPayload = {
   uid: string;
@@ -80,7 +80,7 @@ type ChallengeRecord = { userId: string; expiresAt: number };
 type VerificationRecord = { email: string; expiresAt: number; used: boolean };
 type ResetRecord = { email: string; expiresAt: number; used: boolean };
 
-/** Engine result — handlers translate `cookie` into a Set-Cookie header. */
+/** Engine result - handlers translate `cookie` into a Set-Cookie header. */
 export type EngineResult<T> =
   | { ok: true; status: number; value: T; setCookie?: string }
   | {
@@ -108,7 +108,7 @@ const RATE_LIMITS: Record<string, { max: number; windowMs: number }> = {
   forgot: { max: 3, windowMs: 15 * 60 * 1000 },
 };
 
-/** Mock checksum secret — a REAL backend signs refresh tokens server-side. */
+/** Mock checksum secret - a REAL backend signs refresh tokens server-side. */
 const MOCK_REFRESH_SECRET = "cosmoz-mock-refresh-secret-v1";
 
 /**
@@ -124,7 +124,7 @@ const MOCK_ACCESS_SECRET = "cosmoz-mock-access-secret-v1";
  * HttpOnly cookie jar; in the MSW environment the cookie header never
  * reaches the handler (the service-worker request carries no Cookie header
  * and the reconstructed Request's guard blocks header writes), so the
- * engine persists the presented refresh token in localStorage — storage
+ * engine persists the presented refresh token in localStorage - storage
  * owned by the MOCK BACKEND, never by application state. The client
  * contract is unchanged: the token never enters client-side state.
  */
@@ -143,14 +143,14 @@ function jarWrite(value: string | null): void {
     if (value === null) localStorage.removeItem(MOCK_JAR_KEY);
     else localStorage.setItem(MOCK_JAR_KEY, value);
   } catch {
-    // Storage unavailable — refresh falls back to the cookie header path.
+    // Storage unavailable - refresh falls back to the cookie header path.
   }
 }
 
 export const REFRESH_COOKIE_NAME = "cosmoz_rt";
 
 /**
- * Registered-account persistence (mock seam — same family as the refresh jar
+ * Registered-account persistence (mock seam - same family as the refresh jar
  * above).
  *
  * Observed platform behavior: the post-login redirect to " /" crosses layout
@@ -159,7 +159,7 @@ export const REFRESH_COOKIE_NAME = "cosmoz_rt";
  * account is re-seeded by the constructor, but an account created through
  * the REAL sign-up journey would vanish mid-flow: register → verify →
  * sign-in could never survive the reload. Registered records therefore ride
- * sessionStorage (per-tab — no cross-user leakage, gone when the tab closes)
+ * sessionStorage (per-tab - no cross-user leakage, gone when the tab closes)
  * and are rehydrated on every engine boot.
  */
 const MOCK_USERS_KEY = "cosmoz.mock.registered-users";
@@ -190,7 +190,7 @@ function persistRegisteredUser(record: AuthUserRecord): void {
     ].slice(-PERSISTED_USER_LIMIT);
     sessionStorage.setItem(MOCK_USERS_KEY, JSON.stringify(next));
   } catch {
-    // Storage unavailable — the journey still works within a single document.
+    // Storage unavailable - the journey still works within a single document.
   }
 }
 
@@ -270,7 +270,7 @@ function buildSetCookie(value: string, remember: boolean): string {
     "SameSite=Lax",
     // NO HttpOnly here: MSW persists mocked cookies via document.cookie,
     // which the HTML spec rejects outright when it contains HttpOnly.
-    // A real NestJS backend owns a true HttpOnly cookie jar (§10) — this is
+    // A real NestJS backend owns a true HttpOnly cookie jar (§10) - this is
     // a documented mock-environment seam, the contract is unchanged.
   ];
   if (remember) parts.push(`Max-Age=${Math.floor(REFRESH_REMEMBER_TTL_MS / 1000)}`);
@@ -283,7 +283,7 @@ function rateLimitKey(scope: string, subject: string): string {
   return `${scope}:${subject.toLowerCase()}`;
 }
 
-/** Browser-ish metadata for the session — the mock has one device profile. */
+/** Browser-ish metadata for the session - the mock has one device profile. */
 function describeDevice(): Pick<AuthSession, "device" | "browser" | "os" | "ipMasked" | "location"> {
   return {
     device: "This browser",
@@ -311,7 +311,7 @@ class AuthEngine {
   private sessionSeq = 0;
 
   constructor() {
-    // Map key = record.id (UUID) — every lookup (access tokens, refresh
+    // Map key = record.id (UUID) - every lookup (access tokens, refresh
     // payloads, challenge records) resolves by id.
     const demoUser: AuthUserRecord = {
       id: "8b1f4b2a-3c9d-4e0f-9a1b-2d7c6e5f4a3b",
@@ -328,7 +328,7 @@ class AuthEngine {
     this.users.set(demoUser.id, demoUser);
     this.userIdByEmail.set("trader@cosmoz.app", demoUser.id);
 
-    // Registered-account rehydration — see MOCK_USERS_KEY above.
+    // Registered-account rehydration - see MOCK_USERS_KEY above.
     for (const user of rehydrateRegisteredUsers()) {
       if (this.userIdByEmail.has(user.email)) continue;
       this.users.set(user.id, { ...user, demo: false });
@@ -537,7 +537,7 @@ class AuthEngine {
       demo: false,
     });
     this.userIdByEmail.set(email, id);
-    // The record must survive the post-login full-document navigation —
+    // The record must survive the post-login full-document navigation -
     // see MOCK_USERS_KEY above.
     persistRegisteredUser(this.users.get(id)!);
 
@@ -551,7 +551,7 @@ class AuthEngine {
     securityEngine.recordAuthEvent(
       "SENSITIVE_SETTINGS_CHANGED",
       email,
-      "Account registered — verification email queued (mock delivery).",
+      "Account registered - verification email queued (mock delivery).",
     );
 
     return {
@@ -581,7 +581,7 @@ class AuthEngine {
     if (gate !== "blocked") {
       securityEngine.recordLogin({
         success: false,
-        reason: "Too many attempts — rate limited.",
+        reason: "Too many attempts - rate limited.",
         ...describeDevice(),
       });
       return {
@@ -610,7 +610,7 @@ class AuthEngine {
       securityEngine.recordAuthEvent(
         "LOGIN_FAILED",
         record === null ? "Unknown email" : record.email,
-        "Failed sign-in — invalid credentials.",
+        "Failed sign-in - invalid credentials.",
         "FAILURE",
       );
       // Anti-enumeration: identical message for unknown email and wrong
@@ -648,7 +648,7 @@ class AuthEngine {
       };
     }
 
-    // MFA gate — the Security engine owns the two-factor domain (§24, §25).
+    // MFA gate - the Security engine owns the two-factor domain (§24, §25).
     if (record.demo && securityEngine.isTwoFactorEnabled()) {
       const mfaGate = this.checkRateLimit("mfa", input.email);
       if (mfaGate !== "blocked") {
@@ -670,7 +670,7 @@ class AuthEngine {
         challengeToken,
         challengeExpiresAt: inMs(CHALLENGE_TTL_MS),
         method: "AUTHENTICATOR_APP",
-        // Mock authenticator stand-in (demoCode precedent) — a real backend
+        // Mock authenticator stand-in (demoCode precedent) - a real backend
         // NEVER returns the current TOTP code.
         demoCode: securityEngine.currentDemoCode() ?? undefined,
       };
@@ -729,7 +729,7 @@ class AuthEngine {
         ok: false,
         status: 401,
         code: "INVALID_CHALLENGE",
-        message: "This challenge expired — start again with your password.",
+        message: "This challenge expired - start again with your password.",
       };
     }
     const record = this.findUser(challenge.userId);
@@ -738,7 +738,7 @@ class AuthEngine {
         ok: false,
         status: 401,
         code: "INVALID_CHALLENGE",
-        message: "This challenge is no longer valid — start again.",
+        message: "This challenge is no longer valid - start again.",
       };
     }
 
@@ -758,14 +758,14 @@ class AuthEngine {
       securityEngine.recordAuthEvent(
         "TFA_CHALLENGE_FAILED",
         record.email,
-        "Authenticator challenge failed at sign-in — code rejected.",
+        "Authenticator challenge failed at sign-in - code rejected.",
         "FAILURE",
       );
       return {
         ok: false,
         status: 401,
         code: "INVALID_MFA_CODE",
-        message: "That code does not match — check your authenticator and try again.",
+        message: "That code does not match - check your authenticator and try again.",
       };
     }
 
@@ -781,7 +781,7 @@ class AuthEngine {
         ok: false,
         status: 401,
         code: "INVALID_CHALLENGE",
-        message: "This challenge expired — start again with your password.",
+        message: "This challenge expired - start again with your password.",
       };
     }
     const record = this.findUser(challenge.userId);
@@ -790,7 +790,7 @@ class AuthEngine {
         ok: false,
         status: 401,
         code: "INVALID_CHALLENGE",
-        message: "This challenge is no longer valid — start again.",
+        message: "This challenge is no longer valid - start again.",
       };
     }
 
@@ -810,7 +810,7 @@ class AuthEngine {
       securityEngine.recordAuthEvent(
         "TFA_CHALLENGE_FAILED",
         record.email,
-        "Recovery-code sign-in failed — code rejected.",
+        "Recovery-code sign-in failed - code rejected.",
         "FAILURE",
       );
       return {
@@ -830,7 +830,7 @@ class AuthEngine {
     return this.completeLogin(record, true);
   }
 
-  // ── Refresh (§9, §10) — rotation + reuse detection ─────────────────────────
+  // ── Refresh (§9, §10) - rotation + reuse detection ─────────────────────────
 
   refresh(cookieHeader: string | null): EngineResult<RefreshResponse> {
     // Real contract: the cookie header. Mock seam: the engine-side jar (see
@@ -842,7 +842,7 @@ class AuthEngine {
         ok: false,
         status: 401,
         code: "INVALID_TOKEN",
-        message: "No active session — sign in again.",
+        message: "No active session - sign in again.",
       };
     }
     const payload = decodeRefreshToken(raw);
@@ -851,7 +851,7 @@ class AuthEngine {
         ok: false,
         status: 401,
         code: "INVALID_TOKEN",
-        message: "This session is no longer valid — sign in again.",
+        message: "This session is no longer valid - sign in again.",
       };
     }
     const record = this.findUser(payload.uid);
@@ -860,28 +860,28 @@ class AuthEngine {
         ok: false,
         status: 401,
         code: "INVALID_TOKEN",
-        message: "This session is no longer valid — sign in again.",
+        message: "This session is no longer valid - sign in again.",
       };
     }
 
     const currentGen = this.refreshGeneration.get(payload.uid);
     if (currentGen !== undefined && payload.gen < currentGen) {
-      // Superseded refresh token presented — treat as reuse (§68) and
+      // Superseded refresh token presented - treat as reuse (§68) and
       // revoke everything for this user.
       this.revokeAllSessionsForUser(payload.uid);
       securityEngine.recordAuthEvent(
         "SESSION_REVOKED",
         record.email,
-        "Refresh-token reuse detected — all sessions revoked.",
+        "Refresh-token reuse detected - all sessions revoked.",
       );
       return {
         ok: false,
         status: 401,
         code: "INVALID_TOKEN",
-        message: "This session was revoked — sign in again.",
+        message: "This session was revoked - sign in again.",
       };
     }
-    // Adopt statelessly after a reload (mock seam — documented at the top).
+    // Adopt statelessly after a reload (mock seam - documented at the top).
     this.refreshGeneration.set(payload.uid, payload.gen);
 
     const session = this.openSession(record.id);
@@ -915,7 +915,7 @@ class AuthEngine {
           securityEngine.recordAuthEvent(
             "LOGOUT",
             record.email,
-            "Signed out — refresh token revoked.",
+            "Signed out - refresh token revoked.",
           );
         }
         this.refreshGeneration.delete(payload.uid);
@@ -926,7 +926,7 @@ class AuthEngine {
     return { ok: true, status: 200, value: { loggedOut: true }, setCookie: CLEAR_COOKIE };
   }
 
-  // ── Current user (§9 — GET /auth/me) ───────────────────────────────────────
+  // ── Current user (§9 - GET /auth/me) ───────────────────────────────────────
 
   me(accessTokenUser: AuthUserRecord | null): EngineResult<AuthMeResponse> {
     if (!accessTokenUser) {
@@ -963,7 +963,7 @@ class AuthEngine {
         ok: false,
         status: 400,
         code: "TOKEN_ALREADY_USED",
-        message: "This verification link was already used — try signing in.",
+        message: "This verification link was already used - try signing in.",
       };
     }
     if (record.expiresAt <= nowMs()) {
@@ -971,7 +971,7 @@ class AuthEngine {
         ok: false,
         status: 400,
         code: "EXPIRED_TOKEN",
-        message: "This verification link expired — request a new email.",
+        message: "This verification link expired - request a new email.",
       };
     }
 
@@ -1058,7 +1058,7 @@ class AuthEngine {
     }
 
     const user = this.findUserByEmail(email);
-    // Generic success either way (§18 — no account enumeration).
+    // Generic success either way (§18 - no account enumeration).
     if (!user) {
       return {
         ok: true,
@@ -1101,7 +1101,7 @@ class AuthEngine {
         ok: false,
         status: 400,
         code: "TOKEN_ALREADY_USED",
-        message: "This reset link was already used — request a new one.",
+        message: "This reset link was already used - request a new one.",
       };
     }
     if (record.expiresAt <= nowMs()) {
@@ -1109,7 +1109,7 @@ class AuthEngine {
         ok: false,
         status: 400,
         code: "EXPIRED_TOKEN",
-        message: "This reset link expired — request a new email.",
+        message: "This reset link expired - request a new email.",
       };
     }
 
@@ -1125,7 +1125,7 @@ class AuthEngine {
 
     record.used = true;
     if (user.demo) {
-      // The Security engine owns the demo password — keep both in sync.
+      // The Security engine owns the demo password - keep both in sync.
       securityEngine.applyPasswordReset(password);
     } else {
       user.password = password;

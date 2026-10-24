@@ -17,10 +17,10 @@ import { useEcoEvents } from "@/lib/api/queries";
 import { cn } from "@/lib/utils";
 
 /**
- * Economic calendar (Priorité 3, feature 10) — day view with a week strip,
+ * Economic calendar (Priorité 3, feature 10) - day view with a week strip,
  * impact/currency filters and beat/miss colouring on released values.
  * The coaching angle: high-impact windows ahead today surface a risk banner
- * (process first — plan the volatility or stand aside).
+ * (process first - plan the volatility or stand aside).
  */
 
 const USER_TZ = "America/Toronto";
@@ -84,7 +84,7 @@ const weekdayFormatter = new Intl.DateTimeFormat("fr-FR", {
   weekday: "short",
 });
 
-/** Compact relative countdown — "in 2h 15m", "in 8m". */
+/** Compact relative countdown - "in 2h 15m", "in 8m". */
 function countdown(iso: string, nowMs: number): string | null {
   const diff = new Date(iso).getTime() - nowMs;
   if (diff <= 0) return null;
@@ -95,7 +95,7 @@ function countdown(iso: string, nowMs: number): string | null {
   return `in ${Math.floor(hours / 24)} d`;
 }
 
-/** ImpactBars — 3 vertical bars, filled per tier. */
+/** ImpactBars - 3 vertical bars, filled per tier. */
 function ImpactBars({ impact }: { impact: Impact }) {
   const level = IMPACT_ORDER.indexOf(impact) + 1;
   return (
@@ -127,10 +127,10 @@ function CurrencyBadge({ currency }: { currency: string }) {
   );
 }
 
-/** Actual vs forecast colouring — beat = profit, miss = loss, equal = muted. */
+/** Actual vs forecast colouring - beat = profit, miss = loss, equal = muted. */
 function ActualValue({ event }: { event: EcoEvent }) {
   if (event.actual === null) {
-    return <span className="font-mono text-muted-foreground">—</span>;
+    return <span className="font-mono text-muted-foreground">-</span>;
   }
   if (event.forecast === null || event.actual === event.forecast) {
     return <span className="font-mono tabular-nums text-foreground">{event.actual}</span>;
@@ -152,7 +152,7 @@ function ActualValue({ event }: { event: EcoEvent }) {
 function useNow(): number | null {
   const [now, setNow] = React.useState<number | null>(null);
   React.useEffect(() => {
-    // Deferred first tick — no synchronous setState inside the effect.
+    // Deferred first tick - no synchronous setState inside the effect.
     const initial = window.setTimeout(() => setNow(Date.now()), 0);
     const timer = window.setInterval(() => setNow(Date.now()), 30_000);
     return () => {
@@ -170,7 +170,7 @@ export function EcoCalendarView() {
   const events = React.useMemo(() => data?.events ?? [], [data]);
   const todayKey = React.useMemo(
     () => dayKey(new Date().toISOString()),
-    [], // stable per mount — the calendar is a day-scoped screen
+    [], // stable per mount - the calendar is a day-scoped screen
   );
   const [selectedKey, setSelectedKey] = React.useState(todayKey);
   const [impactFilter, setImpactFilter] = React.useState<"ALL" | Impact>("ALL");
@@ -225,7 +225,7 @@ export function EcoCalendarView() {
   if (isError) {
     return (
       <div className="rounded-xl border border-border bg-surface p-8 text-center text-sm text-muted-foreground">
-        Unable to load the economic calendar — please retry.
+        Unable to load the economic calendar - please retry.
       </div>
     );
   }
@@ -238,7 +238,7 @@ export function EcoCalendarView() {
           Economic calendar
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Macro releases that move your instruments — plan the volatility, don&apos;t react to it.
+          Macro releases that move your instruments - plan the volatility, don&apos;t react to it.
         </p>
       </div>
 
@@ -375,7 +375,7 @@ export function EcoCalendarView() {
         </div>
       </div>
 
-      {/* Risk banner — today's remaining high-impact windows */}
+      {/* Risk banner - today's remaining high-impact windows */}
       {selectedIsToday && upcomingHighToday.length > 0 ? (
         <div
           className="flex items-start gap-3 rounded-xl border border-warning/30 bg-warning/10 px-4 py-3"
@@ -393,10 +393,10 @@ export function EcoCalendarView() {
                 .slice(0, 2)
                 .map(
                   (event) =>
-                    `${event.title} — ${timeFormatter.format(new Date(event.scheduledAt))}`,
+                    `${event.title} - ${timeFormatter.format(new Date(event.scheduledAt))}`,
                 )
                 .join(" · ")}
-              . Expect volatility: widen no stop, halve the size, or stand aside — that is the plan.
+              . Expect volatility: widen no stop, halve the size, or stand aside - that is the plan.
             </p>
           </div>
         </div>
@@ -414,7 +414,7 @@ export function EcoCalendarView() {
           <CalendarDays className="size-6 text-muted-foreground" aria-hidden="true" />
           <p className="text-sm font-medium text-foreground">No releases match the filters</p>
           <p className="text-xs text-muted-foreground">
-            Weekends are quiet — try another day or widen the impact filter.
+            Weekends are quiet - try another day or widen the impact filter.
           </p>
         </div>
       ) : (
@@ -473,7 +473,7 @@ export function EcoCalendarView() {
                   </p>
                 </div>
 
-                {/* Values — desktop grid */}
+                {/* Values - desktop grid */}
                 <div className="hidden items-center gap-5 sm:flex">
                   <div className="text-right">
                     <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
@@ -488,7 +488,7 @@ export function EcoCalendarView() {
                       Forecast
                     </p>
                     <p className="font-mono text-sm tabular-nums text-muted-foreground">
-                      {event.forecast ?? "—"}
+                      {event.forecast ?? "-"}
                     </p>
                   </div>
                   <div className="text-right">
@@ -496,7 +496,7 @@ export function EcoCalendarView() {
                       Previous
                     </p>
                     <p className="font-mono text-sm tabular-nums text-muted-foreground">
-                      {event.previous ?? "—"}
+                      {event.previous ?? "-"}
                     </p>
                   </div>
                 </div>
@@ -517,7 +517,7 @@ export function EcoCalendarView() {
       {/* Footer note */}
       <p className="text-[11px] leading-relaxed text-muted-foreground">
         All times are Toronto time. Beat/miss colouring compares the released value with the
-        forecast — green above, red below. Mocked dataset in this build.
+        forecast - green above, red below. Mocked dataset in this build.
       </p>
     </div>
   );

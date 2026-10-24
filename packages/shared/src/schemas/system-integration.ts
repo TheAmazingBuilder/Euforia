@@ -3,7 +3,7 @@ import { z } from "zod";
 import { isoDateTimeSchema } from "./primitives";
 
 /**
- * System integrations — the simple demo catalog behind the /integrations
+ * System integrations - the simple demo catalog behind the /integrations
  * toggle screen. Each entry states honestly what it does in a demo build:
  * simulated state, no keys, nothing leaves the browser. (The Integration
  * Hub's provider-level architecture lives in schemas/integration.ts; this

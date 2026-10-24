@@ -1,8 +1,8 @@
 /**
- * Accounts data access (infrastructure) — Phase 3.
+ * Accounts data access (infrastructure) - Phase 3.
  *
  * The ONLY place in the accounts context that touches Prisma. All methods
- * return narrow row projections — no Prisma type crosses into services or
+ * return narrow row projections - no Prisma type crosses into services or
  * controllers (Phase 1 §10 boundary). Transactions protect meaningful
  * invariants only (§62): account+connection creation, and the synchronized
  * state write-set of a sync run.
@@ -25,7 +25,7 @@ export interface TradingAccountRow {
   propConfig: unknown;
   externalAccountId: string;
   providerId: string;
-  /** Phase 07 — connect-time broker identification snapshot (JSONB, schema-validated on read). */
+  /** Phase 07 - connect-time broker identification snapshot (JSONB, schema-validated on read). */
   brokerIdentity: unknown;
   createdAt: Date;
   updatedAt: Date;
@@ -43,9 +43,9 @@ export interface TradingConnectionRow {
   lastError: string | null;
   lastConnectedAt: Date | null;
   lastSyncAt: Date | null;
-  /** Phase 05 — provider-issued incremental deals checkpoint (opaque). */
+  /** Phase 05 - provider-issued incremental deals checkpoint (opaque). */
   dealsCheckpoint: string | null;
-  /** Phase 08 — public bridge routing key (PLATFORM_BRIDGE only, else null). */
+  /** Phase 08 - public bridge routing key (PLATFORM_BRIDGE only, else null). */
   bridgeKeyId: string | null;
 }
 
@@ -108,7 +108,7 @@ export interface DealRow {
   profit: Prisma.Decimal | null;
   commission: Prisma.Decimal | null;
   swap: Prisma.Decimal | null;
-  /** Provider-side position this deal belongs to (Phase 4 §9) — nullable. */
+  /** Provider-side position this deal belongs to (Phase 4 §9) - nullable. */
   positionId: string | null;
   executedAt: Date;
   syncedAt: Date;
@@ -132,7 +132,7 @@ export interface SyncRunRow {
   positionsAt: Date | null;
   ordersAt: Date | null;
   dealsAt: Date | null;
-  /** Phase 05 — deals checkpoint progress after this run (§10). */
+  /** Phase 05 - deals checkpoint progress after this run (§10). */
   dealsCheckpoint: string | null;
 }
 
@@ -150,7 +150,7 @@ export class AccountsRepository {
     return rows as TradingAccountRow[];
   }
 
-  /** Ownership check is part of the lookup — foreign ids are simply not found (IDOR → 404). */
+  /** Ownership check is part of the lookup - foreign ids are simply not found (IDOR → 404). */
   async findAccountForUser(accountId: string, userId: string): Promise<TradingAccountRow | null> {
     const row = await this.prisma.tradingAccount.findFirst({
       where: { id: accountId, userId },
@@ -159,7 +159,7 @@ export class AccountsRepository {
   }
 
   /**
-   * Account row by id WITHOUT a user scope — the scheduler's internal path
+   * Account row by id WITHOUT a user scope - the scheduler's internal path
    * (Phase 05 §9). The scheduler never receives client input: it iterates
    * connection rows loaded server-side, and the sync service re-derives the
    * owner from the row for events/logs. Not exposed to any controller.
@@ -171,7 +171,7 @@ export class AccountsRepository {
     return (row as TradingAccountRow) ?? null;
   }
 
-  /** Journal-side label rename — ownership stays in the WHERE (IDOR-safe). */
+  /** Journal-side label rename - ownership stays in the WHERE (IDOR-safe). */
   async renameAccount(accountId: string, userId: string, name: string): Promise<void> {
     await this.prisma.tradingAccount.updateMany({
       where: { id: accountId, userId },
@@ -184,7 +184,7 @@ export class AccountsRepository {
   }
 
   /**
-   * Narrow read contract (ADR-0003): the user's default account id — the
+   * Narrow read contract (ADR-0003): the user's default account id - the
    * persisted default first, else the oldest account (same ordering as
    * listAccountsByUser). Consumers (e.g. the Trades import path) must come
    * here instead of touching prisma.tradingAccount themselves.
@@ -236,7 +236,7 @@ export class AccountsRepository {
       isDefault: boolean;
       externalAccountId: string;
       providerId: string;
-      /** Phase 07 — connect-time broker identification snapshot (already schema-validated upstream). */
+      /** Phase 07 - connect-time broker identification snapshot (already schema-validated upstream). */
       brokerIdentity?: unknown;
     };
     connection: {
@@ -245,7 +245,7 @@ export class AccountsRepository {
       credentialsHint: string;
       permissions: string[];
       lastConnectedAt: Date;
-      /** Phase 08 — PLATFORM_BRIDGE connections boot as CONNECTING (awaiting first push). */
+      /** Phase 08 - PLATFORM_BRIDGE connections boot as CONNECTING (awaiting first push). */
       status?: string;
       bridgeKeyId?: string | null;
     };
@@ -292,7 +292,7 @@ export class AccountsRepository {
     };
   }
 
-  /** Reconnect with fresh credentials — status back to CONNECTED. */
+  /** Reconnect with fresh credentials - status back to CONNECTED. */
   async reconnectConnection(
     accountId: string,
     data: {
@@ -315,7 +315,7 @@ export class AccountsRepository {
   /**
    * Disconnect (§52): credentials are DESTROYED (not kept), the row and all
    * synchronized history stay. Journal data is untouched. The bridge routing
-   * key is destroyed WITH the credentials — a reconnected bridge pairs anew.
+   * key is destroyed WITH the credentials - a reconnected bridge pairs anew.
    */
   async disconnectConnection(accountId: string): Promise<TradingConnectionRow> {
     const row = await this.prisma.tradingConnection.update({
@@ -346,7 +346,7 @@ export class AccountsRepository {
     });
   }
 
-  // ── Phase 08 — MT5 terminal bridge ─────────────────────────────────────────
+  // ── Phase 08 - MT5 terminal bridge ─────────────────────────────────────────
 
   /** Ingest-side lookup: the routing key IS the credential envelope locator. */
   async findConnectionByBridgeKeyId(bridgeKeyId: string): Promise<TradingConnectionRow | null> {
@@ -356,7 +356,7 @@ export class AccountsRepository {
     return (row as TradingConnectionRow) ?? null;
   }
 
-  /** Rotate: the old secret dies with the old key — pairing restarts cleanly. */
+  /** Rotate: the old secret dies with the old key - pairing restarts cleanly. */
   async rotateBridgeKey(accountId: string, bridgeKeyId: string): Promise<void> {
     await this.prisma.tradingConnection.update({
       where: { accountId },
@@ -377,7 +377,7 @@ export class AccountsRepository {
 
   /**
    * Idempotency ledger insert. Returns duplicate=true when (bridgeKeyId,
-   * eventId) already exists — the caller ACKNOWLEDGES the replay (never
+   * eventId) already exists - the caller ACKNOWLEDGES the replay (never
    * re-applies it). Never throws on replays.
    */
   async insertBridgeEvent(data: {
@@ -496,7 +496,7 @@ export class AccountsRepository {
   }
 
   /**
-   * Bounded synchronization history for one account (Phase 05 §16) —
+   * Bounded synchronization history for one account (Phase 05 §16) -
    * keyset-paginated, newest first. `before` (exclusive startedAt upper
    * bound) is the previous page's nextCursor.
    */
@@ -521,7 +521,7 @@ export class AccountsRepository {
    * otherwise hold the per-account single-RUNNING invariant (partial unique
    * index) FOREVER, blocking manual and scheduled synchronization. Runs that
    * are still RUNNING after `staleBefore` cannot be alive (the orchestrator
-   * watchdog bounds every segment) — they are marked CANCELLED, the honest
+   * watchdog bounds every segment) - they are marked CANCELLED, the honest
    * representation of "never completed, not a provider result".
    */
   async cancelStaleRunningRuns(staleBefore: Date): Promise<number> {
@@ -547,7 +547,7 @@ export class AccountsRepository {
   }
 
   /**
-   * Recent sync runs across ALL of the user's accounts — the canonical
+   * Recent sync runs across ALL of the user's accounts - the canonical
    * provider/sync health source consumed by the Monitoring module (Phase 17
    * §26: Monitoring reads the owning domain's state, never a duplicate).
    * Bounded to the most recent `take` runs; user-scoped via the account.
@@ -565,13 +565,13 @@ export class AccountsRepository {
 
   /**
    * Phase 03 (doc B §8.2): per-SEGMENT persistence. Each segment commits in
-   * its own transaction — a failing deals segment must not roll back already
+   * its own transaction - a failing deals segment must not roll back already
    * persisted positions (PARTIAL runs keep what persisted). Segment presence
    * is recorded on the run (segment observation timestamps): a null segment
    * timestamp = not persisted (failed or skipped), which counts alone cannot
    * express (0 legitimately persisted rows ≡ 0-persisted-by-failure).
    * connection.lastSyncAt advances ONLY when the snapshot segment persisted
-   * — the freshness axis is snapshot-anchored (doc B §9); the activity
+   * - the freshness axis is snapshot-anchored (doc B §9); the activity
    * segments carry their own per-row syncedAt provenance.
    */
 
@@ -628,7 +628,7 @@ export class AccountsRepository {
     positions: Array<Record<string, unknown>>;
     syncedAt: Date;
     /** Phase 05 reconciliation: non-null ONLY when the adapter confirmed a
-     * complete open set (§13.2) — ids absent from the list are CLOSED in the
+     * complete open set (§13.2) - ids absent from the list are CLOSED in the
      * SAME transaction (atomic with the upserts; no observer can see a
      * persisted-but-unreconciled state). Rows are never deleted. */
     completeExternalIds?: string[] | null;
@@ -663,7 +663,7 @@ export class AccountsRepository {
           commission: p.commission === null ? null : new Prisma.Decimal(p.commission),
           openedAt: p.openedAt,
           syncedAt: data.syncedAt,
-          // The provider reports this position as open NOW — a previously
+          // The provider reports this position as open NOW - a previously
           // CLOSED row reopens (a re-reported external id is a provider fact,
           // not a duplicate; the closure observation is superseded).
           state: "OPEN",
@@ -757,7 +757,7 @@ export class AccountsRepository {
     deals: Array<Record<string, unknown>>;
     syncedAt: Date;
     /** Phase 05 checkpoint (§8.4): a string = everything ≤ that provider id
-     * was observed AND is persisted by THIS transaction — advance both the
+     * was observed AND is persisted by THIS transaction - advance both the
      * run's progress record and the connection's live checkpoint atomically.
      * undefined/null = nothing observed → the existing checkpoint is NEVER
      * moved backward or wiped. */
@@ -821,7 +821,7 @@ export class AccountsRepository {
   }
 
   /**
-   * Close the run with its final status (COMPLETED or PARTIAL — the FAILED
+   * Close the run with its final status (COMPLETED or PARTIAL - the FAILED
    * path stays failSyncRun). errorCode records the FIRST failing segment's
    * code for PARTIAL runs (doc B §8.2); null for full success.
    */
@@ -850,7 +850,7 @@ export class AccountsRepository {
   }
 
   /**
-   * Per-RESOURCE last successful refresh timestamps (Phase 05 §11) — the
+   * Per-RESOURCE last successful refresh timestamps (Phase 05 §11) - the
    * max over the account's runs of each segment's observation timestamp
    * (null = that resource never persisted). ONE aggregate query; a failed
    * or skipped segment never backdates a resource.
@@ -876,7 +876,7 @@ export class AccountsRepository {
   /**
    * CURRENT open positions (Phase 05): rows the provider's latest complete
    * response still reports as open. CLOSED rows are reconciliation history
-   * — preserved (§6.4) but not "current positions"; they never appear in
+   * - preserved (§6.4) but not "current positions"; they never appear in
    * this listing (the resource means OPEN, per the provider semantics).
    */
   async listPositions(accountId: string): Promise<PositionRow[]> {
@@ -907,7 +907,7 @@ export class AccountsRepository {
 
   /**
    * User-scoped counts over the context's OWN tables (accounts, connections'
-   * normalized state, sync runs) — the narrow read contract Monitoring
+   * normalized state, sync runs) - the narrow read contract Monitoring
    * consumes (Phase 20 §39: no cross-context Prisma access anywhere else).
    */
   async countUserEntities(userId: string): Promise<{

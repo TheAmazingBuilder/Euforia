@@ -1,5 +1,5 @@
 /**
- * Trade Review + Goals controller — the review workspace surface
+ * Trade Review + Goals controller - the review workspace surface
  * (/reviews*) and the computed goals engine (/goals*).
  */
 import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, Put } from "@nestjs/common";

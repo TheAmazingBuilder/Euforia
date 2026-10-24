@@ -27,19 +27,19 @@ import { useDict } from "@/i18n/i18n-provider";
 import { cn } from "@/lib/utils";
 
 /**
- * Oryon drawing property editor — the RIGHT-CLICK menu (TradingView parity).
+ * Oryon drawing property editor - the RIGHT-CLICK menu (TradingView parity).
  *
  * Opens on the interaction controller's context-menu callback (a hit was
- * found — the object is already selected) and edits the object's PROPERTIES
+ * found - the object is already selected) and edits the object's PROPERTIES
  * in place: color, width, dash, fill opacity, font size (text), per-object
- * risk:reward (position tools), direction (arrow marks) — plus the TV
+ * risk:reward (position tools), direction (arrow marks) - plus the TV
  * actions clone / lock / hide / delete. Clones and ratio changes go through
  * the SAME store mutations as every other edit (undoable, locked objects
- * refused) — this component owns NO business rule.
+ * refused) - this component owns NO business rule.
  *
  * Color discipline: swatches are theme-token KEYS; the persisted style never
  * carries hex (AGENTS.md golden rule). Honesty: the R:R control changes the
- * DERIVED target ratio only — it can never move the stop or invent a
+ * DERIVED target ratio only - it can never move the stop or invent a
  * stored target price.
  */
 
@@ -75,7 +75,7 @@ export function OryonDrawingPropertyEditor({
     if (drawing === null) onClose();
   }, [drawing, onClose]);
 
-  // Outside click closes (document CAPTURE — runs before the chart's own
+  // Outside click closes (document CAPTURE - runs before the chart's own
   // capture handlers, so even a consumed chart click closes the menu).
   const rootRef = React.useRef<HTMLDivElement | null>(null);
   React.useEffect(() => {
@@ -89,7 +89,7 @@ export function OryonDrawingPropertyEditor({
     return () => document.removeEventListener("pointerdown", onDocPointerDown, true);
   }, [onClose]);
 
-  // Escape closes (own listener — the layer's Escape deselects as well).
+  // Escape closes (own listener - the layer's Escape deselects as well).
   React.useEffect(() => {
     const onDocKeyDown = (event: KeyboardEvent): void => {
       if (event.key === "Escape") {
@@ -101,7 +101,7 @@ export function OryonDrawingPropertyEditor({
     return () => document.removeEventListener("keydown", onDocKeyDown, true);
   }, [onClose]);
 
-  // Position: clamp INSIDE the chart wrapper (measured after first paint —
+  // Position: clamp INSIDE the chart wrapper (measured after first paint -
   // the menu never overflows the pane it belongs to).
   const [pos, setPos] = React.useState<{ left: number; top: number } | null>(null);
   React.useEffect(() => {
@@ -153,7 +153,7 @@ export function OryonDrawingPropertyEditor({
         </button>
       </header>
 
-      {/* Color (all types) — token swatches, never hex. */}
+      {/* Color (all types) - token swatches, never hex. */}
       <div className="mb-1.5 flex flex-wrap items-center gap-1" role="group" aria-label={S.colorLabel}>
         {ORYON_COLOR_CHOICES.map(({ key, cssVar }) => (
           <button
@@ -273,7 +273,7 @@ export function OryonDrawingPropertyEditor({
         </div>
       ) : null}
 
-      {/* Risk:Reward (position tools) — chips + bounded free input. */}
+      {/* Risk:Reward (position tools) - chips + bounded free input. */}
       {(drawing.type === "longpos" || drawing.type === "shortpos") ? (
         <div className="mb-1.5" data-testid="oryon-ctx-rr">
           <div className="mb-1 flex items-center gap-1">
@@ -322,7 +322,7 @@ export function OryonDrawingPropertyEditor({
         </div>
       ) : null}
 
-      {/* Direction (arrow marks) — re-aims the glyph, tip stays anchored. */}
+      {/* Direction (arrow marks) - re-aims the glyph, tip stays anchored. */}
       {drawing.type === "arrowmark" ? (
         <div className="mb-1.5 flex items-center gap-1" role="group" aria-label={S.directionLabel}>
           <span className="text-[10px] text-muted-foreground">{S.directionLabel}</span>
@@ -349,7 +349,7 @@ export function OryonDrawingPropertyEditor({
         </div>
       ) : null}
 
-      {/* Actions — clone / lock / delete (delete is undoable via history). */}
+      {/* Actions - clone / lock / delete (delete is undoable via history). */}
       <div className="flex items-center gap-1 border-t border-border pt-1.5">
         <button
           type="button"
@@ -371,7 +371,7 @@ export function OryonDrawingPropertyEditor({
           className="flex items-center gap-1 rounded-sm px-1.5 py-1 text-[10px] text-muted-foreground hover:bg-surface-raised hover:text-foreground"
         >
           {locked ? <LockOpen className="size-3" aria-hidden /> : <Lock className="size-3" aria-hidden />}
-          {locked ? S.unlockHint : S.lockHint.split(" — ")[0]}
+          {locked ? S.unlockHint : S.lockHint.split(" - ")[0]}
         </button>
         <button
           type="button"
@@ -395,7 +395,7 @@ export function OryonDrawingPropertyEditor({
 }
 
 /** Type → label key (mirrors the object-list map; kept local to avoid a
- *  component→component import — both read the same dictionary keys). */
+ *  component→component import - both read the same dictionary keys). */
 const TYPE_LABEL_KEYS: Record<OryonDrawing["type"], keyof typeof import("@/i18n/dictionaries/en/oryon").oryonDict.drawings> = {
   trend: "typeTrend",
   hline: "typeHline",

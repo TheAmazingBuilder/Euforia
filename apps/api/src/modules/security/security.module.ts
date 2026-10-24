@@ -1,5 +1,5 @@
 /**
- * Security bounded context (Phase 16) — security posture, security events,
+ * Security bounded context (Phase 16) - security posture, security events,
  * security activity, security visibility (§3).
  *
  * This context OBSERVES and CONTROLS security concerns. It is NOT a second
@@ -9,10 +9,10 @@
  *
  *   Identity          → identity, authentication, sessions, MFA, tokens
  *   Security (HERE)   → posture, audit trail, activity, visibility
- *   Monitoring        → operational observability (FUTURE phase — never here)
+ *   Monitoring        → operational observability (FUTURE phase - never here)
  *
  * Guard order note: the global ThrottlerGuard (RateLimitModule) runs BEFORE
- * JwtAuthGuard — unauthenticated probes are rate-limited before touching
+ * JwtAuthGuard - unauthenticated probes are rate-limited before touching
  * the token verifier. Both are registered once via APP_GUARD in their home
  * modules (RateLimitModule / IdentityModule); importing IdentityModule here
  * does NOT duplicate them (Nest modules are singletons by token).

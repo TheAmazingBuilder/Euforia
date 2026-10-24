@@ -4,7 +4,7 @@ import {
 } from "@cosmoz/shared";
 
 /**
- * Global dashboard filters — pure model (Phase 03 §4/§6).
+ * Global dashboard filters - pure model (Phase 03 §4/§6).
  *
  * The authoritative filter state is a `DashboardFilters` document from the
  * shared contract. Every function here is immutable and React-free; the
@@ -12,13 +12,13 @@ import {
  * semantics: defaults, normalization of untrusted input, equality, suite
  * parameter mapping and active-filter chip extraction.
  *
- * Semantics (documented for the whole app — spec §6):
- *  - single value per dimension (existing app convention — the suite API is
+ * Semantics (documented for the whole app - spec §6):
+ *  - single value per dimension (existing app convention - the suite API is
  *    scalar); absent = the dimension imposes no restriction;
  *  - dimensions combine with AND (the server engine's behavior);
  *  - "none" as strategyId = out-of-playbook trades, never a missing id;
  *  - date ranges are resolved SERVER-SIDE against the user's trading-day
- *    clock — no client date math anywhere in this module.
+ *    clock - no client date math anywhere in this module.
  */
 
 export const DEFAULT_DASHBOARD_FILTERS: DashboardFilters = { period: "ALL" };
@@ -26,7 +26,7 @@ export const DEFAULT_DASHBOARD_FILTERS: DashboardFilters = { period: "ALL" };
 /**
  * Period presets offered by the dashboard filter bar, in display order.
  * Every value exists in `analyticsPeriodSchema` and is resolved server-side
- * by the analytics clock — the UI can never offer an unsupported preset
+ * by the analytics clock - the UI can never offer an unsupported preset
  * (LAST_7 was deliberately NOT invented: the suite has no such preset).
  */
 export const DASHBOARD_PERIOD_OPTIONS = [
@@ -64,10 +64,10 @@ export const DASHBOARD_PERIOD_LABELS: Record<DashboardFilters["period"], string>
 
 /**
  * Normalize an untrusted candidate (stored prefs, imported views, MSW) into
- * a valid `DashboardFilters`. Invalid documents NEVER throw — they degrade
+ * a valid `DashboardFilters`. Invalid documents NEVER throw - they degrade
  * field-by-field: a full parse failure keeps valid dimensions and resets
  * period to ALL; a CUSTOM period missing its bounds degrades to ALL (the
- * same honest fallback the server clock applies — never a fabricated window).
+ * same honest fallback the server clock applies - never a fabricated window).
  */
 export function normalizeDashboardFilters(candidate: unknown): DashboardFilters {
   const parsed = dashboardFiltersSchema.safeParse(candidate);
@@ -117,7 +117,7 @@ export function isDefaultFilters(filters: DashboardFilters): boolean {
 }
 
 /**
- * The suite query accepts the SAME field names — the dashboard filter model
+ * The suite query accepts the SAME field names - the dashboard filter model
  * is a strict subset of `AnalyticsFilters`, so the mapping is identity.
  * Returned as a fresh normalized object so callers can add `sims` freely.
  */
@@ -131,7 +131,7 @@ export type FilterChip = {
   value: string;
 };
 
-/** Active-filter extraction for chips — labels resolved by the UI layer. */
+/** Active-filter extraction for chips - labels resolved by the UI layer. */
 export function activeFilterChips(filters: DashboardFilters): FilterChip[] {
   const chips: FilterChip[] = [];
   if (filters.period !== "ALL") {

@@ -1,4 +1,4 @@
-/** TanStack Query key registry — stable, hierarchical, prefix-invalidation friendly. */
+/** TanStack Query key registry - stable, hierarchical, prefix-invalidation friendly. */
 export const queryKeys = {
   accounts: ["accounts"] as const,
   instruments: (q: string) => ["instruments", q] as const,
@@ -21,7 +21,7 @@ export const queryKeys = {
   // Trade module upgrades
   tradeViews: ["trade-views"] as const,
   sessionSeries: (tradeId: string) => ["session-series", tradeId] as const,
-  // Trade Plans (Phase 11) — list keyed by filters, detail carries the
+  // Trade Plans (Phase 11) - list keyed by filters, detail carries the
   // plan-vs-actual comparison (refetched after every lifecycle mutation).
   plans: (params: { tradeId?: string; status?: string; symbol?: string }) =>
     ["plans", params] as const,
@@ -46,11 +46,11 @@ export const queryKeys = {
   sessionNotes: ["session-notes"] as const,
   brokerSession: ["broker-session"] as const,
   // Accounts & Trading Connectivity (Phase 02). NOTE: `accounts` (above) is
-  // the journal identity list — trading keys are namespaced `trading-*`.
+  // the journal identity list - trading keys are namespaced `trading-*`.
   tradingAccounts: ["trading-accounts"] as const,
   tradingAccount: (accountId: string) => ["trading-accounts", "detail", accountId] as const,
   tradingAccountProviders: ["trading-accounts", "providers"] as const,
-  // Phase 07 — universal broker catalog (identity metadata, honest status).
+  // Phase 07 - universal broker catalog (identity metadata, honest status).
   tradingAccountBrokers: ["trading-accounts", "brokers"] as const,
   tradingAccountPositions: (accountId: string) =>
     ["trading-accounts", accountId, "positions"] as const,
@@ -59,19 +59,19 @@ export const queryKeys = {
   tradingAccountDeals: (accountId: string) => ["trading-accounts", accountId, "deals"] as const,
   tradingAccountSyncRuns: (accountId: string) =>
     ["trading-accounts", accountId, "sync-runs"] as const,
-  // Phase 08 — MT5 terminal bridge pairing sheet (owner-only view).
+  // Phase 08 - MT5 terminal bridge pairing sheet (owner-only view).
   tradingAccountBridgePairing: (accountId: string) =>
     ["trading-accounts", accountId, "bridge-pairing"] as const,
   integrations: ["integrations"] as const,
   security: ["security"] as const,
   monitoring: ["monitoring"] as const,
-  // Import & Recognition (/recognition — PROMPT 3)
+  // Import & Recognition (/recognition - PROMPT 3)
   ocrRecognitions: (status?: string) => ["ocr-recognitions", status ?? "all"] as const,
   ocrRecognitionsRoot: ["ocr-recognitions"] as const,
   ocrRecognition: (id: string) => ["ocr-recognitions", "job", id] as const,
   ocrAnalytics: (days: number) => ["ocr-analytics", days] as const,
   ocrStorage: ["ocr-storage"] as const,
-  // V2 — sets, collections, reprocess
+  // V2 - sets, collections, reprocess
   ocrSetsRoot: ["ocr-sets"] as const,
   ocrSet: (id: string) => ["ocr-sets", "set", id] as const,
   ocrCollections: ["ocr-collections"] as const,
@@ -144,7 +144,7 @@ export const queryKeys = {
     ["nofy-folders"],
     ["nofy-tags"],
   ] as const,
-  // Application authentication — the single authoritative session state
+  // Application authentication - the single authoritative session state
   authMe: ["auth", "me"] as const,
   authRoot: ["auth"] as const,
 } as const;
@@ -154,11 +154,11 @@ export const queryKeys = {
  * (rules-status) refetches after EACH mutation per trade-entry-ux.md §12,
  * and the Session Live timeline is rebuilt from trades/events/alerts.
  *
- * Phase 09 (data freshness): `analyticsSuiteRoot` joined the bundle — a
+ * Phase 09 (data freshness): `analyticsSuiteRoot` joined the bundle - a
  * single-trade create/edit/close/decision/delete changes every derived
  * aggregate (dashboard comparison widgets consume the sims=50 suite; the
  * Analytics page refetches on mount after navigation because its cached
- * entry is stale). Bulk-tag and CSV-import already invalidated it — the
+ * entry is stale). Bulk-tag and CSV-import already invalidated it - the
  * single-trade path was the gap (audit finding #1, evidence-ranked).
  */
 export const tradeMutationInvalidations = [

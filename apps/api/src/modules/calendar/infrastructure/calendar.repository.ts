@@ -1,19 +1,19 @@
 /**
- * Calendar data access (Phase 13) — the ONLY place in the context that
+ * Calendar data access (Phase 13) - the ONLY place in the context that
  * touches Prisma. Narrow projections, no Prisma types cross into services
  * or controllers (Phase 1 §10 boundary).
  *
  * Ownership:
  *   - EconomicEvent   canonical provider-independent events; the sync
  *                     upsert is IDEMPOTENT on (provider, providerEventId)
- *                     — replaying a provider batch never duplicates (§24)
+ *                     - replaying a provider batch never duplicates (§24)
  *   - CalendarSyncRun freshness + observability of every sync (§29/§52)
  *   - CalendarBlock   per-user trading-calendar overlay; the principal's
  *                     userId is part of EVERY where-clause (§40/§46)
  *
  * Multi-step writes run in one transaction (§25/§27): the sync upsert
  * reads existing rows, partitions into create/update/unchanged and writes
- * atomically — concurrent syncs converge on the unique constraint instead
+ * atomically - concurrent syncs converge on the unique constraint instead
  * of racing (§25: no distributed locking invented).
  */
 import { Injectable } from "@nestjs/common";
@@ -39,7 +39,7 @@ export interface EconomicEventRow {
   providerEventId: string;
 }
 
-/** Wire projection of `/eco-events` — provider internals stay internal. */
+/** Wire projection of `/eco-events` - provider internals stay internal. */
 export interface EconomicEventWireRow {
   id: string;
   title: string;
@@ -80,7 +80,7 @@ export interface SyncUpsertOutcome {
   unchanged: number;
 }
 
-/** Projection for the `/eco-events` wire — provider internals stay internal. */
+/** Projection for the `/eco-events` wire - provider internals stay internal. */
 const eventWireSelect = {
   id: true,
   title: true,
@@ -102,7 +102,7 @@ export class CalendarRepository {
    * Idempotent sync upsert (§22/§24): events are keyed by the provider
    * identity pair; new rows are created, existing rows are updated ONLY
    * when a value actually changed (revision support, §20), unchanged rows
-   * are left untouched. One transaction — partial synchronization is
+   * are left untouched. One transaction - partial synchronization is
    * impossible (§25).
    */
   async syncUpsertEvents(
@@ -195,7 +195,7 @@ export class CalendarRepository {
     return { created: toCreate.length, updated: toUpdate.length, unchanged };
   }
 
-  /** Chronological canonical events in [from, to] — the wire projection. */
+  /** Chronological canonical events in [from, to] - the wire projection. */
   async listEventsBetween(from: Date, to: Date): Promise<EconomicEventWireRow[]> {
     const rows = await this.prisma.economicEvent.findMany({
       where: { scheduledAt: { gte: from, lte: to } },
@@ -205,14 +205,14 @@ export class CalendarRepository {
     return rows;
   }
 
-  /** Window count for consumer contexts (Session Live summary — mock §43). */
+  /** Window count for consumer contexts (Session Live summary - mock §43). */
   async countEventsBetween(from: Date, to: Date): Promise<number> {
     return this.prisma.economicEvent.count({
       where: { scheduledAt: { gte: from, lte: to } },
     });
   }
 
-  /** Ref resolution (Nofy EVENT refs) — null when the pointer is stale. */
+  /** Ref resolution (Nofy EVENT refs) - null when the pointer is stale. */
   async findEventById(id: string): Promise<EconomicEventRow | null> {
     const row = await this.prisma.economicEvent.findUnique({ where: { id } });
     // Row-boundary cast (same as listHubEvents): the Prisma EcoImpact/
@@ -243,7 +243,7 @@ export class CalendarRepository {
 
   /**
    * Integrations Hub projection (Phase 14 §29): full normalized rows with
-   * provider provenance — the Hub builds its `providerKey` idempotency
+   * provider provenance - the Hub builds its `providerKey` idempotency
    * identity from (provider, providerEventId). Naturally bounded: the table
    * only ever contains the rolling sync window. READ-ONLY, additive.
    */
@@ -303,7 +303,7 @@ export class CalendarRepository {
       eventsUnchanged?: number;
       eventsRejected?: number;
       durationMs?: number;
-      /** Bounded, credential-free summary — never a raw exception. */
+      /** Bounded, credential-free summary - never a raw exception. */
       errorMessage?: string;
     },
   ): Promise<void> {
@@ -346,7 +346,7 @@ export class CalendarRepository {
   }
 
   async findBlockForUser(userId: string, date: string): Promise<CalendarBlockRow | null> {
-    // CalendarBlock's @@unique is (userId, date, kind) — a per-date read is
+    // CalendarBlock's @@unique is (userId, date, kind) - a per-date read is
     // a findFirst over the kinds, not a compound-unique lookup.
     const row = await this.prisma.calendarBlock.findFirst({
       where: { userId, date: new Date(`${date}T00:00:00.000Z`) },

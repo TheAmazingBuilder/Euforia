@@ -1,10 +1,10 @@
 /**
- * Oryon drawing geometry — pure screen-space math.
+ * Oryon drawing geometry - pure screen-space math.
  *
  * ZERO framework imports: every function operates on plain numbers so it is
  * trivially unit-testable (bun) and reusable by BOTH the canvas renderer and
  * the interaction controller. Domain↔screen projection happens in the chart
- * engine boundary (oryon-chart-engine.ts) — this layer never talks to the
+ * engine boundary (oryon-chart-engine.ts) - this layer never talks to the
  * chart library.
  *
  * Screen space: CSS pixels relative to the chart pane's top-left corner
@@ -27,7 +27,7 @@ export interface ScreenRect {
 /** Default hit tolerance in CSS px (comfortable for pointer work). */
 export const HIT_TOLERANCE = 6;
 
-/** Selection handle radius (CSS px) — hit area slightly larger. */
+/** Selection handle radius (CSS px) - hit area slightly larger. */
 export const HANDLE_RADIUS = 4.5;
 export const HANDLE_HIT_RADIUS = 9;
 
@@ -44,7 +44,7 @@ export function distanceToSegment(
   const dy = by - ay;
   const lengthSq = dx * dx + dy * dy;
   if (lengthSq === 0) {
-    // Degenerate segment — treat as a point.
+    // Degenerate segment - treat as a point.
     return Math.hypot(px - ax, py - ay);
   }
   let t = ((px - ax) * dx + (py - ay) * dy) / lengthSq;
@@ -115,7 +115,7 @@ export function normalizeRect(a: ScreenPoint, b: ScreenPoint): {
 
 /**
  * Rect hit: inside the body (within tolerance). Interior hits make the whole
- * zone draggable — matches professional chart UX.
+ * zone draggable - matches professional chart UX.
  */
 export function hitRect(
   px: number,
@@ -177,7 +177,7 @@ export function fibLevelPrice(
  * Distance from point P to the INFINITE line through A→B, clipped to the
  * plot rect (extended-line tool: the drawn portion is the full chord of
  * the plot the line crosses). Returns the distance to the DRAWN portion
- * only — points beyond the plot edge are not hit-testable, consistent
+ * only - points beyond the plot edge are not hit-testable, consistent
  * with the painter.
  */
 export function distanceToLineClipped(
@@ -225,7 +225,7 @@ export function distanceToLineClipped(
 }
 
 /**
- * Clips the INFINITE line through A→B to the plot rect — the visible chord
+ * Clips the INFINITE line through A→B to the plot rect - the visible chord
  * endpoints for the extended-line painter (null = the line misses the plot).
  */
 export function clipLineToRect(
@@ -282,9 +282,9 @@ export function ellipseFromRect(a: ScreenPoint, b: ScreenPoint): {
 
 /**
  * Ellipse STROKE hit: |normalized radius − 1| scaled by the pixel size of
- * one normalized-radius unit along the ray — an approximation that is
+ * one normalized-radius unit along the ray - an approximation that is
  * exact on the axes and within a few px elsewhere (documented; the ring is
- * a thin stroke, interior hits do NOT move the shape — matches TV where
+ * a thin stroke, interior hits do NOT move the shape - matches TV where
  * the ellipse body is hollow).
  */
 export function hitEllipseEdge(
@@ -307,7 +307,7 @@ export function hitEllipseEdge(
 
 /**
  * Trend-based Fibonacci EXTENSION level price: the A→B swing measured as
- * (b − a), projected from C — level 0 sits AT C, level 1 one full swing
+ * (b − a), projected from C - level 0 sits AT C, level 1 one full swing
  * beyond C. Pure mirror of the retracement helper above.
  */
 export function fibExtLevelPrice(
@@ -320,10 +320,10 @@ export function fibExtLevelPrice(
 }
 
 /**
- * Arrow-mark glyph geometry (SCREEN px) — shared by the painter, the hit
+ * Arrow-mark glyph geometry (SCREEN px) - shared by the painter, the hit
  * test and the properties editor so the drawn, hittable and described
  * extents can never disagree. The TIP sits at the anchor; the tail extends
- * toward the OPPOSITE of `dir` (an "up" arrow's tail is BELOW the tip —
+ * toward the OPPOSITE of `dir` (an "up" arrow's tail is BELOW the tip -
  * screen y grows downward).
  */
 export const ARROW_MARK_SIZE = 14;
@@ -342,7 +342,7 @@ export function clamp(value: number, min: number, max: number): number {
 }
 
 /**
- * Distance from point P to a POLYLINE (min over its segments) — the brush
+ * Distance from point P to a POLYLINE (min over its segments) - the brush
  * hit test. A degenerate single-point list measures the point distance.
  */
 export function distanceToPolyline(
@@ -365,7 +365,7 @@ export function distanceToPolyline(
 }
 
 /**
- * Brush capture spacing filter — keeps a point only when it is at least
+ * Brush capture spacing filter - keeps a point only when it is at least
  * `minPx` away (in whatever unit the caller projects; the controller passes
  * SCREEN px) from the last KEPT point. First point always survives. Pure:
  * the controller streams raw captures through this to keep strokes smooth

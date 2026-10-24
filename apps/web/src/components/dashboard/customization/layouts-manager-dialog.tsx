@@ -23,16 +23,16 @@ import { cn } from "@/lib/utils";
 import { widgetIcon } from "./widget-icons";
 
 /**
- * Workspace manager (Phase 01 §10/§11, extended by Phase 06) — the layout
+ * Workspace manager (Phase 01 §10/§11, extended by Phase 06) - the layout
  * collection presented as what it is: the user's named dashboard
  * workspaces. Switch, duplicate, rename, delete, create empty, set the
  * default workspace, and templates (built-in presets + the user's own
  * frozen snapshots). While an edit session is live, active-changing
- * operations are disabled (a draft is never silently discarded — §10.2);
+ * operations are disabled (a draft is never silently discarded - §10.2);
  * templates then replace the draft instead.
  *
  * Stored testids keep the `dashboard-layout-*` / `dashboard-template-*`
- * prefixes (Phase 01 contract) — only the human labels say "workspace".
+ * prefixes (Phase 01 contract) - only the human labels say "workspace".
  */
 export interface LayoutsManagerDialogProps {
   open: boolean;
@@ -40,9 +40,9 @@ export interface LayoutsManagerDialogProps {
   layouts: DashboardLayoutDocument[];
   activeLayoutId: string;
   editing: boolean;
-  /** Phase 06 — the user's default workspace id (null = none). */
+  /** Phase 06 - the user's default workspace id (null = none). */
   defaultLayoutId: string | null;
-  /** Phase 06 — user-created templates (frozen snapshots). */
+  /** Phase 06 - user-created templates (frozen snapshots). */
   userTemplates: DashboardUserTemplate[];
   onSwitch: (layoutId: string) => void;
   onDuplicate: (layoutId: string) => void;
@@ -51,12 +51,12 @@ export interface LayoutsManagerDialogProps {
   onCreateEmpty: () => void;
   /** View mode: template → new layout. Edit mode: template → draft. */
   onApplyTemplate: (templateId: string) => void;
-  /** Phase 06 — mark a workspace as the default. */
+  /** Phase 06 - mark a workspace as the default. */
   onSetDefault: (layoutId: string) => void;
-  /** Phase 06 — freeze the active workspace into a user template. */
+  /** Phase 06 - freeze the active workspace into a user template. */
   onSaveAsTemplate: (name: string) => boolean;
   onDeleteUserTemplate: (templateId: string) => void;
-  /** Phase 06 — spawn a NEW independent workspace from a user template. */
+  /** Phase 06 - spawn a NEW independent workspace from a user template. */
   onApplyUserTemplate: (templateId: string) => boolean;
 }
 
@@ -89,7 +89,7 @@ export function LayoutsManagerDialog({
           <DialogTitle className="font-heading">Workspaces</DialogTitle>
           <DialogDescription>
             {editing
-              ? "You are editing — save or cancel first to switch or duplicate. Templates replace your draft."
+              ? "You are editing - save or cancel first to switch or duplicate. Templates replace your draft."
               : "Switch workspaces, or create one from scratch, from a template, or from one of your saved snapshots."}
           </DialogDescription>
         </DialogHeader>
@@ -145,7 +145,7 @@ export function LayoutsManagerDialog({
               </h3>
               {userTemplates.length === 0 ? (
                 <p className="rounded-lg border border-dashed border-border p-3 text-xs text-muted-foreground">
-                  No saved templates yet — freeze one of your workspaces above and spawn new
+                  No saved templates yet - freeze one of your workspaces above and spawn new
                   dashboards from it. Templates are private to your account.
                 </p>
               ) : (
@@ -182,7 +182,7 @@ export function LayoutsManagerDialog({
                         variant="ghost"
                         size="icon-sm"
                         aria-label={`Delete template ${template.name}`}
-                        title="Delete template — workspaces already created from it are untouched"
+                        title="Delete template - workspaces already created from it are untouched"
                         data-testid={`dashboard-user-template-delete-${template.id}`}
                         onClick={() => onDeleteUserTemplate(template.id)}
                         className="hover:text-loss"
@@ -241,7 +241,7 @@ export function LayoutsManagerDialog({
             </div>
             {editing && (
               <p className="text-xs text-muted-foreground">
-                Applying a template replaces your current draft — save to keep it.
+                Applying a template replaces your current draft - save to keep it.
               </p>
             )}
           </TabsContent>
@@ -251,7 +251,7 @@ export function LayoutsManagerDialog({
   );
 }
 
-/** Freeze-current-workspace flow (view mode only — a live draft is not a
+/** Freeze-current-workspace flow (view mode only - a live draft is not a
  * saved workspace). Inline name input; validation happens in the hook. */
 function SaveAsTemplateSection({
   editing,
@@ -274,7 +274,7 @@ function SaveAsTemplateSection({
     } else {
       setError(
         atCap
-          ? "Template limit reached (10) — delete one first."
+          ? "Template limit reached (10) - delete one first."
           : name.trim().length === 0
             ? "Give the template a name."
             : "That name is unavailable or too long.",
@@ -288,7 +288,7 @@ function SaveAsTemplateSection({
         Save current workspace as a template
       </Label>
       <p className="mt-0.5 text-xs text-muted-foreground">
-        A frozen copy of this workspace — widgets, sizes and settings at the moment you save.
+        A frozen copy of this workspace - widgets, sizes and settings at the moment you save.
       </p>
       <div className="mt-2 flex items-center gap-2">
         <Input

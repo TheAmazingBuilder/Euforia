@@ -5,20 +5,20 @@ import {
 } from "@cosmoz/shared";
 
 /**
- * Oryon drawing persistence — local storage adapter (RF-09).
+ * Oryon drawing persistence - local storage adapter (RF-09).
  *
  * Product decision (cahier des charges §13 Q7 + RF-09):
  *  - drawings persist PER SYMBOL under the NEW versioned key
  *    `euforia.oryon.drawings.v1:{symbol}`;
  *  - the legacy key `cosmoz.session-live.chart.v1` is NOT read back and its
  *    unvalidated data is NOT migrated;
- *  - every load goes through Zod safeParse — invalid records are dropped
+ *  - every load goes through Zod safeParse - invalid records are dropped
  *    with a console warning, never rendered as-is;
  *  - NO backend endpoint is invented: local-only, documented limitation
  *    (not cross-device, not account-synchronized).
  *
  * Scope: the symbol is the repo's stable market identity (market-service
- * contract — candles/quotes are keyed by symbol; instrument symbols in the
+ * contract - candles/quotes are keyed by symbol; instrument symbols in the
  * catalog are unique). Timeframe is deliberately NOT part of the key:
  * time/price-anchored drawings survive timeframe switches (spec §13).
  */
@@ -26,11 +26,11 @@ import {
 const KEY_PREFIX = "euforia.oryon.drawings.v1";
 const SAVE_DEBOUNCE_MS = 300;
 
-/** Types the CURRENT renderer can draw — DERIVED from the shared schema's
+/** Types the CURRENT renderer can draw - DERIVED from the shared schema's
  * full type set. Every schema member ships with a renderer in the same
  * build (the schema's own contract), so deriving removes the drift class
  * entirely: a hand-maintained list here silently DROPPED every toolbar-v2
- * drawing (extended/fibext/longpos/…) on reload — the exact bug this
+ * drawing (extended/fibext/longpos/…) on reload - the exact bug this
  * derivation fixes. The filter stays as the load-time safety net. */
 export const RENDERABLE_DRAWING_TYPES: ReadonlySet<string> = new Set(
   oryonDrawingTypeSchema.options,
@@ -44,7 +44,7 @@ function isStorageAvailable(): boolean {
   try {
     return typeof window !== "undefined" && window.localStorage !== null;
   } catch {
-    return false; // Privacy mode / disabled storage — features degrade safely.
+    return false; // Privacy mode / disabled storage - features degrade safely.
   }
 }
 
@@ -84,7 +84,7 @@ export function loadDrawingsForSymbol(symbol: string): OryonDrawing[] {
   const renderable = file.data.drawings.filter((drawing) => {
     if (RENDERABLE_DRAWING_TYPES.has(drawing.type)) return true;
     console.warn(
-      `[oryon] drawings for ${symbol}: type "${drawing.type}" has no renderer — dropped.`,
+      `[oryon] drawings for ${symbol}: type "${drawing.type}" has no renderer - dropped.`,
     );
     return false;
   });
@@ -94,7 +94,7 @@ export function loadDrawingsForSymbol(symbol: string): OryonDrawing[] {
 const pendingTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
 /**
- * Debounced save (300 ms) — a burst of mutations (drag end, style tweaks)
+ * Debounced save (300 ms) - a burst of mutations (drag end, style tweaks)
  * lands as one write. Failures are swallowed: persistence must never break
  * the interactive session.
  */
@@ -119,16 +119,16 @@ export function saveDrawingsForSymbol(
         savedAt: Date.now(),
         drawings,
       };
-      // Persist through the SAME schema that validates the load — a save
+      // Persist through the SAME schema that validates the load - a save
       // that would not survive its own load is a bug caught here.
       const check = oryonDrawingsFileSchema.safeParse(file);
       if (!check.success) {
-        console.warn("[oryon] drawings save skipped — payload invalid.");
+        console.warn("[oryon] drawings save skipped - payload invalid.");
         return;
       }
       window.localStorage.setItem(storageKey(symbol), JSON.stringify(check.data));
     } catch {
-      // Quota exceeded / storage evicted — session keeps working in memory.
+      // Quota exceeded / storage evicted - session keeps working in memory.
     }
   }, SAVE_DEBOUNCE_MS);
   pendingTimers.set(symbol, timer);

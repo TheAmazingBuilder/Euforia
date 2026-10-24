@@ -1,5 +1,5 @@
 /**
- * Unit — the canonical API-mode matrix (lib/api/mode.ts).
+ * Unit - the canonical API-mode matrix (lib/api/mode.ts).
  *
  * MASTER QA spec §14.9/§14.10: production builds cannot ACCIDENTALLY
  * activate the demo providers, and an automated check guards that rule.
@@ -49,7 +49,7 @@ describe("API_MOCKED resolution matrix", () => {
     expect(await loadMode(undefined, "development")).toBe(true);
   });
 
-  it("zero-env PRODUCTION defaults to the REAL API — the accidental-mock-activation guard", async () => {
+  it("zero-env PRODUCTION defaults to the REAL API - the accidental-mock-activation guard", async () => {
     expect(await loadMode(undefined, "production")).toBe(false);
   });
 

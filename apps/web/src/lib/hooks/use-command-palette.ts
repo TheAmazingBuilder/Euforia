@@ -3,12 +3,12 @@
 import { useSyncExternalStore } from "react";
 
 /**
- * Global command-palette state — same tiny external-store pattern as the
+ * Global command-palette state - same tiny external-store pattern as the
  * trade modal, so the topbar search button, the ⌘K / Ctrl+K hotkey and any
  * future entry point share one instance without prop drilling.
  */
 
-/** Frozen closed snapshot — stable server reference, no hydration loops. */
+/** Frozen closed snapshot - stable server reference, no hydration loops. */
 const CLOSED_SNAPSHOT: CommandPaletteState = Object.freeze({ open: false });
 
 export interface CommandPaletteState {
@@ -47,7 +47,7 @@ export function useCommandPaletteState(): CommandPaletteState {
   return useSyncExternalStore(
     subscribe,
     () => state,
-    // Server + hydration snapshot: closed (stable reference — see above).
+    // Server + hydration snapshot: closed (stable reference - see above).
     () => CLOSED_SNAPSHOT,
   );
 }

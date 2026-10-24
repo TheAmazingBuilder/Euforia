@@ -10,12 +10,12 @@ import { mockStore } from "@/mocks/store";
 import { endpoint, latency, parseBody, pathParam, readJson, toErrorResponse } from "./utils";
 
 /**
- * Trade Review domain — the post-trade review workflow fused with Goal
+ * Trade Review domain - the post-trade review workflow fused with Goal
  * setting. Progress is always computed server-side from real behavior;
  * reviews are one per trade (upsert) and sync the trade's written trace.
  */
 export const tradeReviewHandlers = [
-  // GET /reviews/overview — the module's aggregate (stats + goals + lessons)
+  // GET /reviews/overview - the module's aggregate (stats + goals + lessons)
   http.get(endpoint(apiPaths.reviewWorkspaceOverview), async () => {
     await latency();
     try {
@@ -25,7 +25,7 @@ export const tradeReviewHandlers = [
     }
   }),
 
-  // GET /reviews — every review row (pending + reviewed), joined with trades
+  // GET /reviews - every review row (pending + reviewed), joined with trades
   http.get(endpoint(apiPaths.reviewWorkspace), async () => {
     await latency();
     try {
@@ -35,7 +35,7 @@ export const tradeReviewHandlers = [
     }
   }),
 
-  // PUT /reviews/:tradeId — upsert the post-trade review (URL is authoritative)
+  // PUT /reviews/:tradeId - upsert the post-trade review (URL is authoritative)
   http.put(endpoint(apiPaths.reviewWorkspaceEntry(":tradeId")), async ({ request, params }) => {
     await latency();
     try {
@@ -48,7 +48,7 @@ export const tradeReviewHandlers = [
     }
   }),
 
-  // DELETE /reviews/:tradeId — undo a review (trade returns to pending)
+  // DELETE /reviews/:tradeId - undo a review (trade returns to pending)
   http.delete(endpoint(apiPaths.reviewWorkspaceEntry(":tradeId")), async ({ params }) => {
     await latency();
     try {
@@ -58,7 +58,7 @@ export const tradeReviewHandlers = [
     }
   }),
 
-  // GET /reviews/lessons — the lessons library (union of all sources)
+  // GET /reviews/lessons - the lessons library (union of all sources)
   http.get(endpoint(apiPaths.reviewLessons), async () => {
     await latency();
     try {
@@ -68,7 +68,7 @@ export const tradeReviewHandlers = [
     }
   }),
 
-  // GET /goals — goals WITH computed progress (targets vs real behavior)
+  // GET /goals - goals WITH computed progress (targets vs real behavior)
   http.get(endpoint(apiPaths.goals), async () => {
     await latency();
     try {

@@ -20,7 +20,7 @@ import { mockStore } from "@/mocks/store";
 import { endpoint, latency, parseBody, pathParam, toErrorResponse } from "./utils";
 
 /**
- * Module upgrade — the 2FA-off inbox reminder. The engine owns the truth;
+ * Module upgrade - the 2FA-off inbox reminder. The engine owns the truth;
  * the store's inbox evaluates the injected check on every read.
  */
 mockStore.registerSecurityReminderCheck(() => securityEngine.twoFactorReminder());
@@ -28,10 +28,10 @@ mockStore.registerSecurityReminderCheck(() => securityEngine.twoFactorReminder()
 /**
  * Security endpoints (MASTER PROMPT §5–§19). Inputs are Zod-validated, engine
  * results map to HTTP statuses; rate-limit failures carry Retry-After. The
- * overview is the module's single aggregate — every mutation invalidates it.
+ * overview is the module's single aggregate - every mutation invalidates it.
  */
 export const securityHandlers = [
-  /** GET /security/overview — one aggregate for the whole center. */
+  /** GET /security/overview - one aggregate for the whole center. */
   http.get(endpoint(apiPaths.securityOverview), async () => {
     await latency();
     try {
@@ -97,7 +97,7 @@ export const securityHandlers = [
       const body = await request.json().catch(() => null) as { reauthToken?: string } | null;
       if (body === null || typeof body.reauthToken !== "string") {
         return HttpResponse.json(
-          { error: "Re-authentication required — confirm your password first.", code: "INVALID_REAUTH_TOKEN" },
+          { error: "Re-authentication required - confirm your password first.", code: "INVALID_REAUTH_TOKEN" },
           { status: 401 },
         );
       }
@@ -114,7 +114,7 @@ export const securityHandlers = [
     }
   }),
 
-  /** POST /security/2fa/confirm { code } — validates the authenticator challenge. */
+  /** POST /security/2fa/confirm { code } - validates the authenticator challenge. */
   http.post(endpoint(apiPaths.securityTwoFactorConfirm), async ({ request }) => {
     await latency();
     try {
@@ -142,7 +142,7 @@ export const securityHandlers = [
       const body = await request.json().catch(() => null) as { reauthToken?: string } | null;
       if (body === null || typeof body.reauthToken !== "string") {
         return HttpResponse.json(
-          { error: "Re-authentication required — confirm your password first.", code: "INVALID_REAUTH_TOKEN" },
+          { error: "Re-authentication required - confirm your password first.", code: "INVALID_REAUTH_TOKEN" },
           { status: 401 },
         );
       }
@@ -166,7 +166,7 @@ export const securityHandlers = [
       const body = await request.json().catch(() => null) as { reauthToken?: string } | null;
       if (body === null || typeof body.reauthToken !== "string") {
         return HttpResponse.json(
-          { error: "Re-authentication required — confirm your password first.", code: "INVALID_REAUTH_TOKEN" },
+          { error: "Re-authentication required - confirm your password first.", code: "INVALID_REAUTH_TOKEN" },
           { status: 401 },
         );
       }
@@ -212,7 +212,7 @@ export const securityHandlers = [
       const body = await request.json().catch(() => null) as { reauthToken?: string } | null;
       if (body === null || typeof body.reauthToken !== "string") {
         return HttpResponse.json(
-          { error: "Re-authentication required — confirm your password first.", code: "INVALID_REAUTH_TOKEN" },
+          { error: "Re-authentication required - confirm your password first.", code: "INVALID_REAUTH_TOKEN" },
           { status: 401 },
         );
       }

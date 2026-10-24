@@ -1,11 +1,11 @@
 /**
- * OCR screenshot collections (V2 spec §28) — a lightweight ORGANIZATION
+ * OCR screenshot collections (V2 spec §28) - a lightweight ORGANIZATION
  * layer over existing recognitions ("Gold Scalping", "London Session",
  * "Winning Trades", …).
  *
  * Boundary discipline: collections are NOT a second storage system (the
  * binaries live behind the screenshot storage port, §6) and NOT a second
- * document system — they are named, owner-scoped references to recognition
+ * document system - they are named, owner-scoped references to recognition
  * rows. A recognition may live in several collections; deleting a
  * collection never touches recognitions or assets.
  */
@@ -65,7 +65,7 @@ export class OcrCollectionService {
   }): Promise<{ collection: OcrCollection }> {
     const row = await this.collections.findForUser(input.id, input.userId);
     if (!row) throw new NotFoundError("Collection not found.");
-    // The recognition must belong to the SAME owner (§ IDOR) — foreign ids
+    // The recognition must belong to the SAME owner (§ IDOR) - foreign ids
     // are an honest 404, never a 403 leak.
     const recognition = await this.recognitions.findForUser(input.recognitionId, input.userId);
     if (!recognition) throw new NotFoundError("Recognition not found.");

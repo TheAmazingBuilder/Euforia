@@ -21,7 +21,7 @@ import {
 } from "@/components/auth/auth-primitives";
 
 /**
- * Forgot password (spec §18) — the success state is deliberately GENERIC
+ * Forgot password (spec §18) - the success state is deliberately GENERIC
  * ("if an account exists…"): the UI never confirms whether an address is
  * registered. In the mocked environment the one-time reset link is surfaced
  * with an explicit MOCKED panel (demoCode precedent).

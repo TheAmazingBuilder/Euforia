@@ -5,9 +5,9 @@ import { apiPaths } from "@/lib/api/endpoints";
 import { mockStore } from "@/mocks/store";
 import { endpoint, latency, parseBody, readJson, toErrorResponse } from "./utils";
 
-/** Catalog domains — instruments (with ?q= search), strategies, accounts. */
+/** Catalog domains - instruments (with ?q= search), strategies, accounts. */
 export const catalogHandlers = [
-  // GET /instruments?q= — search-first autocomplete (symbol or name)
+  // GET /instruments?q= - search-first autocomplete (symbol or name)
   http.get(endpoint(apiPaths.instruments), async ({ request }) => {
     await latency();
     try {
@@ -25,7 +25,7 @@ export const catalogHandlers = [
     }
   }),
 
-  // GET /strategies — playbook templates / "Trade this setup" prefill
+  // GET /strategies - playbook templates / "Trade this setup" prefill
   http.get(endpoint(apiPaths.strategies), async () => {
     await latency();
     try {
@@ -35,7 +35,7 @@ export const catalogHandlers = [
     }
   }),
 
-  // GET /accounts — account switcher
+  // GET /accounts - account switcher
   http.get(endpoint(apiPaths.accounts), async () => {
     await latency();
     try {
@@ -45,7 +45,7 @@ export const catalogHandlers = [
     }
   }),
 
-  // GET /tags — tag catalog for the capture form ("Add details" chips)
+  // GET /tags - tag catalog for the capture form ("Add details" chips)
   http.get(endpoint(apiPaths.tags), async () => {
     await latency();
     try {
@@ -55,7 +55,7 @@ export const catalogHandlers = [
     }
   }),
 
-  // POST /tags — inline tag creation (reflect screen)
+  // POST /tags - inline tag creation (reflect screen)
   http.post(endpoint(apiPaths.tags), async ({ request }) => {
     await latency();
     try {

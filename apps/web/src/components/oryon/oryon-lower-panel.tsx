@@ -23,13 +23,13 @@ import {
 import { cn } from "@/lib/utils";
 
 /**
- * Oryon lower panel — the Open Positions monitor (Phase 4, PRD FR-15).
+ * Oryon lower panel - the Open Positions monitor (Phase 4, PRD FR-15).
  *
  * Data honesty contract (spec §3/§4/§10):
  *   - the book comes from the app's private positions stream, which is a
- *     SIMULATED per-user book in this deployment — the SIM badge says so and
+ *     SIMULATED per-user book in this deployment - the SIM badge says so and
  *     never disappears while simulated rows are shown;
- *   - missing SL/TP/market/P&L render the neutral N/A — never zero, never a
+ *   - missing SL/TP/market/P&L render the neutral N/A - never zero, never a
  *     guess (missing ≠ 0);
  *   - connected-with-zero ≠ disconnected: the empty state appears ONLY on a
  *     synced book; a lost transport says so and keeps the last known rows;
@@ -38,13 +38,13 @@ import { cn } from "@/lib/utils";
  *     simulated book and never fakes a connection.
  *
  * Read-only by design: rows select (highlight the chart overlay) and nothing
- * else — there is no close/modify/order affordance anywhere in this panel.
+ * else - there is no close/modify/order affordance anywhere in this panel.
  */
 
 interface OryonLowerPanelProps {
   open: boolean;
   onClose: () => void;
-  /** Symbol displayed by the chart — rows matching it carry the overlay. */
+  /** Symbol displayed by the chart - rows matching it carry the overlay. */
   activeSymbol: string | null;
 }
 
@@ -117,7 +117,7 @@ function PositionsSummary() {
   );
 }
 
-/** SIM provenance badge — tooltip carries the full honesty statement. */
+/** SIM provenance badge - tooltip carries the full honesty statement. */
 function SimBadge() {
   const dict = useDict();
   const S = dict.oryon.lower;
@@ -133,9 +133,9 @@ function SimBadge() {
 }
 
 /**
- * Stream freshness chip — LEAF with its own 1 Hz ticker (same pattern as
+ * Stream freshness chip - LEAF with its own 1 Hz ticker (same pattern as
  * OryonFeedStatus): the panel does not re-render for the clock, only the
- * chip does. A frozen stream renders STALE — never a permanent green Live.
+ * chip does. A frozen stream renders STALE - never a permanent green Live.
  */
 function PositionsStatusChip() {
   const dict = useDict();
@@ -195,7 +195,7 @@ function PositionsBody({ activeSymbol }: { activeSymbol: string | null }) {
   const S = dict.oryon.lower;
   const { positions, connected, lastEventAt } = usePositionsSafe();
 
-  // 1 Hz refresh for the freshness verdict ONLY (no table reshuffle — the
+  // 1 Hz refresh for the freshness verdict ONLY (no table reshuffle - the
   // verdict gates which state renders, the rows themselves are stable).
   const [now, setNow] = React.useState(() => Date.now());
   React.useEffect(() => {
@@ -358,14 +358,14 @@ function PositionRow({
 }
 
 /**
- * Broker account context (§10) — a SEPARATE, read-only surface. It states
+ * Broker account context (§10) - a SEPARATE, read-only surface. It states
  * which real account (if any) backs the workspace and never merges broker
  * positions into the simulated book shown above.
  */
 function AccountContextRow() {
   const dict = useDict();
   const S = dict.oryon.lower;
-  // Gated polling: the panel is the only consumer — no requests while closed.
+  // Gated polling: the panel is the only consumer - no requests while closed.
   const session = useBrokerSession({ enabled: true });
 
   let content: React.ReactNode;

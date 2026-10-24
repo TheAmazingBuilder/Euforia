@@ -11,11 +11,11 @@ export const metadata: Metadata = {
 };
 
 /**
- * /tools/risk-reward — Risk/Reward (TOOLS section). Standard module header
+ * /tools/risk-reward - Risk/Reward (TOOLS section). Standard module header
  * (title + description, same typography as every other module) over the
  * expectancy workspace: reactive calculator inputs → live summary stat band →
  * color-coded win rate cheat sheet matrix. Frontend-only deterministic math
- * through the shared risk-reward engine; no backend, no persistence — a
+ * through the shared risk-reward engine; no backend, no persistence - a
  * planning tool, never a performance promise.
  */
 export default function RiskRewardPage() {

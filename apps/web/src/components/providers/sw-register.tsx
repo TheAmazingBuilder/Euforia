@@ -3,7 +3,7 @@
 import * as React from "react";
 
 /**
- * Early-registers the composed Euforia service worker (/sw.js — PWA offline
+ * Early-registers the composed Euforia service worker (/sw.js - PWA offline
  * shell + hosted MSW mock layer, feature 12). MSW's start() targets the same
  * script, so whichever registers first, there is exactly ONE worker.
  * Registration failures (private mode, unsupported) are non-fatal.

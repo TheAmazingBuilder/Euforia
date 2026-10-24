@@ -1,5 +1,5 @@
 /**
- * Replay Engine — deterministic historical playback core (REPLAY MASTER
+ * Replay Engine - deterministic historical playback core (REPLAY MASTER
  * PROMPT §17, §18, §58).
  *
  * Pure TypeScript: no React, no DOM, no clock, no randomness. The same
@@ -9,7 +9,7 @@
  * LOOK-AHEAD BIAS PROTECTION (§18): the engine is the ONLY component that
  * decides which market data the presentation layer may see. `visibleCandles`
  * never returns a candle whose open time is after the current replay time,
- * and the engine never stores candles at all — the caller feeds a window
+ * and the engine never stores candles at all - the caller feeds a window
  * slice, the engine answers with the visible prefix. Future candles that
  * the caller never received cannot leak, and seek/step are clamped so the
  * playhead can never jump beyond the dataset bounds.
@@ -19,7 +19,7 @@ import type { ReplayPlaybackState } from "../schemas/replay";
 
 // ── Playback state (§17) ─────────────────────────────────────────────────────
 
-/** Playback speeds (§19) — 1x = historical time at real time. */
+/** Playback speeds (§19) - 1x = historical time at real time. */
 export const REPLAY_SPEEDS = [0.5, 1, 2, 5, 10, 25, 50] as const;
 export type ReplaySpeed = (typeof REPLAY_SPEEDS)[number];
 
@@ -28,15 +28,15 @@ export interface ReplayEngineConfig {
   datasetStartMs: number;
   /** Last bucket open time of the historical window (ms epoch). */
   datasetEndMs: number;
-  /** Where the playhead sits when the replay starts — inside the window. */
+  /** Where the playhead sits when the replay starts - inside the window. */
   startAtMs: number;
-  /** One candle bucket (interval ms) — the step granularity. */
+  /** One candle bucket (interval ms) - the step granularity. */
   stepMs: number;
 }
 
 export interface ReplayEngineSnapshot {
   state: ReplayPlaybackState;
-  /** Current replay time (historical ms epoch) — the visible-data boundary. */
+  /** Current replay time (historical ms epoch) - the visible-data boundary. */
   currentMs: number;
   speed: ReplaySpeed;
   /** 0-100 progress across the replayed span (startAtMs → datasetEndMs). */
@@ -72,7 +72,7 @@ export class ReplayEngine {
   constructor(config: ReplayEngineConfig) {
     assertValidConfig(config);
     this.config = config;
-    // A zero-length dataset (single candle) starts COMPLETED — there is
+    // A zero-length dataset (single candle) starts COMPLETED - there is
     // nothing to reveal (§58 single-candle dataset).
     this.state = config.datasetEndMs <= config.startAtMs ? "COMPLETED" : "READY";
     this.currentMs = config.startAtMs;
@@ -126,7 +126,7 @@ export class ReplayEngine {
   /**
    * Real-time driven progression: `elapsedRealMs` of wall clock reveals
    * `elapsedRealMs × speed` of historical time. Deterministic given the
-   * elapsed sequence — the engine never reads the clock itself.
+   * elapsed sequence - the engine never reads the clock itself.
    */
   advance(elapsedRealMs: number): void {
     if (this.state !== "PLAYING" || elapsedRealMs <= 0) return;
@@ -138,12 +138,12 @@ export class ReplayEngine {
     this.moveTo(this.currentMs + this.config.stepMs);
   }
 
-  /** One candle back — clamped at the start point (§19 "where valid"). */
+  /** One candle back - clamped at the start point (§19 "where valid"). */
   stepBackward(): void {
     this.moveTo(this.currentMs - this.config.stepMs);
   }
 
-  /** Scrub/seek — clamped into [startAtMs, datasetEndMs]. */
+  /** Scrub/seek - clamped into [startAtMs, datasetEndMs]. */
   seek(toMs: number): void {
     if (!Number.isFinite(toMs)) return;
     this.moveTo(toMs);
@@ -151,7 +151,7 @@ export class ReplayEngine {
 
   // ── Internals ───────────────────────────────────────────────────────────────
 
-  /** Single choke point for every position change — clamps and completes. */
+  /** Single choke point for every position change - clamps and completes. */
   private moveTo(targetMs: number): void {
     const clamped = Math.min(
       Math.max(targetMs, this.config.startAtMs),
@@ -161,7 +161,7 @@ export class ReplayEngine {
     if (clamped >= this.config.datasetEndMs) {
       this.state = "COMPLETED";
     } else if (this.state === "COMPLETED") {
-      // Stepping/seeking back off the end re-opens the replay as paused —
+      // Stepping/seeking back off the end re-opens the replay as paused -
       // deterministic and predictable (resume continues from there).
       this.state = "PAUSED";
     }
@@ -174,7 +174,7 @@ export class ReplayEngine {
  * The visible-data boundary: from any candle slice, only the candles whose
  * open time is at or before `currentMs` may reach the presentation layer.
  * The forming candle (open == floor(currentMs / bucket) × bucket) IS visible
- * — the trader watches it build, exactly like live charts. This is the one
+ * - the trader watches it build, exactly like live charts. This is the one
  * function the workspace chart is allowed to source its data through.
  */
 export function visibleCandles<T extends { t: number }>(
@@ -221,7 +221,7 @@ export interface ReplayResultComputation {
 }
 
 /**
- * Pure result metrics from the recorded trades/decisions — never invented:
+ * Pure result metrics from the recorded trades/decisions - never invented:
  * every field is null/zero when its input data is absent. Max drawdown is
  * the worst peak-to-trough of the cumulative simulated P&L curve.
  */

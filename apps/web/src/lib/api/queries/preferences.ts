@@ -15,12 +15,12 @@ import { queryKeys } from "@/lib/api/keys";
 
 /**
  * Preferences domain hooks (Settings module). Each domain card saves ITSELF
- * (PATCH /me/preferences/:domain with the full domain object) — unrelated
+ * (PATCH /me/preferences/:domain with the full domain object) - unrelated
  * settings are never saved together. Updates write straight into the query
  * cache with a snapshot rollback on failure.
  */
 
-/** GET /me/preferences — the whole structured preferences document. */
+/** GET /me/preferences - the whole structured preferences document. */
 export function usePreferences() {
   return useQuery({
     queryKey: queryKeys.preferences,
@@ -28,7 +28,7 @@ export function usePreferences() {
   });
 }
 
-/** PATCH /me/preferences/:domain — replace one validated domain. */
+/** PATCH /me/preferences/:domain - replace one validated domain. */
 export function useUpdatePreferencesDomain<TDomain extends PreferenceDomain>(
   domain: TDomain,
 ) {
@@ -39,7 +39,7 @@ export function useUpdatePreferencesDomain<TDomain extends PreferenceDomain>(
         method: "PATCH",
         body: input,
       }),
-    // Optimistic update — the settings UI feels instant, rolls back on 4xx.
+    // Optimistic update - the settings UI feels instant, rolls back on 4xx.
     onMutate: async (input) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.preferences });
       const previous = queryClient.getQueryData<UserPreferences>(queryKeys.preferences);
@@ -63,7 +63,7 @@ export function useUpdatePreferencesDomain<TDomain extends PreferenceDomain>(
   });
 }
 
-/** POST /me/preferences/reset — restore one domain to the safe defaults. */
+/** POST /me/preferences/reset - restore one domain to the safe defaults. */
 export function useResetPreferencesDomain() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -75,7 +75,7 @@ export function useResetPreferencesDomain() {
   });
 }
 
-/** POST /me/deactivate — pause the account (typed confirmation). */
+/** POST /me/deactivate - pause the account (typed confirmation). */
 export function useDeactivateAccount() {
   return useMutation({
     mutationFn: (input: DeactivateAccountInput) =>
@@ -86,7 +86,7 @@ export function useDeactivateAccount() {
   });
 }
 
-/** POST /me/delete — schedule account deletion (typed confirmation). */
+/** POST /me/delete - schedule account deletion (typed confirmation). */
 export function useRequestAccountDeletion() {
   return useMutation({
     mutationFn: (input: RequestAccountDeletionInput) =>

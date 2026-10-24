@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { useI18n } from "@/i18n/i18n-provider";
 
 /**
- * Live calculation bar (spec §4): mono font, updated live —
+ * Live calculation bar (spec §4): mono font, updated live -
  * "R:R 1:2.4 · Risk $104 (1.0%) · Est. P&L +$255".
  * Estimated P&L may use P&L color semantics; risk never does.
  */
@@ -22,13 +22,13 @@ export interface LiveCalcBarProps {
 export function LiveCalcBar({ rr, riskAmount, riskPct, estimatedPnl, currency }: LiveCalcBarProps) {
   const { dict } = useI18n();
   const T = dict.trades.liveCalc;
-  const rrLabel = rr !== null ? `1:${rr >= 10 ? rr.toFixed(0) : rr.toFixed(1)}` : "—";
+  const rrLabel = rr !== null ? `1:${rr >= 10 ? rr.toFixed(0) : rr.toFixed(1)}` : "-";
   const riskLabel =
     riskAmount !== null
       ? `${formatMoney(riskAmount, currency, { digits: riskPct !== null && riskPct < 1 ? 2 : 0 })}${
           riskPct !== null ? ` (${formatPercentLabel(riskPct)})` : ""
         }`
-      : "—";
+      : "-";
   const pnlLabel = estimatedPnl !== null ? formatMoney(estimatedPnl, currency, { digits: 0 }) : null;
 
   return (

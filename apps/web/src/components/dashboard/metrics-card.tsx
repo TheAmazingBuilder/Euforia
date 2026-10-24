@@ -28,13 +28,13 @@ import {
 } from "@/lib/dashboard-customization/widget-configs";
 
 /**
- * Performance metrics card (Phase 02 §7/§10/§11) — the configurable KPI
+ * Performance metrics card (Phase 02 §7/§10/§11) - the configurable KPI
  * widget. Metrics are picked from the shared catalog (server-computed
- * fields of the analytics suite — the client never re-derives), aggregated
+ * fields of the analytics suite - the client never re-derives), aggregated
  * over a per-widget period, with an optional comparison against the
  * previous equivalent period (server-resolved presets only).
  *
- * Formatting preferences (§8) affect presentation only — the underlying
+ * Formatting preferences (§8) affect presentation only - the underlying
  * numbers come from the server at full precision.
  */
 
@@ -56,7 +56,7 @@ const PERIOD_LABELS: Record<MetricsCardWidgetConfig["period"], string> = {
 
 interface MetricsCardWidgetProps {
   config: MetricsCardWidgetConfig;
-  /** The authoritative global filter context (Phase 03 §7/§8 — the
+  /** The authoritative global filter context (Phase 03 §7/§8 - the
    * registry note in full): when the global bar restricts the DATE
    * dimension, it wins over this widget's own period setting (the global
    * bar is the authoritative context); the widget-level period applies
@@ -82,7 +82,7 @@ export function MetricsCardWidget({ config, globalFilters }: MetricsCardWidgetPr
     : filtersForPeriod(config);
   // The previous-period baseline is a WIDGET-level feature: under global
   // filters the "previous equivalent" of a server-resolved preset is not
-  // derived client-side — the comparison is disabled rather than faked.
+  // derived client-side - the comparison is disabled rather than faked.
   const previous = globalActive ? null : previousPeriodFilters(config);
 
   const current = useAnalyticsSuite(baseFilters, 50);
@@ -148,13 +148,13 @@ export function MetricsCardWidget({ config, globalFilters }: MetricsCardWidgetPr
           </div>
         ) : empty ? (
           <p className="py-6 text-center text-sm text-muted-foreground" data-testid="metrics-card-empty">
-            No closed trades in this period — nothing to measure yet.
+            No closed trades in this period - nothing to measure yet.
           </p>
         ) : data ? (
           <>
             {multiCurrency && (
               <p className="mb-3 rounded-md border border-warning/40 bg-warning/10 px-2.5 py-1.5 text-xs text-warning">
-                Multi-currency dataset — money metrics are unavailable; R-based and rate metrics still compare cleanly.
+                Multi-currency dataset - money metrics are unavailable; R-based and rate metrics still compare cleanly.
               </p>
             )}
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" data-testid="metrics-card-grid">
@@ -196,7 +196,7 @@ export function MetricsCardWidget({ config, globalFilters }: MetricsCardWidgetPr
   );
 }
 
-/** One KPI cell — label, formatted value, optional comparison pill. */
+/** One KPI cell - label, formatted value, optional comparison pill. */
 function MetricCell({
   metric,
   value,
@@ -240,7 +240,7 @@ function MetricCell({
 }
 
 /**
- * Comparison pill (§11) — metric-aware improvement semantics: UP is only
+ * Comparison pill (§11) - metric-aware improvement semantics: UP is only
  * tinted profit when the metric's increase is actually a good thing.
  */
 function ComparisonPill({
@@ -291,7 +291,7 @@ function ComparisonPill({
   );
 }
 
-/** Presentation formatting per unit — shared Intl helpers, nothing new. */
+/** Presentation formatting per unit - shared Intl helpers, nothing new. */
 function formatMetricValue(
   metric: MetricDefinition,
   value: number | null,
@@ -299,10 +299,10 @@ function formatMetricValue(
   notation: MetricsCardWidgetConfig["notation"],
   decimals: MetricsCardWidgetConfig["decimals"],
 ): string {
-  if (value === null || !Number.isFinite(value)) return "—";
+  if (value === null || !Number.isFinite(value)) return "-";
   switch (metric.unit) {
     case "MONEY": {
-      if (!currency) return "—";
+      if (!currency) return "-";
       const digits = decimals;
       return metric.signed
         ? formatSigned(value, (amount) =>
@@ -336,7 +336,7 @@ function formatDeltaValue(
 ): string {
   switch (metric.unit) {
     case "PERCENT":
-      // Rates are ratios — the delta is rendered in percentage points.
+      // Rates are ratios - the delta is rendered in percentage points.
       return `${delta > 0 ? "+" : "-"}${formatNumber(Math.abs(delta * 100), decimals)} pp`;
     case "MONEY":
       return metric.signed

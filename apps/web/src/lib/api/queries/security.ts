@@ -16,7 +16,7 @@ import { queryKeys } from "@/lib/api/keys";
 import type { ApiKeyCreateInput, PasswordChangeInput } from "@cosmoz/shared";
 
 /**
- * Security center hooks. The overview is the single aggregate — every
+ * Security center hooks. The overview is the single aggregate - every
  * mutation (including FAILED ones) invalidates it onSettled, because the
  * append-only event log records failures too (rate limits, wrong password).
  */

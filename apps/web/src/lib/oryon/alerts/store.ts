@@ -1,26 +1,26 @@
 import type { OryonAlert, OryonAlertCondition } from "@cosmoz/shared";
 
 /**
- * Oryon alert store — single source of truth for the browser-local alert
+ * Oryon alert store - single source of truth for the browser-local alert
  * records (Phase 5). Same discipline as the drawing store: NO external state
  * library, immutable updates (every mutation produces a new array reference),
  * useSyncExternalStore-ready, and the consumer wires persistence to the
  * subscription (the store itself knows nothing about localStorage).
  *
  * Scope note (documented product decision): alerts are a WORKSPACE-level
- * list (like the indicator stack), not per-symbol documents — one file, one
+ * list (like the indicator stack), not per-symbol documents - one file, one
  * store. The chart overlay filters by the DISPLAYED instrument downstream.
  *
  * Validation happens at the boundaries: creation goes through the caller's
  * form validation + this factory; loading goes through the Zod-validated
  * persistence adapter. The store never mutates a record into an invalid
- * shape — status transitions are the only in-place changes and they preserve
+ * shape - status transitions are the only in-place changes and they preserve
  * every schema constraint.
  */
 
 export interface AlertStoreSnapshot {
   alerts: readonly OryonAlert[];
-  /** Bumped on every commit — cheap reactivity signal for subscribers. */
+  /** Bumped on every commit - cheap reactivity signal for subscribers. */
   version: number;
 }
 
@@ -35,7 +35,7 @@ export function newAlertId(): string {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
     return crypto.randomUUID();
   }
-  // Test/SSR fallback — never a silent collision source.
+  // Test/SSR fallback - never a silent collision source.
   return `a-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
@@ -105,7 +105,7 @@ export class OryonAlertStore {
     this.patch(id, { status: "active", triggeredAt: null });
   }
 
-  /** Applies a CONFIRMED trigger (engine event) — idempotent per status. */
+  /** Applies a CONFIRMED trigger (engine event) - idempotent per status. */
   markTriggered(id: string, at: number): void {
     const target = this.getById(id);
     if (target === null || target.status !== "active") return;

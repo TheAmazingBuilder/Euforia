@@ -19,14 +19,14 @@ import { useI18n } from "@/i18n/i18n-provider";
 import { CATEGORY_HUES, tint } from "@/components/academy/academy-shared";
 
 /**
- * Academy shell — the learning platform lives on ONE route with internal
+ * Academy shell - the learning platform lives on ONE route with internal
  * navigation (?tab=, module convention): Overview (learning dashboard),
  * Courses (catalog → course → lesson, deep-linkable), Practice (drills),
  * Progress, Glossary and Bookmarks. The sidebar keeps a single "Academy"
- * entry — the 12 course categories stay inside, never in the main nav.
+ * entry - the 12 course categories stay inside, never in the main nav.
  */
 
-/** Tab machine ids — labels resolve through dict.academy.view.tabs. */
+/** Tab machine ids - labels resolve through dict.academy.view.tabs. */
 const TABS = [
   { id: "overview", icon: LayoutDashboard },
   { id: "courses", icon: BookOpen },
@@ -85,7 +85,7 @@ export function AcademyView() {
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-4 sm:space-y-6" data-testid="academy-view">
-      {/* Identity band — solid surface, hairline frame, crowned by the 12-hue
+      {/* Identity band - solid surface, hairline frame, crowned by the 12-hue
           prism keyline: one color per teaching track (tokens, not chrome). */}
       <header className="overflow-hidden rounded-xl border bg-surface" data-testid="academy-header">
         <div className="flex h-1.5" aria-hidden="true">

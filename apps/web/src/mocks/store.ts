@@ -163,7 +163,7 @@ import { integrationEngine } from "./integration-engine";
 import { buildPlaybookSeed, playbookTemplateCards, templateToCreateInput } from "./playbook-seed";
 import { buildGoalSeed, buildReviewSeed } from "./review-seed";
 
-/** Per-domain validation schemas — one source of truth, used by the handler. */
+/** Per-domain validation schemas - one source of truth, used by the handler. */
 const PREFERENCE_DOMAIN_SCHEMAS = {
   trading: tradingPreferencesSchema,
   risk: riskPreferencesSchema,
@@ -180,7 +180,7 @@ const PREFERENCE_DOMAIN_SCHEMAS = {
 /**
  * In-memory mock backend. Initialized from the seeded fixtures; every
  * mutation updates the store so the UI reflects changes without a server.
- * Lives in browser memory for the page session — a full reload reseeds it.
+ * Lives in browser memory for the page session - a full reload reseeds it.
  */
 
 export class MockError extends Error {
@@ -218,7 +218,7 @@ export function createMockStore() {
   const alertsByTrade = new Map<string, Alert[]>();
   /** Trade ↔ tag join rows (tradeId → tagIds), Act 3 review. */
   const tradeTags = new Map<string, Set<string>>();
-  /** Trade screenshots (module gallery) — data URLs held in memory. */
+  /** Trade screenshots (module gallery) - data URLs held in memory. */
   const screenshotsByTrade = new Map<string, TradeScreenshot[]>();
   const user = data.user;
   const mainAccount = data.accounts.find((a) => a.isDefault) ?? data.accounts[0]!;
@@ -228,7 +228,7 @@ export function createMockStore() {
   const setups: Setup[] = playbookSeed.setups;
   const checklists: ChecklistTemplate[] = playbookSeed.checklists;
   const playbookRules: PlaybookRule[] = playbookSeed.rules;
-  /** Historical strategy definitions (§17) — appended, never rewritten. */
+  /** Historical strategy definitions (§17) - appended, never rewritten. */
   const strategyVersions: StrategyVersionSnapshot[] = [];
 
   // Link closed trades to a concrete setup of their strategy (deterministic
@@ -248,7 +248,7 @@ export function createMockStore() {
   const reviews: TradeReview[] = buildReviewSeed(user.id, data.trades);
 
   /**
-   * User preferences (Settings module) — seeded from the safe shared
+   * User preferences (Settings module) - seeded from the safe shared
    * defaults, with the seeded instruments/account resolved into the
    * trading domain so the trade form opens pre-filled with real ids.
    */
@@ -307,7 +307,7 @@ export function createMockStore() {
     },
     {
       id: crypto.randomUUID(),
-      name: "Losses — last 30d",
+      name: "Losses - last 30d",
       scope: "TRADES",
       analyticsFilters: null,
       filters: {
@@ -320,10 +320,10 @@ export function createMockStore() {
       createdAt: nowIso(),
     },
     {
-      // ANALYTICS-scope preset in the SAME unified library — Analytics reads
+      // ANALYTICS-scope preset in the SAME unified library - Analytics reads
       // and writes this store, Trades keeps seeing only the TRADES scope.
       id: crypto.randomUUID(),
-      name: "Revenge review — last 90d",
+      name: "Revenge review - last 90d",
       scope: "ANALYTICS",
       analyticsFilters: { period: "LAST_90", emotion: "REVENGE" },
       filters: {
@@ -350,7 +350,7 @@ export function createMockStore() {
     }
     if (query.accountId) trades = trades.filter((t) => t.accountId === query.accountId);
     trades.sort((a, b) => (b.exitAt ?? b.entryAt).localeCompare(a.exitAt ?? a.entryAt));
-    // Tag join projection — lets the trade module render tag chips directly.
+    // Tag join projection - lets the trade module render tag chips directly.
     return {
       trades: trades.map((t) => ({ ...t, tagIds: [...(tradeTags.get(t.id) ?? [])] })),
       total: trades.length,
@@ -362,7 +362,7 @@ export function createMockStore() {
   const listStrategies = (): Strategy[] => data.strategies;
   const listTags = (): TagsResponse => ({ tags: [...data.tags] });
 
-  /** POST /tags — inline tag creation (Act 3 reflect, capture details). */
+  /** POST /tags - inline tag creation (Act 3 reflect, capture details). */
   function createTag(input: CreateTagInput): Tag {
     const name = input.name.trim();
     if (name === "") throw new MockError(422, "Tag name is required");
@@ -387,7 +387,7 @@ export function createMockStore() {
   });
 
   /**
-   * Weekly discipline report — pushed to the inbox on the FIRST alerts read
+   * Weekly discipline report - pushed to the inbox on the FIRST alerts read
    * after a new calendar week starts (the « Monday send »), one per week
    * (idempotent via payload.weekStart). Reports the PREVIOUS week's facts:
    * trades, violations, plan adherence, R, biggest leak.
@@ -435,7 +435,7 @@ export function createMockStore() {
       userId: user.id,
       type: "SYSTEM",
       severity: "NOTIFY",
-      title: `Discipline weekly report — week of ${prevWeekStart}`,
+      title: `Discipline weekly report - week of ${prevWeekStart}`,
       message:
         `Last week (${prevWeekStart} → ${prevWeekEnd}): ${weekTrades.length} trade${weekTrades.length === 1 ? "" : "s"}, ` +
         `${weekViolations.length} rule violation${weekViolations.length === 1 ? "" : "s"}, ` +
@@ -443,7 +443,7 @@ export function createMockStore() {
         `${rSum >= 0 ? "+" : ""}${rSum.toFixed(1)}R.` +
         (leakType !== null
           ? ` Biggest leak: ${leakType.replaceAll("_", " ").toLowerCase()} (${leakCount}×).`
-          : " No rule breached — keep the bar."),
+          : " No rule breached - keep the bar."),
       payload: { kind: "WEEKLY_DISCIPLINE_REPORT", weekStart },
       tradeId: null,
       readAt: null,
@@ -456,9 +456,9 @@ export function createMockStore() {
     // Goal → inbox bridge runs on every read: the topbar bell stays truthful
     // even when the Goals tab was never opened this session.
     syncGoalAlerts();
-    // Weekly discipline report — Monday-send mechanics, idempotent per week.
+    // Weekly discipline report - Monday-send mechanics, idempotent per week.
     syncWeeklyDisciplineReport();
-    // Security reminder bridge (2FA off > 7 days) — engine-injected check.
+    // Security reminder bridge (2FA off > 7 days) - engine-injected check.
     syncSecurityReminders();
     const alerts = [...data.alerts].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
     const unreadCount = alerts.filter((a) => a.readAt === null && a.dismissedAt === null).length;
@@ -495,7 +495,7 @@ export function createMockStore() {
           userId: user.id,
           type: "SYSTEM",
           severity: "WARN",
-          title: "Security reminder — two-factor is off",
+          title: "Security reminder - two-factor is off",
           message: reminder.message,
           payload: { kind: "TWO_FACTOR_OFF", days: reminder.days },
           tradeId: null,
@@ -523,7 +523,7 @@ export function createMockStore() {
     return alert;
   }
 
-  /** Dismiss WITHOUT deleting — the audit history stays (Phase 07 §8). */
+  /** Dismiss WITHOUT deleting - the audit history stays (Phase 07 §8). */
   function dismissAlert(alertId: string): Alert {
     const alert = data.alerts.find((a) => a.id === alertId);
     if (!alert) throw new MockError(404, "Alert not found");
@@ -553,7 +553,7 @@ export function createMockStore() {
       userId: user.id,
       type: "SYSTEM",
       severity: input.severity === "CRITICAL" ? "ALERT" : input.severity === "WARNING" ? "WARN" : "NOTIFY",
-      title: `Monitoring — ${input.ruleId}`,
+      title: `Monitoring - ${input.ruleId}`,
       message: input.message,
       payload: { ruleId: input.ruleId },
       tradeId: null,
@@ -563,7 +563,7 @@ export function createMockStore() {
     });
   }
 
-  /** GET /eco-events — economic calendar, chronological. Fed by the
+  /** GET /eco-events - economic calendar, chronological. Fed by the
    *  Integration Hub's economic provider pipeline (§9/§22), not hardcoded. */
   function listEcoEvents(): EcoEventsResponse {
     return integrationEngine.listEcoEventsForCalendar();
@@ -571,14 +571,14 @@ export function createMockStore() {
 
   // ── Calendar module: trading overlay, day-offs, eco blockers, semester ────
 
-  /** One entry per marked date — the trading-calendar block store. */
+  /** One entry per marked date - the trading-calendar block store. */
   const calendarBlocks = new Map<string, CalendarBlock>();
   // Seed: one planned day off in the recent past so the exclusion mechanics
   // are visible without any setup (editors remove it with one click).
   calendarBlocks.set(dateKeyOffset(-11), {
     date: dateKeyOffset(-11),
     kind: "OFF",
-    note: "Planned day off — long weekend",
+    note: "Planned day off - long weekend",
     createdAt: nowIso(),
   });
 
@@ -635,13 +635,13 @@ export function createMockStore() {
       dates,
       message:
         imported === 0
-          ? "Nothing to import — the next two weeks are already marked or clear."
+          ? "Nothing to import - the next two weeks are already marked or clear."
           : `${imported} high-impact day${imported === 1 ? "" : "s"} imported as news blockers over the next two weeks.`,
     };
   }
 
   /**
-   * GET /calendar-view?from&to — the trading-calendar overlay. Every row is
+   * GET /calendar-view?from&to - the trading-calendar overlay. Every row is
    * server-computed from dailyStats + eco events + blocks; days marked OFF
    * are EXCLUDED from the aggregates (planned rest is not trading data).
    */
@@ -701,7 +701,7 @@ export function createMockStore() {
     };
   }
 
-  /** GET /export/backup — full authored-data snapshot (feature 12). */
+  /** GET /export/backup - full authored-data snapshot (feature 12). */
   function exportBackup(): BackupPayload {
     return {
       app: "cosmoz",
@@ -713,7 +713,7 @@ export function createMockStore() {
     };
   }
 
-  /** POST /import/backup — replace trades, merge strategies + tags by id. */
+  /** POST /import/backup - replace trades, merge strategies + tags by id. */
   function importBackup(payload: BackupPayload): ImportBackupResponse {
     data.trades = [...payload.trades];
 
@@ -770,7 +770,7 @@ export function createMockStore() {
         riskAmount: toDecimalString(round2(quantity * stopDistance * contractSize)),
       };
     }
-    // Risk-based sizing without a stop: cannot size — minimal unit fallback.
+    // Risk-based sizing without a stop: cannot size - minimal unit fallback.
     return { quantity: "0.01", riskAmount: toDecimalString(round2(budget)) };
   }
 
@@ -836,7 +836,7 @@ export function createMockStore() {
       );
       if (alreadyAlerted) continue;
 
-      // rule_violations row — the durable record the discipline screen's log
+      // rule_violations row - the durable record the discipline screen's log
       // reads (alerts stay the V1 response channel). Context freezes values
       // at time T (data-model.md "Domaine 7").
       const violation: RuleViolation = {
@@ -1277,7 +1277,7 @@ export function createMockStore() {
         return { ruleId: r.id, type: r.type, severity: r.severity, limit: toDecimalString(limit), current: toDecimalString(round2(current)) };
       });
 
-    // Guardrail input — rule breaches that happened TODAY (any rule).
+    // Guardrail input - rule breaches that happened TODAY (any rule).
     const violationsToday = data.ruleViolations.filter(
       (violation) => toTradingDateKey(violation.occurredAt, USER_TZ) === today,
     ).length;
@@ -1344,7 +1344,7 @@ export function createMockStore() {
     }
     const equityPeak = Math.max(runningPeak, Number(mainAccount.startingBalance));
 
-    // ── Deltas WEEK VS WEEK (last 7 trading days vs the 7 before that) —
+    // ── Deltas WEEK VS WEEK (last 7 trading days vs the 7 before that) -
     // all aggregates stay server-side, decimal strings out ──────────────────
     const shiftDateKey = (offsetDays: number): string => {
       const shifted = new Date();
@@ -1400,7 +1400,7 @@ export function createMockStore() {
         ? { value: null, direction: cur.netPnl > prev.netPnl && cur.hasData ? "UP" : "FLAT" }
         : rawDelta(cur.netPnl, prev.netPnl);
 
-    // ── Per-KPI sparklines — WEEKLY buckets (last 8 weeks, Monday-anchored).
+    // ── Per-KPI sparklines - WEEKLY buckets (last 8 weeks, Monday-anchored).
     // The strips compare week vs week, so the trend line draws one point per
     // week rather than a rolling day window.
     const sparklines: StatsOverviewResponse["sparklines"] = {
@@ -1426,7 +1426,7 @@ export function createMockStore() {
       weekBuckets.set(key, bucket);
     }
     const sortedWeekKeys = [...weekBuckets.keys()].sort();
-    // Only the weeks that have data, capped to the last 8 — the oldest first.
+    // Only the weeks that have data, capped to the last 8 - the oldest first.
     const shownWeeks = sortedWeekKeys.slice(-WEEKS_SHOWN);
     for (const weekKey of shownWeeks) {
       const weekTrades = weekBuckets.get(weekKey) ?? [];
@@ -1452,19 +1452,19 @@ export function createMockStore() {
       );
     }
 
-    // ── Discipline Saved — settled would-have-lost ghost trades ─────────────
+    // ── Discipline Saved - settled would-have-lost ghost trades ─────────────
     const savedGhosts = data.skippedTrades.filter(
       (g) => g.outcomeGuess === "WOULD_HAVE_LOST" && g.hypotheticalR !== null,
     );
     const rSaved = savedGhosts.reduce((sum, g) => sum + Math.abs(Number(g.hypotheticalR)), 0);
 
-    // ── Hesitation Cost — settled would-have-won ghost trades (mirror) ──────
+    // ── Hesitation Cost - settled would-have-won ghost trades (mirror) ──────
     const hesitantGhosts = data.skippedTrades.filter(
       (g) => g.outcomeGuess === "WOULD_HAVE_WON" && g.hypotheticalR !== null,
     );
     const rCost = hesitantGhosts.reduce((sum, g) => sum + Math.abs(Number(g.hypotheticalR)), 0);
 
-    // ── Ghost trend — fear vs discipline skip counts, last 30 days ─────────
+    // ── Ghost trend - fear vs discipline skip counts, last 30 days ─────────
     const trendDays = 30;
     const ghostTrend: StatsOverviewResponse["ghostTrend"] = [];
     for (let offset = trendDays - 1; offset >= 0; offset -= 1) {
@@ -1479,7 +1479,7 @@ export function createMockStore() {
       });
     }
 
-    // ── Weekly comparison bands (this week vs previous week) — the SAME
+    // ── Weekly comparison bands (this week vs previous week) - the SAME
     // rolling 7-day windows as the deltas above, zero-filled so both
     // mini-sparkline strips always draw 7 columns. Server-computed.
     const weekBands = (fromOffset: number): StatsOverviewResponse["weeklyCompare"]["thisWeek"]["days"] =>
@@ -1583,7 +1583,7 @@ export function createMockStore() {
 
   /**
    * Definition fields whose change creates a NEW version (§17). Status, color
-   * and grade are lifecycle/presentation — they mutate in place without
+   * and grade are lifecycle/presentation - they mutate in place without
    * rewriting the definition a trade was executed under.
    */
   const STRATEGY_DEFINITION_FIELDS = [
@@ -1602,7 +1602,7 @@ export function createMockStore() {
     }
 
     // Versioning (§17): freeze the CURRENT definition BEFORE any content
-    // mutation — a trade executed under v1 must stay explainable as v1.
+    // mutation - a trade executed under v1 must stay explainable as v1.
     const touchesDefinition = STRATEGY_DEFINITION_FIELDS.some(
       (field) => input[field] !== undefined,
     );
@@ -1641,7 +1641,7 @@ export function createMockStore() {
   }
 
   /**
-   * POST /strategies/:id/duplicate (§5 quick action) — a fresh DRAFT copy:
+   * POST /strategies/:id/duplicate (§5 quick action) - a fresh DRAFT copy:
    * definition blocks deep-copied, grade reset (the copy is unproven),
    * setups and scoped checklists duplicated; history does NOT follow.
    */
@@ -1695,11 +1695,11 @@ export function createMockStore() {
   function deleteStrategy(strategyId: string): { ok: true } {
     const index = data.strategies.findIndex((s) => s.id === strategyId);
     if (index === -1) throw new MockError(404, "Strategy not found");
-    // FK-RESTRICT semantics: a strategy with history is paused, never erased —
+    // FK-RESTRICT semantics: a strategy with history is paused, never erased -
     // the playbook evolves but the journal stays true (data-model.md V2 note).
     const used = data.trades.some((t) => t.strategyId === strategyId);
     if (used) {
-      throw new MockError(409, "This strategy has trades attached — pause or retire it instead.");
+      throw new MockError(409, "This strategy has trades attached - pause or retire it instead.");
     }
     // The playbook children of a deleted strategy have no reason to dangle.
     for (let i = setups.length - 1; i >= 0; i -= 1) {
@@ -1781,7 +1781,7 @@ export function createMockStore() {
     const index = setups.findIndex((s) => s.id === setupId);
     if (index === -1) throw new MockError(404, "Setup not found");
     const used = data.trades.some((t) => t.setupId === setupId);
-    if (used) throw new MockError(409, "This setup has trades attached — pause it instead.");
+    if (used) throw new MockError(409, "This setup has trades attached - pause it instead.");
     setups.splice(index, 1);
     return { ok: true };
   }
@@ -1889,12 +1889,12 @@ export function createMockStore() {
     return { ok: true };
   }
 
-  /** GET /playbook/templates — the starting-point library (§18). */
+  /** GET /playbook/templates - the starting-point library (§18). */
   function listPlaybookTemplates(): PlaybookTemplatesResponse {
     return { templates: playbookTemplateCards() };
   }
 
-  /** POST /playbook/templates/instantiate — creates a DRAFT from a template. */
+  /** POST /playbook/templates/instantiate - creates a DRAFT from a template. */
   function instantiatePlaybookTemplate(input: InstantiateTemplateInput): Strategy {
     const payload = templateToCreateInput(input.key, input.name);
     if (!payload) throw new MockError(404, "Unknown playbook template");
@@ -1902,16 +1902,16 @@ export function createMockStore() {
   }
 
   /**
-   * GET /playbook/overview — ONE aggregate for the module (§5): counts,
+   * GET /playbook/overview - ONE aggregate for the module (§5): counts,
    * recency, performance summary and §20 completeness health. All computed
-   * from the stored trades/strategies — never invented client-side.
+   * from the stored trades/strategies - never invented client-side.
    */
   // ── Playbook upgrades: live compliance / setup insights / version history ─
 
   const COMPLIANCE_WINDOW = 20;
 
   /**
-   * Live compliance — playbookMatch DECLARED AT REVIEW TIME over the last N
+   * Live compliance - playbookMatch DECLARED AT REVIEW TIME over the last N
    * closed trades. The score counts MATCHED only; unreviewed trades are
    * reported separately, never silently judged.
    */
@@ -1963,7 +1963,7 @@ export function createMockStore() {
   }
 
   /**
-   * Light 90d backtest per setup — REALIZED performance of the trades
+   * Light 90d backtest per setup - REALIZED performance of the trades
    * executed under it (Trade.setupId), plus market heuristics: the
    * instrument with the best summed R and the dominant entry session.
    * n < 5 flags the sample; nothing here is a simulation claim.
@@ -2021,7 +2021,7 @@ export function createMockStore() {
     return { insights };
   }
 
-  /** GET /strategies/:id/versions — history for the visual diff. */
+  /** GET /strategies/:id/versions - history for the visual diff. */
   function listStrategyVersions(strategyId: string): StrategyVersionsResponse {
     const strategy = data.strategies.find((s) => s.id === strategyId);
     if (!strategy) throw new MockError(404, "Strategy not found");
@@ -2044,7 +2044,7 @@ export function createMockStore() {
       data.strategies.filter((s) => s.status === status).length;
 
     // Rule adherence (§5): followedPlan among closed playbook trades that
-    // have an answer — missing answers never silently count as "followed".
+    // have an answer - missing answers never silently count as "followed".
     const graded = playbookClosed.filter((t) => t.followedPlan !== null);
     const followedPct =
       graded.length > 0
@@ -2091,7 +2091,7 @@ export function createMockStore() {
         };
       });
 
-    // §20 completeness health — factual flags, no profitability judgment.
+    // §20 completeness health - factual flags, no profitability judgment.
     const hasGlobalChecklist = checklists.some((c) => c.strategyId === null);
     const thirtyDaysAgo = new Date(Date.now() - 30 * 86_400_000).toISOString();
     const health = data.strategies.map((s) => {
@@ -2143,7 +2143,7 @@ export function createMockStore() {
   }
 
   /**
-   * GET /strategies/stats — per-strategy aggregates computed from the CLOSED
+   * GET /strategies/stats - per-strategy aggregates computed from the CLOSED
    * trades, server-side (same contract as /stats/overview). The decay
    * detector window is the LAST 20 closed trades of each strategy.
    */
@@ -2191,7 +2191,7 @@ export function createMockStore() {
       }
     }
 
-    // The coach banner calls out the WORST negative last-20 expectancy —
+    // The coach banner calls out the WORST negative last-20 expectancy -
     // computed from the data, never a hardcoded name.
     const worst = candidates.sort((a, b) => a.last20Expectancy - b.last20Expectancy)[0] ?? null;
     return {
@@ -2281,7 +2281,7 @@ export function createMockStore() {
   }
 
   /**
-   * GET /discipline/score — the Euforia Discipline Score with its current
+   * GET /discipline/score - the Euforia Discipline Score with its current
    * month component breakdown (data-model.md "Tier-1 feature wiring"):
    * process only, deliberately decoupled from P&L.
    */
@@ -2309,7 +2309,7 @@ export function createMockStore() {
     ).length;
 
     // Journaling consistency: % of the window's trading days with at least
-    // one written reflection (lesson or note) — V1 trace of daily_journal.
+    // one written reflection (lesson or note) - V1 trace of daily_journal.
     const tradingDays = new Set(windowClosed.map((t) => t.tradingDate));
     const journaledDays = new Set(
       windowClosed
@@ -2335,7 +2335,7 @@ export function createMockStore() {
     };
   }
 
-  /** GET /mistakes/ledger — per-mistake frequency + R cost over the window. */
+  /** GET /mistakes/ledger - per-mistake frequency + R cost over the window. */
   function mistakesLedger(since: string = windowStart()): MistakeLedgerResponse {
     const entries: MistakeLedgerResponse["entries"] = [];
     for (const mistake of data.mistakes) {
@@ -2360,13 +2360,13 @@ export function createMockStore() {
         lastSeenAt,
       });
     }
-    // Most expensive first — cost dominates, then frequency.
+    // Most expensive first - cost dominates, then frequency.
     entries.sort((a, b) => Math.abs(Number(b.rCost)) - Math.abs(Number(a.rCost)) || b.count - a.count);
     return { windowStart: since, entries };
   }
 
   /**
-   * GET /discipline/emotion-matrix — emotion → outcome grid over the same
+   * GET /discipline/emotion-matrix - emotion → outcome grid over the same
    * 30-day window as the discipline score. Correlational by design: the
    * grid makes the pattern visible, it never claims causation. Trades
    * without a logged emotion are counted as `excluded`.
@@ -2393,7 +2393,7 @@ export function createMockStore() {
           totalR: group.length > 0 ? round2(rSum) : null,
         };
       })
-      // Busiest emotions first — the heatmap reads top-down.
+      // Busiest emotions first - the heatmap reads top-down.
       .sort((a, b) => b.trades - a.trades);
     return {
       windowStart: since,
@@ -2421,7 +2421,7 @@ export function createMockStore() {
   }
 
   /**
-   * GET /stats/analytics — every aggregate the analytics suite renders,
+   * GET /stats/analytics - every aggregate the analytics suite renders,
    * computed here so the client only formats (same contract as
    * /stats/overview). Each rate ships with its n.
    */
@@ -2519,7 +2519,7 @@ export function createMockStore() {
       );
     });
 
-    // ── Emotions (worst average R first — friction surfaces on top) ────────
+    // ── Emotions (worst average R first - friction surfaces on top) ────────
     const emotionBuckets = [...new Set(closed.map((t) => t.emotionBefore).filter((e): e is Emotion => e !== null))]
       .map((emotion) => bucketOf(emotion, EMOTION_LABELS[emotion], closed.filter((t) => t.emotionBefore === emotion)))
       .sort((a, b) => Number(a.avgR ?? 0) - Number(b.avgR ?? 0));
@@ -2616,11 +2616,11 @@ export function createMockStore() {
     };
   }
 
-  // ── Analytics Suite (MASTER PROMPT — one filtered dataset, §5) ───────────
+  // ── Analytics Suite (MASTER PROMPT - one filtered dataset, §5) ───────────
 
   /**
    * Resolve a named period preset into [from, to] trading-date keys using the
-   * SERVER's trading-day clock (the client never derives "today" — same rule
+   * SERVER's trading-day clock (the client never derives "today" - same rule
    * as the session timeline). CUSTOM falls back to ALL when bounds are absent.
    */
   function resolvePeriodRange(filters: AnalyticsFilters): { from: string; to: string } {
@@ -2681,7 +2681,7 @@ export function createMockStore() {
   }
 
   /**
-   * GET /stats/analytics-suite — the Analytics module's single dataset
+   * GET /stats/analytics-suite - the Analytics module's single dataset
    * definition. Every tab renders the SAME filtered closed-trade set; every
    * aggregate is computed here so the client only formats (product rule).
    * Open positions are excluded from performance stats and merely counted
@@ -2814,7 +2814,7 @@ export function createMockStore() {
     const recoveryFactor = netPnl !== null && maxDrawdownR < 0 ? netPnl / Math.abs(maxDrawdownR) : null;
 
     // Sharpe / Sortino on DAILY R sums (calendar days from first to last
-    // trade, zero on no-trade days), annualized √252, risk-free 0 — the
+    // trade, zero on no-trade days), annualized √252, risk-free 0 - the
     // methodology travels with the payload (§8).
     let sharpe: number | null = null;
     let sortino: number | null = null;
@@ -2880,7 +2880,7 @@ export function createMockStore() {
       sharpeNote:
         "Sharpe = mean daily ΣR ÷ stdev(daily ΣR) × √252, risk-free = 0. Daily series spans the full filter window (0R on no-trade days); null below 10 days.",
       sortinoNote:
-        "Sortino uses the same daily ΣR series with downside deviation (√mean(min(0,d)²)), annualized √252 — penalizes only negative volatility.",
+        "Sortino uses the same daily ΣR series with downside deviation (√mean(min(0,d)²)), annualized √252 - penalizes only negative volatility.",
     };
 
     // ── Cumulative R + rolling (window 10) (§7/§9) ─────────────────────────
@@ -3028,7 +3028,7 @@ export function createMockStore() {
           r: toDecimalString(round2(rOf(trade))),
         });
       }
-      if (inDrawdown) flush(null, null, null); // still under water — honest nulls
+      if (inDrawdown) flush(null, null, null); // still under water - honest nulls
       drawdowns.sort((a, b) => Number(a.drawdownR) - Number(b.drawdownR));
     }
 
@@ -3078,7 +3078,7 @@ export function createMockStore() {
       },
     ];
 
-    // ── Strategy rows (§12) — factual comparisons, no ranking verdict ─────
+    // ── Strategy rows (§12) - factual comparisons, no ranking verdict ─────
     const strategyGroup = (id: string | null): Trade[] =>
       closed.filter((t) => (id === null ? t.strategyId === null : t.strategyId === id));
     const strategyIds = [...new Set(closed.map((t) => t.strategyId))];
@@ -3172,7 +3172,7 @@ export function createMockStore() {
       };
     });
 
-    // ── Time analytics (§14) — reuse the suite bucket machinery ────────────
+    // ── Time analytics (§14) - reuse the suite bucket machinery ────────────
     const weekdayOf = (trade: Trade): number => new Date(`${trade.tradingDate}T00:00:00Z`).getUTCDay();
     const hourBucketOf = (trade: Trade): number => {
       const hour = new Date(trade.entryAt).getUTCHours();
@@ -3308,7 +3308,7 @@ export function createMockStore() {
       totalR: toDecimalString(round2(violatingTrades.reduce((sum, t) => sum + rOf(t), 0))),
     };
 
-    // ── Economic-event context (§21) — only where the calendar reaches ─────
+    // ── Economic-event context (§21) - only where the calendar reaches ─────
     const eventDates = data.ecoEvents.map((e) => e.scheduledAt.slice(0, 10)).sort();
     const calendarFrom = eventDates[0] ?? null;
     const calendarTo = eventDates[eventDates.length - 1] ?? null;
@@ -3395,7 +3395,7 @@ export function createMockStore() {
     if (currentWin > 0) winStreaks.push(currentWin);
     if (currentLoss > 0) lossStreaks.push(currentLoss);
 
-    // ── Monte Carlo (§25) — bootstrap of the filtered R list ───────────────
+    // ── Monte Carlo (§25) - bootstrap of the filtered R list ───────────────
     const rng = mulberry32(20260930);
     const simulationCount = Math.max(100, Math.min(2000, sims));
     const finals: number[] = [];
@@ -3454,7 +3454,7 @@ export function createMockStore() {
     // the client renders them next to the dataset warnings.
     const anomalies: AnalyticsSuiteResponse["meta"]["anomalies"] = [];
     if (closed.length >= 10) {
-      // TAIL_LOSS — the worst 5 % of losing trades vs the total loss mass (R).
+      // TAIL_LOSS - the worst 5 % of losing trades vs the total loss mass (R).
       const lossR = closed.map(rOf).filter((r) => r < 0).sort((a, b) => a - b);
       const totalLossAbs = lossR.reduce((sum, r) => sum + Math.abs(r), 0);
       if (lossR.length >= 5 && totalLossAbs > 0) {
@@ -3471,7 +3471,7 @@ export function createMockStore() {
         }
       }
 
-      // OVERTRADING — unusually busy days whose average daily R underperforms.
+      // OVERTRADING - unusually busy days whose average daily R underperforms.
       const dayCounts = [...dailyGroups.values()].map((group) => group.length).sort((a, b) => a - b);
       if (dayCounts.length >= 8) {
         const medianCount = dayCounts[Math.floor(dayCounts.length / 2)]!;
@@ -3492,7 +3492,7 @@ export function createMockStore() {
         }
       }
 
-      // LOSS_STREAK — longest consecutive losing run in chronological order.
+      // LOSS_STREAK - longest consecutive losing run in chronological order.
       let streak = 0;
       let worstStreak = 0;
       for (const trade of closed) {
@@ -3513,7 +3513,7 @@ export function createMockStore() {
       }
     }
 
-    // ── Phase 05 — insights/durations/streak profile (SHARED engine — the
+    // ── Phase 05 - insights/durations/streak profile (SHARED engine - the
     // same deterministic functions the API suite calls, so mock parity can
     // never drift) ────────────────────────────────────────────────────────
     const insightsRows: InsightsEngineRow[] = closed.map((t) => ({
@@ -3652,7 +3652,7 @@ export function createMockStore() {
   // ── Session Live (trade-entry-ux.md §9) ──────────────────────────────────
 
   /**
-   * GET /session/timeline — today's events (entries, exits, SL/TP
+   * GET /session/timeline - today's events (entries, exits, SL/TP
    * modifications, alerts) + logged emotions, all assembled SERVER-SIDE for
    * the server's trading date. The client never derives "today".
    */
@@ -3729,7 +3729,7 @@ export function createMockStore() {
           tradeId: trade.id,
         });
       }
-      // Exit / in-trade emotion: the TAP's day is what matters — an in-trade
+      // Exit / in-trade emotion: the TAP's day is what matters - an in-trade
       // quick-log on a trade opened yesterday is still today's event.
       if (trade.emotionAfter !== null) {
         const at = trade.status === "OPEN" ? trade.updatedAt : (trade.exitAt ?? trade.updatedAt);
@@ -3743,7 +3743,7 @@ export function createMockStore() {
     return { date: today, events, moods };
   }
 
-  // ── Session logbook — timestamped in-session notes ────────────────────
+  // ── Session logbook - timestamped in-session notes ────────────────────
   // Flat list per trading day; the date is SERVER-resolved (same trading
   // day key as the timeline) so a note logged at 23:59 UTC-5 belongs to
   // the right session. Notes live in memory like every other mutation.
@@ -3777,7 +3777,7 @@ export function createMockStore() {
   }
 
 
-  /** PATCH /trades/:id/notes — session note icon quick-save. */
+  /** PATCH /trades/:id/notes - session note icon quick-save. */
   function updateNotes(tradeId: string, input: NotesUpdateInput): Trade {
     const trade = data.trades.find((t) => t.id === tradeId);
     if (!trade) throw new MockError(404, "Trade not found");
@@ -3789,7 +3789,7 @@ export function createMockStore() {
   // ── Trade module: edit / delete / screenshots / profile ──────────────────
 
   /**
-   * PATCH /trades/:id — journal correction. Closed trades get their results
+   * PATCH /trades/:id - journal correction. Closed trades get their results
    * recomputed server-side (§15); daily stats refresh for both the old and
    * the new trading date when the entry moved across days.
    */
@@ -3812,7 +3812,7 @@ export function createMockStore() {
       trade.tradingDate = toTradingDateKey(input.entryAt, USER_TZ);
     }
     if (input.exitPrice !== undefined || input.exitAt !== undefined || input.exitReason !== undefined) {
-      if (trade.status !== "CLOSED") throw new MockError(409, "Trade is not closed — close it first");
+      if (trade.status !== "CLOSED") throw new MockError(409, "Trade is not closed - close it first");
       if (input.exitPrice !== undefined) trade.exitPrice = input.exitPrice;
       if (input.exitAt !== undefined) trade.exitAt = input.exitAt;
       if (input.exitReason !== undefined) trade.exitReason = input.exitReason;
@@ -3840,7 +3840,7 @@ export function createMockStore() {
     return { trade };
   }
 
-  /** DELETE /trades/:id — soft delete; aggregates refresh immediately. */
+  /** DELETE /trades/:id - soft delete; aggregates refresh immediately. */
   function deleteTrade(tradeId: string): DeleteTradeResponse {
     const trade = data.trades.find((t) => t.id === tradeId && t.deletedAt === null);
     if (!trade) throw new MockError(404, "Trade not found");
@@ -3915,7 +3915,7 @@ export function createMockStore() {
     if (input.op === "GRADE") {
       let affected = 0;
       for (const trade of targets) {
-        // The decision gate applies to CLOSED trades only — OPEN rows are
+        // The decision gate applies to CLOSED trades only - OPEN rows are
         // reported as skipped, never silently mixed in.
         if (trade.status !== "CLOSED") continue;
         trade.decisionGrade = input.grade;
@@ -3926,7 +3926,7 @@ export function createMockStore() {
       return { op: input.op, affected, skipped: skipped + (targets.length - affected) };
     }
 
-    // TAG — add/remove against the trade↔tag join.
+    // TAG - add/remove against the trade↔tag join.
     let tagged = 0;
     for (const trade of targets) {
       const bucket = tradeTags.get(trade.id) ?? new Set<string>();
@@ -4042,7 +4042,7 @@ export function createMockStore() {
    * Price path around the trade window (pre-entry → post-exit), anchored on
    * the RECORDED journal values: entry at the entry bucket, exit at the exit
    * bucket, MFE/MAE touched inside the trade. The walk itself is a
-   * deterministic per-trade random path (seeded by trade id) — in production
+   * deterministic per-trade random path (seeded by trade id) - in production
    * this endpoint serves real broker price history; the overlays are always
    * the trade's actual recorded levels.
    */
@@ -4103,7 +4103,7 @@ export function createMockStore() {
       price: toDecimalString(Number(price.toFixed(digits))),
     }));
     return {
-      symbol: instrument?.symbol ?? "—",
+      symbol: instrument?.symbol ?? "-",
       digits,
       direction: trade.direction,
       from: points[0]!.t,
@@ -4170,7 +4170,7 @@ export function createMockStore() {
     if (input.email !== undefined) user.email = input.email;
     if (input.timezone !== undefined) {
       user.timezone = input.timezone;
-      // Timezone has one source of truth (the profile) — keep the
+      // Timezone has one source of truth (the profile) - keep the
       // Localization mirror in sync so the two screens never disagree.
       preferences.localization.timezone = input.timezone;
     }
@@ -4180,7 +4180,7 @@ export function createMockStore() {
     return getProfile();
   }
 
-  // ── Preferences (Settings module — GET/PATCH/reset per domain) ───────────
+  // ── Preferences (Settings module - GET/PATCH/reset per domain) ───────────
 
   function getPreferences(): UserPreferences {
     return structuredClone(preferences);
@@ -4190,7 +4190,7 @@ export function createMockStore() {
     domain: PreferenceDomain,
     input: Record<string, unknown>,
   ): UserPreferences {
-    // Server-side validation — the same zod schema the real NestJS API runs.
+    // Server-side validation - the same zod schema the real NestJS API runs.
     const schema = PREFERENCE_DOMAIN_SCHEMAS[domain];
     const parsed = schema.parse(input);
     // TS limitation: union-keyed write needs the widened record view.
@@ -4224,7 +4224,7 @@ export function createMockStore() {
 
   // ── Trade Review module (fusion with Goal) ────────────────────────────────
   // Goals: targets set by the trader; progress is COMPUTED here from real
-  // trading behavior over a resolved calendar period — never self-entered.
+  // trading behavior over a resolved calendar period - never self-entered.
   // Reviews: one post-trade review per trade (upsert), distinct from the
   // pre-reveal decisionGrade frozen on the trade.
 
@@ -4292,7 +4292,7 @@ export function createMockStore() {
     return resolvePeriodFor(currentPeriodOf(period), shiftDayKey2(period.from, -1));
   }
 
-  /** Which GoalPeriod a resolved window came from — recovered from length.
+  /** Which GoalPeriod a resolved window came from - recovered from length.
    *  Simpler and exact: previousWindow is called right after resolvePeriod,
    *  so we thread the GoalPeriod through instead. */
   function currentPeriodOf(period: ResolvedPeriod): GoalPeriod {
@@ -4363,7 +4363,7 @@ export function createMockStore() {
     if (current.actual !== null) {
       const actual = current.actual;
       if (shape.direction === "LOWER_IS_BETTER") {
-        // A limit to respect ("max 3 trades/day") — maintained, not "achieved early".
+        // A limit to respect ("max 3 trades/day") - maintained, not "achieved early".
         if (actual <= goal.target) {
           progressPct = 100;
           status = "ON_TRACK";
@@ -4382,7 +4382,7 @@ export function createMockStore() {
           status = "BEHIND";
         }
       } else {
-        // A growth target — pace it against elapsed time.
+        // A growth target - pace it against elapsed time.
         progressPct = Math.max(0, Math.min(100, round1((actual / goal.target) * 100)));
         if (actual >= goal.target) {
           status = "ACHIEVED";
@@ -4410,7 +4410,7 @@ export function createMockStore() {
         ? "floor"
         : "target";
     const detail = current.actual === null
-      ? `No data yet this ${goal.period.toLowerCase()} — the sample is empty`
+      ? `No data yet this ${goal.period.toLowerCase()} - the sample is empty`
       : `${fmt(current.actual)} vs ${fmt(goal.target)} ${targetWord}`;
 
     return {
@@ -4507,7 +4507,7 @@ export function createMockStore() {
     for (const goal of goals) {
       if (!goal.active) continue;
       const { progress: p } = goalProgressFor(goal);
-      // Period moved (goal edited) — retire risk alerts pinned to older windows.
+      // Period moved (goal edited) - retire risk alerts pinned to older windows.
       for (const stale of data.alerts) {
         if (stale.type !== "GOAL_STATUS" || stale.dismissedAt !== null) continue;
         const stalePayload = stale.payload as Partial<GoalAlertPayload> | null;
@@ -4519,7 +4519,7 @@ export function createMockStore() {
           stale.dismissedAt = nowIso();
         }
       }
-      // PENDING = no data yet — never nag about an empty sample.
+      // PENDING = no data yet - never nag about an empty sample.
       if (p.actual === null || p.status === "PENDING") continue;
 
       const daysLeft = Math.max(0, p.daysTotal - p.daysElapsed);
@@ -4534,10 +4534,10 @@ export function createMockStore() {
 
       if (slipping) {
         const severity = p.status === "BEHIND" ? "ALERT" : "WARN";
-        const title = p.status === "BEHIND" ? `Goal off pace — ${goal.title}` : `Goal at risk — ${goal.title}`;
+        const title = p.status === "BEHIND" ? `Goal off pace - ${goal.title}` : `Goal at risk - ${goal.title}`;
         const message = `${p.detail}.${pacing}`;
         if (slipAlert) {
-          // Same episode, status moved — rewrite the live alert in place.
+          // Same episode, status moved - rewrite the live alert in place.
           slipAlert.severity = severity;
           slipAlert.title = title;
           slipAlert.message = message;
@@ -4560,7 +4560,7 @@ export function createMockStore() {
         continue;
       }
 
-      // Not slipping anymore — retire the live risk alert (if any).
+      // Not slipping anymore - retire the live risk alert (if any).
       if (slipAlert) slipAlert.dismissedAt = nowIso();
       if (p.status === "ON_TRACK" && slipAlert && goalPrefs.enabled && goalPrefs.events.GOAL_RECOVERED.inApp) {
         data.alerts.push({
@@ -4568,7 +4568,7 @@ export function createMockStore() {
           userId: goal.userId,
           type: "GOAL_STATUS",
           severity: "NOTIFY",
-          title: `Goal back on track — ${goal.title}`,
+          title: `Goal back on track - ${goal.title}`,
           message: `${p.detail}.${pacing}`,
           payload: { goalId: goal.id, kind: "ACHIEVED", periodStart: p.periodStart },
           tradeId: null,
@@ -4588,7 +4588,7 @@ export function createMockStore() {
           userId: goal.userId,
           type: "GOAL_STATUS",
           severity: "NOTIFY",
-          title: `Goal achieved — ${goal.title}`,
+          title: `Goal achieved - ${goal.title}`,
           message: `${p.detail}. Target reached with ${daysLeft} ${dayWord} left in the ${goal.period.toLowerCase()}.`,
           payload: { goalId: goal.id, kind: "ACHIEVED", periodStart: p.periodStart },
           tradeId: null,
@@ -4610,7 +4610,7 @@ export function createMockStore() {
     if (!trade) throw new MockError(500, "Review references a missing trade");
     return {
       tradeId: review.tradeId,
-      symbol: instrumentById.get(trade.instrumentId)?.symbol ?? "—",
+      symbol: instrumentById.get(trade.instrumentId)?.symbol ?? "-",
       direction: trade.direction,
       tradingDate: trade.tradingDate,
       reviewStatus: "REVIEWED",
@@ -4636,7 +4636,7 @@ export function createMockStore() {
   function pendingRowForTrade(trade: Trade): ReviewRow {
     return {
       tradeId: trade.id,
-      symbol: instrumentById.get(trade.instrumentId)?.symbol ?? "—",
+      symbol: instrumentById.get(trade.instrumentId)?.symbol ?? "-",
       direction: trade.direction,
       tradingDate: trade.tradingDate,
       reviewStatus: "PENDING",
@@ -4675,7 +4675,7 @@ export function createMockStore() {
         .map(pendingRowForTrade),
     ];
     rows.sort((a, b) => b.tradingDate.localeCompare(a.tradingDate));
-    // Phase 6 pagination meta — mirrors the Nest list (page default 1,
+    // Phase 6 pagination meta - mirrors the Nest list (page default 1,
     // DEFAULT_PAGE_SIZE 200; the mock returns everything it has).
     const limit = 200;
     return {
@@ -4791,7 +4791,7 @@ export function createMockStore() {
 
     // Review streak with an HONEST freeze: one grace day per calendar week
     // (Mon–Sun). The chain walks back from today (or yesterday); a single
-    // missed day is forgiven — counted as FROZEN, never as reviewed — only
+    // missed day is forgiven - counted as FROZEN, never as reviewed - only
     // when the chain stays continuous around it and that calendar week has
     // not already consumed its grace day. Numbers reported separately.
     const reviewDays = new Set(reviews.map((r) => toTradingDateKey(r.reviewedAt, USER_TZ)));
@@ -4844,7 +4844,7 @@ export function createMockStore() {
       longestStreak,
     };
 
-    // Recurring-lesson template source — the most recent next-time note.
+    // Recurring-lesson template source - the most recent next-time note.
     const lastImprovementNote =
       reviews
         .filter((r) => r.improvementNote !== null && r.improvementNote.trim() !== "")
@@ -5019,5 +5019,5 @@ export function createMockStore() {
 
 export type MockStore = ReturnType<typeof createMockStore>;
 
-/** Browser-session singleton — handlers and fixtures share one store. */
+/** Browser-session singleton - handlers and fixtures share one store. */
 export const mockStore: MockStore = createMockStore();

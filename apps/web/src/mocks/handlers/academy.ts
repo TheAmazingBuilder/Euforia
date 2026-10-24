@@ -63,12 +63,12 @@ import { MockError } from "@/mocks/store";
 import { endpoint, latency, parseBody, pathParam, readJson, toErrorResponse } from "./utils";
 
 /**
- * Academy endpoints — the learning platform's API surface. Content is served
+ * Academy endpoints - the learning platform's API surface. Content is served
  * from the authored catalog; per-user state lives in the academy engine.
  * Quiz submissions and practice logs are Zod-validated before grading.
  */
 export const academyHandlers = [
-  /** GET /academy/catalog — categories + course cards with per-user progress. */
+  /** GET /academy/catalog - categories + course cards with per-user progress. */
   http.get(endpoint(apiPaths.academyCatalog), async () => {
     await latency();
     try {
@@ -78,7 +78,7 @@ export const academyHandlers = [
     }
   }),
 
-  /** GET /academy/overview — continue learning, stats, recommendations. */
+  /** GET /academy/overview - continue learning, stats, recommendations. */
   http.get(endpoint(apiPaths.academyOverview), async () => {
     await latency();
     try {
@@ -88,7 +88,7 @@ export const academyHandlers = [
     }
   }),
 
-  /** GET /academy/progress — overall + per-category progress. */
+  /** GET /academy/progress - overall + per-category progress. */
   http.get(endpoint(apiPaths.academyProgress), async () => {
     await latency();
     try {
@@ -98,7 +98,7 @@ export const academyHandlers = [
     }
   }),
 
-  /** GET /academy/courses/:courseId — course detail with lesson list. */
+  /** GET /academy/courses/:courseId - course detail with lesson list. */
   http.get(endpoint(apiPaths.academyCourse(":courseId")), async ({ params }) => {
     await latency();
     try {
@@ -112,7 +112,7 @@ export const academyHandlers = [
     }
   }),
 
-  /** GET /academy/lessons/:lessonId — full lesson content (visual blocks). */
+  /** GET /academy/lessons/:lessonId - full lesson content (visual blocks). */
   http.get(endpoint(apiPaths.academyLesson(":lessonId")), async ({ params }) => {
     await latency();
     try {
@@ -126,7 +126,7 @@ export const academyHandlers = [
     }
   }),
 
-  /** POST /academy/lessons/:lessonId/complete — mark completed (idempotent). */
+  /** POST /academy/lessons/:lessonId/complete - mark completed (idempotent). */
   http.post(endpoint(apiPaths.academyLessonComplete(":lessonId")), async ({ params }) => {
     await latency();
     try {
@@ -140,7 +140,7 @@ export const academyHandlers = [
     }
   }),
 
-  /** POST /academy/lessons/:lessonId/checkpoint — grade the inline checkpoint. */
+  /** POST /academy/lessons/:lessonId/checkpoint - grade the inline checkpoint. */
   http.post(endpoint(apiPaths.academyCheckpoint(":lessonId")), async ({ request, params }) => {
     await latency();
     try {
@@ -158,7 +158,7 @@ export const academyHandlers = [
     }
   }),
 
-  /** PUT /academy/lessons/:lessonId/notes — save the personal lesson note. */
+  /** PUT /academy/lessons/:lessonId/notes - save the personal lesson note. */
   http.put(endpoint(apiPaths.academyLessonNote(":lessonId")), async ({ request, params }) => {
     await latency();
     try {
@@ -176,7 +176,7 @@ export const academyHandlers = [
     }
   }),
 
-  /** GET /academy/quizzes/:quizId — public questions (answers stripped). */
+  /** GET /academy/quizzes/:quizId - public questions (answers stripped). */
   http.get(endpoint(apiPaths.academyQuiz(":quizId")), async ({ params }) => {
     await latency();
     try {
@@ -190,7 +190,7 @@ export const academyHandlers = [
     }
   }),
 
-  /** POST /academy/quizzes/:quizId/attempts — grade server-side. */
+  /** POST /academy/quizzes/:quizId/attempts - grade server-side. */
   http.post(endpoint(apiPaths.academyQuizSubmit(":quizId")), async ({ request, params }) => {
     await latency();
     try {
@@ -208,7 +208,7 @@ export const academyHandlers = [
     }
   }),
 
-  /** GET /academy/glossary?q= — searchable glossary. */
+  /** GET /academy/glossary?q= - searchable glossary. */
   http.get(endpoint(apiPaths.academyGlossary), async ({ request }) => {
     await latency();
     try {
@@ -219,7 +219,7 @@ export const academyHandlers = [
     }
   }),
 
-  /** GET /academy/search?q= — courses + lessons + glossary. */
+  /** GET /academy/search?q= - courses + lessons + glossary. */
   http.get(endpoint(apiPaths.academySearch), async ({ request }) => {
     await latency();
     try {
@@ -230,7 +230,7 @@ export const academyHandlers = [
     }
   }),
 
-  /** GET /academy/bookmarks — user bookmarks (lessons + glossary terms). */
+  /** GET /academy/bookmarks - user bookmarks (lessons + glossary terms). */
   http.get(endpoint(apiPaths.academyBookmarks), async () => {
     await latency();
     try {
@@ -240,7 +240,7 @@ export const academyHandlers = [
     }
   }),
 
-  /** POST /academy/bookmarks — toggle a bookmark (kind + refId). */
+  /** POST /academy/bookmarks - toggle a bookmark (kind + refId). */
   http.post(endpoint(apiPaths.academyBookmarks), async ({ request }) => {
     await latency();
     try {
@@ -258,7 +258,7 @@ export const academyHandlers = [
     }
   }),
 
-  /** POST /academy/practice/log — record a drill attempt. */
+  /** POST /academy/practice/log - record a drill attempt. */
   http.post(endpoint(apiPaths.academyPracticeLog), async ({ request }) => {
     await latency();
     try {
@@ -272,7 +272,7 @@ export const academyHandlers = [
     }
   }),
 
-  /** GET /academy/practice/pattern-drill — one randomized pattern drill. */
+  /** GET /academy/practice/pattern-drill - one randomized pattern drill. */
   http.get(endpoint(apiPaths.academyPatternDrill), async () => {
     await latency();
     try {
@@ -286,7 +286,7 @@ export const academyHandlers = [
     }
   }),
 
-  /** GET /academy/practice/sr-drill — engine-generated support/resistance read. */
+  /** GET /academy/practice/sr-drill - engine-generated support/resistance read. */
   http.get(endpoint(apiPaths.academySrDrill), async () => {
     await latency();
     try {
@@ -296,7 +296,7 @@ export const academyHandlers = [
     }
   }),
 
-  /** GET /academy/practice/position-drill — randomized position-sizing arithmetic. */
+  /** GET /academy/practice/position-drill - randomized position-sizing arithmetic. */
   http.get(endpoint(apiPaths.academyPositionDrill), async () => {
     await latency();
     try {
@@ -306,7 +306,7 @@ export const academyHandlers = [
     }
   }),
 
-  /** GET /academy/practice/zone-drill — engine-generated supply/demand read. */
+  /** GET /academy/practice/zone-drill - engine-generated supply/demand read. */
   http.get(endpoint(apiPaths.academyZoneDrill), async () => {
     await latency();
     try {
@@ -316,7 +316,7 @@ export const academyHandlers = [
     }
   }),
 
-  /** GET /academy/practice/stats — per-drill accuracy + recent ledger rows. */
+  /** GET /academy/practice/stats - per-drill accuracy + recent ledger rows. */
   http.get(endpoint(apiPaths.academyPracticeStats), async () => {
     await latency();
     try {
@@ -326,7 +326,7 @@ export const academyHandlers = [
     }
   }),
 
-  /** GET /academy/scenarios — the full scenario library (learning tool). */
+  /** GET /academy/scenarios - the full scenario library (learning tool). */
   http.get(endpoint(apiPaths.academyScenarios), async () => {
     await latency();
     try {
@@ -336,7 +336,7 @@ export const academyHandlers = [
     }
   }),
 
-  /** GET /academy/flashcards — the due queue (Leitner SRS, 10/day cap). */
+  /** GET /academy/flashcards - the due queue (Leitner SRS, 10/day cap). */
   http.get(endpoint(apiPaths.academyFlashcards), async () => {
     await latency();
     try {
@@ -346,7 +346,7 @@ export const academyHandlers = [
     }
   }),
 
-  /** POST /academy/flashcards/review — grade a card (AGAIN/GOOD/EASY). */
+  /** POST /academy/flashcards/review - grade a card (AGAIN/GOOD/EASY). */
   http.post(endpoint(apiPaths.academyFlashcardReview), async ({ request }) => {
     await latency();
     try {
@@ -364,7 +364,7 @@ export const academyHandlers = [
     }
   }),
 
-  /** GET /academy/certifications — per-category exam bests and tiers. */
+  /** GET /academy/certifications - per-category exam bests and tiers. */
   http.get(endpoint(apiPaths.academyCertifications), async () => {
     await latency();
     try {
@@ -374,7 +374,7 @@ export const academyHandlers = [
     }
   }),
 
-  /** GET /academy/exams/:categoryId — an exam paper over the category pool. */
+  /** GET /academy/exams/:categoryId - an exam paper over the category pool. */
   http.get(endpoint(apiPaths.academyExam(":categoryId")), async ({ params }) => {
     await latency();
     try {
@@ -388,7 +388,7 @@ export const academyHandlers = [
     }
   }),
 
-  /** POST /academy/exams/:categoryId/attempts — grade the exam server-side. */
+  /** POST /academy/exams/:categoryId/attempts - grade the exam server-side. */
   http.post(endpoint(apiPaths.academyExamSubmit(":categoryId")), async ({ request, params }) => {
     await latency();
     try {
@@ -406,7 +406,7 @@ export const academyHandlers = [
     }
   }),
 
-  /** GET /academy/milestones — sober achievements computed from real state. */
+  /** GET /academy/milestones - sober achievements computed from real state. */
   http.get(endpoint(apiPaths.academyMilestones), async () => {
     await latency();
     try {
@@ -416,7 +416,7 @@ export const academyHandlers = [
     }
   }),
 
-  /** GET /academy/suggestions — journal-driven lesson recommendations. */
+  /** GET /academy/suggestions - journal-driven lesson recommendations. */
   http.get(endpoint(apiPaths.academySuggestions), async () => {
     await latency();
     try {
@@ -426,7 +426,7 @@ export const academyHandlers = [
     }
   }),
 
-  /** GET /academy/events — live sessions (upcoming + past). */
+  /** GET /academy/events - live sessions (upcoming + past). */
   http.get(endpoint(apiPaths.academyEvents), async () => {
     await latency();
     try {
@@ -436,7 +436,7 @@ export const academyHandlers = [
     }
   }),
 
-  /** POST /academy/events/register — toggle a seat on an upcoming event. */
+  /** POST /academy/events/register - toggle a seat on an upcoming event. */
   http.post(endpoint(apiPaths.academyEventRegister), async ({ request }) => {
     await latency();
     try {
@@ -451,7 +451,7 @@ export const academyHandlers = [
     }
   }),
 
-  /** GET /academy/tasks — the Tasky study list. */
+  /** GET /academy/tasks - the Tasky study list. */
   http.get(endpoint(apiPaths.academyTasks), async () => {
     await latency();
     try {
@@ -461,7 +461,7 @@ export const academyHandlers = [
     }
   }),
 
-  /** POST /academy/tasks — create a custom study task. */
+  /** POST /academy/tasks - create a custom study task. */
   http.post(endpoint(apiPaths.academyTasks), async ({ request }) => {
     await latency();
     try {
@@ -472,7 +472,7 @@ export const academyHandlers = [
     }
   }),
 
-  /** POST /academy/tasks/toggle — mark a task done / reopen it. */
+  /** POST /academy/tasks/toggle - mark a task done / reopen it. */
   http.post(endpoint(apiPaths.academyTaskToggle), async ({ request }) => {
     await latency();
     try {
@@ -487,7 +487,7 @@ export const academyHandlers = [
     }
   }),
 
-  /** POST /academy/tasks/delete — remove a task permanently. */
+  /** POST /academy/tasks/delete - remove a task permanently. */
   http.post(endpoint(apiPaths.academyTaskDelete), async ({ request }) => {
     await latency();
     try {

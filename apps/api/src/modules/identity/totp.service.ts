@@ -4,7 +4,7 @@
  * - RFC 6238 TOTP via `otpauth` (compatible with Google/Microsoft
  *   Authenticator, 1Password, Authy; SHA-1 + 6 digits + 30s step defaults).
  * - Secrets are ENCRYPTED AT REST with AES-256-GCM using the dedicated
- *   AUTH_MFA_ENCRYPTION_KEY — never stored plaintext, never logged,
+ *   AUTH_MFA_ENCRYPTION_KEY - never stored plaintext, never logged,
  *   never returned after enrollment.
  * - The real backend NEVER returns a current TOTP code (the mock's
  *   `demoCode` is a documented mock-only affordance).
@@ -82,7 +82,7 @@ export class TotpService {
   }
 
   hashRecoveryCode(code: string): string {
-    // Recovery codes are high-entropy (16^8 ≈ 4.3e9) and single-use — a plain
+    // Recovery codes are high-entropy (16^8 ≈ 4.3e9) and single-use - a plain
     // SHA-256 of the normalized code is the safe storage representation (§35).
     return createHash("sha256").update(normalizeRecoveryCode(code)).digest("hex");
   }

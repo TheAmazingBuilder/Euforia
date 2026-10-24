@@ -26,7 +26,7 @@ import { apiPaths } from "@/lib/api/endpoints";
 import { queryKeys } from "@/lib/api/keys";
 
 /**
- * Import & Recognition hooks — the frontend half of the PROMPT 3 service
+ * Import & Recognition hooks - the frontend half of the PROMPT 3 service
  * abstraction. The UI never talks to an OCR engine: it goes
  *
  *   component → hook (React Query) → apiClient → NestJS /ocr/recognitions
@@ -34,7 +34,7 @@ import { queryKeys } from "@/lib/api/keys";
  * The MSW handlers are the MockRecognitionService (async pipeline simulated
  * server-side, time-based); the NestJS OcrController is the
  * ApiRecognitionService. Swapping one for the other changes NOTHING in the
- * views (spec §41 — the UI is never coupled to the mocks).
+ * views (spec §41 - the UI is never coupled to the mocks).
  *
  * Job progress: while a recognition is PROCESSING, useOcrRecognition polls
  * on an interval; the backend settles the job (the mock advances it through
@@ -42,11 +42,11 @@ import { queryKeys } from "@/lib/api/keys";
  * orchestrator later emits progress events, only this layer changes.
  */
 
-/** Poll cadence while a job is PROCESSING — fast enough to feel live. */
+/** Poll cadence while a job is PROCESSING - fast enough to feel live. */
 const PROCESSING_POLL_MS = 700;
 
 /**
- * V2 §62 — the history listing as an infinite query: every "Load more"
+ * V2 §62 - the history listing as an infinite query: every "Load more"
  * appends a keyset page WITHOUT cascading effects (the pages are React
  * Query cache state, not component state).
  */
@@ -64,7 +64,7 @@ export function useOcrRecognitionsInfinite() {
 }
 
 /**
- * Single recognition job — the URL-state context (?job=<id>). Polls while
+ * Single recognition job - the URL-state context (?job=<id>). Polls while
  * PROCESSING so the staged progress screen tracks the real pipeline, then
  * stops and lets the result view take over.
  */
@@ -113,7 +113,7 @@ export function useConfirmOcrRecognition() {
       corrections: OcrConfirmInput["corrections"];
       batches?: OcrConfirmInput["batches"];
       accountId?: string | null;
-      /** V2 §58 — explicit duplicate acknowledgments. */
+      /** V2 §58 - explicit duplicate acknowledgments. */
       acknowledgeDuplicateScreenshot?: boolean;
       acknowledgeDuplicateTrade?: boolean;
     }) =>
@@ -147,13 +147,13 @@ export function useDeleteOcrRecognition() {
 }
 
 /**
- * Authenticated fetch of the raw screenshot bytes — returns an object URL
+ * Authenticated fetch of the raw screenshot bytes - returns an object URL
  * the views can render in an <img>. Callers own the URL lifetime
  * (revokeObjectURL on cleanup). Works in both mocked and live modes.
  */
 /**
  * Re-OCR by crop (engine quality §2.4): targeted re-scan of a framed
- * region. Ephemeral guidance — the caller owns merging the results into
+ * region. Ephemeral guidance - the caller owns merging the results into
  * the local correction state.
  */
 export function useOcrRecrop() {
@@ -166,7 +166,7 @@ export function useOcrRecrop() {
   });
 }
 
-/** OCR quality analytics (engine quality §3.2) — the Analytics card feed. */
+/** OCR quality analytics (engine quality §3.2) - the Analytics card feed. */
 export function useOcrAnalytics(days = 30) {
   return useQuery({
     queryKey: queryKeys.ocrAnalytics(days),
@@ -192,7 +192,7 @@ export function useOcrStorage() {
  * a PROCESSING job. The live NestJS backend streams status events; the
  * mocked backend has no stream (MSW cannot intercept EventSource-style
  * responses), so the hook NO-OPs in mock mode and the existing polling
- * keeps the job moving — same UI either way.
+ * keeps the job moving - same UI either way.
  *
  * Implementation is a fetch-stream reader (the browser EventSource cannot
  * send an Authorization header). Each `status` event is written straight
@@ -255,7 +255,7 @@ export function useOcrRecognitionEvents(id: string | null, enabled: boolean) {
           }
         }
       } catch {
-        // aborted or network loss — the polling fallback already covers it
+        // aborted or network loss - the polling fallback already covers it
       }
     })();
     return () => {
@@ -279,7 +279,7 @@ export async function fetchOcrRecognitionImage(
   return { url: URL.createObjectURL(blob), mime: blob.type };
 }
 
-// ── V2 — multi-screenshot sets, collections, reprocess ──────────────────────
+// ── V2 - multi-screenshot sets, collections, reprocess ──────────────────────
 
 export function useOcrSet(id: string | null) {
   return useQuery({
@@ -345,7 +345,7 @@ export function useDeleteOcrSet() {
   });
 }
 
-/** V2 §32/§39 — reprocess: a fresh recognition from the same asset. */
+/** V2 §32/§39 - reprocess: a fresh recognition from the same asset. */
 export function useReprocessOcrRecognition() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -359,7 +359,7 @@ export function useReprocessOcrRecognition() {
   });
 }
 
-/** V2 §28 — named screenshot collections. */
+/** V2 §28 - named screenshot collections. */
 export function useOcrCollections() {
   return useQuery({
     queryKey: queryKeys.ocrCollections,

@@ -1,8 +1,8 @@
 import type { Dictionary } from "@/i18n/dictionaries/en";
 
 /**
- * EN dictionary — ORYON namespace (canonical). The full-screen charting
- * workspace. Values are STATIC strings — components compose dynamic parts
+ * EN dictionary - ORYON namespace (canonical). The full-screen charting
+ * workspace. Values are STATIC strings - components compose dynamic parts
  * themselves (dict.* pattern, no {var} templates).
  *
  * Voice contract: Oryon states what the workspace CAN do in this phase and
@@ -37,18 +37,18 @@ export const oryonDict = {
     alertHint: "Create price alert",
     gridHint: "Chart grid",
     syncHint: "Chart synchronization",
-    bottomBar: "Chart toolbar — historical range and clock",
+    bottomBar: "Chart toolbar - historical range and clock",
     bottomTimezone: "Display timezone",
     bottomTimezoneHint: "Formats the clock; never moves market data",
     bottomTimezoneSaved: "Display timezone updated",
-    bottomTimezoneError: "Timezone update failed — try again",
-    // ── Toolbar v4 — historical range strip (TradingView parity) ──
+    bottomTimezoneError: "Timezone update failed - try again",
+    // ── Toolbar v4 - historical range strip (TradingView parity) ──
     historyRange: "Historical range",
     historyRangeHint:
-      "Sets how much history is visible — the bar timeframe stays on the top toolbar",
+      "Sets how much history is visible - the bar timeframe stays on the top toolbar",
     calendarJump: "Go to date",
     calendarJumpHint: "Starts the visible range at the selected day and ends at the latest bar",
-    calendarNoData: "Load a chart first — the range follows the bars the chart actually holds.",
+    calendarNoData: "Load a chart first - the range follows the bars the chart actually holds.",
     calendarPrevMonth: "Previous month",
     calendarNextMonth: "Next month",
     calendarToday: "Today",
@@ -73,7 +73,7 @@ export const oryonDict = {
     latest: "Return to latest",
     duplicateCapacityToast: "The workspace already shows the maximum of four charts.",
     removeLastHint: "The last chart panel cannot be removed.",
-    instrumentsMissingToast: "Chart panel instruments are unavailable — the default selection is kept.",
+    instrumentsMissingToast: "Chart panel instruments are unavailable - the default selection is kept.",
   },
   sync: {
     label: "Chart synchronization",
@@ -91,7 +91,7 @@ export const oryonDict = {
     timeframeHint: "Changing the timeframe on one chart updates the other charts.",
   },
   context: {
-    // Panel-header menu (Phase 8 §12) — per-panel temporal context.
+    // Panel-header menu (Phase 8 §12) - per-panel temporal context.
     menuHint: "Sessions and events",
     menuTitle: "Temporal context (this chart)",
     sessionsToggle: "Session shading",
@@ -106,15 +106,15 @@ export const oryonDict = {
     actual: "Actual",
     forecast: "Forecast",
     previous: "Previous",
-    // Market-context panel (rail tab, §7) — sessions section.
+    // Market-context panel (rail tab, §7) - sessions section.
     sessionsHeading: "Market sessions",
-    sessionsIndicative: "Indicative reference — standard interbank windows in each market's own timezone. Not an exchange-grade schedule; holidays are not accounted for.",
+    sessionsIndicative: "Indicative reference - standard interbank windows in each market's own timezone. Not an exchange-grade schedule; holidays are not accounted for.",
     sessionOpen: "Open",
     sessionClosed: "Closed",
     sessionClosesAt: "closes {t}",
     sessionOpensAt: "opens {t}",
     sessionStatusUnavailable: "Session status unavailable",
-    sessionsNone: "This market trades continuously — sessions do not apply.",
+    sessionsNone: "This market trades continuously - sessions do not apply.",
     sessionsWaiting: "Select an instrument to see its sessions.",
     // Events section.
     eventsHeading: "Economic events",
@@ -128,13 +128,13 @@ export const oryonDict = {
     eventsError: "The economic calendar is unavailable right now.",
     eventsRetry: "Retry",
     eventsSourceNote:
-      "Sample provider data — deterministic development fixtures, not live announcements. The full calendar stays in Events.",
+      "Sample provider data - deterministic development fixtures, not live announcements. The full calendar stays in Events.",
     eventsSourceLive:
-      "Live source: ForexFactory weekly calendar — real announcements for the current week; deterministic samples outside it. The full calendar stays in Events.",
+      "Live source: ForexFactory weekly calendar - real announcements for the current week; deterministic samples outside it. The full calendar stays in Events.",
     displayTzLabel: "Times shown in {tz}",
   },
   analysis: {
-    // Panel-header menu (Phase 9 §7) — per-panel market structure & levels.
+    // Panel-header menu (Phase 9 §7) - per-panel market structure & levels.
     menuHint: "Market structure and key levels",
     menuTitle: "Chart analysis (this chart)",
     structureTitle: "Market structure",
@@ -171,11 +171,11 @@ export const oryonDict = {
     orDuration60: "60 min",
     orDuration120: "120 min",
     sourceNote:
-      "Levels come from the 1D candle series (UTC day buckets, ISO weeks). Sessions are indicative references — no holiday calendar is applied. Historical analysis only; it predicts nothing.",
+      "Levels come from the 1D candle series (UTC day buckets, ISO weeks). Sessions are indicative references - no holiday calendar is applied. Historical analysis only; it predicts nothing.",
   },
   source: {
     sim: "SIM",
-    simHint: "Simulated market data — the feed is labeled, not real.",
+    simHint: "Simulated market data - the feed is labeled, not real.",
     real: "REAL",
     realHint: "Real market data from the provider.",
   },
@@ -205,42 +205,42 @@ export const oryonDict = {
   },
   rail: {
     toolsGroup: "Drawing tools",
-    pointerHint: "Cursor — select, move, edit (Esc)",
-    trendline: "Trend line — two anchors",
-    hline: "Horizontal level — one click",
-    vline: "Vertical line — one click",
-    ray: "Ray — two anchors, extends forward",
-    rect: "Zone — rectangle, two anchors",
-    fib: "Fibonacci retracement — two anchors",
-    text: "Text note — click to place",
-    measure: "Measure — Δprice, Δ%, pips, bars",
+    pointerHint: "Cursor - select, move, edit (Esc)",
+    trendline: "Trend line - two anchors",
+    hline: "Horizontal level - one click",
+    vline: "Vertical line - one click",
+    ray: "Ray - two anchors, extends forward",
+    rect: "Zone - rectangle, two anchors",
+    fib: "Fibonacci retracement - two anchors",
+    text: "Text note - click to place",
+    measure: "Measure - Δprice, Δ%, pips, bars",
     undoHint: "Undo (Ctrl+Z)",
     redoHint: "Redo (Ctrl+Shift+Z)",
     listHint: "Drawing objects",
-    // ── Toolbar v2 — grouped flyouts (TradingView parity) ──
+    // ── Toolbar v2 - grouped flyouts (TradingView parity) ──
     groupCursors: "Cursors",
     groupTrend: "Trend line tools",
     groupFib: "Fibonacci tools",
     groupForecast: "Forecasting and measurement",
     groupShapes: "Geometric shapes",
     groupText: "Annotations",
-    cursorArrow: "Arrow — select, move, edit",
+    cursorArrow: "Arrow - select, move, edit",
     cursorCross: "Cross cursor",
     cursorDot: "Dot cursor",
-    eraser: "Eraser — click a drawing to remove it",
-    extended: "Extended line — infinite in both directions",
-    crossline: "Cross line — horizontal + vertical, one click",
-    ellipse: "Ellipse — two anchors",
-    pricerange: "Price range — Δprice, Δ%, pips",
-    daterange: "Date range — elapsed time, bars",
-    fibext: "Trend-based fib extension — three anchors",
-    longpos: "Long position — entry, stop, 1:1 target",
-    shortpos: "Short position — entry, stop, 1:1 target",
-    brush: "Brush — freehand path",
-    arrowUp: "Arrow up — one click marks the level",
-    arrowDown: "Arrow down — one click marks the level",
-    arrowLeft: "Arrow left — one click marks the level",
-    arrowRight: "Arrow right — one click marks the level",
+    eraser: "Eraser - click a drawing to remove it",
+    extended: "Extended line - infinite in both directions",
+    crossline: "Cross line - horizontal + vertical, one click",
+    ellipse: "Ellipse - two anchors",
+    pricerange: "Price range - Δprice, Δ%, pips",
+    daterange: "Date range - elapsed time, bars",
+    fibext: "Trend-based fib extension - three anchors",
+    longpos: "Long position - entry, stop, 1:1 target",
+    shortpos: "Short position - entry, stop, 1:1 target",
+    brush: "Brush - freehand path",
+    arrowUp: "Arrow up - one click marks the level",
+    arrowDown: "Arrow down - one click marks the level",
+    arrowLeft: "Arrow left - one click marks the level",
+    arrowRight: "Arrow right - one click marks the level",
     shortcutTrend: "Alt+T",
     shortcutHline: "Alt+H",
     shortcutVline: "Alt+V",
@@ -252,8 +252,8 @@ export const oryonDict = {
     favoritesHint: "Show favorites bar",
     favoritesEmpty: "Star tools in the menus to pin them here.",
     favoritesBarLabel: "Favorite drawing tools",
-    clearAllHint: "Remove objects — clears every drawing (undoable)",
-    // ── Toolbar v4 — rail scroll navigation (no scrollbar) ──
+    clearAllHint: "Remove objects - clears every drawing (undoable)",
+    // ── Toolbar v4 - rail scroll navigation (no scrollbar) ──
     navUpHint: "Scroll to the tools above",
     navDownHint: "Scroll to the tools below",
   },
@@ -281,23 +281,23 @@ export const oryonDict = {
     typeArrowMark: "Arrow mark",
     ctxClone: "Clone",
     rrLabel: "Risk : Reward",
-    rrHint: "Target = entry ± risk × ratio — derived, never stored",
+    rrHint: "Target = entry ± risk × ratio - derived, never stored",
     directionLabel: "Direction",
     dirUp: "Up",
     dirDown: "Down",
     dirLeft: "Left",
     dirRight: "Right",
     fontSizeLabel: "Font",
-    ctxArrowSizeNote: "Arrow size is fixed — color and shaft width apply.",
+    ctxArrowSizeNote: "Arrow size is fixed - color and shaft width apply.",
     lockedBadge: "Locked",
     hiddenBadge: "Hidden",
     showHint: "Show",
     hideHint: "Hide",
-    lockHint: "Lock — prevents moves and edits",
+    lockHint: "Lock - prevents moves and edits",
     unlockHint: "Unlock",
     deleteHint: "Delete",
     deleteAll: "Delete all",
-    deleteAllConfirm: "Confirm — delete every drawing?",
+    deleteAllConfirm: "Confirm - delete every drawing?",
     deleteAllKeep: "Keep",
     styleTitle: "Style",
     colorLabel: "Color",
@@ -312,7 +312,7 @@ export const oryonDict = {
     textSave: "Save",
     textCancel: "Cancel",
     selectHint: "Click to select",
-    lockedHint: "Locked — unlock to edit",
+    lockedHint: "Locked - unlock to edit",
   },
   utility: {
     notifications: "Notifications",
@@ -320,16 +320,16 @@ export const oryonDict = {
     notificationsLink: "Open Nofy",
     alerts: "Price alerts",
     calendar: "Market context",
-    calendarBody: "Session status and economic events for the active chart — the full day view stays in Events.",
+    calendarBody: "Session status and economic events for the active chart - the full day view stays in Events.",
     calendarEmpty: "No upcoming releases in the loaded window.",
     calendarLink: "Open Events",
-    // ── Toolbar v4 — objects dock (the drawing manager on the right rail) ──
+    // ── Toolbar v4 - objects dock (the drawing manager on the right rail) ──
     objects: "Objects",
-    objectsBody: "Drawings of the symbol the ACTIVE chart displays — click a row to select it on the chart.",
+    objectsBody: "Drawings of the symbol the ACTIVE chart displays - click a row to select it on the chart.",
   },
   lower: {
     title: "Open positions",
-    // Stream freshness (same honesty machine as the price feed — §9/§10).
+    // Stream freshness (same honesty machine as the price feed - §9/§10).
     statusLive: "Synced",
     statusConnecting: "Connecting…",
     statusDisconnected: "Disconnected",
@@ -337,13 +337,13 @@ export const oryonDict = {
     staleAgo: "last update {s}s ago",
     simBadge: "SIM",
     simHint:
-      "Simulated broker book — per-user demo positions marked to market. Not a live broker connection; real positions appear once a broker account is connected.",
+      "Simulated broker book - per-user demo positions marked to market. Not a live broker connection; real positions appear once a broker account is connected.",
     // Summary line.
     openCount: "open",
     pnlTotalLabel: "Unrealized P&L",
     pnlPartial: "partial",
     usdDenominated: "USD-denominated simulated book",
-    // Honest states (§10) — connected-with-zero ≠ disconnected.
+    // Honest states (§10) - connected-with-zero ≠ disconnected.
     stateConnecting: "Connecting to the position feed…",
     stateDisconnected: "Position feed disconnected. Updates resume automatically on reconnect.",
     stateEmpty: "No open positions on this book.",
@@ -363,21 +363,21 @@ export const oryonDict = {
     },
     sideLong: "LONG",
     sideShort: "SHORT",
-    na: "—",
+    na: "-",
     selectHint: "Select a position to highlight its levels on the chart.",
     rowSelectAria: "Select position",
-    // Broker account context (§10) — separate from the simulated book.
-    accountNotConfigured: "No broker account connected — real positions appear once an account is linked.",
+    // Broker account context (§10) - separate from the simulated book.
+    accountNotConfigured: "No broker account connected - real positions appear once an account is linked.",
     accountLink: "Connect in Accounts",
     accountError: "Trading connection error",
-    positionsSourceNote: "Showing the simulated book — the connected broker's positions are not merged here.",
+    positionsSourceNote: "Showing the simulated book - the connected broker's positions are not merged here.",
   },
   indicators: {
     title: "Indicators",
     settingsTitle: "Indicator settings",
     searchPlaceholder: "Search indicators…",
     noMatch: "No indicator matches.",
-    onlyImplemented: "Only implemented indicators are listed — no placeholders.",
+    onlyImplemented: "Only implemented indicators are listed - no placeholders.",
     categoryOverlay: "Overlay on the price chart",
     categoryPane: "Separate pane below the chart",
     active: "On the chart",
@@ -407,7 +407,7 @@ export const oryonDict = {
     paramLower: "Lower level",
     errorMacdFastBelowSlow: "Fast length must be smaller than slow length.",
     errorRsiLowerBelowUpper: "Lower level must be below the upper level.",
-    errorSchema: "Invalid values — check the parameters.",
+    errorSchema: "Invalid values - check the parameters.",
     errorCapacity: "The indicator limit for this chart is reached.",
     values: {
       macd: "M",
@@ -423,9 +423,9 @@ export const oryonDict = {
     nameVolume: "Volume",
   },
   alerts: {
-    // Create dialog (§6.1) — one entry point, active chart instrument.
+    // Create dialog (§6.1) - one entry point, active chart instrument.
     createTitle: "New price alert",
-    // Eco-approach notices (HIGH-impact events on workspace instruments) —
+    // Eco-approach notices (HIGH-impact events on workspace instruments) -
     // the alerts engine's pattern applied to the calendar surface.
     ecoToastTitle: "High-impact event",
     ecoToastIn: "in {m} min",
@@ -443,14 +443,14 @@ export const oryonDict = {
     create: "Create alert",
     cancel: "Cancel",
     notificationNote:
-      "In-app notification only — evaluated while this page is open. Stored in this browser, not on a server.",
+      "In-app notification only - evaluated while this page is open. Stored in this browser, not on a server.",
     // Management panel (§8).
-    feedLive: "Evaluating — feed live",
-    feedPaused: "Paused — feed offline",
+    feedLive: "Evaluating - feed live",
+    feedPaused: "Paused - feed offline",
     empty: "No price alerts yet.",
     emptyHint: "Create one from the toolbar to watch a price level.",
     scopeNote:
-      "Browser-local alerts. Evaluated only while this workspace is open — no server-side monitoring, no email or push delivery.",
+      "Browser-local alerts. Evaluated only while this workspace is open - no server-side monitoring, no email or push delivery.",
     statusActive: "Active",
     statusTriggered: "Triggered",
     statusDisabled: "Disabled",
@@ -460,20 +460,20 @@ export const oryonDict = {
     enableHint: "Enable alert",
     disableHint: "Disable alert",
     deleteHint: "Delete alert",
-    // Trigger toast — the only implemented notification channel.
+    // Trigger toast - the only implemented notification channel.
     triggerToastTitle: "Price alert triggered",
     triggerAbove: "crossed above",
     triggerBelow: "crossed below",
   },
   layouts: {
-    // Toolbar trigger + menu header (§4) — the active layout is named here.
+    // Toolbar trigger + menu header (§4) - the active layout is named here.
     triggerHint: "Workspace layouts",
     activeHeading: "Active layout",
     defaultName: "Default layout",
     dirtyLabel: "Unsaved changes",
     savedGroup: "Saved layouts",
-    savedEmpty: "No saved layouts yet — the default layout is in use.",
-    // Menu actions (§4) — operations target the ACTIVE layout.
+    savedEmpty: "No saved layouts yet - the default layout is in use.",
+    // Menu actions (§4) - operations target the ACTIVE layout.
     saveChanges: "Save changes",
     saveAsNew: "Save as new…",
     rename: "Rename…",
@@ -497,27 +497,27 @@ export const oryonDict = {
     deleteTitle: "Delete layout",
     deleteBody: "The saved arrangement is removed permanently. The default layout stays available, and saved templates are not affected.",
     deleteSubmit: "Delete layout",
-    // Unsaved-changes guard on switch (§10) — explicit, predictable policy.
+    // Unsaved-changes guard on switch (§10) - explicit, predictable policy.
     switchTitle: "Unsaved layout changes",
     switchBody: "The active layout has unsaved changes. Save them before switching, or discard them.",
     switchSave: "Save & switch",
     switchDiscard: "Discard changes",
     switchCancel: "Cancel",
-    switchSavedToast: "Changes saved — layout applied",
+    switchSavedToast: "Changes saved - layout applied",
     // Partial restore (unknown instrument symbol after a catalog load).
-    instrumentMissingToast: "Layout instrument is unavailable — the default selection is kept.",
+    instrumentMissingToast: "Layout instrument is unavailable - the default selection is kept.",
     // Errors (inline in dialogs).
     errorNameInvalid: "Enter a name (1–48 characters).",
     errorNameTaken: "A layout with this name already exists.",
     errorCapacity: "The layout limit is reached.",
     errorNotFound: "This layout no longer exists.",
-    errorDefaultImmutable: "The default layout cannot be overwritten — save as a new layout instead.",
+    errorDefaultImmutable: "The default layout cannot be overwritten - save as a new layout instead.",
   },
   templates: {
     // Toolbar trigger + menu (§6).
     triggerHint: "Chart templates",
     heading: "Chart templates",
-    headingHint: "Reusable analysis settings — indicators, chart type, timeframe.",
+    headingHint: "Reusable analysis settings - indicators, chart type, timeframe.",
     savedEmpty: "No templates yet.",
     savedEmptyHint: "Set the chart up, then save it as a template to reuse this analysis.",
     metaIndicators: "indicators",
@@ -525,21 +525,21 @@ export const oryonDict = {
     // Menu actions.
     saveCurrent: "Save current as template…",
     manage: "Manage templates…",
-    // Save dialog — what a template captures, stated exactly (§6, §11).
+    // Save dialog - what a template captures, stated exactly (§6, §11).
     saveTitle: "Save chart template",
     saveBody: "Captures the active chart's type, its current timeframe and its indicator stack with their settings. Drawings, alerts and positions are not included. Other panels are not affected.",
     nameLabel: "Template name",
     namePlaceholder: "e.g. Swing analysis",
     nameSubmitCreate: "Save template",
     savedToast: "Template saved",
-    // Apply confirmation (replaces the indicator stack — §6, §11).
+    // Apply confirmation (replaces the indicator stack - §6, §11).
     applyTitle: "Apply chart template",
     applyBody: "Applying this template replaces the active chart's indicator stack. Drawings, alerts and open positions are untouched, and other panels keep their own setup.",
     applySubmit: "Apply template",
     appliedToast: "Template applied",
     appliedPartialToast: "Template applied with skipped indicators",
     skippedDetail: "indicators skipped",
-    // Manage dialog (§6 — list + apply + rename + delete).
+    // Manage dialog (§6 - list + apply + rename + delete).
     manageTitle: "Manage templates",
     manageEmpty: "No saved templates yet.",
     apply: "Apply",
@@ -559,12 +559,12 @@ export const oryonDict = {
     errorNotFound: "This template no longer exists.",
   },
   restore: {
-    // Deep-link restore (/oryon?analysis=<id> — Phase 10).
+    // Deep-link restore (/oryon?analysis=<id> - Phase 10).
     notFoundToast: "This analysis no longer exists in this browser.",
-    unknownSymbolToast: "Cannot restore — this symbol is not in the instrument catalog:",
+    unknownSymbolToast: "Cannot restore - this symbol is not in the instrument catalog:",
     noPanelToast: "No chart panel to restore the analysis into.",
     reconstructedBadge: "reconstructed view",
-    reconstructedNote: "live candles + saved annotations — not a historical replay.",
+    reconstructedNote: "live candles + saved annotations - not a historical replay.",
     dismiss: "Dismiss",
     replaceTitle: "Replace existing drawings?",
     replaceBody:
@@ -576,7 +576,7 @@ export const oryonDict = {
     tradeSearchPlaceholder: "Search symbol or trade id…",
     statusFilter: "Status filter",
     tradeEmpty: "No journal trade matches this search.",
-    tradeRefine: "Refine the search — only the first 50 trades are shown.",
+    tradeRefine: "Refine the search - only the first 50 trades are shown.",
     // Instrument mismatch guard.
     mismatchTitle: "Instrument mismatch",
     mismatchBody: "This chart shows",
@@ -592,7 +592,7 @@ export const oryonDict = {
     localNote:
       "Analyses are stored in this browser (not synced to other devices). The linked trade record stays untouched in the journal.",
     saveSubmit: "Save analysis",
-    saveFailed: "The analysis could not be saved — nothing was written.",
+    saveFailed: "The analysis could not be saved - nothing was written.",
     savedToast: "Analysis saved",
     linkedTo: "linked to",
     // Snapshot.
@@ -600,11 +600,11 @@ export const oryonDict = {
     snapshotBody:
       "The chart image is captured now and attached through the journal's screenshot mechanism.",
     snapshotAlt: "Chart snapshot preview",
-    snapshotUnavailable: "The snapshot could not be captured — nothing will be attached.",
+    snapshotUnavailable: "The snapshot could not be captured - nothing will be attached.",
     snapshotTradeLabel: "Attach to trade",
     alsoAnalysis: "Also save a linked analysis record",
     snapshotNote:
-      "Capture time and the chart's reference time are stored separately — the image is evidence, not market history.",
+      "Capture time and the chart's reference time are stored separately - the image is evidence, not market history.",
     snapshotAttach: "Attach snapshot",
     snapshotAttachedToast: "Snapshot attached to the trade",
     snapshotAttachFailed: "The snapshot could not be attached.",
@@ -613,15 +613,15 @@ export const oryonDict = {
     // Price actions.
     copyPrice: "Copy price",
     copyPriceTime: "Copy price & time",
-    priceCopied: "Price copied —",
+    priceCopied: "Price copied -",
     coordsCopied: "Chart coordinates copied",
-    copyFailed: "Copy failed — the clipboard is unavailable.",
+    copyFailed: "Copy failed - the clipboard is unavailable.",
     // Alert + level.
     addAlert: "Add alert…",
     addAlertOn: "Add alert on",
     addAlertAt: "at",
     addLevel: "Add horizontal level at",
-    levelInactiveHint: "Activate this chart first — levels are drawing tools.",
+    levelInactiveHint: "Activate this chart first - levels are drawing tools.",
     // Display + navigation.
     resetView: "Reset chart view",
     objectTree: "Object tree",
@@ -631,12 +631,12 @@ export const oryonDict = {
     snapshotToTrade: "Attach snapshot to trade…",
     openLinkedTrade: "Open linked trade",
     templates: "Chart template",
-    templatesEmpty: "No saved templates yet — save the current setup first.",
+    templatesEmpty: "No saved templates yet - save the current setup first.",
     settings: "Settings…",
   },
   chartSettings: {
     title: "Chart settings",
-    hint: "Applies to this chart panel only —",
+    hint: "Applies to this chart panel only -",
     tabSymbol: "Symbol",
     tabStatusLine: "Status line",
     tabScales: "Scales and lines",

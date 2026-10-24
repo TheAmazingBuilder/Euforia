@@ -82,7 +82,7 @@ function ExtremumBlock({ trade, symbol, strategyName, currency, tone }: Extremum
             <span>
               {trade.exitAt !== null
                 ? formatDuration(trade.entryAt, trade.exitAt)
-                : "—"}
+                : "-"}
             </span>
             <span className="max-w-28 truncate">{strategyName ?? "Out of playbook"}</span>
           </div>
@@ -93,7 +93,7 @@ function ExtremumBlock({ trade, symbol, strategyName, currency, tone }: Extremum
 }
 
 /**
- * Best & Worst trade of the month — the two verdicts worth remembering.
+ * Best & Worst trade of the month - the two verdicts worth remembering.
  * Ranked by R multiple (position-size independent) over closed trades whose
  * trading date falls in the current calendar month.
  */
@@ -147,7 +147,7 @@ export function BestWorstCard() {
   }, [monthTrades]);
 
   const symbolOf = (trade: Trade | null): string =>
-    trade ? instruments.find((item) => item.id === trade.instrumentId)?.symbol ?? "—" : "—";
+    trade ? instruments.find((item) => item.id === trade.instrumentId)?.symbol ?? "-" : "-";
   const strategyNameOf = (trade: Trade | null): string | null =>
     trade?.strategyId
       ? strategies.find((strategy) => strategy.id === trade.strategyId)?.name ?? null

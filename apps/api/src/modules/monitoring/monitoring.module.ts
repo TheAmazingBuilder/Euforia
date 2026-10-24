@@ -1,5 +1,5 @@
 /**
- * Monitoring bounded context (Phase 17) — thin operational observability:
+ * Monitoring bounded context (Phase 17) - thin operational observability:
  * health, metrics, jobs, providers, errors (§2/§3).
  *
  * What Monitoring is NOT (§1/§57): not a second Security system (security
@@ -10,12 +10,12 @@
  *
  * Dependency graph (acyclic):
  *   MonitoringModule → MonitoringRepository (own Prisma boundary)
- *                    → AccountsModule (AccountsRepository — canonical sync
+ *                    → AccountsModule (AccountsRepository - canonical sync
  *                      health + owned-entity counts, §26 "consume, never
  *                      duplicate"; Phase 20 §39)
  *                    → IdentityModule (MailerService delivery telemetry +
  *                      IdentityRepository owned-entity counts)
- *                    → SecurityEventModule (SecurityEventRepository — the
+ *                    → SecurityEventModule (SecurityEventRepository - the
  *                      ledger/login-record counts stay owned by Security,
  *                      Phase 20 §39)
  *   Shared infrastructure: apiTelemetry ring (app.setup.ts hook), global

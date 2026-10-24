@@ -1,5 +1,5 @@
 /**
- * Onboarding dictionary — the first-run experience copy.
+ * Onboarding dictionary - the first-run experience copy.
  *
  * Voice: precise, confident, factual. Never claims broker execution,
  * never promises returns, never fabricates data. Every number-less
@@ -17,34 +17,34 @@ export const onboardingDict = {
   },
 
   progress: {
-    /** aria-live announcement — {current}/{total} + the step title. */
+    /** aria-live announcement - {current}/{total} + the step title. */
     live: "Step {current} of {total}: {title}",
     label: "Step {current} of {total}",
     resumeLater: "Save and resume later",
     resumeLaterShort: "Save progress",
-    resumeToast: "Progress saved — we'll pick up where you left off.",
+    resumeToast: "Progress saved - we'll pick up where you left off.",
     back: "Back",
     continue: "Continue",
   },
 
   welcome: {
     headline: "The trading journal that coaches you",
-    body: "Euforia turns every trade into structured insight — document your decisions, measure your discipline, and let your own data guide your next move.",
+    body: "Euforia turns every trade into structured insight - document your decisions, measure your discipline, and let your own data guide your next move.",
     getStarted: "Get started",
     skip: "Skip introduction",
     errors: {
-      start: "We couldn't start the tour. Nothing was changed — try again.",
-      skip: "We couldn't save your choice. Nothing was changed — try again.",
+      start: "We couldn't start the tour. Nothing was changed - try again.",
+      skip: "We couldn't save your choice. Nothing was changed - try again.",
     },
   },
 
   tour: {
     headline: "One workspace for the full trading loop",
-    body: "Journal your trades, watch your discipline, and read your own performance honestly — these modules are ready for you.",
+    body: "Journal your trades, watch your discipline, and read your own performance honestly - these modules are ready for you.",
     modules: {
       dashboard: {
         title: "Dashboard",
-        description: "Your coaching view — trends, streaks and highlights at a glance.",
+        description: "Your coaching view - trends, streaks and highlights at a glance.",
       },
       trades: {
         title: "Trades",
@@ -80,7 +80,7 @@ export const onboardingDict = {
 
   preferences: {
     headline: "Make the numbers yours",
-    body: "Display preferences only — they never change a trading account's currency or balances.",
+    body: "Display preferences only - they never change a trading account's currency or balances.",
     timezone: {
       label: "Timezone",
       hint: "Used for trading-day boundaries and the calendar.",
@@ -102,15 +102,15 @@ export const onboardingDict = {
     save: "Save and continue",
     skip: "Skip for now",
     errors: {
-      save: "We couldn't save your preferences. Nothing was changed — try again.",
+      save: "We couldn't save your preferences. Nothing was changed - try again.",
     },
   },
 
   accounts: {
     headline: "Connect your trading activity",
-    body: "Euforia builds insight from your journal and records. Add a trading account manually, or browse the supported broker integrations — both are available anytime from the navigation.",
+    body: "Euforia builds insight from your journal and records. Add a trading account manually, or browse the supported broker integrations - both are available anytime from the navigation.",
     openAccounts: "Set up a trading account",
-    openAccountsHint: "Opens Accounts after the tour — create a manual account in a few fields.",
+    openAccountsHint: "Opens Accounts after the tour - create a manual account in a few fields.",
     openIntegrations: "Browse broker integrations",
     openIntegrationsHint: "See which brokers can connect today, and connect when you're ready.",
     continueWithout: "Continue without configuring an account",
@@ -118,7 +118,7 @@ export const onboardingDict = {
 
   personalize: {
     headline: "Shape your dashboard",
-    body: "Pick the analytical emphasis of your default workspace — every widget stays rearrangeable from the dashboard toolbar.",
+    body: "Pick the analytical emphasis of your default workspace - every widget stays rearrangeable from the dashboard toolbar.",
     layouts: {
       COACH_FIRST: {
         title: "Coach first",
@@ -133,28 +133,28 @@ export const onboardingDict = {
         description: "Results and trends up top.",
       },
     },
-    illustrative: "Illustrative preview — not your data",
+    illustrative: "Illustrative preview - not your data",
     current: "Current",
     keepDefault: "Keep the default layout",
     save: "Save and continue",
     errors: {
-      save: "We couldn't save your layout. Nothing was changed — try again.",
+      save: "We couldn't save your layout. Nothing was changed - try again.",
     },
   },
 
   ready: {
     headline: "You're ready to trade smarter",
-    body: "Your workspace is set. Log your first trade or explore the dashboard — your data stays yours.",
+    body: "Your workspace is set. Log your first trade or explore the dashboard - your data stays yours.",
     open: "Open my dashboard",
     completing: "Saving your setup…",
     errors: {
-      complete: "We couldn't save your progress. Your setup is NOT marked as done — try again.",
+      complete: "We couldn't save your progress. Your setup is NOT marked as done - try again.",
     },
   },
 
   errorNotice: {
     title: "Setup status unavailable",
-    body: "We couldn't verify whether the first-run tour applies to your account. Nothing has been changed — you can retry.",
+    body: "We couldn't verify whether the first-run tour applies to your account. Nothing has been changed - you can retry.",
     retry: "Retry",
     dismiss: "Dismiss",
   },

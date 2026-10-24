@@ -3,7 +3,7 @@ import { impactSchema } from "../enums";
 import { isoDateTimeSchema, uuidSchema } from "./primitives";
 
 /**
- * Integration Hub — the platform layer connecting Cosmoz to external
+ * Integration Hub - the platform layer connecting Cosmoz to external
  * trading, market-data, economic-data, news, notification and productivity
  * services.
  *
@@ -73,10 +73,10 @@ export const integrationPermissionSchema = z.enum([
 ]);
 export type IntegrationPermission = z.infer<typeof integrationPermissionSchema>;
 
-// ── Credentials as the vault sees them (§18 — never the secret) ─────────────
+// ── Credentials as the vault sees them (§18 - never the secret) ─────────────
 
 export const integrationCredentialsViewSchema = z.object({
-  /** Reference into the Security vault — never the secret itself. */
+  /** Reference into the Security vault - never the secret itself. */
   vaultRef: z.string().min(1),
   /** Human-safe masked hint, e.g. "••••4f2a". */
   maskedHint: z.string().min(1),
@@ -102,14 +102,14 @@ export const integrationSyncStateSchema = z.object({
 });
 export type IntegrationSyncState = z.infer<typeof integrationSyncStateSchema>;
 
-// ── Errors (§15 — logged, observable, actionable, safe) ─────────────────────
+// ── Errors (§15 - logged, observable, actionable, safe) ─────────────────────
 
 export const integrationErrorSchema = z.object({
   id: uuidSchema,
   providerId: z.string().min(1),
   occurredAt: isoDateTimeSchema,
   code: integrationErrorCodeSchema,
-  /** Sanitized message — no secrets, no raw provider tokens. */
+  /** Sanitized message - no secrets, no raw provider tokens. */
   message: z.string().min(1),
   retryable: z.boolean(),
   /** What the user should do about it. */
@@ -146,7 +146,7 @@ export const integrationEventSchema = z.object({
 });
 export type IntegrationEvent = z.infer<typeof integrationEventSchema>;
 
-// ── Licensing (§29 — verified before implementation) ────────────────────────
+// ── Licensing (§29 - verified before implementation) ────────────────────────
 
 export const integrationLicensingSchema = z.object({
   verified: z.boolean(),
@@ -154,7 +154,7 @@ export const integrationLicensingSchema = z.object({
 });
 export type IntegrationLicensing = z.infer<typeof integrationLicensingSchema>;
 
-// ── Market-data capabilities (§8 — providers differ, honestly declared) ─────
+// ── Market-data capabilities (§8 - providers differ, honestly declared) ─────
 
 export const marketDataCapabilitiesSchema = z.object({
   tick: z.boolean(),
@@ -177,7 +177,7 @@ export const integrationProviderSchema = z.object({
   description: z.string().min(1),
   docsUrl: z.string().min(1).nullable(),
   capabilities: z.array(integrationPermissionSchema),
-  /** Market-data providers only — null otherwise. */
+  /** Market-data providers only - null otherwise. */
   marketData: marketDataCapabilitiesSchema.nullable(),
   licensing: integrationLicensingSchema,
   status: integrationStatusSchema,
@@ -190,7 +190,7 @@ export const integrationProviderSchema = z.object({
 });
 export type IntegrationProvider = z.infer<typeof integrationProviderSchema>;
 
-// ── Normalized trading account (§6 — numbers only when the adapter gives
+// ── Normalized trading account (§6 - numbers only when the adapter gives
 //    them; never invented. Money stays decimal-as-string.) ───────────────────
 
 export const tradingAccountViewSchema = z.object({
@@ -212,7 +212,7 @@ export type TradingAccountView = z.infer<typeof tradingAccountViewSchema>;
 
 export const integrationEcoEventSchema = z.object({
   id: uuidSchema,
-  /** Idempotency key — `${providerId}:${providerEventId}` (§14). */
+  /** Idempotency key - `${providerId}:${providerEventId}` (§14). */
   providerKey: z.string().min(1),
   providerId: z.string().min(1),
   title: z.string().min(1),
@@ -227,7 +227,7 @@ export const integrationEcoEventSchema = z.object({
 });
 export type IntegrationEcoEvent = z.infer<typeof integrationEcoEventSchema>;
 
-// ── News items (§10 — separate from economic data, license-aware) ───────────
+// ── News items (§10 - separate from economic data, license-aware) ───────────
 
 export const newsCategorySchema = z.enum([
   "FOREX",
@@ -252,12 +252,12 @@ export const newsItemSchema = z.object({
   /** Provider importance 1–3 (3 = highest). */
   importance: z.number().int().min(1).max(3),
   url: z.string().min(1),
-  /** True for the development sample set — never redistributed content. */
+  /** True for the development sample set - never redistributed content. */
   sample: z.boolean(),
 });
 export type NewsItem = z.infer<typeof newsItemSchema>;
 
-// ── Webhooks (§12 — authenticated, replay-safe, idempotent) ──────────────────
+// ── Webhooks (§12 - authenticated, replay-safe, idempotent) ──────────────────
 
 export const webhookDeliverySchema = z.object({
   id: uuidSchema,
@@ -273,10 +273,10 @@ export type WebhookDelivery = z.infer<typeof webhookDeliverySchema>;
 export const webhookEndpointSchema = z.object({
   id: z.string().min(1),
   providerId: z.string().min(1),
-  /** Path-only URL — inbound webhooks land on the API base. */
+  /** Path-only URL - inbound webhooks land on the API base. */
   path: z.string().min(1),
   status: z.enum(["ACTIVE", "PAUSED"]),
-  /** Masked signing-secret hint — the secret itself lives in the vault. */
+  /** Masked signing-secret hint - the secret itself lives in the vault. */
   secretMaskedHint: z.string().min(1),
   deliveries: z.array(webhookDeliverySchema),
 });
@@ -321,7 +321,7 @@ export type IntegrationsOverviewResponse = z.infer<
 
 // ── Actions (§25–§27) ────────────────────────────────────────────────────────
 
-/** Connect payload — a vault REFERENCE, never the secret material. */
+/** Connect payload - a vault REFERENCE, never the secret material. */
 export const integrationConnectInputSchema = z.object({
   vaultRef: z
     .string()
@@ -366,7 +366,7 @@ export type IntegrationDisconnectResponse = z.infer<
 
 /**
  * Inbound webhook PIPELINE TEST (§12, §32). The real inbound path verifies an
- * HMAC signature computed by the PROVIDER — the signing secret never reaches
+ * HMAC signature computed by the PROVIDER - the signing secret never reaches
  * the client. This simulate endpoint stands in for the provider: the engine
  * signs internally, then runs the full verification pipeline (timestamp
  * freshness → signature → idempotency). `mode` corrupts exactly one step so

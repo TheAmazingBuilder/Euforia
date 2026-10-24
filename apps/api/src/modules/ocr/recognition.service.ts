@@ -1,17 +1,17 @@
 /**
- * Recognition application service (OCR backend V1) — the orchestration brain
+ * Recognition application service (OCR backend V1) - the orchestration brain
  * for the frontend-derived /recognition surface.
  *
  * Pipeline (§10): upload → validation → storage → job rows → engine call →
  * strict contract validation → domain validation → persistence → review →
  * draft → confirmation → Trading Core. Request-scoped (no external queue in
- * this build — the Accounts sync-run house pattern): a job completes, fails
+ * this build - the Accounts sync-run house pattern): a job completes, fails
  * or becomes reviewable by the time the HTTP answer is written.
  *
  * Reuse over reinvention (§132): image validation, the storage port, the
  * engine port (FastAPI sidecar / deterministic dev engine / explicit
  * unavailable), rate limiting and the audit ledger are the Phase-19
- * components — nothing here duplicates them. The canonical Trade is created
+ * components - nothing here duplicates them. The canonical Trade is created
  * ONLY through TradesService.importTradeFromRecognition (§77/§78).
  *
  * Non-negotiables enforced here:
@@ -19,16 +19,16 @@
  *     the domain before persistence;
  *   - idempotency (§32/§68): a concurrent double job-POST for the same
  *     screenshot loses the (userId, idempotencyKey) unique race and is
- *     mapped back to the winning job — no accidental duplicate processing;
+ *     mapped back to the winning job - no accidental duplicate processing;
  *   - bounded retries (§69): only TRANSIENT engine failures retry, inside
- *     the engine-call loop — invalid images and deterministic parser errors
+ *     the engine-call loop - invalid images and deterministic parser errors
  *     never retry;
  *   - cancellation (§71): guarded repository transitions make a CANCELLED
  *     job unable to accept a late engine result, a draft, or an import;
  *   - human-in-the-loop (§6/§75): ONLY the explicit confirm endpoint
  *     creates a Trade, and only from the validated stored draft;
  *   - every step is owner-scoped (§34/§35) and audited (§83) through the
- *     shared SecurityEventService port — never the screenshot bytes, never
+ *     shared SecurityEventService port - never the screenshot bytes, never
  *     secrets (§84).
  */
 import { Inject, Injectable } from "@nestjs/common";
@@ -100,10 +100,10 @@ import {
 import { TradesService } from "../trades/trades.service";
 import { SecurityEventService } from "../security/security-event.service";
 
-/** Pipeline version recorded on every row (§95 — results stay interpretable). */
+/** Pipeline version recorded on every row (§95 - results stay interpretable). */
 export const OCR_PIPELINE_VERSION = "2026.10.05";
 
-/** V2 — event types (stable tokens, shared recognitionAnalyticsEventTypeSchema). */
+/** V2 - event types (stable tokens, shared recognitionAnalyticsEventTypeSchema). */
 export const OCR_EVENT_TYPES = {
   uploadStarted: "recognition_upload_started",
   uploadCompleted: "recognition_upload_completed",
@@ -129,7 +129,7 @@ export const OCR_EVENT_TYPES = {
   collectionAssetRemoved: "recognition_collection_asset_removed",
 } as const;
 
-/** V2 — duplicate-candidate pool size (recent uploads examined per upload). */
+/** V2 - duplicate-candidate pool size (recent uploads examined per upload). */
 const DUPLICATE_CANDIDATE_POOL = 200;
 
 export const RECOGNITION_ERROR_CODES = {
@@ -169,7 +169,7 @@ export class RecognitionService {
     @Inject(APP_CONFIG) private readonly config: AppConfig,
   ) {}
 
-  // ── Upload (§36/§37/§38 — bytes validated server-side, always) ────────────
+  // ── Upload (§36/§37/§38 - bytes validated server-side, always) ────────────
 
   async uploadScreenshot(input: {
     userId: string;
@@ -200,7 +200,7 @@ export class RecognitionService {
     }
 
     // Independent boundary validation (§38): magic bytes beat the declared
-    // type, size and pixel ceilings are enforced before any decode. V2 —
+    // type, size and pixel ceilings are enforced before any decode. V2 -
     // the PDF statement branch shares the discipline with its own budget.
     const isPdfEnvelope = input.fileDataUrl.startsWith("data:application/pdf;");
     const image = isPdfEnvelope
@@ -213,7 +213,7 @@ export class RecognitionService {
         });
     this.limiter.hit("upload", input.userId);
 
-    // Same bytes = same stored asset (dedup by checksum, §32) — the display
+    // Same bytes = same stored asset (dedup by checksum, §32) - the display
     // name of the FIRST upload persists; filenames never touch paths (§85).
     const perceptualHash = await this.computePerceptualHash(image);
     const asset = await this.ensureAsset(input.userId, image, input.name, perceptualHash);
@@ -231,7 +231,7 @@ export class RecognitionService {
       metadata: { bytes: image.sizeBytes, mime: image.mime },
     });
 
-    // V2 — perceptual duplicate verdict (a WARNING, never a block): when a
+    // V2 - perceptual duplicate verdict (a WARNING, never a block): when a
     // visually similar upload already exists the client can jump to the
     // previous import or continue anyway. Unavailable hash → no verdict.
     let duplicate: {
@@ -267,7 +267,7 @@ export class RecognitionService {
           recognitionId: latestJob?.id ?? null,
           metadata: { hammingDistance: match.hammingDistance },
         });
-        // V3 — the duplicate warning is a persistent ASSET facet (spec §62
+        // V3 - the duplicate warning is a persistent ASSET facet (spec §62
         // `duplicate` history filter): recorded once, surfaced on every job.
         await this.repository.markAssetDuplicateWarned(asset.id);
       }
@@ -288,9 +288,9 @@ export class RecognitionService {
   }
 
   /**
-   * V2 — perceptual anchor via the sidecar's dHash (single source of truth
+   * V2 - perceptual anchor via the sidecar's dHash (single source of truth
    * for the algorithm). BEST-EFFORT: an unavailable sidecar only means no
-   * duplicate verdict — the upload itself is never blocked by it.
+   * duplicate verdict - the upload itself is never blocked by it.
    */
   private async computePerceptualHash(image: { bytes: Buffer; mime: string }): Promise<string | null> {
     try {
@@ -352,7 +352,7 @@ export class RecognitionService {
       })
       .catch(async (error) => {
         // Lost the (userId, checksum) race (§51): the winning asset row is
-        // the shared one — this file copy becomes an orphan and is removed
+        // the shared one - this file copy becomes an orphan and is removed
         // best-effort.
         if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
           const winner = await this.repository.findAssetByChecksum(userId, image.checksumSha256);
@@ -391,9 +391,9 @@ export class RecognitionService {
       throw new NotFoundError("Screenshot not found.", RECOGNITION_ERROR_CODES.NOT_FOUND);
     }
 
-    // §68 idempotency — the FIRST job of an image owns the base key
+    // §68 idempotency - the FIRST job of an image owns the base key
     // (jobIndex 0): a concurrent OR sequential duplicate POST derives the
-    // same key and is mapped back to the winning job — accidental duplicate
+    // same key and is mapped back to the winning job - accidental duplicate
     // processing is impossible. Explicit retries use the count-based key
     // (see retryJob) which is deliberately fresh.
     const baseKey = deriveJobIdempotencyKey({
@@ -406,7 +406,7 @@ export class RecognitionService {
     });
     const existing = await this.repository.findRecognitionByIdempotencyKey(input.userId, baseKey);
     if (existing) {
-      // Replay: an in-flight or finished job is returned as-is — the client
+      // Replay: an in-flight or finished job is returned as-is - the client
       // cannot accidentally process the same screenshot twice (§68/§32).
       return { job: toRecognitionJobDto(existing) };
     }
@@ -433,7 +433,7 @@ export class RecognitionService {
         mode: input.mode,
       })
       .catch(async (error) => {
-        // Lost the (userId, idempotencyKey) race (§51) — re-read the winner.
+        // Lost the (userId, idempotencyKey) race (§51) - re-read the winner.
         if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
           const winner = await this.repository.findRecognitionByIdempotencyKey(input.userId, idempotencyKey);
           if (winner) return winner;
@@ -500,7 +500,7 @@ export class RecognitionService {
     try {
       const bytes = await this.storage.get(asset.storageKey);
       if (bytes === null) {
-        // Storage/metadata divergence is an infrastructure fault — an
+        // Storage/metadata divergence is an infrastructure fault - an
         // explicit FAILED state (§35), never a fake reviewable result.
         await this.failRow(userId, row, "EXTRACTION_FAILED", "stored screenshot is unreadable", attemptsUsed.count);
         return;
@@ -513,7 +513,7 @@ export class RecognitionService {
         metadata: {
           mime: asset.mime,
           sizeBytes: asset.sizeBytes,
-          // Image jobs only — documents take the dedicated pipeline above.
+          // Image jobs only - documents take the dedicated pipeline above.
           width: asset.width as number,
           height: asset.height as number,
           checksumSha256: asset.checksumSha256,
@@ -556,7 +556,7 @@ export class RecognitionService {
         );
         return;
       }
-      // Unknown failures never leak internals (§91) — stable category,
+      // Unknown failures never leak internals (§91) - stable category,
       // diagnostics in the logs only.
       await this.failRow(userId, row, "ENGINE_ERROR", "the recognition pipeline failed unexpectedly", attemptsUsed.count);
     }
@@ -597,7 +597,7 @@ export class RecognitionService {
     response: EngineResponse,
   ): Promise<void> {
     const fields = applyDomainValidation(response.fields.map(mapEngineField));
-    // V2 — grouped trades, when the engine supplied them (row clustering).
+    // V2 - grouped trades, when the engine supplied them (row clustering).
     const trades = response.trades?.map((trade) => ({
       pageIndex: trade.pageIndex,
       fields: applyDomainValidation(trade.fields.map(mapEngineField)),
@@ -620,11 +620,11 @@ export class RecognitionService {
       durationMs: response.processingMetadata.durationsMs["total"] ?? null,
     };
     // Guarded persist: a CANCELLED row (status no longer PROCESSING)
-    // silently rejects the late result — §71 is enforced by the transition
+    // silently rejects the late result - §71 is enforced by the transition
     // guard, not by timing luck.
     const persisted = await this.repository.persistResult(row.id, result);
     if (persisted !== null) {
-      // V3 — deterministic quality score (spec §28) computed from the SAME
+      // V3 - deterministic quality score (spec §28) computed from the SAME
       // wire surface the review screen renders; persisted for the history
       // facets. Best-effort: a scoring failure never fails the recognition.
       try {
@@ -637,7 +637,7 @@ export class RecognitionService {
           await this.repository.updateQuality(row.id, quality);
         }
       } catch {
-        // Quality is additive evidence — never a pipeline failure.
+        // Quality is additive evidence - never a pipeline failure.
       }
       await this.repository.recordEvent({
         userId,
@@ -652,7 +652,7 @@ export class RecognitionService {
   }
 
   /**
-   * V2 — PDF statement pipeline: the sidecar renders every page and runs
+   * V2 - PDF statement pipeline: the sidecar renders every page and runs
    * the full extraction per page; the response pages merge into ONE result
    * payload whose trades carry their pageIndex (multi-trade flow then owns
    * the review). An engine without document support fails the job honestly
@@ -768,7 +768,7 @@ export class RecognitionService {
     }
   }
 
-  // ── Read paths (§34/§35 — owner-scoped on every operation) ────────────────
+  // ── Read paths (§34/§35 - owner-scoped on every operation) ────────────────
 
   private async requireRow(userId: string, id: string): Promise<OcrRecognitionRow> {
     const row = await this.repository.findForUser(id, userId);
@@ -784,7 +784,7 @@ export class RecognitionService {
   ): Promise<{ jobs: RecognitionHistoryItem[] }> {
     // V3 history filters (spec §62). DB-level facets narrow the page;
     // corrected/confidence facets are evaluated over the loaded page (the
-    // wire history is bounded to 100 rows by design — honest and cheap).
+    // wire history is bounded to 100 rows by design - honest and cheap).
     if (
       query === undefined ||
       (query.status === undefined &&
@@ -857,7 +857,7 @@ export class RecognitionService {
     };
   }
 
-  /** V2 — every draft slot of the job (one per detected trade). */
+  /** V2 - every draft slot of the job (one per detected trade). */
   async getDrafts(userId: string, id: string): Promise<{ drafts: Array<{ tradeIndex: number; draft: (TradeDraft & { tradeIndex: number }) | null }> }> {
     const row = await this.requireRow(userId, id);
     const result = toRecognitionResult(row);
@@ -891,7 +891,7 @@ export class RecognitionService {
     return { bytes, mime: row.asset.mime };
   }
 
-  // ── Draft (§72/§74 — re-validated server-side, never trusted) ─────────────
+  // ── Draft (§72/§74 - re-validated server-side, never trusted) ─────────────
 
   async saveDraft(userId: string, id: string, draftInput: TradeDraftRecord): Promise<{ draft: TradeDraft }> {
     const saved = await this.saveDraftAtIndex(userId, id, draftInput, 1);
@@ -899,10 +899,10 @@ export class RecognitionService {
   }
 
   /**
-   * V2 — validated draft per trade index. Beyond the V1 validations, the
+   * V2 - validated draft per trade index. Beyond the V1 validations, the
    * save feeds the CORRECTIONS MEMORY: every tracked field where the user's
    * value differs from the machine read becomes a correction observation
-   * (the draft itself stays the only authoritative declaration — the memory
+   * (the draft itself stays the only authoritative declaration - the memory
    * only powers future suggestions, §21).
    */
   async saveDraftAtIndex(
@@ -920,12 +920,12 @@ export class RecognitionService {
     }
 
     // Server-side coherence re-validation (§56): violations are REJECTED,
-    // never silently corrected. A 422 business rule — the shape was fine,
+    // never silently corrected. A 422 business rule - the shape was fine,
     // the VALUES are incoherent.
     const issues = validateDraftCoherence(draftInput);
     if (issues.length > 0) {
       throw new BusinessRuleError(
-        `Invalid trade draft: ${issues.map((issue) => `${issue.field} — ${issue.message}`).join("; ")}`,
+        `Invalid trade draft: ${issues.map((issue) => `${issue.field} - ${issue.message}`).join("; ")}`,
         RECOGNITION_ERROR_CODES.DRAFT_INVALID,
       );
     }
@@ -948,7 +948,7 @@ export class RecognitionService {
     });
     void hadAnyDraft;
 
-    // Corrections memory — machine read vs the user's declaration.
+    // Corrections memory - machine read vs the user's declaration.
     const result = toRecognitionResult(updated);
     const tradeFields = result?.trades.find((trade) => trade.index === tradeIndex)?.fields ?? null;
     if (tradeFields !== null) {
@@ -998,7 +998,7 @@ export class RecognitionService {
   // ── Confirmation → Trading Core (§6/§75–§79/§102, V2 batch) ────────────────
 
   /**
-   * V2 confirm — imports EVERY trade with a saved draft by default (V1
+   * V2 confirm - imports EVERY trade with a saved draft by default (V1
    * behavior = the single draft), or the explicitly requested tradeIndexes
    * subset, optionally attached to a specific account. Human-in-the-loop
    * invariants are unchanged: no draft ⇒ no import; the canonical Trades
@@ -1029,7 +1029,7 @@ export class RecognitionService {
     const row = await this.requireRow(userId, id);
 
     // Idempotent replay (§51): the same confirmed recognition returns the
-    // SAME trade ids — never a second import (§79).
+    // SAME trade ids - never a second import (§79).
     if (row.status === "CONFIRMED") {
       const tradeIds = row.importedTradeIds ?? (row.importedTradeId !== null ? [row.importedTradeId] : []);
       if (tradeIds.length > 0) {
@@ -1087,7 +1087,7 @@ export class RecognitionService {
       if (coherenceIssues.length > 0) {
         throw new BusinessRuleError(
           `Invalid trade draft (trade ${tradeIndex}): ${coherenceIssues
-            .map((issue) => `${issue.field} — ${issue.message}`)
+            .map((issue) => `${issue.field} - ${issue.message}`)
             .join("; ")}`,
           RECOGNITION_ERROR_CODES.DRAFT_INVALID,
         );
@@ -1121,7 +1121,7 @@ export class RecognitionService {
       draftToCorrections(firstBatchEntry.draft),
     );
     if (reserved === null) {
-      // A concurrent confirm won the race — replay its state honestly.
+      // A concurrent confirm won the race - replay its state honestly.
       const winner = await this.repository.findForUser(row.id, userId);
       if (winner?.status === "CONFIRMED") {
         const tradeIds = winner.importedTradeIds ?? (winner.importedTradeId !== null ? [winner.importedTradeId] : []);
@@ -1140,7 +1140,7 @@ export class RecognitionService {
     }
 
     try {
-      // The canonical Trades are created by Trading Core (§77) — never by
+      // The canonical Trades are created by Trading Core (§77) - never by
       // the OCR context (§78). Unknown symbol / missing account surface as
       // Trading Core business errors mapped below.
       const created: Array<{ tradeId: string; tradeIndex: number }> = [];
@@ -1222,7 +1222,7 @@ export class RecognitionService {
         job: toRecognitionJobDto(finalRow),
       };
     } catch (error) {
-      // §146 rollback — the recognition returns to REVIEW_REQUIRED so the
+      // §146 rollback - the recognition returns to REVIEW_REQUIRED so the
       // user can fix the draft (or the account situation) and retry; a
       // confirmed-without-trade state is never left behind silently.
       // Trades already created before the failure stay in the journal;
@@ -1309,7 +1309,7 @@ export class RecognitionService {
       throw new NotFoundError("Recognition not found.", RECOGNITION_ERROR_CODES.NOT_FOUND);
     }
     if (deleted.storageKey !== null) {
-      // AFTER commit (§50): binary removal is best-effort — a failure leaves
+      // AFTER commit (§50): binary removal is best-effort - a failure leaves
       // an orphan file, never an orphaned metadata row.
       await this.storage.delete(deleted.storageKey);
     }
@@ -1323,7 +1323,7 @@ export class RecognitionService {
     return { ok: true };
   }
 
-  // ── V2 — crop re-recognition (zone re-read) ────────────────────────────────
+  // ── V2 - crop re-recognition (zone re-read) ────────────────────────────────
 
   /**
    * Re-runs the engine over ONE user-selected zone of the ORIGINAL upload
@@ -1392,7 +1392,7 @@ export class RecognitionService {
     }
 
     // Merge the zone read into the TARGET trade's fields (engine wins for
-    // the zone — it read zoomed pixels; everything else is preserved).
+    // the zone - it read zoomed pixels; everything else is preserved).
     const zoneFields = applyDomainValidation(response.fields.map(mapEngineField));
     const existingTrades =
       row.result.trades !== undefined && row.result.trades !== null && row.result.trades.length > 0
@@ -1449,7 +1449,7 @@ export class RecognitionService {
     return { result: wire };
   }
 
-  // ── V2 — suggestions (corrections memory + instrument catalog) ─────────────
+  // ── V2 - suggestions (corrections memory + instrument catalog) ─────────────
 
   async getSuggestions(
     userId: string,
@@ -1467,7 +1467,7 @@ export class RecognitionService {
     return { suggestions, symbolCandidates };
   }
 
-  // ── V2 — quality analytics (event-driven, owner-scoped) ────────────────────
+  // ── V2 - quality analytics (event-driven, owner-scoped) ────────────────────
 
   async getAnalytics(userId: string, windowDays: number): Promise<{
     windowDays: number;
@@ -1530,7 +1530,7 @@ export class RecognitionService {
     };
   }
 
-  // ── V2 — storage & retention ───────────────────────────────────────────────
+  // ── V2 - storage & retention ───────────────────────────────────────────────
 
   async getStorage(userId: string): Promise<{
     assetsCount: number;
@@ -1553,7 +1553,7 @@ export class RecognitionService {
     };
   }
 
-  /** Lazy retention sweep — throttled by the configured cadence. */
+  /** Lazy retention sweep - throttled by the configured cadence. */
   private lastSweepAt: Date = new Date();
 
   async sweepExpired(force = false): Promise<{ swept: number; storageKeys: string[] }> {
@@ -1581,7 +1581,7 @@ export class RecognitionService {
     return { swept: recognitions, storageKeys };
   }
 
-  /** V2 — SSE progress snapshot (the seam for async processing later). */
+  /** V2 - SSE progress snapshot (the seam for async processing later). */
   async getProgress(
     userId: string,
     id: string,
@@ -1599,11 +1599,11 @@ export class RecognitionService {
     };
   }
 
-  // ── V3 — reprocessing (spec §45) ───────────────────────────────────────────
+  // ── V3 - reprocessing (spec §45) ───────────────────────────────────────────
 
   /**
    * Reprocess: run a NEW recognition over the SAME asset with the CURRENT
-   * pipeline. The source recognition is NEVER mutated (spec §33/§45) — a
+   * pipeline. The source recognition is NEVER mutated (spec §33/§45) - a
    * confirmed trade stays untouched; the fresh job joins the review flow
    * exactly like any other. Deliberately NOT idempotent on the source id
    * (each call = a new attempt, §51 only forbids duplicate TRADES, which
@@ -1640,7 +1640,7 @@ export class RecognitionService {
     }
 
     // A fresh idempotency key derived from the SOURCE job (never colliding
-    // with the base key, §32) — the new row is a new review opportunity.
+    // with the base key, §32) - the new row is a new review opportunity.
     const jobCount = await this.repository.countRecognitionsForAsset(userId, asset.id);
     const idempotencyKey = deriveJobIdempotencyKey({
       userId,
@@ -1694,7 +1694,7 @@ export class RecognitionService {
     return { job: toRecognitionJobDto(processed), reprocessedFromJobId: source.id };
   }
 
-  // ── V3 — multi-screenshot fusion groups (spec §14/§15/§31/§36) ────────────
+  // ── V3 - multi-screenshot fusion groups (spec §14/§15/§31/§36) ────────────
 
   /** Wire shape of a group; members are resolved owner-scoped (§34). */
   private async toGroupDto(group: OcrGroupRow): Promise<RecognitionGroup> {
@@ -1811,7 +1811,7 @@ export class RecognitionService {
       }
     }
 
-    // A fused draft without symbol or direction cannot become a trade —
+    // A fused draft without symbol or direction cannot become a trade -
     // still creatable for review, but never auto-confirmed (§103).
     const fusable =
       outcome.fusedDraft.symbol !== null &&
@@ -1879,7 +1879,7 @@ export class RecognitionService {
     return { group: await this.toGroupDto(group) };
   }
 
-  /** Edit the fused draft — SAME validated rules as a job draft (§74). */
+  /** Edit the fused draft - SAME validated rules as a job draft (§74). */
   async updateGroupDraft(
     userId: string,
     id: string,
@@ -1896,7 +1896,7 @@ export class RecognitionService {
     if (coherenceIssues.length > 0) {
       throw new BusinessRuleError(
         `Invalid fused draft: ${coherenceIssues
-          .map((issue) => `${issue.field} — ${issue.message}`)
+          .map((issue) => `${issue.field} - ${issue.message}`)
           .join("; ")}`,
         RECOGNITION_ERROR_CODES.DRAFT_INVALID,
       );
@@ -1921,7 +1921,7 @@ export class RecognitionService {
   /**
    * THE group human-in-the-loop gate (spec §20/§60): converts the fused
    * draft into exactly ONE canonical trade through the SAME Trading Core
-   * bridge (externalRef `OCR:group:<id>` — idempotent replay, §51/§33).
+   * bridge (externalRef `OCR:group:<id>` - idempotent replay, §51/§33).
    */
   async confirmGroup(
     userId: string,
@@ -1958,7 +1958,7 @@ export class RecognitionService {
     }
     if (group.fusedDraft === null) {
       throw new BusinessRuleError(
-        "The fused draft is incomplete — review the grouped screenshots first.",
+        "The fused draft is incomplete - review the grouped screenshots first.",
         RECOGNITION_ERROR_CODES.DRAFT_REQUIRED,
       );
     }
@@ -1967,13 +1967,13 @@ export class RecognitionService {
     if (coherenceIssues.length > 0) {
       throw new BusinessRuleError(
         `Invalid fused draft: ${coherenceIssues
-          .map((issue) => `${issue.field} — ${issue.message}`)
+          .map((issue) => `${issue.field} - ${issue.message}`)
           .join("; ")}`,
         RECOGNITION_ERROR_CODES.DRAFT_INVALID,
       );
     }
 
-    // At-most-one-import mutex (§51) — mirrors the job confirm flow.
+    // At-most-one-import mutex (§51) - mirrors the job confirm flow.
     const reserved = await this.repository.reserveGroupConfirmation(group.id);
     if (reserved === null) {
       const winner = await this.repository.findGroupByIdForUser(group.id, userId);
@@ -2042,7 +2042,7 @@ export class RecognitionService {
 
       return { tradeId, group: await this.toGroupDto(finalGroup) };
     } catch (error) {
-      // §146 rollback — the group returns to ACTIVE so the user can fix the
+      // §146 rollback - the group returns to ACTIVE so the user can fix the
       // fused draft and retry; a confirmed-without-trade state never sticks.
       await this.repository.rollbackGroupConfirmation(group.id);
       if (error instanceof BusinessRuleError || error instanceof ConflictError) {
@@ -2052,7 +2052,7 @@ export class RecognitionService {
     }
   }
 
-  /** Dissolve a group — every member recognition stays intact (§15). */
+  /** Dissolve a group - every member recognition stays intact (§15). */
   async discardGroup(userId: string, id: string): Promise<{ ok: true }> {
     const group = await this.requireGroup(userId, id);
     if (group.status !== "CONFIRMED") {
@@ -2066,7 +2066,7 @@ export class RecognitionService {
     return { ok: true };
   }
 
-  // ── V3 — screenshot collections (spec §41) ────────────────────────────────
+  // ── V3 - screenshot collections (spec §41) ────────────────────────────────
 
   private toCollectionDto(row: {
     id: string;
@@ -2159,7 +2159,7 @@ export class RecognitionService {
     assetId: string,
   ): Promise<{ collection: RecognitionCollectionDetail }> {
     // Ownership boundary (§34): the collection AND the asset must be the
-    // caller's — a forged asset id can never join a collection (IDOR).
+    // caller's - a forged asset id can never join a collection (IDOR).
     const detail = await this.requireCollectionDetail(userId, collectionId);
     const asset = await this.repository.findAssetByIdForUser(assetId, userId);
     if (asset === null) {
@@ -2193,7 +2193,7 @@ export class RecognitionService {
 }
 
 /** The confirmed declaration as a field record (audit trail + post-confirmation
- * replay overlay). Draft values only — the machine never writes here. */
+ * replay overlay). Draft values only - the machine never writes here. */
 function draftToCorrections(draft: TradeDraftRecord): Record<string, string | null> {
   return {
     symbol: draft.symbol,
@@ -2219,7 +2219,7 @@ function requireValue(value: string | null): string {
   return value;
 }
 
-/** Display names are metadata only — bounded and path-neutral (§85): the
+/** Display names are metadata only - bounded and path-neutral (§85): the
  * value never reaches a filesystem path and cannot smuggle separators. */
 function sanitizeDisplayName(name: string, mime: string): string {
   const cleaned = name

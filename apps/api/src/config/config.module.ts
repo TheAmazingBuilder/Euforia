@@ -4,7 +4,7 @@ import { APP_CONFIG, loadAppConfig } from "./app-config";
 export { APP_CONFIG };
 
 /**
- * Global configuration module — provides the validated {@link AppConfig}
+ * Global configuration module - provides the validated {@link AppConfig}
  * under the {@link APP_CONFIG} token. Validation happens when the provider
  * is first resolved (i.e. at application bootstrap), so an invalid
  * environment produces a controlled startup failure before any route,

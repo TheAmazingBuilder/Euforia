@@ -1,21 +1,21 @@
 /**
- * OCR controller (Phase 19 §40) — the frontend-facing API surface, derived
+ * OCR controller (Phase 19 §40) - the frontend-facing API surface, derived
  * from the product intent (the frontend has no OCR consumer yet; this is the
- * documented V1 contract the review UI will call — §2 smallest coherent
+ * documented V1 contract the review UI will call - §2 smallest coherent
  * foundation).
  *
  * Conventions (house standard, mirrors accounts/security):
  *   - global JwtAuthGuard + ThrottlerGuard apply; the OCR-specific per-user
  *     vectors (§37) fire inside the service;
- *   - ZodValidationPipe on body/query — unknown fields stripped, malformed
+ *   - ZodValidationPipe on body/query - unknown fields stripped, malformed
  *     input → 400 with issues; path ids are parsed with the shared
  *     uuidSchema (forged ids → 400, unknown-but-valid ids → 404, §39);
- *   - ownership comes ONLY from the authenticated principal — ids in URLs
+ *   - ownership comes ONLY from the authenticated principal - ids in URLs
  *     are never trusted for authorization;
  *   - NO OCR logic lives here (§40): the controller is a thin adapter.
  *
  * Trade-boundary (§22/§42/§43): no route creates or modifies a Trade, no
- * route reaches broker execution — recognition + confirmation only.
+ * route reaches broker execution - recognition + confirmation only.
  */
 import {
   Body,
@@ -68,7 +68,7 @@ function requestIdOf(request: FastifyRequest): string | null {
   return typeof raw === "string" ? raw : null;
 }
 
-/** Query strings arrive as strings — coerce `limit` like the security routes. */
+/** Query strings arrive as strings - coerce `limit` like the security routes. */
 const ocrPageQueryWire = ocrRecognitionPageQuerySchema.extend({
   limit: z.coerce.number().int().min(1).max(50).default(20),
 });
@@ -128,7 +128,7 @@ export class OcrController {
     return this.ocr.getRecognition(principal.userId, uuidSchema.parse(id));
   }
 
-  /** Raw screenshot bytes — owner-scoped, private, never cached by proxies. */
+  /** Raw screenshot bytes - owner-scoped, private, never cached by proxies. */
   @Get("recognitions/:id/image")
   async image(
     @CurrentUser() principal: AuthPrincipal,
@@ -144,13 +144,13 @@ export class OcrController {
   }
 
   @Post("recognitions/:id/confirm")
-  @HttpCode(HttpStatus.OK) // confirmation is idempotent — not a 201 creation
+  @HttpCode(HttpStatus.OK) // confirmation is idempotent - not a 201 creation
   async confirm(
     @CurrentUser() principal: AuthPrincipal,
     @Param("id") id: string,
     @Body(new ZodValidationPipe(ocrConfirmInputSchema)) input?: OcrConfirmInput,
   ) {
-    // An absent body behaves like the valid no-correction payload (§76 —
+    // An absent body behaves like the valid no-correction payload (§76 -
     // degenerate input is a 4xx/OK path, never a 500).
     const body = input ?? { corrections: {}, acknowledgeDuplicateScreenshot: false, acknowledgeDuplicateTrade: false };
     return this.ocr.confirmRecognition({
@@ -162,7 +162,7 @@ export class OcrController {
         include: batch.include,
       })),
       accountId: body.accountId,
-      // V2 §58 — explicit duplicate acknowledgments (default false).
+      // V2 §58 - explicit duplicate acknowledgments (default false).
       acknowledgeDuplicateScreenshot: body.acknowledgeDuplicateScreenshot,
       acknowledgeDuplicateTrade: body.acknowledgeDuplicateTrade,
     });
@@ -170,7 +170,7 @@ export class OcrController {
 
   /**
    * Re-OCR by crop (engine quality §2.4): targeted re-scan of a framed
-   * region. Ephemeral guidance — never persisted, never authoritative.
+   * region. Ephemeral guidance - never persisted, never authoritative.
    */
   @Post("recognitions/:id/recrop")
   @HttpCode(HttpStatus.OK)
@@ -186,7 +186,7 @@ export class OcrController {
    * Real-time progress (engine quality §4.1): a server-sent-events stream
    * of the job status. Emits the current state immediately, then follows
    * the repository until the job leaves QUEUED/PROCESSING (or a bounded
-   * window elapses — the stream closes honestly instead of hanging).
+   * window elapses - the stream closes honestly instead of hanging).
    * Works in both live and mock frontends via fetch-stream readers (the
    * browser EventSource cannot carry an Authorization header).
    */
@@ -232,14 +232,14 @@ export class OcrController {
         await new Promise((resolve) => setTimeout(resolve, POLL_MS));
       }
     } catch {
-      // client disconnect or transient repo failure — close honestly
+      // client disconnect or transient repo failure - close honestly
     } finally {
       close();
     }
     return reply;
   }
 
-  /** OCR quality analytics (engine quality §3.2) — the Analytics card feed. */
+  /** OCR quality analytics (engine quality §3.2) - the Analytics card feed. */
   @Get("analytics")
   async analytics(
     @CurrentUser() principal: AuthPrincipal,
@@ -254,7 +254,7 @@ export class OcrController {
     return this.ops.getStorage(principal.userId);
   }
 
-  /** V2 §32/§39 — reprocess: a FRESH recognition from the same asset. */
+  /** V2 §32/§39 - reprocess: a FRESH recognition from the same asset. */
   @Post("recognitions/:id/reprocess")
   async reprocess(
     @CurrentUser() principal: AuthPrincipal,
@@ -266,7 +266,7 @@ export class OcrController {
     });
   }
 
-  // ── V2 §28 — screenshot collections ──────────────────────────────────────
+  // ── V2 §28 - screenshot collections ──────────────────────────────────────
 
   @Post("collections")
   async createCollection(
@@ -323,7 +323,7 @@ export class OcrController {
     return this.collectionsService.delete({ userId: principal.userId, id: uuidSchema.parse(id) });
   }
 
-  // ── V2 §1/§2/§14/§15/§18 — multi-screenshot recognition sets ──────────────
+  // ── V2 §1/§2/§14/§15/§18 - multi-screenshot recognition sets ──────────────
 
   @Post("sets")
   async createSet(
@@ -361,7 +361,7 @@ export class OcrController {
   }
 
   @Post("sets/:id/confirm")
-  @HttpCode(HttpStatus.OK) // idempotent replay — not a 201 creation
+  @HttpCode(HttpStatus.OK) // idempotent replay - not a 201 creation
   async confirmSet(
     @CurrentUser() principal: AuthPrincipal,
     @Param("id") id: string,
@@ -379,7 +379,7 @@ export class OcrController {
     });
   }
 
-  /** Deletes the SET only — member recognitions survive (V2 §15). */
+  /** Deletes the SET only - member recognitions survive (V2 §15). */
   @Delete("sets/:id")
   async removeSet(
     @CurrentUser() principal: AuthPrincipal,

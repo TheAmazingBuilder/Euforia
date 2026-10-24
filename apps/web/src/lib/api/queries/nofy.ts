@@ -27,7 +27,7 @@ import { apiPaths } from "@/lib/api/endpoints";
 import { queryKeys } from "@/lib/api/keys";
 
 /**
- * Nofy hooks — the knowledge workspace's data layer. List queries key on
+ * Nofy hooks - the knowledge workspace's data layer. List queries key on
  * the full view/filter signature; every mutation invalidates the aggregates
  * so Overview, My Notes, Folders and Favorites stay in lockstep.
  */
@@ -76,7 +76,7 @@ export function useNofyNote(noteId: string | null) {
 }
 
 /**
- * Notes linked to an app entity (Playbook strategy, reviewed trade, …) —
+ * Notes linked to an app entity (Playbook strategy, reviewed trade, …) -
  * the entity side of the Nofy↔Playbook/Trade-Review integration. Keyed
  * under the "nofy-notes" root so any note mutation invalidates it.
  */
@@ -160,7 +160,7 @@ export function useCreateNofyNote(options: { onCreated?: (note: NofyNote) => voi
 }
 
 /**
- * The autosave PATCH — silent success (the editor shows its own save
+ * The autosave PATCH - silent success (the editor shows its own save
  * status and remains the source of truth for the open note), toast only
  * on failure so content is never silently lost.
  */

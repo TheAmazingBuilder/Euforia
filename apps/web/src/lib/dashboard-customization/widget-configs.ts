@@ -16,20 +16,20 @@ import {
 import { parseDecimal } from "@cosmoz/shared";
 
 /**
- * Widget configuration system (Phase 02 §5) — the typed layer between the
+ * Widget configuration system (Phase 02 §5) - the typed layer between the
  * shared config schemas and the registry/renderers.
  *
  * Responsibilities:
  *  - defaults per configurable widget type;
  *  - SAFE resolution of a stored config: migrate → validate → repair.
- *    An invalid or outdated stored config never crashes the dashboard —
+ *    An invalid or outdated stored config never crashes the dashboard -
  *    it falls back to the widget's defaults (the settings dialog is where
  *    the user gets validation feedback, not the render path);
  *  - the metric catalog (§7/§10): every metric is a SERVER-computed field
- *    of the analytics suite — no client-side financial formula exists here;
+ *    of the analytics suite - no client-side financial formula exists here;
  *  - previous-period mapping (§11) and metric-aware comparison semantics.
  *
- * Pure data + pure functions: no React, no I/O — fully unit-testable.
+ * Pure data + pure functions: no React, no I/O - fully unit-testable.
  */
 
 // ── Defaults ─────────────────────────────────────────────────────────────────
@@ -87,7 +87,7 @@ export const DEFAULT_PERFORMANCE_BREAKDOWN_CONFIG: PerformanceBreakdownWidgetCon
 /**
  * Default config per widget type. Non-configurable widgets return null.
  * A fresh STRATEGY_COMPARE starts empty: the settings dialog is where the
- * user picks strategies (an empty selection renders a purposeful hint —
+ * user picks strategies (an empty selection renders a purposeful hint -
  * never a fabricated comparison).
  */
 export function defaultWidgetConfig(type: DashboardWidgetKey): DashboardWidgetConfig | null {
@@ -111,7 +111,7 @@ export function defaultWidgetConfig(type: DashboardWidgetKey): DashboardWidgetCo
   }
 }
 
-/** Widgets that expose a settings panel (§6) — registry-linked truth. */
+/** Widgets that expose a settings panel (§6) - registry-linked truth. */
 export function isConfigurable(type: DashboardWidgetKey): boolean {
   return defaultWidgetConfig(type) !== null;
 }
@@ -125,10 +125,10 @@ export type ConfigResolution =
 
 /**
  * Resolve a stored raw config against the widget type:
- *  1. absent → the widget defaults (status "repaired" is NOT reported —
+ *  1. absent → the widget defaults (status "repaired" is NOT reported -
  *     absence is the pre-Phase-02 normal state, not a defect);
  *  2. unknown version → defaults (a future version's semantics cannot be
- *     guessed — never silently reinterpret);
+ *     guessed - never silently reinterpret);
  *  3. schema-invalid → defaults, with the first zod issue as the reason;
  *  4. valid → parsed config as-is.
  * The shared item-level superRefine also rejects kind/type mismatches.
@@ -148,7 +148,7 @@ export function resolveWidgetConfig(
   if (candidate.v !== WIDGET_CONFIG_VERSION) {
     return {
       status: "repaired",
-      reason: `Config version ${String(candidate.v)} is not supported — defaults applied`,
+      reason: `Config version ${String(candidate.v)} is not supported - defaults applied`,
       config: fallback,
     };
   }
@@ -156,26 +156,26 @@ export function resolveWidgetConfig(
   if (!parsed.success) {
     return {
       status: "repaired",
-      reason: parsed.error.issues[0]?.message ?? "Invalid configuration — defaults applied",
+      reason: parsed.error.issues[0]?.message ?? "Invalid configuration - defaults applied",
       config: fallback,
     };
   }
   if (parsed.data.kind !== type) {
     return {
       status: "repaired",
-      reason: `Config belongs to "${parsed.data.kind}", not "${type}" — defaults applied`,
+      reason: `Config belongs to "${parsed.data.kind}", not "${type}" - defaults applied`,
       config: fallback,
     };
   }
   // Catalog-level validation the structural schema cannot express: a
   // metrics card whose ids the catalog does not know would render nothing
-  // but noise — treat it like any invalid config (§7 "unknown metric ids").
+  // but noise - treat it like any invalid config (§7 "unknown metric ids").
   if (parsed.data.kind === "METRICS_CARD") {
     const unknown = parsed.data.metrics.filter((id) => getMetricDefinition(id) === null);
     if (unknown.length > 0) {
       return {
         status: "repaired",
-        reason: `Unknown metric id(s): ${unknown.join(", ")} — defaults applied`,
+        reason: `Unknown metric id(s): ${unknown.join(", ")} - defaults applied`,
         config: fallback,
       };
     }
@@ -184,7 +184,7 @@ export function resolveWidgetConfig(
       if (!customFrom || !customTo || customFrom > customTo) {
         return {
           status: "repaired",
-          reason: "CUSTOM period requires customFrom and customTo (from ≤ to) — defaults applied",
+          reason: "CUSTOM period requires customFrom and customTo (from ≤ to) - defaults applied",
           config: fallback,
         };
       }
@@ -197,7 +197,7 @@ export function resolveWidgetConfig(
  * Validate a config PAYLOAD for `type` (settings-dialog save path). Returns
  * the first issue message, or null when the payload is acceptable. Same
  * rules as the read path (resolveWidgetConfig) so what the dialog accepts
- * is exactly what the model layer persists — one contract, no drift.
+ * is exactly what the model layer persists - one contract, no drift.
  */
 export function validateWidgetConfigPayload(
   type: DashboardWidgetKey,
@@ -228,9 +228,9 @@ export function validateWidgetConfigPayload(
 // ── Metric catalog (§7 KPI selection / §12 analytics widgets) ────────────────
 
 /**
- * Every metric maps ONE server-computed field — the client formats, it
+ * Every metric maps ONE server-computed field - the client formats, it
  * never re-derives (analytics golden rule). `higherIsBetter` drives the
- * comparison sentiment (§11: an increase is NOT always an improvement —
+ * comparison sentiment (§11: an increase is NOT always an improvement -
  * drawdown growing toward -∞ is a deterioration; gross loss shrinking is
  * an improvement). null = neutral (sample-size metrics).
  */
@@ -245,7 +245,7 @@ export interface MetricDefinition {
   higherIsBetter: boolean | null;
   /** Ratio 0–1 rendered via formatPercent (win/loss rates). */
   isRatio?: boolean;
-  /** Signed display (explicit +/−) — P&L-style metrics. */
+  /** Signed display (explicit +/−) - P&L-style metrics. */
   signed?: boolean;
   /** Field path on AnalyticsSuiteResponse["summary"] (all total-window metrics). */
   summaryField?: keyof AnalyticsSuiteResponse["summary"];
@@ -363,7 +363,7 @@ export const METRIC_CATALOG: readonly MetricDefinition[] = [
   {
     id: "WORST_R",
     label: "Worst trade (R)",
-    description: "Lowest realized R in the period — closer to zero is better.",
+    description: "Lowest realized R in the period - closer to zero is better.",
     unit: "R",
     higherIsBetter: true,
     signed: true,
@@ -398,7 +398,7 @@ export const METRIC_CATALOG: readonly MetricDefinition[] = [
   {
     id: "AVG_LOSS_R",
     label: "Average loss (R)",
-    description: "Mean R of losing trades (positive magnitude) — lower is better.",
+    description: "Mean R of losing trades (positive magnitude) - lower is better.",
     unit: "R",
     higherIsBetter: false,
     summaryField: "avgLossR",
@@ -433,7 +433,7 @@ export const METRIC_CATALOG: readonly MetricDefinition[] = [
   {
     id: "RECOVERY_FACTOR",
     label: "Recovery factor",
-    description: "Net P&L over the worst drawdown — higher recovers faster.",
+    description: "Net P&L over the worst drawdown - higher recovers faster.",
     unit: "R",
     higherIsBetter: true,
     summaryField: "recoveryFactor",
@@ -457,7 +457,7 @@ export const METRIC_CATALOG: readonly MetricDefinition[] = [
   {
     id: "SQN",
     label: "SQN",
-    description: "System Quality Number — mean(R) ÷ std(R) × √n.",
+    description: "System Quality Number - mean(R) ÷ std(R) × √n.",
     unit: "R",
     higherIsBetter: true,
     summaryField: "sqn",
@@ -510,7 +510,7 @@ export const METRIC_CATALOG: readonly MetricDefinition[] = [
 
 const METRICS_BY_ID = new Map(METRIC_CATALOG.map((metric) => [metric.id, metric]));
 
-/** Stable catalog lookup — unknown ids never render. */
+/** Stable catalog lookup - unknown ids never render. */
 export function getMetricDefinition(id: string): MetricDefinition | null {
   return METRICS_BY_ID.get(id) ?? null;
 }
@@ -547,7 +547,7 @@ export const METRICS_CARD_PERIODS: readonly { value: MetricsCardWidgetConfig["pe
 ];
 
 /**
- * Server-resolved previous equivalents ONLY — the server owns period
+ * Server-resolved previous equivalents ONLY - the server owns period
  * resolution against the trading-day clock, so the client never does its
  * own date math (no timezone drift, no overlapping windows). Presets
  * without an entry show an explicit "comparison unavailable" state.
@@ -588,7 +588,7 @@ export interface MetricComparison {
   previous: number | null;
   /** current − previous (null when either side is missing). */
   absDelta: number | null;
-  /** % change vs |previous| (null when the baseline is 0/missing — never
+  /** % change vs |previous| (null when the baseline is 0/missing - never
    * an infinite or misleading ratio). */
   pctDelta: number | null;
   direction: "UP" | "DOWN" | "FLAT";
@@ -601,7 +601,7 @@ const FLAT_EPSILON = 1e-9;
 /**
  * Compare one metric across two server-computed periods. Missing sides
  * (null fields, empty previous period, multi-currency money) propagate as
- * "unavailable" — never fabricated, never an Infinity.
+ * "unavailable" - never fabricated, never an Infinity.
  */
 export function compareMetric(
   metric: MetricDefinition,
@@ -661,7 +661,7 @@ export function strategyMetricValue(
 
 // ── Config equality (dirty tracking) ────────────────────────────────────────
 
-/** Deterministic stringify (sorted keys) — configs are tiny plain objects. */
+/** Deterministic stringify (sorted keys) - configs are tiny plain objects. */
 export function configEquals(a: unknown, b: unknown): boolean {
   return stableStringify(a) === stableStringify(b);
 }

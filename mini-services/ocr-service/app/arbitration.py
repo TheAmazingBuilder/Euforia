@@ -7,21 +7,21 @@ with the primary one, plus field-level arbitrage between the two.
 Design (honest, no ML, §28):
   - Pass A (primary): tesseract's default page segmentation (PSM 3, full
     auto analysis) over the complete preprocessing chain (denoise → deskew
-    → ×2 LANCZOS → CLAHE) — the best all-round configuration for panel
+    → ×2 LANCZOS → CLAHE) - the best all-round configuration for panel
     screenshots with mixed column layouts.
   - Pass B (challenger): PSM 11 (sparse text) over the OTSU-BINARIZED
-    variant — a genuinely different segmentation of the same pixels, which
+    variant - a genuinely different segmentation of the same pixels, which
     is exactly what makes disagreement informative. Sparse text finds
     scattered values (MT5 mobile cards) that block segmentation misses.
   - Arbitrage is PER FIELD, explainable, and never invents values:
       · both passes agree on the normalized value → confidence boost
-        (PASS_AGREEMENT note) — two independent segmentations reading the
+        (PASS_AGREEMENT note) - two independent segmentations reading the
         same glyphs is the strongest deterministic evidence available;
       · both found the field but disagree → the higher-confidence reading
         wins, the other is recorded (PASS_DISAGREEMENT note) so the review
         UI can flag it;
       · only one pass found the field → keep it with a note
-        (SECOND_PASS_ONLY / FIRST_PASS_ONLY) and NO bonus — single-source
+        (SECOND_PASS_ONLY / FIRST_PASS_ONLY) and NO bonus - single-source
         evidence stays single-source.
 """
 
@@ -34,14 +34,14 @@ from .contract import EngineField, SourceRegion
 from .extraction_types import OcrLine
 from .extraction import extract_fields  # re-exported for pipeline composition
 
-# Note tokens — stable, client-copyable (the review UI surfaces them).
+# Note tokens - stable, client-copyable (the review UI surfaces them).
 PASS_AGREEMENT = "PASS_AGREEMENT"
 PASS_DISAGREEMENT = "PASS_DISAGREEMENT"
 SECOND_PASS_ONLY = "SECOND_PASS_ONLY"
 FIRST_PASS_ONLY = "FIRST_PASS_ONLY"
 
 # Honest pass labels (V2 audit fix): pass A runs tesseract's DEFAULT
-# segmentation (PSM 3) — the previous "block_psm6" label claimed a config
+# segmentation (PSM 3) - the previous "block_psm6" label claimed a config
 # that was never passed. Renaming keeps the observability surface truthful;
 # contractVersion stays "1" (labels are metadata, not contract shape).
 PASS_NAMES = ("block_psm3", "sparse_psm11")
@@ -90,7 +90,7 @@ def arbitrate_fields(
     """Field-level arbitrage between the two passes.
 
     Returns (arbitrated_fields, all_clear). A field is CLSear when both
-    passes agree — the only case that earns the confidence boost.
+    passes agree - the only case that earns the confidence boost.
     """
     challenger_by_key = {f.field: f for f in challenger}
     arbitrated: list[EngineField] = []
@@ -98,7 +98,7 @@ def arbitrate_fields(
         other = challenger_by_key.get(field.field)
         challenger_by_key.pop(field.field, None)
         arbitrated.append(_merge_pair(field, other))
-    # Fields ONLY the challenger found — appended with the honest note.
+    # Fields ONLY the challenger found - appended with the honest note.
     for field in challenger_by_key.values():
         arbitrated.append(
             EngineField(
@@ -117,7 +117,7 @@ def arbitrate_fields(
 
 def _merge_pair(primary: EngineField, challenger: EngineField | None) -> EngineField:
     if challenger is None:
-        # Primary found it, challenger missed it — keep primary unchanged.
+        # Primary found it, challenger missed it - keep primary unchanged.
         return EngineField(
             field=primary.field,
             rawValue=primary.rawValue,
@@ -128,7 +128,7 @@ def _merge_pair(primary: EngineField, challenger: EngineField | None) -> EngineF
         )
 
     if primary.normalizedValue is not None and challenger.normalizedValue == primary.normalizedValue:
-        # Agreement — the one explainable confidence boost in the engine.
+        # Agreement - the one explainable confidence boost in the engine.
         boosted = min(primary.confidence + 0.06, 0.99)
         return EngineField(
             field=primary.field,
@@ -140,7 +140,7 @@ def _merge_pair(primary: EngineField, challenger: EngineField | None) -> EngineF
         )
 
     if primary.normalizedValue is None and challenger.normalizedValue is None:
-        return primary  # both failed — keep the primary's failure shape
+        return primary  # both failed - keep the primary's failure shape
 
     if primary.normalizedValue is None and challenger.normalizedValue is not None:
         # Challenger rescued a field the primary could not read.
@@ -153,7 +153,7 @@ def _merge_pair(primary: EngineField, challenger: EngineField | None) -> EngineF
             notes=challenger.notes + [SECOND_PASS_ONLY],
         )
 
-    # Disagreement — higher confidence wins, the divergence is recorded so
+    # Disagreement - higher confidence wins, the divergence is recorded so
     # the review UI can flag the field (never silently averaged, §14).
     winner, loser = (primary, challenger)
     if challenger.confidence > primary.confidence:
@@ -173,7 +173,7 @@ def _merge_pair(primary: EngineField, challenger: EngineField | None) -> EngineF
 
 
 def region_union(regions: list[SourceRegion]) -> SourceRegion | None:
-    """Bounding box over regions — used by the crop suggestion helper."""
+    """Bounding box over regions - used by the crop suggestion helper."""
     if not regions:
         return None
     x0 = min(r.x for r in regions)

@@ -1,5 +1,5 @@
 /**
- * Academy data access (B12) — the ONLY place the academy context touches
+ * Academy data access (B12) - the ONLY place the academy context touches
  * Prisma. Rows land in academyRow with a `kind` (STATE | TASK | EVENT_REG):
  * STATE is the per-user learning state blob (lesson completions, quiz
  * attempts, SRS flashcard boxes, practice ledger…), TASK/EVENT_REG rows

@@ -1,13 +1,13 @@
 /**
- * Academy content registry — the READ layer over the authored catalog
+ * Academy content registry - the READ layer over the authored catalog
  * (src/modules/academy/content, ported verbatim from the product's authoring
  * files). Pure functions only: no clock, no randomness, no I/O.
  *
  * This is the bounded context's content architecture (Phase 11 §9–§18, §45,
  * §56): the catalog is code-owned, served through the API, and the client
- * renders it — it is never a database blob, never user-generated, and the
+ * renders it - it is never a database blob, never user-generated, and the
  * renderer's SVG visual variants keep lesson bodies free of raw HTML (no
- * sanitization surface exists — Phase 11 §17/§82 documented as N/A).
+ * sanitization surface exists - Phase 11 §17/§82 documented as N/A).
  *
  * Parity source: mocks/academy-engine.ts catalog helpers.
  */
@@ -51,7 +51,7 @@ export const lessonOwner = (lessonId: string): { course: AuthoredCourse; index: 
   return null;
 };
 
-/** Category exam question pool — every question of the category's course quizzes. */
+/** Category exam question pool - every question of the category's course quizzes. */
 export const examPool = (categoryId: string): AcademyQuizQuestion[] =>
   COURSES.filter((course) => course.categoryId === categoryId).flatMap(
     (course) => course.quiz?.questions ?? [],
@@ -59,7 +59,7 @@ export const examPool = (categoryId: string): AcademyQuizQuestion[] =>
 
 // ── Deterministic ordering ───────────────────────────────────────────────────
 // Course listing order: level (BEGINNER → ADVANCED), then category order,
-// then title — never insertion order (Phase 11 §48).
+// then title - never insertion order (Phase 11 §48).
 
 export function sortedCourses(): AuthoredCourse[] {
   const categoryRank = new Map(CATEGORIES.map((category, index) => [category.id, index]));
@@ -167,7 +167,7 @@ export function courseDetail(courseId: string, seed: ProgressSeed): AcademyCours
 
 // ── Checkpoint selection (deterministic per lesson + UTC day) ────────────────
 
-/** Stable string hash — deterministic checkpoint picks per lesson + day. */
+/** Stable string hash - deterministic checkpoint picks per lesson + day. */
 export function hashString(input: string): number {
   let hash = 0;
   for (let i = 0; i < input.length; i += 1) {
@@ -179,7 +179,7 @@ export function hashString(input: string): number {
 /**
  * Mid-lesson checkpoint rule (parity verbatim): long lessons (≥ 6 blocks) in
  * quiz-bearing courses get ONE question from the course bank, picked from
- * lessonId + UTC day — same pick for serving and grading; answers never leave
+ * lessonId + UTC day - same pick for serving and grading; answers never leave
  * the server (Phase 11 §33).
  */
 export const CHECKPOINT_MIN_BLOCKS = 6;
@@ -237,7 +237,7 @@ export function lessonResponse(input: LessonAssemblyInput): AcademyLessonRespons
   };
 }
 
-// ── Glossary & search (in-memory over authored content — Phase 11 §43/§45) ──
+// ── Glossary & search (in-memory over authored content - Phase 11 §43/§45) ──
 
 export function glossary(query: string | undefined): AcademyGlossaryResponse {
   const q = query?.trim().toLowerCase() ?? "";
@@ -313,7 +313,7 @@ export function academySearch(query: string, seed: ProgressSeed): AcademySearchR
   return { query, courses, lessons, glossary: glossaryTerms };
 }
 
-// ── Category progress (derived on read — never persisted, §29/§30) ──────────
+// ── Category progress (derived on read - never persisted, §29/§30) ──────────
 
 export function categoryProgress(
   seed: ProgressSeed,
@@ -357,7 +357,7 @@ export function flashcardDeck(): AcademyFlashcard[] {
         deck.push({
           id: `fc-take-${lesson.id}-${index}`,
           kind: "TAKEAWAY",
-          front: `${lesson.title} — key takeaway`,
+          front: `${lesson.title} - key takeaway`,
           back: item,
           source: lesson.title,
           categoryId: course.categoryId,

@@ -24,7 +24,7 @@ import { apiErrorMessage } from "@/lib/api/client";
 import { useI18n } from "@/i18n/i18n-provider";
 
 /**
- * Academy preferences — provisioned ahead of the learning module (later
+ * Academy preferences - provisioned ahead of the learning module (later
  * phase): difficulty, weekly goal, reminders and autoplay. Storing them
  * now means the module ships with a ready-made configuration center.
  */

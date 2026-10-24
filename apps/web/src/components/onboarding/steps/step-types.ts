@@ -5,7 +5,7 @@ import type { OnboardingController } from "@/lib/onboarding/use-onboarding";
  * Contract shared by every onboarding step component. Steps are
  * presentational: they own their local form state and their writes, and
  * delegate navigation + exit animation to the overlay (single owner of the
- * step machine — no duplicated navigation logic per step).
+ * step machine - no duplicated navigation logic per step).
  */
 export type OnboardingStepProps = {
   controller: OnboardingController;
@@ -15,7 +15,7 @@ export type OnboardingStepProps = {
   /** Go back one step (milestones unchanged). */
   onBack: () => void;
   /**
-   * Complete the flow and hand off to an app route (accounts step) — the
+   * Complete the flow and hand off to an app route (accounts step) - the
    * overlay closes AFTER the backend confirms completion; a failed
    * completion must NOT navigate.
    */

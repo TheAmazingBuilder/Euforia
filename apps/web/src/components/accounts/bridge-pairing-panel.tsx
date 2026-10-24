@@ -12,7 +12,7 @@ import { useDict } from "@/i18n/i18n-provider";
 import { cn } from "@/lib/utils";
 
 /**
- * The MT5 terminal pairing sheet (Phase 08) — the one component that ever
+ * The MT5 terminal pairing sheet (Phase 08) - the one component that ever
  * renders the bridge secret, reused by BOTH pairing surfaces:
  *   1. the connect-time follow-up state (connect-account-dialog), and
  *   2. the account-detail "Pairing sheet" dialog (account-detail-drawer).
@@ -20,20 +20,20 @@ import { cn } from "@/lib/utils";
  * Honesty rules mirrored from the backend contract:
  *  - the ingest URL is rendered ABSOLUTE (window.location.origin + the
  *    server-provided ingestPath) because the terminal must WebRequest it;
- *  - the secret is masked by default with an explicit reveal — unlike
+ *  - the secret is masked by default with an explicit reveal - unlike
  *    API-key credentials it is re-readable from the pairing view by design,
  *    and the copy says so;
  *  - the EA download is a plain anchor with `download` pointing at the
  *    static asset path the backend declares (public/bridge/EuforiaBridge.mq5);
  *  - copy buttons reuse the shared CopyButton (no third clipboard impl).
- * Zero hardcoded copy — every string comes from dict.accounts.bridge.
+ * Zero hardcoded copy - every string comes from dict.accounts.bridge.
  */
 export function BridgePairingPanel({
   pairing,
   testIdPrefix = "bridge-pairing",
 }: {
   pairing: BridgePairing;
-  /** Testid namespace — lets the two surfaces assert independently. */
+  /** Testid namespace - lets the two surfaces assert independently. */
   testIdPrefix?: string;
 }) {
   const dict = useDict();
@@ -56,7 +56,7 @@ export function BridgePairingPanel({
 
   return (
     <div className="grid gap-3.5" data-testid={testIdPrefix}>
-      {/* (a) Ingest URL — absolute, copyable, the WebRequest allowlist entry */}
+      {/* (a) Ingest URL - absolute, copyable, the WebRequest allowlist entry */}
       <div className="grid gap-1.5" data-testid={`${testIdPrefix}-ingest`}>
         <Label className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <Link2 className="size-3" aria-hidden />
@@ -76,7 +76,7 @@ export function BridgePairingPanel({
         </div>
       </div>
 
-      {/* (b) Bridge key — the X-Bridge-Key header value */}
+      {/* (b) Bridge key - the X-Bridge-Key header value */}
       <div className="grid gap-1.5" data-testid={`${testIdPrefix}-key`}>
         <Label className="text-xs text-muted-foreground">{B.bridgeKeyLabel}</Label>
         <div className="flex items-center gap-2">
@@ -87,7 +87,7 @@ export function BridgePairingPanel({
         </div>
       </div>
 
-      {/* (c) Bridge secret — masked by default, reveal + copy, re-readable */}
+      {/* (c) Bridge secret - masked by default, reveal + copy, re-readable */}
       <div className="grid gap-1.5" data-testid={`${testIdPrefix}-secret-block`}>
         <Label className="text-xs text-muted-foreground">{B.secretLabel}</Label>
         <div className="flex items-center gap-2">

@@ -14,24 +14,24 @@ import { timeframeSchema } from "./settings";
 import { marketBiasSchema } from "./sessionLive";
 
 /**
- * Trade Planner module — planned trades as first-class entities, distinct
+ * Trade Planner module - planned trades as first-class entities, distinct
  * from executed trades (Trade). Cosmoz plans, calculates and validates;
  * execution stays external. A plan never places orders.
  *
  * Reuse map (nothing duplicated):
- * - direction: directionSchema (BUY/SELL) — same enum as Trade
- * - timeframe: timeframeSchema — same enum as trading preferences
- * - marketBias: marketBiasSchema — same enum as Session Live / SavedAnalysis
+ * - direction: directionSchema (BUY/SELL) - same enum as Trade
+ * - timeframe: timeframeSchema - same enum as trading preferences
+ * - marketBias: marketBiasSchema - same enum as Session Live / SavedAnalysis
  * - strategy/setup links: playbook domain remains canonical
  * - risk math: server recomputes with computeRR / suggestPositionSize from
- *   utils/risk.ts — the SAME canonical engine the trade form uses
+ *   utils/risk.ts - the SAME canonical engine the trade form uses
  * - checklist source: ChecklistTemplate (global + per-strategy) is composed
  *   INTO the plan checklist at creation; templates stay untouched
  */
 
 // ── Enums ────────────────────────────────────────────────────────────────────
 
-/** Plan lifecycle (spec §7). EXECUTED means "executed externally" — the
+/** Plan lifecycle (spec §7). EXECUTED means "executed externally" - the
  *  user flips it manually; Cosmoz never trades. */
 export const tradePlanStatusSchema = z.enum([
   "DRAFT",
@@ -68,7 +68,7 @@ export type PlanChecklistItemState = z.infer<typeof planChecklistItemStateSchema
 export const planReadinessStatusSchema = z.enum(["NOT_READY", "READY", "BLOCKED"]);
 export type PlanReadinessStatus = z.infer<typeof planReadinessStatusSchema>;
 
-/** Risk limit states (spec §30) — never color-only, always paired with a
+/** Risk limit states (spec §30) - never color-only, always paired with a
  *  textual chip in the UI. */
 export const riskLimitStateSchema = z.enum([
   "WITHIN_LIMIT",
@@ -94,13 +94,13 @@ export const planChecklistItemSchema = z.object({
   kind: planChecklistItemKindSchema,
   required: z.boolean(),
   state: planChecklistItemStateSchema,
-  /** Last AUTO evaluation outcome code (e.g. "RR_BELOW_MIN") — null for MANUAL. */
+  /** Last AUTO evaluation outcome code (e.g. "RR_BELOW_MIN") - null for MANUAL. */
   detail: z.string().max(60).nullable(),
 });
 export type PlanChecklistItem = z.infer<typeof planChecklistItemSchema>;
 
 /**
- * Readiness — the system must explain WHY (spec §47). `blockers` holds the
+ * Readiness - the system must explain WHY (spec §47). `blockers` holds the
  * stable codes of failed required AUTO checks; messages live in dictionaries.
  */
 export const planReadinessSchema = z.object({
@@ -122,13 +122,13 @@ export const tradePlanSchema = z.object({
   direction: directionSchema,
   timeframe: timeframeSchema,
   marketBias: marketBiasSchema,
-  /** Playbook link — the strategy/setup remain the canonical definitions. */
+  /** Playbook link - the strategy/setup remain the canonical definitions. */
   strategyId: uuidSchema.nullable(),
   setupId: uuidSchema.nullable(),
   entryPrice: positiveDecimalStringSchema,
   stopLoss: positiveDecimalStringSchema.nullable(),
   takeProfit: positiveDecimalStringSchema.nullable(),
-  /** Percent of account risked — config input, plain number. */
+  /** Percent of account risked - config input, plain number. */
   riskPercent: z.number().min(0).max(100),
   // ── Server-computed risk fields (never accepted from clients) ────────────
   accountBalance: decimalStringSchema,
@@ -175,7 +175,7 @@ export const createTradePlanInputSchema = z
   });
 export type CreateTradePlanInput = z.infer<typeof createTradePlanInputSchema>;
 
-/** Manual checklist state patch — AUTO items are server-authoritative and
+/** Manual checklist state patch - AUTO items are server-authoritative and
  *  ignore client-sent states. */
 export const planChecklistStatePatchSchema = z.object({
   id: z.string().min(1).max(80),
@@ -199,9 +199,9 @@ export const updateTradePlanInputSchema = z
     invalidation: z.string().max(2000).nullable().optional(),
     notes: z.string().max(4000).nullable().optional(),
     checklistStates: z.array(planChecklistStatePatchSchema).max(40).optional(),
-    /** Explicit lifecycle transition — validated against the current status. */
+    /** Explicit lifecycle transition - validated against the current status. */
     status: tradePlanStatusSchema.optional(),
-    /** Executed-trade link — accepted ONLY together with a status → EXECUTED
+    /** Executed-trade link - accepted ONLY together with a status → EXECUTED
      *  transition (the server rejects it in any other situation). */
     executedTradeId: uuidSchema.nullable().optional(),
   })
@@ -228,7 +228,7 @@ export type TradePlanResponse = z.infer<typeof tradePlanResponseSchema>;
 /**
  * One row of the exposure tables. `kind` separates ACTUAL open positions
  * (risk committed at entry) from PLANNED risk (READY plans, not yet executed)
- * — the two are never summed silently (spec §26/§27).
+ * - the two are never summed silently (spec §26/§27).
  */
 export const riskExposureRowSchema = z.object({
   id: uuidSchema,
@@ -252,7 +252,7 @@ export const riskExposureBlockSchema = z.object({
 export type RiskExposureBlock = z.infer<typeof riskExposureBlockSchema>;
 
 /**
- * GET /planner/risk — the ONE aggregate Risk & Money Management dataset.
+ * GET /planner/risk - the ONE aggregate Risk & Money Management dataset.
  * Composes EXISTING engines (no new math): balance from the account,
  * daily risk budget from the discipline rulesStatus methodology, position
  * risk from Trade.riskAmount, planned risk from READY plans, drawdown from
@@ -265,7 +265,7 @@ export const plannerRiskResponseSchema = z.object({
     startingBalance: decimalStringSchema,
     equityPeak: decimalStringSchema.nullable(),
   }),
-  /** The user's configured risk frame (Settings → Risk — read, never written here). */
+  /** The user's configured risk frame (Settings → Risk - read, never written here). */
   preferences: z.object({
     defaultRiskPct: z.number(),
     maxRiskPct: z.number(),
@@ -274,7 +274,7 @@ export const plannerRiskResponseSchema = z.object({
   }),
   daily: z.object({
     date: z.string(),
-    /** Risk committed today (Σ trade.riskAmount / balance × 100) — same
+    /** Risk committed today (Σ trade.riskAmount / balance × 100) - same
      *  methodology as /rules/status riskBudgetSpentPct. */
     riskBudgetSpentPct: z.number(),
     realizedPnl: decimalStringSchema,

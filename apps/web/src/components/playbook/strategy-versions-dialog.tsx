@@ -25,7 +25,7 @@ import { cn } from "@/lib/utils";
 
 const CURRENT_KEY = "__current";
 
-/** The definition fields worth diffing (§17 — the frozen definition). */
+/** The definition fields worth diffing (§17 - the frozen definition). */
 const DIFF_FIELD_KEYS = [
   "name",
   "description",
@@ -45,20 +45,20 @@ const truncate = (value: string, max = 140): string =>
   value.length > max ? `${value.slice(0, max)}…` : value;
 
 const render = (value: unknown): string => {
-  if (value === null || value === undefined) return "—";
-  if (typeof value === "string") return value.trim() === "" ? "—" : value;
-  if (Array.isArray(value)) return value.length === 0 ? "—" : value.join(" · ");
+  if (value === null || value === undefined) return "-";
+  if (typeof value === "string") return value.trim() === "" ? "-" : value;
+  if (Array.isArray(value)) return value.length === 0 ? "-" : value.join(" · ");
   if (typeof value === "object") {
     const parts = Object.entries(value as Record<string, unknown>)
       .filter(([, v]) => v !== null && v !== undefined)
       .map(([k, v]) => `${k}: ${String(v)}`);
-    return parts.length === 0 ? "—" : parts.join(" · ");
+    return parts.length === 0 ? "-" : parts.join(" · ");
   }
   return String(value);
 };
 
 /**
- * Strategy version diff — pick any two snapshots (historical or current) and
+ * Strategy version diff - pick any two snapshots (historical or current) and
  * read the definition changes field by field. The server freezes a snapshot
  * BEFORE every definition edit (§17), so a trade executed under v1 stays
  * explainable as v1 forever.
@@ -98,7 +98,7 @@ export function StrategyVersionsDialog({
 
   const [aKey, setAKey] = React.useState<string | null>(null);
   const [bKey, setBKey] = React.useState<string | null>(null);
-  // Default A = oldest snapshot, B = current — resolved once options load.
+  // Default A = oldest snapshot, B = current - resolved once options load.
   const [resolvedFor, setResolvedFor] = React.useState<string | null>(null);
   const optionsKey = `${strategy?.id ?? "none"}|${options.length}`;
   if (open && options.length > 0 && resolvedFor !== optionsKey) {
@@ -116,7 +116,7 @@ export function StrategyVersionsDialog({
       const after = render(b.snapshot![key]);
       const same = before === after;
       const kind: "SAME" | "ADDED" | "REMOVED" | "CHANGED" =
-        same ? "SAME" : before === "—" ? "ADDED" : after === "—" ? "REMOVED" : "CHANGED";
+        same ? "SAME" : before === "-" ? "ADDED" : after === "-" ? "REMOVED" : "CHANGED";
       return { label: V.diffFields[key], before, after, kind };
     }).filter((entry) => entry.kind !== "SAME");
   }, [options, aKey, bKey, V]);

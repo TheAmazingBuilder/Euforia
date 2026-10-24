@@ -5,7 +5,7 @@ import { apiPaths } from "@/lib/api/endpoints";
 import { mockStore } from "@/mocks/store";
 import { endpoint, latency, parseBody, readJson, requireAuth, toErrorResponse } from "./utils";
 
-/** Profile domain — GET /me (identity) + PATCH /me (direct edit). */
+/** Profile domain - GET /me (identity) + PATCH /me (direct edit). */
 export const profileHandlers = [
   http.get(endpoint(apiPaths.me), async ({ request }) => {
     await latency();

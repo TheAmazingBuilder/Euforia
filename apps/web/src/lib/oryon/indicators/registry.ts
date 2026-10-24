@@ -1,7 +1,7 @@
 import type { OryonIndicatorInstance, OryonIndicatorType } from "@cosmoz/shared";
 
 /**
- * Indicator registry — metadata for the IMPLEMENTED set (Phase 3 spec §4A).
+ * Indicator registry - metadata for the IMPLEMENTED set (Phase 3 spec §4A).
  * Only implemented indicators appear here; the UI renders the registry, so
  * a future type without a calculation cannot surface a fake "Add" action.
  */
@@ -82,7 +82,7 @@ export const INDICATOR_REGISTRY: Readonly<Record<OryonIndicatorType, IndicatorMe
   },
 };
 
-/** Dialog display order — matches the PRD RF-05 enumeration. */
+/** Dialog display order - matches the PRD RF-05 enumeration. */
 export const INDICATOR_ORDER: readonly OryonIndicatorType[] = [
   "sma",
   "ema",
@@ -95,7 +95,7 @@ export const INDICATOR_ORDER: readonly OryonIndicatorType[] = [
 
 /**
  * Theme token KEYS available for indicator lines. ORDER MIRRORS
- * getChartTheme().indicatorPalette (lib/utils/chart-theme.ts) — the series
+ * getChartTheme().indicatorPalette (lib/utils/chart-theme.ts) - the series
  * manager resolves key → live token value through that same array, so a new
  * token must be added in BOTH places (kept adjacent by convention).
  */
@@ -113,7 +113,7 @@ function newIndicatorId(): string {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
     return crypto.randomUUID();
   }
-  // Test/SSR fallback — never a silent collision source.
+  // Test/SSR fallback - never a silent collision source.
   return `i-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
@@ -162,7 +162,7 @@ export function defaultIndicatorInstance(
 }
 
 /**
- * Legend label — parameters INCLUDED so multiple instances of the same
+ * Legend label - parameters INCLUDED so multiple instances of the same
  * indicator are distinguishable at a glance (Phase 3 spec §8.10).
  */
 export function indicatorLabel(instance: OryonIndicatorInstance): string {

@@ -15,7 +15,7 @@ import type {
  *
  * Self-contained module state (same lifecycle as the academy engine): the
  * seeds regenerate per browser session, registrations and task mutations
- * live in memory — the mock contract a real NestJS module replaces 1:1.
+ * live in memory - the mock contract a real NestJS module replaces 1:1.
  *
  * Event dates are generated RELATIVE TO NOW so the "Upcoming" band always
  * has live content no matter when the sandbox boots.
@@ -35,7 +35,7 @@ type EventSeed = Omit<AcademyEvent, "registered" | "startsAt"> & { offsetHours: 
 const UPCOMING_SEEDS: EventSeed[] = [
   {
     id: "evt-workshop-risk-sizing",
-    title: "Workshop — Position sizing under pressure",
+    title: "Workshop - Position sizing under pressure",
     description:
       "Live lab: compute size for five messy real charts, then defend the number against a forced redraw of your stop. Bring a calculator and your last 10 losers.",
     type: "WORKSHOP",
@@ -50,7 +50,7 @@ const UPCOMING_SEEDS: EventSeed[] = [
   },
   {
     id: "evt-webinar-liquidity",
-    title: "Webinar — Where liquidity actually sits",
+    title: "Webinar - Where liquidity actually sits",
     description:
       "Equal highs, session opens and the myth of the stop hunt: a sober map of resting liquidity on FX and crypto, with repeatable marking rules.",
     type: "WEBINAR",
@@ -65,7 +65,7 @@ const UPCOMING_SEEDS: EventSeed[] = [
   },
   {
     id: "evt-qa-psychology",
-    title: "Live Q&A — Tilt, revenge and the reset routine",
+    title: "Live Q&A - Tilt, revenge and the reset routine",
     description:
       "Open mic with the psychology team. Bring your worst session of the month; we rebuild the recovery checklist together, step by step.",
     type: "LIVE_QA",
@@ -80,7 +80,7 @@ const UPCOMING_SEEDS: EventSeed[] = [
   },
   {
     id: "evt-exam-fundamentals",
-    title: "Certification window — Trading Fundamentals",
+    title: "Certification window - Trading Fundamentals",
     description:
       "Supervised 40-question exam on the Fundamentals track. A GOLD tier score unlocks the advanced risk syllabus. One attempt per window.",
     type: "EXAM",
@@ -95,9 +95,9 @@ const UPCOMING_SEEDS: EventSeed[] = [
   },
   {
     id: "evt-workshop-patterns",
-    title: "Workshop — Grading breakouts by context",
+    title: "Workshop - Grading breakouts by context",
     description:
-      "We grade twenty breakouts live — location, compression, volume and invalidation — and you score each one before the reveal. Brutal and useful.",
+      "We grade twenty breakouts live - location, compression, volume and invalidation - and you score each one before the reveal. Brutal and useful.",
     type: "WORKSHOP",
     host: "Jonas Feld",
     hostRole: "Chart patterns instructor",
@@ -113,9 +113,9 @@ const UPCOMING_SEEDS: EventSeed[] = [
 const PAST_SEEDS: EventSeed[] = [
   {
     id: "evt-webinar-structure",
-    title: "Webinar — Market structure without the mysticism",
+    title: "Webinar - Market structure without the mysticism",
     description:
-      "Swings, BOS and CHoCH defined precisely enough to code — and the three setups where structure says nothing at all.",
+      "Swings, BOS and CHoCH defined precisely enough to code - and the three setups where structure says nothing at all.",
     type: "WEBINAR",
     host: "Deniz Aksoy",
     hostRole: "Price action instructor",
@@ -128,7 +128,7 @@ const PAST_SEEDS: EventSeed[] = [
   },
   {
     id: "evt-qa-journaling",
-    title: "Live Q&A — From journal to edge",
+    title: "Live Q&A - From journal to edge",
     description:
       "How to read your own journal like a dataset: sample size traps, regime splits, and the two metrics worth tracking weekly.",
     type: "LIVE_QA",
@@ -192,7 +192,7 @@ const TASK_SEEDS: TaskSeed[] = [
   {
     id: "tsk-fund-orders",
     title: "Finish “Order types & execution”",
-    description: "Three lessons left — then run the checkpoint quiz until 80%+.",
+    description: "Three lessons left - then run the checkpoint quiz until 80%+.",
     kind: "LESSON",
     priority: "HIGH",
     dueOffsetHours: 20,
@@ -205,7 +205,7 @@ const TASK_SEEDS: TaskSeed[] = [
   {
     id: "tsk-drill-sr",
     title: "10 structure drill reps",
-    description: "Support/resistance drill — stay above 70% accuracy before logging off.",
+    description: "Support/resistance drill - stay above 70% accuracy before logging off.",
     kind: "DRILL",
     priority: "MEDIUM",
     dueOffsetHours: 8,
@@ -244,7 +244,7 @@ const TASK_SEEDS: TaskSeed[] = [
   {
     id: "tsk-flashcards",
     title: "Clear the flashcard backlog",
-    description: "The review queue is at 14 cards — zero it out today.",
+    description: "The review queue is at 14 cards - zero it out today.",
     kind: "DRILL",
     priority: "MEDIUM",
     dueOffsetHours: null,
@@ -256,7 +256,7 @@ const TASK_SEEDS: TaskSeed[] = [
   },
   {
     id: "tsk-quiz-fundamentals",
-    title: "Fundamentals checkpoint — passed",
+    title: "Fundamentals checkpoint - passed",
     description: "Scored 85% on the first attempt.",
     kind: "LESSON",
     priority: "HIGH",

@@ -27,7 +27,7 @@ import { integrationEngine } from "./integration-engine";
 import { mockStore } from "./store";
 
 /**
- * Monitoring engine — aggregates REAL observations from the running session
+ * Monitoring engine - aggregates REAL observations from the running session
  * (Monitoring MASTER PROMPT §4, §21). Nothing here is a hardcoded status:
  *
  * - API health   → client-observed telemetry from lib/api/telemetry.ts
@@ -41,7 +41,7 @@ import { mockStore } from "./store";
  * - Database     → the in-memory demo store's real entity counts + read
  *                  latency measured from API telemetry (§10).
  * - Events       → an append-only system event log fed by observed failures
- *                  and recoveries (§15) — distinct from the Security log.
+ *                  and recoveries (§15) - distinct from the Security log.
  * - Incidents    → derived from that event log; root causes only when the
  *                  evidence states one (§16).
  * - Alerts       → rules evaluated against the above at read time (§14).
@@ -94,7 +94,7 @@ function ago(iso: string | null, nowMs: number): string {
   return `${Math.floor(delta / 3_600_000)} h ago`;
 }
 
-// ── Job registry (§11) — definitions + real execution ledger ────────────────
+// ── Job registry (§11) - definitions + real execution ledger ────────────────
 
 interface JobDef {
   id: string;
@@ -119,7 +119,7 @@ const JOB_DEFS: JobDef[] = [
     name: "Integration sync",
     queue: "providers",
     schedule: "PERIODIC",
-    description: "Incremental provider synchronization with cursors — run from the Integration Hub (Sync action).",
+    description: "Incremental provider synchronization with cursors - run from the Integration Hub (Sync action).",
     manualRunnable: false,
   },
   {
@@ -159,7 +159,7 @@ const JOB_DEFS: JobDef[] = [
 export class MonitoringEngine {
   readonly startedAtMs: number;
 
-  /** Inbox sink — invoked once per NEW raised alert (module upgrade). */
+  /** Inbox sink - invoked once per NEW raised alert (module upgrade). */
   onAlertRaised: ((alert: { ruleId: AlertRuleId; severity: RaisedAlert["severity"]; message: string }) => void) | null = null;
 
   private thresholds: MonitoringThresholds;
@@ -209,7 +209,7 @@ export class MonitoringEngine {
     }
   }
 
-  /** Open a job run (REAL execution — ledger, not decoration §11). */
+  /** Open a job run (REAL execution - ledger, not decoration §11). */
   startJob(jobId: string, trigger: JobRun["trigger"]): string {
     const run: JobRun = {
       id: id(Date.now() & 0xffff ^ (this.jobs.length + 1)),
@@ -237,13 +237,13 @@ export class MonitoringEngine {
         source: `job:${run.jobId}`,
         type: "JOB_FAILURE",
         level: "ERROR",
-        message: `Job "${run.jobId}" failed — ${run.error ?? "unknown error"}`,
+        message: `Job "${run.jobId}" failed - ${run.error ?? "unknown error"}`,
         correlationKey: `job:${run.jobId}`,
       });
     }
   }
 
-  /** Seed bookkeeping — the one execution every session starts with. */
+  /** Seed bookkeeping - the one execution every session starts with. */
   markSeeded(durationMs: number): void {
     if (this.seedDone) return;
     this.seedDone = true;
@@ -251,7 +251,7 @@ export class MonitoringEngine {
     this.finishJob(runId, "SUCCESS", durationMs);
   }
 
-  // ── Thresholds (§14 — configurable) ────────────────────────────────────────
+  // ── Thresholds (§14 - configurable) ────────────────────────────────────────
 
   getThresholds(): MonitoringThresholds {
     return structuredClone(this.thresholds);
@@ -271,7 +271,7 @@ export class MonitoringEngine {
         if (rule.enabled !== undefined) current.enabled = rule.enabled;
         if (rule.thresholdValue !== undefined) {
           current.thresholdValue = rule.thresholdValue;
-          // The label is the human contract — it travels with the knob.
+          // The label is the human contract - it travels with the knob.
           if (current.thresholdValue !== null) {
             if (current.id === "API_DEGRADED") {
               current.thresholdLabel = `error rate > ${current.thresholdValue} % (min 10 requests)`;
@@ -299,7 +299,7 @@ export class MonitoringEngine {
     return this.thresholds.rules.find((rule) => rule.id === ruleId)?.enabled ?? false;
   }
 
-  /** Numeric knob of a rule — null/undefined falls back to the default. */
+  /** Numeric knob of a rule - null/undefined falls back to the default. */
   private ruleValue(ruleId: AlertRuleId, fallback: number): number {
     const value = this.thresholds.rules.find((rule) => rule.id === ruleId)?.thresholdValue;
     return typeof value === "number" && Number.isFinite(value) ? value : fallback;
@@ -374,7 +374,7 @@ export class MonitoringEngine {
     const statusCounts = new Map<number, number>();
     for (const call of calls) statusCounts.set(call.status, (statusCounts.get(call.status) ?? 0) + 1);
 
-    // Time-based analysis — minute buckets from the raw observations (§9).
+    // Time-based analysis - minute buckets from the raw observations (§9).
     const bucketMap = new Map<number, { count: number; errorCount: number }>();
     for (const call of calls) {
       const key = Math.floor(call.at / 60_000) * 60_000;
@@ -458,7 +458,7 @@ export class MonitoringEngine {
         id: "database",
         label: "Journal store",
         status: "OPERATIONAL",
-        evidence: "In-memory demo store serving reads — entity counts on the Database tab.",
+        evidence: "In-memory demo store serving reads - entity counts on the Database tab.",
         source: "engine",
         tab: "database",
       },
@@ -466,7 +466,7 @@ export class MonitoringEngine {
         id: "market-data",
         label: "Market data",
         status: "UNKNOWN",
-        evidence: "Observed client-side from the live quote feed — see the Market Data tab.",
+        evidence: "Observed client-side from the live quote feed - see the Market Data tab.",
         source: "client-observed",
         tab: "market-data",
       },
@@ -474,7 +474,7 @@ export class MonitoringEngine {
         id: "websocket",
         label: "Quote stream",
         status: "UNKNOWN",
-        evidence: "Observed client-side (socket.io / polling transport) — see the WebSockets tab.",
+        evidence: "Observed client-side (socket.io / polling transport) - see the WebSockets tab.",
         source: "client-observed",
         tab: "websockets",
       },
@@ -584,7 +584,7 @@ export class MonitoringEngine {
           { label: "Layer", value: "None server-side" },
           { label: "Client cache", value: "TanStack Query" },
         ],
-        evidence: "No server cache exists in this build — status stays Unknown instead of a fake green.",
+        evidence: "No server cache exists in this build - status stays Unknown instead of a fake green.",
       },
       {
         id: "storage",
@@ -615,7 +615,7 @@ export class MonitoringEngine {
           { label: "Cron", value: "Not wired (demo)" },
           { label: "Providers sync", value: "On demand / app-driven" },
         ],
-        evidence: "No scheduler process exists in this build — periodic jobs run when the app triggers them.",
+        evidence: "No scheduler process exists in this build - periodic jobs run when the app triggers them.",
       },
       {
         id: "queue",
@@ -635,7 +635,7 @@ export class MonitoringEngine {
           { label: "Feed", value: "socket.io + polling fallback" },
           { label: "Market service", value: ":3003 (gateway)" },
         ],
-        evidence: "Connection observed client-side — see the WebSockets tab for live counters.",
+        evidence: "Connection observed client-side - see the WebSockets tab for live counters.",
       },
     ];
     return { rows, sessionUptimeMs: uptime };
@@ -664,7 +664,7 @@ export class MonitoringEngine {
         : Math.round(readDurations.reduce((sum, value) => sum + value, 0) / readDurations.length);
 
     return {
-      kind: "In-memory demo store — no credentials, pool or host exposed (§10/§19)",
+      kind: "In-memory demo store - no credentials, pool or host exposed (§10/§19)",
       status: "OPERATIONAL",
       entities: [
         { label: "Trades", count: count("trades") },
@@ -682,8 +682,8 @@ export class MonitoringEngine {
       avgReadMs,
       slowQueries: api.endpoints.filter((endpoint) => endpoint.key.startsWith("GET") && endpoint.p95Ms > 250).length,
       unavailable: [
-        "Connection pool & storage size — no infrastructure in the demo sandbox",
-        "Replication / durability — in-memory store reseeds on reload (stated, not hidden)",
+        "Connection pool & storage size - no infrastructure in the demo sandbox",
+        "Replication / durability - in-memory store reseeds on reload (stated, not hidden)",
       ],
     };
   }
@@ -744,7 +744,7 @@ export class MonitoringEngine {
         failed: 0,
         queued: 0,
         retrying: 0,
-        evidence: "No email provider wired in this build — no fake delivery counts.",
+        evidence: "No email provider wired in this build - no fake delivery counts.",
       },
       {
         channel: "PUSH",
@@ -753,7 +753,7 @@ export class MonitoringEngine {
         failed: 0,
         queued: 0,
         retrying: 0,
-        evidence: "No push provider wired in this build — no fake delivery counts.",
+        evidence: "No push provider wired in this build - no fake delivery counts.",
       },
     ];
 
@@ -830,7 +830,7 @@ export class MonitoringEngine {
     const overview = integrationEngine.overview();
     const failedJobs = this.jobStatuses(nowMs).filter((job) => job.failureCount >= 2);
 
-    // API degraded (§14) — real error rate from observed requests, knob configurable.
+    // API degraded (§14) - real error rate from observed requests, knob configurable.
     if (this.ruleEnabled("API_DEGRADED")) {
       const errorRateThreshold = this.ruleValue("API_DEGRADED", 10);
       if (api.totalRequests >= 10 && api.errorRatePct >= errorRateThreshold) {
@@ -881,7 +881,7 @@ export class MonitoringEngine {
     return [...this.alerts.values()].sort((a, b) => b.lastSeenAt.localeCompare(a.lastSeenAt));
   }
 
-  /** Incidents derived from the append-only event log (§16 — no fabrication). */
+  /** Incidents derived from the append-only event log (§16 - no fabrication). */
   private incidents(nowMs: number): Incident[] {
     const incidents: Incident[] = [];
     const errorEvents = this.events.filter((event) => event.level !== "INFO");
@@ -984,7 +984,7 @@ export class MonitoringEngine {
     };
   }
 
-  /** Manual run for jobs with real work in the demo (§11 — honest gating). */
+  /** Manual run for jobs with real work in the demo (§11 - honest gating). */
   runJob(jobId: string): { accepted: boolean; message: string } {
     const def = JOB_DEFS.find((candidate) => candidate.id === jobId);
     if (def === undefined || !def.manualRunnable) {
@@ -993,7 +993,7 @@ export class MonitoringEngine {
         message:
           def === undefined
             ? "Unknown job."
-            : `"${def.name}" is ${def.schedule.toLowerCase()} and driven by the app in this build — no synthetic run is fabricated.`,
+            : `"${def.name}" is ${def.schedule.toLowerCase()} and driven by the app in this build - no synthetic run is fabricated.`,
       };
     }
     const runId = this.startJob(jobId, "MANUAL");
@@ -1008,7 +1008,7 @@ export class MonitoringEngine {
       return { accepted: true, message: `"${def.name}" completed.` };
     } catch (error) {
       this.finishJob(runId, "FAILED", Date.now() - startedAt, error instanceof Error ? error.message : String(error));
-      return { accepted: true, message: `"${def.name}" failed — see the ledger.` };
+      return { accepted: true, message: `"${def.name}" failed - see the ledger.` };
     }
   }
 }
@@ -1017,7 +1017,7 @@ function stuckRun(run: JobRun): boolean {
   return run.status === "RUNNING" && Date.now() - Date.parse(run.startedAt) > STUCK_RUNNING_MS;
 }
 
-/** Credential status from observable facts only — never the secret itself. */
+/** Credential status from observable facts only - never the secret itself. */
 function monitoringCredentialStatus(expiresAt: string | null): string {
   if (expiresAt === null) return "configured";
   return Date.parse(expiresAt) < Date.now() ? "expired" : "configured";
@@ -1026,5 +1026,5 @@ function monitoringCredentialStatus(expiresAt: string | null): string {
 const bootStartedAt = Date.now();
 export const monitoringEngine = new MonitoringEngine(bootStartedAt);
 // The fixture seed already executed while the modules loaded (store.ts runs
-// at import time) — record that REAL bootstrap in the job ledger.
+// at import time) - record that REAL bootstrap in the job ledger.
 monitoringEngine.markSeeded(Math.max(1, Date.now() - bootStartedAt));

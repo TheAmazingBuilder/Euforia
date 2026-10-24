@@ -58,7 +58,7 @@ export function RuleFormDialog({
 
   const fields = React.useMemo(() => ruleParamFields(type), [type]);
 
-  // Reset the draft each time the dialog opens — guarded render-time
+  // Reset the draft each time the dialog opens - guarded render-time
   // adjustment per the React docs "You might not need an effect" pattern.
   const [wasOpen, setWasOpen] = React.useState(open);
   if (open !== wasOpen) {

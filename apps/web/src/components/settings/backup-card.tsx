@@ -18,7 +18,7 @@ import { exportBackupWithToasts } from "@/lib/utils/backup-export";
 import { useI18n } from "@/i18n/i18n-provider";
 
 /**
- * Data & backup card (Priorité 3, feature 12) — export the user's authored
+ * Data & backup card (Priorité 3, feature 12) - export the user's authored
  * data as a plain JSON file, re-import it later. Validation happens twice:
  * client-side (zod, instant feedback) and server-side (same schema).
  * Export goes through the shared helper (also used by the Account tab).
@@ -48,7 +48,7 @@ export function BackupCard() {
     try {
       const text = await file.text();
       const json: unknown = JSON.parse(text);
-      // Client-side validation — same contract as the server.
+      // Client-side validation - same contract as the server.
       const payload = backupPayloadSchema.parse(json);
       const result = await importBackup.mutateAsync(payload);
       toast.success(B.toastImported, {

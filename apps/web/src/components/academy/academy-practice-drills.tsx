@@ -12,7 +12,7 @@ import { useAcademyPositionDrill, useAcademySrDrill, useAcademyZoneDrill, useLog
 import { useI18n } from "@/i18n/i18n-provider";
 
 /**
- * Engine-generated drills — support/resistance reading, position sizing
+ * Engine-generated drills - support/resistance reading, position sizing
  * arithmetic, supply/demand zone identification. Charts are drawn from the
  * engine's candle data; levels and bands are annotated in the ledger chart
  * language (token inks, hairline grid, mono tags).

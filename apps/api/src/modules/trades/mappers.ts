@@ -1,5 +1,5 @@
 /**
- * Trading Core contract mappers — rows → shared-schema-shaped payloads.
+ * Trading Core contract mappers - rows → shared-schema-shaped payloads.
  * The ONLY place that translates persistence shapes into wire shapes.
  * Prisma rows never leak past this boundary; decimals serialize as the
  * shared decimal-string format; timestamps as UTC ISO with Z.
@@ -24,7 +24,7 @@ import type {
 } from "../../shared/contracts";
 
 /** Decimal → canonical decimal-string: at most 8 decimals (numeric(18,8)),
- * trailing zeros stripped — the shared toDecimalString wire convention. */
+ * trailing zeros stripped - the shared toDecimalString wire convention. */
 function decimal(value: PrismaDecimalLike): string {
   const fixed = value.toFixed(8);
   return fixed.includes(".") ? fixed.replace(/0+$/, "").replace(/\.$/, "") : fixed;

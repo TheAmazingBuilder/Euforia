@@ -11,12 +11,12 @@ import { isoDateTimeSchema, uuidSchema } from "./primitives";
  *
  * Design rules:
  * - Every status claims EVIDENCE. A component is never "operational" because
- *   a constant says so — the board carries the observation that justifies the
+ *   a constant says so - the board carries the observation that justifies the
  *   status, or the status is UNKNOWN (§4).
  * - Freshness thresholds (LIVE/DELAYED/STALE) are configurable data, not
  *   hardcoded assumptions (§17).
  * - API telemetry is OBSERVED client-side by the typed fetch wrapper and
- *   aggregated by the engine — request counts, latencies and error rates are
+ *   aggregated by the engine - request counts, latencies and error rates are
  *   real measurements from the running session (§9, §21).
  * - Monitoring never exposes infrastructure secrets: no credentials, no
  *   connection strings, no raw error internals (§10, §19).
@@ -43,7 +43,7 @@ export const componentStatusSchema = z.object({
   id: z.string().min(1),
   label: z.string().min(1),
   status: monitoringStatusSchema,
-  /** The observation that justifies the status — never a bare claim (§4). */
+  /** The observation that justifies the status - never a bare claim (§4). */
   evidence: z.string().min(1),
   /** "engine" = computed in the API layer; "client-observed" = the browser feed. */
   source: statusSourceSchema,
@@ -93,7 +93,7 @@ export const alertRuleIdSchema = z.enum([
 ]);
 export type AlertRuleId = z.infer<typeof alertRuleIdSchema>;
 
-/** Configurable rule set (§14 — alerts must be configurable). */
+/** Configurable rule set (§14 - alerts must be configurable). */
 export const monitoringThresholdsSchema = z.object({
   freshness: freshnessThresholdsSchema,
   rules: z.array(
@@ -110,7 +110,7 @@ export const monitoringThresholdsSchema = z.object({
 export type MonitoringThresholds = z.infer<typeof monitoringThresholdsSchema>;
 export type AlertRule = MonitoringThresholds["rules"][number];
 
-/** A raised alert — deduplicated by rule with occurrences (§14). */
+/** A raised alert - deduplicated by rule with occurrences (§14). */
 export const raisedAlertSchema = z.object({
   id: uuidSchema,
   ruleId: alertRuleIdSchema,
@@ -171,7 +171,7 @@ export const incidentSchema = z.object({
   /** Chronological event lines feeding the incident. */
   events: z.array(z.string().min(1)),
   resolution: z.string().nullable(),
-  /** Null unless derivable from evidence — never invented (§16). */
+  /** Null unless derivable from evidence - never invented (§16). */
   rootCause: z.string().nullable(),
 });
 export type Incident = z.infer<typeof incidentSchema>;
@@ -211,7 +211,7 @@ export const apiMonitoringSchema = z.object({
   statusCodes: z.array(z.object({ code: z.number().int(), count: z.number().int().nonnegative() })),
   endpoints: z.array(apiEndpointStatSchema),
   slowest: z.array(apiEndpointStatSchema),
-  /** Time-based analysis — one bucket per minute (§9). */
+  /** Time-based analysis - one bucket per minute (§9). */
   buckets: z.array(apiStatusBucketSchema),
   rateLimitedTotal: z.number().int().nonnegative(),
 });
@@ -237,7 +237,7 @@ export const databaseMonitoringSchema = z.object({
   failedQueries: z.number().int().nonnegative(),
   avgReadMs: z.number().nonnegative(),
   slowQueries: z.number().int().nonnegative(),
-  /** What the demo build cannot observe — stated, not faked (§10). */
+  /** What the demo build cannot observe - stated, not faked (§10). */
   unavailable: z.array(z.string().min(1)),
 });
 export type DatabaseMonitoring = z.infer<typeof databaseMonitoringSchema>;
@@ -307,12 +307,12 @@ export const notificationDeliverySchema = z.object({
 });
 export type NotificationDelivery = z.infer<typeof notificationDeliverySchema>;
 
-// ── Market data (§6) + WebSockets (§8) — client-observed shapes ─────────────
+// ── Market data (§6) + WebSockets (§8) - client-observed shapes ─────────────
 
 export const marketSymbolStatusSchema = z.object({
   symbol: z.string().min(1),
   price: z.number().nullable(),
-  /** Feed origin label — REAL or SIM, displayed honestly. */
+  /** Feed origin label - REAL or SIM, displayed honestly. */
   source: z.string().min(1),
   lastTickAt: isoDateTimeSchema.nullable(),
   ageMs: z.number().nullable(),
@@ -363,7 +363,7 @@ export const brokerConnectionSchema = z.object({
   latencyMs: z.number().int().nonnegative().nullable(),
   authState: z.string().min(1),
   syncErrors: z.number().int().nonnegative(),
-  /** Sync surfaces the adapter actually reports — "not reported" otherwise. */
+  /** Sync surfaces the adapter actually reports - "not reported" otherwise. */
   positionsSync: z.string().min(1),
   ordersSync: z.string().min(1),
   executionSync: z.string().min(1),
@@ -391,7 +391,7 @@ export type IntegrationHealth = z.infer<typeof integrationHealthSchema>;
 
 export const monitoringOverviewSchema = z.object({
   generatedAt: isoDateTimeSchema,
-  /** Session start — the observation window for every counter. */
+  /** Session start - the observation window for every counter. */
   windowStartedAt: isoDateTimeSchema,
   overall: monitoringStatusSchema,
   overallEvidence: z.string().min(1),
@@ -440,7 +440,7 @@ export const monitoringThresholdsUpdateInputSchema = z.object({
       z.object({
         id: alertRuleIdSchema,
         enabled: z.boolean().optional(),
-        /** Custom numeric knob (p95 ms, error-rate %…) — null clears it. */
+        /** Custom numeric knob (p95 ms, error-rate %…) - null clears it. */
         thresholdValue: z.number().nullable().optional(),
       }),
     )
