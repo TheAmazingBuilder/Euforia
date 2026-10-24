@@ -37,7 +37,7 @@ export const ianaTimezoneSchema = z.string().min(1).superRefine((value, ctx) => 
     new Intl.DateTimeFormat("en-US", { timeZone: value });
   } catch {
     ctx.addIssue({
-      code: z.ZodIssueCode.custom,
+      code: "custom",
       message: "Unknown IANA timezone identifier",
     });
   }
@@ -510,7 +510,7 @@ export const dashboardWidgetItemSchema = z
   .superRefine((item, ctx) => {
     if (item.config && item.config.kind !== item.type) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         path: ["config"],
         message: `Config kind "${item.config.kind}" does not match widget type "${item.type}"`,
       });
@@ -524,7 +524,7 @@ export const dashboardWidgetItemSchema = z
         item.config.customFrom > item.config.customTo)
     ) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         path: ["config"],
         message: "CUSTOM period requires customFrom and customTo (from ≤ to)",
       });
@@ -603,13 +603,13 @@ export const dashboardFiltersSchema = z
     if (filters.period === "CUSTOM") {
       if (filters.customFrom === undefined || filters.customTo === undefined) {
         ctx.addIssue({
-          code: z.ZodIssueCode.custom,
+          code: "custom",
           path: ["customFrom"],
           message: "CUSTOM period requires customFrom and customTo",
         });
       } else if (filters.customFrom > filters.customTo) {
         ctx.addIssue({
-          code: z.ZodIssueCode.custom,
+          code: "custom",
           path: ["customTo"],
           message: "customFrom must be ≤ customTo",
         });
@@ -861,7 +861,7 @@ export const onboardingPreferencesSchema = z
   })
   .superRefine((value, ctx) => {
     const addIssue = (path: string, message: string) =>
-      ctx.addIssue({ code: z.ZodIssueCode.custom, path: [path], message });
+      ctx.addIssue({ code: "custom", path: [path], message });
     const isTerminal = value.status === "COMPLETED" || value.status === "SKIPPED";
 
     if (isTerminal && value.currentStep !== null) {

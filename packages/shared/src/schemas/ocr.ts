@@ -336,7 +336,7 @@ export type OcrFailure = z.infer<typeof ocrFailureSchema>;
  * raw user input (strings); the API re-normalizes and re-validates them with
  * the same domain rules as machine values before persisting.
  */
-export const ocrCorrectionRecordSchema = z.record(
+export const ocrCorrectionRecordSchema = z.partialRecord(
   ocrFieldKeySchema,
   z.string().max(128).nullable(),
 );
@@ -919,7 +919,7 @@ export type RecognizedField = z.infer<typeof recognizedFieldSchema>;
 export const recognizedTradeSchema = z.object({
   /** 1-based position within the screenshot. */
   index: z.number().int().positive(),
-  fields: z.record(recognitionFieldKeySchema, recognizedFieldSchema),
+  fields: z.partialRecord(recognitionFieldKeySchema, recognizedFieldSchema),
   pageIndex: z.number().int().nonnegative().optional(),
 });
 export type RecognizedTrade = z.infer<typeof recognizedTradeSchema>;

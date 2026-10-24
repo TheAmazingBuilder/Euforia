@@ -270,14 +270,14 @@ export const createTradeInputSchema = z
     const flagOffPlaybook = value.outOfPlaybook === true;
     if (hasStrategy && flagOffPlaybook) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         path: ["outOfPlaybook"],
         message: "Provide either strategyId or outOfPlaybook, not both",
       });
     }
     if (!hasStrategy && !flagOffPlaybook) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         path: ["strategyId"],
         message: "Provide strategyId or set outOfPlaybook: true",
       });
@@ -288,7 +288,7 @@ export const createTradeInputSchema = z
       value.exitAt < value.entryAt
     ) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         path: ["exitAt"],
         message: "exitAt must be after entryAt",
       });
@@ -343,7 +343,7 @@ export const closeTradeInputSchema = z
         const previous = index > 0 ? value.exits[index - 1] : undefined;
         if (previous !== undefined && exit.exitedAt < previous.exitedAt) {
           ctx.addIssue({
-            code: z.ZodIssueCode.custom,
+            code: "custom",
             path: ["exits", index, "exitedAt"],
             message: "Partial exits must be in chronological order",
           });

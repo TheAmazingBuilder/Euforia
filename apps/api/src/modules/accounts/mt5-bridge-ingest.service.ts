@@ -97,7 +97,7 @@ export const bridgeIngestEnvelopeSchema = z
     const parsed = schema.safeParse(value.payload);
     if (!parsed.success) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         path: ["payload"],
         message: `payload does not match the ${value.kind} bridge contract`,
       });

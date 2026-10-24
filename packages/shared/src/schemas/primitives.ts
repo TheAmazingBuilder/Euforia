@@ -61,7 +61,7 @@ export const dateKeySchema = z
     const parsed = new Date(`${value}T00:00:00.000Z`);
     if (Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== value) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         message: "Not a valid calendar date",
       });
     }
@@ -98,11 +98,11 @@ export const jsonValueSchema: z.ZodType<JsonValue> = z.lazy(() =>
     z.boolean(),
     z.null(),
     z.array(jsonValueSchema),
-    z.record(jsonValueSchema),
+    z.record(z.string(), jsonValueSchema),
   ]),
 );
 
 /** Object-shaped JSON column (keys are strings). */
-export const jsonObjectSchema = z.record(jsonValueSchema);
+export const jsonObjectSchema = z.record(z.string(), jsonValueSchema);
 
 export type JsonObject = { [key: string]: JsonValue };

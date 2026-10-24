@@ -108,7 +108,7 @@ export const lotSizeCalculatorInputSchema = z
   .superRefine((value, ctx) => {
     if (sameDecimal(value.entryPrice, value.stopLossPrice)) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         path: ["stopLossPrice"],
         message: "stopLossPrice must differ from entryPrice (zero stop distance is invalid)",
       });
@@ -116,7 +116,7 @@ export const lotSizeCalculatorInputSchema = z
     const { minVolume, maxVolume } = value.instrument;
     if (minVolume !== undefined && maxVolume !== undefined && !sameDecimal(minVolume, maxVolume) && Number(minVolume) > Number(maxVolume)) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         path: ["instrument", "maxVolume"],
         message: "maxVolume must be >= minVolume",
       });

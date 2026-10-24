@@ -283,7 +283,7 @@ export const accountTestInputSchema = z.object({
   providerId: z.string().min(1),
   methodId: z.string().min(1),
   environment: accountEnvironmentSchema,
-  credentials: z.record(z.string()),
+  credentials: z.record(z.string(), z.string()),
 });
 export type AccountTestInput = z.infer<typeof accountTestInputSchema>;
 
@@ -319,7 +319,7 @@ export const accountConnectInputSchema = z.object({
   providerId: z.string().min(1),
   methodId: z.string().min(1),
   environment: accountEnvironmentSchema,
-  credentials: z.record(z.string()),
+  credentials: z.record(z.string(), z.string()),
   /** Display name - auto-suggested from provider + environment when omitted. */
   name: z.string().min(1).max(60).optional(),
 });

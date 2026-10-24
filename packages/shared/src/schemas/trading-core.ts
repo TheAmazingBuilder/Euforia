@@ -218,7 +218,7 @@ export const createManualTradeInputSchema = z
       value.exitAt < value.entryAt
     ) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         path: ["exitAt"],
         message: "exitAt must be after entryAt",
       });
@@ -267,7 +267,7 @@ export const closeManualTradeInputSchema = z
         const previous = index > 0 ? value.exits[index - 1] : undefined;
         if (previous !== undefined && exit.exitedAt < previous.exitedAt) {
           ctx.addIssue({
-            code: z.ZodIssueCode.custom,
+            code: "custom",
             path: ["exits", index, "exitedAt"],
             message: "Partial exits must be in chronological order",
           });

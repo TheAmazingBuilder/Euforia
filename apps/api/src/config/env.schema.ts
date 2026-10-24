@@ -344,7 +344,7 @@ export type Env = z.infer<typeof envSchema>;
 const refinedEnvSchema = envSchema.superRefine((env, ctx) => {
   if (env.OCR_SERVICE_URL && !env.OCR_SERVICE_TOKEN) {
     ctx.addIssue({
-      code: z.ZodIssueCode.custom,
+      code: "custom",
       path: ["OCR_SERVICE_TOKEN"],
       message: "OCR_SERVICE_TOKEN is required when OCR_SERVICE_URL is set",
     });
@@ -357,7 +357,7 @@ const refinedEnvSchema = envSchema.superRefine((env, ctx) => {
   );
   if (env.BODY_LIMIT_BYTES <= largestUploadCap + Math.floor(largestUploadCap / 3)) {
     ctx.addIssue({
-      code: z.ZodIssueCode.custom,
+      code: "custom",
       path: ["BODY_LIMIT_BYTES"],
       message:
         "BODY_LIMIT_BYTES must exceed the largest image upload cap (OCR_UPLOAD_MAX_BYTES / TRADES_SCREENSHOT_MAX_BYTES) by the base64 inflation factor (×4/3)",
