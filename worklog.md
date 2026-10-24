@@ -2202,3 +2202,22 @@ Stage Summary:
 - 4 corrections livrees en 4 commits atomiques: 59f8487 (auto-login register), d11238d (build stamp), ca1d7aa (latence mocks), 5b5aeee (em dashes)
 - Navigation dev notablement plus fluide: execSync supprime + latence mocke /3.4; la lenteur residuelle en dev est la compilation Next a la volee (inherente au mode dev, voir build prod)
 - Register -> dashboard direct en mode reel sans verification email; mode mocke (PENDING_VERIFICATION) inchange
+
+---
+Task ID: 32
+Agent: Z.ai (main, sandbox collaboration)
+Task: Remediation des vulnerabilites Dependabot + audit pnpm complet (demande owner)
+
+Work Log:
+- AUDIT: pnpm audit --prod revelait 12 vulnerabilites (2 critical, 2 high, 4 moderate, 4 low) — plus large que les 2 moderates alertees par GitHub sur la branche par defaut (le PAT n'a pas le scope security_events, audit fait en local)
+- NEXT 16.3.8 -> 16.4.3 (commit 89b7535): patche GHSA-2464-fhr4-w9xw (RCE critique, Image Optimization SVG), GHSA-673q-mjm6-r5xr (RCE critique, use cache typed arrays), GHSA-p3m5-59mp-jv5r (DoS Server Actions). eslint-config-next garde en lockstep. pnpm 12 a auto-ajoute minimumReleaseAgeExclude pour les paquets next@16.4.3 (sortis la veille, politique supply-chain) — conserve et documente dans pnpm-workspace.yaml
+- FAST-URI (commit 4fb05d2): overrides par-major 'fast-uri@^3.0.0': ^3.1.9 et 'fast-uri@^4.0.0': ^4.2.3 dans pnpm-workspace.yaml (convention repo: pins de securite cote workspace yaml, pas package.json racine) — patche les 2 moderates GitHub (GHSA-w74x-v6f9-j3xg, GHSA-wjr9-j795-jxcr) + 2 lows (GHSA-xhq7-xmqj-769h, GHSA-333x-w4r6-6crp), transitoires via la stack Fastify (ajv / fast-json-stringify / @fastify/ajv-compiler)
+- ZOD 3.25.76 -> 4.6.7 (commit 2e002ba): patche GHSA-mrhx-c7xc-m3w5 (high, CVSS 8.2 — DoS par epuisement memoire, seul correctif dispo en 4.x). Audit de breaking changes sur les 122 fichiers importeurs: z.record 2 args obligatoires (primitives.ts, tradingAccount.ts), z.record a cles enum devenu TOTAL -> z.partialRecord pour les corrections OCR et les champs recus (contrat partiel prouve par les sites 'fields[key]?.value ?? null' — piege silencieux sinon), z.ZodIssueCode supprime -> litteral 'custom' (5 sites), casts tests alignes sur le pattern du service. Test de non-regression zod4-migration.spec.ts ajoute (7 tests) pour verrouiller la semantique partielle des records a cles enum
+- VERIFICATION BISSECTABILITE: 3 commits atomiques avec lockfiles coherent a chaque etape (regenere pas-a-pas: next seul, puis +fast-uri, puis +zod), chaque commit verifie independamment
+- INCIDENT SANDBOX: restart entre les sessions 31 et 32 — clone local restaure a 96db17c (commits Task 30/31 perdus localement, presents sur l'origin). Les commits securite construits sur la base obsolete ont ete REBASES sur origin/683a01a: conflit unique (tradingAccount.ts) resolu en union (fix zod 4 + em-dash Task31), worklog merge en conservant les entrees 30+31+32 dans l'ordre; lecon: verifier `git fetch && git status` au debut de CHAQUE session
+- VALIDATION FINALE: tsc OK x3 (web, shared, api src — NB: 8 erreurs PREEXISTANTES dans apps/api/test/global-setup.ts presentes sur HEAD propre), vitest web 230/230 (223 + 7 nouveaux), next build prod SUCCES, pnpm audit --prod = "No known vulnerabilities found" (12 -> 0)
+
+Stage Summary:
+- 12 vulnerabilites -> 0: 2 critiques (RCE Next.js), 2 high (DoS Zod, DoS Next), 4 moderate + 4 low (fast-uri x6 advisories)
+- Les alerts Dependabot GitHub devraient se resoudre au prochain scan de la branche; le token PAT fourni ne permet pas de consulter/dismiss les alerts (scope Contents uniquement) — owner a verifier sur https://github.com/TheAmazingBuilder/Euforia/security/dependabot
+- Recommandation owner: relancer la suite de tests API avec Postgres externe (docker-compose) pour couvrir le runtime NestJS avec zod 4 — la sandbox n'a pas de Docker; les tests web+shared (230) couvrent deja les schemas au runtime
