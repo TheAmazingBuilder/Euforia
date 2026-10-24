@@ -8,7 +8,7 @@ import { authEngine } from "@/mocks/auth-engine";
 /** Small helpers shared by every MSW handler. */
 
 /**
- * Guard private endpoints (spec §68 — "no unauthorized private route
+ * Guard private endpoints (spec §68 - "no unauthorized private route
  * access"): protected mock handlers call this BEFORE touching the store so
  * private data never leaves the mock backend without a valid Bearer access
  * token. The future NestJS backend enforces the same rule for real.
@@ -22,8 +22,10 @@ export function requireAuth(request: Request): void {
 /** Resolve an endpoint path to the exact URL form the fetch client produces. */
 export const endpoint = (path: string): string => buildApiUrl(path);
 
-/** Deterministic simulated latency so loading states are visible. */
-export const latency = (): Promise<void> => delay(120);
+/** Deterministic simulated latency so loading states stay visible without
+ *  making every navigation feel sluggish (was 120ms - stacked waterfall
+ *  requests added up to a full second of pure artificial delay per page). */
+export const latency = (): Promise<void> => delay(35);
 
 export function parseBody<T>(schema: ZodType<T>, body: unknown): T {
   if (body === null || body === undefined) {
@@ -54,7 +56,7 @@ export async function readJson(request: Request): Promise<unknown> {
   }
 }
 
-/** msw 2.15 types path params as `string | readonly string[]` — normalize. */
+/** msw 2.15 types path params as `string | readonly string[]` - normalize. */
 export function pathParam(params: object, key: string): string {
   const value = (params as Record<string, unknown>)[key];
   if (typeof value !== "string") {
