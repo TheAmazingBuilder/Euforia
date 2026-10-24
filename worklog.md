@@ -2185,3 +2185,20 @@ Stage Summary:
 - Pont operationnel: les modifications de la sandbox sont poussees directement sur origin/work/euforia-collaboration
 - Workflow: chaque modification = commit atomique + push immediate (convention demande par l'owner)
 - Token revoquable: GitHub > Settings > Developer settings > Fine-grained tokens
+
+---
+Task ID: 31
+Agent: Z.ai (main, sandbox collaboration)
+Task: UX fixes + perf + typographie (4 demandes owner)
+
+Work Log:
+- FIX REGISTER: apres register d'un compte ACTIVE, l'utilisateur rebondissait sur /login au lieu du dashboard. Le form detient deja les credentials en memoire -> auto-login silencieux (setAccessToken + setAuthenticated) puis router.replace("/") vers le dashboard; tout echec de login retombe proprement sur l'ancien parcours "compte cree, connectez-vous" avec email pre-rempli (commit 59f8487)
+- BUILD STAMP SUPPRIME: composant build-stamp.tsx (chip fixe "BUILD <hash> <time> UTC") efface + usage retire du layout racine. Effet perf de bord: le composant executait execSync("git rev-parse") a CHAQUE render serveur du layout en dev (spawn de process, tres couteux sous Windows) — c'etait un frein direct a chaque navigation (commit d11238d)
+- PERF NAVIGATION: 3 causes identifiees et corrigees/attaquees: (1) execSync BuildStamp [supprime], (2) delay MSW artificiel de 120ms par requete en mode mocke -> reduit a 35ms (les waterfalls empilaient pres d'une seconde de latence fake par page) (commit ca1d7aa), (3) reste la compilation a la volee de next dev — RECOMMANDATION OWNER: tester en prod (pnpm build + pnpm start) pour evaluer la vraie vitesse; dev compile chaque page au premier passage
+- EM DASHES: remplace U+2014 par hyphen-minus dans 922 fichiers / 9689 occurrences (apps/web/src, apps/api/src, packages/shared/src, mini-services) via script Python persiste hors-repo; seul usage fonctionnel (split("—") du deleteAllConfirm Oryon) mis a jour des deux cotes; box-drawing chars des separateurs de commentaires (U+2500) non touches (commit 5b5aeee)
+- VALIDATION: tsc --noEmit OK (web, shared, api src) — NB: 8 erreurs PREEXISTANTES dans apps/api/test/global-setup.ts presentes sur HEAD propre (match[1] indexing strict), hors de ma portee; vitest web 223/223 PASS; next build prod SUCCES (toutes routes generees)
+
+Stage Summary:
+- 4 corrections livrees en 4 commits atomiques: 59f8487 (auto-login register), d11238d (build stamp), ca1d7aa (latence mocks), 5b5aeee (em dashes)
+- Navigation dev notablement plus fluide: execSync supprime + latence mocke /3.4; la lenteur residuelle en dev est la compilation Next a la volee (inherente au mode dev, voir build prod)
+- Register -> dashboard direct en mode reel sans verification email; mode mocke (PENDING_VERIFICATION) inchange
