@@ -36,6 +36,8 @@ minimumReleaseAgeExclude:
   - eslint-config-next@16.4.3
   - next@16.4.3
 
+# Security pins (MASTER QA audit + security audit 2026-10-19 partie 2 §2.38):
+# every line forces the patched version of a known advisory, transitive or not.
 overrides:
   fastify: 5.12.7
   # GHSA-v888 (deepmerge-ts stack exhaustion) — transitive via @prisma/config.
@@ -44,3 +46,9 @@ overrides:
   source-map-js: 1.2.2
   # GHSA-wq5f (sharp librsvg CVE-2026-96889) — transitive via next.
   sharp: 0.35.5
+  # GHSA-w74x-v6f9-j3xg / GHSA-wjr9-j795-jxcr (moderate) + GHSA-xhq7-xmqj-769h /
+  # GHSA-333x-w4r6-6crp (low) — transitive via the Fastify stack (ajv /
+  # fast-json-stringify / @fastify/ajv-compiler). Per-major pins keep each
+  # resolution inside its original major line: zero API risk.
+  'fast-uri@^3.0.0': ^3.1.9
+  'fast-uri@^4.0.0': ^4.2.3
