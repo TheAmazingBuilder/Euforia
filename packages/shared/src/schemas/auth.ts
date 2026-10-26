@@ -91,22 +91,6 @@ export const registerInputSchema = z.object({
 });
 export type RegisterInput = z.infer<typeof registerInputSchema>;
 
-/**
- * Mock-delivery affordance: in the MSW environment no mail service exists,
- * so the one-time verification token rides along with an explicit
- * `delivery: "MOCKED"` marker (same precedent as the 2FA demoCode). A real
- * backend never returns `verificationToken`.
- */
-export const registerResponseSchema = z.object({
-  user: authUserSchema,
-  status: accountStatusSchema,
-  verificationSentAt: isoDateTimeSchema,
-  delivery: z.enum(["EMAIL", "MOCKED"]),
-  verificationToken: z.string().min(10).optional(),
-  verificationExpiresAt: isoDateTimeSchema.nullable(),
-});
-export type RegisterResponse = z.infer<typeof registerResponseSchema>;
-
 // ── Login (§14, §25) ─────────────────────────────────────────────────────────
 
 export const loginInputSchema = z.object({
@@ -128,6 +112,30 @@ export const authSuccessSchema = z.object({
   session: authSessionSchema,
 });
 export type AuthSuccess = z.infer<typeof authSuccessSchema>;
+
+/**
+ * Mock-delivery affordance: in the MSW environment no mail service exists,
+ * so the one-time verification token rides along with an explicit
+ * `delivery: "MOCKED"` marker (same precedent as the 2FA demoCode). A real
+ * backend never returns `verificationToken`.
+ */
+export const registerResponseSchema = z.object({
+  user: authUserSchema,
+  status: accountStatusSchema,
+  verificationSentAt: isoDateTimeSchema,
+  delivery: z.enum(["EMAIL", "MOCKED"]),
+  verificationToken: z.string().min(10).optional(),
+  verificationExpiresAt: isoDateTimeSchema.nullable(),
+  /**
+   * Auto-login affordance: when registration lands on an ACTIVE account
+   * (email verification not required), the backend returns the same
+   * credentials a successful login would, so the client goes straight to
+   * the dashboard instead of bouncing back to /login. Optional - pending
+   * accounts omit it.
+   */
+  session: authSuccessSchema.optional(),
+});
+export type RegisterResponse = z.infer<typeof registerResponseSchema>;
 
 export const mfaRequiredSchema = z.object({
   mfaRequired: z.literal(true),

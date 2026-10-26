@@ -9,7 +9,7 @@
 import { Inject, Injectable, Optional } from "@nestjs/common";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { REFRESH_COOKIE_NAME, TokenService } from "./token.service";
-import { IdentityRepository, type UserRow } from "./identity.repository";
+import { IdentityRepository, type SessionRow, type UserRow } from "./identity.repository";
 import { PasswordHasherService } from "./password-hasher.service";
 import { AuthRateLimiterService } from "./auth-rate-limiter.service";
 import { SecurityEventService, type RequestFingerprint } from "../security/security-event.service";
@@ -21,6 +21,7 @@ import {
   UNKNOWN_LOCATION,
 } from "./client-metadata";
 import { toAuthSession, toAuthUser } from "./mappers";
+import type { AuthSuccess } from "../../shared/contracts";
 import {
   ConflictError,
   ForbiddenError,
@@ -38,6 +39,9 @@ interface MfaChallenge {
   userId: string;
   expiresAt: number;
 }
+
+/** Login-shaped credentials returned by register() on auto-login accounts. */
+type RegisterSession = AuthSuccess & { session: ReturnType<typeof toAuthSession> };
 
 export interface RequestLike {
   ip?: string;
@@ -77,12 +81,21 @@ export class AuthService {
 
   async register(
     input: { name: string; email: string; password: string },
+    reply: FastifyReply,
   ): Promise<{
     user: ReturnType<typeof toAuthUser>;
     status: string;
     verificationSentAt: string;
     delivery: "EMAIL";
     verificationExpiresAt: string;
+    /**
+     * Auto-login affordance: when registration lands on an ACTIVE account
+     * (email verification disabled), the response carries the same
+     * credentials a successful login would, so the client goes straight to
+     * the dashboard instead of bouncing back to /login. Pending accounts
+     * omit it. The refresh cookie is set on `reply` when present.
+     */
+    session?: RegisterSession;
   }> {
     const check = this.limiter.check("register", input.email);
     if (!check.allowed) {
@@ -116,12 +129,45 @@ export class AuthService {
       ? await this.issueVerificationChallenge(user, user.email)
       : new Date(Date.now() + 86_400_000).toISOString();
 
+    // Auto-login when the account lands ACTIVE (verification disabled):
+    // issue the same credentials a successful login would so the client
+    // goes straight to the dashboard instead of bouncing back to /login.
+    let session: RegisterSession | undefined;
+    if (!requireEmail && user.status === "ACTIVE") {
+      const meta = fingerprintOf({ ip: undefined, headers: reply.request.headers });
+      const refresh = this.tokens.issueRefreshToken(1);
+      const created = await this.repository.createSession({
+        userId: user.id,
+        refreshTokenHash: refresh.hash,
+        device: meta.device,
+        browser: meta.browser,
+        os: meta.os,
+        ipMasked: meta.ipMasked,
+        location: meta.location,
+        userAgent: meta.userAgent,
+        expiresAt: new Date(Date.now() + this.config.auth.refreshSessionHours * 3_600_000),
+      });
+      const access = await this.tokens.signAccessToken(user.id, created.id);
+      this.setRefreshCookie(reply, refresh.value, { remember: false });
+      await this.events.recordLogin(
+        { userId: user.id, type: "LOGIN_SUCCESS", context: "Signed in on registration.", outcome: "SUCCESS" },
+        meta,
+      );
+      session = {
+        user: toAuthUser(user),
+        accessToken: access.token,
+        accessTokenExpiresAt: access.expiresAt.toISOString(),
+        session: toAuthSession(created, created.id),
+      };
+    }
+
     return {
       user: toAuthUser(user),
       status: user.status,
       verificationSentAt: new Date().toISOString(),
       delivery: "EMAIL",
       verificationExpiresAt: expiresAt,
+      ...(session ? { session } : {}),
     };
   }
 
