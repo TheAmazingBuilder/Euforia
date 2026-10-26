@@ -1,12 +1,12 @@
 @import "tailwindcss";
 /* Kept from shadcn init: animation utilities (animate-in/out, fade/zoom) used
-   by shadcn/ui components. Not part of spec §5 — see deviation report. */
+   by shadcn/ui components. Not part of spec §5 - see deviation report. */
 @import "tw-animate-css";
 /* Kept from shadcn init: custom data-* variants + utilities the shadcn
    (radix-nova) components are generated against. No variables, no conflicts
-   with the token system below. Not part of spec §5 — see deviation report. */
+   with the token system below. Not part of spec §5 - see deviation report. */
 @import "shadcn/tailwind.css";
-/* Euforia brand tokens (palette + official gradients) — values only, opt-in
+/* Euforia brand tokens (palette + official gradients) - values only, opt-in
    styling. The app theme system below is untouched. */
 @import "../design-system/euforia.css";
 
@@ -16,7 +16,7 @@
   [data-theme="dark-blue"], [data-theme="dark-blue"] *));
 
 /* ============================================================
-   COSMOZ — "Le Registre" design world (2026 refonte)
+   COSMOZ - "Le Registre" design world (2026 refonte)
    Three expressions of the same ink-and-paper record:
    - dark-blue → "Encre" (default): ink night, cool cast
    - dark      → "Carbone": neutral carbon
@@ -44,21 +44,21 @@
   --radius: 8px;
   /* authorized addition: destructive-foreground (shadcn needs it) */
   --destructive-foreground: #0E1116;
-  /* authorized addition (2026-10): Academy category hues — 12 teaching tracks
+  /* authorized addition (2026-10): Academy category hues - 12 teaching tracks
      each own an identity ink. Bright set for dark themes. Consumed ONLY through
      var()/color-mix in .tsx; charts and illustrations read these directly. */
-  --cat-fund: #E2B04A;        /* Trading Fundamentals — amber   */
-  --cat-risk: #E0655F;        /* Risk Management — carmine      */
-  --cat-ta: #4FA3E8;          /* Technical Analysis — sky       */
-  --cat-pa: #A57BE8;          /* Price Action — violet          */
-  --cat-candles: #E88B4F;     /* Candlestick Patterns — ember   */
-  --cat-patterns: #45C4D8;    /* Chart Patterns — cyan          */
-  --cat-indicators: #46C79A;  /* Indicators — emerald           */
-  --cat-strategies: #D967AC;  /* Trading Strategies — magenta   */
-  --cat-mgmt: #3ECFB4;        /* Trade Management — teal        */
-  --cat-psy: #E879A8;         /* Trading Psychology — rose      */
-  --cat-structure: #7D8CEB;   /* Market Structure — indigo      */
-  --cat-advanced: #B9CC4F;    /* Advanced Trading — lime        */
+  --cat-fund: #E2B04A;        /* Trading Fundamentals - amber   */
+  --cat-risk: #E0655F;        /* Risk Management - carmine      */
+  --cat-ta: #4FA3E8;          /* Technical Analysis - sky       */
+  --cat-pa: #A57BE8;          /* Price Action - violet          */
+  --cat-candles: #E88B4F;     /* Candlestick Patterns - ember   */
+  --cat-patterns: #45C4D8;    /* Chart Patterns - cyan          */
+  --cat-indicators: #46C79A;  /* Indicators - emerald           */
+  --cat-strategies: #D967AC;  /* Trading Strategies - magenta   */
+  --cat-mgmt: #3ECFB4;        /* Trade Management - teal        */
+  --cat-psy: #E879A8;         /* Trading Psychology - rose      */
+  --cat-structure: #7D8CEB;   /* Market Structure - indigo      */
+  --cat-advanced: #B9CC4F;    /* Advanced Trading - lime        */
 }
 
 /* ---- Theme: dark / "Carbone" ---- */
@@ -78,7 +78,7 @@
   --radius: 8px;
   /* authorized addition: destructive-foreground (shadcn needs it) */
   --destructive-foreground: #0B0B0D;
-  /* Academy category hues — same bright set as dark-blue (declared on :root). */
+  /* Academy category hues - same bright set as dark-blue (declared on :root). */
 }
 
 /* ---- Theme: light / "Papier" ---- */
@@ -98,7 +98,7 @@
   --radius: 8px;
   /* authorized addition: destructive-foreground (shadcn needs it) */
   --destructive-foreground: #FFFFFF;
-  /* Academy category hues — deepened for paper contrast (light theme). */
+  /* Academy category hues - deepened for paper contrast (light theme). */
   --cat-fund: #96660F;        /* amber → bronze   */
   --cat-risk: #B84040;        /* carmine → deeper */
   --cat-ta: #1F6FB2;          /* sky → lapis      */
@@ -163,7 +163,7 @@
   --font-heading: var(--font-schibsted), var(--font-inter), sans-serif;
   --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
 
-  /* Radius scale — records are crisper than consumer apps:
+  /* Radius scale - records are crisper than consumer apps:
      sm 4 / md 6 / lg 8 / xl 10 */
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -183,7 +183,7 @@
     color: var(--text-primary);
     caret-color: var(--accent);
   }
-  /* Selection, caret, focus — the browser surfaces the craft-floor
+  /* Selection, caret, focus - the browser surfaces the craft-floor
      warns about: themed from the palette, not left default. */
   ::selection {
     background-color: color-mix(in srgb, var(--accent) 30%, transparent);
@@ -214,7 +214,7 @@
 }
 
 /* ---- Theme swatch dots (ThemeToggle) ----
-   Hard rule §9: zero hardcoded hex outside globals.css — the per-theme preview
+   Hard rule §9: zero hardcoded hex outside globals.css - the per-theme preview
    dots therefore live HERE as classes, consumed by theme-toggle.tsx. */
 .theme-dot-dark-blue {
   background-color: #0E1116;
@@ -236,7 +236,7 @@
 
 /* ---- Ledger primitives ------------------------------------ */
 
-/* Rubber-stamp marks for outcomes — bordered uppercase mono ink,
+/* Rubber-stamp marks for outcomes - bordered uppercase mono ink,
    NOT pills. Rotation is applied inline (±2deg) for the hand-struck feel. */
 .stamp {
   display: inline-flex;
@@ -259,7 +259,7 @@
 .stamp-ink { color: var(--text-muted); }
 .stamp-accent { color: var(--accent); }
 
-/* Stat band: ONE ruled band on a 12-column ledger grid —
+/* Stat band: ONE ruled band on a 12-column ledger grid -
    row 1 = two hero cells (span 6 each), row 2 = four KPI cells
    (span 3 each). Cells divide by hairlines; headers are ledger
    annotations; paddings are generous so nothing ever feels cramped. */
@@ -296,7 +296,7 @@
   .stat-kpi { border-top: 1px solid var(--border); }
 }
 
-/* Ledger annotation label — small mono tag used inside cells,
+/* Ledger annotation label - small mono tag used inside cells,
    never as a decorative kicker above standalone headings. */
 .ledger-label {
   font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
@@ -307,7 +307,7 @@
   color: var(--text-muted);
 }
 
-/* Graph-paper ruling for chart panels — the plotter grid that carries
+/* Graph-paper ruling for chart panels - the plotter grid that carries
    the equity line. Token-driven alpha hairlines, 24px pitch. */
 .chart-paper {
   background-image:
@@ -325,16 +325,16 @@
   background-position: center;
 }
 
-/* Double rule under totals — the accounting signature. */
+/* Double rule under totals - the accounting signature. */
 .rule-double {
   border-bottom: 1px solid var(--border);
   box-shadow: 0 3px 0 -2px var(--border);
 }
 
-/* ---- Scan frame — the viewfinder -------------------------------------------
+/* ---- Scan frame - the viewfinder -------------------------------------------
    Upload/scan surfaces wear corner ticks instead of heavy chrome: a dashed
    hairline body with four L-shaped accent corners, like a plotter's register
-   marks. Purely decorative structure — the inner content stays plain. */
+   marks. Purely decorative structure - the inner content stays plain. */
 .scan-frame {
   position: relative;
 }
@@ -353,7 +353,7 @@
 .scan-corner-br { bottom: -1px; right: -1px; border-bottom: 2px solid; border-right: 2px solid; border-bottom-right-radius: 2px; }
 .scan-frame[data-dragging="true"] .scan-corner { opacity: 1; }
 
-/* Thin meter bar for storage/usage strips — token-driven track + fill. */
+/* Thin meter bar for storage/usage strips - token-driven track + fill. */
 .meter {
   height: 3px;
   background-color: var(--surface-raised);
@@ -441,7 +441,7 @@
   color: var(--text-primary);
   line-height: 1.3;
 }
-/* Sticky ratio column — row labels stay visible through horizontal scrolls. */
+/* Sticky ratio column - row labels stay visible through horizontal scrolls. */
 .rr-sticky {
   position: sticky;
   left: 0;
@@ -528,7 +528,7 @@
 
 /* ── Dashboard compact density (same stored preference, scoped tighter) ───
    The dashboard is the densest screen, so COMPACT goes one notch further
-   HERE — but only here: scoped to [data-page="dashboard"] so every other
+   HERE - but only here: scoped to [data-page="dashboard"] so every other
    screen keeps the global compact rhythm above. Descriptions fold away,
    card padding shrinks, the KPI band tightens. COMFORTABLE = untouched. */
 [data-density="compact"] [data-page="dashboard"] [data-slot="card"] {
@@ -544,7 +544,7 @@
   padding: 1.125rem 1.25rem 1rem;
 }
 /* While dragging a widget the section dims (opacity class in JSX); the
-   grip communicates the affordance via cursor — nothing else changes, so
+   grip communicates the affordance via cursor - nothing else changes, so
    edit mode never redesigns the dashboard. */
 
 /* ── Print sheets: monthly review journal + quarterly analytics report +
@@ -591,13 +591,13 @@
   }
 }
 
-/* ── Candle-ink palettes — Academy pattern drills ────────────────────────
+/* ── Candle-ink palettes - Academy pattern drills ────────────────────────
    Teaching device: pattern anatomy is color-independent. The drill wraps
    its candle chart in [data-candle-ink] and CandleSeries resolves its
    inks through --candle-bull/--candle-bear (falling back to profit/loss),
    so re-inking never touches the app's chart tokens. Hex values live here
    only, per the design hard rule (zero hex in .tsx). "inverse" mirrors the
-   East-Asian convention (red = up) — the strongest color-independence
+   East-Asian convention (red = up) - the strongest color-independence
    lesson; "mono" is the classic hollow/filled newspaper chart. */
 [data-candle-ink="classic"] {
   --candle-bull: var(--profit);

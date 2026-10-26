@@ -7,7 +7,7 @@ export type { OnboardingStepId };
  *
  * The ids mirror the shared `onboardingStepIdSchema`; the ORDER lives here
  * because the wire contract stores only a resume pointer, not the sequence.
- * A future onboarding revision may reorder or add steps — it must bump
+ * A future onboarding revision may reorder or add steps - it must bump
  * ONBOARDING_VERSION and document the resume policy (see the report §resume).
  */
 export const ONBOARDING_STEP_ORDER = [
@@ -25,7 +25,7 @@ export function isOnboardingStepId(value: unknown): value is OnboardingStepId {
   return onboardingStepIdSchema.safeParse(value).success;
 }
 
-/** Defensive step resolution — a stored pointer that no longer exists (a
+/** Defensive step resolution - a stored pointer that no longer exists (a
  * future revision removed/renamed a step) falls back to the FIRST step of
  * the current sequence instead of trapping the user on a ghost step. */
 export function normalizeStepId(value: unknown): OnboardingStepId {

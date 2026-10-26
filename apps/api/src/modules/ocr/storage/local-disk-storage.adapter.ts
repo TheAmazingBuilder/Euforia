@@ -5,13 +5,13 @@
  *
  * Security properties (§7):
  *   - keys are constructed ONLY from the (validated) user uuid and the hex
- *     checksum — a client filename can never reach the filesystem;
+ *     checksum - a client filename can never reach the filesystem;
  *   - every read re-validates that the resolved path stays INSIDE the root
  *     (defense in depth against traversal through a corrupted key);
  *   - writes are atomic (tmp file + rename) so a crash never leaves a
  *     half-written image behind a valid metadata row.
  *
- * Retention (§31): deletion is explicit — recognition DELETE removes the
+ * Retention (§31): deletion is explicit - recognition DELETE removes the
  * file after the DB transaction commits; user cascade deletes are handled
  * by the application service (storage rows outlive no metadata).
  */
@@ -29,7 +29,7 @@ const EXT_BY_MIME: Record<string, string> = {
   "image/webp": "webp",
 };
 
-/** UUIDs are the only user ids this adapter ever sees — enforced here. */
+/** UUIDs are the only user ids this adapter ever sees - enforced here. */
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 @Injectable()
@@ -87,7 +87,7 @@ export class LocalDiskScreenshotStorage implements ScreenshotStorage {
     }
   }
 
-  /** Strict variant — invalid keys are a programming error, not a 404. */
+  /** Strict variant - invalid keys are a programming error, not a 404. */
   private resolveInside(storageKey: string): string {
     assertSafeStorageKey(storageKey);
     const target = resolve(this.root, storageKey);
@@ -97,7 +97,7 @@ export class LocalDiskScreenshotStorage implements ScreenshotStorage {
     return target;
   }
 
-  /** Lenient variant for reads/deletes — invalid keys resolve to null. */
+  /** Lenient variant for reads/deletes - invalid keys resolve to null. */
   private tryResolveInside(storageKey: string): string | null {
     try {
       return this.resolveInside(storageKey);

@@ -10,13 +10,13 @@ import { profileMetaKey } from "@/components/recognition/recognition-model";
 import type { RecognitionDict } from "@/i18n/dictionaries/en/recognition";
 
 /**
- * RecognitionSuccess — post-confirmation state (PROMPT 3 §29 + engine
+ * RecognitionSuccess - post-confirmation state (PROMPT 3 §29 + engine
  * quality §2.2/§3.3 + Account & Chart V1.1). The toast carries the
  * immediate feedback; this panel offers the next actions. The copy adapts
  * to the extraction profile:
  *   - TRADE_SUMMARY  → "Import confirmed" + journal CTA (+ tag chips);
  *   - ACCOUNT_POSITION → "Snapshot confirmed" + accounts CTA (nothing is
- *     written to the journal — honest non-trade outcome);
+ *     written to the journal - honest non-trade outcome);
  *   - CHART_ANALYSIS → "Reading confirmed" (+ journal CTA stays available).
  */
 export function RecognitionSuccess({

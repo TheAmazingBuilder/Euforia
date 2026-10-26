@@ -1,6 +1,6 @@
 /**
- * Session Live chart workspace probe — the TradingView-grade chart surface:
- *   1. FULL-WIDTH chart (no side rails — toolbar strip above, panels below);
+ * Session Live chart workspace probe - the TradingView-grade chart surface:
+ *   1. FULL-WIDTH chart (no side rails - toolbar strip above, panels below);
  *   2. Default indicator template on first visit: volume histogram + RSI(14);
  *   3. Indicator management (add EMA → 3, remove → 2);
  *   4. Drawing tools end-to-end (arm HLINE → place on chart → listed, undo);
@@ -18,11 +18,11 @@ const pageErrors = [];
 
 function ok(label, extra = "") {
   passed += 1;
-  console.log(`  ✓ ${label}${extra ? ` — ${extra}` : ""}`);
+  console.log(`  ✓ ${label}${extra ? ` - ${extra}` : ""}`);
 }
 function bad(label, extra = "") {
   failedCount += 1;
-  console.log(`  ✗ ${label}${extra ? ` — ${extra}` : ""}`);
+  console.log(`  ✗ ${label}${extra ? ` - ${extra}` : ""}`);
 }
 async function check(label, condition, extra = "") {
   condition ? ok(label, extra) : bad(label, extra);
@@ -47,7 +47,7 @@ async function openSession(page) {
 (async () => {
   const browser = await chromium.launch();
 
-  // ── Desktop dark — the main walkthrough ──────────────────────────────────
+  // ── Desktop dark - the main walkthrough ──────────────────────────────────
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   page.on("pageerror", (e) => pageErrors.push("PAGEERROR: " + String(e).slice(0, 300)));
   page.on("console", (m) => {
@@ -59,7 +59,7 @@ async function openSession(page) {
   });
   page.on("response", (r) => {
     // /api/auth/* 401s are the EXPECTED pre-login session probe (mock engine
-    // answers honestly for unauthenticated checks) — not a defect.
+    // answers honestly for unauthenticated checks) - not a defect.
     if (r.status() >= 400 && !r.url().includes("/api/auth/")) {
       pageErrors.push(`HTTP ${r.status()} ${r.url().slice(0, 140)}`);
     }
@@ -86,7 +86,7 @@ async function openSession(page) {
     bad("chart spans the full content width", "bounding boxes unavailable");
   }
 
-  // 2. Default indicator template — volume + RSI(14) on first visit.
+  // 2. Default indicator template - volume + RSI(14) on first visit.
   const indicatorCount = Number(await page.locator('[data-testid="analysis-chart"]').first().getAttribute("data-indicators"));
   await check("default template: 2 indicators active (VOLUME + RSI)", indicatorCount === 2, `data-indicators=${indicatorCount}`);
   const legendText = (await page.locator('[data-testid="chart-indicator-legend"]').first().textContent().catch(() => "")) ?? "";
@@ -128,7 +128,7 @@ async function openSession(page) {
   await page.keyboard.press("Escape");
   await page.waitForTimeout(300);
 
-  // 5. Multi-chart layout — aux panes inherit the template.
+  // 5. Multi-chart layout - aux panes inherit the template.
   await page.locator('[data-testid="chart-layout-2"]').click();
   await page.waitForTimeout(2000);
   const chartCount = await page.locator('[data-testid="analysis-chart"]').count();

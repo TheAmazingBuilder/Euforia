@@ -1,7 +1,7 @@
 /**
- * Unit — plan-vs-actual comparison engine (Phase 6 §12/§27/§28/§54/§55/§67).
+ * Unit - plan-vs-actual comparison engine (Phase 6 §12/§27/§28/§54/§55/§67).
  *
- * The engine produces OBJECTIVE deviations only — no quality scores, no
+ * The engine produces OBJECTIVE deviations only - no quality scores, no
  * tolerance labels (§55/§56). Financial math runs on decimal strings.
  */
 import { describe, expect, it } from "vitest";
@@ -41,7 +41,7 @@ function trade(overrides: Partial<ComparisonTradeInput> = {}): ComparisonTradeIn
   };
 }
 
-describe("plan-vs-actual — exact adherence (§67)", () => {
+describe("plan-vs-actual - exact adherence (§67)", () => {
   it("reports zero deviations when the trade realized the plan exactly", () => {
     const result = comparePlanAgainstTrade(plan(), trade(), EURUSD_SPECS, "SNAPSHOT");
     expect(result.hasPlan).toBe(true);
@@ -56,7 +56,7 @@ describe("plan-vs-actual — exact adherence (§67)", () => {
   });
 });
 
-describe("plan-vs-actual — deviations (§67)", () => {
+describe("plan-vs-actual - deviations (§67)", () => {
   it("computes entry deviation in price space and pips", () => {
     const result = comparePlanAgainstTrade(
       plan(),
@@ -87,7 +87,7 @@ describe("plan-vs-actual — deviations (§67)", () => {
       "SNAPSHOT",
     );
     expect(result.risk.deviation).toBe("40");
-    // Pips are a price-space unit — a money leg has none.
+    // Pips are a price-space unit - a money leg has none.
     expect(result.risk.deviationPips).toBeNull();
   });
 
@@ -121,12 +121,12 @@ describe("plan-vs-actual — deviations (§67)", () => {
       "SNAPSHOT",
     );
     expect(result.direction.match).toBe(false);
-    // Entry deviation still computed — SELL at 1.0856 vs planned 1.085.
+    // Entry deviation still computed - SELL at 1.0856 vs planned 1.085.
     expect(result.entry.deviation).toBe("0.0006");
   });
 });
 
-describe("plan-vs-actual — missing legs (§67: no fabrication)", () => {
+describe("plan-vs-actual - missing legs (§67: no fabrication)", () => {
   it("marks legs unavailable when the plan has no stop/target", () => {
     const result = comparePlanAgainstTrade(
       plan({ stopLoss: null, takeProfit: null, rrRatio: null }),
@@ -161,7 +161,7 @@ describe("plan-vs-actual — missing legs (§67: no fabrication)", () => {
     expect(result.size.available).toBe(true);
   });
 
-  it("handles the no-plan trade — review still functions (§67)", () => {
+  it("handles the no-plan trade - review still functions (§67)", () => {
     const result = comparePlanAgainstTrade(null, trade(), EURUSD_SPECS, "NONE");
     expect(result.hasPlan).toBe(false);
     expect(result.basedOn).toBe("NONE");
@@ -185,7 +185,7 @@ describe("plan-vs-actual — missing legs (§67: no fabrication)", () => {
   });
 });
 
-describe("plan-vs-actual — decimal integrity (§40)", () => {
+describe("plan-vs-actual - decimal integrity (§40)", () => {
   it("keeps exact decimal arithmetic (no binary-float drift)", () => {
     const result = comparePlanAgainstTrade(
       plan({ entryPrice: "0.1" }),

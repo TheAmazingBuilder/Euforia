@@ -1,5 +1,5 @@
 /**
- * e2e — Trade Review + Goals (B8) over the REAL AppModule + real database:
+ * e2e - Trade Review + Goals (B8) over the REAL AppModule + real database:
  * the review workflow (pending → reviewed → undo, lesson sync), the goals
  * engine (computed progress, honest PENDING without data), the lessons
  * library and the overview aggregate. Validated against SHARED contracts.
@@ -110,7 +110,7 @@ describe("review workflow (B8)", () => {
         entryQuality: 4,
         exitQuality: 3,
         riskManagement: 5,
-        lessons: "Waited for the retest — patience paid; size was conservative.",
+        lessons: "Waited for the retest - patience paid; size was conservative.",
         improvementNote: "Next time I will scale in half size at the retest.",
       },
     });
@@ -121,7 +121,7 @@ describe("review workflow (B8)", () => {
     expect(reviewed.reviewedAt).not.toBeNull();
 
     // Phase-6 reconciliation: the canonical Trade row is NEVER mutated by a
-    // review — the lesson lives on the review record itself (the trade's own
+    // review - the lesson lives on the review record itself (the trade's own
     // notes stay whatever the capture wrote; reviews own their lessons).
     const detail = (
       await app.inject({
@@ -180,7 +180,7 @@ describe("review workflow (B8)", () => {
         executionGrade: "A",
         followedPlan: true,
         playbookMatch: "MATCHED",
-        lessons: "Too early — the trade is still open.",
+        lessons: "Too early - the trade is still open.",
       },
     });
     expect(onOpen.statusCode).toBe(422);

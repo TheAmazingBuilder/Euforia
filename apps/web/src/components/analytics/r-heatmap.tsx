@@ -14,8 +14,8 @@ import { withAlpha } from "@/lib/utils/color";
 /**
  * Temporal edge heatmap (Phase 9 Overview): weekday × UTC hour bucket, cell
  * green/red by average R sign, intensity by magnitude. Cells below 10 trades
- * carry a visible "low n" treatment — dashed border + warning-tinted n label
- * — because statistical honesty is a product principle.
+ * carry a visible "low n" treatment - dashed border + warning-tinted n label
+ * - because statistical honesty is a product principle.
  */
 
 /** Magnitude scale ceiling: |avgR| beyond this renders at full intensity. */
@@ -74,7 +74,7 @@ export function RHeatmap({ cells, className }: RHeatmapProps) {
           label: {
             show: true,
             formatter: () => {
-              if (trades === 0) return "—";
+              if (trades === 0) return "-";
               const rLine = `{r|${formatR(avgR ?? 0)}}`;
               const nLine = lowN ? `{lowN|n=${trades}}` : `{n|n=${trades}}`;
               return `${rLine}\n${nLine}`;
@@ -118,7 +118,7 @@ export function RHeatmap({ cells, className }: RHeatmapProps) {
           if (!raw || raw.trades === 0) return H.noTrades;
           const day = ANALYTICS_WEEKDAYS[typed!.data.value[1]!]?.label ?? "";
           const bucketLabel = ANALYTICS_HOUR_BUCKETS[typed!.data.value[0]!]?.label ?? "";
-          const rText = raw.avgR === null ? "—" : formatR(raw.avgR);
+          const rText = raw.avgR === null ? "-" : formatR(raw.avgR);
           const lowNote =
             raw.trades < LOW_N_THRESHOLD
               ? `<div style="color:${t.warning};margin-top:2px">${S.lowSample}</div>`

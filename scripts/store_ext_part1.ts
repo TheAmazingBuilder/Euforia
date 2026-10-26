@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════════════════════
-// RESTORE EXTENSIONS — domains that were mid-wiring when the previous session
+// RESTORE EXTENSIONS - domains that were mid-wiring when the previous session
 // died (Academy save, Sep 27). Every builder here is deterministic from the
 // same seeded fixtures, computes server-side aggregates, and returns payloads
 // that satisfy the shared schemas (honest at zero, decimal-string money).
@@ -43,7 +43,7 @@ const brokerConnections: BrokerConnectionRow[] = data.accounts
     userId: user.id,
     accountId: account.id,
     provider: account.broker === "MANUAL" ? "OTHER" : account.broker,
-    label: `${account.broker === "MANUAL" ? "Generic" : account.broker} feed — ${account.name}`,
+    label: `${account.broker === "MANUAL" ? "Generic" : account.broker} feed - ${account.name}`,
     status: index === 0 ? "ACTIVE" : "ACTIVE",
     autoImport: index === 0,
     lastSyncAt: daysAgoIso(index === 0 ? 0.2 : 2.4),
@@ -71,9 +71,9 @@ const importBatches: ImportBatchRow[] = brokerConnections.map((connection, index
 const journalEntries: JournalEntry[] = (() => {
   const seeds: { title: string; body: string; tag: string; dayOffset: number }[] = [
     { title: "Patience paid on the BOOM spike", body: "Waited for the NY open range to settle before touching the sizer. Entry was textbook, exit at the planned level. No revenge after the first small red.", tag: "patience", dayOffset: 1 },
-    { title: "Checklist saved me from a FOMO entry", body: "The setup looked tempting mid-session but the checklist flagged news in 10 minutes. Skipped it — the move reversed within the hour. Process win, P&L irrelevant.", tag: "checklist", dayOffset: 2 },
+    { title: "Checklist saved me from a FOMO entry", body: "The setup looked tempting mid-session but the checklist flagged news in 10 minutes. Skipped it - the move reversed within the hour. Process win, P&L irrelevant.", tag: "checklist", dayOffset: 2 },
     { title: "Stop moved too early on CRASH", body: "I shaded the stop tighter because of a streak of losses. The trade would have survived the wick and hit target. Lesson: size down instead of moving stops.", tag: "leak", dayOffset: 4 },
-    { title: "Weekly review — the desk is calm", body: "Three green days out of four, every trade graded the same evening. The discipline band is trending up since I started journaling before the session instead of after.", tag: "review", dayOffset: 6 },
+    { title: "Weekly review - the desk is calm", body: "Three green days out of four, every trade graded the same evening. The discipline band is trending up since I started journaling before the session instead of after.", tag: "review", dayOffset: 6 },
   ];
   return seeds.map((seed, index) => ({
     id: `jrn_${String(index + 1).padStart(4, "0")}`,
@@ -124,7 +124,7 @@ const securityState = {
   ],
   recommendations: [
     { id: "rec_2fa", title: "Enable two-factor authentication", detail: "A second factor blocks 99% of account-takeover attempts.", done: false },
-    { id: "rec_pass", title: "Rotate your password quarterly", detail: "Your password is 34 days old — still fresh, plan a rotation.", done: true },
+    { id: "rec_pass", title: "Rotate your password quarterly", detail: "Your password is 34 days old - still fresh, plan a rotation.", done: true },
   ],
 };
 
@@ -139,7 +139,7 @@ const followedTraders = new Set<string>(["soc_2"]);
 const socialPostsState: SocialPost[] = [
   { id: "sp_1", traderId: "soc_2", handle: "ironrisk", displayName: "Ironrisk", avatarHue: 150, kind: "TRADE_SHARE", text: "Clean London sweep long on XAUUSD, +1.8R, checklist followed to the letter.", isFollowing: true, symbol: "XAUUSD", direction: "BUY", rMultiple: "1.8", pnl: null, likes: 23, likedByMe: false, comments: 4, createdAt: daysAgoIso(0.2) },
   { id: "sp_2", traderId: "soc_1", handle: "nova_fx", displayName: "Nova · synthetics", avatarHue: 210, kind: "MILESTONE", text: "30 days without breaking the daily loss limit. The register works.", isFollowing: false, symbol: null, direction: null, rMultiple: null, pnl: null, likes: 51, likedByMe: true, comments: 9, createdAt: daysAgoIso(1.1) },
-  { id: "sp_3", traderId: "soc_3", handle: "kd_prop", displayName: "K.D. Prop Diary", avatarHue: 25, kind: "LESSON", text: "Moving a stop is a decision — grade it like one. My leak this month was exactly there.", isFollowing: false, symbol: null, direction: null, rMultiple: null, pnl: null, likes: 17, likedByMe: false, comments: 3, createdAt: daysAgoIso(2.3) },
+  { id: "sp_3", traderId: "soc_3", handle: "kd_prop", displayName: "K.D. Prop Diary", avatarHue: 25, kind: "LESSON", text: "Moving a stop is a decision - grade it like one. My leak this month was exactly there.", isFollowing: false, symbol: null, direction: null, rMultiple: null, pnl: null, likes: 17, likedByMe: false, comments: 3, createdAt: daysAgoIso(2.3) },
 ];
 const socialMeState: SocialMe = {
   handle: "alex_trades",
@@ -184,13 +184,13 @@ function buildSystemHealth(): SystemHealth {
   };
 }
 
-/** System integrations — the lightweight demo catalog. */
+/** System integrations - the lightweight demo catalog. */
 const systemIntegrationsState: Integration[] = [
   { id: "int_deriv", name: "Deriv API", category: "broker", status: "connected", connectedAt: daysAgoIso(9), description: "Pulls closed positions from your Deriv account into the journal.", detail: "Demo build: simulated sync over the seeded ledger." },
   { id: "int_mt5", name: "MT4 / MT5 bridge", category: "broker", status: "disconnected", connectedAt: null, description: "Reads the MT terminal history and imports trades idempotently.", detail: "Demo build: no terminal is contacted." },
   { id: "int_market", name: "Market data feed", category: "data", status: "connected", connectedAt: daysAgoIso(30), description: "Prices, candles and session volume for Session Live.", detail: "Demo build: Binance-backed quotes via the market service." },
   { id: "int_eco", name: "Economic calendar", category: "data", status: "connected", connectedAt: daysAgoIso(30), description: "High-impact macro events mapped onto your trading days.", detail: "Demo build: deterministic weekly fixture generator." },
-  { id: "int_tv", name: "TradingView charts", category: "data", status: "disconnected", connectedAt: null, description: "Embeds pro charting for the replay view — never the source of truth.", detail: "Demo build: charting only, no execution." },
+  { id: "int_tv", name: "TradingView charts", category: "data", status: "disconnected", connectedAt: null, description: "Embeds pro charting for the replay view - never the source of truth.", detail: "Demo build: charting only, no execution." },
   { id: "int_news", name: "Market news feed", category: "data", status: "disconnected", connectedAt: null, description: "Headlines tagged by asset and importance for the session runner.", detail: "Demo build: provider-ready, not wired to a real vendor." },
   { id: "int_webhook", name: "Webhooks & alerts", category: "automation", status: "disconnected", connectedAt: null, description: "Signed inbound events with replay protection and retries.", detail: "Demo build: signing console is simulated." },
   { id: "int_backup", name: "Cloud backup", category: "productivity", status: "connected", connectedAt: daysAgoIso(2), description: "Nightly JSON snapshot of the journal for disaster recovery.", detail: "Demo build: export lives in your browser storage." },
@@ -204,7 +204,7 @@ const strategyById = new Map(data.strategies.map((strategy) => [strategy.id, str
 const closedTrades = (): Trade[] =>
   data.trades.filter((trade) => trade.status === "CLOSED" && !trade.deletedAt);
 const symbolOf = (trade: Trade): string =>
-  instrumentById.get(trade.instrumentId)?.symbol ?? "—";
+  instrumentById.get(trade.instrumentId)?.symbol ?? "-";
 const strategyNameOf = (trade: Trade): string | null =>
   trade.strategyId ? strategyById.get(trade.strategyId)?.name ?? null : null;
 const strategyColorOf = (trade: Trade): string | null =>

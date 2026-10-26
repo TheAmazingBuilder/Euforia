@@ -4,7 +4,6 @@ import * as React from "react";
 import { Check, ChevronDown, Wallet } from "lucide-react";
 
 import { useAccounts } from "@/lib/api/queries";
-import { DemoDataChip } from "@/components/demo-data-chip";
 import type { Account } from "@cosmoz/shared";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,7 +20,7 @@ const kindLabel = (type: Account["type"]): string =>
   type === "PROP_FIRM" ? "PROP" : type;
 
 /**
- * Account switcher — fed by the accounts API (useAccounts).
+ * Account switcher - fed by the accounts API (useAccounts).
  * Selection is local state only; real account-scoped data arrives later.
  */
 export function AccountSwitcher() {
@@ -88,8 +87,7 @@ export function AccountSwitcher() {
         )}
         <div className="flex items-center justify-between px-2 py-1.5">
           <span className="text-[11px] text-muted-foreground">Journal accounts</span>
-          {/* Phase 02: fixture catalog in mock mode — explicitly marked. */}
-          <DemoDataChip testId="account-switcher-demo-chip" />
+          {/* Phase 02: fixture catalog in mock mode - explicitly marked. */}
         </div>
       </DropdownMenuContent>
     </DropdownMenu>

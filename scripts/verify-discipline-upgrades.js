@@ -1,10 +1,10 @@
 /**
- * Verify — Discipline / Risk upgrades (4 user-selected features).
+ * Verify - Discipline / Risk upgrades (4 user-selected features).
  *  1. Violation Pareto (80/20): ranked by frequency, cumulative %, « vital
  *     few » highlighted, drill-through to the actual trades
  *  2. Emotion → outcome heatmap (server-computed, correlational by design)
  *  3. Capture guardrail: soft-lock after N violations today (preference),
- *     honest two-step acknowledgment — never a hard block
+ *     honest two-step acknowledgment - never a hard block
  *  4. Weekly discipline report pushed to the inbox on the new week
  * Plus light theme, mobile 390 and console health.
  */
@@ -24,7 +24,7 @@ const BASE = "http://localhost:3000";
 
   const results = [];
   const check = (name, ok, extra = "") =>
-    results.push(`${ok ? "PASS" : "FAIL"} — ${name}${extra ? ` (${extra})` : ""}`);
+    results.push(`${ok ? "PASS" : "FAIL"} - ${name}${extra ? ` (${extra})` : ""}`);
 
   // ── 1+2. Pareto + emotion heatmap (Discipline page) ────────────────────────
   await page.goto(`${BASE}/discipline`, { waitUntil: "networkidle", timeout: 60_000 });
@@ -46,7 +46,7 @@ const BASE = "http://localhost:3000";
     ((await pareto.textContent()) ?? "").includes("top 2 ="),
   );
 
-  // Heatmap FIRST — the drill-through below navigates away to /trades.
+  // Heatmap FIRST - the drill-through below navigates away to /trades.
   const emotionCard = page.locator('[data-testid="emotion-matrix"]');
   check("Emotion heatmap card rendered", await emotionCard.isVisible());
   const emotionRows = await page.locator('[data-testid^="emotion-row-"]').count();
@@ -72,7 +72,7 @@ const BASE = "http://localhost:3000";
     await tradeLinks.first().click();
     await page.waitForTimeout(1100);
     // The deep link consumes ?trade= (the URL is stripped on purpose once
-    // the drawer opens) — the drawer being open IS the success signal.
+    // the drawer opens) - the drawer being open IS the success signal.
     check(
       "Drill-through opens the trade drawer",
       (await page.locator('[data-testid="trade-detail-dialog"]').count()) > 0 ||
@@ -98,7 +98,7 @@ const BASE = "http://localhost:3000";
   await page.waitForTimeout(300);
 
   // ── 4. Guardrail: preference + soft-lock mechanics ─────────────────────────
-  // A full reload here RESEEDS the store — harmless because the preference
+  // A full reload here RESEEDS the store - harmless because the preference
   // is saved AFTER this navigation; everything downstream stays in-session.
   await page.goto(`${BASE}/settings#trading`, { waitUntil: "networkidle", timeout: 60_000 });
   await page.waitForTimeout(1000);
@@ -110,7 +110,7 @@ const BASE = "http://localhost:3000";
   check("Guardrail preference saved", await page.waitForSelector('[data-sonner-toast]:has-text("saved")', { timeout: 4000 }).then(() => true).catch(() => false));
 
   // Force a rule violation TODAY: capture trades until the engine trips
-  // (MAX_TRADES_PER_DAY limit 3 — the 3rd capture of the day breaches).
+  // (MAX_TRADES_PER_DAY limit 3 - the 3rd capture of the day breaches).
   const createdViolations = await page.evaluate(async () => {
     const instrumentsResponse = await fetch("/api/instruments");
     const instruments = (await instrumentsResponse.json()).instruments;

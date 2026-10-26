@@ -1,7 +1,7 @@
 /**
  * Test-only probe controller.
  *
- * NOT part of the application — exists solely to exercise the Foundation
+ * NOT part of the application - exists solely to exercise the Foundation
  * infrastructure end-to-end (validation pipe, error taxonomy, throttling)
  * without implementing any business domain (Phase 1 mandate §37).
  */
@@ -60,7 +60,7 @@ const ERROR_CASES: Record<string, () => never> = {
   infrastructure: () => {
     throw new InfrastructureError();
   },
-  // Raw unknown error — must surface as a sanitized InternalError.
+  // Raw unknown error - must surface as a sanitized InternalError.
   boom: () => {
     throw new Error("internal secret: postgres://user:hunter2@db/internal");
   },

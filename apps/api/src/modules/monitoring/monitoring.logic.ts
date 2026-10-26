@@ -1,8 +1,8 @@
 /**
- * Monitoring domain logic (Phase 17) — PURE functions, no Nest, no Prisma.
+ * Monitoring domain logic (Phase 17) - PURE functions, no Nest, no Prisma.
  *
  * Every status carries EVIDENCE and every derivation is deterministic from
- * observed facts — the monitoring board never invents health (§4/§10).
+ * observed facts - the monitoring board never invents health (§4/§10).
  * Separated from the service so the rules are unit-testable without a
  * running application (§47).
  */
@@ -26,7 +26,7 @@ import { randomUUID } from "node:crypto";
 export const DEFAULT_FRESHNESS = { liveMaxMs: 2_000, delayedMaxMs: 10_000 } as const;
 
 /** The 8 contract rules. MARKET_DATA_STALE and QUEUE_BACKLOG have no
- * server-side signal in this build (client-observed freshness; no queue) —
+ * server-side signal in this build (client-observed freshness; no queue) -
  * they stay configurable but never raise; NOTIFICATION_FAILURES, API_*
  * and broker/job/sync rules evaluate against real signals. */
 export const RULE_DEFAULTS: Array<{
@@ -97,7 +97,7 @@ export function mergeThresholdPatch(
   return { freshness, rules };
 }
 
-// ── Percentiles (nearest-rank — §13) ─────────────────────────────────────────
+// ── Percentiles (nearest-rank - §13) ─────────────────────────────────────────
 
 export function percentile(durations: number[], p: number): number {
   if (durations.length === 0) return 0;
@@ -113,7 +113,7 @@ export const SLOW_QUERY_MS = 250;
 
 /**
  * Aggregate the caller's OWN completed requests (§34) into the contract
- * shape. Error semantics (§14): an error is a ≥400 response — the
+ * shape. Error semantics (§14): an error is a ≥400 response - the
  * status-code histogram keeps 4xx (client) and 5xx (server) distinguishable,
  * and rate-limited (429) traffic is counted separately.
  */
@@ -148,7 +148,7 @@ export function computeApiMonitoring(calls: readonly ApiCallRecord[], now: Date)
     statusCodes.set(call.statusCode, (statusCodes.get(call.statusCode) ?? 0) + 1);
   }
 
-  // One bucket per minute for the last 30 minutes (§12) — derived from the
+  // One bucket per minute for the last 30 minutes (§12) - derived from the
   // ring, so the window is also bounded by ring capacity (honest window).
   const buckets: Array<{ at: string; count: number; errorCount: number }> = [];
   const currentMinute = Math.floor(now.getTime() / 60_000);
@@ -201,7 +201,7 @@ export function deriveApiStatus(api: ApiMonitoring): { status: MonitoringStatus;
   };
 }
 
-// ── Broker connection health (§24/§26 — mapped from Accounts' facts) ────────
+// ── Broker connection health (§24/§26 - mapped from Accounts' facts) ────────
 
 export interface ConnectionHealthFacts {
   status: string;
@@ -234,16 +234,16 @@ export function mapBrokerStatus(facts: ConnectionHealthFacts): BrokerConnectionS
  * (`jobRunStatusSchema` = RUNNING | SUCCESS | FAILED). The trading-sync job
  * has no scheduler in this build and its runs are written as
  * RUNNING | COMPLETED | FAILED (PARTIAL is reserved, Phase 03), while the
- * shared job contract speaks SUCCESS/FAILED — the same boundary mapping the
+ * shared job contract speaks SUCCESS/FAILED - the same boundary mapping the
  * email-dispatch job applies to SENT/FAILED. Mapping:
  *   RUNNING   → RUNNING   (a run is in flight)
  *   COMPLETED → SUCCESS   (all segments persisted)
  *   FAILED    → FAILED
- *   PARTIAL   → FAILED    (failures existed — conservative health view; the
+ *   PARTIAL   → FAILED    (failures existed - conservative health view; the
  *                         accounts domain preserves the finer status and the
  *                         errorCode travels in the job run's error field.
  *                         Revisit if PARTIAL production ships, Phase 03.)
- * Unknown values never pass through unchecked — they land on FAILED so the
+ * Unknown values never pass through unchecked - they land on FAILED so the
  * board never mistakes an unrecognized status for a healthy one.
  */
 export function toJobRunStatus(
@@ -259,7 +259,7 @@ export function toJobRunStatus(
   }
 }
 
-// ── Alert evaluation (§37/§38/§39) — conditions only; episodes live in the
+// ── Alert evaluation (§37/§38/§39) - conditions only; episodes live in the
 //    service. Only rules with REAL server-side signals evaluate here.
 
 export interface AlertFacts {
@@ -341,7 +341,7 @@ export function evaluateAlertRules(facts: AlertFacts, thresholds: MonitoringThre
     }
   }
   // MARKET_DATA_STALE / QUEUE_BACKLOG: no server-side signal in this build
-  // (client-observed freshness; no queue) — documented, never fabricated.
+  // (client-observed freshness; no queue) - documented, never fabricated.
   return conditions;
 }
 
@@ -376,7 +376,7 @@ export function groupIncidents(events: readonly SystemEvent[], limit = 8): Incid
         : null,
       symptoms: [...new Set(worsening.map((event) => event.message))],
       events: ordered.map((event) => `${event.at.slice(11, 19)} ${event.level} ${event.message}`),
-      resolution: recovered ? "Condition cleared — service recovered." : null,
+      resolution: recovered ? "Condition cleared - service recovered." : null,
       rootCause: null, // never invented (§16)
     });
   }
@@ -397,7 +397,7 @@ export function applyConditionToEpisode(
   if (condition) {
     if (episode) {
       // A previously RESOLVED episode that re-fires is a NEW degradation
-      // transition — the event ledger must log it (§39 state transitions).
+      // transition - the event ledger must log it (§39 state transitions).
       const reRaised = episode.alert.resolvedAt !== null;
       return {
         episode: {
@@ -439,7 +439,7 @@ export function applyConditionToEpisode(
     };
   }
   if (episode) return { episode, raised: false, resolved: false };
-  // No episode, no condition — nothing to record.
+  // No episode, no condition - nothing to record.
   return {
     episode: {
       alert: {

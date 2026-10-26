@@ -1,5 +1,5 @@
 /**
- * Integration Hub verification — MASTER PROMPT §32.
+ * Integration Hub verification - MASTER PROMPT §32.
  * Covers: connection lifecycle, safe connection test (no trades), sync +
  * idempotency, rate limiting + manual retry, webhook pipeline (valid /
  * bad signature / stale timestamp / replay), secret isolation, licensing
@@ -9,7 +9,7 @@ const { chromium } = require("playwright");
 
 const BASE = "http://localhost:3000";
 const results = [];
-const ok = (name, cond) => results.push(`${cond ? "PASS" : "FAIL"} — ${name}`);
+const ok = (name, cond) => results.push(`${cond ? "PASS" : "FAIL"} - ${name}`);
 
 (async () => {
   const browser = await chromium.launch();
@@ -60,7 +60,7 @@ const ok = (name, cond) => results.push(`${cond ? "PASS" : "FAIL"} — ${name}`)
   ok("news licensing gate visible", await page.getByTestId("hub-news-license").isVisible());
   ok("news sample items flagged", (await page.getByTestId("hub-news-item").count()) === 6);
 
-  // ── 6. Trades count before connection tests (§27 — never create trades) ──
+  // ── 6. Trades count before connection tests (§27 - never create trades) ──
   await page.goto(BASE + "/trades", { waitUntil: "networkidle" });
   await page.waitForTimeout(1500);
   const tradeRowsBefore = await page.locator("[data-testid^='trade-row-'], tbody tr").count();
@@ -162,7 +162,7 @@ const ok = (name, cond) => results.push(`${cond ? "PASS" : "FAIL"} — ${name}`)
   const brokersText = await page.locator("body").innerText();
   ok("masked hints visible instead", brokersText.includes("••••"));
 
-  // ── 13. §27 — connection tests never created trades ──────────────────────
+  // ── 13. §27 - connection tests never created trades ──────────────────────
   await page.goto(BASE + "/trades", { waitUntil: "networkidle" });
   await page.waitForTimeout(1500);
   const tradeRowsAfter = await page.locator("[data-testid^='trade-row-'], tbody tr").count();

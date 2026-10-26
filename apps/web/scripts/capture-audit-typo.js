@@ -1,5 +1,5 @@
 /**
- * Typography audit captures — dashboard vs recognition vs accounts vs profile.
+ * Typography audit captures - dashboard vs recognition vs accounts vs profile.
  * Run: node scripts/capture-audit-typo.js   (server on :3000, mock mode)
  */
 const { chromium } = require("playwright");

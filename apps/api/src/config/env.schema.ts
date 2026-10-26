@@ -1,9 +1,9 @@
 /**
- * COSMOZ API — environment contract (Foundation).
+ * COSMOZ API - environment contract (Foundation).
  *
  * All environment variables are validated at process start. Invalid or missing
  * configuration causes a CONTROLLED STARTUP FAILURE (fail fast) with an error
- * that lists invalid keys and reasons — never secret VALUES.
+ * that lists invalid keys and reasons - never secret VALUES.
  *
  * Categories (Phase 1 mandate §8): application, database, security, CORS,
  * logging, rate limiting, external services.
@@ -28,7 +28,7 @@ const corsOriginsSchema = z
   )
   .refine(
     (origins) => !origins.includes("*"),
-    'CORS_ORIGINS must not contain "*" — use an explicit origin allowlist',
+    'CORS_ORIGINS must not contain "*" - use an explicit origin allowlist',
   )
   .refine(
     (origins) =>
@@ -72,7 +72,7 @@ export const envSchema = z.object({
 
   // ── Security / requests ────────────────────────────────────────────────────
   // Default must always clear the largest domain upload cap (base64 data-URL
-  // inflation ≈ 4/3 + JSON envelope) — superRefine below enforces the
+  // inflation ≈ 4/3 + JSON envelope) - superRefine below enforces the
   // invariant for explicit values, so an oversized screenshot reaches the
   // domain validator (422) instead of dying as a generic body-limit 413.
   BODY_LIMIT_BYTES: z.coerce.number().int().min(1024).max(16_777_216).default(9_437_184),
@@ -85,7 +85,7 @@ export const envSchema = z.object({
   RATE_LIMIT_WINDOW_SECONDS: z.coerce.number().int().min(1).max(3_600).default(60),
   RATE_LIMIT_MAX: z.coerce.number().int().min(1).max(100_000).default(120),
 
-  // ── External services (optional — Foundation wires nothing) ────────────────
+  // ── External services (optional - Foundation wires nothing) ────────────────
   MARKET_SERVICE_URL: z
     .string()
     .trim()
@@ -111,14 +111,14 @@ export const envSchema = z.object({
   /** Per-call timeout for trading provider adapter calls. */
   ACCOUNTS_PROVIDER_TIMEOUT_MS: z.coerce.number().int().min(1_000).max(60_000).default(10_000),
   /**
-   * Mock trading provider gate (§57 — production must never silently serve
+   * Mock trading provider gate (§57 - production must never silently serve
    * mock data). Defaults to enabled in non-production, disabled in production;
    * an explicit value always wins.
    */
   ACCOUNTS_MOCK_PROVIDER: z.enum(["enabled", "disabled"]).optional(),
   /**
    * OANDA v20 REST adapter gate (Phase 03). A real adapter is NEVER enabled
-   * by default — explicit opt-in per deployment (§57 policy applied to real
+   * by default - explicit opt-in per deployment (§57 policy applied to real
    * providers: enabled ⇒ the registry exposes oanda-v20 and connect calls
    * the real OANDA hosts with the user's stored token).
    */
@@ -136,8 +136,8 @@ export const envSchema = z.object({
     .optional()
     .or(z.literal("").transform(() => undefined)),
   /**
-   * Deriv WebSocket API adapter gate (Phase 07 — second real provider). Same
-   * §57 policy as every real adapter: NEVER enabled by default — explicit
+   * Deriv WebSocket API adapter gate (Phase 07 - second real provider). Same
+   * §57 policy as every real adapter: NEVER enabled by default - explicit
    * opt-in per deployment. Enabled ⇒ the registry exposes deriv-ws and
    * connect calls the official Deriv WS endpoint with the user's stored
    * read-scope API token.
@@ -156,7 +156,7 @@ export const envSchema = z.object({
     .optional()
     .or(z.literal("").transform(() => undefined)),
   /**
-   * Deriv application id (developers.deriv.com dashboard registration —
+   * Deriv application id (developers.deriv.com dashboard registration -
    * official docs require every API call to carry the registering app's id).
    * Defaults to Deriv's public example app id 1089, which is suitable for
    * development/verification only; production deployments MUST register
@@ -164,17 +164,17 @@ export const envSchema = z.object({
    */
   ACCOUNTS_DERIV_APP_ID: z.string().trim().min(1).max(32).optional(),
 
-  // ── Phase 08 — MT5 terminal bridge (PLATFORM_BRIDGE) ─────────────────────
+  // ── Phase 08 - MT5 terminal bridge (PLATFORM_BRIDGE) ─────────────────────
   /**
    * MT5 terminal bridge gate (same §57 opt-in posture as every real
    * provider). When enabled, the bridge adapter registers and the accounts
    * surface accepts PLATFORM_BRIDGE pairings: the ingest endpoint becomes
    * reachable and the adapter serves data from the server-persisted push
-   * log. No outbound call ever happens — the terminal pushes to us.
+   * log. No outbound call ever happens - the terminal pushes to us.
    */
   ACCOUNTS_MT5_BRIDGE_PROVIDER: z.enum(["enabled", "disabled"]).optional(),
 
-  // ── Phase 05 — scheduled synchronization, freshness, recovery ─────────────
+  // ── Phase 05 - scheduled synchronization, freshness, recovery ─────────────
   /**
    * Background sync scheduler gate (Phase 05 §9). Like every real-provider
    * automation it is NEVER on by default: explicit opt-in per deployment
@@ -192,7 +192,7 @@ export const envSchema = z.object({
   /** Max connections synchronized in parallel per sweep (bounded concurrency, §9.1). */
   ACCOUNTS_SYNC_MAX_CONCURRENCY: z.coerce.number().int().min(1).max(10).default(3),
   /** A RUNNING run older than this cannot be alive (watchdog bounds every
-   * segment) — the recovery sweep marks it CANCELLED (§15 safe restart). */
+   * segment) - the recovery sweep marks it CANCELLED (§15 safe restart). */
   ACCOUNTS_SYNC_STALE_RUN_MS: z.coerce
     .number()
     .int()
@@ -205,7 +205,7 @@ export const envSchema = z.object({
   // ── OCR / Screenshot Recognition (Phase 19) ───────────────────────────────
   /**
    * FastAPI OCR sidecar base URL (e.g. http://127.0.0.1:3004). When unset the
-   * FastAPI engine adapter is not registered — the deterministic mock engine
+   * FastAPI engine adapter is not registered - the deterministic mock engine
    * (OCR_MOCK_ENGINE) is then the only option, so production with a disabled
    * mock degrades to an explicit OCR_UNAVAILABLE, never a fake result.
    */
@@ -228,7 +228,7 @@ export const envSchema = z.object({
   OCR_MOCK_ENGINE: z.enum(["enabled", "disabled"]).optional(),
   /** Max decoded binary size accepted for one screenshot upload. */
   OCR_UPLOAD_MAX_BYTES: z.coerce.number().int().min(10_240).max(8_388_608).default(6_291_456),
-  /** Max pixel count per image — decompression-bomb guard (§38). */
+  /** Max pixel count per image - decompression-bomb guard (§38). */
   OCR_IMAGE_MAX_PIXELS: z.coerce.number().int().min(65_536).max(80_000_000).default(24_000_000),
   /** Per-sidecar-call timeout for the recognition request (§26/§56). */
   OCR_ENGINE_TIMEOUT_MS: z.coerce.number().int().min(2_000).max(120_000).default(30_000),
@@ -237,20 +237,20 @@ export const envSchema = z.object({
    * is created on demand; paths are validated to stay inside it.
    */
   OCR_STORAGE_ROOT: z.string().trim().min(1).default(".data/ocr-storage"),
-  /** Bounded retry attempts for TRANSIENT engine failures (§34) — extra attempts on top of the first call. */
+  /** Bounded retry attempts for TRANSIENT engine failures (§34) - extra attempts on top of the first call. */
   OCR_ENGINE_MAX_RETRIES: z.coerce.number().int().min(0).max(3).default(1),
   /** Screenshot retention (engine quality §4.2): binaries of CONFIRMED/FAILED
    *  recognitions older than this are purged (0 disables retention). */
   OCR_RETENTION_DAYS: z.coerce.number().int().min(0).max(3650).default(30),
   /** Minimum delay between two lazy retention sweeps (recognition V1 sweep
-   *  throttle) — a burst of requests must not fan out into a burst of sweeps. */
+   *  throttle) - a burst of requests must not fan out into a burst of sweeps. */
   OCR_RETENTION_SWEEP_MS: z.coerce.number().int().min(1_000).max(86_400_000).default(900_000),
-  /** Max decoded binary size accepted for one PDF statement upload (V2 —
+  /** Max decoded binary size accepted for one PDF statement upload (V2 -
    *  documents share the screenshot discipline with their own budget). */
   OCR_PDF_MAX_BYTES: z.coerce.number().int().min(10_240).max(8_388_608).default(6_291_456),
 
   // ── Trading Core / Journal (Phase 4) ───────────────────────────────────────
-  /** Local filesystem storage root for trade-screenshot binaries (§39) —
+  /** Local filesystem storage root for trade-screenshot binaries (§39) -
    * metadata-only rows in PostgreSQL; binaries live under this root. */
   TRADES_SCREENSHOTS_ROOT: z.string().trim().min(1).default(".data/trades-screenshots"),
   /** Max decoded binary size accepted for one trade screenshot (wire limit). */
@@ -262,16 +262,16 @@ export const envSchema = z.object({
     .default(6_291_456),
 
   // ── Calendar / Economic events (Phase 13) ─────────────────────────────────
-  /** Past half of the canonical eco-event sync window (§23) — the Analytics
+  /** Past half of the canonical eco-event sync window (§23) - the Analytics
    *  correlation depth (the reference engine ships -92 days of history). */
   CALENDAR_WINDOW_PAST_DAYS: z.coerce.number().int().min(1).max(365).default(92),
-  /** Future half of the canonical eco-event sync window (§23) — the planner
+  /** Future half of the canonical eco-event sync window (§23) - the planner
    *  banner / news-blocker horizon (the reference engine ships +13 days). */
   CALENDAR_WINDOW_FUTURE_DAYS: z.coerce.number().int().min(1).max(60).default(13),
 
   // ── Integrations Hub (Phase 14) ───────────────────────────────────────────
   /** AES-256-GCM key (base64, 32 bytes) encrypting webhook signing secrets
-   *  at rest (§14). Deliberately its OWN key — never the accounts credentials
+   *  at rest (§14). Deliberately its OWN key - never the accounts credentials
    *  key and never the identity MFA key (key separation). */
   INTEGRATIONS_WEBHOOK_ENCRYPTION_KEY: z
     .string()
@@ -287,7 +287,7 @@ export const envSchema = z.object({
       "INTEGRATIONS_WEBHOOK_ENCRYPTION_KEY must be base64 encoding exactly 32 bytes",
     ),
 
-  // ── Authentication (Identity phase — REQUIRED, never defaulted) ────────────
+  // ── Authentication (Identity phase - REQUIRED, never defaulted) ────────────
   /** HS256 signing secret for short-lived access JWTs. ≥ 32 chars. */
   AUTH_JWT_SECRET: z
     .string()
@@ -320,7 +320,7 @@ export const envSchema = z.object({
   AUTH_PASSWORD_RESET_MINUTES: z.coerce.number().int().min(5).max(1_440).default(30),
   AUTH_MFA_CHALLENGE_MINUTES: z.coerce.number().int().min(1).max(30).default(5),
   AUTH_REAUTH_MINUTES: z.coerce.number().int().min(1).max(30).default(5),
-  /** Public web origin — used to build email links (verify/reset). */
+  /** Public web origin - used to build email links (verify/reset). */
   WEB_APP_URL: z
     .string()
     .trim()
@@ -339,7 +339,7 @@ export type Env = z.infer<typeof envSchema>;
 
 /**
  * Cross-field invariant (§27): the sidecar URL without a shared secret would
- * mean unauthenticated internal calls — refuse to boot in that state.
+ * mean unauthenticated internal calls - refuse to boot in that state.
  */
 const refinedEnvSchema = envSchema.superRefine((env, ctx) => {
   if (env.OCR_SERVICE_URL && !env.OCR_SERVICE_TOKEN) {
@@ -380,7 +380,7 @@ export class EnvValidationError extends Error {
 
 /**
  * Validate raw environment input. Throws {@link EnvValidationError} carrying
- * only key paths and reasons — secret values never appear in the error.
+ * only key paths and reasons - secret values never appear in the error.
  */
 export function validateEnv(
   source: Record<string, string | undefined> = process.env,

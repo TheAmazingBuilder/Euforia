@@ -1,9 +1,9 @@
 /**
- * Image validation service (Phase 19 §7/§8/§38) — the API-boundary gate for
+ * Image validation service (Phase 19 §7/§8/§38) - the API-boundary gate for
  * every screenshot upload.
  *
  * Threat model (§7): every upload is UNTRUSTED input. The declared MIME,
- * the filename, the extension and any client metadata are never trusted —
+ * the filename, the extension and any client metadata are never trusted -
  * the wire format (frontend contract) is a data URL, so this service:
  *
  *   1. strictly parses the data-URL envelope;
@@ -13,7 +13,7 @@
  *   4. parses pixel dimensions from the binary header and enforces the
  *      pixel-count ceiling (decompression/resource-exhaustion guard, §38)
  *      without decoding the image;
- *   5. computes the SHA-256 checksum — the asset identity + idempotency
+ *   5. computes the SHA-256 checksum - the asset identity + idempotency
  *      anchor (§6/§32).
  */
 import { createHash } from "node:crypto";
@@ -40,7 +40,7 @@ export interface ValidatedImage {
 @Injectable()
 export class ImageValidationService {
   validateDataUrl(dataUrl: string, limits: { maxBytes: number; maxPixels: number }): ValidatedImage {
-    // 1. Strict envelope parse — anything outside data:<allowed>;base64 is a 400.
+    // 1. Strict envelope parse - anything outside data:<allowed>;base64 is a 400.
     const match = /^data:((?:image\/[a-z0-9.+-]+)|application\/pdf);base64,([A-Za-z0-9+/=\r\n]+)$/.exec(dataUrl);
     if (match === null || match[2] === undefined) {
       throw new ValidationError(
@@ -70,7 +70,7 @@ export class ImageValidationService {
       );
     }
 
-    // 3. Magic bytes — the declared type must MATCH the binary (§7).
+    // 3. Magic bytes - the declared type must MATCH the binary (§7).
     const actual = sniffImageMime(bytes);
     if (actual === null) {
       throw new ValidationError(
@@ -80,7 +80,7 @@ export class ImageValidationService {
       );
     }
     if (actual !== declared) {
-      // Content-Type spoofing — the bytes win, and a mismatch is rejected.
+      // Content-Type spoofing - the bytes win, and a mismatch is rejected.
       throw new ValidationError(
         "The declared image type does not match the actual content.",
         [{ path: "imageDataUrl", message: `declared ${declared} but content is ${actual}` }],
@@ -89,7 +89,7 @@ export class ImageValidationService {
     }
 
     // PDF statements (engine quality §4.3): no intrinsic pixel size and no
-    // header dimension parse — the page budget + pixel ceiling are enforced
+    // header dimension parse - the page budget + pixel ceiling are enforced
     // by the SIDE CAR at render time (pypdfium2). Dimensions land on the
     // asset row once the engine reports the rendered first page.
     if (actual === "application/pdf") {
@@ -105,7 +105,7 @@ export class ImageValidationService {
     }
 
     // 4. Structural dimension parse (also catches truncated/malformed files).
-    //    (PDF never reaches here — handled above.)
+    //    (PDF never reaches here - handled above.)
     const dimensions = parseImageDimensions(bytes, actual as "image/png" | "image/jpeg" | "image/webp");
     if (dimensions === null) {
       throw new ValidationError(
@@ -125,7 +125,7 @@ export class ImageValidationService {
       );
     }
 
-    // 5. Checksum — identity + integrity anchor (§6).
+    // 5. Checksum - identity + integrity anchor (§6).
     const checksumSha256 = createHash("sha256").update(bytes).digest("hex");
     return {
       bytes,
@@ -138,15 +138,15 @@ export class ImageValidationService {
   }
 
   /**
-   * V2 — PDF statement branch of the upload gate: SAME envelope/size/magic
+   * V2 - PDF statement branch of the upload gate: SAME envelope/size/magic
    * discipline as validateDataUrl, with its own byte budget (config
-   * OCR_PDF_MAX_BYTES) and NO pixel-dimension parse — a document has no
+   * OCR_PDF_MAX_BYTES) and NO pixel-dimension parse - a document has no
    * intrinsic pixels; the sidecar renders pages and the REAL dimensions land
    * on the asset row through the engine render (§4.3), so the 1×1 placeholder
    * matches the legacy PDF convention in validateDataUrl.
    */
   validateDocumentDataUrl(dataUrl: string, limits: { maxBytes: number }): ValidatedImage {
-    // 1. Strict envelope parse — PDFs only (declared type must be application/pdf).
+    // 1. Strict envelope parse - PDFs only (declared type must be application/pdf).
     const match = /^data:application\/pdf;base64,([A-Za-z0-9+/=\r\n]+)$/.exec(dataUrl);
     if (match === null || match[1] === undefined) {
       throw new ValidationError(
@@ -157,7 +157,7 @@ export class ImageValidationService {
     }
     const base64 = match[1]!;
 
-    // 2. Size guard BEFORE decoding (cheap, deterministic — §8 discipline).
+    // 2. Size guard BEFORE decoding (cheap, deterministic - §8 discipline).
     if (Math.floor((base64.length * 3) / 4) > limits.maxBytes) {
       throw new ValidationError(
         "The document is too large.",
@@ -174,7 +174,7 @@ export class ImageValidationService {
       );
     }
 
-    // 3. Magic bytes — the declared type must MATCH the binary (§7).
+    // 3. Magic bytes - the declared type must MATCH the binary (§7).
     const actual = sniffImageMime(bytes);
     if (actual !== "application/pdf") {
       throw new ValidationError(
@@ -184,7 +184,7 @@ export class ImageValidationService {
       );
     }
 
-    // 4. Checksum — identity + integrity anchor (§6).
+    // 4. Checksum - identity + integrity anchor (§6).
     const checksumSha256 = createHash("sha256").update(bytes).digest("hex");
     return {
       bytes,

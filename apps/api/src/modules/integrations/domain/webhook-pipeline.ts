@@ -1,5 +1,5 @@
 /**
- * Inbound webhook pipeline (Phase 14 §12/§21/§22/§23) — signing + PURE
+ * Inbound webhook pipeline (Phase 14 §12/§21/§22/§23) - signing + PURE
  * pipeline decisions. The transport-free evaluator mirrors the mock engine
  * pipeline exactly (timestamp freshness → signature → idempotency) so the
  * simulate endpoint is a REAL pipeline exercise, not a simulated verdict.
@@ -20,7 +20,7 @@ export interface WebhookSignedPayload {
   readonly payload: Record<string, unknown>;
 }
 
-/** Serialize the canonical signed body — the exact string the HMAC covers. */
+/** Serialize the canonical signed body - the exact string the HMAC covers. */
 export function serializeWebhookBody(timestampMs: number, body: WebhookSignedPayload): string {
   return `${timestampMs}.${JSON.stringify({
     eventId: body.eventId,
@@ -29,7 +29,7 @@ export function serializeWebhookBody(timestampMs: number, body: WebhookSignedPay
   })}`;
 }
 
-/** HMAC-SHA256 hex digest — node:crypto, no external dependency. */
+/** HMAC-SHA256 hex digest - node:crypto, no external dependency. */
 export function signWebhookBody(secret: string, message: string): string {
   return createHmac("sha256", secret).update(message, "utf8").digest("hex");
 }
@@ -42,7 +42,7 @@ export function signaturesMatch(provided: string, expected: string): boolean {
   return timingSafeEqual(a, b);
 }
 
-/** `whsec_<12 hex>` — generated server-side, never returned (§14). */
+/** `whsec_<12 hex>` - generated server-side, never returned (§14). */
 export function generateWebhookSecret(): string {
   return `whsec_${randomBytes(6).toString("hex")}`;
 }
@@ -97,13 +97,13 @@ export function evaluateWebhookDelivery(params: {
 }): WebhookVerdict {
   const { fresh, signatureValid, alreadySeen, isReplay } = params;
 
-  // Pipeline step 1 — timestamp freshness (replay protection, §22).
+  // Pipeline step 1 - timestamp freshness (replay protection, §22).
   if (!fresh) {
     return {
       accepted: false,
       duplicate: false,
       signatureValid: true,
-      message: "Rejected — timestamp outside the replay window",
+      message: "Rejected - timestamp outside the replay window",
       eventType: null,
       eventMessage: null,
       delivery: {
@@ -115,15 +115,15 @@ export function evaluateWebhookDelivery(params: {
       acceptedNow: false,
     };
   }
-  // Pipeline step 2 — signature verification.
+  // Pipeline step 2 - signature verification.
   if (!signatureValid) {
     return {
       accepted: false,
       duplicate: false,
       signatureValid: false,
-      message: "Rejected — invalid signature",
+      message: "Rejected - invalid signature",
       eventType: "WEBHOOK_REJECTED",
-      eventMessage: "Webhook rejected — invalid signature",
+      eventMessage: "Webhook rejected - invalid signature",
       delivery: {
         signatureValid: false,
         accepted: false,
@@ -133,13 +133,13 @@ export function evaluateWebhookDelivery(params: {
       acceptedNow: false,
     };
   }
-  // Pipeline step 3 — idempotency (§23).
+  // Pipeline step 3 - idempotency (§23).
   if (alreadySeen && !isReplay) {
     return {
       accepted: false,
       duplicate: false,
       signatureValid: true,
-      message: "Duplicate event — ignored",
+      message: "Duplicate event - ignored",
       eventType: null,
       eventMessage: null,
       delivery: {
@@ -156,9 +156,9 @@ export function evaluateWebhookDelivery(params: {
       accepted: false,
       duplicate: true,
       signatureValid: true,
-      message: "Duplicate — the event was already processed",
+      message: "Duplicate - the event was already processed",
       eventType: "WEBHOOK_DUPLICATE",
-      eventMessage: "Replayed delivery ignored — idempotency held",
+      eventMessage: "Replayed delivery ignored - idempotency held",
       delivery: {
         signatureValid: true,
         accepted: true,
@@ -173,14 +173,14 @@ export function evaluateWebhookDelivery(params: {
     accepted: true,
     duplicate: false,
     signatureValid: true,
-    message: "Accepted — event applied",
+    message: "Accepted - event applied",
     eventType: "WEBHOOK_RECEIVED",
-    eventMessage: `Webhook accepted — event applied in real time`,
+    eventMessage: `Webhook accepted - event applied in real time`,
     delivery: {
       signatureValid: true,
       accepted: true,
       duplicate: false,
-      message: "Signature verified — event applied",
+      message: "Signature verified - event applied",
     },
     acceptedNow: true,
   };

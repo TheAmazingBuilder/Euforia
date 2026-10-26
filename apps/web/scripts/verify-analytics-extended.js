@@ -1,5 +1,5 @@
 /**
- * Verify — Analytics EXTENDED (Execution / Behavioral / Consistency, V1).
+ * Verify - Analytics EXTENDED (Execution / Behavioral / Consistency, V1).
  *
  * IMPORTANT: navigation uses sidebar/tab clicks ONLY (SPA). Exactly ONE
  * reload is performed, for the ?tab= deep-link persistence check.
@@ -52,7 +52,7 @@ const SHOTS = "/home/z/my-project/scripts/shots/analytics-extended";
 
   const results = [];
   const check = (name, ok, extra = "") => {
-    results.push(`${ok ? "PASS" : "FAIL"} — ${name}${extra ? ` (${extra})` : ""}`);
+    results.push(`${ok ? "PASS" : "FAIL"} - ${name}${extra ? ` (${extra})` : ""}`);
     console.log(results[results.length - 1]);
   };
   const shot = async (name) => {

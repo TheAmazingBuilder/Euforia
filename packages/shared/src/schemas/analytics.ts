@@ -4,10 +4,10 @@ import { currencySchema, directionSchema, gradeSchema, tradeStatusSchema } from 
 import { dateKeySchema, decimalStringSchema, isoDateTimeSchema, uuidSchema } from "./primitives";
 
 /**
- * Dashboard band payloads (Phase 11) — the server-computed aggregates behind
+ * Dashboard band payloads (Phase 11) - the server-computed aggregates behind
  * the account band, the monthly goal strip, the month highlights card and
  * the product band. Every money/R/ratio field travels as a decimal string;
- * counts stay numbers. Honest at zero: nulls render as "—", never as fake
+ * counts stay numbers. Honest at zero: nulls render as "-", never as fake
  * confidence.
  */
 
@@ -39,7 +39,7 @@ export const monthlyGoalSchema = z.object({
 });
 export type MonthlyGoal = z.infer<typeof monthlyGoalSchema>;
 
-/** GET /stats/monthly-goals — the goal strip for the current month. */
+/** GET /stats/monthly-goals - the goal strip for the current month. */
 export const monthlyGoalsResponseSchema = z.object({
   monthLabel: z.string().min(1),
   currency: currencySchema,
@@ -81,7 +81,7 @@ export const accountBandResponseSchema = z.object({
   totalTrades: z.number().int().min(0),
   openTrades: z.number().int().min(0),
   closedTrades: z.number().int().min(0),
-  /** Last 8 ISO weeks of trade counts (oldest first) — sparkline. */
+  /** Last 8 ISO weeks of trade counts (oldest first) - sparkline. */
   weeklyTradeCounts: z.array(z.number().int().min(0)),
   /** Last 8 ISO weeks of days with at least one trade. */
   weeklyActiveDays: z.array(z.number().int().min(0)),

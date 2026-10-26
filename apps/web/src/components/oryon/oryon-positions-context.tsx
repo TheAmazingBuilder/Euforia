@@ -10,7 +10,7 @@ import {
 } from "@/lib/oryon/positions/sanitize";
 
 /**
- * Oryon positions context (Phase 4) — ONE subscription to the app-wide
+ * Oryon positions context (Phase 4) - ONE subscription to the app-wide
  * private-positions stream (the same socket, auth lifecycle and snapshot
  * semantics as the price feed), validated at this boundary, plus the
  * panel↔chart selection state.
@@ -22,7 +22,7 @@ import {
  *   - chart integration    → the overlay bridge leaf (engine imperative sync)
  *
  * Re-render discipline: the stream updates at the server's broadcast cadence
- * (~2 s). Consumers are the lower panel and the overlay bridge LEAF only —
+ * (~2 s). Consumers are the lower panel and the overlay bridge LEAF only -
  * the chart engine is updated imperatively, the workspace never re-renders
  * per position update. No duplicate subscription is ever created: the
  * underlying store is a module singleton (useSyncExternalStore).
@@ -31,7 +31,7 @@ import {
 export interface OryonPositionsContextValue {
   /** Validated positions of the current book (invalid records dropped). */
   positions: BrokerPosition[];
-  /** Wire source label — "sim" for the simulated book, "idle" before data. */
+  /** Wire source label - "sim" for the simulated book, "idle" before data. */
   source: "idle" | "sim";
   /** Transport alive AND at least one snapshot received (store semantics). */
   connected: boolean;
@@ -41,7 +41,7 @@ export interface OryonPositionsContextValue {
   dropped: number;
   /** Currently selected position id (panel ↔ overlay highlight), nullable. */
   selectedId: string | null;
-  /** Select a position (null = clear). Pure UI state — never a trade action. */
+  /** Select a position (null = clear). Pure UI state - never a trade action. */
   select: (positionId: string | null) => void;
 }
 
@@ -50,7 +50,7 @@ const OryonPositionsContext = React.createContext<OryonPositionsContextValue | n
 export function OryonPositionsProvider({ children }: { children: React.ReactNode }) {
   const stream = usePrivatePositions();
 
-  // Validate every record at the boundary — one poisoned record must not
+  // Validate every record at the boundary - one poisoned record must not
   // reach the table or the chart. Memoized on the stream identity: the store
   // freezes a new snapshot object per event, so this recomputes per event
   // (≤ handful of records, cents-cheap) and never per render.

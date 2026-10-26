@@ -1,4 +1,4 @@
-/** Screenshots — pattern drill under different candle inks. */
+/** Screenshots - pattern drill under different candle inks. */
 const { chromium } = require("playwright");
 
 const BASE = "http://localhost:3000";

@@ -6,7 +6,7 @@
  * the controller boundary and stored verbatim (analysis/drawings/snapshot
  * JSONB). The optional trade link is validated against the canonical journal:
  * ownership first (foreign id → 404), symbol equality second (a mismatch is a
- * 422 — the client must confirm explicitly, never a silent normalization).
+ * 422 - the client must confirm explicitly, never a silent normalization).
  *
  * The canonical trade is NEVER created, copied or mutated here.
  */
@@ -27,7 +27,7 @@ type CreatePayload = OryonChartAnalysis & { tradeId: string | null };
 
 function toWire(row: OryonAnalysisRow): OryonChartAnalysis {
   // The wire contract (shared with the localStorage store) carries unix-ms
-  // integer timestamps — the DB rows convert here, at the boundary.
+  // integer timestamps - the DB rows convert here, at the boundary.
   return oryonAnalysisMutatedResponseSchema.shape.analysis.parse({
     id: row.id,
     userId: row.userId,
@@ -123,7 +123,7 @@ export class OryonAnalysisService {
   /**
    * Canonical-trade link resolution: null → clear; a foreign or unknown id →
    * honest 404; a symbol mismatch → 422 (the client confirms explicitly with
-   * the mismatch dialog — the wire PATCH carries no "force" flag by design:
+   * the mismatch dialog - the wire PATCH carries no "force" flag by design:
    * the UI confirm happens BEFORE the call, mirroring the Phase-10 store).
    */
   private async resolveTradeLink(

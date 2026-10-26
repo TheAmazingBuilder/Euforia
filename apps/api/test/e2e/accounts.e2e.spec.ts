@@ -1,5 +1,5 @@
 /**
- * e2e — Accounts / Trading Connectivity (Phase 3).
+ * e2e - Accounts / Trading Connectivity (Phase 3).
  *
  * Covers the full lifecycle over the REAL AppModule + real database:
  * connect → initial sync → reads → manual sync (idempotency) → test →
@@ -77,7 +77,7 @@ async function userAandB() {
 
 // ── Auth boundary ────────────────────────────────────────────────────────────
 
-describe("accounts — authentication boundary", () => {
+describe("accounts - authentication boundary", () => {
   it("401 on every accounts route without a token", async () => {
     for (const [method, url] of [
       ["GET", "/api/v1/accounts"],
@@ -104,7 +104,7 @@ describe("accounts — authentication boundary", () => {
 
 // ── Provider registry ────────────────────────────────────────────────────────
 
-describe("accounts — provider registry (§44)", () => {
+describe("accounts - provider registry (§44)", () => {
   it("lists the mock provider with explicit read-only permissions and mock labeling", async () => {
     const user = await authenticatedUser(app, mail);
     const res = await app.inject({
@@ -130,7 +130,7 @@ describe("accounts — provider registry (§44)", () => {
 
 // ── Connect + initial synchronization ────────────────────────────────────────
 
-describe("accounts — connect (§17)", () => {
+describe("accounts - connect (§17)", () => {
   it("registers account + connection, runs the initial sync, returns validated details", async () => {
     const user = await authenticatedUser(app, mail);
     const res = await connectAccount(user.authHeader, { environment: "DEMO" });
@@ -242,7 +242,7 @@ describe("accounts — connect (§17)", () => {
 
 // ── Synchronization ──────────────────────────────────────────────────────────
 
-describe("accounts — synchronization (§16–§18, §38)", () => {
+describe("accounts - synchronization (§16–§18, §38)", () => {
   it("manual sync completes and stays IDEMPOTENT across repeated runs (§18)", async () => {
     const user = await authenticatedUser(app, mail);
     const connected = await connectAccount(user.authHeader, { externalAccountId: "SYNC-1" });
@@ -306,7 +306,7 @@ describe("accounts — synchronization (§16–§18, §38)", () => {
         })
       ).json(),
     );
-    // Stable external identity — no duplicates, byte-identical content.
+    // Stable external identity - no duplicates, byte-identical content.
     expect(pos2.positions.map((p) => p.id)).toEqual(pos1.positions.map((p) => p.id));
     expect(deals2.deals.map((d) => d.externalDealId)).toEqual(deals1.deals.map((d) => d.externalDealId));
   });
@@ -379,7 +379,7 @@ describe("accounts — synchronization (§16–§18, §38)", () => {
     ).account;
     // Orthogonal lifecycles (§15): the CONNECTION axis is ERROR (credentials
     // rejected), the SYNC axis reports data freshness (still LIVE) with the
-    // failure visible on the run record — never a merged status.
+    // failure visible on the run record - never a merged status.
     expect(after.connection?.status).toBe("ERROR");
     expect(after.connection?.lastError).not.toContain("fail-invalid-stale-creds");
     expect(after.synchronization.status).toBe("LIVE");
@@ -405,7 +405,7 @@ describe("accounts — synchronization (§16–§18, §38)", () => {
 
 // ── Reads + broker session ───────────────────────────────────────────────────
 
-describe("accounts — reads and the Session-Live contract (§42/§46)", () => {
+describe("accounts - reads and the Session-Live contract (§42/§46)", () => {
   it("serves positions, orders and deals as validated shared-contract payloads", async () => {
     const user = await authenticatedUser(app, mail);
     const connected = await connectAccount(user.authHeader, { externalAccountId: "READS-1" });
@@ -472,7 +472,7 @@ describe("accounts — reads and the Session-Live contract (§42/§46)", () => {
 
 // ── Test / reconnect / disconnect lifecycle ─────────────────────────────────
 
-describe("accounts — connection lifecycle (§15, §52)", () => {
+describe("accounts - connection lifecycle (§15, §52)", () => {
   it("test returns four named honest checks", async () => {
     const user = await authenticatedUser(app, mail);
     const connected = await connectAccount(user.authHeader, { externalAccountId: "TEST-1" });
@@ -632,7 +632,7 @@ describe("accounts — connection lifecycle (§15, §52)", () => {
 
 // ── Ownership / security ─────────────────────────────────────────────────────
 
-describe("accounts — ownership and security (§19, §22, §47)", () => {
+describe("accounts - ownership and security (§19, §22, §47)", () => {
   it("user B cannot read, sync, test or disconnect user A's account (404 everywhere)", async () => {
     const { a, b } = await userAandB();
     const connected = await connectAccount(a.authHeader, { externalAccountId: "OWN-1" });
@@ -775,7 +775,7 @@ describe("accounts — ownership and security (§19, §22, §47)", () => {
 
 // ── Audit trail ──────────────────────────────────────────────────────────────
 
-describe("accounts — audit events (§39)", () => {
+describe("accounts - audit events (§39)", () => {
   it("records connect / disconnect / sync-failure events without secrets", async () => {
     const email = uniqueEmail("audit");
     const user = await authenticatedUser(app, mail, { email });
@@ -815,15 +815,15 @@ describe("accounts — audit events (§39)", () => {
   });
 });
 
-// ── Rich surface (Phase 02 — registered TradingAccountsController) ──────────
+// ── Rich surface (Phase 02 - registered TradingAccountsController) ──────────
 
-describe("trading-accounts — registered rich surface (Phase 02 hygiene)", () => {
+describe("trading-accounts - registered rich surface (Phase 02 hygiene)", () => {
   it("serves the details-list and rename (PATCH) routes the UI consumes", async () => {
     const user = await authenticatedUser(app, mail);
     const connected = await connectAccount(user.authHeader, { externalAccountId: "RICH-1" });
     const { account } = tradingAccountDetailsResponseSchema.parse(connected.json());
 
-    // GET /trading-accounts — the connectivity list (details shape per account).
+    // GET /trading-accounts - the connectivity list (details shape per account).
     const list = await app.inject({
       method: "GET",
       url: "/api/v1/trading-accounts",
@@ -838,7 +838,7 @@ describe("trading-accounts — registered rich surface (Phase 02 hygiene)", () =
     expect(rich.provider.providerId).toBe("MOCK");
     expect(rich.connection?.status).toBe("CONNECTED");
 
-    // PATCH /trading-accounts/:id — rename (label only).
+    // PATCH /trading-accounts/:id - rename (label only).
     const renamed = await app.inject({
       method: "PATCH",
       url: `/api/v1/trading-accounts/${account.id}`,
@@ -888,7 +888,7 @@ describe("trading-accounts — registered rich surface (Phase 02 hygiene)", () =
   });
 });
 
-// ── MT5 terminal bridge — public ingest route (Phase 08, EA-parity E2E) ──────
+// ── MT5 terminal bridge - public ingest route (Phase 08, EA-parity E2E) ──────
 //
 // The bridge is the ONLY public (JWT-free) route of the trading-accounts
 // surface. These tests push EXACTLY what docs/bridge/EuforiaBridge.mq5
@@ -896,16 +896,16 @@ describe("trading-accounts — registered rich surface (Phase 02 hygiene)", () =
 // canonical `${ts}.${JSON.stringify({eventId, kind, payload})}` signed
 // HMAC-SHA256, headers x-bridge-key/timestamp/signature/event-id. The
 // timestamp cases cover BOTH EA generations: v1.0.0 sends epoch SECONDS
-// ((long)TimeGMT()), v1.0.1+ sends MILLISECONDS — both must authenticate
+// ((long)TimeGMT()), v1.0.1+ sends MILLISECONDS - both must authenticate
 // (magnitude detection), while stale/replayed timestamps must not.
 
 import { createHmac } from "node:crypto";
 
-describe("trading-accounts — MT5 bridge ingest (public, HMAC)", () => {
-  // The MT5 bridge adapter sits behind an OPT-IN real-provider gate (§57 —
+describe("trading-accounts - MT5 bridge ingest (public, HMAC)", () => {
+  // The MT5 bridge adapter sits behind an OPT-IN real-provider gate (§57 -
   // never default-on). These tests boot THEIR OWN app with the gate
   // explicitly enabled instead of depending on a local .env that may or may
-  // not enable it — the suite must be self-contained (identical behavior on
+  // not enable it - the suite must be self-contained (identical behavior on
   // a dev machine, in CI, and anywhere else).
   let bridgeApp: Awaited<ReturnType<typeof buildTestApp>>;
   let bridgeMail: MailCapture;
@@ -913,7 +913,7 @@ describe("trading-accounts — MT5 bridge ingest (public, HMAC)", () => {
   beforeAll(async () => {
     process.env.ACCOUNTS_MT5_BRIDGE_PROVIDER = "enabled";
     // loadAppConfig is memoized ("validate exactly once at boot") and the
-    // shared module-level app already warmed the cache with the gate off —
+    // shared module-level app already warmed the cache with the gate off -
     // reset it so THIS app boots with the bridge adapter registered.
     resetAppConfigCache();
     bridgeApp = await buildTestApp();
@@ -1064,13 +1064,13 @@ describe("trading-accounts — MT5 bridge ingest (public, HMAC)", () => {
     expect(res.json().code).toBe("BRIDGE_BAD_SIGNATURE");
   });
 
-  it("full loop — pushes → sync → journal trades (EA-parity payloads, balance ops excluded)", async () => {
+  it("full loop - pushes → sync → journal trades (EA-parity payloads, balance ops excluded)", async () => {
     const { user, account, pairing } = await pairedBridgeAccount(
       `88${Math.random().toString().slice(2, 8)}`,
     );
 
     // The reconstruction maps deals to journal trades THROUGH the Instrument
-    // table — seed the bridged symbol the way the dev seed does.
+    // table - seed the bridged symbol the way the dev seed does.
     const symbol = "XAGEUR";
     await bridgeApp.get(PrismaService).instrument.upsert({
       where: { symbol },
@@ -1086,7 +1086,7 @@ describe("trading-accounts — MT5 bridge ingest (public, HMAC)", () => {
       update: {},
     });
 
-    // 1) ACCOUNT_INFO (EA v1.0.1 — ms epoch) → activates + identifies broker.
+    // 1) ACCOUNT_INFO (EA v1.0.1 - ms epoch) → activates + identifies broker.
     const info = await push({
       keyId: pairing.bridgeKeyId,
       secret: pairing.secret,
@@ -1107,7 +1107,7 @@ describe("trading-accounts — MT5 bridge ingest (public, HMAC)", () => {
     expect(info.statusCode).toBe(200);
     expect(info.json().state).toBe("CONNECTED");
 
-    // 2) SNAPSHOT — decimals as strings (EA JDec semantics).
+    // 2) SNAPSHOT - decimals as strings (EA JDec semantics).
     const snap = await push({
       keyId: pairing.bridgeKeyId,
       secret: pairing.secret,
@@ -1126,7 +1126,7 @@ describe("trading-accounts — MT5 bridge ingest (public, HMAC)", () => {
     });
     expect(snap.statusCode).toBe(200);
 
-    // 3) DEALS — one netting position (IN + OUT), one balance op (excluded).
+    // 3) DEALS - one netting position (IN + OUT), one balance op (excluded).
     const deals = await push({
       keyId: pairing.bridgeKeyId,
       secret: pairing.secret,
@@ -1180,7 +1180,7 @@ describe("trading-accounts — MT5 bridge ingest (public, HMAC)", () => {
     });
     expect(deals.statusCode).toBe(200);
 
-    // 4) Account sync — the pull orchestrator reads the persisted events.
+    // 4) Account sync - the pull orchestrator reads the persisted events.
     const sync = await bridgeApp.inject({
       method: "POST",
       url: `/api/v1/trading-accounts/${account.id}/sync`,
@@ -1191,7 +1191,7 @@ describe("trading-accounts — MT5 bridge ingest (public, HMAC)", () => {
 
     // 5) Journal reconciliation is LAZY: GET /trades re-reconciles the
     //    account's latest synchronized activity before serving the list
-    //    (trades.service listTrades — idempotent by external position). The
+    //    (trades.service listTrades - idempotent by external position). The
     //    balance operation (symbol null) never becomes a trade.
     const list = await bridgeApp.inject({
       method: "GET",
@@ -1203,7 +1203,7 @@ describe("trading-accounts — MT5 bridge ingest (public, HMAC)", () => {
     expect(trades).toHaveLength(1);
     const [trade] = trades;
     if (!trade) throw new Error("expected the reconstructed trade");
-    // The wire carries instrumentId — resolve it back to the bridged symbol.
+    // The wire carries instrumentId - resolve it back to the bridged symbol.
     const instrument = await bridgeApp
       .get(PrismaService)
       .instrument.findUnique({ where: { id: String(trade.instrumentId) }, select: { symbol: true } });

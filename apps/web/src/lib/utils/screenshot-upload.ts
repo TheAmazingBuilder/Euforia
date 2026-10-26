@@ -8,7 +8,7 @@ import { draftToDataUrl, type DraftScreenshot } from "@/components/trades/screen
  * Sequential draft-screenshot upload (Livrable 4 seam closure): the capture
  * and reflect flows hold picked files in component state; this helper turns
  * each into a data URL and pushes it through POST /trades/:id/screenshots
- * (the same useAddScreenshot mutation the detail drawer uses) — ONE BY ONE,
+ * (the same useAddScreenshot mutation the detail drawer uses) - ONE BY ONE,
  * so a large batch never floods the wire. Failures NEVER propagate: the
  * returned split tells the caller which drafts to drop from the picker and
  * how to surface the failure (toast) without blocking the flow.

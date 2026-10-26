@@ -1,9 +1,9 @@
 /**
- * Playbook application service (B10) — strategy CRUD with SERVER-SIDE
+ * Playbook application service (B10) - strategy CRUD with SERVER-SIDE
  * versioning (§17: definition edits freeze the prior version), setups,
  * checklist templates, operating rules, duplicate-as-draft, template
  * library, and the module aggregates (overview / stats / insights).
- * All aggregates derive from stored trades — never invented client-side.
+ * All aggregates derive from stored trades - never invented client-side.
  */
 import { Injectable } from "@nestjs/common";
 import type { z } from "zod";
@@ -160,7 +160,7 @@ export class PlaybookService {
     }
 
     // Versioning (§17): freeze the CURRENT definition BEFORE any content
-    // mutation — a trade executed under v1 must stay explainable as v1.
+    // mutation - a trade executed under v1 must stay explainable as v1.
     const touchesDefinition = STRATEGY_DEFINITION_FIELDS.some(
       (field) => (input as Record<string, unknown>)[field] !== undefined,
     );
@@ -239,11 +239,11 @@ export class PlaybookService {
   async deleteStrategy(userId: string, strategyId: string): Promise<{ ok: true }> {
     const row = await this.loadStrategy(userId, strategyId);
     // FK-RESTRICT semantics: a strategy with history is paused, never
-    // erased — the playbook evolves but the journal stays true.
+    // erased - the playbook evolves but the journal stays true.
     const trades = await this.trades.listTrades(userId, {});
     if (trades.some((t) => t.strategyId === strategyId)) {
       throw new ConflictError(
-        "This strategy has trades attached — pause or retire it instead.",
+        "This strategy has trades attached - pause or retire it instead.",
         TRADING_ERROR.INVALID_TRADE_STATE,
       );
     }
@@ -329,7 +329,7 @@ export class PlaybookService {
     const row = await this.loadSetup(userId, setupId);
     const trades = await this.trades.listTrades(userId, {});
     if (trades.some((t) => t.setupId === setupId)) {
-      throw new ConflictError("This setup has trades attached — pause it instead.", TRADING_ERROR.INVALID_TRADE_STATE);
+      throw new ConflictError("This setup has trades attached - pause it instead.", TRADING_ERROR.INVALID_TRADE_STATE);
     }
     await this.repository.deleteRow(row.id);
     return { ok: true };
@@ -608,7 +608,7 @@ export class PlaybookService {
         };
       });
 
-    // §20 completeness health — factual flags, no profitability judgment.
+    // §20 completeness health - factual flags, no profitability judgment.
     const hasGlobalChecklist = checklists.some((c) => c.strategyId === null);
     const thirtyDaysAgo = new Date(Date.now() - 30 * 86_400_000).toISOString();
     const health = strategies.map((s) => {
@@ -717,7 +717,7 @@ export class PlaybookService {
       }
     }
 
-    // The coach banner calls out the WORST negative last-20 expectancy —
+    // The coach banner calls out the WORST negative last-20 expectancy -
     // computed from the data, never a hardcoded name.
     const worst = candidates.sort((a, b) => a.last20Expectancy - b.last20Expectancy)[0] ?? null;
     return {

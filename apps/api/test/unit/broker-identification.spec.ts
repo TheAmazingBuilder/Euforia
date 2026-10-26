@@ -1,5 +1,5 @@
 /**
- * Unit — BrokerIdentificationService (Phase 07 universal broker layer).
+ * Unit - BrokerIdentificationService (Phase 07 universal broker layer).
  *
  * Covers the catalog integrity, the confidence ladder
  * (PROVIDER_REPORTED > PATTERN_MATCH > PLATFORM_KNOWN > UNKNOWN), the
@@ -18,7 +18,7 @@ import {
   type TradingProviderDescriptor,
 } from "../../src/shared/contracts";
 
-/** Minimal registry stub — only get() is used by the service. */
+/** Minimal registry stub - only get() is used by the service. */
 function registryWith(...providerIds: string[]): ProviderRegistryService {
   const adapters = providerIds.map((id) => {
     const adapter =
@@ -69,7 +69,7 @@ describe("broker catalog integrity", () => {
   });
 });
 
-describe("identify — confidence ladder", () => {
+describe("identify - confidence ladder", () => {
   it("OANDA external id shape → PATTERN_MATCH(oanda), connector available when registered", () => {
     const service = new BrokerIdentificationService(registryWith("oanda-v20"));
     const result = service.identify({ externalAccountId: "101-004-7192958-001" });
@@ -136,7 +136,7 @@ describe("identify — confidence ladder", () => {
   });
 });
 
-describe("identifyAtConnect — provider-reported identity wins", () => {
+describe("identifyAtConnect - provider-reported identity wins", () => {
   it("Deriv landing company → PROVIDER_REPORTED with the entity as displayName", () => {
     const service = new BrokerIdentificationService(registryWith("deriv-ws"));
     const result = service.identifyAtConnect({
@@ -176,7 +176,7 @@ describe("catalogForClient", () => {
     expect(deriv?.connectorStatus).toBe("CONNECTOR_AVAILABLE");
     expect(deriv?.providerId).toBe("deriv-ws");
     const icmarkets = catalog.brokers.find((b) => b.brokerId === "icmarkets");
-    // Phase 08 — icmarkets now carries the mt5-bridge connector id; the
+    // Phase 08 - icmarkets now carries the mt5-bridge connector id; the
     // status stays honest against the registry this service was built with.
     expect(icmarkets?.connectorStatus).toBe("CONNECTOR_NOT_IMPLEMENTED");
     expect(icmarkets?.providerId).toBe("mt5-bridge");

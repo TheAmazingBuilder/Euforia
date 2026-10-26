@@ -1,7 +1,7 @@
 /**
- * Unit — Monitoring domain logic (Phase 17 §47): threshold merging,
+ * Unit - Monitoring domain logic (Phase 17 §47): threshold merging,
  * API telemetry aggregation, status derivation, alert evaluation with
- * episode dedupe, incident grouping. Pure functions — no Nest, no DB.
+ * episode dedupe, incident grouping. Pure functions - no Nest, no DB.
  */
 import { describe, expect, it } from "vitest";
 import type { ApiCallRecord } from "../../src/infrastructure/telemetry/api-telemetry";
@@ -138,8 +138,8 @@ describe("mapBrokerStatus (Accounts facts → Monitoring status)", () => {
 
 describe("toJobRunStatus (Accounts sync-run status → job ledger status)", () => {
   it("maps the statuses the repository actually writes (RUNNING/COMPLETED/FAILED)", () => {
-    // Regression: the board filtered on "SUCCESS" — a status the accounts
-    // repository never writes — so successCount/latency were permanently
+    // Regression: the board filtered on "SUCCESS" - a status the accounts
+    // repository never writes - so successCount/latency were permanently
     // zero/null (Phase 00 defect). The mapping must recognize the REAL
     // written values: RUNNING | COMPLETED | FAILED.
     expect(toJobRunStatus("RUNNING")).toBe("RUNNING");
@@ -148,7 +148,7 @@ describe("toJobRunStatus (Accounts sync-run status → job ledger status)", () =
   });
 
   it("never mistakes an unknown or partial status for a healthy one", () => {
-    // PARTIAL (reserved, Phase 03) carries failures — conservative FAILED.
+    // PARTIAL (reserved, Phase 03) carries failures - conservative FAILED.
     // Unknown future values land on FAILED, never on SUCCESS.
     expect(toJobRunStatus("PARTIAL")).toBe("FAILED");
     expect(toJobRunStatus("SOMETHING_NEW")).toBe("FAILED");
@@ -204,7 +204,7 @@ describe("evaluateAlertRules", () => {
     expect(byRule.get("SYNC_FAILURES")).toBeDefined();
     expect(byRule.get("NOTIFICATION_FAILURES")).toBeDefined();
     // MARKET_DATA_STALE / QUEUE_BACKLOG have no server-side signal in this
-    // build — never fabricated (§16/§57).
+    // build - never fabricated (§16/§57).
     expect(byRule.has("MARKET_DATA_STALE")).toBe(false);
     expect(byRule.has("QUEUE_BACKLOG")).toBe(false);
 

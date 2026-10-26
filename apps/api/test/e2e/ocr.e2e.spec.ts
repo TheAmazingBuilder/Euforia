@@ -1,7 +1,7 @@
 /**
- * e2e — OCR recognition lifecycle (Phase 19 §52/§53/§60): upload →
+ * e2e - OCR recognition lifecycle (Phase 19 §52/§53/§60): upload →
  * REVIEW_REQUIRED → confirm → delete, against the REAL AppModule, the REAL
- * database and the DETERMINISTIC mock engine (§57 — production cannot
+ * database and the DETERMINISTIC mock engine (§57 - production cannot
  * register it; the FastAPI sidecar path is exercised in
  * ocr-negative.e2e.spec.ts via a real HTTP engine and in the sidecar's own
  * pytest suite).
@@ -57,13 +57,13 @@ async function upload(
     headers: { ...authHeader, "content-type": "application/json" },
     payload: { imageDataUrl: dataUrl, requestedProfile: "TRADE_SUMMARY" },
   });
-  // Parse through the shared contract — typed payloads, no any in the suite.
+  // Parse through the shared contract - typed payloads, no any in the suite.
   return { status: res.statusCode, body: ocrRecognitionResponseSchema.parse(res.json()) };
 }
 
 // ── Auth boundary (§39) ──────────────────────────────────────────────────────
 
-describe("OCR routes — authentication boundary", () => {
+describe("OCR routes - authentication boundary", () => {
   const routes = [
     ["POST", "/api/v1/ocr/recognitions"],
     ["GET", "/api/v1/ocr/recognitions"],
@@ -93,7 +93,7 @@ describe("OCR recognition lifecycle (happy path, deterministic engine)", () => {
     expect(recognition.status).toBe("REVIEW_REQUIRED");
     expect(recognition.extractionProfile).toBe("TRADE_SUMMARY");
 
-    // Asset metadata (§6) — no binary in the payload, checksum is sha256 hex.
+    // Asset metadata (§6) - no binary in the payload, checksum is sha256 hex.
     expect(recognition.asset.mime).toBe("image/png");
     expect(recognition.asset.width).toBe(320);
     expect(recognition.asset.height).toBe(160);
@@ -113,7 +113,7 @@ describe("OCR recognition lifecycle (happy path, deterministic engine)", () => {
       );
     }
 
-    // Contract parse — the response IS the shared contract.
+    // Contract parse - the response IS the shared contract.
     const { ocrRecognitionSchema } = await import("../../src/shared/contracts");
     expect(() => ocrRecognitionSchema.parse(recognition)).not.toThrow();
 
@@ -160,7 +160,7 @@ describe("OCR recognition lifecycle (happy path, deterministic engine)", () => {
 
 // ── Human confirmation (§21/§51) ─────────────────────────────────────────────
 
-describe("OCR confirmation — human-in-the-loop (§21)", () => {
+describe("OCR confirmation - human-in-the-loop (§21)", () => {
   it("applies user corrections as AUTHORITATIVE values inside a transaction", async () => {
     const a = await user();
     const created = await upload(a.authHeader, pngDataUrl(makeHappyPathPng()));
@@ -335,7 +335,7 @@ describe("OCR listing and deletion", () => {
 
 // ── IDOR (§39) ───────────────────────────────────────────────────────────────
 
-describe("OCR IDOR — User A can never touch User B's recognitions (§39)", () => {
+describe("OCR IDOR - User A can never touch User B's recognitions (§39)", () => {
   it("read, image, confirm, delete and list are all owner-scoped", async () => {
     const a = await user();
     const b = await user();
@@ -361,7 +361,7 @@ describe("OCR IDOR — User A can never touch User B's recognitions (§39)", () 
     expect(bList.statusCode).toBe(200);
     expect(ocrRecognitionPageSchema.parse(bList.json()).items.some((item) => item.id === id)).toBe(false);
 
-    // A still sees it — the attempts above had no side effect.
+    // A still sees it - the attempts above had no side effect.
     const aRead = await app.inject({ method: "GET", url: `/api/v1/ocr/recognitions/${id}`, headers: a.authHeader });
     expect(aRead.statusCode).toBe(200);
     expect(aRead.json().recognition.status).toBe("REVIEW_REQUIRED");
@@ -428,9 +428,9 @@ describe("OCR upload security (§7)", () => {
     expect(count).toBe(0);
   });
 
-  it("ignores injected filename metadata — the wire carries NO filename (§7)", async () => {
+  it("ignores injected filename metadata - the wire carries NO filename (§7)", async () => {
     const a = await user();
-    // The wire format carries no filename at all — a traversal attempt can
+    // The wire format carries no filename at all - a traversal attempt can
     // only arrive as an injected extra field, which the contract strips.
     // Storage keys derive from (userId, checksum) server-side only, so no
     // client string ever reaches the filesystem (unit-proven).
@@ -454,7 +454,7 @@ describe("OCR upload security (§7)", () => {
   it("rejects pixel bombs with IMAGE_DIMENSIONS_INVALID (§38)", async () => {
     const a = await user();
     // 5000x5000 = 25 MP > the 24 MP ceiling, while the gradient payload
-    // stays far below the size caps — this isolates the pixel guard.
+    // stays far below the size caps - this isolates the pixel guard.
     const bigPng = makeOcrFixturePng({ width: 5000, height: 5000 });
     const res = await app.inject({
       method: "POST",
@@ -491,7 +491,7 @@ describe("OCR upload security (§7)", () => {
 // ── Negative capability (§53 domain safety) ─────────────────────────────────
 
 describe("OCR negative capabilities (§53)", () => {
-  it("has NO trade-creation surface — OCR cannot bypass Trading Core", async () => {
+  it("has NO trade-creation surface - OCR cannot bypass Trading Core", async () => {
     const a = await user();
     const probes = [
       ["POST", "/api/v1/ocr/recognitions/00000000-0000-4000-8000-000000000001/trade"],
@@ -515,7 +515,7 @@ describe("OCR negative capabilities (§53)", () => {
   });
 });
 
-// ── Phase 21 — the sanctioned confirmation → Trading Core bridge (§77) ──────
+// ── Phase 21 - the sanctioned confirmation → Trading Core bridge (§77) ──────
 
 describe("OCR confirmation → canonical trade import (Phase 21)", () => {
   /** Register a user and connect one MOCK account (trades-e2e house pattern). */
@@ -587,7 +587,7 @@ describe("OCR confirmation → canonical trade import (Phase 21)", () => {
       source: "IMPORT",
       entryPrice: valueOf("entryPrice"),
       quantity: valueOf("volume"),
-      // Server-computed — the OCR profit field is NEVER copied (§55/§15).
+      // Server-computed - the OCR profit field is NEVER copied (§55/§15).
       strategyId: null,
     });
     expect(String(imported?.notes)).toContain(`recognition ${id}`);
@@ -604,7 +604,7 @@ describe("OCR confirmation → canonical trade import (Phase 21)", () => {
     }
   });
 
-  it("is idempotent — a confirmation replay never creates a second trade", async () => {
+  it("is idempotent - a confirmation replay never creates a second trade", async () => {
     const a = await userWithAccount();
     const created = await upload(a.authHeader, pngDataUrl(makeHappyPathPng()));
     const id = created.body.recognition.id;
@@ -624,7 +624,7 @@ describe("OCR confirmation → canonical trade import (Phase 21)", () => {
   it("replays idempotently even when the retry arrives in RAW user form (§21/§51 regression)", async () => {
     // Runtime verification caught this: the stored declaration is the
     // CANONICAL form ("2345,60" → "2345.60"), so a retry of the same
-    // logical payload arriving with the comma separator must replay 200 —
+    // logical payload arriving with the comma separator must replay 200 -
     // never a 409 (two tabs / network retry).
     const a = await userWithAccount();
     const created = await upload(a.authHeader, pngDataUrl(makeHappyPathPng()));
@@ -648,7 +648,7 @@ describe("OCR confirmation → canonical trade import (Phase 21)", () => {
     const res = await confirm(a, id, { symbol: "NOSUCHCOIN" });
     expect(res.statusCode).toBe(200);
     const confirmed = ocrRecognitionResponseSchema.parse(res.json()).recognition;
-    // The confirmed declaration stays authoritative — only the import skipped.
+    // The confirmed declaration stays authoritative - only the import skipped.
     expect(confirmed.status).toBe("CONFIRMED");
     expect(confirmed.tradeId).toBeNull();
     expect(confirmed.warnings).toContain("TRADE_IMPORT_SKIPPED_UNKNOWN_SYMBOL");

@@ -12,43 +12,43 @@ import type {
 import type { OryonDrawingConversions } from "./oryon-chart-engine";
 
 /**
- * Oryon structure-line overlay primitive — the market-structure BREAK
+ * Oryon structure-line overlay primitive - the market-structure BREAK
  * rendering (Phase 9 refinement): for every BOS / CHoCH event, the broken
  * swing level is drawn as a horizontal segment from the PIVOT bar to the
  * BREAK bar at the level price, with a boxed label at the break end.
  *
  * This is the TradingView-style market-structure look: the reader sees
- * WHICH swing was broken, WHEN it was broken, and the event type — instead
+ * WHICH swing was broken, WHEN it was broken, and the event type - instead
  * of a bare floating marker text.
  *
  * Architecture (same argument as the range-box / session overlays, audit-
  * verified against the installed 5.2.1 typings): LWC calls updateAllViews()
  * + the pane renderer before EVERY internal repaint (pan, zoom, autoscale,
- * data updates, live ticks) — a line anchored to real times + a real price
+ * data updates, live ticks) - a line anchored to real times + a real price
  * cannot drift from the candles because the library's own paint loop
  * projects it. One canvas pass, no per-candle DOM, no React.
  *
  * Theming: colors travel as THEME TOKEN KEYS and resolve at draw time via
- * the injected resolver (never stored hex) — a theme switch restyles the
+ * the injected resolver (never stored hex) - a theme switch restyles the
  * lines on the next paint. BOS renders solid, CHoCH dashed (the type is
  * encoded by line style AND the label text, never color alone).
  */
 
-/** Resolved color lookup — invalidated on theme re-apply (engine applyTheme). */
+/** Resolved color lookup - invalidated on theme re-apply (engine applyTheme). */
 export type StructureColorResolver = (tokenKey: string) => string;
 
 export interface OryonStructureLineSpec {
-  /** Stable identity — derived from the break event id (§4.4). */
+  /** Stable identity - derived from the break event id (§4.4). */
   readonly id: string;
-  /** Open time of the PIVOT bar (unix seconds) — segment start. */
+  /** Open time of the PIVOT bar (unix seconds) - segment start. */
   readonly startSec: number;
-  /** Open time of the BREAK bar (unix seconds) — segment end + label. */
+  /** Open time of the BREAK bar (unix seconds) - segment end + label. */
   readonly endSec: number;
   /** The broken swing level (the pivot price). */
   readonly level: number;
-  /** Event type — line style + label text. */
+  /** Event type - line style + label text. */
   readonly type: "BOS" | "CHoCH";
-  /** Structure direction after the break — label side (above/below). */
+  /** Structure direction after the break - label side (above/below). */
   readonly direction: "bullish" | "bearish";
   /** Theme token KEY for line + label box ("profit", "loss", "warning"). */
   readonly colorToken: string;
@@ -107,7 +107,7 @@ class OryonStructureLineRenderer implements IPrimitivePaneRenderer {
         context.setLineDash([]);
         context.globalAlpha = 1;
 
-        // Boxed label at the BREAK end — above the line for a bullish
+        // Boxed label at the BREAK end - above the line for a bullish
         // break, below for a bearish one (mirrors the price crossing).
         const text = spec.type;
         context.font = `${LABEL_FONT_SIZE}px ${this.monoFont}`;
@@ -140,7 +140,7 @@ export interface StructureLineDeps {
 class OryonStructureLinePaneView implements IPrimitivePaneView {
   constructor(private readonly deps: StructureLineDeps) {}
 
-  /** ABOVE the series — structure annotations must stay readable. */
+  /** ABOVE the series - structure annotations must stay readable. */
   zOrder(): "top" {
     return "top";
   }
@@ -161,7 +161,7 @@ class OryonStructureLinePaneView implements IPrimitivePaneView {
 }
 
 /**
- * The attachable primitive. Lines are read through deps at paint time —
+ * The attachable primitive. Lines are read through deps at paint time -
  * setLines() swaps the source array and requests a redraw, so a visibility
  * toggle NEVER recreates the chart.
  */
@@ -178,7 +178,7 @@ export class OryonStructureLinePrimitive implements ISeriesPrimitive<UTCTimestam
   }
 
   updateAllViews(): void {
-    // State is read live in the renderer — nothing to precompute.
+    // State is read live in the renderer - nothing to precompute.
   }
 
   paneViews(): readonly IPrimitivePaneView[] {
@@ -201,7 +201,7 @@ export class OryonStructureLinePrimitive implements ISeriesPrimitive<UTCTimestam
 }
 
 /**
- * Engine-facing manager — owns the attach lifecycle (mirrors the range-box
+ * Engine-facing manager - owns the attach lifecycle (mirrors the range-box
  * manager; the engine stays a thin boundary). Lines survive chart-type
  * switches: specs are remembered and replayed on re-attach.
  */
@@ -221,7 +221,7 @@ export class OryonStructureLineManager {
     return this.lines.length;
   }
 
-  /** (Re)attaches to the given series — no-op when already attached there. */
+  /** (Re)attaches to the given series - no-op when already attached there. */
   attach(series: ISeriesApi<"Candlestick"> | ISeriesApi<"Line">): void {
     if (this.series === series) return;
     this.detach();
@@ -248,7 +248,7 @@ export class OryonStructureLineManager {
     try {
       series.detachPrimitive(primitive as unknown as Parameters<ISeriesApi<"Candlestick">["detachPrimitive"]>[0]);
     } catch {
-      // Never attached / already gone — nothing to clean.
+      // Never attached / already gone - nothing to clean.
     }
   }
 

@@ -1,7 +1,7 @@
 /**
- * Unit — OCR V2 decision layer (V2 spec §15/§16/§17/§23/§4): structured
+ * Unit - OCR V2 decision layer (V2 spec §15/§16/§17/§23/§4): structured
  * issues, quality score, timeline derivation, trade-duplicate evidence,
- * timestamp-order validation. PURE functions — no DB, no clock, fully
+ * timestamp-order validation. PURE functions - no DB, no clock, fully
  * deterministic (V2 §77: same input → same output).
  */
 import { describe, expect, it } from "vitest";
@@ -42,7 +42,7 @@ const completeFields = (): OcrExtractedField[] => [
   field("entryPrice", { normalizedValue: "2345.6" }),
 ];
 
-// ── V2 §16 — deriveRecognitionIssues ─────────────────────────────────────────
+// ── V2 §16 - deriveRecognitionIssues ─────────────────────────────────────────
 
 describe("deriveRecognitionIssues", () => {
   it("is empty for a clean, catalog-resolved recognition", () => {
@@ -164,7 +164,7 @@ describe("deriveRecognitionIssues", () => {
   });
 });
 
-// ── V2 §15 — computeQualityScore ─────────────────────────────────────────────
+// ── V2 §15 - computeQualityScore ─────────────────────────────────────────────
 
 describe("computeQualityScore", () => {
   it("returns null when nothing is readable", () => {
@@ -176,7 +176,7 @@ describe("computeQualityScore", () => {
     expect(score).toBeNull();
   });
 
-  it("is deterministic — the same input yields the same score", () => {
+  it("is deterministic - the same input yields the same score", () => {
     const input: Parameters<typeof computeQualityScore>[0] = {
       fields: completeFields(),
       classification: { type: "TRADE_HISTORY", confidence: 0.9, alternatives: [], platform: "MT5" },
@@ -227,10 +227,10 @@ describe("computeQualityScore", () => {
   });
 });
 
-// ── V2 §23 — buildRecognitionTimeline ────────────────────────────────────────
+// ── V2 §23 - buildRecognitionTimeline ────────────────────────────────────────
 
 describe("buildRecognitionTimeline", () => {
-  it("omits entries without evidence — never invents a timestamp (§23)", () => {
+  it("omits entries without evidence - never invents a timestamp (§23)", () => {
     const timeline = buildRecognitionTimeline({
       fields: [field("profit", { normalizedValue: "12.3" })],
       uploadedAt: "2026-10-07T10:00:00.000Z",
@@ -254,7 +254,7 @@ describe("buildRecognitionTimeline", () => {
       "UPLOADED",
       "CONFIRMED",
     ]);
-    // Wall-clock canonical form preserved — no timezone conversion (§16).
+    // Wall-clock canonical form preserved - no timezone conversion (§16).
     expect(timeline[0]).toEqual({
       kind: "OPEN_TIME",
       at: "2026-01-05T09:30:00",
@@ -263,7 +263,7 @@ describe("buildRecognitionTimeline", () => {
   });
 });
 
-// ── V2 §4 — tradeDuplicateEvidence ───────────────────────────────────────────
+// ── V2 §4 - tradeDuplicateEvidence ───────────────────────────────────────────
 
 describe("tradeDuplicateEvidence", () => {
   const candidate = {
@@ -306,9 +306,9 @@ describe("tradeDuplicateEvidence", () => {
   });
 });
 
-// ── V2 §17 — timestamp order in applyDomainValidation ────────────────────────
+// ── V2 §17 - timestamp order in applyDomainValidation ────────────────────────
 
-describe("applyDomainValidation — timestamp order (V2 §17)", () => {
+describe("applyDomainValidation - timestamp order (V2 §17)", () => {
   it("marks closeTime INVALID when it precedes openTime", () => {
     const fields: OcrExtractedField[] = [
       field("openTime", { normalizedValue: "2026-01-05T10:00:00", rawValue: "2026.01.05 10:00:00" }),

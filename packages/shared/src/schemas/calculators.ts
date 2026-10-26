@@ -3,10 +3,10 @@ import { directionSchema } from "../enums";
 import { decimalStringSchema, positiveDecimalStringSchema } from "./primitives";
 
 /**
- * Calculators contract (Phase 18) — deterministic quantitative utilities.
+ * Calculators contract (Phase 18) - deterministic quantitative utilities.
  *
  * The Calculator bounded context is a pure calculation layer: NO persistence,
- * NO database reads (§34/§53), NO execution semantics (§43 — the result is
+ * NO database reads (§34/§53), NO execution semantics (§43 - the result is
  * never an order instruction). Inputs and outputs travel as decimal strings
  * (wire format, numeric(18,8) compatible).
  *
@@ -19,14 +19,14 @@ import { decimalStringSchema, positiveDecimalStringSchema } from "./primitives";
  * anywhere. Specs are provided per request against the same per-instrument
  * model the frontend already uses (`schemas/instrument.ts`: pipSize,
  * contractSize). Volume constraints (volumeStep/minVolume/maxVolume) are
- * optional broker-specific extensions — never assumed.
+ * optional broker-specific extensions - never assumed.
  */
 
 // ── Error codes (§44) ────────────────────────────────────────────────────────
 
 /**
  * Stable machine codes for the calculators domain. Only the errors the
- * implementation actually raises are listed — input-shape problems are plain
+ * implementation actually raises are listed - input-shape problems are plain
  * 400 ValidationErrors (Zod issues), domain invariants are 422s with codes.
  */
 export const CALCULATOR_ERROR_CODES = {
@@ -51,13 +51,13 @@ export const calculatorInstrumentSpecsSchema = z.object({
   /** Units per lot/contract, e.g. "100000" EURUSD, "100" XAUUSD, "1" crypto. */
   contractSize: positiveDecimalStringSchema,
   /**
-   * Broker volume increment. Defaults to "0.01" (micro-lot) — exactly the
-   * frontend sizer granularity — when omitted.
+   * Broker volume increment. Defaults to "0.01" (micro-lot) - exactly the
+   * frontend sizer granularity - when omitted.
    */
   volumeStep: positiveDecimalStringSchema.optional(),
-  /** Smallest tradeable volume (broker constraint). No default — explicit only. */
+  /** Smallest tradeable volume (broker constraint). No default - explicit only. */
   minVolume: positiveDecimalStringSchema.optional(),
-  /** Largest tradeable volume (broker constraint). No default — explicit only. */
+  /** Largest tradeable volume (broker constraint). No default - explicit only. */
   maxVolume: positiveDecimalStringSchema.optional(),
 });
 
@@ -80,11 +80,11 @@ export const lotSizeCalculatorInputSchema = z
     /**
      * Account-currency balance the risk budget is computed from. The caller
      * supplies it explicitly (Accounts stays the canonical balance owner,
-     * §36) — from a snapshot or a manual entry, the calculation is identical.
+     * §36) - from a snapshot or a manual entry, the calculation is identical.
      */
     balance: positiveDecimalStringSchema,
     /**
-     * Risk budget as a PERCENT of balance: "1" = 1 % (÷100 internally — §12
+     * Risk budget as a PERCENT of balance: "1" = 1 % (÷100 internally - §12
      * normalization guard). Capped at 100 %: risking more than the balance
      * is outside the product model (§48 "risk > 100 %" → 400).
      */
@@ -93,13 +93,13 @@ export const lotSizeCalculatorInputSchema = z
       "riskPercent must be <= 100 (percent of balance)",
     ),
     entryPrice: positiveDecimalStringSchema,
-    /** Stop loss price — must differ from entry (zero distance is rejected, §13). */
+    /** Stop loss price - must differ from entry (zero distance is rejected, §13). */
     stopLossPrice: positiveDecimalStringSchema,
-    /** Optional target — used ONLY for the risk/reward ratio (§14), never for sizing. */
+    /** Optional target - used ONLY for the risk/reward ratio (§14), never for sizing. */
     takeProfitPrice: positiveDecimalStringSchema.optional(),
     /**
      * Direction semantics mirror the frontend: BUY/SELL affects the RR sign
-     * convention only. Sizing uses the symmetric |entry − stop| distance —
+     * convention only. Sizing uses the symmetric |entry − stop| distance -
      * exactly like the frontend Position Sizer (§58 parity).
      */
     direction: directionSchema.default("BUY"),
@@ -139,20 +139,20 @@ export type LotSizeStatus = z.infer<typeof lotSizeStatusSchema>;
 export const lotSizeCalculatorResultSchema = z.object({
   /** Risk budget: balance × riskPercent / 100 (account currency). */
   riskAmount: decimalStringSchema,
-  /** |entry − stop| in price units (always > 0 — §13). */
+  /** |entry − stop| in price units (always > 0 - §13). */
   stopDistance: decimalStringSchema,
   /** stopDistance ÷ pipSize (instrument-independent pip count). */
   stopPips: decimalStringSchema,
   /**
    * Directional risk:reward ratio (frontend computeRR semantics: reward
-   * distance ÷ risk distance, signed — a bad setup yields a negative ratio).
+   * distance ÷ risk distance, signed - a bad setup yields a negative ratio).
    * null when no TP was provided or the SL sits on the wrong side of entry
-   * (risk ≤ 0) — sizing still computed from the symmetric distance.
+   * (risk ≤ 0) - sizing still computed from the symmetric distance.
    */
   riskReward: decimalStringSchema.nullable(),
   /** Exact position size before volume normalization (full precision). */
   rawPositionSize: decimalStringSchema,
-  /** Size floored to the volume step so realized risk ≤ budget (§16 — never rounded up). */
+  /** Size floored to the volume step so realized risk ≤ budget (§16 - never rounded up). */
   normalizedPositionSize: decimalStringSchema,
   /** Money actually risked by the normalized size: normalizedPositionSize × stopDistance × contractSize. */
   realizedRiskAmount: decimalStringSchema,
@@ -165,14 +165,14 @@ export type LotSizeCalculatorResult = z.infer<typeof lotSizeCalculatorResultSche
 // ── Compounding calculator ───────────────────────────────────────────────────
 
 /**
- * §28 — documented product cap: 1 000 periods (~3 years of daily periods)
+ * §28 - documented product cap: 1 000 periods (~3 years of daily periods)
  * keeps the period-by-period response bounded (~hundreds of KB max) and the
  * computation O(1000) trivial. Anything above is a 400, not a hang.
  */
 export const COMPOUNDING_MAX_PERIODS = 1_000;
 
 /**
- * §25 — documented product range: a period GAIN is a growth rate in
+ * §25 - documented product range: a period GAIN is a growth rate in
  * [0 %, 10 000 %] ("5" = 5 %, "100" = 100 %). The model is growth-only:
  * negative rates are not a product concept here (§47 positive-rate model).
  */
@@ -181,12 +181,12 @@ export const COMPOUNDING_MAX_GAIN_PERCENT = 10_000;
 /**
  * Anti-overflow guard (§25): balances beyond 1e15 are far outside anything
  * numeric(18,8) could ever persist (~1e10) and only reachable by pathological
- * projections — hitting it is a 422 CALCULATION_OVERFLOW, not an Infinity.
+ * projections - hitting it is a 422 CALCULATION_OVERFLOW, not an Infinity.
  */
 export const COMPOUNDING_MAX_BALANCE = 1e15;
 
 export const compoundingCalculatorInputSchema = z.object({
-  /** Manually entered starting balance (> 0 — §25). */
+  /** Manually entered starting balance (> 0 - §25). */
   startingBalance: positiveDecimalStringSchema,
   /** Number of periods, 1..COMPOUNDING_MAX_PERIODS (integer, no fractionals). */
   periods: z
@@ -194,7 +194,7 @@ export const compoundingCalculatorInputSchema = z.object({
     .int()
     .min(1)
     .max(COMPOUNDING_MAX_PERIODS),
-  /** Gain per period, PERCENT: "5" = 5 % (÷100 internally — §23 normalization). */
+  /** Gain per period, PERCENT: "5" = 5 % (÷100 internally - §23 normalization). */
   gainPerPeriodPercent: decimalStringSchema.refine(
     (value) => Number(value) >= 0 && Number(value) <= COMPOUNDING_MAX_GAIN_PERCENT,
     `gainPerPeriodPercent must be between 0 and ${COMPOUNDING_MAX_GAIN_PERCENT} (percent per period)`,
@@ -205,9 +205,9 @@ export type CompoundingCalculatorInput = z.infer<typeof compoundingCalculatorInp
 
 /**
  * One period row (§21/§26). Absolute profit (`periodProfit`) and percentage
- * gain (`cumulativeGainPercentage`) are deliberately distinct fields —
+ * gain (`cumulativeGainPercentage`) are deliberately distinct fields -
  * never conflated. All balances are FULL-PRECISION internally, rendered to
- * the 8-decimal wire format only for display (§27 — never round early).
+ * the 8-decimal wire format only for display (§27 - never round early).
  */
 export const compoundingPeriodRowSchema = z.object({
   /** 1-based period index. */
@@ -232,9 +232,9 @@ export const compoundingCalculatorResultSchema = z.object({
   rows: z.array(compoundingPeriodRowSchema),
   /** Balance after the last period (absolute). */
   finalBalance: decimalStringSchema,
-  /** Total Profit — absolute, account currency (§26 semantics). */
+  /** Total Profit - absolute, account currency (§26 semantics). */
   totalProfit: decimalStringSchema,
-  /** Total Gain — PERCENT of the original starting balance, NOT absolute (§26). */
+  /** Total Gain - PERCENT of the original starting balance, NOT absolute (§26). */
   totalGainPercentage: decimalStringSchema,
 });
 

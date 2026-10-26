@@ -13,14 +13,14 @@ import { useAcademyPatternDrill, useAcademyPracticeStats, useLogPractice } from 
 import { useI18n } from "@/i18n/i18n-provider";
 
 /**
- * Practice zone — six ways to train recognition, not prediction:
- * 1. Flashcards — daily spaced repetition (glossary + lesson takeaways);
- * 2. Pattern Identification — randomized drills, engine-graded, with a
+ * Practice zone - six ways to train recognition, not prediction:
+ * 1. Flashcards - daily spaced repetition (glossary + lesson takeaways);
+ * 2. Pattern Identification - randomized drills, engine-graded, with a
  *    weakness bank that resurfaces missed patterns;
- * 3. Support/Resistance + Supply/Demand — read the level / the zone;
- * 4. Candle Lab — the interactive OHLC simulator (spec §25);
- * 5. Position Sizing — risk arithmetic with tolerance grading;
- * 6. Structure Reading + Scenario Player — decision training.
+ * 3. Support/Resistance + Supply/Demand - read the level / the zone;
+ * 4. Candle Lab - the interactive OHLC simulator (spec §25);
+ * 5. Position Sizing - risk arithmetic with tolerance grading;
+ * 6. Structure Reading + Scenario Player - decision training.
  * Every attempt lands in the practice ledger (per-drill accuracy below).
  */
 
@@ -106,11 +106,11 @@ function PracticeStats() {
 // ── 1. Pattern identification drill ──────────────────────────────────────────
 
 /**
- * Candle-ink palettes — the color-independence teaching device. Every
+ * Candle-ink palettes - the color-independence teaching device. Every
  * palette re-inks the SAME anatomy via [data-candle-ink] CSS variables
  * (globals.css): "inverse" mirrors the East-Asian convention (red = up),
  * "mono" is the classic hollow/filled newspaper chart. The lesson: the
- * pattern is the geometry and its location — never the color.
+ * pattern is the geometry and its location - never the color.
  */
 const INK_PALETTES = [
   { id: "classic" },
@@ -120,7 +120,7 @@ const INK_PALETTES = [
   { id: "mono" },
 ] as const;
 
-// Palette machine ids — labels resolve through dict.academy.practice.inkPalettes.
+// Palette machine ids - labels resolve through dict.academy.practice.inkPalettes.
 type InkPaletteId = (typeof INK_PALETTES)[number]["id"];
 
 const INK_STORAGE_KEY = "cosmoz:candle-ink";
@@ -183,7 +183,7 @@ function PatternDrill() {
     try {
       window.localStorage.setItem(INK_STORAGE_KEY, id);
     } catch {
-      /* private mode — palette stays session-only */
+      /* private mode - palette stays session-only */
     }
   };
 
@@ -310,7 +310,7 @@ function PatternDrill() {
   );
 }
 
-// ── 2. Candle Lab — the interactive OHLC simulator (spec §25) ───────────────
+// ── 2. Candle Lab - the interactive OHLC simulator (spec §25) ───────────────
 
 type Ohlc = { o: number; h: number; l: number; c: number };
 
@@ -322,7 +322,7 @@ function CandleLab() {
   const set = (key: keyof Ohlc) => (value: number) => {
     setOhlc((prev) => {
       const next = { ...prev, [key]: value };
-      // Keep h ≥ max(o, c) and l ≤ min(o, c) — physics of a candle.
+      // Keep h ≥ max(o, c) and l ≤ min(o, c) - physics of a candle.
       next.h = Math.max(next.h, next.o, next.c);
       next.l = Math.min(next.l, next.o, next.c);
       return next;
@@ -396,7 +396,7 @@ function CandleLab() {
 
 // ── 3. Structure reading drill ──────────────────────────────────────────────
 
-// Scenario machine ids — the content (context/prompt/options/explanation)
+// Scenario machine ids - the content (context/prompt/options/explanation)
 // resolves through dict.academy.practice.scenarios; the variant id doubles
 // as the StructureFigure geometry key and stays API-stable.
 const STRUCTURE_VARIANTS = ["uptrend", "bos-up", "choch", "range", "liquidity-sweep", "double-top"] as const;

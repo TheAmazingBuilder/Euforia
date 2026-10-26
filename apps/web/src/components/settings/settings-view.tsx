@@ -35,7 +35,7 @@ import { LocalizationCard } from "@/components/settings/cards/localization-card"
 import { AccountCard } from "@/components/settings/cards/account-card";
 
 /**
- * Settings module shell — a two-pane preference center: category rail
+ * Settings module shell - a two-pane preference center: category rail
  * (desktop) / chip scroller (mobile) on the left, ONE category at a time
  * on the right. Includes fuzzy search across categories and deep links
  * via location.hash (#trading, #notifications…) so support answers can
@@ -175,7 +175,7 @@ function readInitialCategory(): string {
     : CATEGORIES[0]!.id;
 }
 
-/** Key-order-stable stringify — safe deep comparison for the modified badge. */
+/** Key-order-stable stringify - safe deep comparison for the modified badge. */
 function stableStringify(value: unknown): string {
   if (value === null || typeof value !== "object") return JSON.stringify(value) ?? "null";
   if (Array.isArray(value)) return `[${value.map(stableStringify).join(",")}]`;
@@ -184,7 +184,7 @@ function stableStringify(value: unknown): string {
 }
 
 /**
- * Modified badges (module upgrade) — a domain lights up when its CURRENT
+ * Modified badges (module upgrade) - a domain lights up when its CURRENT
  * value differs from the shared safe defaults (server document vs the
  * shared DEFAULT_USER_PREFERENCES, deep-compared key-order-stable).
  */
@@ -213,13 +213,13 @@ export function SettingsView() {
   const [query, setQuery] = React.useState("");
   const modifiedDomains = useModifiedDomains();
   const { dict } = useI18n();
-  /** Localized category meta — EN CATEGORIES stay the structural source. */
+  /** Localized category meta - EN CATEGORIES stay the structural source. */
   const categoryMeta = (category: (typeof CATEGORIES)[number]) => ({
     label: dict.settings.categories[category.id]?.label ?? category.label,
     description: dict.settings.categories[category.id]?.description ?? category.description,
   });
 
-  // Deep links stay live — back/forward and manual hash edits work.
+  // Deep links stay live - back/forward and manual hash edits work.
   React.useEffect(() => {
     const onHashChange = () => setActive(readInitialCategory());
     window.addEventListener("hashchange", onHashChange);
@@ -265,7 +265,7 @@ export function SettingsView() {
         </p>
       </header>
 
-      {/* Search — filters categories by label, description and keywords.
+      {/* Search - filters categories by label, description and keywords.
           ⌘K opens the GLOBAL palette, which now carries a Settings group. */}
       <div className="relative">
         <Search
@@ -291,7 +291,7 @@ export function SettingsView() {
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[220px_minmax(0,1fr)]">
-        {/* Category rail — sticky on desktop, chip scroller on mobile. */}
+        {/* Category rail - sticky on desktop, chip scroller on mobile. */}
         <nav aria-label={dict.settings.view.categoriesNavAria} className="lg:sticky lg:top-20 lg:self-start">
           <div className="flex gap-2 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible lg:pb-0">
             {visibleCategories.map((category) => {
@@ -335,7 +335,7 @@ export function SettingsView() {
           </div>
         </nav>
 
-        {/* Content pane — the active category only. */}
+        {/* Content pane - the active category only. */}
         <div className="min-w-0" data-testid="settings-content">
           {activeCategory ? (
             <activeCategory.Component />

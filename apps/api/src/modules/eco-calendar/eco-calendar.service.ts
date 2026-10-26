@@ -1,11 +1,11 @@
 /**
- * Eco-Calendar service — the reference macro calendar + the per-user
+ * Eco-Calendar service - the reference macro calendar + the per-user
  * trading-calendar overlay (blocks, news importers, day range view).
  *
  * EcoEvent is a GLOBAL catalog: a deterministic weekly release schedule
  * (UTC) generated lazily over a rolling window (past 35d → future 21d).
  * Values (actual/forecast/previous) stay null until a release pipeline
- * feeds them — the backend never fabricates market outcomes.
+ * feeds them - the backend never fabricates market outcomes.
  */
 import { Injectable } from "@nestjs/common";
 import { randomUUID } from "node:crypto";
@@ -22,7 +22,7 @@ import { PrismaService } from "../../infrastructure/prisma/prisma.service";
 import { IdentityRepository } from "../identity/identity.repository";
 import { num, round2 } from "../stats/stats.helpers";
 
-/** The weekly release template (UTC hours) — deterministic and documented. */
+/** The weekly release template (UTC hours) - deterministic and documented. */
 interface ReleaseTemplate {
   weekday: number; // 0 = Sunday
   hour: number;
@@ -30,7 +30,7 @@ interface ReleaseTemplate {
   currency: string;
   title: string;
   impact: "HIGH" | "MEDIUM" | "LOW";
-  /** Every Nth week of the ISO year, modulo bucket — for rate decisions. */
+  /** Every Nth week of the ISO year, modulo bucket - for rate decisions. */
   everyNthWeek?: number;
   weekBucket?: number;
 }
@@ -83,7 +83,7 @@ export class EcoCalendarService {
     };
   }
 
-  /** Lazy rolling-window generator — idempotent per (title, scheduledAt). */
+  /** Lazy rolling-window generator - idempotent per (title, scheduledAt). */
   private async ensureEcoWindow(): Promise<void> {
     const now = new Date();
     const start = new Date(now.getTime() - PAST_DAYS * 86_400_000);
@@ -117,7 +117,7 @@ export class EcoCalendarService {
             currency: template.currency,
             impact: template.impact,
             scheduledAt,
-            // Deterministic template identity — the (provider, providerEventId)
+            // Deterministic template identity - the (provider, providerEventId)
             // unique keeps the lazy rolling-window generator idempotent.
             provider: "ECO_TEMPLATE",
             providerEventId: `${template.title}:${scheduledAt.toISOString()}`,
@@ -191,7 +191,7 @@ export class EcoCalendarService {
       dates,
       message:
         imported === 0
-          ? "Nothing to import — the next two weeks are already marked or clear."
+          ? "Nothing to import - the next two weeks are already marked or clear."
           : `${imported} high-impact day${imported === 1 ? "" : "s"} imported as news blockers over the next two weeks.`,
     };
   }

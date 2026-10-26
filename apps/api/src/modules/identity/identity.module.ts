@@ -1,18 +1,18 @@
 /**
- * Identity bounded context (Phase 2, refined Phase 16) — authentication,
+ * Identity bounded context (Phase 2, refined Phase 16) - authentication,
  * sessions, MFA, authorization foundation, account lifecycle.
  *
  * Generic subdomain (Phase 0 §I): flat application services + one
- * repository + thin controllers — no ceremonial layering.
+ * repository + thin controllers - no ceremonial layering.
  *
  * Phase 16 boundary refinement: the Security center and the security-event
  * ledger now live in `modules/security` (SecurityModule + the shared
  * SecurityEventModule write port). Identity records auth events THROUGH
  * that port and keeps ownership of authentication, sessions, MFA and
- * authorization — it never implements security visibility itself.
+ * authorization - it never implements security visibility itself.
  *
  * Guard order note: the global ThrottlerGuard (RateLimitModule, imported
- * before this module in AppModule) runs BEFORE JwtAuthGuard — unauthenticated
+ * before this module in AppModule) runs BEFORE JwtAuthGuard - unauthenticated
  * probes are rate-limited before touching the token verifier.
  */
 import { Module, type Provider } from "@nestjs/common";
@@ -89,11 +89,11 @@ const rateLimiterProvider: Provider = {
     MfaService,
     AccountService,
     guardDepsProvider,
-    // Global authentication — after the throttler (module import order).
+    // Global authentication - after the throttler (module import order).
     { provide: APP_GUARD, useClass: JwtAuthGuard },
   ],
   // SecurityModule (the Security center) and MonitoringModule (Phase 17)
-  // orchestrate these capabilities — they stay OWNED here; exports are the
+  // orchestrate these capabilities - they stay OWNED here; exports are the
   // narrow public contract (§33).
   exports: [IdentityRepository, TokenService, PasswordHasherService, ReauthService, MfaService, MailerService],
 })

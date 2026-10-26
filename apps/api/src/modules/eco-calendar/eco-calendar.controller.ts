@@ -1,5 +1,5 @@
 /**
- * Eco-Calendar controller — the global macro calendar + per-user overlay.
+ * Eco-Calendar controller - the global macro calendar + per-user overlay.
  */
 import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Post, Put, Query } from "@nestjs/common";
 import { dateKeySchema, upsertCalendarBlockInputSchema } from "../../shared/contracts";

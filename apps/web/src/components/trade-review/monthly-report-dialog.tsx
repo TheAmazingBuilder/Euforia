@@ -31,7 +31,7 @@ function monthKey(date: Date): string {
 }
 
 /**
- * Monthly review journal — a ONE-PAGE printable report (browser print →
+ * Monthly review journal - a ONE-PAGE printable report (browser print →
  * "Save as PDF"). The sheet aggregates the month's reviews client-side from
  * the SAME server rows the module already renders (no new aggregation
  * contract): KPIs, grade distribution, quality averages, the month's lessons
@@ -141,7 +141,7 @@ export function MonthlyReportDialog({
             Monthly review journal
           </DialogTitle>
           <DialogDescription>
-            One printable page — grades, qualities, lessons and commitments. Print it or save it
+            One printable page - grades, qualities, lessons and commitments. Print it or save it
             as PDF from the browser dialog.
           </DialogDescription>
         </DialogHeader>
@@ -176,7 +176,7 @@ export function MonthlyReportDialog({
         <div className="print-sheet rounded-xl border border-border bg-background p-6" data-testid="review-report-sheet">
           <header className="flex items-start justify-between border-b pb-3">
             <div>
-              <p className="font-heading text-lg font-bold tracking-tight">Euforia — Trade Review</p>
+              <p className="font-heading text-lg font-bold tracking-tight">Euforia - Trade Review</p>
               <p className="text-sm text-muted-foreground">Monthly journal · {label}</p>
             </div>
             <div className="text-right text-[10px] leading-relaxed text-muted-foreground">
@@ -187,7 +187,7 @@ export function MonthlyReportDialog({
 
           {monthRows.length === 0 ? (
             <p className="py-10 text-center text-sm text-muted-foreground">
-              No reviewed trades this month yet — the page fills itself as the queue clears.
+              No reviewed trades this month yet - the page fills itself as the queue clears.
             </p>
           ) : (
             <div className="mt-4 space-y-5 text-[11px]">
@@ -198,7 +198,7 @@ export function MonthlyReportDialog({
                     { label: "Reviews", value: String(monthRows.length) },
                     { label: "Total R", value: `${summary.rSum >= 0 ? "+" : ""}${summary.rSum.toFixed(1)}R` },
                     { label: "Win rate", value: `${Math.round((summary.wins / monthRows.length) * 100)}%` },
-                    { label: "Plan followed", value: summary.followedPct === null ? "—" : `${summary.followedPct}%` },
+                    { label: "Plan followed", value: summary.followedPct === null ? "-" : `${summary.followedPct}%` },
                   ] as const
                 ).map((kpi) => (
                   <div key={kpi.label} className="rounded-lg border px-2.5 py-2">
@@ -243,7 +243,7 @@ export function MonthlyReportDialog({
                     Quality averages (1–5)
                   </p>
                   {summary.avgQuality === null ? (
-                    <p className="text-muted-foreground">—</p>
+                    <p className="text-muted-foreground">-</p>
                   ) : (
                     <div className="space-y-1.5">
                       {(
@@ -285,7 +285,7 @@ export function MonthlyReportDialog({
               {monthCommitments.length > 0 ? (
                 <div>
                   <p className="mb-1.5 text-[9px] font-semibold tracking-wider uppercase text-muted-foreground">
-                    Carry forward — next time I will
+                    Carry forward - next time I will
                   </p>
                   <ol className="list-decimal space-y-1 pl-4">
                     {monthCommitments.map((row) => (

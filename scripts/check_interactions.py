@@ -1,4 +1,4 @@
-"""Interaction integrity — click through every rail item (desktop + mobile sheet),
+"""Interaction integrity - click through every rail item (desktop + mobile sheet),
 check the command palette contents, and verify the sheet closes on navigate.
 """
 
@@ -61,7 +61,7 @@ with sync_playwright() as p:
     nav(page, "/", settle=1500)
 
     for href, label in RAIL.items():
-        link = page.locator(f'nav[aria-label="Main navigation"] a[aria-label="Cosmoz — Dashboard"], nav[aria-label="Main navigation"] a[title="{label}"]').first
+        link = page.locator(f'nav[aria-label="Main navigation"] a[aria-label="Cosmoz - Dashboard"], nav[aria-label="Main navigation"] a[title="{label}"]').first
         try:
             link.click(timeout=4000)
             page.wait_for_timeout(700)
@@ -117,4 +117,4 @@ with sync_playwright() as p:
 (OUT / "interactions.json").write_text(json.dumps(result, indent=2))
 print(json.dumps(result, indent=2))
 print("---ISSUES---")
-print("\n".join(issues) if issues else "NONE — all interactions healthy")
+print("\n".join(issues) if issues else "NONE - all interactions healthy")

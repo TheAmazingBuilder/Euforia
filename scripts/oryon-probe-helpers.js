@@ -1,10 +1,10 @@
 /**
- * Shared probe helpers for the Oryon verification scripts — the catalog-
+ * Shared probe helpers for the Oryon verification scripts - the catalog-
  * driven toolbar v2/v3 interaction shim.
  *
  * History: the v1 rail exposed FLAT buttons (`oryon-tool-trendline`, …).
  * Toolbar v2 moved to split controls + grouped flyouts (`oryon-tool-caret-*
- * / oryon-tool-item-*`) — the P2/P3/P7 probes kept the v1 selectors and
+ * / oryon-tool-item-*`) - the P2/P3/P7 probes kept the v1 selectors and
  * silently timed out (the documented "dérive sondes"). This module restores
  * them: ONE arming helper driven by the same group mapping as the catalog.
  */
@@ -46,7 +46,7 @@ const LEGACY_TOOL_ALIAS = {
 
 /**
  * Arms a drawing tool through the rail flyout (caret → item → settle).
- * The settle wait lets the Radix popover exit animation finish — a chart
+ * The settle wait lets the Radix popover exit animation finish - a chart
  * click landing inside the exiting popover is swallowed (observed).
  */
 async function armTool(page, tool) {

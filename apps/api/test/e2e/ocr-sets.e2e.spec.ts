@@ -1,5 +1,5 @@
 /**
- * e2e — multi-screenshot recognition SETS (V2 spec §1/§2/§14/§15/§18):
+ * e2e - multi-screenshot recognition SETS (V2 spec §1/§2/§14/§15/§18):
  * create (2..6 screenshots → individual recognitions + fused draft),
  * conflict recording, correlation (coherent flag), fused confirmation
  * through the Trading Core bridge (`ocr:set:<id>` idempotency), set
@@ -103,7 +103,7 @@ async function confirmSet(a: UserCtx, id: string, payload: Record<string, unknow
 
 // ── Contract + auth discipline ───────────────────────────────────────────────
 
-describe("set routes — contract discipline", () => {
+describe("set routes - contract discipline", () => {
   it("is 401 without credentials", async () => {
     for (const [method, url] of [
       ["POST", "/api/v1/ocr/sets"],
@@ -173,7 +173,7 @@ describe("multi-screenshot set lifecycle (V2 §1/§14/§18)", () => {
     expect(symbolField?.normalizedValue).toBe(first.symbol);
     expect(symbolField?.warnings).toContain("MULTI_SOURCE_AGREEMENT");
 
-    // One MOCK account connected — the import needs a target (the persisted
+    // One MOCK account connected - the import needs a target (the persisted
     // default account convention, engine quality §3.1).
     const connected = await app.inject({
       method: "POST",
@@ -201,7 +201,7 @@ describe("multi-screenshot set lifecycle (V2 §1/§14/§18)", () => {
     expect(confirmedSet.tradeIds).toHaveLength(1);
     expect(confirmedSet.tradeId).toBeTruthy();
 
-    // Idempotent replay — same declared payload → no second trade (§79).
+    // Idempotent replay - same declared payload → no second trade (§79).
     const replay = await confirmSet(a, set.id, {});
     expect(replay.statusCode).toBe(200);
     const tradesReplay = await listTrades(a);
@@ -212,7 +212,7 @@ describe("multi-screenshot set lifecycle (V2 §1/§14/§18)", () => {
     const a = await user();
     const [first, second] = await pickCoherentNonces(a);
     const created = await createSet(a, [first.nonce + 1, second.nonce + 1]);
-    // Nonce+1 may flip the engine bucket — only assert what the contract
+    // Nonce+1 may flip the engine bucket - only assert what the contract
     // guarantees: the creation itself (2 distinct images).
     if (created.status !== 201) {
       expect(created.status).toBe(400); // deterministic bucket refused → honest
@@ -228,7 +228,7 @@ describe("multi-screenshot set lifecycle (V2 §1/§14/§18)", () => {
     });
     expect(deleted.statusCode).toBe(200);
 
-    // Fusion never destroys individual results — every member survives.
+    // Fusion never destroys individual results - every member survives.
     for (const memberId of memberIds) {
       const res = await app.inject({
         method: "GET",
@@ -244,7 +244,7 @@ describe("multi-screenshot set lifecycle (V2 §1/§14/§18)", () => {
     const b = await user();
     const [first, second] = await pickCoherentNonces(a);
     const created = await createSet(a, [first.nonce + 2, second.nonce + 2]);
-    if (created.status !== 201) return; // bucket refused — IDOR covered elsewhere
+    if (created.status !== 201) return; // bucket refused - IDOR covered elsewhere
     const setId = created.body.set.id;
 
     for (const [method, url] of [
@@ -269,5 +269,5 @@ async function listTrades(a: UserCtx): Promise<Array<Record<string, unknown>>> {
 }
 
 // The recognition response schema import is used by the member assertion
-// helper below — keeps the suite contract-typed end to end.
+// helper below - keeps the suite contract-typed end to end.
 void ocrRecognitionResponseSchema;

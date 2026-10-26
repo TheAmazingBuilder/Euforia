@@ -3,7 +3,7 @@
 import { ThemeProvider as NextThemesProvider } from "next-themes";
 
 /**
- * Theme runtime — next-themes owns the DOM (zero-flash). "system" resolves
+ * Theme runtime - next-themes owns the DOM (zero-flash). "system" resolves
  * to the OS preference (Settings §Appearance: Light / Dark / System);
  * the stored default stays dark-blue so first visits keep the brand look.
  */

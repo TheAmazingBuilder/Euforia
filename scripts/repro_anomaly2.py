@@ -1,4 +1,4 @@
-"""Focused repro: (1) palette stale entries — search INSIDE the dialog only;
+"""Focused repro: (1) palette stale entries - search INSIDE the dialog only;
 (2) Trades rail click repro x2 with generous settle.
 """
 
@@ -26,7 +26,7 @@ with sync_playwright() as p:
     ctx = browser.new_context(viewport={"width": 1440, "height": 900})
     page = ctx.new_page()
 
-    # ── (1) Palette entries — dialog-scoped ──
+    # ── (1) Palette entries - dialog-scoped ──
     nav(page, "/", settle=1500)
     page.keyboard.press("Control+k")
     page.wait_for_timeout(800)

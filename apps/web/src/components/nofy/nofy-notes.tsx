@@ -48,7 +48,7 @@ import {
 import { FolderChip, NofyEmptyState, TagChip, nofyRelativeTime } from "./nofy-shared";
 
 /**
- * Nofy notes browser — the shared list/grid surface behind My Notes,
+ * Nofy notes browser - the shared list/grid surface behind My Notes,
  * Favorites and the per-folder views. Search is debounced and served
  * server-side (title + content + tags + folder, spec §21); sorting and
  * the list/grid views follow the module convention.
@@ -76,7 +76,7 @@ export function NotesBrowser({
   const [rawQuery, setRawQuery] = React.useState(params.q);
   const [layout, setLayout] = React.useState<"list" | "grid">("list");
   const [moveTarget, setMoveTarget] = React.useState<NofyNoteRow | null>(null);
-  /** External filter changes (tab switches, chip clicks) adopt into the input —
+  /** External filter changes (tab switches, chip clicks) adopt into the input -
    * render-phase adjustment with pure state (no refs). */
   const [lastExternalQuery, setLastExternalQuery] = React.useState(params.q);
   if (params.q !== lastExternalQuery) {
@@ -378,7 +378,7 @@ function MoveDialog({ note, onClose }: { note: NofyNoteRow | null; onClose: () =
         <DialogHeader>
           <DialogTitle>{N.notes.moveTitle}</DialogTitle>
           <DialogDescription>
-            {note ? `“${note.title === "" ? N.shared.untitledNote : note.title}” — ${N.notes.movePickWhere}` : ""}
+            {note ? `“${note.title === "" ? N.shared.untitledNote : note.title}” - ${N.notes.movePickWhere}` : ""}
           </DialogDescription>
         </DialogHeader>
         <Select value={folderId} onValueChange={setFolderId}>

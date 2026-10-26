@@ -2,7 +2,7 @@
  * Re-authentication for sensitive operations (Phase 2 mandate §37; shared
  * security.ts §13): POST /security/reauth with the account password issues a
  * SINGLE-USE, 5-minute, purpose-agnostic capability token. Sensitive
- * mutations consume it — a token cannot be replayed, and failed attempts
+ * mutations consume it - a token cannot be replayed, and failed attempts
  * are rate-limited (5 failures / 15 min, lockout message parity).
  *
  * In-memory storage matches the 5-minute TTL: restarts invalidate pending
@@ -54,12 +54,12 @@ export class ReauthService {
         userId: user.id,
         type: "REAUTH_FAILED",
         actor: user.email,
-        context: "Re-authentication failed — wrong password.",
+        context: "Re-authentication failed - wrong password.",
         outcome: "FAILURE",
       });
       const failuresLeft = Math.max(0, REAUTH_LIMIT - this.failuresSoFar(user.email));
       throw new UnauthorizedError(
-        `Wrong password — ${failuresLeft} attempt(s) left before a temporary lock.`,
+        `Wrong password - ${failuresLeft} attempt(s) left before a temporary lock.`,
         "INVALID_CREDENTIALS",
       );
     }
@@ -74,7 +74,7 @@ export class ReauthService {
       userId: user.id,
       type: "REAUTH_OK",
       actor: user.email,
-      context: "Re-authentication succeeded — sensitive-action token issued.",
+      context: "Re-authentication succeeded - sensitive-action token issued.",
     });
     return { token, expiresAt: new Date(expiresAt).toISOString() };
   }
@@ -87,7 +87,7 @@ export class ReauthService {
   async consume(token: string | undefined, userId: string): Promise<void> {
     if (!token) {
       throw new UnauthorizedError(
-        "Re-authentication required — confirm your password first.",
+        "Re-authentication required - confirm your password first.",
         "INVALID_REAUTH_TOKEN",
       );
     }
@@ -95,13 +95,13 @@ export class ReauthService {
     this.pending.delete(token); // single-use: consumed even on expiry
     if (!entry || entry.userId !== userId) {
       throw new UnauthorizedError(
-        "Re-authentication required — confirm your password first.",
+        "Re-authentication required - confirm your password first.",
         "INVALID_REAUTH_TOKEN",
       );
     }
     if (entry.expiresAt <= Date.now()) {
       throw new UnauthorizedError(
-        "This re-authentication has expired — confirm your password again.",
+        "This re-authentication has expired - confirm your password again.",
         "REAUTH_TOKEN_EXPIRED",
       );
     }
@@ -111,7 +111,7 @@ export class ReauthService {
     return this.limiter.count("reauth", email);
   }
 
-  /** Opportunistic cleanup — pending entries are tiny and short-lived. */
+  /** Opportunistic cleanup - pending entries are tiny and short-lived. */
   private sweepExpired(): void {
     const now = Date.now();
     for (const [token, entry] of this.pending) {

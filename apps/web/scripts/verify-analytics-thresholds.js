@@ -1,5 +1,5 @@
 /**
- * Verify — Analytics detection thresholds (adjustable RR floor / overtrading
+ * Verify - Analytics detection thresholds (adjustable RR floor / overtrading
  * window) + pattern-drawer coming-soon actions.
  *
  * IMPORTANT: navigation uses sidebar/tab clicks ONLY (SPA). Exactly ONE
@@ -20,7 +20,7 @@
  *   E. Reset restores defaults (URL params removed, applied readout back).
  *   F. Deep link /analytics?tab=behavior&rrFloor=3 survives ONE reload.
  *   G. Pattern drawer: Actions section with "View Playbook Rule" and
- *      "Save to Nofy" — both disabled, "Coming soon" declared.
+ *      "Save to Nofy" - both disabled, "Coming soon" declared.
  *   H. Existing tabs untouched (Performance spot-check), FilterBar intact.
  *   I. Mobile 390px: no horizontal overflow on the Behavior tab.
  *   J. Console/network cleanliness.
@@ -55,7 +55,7 @@ const SHOTS = "/home/z/my-project/scripts/shots/analytics-thresholds";
 
   const results = [];
   const check = (name, ok, extra = "") => {
-    results.push(`${ok ? "PASS" : "FAIL"} — ${name}${extra ? ` (${extra})` : ""}`);
+    results.push(`${ok ? "PASS" : "FAIL"} - ${name}${extra ? ` (${extra})` : ""}`);
     console.log(results[results.length - 1]);
   };
   const shot = async (name) => {
@@ -163,7 +163,7 @@ const SHOTS = "/home/z/my-project/scripts/shots/analytics-thresholds";
     const headline = await otCard.first().innerText();
     check("C4 OVERTRADING headline mirrors the 1.5× window", /1\.5×/.test(headline), headline.slice(0, 90));
   } else {
-    // Seeded dataset: max 2 trades/day — below the declared min 4/day floor,
+    // Seeded dataset: max 2 trades/day - below the declared min 4/day floor,
     // so an absent OVERTRADING pattern IS the correct engine answer.
     check("C4 OVERTRADING absent is consistent with the declared min 4/day floor", true, "seed max 2 trades/day");
   }
@@ -200,7 +200,7 @@ const SHOTS = "/home/z/my-project/scripts/shots/analytics-thresholds";
   const appliedReload = await page.locator('[data-testid="behavior-thresholds-applied"]').innerText();
   check("F1 Thresholds survive a reload via the URL", /RR\s*3/.test(appliedReload) && /1\.5/.test(appliedReload), appliedReload);
 
-  // ══ G. Pattern drawer — coming-soon actions ═════════════════════════════
+  // ══ G. Pattern drawer - coming-soon actions ═════════════════════════════
   const firstCard = page.locator('[data-testid="behavior-pattern-card"]').first();
   await firstCard.locator("button", { hasText: /view details/i }).click();
   await page.locator('[data-testid="behavior-pattern-drawer"]').waitFor({ state: "visible", timeout: 15_000 });
@@ -230,7 +230,7 @@ const SHOTS = "/home/z/my-project/scripts/shots/analytics-thresholds";
     (await page.locator('[data-testid="analytics-tab-performance"]').innerText()).length > 100);
   check("H2 FilterBar still present", (await page.locator('[data-testid="analytics-filters"]').count()) === 1);
 
-  // ══ I. Mobile 390px — no horizontal overflow ════════════════════════════
+  // ══ I. Mobile 390px - no horizontal overflow ════════════════════════════
   await page.setViewportSize({ width: 390, height: 844 });
   await openTab("Behavior");
   await page.waitForTimeout(600);

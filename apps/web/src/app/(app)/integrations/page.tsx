@@ -6,7 +6,7 @@ import { IntegrationsHubView } from "@/components/integrations/integrations-hub-
 export const metadata: Metadata = {
   title: "Integrations",
   description:
-    "The Integration Hub: brokers, exchanges, market data, economic feeds, news, charting and delivery channels — provider-agnostic and read-only.",
+    "The Integration Hub: brokers, exchanges, market data, economic feeds, news, charting and delivery channels - provider-agnostic and read-only.",
 };
 
 export default function IntegrationsPage() {

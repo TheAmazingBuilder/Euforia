@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 /**
- * Emotion → outcome heatmap — how the trades entered under each logged
+ * Emotion → outcome heatmap - how the trades entered under each logged
  * emotion turned out over the window. Correlational reading ONLY (the card
  * says so): cell color encodes the win rate from loss-rose to win-emerald,
  * Avg R sits next to it. Excluded (no emotion logged) reported honestly.
@@ -25,7 +25,7 @@ export function EmotionMatrix({ matrix }: { matrix: DisciplineEmotionMatrixRespo
       <CardContent className="space-y-3">
         {matrix.rows.length === 0 ? (
           <p className="py-4 text-center text-sm text-muted-foreground">
-            No emotion logged in the window yet — tap a feeling at capture and the pattern appears.
+            No emotion logged in the window yet - tap a feeling at capture and the pattern appears.
           </p>
         ) : (
           <div className="overflow-x-auto">
@@ -60,7 +60,7 @@ export function EmotionMatrix({ matrix }: { matrix: DisciplineEmotionMatrixRespo
                           cellTone(row.winRatePct),
                         )}
                       >
-                        {row.winRatePct === null ? "—" : `${row.winRatePct.toFixed(0)}%`}
+                        {row.winRatePct === null ? "-" : `${row.winRatePct.toFixed(0)}%`}
                       </span>
                     </td>
                     <td className="pl-2 py-2 text-right">
@@ -70,7 +70,7 @@ export function EmotionMatrix({ matrix }: { matrix: DisciplineEmotionMatrixRespo
                           rTone(row.avgR),
                         )}
                       >
-                        {row.avgR === null ? "—" : `${row.avgR > 0 ? "+" : ""}${row.avgR.toFixed(2)}R`}
+                        {row.avgR === null ? "-" : `${row.avgR > 0 ? "+" : ""}${row.avgR.toFixed(2)}R`}
                       </span>
                     </td>
                   </tr>
@@ -80,7 +80,7 @@ export function EmotionMatrix({ matrix }: { matrix: DisciplineEmotionMatrixRespo
           </div>
         )}
         <p className="border-t border-border pt-2 text-[11px] leading-relaxed text-muted-foreground">
-          Window starting {matrix.windowStart} · correlational, not causal — the grid shows
+          Window starting {matrix.windowStart} · correlational, not causal - the grid shows
           patterns, it doesn&apos;t explain them.
           {matrix.excluded > 0 ? ` ${matrix.excluded} trade${matrix.excluded === 1 ? "" : "s"} without an emotion logged are not judged.` : ""}
         </p>
@@ -89,7 +89,7 @@ export function EmotionMatrix({ matrix }: { matrix: DisciplineEmotionMatrixRespo
   );
 }
 
-/** Cell tone from the win rate — emerald ≥ 60, amber middle, rose < 40. */
+/** Cell tone from the win rate - emerald ≥ 60, amber middle, rose < 40. */
 function cellTone(winRatePct: number | null): string {
   if (winRatePct === null) return "bg-muted text-muted-foreground";
   if (winRatePct >= 60) return "bg-profit/15 text-profit";

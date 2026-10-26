@@ -1,17 +1,17 @@
 import type { SyncRange } from "@/lib/oryon/sync/alignment";
 
 /**
- * Historical visible-range presets (TradingView parity) — the "1D · 5D ·
+ * Historical visible-range presets (TradingView parity) - the "1D · 5D ·
  * 1M · 3M · 6M · YTD · 1Y · 5Y · All" strip in the chart footer.
  *
  * SEMANTICS (the user's explicit contract): these buttons set how much
- * HISTORY is visible — they never touch the bar timeframe (the interval).
+ * HISTORY is visible - they never touch the bar timeframe (the interval).
  *
  * Math discipline: durations are computed on UTC calendar math over the
- * LAST loaded bar's open time (candle opens are UTC epochs — display-time
+ * LAST loaded bar's open time (candle opens are UTC epochs - display-time
  * zones never move a range). The result is clamped to the actually loaded
  * span: a preset wider than the loaded history resolves to the full span
- * (honest — the chart cannot show data it does not have).
+ * (honest - the chart cannot show data it does not have).
  */
 
 export type OryonHistoryRangeId = "1D" | "5D" | "1M" | "3M" | "6M" | "YTD" | "1Y" | "5Y" | "ALL";
@@ -37,7 +37,7 @@ export interface OryonDataSpan {
 const DAY_SECONDS = 86_400;
 
 /**
- * Visible range [from, to] for a preset over `span` — null when the span
+ * Visible range [from, to] for a preset over `span` - null when the span
  * is empty/invalid. `to` is the last bar (the time scale keeps its own
  * right margin); `from` never precedes the first loaded bar.
  */
@@ -86,7 +86,7 @@ export function historyRangeSpan(
 
 /**
  * `dateMs` (any instant of the picked day) → visible range STARTING at that
- * day's UTC midnight, ending at the last bar — the calendar jump. Clamped
+ * day's UTC midnight, ending at the last bar - the calendar jump. Clamped
  * to the loaded span exactly like the presets.
  */
 export function dateStartRange(dateMs: number, span: OryonDataSpan): SyncRange | null {

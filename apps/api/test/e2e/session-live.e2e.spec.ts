@@ -1,5 +1,5 @@
 /**
- * e2e — Session Live (B9) over the REAL AppModule + real database: the
+ * e2e - Session Live (B9) over the REAL AppModule + real database: the
  * trading-session lifecycle (start → update → end with an honest §43
  * summary / cancel), saved analyses and key levels. Also asserts the
  * single-active-session rule (409) and the auth boundary.
@@ -83,7 +83,7 @@ describe("session live lifecycle (B9)", () => {
     expect(endedBody.session.endedAt).not.toBeNull();
     expect(endedBody.summary.durationMinutes).toBeGreaterThanOrEqual(0);
     expect(endedBody.summary.tradeCount).toBe(0); // no journal trades in window
-    expect(endedBody.summary.netPnl).toBeNull(); // honest null — none closed
+    expect(endedBody.summary.netPnl).toBeNull(); // honest null - none closed
 
     // State: the ended session moved to history (newest first).
     const state = (await app.inject({
@@ -211,9 +211,9 @@ describe("saved analyses + key levels (B9)", () => {
       method: "PATCH",
       url: `/api/v1/session-live/levels/${level.id}`,
       headers: user1.authHeader,
-      payload: { note: "Held twice — stronger now." },
+      payload: { note: "Held twice - stronger now." },
     });
-    expect(patched.json()).toMatchObject({ level: { note: "Held twice — stronger now." } });
+    expect(patched.json()).toMatchObject({ level: { note: "Held twice - stronger now." } });
 
     // The active session recorded the LEVEL_ADDED event.
     const state = (await app.inject({

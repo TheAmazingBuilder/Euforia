@@ -1,5 +1,5 @@
 /**
- * e2e — Identity & Authentication (Phase 2 §41–§44 negative testing).
+ * e2e - Identity & Authentication (Phase 2 §41–§44 negative testing).
  * Register → verify → login → refresh (rotation + reuse) → logout,
  * password reset, status gates, anti-enumeration, rate limits.
  */
@@ -29,7 +29,7 @@ afterAll(async () => {
 });
 
 describe("registration & email verification", () => {
-  it("registers a user — PENDING_VERIFICATION, no token leaked, delivery EMAIL", async () => {
+  it("registers a user - PENDING_VERIFICATION, no token leaked, delivery EMAIL", async () => {
     mail.clear();
     const email = uniqueEmail();
     const res = await app.inject({
@@ -241,7 +241,7 @@ describe("me / refresh rotation / reuse detection / logout", () => {
     expect(reuse.statusCode).toBe(401);
     expect(reuse.json().code).toBe("INVALID_TOKEN");
 
-    // The post-rotation token is dead too — the family was revoked.
+    // The post-rotation token is dead too - the family was revoked.
     const afterReuse = await app.inject({
       method: "POST",
       url: "/api/v1/auth/refresh",

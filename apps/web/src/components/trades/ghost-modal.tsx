@@ -28,14 +28,14 @@ import { cn } from "@/lib/utils";
 import { useI18n } from "@/i18n/i18n-provider";
 
 /**
- * Ghost trade — the 10-second capture (spec §8): instrument combobox,
- * direction (▲ ▼ —), single-select reason chips, [Log it]. No prices, no
- * sizing, no strategy fields — an intention, not a trade. Settlement comes
+ * Ghost trade - the 10-second capture (spec §8): instrument combobox,
+ * direction (▲ ▼ -), single-select reason chips, [Log it]. No prices, no
+ * sizing, no strategy fields - an intention, not a trade. Settlement comes
  * tomorrow ("We'll ask you tomorrow how it played out.").
  */
 
 // Machine values stay module-scope; the user-facing labels/hints resolve
-// through dict.trades.ghost at render time (i18n pattern — same as the
+// through dict.trades.ghost at render time (i18n pattern - same as the
 // emotion chips' EMOTION_OPTIONS).
 const REASONS: readonly SkipReason[] = [
   "FEAR",
@@ -52,7 +52,7 @@ const DIRECTIONS: readonly {
 }[] = [
   { value: "BUY", labelKey: "long", glyph: "▲" },
   { value: "SELL", labelKey: "short", glyph: "▼" },
-  { value: null, labelKey: "undecided", glyph: "—" },
+  { value: null, labelKey: "undecided", glyph: "-" },
 ];
 
 function GhostForm() {

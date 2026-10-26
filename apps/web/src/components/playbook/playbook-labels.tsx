@@ -15,12 +15,12 @@ import type { PlaybookDict } from "@/i18n/dictionaries/en/playbook";
 import { cn } from "@/lib/utils";
 
 /**
- * Human labels for the Playbook enums — one source of truth so chips, badges
+ * Human labels for the Playbook enums - one source of truth so chips, badges
  * and dialogs never drift apart. The LABEL TEXT lives in the dict
  * (dict.playbook.labels.*, mirrored EN/FR); these builders only wire the
  * enum ids to the dict fragments. RETIRED is DISPLAYED as "Archived" (the
  * professional module's §6 vocabulary; the wire value keeps API stability).
- * Components call them inside their body (where useI18n is available) —
+ * Components call them inside their body (where useI18n is available) -
  * STATUS_DOT colors stay a plain const (class names are not copy).
  */
 
@@ -148,7 +148,7 @@ export function healthFlagLabels(
   };
 }
 
-/** Multi-select chip — toggles `value` inside `selected`. */
+/** Multi-select chip - toggles `value` inside `selected`. */
 export function toggleInArray<T>(array: T[], value: T): T[] {
   return array.includes(value) ? array.filter((item) => item !== value) : [...array, value];
 }

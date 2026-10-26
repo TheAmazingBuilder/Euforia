@@ -2,7 +2,7 @@
  * Minimal user-agent → {device, browser, os} extraction (Phase 2 §16/§17).
  *
  * Data minimization: only the fields the contract requires for session
- * visibility. No dependency — a tiny, conservative parser for the major
+ * visibility. No dependency - a tiny, conservative parser for the major
  * browsers/OS; anything unrecognized degrades to honest "Unknown" values.
  */
 
@@ -68,5 +68,5 @@ export function maskIp(ip: string | undefined): string {
   return "unknown";
 }
 
-/** Honest location label — no geo-IP, no invented data (schema §22 note). */
+/** Honest location label - no geo-IP, no invented data (schema §22 note). */
 export const UNKNOWN_LOCATION = "Unknown";

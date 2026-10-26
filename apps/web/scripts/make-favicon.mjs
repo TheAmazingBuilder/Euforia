@@ -1,5 +1,5 @@
 /**
- * make-favicon.mjs — regenerate the Cosmoz favicon set from src/app/icon.svg.
+ * make-favicon.mjs - regenerate the Cosmoz favicon set from src/app/icon.svg.
  *
  * Renders the SVG with headless Chromium at 16/32/48 px, packs the PNGs into
  * a multi-resolution `favicon.ico`, and renders a 180 px `apple-icon.png`.
@@ -66,7 +66,7 @@ for (const size of SIZES) {
     `<body style="margin:0"><div id="m" style="width:${size}px;height:${size}px">${svgAt(size)}</div></body>`,
   );
   const raw = await page.locator("#m").screenshot({ type: "png" });
-  // ICO decoders require RGBA — Chromium screenshots come out RGB.
+  // ICO decoders require RGBA - Chromium screenshots come out RGB.
   const buf = await sharp(raw).ensureAlpha().png().toBuffer();
   shots.push({ size, buf });
   console.log(`rendered ${size}px (${buf.length} bytes)`);

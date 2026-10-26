@@ -1,4 +1,4 @@
-/** smoke-analytics-endpoint.js — quick API-level check of /stats/analytics-suite. */
+/** smoke-analytics-endpoint.js - quick API-level check of /stats/analytics-suite. */
 const { chromium } = require("playwright");
 
 (async () => {

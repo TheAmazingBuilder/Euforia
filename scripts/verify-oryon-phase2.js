@@ -1,5 +1,5 @@
 /**
- * verify-oryon-phase2.js — Oryon Phase 2 (drawing engine + tools).
+ * verify-oryon-phase2.js - Oryon Phase 2 (drawing engine + tools).
  * Contract under test:
  *  - the left rail arms REAL tools (no decorative buttons)
  *  - trend line: two-click creation, object appears in the list
@@ -12,7 +12,7 @@
  *  - chart functionality intact: pan, timeframe switch, type switch
  *  - 0 console errors · desktop 1440 · screenshots
  *
- * NOTE MSW: the mock engine reseeds on full page reload — the script loads
+ * NOTE MSW: the mock engine reseeds on full page reload - the script loads
  * the app once on the dashboard, then navigates client-side. Reload-based
  * persistence checks clear storage state explicitly instead of re-signing.
  */
@@ -22,7 +22,7 @@ const { armTool, isToolArmed, navTo } = require("./oryon-probe-helpers.js");
 const fs = require("fs");
 
 const LOG = path.resolve(__dirname, "oryon-phase2-probe.log");
-fs.writeFileSync(LOG, `=== oryon phase2 probe — ${new Date().toISOString()} ===\n`);
+fs.writeFileSync(LOG, `=== oryon phase2 probe - ${new Date().toISOString()} ===\n`);
 
 const BASE = process.env.BASE_URL || "http://localhost:3001";
 const OUT = path.resolve(__dirname, "shots");
@@ -61,7 +61,7 @@ const CONSOLE_NOISE = [
 /** Mocked-mode sign-in (the app gates every route behind auth). */
 async function signIn(app) {
   await app.goto(`${BASE}/`, { waitUntil: "load", timeout: 60_000 });
-  fs.appendFileSync(LOG, `signIn: after goto — ${app.url()}\n`);
+  fs.appendFileSync(LOG, `signIn: after goto - ${app.url()}\n`);
   try {
     await app.waitForSelector('[data-testid="login-form"]', { timeout: 15_000 });
   } catch {
@@ -91,7 +91,7 @@ async function signIn(app) {
   await app.waitForSelector('[data-testid="oryon-workspace"], a[href="/oryon"]', { timeout: 30_000 }).catch(() => {});
 }
 
-/** Chart pane box (the LWC container) — click coordinates derive from it. */
+/** Chart pane box (the LWC container) - click coordinates derive from it. */
 async function chartBox(page) {
   return page.locator('[data-testid="oryon-chart-canvas"]').boundingBox();
 }
@@ -122,7 +122,7 @@ async function listCount(page) {
 }
 
 /**
- * Pixel probe — looks for a bright (non-background) horizontal run of pixels
+ * Pixel probe - looks for a bright (non-background) horizontal run of pixels
  * near `yRatio` of the chart canvas across several columns. LWC paints on
  * stacked 2D canvases; we scan them all.
  */
@@ -149,7 +149,7 @@ async function brightPixelRowNear(page, yRatio, xRatios) {
             const [r, g, b, a] = px;
             if (a > 0 && r + g + b > 240) return true;
           } catch {
-            /* cross-origin guard — cannot happen locally */
+            /* cross-origin guard - cannot happen locally */
           }
         }
       }
@@ -182,57 +182,57 @@ async function brightPixelRowNear(page, yRatio, xRatios) {
   await page.waitForTimeout(2_000);
   await clearDevOverlay(page);
 
-  ok("P2 — workspace rendu", await page.locator('[data-testid="oryon-workspace"]').isVisible());
+  ok("P2 - workspace rendu", await page.locator('[data-testid="oryon-workspace"]').isVisible());
 
-  // ── 2. Tool rail — all tools armed and functional-looking ────────────────
+  // ── 2. Tool rail - all tools armed and functional-looking ────────────────
   // Toolbar v2/v3 rail: six GROUP controls (split icon+caret); the flat v1
   // buttons are gone. Presence = every caret renders; tools live in flyouts.
   const railGroups = ["cursors", "trend", "fib", "forecast", "shapes", "text"];
   for (const group of railGroups) {
     const caret = page.locator(`[data-testid="oryon-tool-caret-${group}"]`);
-    ok(`P2 — rail: groupe ${group} présent et actif`, (await caret.count()) === 1 && (await caret.isEnabled()));
+    ok(`P2 - rail: groupe ${group} présent et actif`, (await caret.count()) === 1 && (await caret.isEnabled()));
   }
   for (const tool of ["trend", "hline", "fib", "measure", "text"]) {
     await page.click(`[data-testid="oryon-tool-caret-${{ trend: "trend", hline: "trend", fib: "fib", measure: "forecast", text: "text" }[tool]}"]`);
     await page.waitForSelector(`[data-testid="oryon-tool-item-${tool}"]`, { timeout: 5_000 });
-    ok(`P2 — rail: outil ${tool} listé dans son flyout`, (await page.locator(`[data-testid="oryon-tool-item-${tool}"]`).count()) === 1);
+    ok(`P2 - rail: outil ${tool} listé dans son flyout`, (await page.locator(`[data-testid="oryon-tool-item-${tool}"]`).count()) === 1);
     await page.keyboard.press("Escape");
     await page.waitForTimeout(150);
   }
-  ok("P2 — rail: undo désactivé à vide", await page.locator('[data-testid="oryon-drawing-undo"]').isDisabled());
-  ok("P2 — rail: redo désactivé à vide", await page.locator('[data-testid="oryon-drawing-redo"]').isDisabled());
+  ok("P2 - rail: undo désactivé à vide", await page.locator('[data-testid="oryon-drawing-undo"]').isDisabled());
+  ok("P2 - rail: redo désactivé à vide", await page.locator('[data-testid="oryon-drawing-redo"]').isDisabled());
 
-  // ── 3. Trend line — two-click creation ────────────────────────────────────
+  // ── 3. Trend line - two-click creation ────────────────────────────────────
   await armTool(page, "trend");
-  ok("P2 — outil trend armé (état actif)", await isToolArmed(page, "trend"));
+  ok("P2 - outil trend armé (état actif)", await isToolArmed(page, "trend"));
   await armTool(page, "trend");
   await drawTrend(page, 0.3, 0.55, 0.62, 0.35);
-  ok("P2 — trend créé → outil désarmé (retour curseur)", !(await isToolArmed(page, "trend")));
-  ok("P2 — undo disponible après création", !(await page.locator('[data-testid="oryon-drawing-undo"]').isDisabled()));
+  ok("P2 - trend créé → outil désarmé (retour curseur)", !(await isToolArmed(page, "trend")));
+  ok("P2 - undo disponible après création", !(await page.locator('[data-testid="oryon-drawing-undo"]').isDisabled()));
 
   await openList(page);
-  ok("P2 — liste ouverte avec 1 objet", (await listCount(page)) === 1);
-  ok("P2 — ligne trend dans la liste", (await page.locator('[data-testid="oryon-drawing-row-trend"]').count()) === 1);
+  ok("P2 - liste ouverte avec 1 objet", (await listCount(page)) === 1);
+  ok("P2 - ligne trend dans la liste", (await page.locator('[data-testid="oryon-drawing-row-trend"]').count()) === 1);
 
   // ── 4. Undo / redo ─────────────────────────────────────────────────────────
   await page.locator('[data-testid="oryon-drawing-undo"]').click();
   await page.waitForTimeout(150);
-  ok("P2 — undo retire l'objet", (await listCount(page)) === 0);
-  ok("P2 — redo disponible", !(await page.locator('[data-testid="oryon-drawing-redo"]').isDisabled()));
+  ok("P2 - undo retire l'objet", (await listCount(page)) === 0);
+  ok("P2 - redo disponible", !(await page.locator('[data-testid="oryon-drawing-redo"]').isDisabled()));
   await page.locator('[data-testid="oryon-drawing-redo"]').click();
   await page.waitForTimeout(150);
-  ok("P2 — redo restaure l'objet", (await listCount(page)) === 1);
+  ok("P2 - redo restaure l'objet", (await listCount(page)) === 1);
 
-  // ── 5. Hline — one-click + pixel alignment across a horizontal pan ────────
+  // ── 5. Hline - one-click + pixel alignment across a horizontal pan ────────
   await armTool(page, "hline");
   const box = await chartBox(page);
   const hlineY = 0.5;
   await page.mouse.click(box.x + box.width * 0.4, box.y + box.height * hlineY);
   await page.waitForTimeout(250);
-  ok("P2 — hline créé (2 objets)", (await listCount(page)) === 2);
+  ok("P2 - hline créé (2 objets)", (await listCount(page)) === 2);
 
   const lineBefore = await brightPixelRowNear(page, hlineY, [0.12, 0.2, 0.8, 0.88]);
-  ok("P2 — hline visible sur le canvas (pixels)", lineBefore);
+  ok("P2 - hline visible sur le canvas (pixels)", lineBefore);
 
   // Horizontal pan on empty chart space (cursor tool, no hit → chart pans).
   await page.mouse.move(box.x + box.width * 0.55, box.y + box.height * 0.8);
@@ -241,40 +241,40 @@ async function brightPixelRowNear(page, yRatio, xRatios) {
   await page.mouse.up();
   await page.waitForTimeout(400);
   const lineAfterPan = await brightPixelRowNear(page, hlineY, [0.12, 0.2, 0.8, 0.88]);
-  ok("P2 — hline reste à son prix après pan (alignement)", lineAfterPan);
+  ok("P2 - hline reste à son prix après pan (alignement)", lineAfterPan);
 
   // ── 6. One-click tools: vline, ray, rect, fib, measure, text ──────────────
   await armTool(page, "vline");
   await page.mouse.click(box.x + box.width * 0.5, box.y + box.height * 0.3);
   await page.waitForTimeout(150);
-  ok("P2 — vline créé", (await page.locator('[data-testid="oryon-drawing-row-vline"]').count()) === 1);
+  ok("P2 - vline créé", (await page.locator('[data-testid="oryon-drawing-row-vline"]').count()) === 1);
 
   await armTool(page, "ray");
   await drawTrend(page, 0.35, 0.32, 0.55, 0.26);
-  ok("P2 — ray créé", (await page.locator('[data-testid="oryon-drawing-row-ray"]').count()) === 1);
+  ok("P2 - ray créé", (await page.locator('[data-testid="oryon-drawing-row-ray"]').count()) === 1);
 
   await armTool(page, "rect");
   await drawTrend(page, 0.6, 0.4, 0.75, 0.28);
-  ok("P2 — rect créé", (await page.locator('[data-testid="oryon-drawing-row-rect"]').count()) === 1);
+  ok("P2 - rect créé", (await page.locator('[data-testid="oryon-drawing-row-rect"]').count()) === 1);
 
   await armTool(page, "fib");
   await drawTrend(page, 0.2, 0.24, 0.45, 0.38);
-  ok("P2 — fib créé", (await page.locator('[data-testid="oryon-drawing-row-fib"]').count()) === 1);
+  ok("P2 - fib créé", (await page.locator('[data-testid="oryon-drawing-row-fib"]').count()) === 1);
 
   await armTool(page, "measure");
   await drawTrend(page, 0.5, 0.26, 0.62, 0.34);
-  ok("P2 — measure créé", (await page.locator('[data-testid="oryon-drawing-row-measure"]').count()) === 1);
+  ok("P2 - measure créé", (await page.locator('[data-testid="oryon-drawing-row-measure"]').count()) === 1);
 
   await armTool(page, "text");
   await page.mouse.click(box.x + box.width * 0.7, box.y + box.height * 0.25);
   await page.waitForSelector('[data-testid="oryon-text-editor"]', { timeout: 5_000 });
   await page.keyboard.type("Oryon note");
   await page.keyboard.press("Escape"); // cancel-empty would delete; we typed → Escape reverts? (commit path: blur)
-  // Escape cancels editing — for an object with no committed text it is removed.
+  // Escape cancels editing - for an object with no committed text it is removed.
   await page.waitForTimeout(200);
   const textAfterEscape = await page.locator('[data-testid="oryon-drawing-row-text"]').count();
   if (textAfterEscape === 0) {
-    ok("P2 — texte: Esc sans contenu ne laisse pas d'objet vide", true);
+    ok("P2 - texte: Esc sans contenu ne laisse pas d'objet vide", true);
     // Re-create and COMMIT this time.
     await armTool(page, "text");
     await page.mouse.click(box.x + box.width * 0.7, box.y + box.height * 0.25);
@@ -283,24 +283,24 @@ async function brightPixelRowNear(page, yRatio, xRatios) {
     await page.keyboard.press("Control+Enter");
     await page.waitForTimeout(200);
   } else {
-    ok("P2 — texte: Esc sans contenu ne laisse pas d'objet vide", false);
+    ok("P2 - texte: Esc sans contenu ne laisse pas d'objet vide", false);
   }
-  ok("P2 — texte commité (Ctrl+Enter)", (await page.locator('[data-testid="oryon-drawing-row-text"]').count()) === 1);
+  ok("P2 - texte commité (Ctrl+Enter)", (await page.locator('[data-testid="oryon-drawing-row-text"]').count()) === 1);
 
   await page.screenshot({ path: `${OUT}/oryon-phase2-all-tools.png` });
 
   // ── 7. Selection, lock, hide ───────────────────────────────────────────────
   const lockButtons = page.locator('[data-testid^="oryon-drawing-lock-"]');
-  ok("P2 — contrôles lock présents par objet", (await lockButtons.count()) >= 7);
+  ok("P2 - contrôles lock présents par objet", (await lockButtons.count()) >= 7);
   await lockButtons.first().click();
   await page.waitForTimeout(100);
-  ok("P2 — lock togglé (badge actif)", (await lockButtons.first().getAttribute("data-active")) !== null);
+  ok("P2 - lock togglé (badge actif)", (await lockButtons.first().getAttribute("data-active")) !== null);
   await lockButtons.first().click(); // unlock again
 
   const hideButtons = page.locator('[data-testid^="oryon-drawing-hide-"]');
   await hideButtons.first().click();
   await page.waitForTimeout(100);
-  ok("P2 — hide togglé", (await hideButtons.first().getAttribute("aria-pressed")) !== null);
+  ok("P2 - hide togglé", (await hideButtons.first().getAttribute("aria-pressed")) !== null);
   await hideButtons.first().click();
 
   // ── 8. Persistence across reload ───────────────────────────────────────────
@@ -312,9 +312,9 @@ async function brightPixelRowNear(page, yRatio, xRatios) {
   await page.waitForTimeout(2_000);
   await openList(page);
   const countAfterReload = await listCount(page);
-  ok(`P2 — persistance: ${countBeforeReload} objets restaurés après reload`, countAfterReload === countBeforeReload && countBeforeReload > 0);
+  ok(`P2 - persistance: ${countBeforeReload} objets restaurés après reload`, countAfterReload === countBeforeReload && countBeforeReload > 0);
 
-  // ── 9. Instrument scoping — drawings do not leak ───────────────────────────
+  // ── 9. Instrument scoping - drawings do not leak ───────────────────────────
   const instrumentTrigger = page.locator('[data-testid="oryon-instrument-trigger"]');
   await instrumentTrigger.click();
   await page.waitForTimeout(400);
@@ -333,8 +333,8 @@ async function brightPixelRowNear(page, yRatio, xRatios) {
   }
   await page.waitForTimeout(2_000);
   if (switched) {
-    ok("P2 — changement d'instrument: liste vide (pas de fuite)", (await listCount(page)) === 0);
-    // Switch back — drawings return.
+    ok("P2 - changement d'instrument: liste vide (pas de fuite)", (await listCount(page)) === 0);
+    // Switch back - drawings return.
     await instrumentTrigger.click();
     await page.waitForTimeout(400);
     const backOptions = page.locator('[role="option"], [cmdk-item]');
@@ -347,27 +347,27 @@ async function brightPixelRowNear(page, yRatio, xRatios) {
       }
     }
     await page.waitForTimeout(2_000);
-    ok("P2 — retour instrument: dessins restaurés", (await listCount(page)) === countBeforeReload);
+    ok("P2 - retour instrument: dessins restaurés", (await listCount(page)) === countBeforeReload);
   } else {
-    ok("P2 — changement d'instrument disponible", false);
+    ok("P2 - changement d'instrument disponible", false);
   }
 
-  // ── 10. Chart integrity — timeframe + type switch with drawings present ───
+  // ── 10. Chart integrity - timeframe + type switch with drawings present ───
   await page.locator('[data-testid="oryon-tf-1H"]').click();
   await page.waitForTimeout(1_500);
-  ok("P2 — changement d'UT: dessins conservés (domaine temps/prix)", (await listCount(page)) === countBeforeReload);
+  ok("P2 - changement d'UT: dessins conservés (domaine temps/prix)", (await listCount(page)) === countBeforeReload);
   await page.locator('[data-testid="oryon-type-line"]').click();
   await page.waitForTimeout(800);
-  ok("P2 — passage en ligne: dessins toujours en liste", (await listCount(page)) === countBeforeReload);
+  ok("P2 - passage en ligne: dessins toujours en liste", (await listCount(page)) === countBeforeReload);
   await page.locator('[data-testid="oryon-type-candles"]').click();
   await page.waitForTimeout(500);
 
-  // ── 11. Delete-all — explicit confirmation flow ─────────────────────────────
+  // ── 11. Delete-all - explicit confirmation flow ─────────────────────────────
   await page.locator('[data-testid="oryon-drawing-clear"]').click();
   await page.waitForTimeout(100);
   await page.locator('[data-testid="oryon-drawing-clear-confirm"]').click();
   await page.waitForTimeout(150);
-  ok("P2 — delete-all avec confirmation → liste vide", (await listCount(page)) === 0);
+  ok("P2 - delete-all avec confirmation → liste vide", (await listCount(page)) === 0);
 
   // ── 12. Corrupt storage never crashes Oryon ────────────────────────────────
   await page.evaluate(() => {
@@ -379,12 +379,12 @@ async function brightPixelRowNear(page, yRatio, xRatios) {
   await page.waitForSelector('[data-testid="oryon-workspace"]', { timeout: 30_000 });
   await page.waitForTimeout(2_000);
   await openList(page);
-  ok("P2 — stockage corrompu: pas de crash, liste vide", (await listCount(page)) === 0);
+  ok("P2 - stockage corrompu: pas de crash, liste vide", (await listCount(page)) === 0);
 
   await page.screenshot({ path: `${OUT}/oryon-phase2-final.png` });
 
   // ── console errors ──────────────────────────────────────────────────────────
-  ok("P2 — zéro erreur de console", errors.length === 0);
+  ok("P2 - zéro erreur de console", errors.length === 0);
   if (errors.length > 0) {
     fs.appendFileSync(LOG, `CONSOLE ERRORS:\n${errors.join("\n")}\n`);
     console.log("Console errors:", errors.slice(0, 5));

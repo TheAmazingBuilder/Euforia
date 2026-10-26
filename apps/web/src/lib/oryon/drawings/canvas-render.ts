@@ -13,17 +13,17 @@ import {
 } from "./geometry";
 
 /**
- * Oryon drawing canvas renderer — pure paint functions.
+ * Oryon drawing canvas renderer - pure paint functions.
  *
  * Inputs are PROJECTED screen geometry (CSS px, pane-relative) + the
  * resolved theme palette; outputs are canvas calls. No chart-library type
  * appears here: the primitive projects, this layer paints. The projection
  * layer precomputes EVERYTHING screen-space (including fib level positions
- * and measure readouts) — this file never converts coordinates.
+ * and measure readouts) - this file never converts coordinates.
  *
  * Color discipline (AGENTS.md golden rule): persisted styles store THEME
  * TOKEN KEYS, never hex. The palette is resolved at paint time from
- * getChartTheme() — a theme switch repaints drawings with new tokens.
+ * getChartTheme() - a theme switch repaints drawings with new tokens.
  */
 
 /** Style color = a theme token key resolved through this palette. */
@@ -63,7 +63,7 @@ export type ProjectedDrawing =
 /** Canvas draw context handed to every paint function (already DPR-scaled). */
 export interface PaintContext {
   ctx: CanvasRenderingContext2D;
-  /** Plot area bounds in CSS px (pane-relative) — clips infinite lines. */
+  /** Plot area bounds in CSS px (pane-relative) - clips infinite lines. */
   plot: ScreenRect;
   palette: DrawingPalette;
   monoFont: string;
@@ -139,7 +139,7 @@ function paintTrendOrRay(
     return;
   }
   if (view.type === "extended") {
-    // Infinite line BOTH directions — clipped to the plot (the hit test
+    // Infinite line BOTH directions - clipped to the plot (the hit test
     // uses the same chord, so what you can see is what you can hit).
     const chord = clipLineToRect(a.x, a.y, b.x, b.y, paint.plot);
     if (chord === null) return;
@@ -159,7 +159,7 @@ function paintCrossline(paint: PaintContext, at: ScreenPoint, style: OryonDrawin
   applyStroke(paint, style);
   strokeSegment(paint, { x: paint.plot.left, y: at.y }, { x: paint.plot.right, y: at.y });
   strokeSegment(paint, { x: at.x, y: paint.plot.top }, { x: at.x, y: paint.plot.bottom });
-  // Intersection dot — the one-click anchor stays findable/selectable.
+  // Intersection dot - the one-click anchor stays findable/selectable.
   paint.ctx.setLineDash([]);
   paint.ctx.fillStyle = resolveColor(paint.palette, style.color, paint.accent);
   paint.ctx.beginPath();
@@ -243,7 +243,7 @@ function paintFib(paint: PaintContext, view: {
 }
 
 /**
- * Measure readout — Phase 5: the label may carry MULTIPLE lines (newline
+ * Measure readout - Phase 5: the label may carry MULTIPLE lines (newline
  * split, composed by the pure measure module). The box grows with the row
  * count and stays clamped inside the plot area; nothing here computes
  * financial values.
@@ -261,7 +261,7 @@ function paintMeasure(paint: PaintContext, view: {
 
 /**
  * Shared readout label box (measure / price range / date range / position
- * tools) — dark translucent panel, clamped INSIDE the plot, mono rows.
+ * tools) - dark translucent panel, clamped INSIDE the plot, mono rows.
  * Pure presentation: the lines arrive composed by the pure modules.
  */
 function paintLabelBox(paint: PaintContext, lines: readonly string[], x: number, y: number): void {
@@ -287,7 +287,7 @@ function paintLabelBox(paint: PaintContext, lines: readonly string[], x: number,
   });
 }
 
-/** Small filled arrowhead pointing along (from→to) — ruler end caps. */
+/** Small filled arrowhead pointing along (from→to) - ruler end caps. */
 function paintArrowCap(paint: PaintContext, tip: ScreenPoint, from: ScreenPoint, color: string): void {
   const angle = Math.atan2(from.y - tip.y, from.x - tip.x);
   const wing = Math.PI / 6;
@@ -302,7 +302,7 @@ function paintArrowCap(paint: PaintContext, tip: ScreenPoint, from: ScreenPoint,
   paint.ctx.fill();
 }
 
-/** Price range ruler — vertical segment AT a.x with arrow caps + readout. */
+/** Price range ruler - vertical segment AT a.x with arrow caps + readout. */
 function paintPriceRange(paint: PaintContext, view: {
   a: ScreenPoint;
   b: ScreenPoint;
@@ -324,7 +324,7 @@ function paintPriceRange(paint: PaintContext, view: {
   }
 }
 
-/** Date range ruler — horizontal segment AT a.y with arrow caps + readout. */
+/** Date range ruler - horizontal segment AT a.y with arrow caps + readout. */
 function paintDateRange(paint: PaintContext, view: {
   a: ScreenPoint;
   b: ScreenPoint;
@@ -347,7 +347,7 @@ function paintDateRange(paint: PaintContext, view: {
 }
 
 /**
- * Position tool (long/short) — risk box (entry↔stop, loss token) + reward
+ * Position tool (long/short) - risk box (entry↔stop, loss token) + reward
  * box (entry↔derived target, profit token) across the a.t→b.t span. The
  * target is DERIVED (never stored); the label lists Entry/Stop/Target.
  */
@@ -363,7 +363,7 @@ function paintPosition(paint: PaintContext, view: {
   const riskColor = withAlpha(resolveColor(paint.palette, "loss", "#ef4444"), 0.14);
   const rewardColor = withAlpha(resolveColor(paint.palette, "profit", "#22c55e"), 0.14);
   if (view.targetY !== null) {
-    // Reward zone spans entry↔target, risk zone entry↔stop — whichever
+    // Reward zone spans entry↔target, risk zone entry↔stop - whichever
     // side each price lands is derived from the actual Y coordinates.
     const entryY = view.a.y;
     paint.ctx.fillStyle = rewardColor;
@@ -389,7 +389,7 @@ function paintPosition(paint: PaintContext, view: {
 }
 
 /**
- * Trend-based Fibonacci extension — the A→B and B→C swing legs + the
+ * Trend-based Fibonacci extension - the A→B and B→C swing legs + the
  * extension levels projected from C, drawn from the LAST anchor rightward.
  */
 function paintFibExt(paint: PaintContext, view: {
@@ -406,7 +406,7 @@ function paintFibExt(paint: PaintContext, view: {
   paint.ctx.textBaseline = "middle";
   paint.ctx.textAlign = "left";
 
-  // Swing legs (A→B, B→C) — the measured move.
+  // Swing legs (A→B, B→C) - the measured move.
   applyStroke(paint, view.style);
   strokeSegment(paint, view.a, view.b);
   strokeSegment(paint, view.b, view.c);
@@ -442,7 +442,7 @@ function paintText(paint: PaintContext, view: {
   paint.ctx.textAlign = "center";
   paint.ctx.textBaseline = "middle";
   if (view.text === "") {
-    // Empty text — a subtle marker dot keeps the object findable/selectable.
+    // Empty text - a subtle marker dot keeps the object findable/selectable.
     paint.ctx.fillStyle = color;
     paint.ctx.beginPath();
     paint.ctx.arc(view.at.x, view.at.y, 3, 0, Math.PI * 2);
@@ -467,8 +467,8 @@ function paintText(paint: PaintContext, view: {
 }
 
 /**
- * Brush — the captured polyline stroked with the object style (color,
- * width and dash all apply; no fill — a stroke is a stroke).
+ * Brush - the captured polyline stroked with the object style (color,
+ * width and dash all apply; no fill - a stroke is a stroke).
  */
 function paintBrush(paint: PaintContext, points: readonly ScreenPoint[], style: OryonDrawingStyle): void {
   if (points.length < 2) return;
@@ -482,7 +482,7 @@ function paintBrush(paint: PaintContext, points: readonly ScreenPoint[], style: 
 }
 
 /**
- * Arrow mark — filled glyph whose TIP sits at the anchor, tail extending
+ * Arrow mark - filled glyph whose TIP sits at the anchor, tail extending
  * toward the opposite of `dir` (screen y down). Shaft = style width,
  * head = fixed proportions of ARROW_MARK_SIZE. Color = style.color.
  */
@@ -516,7 +516,7 @@ function paintArrowMark(paint: PaintContext, at: ScreenPoint, dir: "up" | "down"
   paint.ctx.fill();
 }
 
-/** Anchor handles — drawn ONLY for the selected object (spec §7 Tool 1). */
+/** Anchor handles - drawn ONLY for the selected object (spec §7 Tool 1). */
 export function paintHandles(paint: PaintContext, points: readonly ScreenPoint[]): void {
   paint.ctx.setLineDash([]);
   for (const p of points) {
@@ -588,7 +588,7 @@ export function paintProjectedDrawing(paint: PaintContext, view: ProjectedDrawin
       if (state.selected) {
         // FOUR handles in the interaction's slot order: a/b corners + the
         // TARGET line (rr) + the STOP line (stop price), both mid-line.
-        // The target handle drops out when the target cannot project —
+        // The target handle drops out when the target cannot project -
         // the same condition under which the controller leaves an unhittable
         // NaN slot (painter and hit-test agree).
         const midX = (view.a.x + view.b.x) / 2;

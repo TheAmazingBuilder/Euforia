@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-require-imports -- Node verification script */
 /**
- * OCR & Trade Recognition — browser verification (Prompt 3 §59 visual QA).
+ * OCR & Trade Recognition - browser verification (Prompt 3 §59 visual QA).
  * Run: node scripts/verify-ocr.js
  *
  * Golden paths: sidebar entry between Analytics and Calendar → overview
@@ -35,7 +35,7 @@ function check(name, ok, extra = "") {
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
 
-  // SPA navigation — a full page.goto restarts the MSW service worker and
+  // SPA navigation - a full page.goto restarts the MSW service worker and
   // resets the in-memory mock engine (documented frontend-only behavior),
   // so every mid-suite navigation must stay inside the client router.
   const spaNav = async (path) => {
@@ -128,7 +128,7 @@ function check(name, ok, extra = "") {
 
   // Start analysis
   await page.locator('[data-testid="ocr-start-analysis"]').click();
-  // V2 — a re-uploaded file triggers the duplicate WARNING; continue deliberately.
+  // V2 - a re-uploaded file triggers the duplicate WARNING; continue deliberately.
   await page.waitForTimeout(1100);
   if (await page.locator('[data-testid="ocr-duplicate-continue"]').isVisible().catch(() => false)) {
     await page.locator('[data-testid="ocr-duplicate-continue"]').click();
@@ -259,7 +259,7 @@ function check(name, ok, extra = "") {
   await page.locator('input[aria-label="Upload screenshot"]').setInputFiles(pngPath);
   await page.waitForTimeout(500);
   await page.locator('[data-testid="ocr-start-analysis"]').click();
-  // V2 — a re-uploaded file triggers the duplicate WARNING; continue deliberately.
+  // V2 - a re-uploaded file triggers the duplicate WARNING; continue deliberately.
   await page.waitForTimeout(1100);
   if (await page.locator('[data-testid="ocr-duplicate-continue"]').isVisible().catch(() => false)) {
     await page.locator('[data-testid="ocr-duplicate-continue"]').click();
@@ -272,7 +272,7 @@ function check(name, ok, extra = "") {
   check("2nd import: EURUSD clean scenario", eurusdHeader.includes("EURUSD"));
   check("no warnings panel on clean read", !(await page.locator('[data-testid="ocr-warnings"]').isVisible().catch(() => false)));
 
-  // ── Third import (NAS100 low confidence) — cancel mid-processing (§55) ─
+  // ── Third import (NAS100 low confidence) - cancel mid-processing (§55) ─
   await page.locator('[data-testid="ocr-success"], [data-testid="ocr-result"]').first().waitFor({ timeout: 5000 });
   await page.locator('a[href="/recognition"]').first().click();
   await page.waitForTimeout(700);
@@ -281,7 +281,7 @@ function check(name, ok, extra = "") {
   await page.locator('input[aria-label="Upload screenshot"]').setInputFiles(pngPath);
   await page.waitForTimeout(500);
   await page.locator('[data-testid="ocr-start-analysis"]').click();
-  // V2 — a re-uploaded file triggers the duplicate WARNING; continue deliberately.
+  // V2 - a re-uploaded file triggers the duplicate WARNING; continue deliberately.
   await page.waitForTimeout(1100);
   if (await page.locator('[data-testid="ocr-duplicate-continue"]').isVisible().catch(() => false)) {
     await page.locator('[data-testid="ocr-duplicate-continue"]').click();
@@ -305,7 +305,7 @@ function check(name, ok, extra = "") {
   await page.waitForTimeout(500);
   const staleJobId = new URL(page.url()).searchParams.get("job");
   await page.locator('[data-testid="ocr-start-analysis"]').click();
-  // V2 — a re-uploaded file triggers the duplicate WARNING; continue deliberately.
+  // V2 - a re-uploaded file triggers the duplicate WARNING; continue deliberately.
   await page.waitForTimeout(1100);
   if (await page.locator('[data-testid="ocr-duplicate-continue"]').isVisible().catch(() => false)) {
     await page.locator('[data-testid="ocr-duplicate-continue"]').click();

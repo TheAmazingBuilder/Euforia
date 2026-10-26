@@ -1,13 +1,13 @@
 /**
- * e2e — Onboarding first-run lifecycle (preferences domain "onboarding").
+ * e2e - Onboarding first-run lifecycle (preferences domain "onboarding").
  *
  * The onboarding state lives in the EXISTING per-user preferences document
- * (PATCH /me/preferences/onboarding) — no second service, no second model.
+ * (PATCH /me/preferences/onboarding) - no second service, no second model.
  * This spec proves against the real AppModule + real PostgreSQL:
  *   - fresh provisioning: every NEW user gets onboarding NOT_STARTED;
  *   - backward compatibility: a preferences document WITHOUT the onboarding
  *     key still satisfies the shared root schema (existing users predate the
- *     tour — the absence of the key is the documented "predates" marker);
+ *     tour - the absence of the key is the documented "predates" marker);
  *   - progress save + resume pointer persistence across independent reads;
  *   - the shared superRefine transition invariants (terminal timestamps,
  *     currentStep null on terminal states, startedAt on IN_PROGRESS, no
@@ -15,7 +15,7 @@
  *   - envelope planting defense (userId/updatedAt are server-managed);
  *   - skip semantics (SKIPPED + skippedAt, tour suppressed by the client);
  *   - reset semantics (explicit POST /me/preferences/reset re-arms the
- *     domain to its defaults — documented product behavior);
+ *     domain to its defaults - documented product behavior);
  *   - per-user isolation (completing user A never touches user B);
  *   - authentication on every onboarding operation.
  */
@@ -88,7 +88,7 @@ describe("onboarding provisioning (fresh users) and backward compatibility", () 
   it("accepts a preferences document WITHOUT the onboarding key (predates the tour)", () => {
     // The documented backward-compat contract: docs stored before onboarding
     // shipped carry no onboarding key, and the root schema must keep parsing
-    // them — otherwise every existing user's read would 500.
+    // them - otherwise every existing user's read would 500.
     const legacy = {
       ...structuredClone(DEFAULT_USER_PREFERENCES),
       userId: "3f1d2b0e-0000-4000-8000-000000000001",
@@ -117,7 +117,7 @@ describe("onboarding lifecycle transitions", () => {
     });
     expect(res.statusCode).toBe(200);
 
-    // Independent read — the resume pointer must survive (fresh GET).
+    // Independent read - the resume pointer must survive (fresh GET).
     const prefs = await getPrefs(ctx.authHeader);
     expect(prefs.onboarding?.status).toBe("IN_PROGRESS");
     expect(prefs.onboarding?.currentStep).toBe("tour");
@@ -125,7 +125,7 @@ describe("onboarding lifecycle transitions", () => {
     expect(prefs.onboarding?.startedAt).toBe(startedAt);
   });
 
-  it("completes only with completedAt and a null resume pointer — full-contract re-parse", async () => {
+  it("completes only with completedAt and a null resume pointer - full-contract re-parse", async () => {
     const ctx = await authenticatedUser(app, mail);
 
     // Invalid: COMPLETED without completedAt.
@@ -152,7 +152,7 @@ describe("onboarding lifecycle transitions", () => {
     });
     expectValidationError(dangling.statusCode, dangling.json());
 
-    // Valid completion — the response satisfies the WHOLE shared contract.
+    // Valid completion - the response satisfies the WHOLE shared contract.
     const ok = await patchOnboarding(ctx.authHeader, {
       status: "COMPLETED",
       version: ONBOARDING_VERSION,
@@ -279,7 +279,7 @@ describe("onboarding lifecycle transitions", () => {
 
     // Give the doc a distinctive sibling value + a completed onboarding.
     // The trading PATCH body is the WHOLE domain object (whole-domain
-    // semantics) — merge the new display currency over the safe defaults.
+    // semantics) - merge the new display currency over the safe defaults.
     const tradingDomain = {
       ...structuredClone(DEFAULT_USER_PREFERENCES.trading),
       displayCurrency: "EUR",

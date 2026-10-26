@@ -19,7 +19,7 @@ import type { OryonConfigOpError } from "@/lib/oryon/workspace/layouts";
  * Compact dialogs shared by the Oryon workspace-configuration surfaces
  * (Phase 6 spec §4, §6, §13): a NAME dialog (save-as / rename / template
  * save) and a CONFIRM dialog (destructive deletes + the unsaved-changes
- * guard). Both follow the established Radix conventions — content unmounts
+ * guard). Both follow the established Radix conventions - content unmounts
  * on close, so every open starts from fresh, honest state; errors render
  * inline and never discard the user's input.
  */

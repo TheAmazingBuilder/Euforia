@@ -1,5 +1,5 @@
 /**
- * e2e — Academy (B12) over the REAL AppModule + real database: catalog and
+ * e2e - Academy (B12) over the REAL AppModule + real database: catalog and
  * content served from the shared registry, per-user learning state in the
  * STATE blob, server-graded quizzes/checkpoints/exams (answers never on the
  * wire), SRS flashcards, practice ledger + engine-generated drills,
@@ -137,7 +137,7 @@ describe("academy (B12)", () => {
     };
     expect(quiz.id).toBe(quizId);
     expect(quiz.questions.length).toBeGreaterThan(0);
-    // Public questions only — no answer and no explanation on the wire.
+    // Public questions only - no answer and no explanation on the wire.
     expect(quiz.questions.every((q) => q.answer === undefined && q.explanation === undefined)).toBe(true);
 
     // Submit all-wrong (0 vs 99 for MC; false for TF) → score 0, then verify
@@ -152,12 +152,12 @@ describe("academy (B12)", () => {
     ).json() as { score: number; total: number; passed: boolean; previousBest: number | null; results: Array<{ questionId: string; correct: boolean; answer: number | boolean; explanation: string }> };
     expect(bad.previousBest).toBeNull();
     expect(bad.results).toHaveLength(quiz.questions.length);
-    // Every result carries the explanation (the reveal moment) — but the
+    // Every result carries the explanation (the reveal moment) - but the
     // score itself depends on which TF answers happened to match.
     expect(bad.results.every((r) => typeof r.explanation === "string" && r.explanation.length > 0)).toBe(true);
     expect(bad.score).toBe(bad.results.filter((r) => r.correct).length);
 
-    // The engine returns the CORRECT answers in the results — a replay that
+    // The engine returns the CORRECT answers in the results - a replay that
     // echoes them back must score 100 and update previousBest.
     const replay = (
       await app.inject({
@@ -175,7 +175,7 @@ describe("academy (B12)", () => {
     expect(replay.score).toBe(replay.total);
     expect(replay.passed).toBe(true);
     // The best BEFORE this replay is the first attempt's score (a TF answer
-    // may have matched by chance — the engine graded it honestly).
+    // may have matched by chance - the engine graded it honestly).
     expect(replay.previousBest).toBe(bad.score);
   });
 
@@ -187,7 +187,7 @@ describe("academy (B12)", () => {
     const quizCourseIds = catalog.courses.filter((c) => c.quizId !== null).map((c) => c.id);
     expect(quizCourseIds.length).toBeGreaterThan(0);
 
-    // Find a long lesson (≥ 6 blocks) in any quiz-bearing course — it
+    // Find a long lesson (≥ 6 blocks) in any quiz-bearing course - it
     // carries a checkpoint.
     let checkpoint: { id: string } | null = null;
     let lessonId = "";
@@ -319,7 +319,7 @@ describe("academy (B12)", () => {
         payload: { answers: [] },
       })
     );
-    // Empty answers is schema-valid (min(1) fails → 400) — build from paper instead.
+    // Empty answers is schema-valid (min(1) fails → 400) - build from paper instead.
     expect(perfect.statusCode).toBe(400);
 
     const certs = (

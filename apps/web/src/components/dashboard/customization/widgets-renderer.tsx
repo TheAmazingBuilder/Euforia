@@ -36,7 +36,7 @@ import { WeekCompareCard } from "@/components/dashboard/week-compare-card";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 /**
- * Widget renderer map (Phase 01 §4.3, extended by Phase 02) — the RUNTIME
+ * Widget renderer map (Phase 01 §4.3, extended by Phase 02) - the RUNTIME
  * counterpart of the widget registry. Persisted layouts reference `type`
  * keys only; this layer resolves them to the real components with the real
  * data props and the instance's resolved configuration. Nothing here is
@@ -54,7 +54,7 @@ export interface DashboardWidgetData {
   /** Analytics-suite aggregates for the server-computed widgets (null while
    * the dashboard-level fetch is not needed / not resolved). */
   suite: AnalyticsSuiteResponse | null;
-  /** The shared fetch's status — suite-fed widgets render loading/error
+  /** The shared fetch's status - suite-fed widgets render loading/error
    * states from THIS (Phase 05 §10: one shared query, one source of truth). */
   suiteStatus: SuiteStatus;
 }
@@ -73,7 +73,7 @@ export interface WidgetContentProps {
   data: DashboardWidgetData;
   /** The instance's RESOLVED config (undefined = widget defaults). */
   config?: DashboardWidgetConfig;
-  /** The authoritative global filter context (Phase 03 §7) — only the
+  /** The authoritative global filter context (Phase 03 §7) - only the
    * suite-fed widgets consume it (registry filterSupport FULL); the others
    * render their normal data and the grid badges them instead. */
   globalFilters?: DashboardFilters;
@@ -81,7 +81,7 @@ export interface WidgetContentProps {
   onRangeChange?: (range: RangeDays) => void;
 }
 
-/** One widget instance's content — moved verbatim from the previous
+/** One widget instance's content - moved verbatim from the previous
  * inline registry in dashboard-view (same markup, same data wiring). */
 export function WidgetContent({ type, data, config, globalFilters, onRangeChange }: WidgetContentProps) {
   const insights = React.useMemo(
@@ -89,7 +89,7 @@ export function WidgetContent({ type, data, config, globalFilters, onRangeChange
     [data.alerts.alerts],
   );
   // The config the component renders with: the instance's stored config when
-  // valid, otherwise the widget's defaults — a FRESHLY ADDED instance has no
+  // valid, otherwise the widget's defaults - a FRESHLY ADDED instance has no
   // stored config yet and must still render (never a blank card).
   const resolvedConfig =
     config?.kind === type ? config : (defaultWidgetConfig(type) ?? undefined);
@@ -115,7 +115,7 @@ export function WidgetContent({ type, data, config, globalFilters, onRangeChange
                 Equity trajectory
               </CardTitle>
               <CardDescription>
-                Each star is a trading day — the plotted line of your decisions, drawdown
+                Each star is a trading day - the plotted line of your decisions, drawdown
                 zones shaded in loss ink.
               </CardDescription>
             </CardHeader>

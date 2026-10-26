@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-require-imports -- Node verification script */
 /**
- * OCR V2 — browser verification of the thirteen V2 features.
+ * OCR V2 - browser verification of the thirteen V2 features.
  * Run: node scripts/verify-ocr-v2.js   (requires :3000 mocked build running)
  *
  * Covers: duplicate warning (warn + view previous + continue anyway),
@@ -106,7 +106,7 @@ const PNG_B = `${SHOTS}/ocr-01-empty-hero.png`;
     }
   });
 
-  console.log("— Setup: login + fresh recognition session —");
+  console.log("- Setup: login + fresh recognition session -");
   await page.goto(`${BASE}/login`, { waitUntil: "networkidle" });
   await page.locator("#login-email").fill("trader@cosmoz.app");
   await page.locator("#login-password").fill("cosmoz-demo-2026");
@@ -119,10 +119,10 @@ const PNG_B = `${SHOTS}/ocr-01-empty-hero.png`;
   await page.locator('[data-testid="ocr-empty-hero"], [data-testid="ocr-stats"]').first().waitFor({ timeout: 10000 });
 
   // ── 1. Duplicate detection ──────────────────────────────────────────────
-  console.log("— V2: duplicate warning (upload → warn → view → continue anyway) —");
+  console.log("- V2: duplicate warning (upload → warn → view → continue anyway) -");
   await page.locator('[data-testid="ocr-import-cta"], [data-testid="ocr-empty-hero-cta"]').first().click();
   await page.waitForTimeout(400);
-  await uploadAndStart(page, PNG_A); // job #1 — XAUUSD_BUY
+  await uploadAndStart(page, PNG_A); // job #1 - XAUUSD_BUY
   await page.locator('[data-testid="ocr-result"]').waitFor({ timeout: 25000 });
   check("job #1 completed (rotation head)", true);
 
@@ -169,7 +169,7 @@ const PNG_B = `${SHOTS}/ocr-01-empty-hero.png`;
   await backToOverview(page);
 
   // ── 2. Storage & retention card ─────────────────────────────────────────
-  console.log("— V2: storage & retention card —");
+  console.log("- V2: storage & retention card -");
   const storageVisible = await page.locator('[data-testid="ocr-storage-card"]').isVisible().catch(() => false);
   check("storage card on overview", storageVisible);
   if (storageVisible) {
@@ -179,7 +179,7 @@ const PNG_B = `${SHOTS}/ocr-01-empty-hero.png`;
   }
 
   // ── 3. Rotate to HISTORY_MULTI (jobs #3–#5 fast-forwarded) ──────────────
-  console.log("— Rotation fast-forward (NAS100 → FAILED → BTCUSD) —");
+  console.log("- Rotation fast-forward (NAS100 → FAILED → BTCUSD) -");
   for (let i = 0; i < 3; i += 1) {
     await page.locator('[data-testid="ocr-import-cta"]').first().click();
     await page.waitForTimeout(400);
@@ -188,8 +188,8 @@ const PNG_B = `${SHOTS}/ocr-01-empty-hero.png`;
     await backToOverview(page);
   }
 
-  // ── 4. Multi-trade flow (job #6 — HISTORY_MULTI) ────────────────────────
-  console.log("— V2: multi-trade detection, per-trade drafts, batch confirm —");
+  // ── 4. Multi-trade flow (job #6 - HISTORY_MULTI) ────────────────────────
+  console.log("- V2: multi-trade detection, per-trade drafts, batch confirm -");
   await page.locator('[data-testid="ocr-import-cta"]').first().click();
   await page.waitForTimeout(400);
   await uploadAndStart(page, PNG_A);
@@ -212,7 +212,7 @@ const PNG_B = `${SHOTS}/ocr-01-empty-hero.png`;
   await page.locator('[role="option"]:has-text("Trade #1")').click();
   await page.waitForTimeout(300);
 
-  // Continue to draft of trade #1 — suggestions strip may surface
+  // Continue to draft of trade #1 - suggestions strip may surface
   await page.locator('[data-testid="ocr-continue-draft"]').click();
   await page.waitForTimeout(600);
   check("draft review for trade #1", await page.locator('[data-testid="ocr-draft-review"]').isVisible());
@@ -271,7 +271,7 @@ const PNG_B = `${SHOTS}/ocr-01-empty-hero.png`;
   check("history badge shows 3 trades", /3 trades/.test(historyText));
 
   // ── 5. Crop re-read tool ────────────────────────────────────────────────
-  console.log("— V2: crop re-read on a fresh import —");
+  console.log("- V2: crop re-read on a fresh import -");
   await page.locator('[data-testid="ocr-import-cta"]').first().click();
   await page.waitForTimeout(400);
   await uploadAndStart(page, PNG_B);
@@ -300,7 +300,7 @@ const PNG_B = `${SHOTS}/ocr-01-empty-hero.png`;
   }
 
   // ── 6. PDF statement upload ─────────────────────────────────────────────
-  console.log("— V2: PDF statement upload with page badges —");
+  console.log("- V2: PDF statement upload with page badges -");
   await backToOverview(page);
   const pdfPath = "/tmp/ocr-v2-statement.pdf";
   const pdfContent = Buffer.from(
@@ -322,7 +322,7 @@ const PNG_B = `${SHOTS}/ocr-01-empty-hero.png`;
   await backToOverview(page);
 
   // ── 7. Analytics OCR quality card ───────────────────────────────────────
-  console.log("— V2: analytics OCR quality card —");
+  console.log("- V2: analytics OCR quality card -");
   await page.locator('a[href="/analytics"]').first().click();
   await page.waitForURL("**/analytics", { timeout: 10000 });
   await page.waitForTimeout(1200);
@@ -337,7 +337,7 @@ const PNG_B = `${SHOTS}/ocr-01-empty-hero.png`;
   await page.screenshot({ path: `${SHOTS}/ocr-v2-08-analytics.png` });
 
   // ── 8. Mobile 390 overflow guard ────────────────────────────────────────
-  console.log("— Mobile 390 —");
+  console.log("- Mobile 390 -");
   await page.setViewportSize({ width: 390, height: 844 });
   // Full reload is safe here (last step): the recognition module owns no
   // state the remaining checks depend on.

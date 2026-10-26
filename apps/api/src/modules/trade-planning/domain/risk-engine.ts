@@ -1,20 +1,20 @@
 /**
- * Planned-risk engine (Phase 5 §13/§17/§19/§20) — the ONE authoritative
+ * Planned-risk engine (Phase 5 §13/§17/§19/§20) - the ONE authoritative
  * implementation of planned risk, position sizing and R:R for Trade Plans.
  *
- * Precision: pure `decimal.js` arithmetic — NEVER JavaScript floating point
+ * Precision: pure `decimal.js` arithmetic - NEVER JavaScript floating point
  * (§13). The formulas mirror the shared frontend helpers
- * (`@cosmoz/shared` utils/risk.ts) exactly — same semantics, upgraded
- * precision — so the client's live PREVIEW (§57) and the server's
+ * (`@cosmoz/shared` utils/risk.ts) exactly - same semantics, upgraded
+ * precision - so the client's live PREVIEW (§57) and the server's
  * authoritative value can never disagree about INTENT, only about precision.
  *
  * Determinism (§17): the recommended position size is FLOORED to the
  * instrument's volume step (0.01 when the catalog gives no step), so realized
- * planned risk never exceeds the budget. Rounding is ROUND_DOWN — a
+ * planned risk never exceeds the budget. Rounding is ROUND_DOWN - a
  * deterministic, documented strategy, not arbitrary precision.
  *
  * Failure philosophy: mathematically meaningless configurations are surfaced
- * as structured issues (§21) with code/severity/field/message — the engine
+ * as structured issues (§21) with code/severity/field/message - the engine
  * never silently produces negative or fabricated values (§11/§12/§16).
  *
  * This file is DOMAIN: no NestJS, no Prisma, no HTTP (§59).
@@ -41,7 +41,7 @@ export interface RiskEngineInput {
    * Null when the account has no usable balance (zero/negative/absent).
    */
   balance: Decimal | null;
-  /** Catalog specification for the symbol — null when unavailable (§15). */
+  /** Catalog specification for the symbol - null when unavailable (§15). */
   specs: InstrumentSpecification | null;
   /**
    * Quote→account currency conversion multiplier, resolved by the
@@ -74,7 +74,7 @@ export interface RiskComputation {
   potentialProfit: Decimal | null;
   /** Potential loss = planned money risk, ACCOUNT currency. */
   potentialLoss: Decimal | null;
-  /** Planned reward/risk ratio — reward distance ÷ risk distance (§19). */
+  /** Planned reward/risk ratio - reward distance ÷ risk distance (§19). */
   rrRatio: Decimal | null;
   /** Findings accumulated while computing (structured, machine-readable). */
   issues: PlanValidationIssue[];
@@ -93,14 +93,14 @@ function issue(
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-/** Floor a quantity to the given step (0.01 fallback) — deterministic §17. */
+/** Floor a quantity to the given step (0.01 fallback) - deterministic §17. */
 function floorToStep(quantity: Decimal, step: Decimal | null): Decimal {
   const effective = step ?? new Decimal("0.01");
   return quantity.div(effective).floor().mul(effective);
 }
 
 /**
- * Stop distance for the direction — null when the stop is missing or on the
+ * Stop distance for the direction - null when the stop is missing or on the
  * wrong side (the caller decides how each case surfaces as an issue).
  */
 function stopDistance(
@@ -112,7 +112,7 @@ function stopDistance(
   return direction === "BUY" ? entry.minus(stop) : stop.minus(entry);
 }
 
-/** Reward distance for the direction — null when the target is missing. */
+/** Reward distance for the direction - null when the target is missing. */
 function rewardDistance(
   direction: PlanDirection,
   entry: Decimal,
@@ -138,7 +138,7 @@ export function computePlannedRisk(input: RiskEngineInput): RiskComputation {
   const { direction, entryPrice, stopLoss, takeProfit, sizeMode, sizeValue, balance, specs, fxRate } =
     input;
 
-  // ── Directional integrity (§11/§12) — meaningless risk is never produced ──
+  // ── Directional integrity (§11/§12) - meaningless risk is never produced ──
   const riskDist = stopDistance(direction, entryPrice, stopLoss);
   if (stopLoss === null) {
     issues.push(
@@ -305,7 +305,7 @@ export function computePlannedRisk(input: RiskEngineInput): RiskComputation {
     }
   }
 
-  // Potential profit uses the FINAL planned size (§20 — R-based metrics stay
+  // Potential profit uses the FINAL planned size (§20 - R-based metrics stay
   // deterministic and domain-owned).
   if (positionSize !== null && moneyFeasible && rewardDist !== null && rewardDist.gt(0)) {
     potentialProfit = rewardDist.times(positionSize).times(specs!.contractSize).times(fxRate!);

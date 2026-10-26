@@ -36,9 +36,9 @@ import { apiErrorMessage } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
 
 /**
- * /profile — the identity hub, faithful to the product reference: identity
+ * /profile - the identity hub, faithful to the product reference: identity
  * header card (avatar + camera, name + plan badge, job title, contact meta,
- * Edit Profile), then a 4-tab bar — Personal (2-column identity form),
+ * Edit Profile), then a 4-tab bar - Personal (2-column identity form),
  * Account (status, plan, visibility, export + danger zone), Security (real
  * security-overview rows: password age, 2FA, login alerts, live sessions)
  * and Notifications (channel preferences). API-backed fields save through
@@ -53,7 +53,7 @@ type ProfileExtras = {
   jobTitle: string;
   company: string;
   location: string;
-  joinedAt: string; // ISO date — rendered "Joined March 2023".
+  joinedAt: string; // ISO date - rendered "Joined March 2023".
 };
 
 type ProfilePrefs = {
@@ -85,7 +85,7 @@ function loadExtras(): ProfileExtras {
     const raw = window.localStorage.getItem(EXTRAS_KEY);
     if (raw) return { ...EXTRAS_SEED, ...(JSON.parse(raw) as Partial<ProfileExtras>) };
   } catch {
-    // Corrupted snapshot — fall through to the seed.
+    // Corrupted snapshot - fall through to the seed.
   }
   return EXTRAS_SEED;
 }
@@ -99,7 +99,7 @@ function loadPrefs(): ProfilePrefs {
       return { ...PREFS_SEED, ...parsed, notifications: { ...PREFS_SEED.notifications, ...parsed.notifications } };
     }
   } catch {
-    // Corrupted snapshot — fall through to the seed.
+    // Corrupted snapshot - fall through to the seed.
   }
   return PREFS_SEED;
 }
@@ -133,7 +133,7 @@ function formatJoined(iso: string): string {
   return new Date(`${iso}T00:00:00`).toLocaleDateString("en-US", { month: "long", year: "numeric" });
 }
 
-/** A settings row — label + description left, control right, hairline rules. */
+/** A settings row - label + description left, control right, hairline rules. */
 function SettingRow({
   title,
   description,
@@ -196,12 +196,12 @@ export function ProfileView() {
   const [email, setEmail] = React.useState("");
   const [bio, setBio] = React.useState("");
 
-  // Reference extras — local document, hydrated once on the client.
+  // Reference extras - local document, hydrated once on the client.
   const [extras, setExtras] = React.useState<ProfileExtras>(loadExtras);
   const [savedExtras, setSavedExtras] = React.useState<ProfileExtras>(loadExtras);
   const [prefs, setPrefs] = React.useState<ProfilePrefs>(loadPrefs);
 
-  // Hydrate the editable fields when the profile query lands — the documented
+  // Hydrate the editable fields when the profile query lands - the documented
   // "adjust state during render" pattern (no setState inside an effect).
   const [hydratedFrom, setHydratedFrom] = React.useState<ProfileData | null>(null);
   if (data !== undefined && data !== hydratedFrom) {
@@ -236,7 +236,7 @@ export function ProfileView() {
       try {
         window.localStorage.setItem(EXTRAS_KEY, JSON.stringify(extras));
       } catch {
-        // Storage unavailable — the API-backed fields are still saved.
+        // Storage unavailable - the API-backed fields are still saved.
       }
       toast.success("Profile saved");
     };
@@ -262,7 +262,7 @@ export function ProfileView() {
       return;
     }
     if (file.size > 450_000) {
-      toast.error("Image too large — pick one under 450 KB");
+      toast.error("Image too large - pick one under 450 KB");
       return;
     }
     const reader = new FileReader();
@@ -295,7 +295,7 @@ export function ProfileView() {
       try {
         window.localStorage.setItem(PREFS_KEY, JSON.stringify(next));
       } catch {
-        // Storage unavailable — the toggle still works for the session.
+        // Storage unavailable - the toggle still works for the session.
       }
       return next;
     });
@@ -352,7 +352,7 @@ export function ProfileView() {
       <header className="space-y-1">
         <h1 className="font-heading text-2xl font-extrabold tracking-tight sm:text-3xl">Profile</h1>
         <p className="text-sm text-muted-foreground">
-          Your identity, account, security and notification preferences — one place.
+          Your identity, account, security and notification preferences - one place.
         </p>
       </header>
 
@@ -782,7 +782,7 @@ export function ProfileView() {
               disabled={deleteConfirm !== "DELETE"}
               onClick={() => {
                 setDeleteOpen(false);
-                toast.info("Demo build — the deletion request was simulated");
+                toast.info("Demo build - the deletion request was simulated");
               }}
               data-testid="profile-delete-confirm"
               className="border border-loss/30 bg-loss/15 text-loss hover:bg-loss/25 hover:text-loss"

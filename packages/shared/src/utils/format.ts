@@ -1,9 +1,9 @@
 import { parseDecimal, DEFAULT_FORMAT_LOCALE, MONEY_PLACEHOLDER } from "./money";
 
 /**
- * Number & duration display formatters — pure, deterministic, Intl-based.
+ * Number & duration display formatters - pure, deterministic, Intl-based.
  * All user-facing numbers rendered through these must use font-mono in JSX
- * (AGENTS.md golden rule — enforced at component level, not here).
+ * (AGENTS.md golden rule - enforced at component level, not here).
  */
 
 /**
@@ -77,7 +77,7 @@ export function formatNumber(
 
 /**
  * Format a ratio as a percentage with `digits` decimals.
- * CONVENTION: input is a RATIO — formatPercent("0.554") → "55,4 %",
+ * CONVENTION: input is a RATIO - formatPercent("0.554") → "55,4 %",
  * formatPercent(0.08) → "8,0 %". Multiply by 100 yourself if your source
  * value is already expressed in percent units.
  * Invalid input → placeholder.

@@ -57,10 +57,10 @@ const textClasses =
 const DECIMAL_RE = /^-?\d+(\.\d+)?$/;
 
 /** Phase 11 honesty contract, applied to every plan surface in the drawer:
- *  a plan is written reasoning — it never creates or mutates a trade, its
+ *  a plan is written reasoning - it never creates or mutates a trade, its
  *  levels are hypothetical (explicitly labeled), its probabilities are
  *  subjective (labeled as entered), and the planned-vs-actual comparison
- *  shows "—" for anything the canonical record does not provide. */
+ *  shows "-" for anything the canonical record does not provide. */
 
 // ── Small shared pieces ──────────────────────────────────────────────────────
 
@@ -91,14 +91,14 @@ function roleBadgeClass(role: PlanScenario["role"]): string {
 }
 
 function formatStamp(iso: string | null): string {
-  if (iso === null) return "—";
+  if (iso === null) return "-";
   const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return "—";
+  if (Number.isNaN(date.getTime())) return "-";
   return date.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
 }
 
 function decimalOrDash(value: string | null): string {
-  return value ?? "—";
+  return value ?? "-";
 }
 
 interface ComparisonLegProps {
@@ -111,7 +111,7 @@ interface ComparisonLegProps {
   unavailableLabel: string;
 }
 
-/** One planned-vs-actual leg — honest "—" for anything missing; an explicit
+/** One planned-vs-actual leg - honest "-" for anything missing; an explicit
  *  "unavailable" tag when the comparison cannot even be formed. */
 function ComparisonLegRow({
   label,
@@ -161,7 +161,7 @@ export function TradePlanSection({ trade }: TradePlanSectionProps) {
   const T = dict.trades.detail.plans;
 
   // `session` is a freshness nonce: EVERY open (create or edit) rehydrates
-  // the editor from scratch — without it, two consecutive create sessions
+  // the editor from scratch - without it, two consecutive create sessions
   // share the "create" hydrate key and the second silently inherits the
   // first plan's fields (found by the Phase 11 probe).
   const [editorState, setEditorState] = React.useState<
@@ -351,7 +351,7 @@ export function TradePlanSection({ trade }: TradePlanSectionProps) {
           <DialogHeader>
             <DialogTitle>{T.linkMismatchTitle}</DialogTitle>
             <DialogDescription>
-              {T.linkMismatchBody.replace("{planSymbol}", mismatchFor?.symbol ?? "—").replace(
+              {T.linkMismatchBody.replace("{planSymbol}", mismatchFor?.symbol ?? "-").replace(
                 "{tradeSymbol}",
                 tradeSymbol,
               )}
@@ -506,7 +506,7 @@ function PlanDetailDialog({
         <DialogContent className="sm:max-w-md" data-testid="trade-plan-detail-dialog">
           <DialogHeader>
             <DialogTitle>{T.heading}</DialogTitle>
-            <DialogDescription>{isLoading ? dict.common.loading : "—"}</DialogDescription>
+            <DialogDescription>{isLoading ? dict.common.loading : "-"}</DialogDescription>
           </DialogHeader>
         </DialogContent>
       </Dialog>
@@ -602,7 +602,7 @@ function PlanDetailDialog({
             ) : null}
           </section>
 
-          {/* Planned levels — hypothetical by contract */}
+          {/* Planned levels - hypothetical by contract */}
           {plan.plannedEntry !== null ||
           plan.plannedStop !== null ||
           (plan.plannedTargets !== null && plan.plannedTargets.length > 0) ? (
@@ -631,7 +631,7 @@ function PlanDetailDialog({
                   <p data-testid="trade-plan-detail-targets">
                     {plan.plannedTargets !== null && plan.plannedTargets.length > 0
                       ? plan.plannedTargets.join(", ")
-                      : "—"}
+                      : "-"}
                   </p>
                 </div>
               </div>
@@ -677,7 +677,7 @@ function PlanDetailDialog({
             </section>
           ) : null}
 
-          {/* Lifecycle trail — every timestamp the contract actually keeps */}
+          {/* Lifecycle trail - every timestamp the contract actually keeps */}
           <section className="space-y-1.5">
             <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               {T.lifecycleHeading}
@@ -738,7 +738,7 @@ function PlanDetailDialog({
 
           <Separator />
 
-          {/* Planned vs actual — facts only, honest nulls */}
+          {/* Planned vs actual - facts only, honest nulls */}
           <section className="space-y-1.5" data-testid="trade-plan-detail-comparison">
             <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               {T.comparisonHeading}
@@ -763,7 +763,7 @@ function PlanDetailDialog({
                       className="text-right font-mono text-xs tabular-nums"
                       data-testid="trade-plan-comparison-direction"
                     >
-                      {comparison.direction.actual ?? "—"}
+                      {comparison.direction.actual ?? "-"}
                     </span>
                   </div>
                   <ComparisonLegRow
@@ -823,7 +823,7 @@ function PlanDetailDialog({
           </section>
         </div>
 
-        {/* Actions — offered strictly per lifecycle state */}
+        {/* Actions - offered strictly per lifecycle state */}
         <footer className="flex flex-wrap items-center gap-2 border-t border-border bg-surface p-3">
           {status === "DRAFT" ? (
             <Button
@@ -976,7 +976,7 @@ function PlanEditorDialog({
   const [scenarios, setScenarios] = React.useState<ScenarioDraft[]>([]);
 
   // Re-hydrate whenever the dialog opens for a different target (render-time
-  // adjustment — no setState inside effects).
+  // adjustment - no setState inside effects).
   const [hydratedKey, setHydratedKey] = React.useState<string | null>(null);
   const key = open ? `${state!.session}:${editing?.id ?? "create"}` : null;
   if (key !== null && hydratedKey !== key) {
@@ -1220,7 +1220,7 @@ function PlanEditorDialog({
                   id="plan-entry"
                   value={plannedEntry}
                   onChange={(event) => setPlannedEntry(event.target.value)}
-                  placeholder="—"
+                  placeholder="-"
                   inputMode="decimal"
                   className={inputClasses}
                   data-testid="trade-plan-entry"
@@ -1232,7 +1232,7 @@ function PlanEditorDialog({
                   id="plan-stop"
                   value={plannedStop}
                   onChange={(event) => setPlannedStop(event.target.value)}
-                  placeholder="—"
+                  placeholder="-"
                   inputMode="decimal"
                   className={inputClasses}
                   data-testid="trade-plan-stop"
@@ -1377,7 +1377,7 @@ function InvalidateDialog({ plan, onOpenChange }: InvalidateDialogProps) {
   const invalidate = useInvalidatePlan();
   const [reason, setReason] = React.useState("");
 
-  // Fresh reason per plan — render-time adjustment, no effect setState.
+  // Fresh reason per plan - render-time adjustment, no effect setState.
   const [reasonFor, setReasonFor] = React.useState<string | null>(null);
   if (plan !== null && reasonFor !== plan.id) {
     setReasonFor(plan.id);

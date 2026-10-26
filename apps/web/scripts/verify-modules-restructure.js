@@ -1,5 +1,5 @@
 /**
- * Verify — Sidebar restructure (4 independent ACADEMY modules) + Tasky board
+ * Verify - Sidebar restructure (4 independent ACADEMY modules) + Tasky board
  * (touch drag) + Events calendar (New Calendar modal, connected identity).
  *
  * Covers:
@@ -28,7 +28,7 @@ const NOISE = [
 
 const results = [];
 const check = (name, ok, extra = "") => {
-  results.push(`${ok ? "PASS" : "FAIL"} — ${name}${extra ? ` (${extra})` : ""}`);
+  results.push(`${ok ? "PASS" : "FAIL"} - ${name}${extra ? ` (${extra})` : ""}`);
   console.log(results[results.length - 1]);
 };
 
@@ -48,7 +48,7 @@ const check = (name, ok, extra = "") => {
   });
   page.on("pageerror", (err) => errors.push(String(err)));
 
-  // Capture the CONNECTED identity — the Events chip renders GET /api/me
+  // Capture the CONNECTED identity - the Events chip renders GET /api/me
   // (Profile: name + email) with the auth user as fallback.
   let connectedEmail = "";
   let connectedName = "";
@@ -84,7 +84,7 @@ const check = (name, ok, extra = "") => {
   await page.locator('nav[aria-label="Main navigation"]').waitFor({ state: "visible", timeout: 20_000 });
   check("login", true);
 
-  // ── 1. Sidebar — 4 independent Academy modules ─────────────────────────────
+  // ── 1. Sidebar - 4 independent Academy modules ─────────────────────────────
   const nav = page.locator('nav[aria-label="Main navigation"]');
   for (const [href, label] of [
     ["/academy", "Academy"],
@@ -192,7 +192,7 @@ const check = (name, ok, extra = "") => {
     .getAttribute("data-column");
   check("TOUCH drag moves card to In Progress", afterTouchDrag === "progress", `${touchCardId} → ${afterTouchDrag}`);
 
-  // New Tasky dialog — create a card in Review.
+  // New Tasky dialog - create a card in Review.
   await page.locator('[data-testid="tasky-new-open"]').click();
   await page.locator('[data-testid="tasky-new-dialog"]').waitFor({ state: "visible" });
   await page.screenshot({ path: `${SHOTS}/restructure-tasky-new-dialog.png` });
@@ -240,7 +240,7 @@ const check = (name, ok, extra = "") => {
   const eventsTitle = await page.locator('[data-testid="events-header"] h1').innerText();
   check('Events title is "Events"', eventsTitle.trim() === "Events", eventsTitle);
 
-  // Connected identity — chip must mirror the boot-time /auth/me user.
+  // Connected identity - chip must mirror the boot-time /auth/me user.
   const chip = await page.locator('[data-testid="events-user-chip"]').innerText();
   check(
     "identity chip shows the CONNECTED profile",
@@ -256,7 +256,7 @@ const check = (name, ok, extra = "") => {
     (await page.locator(`[data-testid="events-day-${todayISO}"] span`).first().getAttribute("class")).includes("bg-accent"),
   );
 
-  // New Calendar dialog — functional create.
+  // New Calendar dialog - functional create.
   await page.locator('[data-testid="events-new-calendar-open"]').click();
   await page.locator('[data-testid="events-new-calendar-dialog"]').waitFor({ state: "visible" });
   await page.screenshot({ path: `${SHOTS}/restructure-events-new-calendar.png` });
@@ -270,7 +270,7 @@ const check = (name, ok, extra = "") => {
     .count();
   check("New Calendar creates a filter chip", qaChip === 1);
 
-  // New Event dialog — lands on the pre-filled date (today).
+  // New Event dialog - lands on the pre-filled date (today).
   await page.locator('[data-testid="events-filter-all"]').click();
   await page.locator('[data-testid="events-new-event-open"]').click();
   await page.locator('[data-testid="events-new-event-dialog"]').waitFor({ state: "visible" });

@@ -1,13 +1,13 @@
 /**
- * Trade Planning controller (Phase 5 §36) — thin HTTP boundary over the
+ * Trade Planning controller (Phase 5 §36) - thin HTTP boundary over the
  * trade-planning application service. Validation → authentication (global
  * guard) → application use case → response. No domain logic, no Prisma, no
  * risk math here.
  *
- * All routes require authentication (global JwtAuthGuard — no @Public here).
+ * All routes require authentication (global JwtAuthGuard - no @Public here).
  * Ownership is enforced inside the service: the userId always comes from the
  * auth principal, never from the client (§28/§44). No execution capability
- * exists anywhere in this API (§30 red line — plans never become orders).
+ * exists anywhere in this API (§30 red line - plans never become orders).
  */
 import {
   Body,
@@ -42,7 +42,7 @@ import { TradePlanningService } from "./trade-plan.service";
 export class TradePlanController {
   constructor(private readonly planning: TradePlanningService) {}
 
-  /** List plans — filters + server-side sorting + pagination (§55). */
+  /** List plans - filters + server-side sorting + pagination (§55). */
   @Get()
   list(
     @CurrentUser() principal: AuthPrincipal,
@@ -51,7 +51,7 @@ export class TradePlanController {
     return this.planning.list(principal.userId, query);
   }
 
-  /** Create a plan — DRAFT by default, PLANNED with commitNow (§7/§37). */
+  /** Create a plan - DRAFT by default, PLANNED with commitNow (§7/§37). */
   @Post()
   async create(
     @CurrentUser() principal: AuthPrincipal,
@@ -90,7 +90,7 @@ export class TradePlanController {
     return this.planning.commit(principal.userId, id, payload);
   }
 
-  /** Pre-trade validation battery (§21) — structured findings, never "invalid". */
+  /** Pre-trade validation battery (§21) - structured findings, never "invalid". */
   @Post(":planId/validate")
   @HttpCode(HttpStatus.OK)
   async validate(

@@ -1,6 +1,6 @@
 /**
- * Verify — Dashboard Customization Phase 02 (widget settings + analytics widgets).
- * Probes (ONE SPA session — the mock store reseeds on full reload):
+ * Verify - Dashboard Customization Phase 02 (widget settings + analytics widgets).
+ * Probes (ONE SPA session - the mock store reseeds on full reload):
  *   [A] Default view unchanged: the designed 7-widget layout (opt-in policy)
  *   [B] New analytics widgets appear in the library; METRICS_CARD add → default
  *       metrics render → Save persists
@@ -42,7 +42,7 @@ const CANONICAL = ["PNL_BAND", "EQUITY_ROW", "GOALS_PACE", "WEEK_COMPARE", "HEAT
 
   const results = [];
   const check = (name, ok, extra = "") =>
-    results.push(`${ok ? "PASS" : "FAIL"} — ${name}${extra ? ` (${extra})` : ""}`);
+    results.push(`${ok ? "PASS" : "FAIL"} - ${name}${extra ? ` (${extra})` : ""}`);
 
   const widgetOrder = async () =>
     page.$$eval('[data-page="dashboard"] section[data-widget]', (nodes) =>
@@ -278,7 +278,7 @@ const CANONICAL = ["PNL_BAND", "EQUITY_ROW", "GOALS_PACE", "WEEK_COMPARE", "HEAT
   await saveEdit();
   check("[J] Draft config committed by Save", patchCount >= 7, `patches=${patchCount}`);
 
-  // Second change then CANCEL — confirmed discard keeps the saved config
+  // Second change then CANCEL - confirmed discard keeps the saved config
   await enterEdit();
   await page.locator('[data-testid="dashboard-widget-settings-heatmap"]').first().click();
   await page.locator('[data-testid="widget-settings-dialog"]').waitFor({ timeout: 10000 });
@@ -321,11 +321,11 @@ const CANONICAL = ["PNL_BAND", "EQUITY_ROW", "GOALS_PACE", "WEEK_COMPARE", "HEAT
   await mobile.close();
 
   // ── Report ──────────────────────────────────────────────────────────────────
-  console.log("\n=== Phase 02 widget customization — results ===");
+  console.log("\n=== Phase 02 widget customization - results ===");
   for (const line of results) console.log(line);
   const failed = results.filter((line) => line.startsWith("FAIL"));
   // Expected pre-login session probes: the auth provider checks /me, gets a
-  // 401, attempts a refresh, gets a 401 — the designed anonymous flow.
+  // 401, attempts a refresh, gets a 401 - the designed anonymous flow.
   const noise = errors.filter(
     (entry) =>
       !entry.includes("favicon") &&

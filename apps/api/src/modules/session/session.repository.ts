@@ -1,5 +1,5 @@
 /**
- * Session data access (B5) — owns the sessionNoteRow table; every other
+ * Session data access (B5) - owns the sessionNoteRow table; every other
  * timeline fact comes from the owning contexts' narrow contracts.
  */
 import { Injectable } from "@nestjs/common";

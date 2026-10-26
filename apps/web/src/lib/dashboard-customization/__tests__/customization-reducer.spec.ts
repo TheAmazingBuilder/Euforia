@@ -61,7 +61,7 @@ describe("edit session (draft transaction)", () => {
 
   it("adding and removing widgets follow the singleton rule and never touch data", () => {
     const started = customizationReducer(idleState(), { type: "editStarted" });
-    // Remove and re-add THE SAME singleton type — the guard counts hidden
+    // Remove and re-add THE SAME singleton type - the guard counts hidden
     // AND still-present instances, so a different type would be a no-op.
     const removedType = started.draft!.widgets.at(-1)!.type;
     const withoutLast = customizationReducer(started, {
@@ -189,7 +189,7 @@ describe("saved layout collection", () => {
     expect(copy.id).not.toBe("layout_default");
     expect(copy.name).toBe("Default copy");
     const source = duplicated.layouts[0]!;
-    // Same content (ids regenerated) — and no shared structure.
+    // Same content (ids regenerated) - and no shared structure.
     expect(copy.widgets.map((w) => [w.type, w.visible, w.w, w.h]))
       .toEqual(source.widgets.map((w) => [w.type, w.visible, w.w, w.h]));
     expect(copy.widgets).not.toBe(source.widgets);
@@ -286,7 +286,7 @@ describe("per-widget configuration (Phase 02)", () => {
     showZeroLine: true,
   };
 
-  it("draftSetConfig edits the draft only — the saved layout is untouched until commit", () => {
+  it("draftSetConfig edits the draft only - the saved layout is untouched until commit", () => {
     const started = customizationReducer(idleState(), { type: "editStarted" });
     const id = firstInstanceId(started); // PNL_BAND
     const dirtied = customizationReducer(started, { type: "draftSetConfig", instanceId: id, config: VALID_CONFIG });

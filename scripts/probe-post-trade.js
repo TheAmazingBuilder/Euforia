@@ -1,4 +1,4 @@
-/** Probe 2: POST /api/trades breaching trade — inspect status + response. */
+/** Probe 2: POST /api/trades breaching trade - inspect status + response. */
 const { chromium } = require("playwright");
 
 const BASE = "http://localhost:3000";

@@ -32,7 +32,7 @@ const PNG = path.join(BRAND, "png");
   }
 
   const tasks = [];
-  // gradient mark (bare) — kit sizes
+  // gradient mark (bare) - kit sizes
   for (const s of [64, 128, 256, 512, 1024]) {
     tasks.push(["euforia-mark.svg", `euforia-mark-${s}.png`, s, Math.round((s * 918) / 750)]);
   }

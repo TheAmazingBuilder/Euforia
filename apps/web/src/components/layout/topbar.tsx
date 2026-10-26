@@ -30,7 +30,7 @@ type TopbarProps = {
 export function Topbar({ onMenuClick }: TopbarProps) {
   const pathname = usePathname();
   const { dict } = useI18n();
-  // Sidebar collapse state — same external store as the AppShell rail. The
+  // Sidebar collapse state - same external store as the AppShell rail. The
   // toggle affordance is THIS header icon (the rail itself has no button).
   const collapsed = React.useSyncExternalStore(
     subscribeSidebar,
@@ -55,7 +55,7 @@ export function Topbar({ onMenuClick }: TopbarProps) {
   }));
   const [queueOpen, setQueueOpen] = React.useState(false);
 
-  // Elevation shadow — flips on only after real scroll (threshold 6px).
+  // Elevation shadow - flips on only after real scroll (threshold 6px).
   const [scrolled, setScrolled] = React.useState(false);
   React.useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 6);
@@ -89,7 +89,7 @@ export function Topbar({ onMenuClick }: TopbarProps) {
         <Menu className="size-5" aria-hidden="true" />
       </Button>
 
-      {/* Desktop sidebar toggle — the collapse icon lives in the header
+      {/* Desktop sidebar toggle - the collapse icon lives in the header
           (reference: panel glyph before the breadcrumb, separated by a
           hairline). Visible affordance only on lg+, where the rail exists. */}
       <Button
@@ -105,7 +105,7 @@ export function Topbar({ onMenuClick }: TopbarProps) {
       </Button>
       <span aria-hidden="true" className="hidden h-5 w-px bg-border lg:block" />
 
-      {/* Breadcrumb — app root first, then the active page */}
+      {/* Breadcrumb - app root first, then the active page */}
       <nav aria-label="Breadcrumb" data-testid="breadcrumb" className="min-w-0">
         <ol className="flex items-center gap-0.5 text-sm">
           {crumbs.map((crumb, index) => {
@@ -140,7 +140,7 @@ export function Topbar({ onMenuClick }: TopbarProps) {
       </nav>
 
       <div className="ml-auto flex items-center gap-1">
-        {/* Command palette trigger — search affordance with ⌘K hint */}
+        {/* Command palette trigger - search affordance with ⌘K hint */}
         <button
           type="button"
           onClick={openCommandPalette}
@@ -158,7 +158,7 @@ export function Topbar({ onMenuClick }: TopbarProps) {
 
         {/* Pulsing badge while positions are open */}
 
-        {/* "To grade" queue badge — hidden when the queue is empty */}
+        {/* "To grade" queue badge - hidden when the queue is empty */}
         {toGradeCount > 0 ? (
           <button
             type="button"
@@ -178,7 +178,7 @@ export function Topbar({ onMenuClick }: TopbarProps) {
           <AccountSwitcher />
         </div>
 
-        {/* Notification center — bell inbox with unread badge + mark-as-read */}
+        {/* Notification center - bell inbox with unread badge + mark-as-read */}
         <NotificationCenter />
 
         <ThemeToggle />
@@ -187,7 +187,7 @@ export function Topbar({ onMenuClick }: TopbarProps) {
         <UserAvatar className="ml-0.5" />
       </div>
 
-      {/* Ungraded trades — grading opens the same Gate → Reveal flow */}
+      {/* Ungraded trades - grading opens the same Gate → Reveal flow */}
       <ToGradeQueue open={queueOpen} onOpenChange={setQueueOpen} />
     </header>
   );

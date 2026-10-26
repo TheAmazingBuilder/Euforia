@@ -1,13 +1,13 @@
 /**
- * Academy service (B12) — the learning domain's server-side brain.
+ * Academy service (B12) - the learning domain's server-side brain.
  *
  * Owns per-user learning state (lesson completion, quiz attempts,
  * bookmarks, practice log, flashcard SRS boxes, exam attempts) persisted
  * as one STATE blob row + per-entity TASK/EVENT_REG rows. Serves the
  * catalog authored in `packages/shared/src/content/academy` (the same
  * registry the browser mock re-exports). Quiz answers and drill answers
- * NEVER leave the engine ungraded — the client receives public questions
- * only (spec §43 — progress never leaks between accounts; §34 scoping).
+ * NEVER leave the engine ungraded - the client receives public questions
+ * only (spec §43 - progress never leaks between accounts; §34 scoping).
  */
 import { Injectable } from "@nestjs/common";
 import type {
@@ -86,21 +86,21 @@ type AcademyState = {
   practiceCorrect: number;
   /** UTC dates (YYYY-MM-DD) with any learning activity. */
   activityDates: string[];
-  /** lessonId of the most recent completion — drives Continue Learning. */
+  /** lessonId of the most recent completion - drives Continue Learning. */
   lastActivityLessonId: string | null;
   /** lessonId → last time the user opened the lesson (Resume Reading). */
   viewedLessons: Record<string, string>;
   /** lessonId → personal note. */
   notes: Record<string, AcademyLessonNote>;
-  /** Practice ledger — per-attempt rows (drill, outcome, time), capped 300. */
+  /** Practice ledger - per-attempt rows (drill, outcome, time), capped 300. */
   drillLog: { drill: string; correct: boolean; at: string }[];
-  /** Patterns the learner missed — resurface with priority until cleared. */
+  /** Patterns the learner missed - resurface with priority until cleared. */
   wrongPatternIds: string[];
   /** Flashcard SRS state (Leitner boxes). */
   flashcardStates: Record<string, { box: number; due: string; reviews: number }>;
   flashcardDay: string;
   flashcardReviewedToday: number;
-  /** Category exam attempts — the certification ladder. */
+  /** Category exam attempts - the certification ladder. */
   examAttempts: Record<string, ExamAttempt>;
 };
 
@@ -129,7 +129,7 @@ const nowIso = (): string => new Date().toISOString();
 const HOUR = 3_600_000;
 const inHours = (hours: number): string => new Date(Date.now() + hours * HOUR).toISOString();
 
-/** Stable string hash — deterministic checkpoint picks per lesson + day. */
+/** Stable string hash - deterministic checkpoint picks per lesson + day. */
 function hashString(input: string): number {
   let hash = 0;
   for (let i = 0; i < input.length; i += 1) {
@@ -138,7 +138,7 @@ function hashString(input: string): number {
   return Math.abs(hash);
 }
 
-/** Shuffle helper — Fisher–Yates over a copy; drills only, no crypto needs. */
+/** Shuffle helper - Fisher–Yates over a copy; drills only, no crypto needs. */
 function shuffle<T>(items: T[]): T[] {
   const copy = [...items];
   for (let i = copy.length - 1; i > 0; i -= 1) {
@@ -315,7 +315,7 @@ export class AcademyService {
 
   // ── Lesson ──────────────────────────────────────────────────────────────────
 
-  /** Mid-lesson checkpoint — long lessons (≥ 6 blocks) in quiz-bearing
+  /** Mid-lesson checkpoint - long lessons (≥ 6 blocks) in quiz-bearing
    *  courses get ONE question from the course bank, picked deterministically
    *  from lessonId + UTC day (rotates daily; same pick for serving and
    *  grading). Answers never leave the engine. */
@@ -447,7 +447,7 @@ export class AcademyService {
   // ── Quizzes ────────────────────────────────────────────────────────────────
 
   async getQuiz(userId: string, quizId: string) {
-    void userId; // quiz content is static — no per-user state on the read path
+    void userId; // quiz content is static - no per-user state on the read path
     const course = COURSES.find((crs) => crs.quiz?.id === quizId);
     if (!course?.quiz) throw new NotFoundError("Quiz not found", TRADING_ERROR.TRADE_NOT_FOUND);
     return {
@@ -633,7 +633,7 @@ export class AcademyService {
     };
   }
 
-  /** Rule-based recommendations — deliberately simple (spec §35). */
+  /** Rule-based recommendations - deliberately simple (spec §35). */
   private recommendations(state: AcademyState): AcademyRecommendation[] {
     const cards = this.sortedCourses().map((crs) => ({ course: crs, card: this.courseCard(state, crs) }));
     const picks: AcademyRecommendation[] = [];
@@ -644,7 +644,7 @@ export class AcademyService {
       picks.push({
         courseId: course.id,
         title: course.title,
-        reason: `In progress — ${card.completedLessons}/${card.lessonCount} lessons done.`,
+        reason: `In progress - ${card.completedLessons}/${card.lessonCount} lessons done.`,
         categoryId: course.categoryId,
       });
     }
@@ -656,7 +656,7 @@ export class AcademyService {
         picks.push({
           courseId: next.course.id,
           title: next.course.title,
-          reason: "Foundation track — recommended next for your level.",
+          reason: "Foundation track - recommended next for your level.",
           categoryId,
         });
       }
@@ -667,7 +667,7 @@ export class AcademyService {
       picks.push({
         courseId: advanced.course.id,
         title: advanced.course.title,
-        reason: "Advanced track — when the foundations hold.",
+        reason: "Advanced track - when the foundations hold.",
         categoryId: advanced.course.categoryId,
       });
     }
@@ -675,7 +675,7 @@ export class AcademyService {
     return picks.slice(0, 3);
   }
 
-  /** The unfinished lesson the user last had open — distinct from the
+  /** The unfinished lesson the user last had open - distinct from the
    *  curriculum's next-up pointer (continueLearning). null → nothing to resume. */
   private resumeLearning(state: AcademyState): AcademyResume {
     const viewed = Object.entries(state.viewedLessons)
@@ -857,7 +857,7 @@ export class AcademyService {
 
   // ── Practice ────────────────────────────────────────────────────────────────
 
-  /** One honest row in the practice ledger — shared by drills and checkpoints. */
+  /** One honest row in the practice ledger - shared by drills and checkpoints. */
   private recordAttempt(state: AcademyState, drill: string, correct: boolean, refId?: string): void {
     state.practiceAttempts += 1;
     if (correct) state.practiceCorrect += 1;
@@ -908,7 +908,7 @@ export class AcademyService {
     };
   }
 
-  /** Pattern ID drill — the weakness bank resurfaces ~50% of rounds. */
+  /** Pattern ID drill - the weakness bank resurfaces ~50% of rounds. */
   async patternDrill(userId: string): Promise<AcademyPatternDrill> {
     const { state } = await this.loadState(userId);
     if (PATTERN_EXEMPLARS.length === 0) throw new NotFoundError("No pattern exemplars", TRADING_ERROR.TRADE_NOT_FOUND);
@@ -936,7 +936,7 @@ export class AcademyService {
     };
   }
 
-  /** Support/Resistance — a shaped random walk: approach, prior touch, retest,
+  /** Support/Resistance - a shaped random walk: approach, prior touch, retest,
    *  reaction. The learner reads which side the level is serving. */
   srDrill(): AcademySrDrill {
     const support = Math.random() < 0.5;
@@ -986,8 +986,8 @@ export class AcademyService {
     pushCandle(price, c, Math.random() * 0.4, Math.random() * 0.4);
 
     const options = shuffle([
-      { id: "support", label: "Support — buyers defended the level, price bounced" },
-      { id: "resistance", label: "Resistance — sellers capped the level, price turned down" },
+      { id: "support", label: "Support - buyers defended the level, price bounced" },
+      { id: "resistance", label: "Resistance - sellers capped the level, price turned down" },
     ]);
     const answerId = support ? "support" : "resistance";
     return {
@@ -998,12 +998,12 @@ export class AcademyService {
       options,
       answer: options.findIndex((option) => option.id === answerId),
       explanation: support
-        ? "Price descended into the level, probed below with wicks, and closed back above before bouncing — the footprint of buyers defending support. A level is a zone of interest, never a guarantee: the reaction is the evidence, and invalidation sits below the retest low."
-        : "Price rallied into the level, probed above with wicks, and closed back below before turning down — the footprint of sellers capping resistance. A level is a zone of interest, never a guarantee: the reaction is the evidence, and invalidation sits above the retest high.",
+        ? "Price descended into the level, probed below with wicks, and closed back above before bouncing - the footprint of buyers defending support. A level is a zone of interest, never a guarantee: the reaction is the evidence, and invalidation sits below the retest low."
+        : "Price rallied into the level, probed above with wicks, and closed back below before turning down - the footprint of sellers capping resistance. A level is a zone of interest, never a guarantee: the reaction is the evidence, and invalidation sits above the retest high.",
     };
   }
 
-  /** Position sizing — the arithmetic that keeps traders solvent, randomized. */
+  /** Position sizing - the arithmetic that keeps traders solvent, randomized. */
   positionDrill(): AcademyPositionDrill {
     const balances = [5000, 10000, 25000, 50000];
     const percents = [0.5, 1, 1.5, 2];
@@ -1025,11 +1025,11 @@ export class AcademyService {
       unit: "units",
       answer,
       tolerance: 0.03,
-      explanation: `Risk budget = $${accountBalance.toLocaleString("en-US")} × ${riskPercent}% = $${riskBudget.toLocaleString("en-US", { maximumFractionDigits: 2 })}. Stop distance = ${entry} − ${stop} = ${stopDistance}. Size = budget ÷ distance = ${riskBudget.toLocaleString("en-US", { maximumFractionDigits: 2 })} ÷ ${stopDistance} = ${answer} units. Confidence never sizes a position — the stop distance and the account rule do.`,
+      explanation: `Risk budget = $${accountBalance.toLocaleString("en-US")} × ${riskPercent}% = $${riskBudget.toLocaleString("en-US", { maximumFractionDigits: 2 })}. Stop distance = ${entry} − ${stop} = ${stopDistance}. Size = budget ÷ distance = ${riskBudget.toLocaleString("en-US", { maximumFractionDigits: 2 })} ÷ ${stopDistance} = ${answer} units. Confidence never sizes a position - the stop distance and the account rule do.`,
     };
   }
 
-  /** Supply/Demand — two bands, one displacement origin. The learner reads
+  /** Supply/Demand - two bands, one displacement origin. The learner reads
    *  which band buyers (or sellers) built. Identity is never on the wire. */
   zoneDrill(): AcademyZoneDrill {
     const vol = 1.2;
@@ -1087,11 +1087,11 @@ export class AcademyService {
       candles,
       zones,
       context: "Daily chart, trending leg followed by a pullback. Bands mark prior reaction areas.",
-      prompt: "Which band is the demand zone — the area where buyers previously stepped in with displacement?",
+      prompt: "Which band is the demand zone - the area where buyers previously stepped in with displacement?",
       options,
       answer: demandTag === "A" ? 0 : 1,
       explanation:
-        "Demand is where aggressive buying originated: the strong rally away from the lower band is displacement — the footprint of unfilled interest. Supply sits where the rally stalled and rolled over. Price returning toward a demand zone is where buyers may defend again — potential, never a promise.",
+        "Demand is where aggressive buying originated: the strong rally away from the lower band is displacement - the footprint of unfilled interest. Supply sits where the rally stalled and rolled over. Price returning toward a demand zone is where buyers may defend again - potential, never a promise.",
     };
   }
 
@@ -1100,7 +1100,7 @@ export class AcademyService {
     return { scenarios: SCENARIOS satisfies AcademyScenario[] };
   }
 
-  // ── Flashcards — Leitner boxes over glossary + lesson takeaways ────────────
+  // ── Flashcards - Leitner boxes over glossary + lesson takeaways ────────────
 
   private buildFlashcardDeck(): AcademyFlashcard[] {
     const deck: AcademyFlashcard[] = [];
@@ -1122,7 +1122,7 @@ export class AcademyService {
           deck.push({
             id: `fc-take-${lesson.id}-${index}`,
             kind: "TAKEAWAY",
-            front: `${lesson.title} — key takeaway`,
+            front: `${lesson.title} - key takeaway`,
             back: item,
             source: lesson.title,
             categoryId: course.categoryId,
@@ -1144,7 +1144,7 @@ export class AcademyService {
     const remaining = Math.max(0, FLASHCARD_DAILY_CAP - reviewedToday);
     const queue = dueCards.slice(0, remaining).map((card) => ({ ...card, extra: false }));
     if (queue.length === 0) {
-      // Nothing due — free practice keeps the deck warm without touching caps.
+      // Nothing due - free practice keeps the deck warm without touching caps.
       const free = shuffle(deck).slice(0, 5).map((card) => ({ ...card, extra: true }));
       return { due: free, dueCount: dueCards.length, reviewedToday, totalCards: deck.length };
     }
@@ -1193,7 +1193,7 @@ export class AcademyService {
     return { reviewedToday: state.flashcardReviewedToday, dueRemaining };
   }
 
-  // ── Category certifications — exams over the category's question pool ─────
+  // ── Category certifications - exams over the category's question pool ─────
 
   private examPool(categoryId: string): AcademyQuizQuestion[] {
     return COURSES.filter((crs) => crs.categoryId === categoryId).flatMap((crs) => crs.quiz?.questions ?? []);
@@ -1292,7 +1292,7 @@ export class AcademyService {
     };
   }
 
-  // ── Milestones — sober, computed from real state ──────────────────────────
+  // ── Milestones - sober, computed from real state ──────────────────────────
 
   async getMilestones(userId: string): Promise<AcademyMilestonesResponse> {
     const { state } = await this.loadState(userId);
@@ -1349,10 +1349,10 @@ export class AcademyService {
     };
   }
 
-  // ── Journal → Academy — evidence-based lesson suggestions ────────────────
+  // ── Journal → Academy - evidence-based lesson suggestions ────────────────
 
   /** Reads the journal's closed trades and maps observed weakness patterns to
-   *  the course that addresses them. Rules are deliberately readable — the
+   *  the course that addresses them. Rules are deliberately readable - the
    *  Analytics-driven engine can replace them later at the same seam. */
   async getSuggestions(userId: string) {
     const { trades: closed } = await this.trades.listTrades(userId, { status: "CLOSED" }).catch(() => ({ trades: [] as Array<Record<string, unknown>> }));
@@ -1371,7 +1371,7 @@ export class AcademyService {
       rules.push({
         courseId: "crs-trademgmt",
         weight: givenBack,
-        reason: `${givenBack} of your closed trades traveled +2R but finished below +1R — managing winners is the gap the Trade Management track closes.`,
+        reason: `${givenBack} of your closed trades traveled +2R but finished below +1R - managing winners is the gap the Trade Management track closes.`,
       });
     }
 
@@ -1381,7 +1381,7 @@ export class AcademyService {
       rules.push({
         courseId: "crs-risk-fundamentals",
         weight: fullLosses,
-        reason: `${fullLosses} closed trades hit −1R or worse — worth revisiting stop placement and position sizing in Risk Management.`,
+        reason: `${fullLosses} closed trades hit −1R or worse - worth revisiting stop placement and position sizing in Risk Management.`,
       });
     }
 
@@ -1393,7 +1393,7 @@ export class AcademyService {
       rules.push({
         courseId: "crs-psychology",
         weight: emotional,
-        reason: `${emotional} trades carry an emotional exit tag — Trading Psychology covers the routine that makes discipline cheap.`,
+        reason: `${emotional} trades carry an emotional exit tag - Trading Psychology covers the routine that makes discipline cheap.`,
       });
     }
 
@@ -1403,7 +1403,7 @@ export class AcademyService {
       rules.push({
         courseId: "crs-strategies-core",
         weight: noStrategy,
-        reason: `${noStrategy} trades sat outside your playbook — the 13-field strategy template turns loose setups into testable systems.`,
+        reason: `${noStrategy} trades sat outside your playbook - the 13-field strategy template turns loose setups into testable systems.`,
       });
     }
 
@@ -1413,7 +1413,7 @@ export class AcademyService {
       rules.push({
         courseId: "crs-advanced-execution",
         weight: planDrift,
-        reason: `${planDrift} trades planned ≥2R but closed red — Advanced Execution covers the entry-to-exit gap.`,
+        reason: `${planDrift} trades planned ≥2R but closed red - Advanced Execution covers the entry-to-exit gap.`,
       });
     }
 
@@ -1438,13 +1438,13 @@ export class AcademyService {
     return { suggestions: picks };
   }
 
-  // ── Events (Academy live sessions) — seeds relative to "now" ──────────────
+  // ── Events (Academy live sessions) - seeds relative to "now" ──────────────
 
   private eventSeeds(): Array<Omit<AcademyEvent, "registered" | "startsAt"> & { offsetHours: number }> {
     return [
       {
         id: "evt-workshop-risk-sizing",
-        title: "Workshop — Position sizing under pressure",
+        title: "Workshop - Position sizing under pressure",
         description:
           "Live lab: compute size for five messy real charts, then defend the number against a forced redraw of your stop. Bring a calculator and your last 10 losers.",
         type: "WORKSHOP",
@@ -1459,7 +1459,7 @@ export class AcademyService {
       },
       {
         id: "evt-webinar-liquidity",
-        title: "Webinar — Where liquidity actually sits",
+        title: "Webinar - Where liquidity actually sits",
         description:
           "Equal highs, session opens and the myth of the stop hunt: a sober map of resting liquidity on FX and crypto, with repeatable marking rules.",
         type: "WEBINAR",
@@ -1474,7 +1474,7 @@ export class AcademyService {
       },
       {
         id: "evt-qa-psychology",
-        title: "Live Q&A — Tilt, revenge and the reset routine",
+        title: "Live Q&A - Tilt, revenge and the reset routine",
         description:
           "Open mic with the psychology team. Bring your worst session of the month; we rebuild the recovery checklist together, step by step.",
         type: "LIVE_QA",
@@ -1489,7 +1489,7 @@ export class AcademyService {
       },
       {
         id: "evt-exam-fundamentals",
-        title: "Certification window — Trading Fundamentals",
+        title: "Certification window - Trading Fundamentals",
         description:
           "Supervised 40-question exam on the Fundamentals track. A GOLD tier score unlocks the advanced risk syllabus. One attempt per window.",
         type: "EXAM",
@@ -1504,9 +1504,9 @@ export class AcademyService {
       },
       {
         id: "evt-workshop-patterns",
-        title: "Workshop — Grading breakouts by context",
+        title: "Workshop - Grading breakouts by context",
         description:
-          "We grade twenty breakouts live — location, compression, volume and invalidation — and you score each one before the reveal. Brutal and useful.",
+          "We grade twenty breakouts live - location, compression, volume and invalidation - and you score each one before the reveal. Brutal and useful.",
         type: "WORKSHOP",
         host: "Jonas Feld",
         hostRole: "Chart patterns instructor",
@@ -1519,9 +1519,9 @@ export class AcademyService {
       },
       {
         id: "evt-webinar-structure",
-        title: "Webinar — Market structure without the mysticism",
+        title: "Webinar - Market structure without the mysticism",
         description:
-          "Swings, BOS and CHoCH defined precisely enough to code — and the three setups where structure says nothing at all.",
+          "Swings, BOS and CHoCH defined precisely enough to code - and the three setups where structure says nothing at all.",
         type: "WEBINAR",
         host: "Deniz Aksoy",
         hostRole: "Price action instructor",
@@ -1534,7 +1534,7 @@ export class AcademyService {
       },
       {
         id: "evt-qa-journaling",
-        title: "Live Q&A — From journal to edge",
+        title: "Live Q&A - From journal to edge",
         description:
           "How to read your own journal like a dataset: sample size traps, regime splits, and the two metrics worth tracking weekly.",
         type: "LIVE_QA",
@@ -1590,7 +1590,7 @@ export class AcademyService {
     }
     const registered = await this.registeredEventIds(userId);
     if (registered.has(seed.id)) {
-      // Toggle off — deregistration is allowed until the event starts.
+      // Toggle off - deregistration is allowed until the event starts.
       const row = await this.repository.listByKind(userId, "EVENT_REG");
       const target = row.find((r) => (r.data as { eventId: string }).eventId === seed.id);
       if (target) await this.repository.deleteRow(target.id);
@@ -1610,7 +1610,7 @@ export class AcademyService {
       {
         id: "tsk-fund-orders",
         title: "Finish “Order types & execution”",
-        description: "Three lessons left — then run the checkpoint quiz until 80%+.",
+        description: "Three lessons left - then run the checkpoint quiz until 80%+.",
         kind: "LESSON" as const,
         priority: "HIGH" as const,
         dueOffsetHours: 20,
@@ -1623,7 +1623,7 @@ export class AcademyService {
       {
         id: "tsk-drill-sr",
         title: "10 structure drill reps",
-        description: "Support/resistance drill — stay above 70% accuracy before logging off.",
+        description: "Support/resistance drill - stay above 70% accuracy before logging off.",
         kind: "DRILL" as const,
         priority: "MEDIUM" as const,
         dueOffsetHours: 8,
@@ -1662,7 +1662,7 @@ export class AcademyService {
       {
         id: "tsk-flashcards",
         title: "Clear the flashcard backlog",
-        description: "The review queue is at 14 cards — zero it out today.",
+        description: "The review queue is at 14 cards - zero it out today.",
         kind: "DRILL" as const,
         priority: "MEDIUM" as const,
         dueOffsetHours: null,
@@ -1674,7 +1674,7 @@ export class AcademyService {
       },
       {
         id: "tsk-quiz-fundamentals",
-        title: "Fundamentals checkpoint — passed",
+        title: "Fundamentals checkpoint - passed",
         description: "Scored 85% on the first attempt.",
         kind: "LESSON" as const,
         priority: "HIGH" as const,
@@ -1688,7 +1688,7 @@ export class AcademyService {
     ];
   }
 
-  /** Lazy task seed — the demo board appears on first read. */
+  /** Lazy task seed - the demo board appears on first read. */
   private async ensureTaskSeed(userId: string): Promise<void> {
     const existing = await this.repository.listByKind(userId, "TASK");
     if (existing.length > 0) return;
@@ -1706,7 +1706,7 @@ export class AcademyService {
         done: seed.done,
         completedAt: seed.completedAt,
       };
-      // Task seed ids are slugs (tsk-…) — the uuid row id is derived while
+      // Task seed ids are slugs (tsk-…) - the uuid row id is derived while
       // the slug stays in the payload.
       await this.repository.insert(userId, "TASK", crypto.randomUUID(), task as unknown as never);
     }
@@ -1762,7 +1762,7 @@ export class AcademyService {
 
   async toggleTask(userId: string, input: { taskId: string; done: boolean }): Promise<AcademyTask> {
     // Tasks are addressed by row id (custom tasks) OR payload slug id (seed
-    // tasks — the row id is a derived uuid). A single list covers both.
+    // tasks - the row id is a derived uuid). A single list covers both.
     const rows = await this.repository.listByKind(userId, "TASK");
     const target = rows.find(
       (r) => r.id === input.taskId || (r.data as { id?: string }).id === input.taskId,

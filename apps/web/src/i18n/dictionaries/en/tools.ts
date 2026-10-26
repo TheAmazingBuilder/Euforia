@@ -1,11 +1,11 @@
 import type { Dictionary } from "@/i18n/dictionaries/en";
 
 /**
- * EN dictionary — TOOLS namespace (canonical). The standalone operational
- * calculators: Lot Size + Compounding. Values are STATIC strings — components
+ * EN dictionary - TOOLS namespace (canonical). The standalone operational
+ * calculators: Lot Size + Compounding. Values are STATIC strings - components
  * compose dynamic parts themselves (dict.* pattern, no {var} templates).
  *
- * Voice contract: these tools project and estimate — they never promise.
+ * Voice contract: these tools project and estimate - they never promise.
  * Result copy states what was computed from the given parameters; disclaimers
  * state that instrument specifications vary by broker. No performance claims.
  */
@@ -28,7 +28,7 @@ export const toolsDict = {
       entry: "Entry price",
       stop: "Stop loss",
       takeProfit: "Take profit",
-      optionalSuffix: "optional — used for R:R only",
+      optionalSuffix: "optional - used for R:R only",
       advanced: "Advanced parameters",
       advancedHint:
         "Instrument specifications vary by broker. Verify contract and tick specifications before placing a trade.",
@@ -36,7 +36,7 @@ export const toolsDict = {
       contractSize: "Contract size",
       volumeStep: "Volume step",
       presets: "Risk presets",
-      presetsNote: "Convenience presets — not advice.",
+      presetsNote: "Convenience presets - not advice.",
       calculate: "Calculate",
     },
     result: {
@@ -51,9 +51,9 @@ export const toolsDict = {
       statusValid: "Within limits",
       statusBelowStep: "Below one volume step",
       statusBelowStepBody:
-        "The risk budget cannot cover a single volume step — no tradeable size.",
+        "The risk budget cannot cover a single volume step - no tradeable size.",
       volumeAdjusted: "Floored to the volume step so realized risk stays within budget.",
-      rrNegative: "Reward distance is non-positive for this take profit — the ratio is negative.",
+      rrNegative: "Reward distance is non-positive for this take profit - the ratio is negative.",
     },
     breakdown: {
       title: "Calculation breakdown",
@@ -108,7 +108,7 @@ export const toolsDict = {
       tradesHint: "1–1 000 000 trades",
       presetsRatio: "R presets",
       presetsTrades: "Trade count presets",
-      presetsNote: "Convenience presets — not advice.",
+      presetsNote: "Convenience presets - not advice.",
       reset: "Reset",
       extraRatios: "Extra matrix rows",
     },
@@ -127,7 +127,7 @@ export const toolsDict = {
       ratio: "R : R",
       hint: "Every cell is computed independently from your risk amount, the row's reward multiple and the column's win rate over the selected trade count.",
       assumption:
-        "Fixed monetary risk per trade — the balance is NOT compounded after each trade.",
+        "Fixed monetary risk per trade - the balance is NOT compounded after each trade.",
       empty: "Enter valid parameters to build the matrix.",
     },
     detail: {
@@ -152,7 +152,7 @@ export const toolsDict = {
     },
     how: {
       title: "How it works",
-      line1: "Risk per losing trade: a percentage of the starting balance, or a fixed amount — held constant, never compounded.",
+      line1: "Risk per losing trade: a percentage of the starting balance, or a fixed amount - held constant, never compounded.",
       line2: "Reward per winning trade: the risk amount multiplied by the reward multiple (or the entered stop/target amounts).",
       line3: "Each cell multiplies the expected wins and losses over the selected trade count: P = N × L × [pR − (1 − p)].",
     },
@@ -168,7 +168,7 @@ export const toolsDict = {
       tradesRange: "Trades must be a whole number between 1 and 1 000 000.",
     },
     disclaimer:
-      "Results are THEORETICAL expected values over the selected trade sample: constant monetary risk, no compounding, no fees, spread, slippage or swaps. They exclude transaction costs and do not predict how any real sequence of trades will unfold — a planning tool, not a promise of profitability.",
+      "Results are THEORETICAL expected values over the selected trade sample: constant monetary risk, no compounding, no fees, spread, slippage or swaps. They exclude transaction costs and do not predict how any real sequence of trades will unfold - a planning tool, not a promise of profitability.",
     copy: {
       summary: "Copy summary",
       copied: "Copied",
@@ -187,7 +187,7 @@ export const toolsDict = {
       currency: "Currency",
       presetsBalance: "Balance presets",
       presetsGain: "Gain presets",
-      presetsNote: "Convenience presets — not expected returns.",
+      presetsNote: "Convenience presets - not expected returns.",
       periodsHint: "1–1 000 periods",
       gainHint: "Negative rates model drawdowns.",
     },
@@ -217,7 +217,7 @@ export const toolsDict = {
       balancePositive: "Starting balance must be greater than zero.",
       periodsRange: "Periods must be an integer between 1 and 1 000.",
       gainRange: "Gain per period must be between −100% and +10 000%.",
-      overflow: "The projection exceeds the supported balance ceiling — reduce the rate or the periods.",
+      overflow: "The projection exceeds the supported balance ceiling - reduce the rate or the periods.",
     },
     how: {
       title: "How it works",
@@ -226,7 +226,7 @@ export const toolsDict = {
       line3: "This creates compound growth because gains are reinvested.",
     },
     disclaimer:
-      "Projected growth assumes the specified return occurs consistently and does not account for fees, slippage, losses or withdrawals unless included. This is a mathematical projection — not a performance promise.",
+      "Projected growth assumes the specified return occurs consistently and does not account for fees, slippage, losses or withdrawals unless included. This is a mathematical projection - not a performance promise.",
     copy: {
       summary: "Copy summary",
       copied: "Copied",

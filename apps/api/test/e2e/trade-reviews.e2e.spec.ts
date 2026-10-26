@@ -1,5 +1,5 @@
 /**
- * e2e — Trade Review / Post-Trade Analysis (Phase 6).
+ * e2e - Trade Review / Post-Trade Analysis (Phase 6).
  *
  * Over the REAL AppModule + real database: review eligibility (§9), the
  * upsert lifecycle (create/edit/reactivate, §10/§31/§32), merge semantics,
@@ -7,7 +7,7 @@
  * aggregate, the lessons library, the plan-vs-actual comparison engine
  * (§54/§67) with the FROZEN origin-plan snapshot (§26), plus the security
  * battery: authentication boundary, IDOR (user A ↔ user B), forged
- * ownership, leakage scans — and the IMMUTABILITY battery (§66): review
+ * ownership, leakage scans - and the IMMUTABILITY battery (§66): review
  * operations can never modify Trade, TradeExecution or TradePlan rows.
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -41,7 +41,7 @@ afterAll(async () => {
 // ── fixtures ─────────────────────────────────────────────────────────────────
 
 /**
- * Journal-only TradingAccount seeded through Prisma — deliberately NOT via
+ * Journal-only TradingAccount seeded through Prisma - deliberately NOT via
  * the connect API: connecting a MOCK provider runs an INITIAL synchronization
  * that reconstructs EXTERNAL_SYNC trades into the journal, which would
  * pollute the exact workspace/pagination/overview counts this suite asserts
@@ -64,7 +64,7 @@ async function createJournalAccount(userId: string, currency = "USD") {
 }
 
 /**
- * EURUSD instrument id — the Instrument catalog is seeded by migrations and
+ * EURUSD instrument id - the Instrument catalog is seeded by migrations and
  * the WIRED legacy capture API (POST /trades) takes an instrumentId, not a
  * symbol. Resolved once through the injected PrismaService and cached.
  */
@@ -137,7 +137,7 @@ async function closeTrade(
 /**
  * A CLOSED canonical trade: BUY 1.085 → 1.09 at risk 100 (the risk_amount
  * size mode sizes 0.2 lots; the wired close recomputes pnlNet 100 / R 1
- * server-side). The close response is only the decision-gate envelope — the
+ * server-side). The close response is only the decision-gate envelope - the
  * canonical row is fetched back from the wired legacy list; its DTO lacks
  * the denormalized symbol/currency columns, so those two are merged in from
  * the Prisma row as plain strings.
@@ -183,7 +183,7 @@ async function closedTrade(
   };
 }
 
-/** Review payload WITHOUT the optional keys — exercises fresh resets. */
+/** Review payload WITHOUT the optional keys - exercises fresh resets. */
 function minimalReviewPayload(overrides: Record<string, unknown> = {}) {
   return {
     tradeId: "00000000-0000-0000-0000-000000000000",
@@ -209,7 +209,7 @@ function planPayload(accountId: string, overrides: Record<string, unknown> = {})
   };
 }
 
-/** A PLANNED (committed) EURUSD plan — engine sizes 0.2 lots at 100 risk, 2R. */
+/** A PLANNED (committed) EURUSD plan - engine sizes 0.2 lots at 100 risk, 2R. */
 async function createPlan(auth: Record<string, string>, accountId: string, overrides: Record<string, unknown> = {}) {
   const res = await app.inject({
     method: "POST",
@@ -246,7 +246,7 @@ async function putReview(auth: Record<string, string>, tradeId: string, override
   });
 }
 
-/** Byte-stable snapshot of the canonical rows — the immutability witness. */
+/** Byte-stable snapshot of the canonical rows - the immutability witness. */
 async function canonicalSnapshot(tradeId: string) {
   const trade = await prisma.trade.findFirst({ where: { id: tradeId } });
   const executions = await prisma.tradeExecution.findMany({
@@ -258,7 +258,7 @@ async function canonicalSnapshot(tradeId: string) {
 
 // ── Authentication boundary ──────────────────────────────────────────────────
 
-describe("trade reviews — authentication boundary", () => {
+describe("trade reviews - authentication boundary", () => {
   it("401 on every review route without a token", async () => {
     for (const [method, url] of [
       ["GET", "/api/v1/reviews"],
@@ -277,7 +277,7 @@ describe("trade reviews — authentication boundary", () => {
 
 // ── Review eligibility (§9) ──────────────────────────────────────────────────
 
-describe("trade reviews — eligibility", () => {
+describe("trade reviews - eligibility", () => {
   it("rejects reviews for OPEN trades (only closed trades can be reviewed)", async () => {
     const user = await authenticatedUser(app, mail);
     const account = await createJournalAccount(user.userId);
@@ -321,7 +321,7 @@ describe("trade reviews — eligibility", () => {
 
 // ── Upsert: create + edit (§31/§32) ─────────────────────────────────────────
 
-describe("trade reviews — upsert lifecycle", () => {
+describe("trade reviews - upsert lifecycle", () => {
   it("creates a review and returns the contract-shaped workspace row", async () => {
     const user = await authenticatedUser(app, mail);
     const { trade, account } = await closedTrade(user);
@@ -371,7 +371,7 @@ describe("trade reviews — upsert lifecycle", () => {
     const created = (await putReview(user.authHeader, trade.id as string)).json();
     const first = reviewRowSchema.parse(created);
 
-    // Re-PUT WITHOUT the optional fields — they keep their stored values.
+    // Re-PUT WITHOUT the optional fields - they keep their stored values.
     const second = await putReview(user.authHeader, trade.id as string, {
       executionGrade: "B",
       followedPlan: false,
@@ -446,7 +446,7 @@ describe("trade reviews — upsert lifecycle", () => {
 
 // ── Archive as undo (§10/§32) ───────────────────────────────────────────────
 
-describe("trade reviews — archive (undo review)", () => {
+describe("trade reviews - archive (undo review)", () => {
   it("archives on DELETE: trade returns to PENDING, archived rows are invisible", async () => {
     const user = await authenticatedUser(app, mail);
     const { trade } = await closedTrade(user);
@@ -500,7 +500,7 @@ describe("trade reviews — archive (undo review)", () => {
       headers: user.authHeader,
     });
 
-    // Fresh completion WITHOUT optionals — they reset (no stale revival).
+    // Fresh completion WITHOUT optionals - they reset (no stale revival).
     const res = await app.inject({
       method: "PUT",
       url: `/api/v1/reviews/${trade.id as string}`,
@@ -523,7 +523,7 @@ describe("trade reviews — archive (undo review)", () => {
 
 // ── Workspace list + pagination (§72) ────────────────────────────────────────
 
-describe("trade reviews — workspace list", () => {
+describe("trade reviews - workspace list", () => {
   it("returns REVIEWED and PENDING rows, newest trading day first", async () => {
     const user = await authenticatedUser(app, mail);
     const reviewed = await closedTrade(user); // 2026-03-02
@@ -537,7 +537,7 @@ describe("trade reviews — workspace list", () => {
     expect(res.statusCode).toBe(200);
     const parsed = reviewsResponseSchema.parse(res.json());
     expect(parsed.reviews).toHaveLength(2);
-    // Newest trading day first — the PENDING 03-03 trade leads.
+    // Newest trading day first - the PENDING 03-03 trade leads.
     expect(parsed.reviews[0]!.tradeId).toBe(pending.trade.id);
     expect(parsed.reviews[0]!.reviewStatus).toBe("PENDING");
     expect(parsed.reviews[1]!.tradeId).toBe(reviewed.trade.id);
@@ -604,12 +604,12 @@ describe("trade reviews — workspace list", () => {
 
 // ── Overview aggregate ────────────────────────────────────────────────────────
 
-describe("trade reviews — overview", () => {
+describe("trade reviews - overview", () => {
   it("computes stats, distribution, averages, streak and trend over real rows", async () => {
     const user = await authenticatedUser(app, mail);
     const reviewed = await closedTrade(user);
     const pending = await closedTrade(user, {
-      notes: "Held through the news — worked out, but sloppy process.",
+      notes: "Held through the news - worked out, but sloppy process.",
       entryAt: "2026-03-02T13:00:00.000Z",
       exit: { exitAt: "2026-03-02T15:00:00.000Z" },
     });
@@ -675,7 +675,7 @@ describe("trade reviews — overview", () => {
 
 // ── Lessons library ───────────────────────────────────────────────────────────
 
-describe("trade reviews — lessons library", () => {
+describe("trade reviews - lessons library", () => {
   it("unions REVIEW lessons with TRADE_NOTE lessons, newest first", async () => {
     const user = await authenticatedUser(app, mail);
     const reviewed = await closedTrade(user);
@@ -701,12 +701,12 @@ describe("trade reviews — lessons library", () => {
     expect(reviewEntry?.rMultiple).toBe(1);
 
     const noteEntry = parsed.lessons.find((entry) => entry.source === "TRADE_NOTE");
-    // The lessons id is a uuid per the shared contract — the trade id IS one.
+    // The lessons id is a uuid per the shared contract - the trade id IS one.
     expect(noteEntry?.id).toBe(noted.trade.id);
     expect(noteEntry?.text).toContain("News-day spreads");
     expect(noteEntry?.executionGrade).toBeNull();
 
-    // Newest trading day first (both 2026-03-02 — stable order keeps both).
+    // Newest trading day first (both 2026-03-02 - stable order keeps both).
     expect(parsed.lessons).toHaveLength(2);
     void noted;
   });
@@ -714,7 +714,7 @@ describe("trade reviews — lessons library", () => {
 
 // ── Detail + plan-vs-actual comparison (§54/§67/§70) ─────────────────────────
 
-describe("trade reviews — detail and comparison without a plan", () => {
+describe("trade reviews - detail and comparison without a plan", () => {
   it("returns the review, authoritative trade summary and a NONE comparison", async () => {
     const user = await authenticatedUser(app, mail);
     const { trade } = await closedTrade(user);
@@ -737,7 +737,7 @@ describe("trade reviews — detail and comparison without a plan", () => {
     // The risk_amount 100 size mode sized 0.2 lots (not the Phase-4-era 1).
     expect(detail.tradeSummary.quantity).toBe("0.2");
     // The WIRED legacy close computes results server-side (0.005 Δ × 0.2 ×
-    // 100000 = pnlNet 100 → R 1) — canonical Trading Core truth.
+    // 100000 = pnlNet 100 → R 1) - canonical Trading Core truth.
     expect(detail.tradeSummary.pnlNet).toBe("100");
     expect(detail.tradeSummary.riskAmount).toBe("100");
     expect(detail.tradeSummary.rMultiple).toBe("1");
@@ -753,7 +753,7 @@ describe("trade reviews — detail and comparison without a plan", () => {
   });
 });
 
-describe("trade reviews — detail and comparison with an origin plan", () => {
+describe("trade reviews - detail and comparison with an origin plan", () => {
   it("compares plan vs actual across every dimension and freezes the snapshot", async () => {
     const user = await authenticatedUser(app, mail);
     const account = await createJournalAccount(user.userId);
@@ -821,7 +821,7 @@ describe("trade reviews — detail and comparison with an origin plan", () => {
       deviationPips: null,
       available: true,
     });
-    // Planned RR 2 vs realized R — the WIRED legacy close computed R=1
+    // Planned RR 2 vs realized R - the WIRED legacy close computed R=1
     // server-side (pnlNet 100 at risk 100), so the deviation leg is fully
     // available: actual 1 vs planned 2.
     expect(detail.comparison.rMultiple).toEqual({
@@ -853,7 +853,7 @@ describe("trade reviews — detail and comparison with an origin plan", () => {
     await closeTrade(user.authHeader, created.id);
     await putReview(user.authHeader, created.id, { originTradePlanId: plan.id });
 
-    // The plan stays editable (PLANNED) — but the review's comparison must not move.
+    // The plan stays editable (PLANNED) - but the review's comparison must not move.
     const edit = await app.inject({
       method: "PATCH",
       url: `/api/v1/trade-plans/${plan.id}`,
@@ -906,7 +906,7 @@ describe("trade reviews — detail and comparison with an origin plan", () => {
     expect(mismatch.statusCode).toBe(422);
     expect(mismatch.json().code).toBe("TRADE_REVIEW_PLAN_MISMATCH");
 
-    // Link then detach — the comparison falls back to NONE.
+    // Link then detach - the comparison falls back to NONE.
     const eurusdPlan = await createPlan(user.authHeader, (await createJournalAccount(user.userId)).id);
     await putReview(user.authHeader, trade.id as string, { originTradePlanId: eurusdPlan.id });
     const detail = reviewDetailResponseSchema.parse(
@@ -938,7 +938,7 @@ describe("trade reviews — detail and comparison with an origin plan", () => {
 
 // ── Security: ownership, IDOR, forged ownership (§36/§65) ────────────────────
 
-describe("trade reviews — security battery", () => {
+describe("trade reviews - security battery", () => {
   it("IDOR: user B cannot read, edit, complete or archive user A's review (honest 404)", async () => {
     const a = await authenticatedUser(app, mail);
     const b = await authenticatedUser(app, mail);
@@ -961,7 +961,7 @@ describe("trade reviews — security battery", () => {
     });
     expect(edit.statusCode).toBe(404);
 
-    // B cannot even CREATE a review for A's trade — the trade itself 404s.
+    // B cannot even CREATE a review for A's trade - the trade itself 404s.
     const complete = await putReview(b.authHeader, trade.id as string);
     expect(complete.statusCode).toBe(404);
     expect(complete.json().code).toBe("TRADE_REVIEW_TRADE_NOT_FOUND");
@@ -1000,12 +1000,12 @@ describe("trade reviews — security battery", () => {
     void aTrade;
   });
 
-  it("the URL tradeId is authoritative — a forged body tradeId is ignored (§24)", async () => {
+  it("the URL tradeId is authoritative - a forged body tradeId is ignored (§24)", async () => {
     const user = await authenticatedUser(app, mail);
     const owned = await closedTrade(user);
 
     const res = await putReview(user.authHeader, owned.trade.id as string, {
-      tradeId: "00000000-0000-0000-0000-000000000099", // forged — ignored
+      tradeId: "00000000-0000-0000-0000-000000000099", // forged - ignored
     });
     expect(res.statusCode).toBe(200);
     const row = reviewRowSchema.parse(res.json());
@@ -1033,9 +1033,9 @@ describe("trade reviews — security battery", () => {
   });
 });
 
-// ── Immutability battery (§66 — the critical architectural test) ─────────────
+// ── Immutability battery (§66 - the critical architectural test) ─────────────
 
-describe("trade reviews — immutability of execution truth", () => {
+describe("trade reviews - immutability of execution truth", () => {
   it("review create/edit/complete/archive never modify Trade or TradeExecution rows", async () => {
     const user = await authenticatedUser(app, mail);
     const account = await createJournalAccount(user.userId);
@@ -1091,7 +1091,7 @@ describe("trade reviews — immutability of execution truth", () => {
     const { trade } = await closedTrade(user);
     const row = reviewRowSchema.parse((await putReview(user.authHeader, trade.id as string)).json());
 
-    // The review has NO field for P&L/R (they are not user-writable) — the
+    // The review has NO field for P&L/R (they are not user-writable) - the
     // trader records the process verdict while the canonical facts stand
     // (wired close: pnlNet 100, R 1).
     await putReview(user.authHeader, trade.id as string, {

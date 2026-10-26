@@ -7,11 +7,11 @@ import {
 import { filtersEqual } from "./filters";
 
 /**
- * Saved analytical views — pure operations (Phase 03 §10).
+ * Saved analytical views - pure operations (Phase 03 §10).
  *
  * A saved view is a NAME + a validated filter context, persisted inside the
  * dashboard preferences domain (same mechanism as the Phase 01 layout
- * collection — an additive optional `savedViews` key, max 30). Views are
+ * collection - an additive optional `savedViews` key, max 30). Views are
  * strictly separate from layouts and widget configs: applying a view never
  * touches widget arrangement, and CRUD here never touches layouts.
  *
@@ -19,7 +19,7 @@ import { filtersEqual } from "./filters";
  * model house pattern: unknown/malformed views are dropped individually
  * (one invalid view never destroys the collection), ids are deduplicated
  * first-wins, names are unique case-insensitively (first wins), and the
- * collection is capped. No React, no I/O — fully unit-testable.
+ * collection is capped. No React, no I/O - fully unit-testable.
  */
 
 export const VIEW_SCHEMA_VERSION = 1;
@@ -66,7 +66,7 @@ export function normalizeSavedViews(candidate: unknown): DashboardSavedView[] {
   return views;
 }
 
-/** Trimmed name validation (non-empty, ≤ 60 — same bounds as layout names). */
+/** Trimmed name validation (non-empty, ≤ 60 - same bounds as layout names). */
 function validName(name: string): string | null {
   const trimmed = name.trim();
   if (trimmed.length < 1 || trimmed.length > MAX_VIEW_NAME_LENGTH) return null;
@@ -107,7 +107,7 @@ export function createSavedView(
   return { ok: true, value: [...views, withTimestamps(view, now)] };
 }
 
-/** Rename — validates the new name and preserves the filter definition. */
+/** Rename - validates the new name and preserves the filter definition. */
 export function renameSavedView(
   views: DashboardSavedView[],
   id: string,
@@ -128,8 +128,8 @@ export function renameSavedView(
 }
 
 /**
- * Duplicate — a NEW id and a DEEP, independent copy of the filter document
- * (later edits to one view never mutate the other — spec §10.5). The name
+ * Duplicate - a NEW id and a DEEP, independent copy of the filter document
+ * (later edits to one view never mutate the other - spec §10.5). The name
  * gets a unique "copy" suffix; timestamps are fresh (a new view identity).
  */
 export function duplicateSavedView(
@@ -158,7 +158,7 @@ export function duplicateSavedView(
   return { ok: true, value: [...views, copy] };
 }
 
-/** Delete — removes ONLY the view; never touches filters, layouts or data. */
+/** Delete - removes ONLY the view; never touches filters, layouts or data. */
 export function deleteSavedView(
   views: DashboardSavedView[],
   id: string,
@@ -169,7 +169,7 @@ export function deleteSavedView(
 
 /**
  * Active-view detection: the FIRST view whose filters exactly equal the
- * current authoritative filters. Manual filter edits make this undefined —
+ * current authoritative filters. Manual filter edits make this undefined -
  * the UI renders "diverged from saved view" through a separate dirty check
  * (current filters ≠ selected view's filters).
  */

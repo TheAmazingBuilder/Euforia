@@ -1,5 +1,5 @@
 /**
- * Trading Core controllers (Phase 4 §33) — thin HTTP boundaries over the
+ * Trading Core controllers (Phase 4 §33) - thin HTTP boundaries over the
  * trades application service, following the exact repo conventions:
  * global JwtAuthGuard (no @Public), ZodValidationPipe on every body/query,
  * @CurrentUser principal, uuid-validated params, ownership resolved in the
@@ -7,7 +7,7 @@
  *
  * GET /trades/:id/session-series (B3) returns a DETERMINISTIC SYNTHETIC
  * path anchored on the trade's real recorded points (entry/exit/MFE/MAE)
- * — no market-data provider exists, and the endpoint never pretends
+ * - no market-data provider exists, and the endpoint never pretends
  * otherwise (§68); see session-series.ts for the honesty contract.
  */
 import {
@@ -137,7 +137,7 @@ export class TradesController {
     return this.trades.decide(principal.userId, id, payload);
   }
 
-  // ── B3 — session series projection + mistake resolution ────────────────────
+  // ── B3 - session series projection + mistake resolution ────────────────────
 
   /** Deterministic projection path anchored on the trade's real points. */
   @Get(":tradeId/session-series")
@@ -306,7 +306,7 @@ export class TradeViewsController {
   }
 }
 
-/** Tag catalog (B3, Domaine 4) — capture-form chips + inline creation. */
+/** Tag catalog (B3, Domaine 4) - capture-form chips + inline creation. */
 @Controller("tags")
 export class TagsController {
   constructor(private readonly trades: TradesService) {}

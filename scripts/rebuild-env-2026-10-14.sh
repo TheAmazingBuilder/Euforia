@@ -1,5 +1,5 @@
 #!/bin/sh
-# rebuild-env-2026-10-14.sh — restore the embedded PostgreSQL cluster and
+# rebuild-env-2026-10-14.sh - restore the embedded PostgreSQL cluster and
 # apps/api/.env after the sandbox restart wiped .localpg/ and the .env files
 # (same recovery as worklog "recover-2026-10-13b", re-applied 2026-10-14).
 #
@@ -14,16 +14,16 @@ DEV_URL='postgresql://cosmoz@127.0.0.1:5433/cosmoz'
 TEST_URL='postgresql://cosmoz@127.0.0.1:5433/cosmoz_test'
 PRISMA=./node_modules/.bin/prisma
 
-echo "== 1. apps/api/.env (fresh keys — values are NOT printed) =="
+echo "== 1. apps/api/.env (fresh keys - values are NOT printed) =="
 if [ -f .env ]; then
-  echo ".env already exists — keeping it"
+  echo ".env already exists - keeping it"
 else
   JWT=$(node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))")
   MFA=$(node -e "console.log(require('crypto').randomBytes(32).toString('base64'))")
   ACC=$(node -e "console.log(require('crypto').randomBytes(32).toString('base64'))")
   WHK=$(node -e "console.log(require('crypto').randomBytes(32).toString('base64'))")
   cat > .env <<EOF
-# Rebuilt 2026-10-14 after sandbox restart (fresh coherent key set — the
+# Rebuilt 2026-10-14 after sandbox restart (fresh coherent key set - the
 # previous vault keys were lost with the previous .localpg cluster).
 NODE_ENV=development
 PORT=4000
@@ -70,7 +70,7 @@ for d in prisma/migrations/*/; do
   echo "resolved: $name"
 done
 
-echo "== 5. partial unique index (Prisma cannot express it — hand-written) =="
+echo "== 5. partial unique index (Prisma cannot express it - hand-written) =="
 SQL_INDEX="CREATE UNIQUE INDEX IF NOT EXISTS \"TradingSyncRun_accountId_running_key\" ON \"TradingSyncRun\"(\"accountId\") WHERE status = 'RUNNING';"
 printf '%s' "$SQL_INDEX" | DATABASE_URL="$DEV_URL" $PRISMA db execute --url "$DEV_URL" --stdin
 printf '%s' "$SQL_INDEX" | DATABASE_URL="$TEST_URL" $PRISMA db execute --url "$TEST_URL" --stdin

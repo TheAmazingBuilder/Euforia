@@ -1,8 +1,8 @@
-"""E2E ritual — Sidebar SYSTEM (Security + Monitoring) + Monitoring observability console.
+"""E2E ritual - Sidebar SYSTEM (Security + Monitoring) + Monitoring observability console.
 
 Covers:
 - SIDEBAR (desktop 1440 light): System section now shows Integrations, Security,
-  Monitoring, Settings — the two previously hidden deep modules are rail items.
+  Monitoring, Settings - the two previously hidden deep modules are rail items.
 - SECURITY regression: /security renders the full center after the nav move.
 - MONITORING (desktop 1440 light + dark):
   - Overview: 8 component tiles with evidence, overall badge, active alerts

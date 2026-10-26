@@ -2,7 +2,7 @@
  * Access-token store (spec §9, §11, §66).
  *
  * The access token is a short-lived application credential that lives in
- * MODULE MEMORY ONLY — never in localStorage, sessionStorage, IndexedDB,
+ * MODULE MEMORY ONLY - never in localStorage, sessionStorage, IndexedDB,
  * cookies, URL parameters or React state. A full page reload intentionally
  * drops it; the centralized refresh flow restores the session via the
  * HttpOnly refresh cookie (see lib/auth/refresh.ts).
@@ -20,7 +20,7 @@ export function setAccessToken(token: string, expiresAtIso: string): void {
 }
 
 export function getAccessToken(): string | null {
-  // Expired tokens are filtered but the RECORD stays — refresh failure
+  // Expired tokens are filtered but the RECORD stays - refresh failure
   // handling distinguishes "session died mid-use" (had a token) from
   // "boot restore without a session" (never had one).
   if (accessToken && accessTokenExpiresAt !== null && accessTokenExpiresAt <= Date.now()) {
@@ -29,7 +29,7 @@ export function getAccessToken(): string | null {
   return accessToken;
 }
 
-/** True while any token record exists (even expired) — session-lifecycle signal. */
+/** True while any token record exists (even expired) - session-lifecycle signal. */
 export function hasTokenRecord(): boolean {
   return accessToken !== null;
 }
@@ -43,14 +43,3 @@ export function hasAccessToken(): boolean {
   return getAccessToken() !== null;
 }
 
-/**
- * Test/dev affordance ONLY (mocked dev builds): forces the in-memory token
- * to look expired so E2E harnesses can exercise the 401 → refresh → retry
- * path without waiting for the real 15-minute TTL. Never compiled into
- * production behavior — see lib/auth/dev-hooks.ts for the registration gate.
- */
-export function forceExpireAccessTokenForTesting(): void {
-  if (accessToken && accessTokenExpiresAt !== null) {
-    accessTokenExpiresAt = Date.now() - 1;
-  }
-}

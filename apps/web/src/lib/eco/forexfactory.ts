@@ -1,24 +1,24 @@
 import type { EcoEvent } from "@cosmoz/shared";
 
 /**
- * REAL economic provider bridge — ForexFactory weekly calendar (server-side
+ * REAL economic provider bridge - ForexFactory weekly calendar (server-side
  * ONLY: the public JSON has no CORS headers, so this fetch never runs in
  * the browser; it lives behind the /api/eco-events route handler).
  *
  * "Behind the existing port" (the user's contract): the bridge answers the
- * SAME route with the SAME canonical EcoEvent shape — the workspace, the
+ * SAME route with the SAME canonical EcoEvent shape - the workspace, the
  * calendar pages and every consumer keep their exact queries; only the
  * provenance changes (and is HONESTLY labeled by `source`).
  *
  * Robustness contract (the provider is external and unauthenticated):
  *   - hard 6 s timeout, single-flight fetch, 30 min TTL cache;
- *   - every row is re-validated against the canonical shape — invalid rows
+ *   - every row is re-validated against the canonical shape - invalid rows
  *     are skipped, never forced;
  *   - ANY failure (network, shape, parse) returns null and the route falls
- *     back to the deterministic sample fixtures — the surface never breaks
+ *     back to the deterministic sample fixtures - the surface never breaks
  *     because the provider is down.
  *
- * Identity: `ff-` ref folded into UUID hex from sha256(title|instant) —
+ * Identity: `ff-` ref folded into UUID hex from sha256(title|instant) -
  * stable across polls (the same release keeps its id), never a raw
  * provider id.
  */
@@ -35,7 +35,7 @@ function mapImpact(impact: string): EcoEvent["impact"] | null {
   if (normalized === "medium") return "MEDIUM";
   if (normalized === "low") return "LOW";
   if (normalized === "holiday") return "LOW";
-  return null; // Unknown tier — the row is skipped, never force-mapped.
+  return null; // Unknown tier - the row is skipped, never force-mapped.
 }
 
 /** sha256 hex → canonical UUID layout (deterministic, collision-safe). */
@@ -44,7 +44,7 @@ function stableUuid(ref: string): string {
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`;
 }
 
-/** Raw FF wire row — only the fields this bridge consumes. */
+/** Raw FF wire row - only the fields this bridge consumes. */
 interface FfRow {
   title?: unknown;
   country?: unknown;
@@ -79,7 +79,7 @@ function normalizeRow(row: FfRow): EcoEvent | null {
     currency,
     impact,
     scheduledAt: scheduled.toISOString(),
-    actual: null, // The weekly feed carries no released actuals — honest null.
+    actual: null, // The weekly feed carries no released actuals - honest null.
     forecast: text(row.forecast),
     previous: text(row.previous),
   };
@@ -122,7 +122,7 @@ async function fetchOnce(): Promise<RealEcoWindow | null> {
     if (events.length === 0) return null;
     return { events, windowStartMs, windowEndMs };
   } catch {
-    return null; // Timeout / network / parse — the caller falls back.
+    return null; // Timeout / network / parse - the caller falls back.
   } finally {
     clearTimeout(timer);
   }

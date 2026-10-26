@@ -13,7 +13,7 @@ const BASE = process.env.BASE_URL || "http://localhost:3000";
 const results = [];
 function check(id, label, ok, detail = "") {
   results.push({ id, ok });
-  console.log(`${ok ? "PASS" : "FAIL"}  ${id}  ${label}${detail ? "  — " + detail : ""}`);
+  console.log(`${ok ? "PASS" : "FAIL"}  ${id}  ${label}${detail ? "  - " + detail : ""}`);
 }
 const NOISE = [/401/, /auth\/me/, /auth\/refresh/, /WebSocket/];
 

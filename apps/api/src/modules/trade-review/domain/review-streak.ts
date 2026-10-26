@@ -1,11 +1,11 @@
 /**
- * Review streak + weekly grade trend (Phase 6 — workspace overview).
+ * Review streak + weekly grade trend (Phase 6 - workspace overview).
  *
  * Faithful port of the product's established semantics (the frontend mock is
- * the product spec until the real backend replaces it — §71):
+ * the product spec until the real backend replaces it - §71):
  *
  *   - Streak with an HONEST freeze: one grace day per calendar week (Mon–Sun).
- *     A missed day is forgiven — counted as FROZEN, never as reviewed — only
+ *     A missed day is forgiven - counted as FROZEN, never as reviewed - only
  *     if the chain stays continuous around it and that calendar week has not
  *     already consumed its grace day. Numbers reported separately so the
  *     gamification never lies.
@@ -13,7 +13,7 @@
  *     rounded to 2 decimals, oldest → newest, current week included, max 8
  *     weeks, weeks without reviews skipped.
  *
- * Pure domain functions on DAY KEYS ("YYYY-MM-DD") — the caller converts
+ * Pure domain functions on DAY KEYS ("YYYY-MM-DD") - the caller converts
  * instants to the user's trading-day keys (timezone-aware), keeping this
  * module free of framework and clock concerns (§75).
  */
@@ -24,7 +24,7 @@ const GRADE_POINTS: Record<string, number> = { A: 5, B: 4, C: 3, D: 2, F: 1 };
 export const GRACE_DAYS_PER_WEEK = 1;
 export const TREND_WEEKS = 8;
 
-// ── day-key helpers (UTC math on "YYYY-MM-DD" strings — date keys are zoneless) ──
+// ── day-key helpers (UTC math on "YYYY-MM-DD" strings - date keys are zoneless) ──
 
 export function shiftDayKey(dayKey: string, deltaDays: number): string {
   const date = new Date(`${dayKey}T00:00:00.000Z`);

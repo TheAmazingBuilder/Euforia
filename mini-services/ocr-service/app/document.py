@@ -1,14 +1,14 @@
-"""PDF statement rendering (OCR V2 — multi-page import).
+"""PDF statement rendering (OCR V2 - multi-page import).
 
 MetaTrader 5 (and most brokers) export account history as multi-page PDF
 reports. The sidecar accepts the document bytes, renders every page to a
-PNG working image with PyMuPDF (self-contained — no poppler dependency)
+PNG working image with PyMuPDF (self-contained - no poppler dependency)
 and hands each page to the regular pipeline. Rendering is a LOCAL,
 stateless operation: no network, no persistence, pages never leave the
 process boundary except as in-memory working images.
 
 Guards:
-  - page ceiling (20) and pixel budget per page — a hostile PDF cannot
+  - page ceiling (20) and pixel budget per page - a hostile PDF cannot
     exhaust the worker (RESOURCE_LIMIT);
   - encrypted/corrupt documents are rejected as structurally unusable
     (SCREENSHOT_UNSUPPORTED at the Nest mapping, same class as images);
@@ -50,7 +50,7 @@ class RenderedPage:
 
 
 def is_pdf(data: bytes) -> bool:
-    """Header sniff — the declared MIME stays advisory (mirror of images)."""
+    """Header sniff - the declared MIME stays advisory (mirror of images)."""
     return data[:5] == b"%PDF-"
 
 
@@ -90,7 +90,7 @@ def render_pages(data: bytes, max_pixels_per_page: int) -> List[RenderedPage]:
 
 
 def render_first_page_png(data: bytes, max_pixels_per_page: int) -> Tuple[bytes, int, int]:
-    """First-page render — the perceptual-hash anchor for document dedup."""
+    """First-page render - the perceptual-hash anchor for document dedup."""
     pages = render_pages(data, max_pixels_per_page)
     first = pages[0]
     return first.png, first.width, first.height

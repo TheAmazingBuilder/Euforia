@@ -26,7 +26,7 @@ import { cn } from "@/lib/utils";
 import { GRADE_STYLES, PLAYBOOK_MATCH_META } from "@/components/trade-review/trade-review-shared";
 
 /**
- * The review workflow dialog — grade execution against the playbook, score
+ * The review workflow dialog - grade execution against the playbook, score
  * entry/exit/risk quality, tick the frozen checklist and capture THE lesson.
  * One review per trade (upsert): the same dialog edits an existing review.
  */
@@ -44,12 +44,12 @@ interface ReviewDialogProps {
 export function ReviewDialog({ row, open, onOpenChange }: ReviewDialogProps) {
   const upsert = useUpsertReview();
   const router = useRouter();
-  // The overview is already cached by the module — the recurring-lesson
+  // The overview is already cached by the module - the recurring-lesson
   // template comes from it (shared query key, no extra round-trip).
   const { data: overviewData } = useReviewOverview();
   const lastImprovementNote = overviewData?.lastImprovementNote ?? null;
 
-  // Nofy integration — the trade side of the knowledge loop: the review's
+  // Nofy integration - the trade side of the knowledge loop: the review's
   // lesson becomes the seed of a note that stays linked to this trade.
   const createNofyNote = useCreateNofyNote({
     onCreated: (note) => {
@@ -69,7 +69,7 @@ export function ReviewDialog({ row, open, onOpenChange }: ReviewDialogProps) {
   const [lessons, setLessons] = React.useState("");
   const [improvementNote, setImprovementNote] = React.useState("");
 
-  // Re-hydrate whenever the dialog opens (or the row swaps — the caller also
+  // Re-hydrate whenever the dialog opens (or the row swaps - the caller also
   // remounts by key). Guarded render-time adjustment per the React docs
   // "You might not need an effect" pattern.
   const [wasOpen, setWasOpen] = React.useState(open);
@@ -102,7 +102,7 @@ export function ReviewDialog({ row, open, onOpenChange }: ReviewDialogProps) {
     if (improvementNote.trim() !== "") {
       blocks.push({ id: blockId(), type: "todo", text: improvementNote.trim(), checked: false });
     }
-    createNofyNote.mutate({ title: `${row.symbol} ${row.tradingDate} — review notes`, blocks });
+    createNofyNote.mutate({ title: `${row.symbol} ${row.tradingDate} - review notes`, blocks });
   };
 
   if (!row) return null;
@@ -112,7 +112,7 @@ export function ReviewDialog({ row, open, onOpenChange }: ReviewDialogProps) {
   const submit = () => {
     if (lessons.trim().length < 3) {
       toast.error("Capture the lesson first", {
-        description: "The review exists for the lesson — one sentence is enough.",
+        description: "The review exists for the lesson - one sentence is enough.",
       });
       return;
     }
@@ -132,7 +132,7 @@ export function ReviewDialog({ row, open, onOpenChange }: ReviewDialogProps) {
       {
         onSuccess: () => {
           toast.success(row.reviewStatus === "PENDING" ? "Trade reviewed" : "Review updated", {
-            description: `${row.symbol} — execution graded ${executionGrade}.`,
+            description: `${row.symbol} - execution graded ${executionGrade}.`,
           });
           onOpenChange(false);
         },
@@ -149,7 +149,7 @@ export function ReviewDialog({ row, open, onOpenChange }: ReviewDialogProps) {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <NotebookPen className="size-5 text-violet-400" aria-hidden="true" />
-            {row.reviewStatus === "PENDING" ? "Review trade" : "Edit review"} — {row.symbol}
+            {row.reviewStatus === "PENDING" ? "Review trade" : "Edit review"} - {row.symbol}
           </DialogTitle>
           <DialogDescription>
             {row.tradingDate} · {row.direction} · {row.strategyName ?? "Off playbook"}
@@ -157,7 +157,7 @@ export function ReviewDialog({ row, open, onOpenChange }: ReviewDialogProps) {
           </DialogDescription>
         </DialogHeader>
 
-        {/* Verdict strip — the result stays visible while judging execution */}
+        {/* Verdict strip - the result stays visible while judging execution */}
         <div className="flex items-center justify-between rounded-lg border bg-muted/40 px-4 py-3" data-testid="review-verdict">
           <div>
             <p className="text-xs text-muted-foreground">Result (revealed)</p>
@@ -167,7 +167,7 @@ export function ReviewDialog({ row, open, onOpenChange }: ReviewDialogProps) {
           </div>
           <div className="text-right">
             <p className="text-xs text-muted-foreground">Decision grade (pre-reveal)</p>
-            <p className="font-mono text-sm font-semibold">{row.decisionGrade ?? "—"}</p>
+            <p className="font-mono text-sm font-semibold">{row.decisionGrade ?? "-"}</p>
           </div>
         </div>
 
@@ -176,7 +176,7 @@ export function ReviewDialog({ row, open, onOpenChange }: ReviewDialogProps) {
           <div>
             <Label className="text-sm font-medium">Execution grade</Label>
             <p className="mb-2 text-xs text-muted-foreground">
-              Your post-trade verdict — did the execution deserve the result?
+              Your post-trade verdict - did the execution deserve the result?
             </p>
             <div className="flex gap-2" data-testid="execution-grade-picker">
               {GRADES.map((grade) => (
@@ -298,7 +298,7 @@ export function ReviewDialog({ row, open, onOpenChange }: ReviewDialogProps) {
             ))}
           </div>
 
-          {/* The lesson — the point of the module */}
+          {/* The lesson - the point of the module */}
           <div>
             <Label htmlFor="review-lessons" className="text-sm font-medium">
               The lesson you keep
@@ -336,12 +336,12 @@ export function ReviewDialog({ row, open, onOpenChange }: ReviewDialogProps) {
                 data-testid="review-reuse-note"
               >
                 <History className="size-3 shrink-0" aria-hidden="true" />
-                <span className="truncate">Reuse from your last review — “{lastImprovementNote}”</span>
+                <span className="truncate">Reuse from your last review - “{lastImprovementNote}”</span>
               </button>
             ) : null}
           </div>
 
-          {/* Nofy bridge — notes linked to this trade */}
+          {/* Nofy bridge - notes linked to this trade */}
           <NofyLinkedNotesSection
             kind="TRADE"
             id={row.tradeId}

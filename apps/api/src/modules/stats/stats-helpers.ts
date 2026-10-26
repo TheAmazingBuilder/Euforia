@@ -1,7 +1,7 @@
 /**
- * Stats service helpers (B1) — pure date/number utilities + the internal
+ * Stats service helpers (B1) - pure date/number utilities + the internal
  * TradeLike projection the analytics math runs on (numbers instead of
- * decimal strings — the wire conversion happens at the edges, exactly like
+ * decimal strings - the wire conversion happens at the edges, exactly like
  * the mock's `Number(...)` unwrapping).
  */
 
@@ -63,7 +63,7 @@ export const todayKey = (): string => new Date().toISOString().slice(0, 10);
 export const dateKeyOffset = (offset: number): string =>
   new Date(Date.now() + offset * 86_400_000).toISOString().slice(0, 10);
 
-/** mulberry32 — deterministic PRNG for the Monte Carlo bootstrap. */
+/** mulberry32 - deterministic PRNG for the Monte Carlo bootstrap. */
 export function mulberry32(seed: number): () => number {
   let a = seed >>> 0;
   return () => {

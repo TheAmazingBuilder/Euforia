@@ -1,4 +1,4 @@
-/** Probe: client-side Link to /settings#risk — what does the app show? */
+/** Probe: client-side Link to /settings#risk - what does the app show? */
 const { chromium } = require("playwright");
 
 const BASE = "http://localhost:3000";

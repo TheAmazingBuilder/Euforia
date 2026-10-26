@@ -1,5 +1,5 @@
 /**
- * Unit — Trade aggregation (Phase 4 §47).
+ * Unit - Trade aggregation (Phase 4 §47).
  *
  * The authoritative financial implementation must be exact (no float drift),
  * symmetric for BUY/SELL, correct across partial closes, scale-in and
@@ -30,7 +30,7 @@ function execution(overrides: Partial<AggregationExecution> & { role: "ENTRY" | 
   } as AggregationExecution;
 }
 
-describe("aggregateExecutions — lifecycle & quantities", () => {
+describe("aggregateExecutions - lifecycle & quantities", () => {
   it("an entry-only trade is OPEN with no exit aggregates", () => {
     const result = aggregateExecutions([
       execution({ role: "ENTRY", volume: "0.5", price: "2000", executedAt: at("2026-03-02T10:00:00Z") }),
@@ -65,7 +65,7 @@ describe("aggregateExecutions — lifecycle & quantities", () => {
   });
 });
 
-describe("aggregateExecutions — weighted prices (§17/§19)", () => {
+describe("aggregateExecutions - weighted prices (§17/§19)", () => {
   it("weights scale-in entries by volume", () => {
     const result = aggregateExecutions([
       execution({ role: "ENTRY", volume: "1", price: "100" }),
@@ -88,7 +88,7 @@ describe("aggregateExecutions — weighted prices (§17/§19)", () => {
   });
 });
 
-describe("aggregateExecutions — P&L, fees, swap (§20/§46)", () => {
+describe("aggregateExecutions - P&L, fees, swap (§20/§46)", () => {
   it("computes net = gross − fees + swap with provider-signed values", () => {
     const result = aggregateExecutions([
       execution({ role: "ENTRY", volume: "1", price: "100", commission: "-2", swap: "-0.5" }),
@@ -159,7 +159,7 @@ describe("aggregateExecutions — P&L, fees, swap (§20/§46)", () => {
   });
 });
 
-describe("tradingDateKey (§22/§56 — server-side, never browser time)", () => {
+describe("tradingDateKey (§22/§56 - server-side, never browser time)", () => {
   it("maps a UTC instant to the user's local trading day", () => {
     // 2026-03-02T23:30Z is 2026-03-03 in Asia/Tokyo and 2026-03-02 in UTC.
     const instant = at("2026-03-02T23:30:00.000Z");

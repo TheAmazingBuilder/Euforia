@@ -1,4 +1,4 @@
-"""E2E ritual — Integration Hub (t49).
+"""E2E ritual - Integration Hub (t49).
 
 Covers:
 - Desktop 1440x900 light: overview (stat strip, needs attention, matrix, activity),
@@ -131,7 +131,7 @@ def goto_tab(page, tab_label: str, settle: int = 700) -> None:
 with sync_playwright() as p:
     browser = p.chromium.launch()
 
-    # ---------- Desktop 1440 — light ----------
+    # ---------- Desktop 1440 - light ----------
     ctx = browser.new_context(viewport={"width": 1440, "height": 900})
     page = ctx.new_page()
     page.on("console", track_console)
@@ -251,7 +251,7 @@ with sync_playwright() as p:
     except Exception as exc:  # noqa: BLE001
         step_fail("notify-test-email", str(exc)[:160])
 
-    # ===== Webhooks tab — full gauntlet =====
+    # ===== Webhooks tab - full gauntlet =====
     goto_tab(page, "Webhooks", settle=900)
     page.wait_for_selector('[data-testid="webhook-console"]', timeout=8000)
     shot(page, "11-desktop-light-webhooks")
@@ -333,7 +333,7 @@ with sync_playwright() as p:
     except Exception as exc:  # noqa: BLE001
         step_fail("reauthorize-sheets-sync", str(exc)[:160])
 
-    # ===== Disconnect flow (history retained) — MT5 was connected earlier =====
+    # ===== Disconnect flow (history retained) - MT5 was connected earlier =====
     try:
         goto_tab(page, "Trading Accounts", settle=800)
         unblock(page)
@@ -355,7 +355,7 @@ with sync_playwright() as p:
     activity = page.locator('[data-testid="hub-activity"] > div').count()
     results["steps"].append(f"OK activity-log rows={activity}")
 
-    # ---------- Desktop 1440 — dark ----------
+    # ---------- Desktop 1440 - dark ----------
     set_theme(page, "dark-blue")
     nav(page, "/integrations", settle=1600)
     shot(page, "17-desktop-dark-overview")

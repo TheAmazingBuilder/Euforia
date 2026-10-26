@@ -4,7 +4,7 @@ import { currencySchema, severitySchema } from "../enums";
 import { dateKeySchema, decimalStringSchema } from "./primitives";
 
 /**
- * Risk Command Center (GET /risk/overview) — the four guardrails (daily loss,
+ * Risk Command Center (GET /risk/overview) - the four guardrails (daily loss,
  * per-trade risk, losses/day, drawdown) in one server-computed posture.
  * Money and percentages travel as decimal strings; counters stay numbers.
  * Events reuse the violation id so the client can acknowledge inline.

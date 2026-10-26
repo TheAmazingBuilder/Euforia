@@ -1,10 +1,10 @@
 /**
- * SimulatedProvider — clearly-labeled SIMULATED feed (mission §33/§34).
+ * SimulatedProvider - clearly-labeled SIMULATED feed (mission §33/§34).
  *
  * Serves the catalog symbols that no real provider handles (forex, metals,
  * Deriv synthetics): a mean-reverting random walk around the same anchors
  * the journal fixtures use. Every tick/candle carries source:"sim" and the
- * Session Live renders those symbols with a SIM badge — the feed exists so
+ * Session Live renders those symbols with a SIM badge - the feed exists so
  * the monitoring UX is testable end-to-end, NOT to impersonate a market.
  *
  * Candle series are materialized lazily per (symbol, interval), backfilled
@@ -158,7 +158,7 @@ export class SimulatedProvider implements MarketDataProvider {
     const now = Date.now();
     const bucketMs = INTERVAL_MS[interval];
     const currentBucket = Math.floor(now / bucketMs) * bucketMs;
-    // Walk BACKWARD from the live price, then re-order forward — the history
+    // Walk BACKWARD from the live price, then re-order forward - the history
     // joins the present exactly where the walk is right now.
     let price = this.quotes.get(symbol)?.price ?? def.basePrice;
     for (let index = 0; index < limit; index += 1) {
@@ -173,7 +173,7 @@ export class SimulatedProvider implements MarketDataProvider {
         h: Math.max(high, open, close),
         l: Math.min(low, open, close),
         c: close,
-        v: Number((Math.random() * 100).toFixed(2)), // synthetic volume — SIM
+        v: Number((Math.random() * 100).toFixed(2)), // synthetic volume - SIM
       });
       price = close;
     }
@@ -197,7 +197,7 @@ export class SimulatedProvider implements MarketDataProvider {
 
   /**
    * Window-anchored SIM walk for historical windows the lazy series never
-   * retained. Stays a clearly-labeled simulation (source:"sim" everywhere) —
+   * retained. Stays a clearly-labeled simulation (source:"sim" everywhere) -
    * it exists so the replay UX is exercisable, never to impersonate a market.
    */
   private materializeWindow(def: SymbolDef, interval: Interval, limit: number, from?: number, to?: number): Candle[] {

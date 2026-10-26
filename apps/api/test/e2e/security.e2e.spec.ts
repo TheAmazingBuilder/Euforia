@@ -1,5 +1,5 @@
 /**
- * e2e — Security center, MFA/TOTP, sessions, API keys, profile/preferences
+ * e2e - Security center, MFA/TOTP, sessions, API keys, profile/preferences
  * (Phase 2 §41–§44: authorization + IDOR + sensitive operations).
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -147,7 +147,7 @@ describe("password change (§23)", () => {
     expect(changed.statusCode).toBe(200);
     expect(changed.json().changedAt).toBeTruthy();
 
-    // Other session revoked — cannot refresh.
+    // Other session revoked - cannot refresh.
     const otherRefresh = await app.inject({
       method: "POST",
       url: "/api/v1/auth/refresh",
@@ -347,7 +347,7 @@ describe("MFA / TOTP lifecycle (§18–§21)", () => {
     expect(reuse.statusCode).toBe(401);
     expect(reuse.json().code).toBe("INVALID_MFA_CODE");
 
-    // Unknown code — same envelope.
+    // Unknown code - same envelope.
     const unknown = await app.inject({
       method: "POST",
       url: "/api/v1/auth/mfa/recover",
@@ -681,7 +681,7 @@ describe("profile, preferences & account state", () => {
       headers: ctx.authHeader,
       payload: { confirmation: "yes" },
     });
-    // The shared schema enforces the literal confirmation — schema-level 400.
+    // The shared schema enforces the literal confirmation - schema-level 400.
     expect(wrongConfirm.statusCode).toBe(400);
     expect(wrongConfirm.json().error).toBe("ValidationError");
 
@@ -697,7 +697,7 @@ describe("profile, preferences & account state", () => {
       url: "/api/v1/auth/me",
       headers: ctx.authHeader,
     });
-    // Deactivation revokes sessions — the guard reports the dead session
+    // Deactivation revokes sessions - the guard reports the dead session
     // (401) rather than an account-status 403 (which applies to live
     // sessions, e.g. an admin suspension).
     expect(meAfter.statusCode).toBe(401);
@@ -724,7 +724,7 @@ describe("profile, preferences & account state", () => {
       url: "/api/v1/security/overview",
       headers: doomed.authHeader,
     });
-    // Sessions were revoked with the scheduling — dead session → 401.
+    // Sessions were revoked with the scheduling - dead session → 401.
     expect(doomedOverview.statusCode).toBe(401);
   });
 });

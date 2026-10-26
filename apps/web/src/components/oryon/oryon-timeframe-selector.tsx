@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import { ORYON_INTERVALS } from "@/lib/charting/oryon-intervals";
 
 /**
- * Oryon timeframe selector — renders EXACTLY the shared MarketInterval enum
+ * Oryon timeframe selector - renders EXACTLY the shared MarketInterval enum
  * (the contract the market service validates). Every selectable timeframe is
  * therefore servable: nothing is displayed as operational if the service
  * could not return it.
@@ -18,7 +18,7 @@ import { ORYON_INTERVALS } from "@/lib/charting/oryon-intervals";
 export function OryonTimeframeSelector({
   value,
   onChange,
-  /** Optional testid namespace — panel headers use `oryon-panel-{index}`
+  /** Optional testid namespace - panel headers use `oryon-panel-{index}`
    *  so their controls never collide with the toolbar's canonical ids. */
   idPrefix = "oryon",
 }: {

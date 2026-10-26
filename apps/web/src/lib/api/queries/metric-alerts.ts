@@ -13,9 +13,9 @@ import { apiRequest } from "@/lib/api/client";
 import { apiPaths } from "@/lib/api/endpoints";
 import { queryKeys } from "@/lib/api/keys";
 
-/** Metric alert rules (Dashboard Customization Phase 07) — rule CRUD, the
+/** Metric alert rules (Dashboard Customization Phase 07) - rule CRUD, the
  * manual evaluation pass and per-rule event history. Triggered events land
- * in the shared inbox (queryKeys.alerts) — every mutation invalidates it. */
+ * in the shared inbox (queryKeys.alerts) - every mutation invalidates it. */
 
 export function useAlertRules() {
   return useQuery({
@@ -58,7 +58,7 @@ export function useDeleteAlertRule() {
   });
 }
 
-/** POST /alert-rules/evaluate — explicit pass (diagnostics / "Run now"). */
+/** POST /alert-rules/evaluate - explicit pass (diagnostics / "Run now"). */
 export function useEvaluateAlertRules() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -71,7 +71,7 @@ export function useEvaluateAlertRules() {
   });
 }
 
-/** GET /alert-rules/:id/events — recent inbox events for one rule. */
+/** GET /alert-rules/:id/events - recent inbox events for one rule. */
 export function useAlertRuleEvents(ruleId: string | null) {
   return useQuery({
     queryKey: queryKeys.alertRuleEvents(ruleId ?? "none"),
@@ -81,7 +81,7 @@ export function useAlertRuleEvents(ruleId: string | null) {
   });
 }
 
-/** PATCH /alerts/:id/dismiss — archive WITHOUT deleting (audit history). */
+/** PATCH /alerts/:id/dismiss - archive WITHOUT deleting (audit history). */
 export function useDismissAlert() {
   const queryClient = useQueryClient();
   return useMutation({

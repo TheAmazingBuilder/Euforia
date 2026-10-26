@@ -7,28 +7,28 @@ import { createEchoGuard, type EchoGuard, type SyncRange } from "./alignment";
  *
  * Coordinates TIME-SCALE and CROSSHAIR synchronization across chart-panel
  * engines. Instrument and timeframe linking are STATE concerns enforced in
- * the workspace config store — they never pass through here.
+ * the workspace config store - they never pass through here.
  *
  * Group model (spec §9, simpler-model clause): the workspace is ONE
- * implicit group. Membership is DERIVED from the registered engines — an
+ * implicit group. Membership is DERIVED from the registered engines - an
  * added/removed panel registers/unregisters, so stale member references
  * are structurally impossible, and conflicting group memberships cannot
  * exist. The four sync features are INDEPENDENT: enabling one never
  * enables another.
  *
- * Loop protection (spec §8, §14) — three independent layers:
+ * Loop protection (spec §8, §14) - three independent layers:
  *  1. a programmatic apply marks the target's echo guard; the guard's
  *     suppression window (short, see alignment.ts) swallows the change
  *     event the library fires back for OUR OWN apply;
  *  2. an event carrying the exact value we just broadcast is dropped
  *     (per-adapter guard);
  *  3. targets that already match the incoming value within the range
- *     epsilon are skipped — no-op applies never enter the pipeline.
+ *     epsilon are skipped - no-op applies never enter the pipeline.
  * A user-originated change on ANY chart (including a synchronized target)
  * is a new value: it propagates symmetrically.
  */
 
-/** The engine surface the coordinator needs — implemented (and unit-tested
+/** The engine surface the coordinator needs - implemented (and unit-tested
  *  with fakes) independently of the chart library. */
 export interface SyncEngineAdapter {
   /** Current visible time range (unix seconds), or null when no data. */
@@ -39,7 +39,7 @@ export interface SyncEngineAdapter {
   onVisibleRangeChange(handler: (range: SyncRange | null) => void): () => void;
   /**
    * Moves the crosshair to the bar CONTAINING `timeSec`. False = the chart
-   * cannot represent that timestamp (gap/outside span) — nothing moved.
+   * cannot represent that timestamp (gap/outside span) - nothing moved.
    */
   applyCrosshairAtTime(timeSec: number): boolean;
   /** Removes the crosshair (source hover left / timestamp not representable). */
@@ -67,7 +67,7 @@ export class OryonSyncCoordinator {
   };
   private disposing = false;
 
-  /** Currently enabled features (instrument/timeframe are inert here —
+  /** Currently enabled features (instrument/timeframe are inert here -
    *  state-level sync lives in the workspace store). */
   setFeatures(features: SyncFeatures): void {
     this.features = { ...features };
@@ -130,13 +130,13 @@ export class OryonSyncCoordinator {
     range: SyncRange | null,
   ): void {
     if (!this.features.timeScale || range === null) return;
-    // Echo of OUR OWN programmatic apply on this very chart — never re-broadcast.
+    // Echo of OUR OWN programmatic apply on this very chart - never re-broadcast.
     if (sourceGuard.matches(range)) return;
 
     for (const [id, entry] of this.entries) {
       if (id === sourceId) continue;
       const current = entry.adapter.getVisibleRange();
-      // Already aligned (within epsilon) — skip the no-op apply entirely.
+      // Already aligned (within epsilon) - skip the no-op apply entirely.
       if (current !== null && Math.abs(current.from - range.from) <= 1 && Math.abs(current.to - range.to) <= 1) {
         continue;
       }
@@ -160,7 +160,7 @@ export class OryonSyncCoordinator {
         entry.adapter.clearCrosshair();
       } else if (!entry.adapter.applyCrosshairAtTime(timeSec)) {
         // A target that cannot represent the timestamp (session gap,
-        // out-of-span bar) keeps an honest EMPTY crosshair — no snap
+        // out-of-span bar) keeps an honest EMPTY crosshair - no snap
         // fabrication, no stale position left behind (spec §8.2).
         entry.adapter.clearCrosshair();
       }

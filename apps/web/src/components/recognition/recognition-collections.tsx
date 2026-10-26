@@ -43,16 +43,16 @@ import { RecognitionStatusBadge } from "@/components/recognition/recognition-sta
 import type { RecognitionDict } from "@/i18n/dictionaries/en/recognition";
 
 /**
- * Recognition collections — V2 §28.
+ * Recognition collections - V2 §28.
  *
  * A collection is a NAMED, ORDERED group of recognitions (up to 200) that
  * stays purely referential: adding or removing never mutates the
  * recognition itself, and deleting a collection never touches the history
- * (the backend keeps every recognition row — the collection is just
+ * (the backend keeps every recognition row - the collection is just
  * membership).
  *
  * Three standalone surfaces, all reading the same React Query cache (the
- * five useOcrCollection* hooks) — no context needed:
+ * five useOcrCollection* hooks) - no context needed:
  *   - AddToCollectionMenu   per-row membership manager (history rows AND
  *                           the result view)
  *   - CollectionsPanel      the history-side panel (list / expand / create
@@ -73,7 +73,7 @@ function useCollectionMemberships(recognitionId: string): OcrCollection[] {
 }
 
 /**
- * AddToCollectionMenu — the membership affordance for ONE recognition.
+ * AddToCollectionMenu - the membership affordance for ONE recognition.
  * Lists every collection with a membership check (clicking toggles), then
  * "New collection…" which opens the create dialog with this recognition
  * pre-targeted (create & add in one pass).
@@ -197,7 +197,7 @@ export function AddToCollectionMenu({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {/* Create & add — reached from the menu's "New collection…" entry. */}
+      {/* Create & add - reached from the menu's "New collection…" entry. */}
       <Dialog open={createOpen} onOpenChange={(open) => (open ? setCreateOpen(true) : (setCreateOpen(false), setName("")))}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
@@ -236,7 +236,7 @@ export function AddToCollectionMenu({
 }
 
 /**
- * RecognitionCollectionsRow — the result-view display: which collections
+ * RecognitionCollectionsRow - the result-view display: which collections
  * already hold this screenshot. Renders nothing when the recognition
  * belongs to none (no noise on fresh recognitions); the menu at the end
  * lets the reviewer manage membership without leaving the review.
@@ -272,7 +272,7 @@ export function RecognitionCollectionsRow({
 }
 
 /**
- * CollectionsPanel — the history-side surface: every collection as a ruled
+ * CollectionsPanel - the history-side surface: every collection as a ruled
  * row (name, member count, created), expandable to its member
  * recognitions with open / remove actions, plus create and delete.
  * Standalone: consumes the collection hooks directly (same cache as the
@@ -284,7 +284,7 @@ export function CollectionsPanel({
   onOpen,
 }: {
   dict: RecognitionDict;
-  /** Loaded history recognitions — the first-resort member resolver. */
+  /** Loaded history recognitions - the first-resort member resolver. */
   items: readonly OcrRecognition[];
   /** Deep-open a recognition (?job=<id>). */
   onOpen: (id: string) => void;
@@ -410,7 +410,7 @@ export function CollectionsPanel({
         </div>
       )}
 
-      {/* Create — panel header (no pre-targeted recognition). */}
+      {/* Create - panel header (no pre-targeted recognition). */}
       <Dialog open={createOpen} onOpenChange={(open) => (open ? setCreateOpen(true) : (setCreateOpen(false), setName("")))}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
@@ -445,7 +445,7 @@ export function CollectionsPanel({
         </DialogContent>
       </Dialog>
 
-      {/* Delete — focused confirmation, mirrors the history delete dialog. */}
+      {/* Delete - focused confirmation, mirrors the history delete dialog. */}
       <Dialog open={Boolean(pendingDelete)} onOpenChange={(open) => !open && setPendingDelete(null)}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
@@ -486,7 +486,7 @@ export function CollectionsPanel({
 }
 
 /**
- * CollectionMemberRow — resolves the member recognition from the loaded
+ * CollectionMemberRow - resolves the member recognition from the loaded
  * history pages first; only members outside the loaded pages trigger a
  * single GET (the same cached hook the focused job uses).
  */
@@ -509,7 +509,7 @@ function CollectionMemberRow({
 }) {
   const knownRecognition = known.get(recognitionId) ?? null;
   // Hook is skipped (enabled: false) whenever the resolver already knows
-  // the recognition — no fetch fan-out for the common case.
+  // the recognition - no fetch fan-out for the common case.
   const fetched = useOcrRecognition(knownRecognition ? null : recognitionId);
   const recognition: OcrRecognition | null = knownRecognition ?? fetched.data?.recognition ?? null;
 
@@ -549,7 +549,7 @@ function CollectionMemberRow({
         </span>
         <span className="truncate text-xs">{platformLabel(dict, recognition.classification)}</span>
         <span className="font-mono text-[11px] tabular-nums text-muted-foreground">
-          {recognition.status === "FAILED" ? "—" : `${recognitionConfidence(recognition.fields) ?? 0}%`}
+          {recognition.status === "FAILED" ? "-" : `${recognitionConfidence(recognition.fields) ?? 0}%`}
         </span>
         <span className="hidden font-mono text-[11px] tabular-nums text-muted-foreground sm:inline">
           {formatRelative(recognition.createdAt)}

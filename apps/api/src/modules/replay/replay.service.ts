@@ -1,18 +1,18 @@
 /**
- * Replay application service — the historical replay domain (REPLAY MASTER
+ * Replay application service - the historical replay domain (REPLAY MASTER
  * PROMPT). Simulation ONLY: every endpoint mutates replay-owned records;
- * no route, service or adapter here can reach a broker (§37 — there is no
+ * no route, service or adapter here can reach a broker (§37 - there is no
  * execution path by construction).
  *
  * Security model (§34/§35):
- *  - every lookup goes through ReplayRepository.findForUser(userId, …) —
+ *  - every lookup goes through ReplayRepository.findForUser(userId, …) -
  *    foreign ids are simply not found (IDOR → 404);
  *  - strategyId / setupId / tradingAccountId references are validated
  *    against the OWNER's playbook rows / trading accounts before attach;
  *  - replay-clock writes (openedAtMs/closedAtMs/atMs/advance) are clamped
  *    into the session's historical window server-side.
  *
- * Result metrics (§30) are computed with the shared deterministic engine —
+ * Result metrics (§30) are computed with the shared deterministic engine -
  * only from data the trader actually recorded; absent data stays null.
  */
 import { Injectable } from "@nestjs/common";
@@ -64,7 +64,7 @@ export class ReplayService {
     return new Date().toISOString();
   }
 
-  /** Ownership-scoped session lookup — foreign ids are NOT found (§35). */
+  /** Ownership-scoped session lookup - foreign ids are NOT found (§35). */
   private async sessionForUser(userId: string, sessionId: string): Promise<ReplaySession> {
     const row = await this.repository.findForUser(userId, REPLAY_KINDS.SESSION, sessionId);
     if (!row) throw new NotFoundError("Replay session not found");
@@ -86,7 +86,7 @@ export class ReplayService {
   /** Simulated records are immutable once the replay is archived. */
   private assertWritable(session: ReplaySession): void {
     if (session.status === "ARCHIVED") {
-      throw new BusinessRuleError("This replay is archived — records can no longer change.");
+      throw new BusinessRuleError("This replay is archived - records can no longer change.");
     }
   }
 
@@ -97,7 +97,7 @@ export class ReplayService {
 
   // ── Sessions ────────────────────────────────────────────────────────────────
 
-  /** POST /replay/sessions — create a DRAFT replay (§14 inputs). */
+  /** POST /replay/sessions - create a DRAFT replay (§14 inputs). */
   async createSession(userId: string, input: CreateSessionInput): Promise<{ session: ReplaySession }> {
     await this.assertContextOwnership(userId, input);
 
@@ -132,13 +132,13 @@ export class ReplayService {
     return { session };
   }
 
-  /** GET /replay/sessions — newest first (list cards carry counts only). */
+  /** GET /replay/sessions - newest first (list cards carry counts only). */
   async listSessions(userId: string): Promise<ReplaySessionsResponse> {
     const rows = await this.repository.listByKindDesc(userId, REPLAY_KINDS.SESSION);
     return { sessions: rows.map((row) => row.data as unknown as ReplaySession) };
   }
 
-  /** GET /replay/overview — landing metrics from the user's real data (§13). */
+  /** GET /replay/overview - landing metrics from the user's real data (§13). */
   async overview(userId: string): Promise<ReplayOverviewResponse> {
     const rows = await this.repository.listByKindDesc(userId, REPLAY_KINDS.SESSION);
     const sessions = rows.map((row) => row.data as unknown as ReplaySession);
@@ -167,7 +167,7 @@ export class ReplayService {
     };
   }
 
-  /** GET /replay/sessions/:id — session + children (workspace payload). */
+  /** GET /replay/sessions/:id - session + children (workspace payload). */
   async detail(userId: string, sessionId: string): Promise<ReplayDetailResponse> {
     const session = await this.sessionForUser(userId, sessionId);
     const [trades, decisions, notes] = await Promise.all([
@@ -192,7 +192,7 @@ export class ReplayService {
     };
   }
 
-  /** PATCH /replay/sessions/:id — attach/detach playbook context. */
+  /** PATCH /replay/sessions/:id - attach/detach playbook context. */
   async updateSession(userId: string, sessionId: string, input: UpdateSessionInput): Promise<{ session: ReplaySession }> {
     const session = await this.sessionForUser(userId, sessionId);
     this.assertWritable(session);
@@ -214,7 +214,7 @@ export class ReplayService {
     return { session: next };
   }
 
-  /** POST /replay/sessions/:id/advance — resume checkpoint (§51, coarse). */
+  /** POST /replay/sessions/:id/advance - resume checkpoint (§51, coarse). */
   async advance(userId: string, sessionId: string, input: AdvanceInput): Promise<{ session: ReplaySession }> {
     const session = await this.sessionForUser(userId, sessionId);
     this.assertWritable(session);
@@ -234,7 +234,7 @@ export class ReplayService {
     return { session: next };
   }
 
-  /** POST /replay/sessions/:id/complete — freeze the result (§30). */
+  /** POST /replay/sessions/:id/complete - freeze the result (§30). */
   async complete(userId: string, sessionId: string): Promise<{ session: ReplaySession }> {
     const session = await this.sessionForUser(userId, sessionId);
     if (session.status === "COMPLETED") return { session };
@@ -276,7 +276,7 @@ export class ReplayService {
     return { session: next };
   }
 
-  /** DELETE /replay/sessions/:id — cascade deletes the child rows. */
+  /** DELETE /replay/sessions/:id - cascade deletes the child rows. */
   async deleteSession(userId: string, sessionId: string): Promise<{ ok: true }> {
     const session = await this.sessionForUser(userId, sessionId);
     const [trades, decisions, notes] = await Promise.all([
@@ -298,7 +298,7 @@ export class ReplayService {
 
   // ── Simulated trades (§23/§24) ──────────────────────────────────────────────
 
-  /** POST /replay/sessions/:id/trades — open a simulated position. */
+  /** POST /replay/sessions/:id/trades - open a simulated position. */
   async createTrade(userId: string, sessionId: string, input: CreateTradeInput): Promise<{ trade: ReplayTrade }> {
     const session = await this.sessionForUser(userId, sessionId);
     this.assertWritable(session);
@@ -335,7 +335,7 @@ export class ReplayService {
     return { trade };
   }
 
-  /** POST /replay/sessions/:id/trades/:tradeId/close — settle a simulation. */
+  /** POST /replay/sessions/:id/trades/:tradeId/close - settle a simulation. */
   async closeTrade(userId: string, sessionId: string, tradeId: string, input: CloseTradeInput): Promise<{ trade: ReplayTrade }> {
     const { session, child } = await this.childForUser<ReplayTrade>(userId, sessionId, REPLAY_KINDS.TRADE, tradeId);
     this.assertWritable(session);
@@ -373,7 +373,7 @@ export class ReplayService {
     return { trade: next };
   }
 
-  /** DELETE /replay/sessions/:id/trades/:tradeId — retract a mistake. */
+  /** DELETE /replay/sessions/:id/trades/:tradeId - retract a mistake. */
   async deleteTrade(userId: string, sessionId: string, tradeId: string): Promise<{ ok: true }> {
     const { session, child } = await this.childForUser<ReplayTrade>(userId, sessionId, REPLAY_KINDS.TRADE, tradeId);
     this.assertWritable(session);
@@ -437,7 +437,7 @@ export class ReplayService {
 
   // ── Internals ───────────────────────────────────────────────────────────────
 
-  /** §35 — attached context must belong to the SAME user. */
+  /** §35 - attached context must belong to the SAME user. */
   private async assertContextOwnership(
     userId: string,
     refs: { strategyId?: string | null; setupId?: string | null; tradingAccountId?: string | null },
@@ -460,7 +460,7 @@ export class ReplayService {
     }
   }
 
-  /** Denormalized list counters — kept consistent with child writes. */
+  /** Denormalized list counters - kept consistent with child writes. */
   private async bumpCounts(
     sessionId: string,
     session: ReplaySession,

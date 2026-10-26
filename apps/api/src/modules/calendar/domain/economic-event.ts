@@ -1,18 +1,18 @@
 /**
- * Economic-event domain (Phase 13) — PURE, framework-free.
+ * Economic-event domain (Phase 13) - PURE, framework-free.
  *
  * The Calendar owns the NORMALIZED Cosmoz event (§5/§7): provider payloads
  * are external data and never trusted blindly (§48). Every payload entering
  * the domain goes through {@link normalizeProviderEvent}, which:
- *   1. validates the provider wire shape (Zod — reject safely, log reason);
+ *   1. validates the provider wire shape (Zod - reject safely, log reason);
  *   2. maps provider-specific values onto the canonical vocabulary
- *      (impact tiers — §15: provider enums never leak into the domain);
+ *      (impact tiers - §15: provider enums never leak into the domain);
  *   3. preserves the semantic meaning of actual/forecast/previous as
  *      TEXTUAL values (§18/§19: "2.9%" is not "2.9"; "250K" and
- *      "Unchanged" stay strings — no forced numeric conversion);
- *   4. normalizes timestamps to UTC instants (§13 — never ambiguous
+ *      "Unchanged" stay strings - no forced numeric conversion);
+ *   4. normalizes timestamps to UTC instants (§13 - never ambiguous
  *      local stamps);
- *   5. derives the event status (§12) — an event whose actual value
+ *   5. derives the event status (§12) - an event whose actual value
  *      becomes available keeps its identity (SCHEDULED → RELEASED on the
  *      same row), never a second event.
  *
@@ -24,7 +24,7 @@ import { z } from "zod";
 
 import { isoDateTimeSchema } from "../../../shared/contracts";
 
-/** Canonical impact tiers — mirrors the shared `impactSchema` enum (§15). */
+/** Canonical impact tiers - mirrors the shared `impactSchema` enum (§15). */
 export type EcoImpact = "HIGH" | "MEDIUM" | "LOW";
 
 /** Canonical event lifecycle (§12). SCHEDULED/RELEASED are derived by
@@ -33,7 +33,7 @@ export type EcoImpact = "HIGH" | "MEDIUM" | "LOW";
 export type EcoEventStatus = "SCHEDULED" | "RELEASED" | "UPDATED";
 
 /**
- * Provider wire payload — DELIBERATELY different from the domain shape
+ * Provider wire payload - DELIBERATELY different from the domain shape
  * (§5: providers own their payload formats; the domain owns the normalized
  * event). Mirrors the product's reference provider vocabulary (mock §22).
  */
@@ -43,7 +43,7 @@ export interface ProviderEconomicEventPayload {
   readonly title: string;
   /** ISO 4217 currency most affected by the release. */
   readonly currency: string;
-  /** Provider-specific impact vocabulary — mapped, never leaked. */
+  /** Provider-specific impact vocabulary - mapped, never leaked. */
   readonly tone: string;
   /** ISO-8601 UTC instant of the scheduled release. */
   readonly scheduledAtIso: string;
@@ -58,7 +58,7 @@ export interface NormalizedEconomicEvent {
   readonly title: string;
   readonly currency: string;
   readonly impact: EcoImpact;
-  /** UTC instant — persistence and queries always see this canonical form. */
+  /** UTC instant - persistence and queries always see this canonical form. */
   readonly scheduledAt: Date;
   readonly actual: string | null;
   readonly forecast: string | null;
@@ -68,10 +68,10 @@ export interface NormalizedEconomicEvent {
 
 export type NormalizeOutcome =
   | { readonly ok: true; readonly event: NormalizedEconomicEvent }
-  /** Safe rejection (§48) — reason is a bounded, credential-free summary. */
+  /** Safe rejection (§48) - reason is a bounded, credential-free summary. */
   | { readonly ok: false; readonly reason: string };
 
-/** Provider payload validation — types/required fields/bounds (§48). */
+/** Provider payload validation - types/required fields/bounds (§48). */
 const providerPayloadSchema = z.object({
   ref: z.string().trim().min(1).max(200),
   title: z.string().trim().min(1).max(200),
@@ -104,7 +104,7 @@ function deriveStatus(scheduledAt: Date, actual: string | null, now: Date): EcoE
 
 /**
  * Validate + map one provider payload onto the canonical domain shape.
- * Malformed payloads are rejected with a bounded reason — never thrown
+ * Malformed payloads are rejected with a bounded reason - never thrown
  * across the domain boundary (the sync run counts them, §48/§52).
  */
 export function normalizeProviderEvent(
@@ -144,7 +144,7 @@ export function normalizeProviderEvent(
 }
 
 /**
- * The canonical sync window (§23): a bounded rolling window around now —
+ * The canonical sync window (§23): a bounded rolling window around now -
  * past history for Analytics correlation, near-future for the planner
  * banner and the news-blocker import. Window sizes come from validated
  * configuration (never unlimited provider history).
@@ -162,7 +162,7 @@ export function calendarWindowBounds(
 }
 
 /**
- * UTC day key of an instant (YYYY-MM-DD) — the join key between events,
+ * UTC day key of an instant (YYYY-MM-DD) - the join key between events,
  * blocks and trade rows in the calendar view. UTC on purpose: the wire
  * contract is UTC everywhere (§13), the frontend derives its own local
  * day keys for rendering.

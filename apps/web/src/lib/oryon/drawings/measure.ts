@@ -2,7 +2,7 @@ import type { OryonDrawingAnchor } from "@cosmoz/shared";
 import { ORYON_POSITION_RR, oryonFormatRr, oryonPositionTargetPrice } from "@cosmoz/shared";
 
 /**
- * Oryon measure readout — PURE computation (Phase 5 spec §4.1–§4.3).
+ * Oryon measure readout - PURE computation (Phase 5 spec §4.1–§4.3).
  *
  * Extracted from the drawing primitive so the financial math is testable
  * without a chart: every value is derived from the ACTUAL anchors (chart
@@ -10,13 +10,13 @@ import { ORYON_POSITION_RR, oryonFormatRr, oryonPositionTargetPrice } from "@cos
  *
  * Honesty contract (spec §4.3): the bar count is an INPUT (the chart's
  * logical pipeline computes it); the elapsed duration comes from the anchor
- * TIMESTAMP DELTA — ten candles on a gapped market are NOT ten continuous
+ * TIMESTAMP DELTA - ten candles on a gapped market are NOT ten continuous
  * clock intervals, so bars × interval is never used as a duration. When an
  * input is missing or invalid the corresponding readout is OMITTED (null),
  * never fabricated, and a fully invalid measurement yields no label at all.
  *
  * Percentage (spec §4.1): ((endPrice − startPrice) / startPrice) × 100.
- * A zero/invalid start price disables ONLY the percentage — the absolute
+ * A zero/invalid start price disables ONLY the percentage - the absolute
  * difference stays computable and honest.
  */
 
@@ -37,12 +37,12 @@ export interface MeasureReadout {
   endPrice: number | null;
   /** Signed price difference (b.p − a.p); null when anchors are invalid. */
   delta: number | null;
-  /** ((end − start) / start) × 100 — null when the start price is 0. */
+  /** ((end − start) / start) × 100 - null when the start price is 0. */
   pct: number | null;
-  /** Δ in pips — null when pipSize is not a positive finite number. */
+  /** Δ in pips - null when pipSize is not a positive finite number. */
   pips: number | null;
   bars: number | null;
-  /** |Δt| in seconds from the ACTUAL anchor timestamps — null otherwise. */
+  /** |Δt| in seconds from the ACTUAL anchor timestamps - null otherwise. */
   elapsedSec: number | null;
   /** Composed canvas label lines (empty when the readout is invalid). */
   lines: string[];
@@ -51,14 +51,14 @@ export interface MeasureReadout {
 const DIRECTION_ARROWS = { up: "↑", down: "↓", flat: "→" } as const;
 
 function signed(value: number, digits: number, unit = ""): string {
-  // ASCII "-" (not U+2212) — canvas fonts render it reliably at 11px.
+  // ASCII "-" (not U+2212) - canvas fonts render it reliably at 11px.
   const sign = value >= 0 ? "+" : "-";
   return `${sign}${Math.abs(value).toFixed(digits)}${unit}`;
 }
 
 /**
  * Compact elapsed duration from a SECONDS delta (actual timestamps only).
- * Two most significant units — "1d 4h", "3h 12m", "42m 10s", "8s".
+ * Two most significant units - "1d 4h", "3h 12m", "42m 10s", "8s".
  * Returns null for non-finite or negative inputs (never a guess).
  */
 export function formatElapsedDuration(totalSeconds: number): string | null {
@@ -100,7 +100,7 @@ export function computeMeasureReadout(
 
   const delta = b.p - a.p;
   const direction = delta > 0 ? "up" : delta < 0 ? "down" : "flat";
-  // Spec §4.1 — validate the start price BEFORE the percentage: a zero (or
+  // Spec §4.1 - validate the start price BEFORE the percentage: a zero (or
   // non-finite) start disables the percentage, never the absolute delta.
   const pct = a.p === 0 ? null : (delta / a.p) * 100;
   const pips =
@@ -187,7 +187,7 @@ export interface DateRangeReadout {
 
 /**
  * Horizontal time ruler: elapsed duration from the ACTUAL anchor timestamp
- * delta (never bars × interval — gapped sessions are not continuous time,
+ * delta (never bars × interval - gapped sessions are not continuous time,
  * same honesty contract as the measure tool) + the bar count when the
  * chart's logical pipeline provides it.
  */
@@ -217,7 +217,7 @@ export interface PositionReadout {
   valid: boolean;
   entryPrice: number | null;
   stopPrice: number | null;
-  /** Derived at ORYON_POSITION_RR (shared constant) — never persisted. */
+  /** Derived at ORYON_POSITION_RR (shared constant) - never persisted. */
   targetPrice: number | null;
   riskPips: number | null;
   /** Composed canvas label lines (empty when invalid). */
@@ -226,9 +226,9 @@ export interface PositionReadout {
 
 /**
  * Position tool labels: Entry / Stop / Target prices (target DERIVED via
- * the shared oryonPositionTargetPrice helper at the object's OWN rr — the
+ * the shared oryonPositionTargetPrice helper at the object's OWN rr - the
  * property editor's per-object risk:reward, defaulting to the documented
- * ORYON_POSITION_RR) + the risk in pips. Invalid inputs omit the label —
+ * ORYON_POSITION_RR) + the risk in pips. Invalid inputs omit the label -
  * no fabricated levels.
  */
 export function computePositionReadout(

@@ -1,5 +1,5 @@
 /**
- * Trade Planning contract mappers — rows → shared-schema-shaped payloads.
+ * Trade Planning contract mappers - rows → shared-schema-shaped payloads.
  * The ONLY place that translates persistence shapes into wire shapes.
  * Prisma models and engine internals never reach the API surface (§33).
  */

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# run-with-server.sh — start the dev server, wait until it answers, run a
+# run-with-server.sh - start the dev server, wait until it answers, run a
 # command, then stop the server. Usage: bash run-with-server.sh <command...>
 set -u
 export PATH="/home/z/.local/bin:$PATH"
@@ -28,7 +28,7 @@ if ! curl -s -o /dev/null --max-time 2 http://localhost:$PORT/; then
   echo "SERVER FAILED TO START"; tail -20 "$LOG"; exit 1
 fi
 
-echo "server ready — running: $*"
+echo "server ready - running: $*"
 cd /home/z/my-project
 "$@"
 EXIT=$?

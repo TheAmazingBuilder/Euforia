@@ -1,5 +1,5 @@
 /**
- * Unit tests — AES-256-GCM encryption primitive (Phase 3 §22).
+ * Unit tests - AES-256-GCM encryption primitive (Phase 3 §22).
  */
 import { describe, expect, it } from "vitest";
 import { randomBytes } from "node:crypto";
@@ -16,7 +16,7 @@ describe("encryptWithAesGcm / decryptWithAesGcm", () => {
     expect(decryptWithAesGcm(KEY, payload)).toBe(secret);
   });
 
-  it("produces fresh IVs — same plaintext, different ciphertexts", () => {
+  it("produces fresh IVs - same plaintext, different ciphertexts", () => {
     const a = encryptWithAesGcm(KEY, "same-secret");
     const b = encryptWithAesGcm(KEY, "same-secret");
     expect(a).not.toBe(b);

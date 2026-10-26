@@ -1,13 +1,13 @@
 /**
- * Oryon Drawing toolbar v2 — unit tests (bun).
+ * Oryon Drawing toolbar v2 - unit tests (bun).
  *
  * Covers the TradingView-parity rail's NO-BROWSER domains (the repo's
- * bun-run convention — plain assertions, no test runner):
+ * bun-run convention - plain assertions, no test runner):
  *   - shared contracts: every V3 drawing type round-trips the persistence
  *     schema; a V2-era envelope still loads untouched (additive evolution)
  *   - geometry: extended-line slab clip (painter + hit test), ellipse ring
  *     hit, fib-extension level prices, position target derivation
- *   - readouts: price range / date range / position — the honesty rules
+ *   - readouts: price range / date range / position - the honesty rules
  *     (invalid inputs omit, never fabricate)
  *   - ui prefs: defaults, per-entry favorites salvage, position validation,
  *     corrupt payloads → defaults (never a throw)
@@ -114,7 +114,7 @@ function makeDrawing(type: OryonDrawing["type"]): OryonDrawing {
   }
 }
 
-console.log("\n── Shared contracts — V3+V4 types round-trip the persistence schema");
+console.log("\n── Shared contracts - V3+V4 types round-trip the persistence schema");
 const ALL_TYPES = [
   "trend", "hline", "vline", "ray", "rect", "text", "measure", "fib",
   "extended", "crossline", "fibext", "pricerange", "daterange", "longpos", "shortpos", "ellipse",
@@ -143,7 +143,7 @@ ok("position target helper: long 100/95 → 105", oryonPositionTargetPrice(100, 
 eq("position target helper: short 100/105 → 95", oryonPositionTargetPrice(100, 105), 95);
 eq("position target helper: 1:1 documented", ORYON_POSITION_RR, 1);
 
-console.log("\n── R:R — per-object ratio (property editor)");
+console.log("\n── R:R - per-object ratio (property editor)");
 {
   eq("target with rr=3: long 100/95 → 115", oryonPositionTargetPrice(100, 95, 3), 115);
   eq("target with rr=0.5: short 100/105 → 97.5", oryonPositionTargetPrice(100, 105, 0.5), 97.5);
@@ -163,7 +163,7 @@ console.log("\n── R:R — per-object ratio (property editor)");
   ok("schema: longpos rr=11 rejected", !oryonDrawingSchema.safeParse({ ...makeDrawing("longpos"), rr: 11 }).success);
   ok("schema: shortpos rr=2.5 valid", oryonDrawingSchema.safeParse({ ...makeDrawing("shortpos"), rr: 2.5 }).success);
 
-  // Readout at a custom rr — the label NEVER invents a stored target.
+  // Readout at a custom rr - the label NEVER invents a stored target.
   const pos3 = computePositionReadout({ t: 1, p: 100 }, { t: 2, p: 95 }, { digits: 2, pipSize: 0.01, rr: 3 });
   ok("readout: rr=3 valid", pos3.valid);
   eq("readout: rr=3 target 115", pos3.targetPrice, 115);
@@ -173,7 +173,7 @@ console.log("\n── R:R — per-object ratio (property editor)");
   eq("readout: rr absent → 1:1", computePositionReadout({ t: 1, p: 100 }, { t: 2, p: 95 }, { digits: 2, pipSize: 0.01 }).targetPrice, 105);
 }
 
-console.log("\n── Geometry — extended line / ellipse / fibext");
+console.log("\n── Geometry - extended line / ellipse / fibext");
 {
   const plot = { left: 0, top: 0, right: 400, bottom: 300 };
   // Diagonal through (100,100)→(300,200): the chord spans the whole plot.
@@ -211,7 +211,7 @@ console.log("\n── Geometry — extended line / ellipse / fibext");
   eq("ORYON_FIB_EXT_LEVELS includes golden ratio", ORYON_FIB_EXT_LEVELS.includes(1.618), true);
 }
 
-console.log("\n── Geometry — brush polyline (hit + capture spacing)");
+console.log("\n── Geometry - brush polyline (hit + capture spacing)");
 {
   const pts = [
     { x: 0, y: 0 },
@@ -241,7 +241,7 @@ console.log("\n── Geometry — brush polyline (hit + capture spacing)");
   eq("filterPolylineBySpacing: empty input", filterPolylineBySpacing([], 3).length, 0);
 }
 
-console.log("\n── Readouts — price range / date range / position (honesty rules)");
+console.log("\n── Readouts - price range / date range / position (honesty rules)");
 {
   const a = { t: 1_700_000_000, p: 100 };
   const b = { t: 1_700_086_400, p: 110 };
@@ -281,7 +281,7 @@ console.log("\n── Readouts — price range / date range / position (honesty 
   ok("position: invalid anchors → nothing fabricated", !posInvalid.valid && posInvalid.lines.length === 0 && posInvalid.targetPrice === null);
 }
 
-console.log("\n── UI prefs — defaults, salvage, corrupt payloads");
+console.log("\n── UI prefs - defaults, salvage, corrupt payloads");
 {
   // Fresh environment (no storage in bun) → documented defaults.
   const fresh = loadUiPrefs();
@@ -292,7 +292,7 @@ console.log("\n── UI prefs — defaults, salvage, corrupt payloads");
   ok("defaults: every favorite is a catalog id", fresh.favorites.every((tool) => isCatalogToolId(tool)));
 }
 
-console.log("\n── Tool catalog — structural invariants");
+console.log("\n── Tool catalog - structural invariants");
 {
   const ids = ORYON_TOOL_IDS;
   eq("catalog: 25 tools", ids.length, 25);
@@ -338,7 +338,7 @@ console.log("\n── Tool catalog — structural invariants");
   eq("catalog: arrow-right ∈ text group", toolGroupOf("arrow-right")?.id, "text");
 
   // Persistence loader: EVERY schema type is renderable (the hand-list
-  // staleness bug — v2 drawings were dropped on reload — can't regress).
+  // staleness bug - v2 drawings were dropped on reload - can't regress).
   for (const type of oryonDrawingTypeSchema.options) {
     ok(`loader: type ${type} is renderable`, RENDERABLE_DRAWING_TYPES.has(type));
   }

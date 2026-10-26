@@ -3,7 +3,7 @@ import { emotionSchema } from "../enums";
 import { dateKeySchema, decimalStringSchema, uuidSchema } from "./primitives";
 
 /**
- * DailyJournal — data-model.md "Domaine 6". One per (userId, date).
+ * DailyJournal - data-model.md "Domaine 6". One per (userId, date).
  * Pre-market columns are queryable (sleep, energy, focus, mood, plan) so the
  * analytics can correlate them with outcomes; post-market is free review.
  */

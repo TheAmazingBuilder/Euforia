@@ -1,5 +1,5 @@
 /**
- * e2e — Stats/Analytics (B1) over the REAL AppModule + real database:
+ * e2e - Stats/Analytics (B1) over the REAL AppModule + real database:
  * the three read-only routes over an EMPTY journal (honest zeros/nulls)
  * and over a real closed trade (aggregates react to the journal). The
  * analytics-suite filter schema, warnings and Monte Carlo bands are
@@ -84,7 +84,7 @@ describe("stats module (B1)", () => {
     expect(analytics.sessionBuckets).toHaveLength(3);
     expect(analytics.mistakes).toEqual([]);
     expect(analytics.strategyDistributions).toEqual([]);
-    expect(analytics.sleepScatter).toEqual([]); // no daily-stat storage yet — honest
+    expect(analytics.sleepScatter).toEqual([]); // no daily-stat storage yet - honest
   });
 
   it("analytics-suite on an empty dataset: meta, warnings and seeded Monte Carlo", async () => {
@@ -223,7 +223,7 @@ describe("stats module (B1)", () => {
     expect(suite.meta.closedTrades).toBe(1);
     expect(suite.summary.trades).toBe(1);
     expect(suite.summary.winRate).toBe("1"); // Phase-8 raw-ratio formatting
-    expect(suite.summary.expectancyR).toBe("1"); // Phase-8 formatting — +1R on the only trade
+    expect(suite.summary.expectancyR).toBe("1"); // Phase-8 formatting - +1R on the only trade
     expect(suite.monteCarlo.simulations).toBe(400);
     expect(suite.monteCarlo.bands.length).toBe(1); // one trade → one path bucket
     expect(suite.cumulativeR[0]!.cumR).toBe("1"); // Phase-8 formatting

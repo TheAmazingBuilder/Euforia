@@ -3,7 +3,7 @@
 import { useSyncExternalStore } from "react";
 
 /**
- * Global ghost-capture modal state ("Setup seen, not taken", spec §3/§8) —
+ * Global ghost-capture modal state ("Setup seen, not taken", spec §3/§8) -
  * same tiny external-store pattern as use-trade-modal so the sidebar button,
  * the mobile ghost button and the G hotkey all open the same modal from
  * anywhere without prop drilling.
@@ -13,7 +13,7 @@ interface GhostModalState {
   open: boolean;
 }
 
-/** Frozen closed snapshot — stable reference for the server snapshot. */
+/** Frozen closed snapshot - stable reference for the server snapshot. */
 const CLOSED_SNAPSHOT: GhostModalState = Object.freeze({ open: false });
 
 let state: GhostModalState = CLOSED_SNAPSHOT;
@@ -48,7 +48,7 @@ export function useGhostModalState(): GhostModalState {
   return useSyncExternalStore(
     subscribe,
     () => state,
-    // Server + hydration snapshot: closed (stable reference — cached).
+    // Server + hydration snapshot: closed (stable reference - cached).
     () => CLOSED_SNAPSHOT,
   );
 }

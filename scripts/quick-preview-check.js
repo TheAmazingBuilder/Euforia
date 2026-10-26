@@ -26,5 +26,5 @@ const BASE = "http://localhost:3000";
   console.log("H1 DASHBOARD:", (h1 || "").trim());
   console.log("ERREURS CONSOLE (hors socket.io):", errors.length ? errors.slice(0, 5) : "aucune");
   await browser.close();
-  console.log("OK — captures: scripts/preview-dashboard.png, scripts/preview-risk.png");
+  console.log("OK - captures: scripts/preview-dashboard.png, scripts/preview-risk.png");
 })();

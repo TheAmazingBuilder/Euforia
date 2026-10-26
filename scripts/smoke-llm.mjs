@@ -1,4 +1,4 @@
-/** Smoke test — z-ai-web-dev-sdk server-side import (feature 11 pre-check). */
+/** Smoke test - z-ai-web-dev-sdk server-side import (feature 11 pre-check). */
 async function main() {
   const { createRequire } = await import("module");
   const appRequire = createRequire("/home/z/my-project/apps/web/package.json");

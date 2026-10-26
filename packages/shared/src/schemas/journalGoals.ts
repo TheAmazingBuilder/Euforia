@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 /**
- * JournalGoals — the writing cadence the trader commits to (Journal page).
+ * JournalGoals - the writing cadence the trader commits to (Journal page).
  * Targets are per calendar period in the user's timezone; 0 disables a
  * period's bar (the honest "no target set" state).
  */

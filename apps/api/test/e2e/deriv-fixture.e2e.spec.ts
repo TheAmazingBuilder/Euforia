@@ -1,14 +1,14 @@
 /**
- * e2e — Deriv adapter lifecycle over a LOCAL WS fixture server (Phase 07).
+ * e2e - Deriv adapter lifecycle over a LOCAL WS fixture server (Phase 07).
  *
  * The Deriv WebSocket adapter is exercised end-to-end against the REAL
  * AppModule + real database + real AES-GCM credential vault + real zod
- * boundaries — the ONLY difference from production being the transport: a
+ * boundaries - the ONLY difference from production being the transport: a
  * local ws fixture server that answers REALISTIC v3 payload shapes.
  *
  * HONESTY LABEL: fixture evidence. This proves the ADAPTER + ORCHESTRATION +
  * PERSISTENCE + BROKER-IDENTIFICATION pipeline; it is NEVER evidence of real
- * Deriv connectivity (that requires the user-created API token — U4 runbook,
+ * Deriv connectivity (that requires the user-created API token - U4 runbook,
  * phase report §22).
  *
  * Cross-provider consistency: the same shared pipeline (connect → initial
@@ -71,11 +71,11 @@ beforeAll(async () => {
       ],
     }),
   );
-  // Set BEFORE buildTestApp — the config is validated at boot.
+  // Set BEFORE buildTestApp - the config is validated at boot.
   process.env.ACCOUNTS_DERIV_PROVIDER = "enabled";
   process.env.ACCOUNTS_DERIV_WS_URL = fixture.url;
   process.env.ACCOUNTS_MOCK_PROVIDER = "enabled";
-  // Phase 08 — this fixture is scoped to deriv-ws: pin the bridge gate OFF
+  // Phase 08 - this fixture is scoped to deriv-ws: pin the bridge gate OFF
   // so the registry contents never depend on the developer 's local .env.
   process.env.ACCOUNTS_MT5_BRIDGE_PROVIDER = "disabled";
   app = await buildTestApp();
@@ -102,7 +102,7 @@ const CONNECT = {
   credentials: { method: "API_KEY", secret: TOKEN },
 };
 
-describe("deriv-ws over the fixture — registry and universal broker layer", () => {
+describe("deriv-ws over the fixture - registry and universal broker layer", () => {
   it("lists deriv-ws as a REAL provider (isMock false, V2 capabilities, DERIV platform)", async () => {
     const res = await app.inject({ method: "GET", url: "/api/v1/trading-accounts/providers", headers: auth });
     expect(res.statusCode).toBe(200);
@@ -118,7 +118,7 @@ describe("deriv-ws over the fixture — registry and universal broker layer", ()
       deals: { support: "SUPPORTED" },
     });
     // Cross-provider: the registry here exposes mock + deriv-ws (oanda is
-    // env-gated OFF in this spec — the cross-provider co-existence with
+    // env-gated OFF in this spec - the cross-provider co-existence with
     // oanda-v20 is proven by the registry listing in oanda-fixture.e2e and
     // by both adapters sharing the same pipeline).
     expect(parsed.providers.map((p) => p.providerId).sort()).toEqual(["MOCK", "deriv-ws"]);
@@ -132,7 +132,7 @@ describe("deriv-ws over the fixture — registry and universal broker layer", ()
     const deriv = parsed.brokers.find((b) => b.brokerId === "deriv");
     expect(deriv?.connectorStatus).toBe("CONNECTOR_AVAILABLE");
     const icmarkets = parsed.brokers.find((b) => b.brokerId === "icmarkets");
-    // Phase 08 — icmarkets carries the mt5-bridge connector; with only the
+    // Phase 08 - icmarkets carries the mt5-bridge connector; with only the
     // deriv adapter registered in this fixture the honest status stays
     // CONNECTOR_NOT_IMPLEMENTED, and the providerId is now declared.
     expect(icmarkets?.connectorStatus).toBe("CONNECTOR_NOT_IMPLEMENTED");
@@ -154,7 +154,7 @@ describe("deriv-ws over the fixture — registry and universal broker layer", ()
     const parsed = brokerIdentifyResponseSchema.parse(res.json());
     expect(parsed.identification.brokerId).toBe("oanda");
     expect(parsed.identification.confidence).toBe("PATTERN_MATCH");
-    // oanda-v20 is env-gated OFF in THIS spec — the honest connector status
+    // oanda-v20 is env-gated OFF in THIS spec - the honest connector status
     // for the identified broker is therefore NOT_IMPLEMENTED here (the same
     // probe answers CONNECTOR_AVAILABLE in oanda-fixture.e2e.spec.ts).
     expect(parsed.identification.connectorStatus).toBe("CONNECTOR_NOT_IMPLEMENTED");
@@ -193,7 +193,7 @@ describe("deriv-ws over the fixture — registry and universal broker layer", ()
   });
 });
 
-describe("deriv-ws — connect → initial sync → reads → broker identification", () => {
+describe("deriv-ws - connect → initial sync → reads → broker identification", () => {
   let accountId: string;
 
   it("connect persists the account, encrypts the token, identifies the broker, and the initial sync COMPLETED", async () => {

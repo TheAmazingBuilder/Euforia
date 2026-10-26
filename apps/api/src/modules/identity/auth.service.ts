@@ -4,12 +4,12 @@
  * Flow semantics match the frontend contract EXACTLY (mock engine is the
  * porting spec; the shared schemas are the law). Where the mock leaks
  * mock-only affordances (verificationToken / resetToken / demoCode), the
- * real backend NEVER returns them — production delivery is EMAIL.
+ * real backend NEVER returns them - production delivery is EMAIL.
  */
 import { Inject, Injectable, Optional } from "@nestjs/common";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { REFRESH_COOKIE_NAME, TokenService } from "./token.service";
-import { IdentityRepository, type SessionRow, type UserRow } from "./identity.repository";
+import { IdentityRepository, type UserRow } from "./identity.repository";
 import { PasswordHasherService } from "./password-hasher.service";
 import { AuthRateLimiterService } from "./auth-rate-limiter.service";
 import { SecurityEventService, type RequestFingerprint } from "../security/security-event.service";
@@ -33,7 +33,7 @@ import { APP_CONFIG } from "../../config/app-config";
 import type { AppConfig } from "../../config/app-config";
 import { ROOT_LOGGER, type RootLogger } from "../../infrastructure/logging/logger.factory";
 
-// ── In-memory MFA login challenges (5-min TTL, single-use — mock parity) ─────
+// ── In-memory MFA login challenges (5-min TTL, single-use - mock parity) ─────
 
 interface MfaChallenge {
   userId: string;
@@ -48,7 +48,7 @@ export interface RequestLike {
   headers: Record<string, string | string[] | undefined>;
 }
 
-/** Extract the request fingerprint (masked, minimal — §11/§17). */
+/** Extract the request fingerprint (masked, minimal - §11/§17). */
 export function fingerprintOf(request: RequestLike): RequestFingerprint {
   const uaHeader = request.headers["user-agent"];
   const userAgent = Array.isArray(uaHeader) ? (uaHeader[0] ?? undefined) : uaHeader;
@@ -84,7 +84,7 @@ export class AuthService {
     reply: FastifyReply,
   ): Promise<{
     user: ReturnType<typeof toAuthUser>;
-    status: string;
+    status: UserRow["status"];
     verificationSentAt: string;
     delivery: "EMAIL";
     verificationExpiresAt: string;
@@ -105,7 +105,7 @@ export class AuthService {
 
     if (await this.repository.isEmailTaken(input.email)) {
       // Registration is inherently non-enumerable-safe? No: uniqueness is a
-      // product requirement the frontend surfaces with a dedicated state —
+      // product requirement the frontend surfaces with a dedicated state -
       // the mock returns 409 EMAIL_ALREADY_USED (documented contract).
       throw new ConflictError(
         "An account already exists for this email address.",
@@ -163,7 +163,7 @@ export class AuthService {
 
     return {
       user: toAuthUser(user),
-      status: user.status,
+      status: user.status as AccountStatus,
       verificationSentAt: new Date().toISOString(),
       delivery: "EMAIL",
       verificationExpiresAt: expiresAt,
@@ -182,14 +182,14 @@ export class AuthService {
     }
     if (challenge.usedAt) {
       throw new ValidationError(
-        "This verification link has already been used — try signing in.",
+        "This verification link has already been used - try signing in.",
         undefined,
         "TOKEN_ALREADY_USED",
       );
     }
     if (challenge.expiresAt.getTime() <= Date.now()) {
       throw new ValidationError(
-        "This verification link has expired — request a new email.",
+        "This verification link has expired - request a new email.",
         undefined,
         "EXPIRED_TOKEN",
       );
@@ -219,7 +219,7 @@ export class AuthService {
     email: string,
   ): Promise<{ sent: true; delivery: "EMAIL"; verificationExpiresAt: string | null }> {
     // Anti-enumeration (§10): the response is identical whether or not the
-    // account exists / is already verified — only delivery actually happens.
+    // account exists / is already verified - only delivery actually happens.
     const user = await this.repository.findUserByEmail(email);
     if (!user || user.status !== "PENDING_VERIFICATION") {
       return { sent: true, delivery: "EMAIL", verificationExpiresAt: null };
@@ -266,7 +266,7 @@ export class AuthService {
       throw new UnauthorizedError("Incorrect email or password.", "INVALID_CREDENTIALS");
     }
 
-    // Account status gates (§7) — order matters (suspended before deactivated
+    // Account status gates (§7) - order matters (suspended before deactivated
     // before pending verification, matching the mock's precedence).
     if (user.status === "SUSPENDED") {
       throw new ForbiddenError("This account is suspended. Contact support for help.", "ACCOUNT_SUSPENDED");
@@ -316,7 +316,7 @@ export class AuthService {
     const secret = this.totp.decryptSecret(user.mfaSecretEnc ?? "");
     if (!secret || !this.totp.verify(secret, user.email, input.code)) {
       this.limiter.hit("mfa", user.email);
-      // Phase 20 §39: the LoginRecord is Security-owned — the failure pair
+      // Phase 20 §39: the LoginRecord is Security-owned - the failure pair
       // (security event + login history row) is recorded through the shared
       // SecurityEventService port, never through raw identity Prisma access.
       await this.events.recordLogin(
@@ -389,13 +389,13 @@ export class AuthService {
     const raw = cookies?.[REFRESH_COOKIE_NAME];
     const presented = this.tokens.parseRefreshToken(raw);
     if (!presented) {
-      throw new UnauthorizedError("No active session — sign in again.", "INVALID_TOKEN");
+      throw new UnauthorizedError("No active session - sign in again.", "INVALID_TOKEN");
     }
 
     const session = await this.repository.findSessionByTokenHash(presented.hash);
 
     // REUSE DETECTION (§13): a token that is neither current NOR the one
-    // rotated away in this session's last rotation is unknown — and a token
+    // rotated away in this session's last rotation is unknown - and a token
     // equal to the last-rotated hash, or a stale generation, is a REUSE
     // signal: revoke every session of the user, never silently accept.
     const isReuse =
@@ -411,16 +411,16 @@ export class AuthService {
           userId: previous.userId,
           type: "SESSION_REVOKED",
           actor: previous.device,
-          context: "Refresh-token reuse detected — all sessions revoked.",
+          context: "Refresh-token reuse detected - all sessions revoked.",
           outcome: "FAILURE",
         });
-        this.logger?.warn({ userId: previous.userId }, "refresh-token reuse detected — all sessions revoked");
-        throw new UnauthorizedError("This session was revoked — sign in again.", "INVALID_TOKEN");
+        this.logger?.warn({ userId: previous.userId }, "refresh-token reuse detected - all sessions revoked");
+        throw new UnauthorizedError("This session was revoked - sign in again.", "INVALID_TOKEN");
       }
     }
 
     if (!session) {
-      throw new UnauthorizedError("This session is no longer valid — sign in again.", "INVALID_TOKEN");
+      throw new UnauthorizedError("This session is no longer valid - sign in again.", "INVALID_TOKEN");
     }
 
     if (isReuse) {
@@ -429,23 +429,23 @@ export class AuthService {
         userId: session.userId,
         type: "SESSION_REVOKED",
         actor: session.device,
-        context: "Refresh-token reuse detected — all sessions revoked.",
+        context: "Refresh-token reuse detected - all sessions revoked.",
         outcome: "FAILURE",
       });
-      this.logger?.warn({ userId: session.userId }, "refresh-token reuse detected — all sessions revoked");
-      throw new UnauthorizedError("This session was revoked — sign in again.", "INVALID_TOKEN");
+      this.logger?.warn({ userId: session.userId }, "refresh-token reuse detected - all sessions revoked");
+      throw new UnauthorizedError("This session was revoked - sign in again.", "INVALID_TOKEN");
     }
 
     if (session.revokedAt) {
-      throw new UnauthorizedError("This session was revoked — sign in again.", "INVALID_TOKEN");
+      throw new UnauthorizedError("This session was revoked - sign in again.", "INVALID_TOKEN");
     }
     if (session.expiresAt.getTime() <= Date.now()) {
-      throw new UnauthorizedError("This session is no longer valid — sign in again.", "INVALID_TOKEN");
+      throw new UnauthorizedError("This session is no longer valid - sign in again.", "INVALID_TOKEN");
     }
 
     const user = await this.repository.findUserById(session.userId);
     if (!user || user.status !== "ACTIVE") {
-      throw new UnauthorizedError("This session is no longer valid — sign in again.", "INVALID_TOKEN");
+      throw new UnauthorizedError("This session is no longer valid - sign in again.", "INVALID_TOKEN");
     }
 
     // Rotation: same row, new generation + new hash, remember-length TTL.
@@ -477,7 +477,7 @@ export class AuthService {
           userId: session.userId,
           type: "LOGOUT",
           actor: session.device,
-          context: "Signed out — refresh token revoked.",
+          context: "Signed out - refresh token revoked.",
         });
       }
     }
@@ -533,7 +533,7 @@ export class AuthService {
       userId: user.id,
       type: "PASSWORD_RESET_REQUESTED",
       actor: fingerprintOf(request).device,
-      context: "Password reset requested — email sent.",
+      context: "Password reset requested - email sent.",
     });
     return { sent: true, delivery: "EMAIL", resetExpiresAt: expiresAt.toISOString() };
   }
@@ -549,14 +549,14 @@ export class AuthService {
     }
     if (challenge.usedAt) {
       throw new ValidationError(
-        "This reset link has already been used — request a new email.",
+        "This reset link has already been used - request a new email.",
         undefined,
         "TOKEN_ALREADY_USED",
       );
     }
     if (challenge.expiresAt.getTime() <= Date.now()) {
       throw new ValidationError(
-        "This reset link has expired — request a new email.",
+        "This reset link has expired - request a new email.",
         undefined,
         "EXPIRED_TOKEN",
       );
@@ -619,7 +619,7 @@ export class AuthService {
   }
 
   /**
-   * Validate a challenge WITHOUT consuming it — a wrong TOTP/recovery code
+   * Validate a challenge WITHOUT consuming it - a wrong TOTP/recovery code
    * keeps the challenge alive (rate limiter bounds guessing); success or
    * expiry consumes it. Mirrors the mock's semantics.
    */
@@ -629,7 +629,7 @@ export class AuthService {
     if (!challenge || challenge.expiresAt <= Date.now()) {
       this.challenges.delete(challengeToken);
       throw new UnauthorizedError(
-        "This challenge expired — start again with your password.",
+        "This challenge expired - start again with your password.",
         "INVALID_CHALLENGE",
       );
     }
@@ -637,7 +637,7 @@ export class AuthService {
     if (!user || user.status !== "ACTIVE") {
       this.challenges.delete(challengeToken);
       throw new UnauthorizedError(
-        "This challenge expired — start again with your password.",
+        "This challenge expired - start again with your password.",
         "INVALID_CHALLENGE",
       );
     }
@@ -701,7 +701,7 @@ export class AuthService {
       {
         userId: user.id,
         type: "LOGIN_FAILED",
-        context: `Sign-in failed — ${reason.toLowerCase()}.`,
+        context: `Sign-in failed - ${reason.toLowerCase()}.`,
         outcome: "FAILURE",
         reason,
       },
@@ -709,7 +709,7 @@ export class AuthService {
     );
   }
 
-  // ── Cookie jar (HttpOnly — production contract; the mock documented this
+  // ── Cookie jar (HttpOnly - production contract; the mock documented this
   //    as its seam) ─────────────────────────────────────────────────────────────
 
   private setRefreshCookie(

@@ -1,8 +1,8 @@
 /**
- * Stats bounded context (B1) — the analytics domain. READ-ONLY: consumes
+ * Stats bounded context (B1) - the analytics domain. READ-ONLY: consumes
  * journal facts, account balances, discipline aggregates and the ghost
  * registry through the owning contexts' narrow contracts; owns NO tables
- * of its own (§ — analytics is a lens over the journal, not a store).
+ * of its own (§ - analytics is a lens over the journal, not a store).
  *
  * Dependency graph (acyclic):
  *   StatsModule → TradesRepository (journal facts + instruments + tags)

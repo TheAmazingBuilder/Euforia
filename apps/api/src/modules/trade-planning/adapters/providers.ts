@@ -1,15 +1,15 @@
 /**
  * Infrastructure adapters for the Trade Planning domain ports (Phase 5).
  *
- * CatalogInstrumentSpecsProvider — reads the InstrumentSpecification catalog
+ * CatalogInstrumentSpecsProvider - reads the InstrumentSpecification catalog
  * table (exact symbol match, active rows only). The catalog is the
  * authoritative source (§15): values live in reference data, never in code.
  *
- * PassthroughFxRateProvider — SAME-CURRENCY conversions only (rate = 1).
+ * PassthroughFxRateProvider - SAME-CURRENCY conversions only (rate = 1).
  * Cross-currency requests return null: Phase 5 will not fabricate exchange
  * rates (§16). A future FX bounded context plugs in behind the same port.
  *
- * NoRiskLimitsProvider — the §22 seam with NO invented portfolio rules:
+ * NoRiskLimitsProvider - the §22 seam with NO invented portfolio rules:
  * a future Portfolio/Account Risk bounded context supplies real limits.
  */
 import { Injectable } from "@nestjs/common";
@@ -63,7 +63,7 @@ export class CatalogInstrumentSpecsProvider implements InstrumentSpecificationPr
 export class PassthroughFxRateProvider implements FxRateProvider {
   async rate(fromCurrency: string, toCurrency: string): Promise<Decimal | null> {
     if (fromCurrency === toCurrency) return new Decimal(1);
-    // No FX service exists yet (§16): never fabricate rates — the caller
+    // No FX service exists yet (§16): never fabricate rates - the caller
     // surfaces CURRENCY_CONVERSION_UNAVAILABLE instead.
     return null;
   }

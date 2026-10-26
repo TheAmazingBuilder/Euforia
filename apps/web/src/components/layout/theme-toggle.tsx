@@ -46,7 +46,7 @@ const THEME_OPTIONS = [
 const emptySubscribe = () => () => {};
 
 /**
- * Theme switch — ONE click toggles light ↔ dark (the default dark-blue is
+ * Theme switch - ONE click toggles light ↔ dark (the default dark-blue is
  * remembered). The dropdown chevron still exposes all three Euforia themes.
  */
 export function ThemeToggle() {
@@ -64,7 +64,7 @@ export function ThemeToggle() {
       THEME_OPTIONS[0])
     : undefined;
   const ActiveIcon = active?.Icon ?? Moon;
-  // "system" counts as light when the OS resolves to light — the one-click
+  // "system" counts as light when the OS resolves to light - the one-click
   // toggle always flips the VISIBLE appearance.
   const isLight =
     mounted && (theme === "light" || (theme === "system" && resolvedTheme === "light"));

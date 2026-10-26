@@ -1,10 +1,10 @@
 /**
- * Session Live contract mappers — rows → shared-schema-shaped payloads.
+ * Session Live contract mappers - rows → shared-schema-shaped payloads.
  * The ONLY place translating persistence shapes into wire shapes; Prisma
  * internals never cross the module boundary (repo-wide convention).
  *
  * Decimal columns map to the shared contract's NUMBERS (tradingSession.
- * riskPerTradePct, keyLevel.price, savedAnalysis.priceAtSave) — the shared
+ * riskPerTradePct, keyLevel.price, savedAnalysis.priceAtSave) - the shared
  * sessionLive schemas are consumed verbatim (numbers on the wire), the same
  * "follow the contract" rule as Phase 6's workspace numbers.
  */

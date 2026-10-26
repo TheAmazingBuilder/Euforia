@@ -3,21 +3,21 @@
  *
  * Architectural position (§27/§29):
  *   - THIS service orchestrates; it does NOT persist trades. Every Trade is
- *     created through `TradesService.createTrade` — the canonical Trading
+ *     created through `TradesService.createTrade` - the canonical Trading
  *     Core application service that owns the account check, the sizing math,
  *     the P&L recomputation and the external-ref dedup. There is no
  *     OCR-specific Trade creation logic here and no Prisma trade write.
  *   - The account resolves, in order: the user's EXPLICIT choice (engine
- *     quality §3.1 — validated for ownership by the caller) then the owner's
- *     PERSISTED default account — never a screenshot account number (§81).
+ *     quality §3.1 - validated for ownership by the caller) then the owner's
+ *     PERSISTED default account - never a screenshot account number (§81).
  *   - The symbol resolves against the instrument catalog ONLY (§50): no
- *     invented alias tables — an unknown symbol is an honest skip.
+ *     invented alias tables - an unknown symbol is an honest skip.
  *   - FAILURE ISOLATION (§126): an import problem NEVER fails the
  *     confirmation. Per-draft isolation extends this to grouped
  *     confirmations: one skipped draft never blocks its siblings.
  *
  * Idempotency: the external ref is `ocr:<recognitionId>` for the single
- * path and `ocr:<recognitionId>:<batchIndex>` per grouped draft —
+ * path and `ocr:<recognitionId>:<batchIndex>` per grouped draft -
  * deterministic, so a race that reaches creation twice hits Trading Core's
  * duplicate conflict and resolves to linking the existing trade (never a
  * second one).
@@ -50,7 +50,7 @@ export interface ConfirmationDraft {
 }
 
 export interface TradeImportOutcome {
-  /** The primary canonical Trade id (first import) — null when none. */
+  /** The primary canonical Trade id (first import) - null when none. */
   tradeId: string | null;
   /** Every imported Trade id (grouped confirmation) in draft order. */
   tradeIds: string[];
@@ -71,20 +71,20 @@ export class OcrTradeImportService {
     private readonly securityEvents: SecurityEventService,
   ) {}
 
-  /** Deterministic dedup handle — one recognition draft can ever import one trade. */
+  /** Deterministic dedup handle - one recognition draft can ever import one trade. */
   externalRefOf(recognitionId: string, batchIndex?: number): string {
     return batchIndex === undefined ? `ocr:${recognitionId}` : `ocr:${recognitionId}:${batchIndex}`;
   }
 
   /**
-   * Content-based trade duplicate detection (V2 spec §4 — "different
+   * Content-based trade duplicate detection (V2 spec §4 - "different
    * screenshots representing the same trade"). ADVISORY: the caller stores
    * the flag on the recognition; the review UI surfaces it and confirmation
    * requires an explicit acknowledgment (V2 §58). Same owner only (§ IDOR).
    *
    * Prerequisites: symbol resolves in the catalog + direction matches.
    * Evidence: entry price equal OR entry time within ±48h (wall-clock vs
-   * instant tolerance — never a timezone assertion, §16).
+   * instant tolerance - never a timezone assertion, §16).
    *
    * Returns null when nothing matched or there is not enough evidence.
    * Also returns whether the symbol exists in the catalog (feeds the
@@ -112,13 +112,13 @@ export class OcrTradeImportService {
       return { symbolInCatalog: false, duplicate: null };
     }
     // A symbol without a direction (chart profile) resolves against the
-    // catalog — real information for the UNKNOWN_SYMBOL issue — but can
+    // catalog - real information for the UNKNOWN_SYMBOL issue - but can
     // never be a trade duplicate (nothing trade-shaped was recognized).
     if (direction !== "BUY" && direction !== "SELL") {
       return { symbolInCatalog: true, duplicate: null };
     }
 
-    // Wall-clock window — widened to ±48h BEFORE the query so the wall
+    // Wall-clock window - widened to ±48h BEFORE the query so the wall
     // clock vs instant comparison stays a pure-logic concern (§16: the
     // persisted candidate window is coarse, the evidence check is exact).
     const window = openTime !== null && !Number.isNaN(Date.parse(`${openTime}Z`))
@@ -160,14 +160,14 @@ export class OcrTradeImportService {
   async importFromConfirmation(input: {
     userId: string;
     recognitionId: string;
-    /** Single-trade path — the confirmed primary fields. */
+    /** Single-trade path - the confirmed primary fields. */
     mergedFields?: OcrExtractedField[];
-    /** Grouped-confirmation path — one entry per candidate draft. */
+    /** Grouped-confirmation path - one entry per candidate draft. */
     drafts?: ConfirmationDraft[];
     /** The user's explicit ACCOUNTS choice (ownership validated upstream). */
     accountId?: string | null;
     /**
-     * V2 multi-screenshot — the dedup ref scope for a FUSED set confirm.
+     * V2 multi-screenshot - the dedup ref scope for a FUSED set confirm.
      * When provided the externalRef becomes `ocr:<scopeLabel>` instead of
      * `ocr:<recognitionId>` (audit context keeps the scope label too).
      */
@@ -180,7 +180,7 @@ export class OcrTradeImportService {
       return { tradeId: null, tradeIds: [], warnings: [], suggestedTags: [] };
     }
 
-    // 1. Account — explicit choice first (engine quality §3.1), then the
+    // 1. Account - explicit choice first (engine quality §3.1), then the
     // persisted default (importTrades convention). An explicit but
     // unresolvable account is an honest per-confirmation skip.
     let accountId: string | null = null;
@@ -232,7 +232,7 @@ export class OcrTradeImportService {
       warnings.push(...outcome.warnings);
     }
 
-    // 3. Playbook tag suggestions (engine quality §3.3) — deterministic,
+    // 3. Playbook tag suggestions (engine quality §3.3) - deterministic,
     // derived from the FIRST imported (or attempted) draft's values.
     const resolved = resolveTradeImportValues(primaryFields);
     const suggestedTags = resolved.eligible
@@ -253,19 +253,19 @@ export class OcrTradeImportService {
     draftIndex: number | undefined;
     mergedFields: OcrExtractedField[];
     accountId: string;
-    /** V2 — set-scope external ref (`ocr:set:<id>`); undefined for single. */
+    /** V2 - set-scope external ref (`ocr:set:<id>`); undefined for single. */
     scopeLabel?: string;
   }): Promise<{ tradeId: string | null; warnings: string[]; instrumentAssetClass: string | null }> {
-    // Eligibility — the confirmed fields must resolve into a complete
+    // Eligibility - the confirmed fields must resolve into a complete
     // trade fact set (§76 "validate fields"). Incomplete stays a CONFIRMED
-    // recognition without a trade (honest, never fabricated — §44).
+    // recognition without a trade (honest, never fabricated - §44).
     const resolved = resolveTradeImportValues(input.mergedFields);
     if (!resolved.eligible) {
       const outcome = await this.skip(input.userId, input.recognitionId, resolved.reason, "confirmed values are not a complete trade", "SUCCESS", input.draftIndex);
       return { ...outcome, instrumentAssetClass: null };
     }
 
-    // Instrument — catalog lookup only (§50: no invented mapping).
+    // Instrument - catalog lookup only (§50: no invented mapping).
     const instrument = await this.tradesRepository.findInstrumentBySymbol(resolved.values.symbol);
     if (instrument === null || !instrument.isActive) {
       const outcome = await this.skip(
@@ -279,20 +279,20 @@ export class OcrTradeImportService {
       return { ...outcome, instrumentAssetClass: null };
     }
 
-    // V2 — the dedup ref: set scope (`ocr:set:<id>`) when the confirmation
-    // comes from a fused set, else the per-recognition/per-draft ref (§79 —
+    // V2 - the dedup ref: set scope (`ocr:set:<id>`) when the confirmation
+    // comes from a fused set, else the per-recognition/per-draft ref (§79 -
     // reuse the existing external-ref mechanism either way).
     const externalRef = input.scopeLabel !== undefined
       ? `ocr:${input.scopeLabel}`
       : this.externalRefOf(input.recognitionId, input.draftIndex);
-    // Duplicate check — a live trade with this ref means the import already
+    // Duplicate check - a live trade with this ref means the import already
     // happened.
     const existing = await this.tradesRepository.findLiveTradeByExternalRef(input.accountId, externalRef);
     if (existing !== null) {
       return { tradeId: existing.id, warnings: [], instrumentAssetClass: instrument.assetClass };
     }
 
-    // Create through Trading Core (§77 — the canonical application
+    // Create through Trading Core (§77 - the canonical application
     // service; no OCR-side persistence, P&L recomputed server-side).
     const tradeInput = buildOcrTradeInput({
       values: resolved.values,
@@ -311,7 +311,7 @@ export class OcrTradeImportService {
       });
       return { tradeId: created.id, warnings: [], instrumentAssetClass: instrument.assetClass };
     } catch (error) {
-      // A concurrent confirmation could have won the creation race — link
+      // A concurrent confirmation could have won the creation race - link
       // instead of conflicting (§51 house policy).
       if (error instanceof ConflictError) {
         const winner = await this.tradesRepository.findLiveTradeByExternalRef(input.accountId, externalRef);
@@ -326,7 +326,7 @@ export class OcrTradeImportService {
         error instanceof ConflictError;
       if (known) {
         // Stable domain refusal (account state, instrument specs, sizing…)
-        // — sanitized code only, never the raw message (§36).
+        // - sanitized code only, never the raw message (§36).
         const outcome = await this.skip(
           input.userId,
           input.recognitionId,
@@ -337,7 +337,7 @@ export class OcrTradeImportService {
         );
         return { ...outcome, instrumentAssetClass: null };
       }
-      // Unexpected — still isolated (§126): log server-side, answer honestly.
+      // Unexpected - still isolated (§126): log server-side, answer honestly.
       this.logger.error(
         `trade import failed for recognition ${input.recognitionId}: ${error instanceof Error ? error.name : "unknown"}`,
       );

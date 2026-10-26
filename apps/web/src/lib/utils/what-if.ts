@@ -1,7 +1,7 @@
 import type { Trade } from "@cosmoz/shared";
 
 /**
- * What-If simulation — pure, client-side (Phase 9 brief: computed from the
+ * What-If simulation - pure, client-side (Phase 9 brief: computed from the
  * trades query, no new endpoint). The same helper powers the Mistakes tab
  * teaser. Money never re-derived here: curves are cumulative R, the one
  * unit the trade contract already ships as a decimal string.

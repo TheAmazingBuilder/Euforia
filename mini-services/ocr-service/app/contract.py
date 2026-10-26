@@ -2,7 +2,7 @@
 
 Mirrors the Zod schemas in apps/api/src/modules/ocr/engine/ocr-engine.port.ts
 (contractVersion "1"). The sidecar ANSWERS with these shapes and strips
-unknown inputs — the Nest side re-validates everything (§54: engine output
+unknown inputs - the Nest side re-validates everything (§54: engine output
 is untrusted) but the wire discipline starts here.
 """
 
@@ -13,11 +13,11 @@ from typing import Any, Dict, List, Literal, Optional
 from pydantic import BaseModel, Field
 
 ProcessingStatus = Literal["COMPLETED", "UNPROCESSABLE", "FAILED"]
-# Recognition V1.1 — Account & Chart expansion. TRADE_SUMMARY stays the V1
+# Recognition V1.1 - Account & Chart expansion. TRADE_SUMMARY stays the V1
 # target; ACCOUNT_POSITION reads account snapshots (header fields + the open
 # positions table as candidates); CHART_ANALYSIS reads chart screenshots
 # (quote panel + visible indicator readings). Profiles route the extraction
-# vocabulary — never invent fields outside the set.
+# vocabulary - never invent fields outside the set.
 Profile = Literal["TRADE_SUMMARY", "ACCOUNT_POSITION", "CHART_ANALYSIS"]
 
 TRADE_FIELD_KEYS = (
@@ -99,11 +99,11 @@ class EngineRequest(BaseModel):
     metadata: EngineMetadata
     extractionProfile: Profile = "TRADE_SUMMARY"
     deadlineMs: int = Field(default=25_000, ge=1_000, le=120_000)
-    # Re-OCR by crop (engine quality phase §2.4): optional pixel region —
+    # Re-OCR by crop (engine quality phase §2.4): optional pixel region -
     # the image is cropped to this region BEFORE preprocessing. Owner-side
     # (NestJS) validates the region against the asset dimensions.
     crop: Optional[SourceRegion] = None
-    # V2 §24 — pixel-rect re-read of a user-selected zone on the MAIN route
+    # V2 §24 - pixel-rect re-read of a user-selected zone on the MAIN route
     # (mirrors ocr-engine.port.ts cropRegion). Distinct from `crop` (the
     # dedicated /v1/recrops route): this one rides the full recognition
     # contract and reports sourceRegion values OFFSET by the region origin
@@ -129,7 +129,7 @@ class EngineClassification(BaseModel):
     type: str
     confidence: float = Field(ge=0.0, le=1.0)
     alternatives: List[ClassificationCandidate] = Field(default_factory=list, max_length=4)
-    # V2 spec §18 — detected platform (MT5/MT4/TRADINGVIEW/CTRADER/...);
+    # V2 spec §18 - detected platform (MT5/MT4/TRADINGVIEW/CTRADER/...);
     # UNKNOWN is explicit, never a guess. Default keeps old callers parsing.
     platform: str = "UNKNOWN"
 
@@ -145,7 +145,7 @@ class EngineProcessingMetadata(BaseModel):
     layoutTemplate: Optional[str] = None
     deskewDeg: Optional[float] = None
     # PDF statements (ops §4.3): pages processed + rendered first-page dims
-    # (PDFs carry no intrinsic pixel size — the Nest side learns them here).
+    # (PDFs carry no intrinsic pixel size - the Nest side learns them here).
     documentPages: Optional[int] = None
     documentWidth: Optional[int] = None
     documentHeight: Optional[int] = None
@@ -158,7 +158,7 @@ class EngineFailure(BaseModel):
 
 class EngineTradeCandidate(BaseModel):
     """One multi-trade draft grouped from an account-history screenshot.
-    Fields only — grouping is evidence, never a created trade (§21)."""
+    Fields only - grouping is evidence, never a created trade (§21)."""
 
     fields: List[EngineField] = Field(default_factory=list, max_length=16)
 
@@ -173,7 +173,7 @@ class EngineTrade(BaseModel):
 
 
 class EngineDocumentMetadata(BaseModel):
-    """Document metadata — mirrors the Nest document request (NO width/
+    """Document metadata - mirrors the Nest document request (NO width/
     height: PDFs carry no intrinsic pixel size; the sidecar learns the
     rendered dims and reports them back via processingMetadata)."""
 
@@ -183,7 +183,7 @@ class EngineDocumentMetadata(BaseModel):
 
 
 class EngineDocumentRequest(BaseModel):
-    """PDF statement recognition (V2 document pipeline) — mirrors
+    """PDF statement recognition (V2 document pipeline) - mirrors
     EngineDocumentRecognizeRequest on the Nest side. The checksum member is
     accepted for wire parity but NOT verified here: the document integrity
     check IS the render pipeline (undecodable/corrupt PDFs are rejected by
@@ -199,7 +199,7 @@ class EngineDocumentRequest(BaseModel):
 
 
 class EngineDocumentPage(BaseModel):
-    """One rendered page of a document recognition (per-page extraction —
+    """One rendered page of a document recognition (per-page extraction -
     the Nest side owns the cross-page merge, the sidecar answers page-wise)."""
 
     pageIndex: int = Field(ge=0)
@@ -226,15 +226,15 @@ class EngineResponse(BaseModel):
     processingStatus: ProcessingStatus
     classification: Optional[EngineClassification] = None
     fields: List[EngineField] = Field(default_factory=list, max_length=64)
-    # V2 — grouped trades from row clustering ( pageIndex provenance). The
+    # V2 - grouped trades from row clustering ( pageIndex provenance). The
     # flat `fields` stay populated (back-compat: they mirror the primary
-    # trade) — the review UI renders trades when present, else the flat set.
+    # trade) - the review UI renders trades when present, else the flat set.
     trades: Optional[List[EngineTrade]] = Field(default=None, max_length=20)
-    # Multi-trade drafts (account-history screenshots) — empty for the
+    # Multi-trade drafts (account-history screenshots) - empty for the
     # mono-trade path (UI keeps a single review card).
     tradeCandidates: List[EngineTradeCandidate] = Field(default_factory=list, max_length=20)
     warnings: List[str] = Field(default_factory=list, max_length=16)
-    # Perceptual fingerprint (dHash, 16 hex chars) — the Nest side owns
+    # Perceptual fingerprint (dHash, 16 hex chars) - the Nest side owns
     # storage and duplicate decisions; the sidecar only computes it.
     perceptualHash: Optional[str] = None
     processingMetadata: EngineProcessingMetadata
@@ -242,10 +242,10 @@ class EngineResponse(BaseModel):
 
 
 def field_names() -> List[str]:
-    """Valid field keys — the sidecar never invents fields outside this set.
+    """Valid field keys - the sidecar never invents fields outside this set.
 
     The union spans every profile: the Nest side re-validates per profile,
     so a TRADE_SUMMARY run returning account fields would be rejected there
-    (defense in depth — the wire stays honest).
+    (defense in depth - the wire stays honest).
     """
     return list(TRADE_FIELD_KEYS) + list(ACCOUNT_FIELD_KEYS) + list(CHART_FIELD_KEYS)

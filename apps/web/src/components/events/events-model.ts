@@ -1,9 +1,9 @@
 /**
- * Events — data model for the trading calendar module (Academy section).
+ * Events - data model for the trading calendar module (Academy section).
  * Calendars are grouped (My Calendars / Favorites / Other) and double as
  * the filter axis; events are pills on the month grid and can be dragged
  * between days with the cursor or a finger. The whole state persists 100%
- * locally — same local-by-design contract as Tasky.
+ * locally - same local-by-design contract as Tasky.
  */
 
 export type EventColor =
@@ -31,15 +31,15 @@ export type CalEvent = {
   id: string;
   title: string;
   calendarId: string;
-  /** ISO date — the day cell the event sits on. */
+  /** ISO date - the day cell the event sits on. */
   date: string;
   allDay: boolean;
-  /** "HH:MM" — omitted for all-day events. */
+  /** "HH:MM" - omitted for all-day events. */
   time?: string;
   favorite?: boolean;
 };
 
-/** Tailwind classes per color — dot (sidebar), pill (grid), checked box. */
+/** Tailwind classes per color - dot (sidebar), pill (grid), checked box. */
 export const EVENT_COLORS: Record<EventColor, { dot: string; pill: string; check: string }> = {
   blue: { dot: "bg-blue-500", pill: "bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/50", check: "bg-blue-500" },
   cyan: { dot: "bg-cyan-500", pill: "bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border-cyan-500/50", check: "bg-cyan-500" },
@@ -75,7 +75,7 @@ function seedCalendars(): EventsCalendar[] {
   ];
 }
 
-/** October 2026 seed — mirrors the product reference day for day. */
+/** October 2026 seed - mirrors the product reference day for day. */
 function seedEvents(): CalEvent[] {
   return [
     { id: "e1", title: "Team Standup", calendarId: "work", date: "2026-10-01", allDay: false, time: "09:00" },
@@ -124,7 +124,7 @@ export function loadEventsState(): EventsState {
       return { calendars: parsed.calendars as EventsCalendar[], events: parsed.events as CalEvent[] };
     }
   } catch {
-    // Corrupted snapshot — fall through to the seed.
+    // Corrupted snapshot - fall through to the seed.
   }
   return { calendars: seedCalendars(), events: seedEvents() };
 }
@@ -134,7 +134,7 @@ export function saveEventsState(state: EventsState): void {
   try {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   } catch {
-    // Storage unavailable — the calendar still works for the session.
+    // Storage unavailable - the calendar still works for the session.
   }
 }
 
@@ -183,7 +183,7 @@ export const SORT_LABELS: Record<SortMode, string> = {
   calendar: "Sort by calendar",
 };
 
-/** Sorts a day's events per the active mode — stable, mutating nothing. */
+/** Sorts a day's events per the active mode - stable, mutating nothing. */
 export function sortEvents(
   events: CalEvent[],
   mode: SortMode,

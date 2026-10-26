@@ -67,7 +67,7 @@ import {
 } from "@/components/events/events-model";
 
 /**
- * Events — the trading calendar (Academy section, independent module).
+ * Events - the trading calendar (Academy section, independent module).
  * Faithful to the product reference: inner left panel (account card, mini
  * month, calendar groups used as filters) + month grid with colored pills.
  * Extras without changing the design: sort menu, new-event and new-calendar
@@ -203,7 +203,7 @@ export function EventsView() {
           }
           setDragState(null);
         } else {
-          // No movement — open the details card where the finger/cursor is.
+          // No movement - open the details card where the finger/cursor is.
           setRenameValue("");
           setDetails({ eventId, x: upEvent.clientX, y: upEvent.clientY, renaming: false });
         }
@@ -356,7 +356,7 @@ export function EventsView() {
 
   return (
     <div className="flex gap-4" data-testid="events-view">
-      {/* Inner left panel — account, mini month, calendar groups (filters) */}
+      {/* Inner left panel - account, mini month, calendar groups (filters) */}
       {panelOpen ? (
         <aside
           data-testid="events-sidebar"
@@ -445,12 +445,12 @@ export function EventsView() {
             </div>
           </div>
 
-          {/* Calendar groups — the filter axis */}
+          {/* Calendar groups - the filter axis */}
           <div className="flex flex-col gap-2" data-testid="events-groups">
             {GROUP_ORDER.map((group) => renderGroup(group))}
           </div>
 
-          {/* New Calendar — bottom of the panel, like the reference */}
+          {/* New Calendar - bottom of the panel, like the reference */}
           <div className="mt-auto">
             <Button
               variant="ghost"
@@ -470,7 +470,7 @@ export function EventsView() {
       <div className="flex min-w-0 flex-1 flex-col gap-3">
         {/* Toolbar */}
         <div className="flex flex-wrap items-center gap-2">
-          {/* Panel toggle — same glyph family as the header collapse */}
+          {/* Panel toggle - same glyph family as the header collapse */}
           <button
             type="button"
             onClick={() => setPanelOpen((open) => !open)}
@@ -533,7 +533,7 @@ export function EventsView() {
               New event
             </Button>
 
-            {/* Sort menu — time / title / calendar */}
+            {/* Sort menu - time / title / calendar */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" data-testid="events-sort" className="h-8 gap-1.5 px-2.5 text-xs">
@@ -693,7 +693,7 @@ export function EventsView() {
         </div>
       </div>
 
-      {/* Event details card — appears where the pill was tapped/clicked */}
+      {/* Event details card - appears where the pill was tapped/clicked */}
       {details && detailsEvent ? (
         <>
           <button

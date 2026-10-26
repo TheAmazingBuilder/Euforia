@@ -10,7 +10,7 @@ import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle }
 import { getChartTheme } from "@/lib/utils/chart-theme";
 import { cn } from "@/lib/utils";
 
-/** Strip geometry — 7 slots of 100 units, bars centered in their slot.
+/** Strip geometry - 7 slots of 100 units, bars centered in their slot.
  * `preserveAspectRatio="none"` keeps the slot grid aligned with the
  * day-number row underneath (both are equal-width columns). */
 const SLOT_W = 100;
@@ -23,7 +23,7 @@ function dayOfMonth(dateKey: string): number {
 }
 
 /**
- * Baseline-centered mini bands — one column per day, profit above the
+ * Baseline-centered mini bands - one column per day, profit above the
  * baseline, loss below, scaled to the largest absolute day across BOTH
  * weeks so the two strips share an honest visual scale.
  */
@@ -140,7 +140,7 @@ function WeekRow({
 }
 
 /**
- * « This week vs last week » — two aligned mini-sparkline band strips fed
+ * « This week vs last week » - two aligned mini-sparkline band strips fed
  * by the server-computed weeklyCompare (same rolling 7-day window as the
  * KPI arrows, zero-filled). No client-side aggregation: the card renders.
  */
@@ -173,7 +173,7 @@ export function WeekCompareCard({
       <CardHeader>
         <CardTitle className="font-heading text-base font-semibold">This week vs last week</CardTitle>
         <CardDescription>
-          Daily net P&L bands over the same 7-day window as the KPI arrows — both strips scaled to
+          Daily net P&L bands over the same 7-day window as the KPI arrows - both strips scaled to
           the biggest absolute day.
         </CardDescription>
         <CardAction>
@@ -204,7 +204,7 @@ export function WeekCompareCard({
               ) : (
                 <Minus className="size-3" aria-hidden="true" />
               )}
-              {/* Direction spoken for assistive tech — the arrow is
+              {/* Direction spoken for assistive tech - the arrow is
                   aria-hidden, color must never be the only cue (Phase 10). */}
               <span className="sr-only">
                 {delta > 0 ? "Up" : delta < 0 ? "Down" : "Unchanged"} vs last week: 

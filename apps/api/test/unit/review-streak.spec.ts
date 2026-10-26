@@ -1,5 +1,5 @@
 /**
- * Unit — review streak (freeze-aware) + weekly grade trend (Phase 6).
+ * Unit - review streak (freeze-aware) + weekly grade trend (Phase 6).
  *
  * Faithful semantics of the product's honest gamification ledger: one grace
  * day per Mon–Sun calendar week, frozen days reported separately, never
@@ -55,7 +55,7 @@ describe("review streak (§71 semantics)", () => {
   });
 
   it("grants at most one freeze per Mon–Sun calendar week", () => {
-    // 2026-03-09 is a Monday; 03-11 and 03-13 both miss in the same week —
+    // 2026-03-09 is a Monday; 03-11 and 03-13 both miss in the same week -
     // only the first gap may be frozen.
     const streak = computeReviewStreak({
       todayKey: "2026-03-13",
@@ -115,7 +115,7 @@ describe("weekly grade trend", () => {
         { dayKey: "2026-03-09", grade: "A" }, // current week (Mon)
         { dayKey: "2026-03-10", grade: "B" },
         { dayKey: "2026-03-02", grade: "F" }, // previous week
-        { dayKey: "2026-01-05", grade: "A" }, // far past — outside 8 weeks
+        { dayKey: "2026-01-05", grade: "A" }, // far past - outside 8 weeks
       ],
       "2026-03-11",
     );

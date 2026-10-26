@@ -22,7 +22,7 @@ export default tseslint.config(
             {
               group: ["@cosmoz/shared", "@cosmoz/shared/*"],
               message:
-                "Import shared contracts via 'src/shared/contracts' (relative barrel) — '@cosmoz/shared' resolves to TS source at runtime.",
+                "Import shared contracts via 'src/shared/contracts' (relative barrel) - '@cosmoz/shared' resolves to TS source at runtime.",
             },
           ],
         },

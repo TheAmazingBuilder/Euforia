@@ -1,7 +1,7 @@
 /**
- * e2e — Monitoring API (Phase 17 §48/§49/§50): access control, contract
+ * e2e - Monitoring API (Phase 17 §48/§49/§50): access control, contract
  * shape, per-user isolation, threshold persistence, observational-only
- * mutation surface, and secret/stack-trace non-exposure — against the real
+ * mutation surface, and secret/stack-trace non-exposure - against the real
  * AppModule, real PostgreSQL and the real telemetry hook.
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -52,7 +52,7 @@ describe("monitoring access control (§33/§49)", () => {
 describe("GET /monitoring/overview (§48)", () => {
   it("returns the full aggregate conforming to the shared contract", async () => {
     const user = await authenticatedUser(app, mail);
-    // The telemetry hook records a request AFTER its response — the first
+    // The telemetry hook records a request AFTER its response - the first
     // authenticated call becomes visible to the SECOND overview read.
     await app.inject({ method: "GET", url: "/api/v1/auth/me", headers: user.authHeader });
     await get(user.authHeader, "/api/v1/monitoring/overview");
@@ -176,7 +176,7 @@ describe("PATCH /monitoring/thresholds", () => {
     expect(badFreshness.statusCode).toBe(400);
   });
 
-  it("keeps thresholds per-user — User B never sees User A's tuning (§34)", async () => {
+  it("keeps thresholds per-user - User B never sees User A's tuning (§34)", async () => {
     const a = await authenticatedUser(app, mail);
     const b = await authenticatedUser(app, mail);
     await app.inject({
@@ -187,13 +187,13 @@ describe("PATCH /monitoring/thresholds", () => {
     });
     const bView = await get(b.authHeader, "/api/v1/monitoring/overview");
     const degraded = bView.body.thresholds.rules.find((rule) => rule.id === "API_DEGRADED");
-    expect(degraded?.thresholdValue).toBe(10); // default — A's knob is A's own
+    expect(degraded?.thresholdValue).toBe(10); // default - A's knob is A's own
     const aView = await get(a.authHeader, "/api/v1/monitoring/overview");
     expect(aView.body.thresholds.rules.find((rule: { id: string }) => rule.id === "API_DEGRADED")?.thresholdValue).toBe(42);
   });
 });
 
-describe("POST /monitoring/jobs/:jobId/run — observational only (§50)", () => {
+describe("POST /monitoring/jobs/:jobId/run - observational only (§50)", () => {
   it("never fabricates a run: known and unknown jobs are refused with 409", async () => {
     const user = await authenticatedUser(app, mail);
     const known = await app.inject({
@@ -234,7 +234,7 @@ describe("per-user isolation (§34/§49)", () => {
   });
 });
 
-describe("negative capability — Monitoring cannot act (§50)", () => {
+describe("negative capability - Monitoring cannot act (§50)", () => {
   it("has no mutation surface beyond its own thresholds", async () => {
     const user = await authenticatedUser(app, mail);
     for (const [method, url] of [

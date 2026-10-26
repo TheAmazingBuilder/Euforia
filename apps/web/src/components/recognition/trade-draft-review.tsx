@@ -31,20 +31,20 @@ import {
 import { recognitionFieldLabel, type RecognitionDict } from "@/i18n/dictionaries/en/recognition";
 
 /**
- * TradeDraftReview — the final look before confirmation (PROMPT 3 §23/§24/
+ * TradeDraftReview - the final look before confirmation (PROMPT 3 §23/§24/
  * §28 + grouped confirmation, engine quality §2.2). Sections mirror the
  * trade form (Basic / Execution / Risk / Result / Timing); risk-reward is
  * computed only when entry, stop and target are all readable. The explicit
  * "Confirm & import" action is the ONLY path that makes the reviewed values
- * authoritative (§28) — until then this stays a draft, never a Trade
+ * authoritative (§28) - until then this stays a draft, never a Trade
  * (contract invariant).
  *
  * Grouped confirmation: when the recognition carries N candidate drafts,
- * each draft renders as its own ruled card with an include decision —
+ * each draft renders as its own ruled card with an include decision -
  * the user imports exactly the drafts they checked.
  */
 
-/** Risk/reward from entry, stop, target and direction — 1 : X, when computable. */
+/** Risk/reward from entry, stop, target and direction - 1 : X, when computable. */
 export function riskReward(entry: string | null, stop: string | null, target: string | null, direction: string | null): number | null {
   if (!entry || !stop || !target) return null;
   const e = Number(entry.replace(",", "."));
@@ -68,7 +68,7 @@ interface DraftCardProps {
   platform: string;
 }
 
-/** One draft card — the ruled form-mirror summary with an include decision. */
+/** One draft card - the ruled form-mirror summary with an include decision. */
 function DraftCard({ index, total, fields, effectiveValues, include, onToggle, dict, platform }: DraftCardProps) {
   const value = (field: FieldKey): string | null => {
     if (field in effectiveValues) return effectiveValues[field];
@@ -99,7 +99,7 @@ function DraftCard({ index, total, fields, effectiveValues, include, onToggle, d
             type="button"
             role="checkbox"
             aria-checked={include}
-            aria-label={`${dict.multi.include} — ${dict.multi.draft} ${index + 1}`}
+            aria-label={`${dict.multi.include} - ${dict.multi.draft} ${index + 1}`}
             onClick={() => onToggle(!include)}
             className="flex items-center gap-2 text-sm"
             data-testid={`recognition-draft-include-${index}`}
@@ -199,14 +199,14 @@ export function TradeDraftReview({
   recognition: OcrRecognition;
   dict: RecognitionDict;
   effectiveValues: Record<string, string | null>;
-  /** Grouped confirmation (engine quality §2.2) — one entry per candidate. */
+  /** Grouped confirmation (engine quality §2.2) - one entry per candidate. */
   draftStates?: { effectiveValues: Record<string, string | null>; include: boolean }[];
   onToggleInclude?: (index: number, include: boolean) => void;
   onBack: () => void;
   onConfirm: () => void;
   pending?: boolean;
 }) {
-  // V2 §60 — the confirmation dialog state; §59 — recognized-vs-corrected.
+  // V2 §60 - the confirmation dialog state; §59 - recognized-vs-corrected.
   const [confirmOpen, setConfirmOpen] = React.useState(false);
   const metaKey = profileMetaKey(recognition.extractionProfile);
   const sections = reviewSections(metaKey);
@@ -309,7 +309,7 @@ export function TradeDraftReview({
         <p className="flex items-start gap-2 text-sm text-muted-foreground">
           <ShieldCheck className="mt-0.5 size-4 shrink-0 text-accent" strokeWidth={1.5} aria-hidden="true" />
           {isMulti
-            ? `${dict.multi.confirmedCount} — ${includedCount}/${draftStates!.length}`
+            ? `${dict.multi.confirmedCount} - ${includedCount}/${draftStates!.length}`
             : dict.draft.confirmHint}
         </p>
         <div className="flex shrink-0 items-center gap-2">
@@ -327,9 +327,9 @@ export function TradeDraftReview({
         </div>
       </div>
 
-      {/* V2 §60 — the explicit confirmation dialog: everything looks correct?
+      {/* V2 §60 - the explicit confirmation dialog: everything looks correct?
           [Confirm Trade] / [Continue Editing] / [Cancel]. The dialog also
-          shows the USER_CORRECTED fields (V2 §59 — recognized vs confirmed). */}
+          shows the USER_CORRECTED fields (V2 §59 - recognized vs confirmed). */}
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>

@@ -1,5 +1,5 @@
 /**
- * Oryon Phase 9 structure tests — pivot detection, HH/LH/HL/LL
+ * Oryon Phase 9 structure tests - pivot detection, HH/LH/HL/LL
  * classification, the BOS/CHoCH state machine, and the per-panel analysis
  * store/persistence surface (v4).
  *
@@ -8,7 +8,7 @@
  * The detection semantics under test (spec §4.1/§4.2/§4.4):
  *   - strict neighborhood comparisons (equal highs/lows never pivot);
  *   - right-side confirmation (a pivot is confirmed only when its full
- *     right window exists — confirmation never depends on future data);
+ *     right window exists - confirmation never depends on future data);
  *   - provisional candidates are a DIFFERENT state, opt-in to display;
  *   - breaks fire once per level, causally (after the pivot's confirmation
  *     window), close- or wick-confirmed per configuration.
@@ -55,7 +55,7 @@ function eq(name: string, actual: unknown, expected: unknown): void {
   ok(`${name} (${a === b ? "ok" : `${a} !== ${b}`})`, a === b);
 }
 
-/** Fake localStorage — the store's persistence adapters need the DOM API. */
+/** Fake localStorage - the store's persistence adapters need the DOM API. */
 function installStorage(): Map<string, string> {
   const memory = new Map<string, string>();
   (globalThis as { window?: unknown }).window = {
@@ -70,7 +70,7 @@ function installStorage(): Map<string, string> {
 
 const MIN = 60_000;
 
-/** Synthetic candle — opens at `t`, with given high/low (close defaults mid). */
+/** Synthetic candle - opens at `t`, with given high/low (close defaults mid). */
 function bar(t: number, h: number, l: number, o?: number, c?: number): Candle {
   return { t, o: o ?? (h + l) / 2, h, l, c: c ?? (o ?? (h + l) / 2), v: 1 };
 }
@@ -84,7 +84,7 @@ const BASE = Date.UTC(2026, 8, 1, 0, 0); // 2026-09-01 00:00 UTC
 
 // ── 1. Pivot detection ───────────────────────────────────────────────────────
 
-console.log("— pivots (détection)");
+console.log("- pivots (détection)");
 
 // highs: 1 3 1 3 1 with left=right=1 → swing highs at index 1 and 3.
 const zigCandles = zigzag([1, 3, 1, 3, 1], BASE);
@@ -101,7 +101,7 @@ eq(
 eq("identité stable = kind + open time", zigPivots[0]!.id, `h-${(BASE + MIN) / 1000}`);
 eq("ancre = prix réel de la bougie", zigPivots[0]!.price, 3);
 
-// lows: mirror — lows 5 3 5 with left=right=1 → swing low at index 1.
+// lows: mirror - lows 5 3 5 with left=right=1 → swing low at index 1.
 const lowCandles = [bar(BASE, 5, 5), bar(BASE + MIN, 3, 3), bar(BASE + 2 * MIN, 5, 5)];
 const lowPivots = detectPivots({
   candles: lowCandles,
@@ -117,7 +117,7 @@ eq(
 // Right-side confirmation: a high at index 2 needs 2 candles after it.
 const confirmCandles = zigzag([1, 2, 4, 3, 2, 1], BASE);
 const withRight2 = detectPivots({
-  candles: confirmCandles.slice(0, 5), // index 2 high, only 2 bars after (3,4) — enough for right=2
+  candles: confirmCandles.slice(0, 5), // index 2 high, only 2 bars after (3,4) - enough for right=2
   config: { leftBars: 1, rightBars: 2, minDistancePips: null, minSeparationBars: null },
   pipSize: 0.0001,
 });
@@ -187,7 +187,7 @@ eq(
   1,
 );
 
-// Min distance in pips: second high 2 units away with distance 10 pips (= 1 unit at pip 0.1) — accepted.
+// Min distance in pips: second high 2 units away with distance 10 pips (= 1 unit at pip 0.1) - accepted.
 const farZig = zigzag([1, 4, 1, 7, 1], BASE);
 eq(
   "distance minimale : pivots éloignés conservés",
@@ -246,8 +246,8 @@ ok(
 // Duplicate timestamps: first wins; invalid (h < l) dropped.
 const dirtyCandles = [
   bar(BASE, 2, 1),
-  bar(BASE, 9, 8), // duplicate timestamp — dropped (first wins)
-  bar(BASE + MIN, 5, 7), // invalid h < l — dropped
+  bar(BASE, 9, 8), // duplicate timestamp - dropped (first wins)
+  bar(BASE + MIN, 5, 7), // invalid h < l - dropped
   bar(BASE + 2 * MIN, 3, 1),
 ];
 eq(
@@ -258,7 +258,7 @@ eq(
 
 // ── 2. Classification HH/LH/HL/LL ────────────────────────────────────────────
 
-console.log("— classification (HH/LH/HL/LL)");
+console.log("- classification (HH/LH/HL/LL)");
 
 // Highs 3, 5, 4 → none, HH, LH. Lows 1, 2, 0.5 → none, HL, LL.
 const classCandles: Candle[] = [
@@ -320,7 +320,7 @@ eq(
 
 // ── 3. BOS / CHoCH ───────────────────────────────────────────────────────────
 
-console.log("— cassures de structure (BOS/CHoCH)");
+console.log("- cassures de structure (BOS/CHoCH)");
 
 // Scenario: swing low at index 1 (price 2), then a close below it at index 4.
 // lows: 3, 2, 3, 3, close 1.5 → first break with null trend = CHoCH (bearish).
@@ -372,7 +372,7 @@ eq(
 
 // BOS: within an established bearish trend, the next swing-low break is a BOS.
 // After the CHoCH above, a new swing low forms (index 5 area) and breaks again.
-// lows: index5 = 1.2 pivot? left neighbor 1.5(index4)? — craft explicitly:
+// lows: index5 = 1.2 pivot? left neighbor 1.5(index4)? - craft explicitly:
 const bosCandles: Candle[] = [
   ...chochCandles, // CHoCH at 4 (level 2)
   bar(BASE + 5 * MIN, 3, 1.6, 1.5, 2),   // small bounce closes at 2
@@ -467,12 +467,12 @@ eq("causalité : cassure après la fenêtre de confirmation", causalBreaks.map((
 ok("causalité : l'événement existe bien", causalBreaks.length === 1);
 
 // Level replacement: a newer swing high replaces the active one before any
-// break — the replaced level never fires (most-recent-swing rule).
+// break - the replaced level never fires (most-recent-swing rule).
 const replaceCandles: Candle[] = [
   bar(BASE + 0 * MIN, 3, 1),
   bar(BASE + 1 * MIN, 5, 2),      // swing high A (5)
   bar(BASE + 2 * MIN, 4, 2.5),
-  bar(BASE + 3 * MIN, 7, 3),      // swing high B (7) — replaces A
+  bar(BASE + 3 * MIN, 7, 3),      // swing high B (7) - replaces A
   bar(BASE + 4 * MIN, 6, 4),
   bar(BASE + 5 * MIN, 8, 5, 6, 8),// close 8 > 7 → breaks B only
 ];
@@ -514,7 +514,7 @@ eq(
 
 // ── 4. Shared schema whitelist (persisted config can never be invalid) ──────
 
-console.log("— schéma partagé (whitelist analyse)");
+console.log("- schéma partagé (whitelist analyse)");
 
 eq(
   "défauts : tout désactivé, fenêtre 3/3, OR NY 60",
@@ -572,7 +572,7 @@ eq(
 
 // ── 5. Store + persistence v4 ────────────────────────────────────────────────
 
-console.log("— store + persistance v4 (analyse par panneau)");
+console.log("- store + persistance v4 (analyse par panneau)");
 
 let memory = installStorage();
 
@@ -611,7 +611,7 @@ eq(
   eq("duplicatePanel copie l'analyse", panels[1]!.analysis, other);
   ok("duplicatePanel : identité indépendante (copie profonde)", panels[1]!.analysis.structure !== panels[0]!.analysis.structure);
 
-  // Unknown panel id — null-safe.
+  // Unknown panel id - null-safe.
   store.setPanelAnalysis("panel-inconnu", enabled);
   eq("setPanelAnalysis : panneau inconnu ignoré", store.getSnapshot().session.panels.length, 2);
 }

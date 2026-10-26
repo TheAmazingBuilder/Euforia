@@ -1,10 +1,10 @@
 /**
- * e2e — Integration Hub (B14): the platform layer over the REAL AppModule +
+ * e2e - Integration Hub (B14): the platform layer over the REAL AppModule +
  * real database. Covers the overview seed (registry + honest nulls), the
  * connect → test → sync lifecycle with licensing/already-connected gates,
  * §26 history-preserved disconnect, §32 demo scenarios and the §12 webhook
  * pipeline (signature → timestamp → idempotency). Responses are validated
- * against the SHARED Zod contract — the same schemas the frontend reads.
+ * against the SHARED Zod contract - the same schemas the frontend reads.
  * Mirrors `mocks/handlers/integrations.ts` behavior.
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -47,7 +47,7 @@ describe("integration hub (B14)", () => {
     expect(overview.summary.connected).toBe(5);
     const deriv = overview.providers.find((provider) => provider.id === "deriv");
     expect(deriv?.status).toBe("CONNECTED");
-    // §6 honesty — the broker adapter has never sent real numbers.
+    // §6 honesty - the broker adapter has never sent real numbers.
     expect(overview.accounts[0]?.balance).toBeNull();
     expect(overview.accounts[0]?.equity).toBeNull();
     // Economic pipeline fed by the normalization layer, sorted by time.
@@ -68,7 +68,7 @@ describe("integration hub (B14)", () => {
   it("connect → sync lifecycle with gates: license 422, duplicate 409, unknown 404", async () => {
     const user = await authenticatedUser(app, mail);
 
-    // §29 — the unverified news provider can never be connected.
+    // §29 - the unverified news provider can never be connected.
     const licensed = await app.inject({
       method: "POST",
       url: "/api/v1/integrations/providers/news-wire/connect",
@@ -116,11 +116,11 @@ describe("integration hub (B14)", () => {
     expect(sync.statusCode).toBe(200);
     const syncBody = integrationSyncResponseSchema.parse(sync.json());
     expect(syncBody.status).toBe("CONNECTED");
-    // Account snapshot refresh — exactly one record, nulls stay nulls.
+    // Account snapshot refresh - exactly one record, nulls stay nulls.
     expect(syncBody.sync.recordsProcessed).toBe(1);
     expect(syncBody.sync.lastSuccessAt).not.toBeNull();
 
-    // §32 — cTrader's FIRST pairing ships the expired-key scenario.
+    // §32 - cTrader's FIRST pairing ships the expired-key scenario.
     const ctrader = await app.inject({
       method: "POST",
       url: "/api/v1/integrations/providers/ctrader/connect",
@@ -182,7 +182,7 @@ describe("integration hub (B14)", () => {
     expect(ecoEvent).toBeDefined();
     if (ecoEvent === undefined) throw new Error("expected a seeded eco event");
 
-    // 1) valid delivery — event applied to the referenced normalized record.
+    // 1) valid delivery - event applied to the referenced normalized record.
     const valid = await app.inject({
       method: "POST",
       url: "/api/v1/integrations/webhooks/wh-macro/simulate",
@@ -271,7 +271,7 @@ describe("integration hub (B14)", () => {
     });
     expect(sync.statusCode).toBe(200);
     const body = integrationSyncResponseSchema.parse(sync.json());
-    // The seed cursor was batch-7 — this sync consumed batch-8.
+    // The seed cursor was batch-7 - this sync consumed batch-8.
     expect(body.sync.cursor).toBe("batch-8");
     expect(body.sync.recordsProcessed).toBeGreaterThanOrEqual(1);
   });

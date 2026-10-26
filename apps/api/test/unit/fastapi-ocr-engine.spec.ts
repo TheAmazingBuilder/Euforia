@@ -1,9 +1,9 @@
 /**
- * Unit — FastApiOcrEngine adapter (the REAL sidecar HTTP client).
+ * Unit - FastApiOcrEngine adapter (the REAL sidecar HTTP client).
  *
  * Fetch is stubbed: these tests pin the HTTP discipline (§34 failure
  * mapping, §54 strict response parsing, request-id/contract echo check)
- * and the document capability routing — NOT the sidecar pipeline itself
+ * and the document capability routing - NOT the sidecar pipeline itself
  * (the sidecar's own pytest suite in mini-services/ocr-service owns that).
  */
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -78,7 +78,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe("FastApiOcrEngine — recognize", () => {
+describe("FastApiOcrEngine - recognize", () => {
   it("posts to /v1/recognitions with the internal token and parses a COMPLETED body (trades included)", async () => {
     const fetchMock = vi.fn().mockResolvedValue(jsonResponse(200, completedImageResponse));
     vi.stubGlobal("fetch", fetchMock);
@@ -124,7 +124,7 @@ describe("FastApiOcrEngine — recognize", () => {
   });
 });
 
-describe("FastApiOcrEngine — recognizeDocument", () => {
+describe("FastApiOcrEngine - recognizeDocument", () => {
   const DOCUMENT_REQUEST = {
     requestId: "doc-1",
     contractVersion: OCR_CONTRACT_VERSION,

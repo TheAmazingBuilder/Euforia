@@ -1,4 +1,4 @@
-/** Debug: layout switch flow — dump state at each step. */
+/** Debug: layout switch flow - dump state at each step. */
 const { chromium } = require("playwright");
 
 const BASE = process.env.BASE_URL || "http://localhost:3001";

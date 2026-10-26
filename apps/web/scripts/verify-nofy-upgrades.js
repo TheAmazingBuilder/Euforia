@@ -1,5 +1,5 @@
 /**
- * Verify — Nofy upgrades: scroll-safe slash menu, Export PDF print sheet,
+ * Verify - Nofy upgrades: scroll-safe slash menu, Export PDF print sheet,
  * and the Nofy ↔ Playbook / Trade Review integrations.
  *   1. Slash menu: scrollable list that never closes itself on wheel,
  *      keyboard nav scrolls the active item into view, page scroll
@@ -31,17 +31,17 @@ const NOISE = [/socket\.io/i, /candles/i, /market-service/i, /favicon/i, /net::E
 
   const results = [];
   const check = (name, ok, extra = "") => {
-    results.push(`${ok ? "PASS" : "FAIL"} — ${name}${extra ? ` (${extra})` : ""}`);
+    results.push(`${ok ? "PASS" : "FAIL"} - ${name}${extra ? ` (${extra})` : ""}`);
     console.log(results[results.length - 1]);
   };
 
-  // Desktop sidebar only — the mobile bottom nav duplicates the hrefs.
+  // Desktop sidebar only - the mobile bottom nav duplicates the hrefs.
   const sideLink = (href) => page.locator(`nav[aria-label="Main navigation"] a[href="${href}"]`);
 
   await page.goto(`${BASE}/`, { waitUntil: "networkidle", timeout: 60_000 });
   await page.waitForTimeout(1500);
 
-  // ══ Part A — Slash menu scroll behaviour ══════════════════════════════════
+  // ══ Part A - Slash menu scroll behaviour ══════════════════════════════════
   await sideLink("/nofy").click();
   await page.waitForTimeout(1500);
   await page.click('[data-testid="nofy-tab-notes"]');
@@ -68,7 +68,7 @@ const NOISE = [/socket\.io/i, /candles/i, /market-service/i, /favicon/i, /net::E
   check("Wheel over the menu does NOT close it", menuStillOpen);
   const ulScroll = await page.evaluate(() => {
     const ul = document.querySelector('[data-testid="nofy-slash-menu"] ul');
-    if (ul.scrollTop <= 0) ul.scrollTop = 90; // programmatic fallback — same scroll events, same handler path
+    if (ul.scrollTop <= 0) ul.scrollTop = 90; // programmatic fallback - same scroll events, same handler path
     return { scrollable: ul.scrollHeight > ul.clientHeight + 4, scrolled: ul.scrollTop > 0 };
   });
   await page.waitForTimeout(300);
@@ -88,7 +88,7 @@ const NOISE = [/socket\.io/i, /candles/i, /market-service/i, /favicon/i, /net::E
   });
   check("ArrowDown scrolls the active item into view", kbScroll.moved && kbScroll.visible);
 
-  // Page scroll re-anchors the menu instead of closing it — the document is
+  // Page scroll re-anchors the menu instead of closing it - the document is
   // the scroller on this page; drive it directly, then verify the menu moved
   // WITH its source block.
   const scrollInfo = await page.evaluate(() => {
@@ -132,7 +132,7 @@ const NOISE = [/socket\.io/i, /candles/i, /market-service/i, /favicon/i, /net::E
   await anchorBlock.press("Backspace");
   await page.waitForTimeout(1800);
 
-  // ══ Part B — Export PDF ═══════════════════════════════════════════════════
+  // ══ Part B - Export PDF ═══════════════════════════════════════════════════
   await page.click('[data-testid="nofy-note-menu"]');
   await page.waitForTimeout(400);
   check("Export PDF action listed", (await page.locator('[role="menuitem"]', { hasText: "Export PDF" }).count()) === 1);
@@ -164,7 +164,7 @@ const NOISE = [/socket\.io/i, /candles/i, /market-service/i, /favicon/i, /net::E
   const bodyClassAfter = await page.evaluate(() => document.body.classList.contains("printing-nofy"));
   check("body class removed after closing", bodyClassAfter === false);
 
-  // ══ Part C — Nofy ↔ Playbook ══════════════════════════════════════════════
+  // ══ Part C - Nofy ↔ Playbook ══════════════════════════════════════════════
   await sideLink("/playbook").click();
   await page.waitForTimeout(1600);
   await page.click('[data-testid="tab-strategies"]');
@@ -181,7 +181,7 @@ const NOISE = [/socket\.io/i, /candles/i, /market-service/i, /favicon/i, /net::E
   const playbookNoteTitle = await page.locator('[data-testid="nofy-title-input"]').inputValue();
   check(
     "Take notes deep-links into the Nofy editor",
-    page.url().includes("/nofy?tab=notes&note=") && playbookNoteTitle.includes("— playbook notes"),
+    page.url().includes("/nofy?tab=notes&note=") && playbookNoteTitle.includes("- playbook notes"),
     `title=${playbookNoteTitle}`,
   );
   check("Note carries the strategy ref card", (await page.locator('[data-testid="nofy-ref-block"]').count()) >= 1);
@@ -200,12 +200,12 @@ const NOISE = [/socket\.io/i, /candles/i, /market-service/i, /favicon/i, /net::E
   await page.keyboard.press("Escape");
   await page.waitForTimeout(500);
 
-  // ══ Part D — Nofy ↔ Trade Review ══════════════════════════════════════════
+  // ══ Part D - Nofy ↔ Trade Review ══════════════════════════════════════════
   await sideLink("/journal").click();
   await page.waitForTimeout(1600);
   await page.click('[data-testid="tab-reviews"]');
   await page.waitForTimeout(1400);
-  // A REVIEWED row carries the lesson — the pending queue has none to seed.
+  // A REVIEWED row carries the lesson - the pending queue has none to seed.
   await page.locator('[data-testid="review-edit"]').first().click();
   await page.waitForTimeout(1200);
   check("Review dialog opens", await page.locator('[data-testid="review-dialog"]').isVisible());
@@ -217,10 +217,10 @@ const NOISE = [/socket\.io/i, /candles/i, /market-service/i, /favicon/i, /net::E
   const reviewNoteTitle = await page.locator('[data-testid="nofy-title-input"]').inputValue();
   check(
     "Review Take notes deep-links into Nofy",
-    page.url().includes("/nofy?tab=notes&note=") && reviewNoteTitle.includes("— review notes"),
+    page.url().includes("/nofy?tab=notes&note=") && reviewNoteTitle.includes("- review notes"),
     `title=${reviewNoteTitle}`,
   );
-  // Textarea contents are invisible to innerText — read the lesson heading's value.
+  // Textarea contents are invisible to innerText - read the lesson heading's value.
   const lessonHeading = await page.locator('[data-testid="nofy-block"][data-block-type="h3"] textarea').last().inputValue();
   check("Note seeds the review lesson", lessonHeading === "The lesson", `h3=${lessonHeading}`);
   check("Note carries the trade ref card", (await page.locator('[data-testid="nofy-ref-block"]').count()) >= 1);
@@ -247,6 +247,6 @@ const NOISE = [/socket\.io/i, /candles/i, /market-service/i, /favicon/i, /net::E
   await browser.close();
   process.exit(failed.length > 0 ? 1 : 0);
 })().catch((err) => {
-  console.error("CRASH —", err);
+  console.error("CRASH -", err);
   process.exit(2);
 });

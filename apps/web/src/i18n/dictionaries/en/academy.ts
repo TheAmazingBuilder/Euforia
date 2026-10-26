@@ -1,7 +1,7 @@
 import type { Dictionary } from "@/i18n/dictionaries/en";
 
 /**
- * EN dictionary — ACADEMY namespace (canonical; FR mirrors it exactly
+ * EN dictionary - ACADEMY namespace (canonical; FR mirrors it exactly
  * through the `Dictionary` type at fr.ts). Grouped by component concern:
  * view shell, overview dashboard, courses catalog/detail, lesson reader
  * (+ quiz, checkpoint, notes, TOC), lesson-block renderer, exams,
@@ -9,12 +9,12 @@ import type { Dictionary } from "@/i18n/dictionaries/en";
  * picker, pattern drill, candle lab, structure drill + its hardcoded
  * scenario content), engine drills (SR/position/zone), progress panel
  * (+ milestones), bookmarks and the lesson-figure `visuals`. Values are
- * STATIC strings — components compose dynamic parts themselves (the
+ * STATIC strings - components compose dynamic parts themselves (the
  * dict.* pattern). EN values are verbatim the strings the module rendered
  * before migration. Academy API-served CONTENT (lesson bodies, quiz
  * questions/answers, glossary definitions, course/lesson titles,
  * flashcard fronts/backs, drill candles/prompts, recommendation &
- * milestone copy from the mock engine) is DATA, NOT dict material — only
+ * milestone copy from the mock engine) is DATA, NOT dict material - only
  * UI chrome and content hardcoded in the components is migrated here.
  */
 export type AcademyDict = Dictionary["academy"];
@@ -22,7 +22,7 @@ export type AcademyDict = Dictionary["academy"];
 export const academyDict = {
   /** Fragments reused across several academy components. */
   shared: {
-    // LevelBadge enum labels (academy-shared.tsx) — machine ids stay keys.
+    // LevelBadge enum labels (academy-shared.tsx) - machine ids stay keys.
     levels: {
       BEGINNER: "Beginner",
       INTERMEDIATE: "Intermediate",
@@ -45,7 +45,7 @@ export const academyDict = {
   view: {
     title: "Academy",
     subtitle:
-      "Learn → practice → trade → journal → analyze → learn again. The curriculum behind the journal: structured courses, drills, quizzes and a searchable glossary — from market fundamentals to advanced execution.",
+      "Learn → practice → trade → journal → analyze → learn again. The curriculum behind the journal: structured courses, drills, quizzes and a searchable glossary - from market fundamentals to advanced execution.",
     tabs: {
       overview: "Overview",
       courses: "Courses",
@@ -71,7 +71,7 @@ export const academyDict = {
     lessonWord: "lesson",
     continueLesson: "Continue lesson",
     course: "Course",
-    curriculumComplete: "The curriculum is complete. Nothing left to continue — respect.",
+    curriculumComplete: "The curriculum is complete. Nothing left to continue - respect.",
     keepDrillsSharp: "Keep drills sharp",
     resumeTitle: "Pick up where you left off",
     resume: "Resume",
@@ -86,7 +86,7 @@ export const academyDict = {
     streakLabel: "Learning streak",
     days: "days",
     longest: "Longest",
-    activeToday: "Active today — the loop continues.",
+    activeToday: "Active today - the loop continues.",
     noActivityToday: "No activity yet today.",
     coursesCompleted: "Courses completed",
     lessonsCompleted: "Lessons completed",
@@ -94,7 +94,7 @@ export const academyDict = {
     drillAccuracy: "Drill accuracy",
     // Weekly plan.
     weeklyAria: "This week's plan",
-    weeklyTitle: "This week — lessons · drills · quizzes",
+    weeklyTitle: "This week - lessons · drills · quizzes",
     weekComplete: "weekly plan complete",
     weekOfPrefix: "week of ",
     rowLessons: "Lessons",
@@ -104,16 +104,16 @@ export const academyDict = {
     // Recommendations.
     recommendedAria: "Recommended for you",
     recommendedTitle: "Recommended for you",
-    recommendationsEmpty: "Every course completed — the curriculum salutes you. Revisit drills to stay sharp.",
+    recommendationsEmpty: "Every course completed - the curriculum salutes you. Revisit drills to stay sharp.",
     // Recent activity.
     recentAria: "Recently completed",
     recentTitle: "Recently completed",
-    recentEmpty: "Nothing yet — finish your first lesson and it will land here.",
+    recentEmpty: "Nothing yet - finish your first lesson and it will land here.",
     // Bookmarks strip.
     bookmarksAria: "My bookmarks",
     bookmarksTitle: "My bookmarks",
     viewAll: "View all",
-    bookmarksEmpty: "Bookmark lessons and glossary terms with the star button — they will wait here.",
+    bookmarksEmpty: "Bookmark lessons and glossary terms with the star button - they will wait here.",
     // Quick destinations.
     quickAria: "Practice and glossary",
     quickTitle: "Keep the loop turning",
@@ -124,7 +124,7 @@ export const academyDict = {
     // Journal → Academy suggestions.
     journalAria: "From your journal",
     journalTitle: "From your journal",
-    journalDesc: "Patterns the Academy noticed in your closed trades — each suggestion links to the track that addresses it.",
+    journalDesc: "Patterns the Academy noticed in your closed trades - each suggestion links to the track that addresses it.",
     startLesson: "start lesson",
     preferCoursePrefix: "Prefer the full course view? Open ",
     preferCourseSuffix: " →",
@@ -177,7 +177,7 @@ export const academyDict = {
     lessonsSuffix: " lessons",
     // Search results.
     noResultsPrefix: "Nothing found for “",
-    noResultsSuffix: "”. Try a broader term — the glossary also matches definitions.",
+    noResultsSuffix: "”. Try a broader term - the glossary also matches definitions.",
     matchingCoursesAria: "Matching courses",
     matchingLessonsAria: "Matching lessons",
     matchingGlossaryAria: "Matching glossary terms",
@@ -195,7 +195,7 @@ export const academyDict = {
     // Course quiz section.
     quizAria: "Course quiz",
     quizTitle: "Course quiz",
-    quizDesc: "Check your understanding — a few questions, graded with explanations. Only your best score is kept.",
+    quizDesc: "Check your understanding - a few questions, graded with explanations. Only your best score is kept.",
     hideQuiz: "Hide quiz",
     takeQuiz: "Take the quiz",
   },
@@ -233,32 +233,32 @@ export const academyDict = {
     sectionsOfPrefix: "Sections of ",
     // Mid-lesson checkpoint.
     checkpointAria: "Comprehension checkpoint",
-    checkpointTitle: "Quick check — do you have it?",
+    checkpointTitle: "Quick check - do you have it?",
     checkAnswer: "Check answer",
     // Personal notes.
     notesAria: "Your notes",
     notesTitle: "Your notes",
     savedPrefix: "Saved ",
     autosaves: "Autosaves as you type",
-    notesPlaceholder: "What clicked? What do you want to remember before the quiz — or before your next session?",
+    notesPlaceholder: "What clicked? What do you want to remember before the quiz - or before your next session?",
     notesInputAria: "Lesson notes",
     // Inline quiz teaser.
     quizAvailable: "Course quiz available",
-    quizAvailableDesc: "A few questions with explanations — graded server-side, only your best score is kept.",
+    quizAvailableDesc: "A few questions with explanations - graded server-side, only your best score is kept.",
     startQuiz: "Start quiz",
     backToCourse: "Back to course",
     // Course quiz.
     correctSuffix: " correct",
-    passed: "Perfect score — the concept is yours.",
+    passed: "Perfect score - the concept is yours.",
     previousBestPrefix: "Previous best: ",
     previousBestSuffix: ". Only the best score is kept.",
-    failedHint: "Review the explanations, then retake — only the best score is kept.",
+    failedHint: "Review the explanations, then retake - only the best score is kept.",
     retake: "Retake",
     close: "Close",
-    quizHeadingSuffix: " — quiz · ",
+    quizHeadingSuffix: " - quiz · ",
     answeredSuffix: " answered",
     submitAnswers: "Submit answers",
-    gradedServerNote: "Graded on the server — answers never leave the engine ungraded.",
+    gradedServerNote: "Graded on the server - answers never leave the engine ungraded.",
   },
 
   // ── Lesson block renderer (lesson-blocks.tsx) ────────────────────────────
@@ -282,7 +282,7 @@ export const academyDict = {
   exams: {
     aria: "Certifications",
     title: "Certifications",
-    tiersNote: "Bronze ≥50% · Silver ≥70% · Gold ≥90% — best attempt kept",
+    tiersNote: "Bronze ≥50% · Silver ≥70% · Gold ≥90% - best attempt kept",
     poolSuffix: " questions in pool · ",
     attempt: "attempt",
     attemptPlural: "s",
@@ -297,25 +297,25 @@ export const academyDict = {
     bestAcrossPrefix: "Best across attempts: ",
     bestAcrossMiddle: "% · ",
     earned: "certification earned.",
-    bronzeHint: "50% unlocks Bronze — review the explanations and retake.",
+    bronzeHint: "50% unlocks Bronze - review the explanations and retake.",
     retakeNewSample: "Retake (new sample)",
     // Exam paper.
     examHeading: "Certification exam · ",
     answeredSuffix: " answered",
     submitExam: "Submit exam",
-    gradedServerNote: "Graded on the server — only your best attempt counts.",
+    gradedServerNote: "Graded on the server - only your best attempt counts.",
   },
 
-  // ── Flashcards — daily review (academy-flashcards.tsx, Flashcards) ───────
+  // ── Flashcards - daily review (academy-flashcards.tsx, Flashcards) ───────
   flashcards: {
     aria: "Flashcard review",
-    title: "Daily review — flashcards",
+    title: "Daily review - flashcards",
     sessionComplete: "session complete",
     dueTodayPrefix: " · ",
     dueTodaySuffix: " due today",
-    desc: "Spaced repetition over the glossary and every lesson takeaway — ten cards a day keeps recall honest.",
-    deckEmpty: "Nothing due right now — the deck is clear. Come back tomorrow.",
-    sessionDonePrefix: "Session complete — ",
+    desc: "Spaced repetition over the glossary and every lesson takeaway - ten cards a day keeps recall honest.",
+    deckEmpty: "Nothing due right now - the deck is clear. Come back tomorrow.",
+    sessionDonePrefix: "Session complete - ",
     sessionDoneSuffix: " cards graded.",
     sessionDoneDesc: "Cards you marked AGAIN return tomorrow; GOOD and EASY drift further out.",
     showFrontAria: "Show front of card",
@@ -325,7 +325,7 @@ export const academyDict = {
     freePractice: "free practice",
     answer: "Answer",
     prompt: "Prompt",
-    tapToReveal: "Tap to reveal — recall first, then check.",
+    tapToReveal: "Tap to reveal - recall first, then check.",
     grades: {
       AGAIN: "Again",
       GOOD: "Good",
@@ -337,11 +337,11 @@ export const academyDict = {
   // ── Scenario player (academy-flashcards.tsx, ScenarioPlayer) ─────────────
   scenario: {
     aria: "Scenario player",
-    title: "Scenario player — what would you do?",
+    title: "Scenario player - what would you do?",
     desc: "Step inside a market situation and choose the professional action. Every step gives feedback; every decision is logged.",
     stepsSuffix: " steps",
     alignedSuffix: " aligned with the professional read",
-    alignmentNote: "Alignment, not perfection — every step traded the same edge: pattern + context + location + structure + confirmation + risk.",
+    alignmentNote: "Alignment, not perfection - every step traded the same edge: pattern + context + location + structure + confirmation + risk.",
     backToScenarios: "Back to scenarios",
     stepWord: "step",
     exit: "exit",
@@ -351,13 +351,13 @@ export const academyDict = {
 
   // ── Glossary (academy-glossary.tsx) ──────────────────────────────────────
   glossary: {
-    searchPlaceholder: "Search the vocabulary — term, definition or related concept…",
+    searchPlaceholder: "Search the vocabulary - term, definition or related concept…",
     searchAria: "Search the glossary",
     clearSearch: "Clear glossary search",
     termsSuffix: " terms",
     layeredNote: " · layered definitions: simple first, professional second. The letter tile carries the track color the term belongs to.",
     emptyPrefix: "No term matches “",
-    emptySuffix: "”. Try a broader word — or the Courses search, which also covers lessons.",
+    emptySuffix: "”. Try a broader word - or the Courses search, which also covers lessons.",
     removeBookmarkPrefix: "Remove bookmark for ",
     bookmarkPrefix: "Bookmark ",
     simple: "Simple",
@@ -373,13 +373,13 @@ export const academyDict = {
     ledgerTitle: "Practice ledger",
     lastAttemptsPrefix: "last ",
     lastAttemptsSuffix: " attempts",
-    ledgerEmpty: "No attempts yet — your per-drill accuracy will build here as you train.",
+    ledgerEmpty: "No attempts yet - your per-drill accuracy will build here as you train.",
     correctTitleSuffix: " correct",
     // Candle ink picker.
     inkLabel: "Candle ink",
     inkAria: "Candle ink palette",
     inkColorsSuffix: " candle colors",
-    inkTitleSuffix: " — same patterns, different inks",
+    inkTitleSuffix: " - same patterns, different inks",
     inkPalettes: {
       classic: "Classic",
       inverse: "Inverse",
@@ -387,12 +387,12 @@ export const academyDict = {
       violet: "Violet",
       mono: "Mono",
     },
-    inkHint: "Same anatomy, different ink — in some markets red means “up”. Read the pattern, not the palette.",
+    inkHint: "Same anatomy, different ink - in some markets red means “up”. Read the pattern, not the palette.",
     // Pattern identification drill.
     patternAria: "Identify the pattern",
     patternTitle: "Identify the pattern",
     roundPrefix: "round ",
-    patternIntro: "A formation is drawn below. Name it — then read the explanation. ",
+    patternIntro: "A formation is drawn below. Name it - then read the explanation. ",
     contextPrefix: "Context: ",
     optionsAria: "Pattern options",
     correct: "Correct.",
@@ -401,7 +401,7 @@ export const academyDict = {
     // Candle Lab.
     labAria: "Candle lab",
     labTitle: "Candle Lab",
-    labDesc: "Drag open, high, low and close — watch the candle rebuild and read what it says. The anatomy every pattern assumes.",
+    labDesc: "Drag open, high, low and close - watch the candle rebuild and read what it says. The anatomy every pattern assumes.",
     ohlc: {
       open: "Open",
       high: "High",
@@ -413,13 +413,13 @@ export const academyDict = {
     readBody: "Body",
     readUpperWick: "Upper wick",
     readLowerWick: "Lower wick",
-    bullDir: "Bullish — close above open",
-    bearDir: "Bearish — close below open",
-    bodySmall: "Small — balance between sides",
-    bodyLarge: "Large — one side dominated",
+    bullDir: "Bullish - close above open",
+    bearDir: "Bearish - close below open",
+    bodySmall: "Small - balance between sides",
+    bodyLarge: "Large - one side dominated",
     bodyMedium: "Medium",
-    wickLongHighs: "Long — highs rejected",
-    wickLongLows: "Long — lows rejected, buyers stepped in",
+    wickLongHighs: "Long - highs rejected",
+    wickLongLows: "Long - lows rejected, buyers stepped in",
     wickNone: "None meaningful",
     wickShort: "Short",
     // Structure reading drill.
@@ -432,26 +432,26 @@ export const academyDict = {
       uptrend: {
         context: "Daily timeframe, no news scheduled.",
         prompt: "What state is this market in?",
-        opt1: "Uptrend — repeating HH/HL sequence",
+        opt1: "Uptrend - repeating HH/HL sequence",
         opt2: "Downtrend",
-        opt3: "Range — no directional progression",
-        explanation: "Higher highs and higher lows repeating: an uptrend by definition. Trend tactics apply — pullback entries, not fades.",
+        opt3: "Range - no directional progression",
+        explanation: "Higher highs and higher lows repeating: an uptrend by definition. Trend tactics apply - pullback entries, not fades.",
       },
       bosUp: {
         context: "Within an established uptrend.",
         prompt: "The highlighted event is best labeled…",
-        opt1: "BOS — break of structure, continuation",
-        opt2: "CHoCH — change of character",
+        opt1: "BOS - break of structure, continuation",
+        opt2: "CHoCH - change of character",
         opt3: "Liquidity sweep",
-        explanation: "A decisive close above the prior swing high IN the trend's direction is a break of structure — a continuation event, not a reversal warning.",
+        explanation: "A decisive close above the prior swing high IN the trend's direction is a break of structure - a continuation event, not a reversal warning.",
       },
       choch: {
         context: "After a long series of HH/HL.",
         prompt: "Price just closed below the last higher low. This event is…",
-        opt1: "CHoCH — first warning of a possible reversal",
-        opt2: "A confirmed downtrend — go short at market",
+        opt1: "CHoCH - first warning of a possible reversal",
+        opt2: "A confirmed downtrend - go short at market",
         opt3: " meaningless noise",
-        explanation: "First counter-trend structural break = change of character. It is a warning, not a confirmed reversal — the MSS (LH then LL) is the confirmation stage.",
+        explanation: "First counter-trend structural break = change of character. It is a warning, not a confirmed reversal - the MSS (LH then LL) is the confirmation stage.",
       },
       range: {
         context: "Two levels tested repeatedly over weeks.",
@@ -466,8 +466,8 @@ export const academyDict = {
         prompt: "What did the pierce below the equal lows most plausibly do?",
         opt1: "Swept resting sell-stops, then reversed",
         opt2: "Confirmed a breakdown",
-        opt3: "Nothing — it is a data error",
-        explanation: "The observable sequence — pierce beyond obvious lows, fast reversal — is the classic sweep. Trade the reversal sequence with a stop beyond the sweep extreme.",
+        opt3: "Nothing - it is a data error",
+        explanation: "The observable sequence - pierce beyond obvious lows, fast reversal - is the classic sweep. Trade the reversal sequence with a stop beyond the sweep extreme.",
       },
       doubleTop: {
         context: "Two peaks at the same supply area.",
@@ -487,12 +487,12 @@ export const academyDict = {
     // Support / Resistance.
     srAria: "Support and resistance drill",
     srTitle: "Support / Resistance",
-    srDesc: "Read what the level is doing — the reaction tells you which side it serves.",
+    srDesc: "Read what the level is doing - the reaction tells you which side it serves.",
     nextLevel: "Next level",
     // Position sizing.
     positionAria: "Position sizing drill",
     positionTitle: "Position sizing",
-    positionDesc: "Risk arithmetic until it is reflex — the only formula that keeps accounts alive.",
+    positionDesc: "Risk arithmetic until it is reflex - the only formula that keeps accounts alive.",
     positionInputAria: "Position size",
     check: "Check",
     withinBudget: "within budget",
@@ -512,7 +512,7 @@ export const academyDict = {
     overallProgress: "Overall progress",
     lessonsMid: " lessons · ",
     coursesEnd: " courses completed",
-    arcsNote: "Each arc is a teaching track — its length is fixed, its fill is your completion.",
+    arcsNote: "Each arc is a teaching track - its length is fixed, its fill is your completion.",
     streak: "Streak",
     days: "days",
     longestPrefix: "Longest ",
@@ -524,11 +524,11 @@ export const academyDict = {
     byCategoryAria: "Progress by category",
     byCategoryTitle: "By category",
     categoryCompletedAria: "Category completed",
-    rereadNote: "Completed courses stay open — rereading a lesson after a few live weeks is where it actually clicks.",
+    rereadNote: "Completed courses stay open - rereading a lesson after a few live weeks is where it actually clicks.",
     // Milestones.
     milestonesAria: "Milestones",
     milestonesTitle: "Milestones",
-    milestonesDesc: "No vanity badges — each milestone is computed from what you have actually done.",
+    milestonesDesc: "No vanity badges - each milestone is computed from what you have actually done.",
     earnedChip: "earned",
     earnedPrefix: "earned ",
   },
@@ -536,7 +536,7 @@ export const academyDict = {
   // ── Bookmarks shelf (academy-bookmarks.tsx) ──────────────────────────────
   bookmarks: {
     emptyTitle: "Nothing bookmarked yet",
-    emptyDesc: "Star any lesson from its reader, or any glossary term from the vocabulary — your saved spots line up here.",
+    emptyDesc: "Star any lesson from its reader, or any glossary term from the vocabulary - your saved spots line up here.",
     browseCourses: "Browse courses",
     openGlossary: "Open the glossary",
     removeAriaPrefix: "Remove bookmark: ",
@@ -557,15 +557,15 @@ export const academyDict = {
     structureAria: "Market structure diagram",
     drawdownAria: "Drawdown diagram",
     riskRewardAria: "Risk/reward diagram",
-    anatomyBullCaption: "Bullish candle — close above open. The lower wick marks rejected lows.",
-    anatomyBearCaption: "Bearish candle — close below open. The upper wick marks rejected highs.",
-    zonesCaption: "Zones, not lines — width is part of the level. Reaction is expected at the band's edge.",
+    anatomyBullCaption: "Bullish candle - close above open. The lower wick marks rejected lows.",
+    anatomyBearCaption: "Bearish candle - close below open. The upper wick marks rejected highs.",
+    zonesCaption: "Zones, not lines - width is part of the level. Reaction is expected at the band's edge.",
   },
 
   // ── Events (academy-events.tsx) ─────────────────────────────────────────
   events: {
     title: "Live sessions",
-    subtitle: "Workshops, webinars, open Q&A and certification windows — the Academy's live calendar.",
+    subtitle: "Workshops, webinars, open Q&A and certification windows - the Academy's live calendar.",
     upcoming: "Upcoming",
     past: "Past sessions",
     replay: "Replay available",
@@ -580,9 +580,9 @@ export const academyDict = {
     beginsIn: "Starts",
     today: "Today",
     tomorrow: "Tomorrow",
-    emptyUpcoming: "No sessions scheduled — check back soon.",
+    emptyUpcoming: "No sessions scheduled - check back soon.",
     emptyPast: "No past sessions yet.",
-    registerToast: "Seat reserved — see you there",
+    registerToast: "Seat reserved - see you there",
     unregisterToast: "Registration cancelled",
     typeLabels: {
       WORKSHOP: "Workshop",
@@ -595,7 +595,7 @@ export const academyDict = {
   // ── Tasky (academy-tasky.tsx) ───────────────────────────────────────────
   tasky: {
     title: "Study tasks",
-    subtitle: "Your learning backlog, one checklist at a time — small reps, steady streak.",
+    subtitle: "Your learning backlog, one checklist at a time - small reps, steady streak.",
     focus: "Today's focus",
     upcoming: "Upcoming",
     done: "Completed",
@@ -613,7 +613,7 @@ export const academyDict = {
     streakDays: "day streak",
     totalXp: "XP earned",
     completedOf: "of",
-    empty: "Nothing here — add your first task above.",
+    empty: "Nothing here - add your first task above.",
     kindLabels: {
       LESSON: "Lesson",
       DRILL: "Drill",
@@ -628,7 +628,7 @@ export const academyDict = {
     delete: "Delete task",
     reopen: "Reopen",
     toastAdded: "Task added",
-    toastDone: "Task completed — nice",
+    toastDone: "Task completed - nice",
     toastReopened: "Task reopened",
     toastDeleted: "Task deleted",
   },

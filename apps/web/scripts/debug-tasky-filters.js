@@ -1,4 +1,4 @@
-/* Debug — Tasky search + priority filter behavior. */
+/* Debug - Tasky search + priority filter behavior. */
 const { chromium } = require("playwright");
 
 (async () => {

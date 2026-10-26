@@ -32,7 +32,7 @@ import { TourStep } from "./steps/tour-step";
 import { WelcomeStep } from "./steps/welcome-step";
 
 /**
- * FirstRunOnboarding — the blocking, full-screen first-run experience.
+ * FirstRunOnboarding - the blocking, full-screen first-run experience.
  *
  * Integration point: mounted ONCE inside the authenticated shell (AuthGate
  * children), so it can only ever appear after the identity is resolved and
@@ -40,13 +40,13 @@ import { WelcomeStep } from "./steps/welcome-step";
  *
  * Behavior contract:
  *  - renders ONLY while eligibility === "eligible" (state machine in
- *    lib/onboarding/state.ts — never on fetch errors, never for completed
+ *    lib/onboarding/state.ts - never on fetch errors, never for completed
  *    or skipped users, never for users predating the feature);
  *  - Radix modal semantics: focus trapped, outside pointer interactions
  *    blocked, focus restored on close;
  *  - ESC / the close control PAUSE the flow (state stays IN_PROGRESS at the
  *    persisted resume pointer; a toast confirms; the tour reopens on the
- *    next session) — pausing never fabricates completion;
+ *    next session) - pausing never fabricates completion;
  *  - step transitions are deterministic: one exit tween with a hard
  *    fallback timer, then the step commits and progress persists;
  *  - reduced motion: entrances/exits collapse to instant state changes.
@@ -63,14 +63,14 @@ export function FirstRunOnboarding() {
   const contentRef = React.useRef<HTMLDivElement>(null);
 
   // Derived, never stored: the overlay is open exactly while the user is
-  // eligible AND has not paused during this session — it cannot flicker for
+  // eligible AND has not paused during this session - it cannot flicker for
   // existing users while state loads, and cannot re-open after a pause.
   const open = controller.status === "eligible" && !pausedThisSession;
 
-  // One initialization per eligibility episode — the persisted resume
+  // One initialization per eligibility episode - the persisted resume
   // pointer seeds the local step EXACTLY once; subsequent navigation is
   // purely local (a failed progress write must not yank the user back).
-  // React-documented "adjust state during render" pattern — NOT an effect.
+  // React-documented "adjust state during render" pattern - NOT an effect.
   const [episode, setEpisode] = React.useState<{ active: boolean; step: OnboardingStepId }>({
     active: false,
     step: "welcome",
@@ -82,7 +82,7 @@ export function FirstRunOnboarding() {
   }
   const step = episode.step;
 
-  // Scoped, cleanup-safe entrance animation — re-runs per step change.
+  // Scoped, cleanup-safe entrance animation - re-runs per step change.
   useOnbStepEntrance(contentRef, step, reduce);
 
   // Per-step focus: the step heading takes focus after each transition so
@@ -133,7 +133,7 @@ export function FirstRunOnboarding() {
   const handleCompleteNavigate = React.useCallback(
     (href: string) => {
       // Completion was confirmed by the backend BEFORE this call; the status
-      // flip closes the overlay — navigation hands off to the real shell.
+      // flip closes the overlay - navigation hands off to the real shell.
       setPausedThisSession(true);
       router.push(href);
     },
@@ -164,7 +164,7 @@ export function FirstRunOnboarding() {
     <Dialog
       open={open}
       onOpenChange={(next) => {
-        // Every dismiss path (ESC, outside click) is a PAUSE — progress is
+        // Every dismiss path (ESC, outside click) is a PAUSE - progress is
         // already persisted at each step change.
         if (!next) pause();
       }}
@@ -186,7 +186,7 @@ export function FirstRunOnboarding() {
         aria-describedby={undefined}
         className="top-0 left-0 z-50 h-dvh w-full max-w-none translate-x-0 translate-y-0 rounded-none border-0 bg-background p-0 text-foreground ring-0 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0 sm:max-w-none"
       >
-        {/* Radix a11y contract — the visible step headings are below. */}
+        {/* Radix a11y contract - the visible step headings are below. */}
         <DialogTitle className="sr-only">Euforia setup</DialogTitle>
         <DialogDescription className="sr-only">{dict.welcome.body}</DialogDescription>
 
@@ -214,7 +214,7 @@ export function FirstRunOnboarding() {
           </header>
 
           {/* Polite step announcements (the ONLY place meaning is conveyed
-              textually — never by animation alone). */}
+              textually - never by animation alone). */}
           <p aria-live="polite" className="sr-only">
             {liveAnnouncement}
           </p>

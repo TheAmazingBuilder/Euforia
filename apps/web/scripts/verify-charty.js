@@ -1,5 +1,5 @@
 /**
- * Charty terminal probe — the TradingView-grade frontend refonte of the
+ * Charty terminal probe - the TradingView-grade frontend refonte of the
  * Session Live workspace (rename + full-width terminal):
  *   1. Rename: sidebar "Charty" + page h1 "Charty";
  *   2. Top toolbar: symbol pill (avatar), timeframes, style/volume/grid
@@ -24,11 +24,11 @@ const pageErrors = [];
 
 function ok(label, extra = "") {
   passed += 1;
-  console.log(`  ✓ ${label}${extra ? ` — ${extra}` : ""}`);
+  console.log(`  ✓ ${label}${extra ? ` - ${extra}` : ""}`);
 }
 function bad(label, extra = "") {
   failedCount += 1;
-  console.log(`  ✗ ${label}${extra ? ` — ${extra}` : ""}`);
+  console.log(`  ✗ ${label}${extra ? ` - ${extra}` : ""}`);
 }
 async function check(label, condition, extra = "") {
   condition ? ok(label, extra) : bad(label, extra);
@@ -53,7 +53,7 @@ async function openCharty(page) {
 (async () => {
   const browser = await chromium.launch();
 
-  // ── Desktop dark — the main walkthrough ──────────────────────────────────
+  // ── Desktop dark - the main walkthrough ──────────────────────────────────
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   page.on("pageerror", (e) => pageErrors.push("PAGEERROR: " + String(e).slice(0, 300)));
   page.on("console", (m) => {
@@ -105,7 +105,7 @@ async function openCharty(page) {
   await check("dropdown lists trading accounts", accountItems >= 1, `${accountItems} item(s)`);
   const manageHref = await page.locator('[data-testid="charty-account-manage"]').getAttribute("href").catch(() => null);
   await check("manage link routes to /accounts", manageHref === "/accounts", `href=${manageHref ?? "?"}`);
-  // Select the SECOND account (mock engine has 3 seeded) — pill must update.
+  // Select the SECOND account (mock engine has 3 seeded) - pill must update.
   if (accountItems >= 2) {
     const firstPill = pillText.trim();
     await page.locator('[data-testid^="charty-account-item-"]').nth(1).click();
@@ -126,7 +126,7 @@ async function openCharty(page) {
   const toolButtons = await page.locator('[data-testid="charty-left-rail"] [data-testid^="drawing-tool-"]').count();
   await check("7 drawing tools in rail", toolButtons === 7, `${toolButtons} tools`);
   await check("rail undo + clear", (await page.locator('[data-testid="charty-undo"]').count()) === 1 && (await page.locator('[data-testid="charty-clear"]').count()) === 1);
-  // Arm a tool from the rail — the armed hint appears on the chart.
+  // Arm a tool from the rail - the armed hint appears on the chart.
   await page.locator('[data-testid="drawing-tool-TREND"]').click();
   await page.waitForTimeout(400);
   await check("arming a tool shows the chart hint", await page.locator('[data-testid="chart-tool-hint"]').isVisible());

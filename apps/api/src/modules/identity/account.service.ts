@@ -4,14 +4,14 @@
  *
  * Phase 15: the 9-domain preferences doc moved to the dedicated Settings
  * bounded context (modules/settings). This service keeps ONE preferences
- * responsibility — the Localization↔Profile timezone mirror (single source
+ * responsibility - the Localization↔Profile timezone mirror (single source
  * of truth: Profile, settings.ts boundary rules): a profile timezone change
  * mirrors into the existing preferences document through the narrow
  * updatePreferences contract. If the document does not exist yet, there is
- * nothing to mirror — Settings provisions it from the current profile.
+ * nothing to mirror - Settings provisions it from the current profile.
  *
  * Email change (§24): the new address must complete verification before it
- * becomes the verified identity — until then the account returns to
+ * becomes the verified identity - until then the account returns to
  * PENDING_VERIFICATION (login gate: EMAIL_NOT_VERIFIED). The old address is
  * never automatically verified.
  */
@@ -97,7 +97,7 @@ export class AccountService {
 
     // One source of truth for timezone = Profile (settings.ts boundary rule):
     // mirror into the preferences localization domain when the document
-    // already exists (Phase 15 — Settings owns the doc and its provisioning;
+    // already exists (Phase 15 - Settings owns the doc and its provisioning;
     // a missing document is provisioned from the current profile instead).
     if (input.timezone !== undefined && user.preferences) {
       const doc = userPreferencesSchema.parse(user.preferences);
@@ -117,7 +117,7 @@ export class AccountService {
         userId: user.id,
         type: "SENSITIVE_SETTINGS_CHANGED",
         actor: user.email,
-        context: `Email change requested — verification sent to ${updated.email}.`,
+        context: `Email change requested - verification sent to ${updated.email}.`,
       });
     }
 
@@ -141,7 +141,7 @@ export class AccountService {
       userId: user.id,
       type: "SENSITIVE_SETTINGS_CHANGED",
       actor: user.email,
-      context: "Account deactivated — all sessions signed out.",
+      context: "Account deactivated - all sessions signed out.",
     });
     void now;
     return { status: "DEACTIVATED" as const, deactivatedAt: now.toISOString() };

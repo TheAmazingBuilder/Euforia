@@ -3,19 +3,19 @@ import { directionSchema } from "../enums";
 import { decimalStringSchema, isoDateTimeSchema, uuidSchema } from "./primitives";
 
 /**
- * Phase 11 — the Trade Plan contract: documented market reasoning (thesis,
+ * Phase 11 - the Trade Plan contract: documented market reasoning (thesis,
  * invalidation criteria, alternative scenarios, post-trade review).
  *
  * Distinctions the whole module enforces:
- *   - A plan is NOT an order and NOT a broker position — nothing here ever
+ *   - A plan is NOT an order and NOT a broker position - nothing here ever
  *     transmits levels to a broker or creates/modifies a trade.
  *   - Hypothetical levels (plannedEntry/plannedStop/plannedTargets) travel as
  *     decimal strings and stay structurally SEPARATE from canonical trade
  *     facts (the canonical Trade row is never written by this domain).
- *   - Invalidation is MANUAL (user action + reason) — no automatic rule
+ *   - Invalidation is MANUAL (user action + reason) - no automatic rule
  *     engine exists in this build, so none is claimed.
  *   - A winning trade never proves the thesis, a losing trade never
- *     disproves it — the review is process-focused by design.
+ *     disproves it - the review is process-focused by design.
  */
 
 // ── Lifecycle ────────────────────────────────────────────────────────────────
@@ -23,7 +23,7 @@ import { decimalStringSchema, isoDateTimeSchema, uuidSchema } from "./primitives
 export const planStatusSchema = z.enum(["DRAFT", "ACTIVE", "INVALIDATED", "COMPLETED", "ARCHIVED"]);
 export type PlanStatus = z.infer<typeof planStatusSchema>;
 
-/** Explicit transition table — the API rejects anything not listed (§11.3). */
+/** Explicit transition table - the API rejects anything not listed (§11.3). */
 export const PLAN_TRANSITIONS: Record<PlanStatus, PlanStatus[]> = {
   DRAFT: ["ACTIVE", "ARCHIVED"],
   ACTIVE: ["INVALIDATED", "COMPLETED", "ARCHIVED"],
@@ -41,7 +41,7 @@ export function planIsEditable(status: PlanStatus): boolean {
   return status === "DRAFT" || status === "ACTIVE";
 }
 
-/** Stable, extensible process tags — neutral language, no judgment (§9.3). */
+/** Stable, extensible process tags - neutral language, no judgment (§9.3). */
 export const PLAN_PROCESS_TAGS = [
   "followed_plan",
   "deviated_from_plan",
@@ -52,15 +52,15 @@ export const PLAN_PROCESS_TAGS = [
 export const planProcessTagSchema = z.enum(PLAN_PROCESS_TAGS);
 export type PlanProcessTag = z.infer<typeof planProcessTagSchema>;
 
-// ── Scenarios (nested schema — stable ids, conditional reasoning) ────────────
+// ── Scenarios (nested schema - stable ids, conditional reasoning) ────────────
 
 export const planScenarioSchema = z.object({
   /** Stable client-generated id (reorder-friendly). */
   id: z.string().min(8).max(64),
-  /** PRIMARY | ALTERNATIVE | INVALIDATION — organizational labels, not predictions. */
+  /** PRIMARY | ALTERNATIVE | INVALIDATION - organizational labels, not predictions. */
   role: z.enum(["PRIMARY", "ALTERNATIVE", "INVALIDATION"]),
   title: z.string().min(1).max(120),
-  /** Conditional description — "if X then Y", never a bare direction. */
+  /** Conditional description - "if X then Y", never a bare direction. */
   description: z.string().min(1).max(2000),
   /** What supports the scenario (free text, optional). */
   supports: z.string().max(1000).nullable().optional(),
@@ -68,7 +68,7 @@ export const planScenarioSchema = z.object({
   falsifiedBy: z.string().max(1000).nullable().optional(),
   /** Optional reference levels (decimal strings, hypothetical). */
   referenceLevels: z.array(decimalStringSchema).max(6).optional(),
-  /** User-entered subjective estimate ONLY — never engine-derived. */
+  /** User-entered subjective estimate ONLY - never engine-derived. */
   probabilityPct: z.number().int().min(0).max(100).nullable().optional(),
   /** Post-review outcome notes (optional, filled at review time). */
   outcomeNotes: z.string().max(1000).nullable().optional(),
@@ -85,7 +85,7 @@ export const analysisPlanSchema = z.object({
   timeframe: z.string().max(16).nullable(),
   title: z.string().min(1).max(120),
   thesis: z.string().min(1).max(4000),
-  /** Canonical journal trade link (nullable — a plan may exist unlinked). */
+  /** Canonical journal trade link (nullable - a plan may exist unlinked). */
   tradeId: uuidSchema.nullable(),
   /** Oryon chart-analysis reference (Phase 10 integration, nullable). */
   analysisId: uuidSchema.nullable(),
@@ -96,7 +96,7 @@ export const analysisPlanSchema = z.object({
   processTags: z.array(planProcessTagSchema).max(5).nullable(),
   reviewedAt: isoDateTimeSchema.nullable(),
   completedAt: isoDateTimeSchema.nullable(),
-  /** Hypothetical levels — explicitly NOT execution facts (decimal strings). */
+  /** Hypothetical levels - explicitly NOT execution facts (decimal strings). */
   plannedEntry: decimalStringSchema.nullable(),
   plannedStop: decimalStringSchema.nullable(),
   plannedTargets: z.array(decimalStringSchema).max(6).nullable(),
@@ -124,7 +124,7 @@ export const createAnalysisPlanInputSchema = z.object({
   referenceTimeSec: z.number().int().nonnegative().nullable().optional(),
   scenarios: z.array(planScenarioSchema).max(6).optional(),
   analysisId: uuidSchema.nullable().optional(),
-  /** Optimistic client idempotency (uuid) — the unique key collapses retries. */
+  /** Optimistic client idempotency (uuid) - the unique key collapses retries. */
   clientRequestId: uuidSchema.optional(),
   /** Create-and-activate in one call (draft save stays the default). */
   activate: z.boolean().optional(),
@@ -151,29 +151,29 @@ export const updateAnalysisPlanInputSchema = z
   });
 export type UpdateAnalysisPlanInput = z.infer<typeof updateAnalysisPlanInputSchema>;
 
-/** POST /plans/:id/link-trade — canonical-trade linkage (§4.2). */
+/** POST /plans/:id/link-trade - canonical-trade linkage (§4.2). */
 export const linkPlanTradeInputSchema = z.object({
   tradeId: uuidSchema,
-  /** The client CONFIRMED a symbol mismatch in the UI — without this flag a
+  /** The client CONFIRMED a symbol mismatch in the UI - without this flag a
    * mismatching link is a 422, never a silent normalization. */
   confirmSymbolMismatch: z.boolean().optional(),
 });
 export type LinkPlanTradeInput = z.infer<typeof linkPlanTradeInputSchema>;
 
-/** POST /plans/:id/invalidate — manual invalidation with a reason (§8.1). */
+/** POST /plans/:id/invalidate - manual invalidation with a reason (§8.1). */
 export const invalidatePlanInputSchema = z.object({
   reason: z.string().trim().min(1).max(1000),
 });
 export type InvalidatePlanInput = z.infer<typeof invalidatePlanInputSchema>;
 
-/** POST /plans/:id/complete — the post-trade review (§9). */
+/** POST /plans/:id/complete - the post-trade review (§9). */
 export const completePlanInputSchema = z.object({
   reviewNotes: z.string().max(4000).nullable().optional(),
   processTags: z.array(planProcessTagSchema).max(5).nullable().optional(),
 });
 export type CompletePlanInput = z.infer<typeof completePlanInputSchema>;
 
-// ── Planned vs actual (facts only — missing values stay null, §9.2) ─────────
+// ── Planned vs actual (facts only - missing values stay null, §9.2) ─────────
 
 export const planComparisonLegSchema = z.object({
   planned: decimalStringSchema.nullable(),
@@ -182,7 +182,7 @@ export const planComparisonLegSchema = z.object({
 });
 export type PlanComparisonLeg = z.infer<typeof planComparisonLegSchema>;
 
-/** Canonical trade facts at comparison time — read-only, never overwritten. */
+/** Canonical trade facts at comparison time - read-only, never overwritten. */
 export const planTradeFactsSchema = z.object({
   tradeId: uuidSchema,
   status: z.string().min(1).max(32),
@@ -199,7 +199,7 @@ export const planTradeFactsSchema = z.object({
 export type PlanTradeFacts = z.infer<typeof planTradeFactsSchema>;
 
 export const planComparisonSchema = z.object({
-  /** null when the plan has no linked trade — no fabricated comparisons. */
+  /** null when the plan has no linked trade - no fabricated comparisons. */
   trade: planTradeFactsSchema.nullable(),
   direction: z.object({
     planned: directionSchema.nullable(),

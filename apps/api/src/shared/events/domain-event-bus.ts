@@ -3,7 +3,7 @@
  *
  * WHY: Session Live must SUBSCRIBE to canonical domain events ("Session Live
  * should subscribe to canonical domain/provider events. It must not become
- * the event source of truth") without creating module cycles — Trading Core
+ * the event source of truth") without creating module cycles - Trading Core
  * (the producer) and Session Live (the consumer) would otherwise have to
  * import each other. A tiny typed in-process bus breaks that coupling while
  * keeping the one-way dependency graph: both contexts depend on this leaf
@@ -18,19 +18,19 @@
  *    subscriber failures to the producer (the producer's transaction already
  *    committed; a slow/broken consumer must not fail the producing request).
  *  - subscriber errors are logged (structured, ids only) and contained.
- *  - synchronous in-process delivery — no persistence, no retry, no
+ *  - synchronous in-process delivery - no persistence, no retry, no
  *    cross-process fan-out. Persisted projections are the consumer's duty
  *    (Session Live persists TradingSessionEvent rows at delivery time).
- *  - teardown: `unsubscribeAll(subscriber)` — real-time contexts must not
+ *  - teardown: `unsubscribeAll(subscriber)` - real-time contexts must not
  *    leak listeners on shutdown (Phase 10 §47 resource management).
  */
 import { EventEmitter } from "node:events";
 
 import type { RootLogger } from "../../infrastructure/logging/logger.factory";
 
-/** Canonical domain events (grow the map additively — never re-shape). */
+/** Canonical domain events (grow the map additively - never re-shape). */
 export interface DomainEventMap {
-  /** Trading Core — a journal trade was created (manual capture path). */
+  /** Trading Core - a journal trade was created (manual capture path). */
   "trade.created": {
     userId: string;
     tradeId: string;
@@ -43,7 +43,7 @@ export interface DomainEventMap {
     /** Event instant (UTC ISO). */
     at: string;
   };
-  /** Integrations (Phase 14 §21/§29) — a signature-verified inbound webhook
+  /** Integrations (Phase 14 §21/§29) - a signature-verified inbound webhook
    * was accepted and normalized. Consumer domains (e.g. Calendar applying an
    * actual release) subscribe at their own pace; the Hub only publishes. */
   "integration.webhook.received": {
@@ -52,7 +52,7 @@ export interface DomainEventMap {
     endpointId: string;
     eventId: string;
     eventType: string;
-    /** Normalized provider payload — signature already verified. */
+    /** Normalized provider payload - signature already verified. */
     payload: Record<string, unknown>;
     /** Event instant (UTC ISO). */
     at: string;
@@ -75,7 +75,7 @@ export class DomainEventBus {
   }
 
   /**
-   * Fire-and-forget publish — never throws to the producer. Subscriber
+   * Fire-and-forget publish - never throws to the producer. Subscriber
    * handlers are wrapped by `wrap` (error-contained) and dispatched off the
    * producer's stack so subscriber work never lands in the producing request.
    */
@@ -91,7 +91,7 @@ export class DomainEventBus {
 
   /**
    * Register an error-contained handler attributed to `subscriber`:
-   * handler failures are logged + contained (never propagated — §48 the
+   * handler failures are logged + contained (never propagated - §48 the
    * consumer's failure must not corrupt the producer), and
    * `unsubscribeAll(subscriber)` can release them at shutdown (§47).
    */

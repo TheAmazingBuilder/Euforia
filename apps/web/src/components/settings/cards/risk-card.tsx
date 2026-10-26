@@ -30,12 +30,12 @@ import { cn } from "@/lib/utils";
 import { useI18n } from "@/i18n/i18n-provider";
 
 /**
- * Risk preferences — the NUMBERS the Rules Engine enforces. Saving the card
+ * Risk preferences - the NUMBERS the Rules Engine enforces. Saving the card
  * stores the defaults; "Apply limits to Rules Engine" upserts the matching
  * discipline rules (MAX_RISK_PCT_PER_TRADE / MAX_DAILY_LOSS_PCT /
  * MAX_OPEN_POSITIONS) so monitoring, alerts and locks follow instantly.
  * Flow: Settings → Rules Engine → Monitoring / Notifications.
- * Labels live in the dictionary (dict.settings.risk.rules) — the module
+ * Labels live in the dictionary (dict.settings.risk.rules) - the module
  * map stays machine-only (types, severities, units, value getters).
  */
 
@@ -72,7 +72,7 @@ function ruleLimit(rule: Rule | undefined): string {
     const limit = (params as Record<string, unknown>).limit;
     if (typeof limit === "number") return String(limit);
   }
-  return "—";
+  return "-";
 }
 
 export function RiskCard() {
@@ -96,7 +96,7 @@ export function RiskCard() {
   const patch = (changes: Partial<UserPreferences["risk"]>) =>
     setDraft((previous) => (previous ? { ...previous, ...changes } : previous));
 
-  // Cross-field validation — mirrors the server-side zod refine.
+  // Cross-field validation - mirrors the server-side zod refine.
   const maxBelowDefault = draft.maxRiskPerTradePct < draft.defaultRiskPerTradePct;
 
   const onSave = () => {
@@ -336,7 +336,7 @@ export function RiskCard() {
         />
       </div>
 
-      {/* Rules Engine linkage — Settings → Rules → Monitoring/Notifications */}
+      {/* Rules Engine linkage - Settings → Rules → Monitoring/Notifications */}
       <div
         className="grid gap-3 rounded-xl border border-border bg-background/60 p-4"
         data-testid="settings-risk-rules-engine"

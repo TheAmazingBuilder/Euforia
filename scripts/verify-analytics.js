@@ -1,9 +1,9 @@
 /**
- * verify-analytics.js — Analytics module (MASTER PROMPT) + logo/logout fixes.
+ * verify-analytics.js - Analytics module (MASTER PROMPT) + logo/logout fixes.
  *
  * Contract under test:
  *  - 13 tabs (§4) persisted in the URL (?tab=)
- *  - Overview KPI band with definitions + honest "—" when data is missing (§6/§34)
+ *  - Overview KPI band with definitions + honest "-" when data is missing (§6/§34)
  *  - Global filter system (§5): ONE dataset definition, filters update every
  *    tab, URL-persisted, reset, saved presets, dataset echo line
  *  - Performance charts, drawdown drill-down (§11/§33), strategy factual rows (§12)
@@ -56,7 +56,7 @@ const ok = (label, cond) => {
   await page.waitForTimeout(2500);
 
   const brandHasSvg = await page.locator("aside a[data-slot?] svg, aside a svg").first().isVisible().catch(() => false);
-  const logoSvg = await page.locator("aside a[aria-label='Euforia — Dashboard'] svg").first();
+  const logoSvg = await page.locator("aside a[aria-label='Euforia - Dashboard'] svg").first();
   ok("Sidebar brand renders an SVG mark", brandHasSvg || (await logoSvg.isVisible().catch(() => false)));
   // Logo: the ORBITAL COMET artwork (orbit arc ending in a comet head).
   const cometShape = await logoSvg.locator("path[d^='M 74.43 43.11']").count().catch(() => 0);
@@ -83,7 +83,7 @@ const ok = (label, cond) => {
   ok("Bottom bar no longer holds the logout (Collapse only)", !bottomBarText.includes("Log out"));
 
   // ── 2. Analytics module ───────────────────────────────────────────────────
-  console.log("\n■ Analytics — Overview");
+  console.log("\n■ Analytics - Overview");
   await page.goto(`${BASE}/analytics`, { waitUntil: "networkidle", timeout: 60000 });
   await page.waitForTimeout(2500);
 
@@ -105,7 +105,7 @@ const ok = (label, cond) => {
   const infoButtons = await overviewBlock.locator("button[aria-label$='definition']").count();
   ok("Overview KPI cards expose definition tooltips", infoButtons >= 6);
 
-  console.log("\n■ Analytics — tabs");
+  console.log("\n■ Analytics - tabs");
   for (const tabId of ["performance", "risk", "strategy", "market", "time", "psychology", "quality", "mistakes", "events", "advanced", "montecarlo", "reports"]) {
     await page.locator(`[role='tab']:has-text('${labelFor(tabId)}')`).first().click();
     await page.waitForTimeout(650);
@@ -115,7 +115,7 @@ const ok = (label, cond) => {
   ok("Tab persisted in URL (?tab=)", (await page.url()).includes("tab=reports"));
 
   // ── 3. Global filters (§5) ────────────────────────────────────────────────
-  console.log("\n■ Analytics — global filters");
+  console.log("\n■ Analytics - global filters");
   await page.goto(`${BASE}/analytics`, { waitUntil: "networkidle", timeout: 60000 });
   await page.waitForTimeout(2200);
 

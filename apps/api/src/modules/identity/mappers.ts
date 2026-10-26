@@ -1,5 +1,5 @@
 /**
- * Contract mappers — rows → shared-schema-shaped payloads.
+ * Contract mappers - rows → shared-schema-shaped payloads.
  * The ONLY place that translates persistence shapes into wire shapes.
  */
 import type { UserRow, SessionRow } from "./identity.repository";
@@ -10,7 +10,7 @@ export function isoDateTime(date: Date): string {
   return date.toISOString().replace(/\.\d{3}Z$/, "Z");
 }
 
-/** Fixed permission set per role — extensible, not an RBAC matrix (§26/§27). */
+/** Fixed permission set per role - extensible, not an RBAC matrix (§26/§27). */
 const TRADER_PERMISSIONS = [
   "trades:read",
   "trades:create",

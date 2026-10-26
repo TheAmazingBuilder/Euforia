@@ -1,15 +1,15 @@
 /**
- * verify-oryon-phase8.js — Oryon Phase 8 (market sessions, economic events,
+ * verify-oryon-phase8.js - Oryon Phase 8 (market sessions, economic events,
  * temporal context).
  *
  * Contract under test:
  *  - SESSION SHADING (§5): per-panel on/off (independent, §11), bands only
  *    for the displayed instrument's asset-class scope (FOREX yes, CRYPTO
- *    none — honest 24/7), intraday-only gate, toggle WITHOUT chart
+ *    none - honest 24/7), intraday-only gate, toggle WITHOUT chart
  *    recreation (series/panes/viewport stability).
  *  - EVENT MARKERS (§8): per-panel on/off, importance threshold (subset
  *    monotonicity), bar-snapped, stable sets, click → event popover with
- *    honest "—" for missing values.
+ *    honest "-" for missing values.
  *  - MARKET-CONTEXT PANEL (§7): session status rows for the active chart's
  *    class, filtered event list (scope/importance/currency), honest source
  *    note, loading/empty/error states present, display-timezone label.
@@ -20,7 +20,7 @@
  *  - Honest a11y: menu state via aria-checked; 0 console errors; desktop
  *    1440 + mobile 390.
  *
- * Run: node scripts/verify-oryon-phase8.js  (DEV server on :3001 — debug
+ * Run: node scripts/verify-oryon-phase8.js  (DEV server on :3001 - debug
  * handles are dev-only by design; market service on :3003, mocked auth,
  * BASE_URL overridable)
  */
@@ -29,7 +29,7 @@ const { chromium } = require("playwright");
 const fs = require("fs");
 
 const LOG = path.resolve(__dirname, "oryon-phase8-probe.log");
-fs.writeFileSync(LOG, `=== oryon phase8 probe — ${new Date().toISOString()} ===\n`);
+fs.writeFileSync(LOG, `=== oryon phase8 probe - ${new Date().toISOString()} ===\n`);
 
 const BASE = process.env.BASE_URL || "http://localhost:3001";
 
@@ -152,7 +152,7 @@ async function activatePanel(app, i) {
 async function setPanelSymbol(app, i, symbol, multi = false) {
   // Single-chart workspace: the toolbar owns the selectors (canonical
   // `oryon-` prefix, targeting the only/active panel). Grid mode: the
-  // per-panel header controls (activated first — first-click semantic).
+  // per-panel header controls (activated first - first-click semantic).
   const prefix = multi ? `oryon-panel-${i}` : "oryon";
   if (multi) await activatePanel(app, i);
   await app.click(`[data-testid="${prefix}-instrument-trigger"]`);
@@ -208,7 +208,7 @@ async function setImportance(app, i, level) {
 }
 
 async function openUtility(app, tab) {
-  // The docked rail renders only when open — the toolbar's calendar button
+  // The docked rail renders only when open - the toolbar's calendar button
   // opens it on the calendar panel (tab click works once the rail exists).
   const railOpen = await app.locator('[data-testid="oryon-utility-rail"]').count();
   if (railOpen === 0) {
@@ -260,7 +260,7 @@ async function setGrid(app, grid) {
   await page.waitForTimeout(2_000);
 
   // ── A. État initial ─────────────────────────────────────────────────────
-  console.log("— A. État initial : contexte par défaut");
+  console.log("- A. État initial : contexte par défaut");
   const bootPanels = await waitForPanels(page, 1);
   ok("workspace démarré avec un panneau", Array.isArray(bootPanels) && bootPanels.length === 1);
   ok("contexte sessions par défaut ON", (await contextChecked(page, 0, "sessions")) === true);
@@ -268,7 +268,7 @@ async function setGrid(app, grid) {
   ok("seuil d'importance par défaut MEDIUM", (await contextChecked(page, 0, "imp-MEDIUM")) === true);
 
   // ── B. Sessions sur un instrument FOREX ─────────────────────────────────
-  console.log("— B. Sessions FOREX (bandes,Toggle sans recréation)");
+  console.log("- B. Sessions FOREX (bandes,Toggle sans recréation)");
   await setPanelSymbol(page, 0, "EURUSD");
   await setPanelInterval(page, 0, "15m");
   const forex = await waitForBands(page, 0, (p) => p.series >= 1 && p.sessionBands >= 1);
@@ -284,8 +284,8 @@ async function setGrid(app, grid) {
   const beforeToggle = await panels(page);
   ok("series/panes stables avant toggle", beforeToggle[0].series >= 1 && beforeToggle[0].panes >= 1);
 
-  // ── C. Toggle sessions — sans recréation de graphique ───────────────────
-  console.log("— C. Toggle sessions off/on");
+  // ── C. Toggle sessions - sans recréation de graphique ───────────────────
+  console.log("- C. Toggle sessions off/on");
   await toggleContext(page, 0, "sessions");
   const afterOff = await waitForBands(page, 0, (p) => p.sessionBands === 0);
   ok("sessions OFF → 0 bande", (afterOff?.sessionBands ?? -1) === 0);
@@ -301,7 +301,7 @@ async function setGrid(app, grid) {
   ok("sessions ON → bandes de retour", (afterOn?.sessionBands ?? 0) >= 1);
 
   // ── D. Toggle événements + seuil d'importance ───────────────────────────
-  console.log("— D. Marqueurs d'événements");
+  console.log("- D. Marqueurs d'événements");
   await toggleContext(page, 0, "events");
   const markersOff = await waitForBands(page, 0, (p) => p.eventMarkers === 0);
   ok("événements OFF → 0 marqueur", (markersOff?.eventMarkers ?? -1) === 0);
@@ -315,12 +315,12 @@ async function setGrid(app, grid) {
   await setImportance(page, 0, "MEDIUM");
 
   // ── E. Clic sur un marqueur → popover honnête ───────────────────────────
-  console.log("— E. Popover d'événement");
+  console.log("- E. Popover d'événement");
   const probeTarget = (await panels(page))[0]?.firstMarker ?? null;
   ok("sonde : un marqueur projetable à l'écran", probeTarget !== null);
   if (probeTarget) {
     const box = await panelLoc(page, 0).locator('[data-testid="oryon-chart-canvas"] canvas').first().boundingBox();
-    // The wrapper is the canvas container — click coordinates are
+    // The wrapper is the canvas container - click coordinates are
     // chart-local; the canvas top-left IS the wrapper origin here.
     await page.mouse.click(box.x + probeTarget.x, box.y + 240); // below the HTML legend band (click resolves by TIME, any Y works)
     await page.waitForTimeout(500);
@@ -333,7 +333,7 @@ async function setGrid(app, grid) {
         .locator('[data-testid="oryon-event-popover"] dd')
         .first()
         .innerText();
-      ok("valeurs manquantes rendues « — » (jamais 0)", dashOrValue.length > 0);
+      ok("valeurs manquantes rendues « - » (jamais 0)", dashOrValue.length > 0);
       await page.click('[data-testid="oryon-event-popover-close"]');
       await page.waitForTimeout(300);
       ok("fermeture du popover", (await page.locator('[data-testid="oryon-event-popover"]').count()) === 0);
@@ -341,7 +341,7 @@ async function setGrid(app, grid) {
   }
 
   // ── F. Portes honnêtes : 1D sans shading + crypto 24/7 ──────────────────
-  console.log("— F. Gates (1D + crypto)");
+  console.log("- F. Gates (1D + crypto)");
   await setPanelInterval(page, 0, "1D");
   const daily = await waitForBands(page, 0, (p) => p.series >= 1 && p.sessionBands === 0);
   ok("1D → aucune bande (porte intraday documentée)", (daily?.sessionBands ?? -1) === 0);
@@ -352,7 +352,7 @@ async function setGrid(app, grid) {
   await setPanelSymbol(page, 0, "EURUSD");
 
   // ── G. Panneau de contexte de marché (rail) ─────────────────────────────
-  console.log("— G. Panneau Market context");
+  console.log("- G. Panneau Market context");
   await openUtility(page, "calendar");
   await page.waitForSelector('[data-testid="oryon-panel-calendar"]', { timeout: 8_000 });
   const sessionRows = await page.locator('[data-testid="oryon-sessions-list"] li').count();
@@ -376,12 +376,12 @@ async function setGrid(app, grid) {
     const allCount = await page.locator('[data-testid="oryon-events-list"] li').count();
     ok(`portée ALL ≥ upcoming (${allCount} ≥ ${upcomingCount})`, allCount >= upcomingCount);
   } else {
-    ok("portée ALL ≥ upcoming (menu select non ouvert — ignoré)", true);
+    ok("portée ALL ≥ upcoming (menu select non ouvert - ignoré)", true);
   }
   await page.click('[data-testid="oryon-utility-close"]').catch(() => {});
 
   // ── H. Layouts v3 : les préférences de contexte persistent ──────────────
-  console.log("— H. Layout v3 (contexte persisté)");
+  console.log("- H. Layout v3 (contexte persisté)");
   await toggleContext(page, 0, "sessions"); // OFF
   const savedOff = await waitForBands(page, 0, (p) => p.sessionBands === 0);
   ok("sessions OFF avant sauvegarde", (savedOff?.sessionBands ?? -1) === 0);
@@ -405,7 +405,7 @@ async function setGrid(app, grid) {
     file?.layouts?.[0]?.panels?.[0]?.context?.sessionShading === false,
   );
   // Mutate back ON (dirty), then leave via the DEFAULT layout and return:
-  // after save-as the saved record is ALREADY ACTIVE — clicking its own
+  // after save-as the saved record is ALREADY ACTIVE - clicking its own
   // item is a no-op, so the restore path needs a round trip.
   await toggleContext(page, 0, "sessions"); // ON
   const dirtyOn = await waitForBands(page, 0, (p) => p.sessionBands >= 1);
@@ -423,7 +423,7 @@ async function setGrid(app, grid) {
     await guard.click();
     await page.waitForTimeout(600);
   }
-  // → back to the saved layout (clean now — the switch applies directly).
+  // → back to the saved layout (clean now - the switch applies directly).
   await page.click('[data-testid="oryon-layouts"]');
   await page.waitForTimeout(300);
   await savedItem.click().catch(() => {});
@@ -436,7 +436,7 @@ async function setGrid(app, grid) {
   );
 
   // ── I. Multi-chart : contextes indépendants par panneau ─────────────────
-  console.log("— I. Multi-panneaux (contextes indépendants)");
+  console.log("- I. Multi-panneaux (contextes indépendants)");
   await setGrid(page, "twoHorizontal");
   await waitForPanels(page, 2);
   await setPanelSymbol(page, 0, "EURUSD", true);
@@ -444,7 +444,7 @@ async function setGrid(app, grid) {
   await setPanelSymbol(page, 1, "EURUSD", true);
   await setPanelInterval(page, 1, "15m", true);
   // Panel 1 inherits default context (ON). Panel 0 is OFF (saved layout).
-  // Toggle panel 0 ON again — both panels then show bands independently.
+  // Toggle panel 0 ON again - both panels then show bands independently.
   await toggleContext(page, 0, "sessions"); // panel 0 → ON
   const p0 = await waitForBands(page, 0, (p) => p.sessionBands >= 1);
   const p1 = await waitForBands(page, 1, (p) => p.sessionBands >= 1);
@@ -457,7 +457,7 @@ async function setGrid(app, grid) {
   ok("panneau 0 : événements intacts (préférence indépendante)", (p0Keep[0]?.eventMarkers ?? 0) >= 1);
 
   // ── J. Mobile 390 ────────────────────────────────────────────────────────
-  console.log("— J. Mobile 390 (overlay utilitaire)");
+  console.log("- J. Mobile 390 (overlay utilitaire)");
   const mobile = await browser.newPage({ viewport: { width: 390, height: 844 } });
   const mobileErrors = [];
   mobile.on("pageerror", (e) => mobileErrors.push(String(e)));
@@ -468,7 +468,7 @@ async function setGrid(app, grid) {
     mobileErrors.push(text);
   });
   await signIn(mobile);
-  // The sidebar is collapsed at 390px — the nav link stays hidden; navigate
+  // The sidebar is collapsed at 390px - the nav link stays hidden; navigate
   // directly (auth carries over from the sign-in on the same context).
   await mobile.goto(`${BASE}/oryon`, { waitUntil: "load", timeout: 60_000 });
   await clearDevOverlay(mobile);

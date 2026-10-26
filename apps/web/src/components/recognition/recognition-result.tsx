@@ -31,13 +31,13 @@ export interface CropRegion {
 }
 
 /**
- * RecognitionResult — the review surface (PROMPT 3 §17/§20/§26 + engine
+ * RecognitionResult - the review surface (PROMPT 3 §17/§20/§26 + engine
  * quality §2.1/§2.4).
  *
  * Adds of the engine-quality phase:
- *   - DUPLICATE banner — an advisory "already imported" flag when this
+ *   - DUPLICATE banner - an advisory "already imported" flag when this
  *     screenshot perceptually matches an earlier recognition;
- *   - CROP TOOL — drag a rectangle over the capture to re-scan just that
+ *   - CROP TOOL - drag a rectangle over the capture to re-scan just that
  *     region; results are ephemeral readings the user can apply as
  *     corrections (never auto-applied, §21).
  *
@@ -74,12 +74,12 @@ export function RecognitionResult({
   onSaveField: (field: string, value: string | null) => void;
   onReviewDraft: () => void;
   onRetry: () => void;
-  /** V2 §32/§39 — re-run the pipeline over the stored asset. */
+  /** V2 §32/§39 - re-run the pipeline over the stored asset. */
   onReprocess?: () => void;
   reprocessing?: boolean;
-  /** V2 §58 — acknowledge the trade-duplicate warning (Import Anyway). */
+  /** V2 §58 - acknowledge the trade-duplicate warning (Import Anyway). */
   onAcknowledgeTradeDuplicate?: () => void;
-  /** V2 §58 — acknowledge the screenshot-duplicate warning (Import Anyway). */
+  /** V2 §58 - acknowledge the screenshot-duplicate warning (Import Anyway). */
   onAcknowledgeScreenshotDuplicate?: () => void;
   readOnly?: boolean;
   /** Region re-scan state + handler (engine quality §2.4). */
@@ -96,7 +96,7 @@ export function RecognitionResult({
   const [imageBox, setImageBox] = React.useState<{ width: number; height: number } | null>(null);
   const imageRef = React.useRef<HTMLImageElement>(null);
 
-  // V2 §10/§55 — bounding-box overlay: fields with source regions render as
+  // V2 §10/§55 - bounding-box overlay: fields with source regions render as
   // rectangles on the capture; hovering/clicking a region highlights the
   // field row and vice versa.
   const [showBoxes, setShowBoxes] = React.useState(false);
@@ -166,7 +166,7 @@ export function RecognitionResult({
     recognition.fields.find((field) => field.field === key),
   ).filter((field): field is NonNullable<typeof field> => Boolean(field));
 
-  // Account & Chart V1.1 — the profile decides WHAT the right column is.
+  // Account & Chart V1.1 - the profile decides WHAT the right column is.
   const metaKey = profileMetaKey(recognition.extractionProfile);
 
   /** Shared props for the profile-specific right columns. */
@@ -194,7 +194,7 @@ export function RecognitionResult({
     );
 
   /**
-   * V2 §10/§55 — source-region overlays mapped from REAL pixel coordinates
+   * V2 §10/§55 - source-region overlays mapped from REAL pixel coordinates
    * onto the letterboxed display box. PDFs (and any asset with unknown dims)
    * carry null width/height: there is no mapping without a source size, so
    * the overlays render nothing instead of dividing by null.
@@ -259,10 +259,10 @@ export function RecognitionResult({
         </div>
       </div>
 
-      {/* V2 §28 — collections holding this screenshot (hidden when none). */}
+      {/* V2 §28 - collections holding this screenshot (hidden when none). */}
       <RecognitionCollectionsRow dict={dict} recognitionId={recognition.id} />
 
-      {/* Duplicate banner (engine quality §2.1) — advisory, never blocking. */}
+      {/* Duplicate banner (engine quality §2.1) - advisory, never blocking. */}
       {recognition.duplicateOf ? (
         <div
           className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-warning/40 bg-warning/[0.06] px-4 py-3"
@@ -288,7 +288,7 @@ export function RecognitionResult({
         </div>
       ) : null}
 
-      {/* V2 §4 — content-based trade duplicate (different screenshot, same trade). */}
+      {/* V2 §4 - content-based trade duplicate (different screenshot, same trade). */}
       {recognition.possibleTradeDuplicate ? (
         <div
           className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-warning/40 bg-warning/[0.06] px-4 py-3"
@@ -327,7 +327,7 @@ export function RecognitionResult({
       <RecognitionWarnings warnings={recognition.warnings} dict={dict} />
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
-        {/* Screenshot column — sticky on desktop (§17/§35). */}
+        {/* Screenshot column - sticky on desktop (§17/§35). */}
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between gap-3">
             <p className="ledger-label">{dict.result.screenshot}</p>
@@ -403,8 +403,8 @@ export function RecognitionResult({
                     setImageBox({ width: rect.width, height: rect.height });
                   }}
                 />
-                {/* V2 §10/§55 — source-region overlays (real-pixel → display mapping).
-                    PDFs (and unknown-dim assets) carry null dims — no mapping, no overlays. */}
+                {/* V2 §10/§55 - source-region overlays (real-pixel → display mapping).
+                    PDFs (and unknown-dim assets) carry null dims - no mapping, no overlays. */}
                 {renderRegionOverlays().map((box) => (
                   <button
                     key={box.field}
@@ -424,7 +424,7 @@ export function RecognitionResult({
                     onMouseEnter={box.onHover}
                     onFocus={box.onHover}
                     onClick={box.onClick}
-                    aria-label={`${box.label} — ${dict.boxes.toggle}`}
+                    aria-label={`${box.label} - ${dict.boxes.toggle}`}
                     data-testid={`recognition-box-${box.field}`}
                   />
                 ))}
@@ -448,7 +448,7 @@ export function RecognitionResult({
             )}
             <div className="flex items-center justify-between gap-3 border-t border-border px-3 py-2 font-mono text-[11px] tabular-nums text-muted-foreground">
               <span>
-                {recognition.asset.width ?? "—"} × {recognition.asset.height ?? "—"} ·{" "}
+                {recognition.asset.width ?? "-"} × {recognition.asset.height ?? "-"} ·{" "}
                 {(recognition.asset.sizeBytes / 1024).toFixed(0)} KB
               </span>
               {cropMode && cropRect && cropRect.width > 8 && cropRect.height > 8 ? (
@@ -496,7 +496,7 @@ export function RecognitionResult({
             </div>
           </div>
 
-          {/* Region re-scan results (engine quality §2.4) — ephemeral. */}
+          {/* Region re-scan results (engine quality §2.4) - ephemeral. */}
           {recrop?.results ? (
             <div className="flex flex-col rounded-lg border border-border bg-surface px-3 py-2" data-testid="recognition-crop-results">
               <div className="flex items-center justify-between gap-2 border-b border-border/60 pb-1.5">
@@ -535,7 +535,7 @@ export function RecognitionResult({
           ) : null}
         </div>
 
-        {/* Extracted fields — one ruled list, never cards-in-cards.
+        {/* Extracted fields - one ruled list, never cards-in-cards.
             Account & Chart profiles render their dedicated surfaces. */}
         <div className="flex flex-col gap-4">
           {metaKey === "account" ? (
@@ -578,7 +578,7 @@ export function RecognitionResult({
                 )}
               </div>
 
-              {/* V2 §15/§16/§23 — quality, issues and timeline under the fields. */}
+              {/* V2 §15/§16/§23 - quality, issues and timeline under the fields. */}
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="flex flex-col rounded-xl border border-border bg-surface px-4 py-3">
                   <QualityScore qualityScore={recognition.qualityScore} dict={dict} />

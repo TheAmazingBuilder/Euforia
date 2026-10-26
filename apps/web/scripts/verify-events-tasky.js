@@ -1,8 +1,8 @@
 /**
- * Verify — ACADEMY modules: Events (calendar) + Tasky (kanban board).
+ * Verify - ACADEMY modules: Events (calendar) + Tasky (kanban board).
  *
  * IMPORTANT: navigation uses sidebar clicks ONLY (SPA). No reload is
- * performed — both modules are frontend-only with in-memory state, so the
+ * performed - both modules are frontend-only with in-memory state, so the
  * whole flow runs on a single mount each.
  *
  * Covers:
@@ -54,7 +54,7 @@ const keyOf = (y, m, d) => `${y}-${pad2(m + 1)}-${pad2(d)}`;
 
   const browser = await chromium.launch();
   const context = await browser.newContext({
-    // 1920×1080: the 5-column board fits WITHOUT horizontal scroll — avoids
+    // 1920×1080: the 5-column board fits WITHOUT horizontal scroll - avoids
     // the programmatic-scroll vs mouse hit-testing race on HTML5 drags.
     viewport: { width: 1920, height: 1080 },
   });
@@ -75,7 +75,7 @@ const keyOf = (y, m, d) => `${y}-${pad2(m + 1)}-${pad2(d)}`;
 
   const results = [];
   const check = (name, ok, extra = "") => {
-    results.push(`${ok ? "PASS" : "FAIL"} — ${name}${extra ? ` (${extra})` : ""}`);
+    results.push(`${ok ? "PASS" : "FAIL"} - ${name}${extra ? ` (${extra})` : ""}`);
     console.log(results[results.length - 1]);
   };
   const shot = async (name) => {
@@ -94,7 +94,7 @@ const keyOf = (y, m, d) => `${y}-${pad2(m + 1)}-${pad2(d)}`;
   await page.waitForTimeout(800);
 
   /* ---------------------------------------------------------------- */
-  /* A — Sidebar + SPA navigation                                      */
+  /* A - Sidebar + SPA navigation                                      */
   /* ---------------------------------------------------------------- */
   const navText = await nav.innerText();
   check(
@@ -126,7 +126,7 @@ const keyOf = (y, m, d) => `${y}-${pad2(m + 1)}-${pad2(d)}`;
   check("A3 breadcrumb shows Events", /Events/.test(crumb));
 
   /* ---------------------------------------------------------------- */
-  /* B — Seed events                                                   */
+  /* B - Seed events                                                   */
   /* ---------------------------------------------------------------- */
   const pillCount = await page.locator('[data-testid^="events-event-"]').count();
   check("B1 24 seeded events rendered", pillCount === 24, String(pillCount));
@@ -151,7 +151,7 @@ const keyOf = (y, m, d) => `${y}-${pad2(m + 1)}-${pad2(d)}`;
   );
 
   /* ---------------------------------------------------------------- */
-  /* C — Month engine                                                  */
+  /* C - Month engine                                                  */
   /* ---------------------------------------------------------------- */
   const firstExpected = (() => {
     const first = new Date(curYear, curMonth, 1);
@@ -212,7 +212,7 @@ const keyOf = (y, m, d) => `${y}-${pad2(m + 1)}-${pad2(d)}`;
   );
 
   /* ---------------------------------------------------------------- */
-  /* D — Calendar-list filters                                         */
+  /* D - Calendar-list filters                                         */
   /* ---------------------------------------------------------------- */
   await page.locator('[data-testid="events-list-work"]').click();
   await page.waitForTimeout(300);
@@ -244,7 +244,7 @@ const keyOf = (y, m, d) => `${y}-${pad2(m + 1)}-${pad2(d)}`;
   );
 
   /* ---------------------------------------------------------------- */
-  /* E — Mini month                                                    */
+  /* E - Mini month                                                    */
   /* ---------------------------------------------------------------- */
   check(
     "E1 mini calendar title follows the main month",
@@ -292,7 +292,7 @@ const keyOf = (y, m, d) => `${y}-${pad2(m + 1)}-${pad2(d)}`;
   );
 
   /* ---------------------------------------------------------------- */
-  /* F — Event dialog                                                  */
+  /* F - Event dialog                                                  */
   /* ---------------------------------------------------------------- */
   await page.locator('[data-testid="events-event-ev-03"]').click();
   await page.waitForTimeout(400);
@@ -312,7 +312,7 @@ const keyOf = (y, m, d) => `${y}-${pad2(m + 1)}-${pad2(d)}`;
   check("F2 Escape closes the event dialog", !(await dialog.isVisible()));
 
   /* ---------------------------------------------------------------- */
-  /* G — Rail sections                                                 */
+  /* G - Rail sections                                                 */
   /* ---------------------------------------------------------------- */
   await page.locator('[data-testid="events-section-favorites-toggle"]').click();
   await page.waitForTimeout(200);
@@ -336,7 +336,7 @@ const keyOf = (y, m, d) => `${y}-${pad2(m + 1)}-${pad2(d)}`;
   await page.waitForTimeout(200);
 
   /* ---------------------------------------------------------------- */
-  /* H — New calendar (dialog + preview + cancel)                       */
+  /* H - New calendar (dialog + preview + cancel)                       */
   /* ---------------------------------------------------------------- */
   await page.locator('[data-testid="events-new-calendar"]').click();
   await page.waitForTimeout(400);
@@ -357,7 +357,7 @@ const keyOf = (y, m, d) => `${y}-${pad2(m + 1)}-${pad2(d)}`;
     (await focusRow.count()) === 1 && !(await calDialog.isVisible()),
   );
 
-  // Cancel path — nothing is created.
+  // Cancel path - nothing is created.
   await page.locator('[data-testid="events-new-calendar"]').click();
   await page.waitForTimeout(400);
   await page.locator('[data-testid="events-new-calendar-name"]').fill("Ghost");
@@ -370,7 +370,7 @@ const keyOf = (y, m, d) => `${y}-${pad2(m + 1)}-${pad2(d)}`;
   );
 
   /* ---------------------------------------------------------------- */
-  /* I–J — Tasky structure                                             */
+  /* I–J - Tasky structure                                             */
   /* ---------------------------------------------------------------- */
   await sidebarLink("Tasky").click();
   await page.waitForURL("**/tasky");
@@ -417,7 +417,7 @@ const keyOf = (y, m, d) => `${y}-${pad2(m + 1)}-${pad2(d)}`;
   await page.screenshot({ path: `${SHOTS}/events-final.png`, fullPage: true });
 
   /* ---------------------------------------------------------------- */
-  /* K — Drag & drop across columns                                    */
+  /* K - Drag & drop across columns                                    */
   /* ---------------------------------------------------------------- */
   // HTML5 DnD via raw mouse input (dragTo is unreliable for HTML5 events):
   // hover source → down → threshold move → glide to target → settle → up.
@@ -453,7 +453,7 @@ const keyOf = (y, m, d) => `${y}-${pad2(m + 1)}-${pad2(d)}`;
   const inReviewZone = page.locator('[data-testid="tasky-dropzone-in-review"]');
   const doneZone = page.locator('[data-testid="tasky-dropzone-done"]');
 
-  // K1 — In Review → Done
+  // K1 - In Review → Done
   const k1 = await dragUntil(
     () => dragCard('[data-testid="tasky-card-t-ratelimit"]', doneZone, { x: 120, y: 30 }),
     async () =>
@@ -470,7 +470,7 @@ const keyOf = (y, m, d) => `${y}-${pad2(m + 1)}-${pad2(d)}`;
   );
   await shot("tasky-after-drag");
 
-  // K2 — restore: Done → In Review
+  // K2 - restore: Done → In Review
   const k2 = await dragUntil(
     () =>
       dragCard(
@@ -484,7 +484,7 @@ const keyOf = (y, m, d) => `${y}-${pad2(m + 1)}-${pad2(d)}`;
   check("K2 drag back restores In Review = 2 / Done = 3", k2 !== -1, `attempts=${k2}`);
 
   /* ---------------------------------------------------------------- */
-  /* L — Empty column state                                            */
+  /* L - Empty column state                                            */
   /* ---------------------------------------------------------------- */
   const l1a = await dragUntil(
     () => dragCard('[data-testid="tasky-card-t-darkmode"]', doneZone, { x: 120, y: 30 }),
@@ -524,7 +524,7 @@ const keyOf = (y, m, d) => `${y}-${pad2(m + 1)}-${pad2(d)}`;
   check("L2 both cards restored to In Review (= 2)", l2a !== -1 && l2b !== -1);
 
   /* ---------------------------------------------------------------- */
-  /* M — Reorder within a column                                       */
+  /* M - Reorder within a column                                       */
   /* ---------------------------------------------------------------- */
   const firstBacklogId = () =>
     page
@@ -560,7 +560,7 @@ const keyOf = (y, m, d) => `${y}-${pad2(m + 1)}-${pad2(d)}`;
   check("M2 original order restored", m2 !== -1, `attempts=${m2}`);
 
   /* ---------------------------------------------------------------- */
-  /* Q — Task modal: create → details → edit → delete                   */
+  /* Q - Task modal: create → details → edit → delete                   */
   /* ---------------------------------------------------------------- */
   const backlogCount = () =>
     page.locator('[data-testid="tasky-count-backlog"]').innerText();
@@ -630,7 +630,7 @@ const keyOf = (y, m, d) => `${y}-${pad2(m + 1)}-${pad2(d)}`;
   );
 
   /* ---------------------------------------------------------------- */
-  /* R — Per-column quick add                                           */
+  /* R - Per-column quick add                                           */
   /* ---------------------------------------------------------------- */
   await page.locator('[data-testid="tasky-column-add-todo"]').click();
   await page.waitForTimeout(400);
@@ -655,7 +655,7 @@ const keyOf = (y, m, d) => `${y}-${pad2(m + 1)}-${pad2(d)}`;
   );
 
   /* ---------------------------------------------------------------- */
-  /* S — Keyboard drag & drop on the grip handle                        */
+  /* S - Keyboard drag & drop on the grip handle                        */
   /* ---------------------------------------------------------------- */
   const oauthHandle = page.locator('[data-testid="tasky-handle-t-oauth"]');
   await oauthHandle.focus();
@@ -686,7 +686,7 @@ const keyOf = (y, m, d) => `${y}-${pad2(m + 1)}-${pad2(d)}`;
   check("S4 original order restored", (await firstBacklogId()) === "t-oauth");
 
   /* ---------------------------------------------------------------- */
-  /* T — TOUCH drag & drop (finger, via CDP touch input)                */
+  /* T - TOUCH drag & drop (finger, via CDP touch input)                */
   /* ---------------------------------------------------------------- */
   const touchContext = await browser.newContext({
     viewport: { width: 1920, height: 1080 },
@@ -759,7 +759,7 @@ const keyOf = (y, m, d) => `${y}-${pad2(m + 1)}-${pad2(d)}`;
   await touchContext.close();
 
   /* ---------------------------------------------------------------- */
-  /* U — Events: create an event from the day schedule                  */
+  /* U - Events: create an event from the day schedule                  */
   /* ---------------------------------------------------------------- */
   await sidebarLink("Events").click();
   await page.waitForURL("**/events");
@@ -830,7 +830,7 @@ const keyOf = (y, m, d) => `${y}-${pad2(m + 1)}-${pad2(d)}`;
   );
 
   /* ---------------------------------------------------------------- */
-  /* N — Mobile 390px                                                  */
+  /* N - Mobile 390px                                                  */
   /* ---------------------------------------------------------------- */
   const mobilePage = await context.newPage();
   await mobilePage.setViewportSize({ width: 390, height: 844 });
@@ -841,7 +841,7 @@ const keyOf = (y, m, d) => `${y}-${pad2(m + 1)}-${pad2(d)}`;
       document.documentElement.scrollWidth <= window.innerWidth + 1,
   );
   // The rail is rendered but CSS-hidden below `lg` (pixel-faithful desktop
-  // rail) — so the correct assertion is visibility, not DOM absence.
+  // rail) - so the correct assertion is visibility, not DOM absence.
   const railHidden =
     !(await mobilePage.locator('[data-testid="events-rail"]').isVisible());
   check(
@@ -867,7 +867,7 @@ const keyOf = (y, m, d) => `${y}-${pad2(m + 1)}-${pad2(d)}`;
   await mobilePage.close();
 
   /* ---------------------------------------------------------------- */
-  /* O — Light theme                                                   */
+  /* O - Light theme                                                   */
   /* ---------------------------------------------------------------- */
   await page.evaluate(() =>
     document.documentElement.setAttribute("data-theme", "light"),
@@ -881,7 +881,7 @@ const keyOf = (y, m, d) => `${y}-${pad2(m + 1)}-${pad2(d)}`;
   check("O1 light theme renders without errors", errors.length === 0);
 
   /* ---------------------------------------------------------------- */
-  /* P — Console/network cleanliness                                   */
+  /* P - Console/network cleanliness                                   */
   /* ---------------------------------------------------------------- */
   check("P1 no page errors / unexpected 4xx", errors.length === 0, errors.join(" ; "));
 

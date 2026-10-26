@@ -14,7 +14,7 @@ import { apiPaths } from "@/lib/api/endpoints";
 import { queryKeys } from "@/lib/api/keys";
 
 /**
- * Integration Hub hooks. The overview is the hub's single aggregate —
+ * Integration Hub hooks. The overview is the hub's single aggregate -
  * every mutation invalidates it plus the eco calendar (economic events flow
  * through the provider pipeline) and the broker session (lifecycle parity).
  */
@@ -51,7 +51,7 @@ export function useConnectIntegration() {
         apiPaths.integrationConnect(providerId),
         { method: "POST", body: input },
       ),
-    // onSettled — errors (rate limits, auth failures) ALSO change engine
+    // onSettled - errors (rate limits, auth failures) ALSO change engine
     // state: the error ledger and event log must refresh on failures too.
     onSettled: async () => {
       await invalidateIntegrationSurfaces(queryClient);
@@ -67,7 +67,7 @@ export function useDisconnectIntegration() {
         apiPaths.integrationDisconnect(providerId),
         { method: "POST" },
       ),
-    // onSettled — errors (rate limits, auth failures) ALSO change engine
+    // onSettled - errors (rate limits, auth failures) ALSO change engine
     // state: the error ledger and event log must refresh on failures too.
     onSettled: async () => {
       await invalidateIntegrationSurfaces(queryClient);
@@ -82,7 +82,7 @@ export function useTestIntegration() {
       apiRequest<IntegrationTestResponse>(apiPaths.integrationTest(providerId), {
         method: "POST",
       }),
-    // onSettled — errors (rate limits, auth failures) ALSO change engine
+    // onSettled - errors (rate limits, auth failures) ALSO change engine
     // state: the error ledger and event log must refresh on failures too.
     onSettled: async () => {
       await invalidateIntegrationSurfaces(queryClient);
@@ -97,7 +97,7 @@ export function useSyncIntegration() {
       apiRequest<IntegrationSyncResponse>(apiPaths.integrationSync(providerId), {
         method: "POST",
       }),
-    // onSettled — errors (rate limits, auth failures) ALSO change engine
+    // onSettled - errors (rate limits, auth failures) ALSO change engine
     // state: the error ledger and event log must refresh on failures too.
     onSettled: async () => {
       await invalidateIntegrationSurfaces(queryClient);
@@ -119,7 +119,7 @@ export function useSimulateWebhook() {
         apiPaths.integrationWebhookSimulate(endpointId),
         { method: "POST", body: input },
       ),
-    // onSettled — errors (rate limits, auth failures) ALSO change engine
+    // onSettled - errors (rate limits, auth failures) ALSO change engine
     // state: the error ledger and event log must refresh on failures too.
     onSettled: async () => {
       await invalidateIntegrationSurfaces(queryClient);

@@ -1,9 +1,9 @@
 /**
- * Unit tests — bounded segment retries (Phase 05, spec §15).
+ * Unit tests - bounded segment retries (Phase 05, spec §15).
  *
  * Classification (transient vs permanent), bounded attempt count, exponential
  * backoff with jitter, Retry-After respect, and the in-request delay cap.
- * All timing is injected — deterministic, no fake timers needed.
+ * All timing is injected - deterministic, no fake timers needed.
  */
 import { describe, expect, it, vi } from "vitest";
 

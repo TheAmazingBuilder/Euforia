@@ -1,5 +1,5 @@
 /**
- * Verify — Session Live authenticated WebSocket connection (WS-AUTH).
+ * Verify - Session Live authenticated WebSocket connection (WS-AUTH).
  *
  * Mission §43/§45/§62/§63/§76: the market feed is an AUTHENTICATED channel.
  *
@@ -14,7 +14,7 @@
  *      candles refetch hits 401 → single-flight refresh → TOKEN_REFRESHED
  *      → socket re-handshake; session survives (no expiry redirect), badge
  *      returns to a live state.
- *   D. Logout teardown: signing out disconnects the feed — NO /prices or
+ *   D. Logout teardown: signing out disconnects the feed - NO /prices or
  *      /candles requests may fire afterwards (§76 negative test).
  *   E. Console/network cleanliness (expected 401s from the forced-expiry
  *      test are excluded by an "expected" window, not by blanket filtering).
@@ -79,11 +79,11 @@ async function restProbe(path, headers) {
 (async () => {
   const results = [];
   const check = (name, ok, extra = "") => {
-    results.push(`${ok ? "PASS" : "FAIL"} — ${name}${extra ? ` (${extra})` : ""}`);
+    results.push(`${ok ? "PASS" : "FAIL"} - ${name}${extra ? ` (${extra})` : ""}`);
     console.log(results[results.length - 1]);
   };
 
-  // ══ A. Service-level security (server is the boundary — §63) ══════════════
+  // ══ A. Service-level security (server is the boundary - §63) ══════════════
   // Probed through the SAME gateway route the browser uses (path first,
   // XTransformPort in the query) so header forwarding is covered too.
   const health = await restProbe("/health?XTransformPort=3003");
@@ -188,7 +188,7 @@ async function restProbe(path, headers) {
     refreshedState === "live" || refreshedState === "sim", refreshedState);
   await page.screenshot({ path: `${SHOTS}/session-live-after-refresh.png` });
 
-  // ══ D. Logout teardown — the feed must stop streaming (§76) ═══════════════
+  // ══ D. Logout teardown - the feed must stop streaming (§76) ═══════════════
   const feedRequests = [];
   page.on("request", (req) => {
     const url = req.url();

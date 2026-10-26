@@ -13,12 +13,12 @@ import {
   strategyRiskSchema,
 } from "./playbook-blocks";
 
-// Playbook module — entities + read models (blocks live in playbook-blocks.ts).
+// Playbook module - entities + read models (blocks live in playbook-blocks.ts).
 export * from "./playbook-blocks";
 
 // ── Strategy extensions (all nullish: existing fixtures stay valid) ─────────
 
-/** Extended strategy — identity (§6) + market profile (§7) + structured
+/** Extended strategy - identity (§6) + market profile (§7) + structured
  *  conditions (§8/§10–§15). The original markdown rule bodies stay. */
 export const extendedStrategySchema = strategySchema.extend({
   /** Bumped by the store on every content mutation (§17). */
@@ -38,7 +38,7 @@ export const extendedStrategySchema = strategySchema.extend({
 export type ExtendedStrategy = z.infer<typeof extendedStrategySchema>;
 
 /** A frozen copy of a strategy definition, kept when the strategy evolves
- *  (§17) — trades executed under v1 must stay explainable as v1 trades. */
+ *  (§17) - trades executed under v1 must stay explainable as v1 trades. */
 export const strategyVersionSnapshotSchema = z.object({
   id: uuidSchema,
   strategyId: uuidSchema,
@@ -66,7 +66,7 @@ export const setupSchema = z.object({
   entryModel: z.string().max(400).nullable(),
   stopModel: z.string().max(400).nullable(),
   targetModel: z.string().max(400).nullable(),
-  /** When the setup is no longer valid (§12) — critical, never optional. */
+  /** When the setup is no longer valid (§12) - critical, never optional. */
   invalidation: z.string().max(400).nullable(),
   notes: z.string().max(4000).nullable(),
   tags: z.array(z.string().max(24)),
@@ -183,7 +183,7 @@ export type ChecklistsResponse = z.infer<typeof checklistsResponseSchema>;
 export const playbookRulesResponseSchema = z.object({ rules: z.array(playbookRuleSchema) });
 export type PlaybookRulesResponse = z.infer<typeof playbookRulesResponseSchema>;
 
-/** Completeness indicators (§20) — factual, never profitability judgments. */
+/** Completeness indicators (§20) - factual, never profitability judgments. */
 export const strategyHealthFlagSchema = z.enum([
   "DRAFT",
   "ARCHIVED",
@@ -204,7 +204,7 @@ export type StrategyHealth = z.infer<typeof strategyHealthSchema>;
 // ── Live compliance (last N closed trades vs the declared playbook) ─────────
 
 /**
- * Honest scoring: the score counts MATCHED only (no partial weighting — a
+ * Honest scoring: the score counts MATCHED only (no partial weighting - a
  * "half followed" plan is not followed). Unreviewed trades are reported,
  * never silently judged.
  */
@@ -259,7 +259,7 @@ export const playbookOverviewResponseSchema = z.object({
     expectancyR: decimalStringSchema.nullable(),
     followedPlanPct: z.number().min(0).max(100).nullable(),
   }),
-  /** Live compliance — playbookMatch declared at review time, last N closed trades. */
+  /** Live compliance - playbookMatch declared at review time, last N closed trades. */
   compliance: complianceSummarySchema,
   health: z.array(strategyHealthSchema),
   meta: z.object({ generatedAt: isoDateTimeSchema }),
@@ -273,8 +273,8 @@ export type SessionBucket = z.infer<typeof sessionBucketSchema>;
 
 /**
  * Light backtest for ONE setup: realized performance of the trades executed
- * under it (Trade.setupId) over the last 90 days, plus market heuristics —
- * the instrument and the session bucket where it played best — which the UI
+ * under it (Trade.setupId) over the last 90 days, plus market heuristics -
+ * the instrument and the session bucket where it played best - which the UI
  * offers as a one-click ledger pre-filter. n < 5 is flagged, never hidden.
  */
 export const setupInsightSchema = z.object({
@@ -286,11 +286,11 @@ export const setupInsightSchema = z.object({
   winRatePct: z.number().min(0).max(100).nullable(),
   totalR: z.number().nullable(),
   expectancyR: z.number().nullable(),
-  /** Heuristic — instrument with the best summed R (symbol, for display). */
+  /** Heuristic - instrument with the best summed R (symbol, for display). */
   topInstrument: z.string().nullable(),
-  /** Heuristic — same instrument as an id, for the /trades pre-filter link. */
+  /** Heuristic - same instrument as an id, for the /trades pre-filter link. */
   topInstrumentId: uuidSchema.nullable(),
-  /** Heuristic — dominant entry session bucket. */
+  /** Heuristic - dominant entry session bucket. */
   topSession: sessionBucketSchema.nullable(),
   smallSample: z.boolean(),
 });
@@ -304,7 +304,7 @@ export type SetupInsightsResponse = z.infer<typeof setupInsightsResponseSchema>;
 // ── Strategy version history (visual diff source) ───────────────────────────
 
 /**
- * GET /strategies/:id/versions — the historical snapshots (every definition
+ * GET /strategies/:id/versions - the historical snapshots (every definition
  * edit freezes the prior version) plus the current version number, so the
  * client can diff "any prior version ↔ current" or "prior ↔ prior".
  */

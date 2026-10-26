@@ -1,5 +1,5 @@
 /**
- * Unit — planned-risk engine (Phase 5 §13/§17/§19/§20 + edge cases §53).
+ * Unit - planned-risk engine (Phase 5 §13/§17/§19/§20 + edge cases §53).
  *
  * Deterministic cases over pure Decimal math: no database, no clock. The
  * reference instrument mirrors the seeded EURUSD catalog row
@@ -37,7 +37,7 @@ function issues(r: ReturnType<typeof computePlannedRisk>) {
   return r.issues.map((i) => i.code);
 }
 
-describe("risk engine — deterministic reference cases (§49)", () => {
+describe("risk engine - deterministic reference cases (§49)", () => {
   it("risk_percent: 10k balance × 1% with a 50-pip stop → exactly 0.20 lots risking 100", () => {
     const r = computePlannedRisk({ ...BASE, sizeMode: "risk_percent", sizeValue: new Decimal("1") });
     expect(r.positionSize?.toFixed()).toBe("0.2");
@@ -86,7 +86,7 @@ describe("risk engine — deterministic reference cases (§49)", () => {
   });
 });
 
-describe("risk engine — deterministic flooring (§17)", () => {
+describe("risk engine - deterministic flooring (§17)", () => {
   it("floors the suggested size to the volume step so risk never exceeds budget", () => {
     // Budget 100.40 → raw 0.2008 → floor 0.20 → risk 100.00 (≤ budget).
     const r = computePlannedRisk({
@@ -127,7 +127,7 @@ describe("risk engine — deterministic flooring (§17)", () => {
   });
 });
 
-describe("risk engine — directional integrity (§11/§12)", () => {
+describe("risk engine - directional integrity (§11/§12)", () => {
   it("rejects a stop on the wrong side of entry for BUY", () => {
     const r = computePlannedRisk({ ...BASE, stopLoss: new Decimal("1.09000"), sizeMode: "quantity", sizeValue: new Decimal("1") });
     expect(issues(r)).toContain("STOP_LOSS_INVALID_DIRECTION");
@@ -167,7 +167,7 @@ describe("risk engine — directional integrity (§11/§12)", () => {
   });
 });
 
-describe("risk engine — instrument specs & currency (§15/§16)", () => {
+describe("risk engine - instrument specs & currency (§15/§16)", () => {
   it("quantity mode without specs keeps distance metrics, warns on money", () => {
     const r = computePlannedRisk({ ...BASE, specs: null, sizeMode: "quantity", sizeValue: new Decimal("1") });
     const specIssue = r.issues.find((i) => i.code === "INSTRUMENT_SPECIFICATION_MISSING");
@@ -206,7 +206,7 @@ describe("risk engine — instrument specs & currency (§15/§16)", () => {
   });
 });
 
-describe("risk engine — volume constraints (§17)", () => {
+describe("risk engine - volume constraints (§17)", () => {
   it("flags a budget too small for the minimum size", () => {
     // Budget 0.50 / 500 = 0.001 → floors to 0 → below minimum.
     const r = computePlannedRisk({ ...BASE, sizeMode: "risk_percent", sizeValue: new Decimal("0.005") });
@@ -227,7 +227,7 @@ describe("risk engine — volume constraints (§17)", () => {
   });
 });
 
-describe("risk engine — edge cases (§53)", () => {
+describe("risk engine - edge cases (§53)", () => {
   it("zero balance blocks risk-percent sizing", () => {
     const r = computePlannedRisk({ ...BASE, balance: new Decimal("0"), sizeMode: "risk_percent", sizeValue: new Decimal("1") });
     expect(issues(r)).toContain("BALANCE_UNAVAILABLE");

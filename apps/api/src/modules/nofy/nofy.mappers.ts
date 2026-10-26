@@ -1,8 +1,8 @@
 /**
- * Nofy mappers (Phase 12) — repository rows → shared wire contracts.
+ * Nofy mappers (Phase 12) - repository rows → shared wire contracts.
  * Pure functions; the excerpt/wordCount/refCount/todoOpen projections are
  * computed from the parsed blocks so list rows stay server-authoritative
- * and light (no block payload in list responses — only excerpts).
+ * and light (no block payload in list responses - only excerpts).
  *
  * Ref blocks are NOT resolved in list rows (mock parity: the pointer is
  * stored data; fresh label/meta/href resolution happens in NOTE responses
@@ -50,7 +50,7 @@ export function parseLessonRef(value: unknown): NofyLessonRef | null {
 
 const iso = (at: Date): string => at.toISOString();
 
-/** Full note projection — blocks parsed; refs resolved by the caller. */
+/** Full note projection - blocks parsed; refs resolved by the caller. */
 export function toNote(data: NofyNoteData, blocks: NofyBlock[]): NofyNote {
   return {
     id: data.id,
@@ -70,7 +70,7 @@ export function toNote(data: NofyNoteData, blocks: NofyBlock[]): NofyNote {
   };
 }
 
-/** List projection — one line in My Notes / Favorites / Trash / search. */
+/** List projection - one line in My Notes / Favorites / Trash / search. */
 export function toNoteRow(data: NofyNoteData): NofyNoteRow {
   const blocks = parseStoredBlocks(data.blocks);
   return {
@@ -116,7 +116,7 @@ export function toTemplate(data: NofyTemplateData): NofyTemplate {
   };
 }
 
-/** Weekly activity buckets (last N weeks, oldest first — mock parity). */
+/** Weekly activity buckets (last N weeks, oldest first - mock parity). */
 export function toActivityWeek(weekStart: string, created: number, edited: number): NofyActivityWeek {
   return { weekStart, created, edited };
 }

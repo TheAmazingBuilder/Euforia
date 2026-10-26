@@ -1,11 +1,11 @@
 /**
- * e2e — Trading Core / Trade Journal Foundation (Phase 4).
+ * e2e - Trading Core / Trade Journal Foundation (Phase 4).
  *
  * Covers the journal lifecycle over the REAL AppModule + real database:
  * capture → close → decision gate → review → mutations → bulk → import →
  * saved views → screenshots, the EXTERNAL_SYNC reconstruction pipeline,
  * ownership (IDOR) and negative capabilities. Responses are validated
- * against the SHARED contracts — the exact schemas the frontend consumes.
+ * against the SHARED contracts - the exact schemas the frontend consumes.
  *
  * Hard product contracts under test (trade-entry-ux.md §12–§13):
  * close responses carry NO P&L; only POST /trades/:id/decision reveals it;
@@ -69,7 +69,7 @@ async function userWithAccount(overrides: Record<string, unknown> = {}) {
   return { ...user, accountId };
 }
 
-/** EURUSD has contractSize 100000 — the fixtures' arithmetic anchors on it. */
+/** EURUSD has contractSize 100000 - the fixtures' arithmetic anchors on it. */
 async function eurInstrument(auth?: Record<string, string>) {
   const list = await app.inject({
     method: "GET",
@@ -123,7 +123,7 @@ function pngDataUrl(): string {
 
 // ── Auth boundary ────────────────────────────────────────────────────────────
 
-describe("trades — authentication boundary", () => {
+describe("trades - authentication boundary", () => {
   it("401 on every trades route without a token", async () => {
     const tradeId = "00000000-0000-4000-8000-00000000dead";
     const routes: Array<[ProbeMethod, string]> = [
@@ -153,7 +153,7 @@ describe("trades — authentication boundary", () => {
 
 // ── Instruments catalog ──────────────────────────────────────────────────────
 
-describe("GET /instruments — catalog (Domaine 2)", () => {
+describe("GET /instruments - catalog (Domaine 2)", () => {
   it("serves the seeded catalog validated against the shared schema", async () => {
     const user = await authenticatedUser(app, mail);
     const response = await app.inject({
@@ -247,7 +247,7 @@ describe("POST /trades + lifecycle + decision gate", () => {
     expect(closed.statusCode).toBe(200);
     expect(closed.json()).toEqual({ id: tradeId, awaitingDecision: true });
 
-    // Results are STORED (server-side authority) but not revealed yet — the
+    // Results are STORED (server-side authority) but not revealed yet - the
     // to-grade queue finds the trade via graded=false.
     const queue = await app.inject({
       method: "GET",
@@ -306,9 +306,9 @@ describe("POST /trades + lifecycle + decision gate", () => {
 
     const row = await prisma.trade.findUnique({ where: { id: tradeId }, include: { exits: true } });
     expect(row?.status).toBe("CLOSED");
-    // Finalization §16 — the weighted average is DECIMAL now: (1.09×0.4 +
+    // Finalization §16 - the weighted average is DECIMAL now: (1.09×0.4 +
     // 1.095×0.6)/1 = 1.093 exactly. The old float path quantized to 2dp
-    // ("1.09", mock simplification) and skewed the stored P&L — the
+    // ("1.09", mock simplification) and skewed the stored P&L - the
     // precision divergence from the mock is documented in the report.
     expect(row?.exitPrice?.toFixed()).toBe("1.093");
     expect(row?.exits).toHaveLength(2);
@@ -465,7 +465,7 @@ describe("review + open-trade mutations + edit + delete", () => {
       payload: { exitPrice: "1.09" },
     });
     expect(beforeClose.statusCode).toBe(409);
-    expect(beforeClose.json().message).toBe("Trade is not closed — close it first");
+    expect(beforeClose.json().message).toBe("Trade is not closed - close it first");
 
     await app.inject({
       method: "POST",
@@ -483,7 +483,7 @@ describe("review + open-trade mutations + edit + delete", () => {
     expect(badDate.json().message).toBe("exitAt must be after entryAt");
   });
 
-  it("soft-deletes a trade (§57) — gone from lists, row kept", async () => {
+  it("soft-deletes a trade (§57) - gone from lists, row kept", async () => {
     const user = await userWithAccount();
     const instrument = await eurInstrument(user.authHeader);
     const created = await createOpenTrade(user.authHeader, user.accountId, instrument.id);
@@ -583,7 +583,7 @@ describe("bulk operations, CSV import, saved views", () => {
     const body = first.json();
     expect(body.imported).toBe(1);
     expect(body.unknownSymbols).toEqual(["NOTAREALSYMBOL"]);
-    // The broker pnl reference is informational — results are recomputed.
+    // The broker pnl reference is informational - results are recomputed.
     const row = await prisma.trade.findUnique({ where: { id: body.tradeIds[0] } });
     expect(row?.pnlNet?.toFixed()).toBe("248"); // (0.005 × 0.5 × 100000) − 2
     expect(row?.source).toBe("IMPORT");
@@ -702,7 +702,7 @@ describe("trade screenshots", () => {
     const tradeId = (created.json() as { id: string }).id;
     // Decoded size > TRADES_SCREENSHOT_MAX_BYTES (6 MB default) while the
     // base64 body (~8.4 MB) still clears the coherent BODY_LIMIT_BYTES
-    // (9 MB default) — the DOMAIN validator must own the rejection.
+    // (9 MB default) - the DOMAIN validator must own the rejection.
     const oversized = Buffer.alloc(6_291_456 + 1024, 7);
     const response = await app.inject({
       method: "POST",
@@ -723,7 +723,7 @@ describe("trade screenshots", () => {
 describe("synchronization → reconstruction pipeline", () => {
   it("rebuilds journal trades from synced deals, idempotently, with explicit source", async () => {
     const user = await userWithAccount();
-    // The connect above already ran the INITIAL sync — deals are in the DB.
+    // The connect above already ran the INITIAL sync - deals are in the DB.
     const first = await app.inject({
       method: "GET",
       url: "/api/v1/trades",
@@ -797,7 +797,7 @@ describe("synchronization → reconstruction pipeline", () => {
 
 // ── Ownership (IDOR) ─────────────────────────────────────────────────────────
 
-describe("ownership — User A vs User B (IDOR → 404)", () => {
+describe("ownership - User A vs User B (IDOR → 404)", () => {
   it("user B cannot reach user A's trade through ANY route", async () => {
     const a = await userWithAccount();
     const b = await userWithAccount();
@@ -1048,7 +1048,7 @@ describe("trade mistakes (B3)", () => {
       .detectedMistakes[0]!;
     expect(mistake.mistakeId).toBeTruthy();
 
-    // resolveMistake is addressed by the TradeMistake ROW id — fetch it from review.
+    // resolveMistake is addressed by the TradeMistake ROW id - fetch it from review.
     const review = await app.inject({
       method: "GET",
       url: `/api/v1/trades/${tradeId}/review`,

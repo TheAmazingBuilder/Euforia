@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Repair helper — map what the web app imports from @cosmoz/shared and what
+"""Repair helper - map what the web app imports from @cosmoz/shared and what
 the shared package exports, then diff. Also detect duplicate export names
 between schema files that would break star-exports."""
 import re

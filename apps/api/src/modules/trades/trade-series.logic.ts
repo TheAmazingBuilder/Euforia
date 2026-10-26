@@ -1,8 +1,8 @@
 /**
- * GET /trades/:id/session-series — deterministic intraround sketch around
+ * GET /trades/:id/session-series - deterministic intraround sketch around
  * the recorded anchors (entry/exit/MFE/MAE). Ported 1:1 from the mock store:
  * a seeded random walk pulled toward the known price anchors. Honest by
- * design — this is a reconstruction aid between REAL anchor points, never a
+ * design - this is a reconstruction aid between REAL anchor points, never a
  * tick replay.
  */
 import { toDecimalString } from "../../shared/contracts";
@@ -22,7 +22,7 @@ export interface TradeSeriesSource {
   maePrice: PrismaDecimalLike | null;
 }
 
-/** Minimal structural type — avoids importing Prisma here. */
+/** Minimal structural type - avoids importing Prisma here. */
 export interface PrismaDecimalLike {
   toString(): string;
 }
@@ -90,7 +90,7 @@ export function buildTradeSessionSeries(
     price: toDecimalString(Number(price.toFixed(digits))),
   }));
   return {
-    symbol: instrument?.symbol ?? "—",
+    symbol: instrument?.symbol ?? "-",
     digits,
     direction: trade.direction as TradeSessionSeriesResponse["direction"],
     from: points[0]!.t,

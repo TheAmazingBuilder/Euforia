@@ -22,15 +22,15 @@ import { cn } from "@/lib/utils";
 import { useI18n } from "@/i18n/i18n-provider";
 
 /**
- * Shared building blocks for the Settings module — one visual language for
+ * Shared building blocks for the Settings module - one visual language for
  * every category card: labelled rows, toggles, selects, numeric fields and
  * a per-card save bar (unrelated settings are NEVER saved together).
  * All controls are keyboard accessible and labelled (a11y golden rule).
  * All user-facing copy resolves through dict.settings.primitives (with
- * common.* reuses) INSIDE the render — no module-level dict lookups.
+ * common.* reuses) INSIDE the render - no module-level dict lookups.
  */
 
-// ── Timezones (curated list — same set the profile screen offers) ──────────
+// ── Timezones (curated list - same set the profile screen offers) ──────────
 
 export const TIMEZONE_OPTIONS = [
   "America/Toronto",
@@ -63,7 +63,7 @@ function stableStringify(value: unknown): string {
  * Re-hydrates whenever the server value identity changes (save / reset /
  * background refetch), and reports whether the draft diverged.
  * Generic over the VALUE (not the domain key) so each card gets an exact
- * domain type — no union leakage.
+ * domain type - no union leakage.
  */
 export function useDomainDraft<Value>(
   server: Value | undefined,
@@ -94,11 +94,11 @@ export interface SettingsCategoryCardProps {
   description: string;
   testid: string;
   children: React.ReactNode;
-  /** Save-bar state — omit to render an informational card (no footer). */
+  /** Save-bar state - omit to render an informational card (no footer). */
   dirty?: boolean;
   saving?: boolean;
   onSave?: () => void;
-  /** Reset-to-defaults — opens the shared confirm dialog when provided. */
+  /** Reset-to-defaults - opens the shared confirm dialog when provided. */
   onReset?: () => void;
   footerNote?: React.ReactNode;
 }
@@ -232,7 +232,7 @@ export function SettingsRow({ label, hint, htmlFor, children, stacked, testid }:
 const selectClasses =
   "h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground outline-none transition-colors focus:border-accent sm:w-56";
 
-/** Native select styled like the profile screen — accessible by default. */
+/** Native select styled like the profile screen - accessible by default. */
 export function SettingsSelect({
   value,
   onChange,
@@ -263,7 +263,7 @@ export function SettingsSelect({
   );
 }
 
-/** Toggle row — the switch IS the control, no save bar needed for it alone. */
+/** Toggle row - the switch IS the control, no save bar needed for it alone. */
 export function ToggleRow({
   label,
   hint,
@@ -303,7 +303,7 @@ export function ToggleRow({
 }
 
 /**
- * Numeric field — keeps the raw text locally so partial input ("1.") never
+ * Numeric field - keeps the raw text locally so partial input ("1.") never
  * commits; only valid in-range numbers propagate. Remounts (via `key` at
  * the call site) when the committed value changes externally.
  */
@@ -371,7 +371,7 @@ export function NumberField({
   );
 }
 
-/** Segmented radio pills — for 2–4 mutually exclusive choices. */
+/** Segmented radio pills - for 2–4 mutually exclusive choices. */
 export function SegmentedControl({
   value,
   onChange,
@@ -417,7 +417,7 @@ export function SegmentedControl({
   );
 }
 
-/** Checkbox chip list — for multi-select sets (journal required fields). */
+/** Checkbox chip list - for multi-select sets (journal required fields). */
 export function CheckboxChips({
   selected,
   onToggle,
@@ -488,7 +488,7 @@ export function ConfirmDialog({
   const common = dict.common;
   const [typed, setTyped] = React.useState("");
 
-  // Clear the typed phrase when the dialog closes — handled in the change
+  // Clear the typed phrase when the dialog closes - handled in the change
   // callback (event, not effect) per the react-hooks rules.
   const handleOpenChange = (next: boolean) => {
     if (!next) setTyped("");

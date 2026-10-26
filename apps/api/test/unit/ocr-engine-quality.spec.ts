@@ -1,5 +1,5 @@
 /**
- * Unit — engine-quality phase pure logic: perceptual duplicate distance,
+ * Unit - engine-quality phase pure logic: perceptual duplicate distance,
  * corrections-memory pattern collection, playbook tag suggestions.
  * No Nest, no DB, no clock (§94 determinism).
  */
@@ -41,7 +41,7 @@ describe("hammingDistance64", () => {
     expect(hammingDistance64("ffffffffffffffff", "0000000000000000")).toBe(64);
   });
 
-  it("treats malformed input as maximally distant (V2 contract — advisory signal, never a crash)", () => {
+  it("treats malformed input as maximally distant (V2 contract - advisory signal, never a crash)", () => {
     expect(hammingDistance64("xyz", "0123456789abcdef")).toBe(HAMMING_MAX_DISTANCE);
     expect(hammingDistance64("0123456789ABCDEF", "0123456789abcdef")).toBe(HAMMING_MAX_DISTANCE); // uppercase not allowed
     expect(hammingDistance64("", "0123456789abcdef")).toBe(HAMMING_MAX_DISTANCE);

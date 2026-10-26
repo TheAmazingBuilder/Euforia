@@ -37,7 +37,7 @@ import {
 } from "@/lib/dashboard-customization/workspaces";
 
 /**
- * Dashboard customization hook (Phase 01, Phase 03-aware) — wires the pure
+ * Dashboard customization hook (Phase 01, Phase 03-aware) - wires the pure
  * customization state machine to the existing persistence architecture
  * (PATCH /me/preferences/dashboard via TanStack Query with optimistic cache).
  *
@@ -46,13 +46,13 @@ import {
  * or Cancel discards. A failed save keeps the draft and the session alive.
  *
  * Layout-collection operations (switch/duplicate/rename/delete/templates)
- * persist immediately through the same PATCH — they are separate objects
+ * persist immediately through the same PATCH - they are separate objects
  * from the edited draft; while editing, active-changing ops are disabled
  * by the UI so a live draft is never silently discarded (§10.2).
  *
  * Phase 03: the dashboard domain is replaced WHOLESALE by the server, so
  * EVERY layout PATCH carries the current filter half (saved analytical
- * views + active filters) merged from the freshest preferences cache — a
+ * views + active filters) merged from the freshest preferences cache - a
  * layout save can never wipe the global filter context (the filters hook
  * merges this machine's layouts the same way, in reverse).
  */
@@ -63,7 +63,7 @@ export function useDashboardCustomization() {
 
   const [state, dispatch] = React.useReducer(customizationReducer, initialCustomizationState);
 
-  // Ref mirror for event handlers — synced in an effect (react-compiler
+  // Ref mirror for event handlers - synced in an effect (react-compiler
   // purity: no ref writes during render).
   const stateRef = React.useRef(state);
   React.useEffect(() => {
@@ -91,7 +91,7 @@ export function useDashboardCustomization() {
     dispatch({ type: "sync", snapshot });
   }, [storedSignature]);
 
-  /** Layout payload + the CURRENT filter half from the freshest cache —
+  /** Layout payload + the CURRENT filter half from the freshest cache -
    * the domain PATCH replaces everything, both halves always travel. */
   const fullDomainPayload = React.useCallback(
     (snapshot: CustomizationSnapshot) => {
@@ -117,7 +117,7 @@ export function useDashboardCustomization() {
   );
 
   /** View-mode collection op: apply via the pure reducer, then persist the
-   * FULL snapshot (layouts + active + Phase 06 workspace keys — the domain
+   * FULL snapshot (layouts + active + Phase 06 workspace keys - the domain
    * is replaced wholesale, every half always travels). */
   const applyCollectionAction = React.useCallback(
     (action: CustomizationAction) => {
@@ -161,7 +161,7 @@ export function useDashboardCustomization() {
       onError: (error) => {
         dispatch({
           type: "saveFailed",
-          message: apiErrorMessage(error, "The layout could not be saved. Your edits are kept — try again."),
+          message: apiErrorMessage(error, "The layout could not be saved. Your edits are kept - try again."),
         });
       },
     });
@@ -199,7 +199,7 @@ export function useDashboardCustomization() {
   /**
    * Per-widget config (Phase 02 §6): edit mode routes into the draft
    * transaction (nothing persists before Save); view mode applies the
-   * validated change to the active layout and persists immediately — the
+   * validated change to the active layout and persists immediately - the
    * same channel as the other view-mode collection operations.
    */
   const setWidgetConfig = React.useCallback(
@@ -281,7 +281,7 @@ export function useDashboardCustomization() {
     [applyCollectionAction],
   );
 
-  // ── Phase 06 — workspace layer (default flag + user templates) ────────────
+  // ── Phase 06 - workspace layer (default flag + user templates) ────────────
 
   const setDefaultLayout = React.useCallback(
     (layoutId: string) => applyCollectionAction({ type: "defaultLayoutSet", layoutId }),
@@ -294,7 +294,7 @@ export function useDashboardCustomization() {
   );
 
   /** Freeze the ACTIVE workspace's current saved state into a user-owned
-   * template (view mode only — a live draft is not a saved workspace).
+   * template (view mode only - a live draft is not a saved workspace).
    * Returns false when the name is invalid/clashing or the cap is reached. */
   const saveWorkspaceAsTemplate = React.useCallback(
     (name: string, description?: string): boolean => {
@@ -313,7 +313,7 @@ export function useDashboardCustomization() {
     [applyCollectionAction],
   );
 
-  /** Create a NEW independent workspace from a user template — the stored
+  /** Create a NEW independent workspace from a user template - the stored
    * template is a frozen snapshot; the clone gets a fresh layout id and
    * fresh instance ids, so edits never leak back (spec §6). */
   const createWorkspaceFromUserTemplate = React.useCallback(

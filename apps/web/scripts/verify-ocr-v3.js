@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-require-imports -- Node verification script */
 /**
- * OCR V3 — browser verification of the multi-screenshot fusion, collections,
+ * OCR V3 - browser verification of the multi-screenshot fusion, collections,
  * history filters, quality score, reprocess and strategy matches.
  * Run: node scripts/verify-ocr-v3.js   (requires :3000 mocked build running)
  *
@@ -88,7 +88,7 @@ const PNG_B = `${SHOTS}/ocr-01-empty-hero.png`;
     }
   });
 
-  console.log("— Setup: login + two completed recognitions —");
+  console.log("- Setup: login + two completed recognitions -");
   await page.goto(`${BASE}/login`, { waitUntil: "networkidle" });
   await page.locator("#login-email").fill("trader@cosmoz.app");
   await page.locator("#login-password").fill("cosmoz-demo-2026");
@@ -100,20 +100,20 @@ const PNG_B = `${SHOTS}/ocr-01-empty-hero.png`;
 
   await page.locator('[data-testid="ocr-import-cta"], [data-testid="ocr-empty-hero-cta"]').first().click();
   await page.waitForTimeout(400);
-  await uploadAndStart(page, PNG_A); // job #1 — XAUUSD_BUY
+  await uploadAndStart(page, PNG_A); // job #1 - XAUUSD_BUY
   await page.locator('[data-testid="ocr-result"]').waitFor({ timeout: 25000 });
   check("job #1 completed (XAUUSD_BUY)", true);
   await backToOverview(page);
 
   await page.locator('[data-testid="ocr-import-cta"]').first().click();
   await page.waitForTimeout(400);
-  await uploadAndStart(page, PNG_B); // job #2 — EURUSD_BUY
+  await uploadAndStart(page, PNG_B); // job #2 - EURUSD_BUY
   await page.locator('[data-testid="ocr-result"]').waitFor({ timeout: 25000 });
   check("job #2 completed (EURUSD_BUY)", true);
   await backToOverview(page);
 
   // ── Groups & collections section ─────────────────────────────────────────
-  console.log("— V3: groups & collections section —");
+  console.log("- V3: groups & collections section -");
   check("groups & collections section renders", await page.locator('[data-testid="ocr-groups-section"]').isVisible());
   check("history filter bar renders", await page.locator('[data-testid="ocr-history-filters"]').isVisible());
   const groupBtn = page.locator('[data-testid="ocr-group-open-dialog"]');
@@ -126,7 +126,7 @@ const PNG_B = `${SHOTS}/ocr-01-empty-hero.png`;
   await page.screenshot({ path: `${SHOTS}/ocr-v3-01-overview.png` });
 
   // ── Group creation dialog ────────────────────────────────────────────────
-  console.log("— V3: fusion group creation —");
+  console.log("- V3: fusion group creation -");
   await page.locator('[data-testid="ocr-group-open-dialog"]').click();
   await page.locator('[data-testid="ocr-group-dialog"]').waitFor({ timeout: 5000 });
   const optionsCount = await page.locator('[data-testid="ocr-group-options"] label').count();
@@ -154,7 +154,7 @@ const PNG_B = `${SHOTS}/ocr-01-empty-hero.png`;
   await page.screenshot({ path: `${SHOTS}/ocr-v3-02-group-proposed.png` });
 
   // ── Fused draft edit (SAME review surface) ───────────────────────────────
-  console.log("— V3: fused draft edit + group confirm —");
+  console.log("- V3: fused draft edit + group confirm -");
   await page.locator('[data-testid="ocr-group-edit-draft"]').click();
   await page.locator('[data-testid="ocr-draft-review"]').waitFor({ timeout: 5000 });
   check("fused draft opens the standard review surface", true);
@@ -178,7 +178,7 @@ const PNG_B = `${SHOTS}/ocr-01-empty-hero.png`;
   check("group list shows CONFIRMED state", groupRow.includes("CONFIRMED"));
 
   // ── Collections ──────────────────────────────────────────────────────────
-  console.log("— V3: screenshot collections —");
+  console.log("- V3: screenshot collections -");
   await page.locator('[data-testid="ocr-collection-open-dialog"]').click();
   await page.locator('[data-testid="ocr-collection-dialog"]').waitFor({ timeout: 5000 });
   await page.locator('[data-testid="ocr-collection-name"]').fill("May statements");
@@ -217,7 +217,7 @@ const PNG_B = `${SHOTS}/ocr-01-empty-hero.png`;
   check("collection list no longer shows the deleted set", collectionListGone);
 
   // ── History filters ──────────────────────────────────────────────────────
-  console.log("— V3: history filters —");
+  console.log("- V3: history filters -");
   const rowSel = '[data-testid^="ocr-history-row-"]';
   const rowsBefore = await page.locator(rowSel).count();
   await page.locator('[data-testid="ocr-filter-duplicates"]').click();
@@ -236,7 +236,7 @@ const PNG_B = `${SHOTS}/ocr-01-empty-hero.png`;
   check("clear restores the full list", rowsAfter === rowsBefore, `${rowsAfter} vs ${rowsBefore}`);
 
   // ── Reprocess + quality strip ────────────────────────────────────────────
-  console.log("— V3: reprocess + quality score —");
+  console.log("- V3: reprocess + quality score -");
   await page.locator(rowSel).first().click();
   await page.waitForTimeout(900);
   const onJobWorkspace = await page.locator('[data-testid="ocr-result"]').isVisible().catch(() => false);
@@ -265,8 +265,8 @@ const PNG_B = `${SHOTS}/ocr-01-empty-hero.png`;
   }
 
   // ── Strategy match chips (draft suggestions) ─────────────────────────────
-  console.log("— V3: strategy match chips —");
-  // Open the newest completed job and continue to its draft — the
+  console.log("- V3: strategy match chips -");
+  // Open the newest completed job and continue to its draft - the
   // suggestions strip carries the deterministic strategy matches.
   await page.locator(rowSel).first().click();
   await page.waitForTimeout(900);
@@ -284,7 +284,7 @@ const PNG_B = `${SHOTS}/ocr-01-empty-hero.png`;
   }
 
   // ── Mobile 390 + console ─────────────────────────────────────────────────
-  console.log("— Mobile 390 —");
+  console.log("- Mobile 390 -");
   await page.setViewportSize({ width: 390, height: 844 });
   await page.waitForTimeout(600);
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);

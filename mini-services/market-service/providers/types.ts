@@ -1,5 +1,5 @@
 /**
- * Market Data Provider contract (mission §34) — one interface, many sources.
+ * Market Data Provider contract (mission §34) - one interface, many sources.
  * The service composes providers; each owns its transport and its health.
  * `source` travels with EVERY tick/candle so the UI can label simulated
  * data honestly (mission §33: never present a simulated feed as real).
@@ -34,11 +34,11 @@ export interface MarketDataProvider {
   start(emit: (tick: Tick) => void): void | Promise<void>;
   /** Release transports (sockets, timers). Idempotent. */
   stop(): void;
-  /** Observability for /health (mission §28) — no secrets. */
+  /** Observability for /health (mission §28) - no secrets. */
   status(): Record<string, unknown>;
   /**
    * Candle history for the chart datafeed. When `from`/`to` (epoch ms) are
-   * given the provider serves that window (session replay) — bounded by
+   * given the provider serves that window (session replay) - bounded by
    * `limit`; providers that cannot honor historical windows return what
    * they honestly retain, never fabricated "real" data.
    */

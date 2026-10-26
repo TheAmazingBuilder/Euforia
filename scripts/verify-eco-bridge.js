@@ -1,4 +1,4 @@
-// (a)+(b) verification — real eco source note in the UI + eco-approach toast.
+// (a)+(b) verification - real eco source note in the UI + eco-approach toast.
 const { chromium } = require('playwright');
 const BASE = process.env.BASE_URL || 'http://localhost:3001';
 const DEMO_EMAIL = "trader@cosmoz.app";
@@ -14,7 +14,7 @@ async function ensureLogin(page) {
 }
 let pass = 0, fail = 0;
 function check(label, ok, detail = "") {
-  console.log(`${ok ? "PASS" : "FAIL"}  ${label}${detail ? "  — " + detail : ""}`);
+  console.log(`${ok ? "PASS" : "FAIL"}  ${label}${detail ? "  - " + detail : ""}`);
   ok ? pass++ : fail++;
 }
 (async () => {
@@ -33,7 +33,7 @@ function check(label, ok, detail = "") {
   await page.waitForTimeout(2500);
   const note = await page.locator('[data-testid="oryon-events-source-note"]').innerText().catch(() => "");
   check("eco source note reflects the real provider", note.includes("ForexFactory"), note.slice(0, 80));
-  // First uncached FF fetch on a dev server can take a few seconds — poll.
+  // First uncached FF fetch on a dev server can take a few seconds - poll.
   let rows = 0;
   for (let i = 0; i < 30 && rows === 0; i += 1) {
     rows = await page.locator('[data-testid="oryon-eco-row"]').count();
@@ -45,14 +45,14 @@ function check(label, ok, detail = "") {
   await page.evaluate(() => {
     window.__ORYON_ECO_APPROACH_DEBUG__?.inject("Probe Rate Decision", "EUR", 3);
   });
-  // The shared clock ticks every 15 s — allow up to 40 s for the beat.
+  // The shared clock ticks every 15 s - allow up to 40 s for the beat.
   await page.waitForSelector('[data-testid="oryon-eco-approach-toast"]', { timeout: 40_000 });
   const toastText = await page.locator('[data-testid="oryon-eco-approach-toast"]').first().innerText();
   check("eco-approach toast fires", toastText.length > 0, toastText.replace(/\n/g, " | ").slice(0, 120));
   check("toast matches a workspace instrument (EURUSD)", toastText.includes("EURUSD"));
 
   // one-shot: the next clock beat must NOT re-fire the same milestone
-  // (dev StrictMode may mount the bridge twice — each engine one-shot;
+  // (dev StrictMode may mount the bridge twice - each engine one-shot;
   // the assertion tolerates the dev artifact, prod mounts once).
   await page.waitForTimeout(17_000);
   const again = await page.locator('[data-testid="oryon-eco-approach-toast"]').count();

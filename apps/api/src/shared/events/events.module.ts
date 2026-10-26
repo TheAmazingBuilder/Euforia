@@ -1,8 +1,8 @@
 /**
- * EventsModule — shared in-process domain event bus (Foundation leaf).
+ * EventsModule - shared in-process domain event bus (Foundation leaf).
  *
  * A LEAF module on purpose: every bounded context may import it without
- * creating cycles. It owns no Prisma, no config, no routes — just the typed
+ * creating cycles. It owns no Prisma, no config, no routes - just the typed
  * bus singleton wired to the root logger.
  */
 import { Module } from "@nestjs/common";

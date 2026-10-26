@@ -29,7 +29,7 @@ import {
 import { NOFY_REF_META, safeNofyHref } from "./nofy-shared";
 
 /**
- * Nofy block renderers — one component per block type. Text blocks are
+ * Nofy block renderers - one component per block type. Text blocks are
  * UNCONTROLLED textareas (defaultValue only) so React re-renders from the
  * autosave loop can never move the caret. All key behaviours (Enter split,
  * Backspace merge, arrow traversal) live here and talk to the editor
@@ -41,9 +41,9 @@ import { NOFY_REF_META, safeNofyHref } from "./nofy-shared";
 export type NofyBlockOps = {
   updateText: (id: string, text: string) => void;
   updateBlock: (id: string, patch: Partial<NofyBlock>) => void;
-  /** Enter — split the block at the caret, returning the new block's type. */
+  /** Enter - split the block at the caret, returning the new block's type. */
   splitBlock: (id: string, caret: number) => void;
-  /** Backspace at position 0 — merge into the previous block (or delete). */
+  /** Backspace at position 0 - merge into the previous block (or delete). */
   mergeBackward: (id: string) => void;
   deleteBlock: (id: string) => void;
   duplicateBlock: (id: string) => void;
@@ -51,14 +51,14 @@ export type NofyBlockOps = {
   reorder: (dragId: string, targetId: string, position: "above" | "below") => void;
   /** Exact focus on a known block (after transforms). */
   focusBlock: (id: string, caret: "start" | "end") => void;
-  /** Arrow-key traversal — previous block end / next block start. */
+  /** Arrow-key traversal - previous block end / next block start. */
   focusNeighbor: (id: string, direction: -1 | 1) => void;
   registerTextArea: (id: string, el: HTMLTextAreaElement | null) => void;
-  /** Trading reference — open the entity picker for this kind. */
+  /** Trading reference - open the entity picker for this kind. */
   openRefPicker: (kind: NofyRefKind, sourceBlockId: string) => void;
   /** Flush pending autosave, then SPA-navigate to a reference's href. */
   navigateToRef: (href: string) => void;
-  /** Slash command menu — (source block id, current filter text). */
+  /** Slash command menu - (source block id, current filter text). */
   openSlashMenu: (sourceBlockId: string, filter: string) => void;
   closeSlashMenu: () => void;
 };
@@ -83,7 +83,7 @@ export function blockTypeLabel(type: NofyBlock["type"], B: Dictionary["nofy"]["b
   return labels[type] ?? type;
 }
 
-/** Empty-block placeholder — headings reuse their blockTypes label (i18n). */
+/** Empty-block placeholder - headings reuse their blockTypes label (i18n). */
 function placeholderFor(type: NofyBlock["type"], N: Dictionary["nofy"]): string {
   switch (type) {
     case "paragraph": return N.placeholders.paragraph;
@@ -299,7 +299,7 @@ export function NofyBlockRow({
         />
       ) : null}
 
-      {/* Gutter — drag handle + block menu, visible on hover/focus */}
+      {/* Gutter - drag handle + block menu, visible on hover/focus */}
       {!compactGutter ? (
         <div className="flex w-6 shrink-0 flex-col items-center pt-1 opacity-0 transition-opacity group-hover/row:opacity-100 focus-within:opacity-100">
           <button
@@ -387,7 +387,7 @@ export function NofyBlockRow({
 
 // ── Block menu (turn into / duplicate / move / delete) ───────────────────────
 
-/** Machine types offered by "Turn into" — display labels resolve via blockTypes (i18n). */
+/** Machine types offered by "Turn into" - display labels resolve via blockTypes (i18n). */
 const TURN_INTO: readonly NofyBlock["type"][] = [
   "paragraph", "h1", "h2", "h3", "bullet", "numbered", "todo", "quote", "callout", "code",
 ];
@@ -448,7 +448,7 @@ function isTextLike(type: NofyBlock["type"]): boolean {
 
 // ── Callout ──────────────────────────────────────────────────────────────────
 
-/** Machine tones + identity — display labels resolve through blocks.tones (i18n). */
+/** Machine tones + identity - display labels resolve through blocks.tones (i18n). */
 const CALLOUT_TONES: { tone: NonNullable<NofyBlock["tone"]>; icon: typeof Info; hue: string }[] = [
   { tone: "info", icon: Info, hue: "var(--accent)" },
   { tone: "tip", icon: Lightbulb, hue: "var(--profit)" },
@@ -567,7 +567,7 @@ function ImageBody({ block, ops }: { block: NofyBlock; ops: NofyBlockOps }) {
   return (
     <figure className="overflow-hidden rounded-md border border-border" data-testid="nofy-image">
       {/* Remote URLs are only ever self-seeded data URLs / user-provided image srcs
-          rendered as an <img> — never injected HTML (spec §49). */}
+          rendered as an <img> - never injected HTML (spec §49). */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={block.src} alt={block.alt ?? block.caption ?? N.blocks.noteImageAlt} className="max-h-96 w-full object-contain bg-muted/30" />
       <figcaption className="flex items-center gap-2 border-t border-border bg-surface px-2 py-1.5">

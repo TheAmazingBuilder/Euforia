@@ -1,16 +1,16 @@
 /**
- * Dashboard workspaces probe — Phase 06 (workspace management, layout
+ * Dashboard workspaces probe - Phase 06 (workspace management, layout
  * collections & user templates), run against the ZERO-ENV mock preview
  * (MSW on, default `next dev`).
  *
  * Covers: the manager opens as "Workspaces", rename, duplicate, set
  * default (badge appears), save the current workspace as a user template,
- * spawn an independent workspace from it (deep copy — the clone edits do
+ * spawn an independent workspace from it (deep copy - the clone edits do
  * not touch the source), delete the user template, delete the default
- * workspace (flag clears — the Default badge disappears), console integrity.
+ * workspace (flag clears - the Default badge disappears), console integrity.
  *
  * NOTE ON PERSISTENCE: mock preferences live in browser memory and reseed
- * on reload — reload-survival is proven SERVER-SIDE by the settings e2e
+ * on reload - reload-survival is proven SERVER-SIDE by the settings e2e
  * suite (real PostgreSQL), not here.
  */
 const { chromium } = require("playwright");
@@ -24,7 +24,7 @@ function check(label, ok, extra = "") {
   const tag = ok ? "✓" : "✗";
   if (ok) passed += 1;
   else failed += 1;
-  console.log(`  ${tag} ${label}${extra ? ` — ${extra}` : ""}`);
+  console.log(`  ${tag} ${label}${extra ? ` - ${extra}` : ""}`);
 }
 
 async function login(page) {
@@ -101,7 +101,7 @@ async function openWorkspaces(page) {
     const tplId = (await tplRow.getAttribute("data-testid")).replace("dashboard-user-template-row-", "");
 
     // Apply the user template → NEW independent workspace, auto-activated.
-    // The manager dialog stays open — count rows in the SAME session.
+    // The manager dialog stays open - count rows in the SAME session.
     await page.click(`[data-testid="dashboard-user-template-apply-${tplId}"]`);
     await page.waitForTimeout(1200);
     await page.click('[data-testid="dashboard-layouts-tab"]');
@@ -127,7 +127,7 @@ async function openWorkspaces(page) {
     );
     await page.click(`[data-testid="dashboard-layout-delete-${secondId}"]`);
     await page.waitForTimeout(500);
-    // Destructive deletes go through the ConfirmDialog (spec §12) — accept it.
+    // Destructive deletes go through the ConfirmDialog (spec §12) - accept it.
     await page.click('[data-testid="dashboard-confirm-accept"]');
     await page.waitForTimeout(900);
     check(

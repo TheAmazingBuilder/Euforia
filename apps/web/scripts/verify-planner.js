@@ -1,9 +1,9 @@
 /**
- * Verify — Trade Planner module (Trade Planning + Risk & Money Management +
+ * Verify - Trade Planner module (Trade Planning + Risk & Money Management +
  * Trading Checklist V1, frontend-first over the MSW mock backend).
  *
  * IMPORTANT: navigation uses sidebar clicks ONLY (SPA). Exactly ONE reload
- * is performed, for the ?plan= deep-link persistence sanity — dark mode is
+ * is performed, for the ?plan= deep-link persistence sanity - dark mode is
  * exercised through media emulation (no reload).
  *
  * Covers (prompt §5–§76 DoD):
@@ -61,7 +61,7 @@ const SHOTS = "/home/z/my-project/scripts/shots/planner";
 
   const results = [];
   const check = (name, ok, extra = "") => {
-    results.push(`${ok ? "PASS" : "FAIL"} — ${name}${extra ? ` (${extra})` : ""}`);
+    results.push(`${ok ? "PASS" : "FAIL"} - ${name}${extra ? ` (${extra})` : ""}`);
     console.log(results[results.length - 1]);
   };
   const shot = async (name) => {
@@ -308,7 +308,7 @@ const SHOTS = "/home/z/my-project/scripts/shots/planner";
   await page.waitForTimeout(1_000);
   check("H1 Reload keeps ?tab=risk",
     (await page.locator('[data-testid="planner-risk-panel"]').count()) === 1);
-  // Note: the mock store reseeds on full reload (documented module behavior) —
+  // Note: the mock store reseeds on full reload (documented module behavior) -
   // the deep-link persistence check targets the URL contract, not memory.
   await page.locator('[data-testid="planner-tab-plans"]').click();
   await page.waitForTimeout(400);
@@ -328,7 +328,7 @@ const SHOTS = "/home/z/my-project/scripts/shots/planner";
     await page.locator('[data-testid="planner-confirm-delete-confirm"]').click();
     await page.locator('[data-testid="planner-plans-panel"]').waitFor({ state: "visible", timeout: 30_000 });
     await page.waitForTimeout(600);
-    // The list filter resets on remount — re-apply it before counting.
+    // The list filter resets on remount - re-apply it before counting.
     await page.locator('[data-testid="planner-filter-cancelled"]').click();
     await page.waitForTimeout(400);
     const cancelledAfter = await page.locator('[data-testid="planner-plan-card"]').count();
@@ -337,7 +337,7 @@ const SHOTS = "/home/z/my-project/scripts/shots/planner";
     check("I1 Cancelled plan deleted from the list", false, "no cancelled seed found");
   }
 
-  // ══ J. Mobile 390px (direct URL — the sidebar lives in a closed sheet) ══
+  // ══ J. Mobile 390px (direct URL - the sidebar lives in a closed sheet) ══
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`${BASE}/planner?tab=plans`, { waitUntil: "domcontentloaded", timeout: 60_000 });
   await page.locator('[data-testid="planner-view"]').waitFor({ state: "visible", timeout: 60_000 });
@@ -370,7 +370,7 @@ const SHOTS = "/home/z/my-project/scripts/shots/planner";
   check("L1 No unexpected 4xx / page errors", realErrors.length === 0, realErrors.slice(0, 3).join(" | "));
 
   const failed = results.filter((r) => r.startsWith("FAIL"));
-  console.log(`\n${results.length - failed.length}/${results.length} PASS — ${SHOTS}`);
+  console.log(`\n${results.length - failed.length}/${results.length} PASS - ${SHOTS}`);
   await browser.close();
   process.exit(failed.length === 0 ? 0 : 1);
 })().catch((error) => {

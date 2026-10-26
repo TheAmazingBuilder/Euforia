@@ -16,9 +16,9 @@ import { getChartTheme } from "@/lib/utils/chart-theme";
 import { withAlpha } from "@/lib/utils/color";
 
 /**
- * Activity heatmap widget (Phase 02 §12.3) — weekday × UTC-hour-bucket grid
+ * Activity heatmap widget (Phase 02 §12.3) - weekday × UTC-hour-bucket grid
  * over the server-computed analytics-suite cells. Metric configurable:
- * average R (signed — profit/loss ink) or trade count (volume — accent
+ * average R (signed - profit/loss ink) or trade count (volume - accent
  * scale). Empty cells stay visually distinct from zero (honest gaps).
  */
 
@@ -138,7 +138,7 @@ export function ActivityHeatmapWidget({
         ],
       } satisfies EChartsCoreOption;
     }
-    // Trades mode — accent intensity scale from 0 to the busiest cell.
+    // Trades mode - accent intensity scale from 0 to the busiest cell.
     const maxTrades = Math.max(1, ...values);
     return {
       tooltip: {
@@ -244,7 +244,7 @@ export function ActivityHeatmapWidget({
           />
         ) : (
           <p className="py-6 text-center text-sm text-muted-foreground" data-testid="activity-heatmap-empty">
-            No closed trades yet — the grid lights up as you journal.
+            No closed trades yet - the grid lights up as you journal.
           </p>
         )}
       </CardContent>

@@ -19,7 +19,7 @@ import { apiErrorMessage } from "@/lib/api/client";
 import { useI18n } from "@/i18n/i18n-provider";
 
 /**
- * Profile category — identity only. Edits go through PATCH /me (the profile
+ * Profile category - identity only. Edits go through PATCH /me (the profile
  * endpoint), NOT the preferences document: name / email / timezone are
  * account identity, and timezone is the single source of truth for
  * trading-day keys. Avatar is a data URL in V1 (≤ 150 KB), CDN later.

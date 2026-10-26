@@ -1,29 +1,29 @@
 import type { OryonAlert } from "@cosmoz/shared";
 
 /**
- * Alert overlay SPEC + structural diff (Phase 5 spec §7) — PURE.
+ * Alert overlay SPEC + structural diff (Phase 5 spec §7) - PURE.
  *
  * Mirrors the position overlay contract (lib/oryon/positions/overlay.ts):
  * the chart manager (lib/charting/oryon-alert-overlays.ts) consumes the diff
  * and applies it through the engine's supported API (`series.createPriceLine`
  * / `IPriceLine.applyOptions` / `series.removePriceLine`). Everything
- * testable about the overlay logic — filtering, level extraction, titles,
- * diffing — lives HERE, without DOM, without Lightweight Charts.
+ * testable about the overlay logic - filtering, level extraction, titles,
+ * diffing - lives HERE, without DOM, without Lightweight Charts.
  *
  * Lifecycle contract:
- *   - stable key = the alert id (one line per alert) — lines update IN PLACE
+ *   - stable key = the alert id (one line per alert) - lines update IN PLACE
  *     on store commits instead of being destroyed and recreated;
  *   - an alert that stops being eligible (removed, disabled, triggered, or
  *     its symbol no longer matches the displayed instrument) produces a
- *     "remove" op — no orphan lines, no duplicates after repeated updates;
+ *     "remove" op - no orphan lines, no duplicates after repeated updates;
  *   - ONLY active alerts are drawn (spec §7: display ACTIVE alerts; a
  *     triggered alert leaves the chart and lives in the panel history);
- *   - symbol matching is EXACT after trim+uppercase — never a substring
+ *   - symbol matching is EXACT after trim+uppercase - never a substring
  *     (BTCUSD ≠ BTCUSDT, the Phase 4 invariant).
  */
 
 export interface AlertLineSpec {
-  /** Stable identity: the alert id — never reused while the alert exists. */
+  /** Stable identity: the alert id - never reused while the alert exists. */
   key: string;
   alertId: string;
   /** Threshold the line anchors to (chart price domain). */
@@ -40,7 +40,7 @@ function alertTitle(alert: OryonAlert): string {
   return label === null ? `${arrow} Alert` : `${arrow} ${label}`.slice(0, 24);
 }
 
-/** The single line derived from one alert — null when not renderable. */
+/** The single line derived from one alert - null when not renderable. */
 export function alertLineSpecFor(alert: OryonAlert): AlertLineSpec | null {
   if (alert.status !== "active") return null;
   const price = Number(alert.targetPrice);
@@ -77,7 +77,7 @@ function sameSpec(a: AlertLineSpec, b: AlertLineSpec): boolean {
 }
 
 /**
- * Structural diff between the rendered specs and the next specs — a replayed
+ * Structural diff between the rendered specs and the next specs - a replayed
  * identical snapshot produces an EMPTY diff (idempotent apply).
  */
 export function diffAlertLines(

@@ -1,6 +1,6 @@
 /**
- * shot-preview.js — real screenshots of the current build for the IM preview.
- *   1. / (dashboard shell) — desktop dark 1440x900
+ * shot-preview.js - real screenshots of the current build for the IM preview.
+ *   1. / (dashboard shell) - desktop dark 1440x900
  * Saves PNGs to /home/z/my-project/download/.
  * Run: node scripts/shot-preview.js  (server on :3000, mock mode)
  */

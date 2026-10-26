@@ -1,5 +1,5 @@
 /**
- * Trade Review workspace + Goals service — the structured post-trade review
+ * Trade Review workspace + Goals service - the structured post-trade review
  * workflow and the computed goal-progress engine. Ported from the mock
  * store: the reviews list merges REVIEWED rows + PENDING closed trades, the
  * upsert keeps the trade's own lessons/followedPlan in sync, the lessons
@@ -229,7 +229,7 @@ export class ReviewsService {
         source: "REVIEW",
         tradeId: review.tradeId,
         date: trade.tradingDate.toISOString().slice(0, 10),
-        text: p.lessons ?? "—",
+        text: p.lessons ?? "-",
         symbol: trade.instrument.symbol,
         executionGrade: p.executionGrade ?? null,
         rMultiple: trade.rMultiple === null ? null : Number(trade.rMultiple),
@@ -506,7 +506,7 @@ export class ReviewsService {
     };
     const targetWord = shape.direction === "LOWER_IS_BETTER" ? "max" : metric === "MAX_DAILY_LOSS_R" ? "floor" : "target";
     const detail = actual === null
-      ? `No data yet this ${period.toLowerCase()} — the sample is empty`
+      ? `No data yet this ${period.toLowerCase()} - the sample is empty`
       : `${fmt(actual)} vs ${fmt(target)} ${targetWord}`;
 
     return {

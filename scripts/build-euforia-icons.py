@@ -8,7 +8,7 @@ Fixes and derives the app-facing raster icons from the supplied brand kit:
   - generates apps/web/src/app/apple-icon.png (180x180)
 
 Source of truth: apps/web/public/brand/** (copied verbatim from Eurofia.zip).
-No color or geometry is altered — pure resampling of official assets.
+No color or geometry is altered - pure resampling of official assets.
 """
 
 from PIL import Image
@@ -33,7 +33,7 @@ def main() -> None:
     # 2) icon-192.png referenced by the webmanifest but absent from the kit
     resize_to(PNG / "icon-512.png", 192, PNG / "icon-192.png")
 
-    # 3) favicon.ico — multi-size, built from the official squircle renders
+    # 3) favicon.ico - multi-size, built from the official squircle renders
     favicon_src = Image.open(PNG / "icon-32.png").convert("RGBA")
     big = Image.open(PNG / "icon-128.png").convert("RGBA")
     sizes = [(16, 16), (32, 32), (48, 48)]
@@ -41,7 +41,7 @@ def main() -> None:
     big.save(dest, format="ICO", sizes=sizes)
     print(f"  {dest.relative_to(WEB)} (16/32/48)")
 
-    # 4) apple-icon.png — 180x180 (Next auto-discovers src/app/apple-icon.png)
+    # 4) apple-icon.png - 180x180 (Next auto-discovers src/app/apple-icon.png)
     resize_to(PNG / "icon-512.png", 180, WEB / "src" / "app" / "apple-icon.png")
 
     print("done")

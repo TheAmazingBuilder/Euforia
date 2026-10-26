@@ -12,11 +12,11 @@ layers directly FROM the reference pixels:
      highlight map = where the reference is brighter
      (both normalized, edge-eroded, feathered)
   4. vectorize each level with vtracer (binary spline, full-canvas mask so
-     coordinates stay in SVG space — no transforms to fight)
+     coordinates stay in SVG space - no transforms to fight)
   5. recompose euforia-mark.svg / euforia-icon.svg / favicon.svg:
      base gradient path + <g clip><g blur> shading levels </g></g>
 
-Mono marks (white/black) stay flat on purpose — single-color reproduction.
+Mono marks (white/black) stay flat on purpose - single-color reproduction.
 """
 
 import re
@@ -96,7 +96,7 @@ def trace_mask(mask_arr: np.ndarray, tag: str) -> list[str]:
     """vtracer binary spline trace of a full-canvas binary mask.
 
     Returns raw <path …/> elements whose coordinates are already in the
-    750x918 SVG space (mask traced at full canvas — no offset games).
+    750x918 SVG space (mask traced at full canvas - no offset games).
     """
     mask_img = Image.fromarray(np.where(mask_arr, 0, 255).astype(np.uint8))
     assert mask_img.size == (W, H)
@@ -119,7 +119,7 @@ vtracer.convert_image_to_svg_py(
     m = re.search(r'width="(\d+)" height="(\d+)"', text)
     tw, th = int(m.group(1)), int(m.group(2))
     if (tw, th) != (W, H):
-        sys.exit(f"trace canvas {tw}x{th} != {W}x{H} for {tag} — aborting")
+        sys.exit(f"trace canvas {tw}x{th} != {W}x{H} for {tag} - aborting")
     els = re.findall(r"<path[^>]*/?>", text)
     return els
 
@@ -163,7 +163,7 @@ def main():
     iou = (sr & sf).sum() / max(1, (sr | sf).sum())
     print(f"silhouette IoU ref vs flat: {iou:.4f}")
     if iou < 0.97:
-        sys.exit("alignment broken — aborting")
+        sys.exit("alignment broken - aborting")
 
     mask = inside_mask(ref, flat)
     L_ref, L_flat = lum(ref), lum(flat)
@@ -230,7 +230,7 @@ def main():
     (BRAND / "favicon.svg").write_text(icon_svg)
 
     kb = len(mark_svg) / 1024
-    print(f"euforia-mark.svg rebuilt ({kb:.0f} KB) — icon + favicon synced")
+    print(f"euforia-mark.svg rebuilt ({kb:.0f} KB) - icon + favicon synced")
 
 
 if __name__ == "__main__":

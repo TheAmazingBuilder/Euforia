@@ -1,5 +1,5 @@
 /**
- * Spot regression probe — shell integrity after the FEATURES navigation
+ * Spot regression probe - shell integrity after the FEATURES navigation
  * change. SPA-only: login, then walk existing pages through the sidebar and
  * confirm each still renders its header + primary surface.
  */
@@ -42,7 +42,7 @@ const DEMO_PASSWORD = "cosmoz-demo-2026";
     await page.waitForTimeout(700);
     const h1 = (await page.locator("h1").first().innerText().catch(() => "")).trim();
     const ok = pattern.test(h1) || (await page.locator("main, section").first().innerText()).length > 100;
-    console.log(`${ok ? "PASS" : "FAIL"} — ${href} (h1="${h1}")`);
+    console.log(`${ok ? "PASS" : "FAIL"} - ${href} (h1="${h1}")`);
     if (ok) pass += 1;
   }
   console.log(`\n${pass}/${walk.length} shell pages OK; pageerrors=${errors.length}`);

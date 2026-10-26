@@ -14,11 +14,11 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 /**
- * Tasky — the trading kanban (Academy section, independent module).
+ * Tasky - the trading kanban (Academy section, independent module).
  * Columns flow horizontally (left → right) inside a horizontally scrollable
  * board; cards move between columns by dragging the grip handle with the
  * cursor OR a finger (unified Pointer Events path, touch-action: none on the
- * handle — page scroll stays available everywhere else). The board persists
+ * handle - page scroll stays available everywhere else). The board persists
  * 100% locally: Tasky is local-by-design, like the rest of the study toolkit.
  */
 
@@ -30,7 +30,7 @@ type TaskyCard = {
   tag: string;
   priority: Priority;
   assignee: string;
-  /** ISO date or undefined — rendered as “Apr 20”. */
+  /** ISO date or undefined - rendered as “Apr 20”. */
   due?: string;
 };
 
@@ -137,7 +137,7 @@ function loadBoard(): TaskyColumn[] {
       return parsed as TaskyColumn[];
     }
   } catch {
-    // Corrupted snapshot — fall through to the seed.
+    // Corrupted snapshot - fall through to the seed.
   }
   return seedBoard();
 }
@@ -190,7 +190,7 @@ export function TaskyView() {
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(columns));
     } catch {
-      // Storage full/unavailable — the board still works for the session.
+      // Storage full/unavailable - the board still works for the session.
     }
   }, [columns, hydrated]);
 
@@ -241,7 +241,7 @@ export function TaskyView() {
     [resolveTarget, setDragState],
   );
 
-  // Global pointer tracking — ONE path for cursor AND finger drags.
+  // Global pointer tracking - ONE path for cursor AND finger drags.
   React.useEffect(() => {
     if (!drag) return;
     let lastPoint = { x: drag.x, y: drag.y };
@@ -262,7 +262,7 @@ export function TaskyView() {
           const moved = fromColumn?.cards.find((card) => card.id === current.cardId);
           if (!moved) return prev;
           // The DOM insertion index counts the dragged card itself while it
-          // still sits in its source column — compensate on same-column drops.
+          // still sits in its source column - compensate on same-column drops.
           let insertAt = target.index ?? 0;
           if (target.col === current.fromCol && fromColumn) {
             const originalIndex = fromColumn.cards.findIndex((card) => card.id === current.cardId);
@@ -334,7 +334,7 @@ export function TaskyView() {
 
   return (
     <div className="flex flex-col" data-testid="tasky-view">
-      {/* Board — columns added horizontally (left → right), board scrolls X */}
+      {/* Board - columns added horizontally (left → right), board scrolls X */}
       <div data-testid="tasky-board" className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-3 pt-1">
         {columns.map((column) => {
           const isOver = drag !== null && drag.overCol === column.id;
@@ -507,7 +507,7 @@ export function TaskyView() {
           );
         })}
 
-        {/* Add list — appended at the right end of the horizontal flow */}
+        {/* Add list - appended at the right end of the horizontal flow */}
         <div className="w-[272px] shrink-0 sm:w-[280px]" data-testid="tasky-add-list-zone">
           {addingList ? (
             <form
@@ -564,7 +564,7 @@ export function TaskyView() {
         </div>
       </div>
 
-      {/* Drag ghost — fixed overlay following the pointer (cursor or finger) */}
+      {/* Drag ghost - fixed overlay following the pointer (cursor or finger) */}
       {drag && dragCard ? (
         <div
           aria-hidden="true"

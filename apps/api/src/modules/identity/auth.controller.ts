@@ -1,5 +1,5 @@
 /**
- * Auth controller — the 11 public auth endpoints (shared schemas/auth.ts).
+ * Auth controller - the 11 public auth endpoints (shared schemas/auth.ts).
  * All are @Public(): they authenticate via credentials, cookies or tokens.
  * The MFA challenge/recover endpoints complete a challenge-token login.
  */
@@ -72,7 +72,7 @@ export class AuthController {
     return this.auth.mfaRecover(input, request, reply);
   }
 
-  /** NOT exempt on the frontend — its 401 is the refresh trigger (§56). */
+  /** NOT exempt on the frontend - its 401 is the refresh trigger (§56). */
   @Get("me")
   me(@CurrentUser() principal: { userId: string; sessionId: string }) {
     return this.auth.me(principal);

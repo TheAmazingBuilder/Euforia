@@ -1,5 +1,5 @@
 #!/bin/bash
-# Battery de vérification post-restauration + cleanup — Task 29
+# Battery de vérification post-restauration + cleanup - Task 29
 export PATH=/home/z/.npm-global/bin:$PATH
 cd /home/z/my-project/apps/api
 pnpm prisma generate > /tmp/battery.log 2>&1

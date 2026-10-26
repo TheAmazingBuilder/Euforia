@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 /**
- * seed-instruments.mjs — idempotent re-application of the canonical
+ * seed-instruments.mjs - idempotent re-application of the canonical
  * Instrument catalog seed (7 rows with FIXED UUIDs from migration
  * 20261004120000_trade_journal_core).
  *
  * WHY THIS EXISTS: the sandbox-recovery path (`db push` + `migrate resolve
- * --applied`) syncs the SCHEMA but never executes migration SQL — so a
+ * --applied`) syncs the SCHEMA but never executes migration SQL - so a
  * rebuilt database has NO instruments, and both the deals→trades
  * reconstruction AND the CSV import skip every symbol as "unknown".
  * This script restores the catalog without touching any other table.
@@ -35,7 +35,7 @@ ${INSTRUMENTS.map(
 ON CONFLICT DO NOTHING;
 
 -- InstrumentSpecification rows (from scripts/migration-seeds.sql, unwired
--- until now) — required by the trade-plan risk engine / validator and the
+-- until now) - required by the trade-plan risk engine / validator and the
 -- calculators. BTCUSDT added to mirror the Instrument catalog.
 INSERT INTO "InstrumentSpecification"
   ("id", "symbol", "name", "assetClass", "quoteCurrency", "pipSize", "contractSize", "minVolume", "maxVolume", "volumeStep", "digits", "isActive", "createdAt", "updatedAt")
@@ -51,7 +51,7 @@ VALUES
 ON CONFLICT ("symbol") DO NOTHING;
 `;
 
-// pg resolves through the repo's pnpm store (embedded-postgres dependency) —
+// pg resolves through the repo's pnpm store (embedded-postgres dependency) -
 // no direct dependency needed. Version discovered dynamically, fallback by glob.
 const { readdirSync } = await import("node:fs");
 const pnpmDir = "/home/z/my-project/node_modules/.pnpm";

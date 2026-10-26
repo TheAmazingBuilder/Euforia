@@ -24,7 +24,7 @@ import {
 } from "@/lib/utils/sidebar";
 
 /**
- * Application shell: fixed desktop sidebar (240px <-> 72px, persisted —
+ * Application shell: fixed desktop sidebar (240px <-> 72px, persisted -
  * toggled from the header icon, not from inside the rail), sticky topbar,
  * mobile sheet navigation and the mobile bottom nav + FAB. Server pages are
  * rendered through `children`, so they stay Server Components.
@@ -56,7 +56,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* Desktop sidebar — the collapse affordance lives in the Topbar. */}
+      {/* Desktop sidebar - the collapse affordance lives in the Topbar. */}
       <aside
         className={`fixed inset-y-0 left-0 z-40 hidden flex-col border-r border-border bg-surface transition-[width] duration-200 ease-in-out lg:flex ${
           collapsed ? "w-[72px]" : "w-[240px]"
@@ -84,13 +84,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {/* Mobile bottom navigation + FAB */}
       <BottomNav />
 
-      {/* Command palette — ⌘K / Ctrl+K, topbar search button */}
+      {/* Command palette - ⌘K / Ctrl+K, topbar search button */}
       <CommandPalette />
 
       {/* Global capture modal + "?" shortcuts overlay (N / ? hotkeys) */}
       <TradeModalHost />
 
-      {/* Acts 2 & 3 — the Gate → Reveal → Reflect flow (opens after a save
+      {/* Acts 2 & 3 - the Gate → Reveal → Reflect flow (opens after a save
           or from the to-grade queue) */}
       <JudgmentFlowModal />
 

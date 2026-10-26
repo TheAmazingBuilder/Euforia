@@ -12,24 +12,24 @@ import type {
 import type { OryonDrawingConversions } from "./oryon-chart-engine";
 
 /**
- * Oryon range-box overlay primitive (Phase 9 spec §6.1) — a bounded
+ * Oryon range-box overlay primitive (Phase 9 spec §6.1) - a bounded
  * price/time rectangle (the opening-range shading), rendered BEHIND the
  * series like the Phase 8 session bands.
  *
  * Same architecture argument as the session overlay (audit-verified
  * against the installed 5.2.1 typings): LWC calls updateAllViews() + the
  * pane renderer before EVERY internal repaint (pan, zoom, autoscale,
- * autoSize resize, data updates, live ticks) — a box anchored to real
+ * autoSize resize, data updates, live ticks) - a box anchored to real
  * times + real prices cannot drift from the candles because the library's
  * own paint loop projects it. NO per-candle DOM: one canvas pass.
  *
- * The box spans EXACTLY [startSec, endSec] × [lowPrice, highPrice] — the
+ * The box spans EXACTLY [startSec, endSec] × [lowPrice, highPrice] - the
  * opening range never extends beyond its window (spec §5.3). Fill alpha
  * stays subtle (§6.3) and the boundary hairlines echo the OR price lines.
  * Colors resolve from THEME TOKENS at draw time (never stored hex).
  */
 
-/** Resolved color lookup — cleared on theme re-apply (engine applyTheme). */
+/** Resolved color lookup - cleared on theme re-apply (engine applyTheme). */
 export type RangeColorResolver = (tokenKey: string) => string;
 
 export interface OryonRangeBoxSpec {
@@ -39,7 +39,7 @@ export interface OryonRangeBoxSpec {
   readonly endSec: number;
   readonly highPrice: number;
   readonly lowPrice: number;
-  /** Theme token KEY — resolved at draw time. */
+  /** Theme token KEY - resolved at draw time. */
   readonly colorToken: string;
 }
 
@@ -84,7 +84,7 @@ class OryonRangeBoxRenderer implements IPrimitivePaneRenderer {
         context.fillStyle = base;
         context.fillRect(left, top, width, height);
         context.globalAlpha = 0.3;
-        // Boundary hairlines — echo the OR high/low price lines.
+        // Boundary hairlines - echo the OR high/low price lines.
         context.fillRect(left, top, width, Math.max(1, vp));
         context.fillRect(left, bottom - Math.max(1, vp), width, Math.max(1, vp));
       }
@@ -102,7 +102,7 @@ export interface RangeBoxDeps {
 class OryonRangeBoxPaneView implements IPrimitivePaneView {
   constructor(private readonly deps: RangeBoxDeps) {}
 
-  /** BEHIND the series — the documented background layer (§6.3). */
+  /** BEHIND the series - the documented background layer (§6.3). */
   zOrder(): "bottom" {
     return "bottom";
   }
@@ -124,7 +124,7 @@ class OryonRangeBoxPaneView implements IPrimitivePaneView {
 }
 
 /**
- * The attachable primitive. Boxes are read through deps at paint time —
+ * The attachable primitive. Boxes are read through deps at paint time -
  * setBoxes() swaps the source array and requests a redraw, so a visibility
  * toggle NEVER recreates the chart (spec §6/§14).
  */
@@ -141,7 +141,7 @@ export class OryonRangeBoxPrimitive implements ISeriesPrimitive<UTCTimestamp> {
   }
 
   updateAllViews(): void {
-    // State is read live in the renderer — nothing to precompute.
+    // State is read live in the renderer - nothing to precompute.
   }
 
   paneViews(): readonly IPrimitivePaneView[] {
@@ -164,7 +164,7 @@ export class OryonRangeBoxPrimitive implements ISeriesPrimitive<UTCTimestamp> {
 }
 
 /**
- * Engine-facing manager — owns the attach lifecycle (mirrors the session
+ * Engine-facing manager - owns the attach lifecycle (mirrors the session
  * overlay manager; the engine stays a thin boundary).
  */
 export class OryonRangeBoxManager {
@@ -183,7 +183,7 @@ export class OryonRangeBoxManager {
     return this.boxes.length;
   }
 
-  /** (Re)attaches to the given series — no-op when already attached there. */
+  /** (Re)attaches to the given series - no-op when already attached there. */
   attach(series: ISeriesApi<"Candlestick"> | ISeriesApi<"Line">): void {
     if (this.series === series) return;
     this.detach();
@@ -210,7 +210,7 @@ export class OryonRangeBoxManager {
     try {
       series.detachPrimitive(primitive as unknown as Parameters<ISeriesApi<"Candlestick">["detachPrimitive"]>[0]);
     } catch {
-      // Never attached / already gone — nothing to clean.
+      // Never attached / already gone - nothing to clean.
     }
   }
 

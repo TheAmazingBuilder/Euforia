@@ -8,12 +8,12 @@ import { Button } from "@/components/ui/button";
 import type { OnboardingStepProps } from "./step-types";
 
 /**
- * Step 4 — Trading accounts. The tour NEVER embeds account creation or
+ * Step 4 - Trading accounts. The tour NEVER embeds account creation or
  * broker connectivity: it LINKS to the existing flows (Accounts page for
  * manual accounts, Integrations hub for broker connections) AFTER the
  * backend confirms completion. No credentials are requested here, no
  * connection is faked, no trade is executed. "Continue without an account"
- * simply advances — nothing is fabricated.
+ * simply advances - nothing is fabricated.
  */
 export function AccountsStep({ controller, dict, onAdvance, onCompleteNavigate }: OnboardingStepProps) {
   const [pendingTarget, setPendingTarget] = React.useState<string | null>(null);
@@ -29,7 +29,7 @@ export function AccountsStep({ controller, dict, onAdvance, onCompleteNavigate }
       setError(dict.ready.errors.complete);
       return;
     }
-    // Completion confirmed by the backend — safe to leave the tour.
+    // Completion confirmed by the backend - safe to leave the tour.
     onCompleteNavigate(href);
   }
 

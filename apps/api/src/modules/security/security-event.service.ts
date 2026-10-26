@@ -1,14 +1,14 @@
 /**
- * Security-event recording — the SHARED write port for security-relevant
+ * Security-event recording - the SHARED write port for security-relevant
  * facts (Phase 2 mandate §30; Phase 16 bounded-context extraction §33/§34).
  *
  * Identity (auth flows), Accounts (connection lifecycle) and any future
- * domain record through THIS service — they never touch the Security
+ * domain record through THIS service - they never touch the Security
  * center's internals, and the Security center never writes into another
  * context's tables. One coherent event architecture (§38): a single model,
  * a single writer, one catalog (shared securityEventTypeSchema).
  *
- * The log is APPEND-ONLY: this service exposes record + reads — no update,
+ * The log is APPEND-ONLY: this service exposes record + reads - no update,
  * no delete. Events carry sanitized human context and NEVER contain
  * passwords, tokens, MFA secrets or recovery codes (§30).
  * Login history rows share the same metadata discipline (§31).
@@ -22,7 +22,7 @@ import { isoDateTime } from "../identity/mappers";
  * Recognition V1 backend additions to the shared audit catalog (§83): the
  * recognition surface emits lifecycle facts (job created/cancelled, draft
  * saved, journal import, retention sweep, fusion groups) that postdate the
- * shared enum. Declared HERE — the shared contract stays frozen — in the
+ * shared enum. Declared HERE - the shared contract stays frozen - in the
  * SAME naming style, so every writer keeps going through THIS port and the
  * append-only model is unchanged.
  */
@@ -35,7 +35,7 @@ export type OcrSecurityEventType =
   | "TRADE_IMPORTED";
 
 /**
- * Accounts bridge additions (Phase 08 — MT5 terminal bridge): the rotation
+ * Accounts bridge additions (Phase 08 - MT5 terminal bridge): the rotation
  * of a bridge secret is a security-relevant credential lifecycle fact. The
  * activation path reuses TRADING_ACCOUNT_CONNECTED (pairing IS a connection
  * fact); only the rotation needs its own type.
@@ -67,7 +67,7 @@ export class SecurityEventService {
     context: string;
     outcome?: "SUCCESS" | "FAILURE";
   }): Promise<void> {
-    // Append-only — failures of the write itself must not break the caller,
+    // Append-only - failures of the write itself must not break the caller,
     // but are surfaced to logs for observability (§54).
     try {
       await this.repository.appendSecurityEvent({

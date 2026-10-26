@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 /**
- * Academy contracts — the learning platform embedded in the trading journal.
+ * Academy contracts - the learning platform embedded in the trading journal.
  *
  * Content (catalog/lessons/glossary) is authored in the mock server layer and
  * served through the API; per-user state (progress, quiz attempts, bookmarks,
@@ -20,7 +20,7 @@ export type AcademyLevel = z.infer<typeof academyLevelSchema>;
 // risk) reference deterministic SVG diagram variants rendered by the client.
 
 export type AcademyCandle = {
-  /** Simple integer price units — the renderer normalizes to viewbox space. */
+  /** Simple integer price units - the renderer normalizes to viewbox space. */
   o: number;
   h: number;
   l: number;
@@ -61,7 +61,7 @@ export type AcademyQuizQuestion = {
   explanation: string;
 };
 
-/** Public question — answers stripped, order kept. */
+/** Public question - answers stripped, order kept. */
 export type AcademyQuizQuestionPublic = {
   id: string;
   kind: AcademyQuizQuestionKind;
@@ -76,7 +76,7 @@ export const academyQuizSubmitInputSchema = z.object({
   answers: z.array(
     z.object({
       questionId: z.string().min(1),
-      /** option index / boolean / numeric value — null = skipped. */
+      /** option index / boolean / numeric value - null = skipped. */
       value: z.union([z.number(), z.boolean(), z.null()]).optional(),
     }),
   ).min(1),
@@ -296,7 +296,7 @@ export type AcademyOverviewResponse = {
    *  Distinct from continueLearning, which points at the curriculum's next-up. */
   resume: AcademyResume;
   progress: AcademyProgressResponse;
-  /** This week's habit loop — lessons/drills/quizzes done vs. targets. */
+  /** This week's habit loop - lessons/drills/quizzes done vs. targets. */
   weeklyPlan: AcademyWeeklyPlan;
   recommendations: AcademyRecommendation[];
   /** Recent completions, newest first (max 6). */
@@ -395,7 +395,7 @@ export type AcademyPracticeStats = {
 // ── Pattern identification drill (served by the engine, seeded client-side) ──
 
 export type AcademyPatternOption = {
-  /** pattern key — matches a visual variant in the client renderer. */
+  /** pattern key - matches a visual variant in the client renderer. */
   id: string;
   label: string;
 };
@@ -403,10 +403,10 @@ export type AcademyPatternOption = {
 export type AcademyPatternDrill = {
   /** Which pattern is drawn (never sent to the client before answering). */
   patternId: string;
-  /** Candles to render — deterministic exemplar series. */
+  /** Candles to render - deterministic exemplar series. */
   candles: AcademyCandle[];
   context: string;
-  /** Family teaching tag, e.g. "Double candle" — pattern taxonomy chip. */
+  /** Family teaching tag, e.g. "Double candle" - pattern taxonomy chip. */
   family?: string;
   /** Directional teaching tag, e.g. "Bullish reversal". */
   bias?: string;
@@ -420,7 +420,7 @@ export type AcademyPatternDrill = {
 
 export type AcademySrDrill = {
   candles: AcademyCandle[];
-  /** Level price in candle units — client draws the hairline. */
+  /** Level price in candle units - client draws the hairline. */
   level: number;
   context: string;
   prompt: string;
@@ -451,7 +451,7 @@ export type AcademyPositionDrill = {
 
 export type AcademyZoneDrill = {
   candles: AcademyCandle[];
-  /** Bands in candle price units — client shades + tags them (A/B). The
+  /** Bands in candle price units - client shades + tags them (A/B). The
    *  supply/demand identity is NOT on the wire; it is what the learner picks. */
   zones: { top: number; bottom: number; tag: string }[];
   context: string;
@@ -527,7 +527,7 @@ export type AcademyExamResultResponse = {
   score: number;
   total: number;
   passed: boolean;
-  /** BRONZE ≥50%, SILVER ≥70%, GOLD ≥90% — computed on this attempt. */
+  /** BRONZE ≥50%, SILVER ≥70%, GOLD ≥90% - computed on this attempt. */
   tier: "NONE" | "BRONZE" | "SILVER" | "GOLD";
   /** Best percent across attempts INCLUDING this one. */
   bestPercent: number;
@@ -583,7 +583,7 @@ export type AcademySuggestion = {
   courseId: string;
   courseTitle: string;
   categoryId: string;
-  /** First lesson of the suggested course — the deep link target. */
+  /** First lesson of the suggested course - the deep link target. */
   lessonId: string;
   lessonTitle: string;
   reason: string;
@@ -593,7 +593,7 @@ export type AcademySuggestionsResponse = {
   suggestions: AcademySuggestion[];
 };
 
-// ── Events (Academy live sessions — workshops, webinars, Q&A, exams) ────────
+// ── Events (Academy live sessions - workshops, webinars, Q&A, exams) ────────
 
 export type AcademyEventType = "WORKSHOP" | "WEBINAR" | "LIVE_QA" | "EXAM";
 
@@ -604,7 +604,7 @@ export type AcademyEvent = {
   type: AcademyEventType;
   host: string;
   hostRole: string;
-  /** ISO instant — the mock generates dates relative to "now". */
+  /** ISO instant - the mock generates dates relative to "now". */
   startsAt: string;
   durationMin: number;
   categoryId: string | null;
@@ -644,7 +644,7 @@ export type AcademyTask = {
   description: string | null;
   kind: AcademyTaskKind;
   priority: AcademyTaskPriority;
-  /** ISO instant deadline — null means "no deadline". */
+  /** ISO instant deadline - null means "no deadline". */
   dueAt: string | null;
   /** Deep link when the task ties back to a lesson or drill. */
   href: string | null;

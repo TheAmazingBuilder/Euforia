@@ -3,19 +3,19 @@
 import { cn } from "@/lib/utils";
 
 /**
- * EuforiaLogo — the official brand mark, vectorized verbatim from the
+ * EuforiaLogo - the official brand mark, vectorized verbatim from the
  * founder's reference artwork (three-ribbon "E", violet→cyan gradient).
  *
- * The geometry lives in the /brand SVGs (public/brand/euforia-*.svg) —
+ * The geometry lives in the /brand SVGs (public/brand/euforia-*.svg) -
  * traced from the reference image, NOT re-drawn: the mark must stay
  * pixel-identical to it. Never re-proportion, never add candlesticks,
  * dollar symbols or other gradients (forbidden treatments §9).
  *
  * Variants:
- *  - "mark" — the squircle app icon: deep-navy tile + gradient ribbons
+ *  - "mark" - the squircle app icon: deep-navy tile + gradient ribbons
  *    (euforia-icon.svg). Use in compact navigation, loading states,
  *    avatars/watermarks.
- *  - "full" — mark + "Euforia" wordmark (+ optional tagline). Minimum
+ *  - "full" - mark + "Euforia" wordmark (+ optional tagline). Minimum
  *    120px wide per the guide; never use the tagline below that.
  *
  * Tones (surface the logo sits on):
@@ -24,7 +24,7 @@ import { cn } from "@/lib/utils";
  *  - "white" → monochrome white ribbons, no tile
  *  - "black" → monochrome navy-black ribbons, no tile
  *  - "auto"  → navy tile + gradient mark (theme-invariant, like the
- *    favicon), wordmark inherits the app's foreground token — use for
+ *    favicon), wordmark inherits the app's foreground token - use for
  *    in-app lockups that must follow the active theme.
  *
  * Theme-invariant on purpose (like the favicon): the mark keeps its own
@@ -47,7 +47,7 @@ const WORDMARK_CLASS: Record<EuforiaLogoSize, string> = {
   lg: "text-2xl",
 };
 
-/** Mark artwork per tone — traced reference geometry, served from /brand. */
+/** Mark artwork per tone - traced reference geometry, served from /brand. */
 const MARK_SRC: Record<EuforiaLogoTone, string> = {
   dark: "/brand/euforia-icon.svg",
   light: "/brand/euforia-icon.svg",

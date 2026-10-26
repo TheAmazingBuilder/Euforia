@@ -1,8 +1,8 @@
 /**
- * Backup bounded context (B2) — authored-data portability: full snapshot
+ * Backup bounded context (B2) - authored-data portability: full snapshot
  * export (journal trades + playbook strategies + tags) and validated
  * import (replace trades, merge strategies/tags by id, re-owned to the
- * requesting user). NO tables of its own — it operates over the owning
+ * requesting user). NO tables of its own - it operates over the owning
  * contexts' stores (the one documented cross-context Prisma exception).
  *
  * Dependency graph (acyclic):

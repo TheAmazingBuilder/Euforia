@@ -1,5 +1,5 @@
 /**
- * Stats HTTP surface (B1) — three read-only GET routes: the dashboard
+ * Stats HTTP surface (B1) - three read-only GET routes: the dashboard
  * overview (netPnl, win rate, equity curve, deltas, sparklines, ghost
  * chips, weekly compare), the Phase-9 analytics aggregates, and the
  * Analytics MODULE dataset (the global filter system's single source of
@@ -16,13 +16,13 @@ import { StatsService } from "./stats.service";
 export class StatsController {
   constructor(private readonly stats: StatsService) {}
 
-  /** GET /stats/overview — dashboard aggregates (equity fuel included). */
+  /** GET /stats/overview - dashboard aggregates (equity fuel included). */
   @Get("overview")
   async overview(@CurrentUser() principal: AuthPrincipal) {
     return this.stats.statsOverview(principal.userId);
   }
 
-  /** GET /stats/analytics — summary cards, heatmap, buckets, correlations. */
+  /** GET /stats/analytics - summary cards, heatmap, buckets, correlations. */
   @Get("analytics")
   async analytics(@CurrentUser() principal: AuthPrincipal) {
     return this.stats.analytics(principal.userId);

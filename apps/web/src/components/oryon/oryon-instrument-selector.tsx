@@ -17,7 +17,7 @@ import { useDict } from "@/i18n/i18n-provider";
 
 /**
  * Oryon instrument selector. The catalog comes from useInstruments() (the
- * app's /instruments surface) — nothing is hardcoded. Feed coverage comes
+ * app's /instruments surface) - nothing is hardcoded. Feed coverage comes
  * from the market service's own health list: instruments the feed does not
  * serve stay visible but disabled with an honest "No feed" chip.
  */
@@ -27,7 +27,7 @@ export function OryonInstrumentSelector({
   feedSymbols,
   feedKnown,
   onSelect,
-  /** Optional testid namespace — panel headers use `oryon-panel-{index}`
+  /** Optional testid namespace - panel headers use `oryon-panel-{index}`
    *  so their controls never collide with the toolbar's canonical ids
    *  (Playwright strict mode). */
   idPrefix = "oryon",
@@ -66,7 +66,7 @@ export function OryonInstrumentSelector({
           aria-expanded={open}
           className="h-8 gap-1.5 px-2.5 font-mono text-xs font-semibold"
         >
-          {selected !== null ? selected.symbol : "—"}
+          {selected !== null ? selected.symbol : "-"}
           <ChevronDown className="size-3.5 text-muted-foreground" aria-hidden />
         </Button>
       </PopoverTrigger>

@@ -1,5 +1,5 @@
 /**
- * Provider-side rate limiter (Phase 14 §25) — in-process sliding window per
+ * Provider-side rate limiter (Phase 14 §25) - in-process sliding window per
  * (user, provider), mirroring the mock's per-provider quota bookkeeping
  * (30/60 s default, 60/60 s market data, 3/10 s economic sample).
  *
@@ -9,7 +9,7 @@
  * single-instance assumption are reused (accounts precedent: "correct for
  * the single-instance monolith") with provider-shaped windows.
  *
- * Applied ONLY to the sync action (mock parity — connect/disconnect/test are
+ * Applied ONLY to the sync action (mock parity - connect/disconnect/test are
  * not provider-API calls in this phase).
  */
 
@@ -53,13 +53,13 @@ export class IntegrationRateLimiterService {
     return { allowed: true };
   }
 
-  /** Test helper — reset the in-memory window bookkeeping. */
+  /** Test helper - reset the in-memory window bookkeeping. */
   clear(): void {
     this.buckets.clear();
   }
 
   private prune(nowMs: number): void {
-    // The widest provider window is 60 s (catalog) — anything older is dead.
+    // The widest provider window is 60 s (catalog) - anything older is dead.
     for (const [key, state] of this.buckets) {
       const alive = state.timestamps.filter((ts) => nowMs - ts < 60_000);
       if (alive.length === 0) this.buckets.delete(key);

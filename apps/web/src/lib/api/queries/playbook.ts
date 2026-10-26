@@ -28,7 +28,7 @@ import { apiPaths } from "@/lib/api/endpoints";
 import { queryKeys } from "@/lib/api/keys";
 
 /**
- * Professional Playbook hooks — strategies + setups + checklists + operating
+ * Professional Playbook hooks - strategies + setups + checklists + operating
  * rules + template library + the ONE aggregate overview. Strategy mutations
  * invalidate the module keys AND the analytics suite (per-strategy rows read
  * trades through the strategy link).
@@ -55,7 +55,7 @@ export function useSetups() {
   });
 }
 
-/** GET /setups/insights — light 90d backtest + market heuristics per setup. */
+/** GET /setups/insights - light 90d backtest + market heuristics per setup. */
 export function useSetupInsights() {
   return useQuery({
     queryKey: queryKeys.setupInsights,
@@ -63,7 +63,7 @@ export function useSetupInsights() {
   });
 }
 
-/** GET /strategies/:id/versions — history for the visual diff. */
+/** GET /strategies/:id/versions - history for the visual diff. */
 export function useStrategyVersions(strategyId: string | null) {
   return useQuery({
     queryKey: queryKeys.strategyVersions(strategyId ?? "none"),
@@ -103,7 +103,7 @@ function useStrategyInvalidation() {
   };
 }
 
-/** Invalidate every playbook child collection — cheap, always correct. */
+/** Invalidate every playbook child collection - cheap, always correct. */
 function usePlaybookInvalidation() {
   const queryClient = useQueryClient();
   return async () => {
@@ -115,7 +115,7 @@ function usePlaybookInvalidation() {
   };
 }
 
-/** POST /strategies — create a playbook entry. */
+/** POST /strategies - create a playbook entry. */
 export function useCreateStrategy() {
   const invalidate = useStrategyInvalidation();
   return useMutation({
@@ -125,7 +125,7 @@ export function useCreateStrategy() {
   });
 }
 
-/** PATCH /strategies/:id — edit a playbook entry. */
+/** PATCH /strategies/:id - edit a playbook entry. */
 export function useUpdateStrategy() {
   const invalidate = useStrategyInvalidation();
   return useMutation({
@@ -135,7 +135,7 @@ export function useUpdateStrategy() {
   });
 }
 
-/** DELETE /strategies/:id — rejected (409) while trades are attached. */
+/** DELETE /strategies/:id - rejected (409) while trades are attached. */
 export function useDeleteStrategy() {
   const invalidate = useStrategyInvalidation();
   return useMutation({
@@ -145,7 +145,7 @@ export function useDeleteStrategy() {
   });
 }
 
-/** POST /strategies/:id/duplicate — fresh DRAFT copy incl. setups/checklists. */
+/** POST /strategies/:id/duplicate - fresh DRAFT copy incl. setups/checklists. */
 export function useDuplicateStrategy() {
   const invalidate = useStrategyInvalidation();
   return useMutation({
@@ -155,7 +155,7 @@ export function useDuplicateStrategy() {
   });
 }
 
-/** POST /playbook/templates/instantiate — DRAFT from a starting-point template. */
+/** POST /playbook/templates/instantiate - DRAFT from a starting-point template. */
 export function useInstantiateTemplate() {
   const invalidate = useStrategyInvalidation();
   return useMutation({

@@ -4,7 +4,7 @@ import { isoDateTimeSchema } from "./primitives";
 import { loginOutcomeSchema } from "./security";
 
 /**
- * Security Center contracts — the professional security surface: typed
+ * Security Center contracts - the professional security surface: typed
  * audit events, API keys (secrets returned EXACTLY ONCE then only masked),
  * 2FA enrollment with one-time recovery codes, enriched sessions and login
  * history, and re-authentication for sensitive actions.
@@ -30,11 +30,11 @@ export const securitySessionV2Schema = z.object({
   browser: z.string().min(1),
   os: z.string().min(1),
   location: z.string().min(1),
-  /** Masked at the source — the full IP never reaches the client. */
+  /** Masked at the source - the full IP never reaches the client. */
   ipMasked: z.string().min(1),
   createdAt: isoDateTimeSchema,
   lastActiveAt: isoDateTimeSchema,
-  /** The session making the request — it cannot revoke itself. */
+  /** The session making the request - it cannot revoke itself. */
   current: z.boolean(),
 });
 export type SecuritySessionV2 = z.infer<typeof securitySessionV2Schema>;
@@ -50,7 +50,7 @@ export const securityLoginV2Schema = z.object({
   location: z.string().min(1),
   ipMasked: z.string().min(1),
   outcome: loginOutcomeSchema,
-  /** Failure reason only — success rows carry null. */
+  /** Failure reason only - success rows carry null. */
   reason: z.string().nullable(),
 });
 export type SecurityLoginV2 = z.infer<typeof securityLoginV2Schema>;
@@ -101,7 +101,7 @@ export const createApiKeyInputSchema = z.object({
 });
 export type CreateApiKeyInput = z.infer<typeof createApiKeyInputSchema>;
 
-/** The plaintext key appears here and NOWHERE else — never again, ever. */
+/** The plaintext key appears here and NOWHERE else - never again, ever. */
 export const createApiKeyResponseSchema = z.object({
   key: apiKeySchema,
   plaintext: z.string().min(8),
@@ -122,7 +122,7 @@ export type RevokeApiKeyResponse = z.infer<typeof revokeApiKeyResponseSchema>;
 // ── Two-factor authentication (§6) ──────────────────────────────────────────
 
 /**
- * Enrollment payload — secret, otpauth URI and recovery codes are shown
+ * Enrollment payload - secret, otpauth URI and recovery codes are shown
  * ONCE during setup. The backend stores only its own copy of the secret
  * and a recovery-code COUNT; the client cannot fetch them again.
  */
@@ -149,7 +149,7 @@ export const disableTwoFactorInputSchema = z.object({
 });
 export type DisableTwoFactorInput = z.infer<typeof disableTwoFactorInputSchema>;
 
-/** Status read model — recovery codes appear ONLY as a remaining count. */
+/** Status read model - recovery codes appear ONLY as a remaining count. */
 export const twoFactorStatusSchema = z.object({
   enabled: z.boolean(),
   enabledAt: isoDateTimeSchema.nullable(),
@@ -166,7 +166,7 @@ export type ReauthInput = z.infer<typeof reauthInputSchema>;
 
 export const reauthResponseSchema = z.object({
   token: z.string().min(1),
-  /** Short-lived by contract — the UI re-prompts after this window. */
+  /** Short-lived by contract - the UI re-prompts after this window. */
   expiresInMs: z.number().int().positive(),
 });
 export type ReauthResponse = z.infer<typeof reauthResponseSchema>;
@@ -196,7 +196,7 @@ export const securityAuditEventSchema = z.object({
   id: z.string().min(1),
   at: isoDateTimeSchema,
   kind: securityEventKindSchema,
-  /** Who/what performed it — user or device label. */
+  /** Who/what performed it - user or device label. */
   actor: z.string().min(1),
   detail: z.string().nullable(),
   outcome: z.enum(["success", "failure"]),
@@ -208,7 +208,7 @@ export const securityAuditResponseSchema = z.object({
 });
 export type SecurityAuditResponse = z.infer<typeof securityAuditResponseSchema>;
 
-// ── Overview (§4) — checklist-based readiness, NO invented score ────────────
+// ── Overview (§4) - checklist-based readiness, NO invented score ────────────
 
 export const securityControlActionSchema = z.enum([
   "enable_2fa",
@@ -221,7 +221,7 @@ export type SecurityControlAction = z.infer<typeof securityControlActionSchema>;
 export const securityControlSchema = z.object({
   id: z.string().min(1),
   title: z.string().min(1),
-  /** How this control is evaluated — the methodology is the UI. */
+  /** How this control is evaluated - the methodology is the UI. */
   detail: z.string().min(1),
   done: z.boolean(),
   action: securityControlActionSchema.nullable(),

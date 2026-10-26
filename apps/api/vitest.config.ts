@@ -3,7 +3,7 @@ import swc from "unplugin-swc";
 
 export default defineConfig({
   // SWC restores TypeScript decorator metadata (emitDecoratorMetadata) that
-  // esbuild (vitest's default transformer) cannot emit — required for Nest
+  // esbuild (vitest's default transformer) cannot emit - required for Nest
   // dependency injection in tests. Only workspace sources are transformed;
   // node_modules stay untouched.
   plugins: [

@@ -1,7 +1,7 @@
 /**
  * Accounts synchronization scheduler (Phase 05, spec §9).
  *
- * Periodic refresh of ELIGIBLE connections — the deployment model is a
+ * Periodic refresh of ELIGIBLE connections - the deployment model is a
  * single long-running NestJS monolith (documented in the Phase 04 report
  * and SAVEPOINT runbook), so an in-process timer is the simplest safe
  * approach (spec §9: "If no suitable scheduler exists, evaluate the
@@ -11,27 +11,27 @@
  * §9.1 requirements mapped:
  *   - eligible connections only .... listSchedulableConnections (CONNECTED +
  *     credentials present) + registered adapter + descriptor-declared
- *     environment — disconnected/revoked/auth-broken connections NEVER run.
+ *     environment - disconnected/revoked/auth-broken connections NEVER run.
  *   - no overlapping runs .......... the §38 partial unique index: a second
  *     trigger gets 409 SYNC_ALREADY_RUNNING and the scheduler SKIPS.
  *   - bounded concurrency .......... a worker pool of syncMaxConcurrency.
  *   - rate-limit awareness ......... a thrown RATE_LIMITED puts the account
  *     on a cooldown ≥ the provider-advertised Retry-After (capped at the
- *     sweep interval — the next sweep retries naturally).
+ *     sweep interval - the next sweep retries naturally).
  *   - failure isolation ............ per-connection try/catch; one user's
  *     failing connection never blocks another.
  *   - no excessive provider calls .. one sweep per jittered interval; the
  *     interval floor is one minute (env schema).
  *
  * Recovery (§15 "safe restart after process termination"): every sweep
- * first marks RUNNING runs older than syncStaleRunMs as CANCELLED — a
+ * first marks RUNNING runs older than syncStaleRunMs as CANCELLED - a
  * crashed process must never hold the per-account single-RUNNING invariant
  * hostage (the watchdog bounds every segment, so such a run cannot be
  * alive). The sweep ALSO runs once at module init (even when the timer is
  * disabled) so manual synchronization unblocks after a restart.
  *
  * The timer is NEVER started by default: ACCOUNTS_SYNC_SCHEDULER=enabled is
- * an explicit deployment decision (§57 posture — real-provider automation
+ * an explicit deployment decision (§57 posture - real-provider automation
  * is opt-in; disabled ⇒ zero automatic provider calls).
  */
 import { Injectable, OnModuleDestroy, OnModuleInit } from "@nestjs/common";
@@ -67,7 +67,7 @@ export class AccountsSyncSchedulerService implements OnModuleInit, OnModuleDestr
   ) {}
 
   onModuleInit(): void {
-    // Recovery sweep FIRST — unconditionally (a stale RUNNING row from a
+    // Recovery sweep FIRST - unconditionally (a stale RUNNING row from a
     // crashed process blocks even manual synchronization).
     void this.recoverStaleRuns()
       .then((cancelled) => {
@@ -82,7 +82,7 @@ export class AccountsSyncSchedulerService implements OnModuleInit, OnModuleDestr
     if (!this.config.accounts.syncSchedulerEnabled) {
       this.logger?.info(
         {},
-        "accounts sync scheduler disabled (ACCOUNTS_SYNC_SCHEDULER != enabled) — no periodic synchronization",
+        "accounts sync scheduler disabled (ACCOUNTS_SYNC_SCHEDULER != enabled) - no periodic synchronization",
       );
       return;
     }
@@ -102,7 +102,7 @@ export class AccountsSyncSchedulerService implements OnModuleInit, OnModuleDestr
   }
 
   /**
-   * One scheduler sweep — ALSO the test entry point (deterministic, no
+   * One scheduler sweep - ALSO the test entry point (deterministic, no
    * timer dependence): recover stale runs, resolve eligible connections,
    * run them through a bounded-concurrency pool with per-connection
    * isolation and rate-limit cooldowns.
@@ -167,12 +167,12 @@ export class AccountsSyncSchedulerService implements OnModuleInit, OnModuleDestr
   }
 
   /**
-   * Eligibility (§9.1): registered adapter (a deregistered provider — e.g.
-   * the OANDA gate off — is skipped WITHOUT a run, so no failed-run noise),
+   * Eligibility (§9.1): registered adapter (a deregistered provider - e.g.
+   * the OANDA gate off - is skipped WITHOUT a run, so no failed-run noise),
    * descriptor-declared environment, and no active rate-limit cooldown.
    * Ownership is structural: the connection row belongs to exactly one
    * account owned by one user; every downstream read/write is account-
-   * scoped (no cross-user path exists in the sync domain — IDOR suites).
+   * scoped (no cross-user path exists in the sync domain - IDOR suites).
    */
   private isEligible(connection: TradingConnectionRow): boolean {
     const adapter = this.registry.get(connection.providerId);
@@ -184,7 +184,7 @@ export class AccountsSyncSchedulerService implements OnModuleInit, OnModuleDestr
    * One connection's scheduled run. Ownership/scoping: the sync service
    * loads the owned account pair itself via the account id; the environment
    * gate happens INSIDE the adapter (honest UNSUPPORTED_ACCOUNT) or here
-   * via the descriptor — a descriptor-declared environment mismatch skips
+   * via the descriptor - a descriptor-declared environment mismatch skips
    * the run entirely (no noise, no provider call).
    */
   private async synchronizeConnection(connection: TradingConnectionRow): Promise<void> {
@@ -217,7 +217,7 @@ export class AccountsSyncSchedulerService implements OnModuleInit, OnModuleDestr
       this.cooldownUntil.delete(connection.accountId);
     } catch (error) {
       if (error instanceof ConflictError) {
-        // Already RUNNING (manual or overlapping sweep) — honest skip, no noise.
+        // Already RUNNING (manual or overlapping sweep) - honest skip, no noise.
         return;
       }
       if (error instanceof RateLimitError) {
@@ -231,7 +231,7 @@ export class AccountsSyncSchedulerService implements OnModuleInit, OnModuleDestr
         return;
       }
       // Any other failure: logged by the sync service (run record + security
-      // events on the all-fail path) — the sweep moves on (isolation §9.1).
+      // events on the all-fail path) - the sweep moves on (isolation §9.1).
       this.logger?.warn(
         { accountId: account.id, provider: connection.providerId, error: String(error) },
         "accounts sync scheduler run failed for connection",

@@ -1,14 +1,14 @@
 /**
- * Security Center controller (Phase 16 bounded context — routes unchanged
+ * Security Center controller (Phase 16 bounded context - routes unchanged
  * from the Phase 2 placement; the extraction is internal to the API).
  *
  * Requires an authenticated session; sensitive mutations additionally
  * consume a single-use re-authentication token (body `reauthToken`).
  *
- * Phase 16 additions: the paginated audit trail (§28) — GET /security/events
+ * Phase 16 additions: the paginated audit trail (§28) - GET /security/events
  * and GET /security/logins. Read-only, ownership-scoped to the caller by the
  * repository, filtered by validated values only (§29). Rate limiting comes
- * from the existing global ThrottlerGuard (Phase 1) — no new limiter (§39).
+ * from the existing global ThrottlerGuard (Phase 1) - no new limiter (§39).
  */
 import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post, Query } from "@nestjs/common";
 import { ZodValidationPipe } from "../../shared/http/zod-validation.pipe";
@@ -37,7 +37,7 @@ import { IdentityRepository, type UserRow } from "../identity/identity.repositor
 
 /**
  * Missing reauthToken must reach the HANDLER (contract: 401
- * INVALID_REAUTH_TOKEN, mock §13) — so the pipe-level schemas accept it as
+ * INVALID_REAUTH_TOKEN, mock §13) - so the pipe-level schemas accept it as
  * optional and ReauthService enforces presence/consumption.
  */
 const sensitiveOptional = sensitiveActionInputSchema.extend({
@@ -78,7 +78,7 @@ export class SecurityCenterController {
   private async loadUser(userId: string): Promise<UserRow> {
     const user = await this.repository.findUserById(userId);
     if (!user) {
-      // Authenticated principal without a row — treat as unauthenticated.
+      // Authenticated principal without a row - treat as unauthenticated.
       throw new UnauthorizedError("Not authenticated.", "INVALID_TOKEN");
     }
     return user;
@@ -94,7 +94,7 @@ export class SecurityCenterController {
     @CurrentUser() principal: AuthPrincipal,
     @Query(new ZodValidationPipe(securityEventsQueryWire)) query: SecurityEventsQuery,
   ) {
-    // Ownership is enforced inside the query itself — the principal's own
+    // Ownership is enforced inside the query itself - the principal's own
     // userId is the only scope ever consulted (§32).
     return this.security.listEventsPage(principal.userId, query);
   }

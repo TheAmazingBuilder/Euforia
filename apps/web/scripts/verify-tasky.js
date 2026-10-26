@@ -1,5 +1,5 @@
 /**
- * Tasky probe — the trading kanban (Academy section).
+ * Tasky probe - the trading kanban (Academy section).
  * Covers: Tasky Board header, 5 seeded columns left→right in a horizontally
  * scrollable board, faithful card anatomy (tag + priority + assignee + due),
  * add/delete card, mouse drag AND touch (pointer) drag between columns,
@@ -16,7 +16,7 @@ function check(label, ok, extra = "") {
   const tag = ok ? "✓" : "✗";
   if (ok) passed += 1;
   else failed += 1;
-  console.log(`  ${tag} ${label}${extra ? ` — ${extra}` : ""}`);
+  console.log(`  ${tag} ${label}${extra ? ` - ${extra}` : ""}`);
 }
 
 async function login(page) {

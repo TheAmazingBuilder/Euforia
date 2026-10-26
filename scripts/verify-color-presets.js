@@ -1,4 +1,4 @@
-// Chart color presets verification — Settings ▸ Symbol tab preset strip.
+// Chart color presets verification - Settings ▸ Symbol tab preset strip.
 // PROD-SAFE (:3000): DOM/testids + localStorage only, no debug handles.
 //  (1) preset strip renders 7 chips
 //  (2) TradingView preset applies #089981/#f23645 live (chip active)
@@ -11,7 +11,7 @@ const BASE = process.env.BASE_URL || "http://localhost:3000";
 const results = [];
 function check(id, label, ok, detail = "") {
   results.push({ id, ok });
-  console.log(`${ok ? "PASS" : "FAIL"}  ${id}  ${label}${detail ? "  — " + detail : ""}`);
+  console.log(`${ok ? "PASS" : "FAIL"}  ${id}  ${label}${detail ? "  - " + detail : ""}`);
 }
 const NOISE = [/401/, /auth\/me/, /auth\/refresh/, /WebSocket/];
 
@@ -95,7 +95,7 @@ async function ensureLogin(page) {
       firstPanel?.appearance?.upColor === "#00e676" && firstPanel?.appearance?.downColor === "#ff1744",
       JSON.stringify(firstPanel?.appearance ?? null));
 
-    // (5) cancel reverts — open again, apply Gold, Escape
+    // (5) cancel reverts - open again, apply Gold, Escape
     await page.mouse.click(box.x + box.width * 0.6, box.y + box.height * 0.4, { button: "right" });
     await page.waitForSelector('[data-testid="oryon-ctx-menu"]', { timeout: 5000 });
     await page.click('[data-testid="oryon-ctx-settings"]');

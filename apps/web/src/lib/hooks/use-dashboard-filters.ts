@@ -22,23 +22,23 @@ import {
 } from "@/lib/dashboard-customization/persistence";
 
 /**
- * Global dashboard filters hook (Phase 03 §7/§10/§12) — wires the pure
+ * Global dashboard filters hook (Phase 03 §7/§10/§12) - wires the pure
  * filter state machine to the EXISTING persistence architecture (PATCH
  * /me/preferences/dashboard via the optimistic preferences mutation).
  *
  * Transaction model: every filter edit / view operation is applied by the
- * reducer immediately (authoritative state) and persisted right away — the
+ * reducer immediately (authoritative state) and persisted right away - the
  * same convention as the view-mode layout collection operations. The PATCH
  * carries the WHOLE dashboard domain (layouts merged from the current
  * stored snapshot, views + active filters from this machine) because the
- * server replaces the domain wholesale — a filter save can never wipe
+ * server replaces the domain wholesale - a filter save can never wipe
  * layouts, and a layout save can never wipe views (both halves always
  * travel together).
  *
  * Purity contract: the saved-views MODEL (create/rename/duplicate/delete)
- * runs HERE, never inside the reducer — ids and timestamps are generated
+ * runs HERE, never inside the reducer - ids and timestamps are generated
  * once per user action and the reducer only applies pre-computed
- * collections (replay-safe under React's reducer re-runs — the same
+ * collections (replay-safe under React's reducer re-runs - the same
  * contract as the Phase 01 layout machine).
  *
  * Stale-response safety: `sync` is ignored while a save is in flight; the
@@ -56,7 +56,7 @@ export function useDashboardFilters() {
     stateRef.current = state;
   }, [state]);
 
-  // Fresh stored domain for WHOLESALE merges — synced in an effect
+  // Fresh stored domain for WHOLESALE merges - synced in an effect
   // (react-compiler purity: no ref writes during render).
   const storedDashboard = prefs?.dashboard;
   const storedRef = React.useRef(storedDashboard);
@@ -132,7 +132,7 @@ export function useDashboardFilters() {
     [applyAction],
   );
 
-  // ── Saved-view collection ops (§10) — model runs HERE, reducer applies ────
+  // ── Saved-view collection ops (§10) - model runs HERE, reducer applies ────
 
   const createView = React.useCallback(
     (name: string, description?: string) => {

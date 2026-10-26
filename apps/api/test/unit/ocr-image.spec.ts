@@ -1,7 +1,7 @@
 /**
- * Unit — OCR image boundary (Phase 19 §7/§8/§38): magic-byte sniffing,
+ * Unit - OCR image boundary (Phase 19 §7/§8/§38): magic-byte sniffing,
  * header dimension parsing, data-URL validation guards, checksum stability.
- * Pure/parsing functions — no Nest, no DB.
+ * Pure/parsing functions - no Nest, no DB.
  */
 import { describe, expect, it } from "vitest";
 import { parseImageDimensions, sniffImageMime } from "../../src/modules/ocr/image/image-header";
@@ -99,7 +99,7 @@ describe("ImageValidationService (§7/§8/§38 upload guards)", () => {
     ).toThrow(/Unsupported image format/);
   });
 
-  it("catches MIME/extension spoofing — declared type must match the bytes", () => {
+  it("catches MIME/extension spoofing - declared type must match the bytes", () => {
     const jpeg = makeJpegBytes();
     expect(() =>
       service.validateDataUrl(`data:image/png;base64,${jpeg.toString("base64")}`, limits),

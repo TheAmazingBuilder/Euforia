@@ -1,18 +1,18 @@
 /**
- * BrokerIdentificationService (Phase 07 — universal broker layer).
+ * BrokerIdentificationService (Phase 07 - universal broker layer).
  *
- * Answers "WHICH broker is this?" for any connection attempt — the owner's
+ * Answers "WHICH broker is this?" for any connection attempt - the owner's
  * requirement that Euforia welcome ANY broker, not only the implemented
  * connectors. Three entry points:
  *
- *  1. catalogForClient() — the versioned catalog with HONEST connector
+ *  1. catalogForClient() - the versioned catalog with HONEST connector
  *     status per broker (resolved against the provider registry at call
  *     time), powering the Accounts UI broker picker.
- *  2. identify(hints) — rule-based identification for the identify endpoint.
+ *  2. identify(hints) - rule-based identification for the identify endpoint.
  *     NO outbound call, NO secrets accepted, client-supplied endpoint strings
  *     are matched against catalog patterns and never dialed (SSRF-safe by
  *     construction).
- *  3. identifyAtConnect(...) — the connect-time capture: the adapter's
+ *  3. identifyAtConnect(...) - the connect-time capture: the adapter's
  *     PROVIDER-REPORTED broker identity (strongest evidence, e.g. Deriv's
  *     landing company) takes priority; catalog patterns and the registry
  *     descriptor fall through in that order. The result is persisted on the
@@ -20,7 +20,7 @@
  *
  * Honesty ladder (confidence, strongest first):
  *   PROVIDER_REPORTED → PATTERN_MATCH → PLATFORM_KNOWN → UNKNOWN.
- * UNKNOWN is a first-class result — never fabricated into a guess.
+ * UNKNOWN is a first-class result - never fabricated into a guess.
  */
 import { Injectable } from "@nestjs/common";
 import {
@@ -81,7 +81,7 @@ export class BrokerIdentificationService {
       ? this.registry.get(hints.providerId)?.descriptor ?? null
       : null;
 
-    // 1) ENDPOINT patterns (host/server hint — matched, never dialed).
+    // 1) ENDPOINT patterns (host/server hint - matched, never dialed).
     if (hints.endpoint) {
       const endpointMatch = this.matchPatterns(hints.endpoint, "ENDPOINT");
       if (endpointMatch) {
@@ -115,7 +115,7 @@ export class BrokerIdentificationService {
   /**
    * The connect-time capture (§8 "identify the broker during connection"):
    * provider-reported identity wins; then catalog patterns; then the
-   * descriptor platform. The result is persisted verbatim (JSON column) —
+   * descriptor platform. The result is persisted verbatim (JSON column) -
    * a snapshot of what the evidence supported at connect time.
    */
   identifyAtConnect(input: {
@@ -131,7 +131,7 @@ export class BrokerIdentificationService {
       if (input.providerReported.accountClass) {
         signals.push(`provider-reported account class: ${input.providerReported.accountClass}`);
       }
-      // Match the catalog entry for connector status/platform context — the
+      // Match the catalog entry for connector status/platform context - the
       // DISPLAY NAME stays the provider-reported entity (most specific).
       const entry =
         this.entryByProviderId(input.providerId) ??
@@ -241,5 +241,5 @@ export class BrokerIdentificationService {
   }
 }
 
-/** Re-exported for convenience — the persisted-JSON boundary schema. */
+/** Re-exported for convenience - the persisted-JSON boundary schema. */
 export { brokerIdentificationSchema };

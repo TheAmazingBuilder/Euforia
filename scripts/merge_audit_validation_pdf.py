@@ -24,10 +24,10 @@ writer.add_page(normalize_page_to_a4(cover_page))
 for page in PdfReader(BODY).pages:
     writer.add_page(normalize_page_to_a4(page))
 writer.add_metadata({
-    '/Title': 'EUFORIA — Rapport de Validation de l’Audit Ultra-Complet',
+    '/Title': 'EUFORIA - Rapport de Validation de l’Audit Ultra-Complet',
     '/Author': 'Z.ai',
     '/Creator': 'Z.ai',
-    '/Subject': 'Validation de l’audit final Euforia — Phase 12 + MASTER full-stack',
+    '/Subject': 'Validation de l’audit final Euforia - Phase 12 + MASTER full-stack',
 })
 with open(OUT, 'wb') as f:
     writer.write(f)

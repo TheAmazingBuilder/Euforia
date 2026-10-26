@@ -1,5 +1,5 @@
 /**
- * Unit — Integrations Hub pure domain (Phase 14).
+ * Unit - Integrations Hub pure domain (Phase 14).
  *
  * Covers the decision layer without HTTP/DB: connect/disconnect/test/sync
  * outcome builders (mock §25-§17 parity), the webhook pipeline evaluator
@@ -67,7 +67,7 @@ describe("provider catalog", () => {
     expect(findWebhookInboundProvider()?.id).toBe("macro-sample");
   });
 
-  it("keeps every registration read-only (§19 — no execution surface)", () => {
+  it("keeps every registration read-only (§19 - no execution surface)", () => {
     expect(PROVIDER_CATALOG.every((provider) => provider.readOnly)).toBe(true);
   });
 });
@@ -145,7 +145,7 @@ describe("buildTestOutcome", () => {
     const outcome = buildTestOutcome(deriv, false, null, NOW);
     const auth = outcome.response.checks.find((check) => check.name === "authentication");
     expect(auth?.ok).toBe(false);
-    expect(auth?.detail).toBe("No credential stored — connect the provider first");
+    expect(auth?.detail).toBe("No credential stored - connect the provider first");
     expect(outcome.status).toBe("AUTH_REQUIRED");
     expect(outcome.error?.code).toBe("CREDENTIALS_EXPIRED");
   });
@@ -153,7 +153,7 @@ describe("buildTestOutcome", () => {
   it("reports the expired-credential scenario distinctly", () => {
     const outcome = buildTestOutcome(deriv, true, "expired-credentials", NOW);
     const auth = outcome.response.checks.find((check) => check.name === "authentication");
-    expect(auth?.detail).toBe("Stored credential is expired — rotate the key and reconnect");
+    expect(auth?.detail).toBe("Stored credential is expired - rotate the key and reconnect");
     expect(outcome.response.ok).toBe(false);
   });
 
@@ -161,7 +161,7 @@ describe("buildTestOutcome", () => {
     const outcome = buildTestOutcome(tradingview, false, null, NOW);
     const permissions = outcome.response.checks.find((check) => check.name === "permissions");
     expect(permissions?.ok).toBe(false);
-    expect(permissions?.detail).toBe("No data permissions — visualization only");
+    expect(permissions?.detail).toBe("No data permissions - visualization only");
   });
 
   it("follows auth for connectivity when the adapter has no latency", () => {

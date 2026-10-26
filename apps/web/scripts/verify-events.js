@@ -1,5 +1,5 @@
 /**
- * Events probe — the trading calendar (Academy section).
+ * Events probe - the trading calendar (Academy section).
  * Covers: header + structure (sidebar, mini month, groups), calendar-group
  * filters (uncheck hides pills), group collapse, sort menu (time/title/
  * calendar), New Calendar dialog (disabled empty + create into group),
@@ -18,7 +18,7 @@ function check(label, ok, extra = "") {
   const tag = ok ? "✓" : "✗";
   if (ok) passed += 1;
   else failed += 1;
-  console.log(`  ${tag} ${label}${extra ? ` — ${extra}` : ""}`);
+  console.log(`  ${tag} ${label}${extra ? ` - ${extra}` : ""}`);
 }
 
 async function login(page) {
@@ -150,7 +150,7 @@ async function touchDragPill(page, pillId, targetIso) {
     await page.click('[data-testid="events-sort-item-title"]');
     await page.waitForTimeout(300);
     const titleOrder = await cellPillOrder(page, "2026-10-08");
-    // "Dentist" < "Design Review" alphabetically — title sort flips the pair.
+    // "Dentist" < "Design Review" alphabetically - title sort flips the pair.
     check("title sort flips to e8 (Dentist) first", titleOrder.join(",") === "e8,e7", titleOrder.join(","));
     check(
       "sort button label reads Sort by title",
@@ -206,7 +206,7 @@ async function touchDragPill(page, pillId, targetIso) {
     const probePillCell = await probePill.evaluate((el) => el.closest("[data-events-cell]")?.getAttribute("data-events-cell"));
     check("Probe Event sits on today's cell", probePillCell === todayIso, `${probePillCell} vs ${todayIso}`);
 
-    console.log("\n[6] Details card — star / rename / delete");
+    console.log("\n[6] Details card - star / rename / delete");
     await page.click('[data-testid="events-pill-e1"]');
     await page.waitForTimeout(350);
     check("details card opens", await page.locator('[data-testid="events-details"]').isVisible().catch(() => false));

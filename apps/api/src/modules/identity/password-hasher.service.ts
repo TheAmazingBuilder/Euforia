@@ -1,9 +1,9 @@
 /**
  * Password hashing (Phase 2 mandate §8): Argon2id via @node-rs/argon2
- * (prebuilt native bindings — no compilation step). OWASP-aligned defaults,
+ * (prebuilt native bindings - no compilation step). OWASP-aligned defaults,
  * overridable through env for future hardware adjustments.
  *
- * Plaintext passwords and hashes NEVER appear in logs or responses — the
+ * Plaintext passwords and hashes NEVER appear in logs or responses - the
  * hasher returns only booleans/hashes and is the single crypto authority
  * for passwords.
  */

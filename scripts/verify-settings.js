@@ -1,5 +1,5 @@
 /**
- * Verify — Settings module (MASTER PROMPT).
+ * Verify - Settings module (MASTER PROMPT).
  * Probes: category rail + deep links, search, per-card save, reset with
  * confirm, risk validation (max ≥ default), Rules Engine apply, notification
  * matrix toggles, appearance theme/density (incl. System §9), localization preview
@@ -21,7 +21,7 @@ const BASE = "http://localhost:3000";
 
   const results = [];
   const check = (name, ok, extra = "") =>
-    results.push(`${ok ? "PASS" : "FAIL"} — ${name}${extra ? ` (${extra})` : ""}`);
+    results.push(`${ok ? "PASS" : "FAIL"} - ${name}${extra ? ` (${extra})` : ""}`);
 
   await page.goto(`${BASE}/settings`, { waitUntil: "networkidle" });
   await page.waitForTimeout(1200);
@@ -136,7 +136,7 @@ const BASE = "http://localhost:3000";
   await page.locator('[data-testid="settings-appearance-theme-DARK_BLUE"]').click();
   await page.waitForTimeout(400);
 
-  // §9 — System theme: follows the OS (resolves to a concrete data-theme).
+  // §9 - System theme: follows the OS (resolves to a concrete data-theme).
   const themeOptions = await page.locator('[data-testid^="settings-appearance-theme-"]').count();
   check("Theme control offers Light/Dark/Dark blue/System", themeOptions === 4, `options=${themeOptions}`);
   await page.locator('[data-testid="settings-appearance-theme-SYSTEM"]').click();
@@ -169,7 +169,7 @@ const BASE = "http://localhost:3000";
   await page.locator('[data-testid="settings-localization-timezone"]').selectOption("America/Toronto");
   await page.waitForTimeout(700);
 
-  // §12 — Number format: grouping styles render through the live preview.
+  // §12 - Number format: grouping styles render through the live preview.
   const preview = page.locator("[data-testid=\"settings-localization-preview\"]");
   await page.locator('[data-testid="settings-localization-number"]').selectOption("NONE");
   await page.waitForTimeout(300);
@@ -182,7 +182,7 @@ const BASE = "http://localhost:3000";
   await page.locator('[data-testid="settings-localization-number"]').selectOption("LOCALE");
   await page.waitForTimeout(300);
 
-  // §10 — Academy: learning notifications toggle persists.
+  // §10 - Academy: learning notifications toggle persists.
   await page.locator('[data-testid="settings-nav-academy"]').click();
   await page.waitForTimeout(600);
   const newContent = page.locator("[data-testid=\"settings-academy-new-content-switch\"]");

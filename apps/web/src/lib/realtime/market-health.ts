@@ -6,9 +6,9 @@ import { useQuery } from "@tanstack/react-query";
  * Health probe of the market service (Monitoring MASTER PROMPT §6).
  *
  * The service exposes GET /health through the same gateway rewrite as the
- * quote feed (XTransformPort) — NOT the /api MSW surface, so this uses fetch
+ * quote feed (XTransformPort) - NOT the /api MSW surface, so this uses fetch
  * directly inside the data layer (components stay fetch-free). The response
- * lists the REAL providers with their status — the Market Data tab renders
+ * lists the REAL providers with their status - the Market Data tab renders
  * these as evidence, never a synthesized status.
  */
 
@@ -34,7 +34,7 @@ async function fetchHealth(): Promise<MarketServiceHealth> {
 }
 
 /**
- * Polls the service health lightly (§18 — monitoring must not become a load
+ * Polls the service health lightly (§18 - monitoring must not become a load
  * source): every 15 s, 2 retries max, no refetch storms on window focus.
  */
 export function useMarketServiceHealth() {

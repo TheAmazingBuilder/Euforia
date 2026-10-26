@@ -1,5 +1,5 @@
 /**
- * Unit — Trade Review lifecycle (Phase 6 §10/§32/§44).
+ * Unit - Trade Review lifecycle (Phase 6 §10/§32/§44).
  *
  * The state machine is intentionally small: only states the product
  * exercises, explicit transitions, no arbitrary mutation.
@@ -14,7 +14,7 @@ import {
   upsertAcceptsState,
 } from "../../src/modules/trade-review/domain/review-lifecycle";
 
-describe("review lifecycle — transition table (§10)", () => {
+describe("review lifecycle - transition table (§10)", () => {
   it("allows COMPLETED → ARCHIVED (undo review)", () => {
     expect(canTransitionReview(REVIEW_STATUS.COMPLETED, REVIEW_STATUS.ARCHIVED)).toBe(true);
   });
@@ -29,7 +29,7 @@ describe("review lifecycle — transition table (§10)", () => {
   });
 });
 
-describe("review lifecycle — operation gates (§32)", () => {
+describe("review lifecycle - operation gates (§32)", () => {
   it("upsert accepts both states (create/edit/reactivate)", () => {
     expect(upsertAcceptsState(REVIEW_STATUS.COMPLETED)).toBe(true);
     expect(upsertAcceptsState(REVIEW_STATUS.ARCHIVED)).toBe(true);

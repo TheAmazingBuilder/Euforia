@@ -1,16 +1,16 @@
 /**
- * Trade Review controller (Phase 6 §34/§35/§70) — thin HTTP boundary over
+ * Trade Review controller (Phase 6 §34/§35/§70) - thin HTTP boundary over
  * the review application service. Validation → authentication (global
  * guard) → application use case → response. No domain logic, no Prisma here.
  *
  * Routing follows the repository conventions AND the frontend contract:
  * the Review workspace speaks review-centric paths (/reviews, one review per
- * trade — the tradeId identifies the review). Static paths are declared
+ * trade - the tradeId identifies the review). Static paths are declared
  * before the :tradeId parameter routes.
  *
- * All routes require authentication (global JwtAuthGuard — no @Public).
+ * All routes require authentication (global JwtAuthGuard - no @Public).
  * Ownership is enforced inside the service: the userId always comes from the
- * auth principal, never from the client (§8/§24/§36 — IDOR battery in e2e).
+ * auth principal, never from the client (§8/§24/§36 - IDOR battery in e2e).
  */
 import {
   Body,
@@ -61,7 +61,7 @@ export class TradeReviewController {
     return this.reviews.getLessons(principal.userId);
   }
 
-  /** Workspace list — REVIEWED ⊕ PENDING rows, paginated (§72). */
+  /** Workspace list - REVIEWED ⊕ PENDING rows, paginated (§72). */
   @Get()
   list(
     @CurrentUser() principal: AuthPrincipal,
@@ -102,7 +102,7 @@ export class TradeReviewController {
     return this.reviews.patchReview(principal.userId, uuidSchema.parse(tradeId), payload);
   }
 
-  /** Undo a review — the trade returns to PENDING; the row is archived. */
+  /** Undo a review - the trade returns to PENDING; the row is archived. */
   @Delete(":tradeId")
   @HttpCode(HttpStatus.OK)
   archive(

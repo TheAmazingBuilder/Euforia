@@ -1,4 +1,4 @@
-"""E2E ritual — sidebar IA v2 + sign-out + session chart + brand mark + audit sweep.
+"""E2E ritual - sidebar IA v2 + sign-out + session chart + brand mark + audit sweep.
 
 Captures:
 - Sectioned rail v2: Overview / Trading / News / Insights / Growth / System
@@ -87,7 +87,7 @@ with sync_playwright() as p:
     set_theme(page, "light")
     shot(page, "desktop-light-dashboard")
 
-    # Session Live — full-width chart
+    # Session Live - full-width chart
     nav(page, "/session", settle=2500)
     shot(page, "desktop-light-session")
     set_theme(page, "dark-blue")
@@ -140,7 +140,7 @@ with sync_playwright() as p:
         audit["routes"][route] = {"console_errors": len(errors)}
         if errors:
             audit["routes"][route]["sample"] = errors[-1]["text"][:200]
-            print(f"  !! {route}: {len(errors)} console errors — {errors[-1]['text'][:120]}")
+            print(f"  !! {route}: {len(errors)} console errors - {errors[-1]['text'][:120]}")
     actx.close()
 
     # ---------- Mobile 390 ----------

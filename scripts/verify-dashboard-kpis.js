@@ -1,5 +1,5 @@
 /**
- * Verify — Dashboard KPI extension.
+ * Verify - Dashboard KPI extension.
  * Probes: 6-cell primary strip (Balance + sparkline, Net P&L, Win rate with
  * avg-per-strategy sub), 5-cell performance strip (Total trades, Avg R:R,
  * Avg win, Avg loss, Drawdown now), equity chips (Drawdown now), monthly
@@ -31,7 +31,7 @@ function localDayKey(date = new Date()) {
 
   const results = [];
   const check = (name, ok, extra = "") =>
-    results.push(`${ok ? "PASS" : "FAIL"} — ${name}${extra ? ` (${extra})` : ""}`);
+    results.push(`${ok ? "PASS" : "FAIL"} - ${name}${extra ? ` (${extra})` : ""}`);
 
   // Seed the usage tracker's localStorage before any page load: 95 min today.
   const usagePayload = JSON.stringify({ [localDayKey()]: 95 });
@@ -42,7 +42,7 @@ function localDayKey(date = new Date()) {
     );
   seedUsage(page);
 
-  // ── Sign in (demo account) — every app route sits behind AuthGate ────────
+  // ── Sign in (demo account) - every app route sits behind AuthGate ────────
   await page.goto(`${BASE}/login`, { waitUntil: "networkidle" });
   await page.waitForTimeout(800);
   const fillDemo = page.locator('[data-testid="fill-demo"]');
@@ -61,7 +61,7 @@ function localDayKey(date = new Date()) {
   await page.locator('[data-testid="performance-strip"]').waitFor({ timeout: 20000 });
   await page.waitForTimeout(800);
 
-  // ── 1. Primary KPI strip — 6 cells, Balance leads ─────────────────────────
+  // ── 1. Primary KPI strip - 6 cells, Balance leads ─────────────────────────
   const kpiStrip = page.locator('section[aria-label="Key performance indicators"]');
   const kpiCells = kpiStrip.locator(".stat-cell");
   const kpiCount = await kpiCells.count();
@@ -91,7 +91,7 @@ function localDayKey(date = new Date()) {
     : NaN;
   check("Avg-per-strategy sub is a plausible % (≤ 100)", Number.isFinite(avgSubPct) && avgSubPct <= 100, String(avgSubPct));
 
-  // ── 2. Performance strip — 5 cells ─────────────────────────────────────────
+  // ── 2. Performance strip - 5 cells ─────────────────────────────────────────
   const perfStrip = page.locator('[data-testid="performance-strip"]');
   const perfCells = perfStrip.locator(".stat-cell");
   const perfCount = await perfCells.count();
@@ -173,7 +173,7 @@ function localDayKey(date = new Date()) {
   const activeUsers = productBand.locator('[data-testid="product-active-users"]');
   const activeUsersText = (await activeUsers.textContent()) ?? "";
   check(
-    "Active users cell — you, signed in, live dot",
+    "Active users cell - you, signed in, live dot",
     activeUsersText.includes("You · signed in") && (await activeUsers.locator(".animate-ping").count()) === 1,
   );
 
@@ -244,7 +244,7 @@ function localDayKey(date = new Date()) {
   const overflow = await mobile.evaluate(
     () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
   );
-  check("Mobile 390px — no horizontal overflow", overflow <= 0, `overflow=${overflow}px`);
+  check("Mobile 390px - no horizontal overflow", overflow <= 0, `overflow=${overflow}px`);
   await mobile.screenshot({ path: "scripts/shots/dashboard-kpis/mobile-390.png", fullPage: true });
 
   await browser.close();

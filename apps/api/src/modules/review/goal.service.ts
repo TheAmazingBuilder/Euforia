@@ -1,5 +1,5 @@
 /**
- * Goals application service (B8) — targets the trader sets; progress is
+ * Goals application service (B8) - targets the trader sets; progress is
  * COMPUTED server-side from real trading behavior over a resolved calendar
  * period, never self-entered. 1:1 port of the mock engine's metric math
  * (direction/unit derived server-side; pacing vs elapsed time honest).
@@ -159,7 +159,7 @@ export class GoalService {
     if (current.actual !== null) {
       const actual = current.actual;
       if (shape.direction === "LOWER_IS_BETTER") {
-        // A limit to respect — maintained, not "achieved early".
+        // A limit to respect - maintained, not "achieved early".
         if (actual <= goal.target) {
           progressPct = 100;
           status = "ON_TRACK";
@@ -178,7 +178,7 @@ export class GoalService {
           status = "BEHIND";
         }
       } else {
-        // A growth target — pace it against elapsed time.
+        // A growth target - pace it against elapsed time.
         progressPct = Math.max(0, Math.min(100, this.round1((actual / goal.target) * 100)));
         if (actual >= goal.target) {
           status = "ACHIEVED";
@@ -208,7 +208,7 @@ export class GoalService {
           : "target";
     const detail =
       current.actual === null
-        ? `No data yet this ${goal.period.toLowerCase()} — the sample is empty`
+        ? `No data yet this ${goal.period.toLowerCase()} - the sample is empty`
         : `${fmt(current.actual)} vs ${fmt(goal.target)} ${targetWord}`;
 
     return {

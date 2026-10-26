@@ -1,5 +1,5 @@
 /**
- * Verify — Session Live replay de session complet (increment ②).
+ * Verify - Session Live replay de session complet (increment ②).
  *
  * Covers:
  *   A. Real documented session: start → bias → note → key level → analysis
@@ -44,7 +44,7 @@ async function scrubTo(page, selector, value) {
 
   const results = [];
   const check = (name, ok, extra = "") => {
-    results.push(`${ok ? "PASS" : "FAIL"} — ${name}${extra ? ` (${extra})` : ""}`);
+    results.push(`${ok ? "PASS" : "FAIL"} - ${name}${extra ? ` (${extra})` : ""}`);
     console.log(results[results.length - 1]);
   };
 
@@ -139,7 +139,7 @@ async function scrubTo(page, selector, value) {
     }),
   );
   const priceAtStart = (await page.locator('[data-testid="replay-price"]').textContent()) ?? "";
-  check("Price readout live from candles", priceAtStart.length > 0 && priceAtStart !== "—", priceAtStart);
+  check("Price readout live from candles", priceAtStart.length > 0 && priceAtStart !== "-", priceAtStart);
   await dialog.screenshot({ path: `${SHOTS}/early.png` });
 
   // 1× playback: the clock advances with real time.

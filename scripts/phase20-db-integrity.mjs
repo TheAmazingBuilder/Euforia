@@ -1,9 +1,9 @@
 /**
- * COSMOZ — Phase 20 §59 database integrity checks.
+ * COSMOZ - Phase 20 §59 database integrity checks.
  *
  * Runs user-scoped integrity assertions over the REAL tables (test database
  * populated by the e2e suite): orphaned references, duplicated records,
- * inconsistent status. Read-only — no repair logic is applied (§59: create
+ * inconsistent status. Read-only - no repair logic is applied (§59: create
  * repair/migration logic only when genuinely required).
  *
  * Usage: node scripts/phase20-db-integrity.mjs <DATABASE_URL>

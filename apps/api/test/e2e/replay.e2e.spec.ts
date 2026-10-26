@@ -1,11 +1,11 @@
 /**
- * e2e — Replay module over the REAL AppModule + real database (REPLAY
+ * e2e - Replay module over the REAL AppModule + real database (REPLAY
  * MASTER PROMPT verification): the simulated-replay lifecycle (create →
  * advance → simulate → settle → complete with a §30-honest result), the
- * §18 replay-clock clamps, and the MANDATORY security suite (§34/§35 —
+ * §18 replay-clock clamps, and the MANDATORY security suite (§34/§35 -
  * IDOR across sessions, trades, notes; foreign strategy rejection; auth
  * boundary). The module is simulation-only: no execution route exists to
- * test — only that every write lands in the trader's own replay records.
+ * test - only that every write lands in the trader's own replay records.
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { NestFastifyApplication } from "@nestjs/platform-fastify";
@@ -56,7 +56,7 @@ describe("replay lifecycle (simulation only)", () => {
       riskPerTradePct: 1,
     });
 
-    // Advance — DRAFT → IN_PROGRESS, checkpoint persisted.
+    // Advance - DRAFT → IN_PROGRESS, checkpoint persisted.
     const advanced = await app.inject({
       method: "POST",
       url: `/api/v1/replay/sessions/${session.id}/advance`,
@@ -68,7 +68,7 @@ describe("replay lifecycle (simulation only)", () => {
     expect(advancedSession.status).toBe("IN_PROGRESS");
     expect(advancedSession.currentMs).toBe(fromMs + 60 * 60_000);
 
-    // Simulated trade — risk amount computed by the shared math.
+    // Simulated trade - risk amount computed by the shared math.
     const traded = await app.inject({
       method: "POST",
       url: `/api/v1/replay/sessions/${session.id}/trades`,
@@ -85,7 +85,7 @@ describe("replay lifecycle (simulation only)", () => {
     const trade = (traded.json() as { trade: { id: string; riskAmount: string | null; openedAtMs: number } }).trade;
     expect(trade.riskAmount).not.toBeNull();
 
-    // Settle — pnl + R authoritative server-side.
+    // Settle - pnl + R authoritative server-side.
     const closed = await app.inject({
       method: "POST",
       url: `/api/v1/replay/sessions/${session.id}/trades/${trade.id}/close`,
@@ -114,7 +114,7 @@ describe("replay lifecycle (simulation only)", () => {
     });
     expect(note.statusCode).toBe(201);
 
-    // Complete — result computed from the recorded data only.
+    // Complete - result computed from the recorded data only.
     const completed = await app.inject({
       method: "POST",
       url: `/api/v1/replay/sessions/${session.id}/complete`,
@@ -194,7 +194,7 @@ describe("replay lifecycle (simulation only)", () => {
   });
 });
 
-describe("replay security (§34/§35 — mandatory)", () => {
+describe("replay security (§34/§35 - mandatory)", () => {
   it("401 without a token", async () => {
     const anonymous = await app.inject({ method: "GET", url: "/api/v1/replay/sessions" });
     expect(anonymous.statusCode).toBe(401);

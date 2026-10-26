@@ -1,5 +1,5 @@
 /**
- * e2e — Metric alert rules (Dashboard Customization Phase 07) over the REAL
+ * e2e - Metric alert rules (Dashboard Customization Phase 07) over the REAL
  * AppModule + real database: rule CRUD + validation + ownership, the
  * deterministic evaluation engine (transitions, duplicate suppression,
  * scopes, NO_DATA), goal integration (the authoritative goal engine), event
@@ -11,7 +11,7 @@ import type { NestFastifyApplication } from "@nestjs/platform-fastify";
 import { buildTestApp } from "../helpers/build-app";
 import { authenticatedUser, captureMail, type MailCapture } from "../helpers/identity";
 
-// Post-write evaluation debounce — short but non-zero so the e2e exercises
+// Post-write evaluation debounce - short but non-zero so the e2e exercises
 // the real debounced path (default is 1000ms).
 process.env.METRIC_ALERTS_DEBOUNCE_MS = "200";
 
@@ -53,7 +53,7 @@ async function userWithAccount() {
 }
 
 /** Capture → close a BUY trade TODAY. Profit by default (TP). The close
- * response hides stored results (decision-gate §13) — the alert payload
+ * response hides stored results (decision-gate §13) - the alert payload
  * carries the observed value instead. */
 async function closedTrade(
   user: { authHeader: Record<string, string>; accountId: string; instrumentId: string },
@@ -210,7 +210,7 @@ describe("alert rule CRUD, validation and authorization", () => {
     expect(first.statusCode).toBe(201);
     const duplicate = await createRule(user, thresholdInput());
     expect(duplicate.statusCode).toBe(409);
-    // Near duplicate (different threshold) — a deliberate ladder, allowed.
+    // Near duplicate (different threshold) - a deliberate ladder, allowed.
     const ladder = await createRule(user, thresholdInput({ threshold: 100 }));
     expect(ladder.statusCode).toBe(201);
   });
@@ -224,7 +224,7 @@ describe("alert rule CRUD, validation and authorization", () => {
     expect(
       (await createRule(user, thresholdInput({ metric: "WIN_RATE", condition: "EQUAL", threshold: 50 }))).statusCode,
     ).toBe(400); // EQUAL is only meaningful for counts (semantic check)
-    // A percentage threshold out of 0..100 — currency/percent unit discipline.
+    // A percentage threshold out of 0..100 - currency/percent unit discipline.
     expect(
       (await createRule(user, thresholdInput({ metric: "WIN_RATE", threshold: 150 }))).statusCode,
     ).toBe(400);
@@ -333,7 +333,7 @@ describe("alert rule CRUD, validation and authorization", () => {
 
 // ── Evaluation engine ─────────────────────────────────────────────────────────
 
-describe("threshold evaluation — transitions, dedup, scopes", () => {
+describe("threshold evaluation - transitions, dedup, scopes", () => {
   it("fires once, never duplicates, and records the frozen payload", async () => {
     const user = await userWithAccount();
     const win1 = await closedTrade(user);
@@ -373,7 +373,7 @@ describe("threshold evaluation — transitions, dedup, scopes", () => {
     expect(payload.period).toBe("THIS_MONTH");
     expect(payload.evaluationKey).toBe("t1");
 
-    // Repeated evaluation — the condition stays true → NO duplicate event.
+    // Repeated evaluation - the condition stays true → NO duplicate event.
     const again = await app.inject({
       method: "POST",
       url: "/api/v1/alert-rules/evaluate",
@@ -549,7 +549,7 @@ describe("goal-rule integration", () => {
     expect(payload.goalId).toBe(goalId);
     expect(payload.goalCondition).toBe("ACHIEVED");
 
-    // Deleting the goal degrades the rule to NO_DATA — no crash, no fake event.
+    // Deleting the goal degrades the rule to NO_DATA - no crash, no fake event.
     const deleted = await app.inject({
       method: "DELETE",
       url: `/api/v1/goals/${goalId}`,
@@ -567,7 +567,7 @@ describe("goal-rule integration", () => {
 
   it("fires PROGRESS_BELOW when progress slips under the configured percent", async () => {
     const user = await userWithAccount();
-    // The goal engine marks an EMPTY sample PENDING (progressPct null) —
+    // The goal engine marks an EMPTY sample PENDING (progressPct null) -
     // the alert rule honestly degrades that to NO_DATA instead of faking a
     // "slipped" status (spec §10: never fabricate goal status). Progress
     // exists as soon as the period has one closed trade.
@@ -647,7 +647,7 @@ describe("event history, read and dismiss", () => {
     expect(read.statusCode).toBe(200);
     expect((read.json() as { readAt: string | null }).readAt).not.toBeNull();
 
-    // Dismiss — the row SURVIVES with dismissedAt set (audit history).
+    // Dismiss - the row SURVIVES with dismissedAt set (audit history).
     const dismiss = await app.inject({
       method: "PATCH",
       url: `/api/v1/alerts/${event.id}/dismiss`,
@@ -718,7 +718,7 @@ describe("evaluation triggers and workspace decoupling", () => {
     const created = await createRule(user, thresholdInput({ threshold: 1 }));
     expect(created.statusCode).toBe(201);
 
-    // No manual evaluate — the trade.closed domain event drives it.
+    // No manual evaluate - the trade.closed domain event drives it.
     await closedTrade(user);
     const deadline = Date.now() + 8_000;
     let seen = 0;
@@ -737,7 +737,7 @@ describe("evaluation triggers and workspace decoupling", () => {
     const created = await createRule(user, thresholdInput({ threshold: 1 }));
     expect(created.statusCode).toBe(201);
 
-    // Exercise the preferences API the workspaces/layouts use — rules are
+    // Exercise the preferences API the workspaces/layouts use - rules are
     // NOT coupled to layouts, so a dashboard-domain PATCH must not disturb
     // them.
     const prefs = await app.inject({

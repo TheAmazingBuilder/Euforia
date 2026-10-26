@@ -1,7 +1,7 @@
 import type { AssetClass } from "@cosmoz/shared";
 
 /**
- * Instrument display helpers — asset-class aware UI copy.
+ * Instrument display helpers - asset-class aware UI copy.
  * Labels are driven by instrument metadata, never by per-asset-class
  * constants in business code (trade-entry-ux.md §4 "Asset-class adaptation").
  */

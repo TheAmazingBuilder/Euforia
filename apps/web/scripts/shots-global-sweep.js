@@ -1,5 +1,5 @@
 /**
- * Visual QA — full-page screenshots of every app page (desktop 1440) plus a
+ * Visual QA - full-page screenshots of every app page (desktop 1440) plus a
  * mobile 390 sample set, and a light-theme sample. Output: scripts/shots/global-sweep/
  */
 /* eslint-disable @typescript-eslint/no-require-imports -- Node verification script */

@@ -6,7 +6,7 @@
  *
  * A client-supplied `x-request-id` is reused ONLY when it matches a strict
  * safe format (8–64 chars of [A-Za-z0-9_-]); otherwise a fresh UUID is
- * generated — arbitrary values are never trusted blindly.
+ * generated - arbitrary values are never trusted blindly.
  */
 import { randomUUID } from "node:crypto";
 

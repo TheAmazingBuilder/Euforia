@@ -1,5 +1,5 @@
 /**
- * Reviews bounded context — the Trade Review workspace + Goals engine.
+ * Reviews bounded context - the Trade Review workspace + Goals engine.
  */
 import { Module } from "@nestjs/common";
 import { GoalsController, ReviewsController } from "./reviews.controller";

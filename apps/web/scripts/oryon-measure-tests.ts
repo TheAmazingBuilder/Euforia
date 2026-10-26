@@ -1,11 +1,11 @@
 /**
- * Oryon measure readout — unit tests (bun).
+ * Oryon measure readout - unit tests (bun).
  *
  * Phase 5 spec §13 "measurement tests": positive and negative movements,
  * correct absolute difference, correct percentage calculation (spec formula
  * ((end − start) / start) × 100), invalid and zero starting prices, bar
  * counting (passed through from the chart pipeline), elapsed-time
- * calculation from ACTUAL anchor timestamps (never bars × interval — a
+ * calculation from ACTUAL anchor timestamps (never bars × interval - a
  * gapped market must not fake a duration), direction, and honest omission
  * of every unavailable part.
  *
@@ -40,7 +40,7 @@ const anchor = (t: number, p: number): OryonDrawingAnchor => ({ t, p });
 
 // ── 1. Direction + absolute difference ──────────────────────────────────────
 
-console.log("— direction et différence absolue");
+console.log("- direction et différence absolue");
 const up = computeMeasureReadout(anchor(1000, 100), anchor(2000, 101.5), { digits: 2, pipSize: 0, bars: 10 });
 ok("hausse → direction up", up.direction === "up");
 ok("delta signé positif", up.delta === 1.5);
@@ -59,7 +59,7 @@ ok("plat → pct = 0 (dénominateur valide)", flat.pct === 0);
 
 // ── 2. Percentage (formule spec, validation du dénominateur) ────────────────
 
-console.log("— pourcentage");
+console.log("- pourcentage");
 const pctCase = computeMeasureReadout(anchor(0, 200), anchor(60, 205), { digits: 2, pipSize: 0, bars: 1 });
 eq("((205-200)/200)*100 = 2.5", pctCase.pct, 2.5);
 const negPct = computeMeasureReadout(anchor(0, 200), anchor(60, 195), { digits: 2, pipSize: 0, bars: 1 });
@@ -71,7 +71,7 @@ ok("départ 0 → readout valide quand même", zeroStart.valid === true);
 
 // ── 3. Pips (pipSize du contrat instrument) ─────────────────────────────────
 
-console.log("— pips");
+console.log("- pips");
 const pipsCase = computeMeasureReadout(anchor(0, 1.085), anchor(0, 1.0912), { digits: 4, pipSize: 0.0001, bars: null });
 ok("Δ 0.0062 / 0.0001 = 62 pips (tolérance flottant)", pipsCase.pips !== null && Math.abs(pipsCase.pips - 62) < 1e-9);
 ok("ligne 2 contient « 62.0 pips » (arrondi affichage)", pipsCase.lines[1]!.includes("62.0 pips"));
@@ -80,17 +80,17 @@ ok("pipSize 0 → pips omis (pas de division inventée)", noPips.pips === null &
 
 // ── 4. Barres (fournies par le pipeline logique du chart) ───────────────────
 
-console.log("— barres");
+console.log("- barres");
 const barsCase = computeMeasureReadout(anchor(0, 10), anchor(0, 12), { digits: 2, pipSize: 0, bars: 14 });
 ok("14 bars affichées", barsCase.bars === 14 && barsCase.lines[1]!.includes("14 bars"));
 const noBars = computeMeasureReadout(anchor(0, 10), anchor(0, 12), { digits: 2, pipSize: 0, bars: null });
 ok("bars indisponibles → omises honnêtement", noBars.bars === null && !noBars.lines[1]!.includes("bars"));
 
-// ── 5. Durée écoulée — TIMESTAMPS RÉELS, jamais bars × intervalle ───────────
+// ── 5. Durée écoulée - TIMESTAMPS RÉELS, jamais bars × intervalle ───────────
 
-console.log("— durée écoulée (timestamps réels)");
+console.log("- durée écoulée (timestamps réels)");
 // 14 bougies 5m = 70 minutes d'axe ; les timestamps réels (avec trou de
-// week-end simulé) donnent 2h30 — le readout doit afficher 2h 30m.
+// week-end simulé) donnent 2h30 - le readout doit afficher 2h 30m.
 const gapped = computeMeasureReadout(
   anchor(1_760_000_000, 10),
   anchor(1_760_000_000 + 9_000, 11),
@@ -111,7 +111,7 @@ ok("formatElapsedDuration(négatif) = null", formatElapsedDuration(-5) === null)
 
 // ── 6. Ancres invalides → readout honnêtement vide ─────────────────────────
 
-console.log("— ancres invalides");
+console.log("- ancres invalides");
 const badStart = computeMeasureReadout(anchor(0, NaN), anchor(60, 10), { digits: 2, pipSize: 0.1, bars: 1 });
 ok("départ NaN → invalide, aucune ligne", badStart.valid === false && badStart.lines.length === 0);
 const badEnd = computeMeasureReadout(anchor(0, 10), anchor(60, Infinity), { digits: 2, pipSize: 0.1, bars: 1 });
@@ -120,7 +120,7 @@ eq("champs numériques null sur readout invalide", [badStart.delta, badStart.pct
 
 // ── 7. Composé : ligne 2 complète (delta + pct + pips + bars + durée) ──────
 
-console.log("— composition complète");
+console.log("- composition complète");
 const full = computeMeasureReadout(anchor(1_000_000, 1.085), anchor(1_000_000 + 3_600, 1.0912), {
   digits: 4,
   pipSize: 0.0001,

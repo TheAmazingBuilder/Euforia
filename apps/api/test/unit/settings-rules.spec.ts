@@ -1,7 +1,7 @@
 /**
- * Unit — Settings domain rules (Phase 15 §38): defaults, per-domain merge,
+ * Unit - Settings domain rules (Phase 15 §38): defaults, per-domain merge,
  * reset scoping, full-doc invariant, read-mirror resolution and the §33
- * audit triage. Pure functions — no framework, no database.
+ * audit triage. Pure functions - no framework, no database.
  */
 import { describe, expect, it } from "vitest";
 import {
@@ -36,7 +36,7 @@ describe("buildFreshPreferences", () => {
     expect(userPreferencesSchema.safeParse(doc).success).toBe(true);
   });
 
-  it("deep-clones — mutating the doc never leaks into the shared defaults", () => {
+  it("deep-clones - mutating the doc never leaks into the shared defaults", () => {
     const doc = freshDoc();
     doc.appearance.theme = "LIGHT";
     expect(DEFAULT_USER_PREFERENCES.appearance.theme).toBe("DARK_BLUE");
@@ -78,7 +78,7 @@ describe("mergeDomain", () => {
     expect(next.localization).toEqual(previous.localization);
   });
 
-  it("keeps the full-document invariant — a bad domain value cannot persist", () => {
+  it("keeps the full-document invariant - a bad domain value cannot persist", () => {
     expect(() => PREFERENCE_DOMAIN_SCHEMAS.risk.parse({ garbage: true })).toThrow();
   });
 });

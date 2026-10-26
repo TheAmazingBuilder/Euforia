@@ -1,14 +1,14 @@
 import { z } from "zod";
 
 /**
- * Nofy contracts — the personal trading knowledge & notes workspace.
+ * Nofy contracts - the personal trading knowledge & notes workspace.
  *
  * Nofy is an independent first-class module (ACADEMY section, beside the
  * Academy module) that owns the trader's notes, ideas, research and
  * documentation. Notes are composed of ordered BLOCKS (Notion-style), stored
  * as structured data so block-level operations (reorder, query, version)
  * stay possible. Trading-entity references are real relational pointers
- * (kind + id) resolved server-side at read time — never plain-text names.
+ * (kind + id) resolved server-side at read time - never plain-text names.
  */
 
 // ── Blocks ───────────────────────────────────────────────────────────────────
@@ -35,7 +35,7 @@ export type NofyBlockType = z.infer<typeof nofyBlockTypeSchema>;
 export const nofyCalloutToneSchema = z.enum(["info", "tip", "warn", "risk"]);
 export type NofyCalloutTone = z.infer<typeof nofyCalloutToneSchema>;
 
-/** Trading-entity reference kinds — resolved against real app entities. */
+/** Trading-entity reference kinds - resolved against real app entities. */
 export const nofyRefKindSchema = z.enum([
   "TRADE",
   "STRATEGY",
@@ -50,7 +50,7 @@ export type NofyRefKind = z.infer<typeof nofyRefKindSchema>;
 
 export type NofyRefResolved = {
   kind: NofyRefKind;
-  /** Real entity id — the relational pointer, not a name. */
+  /** Real entity id - the relational pointer, not a name. */
   id: string;
   /** Server-resolved display label (fresh at read time). */
   label: string;
@@ -157,7 +157,7 @@ export type NofyNote = {
   deletedAt: string | null;
 };
 
-/** List projection — one line in My Notes / Favorites / Trash / search. */
+/** List projection - one line in My Notes / Favorites / Trash / search. */
 export type NofyNoteRow = {
   id: string;
   title: string;
@@ -242,7 +242,7 @@ export type NofySearchResponse = {
   total: number;
 };
 
-/** Entity picker hit — one referenceable app entity. */
+/** Entity picker hit - one referenceable app entity. */
 export type NofyRefHit = {
   kind: NofyRefKind;
   id: string;
@@ -274,7 +274,7 @@ export const nofyNoteCreateInputSchema = z.object({
 export type NofyNoteCreateInput = z.infer<typeof nofyNoteCreateInputSchema>;
 
 /**
- * Autosave PATCH — every field optional; the server touches updatedAt only
+ * Autosave PATCH - every field optional; the server touches updatedAt only
  * when at least one meaningful field is present.
  */
 export const nofyNoteUpdateInputSchema = z.object({

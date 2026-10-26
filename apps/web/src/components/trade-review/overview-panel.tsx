@@ -22,10 +22,10 @@ import { GradeBadge, GRADE_BAR, GRADE_STYLES } from "@/components/trade-review/t
 import { Snowflake } from "lucide-react";
 
 /**
- * Trade Review overview — the module's cockpit. Review rate, streak, lessons
+ * Trade Review overview - the module's cockpit. Review rate, streak, lessons
  * and goal health up top; the grade distribution as a full-width segmented
  * bar; the weekly execution trend; the pending queue CTA and the freshest
- * lessons. Everything from GET /reviews/overview — the client renders, never
+ * lessons. Everything from GET /reviews/overview - the client renders, never
  * recomputes.
  */
 
@@ -123,7 +123,7 @@ export function OverviewPanel({ overview, onGoTo }: OverviewPanelProps) {
           data-testid="streak-freeze-note"
         >
           <Snowflake className="size-3 shrink-0" aria-hidden="true" />
-          Honest streak: {streak.currentDays} reviewed + {streak.frozenDays} frozen (one grace day per week) — best pure run {streak.longestStreak}d.
+          Honest streak: {streak.currentDays} reviewed + {streak.frozenDays} frozen (one grace day per week) - best pure run {streak.longestStreak}d.
         </p>
       ) : null}
 
@@ -138,7 +138,7 @@ export function OverviewPanel({ overview, onGoTo }: OverviewPanelProps) {
           </CardHeader>
           <CardContent className="space-y-3">
             {gradeTotal === 0 ? (
-              <p className="py-4 text-center text-sm text-muted-foreground">No reviews yet — grade your first trade.</p>
+              <p className="py-4 text-center text-sm text-muted-foreground">No reviews yet - grade your first trade.</p>
             ) : (
               <>
                 <div className="flex h-3.5 w-full overflow-hidden rounded-full" data-testid="grade-bar">
@@ -177,7 +177,7 @@ export function OverviewPanel({ overview, onGoTo }: OverviewPanelProps) {
                   ).map(({ label, value }) => (
                     <div key={label}>
                       <p className="text-xs text-muted-foreground">Avg {label}</p>
-                      <p className="font-mono text-sm font-bold">{value === null ? "—" : `${value}/5`}</p>
+                      <p className="font-mono text-sm font-bold">{value === null ? "-" : `${value}/5`}</p>
                     </div>
                   ))}
                 </div>
@@ -218,7 +218,7 @@ export function OverviewPanel({ overview, onGoTo }: OverviewPanelProps) {
               </div>
             )}
             <p className="mt-3 border-t pt-3 text-xs text-muted-foreground">
-              Average execution grade per week (A=5 … F=1) · plan followed {stats.followedPlanPct === null ? "—" : `${stats.followedPlanPct}%`} of the time.
+              Average execution grade per week (A=5 … F=1) · plan followed {stats.followedPlanPct === null ? "-" : `${stats.followedPlanPct}%`} of the time.
             </p>
           </CardContent>
         </Card>
@@ -242,7 +242,7 @@ export function OverviewPanel({ overview, onGoTo }: OverviewPanelProps) {
             {pendingQueuePreview.length === 0 ? (
               <p className="flex items-center justify-center gap-2 py-4 text-sm text-muted-foreground">
                 <CheckCircle2 className="size-4 text-emerald-500" aria-hidden="true" />
-                Queue clear — every closed trade has its verdict.
+                Queue clear - every closed trade has its verdict.
               </p>
             ) : (
               <>
@@ -257,7 +257,7 @@ export function OverviewPanel({ overview, onGoTo }: OverviewPanelProps) {
                         (row.rMultiple ?? 0) >= 0 ? "text-profit" : "text-loss",
                       )}
                     >
-                      {row.rMultiple === null ? "—" : `${row.rMultiple > 0 ? "+" : ""}${row.rMultiple.toFixed(2)}R`}
+                      {row.rMultiple === null ? "-" : `${row.rMultiple > 0 ? "+" : ""}${row.rMultiple.toFixed(2)}R`}
                     </span>
                   </div>
                 ))}

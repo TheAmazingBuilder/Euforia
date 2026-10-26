@@ -18,7 +18,7 @@ VALUES
   (gen_random_uuid(), 'NAS100', 'Nasdaq 100',               'INDEX',    'USD', 1,      1,      0.1,  100, 0.1,  1, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 ON CONFLICT ("symbol") DO NOTHING;
 
--- ── Instrument journal catalog (unique: symbol — fixed ids from migration) ────
+-- ── Instrument journal catalog (unique: symbol - fixed ids from migration) ────
 INSERT INTO "Instrument" ("id", "symbol", "name", "assetClass", "quoteCurrency", "pipSize", "digits", "contractSize", "isActive")
 SELECT v.id, v.symbol, v.name, v.assetClass, v.quoteCurrency, v.pipSize, v.digits, v.contractSize, v.isActive
 FROM (VALUES

@@ -1,7 +1,7 @@
 /**
- * MASTER QA spec §14.10 — automated mock-leakage guard for production.
+ * MASTER QA spec §14.10 - automated mock-leakage guard for production.
  *
- * Asserts that a DEFAULT production build (zero env — the deployment
+ * Asserts that a DEFAULT production build (zero env - the deployment
  * mistake the QA audit targets) cannot activate the MSW demo layer:
  *
  *   1. The mode matrix test (src/lib/api/__tests__/mode.spec.ts) is the
@@ -9,7 +9,7 @@
  *      inspects the BUILT client output:
  *   2. The composed service worker (/sw.js) must keep its MSW passthrough
  *      semantics (it only intercepts after an explicit client start), and
- *   3. No client chunk may contain an UNCONDITIONAL `worker.start(` call —
+ *   3. No client chunk may contain an UNCONDITIONAL `worker.start(` call -
  *      the only start site lives behind the API_MOCKED check in
  *      MockProvider (dynamic import, never in the default path).
  *
@@ -73,11 +73,11 @@ function walk(dir, depth = 0) {
 }
 
 if (existsSync(nextDir)) {
-  // static/ chunks — only CLIENT chunks can boot the worker. The MSW
+  // static/ chunks - only CLIENT chunks can boot the worker. The MSW
   // library's own code (setupWorker internals) legitimately contains
   // worker.start machinery; the leakage rule targets OUR module boundary:
   // any chunk that imports @/mocks/browser (the app's worker bootstrap)
-  // must carry the API_MOCKED guard — the MockProvider is the only
+  // must carry the API_MOCKED guard - the MockProvider is the only
   // permitted start site (lazy, behind the canonical mode check).
   walk(path.join(nextDir, "static"));
   for (const file of chunks) {
@@ -102,12 +102,12 @@ if (existsSync(nextDir)) {
     }
   }
 } else {
-  findings.push("no .next build found — run `next build` before this guard");
+  findings.push("no .next build found - run `next build` before this guard");
 }
 
 if (findings.length > 0) {
-  console.error("MOCK-LEAKAGE GUARD — FAIL:");
+  console.error("MOCK-LEAKAGE GUARD - FAIL:");
   for (const finding of findings) console.error(`  - ${finding}`);
   process.exit(1);
 }
-console.log("MOCK-LEAKAGE GUARD — PASS (production default cannot activate the demo layer)");
+console.log("MOCK-LEAKAGE GUARD - PASS (production default cannot activate the demo layer)");

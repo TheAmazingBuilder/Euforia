@@ -20,7 +20,7 @@ import {
 
 import type { OnboardingStepProps } from "./step-types";
 
-/** Curated IANA list — every entry is schema-valid (ianaTimezoneSchema). */
+/** Curated IANA list - every entry is schema-valid (ianaTimezoneSchema). */
 const COMMON_TIMEZONES = [
   "UTC",
   "America/Toronto",
@@ -49,8 +49,8 @@ const COMMON_TIMEZONES = [
 ] as const;
 
 /**
- * Step 3 — Trading preferences. REAL writes only, through the EXISTING
- * endpoints: timezone → PATCH /me (single source of truth — the server
+ * Step 3 - Trading preferences. REAL writes only, through the EXISTING
+ * endpoints: timezone → PATCH /me (single source of truth - the server
  * computes trading-day keys from it), display currency + preferred session
  * → the whole-domain trading PATCH. Display preferences never touch a
  * trading account's base currency or balances (copy says it explicitly).
@@ -94,7 +94,7 @@ export function PreferencesStep({ controller, dict, onAdvance, onBack }: Onboard
     if (pending) return;
     setError(null);
     setPending("skip");
-    // No write at all — skipping performs nothing (honest by construction).
+    // No write at all - skipping performs nothing (honest by construction).
     onAdvance();
   }
 

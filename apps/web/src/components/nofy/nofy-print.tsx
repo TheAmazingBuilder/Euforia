@@ -18,11 +18,11 @@ import type { Dictionary } from "@/i18n/dictionaries/en";
 import { InlineMarkdown, NOFY_REF_META } from "./nofy-shared";
 
 /**
- * Note print sheet (Export PDF) — the note rendered as a clean document and
+ * Note print sheet (Export PDF) - the note rendered as a clean document and
  * offered to the browser's print dialog ("Save as PDF"). Same mechanics as
  * the quarterly analytics report: while the dialog is open the body carries
  * `printing-nofy`, and the @media print rules hide everything but the
- * `.print-sheet` — so a print started anywhere else is never hijacked.
+ * `.print-sheet` - so a print started anywhere else is never hijacked.
  */
 
 export type NofyPrintNote = {
@@ -165,8 +165,8 @@ function PrintBlock({ block }: { block: NofyBlock }) {
           <span className="font-semibold uppercase tracking-wider" style={{ color: meta.hue }}>
             {N.refKinds[refKindKey(block.ref.kind)]}
           </span>
-          {" — "}
-          <span className="font-medium text-foreground">{block.ref.label ?? "—"}</span>
+          {" - "}
+          <span className="font-medium text-foreground">{block.ref.label ?? "-"}</span>
           {block.ref.meta ? <span className="text-muted-foreground"> · {block.ref.meta}</span> : null}
         </p>
       );

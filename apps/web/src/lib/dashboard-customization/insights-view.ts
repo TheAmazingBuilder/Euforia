@@ -8,7 +8,7 @@ import type {
 import { formatMoney, formatNumber, formatPercent, formatR, parseDecimal } from "@cosmoz/shared";
 
 /**
- * Phase 05 widget view-models — PURE presentation helpers between the
+ * Phase 05 widget view-models - PURE presentation helpers between the
  * analytics-suite payload and the insight widgets. The client never
  * re-derives analytics here: rows are projected from server-computed suite
  * sections, and the only arithmetic is display ordering, a display cap and
@@ -42,7 +42,7 @@ export interface BreakdownModel {
   rows: BreakdownRow[];
   /** Honest truncation: how many further rows exist beyond the cap. */
   truncated: number;
-  /** null = every column is available; otherwise the money column shows "—". */
+  /** null = every column is available; otherwise the money column shows "-". */
   moneyNote: string | null;
 }
 
@@ -64,7 +64,7 @@ export function breakdownModelOf(
 ): BreakdownModel {
   const moneyNote =
     suite.meta.singleCurrency === false
-      ? "Mixed-currency scope — money columns are unavailable; R, counts and rates stay computed."
+      ? "Mixed-currency scope - money columns are unavailable; R, counts and rates stay computed."
       : null;
   let rows: BreakdownRow[];
   switch (dimension) {
@@ -153,7 +153,7 @@ export function breakdownModelOf(
       }));
       break;
   }
-  // Display ordering only (busiest populations first, ties alphabetical) —
+  // Display ordering only (busiest populations first, ties alphabetical) -
   // this is presentation, never a ranking verdict.
   rows = [...rows].sort((a, b) => b.trades - a.trades || a.label.localeCompare(b.label));
   return {
@@ -168,7 +168,7 @@ export function breakdownModelOf(
 export const TREND_MAX_WEEKS = 6;
 
 export interface TrendRow {
-  /** ISO week key from the server (e.g. "2026-W11") — clearly labeled dates. */
+  /** ISO week key from the server (e.g. "2026-W11") - clearly labeled dates. */
   key: string;
   trades: number;
   netPnl: number | null;
@@ -219,12 +219,12 @@ export function reliabilityCopy(reliability: TradingInsightReliability): { label
 /** Format one typed insight metric for display. Money needs the scope
  * currency; the engine already nulled it under multi-currency. */
 export function insightMetricText(metric: TradingInsightMetric, currency: Currency | null): string {
-  if (metric.value === null) return "—";
+  if (metric.value === null) return "-";
   switch (metric.kind) {
     case "R":
       return formatR(metric.value);
     case "MONEY":
-      return currency ? formatMoney(metric.value, currency) : "—";
+      return currency ? formatMoney(metric.value, currency) : "-";
     case "PERCENT":
       return formatPercent(metric.value, 1);
     case "COUNT":
@@ -232,7 +232,7 @@ export function insightMetricText(metric: TradingInsightMetric, currency: Curren
   }
 }
 
-/** The widget's empty state must explain WHY it is empty — never a fake
+/** The widget's empty state must explain WHY it is empty - never a fake
  * finding (spec §3/§9D). */
 export const INSIGHTS_EMPTY_COPY =
-  "No finding met the reporting thresholds for this scope yet. Comparisons need at least 5 observations per group — small samples stay silent instead of becoming conclusions.";
+  "No finding met the reporting thresholds for this scope yet. Comparisons need at least 5 observations per group - small samples stay silent instead of becoming conclusions.";

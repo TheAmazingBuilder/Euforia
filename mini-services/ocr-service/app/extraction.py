@@ -1,21 +1,21 @@
 """Field extraction (Phase 19 §10 stages 4–8): tesseract OCR → line
 grouping → deterministic field regexes → normalization → confidence.
 
-Extraction profile: TRADE_SUMMARY (V1, the only profile — §12). MT5-style
+Extraction profile: TRADE_SUMMARY (V1, the only profile - §12). MT5-style
 trade lines carry: a timestamp, buy/sell, volume, symbol, prices, and
 labeled S/L / T/P / Profit values. Extraction is CONSERVATIVE (§20): when
-evidence is missing, the field is absent — never invented. The recognized
+evidence is missing, the field is absent - never invented. The recognized
 words keep their bounding boxes (§18) so the review UI can highlight the
 source region later.
 
 Engine-quality phase additions:
-  - LAYOUT TEMPLATES — extraction accepts a LayoutTemplate (templates.py)
+  - LAYOUT TEMPLATES - extraction accepts a LayoutTemplate (templates.py)
     that tightens/widens plausibility windows per platform layout and may
     enable the trailing-profit rule for MT5 desktop history rows;
-  - MULTI-TRADE CANDIDATES — account-history screenshots carry N trade
+  - MULTI-TRADE CANDIDATES - account-history screenshots carry N trade
     rows; extract_trade_candidates() groups order rows into per-trade
     field sets (drafts for grouped confirmation). Candidates are only
-    GROUPED evidence — never merged into one fake trade.
+    GROUPED evidence - never merged into one fake trade.
 """
 
 from __future__ import annotations
@@ -58,7 +58,7 @@ __all__ = ["ENGINE_NAME", "OcrLine", "OcrWord", "extract_fields", "extract_trade
 
 ENGINE_NAME = "fastapi-tesseract"
 
-# MT5 vocabulary — the extraction evidence (deterministic, explainable).
+# MT5 vocabulary - the extraction evidence (deterministic, explainable).
 # Label/direction/decimal/token patterns now live in templates.py (shared
 # with the layout templates); DATE/CLOCK stay extraction-local.
 DECIMAL_TOKEN = re.compile(r"^[-+]?\d{1,3}(?:[.,\s]\d{3})*(?:[.,]\d+)?|[-+]?\d+[.,]\d+|^[-+]?\d+$")
@@ -67,14 +67,14 @@ CLOCK_ONLY_TOKEN = re.compile(r"^\d{2}:\d{2}(?::\d{2})?$")
 
 
 # OcrWord / OcrLine now live in extraction_types.py (shared with
-# templates.py and arbitration.py — no import cycles). Re-exported above.
+# templates.py and arbitration.py - no import cycles). Re-exported above.
 
 
 def run_ocr(image, lang: str) -> List[OcrLine]:
     """Tesseract over the preprocessed image, grouped into reading-order lines.
 
     Uses `image_to_data` so every word keeps its bounding box (§18) and
-    confidence — the raw material for field-level confidence (§17).
+    confidence - the raw material for field-level confidence (§17).
     """
     data = pytesseract.image_to_data(image, lang=lang, output_type=Output.DICT)
     lines: Dict[tuple, List[OcrWord]] = {}
@@ -102,7 +102,7 @@ def run_ocr(image, lang: str) -> List[OcrLine]:
 
 
 def _decimal_from(word: OcrWord) -> Optional[Normalized]:
-    # A timestamp is NOT a price — exclude time-shaped tokens first (a real
+    # A timestamp is NOT a price - exclude time-shaped tokens first (a real
     # bug caught by the fixture: "2026.01.05" parsed as 20260105).
     if TIME_TOKEN.match(word.text):
         return None
@@ -136,7 +136,7 @@ def _labeled_value(line: OcrLine, label_pattern: re.Pattern) -> Optional[tuple]:
     return None
 
 
-# Exit-price labels (V2 §11) — WORD-level shapes. The bare word "close" in
+# Exit-price labels (V2 §11) - WORD-level shapes. The bare word "close" in
 # a history row is an ORDER TYPE ("close 0.15 XAUUSD ...") and must never
 # capture the following volume as a price; an explicit "exit" word, a
 # colon-carrying "closed:"/"close:" or an "exit price" word pair are the
@@ -190,7 +190,7 @@ def extract_fields(
     """Deterministic field extraction over the OCR lines (§10 stage 6–8).
 
     `template` (optional) carries the platform layout priors: plausibility
-    windows and the trailing-profit rule. GENERIC behavior when absent —
+    windows and the trailing-profit rule. GENERIC behavior when absent -
     identical to the V1 extraction.
     """
     started = time.perf_counter()
@@ -270,7 +270,7 @@ def extract_fields(
                     break
 
         # Labeled risk/profit values (V2 §11: exit price via explicit
-        # exit/close-price labels — see _exit_labeled_value).
+        # exit/close-price labels - see _exit_labeled_value).
         for pattern, key in (
             (SL_LABELS, "stopLoss"),
             (TP_LABELS, "takeProfit"),
@@ -291,11 +291,11 @@ def extract_fields(
                 )
             )
 
-        # Exit price — explicit label shapes only.
+        # Exit price - explicit label shapes only.
         _upsert_exit(line, fields, line.confidence)
 
-        # Timestamps: MT5-style dotted/dashed wall clocks (§16 — no tz guess).
-        # Tesseract splits "2026.01.05 09:30:00" into date + clock words —
+        # Timestamps: MT5-style dotted/dashed wall clocks (§16 - no tz guess).
+        # Tesseract splits "2026.01.05 09:30:00" into date + clock words -
         # join the adjacent pair before normalizing (never guess: only a
         # DIRECTLY adjacent pair is joined).
         for index, word in enumerate(line.words):
@@ -326,7 +326,7 @@ def extract_fields(
             )
 
     # entryPrice: the price token AFTER the symbol inside an order line that
-    # carries both direction and symbol (MT5 history layout) — conservative,
+    # carries both direction and symbol (MT5 history layout) - conservative,
     # labeled evidence only (§20). One order line is consumed per screenshot.
     for line in lines:
         words_text = [w.text for w in line.words]
@@ -362,7 +362,7 @@ def extract_fields(
         if "entryPrice" in fields:
             break
 
-    # Trailing-profit rule — history template only, explicit sign required
+    # Trailing-profit rule - history template only, explicit sign required
     # (templates.py never invents: an unsigned trailing number is too
     # ambiguous to claim, §20).
     if template.trailing_profit and "profit" not in fields:
@@ -386,7 +386,7 @@ def extract_fields(
                 )
                 break
 
-    # Layout shape bonus — last, explainable, capped (templates.py).
+    # Layout shape bonus - last, explainable, capped (templates.py).
     if template.name != GENERIC:
         result = [apply_shape_bonus(field, template) for field in fields.values()]
     else:
@@ -411,12 +411,12 @@ def extract_trade_candidates(
       - the leading timestamp on the same row (openTime);
       - labeled S/L / T/P / Profit values from the row itself;
       - labeled values from the following lines up to the NEXT order row
-        (MT5 stacks the S/L line under the order row — conftest fixture
-        shape) — those lines are consumed and not re-offered;
+        (MT5 stacks the S/L line under the order row - conftest fixture
+        shape) - those lines are consumed and not re-offered;
       - the trailing signed profit when the template allows it.
 
     A candidate needs direction + symbol + at least one more field to be
-    offered — never a naked single-word row. Capped at MAX_TRADE_CANDIDATES
+    offered - never a naked single-word row. Capped at MAX_TRADE_CANDIDATES
     (a screenshot is not a CSV import; huge statements belong to files).
     """
     template = template or _GENERIC_TEMPLATE
@@ -438,7 +438,7 @@ def extract_trade_candidates(
             if existing is None or field.confidence > existing.confidence:
                 fields[field.field] = field
 
-        # Row scan — direction, symbol, volume, entry, openTime, labels.
+        # Row scan - direction, symbol, volume, entry, openTime, labels.
         direction_seen: Optional[str] = None
         symbol_seen: Optional[str] = None
         entry_done = False
@@ -474,7 +474,7 @@ def extract_trade_candidates(
                         sourceRegion=_region_in(row, word), notes=[],
                     ))
                 continue
-            # Entry price — first decimal after the symbol.
+            # Entry price - first decimal after the symbol.
             if symbol_seen is not None and not entry_done and _decimal_from(word) is not None:
                 normalized = _decimal_from(word)
                 if normalized is not None and normalized.value is not None and float(normalized.value) > 0:
@@ -484,7 +484,7 @@ def extract_trade_candidates(
                         confidence=round(min(row.confidence * (word.confidence / 100.0), 0.99), 3),
                         sourceRegion=_region_in(row, word), notes=normalized.notes,
                     ))
-            # Open time — leading date(+clock) on the row.
+            # Open time - leading date(+clock) on the row.
             combined: Optional[str] = None
             if TIME_TOKEN.match(word.text):
                 combined = word.text
@@ -516,10 +516,10 @@ def extract_trade_candidates(
                         confidence=round(min(row.confidence * (token.confidence / 100.0), 0.99), 3),
                         sourceRegion=_region_in(row, token), notes=normalized.notes,
                     ))
-            # Exit price on the row itself — explicit label shapes only.
+            # Exit price on the row itself - explicit label shapes only.
             _upsert_exit(row, fields, row.confidence)
 
-        # Follower lines up to the next order row — labeled SL/TP/profit.
+        # Follower lines up to the next order row - labeled SL/TP/profit.
         for follower_index in range(index + 1, next_index):
             follower_line = lines[follower_index]
             for pattern, key in (
@@ -569,10 +569,10 @@ def extract_trades(
 ) -> List["EngineTrade"]:
     """The response-level trade read (V2): clustered trades when the row
     grouping finds order rows, else the V1 flat extraction surfaced as ONE
-    trade (single direction line → the V1 global path must be kept — the
+    trade (single direction line → the V1 global path must be kept - the
     mono review card never disappears just because clustering found no row).
 
-    Returns [] only when NOTHING was read (no fields at all) — an empty
+    Returns [] only when NOTHING was read (no fields at all) - an empty
     list, never an invented trade (§20/§21).
     """
     template = template or _GENERIC_TEMPLATE

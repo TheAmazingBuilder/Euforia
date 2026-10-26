@@ -18,7 +18,7 @@ const OPTIONS: readonly Direction[] = ["BUY", "SELL"];
 /**
  * Direction segmented control (spec §4): BUY / SELL, pre-selected by the
  * caller from the last trade. ←/→ arrow-key support with roving focus.
- * Direction is NOT P&L — accent styling only (golden rule: no green/red UI).
+ * Direction is NOT P&L - accent styling only (golden rule: no green/red UI).
  */
 export function DirectionSegmented({ value, onChange, id }: DirectionSegmentedProps) {
   const { dict } = useI18n();

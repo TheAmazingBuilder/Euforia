@@ -1,11 +1,11 @@
 /**
- * Trade Review bounded context (B8) — the post-trade review workflow fused
+ * Trade Review bounded context (B8) - the post-trade review workflow fused
  * with Goal setting. Reviews are one per trade (upsert) and sync the
  * trade's written trace; progress is always computed server-side from real
  * behavior (never self-entered).
  *
  * Dependency graph (acyclic):
- *   ReviewModule → ReviewRepository (own Prisma boundary — REVIEW|GOAL rows)
+ *   ReviewModule → ReviewRepository (own Prisma boundary - REVIEW|GOAL rows)
  *                → TradesModule (journal facts + review trace sync)
  *                → DisciplineModule (DISCIPLINE_SCORE metric facts)
  *                → AccountsModule (currency for MONEY-unit metrics)
@@ -30,7 +30,7 @@ import { ReviewService } from "./review.service";
   controllers: [GoalsController],
   providers: [ReviewRepository, GoalService, ReviewService],
   // NOTE: the legacy ReviewsController (this module) is intentionally
-  // unwired — the Phase-6 TradeReviewModule owns the /reviews routes now
+  // unwired - the Phase-6 TradeReviewModule owns the /reviews routes now
   // (one route owner per path). Goals stay served here (ReviewRow gen).
   // Narrow contract: Playbook compliance reads review playbookMatch rows
   // from the owning context (§26); the Phase-07 metric-alerts engine

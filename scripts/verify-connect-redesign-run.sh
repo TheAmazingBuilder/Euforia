@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# verify-connect-redesign-run.sh — REBUILD the web app (the redesign must be
+# verify-connect-redesign-run.sh - REBUILD the web app (the redesign must be
 # verified on the production build, not a stale next-server), restart :3000
 # with next start, then run the probe in the SAME shell session so the server
 # survives the whole run (sandbox: processes die between commands).

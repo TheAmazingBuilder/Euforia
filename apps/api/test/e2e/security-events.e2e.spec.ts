@@ -1,5 +1,5 @@
 /**
- * e2e — Security audit-trail pagination (Phase 16 §28/§29) + activity
+ * e2e - Security audit-trail pagination (Phase 16 §28/§29) + activity
  * ownership (§32/§43) + append-only immutability (§10/§44).
  *
  * Complements security.e2e.spec.ts (Phase 2): here the PAGINATED reads
@@ -24,7 +24,7 @@ afterAll(async () => {
   await app?.close();
 });
 
-/** base64url — the server's documented cursor encoding ("<at>|<id>"). */
+/** base64url - the server's documented cursor encoding ("<at>|<id>"). */
 function encodeCursor(at: string, id: string): string {
   return Buffer.from(`${at}|${id}`, "utf8").toString("base64url");
 }
@@ -35,7 +35,7 @@ async function getJson(authHeader: Record<string, string>, url: string) {
 }
 
 /**
- * at DESC — the wire format truncates milliseconds, so the id tie-break of
+ * at DESC - the wire format truncates milliseconds, so the id tie-break of
  * the server's (at DESC, id DESC) keyset is NOT observable on same-second
  * events; the walk == reference-set equality above proves keyset stability.
  */
@@ -59,7 +59,7 @@ describe("security activity pagination (Phase 16)", () => {
   it("walks the event log in stable keyset pages until exhaustion", async () => {
     const a = await authenticatedUser(app, mail);
     // Generate a deterministic set of activity: two more sign-ins + one
-    // failure (the limiter allows 5 failures / 15 min — one is well within).
+    // failure (the limiter allows 5 failures / 15 min - one is well within).
     await app.inject({
       method: "POST",
       url: "/api/v1/auth/login",
@@ -85,7 +85,7 @@ describe("security activity pagination (Phase 16)", () => {
     const referenceIds = all.body.items.map((e: { id: string }) => e.id);
     expect(new Set(referenceIds).size).toBe(referenceIds.length);
 
-    // Walk with limit=2 — no duplicates, no gaps, stable order, null tail.
+    // Walk with limit=2 - no duplicates, no gaps, stable order, null tail.
     const walked: Array<{ id: string; at: string }> = [];
     let cursor: string | null = null;
     for (let page = 0; page < 50; page += 1) {
@@ -96,7 +96,7 @@ describe("security activity pagination (Phase 16)", () => {
       walked.push(...res.body.items);
       // The cursor always pins the LAST item of the page (keyset anchor).
       // The wire format truncates milliseconds; the opaque cursor keeps full
-      // precision — compare second-precision date + the pinned row id.
+      // precision - compare second-precision date + the pinned row id.
       if (res.body.nextCursor !== null) {
         const last = res.body.items[res.body.items.length - 1];
         const decoded = Buffer.from(res.body.nextCursor, "base64url").toString("utf8");
@@ -205,7 +205,7 @@ describe("security activity pagination (Phase 16)", () => {
     }
   });
 
-  it("isolates activity per user — User A never sees User B's log (§32/§43)", async () => {
+  it("isolates activity per user - User A never sees User B's log (§32/§43)", async () => {
     const a = await authenticatedUser(app, mail);
     const b = await authenticatedUser(app, mail);
     await app.inject({
@@ -223,10 +223,10 @@ describe("security activity pagination (Phase 16)", () => {
     for (const foreignId of bIds) {
       expect(aIds).not.toContain(foreignId);
     }
-    // A's log is exclusively A's activity — B's email appears nowhere.
+    // A's log is exclusively A's activity - B's email appears nowhere.
     expect(JSON.stringify(aPages.body)).not.toContain(b.email);
 
-    // A cursor forged from B's LAST event pages into A's OWN log only —
+    // A cursor forged from B's LAST event pages into A's OWN log only -
     // the userId scope is server-side, never derived from the cursor.
     const bLast = bOwn.body.items[0];
     const forged = await getJson(

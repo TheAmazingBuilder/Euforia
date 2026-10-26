@@ -4,14 +4,14 @@ import { useSyncExternalStore } from "react";
 import type { Direction, Emotion } from "@cosmoz/shared";
 
 /**
- * Global trade-capture modal state — a tiny external store so the sidebar
+ * Global trade-capture modal state - a tiny external store so the sidebar
  * button, the mobile FAB and the N hotkey can all open the same modal
  * from anywhere without prop drilling (spec trade-entry-ux.md §3).
  */
 
 /** Fast-loop prefill captured at submit time (spec §7). */
 export interface TradeContextSeed {
-  /** null when the entry point doesn't know the instrument yet — the
+  /** null when the entry point doesn't know the instrument yet - the
    * playbook's "Trade this setup" leaves the choice to the user. */
   instrumentId: string | null;
   direction: Direction;
@@ -30,7 +30,7 @@ export interface TradeModalState {
   seed: TradeContextSeed | null;
 }
 
-/** Frozen closed snapshot — stable reference for the server snapshot so
+/** Frozen closed snapshot - stable reference for the server snapshot so
  * hydration can never loop (a fresh object per call would re-render forever). */
 const CLOSED_SNAPSHOT: TradeModalState = Object.freeze({ open: false, seed: null });
 
@@ -66,7 +66,7 @@ export function useTradeModalState(): TradeModalState {
   return useSyncExternalStore(
     subscribe,
     () => state,
-    // Server + hydration snapshot: closed (stable reference — see above).
+    // Server + hydration snapshot: closed (stable reference - see above).
     () => CLOSED_SNAPSHOT,
   );
 }

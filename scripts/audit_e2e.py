@@ -1,5 +1,5 @@
 """
-Audit E2E complet — Cosmoz (Le Registre)
+Audit E2E complet - Cosmoz (Le Registre)
 Phases:
   A. Desktop dark 1440x900 : 12 pages, console, overflow, screenshots
   B. Navigation sidebar par clics réels

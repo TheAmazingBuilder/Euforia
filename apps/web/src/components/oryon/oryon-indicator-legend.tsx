@@ -18,21 +18,21 @@ import { cn } from "@/lib/utils";
 import { useIndicatorSnapshot, useOryonIndicators } from "./oryon-indicators-context";
 
 /**
- * Oryon indicator legend — one compact chip per active instance, rendered
+ * Oryon indicator legend - one compact chip per active instance, rendered
  * inside the chart legend block (Phase 3 spec §4F, §8; Phase 5 §5).
  *
  * Phase 7: the chips reflect THIS panel's indicator stack (the store is a
- * prop — indicators belong to the chart panel they are configured on).
+ * prop - indicators belong to the chart panel they are configured on).
  *
  * Values arrive through the engine's imperative callback (rebuild + tick
- * path) — this leaf is the ONLY component that re-renders on the tick path
+ * path) - this leaf is the ONLY component that re-renders on the tick path
  * (≤ feed rate), the workspace tree stays still. While the crosshair
  * INSPECTS a bar (Phase 5), the chips show that bar's readings via the
- * engine's exact-time lookup — never an interpolation; when the inspected
+ * engine's exact-time lookup - never an interpolation; when the inspected
  * time has no computed value the chip simply shows nothing new. Quick
  * actions: chip body opens settings, eye toggles visibility, X removes.
  * Hidden instances stay listed (muted, eye-off) so the state is
- * discoverable — never silently vanished.
+ * discoverable - never silently vanished.
  */
 export function OryonIndicatorLegend({
   engine,
@@ -42,7 +42,7 @@ export function OryonIndicatorLegend({
   engine: OryonChartEngine | null;
   /** THIS panel's indicator store (Phase 7 panel ownership). */
   store: OryonIndicatorStore;
-  /** Inspected bar (crosshair) — null when the mouse left the chart. */
+  /** Inspected bar (crosshair) - null when the mouse left the chart. */
   hoverBar?: OryonCrosshairBar | null;
 }) {
   const dict = useDict();
@@ -66,7 +66,7 @@ export function OryonIndicatorLegend({
     };
   }, [engine]);
 
-  // Crosshair inspection (Phase 5): exact-time lookup per hovered bar —
+  // Crosshair inspection (Phase 5): exact-time lookup per hovered bar -
   // cheap (few indicators × binary search), no new subscriptions, and the
   // fallback stays the live stream when the mouse leaves.
   const hoverValues = React.useMemo(() => {
@@ -80,7 +80,7 @@ export function OryonIndicatorLegend({
 
   return (
     // pointer-events-auto: the parent legend block is pointer-events-none
-    // (it overlays the chart) — the chips are INTERACTIVE controls and must
+    // (it overlays the chart) - the chips are INTERACTIVE controls and must
     // receive clicks; the row re-enables events for itself only.
     <div className="pointer-events-auto flex w-full flex-wrap items-center gap-1">
       {snapshot.indicators.map((instance) => (
@@ -134,7 +134,7 @@ function IndicatorChip({
       <button
         type="button"
         onClick={onOpen}
-        title={`${indicatorLabel(instance)} — settings`}
+        title={`${indicatorLabel(instance)} - settings`}
         data-testid="oryon-indicator-chip-open"
         className="inline-flex items-center gap-1 rounded-sm text-foreground transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
       >
@@ -167,7 +167,7 @@ function IndicatorChip({
   );
 }
 
-/** Compact readout per instance — MACD shows line + histogram, others one value. */
+/** Compact readout per instance - MACD shows line + histogram, others one value. */
 function chipReadout(
   instance: OryonIndicatorInstance,
   values: Partial<Record<IndicatorOutputId, number>> | undefined,

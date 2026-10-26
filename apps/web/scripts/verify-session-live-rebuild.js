@@ -1,5 +1,5 @@
 /**
- * Verify — Session Live V1 rebuild (MASTER PROMPT + V1 roadmap).
+ * Verify - Session Live V1 rebuild (MASTER PROMPT + V1 roadmap).
  *
  * Covers:
  *   A. Workspace shell: header statuses, market row, 3-column grid, chart,
@@ -40,7 +40,7 @@ const NOISE = [/\/api\/auth\/(me|refresh)\b/i, // fresh-context boot restore 401
 
   const results = [];
   const check = (name, ok, extra = "") => {
-    results.push(`${ok ? "PASS" : "FAIL"} — ${name}${extra ? ` (${extra})` : ""}`);
+    results.push(`${ok ? "PASS" : "FAIL"} - ${name}${extra ? ` (${extra})` : ""}`);
     console.log(results[results.length - 1]);
   };
 
@@ -76,7 +76,7 @@ const NOISE = [/\/api\/auth\/(me|refresh)\b/i, // fresh-context boot restore 401
   check("Market context panel", await page.locator('[data-testid="market-context-panel"]').isVisible());
   check("Objective section present", (await page.locator('[data-testid="market-context-panel"]').textContent())?.includes("Objective market data") === true);
   check("Interpretation section separated", (await page.locator('[data-testid="market-context-panel"]').textContent())?.includes("Trader interpretation") === true);
-  check("Context price rendered", ((await page.locator('[data-testid="context-price"]').textContent()) ?? "").trim() !== "" && (await page.locator('[data-testid="context-price"]').textContent()) !== "—");
+  check("Context price rendered", ((await page.locator('[data-testid="context-price"]').textContent()) ?? "").trim() !== "" && (await page.locator('[data-testid="context-price"]').textContent()) !== "-");
   check("Key levels panel", await page.locator('[data-testid="key-levels-panel"]').isVisible());
   check("Broker panel read-only stamp", (await page.locator('[data-testid="broker-panel"]').textContent())?.includes("READ ONLY") === true);
   check("Broker panel has zero action buttons", (await page.locator('[data-testid="broker-panel"] button').count()) === 0);
@@ -137,7 +137,7 @@ const NOISE = [/\/api\/auth\/(me|refresh)\b/i, // fresh-context boot restore 401
   };
   await openDrawings();
   check("HLINE placed by click", (await page.locator('[data-testid="drawing-list"] li').count()) === 1);
-  // FIB — arm again (closes popover), then two clicks.
+  // FIB - arm again (closes popover), then two clicks.
   await page.locator('[data-testid="drawing-tool-FIB"]').click();
   await page.waitForTimeout(300);
   if (chartBox) {

@@ -1,15 +1,15 @@
 /**
- * e2e — Performance snapshots (Dashboard Customization Phase 08) over the
+ * e2e - Performance snapshots (Dashboard Customization Phase 08) over the
  * REAL AppModule + real database.
  *
  * Proven here:
  *   - FINANCIAL CORRECTNESS: a snapshot capture freezes the authoritative
  *     suite's summary; the frozen metrics are checked against INDEPENDENTLY
  *     computed expected values from a deterministic canonical journal
- *     (sum of pnlNet, win count/total, mean R — arithmetic done in the test,
+ *     (sum of pnlNet, win count/total, mean R - arithmetic done in the test,
  *     never reusing app code).
  *   - IMMUTABILITY (§9): captured values do NOT change when the underlying
- *     trade rows change afterwards — a NEW capture sees the new data
+ *     trade rows change afterwards - a NEW capture sees the new data
  *     (captured vs recalculated distinction), the OLD snapshot stays frozen.
  *   - Metadata-only patch: unknown/metric-like fields are stripped by the
  *     shared contract; name/notes change, metrics never.
@@ -60,7 +60,7 @@ function fnv1a(input: string): number {
 }
 
 /** MOCK accounts derive their currency deterministically from the external
- * id (same mechanics as the analytics e2e) — walk ids until one yields USD. */
+ * id (same mechanics as the analytics e2e) - walk ids until one yields USD. */
 async function usdAccount(auth: Record<string, string>): Promise<{ id: string; currency: string }> {
   for (let attempt = 0; attempt < 1000; attempt += 1) {
     const externalAccountId = `77${attempt.toString(36).padStart(4, "0")}`;
@@ -91,7 +91,7 @@ interface TradeSpec {
   exitReason?: string;
 }
 
-/** Canonical CLOSED trade row (provider-journal truth — pre-computed P&L/R). */
+/** Canonical CLOSED trade row (provider-journal truth - pre-computed P&L/R). */
 async function seedTrade(userId: string, accountId: string, spec: TradeSpec): Promise<{ id: string }> {
   return prisma.trade.create({
     data: {
@@ -171,7 +171,7 @@ type SnapshotDoc = {
 
 // ── tests ──────────────────────────────────────────────────────────────────────
 
-describe("snapshot capture — financial correctness against independent expectations", () => {
+describe("snapshot capture - financial correctness against independent expectations", () => {
   it("freezes the authoritative summary EXACTLY (independently computed)", async () => {
     const user = await authenticatedUser(app, mail);
     const account = await usdAccount(user.authHeader);
@@ -190,7 +190,7 @@ describe("snapshot capture — financial correctness against independent expecta
 
     // Context is explicit (spec §3): window, scope echo, currency, version.
     // For the ALL preset the suite resolves the window to the DATASET's real
-    // extent (first/last closed trading day) — independently known here.
+    // extent (first/last closed trading day) - independently known here.
     expect(snapshot.periodFrom).toBe("2026-03-02");
     expect(snapshot.periodTo).toBe("2026-03-03");
     expect(snapshot.period).toBe("ALL");
@@ -200,7 +200,7 @@ describe("snapshot capture — financial correctness against independent expecta
     expect(snapshot.schemaVersion).toBe(1);
     expect(snapshot.notes).toBe("baseline");
 
-    // The frozen metrics — every expected value computed IN THIS TEST.
+    // The frozen metrics - every expected value computed IN THIS TEST.
     expect(snapshot.metrics.trades).toBe(2);
     expect(snapshot.metrics.netPnl).toBe("200"); // 500 + (−300)
     expect(snapshot.metrics.winRate).toBe("0.5"); // 1 win / 2 trades
@@ -210,7 +210,7 @@ describe("snapshot capture — financial correctness against independent expecta
     expect(Number(snapshot.metrics.maxDrawdownR)).toBeLessThanOrEqual(0);
   });
 
-  it("is deterministic — same scope, different name → identical metrics", async () => {
+  it("is deterministic - same scope, different name → identical metrics", async () => {
     const user = await authenticatedUser(app, mail);
     const account = await usdAccount(user.authHeader);
     for (const spec of referenceSpecs()) {
@@ -240,7 +240,7 @@ describe("snapshot capture — financial correctness against independent expecta
   });
 });
 
-describe("snapshot consistency — captured values never move (§9)", () => {
+describe("snapshot consistency - captured values never move (§9)", () => {
   it("a source-data change after capture leaves the frozen snapshot untouched; a NEW capture sees the new data", async () => {
     const user = await authenticatedUser(app, mail);
     const account = await usdAccount(user.authHeader);
@@ -270,7 +270,7 @@ describe("snapshot consistency — captured values never move (§9)", () => {
     expect((after.body as unknown as SnapshotDoc).metrics.netPnl).toBe("900");
   });
 
-  it("PATCH is metadata-only — metric-like fields are stripped by the contract", async () => {
+  it("PATCH is metadata-only - metric-like fields are stripped by the contract", async () => {
     const user = await authenticatedUser(app, mail);
     const account = await usdAccount(user.authHeader);
     await seedTrade(user.userId, account.id, referenceSpecs()[0]!);
@@ -284,7 +284,7 @@ describe("snapshot consistency — captured values never move (§9)", () => {
       payload: {
         name: "renamed capture",
         notes: "metadata only",
-        // An attempted metrics rewrite — NOT part of the update contract;
+        // An attempted metrics rewrite - NOT part of the update contract;
         // zod strips unknown keys, so this can never touch captured values.
         netPnl: "999999",
         metrics: { netPnl: "999999" },
@@ -363,7 +363,7 @@ describe("snapshot names, validation, auth", () => {
   });
 });
 
-describe("ownership — cross-user access is 404 (foreign = not found)", () => {
+describe("ownership - cross-user access is 404 (foreign = not found)", () => {
   it("another user cannot read, rename or delete a snapshot", async () => {
     const owner = await authenticatedUser(app, mail);
     const account = await usdAccount(owner.authHeader);

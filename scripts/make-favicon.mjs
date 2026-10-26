@@ -1,4 +1,4 @@
-// make-favicon.mjs — génère favicon.ico + apple-icon.png depuis app/icon.svg
+// make-favicon.mjs - génère favicon.ico + apple-icon.png depuis app/icon.svg
 // Usage : node /home/z/my-project/scripts/make-favicon.mjs
 // Prérequis : playwright + chromium installés (node require('playwright') OK)
 import { chromium } from "playwright";
@@ -60,6 +60,6 @@ function makeIco(entries) {
 
 writeFileSync(`${OUT_DIR}/favicon.ico`, makeIco(pngs));
 writeFileSync(`${OUT_DIR}/apple-icon.png`, apple);
-console.log(`favicon.ico : ${ICO_SIZES.join("/")} — ${pngs.reduce((n, e) => n + e.buf.length, 0)} octets de données`);
+console.log(`favicon.ico : ${ICO_SIZES.join("/")} - ${pngs.reduce((n, e) => n + e.buf.length, 0)} octets de données`);
 console.log(`apple-icon.png : ${APPLE_SIZE}x${APPLE_SIZE}`);
 console.log("OK");

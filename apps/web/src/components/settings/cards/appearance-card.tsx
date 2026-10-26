@@ -25,9 +25,9 @@ import { apiErrorMessage } from "@/lib/api/client";
 import { useI18n } from "@/i18n/i18n-provider";
 
 /**
- * Appearance — theme, density, dashboard arrangement and P&L display.
+ * Appearance - theme, density, dashboard arrangement and P&L display.
  * The theme choice writes to next-themes IMMEDIATELY (same store the
- * topbar toggle uses) and persists to the preferences document on save —
+ * topbar toggle uses) and persists to the preferences document on save -
  * runtime stays next-themes (zero-flash), the document mirrors it for
  * multi-device sync when the real API ships.
  */
@@ -67,7 +67,7 @@ export function AppearanceCard() {
   const onThemeChange = (value: string) => {
     const nextTheme = value as UserPreferences["appearance"]["theme"];
     patch({ theme: nextTheme });
-    // Instant visual feedback — the whole app follows immediately.
+    // Instant visual feedback - the whole app follows immediately.
     setTheme(THEME_TO_NEXT[nextTheme]);
   };
 
@@ -114,7 +114,7 @@ export function AppearanceCard() {
           testid="settings-appearance-theme"
           ariaLabel={L.themeLabel}
         />
-        {/* Live preview — a miniature trade card in the CURRENT theme. */}
+        {/* Live preview - a miniature trade card in the CURRENT theme. */}
         <div className="mt-3 max-w-72">
           <ThemePreviewMiniTradeCard />
         </div>

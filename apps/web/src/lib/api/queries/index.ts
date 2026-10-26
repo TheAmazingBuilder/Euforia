@@ -239,7 +239,7 @@ export {
   type NofyNotesParams,
 } from "./nofy";
 
-// Application authentication — consumed by the centralized AuthProvider and
+// Application authentication - consumed by the centralized AuthProvider and
 // the (auth) pages; see lib/auth and components/auth.
 export {
   useAuthMeQuery,
@@ -254,7 +254,7 @@ export {
   useVerifyEmailMutation,
 } from "./auth";
 
-// Accounts & Trading Connectivity (Phase 02) — read-only surfaces over the
+// Accounts & Trading Connectivity (Phase 02) - read-only surfaces over the
 // trading-accounts Nest module; presentation mapping helpers travel with it.
 export {
   useTradingAccounts,

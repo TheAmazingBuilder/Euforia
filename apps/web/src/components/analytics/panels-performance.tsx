@@ -29,7 +29,7 @@ import { cn } from "@/lib/utils";
 /**
  * Overview / Performance / Risk tabs (MASTER PROMPT §6, §7, §8, §9, §10, §11).
  * All numbers arrive server-computed; tone (profit/loss) is P&L semantics only.
- * Labels and definitions resolve through dict.analytics.* — machine composition
+ * Labels and definitions resolve through dict.analytics.* - machine composition
  * stays in the component (the dict.* pattern).
  */
 
@@ -46,7 +46,7 @@ function rTone(value: string | null): "profit" | "loss" | "neutral" {
 }
 
 const durationLabel = (minutes: number | null): string => {
-  if (minutes === null) return "—";
+  if (minutes === null) return "-";
   if (minutes < 60) return `${minutes}m`;
   const hours = Math.floor(minutes / 60);
   const rest = minutes % 60;
@@ -64,18 +64,18 @@ export function OverviewTab({ suite }: { suite: Suite }) {
 
   return (
     <div className="space-y-4" data-testid="analytics-tab-overview">
-      {/* Executive KPI band — every card carries its definition (§6). */}
+      {/* Executive KPI band - every card carries its definition (§6). */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 xl:grid-cols-6">
         <MetricCard
           label={T.netPnl}
-          value={money ? formatSignedMoney(s.netPnl ?? "0", currency) : "—"}
+          value={money ? formatSignedMoney(s.netPnl ?? "0", currency) : "-"}
           definition={T.netPnlDef}
           tone={moneyTone(money ? s.netPnl : null)}
           sub={`${s.trades} ${SH.closedTrades}`}
         />
         <MetricCard
           label={T.winRate}
-          value={s.winRate === null ? "—" : formatPercent(s.winRate, 1)}
+          value={s.winRate === null ? "-" : formatPercent(s.winRate, 1)}
           definition={T.winRateDef}
           tone={s.winRate !== null && Number(s.winRate) >= 0.5 ? "profit" : "neutral"}
           sub={`${s.winningTrades}W / ${s.losingTrades}L / ${s.breakevenTrades}BE`}
@@ -83,7 +83,7 @@ export function OverviewTab({ suite }: { suite: Suite }) {
         />
         <MetricCard
           label={T.profitFactor}
-          value={s.profitFactor === null ? "—" : formatNumber(s.profitFactor, 2)}
+          value={s.profitFactor === null ? "-" : formatNumber(s.profitFactor, 2)}
           definition={T.profitFactorDef}
           tone={s.profitFactor !== null && Number(s.profitFactor) >= 1.5 ? "profit" : "neutral"}
           sub={T.profitFactorSub}
@@ -106,7 +106,7 @@ export function OverviewTab({ suite }: { suite: Suite }) {
         />
         <MetricCard
           label={T.payoffRatio}
-          value={s.payoffRatio === null ? "—" : formatNumber(s.payoffRatio, 2)}
+          value={s.payoffRatio === null ? "-" : formatNumber(s.payoffRatio, 2)}
           definition={T.payoffRatioDef}
           tone={s.payoffRatio !== null && Number(s.payoffRatio) >= 1 ? "profit" : "neutral"}
           sub={`${T.avgWinWord} ${formatR(s.avgWinR)} / ${T.lossWord} ${formatR(s.avgLossR === null ? null : `-${s.avgLossR}`)}`}
@@ -153,14 +153,14 @@ export function OverviewTab({ suite }: { suite: Suite }) {
       <div className="grid gap-3 sm:gap-4 lg:grid-cols-3">
         <MetricCard
           label={T.averageR}
-          value={s.avgR === null ? "—" : formatR(s.avgR)}
+          value={s.avgR === null ? "-" : formatR(s.avgR)}
           definition={T.averageRDef}
           tone={rTone(s.avgR)}
           insufficient={s.trades === 0}
         />
         <MetricCard
           label={T.medianR}
-          value={s.medianR === null ? "—" : formatR(s.medianR)}
+          value={s.medianR === null ? "-" : formatR(s.medianR)}
           definition={T.medianRDef}
           tone={rTone(s.medianR)}
           insufficient={s.trades === 0}
@@ -302,27 +302,27 @@ export function RiskTab({ suite }: { suite: Suite }) {
       <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 xl:grid-cols-6">
         <MetricCard
           label={T.avgRisk}
-          value={money && risk.avgRiskMoney !== null ? formatMoney(risk.avgRiskMoney, currency) : "—"}
+          value={money && risk.avgRiskMoney !== null ? formatMoney(risk.avgRiskMoney, currency) : "-"}
           definition={T.avgRiskDef}
           sub={`${risk.tradesWithRisk} ${T.ofWord} ${s.trades} ${T.carryRiskData}`}
           insufficient={risk.avgRiskMoney === null}
         />
         <MetricCard
           label={T.maxRisk}
-          value={money && risk.maxRiskMoney !== null ? formatMoney(risk.maxRiskMoney, currency) : "—"}
+          value={money && risk.maxRiskMoney !== null ? formatMoney(risk.maxRiskMoney, currency) : "-"}
           definition={T.maxRiskDef}
           insufficient={risk.maxRiskMoney === null}
         />
         <MetricCard
           label={T.riskDeviation}
-          value={risk.riskDeviationPct === null ? "—" : `${formatNumber(risk.riskDeviationPct, 1)} %`}
+          value={risk.riskDeviationPct === null ? "-" : `${formatNumber(risk.riskDeviationPct, 1)} %`}
           definition={T.riskDeviationDef}
           tone={risk.riskDeviationPct !== null && Number(risk.riskDeviationPct) > 50 ? "warning" : "neutral"}
           insufficient={risk.riskDeviationPct === null}
         />
         <MetricCard
           label={T.maxDailyRisk}
-          value={money && risk.maxDailyRisk !== null ? formatMoney(risk.maxDailyRisk, currency) : "—"}
+          value={money && risk.maxDailyRisk !== null ? formatMoney(risk.maxDailyRisk, currency) : "-"}
           definition={T.maxDailyRiskDef}
           insufficient={risk.maxDailyRisk === null}
         />
@@ -333,7 +333,7 @@ export function RiskTab({ suite }: { suite: Suite }) {
         />
         <MetricCard
           label={T.recoveryFactor}
-          value={s.recoveryFactor === null ? "—" : formatNumber(s.recoveryFactor, 2)}
+          value={s.recoveryFactor === null ? "-" : formatNumber(s.recoveryFactor, 2)}
           definition={T.recoveryFactorDef}
           tone={rTone(s.recoveryFactor)}
           insufficient={s.recoveryFactor === null}
@@ -379,7 +379,7 @@ export function RiskTab({ suite }: { suite: Suite }) {
                         <td className="py-2.5 pr-3 font-mono text-xs tabular-nums text-loss">
                           {money && drawdown.drawdownMoney !== null
                             ? formatSignedMoney(drawdown.drawdownMoney, currency)
-                            : "—"}
+                            : "-"}
                         </td>
                         <td className="py-2.5 pr-3 font-mono text-xs tabular-nums text-loss">
                           {formatR(drawdown.drawdownR)}

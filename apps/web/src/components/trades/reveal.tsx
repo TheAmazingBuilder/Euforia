@@ -24,10 +24,10 @@ import { setRevealAnimation, useRevealAnimation } from "@/lib/utils/preferences"
 import { useI18n } from "@/i18n/i18n-provider";
 
 /**
- * The Reveal (trade-entry-ux.md §5) — the signature moment AFTER the grade.
+ * The Reveal (trade-entry-ux.md §5) - the signature moment AFTER the grade.
  * Everything arrives in one RevealPayload from POST /trades/:id/decision
  * (the only P&L carrier in the app). Coaching copy is the 4-quadrant matrix
- * (dict.trades.reveal.coaching) — VERBATIM product copy, not to be reworded.
+ * (dict.trades.reveal.coaching) - VERBATIM product copy, not to be reworded.
  */
 
 /** Build the fast-loop seed from the revealed trade (spec §7). */
@@ -126,18 +126,18 @@ export function Reveal({ reveal, currency, decision }: RevealProps) {
       ? coachingCopy[reveal.coachingKey as keyof typeof coachingCopy]
       : coachingCopy.loss_ab;
   const durationText =
-    trade !== null ? formatDuration(trade.entryAt, trade.exitAt ?? trade.entryAt) : "—";
+    trade !== null ? formatDuration(trade.entryAt, trade.exitAt ?? trade.entryAt) : "-";
   const animClass = (enabled: boolean) => (playing && enabled ? "animate-reveal-fade-up" : "");
 
   return (
     <div className="space-y-5" data-testid="reveal">
-      {/* The star — subtle constellation motif (mockup: the_reveal) */}
+      {/* The star - subtle constellation motif (mockup: the_reveal) */}
       <div className="flex flex-col items-center gap-3">
         <RevealStar animated={animationEnabled} ariaLabel={T.reveal.constellationAria} />
         <div className="flex flex-wrap items-center justify-center gap-1.5 font-mono text-xs text-muted-foreground">
-          <span className="font-semibold text-foreground">{instrument?.symbol ?? "—"}</span>
+          <span className="font-semibold text-foreground">{instrument?.symbol ?? "-"}</span>
           <span className="rounded-sm border border-border px-1.5 py-0.5 font-semibold text-foreground">
-            {trade?.direction ?? "—"}
+            {trade?.direction ?? "-"}
           </span>
           <span aria-hidden="true">·</span>
           <span>{durationText}</span>
@@ -154,7 +154,7 @@ export function Reveal({ reveal, currency, decision }: RevealProps) {
         </div>
       </div>
 
-      {/* Large mono result — the ONLY place P&L exists, profit/loss colors */}
+      {/* Large mono result - the ONLY place P&L exists, profit/loss colors */}
       <div className={`text-center ${animClass(true)}`} data-testid="reveal-result">
         <p
           className={cn(
@@ -174,7 +174,7 @@ export function Reveal({ reveal, currency, decision }: RevealProps) {
         </p>
       </div>
 
-      {/* Behavioral guardian — coaching line from the 4-quadrant matrix */}
+      {/* Behavioral guardian - coaching line from the 4-quadrant matrix */}
       <div className="rounded-lg border border-border bg-surface p-4">
         <div className="mb-1.5 flex items-center justify-between gap-2">
           <span className="flex items-center gap-1.5 font-heading text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -190,7 +190,7 @@ export function Reveal({ reveal, currency, decision }: RevealProps) {
         </p>
       </div>
 
-      {/* Stats strip — Discipline Saved today (server-computed) */}
+      {/* Stats strip - Discipline Saved today (server-computed) */}
       <div className="grid grid-cols-2 gap-2.5" data-testid="reveal-stats">
         <div className="rounded-lg border border-border bg-surface p-3">
           <p className="flex items-center gap-1.5 text-[11px] uppercase tracking-wide text-muted-foreground">
@@ -204,12 +204,12 @@ export function Reveal({ reveal, currency, decision }: RevealProps) {
         <div className="rounded-lg border border-border bg-surface p-3">
           <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{T.reveal.rSaved}</p>
           <p className="mt-1 font-mono text-xl font-semibold tabular-nums text-profit">
-            {reveal.savedRToday !== null ? formatR(reveal.savedRToday) : "—"}
+            {reveal.savedRToday !== null ? formatR(reveal.savedRToday) : "-"}
           </p>
         </div>
       </div>
 
-      {/* Actions — fast loop: Enter finishes, N opens a pre-filled trade */}
+      {/* Actions - fast loop: Enter finishes, N opens a pre-filled trade */}
       <div className="grid grid-cols-2 gap-2.5">
         <Button type="button" variant="outline" onClick={newTrade} className="h-11">
           {T.shared.newTrade}
@@ -236,9 +236,9 @@ export function Reveal({ reveal, currency, decision }: RevealProps) {
 }
 
 /**
- * Constellation star — 5 glowing nodes + connections (CSS/SVG only). The
+ * Constellation star - 5 glowing nodes + connections (CSS/SVG only). The
  * motif stays in the ACCENT color for every outcome (golden rule: green/red
- * are reserved for P&L text — the constellation is UI, the R/P&L line is
+ * are reserved for P&L text - the constellation is UI, the R/P&L line is
  * the verdict). Purely celebratory: no result hint in the motif itself.
  */
 function RevealStar({ animated, ariaLabel }: { animated: boolean; ariaLabel: string }) {

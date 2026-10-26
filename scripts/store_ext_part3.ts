@@ -65,7 +65,7 @@ function coachWeeklyReport(): CoachWeeklyReportResponse {
       ? { title: "Stop the rule breaks", message: `You triggered ${violationsThisWeek} violation${violationsThisWeek === 1 ? "" : "s"} this week. Cap the day after the first one.`, metricLabel: "Violations", metricValue: String(violationsThisWeek) }
       : worstSorted.length > 0 && num(worstSorted[0]!.rMultiple) < -1
         ? { title: "Shrink the worst loss", message: `The ${symbolOf(worstSorted[0]!)} trade cost ${worstSorted[0]!.rMultiple}R. Halve the size when the setup is B-grade.`, metricLabel: "Worst R", metricValue: worstSorted[0]!.rMultiple }
-        : { title: "Protect the streak", message: "The process is intact — keep grading every trade the same evening.", metricLabel: "Clean days", metricValue: String(Math.min(cleanDays, 7)) };
+        : { title: "Protect the streak", message: "The process is intact - keep grading every trade the same evening.", metricLabel: "Clean days", metricValue: String(Math.min(cleanDays, 7)) };
 
   return {
     weekStart,
@@ -74,8 +74,8 @@ function coachWeeklyReport(): CoachWeeklyReportResponse {
     netR: toDecimalString(round2(netR)),
     netPnl: toDecimalString(round2(netPnl)),
     currency: mainAccount.currency,
-    bestDecisions: bestSorted.slice(0, 3).map((t) => decision(t, "Played the plan — entry, size and exit matched the playbook.")),
-    worstDecisions: worstSorted.slice(0, 3).map((t) => decision(t, num(t.rMultiple) < 0 ? "Plan drift: the exit deviated from the written scenario." : "Outcome fine, process gradeable — keep the standard.")),
+    bestDecisions: bestSorted.slice(0, 3).map((t) => decision(t, "Played the plan - entry, size and exit matched the playbook.")),
+    worstDecisions: worstSorted.slice(0, 3).map((t) => decision(t, num(t.rMultiple) < 0 ? "Plan drift: the exit deviated from the written scenario." : "Outcome fine, process gradeable - keep the standard.")),
     disciplineScore: discipline === null ? null : toDecimalString(round2(discipline)),
     disciplinePrevScore: disciplinePrev === null ? null : toDecimalString(round2(disciplinePrev)),
     adherencePct: adherencePct === null ? null : toDecimalString(round2(adherencePct)),
@@ -143,7 +143,7 @@ function riskOverview(): RiskOverviewResponse {
       id: violation.id,
       kind: "VIOLATION" as const,
       severity: violation.severity,
-      title: `Rule violation — ${violation.ruleId.slice(0, 8)}`,
+      title: `Rule violation - ${violation.ruleId.slice(0, 8)}`,
       message: violation.detail ?? "A standing risk rule was breached.",
       createdAt: violation.createdAt,
       acknowledgedAt: violation.acknowledgedAt,
@@ -264,7 +264,7 @@ function getSymbolHistory(instrumentId: string): SymbolHistoryResponse {
       pnlNet: num(trade.pnlNet),
       rMultiple: trade.rMultiple === null ? null : num(trade.rMultiple),
     }));
-  return { symbol: instrument?.symbol ?? "—", trades };
+  return { symbol: instrument?.symbol ?? "-", trades };
 }
 
 function updateTradeChart(tradeId: string, input: UpdateTradeChartInput): TradeChartResponse {

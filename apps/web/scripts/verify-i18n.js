@@ -1,11 +1,11 @@
 /**
- * Verify — Dynamic i18n (runtime language engine, EN default / FR pack).
+ * Verify - Dynamic i18n (runtime language engine, EN default / FR pack).
  *
  * Covers:
  *   A. Default EN: gate redirect, <html lang="en">, EN login surface.
  *   B. Authenticated shell EN: sidebar + breadcrumb in English.
  *   C. Dynamic switch (SPA, NO reload): Settings → Localization → Français
- *      → Save — sidebar/settings/breadcrumb flip to FR in place, <html lang>
+ *      → Save - sidebar/settings/breadcrumb flip to FR in place, <html lang>
  *      follows, a window marker proves no page reload happened.
  *   D. Persistence: FR survives SPA navigation AND a full reload (boot
  *      mirror + mock-backend language jar).
@@ -47,7 +47,7 @@ const SHOTS = "/home/z/my-project/scripts/shots/i18n";
 
   const results = [];
   const check = (name, ok, extra = "") => {
-    results.push(`${ok ? "PASS" : "FAIL"} — ${name}${extra ? ` (${extra})` : ""}`);
+    results.push(`${ok ? "PASS" : "FAIL"} - ${name}${extra ? ` (${extra})` : ""}`);
     console.log(results[results.length - 1]);
   };
   const htmlLang = () => page.evaluate(() => document.documentElement.lang);
@@ -67,7 +67,7 @@ const SHOTS = "/home/z/my-project/scripts/shots/i18n";
   await page.locator('nav[aria-label="Main navigation"]').waitFor({ state: "visible", timeout: 20_000 });
   bootPhase = false;
   check("B1 Sidebar renders EN (Dashboard)", true);
-  // SPA proof marker — must survive the language switch below untouched.
+  // SPA proof marker - must survive the language switch below untouched.
   await page.evaluate(() => { window.__i18nProbe = 42; });
 
   // ══ C. Dynamic switch to FR (no reload) ═══════════════════════════════════

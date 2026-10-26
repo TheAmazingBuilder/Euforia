@@ -6,7 +6,7 @@ import { animateOnbProgress } from "@/lib/onboarding/motion";
 import { cn } from "@/lib/utils";
 
 /**
- * Onboarding progress chrome — the step counter + the fine progress rule.
+ * Onboarding progress chrome - the step counter + the fine progress rule.
  * Visual only (aria-hidden): the accessible announcement lives in the
  * overlay's polite live region, never carried by color/width alone.
  */

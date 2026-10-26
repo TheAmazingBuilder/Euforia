@@ -1,5 +1,5 @@
 /**
- * Identity e2e helpers — real AppModule, real database, captured mail.
+ * Identity e2e helpers - real AppModule, real database, captured mail.
  */
 import type { NestFastifyApplication } from "@nestjs/platform-fastify";
 import { MailerService, type MailMessage } from "../../src/modules/identity/mailer.service";
@@ -64,7 +64,7 @@ export function cookieHeader(value: string): Record<string, string> {
   return { cookie: `cosmoz_rt=${value}` };
 }
 
-/** Register + verify + login — returns an authenticated context. */
+/** Register + verify + login - returns an authenticated context. */
 export async function authenticatedUser(
   app: NestFastifyApplication,
   mail: MailCapture,

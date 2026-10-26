@@ -6,10 +6,10 @@ import { OCR_ACCOUNT_FIELD_KEYS, OCR_CHART_FIELD_KEYS } from "@cosmoz/shared";
 import type { RecognitionDict } from "@/i18n/dictionaries/en/recognition";
 
 /**
- * Import & Recognition — centralized feature model (PROMPT 3 §16/§22/§64).
+ * Import & Recognition - centralized feature model (PROMPT 3 §16/§22/§64).
  *
  * Everything the views need to agree on lives here: the wizard steps, the
- * processing-stage timeline (display only — the pipeline itself advances
+ * processing-stage timeline (display only - the pipeline itself advances
  * server-side), status → stamp mapping, per-field validation rules and the
  * financial formatting rules. The wire contract is @cosmoz/shared's OCR
  * schema; these are the VIEW models on top of it.
@@ -33,7 +33,7 @@ export const STEP_INDEX: Record<Exclude<RecognitionStep, "overview">, number> = 
   success: 4,
 };
 
-// ── Processing stages (§15/§16 — display timeline) ──────────────────────────
+// ── Processing stages (§15/§16 - display timeline) ──────────────────────────
 
 /**
  * The stages the OCR orchestrator will report (UPLOADING → … → COMPLETED).
@@ -205,7 +205,7 @@ export function isMissing(field: OcrExtractedField): boolean {
   return field.validationStatus === "MISSING" || field.normalizedValue === null;
 }
 
-// ── Per-field validation (§22 — Zod-grade rules, centralized) ───────────────
+// ── Per-field validation (§22 - Zod-grade rules, centralized) ───────────────
 
 export type FieldValidation =
   | { ok: true; value: string }
@@ -228,7 +228,7 @@ const TEXT_PATTERNS: Record<string, RegExp> = {
 
 /**
  * Client-side validation for edited values. The API re-validates with the
- * same domain rules on confirm — this is the immediate feedback layer, not
+ * same domain rules on confirm - this is the immediate feedback layer, not
  * the authority (financial data never trusts `if (!value)`, §22).
  */
 export function validateFieldValue(field: string, raw: string): FieldValidation {
@@ -247,11 +247,11 @@ export function validateFieldValue(field: string, raw: string): FieldValidation 
   if (field === "symbol") {
     const symbol = value.toUpperCase();
     if (!/^[A-Z0-9._-]{3,20}$/.test(symbol)) {
-      return { ok: false, messageKey: "invalid", message: "3–20 characters — letters, digits, . _ -" };
+      return { ok: false, messageKey: "invalid", message: "3–20 characters - letters, digits, . _ -" };
     }
     return { ok: true, value: symbol };
   }
-  // Free-text keys of the Account profile (server names — permissive).
+  // Free-text keys of the Account profile (server names - permissive).
   if (field === "accountServer") {
     if (!/^[A-Za-z0-9][A-Za-z0-9 ._-]{0,30}$/.test(value)) {
       return { ok: false, messageKey: "invalid", message: "Letters, digits, dots, dashes and spaces" };
@@ -263,9 +263,9 @@ export function validateFieldValue(field: string, raw: string): FieldValidation 
     if (!pattern.test(value)) {
       const hint: Record<string, string> = {
         accountLogin: "A 4–12 digit account number",
-        accountCurrency: "A 3-letter currency code — e.g. USD",
-        accountLeverage: "A leverage ratio — e.g. 1:500",
-        chartTimeframe: "A timeframe — e.g. M5, H1, D1",
+        accountCurrency: "A 3-letter currency code - e.g. USD",
+        accountLeverage: "A leverage ratio - e.g. 1:500",
+        chartTimeframe: "A timeframe - e.g. M5, H1, D1",
       };
       return { ok: false, messageKey: "invalid", message: hint[field] ?? "Invalid value" };
     }
@@ -274,11 +274,11 @@ export function validateFieldValue(field: string, raw: string): FieldValidation 
   if (DECIMAL_FIELDS.has(field)) {
     const normalized = value.replace(/\s/g, "").replace(",", ".");
     if (!/^[+-]?\d+(\.\d+)?$/.test(normalized)) {
-      return { ok: false, messageKey: "invalid", message: "A decimal number — e.g. 2645.32" };
+      return { ok: false, messageKey: "invalid", message: "A decimal number - e.g. 2645.32" };
     }
     const numeric = Number(normalized);
     if (!Number.isFinite(numeric)) {
-      return { ok: false, messageKey: "invalid", message: "A decimal number — e.g. 2645.32" };
+      return { ok: false, messageKey: "invalid", message: "A decimal number - e.g. 2645.32" };
     }
     if (POSITIVE_FIELDS.has(field) && numeric <= 0) {
       return { ok: false, messageKey: "invalid", message: "Volume must be positive" };
@@ -295,10 +295,10 @@ export function validateFieldValue(field: string, raw: string): FieldValidation 
   return { ok: true, value };
 }
 
-// ── Financial + temporal display (§47/§48 — exact, centralized) ─────────────
+// ── Financial + temporal display (§47/§48 - exact, centralized) ─────────────
 
 /**
- * Financial values travel as decimal strings and are displayed exactly —
+ * Financial values travel as decimal strings and are displayed exactly -
  * 2645.32 never loses precision (§47). Readable thousands grouping with the
  * original decimals preserved; sign is data.
  */
@@ -314,7 +314,7 @@ export function formatFinancial(value: string | null): string {
   return `${signForDisplay}${grouped}${decimals ? `.${decimals}` : ""}`;
 }
 
-/** P&L semantic ink — the ONE colored numeral of its row (Le Registre #3). */
+/** P&L semantic ink - the ONE colored numeral of its row (Le Registre #3). */
 export function profitTone(value: string | null): "profit" | "loss" | null {
   if (!value) return null;
   const normalized = value.replace(/\s/g, "").replace(",", ".");
@@ -348,7 +348,7 @@ export function formatRelative(iso: string): string {
   return rtf.format(-days, "day");
 }
 
-/** Best-effort platform label — V2 §18: prefer the detected platform field
+/** Best-effort platform label - V2 §18: prefer the detected platform field
  * (sidecar v3 emits MT5/MT4/CTRADER/...), fall back to the legacy type. */
 export function platformLabel(
   dict: RecognitionDict,
@@ -377,7 +377,7 @@ export function platformLabel(
   return dict.settings.platformOther;
 }
 
-/** Mean confidence over readable fields — the history "Confidence" column. */
+/** Mean confidence over readable fields - the history "Confidence" column. */
 export function recognitionConfidence(fields: readonly OcrExtractedField[]): number | null {
   const readable = fields.filter((field) => field.validationStatus !== "MISSING");
   if (readable.length === 0) return null;
@@ -385,7 +385,7 @@ export function recognitionConfidence(fields: readonly OcrExtractedField[]): num
   return Math.round((sum / readable.length) * 100);
 }
 
-// ── Upload constraints (reused limits — §11, no arbitrary hardcodes) ────────
+// ── Upload constraints (reused limits - §11, no arbitrary hardcodes) ────────
 
 /** Mirrors ocrCreateInputSchema's 8 400 000-char data-URL ceiling ≈ 6 MB decoded. */
 export const UPLOAD_MAX_BYTES = 6 * 1024 * 1024;

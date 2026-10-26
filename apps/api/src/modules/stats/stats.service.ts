@@ -1,9 +1,9 @@
 /**
- * Stats service (B1) — the analytics domain's server-side brain.
+ * Stats service (B1) - the analytics domain's server-side brain.
  *
  * Every aggregate the frontend renders is COMPUTED HERE from the real
  * persisted journal (trades via TradesRepository), the discipline engine's
- * daily scores, the ghost registry and the account balances — the client
+ * daily scores, the ghost registry and the account balances - the client
  * only formats. The math is transplanted 1:1 from the mock engine
  * (statsOverview / analytics / analyticsSuite) so mock and backend stay in
  * behavioral parity: decimal strings on the wire, honest nulls where the
@@ -216,7 +216,7 @@ export class StatsService {
         ? { value: null, direction: cur.netPnl > prev.netPnl && cur.hasData ? "UP" : "FLAT" }
         : rawDelta(cur.netPnl, prev.netPnl);
 
-    // ── Per-KPI sparklines — WEEKLY buckets (last 8 weeks, Monday-anchored) ──
+    // ── Per-KPI sparklines - WEEKLY buckets (last 8 weeks, Monday-anchored) ──
     const sparklines: StatsOverviewResponse["sparklines"] = {
       netPnl: [],
       winRate: [],
@@ -261,16 +261,16 @@ export class StatsService {
       );
     }
 
-    // ── Discipline Saved — settled would-have-lost ghost trades ─────────────
+    // ── Discipline Saved - settled would-have-lost ghost trades ─────────────
     const settledGhosts = skipped.skippedTrades.filter((g) => g.hypotheticalR !== null);
     const savedGhosts = settledGhosts.filter((g) => g.outcomeGuess === "WOULD_HAVE_LOST");
     const rSaved = savedGhosts.reduce((sum, g) => sum + Math.abs(Number(g.hypotheticalR)), 0);
 
-    // ── Hesitation Cost — settled would-have-won ghost trades (mirror) ──────
+    // ── Hesitation Cost - settled would-have-won ghost trades (mirror) ──────
     const hesitantGhosts = settledGhosts.filter((g) => g.outcomeGuess === "WOULD_HAVE_WON");
     const rCost = hesitantGhosts.reduce((sum, g) => sum + Math.abs(Number(g.hypotheticalR)), 0);
 
-    // ── Ghost trend — fear vs discipline skip counts, last 30 days ─────────
+    // ── Ghost trend - fear vs discipline skip counts, last 30 days ─────────
     const ghostTrend: StatsOverviewResponse["ghostTrend"] = [];
     for (let offset = 29; offset >= 0; offset -= 1) {
       const date = shiftDateKey(offset);
@@ -284,7 +284,7 @@ export class StatsService {
       });
     }
 
-    // ── Weekly comparison bands (this week vs previous week) — zero-filled ──
+    // ── Weekly comparison bands (this week vs previous week) - zero-filled ──
     const weekBands = (fromOffset: number): StatsOverviewResponse["weeklyCompare"]["thisWeek"]["days"] =>
       Array.from({ length: 7 }, (_, i) => {
         const date = shiftDateKey(fromOffset + i);
@@ -473,7 +473,7 @@ export class StatsService {
       );
     });
 
-    // ── Emotions (worst average R first — friction surfaces on top) ────────
+    // ── Emotions (worst average R first - friction surfaces on top) ────────
     const emotionBuckets = [...new Set(closed.map((t) => t.emotionBefore).filter((e): e is string => e !== null))]
       .map((emotion) => this.bucketOf(emotion, EMOTION_LABELS[emotion] ?? emotion, closed.filter((t) => t.emotionBefore === emotion)))
       .sort((a, b) => Number(a.avgR ?? 0) - Number(b.avgR ?? 0));
@@ -515,7 +515,7 @@ export class StatsService {
       previousRisk = risk > 0 ? risk : previousRisk;
     }
 
-    // ── Sleep scatter (KNOWN GAP: no daily-stat storage yet — honest empty) ─
+    // ── Sleep scatter (KNOWN GAP: no daily-stat storage yet - honest empty) ─
     const sleepScatter: SleepPoint[] = [];
 
     // ── All-time mistake ledger + per-strategy R distributions ─────────────
@@ -659,7 +659,7 @@ export class StatsService {
     if (filters.emotion) closed = closed.filter((t) => t.emotionBefore === filters.emotion);
     if (filters.exitReason) closed = closed.filter((t) => t.exitReason === filters.exitReason);
     if (filters.tagId) {
-      // Tag joins live in TradeSubRow kind=TAG rows (B3) — filter by payload tagId.
+      // Tag joins live in TradeSubRow kind=TAG rows (B3) - filter by payload tagId.
       const tagRowIds = new Set(
         tagRows
           .filter((r) => (r.data as { tagId?: string }).tagId === filters.tagId)
@@ -771,7 +771,7 @@ export class StatsService {
     const recoveryFactor = netPnl !== null && maxDrawdownR < 0 ? netPnl / Math.abs(maxDrawdownR) : null;
 
     // Sharpe / Sortino on DAILY R sums (calendar days from first to last
-    // trade, zero on no-trade days), annualized √252, risk-free 0 — the
+    // trade, zero on no-trade days), annualized √252, risk-free 0 - the
     // methodology travels with the payload (§8).
     let sharpe: number | null = null;
     let sortino: number | null = null;
@@ -837,7 +837,7 @@ export class StatsService {
       sharpeNote:
         "Sharpe = mean daily ΣR ÷ stdev(daily ΣR) × √252, risk-free = 0. Daily series spans the full filter window (0R on no-trade days); null below 10 days.",
       sortinoNote:
-        "Sortino uses the same daily ΣR series with downside deviation (√mean(min(0,d)²)), annualized √252 — penalizes only negative volatility.",
+        "Sortino uses the same daily ΣR series with downside deviation (√mean(min(0,d)²)), annualized √252 - penalizes only negative volatility.",
     };
 
     // ── Cumulative R + rolling (window 10) (§7/§9) ─────────────────────────
@@ -987,7 +987,7 @@ export class StatsService {
           r: toDecimalString(round2(rOf(trade))),
         });
       }
-      if (inDrawdown) flush(null, null, null); // still under water — honest nulls
+      if (inDrawdown) flush(null, null, null); // still under water - honest nulls
       drawdowns.sort((a, b) => Number(a.drawdownR) - Number(b.drawdownR));
     }
 
@@ -1052,7 +1052,7 @@ export class StatsService {
       maxConcurrentPositions: maxConcurrent,
       plannedVsRealized,
     };
-    // ── Strategy rows (§12) — factual comparisons, no ranking verdict ─────
+    // ── Strategy rows (§12) - factual comparisons, no ranking verdict ─────
     const strategyGroup = (id: string | null): TradeLike[] =>
       closed.filter((t) => (id === null ? t.strategyId === null : t.strategyId === id));
     const strategyIds = [...new Set(closed.map((t) => t.strategyId))];
@@ -1148,7 +1148,7 @@ export class StatsService {
       };
     });
 
-    // ── Time analytics (§14) — reuse the suite bucket machinery ────────────
+    // ── Time analytics (§14) - reuse the suite bucket machinery ────────────
     const weekdayOf = (trade: TradeLike): number => new Date(`${trade.tradingDate}T00:00:00Z`).getUTCDay();
     const hourBucketOf = (trade: TradeLike): number => {
       const hour = new Date(trade.entryAt).getUTCHours();
@@ -1303,7 +1303,7 @@ export class StatsService {
       totalR: toDecimalString(round2(closed.reduce((sum, t) => sum + rOf(t), 0))),
     };
 
-    // ── Economic-event context (§21) — only where the calendar reaches ─────
+    // ── Economic-event context (§21) - only where the calendar reaches ─────
     const eventDates = ecoEvents.map((e) => e.scheduledAt.slice(0, 10)).sort();
     const calendarFrom = eventDates[0] ?? null;
     const calendarTo = eventDates[eventDates.length - 1] ?? null;
@@ -1418,7 +1418,7 @@ export class StatsService {
     };
     void rSorted;
 
-    // ── Monte Carlo (§25) — bootstrap of the filtered R list ───────────────
+    // ── Monte Carlo (§25) - bootstrap of the filtered R list ───────────────
     const rng = mulberry32(20260930);
     const simulationCount = Math.max(100, Math.min(2000, sims));
     const finals: number[] = [];
@@ -1466,7 +1466,7 @@ export class StatsService {
         worst: toDecimalString(round2(Math.min(...maxDds, 0))),
       },
       methodology:
-        "Bootstrap resampling of the filtered per-trade R series (seeded mulberry32, identical seed per request). Bands are percentiles of the cumulative-R path per trade index — a SIMULATION of variance, never a prediction.",
+        "Bootstrap resampling of the filtered per-trade R series (seeded mulberry32, identical seed per request). Bands are percentiles of the cumulative-R path per trade index - a SIMULATION of variance, never a prediction.",
     };
 
     // ── Reports (§26) ──────────────────────────────────────────────────────
@@ -1524,7 +1524,7 @@ export class StatsService {
       }
     }
 
-    // ── Phase 05 — insights/durations/streak profile (shared engine) ──────
+    // ── Phase 05 - insights/durations/streak profile (shared engine) ──────
     const insightsRows: InsightsEngineRow[] = closed.map((t) => ({
       id: t.id,
       instrumentSymbol: instrumentById.get(t.instrumentId)?.symbol ?? t.instrumentId,

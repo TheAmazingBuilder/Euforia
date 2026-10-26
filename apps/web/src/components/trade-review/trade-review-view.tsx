@@ -19,7 +19,7 @@ import { MonthlyReportDialog } from "@/components/trade-review/monthly-report-di
 import { useReviewOverview } from "@/lib/api/queries";
 
 /**
- * Professional Trade Review module (fusion with Goal) — four tabs over the
+ * Professional Trade Review module (fusion with Goal) - four tabs over the
  * post-trade workspace: Overview (cockpit), Goals (targets vs real behavior),
  * Reviews (grade execution against the playbook + capture lessons) and
  * Lessons (the accumulated library). The tab persists as ?tab= (module
@@ -79,7 +79,7 @@ export function TradeReviewView() {
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-4 sm:space-y-6" data-testid="trade-review-view">
-      {/* Colorful header — the module's identity band */}
+      {/* Colorful header - the module's identity band */}
       <header className="relative overflow-hidden rounded-xl border bg-gradient-to-r from-violet-600/15 via-fuchsia-500/10 to-cyan-500/15 px-4 py-5 sm:px-6" data-testid="review-header">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
@@ -89,7 +89,7 @@ export function TradeReviewView() {
             </h1>
             <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
               Grade execution against the playbook, capture the lesson, and hold your goals against what you actually
-              do. Targets are set by you; progress is computed from real trades — you cannot cheat the bar.
+              do. Targets are set by you; progress is computed from real trades - you cannot cheat the bar.
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -110,8 +110,8 @@ export function TradeReviewView() {
                   className="gap-1.5 border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-amber-500"
                   title={
                     overview.streak.frozenDays > 0
-                      ? `Includes ${overview.streak.frozenDays} frozen grace day${overview.streak.frozenDays === 1 ? "" : "s"} — one per week, honestly reported.`
-                      : "Consecutive review days — one grace day per week is forgiven, honestly reported."
+                      ? `Includes ${overview.streak.frozenDays} frozen grace day${overview.streak.frozenDays === 1 ? "" : "s"} - one per week, honestly reported.`
+                      : "Consecutive review days - one grace day per week is forgiven, honestly reported."
                   }
                   data-testid="header-streak"
                 >

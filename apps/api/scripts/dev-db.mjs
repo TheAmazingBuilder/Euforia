@@ -1,11 +1,11 @@
 /**
- * COSMOZ API — embedded development PostgreSQL manager.
+ * COSMOZ API - embedded development PostgreSQL manager.
  *
  * The sandbox/dev environment has no Docker and no root, so the dev/test
  * database runs from PORTABLE PostgreSQL binaries (via the
  * `embedded-postgres` devDependency, PostgreSQL 17) initialized as the
  * current user. This is a DEVELOPMENT/TEST convenience ONLY:
- *   - trust auth on 127.0.0.1 (no password) — never use outside localhost
+ *   - trust auth on 127.0.0.1 (no password) - never use outside localhost
  *   - real deployments use docker-compose.yml / managed PostgreSQL
  *
  * Commands:
@@ -14,7 +14,7 @@
  *   node scripts/dev-db.mjs down    → stop the cluster
  *
  * Layout: apps/api/.localpg/{data,postgres.log} (gitignored)
- * Databases created: `cosmoz` (dev) and `cosmoz_test` (tests — guarded).
+ * Databases created: `cosmoz` (dev) and `cosmoz_test` (tests - guarded).
  */
 import { spawnSync } from "node:child_process";
 import net from "node:net";
@@ -166,7 +166,7 @@ async function ensureRunning() {
 function ensureDatabases() {
   const adminUrl = `postgresql://${USER}@${HOST}:${PORT}/postgres`;
   for (const database of DATABASES) {
-    // No psql/createdb in the binary bundle — run SQL through the prisma CLI
+    // No psql/createdb in the binary bundle - run SQL through the prisma CLI
     // (already a devDependency of apps/api, zero extra deps).
     const result = spawnSync(process.execPath, [prismaCliPath(), "db", "execute", "--url", adminUrl, "--stdin"], {
       input: `CREATE DATABASE "${database}";`,
@@ -183,7 +183,7 @@ function ensureDatabases() {
   }
 }
 
-/** Absolute path of the prisma CLI (node_modules/.bin is a shell shim — unreliable). */
+/** Absolute path of the prisma CLI (node_modules/.bin is a shell shim - unreliable). */
 function prismaCliPath() {
   const root = packageRoot(require_, "prisma");
   return path.join(root, "build", "index.js");
@@ -231,7 +231,7 @@ export async function ensureDevDb() {
   ensureDatabases();
 }
 
-// CLI mode — also importable by test/global-setup.
+// CLI mode - also importable by test/global-setup.
 if (process.argv[1] && import.meta.url === new URL(`file://${path.resolve(process.argv[1])}`).href) {
   main().catch((error) => {
     console.error("[dev-db] fatal:", error instanceof Error ? error.message : error);

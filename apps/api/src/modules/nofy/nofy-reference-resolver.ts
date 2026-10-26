@@ -1,5 +1,5 @@
 /**
- * Nofy reference resolver (Phase 12 §18/§19/§41) — turns stored relational
+ * Nofy reference resolver (Phase 12 §18/§19/§41) - turns stored relational
  * pointers (kind + id) into FRESH display data (label / meta / SPA href)
  * at read time, so links can never go stale. Pointers are never copied:
  * the referenced domain remains authoritative, Nofy only stores the id.
@@ -9,7 +9,7 @@
  *   - TradingRepository  (TradingModule)          → TRADE
  *   - PlaybookRepository (PlaybookModule)         → STRATEGY / SETUP / RULE
  *   - INSTRUMENT_SPECIFICATION_PROVIDER (TradePlanningModule) → SYMBOL
- *   - academy content catalog (code-owned immutable data — the Phase 7
+ *   - academy content catalog (code-owned immutable data - the Phase 7
  *     playbook-templates precedent; NO runtime Academy coupling) → LESSON
  *   - CalendarQueriesService (CalendarModule, Phase 13) → EVENT
  *   - NofyRepository (this context)               → NOTE
@@ -26,7 +26,7 @@ import type { NofyRefHit, NofyRefKind, NofyRefResolved } from "../../shared/cont
 
 const ALL_KINDS: NofyRefKind[] = ["TRADE", "STRATEGY", "SETUP", "RULE", "LESSON", "EVENT", "SYMBOL", "NOTE"];
 
-/** Picker scan bounds — bounded queries, never unbounded table scans (§43). */
+/** Picker scan bounds - bounded queries, never unbounded table scans (§43). */
 const PICKER_TRADE_LIMIT = 60;
 const PICKER_RESULT_LIMIT = 40;
 
@@ -79,7 +79,7 @@ export class NofyReferenceResolver {
       case "NOTE":
         return this.resolveNote(id, userId);
       case "EVENT":
-        // Phase 13 — the Calendar is the canonical economic-event layer.
+        // Phase 13 - the Calendar is the canonical economic-event layer.
         // Economic events are SHARED reference data (no user scope).
         return this.resolveEvent(id);
       default:
@@ -90,7 +90,7 @@ export class NofyReferenceResolver {
   /**
    * Re-resolve every ref block of a note IN PLACE (server-authoritative
    * labels/hrefs). Unresolvable pointers keep the client's stored label and
-   * null meta/href — matching the mock engine's fallback exactly.
+   * null meta/href - matching the mock engine's fallback exactly.
    */
   async resolveNoteBlocks(
     blocks: import("../../shared/contracts").NofyBlock[],
@@ -114,7 +114,7 @@ export class NofyReferenceResolver {
   }
 
   /**
-   * Entity picker (GET /nofy/refs) — scans the principal's referenceable
+   * Entity picker (GET /nofy/refs) - scans the principal's referenceable
    * entities per kind, filters by `q` over label+meta, bounded result.
    */
   async listHits(userId: string, q: string, kindFilter?: string): Promise<NofyRefHit[]> {
@@ -186,7 +186,7 @@ export class NofyReferenceResolver {
     return filtered.slice(0, PICKER_RESULT_LIMIT);
   }
 
-  /** NOTE resolution needs this context's repository — set by the module. */
+  /** NOTE resolution needs this context's repository - set by the module. */
   private nofyNotesProvider?: (userId: string) => Promise<Array<{ id: string; title: string }>>;
   private nofyNoteProvider?: (noteId: string, userId: string) => Promise<{ id: string; title: string } | null>;
 
