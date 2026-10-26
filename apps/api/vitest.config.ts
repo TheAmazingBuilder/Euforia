@@ -11,35 +11,30 @@ export default defineConfig({
   ],
   test: {
     environment: "node",
-    include: ["test/**/*.spec.ts"],
-    // global-setup: boots the embedded dev/test PostgreSQL if needed, creates
-    // the dedicated `cosmoz_test` database, applies Prisma migrations, and
-    // exports the test DATABASE_URL so no test can ever target another DB.
-    globalSetup: ["test/global-setup.ts"],
-    // setup: fail-fast guard asserting the process env is the TEST database
-    // (defense in depth on top of global-setup).
-    setupFiles: ["test/setup.ts"],
+    // Default run = pure unit specs only (no database required). E2E specs
+    // live behind an explicit flag because they need a real local PostgreSQL
+    // server (see test/global-setup.ts header).
+    include: ["test/unit/**/*.spec.ts"],
     testTimeout: 30_000,
     hookTimeout: 120_000,
     // Isolated process per test file: each e2e file boots its own Nest app.
     pool: "forks",
-    projects: [
-      {
-        // Pure unit specs - no database, no global setup (runs anywhere).
-        extends: true,
-        test: {
-          include: ["test/unit/**/*.spec.ts"],
-          globalSetup: [],
-          setupFiles: [],
-        },
-      },
-      {
-        // E2E specs - full harness (test DB via DATABASE_URL_TEST / cosmoz_test).
-        extends: true,
-        test: {
+
+    // ---- E2E harness (opt-in) --------------------------------------------
+    // Activate with:  COSMOZ_E2E=1 pnpm --filter @cosmoz/api exec vitest run
+    // or:             pnpm --filter @cosmoz/api test:e2e
+    //
+    // global-setup: creates the dedicated test database (DATABASE_URL_TEST,
+    // default cosmoz_test), applies Prisma migrations, and exports the test
+    // DATABASE_URL so no test can ever target another DB.
+    // setup: fail-fast guard asserting the process env is the TEST database
+    // (defense in depth on top of global-setup).
+    ...(process.env.COSMOZ_E2E === "1"
+      ? {
           include: ["test/e2e/**/*.spec.ts"],
-        },
-      },
-    ],
+          globalSetup: ["test/global-setup.ts"],
+          setupFiles: ["test/setup.ts"],
+        }
+      : {}),
   },
 });

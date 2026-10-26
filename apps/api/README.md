@@ -49,7 +49,8 @@ The API listens on **http://localhost:4000**:
 | `pnpm start` | Run compiled output |
 | `pnpm typecheck` | `tsc --noEmit` (src + test) |
 | `pnpm lint` | ESLint (flat config) |
-| `pnpm test` | vitest — unit + e2e (creates/migrates `cosmoz_test` on your local PG; override with `DATABASE_URL_TEST`) |
+| `pnpm test` | vitest — **unit specs only** (no database required) |
+| `pnpm test:e2e` | vitest e2e harness — needs a local PostgreSQL; creates/migrates the dedicated test DB (`cosmoz_test` by default, override with `DATABASE_URL_TEST`) |
 | `pnpm prisma:generate` | Regenerate the Prisma client after schema edits |
 | `pnpm db:migrate -- --name X` | Create + apply a migration (dev) |
 | `pnpm db:deploy` | Apply committed migrations (CI/prod) |
@@ -92,12 +93,20 @@ secrets into `.env.example`; `.env*` files are gitignored.
 
 ### Test database safety (binding)
 
-Tests refuse to run against anything but `cosmoz_test`:
+E2E tests refuse to run against anything but the dedicated test database:
 
-1. `test/global-setup.ts` starts the cluster, creates `cosmoz_test`, applies
-   migrations and exports `DATABASE_URL` for every worker.
-2. `test/setup.ts` re-asserts `NODE_ENV=test` and `DATABASE_URL → /cosmoz_test`
+1. `test/global-setup.ts` creates the test DB (best-effort) on YOUR local
+   PostgreSQL server, applies migrations and exports `DATABASE_URL` for every
+   worker. The target is `DATABASE_URL_TEST` (default
+   `postgresql://postgres@127.0.0.1:5432/cosmoz_test`). Put your real
+   credentials there, e.g.
+   `DATABASE_URL_TEST="postgresql://postgres:secret@127.0.0.1:5432/euforia_test"`.
+2. `test/setup.ts` re-asserts `NODE_ENV=test` and `DATABASE_URL → /<TEST_DB_NAME>`
    inside each worker (fail-fast, defense in depth).
+
+Unit specs (`test/unit/**`) never touch a database and run with plain
+`pnpm test` anywhere. The e2e harness is opt-in (`pnpm test:e2e`) so a missing
+or unauthenticated local PG can never block the default test command.
 
 ## Error contract (API envelope)
 

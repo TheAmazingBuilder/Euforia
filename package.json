@@ -6,6 +6,7 @@
     "dev": "turbo dev",
     "build": "turbo build",
     "lint": "turbo lint",
+    "typecheck": "turbo run typecheck",
     "test": "turbo test",
     "api:dev": "pnpm --filter @cosmoz/api dev"
   },

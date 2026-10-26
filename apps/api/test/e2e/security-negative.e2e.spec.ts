@@ -5,6 +5,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { NestFastifyApplication } from "@nestjs/platform-fastify";
 import { buildTestApp } from "../helpers/build-app";
+import { TEST_DB_NAME } from "../global-setup";
 import { EnvValidationError, validateEnv } from "../../src/config/env.schema";
 
 let app: NestFastifyApplication;
@@ -123,9 +124,13 @@ describe("environment validation fails safely at startup", () => {
 });
 
 describe("test database safety", () => {
-  it("the running test process targets the dedicated cosmoz_test database", () => {
+  it("the running test process targets the dedicated test database (TEST_DB_NAME)", () => {
+    // The DB name is parameterized: default "cosmoz_test", overridable via
+    // DATABASE_URL_TEST (e.g. ".../euforia_test"). Same static import as
+    // test/setup.ts - global-setup top-level code is pure constants, no
+    // side effects at module load.
     const url = new URL(process.env.DATABASE_URL as string);
-    expect(url.pathname).toBe("/cosmoz_test");
+    expect(url.pathname).toBe(`/${TEST_DB_NAME}`);
     expect(process.env.NODE_ENV).toBe("test");
   });
 });
