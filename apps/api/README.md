@@ -16,12 +16,11 @@ every future bounded context must follow.
 # 1. Install (workspace root)
 corepack pnpm install
 
-# 2. Start the local development database (embedded PostgreSQL 17 — no Docker
-#    needed; portable binaries, trust auth on 127.0.0.1 ONLY)
-pnpm api:db:up
+# 2. Make sure YOUR OWN local PostgreSQL server is running (default port 5432)
+#    and create the dev database:  createdb cosmoz   (or via pgAdmin)
 
 # 3. Configure
-cp apps/api/.env.example apps/api/.env     # defaults match db:up
+cp apps/api/.env.example apps/api/.env     # edit DATABASE_URL for your PG user/password
 
 # 4. Run
 pnpm api:dev          # watch mode (tsc-watch → node)
@@ -50,8 +49,7 @@ The API listens on **http://localhost:4000**:
 | `pnpm start` | Run compiled output |
 | `pnpm typecheck` | `tsc --noEmit` (src + test) |
 | `pnpm lint` | ESLint (flat config) |
-| `pnpm test` | vitest — unit + e2e (boots the embedded test DB automatically) |
-| `pnpm db:up` / `db:status` / `db:down` | Embedded dev PostgreSQL lifecycle |
+| `pnpm test` | vitest — unit + e2e (creates/migrates `cosmoz_test` on your local PG; override with `DATABASE_URL_TEST`) |
 | `pnpm prisma:generate` | Regenerate the Prisma client after schema edits |
 | `pnpm db:migrate -- --name X` | Create + apply a migration (dev) |
 | `pnpm db:deploy` | Apply committed migrations (CI/prod) |
@@ -86,10 +84,11 @@ secrets into `.env.example`; `.env*` files are gitignored.
   future phase adds its own models + migration following `data-model.md`.
 - Migrations are versioned, reviewable files in `prisma/migrations/` (created
   by `db:migrate`, applied by `db:deploy`). Never reset a non-test database.
-- Dev/test databases run from **portable binaries** (`scripts/dev-db.mjs`,
-  data dir `apps/api/.localpg/`, gitignored) because the dev sandbox has no
-  Docker: `cosmoz` (dev) and `cosmoz_test` (tests) on port `5433`, trust auth,
-  localhost only. Real deployments use `docker-compose.yml` / managed PG.
+- The embedded dev PostgreSQL (`scripts/dev-db.mjs`, port `5433`) has been
+  REMOVED from the project. Local development points at a developer-provided
+  PostgreSQL server (default port `5432`) via `DATABASE_URL`; tests use the
+  dedicated `cosmoz_test` database (`DATABASE_URL_TEST`). Containers remain
+  available through `docker-compose.yml` / managed PG.
 
 ### Test database safety (binding)
 

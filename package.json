@@ -7,8 +7,7 @@
     "build": "turbo build",
     "lint": "turbo lint",
     "test": "turbo test",
-    "api:dev": "pnpm --filter @cosmoz/api dev",
-    "api:db:up": "pnpm --filter @cosmoz/api db:up"
+    "api:dev": "pnpm --filter @cosmoz/api dev"
   },
   "devDependencies": {
     "turbo": "^2"

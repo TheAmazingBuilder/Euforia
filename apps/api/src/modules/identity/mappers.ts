@@ -30,11 +30,28 @@ export function permissionsForRole(role: string): string[] {
   return [...TRADER_PERMISSIONS];
 }
 
+/** Account status union (mirrors the shared accountStatusSchema). */
+export type MappedAccountStatus = "PENDING_VERIFICATION" | "ACTIVE" | "SUSPENDED" | "DEACTIVATED";
+
+const ACCOUNT_STATUSES: readonly MappedAccountStatus[] = [
+  "PENDING_VERIFICATION",
+  "ACTIVE",
+  "SUSPENDED",
+  "DEACTIVATED",
+];
+
+/** Narrow a persisted `string` status to the shared union (fallback: PENDING). */
+export function toAccountStatus(status: string): MappedAccountStatus {
+  return (ACCOUNT_STATUSES as readonly string[]).includes(status)
+    ? (status as MappedAccountStatus)
+    : "PENDING_VERIFICATION";
+}
+
 export function toAuthUser(user: UserRow): {
   id: string;
   email: string;
   name: string;
-  status: string;
+  status: MappedAccountStatus;
   emailVerifiedAt: string | null;
   roles: string[];
   permissions: string[];
@@ -44,7 +61,7 @@ export function toAuthUser(user: UserRow): {
     id: user.id,
     email: user.email,
     name: user.name,
-    status: user.status,
+    status: toAccountStatus(user.status),
     emailVerifiedAt: user.emailVerifiedAt ? isoDateTime(user.emailVerifiedAt) : null,
     roles: [user.role],
     permissions: permissionsForRole(user.role),

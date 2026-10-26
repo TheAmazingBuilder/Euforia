@@ -2,19 +2,31 @@
  * Vitest global setup (Foundation mandate §24/§25).
  *
  * Guarantees, before any test runs:
- *   1. An embedded PostgreSQL cluster is reachable (started if needed).
- *   2. A DEDICATED test database `cosmoz_test` exists - tests never target
- *      the dev database or anything resembling production.
- *   3. Prisma migrations are applied to the test database.
- *   4. `process.env.DATABASE_URL` points at `cosmoz_test` for every worker.
+ *   1. A DEDICATED test database `cosmoz_test` is reachable via
+ *      DATABASE_URL_TEST (or the derived default on localhost:5432) -
+ *      tests never target the dev database or anything resembling
+ *      production. The project no longer ships an embedded PostgreSQL;
+ *      a real local PostgreSQL server is required for e2e tests.
+ *   2. Prisma migrations are applied to the test database.
+ *   3. `process.env.DATABASE_URL` points at `cosmoz_test` for every worker.
  *
- * The setup.ts guard re-asserts (4) inside each worker as defense in depth.
+ * The setup.ts guard re-asserts (3) inside each worker as defense in depth.
  */
 import { execFileSync } from "node:child_process";
 import { createRequire } from "node:module";
 import path from "node:path";
 import fs from "node:fs";
-import { ensureDevDb, TEST_DB_URL } from "../scripts/dev-db.mjs";
+
+/**
+ * Test database URL. Override with DATABASE_URL_TEST when your local
+ * PostgreSQL listens on a non-default port or needs credentials, e.g.:
+ *   DATABASE_URL_TEST="postgresql://postgres:secret@localhost:5432/cosmoz_test"
+ */
+const TEST_DB_URL =
+  process.env.DATABASE_URL_TEST ?? "postgresql://postgres@127.0.0.1:5432/cosmoz_test";
+
+/** Test database name (last path segment of TEST_DB_URL). */
+const TEST_DB_NAME = new URL(TEST_DB_URL).pathname.split("/").pop() ?? "cosmoz_test";
 
 /** Locate the prisma CLI entry (resilient to exports-map restrictions). */
 function prismaCliPath(): string {
@@ -55,10 +67,33 @@ export default async function globalSetup(): Promise<void> {
   process.env.OCR_SERVICE_TOKEN = "test-harness-unused-token-000000000000";
   process.env.OCR_MOCK_ENGINE = "enabled";
 
-  // 1. Cluster up (idempotent - reuses a running one).
-  await ensureDevDb();
+  // 1. Dedicated test database on the developer's own PostgreSQL server -
+  // the embedded dev cluster has been removed from the project. Create it
+  // best-effort via the `postgres` maintenance DB; if it already exists (or
+  // the role cannot create databases), tests simply run against it.
+  {
+    const adminUrl = new URL(TEST_DB_URL);
+    adminUrl.pathname = "/postgres";
+    try {
+      execFileSync(
+        process.execPath,
+        [prismaCliPath(), "db", "execute", "--url", adminUrl.toString(), "--command",
+          `CREATE DATABASE "${TEST_DB_NAME}"`],
+        { env: { ...process.env, DATABASE_URL: adminUrl.toString() }, stdio: "pipe", encoding: "utf8" },
+      );
+      console.log(`[test-db] created database "${TEST_DB_NAME}"`);
+    } catch (error) {
+      const message = String((error as { stderr?: string })?.stderr ?? error);
+      if (!/already exists/i.test(message)) {
+        console.warn(
+          `[test-db] could not create "${TEST_DB_NAME}" (${message.trim().split("\n").pop()}). ` +
+            `Assuming it exists - create it manually if tests fail to connect.`,
+        );
+      }
+    }
+  }
 
-  // 2/3. Dedicated test database + migrations.
+  // 2/3. Prisma migrations on the test database.
   process.env.DATABASE_URL = TEST_DB_URL;
   execFileSync(
     process.execPath,
