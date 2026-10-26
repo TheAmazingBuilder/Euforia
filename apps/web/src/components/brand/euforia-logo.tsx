@@ -56,6 +56,19 @@ const MARK_SRC: Record<EuforiaLogoTone, string> = {
   black: "/brand/euforia-mark-black.svg",
 };
 
+/**
+ * The mark is now the bare gradient ribbons (no navy tile), aspect 750:918.
+ * In the full lockup it gets a touch more presence than the old squircle;
+ * the gap to the wordmark follows a fixed ratio (see LOCKUP_MARK_GAP_RATIO).
+ */
+const LOCKUP_MARK_PX: Record<EuforiaLogoSize, number> = {
+  sm: 26,
+  md: 34,
+  lg: 52,
+};
+
+const LOCKUP_MARK_GAP_RATIO = 0.34;
+
 const WORDMARK_FILL: Record<EuforiaLogoTone, string | undefined> = {
   dark: "#F8FAFC", // euforia-logo-dark.svg
   light: "#020617", // euforia-logo-light.svg
@@ -104,9 +117,28 @@ export function EuforiaLogo({
     return mark;
   }
 
+  // Full lockup: the mark is now the bare gradient ribbons (no tile). Its
+  // height drives the wordmark cap-height alignment; spacing follows a
+  // fixed ratio (gap = 34% of mark height) for a professional optical balance.
+  const lockupPx = LOCKUP_MARK_PX[size];
+  const lockupW = Math.round(lockupPx * MARK_ASPECT);
+
   return (
-    <span className={cn("inline-flex items-center gap-2.5", className)}>
-      {mark}
+    <span className={cn("inline-flex items-center", className)}>
+      <img
+        src={MARK_SRC[tone]}
+        alt=""
+        aria-hidden="true"
+        draggable={false}
+        width={lockupW}
+        height={lockupPx}
+        style={{
+          width: lockupPx,
+          height: lockupPx,
+          marginRight: `${Math.round(lockupPx * 0.34)}px`,
+        }}
+        className="shrink-0 select-none"
+      />
       <span className="flex flex-col leading-none">
         <span
           className={cn(

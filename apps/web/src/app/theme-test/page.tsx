@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { ThemeToggle } from "@/components/layout/theme-toggle";
+import { ThemeSwitch } from "@/components/layout/theme-switch";
 
 export const metadata = {
   title: "Euforia - Theme test",
@@ -41,7 +41,7 @@ export default function ThemeTestPage() {
               surfaces, text and P&amp;L semantics update without a flash.
             </p>
           </div>
-          <ThemeToggle />
+          <ThemeSwitch />
         </header>
 
         {/* Surfaces card */}

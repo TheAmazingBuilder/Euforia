@@ -3,7 +3,7 @@
 import Link from "next/link";
 
 import { EuforiaLogo } from "@/components/brand/euforia-logo";
-import { ThemeToggle } from "@/components/layout/theme-toggle";
+import { ThemeSwitch } from "@/components/layout/theme-switch";
 import { useDict } from "@/i18n/i18n-provider";
 
 /**
@@ -97,7 +97,7 @@ export function AuthLayout({
             <EuforiaLogo variant="full" tone="auto" size="sm" />
           </Link>
           <div className="flex items-center gap-2">
-            <ThemeToggle />
+            <ThemeSwitch />
           </div>
         </div>
 

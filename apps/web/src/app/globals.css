@@ -215,7 +215,7 @@
 
 /* ---- Theme swatch dots (ThemeToggle) ----
    Hard rule §9: zero hardcoded hex outside globals.css - the per-theme preview
-   dots therefore live HERE as classes, consumed by theme-toggle.tsx. */
+   dots therefore live HERE as classes, consumed by the theme switcher (theme-switch.tsx). */
 .theme-dot-dark-blue {
   background-color: #0E1116;
   box-shadow: inset 0 0 0 1px #262E3A;

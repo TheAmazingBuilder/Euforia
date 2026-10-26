@@ -8,7 +8,7 @@ import { ChevronRight, GraduationCap, Menu, PanelLeft, Search } from "lucide-rea
 import { useTrades } from "@/lib/api/queries";
 import { Button } from "@/components/ui/button";
 import { AccountSwitcher } from "@/components/layout/account-switcher";
-import { ThemeToggle } from "@/components/layout/theme-toggle";
+import { ThemeSwitch } from "@/components/layout/theme-switch";
 import { NotificationCenter } from "@/components/layout/notification-center";
 import { UserAvatar } from "@/components/layout/user-avatar";
 import { openCommandPalette } from "@/lib/hooks/use-command-palette";
@@ -181,7 +181,7 @@ export function Topbar({ onMenuClick }: TopbarProps) {
         {/* Notification center - bell inbox with unread badge + mark-as-read */}
         <NotificationCenter />
 
-        <ThemeToggle />
+        <ThemeSwitch />
 
         {/* Avatar → /profile (direct edit) */}
         <UserAvatar className="ml-0.5" />
