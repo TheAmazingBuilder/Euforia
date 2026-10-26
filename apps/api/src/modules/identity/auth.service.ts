@@ -106,27 +106,49 @@ export class AuthService {
     }
     this.limiter.hit("register", input.email);
 
+    // Client metadata (masked IP, device/browser/os) - computed once, reused
+    // by the audit trail and the auto-login session below.
+    const meta = fingerprintOf({
+      ip: reply.request.ip,
+      headers: reply.request.headers,
+    });
+
+    // P2002 guard: the explicit email check above races against concurrent
+    // registrations and misses case-variant duplicates (the unique index is
+    // byte-wise, the lookup is lower-cased). A violated uniqueness constraint
+    // must surface as 409 EMAIL_ALREADY_USED - never an unhandled 500.
+    const duplicateEmail = (): ConflictError =>
+      new ConflictError(
+        "An account already exists for this email address.",
+        "EMAIL_ALREADY_USED",
+      );
+    const isUniqueViolation = (error: unknown): boolean =>
+      typeof error === "object" && error !== null && (error as { code?: string }).code === "P2002";
+
     if (await this.repository.isEmailTaken(input.email)) {
       // Registration is inherently non-enumerable-safe? No: uniqueness is a
       // product requirement the frontend surfaces with a dedicated state -
       // the mock returns 409 EMAIL_ALREADY_USED (documented contract).
-      throw new ConflictError(
-        "An account already exists for this email address.",
-        "EMAIL_ALREADY_USED",
-      );
+      throw duplicateEmail();
     }
 
     const requireEmail = this.config.auth.requireEmailVerification;
 
     const passwordHash = await this.hasher.hash(input.password);
-    const user = await this.repository.createUser({
-      email: input.email,
-      name: input.name,
-      passwordHash,
-      preferences: null, // created lazily on first preferences read
-      status: requireEmail ? "PENDING_VERIFICATION" : "ACTIVE",
-      emailVerifiedAt: requireEmail ? null : new Date(),
-    });
+    let user;
+    try {
+      user = await this.repository.createUser({
+        email: input.email,
+        name: input.name,
+        passwordHash,
+        preferences: null, // created lazily on first preferences read
+        status: requireEmail ? "PENDING_VERIFICATION" : "ACTIVE",
+        emailVerifiedAt: requireEmail ? null : new Date(),
+      });
+    } catch (error) {
+      if (isUniqueViolation(error)) throw duplicateEmail();
+      throw error;
+    }
 
     const expiresAt = requireEmail
       ? await this.issueVerificationChallenge(user, user.email)
@@ -137,31 +159,44 @@ export class AuthService {
     // goes straight to the dashboard instead of bouncing back to /login.
     let session: RegisterSession | undefined;
     if (!requireEmail && user.status === "ACTIVE") {
-      const meta = fingerprintOf({ ip: undefined, headers: reply.request.headers });
-      const refresh = this.tokens.issueRefreshToken(1);
-      const created = await this.repository.createSession({
-        userId: user.id,
-        refreshTokenHash: refresh.hash,
-        device: meta.device,
-        browser: meta.browser,
-        os: meta.os,
-        ipMasked: meta.ipMasked,
-        location: meta.location,
-        userAgent: meta.userAgent,
-        expiresAt: new Date(Date.now() + this.config.auth.refreshSessionHours * 3_600_000),
-      });
-      const access = await this.tokens.signAccessToken(user.id, created.id);
-      this.setRefreshCookie(reply, refresh.value, { remember: false });
-      await this.events.recordLogin(
-        { userId: user.id, type: "LOGIN_SUCCESS", context: "Signed in on registration.", outcome: "SUCCESS" },
+      try {
+        const refresh = this.tokens.issueRefreshToken(1);
+        const created = await this.repository.createSession({
+          userId: user.id,
+          refreshTokenHash: refresh.hash,
+          device: meta.device,
+          browser: meta.browser,
+          os: meta.os,
+          ipMasked: meta.ipMasked,
+          location: meta.location,
+          userAgent: meta.userAgent,
+          expiresAt: new Date(Date.now() + this.config.auth.refreshSessionHours * 3_600_000),
+        });
+        const access = await this.tokens.signAccessToken(user.id, created.id);
+        this.setRefreshCookie(reply, refresh.value, { remember: false });
+        session = {
+          user: toAuthUser(user),
+          accessToken: access.token,
+          accessTokenExpiresAt: access.expiresAt.toISOString(),
+          session: toAuthSession(created, created.id),
+        };
+      } catch (error) {
+        // The account EXISTS at this point - failing the whole registration
+        // with a 500 would strand the user (email taken, no session, no
+        // verification mail). Degrade honestly: complete the signup without
+        // the auto-login session and sign the user in through /login.
+        this.logger?.warn(
+          { err: error instanceof Error ? error.message : String(error), userId: user.id },
+          "register auto-login session creation failed - continuing without session",
+        );
+      }
+      // Audit writes are best-effort here: a security-log failure must not
+      // turn a successful registration into a 500 (append-only log, §30).
+      await this.recordLoginBestEffort(
+        user.id,
+        "Signed in on registration.",
         meta,
       );
-      session = {
-        user: toAuthUser(user),
-        accessToken: access.token,
-        accessTokenExpiresAt: access.expiresAt.toISOString(),
-        session: toAuthSession(created, created.id),
-      };
     }
 
     return {
@@ -714,6 +749,30 @@ export class AuthService {
 
   // ── Cookie jar (HttpOnly - production contract; the mock documented this
   //    as its seam) ─────────────────────────────────────────────────────────────
+
+  /**
+   * Best-effort LOGIN_SUCCESS audit write for the registration auto-login.
+   * The append-only security log must never turn a successful signup into a
+   * 500: any write failure (missing tables, constraint violations, outages)
+   * is logged and swallowed. Sanitized context only - no secrets (§30).
+   */
+  private async recordLoginBestEffort(
+    userId: string,
+    context: string,
+    fingerprint: RequestFingerprint,
+  ): Promise<void> {
+    try {
+      await this.events.recordLogin(
+        { userId, type: "LOGIN_SUCCESS", context, outcome: "SUCCESS" },
+        fingerprint,
+      );
+    } catch (error) {
+      this.logger?.warn(
+        { err: error instanceof Error ? error.message : String(error), userId },
+        "security-event login recording failed (ignored - signup unaffected)",
+      );
+    }
+  }
 
   private setRefreshCookie(
     reply: FastifyReply,

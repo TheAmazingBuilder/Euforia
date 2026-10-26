@@ -4,6 +4,9 @@
  */
 import type { UserRow, SessionRow } from "./identity.repository";
 import type { AuthPrincipal } from "../../shared/auth/current-user.decorator";
+// Contract types come from the sanctioned barrel (eslint no-restricted-imports:
+// @cosmoz/shared is source-exported and cannot be required directly by Node).
+import type { AuthPermission, AuthRole } from "../../shared/contracts";
 
 /** UTC ISO-8601 with Z suffix (shared isoDateTimeSchema wire format). */
 export function isoDateTime(date: Date): string {
@@ -11,7 +14,7 @@ export function isoDateTime(date: Date): string {
 }
 
 /** Fixed permission set per role - extensible, not an RBAC matrix (§26/§27). */
-const TRADER_PERMISSIONS = [
+const TRADER_PERMISSIONS: readonly AuthPermission[] = [
   "trades:read",
   "trades:create",
   "trades:grade",
@@ -23,7 +26,7 @@ const TRADER_PERMISSIONS = [
   "security:manage",
 ] as const;
 
-export function permissionsForRole(role: string): string[] {
+export function permissionsForRole(role: string): AuthPermission[] {
   // TRADER is the full product permission set; ADMIN extends it with future
   // administrative permissions (no RBAC matrix until a product need exists).
   void role;
@@ -53,8 +56,8 @@ export function toAuthUser(user: UserRow): {
   name: string;
   status: MappedAccountStatus;
   emailVerifiedAt: string | null;
-  roles: string[];
-  permissions: string[];
+  roles: AuthRole[];
+  permissions: AuthPermission[];
   createdAt: string;
 } {
   return {
@@ -63,7 +66,9 @@ export function toAuthUser(user: UserRow): {
     name: user.name,
     status: toAccountStatus(user.status),
     emailVerifiedAt: user.emailVerifiedAt ? isoDateTime(user.emailVerifiedAt) : null,
-    roles: [user.role],
+    // Persisted role is a free string; the shared contract only knows TRADER/ADMIN.
+    // Unknown values fall back to TRADER (the baseline product role).
+    roles: [user.role === "ADMIN" ? "ADMIN" : "TRADER"],
     permissions: permissionsForRole(user.role),
     createdAt: isoDateTime(user.createdAt),
   };
