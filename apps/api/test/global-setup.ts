@@ -26,7 +26,7 @@ const TEST_DB_URL =
   process.env.DATABASE_URL_TEST ?? "postgresql://postgres@127.0.0.1:5432/cosmoz_test";
 
 /** Test database name (last path segment of TEST_DB_URL). */
-const TEST_DB_NAME = new URL(TEST_DB_URL).pathname.split("/").pop() ?? "cosmoz_test";
+export const TEST_DB_NAME = new URL(TEST_DB_URL).pathname.split("/").pop() ?? "cosmoz_test";
 
 /** Locate the prisma CLI entry (resilient to exports-map restrictions). */
 function prismaCliPath(): string {
