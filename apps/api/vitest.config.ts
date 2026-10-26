@@ -23,5 +23,23 @@ export default defineConfig({
     hookTimeout: 120_000,
     // Isolated process per test file: each e2e file boots its own Nest app.
     pool: "forks",
+    projects: [
+      {
+        // Pure unit specs - no database, no global setup (runs anywhere).
+        extends: true,
+        test: {
+          include: ["test/unit/**/*.spec.ts"],
+          globalSetup: [],
+          setupFiles: [],
+        },
+      },
+      {
+        // E2E specs - full harness (test DB via DATABASE_URL_TEST / cosmoz_test).
+        extends: true,
+        test: {
+          include: ["test/e2e/**/*.spec.ts"],
+        },
+      },
+    ],
   },
 });
