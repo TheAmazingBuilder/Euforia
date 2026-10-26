@@ -324,12 +324,6 @@ export function LoginForm() {
             </Link>
           </p>
         ) : null}
-        <Link
-          href="/"
-          className="text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
-        >
-          &larr; Back to overview
-        </Link>
       </footer>
     </div>
   );

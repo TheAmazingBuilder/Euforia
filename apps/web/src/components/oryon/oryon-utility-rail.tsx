@@ -4,6 +4,7 @@ import * as React from "react";
 
 import { Bell, BellRing, CalendarDays, List, X } from "lucide-react";
 
+import Link from "next/link";
 import type { EcoEvent, Instrument } from "@cosmoz/shared";
 
 import { useEcoEvents } from "@/lib/api/queries";
@@ -227,7 +228,7 @@ function OryonNotificationsPanel() {
     <div className="flex min-h-0 flex-1 flex-col gap-3 p-4" data-testid="oryon-panel-notifications">
       <p className="text-sm text-muted-foreground">{S.notificationsBody}</p>
       <Button asChild variant="outline" size="sm" className="w-fit">
-        <a href="/nofy">{S.notificationsLink}</a>
+        <Link href="/nofy">{S.notificationsLink}</Link>
       </Button>
     </div>
   );
@@ -537,7 +538,7 @@ function OryonMarketContextPanel({ instrument }: { instrument: Instrument | null
         {(eco.data?.source ?? "sample") === "sample" ? S.eventsSourceNote : S.eventsSourceLive}
       </p>
       <Button asChild variant="ghost" size="sm" className="mt-1 w-fit">
-        <a href="/events">{utility.calendarLink}</a>
+        <Link href="/events">{utility.calendarLink}</Link>
       </Button>
     </div>
   );

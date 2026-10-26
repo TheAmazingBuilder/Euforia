@@ -33,14 +33,12 @@
         padding: 32px 28px;
         text-align: center;
       }
-      .mark {
-        width: 56px; height: 56px;
+      .mark img {
+        width: 88px; height: 88px;
         margin: 0 auto 20px;
-        border-radius: 14px;
-        background: linear-gradient(135deg, #6e7bff, #4050e0);
-        display: grid; place-items: center;
+        display: block;
+        border-radius: 20px;
       }
-      .mark svg { width: 32px; height: 32px; }
       h1 { margin: 0 0 8px; font-size: 1.25rem; letter-spacing: -0.01em; }
       p { margin: 0 0 20px; font-size: 0.875rem; line-height: 1.6; color: var(--muted); }
       button {
@@ -60,12 +58,8 @@
   </head>
   <body>
     <main class="card">
-      <div class="mark" aria-hidden="true">
-        <svg viewBox="0 0 512 512" fill="none">
-          <polyline points="104,352 208,240 288,288 408,160" stroke="#fff" stroke-width="36" stroke-linecap="round" stroke-linejoin="round"/>
-          <circle cx="104" cy="352" r="34" fill="#fff"/>
-          <circle cx="408" cy="160" r="40" fill="#fff"/>
-        </svg>
+      <div class="mark">
+        <img src="/brand/euforia-icon.svg" alt="Euforia logo" />
       </div>
       <h1>You are offline</h1>
       <p>

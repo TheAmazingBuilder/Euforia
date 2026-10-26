@@ -3,6 +3,7 @@
 import * as React from "react";
 import { Copy, Crop, FileWarning, Loader2, RotateCcw, ScanSearch, Shapes, X } from "lucide-react";
 
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 import type { OcrRecognition } from "@cosmoz/shared";
 
@@ -277,7 +278,7 @@ export function RecognitionResult({
           </p>
           <div className="flex items-center gap-2">
             <Button type="button" variant="outline" size="sm" asChild data-testid="recognition-duplicate-open">
-              <a href={`/recognition?job=${recognition.duplicateOf.recognitionId}`}>{dict.duplicate.open}</a>
+              <Link href={`/recognition?job=${recognition.duplicateOf.recognitionId}`}>{dict.duplicate.open}</Link>
             </Button>
             {!readOnly && onAcknowledgeScreenshotDuplicate ? (
               <Button type="button" variant="ghost" size="sm" onClick={onAcknowledgeScreenshotDuplicate} data-testid="recognition-duplicate-anyway">
@@ -313,7 +314,7 @@ export function RecognitionResult({
           </p>
           <div className="flex items-center gap-2">
             <Button type="button" variant="outline" size="sm" asChild data-testid="recognition-trade-duplicate-open">
-              <a href={`/trades?tradeId=${recognition.possibleTradeDuplicate.tradeId}`}>{dict.tradeDuplicate.open}</a>
+              <Link href={`/trades?tradeId=${recognition.possibleTradeDuplicate.tradeId}`}>{dict.tradeDuplicate.open}</Link>
             </Button>
             {!readOnly && onAcknowledgeTradeDuplicate ? (
               <Button type="button" variant="ghost" size="sm" onClick={onAcknowledgeTradeDuplicate} data-testid="recognition-trade-duplicate-anyway">
