@@ -22,6 +22,9 @@ import {
 } from "./client-metadata";
 import { toAuthSession, toAuthUser } from "./mappers";
 import type { AuthSuccess } from "../../shared/contracts";
+// Local status union mirroring the shared accountStatusSchema (the API has no
+// @cosmoz/shared dependency; register() narrows the row's `string` status).
+type AccountStatus = "PENDING_VERIFICATION" | "ACTIVE" | "SUSPENDED" | "DEACTIVATED";
 import {
   ConflictError,
   ForbiddenError,
