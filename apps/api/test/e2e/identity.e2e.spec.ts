@@ -203,6 +203,101 @@ describe("login & anti-enumeration", () => {
   });
 });
 
+describe("email-based two-factor authentication", () => {
+  it("enables email MFA, sends a short-lived code at login, and consumes the challenge once", async () => {
+    mail.clear();
+    const ctx = await authenticatedUser(app, mail);
+    const reauth = await app.inject({
+      method: "POST",
+      url: "/api/v1/security/reauth",
+      headers: ctx.authHeader,
+      payload: { password: ctx.password },
+    });
+    expect(reauth.statusCode).toBe(200);
+    const reauthToken = reauth.json().reauthToken as string;
+    expect(reauthToken).toBeTruthy();
+
+    const enabled = await app.inject({
+      method: "POST",
+      url: "/api/v1/security/2fa/email/enable",
+      headers: ctx.authHeader,
+      payload: { reauthToken },
+    });
+    expect(enabled.statusCode).toBe(200);
+    expect(enabled.json().state).toMatchObject({
+      enabled: true,
+      method: "EMAIL",
+      recoveryCodesRemaining: 10,
+    });
+    expect(enabled.json().recoveryCodes).toHaveLength(10);
+
+    mail.clear();
+    const login = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/login",
+      payload: { email: ctx.email, password: ctx.password, remember: false },
+    });
+    expect(login.statusCode).toBe(200);
+    const challenge = login.json();
+    expect(challenge).toMatchObject({ outcome: "MFA_REQUIRED", method: "EMAIL" });
+    expect(challenge.challengeToken).toBeTruthy();
+
+    const message = [...mail.messages].reverse().find((item) => item.kind === "MFA_EMAIL_CODE");
+    expect(message?.to).toBe(ctx.email);
+    expect(message?.code).toMatch(/^\\d{6}$/);
+
+    const completed = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/mfa/challenge",
+      payload: { challengeToken: challenge.challengeToken, code: message?.code },
+    });
+    expect(completed.statusCode).toBe(200);
+    expect(completed.json().outcome).toBe("AUTHENTICATED");
+
+    const replay = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/mfa/challenge",
+      payload: { challengeToken: challenge.challengeToken, code: message?.code },
+    });
+    expect(replay.statusCode).toBe(401);
+    expect(replay.json().code).toBe("INVALID_CHALLENGE");
+  });
+
+  it("does not complete email MFA with an incorrect code", async () => {
+    mail.clear();
+    const ctx = await authenticatedUser(app, mail);
+    const reauth = await app.inject({
+      method: "POST",
+      url: "/api/v1/security/reauth",
+      headers: ctx.authHeader,
+      payload: { password: ctx.password },
+    });
+    const enabled = await app.inject({
+      method: "POST",
+      url: "/api/v1/security/2fa/email/enable",
+      headers: ctx.authHeader,
+      payload: { reauthToken: reauth.json().reauthToken },
+    });
+    expect(enabled.statusCode).toBe(200);
+
+    mail.clear();
+    const login = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/login",
+      payload: { email: ctx.email, password: ctx.password, remember: false },
+    });
+    const challenge = login.json();
+    const invalid = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/mfa/challenge",
+      payload: { challengeToken: challenge.challengeToken, code: "000000",
+      },
+    });
+    expect(invalid.statusCode).toBe(401);
+    expect(invalid.json().code).toBe("INVALID_MFA_CODE");
+  });
+});
+
 describe("me / refresh rotation / reuse detection / logout", () => {
   it("/auth/me requires a bearer token and returns user+session", async () => {
     const ctx = await authenticatedUser(app, mail);
