@@ -54,7 +54,7 @@ The API listens on **http://localhost:4000**:
 | `GET /health/live` | Liveness probe |
 | `GET /health/ready` | Readiness probe (pings the database) |
 | `POST /api/v1/auth/*` | register · login · refresh · logout · me · email verify/resend · password forgot/reset · MFA challenge/recover |
-| `GET·POST /api/v1/security/*` | overview · reauth · password change · 2FA enable/confirm/disable · recovery codes · sessions revoke · API keys |
+| `GET·POST /api/v1/security/*` | overview · reauth · password change · 2FA enable/confirm/disable · email-code MFA enable · recovery codes · sessions revoke · API keys |
 | `GET·PATCH /api/v1/me` | profile + preferences doc (9 domains) · deactivate · delete |
 | `POST /api/v1/calculators/lot-size` | authoritative position sizing — exact-decimal, broker-aware specs per request; informational only, never an order instruction |
 | `POST /api/v1/calculators/compounding` | period-by-period growth projection (full precision, ≤ 1 000 periods); informational only |
@@ -241,8 +241,24 @@ Key mechanics (all negative-tested):
   user), `@Public()` opt-out, `@CurrentUser` principal; ownership checks
   demonstrated on sessions/keys (foreign ids → 404, never leaky).
 
-Transactional email uses a log-rendering dev transport (see `mailer.service.ts`);
-a real provider plugs into `MailTransport` (Phase 0 open question #1).
+Transactional email uses Nodemailer over SMTP when `SMTP_USER` and
+`SMTP_APP_PASSWORD` are configured; development falls back to a console transport
+when credentials are absent. For Gmail, enable Google 2-Step Verification, create
+an App Password, and set the following in `apps/api/.env`:
+
+```dotenv
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=your-account@gmail.com
+SMTP_APP_PASSWORD=your-16-character-app-password
+EMAIL_FROM=Euforia <your-account@gmail.com>
+```
+
+Use the same address in `SMTP_USER` and `EMAIL_FROM`, or a Gmail-approved
+send-as alias. Never commit real credentials. Production startup fails if SMTP
+credentials are missing. Email-based MFA sends a six-digit code with the same
+short expiry as the login challenge; TOTP remains available as the alternative.
 
 ## Accounts / Trading Connectivity (Phase 3)
 
