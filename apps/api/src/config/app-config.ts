@@ -102,6 +102,11 @@ export interface AppConfig {
     reauthMinutes: number;
     webAppUrl: string;
     emailFrom: string;
+    smtpHost: string;
+    smtpPort: number;
+    smtpSecure: boolean;
+    smtpUser?: string;
+    smtpAppPassword?: string;
     requireEmailVerification: boolean;
   };
 }
@@ -186,6 +191,11 @@ function build(env: Env): AppConfig {
       reauthMinutes: env.AUTH_REAUTH_MINUTES,
       webAppUrl: env.WEB_APP_URL,
       emailFrom: env.EMAIL_FROM,
+      smtpHost: env.SMTP_HOST,
+      smtpPort: env.SMTP_PORT,
+      smtpSecure: env.SMTP_SECURE,
+      smtpUser: env.SMTP_USER,
+      smtpAppPassword: env.SMTP_APP_PASSWORD,
       requireEmailVerification: env.AUTH_REQUIRE_EMAIL_VERIFICATION,
     },
   };
