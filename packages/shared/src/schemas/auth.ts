@@ -145,7 +145,7 @@ export const mfaRequiredSchema = z.object({
   mfaRequired: z.literal(true),
   challengeToken: z.string().min(10),
   challengeExpiresAt: isoDateTimeSchema,
-  method: z.literal("AUTHENTICATOR_APP"),
+  method: z.enum(["AUTHENTICATOR_APP", "EMAIL"]),
   demoCode: z.string().regex(/^\d{6}$/).optional(),
 });
 export type MfaRequired = z.infer<typeof mfaRequiredSchema>;
@@ -162,7 +162,7 @@ export const mfaChallengeInputSchema = z.object({
   challengeToken: z.string().min(10),
   code: z
     .string()
-    .regex(/^\d{6}$/, "Enter the 6-digit code from your authenticator"),
+    .regex(/^\d{6}$/, "Enter the 6-digit code from your chosen method"),
 });
 export type MfaChallengeInput = z.infer<typeof mfaChallengeInputSchema>;
 
