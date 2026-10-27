@@ -15,7 +15,7 @@ import { APP_CONFIG } from "../../config/app-config";
 import type { AppConfig } from "../../config/app-config";
 import { ROOT_LOGGER, type RootLogger } from "../../infrastructure/logging/logger.factory";
 
-export type MailKind = "EMAIL_VERIFICATION" | "PASSWORD_RESET" | "EMAIL_CHANGE";
+export type MailKind = "EMAIL_VERIFICATION" | "PASSWORD_RESET" | "EMAIL_CHANGE" | "MFA_EMAIL_CODE";
 
 export interface MailMessage {
   kind: MailKind;
@@ -24,6 +24,8 @@ export interface MailMessage {
   actionLabel: string;
   actionUrl: string;
   expiresIn: string;
+  /** Present only for email-based sign-in MFA; never persisted or logged in production. */
+  code?: string;
 }
 
 export interface MailTransport {
@@ -54,16 +56,12 @@ export class NodemailerMailTransport implements MailTransport {
     const safeLabel = escapeHtml(message.actionLabel);
     const safeUrl = escapeHtml(message.actionUrl);
     const safeExpiry = escapeHtml(message.expiresIn);
-    const text = [
-      message.subject,
-      "",
-      message.actionLabel,
-      message.actionUrl,
-      "",
-      `This link expires in ${message.expiresIn}.`,
-      "If you did not request this message, you can safely ignore it.",
-    ].join("\n");
-    const html = `<!doctype html><html lang="en"><body style="font-family:Arial,sans-serif;line-height:1.5;color:#172033"><h1 style="font-size:20px">${safeLabel}</h1><p>Use the secure link below to continue.</p><p><a href="${safeUrl}" style="display:inline-block;padding:12px 18px;border-radius:8px;background:#273a70;color:#fff;text-decoration:none">${safeLabel}</a></p><p>This link expires in ${safeExpiry}.</p><p>If you did not request this message, you can safely ignore it.</p></body></html>`;
+    const text = message.code
+      ? [message.subject, "", `Your sign-in code is: ${message.code}`, "", `This code expires in ${message.expiresIn}.`, "If you did not request this sign-in, secure your account."].join("\n")
+      : [message.subject, "", message.actionLabel, message.actionUrl, "", `This link expires in ${message.expiresIn}.`, "If you did not request this message, you can safely ignore it."].join("\n");
+    const html = message.code
+      ? `<!doctype html><html lang="en"><body style="font-family:Arial,sans-serif;line-height:1.5;color:#172033"><h1 style="font-size:20px">Your Euforia sign-in code</h1><p style="font-size:30px;font-weight:700;letter-spacing:6px">${escapeHtml(message.code)}</p><p>This code expires in ${safeExpiry}.</p><p>If you did not request this sign-in, secure your account.</p></body></html>`
+      : `<!doctype html><html lang="en"><body style="font-family:Arial,sans-serif;line-height:1.5;color:#172033"><h1 style="font-size:20px">${safeLabel}</h1><p>Use the secure link below to continue.</p><p><a href="${safeUrl}" style="display:inline-block;padding:12px 18px;border-radius:8px;background:#273a70;color:#fff;text-decoration:none">${safeLabel}</a></p><p>This link expires in ${safeExpiry}.</p><p>If you did not request this message, you can safely ignore it.</p></body></html>`;
     await this.transporter.sendMail({ from: this.from, to: message.to, subject: message.subject, text, html });
   }
 }
@@ -118,6 +116,7 @@ export class ConsoleMailTransport implements MailTransport {
           subject: message.subject,
           actionUrl: this.redactActionUrl ? "[REDACTED - configure a real mail transport for production]" : message.actionUrl,
           expiresIn: message.expiresIn,
+          code: message.code ? (this.redactActionUrl ? "[REDACTED]" : message.code) : undefined,
         },
       },
       `[mailer] ${message.subject} → ${message.to}`,
@@ -201,6 +200,18 @@ export class MailerService {
       subject: "Reset your Euforia password",
       actionLabel: "Choose a new password",
       actionUrl: `${this.config.auth.webAppUrl}/reset-password?token=${encodeURIComponent(token)}`,
+      expiresIn,
+    });
+  }
+
+  async sendEmailMfaCode(to: string, code: string, expiresIn: string): Promise<void> {
+    await this.deliver({
+      kind: "MFA_EMAIL_CODE",
+      to,
+      subject: "Your Euforia sign-in code",
+      actionLabel: "Your sign-in code",
+      actionUrl: "",
+      code,
       expiresIn,
     });
   }
