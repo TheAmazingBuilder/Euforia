@@ -65,7 +65,7 @@ export interface QualityScore {
  */
 export function computeQuality(input: QualityInput): QualityScore {
   const lead = input.trades[0];
-  const fields = lead?.fields ?? {};
+  const fields: RecognizedTrade["fields"] = lead?.fields ?? {};
 
   // ── textRecognition: mean confidence across detected fields ──────────────
   const confidences = Object.values(fields)
