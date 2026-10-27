@@ -131,6 +131,7 @@ export {
   useCreateApiKey,
   useDisableTwoFactor,
   useEnableTwoFactor,
+  useEnableEmailTwoFactor,
   useReauth,
   useRegenerateRecoveryCodes,
   useRevokeApiKey,
