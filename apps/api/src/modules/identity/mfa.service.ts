@@ -63,6 +63,41 @@ export class MfaService {
     return { secret, recoveryCodes: plainCodes };
   }
 
+  /** POST /security/2fa/email/enable - enable email OTP as the selected second factor. */
+  async enableEmail(user: UserRow, reauthToken: string | undefined): Promise<TwoFactorState> {
+    await this.reauth.consume(reauthToken, user.id);
+    if (!user.emailVerifiedAt) {
+      throw new BusinessRuleError("Verify your email address before enabling email authentication.", "EMAIL_NOT_VERIFIED");
+    }
+    if (user.mfaEnabledAt) {
+      throw new ConflictError("Disable the current two-factor method before switching methods.", "TFA_ALREADY_ON");
+    }
+
+    const plainCodes = this.totp.generateRecoveryCodes(10);
+    await this.repository.replaceRecoveryCodes(
+      user.id,
+      plainCodes.map((code) => this.totp.hashRecoveryCode(code)),
+    );
+    const now = new Date();
+    const updated = await this.repository.updateUser(user.id, {
+      mfaSecretEnc: null,
+      mfaPendingSecretEnc: null,
+      mfaMethod: "EMAIL",
+      mfaEnabledAt: now,
+      mfaDisabledAt: null,
+      mfaLastVerifiedAt: null,
+      mfaMethod: null,
+    });
+    await this.repository.activateRecoveryCodes(user.id);
+    await this.events.record({
+      userId: user.id,
+      type: "TFA_ENABLED",
+      actor: user.email,
+      context: "Two-factor authentication enabled (email code).",
+    });
+    return this.state(updated);
+  }
+
   /** POST /security/2fa/confirm - activates the pending enrollment (no reauth: the TOTP code IS the proof). */
   async confirm(user: UserRow, code: string): Promise<TwoFactorState> {
     if (user.mfaEnabledAt) {
@@ -83,6 +118,7 @@ export class MfaService {
       mfaPendingSecretEnc: null,
       mfaEnabledAt: now,
       mfaLastVerifiedAt: now,
+      mfaMethod: "AUTHENTICATOR_APP",
     });
     await this.repository.activateRecoveryCodes(user.id);
     await this.events.record({
@@ -147,7 +183,7 @@ export class MfaService {
     return {
       enabled: Boolean(user.mfaEnabledAt),
       pending: !user.mfaEnabledAt && Boolean(user.mfaPendingSecretEnc),
-      method: user.mfaEnabledAt ? "AUTHENTICATOR_APP" : null,
+      method: user.mfaEnabledAt ? (user.mfaMethod === "EMAIL" ? "EMAIL" : "AUTHENTICATOR_APP") : null,
       enabledAt: user.mfaEnabledAt ? mfaIso(user.mfaEnabledAt) : null,
       disabledAt: user.mfaDisabledAt ? mfaIso(user.mfaDisabledAt) : null,
       lastVerifiedAt: user.mfaLastVerifiedAt ? mfaIso(user.mfaLastVerifiedAt) : null,
