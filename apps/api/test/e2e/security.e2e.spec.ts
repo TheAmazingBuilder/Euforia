@@ -477,7 +477,7 @@ describe("MFA / email-code lifecycle", () => {
     const message = [...mail.messages].reverse().find((item) => item.kind === "MFA_EMAIL_CODE");
     expect(message?.code).toMatch(/^\d{6}$/);
 
-    if (!message?.code || !new RegExp("^" + "\" + "d{6}$").test(message.code)) {
+    if (!message?.code) {
       throw new Error("email MFA code was not captured");
     }
     const emailCode = message.code;
