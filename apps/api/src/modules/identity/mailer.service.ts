@@ -46,6 +46,7 @@ export class NodemailerMailTransport implements MailTransport {
       connectionTimeout: 10_000,
       greetingTimeout: 10_000,
       socketTimeout: 20_000,
+      requireTLS: !options.secure,
       tls: { minVersion: "TLSv1.2" },
     });
   }
@@ -151,7 +152,7 @@ export class MailerService {
         });
   }
 
-  /** Swap the transport (production adapter plugs in here). */
+  /** Swap the transport for isolated tests or an alternative provider. */
   useTransport(transport: MailTransport): void {
     this.transport = transport;
   }
