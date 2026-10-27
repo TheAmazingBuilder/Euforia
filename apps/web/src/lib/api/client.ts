@@ -111,6 +111,10 @@ async function execute<TResponse>(
     response = await fetch(buildApiUrl(path, query), {
       method,
       headers,
+      // Auth refresh uses an HttpOnly cookie. Include it for same-origin proxy
+      // requests and for an explicitly configured cross-origin API (which must
+      // separately allow credentials via CORS).
+      credentials: "include",
       body: body === undefined ? undefined : JSON.stringify(body),
       signal,
     });
