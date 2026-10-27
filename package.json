@@ -8,7 +8,8 @@
     "lint": "turbo lint",
     "typecheck": "turbo run typecheck",
     "test": "turbo test",
-    "api:dev": "pnpm --filter @cosmoz/api dev"
+    "api:dev": "pnpm --filter @cosmoz/api dev",
+    "web:dev": "pnpm --filter web dev"
   },
   "devDependencies": {
     "turbo": "^2"
