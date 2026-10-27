@@ -198,6 +198,61 @@ describe("password change (§23)", () => {
   });
 });
 
+describe("MFA / email OTP lifecycle", () => {
+  it("enables email MFA, sends a one-time code at login, and consumes the challenge", async () => {
+    const email = uniqueEmail("mfa-email");
+    const ctx = await authenticatedUser(app, mail, { email });
+    const reauth = await app.inject({
+      method: "POST",
+      url: "/api/v1/security/reauth",
+      headers: ctx.authHeader,
+      payload: { password: ctx.password },
+    });
+    expect(reauth.statusCode).toBe(200);
+
+    const enabled = await app.inject({
+      method: "POST",
+      url: "/api/v1/security/2fa/email/enable",
+      headers: ctx.authHeader,
+      payload: { reauthToken: reauth.json().token },
+    });
+    expect(enabled.statusCode).toBe(200);
+    expect(enabled.json().state.enabled).toBe(true);
+    expect(enabled.json().state.method).toBe("EMAIL");
+    expect(enabled.json().recoveryCodes).toHaveLength(10);
+
+    mail.clear();
+    const login = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/login",
+      payload: { email, password: ctx.password, remember: false },
+    });
+    expect(login.statusCode).toBe(200);
+    const pending = login.json();
+    expect(pending.outcome).toBe("MFA_REQUIRED");
+    expect(pending.method).toBe("EMAIL");
+    const codeMessage = mail.messages.find((message) => message.kind === "MFA_EMAIL_CODE");
+    expect(codeMessage?.code).toMatch(/^\\d{6}$/);
+
+    const challenge = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/mfa/challenge",
+      payload: { challengeToken: pending.challengeToken, code: codeMessage?.code },
+    });
+    expect(challenge.statusCode).toBe(200);
+    expect(challenge.json().outcome).toBe("AUTHENTICATED");
+    expect(challenge.json().session.current).toBe(true);
+
+    const replay = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/mfa/challenge",
+      payload: { challengeToken: pending.challengeToken, code: codeMessage?.code },
+    });
+    expect(replay.statusCode).toBe(401);
+    expect(replay.json().code).toBe("INVALID_CHALLENGE");
+  });
+});
+
 describe("MFA / TOTP lifecycle (§18–§21)", () => {
   let email = "";
   const password = PASSWORD;
