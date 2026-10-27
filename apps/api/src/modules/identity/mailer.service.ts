@@ -10,6 +10,7 @@
  */
 import { Inject, Injectable, Optional } from "@nestjs/common";
 import { randomUUID } from "node:crypto";
+import nodemailer from "nodemailer";
 import { APP_CONFIG } from "../../config/app-config";
 import type { AppConfig } from "../../config/app-config";
 import { ROOT_LOGGER, type RootLogger } from "../../infrastructure/logging/logger.factory";
@@ -27,6 +28,54 @@ export interface MailMessage {
 
 export interface MailTransport {
   send(message: MailMessage): Promise<void>;
+}
+
+/** Real SMTP adapter. The adapter never logs message bodies or action links. */
+export class NodemailerMailTransport implements MailTransport {
+  private readonly transporter: ReturnType<typeof nodemailer.createTransport>;
+
+  constructor(
+    private readonly from: string,
+    options: { host: string; port: number; secure: boolean; user: string; appPassword: string },
+  ) {
+    this.transporter = nodemailer.createTransport({
+      host: options.host,
+      port: options.port,
+      secure: options.secure,
+      auth: { user: options.user, pass: options.appPassword },
+      connectionTimeout: 10_000,
+      greetingTimeout: 10_000,
+      socketTimeout: 20_000,
+      tls: { minVersion: "TLSv1.2" },
+    });
+  }
+
+  async send(message: MailMessage): Promise<void> {
+    const safeLabel = escapeHtml(message.actionLabel);
+    const safeUrl = escapeHtml(message.actionUrl);
+    const safeExpiry = escapeHtml(message.expiresIn);
+    const text = [
+      message.subject,
+      "",
+      message.actionLabel,
+      message.actionUrl,
+      "",
+      `This link expires in ${message.expiresIn}.`,
+      "If you did not request this message, you can safely ignore it.",
+    ].join("\\n");
+    const html = `<!doctype html><html lang="en"><body style="font-family:Arial,sans-serif;line-height:1.5;color:#172033"><h1 style="font-size:20px">${safeLabel}</h1><p>Use the secure link below to continue.</p><p><a href="${safeUrl}" style="display:inline-block;padding:12px 18px;border-radius:8px;background:#273a70;color:#fff;text-decoration:none">${safeLabel}</a></p><p>This link expires in ${safeExpiry}.</p><p>If you did not request this message, you can safely ignore it.</p></body></html>`;
+    await this.transporter.sendMail({ from: this.from, to: message.to, subject: message.subject, text, html });
+  }
+}
+
+function escapeHtml(value: string): string {
+  return value.replace(/[&<>"']/g, (character) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    `"`: "&quot;",
+    "'": "&#39;",
+  })[character] ?? character);
 }
 
 /** Operational delivery record (Phase 17 telemetry) - NO recipient, NO URL:
@@ -90,9 +139,18 @@ export class MailerService {
   ) {
     // Never log one-time email tokens in production (§46 - tokens are
     // redacted); the dev transport keeps the link for local testability.
-    this.transport = new ConsoleMailTransport(this.logger ?? this.fallbackLogger(), {
-      redactActionUrl: this.config.isProduction,
-    });
+    const smtp = this.config.auth;
+    this.transport = smtp.smtpUser && smtp.smtpAppPassword
+      ? new NodemailerMailTransport(smtp.emailFrom, {
+          host: smtp.smtpHost,
+          port: smtp.smtpPort,
+          secure: smtp.smtpSecure,
+          user: smtp.smtpUser,
+          appPassword: smtp.smtpAppPassword,
+        })
+      : new ConsoleMailTransport(this.logger ?? this.fallbackLogger(), {
+          redactActionUrl: this.config.isProduction,
+        });
   }
 
   /** Swap the transport (production adapter plugs in here). */
