@@ -1,12 +1,10 @@
 /**
  * Transactional email infrastructure (Phase 2 mandate §46).
  *
- * A MINIMAL port: exactly three message kinds (verification, password reset,
- * email change). The transport is infrastructure behind this service -
- * the sandbox/dev transport renders the email to the structured log
- * (including the action link) so flows are testable end-to-end without a
- * provider; a provider adapter (SMTP/Resend/SES - Phase 0 open question #1)
- * plugs in by implementing MailTransport. No marketing email system.
+ * The mail port supports verification, password reset, email change, and
+ * email-based sign-in MFA. Nodemailer delivers through configured SMTP;
+ * local development keeps a console transport when credentials are absent.
+ * This service handles transactional messages only - no marketing email.
  */
 import { Inject, Injectable, Optional } from "@nestjs/common";
 import { randomUUID } from "node:crypto";
