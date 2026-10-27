@@ -31,7 +31,7 @@
  *   Shared infrastructure: JwtAuthGuard, ThrottlerGuard, ZodValidationPipe,
  *   shared contracts barrel. The engine is resolved by factory:
  *     FastAPI sidecar (when OCR_SERVICE_URL + token are configured)
- *     else deterministic mock (when allowed - §57: never in production)
+ *     else deterministic mock (test by default; explicit opt-in elsewhere)
  *     else an explicit unavailable adapter → OCR_UNAVAILABLE (honest
  *     degradation, never a fake result).
  */
