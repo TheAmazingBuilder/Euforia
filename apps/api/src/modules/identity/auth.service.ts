@@ -8,7 +8,7 @@
  */
 import { Inject, Injectable, Optional } from "@nestjs/common";
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { randomInt } from "node:crypto";
+import { randomInt, timingSafeEqual } from "node:crypto";
 import { REFRESH_COOKIE_NAME, TokenService } from "./token.service";
 import { IdentityRepository, type UserRow } from "./identity.repository";
 import { PasswordHasherService } from "./password-hasher.service";
@@ -283,7 +283,7 @@ export class AuthService {
     request: RequestLike,
     reply: FastifyReply,
   ): Promise<
-    | { outcome: "MFA_REQUIRED"; mfaRequired: true; challengeToken: string; challengeExpiresAt: string; method: "AUTHENTICATOR_APP" }
+    | { outcome: "MFA_REQUIRED"; mfaRequired: true; challengeToken: string; challengeExpiresAt: string; method: "AUTHENTICATOR_APP" | "EMAIL" }
     | { outcome: "AUTHENTICATED"; user: ReturnType<typeof toAuthUser>; accessToken: string; accessTokenExpiresAt: string; session: ReturnType<typeof toAuthSession> }
   > {
     const fingerprint = fingerprintOf(request);
@@ -354,8 +354,12 @@ export class AuthService {
       throw new RateLimitError("Too many attempts. Please wait before trying again.", "RATE_LIMITED", mfaCheck.retryAfterSeconds);
     }
 
+    const submittedCodeHash = IdentityRepository.hashToken(input.code);
     const valid = challenge.method === "EMAIL"
-      ? challenge.codeHash === IdentityRepository.hashToken(input.code)
+      ? Boolean(
+          challenge.codeHash &&
+          timingSafeEqual(Buffer.from(challenge.codeHash, "hex"), Buffer.from(submittedCodeHash, "hex")),
+        )
       : (() => {
           const secret = this.totp.decryptSecret(user.mfaSecretEnc ?? "");
           return Boolean(secret && this.totp.verify(secret, user.email, input.code));
