@@ -444,6 +444,68 @@ describe("MFA / TOTP lifecycle (§18–§21)", () => {
   });
 });
 
+describe("MFA / email-code lifecycle", () => {
+  it("enables email MFA, verifies a delivered code, and rejects challenge replay", async () => {
+    const email = uniqueEmail("mfa-email");
+    const ctx = await authenticatedUser(app, mail, { email });
+    const reauth = await app.inject({
+      method: "POST",
+      url: "/api/v1/security/reauth",
+      headers: ctx.authHeader,
+      payload: { password: ctx.password },
+    });
+    const enabled = await app.inject({
+      method: "POST",
+      url: "/api/v1/security/2fa/email/enable",
+      headers: ctx.authHeader,
+      payload: { reauthToken: reauth.json().token },
+    });
+    expect(enabled.statusCode).toBe(200);
+    expect(enabled.json().state).toMatchObject({ enabled: true, method: "EMAIL", recoveryCodesRemaining: 10 });
+    const recoveryCodes = enabled.json().recoveryCodes as string[];
+    expect(recoveryCodes).toHaveLength(10);
+    expect(recoveryCodes.every((code) => /^[\\dA-F]{4}-[\\dA-F]{4}$/.test(code))).toBe(true);
+
+    mail.clear();
+    const login = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/login",
+      payload: { email, password: ctx.password, remember: true },
+    });
+    expect(login.statusCode).toBe(200);
+    expect(login.json()).toMatchObject({ outcome: "MFA_REQUIRED", method: "EMAIL" });
+    const message = [...mail.messages].reverse().find((item) => item.kind === "MFA_EMAIL_CODE");
+    expect(message?.code).toMatch(/^\\d{6}$/);
+
+    const challengeToken = login.json().challengeToken as string;
+    const wrong = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/mfa/challenge",
+      payload: { challengeToken, code: "999999" },
+    });
+    if (message?.code !== "999999") {
+      expect(wrong.statusCode).toBe(401);
+      expect(wrong.json().code).toBe("INVALID_MFA_CODE");
+    }
+
+    const verified = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/mfa/challenge",
+      payload: { challengeToken, code: message?.code },
+    });
+    expect(verified.statusCode).toBe(200);
+    expect(verified.json().outcome).toBe("AUTHENTICATED");
+
+    const replay = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/mfa/challenge",
+      payload: { challengeToken, code: message?.code },
+    });
+    expect(replay.statusCode).toBe(401);
+    expect(replay.json().code).toBe("INVALID_CHALLENGE");
+  });
+});
+
 describe("sessions & devices (§16–§17) + IDOR (§43)", () => {
   it("lists sessions; revokes one; a foreign session id is 404 not leaky", async () => {
     const ctxA = await authenticatedUser(app, mail, { email: uniqueEmail("sess") });
