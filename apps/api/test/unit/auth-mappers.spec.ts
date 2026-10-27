@@ -30,6 +30,7 @@ const BASE_ROW: UserRow = {
   mfaEnabledAt: null,
   mfaDisabledAt: null,
   mfaLastVerifiedAt: null,
+  mfaMethod: null,
   timezone: "UTC",
   baseCurrency: "USD",
   username: null,
