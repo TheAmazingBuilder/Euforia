@@ -72,8 +72,10 @@ export class SecurityCenterService {
         id: "two-factor",
         label: "Two-factor authentication",
         detail: twoFactor.enabled
-          ? "Authenticator app is protecting sign-ins."
-          : "Add an authenticator app to protect your sign-ins.",
+          ? twoFactor.method === "EMAIL"
+            ? "Email one-time codes are protecting sign-ins."
+            : "Authenticator app is protecting sign-ins."
+          : "Add an authenticator app or enable email codes to protect your sign-ins.",
         pass: twoFactor.enabled,
         methodology: "TFA state is enabled (server-side mfaEnabledAt).",
       },
