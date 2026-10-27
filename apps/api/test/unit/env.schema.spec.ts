@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { EnvValidationError, validateEnv } from "../../src/config/env.schema";
+import { loadAppConfig, resetAppConfigCache } from "../../src/config/app-config";
 
 const BASE_ENV = {
   NODE_ENV: "test",
@@ -10,6 +11,29 @@ const BASE_ENV = {
   // Integration Hub (B14) - webhook-secret vault key (base64, 32 bytes).
   INTEGRATIONS_WEBHOOK_ENCRYPTION_KEY: "u4xveSMFK0EL4Wp6XsBmPWcimrrG7Tg9KxLFRnGzc1M=",
 } as const;
+
+describe("mock provider defaults", () => {
+  it("keeps synthetic account and OCR providers disabled in development by default", () => {
+    resetAppConfigCache();
+    const config = loadAppConfig({ ...BASE_ENV, NODE_ENV: "development" });
+    expect(config.accounts.mockProviderEnabled).toBe(false);
+    expect(config.ocr.mockEngineEnabled).toBe(false);
+    resetAppConfigCache();
+  });
+
+  it("allows explicit mock-provider opt-in for development tests", () => {
+    resetAppConfigCache();
+    const config = loadAppConfig({
+      ...BASE_ENV,
+      NODE_ENV: "development",
+      ACCOUNTS_MOCK_PROVIDER: "enabled",
+      OCR_MOCK_ENGINE: "enabled",
+    });
+    expect(config.accounts.mockProviderEnabled).toBe(true);
+    expect(config.ocr.mockEngineEnabled).toBe(true);
+    resetAppConfigCache();
+  });
+});
 
 describe("validateEnv", () => {
   it("applies safe development defaults", () => {
