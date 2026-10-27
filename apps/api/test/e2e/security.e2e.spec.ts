@@ -232,7 +232,7 @@ describe("MFA / email OTP lifecycle", () => {
     expect(pending.outcome).toBe("MFA_REQUIRED");
     expect(pending.method).toBe("EMAIL");
     const codeMessage = mail.messages.find((message) => message.kind === "MFA_EMAIL_CODE");
-    expect(codeMessage?.code).toMatch(/^\\d{6}$/);
+    expect(codeMessage?.code).toMatch(/^\d{6}$/);
 
     const challenge = await app.inject({
       method: "POST",
