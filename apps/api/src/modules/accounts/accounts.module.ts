@@ -17,7 +17,7 @@
  * health from HERE instead of duplicating synchronization state.
  *
  * Provider registration (§57): the mock adapter is only registered when
- * config.accounts.mockProviderEnabled (default: on outside production).
+ * config.accounts.mockProviderEnabled (default: test-only).
  * Registering a real adapter later = implement the interface + add it to the
  * factory below + register in the registry - nothing else changes (§60).
  */
