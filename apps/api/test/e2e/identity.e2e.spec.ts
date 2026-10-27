@@ -289,13 +289,23 @@ describe("email-based two-factor authentication", () => {
     const challenge = login.json();
     const issuedCode = [...mail.messages].reverse().find((item) => item.kind === "MFA_EMAIL_CODE")?.code;
     const wrongCode = issuedCode === "000000" ? "000001" : "000000";
-    const invalid = await app.inject({
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      const invalid = await app.inject({
+        method: "POST",
+        url: "/api/v1/auth/mfa/challenge",
+        payload: { challengeToken: challenge.challengeToken, code: wrongCode },
+      });
+      expect(invalid.statusCode).toBe(401);
+      expect(invalid.json().code).toBe("INVALID_MFA_CODE");
+    }
+
+    const lockedChallenge = await app.inject({
       method: "POST",
       url: "/api/v1/auth/mfa/challenge",
-      payload: { challengeToken: challenge.challengeToken, code: wrongCode },
+      payload: { challengeToken: challenge.challengeToken, code: issuedCode },
     });
-    expect(invalid.statusCode).toBe(401);
-    expect(invalid.json().code).toBe("INVALID_MFA_CODE");
+    expect(lockedChallenge.statusCode).toBe(401);
+    expect(lockedChallenge.json().code).toBe("INVALID_CHALLENGE");
   });
 });
 
