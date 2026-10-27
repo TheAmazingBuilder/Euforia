@@ -190,7 +190,7 @@ function build(env: Env): AppConfig {
       mfaChallengeMinutes: env.AUTH_MFA_CHALLENGE_MINUTES,
       reauthMinutes: env.AUTH_REAUTH_MINUTES,
       webAppUrl: env.WEB_APP_URL,
-      emailFrom: env.EMAIL_FROM,
+      emailFrom: env.EMAIL_FROM ?? (env.SMTP_USER ? `Euforia <${env.SMTP_USER}>` : "Euforia <no-reply@euforia.app>"),
       smtpHost: env.SMTP_HOST,
       smtpPort: env.SMTP_PORT,
       smtpSecure: env.SMTP_SECURE,
