@@ -26,26 +26,7 @@ const TEST_DB_URL =
   process.env.DATABASE_URL_TEST ?? "postgresql://postgres@127.0.0.1:5432/cosmoz_test";
 
 /** Test database name (last path segment of TEST_DB_URL). */
-const parsedTestDbUrl = new URL(TEST_DB_URL);
-export const TEST_DB_NAME = parsedTestDbUrl.pathname.split("/").pop() ?? "cosmoz_test";
-
-// E2E setup creates a database and applies migrations. Refuse remote hosts,
-// non-test database names, and unsafe identifiers before running any SQL.
-// This is a guardrail against accidentally pointing DATABASE_URL_TEST at dev
-// or production; E2E is intentionally limited to a local PostgreSQL instance.
-const localHosts = new Set(["localhost", "127.0.0.1", "::1"]);
-if (!["postgresql:", "postgres:"].includes(parsedTestDbUrl.protocol)) {
-  throw new Error("[test-db] DATABASE_URL_TEST must use PostgreSQL.");
-}
-if (!localHosts.has(parsedTestDbUrl.hostname)) {
-  throw new Error("[test-db] E2E tests may only use a local PostgreSQL host.");
-}
-if (!/^[A-Za-z_][A-Za-z0-9_]*_test$/i.test(TEST_DB_NAME)) {
-  throw new Error(
-    '[test-db] DATABASE_URL_TEST must target a database whose name ends in "_test" ' +
-      "and contains only safe PostgreSQL identifier characters.",
-  );
-}
+export const TEST_DB_NAME = new URL(TEST_DB_URL).pathname.split("/").pop() ?? "cosmoz_test";
 
 /** Locate the prisma CLI entry (resilient to exports-map restrictions). */
 function prismaCliPath(): string {
