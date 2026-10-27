@@ -62,7 +62,7 @@ export class NodemailerMailTransport implements MailTransport {
       "",
       `This link expires in ${message.expiresIn}.`,
       "If you did not request this message, you can safely ignore it.",
-    ].join("\\n");
+    ].join("\n");
     const html = `<!doctype html><html lang="en"><body style="font-family:Arial,sans-serif;line-height:1.5;color:#172033"><h1 style="font-size:20px">${safeLabel}</h1><p>Use the secure link below to continue.</p><p><a href="${safeUrl}" style="display:inline-block;padding:12px 18px;border-radius:8px;background:#273a70;color:#fff;text-decoration:none">${safeLabel}</a></p><p>This link expires in ${safeExpiry}.</p><p>If you did not request this message, you can safely ignore it.</p></body></html>`;
     await this.transporter.sendMail({ from: this.from, to: message.to, subject: message.subject, text, html });
   }
