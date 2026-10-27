@@ -130,7 +130,7 @@ function build(env: Env): AppConfig {
       mockEngineEnabled:
         env.OCR_MOCK_ENGINE !== undefined
           ? env.OCR_MOCK_ENGINE === "enabled"
-          : env.NODE_ENV !== "production",
+          : env.NODE_ENV === "test",
       uploadMaxBytes: env.OCR_UPLOAD_MAX_BYTES,
       imageMaxPixels: env.OCR_IMAGE_MAX_PIXELS,
       engineTimeoutMs: env.OCR_ENGINE_TIMEOUT_MS,
@@ -146,7 +146,7 @@ function build(env: Env): AppConfig {
       mockProviderEnabled:
         env.ACCOUNTS_MOCK_PROVIDER !== undefined
           ? env.ACCOUNTS_MOCK_PROVIDER === "enabled"
-          : env.NODE_ENV !== "production",
+          : env.NODE_ENV === "test",
       oandaEnabled: env.ACCOUNTS_OANDA_PROVIDER === "enabled",
       oandaRestUrlOverride: env.ACCOUNTS_OANDA_REST_URL ?? null,
       derivEnabled: env.ACCOUNTS_DERIV_PROVIDER === "enabled",
