@@ -98,11 +98,11 @@ export const jsonValueSchema: z.ZodType<JsonValue> = z.lazy(() =>
     z.boolean(),
     z.null(),
     z.array(jsonValueSchema),
-    z.record(jsonValueSchema),
+    z.record(z.string(), jsonValueSchema),
   ]),
 );
 
 /** Object-shaped JSON column (keys are strings). */
-export const jsonObjectSchema = z.record(jsonValueSchema);
+export const jsonObjectSchema = z.record(z.string(), jsonValueSchema);
 
 export type JsonObject = { [key: string]: JsonValue };
