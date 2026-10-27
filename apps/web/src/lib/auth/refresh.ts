@@ -49,6 +49,9 @@ async function doRefresh(): Promise<boolean> {
     // (Fastify JSON parser) even though the MSW mock tolerated it.
     const response = await fetch(buildApiUrl(apiPaths.authRefresh), {
       method: "POST",
+      // Required when NEXT_PUBLIC_API_URL points directly to localhost:4000:
+      // the browser must send the HttpOnly refresh cookie across ports.
+      credentials: "include",
     });
     if (!response.ok) {
       clearAccessToken();
