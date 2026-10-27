@@ -358,6 +358,22 @@ const refinedEnvSchema = envSchema.superRefine((env, ctx) => {
       message: "OCR_SERVICE_TOKEN is required when OCR_SERVICE_URL is set",
     });
   }
+  const hasSmtpUser = Boolean(env.SMTP_USER);
+  const hasSmtpPassword = Boolean(env.SMTP_APP_PASSWORD);
+  if (hasSmtpUser !== hasSmtpPassword) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: [hasSmtpUser ? "SMTP_APP_PASSWORD" : "SMTP_USER"],
+      message: "SMTP_USER and SMTP_APP_PASSWORD must be configured together",
+    });
+  }
+  if (env.NODE_ENV === "production" && (!hasSmtpUser || !hasSmtpPassword)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["SMTP_USER"],
+      message: "SMTP_USER and SMTP_APP_PASSWORD are required in production so authentication emails are delivered",
+    });
+  }
   // The body limit must clear every domain image cap (§85 coherence): the
   // wire carries base64 data URLs (≈ 4/3 of the decoded bytes) inside JSON.
   const largestUploadCap = Math.max(
