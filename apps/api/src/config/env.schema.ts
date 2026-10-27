@@ -328,6 +328,15 @@ export const envSchema = z.object({
     .default("http://localhost:3000"),
   /** From-header for transactional emails. */
   EMAIL_FROM: z.string().trim().min(3).default("Euforia <no-reply@cosmoz.app>"),
+  /** SMTP server; defaults to Google Gmail SMTP. */
+  SMTP_HOST: z.string().trim().min(1).default("smtp.gmail.com"),
+  SMTP_PORT: z.coerce.number().int().min(1).max(65_535).default(587),
+  /** true for implicit TLS (normally port 465); false uses STARTTLS (normally 587). */
+  SMTP_SECURE: z.enum(["true", "false"]).default("false").transform((value) => value === "true"),
+  /** SMTP login; leave both credentials empty to use the development console transport. */
+  SMTP_USER: z.string().trim().email().optional().or(z.literal("").transform(() => undefined)),
+  /** Google App Password (spaces are removed); never use the Google account password. */
+  SMTP_APP_PASSWORD: z.string().trim().min(1).optional().or(z.literal("").transform(() => undefined)),
   /** Whether email verification is required before signing in (can be paused/disabled in dev). */
   AUTH_REQUIRE_EMAIL_VERIFICATION: z
     .enum(["true", "false"])
