@@ -64,7 +64,7 @@ export class MfaService {
   }
 
   /** POST /security/2fa/email/enable - enable email OTP as the selected second factor. */
-  async enableEmail(user: UserRow, reauthToken: string | undefined): Promise<TwoFactorState> {
+  async enableEmail(user: UserRow, reauthToken: string | undefined): Promise<{ state: TwoFactorState; recoveryCodes: string[] }> {
     await this.reauth.consume(reauthToken, user.id);
     if (!user.emailVerifiedAt) {
       throw new BusinessRuleError("Verify your email address before enabling email authentication.", "EMAIL_NOT_VERIFIED");
@@ -95,7 +95,7 @@ export class MfaService {
       actor: user.email,
       context: "Two-factor authentication enabled (email code).",
     });
-    return this.state(updated);
+    return { state: await this.state(updated), recoveryCodes: plainCodes };
   }
 
   /** POST /security/2fa/confirm - activates the pending enrollment (no reauth: the TOTP code IS the proof). */
