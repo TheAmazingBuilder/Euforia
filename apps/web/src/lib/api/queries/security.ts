@@ -75,7 +75,7 @@ export function useEnableEmailTwoFactor() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (reauthToken: string) =>
-      apiRequest<TwoFactorState>(apiPaths.securityTwoFactorEmailEnable, {
+      apiRequest<{ state: TwoFactorState; recoveryCodes: string[] }>(apiPaths.securityTwoFactorEmailEnable, {
         method: "POST",
         body: { reauthToken },
       }),
