@@ -8,6 +8,7 @@
  */
 import { Inject, Injectable, Optional } from "@nestjs/common";
 import type { FastifyReply, FastifyRequest } from "fastify";
+import { randomInt } from "node:crypto";
 import { REFRESH_COOKIE_NAME, TokenService } from "./token.service";
 import { IdentityRepository, type UserRow } from "./identity.repository";
 import { PasswordHasherService } from "./password-hasher.service";
@@ -41,6 +42,8 @@ import { ROOT_LOGGER, type RootLogger } from "../../infrastructure/logging/logge
 interface MfaChallenge {
   userId: string;
   expiresAt: number;
+  method: "AUTHENTICATOR_APP" | "EMAIL";
+  codeHash?: string;
 }
 
 /** Login-shaped credentials returned by register() on auto-login accounts. */
@@ -327,7 +330,7 @@ export class AuthService {
     }
 
     // MFA required → issue a single-use challenge (§19).
-    if (user.mfaSecretEnc && user.mfaEnabledAt) {
+    if (user.mfaEnabledAt) {
       const mfaCheck = this.limiter.check("mfa", user.email);
       if (!mfaCheck.allowed) {
         throw new RateLimitError("Too many attempts. Please wait before trying again.", "RATE_LIMITED", mfaCheck.retryAfterSeconds);
@@ -343,7 +346,7 @@ export class AuthService {
     request: RequestLike,
     reply: FastifyReply,
   ): Promise<{ outcome: "AUTHENTICATED"; user: ReturnType<typeof toAuthUser>; accessToken: string; accessTokenExpiresAt: string; session: ReturnType<typeof toAuthSession> }> {
-    const { user, consume } = await this.peekMfaChallenge(input.challengeToken);
+    const { user, challenge, consume } = await this.peekMfaChallenge(input.challengeToken);
     const fingerprint = fingerprintOf(request);
 
     const mfaCheck = this.limiter.check("mfa", user.email);
@@ -351,23 +354,25 @@ export class AuthService {
       throw new RateLimitError("Too many attempts. Please wait before trying again.", "RATE_LIMITED", mfaCheck.retryAfterSeconds);
     }
 
-    const secret = this.totp.decryptSecret(user.mfaSecretEnc ?? "");
-    if (!secret || !this.totp.verify(secret, user.email, input.code)) {
+    const valid = challenge.method === "EMAIL"
+      ? challenge.codeHash === IdentityRepository.hashToken(input.code)
+      : (() => {
+          const secret = this.totp.decryptSecret(user.mfaSecretEnc ?? "");
+          return Boolean(secret && this.totp.verify(secret, user.email, input.code));
+        })();
+    if (!valid) {
       this.limiter.hit("mfa", user.email);
-      // Phase 20 §39: the LoginRecord is Security-owned - the failure pair
-      // (security event + login history row) is recorded through the shared
-      // SecurityEventService port, never through raw identity Prisma access.
       await this.events.recordLogin(
         {
           userId: user.id,
           type: "TFA_CHALLENGE_FAILED",
-          context: "Invalid TOTP code during sign-in.",
+          context: challenge.method === "EMAIL" ? "Invalid email code during sign-in." : "Invalid TOTP code during sign-in.",
           outcome: "FAILURE",
           reason: "Invalid MFA code",
         },
         fingerprint,
       );
-      throw new UnauthorizedError("That code didn't match. Check your authenticator app.", "INVALID_MFA_CODE");
+      throw new UnauthorizedError("That code didn't match. Check your email or authenticator app.", "INVALID_MFA_CODE");
     }
 
     consume();
@@ -636,31 +641,40 @@ export class AuthService {
     return expiresAt.toISOString();
   }
 
-  private issueMfaChallenge(user: { id: string; email: string }): {
+  private async issueMfaChallenge(user: Pick<UserRow, "id" | "email" | "mfaMethod">): Promise<{
     outcome: "MFA_REQUIRED";
     mfaRequired: true;
     challengeToken: string;
     challengeExpiresAt: string;
-    method: "AUTHENTICATOR_APP";
-  } {
+    method: "AUTHENTICATOR_APP" | "EMAIL";
+  }> {
     this.sweepChallenges();
     const token = IdentityRepository.randomToken(24);
     const ttlMs = this.config.auth.mfaChallengeMinutes * 60 * 1000;
-    this.challenges.set(token, { userId: user.id, expiresAt: Date.now() + ttlMs });
+    const expiresAt = Date.now() + ttlMs;
+    const method = user.mfaMethod === "EMAIL" ? "EMAIL" : "AUTHENTICATOR_APP";
+    let codeHash: string | undefined;
+
+    if (method === "EMAIL") {
+      const code = randomInt(0, 1_000_000).toString().padStart(6, "0");
+      await this.mailer.sendEmailMfaCode(
+        user.email,
+        code,
+        `${this.config.auth.mfaChallengeMinutes} minutes`,
+      );
+      codeHash = IdentityRepository.hashToken(code);
+    }
+
+    this.challenges.set(token, { userId: user.id, expiresAt, method, codeHash });
     return {
       outcome: "MFA_REQUIRED",
       mfaRequired: true,
       challengeToken: token,
-      challengeExpiresAt: new Date(Date.now() + ttlMs).toISOString(),
-      method: "AUTHENTICATOR_APP",
+      challengeExpiresAt: new Date(expiresAt).toISOString(),
+      method,
     };
   }
 
-  /**
-   * Validate a challenge WITHOUT consuming it - a wrong TOTP/recovery code
-   * keeps the challenge alive (rate limiter bounds guessing); success or
-   * expiry consumes it. Mirrors the mock's semantics.
-   */
   private async peekMfaChallenge(challengeToken: string) {
     this.sweepChallenges();
     const challenge = this.challenges.get(challengeToken);
@@ -679,7 +693,7 @@ export class AuthService {
         "INVALID_CHALLENGE",
       );
     }
-    return { user, consume: () => this.challenges.delete(challengeToken) };
+    return { user, challenge, consume: () => this.challenges.delete(challengeToken) };
   }
 
   private sweepChallenges(): void {
