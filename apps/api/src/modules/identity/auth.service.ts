@@ -390,7 +390,7 @@ export class AuthService {
     request: RequestLike,
     reply: FastifyReply,
   ): Promise<{ outcome: "AUTHENTICATED"; user: ReturnType<typeof toAuthUser>; accessToken: string; accessTokenExpiresAt: string; session: ReturnType<typeof toAuthSession> }> {
-    const { user, consume } = await this.peekMfaChallenge(input.challengeToken);
+    const { user, challenge, consume } = await this.peekMfaChallenge(input.challengeToken);
     const fingerprint = fingerprintOf(request);
 
     const mfaCheck = this.limiter.check("mfa", user.email);
