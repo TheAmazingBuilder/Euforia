@@ -152,7 +152,11 @@ export class OcrController {
   ) {
     // An absent body behaves like the valid no-correction payload (§76 -
     // degenerate input is a 4xx/OK path, never a 500).
-    const body = input ?? { corrections: {}, acknowledgeDuplicateScreenshot: false, acknowledgeDuplicateTrade: false };
+    const body: OcrConfirmInput = input ?? {
+      corrections: {},
+      acknowledgeDuplicateScreenshot: false,
+      acknowledgeDuplicateTrade: false,
+    };
     return this.ocr.confirmRecognition({
       userId: principal.userId,
       id: uuidSchema.parse(id),
@@ -368,7 +372,11 @@ export class OcrController {
     @Body(new ZodValidationPipe(ocrSetConfirmInputSchema)) input?: OcrSetConfirmInput,
   ) {
     // Same absent-body discipline as the single-path confirm (§76).
-    const body = input ?? { corrections: {}, acknowledgeDuplicateScreenshot: false, acknowledgeDuplicateTrade: false };
+    const body: OcrSetConfirmInput = input ?? {
+      corrections: {},
+      acknowledgeDuplicateScreenshot: false,
+      acknowledgeDuplicateTrade: false,
+    };
     return this.sets.confirmSet({
       userId: principal.userId,
       id: uuidSchema.parse(id),
