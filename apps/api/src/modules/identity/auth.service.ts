@@ -660,6 +660,11 @@ export class AuthService {
     let codeHash: string | undefined;
 
     if (method === "EMAIL") {
+      const sendCheck = this.limiter.check("mfa_email_send", user.email);
+      if (!sendCheck.allowed) {
+        throw new RateLimitError("Too many sign-in codes requested. Please wait before trying again.", "RATE_LIMITED", sendCheck.retryAfterSeconds);
+      }
+      this.limiter.hit("mfa_email_send", user.email);
       const code = randomInt(0, 1_000_000).toString().padStart(6, "0");
       await this.mailer.sendEmailMfaCode(
         user.email,
@@ -690,7 +695,12 @@ export class AuthService {
       );
     }
     const user = await this.repository.findUserById(challenge.userId);
-    if (!user || user.status !== "ACTIVE") {
+    if (
+      !user ||
+      user.status !== "ACTIVE" ||
+      !user.mfaEnabledAt ||
+      (user.mfaMethod === "EMAIL" ? "EMAIL" : "AUTHENTICATOR_APP") !== challenge.method
+    ) {
       this.challenges.delete(challengeToken);
       throw new UnauthorizedError(
         "This challenge expired - start again with your password.",
@@ -735,6 +745,8 @@ export class AuthService {
     const access = await this.tokens.signAccessToken(user.id, session.id);
     this.setRefreshCookie(reply, refresh.value, { remember });
     this.limiter.clear("login", user.email);
+    this.limiter.clear("mfa", user.email);
+    this.limiter.clear("mfa_email_send", user.email);
 
     await this.events.recordLogin(
       { userId: user.id, type: "LOGIN_SUCCESS", context, outcome: "SUCCESS" },
