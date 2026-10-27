@@ -173,7 +173,10 @@ export function SecurityCenterView() {
   const onEnableEmailTwoFactor = () => {
     requestReauth("Enabling email-code two-factor authentication", (token) =>
       enableEmailTwoFactor.mutate(token, {
-        onSuccess: () => toast.success("Email-code two-factor authentication is on"),
+        onSuccess: (result) => {
+          setCodesOnce(result.recoveryCodes);
+          toast.success("Email-code two-factor authentication is on");
+        },
         onError: (error) => toast.error(apiErrorMessage(error, "Could not enable email-code 2FA")),
       }),
     );
