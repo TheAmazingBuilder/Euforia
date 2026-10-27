@@ -26,6 +26,7 @@ export interface UserRow {
   mfaEnabledAt: Date | null;
   mfaDisabledAt: Date | null;
   mfaLastVerifiedAt: Date | null;
+  mfaMethod: string | null;
   timezone: string;
   baseCurrency: string;
   username: string | null;
@@ -163,6 +164,7 @@ export class IdentityRepository {
       mfaEnabledAt: Date | null;
       mfaDisabledAt: Date | null;
       mfaLastVerifiedAt: Date | null;
+      mfaMethod: string | null;
       deletionScheduledFor: Date | null;
     }>,
   ): Promise<UserRow> {
