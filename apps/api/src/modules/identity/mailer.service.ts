@@ -71,7 +71,7 @@ function escapeHtml(value: string): string {
     "&": "&amp;",
     "<": "&lt;",
     ">": "&gt;",
-    `"`: "&quot;",
+    '"': "&quot;",
     "'": "&#39;",
   })[character] ?? character);
 }
