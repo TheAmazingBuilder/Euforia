@@ -477,21 +477,24 @@ describe("MFA / email-code lifecycle", () => {
     const message = [...mail.messages].reverse().find((item) => item.kind === "MFA_EMAIL_CODE");
     expect(message?.code).toMatch(/^\d{6}$/);
 
+    if (!message?.code || !new RegExp("^" + "\" + "d{6}$").test(message.code)) {
+      throw new Error("email MFA code was not captured");
+    }
+    const emailCode = message.code;
+    const wrongCode = emailCode === "999999" ? "999998" : "999999";
     const challengeToken = login.json().challengeToken as string;
     const wrong = await app.inject({
       method: "POST",
       url: "/api/v1/auth/mfa/challenge",
-      payload: { challengeToken, code: "999999" },
+      payload: { challengeToken, code: wrongCode },
     });
-    if (message?.code !== "999999") {
-      expect(wrong.statusCode).toBe(401);
-      expect(wrong.json().code).toBe("INVALID_MFA_CODE");
-    }
+    expect(wrong.statusCode).toBe(401);
+    expect(wrong.json().code).toBe("INVALID_MFA_CODE");
 
     const verified = await app.inject({
       method: "POST",
       url: "/api/v1/auth/mfa/challenge",
-      payload: { challengeToken, code: message?.code },
+      payload: { challengeToken, code: emailCode },
     });
     expect(verified.statusCode).toBe(200);
     expect(verified.json().outcome).toBe("AUTHENTICATED");
@@ -499,7 +502,7 @@ describe("MFA / email-code lifecycle", () => {
     const replay = await app.inject({
       method: "POST",
       url: "/api/v1/auth/mfa/challenge",
-      payload: { challengeToken, code: message?.code },
+      payload: { challengeToken, code: emailCode },
     });
     expect(replay.statusCode).toBe(401);
     expect(replay.json().code).toBe("INVALID_CHALLENGE");
