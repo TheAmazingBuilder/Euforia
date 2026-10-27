@@ -86,7 +86,6 @@ export class MfaService {
       mfaEnabledAt: now,
       mfaDisabledAt: null,
       mfaLastVerifiedAt: null,
-      mfaMethod: "EMAIL",
     });
     await this.repository.activateRecoveryCodes(user.id);
     await this.events.record({
