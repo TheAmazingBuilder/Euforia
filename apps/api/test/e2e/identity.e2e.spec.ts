@@ -244,7 +244,7 @@ describe("email-based two-factor authentication", () => {
 
     const message = [...mail.messages].reverse().find((item) => item.kind === "MFA_EMAIL_CODE");
     expect(message?.to).toBe(ctx.email);
-    expect(message?.code).toMatch(/^\\d{6}$/);
+    expect(message?.code).toMatch(/^\d{6}$/);
 
     const completed = await app.inject({
       method: "POST",
