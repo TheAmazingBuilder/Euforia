@@ -134,6 +134,15 @@ export class SecurityCenterController {
     return this.mfa.enable(await this.loadUser(principal.userId), input.reauthToken);
   }
 
+  @Post("2fa/email/enable")
+  @HttpCode(HttpStatus.OK)
+  async enableEmail2fa(
+    @CurrentUser() principal: AuthPrincipal,
+    @Body(new ZodValidationPipe(sensitiveOptional)) input: SensitiveActionInput,
+  ) {
+    return this.mfa.enableEmail(await this.loadUser(principal.userId), input.reauthToken);
+  }
+
   @Post("2fa/confirm")
   @HttpCode(HttpStatus.OK)
   async confirm2fa(
