@@ -23,7 +23,7 @@ export function captureMail(app: NestFastifyApplication): MailCapture {
   return {
     messages,
     lastVerificationToken() {
-      const last = [...messages].reverse().find((m) => m.kind !== "PASSWORD_RESET");
+      const last = [...messages].reverse().find((m) => m.kind === "EMAIL_VERIFICATION" || m.kind === "EMAIL_CHANGE");
       if (!last) throw new Error("no verification mail captured");
       return tokenFrom(last.actionUrl);
     },
