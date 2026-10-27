@@ -515,12 +515,14 @@ export function SessionsPanel({
 export function TwoFactorPanel({
   overview,
   onEnable,
+  onEnableEmail,
   onDisable,
   onRegenerate,
   pending,
 }: {
   overview: Overview;
   onEnable: () => void;
+  onEnableEmail: () => void;
   /** Disable goes through a confirm first - the parent owns both steps. */
   onDisable: () => void;
   onRegenerate: () => void;
@@ -552,11 +554,11 @@ export function TwoFactorPanel({
         {twoFactor.enabled ? (
           <>
             <p>
-              You are asked for a rotating code at each new sign-in. Recovery
+              You are asked for a one-time code at each new sign-in. Recovery
               codes were shown once at setup - they are never displayed again.
             </p>
             <div className="grid gap-1.5 rounded-lg border border-border bg-background/60 px-3 py-2.5 font-mono text-xs tabular-nums">
-              <span>method · authenticator app</span>
+              <span>method · {twoFactor.method === "EMAIL" ? "email code" : "authenticator app"}</span>
               <span>enabled · {utc(twoFactor.enabledAt)}</span>
               <span>last verified · {utc(twoFactor.lastVerifiedAt)}</span>
               <span>
@@ -580,10 +582,22 @@ export function TwoFactorPanel({
         ) : twoFactor.pending ? (
           <p>Setup in progress - confirm the authenticator challenge to activate 2FA.</p>
         ) : (
-          <p>
-            Recommended - an authenticator app is all it takes. Setup issues 10
-            recovery codes, shown once, then stored only as a count.
-          </p>
+          <>
+            <p>
+              Choose an authenticator app (TOTP) or a one-time code sent to your verified email.
+              Setup issues 10 recovery codes, shown once, then stored only as a count.
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onEnableEmail}
+              disabled={pending}
+              className="mt-1 w-fit"
+              data-testid="tfa-enable-email"
+            >
+              Use email verification codes
+            </Button>
+          </>
         )}
       </CardContent>
     </Card>
