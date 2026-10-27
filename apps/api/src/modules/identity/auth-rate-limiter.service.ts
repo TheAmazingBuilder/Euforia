@@ -101,6 +101,7 @@ export class AuthRateLimiterService {
 export const AUTH_RATE_LIMITS: Record<string, number> = {
   login: 5,
   mfa: 5,
+  mfa_email_send: 3,
   register: 5,
   resend: 3,
   forgot: 3,
