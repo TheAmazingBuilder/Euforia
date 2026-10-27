@@ -17,7 +17,7 @@ import { BusinessRuleError, ConflictError } from "../../shared/errors/app-error"
 export interface TwoFactorState {
   enabled: boolean;
   pending: boolean;
-  method: "AUTHENTICATOR_APP" | null;
+  method: "AUTHENTICATOR_APP" | "EMAIL" | null;
   enabledAt: string | null;
   disabledAt: string | null;
   lastVerifiedAt: string | null;
@@ -86,7 +86,7 @@ export class MfaService {
       mfaEnabledAt: now,
       mfaDisabledAt: null,
       mfaLastVerifiedAt: null,
-      mfaMethod: null,
+      mfaMethod: "EMAIL",
     });
     await this.repository.activateRecoveryCodes(user.id);
     await this.events.record({
@@ -144,6 +144,7 @@ export class MfaService {
       mfaEnabledAt: null,
       mfaDisabledAt: now,
       mfaLastVerifiedAt: null,
+      mfaMethod: null,
     });
     await this.repository.deactivateRecoveryCodes(user.id);
     await this.events.record({
