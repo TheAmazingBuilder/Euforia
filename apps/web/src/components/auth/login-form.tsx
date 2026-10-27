@@ -68,6 +68,7 @@ export function LoginForm() {
   const [formError, setFormError] = React.useState<{ body: string; hint?: string } | null>(null);
 
   const [challengeToken, setChallengeToken] = React.useState<string | null>(null);
+  const [mfaMethod, setMfaMethod] = React.useState<"AUTHENTICATOR_APP" | "EMAIL">("AUTHENTICATOR_APP");
   const [mfaCode, setMfaCode] = React.useState("");
   const [recoveryMode, setRecoveryMode] = React.useState(false);
 
@@ -111,8 +112,9 @@ export function LoginForm() {
     }
   }
 
-  function switchToMfa(params: { challengeToken: string }) {
+  function switchToMfa(params: { challengeToken: string; method: "AUTHENTICATOR_APP" | "EMAIL" }) {
     setChallengeToken(params.challengeToken);
+    setMfaMethod(params.method);
     setMfaCode("");
     setFormError(null);
     setStep("mfa");
@@ -136,6 +138,7 @@ export function LoginForm() {
           if (data.outcome === "MFA_REQUIRED") {
             switchToMfa({
               challengeToken: data.challengeToken,
+              method: data.method,
             });
             return;
           }
@@ -266,17 +269,19 @@ export function LoginForm() {
               <p className="text-xs text-muted-foreground">
                 {recoveryMode
                   ? "Enter one of your unused recovery codes (e.g. 1A2B-3C4D)."
-                  : auth.login.mfaSubtitle}
+                  : mfaMethod === "EMAIL"
+                    ? "We sent a 6-digit sign-in code to your verified email address."
+                    : auth.login.mfaSubtitle}
               </p>
             </div>
           </div>
 
           <AuthField
             id="login-mfa-code"
-            label={recoveryMode ? auth.login.mfaRecoveryLabel : auth.login.mfaCode}
+            label={recoveryMode ? auth.login.mfaRecoveryLabel : mfaMethod === "EMAIL" ? "Email sign-in code" : auth.login.mfaCode}
           >
             <Input
-              key={recoveryMode ? "recovery" : "totp"}
+              key={recoveryMode ? "recovery" : mfaMethod === "EMAIL" ? "email-code" : "totp"}
               inputMode={recoveryMode ? "text" : "numeric"}
               autoComplete={recoveryMode ? "off" : "one-time-code"}
               placeholder={recoveryMode ? "1A2B-3C4D" : "123456"}
