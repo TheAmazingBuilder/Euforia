@@ -32,6 +32,7 @@ import {
   useCreateApiKey,
   useDisableTwoFactor,
   useEnableTwoFactor,
+  useEnableEmailTwoFactor,
   useRegenerateRecoveryCodes,
   useRevokeApiKey,
   useRevokeSessions,
@@ -111,6 +112,7 @@ export function SecurityCenterView() {
   const { logout } = useAuth();
   const changePassword = useChangePassword();
   const enableTwoFactor = useEnableTwoFactor();
+  const enableEmailTwoFactor = useEnableEmailTwoFactor();
   const confirmTwoFactor = useConfirmTwoFactor();
   const disableTwoFactor = useDisableTwoFactor();
   const regenerateCodes = useRegenerateRecoveryCodes();
@@ -121,6 +123,7 @@ export function SecurityCenterView() {
   const busy =
     changePassword.isPending ||
     enableTwoFactor.isPending ||
+    enableEmailTwoFactor.isPending ||
     confirmTwoFactor.isPending ||
     disableTwoFactor.isPending ||
     regenerateCodes.isPending ||
@@ -163,6 +166,15 @@ export function SecurityCenterView() {
           setEnrollment(result);
         },
         onError: (error) => toast.error(apiErrorMessage(error, "Could not start the 2FA setup")),
+      }),
+    );
+  };
+
+  const onEnableEmailTwoFactor = () => {
+    requestReauth("Enabling email-code two-factor authentication", (token) =>
+      enableEmailTwoFactor.mutate(token, {
+        onSuccess: () => toast.success("Email-code two-factor authentication is on"),
+        onError: (error) => toast.error(apiErrorMessage(error, "Could not enable email-code 2FA")),
       }),
     );
   };
@@ -313,6 +325,7 @@ export function SecurityCenterView() {
         <TwoFactorPanel
           overview={overview}
           onEnable={onEnableTwoFactor}
+          onEnableEmail={onEnableEmailTwoFactor}
           onDisable={() => setDisableConfirmOpen(true)}
           onRegenerate={onRegenerateCodes}
           pending={busy}
