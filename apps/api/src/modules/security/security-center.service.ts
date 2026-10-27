@@ -173,6 +173,7 @@ export class SecurityCenterService {
       },
       rateLimits: [
         { scope: "Sign-in", limit: 5, windowLabel: "15 min", detail: "Per email address, sliding window." },
+        { scope: "Email MFA codes", limit: 3, windowLabel: "15 min", detail: "Code delivery requests per email address." },
         { scope: "Re-authentication", limit: 5, windowLabel: "15 min", detail: "Failed attempts only." },
         { scope: "Password reset", limit: 3, windowLabel: "15 min", detail: "Reset emails per address." },
         { scope: "API endpoints", limit: 120, windowLabel: "min / key", detail: "Default global API rate limit." },
