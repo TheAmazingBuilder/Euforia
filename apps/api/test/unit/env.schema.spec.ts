@@ -60,6 +60,8 @@ describe("validateEnv", () => {
       RATE_LIMIT_WINDOW_SECONDS: "30",
       RATE_LIMIT_MAX: "1000",
       MARKET_SERVICE_URL: "https://market.cosmoz.internal",
+      SMTP_USER: "mailer@example.com",
+      SMTP_APP_PASSWORD: "test-only-app-password",
     });
     expect(env.PORT).toBe(8080);
     expect(env.CORS_ORIGINS).toEqual(["https://app.cosmoz.app", "https://admin.cosmoz.app"]);
@@ -107,6 +109,20 @@ describe("validateEnv", () => {
       const issues = (error as EnvValidationError).issues;
       expect(issues.some((issue) => issue.path === "BODY_LIMIT_BYTES")).toBe(true);
     }
+  });
+
+  it("requires SMTP credentials together and in production", () => {
+    expect(() => validateEnv({ ...BASE_ENV, SMTP_USER: "mailer@example.com" })).toThrow(/SMTP_APP_PASSWORD/);
+    expect(() => validateEnv({ ...BASE_ENV, NODE_ENV: "production" })).toThrow(/SMTP_USER/);
+  });
+
+  it("normalizes spaces from a Google App Password", () => {
+    const env = validateEnv({
+      ...BASE_ENV,
+      SMTP_USER: "mailer@example.com",
+      SMTP_APP_PASSWORD: "abcd efgh ijkl mnop",
+    });
+    expect(env.SMTP_APP_PASSWORD).toBe("abcdefghijklmnop");
   });
 
   it("rejects invalid values for numeric and enum settings", () => {
