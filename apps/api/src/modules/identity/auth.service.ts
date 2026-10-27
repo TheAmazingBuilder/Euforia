@@ -44,6 +44,7 @@ interface MfaChallenge {
   expiresAt: number;
   method: "AUTHENTICATOR_APP" | "EMAIL";
   codeHash?: string;
+  remember: boolean;
 }
 
 /** Login-shaped credentials returned by register() on auto-login accounts. */
@@ -335,7 +336,7 @@ export class AuthService {
       if (!mfaCheck.allowed) {
         throw new RateLimitError("Too many attempts. Please wait before trying again.", "RATE_LIMITED", mfaCheck.retryAfterSeconds);
       }
-      return this.issueMfaChallenge(user);
+      return this.issueMfaChallenge(user, input.remember);
     }
 
     return this.completeLogin(user, input.remember, reply, fingerprint, "Signed in with email and password.");
@@ -381,7 +382,7 @@ export class AuthService {
 
     consume();
     const updated = await this.repository.updateUser(user.id, { mfaLastVerifiedAt: new Date() });
-    return this.completeLogin(updated, true, reply, fingerprint, "Signed in with two-factor authentication.");
+    return this.completeLogin(updated, challenge.remember, reply, fingerprint, "Signed in with two-factor authentication.");
   }
 
   async mfaRecover(
@@ -419,7 +420,7 @@ export class AuthService {
     const updated = await this.repository.updateUser(user.id, { mfaLastVerifiedAt: new Date() });
     return this.completeLogin(
       updated,
-      true,
+      challenge.remember,
       reply,
       fingerprint,
       "Signed in with a recovery code.",
@@ -645,7 +646,7 @@ export class AuthService {
     return expiresAt.toISOString();
   }
 
-  private async issueMfaChallenge(user: Pick<UserRow, "id" | "email" | "mfaMethod">): Promise<{
+  private async issueMfaChallenge(user: Pick<UserRow, "id" | "email" | "mfaMethod">, remember: boolean): Promise<{
     outcome: "MFA_REQUIRED";
     mfaRequired: true;
     challengeToken: string;
@@ -674,7 +675,7 @@ export class AuthService {
       codeHash = IdentityRepository.hashToken(code);
     }
 
-    this.challenges.set(token, { userId: user.id, expiresAt, method, codeHash });
+    this.challenges.set(token, { userId: user.id, expiresAt, method, codeHash, remember });
     return {
       outcome: "MFA_REQUIRED",
       mfaRequired: true,
