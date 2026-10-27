@@ -214,7 +214,7 @@ describe("email-based two-factor authentication", () => {
       payload: { password: ctx.password },
     });
     expect(reauth.statusCode).toBe(200);
-    const reauthToken = reauth.json().reauthToken as string;
+    const reauthToken = reauth.json().token as string;
     expect(reauthToken).toBeTruthy();
 
     const enabled = await app.inject({
@@ -276,7 +276,7 @@ describe("email-based two-factor authentication", () => {
       method: "POST",
       url: "/api/v1/security/2fa/email/enable",
       headers: ctx.authHeader,
-      payload: { reauthToken: reauth.json().reauthToken },
+      payload: { reauthToken: reauth.json().token },
     });
     expect(enabled.statusCode).toBe(200);
 
@@ -287,11 +287,12 @@ describe("email-based two-factor authentication", () => {
       payload: { email: ctx.email, password: ctx.password, remember: false },
     });
     const challenge = login.json();
+    const issuedCode = [...mail.messages].reverse().find((item) => item.kind === "MFA_EMAIL_CODE")?.code;
+    const wrongCode = issuedCode === "000000" ? "000001" : "000000";
     const invalid = await app.inject({
       method: "POST",
       url: "/api/v1/auth/mfa/challenge",
-      payload: { challengeToken: challenge.challengeToken, code: "000000",
-      },
+      payload: { challengeToken: challenge.challengeToken, code: wrongCode },
     });
     expect(invalid.statusCode).toBe(401);
     expect(invalid.json().code).toBe("INVALID_MFA_CODE");
