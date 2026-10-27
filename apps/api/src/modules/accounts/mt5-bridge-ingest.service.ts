@@ -140,12 +140,12 @@ export class Mt5BridgeIngestService implements OnModuleDestroy {
     signatureHex: string;
     envelope: BridgeIngestEnvelope;
   }): Promise<{ accepted: true; duplicate: boolean; state: "CONNECTING" | "CONNECTED" }> {
-    this.enforceRateLimit(input.keyId);
-
     const connection = await this.repository.findConnectionByBridgeKeyId(input.keyId);
     if (!connection) {
       throw new UnauthorizedError("Unknown bridge key.", "BRIDGE_KEY_UNKNOWN");
     }
+    // Only allocate per-key rate-limit state after resolving a real bridge key.
+    // Otherwise arbitrary unauthenticated key IDs can grow the in-memory map.
     if (connection.method !== "PLATFORM_BRIDGE") {
       throw new ForbiddenError(
         "This connection does not accept bridge pushes.",
@@ -158,6 +158,8 @@ export class Mt5BridgeIngestService implements OnModuleDestroy {
         "BRIDGE_DISCONNECTED",
       );
     }
+
+    this.enforceRateLimit(input.keyId);
 
     const now = Date.now();
     // Freshness is compared in MILLISECONDS. The EA v1.0.0 sends epoch
