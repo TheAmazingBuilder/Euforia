@@ -118,6 +118,7 @@ export class MfaService {
       mfaPendingSecretEnc: null,
       mfaEnabledAt: now,
       mfaLastVerifiedAt: now,
+      mfaDisabledAt: null,
       mfaMethod: "AUTHENTICATOR_APP",
     });
     await this.repository.activateRecoveryCodes(user.id);
