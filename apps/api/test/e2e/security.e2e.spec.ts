@@ -464,7 +464,7 @@ describe("MFA / email-code lifecycle", () => {
     expect(enabled.json().state).toMatchObject({ enabled: true, method: "EMAIL", recoveryCodesRemaining: 10 });
     const recoveryCodes = enabled.json().recoveryCodes as string[];
     expect(recoveryCodes).toHaveLength(10);
-    expect(recoveryCodes.every((code) => /^[\\dA-F]{4}-[\\dA-F]{4}$/.test(code))).toBe(true);
+    expect(recoveryCodes.every((code) => /^[\dA-F]{4}-[\dA-F]{4}$/.test(code))).toBe(true);
 
     mail.clear();
     const login = await app.inject({
@@ -475,7 +475,7 @@ describe("MFA / email-code lifecycle", () => {
     expect(login.statusCode).toBe(200);
     expect(login.json()).toMatchObject({ outcome: "MFA_REQUIRED", method: "EMAIL" });
     const message = [...mail.messages].reverse().find((item) => item.kind === "MFA_EMAIL_CODE");
-    expect(message?.code).toMatch(/^\\d{6}$/);
+    expect(message?.code).toMatch(/^\d{6}$/);
 
     const challengeToken = login.json().challengeToken as string;
     const wrong = await app.inject({
