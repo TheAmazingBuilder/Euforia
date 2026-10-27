@@ -257,9 +257,6 @@ importers:
       '@types/node':
         specifier: ^24.5.2
         version: 24.19.2
-      '@types/nodemailer':
-        specifier: ^8.0.2
-        version: 8.0.2
       '@types/ws':
         specifier: ^8.18.2
         version: 8.18.2
