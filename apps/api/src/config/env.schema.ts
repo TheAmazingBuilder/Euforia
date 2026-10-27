@@ -336,7 +336,7 @@ export const envSchema = z.object({
   /** SMTP login; leave both credentials empty to use the development console transport. */
   SMTP_USER: z.string().trim().email().optional().or(z.literal("").transform(() => undefined)),
   /** Google App Password (spaces are removed); never use the Google account password. */
-  SMTP_APP_PASSWORD: z.string().trim().min(1).optional().or(z.literal("").transform(() => undefined)),
+  SMTP_APP_PASSWORD: z.string().transform((value) => value.replace(/\\s+/g, "")).pipe(z.string().min(1)).optional().or(z.literal("").transform(() => undefined)),
   /** Whether email verification is required before signing in (can be paused/disabled in dev). */
   AUTH_REQUIRE_EMAIL_VERIFICATION: z
     .enum(["true", "false"])
