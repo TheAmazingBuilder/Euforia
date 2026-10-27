@@ -327,7 +327,7 @@ export const envSchema = z.object({
     .url("WEB_APP_URL must be a valid URL")
     .default("http://localhost:3000"),
   /** From-header for transactional emails. */
-  EMAIL_FROM: z.string().trim().min(3).default("Euforia <no-reply@cosmoz.app>"),
+  EMAIL_FROM: z.string().trim().min(3).optional().or(z.literal("").transform(() => undefined)),
   /** SMTP server; defaults to Google Gmail SMTP. */
   SMTP_HOST: z.string().trim().min(1).default("smtp.gmail.com"),
   SMTP_PORT: z.coerce.number().int().min(1).max(65_535).default(587),
