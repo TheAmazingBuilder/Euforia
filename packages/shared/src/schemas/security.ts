@@ -119,7 +119,7 @@ export const twoFactorStateSchema = z.object({
   enabled: z.boolean(),
   /** True between enable() and confirm() - codes not active yet. */
   pending: z.boolean(),
-  method: z.enum(["AUTHENTICATOR_APP"]).nullable(),
+  method: z.enum(["AUTHENTICATOR_APP", "EMAIL"]).nullable(),
   enabledAt: isoDateTimeSchema.nullable(),
   /** When 2FA was last turned OFF - fuels the >7-day inbox reminder. */
   disabledAt: isoDateTimeSchema.nullable(),
