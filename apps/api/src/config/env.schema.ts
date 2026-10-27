@@ -112,7 +112,7 @@ export const envSchema = z.object({
   ACCOUNTS_PROVIDER_TIMEOUT_MS: z.coerce.number().int().min(1_000).max(60_000).default(10_000),
   /**
    * Mock trading provider gate (§57 - production must never silently serve
-   * mock data). Defaults to enabled in non-production, disabled in production;
+   * mock data). Defaults to enabled only in test; development/production require explicit opt-in;
    * an explicit value always wins.
    */
   ACCOUNTS_MOCK_PROVIDER: z.enum(["enabled", "disabled"]).optional(),
@@ -224,7 +224,7 @@ export const envSchema = z.object({
     .trim()
     .min(32, "OCR_SERVICE_TOKEN must be at least 32 characters")
     .optional(),
-  /** Mock OCR engine gate (same policy as ACCOUNTS_MOCK_PROVIDER, §57). */
+  /** Mock OCR engine gate: enabled by default only in test; opt-in elsewhere (§57). */
   OCR_MOCK_ENGINE: z.enum(["enabled", "disabled"]).optional(),
   /** Max decoded binary size accepted for one screenshot upload. */
   OCR_UPLOAD_MAX_BYTES: z.coerce.number().int().min(10_240).max(8_388_608).default(6_291_456),
