@@ -20,11 +20,31 @@ corepack pnpm install
 #    and create the dev database:  createdb cosmoz   (or via pgAdmin)
 
 # 3. Configure
-cp apps/api/.env.example apps/api/.env     # edit DATABASE_URL for your PG user/password
+cp apps/api/.env.example apps/api/.env
+# Edit apps/api/.env: DATABASE_URL, AUTH_JWT_SECRET,
+# AUTH_MFA_ENCRYPTION_KEY, ACCOUNTS_CREDENTIALS_ENCRYPTION_KEY,
+# INTEGRATIONS_WEBHOOK_ENCRYPTION_KEY must all be valid.
+# Generate keys with:
+# node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"
+# node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
 
-# 4. Run
-pnpm api:dev          # watch mode (tsc-watch → node)
+# 4. Start the API in its own terminal (port 4000)
+pnpm api:dev
+
+# 5. In a SECOND terminal, start only the web frontend (port 3000)
+pnpm web:dev
 ```
+
+Do not assume the API started just because Next.js is running. Wait for the
+`cosmoz-api listening` log and verify `http://localhost:4000/health/ready`.
+If the API exits during startup, fix the first `[config]` validation error
+or database connection error shown in that terminal before testing auth.
+
+For local-only signup/login without an email provider, set
+`AUTH_REQUIRE_EMAIL_VERIFICATION=false` in `apps/api/.env`. This still uses
+the real API and PostgreSQL; it disables only the email-verification gate.
+When enabled, registration returns an active session and auto-signs the user
+in. Do not disable email verification in production.
 
 The API listens on **http://localhost:4000**:
 
@@ -44,7 +64,9 @@ The API listens on **http://localhost:4000**:
 
 | Script | What it does |
 |---|---|
-| `pnpm dev` | Watch build + auto-restart (`tsc-watch`) |
+| `pnpm api:dev` | Start only the NestJS API on port 4000 (watch mode) |
+| `pnpm web:dev` | Start only the Next.js frontend on port 3000 |
+| `pnpm dev` | Start all workspace dev services through Turbo |
 | `pnpm build` | Compile to `dist/` (tsc) |
 | `pnpm start` | Run compiled output |
 | `pnpm typecheck` | `tsc --noEmit` (src + test) |
@@ -74,9 +96,13 @@ never secret values.**
 | `RATE_LIMIT_MAX` | `120` | Global default max requests |
 | `MARKET_SERVICE_URL` | — (optional) | Market sidecar; not wired in Foundation |
 
-Authentication placeholders (`AUTH_JWT_SECRET`, …) are **deliberately not
-validated yet** — the Identity phase owns their contract. Do not put real
-secrets into `.env.example`; `.env*` files are gitignored.
+Authentication and encryption keys are validated at startup. The API will
+exit rather than listen if any required key is empty/invalid or PostgreSQL
+cannot be reached. Generate local-only secrets; never commit `.env` values.
+The current mail transport is development-only: it writes verification/reset
+links to the API logs and does not deliver real email. Production email
+delivery requires a real transport adapter; never rely on console logs in
+production.
 
 ## Database
 
