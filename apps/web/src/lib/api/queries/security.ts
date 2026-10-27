@@ -71,6 +71,20 @@ export function useEnableTwoFactor() {
   });
 }
 
+export function useEnableEmailTwoFactor() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (reauthToken: string) =>
+      apiRequest<TwoFactorState>(apiPaths.securityTwoFactorEmailEnable, {
+        method: "POST",
+        body: { reauthToken },
+      }),
+    onSettled: async () => {
+      await invalidateSecurity(queryClient);
+    },
+  });
+}
+
 export function useConfirmTwoFactor() {
   const queryClient = useQueryClient();
   return useMutation({
