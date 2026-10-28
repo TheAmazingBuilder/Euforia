@@ -296,8 +296,9 @@ export class AuthService {
     }
 
     try {
-      const expiresAt = await this.issueVerificationChallenge(user, user.email);
-      return { sent: true, delivery: "EMAIL", verificationExpiresAt: expiresAt };
+      await this.issueVerificationChallenge(user, user.email);
+      // Keep the response identical for pending, verified, and unknown addresses.
+      return { sent: true, delivery: "EMAIL", verificationExpiresAt: null };
     } catch (error) {
       // Preserve anti-enumeration: unknown accounts and delivery failures have
       // the same response shape. A later resend can retry without changing
@@ -674,7 +675,8 @@ export class AuthService {
       actor: fingerprintOf(request).device,
       context: "Password reset requested - email sent.",
     });
-    return { sent: true, delivery: "EMAIL", resetExpiresAt: expiresAt.toISOString() };
+    // Do not expose whether an account exists through a populated expiry timestamp.
+    return { sent: true, delivery: "EMAIL", resetExpiresAt: null };
   }
 
   async resetPassword(
