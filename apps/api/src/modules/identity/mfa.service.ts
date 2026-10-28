@@ -94,15 +94,43 @@ export class MfaService {
     }
 
     const code = randomInt(0, 1_000_000).toString().padStart(6, "0");
+    const codeHash = this.hashEmailEnrollmentCode(code);
     const expiresAt = new Date(Date.now() + this.config.auth.mfaChallengeMinutes * 60 * 1000);
     this.limiter.hit("mfa_email_enroll", user.email);
-    await this.mailer.sendEmailMfaCode(user.email, code, `${this.config.auth.mfaChallengeMinutes} minutes`);
-    await this.repository.updateUser(user.id, {
-      mfaPendingEmailCodeHash: this.hashEmailEnrollmentCode(code),
-      mfaPendingEmailExpiresAt: expiresAt,
-      mfaPendingEmailAttempts: 0,
-      mfaPendingSecretEnc: null,
+
+    // Claim the enrollment slot before delivery. A failed send restores the
+    // previous code only if no newer request has replaced this candidate.
+    const claimed = await this.repository.beginPendingEmailMfaChallenge({
+      userId: user.id,
+      expectedCodeHash: user.mfaPendingEmailCodeHash,
+      expectedExpiresAt: user.mfaPendingEmailExpiresAt,
+      codeHash,
+      expiresAt,
     });
+    if (!claimed) {
+      throw new ConflictError(
+        "Email two-factor setup changed in another request. Please try again.",
+        "EMAIL_MFA_CHALLENGE_CHANGED",
+      );
+    }
+
+    try {
+      await this.mailer.sendEmailMfaCode(user.email, code, `${this.config.auth.mfaChallengeMinutes} minutes`);
+    } catch (error) {
+      try {
+        await this.repository.restorePendingEmailMfaChallenge({
+          userId: user.id,
+          candidateCodeHash: codeHash,
+          previousCodeHash: user.mfaPendingEmailCodeHash,
+          previousExpiresAt: user.mfaPendingEmailExpiresAt,
+          previousAttempts: user.mfaPendingEmailAttempts,
+          previousSecretEnc: user.mfaPendingSecretEnc,
+        });
+      } catch {
+        // Preserve the SMTP error as the primary failure; retry remains possible.
+      }
+      throw error;
+    }
     return { pending: true, expiresAt: expiresAt.toISOString() };
   }
 
