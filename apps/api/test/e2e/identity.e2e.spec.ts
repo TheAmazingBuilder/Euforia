@@ -381,6 +381,51 @@ describe("login & anti-enumeration", () => {
 });
 
 describe("email-based two-factor authentication", () => {
+  it("allows email MFA enrollment to retry after SMTP failure", async () => {
+    mail.clear();
+    const ctx = await authenticatedUser(app, mail);
+    const mailer = app.get(MailerService);
+    const firstReauth = await app.inject({
+      method: "POST",
+      url: "/api/v1/security/reauth",
+      headers: ctx.authHeader,
+      payload: { password: ctx.password },
+    });
+    mailer.useTransport({ send: async () => { throw new Error("simulated SMTP outage"); } });
+    const failed = await app.inject({
+      method: "POST",
+      url: "/api/v1/security/2fa/email/enable",
+      headers: ctx.authHeader,
+      payload: { reauthToken: firstReauth.json().token },
+    });
+    mailer.useTransport({ send: async (message) => { mail.messages.push(message); } });
+    expect(failed.statusCode).toBeGreaterThanOrEqual(500);
+
+    const secondReauth = await app.inject({
+      method: "POST",
+      url: "/api/v1/security/reauth",
+      headers: ctx.authHeader,
+      payload: { password: ctx.password },
+    });
+    const enabled = await app.inject({
+      method: "POST",
+      url: "/api/v1/security/2fa/email/enable",
+      headers: ctx.authHeader,
+      payload: { reauthToken: secondReauth.json().token },
+    });
+    expect(enabled.statusCode).toBe(200);
+    const code = [...mail.messages].reverse().find((item) => item.kind === "MFA_EMAIL_CODE")?.code;
+    expect(code).toMatch(/^\\d{6}$/);
+    const confirmed = await app.inject({
+      method: "POST",
+      url: "/api/v1/security/2fa/email/confirm",
+      headers: ctx.authHeader,
+      payload: { code },
+    });
+    expect(confirmed.statusCode).toBe(200);
+    expect(confirmed.json().state).toMatchObject({ enabled: true, method: "EMAIL" });
+  });
+
   it("enables email MFA, sends a short-lived code at login, and consumes the challenge once", async () => {
     mail.clear();
     const ctx = await authenticatedUser(app, mail);
