@@ -244,7 +244,21 @@ export class AuthService {
       throw new ValidationError("This verification link is not valid.", undefined, "INVALID_TOKEN");
     }
 
-    await this.repository.consumeChallenge(challenge.id);
+    const consumed = await this.repository.consumeChallenge(challenge.id);
+    if (!consumed) {
+      if (challenge.expiresAt.getTime() <= Date.now()) {
+        throw new ValidationError(
+          "This link has expired - request a new email.",
+          undefined,
+          "EXPIRED_TOKEN",
+        );
+      }
+      throw new ValidationError(
+        "This link has already been used - request a new email.",
+        undefined,
+        "TOKEN_ALREADY_USED",
+      );
+    }
     const verifiedAt = new Date();
     const updated = await this.repository.updateUser(user.id, {
       status: "ACTIVE",
@@ -626,7 +640,21 @@ export class AuthService {
     }
 
     const passwordHash = await this.hasher.hash(input.password);
-    await this.repository.consumeChallenge(challenge.id);
+    const consumed = await this.repository.consumeChallenge(challenge.id);
+    if (!consumed) {
+      if (challenge.expiresAt.getTime() <= Date.now()) {
+        throw new ValidationError(
+          "This link has expired - request a new email.",
+          undefined,
+          "EXPIRED_TOKEN",
+        );
+      }
+      throw new ValidationError(
+        "This link has already been used - request a new email.",
+        undefined,
+        "TOKEN_ALREADY_USED",
+      );
+    }
     await this.repository.updateUser(challenge.userId, {
       passwordHash,
       passwordLastChangedAt: new Date(),
