@@ -23,6 +23,7 @@ export interface TwoFactorState {
   enabled: boolean;
   pending: boolean;
   method: "AUTHENTICATOR_APP" | "EMAIL" | null;
+  pendingMethod?: "AUTHENTICATOR_APP" | "EMAIL" | null;
   enabledAt: string | null;
   disabledAt: string | null;
   lastVerifiedAt: string | null;
