@@ -8,7 +8,7 @@
  */
 import { Inject, Injectable, Optional } from "@nestjs/common";
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { randomInt, timingSafeEqual } from "node:crypto";
+import { createHmac, randomInt, timingSafeEqual } from "node:crypto";
 import { REFRESH_COOKIE_NAME, TokenService } from "./token.service";
 import { IdentityRepository, type UserRow } from "./identity.repository";
 import { PasswordHasherService } from "./password-hasher.service";
@@ -397,7 +397,7 @@ export class AuthService {
       throw new RateLimitError("Too many attempts. Please wait before trying again.", "RATE_LIMITED", mfaCheck.retryAfterSeconds);
     }
 
-    const submittedCodeHash = IdentityRepository.hashToken(input.code);
+    const submittedCodeHash = this.hashMfaEmailCode(input.code);
     const valid = challenge.method === "EMAIL"
       ? Boolean(
           challenge.codeHash &&
@@ -819,6 +819,11 @@ export class AuthService {
     return expiresAt.toISOString();
   }
 
+  /** HMAC the six-digit code so a database-only leak cannot brute-force its hash. */
+  private hashMfaEmailCode(code: string): string {
+    return createHmac("sha256", this.config.auth.mfaEncryptionKey).update(code).digest("hex");
+  }
+
   private async issueMfaChallenge(user: Pick<UserRow, "id" | "email" | "mfaMethod">, remember: boolean): Promise<{
     outcome: "MFA_REQUIRED";
     mfaRequired: true;
@@ -840,7 +845,7 @@ export class AuthService {
       }
       this.limiter.hit("mfa_email_send", user.email);
       emailCode = randomInt(0, 1_000_000).toString().padStart(6, "0");
-      codeHash = IdentityRepository.hashToken(emailCode);
+      codeHash = this.hashMfaEmailCode(emailCode);
     }
 
     const tokenHash = IdentityRepository.hashToken(token);
