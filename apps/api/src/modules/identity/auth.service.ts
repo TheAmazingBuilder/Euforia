@@ -228,7 +228,11 @@ export class AuthService {
     }
 
     const user = await this.repository.findUserById(challenge.userId);
-    if (!user || user.status !== "PENDING_VERIFICATION") {
+    if (
+      !user ||
+      user.status !== "PENDING_VERIFICATION" ||
+      (challenge.targetEmail && challenge.targetEmail.toLowerCase() !== user.email.toLowerCase())
+    ) {
       throw new ValidationError("This verification link is not valid.", undefined, "INVALID_TOKEN");
     }
 
@@ -729,6 +733,7 @@ export class AuthService {
       purpose: "EMAIL_VERIFICATION",
       tokenHash,
       expiresAt,
+      targetEmail: toEmail.toLowerCase(),
     });
     try {
       await this.mailer.sendEmailVerification(toEmail, token, `${this.config.auth.emailVerificationHours} hours`);
