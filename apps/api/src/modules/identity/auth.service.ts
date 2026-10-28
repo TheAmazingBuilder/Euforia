@@ -228,7 +228,7 @@ export class AuthService {
     }
 
     const user = await this.repository.findUserById(challenge.userId);
-    if (!user) {
+    if (!user || user.status !== "PENDING_VERIFICATION") {
       throw new ValidationError("This verification link is not valid.", undefined, "INVALID_TOKEN");
     }
 
