@@ -7,7 +7,7 @@
  * Recovery codes: single-use, hashed at rest, regeneration invalidates the
  * previous set (§20).
  */
-import { Inject, Injectable } from "@nestjs/common";
+import { Inject, Injectable, Optional } from "@nestjs/common";
 import { createHmac, randomInt, timingSafeEqual } from "node:crypto";
 import { IdentityRepository, type UserRow } from "./identity.repository";
 import { APP_CONFIG } from "../../config/app-config";
@@ -18,6 +18,7 @@ import { SecurityEventService } from "../security/security-event.service";
 import { MailerService } from "./mailer.service";
 import { AuthRateLimiterService } from "./auth-rate-limiter.service";
 import { BusinessRuleError, ConflictError, RateLimitError } from "../../shared/errors/app-error";
+import { ROOT_LOGGER, type RootLogger } from "../../infrastructure/logging/logger.factory";
 
 export interface TwoFactorState {
   enabled: boolean;
@@ -40,7 +41,21 @@ export class MfaService {
     private readonly mailer: MailerService,
     private readonly limiter: AuthRateLimiterService,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
+    @Optional() @Inject(ROOT_LOGGER) private readonly logger?: RootLogger,
   ) {}
+
+  private async recordEventBestEffort(
+    input: Parameters<SecurityEventService["record"]>[0],
+  ): Promise<void> {
+    try {
+      await this.events.record(input);
+    } catch (error) {
+      this.logger?.warn(
+        { userId: input.userId, errorType: error instanceof Error ? error.name : "UnknownError" },
+        "MFA security event could not be recorded",
+      );
+    }
+  }
 
   /** POST /security/2fa/enable - returns the one-time enrollment payload. */
   async enable(
@@ -65,7 +80,7 @@ export class MfaService {
       mfaPendingEmailAttempts: 0,
     });
 
-    await this.events.record({
+    await this.recordEventBestEffort({
       userId: user.id,
       type: "SENSITIVE_SETTINGS_CHANGED",
       actor: user.email,
@@ -187,7 +202,7 @@ export class MfaService {
       mfaLastVerifiedAt: now,
     });
     await this.repository.activateRecoveryCodes(user.id);
-    await this.events.record({
+    await this.recordEventBestEffort({
       userId: user.id,
       type: "TFA_ENABLED",
       actor: user.email,
@@ -223,7 +238,7 @@ export class MfaService {
       mfaMethod: "AUTHENTICATOR_APP",
     });
     await this.repository.activateRecoveryCodes(user.id);
-    await this.events.record({
+    await this.recordEventBestEffort({
       userId: user.id,
       type: "TFA_ENABLED",
       actor: user.email,
@@ -251,7 +266,7 @@ export class MfaService {
       mfaMethod: null,
     });
     await this.repository.deactivateRecoveryCodes(user.id);
-    await this.events.record({
+    await this.recordEventBestEffort({
       userId: user.id,
       type: "TFA_DISABLED",
       actor: user.email,
@@ -274,7 +289,7 @@ export class MfaService {
       user.id,
       plainCodes.map((code) => this.totp.hashRecoveryCode(code)),
     );
-    await this.events.record({
+    await this.recordEventBestEffort({
       userId: user.id,
       type: "RECOVERY_CODES_REGENERATED",
       actor: user.email,
