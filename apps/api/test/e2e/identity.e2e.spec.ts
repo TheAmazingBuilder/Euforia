@@ -634,6 +634,34 @@ describe("password reset (§22)", () => {
     expect(mail.messages.length).toBe(0);
   });
 
+  it("applies the same password-reset rate-limit response to known and unknown addresses", async () => {
+    const ctx = await authenticatedUser(app, mail);
+    const unknownEmail = uniqueEmail("unknown-reset-rate-limit");
+
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      const known = await app.inject({
+        method: "POST",
+        url: "/api/v1/auth/password/forgot",
+        payload: { email: ctx.email },
+      });
+      const unknown = await app.inject({
+        method: "POST",
+        url: "/api/v1/auth/password/forgot",
+        payload: { email: unknownEmail },
+      });
+      expect(known.statusCode).toBe(202);
+      expect(unknown.statusCode).toBe(202);
+    }
+
+    const [knownLimited, unknownLimited] = await Promise.all([
+      app.inject({ method: "POST", url: "/api/v1/auth/password/forgot", payload: { email: ctx.email } }),
+      app.inject({ method: "POST", url: "/api/v1/auth/password/forgot", payload: { email: unknownEmail } }),
+    ]);
+    expect(knownLimited.statusCode).toBe(429);
+    expect(unknownLimited.statusCode).toBe(429);
+    expect(knownLimited.json().code).toBe(unknownLimited.json().code);
+  });
+
   it("SMTP failure does not invalidate the last delivered reset link or reveal account existence", async () => {
     const ctx = await authenticatedUser(app, mail);
     const mailer = app.get(MailerService);
