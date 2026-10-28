@@ -95,10 +95,9 @@ export interface MailDeliveryTelemetry {
 /** Dev/sandbox transport: structured log output - honest and inspectable.
  *
  * SECURITY (finalization §46/§51): the action link embeds a one-time token.
- * In development the link is logged verbatim so flows are testable without
- * a mail provider; in PRODUCTION the link is ALWAYS redacted - a real
- * transport (SMTP/Resend/SES) must be plugged via `useTransport`, and a
- * token must never land in persistent logs.
+ * In development the link/code is logged for local testing only. Production
+ * configuration requires SMTP credentials, so this transport must never be
+ * selected there; sensitive message values are redacted as defense in depth.
  */
 export class ConsoleMailTransport implements MailTransport {
   private readonly redactActionUrl: boolean;
