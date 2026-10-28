@@ -232,17 +232,21 @@ export class MfaService {
     }
 
     const now = new Date();
-    const updated = await this.repository.updateUser(user.id, {
-      mfaSecretEnc: pending,
-      mfaPendingSecretEnc: null,
-      mfaEnabledAt: now,
-      mfaLastVerifiedAt: now,
-      mfaDisabledAt: null,
-      mfaPendingEmailCodeHash: null,
-      mfaPendingEmailExpiresAt: null,
-      mfaPendingEmailAttempts: 0,
-      mfaMethod: "AUTHENTICATOR_APP",
+    const updated = await this.repository.completeTotpMfaEnrollment({
+      userId: user.id,
+      pendingSecretEnc: pending,
+      enabledAt: now,
     });
+    if (!updated) {
+      const current = await this.repository.findUserById(user.id);
+      if (current?.mfaEnabledAt) {
+        throw new ConflictError("Two-factor authentication is already enabled.", "TFA_ALREADY_ON");
+      }
+      throw new BusinessRuleError(
+        "The pending authenticator setup expired or was replaced. Start two-factor setup again.",
+        "NO_PENDING_ENROLLMENT",
+      );
+    }
     await this.repository.activateRecoveryCodes(user.id);
     await this.recordEventBestEffort({
       userId: user.id,
