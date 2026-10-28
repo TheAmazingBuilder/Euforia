@@ -256,7 +256,6 @@ export class MfaService {
         "NO_PENDING_ENROLLMENT",
       );
     }
-    await this.repository.activateRecoveryCodes(user.id);
     await this.recordEventBestEffort({
       userId: user.id,
       type: "TFA_ENABLED",
