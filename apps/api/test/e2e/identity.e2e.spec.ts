@@ -501,19 +501,29 @@ describe("email-based two-factor authentication", () => {
     const enrollmentMessage = [...mail.messages].reverse().find((item) => item.kind === "MFA_EMAIL_CODE");
     expect(enrollmentMessage?.to).toBe(ctx.email);
     expect(enrollmentMessage?.code).toMatch(/^\\d{6}$/);
-    const confirmed = await app.inject({
-      method: "POST",
-      url: "/api/v1/security/2fa/email/confirm",
-      headers: ctx.authHeader,
-      payload: { code: enrollmentMessage?.code },
-    });
-    expect(confirmed.statusCode).toBe(200);
-    expect(confirmed.json().state).toMatchObject({
+    const confirmations = await Promise.all([
+      app.inject({
+        method: "POST",
+        url: "/api/v1/security/2fa/email/confirm",
+        headers: ctx.authHeader,
+        payload: { code: enrollmentMessage?.code },
+      }),
+      app.inject({
+        method: "POST",
+        url: "/api/v1/security/2fa/email/confirm",
+        headers: ctx.authHeader,
+        payload: { code: enrollmentMessage?.code },
+      }),
+    ]);
+    expect(confirmations.filter((response) => response.statusCode === 200)).toHaveLength(1);
+    expect(confirmations.filter((response) => response.statusCode === 409)).toHaveLength(1);
+    const confirmed = confirmations.find((response) => response.statusCode === 200);
+    expect(confirmed?.json().state).toMatchObject({
       enabled: true,
       method: "EMAIL",
       recoveryCodesRemaining: 10,
     });
-    expect(confirmed.json().recoveryCodes).toHaveLength(10);
+    expect(confirmed?.json().recoveryCodes).toHaveLength(10);
 
     mail.clear();
     const login = await app.inject({
