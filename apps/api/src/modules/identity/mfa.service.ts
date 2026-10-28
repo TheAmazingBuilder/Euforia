@@ -91,6 +91,7 @@ export class MfaService {
 
     const code = randomInt(0, 1_000_000).toString().padStart(6, "0");
     const expiresAt = new Date(Date.now() + this.config.auth.mfaChallengeMinutes * 60 * 1000);
+    this.limiter.hit("mfa_email_enroll", user.email);
     await this.mailer.sendEmailMfaCode(user.email, code, `${this.config.auth.mfaChallengeMinutes} minutes`);
     await this.repository.updateUser(user.id, {
       mfaPendingEmailCodeHash: IdentityRepository.hashToken(code),
@@ -98,7 +99,6 @@ export class MfaService {
       mfaPendingEmailAttempts: 0,
       mfaPendingSecretEnc: null,
     });
-    this.limiter.hit("mfa_email_enroll", user.email);
     return { pending: true, expiresAt: expiresAt.toISOString() };
   }
 
