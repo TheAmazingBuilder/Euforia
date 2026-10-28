@@ -856,6 +856,44 @@ describe("password reset (§22)", () => {
     expect(reset.statusCode).toBe(200);
   });
 
+  it("restores the original verified email if email-change delivery fails", async () => {
+    const ctx = await authenticatedUser(app, mail);
+    const originalEmail = ctx.email;
+    const newEmail = uniqueEmail("email-change-smtp-failure");
+    const mailer = app.get(MailerService);
+    mailer.useTransport({
+      send: async () => {
+        throw new Error("simulated SMTP outage during email change");
+      },
+    });
+
+    let response;
+    try {
+      response = await app.inject({
+        method: "PATCH",
+        url: "/api/v1/me",
+        headers: ctx.authHeader,
+        payload: { email: newEmail },
+      });
+    } finally {
+      mailer.useTransport({ send: async (message) => { mail.messages.push(message); } });
+    }
+
+    expect(response!.statusCode).toBeGreaterThanOrEqual(500);
+    const restored = await app.get(IdentityRepository).findUserById(ctx.userId);
+    expect(restored?.email).toBe(originalEmail);
+    expect(restored?.status).toBe("ACTIVE");
+    expect(restored?.emailVerifiedAt).not.toBeNull();
+
+    const login = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/login",
+      payload: { email: originalEmail, password: PASSWORD, remember: false },
+    });
+    expect(login.statusCode).toBe(200);
+    expect(login.json().outcome).toBe("AUTHENTICATED");
+  });
+
   it("reset changes the password, revokes sessions, and allows re-login", async () => {
     const ctx = await authenticatedUser(app, mail);
     mail.clear();
