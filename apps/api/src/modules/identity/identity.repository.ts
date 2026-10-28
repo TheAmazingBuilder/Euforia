@@ -637,6 +637,33 @@ export class IdentityRepository {
     await this.prisma.authChallenge.deleteMany({ where: { tokenHash, usedAt: null } });
   }
 
+  /** Restore the previously verified address if delivery for an email change fails. */
+  async restoreEmailAfterUndeliveredChange(data: {
+    userId: string;
+    expectedNewEmail: string;
+    originalEmail: string;
+    originalEmailVerifiedAt: Date | null;
+  }): Promise<boolean> {
+    const restored = await this.prisma.user.updateMany({
+      where: {
+        id: data.userId,
+        email: data.expectedNewEmail,
+        status: "PENDING_VERIFICATION",
+        emailVerifiedAt: null,
+      },
+      data: {
+        email: data.originalEmail,
+        status: "ACTIVE",
+        emailVerifiedAt: data.originalEmailVerifiedAt,
+      },
+    });
+    if (restored.count !== 1) return false;
+    await this.prisma.authChallenge.deleteMany({
+      where: { userId: data.userId, purpose: "EMAIL_VERIFICATION" },
+    });
+    return true;
+  }
+
   /** Invalidate old verification links before the account's email identity changes. */
   async invalidateChallengesForUser(
     userId: string,
