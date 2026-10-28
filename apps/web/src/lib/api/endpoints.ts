@@ -151,6 +151,7 @@ export const apiPaths = {
   securityTwoFactorEnable: "/security/2fa/enable",
   securityTwoFactorEmailEnable: "/security/2fa/email/enable",
   securityTwoFactorEmailConfirm: "/security/2fa/email/confirm",
+  securityTwoFactorEmailConfirm: "/security/2fa/email/confirm",
   securityTwoFactorConfirm: "/security/2fa/confirm",
   securityTwoFactorDisable: "/security/2fa/disable",
   securityTwoFactorRecovery: "/security/2fa/recovery/regenerate",
