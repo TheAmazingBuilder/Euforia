@@ -8,11 +8,14 @@
  * previous set (§20).
  */
 import { Injectable } from "@nestjs/common";
+import { randomInt, timingSafeEqual } from "node:crypto";
 import { IdentityRepository, type UserRow } from "./identity.repository";
 import { TotpService } from "./totp.service";
 import { ReauthService } from "./reauth.service";
 import { SecurityEventService } from "../security/security-event.service";
-import { BusinessRuleError, ConflictError } from "../../shared/errors/app-error";
+import { MailerService } from "./mailer.service";
+import { AuthRateLimiterService } from "./auth-rate-limiter.service";
+import { BusinessRuleError, ConflictError, RateLimitError } from "../../shared/errors/app-error";
 
 export interface TwoFactorState {
   enabled: boolean;
@@ -31,6 +34,8 @@ export class MfaService {
     private readonly totp: TotpService,
     private readonly reauth: ReauthService,
     private readonly events: SecurityEventService,
+    private readonly mailer: MailerService,
+    private readonly limiter: AuthRateLimiterService,
   ) {}
 
   /** POST /security/2fa/enable - returns the one-time enrollment payload. */
@@ -63,8 +68,11 @@ export class MfaService {
     return { secret, recoveryCodes: plainCodes };
   }
 
-  /** POST /security/2fa/email/enable - enable email OTP as the selected second factor. */
-  async enableEmail(user: UserRow, reauthToken: string | undefined): Promise<{ state: TwoFactorState; recoveryCodes: string[] }> {
+  /** Begin email MFA enrollment. The method stays disabled until the mailbox code is confirmed. */
+  async enableEmail(
+    user: UserRow,
+    reauthToken: string | undefined,
+  ): Promise<{ pending: true; expiresAt: string }> {
     await this.reauth.consume(reauthToken, user.id);
     if (!user.emailVerifiedAt) {
       throw new BusinessRuleError("Verify your email address before enabling email authentication.", "EMAIL_NOT_VERIFIED");
@@ -73,19 +81,74 @@ export class MfaService {
       throw new ConflictError("Disable the current two-factor method before switching methods.", "TFA_ALREADY_ON");
     }
 
+    const sendCheck = this.limiter.check("mfa_email_enroll", user.email);
+    if (!sendCheck.allowed) {
+      throw new RateLimitError("Too many email verification codes requested. Please wait before trying again.", "RATE_LIMITED", sendCheck.retryAfterSeconds);
+    }
+
+    const code = randomInt(0, 1_000_000).toString().padStart(6, "0");
+    const expiresAt = new Date(Date.now() + this.configuredChallengeTtlMs());
+    await this.mailer.sendEmailMfaCode(user.email, code, "5 minutes");
+    await this.repository.updateUser(user.id, {
+      mfaPendingEmailCodeHash: IdentityRepository.hashToken(code),
+      mfaPendingEmailExpiresAt: expiresAt,
+      mfaPendingEmailAttempts: 0,
+      mfaPendingSecretEnc: null,
+    });
+    this.limiter.hit("mfa_email_enroll", user.email);
+    return { pending: true, expiresAt: expiresAt.toISOString() };
+  }
+
+  /** Confirm email MFA enrollment, then return one-time recovery codes. */
+  async confirmEmail(
+    user: UserRow,
+    code: string,
+  ): Promise<{ state: TwoFactorState; recoveryCodes: string[] }> {
+    if (user.mfaEnabledAt) {
+      throw new ConflictError("Two-factor authentication is already enabled.", "TFA_ALREADY_ON");
+    }
+    const hash = user.mfaPendingEmailCodeHash;
+    const expiresAt = user.mfaPendingEmailExpiresAt;
+    if (!hash || !expiresAt || expiresAt.getTime() <= Date.now() || user.mfaPendingEmailAttempts >= 5) {
+      await this.repository.updateUser(user.id, {
+        mfaPendingEmailCodeHash: null,
+        mfaPendingEmailExpiresAt: null,
+        mfaPendingEmailAttempts: 0,
+      });
+      throw new BusinessRuleError("The email verification code expired. Start email 2FA setup again.", "EMAIL_MFA_CHALLENGE_EXPIRED");
+    }
+
+    const submitted = Buffer.from(IdentityRepository.hashToken(code), "hex");
+    const expected = Buffer.from(hash, "hex");
+    if (submitted.length !== expected.length || !timingSafeEqual(submitted, expected)) {
+      const attempts = user.mfaPendingEmailAttempts + 1;
+      await this.repository.updateUser(user.id, {
+        mfaPendingEmailAttempts: attempts,
+        ...(attempts >= 5 ? {
+          mfaPendingEmailCodeHash: null,
+          mfaPendingEmailExpiresAt: null,
+          mfaPendingEmailAttempts: 0,
+        } : {}),
+      });
+      throw new BusinessRuleError(
+        attempts >= 5 ? "Too many incorrect codes. Start email 2FA setup again." : "That code didn't match. Check your email and try again.",
+        attempts >= 5 ? "EMAIL_MFA_TOO_MANY_ATTEMPTS" : "INVALID_CODE",
+      );
+    }
+
     const plainCodes = this.totp.generateRecoveryCodes(10);
-    await this.repository.replaceRecoveryCodes(
-      user.id,
-      plainCodes.map((code) => this.totp.hashRecoveryCode(code)),
-    );
+    await this.repository.replaceRecoveryCodes(user.id, plainCodes.map((value) => this.totp.hashRecoveryCode(value)));
     const now = new Date();
     const updated = await this.repository.updateUser(user.id, {
       mfaSecretEnc: null,
       mfaPendingSecretEnc: null,
+      mfaPendingEmailCodeHash: null,
+      mfaPendingEmailExpiresAt: null,
+      mfaPendingEmailAttempts: 0,
       mfaMethod: "EMAIL",
       mfaEnabledAt: now,
       mfaDisabledAt: null,
-      mfaLastVerifiedAt: null,
+      mfaLastVerifiedAt: now,
     });
     await this.repository.activateRecoveryCodes(user.id);
     await this.events.record({
@@ -95,6 +158,10 @@ export class MfaService {
       context: "Two-factor authentication enabled (email code).",
     });
     return { state: await this.state(updated), recoveryCodes: plainCodes };
+  }
+
+  private configuredChallengeTtlMs(): number {
+    return 5 * 60 * 1000;
   }
 
   /** POST /security/2fa/confirm - activates the pending enrollment (no reauth: the TOTP code IS the proof). */
@@ -118,6 +185,9 @@ export class MfaService {
       mfaEnabledAt: now,
       mfaLastVerifiedAt: now,
       mfaDisabledAt: null,
+      mfaPendingEmailCodeHash: null,
+      mfaPendingEmailExpiresAt: null,
+      mfaPendingEmailAttempts: 0,
       mfaMethod: "AUTHENTICATOR_APP",
     });
     await this.repository.activateRecoveryCodes(user.id);
@@ -143,6 +213,9 @@ export class MfaService {
       mfaEnabledAt: null,
       mfaDisabledAt: now,
       mfaLastVerifiedAt: null,
+      mfaPendingEmailCodeHash: null,
+      mfaPendingEmailExpiresAt: null,
+      mfaPendingEmailAttempts: 0,
       mfaMethod: null,
     });
     await this.repository.deactivateRecoveryCodes(user.id);
@@ -183,7 +256,7 @@ export class MfaService {
     const remaining = (await this.repository.listActiveRecoveryCodes(user.id)).length;
     return {
       enabled: Boolean(user.mfaEnabledAt),
-      pending: !user.mfaEnabledAt && Boolean(user.mfaPendingSecretEnc),
+      pending: !user.mfaEnabledAt && Boolean(user.mfaPendingSecretEnc || user.mfaPendingEmailCodeHash),
       method: user.mfaEnabledAt ? (user.mfaMethod === "EMAIL" ? "EMAIL" : "AUTHENTICATOR_APP") : null,
       enabledAt: user.mfaEnabledAt ? mfaIso(user.mfaEnabledAt) : null,
       disabledAt: user.mfaDisabledAt ? mfaIso(user.mfaDisabledAt) : null,
