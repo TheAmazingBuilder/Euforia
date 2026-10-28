@@ -594,7 +594,7 @@ export function TwoFactorPanel({
             <Input
               id="email-mfa-enrollment-code"
               value={emailEnrollCode}
-              onChange={(event) => onEmailEnrollCodeChange(event.target.value.replace(/\\D/g, "").slice(0, 6))}
+              onChange={(event) => onEmailEnrollCodeChange(event.target.value.replace(/\D/g, "").slice(0, 6))}
               inputMode="numeric"
               autoComplete="one-time-code"
               maxLength={6}
