@@ -46,6 +46,7 @@ export interface SessionRow {
   refreshTokenHash: string;
   previousTokenHash: string | null;
   generation: number;
+  remember: boolean;
   device: string;
   browser: string;
   os: string;
@@ -466,6 +467,7 @@ export class IdentityRepository {
   async createSession(data: {
     userId: string;
     refreshTokenHash: string;
+    remember?: boolean;
     device: string;
     browser: string;
     os: string;
@@ -478,22 +480,34 @@ export class IdentityRepository {
     return row as SessionRow;
   }
 
-  /** Rotation: new generation + new token hash on the SAME session row. */
+  /**
+   * Compare-and-swap rotation: only the request presenting the current hash
+   * and generation can win. This prevents concurrent requests from replacing
+   * each other's newly issued refresh tokens.
+   */
   async rotateSession(
     id: string,
+    expected: { refreshTokenHash: string; generation: number },
     data: { refreshTokenHash: string; expiresAt: Date },
-  ): Promise<SessionRow> {
-    const existing = await this.prisma.session.findUniqueOrThrow({ where: { id } });
-    const row = await this.prisma.session.update({
-      where: { id },
+  ): Promise<SessionRow | null> {
+    const result = await this.prisma.session.updateMany({
+      where: {
+        id,
+        refreshTokenHash: expected.refreshTokenHash,
+        generation: expected.generation,
+        revokedAt: null,
+        expiresAt: { gt: new Date() },
+      },
       data: {
         ...data,
-        previousTokenHash: existing.refreshTokenHash,
+        previousTokenHash: expected.refreshTokenHash,
         generation: { increment: 1 },
         lastActivityAt: new Date(),
       },
     });
-    return row as SessionRow;
+    if (result.count !== 1) return null;
+    const row = await this.prisma.session.findUnique({ where: { id } });
+    return (row as SessionRow) ?? null;
   }
 
   async findSessionByPreviousTokenHash(hash: string): Promise<SessionRow | null> {
