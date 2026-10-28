@@ -244,8 +244,13 @@ export class AuthService {
       throw new ValidationError("This verification link is not valid.", undefined, "INVALID_TOKEN");
     }
 
-    const consumed = await this.repository.consumeChallenge(challenge.id);
-    if (!consumed) {
+    const verifiedAt = new Date();
+    const updated = await this.repository.completeEmailVerification({
+      challengeId: challenge.id,
+      userId: user.id,
+      verifiedAt,
+    });
+    if (!updated) {
       if (challenge.expiresAt.getTime() <= Date.now()) {
         throw new ValidationError(
           "This link has expired - request a new email.",
@@ -259,11 +264,6 @@ export class AuthService {
         "TOKEN_ALREADY_USED",
       );
     }
-    const verifiedAt = new Date();
-    const updated = await this.repository.updateUser(user.id, {
-      status: "ACTIVE",
-      emailVerifiedAt: verifiedAt,
-    });
     await this.events.record({
       userId: user.id,
       type: "EMAIL_VERIFIED",
