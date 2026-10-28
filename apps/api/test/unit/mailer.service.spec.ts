@@ -26,6 +26,31 @@ function createMailer() {
 }
 
 describe("MailerService email MFA", () => {
+  it("fails closed instead of using console delivery in production without SMTP credentials", () => {
+    const logger = {
+      info: vi.fn(),
+      error: vi.fn(),
+      warn: vi.fn(),
+      debug: vi.fn(),
+    } as unknown as RootLogger;
+    const config = {
+      isProduction: true,
+      auth: {
+        emailFrom: "Euforia <mailer@example.com>",
+        webAppUrl: "https://app.euforia.app",
+        smtpHost: "smtp.gmail.com",
+        smtpPort: 587,
+        smtpSecure: false,
+        smtpUser: undefined,
+        smtpAppPassword: undefined,
+      },
+    } as AppConfig;
+
+    expect(() => new MailerService(config, logger)).toThrow(
+      "Production email delivery requires SMTP_USER and SMTP_APP_PASSWORD.",
+    );
+  });
+
   it("sends an email OTP through the configured transport and records data-minimal telemetry", async () => {
     const mailer = createMailer();
     const messages: MailMessage[] = [];
