@@ -617,13 +617,20 @@ export class AuthService {
       );
       return { sent: true, delivery: "EMAIL", resetExpiresAt: null };
     }
-    // Finalize only after SMTP confirms delivery. If this DB cleanup fails,
-    // do not invalidate the token already sent to the user.
-    await this.repository.finalizeDeliveredChallenge({
-      userId: user.id,
-      purpose: "PASSWORD_RESET",
-      tokenHash,
-    });
+    // Retiring older links is cleanup, not a prerequisite for using the
+    // delivered token. Do not report delivery failure after SMTP succeeded.
+    try {
+      await this.repository.finalizeDeliveredChallenge({
+        userId: user.id,
+        purpose: "PASSWORD_RESET",
+        tokenHash,
+      });
+    } catch (error) {
+      this.logger?.warn(
+        { userId: user.id, errorType: error instanceof Error ? error.name : "UnknownError" },
+        "could not retire previous password reset challenges",
+      );
+    }
     await this.events.record({
       userId: user.id,
       type: "PASSWORD_RESET_REQUESTED",
@@ -712,12 +719,20 @@ export class AuthService {
       await this.repository.deleteChallengeByTokenHash(tokenHash);
       throw error;
     }
-    // Do not delete a token that has already been sent if DB finalization fails.
-    await this.repository.finalizeDeliveredChallenge({
-      userId: user.id,
-      purpose: "EMAIL_VERIFICATION",
-      tokenHash,
-    });
+    // Retiring older links is best-effort after SMTP succeeds; the delivered
+    // token must remain usable even if this cleanup query fails.
+    try {
+      await this.repository.finalizeDeliveredChallenge({
+        userId: user.id,
+        purpose: "EMAIL_VERIFICATION",
+        tokenHash,
+      });
+    } catch (error) {
+      this.logger?.warn(
+        { userId: user.id, errorType: error instanceof Error ? error.name : "UnknownError" },
+        "could not retire previous email verification challenges",
+      );
+    }
     return expiresAt.toISOString();
   }
 
