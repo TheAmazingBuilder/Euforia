@@ -59,6 +59,9 @@ export class MfaService {
     );
     const updated = await this.repository.updateUser(user.id, {
       mfaPendingSecretEnc: this.totp.encryptSecret(secret),
+      mfaPendingEmailCodeHash: null,
+      mfaPendingEmailExpiresAt: null,
+      mfaPendingEmailAttempts: 0,
     });
 
     await this.events.record({
