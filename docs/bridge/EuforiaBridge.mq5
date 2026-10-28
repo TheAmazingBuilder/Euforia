@@ -1,6 +1,6 @@
 //+------------------------------------------------------------------+
 //|                                             EuforiaBridge.mq5    |
-//|         Euforia trading journal — MT5 terminal bridge (v1.0.1)   |
+//|         Euforia trading journal — MT5 terminal bridge (v1.0.2)   |
 //|                                                                  |
 //| WHAT IT DOES                                                     |
 //|   Reads the account attached to THIS terminal (account info,     |
@@ -22,7 +22,7 @@
 //|   5. Keep the terminal open: data is as fresh as the last push.  |
 //+------------------------------------------------------------------+
 #property copyright "Euforia / Cosmoz"
-#property version   "1.01"
+#property version   "1.02"
 #property strict
 
 //--- inputs
@@ -385,7 +385,7 @@ bool PushDeals()
      {
       // Checkpoint advance: +1 s past the newest seen deal (floor semantics).
       g_dealsFrom = maxDealTime + 1;
-      GlobalVariableSet("EUFORIA_DEALS_FROM", (double)g_dealsFrom);
+      GlobalVariableSet(g_dealsCheckpointKey, (double)g_dealsFrom);
      }
    return ok;
   }
