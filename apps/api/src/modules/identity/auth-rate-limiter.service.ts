@@ -106,5 +106,6 @@ export const AUTH_RATE_LIMITS: Record<string, number> = {
   register: 5,
   resend: 3,
   forgot: 3,
+  email_change: 3,
   reauth: 5,
 };
