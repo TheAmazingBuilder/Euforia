@@ -199,7 +199,26 @@ describe("registration & email verification", () => {
     });
     expect(oldLink.statusCode).toBe(400);
     expect(oldLink.json().code).toBe("INVALID_TOKEN");
-    expect((await app.get(IdentityRepository).findUserByEmail(newEmail))?.status).toBe("PENDING_VERIFICATION");
+    const pendingUser = await app.get(IdentityRepository).findUserByEmail(newEmail);
+    expect(pendingUser?.status).toBe("PENDING_VERIFICATION");
+
+    // Simulate a concurrent stale challenge that survived cleanup: the token
+    // must still be rejected because it was issued for the previous address.
+    const staleConcurrentToken = IdentityRepository.randomToken(24);
+    await app.get(IdentityRepository).createChallenge({
+      userId: ctx.userId,
+      purpose: "EMAIL_VERIFICATION",
+      tokenHash: IdentityRepository.hashToken(staleConcurrentToken),
+      targetEmail: ctx.email,
+      expiresAt: new Date(Date.now() + 60_000),
+    });
+    const staleConcurrentLink = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/email/verify",
+      payload: { token: staleConcurrentToken },
+    });
+    expect(staleConcurrentLink.statusCode).toBe(400);
+    expect(staleConcurrentLink.json().code).toBe("INVALID_TOKEN");
 
     const resend = await app.inject({
       method: "POST",
