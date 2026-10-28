@@ -69,16 +69,22 @@ export class MfaService {
 
     const { secret } = this.totp.generateEnrollment(user.email);
     const plainCodes = this.totp.generateRecoveryCodes(10);
-    await this.repository.replaceRecoveryCodes(
-      user.id,
-      plainCodes.map((code) => this.totp.hashRecoveryCode(code)),
-    );
-    const updated = await this.repository.updateUser(user.id, {
-      mfaPendingSecretEnc: this.totp.encryptSecret(secret),
-      mfaPendingEmailCodeHash: null,
-      mfaPendingEmailExpiresAt: null,
-      mfaPendingEmailAttempts: 0,
+    const updated = await this.repository.beginTotpMfaEnrollment({
+      userId: user.id,
+      expectedEmail: user.email,
+      pendingSecretEnc: this.totp.encryptSecret(secret),
+      recoveryCodeHashes: plainCodes.map((code) => this.totp.hashRecoveryCode(code)),
     });
+    if (!updated) {
+      const current = await this.repository.findUserById(user.id);
+      if (current?.mfaEnabledAt) {
+        throw new ConflictError("Two-factor authentication is already enabled.", "TFA_ALREADY_ON");
+      }
+      throw new ConflictError(
+        "Account security settings changed in another request. Please try again.",
+        "NO_PENDING_ENROLLMENT",
+      );
+    }
 
     await this.recordEventBestEffort({
       userId: user.id,
@@ -86,7 +92,6 @@ export class MfaService {
       actor: user.email,
       context: "Two-factor enrollment started - awaiting confirmation.",
     });
-    void updated;
     return { secret, recoveryCodes: plainCodes };
   }
 
