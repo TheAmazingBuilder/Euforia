@@ -87,6 +87,7 @@ describe("registration & email verification", () => {
       payload: { name: "Resend User", email, password: PASSWORD },
     });
     expect(registered.statusCode).toBe(201);
+    const previouslyDeliveredToken = mail.lastVerificationToken();
 
     const mailer = app.get(MailerService);
     mailer.useTransport({ send: async () => { throw new Error("simulated SMTP outage"); } });
@@ -100,6 +101,14 @@ describe("registration & email verification", () => {
     expect(failedDelivery.statusCode).toBe(202);
     expect(failedDelivery.json().sent).toBe(true);
     expect(failedDelivery.json().verificationExpiresAt).toBeNull();
+
+    // A failed resend must not invalidate the verification link already sent.
+    const verified = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/email/verify",
+      payload: { token: previouslyDeliveredToken },
+    });
+    expect(verified.statusCode).toBe(200);
   });
 
   it("rejects weak passwords at the contract level", async () => {
