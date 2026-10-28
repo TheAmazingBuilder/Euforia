@@ -430,8 +430,8 @@ export class IdentityRepository {
     expiresAt: Date;
   }): Promise<void> {
     await this.prisma.$transaction([
-      // Keep active challenges valid, but prune spent/expired MFA records so
-      // the persistent challenge table does not grow without bound.
+      // Keep active challenges valid until a replacement has been delivered;
+      // prune spent/expired records so the table does not grow without bound.
       this.prisma.authChallenge.deleteMany({
         where: {
           purpose: "MFA_LOGIN",
@@ -455,6 +455,25 @@ export class IdentityRepository {
   async findMfaLoginChallengeByTokenHash(hash: string) {
     return this.prisma.authChallenge.findFirst({
       where: { tokenHash: hash, purpose: "MFA_LOGIN" },
+    });
+  }
+
+  /** Retire previous login challenges only after the replacement is ready. */
+  async finalizeMfaLoginChallenge(data: { userId: string; tokenHash: string }): Promise<void> {
+    await this.prisma.authChallenge.deleteMany({
+      where: {
+        userId: data.userId,
+        purpose: "MFA_LOGIN",
+        usedAt: null,
+        tokenHash: { not: data.tokenHash },
+      },
+    });
+  }
+
+  /** Remove a login challenge whose email code could not be delivered. */
+  async deleteMfaLoginChallengeByTokenHash(tokenHash: string): Promise<void> {
+    await this.prisma.authChallenge.deleteMany({
+      where: { tokenHash, purpose: "MFA_LOGIN", usedAt: null },
     });
   }
 
