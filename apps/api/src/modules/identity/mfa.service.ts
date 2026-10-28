@@ -158,50 +158,56 @@ export class MfaService {
     if (user.mfaEnabledAt) {
       throw new ConflictError("Two-factor authentication is already enabled.", "TFA_ALREADY_ON");
     }
+
     const hash = user.mfaPendingEmailCodeHash;
     const expiresAt = user.mfaPendingEmailExpiresAt;
     if (!hash || !expiresAt || expiresAt.getTime() <= Date.now() || user.mfaPendingEmailAttempts >= 5) {
-      await this.repository.updateUser(user.id, {
-        mfaPendingEmailCodeHash: null,
-        mfaPendingEmailExpiresAt: null,
-        mfaPendingEmailAttempts: 0,
-      });
-      throw new BusinessRuleError("The email verification code expired. Start email 2FA setup again.", "EMAIL_MFA_CHALLENGE_EXPIRED");
+      if (hash) {
+        await this.repository.clearPendingEmailMfaChallenge(user.id, hash);
+      }
+      throw new BusinessRuleError(
+        "The email verification code expired. Start email 2FA setup again.",
+        "EMAIL_MFA_CHALLENGE_EXPIRED",
+      );
     }
 
     const submitted = Buffer.from(this.hashEmailEnrollmentCode(code), "hex");
     const expected = Buffer.from(hash, "hex");
     if (submitted.length !== expected.length || !timingSafeEqual(submitted, expected)) {
-      const attempts = user.mfaPendingEmailAttempts + 1;
-      await this.repository.updateUser(user.id, {
-        mfaPendingEmailAttempts: attempts,
-        ...(attempts >= 5 ? {
-          mfaPendingEmailCodeHash: null,
-          mfaPendingEmailExpiresAt: null,
-          mfaPendingEmailAttempts: 0,
-        } : {}),
-      });
+      const attempts = await this.repository.recordEmailMfaEnrollmentFailure(user.id, hash, new Date());
+      if (attempts === null) {
+        throw new BusinessRuleError(
+          "The email verification code expired or was replaced. Start email 2FA setup again.",
+          "EMAIL_MFA_CHALLENGE_EXPIRED",
+        );
+      }
       throw new BusinessRuleError(
-        attempts >= 5 ? "Too many incorrect codes. Start email 2FA setup again." : "That code didn't match. Check your email and try again.",
+        attempts >= 5
+          ? "Too many incorrect codes. Start email 2FA setup again."
+          : "That code didn't match. Check your email and try again.",
         attempts >= 5 ? "EMAIL_MFA_TOO_MANY_ATTEMPTS" : "INVALID_CODE",
       );
     }
 
     const plainCodes = this.totp.generateRecoveryCodes(10);
-    await this.repository.replaceRecoveryCodes(user.id, plainCodes.map((value) => this.totp.hashRecoveryCode(value)));
-    const now = new Date();
-    const updated = await this.repository.updateUser(user.id, {
-      mfaSecretEnc: null,
-      mfaPendingSecretEnc: null,
-      mfaPendingEmailCodeHash: null,
-      mfaPendingEmailExpiresAt: null,
-      mfaPendingEmailAttempts: 0,
-      mfaMethod: "EMAIL",
-      mfaEnabledAt: now,
-      mfaDisabledAt: null,
-      mfaLastVerifiedAt: now,
+    const enabledAt = new Date();
+    const updated = await this.repository.completeEmailMfaEnrollment({
+      userId: user.id,
+      expectedCodeHash: hash,
+      enabledAt,
+      recoveryCodeHashes: plainCodes.map((value) => this.totp.hashRecoveryCode(value)),
     });
-    await this.repository.activateRecoveryCodes(user.id);
+    if (!updated) {
+      const current = await this.repository.findUserById(user.id);
+      if (current?.mfaEnabledAt) {
+        throw new ConflictError("Two-factor authentication is already enabled.", "TFA_ALREADY_ON");
+      }
+      throw new BusinessRuleError(
+        "The email verification code expired or was already used. Start email 2FA setup again.",
+        "EMAIL_MFA_CHALLENGE_EXPIRED",
+      );
+    }
+
     await this.recordEventBestEffort({
       userId: user.id,
       type: "TFA_ENABLED",
