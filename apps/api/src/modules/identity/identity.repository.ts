@@ -150,6 +150,7 @@ export class IdentityRepository {
   /** Atomically claim the email-MFA enrollment slot against stale/concurrent requests. */
   async beginPendingEmailMfaChallenge(data: {
     userId: string;
+    expectedEmail: string;
     expectedCodeHash: string | null;
     expectedExpiresAt: Date | null;
     codeHash: string;
@@ -158,6 +159,8 @@ export class IdentityRepository {
     const result = await this.prisma.user.updateMany({
       where: {
         id: data.userId,
+        email: data.expectedEmail,
+        status: "ACTIVE",
         mfaEnabledAt: null,
         mfaPendingEmailCodeHash: data.expectedCodeHash,
         mfaPendingEmailExpiresAt: data.expectedExpiresAt,
