@@ -606,11 +606,6 @@ export class AuthService {
     });
     try {
       await this.mailer.sendPasswordReset(user.email, token, `${this.config.auth.passwordResetMinutes} minutes`);
-      await this.repository.finalizeDeliveredChallenge({
-        userId: user.id,
-        purpose: "PASSWORD_RESET",
-        tokenHash,
-      });
     } catch (error) {
       // Keep the endpoint anti-enumeration-safe: unknown accounts and failed
       // delivery return the same shape. Remove only the undelivered candidate;
@@ -622,6 +617,13 @@ export class AuthService {
       );
       return { sent: true, delivery: "EMAIL", resetExpiresAt: null };
     }
+    // Finalize only after SMTP confirms delivery. If this DB cleanup fails,
+    // do not invalidate the token already sent to the user.
+    await this.repository.finalizeDeliveredChallenge({
+      userId: user.id,
+      purpose: "PASSWORD_RESET",
+      tokenHash,
+    });
     await this.events.record({
       userId: user.id,
       type: "PASSWORD_RESET_REQUESTED",
@@ -704,17 +706,18 @@ export class AuthService {
     });
     try {
       await this.mailer.sendEmailVerification(toEmail, token, `${this.config.auth.emailVerificationHours} hours`);
-      await this.repository.finalizeDeliveredChallenge({
-        userId: user.id,
-        purpose: "EMAIL_VERIFICATION",
-        tokenHash,
-      });
     } catch (error) {
       // Registration remains pending and resend remains available. Do not
       // leave a token that was never delivered or invalidate an older link.
       await this.repository.deleteChallengeByTokenHash(tokenHash);
       throw error;
     }
+    // Do not delete a token that has already been sent if DB finalization fails.
+    await this.repository.finalizeDeliveredChallenge({
+      userId: user.id,
+      purpose: "EMAIL_VERIFICATION",
+      tokenHash,
+    });
     return expiresAt.toISOString();
   }
 
