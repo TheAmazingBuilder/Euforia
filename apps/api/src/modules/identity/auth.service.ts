@@ -277,8 +277,19 @@ export class AuthService {
     }
     this.limiter.hit("resend", email);
 
-    const expiresAt = await this.issueVerificationChallenge(user, user.email);
-    return { sent: true, delivery: "EMAIL", verificationExpiresAt: expiresAt };
+    try {
+      const expiresAt = await this.issueVerificationChallenge(user, user.email);
+      return { sent: true, delivery: "EMAIL", verificationExpiresAt: expiresAt };
+    } catch (error) {
+      // Preserve anti-enumeration: unknown accounts and delivery failures have
+      // the same response shape. A later resend can retry without changing
+      // the pending account's status or burning a previously delivered link.
+      this.logger?.warn(
+        { userId: user.id, errorType: error instanceof Error ? error.name : "UnknownError" },
+        "verification email could not be delivered",
+      );
+      return { sent: true, delivery: "EMAIL", verificationExpiresAt: null };
+    }
   }
 
   // ── Login (§11) + MFA branch (§19) ──────────────────────────────────────────
