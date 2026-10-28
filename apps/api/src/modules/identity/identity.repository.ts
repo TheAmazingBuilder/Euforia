@@ -388,6 +388,7 @@ export class IdentityRepository {
     purpose: "EMAIL_VERIFICATION" | "PASSWORD_RESET";
     tokenHash: string;
     expiresAt: Date;
+    targetEmail?: string | null;
   }): Promise<void> {
     // Persist the candidate before delivery, but keep the previous link valid
     // until SMTP confirms success. A failed resend must not strand the user.
@@ -403,6 +404,14 @@ export class IdentityRepository {
   /** Remove an undelivered candidate challenge without touching an older valid link. */
   async deleteChallengeByTokenHash(tokenHash: string): Promise<void> {
     await this.prisma.authChallenge.deleteMany({ where: { tokenHash, usedAt: null } });
+  }
+
+  /** Invalidate old verification links before the account's email identity changes. */
+  async invalidateChallengesForUser(
+    userId: string,
+    purpose: "EMAIL_VERIFICATION" | "PASSWORD_RESET",
+  ): Promise<void> {
+    await this.prisma.authChallenge.deleteMany({ where: { userId, purpose } });
   }
 
   /** Once delivery succeeds, invalidate other unused challenges of the same purpose. */
