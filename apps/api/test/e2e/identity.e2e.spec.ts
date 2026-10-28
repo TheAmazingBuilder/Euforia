@@ -836,6 +836,15 @@ describe("password reset (§22)", () => {
     expect(wrongPurpose.statusCode).toBe(400);
     expect(wrongPurpose.json().code).toBe("INVALID_TOKEN");
 
+    // Simulate an older outstanding link left behind by a failed cleanup.
+    const staleResetToken = IdentityRepository.randomToken(24);
+    await app.get(IdentityRepository).createChallenge({
+      userId: ctx.userId,
+      purpose: "PASSWORD_RESET",
+      tokenHash: IdentityRepository.hashToken(staleResetToken),
+      expiresAt: new Date(Date.now() + 60_000),
+    });
+
     // Two requests racing with the same token must not both succeed.
     const concurrent = await Promise.all([
       app.inject({
@@ -862,6 +871,14 @@ describe("password reset (§22)", () => {
     });
     expect(replay.statusCode).toBe(400);
     expect(replay.json().code).toBe("TOKEN_ALREADY_USED");
+
+    const staleReset = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/password/reset",
+      payload: { token: staleResetToken, password: "fourth-password-45" },
+    });
+    expect(staleReset.statusCode).toBe(400);
+    expect(staleReset.json().code).toBe("INVALID_TOKEN");
 
     // Old refresh chain revoked (defense in depth).
     const oldRefresh = await app.inject({
