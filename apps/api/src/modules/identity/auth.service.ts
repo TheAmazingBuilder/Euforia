@@ -271,12 +271,19 @@ export class AuthService {
         "TOKEN_ALREADY_USED",
       );
     }
-    await this.events.record({
-      userId: user.id,
-      type: "EMAIL_VERIFIED",
-      actor: user.email,
-      context: "Email address verified.",
-    });
+    try {
+      await this.events.record({
+        userId: user.id,
+        type: "EMAIL_VERIFIED",
+        actor: user.email,
+        context: "Email address verified.",
+      });
+    } catch (error) {
+      this.logger?.warn(
+        { userId: user.id, errorType: error instanceof Error ? error.name : "UnknownError" },
+        "email verification audit event could not be recorded",
+      );
+    }
     return { user: toAuthUser(updated), verifiedAt: verifiedAt.toISOString() };
   }
 
@@ -630,18 +637,18 @@ export class AuthService {
     const expiresAt = new Date(Date.now() + ttlMs);
     const token = IdentityRepository.randomToken(24);
     const tokenHash = IdentityRepository.hashToken(token);
-    await this.repository.createChallenge({
-      userId: user.id,
-      purpose: "PASSWORD_RESET",
-      tokenHash,
-      expiresAt,
-    });
     try {
+      await this.repository.createChallenge({
+        userId: user.id,
+        purpose: "PASSWORD_RESET",
+        tokenHash,
+        expiresAt,
+      });
       await this.mailer.sendPasswordReset(user.email, token, `${this.config.auth.passwordResetMinutes} minutes`);
     } catch (error) {
-      // Keep the endpoint anti-enumeration-safe: unknown accounts and failed
-      // delivery return the same shape. Remove only the undelivered candidate;
-      // any previously delivered reset link remains usable.
+      // Keep the endpoint anti-enumeration-safe even if challenge persistence or
+      // SMTP fails. Remove only this candidate; a previously delivered link
+      // remains usable.
       try {
         await this.repository.deleteChallengeByTokenHash(tokenHash);
       } catch (cleanupError) {
@@ -652,7 +659,7 @@ export class AuthService {
       }
       this.logger?.warn(
         { userId: user.id, errorType: error instanceof Error ? error.name : "UnknownError" },
-        "password reset email delivery failed",
+        "password reset challenge creation or delivery failed",
       );
       return { sent: true, delivery: "EMAIL", resetExpiresAt: null };
     }
@@ -670,12 +677,19 @@ export class AuthService {
         "could not retire previous password reset challenges",
       );
     }
-    await this.events.record({
-      userId: user.id,
-      type: "PASSWORD_RESET_REQUESTED",
-      actor: fingerprintOf(request).device,
-      context: "Password reset requested - email sent.",
-    });
+    try {
+      await this.events.record({
+        userId: user.id,
+        type: "PASSWORD_RESET_REQUESTED",
+        actor: fingerprintOf(request).device,
+        context: "Password reset requested - email sent.",
+      });
+    } catch (error) {
+      this.logger?.warn(
+        { userId: user.id, errorType: error instanceof Error ? error.name : "UnknownError" },
+        "password reset audit event could not be recorded",
+      );
+    }
     // Do not expose whether an account exists through a populated expiry timestamp.
     return { sent: true, delivery: "EMAIL", resetExpiresAt: null };
   }
@@ -726,12 +740,19 @@ export class AuthService {
         "TOKEN_ALREADY_USED",
       );
     }
-    await this.events.record({
-      userId: challenge.userId,
-      type: "PASSWORD_CHANGED",
-      actor: "system",
-      context: "Password changed via reset link. Sessions were signed out.",
-    });
+    try {
+      await this.events.record({
+        userId: challenge.userId,
+        type: "PASSWORD_CHANGED",
+        actor: "system",
+        context: "Password changed via reset link. Sessions were signed out.",
+      });
+    } catch (error) {
+      this.logger?.warn(
+        { userId: challenge.userId, errorType: error instanceof Error ? error.name : "UnknownError" },
+        "password reset audit event could not be recorded",
+      );
+    }
     return { resetAt: resetAt.toISOString() };
   }
 
