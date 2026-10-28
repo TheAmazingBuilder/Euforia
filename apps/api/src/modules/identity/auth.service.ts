@@ -221,7 +221,7 @@ export class AuthService {
     const challenge = await this.repository.findChallengeByTokenHash(
       IdentityRepository.hashToken(token),
     );
-    if (!challenge) {
+    if (!challenge || challenge.purpose !== "EMAIL_VERIFICATION") {
       throw new ValidationError("This verification link is not valid.", undefined, "INVALID_TOKEN");
     }
     if (challenge.usedAt) {
@@ -628,7 +628,7 @@ export class AuthService {
     const challenge = await this.repository.findChallengeByTokenHash(
       IdentityRepository.hashToken(input.token),
     );
-    if (!challenge) {
+    if (!challenge || challenge.purpose !== "PASSWORD_RESET") {
       throw new ValidationError("This reset link is not valid.", undefined, "INVALID_TOKEN");
     }
     if (challenge.usedAt) {
@@ -647,8 +647,14 @@ export class AuthService {
     }
 
     const passwordHash = await this.hasher.hash(input.password);
-    const consumed = await this.repository.consumeChallenge(challenge.id);
-    if (!consumed) {
+    const resetAt = new Date();
+    const completed = await this.repository.completePasswordReset({
+      challengeId: challenge.id,
+      userId: challenge.userId,
+      passwordHash,
+      changedAt: resetAt,
+    });
+    if (!completed) {
       if (challenge.expiresAt.getTime() <= Date.now()) {
         throw new ValidationError(
           "This link has expired - request a new email.",
@@ -662,19 +668,13 @@ export class AuthService {
         "TOKEN_ALREADY_USED",
       );
     }
-    await this.repository.updateUser(challenge.userId, {
-      passwordHash,
-      passwordLastChangedAt: new Date(),
-    });
-    // Defense in depth (§22): a reset invalidates the user's refresh chain.
-    await this.repository.revokeAllSessionsForUser(challenge.userId);
     await this.events.record({
       userId: challenge.userId,
       type: "PASSWORD_CHANGED",
       actor: "system",
       context: "Password changed via reset link. Sessions were signed out.",
     });
-    return { resetAt: new Date().toISOString() };
+    return { resetAt: resetAt.toISOString() };
   }
 
   // ── Internals ───────────────────────────────────────────────────────────────
