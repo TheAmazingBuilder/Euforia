@@ -169,6 +169,54 @@ describe("registration & email verification", () => {
     expect(knownLimited.json().code).toBe(unknownLimited.json().code);
   });
 
+  it("prevents stale links from verifying a changed email and recovers after SMTP failure", async () => {
+    const ctx = await authenticatedUser(app, mail);
+    const oldToken = IdentityRepository.randomToken(24);
+    await app.get(IdentityRepository).createChallenge({
+      userId: ctx.userId,
+      purpose: "EMAIL_VERIFICATION",
+      tokenHash: IdentityRepository.hashToken(oldToken),
+      targetEmail: ctx.email,
+      expiresAt: new Date(Date.now() + 60_000),
+    });
+
+    const newEmail = uniqueEmail("email-change-smtp");
+    const mailer = app.get(MailerService);
+    mailer.useTransport({ send: async () => { throw new Error("simulated SMTP outage"); } });
+    const change = await app.inject({
+      method: "PATCH",
+      url: "/api/v1/me",
+      headers: ctx.authHeader,
+      payload: { email: newEmail },
+    });
+    mailer.useTransport({ send: async (message) => { mail.messages.push(message); } });
+    expect(change.statusCode).toBeGreaterThanOrEqual(500);
+
+    const oldLink = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/email/verify",
+      payload: { token: oldToken },
+    });
+    expect(oldLink.statusCode).toBe(400);
+    expect(oldLink.json().code).toBe("INVALID_TOKEN");
+    expect((await app.get(IdentityRepository).findUserByEmail(newEmail))?.status).toBe("PENDING_VERIFICATION");
+
+    const resend = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/email/resend",
+      payload: { email: newEmail },
+    });
+    expect(resend.statusCode).toBe(202);
+    const newToken = mail.lastVerificationToken();
+    const verified = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/email/verify",
+      payload: { token: newToken },
+    });
+    expect(verified.statusCode).toBe(200);
+    expect(verified.json().user.email).toBe(newEmail);
+  });
+
   it("rejects weak passwords at the contract level", async () => {
     const res = await app.inject({
       method: "POST",
