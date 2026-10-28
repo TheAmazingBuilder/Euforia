@@ -128,6 +128,7 @@ export {
 export {
   useChangePassword,
   useConfirmTwoFactor,
+  useConfirmEmailTwoFactor,
   useCreateApiKey,
   useDisableTwoFactor,
   useEnableTwoFactor,
