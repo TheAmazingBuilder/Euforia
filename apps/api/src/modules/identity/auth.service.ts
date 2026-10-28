@@ -171,6 +171,7 @@ export class AuthService {
         const created = await this.repository.createSession({
           userId: user.id,
           refreshTokenHash: refresh.hash,
+          remember: false,
           device: meta.device,
           browser: meta.browser,
           os: meta.os,
@@ -575,16 +576,26 @@ export class AuthService {
       throw new UnauthorizedError("This session is no longer valid - sign in again.", "INVALID_TOKEN");
     }
 
-    // Rotation: same row, new generation + new hash, remember-length TTL.
-    const expiresAt = new Date(Date.now() + this.config.auth.refreshRememberDays * 86_400_000);
+    // Preserve the original session policy; refresh must never upgrade a
+    // short session to a remembered session.
+    const ttlMs = session.remember
+      ? this.config.auth.refreshRememberDays * 86_400_000
+      : this.config.auth.refreshSessionHours * 3_600_000;
+    const expiresAt = new Date(Date.now() + ttlMs);
     const rotated = this.tokens.issueRefreshToken(session.generation + 1);
-    const updatedSession = await this.repository.rotateSession(session.id, {
-      refreshTokenHash: rotated.hash,
-      expiresAt,
-    });
+    const updatedSession = await this.repository.rotateSession(
+      session.id,
+      { refreshTokenHash: presented.hash, generation: presented.generation },
+      { refreshTokenHash: rotated.hash, expiresAt },
+    );
+    if (!updatedSession) {
+      // Another request already rotated this token. Never overwrite the
+      // winning request's token hash or issue a second valid refresh token.
+      throw new UnauthorizedError("This session changed - sign in again if needed.", "INVALID_TOKEN");
+    }
 
     const access = await this.tokens.signAccessToken(user.id, session.id);
-    this.setRefreshCookie(reply, rotated.value, { remember: true });
+    this.setRefreshCookie(reply, rotated.value, { remember: session.remember });
     return {
       user: toAuthUser(user),
       accessToken: access.token,
@@ -953,6 +964,7 @@ export class AuthService {
     const session = await this.repository.createSession({
       userId: user.id,
       refreshTokenHash: refresh.hash,
+      remember,
       device: fingerprint.device,
       browser: fingerprint.browser,
       os: fingerprint.os,
