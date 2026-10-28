@@ -270,13 +270,24 @@ describe("email-based two-factor authentication", () => {
     expect(message?.to).toBe(ctx.email);
     expect(message?.code).toMatch(/^\d{6}$/);
 
-    const completed = await app.inject({
-      method: "POST",
-      url: "/api/v1/auth/mfa/challenge",
-      payload: { challengeToken: challenge.challengeToken, code: message?.code },
-    });
-    expect(completed.statusCode).toBe(200);
-    expect(completed.json().outcome).toBe("AUTHENTICATED");
+    // Two concurrent completions for one persistent challenge must yield
+    // exactly one authenticated session.
+    const concurrent = await Promise.all([
+      app.inject({
+        method: "POST",
+        url: "/api/v1/auth/mfa/challenge",
+        payload: { challengeToken: challenge.challengeToken, code: message?.code },
+      }),
+      app.inject({
+        method: "POST",
+        url: "/api/v1/auth/mfa/challenge",
+        payload: { challengeToken: challenge.challengeToken, code: message?.code },
+      }),
+    ]);
+    expect(concurrent.filter((response) => response.statusCode === 200)).toHaveLength(1);
+    expect(concurrent.filter((response) => response.statusCode === 401)).toHaveLength(1);
+    expect(concurrent.find((response) => response.statusCode === 200)?.json().outcome).toBe("AUTHENTICATED");
+    expect(concurrent.find((response) => response.statusCode === 401)?.json().code).toBe("INVALID_CHALLENGE");
 
     const replay = await app.inject({
       method: "POST",
