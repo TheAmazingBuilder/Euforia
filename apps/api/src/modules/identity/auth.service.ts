@@ -748,7 +748,13 @@ export class AuthService {
       );
     }
     const user = await this.repository.findUserById(challenge.userId);
-    const method = challenge.method === "EMAIL" ? "EMAIL" : "AUTHENTICATOR_APP";
+    if (challenge.method !== "EMAIL" && challenge.method !== "AUTHENTICATOR_APP") {
+      throw new UnauthorizedError(
+        "This challenge expired - start again with your password.",
+        "INVALID_CHALLENGE",
+      );
+    }
+    const method = challenge.method;
     if (
       !user ||
       user.status !== "ACTIVE" ||
