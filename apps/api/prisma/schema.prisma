@@ -172,6 +172,8 @@ model Session {
   previousTokenHash String?
   /// Rotation generation — presenting a lower generation is REUSE.
   generation        Int       @default(1)
+  /// Whether the user explicitly selected "remember me" at sign-in.
+  remember          Boolean   @default(false)
   device            String    @default("Unknown device")
   browser           String    @default("Unknown")
   os                String    @default("Unknown")
