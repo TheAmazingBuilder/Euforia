@@ -147,6 +147,45 @@ export class IdentityRepository {
     return row as UserRow;
   }
 
+  /** Begin TOTP enrollment and replace inactive recovery codes as one state transition. */
+  async beginTotpMfaEnrollment(data: {
+    userId: string;
+    expectedEmail: string;
+    pendingSecretEnc: string;
+    recoveryCodeHashes: string[];
+  }): Promise<UserRow | null> {
+    return this.prisma.$transaction(async (tx) => {
+      const updated = await tx.user.updateMany({
+        where: {
+          id: data.userId,
+          email: data.expectedEmail,
+          status: "ACTIVE",
+          mfaEnabledAt: null,
+        },
+        data: {
+          mfaPendingSecretEnc: data.pendingSecretEnc,
+          mfaPendingEmailCodeHash: null,
+          mfaPendingEmailExpiresAt: null,
+          mfaPendingEmailAttempts: 0,
+        },
+      });
+      if (updated.count !== 1) return null;
+
+      await tx.recoveryCode.deleteMany({ where: { userId: data.userId } });
+      if (data.recoveryCodeHashes.length > 0) {
+        await tx.recoveryCode.createMany({
+          data: data.recoveryCodeHashes.map((codeHash) => ({
+            userId: data.userId,
+            codeHash,
+            active: false,
+          })),
+        });
+      }
+      const row = await tx.user.findUnique({ where: { id: data.userId } });
+      return row as UserRow | null;
+    });
+  }
+
   /** Consume the pending TOTP secret only for an active account, preventing stale confirmations. */
   async completeTotpMfaEnrollment(data: {
     userId: string;
