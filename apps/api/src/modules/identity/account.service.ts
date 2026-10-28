@@ -133,8 +133,33 @@ export class AccountService {
     }
 
     if (emailChangePending) {
-      const expiresAt = await this.issueEmailChangeChallenge(updated);
-      void expiresAt;
+      try {
+        await this.issueEmailChangeChallenge(updated);
+      } catch (error) {
+        // The account must not be stranded in PENDING_VERIFICATION when the
+        // new address never received a link. Restore the previously verified
+        // identity conditionally so a concurrent account change is not lost.
+        try {
+          const restored = await this.repository.restoreEmailAfterUndeliveredChange({
+            userId: user.id,
+            expectedNewEmail: updated.email,
+            originalEmail: user.email,
+            originalEmailVerifiedAt: user.emailVerifiedAt,
+          });
+          if (!restored) {
+            this.logger?.error(
+              { userId: user.id, errorType: "ConcurrentIdentityChange" },
+              "could not restore account after email-change delivery failure",
+            );
+          }
+        } catch (restoreError) {
+          this.logger?.error(
+            { userId: user.id, errorType: restoreError instanceof Error ? restoreError.name : "UnknownError" },
+            "could not restore account after email-change delivery failure",
+          );
+        }
+        throw error;
+      }
       try {
         await this.events.record({
           userId: user.id,
