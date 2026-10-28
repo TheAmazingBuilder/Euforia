@@ -5,6 +5,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { Secret, TOTP } from "otpauth";
 import type { NestFastifyApplication } from "@nestjs/platform-fastify";
+import { MailerService } from "../../src/modules/identity/mailer.service";
 import { buildTestApp } from "../helpers/build-app";
 import {
   authenticatedUser,
@@ -263,6 +264,58 @@ describe("MFA / email OTP lifecycle", () => {
     });
     expect(replay.statusCode).toBe(401);
     expect(replay.json().code).toBe("INVALID_CHALLENGE");
+  });
+  it("does not leave an unusable login challenge after email MFA delivery fails", async () => {
+    const email = uniqueEmail("mfa-smtp-failure");
+    const ctx = await authenticatedUser(app, mail, { email });
+    const reauth = await app.inject({
+      method: "POST",
+      url: "/api/v1/security/reauth",
+      headers: ctx.authHeader,
+      payload: { password: ctx.password },
+    });
+    const enabled = await app.inject({
+      method: "POST",
+      url: "/api/v1/security/2fa/email/enable",
+      headers: ctx.authHeader,
+      payload: { reauthToken: reauth.json().token },
+    });
+    expect(enabled.statusCode).toBe(200);
+    const enrollment = [...mail.messages].reverse().find((message) => message.kind === "MFA_EMAIL_CODE");
+    expect(enrollment?.code).toMatch(/^\d{6}$/);
+    const confirmed = await app.inject({
+      method: "POST",
+      url: "/api/v1/security/2fa/email/confirm",
+      headers: ctx.authHeader,
+      payload: { code: enrollment?.code },
+    });
+    expect(confirmed.statusCode).toBe(200);
+
+    const mailer = app.get(MailerService);
+    mailer.useTransport({ send: async () => { throw new Error("simulated SMTP outage"); } });
+    let failedStatus = 0;
+    try {
+      const failed = await app.inject({
+        method: "POST",
+        url: "/api/v1/auth/login",
+        payload: { email, password: ctx.password, remember: false },
+      });
+      failedStatus = failed.statusCode;
+      expect(failed.json().challengeToken).toBeUndefined();
+    } finally {
+      mailer.useTransport({ send: async (message) => { mail.messages.push(message); } });
+    }
+    expect(failedStatus).toBeGreaterThanOrEqual(500);
+
+    const retry = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/login",
+      payload: { email, password: ctx.password, remember: false },
+    });
+    expect(retry.statusCode).toBe(200);
+    expect(retry.json().outcome).toBe("MFA_REQUIRED");
+    expect(retry.json().challengeToken).toBeTruthy();
+    expect(mail.messages.some((message) => message.kind === "MFA_EMAIL_CODE")).toBe(true);
   });
 });
 
