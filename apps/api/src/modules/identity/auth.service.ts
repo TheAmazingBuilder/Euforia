@@ -37,17 +37,7 @@ import { APP_CONFIG } from "../../config/app-config";
 import type { AppConfig } from "../../config/app-config";
 import { ROOT_LOGGER, type RootLogger } from "../../infrastructure/logging/logger.factory";
 
-// ── In-memory MFA login challenges (5-min TTL, single-use - mock parity) ─────
-
-interface MfaChallenge {
-  userId: string;
-  expiresAt: number;
-  method: "AUTHENTICATOR_APP" | "EMAIL";
-  codeHash?: string;
-  remember: boolean;
-  attempts: number;
-  used: boolean;
-}
+// ── MFA login challenges are persisted in AuthChallenge for multi-instance safety. ──
 
 /** Login-shaped credentials returned by register() on auto-login accounts. */
 type RegisterSession = AuthSuccess & { session: ReturnType<typeof toAuthSession> };
@@ -72,8 +62,6 @@ export function fingerprintOf(request: RequestLike): RequestFingerprint {
 
 @Injectable()
 export class AuthService {
-  private readonly challenges = new Map<string, MfaChallenge>();
-
   constructor(
     private readonly repository: IdentityRepository,
     private readonly hasher: PasswordHasherService,
@@ -382,11 +370,13 @@ export class AuthService {
           return Boolean(secret && this.totp.verify(secret, user.email, input.code));
         })();
     if (!valid) {
-      challenge.attempts += 1;
-      // Invalidate this specific challenge after five wrong codes, even if
-      // the account-level rate limiter would otherwise be the first guard
-      // reached on the next request.
-      if (challenge.attempts >= 5) consume();
+      const attempts = await this.repository.recordMfaLoginFailure(challenge.id);
+      if (attempts === null) {
+        throw new UnauthorizedError(
+          "This challenge expired - start again with your password.",
+          "INVALID_CHALLENGE",
+        );
+      }
       this.limiter.hit("mfa", user.email);
       await this.events.recordLogin(
         {
@@ -401,12 +391,10 @@ export class AuthService {
       throw new UnauthorizedError("That code didn't match. Check your email or authenticator app.", "INVALID_MFA_CODE");
     }
 
-    if (challenge.used) {
-      consume();
-      throw new UnauthorizedError("This challenge has already been used.", "INVALID_CHALLENGE");
+    const consumed = await this.repository.consumeMfaLoginChallenge(challenge.id);
+    if (!consumed) {
+      throw new UnauthorizedError("This challenge has already been used or expired.", "INVALID_CHALLENGE");
     }
-    challenge.used = true;
-    consume();
     const updated = await this.repository.updateUser(user.id, { mfaLastVerifiedAt: new Date() });
     return this.completeLogin(updated, challenge.remember, reply, fingerprint, "Signed in with two-factor authentication.");
   }
@@ -430,8 +418,13 @@ export class AuthService {
       this.totp.hashRecoveryCode(normalized),
     );
     if (!match) {
-      challenge.attempts += 1;
-      if (challenge.attempts >= 5) consume();
+      const attempts = await this.repository.recordMfaLoginFailure(challenge.id);
+      if (attempts === null) {
+        throw new UnauthorizedError(
+          "This challenge expired - start again with your password.",
+          "INVALID_CHALLENGE",
+        );
+      }
       this.limiter.hit("mfa", user.email);
       await this.events.record({
         userId: user.id,
@@ -443,12 +436,10 @@ export class AuthService {
       throw new UnauthorizedError("That recovery code was not recognized.", "INVALID_MFA_CODE");
     }
 
-    if (challenge.used) {
-      consume();
-      throw new UnauthorizedError("This challenge has already been used.", "INVALID_CHALLENGE");
+    const consumed = await this.repository.consumeMfaLoginChallenge(challenge.id);
+    if (!consumed) {
+      throw new UnauthorizedError("This challenge has already been used or expired.", "INVALID_CHALLENGE");
     }
-    challenge.used = true;
-    consume();
     const recoveryCodeConsumed = await this.repository.consumeRecoveryCode(match.id);
     if (!recoveryCodeConsumed) {
       throw new UnauthorizedError("That recovery code was already used. Try another recovery code.", "INVALID_MFA_CODE");
@@ -703,10 +694,9 @@ export class AuthService {
     challengeExpiresAt: string;
     method: "AUTHENTICATOR_APP" | "EMAIL";
   }> {
-    this.sweepChallenges();
     const token = IdentityRepository.randomToken(24);
     const ttlMs = this.config.auth.mfaChallengeMinutes * 60 * 1000;
-    const expiresAt = Date.now() + ttlMs;
+    const expiresAt = new Date(Date.now() + ttlMs);
     const method = user.mfaMethod === "EMAIL" ? "EMAIL" : "AUTHENTICATOR_APP";
     let codeHash: string | undefined;
 
@@ -725,47 +715,55 @@ export class AuthService {
       codeHash = IdentityRepository.hashToken(code);
     }
 
-    this.challenges.set(token, { userId: user.id, expiresAt, method, codeHash, remember, attempts: 0, used: false });
+    await this.repository.createMfaLoginChallenge({
+      userId: user.id,
+      tokenHash: IdentityRepository.hashToken(token),
+      codeHash: codeHash ?? null,
+      method,
+      remember,
+      expiresAt,
+    });
     return {
       outcome: "MFA_REQUIRED",
       mfaRequired: true,
       challengeToken: token,
-      challengeExpiresAt: new Date(expiresAt).toISOString(),
+      challengeExpiresAt: expiresAt.toISOString(),
       method,
     };
   }
 
   private async peekMfaChallenge(challengeToken: string) {
-    this.sweepChallenges();
-    const challenge = this.challenges.get(challengeToken);
-    if (!challenge || challenge.used || challenge.expiresAt <= Date.now()) {
-      this.challenges.delete(challengeToken);
+    const challenge = await this.repository.findMfaLoginChallengeByTokenHash(
+      IdentityRepository.hashToken(challengeToken),
+    );
+    if (
+      !challenge ||
+      challenge.usedAt ||
+      challenge.expiresAt.getTime() <= Date.now() ||
+      challenge.attempts >= 5
+    ) {
       throw new UnauthorizedError(
         "This challenge expired - start again with your password.",
         "INVALID_CHALLENGE",
       );
     }
     const user = await this.repository.findUserById(challenge.userId);
+    const method = challenge.method === "EMAIL" ? "EMAIL" : "AUTHENTICATOR_APP";
     if (
       !user ||
       user.status !== "ACTIVE" ||
       !user.mfaEnabledAt ||
-      (user.mfaMethod === "EMAIL" ? "EMAIL" : "AUTHENTICATOR_APP") !== challenge.method
+      (user.mfaMethod === "EMAIL" ? "EMAIL" : "AUTHENTICATOR_APP") !== method
     ) {
-      this.challenges.delete(challengeToken);
       throw new UnauthorizedError(
         "This challenge expired - start again with your password.",
         "INVALID_CHALLENGE",
       );
     }
-    return { user, challenge, consume: () => this.challenges.delete(challengeToken) };
-  }
-
-  private sweepChallenges(): void {
-    const now = Date.now();
-    for (const [token, challenge] of this.challenges) {
-      if (challenge.expiresAt <= now) this.challenges.delete(token);
-    }
+    return {
+      user,
+      challenge: { ...challenge, method },
+    };
   }
 
   private async completeLogin(
