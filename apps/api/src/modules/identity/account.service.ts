@@ -22,7 +22,7 @@ import { MailerService } from "./mailer.service";
 import { SecurityEventService } from "../security/security-event.service";
 import { AuthRateLimiterService } from "./auth-rate-limiter.service";
 import { toAuthUser } from "./mappers";
-import { ConflictError } from "../../shared/errors/app-error";
+import { ConflictError, RateLimitError } from "../../shared/errors/app-error";
 import { APP_CONFIG } from "../../config/app-config";
 import type { AppConfig } from "../../config/app-config";
 
@@ -80,9 +80,10 @@ export class AccountService {
     if (input.email !== undefined && input.email.toLowerCase() !== user.email) {
       const emailChangeCheck = this.limiter.check("email_change", user.id);
       if (!emailChangeCheck.allowed) {
-        throw new ConflictError(
-          `Too many email change requests. Please wait ${emailChangeCheck.retryAfterSeconds} seconds before trying again.`,
+        throw new RateLimitError(
+          "Too many email change requests. Please wait before trying again.",
           "RATE_LIMITED",
+          emailChangeCheck.retryAfterSeconds,
         );
       }
       if (await this.repository.isEmailTaken(input.email, user.id)) {
