@@ -88,6 +88,10 @@ model User {
   mfaLastVerifiedAt   DateTime?
   /// Preferred second factor when MFA is enabled; legacy enabled TOTP accounts are backfilled by migration.
   mfaMethod           String?
+  /// Hashed, short-lived email MFA enrollment challenge; never stores the plain code.
+  mfaPendingEmailCodeHash String?
+  mfaPendingEmailExpiresAt DateTime?
+  mfaPendingEmailAttempts Int @default(0)
 
   // Profile (shared profileSchema — one source of truth for timezone).
   timezone     String  @default("UTC")
