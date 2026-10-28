@@ -106,7 +106,7 @@ describe("registration & email verification", () => {
     const wrongPurpose = await app.inject({
       method: "POST",
       url: "/api/v1/auth/password/reset",
-      payload: { token, password: "not-a-valid-reset" },
+      payload: { token, password: PASSWORD },
     });
     expect(wrongPurpose.statusCode).toBe(400);
     expect(wrongPurpose.json().code).toBe("INVALID_TOKEN");
