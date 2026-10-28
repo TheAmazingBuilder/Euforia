@@ -72,6 +72,9 @@ export class MfaService {
     const updated = await this.repository.beginTotpMfaEnrollment({
       userId: user.id,
       expectedEmail: user.email,
+      expectedPendingSecretEnc: user.mfaPendingSecretEnc,
+      expectedEmailCodeHash: user.mfaPendingEmailCodeHash,
+      expectedEmailExpiresAt: user.mfaPendingEmailExpiresAt,
       pendingSecretEnc: this.totp.encryptSecret(secret),
       recoveryCodeHashes: plainCodes.map((code) => this.totp.hashRecoveryCode(code)),
     });
@@ -123,6 +126,7 @@ export class MfaService {
     const claimed = await this.repository.beginPendingEmailMfaChallenge({
       userId: user.id,
       expectedEmail: user.email,
+      expectedPendingSecretEnc: user.mfaPendingSecretEnc,
       expectedCodeHash: user.mfaPendingEmailCodeHash,
       expectedExpiresAt: user.mfaPendingEmailExpiresAt,
       codeHash,
