@@ -227,9 +227,15 @@ model AuthChallenge {
   id        String    @id @default(uuid()) @db.Uuid
   userId    String    @db.Uuid
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  /// EMAIL_VERIFICATION | PASSWORD_RESET — cross-purpose use is impossible.
+  /// EMAIL_VERIFICATION | PASSWORD_RESET | MFA_LOGIN — purpose-scoped challenges.
   purpose   String
   tokenHash String    @unique
+  /// Used only for email MFA login; always a hash, never the six-digit code.
+  codeHash  String?
+  /// AUTHENTICATOR_APP or EMAIL for MFA_LOGIN challenges.
+  method    String?
+  remember  Boolean   @default(false)
+  attempts  Int       @default(0)
   expiresAt DateTime
   usedAt    DateTime?
   createdAt DateTime  @default(now())
