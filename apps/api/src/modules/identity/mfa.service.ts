@@ -102,6 +102,7 @@ export class MfaService {
     // previous code only if no newer request has replaced this candidate.
     const claimed = await this.repository.beginPendingEmailMfaChallenge({
       userId: user.id,
+      expectedEmail: user.email,
       expectedCodeHash: user.mfaPendingEmailCodeHash,
       expectedExpiresAt: user.mfaPendingEmailExpiresAt,
       codeHash,
