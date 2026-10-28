@@ -383,6 +383,10 @@ export class AuthService {
         })();
     if (!valid) {
       challenge.attempts += 1;
+      // Invalidate this specific challenge after five wrong codes, even if
+      // the account-level rate limiter would otherwise be the first guard
+      // reached on the next request.
+      if (challenge.attempts >= 5) consume();
       this.limiter.hit("mfa", user.email);
       await this.events.recordLogin(
         {
