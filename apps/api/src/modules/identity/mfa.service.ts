@@ -262,6 +262,13 @@ export class MfaService {
       enabled: Boolean(user.mfaEnabledAt),
       pending: !user.mfaEnabledAt && Boolean(user.mfaPendingSecretEnc || user.mfaPendingEmailCodeHash),
       method: user.mfaEnabledAt ? (user.mfaMethod === "EMAIL" ? "EMAIL" : "AUTHENTICATOR_APP") : null,
+      pendingMethod: !user.mfaEnabledAt
+        ? user.mfaPendingEmailCodeHash
+          ? "EMAIL"
+          : user.mfaPendingSecretEnc
+            ? "AUTHENTICATOR_APP"
+            : null
+        : null,
       enabledAt: user.mfaEnabledAt ? mfaIso(user.mfaEnabledAt) : null,
       disabledAt: user.mfaDisabledAt ? mfaIso(user.mfaDisabledAt) : null,
       lastVerifiedAt: user.mfaLastVerifiedAt ? mfaIso(user.mfaLastVerifiedAt) : null,
