@@ -15,7 +15,7 @@
  * PENDING_VERIFICATION (login gate: EMAIL_NOT_VERIFIED). The old address is
  * never automatically verified.
  */
-import { Inject, Injectable } from "@nestjs/common";
+import { Inject, Injectable, Optional } from "@nestjs/common";
 import { userPreferencesSchema } from "../../shared/contracts";
 import { IdentityRepository, type UserRow } from "./identity.repository";
 import { MailerService } from "./mailer.service";
@@ -25,6 +25,7 @@ import { toAuthUser } from "./mappers";
 import { ConflictError, RateLimitError } from "../../shared/errors/app-error";
 import { APP_CONFIG } from "../../config/app-config";
 import type { AppConfig } from "../../config/app-config";
+import { ROOT_LOGGER, type RootLogger } from "../../infrastructure/logging/logger.factory";
 
 @Injectable()
 export class AccountService {
@@ -34,6 +35,7 @@ export class AccountService {
     private readonly events: SecurityEventService,
     private readonly limiter: AuthRateLimiterService,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
+    @Optional() @Inject(ROOT_LOGGER) private readonly logger?: RootLogger,
   ) {}
 
   // ── GET/PATCH /me (profile) ─────────────────────────────────────────────────
@@ -133,12 +135,19 @@ export class AccountService {
     if (emailChangePending) {
       const expiresAt = await this.issueEmailChangeChallenge(updated);
       void expiresAt;
-      await this.events.record({
-        userId: user.id,
-        type: "SENSITIVE_SETTINGS_CHANGED",
-        actor: user.email,
-        context: `Email change requested - verification sent to ${updated.email}.`,
-      });
+      try {
+        await this.events.record({
+          userId: user.id,
+          type: "SENSITIVE_SETTINGS_CHANGED",
+          actor: user.email,
+          context: `Email change requested - verification sent to ${updated.email}.`,
+        });
+      } catch (error) {
+        this.logger?.warn(
+          { userId: user.id, errorType: error instanceof Error ? error.name : "UnknownError" },
+          "email change audit event could not be recorded",
+        );
+      }
     }
 
     return {
