@@ -389,19 +389,35 @@ export class IdentityRepository {
     tokenHash: string;
     expiresAt: Date;
   }): Promise<void> {
-    await this.prisma.$transaction([
-      // Single active challenge per purpose: issuing a new one invalidates
-      // previous unused ones (resend support + replay surface reduction).
-      this.prisma.authChallenge.deleteMany({
-        where: { userId: data.userId, purpose: data.purpose, usedAt: null },
-      }),
-      this.prisma.authChallenge.create({ data }),
-    ]);
+    // Persist the candidate before delivery, but keep the previous link valid
+    // until SMTP confirms success. A failed resend must not strand the user.
+    await this.prisma.authChallenge.create({ data });
   }
 
   async findChallengeByTokenHash(hash: string) {
     return this.prisma.authChallenge.findUnique({
       where: { tokenHash: hash },
+    });
+  }
+
+  /** Remove an undelivered candidate challenge without touching an older valid link. */
+  async deleteChallengeByTokenHash(tokenHash: string): Promise<void> {
+    await this.prisma.authChallenge.deleteMany({ where: { tokenHash, usedAt: null } });
+  }
+
+  /** Once delivery succeeds, invalidate other unused challenges of the same purpose. */
+  async finalizeDeliveredChallenge(data: {
+    userId: string;
+    purpose: "EMAIL_VERIFICATION" | "PASSWORD_RESET";
+    tokenHash: string;
+  }): Promise<void> {
+    await this.prisma.authChallenge.deleteMany({
+      where: {
+        userId: data.userId,
+        purpose: data.purpose,
+        usedAt: null,
+        tokenHash: { not: data.tokenHash },
+      },
     });
   }
 
