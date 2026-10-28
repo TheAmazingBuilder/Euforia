@@ -147,6 +147,51 @@ export class IdentityRepository {
     return row as UserRow;
   }
 
+  /** Atomically claim the email-MFA enrollment slot against stale/concurrent requests. */
+  async beginPendingEmailMfaChallenge(data: {
+    userId: string;
+    expectedCodeHash: string | null;
+    expectedExpiresAt: Date | null;
+    codeHash: string;
+    expiresAt: Date;
+  }): Promise<boolean> {
+    const result = await this.prisma.user.updateMany({
+      where: {
+        id: data.userId,
+        mfaEnabledAt: null,
+        mfaPendingEmailCodeHash: data.expectedCodeHash,
+        mfaPendingEmailExpiresAt: data.expectedExpiresAt,
+      },
+      data: {
+        mfaPendingEmailCodeHash: data.codeHash,
+        mfaPendingEmailExpiresAt: data.expiresAt,
+        mfaPendingEmailAttempts: 0,
+        mfaPendingSecretEnc: null,
+      },
+    });
+    return result.count === 1;
+  }
+
+  /** Restore the prior enrollment state only if this failed send still owns the slot. */
+  async restorePendingEmailMfaChallenge(data: {
+    userId: string;
+    candidateCodeHash: string;
+    previousCodeHash: string | null;
+    previousExpiresAt: Date | null;
+    previousAttempts: number;
+    previousSecretEnc: string | null;
+  }): Promise<void> {
+    await this.prisma.user.updateMany({
+      where: { id: data.userId, mfaPendingEmailCodeHash: data.candidateCodeHash },
+      data: {
+        mfaPendingEmailCodeHash: data.previousCodeHash,
+        mfaPendingEmailExpiresAt: data.previousExpiresAt,
+        mfaPendingEmailAttempts: data.previousAttempts,
+        mfaPendingSecretEnc: data.previousSecretEnc,
+      },
+    });
+  }
+
   async updateUser(
     id: string,
     data: Partial<{
