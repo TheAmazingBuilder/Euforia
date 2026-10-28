@@ -78,21 +78,35 @@ export class AccountService {
     // ── Email change (§24) ──────────────────────────────────────────────────
     let emailChangePending = false;
     if (input.email !== undefined && input.email.toLowerCase() !== user.email) {
+      const emailChangeCheck = this.limiter.check("email_change", user.id);
+      if (!emailChangeCheck.allowed) {
+        throw new ConflictError(
+          `Too many email change requests. Please wait ${emailChangeCheck.retryAfterSeconds} seconds before trying again.`,
+          "RATE_LIMITED",
+        );
+      }
       if (await this.repository.isEmailTaken(input.email, user.id)) {
         throw new ConflictError(
           "An account already exists for this email address.",
           "EMAIL_ALREADY_USED",
         );
       }
+      this.limiter.hit("email_change", user.id);
+
       // The new address is NOT verified yet: the account re-enters the
-      // verification gate until the new address is confirmed (the frontend's
-      // AuthGate renders the verification screen for this state).
+      // verification gate until the new address is confirmed.
       patch.email = input.email.toLowerCase();
       patch.status = "PENDING_VERIFICATION";
       patch.emailVerifiedAt = null;
       emailChangePending = true;
     }
 
+    // Invalidate every older verification link before changing the identity.
+    // Even if the profile update subsequently fails, those links cannot verify
+    // a different address; the still-active account does not need them.
+    if (emailChangePending) {
+      await this.repository.invalidateChallengesForUser(user.id, "EMAIL_VERIFICATION");
+    }
     const updated = await this.repository.updateUser(user.id, patch);
 
     // One source of truth for timezone = Profile (settings.ts boundary rule):
@@ -175,14 +189,34 @@ export class AccountService {
     const ttlMs = this.config.auth.emailVerificationHours * 3_600_000;
     const expiresAt = new Date(Date.now() + ttlMs);
     const token = IdentityRepository.randomToken(24);
+    const tokenHash = IdentityRepository.hashToken(token);
     await this.repository.createChallenge({
       userId: user.id,
       purpose: "EMAIL_VERIFICATION",
-      tokenHash: IdentityRepository.hashToken(token),
+      tokenHash,
       expiresAt,
+      targetEmail: user.email.toLowerCase(),
     });
-    await this.mailer.sendEmailChangeVerification(user.email, token, `${this.config.auth.emailVerificationHours} hours`);
-    void this.limiter;
+    try {
+      await this.mailer.sendEmailChangeVerification(user.email, token, `${this.config.auth.emailVerificationHours} hours`);
+    } catch (error) {
+      try {
+        await this.repository.deleteChallengeByTokenHash(tokenHash);
+      } catch {
+        // An undelivered candidate is unusable without its secret token; keep
+        // the account pending so the authenticated user can request a resend.
+      }
+      throw error;
+    }
+    try {
+      await this.repository.finalizeDeliveredChallenge({
+        userId: user.id,
+        purpose: "EMAIL_VERIFICATION",
+        tokenHash,
+      });
+    } catch {
+      // The delivered link remains usable even if retiring old rows fails.
+    }
     return expiresAt.toISOString();
   }
 }
