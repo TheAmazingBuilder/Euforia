@@ -516,6 +516,10 @@ export function TwoFactorPanel({
   overview,
   onEnable,
   onEnableEmail,
+  emailEnrollmentPending,
+  emailEnrollCode,
+  onEmailEnrollCodeChange,
+  onConfirmEmailEnrollment,
   onDisable,
   onRegenerate,
   pending,
@@ -523,6 +527,10 @@ export function TwoFactorPanel({
   overview: Overview;
   onEnable: () => void;
   onEnableEmail: () => void;
+  emailEnrollmentPending: boolean;
+  emailEnrollCode: string;
+  onEmailEnrollCodeChange: (value: string) => void;
+  onConfirmEmailEnrollment: () => void;
   /** Disable goes through a confirm first - the parent owns both steps. */
   onDisable: () => void;
   onRegenerate: () => void;
@@ -579,6 +587,24 @@ export function TwoFactorPanel({
               </Button>
             </div>
           </>
+        ) : emailEnrollmentPending ? (
+          <div className="grid max-w-sm gap-2 rounded-lg border border-border bg-background/60 p-3">
+            <p className="text-sm text-foreground">Enter the 6-digit code sent to your verified email. The code expires shortly.</p>
+            <Label htmlFor="email-mfa-enrollment-code">Email verification code</Label>
+            <Input
+              id="email-mfa-enrollment-code"
+              value={emailEnrollCode}
+              onChange={(event) => onEmailEnrollCodeChange(event.target.value.replace(/\\D/g, "").slice(0, 6))}
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              maxLength={6}
+              placeholder="123456"
+              data-testid="email-mfa-enrollment-code"
+            />
+            <Button onClick={onConfirmEmailEnrollment} disabled={pending || emailEnrollCode.length !== 6} data-testid="email-mfa-enrollment-confirm">
+              Confirm email and enable 2FA
+            </Button>
+          </div>
         ) : twoFactor.pending ? (
           <p>Setup in progress - confirm the authenticator challenge to activate 2FA.</p>
         ) : (
