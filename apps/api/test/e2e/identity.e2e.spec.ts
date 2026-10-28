@@ -135,6 +135,40 @@ describe("registration & email verification", () => {
     expect((await app.get(IdentityRepository).findUserByEmail(email))?.status).toBe("SUSPENDED");
   });
 
+  it("applies the same resend rate-limit response to known and unknown addresses", async () => {
+    const email = uniqueEmail("resend-rate-limit");
+    const registered = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/register",
+      payload: { name: "Pending User", email, password: PASSWORD },
+    });
+    expect(registered.statusCode).toBe(201);
+    const unknownEmail = uniqueEmail("unknown-resend-rate-limit");
+
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      const known = await app.inject({
+        method: "POST",
+        url: "/api/v1/auth/email/resend",
+        payload: { email },
+      });
+      const unknown = await app.inject({
+        method: "POST",
+        url: "/api/v1/auth/email/resend",
+        payload: { email: unknownEmail },
+      });
+      expect(known.statusCode).toBe(202);
+      expect(unknown.statusCode).toBe(202);
+    }
+
+    const [knownLimited, unknownLimited] = await Promise.all([
+      app.inject({ method: "POST", url: "/api/v1/auth/email/resend", payload: { email } }),
+      app.inject({ method: "POST", url: "/api/v1/auth/email/resend", payload: { email: unknownEmail } }),
+    ]);
+    expect(knownLimited.statusCode).toBe(429);
+    expect(unknownLimited.statusCode).toBe(429);
+    expect(knownLimited.json().code).toBe(unknownLimited.json().code);
+  });
+
   it("rejects weak passwords at the contract level", async () => {
     const res = await app.inject({
       method: "POST",
