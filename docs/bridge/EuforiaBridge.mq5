@@ -39,6 +39,7 @@ int      g_failCount        = 0;
 string   g_lastError        = "";
 string   g_lastPushAt       = "-";
 string   g_historyStartIso  = "";
+string   g_dealsCheckpointKey = "";
 
 //+------------------------------------------------------------------+
 //| ISO-8601 UTC from datetime                                       |
@@ -225,13 +226,16 @@ bool PushEvent(const string kind, const string payloadJson)
 //+------------------------------------------------------------------+
 bool PushAccountInfo()
   {
-   bool isDemo = (AccountInfoInteger(ACCOUNT_TRADE_MODE) == ACCOUNT_TRADE_MODE_DEMO);
+   long tradeMode = AccountInfoInteger(ACCOUNT_TRADE_MODE);
+   string accountClass = "null";
+   if(tradeMode == ACCOUNT_TRADE_MODE_DEMO) accountClass = JStr("DEMO");
+   else if(tradeMode == ACCOUNT_TRADE_MODE_REAL) accountClass = JStr("REAL");
    string payload = "{\"externalAccountId\":" + JStr(IntegerToString(AccountInfoInteger(ACCOUNT_LOGIN))) +
                     ",\"currency\":"          + JStr(AccountInfoString(ACCOUNT_CURRENCY)) +
                     ",\"leverage\":"          + JStr(IntegerToString(AccountInfoInteger(ACCOUNT_LEVERAGE))) +
                     ",\"server\":"            + JStr(AccountInfoString(ACCOUNT_SERVER)) +
                     ",\"brokerName\":"        + JStr(AccountInfoString(ACCOUNT_COMPANY)) +
-                    ",\"accountClass\":"      + (isDemo ? JStr("DEMO") : "null") +
+                    ",\"accountClass\":"      + accountClass +
                     "}";
    return PushEvent("ACCOUNT_INFO", payload);
   }
@@ -396,7 +400,7 @@ bool PushDeals()
 void DrawStatus(const string state)
   {
    Comment(StringFormat(
-      "Euforia Bridge v1.0.1\naccount: %I64d (%s)\nstate: %s\npushes: %d  failures: %d\nlast push: %s\nlast error: %s\nhistory from: %s",
+      "Euforia Bridge v1.0.2\naccount: %I64d (%s)\nstate: %s\npushes: %d  failures: %d\nlast push: %s\nlast error: %s\nhistory from: %s",
       AccountInfoInteger(ACCOUNT_LOGIN),
       AccountInfoString(ACCOUNT_SERVER),
       state,
@@ -419,9 +423,23 @@ int OnInit()
    int cadence = InpPushSeconds;
    if(cadence < 5)    cadence = 5;
    if(cadence > 3600) cadence = 3600;
+   // MT5 terminal global variables are shared across accounts. Scope the
+   // checkpoint to BOTH login and server so switching accounts cannot skip
+   // history for another broker/account in the same terminal.
+   string serverKey = AccountInfoString(ACCOUNT_SERVER);
+   for(int i = 0; i < StringLen(serverKey); i++)
+     {
+      ushort ch = StringGetCharacter(serverKey, i);
+      bool allowed = (ch >= 48 && ch <= 57) || (ch >= 65 && ch <= 90) ||
+                     (ch >= 97 && ch <= 122) || ch == 95;
+      if(!allowed) StringSetCharacter(serverKey, i, 95);
+     }
+   if(StringLen(serverKey) > 24) serverKey = StringSubstr(serverKey, 0, 24);
+   g_dealsCheckpointKey = "EUFORIA_DEALS_FROM_" +
+                          IntegerToString(AccountInfoInteger(ACCOUNT_LOGIN)) + "_" + serverKey;
    g_dealsFrom = 0;
-   if(GlobalVariableCheck("EUFORIA_DEALS_FROM"))
-      g_dealsFrom = (datetime)GlobalVariableGet("EUFORIA_DEALS_FROM");
+   if(GlobalVariableCheck(g_dealsCheckpointKey))
+      g_dealsFrom = (datetime)GlobalVariableGet(g_dealsCheckpointKey);
    g_historyStartIso = IsoUtc(TimeGMT() - InpDealsDaysBack * 86400);
    EventSetTimer(cadence);
    DrawStatus("initialized - first push on the next timer tick");
