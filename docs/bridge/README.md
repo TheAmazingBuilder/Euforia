@@ -18,6 +18,7 @@
 | `DEALS` | l'historique des deals **incrémental** (checkpoint persisté) | chaque cycle |
 
 Chaque push est signé **HMAC-SHA256** avec le secret généré par Euforia au pairage.
+Le checkpoint d'historique des deals est stocké séparément par **login MT5 + serveur** : changer de compte dans le même terminal ne réutilise pas le checkpoint d'un autre compte (EA v1.0.2).
 Côté Euforia : le compte s'active au premier push, le broker est identifié
 automatiquement (ex. « IC Markets (SC) Global »), et **les deals deviennent des trades
 du journal** (regroupement MT5 par position — netting — déjà implémenté).
