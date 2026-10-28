@@ -543,25 +543,46 @@ export class IdentityRepository {
     userId: string;
     verifiedAt: Date;
   }): Promise<UserRow | null> {
-    return this.prisma.$transaction(async (tx) => {
-      const consumed = await tx.authChallenge.updateMany({
-        where: {
-          id: data.challengeId,
-          userId: data.userId,
-          purpose: "EMAIL_VERIFICATION",
-          usedAt: null,
-          expiresAt: { gt: data.verifiedAt },
-        },
-        data: { usedAt: data.verifiedAt },
-      });
-      if (consumed.count !== 1) return null;
+    try {
+      return await this.prisma.$transaction(async (tx) => {
+        const current = await tx.user.findUnique({
+          where: { id: data.userId },
+          select: { status: true },
+        });
+        // A stale verification link must never reactivate a suspended or
+        // deactivated account.
+        if (!current || current.status !== "PENDING_VERIFICATION") return null;
 
-      const row = await tx.user.update({
-        where: { id: data.userId },
-        data: { status: "ACTIVE", emailVerifiedAt: data.verifiedAt },
+        const consumed = await tx.authChallenge.updateMany({
+          where: {
+            id: data.challengeId,
+            userId: data.userId,
+            purpose: "EMAIL_VERIFICATION",
+            usedAt: null,
+            expiresAt: { gt: data.verifiedAt },
+          },
+          data: { usedAt: data.verifiedAt },
+        });
+        if (consumed.count !== 1) return null;
+
+        const updated = await tx.user.updateMany({
+          where: { id: data.userId, status: "PENDING_VERIFICATION" },
+          data: { status: "ACTIVE", emailVerifiedAt: data.verifiedAt },
+        });
+        if (updated.count !== 1) {
+          // Roll back challenge consumption if account status changed mid-flight.
+          throw new Error("EMAIL_VERIFICATION_STATE_CHANGED");
+        }
+
+        const row = await tx.user.findUnique({ where: { id: data.userId } });
+        return row as UserRow | null;
       });
-      return row as UserRow;
-    });
+    } catch (error) {
+      if (error instanceof Error && error.message === "EMAIL_VERIFICATION_STATE_CHANGED") {
+        return null;
+      }
+      throw error;
+    }
   }
 
   /**
