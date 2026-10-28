@@ -418,6 +418,36 @@ export class IdentityRepository {
   }
 
   /**
+   * Consume an email-verification challenge and activate the account atomically.
+   * A failed account update must not burn a valid verification link.
+   */
+  async completeEmailVerification(data: {
+    challengeId: string;
+    userId: string;
+    verifiedAt: Date;
+  }): Promise<UserRow | null> {
+    return this.prisma.$transaction(async (tx) => {
+      const consumed = await tx.authChallenge.updateMany({
+        where: {
+          id: data.challengeId,
+          userId: data.userId,
+          purpose: "EMAIL_VERIFICATION",
+          usedAt: null,
+          expiresAt: { gt: data.verifiedAt },
+        },
+        data: { usedAt: data.verifiedAt },
+      });
+      if (consumed.count !== 1) return null;
+
+      const row = await tx.user.update({
+        where: { id: data.userId },
+        data: { status: "ACTIVE", emailVerifiedAt: data.verifiedAt },
+      });
+      return row as UserRow;
+    });
+  }
+
+  /**
    * Consume a password-reset challenge and apply the credential/session changes
    * in one transaction. A failed user update must not burn a valid reset token.
    */
