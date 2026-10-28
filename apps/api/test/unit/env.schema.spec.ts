@@ -52,6 +52,7 @@ describe("validateEnv", () => {
     const env = validateEnv({
       ...BASE_ENV,
       NODE_ENV: "production",
+      WEB_APP_URL: "https://app.euforia.app",
       PORT: "8080",
       CORS_ORIGINS: "https://app.cosmoz.app , https://admin.cosmoz.app/",
       LOG_LEVEL: "warn",
