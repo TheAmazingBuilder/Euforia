@@ -369,7 +369,6 @@ export class AuthService {
         })();
     if (!valid) {
       challenge.attempts += 1;
-      if (challenge.attempts >= 5) consume();
       this.limiter.hit("mfa", user.email);
       await this.events.recordLogin(
         {
@@ -763,7 +762,6 @@ export class AuthService {
     this.setRefreshCookie(reply, refresh.value, { remember });
     this.limiter.clear("login", user.email);
     this.limiter.clear("mfa", user.email);
-    this.limiter.clear("mfa_email_send", user.email);
 
     await this.events.recordLogin(
       { userId: user.id, type: "LOGIN_SUCCESS", context, outcome: "SUCCESS" },
