@@ -138,6 +138,13 @@ export class MailerService {
     // Never log one-time email tokens in production (§46 - tokens are
     // redacted); the dev transport keeps the link for local testability.
     const smtp = this.config.auth;
+    if (this.config.isProduction && (!smtp.smtpUser || !smtp.smtpAppPassword)) {
+      // Fail closed: production must never silently fall back to a console
+      // transport, even if environment validation is bypassed by a test or
+      // an alternate bootstrap path.
+      throw new Error("Production email delivery requires SMTP_USER and SMTP_APP_PASSWORD.");
+    }
+
     this.transport = smtp.smtpUser && smtp.smtpAppPassword
       ? new NodemailerMailTransport(smtp.emailFrom, {
           host: smtp.smtpHost,
@@ -146,9 +153,7 @@ export class MailerService {
           user: smtp.smtpUser,
           appPassword: smtp.smtpAppPassword,
         })
-      : new ConsoleMailTransport(this.logger ?? this.fallbackLogger(), {
-          redactActionUrl: this.config.isProduction,
-        });
+      : new ConsoleMailTransport(this.logger ?? this.fallbackLogger());
   }
 
   /** Swap the transport for isolated tests or an alternative provider. */
