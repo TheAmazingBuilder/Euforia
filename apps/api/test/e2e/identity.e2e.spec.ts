@@ -512,12 +512,14 @@ describe("password reset (§22)", () => {
       url: "/api/v1/auth/password/forgot",
       payload: { email: ctx.email },
     });
+
+    // Restore capture delivery even if the assertions below fail.
+    mailer.useTransport({ send: async (message) => { mail.messages.push(message); } });
     expect(failedDelivery.statusCode).toBe(202);
     expect(failedDelivery.json().sent).toBe(true);
     expect(failedDelivery.json().resetExpiresAt).toBeNull();
 
-    // Restore capture delivery and prove the earlier delivered token still works.
-    mailer.useTransport({ send: async (message) => { mail.messages.push(message); } });
+    // Prove the earlier delivered token still works.
     const reset = await app.inject({
       method: "POST",
       url: "/api/v1/auth/password/reset",
