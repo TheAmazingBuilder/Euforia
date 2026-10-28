@@ -364,6 +364,17 @@ describe("registration & email verification", () => {
     });
     expect(unknown.statusCode).toBe(202);
     expect(unknown.json().verificationExpiresAt).toBeNull();
+
+    const verifiedUser = await authenticatedUser(app, mail);
+    mail.clear();
+    const alreadyVerified = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/email/resend",
+      payload: { email: verifiedUser.email },
+    });
+    expect(alreadyVerified.statusCode).toBe(202);
+    expect(alreadyVerified.json().verificationExpiresAt).toBeNull();
+    expect(mail.messages.length).toBe(0);
   });
 });
 
