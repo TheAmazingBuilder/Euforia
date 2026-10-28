@@ -374,6 +374,13 @@ const refinedEnvSchema = envSchema.superRefine((env, ctx) => {
       message: "SMTP_USER and SMTP_APP_PASSWORD are required in production so authentication emails are delivered",
     });
   }
+  if (env.NODE_ENV === "production" && new URL(env.WEB_APP_URL).protocol !== "https:") {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["WEB_APP_URL"],
+      message: "WEB_APP_URL must use HTTPS in production so authentication links cannot expose tokens over plaintext HTTP",
+    });
+  }
   // The body limit must clear every domain image cap (§85 coherence): the
   // wire carries base64 data URLs (≈ 4/3 of the decoded bytes) inside JSON.
   const largestUploadCap = Math.max(
