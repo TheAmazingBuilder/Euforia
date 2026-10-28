@@ -405,11 +405,16 @@ export class IdentityRepository {
     });
   }
 
-  async consumeChallenge(id: string): Promise<void> {
-    await this.prisma.authChallenge.update({
-      where: { id },
+  /**
+   * Atomically consume an unused, unexpired challenge. The conditional write
+   * prevents concurrent requests from successfully replaying the same token.
+   */
+  async consumeChallenge(id: string): Promise<boolean> {
+    const result = await this.prisma.authChallenge.updateMany({
+      where: { id, usedAt: null, expiresAt: { gt: new Date() } },
       data: { usedAt: new Date() },
     });
+    return result.count === 1;
   }
 
   // ── Recovery codes ─────────────────────────────────────────────────────────
