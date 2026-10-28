@@ -759,6 +759,7 @@ export class AuthService {
     const expiresAt = new Date(Date.now() + ttlMs);
     const method = user.mfaMethod === "EMAIL" ? "EMAIL" : "AUTHENTICATOR_APP";
     let codeHash: string | undefined;
+    let emailCode: string | undefined;
 
     if (method === "EMAIL") {
       const sendCheck = this.limiter.check("mfa_email_send", user.email);
@@ -766,23 +767,50 @@ export class AuthService {
         throw new RateLimitError("Too many sign-in codes requested. Please wait before trying again.", "RATE_LIMITED", sendCheck.retryAfterSeconds);
       }
       this.limiter.hit("mfa_email_send", user.email);
-      const code = randomInt(0, 1_000_000).toString().padStart(6, "0");
-      await this.mailer.sendEmailMfaCode(
-        user.email,
-        code,
-        `${this.config.auth.mfaChallengeMinutes} minutes`,
-      );
-      codeHash = IdentityRepository.hashToken(code);
+      emailCode = randomInt(0, 1_000_000).toString().padStart(6, "0");
+      codeHash = IdentityRepository.hashToken(emailCode);
     }
 
+    const tokenHash = IdentityRepository.hashToken(token);
     await this.repository.createMfaLoginChallenge({
       userId: user.id,
-      tokenHash: IdentityRepository.hashToken(token),
+      tokenHash,
       codeHash: codeHash ?? null,
       method,
       remember,
       expiresAt,
     });
+
+    if (method === "EMAIL" && emailCode) {
+      try {
+        await this.mailer.sendEmailMfaCode(
+          user.email,
+          emailCode,
+          `${this.config.auth.mfaChallengeMinutes} minutes`,
+        );
+      } catch (error) {
+        try {
+          await this.repository.deleteMfaLoginChallengeByTokenHash(tokenHash);
+        } catch (cleanupError) {
+          this.logger?.warn(
+            { userId: user.id, errorType: cleanupError instanceof Error ? cleanupError.name : "UnknownError" },
+            "could not remove undelivered MFA login challenge",
+          );
+        }
+        throw error;
+      }
+    }
+
+    // The new challenge is now usable (and, for email MFA, delivered). Cleanup
+    // of older challenges is best-effort and must not strand this login.
+    try {
+      await this.repository.finalizeMfaLoginChallenge({ userId: user.id, tokenHash });
+    } catch (error) {
+      this.logger?.warn(
+        { userId: user.id, errorType: error instanceof Error ? error.name : "UnknownError" },
+        "could not retire previous MFA login challenges",
+      );
+    }
     return {
       outcome: "MFA_REQUIRED",
       mfaRequired: true,
