@@ -222,7 +222,7 @@ describe("MFA / email OTP lifecycle", () => {
 
     // Email MFA stays disabled until the mailbox challenge is confirmed.
     const enrollmentMessage = mail.messages.find((message) => message.kind === "MFA_EMAIL_CODE");
-    expect(enrollmentMessage?.code).toMatch(/^\\d{6}$/);
+    expect(enrollmentMessage?.code).toMatch(/^\d{6}$/);
     const confirmed = await app.inject({
       method: "POST",
       url: "/api/v1/security/2fa/email/confirm",
