@@ -598,23 +598,29 @@ export class IdentityRepository {
   async completeEmailVerification(data: {
     challengeId: string;
     userId: string;
+    targetEmail: string;
     verifiedAt: Date;
   }): Promise<UserRow | null> {
     try {
       return await this.prisma.$transaction(async (tx) => {
         const current = await tx.user.findUnique({
           where: { id: data.userId },
-          select: { status: true },
+          select: { status: true, email: true },
         });
         // A stale verification link must never reactivate a suspended or
-        // deactivated account.
-        if (!current || current.status !== "PENDING_VERIFICATION") return null;
+        // deactivated account or verify a different email address.
+        if (
+          !current ||
+          current.status !== "PENDING_VERIFICATION" ||
+          current.email.toLowerCase() !== data.targetEmail.toLowerCase()
+        ) return null;
 
         const consumed = await tx.authChallenge.updateMany({
           where: {
             id: data.challengeId,
             userId: data.userId,
             purpose: "EMAIL_VERIFICATION",
+            targetEmail: data.targetEmail,
             usedAt: null,
             expiresAt: { gt: data.verifiedAt },
           },
@@ -623,7 +629,11 @@ export class IdentityRepository {
         if (consumed.count !== 1) return null;
 
         const updated = await tx.user.updateMany({
-          where: { id: data.userId, status: "PENDING_VERIFICATION" },
+          where: {
+            id: data.userId,
+            email: data.targetEmail,
+            status: "PENDING_VERIFICATION",
+          },
           data: { status: "ACTIVE", emailVerifiedAt: data.verifiedAt },
         });
         if (updated.count !== 1) {
@@ -631,6 +641,14 @@ export class IdentityRepository {
           throw new Error("EMAIL_VERIFICATION_STATE_CHANGED");
         }
 
+        await tx.authChallenge.deleteMany({
+          where: {
+            userId: data.userId,
+            purpose: "EMAIL_VERIFICATION",
+            usedAt: null,
+            id: { not: data.challengeId },
+          },
+        });
         const row = await tx.user.findUnique({ where: { id: data.userId } });
         return row as UserRow | null;
       });
@@ -675,6 +693,15 @@ export class IdentityRepository {
       await tx.session.updateMany({
         where: { userId: data.userId, revokedAt: null },
         data: { revokedAt: data.changedAt },
+      });
+      // A successful reset invalidates every other outstanding reset link.
+      await tx.authChallenge.deleteMany({
+        where: {
+          userId: data.userId,
+          purpose: "PASSWORD_RESET",
+          usedAt: null,
+          id: { not: data.challengeId },
+        },
       });
       return true;
     });
