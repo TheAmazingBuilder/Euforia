@@ -405,6 +405,78 @@ export class IdentityRepository {
     });
   }
 
+  async createMfaLoginChallenge(data: {
+    userId: string;
+    tokenHash: string;
+    codeHash: string | null;
+    method: "AUTHENTICATOR_APP" | "EMAIL";
+    remember: boolean;
+    expiresAt: Date;
+  }): Promise<void> {
+    await this.prisma.authChallenge.create({
+      data: {
+        userId: data.userId,
+        purpose: "MFA_LOGIN",
+        tokenHash: data.tokenHash,
+        codeHash: data.codeHash,
+        method: data.method,
+        remember: data.remember,
+        expiresAt: data.expiresAt,
+      },
+    });
+  }
+
+  async findMfaLoginChallengeByTokenHash(hash: string) {
+    return this.prisma.authChallenge.findFirst({
+      where: { tokenHash: hash, purpose: "MFA_LOGIN" },
+    });
+  }
+
+  /** Atomically record a failed code and burn the challenge on attempt five. */
+  async recordMfaLoginFailure(id: string): Promise<number | null> {
+    const now = new Date();
+    const updated = await this.prisma.authChallenge.updateMany({
+      where: {
+        id,
+        purpose: "MFA_LOGIN",
+        usedAt: null,
+        expiresAt: { gt: now },
+        attempts: { lt: 5 },
+      },
+      data: { attempts: { increment: 1 } },
+    });
+    if (updated.count !== 1) return null;
+
+    const challenge = await this.prisma.authChallenge.findUnique({
+      where: { id },
+      select: { attempts: true },
+    });
+    if (!challenge) return null;
+    if (challenge.attempts >= 5) {
+      await this.prisma.authChallenge.updateMany({
+        where: { id, purpose: "MFA_LOGIN", usedAt: null },
+        data: { usedAt: now },
+      });
+    }
+    return challenge.attempts;
+  }
+
+  /** Single-use completion guard; concurrent successful requests cannot both log in. */
+  async consumeMfaLoginChallenge(id: string): Promise<boolean> {
+    const now = new Date();
+    const result = await this.prisma.authChallenge.updateMany({
+      where: {
+        id,
+        purpose: "MFA_LOGIN",
+        usedAt: null,
+        expiresAt: { gt: now },
+        attempts: { lt: 5 },
+      },
+      data: { usedAt: now },
+    });
+    return result.count === 1;
+  }
+
   /**
    * Atomically consume an unused, unexpired challenge. The conditional write
    * prevents concurrent requests from successfully replaying the same token.
