@@ -359,6 +359,61 @@ describe("email-based two-factor authentication", () => {
     expect(replay.json().code).toBe("INVALID_CHALLENGE");
   });
 
+  it("preserves the last usable MFA challenge when a replacement email cannot be delivered", async () => {
+    mail.clear();
+    const ctx = await authenticatedUser(app, mail);
+    const reauth = await app.inject({
+      method: "POST",
+      url: "/api/v1/security/reauth",
+      headers: ctx.authHeader,
+      payload: { password: ctx.password },
+    });
+    const enabled = await app.inject({
+      method: "POST",
+      url: "/api/v1/security/2fa/email/enable",
+      headers: ctx.authHeader,
+      payload: { reauthToken: reauth.json().token },
+    });
+    expect(enabled.statusCode).toBe(200);
+    const enrollmentCode = [...mail.messages].reverse().find((item) => item.kind === "MFA_EMAIL_CODE")?.code;
+    const confirmed = await app.inject({
+      method: "POST",
+      url: "/api/v1/security/2fa/email/confirm",
+      headers: ctx.authHeader,
+      payload: { code: enrollmentCode },
+    });
+    expect(confirmed.statusCode).toBe(200);
+
+    mail.clear();
+    const firstLogin = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/login",
+      payload: { email: ctx.email, password: ctx.password, remember: false },
+    });
+    expect(firstLogin.statusCode).toBe(200);
+    const firstChallenge = firstLogin.json();
+    const firstCode = [...mail.messages].reverse().find((item) => item.kind === "MFA_EMAIL_CODE")?.code;
+    expect(firstCode).toMatch(/^\\d{6}$/);
+
+    const mailer = app.get(MailerService);
+    mailer.useTransport({ send: async () => { throw new Error("simulated SMTP outage"); } });
+    const failedReplacement = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/login",
+      payload: { email: ctx.email, password: ctx.password, remember: false },
+    });
+    mailer.useTransport({ send: async (message) => { mail.messages.push(message); } });
+    expect(failedReplacement.statusCode).toBeGreaterThanOrEqual(500);
+
+    const complete = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/mfa/challenge",
+      payload: { challengeToken: firstChallenge.challengeToken, code: firstCode },
+    });
+    expect(complete.statusCode).toBe(200);
+    expect(complete.json().outcome).toBe("AUTHENTICATED");
+  });
+
   it("does not complete email MFA with an incorrect code", async () => {
     mail.clear();
     const ctx = await authenticatedUser(app, mail);
