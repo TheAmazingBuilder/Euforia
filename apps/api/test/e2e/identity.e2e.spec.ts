@@ -867,19 +867,20 @@ describe("password reset (§22)", () => {
       },
     });
 
-    let response;
+    let statusCode = 0;
     try {
-      response = await app.inject({
+      const response = await app.inject({
         method: "PATCH",
         url: "/api/v1/me",
         headers: ctx.authHeader,
         payload: { email: newEmail },
       });
+      statusCode = response.statusCode;
     } finally {
       mailer.useTransport({ send: async (message) => { mail.messages.push(message); } });
     }
 
-    expect(response!.statusCode).toBeGreaterThanOrEqual(500);
+    expect(statusCode).toBeGreaterThanOrEqual(500);
     const restored = await app.get(IdentityRepository).findUserById(ctx.userId);
     expect(restored?.email).toBe(originalEmail);
     expect(restored?.status).toBe("ACTIVE");
