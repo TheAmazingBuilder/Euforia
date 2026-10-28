@@ -99,10 +99,10 @@ never secret values.**
 Authentication and encryption keys are validated at startup. The API will
 exit rather than listen if any required key is empty/invalid or PostgreSQL
 cannot be reached. Generate local-only secrets; never commit `.env` values.
-The current mail transport is development-only: it writes verification/reset
-links to the API logs and does not deliver real email. Production email
-delivery requires a real transport adapter; never rely on console logs in
-production.
+Transactional email uses Nodemailer over SMTP when `SMTP_USER` and
+`SMTP_APP_PASSWORD` are configured. In local development only, the console
+transport remains available when credentials are absent; production startup
+requires SMTP credentials and never logs one-time codes or action links.
 
 ## Database
 
