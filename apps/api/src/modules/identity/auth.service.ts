@@ -82,9 +82,9 @@ export class AuthService {
   ): Promise<{
     user: ReturnType<typeof toAuthUser>;
     status: UserRow["status"];
-    verificationSentAt: string;
+    verificationSentAt?: string;
     delivery: "EMAIL";
-    verificationExpiresAt: string;
+    verificationExpiresAt: string | null;
     /**
      * Auto-login affordance: when registration lands on an ACTIVE account
      * (email verification disabled), the response carries the same
@@ -144,9 +144,22 @@ export class AuthService {
       throw error;
     }
 
-    const expiresAt = requireEmail
-      ? await this.issueVerificationChallenge(user, user.email)
-      : new Date(Date.now() + 86_400_000).toISOString();
+    let expiresAt: string | null;
+    if (requireEmail) {
+      try {
+        expiresAt = await this.issueVerificationChallenge(user, user.email);
+      } catch (error) {
+        // The account was created successfully. Keep the user on the pending
+        // verification screen so they can request another email immediately.
+        this.logger?.warn(
+          { userId: user.id, errorType: error instanceof Error ? error.name : "UnknownError" },
+          "registration verification email delivery failed",
+        );
+        expiresAt = null;
+      }
+    } else {
+      expiresAt = new Date(Date.now() + 86_400_000).toISOString();
+    }
 
     // Auto-login when the account lands ACTIVE (verification disabled):
     // issue the same credentials a successful login would so the client
@@ -196,7 +209,7 @@ export class AuthService {
     return {
       user: toAuthUser(user),
       status: user.status as AccountStatus,
-      verificationSentAt: new Date().toISOString(),
+      ...(expiresAt ? { verificationSentAt: new Date().toISOString() } : {}),
       delivery: "EMAIL",
       verificationExpiresAt: expiresAt,
       ...(session ? { session } : {}),
