@@ -51,6 +51,34 @@ describe("registration & email verification", () => {
     expect(JSON.stringify(body)).not.toContain("passwordHash");
   });
 
+  it("cleans up an undelivered verification token and allows resend after SMTP recovers", async () => {
+    const mailer = app.get(MailerService);
+    const email = uniqueEmail("smtp-retry");
+    mailer.useTransport({
+      send: async () => {
+        throw new Error("simulated SMTP outage");
+      },
+    });
+
+    const failedRegistration = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/register",
+      payload: { name: "Retry User", email, password: PASSWORD },
+    });
+    expect(failedRegistration.statusCode).toBeGreaterThanOrEqual(500);
+
+    // The pending account remains recoverable; a retry delivers a fresh link.
+    mailer.useTransport({ send: async (message) => { mail.messages.push(message); } });
+    const resend = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/email/resend",
+      payload: { email },
+    });
+    expect(resend.statusCode).toBe(202);
+    expect(mail.messages.some((message) => message.kind === "EMAIL_VERIFICATION" && message.to === email)).toBe(true);
+    expect(resend.json().verificationExpiresAt).not.toBeNull();
+  });
+
   it("rejects weak passwords at the contract level", async () => {
     const res = await app.inject({
       method: "POST",
