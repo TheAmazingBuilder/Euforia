@@ -147,6 +147,105 @@ export class IdentityRepository {
     return row as UserRow;
   }
 
+  /** Atomically count a wrong email-MFA enrollment code; lock and clear it on attempt five. */
+  async recordEmailMfaEnrollmentFailure(
+    userId: string,
+    expectedCodeHash: string,
+    now: Date,
+  ): Promise<number | null> {
+    const updated = await this.prisma.user.updateMany({
+      where: {
+        id: userId,
+        status: "ACTIVE",
+        mfaEnabledAt: null,
+        mfaPendingEmailCodeHash: expectedCodeHash,
+        mfaPendingEmailExpiresAt: { gt: now },
+        mfaPendingEmailAttempts: { lt: 5 },
+      },
+      data: { mfaPendingEmailAttempts: { increment: 1 } },
+    });
+    if (updated.count !== 1) return null;
+
+    const current = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { mfaPendingEmailAttempts: true },
+    });
+    if (!current) return null;
+    if (current.mfaPendingEmailAttempts >= 5) {
+      await this.prisma.user.updateMany({
+        where: {
+          id: userId,
+          mfaPendingEmailCodeHash: expectedCodeHash,
+          mfaPendingEmailAttempts: { gte: 5 },
+        },
+        data: {
+          mfaPendingEmailCodeHash: null,
+          mfaPendingEmailExpiresAt: null,
+          mfaPendingEmailAttempts: 0,
+        },
+      });
+    }
+    return current.mfaPendingEmailAttempts;
+  }
+
+  /** Clear only the expired enrollment challenge that the caller actually observed. */
+  async clearPendingEmailMfaChallenge(userId: string, expectedCodeHash: string): Promise<void> {
+    await this.prisma.user.updateMany({
+      where: { id: userId, mfaPendingEmailCodeHash: expectedCodeHash },
+      data: {
+        mfaPendingEmailCodeHash: null,
+        mfaPendingEmailExpiresAt: null,
+        mfaPendingEmailAttempts: 0,
+      },
+    });
+  }
+
+  /** Consume the enrollment code and activate email MFA/recovery codes atomically. */
+  async completeEmailMfaEnrollment(data: {
+    userId: string;
+    expectedCodeHash: string;
+    enabledAt: Date;
+    recoveryCodeHashes: string[];
+  }): Promise<UserRow | null> {
+    return this.prisma.$transaction(async (tx) => {
+      const consumed = await tx.user.updateMany({
+        where: {
+          id: data.userId,
+          status: "ACTIVE",
+          mfaEnabledAt: null,
+          mfaPendingEmailCodeHash: data.expectedCodeHash,
+          mfaPendingEmailExpiresAt: { gt: data.enabledAt },
+          mfaPendingEmailAttempts: { lt: 5 },
+        },
+        data: {
+          mfaSecretEnc: null,
+          mfaPendingSecretEnc: null,
+          mfaPendingEmailCodeHash: null,
+          mfaPendingEmailExpiresAt: null,
+          mfaPendingEmailAttempts: 0,
+          mfaMethod: "EMAIL",
+          mfaEnabledAt: data.enabledAt,
+          mfaDisabledAt: null,
+          mfaLastVerifiedAt: data.enabledAt,
+        },
+      });
+      if (consumed.count !== 1) return null;
+
+      await tx.recoveryCode.deleteMany({ where: { userId: data.userId } });
+      if (data.recoveryCodeHashes.length > 0) {
+        await tx.recoveryCode.createMany({
+          data: data.recoveryCodeHashes.map((codeHash) => ({
+            userId: data.userId,
+            codeHash,
+            active: true,
+          })),
+        });
+      }
+      const row = await tx.user.findUnique({ where: { id: data.userId } });
+      return row as UserRow | null;
+    });
+  }
+
   /** Atomically claim the email-MFA enrollment slot against stale/concurrent requests. */
   async beginPendingEmailMfaChallenge(data: {
     userId: string;
