@@ -587,7 +587,7 @@ export function TwoFactorPanel({
               </Button>
             </div>
           </>
-        ) : emailEnrollmentPending ? (
+        ) : emailEnrollmentPending || twoFactor.pendingMethod === "EMAIL" ? (
           <div className="grid max-w-sm gap-2 rounded-lg border border-border bg-background/60 p-3">
             <p className="text-sm text-foreground">Enter the 6-digit code sent to your verified email. The code expires shortly.</p>
             <Label htmlFor="email-mfa-enrollment-code">Email verification code</Label>
@@ -604,6 +604,7 @@ export function TwoFactorPanel({
             <Button onClick={onConfirmEmailEnrollment} disabled={pending || emailEnrollCode.length !== 6} data-testid="email-mfa-enrollment-confirm">
               Confirm email and enable 2FA
             </Button>
+            <Button variant="outline" onClick={onEnableEmail} disabled={pending} data-testid="email-mfa-enrollment-resend">Send a new code</Button>
           </div>
         ) : twoFactor.pending ? (
           <p>Setup in progress - confirm the authenticator challenge to activate 2FA.</p>
