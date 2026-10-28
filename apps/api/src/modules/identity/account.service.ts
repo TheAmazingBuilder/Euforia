@@ -99,6 +99,11 @@ export class AccountService {
       patch.email = input.email.toLowerCase();
       patch.status = "PENDING_VERIFICATION";
       patch.emailVerifiedAt = null;
+      // Any in-progress MFA enrollment was tied to the prior account identity.
+      patch.mfaPendingEmailCodeHash = null;
+      patch.mfaPendingEmailExpiresAt = null;
+      patch.mfaPendingEmailAttempts = 0;
+      patch.mfaPendingSecretEnc = null;
       emailChangePending = true;
     }
 
