@@ -416,16 +416,23 @@ export class AuthService {
         );
       }
       this.limiter.hit("mfa", user.email);
-      await this.events.recordLogin(
-        {
-          userId: user.id,
-          type: "TFA_CHALLENGE_FAILED",
-          context: challenge.method === "EMAIL" ? "Invalid email code during sign-in." : "Invalid TOTP code during sign-in.",
-          outcome: "FAILURE",
-          reason: "Invalid MFA code",
-        },
-        fingerprint,
-      );
+      try {
+        await this.events.recordLogin(
+          {
+            userId: user.id,
+            type: "TFA_CHALLENGE_FAILED",
+            context: challenge.method === "EMAIL" ? "Invalid email code during sign-in." : "Invalid TOTP code during sign-in.",
+            outcome: "FAILURE",
+            reason: "Invalid MFA code",
+          },
+          fingerprint,
+        );
+      } catch (error) {
+        this.logger?.warn(
+          { userId: user.id, errorType: error instanceof Error ? error.name : "UnknownError" },
+          "failed MFA attempt could not be recorded",
+        );
+      }
       throw new UnauthorizedError("That code didn't match. Check your email or authenticator app.", "INVALID_MFA_CODE");
     }
 
@@ -464,13 +471,20 @@ export class AuthService {
         );
       }
       this.limiter.hit("mfa", user.email);
-      await this.events.record({
-        userId: user.id,
-        type: "TFA_CHALLENGE_FAILED",
-        actor: fingerprint.device,
-        context: "Invalid recovery code during sign-in.",
-        outcome: "FAILURE",
-      });
+      try {
+        await this.events.record({
+          userId: user.id,
+          type: "TFA_CHALLENGE_FAILED",
+          actor: fingerprint.device,
+          context: "Invalid recovery code during sign-in.",
+          outcome: "FAILURE",
+        });
+      } catch (error) {
+        this.logger?.warn(
+          { userId: user.id, errorType: error instanceof Error ? error.name : "UnknownError" },
+          "failed recovery-code attempt could not be recorded",
+        );
+      }
       throw new UnauthorizedError("That recovery code was not recognized.", "INVALID_MFA_CODE");
     }
 
@@ -948,10 +962,7 @@ export class AuthService {
     this.limiter.clear("login", user.email);
     this.limiter.clear("mfa", user.email);
 
-    await this.events.recordLogin(
-      { userId: user.id, type: "LOGIN_SUCCESS", context, outcome: "SUCCESS" },
-      fingerprint,
-    );
+    await this.recordLoginBestEffort(user.id, context, fingerprint);
 
     return {
       outcome: "AUTHENTICATED" as const,
@@ -965,16 +976,23 @@ export class AuthService {
   private async recordFailedLogin(email: string, fingerprint: RequestFingerprint, reason: string): Promise<void> {
     const user = await this.repository.findUserByEmail(email);
     if (!user) return;
-    await this.events.recordLogin(
-      {
-        userId: user.id,
-        type: "LOGIN_FAILED",
-        context: `Sign-in failed - ${reason.toLowerCase()}.`,
-        outcome: "FAILURE",
-        reason,
-      },
-      fingerprint,
-    );
+    try {
+      await this.events.recordLogin(
+        {
+          userId: user.id,
+          type: "LOGIN_FAILED",
+          context: `Sign-in failed - ${reason.toLowerCase()}.`,
+          outcome: "FAILURE",
+          reason,
+        },
+        fingerprint,
+      );
+    } catch (error) {
+      this.logger?.warn(
+        { userId: user.id, errorType: error instanceof Error ? error.name : "UnknownError" },
+        "failed login attempt could not be recorded",
+      );
+    }
   }
 
   // ── Cookie jar (HttpOnly - production contract; the mock documented this
@@ -998,8 +1016,8 @@ export class AuthService {
       );
     } catch (error) {
       this.logger?.warn(
-        { err: error instanceof Error ? error.message : String(error), userId },
-        "security-event login recording failed (ignored - signup unaffected)",
+        { errorType: error instanceof Error ? error.name : "UnknownError", userId },
+        "security-event login recording failed (ignored - authentication continues)",
       );
     }
   }
