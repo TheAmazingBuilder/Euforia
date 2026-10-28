@@ -198,28 +198,35 @@ export class IdentityRepository {
     pendingSecretEnc: string;
     enabledAt: Date;
   }): Promise<UserRow | null> {
-    const updated = await this.prisma.user.updateMany({
-      where: {
-        id: data.userId,
-        status: "ACTIVE",
-        mfaEnabledAt: null,
-        mfaPendingSecretEnc: data.pendingSecretEnc,
-      },
-      data: {
-        mfaSecretEnc: data.pendingSecretEnc,
-        mfaPendingSecretEnc: null,
-        mfaPendingEmailCodeHash: null,
-        mfaPendingEmailExpiresAt: null,
-        mfaPendingEmailAttempts: 0,
-        mfaMethod: "AUTHENTICATOR_APP",
-        mfaEnabledAt: data.enabledAt,
-        mfaDisabledAt: null,
-        mfaLastVerifiedAt: data.enabledAt,
-      },
+    return this.prisma.$transaction(async (tx) => {
+      const updated = await tx.user.updateMany({
+        where: {
+          id: data.userId,
+          status: "ACTIVE",
+          mfaEnabledAt: null,
+          mfaPendingSecretEnc: data.pendingSecretEnc,
+        },
+        data: {
+          mfaSecretEnc: data.pendingSecretEnc,
+          mfaPendingSecretEnc: null,
+          mfaPendingEmailCodeHash: null,
+          mfaPendingEmailExpiresAt: null,
+          mfaPendingEmailAttempts: 0,
+          mfaMethod: "AUTHENTICATOR_APP",
+          mfaEnabledAt: data.enabledAt,
+          mfaDisabledAt: null,
+          mfaLastVerifiedAt: data.enabledAt,
+        },
+      });
+      if (updated.count !== 1) return null;
+
+      await tx.recoveryCode.updateMany({
+        where: { userId: data.userId, usedAt: null },
+        data: { active: true },
+      });
+      const row = await tx.user.findUnique({ where: { id: data.userId } });
+      return row as UserRow | null;
     });
-    if (updated.count !== 1) return null;
-    const row = await this.prisma.user.findUnique({ where: { id: data.userId } });
-    return row as UserRow | null;
   }
 
   /** Atomically count a wrong email-MFA enrollment code; lock and clear it on attempt five. */
