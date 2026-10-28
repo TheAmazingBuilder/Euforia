@@ -448,13 +448,23 @@ describe("password reset (§22)", () => {
       payload: { email: ctx.email },
     });
     const newPassword = "brand-new-password-42";
+    const resetToken = mail.lastResetToken();
     const reset = await app.inject({
       method: "POST",
       url: "/api/v1/auth/password/reset",
-      payload: { token: mail.lastResetToken(), password: newPassword },
+      payload: { token: resetToken, password: newPassword },
     });
     expect(reset.statusCode).toBe(200);
     expect(reset.json().resetAt).toBeTruthy();
+
+    // Reset links are single-use even when replayed after a successful change.
+    const replay = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/password/reset",
+      payload: { token: resetToken, password: "another-password-43" },
+    });
+    expect(replay.statusCode).toBe(400);
+    expect(replay.json().code).toBe("TOKEN_ALREADY_USED");
 
     // Old refresh chain revoked (defense in depth).
     const oldRefresh = await app.inject({
