@@ -356,6 +356,8 @@ describe("registration & email verification", () => {
     expect(pending.statusCode).toBe(202);
     expect(pending.json().verificationToken).toBeUndefined();
     expect(pending.json().verificationExpiresAt).toBeNull();
+    expect(mail.messages.some((message) => message.kind === "EMAIL_VERIFICATION" && message.to === pendingEmail)).toBe(true);
+    const deliveredCount = mail.messages.length;
 
     const unknown = await app.inject({
       method: "POST",
@@ -364,6 +366,7 @@ describe("registration & email verification", () => {
     });
     expect(unknown.statusCode).toBe(202);
     expect(unknown.json().verificationExpiresAt).toBeNull();
+    expect(mail.messages).toHaveLength(deliveredCount);
 
     const verifiedUser = await authenticatedUser(app, mail);
     mail.clear();
