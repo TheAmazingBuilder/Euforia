@@ -459,11 +459,13 @@ export class IdentityRepository {
     });
   }
 
-  async consumeRecoveryCode(id: string): Promise<void> {
-    await this.prisma.recoveryCode.update({
-      where: { id },
+  /** Atomically consume an active, unused recovery code exactly once. */
+  async consumeRecoveryCode(id: string): Promise<boolean> {
+    const result = await this.prisma.recoveryCode.updateMany({
+      where: { id, active: true, usedAt: null },
       data: { usedAt: new Date() },
     });
+    return result.count === 1;
   }
 
   // ── API keys ───────────────────────────────────────────────────────────────
