@@ -393,7 +393,7 @@ describe("email-based two-factor authentication", () => {
     expect(firstLogin.statusCode).toBe(200);
     const firstChallenge = firstLogin.json();
     const firstCode = [...mail.messages].reverse().find((item) => item.kind === "MFA_EMAIL_CODE")?.code;
-    expect(firstCode).toMatch(/^\\d{6}$/);
+    expect(firstCode).toMatch(/^\d{6}$/);
 
     const mailer = app.get(MailerService);
     mailer.useTransport({ send: async () => { throw new Error("simulated SMTP outage"); } });
