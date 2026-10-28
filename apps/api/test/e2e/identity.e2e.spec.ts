@@ -449,19 +449,30 @@ describe("password reset (§22)", () => {
     });
     const newPassword = "brand-new-password-42";
     const resetToken = mail.lastResetToken();
-    const reset = await app.inject({
-      method: "POST",
-      url: "/api/v1/auth/password/reset",
-      payload: { token: resetToken, password: newPassword },
-    });
-    expect(reset.statusCode).toBe(200);
-    expect(reset.json().resetAt).toBeTruthy();
 
-    // Reset links are single-use even when replayed after a successful change.
+    // Two requests racing with the same token must not both succeed.
+    const concurrent = await Promise.all([
+      app.inject({
+        method: "POST",
+        url: "/api/v1/auth/password/reset",
+        payload: { token: resetToken, password: newPassword },
+      }),
+      app.inject({
+        method: "POST",
+        url: "/api/v1/auth/password/reset",
+        payload: { token: resetToken, password: "another-password-43" },
+      }),
+    ]);
+    expect(concurrent.filter((response) => response.statusCode === 200)).toHaveLength(1);
+    expect(concurrent.filter((response) => response.statusCode === 400)).toHaveLength(1);
+    expect(concurrent.find((response) => response.statusCode === 200)?.json().resetAt).toBeTruthy();
+    expect(concurrent.find((response) => response.statusCode === 400)?.json().code).toBe("TOKEN_ALREADY_USED");
+
+    // Reset links remain single-use after the concurrent requests complete.
     const replay = await app.inject({
       method: "POST",
       url: "/api/v1/auth/password/reset",
-      payload: { token: resetToken, password: "another-password-43" },
+      payload: { token: resetToken, password: "third-password-44" },
     });
     expect(replay.statusCode).toBe(400);
     expect(replay.json().code).toBe("TOKEN_ALREADY_USED");
