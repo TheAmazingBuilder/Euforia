@@ -417,6 +417,44 @@ export class IdentityRepository {
     return result.count === 1;
   }
 
+  /**
+   * Consume a password-reset challenge and apply the credential/session changes
+   * in one transaction. A failed user update must not burn a valid reset token.
+   */
+  async completePasswordReset(data: {
+    challengeId: string;
+    userId: string;
+    passwordHash: string;
+    changedAt: Date;
+  }): Promise<boolean> {
+    return this.prisma.$transaction(async (tx) => {
+      const consumed = await tx.authChallenge.updateMany({
+        where: {
+          id: data.challengeId,
+          userId: data.userId,
+          purpose: "PASSWORD_RESET",
+          usedAt: null,
+          expiresAt: { gt: data.changedAt },
+        },
+        data: { usedAt: data.changedAt },
+      });
+      if (consumed.count !== 1) return false;
+
+      await tx.user.update({
+        where: { id: data.userId },
+        data: {
+          passwordHash: data.passwordHash,
+          passwordLastChangedAt: data.changedAt,
+        },
+      });
+      await tx.session.updateMany({
+        where: { userId: data.userId, revokedAt: null },
+        data: { revokedAt: data.changedAt },
+      });
+      return true;
+    });
+  }
+
   // ── Recovery codes ─────────────────────────────────────────────────────────
 
   async replaceRecoveryCodes(
