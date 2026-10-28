@@ -617,7 +617,7 @@ export class AuthService {
       // any previously delivered reset link remains usable.
       await this.repository.deleteChallengeByTokenHash(tokenHash);
       this.logger?.warn(
-        { userId: user.id, err: error instanceof Error ? error.message : String(error) },
+        { userId: user.id, errorType: error instanceof Error ? error.name : "UnknownError" },
         "password reset email delivery failed",
       );
       return { sent: true, delivery: "EMAIL", resetExpiresAt: null };
