@@ -384,24 +384,39 @@ describe("MFA / TOTP lifecycle (§18–§21)", () => {
     expect(limited.statusCode).toBe(429);
   });
 
-  it("recovery codes: one-time use, then exhausted", async () => {
-    const login = await app.inject({
-      method: "POST",
-      url: "/api/v1/auth/login",
-      payload: { email, password, remember: true },
-    });
-    const challengeToken = login.json().challengeToken as string;
+  it("recovery codes: concurrent use succeeds once, then the code is exhausted", async () => {
+    const [loginA, loginB] = await Promise.all([
+      app.inject({
+        method: "POST",
+        url: "/api/v1/auth/login",
+        payload: { email, password, remember: true },
+      }),
+      app.inject({
+        method: "POST",
+        url: "/api/v1/auth/login",
+        payload: { email, password, remember: true },
+      }),
+    ]);
     const code = enrollment.recoveryCodes[0];
 
-    const recover = await app.inject({
-      method: "POST",
-      url: "/api/v1/auth/mfa/recover",
-      payload: { challengeToken, recoveryCode: code },
-    });
-    expect(recover.statusCode).toBe(200);
-    expect(recover.json().outcome).toBe("AUTHENTICATED");
+    const concurrent = await Promise.all([
+      app.inject({
+        method: "POST",
+        url: "/api/v1/auth/mfa/recover",
+        payload: { challengeToken: loginA.json().challengeToken, recoveryCode: code },
+      }),
+      app.inject({
+        method: "POST",
+        url: "/api/v1/auth/mfa/recover",
+        payload: { challengeToken: loginB.json().challengeToken, recoveryCode: code },
+      }),
+    ]);
+    expect(concurrent.filter((response) => response.statusCode === 200)).toHaveLength(1);
+    expect(concurrent.filter((response) => response.statusCode === 401)).toHaveLength(1);
+    expect(concurrent.find((response) => response.statusCode === 200)?.json().outcome).toBe("AUTHENTICATED");
+    expect(concurrent.find((response) => response.statusCode === 401)?.json().code).toBe("INVALID_MFA_CODE");
 
-    // Same code can never be reused.
+    // Same code can never be reused, even with a fresh login challenge.
     const login2 = await app.inject({
       method: "POST",
       url: "/api/v1/auth/login",
@@ -415,7 +430,7 @@ describe("MFA / TOTP lifecycle (§18–§21)", () => {
     expect(reuse.statusCode).toBe(401);
     expect(reuse.json().code).toBe("INVALID_MFA_CODE");
 
-    // Unknown code - same envelope.
+    // Unknown code - same unauthorized status.
     const unknown = await app.inject({
       method: "POST",
       url: "/api/v1/auth/mfa/recover",
