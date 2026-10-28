@@ -449,7 +449,10 @@ export class AuthService {
     }
     challenge.used = true;
     consume();
-    await this.repository.consumeRecoveryCode(match.id);
+    const recoveryCodeConsumed = await this.repository.consumeRecoveryCode(match.id);
+    if (!recoveryCodeConsumed) {
+      throw new UnauthorizedError("That recovery code was already used. Try another recovery code.", "INVALID_MFA_CODE");
+    }
     const updated = await this.repository.updateUser(user.id, { mfaLastVerifiedAt: new Date() });
     return this.completeLogin(
       updated,
