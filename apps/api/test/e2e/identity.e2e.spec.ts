@@ -66,7 +66,10 @@ describe("registration & email verification", () => {
       url: "/api/v1/auth/register",
       payload: { name: "Retry User", email, password: PASSWORD },
     });
-    expect(failedRegistration.statusCode).toBeGreaterThanOrEqual(500);
+    expect(failedRegistration.statusCode).toBe(201);
+    expect(failedRegistration.json().status).toBe("PENDING_VERIFICATION");
+    expect(failedRegistration.json().verificationExpiresAt).toBeNull();
+    expect(failedRegistration.json().verificationToken).toBeUndefined();
 
     // The pending account remains recoverable; a retry delivers a fresh link.
     mailer.useTransport({ send: async (message) => { mail.messages.push(message); } });
