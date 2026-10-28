@@ -254,6 +254,7 @@ export class AuthService {
     const updated = await this.repository.completeEmailVerification({
       challengeId: challenge.id,
       userId: user.id,
+      targetEmail: challenge.targetEmail,
       verifiedAt,
     });
     if (!updated) {
