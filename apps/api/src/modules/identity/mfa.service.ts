@@ -8,7 +8,7 @@
  * previous set (§20).
  */
 import { Inject, Injectable } from "@nestjs/common";
-import { randomInt, timingSafeEqual } from "node:crypto";
+import { createHmac, randomInt, timingSafeEqual } from "node:crypto";
 import { IdentityRepository, type UserRow } from "./identity.repository";
 import { APP_CONFIG } from "../../config/app-config";
 import type { AppConfig } from "../../config/app-config";
@@ -94,7 +94,7 @@ export class MfaService {
     this.limiter.hit("mfa_email_enroll", user.email);
     await this.mailer.sendEmailMfaCode(user.email, code, `${this.config.auth.mfaChallengeMinutes} minutes`);
     await this.repository.updateUser(user.id, {
-      mfaPendingEmailCodeHash: IdentityRepository.hashToken(code),
+      mfaPendingEmailCodeHash: this.hashEmailEnrollmentCode(code),
       mfaPendingEmailExpiresAt: expiresAt,
       mfaPendingEmailAttempts: 0,
       mfaPendingSecretEnc: null,
@@ -121,7 +121,7 @@ export class MfaService {
       throw new BusinessRuleError("The email verification code expired. Start email 2FA setup again.", "EMAIL_MFA_CHALLENGE_EXPIRED");
     }
 
-    const submitted = Buffer.from(IdentityRepository.hashToken(code), "hex");
+    const submitted = Buffer.from(this.hashEmailEnrollmentCode(code), "hex");
     const expected = Buffer.from(hash, "hex");
     if (submitted.length !== expected.length || !timingSafeEqual(submitted, expected)) {
       const attempts = user.mfaPendingEmailAttempts + 1;
@@ -248,6 +248,11 @@ export class MfaService {
       context: "Recovery codes regenerated - previous set invalidated.",
     });
     return { recoveryCodes: plainCodes };
+  }
+
+  /** HMAC protects a six-digit code against offline brute-force after a database leak. */
+  private hashEmailEnrollmentCode(code: string): string {
+    return createHmac("sha256", this.config.auth.mfaEncryptionKey).update(code).digest("hex");
   }
 
   /** Project the shared TwoFactorState shape. */
