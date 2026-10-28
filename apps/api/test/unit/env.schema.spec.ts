@@ -117,6 +117,16 @@ describe("validateEnv", () => {
     expect(() => validateEnv({ ...BASE_ENV, NODE_ENV: "production" })).toThrow(/SMTP_USER/);
   });
 
+  it("rejects insecure HTTP authentication links in production", () => {
+    expect(() => validateEnv({
+      ...BASE_ENV,
+      NODE_ENV: "production",
+      WEB_APP_URL: "http://app.euforia.app",
+      SMTP_USER: "mailer@example.com",
+      SMTP_APP_PASSWORD: "test-only-app-password",
+    })).toThrow(/WEB_APP_URL must use HTTPS in production/);
+  });
+
   it("normalizes spaces from a Google App Password", () => {
     const env = validateEnv({
       ...BASE_ENV,
