@@ -521,7 +521,7 @@ describe("MFA / email-code lifecycle", () => {
     expect(enrollment.json().pending).toBe(true);
     expect(enrollment.json().recoveryCodes).toBeUndefined();
     const enrollmentMessage = [...mail.messages].reverse().find((item) => item.kind === "MFA_EMAIL_CODE");
-    expect(enrollmentMessage?.code).toMatch(/^\\d{6}$/);
+    expect(enrollmentMessage?.code).toMatch(/^\d{6}$/);
     if (!enrollmentMessage?.code) throw new Error("email MFA enrollment code was not captured");
 
     const wrongEnrollment = await app.inject({
@@ -542,7 +542,7 @@ describe("MFA / email-code lifecycle", () => {
     expect(confirmed.json().state).toMatchObject({ enabled: true, method: "EMAIL", recoveryCodesRemaining: 10 });
     const recoveryCodes = confirmed.json().recoveryCodes as string[];
     expect(recoveryCodes).toHaveLength(10);
-    expect(recoveryCodes.every((code) => /^[\\dA-F]{4}-[\\dA-F]{4}$/.test(code))).toBe(true);
+    expect(recoveryCodes.every((code) => /^[\dA-F]{4}-[\dA-F]{4}$/.test(code))).toBe(true);
 
     mail.clear();
     const login = await app.inject({
@@ -553,7 +553,7 @@ describe("MFA / email-code lifecycle", () => {
     expect(login.statusCode).toBe(200);
     expect(login.json()).toMatchObject({ outcome: "MFA_REQUIRED", method: "EMAIL" });
     const message = [...mail.messages].reverse().find((item) => item.kind === "MFA_EMAIL_CODE");
-    expect(message?.code).toMatch(/^\\d{6}$/);
+    expect(message?.code).toMatch(/^\d{6}$/);
     if (!message?.code) throw new Error("email MFA code was not captured");
 
     const emailCode = message.code;
