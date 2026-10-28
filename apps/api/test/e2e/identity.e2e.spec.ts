@@ -101,6 +101,16 @@ describe("registration & email verification", () => {
       payload: { name: "Once", email, password: PASSWORD },
     });
     const token = mail.lastVerificationToken();
+
+    // A valid token for one purpose must never be accepted by another flow.
+    const wrongPurpose = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/password/reset",
+      payload: { token, password: "not-a-valid-reset" },
+    });
+    expect(wrongPurpose.statusCode).toBe(400);
+    expect(wrongPurpose.json().code).toBe("INVALID_TOKEN");
+
     const first = await app.inject({
       method: "POST",
       url: "/api/v1/auth/email/verify",
@@ -449,6 +459,14 @@ describe("password reset (§22)", () => {
     });
     const newPassword = "brand-new-password-42";
     const resetToken = mail.lastResetToken();
+
+    const wrongPurpose = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/email/verify",
+      payload: { token: resetToken },
+    });
+    expect(wrongPurpose.statusCode).toBe(400);
+    expect(wrongPurpose.json().code).toBe("INVALID_TOKEN");
 
     // Two requests racing with the same token must not both succeed.
     const concurrent = await Promise.all([
