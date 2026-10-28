@@ -597,13 +597,31 @@ export class AuthService {
     const ttlMs = this.config.auth.passwordResetMinutes * 60 * 1000;
     const expiresAt = new Date(Date.now() + ttlMs);
     const token = IdentityRepository.randomToken(24);
+    const tokenHash = IdentityRepository.hashToken(token);
     await this.repository.createChallenge({
       userId: user.id,
       purpose: "PASSWORD_RESET",
-      tokenHash: IdentityRepository.hashToken(token),
+      tokenHash,
       expiresAt,
     });
-    await this.mailer.sendPasswordReset(user.email, token, `${this.config.auth.passwordResetMinutes} minutes`);
+    try {
+      await this.mailer.sendPasswordReset(user.email, token, `${this.config.auth.passwordResetMinutes} minutes`);
+      await this.repository.finalizeDeliveredChallenge({
+        userId: user.id,
+        purpose: "PASSWORD_RESET",
+        tokenHash,
+      });
+    } catch (error) {
+      // Keep the endpoint anti-enumeration-safe: unknown accounts and failed
+      // delivery return the same shape. Remove only the undelivered candidate;
+      // any previously delivered reset link remains usable.
+      await this.repository.deleteChallengeByTokenHash(tokenHash);
+      this.logger?.warn(
+        { userId: user.id, err: error instanceof Error ? error.message : String(error) },
+        "password reset email delivery failed",
+      );
+      return { sent: true, delivery: "EMAIL", resetExpiresAt: null };
+    }
     await this.events.record({
       userId: user.id,
       type: "PASSWORD_RESET_REQUESTED",
@@ -677,13 +695,26 @@ export class AuthService {
     const ttlMs = this.config.auth.emailVerificationHours * 3_600_000;
     const expiresAt = new Date(Date.now() + ttlMs);
     const token = IdentityRepository.randomToken(24);
+    const tokenHash = IdentityRepository.hashToken(token);
     await this.repository.createChallenge({
       userId: user.id,
       purpose: "EMAIL_VERIFICATION",
-      tokenHash: IdentityRepository.hashToken(token),
+      tokenHash,
       expiresAt,
     });
-    await this.mailer.sendEmailVerification(toEmail, token, `${this.config.auth.emailVerificationHours} hours`);
+    try {
+      await this.mailer.sendEmailVerification(toEmail, token, `${this.config.auth.emailVerificationHours} hours`);
+      await this.repository.finalizeDeliveredChallenge({
+        userId: user.id,
+        purpose: "EMAIL_VERIFICATION",
+        tokenHash,
+      });
+    } catch (error) {
+      // Registration remains pending and resend remains available. Do not
+      // leave a token that was never delivered or invalidate an older link.
+      await this.repository.deleteChallengeByTokenHash(tokenHash);
+      throw error;
+    }
     return expiresAt.toISOString();
   }
 
