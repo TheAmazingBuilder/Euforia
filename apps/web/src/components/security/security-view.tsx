@@ -29,6 +29,7 @@ import { useAuth } from "@/components/auth/auth-provider";
 import {
   useChangePassword,
   useConfirmTwoFactor,
+  useConfirmEmailTwoFactor,
   useCreateApiKey,
   useDisableTwoFactor,
   useEnableTwoFactor,
@@ -114,6 +115,7 @@ export function SecurityCenterView() {
   const enableTwoFactor = useEnableTwoFactor();
   const enableEmailTwoFactor = useEnableEmailTwoFactor();
   const confirmTwoFactor = useConfirmTwoFactor();
+  const confirmEmailTwoFactor = useConfirmEmailTwoFactor();
   const disableTwoFactor = useDisableTwoFactor();
   const regenerateCodes = useRegenerateRecoveryCodes();
   const createApiKey = useCreateApiKey();
@@ -125,6 +127,7 @@ export function SecurityCenterView() {
     enableTwoFactor.isPending ||
     enableEmailTwoFactor.isPending ||
     confirmTwoFactor.isPending ||
+    confirmEmailTwoFactor.isPending ||
     disableTwoFactor.isPending ||
     regenerateCodes.isPending ||
     createApiKey.isPending ||
@@ -135,6 +138,8 @@ export function SecurityCenterView() {
   const [enrollment, setEnrollment] = React.useState<TwoFactorEnrollment | null>(null);
   const [enrollSaved, setEnrollSaved] = React.useState(false);
   const [enrollCode, setEnrollCode] = React.useState("");
+  const [emailEnrollmentPending, setEmailEnrollmentPending] = React.useState(false);
+  const [emailEnrollCode, setEmailEnrollCode] = React.useState("");
 
   // ── One-time secret (API key) / regenerated codes ──────────────────────────
   const [secretOnce, setSecretOnce] = React.useState<{ title: string; secret: string } | null>(null);
@@ -173,13 +178,26 @@ export function SecurityCenterView() {
   const onEnableEmailTwoFactor = () => {
     requestReauth("Enabling email-code two-factor authentication", (token) =>
       enableEmailTwoFactor.mutate(token, {
-        onSuccess: (result) => {
-          setCodesOnce(result.recoveryCodes);
-          toast.success("Email-code two-factor authentication is on");
+        onSuccess: () => {
+          setEmailEnrollCode("");
+          setEmailEnrollmentPending(true);
+          toast.success("Verification code sent to your email");
         },
         onError: (error) => toast.error(apiErrorMessage(error, "Could not enable email-code 2FA")),
       }),
     );
+  };
+
+  const onConfirmEmailEnrollment = () => {
+    confirmEmailTwoFactor.mutate(emailEnrollCode.trim(), {
+      onSuccess: (result) => {
+        setEmailEnrollmentPending(false);
+        setEmailEnrollCode("");
+        setCodesOnce(result.recoveryCodes);
+        toast.success("Email-code two-factor authentication is on");
+      },
+      onError: (error) => toast.error(apiErrorMessage(error, "Could not confirm email-code 2FA")),
+    });
   };
 
   const onConfirmEnrollment = () => {
@@ -329,6 +347,10 @@ export function SecurityCenterView() {
           overview={overview}
           onEnable={onEnableTwoFactor}
           onEnableEmail={onEnableEmailTwoFactor}
+          emailEnrollmentPending={emailEnrollmentPending}
+          emailEnrollCode={emailEnrollCode}
+          onEmailEnrollCodeChange={setEmailEnrollCode}
+          onConfirmEmailEnrollment={onConfirmEmailEnrollment}
           onDisable={() => setDisableConfirmOpen(true)}
           onRegenerate={onRegenerateCodes}
           pending={busy}
