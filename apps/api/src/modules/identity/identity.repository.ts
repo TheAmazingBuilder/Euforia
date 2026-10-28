@@ -163,6 +163,10 @@ export class IdentityRepository {
       data: {
         mfaSecretEnc: data.pendingSecretEnc,
         mfaPendingSecretEnc: null,
+        mfaPendingEmailCodeHash: null,
+        mfaPendingEmailExpiresAt: null,
+        mfaPendingEmailAttempts: 0,
+        mfaMethod: "AUTHENTICATOR_APP",
         mfaEnabledAt: data.enabledAt,
         mfaDisabledAt: null,
         mfaLastVerifiedAt: data.enabledAt,
