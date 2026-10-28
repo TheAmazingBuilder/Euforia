@@ -6,6 +6,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { NestFastifyApplication } from "@nestjs/platform-fastify";
 import { buildTestApp } from "../helpers/build-app";
+import { MailerService } from "../../src/modules/identity/mailer.service";
 import {
   authenticatedUser,
   captureMail,
@@ -458,6 +459,43 @@ describe("password reset (§22)", () => {
     expect(unknown.statusCode).toBe(202);
     expect(unknown.json().resetExpiresAt).toBeNull();
     expect(mail.messages.length).toBe(0);
+  });
+
+  it("SMTP failure does not invalidate the last delivered reset link or reveal account existence", async () => {
+    const ctx = await authenticatedUser(app, mail);
+    const mailer = app.get(MailerService);
+    mail.clear();
+
+    const first = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/password/forgot",
+      payload: { email: ctx.email },
+    });
+    expect(first.statusCode).toBe(202);
+    const deliveredToken = mail.lastResetToken();
+
+    mailer.useTransport({
+      send: async () => {
+        throw new Error("simulated SMTP outage");
+      },
+    });
+    const failedDelivery = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/password/forgot",
+      payload: { email: ctx.email },
+    });
+    expect(failedDelivery.statusCode).toBe(202);
+    expect(failedDelivery.json().sent).toBe(true);
+    expect(failedDelivery.json().resetExpiresAt).toBeNull();
+
+    // Restore capture delivery and prove the earlier delivered token still works.
+    mailer.useTransport({ send: async (message) => { mail.messages.push(message); } });
+    const reset = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/password/reset",
+      payload: { token: deliveredToken, password: "recovered-password-45" },
+    });
+    expect(reset.statusCode).toBe(200);
   });
 
   it("reset changes the password, revokes sessions, and allows re-login", async () => {
