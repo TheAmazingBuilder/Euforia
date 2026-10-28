@@ -80,7 +80,7 @@ describe("registration & email verification", () => {
     });
     expect(resend.statusCode).toBe(202);
     expect(mail.messages.some((message) => message.kind === "EMAIL_VERIFICATION" && message.to === email)).toBe(true);
-    expect(resend.json().verificationExpiresAt).not.toBeNull();
+    expect(resend.json().verificationExpiresAt).toBeNull();
   });
 
   it("keeps verification resend anti-enumeration-safe when SMTP is unavailable", async () => {
@@ -340,7 +340,7 @@ describe("registration & email verification", () => {
     });
     expect(pending.statusCode).toBe(202);
     expect(pending.json().verificationToken).toBeUndefined();
-    expect(pending.json().verificationExpiresAt).not.toBeNull();
+    expect(pending.json().verificationExpiresAt).toBeNull();
 
     const unknown = await app.inject({
       method: "POST",
@@ -736,6 +736,7 @@ describe("password reset (§22)", () => {
     expect(known.statusCode).toBe(202);
     expect(known.json().sent).toBe(true);
     expect(known.json().resetToken).toBeUndefined();
+    expect(known.json().resetExpiresAt).toBeNull();
     expect(mail.messages.some((m) => m.kind === "PASSWORD_RESET")).toBe(true);
 
     mail.clear();
