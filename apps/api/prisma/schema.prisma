@@ -229,6 +229,8 @@ model AuthChallenge {
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   /// EMAIL_VERIFICATION | PASSWORD_RESET | MFA_LOGIN — purpose-scoped challenges.
   purpose   String
+  /// Address that a verification challenge is allowed to verify (prevents stale email-change links).
+  targetEmail String?
   tokenHash String    @unique
   /// Used only for email MFA login; always a hash, never the six-digit code.
   codeHash  String?
