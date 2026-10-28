@@ -305,15 +305,26 @@ describe("MFA / TOTP lifecycle (§18–§21)", () => {
     });
     expect([401, 422]).toContain(bad.statusCode);
 
-    const good = await app.inject({
-      method: "POST",
-      url: "/api/v1/security/2fa/confirm",
-      headers: ctx.authHeader,
-      payload: { code: totpCode(enrollment.secret, email) },
-    });
-    expect(good.statusCode).toBe(200);
-    expect(good.json().enabled).toBe(true);
-    expect(good.json().recoveryCodesRemaining).toBe(10);
+    const validCode = totpCode(enrollment.secret, email);
+    const confirmations = await Promise.all([
+      app.inject({
+        method: "POST",
+        url: "/api/v1/security/2fa/confirm",
+        headers: ctx.authHeader,
+        payload: { code: validCode },
+      }),
+      app.inject({
+        method: "POST",
+        url: "/api/v1/security/2fa/confirm",
+        headers: ctx.authHeader,
+        payload: { code: validCode },
+      }),
+    ]);
+    expect(confirmations.filter((response) => response.statusCode === 200)).toHaveLength(1);
+    expect(confirmations.filter((response) => response.statusCode === 409)).toHaveLength(1);
+    const good = confirmations.find((response) => response.statusCode === 200);
+    expect(good?.json().enabled).toBe(true);
+    expect(good?.json().recoveryCodesRemaining).toBe(10);
   });
 
   it("login now branches to MFA_REQUIRED; the challenge completes with TOTP", async () => {
