@@ -621,7 +621,14 @@ export class AuthService {
       // Keep the endpoint anti-enumeration-safe: unknown accounts and failed
       // delivery return the same shape. Remove only the undelivered candidate;
       // any previously delivered reset link remains usable.
-      await this.repository.deleteChallengeByTokenHash(tokenHash);
+      try {
+        await this.repository.deleteChallengeByTokenHash(tokenHash);
+      } catch (cleanupError) {
+        this.logger?.warn(
+          { userId: user.id, errorType: cleanupError instanceof Error ? cleanupError.name : "UnknownError" },
+          "could not remove undelivered password reset challenge",
+        );
+      }
       this.logger?.warn(
         { userId: user.id, errorType: error instanceof Error ? error.name : "UnknownError" },
         "password reset email delivery failed",
@@ -727,7 +734,14 @@ export class AuthService {
     } catch (error) {
       // Registration remains pending and resend remains available. Do not
       // leave a token that was never delivered or invalidate an older link.
-      await this.repository.deleteChallengeByTokenHash(tokenHash);
+      try {
+        await this.repository.deleteChallengeByTokenHash(tokenHash);
+      } catch (cleanupError) {
+        this.logger?.warn(
+          { userId: user.id, errorType: cleanupError instanceof Error ? cleanupError.name : "UnknownError" },
+          "could not remove undelivered email verification challenge",
+        );
+      }
       throw error;
     }
     // Retiring older links is best-effort after SMTP succeeds; the delivered
