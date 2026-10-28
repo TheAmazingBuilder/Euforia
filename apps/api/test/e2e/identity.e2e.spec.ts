@@ -689,6 +689,48 @@ describe("me / refresh rotation / reuse detection / logout", () => {
     expect(me.json().session.current).toBe(true);
   });
 
+  it("refresh preserves the original remember-me policy", async () => {
+    const short = await authenticatedUser(app, mail, { remember: false });
+    const shortRefresh = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/refresh",
+      headers: cookieHeader(short.refreshCookie),
+    });
+    expect(shortRefresh.statusCode).toBe(200);
+    expect(String(shortRefresh.headers["set-cookie"])).not.toContain("Max-Age=");
+    const shortSession = (await app.get(IdentityRepository).listSessions(short.userId))[0];
+    expect(shortSession?.remember).toBe(false);
+
+    const remembered = await authenticatedUser(app, mail, { remember: true });
+    const rememberedRefresh = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/refresh",
+      headers: cookieHeader(remembered.refreshCookie),
+    });
+    expect(rememberedRefresh.statusCode).toBe(200);
+    expect(String(rememberedRefresh.headers["set-cookie"])).toContain("Max-Age=");
+    const rememberedSession = (await app.get(IdentityRepository).listSessions(remembered.userId))[0];
+    expect(rememberedSession?.remember).toBe(true);
+  });
+
+  it("concurrent refresh requests cannot both rotate the same token", async () => {
+    const ctx = await authenticatedUser(app, mail);
+    const responses = await Promise.all([
+      app.inject({
+        method: "POST",
+        url: "/api/v1/auth/refresh",
+        headers: cookieHeader(ctx.refreshCookie),
+      }),
+      app.inject({
+        method: "POST",
+        url: "/api/v1/auth/refresh",
+        headers: cookieHeader(ctx.refreshCookie),
+      }),
+    ]);
+    expect(responses.filter((response) => response.statusCode === 200)).toHaveLength(1);
+    expect(responses.filter((response) => response.statusCode === 401)).toHaveLength(1);
+  });
+
   it("refresh rotates the cookie; reusing the OLD token revokes ALL sessions", async () => {
     const ctx = await authenticatedUser(app, mail);
     const refreshed = await app.inject({
