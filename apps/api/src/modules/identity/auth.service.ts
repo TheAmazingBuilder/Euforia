@@ -231,7 +231,8 @@ export class AuthService {
     if (
       !user ||
       user.status !== "PENDING_VERIFICATION" ||
-      (challenge.targetEmail && challenge.targetEmail.toLowerCase() !== user.email.toLowerCase())
+      !challenge.targetEmail ||
+      challenge.targetEmail.toLowerCase() !== user.email.toLowerCase()
     ) {
       throw new ValidationError("This verification link is not valid.", undefined, "INVALID_TOKEN");
     }
