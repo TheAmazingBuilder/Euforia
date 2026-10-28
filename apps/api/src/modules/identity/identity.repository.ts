@@ -151,6 +151,9 @@ export class IdentityRepository {
   async beginTotpMfaEnrollment(data: {
     userId: string;
     expectedEmail: string;
+    expectedPendingSecretEnc: string | null;
+    expectedEmailCodeHash: string | null;
+    expectedEmailExpiresAt: Date | null;
     pendingSecretEnc: string;
     recoveryCodeHashes: string[];
   }): Promise<UserRow | null> {
@@ -161,6 +164,9 @@ export class IdentityRepository {
           email: data.expectedEmail,
           status: "ACTIVE",
           mfaEnabledAt: null,
+          mfaPendingSecretEnc: data.expectedPendingSecretEnc,
+          mfaPendingEmailCodeHash: data.expectedEmailCodeHash,
+          mfaPendingEmailExpiresAt: data.expectedEmailExpiresAt,
         },
         data: {
           mfaPendingSecretEnc: data.pendingSecretEnc,
@@ -319,6 +325,7 @@ export class IdentityRepository {
   async beginPendingEmailMfaChallenge(data: {
     userId: string;
     expectedEmail: string;
+    expectedPendingSecretEnc: string | null;
     expectedCodeHash: string | null;
     expectedExpiresAt: Date | null;
     codeHash: string;
@@ -330,6 +337,7 @@ export class IdentityRepository {
         email: data.expectedEmail,
         status: "ACTIVE",
         mfaEnabledAt: null,
+        mfaPendingSecretEnc: data.expectedPendingSecretEnc,
         mfaPendingEmailCodeHash: data.expectedCodeHash,
         mfaPendingEmailExpiresAt: data.expectedExpiresAt,
       },
