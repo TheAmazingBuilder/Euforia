@@ -79,6 +79,29 @@ describe("registration & email verification", () => {
     expect(resend.json().verificationExpiresAt).not.toBeNull();
   });
 
+  it("keeps verification resend anti-enumeration-safe when SMTP is unavailable", async () => {
+    const email = uniqueEmail("smtp-resend");
+    const registered = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/register",
+      payload: { name: "Resend User", email, password: PASSWORD },
+    });
+    expect(registered.statusCode).toBe(201);
+
+    const mailer = app.get(MailerService);
+    mailer.useTransport({ send: async () => { throw new Error("simulated SMTP outage"); } });
+    const failedDelivery = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/email/resend",
+      payload: { email },
+    });
+    mailer.useTransport({ send: async (message) => { mail.messages.push(message); } });
+
+    expect(failedDelivery.statusCode).toBe(202);
+    expect(failedDelivery.json().sent).toBe(true);
+    expect(failedDelivery.json().verificationExpiresAt).toBeNull();
+  });
+
   it("rejects weak passwords at the contract level", async () => {
     const res = await app.inject({
       method: "POST",
