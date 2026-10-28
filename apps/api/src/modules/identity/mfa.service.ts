@@ -7,9 +7,11 @@
  * Recovery codes: single-use, hashed at rest, regeneration invalidates the
  * previous set (§20).
  */
-import { Injectable } from "@nestjs/common";
+import { Inject, Injectable } from "@nestjs/common";
 import { randomInt, timingSafeEqual } from "node:crypto";
 import { IdentityRepository, type UserRow } from "./identity.repository";
+import { APP_CONFIG } from "../../config/app-config";
+import type { AppConfig } from "../../config/app-config";
 import { TotpService } from "./totp.service";
 import { ReauthService } from "./reauth.service";
 import { SecurityEventService } from "../security/security-event.service";
@@ -36,6 +38,7 @@ export class MfaService {
     private readonly events: SecurityEventService,
     private readonly mailer: MailerService,
     private readonly limiter: AuthRateLimiterService,
+    @Inject(APP_CONFIG) private readonly config: AppConfig,
   ) {}
 
   /** POST /security/2fa/enable - returns the one-time enrollment payload. */
@@ -87,8 +90,8 @@ export class MfaService {
     }
 
     const code = randomInt(0, 1_000_000).toString().padStart(6, "0");
-    const expiresAt = new Date(Date.now() + this.configuredChallengeTtlMs());
-    await this.mailer.sendEmailMfaCode(user.email, code, "5 minutes");
+    const expiresAt = new Date(Date.now() + this.config.auth.mfaChallengeMinutes * 60 * 1000);
+    await this.mailer.sendEmailMfaCode(user.email, code, `${this.config.auth.mfaChallengeMinutes} minutes`);
     await this.repository.updateUser(user.id, {
       mfaPendingEmailCodeHash: IdentityRepository.hashToken(code),
       mfaPendingEmailExpiresAt: expiresAt,
@@ -158,10 +161,6 @@ export class MfaService {
       context: "Two-factor authentication enabled (email code).",
     });
     return { state: await this.state(updated), recoveryCodes: plainCodes };
-  }
-
-  private configuredChallengeTtlMs(): number {
-    return 5 * 60 * 1000;
   }
 
   /** POST /security/2fa/confirm - activates the pending enrollment (no reauth: the TOTP code IS the proof). */
