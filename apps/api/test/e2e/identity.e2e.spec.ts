@@ -230,6 +230,14 @@ describe("registration & email verification", () => {
     });
     expect(resend.statusCode).toBe(202);
     const newToken = mail.lastVerificationToken();
+    const staleSameAddressToken = IdentityRepository.randomToken(24);
+    await app.get(IdentityRepository).createChallenge({
+      userId: ctx.userId,
+      purpose: "EMAIL_VERIFICATION",
+      tokenHash: IdentityRepository.hashToken(staleSameAddressToken),
+      targetEmail: newEmail,
+      expiresAt: new Date(Date.now() + 60_000),
+    });
     const verified = await app.inject({
       method: "POST",
       url: "/api/v1/auth/email/verify",
@@ -237,6 +245,13 @@ describe("registration & email verification", () => {
     });
     expect(verified.statusCode).toBe(200);
     expect(verified.json().user.email).toBe(newEmail);
+    const staleSameAddress = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/email/verify",
+      payload: { token: staleSameAddressToken },
+    });
+    expect(staleSameAddress.statusCode).toBe(400);
+    expect(staleSameAddress.json().code).toBe("INVALID_TOKEN");
   });
 
   it("rejects weak passwords at the contract level", async () => {
