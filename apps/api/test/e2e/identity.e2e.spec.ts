@@ -7,6 +7,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { NestFastifyApplication } from "@nestjs/platform-fastify";
 import { buildTestApp } from "../helpers/build-app";
 import { MailerService } from "../../src/modules/identity/mailer.service";
+import { IdentityRepository } from "../../src/modules/identity/identity.repository";
 import {
   authenticatedUser,
   captureMail,
@@ -109,6 +110,29 @@ describe("registration & email verification", () => {
       payload: { token: previouslyDeliveredToken },
     });
     expect(verified.statusCode).toBe(200);
+  });
+
+  it("does not reactivate a suspended account with an old verification link", async () => {
+    const email = uniqueEmail("suspended-verification");
+    const registered = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/register",
+      payload: { name: "Pending User", email, password: PASSWORD },
+    });
+    expect(registered.statusCode).toBe(201);
+    const token = mail.lastVerificationToken();
+    const user = await app.get(IdentityRepository).findUserByEmail(email);
+    expect(user).toBeTruthy();
+    await app.get(IdentityRepository).updateUser(user!.id, { status: "SUSPENDED" });
+
+    const verified = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/email/verify",
+      payload: { token },
+    });
+    expect(verified.statusCode).toBe(400);
+    expect(verified.json().code).toBe("INVALID_TOKEN");
+    expect((await app.get(IdentityRepository).findUserByEmail(email))?.status).toBe("SUSPENDED");
   });
 
   it("rejects weak passwords at the contract level", async () => {
