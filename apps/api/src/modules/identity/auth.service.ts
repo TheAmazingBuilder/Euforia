@@ -264,18 +264,18 @@ export class AuthService {
   async resendVerification(
     email: string,
   ): Promise<{ sent: true; delivery: "EMAIL"; verificationExpiresAt: string | null }> {
-    // Anti-enumeration (§10): the response is identical whether or not the
-    // account exists / is already verified - only delivery actually happens.
-    const user = await this.repository.findUserByEmail(email);
-    if (!user || user.status !== "PENDING_VERIFICATION") {
-      return { sent: true, delivery: "EMAIL", verificationExpiresAt: null };
-    }
-
+    // Apply the same rate-limit vector before account lookup so 429 behavior
+    // cannot distinguish pending, verified, deactivated, or unknown addresses.
     const check = this.limiter.check("resend", email);
     if (!check.allowed) {
       throw new RateLimitError("Too many attempts. Please wait before trying again.", "RATE_LIMITED", check.retryAfterSeconds);
     }
     this.limiter.hit("resend", email);
+
+    const user = await this.repository.findUserByEmail(email);
+    if (!user || user.status !== "PENDING_VERIFICATION") {
+      return { sent: true, delivery: "EMAIL", verificationExpiresAt: null };
+    }
 
     try {
       const expiresAt = await this.issueVerificationChallenge(user, user.email);
@@ -593,17 +593,18 @@ export class AuthService {
     email: string,
     request: RequestLike,
   ): Promise<{ sent: true; delivery: "EMAIL"; resetExpiresAt: string | null }> {
-    const user = await this.repository.findUserByEmail(email);
-    if (!user || user.status === "DEACTIVATED") {
-      // Anti-enumeration (§22): identical response when the account is unknown.
-      return { sent: true, delivery: "EMAIL", resetExpiresAt: null };
-    }
-
+    // Rate-limit before account lookup so repeated requests have the same
+    // response policy for existing, deactivated, and unknown addresses.
     const check = this.limiter.check("forgot", email);
     if (!check.allowed) {
       throw new RateLimitError("Too many attempts. Please wait before trying again.", "RATE_LIMITED", check.retryAfterSeconds);
     }
     this.limiter.hit("forgot", email);
+
+    const user = await this.repository.findUserByEmail(email);
+    if (!user || user.status === "DEACTIVATED") {
+      return { sent: true, delivery: "EMAIL", resetExpiresAt: null };
+    }
 
     const ttlMs = this.config.auth.passwordResetMinutes * 60 * 1000;
     const expiresAt = new Date(Date.now() + ttlMs);
