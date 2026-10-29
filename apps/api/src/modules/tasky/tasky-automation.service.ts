@@ -10,7 +10,6 @@ import {
   taskyKanbanBoardStateSchema,
   type TaskyAutomationRule,
   type TaskyAutomationRuleCreateInput,
-  type TaskyAutomationRuleUpdateInput,
   type TaskyKanbanBoardState,
 } from "../../shared/contracts";
 import { DisciplineService } from "../discipline/discipline.service";
