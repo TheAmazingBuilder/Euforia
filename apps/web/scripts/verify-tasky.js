@@ -307,6 +307,8 @@ async function touchDrag(page, gripTestid, targetColumnId) {
     await page.fill('[data-testid="tasky-automation-name"]', "Automation probe");
     await page.selectOption('[data-testid="tasky-automation-trigger"]', "CARD_MOVED");
     await page.selectOption('[data-testid="tasky-automation-column"]', "in-review");
+    await page.selectOption('[data-testid="tasky-automation-action"]', "SET_PRIORITY");
+    await page.selectOption('[data-testid="tasky-automation-priority"]', "Urgent");
     await page.fill('[data-testid="tasky-automation-message"]', "Probe move notification");
     await page.click('[data-testid="tasky-automation-create"]');
     const automation = page.locator('article[data-testid^="tasky-automation-"]').filter({ hasText: "Automation probe" }).first();
@@ -355,6 +357,10 @@ async function touchDrag(page, gripTestid, targetColumnId) {
       (await page.locator(`[data-testid="tasky-card-${mouseProbeId}"]`).getAttribute("data-column")) === "in-review",
     );
     await page.waitForTimeout(800);
+    check(
+      "automation updates the card priority to Urgent",
+      /Urgent/.test(await page.locator(`[data-testid="tasky-card-${mouseProbeId}"]`).innerText().catch(() => "")),
+    );
     await page.click('[data-testid="tasky-view-mode-automations"]');
     const automationRun = page.locator('[data-testid^="tasky-automation-run-"]').filter({ hasText: "Mouse drag probe" });
     await automationRun.first().waitFor({ state: "visible", timeout: 10000 }).catch(() => undefined);
