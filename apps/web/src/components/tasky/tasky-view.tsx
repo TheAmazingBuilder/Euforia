@@ -666,7 +666,9 @@ export function TaskyView() {
       const binary = window.atob(file.contentBase64);
       const bytes = new Uint8Array(binary.length);
       for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
-      const url = URL.createObjectURL(new Blob([bytes], { type: file.mimeType }));
+      const downloadBuffer = new ArrayBuffer(bytes.byteLength);
+      new Uint8Array(downloadBuffer).set(bytes);
+      const url = URL.createObjectURL(new Blob([downloadBuffer], { type: file.mimeType }));
       const anchor = document.createElement("a");
       anchor.href = url;
       anchor.download = file.fileName;
