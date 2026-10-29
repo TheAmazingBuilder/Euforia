@@ -419,15 +419,16 @@ export function TaskyView() {
           // still sits in its source column - compensate on same-column drops.
           let insertAt = target.index ?? 0;
           if (target.col === current.fromCol && fromColumn) {
-            const originalIndex = fromColumn.cards.findIndex((card) => card.id === current.cardId);
+            const originalIndex = fromColumn.cards.filter((card) => !card.archivedAt).findIndex((card) => card.id === current.cardId);
             if (originalIndex !== -1 && insertAt > originalIndex) insertAt -= 1;
           }
           return prev.map((column) => {
             const without = column.cards.filter((card) => card.id !== current.cardId);
             if (column.id === target.col) {
-              const cards = [...without];
-              cards.splice(Math.min(insertAt, cards.length), 0, moved);
-              return { ...column, cards };
+              const activeCards = without.filter((card) => !card.archivedAt);
+              const archivedCards = without.filter((card) => Boolean(card.archivedAt));
+              activeCards.splice(Math.min(insertAt, activeCards.length), 0, moved);
+              return { ...column, cards: [...activeCards, ...archivedCards] };
             }
             return { ...column, cards: without };
           });
@@ -938,7 +939,7 @@ export function TaskyView() {
 
       if (key.toLocaleLowerCase() === "n") {
         event.preventDefault();
-        const targetColumn = focusedColumn ?? columns.find((column) => !column.cards.every((card) => Boolean(card.archivedAt)));
+        const targetColumn = focusedColumn ?? columns.find((column) => !isTaskyCompletedColumn(column)) ?? columns[0];
         if (targetColumn && viewMode !== "archived") {
           setViewMode("board");
           setAddingIn(targetColumn.id);
@@ -1313,7 +1314,7 @@ export function TaskyView() {
               </thead>
               <tbody>
                 {(viewMode === "completed" ? completedRows : viewMode === "upcoming" ? upcomingRows : viewMode === "archived" ? archivedRows : tableRows).map((row) => (
-                  <tr key={row.card.id} className="border-t border-border/70 hover:bg-muted/20" data-testid={`tasky-table-row-${row.card.id}`} data-tasky-card data-card-id={row.card.id} data-column={row.column.id} tabIndex={0}>
+                  <tr key={row.card.id} className="border-t border-border/70 hover:bg-muted/20" data-testid={`tasky-table-row-${row.card.id}`} data-tasky-card data-card-id={row.card.id} data-column={row.column.id} tabIndex={0} aria-keyshortcuts={viewMode === "archived" ? "R" : "E A"}>
                     <td className="max-w-[260px] px-3 py-2">
                       <button type="button" className="block max-w-full truncate text-left font-medium hover:text-accent" onClick={() => setDetailsCardId(row.card.id)}>{row.card.title}</button>
                     </td>
