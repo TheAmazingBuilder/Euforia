@@ -46,7 +46,7 @@ describe("Tasky board exports", () => {
 
   it("exports every card to CSV, preserving quoted cells and row breaks", () => {
     const csv = buildTaskyBoardCsvExport(board);
-    expect(csv.split("\\r\\n")).toHaveLength(3);
+    expect(csv.split("\r\n")).toHaveLength(3);
     expect(csv).toContain('"Check ""risk"", then confirm"');
     expect(csv).toContain('"2026-10-29T12:05:00.000Z"');
     expect(csv).toContain('"2","1","1","0"');
@@ -59,6 +59,6 @@ describe("Tasky board exports", () => {
 
   it("returns only the header for a board with no cards", () => {
     const csv = buildTaskyBoardCsvExport({ columns: [{ id: "todo", title: "To do", dot: "bg-muted", cards: [] }] });
-    expect(csv.split("\\r\\n")).toHaveLength(1);
+    expect(csv.split("\r\n")).toHaveLength(1);
   });
 });
