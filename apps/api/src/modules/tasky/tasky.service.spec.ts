@@ -17,6 +17,11 @@ const board: TaskyKanbanBoardState = {
           tag: "Review",
           priority: "High",
           assignee: "ME",
+          description: "Review the setup, criteria and risk.",
+          checklist: [
+            { id: "check-1", text: "Verify entry criteria", completed: true },
+            { id: "check-2", text: "Confirm risk limit", completed: false },
+          ],
         },
       ],
     },
@@ -49,6 +54,41 @@ describe("TaskyService", () => {
       updatedAt: updatedAt.toISOString(),
     });
     expect(repository.saveForUser).toHaveBeenCalledWith("user-a", board);
+  });
+
+  it("round-trips descriptions and checklist progress through the board contract", async () => {
+    const updatedAt = new Date("2026-10-29T12:00:00.000Z");
+    const repository = {
+      findByUserId: vi.fn(),
+      saveForUser: vi.fn().mockResolvedValue({ data: board, updatedAt }),
+    };
+    const service = new TaskyService(repository as unknown as TaskyRepository);
+
+    const response = await service.saveBoard("user-a", board);
+    expect(response.board.columns[0].cards[0]).toMatchObject({
+      description: "Review the setup, criteria and risk.",
+      checklist: [
+        { id: "check-1", text: "Verify entry criteria", completed: true },
+        { id: "check-2", text: "Confirm risk limit", completed: false },
+      ],
+    });
+  });
+
+  it("rejects an invalid due date before persistence", async () => {
+    const repository = {
+      findByUserId: vi.fn(),
+      saveForUser: vi.fn(),
+    };
+    const service = new TaskyService(repository as unknown as TaskyRepository);
+    const invalidBoard = {
+      columns: [{
+        ...board.columns[0],
+        cards: [{ ...board.columns[0].cards[0], due: "not-a-date" }],
+      }],
+    };
+
+    await expect(service.saveBoard("user-a", invalidBoard)).rejects.toThrow();
+    expect(repository.saveForUser).not.toHaveBeenCalled();
   });
 
   it("rejects an oversized or malformed board before persistence", async () => {
