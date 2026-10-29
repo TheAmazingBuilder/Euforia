@@ -118,7 +118,7 @@ async function touchDrag(page, gripTestid, targetColumnId) {
       page.waitForEvent("download"),
       page.click('[data-testid="tasky-export-json"]'),
     ]);
-    check("JSON export filename", /\\.json$/i.test(jsonDownload.suggestedFilename()), jsonDownload.suggestedFilename());
+    check("JSON export filename", /\.json$/i.test(jsonDownload.suggestedFilename()), jsonDownload.suggestedFilename());
     const jsonPath = await jsonDownload.path();
     const jsonPayload = JSON.parse(await fs.readFile(jsonPath, "utf8"));
     check("JSON export contains versioned board snapshot",
@@ -130,7 +130,7 @@ async function touchDrag(page, gripTestid, targetColumnId) {
       page.waitForEvent("download"),
       page.click('[data-testid="tasky-export-csv"]'),
     ]);
-    check("CSV export filename", /\\.csv$/i.test(csvDownload.suggestedFilename()), csvDownload.suggestedFilename());
+    check("CSV export filename", /\.csv$/i.test(csvDownload.suggestedFilename()), csvDownload.suggestedFilename());
     const csvPath = await csvDownload.path();
     const csvPayload = await fs.readFile(csvPath, "utf8");
     check("CSV export includes column headers and task rows",
