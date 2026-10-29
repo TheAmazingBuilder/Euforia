@@ -137,6 +137,7 @@ model User {
   playbookRows      PlaybookRow[]
   nofyRows          NofyRow[]
   academyRows       AcademyRow[]
+  taskyBoard        TaskyBoard?
   integrationRows   IntegrationRow[]
   tagRows           TagRow[]
   // ── Reconciliation generation (Phase 4/5/6/7 normalized models) ──
