@@ -276,7 +276,17 @@ function BridgeSection({
 }) {
   const dict = useDict();
   const B = dict.accounts.bridge;
-  const connecting = account.connection?.status === "CONNECTING";
+  const status = account.connection?.status ?? "DISCONNECTED";
+  const connecting = status === "CONNECTING";
+  const connected = status === "CONNECTED";
+  const disconnected = status === "DISCONNECTED";
+  const statusMessage = connecting
+    ? B.statusConnecting
+    : connected
+      ? B.statusConnected
+      : disconnected
+        ? B.statusDisconnected
+        : B.statusError;
   return (
     <div className="rounded-lg border border-border p-3" data-testid="account-bridge-section">
       <p className="flex items-center justify-between gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
@@ -290,24 +300,30 @@ function BridgeSection({
         className={
           connecting
             ? "mt-2 flex items-start gap-2 rounded-md border border-warning/40 bg-warning/10 p-2.5 text-xs leading-relaxed text-warning"
-            : "mt-2 flex items-start gap-2 rounded-md border border-accent/30 bg-accent/10 p-2.5 text-xs leading-relaxed text-accent"
+            : connected
+              ? "mt-2 flex items-start gap-2 rounded-md border border-accent/30 bg-accent/10 p-2.5 text-xs leading-relaxed text-accent"
+              : "mt-2 flex items-start gap-2 rounded-md border border-border bg-muted/20 p-2.5 text-xs leading-relaxed text-muted-foreground"
         }
         data-testid="account-bridge-status-note"
-        data-bridge-status={account.connection?.status ?? "DISCONNECTED"}
+        data-bridge-status={status}
       >
         {connecting ? (
           <Loader2 className="mt-0.5 size-3.5 shrink-0 animate-spin" aria-hidden />
-        ) : (
+        ) : connected ? (
           <CheckCircle2 className="mt-0.5 size-3.5 shrink-0" aria-hidden />
+        ) : (
+          <TriangleAlert className="mt-0.5 size-3.5 shrink-0" aria-hidden />
         )}
-        {connecting ? B.statusConnecting : B.statusConnected}
+        {statusMessage}
       </p>
       <div className="mt-2.5 flex flex-wrap items-center gap-2">
-        <Button variant="outline" size="xs" onClick={onOpenPairing} data-testid="account-bridge-pairing">
-          {B.pairingButton}
-        </Button>
+        {!disconnected ? (
+          <Button variant="outline" size="xs" onClick={onOpenPairing} data-testid="account-bridge-pairing">
+            {B.pairingButton}
+          </Button>
+        ) : null}
         <Button variant="outline" size="xs" onClick={onRotate} disabled={rotating} data-testid="account-bridge-rotate">
-          {rotating ? B.rotatePending : B.rotateButton}
+          {rotating ? B.rotatePending : disconnected ? B.pairAgainButton : B.rotateButton}
         </Button>
         {downloadHref ? (
           <Button variant="outline" size="xs" asChild>
