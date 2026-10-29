@@ -166,7 +166,7 @@ export const taskyKanbanBoardStateSchema = z
           }
           ids.add(item.id);
         });
-      });;
+      });
     });
   });
 export type TaskyKanbanBoardState = z.infer<typeof taskyKanbanBoardStateSchema>;
