@@ -88,3 +88,77 @@ export const taskyDeleteInputSchema = z.object({
   taskId: z.string().min(1),
 });
 export type TaskyDeleteInput = z.infer<typeof taskyDeleteInputSchema>;
+
+
+// ── Tasky Kanban board snapshot (independent from Academy study tasks) ────────
+// This schema follows the current flexible board UI: users may add columns and
+// cards, and their relative order is preserved in the serialized board state.
+export const taskyKanbanPrioritySchema = z.enum(["Low", "Medium", "High", "Urgent"]);
+export type TaskyKanbanPriority = z.infer<typeof taskyKanbanPrioritySchema>;
+
+export const taskyKanbanCardSchema = z.object({
+  id: z.string().trim().min(1).max(100),
+  title: z.string().trim().min(1).max(140),
+  tag: z.string().trim().min(1).max(40),
+  priority: taskyKanbanPrioritySchema,
+  assignee: z.string().trim().min(1).max(12),
+  due: z.string().regex(/^\\d{4}-\\d{2}-\\d{2}$/).optional(),
+});
+export type TaskyKanbanCard = z.infer<typeof taskyKanbanCardSchema>;
+
+export const taskyKanbanColumnSchema = z.object({
+  id: z.string().trim().min(1).max(100),
+  title: z.string().trim().min(1).max(40),
+  dot: z.string().trim().min(1).max(64),
+  cards: z.array(taskyKanbanCardSchema).max(500),
+});
+export type TaskyKanbanColumn = z.infer<typeof taskyKanbanColumnSchema>;
+
+export const taskyKanbanBoardStateSchema = z
+  .object({
+    columns: z.array(taskyKanbanColumnSchema).min(1).max(40),
+  })
+  .superRefine((board, ctx) => {
+    const cardCount = board.columns.reduce((sum, column) => sum + column.cards.length, 0);
+    if (cardCount > 2000) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["columns"],
+        message: "A Tasky board may contain at most 2,000 cards.",
+      });
+    }
+
+    const ids = new Set<string>();
+    board.columns.forEach((column, columnIndex) => {
+      if (ids.has(column.id)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["columns", columnIndex, "id"],
+          message: "Column IDs must be unique.",
+        });
+      }
+      ids.add(column.id);
+      column.cards.forEach((card, cardIndex) => {
+        if (ids.has(card.id)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["columns", columnIndex, "cards", cardIndex, "id"],
+            message: "Board and card IDs must be unique.",
+          });
+        }
+        ids.add(card.id);
+      });
+    });
+  });
+export type TaskyKanbanBoardState = z.infer<typeof taskyKanbanBoardStateSchema>;
+
+export const taskyKanbanBoardEnvelopeSchema = z.object({
+  board: taskyKanbanBoardStateSchema.nullable(),
+});
+export type TaskyKanbanBoardEnvelope = z.infer<typeof taskyKanbanBoardEnvelopeSchema>;
+
+export const taskyKanbanBoardSaveResponseSchema = z.object({
+  board: taskyKanbanBoardStateSchema,
+  updatedAt: z.string().datetime(),
+});
+export type TaskyKanbanBoardSaveResponse = z.infer<typeof taskyKanbanBoardSaveResponseSchema>;
