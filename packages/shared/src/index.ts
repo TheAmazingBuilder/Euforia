@@ -41,6 +41,7 @@ export * from "./schemas/monitoring";
 export * from "./schemas/playbook";
 export * from "./schemas/tradeReview";
 export * from "./schemas/academy";
+export * from "./schemas/tasky";
 export * from "./schemas/nofy";
 export * from "./schemas/sessionLive";
 export * from "./schemas/trading-account";
