@@ -138,6 +138,7 @@ model User {
   nofyRows          NofyRow[]
   academyRows       AcademyRow[]
   taskyBoard        TaskyBoard?
+  taskyAttachments  TaskyAttachment[]
   integrationRows   IntegrationRow[]
   tagRows           TagRow[]
   // ── Reconciliation generation (Phase 4/5/6/7 normalized models) ──
@@ -1292,6 +1293,22 @@ model TaskyBoard {
   data      Json
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+/// Tasky attachment metadata; bytes live outside PostgreSQL behind a storage adapter.
+model TaskyAttachment {
+  id             String   @id @default(uuid()) @db.Uuid
+  userId         String   @db.Uuid
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cardId         String
+  originalName   String
+  mimeType       String
+  sizeBytes      Int
+  checksumSha256 String   @db.Char(64)
+  storageKey     String   @unique
+  createdAt      DateTime @default(now())
+
+  @@index([userId, cardId, createdAt(sort: Desc)])
 }
 
 /// Journal context — user-owned tag catalog (data-model.md "Domaine 4": free,
