@@ -1,6 +1,7 @@
 /** TanStack Query key registry - stable, hierarchical, prefix-invalidation friendly. */
 export const queryKeys = {
   accounts: ["accounts"] as const,
+  taskyBoard: ["tasky-board"] as const,
   instruments: (q: string) => ["instruments", q] as const,
   strategies: ["strategies"] as const,
   strategiesStats: ["strategies-stats"] as const,
