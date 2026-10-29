@@ -507,7 +507,7 @@ export class TradingAccountService {
       ea: {
         fileName: "EuforiaBridge.mq5",
         downloadPath: "/bridge/EuforiaBridge.mq5",
-        version: "1.0.1",
+        version: "1.0.2",
       },
     };
   }
@@ -541,8 +541,11 @@ export class TradingAccountService {
       );
     }
     const { keyId, secret } = this.generateBridgeKey();
-    await this.repository.rotateBridgeKey(accountId, keyId);
-    await this.prismaPatchConnectionCredentials(accountId, secret);
+    await this.repository.rotateBridgeCredentials(accountId, {
+      bridgeKeyId: keyId,
+      credentialsEnc: this.credentials.encrypt(secret),
+      credentialsHint: CredentialsEncryptionService.hint(secret),
+    });
     await this.events.record({
       userId,
       type: "TRADING_ACCOUNT_BRIDGE_ROTATED",
@@ -554,15 +557,8 @@ export class TradingAccountService {
     return { account: { ...details.account, pairing } };
   }
 
-  /** Rotation also re-keys the encrypted secret (single write, repository path). */
-  private async prismaPatchConnectionCredentials(accountId: string, secret: string): Promise<void> {
-    // Credentials + key rotate together; the status stays as-is (the next
-    // accepted push re-proves the terminal against the new secret).
-    await this.repository.rotateBridgeCredentials(accountId, {
-      credentialsEnc: this.credentials.encrypt(secret),
-      credentialsHint: CredentialsEncryptionService.hint(secret),
-    });
-  }
+  // Key + encrypted secret are persisted atomically; the connection status
+  // stays as-is and the next accepted push re-proves the terminal.
 
   /** Connection health check - 200 with per-check results, honest booleans. */
   async testConnection(userId: string, accountId: string) {
