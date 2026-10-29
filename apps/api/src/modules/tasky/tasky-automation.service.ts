@@ -126,7 +126,11 @@ export class TaskyAutomationService implements OnModuleInit, OnModuleDestroy {
       enabled: patch.enabled ?? row.enabled,
       config: patch.config ?? row.config,
     });
-    await this.validateColumnCondition(userId, combined);
+    // Pausing or renaming a stale rule must remain possible even if its
+    // destination column was removed from the board after the rule was created.
+    if (patch.config !== undefined || patch.trigger !== undefined || (patch.enabled === true && !row.enabled)) {
+      await this.validateColumnCondition(userId, combined);
+    }
     const updated = await this.repository.updateAutomation(userId, id, combined);
     if (!updated) throw new NotFoundException("Tasky automation rule not found.");
     return { rule: this.toRule(updated) };
