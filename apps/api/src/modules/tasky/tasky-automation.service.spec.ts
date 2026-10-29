@@ -109,6 +109,52 @@ describe("TaskyAutomationService", () => {
     expect(repository.updateAutomationRun).toHaveBeenCalledWith(runId, expect.objectContaining({ status: "SUCCEEDED" }));
   });
 
+  it("changes card priority server-side when a move rule requests it", async () => {
+    const previous: TaskyKanbanBoardState = {
+      columns: [
+        { id: "todo", title: "Todo", dot: "bg-muted", cards: [{ ...card, priority: "Medium" }] },
+        { id: "review", title: "Review", dot: "bg-accent", cards: [] },
+      ],
+    };
+    const current: TaskyKanbanBoardState = {
+      columns: [
+        { id: "todo", title: "Todo", dot: "bg-muted", cards: [] },
+        { id: "review", title: "Review", dot: "bg-accent", cards: [{ ...card, priority: "Medium" }] },
+      ],
+    };
+    const priorityRule = {
+      ...movedRule,
+      config: { destinationColumnId: "review", action: "SET_PRIORITY", targetPriority: "Urgent" },
+    };
+    const repository = {
+      listAutomations: vi.fn().mockResolvedValue([priorityRule]),
+      createAutomationRun: vi.fn().mockImplementation((input: Record<string, unknown>) => Promise.resolve(runRow(input))),
+      updateAutomationRun: vi.fn().mockImplementation((_id: string, input: Record<string, unknown>) => Promise.resolve({ ...runRow({}), ...input })),
+      saveForUser: vi.fn().mockImplementation((_userId: string, boardState: TaskyKanbanBoardState) =>
+        Promise.resolve({ data: boardState, updatedAt: new Date("2026-10-29T12:05:00.000Z") })),
+    };
+    const discipline = { publishAlert: vi.fn().mockResolvedValue(true) };
+    const service = new TaskyAutomationService(
+      repository as unknown as TaskyRepository,
+      discipline as never,
+    );
+
+    const result = await service.onBoardSaved("user-a", previous, current);
+
+    expect(result.columns[1]?.cards[0]?.priority).toBe("Urgent");
+    expect(repository.saveForUser).toHaveBeenCalledWith("user-a", expect.objectContaining({
+      columns: expect.arrayContaining([
+        expect.objectContaining({
+          id: "review",
+          cards: [expect.objectContaining({ id: card.id, priority: "Urgent" })],
+        }),
+      ]),
+    }));
+    expect(discipline.publishAlert).toHaveBeenCalledWith("user-a", expect.objectContaining({
+      payload: expect.objectContaining({ action: "SET_PRIORITY", priority: "Urgent" }),
+    }));
+  });
+
   it("does not publish a second due-date reminder after the idempotency key succeeded", async () => {
     const today = taskyDateKeyInTimezone(new Date(), "UTC");
     const due = addDays(today, 1);
