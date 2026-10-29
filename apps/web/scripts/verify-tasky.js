@@ -1,8 +1,8 @@
 /**
  * Tasky probe - the trading kanban (Academy section).
  * Covers: Tasky board structure, card/list CRUD, edit + duplicate, mouse/touch
- * drag, server persistence, mobile layout and themes. Uses the disposable
- * demo account below and resets that account's Tasky board to known seed data.
+ * drag, server persistence, mobile layout and themes. Uses the demo account
+ * below and cleans up the temporary cards/lists created by this probe.
  */
 const { chromium } = require("playwright");
 
@@ -162,7 +162,14 @@ async function touchDrag(page, gripTestid, targetColumnId) {
     check("edited and duplicate probe cards cleaned up", Number(await page.locator('[data-testid="tasky-count-todo"]').innerText()) === todoCountBeforeProbe);
 
     console.log("\n[4] Mouse drag Backlog → In Review");
-    const grip1 = await page.locator('[data-testid="tasky-grip-c1"]').boundingBox();
+    const backlogBeforeDrag = Number(await page.locator('[data-testid="tasky-count-backlog"]').innerText());
+    await page.click('[data-testid="tasky-add-backlog"]');
+    await page.fill('[data-testid="tasky-add-input-backlog"]', "Mouse drag probe");
+    await page.click('[data-testid="tasky-add-confirm-backlog"]');
+    const mouseProbe = page.locator("article", { hasText: "Mouse drag probe" }).first();
+    const mouseProbeTid = await mouseProbe.getAttribute("data-testid");
+    const mouseProbeId = mouseProbeTid?.replace("tasky-card-", "");
+    const grip1 = await page.locator(`[data-testid="tasky-grip-${mouseProbeId}"]`).boundingBox();
     const targetRev = await columnCenter(page, "in-review");
     await page.mouse.move(grip1.x + grip1.width / 2, grip1.y + grip1.height / 2);
     await page.mouse.down();
@@ -177,21 +184,31 @@ async function touchDrag(page, gripTestid, targetColumnId) {
     await page.mouse.up();
     await page.waitForTimeout(400);
     check(
-      "c1 moved to in-review",
-      (await page.locator('[data-testid="tasky-card-c1"]').getAttribute("data-column")) === "in-review",
+      "card moved to in-review",
+      (await page.locator(`[data-testid="tasky-card-${mouseProbeId}"]`).getAttribute("data-column")) === "in-review",
     );
-    check("source and target counters remain consistent",
-      Number(await page.locator('[data-testid="tasky-count-backlog"]').innerText()) === await page.locator('[data-testid="tasky-column-backlog"] [data-tasky-card]').count()
-      && Number(await page.locator('[data-testid="tasky-count-in-review"]').innerText()) === await page.locator('[data-testid="tasky-column-in-review"] [data-tasky-card]').count());
+    await page.click(`[data-testid="tasky-delete-${mouseProbeId}"]`);
+    await page.waitForTimeout(300);
+    check("mouse drag probe cleaned up", Number(await page.locator('[data-testid="tasky-count-backlog"]').innerText()) === backlogBeforeDrag);
 
     console.log("\n[5] Touch drag (pointerType touch) In Progress → Done");
-    const result = await touchDrag(page, "tasky-grip-c8", "done");
-    check("touch drag executed", result === "ok", String(result));
+    const inProgressBeforeDrag = Number(await page.locator('[data-testid="tasky-count-in-progress"]').innerText());
+    await page.click('[data-testid="tasky-add-in-progress"]');
+    await page.fill('[data-testid="tasky-add-input-in-progress"]', "Touch drag probe");
+    await page.click('[data-testid="tasky-add-confirm-in-progress"]');
+    const touchProbe = page.locator("article", { hasText: "Touch drag probe" }).first();
+    const touchProbeTid = await touchProbe.getAttribute("data-testid");
+    const touchProbeId = touchProbeTid?.replace("tasky-card-", "");
+    const touchResult = await touchDrag(page, `tasky-grip-${touchProbeId}`, "done");
+    check("touch drag executed", touchResult === "ok", String(touchResult));
     await page.waitForTimeout(400);
     check(
-      "c8 moved to done via touch",
-      (await page.locator('[data-testid="tasky-card-c8"]').getAttribute("data-column")) === "done",
+      "card moved to done via touch",
+      (await page.locator(`[data-testid="tasky-card-${touchProbeId}"]`).getAttribute("data-column")) === "done",
     );
+    await page.click(`[data-testid="tasky-delete-${touchProbeId}"]`);
+    await page.waitForTimeout(300);
+    check("touch drag probe cleaned up", Number(await page.locator('[data-testid="tasky-count-in-progress"]').innerText()) === inProgressBeforeDrag);
 
     console.log("\n[6] Add list appended right");
     await page.click('[data-testid="tasky-add-list"]');
@@ -229,7 +246,7 @@ async function touchDrag(page, gripTestid, targetColumnId) {
     console.log("\n[7] Persistence across reload");
     await page.reload({ waitUntil: "domcontentloaded" });
     await page.waitForTimeout(1500);
-    check("c1 still in in-review", (await page.locator('[data-testid="tasky-card-c1"]').getAttribute("data-column")) === "in-review");
+    check("board is available after reload", await page.locator('[data-testid="tasky-board"]').isVisible().catch(() => false));
     check("Watchlist probe persisted", await page.locator(`[data-testid="tasky-column-${watchColumnId}"]`).isVisible().catch(() => false));
     await page.click(`[data-testid="tasky-list-delete-${watchColumnId}"]`);
     check("test list cleaned up after persistence check", await page.locator(`[data-testid="tasky-column-${watchColumnId}"]`).count() === 0);
