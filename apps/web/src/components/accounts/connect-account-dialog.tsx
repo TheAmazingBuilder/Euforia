@@ -536,7 +536,7 @@ export function ConnectAccountDialog({
               data-testid="connect-external-id"
             />
             <p className="text-xs text-muted-foreground">{C.externalIdHint}</p>
-            {shownIdentification ? (
+            {shownIdentification && !selectedBroker ? (
               <p
                 className="flex items-start gap-1.5 rounded-md border border-border bg-muted/40 px-2 py-1.5 text-xs text-muted-foreground"
                 data-testid="connect-broker-identification"
@@ -574,6 +574,11 @@ export function ConnectAccountDialog({
                 <Lock className="mt-0.5 size-3 shrink-0" aria-hidden />
                 {C.bridge.identityNote}
               </p>
+              {selectedBroker ? (
+                <p className="text-xs leading-relaxed text-muted-foreground" data-testid="connect-selected-broker-identity-hint">
+                  {selectedBroker.displayName}: {C.selectedBrokerHint}
+                </p>
+              ) : null}
             </div>
           ) : (
             <div className="grid gap-1.5">
