@@ -22,6 +22,24 @@ const board: TaskyKanbanBoardState = {
             { id: "check-1", text: "Verify entry criteria", completed: true },
             { id: "check-2", text: "Confirm risk limit", completed: false },
           ],
+          comments: [{
+            id: "comment-1",
+            author: "You",
+            body: "Keep the risk within the daily limit.",
+            createdAt: "2026-10-29T12:10:00.000Z",
+          }],
+          activity: [{
+            id: "activity-1",
+            type: "comment",
+            message: "Added a comment",
+            createdAt: "2026-10-29T12:10:00.000Z",
+          }],
+          links: [{
+            id: "link-1",
+            title: "Trade plan",
+            url: "https://example.com/trade-plan",
+            createdAt: "2026-10-29T12:11:00.000Z",
+          }],
         },
       ],
     },
@@ -71,7 +89,71 @@ describe("TaskyService", () => {
         { id: "check-1", text: "Verify entry criteria", completed: true },
         { id: "check-2", text: "Confirm risk limit", completed: false },
       ],
+      comments: [{
+        id: "comment-1",
+        author: "You",
+        body: "Keep the risk within the daily limit.",
+        createdAt: "2026-10-29T12:10:00.000Z",
+      }],
+      activity: [{
+        id: "activity-1",
+        type: "comment",
+        message: "Added a comment",
+        createdAt: "2026-10-29T12:10:00.000Z",
+      }],
+      links: [{
+        id: "link-1",
+        title: "Trade plan",
+        url: "https://example.com/trade-plan",
+        createdAt: "2026-10-29T12:11:00.000Z",
+      }],
     });
+  });
+
+  it("rejects unsafe links and reused nested identifiers before persistence", async () => {
+    const repository = {
+      findByUserId: vi.fn(),
+      saveForUser: vi.fn(),
+    };
+    const service = new TaskyService(repository as unknown as TaskyRepository);
+    const firstColumn = board.columns[0];
+    const firstCard = firstColumn?.cards[0];
+    if (!firstColumn || !firstCard) {
+      throw new Error("Tasky test fixture must contain at least one card.");
+    }
+
+    const unsafeLinkBoard = {
+      columns: [{
+        ...firstColumn,
+        cards: [{
+          ...firstCard,
+          links: [{
+            id: "unsafe-link",
+            title: "Unsafe URL",
+            url: "javascript:alert(1)",
+            createdAt: "2026-10-29T12:00:00.000Z",
+          }],
+        }],
+      }],
+    };
+    await expect(service.saveBoard("user-a", unsafeLinkBoard)).rejects.toThrow();
+
+    const duplicateNestedIdBoard = {
+      columns: [{
+        ...firstColumn,
+        cards: [{
+          ...firstCard,
+          comments: [{
+            id: "check-1",
+            author: "You",
+            body: "This reuses a checklist ID.",
+            createdAt: "2026-10-29T12:00:00.000Z",
+          }],
+        }],
+      }],
+    };
+    await expect(service.saveBoard("user-a", duplicateNestedIdBoard)).rejects.toThrow();
+    expect(repository.saveForUser).not.toHaveBeenCalled();
   });
 
   it("rejects an invalid due date before persistence", async () => {
