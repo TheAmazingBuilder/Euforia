@@ -65,6 +65,9 @@ describe("Tasky saved views", () => {
     expect(repository.createSavedView).toHaveBeenCalledWith(userId, "Urgent overdue", {
       ...filters,
       query: "urgent",
+      category: "all",
+      assignee: "all",
+      status: "all",
     });
   });
 
