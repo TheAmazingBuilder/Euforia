@@ -9,9 +9,14 @@ import {
   ChevronRight,
   Copy,
   GripVertical,
+  ExternalLink,
   FileText,
+  History,
+  Link2,
   ListChecks,
   LoaderCircle,
+  MessageSquare,
+  Send,
   MoreHorizontal,
   Pencil,
   Plus,
@@ -22,6 +27,8 @@ import {
 
 import {
   taskyKanbanBoardStateSchema,
+  type TaskyKanbanActivity,
+  type TaskyKanbanActivityType,
   type TaskyKanbanBoardState,
   type TaskyKanbanCard as TaskyCard,
   type TaskyKanbanColumn as TaskyColumn,
@@ -173,6 +180,33 @@ function formatDue(iso: string): string {
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
+function formatTimestamp(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+}
+
+function makeActivity(type: TaskyKanbanActivityType, message: string): TaskyKanbanActivity {
+  return { id: newId("activity"), type, message, createdAt: new Date().toISOString() };
+}
+
+function withActivity(card: TaskyCard, type: TaskyKanbanActivityType, message: string): TaskyCard {
+  return { ...card, activity: [...(card.activity ?? []), makeActivity(type, message)].slice(-100) };
+}
+
+function normalizeHttpUrl(value: string): string | null {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  const lower = trimmed.toLowerCase();
+  const candidate = lower.startsWith("https://") || lower.startsWith("http://") ? trimmed : `https://${trimmed}`;
+  try {
+    const parsed = new URL(candidate);
+    return parsed.protocol === "http:" || parsed.protocol === "https:" ? parsed.toString() : null;
+  } catch {
+    return null;
+  }
+}
+
 type DragState = {
   cardId: string;
   fromCol: string;
@@ -201,6 +235,11 @@ export function TaskyView() {
   const [cardDraft, setCardDraft] = React.useState<TaskyCard | null>(null);
   const [detailsCardId, setDetailsCardId] = React.useState<string | null>(null);
   const [checklistDraft, setChecklistDraft] = React.useState("");
+  const [commentDraft, setCommentDraft] = React.useState("");
+  const [linkTitleDraft, setLinkTitleDraft] = React.useState("");
+  const [linkUrlDraft, setLinkUrlDraft] = React.useState("");
+  const [linkError, setLinkError] = React.useState<string | null>(null);
+  const descriptionOriginalRef = React.useRef("");
 
   const columnRefs = React.useRef<Map<string, HTMLElement>>(new Map());
   const dragRef = React.useRef<DragState | null>(null);
@@ -318,8 +357,13 @@ export function TaskyView() {
       if (target.col !== null) {
         setColumns((prev) => {
           const fromColumn = prev.find((column) => column.id === current.fromCol);
-          const moved = fromColumn?.cards.find((card) => card.id === current.cardId);
-          if (!moved) return prev;
+          const destinationColumn = prev.find((column) => column.id === target.col);
+          const sourceCard = fromColumn?.cards.find((card) => card.id === current.cardId);
+          if (!sourceCard) return prev;
+          const activityMessage = current.fromCol === target.col
+            ? `Reordered within ${fromColumn?.title ?? "list"}`
+            : `Moved from ${fromColumn?.title ?? "list"} to ${destinationColumn?.title ?? "list"}`;
+          const moved = withActivity(sourceCard, "moved", activityMessage.slice(0, 180));
           // The DOM insertion index counts the dragged card itself while it
           // still sits in its source column - compensate on same-column drops.
           let insertAt = target.index ?? 0;
@@ -360,7 +404,11 @@ export function TaskyView() {
               ...column,
               cards: [
                 ...column.cards,
-                { id: newId("card"), title: trimmed, tag: "Task", priority: "Medium" as Priority, assignee: "ME" },
+                withActivity(
+                  { id: newId("card"), title: trimmed, tag: "Task", priority: "Medium" as Priority, assignee: "ME" },
+                  "created",
+                  "Created card",
+                ),
               ],
             }
           : column,
@@ -445,13 +493,13 @@ export function TaskyView() {
 
   const commitEditCard = (columnId: string) => {
     if (!cardDraft || !editingCardId || !cardDraft.title.trim() || !cardDraft.tag.trim() || !cardDraft.assignee.trim()) return;
-    const updated: TaskyCard = {
+    const updated = withActivity({
       ...cardDraft,
       title: cardDraft.title.trim(),
       tag: cardDraft.tag.trim(),
       assignee: cardDraft.assignee.trim(),
       due: cardDraft.due || undefined,
-    };
+    }, "updated", "Updated card details");
     setColumns((prev) => prev.map((column) =>
       column.id === columnId
         ? { ...column, cards: column.cards.map((card) => card.id === editingCardId ? updated : card) }
@@ -462,12 +510,15 @@ export function TaskyView() {
   };
 
   const duplicateCard = (columnId: string, card: TaskyCard) => {
-    const duplicate: TaskyCard = {
+    const duplicate = withActivity({
       ...card,
       id: newId("card"),
       title: `${card.title} (copy)`.slice(0, 140),
       checklist: card.checklist?.map((item) => ({ ...item, id: newId("check") })),
-    };
+      comments: [],
+      activity: [],
+      links: card.links?.map((link) => ({ ...link, id: newId("link"), createdAt: new Date().toISOString() })),
+    }, "created", `Duplicated from “${card.title}”`.slice(0, 180));
     setColumns((prev) => prev.map((column) =>
       column.id === columnId ? { ...column, cards: [...column.cards, duplicate] } : column,
     ));
@@ -475,11 +526,16 @@ export function TaskyView() {
 
   const updateCardDetails = (
     cardId: string,
-    updates: Partial<Pick<TaskyCard, "description" | "checklist">>,
+    updates: Partial<Pick<TaskyCard, "description" | "checklist" | "comments" | "links">>,
+    activity?: { type: TaskyKanbanActivityType; message: string },
   ) => {
     setColumns((prev) => prev.map((column) => ({
       ...column,
-      cards: column.cards.map((card) => card.id === cardId ? { ...card, ...updates } : card),
+      cards: column.cards.map((card) => {
+        if (card.id !== cardId) return card;
+        const updated = { ...card, ...updates };
+        return activity ? withActivity(updated, activity.type, activity.message) : updated;
+      }),
     })));
   };
 
@@ -488,20 +544,59 @@ export function TaskyView() {
     if (!text || (card.checklist?.length ?? 0) >= 100) return;
     updateCardDetails(card.id, {
       checklist: [...(card.checklist ?? []), { id: newId("check"), text, completed: false }],
-    });
+    }, { type: "checklist", message: `Added checklist step: ${text}`.slice(0, 180) });
     setChecklistDraft("");
   };
 
   const toggleChecklistItem = (card: TaskyCard, itemId: string, completed: boolean) => {
+    const item = card.checklist?.find((entry) => entry.id === itemId);
     updateCardDetails(card.id, {
-      checklist: (card.checklist ?? []).map((item) => item.id === itemId ? { ...item, completed } : item),
+      checklist: (card.checklist ?? []).map((entry) => entry.id === itemId ? { ...entry, completed } : entry),
+    }, {
+      type: "checklist",
+      message: `${completed ? "Completed" : "Reopened"} checklist step: ${item?.text ?? "item"}`.slice(0, 180),
     });
   };
 
   const removeChecklistItem = (card: TaskyCard, itemId: string) => {
+    const item = card.checklist?.find((entry) => entry.id === itemId);
     updateCardDetails(card.id, {
-      checklist: (card.checklist ?? []).filter((item) => item.id !== itemId),
-    });
+      checklist: (card.checklist ?? []).filter((entry) => entry.id !== itemId),
+    }, { type: "checklist", message: `Removed checklist step: ${item?.text ?? "item"}`.slice(0, 180) });
+  };
+
+  const addComment = (card: TaskyCard) => {
+    const body = commentDraft.trim();
+    if (!body || (card.comments?.length ?? 0) >= 100) return;
+    const comment = { id: newId("comment"), author: "You", body, createdAt: new Date().toISOString() };
+    updateCardDetails(card.id, {
+      comments: [...(card.comments ?? []), comment],
+    }, { type: "comment", message: "Added a comment" });
+    setCommentDraft("");
+  };
+
+  const addCardLink = (card: TaskyCard) => {
+    const title = linkTitleDraft.trim();
+    const url = normalizeHttpUrl(linkUrlDraft);
+    if (!title || (card.links?.length ?? 0) >= 30) return;
+    if (!url) {
+      setLinkError("Enter a valid HTTP or HTTPS URL.");
+      return;
+    }
+    const link = { id: newId("link"), title, url, createdAt: new Date().toISOString() };
+    updateCardDetails(card.id, {
+      links: [...(card.links ?? []), link],
+    }, { type: "link", message: `Added link: ${title}`.slice(0, 180) });
+    setLinkTitleDraft("");
+    setLinkUrlDraft("");
+    setLinkError(null);
+  };
+
+  const removeCardLink = (card: TaskyCard, linkId: string) => {
+    const link = card.links?.find((entry) => entry.id === linkId);
+    updateCardDetails(card.id, {
+      links: (card.links ?? []).filter((entry) => entry.id !== linkId),
+    }, { type: "link", message: `Removed link: ${link?.title ?? "link"}`.slice(0, 180) });
   };
 
   const detailsEntry = detailsCardId
@@ -787,7 +882,15 @@ export function TaskyView() {
                       <footer className="mt-2.5 flex items-center gap-2">
                         <button
                           type="button"
-                          onClick={() => { setDetailsCardId(card.id); setChecklistDraft(""); }}
+                          onClick={() => {
+                            setDetailsCardId(card.id);
+                            setChecklistDraft("");
+                            setCommentDraft("");
+                            setLinkTitleDraft("");
+                            setLinkUrlDraft("");
+                            setLinkError(null);
+                            descriptionOriginalRef.current = card.description ?? "";
+                          }}
                           aria-label={`Open details for ${card.title}`}
                           title="Card details"
                           data-testid={`tasky-details-${card.id}`}
@@ -971,6 +1074,10 @@ export function TaskyView() {
           if (!open) {
             setDetailsCardId(null);
             setChecklistDraft("");
+            setCommentDraft("");
+            setLinkTitleDraft("");
+            setLinkUrlDraft("");
+            setLinkError(null);
           }
         }}
       >
@@ -989,6 +1096,13 @@ export function TaskyView() {
                 id="tasky-card-description"
                 value={detailsEntry.card.description ?? ""}
                 onChange={(event) => updateCardDetails(detailsEntry.card.id, { description: event.target.value })}
+                onBlur={(event) => {
+                  const description = event.currentTarget.value;
+                  if (description !== descriptionOriginalRef.current) {
+                    updateCardDetails(detailsEntry.card.id, { description }, { type: "updated", message: "Updated description" });
+                    descriptionOriginalRef.current = description;
+                  }
+                }}
                 placeholder="Add context, acceptance criteria, links or notes…"
                 maxLength={4000}
                 rows={4}
