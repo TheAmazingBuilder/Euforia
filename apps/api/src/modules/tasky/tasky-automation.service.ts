@@ -160,6 +160,15 @@ export class TaskyAutomationService implements OnModuleInit, OnModuleDestroy {
     let updatedBoard = current;
     let boardChanged = false;
     const priorityApplied = new Set<string>();
+    const notifications: Array<{
+      userId: string;
+      rule: TaskyAutomationRule;
+      trigger: string;
+      cardId: string;
+      cardTitle: string;
+      message: string;
+      payload: Record<string, unknown>;
+    }> = [];
 
     for (const [cardId, location] of after) {
       const old = before.get(cardId);
@@ -199,6 +208,7 @@ export class TaskyAutomationService implements OnModuleInit, OnModuleDestroy {
             boardChanged = true;
             priorityChanged = true;
           }
+          // For overlapping rules, the most recently updated priority rule wins.
           priorityApplied.add(cardId);
         }
 
@@ -206,7 +216,7 @@ export class TaskyAutomationService implements OnModuleInit, OnModuleDestroy {
           ? `“${location.card.title}” moved to ${location.columnTitle}; priority set to ${targetPriority}.`
           : `“${location.card.title}” moved from ${old.columnTitle} to ${location.columnTitle}.`;
         const message = rule.config.notificationMessage?.trim() || defaultMessage;
-        await this.recordNotification({
+        notifications.push({
           userId,
           rule,
           trigger: "CARD_MOVED",
@@ -220,24 +230,28 @@ export class TaskyAutomationService implements OnModuleInit, OnModuleDestroy {
             cardTitle: location.card.title,
             fromColumnId: old.columnId,
             toColumnId: location.columnId,
-            action: priorityChanged ? "SET_PRIORITY" : (rule.config.action ?? "NOTIFY"),
+            action: priorityChanged ? "SET_PRIORITY" : "NOTIFY",
             ...(priorityChanged ? { priority: targetPriority } : {}),
           },
         });
       }
     }
 
-    // Persist rule actions inside this context without calling saveBoard again;
-    // that avoids re-entering the column-transition evaluator.
+    // Commit the card mutation before recording notification success. A failed
+    // action write must never be reported as a successful automation run.
     if (boardChanged) {
       const saved = await this.repository.saveForUser(userId, updatedBoard);
       const validated = taskyKanbanBoardStateSchema.safeParse(saved.data);
       if (!validated.success) {
         throw new BadRequestException("The Tasky board failed validation after an automation action.");
       }
-      return validated.data;
+      updatedBoard = validated.data;
     }
-    return current;
+
+    for (const notification of notifications) {
+      await this.recordNotification(notification);
+    }
+    return updatedBoard;
   }
 
   /** Manual button and background worker both use the same idempotent due-date evaluator. */
