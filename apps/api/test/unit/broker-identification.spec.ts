@@ -155,6 +155,20 @@ describe("identify - confidence ladder", () => {
     expect(result.connectorStatus).toBe("CONNECTOR_AVAILABLE");
   });
 
+  it("shows the generic MT5 platform as available without guessing a broker", () => {
+    const service = new BrokerIdentificationService(registryWith("mt5-bridge"));
+    const result = service.identify({
+      providerId: "mt5-bridge",
+      externalAccountId: "12345678",
+    });
+
+    expect(result.brokerId).toBe("metatrader-platform");
+    expect(result.platform).toBe("MT5");
+    expect(result.confidence).toBe("PLATFORM_KNOWN");
+    expect(result.connectorStatus).toBe("CONNECTOR_AVAILABLE");
+    expect(result.providerId).toBe("mt5-bridge");
+  });
+
   it("PATTERN_MATCH on the endpoint beats an unmatched id but patterns win over platform knowledge", () => {
     const service = new BrokerIdentificationService(registryWith("deriv-ws"));
     const result = service.identify({
