@@ -8,6 +8,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Copy,
+  Download,
   GripVertical,
   ExternalLink,
   FileText,
@@ -19,6 +20,7 @@ import {
   Send,
   MoreHorizontal,
   Pencil,
+  Paperclip,
   Plus,
   RefreshCw,
   Trash2,
@@ -51,7 +53,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { useSaveTaskyBoard, useTaskyBoard } from "@/lib/api/queries";
+import { useDeleteTaskyAttachment, useDownloadTaskyAttachment, useSaveTaskyBoard, useTaskyBoard, useTaskyCardAttachments, useUploadTaskyAttachment } from "@/lib/api/queries";
 import { cn } from "@/lib/utils";
 
 /**
@@ -167,6 +169,24 @@ function clearLegacyBoard(): void {
   }
 }
 
+const TASKY_ATTACHMENT_MAX_BYTES = 5 * 1024 * 1024;
+const TASKY_ATTACHMENT_MIME_BY_EXTENSION: Record<string, "image/png" | "image/jpeg" | "image/webp" | "application/pdf" | "text/plain" | "text/csv" | "text/markdown"> = {
+  png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", webp: "image/webp",
+  pdf: "application/pdf", txt: "text/plain", csv: "text/csv", md: "text/markdown", markdown: "text/markdown",
+};
+function fileSizeLabel(sizeBytes: number): string {
+  if (sizeBytes < 1024) return `${sizeBytes} B`;
+  if (sizeBytes < 1024 * 1024) return `${(sizeBytes / 1024).toFixed(1)} KB`;
+  return `${(sizeBytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  const chunks: string[] = [];
+  for (let offset = 0; offset < bytes.length; offset += 0x8000) {
+    chunks.push(String.fromCharCode(...bytes.subarray(offset, offset + 0x8000)));
+  }
+  return window.btoa(chunks.join(""));
+}
 function newId(prefix: string): string {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
     return `${prefix}-${crypto.randomUUID().slice(0, 8)}`;
@@ -239,6 +259,11 @@ export function TaskyView() {
   const [linkTitleDraft, setLinkTitleDraft] = React.useState("");
   const [linkUrlDraft, setLinkUrlDraft] = React.useState("");
   const [linkError, setLinkError] = React.useState<string | null>(null);
+  const [attachmentError, setAttachmentError] = React.useState<string | null>(null);
+  const attachmentQuery = useTaskyCardAttachments(detailsCardId);
+  const attachmentUpload = useUploadTaskyAttachment();
+  const attachmentDelete = useDeleteTaskyAttachment();
+  const attachmentDownload = useDownloadTaskyAttachment();
   const descriptionOriginalRef = React.useRef("");
 
   const columnRefs = React.useRef<Map<string, HTMLElement>>(new Map());
@@ -597,6 +622,69 @@ export function TaskyView() {
     updateCardDetails(card.id, {
       links: (card.links ?? []).filter((entry) => entry.id !== linkId),
     }, { type: "link", message: `Removed link: ${link?.title ?? "link"}`.slice(0, 180) });
+  };
+
+  const uploadTaskyFile = async (event: React.ChangeEvent<HTMLInputElement>, card: TaskyCard) => {
+    const file = event.currentTarget.files?.[0];
+    event.currentTarget.value = "";
+    setAttachmentError(null);
+    if (!file) return;
+    if (file.size < 1 || file.size > TASKY_ATTACHMENT_MAX_BYTES) {
+      setAttachmentError("Choose a file between 1 byte and 5 MiB.");
+      return;
+    }
+    const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
+    const mimeType = TASKY_ATTACHMENT_MIME_BY_EXTENSION[extension];
+    if (!mimeType) {
+      setAttachmentError("Supported files: PNG, JPG, WebP, PDF, TXT, CSV and Markdown.");
+      return;
+    }
+    if (file.type && file.type !== mimeType &&
+      !(mimeType === "image/jpeg" && file.type === "image/jpg") &&
+      !(mimeType === "text/markdown" && file.type === "text/plain")) {
+      setAttachmentError("The file extension and detected file type do not match.");
+      return;
+    }
+    try {
+      await attachmentUpload.mutateAsync({
+        cardId: card.id, fileName: file.name, mimeType,
+        contentBase64: arrayBufferToBase64(await file.arrayBuffer()),
+      });
+      updateCardDetails(card.id, {}, {
+        type: "attachment",
+        message: `Added attachment: ${file.name}`.slice(0, 180),
+      });
+      setAttachmentError(null);
+    } catch {
+      setAttachmentError("Upload failed. Check the file and your connection, then try again.");
+    }
+  };
+
+  const downloadTaskyFile = async (cardId: string, attachmentId: string) => {
+    try {
+      const file = await attachmentDownload.mutateAsync({ cardId, attachmentId });
+      const binary = window.atob(file.contentBase64);
+      const bytes = new Uint8Array(binary.length);
+      for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
+      const url = URL.createObjectURL(new Blob([bytes], { type: file.mimeType }));
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = file.fileName;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 0);
+    } catch { /* The mutation displays a user-facing transport error. */ }
+  };
+
+  const deleteTaskyFile = async (cardId: string, attachmentId: string, fileName: string) => {
+    try {
+      await attachmentDelete.mutateAsync({ cardId, attachmentId });
+      updateCardDetails(cardId, {}, {
+        type: "attachment",
+        message: `Removed attachment: ${fileName}`.slice(0, 180),
+      });
+    } catch { /* The mutation displays a user-facing transport error. */ }
   };
 
   const detailsEntry = detailsCardId
@@ -1078,6 +1166,7 @@ export function TaskyView() {
             setLinkTitleDraft("");
             setLinkUrlDraft("");
             setLinkError(null);
+            setAttachmentError(null);
           }
         }}
       >
@@ -1277,6 +1366,45 @@ export function TaskyView() {
               {(detailsEntry.card.links?.length ?? 0) >= 30 ? (
                 <p className="text-xs text-muted-foreground">This card has reached the 30-link limit.</p>
               ) : null}
+            </section>
+
+            <section className="flex flex-col gap-3 border-t border-border pt-4" data-testid="tasky-card-attachments">
+              <div className="flex items-center gap-2">
+                <Paperclip className="size-4 text-muted-foreground" aria-hidden="true" />
+                <h3 className="text-sm font-semibold">Attachments</h3>
+                <span className="rounded-md bg-muted px-1.5 py-0.5 font-mono text-[11px] text-muted-foreground">{attachmentQuery.data?.attachments.length ?? 0}/20</span>
+              </div>
+              {attachmentQuery.isPending ? <p className="text-sm text-muted-foreground">Loading attachments…</p> :
+                attachmentQuery.isError ? (
+                  <div className="flex items-center justify-between gap-2 rounded-lg border border-border p-3">
+                    <p className="text-sm text-muted-foreground">Attachments could not be loaded.</p>
+                    <Button type="button" size="sm" variant="outline" onClick={() => void attachmentQuery.refetch()}><RefreshCw className="size-3.5" aria-hidden="true" />Retry</Button>
+                  </div>
+                ) : (attachmentQuery.data?.attachments.length ?? 0) > 0 ? (
+                  <div className="flex flex-col gap-1">
+                    {attachmentQuery.data?.attachments.map((attachment) => (
+                      <div key={attachment.id} className="flex min-w-0 items-center gap-2 rounded-lg border border-border/70 px-3 py-2" data-testid={`tasky-attachment-${attachment.id}`}>
+                        <FileText className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium" title={attachment.originalName}>{attachment.originalName}</p>
+                          <p className="text-[11px] text-muted-foreground">{fileSizeLabel(attachment.sizeBytes)} · {formatTimestamp(attachment.createdAt)}</p>
+                        </div>
+                        <Button type="button" size="icon-sm" variant="ghost" aria-label={`Download ${attachment.originalName}`} title="Download" disabled={attachmentDownload.isPending} onClick={() => void downloadTaskyFile(detailsEntry.card.id, attachment.id)} data-testid={`tasky-attachment-download-${attachment.id}`}><Download className="size-4" aria-hidden="true" /></Button>
+                        <Button type="button" size="icon-sm" variant="ghost" aria-label={`Delete ${attachment.originalName}`} title="Delete attachment" disabled={attachmentDelete.isPending} onClick={() => void deleteTaskyFile(detailsEntry.card.id, attachment.id, attachment.originalName)} data-testid={`tasky-attachment-delete-${attachment.id}`}><Trash2 className="size-4" aria-hidden="true" /></Button>
+                      </div>
+                    ))}
+                  </div>
+                ) : <p className="text-sm text-muted-foreground">No files attached to this card yet.</p>}
+              <div className="flex flex-wrap items-center gap-3">
+                <label htmlFor="tasky-attachment-file" className={cn("inline-flex h-9 cursor-pointer items-center gap-2 rounded-md border border-border px-3 text-sm font-medium transition-colors hover:bg-muted", (attachmentUpload.isPending || (attachmentQuery.data?.attachments.length ?? 0) >= 20) && "pointer-events-none opacity-50")}>
+                  {attachmentUpload.isPending ? <LoaderCircle className="size-4 animate-spin" aria-hidden="true" /> : <Paperclip className="size-4" aria-hidden="true" />}
+                  {attachmentUpload.isPending ? "Uploading…" : "Attach file"}
+                </label>
+                <input id="tasky-attachment-file" type="file" className="sr-only" accept=".png,.jpg,.jpeg,.webp,.pdf,.txt,.csv,.md,.markdown" aria-label="Choose a file to attach" disabled={attachmentUpload.isPending || (attachmentQuery.data?.attachments.length ?? 0) >= 20} onChange={(event) => void uploadTaskyFile(event, detailsEntry.card)} data-testid="tasky-attachment-file-input" />
+                <span className="text-[11px] text-muted-foreground">5 MiB max per file · Up to 20 per card</span>
+              </div>
+              {attachmentError ? <p className="text-xs text-loss" role="alert">{attachmentError}</p> : null}
+              <p className="text-[11px] text-muted-foreground">Files are private and only available to the owner of this board.</p>
             </section>
 
             <section className="flex flex-col gap-3 border-t border-border pt-4" data-testid="tasky-card-comments">
