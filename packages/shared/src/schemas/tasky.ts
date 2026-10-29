@@ -272,3 +272,42 @@ export const taskyKanbanBoardSaveResponseSchema = z.object({
   updatedAt: z.string().datetime(),
 });
 export type TaskyKanbanBoardSaveResponse = z.infer<typeof taskyKanbanBoardSaveResponseSchema>;
+
+
+// ── Tasky saved views (search, filters and presentation order) ──────────────
+export const taskySavedViewDueFilterSchema = z.enum(["all", "overdue", "upcoming", "no-date"]);
+export const taskySavedViewPriorityFilterSchema = z.enum(["all", "Low", "Medium", "High", "Urgent"]);
+export const taskySavedViewSortSchema = z.enum(["manual", "title", "due", "priority"]);
+
+export const taskySavedViewFiltersSchema = z.object({
+  query: z.string().trim().max(180),
+  priority: taskySavedViewPriorityFilterSchema,
+  due: taskySavedViewDueFilterSchema,
+  sort: taskySavedViewSortSchema,
+});
+export type TaskySavedViewFilters = z.infer<typeof taskySavedViewFiltersSchema>;
+
+export const taskySavedViewCreateSchema = z.object({
+  name: z.string().trim().min(1).max(40),
+  filters: taskySavedViewFiltersSchema,
+});
+export type TaskySavedViewCreateInput = z.infer<typeof taskySavedViewCreateSchema>;
+
+export const taskySavedViewSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string().trim().min(1).max(40),
+  filters: taskySavedViewFiltersSchema,
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
+});
+export type TaskySavedView = z.infer<typeof taskySavedViewSchema>;
+
+export const taskySavedViewsEnvelopeSchema = z.object({
+  views: z.array(taskySavedViewSchema).max(20),
+});
+export type TaskySavedViewsEnvelope = z.infer<typeof taskySavedViewsEnvelopeSchema>;
+
+export const taskySavedViewCreateResponseSchema = z.object({
+  view: taskySavedViewSchema,
+});
+export type TaskySavedViewCreateResponse = z.infer<typeof taskySavedViewCreateResponseSchema>;
