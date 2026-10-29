@@ -118,6 +118,7 @@ export const taskyKanbanActivityTypeSchema = z.enum([
   "checklist",
   "comment",
   "link",
+  "attachment",
 ]);
 export type TaskyKanbanActivityType = z.infer<typeof taskyKanbanActivityTypeSchema>;
 
@@ -139,6 +140,38 @@ export const taskyKanbanLinkSchema = z.object({
   createdAt: z.string().datetime(),
 });
 export type TaskyKanbanLink = z.infer<typeof taskyKanbanLinkSchema>;
+
+// File bytes are managed by the API; the board contract contains only attachment metadata.
+export const taskyKanbanAttachmentMimeSchema = z.enum([
+  "image/png", "image/jpeg", "image/webp", "application/pdf",
+  "text/plain", "text/csv", "text/markdown",
+]);
+export type TaskyKanbanAttachmentMime = z.infer<typeof taskyKanbanAttachmentMimeSchema>;
+
+export const taskyKanbanAttachmentSchema = z.object({
+  id: z.string().uuid(),
+  cardId: z.string().trim().min(1).max(100),
+  originalName: z.string().trim().min(1).max(160),
+  mimeType: taskyKanbanAttachmentMimeSchema,
+  sizeBytes: z.number().int().min(1).max(5_242_880),
+  createdAt: z.string().datetime(),
+});
+export type TaskyKanbanAttachment = z.infer<typeof taskyKanbanAttachmentSchema>;
+
+export const taskyKanbanAttachmentUploadSchema = z.object({
+  fileName: z.string().trim().min(1).max(240),
+  mimeType: taskyKanbanAttachmentMimeSchema,
+  contentBase64: z.string().min(4).max(7_000_000)
+    .regex(/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/),
+});
+export type TaskyKanbanAttachmentUploadInput = z.infer<typeof taskyKanbanAttachmentUploadSchema>;
+
+export const taskyKanbanAttachmentDownloadSchema = z.object({
+  fileName: z.string().trim().min(1).max(160),
+  mimeType: taskyKanbanAttachmentMimeSchema,
+  contentBase64: z.string().min(4).max(7_000_000),
+});
+export type TaskyKanbanAttachmentDownload = z.infer<typeof taskyKanbanAttachmentDownloadSchema>;
 
 export const taskyKanbanCardSchema = z.object({
   id: z.string().trim().min(1).max(100),
