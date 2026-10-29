@@ -1,6 +1,6 @@
 //+------------------------------------------------------------------+
 //|                                             EuforiaBridge.mq5    |
-//|         Euforia trading journal — MT5 terminal bridge (v1.0.2)   |
+//|         Euforia trading journal — MT5 terminal bridge (v1.0.3)   |
 //|                                                                  |
 //| WHAT IT DOES                                                     |
 //|   Reads the account attached to THIS terminal (account info,     |
@@ -22,11 +22,11 @@
 //|   5. Keep the terminal open: data is as fresh as the last push.  |
 //+------------------------------------------------------------------+
 #property copyright "Euforia / Cosmoz"
-#property version   "1.02"
+#property version   "1.03"
 #property strict
 
 //--- inputs
-input string InpEndpointURL   = "https://localhost:3000/api/v1/trading-accounts/bridge/ingest"; // Ingest URL (pairing sheet)
+input string InpEndpointURL   = "http://localhost:3000/api/v1/trading-accounts/bridge/ingest"; // Ingest URL (pairing sheet)
 input string InpBridgeKey     = "";     // X-Bridge-Key (public routing key)
 input string InpBridgeSecret  = "";     // Bridge secret (pairing sheet)
 input int    InpPushSeconds   = 30;     // Push cadence (seconds, 5-3600)
@@ -400,7 +400,7 @@ bool PushDeals()
 void DrawStatus(const string state)
   {
    Comment(StringFormat(
-      "Euforia Bridge v1.0.2\naccount: %I64d (%s)\nstate: %s\npushes: %d  failures: %d\nlast push: %s\nlast error: %s\nhistory from: %s",
+      "Euforia Bridge v1.0.3\naccount: %I64d (%s)\nstate: %s\npushes: %d  failures: %d\nlast push: %s\nlast error: %s\nhistory from: %s",
       AccountInfoInteger(ACCOUNT_LOGIN),
       AccountInfoString(ACCOUNT_SERVER),
       state,
