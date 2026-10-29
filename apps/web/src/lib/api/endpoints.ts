@@ -212,6 +212,11 @@ export const apiPaths = {
   academyEventRegister: "/academy/events/register",
   // Tasky Kanban board — distinct from Academy study tasks.
   taskyBoard: "/tasky/board",
+  taskyAutomations: "/tasky/automations",
+  taskyAutomation: (ruleId: string) => `/tasky/automations/${encodeURIComponent(ruleId)}`,
+  taskyAutomationRuns: "/tasky/automation-runs",
+  taskyDueDateCheck: "/tasky/automation-runs/check-due",
+  taskyCardRemind: (cardId: string) => `/tasky/cards/${encodeURIComponent(cardId)}/remind`,
   taskySavedViews: "/tasky/views",
   taskySavedView: (viewId: string) => `/tasky/views/${encodeURIComponent(viewId)}`,
   taskyCardAttachments: (cardId: string) => `/tasky/cards/${encodeURIComponent(cardId)}/attachments`,
