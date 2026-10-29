@@ -96,6 +96,13 @@ export type TaskyDeleteInput = z.infer<typeof taskyDeleteInputSchema>;
 export const taskyKanbanPrioritySchema = z.enum(["Low", "Medium", "High", "Urgent"]);
 export type TaskyKanbanPriority = z.infer<typeof taskyKanbanPrioritySchema>;
 
+export const taskyKanbanChecklistItemSchema = z.object({
+  id: z.string().trim().min(1).max(100),
+  text: z.string().trim().min(1).max(180),
+  completed: z.boolean(),
+});
+export type TaskyKanbanChecklistItem = z.infer<typeof taskyKanbanChecklistItemSchema>;
+
 export const taskyKanbanCardSchema = z.object({
   id: z.string().trim().min(1).max(100),
   title: z.string().trim().min(1).max(140),
@@ -103,6 +110,8 @@ export const taskyKanbanCardSchema = z.object({
   priority: taskyKanbanPrioritySchema,
   assignee: z.string().trim().min(1).max(12),
   due: z.string().regex(/^\\d{4}-\\d{2}-\\d{2}$/).optional(),
+  description: z.string().max(4000).optional(),
+  checklist: z.array(taskyKanbanChecklistItemSchema).max(100).optional(),
 });
 export type TaskyKanbanCard = z.infer<typeof taskyKanbanCardSchema>;
 
@@ -147,7 +156,17 @@ export const taskyKanbanBoardStateSchema = z
           });
         }
         ids.add(card.id);
-      });
+        card.checklist?.forEach((item, itemIndex) => {
+          if (ids.has(item.id)) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: ["columns", columnIndex, "cards", cardIndex, "checklist", itemIndex, "id"],
+              message: "Board, card, and checklist IDs must be unique.",
+            });
+          }
+          ids.add(item.id);
+        });
+      });;
     });
   });
 export type TaskyKanbanBoardState = z.infer<typeof taskyKanbanBoardStateSchema>;
