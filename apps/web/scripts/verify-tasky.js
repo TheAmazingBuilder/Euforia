@@ -160,7 +160,10 @@ async function touchDrag(page, gripTestid, targetColumnId) {
     await page.click(`[data-testid="tasky-details-${editableId}"]`);
     await page.locator('[data-testid="tasky-card-details"]').waitFor({ state: "visible" });
     const saveResponse = page.waitForResponse((response) =>
-      response.url().includes("/tasky/board") && response.request().method() === "PUT" && response.ok(),
+      response.url().includes("/tasky/board")
+      && response.request().method() === "PUT"
+      && response.ok()
+      && (response.request().postData() ?? "").includes("Tasky probe comment"),
     );
     await page.fill('[data-testid="tasky-card-description"]', "Acceptance criteria and regression notes.");
     await page.fill('[data-testid="tasky-checklist-add-input"]', "Validate autosave");
@@ -170,6 +173,16 @@ async function touchDrag(page, gripTestid, targetColumnId) {
     check("checklist item added", await checklistToggle.isVisible().catch(() => false));
     await checklistToggle.check();
     check("checklist item can be completed", await checklistToggle.isChecked());
+
+    await page.fill('[data-testid="tasky-comment-input"]', "Tasky probe comment: review before release.");
+    await page.click('[data-testid="tasky-comment-submit"]');
+    check("comment appears in card details", await page.getByText("Tasky probe comment: review before release.").isVisible().catch(() => false));
+    await page.fill('[data-testid="tasky-link-title-input"]', "Reference link probe");
+    await page.fill('[data-testid="tasky-link-url-input"]', "https://example.com/tasky-probe");
+    await page.click('[data-testid="tasky-link-add-submit"]');
+    const referenceLink = page.getByRole("link", { name: "Reference link probe" });
+    check("reference link added", await referenceLink.isVisible().catch(() => false) && (await referenceLink.getAttribute("href")) === "https://example.com/tasky-probe");
+    check("activity records comment and link", await page.getByText("Added a comment").isVisible().catch(() => false) && await page.getByText("Added link: Reference link probe").isVisible().catch(() => false));
     await saveResponse;
     await page.reload({ waitUntil: "domcontentloaded" });
     await page.waitForTimeout(1000);
@@ -178,6 +191,10 @@ async function touchDrag(page, gripTestid, targetColumnId) {
     check("description persisted after reload", (await page.locator('[data-testid="tasky-card-description"]').inputValue()) === "Acceptance criteria and regression notes.");
     const persistedToggle = page.locator(`[data-testid="${checklistTestId}"]`);
     check("checklist completion persisted after reload", await persistedToggle.isChecked());
+    check("comment persisted after reload", await page.getByText("Tasky probe comment: review before release.").isVisible().catch(() => false));
+    const persistedLink = page.getByRole("link", { name: "Reference link probe" });
+    check("link persisted after reload", await persistedLink.isVisible().catch(() => false) && (await persistedLink.getAttribute("href")) === "https://example.com/tasky-probe");
+    check("activity history persisted after reload", await page.getByText("Added a comment").isVisible().catch(() => false) && await page.getByText("Added link: Reference link probe").isVisible().catch(() => false));
     await page.keyboard.press("Escape");
     await page.waitForTimeout(100);
     await page.click(`[data-testid="tasky-delete-${duplicateId}"]`);
