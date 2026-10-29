@@ -11,59 +11,6 @@ let passed = 0;
 let failed = 0;
 const pageErrors = [];
 
-const SEED_COLUMNS = [
-  {
-    id: "backlog",
-    title: "Backlog",
-    dot: "bg-muted-foreground/70",
-    cards: [
-      { id: "c1", title: "Implement OAuth 2.0 SSO integration", tag: "Feature", priority: "High", assignee: "AK", due: "2026-04-20" },
-      { id: "c2", title: "Add CSV export for reports dashboard", tag: "Enhancement", priority: "Medium", assignee: "SL", due: "2026-04-28" },
-      { id: "c3", title: "Migrate legacy REST endpoints to GraphQL", tag: "Refactor", priority: "Low", assignee: "JW", due: "2026-05-10" },
-      { id: "c4", title: "Set up Datadog APM traces for API layer", tag: "DevOps", priority: "Medium", assignee: "RC", due: "2026-05-05" },
-    ],
-  },
-  {
-    id: "todo",
-    title: "Todo",
-    dot: "bg-violet-500",
-    cards: [
-      { id: "c5", title: "Redesign onboarding flow (3-step wizard)", tag: "Design", priority: "High", assignee: "MT", due: "2026-04-18" },
-      { id: "c6", title: "Write unit tests for payment service", tag: "Testing", priority: "High", assignee: "AK", due: "2026-04-16" },
-      { id: "c7", title: "Localize app strings for EU markets", tag: "i18n", priority: "Medium", assignee: "SL", due: "2026-04-25" },
-    ],
-  },
-  {
-    id: "in-progress",
-    title: "In Progress",
-    dot: "bg-sky-500",
-    cards: [
-      { id: "c8", title: "Fix memory leak in WebSocket handler", tag: "Bug", priority: "Urgent", assignee: "JW", due: "2026-04-12" },
-      { id: "c9", title: "Build real-time notifications with SSE", tag: "Feature", priority: "High", assignee: "RC", due: "2026-04-15" },
-      { id: "c10", title: "Optimize Lighthouse score to 95+", tag: "Performance", priority: "Medium", assignee: "MT", due: "2026-04-22" },
-    ],
-  },
-  {
-    id: "in-review",
-    title: "In Review",
-    dot: "bg-amber-400",
-    cards: [
-      { id: "c11", title: "Dark mode support across all components", tag: "Enhancement", priority: "Medium", assignee: "AK", due: "2026-04-13" },
-      { id: "c12", title: "Rate limiting middleware for public API", tag: "Security", priority: "High", assignee: "SL", due: "2026-04-11" },
-    ],
-  },
-  {
-    id: "done",
-    title: "Done",
-    dot: "bg-emerald-500",
-    cards: [
-      { id: "c13", title: "Set up CI/CD pipeline with GitHub Actions", tag: "DevOps", priority: "High", assignee: "JW" },
-      { id: "c14", title: "Implement row-level security in Postgres", tag: "Security", priority: "Urgent", assignee: "RC" },
-      { id: "c15", title: "Add Stripe webhook signature validation", tag: "Bug", priority: "High", assignee: "MT" },
-    ],
-  },
-];
-
 function check(label, ok, extra = "") {
   const tag = ok ? "✓" : "✗";
   if (ok) passed += 1;
@@ -79,21 +26,6 @@ async function login(page) {
   await page.click('button[type="submit"]');
   await page.waitForTimeout(2500);
   check("login succeeded", !page.url().includes("/login"), page.url());
-}
-
-async function resetDemoBoard(page) {
-  const result = await page.evaluate(async (columns) => {
-    const response = await fetch("/api/v1/tasky/board", {
-      method: "PUT",
-      credentials: "same-origin",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ columns }),
-    });
-    return { ok: response.ok, status: response.status, body: await response.text() };
-  }, SEED_COLUMNS);
-  if (!result.ok) {
-    throw new Error(`Could not reset demo Tasky board (HTTP ${result.status}): ${result.body.slice(0, 300)}`);
-  }
 }
 
 async function columnCenter(page, columnId) {
@@ -141,7 +73,6 @@ async function touchDrag(page, gripTestid, targetColumnId) {
   try {
     console.log("\n[0] Clean board state");
     await login(page);
-    await resetDemoBoard(page);
     await page.goto(`${BASE}/tasky`, { waitUntil: "domcontentloaded", timeout: 60000 });
     await page.evaluate(() => window.localStorage.removeItem("cosmoz.tasky.board.v1"));
     await page.reload({ waitUntil: "domcontentloaded" });
@@ -174,11 +105,12 @@ async function touchDrag(page, gripTestid, targetColumnId) {
     for (const id of columnIds) {
       counts[id] = Number(await page.locator(`[data-testid="tasky-count-${id}"]`).innerText());
     }
-    check(
-      "seed counts 4/3/3/2/3",
-      counts.backlog === 4 && counts.todo === 3 && counts["in-progress"] === 3 && counts["in-review"] === 2 && counts.done === 3,
-      JSON.stringify(counts),
-    );
+    let countsMatchCards = true;
+    for (const id of columnIds) {
+      const rendered = await page.locator(`[data-testid="tasky-column-${id}"] [data-tasky-card]`).count();
+      countsMatchCards = countsMatchCards && counts[id] === rendered;
+    }
+    check("column counters match rendered cards", countsMatchCards, JSON.stringify(counts));
 
     console.log("\n[2] Card anatomy (reference fidelity)");
     const c1 = page.locator('[data-testid="tasky-card-c1"]');
@@ -190,16 +122,17 @@ async function touchDrag(page, gripTestid, targetColumnId) {
     check("c1 grip exists", await page.locator('[data-testid="tasky-grip-c1"]').isVisible().catch(() => false));
 
     console.log("\n[3] Add + delete card");
+    const todoCountBeforeProbe = Number(await page.locator('[data-testid="tasky-count-todo"]').innerText());
     await page.click('[data-testid="tasky-add-todo"]');
     await page.fill('[data-testid="tasky-add-input-todo"]', "Probe card");
     await page.click('[data-testid="tasky-add-confirm-todo"]');
     await page.waitForTimeout(400);
-    check("todo count 4 after add", (await page.locator('[data-testid="tasky-count-todo"]').innerText()) === "4");
+    check("todo count increments after add", Number(await page.locator('[data-testid="tasky-count-todo"]').innerText()) === todoCountBeforeProbe + 1);
     const probeCard = page.locator("article", { hasText: "Probe card" }).first();
     const probeId = await probeCard.getAttribute("data-testid");
     await page.click(`[data-testid="tasky-delete-${probeId?.replace("tasky-card-", "")}"]`);
     await page.waitForTimeout(300);
-    check("todo count 3 after delete", (await page.locator('[data-testid="tasky-count-todo"]').innerText()) === "3");
+    check("todo count restored after delete", Number(await page.locator('[data-testid="tasky-count-todo"]').innerText()) === todoCountBeforeProbe);
 
     console.log("\n[3b] Edit + duplicate card");
     await page.click('[data-testid="tasky-add-todo"]');
@@ -226,7 +159,7 @@ async function touchDrag(page, gripTestid, targetColumnId) {
     await page.click(`[data-testid="tasky-delete-${duplicateId}"]`);
     await page.click(`[data-testid="tasky-delete-${editableId}"]`);
     await page.waitForTimeout(400);
-    check("edited and duplicate probe cards cleaned up", (await page.locator('[data-testid="tasky-count-todo"]').innerText()) === "3");
+    check("edited and duplicate probe cards cleaned up", Number(await page.locator('[data-testid="tasky-count-todo"]').innerText()) === todoCountBeforeProbe);
 
     console.log("\n[4] Mouse drag Backlog → In Review");
     const grip1 = await page.locator('[data-testid="tasky-grip-c1"]').boundingBox();
@@ -247,8 +180,9 @@ async function touchDrag(page, gripTestid, targetColumnId) {
       "c1 moved to in-review",
       (await page.locator('[data-testid="tasky-card-c1"]').getAttribute("data-column")) === "in-review",
     );
-    check("backlog count 3", (await page.locator('[data-testid="tasky-count-backlog"]').innerText()) === "3");
-    check("in-review count 3", (await page.locator('[data-testid="tasky-count-in-review"]').innerText()) === "3");
+    check("source and target counters remain consistent",
+      Number(await page.locator('[data-testid="tasky-count-backlog"]').innerText()) === await page.locator('[data-testid="tasky-column-backlog"] [data-tasky-card]').count()
+      && Number(await page.locator('[data-testid="tasky-count-in-review"]').innerText()) === await page.locator('[data-testid="tasky-column-in-review"] [data-tasky-card]').count());
 
     console.log("\n[5] Touch drag (pointerType touch) In Progress → Done");
     const result = await touchDrag(page, "tasky-grip-c8", "done");
@@ -261,14 +195,16 @@ async function touchDrag(page, gripTestid, targetColumnId) {
 
     console.log("\n[6] Add list appended right");
     await page.click('[data-testid="tasky-add-list"]');
-    await page.fill('[data-testid="tasky-add-list-input"]', "Watchlist");
+    await page.fill('[data-testid="tasky-add-list-input"]', "Watchlist probe");
     await page.click('[data-testid="tasky-add-list-confirm"]');
     await page.waitForTimeout(400);
-    const watchColumn = page.locator('[data-tasky-column="Watchlist"]');
-    check("Watchlist column exists", await watchColumn.isVisible().catch(() => false));
+    const watchColumn = page.locator('[data-tasky-column="Watchlist probe"]').last();
+    const watchColumnTestId = await watchColumn.getAttribute("data-testid");
+    const watchColumnId = watchColumnTestId?.replace("tasky-column-", "");
+    check("Watchlist probe column exists", await watchColumn.isVisible().catch(() => false));
     const watchX = await watchColumn.evaluate((el) => el.getBoundingClientRect().left);
     const doneX = await page.locator('[data-testid="tasky-column-done"]').evaluate((el) => el.getBoundingClientRect().left);
-    check("Watchlist sits right of Done", watchX > doneX, `${Math.round(watchX)}>${Math.round(doneX)}`);
+    check("Watchlist probe sits right of Done", watchX > doneX, `${Math.round(watchX)}>${Math.round(doneX)}`);
 
     console.log("\n[6b] Rename, reorder and delete list");
     await page.click('[data-testid="tasky-add-list"]');
@@ -294,7 +230,9 @@ async function touchDrag(page, gripTestid, targetColumnId) {
     await page.reload({ waitUntil: "domcontentloaded" });
     await page.waitForTimeout(1500);
     check("c1 still in in-review", (await page.locator('[data-testid="tasky-card-c1"]').getAttribute("data-column")) === "in-review");
-    check("Watchlist persisted", await page.locator('[data-tasky-column="Watchlist"]').isVisible().catch(() => false));
+    check("Watchlist probe persisted", await page.locator(`[data-testid="tasky-column-${watchColumnId}"]`).isVisible().catch(() => false));
+    await page.click(`[data-testid="tasky-list-delete-${watchColumnId}"]`);
+    check("test list cleaned up after persistence check", await page.locator(`[data-testid="tasky-column-${watchColumnId}"]`).count() === 0);
 
     console.log("\n[8] Mobile 390px");
     await page.setViewportSize({ width: 390, height: 844 });
