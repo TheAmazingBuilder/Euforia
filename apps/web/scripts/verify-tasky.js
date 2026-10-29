@@ -136,6 +136,25 @@ async function touchDrag(page, gripTestid, targetColumnId) {
       await page.locator('[data-testid="tasky-card-c1"]').isVisible().catch(() => false)
       && await page.locator('[data-testid="tasky-reset-filters"]').isDisabled());
 
+    console.log("\n[2c] Supplementary views");
+    await page.click('[data-testid="tasky-view-mode-calendar"]');
+    check("calendar view is selectable", await page.locator('[data-testid="tasky-calendar-view"]').isVisible().catch(() => false));
+    await page.click('button[aria-label="Next month"]');
+    check("calendar month can advance", await page.locator('[data-testid="tasky-calendar-view"]').isVisible().catch(() => false));
+    await page.click('[data-testid="tasky-view-mode-table"]');
+    check("compact table view is selectable", await page.locator('[data-testid="tasky-table"]').isVisible().catch(() => false));
+    await page.click('[data-testid="tasky-view-mode-timeline"]');
+    check("timeline view is selectable", await page.locator('[data-testid="tasky-timeline-view"]').isVisible().catch(() => false));
+    await page.click('[data-testid="tasky-view-mode-dashboard"]');
+    check("dashboard view is selectable", await page.locator('[data-testid="tasky-dashboard-view"]').isVisible().catch(() => false));
+    check("dashboard exposes completion progress", await page.getByRole("progressbar", { name: "Completion progress" }).isVisible().catch(() => false));
+    await page.click('[data-testid="tasky-view-mode-completed"]');
+    check("completed-task view is selectable", await page.locator('[data-testid="tasky-completed-view"]').isVisible().catch(() => false));
+    await page.click('[data-testid="tasky-view-mode-upcoming"]');
+    check("upcoming-task view is selectable", await page.locator('[data-testid="tasky-upcoming-view"]').isVisible().catch(() => false));
+    await page.click('[data-testid="tasky-view-mode-board"]');
+    check("kanban remains the default and is selectable", await page.locator('[data-testid="tasky-board"]').isVisible().catch(() => false));
+
     console.log("\n[3] Add + delete card");
     const todoCountBeforeProbe = Number(await page.locator('[data-testid="tasky-count-todo"]').innerText());
     await page.click('[data-testid="tasky-add-todo"]');
