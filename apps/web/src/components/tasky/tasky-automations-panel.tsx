@@ -3,7 +3,7 @@
 import * as React from "react";
 import { AlertTriangle, BellRing, CheckCircle2, Clock3, History, Pause, Play, Plus, Trash2, Workflow } from "lucide-react";
 
-import type { TaskyAutomationTrigger, TaskyKanbanColumn } from "@cosmoz/shared";
+import type { TaskyAutomationTrigger, TaskyKanbanColumn, TaskyKanbanPriority } from "@cosmoz/shared";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -25,11 +25,14 @@ const TRIGGER_LABEL: Record<TaskyAutomationTrigger, string> = {
 
 function triggerSummary(
   trigger: TaskyAutomationTrigger,
-  config: { destinationColumnId?: string; daysBeforeDue?: number },
+  config: { destinationColumnId?: string; daysBeforeDue?: number; action?: "NOTIFY" | "SET_PRIORITY"; targetPriority?: TaskyKanbanPriority },
   columns: TaskyKanbanColumn[],
 ): string {
   if (trigger === "CARD_MOVED") {
-    return `When a card moves to “${columns.find((column) => column.id === config.destinationColumnId)?.title ?? config.destinationColumnId ?? "unknown list"}”.`;
+    const destination = columns.find((column) => column.id === config.destinationColumnId)?.title ?? config.destinationColumnId ?? "unknown list";
+    return config.action === "SET_PRIORITY" && config.targetPriority
+      ? `When a card moves to “${destination}”, set priority to ${config.targetPriority} and notify.`
+      : `When a card moves to “${destination}”, send a notification.`;
   }
   if (trigger === "DUE_SOON") return `Notify ${config.daysBeforeDue ?? 1} calendar day(s) before the due date.`;
   return "Notify once when a card becomes overdue.";
@@ -53,6 +56,8 @@ export function TaskyAutomationsPanel({ columns }: Props) {
   const [name, setName] = React.useState("");
   const [trigger, setTrigger] = React.useState<TaskyAutomationTrigger>("CARD_MOVED");
   const [destinationColumnId, setDestinationColumnId] = React.useState("");
+  const [action, setAction] = React.useState<"NOTIFY" | "SET_PRIORITY">("NOTIFY");
+  const [targetPriority, setTargetPriority] = React.useState<TaskyKanbanPriority>("High");
   const [daysBeforeDue, setDaysBeforeDue] = React.useState("1");
   const [notificationMessage, setNotificationMessage] = React.useState("");
 
@@ -69,7 +74,9 @@ export function TaskyAutomationsPanel({ columns }: Props) {
   const submit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const config = {
-      ...(trigger === "CARD_MOVED" ? { destinationColumnId } : {}),
+      ...(trigger === "CARD_MOVED"
+        ? { destinationColumnId, action, ...(action === "SET_PRIORITY" ? { targetPriority } : {}) }
+        : {}),
       ...(trigger === "DUE_SOON" ? { daysBeforeDue: Number(daysBeforeDue) } : {}),
       ...(notificationMessage.trim() ? { notificationMessage: notificationMessage.trim() } : {}),
     };
@@ -162,6 +169,39 @@ export function TaskyAutomationsPanel({ columns }: Props) {
               </div>
             ) : null}
 
+            {trigger === "CARD_MOVED" ? (
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="tasky-automation-action" className="text-xs font-medium text-muted-foreground">Automatic action</label>
+                <select
+                  id="tasky-automation-action"
+                  value={action}
+                  onChange={(event) => setAction(event.target.value as "NOTIFY" | "SET_PRIORITY")}
+                  className="h-9 rounded-lg border border-input bg-background px-3 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+                  data-testid="tasky-automation-action"
+                >
+                  <option value="NOTIFY">Send an in-app notification</option>
+                  <option value="SET_PRIORITY">Change card priority and notify</option>
+                </select>
+              </div>
+            ) : null}
+
+            {trigger === "CARD_MOVED" && action === "SET_PRIORITY" ? (
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="tasky-automation-priority" className="text-xs font-medium text-muted-foreground">Set priority to</label>
+                <select
+                  id="tasky-automation-priority"
+                  value={targetPriority}
+                  onChange={(event) => setTargetPriority(event.target.value as TaskyKanbanPriority)}
+                  className="h-9 rounded-lg border border-input bg-background px-3 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+                  data-testid="tasky-automation-priority"
+                >
+                  {(["Urgent", "High", "Medium", "Low"] as const).map((priority) => (
+                    <option key={priority} value={priority}>{priority}</option>
+                  ))}
+                </select>
+              </div>
+            ) : null}
+
             {trigger === "DUE_SOON" ? (
               <div className="flex flex-col gap-1.5">
                 <label htmlFor="tasky-automation-days" className="text-xs font-medium text-muted-foreground">Remind me how many days before?</label>
@@ -191,9 +231,11 @@ export function TaskyAutomationsPanel({ columns }: Props) {
 
             <p className="rounded-lg bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
               <BellRing className="mr-1 inline size-3.5" aria-hidden="true" />
-              Action: publish an in-app notification and record the execution result.
+              {trigger === "CARD_MOVED" && action === "SET_PRIORITY"
+                ? "When a card enters the selected list, its priority is changed and a notification is published. The run is saved to the history."
+                : "When the rule matches, Euforia publishes an in-app notification and records the execution result."}
             </p>
-            <Button type="submit" disabled={createRule.isPending || !name.trim() || (trigger === "CARD_MOVED" && !destinationColumnId)} data-testid="tasky-automation-create">
+            <Button type="submit" disabled={createRule.isPending || !name.trim() || (trigger === "CARD_MOVED" && (!destinationColumnId || (action === "SET_PRIORITY" && !targetPriority)))} data-testid="tasky-automation-create">
               {createRule.isPending ? "Saving rule…" : "Create automation"}
             </Button>
           </form>
