@@ -747,7 +747,7 @@ export function AccountDetailDrawer({
           {D.reconnect}
         </Button>
       ) : null}
-      <Button variant="outline" size="sm" onClick={() => setRenameOpen(true)} data-testid="account-detail-rename">
+      <Button variant="edit" size="sm" onClick={() => setRenameOpen(true)} data-testid="account-detail-rename">
         <Pencil className="size-3.5" aria-hidden />
         {D.rename}
       </Button>

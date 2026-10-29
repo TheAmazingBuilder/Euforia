@@ -415,7 +415,7 @@ export function ProfileView() {
             </div>
           </div>
 
-          <Button type="button" onClick={onEditProfile} data-testid="profile-edit" className="shrink-0">
+          <Button type="button" variant="edit" onClick={onEditProfile} data-testid="profile-edit" className="shrink-0">
             Edit Profile
           </Button>
         </div>

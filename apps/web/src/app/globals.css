@@ -148,9 +148,10 @@
   --color-cat-structure: var(--cat-structure);
   --color-cat-advanced: var(--cat-advanced);
 
-  --color-primary: var(--action-success);
+  --color-primary: var(--accent);
   --color-action-success: var(--action-success);
   --color-action-success-hover: var(--action-success-hover);
+  --color-action-success-foreground: var(--action-success-foreground);
   --color-destructive: var(--loss);
   --color-ring: var(--ring);
 
