@@ -367,6 +367,10 @@ export function TaskyView() {
         column.id === columnId ? { ...column, cards: column.cards.filter((card) => card.id !== cardId) } : column,
       ),
     );
+    if (editingCardId === cardId) {
+      setEditingCardId(null);
+      setCardDraft(null);
+    }
   };
 
   const beginRenameList = (column: TaskyColumn) => {
@@ -404,6 +408,10 @@ export function TaskyView() {
     setColumns((prev) => prev.filter((item) => item.id !== column.id));
     if (editingListId === column.id) setEditingListId(null);
     if (addingIn === column.id) setAddingIn(null);
+    if (column.cards.some((card) => card.id === editingCardId)) {
+      setEditingCardId(null);
+      setCardDraft(null);
+    }
   };
 
   const beginEditCard = (card: TaskyCard) => {
