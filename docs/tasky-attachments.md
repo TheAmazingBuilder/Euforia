@@ -19,4 +19,6 @@ Supported formats are PNG, JPG/JPEG, WebP, PDF, TXT, CSV and Markdown. The API c
 - `GET /tasky/cards/:cardId/attachments/:attachmentId/download` — retrieve the owner-scoped file payload.
 - `DELETE /tasky/cards/:cardId/attachments/:attachmentId` — remove metadata and best-effort delete the stored file.
 
+When a card is removed from the saved board, the API attempts to delete its attachment metadata and stored files. If storage cleanup fails after the board write, the board save stays successful and the API logs a warning; operators should monitor the configured storage volume and include it in backups/retention procedures.
+
 Apply the Prisma migration with the existing API database-migration procedure before testing the feature against a local database.
