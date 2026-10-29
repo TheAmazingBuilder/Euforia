@@ -264,6 +264,7 @@ export class TradingSyncService {
       // Phase 08 - bridge connections route their pull-adapter to the
       // server-persisted ingest cache through this key (null otherwise).
       bridgeKeyId: input.connection.bridgeKeyId ?? null,
+      lastSyncAt: input.connection.lastSyncAt ?? null,
     };
     const timeoutMs = this.config.accounts.providerTimeoutMs;
     // Phase 05 - bounded transient retries (spec §15). Sleep is real here;
