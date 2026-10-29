@@ -30,7 +30,7 @@ import { cn } from "@/lib/utils";
  * board; cards move between columns by dragging the grip handle with the
  * cursor OR a finger (unified Pointer Events path, touch-action: none on the
  * handle - page scroll stays available everywhere else). The board persists
- * 100% locally: Tasky is local-by-design, like the rest of the study toolkit.
+ * through Euforia's authenticated API in PostgreSQL, with a one-time import from the previous browser-only snapshot.
  */
 
 // Board and card contracts are shared with the authenticated API.
