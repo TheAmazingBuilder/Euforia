@@ -160,7 +160,10 @@ export function ConnectAccountDialog({
   // 30/15-min server rate limit - far above this cadence). Stale results are
   // filtered by the derived key comparison above, not by sync setState.
   React.useEffect(() => {
-    if (step !== "identity" || !provider) {
+    // A broker explicitly selected from the catalog is verified against the
+    // first authenticated terminal report; a generic account-id probe cannot
+    // identify the broker and would only consume the identification rate limit.
+    if (step !== "identity" || !provider || selectedBroker) {
       return;
     }
     const id = externalAccountId.trim();
@@ -179,7 +182,7 @@ export function ConnectAccountDialog({
     }, 600);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, provider?.providerId, externalAccountId]);
+  }, [step, provider?.providerId, externalAccountId, selectedBroker?.brokerId]);
 
   const handleOpenChange = (next: boolean) => {
     if (!next) reset();
