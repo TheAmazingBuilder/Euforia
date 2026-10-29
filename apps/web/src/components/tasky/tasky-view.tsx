@@ -5,10 +5,15 @@ import {
   AlertTriangle,
   CalendarDays,
   Check,
+  ChevronLeft,
+  ChevronRight,
+  Copy,
   GripVertical,
   LoaderCircle,
+  Pencil,
   Plus,
   RefreshCw,
+  Trash2,
   X,
 } from "lucide-react";
 
@@ -172,6 +177,10 @@ export function TaskyView() {
   const [addTitle, setAddTitle] = React.useState("");
   const [addingList, setAddingList] = React.useState(false);
   const [listTitle, setListTitle] = React.useState("");
+  const [editingListId, setEditingListId] = React.useState<string | null>(null);
+  const [listEditTitle, setListEditTitle] = React.useState("");
+  const [editingCardId, setEditingCardId] = React.useState<string | null>(null);
+  const [cardDraft, setCardDraft] = React.useState<TaskyCard | null>(null);
 
   const columnRefs = React.useRef<Map<string, HTMLElement>>(new Map());
   const dragRef = React.useRef<DragState | null>(null);
@@ -360,6 +369,81 @@ export function TaskyView() {
     );
   };
 
+  const beginRenameList = (column: TaskyColumn) => {
+    setEditingListId(column.id);
+    setListEditTitle(column.title);
+  };
+
+  const commitRenameList = () => {
+    const trimmed = listEditTitle.trim();
+    if (!trimmed || !editingListId) return;
+    setColumns((prev) => prev.map((column) => column.id === editingListId ? { ...column, title: trimmed } : column));
+    setEditingListId(null);
+    setListEditTitle("");
+  };
+
+  const moveColumn = (columnId: string, direction: -1 | 1) => {
+    setColumns((prev) => {
+      const index = prev.findIndex((column) => column.id === columnId);
+      const target = index + direction;
+      if (index < 0 || target < 0 || target >= prev.length) return prev;
+      const next = [...prev];
+      [next[index], next[target]] = [next[target], next[index]];
+      return next;
+    });
+  };
+
+  const removeColumn = (column: TaskyColumn) => {
+    if (columns.length <= 1) {
+      window.alert("Tasky must keep at least one list.");
+      return;
+    }
+    if (column.cards.length > 0 && !window.confirm(
+      `Delete "${column.title}" and its ${column.cards.length} card(s)? This cannot be undone.`,
+    )) return;
+    setColumns((prev) => prev.filter((item) => item.id !== column.id));
+    if (editingListId === column.id) setEditingListId(null);
+    if (addingIn === column.id) setAddingIn(null);
+  };
+
+  const beginEditCard = (card: TaskyCard) => {
+    setEditingCardId(card.id);
+    setCardDraft({ ...card });
+  };
+
+  const updateCardDraft = <K extends keyof TaskyCard>(key: K, value: TaskyCard[K]) => {
+    setCardDraft((prev) => prev ? { ...prev, [key]: value } : prev);
+  };
+
+  const commitEditCard = (columnId: string) => {
+    if (!cardDraft || !editingCardId || !cardDraft.title.trim() || !cardDraft.tag.trim() || !cardDraft.assignee.trim()) return;
+    const updated: TaskyCard = {
+      ...cardDraft,
+      title: cardDraft.title.trim(),
+      tag: cardDraft.tag.trim(),
+      assignee: cardDraft.assignee.trim(),
+      due: cardDraft.due || undefined,
+    };
+    setColumns((prev) => prev.map((column) =>
+      column.id === columnId
+        ? { ...column, cards: column.cards.map((card) => card.id === editingCardId ? updated : card) }
+        : column,
+    ));
+    setEditingCardId(null);
+    setCardDraft(null);
+  };
+
+  const duplicateCard = (columnId: string, card: TaskyCard) => {
+    const duplicate: TaskyCard = {
+      ...card,
+      id: newId("card"),
+      title: `${card.title} (copy)`.slice(0, 140),
+    };
+    setColumns((prev) => prev.map((column) =>
+      column.id === columnId ? { ...column, cards: [...column.cards, duplicate] } : column,
+    ));
+  };
+
   const dragCard = drag ? columns.flatMap((column) => column.cards).find((card) => card.id === drag.cardId) : undefined;
 
   if (boardQuery.isError) {
@@ -412,13 +496,51 @@ export function TaskyView() {
             >
               <header className="flex items-center gap-2 px-1">
                 <span className={cn("size-2 shrink-0 rounded-full", column.dot)} aria-hidden="true" />
-                <h2 className="min-w-0 flex-1 truncate text-sm font-semibold tracking-tight">{column.title}</h2>
+                {editingListId === column.id ? (
+                  <form
+                    className="flex min-w-0 flex-1 items-center gap-1"
+                    data-testid={`tasky-rename-list-form-${column.id}`}
+                    onSubmit={(event) => { event.preventDefault(); commitRenameList(); }}
+                  >
+                    <Input
+                      autoFocus
+                      value={listEditTitle}
+                      onChange={(event) => setListEditTitle(event.target.value)}
+                      aria-label={`Rename ${column.title}`}
+                      data-testid={`tasky-rename-list-input-${column.id}`}
+                      maxLength={40}
+                      className="h-7 min-w-0 bg-background px-2 text-sm"
+                    />
+                    <button type="submit" aria-label="Save list name" title="Save list name" className="grid size-6 shrink-0 place-items-center rounded text-profit hover:bg-muted">
+                      <Check className="size-3.5" aria-hidden="true" />
+                    </button>
+                    <button type="button" onClick={() => setEditingListId(null)} aria-label="Cancel list rename" title="Cancel" className="grid size-6 shrink-0 place-items-center rounded text-muted-foreground hover:bg-muted">
+                      <X className="size-3.5" aria-hidden="true" />
+                    </button>
+                  </form>
+                ) : (
+                  <h2 className="min-w-0 flex-1 truncate text-sm font-semibold tracking-tight">{column.title}</h2>
+                )}
                 <span
                   data-testid={`tasky-count-${column.id}`}
                   className="min-w-6 rounded-md bg-muted px-1.5 py-0.5 text-center font-mono text-[11px] font-semibold tabular-nums text-muted-foreground"
                 >
                   {column.cards.length}
                 </span>
+                <div className="flex shrink-0 items-center gap-0.5">
+                  <button type="button" onClick={() => moveColumn(column.id, -1)} disabled={columns[0]?.id === column.id} aria-label={`Move ${column.title} left`} title="Move list left" data-testid={`tasky-list-left-${column.id}`} className="grid size-6 place-items-center rounded text-muted-foreground/70 transition-colors hover:bg-muted hover:text-foreground disabled:opacity-25">
+                    <ChevronLeft className="size-3.5" aria-hidden="true" />
+                  </button>
+                  <button type="button" onClick={() => moveColumn(column.id, 1)} disabled={columns[columns.length - 1]?.id === column.id} aria-label={`Move ${column.title} right`} title="Move list right" data-testid={`tasky-list-right-${column.id}`} className="grid size-6 place-items-center rounded text-muted-foreground/70 transition-colors hover:bg-muted hover:text-foreground disabled:opacity-25">
+                    <ChevronRight className="size-3.5" aria-hidden="true" />
+                  </button>
+                  <button type="button" onClick={() => beginRenameList(column)} aria-label={`Rename ${column.title}`} title="Rename list" data-testid={`tasky-list-rename-${column.id}`} className="grid size-6 place-items-center rounded text-muted-foreground/70 transition-colors hover:bg-muted hover:text-foreground">
+                    <Pencil className="size-3.5" aria-hidden="true" />
+                  </button>
+                  <button type="button" onClick={() => removeColumn(column)} aria-label={`Delete ${column.title}`} title="Delete list" data-testid={`tasky-list-delete-${column.id}`} className="grid size-6 place-items-center rounded text-muted-foreground/70 transition-colors hover:bg-loss/10 hover:text-loss">
+                    <Trash2 className="size-3.5" aria-hidden="true" />
+                  </button>
+                </div>
                 <button
                   type="button"
                   onClick={() => {
@@ -452,8 +574,92 @@ export function TaskyView() {
                         isDragged && "opacity-30",
                       )}
                     >
+                      {editingCardId === card.id && cardDraft ? (
+                        <form
+                          className="flex flex-col gap-2"
+                          data-testid={`tasky-edit-form-${card.id}`}
+                          onSubmit={(event) => { event.preventDefault(); commitEditCard(column.id); }}
+                        >
+                          <Input
+                            autoFocus
+                            value={cardDraft.title}
+                            onChange={(event) => updateCardDraft("title", event.target.value)}
+                            maxLength={140}
+                            aria-label="Card title"
+                            data-testid={`tasky-edit-title-${card.id}`}
+                            className="h-8 bg-background text-sm"
+                          />
+                          <div className="grid grid-cols-2 gap-2">
+                            <Input
+                              value={cardDraft.tag}
+                              onChange={(event) => updateCardDraft("tag", event.target.value)}
+                              maxLength={40}
+                              aria-label="Card label"
+                              data-testid={`tasky-edit-tag-${card.id}`}
+                              className="h-8 bg-background text-xs"
+                            />
+                            <select
+                              value={cardDraft.priority}
+                              onChange={(event) => updateCardDraft("priority", event.target.value as Priority)}
+                              aria-label="Card priority"
+                              data-testid={`tasky-edit-priority-${card.id}`}
+                              className="h-8 min-w-0 rounded-md border border-input bg-background px-2 text-xs text-foreground"
+                            >
+                              <option value="Low">Low</option>
+                              <option value="Medium">Medium</option>
+                              <option value="High">High</option>
+                              <option value="Urgent">Urgent</option>
+                            </select>
+                            <Input
+                              value={cardDraft.assignee}
+                              onChange={(event) => updateCardDraft("assignee", event.target.value)}
+                              maxLength={12}
+                              aria-label="Card assignee"
+                              data-testid={`tasky-edit-assignee-${card.id}`}
+                              className="h-8 bg-background text-xs"
+                            />
+                            <Input
+                              type="date"
+                              value={cardDraft.due ?? ""}
+                              onChange={(event) => updateCardDraft("due", event.target.value || undefined)}
+                              aria-label="Card due date"
+                              data-testid={`tasky-edit-due-${card.id}`}
+                              className="h-8 min-w-0 bg-background px-2 text-xs"
+                            />
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <Button type="submit" size="sm" className="h-7 gap-1 px-2.5 text-xs" disabled={!cardDraft.title.trim() || !cardDraft.tag.trim() || !cardDraft.assignee.trim()} data-testid={`tasky-edit-save-${card.id}`}>
+                              <Check className="size-3.5" aria-hidden="true" /> Save
+                            </Button>
+                            <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-xs text-muted-foreground" onClick={() => { setEditingCardId(null); setCardDraft(null); }}>
+                              Cancel
+                            </Button>
+                          </div>
+                        </form>
+                      ) : (
+                        <>
                       <div className="flex items-start gap-2">
                         <h3 className="min-w-0 flex-1 text-sm font-medium leading-snug">{card.title}</h3>
+                        <button
+                          type="button"
+                          onClick={() => beginEditCard(card)}
+                          aria-label={`Edit ${card.title}`}
+                          title="Edit card"
+                          data-testid={`tasky-edit-${card.id}`}
+                          className="grid size-6 shrink-0 place-items-center rounded text-muted-foreground/50 transition-colors hover:bg-muted hover:text-foreground [@media(hover:none)]:text-muted-foreground"
+                        >
+                          <Pencil className="size-3.5" aria-hidden="true" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => duplicateCard(column.id, card)}
+                          aria-label={`Duplicate ${card.title}`}
+                          title="Duplicate card"
+                          data-testid={`tasky-duplicate-${card.id}`}
+                          className="grid size-6 shrink-0 place-items-center rounded text-muted-foreground/50 transition-colors hover:bg-muted hover:text-foreground [@media(hover:none)]:text-muted-foreground"
+                        >
+                          <Copy className="size-3.5" aria-hidden="true" />
+                        </button>
                         <button
                           type="button"
                           aria-label={`Drag ${card.title}`}
@@ -507,6 +713,8 @@ export function TaskyView() {
                           <X className="size-3.5" aria-hidden="true" />
                         </button>
                       </footer>
+                        </>
+                      )}
                     </article>
                   </React.Fragment>
                 );
