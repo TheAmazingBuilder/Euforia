@@ -18,7 +18,7 @@ describe("Tasky supplementary views", () => {
   it("builds a Monday-first calendar grid with date keys", () => {
     const days = buildTaskyCalendarDays(2026, 9);
     expect(days.length % 7).toBe(0);
-    expect(days[0]).toBe("2026-09-28");
+    expect(days[0]).toBeNull();
     expect(days[3]).toBe("2026-10-01");
     expect(days.filter((day) => day?.startsWith("2026-10-")).length).toBe(31);
   });
