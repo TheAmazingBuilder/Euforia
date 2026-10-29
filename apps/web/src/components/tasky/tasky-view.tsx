@@ -180,7 +180,7 @@ export function TaskyView() {
   const saveQueueRef = React.useRef<Promise<void>>(Promise.resolve());
 
   // Serialize full-board PUTs so a slower older request cannot finish after a newer state.
-  const enqueueSave = React.useCallback((snapshot: TaskyBoardState) => {
+  const enqueueSave = React.useCallback((snapshot: TaskyKanbanBoardState) => {
     const next = saveQueueRef.current.catch(() => undefined).then(async () => {
       await boardSave.mutateAsync(snapshot);
       clearLegacyBoard();
