@@ -28,11 +28,18 @@ identité. **Les deals deviennent des trades du journal** (regroupement MT5 par 
 
 ## Installation (5 minutes)
 
-### 1. Créer le compte pont dans Euforia
-`Accounts ▸ Connect ▸ MT5 Terminal Bridge` → saisis **uniquement ton numéro de login
-MT5** (ex. `52988790`) + environnement (DEMO/LIVE). Euforia te montre la **fiche de
-pairage** : *Ingest URL*, *Bridge key*, *Bridge secret* (tu pourras la revoir ou la
-régénérer à tout moment depuis le détail du compte).
+### 1. Choisir le broker et créer le compte pont dans Euforia
+Dans `Accounts ▸ Connect`, tu peux choisir directement **Axi**, **PU Prime** ou
+**IC Markets** dans le catalogue des brokers, ou sélectionner le connecteur générique
+`MT5 Terminal Bridge`. Le nom choisi est une attente de sécurité : Euforia le compare
+au nom de société et au serveur remontés par MT5 lors du premier push. Si le broker ne
+correspond pas, le compte reste en attente et l'événement n'est pas accepté.
+
+Saisis **uniquement ton numéro de login MT5** (ex. `52988790`) + environnement
+(DEMO/LIVE). Euforia te montre la **fiche de pairage** : *Ingest URL*, *Bridge key*,
+*Bridge secret* (tu pourras la revoir ou régénérer une nouvelle paire depuis le détail
+du compte). Pour Axi, vérifie d'abord que MT5 est bien disponible pour ta région et ton
+compte ; un compte MT4 ou la plateforme propriétaire Axi ne fonctionne pas via ce pont.
 
 ### 2. Installer l'EA dans MetaTrader 5
 1. Télécharge `EuforiaBridge.mq5` (bouton de la fiche de pairage, ou
@@ -69,9 +76,13 @@ Euforia (ex. `https://ton-euforia.exemple` — le domaine seul, sans le chemin).
   **jamais** envoyé au terminal broker. Il autorise uniquement l'*écriture* de données
   de lecture vers TON compte pont (pas d'accès au broker, pas d'exécution).
 - Tu peux le **régénérer** (bouton Rotation) : l'ancienne configuration du terminal
-  cesse immédiatement de fonctionner.
-- Déconnecter le compte détruit la clé et le secret ; l'historique du journal est
-  conservé.
+  cesse immédiatement de fonctionner. Euforia attend un nouveau push avant de réafficher
+  le pont comme connecté.
+- Euforia vérifie le login du terminal, l'environnement DEMO/LIVE et le broker choisi
+  avant d'accepter les données d'identité. Une clé révoquée ne peut ni reconnecter le
+  compte ni ajouter de nouveaux événements.
+- Déconnecter le compte détruit la clé et le secret et purge le cache brut du pont ;
+  l'historique normalisé du journal est conservé.
 - ⚠️ **Ne partage jamais ton mot de passe MT5 avec qui que ce soit** — un pont
   correctement conçu n'en a pas besoin (l'EA tourne *dans* ton terminal déjà connecté).
   Si tu l'as partagé en chat à un moment donné, change-le depuis MT5
