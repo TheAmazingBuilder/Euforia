@@ -35,6 +35,8 @@ export interface TradingConnectionRow {
   id: string;
   accountId: string;
   providerId: string;
+  /** User-selected broker expectation for shared connectors, nullable for generic/API connections. */
+  expectedBrokerId: string | null;
   method: string;
   status: string;
   credentialsEnc: string;
@@ -245,6 +247,8 @@ export class AccountsRepository {
       credentialsHint: string;
       permissions: string[];
       lastConnectedAt: Date;
+      /** Optional broker expectation selected in the shared connector catalog. */
+      expectedBrokerId?: string | null;
       /** Phase 08 - PLATFORM_BRIDGE connections boot as CONNECTING (awaiting first push). */
       status?: string;
       bridgeKeyId?: string | null;
@@ -271,6 +275,7 @@ export class AccountsRepository {
         data: {
           accountId: account.id,
           providerId: data.account.providerId,
+          expectedBrokerId: data.connection.expectedBrokerId ?? null,
           method: data.connection.method,
           credentialsEnc: data.connection.credentialsEnc,
           credentialsHint: data.connection.credentialsHint,
