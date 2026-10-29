@@ -341,6 +341,7 @@ export class TradingAccountService {
           isDefault: count === 0,
           externalAccountId: input.payload.externalAccountId,
           providerId: adapter.descriptor.providerId,
+          brokerId: brokerIdentification.brokerId,
           brokerIdentity: brokerIdentification,
         },
         connection: {
@@ -441,10 +442,12 @@ export class TradingAccountService {
       );
     }
 
+    const accountBrokerId = selectedBroker?.brokerId ?? "unknown";
     const duplicate = await this.repository.findAccountByExternal(
       input.userId,
       adapter.descriptor.providerId,
       input.payload.externalAccountId,
+      accountBrokerId,
     );
     if (duplicate) {
       throw new ConflictError(
@@ -473,6 +476,7 @@ export class TradingAccountService {
         isDefault: count === 0,
         externalAccountId: input.payload.externalAccountId,
         providerId: adapter.descriptor.providerId,
+        brokerId: accountBrokerId,
         brokerIdentity: {
           brokerId: "unknown",
           displayName: "Unknown broker",
