@@ -986,7 +986,7 @@ describe("trading-accounts - MT5 bridge ingest (public, HMAC)", () => {
       headers: user.authHeader,
       payload: {},
     });
-    expect(rotate.statusCode).toBe(201);
+    expect(rotate.statusCode).toBe(200);
     const rotated = rotate.json().account.pairing as {
       bridgeKeyId: string;
       secret: string;
