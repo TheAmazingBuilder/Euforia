@@ -279,7 +279,8 @@ describe("webhook pipeline", () => {
     expect(message).toBe(`${now}.${JSON.stringify(body)}`);
     const signature = signWebhookBody(secret, message);
     expect(signaturesMatch(signature, signature)).toBe(true);
-    expect(signaturesMatch(`0${signature.slice(1)}`, signature)).toBe(false);
+    const alteredSignature = `${signature[0] === "0" ? "1" : "0"}${signature.slice(1)}`;
+    expect(signaturesMatch(alteredSignature, signature)).toBe(false);
   });
 
   it("builds deterministic simulate event ids", () => {
