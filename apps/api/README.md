@@ -95,6 +95,7 @@ never secret values.**
 | `RATE_LIMIT_WINDOW_SECONDS` | `60` | Global default window |
 | `RATE_LIMIT_MAX` | `120` | Global default max requests |
 | `MARKET_SERVICE_URL` | — (optional) | Market sidecar; not wired in Foundation |
+| `ACCOUNTS_MT5_BRIDGE_PROVIDER` | `disabled` | Set to `enabled` to register the read-only MT5 terminal bridge for supported IC Markets, Axi and PU Prime MT5 accounts. Not a direct broker API; MT4/cTrader are not supported. The terminal must be able to reach the API ingest endpoint. |
 
 Authentication and encryption keys are validated at startup. The API will
 exit rather than listen if any required key is empty/invalid or PostgreSQL
@@ -289,6 +290,13 @@ Key mechanics:
   instance to the registry factory in `accounts.module.ts`, done. Registry,
   capabilities, descriptors and UI metadata follow automatically; nothing
   outside the accounts module changes.
+- **MT5 terminal bridge (Phase 08):** the connector is registered only when
+  `ACCOUNTS_MT5_BRIDGE_PROVIDER=enabled`. IC Markets, Axi and PU Prime are broker
+  identities served through this shared MT5 path, not separate direct-API
+  integrations. Euforia validates the selected broker against the terminal's
+  reported broker/server, login and DEMO/LIVE class before accepting the first
+  account-info push. The connector remains read-only; it cannot place or modify
+  orders.
 - **Mock provider (§55/§57)**: `MOCK` simulates an MT5-style broker with
   deterministic data (pure function of the external account id) and
   controlled failures via secret prefixes (`fail-invalid`, `fail-timeout`,
