@@ -61,6 +61,12 @@ export interface ProviderRequestContext {
    * ingest cache; pull adapters never read it. Null for API_KEY methods.
    */
   bridgeKeyId?: string | null;
+  /**
+   * Last successful account snapshot sync. Bridge adapters compare each
+   * cached event's server receipt time against this value so a manual or
+   * scheduled run cannot make an old terminal payload look freshly synced.
+   */
+  lastSyncAt?: Date | null;
 }
 
 /** Normalized provider account metadata (fetchAccountInfo). */
