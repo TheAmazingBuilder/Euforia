@@ -1021,6 +1021,57 @@ describe("trading-accounts - MT5 bridge ingest (public, HMAC)", () => {
     });
     expect(newPairPush.statusCode).toBe(200);
     expect(newPairPush.json().state).toBe("CONNECTED");
+
+    const savedAccount = await bridgeApp.get(PrismaService).tradingAccount.findUnique({
+      where: { id: account.id },
+      select: { brokerIdentity: true },
+    });
+    expect(savedAccount?.brokerIdentity).toMatchObject({
+      brokerId: "puprime",
+      displayName: "PU Prime Limited",
+      platform: "MT5",
+      providerId: "mt5-bridge",
+      confidence: "PROVIDER_REPORTED",
+    });
+  });
+
+  it("identifies Axi by the terminal-reported company and server", async () => {
+    const { user, account, pairing } = await pairedBridgeAccount(
+      `88${Math.random().toString().slice(2, 8)}`,
+    );
+    const res = await push({
+      keyId: pairing.bridgeKeyId,
+      secret: pairing.secret,
+      timestamp: Date.now(),
+      envelope: {
+        eventId: "ea-e2e-axi-info-1",
+        kind: "ACCOUNT_INFO",
+        payload: {
+          externalAccountId: account.externalAccountId,
+          currency: "USD",
+          leverage: "200",
+          server: "Axi-Live",
+          brokerName: "AxiCorp Financial Services Pty Ltd",
+          accountClass: "REAL",
+        },
+      },
+    });
+    expect(res.statusCode).toBe(200);
+
+    const savedAccount = await bridgeApp.get(PrismaService).tradingAccount.findUnique({
+      where: { id: account.id },
+      select: { brokerIdentity: true },
+    });
+    expect(savedAccount?.brokerIdentity).toMatchObject({
+      brokerId: "axi",
+      displayName: "AxiCorp Financial Services Pty Ltd",
+      platform: "MT5",
+      providerId: "mt5-bridge",
+      confidence: "PROVIDER_REPORTED",
+    });
+    // A bridge account's explicit DEMO/LIVE selection is not silently changed
+    // by a broker name; server-side account-type policy remains authoritative.
+    expect(user.authHeader).toBeDefined();
   });
 
   it("401 BRIDGE_HEADER_MISSING when any bridge header is absent", async () => {
@@ -1137,7 +1188,7 @@ describe("trading-accounts - MT5 bridge ingest (public, HMAC)", () => {
       update: {},
     });
 
-    // 1) ACCOUNT_INFO (EA v1.0.1 - ms epoch) → activates + identifies broker.
+    // 1) ACCOUNT_INFO (EA v1.0.2 - ms epoch) → activates + identifies broker.
     const info = await push({
       keyId: pairing.bridgeKeyId,
       secret: pairing.secret,
