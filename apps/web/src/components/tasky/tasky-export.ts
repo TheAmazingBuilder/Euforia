@@ -38,8 +38,8 @@ const CSV_COLUMNS = [
 function csvCell(value: unknown): string {
   const raw = value == null ? "" : String(value);
   // Prevent user-entered values from becoming spreadsheet formulas on open.
-  const safe = /^[\\t\\r\\n ]*[=+\\-@]/.test(raw) ? `'${raw}` : raw;
-  return `"${safe.replace(/"/g, '""')}"`;
+  const safe = /^[\t\r\n ]*[=+\-@]/.test(raw) ? "'" + raw : raw;
+  return '"' + safe.replace(/"/g, '""') + '"';
 }
 
 /** Flatten every card, including archived cards, into a spreadsheet-friendly CSV. */
@@ -68,5 +68,5 @@ export function buildTaskyBoardCsvExport(board: TaskyKanbanBoardState): string {
       ]);
     }
   }
-  return rows.map((row) => row.map(csvCell).join(",")).join("\\r\\n");
+  return rows.map((row) => row.map(csvCell).join(",")).join("\r\n");
 }
