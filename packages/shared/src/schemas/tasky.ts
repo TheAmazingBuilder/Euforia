@@ -184,6 +184,8 @@ export const taskyKanbanCardSchema = z.object({
   startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   /** Created timestamp for creation-order sorting; optional for legacy cards. */
   createdAt: z.string().datetime().optional(),
+  /** Archived cards remain recoverable in the same persisted board payload. */
+  archivedAt: z.string().datetime().optional(),
   description: z.string().max(4000).optional(),
   checklist: z.array(taskyKanbanChecklistItemSchema).max(100).optional(),
   comments: z.array(taskyKanbanCommentSchema).max(100).optional(),
