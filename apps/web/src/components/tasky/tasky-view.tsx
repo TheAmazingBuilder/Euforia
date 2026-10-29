@@ -2,15 +2,26 @@
 
 import * as React from "react";
 import {
+  AlertTriangle,
   CalendarDays,
   Check,
   GripVertical,
+  LoaderCircle,
   Plus,
+  RefreshCw,
   X,
 } from "lucide-react";
 
+import {
+  taskyKanbanBoardStateSchema,
+  type TaskyKanbanBoardState,
+  type TaskyKanbanCard as TaskyCard,
+  type TaskyKanbanColumn as TaskyColumn,
+  type TaskyKanbanPriority as Priority,
+} from "@cosmoz/shared";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useSaveTaskyBoard, useTaskyBoard } from "@/lib/api/queries";
 import { cn } from "@/lib/utils";
 
 /**
@@ -22,25 +33,7 @@ import { cn } from "@/lib/utils";
  * 100% locally: Tasky is local-by-design, like the rest of the study toolkit.
  */
 
-type Priority = "Low" | "Medium" | "High" | "Urgent";
-
-type TaskyCard = {
-  id: string;
-  title: string;
-  tag: string;
-  priority: Priority;
-  assignee: string;
-  /** ISO date or undefined - rendered as “Apr 20”. */
-  due?: string;
-};
-
-type TaskyColumn = {
-  id: string;
-  title: string;
-  /** Tailwind bg class of the header dot. */
-  dot: string;
-  cards: TaskyCard[];
-};
+// Board and card contracts are shared with the authenticated API.
 
 const PRIORITY_CLASS: Record<Priority, string> = {
   Low: "bg-blue-500 text-white",
@@ -116,30 +109,32 @@ function seedBoard(): TaskyColumn[] {
   ];
 }
 
-const STORAGE_KEY = "cosmoz.tasky.board.v1";
+const LEGACY_STORAGE_KEY = "cosmoz.tasky.board.v1";
 
-function loadBoard(): TaskyColumn[] {
-  if (typeof window === "undefined") return seedBoard();
+/**
+ * One-time import only: before this API-backed version, the board lived in
+ * this browser key. Once PostgreSQL has a board, the server is authoritative.
+ */
+function loadLegacyBoard(): TaskyColumn[] | null {
+  if (typeof window === "undefined") return null;
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return seedBoard();
+    const raw = window.localStorage.getItem(LEGACY_STORAGE_KEY);
+    if (!raw) return null;
     const parsed: unknown = JSON.parse(raw);
-    if (
-      Array.isArray(parsed) &&
-      parsed.every(
-        (column) =>
-          typeof column === "object" &&
-          column !== null &&
-          typeof (column as TaskyColumn).id === "string" &&
-          Array.isArray((column as TaskyColumn).cards),
-      )
-    ) {
-      return parsed as TaskyColumn[];
-    }
+    const validated = taskyKanbanBoardStateSchema.safeParse({ columns: parsed });
+    return validated.success ? validated.data.columns : null;
   } catch {
-    // Corrupted snapshot - fall through to the seed.
+    // Invalid or unavailable legacy storage is never trusted as server data.
+    return null;
   }
-  return seedBoard();
+}
+
+function clearLegacyBoard(): void {
+  try {
+    window.localStorage.removeItem(LEGACY_STORAGE_KEY);
+  } catch {
+    // The database remains authoritative; storage cleanup is best-effort.
+  }
 }
 
 function newId(prefix: string): string {
@@ -168,6 +163,8 @@ type DragState = {
 };
 
 export function TaskyView() {
+  const boardQuery = useTaskyBoard();
+  const boardSave = useSaveTaskyBoard();
   const [columns, setColumns] = React.useState<TaskyColumn[]>(seedBoard);
   const [hydrated, setHydrated] = React.useState(false);
   const [drag, setDrag] = React.useState<DragState | null>(null);
@@ -178,21 +175,54 @@ export function TaskyView() {
 
   const columnRefs = React.useRef<Map<string, HTMLElement>>(new Map());
   const dragRef = React.useRef<DragState | null>(null);
+  const bootstrappedRef = React.useRef(false);
+  const skipNextAutoSaveRef = React.useRef(false);
+  const saveQueueRef = React.useRef<Promise<void>>(Promise.resolve());
 
-  // Hydrate from local storage after mount (hydration-safe), then persist.
+  // Serialize full-board PUTs so a slower older request cannot finish after a newer state.
+  const enqueueSave = React.useCallback((snapshot: TaskyBoardState) => {
+    const next = saveQueueRef.current.catch(() => undefined).then(async () => {
+      await boardSave.mutateAsync(snapshot);
+      clearLegacyBoard();
+    });
+    saveQueueRef.current = next.then(() => undefined, () => undefined);
+  }, [boardSave.mutateAsync]);
+
+  // API wins once a board exists. If this is the first server load, import the
+  // old browser-only snapshot once (or seed the familiar board for a new user).
   React.useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot hydration-safe local load: the server renders the seed, the client swaps in the persisted board right after mount
-    setColumns(loadBoard());
+    if (!boardQuery.isSuccess || bootstrappedRef.current) return;
+    bootstrappedRef.current = true;
+    skipNextAutoSaveRef.current = true;
+
+    if (boardQuery.data.board) {
+      setColumns(boardQuery.data.board.columns);
+      setHydrated(true);
+      // Avoid importing one account's legacy local board into another account later.
+      clearLegacyBoard();
+      return;
+    }
+
+    const initialColumns = loadLegacyBoard() ?? seedBoard();
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time hydration from authenticated API, with a one-time legacy localStorage import only when no server board exists
+    setColumns(initialColumns);
     setHydrated(true);
-  }, []);
+    enqueueSave({ columns: initialColumns });
+  }, [boardQuery.data, boardQuery.isSuccess, enqueueSave]);
+
+  // Persist the latest state after small bursts of drag/edit activity. Saves
+  // are queued above; the visual interaction stays immediate and unchanged.
   React.useEffect(() => {
     if (!hydrated) return;
-    try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(columns));
-    } catch {
-      // Storage full/unavailable - the board still works for the session.
+    if (skipNextAutoSaveRef.current) {
+      skipNextAutoSaveRef.current = false;
+      return;
     }
-  }, [columns, hydrated]);
+    const timeout = window.setTimeout(() => {
+      enqueueSave({ columns });
+    }, 350);
+    return () => window.clearTimeout(timeout);
+  }, [columns, hydrated, enqueueSave]);
 
   const setDragState = React.useCallback((next: DragState | null) => {
     dragRef.current = next;
@@ -332,8 +362,35 @@ export function TaskyView() {
 
   const dragCard = drag ? columns.flatMap((column) => column.cards).find((card) => card.id === drag.cardId) : undefined;
 
+  if (boardQuery.isError) {
+    return (
+      <div className="flex flex-col items-start gap-3 rounded-xl border border-border p-5" data-testid="tasky-board-error">
+        <p className="flex items-center gap-2 text-sm text-loss" role="alert">
+          <AlertTriangle className="size-4" aria-hidden="true" />
+          Tasky could not load your saved board. Your server data has not been replaced.
+        </p>
+        <Button variant="outline" size="sm" onClick={() => void boardQuery.refetch()} data-testid="tasky-board-retry">
+          <RefreshCw className="size-3.5" aria-hidden="true" />
+          Try again
+        </Button>
+      </div>
+    );
+  }
+
+  if (!hydrated) {
+    return (
+      <div className="flex min-h-40 items-center justify-center gap-2 text-sm text-muted-foreground" role="status" data-testid="tasky-board-loading">
+        <LoaderCircle className="size-4 animate-spin" aria-hidden="true" />
+        Loading your Tasky board…
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col" data-testid="tasky-view">
+      <p className="sr-only" role="status" aria-live="polite">
+        {boardSave.isPending ? "Saving Tasky board" : boardSave.isError ? "Tasky board save failed" : "Tasky board ready"}
+      </p>
       {/* Board - columns added horizontally (left → right), board scrolls X */}
       <div data-testid="tasky-board" className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-3 pt-1">
         {columns.map((column) => {
