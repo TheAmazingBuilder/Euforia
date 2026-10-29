@@ -323,6 +323,9 @@ model TradingAccount {
   externalAccountId String
   /// Provider registry key (e.g. "MOCK" — real adapters register their own).
   providerId        String
+  /// Canonical broker identity used to scope duplicates for shared connectors.
+  /// "unknown" preserves the generic MT5 bridge path until the terminal reports its broker.
+  brokerId          String  @default("unknown")
   /// Phase 07 — connect-time broker identification snapshot
   /// (shared brokerIdentificationSchema): which broker this is, the evidence
   /// signals, and the confidence level. Null for pre-Phase-07 rows. The
@@ -351,7 +354,7 @@ model TradingAccount {
   /// Phase-4 execution legs booked on this account.
   tradeExecutions TradeExecution[]
 
-  @@unique([userId, providerId, externalAccountId])
+  @@unique([userId, providerId, externalAccountId, brokerId])
   @@index([userId])
 }
 
