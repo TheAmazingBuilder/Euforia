@@ -563,8 +563,6 @@ export function TaskyView() {
       id: newId("card"),
       title: `${card.title} (copy)`.slice(0, 140),
       createdAt: new Date().toISOString(),
-      startDate: undefined,
-      due: undefined,
       checklist: card.checklist?.map((item) => ({ ...item, id: newId("check") })),
       comments: [],
       activity: [],
