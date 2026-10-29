@@ -129,6 +129,24 @@ describe("identify - confidence ladder", () => {
     expect(puPrime.connectorStatus).toBe("CONNECTOR_AVAILABLE");
   });
 
+  it("does not attribute an unrecognized MT5 company to the first shared broker", () => {
+    const service = new BrokerIdentificationService(registryWith("mt5-bridge"));
+    const result = service.identifyAtConnect({
+      providerId: "mt5-bridge",
+      externalAccountId: "12345678",
+      providerReported: {
+        brokerName: "Unlisted MT5 Company",
+        accountClass: "REAL",
+      },
+    });
+
+    expect(result.brokerId).toBe("unknown");
+    expect(result.displayName).toBe("Unlisted MT5 Company");
+    expect(result.platform).toBe("MT5");
+    expect(result.providerId).toBe("mt5-bridge");
+    expect(result.connectorStatus).toBe("CONNECTOR_AVAILABLE");
+  });
+
   it("endpoint hint matching is exact-ish (host) and never dialled", () => {
     const service = new BrokerIdentificationService(registryWith());
     const result = service.identify({ endpoint: "api-fxpractice.oanda.com" });

@@ -150,10 +150,14 @@ export class BrokerIdentificationService {
     const endpointMatch = input.endpoint
       ? this.matchPatterns(input.endpoint, "ENDPOINT")
       : null;
+    // A shared technical connector can serve many brands. An unrecognized
+    // provider-reported company is not evidence for the first catalog entry
+    // sharing that connector (for example, IC Markets). Keep it unknown unless
+    // the server label independently identifies a specific broker.
     const entry =
       nameMatch ??
       endpointMatch?.entry ??
-      this.entryByProviderId(input.providerId);
+      (input.providerId === "mt5-bridge" ? null : this.entryByProviderId(input.providerId));
 
     if (nameMatch) {
       signals.push(`catalog entry matched provider-reported broker name: ${nameMatch.displayName}`);

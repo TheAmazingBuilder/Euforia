@@ -335,12 +335,12 @@ export class Mt5BridgeIngestService implements OnModuleDestroy {
     const connection = await this.repository.findConnectionByAccountId(accountId);
     if (
       connection?.expectedBrokerId &&
-      nextIdentity &&
-      isSpecificBroker(nextIdentity.brokerId) &&
-      connection.expectedBrokerId !== nextIdentity.brokerId
+      (!nextIdentity ||
+        !isSpecificBroker(nextIdentity.brokerId) ||
+        connection.expectedBrokerId !== nextIdentity.brokerId)
     ) {
       throw new ForbiddenError(
-        "The selected broker does not match the broker reported by the MT5 terminal. Verify the broker server before pairing.",
+        "The selected broker could not be confirmed from the MT5 terminal identity, or it does not match the selected broker. Verify the broker name and server before pairing.",
         "BRIDGE_BROKER_MISMATCH",
       );
     }

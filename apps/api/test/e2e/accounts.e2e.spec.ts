@@ -1263,6 +1263,43 @@ describe("trading-accounts - MT5 bridge ingest (public, HMAC)", () => {
     expect(eventCount).toBe(0);
   });
 
+  it("does not activate a specifically selected broker when terminal identity is missing", async () => {
+    const { account, pairing } = await pairedBridgeAccount(
+      `88${Math.random().toString().slice(2, 8)}`,
+      "LIVE",
+      "axi",
+    );
+    const res = await push({
+      keyId: pairing.bridgeKeyId,
+      secret: pairing.secret,
+      timestamp: Date.now(),
+      envelope: {
+        eventId: "ea-e2e-unverified-broker-1",
+        kind: "ACCOUNT_INFO",
+        payload: {
+          externalAccountId: account.externalAccountId,
+          currency: "USD",
+          accountClass: "REAL",
+          // No brokerName or server: the selected Axi identity is unverified.
+        },
+      },
+    });
+
+    expect(res.statusCode).toBe(403);
+    expect(res.json().code).toBe("BRIDGE_BROKER_MISMATCH");
+    const [state, eventCount] = await Promise.all([
+      bridgeApp.get(PrismaService).tradingConnection.findUnique({
+        where: { accountId: account.id },
+        select: { status: true },
+      }),
+      bridgeApp.get(PrismaService).tradingBridgeEvent.count({
+        where: { bridgeKeyId: pairing.bridgeKeyId },
+      }),
+    ]);
+    expect(state?.status).toBe("CONNECTING");
+    expect(eventCount).toBe(0);
+  });
+
   it("rejects an ACCOUNT_INFO login that differs from the paired Euforia account", async () => {
     const { account, pairing } = await pairedBridgeAccount(
       `88${Math.random().toString().slice(2, 8)}`,
