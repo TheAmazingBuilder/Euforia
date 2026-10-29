@@ -352,14 +352,12 @@ export function ConnectAccountDialog({
               </span>
             </button>
           ))}
-          {/* Phase 07 - the universal broker catalog: every known broker
-              stays visible with its honest connector status. Entries whose
-              connector IS available already render as radio cards above.
-              The recognized list is scroll-compact so the connectable
-              cards stay in view - 17+ catalog entries would otherwise
-              bury them. */}
-          {brokers.filter((entry) => entry.connectorStatus !== "CONNECTOR_AVAILABLE").length >
-          0 ? (
+          {/* Universal broker catalog: show every known broker, including
+              brands supported by a shared connector (for example, MT5 Bridge).
+              The connector is selected above; this list communicates which
+              broker identities are recognized and whether a usable path exists.
+              Keep the list scroll-compact so it does not bury connectable paths. */}
+          {brokers.length > 0 ? (
             <div className="rounded-lg border border-border/60 bg-muted/20">
               <p className="px-3 pt-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
                 {C.providerRecognizedSection}
@@ -369,23 +367,31 @@ export function ConnectAccountDialog({
                 data-testid="connect-recognized-brokers"
               >
                 <div className="grid gap-1.5">
-                  {brokers
-                    .filter((entry) => entry.connectorStatus !== "CONNECTOR_AVAILABLE")
-                    .map((entry) => (
+                  {brokers.map((entry) => (
                       <div
                         key={entry.brokerId}
-                        className="flex items-start gap-2.5 rounded-md border border-dashed border-border bg-surface p-2.5 opacity-80"
+                        className={cn(
+                          "flex items-start gap-2.5 rounded-md border border-dashed border-border bg-surface p-2.5",
+                          entry.connectorStatus === "CONNECTOR_AVAILABLE" ? "opacity-100" : "opacity-80",
+                        )}
                         data-testid={`connect-provider-recognized-${entry.brokerId}`}
-                        aria-label={`${entry.displayName} - ${C.providerRecognized}`}
+                        aria-label={`${entry.displayName} - ${entry.connectorStatus === "CONNECTOR_AVAILABLE" ? C.providerAvailable : C.providerRecognized}`}
                       >
-                        <Lock className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" aria-hidden />
+                        {entry.connectorStatus === "CONNECTOR_AVAILABLE" ? (
+                          <ShieldCheck className="mt-0.5 size-3.5 shrink-0 text-accent" aria-hidden />
+                        ) : (
+                          <Lock className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" aria-hidden />
+                        )}
                         <div className="min-w-0 flex-1">
                           <div className="flex flex-wrap items-center gap-2">
-                            <span className="text-sm font-medium text-muted-foreground">
+                            <span className={cn(
+                              "text-sm font-medium",
+                              entry.connectorStatus === "CONNECTOR_AVAILABLE" ? "text-foreground" : "text-muted-foreground",
+                            )}>
                               {entry.displayName}
                             </span>
                             <span className="rounded-sm bg-muted px-1 py-0.5 font-mono text-[9px] uppercase leading-none tracking-wide text-muted-foreground">
-                              {C.providerRecognized}
+                              {entry.connectorStatus === "CONNECTOR_AVAILABLE" ? C.providerAvailable : C.providerRecognized}
                             </span>
                           </div>
                           <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
