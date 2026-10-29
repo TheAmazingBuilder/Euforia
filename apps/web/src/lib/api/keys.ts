@@ -2,6 +2,8 @@
 export const queryKeys = {
   accounts: ["accounts"] as const,
   taskyBoard: ["tasky-board"] as const,
+  taskyAttachments: (cardId: string | null) => ["tasky-attachments", cardId] as const,
+  taskyAttachmentsRoot: ["tasky-attachments"] as const,
   instruments: (q: string) => ["instruments", q] as const,
   strategies: ["strategies"] as const,
   strategiesStats: ["strategies-stats"] as const,
