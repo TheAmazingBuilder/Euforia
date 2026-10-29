@@ -47,12 +47,18 @@ export class TaskyService {
         "The saved Tasky board could not be verified after writing.",
       );
     }
+    let responseBoard = persisted.data;
+    let responseUpdatedAt = saved.updatedAt;
     if (previousParsed?.success && this.automations) {
       try {
-        await this.automations.onBoardSaved(userId, previousParsed.data, persisted.data);
+        responseBoard = await this.automations.onBoardSaved(userId, previousParsed.data, persisted.data);
+        if (responseBoard !== persisted.data) {
+          const latest = await this.repository.findByUserId(userId);
+          if (latest) responseUpdatedAt = latest.updatedAt;
+        }
       } catch (error) {
-        // Automation failures are recorded by the automation context; never
-        // turn an already successful board save into a failed request.
+        // The primary board write already succeeded. Never turn that successful
+        // write into a failed request if a notification/action cannot be completed.
         this.logger.warn(`Tasky automation dispatch failed after board save: ${error instanceof Error ? error.message : "unknown error"}`);
       }
     }
@@ -70,8 +76,8 @@ export class TaskyService {
     }
 
     return {
-      board: persisted.data,
-      updatedAt: saved.updatedAt.toISOString(),
+      board: responseBoard,
+      updatedAt: responseUpdatedAt.toISOString(),
     };
   }
 
