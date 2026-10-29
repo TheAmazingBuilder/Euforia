@@ -935,13 +935,16 @@ describe("trading-accounts - MT5 bridge ingest (public, HMAC)", () => {
       .digest("hex");
   }
 
-  async function pairedBridgeAccount(externalAccountId = "52988790") {
+  async function pairedBridgeAccount(
+    externalAccountId = "52988790",
+    environment: "DEMO" | "LIVE" | "PROP_FIRM" = "DEMO",
+  ) {
     const user = await authenticatedUser(bridgeApp, bridgeMail);
     const res = await bridgeApp.inject({
       method: "POST",
       url: "/api/v1/trading-accounts/connect",
       headers: user.authHeader,
-      payload: { providerId: "mt5-bridge", environment: "DEMO", externalAccountId },
+      payload: { providerId: "mt5-bridge", environment, externalAccountId },
     });
     expect(res.statusCode).toBe(201);
     const { account } = res.json() as {
@@ -1036,8 +1039,9 @@ describe("trading-accounts - MT5 bridge ingest (public, HMAC)", () => {
   });
 
   it("identifies Axi by the terminal-reported company and server", async () => {
-    const { user, account, pairing } = await pairedBridgeAccount(
+    const { account, pairing } = await pairedBridgeAccount(
       `88${Math.random().toString().slice(2, 8)}`,
+      "LIVE",
     );
     const res = await push({
       keyId: pairing.bridgeKeyId,
@@ -1069,9 +1073,68 @@ describe("trading-accounts - MT5 bridge ingest (public, HMAC)", () => {
       providerId: "mt5-bridge",
       confidence: "PROVIDER_REPORTED",
     });
-    // A bridge account's explicit DEMO/LIVE selection is not silently changed
-    // by a broker name; server-side account-type policy remains authoritative.
-    expect(user.authHeader).toBeDefined();
+  });
+
+  it("rejects an ACCOUNT_INFO login that differs from the paired Euforia account", async () => {
+    const { account, pairing } = await pairedBridgeAccount(
+      `88${Math.random().toString().slice(2, 8)}`,
+    );
+    const res = await push({
+      keyId: pairing.bridgeKeyId,
+      secret: pairing.secret,
+      timestamp: Date.now(),
+      envelope: {
+        eventId: "ea-e2e-account-mismatch-1",
+        kind: "ACCOUNT_INFO",
+        payload: {
+          externalAccountId: "99999999",
+          currency: "USD",
+          server: "PUPrime-Demo",
+          brokerName: "PU Prime Limited",
+          accountClass: "DEMO",
+        },
+      },
+    });
+    expect(res.statusCode).toBe(403);
+    expect(res.json().code).toBe("BRIDGE_ACCOUNT_MISMATCH");
+    const state = await bridgeApp.get(PrismaService).tradingConnection.findUnique({
+      where: { accountId: account.id },
+      select: { status: true },
+    });
+    expect(state?.status).toBe("CONNECTING");
+  });
+
+  it("rejects a real terminal account paired as DEMO before recording the event", async () => {
+    const { account, pairing } = await pairedBridgeAccount(
+      `88${Math.random().toString().slice(2, 8)}`,
+    );
+    const res = await push({
+      keyId: pairing.bridgeKeyId,
+      secret: pairing.secret,
+      timestamp: Date.now(),
+      envelope: {
+        eventId: "ea-e2e-environment-mismatch-1",
+        kind: "ACCOUNT_INFO",
+        payload: {
+          externalAccountId: account.externalAccountId,
+          currency: "USD",
+          server: "Axi-Live",
+          brokerName: "AxiCorp Financial Services Pty Ltd",
+          accountClass: "REAL",
+        },
+      },
+    });
+    expect(res.statusCode).toBe(403);
+    expect(res.json().code).toBe("BRIDGE_ENVIRONMENT_MISMATCH");
+    const [state, eventCount] = await Promise.all([
+      bridgeApp.get(PrismaService).tradingConnection.findUnique({
+        where: { accountId: account.id },
+        select: { status: true },
+      }),
+      bridgeApp.get(PrismaService).tradingBridgeEvent.count({ where: { bridgeKeyId: pairing.bridgeKeyId } }),
+    ]);
+    expect(state?.status).toBe("CONNECTING");
+    expect(eventCount).toBe(0);
   });
 
   it("401 BRIDGE_HEADER_MISSING when any bridge header is absent", async () => {
