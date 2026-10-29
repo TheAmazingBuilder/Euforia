@@ -17,10 +17,11 @@
 /* ============================================================
    COSMOZ - "Le Registre" design world (2026 refonte)
    Three expressions of the same ink-and-paper record:
-   - dark  → "Encre": ink night, cool cast
-   - light → "Papier": ledger paper
-   Brand violet drives primary navigation and focus; green/red are
-   reserved for confirmation and trading P&L semantics.
+   - dark-blue → "Encre" (default): ink night, cool cast
+   - dark      → "Carbone": neutral carbon
+   - light     → "Papier": ledger paper (flagship expression)
+   Discipline: hairline ruling over card soup; ONE cobalt accent
+   for interaction; semantic inks (emerald/carmine/ochre) used
    sparingly. No glow, no glass, no gradient text.
    ============================================================ */
 
@@ -37,12 +38,16 @@
   --action-success: #10B981;
   --action-success-hover: #059669;
   --action-success-foreground: #FFFFFF;
+  --action-edit: #2563EB;
+  --action-edit-hover: #1D4ED8;
+  --action-edit: #4299FD;
+  --action-edit-hover: #3185E8;
   --action-edit: #4299FD;
   --action-edit-hover: #3185E8;
   --profit: #3EBE8C;
   --loss: #E05B5B;
   --warning: #D9A03F;
-  --ring: #8B5CF6;
+  --ring: #4E6EE0;
   --radius: 8px;
   /* authorized addition: destructive-foreground (shadcn needs it) */
   --destructive-foreground: #0E1116;
@@ -79,7 +84,7 @@
   --profit: #41C393;
   --loss: #E26363;
   --warning: #DCA748;
-  --ring: #8B5CF6;
+  --ring: #5578E6;
   --radius: 8px;
   /* authorized addition: destructive-foreground (shadcn needs it) */
   --destructive-foreground: #0B0B0D;
@@ -102,9 +107,7 @@
   --profit: #12805C;
   --loss: #C03E3E;
   --warning: #8F6418;
-  --ring: #6D28D9;
-  --action-edit: #2563EB;
-  --action-edit-hover: #1D4ED8;
+  --ring: #2E4FC4;
   --radius: 8px;
   /* authorized addition: destructive-foreground (shadcn needs it) */
   --destructive-foreground: #FFFFFF;

@@ -501,7 +501,7 @@ export function TradeDetailDrawer({
   const actionFooter = (
     <div className="flex items-center gap-2 border-t border-border bg-surface p-3">
       <Button
-        variant="outline"
+        variant="edit"
         size="sm"
         className="gap-1.5"
         onClick={() => onEdit(trade)}

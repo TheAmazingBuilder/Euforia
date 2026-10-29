@@ -214,7 +214,7 @@ export function GoalsPanel() {
                     day {progress.daysElapsed}/{progress.daysTotal} · n={progress.sampleSize}
                   </span>
                   <span className="flex gap-1">
-                    <Button variant="ghost" size="icon" className="size-7" onClick={() => openEdit({ goal, progress })} aria-label="Edit goal">
+                    <Button variant="edit" size="icon" className="size-7" onClick={() => openEdit({ goal, progress })} aria-label="Edit goal">
                       <Pencil className="size-3.5" aria-hidden="true" />
                     </Button>
                     <Button

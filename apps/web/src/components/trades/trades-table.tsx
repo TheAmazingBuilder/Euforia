@@ -945,7 +945,7 @@ function TradesModule() {
                           <DropdownMenuItem onClick={() => setDetailId(trade.id)}>
                             {T.table.rowActions.details}
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => setEditTrade(trade)} data-testid="trades-row-edit">
+                          <DropdownMenuItem className="text-action-edit focus:text-action-edit" onClick={() => setEditTrade(trade)} data-testid="trades-row-edit">
                             <Pencil className="size-3.5" aria-hidden="true" />
                             {T.shared.edit}
                           </DropdownMenuItem>

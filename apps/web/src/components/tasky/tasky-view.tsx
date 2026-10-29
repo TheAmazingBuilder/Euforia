@@ -1562,6 +1562,7 @@ export function TaskyView() {
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                       onSelect={() => beginRenameList(column)}
+                      className="text-action-edit focus:text-action-edit"
                       data-testid={`tasky-list-rename-${column.id}`}
                     >
                       <Pencil className="size-4" aria-hidden="true" />
@@ -1695,7 +1696,7 @@ export function TaskyView() {
                           aria-label={`Edit ${card.title}`}
                           title="Edit card"
                           data-testid={`tasky-edit-${card.id}`}
-                          className="grid size-6 shrink-0 place-items-center rounded text-muted-foreground/50 transition-colors hover:bg-muted hover:text-foreground [@media(hover:none)]:text-muted-foreground"
+                          className="grid size-6 shrink-0 place-items-center rounded text-action-edit/80 transition-colors hover:bg-muted hover:text-action-edit [@media(hover:none)]:text-action-edit"
                         >
                           <Pencil className="size-3.5" aria-hidden="true" />
                         </button>

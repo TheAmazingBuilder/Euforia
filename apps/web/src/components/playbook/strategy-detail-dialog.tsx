@@ -191,7 +191,7 @@ export function StrategyDetailDialog({ strategy, stat, onOpenChange, onEdit }: S
               <History className="size-3.5" aria-hidden="true" />
               {V.versionsBtn}
             </Button>
-            <Button variant="outline" onClick={() => onEdit(strategy)}>
+            <Button variant="edit" onClick={() => onEdit(strategy)}>
               <Pencil className="size-4" aria-hidden="true" />
               {V.editBtn}
             </Button>
