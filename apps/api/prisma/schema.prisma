@@ -139,6 +139,7 @@ model User {
   academyRows       AcademyRow[]
   taskyBoard        TaskyBoard?
   taskyAttachments  TaskyAttachment[]
+  taskySavedViews   TaskySavedView[]
   integrationRows   IntegrationRow[]
   tagRows           TagRow[]
   // ── Reconciliation generation (Phase 4/5/6/7 normalized models) ──
@@ -1293,6 +1294,21 @@ model TaskyBoard {
   data      Json
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+/// Tasky saved filter/sort presets, independent from board content.
+model TaskySavedView {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String   @db.VarChar(40)
+  /// Validated TaskySavedViewFilters JSON; no client-supplied owner identity.
+  filters   Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, name])
+  @@index([userId, updatedAt(sort: Desc)])
 }
 
 /// Tasky attachment metadata; bytes live outside PostgreSQL behind a storage adapter.
