@@ -146,7 +146,7 @@ export const taskyKanbanCardSchema = z.object({
   tag: z.string().trim().min(1).max(40),
   priority: taskyKanbanPrioritySchema,
   assignee: z.string().trim().min(1).max(12),
-  due: z.string().regex(/^\\d{4}-\\d{2}-\\d{2}$/).optional(),
+  due: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   description: z.string().max(4000).optional(),
   checklist: z.array(taskyKanbanChecklistItemSchema).max(100).optional(),
   comments: z.array(taskyKanbanCommentSchema).max(100).optional(),
