@@ -981,6 +981,43 @@ describe("trading-accounts - MT5 bridge ingest (public, HMAC)", () => {
     });
   }
 
+  it("allows the same MT5 login across different brokers but rejects a duplicate within one broker", async () => {
+    const user = await authenticatedUser(bridgeApp, bridgeMail);
+    const externalAccountId = `77${Math.random().toString().slice(2, 8)}`;
+    const connectBroker = (brokerId: "axi" | "puprime") =>
+      bridgeApp.inject({
+        method: "POST",
+        url: "/api/v1/trading-accounts/connect",
+        headers: user.authHeader,
+        payload: {
+          providerId: "mt5-bridge",
+          brokerId,
+          environment: brokerId === "axi" ? "LIVE" : "DEMO",
+          externalAccountId,
+        },
+      });
+
+    const axi = await connectBroker("axi");
+    expect(axi.statusCode).toBe(201);
+    const puPrime = await connectBroker("puprime");
+    expect(puPrime.statusCode).toBe(201);
+
+    const duplicateAxi = await connectBroker("axi");
+    expect(duplicateAxi.statusCode).toBe(409);
+    expect(duplicateAxi.json().code).toBe("DUPLICATE_ACCOUNT");
+
+    const accounts = await bridgeApp.get(PrismaService).tradingAccount.findMany({
+      where: {
+        userId: user.userId,
+        providerId: "mt5-bridge",
+        externalAccountId,
+      },
+      select: { brokerId: true },
+      orderBy: { brokerId: "asc" },
+    });
+    expect(accounts.map((account) => account.brokerId)).toEqual(["axi", "puprime"]);
+  });
+
   it("rotates the bridge key and secret atomically and rejects the previous pairing", async () => {
     const { user, account, pairing } = await pairedBridgeAccount(
       `88${Math.random().toString().slice(2, 8)}`,
