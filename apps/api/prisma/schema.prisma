@@ -140,6 +140,8 @@ model User {
   taskyBoard        TaskyBoard?
   taskyAttachments  TaskyAttachment[]
   taskySavedViews   TaskySavedView[]
+  taskyAutomations  TaskyAutomationRule[]
+  taskyAutomationRuns TaskyAutomationRun[]
   integrationRows   IntegrationRow[]
   tagRows           TagRow[]
   // ── Reconciliation generation (Phase 4/5/6/7 normalized models) ──
@@ -1309,6 +1311,48 @@ model TaskySavedView {
 
   @@unique([userId, name])
   @@index([userId, updatedAt(sort: Desc)])
+}
+
+/// User-defined Tasky rules. Conditions live in a validated JSON contract so
+/// the rule catalog can grow without changing task board payloads.
+model TaskyAutomationRule {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String   @db.VarChar(80)
+  /// CARD_MOVED | DUE_SOON | OVERDUE
+  trigger   String   @db.VarChar(40)
+  enabled   Boolean  @default(true)
+  config    Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  runs TaskyAutomationRun[]
+
+  @@index([userId, enabled, trigger])
+}
+
+/// Append-only execution history. A nullable unique dedupe key makes reminder
+/// checks idempotent while retaining failures for inspection and retry.
+model TaskyAutomationRun {
+  id             String   @id @default(uuid()) @db.Uuid
+  userId         String   @db.Uuid
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  automationId   String?  @db.Uuid
+  automation     TaskyAutomationRule? @relation(fields: [automationId], references: [id], onDelete: SetNull)
+  automationName String   @db.VarChar(80)
+  trigger        String   @db.VarChar(40)
+  cardId         String?
+  cardTitle      String?  @db.VarChar(140)
+  /// RUNNING | SUCCEEDED | FAILED
+  status         String   @db.VarChar(16)
+  message        String   @db.VarChar(240)
+  error          String?  @db.VarChar(500)
+  dedupeKey      String?  @unique
+  createdAt      DateTime @default(now())
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([userId, status])
 }
 
 /// Tasky attachment metadata; bytes live outside PostgreSQL behind a storage adapter.

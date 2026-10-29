@@ -301,6 +301,35 @@ async function touchDrag(page, gripTestid, targetColumnId) {
     await page.waitForTimeout(500);
     check("edited and duplicate probe cards cleaned up", Number(await page.locator('[data-testid="tasky-count-todo"]').innerText()) === todoCountBeforeProbe);
 
+    console.log("\n[3b] Automation rule setup");
+    await page.click('[data-testid="tasky-view-mode-automations"]');
+    check("automation panel opens", await page.locator('[data-testid="tasky-automations-panel"]').isVisible().catch(() => false));
+    await page.fill('[data-testid="tasky-automation-name"]', "Automation probe");
+    await page.selectOption('[data-testid="tasky-automation-trigger"]', "CARD_MOVED");
+    await page.selectOption('[data-testid="tasky-automation-column"]', "in-review");
+    await page.selectOption('[data-testid="tasky-automation-action"]', "SET_PRIORITY");
+    await page.selectOption('[data-testid="tasky-automation-priority"]', "Urgent");
+    await page.fill('[data-testid="tasky-automation-message"]', "Probe move notification");
+    await page.click('[data-testid="tasky-automation-create"]');
+    const automation = page.locator('article[data-testid^="tasky-automation-"]').filter({ hasText: "Automation probe" }).first();
+    await automation.waitFor({ state: "visible", timeout: 8000 });
+    const automationTestId = await automation.getAttribute("data-testid");
+    const automationId = automationTestId?.replace("tasky-automation-", "");
+    check("rule is saved", Boolean(automationId && /^[0-9a-f-]{36}$/i.test(automationId)), automationTestId ?? "");
+    await page.click(`[data-testid="tasky-automation-toggle-${automationId}"]`);
+    await page.locator(`[data-testid="tasky-automation-toggle-${automationId}"]`).getByText("Enable").waitFor({ timeout: 8000 });
+    check("rule can be paused", true);
+    await page.click(`[data-testid="tasky-automation-toggle-${automationId}"]`);
+    await page.locator(`[data-testid="tasky-automation-toggle-${automationId}"]`).getByText("Pause").waitFor({ timeout: 8000 });
+    check("rule can be enabled again", true);
+    const dueCheckResponse = page.waitForResponse((response) =>
+      response.url().includes("/tasky/automation-runs/check-due") && response.request().method() === "POST",
+    );
+    await page.click('[data-testid="tasky-check-due-dates"]');
+    const dueCheck = await dueCheckResponse;
+    check("manual due-date check endpoint succeeds", dueCheck.ok(), String(dueCheck.status()));
+    await page.click('[data-testid="tasky-view-mode-board"]');
+
     console.log("\n[4] Mouse drag Backlog → In Review");
     const backlogBeforeDrag = Number(await page.locator('[data-testid="tasky-count-backlog"]').innerText());
     await page.click('[data-testid="tasky-add-backlog"]');
@@ -327,6 +356,18 @@ async function touchDrag(page, gripTestid, targetColumnId) {
       "card moved to in-review",
       (await page.locator(`[data-testid="tasky-card-${mouseProbeId}"]`).getAttribute("data-column")) === "in-review",
     );
+    await page.waitForTimeout(800);
+    check(
+      "automation updates the card priority to Urgent",
+      /Urgent/.test(await page.locator(`[data-testid="tasky-card-${mouseProbeId}"]`).innerText().catch(() => "")),
+    );
+    await page.click('[data-testid="tasky-view-mode-automations"]');
+    const automationRun = page.locator('[data-testid^="tasky-automation-run-"]').filter({ hasText: "Mouse drag probe" });
+    await automationRun.first().waitFor({ state: "visible", timeout: 10000 }).catch(() => undefined);
+    check("column move triggered an automation run", await automationRun.count() > 0);
+    await page.click(`[data-testid="tasky-automation-delete-${automationId}"]`);
+    await page.locator(`[data-testid="${automationTestId}"]`).waitFor({ state: "detached", timeout: 8000 });
+    await page.click('[data-testid="tasky-view-mode-board"]');
     await page.click(`[data-testid="tasky-delete-${mouseProbeId}"]`);
     await page.waitForTimeout(300);
     check("mouse drag probe cleaned up", Number(await page.locator('[data-testid="tasky-count-backlog"]').innerText()) === backlogBeforeDrag);

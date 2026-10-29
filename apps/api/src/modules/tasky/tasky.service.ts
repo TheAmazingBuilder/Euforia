@@ -3,6 +3,7 @@ import { BadRequestException, ConflictException, Injectable, InternalServerError
 import { taskyKanbanBoardStateSchema, taskySavedViewCreateSchema, taskySavedViewFiltersSchema, taskySavedViewSchema, type TaskySavedViewFilters } from "../../shared/contracts";
 import { TaskyRepository } from "./tasky.repository";
 import { TaskyAttachmentService } from "./tasky-attachment.service";
+import { TaskyAutomationService } from "./tasky-automation.service";
 
 /**
  * Tasky application service. Every lookup/write is scoped to the authenticated
@@ -15,6 +16,7 @@ export class TaskyService {
   constructor(
     private readonly repository: TaskyRepository,
     private readonly attachments?: TaskyAttachmentService,
+    private readonly automations?: TaskyAutomationService,
   ) {}
 
   async getBoard(userId: string) {
@@ -45,6 +47,22 @@ export class TaskyService {
         "The saved Tasky board could not be verified after writing.",
       );
     }
+    let responseBoard = persisted.data;
+    let responseUpdatedAt = saved.updatedAt;
+    if (previousParsed?.success && this.automations) {
+      try {
+        responseBoard = await this.automations.onBoardSaved(userId, previousParsed.data, persisted.data);
+        if (responseBoard !== persisted.data) {
+          const latest = await this.repository.findByUserId(userId);
+          if (latest) responseUpdatedAt = latest.updatedAt;
+        }
+      } catch (error) {
+        // The primary board write already succeeded. Never turn that successful
+        // write into a failed request if a notification/action cannot be completed.
+        this.logger.warn(`Tasky automation dispatch failed after board save: ${error instanceof Error ? error.message : "unknown error"}`);
+      }
+    }
+
     const currentCardIds = new Set(persisted.data.columns.flatMap((column) => column.cards.map((card) => card.id)));
     const removedCardIds = [...new Set(previousCardIds)].filter((cardId) => !currentCardIds.has(cardId));
     if (removedCardIds.length > 0 && this.attachments) {
@@ -58,8 +76,8 @@ export class TaskyService {
     }
 
     return {
-      board: persisted.data,
-      updatedAt: saved.updatedAt.toISOString(),
+      board: responseBoard,
+      updatedAt: responseUpdatedAt.toISOString(),
     };
   }
 

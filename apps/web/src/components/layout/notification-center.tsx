@@ -304,6 +304,13 @@ export function NotificationCenter() {
 
   /** Deep-link: goal alerts open the Goals tab filtered on the goal. */
   const openAlert = (alert: Alert) => {
+    const payload = alert.payload;
+    if (payload !== null && typeof payload === "object" && !Array.isArray(payload) &&
+      "source" in payload && payload.source === "tasky") {
+      setOpen(false);
+      router.push("/tasky");
+      return;
+    }
     const goalId = goalIdOf(alert);
     if (goalId !== null) {
       setOpen(false);

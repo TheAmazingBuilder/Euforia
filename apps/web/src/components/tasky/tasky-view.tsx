@@ -6,6 +6,7 @@ import {
   Archive,
   ArchiveRestore,
   CalendarDays,
+  BellRing,
   Check,
   ChevronLeft,
   ChevronRight,
@@ -61,7 +62,8 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { useCreateTaskySavedView, useDeleteTaskyAttachment, useDeleteTaskySavedView, useDownloadTaskyAttachment, useSaveTaskyBoard, useTaskyBoard, useTaskyCardAttachments, useTaskySavedViews, useUploadTaskyAttachment } from "@/lib/api/queries";
+import { useCreateTaskySavedView, useDeleteTaskyAttachment, useDeleteTaskySavedView, useDownloadTaskyAttachment, useRemindTaskyCard, useSaveTaskyBoard, useTaskyBoard, useTaskyCardAttachments, useTaskySavedViews, useUploadTaskyAttachment } from "@/lib/api/queries";
+import { TaskyAutomationsPanel } from "./tasky-automations-panel";
 import { cn } from "@/lib/utils";
 
 /**
@@ -253,6 +255,7 @@ export function TaskyView() {
   const savedViewsQuery = useTaskySavedViews();
   const savedViewCreate = useCreateTaskySavedView();
   const savedViewDelete = useDeleteTaskySavedView();
+  const remindTaskyCard = useRemindTaskyCard();
   const [columns, setColumns] = React.useState<TaskyColumn[]>(seedBoard);
   const [searchQuery, setSearchQuery] = React.useState("");
   const [priorityFilter, setPriorityFilter] = React.useState<"all" | Priority>("all");
@@ -261,7 +264,7 @@ export function TaskyView() {
   const [categoryFilter, setCategoryFilter] = React.useState("all");
   const [assigneeFilter, setAssigneeFilter] = React.useState("all");
   const [statusFilter, setStatusFilter] = React.useState("all");
-  const [viewMode, setViewMode] = React.useState<"board" | "calendar" | "table" | "timeline" | "dashboard" | "completed" | "upcoming" | "archived">("board");
+  const [viewMode, setViewMode] = React.useState<"board" | "calendar" | "table" | "timeline" | "dashboard" | "completed" | "upcoming" | "archived" | "automations">("board");
   const [shortcutsDialogOpen, setShortcutsDialogOpen] = React.useState(false);
   const [calendarMonth, setCalendarMonth] = React.useState(() => {
     const now = new Date();
@@ -298,11 +301,24 @@ export function TaskyView() {
   const bootstrappedRef = React.useRef(false);
   const skipNextAutoSaveRef = React.useRef(false);
   const saveQueueRef = React.useRef<Promise<void>>(Promise.resolve());
+  const columnsRef = React.useRef(columns);
+  columnsRef.current = columns;
 
   // Serialize full-board PUTs so a slower older request cannot finish after a newer state.
   const enqueueSave = React.useCallback((snapshot: TaskyKanbanBoardState) => {
     const next = saveQueueRef.current.catch(() => undefined).then(async () => {
-      await boardSave.mutateAsync(snapshot);
+      const saved = await boardSave.mutateAsync(snapshot);
+      // Column-transition automations may change a card on the server (e.g.
+      // set its priority). Reflect that response locally only if the user
+      // hasn't made a newer edit while the request was in flight.
+      if (
+        JSON.stringify(saved.board.columns) !== JSON.stringify(snapshot.columns) &&
+        JSON.stringify(columnsRef.current) === JSON.stringify(snapshot.columns)
+      ) {
+        skipNextAutoSaveRef.current = true;
+        columnsRef.current = saved.board.columns;
+        setColumns(saved.board.columns);
+      }
       clearLegacyBoard();
     });
     saveQueueRef.current = next.then(() => undefined, () => undefined);
@@ -1173,6 +1189,7 @@ export function TaskyView() {
           ["table", "Table"],
           ["timeline", "Timeline"],
           ["dashboard", "Dashboard"],
+          ["automations", "Automations"],
           ["completed", "Completed"],
           ["upcoming", "Upcoming"],
           ["archived", "Archived"],
@@ -1201,6 +1218,7 @@ export function TaskyView() {
           Shortcuts
         </Button>
       </nav>
+      {viewMode === "automations" ? <TaskyAutomationsPanel columns={columns} /> : null}
       <Dialog open={shortcutsDialogOpen} onOpenChange={setShortcutsDialogOpen}>
         <DialogContent className="sm:max-w-md" data-testid="tasky-shortcuts-dialog">
           <DialogHeader>
@@ -1945,6 +1963,20 @@ export function TaskyView() {
               <DialogDescription>
                 {detailsEntry.columnTitle} · {detailsEntry.card.tag} · {detailsEntry.card.priority}
               </DialogDescription>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => remindTaskyCard.mutate(detailsEntry.card.id)}
+                  disabled={remindTaskyCard.isPending || Boolean(detailsEntry.card.archivedAt)}
+                  data-testid={`tasky-remind-card-${detailsEntry.card.id}`}
+                >
+                  <BellRing className="size-3.5" aria-hidden="true" />
+                  Remind me now
+                </Button>
+                <span className="text-[11px] text-muted-foreground">Adds a notification to Euforia’s inbox.</span>
+              </div>
             </DialogHeader>
 
             <section className="flex flex-col gap-2">

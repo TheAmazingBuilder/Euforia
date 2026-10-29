@@ -8,6 +8,11 @@ import type {
   TaskyKanbanBoardEnvelope,
   TaskyKanbanBoardSaveResponse,
   TaskyKanbanBoardState,
+  TaskyAutomationRule,
+  TaskyAutomationRuleCreateInput,
+  TaskyAutomationRuleUpdateInput,
+  TaskyAutomationRulesEnvelope,
+  TaskyAutomationRunsEnvelope,
   TaskySavedViewFilters,
   TaskySavedViewCreateResponse,
   TaskySavedViewsEnvelope,
@@ -136,5 +141,99 @@ export function useDownloadTaskyAttachment() {
         apiPaths.taskyCardAttachmentDownload(input.cardId, input.attachmentId),
       ),
     onError: (error) => toast.error(apiErrorMessage(error, "Tasky could not download this attachment.")),
+  });
+}
+
+
+// ── Tasky Phase 5: configurable rules, scheduled reminders and execution history ──
+
+export function useTaskyAutomations() {
+  return useQuery({
+    queryKey: queryKeys.taskyAutomations,
+    queryFn: () => apiRequest<TaskyAutomationRulesEnvelope>(apiPaths.taskyAutomations),
+  });
+}
+
+export function useCreateTaskyAutomation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: TaskyAutomationRuleCreateInput) =>
+      apiRequest<{ rule: TaskyAutomationRule }>(apiPaths.taskyAutomations, {
+        method: "POST",
+        body: input,
+      }),
+    onSuccess: async () => {
+      toast.success("Automation rule created.");
+      await queryClient.invalidateQueries({ queryKey: queryKeys.taskyAutomations });
+    },
+    onError: (error) => toast.error(apiErrorMessage(error, "Tasky could not create this rule.")),
+  });
+}
+
+export function useUpdateTaskyAutomation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ ruleId, input }: { ruleId: string; input: TaskyAutomationRuleUpdateInput }) =>
+      apiRequest<{ rule: TaskyAutomationRule }>(apiPaths.taskyAutomation(ruleId), {
+        method: "PATCH",
+        body: input,
+      }),
+    onSuccess: async () => {
+      toast.success("Automation rule updated.");
+      await queryClient.invalidateQueries({ queryKey: queryKeys.taskyAutomations });
+    },
+    onError: (error) => toast.error(apiErrorMessage(error, "Tasky could not update this rule.")),
+  });
+}
+
+export function useDeleteTaskyAutomation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (ruleId: string) =>
+      apiRequest<{ deleted: true; id: string }>(apiPaths.taskyAutomation(ruleId), { method: "DELETE" }),
+    onSuccess: async () => {
+      toast.success("Automation rule deleted. Its execution history is retained.");
+      await queryClient.invalidateQueries({ queryKey: queryKeys.taskyAutomations });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.taskyAutomationRuns });
+    },
+    onError: (error) => toast.error(apiErrorMessage(error, "Tasky could not delete this rule.")),
+  });
+}
+
+export function useTaskyAutomationRuns() {
+  return useQuery({
+    queryKey: queryKeys.taskyAutomationRuns,
+    queryFn: () => apiRequest<TaskyAutomationRunsEnvelope>(apiPaths.taskyAutomationRuns),
+    refetchInterval: 30_000,
+  });
+}
+
+export function useCheckTaskyDueDates() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => apiRequest<{ checked: true; notificationsCreated: number }>(
+      apiPaths.taskyDueDateCheck,
+      { method: "POST" },
+    ),
+    onSuccess: async (result) => {
+      toast.success(`Due-date check complete: ${result.notificationsCreated} new notification(s).`);
+      await queryClient.invalidateQueries({ queryKey: queryKeys.taskyAutomationRuns });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.alerts });
+    },
+    onError: (error) => toast.error(apiErrorMessage(error, "Tasky could not check due dates.")),
+  });
+}
+
+export function useRemindTaskyCard() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (cardId: string) =>
+      apiRequest<{ sent: true }>(apiPaths.taskyCardRemind(cardId), { method: "POST" }),
+    onSuccess: async () => {
+      toast.success("Reminder sent to your Euforia notification inbox.");
+      await queryClient.invalidateQueries({ queryKey: queryKeys.taskyAutomationRuns });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.alerts });
+    },
+    onError: (error) => toast.error(apiErrorMessage(error, "Tasky could not create this reminder.")),
   });
 }
