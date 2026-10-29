@@ -246,7 +246,7 @@ export class Mt5BridgeIngestService implements OnModuleDestroy {
   /** Enforce the immutable pairing/account boundary before accepting identity data. */
   private async assertAccountInfoMatchesConnection(
     accountId: string,
-    envelope: Extract<BridgeIngestEnvelope, { kind: "ACCOUNT_INFO" }>,
+    envelope: BridgeIngestEnvelope,
   ): Promise<void> {
     const payload = envelope.payload as {
       externalAccountId: string;
