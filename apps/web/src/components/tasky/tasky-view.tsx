@@ -42,6 +42,7 @@ import {
   type TaskyKanbanPriority as Priority,
 } from "@cosmoz/shared";
 import { filterTaskyCards, type TaskySortOrder } from "./tasky-filters";
+import { buildTaskyBoardCsvExport, buildTaskyBoardJsonExport } from "./tasky-export";
 import { buildTaskyCalendarDays, buildTaskyMetrics, getTaskyCreatedAt, getTaskyStartDate, isTaskyCompletedColumn, type TaskyViewRow } from "./tasky-view-model";
 import { Button } from "@/components/ui/button";
 import {
@@ -342,6 +343,25 @@ export function TaskyView() {
     }, 350);
     return () => window.clearTimeout(timeout);
   }, [columns, hydrated, enqueueSave]);
+
+  const exportTaskyBoard = React.useCallback((format: "json" | "csv") => {
+    const snapshot: TaskyKanbanBoardState = { columns };
+    const exportedAt = new Date().toISOString();
+    const content = format === "json"
+      ? buildTaskyBoardJsonExport(snapshot, exportedAt)
+      : "\uFEFF" + buildTaskyBoardCsvExport(snapshot);
+    const mimeType = format === "json" ? "application/json;charset=utf-8" : "text/csv;charset=utf-8";
+    const fileExtension = format;
+    const dateStamp = exportedAt.slice(0, 10);
+    const url = URL.createObjectURL(new Blob([content], { type: mimeType }));
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `tasky-board-${dateStamp}.${fileExtension}`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 0);
+  }, [columns]);
 
   const setDragState = React.useCallback((next: DragState | null) => {
     dragRef.current = next;
@@ -1163,6 +1183,18 @@ export function TaskyView() {
             {label}
           </Button>
         ))}
+        <div className="ml-auto flex flex-wrap items-center gap-2" data-testid="tasky-export-controls">
+          <Button type="button" size="sm" variant="outline" onClick={() => exportTaskyBoard("json")}
+            data-testid="tasky-export-json" aria-label="Export complete Tasky board as JSON">
+            <Download className="size-3.5" aria-hidden="true" />
+            Export JSON
+          </Button>
+          <Button type="button" size="sm" variant="outline" onClick={() => exportTaskyBoard("csv")}
+            data-testid="tasky-export-csv" aria-label="Export Tasky cards as CSV">
+            <FileText className="size-3.5" aria-hidden="true" />
+            Export CSV
+          </Button>
+        </div>
         <Button type="button" size="sm" variant="ghost" onClick={() => setShortcutsDialogOpen(true)}
           data-testid="tasky-shortcuts-open" aria-label="Show keyboard shortcuts">
           <Keyboard className="size-4" aria-hidden="true" />
