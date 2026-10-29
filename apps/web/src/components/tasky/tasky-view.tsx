@@ -1058,7 +1058,6 @@ export function TaskyView() {
                         <button
                           type="button"
                           aria-label={`Drag ${card.title}`}
-                          title="Drag to move"
                           data-testid={`tasky-grip-${card.id}`}
                           onPointerDown={(event) => {
                             if (hasActiveFilters) return;
