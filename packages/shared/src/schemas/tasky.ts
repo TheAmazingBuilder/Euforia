@@ -320,3 +320,96 @@ export const taskySavedViewCreateResponseSchema = z.object({
   view: taskySavedViewSchema,
 });
 export type TaskySavedViewCreateResponse = z.infer<typeof taskySavedViewCreateResponseSchema>;
+
+
+// ── Tasky automations, reminders and execution history ─────────────────────
+
+export const taskyAutomationTriggerSchema = z.enum(["CARD_MOVED", "DUE_SOON", "OVERDUE"]);
+export type TaskyAutomationTrigger = z.infer<typeof taskyAutomationTriggerSchema>;
+
+export const taskyAutomationConfigSchema = z.object({
+  /** Required for CARD_MOVED rules: destination column ID that activates the rule. */
+  destinationColumnId: z.string().trim().min(1).max(100).optional(),
+  /** Calendar days before due date; required for DUE_SOON rules. */
+  daysBeforeDue: z.number().int().min(1).max(7).optional(),
+  /** Optional copy appended to the notification; never interpreted as a command. */
+  notificationMessage: z.string().trim().max(180).optional(),
+});
+export type TaskyAutomationConfig = z.infer<typeof taskyAutomationConfigSchema>;
+
+const taskyAutomationRuleFields = {
+  name: z.string().trim().min(1).max(80),
+  trigger: taskyAutomationTriggerSchema,
+  enabled: z.boolean().default(true),
+  config: taskyAutomationConfigSchema,
+};
+
+function validateTaskyAutomationRule(
+  rule: { trigger: TaskyAutomationTrigger; config: TaskyAutomationConfig },
+  ctx: z.RefinementCtx,
+): void {
+  if (rule.trigger === "CARD_MOVED" && !rule.config.destinationColumnId) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["config", "destinationColumnId"],
+      message: "Choose the destination column that activates this rule.",
+    });
+  }
+  if (rule.trigger === "DUE_SOON" && rule.config.daysBeforeDue === undefined) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["config", "daysBeforeDue"],
+      message: "Choose how many days before the due date to remind you.",
+    });
+  }
+}
+
+export const taskyAutomationRuleCreateSchema = z.object(taskyAutomationRuleFields)
+  .superRefine(validateTaskyAutomationRule);
+export type TaskyAutomationRuleCreateInput = z.infer<typeof taskyAutomationRuleCreateSchema>;
+
+export const taskyAutomationRuleUpdateSchema = z.object({
+  name: taskyAutomationRuleFields.name.optional(),
+  trigger: taskyAutomationTriggerSchema.optional(),
+  enabled: z.boolean().optional(),
+  config: taskyAutomationConfigSchema.optional(),
+});
+export type TaskyAutomationRuleUpdateInput = z.infer<typeof taskyAutomationRuleUpdateSchema>;
+
+export const taskyAutomationRuleSchema = z.object({
+  id: uuidSchema,
+  name: taskyAutomationRuleFields.name,
+  trigger: taskyAutomationTriggerSchema,
+  enabled: z.boolean(),
+  config: taskyAutomationConfigSchema,
+  createdAt: isoDateTimeSchema,
+  updatedAt: isoDateTimeSchema,
+});
+export type TaskyAutomationRule = z.infer<typeof taskyAutomationRuleSchema>;
+
+export const taskyAutomationRunStatusSchema = z.enum(["RUNNING", "SUCCEEDED", "FAILED"]);
+export type TaskyAutomationRunStatus = z.infer<typeof taskyAutomationRunStatusSchema>;
+
+export const taskyAutomationRunSchema = z.object({
+  id: uuidSchema,
+  automationId: uuidSchema.nullable(),
+  automationName: z.string().min(1).max(80),
+  trigger: z.string().min(1).max(40),
+  cardId: z.string().max(100).nullable(),
+  cardTitle: z.string().max(140).nullable(),
+  status: taskyAutomationRunStatusSchema,
+  message: z.string().min(1).max(240),
+  error: z.string().max(500).nullable(),
+  createdAt: isoDateTimeSchema,
+});
+export type TaskyAutomationRun = z.infer<typeof taskyAutomationRunSchema>;
+
+export const taskyAutomationRulesEnvelopeSchema = z.object({
+  rules: z.array(taskyAutomationRuleSchema),
+});
+export type TaskyAutomationRulesEnvelope = z.infer<typeof taskyAutomationRulesEnvelopeSchema>;
+
+export const taskyAutomationRunsEnvelopeSchema = z.object({
+  runs: z.array(taskyAutomationRunSchema),
+});
+export type TaskyAutomationRunsEnvelope = z.infer<typeof taskyAutomationRunsEnvelopeSchema>;
