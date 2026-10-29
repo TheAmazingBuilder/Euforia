@@ -23,6 +23,8 @@ import {
   Paperclip,
   Plus,
   RefreshCw,
+  RotateCcw,
+  Search,
   Trash2,
   X,
 } from "lucide-react";
@@ -36,6 +38,7 @@ import {
   type TaskyKanbanColumn as TaskyColumn,
   type TaskyKanbanPriority as Priority,
 } from "@cosmoz/shared";
+import { filterTaskyCards } from "./tasky-filters";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -243,6 +246,10 @@ export function TaskyView() {
   const boardQuery = useTaskyBoard();
   const boardSave = useSaveTaskyBoard();
   const [columns, setColumns] = React.useState<TaskyColumn[]>(seedBoard);
+  const [searchQuery, setSearchQuery] = React.useState("");
+  const [priorityFilter, setPriorityFilter] = React.useState<"all" | Priority>("all");
+  const [dueFilter, setDueFilter] = React.useState<"all" | "overdue" | "upcoming" | "no-date">("all");
+  const [sortOrder, setSortOrder] = React.useState<"manual" | "title" | "due" | "priority">("manual");
   const [hydrated, setHydrated] = React.useState(false);
   const [drag, setDrag] = React.useState<DragState | null>(null);
   const [addingIn, setAddingIn] = React.useState<string | null>(null);
@@ -694,6 +701,23 @@ export function TaskyView() {
         .find((entry) => entry.card.id === detailsCardId)
     : undefined;
 
+  const todayDate = new Date();
+  const todayKey = `${todayDate.getFullYear()}-${String(todayDate.getMonth() + 1).padStart(2, "0")}-${String(todayDate.getDate()).padStart(2, "0")}`;
+  const hasActiveFilters = Boolean(searchQuery.trim()) || priorityFilter !== "all" || dueFilter !== "all" || sortOrder !== "manual";
+  const visibleCardsByColumn = React.useMemo(
+    () => new Map(columns.map((column) => [
+      column.id,
+      filterTaskyCards(column.cards, {
+        query: searchQuery,
+        priority: priorityFilter,
+        due: dueFilter,
+        sort: sortOrder,
+      }, todayKey),
+    ])),
+    [columns, searchQuery, priorityFilter, dueFilter, sortOrder, todayKey],
+  );
+  const totalCardCount = columns.reduce((total, column) => total + column.cards.length, 0);
+  const visibleCardCount = [...visibleCardsByColumn.values()].reduce((total, cards) => total + cards.length, 0);
   const dragCard = drag ? columns.flatMap((column) => column.cards).find((card) => card.id === drag.cardId) : undefined;
 
   if (boardQuery.isError) {
@@ -725,9 +749,95 @@ export function TaskyView() {
       <p className="sr-only" role="status" aria-live="polite">
         {boardSave.isPending ? "Saving Tasky board" : boardSave.isError ? "Tasky board save failed" : "Tasky board ready"}
       </p>
+      <section className="mb-3 flex flex-col gap-3 rounded-xl border border-border bg-background/40 p-3" data-testid="tasky-filters">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(220px,1.8fr)_repeat(3,minmax(140px,1fr))_auto]">
+          <div className="relative min-w-0">
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+            <Input
+              id="tasky-search"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="Search cards…"
+              aria-label="Search Tasky cards"
+              data-testid="tasky-search"
+              className="h-9 pl-9"
+            />
+          </div>
+          <div className="min-w-0">
+            <label htmlFor="tasky-priority-filter" className="sr-only">Filter by priority</label>
+            <select
+              id="tasky-priority-filter"
+              value={priorityFilter}
+              onChange={(event) => setPriorityFilter(event.target.value as "all" | Priority)}
+              data-testid="tasky-priority-filter"
+              className="h-9 w-full rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+            >
+              <option value="all">All priorities</option>
+              <option value="Urgent">Urgent</option>
+              <option value="High">High</option>
+              <option value="Medium">Medium</option>
+              <option value="Low">Low</option>
+            </select>
+          </div>
+          <div className="min-w-0">
+            <label htmlFor="tasky-due-filter" className="sr-only">Filter by due date</label>
+            <select
+              id="tasky-due-filter"
+              value={dueFilter}
+              onChange={(event) => setDueFilter(event.target.value as "all" | "overdue" | "upcoming" | "no-date")}
+              data-testid="tasky-due-filter"
+              className="h-9 w-full rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+            >
+              <option value="all">Any due date</option>
+              <option value="overdue">Overdue</option>
+              <option value="upcoming">Due today or later</option>
+              <option value="no-date">No due date</option>
+            </select>
+          </div>
+          <div className="min-w-0">
+            <label htmlFor="tasky-sort-order" className="sr-only">Sort cards</label>
+            <select
+              id="tasky-sort-order"
+              value={sortOrder}
+              onChange={(event) => setSortOrder(event.target.value as "manual" | "title" | "due" | "priority")}
+              data-testid="tasky-sort-order"
+              className="h-9 w-full rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+            >
+              <option value="manual">Manual order</option>
+              <option value="title">Title A–Z</option>
+              <option value="due">Due date</option>
+              <option value="priority">Priority</option>
+            </select>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setSearchQuery("");
+              setPriorityFilter("all");
+              setDueFilter("all");
+              setSortOrder("manual");
+            }}
+            disabled={!hasActiveFilters}
+            data-testid="tasky-reset-filters"
+            className="h-9"
+          >
+            <RotateCcw className="size-3.5" aria-hidden="true" />
+            Reset
+          </Button>
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+          <span data-testid="tasky-filter-summary" role="status" aria-live="polite">
+            Showing <span className="font-mono tabular-nums">{visibleCardCount}</span> of <span className="font-mono tabular-nums">{totalCardCount}</span> cards
+          </span>
+          {hasActiveFilters ? <span>Clear filters to drag and reorder cards.</span> : null}
+        </div>
+      </section>
       {/* Board - columns added horizontally (left → right), board scrolls X */}
       <div data-testid="tasky-board" className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-3 pt-1">
         {columns.map((column) => {
+          const visibleCards = visibleCardsByColumn.get(column.id) ?? [];
           const isOver = drag !== null && drag.overCol === column.id;
           return (
             <section
@@ -775,7 +885,7 @@ export function TaskyView() {
                   data-testid={`tasky-count-${column.id}`}
                   className="min-w-6 rounded-md bg-muted px-1.5 py-0.5 text-center font-mono text-[11px] font-semibold tabular-nums text-muted-foreground"
                 >
-                  {column.cards.length}
+                  {visibleCards.length}
                 </span>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -841,7 +951,8 @@ export function TaskyView() {
               </header>
 
               {/* Cards */}
-              {column.cards.map((card, index) => {
+              {visibleCards.map(({ card, originalIndex }) => {
+                const index = originalIndex;
                 const isDragged = drag?.cardId === card.id;
                 const showSlotBefore = isOver && drag?.overIndex === index && drag.cardId !== card.id;
                 return (
@@ -949,8 +1060,13 @@ export function TaskyView() {
                           aria-label={`Drag ${card.title}`}
                           title="Drag to move"
                           data-testid={`tasky-grip-${card.id}`}
-                          onPointerDown={(event) => startDrag(event, card, column.id)}
-                          className="-m-1 grid size-6 shrink-0 cursor-grab place-items-center rounded text-muted-foreground/50 transition-colors hover:text-foreground active:cursor-grabbing"
+                          onPointerDown={(event) => {
+                            if (hasActiveFilters) return;
+                            startDrag(event, card, column.id);
+                          }}
+                          aria-disabled={hasActiveFilters}
+                          title={hasActiveFilters ? "Clear search and filters to drag this card" : "Drag to move"}
+                          className={cn("-m-1 grid size-6 shrink-0 place-items-center rounded text-muted-foreground/50 transition-colors hover:text-foreground", hasActiveFilters ? "cursor-not-allowed opacity-40" : "cursor-grab active:cursor-grabbing")}
                           style={{ touchAction: "none" }}
                         >
                           <GripVertical className="size-3.5" aria-hidden="true" />
@@ -1024,6 +1140,11 @@ export function TaskyView() {
                   </React.Fragment>
                 );
               })}
+              {hasActiveFilters && visibleCards.length === 0 && column.cards.length > 0 ? (
+                <p className="rounded-lg border border-dashed border-border px-3 py-4 text-center text-xs text-muted-foreground">
+                  No matching cards.
+                </p>
+              ) : null}
 
               {/* Drop slot at column end */}
               {isOver && drag !== null && drag.overIndex >= column.cards.length ? (
