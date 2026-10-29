@@ -318,17 +318,31 @@ export class AccountsRepository {
    * key is destroyed WITH the credentials - a reconnected bridge pairs anew.
    */
   async disconnectConnection(accountId: string): Promise<TradingConnectionRow> {
-    const row = await this.prisma.tradingConnection.update({
-      where: { accountId },
-      data: {
-        status: "DISCONNECTED",
-        credentialsEnc: "",
-        credentialsHint: "",
-        bridgeKeyId: null,
-        lastError: null,
-      },
+    return this.prisma.$transaction(async (tx) => {
+      const current = await tx.tradingConnection.findUnique({
+        where: { accountId },
+        select: { bridgeKeyId: true },
+      });
+      const row = await tx.tradingConnection.update({
+        where: { accountId },
+        data: {
+          status: "DISCONNECTED",
+          credentialsEnc: "",
+          credentialsHint: "",
+          bridgeKeyId: null,
+          lastError: null,
+        },
+      });
+      // The event rows are a bounded raw-payload cache/idempotency ledger,
+      // not canonical history. Normalized positions/deals/trades are kept;
+      // raw events for a revoked key are no longer needed or readable.
+      if (current?.bridgeKeyId) {
+        await tx.tradingBridgeEvent.deleteMany({
+          where: { bridgeKeyId: current.bridgeKeyId },
+        });
+      }
+      return row as TradingConnectionRow;
     });
-    return row as TradingConnectionRow;
   }
 
   /** Auth-class provider failures flip the connection to ERROR with sanitized text. */
@@ -365,17 +379,30 @@ export class AccountsRepository {
     accountId: string,
     data: { bridgeKeyId: string; credentialsEnc: string; credentialsHint: string },
   ): Promise<void> {
-    await this.prisma.tradingConnection.update({
-      where: { accountId },
-      data: {
-        bridgeKeyId: data.bridgeKeyId,
-        credentialsEnc: data.credentialsEnc,
-        credentialsHint: data.credentialsHint,
-        // Rotation invalidates the old terminal pairing. Require a fresh
-        // authenticated push before presenting the bridge as connected.
-        status: "CONNECTING",
-        lastError: null,
-      },
+    await this.prisma.$transaction(async (tx) => {
+      const current = await tx.tradingConnection.findUnique({
+        where: { accountId },
+        select: { bridgeKeyId: true },
+      });
+      await tx.tradingConnection.update({
+        where: { accountId },
+        data: {
+          bridgeKeyId: data.bridgeKeyId,
+          credentialsEnc: data.credentialsEnc,
+          credentialsHint: data.credentialsHint,
+          // Rotation invalidates the old terminal pairing. Require a fresh
+          // authenticated push before presenting the bridge as connected.
+          status: "CONNECTING",
+          lastError: null,
+        },
+      });
+      // Old payloads belong to the revoked key; normalized journal history is
+      // stored separately and remains intact.
+      if (current?.bridgeKeyId && current.bridgeKeyId !== data.bridgeKeyId) {
+        await tx.tradingBridgeEvent.deleteMany({
+          where: { bridgeKeyId: current.bridgeKeyId },
+        });
+      }
     });
   }
 
