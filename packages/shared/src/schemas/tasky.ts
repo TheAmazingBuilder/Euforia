@@ -327,6 +327,9 @@ export type TaskySavedViewCreateResponse = z.infer<typeof taskySavedViewCreateRe
 export const taskyAutomationTriggerSchema = z.enum(["CARD_MOVED", "DUE_SOON", "OVERDUE"]);
 export type TaskyAutomationTrigger = z.infer<typeof taskyAutomationTriggerSchema>;
 
+export const taskyAutomationActionSchema = z.enum(["NOTIFY", "SET_PRIORITY"]);
+export type TaskyAutomationAction = z.infer<typeof taskyAutomationActionSchema>;
+
 export const taskyAutomationConfigSchema = z.object({
   /** Required for CARD_MOVED rules: destination column ID that activates the rule. */
   destinationColumnId: z.string().trim().min(1).max(100).optional(),
@@ -334,6 +337,10 @@ export const taskyAutomationConfigSchema = z.object({
   daysBeforeDue: z.number().int().min(1).max(7).optional(),
   /** Optional copy appended to the notification; never interpreted as a command. */
   notificationMessage: z.string().trim().max(180).optional(),
+  /** CARD_MOVED action. NOTIFY is the default when omitted by older clients. */
+  action: taskyAutomationActionSchema.optional(),
+  /** Required when action is SET_PRIORITY. */
+  targetPriority: taskyKanbanPrioritySchema.optional(),
 });
 export type TaskyAutomationConfig = z.infer<typeof taskyAutomationConfigSchema>;
 
@@ -360,6 +367,20 @@ function validateTaskyAutomationRule(
       code: z.ZodIssueCode.custom,
       path: ["config", "daysBeforeDue"],
       message: "Choose how many days before the due date to remind you.",
+    });
+  }
+  if (rule.trigger === "CARD_MOVED" && rule.config.action === "SET_PRIORITY" && rule.config.targetPriority === undefined) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["config", "targetPriority"],
+      message: "Choose the priority to set when the card enters the destination list.",
+    });
+  }
+  if (rule.trigger !== "CARD_MOVED" && rule.config.action === "SET_PRIORITY") {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["config", "action"],
+      message: "Changing card priority is only available when a card moves to a list.",
     });
   }
 }
