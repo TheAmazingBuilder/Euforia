@@ -276,6 +276,8 @@ export type TradingCredentialsInput = z.infer<typeof tradingCredentialsInputSche
  */
 export const tradingAccountConnectInputSchema = z.object({
   providerId: z.string().trim().min(1).max(64),
+  /** Optional broker identity hint for shared connectors; verified on first provider report. */
+  brokerId: z.string().trim().min(1).max(64).optional(),
   environment: accountTypeSchema,
   /** Provider-side account identifier (e.g. MT5 login number). */
   externalAccountId: z.string().trim().min(1).max(64),
