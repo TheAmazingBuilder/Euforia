@@ -34,7 +34,7 @@ describe("Tasky supplementary views", () => {
       { card: baseCard, column: todo, boardOrder: 0 },
       { card: { ...baseCard, id: "card-2", due: "2026-10-20", priority: "Urgent" as const, assignee: "AK" }, column: todo, boardOrder: 1 },
       { card: { ...baseCard, id: "card-3", due: "2026-11-02", priority: "Low" as const, assignee: "SL" }, column: todo, boardOrder: 2 },
-      { card: { ...baseCard, id: "card-4", due: "2026-10-20", priority: "Medium" as const }, column: done, boardOrder: 3 },
+      { card: { ...baseCard, id: "card-4", due: "2026-10-20", priority: "Medium" as const, assignee: "ME" }, column: done, boardOrder: 3 },
     ];
     expect(buildTaskyMetrics(rows, "2026-10-29")).toEqual({
       total: 4,
