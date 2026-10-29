@@ -266,6 +266,21 @@ export class BrokerIdentificationService {
     const entry = this.entryByPlatform(descriptor.platform);
     if (entry) {
       signals.push(`catalog entry for platform ${descriptor.platform}: ${entry.displayName}`);
+      // A generic terminal catalog entry is not a broker-specific connector.
+      // Preserve the actual registered adapter's availability and platform
+      // instead of reporting the generic catalog row as unsupported.
+      if (entry.brokerId === "metatrader-platform") {
+        return {
+          brokerId: entry.brokerId,
+          displayName: entry.displayName,
+          platform: descriptor.platform,
+          confidence: "PLATFORM_KNOWN",
+          connectorStatus: "CONNECTOR_AVAILABLE",
+          providerId: descriptor.providerId,
+          signals,
+          identifiedAt: isoDateTime(new Date()),
+        };
+      }
       return this.buildResult(entry, "PLATFORM_KNOWN", signals, descriptor);
     }
     return {
