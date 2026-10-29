@@ -56,7 +56,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { useDeleteTaskyAttachment, useDownloadTaskyAttachment, useSaveTaskyBoard, useTaskyBoard, useTaskyCardAttachments, useUploadTaskyAttachment } from "@/lib/api/queries";
+import { useCreateTaskySavedView, useDeleteTaskyAttachment, useDeleteTaskySavedView, useDownloadTaskyAttachment, useSaveTaskyBoard, useTaskyBoard, useTaskyCardAttachments, useTaskySavedViews, useUploadTaskyAttachment } from "@/lib/api/queries";
 import { cn } from "@/lib/utils";
 
 /**
@@ -245,11 +245,17 @@ type DragState = {
 export function TaskyView() {
   const boardQuery = useTaskyBoard();
   const boardSave = useSaveTaskyBoard();
+  const savedViewsQuery = useTaskySavedViews();
+  const savedViewCreate = useCreateTaskySavedView();
+  const savedViewDelete = useDeleteTaskySavedView();
   const [columns, setColumns] = React.useState<TaskyColumn[]>(seedBoard);
   const [searchQuery, setSearchQuery] = React.useState("");
   const [priorityFilter, setPriorityFilter] = React.useState<"all" | Priority>("all");
   const [dueFilter, setDueFilter] = React.useState<"all" | "overdue" | "upcoming" | "no-date">("all");
   const [sortOrder, setSortOrder] = React.useState<"manual" | "title" | "due" | "priority">("manual");
+  const [activeSavedViewId, setActiveSavedViewId] = React.useState<string | null>(null);
+  const [savedViewDialogOpen, setSavedViewDialogOpen] = React.useState(false);
+  const [savedViewName, setSavedViewName] = React.useState("");
   const [hydrated, setHydrated] = React.useState(false);
   const [drag, setDrag] = React.useState<DragState | null>(null);
   const [addingIn, setAddingIn] = React.useState<string | null>(null);
@@ -701,6 +707,50 @@ export function TaskyView() {
         .find((entry) => entry.card.id === detailsCardId)
     : undefined;
 
+  const applySavedView = (viewId: string) => {
+    const view = savedViewsQuery.data?.views.find((item) => item.id === viewId);
+    if (!view) {
+      setActiveSavedViewId(null);
+      return;
+    }
+    setSearchQuery(view.filters.query);
+    setPriorityFilter(view.filters.priority);
+    setDueFilter(view.filters.due);
+    setSortOrder(view.filters.sort);
+    setActiveSavedViewId(view.id);
+  };
+
+  const saveCurrentView = async () => {
+    const name = savedViewName.trim();
+    if (!name) return;
+    try {
+      const result = await savedViewCreate.mutateAsync({
+        name,
+        filters: {
+          query: searchQuery.trim(),
+          priority: priorityFilter,
+          due: dueFilter,
+          sort: sortOrder,
+        },
+      });
+      setActiveSavedViewId(result.view.id);
+      setSavedViewName("");
+      setSavedViewDialogOpen(false);
+    } catch {
+      // The mutation already reports an actionable API error.
+    }
+  };
+
+  const deleteActiveSavedView = async () => {
+    if (!activeSavedViewId) return;
+    try {
+      await savedViewDelete.mutateAsync(activeSavedViewId);
+      setActiveSavedViewId(null);
+    } catch {
+      // The mutation already reports an actionable API error.
+    }
+  };
+
   const todayDate = new Date();
   const todayKey = `${todayDate.getFullYear()}-${String(todayDate.getMonth() + 1).padStart(2, "0")}-${String(todayDate.getDate()).padStart(2, "0")}`;
   const hasActiveFilters = Boolean(searchQuery.trim()) || priorityFilter !== "all" || dueFilter !== "all" || sortOrder !== "manual";
@@ -756,8 +806,9 @@ export function TaskyView() {
             <Input
               id="tasky-search"
               value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
+              onChange={(event) => { setSearchQuery(event.target.value); setActiveSavedViewId(null); }}
               placeholder="Search cards…"
+              maxLength={180}
               aria-label="Search Tasky cards"
               data-testid="tasky-search"
               className="h-9 pl-9"
@@ -768,7 +819,7 @@ export function TaskyView() {
             <select
               id="tasky-priority-filter"
               value={priorityFilter}
-              onChange={(event) => setPriorityFilter(event.target.value as "all" | Priority)}
+              onChange={(event) => { setPriorityFilter(event.target.value as "all" | Priority); setActiveSavedViewId(null); }}
               data-testid="tasky-priority-filter"
               className="h-9 w-full rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
             >
@@ -784,7 +835,7 @@ export function TaskyView() {
             <select
               id="tasky-due-filter"
               value={dueFilter}
-              onChange={(event) => setDueFilter(event.target.value as "all" | "overdue" | "upcoming" | "no-date")}
+              onChange={(event) => { setDueFilter(event.target.value as "all" | "overdue" | "upcoming" | "no-date"); setActiveSavedViewId(null); }}
               data-testid="tasky-due-filter"
               className="h-9 w-full rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
             >
@@ -799,7 +850,7 @@ export function TaskyView() {
             <select
               id="tasky-sort-order"
               value={sortOrder}
-              onChange={(event) => setSortOrder(event.target.value as "manual" | "title" | "due" | "priority")}
+              onChange={(event) => { setSortOrder(event.target.value as "manual" | "title" | "due" | "priority"); setActiveSavedViewId(null); }}
               data-testid="tasky-sort-order"
               className="h-9 w-full rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
             >
@@ -818,6 +869,7 @@ export function TaskyView() {
               setPriorityFilter("all");
               setDueFilter("all");
               setSortOrder("manual");
+              setActiveSavedViewId(null);
             }}
             disabled={!hasActiveFilters}
             data-testid="tasky-reset-filters"
@@ -827,6 +879,39 @@ export function TaskyView() {
             Reset
           </Button>
         </div>
+        <div className="flex flex-col gap-2 border-t border-border/70 pt-3 sm:flex-row sm:items-center sm:justify-between" data-testid="tasky-saved-view-controls">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <label htmlFor="tasky-saved-view-select" className="sr-only">Apply a saved view</label>
+            <select
+              id="tasky-saved-view-select"
+              value={activeSavedViewId ?? ""}
+              onChange={(event) => applySavedView(event.target.value)}
+              disabled={savedViewsQuery.isLoading}
+              data-testid="tasky-saved-view-select"
+              className="h-9 min-w-48 max-w-full rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+            >
+              <option value="">Saved views ({savedViewsQuery.data?.views.length ?? 0}/20)</option>
+              {(savedViewsQuery.data?.views ?? []).map((view) => (
+                <option key={view.id} value={view.id}>{view.name}</option>
+              ))}
+            </select>
+            {activeSavedViewId ? (
+              <Button type="button" size="sm" variant="outline" onClick={() => void deleteActiveSavedView()}
+                disabled={savedViewDelete.isPending} data-testid="tasky-saved-view-delete">
+                <Trash2 className="size-3.5" aria-hidden="true" />
+                Delete view
+              </Button>
+            ) : null}
+          </div>
+          <div className="flex items-center justify-between gap-2 sm:justify-end">
+            <span className="text-xs text-muted-foreground">Save up to 20 filter presets.</span>
+            <Button type="button" size="sm" onClick={() => setSavedViewDialogOpen(true)}
+              disabled={(savedViewsQuery.data?.views.length ?? 0) >= 20 || savedViewsQuery.isLoading}
+              data-testid="tasky-saved-view-open">
+              Save view
+            </Button>
+          </div>
+        </div>
         <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
           <span data-testid="tasky-filter-summary" role="status" aria-live="polite">
             Showing <span className="font-mono tabular-nums">{visibleCardCount}</span> of <span className="font-mono tabular-nums">{totalCardCount}</span> cards
@@ -834,6 +919,44 @@ export function TaskyView() {
           {hasActiveFilters ? <span>Clear filters to drag and reorder cards.</span> : null}
         </div>
       </section>
+      <Dialog open={savedViewDialogOpen} onOpenChange={setSavedViewDialogOpen}>
+        <DialogContent className="sm:max-w-md" data-testid="tasky-saved-view-dialog">
+          <DialogHeader>
+            <DialogTitle>Save this view</DialogTitle>
+            <DialogDescription>
+              Save the current search, priority and due-date filters, plus the selected card order, to reuse them later.
+            </DialogDescription>
+          </DialogHeader>
+          <form
+            className="flex flex-col gap-4"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void saveCurrentView();
+            }}
+          >
+            <div className="flex flex-col gap-2">
+              <label htmlFor="tasky-saved-view-name" className="text-sm font-medium">View name</label>
+              <Input
+                id="tasky-saved-view-name"
+                value={savedViewName}
+                onChange={(event) => setSavedViewName(event.target.value)}
+                placeholder="e.g. Urgent tasks this week"
+                maxLength={40}
+                autoFocus
+                required
+                data-testid="tasky-saved-view-name"
+              />
+              <span className="text-xs text-muted-foreground">{savedViewName.trim().length}/40 characters</span>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setSavedViewDialogOpen(false)}>Cancel</Button>
+              <Button type="submit" disabled={!savedViewName.trim() || savedViewCreate.isPending} data-testid="tasky-saved-view-save">
+                {savedViewCreate.isPending ? "Saving…" : "Save view"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
       {/* Board - columns added horizontally (left → right), board scrolls X */}
       <div data-testid="tasky-board" className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-3 pt-1">
         {columns.map((column) => {

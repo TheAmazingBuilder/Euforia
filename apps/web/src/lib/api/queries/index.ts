@@ -284,6 +284,9 @@ export {
 
 // Tasky Kanban — PostgreSQL-backed personal board.
 export {
+  useCreateTaskySavedView,
+  useDeleteTaskySavedView,
+  useTaskySavedViews,
   useDeleteTaskyAttachment,
   useDownloadTaskyAttachment,
   useSaveTaskyBoard,

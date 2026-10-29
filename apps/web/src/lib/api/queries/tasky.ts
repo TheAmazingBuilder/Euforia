@@ -8,6 +8,9 @@ import type {
   TaskyKanbanBoardEnvelope,
   TaskyKanbanBoardSaveResponse,
   TaskyKanbanBoardState,
+  TaskySavedViewFilters,
+  TaskySavedViewCreateResponse,
+  TaskySavedViewsEnvelope,
 } from "@cosmoz/shared";
 import { apiErrorMessage, apiRequest } from "@/lib/api/client";
 import { apiPaths } from "@/lib/api/endpoints";
@@ -40,6 +43,40 @@ export function useSaveTaskyBoard() {
   });
 }
 
+
+/** Saved views are stored server-side and scoped to the authenticated user. */
+export function useTaskySavedViews() {
+  return useQuery({
+    queryKey: queryKeys.taskySavedViews,
+    queryFn: () => apiRequest<TaskySavedViewsEnvelope>(apiPaths.taskySavedViews),
+  });
+}
+
+export function useCreateTaskySavedView() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { name: string; filters: TaskySavedViewFilters }) =>
+      apiRequest<TaskySavedViewCreateResponse>(apiPaths.taskySavedViews, {
+        method: "POST",
+        body: input,
+      }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.taskySavedViews }),
+    onError: (error) => toast.error(apiErrorMessage(error, "Tasky could not save this view.")),
+  });
+}
+
+export function useDeleteTaskySavedView() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (viewId: string) =>
+      apiRequest<{ deleted: true; id: string }>(apiPaths.taskySavedView(viewId), { method: "DELETE" }),
+    onSuccess: () => {
+      toast.success("Saved view deleted.");
+      return queryClient.invalidateQueries({ queryKey: queryKeys.taskySavedViews });
+    },
+    onError: (error) => toast.error(apiErrorMessage(error, "Tasky could not delete this view.")),
+  });
+}
 
 export interface TaskyAttachmentUploadPayload {
   cardId: string;

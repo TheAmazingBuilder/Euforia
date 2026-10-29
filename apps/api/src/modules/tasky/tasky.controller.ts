@@ -2,7 +2,7 @@ import { Body, Controller, Delete, Get, Param, Post, Put } from "@nestjs/common"
 
 import { CurrentUser, type AuthPrincipal } from "../../shared/auth/current-user.decorator";
 import { ZodValidationPipe } from "../../shared/http/zod-validation.pipe";
-import { taskyKanbanAttachmentUploadSchema, taskyKanbanBoardStateSchema, type TaskyKanbanAttachmentUploadInput, type TaskyKanbanBoardState, uuidSchema } from "../../shared/contracts";
+import { taskyKanbanAttachmentUploadSchema, taskyKanbanBoardStateSchema, taskySavedViewCreateSchema, type TaskyKanbanAttachmentUploadInput, type TaskyKanbanBoardState, type TaskySavedViewCreateInput, uuidSchema } from "../../shared/contracts";
 import { TaskyService } from "./tasky.service";
 import { TaskyAttachmentService } from "./tasky-attachment.service";
 
@@ -27,6 +27,27 @@ export class TaskyController {
     @Body(new ZodValidationPipe(taskyKanbanBoardStateSchema)) board: TaskyKanbanBoardState,
   ) {
     return this.tasky.saveBoard(principal.userId, board);
+  }
+
+  @Get("views")
+  async listSavedViews(@CurrentUser() principal: AuthPrincipal) {
+    return this.tasky.listSavedViews(principal.userId);
+  }
+
+  @Post("views")
+  async createSavedView(
+    @CurrentUser() principal: AuthPrincipal,
+    @Body(new ZodValidationPipe(taskySavedViewCreateSchema)) input: TaskySavedViewCreateInput,
+  ) {
+    return this.tasky.createSavedView(principal.userId, input);
+  }
+
+  @Delete("views/:viewId")
+  async deleteSavedView(
+    @CurrentUser() principal: AuthPrincipal,
+    @Param("viewId") viewId: string,
+  ) {
+    return this.tasky.deleteSavedView(principal.userId, uuidSchema.parse(viewId));
   }
 
   @Get("cards/:cardId/attachments")
