@@ -25,6 +25,8 @@ export interface TradingAccountRow {
   propConfig: unknown;
   externalAccountId: string;
   providerId: string;
+  /** Canonical broker identity for duplicate scoping on shared connectors. */
+  brokerId: string;
   /** Phase 07 - connect-time broker identification snapshot (JSONB, schema-validated on read). */
   brokerIdentity: unknown;
   createdAt: Date;
@@ -204,16 +206,25 @@ export class AccountsRepository {
     userId: string,
     providerId: string,
     externalAccountId: string,
+    brokerId?: string,
   ): Promise<TradingAccountRow | null> {
-    const row = await this.prisma.tradingAccount.findUnique({
-      where: {
-        userId_providerId_externalAccountId: {
-          userId,
-          providerId,
-          externalAccountId,
-        },
-      },
-    });
+    // Shared connectors such as MT5 Bridge scope the login to the selected
+    // broker. Callers without a broker hint retain the legacy "any match"
+    // behavior (used by direct, broker-specific API adapters).
+    const row = brokerId !== undefined
+      ? await this.prisma.tradingAccount.findUnique({
+          where: {
+            userId_providerId_externalAccountId_brokerId: {
+              userId,
+              providerId,
+              externalAccountId,
+              brokerId,
+            },
+          },
+        })
+      : await this.prisma.tradingAccount.findFirst({
+          where: { userId, providerId, externalAccountId },
+        });
     return (row as TradingAccountRow) ?? null;
   }
 
@@ -238,6 +249,8 @@ export class AccountsRepository {
       isDefault: boolean;
       externalAccountId: string;
       providerId: string;
+      /** Canonical broker identity, "unknown" until identified for generic bridge accounts. */
+      brokerId?: string;
       /** Phase 07 - connect-time broker identification snapshot (already schema-validated upstream). */
       brokerIdentity?: unknown;
     };
@@ -265,6 +278,7 @@ export class AccountsRepository {
           startingBalance: new Prisma.Decimal(data.account.startingBalance),
           isDefault: data.account.isDefault,
           externalAccountId: data.account.externalAccountId,
+          brokerId: data.account.brokerId ?? "unknown",
           ...(data.account.brokerIdentity !== undefined
             ? { brokerIdentity: data.account.brokerIdentity as Prisma.InputJsonValue }
             : {}),
@@ -492,12 +506,13 @@ export class AccountsRepository {
   /** ACCOUNT_INFO pushes refresh the journal anchor facts (currency + identity). */
   async setBridgeAccountIdentity(
     accountId: string,
-    data: { currency?: string; brokerIdentity?: unknown },
+    data: { currency?: string; brokerId?: string; brokerIdentity?: unknown },
   ): Promise<void> {
     await this.prisma.tradingAccount.update({
       where: { id: accountId },
       data: {
         ...(data.currency ? { currency: data.currency } : {}),
+        ...(data.brokerId ? { brokerId: data.brokerId } : {}),
         ...(data.brokerIdentity !== undefined
           ? { brokerIdentity: data.brokerIdentity as Prisma.InputJsonValue }
           : {}),
