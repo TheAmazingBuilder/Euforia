@@ -121,44 +121,68 @@ export class BrokerIdentificationService {
   identifyAtConnect(input: {
     providerId: string;
     externalAccountId: string;
+    endpoint?: string | null;
     providerReported: { brokerName: string | null; accountClass: "REAL" | "DEMO" | null } | null | undefined;
   }): BrokerIdentification {
     const descriptor = this.registry.get(input.providerId)?.descriptor ?? null;
     const signals: string[] = [];
+    const brokerName = input.providerReported?.brokerName?.trim() ?? "";
 
-    if (input.providerReported?.brokerName) {
-      signals.push(`provider-reported broker identity: ${input.providerReported.brokerName}`);
-      if (input.providerReported.accountClass) {
-        signals.push(`provider-reported account class: ${input.providerReported.accountClass}`);
-      }
-      // Match the catalog entry for connector status/platform context - the
-      // DISPLAY NAME stays the provider-reported entity (most specific).
-      const entry =
-        this.entryByProviderId(input.providerId) ??
-        (descriptor ? this.entryByPlatform(descriptor.platform) : null) ??
-        null;
-      if (entry && entry.brokerId !== input.providerId.replace(/-ws$/, "")) {
-        signals.push(`catalog entry: ${entry.displayName}`);
-      }
-      return {
-        brokerId: entry?.brokerId ?? "unknown",
-        displayName: input.providerReported.brokerName,
-        platform: entry?.platforms[0] ?? descriptor?.platform ?? "OTHER",
-        confidence: "PROVIDER_REPORTED",
-        connectorStatus: entry
-          ? this.connectorStatusFor(entry)
-          : "CONNECTOR_NOT_IMPLEMENTED",
+    // No provider-reported label: use the server hint and account id. The
+    // endpoint is matched against static patterns only and is never dialed.
+    if (!brokerName) {
+      return this.identify({
         providerId: input.providerId,
-        signals,
-        identifiedAt: isoDateTime(new Date()),
-      };
+        externalAccountId: input.externalAccountId,
+        ...(input.endpoint ? { endpoint: input.endpoint } : {}),
+      });
     }
 
-    // No provider-reported identity → fall through to the rules engine.
-    return this.identify({
-      providerId: input.providerId,
-      externalAccountId: input.externalAccountId,
-    });
+    signals.push(`provider-reported broker identity: ${brokerName}`);
+    if (input.providerReported?.accountClass) {
+      signals.push(`provider-reported account class: ${input.providerReported.accountClass}`);
+    }
+
+    // Resolve a broker name before consulting providerId. Several brands can
+    // share mt5-bridge; using the first providerId match would label Axi and
+    // PU Prime accounts as IC Markets. Name/endpoint evidence is more specific.
+    const nameMatch = this.matchBrokerName(brokerName);
+    const endpointMatch = input.endpoint
+      ? this.matchPatterns(input.endpoint, "ENDPOINT")
+      : null;
+    const entry =
+      nameMatch ??
+      endpointMatch?.entry ??
+      this.entryByProviderId(input.providerId);
+
+    if (nameMatch) {
+      signals.push(`catalog entry matched provider-reported broker name: ${nameMatch.displayName}`);
+    } else if (endpointMatch) {
+      signals.push(endpointMatch.pattern.signal);
+    } else if (entry) {
+      signals.push(`catalog entry: ${entry.displayName}`);
+    } else {
+      signals.push("provider-reported name did not match a specific broker catalog entry");
+    }
+
+    return {
+      brokerId: entry?.brokerId ?? "unknown",
+      // Preserve the exact broker label reported by MT5; never replace a
+      // legal entity name with a guessed display label.
+      displayName: brokerName,
+      platform: entry?.connectorProviderId === "mt5-bridge"
+        ? "MT5"
+        : entry?.platforms[0] ?? descriptor?.platform ?? "OTHER",
+      confidence: "PROVIDER_REPORTED",
+      connectorStatus: entry
+        ? this.connectorStatusFor(entry)
+        : descriptor
+          ? "CONNECTOR_AVAILABLE"
+          : "CONNECTOR_NOT_IMPLEMENTED",
+      providerId: entry?.connectorProviderId ?? (descriptor ? input.providerId : null),
+      signals,
+      identifiedAt: isoDateTime(new Date()),
+    };
   }
 
   // ── Internals ──────────────────────────────────────────────────────────────
@@ -179,13 +203,42 @@ export class BrokerIdentificationService {
   }
 
   private entryByProviderId(providerId: string): BrokerCatalogEntryDef | null {
-    return (
-      BROKER_CATALOG.find((entry) => entry.connectorProviderId === providerId) ?? null
-    );
+    const matches = BROKER_CATALOG.filter((entry) => entry.connectorProviderId === providerId);
+    // A connector can serve multiple broker brands (e.g. mt5-bridge), so it
+    // only identifies a brand when exactly one catalog entry owns that id.
+    return matches.length === 1 ? matches[0] ?? null : null;
+  }
+
+  /** Match a provider-reported company label to a known broker, conservatively. */
+  private matchBrokerName(value: string): BrokerCatalogEntryDef | null {
+    const normalize = (input: string) => input.toLowerCase().replace(/[^a-z0-9]/g, "");
+    const candidate = normalize(value);
+    if (!candidate) return null;
+
+    const matches = BROKER_CATALOG.flatMap((entry) =>
+      [entry.displayName, ...entry.aliases].map((alias) => ({
+        entry,
+        normalizedAlias: normalize(alias),
+      })),
+    )
+      .filter(({ normalizedAlias }) =>
+        normalizedAlias.length > 0 &&
+        (candidate === normalizedAlias ||
+          (normalizedAlias.length >= 5 && candidate.includes(normalizedAlias))),
+      )
+      .sort((a, b) => b.normalizedAlias.length - a.normalizedAlias.length);
+
+    return matches[0]?.entry ?? null;
   }
 
   private entryByPlatform(platform: TradingProviderDescriptor["platform"]): BrokerCatalogEntryDef | null {
-    return BROKER_CATALOG.find((entry) => entry.platforms.includes(platform)) ?? null;
+    // If only the generic terminal is known, do not guess which MT5 broker
+    // sits behind it by returning the first broker in catalog order.
+    return (
+      BROKER_CATALOG.find((entry) => entry.brokerId === "metatrader-platform" && entry.platforms.includes(platform)) ??
+      BROKER_CATALOG.find((entry) => entry.platforms.includes(platform)) ??
+      null
+    );
   }
 
   private buildResult(
@@ -197,7 +250,7 @@ export class BrokerIdentificationService {
     return {
       brokerId: entry.brokerId,
       displayName: entry.displayName,
-      platform: entry.platforms[0] ?? descriptor?.platform ?? "OTHER",
+      platform: entry.connectorProviderId === "mt5-bridge" ? "MT5" : entry.platforms[0] ?? descriptor?.platform ?? "OTHER",
       confidence,
       connectorStatus: this.connectorStatusFor(entry),
       providerId: entry.connectorProviderId,
