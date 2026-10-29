@@ -12,8 +12,7 @@
 
 /* Makes shadcn/ui `dark:` variants work on BOTH dark themes.
    Without this, all shadcn components break on theme switch. */
-@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *,
-  [data-theme="dark-blue"], [data-theme="dark-blue"] *));
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 /* ============================================================
    COSMOZ - "Le Registre" design world (2026 refonte)
@@ -26,17 +25,19 @@
    sparingly. No glow, no glass, no gradient text.
    ============================================================ */
 
-/* ---- Theme: dark-blue / "Encre" (DEFAULT) ---- */
-:root,
-[data-theme="dark-blue"] {
+/* ---- Theme: dark / Euforia brand (DEFAULT) ---- */
+:root {
   --background: #0E1116;
   --surface: #141920;
   --surface-raised: #1A2029;
   --border: #262E3A;
   --text-primary: #E9ECEF;
   --text-muted: #99A2AD;
-  --accent: #4E6EE0;
-  --accent-hover: #6280EA;
+  --accent: #8B5CF6;
+  --accent-hover: #A78BFA;
+  --action-success: #10B981;
+  --action-success-hover: #059669;
+  --action-success-foreground: #FFFFFF;
   --profit: #3EBE8C;
   --loss: #E05B5B;
   --warning: #D9A03F;
@@ -69,8 +70,11 @@
   --border: #28292E;
   --text-primary: #EDEDEF;
   --text-muted: #9BA0A8;
-  --accent: #5578E6;
-  --accent-hover: #6B8AEC;
+  --accent: #8B5CF6;
+  --accent-hover: #A78BFA;
+  --action-success: #10B981;
+  --action-success-hover: #059669;
+  --action-success-foreground: #FFFFFF;
   --profit: #41C393;
   --loss: #E26363;
   --warning: #DCA748;
@@ -89,8 +93,11 @@
   --border: #D9D6CD;
   --text-primary: #1B1C1E;
   --text-muted: #5F646C;
-  --accent: #2E4FC4;
-  --accent-hover: #2744AF;
+  --accent: #6D28D9;
+  --accent-hover: #5B21B6;
+  --action-success: #047857;
+  --action-success-hover: #065F46;
+  --action-success-foreground: #FFFFFF;
   --profit: #12805C;
   --loss: #C03E3E;
   --warning: #8F6418;
@@ -141,7 +148,9 @@
   --color-cat-structure: var(--cat-structure);
   --color-cat-advanced: var(--cat-advanced);
 
-  --color-primary: var(--accent);
+  --color-primary: var(--action-success);
+  --color-action-success: var(--action-success);
+  --color-action-success-hover: var(--action-success-hover);
   --color-destructive: var(--loss);
   --color-ring: var(--ring);
 
@@ -213,13 +222,7 @@
   }
 }
 
-/* ---- Theme swatch dots (ThemeToggle) ----
-   Hard rule §9: zero hardcoded hex outside globals.css - the per-theme preview
-   dots therefore live HERE as classes, consumed by the theme switcher (theme-switch.tsx). */
-.theme-dot-dark-blue {
-  background-color: #0E1116;
-  box-shadow: inset 0 0 0 1px #262E3A;
-}
+/* ---- Theme swatch dots (ThemeToggle) ---- */
 .theme-dot-dark {
   background-color: #0B0B0D;
   box-shadow: inset 0 0 0 1px #28292E;

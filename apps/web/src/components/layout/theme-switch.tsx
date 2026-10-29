@@ -2,23 +2,21 @@
 
 import * as React from "react";
 import { useTheme } from "next-themes";
-import { Droplet, Moon, Sun } from "lucide-react";
+import { Monitor, Moon, Sun } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
 /**
  * ThemeSwitch - Prisma-docs-inspired segmented theme control.
  *
- * A single pill with three segments (Dark blue / Dark / Light). The active
- * segment sits on a rounded "thumb" that slides smoothly to the clicked
- * position (transform + transition), exactly like the docs-site switcher.
- * Icons only on >=md viewports, labels always accessible via aria/title.
+ * Compact icon-only theme control. Accessible names remain available to
+ * assistive technology and tooltips without consuming horizontal space.
  */
 
 const SEGMENTS = [
-  { value: "dark-blue", label: "Dark blue", Icon: Droplet },
   { value: "dark", label: "Dark", Icon: Moon },
   { value: "light", label: "Light", Icon: Sun },
+  { value: "system", label: "System", Icon: Monitor },
 ] as const;
 
 type SegmentValue = (typeof SEGMENTS)[number]["value"];
@@ -46,7 +44,7 @@ export function ThemeSwitch({ className }: { className?: string }) {
       aria-label="Color theme"
       data-testid="theme-toggle"
       className={cn(
-        "relative inline-flex items-center rounded-full border bg-muted/60 p-0.5 backdrop-blur-sm",
+        "relative inline-flex h-9 w-[108px] shrink-0 items-center rounded-full border bg-muted/60 p-0.5 backdrop-blur-sm",
         className,
       )}
     >
@@ -74,7 +72,7 @@ export function ThemeSwitch({ className }: { className?: string }) {
             aria-label={`Switch to ${segment.label.toLowerCase()} theme`}
             onClick={() => setTheme(segment.value as SegmentValue)}
             className={cn(
-              "relative z-10 flex h-7 items-center justify-center gap-1.5 rounded-full px-2.5 text-xs font-medium",
+              "relative z-10 flex h-7 min-w-0 flex-1 items-center justify-center rounded-full p-0 text-xs font-medium",
               "transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
               isActive
                 ? "text-foreground"
@@ -82,7 +80,6 @@ export function ThemeSwitch({ className }: { className?: string }) {
             )}
           >
             <segment.Icon className="size-3.5 shrink-0" />
-            <span className="hidden sm:inline">{segment.label}</span>
           </button>
         );
       })}

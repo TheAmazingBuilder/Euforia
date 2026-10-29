@@ -34,13 +34,13 @@ import { useI18n } from "@/i18n/i18n-provider";
 
 /** API SCREAMING_SNAKE ↔ next-themes kebab keys. */
 const THEME_TO_NEXT = {
-  DARK_BLUE: "dark-blue",
+  DARK_BLUE: "dark",
   DARK: "dark",
   LIGHT: "light",
   SYSTEM: "system",
 } as const;
 const NEXT_TO_THEME: Record<string, UserPreferences["appearance"]["theme"]> = {
-  "dark-blue": "DARK_BLUE",
+  "dark-blue": "DARK",
   dark: "DARK",
   light: "LIGHT",
   system: "SYSTEM",
@@ -106,7 +106,6 @@ export function AppearanceCard() {
           value={activeTheme}
           onChange={onThemeChange}
           options={[
-            { value: "DARK_BLUE", label: L.themeDarkBlue, hint: L.themeDarkBlueHint },
             { value: "DARK", label: L.themeDark, hint: L.themeDarkHint },
             { value: "LIGHT", label: L.themeLight, hint: L.themeLightHint },
             { value: "SYSTEM", label: L.themeSystem, hint: L.themeSystemHint },

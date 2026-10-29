@@ -1,21 +1,31 @@
 "use client";
 
-import { ThemeProvider as NextThemesProvider } from "next-themes";
+import * as React from "react";
+import { ThemeProvider as NextThemesProvider, useTheme } from "next-themes";
 
 /**
- * Theme runtime - next-themes owns the DOM (zero-flash). "system" resolves
- * to the OS preference (Settings §Appearance: Light / Dark / System);
- * the stored default stays dark-blue so first visits keep the brand look.
+ * Normalize the retired dark-blue preference for existing installations.
  */
+function LegacyThemeMigration() {
+  const { theme, setTheme } = useTheme();
+
+  React.useEffect(() => {
+    if (theme === "dark-blue") setTheme("dark");
+  }, [theme, setTheme]);
+
+  return null;
+}
+
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   return (
     <NextThemesProvider
       attribute="data-theme"
-      defaultTheme="dark-blue"
-      themes={["dark-blue", "dark", "light", "system"]}
+      defaultTheme="dark"
+      themes={["dark", "light", "system"]}
       enableSystem
       disableTransitionOnChange
     >
+      <LegacyThemeMigration />
       {children}
     </NextThemesProvider>
   );
