@@ -301,11 +301,24 @@ export function TaskyView() {
   const bootstrappedRef = React.useRef(false);
   const skipNextAutoSaveRef = React.useRef(false);
   const saveQueueRef = React.useRef<Promise<void>>(Promise.resolve());
+  const columnsRef = React.useRef(columns);
+  columnsRef.current = columns;
 
   // Serialize full-board PUTs so a slower older request cannot finish after a newer state.
   const enqueueSave = React.useCallback((snapshot: TaskyKanbanBoardState) => {
     const next = saveQueueRef.current.catch(() => undefined).then(async () => {
-      await boardSave.mutateAsync(snapshot);
+      const saved = await boardSave.mutateAsync(snapshot);
+      // Column-transition automations may change a card on the server (e.g.
+      // set its priority). Reflect that response locally only if the user
+      // hasn't made a newer edit while the request was in flight.
+      if (
+        JSON.stringify(saved.board.columns) !== JSON.stringify(snapshot.columns) &&
+        JSON.stringify(columnsRef.current) === JSON.stringify(snapshot.columns)
+      ) {
+        skipNextAutoSaveRef.current = true;
+        columnsRef.current = saved.board.columns;
+        setColumns(saved.board.columns);
+      }
       clearLegacyBoard();
     });
     saveQueueRef.current = next.then(() => undefined, () => undefined);
