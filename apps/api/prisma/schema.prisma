@@ -364,6 +364,9 @@ model TradingConnection {
   account         TradingAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
   /// Provider registry key (denormalized from the account for direct lookups).
   providerId      String
+  /// User-selected expected broker for shared connectors (e.g. mt5-bridge).
+  /// Verified against terminal/provider-reported identity before accepting data.
+  expectedBrokerId String?
   /// API_KEY in V1 (shared tradingConnectionMethodSchema).
   method          String
   /// DISCONNECTED | CONNECTING | CONNECTED | ERROR (§15 — orthogonal to sync status).
