@@ -253,6 +253,8 @@ export class Mt5BridgeIngestService implements OnModuleDestroy {
     const payload = envelope.payload as {
       externalAccountId: string;
       accountClass?: "REAL" | "DEMO" | null;
+      brokerName?: string | null;
+      server?: string | null;
     };
     const account = await this.repository.findAccountById(accountId);
     if (!account || payload.externalAccountId.trim() !== account.externalAccountId) {
