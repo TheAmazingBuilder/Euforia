@@ -842,13 +842,19 @@ export function TaskyView() {
   const upcomingRows = tableRows.filter((row) => row.card.due && row.card.due >= todayKey && row.card.due <= nextWeekKey);
   const timelineEntries = React.useMemo(() => {
     const entries = visibleRows.flatMap((row) => {
-      const start = getTaskyStartDate(row.card) ?? row.card.due ?? null;
+      const plannedStart = getTaskyStartDate(row.card);
+      const start = plannedStart ?? row.card.due ?? null;
       if (!start) return [];
       const end = row.card.due && row.card.due >= start ? row.card.due : start;
-      const days = Math.max(1, Math.floor((Date.parse(`${end}T00:00:00Z`) - Date.parse(`${start}T00:00:00Z`)) / 86_400_000) + 1);
-      return [{ ...row, start, end, days }];
+      const durationKnown = Boolean(plannedStart && row.card.due && row.card.due >= plannedStart);
+      const kind = durationKnown ? "range" as const : plannedStart ? "start" as const : "due" as const;
+      const days = durationKnown
+        ? Math.max(1, Math.floor((Date.parse(`${end}T00:00:00Z`) - Date.parse(`${start}T00:00:00Z`)) / 86_400_000) + 1)
+        : 1;
+      return [{ ...row, start, end, days, durationKnown, kind }];
     });
-    if (entries.length === 0) return { min: null as string | null, max: null as string | null, span: 1, entries: [] as Array<TaskyViewRow & { start: string; end: string; days: number; left: number; width: number }> };
+    type TimelineEntry = TaskyViewRow & { start: string; end: string; days: number; durationKnown: boolean; kind: "range" | "start" | "due"; left: number; width: number };
+    if (entries.length === 0) return { min: null as string | null, max: null as string | null, span: 1, entries: [] as TimelineEntry[] };
     const min = entries.reduce((value, entry) => entry.start < value ? entry.start : value, entries[0].start);
     const max = entries.reduce((value, entry) => entry.end > value ? entry.end : value, entries[0].end);
     const span = Math.max(1, Math.floor((Date.parse(`${max}T00:00:00Z`) - Date.parse(`${min}T00:00:00Z`)) / 86_400_000) + 1);
@@ -857,7 +863,7 @@ export function TaskyView() {
       entries: entries.map((entry) => ({
         ...entry,
         left: Math.floor((Date.parse(`${entry.start}T00:00:00Z`) - Date.parse(`${min}T00:00:00Z`)) / 86_400_000) / span * 100,
-        width: Math.max(1.5, entry.days / span * 100),
+        width: Math.max(1.5, (entry.durationKnown ? entry.days : 1) / span * 100),
       })),
     };
   }, [visibleRows]);
@@ -1211,7 +1217,7 @@ export function TaskyView() {
           <header className="flex flex-wrap items-center justify-between gap-2">
             <div>
               <h2 className="text-sm font-semibold">Task timeline</h2>
-              <p className="text-xs text-muted-foreground">Bars use the planned start date (or creation date for legacy cards) through the due date.</p>
+              <p className="text-xs text-muted-foreground">Bars show a duration only when both start and due dates are known; otherwise they mark the known start or due date.</p>
             </div>
             {timelineEntries.min && timelineEntries.max ? <span className="font-mono text-xs text-muted-foreground">{timelineEntries.min} — {timelineEntries.max}</span> : null}
           </header>
@@ -1224,11 +1230,12 @@ export function TaskyView() {
                     <div className="absolute inset-y-0 border-l border-border/70" style={{ left: "25%" }} />
                     <div className="absolute inset-y-0 border-l border-border/70" style={{ left: "50%" }} />
                     <div className="absolute inset-y-0 border-l border-border/70" style={{ left: "75%" }} />
-                    <button type="button" onClick={() => setDetailsCardId(entry.card.id)} title={`${entry.start} to ${entry.end} · ${entry.days} day(s)`}
+                    <button type="button" onClick={() => setDetailsCardId(entry.card.id)}
+                      title={entry.durationKnown ? `${entry.start} to ${entry.end} · ${entry.days} day(s)` : `${entry.kind === "due" ? "Due date" : "Start date"}: ${entry.start}`}
                       className="absolute inset-y-1 rounded bg-accent/70 px-1 text-left text-[10px] text-foreground hover:bg-accent"
                       style={{ left: `${entry.left}%`, width: `${Math.min(entry.width, 100 - entry.left)}%` }}
-                      aria-label={`${entry.card.title}: ${entry.start} to ${entry.end}, ${entry.days} days`}>
-                      <span className="block truncate">{entry.days}d</span>
+                      aria-label={entry.durationKnown ? `${entry.card.title}: ${entry.start} to ${entry.end}, ${entry.days} days` : `${entry.card.title}: ${entry.kind === "due" ? "due date" : "start date"} ${entry.start}`}>
+                      <span className="block truncate">{entry.durationKnown ? `${entry.days}d` : entry.kind === "due" ? "Due" : "Start"}</span>
                     </button>
                   </div>
                   <p className="text-[11px] text-muted-foreground sm:col-start-2">{entry.column.title} · {entry.start} → {entry.end}</p>
