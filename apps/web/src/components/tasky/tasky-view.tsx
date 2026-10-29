@@ -9,6 +9,8 @@ import {
   ChevronRight,
   Copy,
   GripVertical,
+  FileText,
+  ListChecks,
   LoaderCircle,
   MoreHorizontal,
   Pencil,
@@ -33,7 +35,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { useSaveTaskyBoard, useTaskyBoard } from "@/lib/api/queries";
 import { cn } from "@/lib/utils";
 
@@ -189,6 +199,8 @@ export function TaskyView() {
   const [listEditTitle, setListEditTitle] = React.useState("");
   const [editingCardId, setEditingCardId] = React.useState<string | null>(null);
   const [cardDraft, setCardDraft] = React.useState<TaskyCard | null>(null);
+  const [detailsCardId, setDetailsCardId] = React.useState<string | null>(null);
+  const [checklistDraft, setChecklistDraft] = React.useState("");
 
   const columnRefs = React.useRef<Map<string, HTMLElement>>(new Map());
   const dragRef = React.useRef<DragState | null>(null);
@@ -454,11 +466,48 @@ export function TaskyView() {
       ...card,
       id: newId("card"),
       title: `${card.title} (copy)`.slice(0, 140),
+      checklist: card.checklist?.map((item) => ({ ...item, id: newId("check") })),
     };
     setColumns((prev) => prev.map((column) =>
       column.id === columnId ? { ...column, cards: [...column.cards, duplicate] } : column,
     ));
   };
+
+  const updateCardDetails = (
+    cardId: string,
+    updates: Partial<Pick<TaskyCard, "description" | "checklist">>,
+  ) => {
+    setColumns((prev) => prev.map((column) => ({
+      ...column,
+      cards: column.cards.map((card) => card.id === cardId ? { ...card, ...updates } : card),
+    })));
+  };
+
+  const addChecklistItem = (card: TaskyCard) => {
+    const text = checklistDraft.trim();
+    if (!text || (card.checklist?.length ?? 0) >= 100) return;
+    updateCardDetails(card.id, {
+      checklist: [...(card.checklist ?? []), { id: newId("check"), text, completed: false }],
+    });
+    setChecklistDraft("");
+  };
+
+  const toggleChecklistItem = (card: TaskyCard, itemId: string, completed: boolean) => {
+    updateCardDetails(card.id, {
+      checklist: (card.checklist ?? []).map((item) => item.id === itemId ? { ...item, completed } : item),
+    });
+  };
+
+  const removeChecklistItem = (card: TaskyCard, itemId: string) => {
+    updateCardDetails(card.id, {
+      checklist: (card.checklist ?? []).filter((item) => item.id !== itemId),
+    });
+  };
+
+  const detailsEntry = detailsCardId
+    ? columns.flatMap((column) => column.cards.map((card) => ({ card, columnTitle: column.title })))
+        .find((entry) => entry.card.id === detailsCardId)
+    : undefined;
 
   const dragCard = drag ? columns.flatMap((column) => column.cards).find((card) => card.id === drag.cardId) : undefined;
 
@@ -736,6 +785,19 @@ export function TaskyView() {
                         </span>
                       </div>
                       <footer className="mt-2.5 flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => { setDetailsCardId(card.id); setChecklistDraft(""); }}
+                          aria-label={`Open details for ${card.title}`}
+                          title="Card details"
+                          data-testid={`tasky-details-${card.id}`}
+                          className="inline-flex min-w-0 items-center gap-1 rounded-md px-1 py-1 text-[11px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                        >
+                          {card.description?.trim() ? <FileText className="size-3.5 shrink-0" aria-hidden="true" /> : <ListChecks className="size-3.5 shrink-0" aria-hidden="true" />}
+                          {(card.checklist?.length ?? 0) > 0
+                            ? `${card.checklist?.filter((item) => item.completed).length ?? 0}/${card.checklist?.length} checklist`
+                            : "Details"}
+                        </button>
                         <span
                           aria-hidden="true"
                           className="grid size-6 place-items-center rounded-full border border-border bg-muted/60 text-[10px] font-semibold text-muted-foreground"
@@ -902,6 +964,127 @@ export function TaskyView() {
       ) : null}
 
       {drag ? <div className="fixed inset-0 z-[60] cursor-grabbing" aria-hidden="true" data-testid="tasky-drag-veil" /> : null}
+
+      <Dialog
+        open={detailsEntry !== undefined}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDetailsCardId(null);
+            setChecklistDraft("");
+          }
+        }}
+      >
+        {detailsEntry ? (
+          <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl" data-testid="tasky-card-details">
+            <DialogHeader>
+              <DialogTitle className="pr-8 text-lg">{detailsEntry.card.title}</DialogTitle>
+              <DialogDescription>
+                {detailsEntry.columnTitle} · {detailsEntry.card.tag} · {detailsEntry.card.priority}
+              </DialogDescription>
+            </DialogHeader>
+
+            <section className="flex flex-col gap-2">
+              <label htmlFor="tasky-card-description" className="text-sm font-medium">Description</label>
+              <Textarea
+                id="tasky-card-description"
+                value={detailsEntry.card.description ?? ""}
+                onChange={(event) => updateCardDetails(detailsEntry.card.id, { description: event.target.value })}
+                placeholder="Add context, acceptance criteria, links or notes…"
+                maxLength={4000}
+                rows={4}
+                data-testid="tasky-card-description"
+                className="resize-y"
+              />
+              <p className="text-right text-[11px] text-muted-foreground">
+                {(detailsEntry.card.description ?? "").length}/4000 characters
+              </p>
+            </section>
+
+            <section className="flex flex-col gap-3">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <ListChecks className="size-4 text-muted-foreground" aria-hidden="true" />
+                  <h3 className="text-sm font-semibold">Checklist</h3>
+                  <span className="rounded-md bg-muted px-1.5 py-0.5 font-mono text-[11px] text-muted-foreground">
+                    {detailsEntry.card.checklist?.filter((item) => item.completed).length ?? 0}/
+                    {detailsEntry.card.checklist?.length ?? 0}
+                  </span>
+                </div>
+                <span className="text-xs text-muted-foreground">Up to 100 items</span>
+              </div>
+
+              {(detailsEntry.card.checklist?.length ?? 0) > 0 ? (
+                <div className="flex flex-col gap-1" data-testid="tasky-checklist-items">
+                  {detailsEntry.card.checklist?.map((item) => (
+                    <div key={item.id} className="group/check flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-muted/60">
+                      <input
+                        type="checkbox"
+                        checked={item.completed}
+                        onChange={(event) => toggleChecklistItem(detailsEntry.card, item.id, event.target.checked)}
+                        aria-label={`Complete ${item.text}`}
+                        data-testid={`tasky-checklist-toggle-${item.id}`}
+                        className="size-4 shrink-0 accent-[var(--accent)]"
+                      />
+                      <span className={cn("min-w-0 flex-1 break-words text-sm", item.completed && "text-muted-foreground line-through")}>
+                        {item.text}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => removeChecklistItem(detailsEntry.card, item.id)}
+                        aria-label={`Delete checklist item ${item.text}`}
+                        title="Remove item"
+                        data-testid={`tasky-checklist-delete-${item.id}`}
+                        className="grid size-7 shrink-0 place-items-center rounded text-muted-foreground opacity-0 transition-colors hover:bg-loss/10 hover:text-loss group-hover/check:opacity-100 [@media(hover:none)]:opacity-100"
+                      >
+                        <Trash2 className="size-3.5" aria-hidden="true" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="rounded-lg border border-dashed border-border px-3 py-5 text-center text-sm text-muted-foreground">
+                  No checklist items yet. Add the first step below.
+                </p>
+              )}
+
+              <form
+                className="flex items-center gap-2"
+                data-testid="tasky-checklist-add-form"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  addChecklistItem(detailsEntry.card);
+                }}
+              >
+                <Input
+                  value={checklistDraft}
+                  onChange={(event) => setChecklistDraft(event.target.value)}
+                  placeholder="Add a checklist item…"
+                  aria-label="New checklist item"
+                  maxLength={180}
+                  data-testid="tasky-checklist-add-input"
+                  disabled={(detailsEntry.card.checklist?.length ?? 0) >= 100}
+                  className="h-9 min-w-0 flex-1 bg-background text-sm"
+                />
+                <Button
+                  type="submit"
+                  size="sm"
+                  className="h-9 gap-1.5"
+                  disabled={!checklistDraft.trim() || (detailsEntry.card.checklist?.length ?? 0) >= 100}
+                  data-testid="tasky-checklist-add-submit"
+                >
+                  <Plus className="size-3.5" aria-hidden="true" />
+                  Add
+                </Button>
+              </form>
+            </section>
+
+            <div className="flex items-center justify-between border-t border-border pt-3 text-xs text-muted-foreground">
+              <span>Changes save automatically.</span>
+              <span>{detailsEntry.card.assignee} · {detailsEntry.card.due ? formatDue(detailsEntry.card.due) : "No due date"}</span>
+            </div>
+          </DialogContent>
+        ) : null}
+      </Dialog>
     </div>
   );
 }
