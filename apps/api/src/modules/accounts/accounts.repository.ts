@@ -437,57 +437,112 @@ export class AccountsRepository {
     eventId: string;
     kind: string;
     payload: unknown;
-  }): Promise<{ accepted: boolean; duplicate: boolean; activated: boolean }> {
-    return this.prisma.$transaction(async (tx) => {
-      const connecting = await tx.tradingConnection.updateMany({
-        where: {
-          bridgeKeyId: data.bridgeKeyId,
-          method: "PLATFORM_BRIDGE",
-          status: "CONNECTING",
-          credentialsEnc: { not: "" },
-        },
-        data: {
-          status: "CONNECTED",
-          lastConnectedAt: new Date(),
-          lastError: null,
-        },
-      });
-      const activated = connecting.count === 1;
+    identifiedBrokerId?: string;
+  }): Promise<{
+    accepted: boolean;
+    duplicate: boolean;
+    activated: boolean;
+    reason?: "INACTIVE" | "BROKER_DUPLICATE" | "BROKER_MISMATCH";
+  }> {
+    try {
+      return await this.prisma.$transaction(async (tx) => {
+        // Touch the active row first to serialize this acceptance attempt
+        // with disconnect/rotation while keeping CONNECTING unchanged until
+        // every business invariant below has passed.
+        const locked = await tx.tradingConnection.updateMany({
+          where: {
+            bridgeKeyId: data.bridgeKeyId,
+            method: "PLATFORM_BRIDGE",
+            status: { in: ["CONNECTING", "CONNECTED"] },
+            credentialsEnc: { not: "" },
+          },
+          data: { lastError: null },
+        });
+        if (locked.count !== 1) {
+          return { accepted: false, duplicate: false, activated: false, reason: "INACTIVE" as const };
+        }
 
-      // A CONNECTED row is also written conditionally so it is locked against
-      // a concurrent disconnect/rotation until the event insert commits.
-      const connected = activated
-        ? { count: 1 }
-        : await tx.tradingConnection.updateMany({
-            where: {
-              bridgeKeyId: data.bridgeKeyId,
-              method: "PLATFORM_BRIDGE",
-              status: "CONNECTED",
-              credentialsEnc: { not: "" },
-            },
-            data: { lastError: null },
+        const connection = await tx.tradingConnection.findUnique({
+          where: { bridgeKeyId: data.bridgeKeyId },
+          select: { accountId: true, status: true },
+        });
+        if (!connection) {
+          return { accepted: false, duplicate: false, activated: false, reason: "INACTIVE" as const };
+        }
+
+        let nextAccountBrokerId: string | undefined;
+        if (data.identifiedBrokerId) {
+          const account = await tx.tradingAccount.findUnique({
+            where: { id: connection.accountId },
+            select: { id: true, userId: true, providerId: true, externalAccountId: true, brokerId: true },
           });
-      if (connected.count !== 1) {
-        return { accepted: false, duplicate: false, activated: false };
-      }
+          if (!account) {
+            return { accepted: false, duplicate: false, activated: false, reason: "INACTIVE" as const };
+          }
+          if (account.brokerId !== "unknown" && account.brokerId !== data.identifiedBrokerId) {
+            return { accepted: false, duplicate: false, activated: false, reason: "BROKER_MISMATCH" as const };
+          }
 
-      // PostgreSQL ON CONFLICT DO NOTHING preserves idempotency without
-      // aborting the surrounding transaction on a replay.
-      const inserted = await tx.tradingBridgeEvent.createMany({
-        data: [{
-          bridgeKeyId: data.bridgeKeyId,
-          eventId: data.eventId,
-          kind: data.kind,
-          payload: data.payload as Prisma.InputJsonValue,
-        }],
-        skipDuplicates: true,
+          const duplicateAccount = await tx.tradingAccount.findFirst({
+            where: {
+              userId: account.userId,
+              providerId: account.providerId,
+              externalAccountId: account.externalAccountId,
+              brokerId: data.identifiedBrokerId,
+              id: { not: account.id },
+            },
+            select: { id: true },
+          });
+          if (duplicateAccount) {
+            return { accepted: false, duplicate: false, activated: false, reason: "BROKER_DUPLICATE" as const };
+          }
+          if (account.brokerId !== data.identifiedBrokerId) {
+            await tx.tradingAccount.update({
+              where: { id: account.id },
+              data: { brokerId: data.identifiedBrokerId },
+            });
+          }
+          nextAccountBrokerId = data.identifiedBrokerId;
+        }
+
+        const activated = connection.status === "CONNECTING";
+        if (activated) {
+          await tx.tradingConnection.update({
+            where: { bridgeKeyId: data.bridgeKeyId },
+            data: { status: "CONNECTED", lastConnectedAt: new Date(), lastError: null },
+          });
+        }
+
+        // PostgreSQL ON CONFLICT DO NOTHING preserves idempotency without
+        // aborting the surrounding transaction on a replay.
+        const inserted = await tx.tradingBridgeEvent.createMany({
+          data: [{
+            bridgeKeyId: data.bridgeKeyId,
+            eventId: data.eventId,
+            kind: data.kind,
+            payload: data.payload as Prisma.InputJsonValue,
+          }],
+          skipDuplicates: true,
+        });
+        return {
+          accepted: true,
+          duplicate: inserted.count === 0,
+          activated,
+        };
       });
-      return {
-        accepted: true,
-        duplicate: inserted.count === 0,
-        activated,
-      };
-    });
+    } catch (error) {
+      // A concurrent generic bridge pairing may race to claim the same
+      // (user, provider, login, broker) compound key. The DB unique index is
+      // the final arbiter; the transaction rolls back activation/event data.
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2002" &&
+        String(error.meta?.target ?? "").includes("brokerId")
+      ) {
+        return { accepted: false, duplicate: false, activated: false, reason: "BROKER_DUPLICATE" };
+      }
+      throw error;
+    }
   }
 
   /** The pull-adapter's data source: latest cached event of one kind. */
