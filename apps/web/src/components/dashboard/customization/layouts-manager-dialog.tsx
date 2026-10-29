@@ -443,7 +443,7 @@ function LayoutRow({
               <Copy className="size-4" aria-hidden="true" />
             </Button>
             <Button
-              variant="edit"
+              variant="ghost"
               size="icon-sm"
               aria-label={`Rename ${layout.name}`}
               data-testid={`dashboard-layout-rename-${layout.id}`}

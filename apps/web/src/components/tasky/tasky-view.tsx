@@ -1194,7 +1194,7 @@ export function TaskyView() {
           ["upcoming", "Upcoming"],
           ["archived", "Archived"],
         ] as const).map(([mode, label]) => (
-          <Button key={mode} type="button" size="sm" variant={viewMode === mode ? "secondary" : "outline"}
+          <Button key={mode} type="button" size="sm" variant={viewMode === mode ? "default" : "outline"}
             aria-pressed={viewMode === mode} onClick={() => setViewMode(mode)}
             data-testid={`tasky-view-mode-${mode}`}>
             {label}

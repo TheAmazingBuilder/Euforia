@@ -72,9 +72,7 @@ export function AppearanceCard() {
   };
 
   const onSave = () => {
-    const normalizedDraft =
-      draft.theme === "DARK_BLUE" ? { ...draft, theme: "DARK" as const } : draft;
-    save.mutate(normalizedDraft, {
+    save.mutate(draft, {
       onSuccess: () => toast.success(L.toastSaved),
       onError: (error) => toast.error(apiErrorMessage(error, L.toastSaveFailed)),
     });

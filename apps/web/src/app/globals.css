@@ -38,6 +38,12 @@
   --action-success: #10B981;
   --action-success-hover: #059669;
   --action-success-foreground: #FFFFFF;
+  --action-edit: #2563EB;
+  --action-edit-hover: #1D4ED8;
+  --action-edit: #4299FD;
+  --action-edit-hover: #3185E8;
+  --action-edit: #4299FD;
+  --action-edit-hover: #3185E8;
   --profit: #3EBE8C;
   --loss: #E05B5B;
   --warning: #D9A03F;
@@ -152,6 +158,8 @@
   --color-action-success: var(--action-success);
   --color-action-success-hover: var(--action-success-hover);
   --color-action-success-foreground: var(--action-success-foreground);
+  --color-action-edit: var(--action-edit);
+  --color-action-edit-hover: var(--action-edit-hover);
   --color-destructive: var(--loss);
   --color-ring: var(--ring);
 
