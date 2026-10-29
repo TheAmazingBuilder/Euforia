@@ -678,7 +678,7 @@ export function AlertRulesManager({
                       }
                     />
                     <Button
-                      variant="ghost"
+                      variant="edit"
                       size="icon"
                       className="size-7 shrink-0"
                       aria-label={`Edit ${rule.name}`}
