@@ -101,6 +101,17 @@ export class TaskyAttachmentService {
     return { deleted: true, id: row.id };
   }
 
+  /** Removes private files for cards that disappeared from the saved board snapshot. */
+  async removeForDeletedCards(userId: string, cardIds: string[]): Promise<void> {
+    for (const cardId of [...new Set(cardIds)]) {
+      const rows = await this.attachments.listForCard(userId, cardId);
+      for (const row of rows) {
+        const deleted = await this.attachments.deleteForCard(userId, cardId, row.id);
+        if (deleted) await this.storage.delete(deleted.storageKey);
+      }
+    }
+  }
+
   private async assertCardOwned(userId: string, cardId: string): Promise<void> {
     if (!cardId.trim() || cardId.length > 100) throw new NotFoundException("Tasky card not found.");
     const board = await this.boards.findByUserId(userId);
