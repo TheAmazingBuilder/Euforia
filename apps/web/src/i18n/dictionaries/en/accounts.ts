@@ -5,11 +5,11 @@ import type { Dictionary } from "@/i18n/dictionaries/en";
  * Connectivity module. Values are STATIC strings - components compose
  * dynamic parts themselves (dict.* pattern, no {var} templates).
  *
- * Voice contract: the module describes what the platform CAN do today and
- * never implies a live broker integration that does not exist. The only
- * connectable provider in this phase is the mock adapter - every surface
- * labels it as simulated (isMock), and deferred providers say so plainly.
- * No copy offers execution actions: Euforia is read-only by construction.
+ * Voice contract: the module describes only supported connection paths.
+ * Brand identities may share a technical connector (for example Axi and
+ * PU Prime use the read-only MT5 terminal bridge here); they are verified
+ * against the terminal's reported company/server before acceptance.
+ * Euforia is read-only by construction and never sends trading orders.
  */
 
 export type AccountsDict = Dictionary["accounts"];
@@ -145,7 +145,10 @@ export const accountsDict = {
     providerAvailable: "Connectable",
     providerPlanned: "Planned - not connectable yet",
     providerRecognized: "Recognized - connector not yet available",
-    providerRecognizedSection: "Recognized brokers (no connector yet)",
+    providerRecognizedSection: "Choose a broker",
+    connectViaMt5: "Connect via MT5",
+    selectedBrokerHint:
+      "Euforia checks the broker and server reported by your MT5 terminal before accepting the connection. Make sure the terminal is logged into the selected broker.",
     providerMockNote:
       "Development provider - simulates a read-only MT5-style broker. Every value it produces is synthetic.",
     detectedBroker: "Detected broker",
@@ -190,6 +193,8 @@ export const accountsDict = {
       duplicate: "This account is already connected.",
       invalidCredentials: "The provider rejected these credentials.",
       rateLimited: "Too many attempts - wait a moment and retry.",
+      brokerMismatch:
+        "The MT5 terminal reported a different broker than the one selected. Verify the broker and server in MT5, then pair again.",
       generic: "The connection could not be established.",
     },
   },
