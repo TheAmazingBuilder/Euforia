@@ -960,7 +960,7 @@ export function TaskyView() {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [shortcutsDialogOpen, savedViewDialogOpen, detailsCardId, editingCardId, addingIn, addingList, columns, viewMode]);
+  }, [shortcutsDialogOpen, savedViewDialogOpen, detailsCardId, editingCardId, addingIn, addingList, columns, viewMode, beginEditCard, archiveCard, restoreCard]);
 
   if (boardQuery.isError) {
     return (
