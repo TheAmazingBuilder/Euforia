@@ -5,6 +5,7 @@
  * below and cleans up the temporary cards/lists created by this probe.
  */
 const { chromium } = require("playwright");
+const fs = require("node:fs/promises");
 
 const BASE = process.env.PROBE_BASE || "http://localhost:3000";
 let passed = 0;
@@ -111,6 +112,30 @@ async function touchDrag(page, gripTestid, targetColumnId) {
       countsMatchCards = countsMatchCards && counts[id] === rendered;
     }
     check("column counters match rendered cards", countsMatchCards, JSON.stringify(counts));
+
+    console.log("\n[1b] JSON and CSV export");
+    const [jsonDownload] = await Promise.all([
+      page.waitForEvent("download"),
+      page.click('[data-testid="tasky-export-json"]'),
+    ]);
+    check("JSON export filename", /\.json$/i.test(jsonDownload.suggestedFilename()), jsonDownload.suggestedFilename());
+    const jsonPath = await jsonDownload.path();
+    const jsonPayload = JSON.parse(await fs.readFile(jsonPath, "utf8"));
+    check("JSON export contains versioned board snapshot",
+      jsonPayload.format === "euforia-tasky-board" && jsonPayload.version === 1 && Array.isArray(jsonPayload.board?.columns));
+    check("JSON export includes board cards",
+      jsonPayload.board.columns.some((column) => column.cards.some((card) => card.title === "Implement OAuth 2.0 SSO integration")));
+
+    const [csvDownload] = await Promise.all([
+      page.waitForEvent("download"),
+      page.click('[data-testid="tasky-export-csv"]'),
+    ]);
+    check("CSV export filename", /\.csv$/i.test(csvDownload.suggestedFilename()), csvDownload.suggestedFilename());
+    const csvPath = await csvDownload.path();
+    const csvPayload = await fs.readFile(csvPath, "utf8");
+    check("CSV export includes column headers and task rows",
+      csvPayload.includes("list_id,list,card_id,title,category,priority") &&
+      csvPayload.includes("Implement OAuth 2.0 SSO integration"));
 
     console.log("\n[2] Card anatomy (reference fidelity)");
     const c1 = page.locator('[data-testid="tasky-card-c1"]');
