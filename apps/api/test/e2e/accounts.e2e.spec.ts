@@ -972,6 +972,57 @@ describe("trading-accounts - MT5 bridge ingest (public, HMAC)", () => {
     });
   }
 
+  it("rotates the bridge key and secret atomically and rejects the previous pairing", async () => {
+    const { user, account, pairing } = await pairedBridgeAccount(
+      `88${Math.random().toString().slice(2, 8)}`,
+    );
+
+    const rotate = await bridgeApp.inject({
+      method: "POST",
+      url: `/api/v1/trading-accounts/${account.id}/bridge/rotate`,
+      headers: user.authHeader,
+      payload: {},
+    });
+    expect(rotate.statusCode).toBe(201);
+    const rotated = rotate.json().account.pairing as {
+      bridgeKeyId: string;
+      secret: string;
+      ea: { version: string };
+    };
+    expect(rotated.bridgeKeyId).not.toBe(pairing.bridgeKeyId);
+    expect(rotated.secret).not.toBe(pairing.secret);
+    expect(rotated.ea.version).toBe("1.0.2");
+
+    const envelope = {
+      eventId: "ea-e2e-rotate-info-1",
+      kind: "ACCOUNT_INFO" as const,
+      payload: {
+        externalAccountId: account.externalAccountId,
+        currency: "USD",
+        server: "PUPrime-Demo",
+        brokerName: "PU Prime Limited",
+        accountClass: "DEMO" as const,
+      },
+    };
+    const oldPairPush = await push({
+      keyId: pairing.bridgeKeyId,
+      secret: pairing.secret,
+      timestamp: Date.now(),
+      envelope,
+    });
+    expect(oldPairPush.statusCode).toBe(401);
+    expect(oldPairPush.json().code).toBe("BRIDGE_KEY_UNKNOWN");
+
+    const newPairPush = await push({
+      keyId: rotated.bridgeKeyId,
+      secret: rotated.secret,
+      timestamp: Date.now(),
+      envelope,
+    });
+    expect(newPairPush.statusCode).toBe(200);
+    expect(newPairPush.json().state).toBe("CONNECTED");
+  });
+
   it("401 BRIDGE_HEADER_MISSING when any bridge header is absent", async () => {
     const { pairing } = await pairedBridgeAccount(`88${Math.random().toString().slice(2, 8)}`);
     const envelope = {
@@ -1126,7 +1177,32 @@ describe("trading-accounts - MT5 bridge ingest (public, HMAC)", () => {
     });
     expect(snap.statusCode).toBe(200);
 
-    // 3) DEALS - one netting position (IN + OUT), one balance op (excluded).
+    // 3) Complete open-state events - empty means confirmed empty, not missing.
+    const positions = await push({
+      keyId: pairing.bridgeKeyId,
+      secret: pairing.secret,
+      timestamp: Date.now(),
+      envelope: {
+        eventId: "ea-e2e-loop-positions-1",
+        kind: "POSITIONS",
+        payload: { positions: [] },
+      },
+    });
+    expect(positions.statusCode).toBe(200);
+
+    const orders = await push({
+      keyId: pairing.bridgeKeyId,
+      secret: pairing.secret,
+      timestamp: Date.now(),
+      envelope: {
+        eventId: "ea-e2e-loop-orders-1",
+        kind: "ORDERS",
+        payload: { orders: [] },
+      },
+    });
+    expect(orders.statusCode).toBe(200);
+
+    // 4) DEALS - one netting position (IN + OUT), one balance op (excluded).
     const deals = await push({
       keyId: pairing.bridgeKeyId,
       secret: pairing.secret,
@@ -1180,7 +1256,7 @@ describe("trading-accounts - MT5 bridge ingest (public, HMAC)", () => {
     });
     expect(deals.statusCode).toBe(200);
 
-    // 4) Account sync - the pull orchestrator reads the persisted events.
+    // 5) Account sync - the pull orchestrator reads the persisted events.
     const sync = await bridgeApp.inject({
       method: "POST",
       url: `/api/v1/trading-accounts/${account.id}/sync`,
@@ -1189,7 +1265,7 @@ describe("trading-accounts - MT5 bridge ingest (public, HMAC)", () => {
     });
     expect(sync.statusCode).toBe(200);
 
-    // 5) Journal reconciliation is LAZY: GET /trades re-reconciles the
+    // 6) Journal reconciliation is LAZY: GET /trades re-reconciles the
     //    account's latest synchronized activity before serving the list
     //    (trades.service listTrades - idempotent by external position). The
     //    balance operation (symbol null) never becomes a trade.
