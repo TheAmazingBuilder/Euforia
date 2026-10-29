@@ -38,7 +38,8 @@ import {
   type TaskyKanbanColumn as TaskyColumn,
   type TaskyKanbanPriority as Priority,
 } from "@cosmoz/shared";
-import { filterTaskyCards } from "./tasky-filters";
+import { filterTaskyCards, type TaskySortOrder } from "./tasky-filters";
+import { buildTaskyCalendarDays, buildTaskyMetrics, getTaskyCreatedAt, getTaskyStartDate, isTaskyCompletedColumn, type TaskyViewRow } from "./tasky-view-model";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -252,7 +253,15 @@ export function TaskyView() {
   const [searchQuery, setSearchQuery] = React.useState("");
   const [priorityFilter, setPriorityFilter] = React.useState<"all" | Priority>("all");
   const [dueFilter, setDueFilter] = React.useState<"all" | "overdue" | "upcoming" | "no-date">("all");
-  const [sortOrder, setSortOrder] = React.useState<"manual" | "title" | "due" | "priority">("manual");
+  const [sortOrder, setSortOrder] = React.useState<TaskySortOrder>("manual");
+  const [categoryFilter, setCategoryFilter] = React.useState("all");
+  const [assigneeFilter, setAssigneeFilter] = React.useState("all");
+  const [statusFilter, setStatusFilter] = React.useState("all");
+  const [viewMode, setViewMode] = React.useState<"board" | "calendar" | "table" | "timeline" | "dashboard" | "completed" | "upcoming">("board");
+  const [calendarMonth, setCalendarMonth] = React.useState(() => {
+    const now = new Date();
+    return { year: now.getFullYear(), monthIndex: now.getMonth() };
+  });
   const [activeSavedViewId, setActiveSavedViewId] = React.useState<string | null>(null);
   const [savedViewDialogOpen, setSavedViewDialogOpen] = React.useState(false);
   const [savedViewName, setSavedViewName] = React.useState("");
@@ -443,7 +452,7 @@ export function TaskyView() {
               cards: [
                 ...column.cards,
                 withActivity(
-                  { id: newId("card"), title: trimmed, tag: "Task", priority: "Medium" as Priority, assignee: "ME" },
+                  { id: newId("card"), title: trimmed, tag: "Task", priority: "Medium" as Priority, assignee: "ME", createdAt: new Date().toISOString() },
                   "created",
                   "Created card",
                 ),
@@ -537,6 +546,7 @@ export function TaskyView() {
       tag: cardDraft.tag.trim(),
       assignee: cardDraft.assignee.trim(),
       due: cardDraft.due || undefined,
+      startDate: cardDraft.startDate || undefined,
     }, "updated", "Updated card details");
     setColumns((prev) => prev.map((column) =>
       column.id === columnId
@@ -552,6 +562,7 @@ export function TaskyView() {
       ...card,
       id: newId("card"),
       title: `${card.title} (copy)`.slice(0, 140),
+      createdAt: new Date().toISOString(),
       checklist: card.checklist?.map((item) => ({ ...item, id: newId("check") })),
       comments: [],
       activity: [],
@@ -716,6 +727,9 @@ export function TaskyView() {
     setSearchQuery(view.filters.query);
     setPriorityFilter(view.filters.priority);
     setDueFilter(view.filters.due);
+    setCategoryFilter(view.filters.category);
+    setAssigneeFilter(view.filters.assignee);
+    setStatusFilter(view.filters.status);
     setSortOrder(view.filters.sort);
     setActiveSavedViewId(view.id);
   };
@@ -730,6 +744,9 @@ export function TaskyView() {
           query: searchQuery.trim(),
           priority: priorityFilter,
           due: dueFilter,
+          category: categoryFilter,
+          assignee: assigneeFilter,
+          status: statusFilter,
           sort: sortOrder,
         },
       });
@@ -753,21 +770,105 @@ export function TaskyView() {
 
   const todayDate = new Date();
   const todayKey = `${todayDate.getFullYear()}-${String(todayDate.getMonth() + 1).padStart(2, "0")}-${String(todayDate.getDate()).padStart(2, "0")}`;
-  const hasActiveFilters = Boolean(searchQuery.trim()) || priorityFilter !== "all" || dueFilter !== "all" || sortOrder !== "manual";
+  const nextWeekDate = new Date(todayDate.getFullYear(), todayDate.getMonth(), todayDate.getDate() + 7);
+  const nextWeekKey = `${nextWeekDate.getFullYear()}-${String(nextWeekDate.getMonth() + 1).padStart(2, "0")}-${String(nextWeekDate.getDate()).padStart(2, "0")}`;
+  const categories = React.useMemo(
+    () => [...new Set(columns.flatMap((column) => column.cards.map((card) => card.tag)))].sort((a, b) => a.localeCompare(b)),
+    [columns],
+  );
+  const assignees = React.useMemo(
+    () => [...new Set(columns.flatMap((column) => column.cards.map((card) => card.assignee)))].sort((a, b) => a.localeCompare(b)),
+    [columns],
+  );
+  const hasActiveFilters = Boolean(searchQuery.trim()) || priorityFilter !== "all" || dueFilter !== "all"
+    || categoryFilter !== "all" || assigneeFilter !== "all" || statusFilter !== "all" || sortOrder !== "manual";
   const visibleCardsByColumn = React.useMemo(
     () => new Map(columns.map((column) => [
       column.id,
-      filterTaskyCards(column.cards, {
-        query: searchQuery,
-        priority: priorityFilter,
-        due: dueFilter,
-        sort: sortOrder,
-      }, todayKey),
+      statusFilter !== "all" && statusFilter !== column.id
+        ? []
+        : filterTaskyCards(column.cards, {
+            query: searchQuery,
+            priority: priorityFilter,
+            due: dueFilter,
+            category: categoryFilter,
+            assignee: assigneeFilter,
+            sort: sortOrder,
+          }, todayKey),
     ] as const)),
-    [columns, searchQuery, priorityFilter, dueFilter, sortOrder, todayKey],
+    [columns, searchQuery, priorityFilter, dueFilter, categoryFilter, assigneeFilter, statusFilter, sortOrder, todayKey],
   );
+  const visibleRows = React.useMemo(() => {
+    let offset = 0;
+    return columns.flatMap((column) => {
+      const rows = (visibleCardsByColumn.get(column.id) ?? []).map(({ card, originalIndex }) => ({
+        card,
+        column,
+        boardOrder: offset + originalIndex,
+      }));
+      offset += column.cards.length;
+      return rows;
+    });
+  }, [columns, visibleCardsByColumn]);
+  const tableRows = React.useMemo(() => {
+    const rows = [...visibleRows];
+    const priorityRank = { Urgent: 0, High: 1, Medium: 2, Low: 3 } as const;
+    rows.sort((a, b) => {
+      if (sortOrder === "title") return a.card.title.localeCompare(b.card.title, undefined, { sensitivity: "base" }) || a.boardOrder - b.boardOrder;
+      if (sortOrder === "due") return (a.card.due ?? "9999-12-31").localeCompare(b.card.due ?? "9999-12-31") || a.boardOrder - b.boardOrder;
+      if (sortOrder === "priority") return priorityRank[a.card.priority] - priorityRank[b.card.priority] || a.boardOrder - b.boardOrder;
+      if (sortOrder === "created") return getTaskyCreatedAt(a.card).localeCompare(getTaskyCreatedAt(b.card)) || a.boardOrder - b.boardOrder;
+      return a.boardOrder - b.boardOrder;
+    });
+    return rows;
+  }, [visibleRows, sortOrder]);
+  const calendarDays = React.useMemo(
+    () => buildTaskyCalendarDays(calendarMonth.year, calendarMonth.monthIndex),
+    [calendarMonth],
+  );
+  const calendarMonthLabel = new Date(calendarMonth.year, calendarMonth.monthIndex, 1)
+    .toLocaleDateString("en-US", { month: "long", year: "numeric" });
+  const calendarTasksByDate = React.useMemo(() => {
+    const grouped = new Map<string, TaskyViewRow[]>();
+    for (const row of visibleRows) {
+      if (!row.card.due) continue;
+      grouped.set(row.card.due, [...(grouped.get(row.card.due) ?? []), row]);
+    }
+    return grouped;
+  }, [visibleRows]);
+  const unscheduledRows = tableRows.filter((row) => !row.card.due);
+  const metrics = React.useMemo(() => buildTaskyMetrics(visibleRows, todayKey), [visibleRows, todayKey]);
+  const completedRows = tableRows.filter((row) => isTaskyCompletedColumn(row.column));
+  const upcomingRows = tableRows.filter((row) => row.card.due && row.card.due >= todayKey && row.card.due <= nextWeekKey);
+  const timelineEntries = React.useMemo(() => {
+    const entries = visibleRows.flatMap((row) => {
+      const plannedStart = getTaskyStartDate(row.card);
+      const start = plannedStart ?? row.card.due ?? null;
+      if (!start) return [];
+      const end = row.card.due && row.card.due >= start ? row.card.due : start;
+      const durationKnown = Boolean(plannedStart && row.card.due && row.card.due >= plannedStart);
+      const kind = durationKnown ? "range" as const : plannedStart ? "start" as const : "due" as const;
+      const days = durationKnown
+        ? Math.max(1, Math.floor((Date.parse(`${end}T00:00:00Z`) - Date.parse(`${start}T00:00:00Z`)) / 86_400_000) + 1)
+        : 1;
+      return [{ ...row, start, end, days, durationKnown, kind }];
+    });
+    type TimelineEntry = TaskyViewRow & { start: string; end: string; days: number; durationKnown: boolean; kind: "range" | "start" | "due"; left: number; width: number };
+    if (entries.length === 0) return { min: null as string | null, max: null as string | null, span: 1, entries: [] as TimelineEntry[] };
+    const min = entries.reduce((value, entry) => entry.start < value ? entry.start : value, entries[0].start);
+    const max = entries.reduce((value, entry) => entry.end > value ? entry.end : value, entries[0].end);
+    const span = Math.max(1, Math.floor((Date.parse(`${max}T00:00:00Z`) - Date.parse(`${min}T00:00:00Z`)) / 86_400_000) + 1);
+    return {
+      min, max, span,
+      entries: entries.map((entry) => ({
+        ...entry,
+        left: Math.floor((Date.parse(`${entry.start}T00:00:00Z`) - Date.parse(`${min}T00:00:00Z`)) / 86_400_000) / span * 100,
+        width: Math.max(1.5, (entry.durationKnown ? entry.days : 1) / span * 100),
+      })),
+    };
+  }, [visibleRows]);
   const totalCardCount = columns.reduce((total, column) => total + column.cards.length, 0);
-  const visibleCardCount = [...visibleCardsByColumn.values()].reduce((total, cards) => total + cards.length, 0);
+  const visibleCardCount = visibleRows.length;
   const dragCard = drag ? columns.flatMap((column) => column.cards).find((card) => card.id === drag.cardId) : undefined;
 
   if (boardQuery.isError) {
@@ -800,7 +901,7 @@ export function TaskyView() {
         {boardSave.isPending ? "Saving Tasky board" : boardSave.isError ? "Tasky board save failed" : "Tasky board ready"}
       </p>
       <section className="mb-3 flex flex-col gap-3 rounded-xl border border-border bg-background/40 p-3" data-testid="tasky-filters">
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(220px,1.8fr)_repeat(3,minmax(140px,1fr))_auto]">
+        <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-[minmax(220px,1.8fr)_repeat(6,minmax(130px,1fr))_auto]">
           <div className="relative min-w-0">
             <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
             <Input
@@ -846,11 +947,41 @@ export function TaskyView() {
             </select>
           </div>
           <div className="min-w-0">
+            <label htmlFor="tasky-category-filter" className="sr-only">Filter by category</label>
+            <select id="tasky-category-filter" value={categoryFilter}
+              onChange={(event) => { setCategoryFilter(event.target.value); setActiveSavedViewId(null); }}
+              data-testid="tasky-category-filter"
+              className="h-9 w-full rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
+              <option value="all">All categories</option>
+              {categories.map((category) => <option key={category} value={category}>{category}</option>)}
+            </select>
+          </div>
+          <div className="min-w-0">
+            <label htmlFor="tasky-assignee-filter" className="sr-only">Filter by assignee</label>
+            <select id="tasky-assignee-filter" value={assigneeFilter}
+              onChange={(event) => { setAssigneeFilter(event.target.value); setActiveSavedViewId(null); }}
+              data-testid="tasky-assignee-filter"
+              className="h-9 w-full rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
+              <option value="all">All assignees</option>
+              {assignees.map((assignee) => <option key={assignee} value={assignee}>{assignee}</option>)}
+            </select>
+          </div>
+          <div className="min-w-0">
+            <label htmlFor="tasky-status-filter" className="sr-only">Filter by status</label>
+            <select id="tasky-status-filter" value={statusFilter}
+              onChange={(event) => { setStatusFilter(event.target.value); setActiveSavedViewId(null); }}
+              data-testid="tasky-status-filter"
+              className="h-9 w-full rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
+              <option value="all">All statuses</option>
+              {columns.map((column) => <option key={column.id} value={column.id}>{column.title}</option>)}
+            </select>
+          </div>
+          <div className="min-w-0">
             <label htmlFor="tasky-sort-order" className="sr-only">Sort cards</label>
             <select
               id="tasky-sort-order"
               value={sortOrder}
-              onChange={(event) => { setSortOrder(event.target.value as "manual" | "title" | "due" | "priority"); setActiveSavedViewId(null); }}
+              onChange={(event) => { setSortOrder(event.target.value as TaskySortOrder); setActiveSavedViewId(null); }}
               data-testid="tasky-sort-order"
               className="h-9 w-full rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
             >
@@ -858,6 +989,7 @@ export function TaskyView() {
               <option value="title">Title A–Z</option>
               <option value="due">Due date</option>
               <option value="priority">Priority</option>
+              <option value="created">Created date</option>
             </select>
           </div>
           <Button
@@ -868,6 +1000,9 @@ export function TaskyView() {
               setSearchQuery("");
               setPriorityFilter("all");
               setDueFilter("all");
+              setCategoryFilter("all");
+              setAssigneeFilter("all");
+              setStatusFilter("all");
               setSortOrder("manual");
               setActiveSavedViewId(null);
             }}
@@ -919,6 +1054,23 @@ export function TaskyView() {
           {hasActiveFilters ? <span>Clear filters to drag and reorder cards.</span> : null}
         </div>
       </section>
+      <nav className="mb-3 flex flex-wrap items-center gap-2" aria-label="Tasky views" data-testid="tasky-view-switcher">
+        {([
+          ["board", "Board"],
+          ["calendar", "Calendar"],
+          ["table", "Table"],
+          ["timeline", "Timeline"],
+          ["dashboard", "Dashboard"],
+          ["completed", "Completed"],
+          ["upcoming", "Upcoming"],
+        ] as const).map(([mode, label]) => (
+          <Button key={mode} type="button" size="sm" variant={viewMode === mode ? "default" : "outline"}
+            aria-pressed={viewMode === mode} onClick={() => setViewMode(mode)}
+            data-testid={`tasky-view-mode-${mode}`}>
+            {label}
+          </Button>
+        ))}
+      </nav>
       <Dialog open={savedViewDialogOpen} onOpenChange={setSavedViewDialogOpen}>
         <DialogContent className="sm:max-w-md" data-testid="tasky-saved-view-dialog">
           <DialogHeader>
@@ -957,8 +1109,202 @@ export function TaskyView() {
           </form>
         </DialogContent>
       </Dialog>
+      {viewMode === "calendar" ? (
+        <section className="flex flex-col gap-3 rounded-xl border border-border bg-background/40 p-3" data-testid="tasky-calendar-view">
+          <header className="flex items-center justify-between gap-3">
+            <Button type="button" size="sm" variant="outline" aria-label="Previous month"
+              onClick={() => setCalendarMonth((month) => {
+                const date = new Date(month.year, month.monthIndex - 1, 1);
+                return { year: date.getFullYear(), monthIndex: date.getMonth() };
+              })}>
+              <ChevronLeft className="size-4" aria-hidden="true" />
+            </Button>
+            <h2 className="text-base font-semibold">{calendarMonthLabel}</h2>
+            <Button type="button" size="sm" variant="outline" aria-label="Next month"
+              onClick={() => setCalendarMonth((month) => {
+                const date = new Date(month.year, month.monthIndex + 1, 1);
+                return { year: date.getFullYear(), monthIndex: date.getMonth() };
+              })}>
+              <ChevronRight className="size-4" aria-hidden="true" />
+            </Button>
+          </header>
+          <div className="grid grid-cols-7 gap-1 text-center text-xs font-medium text-muted-foreground">
+            {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => <div key={day} className="py-2">{day}</div>)}
+          </div>
+          <div className="grid grid-cols-7 gap-1" role="grid" aria-label={calendarMonthLabel}>
+            {calendarDays.map((day, index) => {
+              const dayRows = day ? calendarTasksByDate.get(day) ?? [] : [];
+              const isCurrentMonth = Boolean(day && day.startsWith(`${calendarMonth.year}-${String(calendarMonth.monthIndex + 1).padStart(2, "0")}-`));
+              const isToday = day === todayKey;
+              return (
+                <div key={day ?? `blank-${index}`} role="gridcell"
+                  className={cn("min-h-24 min-w-0 rounded-lg border p-1.5 sm:min-h-28", isCurrentMonth ? "border-border bg-background/70" : "border-border/40 bg-muted/20", isToday && "ring-1 ring-accent")}>
+                  <div className={cn("mb-1 text-xs font-medium", isCurrentMonth ? "text-foreground" : "text-muted-foreground/60")}>
+                    {day ? Number(day.slice(-2)) : ""}
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    {dayRows.slice(0, 3).map((row) => (
+                      <button key={row.card.id} type="button" onClick={() => setDetailsCardId(row.card.id)}
+                        title={row.card.title}
+                        className="w-full truncate rounded bg-accent/10 px-1 py-0.5 text-left text-[10px] text-foreground hover:bg-accent/20 sm:text-xs"
+                        data-testid={`tasky-calendar-card-${row.card.id}`}>
+                        {row.card.title}
+                      </button>
+                    ))}
+                    {dayRows.length > 3 ? <span className="px-1 text-[10px] text-muted-foreground">+{dayRows.length - 3} more</span> : null}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div className="flex flex-col gap-2 border-t border-border pt-3">
+            <h3 className="text-sm font-semibold">No due date <span className="font-mono text-muted-foreground">({unscheduledRows.length})</span></h3>
+            {unscheduledRows.length ? (
+              <div className="flex flex-wrap gap-2">
+                {unscheduledRows.map((row) => <Button key={row.card.id} type="button" variant="outline" size="sm" onClick={() => setDetailsCardId(row.card.id)}>{row.card.title}</Button>)}
+              </div>
+            ) : <p className="text-sm text-muted-foreground">Every visible task has a due date.</p>}
+          </div>
+        </section>
+      ) : null}
+
+      {viewMode === "table" || viewMode === "completed" || viewMode === "upcoming" ? (
+        <section className="overflow-hidden rounded-xl border border-border bg-background/40" data-testid={`tasky-${viewMode}-view`}>
+          <header className="flex items-center justify-between gap-3 border-b border-border px-3 py-3">
+            <h2 className="text-sm font-semibold">{viewMode === "completed" ? "Completed tasks" : viewMode === "upcoming" ? "Due in the next 7 days" : "All visible tasks"}</h2>
+            <span className="font-mono text-xs text-muted-foreground">
+              {viewMode === "completed" ? completedRows.length : viewMode === "upcoming" ? upcomingRows.length : tableRows.length} tasks
+            </span>
+          </header>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[760px] border-collapse text-left text-sm" data-testid="tasky-table">
+              <thead className="bg-muted/40 text-xs text-muted-foreground">
+                <tr>
+                  <th className="px-3 py-2 font-medium">Task</th>
+                  <th className="px-3 py-2 font-medium">Status</th>
+                  <th className="px-3 py-2 font-medium">Category</th>
+                  <th className="px-3 py-2 font-medium">Priority</th>
+                  <th className="px-3 py-2 font-medium">Assignee</th>
+                  <th className="px-3 py-2 font-medium">Start date</th>
+                  <th className="px-3 py-2 font-medium">Due date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(viewMode === "completed" ? completedRows : viewMode === "upcoming" ? upcomingRows : tableRows).map((row) => (
+                  <tr key={row.card.id} className="border-t border-border/70 hover:bg-muted/20" data-testid={`tasky-table-row-${row.card.id}`}>
+                    <td className="max-w-[260px] px-3 py-2">
+                      <button type="button" className="block max-w-full truncate text-left font-medium hover:text-accent" onClick={() => setDetailsCardId(row.card.id)}>{row.card.title}</button>
+                    </td>
+                    <td className="px-3 py-2 text-muted-foreground">{row.column.title}</td>
+                    <td className="px-3 py-2">{row.card.tag}</td>
+                    <td className="px-3 py-2"><span className="rounded px-1.5 py-0.5 text-xs font-medium">{row.card.priority}</span></td>
+                    <td className="px-3 py-2">{row.card.assignee}</td>
+                    <td className="px-3 py-2 font-mono text-xs">{row.card.startDate ?? (row.card.createdAt?.slice(0, 10) ?? "—")}</td>
+                    <td className="px-3 py-2 font-mono text-xs">{row.card.due ?? "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {(viewMode === "completed" ? completedRows.length : viewMode === "upcoming" ? upcomingRows.length : tableRows.length) === 0 ? (
+            <p className="px-3 py-8 text-center text-sm text-muted-foreground">No tasks match the current filters.</p>
+          ) : null}
+        </section>
+      ) : null}
+
+      {viewMode === "timeline" ? (
+        <section className="flex flex-col gap-3 rounded-xl border border-border bg-background/40 p-3" data-testid="tasky-timeline-view">
+          <header className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h2 className="text-sm font-semibold">Task timeline</h2>
+              <p className="text-xs text-muted-foreground">Bars show a duration only when both start and due dates are known; otherwise they mark the known start or due date.</p>
+            </div>
+            {timelineEntries.min && timelineEntries.max ? <span className="font-mono text-xs text-muted-foreground">{timelineEntries.min} — {timelineEntries.max}</span> : null}
+          </header>
+          {timelineEntries.entries.length ? (
+            <div className="flex flex-col gap-3">
+              {timelineEntries.entries.map((entry) => (
+                <div key={entry.card.id} className="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(180px,240px)_minmax(0,1fr)] sm:items-center" data-testid={`tasky-timeline-row-${entry.card.id}`}>
+                  <button type="button" className="truncate text-left text-sm font-medium hover:text-accent" onClick={() => setDetailsCardId(entry.card.id)} title={entry.card.title}>{entry.card.title}</button>
+                  <div className="relative h-8 overflow-hidden rounded-md border border-border/70 bg-muted/20">
+                    <div className="absolute inset-y-0 border-l border-border/70" style={{ left: "25%" }} />
+                    <div className="absolute inset-y-0 border-l border-border/70" style={{ left: "50%" }} />
+                    <div className="absolute inset-y-0 border-l border-border/70" style={{ left: "75%" }} />
+                    <button type="button" onClick={() => setDetailsCardId(entry.card.id)}
+                      title={entry.durationKnown ? `${entry.start} to ${entry.end} · ${entry.days} day(s)` : `${entry.kind === "due" ? "Due date" : "Start date"}: ${entry.start}`}
+                      className="absolute inset-y-1 rounded bg-accent/70 px-1 text-left text-[10px] text-foreground hover:bg-accent"
+                      style={{ left: `${entry.left}%`, width: `${Math.min(entry.width, 100 - entry.left)}%` }}
+                      aria-label={entry.durationKnown ? `${entry.card.title}: ${entry.start} to ${entry.end}, ${entry.days} days` : `${entry.card.title}: ${entry.kind === "due" ? "due date" : "start date"} ${entry.start}`}>
+                      <span className="block truncate">{entry.durationKnown ? `${entry.days}d` : entry.kind === "due" ? "Due" : "Start"}</span>
+                    </button>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground sm:col-start-2">{entry.column.title} · {entry.start} → {entry.end}</p>
+                </div>
+              ))}
+            </div>
+          ) : <p className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">Add a start or due date to a task to place it on the timeline.</p>}
+        </section>
+      ) : null}
+
+      {viewMode === "dashboard" ? (
+        <section className="flex flex-col gap-4 rounded-xl border border-border bg-background/40 p-4" data-testid="tasky-dashboard-view">
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            {[
+              { label: "Total tasks", value: metrics.total },
+              { label: "Completed", value: metrics.completed },
+              { label: "Overdue", value: metrics.overdue },
+              { label: "Due in 7 days", value: metrics.dueSoon },
+            ].map((metric) => (
+              <div key={metric.label} className="rounded-lg border border-border bg-surface p-3">
+                <p className="text-xs text-muted-foreground">{metric.label}</p>
+                <p className="mt-1 font-mono text-2xl font-semibold tabular-nums">{metric.value}</p>
+              </div>
+            ))}
+          </div>
+          <section className="rounded-lg border border-border p-3">
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <h3 className="text-sm font-semibold">Completion progress</h3>
+              <span className="font-mono text-sm tabular-nums">{metrics.completionPercent}%</span>
+            </div>
+            <div className="h-2 overflow-hidden rounded-full bg-muted" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={metrics.completionPercent} aria-label="Completion progress">
+              <div className="h-full rounded-full bg-accent transition-[width]" style={{ width: `${metrics.completionPercent}%` }} />
+            </div>
+          </section>
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <section className="rounded-lg border border-border p-3">
+              <h3 className="mb-3 text-sm font-semibold">Priority distribution</h3>
+              <div className="flex flex-col gap-3">
+                {(["Urgent", "High", "Medium", "Low"] as const).map((priority) => {
+                  const count = metrics.priorityCounts[priority];
+                  const width = metrics.total ? count / metrics.total * 100 : 0;
+                  return (
+                    <div key={priority} className="flex flex-col gap-1.5">
+                      <div className="flex justify-between text-xs"><span>{priority}</span><span className="font-mono tabular-nums">{count}</span></div>
+                      <div className="h-2 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-accent/70" style={{ width: `${width}%` }} /></div>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+            <section className="rounded-lg border border-border p-3">
+              <h3 className="mb-3 text-sm font-semibold">Workload by assignee</h3>
+              {metrics.workload.length ? (
+                <div className="flex flex-col gap-3">
+                  {metrics.workload.map((item) => (
+                    <div key={item.assignee} className="flex flex-col gap-1.5">
+                      <div className="flex justify-between gap-3 text-xs"><span className="truncate">{item.assignee}</span><span className="font-mono tabular-nums">{item.count}</span></div>
+                      <div className="h-2 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-accent/70" style={{ width: `${metrics.total ? item.count / metrics.total * 100 : 0}%` }} /></div>
+                    </div>
+                  ))}
+                </div>
+              ) : <p className="text-sm text-muted-foreground">No tasks to summarize.</p>}
+            </section>
+          </div>
+        </section>
+      ) : null}
+
       {/* Board - columns added horizontally (left → right), board scrolls X */}
-      <div data-testid="tasky-board" className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-3 pt-1">
+      <div data-testid="tasky-board" aria-hidden={viewMode !== "board"} className={cn("-mx-1 flex gap-3 overflow-x-auto px-1 pb-3 pt-1", viewMode !== "board" && "hidden")}>
         {columns.map((column) => {
           const visibleCards = visibleCardsByColumn.get(column.id) ?? [];
           const isOver = drag !== null && drag.overCol === column.id;
@@ -1128,6 +1474,14 @@ export function TaskyView() {
                               <option value="High">High</option>
                               <option value="Urgent">Urgent</option>
                             </select>
+                            <Input
+                              type="date"
+                              value={cardDraft.startDate ?? ""}
+                              onChange={(event) => updateCardDraft("startDate", event.target.value || undefined)}
+                              aria-label="Planned start date"
+                              data-testid={`tasky-edit-start-date-${card.id}`}
+                              className="h-8 bg-background text-xs"
+                            />
                             <Input
                               value={cardDraft.assignee}
                               onChange={(event) => updateCardDraft("assignee", event.target.value)}

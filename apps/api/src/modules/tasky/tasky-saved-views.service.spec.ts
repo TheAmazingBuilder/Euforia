@@ -6,7 +6,7 @@ import { TaskyService } from "./tasky.service";
 const userId = "11111111-1111-4111-8111-111111111111";
 const viewId = "22222222-2222-4222-8222-222222222222";
 const now = new Date("2026-10-29T14:00:00.000Z");
-const filters = { query: "urgent", priority: "Urgent", due: "overdue", sort: "due" };
+const filters = { query: "urgent", priority: "Urgent", due: "overdue", category: "all", assignee: "all", status: "all", sort: "due" };
 
 function savedView(overrides: Record<string, unknown> = {}) {
   return {
@@ -65,6 +65,9 @@ describe("Tasky saved views", () => {
     expect(repository.createSavedView).toHaveBeenCalledWith(userId, "Urgent overdue", {
       ...filters,
       query: "urgent",
+      category: "all",
+      assignee: "all",
+      status: "all",
     });
   });
 

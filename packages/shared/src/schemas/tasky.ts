@@ -180,6 +180,10 @@ export const taskyKanbanCardSchema = z.object({
   priority: taskyKanbanPrioritySchema,
   assignee: z.string().trim().min(1).max(12),
   due: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  /** Planned start date for timeline visualization; optional for legacy cards. */
+  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  /** Created timestamp for creation-order sorting; optional for legacy cards. */
+  createdAt: z.string().datetime().optional(),
   description: z.string().max(4000).optional(),
   checklist: z.array(taskyKanbanChecklistItemSchema).max(100).optional(),
   comments: z.array(taskyKanbanCommentSchema).max(100).optional(),
@@ -277,13 +281,16 @@ export type TaskyKanbanBoardSaveResponse = z.infer<typeof taskyKanbanBoardSaveRe
 // ── Tasky saved views (search, filters and presentation order) ──────────────
 export const taskySavedViewDueFilterSchema = z.enum(["all", "overdue", "upcoming", "no-date"]);
 export const taskySavedViewPriorityFilterSchema = z.enum(["all", "Low", "Medium", "High", "Urgent"]);
-export const taskySavedViewSortSchema = z.enum(["manual", "title", "due", "priority"]);
+export const taskySavedViewSortSchema = z.enum(["manual", "title", "due", "priority", "created"]);
 
 export const taskySavedViewFiltersSchema = z.object({
-  query: z.string().trim().max(180),
-  priority: taskySavedViewPriorityFilterSchema,
-  due: taskySavedViewDueFilterSchema,
-  sort: taskySavedViewSortSchema,
+  query: z.string().trim().max(180).default(""),
+  priority: taskySavedViewPriorityFilterSchema.default("all"),
+  due: taskySavedViewDueFilterSchema.default("all"),
+  category: z.string().trim().max(40).default("all"),
+  assignee: z.string().trim().max(12).default("all"),
+  status: z.string().trim().max(100).default("all"),
+  sort: taskySavedViewSortSchema.default("manual"),
 });
 export type TaskySavedViewFilters = z.infer<typeof taskySavedViewFiltersSchema>;
 
