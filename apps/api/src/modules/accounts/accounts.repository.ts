@@ -356,22 +356,22 @@ export class AccountsRepository {
     return (row as TradingConnectionRow) ?? null;
   }
 
-  /** Rotate: the old secret dies with the old key - pairing restarts cleanly. */
-  async rotateBridgeKey(accountId: string, bridgeKeyId: string): Promise<void> {
-    await this.prisma.tradingConnection.update({
-      where: { accountId },
-      data: { bridgeKeyId },
-    });
-  }
-
-  /** Rotation re-keys the encrypted secret together with the routing key. */
+  /**
+   * Rotate the routing key and encrypted secret in ONE atomic row update.
+   * Never split these values across writes: a failure between two updates
+   * would invalidate the old pairing without installing a usable new one.
+   */
   async rotateBridgeCredentials(
     accountId: string,
-    data: { credentialsEnc: string; credentialsHint: string },
+    data: { bridgeKeyId: string; credentialsEnc: string; credentialsHint: string },
   ): Promise<void> {
     await this.prisma.tradingConnection.update({
       where: { accountId },
-      data,
+      data: {
+        bridgeKeyId: data.bridgeKeyId,
+        credentialsEnc: data.credentialsEnc,
+        credentialsHint: data.credentialsHint,
+      },
     });
   }
 
