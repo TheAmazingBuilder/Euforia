@@ -160,6 +160,7 @@ async function touchDrag(page, gripTestid, targetColumnId) {
     await page.keyboard.press("/");
     check("slash focuses search", await page.locator('[data-testid="tasky-search"]').evaluate((el) => el === document.activeElement));
     await page.keyboard.press("Escape");
+    await page.locator("body").click({ position: { x: 12, y: 12 } });
     await page.keyboard.press("?");
     check("question mark opens shortcut reference", await page.locator('[data-testid="tasky-shortcuts-dialog"]').isVisible().catch(() => false));
     await page.keyboard.press("Escape");
