@@ -10,6 +10,7 @@ import {
   Copy,
   GripVertical,
   LoaderCircle,
+  MoreHorizontal,
   Pencil,
   Plus,
   RefreshCw,
@@ -25,6 +26,13 @@ import {
   type TaskyKanbanPriority as Priority,
 } from "@cosmoz/shared";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { useSaveTaskyBoard, useTaskyBoard } from "@/lib/api/queries";
 import { cn } from "@/lib/utils";
@@ -535,20 +543,54 @@ export function TaskyView() {
                 >
                   {column.cards.length}
                 </span>
-                <div className="flex shrink-0 items-center gap-0.5">
-                  <button type="button" onClick={() => moveColumn(column.id, -1)} disabled={columns[0]?.id === column.id} aria-label={`Move ${column.title} left`} title="Move list left" data-testid={`tasky-list-left-${column.id}`} className="grid size-6 place-items-center rounded text-muted-foreground/70 transition-colors hover:bg-muted hover:text-foreground disabled:opacity-25">
-                    <ChevronLeft className="size-3.5" aria-hidden="true" />
-                  </button>
-                  <button type="button" onClick={() => moveColumn(column.id, 1)} disabled={columns[columns.length - 1]?.id === column.id} aria-label={`Move ${column.title} right`} title="Move list right" data-testid={`tasky-list-right-${column.id}`} className="grid size-6 place-items-center rounded text-muted-foreground/70 transition-colors hover:bg-muted hover:text-foreground disabled:opacity-25">
-                    <ChevronRight className="size-3.5" aria-hidden="true" />
-                  </button>
-                  <button type="button" onClick={() => beginRenameList(column)} aria-label={`Rename ${column.title}`} title="Rename list" data-testid={`tasky-list-rename-${column.id}`} className="grid size-6 place-items-center rounded text-muted-foreground/70 transition-colors hover:bg-muted hover:text-foreground">
-                    <Pencil className="size-3.5" aria-hidden="true" />
-                  </button>
-                  <button type="button" onClick={() => removeColumn(column)} aria-label={`Delete ${column.title}`} title="Delete list" data-testid={`tasky-list-delete-${column.id}`} className="grid size-6 place-items-center rounded text-muted-foreground/70 transition-colors hover:bg-loss/10 hover:text-loss">
-                    <Trash2 className="size-3.5" aria-hidden="true" />
-                  </button>
-                </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      aria-label={`List actions for ${column.title}`}
+                      title="List actions"
+                      data-testid={`tasky-list-menu-${column.id}`}
+                      className="grid size-6 shrink-0 place-items-center rounded-md text-muted-foreground/70 transition-colors hover:bg-muted hover:text-foreground"
+                    >
+                      <MoreHorizontal className="size-3.5" aria-hidden="true" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="min-w-44">
+                    <DropdownMenuItem
+                      disabled={columns[0]?.id === column.id}
+                      onSelect={() => moveColumn(column.id, -1)}
+                      data-testid={`tasky-list-left-${column.id}`}
+                    >
+                      <ChevronLeft className="size-4" aria-hidden="true" />
+                      Move list left
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      disabled={columns[columns.length - 1]?.id === column.id}
+                      onSelect={() => moveColumn(column.id, 1)}
+                      data-testid={`tasky-list-right-${column.id}`}
+                    >
+                      <ChevronRight className="size-4" aria-hidden="true" />
+                      Move list right
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onSelect={() => beginRenameList(column)}
+                      data-testid={`tasky-list-rename-${column.id}`}
+                    >
+                      <Pencil className="size-4" aria-hidden="true" />
+                      Rename list
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      variant="destructive"
+                      onSelect={() => removeColumn(column)}
+                      data-testid={`tasky-list-delete-${column.id}`}
+                    >
+                      <Trash2 className="size-4" aria-hidden="true" />
+                      Delete list
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
                 <button
                   type="button"
                   onClick={() => {
