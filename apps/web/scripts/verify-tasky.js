@@ -230,16 +230,20 @@ async function touchDrag(page, gripTestid, targetColumnId) {
     const probeList = page.locator('[data-tasky-column="Probe list"]');
     const probeListTestId = await probeList.getAttribute("data-testid");
     const probeListId = probeListTestId?.replace("tasky-column-", "");
+    await page.click(`[data-testid="tasky-list-menu-${probeListId}"]`);
     await page.click(`[data-testid="tasky-list-rename-${probeListId}"]`);
     await page.fill(`[data-testid="tasky-rename-list-input-${probeListId}"]`, "Probe renamed list");
     await page.locator(`[data-testid="tasky-rename-list-form-${probeListId}"] button[type="submit"]`).click();
     check("list can be renamed", await page.locator('[data-tasky-column="Probe renamed list"]').isVisible().catch(() => false));
     const renamedList = page.locator(`[data-testid="tasky-column-${probeListId}"]`);
     const beforeMoveX = await renamedList.evaluate((el) => el.getBoundingClientRect().left);
+    await page.click(`[data-testid="tasky-list-menu-${probeListId}"]`);
     await page.click(`[data-testid="tasky-list-left-${probeListId}"]`);
     const afterMoveX = await renamedList.evaluate((el) => el.getBoundingClientRect().left);
     check("list can move left", afterMoveX < beforeMoveX);
+    await page.click(`[data-testid="tasky-list-menu-${probeListId}"]`);
     await page.click(`[data-testid="tasky-list-right-${probeListId}"]`);
+    await page.click(`[data-testid="tasky-list-menu-${probeListId}"]`);
     await page.click(`[data-testid="tasky-list-delete-${probeListId}"]`);
     check("empty list can be deleted", await page.locator('[data-tasky-column="Probe renamed list"]').count() === 0);
 
@@ -248,6 +252,7 @@ async function touchDrag(page, gripTestid, targetColumnId) {
     await page.waitForTimeout(1500);
     check("board is available after reload", await page.locator('[data-testid="tasky-board"]').isVisible().catch(() => false));
     check("Watchlist probe persisted", await page.locator(`[data-testid="tasky-column-${watchColumnId}"]`).isVisible().catch(() => false));
+    await page.click(`[data-testid="tasky-list-menu-${watchColumnId}"]`);
     await page.click(`[data-testid="tasky-list-delete-${watchColumnId}"]`);
     check("test list cleaned up after persistence check", await page.locator(`[data-testid="tasky-column-${watchColumnId}"]`).count() === 0);
 
