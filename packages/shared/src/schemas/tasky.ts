@@ -377,13 +377,13 @@ export const taskyAutomationRuleUpdateSchema = z.object({
 export type TaskyAutomationRuleUpdateInput = z.infer<typeof taskyAutomationRuleUpdateSchema>;
 
 export const taskyAutomationRuleSchema = z.object({
-  id: uuidSchema,
+  id: z.string().uuid(),
   name: taskyAutomationRuleFields.name,
   trigger: taskyAutomationTriggerSchema,
   enabled: z.boolean(),
   config: taskyAutomationConfigSchema,
-  createdAt: isoDateTimeSchema,
-  updatedAt: isoDateTimeSchema,
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
 });
 export type TaskyAutomationRule = z.infer<typeof taskyAutomationRuleSchema>;
 
@@ -391,7 +391,7 @@ export const taskyAutomationRunStatusSchema = z.enum(["RUNNING", "SUCCEEDED", "F
 export type TaskyAutomationRunStatus = z.infer<typeof taskyAutomationRunStatusSchema>;
 
 export const taskyAutomationRunSchema = z.object({
-  id: uuidSchema,
+  id: z.string().uuid(),
   automationId: uuidSchema.nullable(),
   automationName: z.string().min(1).max(80),
   trigger: z.string().min(1).max(40),
@@ -400,7 +400,7 @@ export const taskyAutomationRunSchema = z.object({
   status: taskyAutomationRunStatusSchema,
   message: z.string().min(1).max(240),
   error: z.string().max(500).nullable(),
-  createdAt: isoDateTimeSchema,
+  createdAt: z.string().datetime(),
 });
 export type TaskyAutomationRun = z.infer<typeof taskyAutomationRunSchema>;
 
