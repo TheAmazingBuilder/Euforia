@@ -252,6 +252,16 @@ export class TradingAccountService {
 
     const adapter = this.registry.require(input.payload.providerId);
 
+    if (
+      input.payload.brokerId &&
+      !adapter.descriptor.supportedConnectionMethods.includes("PLATFORM_BRIDGE")
+    ) {
+      throw new BusinessRuleError(
+        "A broker selection is only accepted for a shared terminal bridge connection.",
+        TRADING_ERROR_CODES.UNSUPPORTED_PROVIDER,
+      );
+    }
+
     // Phase 08 - PLATFORM_BRIDGE connections pair instead of validating
     // credentials: the terminal is external, the secret is SERVER-generated,
     // and the first accepted push IS the validation. Broker credentials
@@ -415,6 +425,22 @@ export class TradingAccountService {
         TRADING_ERROR_CODES.INVALID_CREDENTIALS,
       );
     }
+
+    const selectedBroker = input.payload.brokerId
+      ? this.brokerIdentification.catalogForClient().brokers.find(
+          (entry) =>
+            entry.brokerId === input.payload.brokerId &&
+            entry.providerId === adapter.descriptor.providerId &&
+            entry.connectorStatus === "CONNECTOR_AVAILABLE",
+        )
+      : null;
+    if (input.payload.brokerId && !selectedBroker) {
+      throw new BusinessRuleError(
+        "The selected broker does not have an available connector for this provider.",
+        TRADING_ERROR_CODES.UNSUPPORTED_PROVIDER,
+      );
+    }
+
     const duplicate = await this.repository.findAccountByExternal(
       input.userId,
       adapter.descriptor.providerId,
@@ -430,7 +456,7 @@ export class TradingAccountService {
     const count = await this.repository.countAccountsByUser(input.userId);
     const name =
       input.payload.displayName ??
-      `${adapter.descriptor.providerName} ${input.payload.environment}`;
+      `${selectedBroker?.displayName ?? adapter.descriptor.providerName} ${input.payload.environment}`;
     const { keyId, secret } = this.generateBridgeKey();
     // Journal anchor placeholders, corrected by the first pushes: "USD" is
     // the terminal-side default the pairing guide mandates; the connection
@@ -466,6 +492,7 @@ export class TradingAccountService {
         credentialsHint: CredentialsEncryptionService.hint(secret),
         permissions: [...adapter.descriptor.supportedPermissions],
         lastConnectedAt: new Date(),
+        expectedBrokerId: selectedBroker?.brokerId ?? null,
         status: "CONNECTING",
         bridgeKeyId: keyId,
       },
