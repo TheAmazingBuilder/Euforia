@@ -512,8 +512,7 @@ export function TaskyView() {
       ...column,
       cards: column.cards.map((card) => {
         if (card.id !== cardId) return card;
-        const { archivedAt: _archivedAt, ...activeCard } = card;
-        return withActivity(activeCard, "updated", "Restored card from archive");
+        return withActivity({ ...card, archivedAt: undefined }, "updated", "Restored card from archive");
       }),
     })));
   };
