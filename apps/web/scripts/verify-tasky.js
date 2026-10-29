@@ -1,9 +1,8 @@
 /**
  * Tasky probe - the trading kanban (Academy section).
- * Covers: Tasky Board header, 5 seeded columns left→right in a horizontally
- * scrollable board, faithful card anatomy (tag + priority + assignee + due),
- * add/delete card, mouse drag AND touch (pointer) drag between columns,
- * add-list appended to the right, local persistence, mobile 390px, themes.
+ * Covers: Tasky board structure, card/list CRUD, edit + duplicate, mouse/touch
+ * drag, server persistence, mobile layout and themes. Uses the disposable
+ * demo account below and resets that account's Tasky board to known seed data.
  */
 const { chromium } = require("playwright");
 
@@ -11,6 +10,59 @@ const BASE = process.env.PROBE_BASE || "http://localhost:3000";
 let passed = 0;
 let failed = 0;
 const pageErrors = [];
+
+const SEED_COLUMNS = [
+  {
+    id: "backlog",
+    title: "Backlog",
+    dot: "bg-muted-foreground/70",
+    cards: [
+      { id: "c1", title: "Implement OAuth 2.0 SSO integration", tag: "Feature", priority: "High", assignee: "AK", due: "2026-04-20" },
+      { id: "c2", title: "Add CSV export for reports dashboard", tag: "Enhancement", priority: "Medium", assignee: "SL", due: "2026-04-28" },
+      { id: "c3", title: "Migrate legacy REST endpoints to GraphQL", tag: "Refactor", priority: "Low", assignee: "JW", due: "2026-05-10" },
+      { id: "c4", title: "Set up Datadog APM traces for API layer", tag: "DevOps", priority: "Medium", assignee: "RC", due: "2026-05-05" },
+    ],
+  },
+  {
+    id: "todo",
+    title: "Todo",
+    dot: "bg-violet-500",
+    cards: [
+      { id: "c5", title: "Redesign onboarding flow (3-step wizard)", tag: "Design", priority: "High", assignee: "MT", due: "2026-04-18" },
+      { id: "c6", title: "Write unit tests for payment service", tag: "Testing", priority: "High", assignee: "AK", due: "2026-04-16" },
+      { id: "c7", title: "Localize app strings for EU markets", tag: "i18n", priority: "Medium", assignee: "SL", due: "2026-04-25" },
+    ],
+  },
+  {
+    id: "in-progress",
+    title: "In Progress",
+    dot: "bg-sky-500",
+    cards: [
+      { id: "c8", title: "Fix memory leak in WebSocket handler", tag: "Bug", priority: "Urgent", assignee: "JW", due: "2026-04-12" },
+      { id: "c9", title: "Build real-time notifications with SSE", tag: "Feature", priority: "High", assignee: "RC", due: "2026-04-15" },
+      { id: "c10", title: "Optimize Lighthouse score to 95+", tag: "Performance", priority: "Medium", assignee: "MT", due: "2026-04-22" },
+    ],
+  },
+  {
+    id: "in-review",
+    title: "In Review",
+    dot: "bg-amber-400",
+    cards: [
+      { id: "c11", title: "Dark mode support across all components", tag: "Enhancement", priority: "Medium", assignee: "AK", due: "2026-04-13" },
+      { id: "c12", title: "Rate limiting middleware for public API", tag: "Security", priority: "High", assignee: "SL", due: "2026-04-11" },
+    ],
+  },
+  {
+    id: "done",
+    title: "Done",
+    dot: "bg-emerald-500",
+    cards: [
+      { id: "c13", title: "Set up CI/CD pipeline with GitHub Actions", tag: "DevOps", priority: "High", assignee: "JW" },
+      { id: "c14", title: "Implement row-level security in Postgres", tag: "Security", priority: "Urgent", assignee: "RC" },
+      { id: "c15", title: "Add Stripe webhook signature validation", tag: "Bug", priority: "High", assignee: "MT" },
+    ],
+  },
+];
 
 function check(label, ok, extra = "") {
   const tag = ok ? "✓" : "✗";
@@ -27,6 +79,21 @@ async function login(page) {
   await page.click('button[type="submit"]');
   await page.waitForTimeout(2500);
   check("login succeeded", !page.url().includes("/login"), page.url());
+}
+
+async function resetDemoBoard(page) {
+  const result = await page.evaluate(async (columns) => {
+    const response = await fetch("/api/v1/tasky/board", {
+      method: "PUT",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ columns }),
+    });
+    return { ok: response.ok, status: response.status, body: await response.text() };
+  }, SEED_COLUMNS);
+  if (!result.ok) {
+    throw new Error(`Could not reset demo Tasky board (HTTP ${result.status}): ${result.body.slice(0, 300)}`);
+  }
 }
 
 async function columnCenter(page, columnId) {
@@ -74,6 +141,7 @@ async function touchDrag(page, gripTestid, targetColumnId) {
   try {
     console.log("\n[0] Clean board state");
     await login(page);
+    await resetDemoBoard(page);
     await page.goto(`${BASE}/tasky`, { waitUntil: "domcontentloaded", timeout: 60000 });
     await page.evaluate(() => window.localStorage.removeItem("cosmoz.tasky.board.v1"));
     await page.reload({ waitUntil: "domcontentloaded" });
