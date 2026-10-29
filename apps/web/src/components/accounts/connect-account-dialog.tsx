@@ -121,6 +121,7 @@ export function ConnectAccountDialog({
 
   const [step, setStep] = React.useState<WizardStep>("provider");
   const [provider, setProvider] = React.useState<TradingProviderDescriptor | null>(null);
+  const [selectedBroker, setSelectedBroker] = React.useState<BrokerCatalogEntry | null>(null);
   const [environment, setEnvironment] = React.useState<string | null>(null);
   const [externalAccountId, setExternalAccountId] = React.useState("");
   const [displayName, setDisplayName] = React.useState("");
@@ -145,6 +146,7 @@ export function ConnectAccountDialog({
   const reset = React.useCallback(() => {
     setStep("provider");
     setProvider(null);
+    setSelectedBroker(null);
     setEnvironment(null);
     setExternalAccountId("");
     setDisplayName("");
@@ -199,6 +201,7 @@ export function ConnectAccountDialog({
     connect.mutate(
       {
         providerId: provider.providerId,
+        ...(isBridgeProvider && selectedBroker ? { brokerId: selectedBroker.brokerId } : {}),
         environment: environment as "DEMO" | "LIVE" | "PROP_FIRM",
         externalAccountId: externalAccountId.trim(),
         ...(displayName.trim() ? { displayName: displayName.trim() } : {}),
@@ -230,7 +233,9 @@ export function ConnectAccountDialog({
                     ? C.errors.invalidCredentials
                     : code === "RATE_LIMITED"
                       ? C.errors.rateLimited
-                      : C.errors.generic;
+                      : code === "BRIDGE_BROKER_MISMATCH"
+                        ? C.errors.brokerMismatch
+                        : C.errors.generic;
           toast.error(message);
         },
       },
@@ -307,7 +312,10 @@ export function ConnectAccountDialog({
               type="button"
               role="radio"
               aria-checked={provider?.providerId === candidate.providerId}
-              onClick={() => setProvider(candidate)}
+              onClick={() => {
+                setSelectedBroker(null);
+                setProvider(candidate);
+              }}
               className={cn(
                 "flex items-center gap-3 rounded-lg border p-3 text-left transition-colors",
                 provider?.providerId === candidate.providerId
@@ -367,17 +375,27 @@ export function ConnectAccountDialog({
                 data-testid="connect-recognized-brokers"
               >
                 <div className="grid gap-1.5">
-                  {brokers.map((entry) => (
-                      <div
-                        key={entry.brokerId}
-                        className={cn(
-                          "flex items-start gap-2.5 rounded-md border border-dashed border-border bg-surface p-2.5",
-                          entry.connectorStatus === "CONNECTOR_AVAILABLE" ? "opacity-100" : "opacity-80",
-                        )}
-                        data-testid={`connect-provider-recognized-${entry.brokerId}`}
-                        aria-label={`${entry.displayName} - ${entry.connectorStatus === "CONNECTOR_AVAILABLE" ? C.providerAvailable : C.providerRecognized}`}
-                      >
-                        {entry.connectorStatus === "CONNECTOR_AVAILABLE" ? (
+                  {brokers.map((entry) => {
+                    const bridgeProvider =
+                      entry.providerId === "mt5-bridge"
+                        ? providers.find((candidate) => candidate.providerId === entry.providerId)
+                        : undefined;
+                    const canChoose =
+                      entry.connectorStatus === "CONNECTOR_AVAILABLE" &&
+                      entry.providerId === "mt5-bridge" &&
+                      ["icmarkets", "axi", "puprime"].includes(entry.brokerId) &&
+                      bridgeProvider !== undefined;
+                    // Providers with their own API adapter are already listed
+                    // above; omit those duplicates from this brand catalogue.
+                    if (
+                      entry.connectorStatus === "CONNECTOR_AVAILABLE" &&
+                      entry.providerId !== "mt5-bridge"
+                    ) {
+                      return null;
+                    }
+                    const rowContent = (
+                      <>
+                        {canChoose ? (
                           <ShieldCheck className="mt-0.5 size-3.5 shrink-0 text-accent" aria-hidden />
                         ) : (
                           <Lock className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" aria-hidden />
@@ -386,20 +404,53 @@ export function ConnectAccountDialog({
                           <div className="flex flex-wrap items-center gap-2">
                             <span className={cn(
                               "text-sm font-medium",
-                              entry.connectorStatus === "CONNECTOR_AVAILABLE" ? "text-foreground" : "text-muted-foreground",
+                              canChoose ? "text-foreground" : "text-muted-foreground",
                             )}>
                               {entry.displayName}
                             </span>
                             <span className="rounded-sm bg-muted px-1 py-0.5 font-mono text-[9px] uppercase leading-none tracking-wide text-muted-foreground">
-                              {entry.connectorStatus === "CONNECTOR_AVAILABLE" ? C.providerAvailable : C.providerRecognized}
+                              {canChoose ? C.connectViaMt5 : C.providerRecognized}
                             </span>
                           </div>
                           <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
                             {entry.notes}
                           </p>
                         </div>
+                      </>
+                    );
+                    return canChoose ? (
+                      <button
+                        key={entry.brokerId}
+                        type="button"
+                        onClick={() => {
+                          if (!bridgeProvider) return;
+                          setProvider(bridgeProvider);
+                          setSelectedBroker(entry);
+                          setEnvironment(null);
+                          setStep("environment");
+                        }}
+                        className={cn(
+                          "flex items-start gap-2.5 rounded-md border p-2.5 text-left transition-colors hover:border-accent/40 hover:bg-muted/30",
+                          selectedBroker?.brokerId === entry.brokerId
+                            ? "border-accent bg-accent/5 ring-1 ring-accent/30"
+                            : "border-border bg-surface",
+                        )}
+                        data-testid={`connect-broker-choice-${entry.brokerId}`}
+                        aria-label={`${entry.displayName} - ${C.connectViaMt5}`}
+                      >
+                        {rowContent}
+                      </button>
+                    ) : (
+                      <div
+                        key={entry.brokerId}
+                        className="flex items-start gap-2.5 rounded-md border border-dashed border-border bg-surface p-2.5 opacity-80"
+                        data-testid={`connect-provider-recognized-${entry.brokerId}`}
+                        aria-label={`${entry.displayName} - ${C.providerRecognized}`}
+                      >
+                        {rowContent}
                       </div>
-                    ))}
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -457,6 +508,18 @@ export function ConnectAccountDialog({
             {provider.providerName} serves {provider.supportedEnvironments.join(" and ")} accounts - other
             environments are refused by the provider.
           </p>
+          {selectedBroker ? (
+            <div
+              className="grid gap-1 rounded-lg border border-accent/30 bg-accent/5 p-3"
+              data-testid="connect-selected-broker"
+            >
+              <p className="text-sm font-medium text-foreground">
+                {selectedBroker.displayName} · MT5
+              </p>
+              <p className="text-xs leading-relaxed text-muted-foreground">{selectedBroker.notes}</p>
+              <p className="text-xs leading-relaxed text-muted-foreground">{C.selectedBrokerHint}</p>
+            </div>
+          ) : null}
         </div>
       ) : null}
 
@@ -493,7 +556,7 @@ export function ConnectAccountDialog({
               id="connect-display-name"
               value={displayName}
               onChange={(event) => setDisplayName(event.target.value)}
-              placeholder={`${provider.providerName} ${environment ?? ""}`}
+              placeholder={`${selectedBroker?.displayName ?? provider.providerName} ${environment ?? ""}`}
               autoComplete="off"
               data-testid="connect-display-name"
             />
