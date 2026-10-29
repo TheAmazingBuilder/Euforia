@@ -65,7 +65,7 @@ describe("TaskyService", () => {
     const service = new TaskyService(repository as unknown as TaskyRepository);
 
     const response = await service.saveBoard("user-a", board);
-    expect(response.board.columns[0].cards[0]).toMatchObject({
+    expect(response.board.columns[0]?.cards[0]).toMatchObject({
       description: "Review the setup, criteria and risk.",
       checklist: [
         { id: "check-1", text: "Verify entry criteria", completed: true },
@@ -80,10 +80,15 @@ describe("TaskyService", () => {
       saveForUser: vi.fn(),
     };
     const service = new TaskyService(repository as unknown as TaskyRepository);
+    const firstColumn = board.columns[0];
+    const firstCard = firstColumn?.cards[0];
+    if (!firstColumn || !firstCard) {
+      throw new Error("Tasky test fixture must contain at least one card.");
+    }
     const invalidBoard = {
       columns: [{
-        ...board.columns[0],
-        cards: [{ ...board.columns[0].cards[0], due: "not-a-date" }],
+        ...firstColumn,
+        cards: [{ ...firstCard, due: "not-a-date" }],
       }],
     };
 
