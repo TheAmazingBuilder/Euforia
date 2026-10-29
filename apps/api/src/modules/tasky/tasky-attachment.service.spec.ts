@@ -98,6 +98,23 @@ describe("TaskyAttachmentService", () => {
     expect(attachmentRepository.create).not.toHaveBeenCalled();
   });
 
+  it("removes stored files when their card is removed from the board", async () => {
+    const { service, attachmentRepository, storage } = createService();
+    const row = {
+      id: "22222222-2222-4222-8222-222222222222",
+      storageKey,
+    };
+    attachmentRepository.listForCard.mockImplementation(async () => [row]);
+    attachmentRepository.deleteForCard.mockResolvedValue(row);
+
+    await service.removeForDeletedCards(userId, ["deleted-card", "deleted-card"]);
+
+    expect(attachmentRepository.listForCard).toHaveBeenCalledOnce();
+    expect(attachmentRepository.listForCard).toHaveBeenCalledWith(userId, "deleted-card");
+    expect(attachmentRepository.deleteForCard).toHaveBeenCalledWith(userId, "deleted-card", row.id);
+    expect(storage.delete).toHaveBeenCalledWith(storageKey);
+  });
+
   it("owner-scopes deletion and removes the stored binary after metadata is deleted", async () => {
     const { service, attachmentRepository, storage } = createService();
     attachmentRepository.deleteForCard.mockResolvedValue({
