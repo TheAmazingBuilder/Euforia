@@ -371,6 +371,10 @@ export class AccountsRepository {
         bridgeKeyId: data.bridgeKeyId,
         credentialsEnc: data.credentialsEnc,
         credentialsHint: data.credentialsHint,
+        // Rotation invalidates the old terminal pairing. Require a fresh
+        // authenticated push before presenting the bridge as connected.
+        status: "CONNECTING",
+        lastError: null,
       },
     });
   }
