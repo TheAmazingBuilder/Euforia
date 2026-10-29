@@ -1,9 +1,6 @@
 import { Injectable, InternalServerErrorException } from "@nestjs/common";
 
-import {
-  taskyKanbanBoardStateSchema,
-  type TaskyKanbanBoardState,
-} from "../../shared/contracts";
+import { taskyKanbanBoardStateSchema } from "../../shared/contracts";
 import { TaskyRepository } from "./tasky.repository";
 
 /**
