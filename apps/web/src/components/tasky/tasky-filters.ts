@@ -77,7 +77,7 @@ export function filterTaskyCards(
       PRIORITY_RANK[a.card.priority] - PRIORITY_RANK[b.card.priority] ||
       a.originalIndex - b.originalIndex,
     );
- else if (filters.sort === "created") {
+  } else if (filters.sort === "created") {
     filtered.sort((a, b) =>
       (a.card.createdAt ?? a.card.activity?.find((item) => item.type === "created")?.createdAt ?? "")
         .localeCompare(b.card.createdAt ?? b.card.activity?.find((item) => item.type === "created")?.createdAt ?? "") ||
