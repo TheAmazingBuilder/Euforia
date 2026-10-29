@@ -78,6 +78,12 @@ export interface AppConfig {
     /** Max decoded binary size accepted for one trade screenshot. */
     screenshotMaxBytes: number;
   };
+  tasky: {
+    /** Local filesystem root for Tasky attachments; persist this volume in deployments. */
+    attachmentsRoot: string;
+    /** Maximum decoded bytes per attachment. */
+    attachmentMaxBytes: number;
+  };
   calendar: {
     /** Past half of the canonical eco sync window (§23) - Analytics correlation depth. */
     windowPastDays: number;
@@ -169,6 +175,10 @@ function build(env: Env): AppConfig {
     trades: {
       screenshotsRoot: env.TRADES_SCREENSHOTS_ROOT,
       screenshotMaxBytes: env.TRADES_SCREENSHOT_MAX_BYTES,
+    },
+    tasky: {
+      attachmentsRoot: env.TASKY_ATTACHMENTS_STORAGE_ROOT,
+      attachmentMaxBytes: env.TASKY_ATTACHMENT_MAX_BYTES,
     },
     calendar: {
       windowPastDays: env.CALENDAR_WINDOW_PAST_DAYS,
