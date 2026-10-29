@@ -271,6 +271,53 @@ export class Mt5BridgeIngestService implements OnModuleDestroy {
         "BRIDGE_ENVIRONMENT_MISMATCH",
       );
     }
+
+    const reported = payload.brokerName
+      ? this.identification.identifyAtConnect({
+          providerId: "mt5-bridge",
+          externalAccountId: payload.externalAccountId,
+          providerReported: {
+            brokerName: payload.brokerName,
+            accountClass: payload.accountClass ?? null,
+          },
+        })
+      : null;
+    const server = payload.server
+      ? this.identification.identify({
+          providerId: "mt5-bridge",
+          externalAccountId: payload.externalAccountId,
+          endpoint: payload.server,
+        })
+      : null;
+    const isSpecificBroker = (brokerId: string | undefined) =>
+      Boolean(brokerId && brokerId !== "unknown" && brokerId !== "metatrader-platform");
+    if (
+      reported &&
+      server &&
+      isSpecificBroker(reported.brokerId) &&
+      isSpecificBroker(server.brokerId) &&
+      reported.brokerId !== server.brokerId
+    ) {
+      throw new ForbiddenError(
+        "The broker name and MT5 server do not identify the same broker. Verify the account and terminal server.",
+        "BRIDGE_BROKER_MISMATCH",
+      );
+    }
+
+    const storedIdentity = account.brokerIdentity as { brokerId?: string } | null;
+    const nextIdentity = reported ?? server;
+    if (
+      nextIdentity &&
+      isSpecificBroker(nextIdentity.brokerId) &&
+      storedIdentity &&
+      isSpecificBroker(storedIdentity.brokerId) &&
+      storedIdentity.brokerId !== nextIdentity.brokerId
+    ) {
+      throw new ForbiddenError(
+        "This terminal is now reporting a different broker than the account originally paired in Euforia. Reconnect the intended terminal account.",
+        "BRIDGE_BROKER_MISMATCH",
+      );
+    }
   }
 
   /** ACCOUNT_INFO pushes refresh the journal anchor facts + identification. */
@@ -288,27 +335,50 @@ export class Mt5BridgeIngestService implements OnModuleDestroy {
     const account = await this.repository.findAccountById(accountId);
     if (!account) return;
 
-    // Identification: runs at the first ACCOUNT_INFO push (the connect-time
-    // placeholder is confidence UNKNOWN) and UPGRADES from UNKNOWN. An
-    // already-resolved identity is a frozen snapshot - never re-guessed.
-    const stored = account.brokerIdentity as { confidence?: string } | null;
+    // Capture the strongest trustworthy evidence. A recognized broker may
+    // upgrade the initial UNKNOWN/generic MT5 identity, and provider-reported
+    // identity may strengthen a prior server-pattern match. A different
+    // specific broker is rejected before event persistence by the pairing guard.
+    const stored = account.brokerIdentity as {
+      brokerId?: string;
+      confidence?: string;
+    } | null;
     let brokerIdentity: unknown = undefined;
-    if (!account.brokerIdentity || stored?.confidence === "UNKNOWN") {
-      const identification = payload.brokerName
-        ? this.identification.identifyAtConnect({
-            providerId: "mt5-bridge",
-            externalAccountId: payload.externalAccountId,
-            endpoint: payload.server ?? null,
-            providerReported: {
-              brokerName: payload.brokerName,
-              accountClass: payload.accountClass ?? null,
-            },
-          })
-        : this.identification.identify({
-            providerId: "mt5-bridge",
-            externalAccountId: payload.externalAccountId,
-            ...(payload.server ? { endpoint: payload.server } : {}),
-          });
+    const identification = payload.brokerName
+      ? this.identification.identifyAtConnect({
+          providerId: "mt5-bridge",
+          externalAccountId: payload.externalAccountId,
+          endpoint: payload.server ?? null,
+          providerReported: {
+            brokerName: payload.brokerName,
+            accountClass: payload.accountClass ?? null,
+          },
+        })
+      : this.identification.identify({
+          providerId: "mt5-bridge",
+          externalAccountId: payload.externalAccountId,
+          ...(payload.server ? { endpoint: payload.server } : {}),
+        });
+    const isSpecificBroker = (brokerId: string | undefined) =>
+      Boolean(brokerId && brokerId !== "unknown" && brokerId !== "metatrader-platform");
+    const confidenceRank: Record<string, number> = {
+      UNKNOWN: 0,
+      PLATFORM_KNOWN: 1,
+      PATTERN_MATCH: 2,
+      PROVIDER_REPORTED: 3,
+    };
+    const currentRank = confidenceRank[stored?.confidence ?? "UNKNOWN"] ?? 0;
+    const nextRank = confidenceRank[identification.confidence] ?? 0;
+    const storedIsGeneric =
+      !stored ||
+      !isSpecificBroker(stored.brokerId) ||
+      stored.confidence === "UNKNOWN";
+    if (
+      !stored ||
+      (isSpecificBroker(identification.brokerId) &&
+        (storedIsGeneric ||
+          (stored.brokerId === identification.brokerId && nextRank > currentRank)))
+    ) {
       brokerIdentity = identification;
     }
     await this.repository.setBridgeAccountIdentity(accountId, {
