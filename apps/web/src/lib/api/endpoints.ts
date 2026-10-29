@@ -210,6 +210,8 @@ export const apiPaths = {
   academySuggestions: "/academy/suggestions",
   academyEvents: "/academy/events",
   academyEventRegister: "/academy/events/register",
+  // Tasky Kanban board — distinct from Academy study tasks.
+  taskyBoard: "/tasky/board",
   academyTasks: "/academy/tasks",
   academyTaskToggle: "/academy/tasks/toggle",
   academyTaskDelete: "/academy/tasks/delete",
