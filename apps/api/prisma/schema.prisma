@@ -1283,6 +1283,16 @@ model AcademyRow {
   @@index([userId, kind])
 }
 
+/// Tasky Kanban — one persisted personal board per Euforia user.
+model TaskyBoard {
+  userId    String   @id @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Validated TaskyBoardState JSON; ownership comes from the authenticated user, never from payload data.
+  data      Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 /// Journal context — user-owned tag catalog (data-model.md "Domaine 4": free,
 /// hierarchical tags; the system starter set is lazily seeded on first read).
 model TagRow {
