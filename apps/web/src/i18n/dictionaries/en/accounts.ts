@@ -205,7 +205,10 @@ export const accountsDict = {
     sectionTitle: "MT5 bridge",
     statusConnecting: "Waiting for the first push - attach the EA in your MT5 terminal.",
     statusConnected: "Terminal connected - data is current as of the last push.",
+    statusDisconnected: "Bridge disconnected. Generate a new pairing to reconnect your MT5 terminal.",
+    statusError: "Bridge needs attention. Check the terminal or create a fresh pairing.",
     pairingButton: "Pairing sheet",
+    pairAgainButton: "Pair terminal",
     rotateButton: "Rotate secret",
     rotatePending: "Rotating…",
     rotateWarning:
