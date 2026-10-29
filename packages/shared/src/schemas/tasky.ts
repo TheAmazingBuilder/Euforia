@@ -392,7 +392,7 @@ export type TaskyAutomationRunStatus = z.infer<typeof taskyAutomationRunStatusSc
 
 export const taskyAutomationRunSchema = z.object({
   id: z.string().uuid(),
-  automationId: uuidSchema.nullable(),
+  automationId: z.string().uuid().nullable(),
   automationName: z.string().min(1).max(80),
   trigger: z.string().min(1).max(40),
   cardId: z.string().max(100).nullable(),
