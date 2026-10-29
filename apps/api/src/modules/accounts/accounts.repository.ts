@@ -407,32 +407,68 @@ export class AccountsRepository {
   }
 
   /**
-   * Idempotency ledger insert. Returns duplicate=true when (bridgeKeyId,
-   * eventId) already exists - the caller ACKNOWLEDGES the replay (never
-   * re-applies it). Never throws on replays.
+   * Atomically accept one authenticated bridge event while proving that its
+   * key is still active. This closes a disconnect/rotation race between the
+   * initial HMAC lookup and event persistence. The conditional connection
+   * update locks the row; a revoked key cannot reactivate the connection or
+   * append orphaned events after disconnect.
    */
-  async insertBridgeEvent(data: {
+  async acceptBridgeEvent(data: {
     bridgeKeyId: string;
     eventId: string;
     kind: string;
     payload: unknown;
-  }): Promise<{ duplicate: boolean }> {
-    try {
-      await this.prisma.tradingBridgeEvent.create({
+  }): Promise<{ accepted: boolean; duplicate: boolean; activated: boolean }> {
+    return this.prisma.$transaction(async (tx) => {
+      const connecting = await tx.tradingConnection.updateMany({
+        where: {
+          bridgeKeyId: data.bridgeKeyId,
+          method: "PLATFORM_BRIDGE",
+          status: "CONNECTING",
+          credentialsEnc: { not: "" },
+        },
         data: {
+          status: "CONNECTED",
+          lastConnectedAt: new Date(),
+          lastError: null,
+        },
+      });
+      const activated = connecting.count === 1;
+
+      // A CONNECTED row is also written conditionally so it is locked against
+      // a concurrent disconnect/rotation until the event insert commits.
+      const connected = activated
+        ? { count: 1 }
+        : await tx.tradingConnection.updateMany({
+            where: {
+              bridgeKeyId: data.bridgeKeyId,
+              method: "PLATFORM_BRIDGE",
+              status: "CONNECTED",
+              credentialsEnc: { not: "" },
+            },
+            data: { lastError: null },
+          });
+      if (connected.count !== 1) {
+        return { accepted: false, duplicate: false, activated: false };
+      }
+
+      // PostgreSQL ON CONFLICT DO NOTHING preserves idempotency without
+      // aborting the surrounding transaction on a replay.
+      const inserted = await tx.tradingBridgeEvent.createMany({
+        data: [{
           bridgeKeyId: data.bridgeKeyId,
           eventId: data.eventId,
           kind: data.kind,
           payload: data.payload as Prisma.InputJsonValue,
-        },
+        }],
+        skipDuplicates: true,
       });
-      return { duplicate: false };
-    } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
-        return { duplicate: true };
-      }
-      throw error;
-    }
+      return {
+        accepted: true,
+        duplicate: inserted.count === 0,
+        activated,
+      };
+    });
   }
 
   /** The pull-adapter's data source: latest cached event of one kind. */
@@ -446,15 +482,6 @@ export class AccountsRepository {
       select: { payload: true, receivedAt: true },
     });
     return row ?? null;
-  }
-
-  /** First accepted push: CONNECTING → CONNECTED (pairing IS the validation). */
-  async activateBridgeConnection(accountId: string): Promise<TradingConnectionRow> {
-    const row = await this.prisma.tradingConnection.update({
-      where: { accountId },
-      data: { status: "CONNECTED", lastConnectedAt: new Date(), lastError: null },
-    });
-    return row as TradingConnectionRow;
   }
 
   /** ACCOUNT_INFO pushes refresh the journal anchor facts (currency + identity). */
