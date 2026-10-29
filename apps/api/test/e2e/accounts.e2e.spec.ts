@@ -938,13 +938,19 @@ describe("trading-accounts - MT5 bridge ingest (public, HMAC)", () => {
   async function pairedBridgeAccount(
     externalAccountId = "52988790",
     environment: "DEMO" | "LIVE" | "PROP_FIRM" = "DEMO",
+    brokerId?: "icmarkets" | "axi" | "puprime",
   ) {
     const user = await authenticatedUser(bridgeApp, bridgeMail);
     const res = await bridgeApp.inject({
       method: "POST",
       url: "/api/v1/trading-accounts/connect",
       headers: user.authHeader,
-      payload: { providerId: "mt5-bridge", environment, externalAccountId },
+      payload: {
+        providerId: "mt5-bridge",
+        environment,
+        externalAccountId,
+        ...(brokerId ? { brokerId } : {}),
+      },
     });
     expect(res.statusCode).toBe(201);
     const { account } = res.json() as {
@@ -978,6 +984,8 @@ describe("trading-accounts - MT5 bridge ingest (public, HMAC)", () => {
   it("rotates the bridge key and secret atomically and rejects the previous pairing", async () => {
     const { user, account, pairing } = await pairedBridgeAccount(
       `88${Math.random().toString().slice(2, 8)}`,
+      "DEMO",
+      "puprime",
     );
 
     const firstPush = await push({
@@ -1065,6 +1073,8 @@ describe("trading-accounts - MT5 bridge ingest (public, HMAC)", () => {
   it("allows a disconnected MT5 account to be paired again without losing journal history", async () => {
     const { user, account, pairing } = await pairedBridgeAccount(
       `88${Math.random().toString().slice(2, 8)}`,
+      "DEMO",
+      "puprime",
     );
     const initialPush = await push({
       keyId: pairing.bridgeKeyId,
@@ -1139,6 +1149,7 @@ describe("trading-accounts - MT5 bridge ingest (public, HMAC)", () => {
     const { account, pairing } = await pairedBridgeAccount(
       `88${Math.random().toString().slice(2, 8)}`,
       "LIVE",
+      "axi",
     );
     const res = await push({
       keyId: pairing.bridgeKeyId,
@@ -1170,6 +1181,49 @@ describe("trading-accounts - MT5 bridge ingest (public, HMAC)", () => {
       providerId: "mt5-bridge",
       confidence: "PROVIDER_REPORTED",
     });
+  });
+
+  it("rejects a terminal broker that conflicts with the broker selected at pairing", async () => {
+    const { account, pairing } = await pairedBridgeAccount(
+      `88${Math.random().toString().slice(2, 8)}`,
+      "DEMO",
+      "axi",
+    );
+    const connection = await bridgeApp.get(PrismaService).tradingConnection.findUnique({
+      where: { accountId: account.id },
+      select: { expectedBrokerId: true },
+    });
+    expect(connection?.expectedBrokerId).toBe("axi");
+
+    const res = await push({
+      keyId: pairing.bridgeKeyId,
+      secret: pairing.secret,
+      timestamp: Date.now(),
+      envelope: {
+        eventId: "ea-e2e-selected-broker-mismatch-1",
+        kind: "ACCOUNT_INFO",
+        payload: {
+          externalAccountId: account.externalAccountId,
+          currency: "USD",
+          server: "PUPrime-Demo",
+          brokerName: "PU Prime Limited",
+          accountClass: "DEMO",
+        },
+      },
+    });
+    expect(res.statusCode).toBe(403);
+    expect(res.json().code).toBe("BRIDGE_BROKER_MISMATCH");
+    const [state, eventCount] = await Promise.all([
+      bridgeApp.get(PrismaService).tradingConnection.findUnique({
+        where: { accountId: account.id },
+        select: { status: true },
+      }),
+      bridgeApp.get(PrismaService).tradingBridgeEvent.count({
+        where: { bridgeKeyId: pairing.bridgeKeyId },
+      }),
+    ]);
+    expect(state?.status).toBe("CONNECTING");
+    expect(eventCount).toBe(0);
   });
 
   it("rejects an ACCOUNT_INFO login that differs from the paired Euforia account", async () => {
