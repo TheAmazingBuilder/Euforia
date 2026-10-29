@@ -3,6 +3,8 @@
 import * as React from "react";
 import {
   AlertTriangle,
+  Archive,
+  ArchiveRestore,
   CalendarDays,
   Check,
   ChevronLeft,
@@ -13,6 +15,7 @@ import {
   ExternalLink,
   FileText,
   History,
+  Keyboard,
   Link2,
   ListChecks,
   LoaderCircle,
@@ -257,7 +260,8 @@ export function TaskyView() {
   const [categoryFilter, setCategoryFilter] = React.useState("all");
   const [assigneeFilter, setAssigneeFilter] = React.useState("all");
   const [statusFilter, setStatusFilter] = React.useState("all");
-  const [viewMode, setViewMode] = React.useState<"board" | "calendar" | "table" | "timeline" | "dashboard" | "completed" | "upcoming">("board");
+  const [viewMode, setViewMode] = React.useState<"board" | "calendar" | "table" | "timeline" | "dashboard" | "completed" | "upcoming" | "archived">("board");
+  const [shortcutsDialogOpen, setShortcutsDialogOpen] = React.useState(false);
   const [calendarMonth, setCalendarMonth] = React.useState(() => {
     const now = new Date();
     return { year: now.getFullYear(), monthIndex: now.getMonth() };
@@ -415,15 +419,16 @@ export function TaskyView() {
           // still sits in its source column - compensate on same-column drops.
           let insertAt = target.index ?? 0;
           if (target.col === current.fromCol && fromColumn) {
-            const originalIndex = fromColumn.cards.findIndex((card) => card.id === current.cardId);
+            const originalIndex = fromColumn.cards.filter((card) => !card.archivedAt).findIndex((card) => card.id === current.cardId);
             if (originalIndex !== -1 && insertAt > originalIndex) insertAt -= 1;
           }
           return prev.map((column) => {
             const without = column.cards.filter((card) => card.id !== current.cardId);
             if (column.id === target.col) {
-              const cards = [...without];
-              cards.splice(Math.min(insertAt, cards.length), 0, moved);
-              return { ...column, cards };
+              const activeCards = without.filter((card) => !card.archivedAt);
+              const archivedCards = without.filter((card) => Boolean(card.archivedAt));
+              activeCards.splice(Math.min(insertAt, activeCards.length), 0, moved);
+              return { ...column, cards: [...activeCards, ...archivedCards] };
             }
             return { ...column, cards: without };
           });
@@ -486,6 +491,31 @@ export function TaskyView() {
       setEditingCardId(null);
       setCardDraft(null);
     }
+  };
+
+  const archiveCard = (columnId: string, cardId: string) => {
+    setColumns((prev) => prev.map((column) => column.id !== columnId ? column : ({
+      ...column,
+      cards: column.cards.map((card) => card.id !== cardId ? card : withActivity({
+        ...card,
+        archivedAt: new Date().toISOString(),
+      }, "updated", "Archived card")),
+    })));
+    if (editingCardId === cardId) {
+      setEditingCardId(null);
+      setCardDraft(null);
+    }
+    if (detailsCardId === cardId) setDetailsCardId(null);
+  };
+
+  const restoreCard = (columnId: string, cardId: string) => {
+    setColumns((prev) => prev.map((column) => column.id !== columnId ? column : ({
+      ...column,
+      cards: column.cards.map((card) => {
+        if (card.id !== cardId) return card;
+        return withActivity({ ...card, archivedAt: undefined }, "updated", "Restored card from archive");
+      }),
+    })));
   };
 
   const beginRenameList = (column: TaskyColumn) => {
@@ -787,7 +817,7 @@ export function TaskyView() {
       column.id,
       statusFilter !== "all" && statusFilter !== column.id
         ? []
-        : filterTaskyCards(column.cards, {
+        : filterTaskyCards(column.cards.filter((card) => !card.archivedAt), {
             query: searchQuery,
             priority: priorityFilter,
             due: dueFilter,
@@ -798,6 +828,18 @@ export function TaskyView() {
     ] as const)),
     [columns, searchQuery, priorityFilter, dueFilter, categoryFilter, assigneeFilter, statusFilter, sortOrder, todayKey],
   );
+  const archivedRows = React.useMemo(() => {
+    let offset = 0;
+    return columns.flatMap((column) => {
+      const rows = (statusFilter !== "all" && statusFilter !== column.id ? [] : filterTaskyCards(
+        column.cards.filter((card) => Boolean(card.archivedAt)),
+        { query: searchQuery, priority: priorityFilter, due: dueFilter, category: categoryFilter, assignee: assigneeFilter, sort: sortOrder },
+        todayKey,
+      )).map(({ card, originalIndex }) => ({ card, column, boardOrder: offset + originalIndex }));
+      offset += column.cards.length;
+      return rows;
+    });
+  }, [columns, searchQuery, priorityFilter, dueFilter, categoryFilter, assigneeFilter, statusFilter, sortOrder, todayKey]);
   const visibleRows = React.useMemo(() => {
     let offset = 0;
     return columns.flatMap((column) => {
@@ -867,9 +909,59 @@ export function TaskyView() {
       })),
     };
   }, [visibleRows]);
-  const totalCardCount = columns.reduce((total, column) => total + column.cards.length, 0);
+  const totalCardCount = columns.reduce((total, column) => total + column.cards.filter((card) => !card.archivedAt).length, 0);
   const visibleCardCount = visibleRows.length;
   const dragCard = drag ? columns.flatMap((column) => column.cards).find((card) => card.id === drag.cardId) : undefined;
+
+  React.useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.altKey || event.ctrlKey || event.metaKey || event.defaultPrevented) return;
+      const target = event.target instanceof HTMLElement ? event.target : null;
+      if (target && (target.isContentEditable || target.closest("input, textarea, select, [contenteditable='true']"))) return;
+      if (shortcutsDialogOpen || savedViewDialogOpen || detailsCardId || editingCardId || addingIn || addingList) return;
+      const key = event.key;
+      if (key === "?" ) {
+        event.preventDefault();
+        setShortcutsDialogOpen(true);
+        return;
+      }
+      if (key === "/") {
+        event.preventDefault();
+        document.getElementById("tasky-search")?.focus();
+        return;
+      }
+      const focusedElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      const cardElement = focusedElement?.closest<HTMLElement>("[data-tasky-card]");
+      const cardId = cardElement?.dataset.cardId ?? cardElement?.getAttribute("data-testid")?.replace("tasky-card-", "") ?? null;
+      const columnId = cardElement?.dataset.column ?? null;
+      const focusedColumn = columns.find((column) => column.id === columnId);
+      const focusedCard = cardId ? columns.flatMap((column) => column.cards).find((card) => card.id === cardId) : undefined;
+
+      if (key.toLocaleLowerCase() === "n") {
+        event.preventDefault();
+        const targetColumn = focusedColumn ?? columns.find((column) => !isTaskyCompletedColumn(column)) ?? columns[0];
+        if (targetColumn && viewMode !== "archived") {
+          setViewMode("board");
+          setAddingIn(targetColumn.id);
+          setAddTitle("");
+        }
+        return;
+      }
+      if (!focusedCard || !focusedColumn) return;
+      if (key.toLocaleLowerCase() === "e" && !focusedCard.archivedAt) {
+        event.preventDefault();
+        beginEditCard(focusedCard);
+      } else if (key.toLocaleLowerCase() === "a" && !focusedCard.archivedAt) {
+        event.preventDefault();
+        archiveCard(focusedColumn.id, focusedCard.id);
+      } else if (key.toLocaleLowerCase() === "r" && focusedCard.archivedAt && viewMode === "archived") {
+        event.preventDefault();
+        restoreCard(focusedColumn.id, focusedCard.id);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [shortcutsDialogOpen, savedViewDialogOpen, detailsCardId, editingCardId, addingIn, addingList, columns, viewMode, beginEditCard, archiveCard, restoreCard]);
 
   if (boardQuery.isError) {
     return (
@@ -1063,6 +1155,7 @@ export function TaskyView() {
           ["dashboard", "Dashboard"],
           ["completed", "Completed"],
           ["upcoming", "Upcoming"],
+          ["archived", "Archived"],
         ] as const).map(([mode, label]) => (
           <Button key={mode} type="button" size="sm" variant={viewMode === mode ? "default" : "outline"}
             aria-pressed={viewMode === mode} onClick={() => setViewMode(mode)}
@@ -1070,7 +1163,36 @@ export function TaskyView() {
             {label}
           </Button>
         ))}
+        <Button type="button" size="sm" variant="ghost" onClick={() => setShortcutsDialogOpen(true)}
+          data-testid="tasky-shortcuts-open" aria-label="Show keyboard shortcuts">
+          <Keyboard className="size-4" aria-hidden="true" />
+          Shortcuts
+        </Button>
       </nav>
+      <Dialog open={shortcutsDialogOpen} onOpenChange={setShortcutsDialogOpen}>
+        <DialogContent className="sm:max-w-md" data-testid="tasky-shortcuts-dialog">
+          <DialogHeader>
+            <DialogTitle>Tasky keyboard shortcuts</DialogTitle>
+            <DialogDescription>Shortcuts work outside text fields and editable controls.</DialogDescription>
+          </DialogHeader>
+          <dl className="flex flex-col gap-3 text-sm">
+            {[
+              ["/", "Focus search"],
+              ["N", "Create a card in the focused card’s list, or the first list"],
+              ["E", "Edit the focused card"],
+              ["A", "Archive the focused card"],
+              ["R", "Restore the focused card in Archived view"],
+              ["?", "Open this shortcut reference"],
+              ["Esc", "Close the current dialog"],
+            ].map(([key, description]) => (
+              <div key={key} className="flex items-center justify-between gap-4 border-b border-border/60 pb-2 last:border-b-0">
+                <dt className="rounded-md border border-border bg-muted px-2 py-1 font-mono text-xs">{key}</dt>
+                <dd className="text-right text-muted-foreground">{description}</dd>
+              </div>
+            ))}
+          </dl>
+        </DialogContent>
+      </Dialog>
       <Dialog open={savedViewDialogOpen} onOpenChange={setSavedViewDialogOpen}>
         <DialogContent className="sm:max-w-md" data-testid="tasky-saved-view-dialog">
           <DialogHeader>
@@ -1168,12 +1290,12 @@ export function TaskyView() {
         </section>
       ) : null}
 
-      {viewMode === "table" || viewMode === "completed" || viewMode === "upcoming" ? (
+      {viewMode === "table" || viewMode === "completed" || viewMode === "upcoming" || viewMode === "archived" ? (
         <section className="overflow-hidden rounded-xl border border-border bg-background/40" data-testid={`tasky-${viewMode}-view`}>
           <header className="flex items-center justify-between gap-3 border-b border-border px-3 py-3">
-            <h2 className="text-sm font-semibold">{viewMode === "completed" ? "Completed tasks" : viewMode === "upcoming" ? "Due in the next 7 days" : "All visible tasks"}</h2>
+            <h2 className="text-sm font-semibold">{viewMode === "completed" ? "Completed tasks" : viewMode === "upcoming" ? "Due in the next 7 days" : viewMode === "archived" ? "Archived tasks" : "All visible tasks"}</h2>
             <span className="font-mono text-xs text-muted-foreground">
-              {viewMode === "completed" ? completedRows.length : viewMode === "upcoming" ? upcomingRows.length : tableRows.length} tasks
+              {viewMode === "completed" ? completedRows.length : viewMode === "upcoming" ? upcomingRows.length : viewMode === "archived" ? archivedRows.length : tableRows.length} tasks
             </span>
           </header>
           <div className="overflow-x-auto">
@@ -1187,11 +1309,12 @@ export function TaskyView() {
                   <th className="px-3 py-2 font-medium">Assignee</th>
                   <th className="px-3 py-2 font-medium">Start date</th>
                   <th className="px-3 py-2 font-medium">Due date</th>
+                  {viewMode === "archived" ? <th className="px-3 py-2 font-medium">Actions</th> : null}
                 </tr>
               </thead>
               <tbody>
-                {(viewMode === "completed" ? completedRows : viewMode === "upcoming" ? upcomingRows : tableRows).map((row) => (
-                  <tr key={row.card.id} className="border-t border-border/70 hover:bg-muted/20" data-testid={`tasky-table-row-${row.card.id}`}>
+                {(viewMode === "completed" ? completedRows : viewMode === "upcoming" ? upcomingRows : viewMode === "archived" ? archivedRows : tableRows).map((row) => (
+                  <tr key={row.card.id} className="border-t border-border/70 hover:bg-muted/20" data-testid={`tasky-table-row-${row.card.id}`} data-tasky-card data-card-id={row.card.id} data-column={row.column.id} tabIndex={0} aria-keyshortcuts={viewMode === "archived" ? "R" : "E A"}>
                     <td className="max-w-[260px] px-3 py-2">
                       <button type="button" className="block max-w-full truncate text-left font-medium hover:text-accent" onClick={() => setDetailsCardId(row.card.id)}>{row.card.title}</button>
                     </td>
@@ -1201,12 +1324,13 @@ export function TaskyView() {
                     <td className="px-3 py-2">{row.card.assignee}</td>
                     <td className="px-3 py-2 font-mono text-xs">{row.card.startDate ?? (row.card.createdAt?.slice(0, 10) ?? "—")}</td>
                     <td className="px-3 py-2 font-mono text-xs">{row.card.due ?? "—"}</td>
+                    {viewMode === "archived" ? <td className="px-3 py-2"><Button type="button" size="sm" variant="outline" onClick={() => restoreCard(row.column.id, row.card.id)} data-testid={`tasky-restore-${row.card.id}`}><ArchiveRestore className="mr-1 size-3.5" aria-hidden="true" />Restore</Button></td> : null}
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          {(viewMode === "completed" ? completedRows.length : viewMode === "upcoming" ? upcomingRows.length : tableRows.length) === 0 ? (
+          {(viewMode === "completed" ? completedRows.length : viewMode === "upcoming" ? upcomingRows.length : viewMode === "archived" ? archivedRows.length : tableRows.length) === 0 ? (
             <p className="px-3 py-8 text-center text-sm text-muted-foreground">No tasks match the current filters.</p>
           ) : null}
         </section>
@@ -1433,6 +1557,9 @@ export function TaskyView() {
                       data-tasky-card
                       data-testid={`tasky-card-${card.id}`}
                       data-column={column.id}
+                      data-card-id={card.id}
+                      tabIndex={0}
+                      aria-keyshortcuts="E A"
                       className={cn(
                         "group relative shrink-0 rounded-lg border border-border bg-surface p-3 shadow-sm transition-colors hover:border-accent/40",
                         isDragged && "opacity-30",
@@ -1531,6 +1658,16 @@ export function TaskyView() {
                           className="grid size-6 shrink-0 place-items-center rounded text-muted-foreground/50 transition-colors hover:bg-muted hover:text-foreground [@media(hover:none)]:text-muted-foreground"
                         >
                           <Copy className="size-3.5" aria-hidden="true" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => archiveCard(column.id, card.id)}
+                          aria-label={`Archive ${card.title}`}
+                          title="Archive card"
+                          data-testid={`tasky-archive-${card.id}`}
+                          className="grid size-6 shrink-0 place-items-center rounded text-muted-foreground/50 transition-colors hover:bg-muted hover:text-foreground [@media(hover:none)]:text-muted-foreground"
+                        >
+                          <Archive className="size-3.5" aria-hidden="true" />
                         </button>
                         <button
                           type="button"
