@@ -260,6 +260,7 @@ export class Mt5BridgeIngestService implements OnModuleDestroy {
         ? this.identification.identifyAtConnect({
             providerId: "mt5-bridge",
             externalAccountId: payload.externalAccountId,
+            endpoint: payload.server ?? null,
             providerReported: {
               brokerName: payload.brokerName,
               accountClass: payload.accountClass ?? null,
