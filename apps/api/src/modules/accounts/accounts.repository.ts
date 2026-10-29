@@ -470,7 +470,6 @@ export class AccountsRepository {
           return { accepted: false, duplicate: false, activated: false, reason: "INACTIVE" as const };
         }
 
-        let nextAccountBrokerId: string | undefined;
         if (data.identifiedBrokerId) {
           const account = await tx.tradingAccount.findUnique({
             where: { id: connection.accountId },
@@ -502,7 +501,6 @@ export class AccountsRepository {
               data: { brokerId: data.identifiedBrokerId },
             });
           }
-          nextAccountBrokerId = data.identifiedBrokerId;
         }
 
         const activated = connection.status === "CONNECTING";
