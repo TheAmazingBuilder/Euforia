@@ -44,7 +44,7 @@ export interface BrokerCatalogEntryDef {
 }
 
 /** Catalog snapshot version - recorded in every connect-time identification. */
-export const BROKER_CATALOG_VERSION = "2026-10.1";
+export const BROKER_CATALOG_VERSION = "2026-10.2";
 
 /**
  * OANDA v20 account ids: "101-004-1234567-001" / "101-004-1234567"
@@ -108,6 +108,38 @@ export const BROKER_CATALOG: ReadonlyArray<BrokerCatalogEntryDef> = [
         kind: "ENDPOINT",
         regexSource: "^ICMarkets",
         signal: "server name matches the documented ICMarkets server naming (e.g. ICMarketsSC-MT5)",
+      },
+    ],
+  },
+  {
+    brokerId: "axi",
+    displayName: "Axi",
+    platforms: ["MT4", "MT5"],
+    // Axi exposes MT5 accounts only in eligible regions. Euforia connects
+    // through the user's own MT5 terminal bridge; this is not Axi's Claude-only MCP.
+    connectorProviderId: "mt5-bridge",
+    aliases: ["AxiTrader", "AxiCorp", "AxiCorp Financial Services Pty Ltd", "AxiCorp Limited"],
+    notes: "MT5 accounts can connect through the Euforia Terminal Bridge where Axi MT5 is available for the user's region/account. MT4 and Axi's proprietary platform are not connected by this adapter.",
+    patterns: [
+      {
+        kind: "ENDPOINT",
+        regexSource: "^Axi(?:[- ].*)?$",
+        signal: "server label starts with Axi, matching Axi's official MT5 server-search workflow; the user must select the exact server supplied by Axi",
+      },
+    ],
+  },
+  {
+    brokerId: "puprime",
+    displayName: "PU Prime",
+    platforms: ["MT4", "MT5"],
+    connectorProviderId: "mt5-bridge",
+    aliases: ["PUPrime", "PU Prime Ltd", "PU Prime Limited"],
+    notes: "MT5 accounts connect through the Euforia Terminal Bridge. MT4 and proprietary PU Prime platform data are not connected by this adapter.",
+    patterns: [
+      {
+        kind: "ENDPOINT",
+        regexSource: "^PUPrime-(Demo|Live)(?: ?[2-5])?$",
+        signal: "server label matches PU Prime's documented MT5 server naming (PUPrime-Demo / PUPrime-Live, including numbered Live servers)",
       },
     ],
   },
