@@ -121,6 +121,21 @@ async function touchDrag(page, gripTestid, targetColumnId) {
     check("c1 due Apr 20", /Apr 20/.test(await c1.innerText()));
     check("c1 grip exists", await page.locator('[data-testid="tasky-grip-c1"]').isVisible().catch(() => false));
 
+    console.log("\n[2b] Search, filter and sort");
+    await page.fill('[data-testid="tasky-search"]', "Implement OAuth 2.0 SSO integration");
+    check("search narrows the board to the matching card",
+      await page.locator('[data-testid="tasky-card-c1"]').isVisible().catch(() => false)
+      && /Showing 1 of \\d+ cards/.test(await page.locator('[data-testid="tasky-filter-summary"]').innerText()));
+    await page.selectOption('[data-testid="tasky-priority-filter"]', "Urgent");
+    check("priority filter excludes non-matching cards",
+      await page.locator('[data-testid="tasky-card-c1"]').count() === 0);
+    check("drag is disabled while search/filter/sort is active",
+      await page.locator('[data-testid="tasky-grip-c1"]').getAttribute("aria-disabled") === "true");
+    await page.click('[data-testid="tasky-reset-filters"]');
+    check("reset restores the original board view",
+      await page.locator('[data-testid="tasky-card-c1"]').isVisible().catch(() => false)
+      && await page.locator('[data-testid="tasky-reset-filters"]').isDisabled());
+
     console.log("\n[3] Add + delete card");
     const todoCountBeforeProbe = Number(await page.locator('[data-testid="tasky-count-todo"]').innerText());
     await page.click('[data-testid="tasky-add-todo"]');
