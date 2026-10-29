@@ -156,9 +156,12 @@ async function touchDrag(page, gripTestid, targetColumnId) {
     const duplicateTestId = await duplicate.getAttribute("data-testid");
     const duplicateId = duplicateTestId?.replace("tasky-card-", "");
     check("card can be duplicated", await duplicate.isVisible().catch(() => false));
-    console.log("\\n[3c] Card details, description + checklist");
+    console.log("\n[3c] Card details, description + checklist");
     await page.click(`[data-testid="tasky-details-${editableId}"]`);
     await page.locator('[data-testid="tasky-card-details"]').waitFor({ state: "visible" });
+    const saveResponse = page.waitForResponse((response) =>
+      response.url().includes("/tasky/board") && response.request().method() === "PUT" && response.ok(),
+    );
     await page.fill('[data-testid="tasky-card-description"]', "Acceptance criteria and regression notes.");
     await page.fill('[data-testid="tasky-checklist-add-input"]', "Validate autosave");
     await page.click('[data-testid="tasky-checklist-add-submit"]');
@@ -167,7 +170,7 @@ async function touchDrag(page, gripTestid, targetColumnId) {
     check("checklist item added", await checklistToggle.isVisible().catch(() => false));
     await checklistToggle.check();
     check("checklist item can be completed", await checklistToggle.isChecked());
-    await page.waitForTimeout(800);
+    await saveResponse;
     await page.reload({ waitUntil: "domcontentloaded" });
     await page.waitForTimeout(1000);
     await page.click(`[data-testid="tasky-details-${editableId}"]`);
