@@ -103,15 +103,55 @@ export const taskyKanbanChecklistItemSchema = z.object({
 });
 export type TaskyKanbanChecklistItem = z.infer<typeof taskyKanbanChecklistItemSchema>;
 
+export const taskyKanbanCommentSchema = z.object({
+  id: z.string().trim().min(1).max(100),
+  author: z.string().trim().min(1).max(80),
+  body: z.string().trim().min(1).max(2000),
+  createdAt: z.string().datetime(),
+});
+export type TaskyKanbanComment = z.infer<typeof taskyKanbanCommentSchema>;
+
+export const taskyKanbanActivityTypeSchema = z.enum([
+  "created",
+  "updated",
+  "moved",
+  "checklist",
+  "comment",
+  "link",
+]);
+export type TaskyKanbanActivityType = z.infer<typeof taskyKanbanActivityTypeSchema>;
+
+export const taskyKanbanActivitySchema = z.object({
+  id: z.string().trim().min(1).max(100),
+  type: taskyKanbanActivityTypeSchema,
+  message: z.string().trim().min(1).max(180),
+  createdAt: z.string().datetime(),
+});
+export type TaskyKanbanActivity = z.infer<typeof taskyKanbanActivitySchema>;
+
+export const taskyKanbanLinkSchema = z.object({
+  id: z.string().trim().min(1).max(100),
+  title: z.string().trim().min(1).max(120),
+  url: z.string().url().max(2048).refine((value) => {
+    const protocol = new URL(value).protocol;
+    return protocol === "https:" || protocol === "http:";
+  }, "Links must use HTTP or HTTPS."),
+  createdAt: z.string().datetime(),
+});
+export type TaskyKanbanLink = z.infer<typeof taskyKanbanLinkSchema>;
+
 export const taskyKanbanCardSchema = z.object({
   id: z.string().trim().min(1).max(100),
   title: z.string().trim().min(1).max(140),
   tag: z.string().trim().min(1).max(40),
   priority: taskyKanbanPrioritySchema,
   assignee: z.string().trim().min(1).max(12),
-  due: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  due: z.string().regex(/^\\d{4}-\\d{2}-\\d{2}$/).optional(),
   description: z.string().max(4000).optional(),
   checklist: z.array(taskyKanbanChecklistItemSchema).max(100).optional(),
+  comments: z.array(taskyKanbanCommentSchema).max(100).optional(),
+  activity: z.array(taskyKanbanActivitySchema).max(100).optional(),
+  links: z.array(taskyKanbanLinkSchema).max(30).optional(),
 });
 export type TaskyKanbanCard = z.infer<typeof taskyKanbanCardSchema>;
 
@@ -156,16 +196,34 @@ export const taskyKanbanBoardStateSchema = z
           });
         }
         ids.add(card.id);
-        card.checklist?.forEach((item, itemIndex) => {
-          if (ids.has(item.id)) {
+        const nestedIds: Array<{ id: string; path: (string | number)[] }> = [
+          ...(card.checklist ?? []).map((item, itemIndex) => ({
+            id: item.id,
+            path: ["columns", columnIndex, "cards", cardIndex, "checklist", itemIndex, "id"] as (string | number)[],
+          })),
+          ...(card.comments ?? []).map((item, itemIndex) => ({
+            id: item.id,
+            path: ["columns", columnIndex, "cards", cardIndex, "comments", itemIndex, "id"] as (string | number)[],
+          })),
+          ...(card.activity ?? []).map((item, itemIndex) => ({
+            id: item.id,
+            path: ["columns", columnIndex, "cards", cardIndex, "activity", itemIndex, "id"] as (string | number)[],
+          })),
+          ...(card.links ?? []).map((item, itemIndex) => ({
+            id: item.id,
+            path: ["columns", columnIndex, "cards", cardIndex, "links", itemIndex, "id"] as (string | number)[],
+          })),
+        ];
+        for (const nested of nestedIds) {
+          if (ids.has(nested.id)) {
             ctx.addIssue({
               code: z.ZodIssueCode.custom,
-              path: ["columns", columnIndex, "cards", cardIndex, "checklist", itemIndex, "id"],
-              message: "Board, card, and checklist IDs must be unique.",
+              path: nested.path,
+              message: "All board item IDs must be unique.",
             });
           }
-          ids.add(item.id);
-        });
+          ids.add(nested.id);
+        };
       });
     });
   });
