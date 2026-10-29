@@ -1,17 +1,18 @@
-# Pont MT5 — connecter ton compte IC Markets (démo ou réel) à Euforia
+# Pont MT5 — connecter un compte de trading à Euforia
 
-> **Principe** : IC Markets n'expose aucune API cloud directe (c'est un broker, pas une
-> plateforme — voir `docs/architecture/accounts-connectivity-provider-feasibility.md`).
-> Le pont MT5 est le mécanisme officiellement documenté : un petit programme (**EA**)
-> tourne **dans TON terminal MT5**, lit ton compte, et pousse les données signées vers
-> Euforia. **Tes identifiants broker ne quittent JAMAIS le terminal** — Euforia ne les
-> reçoit jamais, ni maintenant ni plus tard.
+> **Principe** : Euforia utilise le terminal MT5 déjà connecté à ton compte. Un petit
+> programme (**EA**) tourne **dans TON terminal MT5**, lit les informations autorisées
+> et pousse les données signées vers Euforia. Le même pont peut servir pour les brokers
+> qui fournissent un compte MT5 compatible, notamment IC Markets, Axi (si MT5 est proposé
+> dans ton pays et pour ton compte) et PU Prime. Ce n'est pas une API cloud directe du
+> broker. **Tes identifiants broker ne quittent JAMAIS le terminal** : Euforia ne les reçoit
+> pas. L'intégration reste strictement en lecture seule.
 
 ## Ce que le pont envoie (lecture seule, jamais d'ordre)
 
 | Événement | Contenu | Cadence |
 |---|---|---|
-| `ACCOUNT_INFO` | login, serveur, société broker (IC Markets…), devise, levier, démo/réel | chaque cycle |
+| `ACCOUNT_INFO` | login, serveur, société broker, devise, levier, démo/réel | chaque cycle |
 | `SNAPSHOT` | balance, equity, marge, marge libre, niveau de marge | chaque cycle |
 | `POSITIONS` | la liste **complète** des positions ouvertes | chaque cycle |
 | `ORDERS` | la liste **complète** des ordres en attente | chaque cycle |
@@ -19,9 +20,11 @@
 
 Chaque push est signé **HMAC-SHA256** avec le secret généré par Euforia au pairage.
 Le checkpoint d'historique des deals est stocké séparément par **login MT5 + serveur** : changer de compte dans le même terminal ne réutilise pas le checkpoint d'un autre compte (EA v1.0.2).
-Côté Euforia : le compte s'active au premier push, le broker est identifié
-automatiquement (ex. « IC Markets (SC) Global »), et **les deals deviennent des trades
-du journal** (regroupement MT5 par position — netting — déjà implémenté).
+Côté Euforia : le compte s'active au premier push, le broker est identifié à partir du
+nom déclaré par le terminal et du serveur (ex. IC Markets, Axi ou PU Prime). Si le nom
+ne correspond à aucun broker connu, Euforia conserve le libellé reçu sans inventer son
+identité. **Les deals deviennent des trades du journal** (regroupement MT5 par position
+— netting — déjà implémenté).
 
 ## Installation (5 minutes)
 
@@ -43,8 +46,9 @@ MT5 : `Outils ▸ Options ▸ Expert Advisors` → coche
 Euforia (ex. `https://ton-euforia.exemple` — le domaine seul, sans le chemin).
 
 ### 4. Attacher l'EA
-1. Ouvre le terminal sur **le compte IC Markets démo** (login `52988790`, serveur
-   `ICMarketsSC-MT5` — le serveur est déjà mémorisé par ton terminal).
+1. Ouvre ton terminal MT5 et connecte-toi au compte voulu (démo ou réel). Utilise
+   exactement le serveur communiqué par ton broker ; exemples de familles de serveurs :
+   `ICMarkets...`, `Axi...`, ou `PUPrime-Demo / PUPrime-Live...`.
 2. Glisse `EuforiaBridge` sur **n'importe quel graphique** de ce compte.
 3. Renseigne les entrées : `InpEndpointURL` (Ingest URL complète), `InpBridgeKey`,
    `InpBridgeSecret`. Laisse `InpPushSeconds = 30`.
