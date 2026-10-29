@@ -980,6 +980,25 @@ describe("trading-accounts - MT5 bridge ingest (public, HMAC)", () => {
       `88${Math.random().toString().slice(2, 8)}`,
     );
 
+    const firstPush = await push({
+      keyId: pairing.bridgeKeyId,
+      secret: pairing.secret,
+      timestamp: Date.now(),
+      envelope: {
+        eventId: "ea-e2e-rotate-initial-1",
+        kind: "ACCOUNT_INFO",
+        payload: {
+          externalAccountId: account.externalAccountId,
+          currency: "USD",
+          server: "PUPrime-Demo",
+          brokerName: "PU Prime Limited",
+          accountClass: "DEMO",
+        },
+      },
+    });
+    expect(firstPush.statusCode).toBe(200);
+    expect(firstPush.json().state).toBe("CONNECTED");
+
     const rotate = await bridgeApp.inject({
       method: "POST",
       url: `/api/v1/trading-accounts/${account.id}/bridge/rotate`,
@@ -995,6 +1014,11 @@ describe("trading-accounts - MT5 bridge ingest (public, HMAC)", () => {
     expect(rotated.bridgeKeyId).not.toBe(pairing.bridgeKeyId);
     expect(rotated.secret).not.toBe(pairing.secret);
     expect(rotated.ea.version).toBe("1.0.2");
+    const afterRotation = await bridgeApp.get(PrismaService).tradingConnection.findUnique({
+      where: { accountId: account.id },
+      select: { status: true },
+    });
+    expect(afterRotation?.status).toBe("CONNECTING");
 
     const envelope = {
       eventId: "ea-e2e-rotate-info-1",
@@ -1036,6 +1060,79 @@ describe("trading-accounts - MT5 bridge ingest (public, HMAC)", () => {
       providerId: "mt5-bridge",
       confidence: "PROVIDER_REPORTED",
     });
+  });
+
+  it("allows a disconnected MT5 account to be paired again without losing journal history", async () => {
+    const { user, account, pairing } = await pairedBridgeAccount(
+      `88${Math.random().toString().slice(2, 8)}`,
+    );
+    const initialPush = await push({
+      keyId: pairing.bridgeKeyId,
+      secret: pairing.secret,
+      timestamp: Date.now(),
+      envelope: {
+        eventId: "ea-e2e-repair-initial-1",
+        kind: "ACCOUNT_INFO",
+        payload: {
+          externalAccountId: account.externalAccountId,
+          currency: "USD",
+          server: "PUPrime-Demo",
+          brokerName: "PU Prime Limited",
+          accountClass: "DEMO",
+        },
+      },
+    });
+    expect(initialPush.statusCode).toBe(200);
+
+    const disconnect = await bridgeApp.inject({
+      method: "DELETE",
+      url: `/api/v1/trading-accounts/${account.id}`,
+      headers: user.authHeader,
+    });
+    expect(disconnect.statusCode).toBe(200);
+    expect(disconnect.json().historyPreserved).toBe(true);
+    const cachedEventsAfterDisconnect = await bridgeApp
+      .get(PrismaService)
+      .tradingBridgeEvent.count({ where: { bridgeKeyId: pairing.bridgeKeyId } });
+    expect(cachedEventsAfterDisconnect).toBe(0);
+
+    const repair = await bridgeApp.inject({
+      method: "POST",
+      url: `/api/v1/trading-accounts/${account.id}/bridge/rotate`,
+      headers: user.authHeader,
+      payload: {},
+    });
+    expect(repair.statusCode).toBe(200);
+    const newPairing = repair.json().account.pairing as {
+      bridgeKeyId: string;
+      secret: string;
+    };
+    expect(newPairing.bridgeKeyId).not.toBe(pairing.bridgeKeyId);
+
+    const reconnected = await push({
+      keyId: newPairing.bridgeKeyId,
+      secret: newPairing.secret,
+      timestamp: Date.now(),
+      envelope: {
+        eventId: "ea-e2e-repair-account-info-1",
+        kind: "ACCOUNT_INFO",
+        payload: {
+          externalAccountId: account.externalAccountId,
+          currency: "USD",
+          server: "PUPrime-Demo",
+          brokerName: "PU Prime Limited",
+          accountClass: "DEMO",
+        },
+      },
+    });
+    expect(reconnected.statusCode).toBe(200);
+    expect(reconnected.json().state).toBe("CONNECTED");
+    const stored = await bridgeApp.get(PrismaService).tradingAccount.findUnique({
+      where: { id: account.id },
+      select: { id: true, brokerIdentity: true },
+    });
+    expect(stored?.id).toBe(account.id);
+    expect(stored?.brokerIdentity).toMatchObject({ brokerId: "puprime" });
   });
 
   it("identifies Axi by the terminal-reported company and server", async () => {
