@@ -283,4 +283,11 @@ export {
 } from "./trading-accounts";
 
 // Tasky Kanban — PostgreSQL-backed personal board.
-export { useSaveTaskyBoard, useTaskyBoard } from "./tasky";
+export {
+  useDeleteTaskyAttachment,
+  useDownloadTaskyAttachment,
+  useSaveTaskyBoard,
+  useTaskyBoard,
+  useTaskyCardAttachments,
+  useUploadTaskyAttachment,
+} from "./tasky";
