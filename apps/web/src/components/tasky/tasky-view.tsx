@@ -808,6 +808,7 @@ export function TaskyView() {
               value={searchQuery}
               onChange={(event) => { setSearchQuery(event.target.value); setActiveSavedViewId(null); }}
               placeholder="Search cards…"
+              maxLength={180}
               aria-label="Search Tasky cards"
               data-testid="tasky-search"
               className="h-9 pl-9"
