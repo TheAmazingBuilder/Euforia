@@ -132,10 +132,10 @@ export type TaskyKanbanActivity = z.infer<typeof taskyKanbanActivitySchema>;
 export const taskyKanbanLinkSchema = z.object({
   id: z.string().trim().min(1).max(100),
   title: z.string().trim().min(1).max(120),
-  url: z.string().url().max(2048).refine((value) => {
-    const protocol = new URL(value).protocol;
-    return protocol === "https:" || protocol === "http:";
-  }, "Links must use HTTP or HTTPS."),
+  url: z.string().url().max(2048).refine(
+    (value) => value.startsWith("https://") || value.startsWith("http://"),
+    "Links must use HTTP or HTTPS.",
+  ),
   createdAt: z.string().datetime(),
 });
 export type TaskyKanbanLink = z.infer<typeof taskyKanbanLinkSchema>;
