@@ -261,6 +261,12 @@ export const envSchema = z.object({
     .max(8_000_000)
     .default(6_291_456),
 
+  // ── Tasky card attachments ────────────────────────────────────────────────
+  /** Server-side file root. Deployments must mount durable storage here. */
+  TASKY_ATTACHMENTS_STORAGE_ROOT: z.string().trim().min(1).default(".data/tasky-attachments"),
+  /** Hard cap: 5 MiB raw; base64 JSON remains below the default HTTP body limit. */
+  TASKY_ATTACHMENT_MAX_BYTES: z.coerce.number().int().min(10_240).max(5_242_880).default(5_242_880),
+
   // ── Calendar / Economic events (Phase 13) ─────────────────────────────────
   /** Past half of the canonical eco-event sync window (§23) - the Analytics
    *  correlation depth (the reference engine ships -92 days of history). */
