@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, Logger, NotFoundException, OnModuleDestroy, OnModuleInit } from "@nestjs/common";
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 
 import {
   taskyAutomationConfigSchema,
@@ -147,20 +147,65 @@ export class TaskyAutomationService implements OnModuleInit, OnModuleDestroy {
   }
 
   /** Compare consecutive persisted snapshots; only genuine column transitions trigger a rule. */
-  async onBoardSaved(userId: string, previous: TaskyKanbanBoardState, current: TaskyKanbanBoardState): Promise<void> {
+  async onBoardSaved(
+    userId: string,
+    previous: TaskyKanbanBoardState,
+    current: TaskyKanbanBoardState,
+  ): Promise<TaskyKanbanBoardState> {
     const before = boardLocations(previous);
     const after = boardLocations(current);
     const rules = (await this.repository.listAutomations(userId))
       .filter((row) => row.enabled && row.trigger === "CARD_MOVED")
       .map((row) => this.toRule(row));
+    let updatedBoard = current;
+    let boardChanged = false;
+    const priorityApplied = new Set<string>();
 
     for (const [cardId, location] of after) {
       const old = before.get(cardId);
       if (!old || old.columnId === location.columnId || location.card.archivedAt) continue;
       for (const rule of rules) {
         if (rule.config.destinationColumnId !== location.columnId) continue;
-        const message = rule.config.notificationMessage?.trim() ||
-          `“${location.card.title}” moved from ${old.columnTitle} to ${location.columnTitle}.`;
+
+        let priorityChanged = false;
+        const targetPriority = rule.config.targetPriority;
+        if (
+          rule.config.action === "SET_PRIORITY" &&
+          targetPriority &&
+          !priorityApplied.has(cardId)
+        ) {
+          const previousCard = updatedBoard.columns
+            .flatMap((column) => column.cards)
+            .find((card) => card.id === cardId);
+          if (previousCard && previousCard.priority !== targetPriority) {
+            const activity = {
+              id: randomUUID(),
+              type: "updated" as const,
+              message: `Automation “${rule.name}” set priority to ${targetPriority}.`.slice(0, 180),
+              createdAt: new Date().toISOString(),
+            };
+            updatedBoard = {
+              columns: updatedBoard.columns.map((column) => ({
+                ...column,
+                cards: column.cards.map((card) => card.id === cardId
+                  ? {
+                      ...card,
+                      priority: targetPriority,
+                      activity: [...(card.activity ?? []), activity].slice(-100),
+                    }
+                  : card),
+              })),
+            };
+            boardChanged = true;
+            priorityChanged = true;
+          }
+          priorityApplied.add(cardId);
+        }
+
+        const defaultMessage = priorityChanged
+          ? `“${location.card.title}” moved to ${location.columnTitle}; priority set to ${targetPriority}.`
+          : `“${location.card.title}” moved from ${old.columnTitle} to ${location.columnTitle}.`;
+        const message = rule.config.notificationMessage?.trim() || defaultMessage;
         await this.recordNotification({
           userId,
           rule,
@@ -175,10 +220,24 @@ export class TaskyAutomationService implements OnModuleInit, OnModuleDestroy {
             cardTitle: location.card.title,
             fromColumnId: old.columnId,
             toColumnId: location.columnId,
+            action: priorityChanged ? "SET_PRIORITY" : (rule.config.action ?? "NOTIFY"),
+            ...(priorityChanged ? { priority: targetPriority } : {}),
           },
         });
       }
     }
+
+    // Persist rule actions inside this context without calling saveBoard again;
+    // that avoids re-entering the column-transition evaluator.
+    if (boardChanged) {
+      const saved = await this.repository.saveForUser(userId, updatedBoard);
+      const validated = taskyKanbanBoardStateSchema.safeParse(saved.data);
+      if (!validated.success) {
+        throw new BadRequestException("The Tasky board failed validation after an automation action.");
+      }
+      return validated.data;
+    }
+    return current;
   }
 
   /** Manual button and background worker both use the same idempotent due-date evaluator. */
