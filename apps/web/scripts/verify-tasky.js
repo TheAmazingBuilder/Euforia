@@ -148,7 +148,8 @@ async function touchDrag(page, gripTestid, targetColumnId) {
     await page.fill(`[data-testid="tasky-edit-due-${editableId}"]`, "2026-12-31");
     await page.click(`[data-testid="tasky-edit-save-${editableId}"]`);
     await page.waitForTimeout(400);
-    check("card fields can be edited", /Edited probe/.test(await editable.innerText()) && /Regression/.test(await editable.innerText()) && /Urgent/.test(await editable.innerText()) && /QA/.test(await editable.innerText()));
+    const editedCard = page.locator(`[data-testid="tasky-card-${editableId}"]`);
+    check("card fields can be edited", /Edited probe/.test(await editedCard.innerText()) && /Regression/.test(await editedCard.innerText()) && /Urgent/.test(await editedCard.innerText()) && /QA/.test(await editedCard.innerText()));
     await page.click(`[data-testid="tasky-duplicate-${editableId}"]`);
     const duplicate = page.locator("article", { hasText: "Edited probe (copy)" }).first();
     const duplicateTestId = await duplicate.getAttribute("data-testid");
@@ -210,7 +211,7 @@ async function touchDrag(page, gripTestid, targetColumnId) {
     const probeListId = probeListTestId?.replace("tasky-column-", "");
     await page.click(`[data-testid="tasky-list-rename-${probeListId}"]`);
     await page.fill(`[data-testid="tasky-rename-list-input-${probeListId}"]`, "Probe renamed list");
-    await page.locator(`[data-testid="tasky-rename-list-form-${probeListId}"]`).press("Enter");
+    await page.locator(`[data-testid="tasky-rename-list-form-${probeListId}"] button[type="submit"]`).click();
     check("list can be renamed", await page.locator('[data-tasky-column="Probe renamed list"]').isVisible().catch(() => false));
     const renamedList = page.locator(`[data-testid="tasky-column-${probeListId}"]`);
     const beforeMoveX = await renamedList.evaluate((el) => el.getBoundingClientRect().left);
