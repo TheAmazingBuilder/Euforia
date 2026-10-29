@@ -201,23 +201,40 @@ export class Mt5BridgeIngestService implements OnModuleDestroy {
     }
 
     // The routing key is bound to one Euforia account. Validate the
-    // terminal-reported login/environment before recording or activating
-    // this pairing; otherwise a misconfigured terminal could attach another
-    // broker account's identity/data to the wrong Euforia account.
+    // terminal-reported login/environment/broker before recording or activating
+    // this pairing; the DB repeats the broker uniqueness check under the same
+    // transaction that writes the event and changes the connection state.
+    let identifiedBrokerId: string | undefined;
     if (input.envelope.kind === "ACCOUNT_INFO") {
-      await this.assertAccountInfoMatchesConnection(connection.accountId, input.envelope);
+      identifiedBrokerId = await this.assertAccountInfoMatchesConnection(
+        connection.accountId,
+        input.envelope,
+      );
     }
 
     // The database revalidates the active key/status and stores the event in
-    // the same transaction. This serializes the accept path against disconnect
-    // and rotation, so no revoked pairing can reactivate or append orphan data.
+    // the same transaction. This serializes acceptance against disconnect,
+    // rotation, and two accounts racing to claim the same broker/login.
     const accepted = await this.repository.acceptBridgeEvent({
       bridgeKeyId: input.keyId,
       eventId: input.envelope.eventId,
       kind: input.envelope.kind,
       payload: input.envelope.payload,
+      ...(identifiedBrokerId ? { identifiedBrokerId } : {}),
     });
     if (!accepted.accepted) {
+      if (accepted.reason === "BROKER_DUPLICATE") {
+        throw new ForbiddenError(
+          "This broker account is already connected to Euforia.",
+          "BRIDGE_DUPLICATE_ACCOUNT",
+        );
+      }
+      if (accepted.reason === "BROKER_MISMATCH") {
+        throw new ForbiddenError(
+          "The terminal broker differs from the broker originally paired to this account.",
+          "BRIDGE_BROKER_MISMATCH",
+        );
+      }
       throw new UnauthorizedError(
         "This bridge key has been revoked or is no longer active. Pair the terminal again.",
         "BRIDGE_KEY_UNKNOWN",
@@ -249,7 +266,7 @@ export class Mt5BridgeIngestService implements OnModuleDestroy {
   private async assertAccountInfoMatchesConnection(
     accountId: string,
     envelope: BridgeIngestEnvelope,
-  ): Promise<void> {
+  ): Promise<string | undefined> {
     const payload = envelope.payload as {
       externalAccountId: string;
       accountClass?: "REAL" | "DEMO" | null;
@@ -330,15 +347,21 @@ export class Mt5BridgeIngestService implements OnModuleDestroy {
     if (
       nextIdentity &&
       isSpecificBroker(nextIdentity.brokerId) &&
-      storedIdentity &&
-      isSpecificBroker(storedIdentity.brokerId) &&
-      storedIdentity.brokerId !== nextIdentity.brokerId
+      (
+        (storedIdentity && isSpecificBroker(storedIdentity.brokerId) &&
+          storedIdentity.brokerId !== nextIdentity.brokerId) ||
+        (isSpecificBroker(account.brokerId) && account.brokerId !== nextIdentity.brokerId)
+      )
     ) {
       throw new ForbiddenError(
         "This terminal is now reporting a different broker than the account originally paired in Euforia. Reconnect the intended terminal account.",
         "BRIDGE_BROKER_MISMATCH",
       );
     }
+
+    return nextIdentity && isSpecificBroker(nextIdentity.brokerId)
+      ? nextIdentity.brokerId
+      : undefined;
   }
 
   /** ACCOUNT_INFO pushes refresh the journal anchor facts + identification. */
@@ -404,6 +427,7 @@ export class Mt5BridgeIngestService implements OnModuleDestroy {
     }
     await this.repository.setBridgeAccountIdentity(accountId, {
       currency: payload.currency,
+      ...(isSpecificBroker(identification.brokerId) ? { brokerId: identification.brokerId } : {}),
       ...(brokerIdentity !== undefined ? { brokerIdentity } : {}),
     });
   }
