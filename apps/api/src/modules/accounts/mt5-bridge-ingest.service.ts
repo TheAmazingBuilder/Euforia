@@ -208,37 +208,39 @@ export class Mt5BridgeIngestService implements OnModuleDestroy {
       await this.assertAccountInfoMatchesConnection(connection.accountId, input.envelope);
     }
 
-    const { duplicate } = await this.repository.insertBridgeEvent({
+    // The database revalidates the active key/status and stores the event in
+    // the same transaction. This serializes the accept path against disconnect
+    // and rotation, so no revoked pairing can reactivate or append orphan data.
+    const accepted = await this.repository.acceptBridgeEvent({
       bridgeKeyId: input.keyId,
       eventId: input.envelope.eventId,
       kind: input.envelope.kind,
       payload: input.envelope.payload,
     });
-
-    let state: "CONNECTING" | "CONNECTED" =
-      connection.status === "CONNECTED" ? "CONNECTED" : "CONNECTING";
-
-    if (!duplicate) {
-      if (connection.status !== "CONNECTED") {
-        // Pairing IS the validation - the first accepted push activates.
-        await this.repository.activateBridgeConnection(connection.accountId);
-        state = "CONNECTED";
-        const account = await this.repository.findAccountById(connection.accountId);
-        await this.events.record({
-          userId: account?.userId ?? "unknown",
-          type: "TRADING_ACCOUNT_CONNECTED",
-          actor: "mt5-bridge",
-          context: `First bridge push accepted for account ${account?.externalAccountId ?? connection.accountId} - pairing complete (PLATFORM_BRIDGE).`,
-        });
-      }
-      if (input.envelope.kind === "ACCOUNT_INFO") {
-        await this.applyAccountInfo(connection.accountId, input.envelope);
-        // Bounded log maintenance on the slowest cadence.
-        await this.repository.pruneBridgeEvents(input.keyId);
-      }
+    if (!accepted.accepted) {
+      throw new UnauthorizedError(
+        "This bridge key has been revoked or is no longer active. Pair the terminal again.",
+        "BRIDGE_KEY_UNKNOWN",
+      );
     }
 
-    return { accepted: true, duplicate, state };
+    if (accepted.activated && !accepted.duplicate) {
+      const account = await this.repository.findAccountById(connection.accountId);
+      await this.events.record({
+        userId: account?.userId ?? "unknown",
+        type: "TRADING_ACCOUNT_CONNECTED",
+        actor: "mt5-bridge",
+        context: `First bridge push accepted for account ${account?.externalAccountId ?? connection.accountId} - pairing complete (PLATFORM_BRIDGE).`,
+      });
+    }
+
+    if (!accepted.duplicate && input.envelope.kind === "ACCOUNT_INFO") {
+      await this.applyAccountInfo(connection.accountId, input.envelope);
+      // Bounded log maintenance on the slowest cadence.
+      await this.repository.pruneBridgeEvents(input.keyId);
+    }
+
+    return { accepted: true, duplicate: accepted.duplicate, state: "CONNECTED" as const };
   }
 
   // ── Internals ───────────────────────────────────────────────────────────────
@@ -305,7 +307,12 @@ export class Mt5BridgeIngestService implements OnModuleDestroy {
     }
 
     const storedIdentity = account.brokerIdentity as { brokerId?: string } | null;
-    const nextIdentity = reported ?? server;
+    const nextIdentity =
+      reported && isSpecificBroker(reported.brokerId)
+        ? reported
+        : server && isSpecificBroker(server.brokerId)
+          ? server
+          : reported ?? server;
     if (
       nextIdentity &&
       isSpecificBroker(nextIdentity.brokerId) &&
