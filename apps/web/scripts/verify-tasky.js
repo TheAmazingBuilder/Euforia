@@ -133,6 +133,32 @@ async function touchDrag(page, gripTestid, targetColumnId) {
     await page.waitForTimeout(300);
     check("todo count 3 after delete", (await page.locator('[data-testid="tasky-count-todo"]').innerText()) === "3");
 
+    console.log("\n[3b] Edit + duplicate card");
+    await page.click('[data-testid="tasky-add-todo"]');
+    await page.fill('[data-testid="tasky-add-input-todo"]', "Editable probe");
+    await page.click('[data-testid="tasky-add-confirm-todo"]');
+    const editable = page.locator("article", { hasText: "Editable probe" }).first();
+    const editableTestId = await editable.getAttribute("data-testid");
+    const editableId = editableTestId?.replace("tasky-card-", "");
+    await page.click(`[data-testid="tasky-edit-${editableId}"]`);
+    await page.fill(`[data-testid="tasky-edit-title-${editableId}"]`, "Edited probe");
+    await page.fill(`[data-testid="tasky-edit-tag-${editableId}"]`, "Regression");
+    await page.selectOption(`[data-testid="tasky-edit-priority-${editableId}"]`, "Urgent");
+    await page.fill(`[data-testid="tasky-edit-assignee-${editableId}"]`, "QA");
+    await page.fill(`[data-testid="tasky-edit-due-${editableId}"]`, "2026-12-31");
+    await page.click(`[data-testid="tasky-edit-save-${editableId}"]`);
+    await page.waitForTimeout(400);
+    check("card fields can be edited", /Edited probe/.test(await editable.innerText()) && /Regression/.test(await editable.innerText()) && /Urgent/.test(await editable.innerText()) && /QA/.test(await editable.innerText()));
+    await page.click(`[data-testid="tasky-duplicate-${editableId}"]`);
+    const duplicate = page.locator("article", { hasText: "Edited probe (copy)" }).first();
+    const duplicateTestId = await duplicate.getAttribute("data-testid");
+    const duplicateId = duplicateTestId?.replace("tasky-card-", "");
+    check("card can be duplicated", await duplicate.isVisible().catch(() => false));
+    await page.click(`[data-testid="tasky-delete-${duplicateId}"]`);
+    await page.click(`[data-testid="tasky-delete-${editableId}"]`);
+    await page.waitForTimeout(400);
+    check("edited and duplicate probe cards cleaned up", (await page.locator('[data-testid="tasky-count-todo"]').innerText()) === "3");
+
     console.log("\n[4] Mouse drag Backlog → In Review");
     const grip1 = await page.locator('[data-testid="tasky-grip-c1"]').boundingBox();
     const targetRev = await columnCenter(page, "in-review");
@@ -174,6 +200,26 @@ async function touchDrag(page, gripTestid, targetColumnId) {
     const watchX = await watchColumn.evaluate((el) => el.getBoundingClientRect().left);
     const doneX = await page.locator('[data-testid="tasky-column-done"]').evaluate((el) => el.getBoundingClientRect().left);
     check("Watchlist sits right of Done", watchX > doneX, `${Math.round(watchX)}>${Math.round(doneX)}`);
+
+    console.log("\n[6b] Rename, reorder and delete list");
+    await page.click('[data-testid="tasky-add-list"]');
+    await page.fill('[data-testid="tasky-add-list-input"]', "Probe list");
+    await page.click('[data-testid="tasky-add-list-confirm"]');
+    const probeList = page.locator('[data-tasky-column="Probe list"]');
+    const probeListTestId = await probeList.getAttribute("data-testid");
+    const probeListId = probeListTestId?.replace("tasky-column-", "");
+    await page.click(`[data-testid="tasky-list-rename-${probeListId}"]`);
+    await page.fill(`[data-testid="tasky-rename-list-input-${probeListId}"]`, "Probe renamed list");
+    await page.locator(`[data-testid="tasky-rename-list-form-${probeListId}"]`).press("Enter");
+    check("list can be renamed", await page.locator('[data-tasky-column="Probe renamed list"]').isVisible().catch(() => false));
+    const renamedList = page.locator(`[data-testid="tasky-column-${probeListId}"]`);
+    const beforeMoveX = await renamedList.evaluate((el) => el.getBoundingClientRect().left);
+    await page.click(`[data-testid="tasky-list-left-${probeListId}"]`);
+    const afterMoveX = await renamedList.evaluate((el) => el.getBoundingClientRect().left);
+    check("list can move left", afterMoveX < beforeMoveX);
+    await page.click(`[data-testid="tasky-list-right-${probeListId}"]`);
+    await page.click(`[data-testid="tasky-list-delete-${probeListId}"]`);
+    check("empty list can be deleted", await page.locator('[data-tasky-column="Probe renamed list"]').count() === 0);
 
     console.log("\n[7] Persistence across reload");
     await page.reload({ waitUntil: "domcontentloaded" });
