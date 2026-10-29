@@ -200,6 +200,14 @@ export class Mt5BridgeIngestService implements OnModuleDestroy {
       );
     }
 
+    // The routing key is bound to one Euforia account. Validate the
+    // terminal-reported login/environment before recording or activating
+    // this pairing; otherwise a misconfigured terminal could attach another
+    // broker account's identity/data to the wrong Euforia account.
+    if (input.envelope.kind === "ACCOUNT_INFO") {
+      await this.assertAccountInfoMatchesConnection(connection.accountId, input.envelope);
+    }
+
     const { duplicate } = await this.repository.insertBridgeEvent({
       bridgeKeyId: input.keyId,
       eventId: input.envelope.eventId,
@@ -234,6 +242,36 @@ export class Mt5BridgeIngestService implements OnModuleDestroy {
   }
 
   // ── Internals ───────────────────────────────────────────────────────────────
+
+  /** Enforce the immutable pairing/account boundary before accepting identity data. */
+  private async assertAccountInfoMatchesConnection(
+    accountId: string,
+    envelope: Extract<BridgeIngestEnvelope, { kind: "ACCOUNT_INFO" }>,
+  ): Promise<void> {
+    const payload = envelope.payload as {
+      externalAccountId: string;
+      accountClass?: "REAL" | "DEMO" | null;
+    };
+    const account = await this.repository.findAccountById(accountId);
+    if (!account || payload.externalAccountId.trim() !== account.externalAccountId) {
+      throw new ForbiddenError(
+        "The terminal login does not match the Euforia account paired with this bridge key.",
+        "BRIDGE_ACCOUNT_MISMATCH",
+      );
+    }
+
+    // DEMO and LIVE are explicit user choices. PROP_FIRM is a separate
+    // journal category and may use either a broker DEMO or REAL account.
+    const classMismatch =
+      (account.type === "DEMO" && payload.accountClass === "REAL") ||
+      (account.type === "LIVE" && payload.accountClass === "DEMO");
+    if (classMismatch) {
+      throw new ForbiddenError(
+        "The terminal account class does not match the DEMO/LIVE environment selected in Euforia.",
+        "BRIDGE_ENVIRONMENT_MISMATCH",
+      );
+    }
+  }
 
   /** ACCOUNT_INFO pushes refresh the journal anchor facts + identification. */
   private async applyAccountInfo(
