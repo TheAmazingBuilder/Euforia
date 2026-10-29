@@ -713,7 +713,7 @@ export function TaskyView() {
         due: dueFilter,
         sort: sortOrder,
       }, todayKey),
-    ])),
+    ] as const)),
     [columns, searchQuery, priorityFilter, dueFilter, sortOrder, todayKey],
   );
   const totalCardCount = columns.reduce((total, column) => total + column.cards.length, 0);
