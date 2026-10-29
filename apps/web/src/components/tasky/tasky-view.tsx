@@ -1192,6 +1192,185 @@ export function TaskyView() {
               </form>
             </section>
 
+            <section className="flex flex-col gap-3 border-t border-border pt-4" data-testid="tasky-card-links">
+              <div className="flex items-center gap-2">
+                <Link2 className="size-4 text-muted-foreground" aria-hidden="true" />
+                <h3 className="text-sm font-semibold">Links</h3>
+                <span className="rounded-md bg-muted px-1.5 py-0.5 font-mono text-[11px] text-muted-foreground">
+                  {detailsEntry.card.links?.length ?? 0}
+                </span>
+              </div>
+              {(detailsEntry.card.links?.length ?? 0) > 0 ? (
+                <div className="flex flex-col gap-1">
+                  {detailsEntry.card.links?.map((link) => (
+                    <div key={link.id} className="group/link flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-muted/60">
+                      <ExternalLink className="size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
+                      <a
+                        href={link.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="min-w-0 flex-1 truncate text-sm text-accent underline-offset-4 hover:underline"
+                        data-testid={`tasky-link-${link.id}`}
+                      >
+                        {link.title}
+                      </a>
+                      <button
+                        type="button"
+                        onClick={() => removeCardLink(detailsEntry.card, link.id)}
+                        aria-label={`Remove link ${link.title}`}
+                        title="Remove link"
+                        data-testid={`tasky-link-delete-${link.id}`}
+                        className="grid size-7 shrink-0 place-items-center rounded text-muted-foreground opacity-0 transition-colors hover:bg-loss/10 hover:text-loss group-hover/link:opacity-100 [@media(hover:none)]:opacity-100"
+                      >
+                        <Trash2 className="size-3.5" aria-hidden="true" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">No links added to this card yet.</p>
+              )}
+
+              <form
+                className="grid gap-2 sm:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)_auto]"
+                data-testid="tasky-link-add-form"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  addCardLink(detailsEntry.card);
+                }}
+              >
+                <Input
+                  value={linkTitleDraft}
+                  onChange={(event) => setLinkTitleDraft(event.target.value)}
+                  placeholder="Link title"
+                  aria-label="Link title"
+                  maxLength={120}
+                  data-testid="tasky-link-title-input"
+                  disabled={(detailsEntry.card.links?.length ?? 0) >= 30}
+                  className="h-9 min-w-0 bg-background text-sm"
+                />
+                <Input
+                  value={linkUrlDraft}
+                  onChange={(event) => {
+                    setLinkUrlDraft(event.target.value);
+                    setLinkError(null);
+                  }}
+                  placeholder="https://example.com"
+                  aria-label="Link URL"
+                  maxLength={2048}
+                  data-testid="tasky-link-url-input"
+                  disabled={(detailsEntry.card.links?.length ?? 0) >= 30}
+                  className="h-9 min-w-0 bg-background text-sm"
+                />
+                <Button
+                  type="submit"
+                  size="sm"
+                  className="h-9 gap-1.5"
+                  disabled={!linkTitleDraft.trim() || !linkUrlDraft.trim() || (detailsEntry.card.links?.length ?? 0) >= 30}
+                  data-testid="tasky-link-add-submit"
+                >
+                  <Plus className="size-3.5" aria-hidden="true" />
+                  Add link
+                </Button>
+              </form>
+              {linkError ? <p className="text-xs text-loss" role="alert">{linkError}</p> : null}
+              {(detailsEntry.card.links?.length ?? 0) >= 30 ? (
+                <p className="text-xs text-muted-foreground">This card has reached the 30-link limit.</p>
+              ) : null}
+            </section>
+
+            <section className="flex flex-col gap-3 border-t border-border pt-4" data-testid="tasky-card-comments">
+              <div className="flex items-center gap-2">
+                <MessageSquare className="size-4 text-muted-foreground" aria-hidden="true" />
+                <h3 className="text-sm font-semibold">Comments</h3>
+                <span className="rounded-md bg-muted px-1.5 py-0.5 font-mono text-[11px] text-muted-foreground">
+                  {detailsEntry.card.comments?.length ?? 0}
+                </span>
+              </div>
+              {(detailsEntry.card.comments?.length ?? 0) > 0 ? (
+                <div className="flex flex-col gap-3">
+                  {[...(detailsEntry.card.comments ?? [])].reverse().map((comment) => (
+                    <article key={comment.id} className="flex gap-2.5" data-testid={`tasky-comment-${comment.id}`}>
+                      <span aria-hidden="true" className="grid size-8 shrink-0 place-items-center rounded-full border border-border bg-muted/60 text-[10px] font-semibold text-muted-foreground">
+                        {comment.author.slice(0, 2).toUpperCase()}
+                      </span>
+                      <div className="min-w-0 flex-1 rounded-lg border border-border/70 bg-background/50 p-3">
+                        <div className="mb-1 flex flex-wrap items-center gap-2">
+                          <span className="text-xs font-semibold">{comment.author}</span>
+                          <time dateTime={comment.createdAt} className="text-[11px] text-muted-foreground">
+                            {formatTimestamp(comment.createdAt)}
+                          </time>
+                        </div>
+                        <p className="whitespace-pre-wrap break-words text-sm">{comment.body}</p>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">No comments yet. Add context for your future self.</p>
+              )}
+              <form
+                className="flex flex-col gap-2"
+                data-testid="tasky-comment-add-form"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  addComment(detailsEntry.card);
+                }}
+              >
+                <Textarea
+                  value={commentDraft}
+                  onChange={(event) => setCommentDraft(event.target.value)}
+                  placeholder="Write a comment…"
+                  aria-label="New comment"
+                  maxLength={2000}
+                  rows={2}
+                  data-testid="tasky-comment-input"
+                  disabled={(detailsEntry.card.comments?.length ?? 0) >= 100}
+                  className="resize-y"
+                />
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[11px] text-muted-foreground">{commentDraft.length}/2000</span>
+                  <Button
+                    type="submit"
+                    size="sm"
+                    className="h-8 gap-1.5"
+                    disabled={!commentDraft.trim() || (detailsEntry.card.comments?.length ?? 0) >= 100}
+                    data-testid="tasky-comment-submit"
+                  >
+                    <Send className="size-3.5" aria-hidden="true" />
+                    Add comment
+                  </Button>
+                </div>
+                {(detailsEntry.card.comments?.length ?? 0) >= 100 ? (
+                  <p className="text-xs text-muted-foreground">This card has reached the 100-comment limit.</p>
+                ) : null}
+              </form>
+            </section>
+
+            <section className="flex flex-col gap-3 border-t border-border pt-4" data-testid="tasky-card-activity">
+              <div className="flex items-center gap-2">
+                <History className="size-4 text-muted-foreground" aria-hidden="true" />
+                <h3 className="text-sm font-semibold">Activity</h3>
+              </div>
+              {(detailsEntry.card.activity?.length ?? 0) > 0 ? (
+                <ol className="flex flex-col gap-3">
+                  {[...(detailsEntry.card.activity ?? [])].reverse().map((entry) => (
+                    <li key={entry.id} className="flex gap-2.5" data-testid={`tasky-activity-${entry.id}`}>
+                      <span aria-hidden="true" className="mt-1.5 size-2 shrink-0 rounded-full bg-accent/70" />
+                      <div className="min-w-0 flex-1">
+                        <p className="break-words text-sm">{entry.message}</p>
+                        <time dateTime={entry.createdAt} className="text-[11px] text-muted-foreground">
+                          {formatTimestamp(entry.createdAt)}
+                        </time>
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              ) : (
+                <p className="text-sm text-muted-foreground">Activity will appear here as this card changes.</p>
+              )}
+            </section>
+
             <div className="flex items-center justify-between border-t border-border pt-3 text-xs text-muted-foreground">
               <span>Changes save automatically.</span>
               <span>{detailsEntry.card.assignee} · {detailsEntry.card.due ? formatDue(detailsEntry.card.due) : "No due date"}</span>
