@@ -49,10 +49,13 @@ compte ; un compte MT4 ou la plateforme propriétaire Axi ne fonctionne pas via 
 
 ### 3. Autoriser la sortie réseau (obligatoire)
 MT5 : `Outils ▸ Options ▸ Expert Advisors` → coche
-**« Autoriser WebRequest pour les URL listées »** et ajoute l'**hôte** de ton instance
-Euforia (ex. `https://ton-euforia.exemple` — le domaine seul, sans le chemin).
+**« Autoriser WebRequest pour les URL listées »** et ajoute l'origine exacte de l'URL
+affichée sur la fiche de pairage. En local, pour `http://localhost:3000/...`, ajoute
+`http://localhost:3000`. En production, ajoute l'origine HTTPS réelle, par exemple
+`https://ton-euforia.exemple`. N'ajoute pas le chemin `/api/v1/...` : le protocole,
+l'hôte et le port doivent correspondre à l'URL de la fiche.
 
-### 4. Attacher l'EA
+## 4. Attacher l'EA
 1. Ouvre ton terminal MT5 et connecte-toi au compte voulu (démo ou réel). Utilise
    exactement le serveur communiqué par ton broker ; exemples de familles de serveurs :
    `ICMarkets...`, `Axi...`, ou `PUPrime-Demo / PUPrime-Live...`.
