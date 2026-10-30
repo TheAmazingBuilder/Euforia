@@ -17,9 +17,10 @@ import { queryKeys } from "@/lib/api/keys";
  * the engine state too: failed runs land in the job ledger).
  */
 
-export function useMonitoringOverview() {
+export function useMonitoringOverview(options: { enabled?: boolean } = {}) {
   return useQuery({
     queryKey: queryKeys.monitoring,
+    enabled: options.enabled ?? true,
     queryFn: () => apiRequest<MonitoringOverviewResponse>(apiPaths.monitoringOverview),
     refetchInterval: 12_000,
     refetchOnWindowFocus: false,
