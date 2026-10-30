@@ -14,6 +14,7 @@ import type {
 import { COSMOZ_VERSION, classifyFreshness } from "@cosmoz/shared";
 
 import { cn } from "@/lib/utils";
+import { usePermissions } from "@/components/auth/auth-provider";
 import { ApiError, apiErrorMessage } from "@/lib/api/client";
 import { Button } from "@/components/ui/button";
 import {
@@ -81,6 +82,7 @@ function freshnessToStatus(freshness: ReturnType<typeof classifyFreshness>, phas
 }
 
 export function MonitoringView() {
+  const { hasRole } = usePermissions();
   const { data, isLoading, isError, error } = useMonitoringOverview();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -255,6 +257,10 @@ export function MonitoringView() {
           }).format(nowMs),
     [nowMs],
   );
+
+  if (!hasRole("ADMIN")) {
+    return <div className="mx-auto w-full max-w-5xl rounded-xl border border-border bg-surface p-6"><h1 className="font-heading text-xl font-bold">Restricted area</h1><p className="mt-2 text-sm text-muted-foreground">This operational page is available to administrators only.</p></div>;
+  }
 
   if (isLoading || data === undefined) {
     if (isError) {
