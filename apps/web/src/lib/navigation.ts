@@ -225,8 +225,12 @@ export const NAV_SECTIONS: NavSection[] = [
     hrefs: ["/tools/lot-size", "/tools/compounding", "/tools/risk-reward"],
   },
   {
+    title: "Workspace",
+    hrefs: ["/settings", "/integrations", "/security"],
+  },
+  {
     title: "System",
-    hrefs: ["/monitoring", "/settings", "/integrations", "/security"],
+    hrefs: ["/monitoring"],
   },
 ];
 
