@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 import { useI18n } from "@/i18n/i18n-provider";
 import { EuforiaLogo } from "@/components/brand/euforia-logo";
 import { openGhostModal } from "@/lib/hooks/use-ghost-modal";
-import { useAuth } from "@/components/auth/auth-provider";
+import { useAuth, usePermissions } from "@/components/auth/auth-provider";
 import {
   SIDEBAR_ACCOUNTS_FIRST,
   SIDEBAR_FIRST_ITEM,
@@ -36,6 +36,7 @@ export function SidebarNav({
 }: SidebarNavProps) {
   const pathname = usePathname();
   const { logout } = useAuth();
+  const { hasRole } = usePermissions();
   const [signingOut, setSigningOut] = React.useState(false);
 
   const handleLogout = () => {
@@ -119,7 +120,7 @@ export function SidebarNav({
       </button>
 
       {/* Sectioned navigation - grouped, with the SYSTEM section last. */}
-      {NAV_SECTIONS.map((section) => (
+      {NAV_SECTIONS.filter((section) => section.title !== "System" || hasRole("ADMIN")).map((section) => (
         <div key={section.title} className="flex flex-col gap-1">
           {collapsed ? (
             <div
