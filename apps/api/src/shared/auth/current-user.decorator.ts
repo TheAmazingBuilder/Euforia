@@ -6,6 +6,8 @@ export interface AuthPrincipal {
   userId: string;
   /** Active session id (from the access token) - "current session". */
   sessionId: string;
+  /** Persisted role resolved from the active user record on every request. */
+  role: string;
 }
 
 export const CURRENT_USER = Symbol("CURRENT_USER");
