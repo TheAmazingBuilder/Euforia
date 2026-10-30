@@ -282,7 +282,7 @@ export type NotificationPreferencesInput = z.infer<typeof notificationPreference
  * The runtime source of truth stays next-themes; this mirror enables
  * multi-device sync when the real API ships.
  */
-export const appearanceThemeSchema = z.enum(["DARK_BLUE", "DARK", "LIGHT", "SYSTEM"]);
+export const appearanceThemeSchema = z.enum(["DARK_BLUE", "DARK", "LIGHT", "SYSTEM", "NAVY_BLUE", "EUFORIA"]);
 export type AppearanceTheme = z.infer<typeof appearanceThemeSchema>;
 
 export const densitySchema = z.enum(["COMFORTABLE", "COMPACT"]);
