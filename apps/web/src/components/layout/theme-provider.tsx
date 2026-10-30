@@ -10,7 +10,7 @@ function LegacyThemeMigration() {
   const { theme, setTheme } = useTheme();
 
   React.useEffect(() => {
-    if (theme === "dark-blue") setTheme("dark");
+    if (theme === "dark-blue") setTheme("navy-blue");
   }, [theme, setTheme]);
 
   return null;
@@ -21,7 +21,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     <NextThemesProvider
       attribute="data-theme"
       defaultTheme="dark"
-      themes={["dark", "light", "system"]}
+      themes={["dark", "light", "system", "navy-blue", "euforia"]}
       enableSystem
       disableTransitionOnChange
     >
