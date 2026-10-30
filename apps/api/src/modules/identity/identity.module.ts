@@ -48,7 +48,7 @@ const guardDepsProvider: Provider = {
       if (session.expiresAt.getTime() <= Date.now()) return null;
       const user = await repository.findUserById(userId);
       if (!user) return null;
-      return { userStatus: user.status };
+      return { userStatus: user.status, userRole: user.role };
     },
   }),
   inject: [TokenService, IdentityRepository],
