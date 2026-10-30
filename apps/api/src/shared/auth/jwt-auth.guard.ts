@@ -63,7 +63,20 @@ export class JwtAuthGuard implements CanActivate {
       throw new UnauthorizedError("Not authenticated.", "INVALID_TOKEN");
     }
 
-    request[CURRENT_USER] = { userId: payload.sub, sessionId: payload.sid };
+    request[CURRENT_USER] = { userId: payload.sub, sessionId: payload.sid, role: principal.userRole };
+    return true;
+  }
+}
+
+
+/** Restricts explicitly administrative controllers after global authentication. */
+@Injectable()
+export class AdminGuard implements CanActivate {
+  canActivate(context: ExecutionContext): boolean {
+    const request = context.switchToHttp().getRequest<FastifyRequest & { [CURRENT_USER]?: AuthPrincipal }>();
+    if (request[CURRENT_USER]?.role !== "ADMIN") {
+      throw new ForbiddenError("Administrator access is required.", "ADMIN_REQUIRED");
+    }
     return true;
   }
 }
