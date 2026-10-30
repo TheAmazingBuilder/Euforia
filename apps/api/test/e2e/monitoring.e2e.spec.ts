@@ -28,7 +28,7 @@ afterAll(async () => {
 
 async function administrator() {
   const user = await authenticatedUser(app, mail);
-  await app.get(PrismaService).user.update({ where: { id: user.user.id }, data: { role: "ADMIN" } });
+  await app.get(PrismaService).user.update({ where: { id: user.userId }, data: { role: "ADMIN" } });
   return user;
 }
 
@@ -54,7 +54,7 @@ describe("monitoring access control (§33/§49)", () => {
     expect(thresholds.statusCode).toBe(401);
     expect(jobRun.statusCode).toBe(401);
 
-    const trader = await administrator();
+    const trader = await authenticatedUser(app, mail);
     for (const [method, url] of [
       ["GET", "/api/v1/monitoring/overview"],
       ["PATCH", "/api/v1/monitoring/thresholds"],
