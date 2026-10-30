@@ -34,13 +34,17 @@ import { useI18n } from "@/i18n/i18n-provider";
 
 /** API SCREAMING_SNAKE ↔ next-themes kebab keys. */
 const THEME_TO_NEXT = {
-  DARK_BLUE: "dark",
+  DARK_BLUE: "navy-blue",
+  NAVY_BLUE: "navy-blue",
+  EUFORIA: "euforia",
   DARK: "dark",
   LIGHT: "light",
   SYSTEM: "system",
 } as const;
 const NEXT_TO_THEME: Record<string, UserPreferences["appearance"]["theme"]> = {
-  "dark-blue": "DARK",
+  "dark-blue": "NAVY_BLUE",
+  "navy-blue": "NAVY_BLUE",
+  euforia: "EUFORIA",
   dark: "DARK",
   light: "LIGHT",
   system: "SYSTEM",
@@ -73,7 +77,7 @@ export function AppearanceCard() {
 
   const onSave = () => {
     const normalizedDraft =
-      draft.theme === "DARK_BLUE" ? { ...draft, theme: "DARK" as const } : draft;
+      draft.theme === "DARK_BLUE" ? { ...draft, theme: "NAVY_BLUE" as const } : draft;
     save.mutate(normalizedDraft, {
       onSuccess: () => toast.success(L.toastSaved),
       onError: (error) => toast.error(apiErrorMessage(error, L.toastSaveFailed)),
@@ -109,6 +113,8 @@ export function AppearanceCard() {
           onChange={onThemeChange}
           options={[
             { value: "DARK", label: L.themeDark, hint: L.themeDarkHint },
+            { value: "NAVY_BLUE", label: "Navy Blue", hint: "Deep navy surfaces with #00008B identity blue" },
+            { value: "EUFORIA", label: "Euforia", hint: "Official Euforia purple-to-cyan brand palette" },
             { value: "LIGHT", label: L.themeLight, hint: L.themeLightHint },
             { value: "SYSTEM", label: L.themeSystem, hint: L.themeSystemHint },
           ]}
