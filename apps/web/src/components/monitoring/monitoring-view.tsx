@@ -83,7 +83,7 @@ function freshnessToStatus(freshness: ReturnType<typeof classifyFreshness>, phas
 
 export function MonitoringView() {
   const { hasRole } = usePermissions();
-  const { data, isLoading, isError, error } = useMonitoringOverview();
+  const { data, isLoading, isError, error } = useMonitoringOverview({ enabled: hasRole("ADMIN") });
   const searchParams = useSearchParams();
   const router = useRouter();
 
