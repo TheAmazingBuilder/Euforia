@@ -94,7 +94,7 @@ export function AppearanceCard() {
 
   // The radio group reads the LIVE next-themes value so the topbar toggle
   // and this card can never disagree.
-  const activeTheme = NEXT_TO_THEME[theme ?? "dark-blue"] ?? draft.theme;
+  const activeTheme = NEXT_TO_THEME[theme ?? "dark"] ?? draft.theme;
 
   return (
     <SettingsCategoryCard
