@@ -12,7 +12,7 @@
 
 /* Makes shadcn/ui `dark:` variants work on BOTH dark themes.
    Without this, all shadcn components break on theme switch. */
-@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *, [data-theme="navy-blue"], [data-theme="navy-blue"] *, [data-theme="euforia"], [data-theme="euforia"] *));
 
 /* ============================================================
    COSMOZ - "Le Registre" design world (2026 refonte)
@@ -124,6 +124,55 @@
   --cat-psy: #B84A78;         /* rose → mulberry  */
   --cat-structure: #4A5BD0;   /* indigo → deeper  */
   --cat-advanced: #64750F;    /* lime → olive     */
+}
+
+/* ---- Theme: Navy Blue (#00008B identity) ---- */
+[data-theme="navy-blue"] {
+  color-scheme: dark;
+  --background: #050526;
+  --surface: #090943;
+  --surface-raised: #11115F;
+  --border: #282878;
+  --text-primary: #F0F2FF;
+  --text-muted: #A5ACD8;
+  --accent: #6D8DFF;
+  --accent-hover: #91A8FF;
+  --action-success: #10B981;
+  --action-success-hover: #059669;
+  --action-success-foreground: #FFFFFF;
+  --action-edit: #60A5FA;
+  --action-edit-hover: #3B82F6;
+  --profit: #41C393;
+  --loss: #E26363;
+  --warning: #E5B64F;
+  --ring: #819BFF;
+  --radius: 8px;
+  --destructive-foreground: #FFFFFF;
+}
+
+/* ---- Theme: Euforia brand gradient ---- */
+[data-theme="euforia"] {
+  color-scheme: dark;
+  --background: #080817;
+  --surface: #111126;
+  --surface-raised: #1B1B3A;
+  --border: #303052;
+  --text-primary: #F5F3FF;
+  --text-muted: #AAA6C5;
+  --accent: #A78BFA;
+  --accent-hover: #C4B5FD;
+  --action-success: #10B981;
+  --action-success-hover: #059669;
+  --action-success-foreground: #FFFFFF;
+  --action-edit: #4299FD;
+  --action-edit-hover: #3185E8;
+  --profit: #41C393;
+  --loss: #E26363;
+  --warning: #F0B84B;
+  --ring: #8B5CF6;
+  --radius: 8px;
+  --destructive-foreground: #FFFFFF;
+  --brand-gradient: linear-gradient(93deg, #7B22F4 0%, #6318E8 28%, #4299FD 62%, #28D6F6 100%);
 }
 
 /* ---- Tailwind v4 token mapping ---- */
