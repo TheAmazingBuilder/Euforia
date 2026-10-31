@@ -120,8 +120,8 @@ export function PositionSizer(props: PositionSizerProps) {
               className={cn(
                 "rounded-sm px-2.5 py-1 text-xs font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
                 mode === modeValue
-                  ? "bg-accent text-accent-foreground"
-                  : "text-muted-foreground hover:text-foreground",
+                  ? "border border-action-edit/40 bg-action-edit/10 text-action-edit shadow-sm"
+                  : "border border-transparent text-muted-foreground hover:bg-muted hover:text-foreground",
               )}
             >
               {modeValue === "risk_percent" ? T.modeRisk : T.modeFixed}
