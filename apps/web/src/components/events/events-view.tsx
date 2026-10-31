@@ -94,7 +94,7 @@ const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 export function EventsView() {
   const profile = useProfile();
   const boardQuery = usePersonalEventsBoard();
-  const saveBoard = useSavePersonalEventsBoard();
+  const { mutateAsync: saveBoardAsync } = useSavePersonalEventsBoard();
   const saveQueueRef = React.useRef<Promise<unknown>>(Promise.resolve());
   const [calendars, setCalendars] = React.useState<EventsCalendar[]>([]);
   const [events, setEvents] = React.useState<CalEvent[]>([]);
@@ -149,9 +149,9 @@ export function EventsView() {
     const snapshot = { calendars, events };
     saveQueueRef.current = saveQueueRef.current
       .catch(() => undefined)
-      .then(() => saveBoard.mutateAsync(snapshot))
+      .then(() => saveBoardAsync(snapshot))
       .catch(() => undefined);
-  }, [calendars, events, hydrated, saveBoard]);
+  }, [calendars, events, hydrated, saveBoardAsync]);
 
   const calendarById = React.useMemo(
     () => new Map(calendars.map((calendar) => [calendar.id, calendar])),
