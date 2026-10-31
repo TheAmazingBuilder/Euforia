@@ -42,6 +42,7 @@ export const queryKeys = {
   // Performance snapshots (Dashboard Customization Phase 08)
   snapshots: ["snapshots"] as const,
   ecoEvents: ["eco-events"] as const,
+  personalEventsBoard: ["personal-events-board"] as const,
   // Calendar module upgrades
   calendarView: (from: string, to: string) => ["calendar-view", from, to] as const,
   calendarBlocks: ["calendar-blocks"] as const,
