@@ -138,6 +138,7 @@ model User {
   nofyRows          NofyRow[]
   academyRows       AcademyRow[]
   taskyBoard        TaskyBoard?
+  personalEventsBoard PersonalEventsBoard?
   taskyAttachments  TaskyAttachment[]
   taskySavedViews   TaskySavedView[]
   taskyAutomations  TaskyAutomationRule[]
@@ -1293,6 +1294,15 @@ model TaskyBoard {
   userId    String   @id @db.Uuid
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   /// Validated TaskyBoardState JSON; ownership comes from the authenticated user, never from payload data.
+  data      Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PersonalEventsBoard {
+  userId    String   @id @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Validated personal calendars and events; ownership is always the authenticated user.
   data      Json
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
