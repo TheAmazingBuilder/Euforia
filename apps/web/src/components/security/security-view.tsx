@@ -87,7 +87,8 @@ interface ReauthRequest {
 }
 
 export function SecurityCenterView() {
-  const { data: overview, isLoading } = useSecurityOverview();
+  const overviewQuery = useSecurityOverview();
+  const { data: overview, isLoading } = overviewQuery;
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -280,11 +281,42 @@ export function SecurityCenterView() {
     });
   };
 
-  if (isLoading || overview === undefined) {
+  if (isLoading) {
     return (
-      <div className="mx-auto w-full max-w-5xl space-y-4">
+      <div className="mx-auto w-full max-w-5xl space-y-4" aria-busy="true">
         <div className="h-8 w-48 animate-pulse rounded bg-muted" />
         <div className="h-40 animate-pulse rounded-xl bg-muted" />
+      </div>
+    );
+  }
+
+  if (overviewQuery.isError || overview === undefined) {
+    return (
+      <div className="mx-auto w-full max-w-5xl">
+        <div
+          className="flex flex-col items-start gap-3 rounded-lg border border-border bg-surface p-5"
+          role="alert"
+          data-testid="security-load-error"
+        >
+          <div className="flex items-center gap-2 font-medium">
+            <TriangleAlert className="size-4 text-warning" aria-hidden="true" />
+            Security information could not be loaded
+          </div>
+          <p className="text-sm text-muted-foreground">
+            {overviewQuery.error instanceof Error
+              ? overviewQuery.error.message
+              : "The security service did not return an overview. Check that the API is running and try again."}
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => void overviewQuery.refetch()}
+            disabled={overviewQuery.isFetching}
+            data-testid="security-retry"
+          >
+            {overviewQuery.isFetching ? "Retrying…" : "Try again"}
+          </Button>
+        </div>
       </div>
     );
   }

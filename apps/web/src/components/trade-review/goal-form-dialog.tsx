@@ -217,7 +217,7 @@ export function GoalFormDialog({ open, onOpenChange, editTarget }: GoalFormDialo
             </div>
 
             <div>
-              <Label>Color</Label>
+              <Label>Display tone</Label>
               <div className="mt-2 flex gap-1.5" data-testid="goal-color-picker">
                 {COLORS.map((key) => (
                   <button
@@ -227,7 +227,7 @@ export function GoalFormDialog({ open, onOpenChange, editTarget }: GoalFormDialo
                     aria-pressed={color === key}
                     onClick={() => setColor(key)}
                     className={cn(
-                      "size-6 rounded-full bg-gradient-to-br transition-transform hover:scale-110",
+                      "size-6 rounded-full transition-transform hover:scale-110",
                       GOAL_GRADIENTS[key],
                       color !== key && "opacity-35",
                       color === key && "ring-2 ring-ring ring-offset-2 ring-offset-background",

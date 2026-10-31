@@ -24,9 +24,9 @@ import { ReviewDialog } from "@/components/trade-review/review-dialog";
 
 function DirectionIcon({ direction }: { direction: "BUY" | "SELL" }) {
   return direction === "BUY" ? (
-    <ArrowUpRight className="size-3.5 text-profit" aria-hidden="true" />
+    <ArrowUpRight className="size-3.5 text-muted-foreground" aria-hidden="true" />
   ) : (
-    <ArrowDownRight className="size-3.5 text-loss" aria-hidden="true" />
+    <ArrowDownRight className="size-3.5 text-muted-foreground" aria-hidden="true" />
   );
 }
 
@@ -45,9 +45,9 @@ function ReviewRowItem({ row, onReview, onUndo }: { row: ReviewRow; onReview: (r
     >
       <span className="flex w-24 shrink-0 items-center gap-1.5">
         {isPending ? (
-          <CircleDashed className="size-4 text-amber-500" aria-hidden="true" />
+          <CircleDashed className="size-4 text-muted-foreground" aria-hidden="true" />
         ) : (
-          <CheckCircle2 className="size-4 text-emerald-500" aria-hidden="true" />
+          <CheckCircle2 className="size-4 text-muted-foreground" aria-hidden="true" />
         )}
         <span className="font-mono text-sm font-semibold">{row.symbol}</span>
       </span>
@@ -85,7 +85,7 @@ function ReviewRowItem({ row, onReview, onUndo }: { row: ReviewRow; onReview: (r
           {formatSignedMoney(row.pnlNet, row.currency)}
         </span>
         {isPending ? (
-          <Button size="sm" variant="outline" className="h-7 gap-1 border-violet-500/40 text-violet-400 hover:bg-violet-500/10 hover:text-violet-300" onClick={() => onReview(row)} data-testid="review-open">
+          <Button size="sm" variant="outline" className="h-7 gap-1 border-border text-foreground hover:bg-muted" onClick={() => onReview(row)} data-testid="review-open">
             Review
           </Button>
         ) : (
@@ -98,7 +98,7 @@ function ReviewRowItem({ row, onReview, onUndo }: { row: ReviewRow; onReview: (r
           <Button
             size="sm"
             variant="ghost"
-            className="h-7 px-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-loss"
+            className="h-7 px-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
             onClick={() => onUndo(row)}
             aria-label="Undo review"
             title="Undo review - the trade returns to the queue"
@@ -149,7 +149,7 @@ export function ReviewsPanel() {
       <section className="space-y-2">
         <h2 className="flex items-center gap-2 font-heading text-lg font-semibold">
           Awaiting review
-          <Badge variant="outline" className="border-amber-500/30 bg-amber-500/15 font-mono text-amber-500" data-testid="pending-count">
+          <Badge variant="outline" className="border-border bg-muted/20 font-mono text-foreground" data-testid="pending-count">
             {pending.length}
           </Badge>
         </h2>
@@ -159,7 +159,7 @@ export function ReviewsPanel() {
         {pending.length === 0 ? (
           <Card className="border-dashed">
             <CardContent className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
-              <CheckCircle2 className="size-4 text-emerald-500" aria-hidden="true" />
+              <CheckCircle2 className="size-4 text-muted-foreground" aria-hidden="true" />
               Queue clear - every closed trade has been reviewed.
             </CardContent>
           </Card>
@@ -175,7 +175,7 @@ export function ReviewsPanel() {
       <section className="space-y-2">
         <h2 className="flex items-center gap-2 font-heading text-lg font-semibold">
           Reviewed
-          <Badge variant="outline" className="border-emerald-500/30 bg-emerald-500/15 font-mono text-emerald-500" data-testid="reviewed-count">
+          <Badge variant="outline" className="border-border bg-muted/20 font-mono text-foreground" data-testid="reviewed-count">
             {reviewed.length}
           </Badge>
         </h2>

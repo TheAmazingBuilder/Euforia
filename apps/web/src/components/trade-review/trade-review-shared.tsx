@@ -15,43 +15,43 @@ import { cn } from "@/lib/utils";
 // ── Execution grades (A–F) ───────────────────────────────────────────────────
 
 export const GRADE_STYLES: Record<string, string> = {
-  A: "bg-emerald-500/15 text-emerald-500 border-emerald-500/30",
-  B: "bg-sky-500/15 text-sky-400 border-sky-500/30",
-  C: "bg-amber-500/15 text-amber-500 border-amber-500/30",
-  D: "bg-orange-500/15 text-orange-400 border-orange-500/30",
-  F: "bg-rose-500/15 text-rose-400 border-rose-500/30",
+  A: "border-border bg-muted/30 text-foreground",
+  B: "border-border bg-muted/20 text-foreground",
+  C: "border-border bg-muted/10 text-muted-foreground",
+  D: "border-border bg-muted/10 text-muted-foreground",
+  F: "border-border bg-muted/10 text-muted-foreground",
 };
 
 export const GRADE_BAR: Record<string, string> = {
-  A: "bg-emerald-500",
-  B: "bg-sky-500",
-  C: "bg-amber-500",
-  D: "bg-orange-500",
-  F: "bg-rose-500",
+  A: "bg-foreground/80",
+  B: "bg-foreground/65",
+  C: "bg-foreground/50",
+  D: "bg-foreground/35",
+  F: "bg-foreground/25",
 };
 
 // ── Goal palette (vivid gradients, one per color key) ───────────────────────
 
 export const GOAL_GRADIENTS: Record<GoalColor, string> = {
-  VIOLET: "from-violet-500 to-purple-600",
-  CYAN: "from-cyan-500 to-sky-600",
-  EMERALD: "from-emerald-500 to-teal-600",
-  AMBER: "from-amber-500 to-orange-500",
-  ROSE: "from-rose-500 to-pink-600",
-  SKY: "from-sky-500 to-blue-600",
-  FUCHSIA: "from-fuchsia-500 to-purple-600",
-  LIME: "from-lime-500 to-emerald-500",
+  VIOLET: "bg-foreground/85",
+  CYAN: "bg-foreground/75",
+  EMERALD: "bg-foreground/65",
+  AMBER: "bg-foreground/55",
+  ROSE: "bg-foreground/45",
+  SKY: "bg-foreground/35",
+  FUCHSIA: "bg-foreground/25",
+  LIME: "bg-foreground/15",
 };
 
 export const GOAL_DOTS: Record<GoalColor, string> = {
-  VIOLET: "bg-violet-500",
-  CYAN: "bg-cyan-500",
-  EMERALD: "bg-emerald-500",
-  AMBER: "bg-amber-500",
-  ROSE: "bg-rose-500",
-  SKY: "bg-sky-500",
-  FUCHSIA: "bg-fuchsia-500",
-  LIME: "bg-lime-500",
+  VIOLET: "bg-foreground/85",
+  CYAN: "bg-foreground/75",
+  EMERALD: "bg-foreground/65",
+  AMBER: "bg-foreground/55",
+  ROSE: "bg-foreground/45",
+  SKY: "bg-foreground/35",
+  FUCHSIA: "bg-foreground/25",
+  LIME: "bg-foreground/15",
 };
 
 // ── Goal statuses ────────────────────────────────────────────────────────────
@@ -60,11 +60,11 @@ export const GOAL_STATUS: Record<
   GoalStatus,
   { label: string; badge: string; icon: typeof Target }
 > = {
-  ACHIEVED: { label: "Achieved", badge: "bg-emerald-500/15 text-emerald-500 border-emerald-500/30", icon: Trophy },
-  ON_TRACK: { label: "On track", badge: "bg-sky-500/15 text-sky-400 border-sky-500/30", icon: TrendingUp },
-  AT_RISK: { label: "At risk", badge: "bg-amber-500/15 text-amber-500 border-amber-500/30", icon: AlertTriangle },
-  BEHIND: { label: "Behind", badge: "bg-rose-500/15 text-rose-400 border-rose-500/30", icon: TrendingDown },
-  PENDING: { label: "No data yet", badge: "bg-muted text-muted-foreground border-border", icon: Minus },
+  ACHIEVED: { label: "Achieved", badge: "border-border bg-muted/30 text-foreground", icon: Trophy },
+  ON_TRACK: { label: "On track", badge: "border-border bg-muted/20 text-foreground", icon: TrendingUp },
+  AT_RISK: { label: "At risk", badge: "border-border bg-muted/10 text-muted-foreground", icon: AlertTriangle },
+  BEHIND: { label: "Behind", badge: "border-border bg-muted/10 text-muted-foreground", icon: TrendingDown },
+  PENDING: { label: "No data yet", badge: "border-border bg-muted/10 text-muted-foreground", icon: Minus },
 };
 
 // ── Goal metrics ─────────────────────────────────────────────────────────────
@@ -89,17 +89,17 @@ export const PERIOD_LABELS: Record<GoalPeriod, string> = {
 // ── Playbook match ───────────────────────────────────────────────────────────
 
 export const PLAYBOOK_MATCH_META: Record<PlaybookMatch, { label: string; className: string }> = {
-  MATCHED: { label: "Matched", className: "bg-emerald-500/15 text-emerald-500 border-emerald-500/30" },
-  PARTIAL: { label: "Partial", className: "bg-amber-500/15 text-amber-500 border-amber-500/30" },
-  OFF_PLAYBOOK: { label: "Off playbook", className: "bg-rose-500/15 text-rose-400 border-rose-500/30" },
+  MATCHED: { label: "Matched", className: "border-border bg-muted/30 text-foreground" },
+  PARTIAL: { label: "Partial", className: "border-border bg-muted/15 text-muted-foreground" },
+  OFF_PLAYBOOK: { label: "Off playbook", className: "border-dashed border-border bg-muted/10 text-muted-foreground" },
 };
 
 // ── Review source chips (lessons library) ────────────────────────────────────
 
 export const SOURCE_META = {
-  REVIEW: { label: "Review", className: "bg-violet-500/15 text-violet-400 border-violet-500/30" },
-  TRADE_NOTE: { label: "Trade note", className: "bg-sky-500/15 text-sky-400 border-sky-500/30" },
-  JOURNAL: { label: "Journal", className: "bg-emerald-500/15 text-emerald-500 border-emerald-500/30" },
+  REVIEW: { label: "Review", className: "border-border bg-muted/30 text-foreground" },
+  TRADE_NOTE: { label: "Trade note", className: "border-border bg-muted/20 text-muted-foreground" },
+  JOURNAL: { label: "Journal", className: "border-border bg-muted/10 text-muted-foreground" },
 } as const;
 
 /** Formats a number in the metric's natural unit (server-derived). */
@@ -145,7 +145,7 @@ export function GoalStatusBadge({ status, className }: { status: GoalStatus; cla
 /** The review streak chip - flame, amber, honest when cold. */
 export function ReviewStreak({ days }: { days: number }) {
   return (
-    <span className="inline-flex items-center gap-1.5 font-mono text-sm font-semibold text-amber-500" data-testid="review-streak">
+    <span className="inline-flex items-center gap-1.5 font-mono text-sm font-semibold text-muted-foreground" data-testid="review-streak">
       <Flame className={cn("size-4", days === 0 && "text-muted-foreground")} aria-hidden="true" />
       {days === 0 ? "No streak yet" : `${days}-day streak`}
     </span>

@@ -148,7 +148,7 @@ export function ReviewDialog({ row, open, onOpenChange }: ReviewDialogProps) {
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl" data-testid="review-dialog">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <NotebookPen className="size-5 text-violet-400" aria-hidden="true" />
+            <NotebookPen className="size-5 text-muted-foreground" aria-hidden="true" />
             {row.reviewStatus === "PENDING" ? "Review trade" : "Edit review"} - {row.symbol}
           </DialogTitle>
           <DialogDescription>
@@ -257,9 +257,9 @@ export function ReviewDialog({ row, open, onOpenChange }: ReviewDialogProps) {
                   >
                     <span className="min-w-0 flex-1 truncate">{item.label}</span>
                     {item.passed ? (
-                      <CheckCircle2 className="size-4 shrink-0 text-emerald-500" aria-hidden="true" />
+                      <CheckCircle2 className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
                     ) : (
-                      <XCircle className="size-4 shrink-0 text-rose-400" aria-hidden="true" />
+                      <XCircle className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
                     )}
                   </button>
                 ))}
@@ -288,8 +288,8 @@ export function ReviewDialog({ row, open, onOpenChange }: ReviewDialogProps) {
                       className={cn(
                         "h-6 flex-1 rounded-md border transition-all hover:scale-105",
                         step <= value
-                          ? "border-violet-500/50 bg-gradient-to-t from-violet-600 to-violet-400"
-                          : "bg-muted/50 opacity-50",
+                          ? "border-foreground/50 bg-foreground/70"
+                          : "border-border bg-muted/50 opacity-50",
                       )}
                     />
                   ))}
@@ -316,7 +316,7 @@ export function ReviewDialog({ row, open, onOpenChange }: ReviewDialogProps) {
 
           <div>
             <Label htmlFor="review-improvement" className="flex items-center gap-1.5 text-sm font-medium">
-              <Sparkles className="size-3.5 text-amber-500" aria-hidden="true" />
+              <Sparkles className="size-3.5 text-muted-foreground" aria-hidden="true" />
               Next time I will…
             </Label>
             <Input
@@ -332,7 +332,7 @@ export function ReviewDialog({ row, open, onOpenChange }: ReviewDialogProps) {
               <button
                 type="button"
                 onClick={() => setImprovementNote(lastImprovementNote)}
-                className="mt-1.5 inline-flex max-w-full items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-left text-[11px] text-amber-600 transition-colors hover:bg-amber-500/20 dark:text-amber-400"
+                className="mt-1.5 inline-flex max-w-full items-center gap-1.5 rounded-md border border-border bg-muted/20 px-2.5 py-1 text-left text-[11px] text-muted-foreground transition-colors hover:bg-muted/40"
                 data-testid="review-reuse-note"
               >
                 <History className="size-3 shrink-0" aria-hidden="true" />

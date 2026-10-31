@@ -37,7 +37,7 @@ const GRADE_FILTERS: Array<{ id: "ALL" | "AB" | "C" | "DF" | "OFF"; label: strin
 function LessonCard({ entry }: { entry: LessonEntry }) {
   const source = SOURCE_META[entry.source];
   return (
-    <Card className="border-l-4 py-4" data-testid="lesson-card" data-source={entry.source}>
+    <Card className="py-4" data-testid="lesson-card" data-source={entry.source}>
       <CardContent className="space-y-2 px-4">
         <div className="flex flex-wrap items-center gap-2 text-xs">
           <Badge variant="outline" className={cn("text-[10px]", source.className)}>
@@ -59,7 +59,7 @@ function LessonCard({ entry }: { entry: LessonEntry }) {
           <span className="ml-auto font-mono text-muted-foreground">{entry.date}</span>
         </div>
         <p className="text-sm leading-relaxed" data-testid="lesson-text">
-          <Lightbulb className="mr-1.5 mb-0.5 inline size-3.5 text-amber-500" aria-hidden="true" />
+          <Lightbulb className="mr-1.5 mb-0.5 inline size-3.5 text-muted-foreground" aria-hidden="true" />
           {entry.text}
         </p>
       </CardContent>
@@ -128,8 +128,8 @@ export function LessonsPanel() {
               className={cn(
                 "rounded-full border px-3 py-1 text-xs font-medium transition-colors",
                 sourceFilter === filter.id
-                  ? "border-violet-500/40 bg-violet-500/15 text-violet-400"
-                  : "text-muted-foreground hover:bg-muted",
+                  ? "border-foreground bg-foreground text-background"
+                  : "border-transparent text-muted-foreground hover:bg-muted hover:text-foreground",
               )}
               data-testid={`lessons-source-${filter.id.toLowerCase()}`}
             >
@@ -147,8 +147,8 @@ export function LessonsPanel() {
               className={cn(
                 "rounded-full border px-3 py-1 text-xs font-medium transition-colors",
                 gradeFilter === filter.id
-                  ? "border-sky-500/40 bg-sky-500/15 text-sky-400"
-                  : "text-muted-foreground hover:bg-muted",
+                  ? "border-foreground bg-foreground text-background"
+                  : "border-transparent text-muted-foreground hover:bg-muted hover:text-foreground",
               )}
             >
               {filter.label}

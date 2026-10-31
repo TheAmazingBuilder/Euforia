@@ -138,15 +138,21 @@ export class IntegrationsService {  /** Transient rate-limit windows - session-s
   // ── Lazy per-user seed (first overview read materializes the demo state) ──
 
   private async seedIfEmpty(userId: string): Promise<void> {
-    if (await this.repository.hasAnyRow(userId, INTEGRATION_ROW_KINDS.PROVIDER)) return;
     const nowMs = this.now();
 
+    // Seed every missing provider independently. If an earlier startup was
+    // interrupted after writing only part of the catalog, existing rows must
+    // not prevent the remaining providers from being materialized.
     for (const entry of PROVIDER_CATALOG) {
+      const existing = await this.repository.findRow(userId, INTEGRATION_ROW_KINDS.PROVIDER, entry.id);
+      if (existing !== null) continue;
       const state = this.freshState(entry, nowMs);
       await this.repository.upsertRow(userId, INTEGRATION_ROW_KINDS.PROVIDER, entry.id, state as unknown as Prisma.InputJsonValue);
     }
 
-    await this.repository.upsertRow(userId, INTEGRATION_ROW_KINDS.WEBHOOK, DEMO_WEBHOOK.id, {
+    const webhookExists = await this.repository.findRow(userId, INTEGRATION_ROW_KINDS.WEBHOOK, DEMO_WEBHOOK.id);
+    if (webhookExists === null) {
+      await this.repository.upsertRow(userId, INTEGRATION_ROW_KINDS.WEBHOOK, DEMO_WEBHOOK.id, {
       providerId: DEMO_WEBHOOK.providerId,
       path: DEMO_WEBHOOK.path,
       status: DEMO_WEBHOOK.status,
@@ -154,30 +160,37 @@ export class IntegrationsService {  /** Transient rate-limit windows - session-s
       deliveries: [],
       lastAcceptedEventId: null,
       secret: DEMO_WEBHOOK.secret,
-    } as unknown as Prisma.InputJsonValue);
+      } as unknown as Prisma.InputJsonValue);
+    }
 
-    for (const [index, entry] of SEED_EVENT_LOG.entries()) {
-      await this.repository.appendRow(userId, INTEGRATION_ROW_KINDS.EVENT, `seed-${index}`, {
-        occurredAt: new Date(nowMs - (SEED_EVENT_LOG.length - index) * 7 * 60_000).toISOString(),
-        providerId: entry.providerId,
-        providerName: entry.providerName,
-        type: entry.type,
-        message: entry.message,
-      });
+    if (!(await this.repository.hasAnyRow(userId, INTEGRATION_ROW_KINDS.EVENT))) {
+      for (const [index, entry] of SEED_EVENT_LOG.entries()) {
+        await this.repository.appendRow(userId, INTEGRATION_ROW_KINDS.EVENT, `seed-${index}`, {
+          occurredAt: new Date(nowMs - (SEED_EVENT_LOG.length - index) * 7 * 60_000).toISOString(),
+          providerId: entry.providerId,
+          providerName: entry.providerName,
+          type: entry.type,
+          message: entry.message,
+        });
+      }
     }
 
     // §9 - the economic layer consumes a RAW provider payload and normalizes
     // it; the deterministic calendar generator stands in for that payload.
-    const raw = generateEcoEvents(new Date(nowMs));
-    for (const event of raw) {
-      const providerKey = idempotencyKey("macro-sample", `MACRO-${event.id.slice(0, 8)}`);
-      await this.repository.upsertRow(userId, INTEGRATION_ROW_KINDS.SEEN, providerKey, { seeded: true });
-      const eco = this.normalizeEco(event.id, event.title, event.currency, event.impact, event.scheduledAt, event.previous, event.forecast, event.actual, providerKey);
-      await this.repository.upsertRow(userId, INTEGRATION_ROW_KINDS.ECO, providerKey, eco as unknown as Prisma.InputJsonValue);
+    if (!(await this.repository.hasAnyRow(userId, INTEGRATION_ROW_KINDS.ECO))) {
+      const raw = generateEcoEvents(new Date(nowMs));
+      for (const event of raw) {
+        const providerKey = idempotencyKey("macro-sample", `MACRO-${event.id.slice(0, 8)}`);
+        await this.repository.upsertRow(userId, INTEGRATION_ROW_KINDS.SEEN, providerKey, { seeded: true });
+        const eco = this.normalizeEco(event.id, event.title, event.currency, event.impact, event.scheduledAt, event.previous, event.forecast, providerKey);
+        await this.repository.upsertRow(userId, INTEGRATION_ROW_KINDS.ECO, providerKey, eco as unknown as Prisma.InputJsonValue);
+      }
     }
 
-    for (const news of newsSamplesAt(nowMs)) {
-      await this.repository.upsertRow(userId, INTEGRATION_ROW_KINDS.NEWS, news.providerKey, news as unknown as Prisma.InputJsonValue);
+    if (!(await this.repository.hasAnyRow(userId, INTEGRATION_ROW_KINDS.NEWS))) {
+      for (const news of newsSamplesAt(nowMs)) {
+        await this.repository.upsertRow(userId, INTEGRATION_ROW_KINDS.NEWS, news.providerKey, news as unknown as Prisma.InputJsonValue);
+      }
     }
   }
 

@@ -137,7 +137,7 @@ export function MonthlyReportDialog({
       <DialogContent className="max-h-[92dvh] overflow-y-auto sm:max-w-2xl" data-testid="review-report-dialog">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 font-heading">
-            <FileDown className="size-5 text-violet-400" aria-hidden="true" />
+            <FileDown className="size-5 text-muted-foreground" aria-hidden="true" />
             Monthly review journal
           </DialogTitle>
           <DialogDescription>

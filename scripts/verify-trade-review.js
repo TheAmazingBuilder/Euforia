@@ -3,7 +3,7 @@
  * Probes (in ONE SPA session - the mock store reseeds on full reload):
  *  1. Header + 4 tabs (Overview/Goals/Reviews/Lessons), ?tab= persistence
  *  2. Overview: 4 KPI tiles, grade bar segments, pending CTA, recent lessons
- *  3. Goals: colorful cards, computed progress (actual ≠ target, detail "vs"),
+ *  3. Goals: restrained monochrome cards, computed progress (actual ≠ target, detail "vs"),
  *     create → edit → delete round-trip with toasts
  *  4. Reviews: pending queue matches header count, dialog workflow (grade +
  *     playbook match + checklist + lesson) moves a row to Reviewed, undo works
@@ -69,7 +69,7 @@ const BASE = "http://localhost:3000";
   const statusBadges = await page.locator('[data-testid="goal-status"]').count();
   check("Status badges on cards", statusBadges === goalCount, `${statusBadges}/${goalCount}`);
   const gradientSpines = await page.locator('[data-testid="goal-card"] span.bg-gradient-to-r').count();
-  check("Colorful gradient spines on cards", gradientSpines === goalCount, `${gradientSpines}/${goalCount}`);
+  check("Goal cards avoid decorative color gradients", gradientSpines === 0, `${gradientSpines} gradient spines`);
   await page.screenshot({ path: "scripts/shots/review-goals.png" });
 
   // Create a goal

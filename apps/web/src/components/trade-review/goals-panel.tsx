@@ -22,7 +22,6 @@ import { apiErrorMessage } from "@/lib/api/client";
 import { useDeleteGoal, useGoals } from "@/lib/api/queries";
 import { cn } from "@/lib/utils";
 import {
-  GOAL_GRADIENTS,
   GoalStatusBadge,
   METRIC_META,
   PERIOD_LABELS,
@@ -144,11 +143,6 @@ export function GoalsPanel() {
                 data-status={progress.status}
               >
                 {goal.id === highlightedGoalId && <div ref={highlightRef} aria-hidden="true" />}
-                {/* The colorful signature - a gradient spine per goal color */}
-                <span
-                  className={cn("absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r", GOAL_GRADIENTS[goal.color])}
-                  aria-hidden="true"
-                />
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-semibold leading-snug">{goal.title}</CardTitle>
                   <CardDescription className="flex items-center gap-2 text-xs">
@@ -187,7 +181,7 @@ export function GoalsPanel() {
                       data-progress={progress.progressPct ?? 0}
                     >
                       <div
-                        className={cn("h-full rounded-full bg-gradient-to-r transition-all duration-500", GOAL_GRADIENTS[goal.color])}
+                        className="h-full rounded-full bg-foreground/70 transition-all duration-500"
                         style={{ width: `${progress.progressPct ?? 0}%` }}
                       />
                       {/* The "now" marker - where the period should be by time alone */}

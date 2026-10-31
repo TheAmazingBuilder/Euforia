@@ -89,7 +89,8 @@ const utc = (iso: string | null): string =>
   iso === null ? "never" : `${iso.slice(0, 10)} ${iso.slice(11, 19)} UTC`;
 
 export function IntegrationsHubView() {
-  const { data: overview, isLoading } = useIntegrationsOverview();
+  const overviewQuery = useIntegrationsOverview();
+  const { data: overview, isLoading } = overviewQuery;
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -208,11 +209,41 @@ export function IntegrationsHubView() {
     });
   };
 
-  if (isLoading || overview === undefined) {
+  if (isLoading) {
     return (
-      <div className="mx-auto w-full max-w-5xl space-y-4">
+      <div className="mx-auto w-full max-w-5xl space-y-4" aria-busy="true">
         <div className="h-8 w-48 animate-pulse rounded bg-muted" />
         <div className="h-40 animate-pulse rounded-xl bg-muted" />
+      </div>
+    );
+  }
+
+  if (overviewQuery.isError || overview === undefined) {
+    return (
+      <div className="mx-auto w-full max-w-5xl">
+        <Card className="border-border bg-surface" data-testid="integrations-load-error">
+          <CardContent className="flex flex-col items-start gap-3 py-6" role="alert">
+            <div className="flex items-center gap-2 font-medium">
+              <AlertTriangle className="size-4 text-warning" aria-hidden="true" />
+              Integration Hub could not be loaded
+            </div>
+            <p className="text-sm text-muted-foreground">
+              {overviewQuery.error instanceof Error
+                ? overviewQuery.error.message
+                : "The integrations service did not return its provider catalog. Check the API connection and try again."}
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => void overviewQuery.refetch()}
+              disabled={overviewQuery.isFetching}
+              data-testid="integrations-retry"
+            >
+              <RefreshCw className={cn("size-3.5", overviewQuery.isFetching && "animate-spin")} aria-hidden="true" />
+              {overviewQuery.isFetching ? "Retrying…" : "Try again"}
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
