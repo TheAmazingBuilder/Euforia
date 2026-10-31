@@ -10,9 +10,9 @@
    styling. The app theme system below is untouched. */
 @import "../design-system/euforia.css";
 
-/* Makes shadcn/ui `dark:` variants work on BOTH dark themes.
+/* Makes shadcn/ui `dark:` variants work on every dark theme.
    Without this, all shadcn components break on theme switch. */
-@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *, [data-theme="navy-blue"], [data-theme="navy-blue"] *, [data-theme="euforia"], [data-theme="euforia"] *));
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *, [data-theme="euforia"], [data-theme="euforia"] *));
 
 /* ============================================================
    COSMOZ - "Le Registre" design world (2026 refonte)
@@ -46,6 +46,8 @@
   --action-edit-hover: #3185E8;
   --profit: #3EBE8C;
   --loss: #E05B5B;
+  --direction-buy: #3EBE8C;
+  --direction-sell: #E05B5B;
   --warning: #D9A03F;
   --ring: #4E6EE0;
   --radius: 8px;
@@ -83,6 +85,8 @@
   --action-success-foreground: #FFFFFF;
   --profit: #41C393;
   --loss: #E26363;
+  --direction-buy: #41C393;
+  --direction-sell: #E26363;
   --warning: #DCA748;
   --ring: #5578E6;
   --radius: 8px;
@@ -106,6 +110,8 @@
   --action-success-foreground: #FFFFFF;
   --profit: #12805C;
   --loss: #C03E3E;
+  --direction-buy: #12805C;
+  --direction-sell: #C03E3E;
   --warning: #8F6418;
   --ring: #2E4FC4;
   --radius: 8px;
@@ -126,30 +132,6 @@
   --cat-advanced: #64750F;    /* lime → olive     */
 }
 
-/* ---- Theme: Navy Blue (#00008B identity) ---- */
-[data-theme="navy-blue"] {
-  color-scheme: dark;
-  --background: #050526;
-  --surface: #090943;
-  --surface-raised: #11115F;
-  --border: #282878;
-  --text-primary: #F0F2FF;
-  --text-muted: #A5ACD8;
-  --accent: #6D8DFF;
-  --accent-hover: #91A8FF;
-  --action-success: #10B981;
-  --action-success-hover: #059669;
-  --action-success-foreground: #FFFFFF;
-  --action-edit: #60A5FA;
-  --action-edit-hover: #3B82F6;
-  --profit: #41C393;
-  --loss: #E26363;
-  --warning: #E5B64F;
-  --ring: #819BFF;
-  --radius: 8px;
-  --destructive-foreground: #FFFFFF;
-}
-
 /* ---- Theme: Euforia brand gradient ---- */
 [data-theme="euforia"] {
   color-scheme: dark;
@@ -168,6 +150,8 @@
   --action-edit-hover: #3185E8;
   --profit: #41C393;
   --loss: #E26363;
+  --direction-buy: #41C393;
+  --direction-sell: #E26363;
   --warning: #F0B84B;
   --ring: #8B5CF6;
   --radius: 8px;
@@ -188,6 +172,8 @@
   --color-profit: var(--profit);
   --color-loss: var(--loss);
   --color-warning: var(--warning);
+  --color-direction-buy: var(--direction-buy);
+  --color-direction-sell: var(--direction-sell);
 
   /* Academy category hues (identity inks per teaching track) */
   --color-cat-fund: var(--cat-fund);
