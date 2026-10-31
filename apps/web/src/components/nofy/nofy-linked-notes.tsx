@@ -14,7 +14,7 @@ import { useI18n } from "@/i18n/i18n-provider";
 import { NOFY_REF_META, nofyRelativeTime } from "./nofy-shared";
 
 /**
- * The entity side of the Nofy integrations — rendered INSIDE Playbook
+ * The entity side of the Nofy integrations - rendered INSIDE Playbook
  * (strategy detail) and Trade Review (review dialog). Lists the notes
  * whose ref blocks point at this entity and offers "Take notes", which
  * creates a linked note in Nofy and deep-links into its editor. Notes

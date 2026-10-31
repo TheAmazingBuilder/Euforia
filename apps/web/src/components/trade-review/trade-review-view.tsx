@@ -19,7 +19,7 @@ import { MonthlyReportDialog } from "@/components/trade-review/monthly-report-di
 import { useReviewOverview } from "@/lib/api/queries";
 
 /**
- * Professional Trade Review module (fusion with Goal) — four tabs over the
+ * Professional Trade Review module (fusion with Goal) - four tabs over the
  * post-trade workspace: Overview (cockpit), Goals (targets vs real behavior),
  * Reviews (grade execution against the playbook + capture lessons) and
  * Lessons (the accumulated library). The tab persists as ?tab= (module
@@ -79,17 +79,16 @@ export function TradeReviewView() {
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-4 sm:space-y-6" data-testid="trade-review-view">
-      {/* Colorful header — the module's identity band */}
-      <header className="relative overflow-hidden rounded-xl border bg-gradient-to-r from-violet-600/15 via-fuchsia-500/10 to-cyan-500/15 px-4 py-5 sm:px-6" data-testid="review-header">
+      <header className="border-b border-border pb-5" data-testid="review-header">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h1 className="flex items-center gap-2 font-heading text-2xl font-extrabold tracking-tight sm:text-3xl">
-              <NotebookPen className="size-6 text-violet-400 sm:size-7" aria-hidden="true" />
+              <NotebookPen className="size-6 text-muted-foreground sm:size-7" aria-hidden="true" />
               Trade Review
             </h1>
             <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
               Grade execution against the playbook, capture the lesson, and hold your goals against what you actually
-              do. Targets are set by you; progress is computed from real trades — you cannot cheat the bar.
+              do. Targets are set by you; progress is computed from real trades - you cannot cheat the bar.
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -107,11 +106,11 @@ export function TradeReviewView() {
               <>
                 <Badge
                   variant="outline"
-                  className="gap-1.5 border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-amber-500"
+                  className="gap-1.5 border-border bg-muted/20 px-2.5 py-1 text-muted-foreground"
                   title={
                     overview.streak.frozenDays > 0
-                      ? `Includes ${overview.streak.frozenDays} frozen grace day${overview.streak.frozenDays === 1 ? "" : "s"} — one per week, honestly reported.`
-                      : "Consecutive review days — one grace day per week is forgiven, honestly reported."
+                      ? `Includes ${overview.streak.frozenDays} frozen grace day${overview.streak.frozenDays === 1 ? "" : "s"} - one per week, honestly reported.`
+                      : "Consecutive review days - one grace day per week is forgiven, honestly reported."
                   }
                   data-testid="header-streak"
                 >
@@ -119,13 +118,13 @@ export function TradeReviewView() {
                   <span className="font-mono font-semibold">{overview.stats.reviewStreakDays}d</span>
                   streak
                   {overview.streak.frozenDays > 0 ? (
-                    <span className="inline-flex items-center gap-0.5 text-cyan-400" data-testid="header-streak-frozen">
+                    <span className="inline-flex items-center gap-0.5 text-muted-foreground" data-testid="header-streak-frozen">
                       <Snowflake className="size-3" aria-hidden="true" />
                       {overview.streak.frozenDays}
                     </span>
                   ) : null}
                 </Badge>
-                <Badge variant="outline" className="gap-1.5 border-violet-500/30 bg-violet-500/10 px-2.5 py-1 text-violet-400" data-testid="header-pending">
+                <Badge variant="outline" className="gap-1.5 border-border bg-muted/20 px-2.5 py-1 text-muted-foreground" data-testid="header-pending">
                   <NotebookPen className="size-3.5" aria-hidden="true" />
                   <span className="font-mono font-semibold">{overview.stats.pendingReviews}</span>
                   to review
@@ -154,7 +153,7 @@ export function TradeReviewView() {
                   <tab.icon className="size-3.5" aria-hidden="true" />
                   {tab.label}
                   {tab.id === "reviews" && overview && overview.stats.pendingReviews > 0 && (
-                    <span className="ml-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-amber-500/20 px-1 font-mono text-[10px] font-bold text-amber-500">
+                    <span className="ml-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-muted px-1 font-mono text-[10px] font-bold text-muted-foreground">
                       {overview.stats.pendingReviews}
                     </span>
                   )}

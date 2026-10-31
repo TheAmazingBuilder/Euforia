@@ -26,13 +26,13 @@ export const decimalStringSchema = z
 
 export type DecimalString = z.infer<typeof decimalStringSchema>;
 
-/** Strictly positive decimal string — for prices, quantities, risk values. */
+/** Strictly positive decimal string - for prices, quantities, risk values. */
 export const positiveDecimalStringSchema = decimalStringSchema.refine(
   (value) => Number(value) > 0,
   "Must be a decimal string > 0",
 );
 
-/** Zero or positive decimal string — for fees, counts-as-amounts. */
+/** Zero or positive decimal string - for fees, counts-as-amounts. */
 export const nonNegativeDecimalStringSchema = decimalStringSchema.refine(
   (value) => Number(value) >= 0,
   "Must be a decimal string >= 0",
@@ -79,7 +79,7 @@ export type UuidString = z.infer<typeof uuidSchema>;
 // ── JSON columns ─────────────────────────────────────────────────────────────
 
 /**
- * Mirror of Prisma's `Json` column type — strictly typed, no `any`.
+ * Mirror of Prisma's `Json` column type - strictly typed, no `any`.
  * Used for columns the spec leaves schema-free: `checklistSnap`, `params`,
  * `payload`, `context`, `detectionHint`, `annotations`, `errorLog`.
  */
@@ -98,11 +98,11 @@ export const jsonValueSchema: z.ZodType<JsonValue> = z.lazy(() =>
     z.boolean(),
     z.null(),
     z.array(jsonValueSchema),
-    z.record(jsonValueSchema),
+    z.record(z.string(), jsonValueSchema),
   ]),
 );
 
 /** Object-shaped JSON column (keys are strings). */
-export const jsonObjectSchema = z.record(jsonValueSchema);
+export const jsonObjectSchema = z.record(z.string(), jsonValueSchema);
 
 export type JsonObject = { [key: string]: JsonValue };

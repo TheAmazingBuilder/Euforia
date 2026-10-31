@@ -1,11 +1,11 @@
 /**
- * Calendar bounded context (B7) — the trading-calendar overlay: eco events
+ * Calendar bounded context (B7) - the trading-calendar overlay: eco events
  * (deterministic synthetic macro source, §68-honest), marked blocks
  * (day offs / news pauses) and the server-computed view with per-day
  * journal + discipline aggregates.
  *
  * Dependency graph (acyclic):
- *   CalendarModule → CalendarRepository (own Prisma boundary — block rows)
+ *   CalendarModule → CalendarRepository (own Prisma boundary - block rows)
  *                  → TradesModule (journal facts per day)
  *                  → DisciplineModule (daily scores + violations per day)
  *                  → SettingsModule (risk guard-line: dailyLossLimitPct)

@@ -1,15 +1,15 @@
 /**
- * e2e — OANDA adapter lifecycle over a LOCAL fixture server (Phase 03).
+ * e2e - OANDA adapter lifecycle over a LOCAL fixture server (Phase 03).
  *
  * The OANDA v20 REST adapter is exercised end-to-end against the REAL
  * AppModule + real database + real AES-GCM credential vault + real zod
- * boundaries — the ONLY difference from production being the transport:
+ * boundaries - the ONLY difference from production being the transport:
  * a local node:http fixture server that answers with REALISTIC v20 payload
  * shapes (decimal strings, nanosecond timestamps, signed units).
  *
  * HONESTY LABEL: fixture evidence. This proves the ADAPTER + ORCHESTRATION +
  * PERSISTENCE pipeline; it is NEVER evidence of real OANDA connectivity
- * (that requires the user-provided practice token — U2, deferred to the
+ * (that requires the user-provided practice token - U2, deferred to the
  * validation runbook in the phase report).
  */
 import { createServer, type Server } from "node:http";
@@ -191,7 +191,7 @@ function startOandaFixture(): Promise<Server> {
       });
       return;
     }
-    // Phase 05 — the time-based listing returns PAGE URLS (idrange), never
+    // Phase 05 - the time-based listing returns PAGE URLS (idrange), never
     // rows (verified developer.oanda.com/rest-live-v20/transaction-ep,
     // 2026-10-13). The rows come from the idrange page(s).
     if (url.startsWith(`/v3/accounts/${encodeURIComponent(OANDA_ACCOUNT_ID)}/transactions?pageSize=`)) {
@@ -244,7 +244,7 @@ let auth: Record<string, string>;
 beforeAll(async () => {
   fixture = await startOandaFixture();
   const { port } = fixture.address() as AddressInfo;
-  // Set BEFORE buildTestApp — the config is validated at boot.
+  // Set BEFORE buildTestApp - the config is validated at boot.
   process.env.ACCOUNTS_OANDA_PROVIDER = "enabled";
   process.env.ACCOUNTS_OANDA_REST_URL = `http://127.0.0.1:${port}`;
   process.env.ACCOUNTS_MOCK_PROVIDER = "enabled";
@@ -269,7 +269,7 @@ const CONNECT = {
   credentials: { method: "API_KEY", secret: "fixture-personal-access-token" },
 };
 
-describe("oanda-v20 over the fixture server — registry", () => {
+describe("oanda-v20 over the fixture server - registry", () => {
   it("lists oanda-v20 as a REAL provider (isMock false, V2 capability set)", async () => {
     const res = await app.inject({ method: "GET", url: "/api/v1/accounts/providers", headers: auth });
     expect(res.statusCode).toBe(200);
@@ -286,7 +286,7 @@ describe("oanda-v20 over the fixture server — registry", () => {
   });
 });
 
-describe("oanda-v20 over the fixture server — connect → initial sync → reads", () => {
+describe("oanda-v20 over the fixture server - connect → initial sync → reads", () => {
   let accountId: string;
 
   it("connect persists the account, encrypts the token, and the initial sync COMPLETED", async () => {
@@ -300,7 +300,7 @@ describe("oanda-v20 over the fixture server — connect → initial sync → rea
     // Initial sync ran inside connect: full success over the fixture.
     expect(parsed.account.synchronization.lastRun?.status).toBe("COMPLETED");
     expect(parsed.account.snapshot).not.toBeNull();
-    // Vault hint only — the token never appears.
+    // Vault hint only - the token never appears.
     expect(JSON.stringify(parsed)).not.toContain("fixture-personal-access-token");
   });
 
@@ -355,7 +355,7 @@ describe("oanda-v20 over the fixture server — connect → initial sync → rea
     });
   });
 
-  it("repeated syncs are idempotent — same counts, no duplicate rows", async () => {
+  it("repeated syncs are idempotent - same counts, no duplicate rows", async () => {
     const first = await app.inject({ method: "POST", url: `/api/v1/accounts/${accountId}/sync`, headers: auth });
     expect(first.statusCode).toBe(200);
     const firstRun = tradingAccountSyncResponseSchema.parse(first.json()).run;
@@ -373,7 +373,7 @@ describe("oanda-v20 over the fixture server — connect → initial sync → rea
   });
 });
 
-describe("oanda-v20 over the fixture server — PARTIAL run (doc B §8.2)", () => {
+describe("oanda-v20 over the fixture server - PARTIAL run (doc B §8.2)", () => {
   let accountId: string;
 
   beforeAll(async () => {
@@ -383,7 +383,7 @@ describe("oanda-v20 over the fixture server — PARTIAL run (doc B §8.2)", () =
       headers: auth,
       payload: { ...CONNECT, externalAccountId: OANDA_ACCOUNT_ID, displayName: "OANDA Partial Scenario" },
     });
-    // Duplicate (same user+provider+external id) — reuse the first account.
+    // Duplicate (same user+provider+external id) - reuse the first account.
     accountId = res.statusCode === 201 ? (tradingAccountDetailsResponseSchema.parse(res.json()).account.id) : (await (async () => {
       const list = await app.inject({ method: "GET", url: "/api/v1/trading-accounts", headers: auth });
       const body = list.json() as { accounts: Array<{ id: string }> };
@@ -395,7 +395,7 @@ describe("oanda-v20 over the fixture server — PARTIAL run (doc B §8.2)", () =
     state.failOrdersWith429 = true;
     try {
       const res = await app.inject({ method: "POST", url: `/api/v1/accounts/${accountId}/sync`, headers: auth });
-      // Partial throws nothing — the honest representation IS the run.
+      // Partial throws nothing - the honest representation IS the run.
       expect(res.statusCode).toBe(200);
       const parsed = tradingAccountSyncResponseSchema.parse(res.json());
       expect(parsed.run.status).toBe("PARTIAL");
@@ -422,7 +422,7 @@ describe("oanda-v20 over the fixture server — PARTIAL run (doc B §8.2)", () =
   });
 });
 
-describe("oanda-v20 over the fixture server — credential rejection", () => {
+describe("oanda-v20 over the fixture server - credential rejection", () => {
   it("connect with a rejected token → 422 INVALID_CREDENTIALS, nothing persisted, error text sanitized", async () => {
     const res = await app.inject({
       method: "POST",
@@ -454,9 +454,9 @@ describe("oanda-v20 over the fixture server — credential rejection", () => {
   });
 });
 
-// ── Phase 05 — incremental checkpoint, reconciliation, scheduler, history ────
+// ── Phase 05 - incremental checkpoint, reconciliation, scheduler, history ────
 
-describe("oanda-v20 over the fixture server — Phase 05 incremental checkpoint", () => {
+describe("oanda-v20 over the fixture server - Phase 05 incremental checkpoint", () => {
   let accountId: string;
 
   beforeAll(async () => {
@@ -464,7 +464,7 @@ describe("oanda-v20 over the fixture server — Phase 05 incremental checkpoint"
     const body = list.json() as { accounts: Array<{ id: string }> };
     accountId = body.accounts[0]?.id ?? "";
     // The credential-rejection scenario above deliberately left the shared
-    // account's connection in ERROR (auth-class) — restore it: the Phase 05
+    // account's connection in ERROR (auth-class) - restore it: the Phase 05
     // scenarios exercise sync behavior, not the revocation lifecycle.
     const prisma = app.get(PrismaService);
     await prisma.tradingConnection.update({
@@ -479,7 +479,7 @@ describe("oanda-v20 over the fixture server — Phase 05 incremental checkpoint"
     expect(connection?.dealsCheckpoint).toBe(LAST_INITIAL_TXN_ID);
     // The INITIAL run performed the documented pages → idrange pull; later
     // runs (e.g. the credential-rejection FAILED run) legitimately carry a
-    // null progress field — the checkpoint belongs to the run that observed.
+    // null progress field - the checkpoint belongs to the run that observed.
     const run = await prisma.tradingSyncRun.findFirst({
       where: { accountId, trigger: "INITIAL" },
     });
@@ -508,7 +508,7 @@ describe("oanda-v20 over the fixture server — Phase 05 incremental checkpoint"
       const parsed = tradingAccountSyncResponseSchema.parse(res.json());
       expect(parsed.run.status).toBe("COMPLETED");
       // Incremental: exactly ONE new deal (the pre-checkpoint rows are not
-      // re-fetched — the documented sinceid cursor).
+      // re-fetched - the documented sinceid cursor).
       expect(parsed.run.dealsUpserted).toBe(1);
       const prisma = app.get(PrismaService);
       const run = await prisma.tradingSyncRun.findUnique({ where: { id: parsed.run.id } });
@@ -532,7 +532,7 @@ describe("oanda-v20 over the fixture server — Phase 05 incremental checkpoint"
   });
 });
 
-describe("oanda-v20 over the fixture server — Phase 05 position reconciliation", () => {
+describe("oanda-v20 over the fixture server - Phase 05 position reconciliation", () => {
   let accountId: string;
 
   beforeAll(async () => {
@@ -540,7 +540,7 @@ describe("oanda-v20 over the fixture server — Phase 05 position reconciliation
     const body = list.json() as { accounts: Array<{ id: string }> };
     accountId = body.accounts[0]?.id ?? "";
     // The credential-rejection scenario above deliberately left the shared
-    // account's connection in ERROR (auth-class) — restore it: the Phase 05
+    // account's connection in ERROR (auth-class) - restore it: the Phase 05
     // scenarios exercise sync behavior, not the revocation lifecycle.
     const prisma = app.get(PrismaService);
     await prisma.tradingConnection.update({
@@ -561,7 +561,7 @@ describe("oanda-v20 over the fixture server — Phase 05 position reconciliation
       expect(tradingPositionsResponseSchema.parse(positions.json()).positions).toHaveLength(0);
 
       // History is preserved: the row remains, marked CLOSED with an
-      // observation timestamp — never deleted (§6.4).
+      // observation timestamp - never deleted (§6.4).
       const prisma = app.get(PrismaService);
       const row = await prisma.tradingPosition.findUnique({
         where: { accountId_externalPositionId: { accountId, externalPositionId: "2344" } },
@@ -590,7 +590,7 @@ describe("oanda-v20 over the fixture server — Phase 05 position reconciliation
   });
 });
 
-describe("oanda-v20 over the fixture server — Phase 05 scheduler + recovery", () => {
+describe("oanda-v20 over the fixture server - Phase 05 scheduler + recovery", () => {
   let accountId: string;
 
   beforeAll(async () => {
@@ -598,7 +598,7 @@ describe("oanda-v20 over the fixture server — Phase 05 scheduler + recovery", 
     const body = list.json() as { accounts: Array<{ id: string }> };
     accountId = body.accounts[0]?.id ?? "";
     // The credential-rejection scenario above deliberately left the shared
-    // account's connection in ERROR (auth-class) — restore it: the Phase 05
+    // account's connection in ERROR (auth-class) - restore it: the Phase 05
     // scenarios exercise sync behavior, not the revocation lifecycle.
     const prisma = app.get(PrismaService);
     await prisma.tradingConnection.update({
@@ -614,7 +614,7 @@ describe("oanda-v20 over the fixture server — Phase 05 scheduler + recovery", 
         accountId,
         trigger: "MANUAL",
         status: "RUNNING",
-        startedAt: new Date(Date.now() - 10 * 60_000), // 10 min old — past any watchdog
+        startedAt: new Date(Date.now() - 10 * 60_000), // 10 min old - past any watchdog
       },
     });
     const res = await app.inject({ method: "POST", url: `/api/v1/accounts/${accountId}/sync`, headers: auth });
@@ -660,7 +660,7 @@ describe("oanda-v20 over the fixture server — Phase 05 scheduler + recovery", 
   });
 });
 
-describe("oanda-v20 over the fixture server — Phase 05 history endpoint contract", () => {
+describe("oanda-v20 over the fixture server - Phase 05 history endpoint contract", () => {
   let accountId: string;
 
   beforeAll(async () => {
@@ -668,7 +668,7 @@ describe("oanda-v20 over the fixture server — Phase 05 history endpoint contra
     const body = list.json() as { accounts: Array<{ id: string }> };
     accountId = body.accounts[0]?.id ?? "";
     // The credential-rejection scenario above deliberately left the shared
-    // account's connection in ERROR (auth-class) — restore it: the Phase 05
+    // account's connection in ERROR (auth-class) - restore it: the Phase 05
     // scenarios exercise sync behavior, not the revocation lifecycle.
     const prisma = app.get(PrismaService);
     await prisma.tradingConnection.update({

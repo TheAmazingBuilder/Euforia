@@ -12,14 +12,15 @@ import { queryKeys } from "@/lib/api/keys";
 
 /**
  * Monitoring hooks. The overview is one aggregate of observed state, polled
- * lightly (§18) — 12 s interval, no focus refetch storms. Threshold updates
+ * lightly (§18) - 12 s interval, no focus refetch storms. Threshold updates
  * and manual job runs invalidate the aggregate onSettled (failures change
  * the engine state too: failed runs land in the job ledger).
  */
 
-export function useMonitoringOverview() {
+export function useMonitoringOverview(options: { enabled?: boolean } = {}) {
   return useQuery({
     queryKey: queryKeys.monitoring,
+    enabled: options.enabled ?? true,
     queryFn: () => apiRequest<MonitoringOverviewResponse>(apiPaths.monitoringOverview),
     refetchInterval: 12_000,
     refetchOnWindowFocus: false,

@@ -3,12 +3,12 @@ import { currencySchema } from "../enums";
 import { dateKeySchema, decimalStringSchema, isoDateTimeSchema } from "./primitives";
 
 /**
- * WeeklyReport — the auto-generated weekly rollup (GET /stats/weekly).
+ * WeeklyReport - the auto-generated weekly rollup (GET /stats/weekly).
  * Entirely SERVER-CALCULATED from closed trades over a Monday→Sunday window:
  * the client only picks the week, never derives aggregates.
  */
 
-/** One trading day of the week, zero-filled — fuels the daily P&L bars. */
+/** One trading day of the week, zero-filled - fuels the daily P&L bars. */
 export const weekDayPointSchema = z.object({
   date: dateKeySchema,
   /** Short weekday label ("Mon"…"Sun"), pre-rendered server-side. */
@@ -42,7 +42,7 @@ export const weekInstrumentRowSchema = z.object({
 
 export type WeekInstrumentRow = z.infer<typeof weekInstrumentRowSchema>;
 
-/** Auto-insight line ≤4 — tone drives the dot color, text stays honest. */
+/** Auto-insight line ≤4 - tone drives the dot color, text stays honest. */
 export const weekInsightSchema = z.object({
   tone: z.enum(["positive", "negative", "neutral"]),
   text: z.string().min(1),

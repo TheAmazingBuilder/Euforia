@@ -80,7 +80,7 @@ function toggleTwoFactor(): TwoFactorToggleResponse {
 function revokeSession(sessionId: string): RevokeSessionResponse {
   const index = securityState.sessions.findIndex((s) => s.id === sessionId);
   if (index === -1) throw new MockError(404, "Session not found");
-  if (securityState.sessions[index]!.current) throw new MockError(409, "The current session cannot be revoked — sign out instead.");
+  if (securityState.sessions[index]!.current) throw new MockError(409, "The current session cannot be revoked - sign out instead.");
   securityState.sessions.splice(index, 1);
   return { id: sessionId, revoked: true };
 }
@@ -89,7 +89,7 @@ function securityLog(): SecurityLogResponse {
   const events: SecurityEvent[] = [
     { id: "sev_1", type: "security", label: "Password changed", detail: null, createdAt: securityState.passwordLastChangedAt },
     { id: "sev_2", type: "security", label: "Sign-in from Lisbon failed", detail: "Unknown device · Linux", createdAt: daysAgoIso(3.4) },
-    { id: "sev_3", type: "trade", label: `Trade captured — ${symbolOf(data.trades[data.trades.length - 1]!)}`, detail: "Session runner", createdAt: daysAgoIso(0.1) },
+    { id: "sev_3", type: "trade", label: `Trade captured - ${symbolOf(data.trades[data.trades.length - 1]!)}`, detail: "Session runner", createdAt: daysAgoIso(0.1) },
     { id: "sev_4", type: "grade", label: "Decision graded A", detail: "Pre-decision gate respected", createdAt: daysAgoIso(0.5) },
     { id: "sev_5", type: "system", label: "Nightly backup completed", detail: "JSON snapshot, 412 KB", createdAt: daysAgoIso(1) },
   ];

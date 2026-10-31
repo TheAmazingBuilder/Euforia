@@ -1,8 +1,8 @@
 /**
- * e2e — Calculators API (Phase 18 §45/§46/§60/§61): access control, contract
+ * e2e - Calculators API (Phase 18 §45/§46/§60/§61): access control, contract
  * shape, validation, negative security (forged identifiers, formula
  * injection, NaN/Infinity, oversized requests), determinism/isolation and
- * the zero-persistence guarantee — against the real AppModule.
+ * the zero-persistence guarantee - against the real AppModule.
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { NestFastifyApplication } from "@nestjs/platform-fastify";
@@ -77,12 +77,12 @@ describe("POST /calculators/lot-size (§60)", () => {
     expect(body.realizedRiskAmount).toBe("100");
     expect(body.volumeAdjustment).toBe("NONE");
     expect(body.status).toBe("VALID");
-    // §53 — a calculation result is NOT a persisted record: no identity, no timestamps.
+    // §53 - a calculation result is NOT a persisted record: no identity, no timestamps.
     expect(res.json().id).toBeUndefined();
     expect(res.json().createdAt).toBeUndefined();
   });
 
-  it("strips unknown fields and stays mass-assignment-safe (§61 — repo convention)", async () => {
+  it("strips unknown fields and stays mass-assignment-safe (§61 - repo convention)", async () => {
     const user = await authenticatedUser(app, mail);
     const forged = await app.inject({
       method: "POST",
@@ -184,7 +184,7 @@ describe("POST /calculators/compounding (§60)", () => {
     expect(body.finalBalance).toBe("1331");
     expect(body.totalProfit).toBe("331");
     expect(body.totalGainPercentage).toBe("33.1");
-    // §53 — no persistence: the result is a pure projection, not a record.
+    // §53 - no persistence: the result is a pure projection, not a record.
     expect(res.json().id).toBeUndefined();
   });
 
@@ -226,7 +226,7 @@ describe("POST /calculators/compounding (§60)", () => {
 });
 
 describe("determinism & isolation (§46)", () => {
-  it("produces identical results for different users — no cross-user surface exists", async () => {
+  it("produces identical results for different users - no cross-user surface exists", async () => {
     const a = await authenticatedUser(app, mail);
     const b = await authenticatedUser(app, mail);
     const aOne = await app.inject({ method: "POST", url: LOT_SIZE_URL, headers: a.authHeader, payload: VALID_LOT_SIZE });
@@ -245,8 +245,8 @@ describe("determinism & isolation (§46)", () => {
   });
 });
 
-describe("negative capability — Calculators cannot act (§43/§61)", () => {
-  it("exposes only the two calculation routes — no GET/mutation/persistence surface", async () => {
+describe("negative capability - Calculators cannot act (§43/§61)", () => {
+  it("exposes only the two calculation routes - no GET/mutation/persistence surface", async () => {
     const user = await authenticatedUser(app, mail);
     for (const [method, url] of [
       ["GET", LOT_SIZE_URL],

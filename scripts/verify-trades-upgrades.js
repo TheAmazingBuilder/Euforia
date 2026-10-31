@@ -1,5 +1,5 @@
 /**
- * Verify — Trades module upgrades (4 user-selected features).
+ * Verify - Trades module upgrades (4 user-selected features).
  *  1. Saved views: named (filters + columns) presets, apply / active badge / delete
  *  2. CSV import: broker presets, auto column mapping, preview, idempotent submit
  *  3. Bulk actions: tag + grade + delete multiple trades in one round-trip
@@ -23,7 +23,7 @@ const slug = (name) => name.replace(/[^a-z0-9]+/gi, "-").toLowerCase();
 
   const results = [];
   const check = (name, ok, extra = "") =>
-    results.push(`${ok ? "PASS" : "FAIL"} — ${name}${extra ? ` (${extra})` : ""}`);
+    results.push(`${ok ? "PASS" : "FAIL"} - ${name}${extra ? ` (${extra})` : ""}`);
 
   const thCount = async () => page.locator('[data-testid="trades-table"] thead th').count();
   const paginationTotal = async () => {
@@ -36,7 +36,7 @@ const slug = (name) => name.replace(/[^a-z0-9]+/gi, "-").toLowerCase();
     const count = await toasts.count();
     return count === 0 ? "" : (await toasts.nth(count - 1).textContent()) ?? "";
   };
-  /** Sonner stacks toasts — look for the one that carries the expected text. */
+  /** Sonner stacks toasts - look for the one that carries the expected text. */
   const waitForToast = async (text, timeout = 5000) => {
     try {
       await page.waitForSelector(`[data-sonner-toast]:has-text("${text}")`, { timeout });
@@ -74,7 +74,7 @@ const slug = (name) => name.replace(/[^a-z0-9]+/gi, "-").toLowerCase();
   await page.keyboard.press("Escape");
   await page.waitForTimeout(300);
 
-  // ── 2. Saved views — save with Losses filter + Duration hidden ─────────────
+  // ── 2. Saved views - save with Losses filter + Duration hidden ─────────────
   await page.locator('[data-testid="trades-filter-outcome"]').click();
   await page.waitForTimeout(300);
   await page.getByRole("option", { name: "Losses" }).click();
@@ -123,7 +123,7 @@ const slug = (name) => name.replace(/[^a-z0-9]+/gi, "-").toLowerCase();
   await page.keyboard.press("Escape");
   await page.waitForTimeout(300);
 
-  // ── 5. Bulk actions — tag + grade + delete (one POST /trades/bulk each) ────
+  // ── 5. Bulk actions - tag + grade + delete (one POST /trades/bulk each) ────
   await page.locator('[data-testid="trades-filter-reset"]').click();
   await page.waitForTimeout(600);
   const closedRows = page.locator('[data-testid="trades-row"]:not(:has(.stamp-accent))');
@@ -134,7 +134,7 @@ const slug = (name) => name.replace(/[^a-z0-9]+/gi, "-").toLowerCase();
   await page.waitForTimeout(400);
   check("Bulk bar shows 2 selected", (await page.locator('[data-testid="trades-bulk-bar"]').textContent())?.includes("2 selected") ?? false);
 
-  // Tag — Add tag → first tag in the catalog.
+  // Tag - Add tag → first tag in the catalog.
   const tagResponse = page.waitForResponse((resp) => resp.url().includes("/trades/bulk") && resp.request().method() === "POST");
   await page.locator('[data-testid="trades-bulk-tag"]').click();
   await page.waitForTimeout(300);
@@ -145,7 +145,7 @@ const slug = (name) => name.replace(/[^a-z0-9]+/gi, "-").toLowerCase();
   check("Bulk TAG round-trip ok", tagResp.ok(), `status=${tagResp.status()}`);
   check("Bulk TAG toast", await waitForToast("tagged"));
 
-  // Grade — A on closed trades.
+  // Grade - A on closed trades.
   const gradeResponse = page.waitForResponse((resp) => resp.url().includes("/trades/bulk") && resp.request().method() === "POST");
   await page.locator('[data-testid="trades-bulk-grade"]').click();
   await page.waitForTimeout(300);
@@ -161,12 +161,12 @@ const slug = (name) => name.replace(/[^a-z0-9]+/gi, "-").toLowerCase();
 
   await page.screenshot({ path: "scripts/shots/trades-upgrades-bulk.png" });
 
-  // Bulk delete of the same two rows would eat seed data — use Clear instead.
+  // Bulk delete of the same two rows would eat seed data - use Clear instead.
   await page.locator('[data-testid="trades-bulk-clear"]').click();
   await page.waitForTimeout(300);
   check("Clear empties the selection", (await page.locator('[data-testid="trades-bulk-bar"]').count()) === 0);
 
-  // ── 6. CSV import — sample, auto-mapping, idempotent submit ────────────────
+  // ── 6. CSV import - sample, auto-mapping, idempotent submit ────────────────
   const beforeImport = await paginationTotal();
   await page.locator('[data-testid="trades-import-open"]').click();
   await page.waitForTimeout(500);
@@ -183,7 +183,7 @@ const slug = (name) => name.replace(/[^a-z0-9]+/gi, "-").toLowerCase();
   await page.locator('[data-testid="trades-import-submit"]').click();
   const importResp = await importResponse;
   const importBody = await importResp.json();
-  check("Import POST ok — 5 imported", importResp.ok() && importBody.imported === 5, `imported=${importBody.imported} dupes=${importBody.skippedDuplicates}`);
+  check("Import POST ok - 5 imported", importResp.ok() && importBody.imported === 5, `imported=${importBody.imported} dupes=${importBody.skippedDuplicates}`);
   check("Import success toast", await waitForToast("Imported 5"));
   const afterImport = await paginationTotal();
   check("Ledger grew by 5 trades", afterImport === beforeImport + 5, `${beforeImport} → ${afterImport}`);

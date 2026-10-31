@@ -15,7 +15,7 @@ import {
 } from "@/lib/dashboard-customization/insights-view";
 
 /**
- * Behavioral insights widget (Phase 05 §9D) — deterministic, rule-based
+ * Behavioral insights widget (Phase 05 §9D) - deterministic, rule-based
  * findings computed INSIDE the analytics suite (no AI/ML/LLM anywhere).
  * Each finding ships its observation count, reliability label and analyzed
  * period; the methodology footnotes explain the thresholds so no label is
@@ -38,7 +38,7 @@ export function BehavioralInsightsWidget({
         <div className="min-w-0 space-y-1">
           <CardTitle className="font-heading text-base font-semibold">Behavioral insights</CardTitle>
           <CardDescription className="text-xs">
-            Rule-based observations over the filtered journal — measured facts, never diagnoses or predictions.
+            Rule-based observations over the filtered journal - measured facts, never diagnoses or predictions.
           </CardDescription>
         </div>
       </CardHeader>

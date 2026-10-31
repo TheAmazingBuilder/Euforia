@@ -26,7 +26,7 @@ import { useOryonIndicators } from "@/components/oryon/oryon-indicators-context"
  * that spans two domains:
  *  - applying a chart template = plan (pure) → replace the TARGET panel's
  *    (the ACTIVE chart's) indicator stack through the indicator registry
- *    (loadAll — one commit, the series manager diffs by id, no chart
+ *    (loadAll - one commit, the series manager diffs by id, no chart
  *    reinitialization) → patch that panel's chart fields through the
  *    config store. Applying a template never rewrites another panel's
  *    configuration (Phase 7 spec §12);
@@ -35,16 +35,16 @@ import { useOryonIndicators } from "@/components/oryon/oryon-indicators-context"
  *  - saving a LAYOUT = capture every panel's stack through the store's
  *    capture hook; switching/restoring a layout = apply the record's
  *    per-panel stacks through the same registry (null = "not managed by
- *    this layout" — the live stack is left untouched).
+ *    this layout" - the live stack is left untouched).
  *
- * The store hydrates from browser-local persistence in a mount effect —
+ * The store hydrates from browser-local persistence in a mount effect -
  * server render and first client render stay identical (no hydration
  * mismatch), the persisted arrangement lands one frame later, before the
  * chart engines initialize (they wait for the instrument catalog anyway).
  *
  * Drawings, price alerts and positions are NOT wired here on purpose:
  * they live in their own providers/stores, and applying a layout or
- * template must never reach them (spec §11 — structurally guaranteed).
+ * template must never reach them (spec §11 - structurally guaranteed).
  */
 
 export interface TemplateApplyReport {
@@ -61,7 +61,7 @@ export interface OryonWorkspaceConfigContextValue {
   saveCurrentTemplate: (name: string) => WorkspaceOpResult;
   /**
    * Switches to a saved layout (or null = the default) AND applies its
-   * per-panel indicator stacks — the full orchestrated switch the menus
+   * per-panel indicator stacks - the full orchestrated switch the menus
    * call (the store alone owns the session; stacks live in the registry).
    */
   applySavedLayout: (id: string | null) => void;
@@ -77,7 +77,7 @@ export function OryonWorkspaceConfigProvider({ children }: { children: React.Rea
   /**
    * Wires the layout-save indicator capture: the store asks the registry
    * for each panel's CURRENT stack when the user explicitly saves a
-   * layout. A missing store (panel not mounted yet) records null — "not
+   * layout. A missing store (panel not mounted yet) records null - "not
    * managed", never a fabricated empty stack.
    */
   React.useEffect(() => {
@@ -90,7 +90,7 @@ export function OryonWorkspaceConfigProvider({ children }: { children: React.Rea
 
   /**
    * Applies a v2 layout record's per-panel indicator stacks through the
-   * registry. `null` = "not managed by this layout" — the panel's live
+   * registry. `null` = "not managed by this layout" - the panel's live
    * stack is left untouched (v1 heritage, honest partial semantics).
    */
   const applyPanelStacks = React.useCallback(
@@ -104,12 +104,12 @@ export function OryonWorkspaceConfigProvider({ children }: { children: React.Rea
     [indicatorRegistry],
   );
 
-  // Hydrate once per workspace mount (after first paint — hydration-safe).
+  // Hydrate once per workspace mount (after first paint - hydration-safe).
   React.useEffect(() => {
     store.hydrate();
     // Restore the active layout's per-panel indicator stacks (Phase 7):
     // panels whose record manages a stack get it applied through the
-    // validated store path (loadAll — ids preserved, no duplicates).
+    // validated store path (loadAll - ids preserved, no duplicates).
     const { layouts, activeLayoutId } = store.getSnapshot();
     const active = activeLayoutId !== null ? layouts.find((l) => l.id === activeLayoutId) : undefined;
     if (active !== undefined) applyPanelStacks(active);
@@ -127,7 +127,7 @@ export function OryonWorkspaceConfigProvider({ children }: { children: React.Rea
       const template = snapshot.templates.find((t) => t.id === id);
       if (template === undefined) return null;
 
-      // Plan against the SAME business rules the live chart enforces —
+      // Plan against the SAME business rules the live chart enforces -
       // unsupported/invalid entries are dropped and REPORTED, never silent.
       const plan = planTemplateApply(template, indicatorRuleError);
       const activePanelId = snapshot.session.activePanelId;

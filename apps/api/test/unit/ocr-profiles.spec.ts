@@ -1,5 +1,5 @@
 /**
- * Unit — Account & Chart profile logic (Recognition V1.1): per-profile
+ * Unit - Account & Chart profile logic (Recognition V1.1): per-profile
  * required-field floors, chart quote geometry, account decimal semantics,
  * PROFILE_TYPE_MISMATCH derivation. Pure ocr.logic vectors (no DB, no app).
  */
@@ -71,7 +71,7 @@ describe("chart quote geometry (domain validation)", () => {
 });
 
 describe("account decimals (correction semantics)", () => {
-  it("a negative balance stays VALID — a blown account is a truthful snapshot", () => {
+  it("a negative balance stays VALID - a blown account is a truthful snapshot", () => {
     const fields = applyDomainValidation([field("accountBalance", "-5.00")]);
     expect(fields[0]!.validationStatus).toBe("VALID");
   });

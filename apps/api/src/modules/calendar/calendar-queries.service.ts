@@ -1,5 +1,5 @@
 /**
- * Calendar public read port (Phase 13 §34-§37) — the ONLY sanctioned
+ * Calendar public read port (Phase 13 §34-§37) - the ONLY sanctioned
  * surface other bounded contexts consume. Consumers (Session Live,
  * Analytics, Nofy, Integrations Hub) read normalized canonical events
  * through this port; NONE of them may create a second economic-event
@@ -7,9 +7,9 @@
  *
  * READ-ONLY by construction: no DOMAIN write capability exists here. The
  * Phase 14 Hub projection triggers the SAME lazy freshness sync the
- * /eco-events route uses (TTL-throttled, in-flight-locked, idempotent) —
+ * /eco-events route uses (TTL-throttled, in-flight-locked, idempotent) -
  * a cache-refresh, never a caller-directed mutation. All projections are
- * narrow — no Prisma types out.
+ * narrow - no Prisma types out.
  */
 import { Inject, Injectable } from "@nestjs/common";
 
@@ -28,7 +28,7 @@ export interface CalendarEventRef {
 }
 
 /**
- * Phase 14 — Integrations Hub projection row (§29 cross-context contract):
+ * Phase 14 - Integrations Hub projection row (§29 cross-context contract):
  * the canonical event PLUS its provenance pair, so the Hub can build the
  * shared `providerKey` identity (`${provider}:${providerEventId}`). No other
  * consumer uses this shape; the Hub never touches Calendar tables directly.
@@ -52,7 +52,7 @@ export class CalendarQueriesService {
   constructor(
     private readonly repository: CalendarRepository,
     /** Phase 14: freshness trigger for the Hub projection (lazy, TTL-held,
-     * in-flight-locked — the port stays semantically read-only). */
+     * in-flight-locked - the port stays semantically read-only). */
     private readonly calendar: CalendarService,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
   ) {}
@@ -77,7 +77,7 @@ export class CalendarQueriesService {
 
   /**
    * Analytics §21 (economic-event context): canonical events over the
-   * SYNC window — the pure engine performs the phase/impact correlation
+   * SYNC window - the pure engine performs the phase/impact correlation
    * against instrument quote currencies.
    */
   async listSyncWindowEventsForCorrelation(): Promise<
@@ -94,7 +94,7 @@ export class CalendarQueriesService {
 
   /**
    * Nofy reference picker (mock parity: the first 40 chronological
-   * canonical events — bounded scan, never unbounded).
+   * canonical events - bounded scan, never unbounded).
    */
   async listPickerEvents(limit: number): Promise<CalendarEventRef[]> {
     const rows = await this.repository.listEventsAscending(limit);
@@ -108,8 +108,8 @@ export class CalendarQueriesService {
   }
 
   /**
-   * Phase 14 — Integrations Hub eco feed: the canonical feed WITH provenance,
-   * freshest state guaranteed (runs the lazy freshness sync first — same TTL
+   * Phase 14 - Integrations Hub eco feed: the canonical feed WITH provenance,
+   * freshest state guaranteed (runs the lazy freshness sync first - same TTL
    * throttle as /eco-events, so the Hub never serves a colder feed than the
    * Calendar page). Read-your-fresh read model; no second event store.
    */

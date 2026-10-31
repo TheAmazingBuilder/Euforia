@@ -1,5 +1,5 @@
 /**
- * verify-oryon-toolbar3.js — Oryon Drawing toolbar v3 (property editor,
+ * verify-oryon-toolbar3.js - Oryon Drawing toolbar v3 (property editor,
  * R:R, brush + arrow marks, loader fix).
  *
  * Contract under test (browser-observed, dev :3001):
@@ -22,14 +22,14 @@
  *    mobile 390 renders.
  *
  * Run: node scripts/verify-oryon-toolbar3.js  (BASE_URL overridable; dev
- * server on :3001 — debug handles are dev-only).
+ * server on :3001 - debug handles are dev-only).
  */
 const path = require("path");
 const { chromium } = require("playwright");
 const fs = require("fs");
 
 const LOG = path.resolve(__dirname, "oryon-toolbar3-probe.log");
-fs.writeFileSync(LOG, `=== oryon toolbar3 probe — ${new Date().toISOString()} ===\n`);
+fs.writeFileSync(LOG, `=== oryon toolbar3 probe - ${new Date().toISOString()} ===\n`);
 
 const BASE = process.env.BASE_URL || "http://localhost:3001";
 
@@ -200,7 +200,7 @@ async function clearAllDrawings(app) {
   await page.click('[data-testid="oryon-tool-item-brush"]');
   await page.mouse.move(pts.brush1.x, pts.brush1.y);
   await page.mouse.down();
-  // A wandering stroke — many direction changes.
+  // A wandering stroke - many direction changes.
   await page.mouse.move(pts.brush1.x + 60, pts.brush1.y + 40, { steps: 8 });
   await page.mouse.move(pts.brush1.x + 130, pts.brush1.y - 10, { steps: 8 });
   await page.mouse.move(pts.brush2.x, pts.brush2.y, { steps: 10 });
@@ -210,7 +210,7 @@ async function clearAllDrawings(app) {
   const brushObj = dbg && dbg.drawings ? dbg.drawings.find((d) => d.type === "brush") : null;
   ok("brush: persisted ≥ 6 points", brushObj !== null && brushObj.points.length >= 6);
 
-  // Single tap (no drag) — no degenerate brush object.
+  // Single tap (no drag) - no degenerate brush object.
   await page.click('[data-testid="oryon-tool-caret-shapes"]').catch(() => {});
   // Tool disarmed after stroke (TV behavior) → re-arm:
   const brushArmed = await page.locator('[data-testid="oryon-tool-item-brush"]').count();
@@ -345,7 +345,7 @@ async function clearAllDrawings(app) {
   }
   await page.keyboard.press("Escape");
 
-  // ── 7. LOADER FIX — v2/v4 drawings survive reload ─────────────────────────
+  // ── 7. LOADER FIX - v2/v4 drawings survive reload ─────────────────────────
   // Add an `extended` (toolbar-v2 type): arm via trend flyout.
   await page.click('[data-testid="oryon-tool-caret-trend"]');
   await page.waitForSelector('[data-testid="oryon-tool-item-extended"]', { timeout: 5_000 });
@@ -354,7 +354,7 @@ async function clearAllDrawings(app) {
   let toolNow = (await drawingsDebug(page))?.activeTool;
   console.log(`        [debug] activeTool after arming: ${toolNow}`);
   if (toolNow !== "extended") {
-    // One retry (flyout click race) — mechanism, not flakiness, is under test.
+    // One retry (flyout click race) - mechanism, not flakiness, is under test.
     await page.click('[data-testid="oryon-tool-caret-trend"]');
     await page.waitForSelector('[data-testid="oryon-tool-item-extended"]', { timeout: 5_000 });
     await page.click('[data-testid="oryon-tool-item-extended"]');

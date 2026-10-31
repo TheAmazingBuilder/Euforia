@@ -24,11 +24,11 @@ import { apiErrorMessage } from "@/lib/api/client";
 import { useI18n } from "@/i18n/i18n-provider";
 
 /**
- * Trading preferences — DEFAULTS the trade form and session runner open
+ * Trading preferences - DEFAULTS the trade form and session runner open
  * with, never hard limits (enforcement belongs to the Rules Engine).
  * One card = one domain save (PATCH /me/preferences/trading).
  * Machine values stay module-scope (ASSET_CLASSES/TIMEFRAMES/CURRENCIES are
- * rendered verbatim — format-like tokens identical across locales); the
+ * rendered verbatim - format-like tokens identical across locales); the
  * SESSIONS/POSITION_TYPES labels live in dict.settings.trading and resolve
  * at render time.
  */
@@ -77,7 +77,7 @@ export function TradingCard() {
     { value: "", label: L.noDefault },
     ...(instruments.data?.instruments ?? []).map((instrument) => ({
       value: instrument.id,
-      label: `${instrument.symbol} — ${instrument.assetClass}`,
+      label: `${instrument.symbol} - ${instrument.assetClass}`,
     })),
   ];
 
@@ -211,7 +211,7 @@ export function TradingCard() {
         </SettingsRow>
       </div>
 
-      {/* Guardrail — soft-lock the capture form after N violations today */}
+      {/* Guardrail - soft-lock the capture form after N violations today */}
       <SettingsRow
         label={L.guardrailLabel}
         htmlFor="settings-trading-softlock"

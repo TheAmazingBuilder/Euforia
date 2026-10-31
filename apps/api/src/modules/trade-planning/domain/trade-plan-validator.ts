@@ -1,12 +1,12 @@
 /**
- * Pre-trade validation battery (Phase 5 §21) — the domain service that turns
+ * Pre-trade validation battery (Phase 5 §21) - the domain service that turns
  * a plan configuration into STRUCTURED, machine-readable findings
- * (code/severity/field/message — never an opaque "invalid trade").
+ * (code/severity/field/message - never an opaque "invalid trade").
  *
  * Composition: the risk engine (risk-engine.ts) emits configuration findings;
  * this battery adds the checklist gate (§23) and the risk-limit gate (§22),
  * then decides pass/fail: `passed` = zero ERROR findings. WARNINGs never
- * block — they document honest gaps (no target yet, no catalog row for a
+ * block - they document honest gaps (no target yet, no catalog row for a
  * quantity-sized plan).
  *
  * This file is DOMAIN: pure functions over plain data.
@@ -33,13 +33,13 @@ export interface ValidationBatteryInput {
   takeProfit: Decimal | null;
   sizeMode: PlanSizeMode;
   sizeValue: Decimal;
-  /** Account balance snapshot (account currency) — null when unusable. */
+  /** Account balance snapshot (account currency) - null when unusable. */
   balance: Decimal | null;
-  /** Instrument specification — null when the catalog has no row (§15). */
+  /** Instrument specification - null when the catalog has no row (§15). */
   specs: RiskEngineInput["specs"];
-  /** Quote→account conversion multiplier — null when unavailable (§16). */
+  /** Quote→account conversion multiplier - null when unavailable (§16). */
   fxRate: RiskEngineInput["fxRate"];
-  /** Frozen checklist evaluation attached to the plan (§24) — null when none. */
+  /** Frozen checklist evaluation attached to the plan (§24) - null when none. */
   checklist: TradePlanChecklistSnapshot | null;
   /** Account-level limits resolved through the RiskLimitProvider port (§22). */
   limits: RiskLimits;
@@ -54,7 +54,7 @@ export interface ValidationBatteryResult {
 
 /**
  * Run the full battery over one plan configuration.
- * Pure: no I/O, no clock — the caller stamps evaluatedAt.
+ * Pure: no I/O, no clock - the caller stamps evaluatedAt.
  */
 export function runValidationBattery(input: ValidationBatteryInput): ValidationBatteryResult {
   const issues: TradePlanValidationIssue[] = [];
@@ -88,7 +88,7 @@ export function runValidationBattery(input: ValidationBatteryInput): ValidationB
     }
   }
 
-  // ── Risk-limit gate (§22) — only when limits are actually configured ──────
+  // ── Risk-limit gate (§22) - only when limits are actually configured ──────
   if (input.limits.maxRiskPercentPerTrade !== null && risk.riskPercent !== null) {
     if (risk.riskPercent.gt(input.limits.maxRiskPercentPerTrade)) {
       issues.push({
@@ -117,7 +117,7 @@ export function runValidationBattery(input: ValidationBatteryInput): ValidationB
 /**
  * Structural subset of the battery used at CREATE/UPDATE time (§11/§12):
  * these ERROR findings make a configuration meaningless (inverted stop,
- * inverted target, sizing impossible) — such plans are REJECTED at the door
+ * inverted target, sizing impossible) - such plans are REJECTED at the door
  * with 422 instead of being stored with silently broken risk. Everything
  * else (warnings, checklist, limits) is judged by the validate operation.
  */

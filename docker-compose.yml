@@ -6,9 +6,9 @@
 # The web app keeps its own dev workflow (pnpm dev) and is intentionally not
 # containerized in Foundation — revisit at deployment phase.
 #
-# NOTE: the dev sandbox has no Docker; this compose is exercised only in
-# environments that have it. For the embedded dev database used in this
-# sandbox see apps/api/scripts/dev-db.mjs.
+# NOTE: this compose is optional (for environments that have Docker). Local
+# development now targets a developer-provided PostgreSQL on :5432 directly
+# via apps/api/.env - the embedded dev database was removed from the project.
 
 services:
   db:

@@ -10,17 +10,25 @@ import { useCandles } from "@/lib/realtime/market";
 import { useDict } from "@/i18n/i18n-provider";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { OryonPriceChart } from "@/components/oryon/oryon-price-chart";
 import type { OryonChartEngine, OryonChartType } from "@/lib/charting/oryon-chart-engine";
 import type { OryonIndicatorStore } from "@/lib/oryon/indicators/store";
 
+// Perf: the price chart pulls in the whole `lightweight-charts` engine plus
+// every drawing/overlay module. It is client-only anyway (the engine mounts
+// in a useEffect), so code-split it out of the initial route bundle - the
+// panel already renders honest loading states while history resolves, and
+// the lazy chunk simply lands inside that window.
+const OryonPriceChart = React.lazy(() =>
+  import("@/components/oryon/oryon-price-chart").then((m) => ({ default: m.OryonPriceChart })),
+);
+
 /**
- * Oryon chart panel — owns the HISTORY query state and renders the honest
+ * Oryon chart panel - owns the HISTORY query state and renders the honest
  * state machine around the chart: waiting for an instrument, loading
  * history, load failure with retry, empty history, then the live chart.
  * Every state preserves the surrounding workspace (the shell stays put).
  *
- * Phase 7: each panel instance is INDEPENDENT — its own history query
+ * Phase 7: each panel instance is INDEPENDENT - its own history query
  * (TanStack deduplicates identical symbol+interval requests across panels),
  * its own indicator stack and its own drawing set. `interactive` gates the
  * drawing layer; the engine handle surfaces through onEngineReady.
@@ -38,22 +46,22 @@ export function OryonChartPanel({
   onEngineReady,
   onEngineGone,
 }: {
-  /** STABLE panel identity — chart prefs (context-menu Settings) key on it. */
+  /** STABLE panel identity - chart prefs (context-menu Settings) key on it. */
   panelId: string;
   instrument: Instrument | null;
   interval: MarketInterval;
   chartType: OryonChartType;
   magnet: boolean;
-  /** THIS panel's indicator stack (per panel id — Phase 7). */
+  /** THIS panel's indicator stack (per panel id - Phase 7). */
   indicatorStore: OryonIndicatorStore;
-  /** THIS panel's temporal-context prefs (per panel id — Phase 8). */
+  /** THIS panel's temporal-context prefs (per panel id - Phase 8). */
   context: OryonPanelContext;
-  /** THIS panel's analysis prefs (per panel id — Phase 9). */
+  /** THIS panel's analysis prefs (per panel id - Phase 9). */
   analysis: OryonPanelAnalysis;
   /** True while this panel is the workspace's active chart. */
   interactive: boolean;
   onEngineReady?: (engine: OryonChartEngine) => void;
-  /** Engine destroyed (chart unmounted) — mirrors onEngineReady. */
+  /** Engine destroyed (chart unmounted) - mirrors onEngineReady. */
   onEngineGone?: () => void;
 }) {
   const dict = useDict();
@@ -77,7 +85,7 @@ export function OryonChartPanel({
   // keepPreviousData window (instrument/timeframe switch) the chart STAYS
   // mounted showing the previous window: the legend keeps labeling the data
   // ACTUALLY displayed (dataSymbol), live ticks are paused, and an explicit
-  // chip announces the incoming load — nothing is ever mislabeled.
+  // chip announces the incoming load - nothing is ever mislabeled.
   if (history.isPending) {
     return (
       <CenterState testid="oryon-state-loading" spinner message={S.loadingHistory}>
@@ -88,7 +96,7 @@ export function OryonChartPanel({
     );
   }
 
-  // History failed — honest error + retry, workspace stays intact.
+  // History failed - honest error + retry, workspace stays intact.
   if (history.isError) {
     return (
       <CenterState
@@ -135,30 +143,32 @@ export function OryonChartPanel({
           </span>
         </div>
       ) : null}
-      <OryonPriceChart
-        panelId={panelId}
-        dataSymbol={dataSymbol}
-        liveSymbol={history.isPlaceholderData ? null : symbol}
-        interval={interval}
-        chartType={chartType}
-        magnet={magnet}
-        candles={candles}
-        digits={instrument.digits}
-        pipSize={instrument.pipSize}
-        source={source}
-        fitKey={`${symbol}:${interval}`}
-        indicatorStore={indicatorStore}
-        context={context}
-        analysis={analysis}
-        interactive={interactive}
-        onEngineReady={onEngineReady}
-        onEngineGone={onEngineGone}
-      />
+      <React.Suspense fallback={<div className="h-full w-full animate-pulse bg-muted/40" />}>
+        <OryonPriceChart
+          panelId={panelId}
+          dataSymbol={dataSymbol}
+          liveSymbol={history.isPlaceholderData ? null : symbol}
+          interval={interval}
+          chartType={chartType}
+          magnet={magnet}
+          candles={candles}
+          digits={instrument.digits}
+          pipSize={instrument.pipSize}
+          source={source}
+          fitKey={`${symbol}:${interval}`}
+          indicatorStore={indicatorStore}
+          context={context}
+          analysis={analysis}
+          interactive={interactive}
+          onEngineReady={onEngineReady}
+          onEngineGone={onEngineGone}
+        />
+      </React.Suspense>
     </div>
   );
 }
 
-/** Full-area honest state (loading / error / empty) — never a blank canvas. */
+/** Full-area honest state (loading / error / empty) - never a blank canvas. */
 function CenterState({
   testid,
   message,

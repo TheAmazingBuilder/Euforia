@@ -1,19 +1,19 @@
 /**
- * Oryon price-alert domain — unit tests (bun).
+ * Oryon price-alert domain - unit tests (bun).
  *
- * Phase 5 spec §13 "price-alert tests" (pure layer — no DOM, no transport):
+ * Phase 5 spec §13 "price-alert tests" (pure layer - no DOM, no transport):
  *   - valid creation + invalid threshold rejection (store + shared schema)
  *   - crossing policy (spec §6.2): cross-above / cross-below exact semantics
  *   - NO trigger on the first observation already beyond the threshold
  *   - NO repeated trigger from duplicate/equal updates
  *   - out-of-order (stale) observations ignored per symbol
- *   - reconnect handling: feed loss re-primes — a gap is never claimed
+ *   - reconnect handling: feed loss re-primes - a gap is never claimed
  *   - lifecycle: active → triggered (one-shot) → re-arm → active; disabled
  *     records are never evaluated
  *   - exact symbol matching (BTCUSD ≠ BTCUSDT, never a substring)
  *   - overlay specs + structural diff (active-only, idempotent replay)
  *   - browser-local persistence: roundtrip, corrupt JSON, per-record salvage,
- *     debounced write + flush (fake localStorage — the real adapter degrades
+ *     debounced write + flush (fake localStorage - the real adapter degrades
  *     safely when storage is unavailable)
  *
  * Run: bun run scripts/oryon-alert-tests.ts
@@ -74,7 +74,7 @@ const makeInput = (overrides: Partial<AlertCreateInput> = {}): AlertCreateInput 
 
 // ── 1. Décision de croisement pure (spec §6.2 exacte) ───────────────────────
 
-console.log("— crossing : sémantique exacte");
+console.log("- crossing : sémantique exacte");
 ok("cross-above : prev ≤ T et current > T", isCrossing("crosses_above", 1.1, 1.09, 1.11));
 ok("cross-above : prev ÉGAL à T compte (au seuil)", isCrossing("crosses_above", 1.1, 1.1, 1.100001));
 ok("cross-above : current ÉGAL à T ne traverse PAS", !isCrossing("crosses_above", 1.1, 1.09, 1.1));
@@ -86,7 +86,7 @@ ok("valeurs non finies → jamais de croisement", !isCrossing("crosses_above", N
 
 // ── 2. Moteur : priming, doublons, one-shot, reconnect, stale ───────────────
 
-console.log("— moteur d'évaluation : politique complète");
+console.log("- moteur d'évaluation : politique complète");
 const triggers: AlertTriggerEvent[] = [];
 const engine = new OryonAlertEngine();
 engine.setTriggerHandler((event) => triggers.push(event));
@@ -183,7 +183,7 @@ eq("cross-below de bout en bout", belowTriggers.length, 1);
 
 // ── 3. Store : création, validation, cycle de vie ───────────────────────────
 
-console.log("— store d'alertes");
+console.log("- store d'alertes");
 const store = new OryonAlertStore();
 const created = store.add(makeInput());
 ok("création valide → status active", created !== null && created.status === "active");
@@ -217,7 +217,7 @@ ok("cap 100 → la 101e création est refusée", big.alerts.length === 100 && ov
 
 // ── 4. Schéma partagé : roundtrip + rejets ──────────────────────────────────
 
-console.log("— schéma partagé");
+console.log("- schéma partagé");
 eq("roundtrip Zod", oryonAlertSchema.safeParse(makeAlert()).success, true);
 ok("seuil string rejeté", !oryonAlertSchema.safeParse(makeAlert({ targetPrice: "1.1" as unknown as number })).success);
 ok("status inconnu rejeté", !oryonAlertSchema.safeParse(makeAlert({ status: "expired" as never })).success);
@@ -226,7 +226,7 @@ ok("id trop court rejeté", !oryonAlertSchema.safeParse(makeAlert({ id: "court" 
 
 // ── 5. Overlays : specs + diff structurel ───────────────────────────────────
 
-console.log("— specs d'overlay + diff");
+console.log("- specs d'overlay + diff");
 const specs = buildAlertLineSpecs(
   [
     makeAlert({ id: "alert-a-aaaa", symbol: "eurusd" }),
@@ -255,7 +255,7 @@ eq("alerte ajoutée → 1 create", diffAlertLines([], base).map((o) => o.op), ["
 
 // ── 6. Persistance navigateur-local (fake localStorage) ─────────────────────
 
-console.log("— persistance navigateur-local");
+console.log("- persistance navigateur-local");
 const memory = new Map<string, string>();
 (globalThis as { window?: unknown }).window = {
   localStorage: {
@@ -284,7 +284,7 @@ memory.set(
   }),
 );
 // Une enveloppe dont UN enregistrement est invalide doit être valide pour
-// Zod au niveau tableau ? Non — le schéma valide chaque enregistrement :
+// Zod au niveau tableau ? Non - le schéma valide chaque enregistrement :
 // l'enveloppe échoue → salvage par enregistrement (1 poison perdu, 2 valides).
 eq("salvage par enregistrement", loadAlerts().map((a) => a.id), ["alert-eurusd-01", "alert-ok-zzzz"]);
 

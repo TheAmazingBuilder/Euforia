@@ -1,5 +1,5 @@
 /**
- * Trade Review application service (B8) — the post-trade workflow: one
+ * Trade Review application service (B8) - the post-trade workflow: one
  * review per trade (upsert), grade execution against the playbook, score
  * quality, capture THE lesson. Distinct from the pre-reveal decisionGrade
  * frozen on Trade. Also owns the read model rows (reviewed + pending),
@@ -70,7 +70,7 @@ export class ReviewService {
   ): ReviewRowView {
     return {
       tradeId: review.tradeId,
-      symbol: symbol ?? "—",
+      symbol: symbol ?? "-",
       direction: trade.direction as ReviewRowView["direction"],
       tradingDate: dateKeyOf(trade.tradingDate),
       reviewStatus: "REVIEWED",
@@ -98,7 +98,7 @@ export class ReviewService {
     const snap = trade.checklistSnap;
     return {
       tradeId: trade.id,
-      symbol: symbol ?? "—",
+      symbol: symbol ?? "-",
       direction: trade.direction as ReviewRowView["direction"],
       tradingDate: dateKeyOf(trade.tradingDate),
       reviewStatus: "PENDING",
@@ -128,7 +128,7 @@ export class ReviewService {
     };
   }
 
-  /** GET /reviews — every review row (pending + reviewed), newest day first. */
+  /** GET /reviews - every review row (pending + reviewed), newest day first. */
   async listReviews(userId: string): Promise<ReviewsResponse> {
     const currency = await this.currencyOf(userId);
     const [rows, trades] = await Promise.all([
@@ -151,7 +151,7 @@ export class ReviewService {
       readModel.push(this.pendingRowFor(trade, symbols.get(trade.id) ?? null, currency));
     }
     readModel.sort((a, b) => b.tradingDate.localeCompare(a.tradingDate));
-    // Legacy goals-keeping read model — the endpoint returns the FULL list
+    // Legacy goals-keeping read model - the endpoint returns the FULL list
     // (no pagination), so the meta reports the served window honestly.
     return {
       reviews: readModel,
@@ -183,7 +183,7 @@ export class ReviewService {
     return result;
   }
 
-  /** PUT /reviews/:tradeId — upsert the post-trade review. */
+  /** PUT /reviews/:tradeId - upsert the post-trade review. */
   async upsertReview(
     userId: string,
     tradeId: string,
@@ -247,7 +247,7 @@ export class ReviewService {
     return this.reviewedRowFor(review, trade, instrument?.symbol ?? null, currency);
   }
 
-  /** DELETE /reviews/:tradeId — undo a review (trade returns to pending). */
+  /** DELETE /reviews/:tradeId - undo a review (trade returns to pending). */
   async deleteReview(userId: string, tradeId: string): Promise<{ ok: true }> {
     const existing = await this.repository.findReviewByTrade(userId, tradeId);
     if (existing === null) {
@@ -257,7 +257,7 @@ export class ReviewService {
     return { ok: true };
   }
 
-  /** GET /reviews/lessons — the lessons library (union of all sources). */
+  /** GET /reviews/lessons - the lessons library (union of all sources). */
   async listLessons(userId: string): Promise<LessonsResponse> {
     const [rows, trades] = await Promise.all([
       this.repository.listReviewsForUser(userId),
@@ -304,7 +304,7 @@ export class ReviewService {
     return { lessons: entries };
   }
 
-  /** GET /reviews/overview — the module's aggregate (one shot). */
+  /** GET /reviews/overview - the module's aggregate (one shot). */
   async overview(userId: string): Promise<TradeReviewOverviewResponse> {
     const tz = await this.timezoneOf(userId);
     const currency = await this.currencyOf(userId);
@@ -332,7 +332,7 @@ export class ReviewService {
     );
     const streak = computeStreak(reviewDays, today);
 
-    // Recurring-lesson template source — the most recent next-time note.
+    // Recurring-lesson template source - the most recent next-time note.
     const lastImprovementNote =
       [...reviews]
         .filter((r) => r.improvementNote !== null && r.improvementNote.trim() !== "")
@@ -366,7 +366,7 @@ export class ReviewService {
       .filter((row) => row.reviewStatus === "PENDING")
       .slice(0, 5);
 
-    // Goals summary — computed with the same engine as GET /goals.
+    // Goals summary - computed with the same engine as GET /goals.
     const goalRows = await this.repository.listByKind(userId, "GOAL");
     const progressRows = [];
     for (const row of goalRows) {

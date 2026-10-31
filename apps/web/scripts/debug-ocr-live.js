@@ -1,4 +1,4 @@
-/** OCR live probe — boots the full live stack and dumps exactly what
+/** OCR live probe - boots the full live stack and dumps exactly what
  * /recognition renders after a REAL login (with fixed token race). */
 const { chromium } = require("playwright");
 const { spawn, execSync } = require("node:child_process");
@@ -12,7 +12,7 @@ const PASSWORD = "Str0ng-Passphrase!";
 
 async function main() {
   // ── pre-flight: fresh ports + fresh api log (kills the token race) ────
-  // fuser is NOT installed here — parse ss -tlnp instead (see verify-ocr-backend-live.js).
+  // fuser is NOT installed here - parse ss -tlnp instead (see verify-ocr-backend-live.js).
   for (const port of [4000, 3004, 3001]) {
     try {
       const out = execSync(`ss -tlnp | grep ':${port} '`, { encoding: "utf8" });
@@ -58,7 +58,7 @@ async function main() {
   const verify = await fetch("http://127.0.0.1:4000/api/v1/auth/email/verify", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ token }) });
   const verifyBody = await verify.text();
   console.log("verify:", verify.status, verifyBody.slice(0, 120));
-  if (verify.status !== 200) throw new Error("verify failed — token race or expired");
+  if (verify.status !== 200) throw new Error("verify failed - token race or expired");
 
   // ── browser: real login, then inspect /recognition ──────────────────────
   const browser = await chromium.launch();

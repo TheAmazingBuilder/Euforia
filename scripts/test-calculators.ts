@@ -1,7 +1,7 @@
 /**
- * Tools calculators — unit tests (Tools brief §47/§48).
+ * Tools calculators - unit tests (Tools brief §47/§48).
  * Run: bun /home/z/my-project/scripts/test-calculators.ts
- * Pure functions only — no React, no network.
+ * Pure functions only - no React, no network.
  */
 import {
   calculateLotSize,
@@ -28,7 +28,7 @@ function check(name: string, condition: boolean, detail?: string) {
     passed += 1;
   } else {
     failed += 1;
-    console.error(`  ✗ ${name}${detail ? ` — ${detail}` : ""}`);
+    console.error(`  ✗ ${name}${detail ? ` - ${detail}` : ""}`);
   }
 }
 
@@ -96,7 +96,7 @@ console.log("Compounding");
 
 console.log("Lot Size");
 
-// §10 worked example — XAUUSD: $10,000, 1%, entry 2650, SL 2640
+// §10 worked example - XAUUSD: $10,000, 1%, entry 2650, SL 2640
 {
   const spec = getInstrumentSpec("XAUUSD");
   const r = calculateLotSize({
@@ -143,7 +143,7 @@ console.log("Lot Size");
   check("USDJPY short SL above entry valid", r !== null);
 }
 
-// CONTRACT method — NAS100: 10 000, 1%, 18500 / 18490 → 10 units
+// CONTRACT method - NAS100: 10 000, 1%, 18500 / 18490 → 10 units
 {
   const spec = getInstrumentSpec("NAS100");
   const r = calculateLotSize({
@@ -155,7 +155,7 @@ console.log("Lot Size");
   check("NAS100 lotsRounded = units (size 1)", r !== null && approx(r.lotsRounded, 10));
 }
 
-// CONTRACT method — BTCUSD: 0.5% of 20,000 = $100 risk, stop $500 → 0.20 BTC
+// CONTRACT method - BTCUSD: 0.5% of 20,000 = $100 risk, stop $500 → 0.20 BTC
 {
   const spec = getInstrumentSpec("BTCUSD");
   const r = calculateLotSize({
@@ -177,7 +177,7 @@ console.log("Lot Size");
   check("actual risk 99.90 ≤ 100", r !== null && approx(r.actualRiskAtRounded, 99.9));
 }
 
-// Degenerate inputs — no division-by-zero, no silent zero (§12/§48)
+// Degenerate inputs - no division-by-zero, no silent zero (§12/§48)
 {
   const spec = getInstrumentSpec("EURUSD");
   check("zero stop distance → null", calculateLotSize({

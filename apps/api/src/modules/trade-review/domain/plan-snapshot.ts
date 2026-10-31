@@ -3,18 +3,18 @@
  *
  * TradePlan rows stay mutable while DRAFT/PLANNED; a review that claims
  * "this was my plan" must therefore FREEZE the comparison-relevant plan
- * values at save time — otherwise later plan edits would silently rewrite
+ * values at save time - otherwise later plan edits would silently rewrite
  * what the review compared against (historical integrity / reproducibility,
  * §26: "create snapshots only where required").
  *
  * Everything else stays referenced, not copied: the review holds
- * originTradePlanId and the snapshot — never a duplicate of the whole plan.
+ * originTradePlanId and the snapshot - never a duplicate of the whole plan.
  *
  * Decimal values are stored as decimal STRINGS inside the JSONB snapshot
  * (json numbers lose precision, §40). The domain never round-trips through
  * binary floats.
  *
- * Domain module: imports NO framework code (§75) — the shared contract
+ * Domain module: imports NO framework code (§75) - the shared contract
  * schema travels through the api contract barrel (types + plain zod only).
  */
 import { reviewPlanSnapshotSchema, type ReviewPlanSnapshot } from "../../../shared/contracts";
@@ -40,7 +40,7 @@ export interface PlanSnapshotSource {
 /**
  * Freeze the plan's comparison-relevant values into the snapshot shape.
  * The output is JSON-serializable and validated against the shared
- * snapshot schema — a malformed snapshot can never be persisted.
+ * snapshot schema - a malformed snapshot can never be persisted.
  */
 export function freezePlanSnapshot(plan: PlanSnapshotSource, at: Date): ReviewPlanSnapshot {
   const snapshot = {
@@ -64,7 +64,7 @@ export function freezePlanSnapshot(plan: PlanSnapshotSource, at: Date): ReviewPl
 }
 
 /**
- * Re-validate a snapshot read back from JSONB (defensive — the shape is a
+ * Re-validate a snapshot read back from JSONB (defensive - the shape is a
  * contract; a corrupted row fails loudly instead of feeding the comparison
  * engine with fabricated numbers). Returns null for absent snapshots.
  */

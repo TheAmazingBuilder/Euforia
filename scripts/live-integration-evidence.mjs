@@ -1,5 +1,5 @@
 /**
- * MASTER audit — LIVE integration evidence (Stage 5/6/7 of the fullstack
+ * MASTER audit - LIVE integration evidence (Stage 5/6/7 of the fullstack
  * audit spec + Phase 8/§8.2/§9 of the QA spec).
  *
  * Exercises the REAL running services over real HTTP:
@@ -14,7 +14,7 @@
  *      INDEPENDENTLY computed expected value)
  *   E  stats reflect the trade (independent arithmetic)
  *   F  persistence across API restart (checked by the wrapper script)
- *   G  cross-user isolation (IDOR probe — user B cannot read user A's trade)
+ *   G  cross-user isolation (IDOR probe - user B cannot read user A's trade)
  *   H  refresh rotation: old refresh cookie is single-use
  *   I  REAL OCR end-to-end: upload → sidecar tesseract → recognition →
  *      confirm → persisted journal trade (server-recomputed P&L)
@@ -32,7 +32,7 @@ let failures = 0;
 function record(section, name, pass, evidence) {
   results.push({ section, name, pass, evidence });
   if (!pass) failures += 1;
-  console.log(`${pass ? "PASS" : "FAIL"} [${section}] ${name}${evidence ? ` — ${evidence}` : ""}`);
+  console.log(`${pass ? "PASS" : "FAIL"} [${section}] ${name}${evidence ? ` - ${evidence}` : ""}`);
 }
 
 async function api(method, path, { token, body, cookie, raw } = {}) {
@@ -98,7 +98,7 @@ if (phase === 1) {
     registered.status === 201 && registered.json?.delivery === "EMAIL" && registered.json?.verificationToken === undefined,
     `status=${registered.status} delivery=${registered.json?.delivery}`);
 
-  // The dev mailer logs the verification URL — extract it from the API log.
+  // The dev mailer logs the verification URL - extract it from the API log.
   const verificationToken = await verificationTokenFor(email);
   record("A", "verification link reachable via the dev mailer log", Boolean(verificationToken),
     verificationToken ? `token=${verificationToken.slice(0, 8)}…` : "no token found");
@@ -236,7 +236,7 @@ if (phase === 1) {
   // design, so section I/J ride a FRESH login (new session, unaffected).
 
   // ── I: REAL OCR end-to-end through the running sidecar ──────────────────
-  // Fresh login — the H family was deliberately killed by the reuse probe.
+  // Fresh login - the H family was deliberately killed by the reuse probe.
   const ocrLogin = await api("POST", "/auth/login", { body: { email, password, remember: false }, raw: true });
   accessToken = ocrLogin.json?.accessToken;
   const { readFileSync: rf } = await import("node:fs");
@@ -272,7 +272,7 @@ if (phase === 1) {
   const importCountBefore = (before.json?.trades ?? []).filter((t) => t.source === "IMPORT").length;
   const confirmed = await api("POST", `/ocr/recognitions/${recognitionId}/confirm`, {
     token: accessToken,
-    // Mono recognition: corrections only — `batches` is the multi-trade
+    // Mono recognition: corrections only - `batches` is the multi-trade
     // draft confirmation shape (409 OCR_NO_TRADE_CANDIDATES otherwise).
     body: {
       corrections: {},
@@ -285,7 +285,7 @@ if (phase === 1) {
     confirmed.status === 200 && confirmed.json?.recognition?.status === "CONFIRMED",
     `status=${confirmed.status} recognition=${confirmed.json?.recognition?.status}`);
 
-  // A successful confirm response is NOT persistence proof — read the journal.
+  // A successful confirm response is NOT persistence proof - read the journal.
   const after = await api("GET", "/trades", { token: accessToken });
   const importedTrade = (after.json?.trades ?? []).find((t) => t.source === "IMPORT");
   const importCountAfter = (after.json?.trades ?? []).filter((t) => t.source === "IMPORT").length;
@@ -294,7 +294,7 @@ if (phase === 1) {
     `importCount ${importCountBefore}→${importCountAfter} direction=${importedTrade?.direction}`);
 
   if (importedTrade) {
-    // NOTE: plain GET /trades/:id does not exist — the TradingController is
+    // NOTE: plain GET /trades/:id does not exist - the TradingController is
     // intentionally unwired (trading.module.ts reconciliation note); the
     // journal surface is the list + sub-resources. Persistence is asserted
     // through the LIST (same surface the UI consumes).

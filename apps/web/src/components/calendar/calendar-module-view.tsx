@@ -8,7 +8,7 @@ import { TradingCalendarView } from "@/components/calendar/trading-calendar";
 import { cn } from "@/lib/utils";
 
 /**
- * Calendar module shell — two tabs fed by the same top-level design: the
+ * Calendar module shell - two tabs fed by the same top-level design: the
  * TRADING calendar (P&L + discipline overlay, days off, semester targets)
  * and the ECONOMIC calendar (macro releases with impact tiers).
  */

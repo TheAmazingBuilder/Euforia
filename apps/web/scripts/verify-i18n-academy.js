@@ -1,5 +1,5 @@
 /**
- * Verify — i18n migration of the ACADEMY module (view shell, all 6 tab
+ * Verify - i18n migration of the ACADEMY module (view shell, all 6 tab
  * panels, lesson/blocks chrome, flashcards, scenario player, drills,
  * progress arcs, bookmarks, glossary chrome).
  *
@@ -45,7 +45,7 @@ const SHOTS = "/home/z/my-project/scripts/shots/i18n-academy";
 
   const results = [];
   const check = (name, ok, extra = "") => {
-    results.push(`${ok ? "PASS" : "FAIL"} — ${name}${extra ? ` (${extra})` : ""}`);
+    results.push(`${ok ? "PASS" : "FAIL"} - ${name}${extra ? ` (${extra})` : ""}`);
     console.log(results[results.length - 1]);
   };
   const htmlLang = () => page.evaluate(() => document.documentElement.lang);
@@ -61,7 +61,7 @@ const SHOTS = "/home/z/my-project/scripts/shots/i18n-academy";
     await page.locator('nav[aria-label="Main navigation"]').waitFor({ state: "visible", timeout: 60_000 });
   } catch (e) {
     await page.screenshot({ path: `${SHOTS}/debug-login-stuck.png`, fullPage: true });
-    console.error("LOGIN STUCK — body snippet:", (await page.locator("body").innerText()).slice(0, 400));
+    console.error("LOGIN STUCK - body snippet:", (await page.locator("body").innerText()).slice(0, 400));
     console.error("CAPTURED ERRORS:", errors.join(" ; ") || "none");
     throw e;
   }
@@ -106,7 +106,7 @@ const SHOTS = "/home/z/my-project/scripts/shots/i18n-academy";
   await page.screenshot({ path: `${SHOTS}/academy-fr-overview.png`, fullPage: false });
 
   // ══ D. Tab walk in FR (SPA tab clicks) ════════════════════════════════════
-  // D1 — Cours
+  // D1 - Cours
   await page.locator('button[data-testid="academy-tab-courses"]').click();
   await page.waitForTimeout(900);
   const coursesFr = await bodyText();
@@ -115,16 +115,16 @@ const SHOTS = "/home/z/my-project/scripts/shots/i18n-academy";
     /Toutes les catégories/.test(coursesFr));
   await page.screenshot({ path: `${SHOTS}/academy-fr-courses.png`, fullPage: false });
 
-  // D2 — Entraînement (flashcards + scenario player live here)
+  // D2 - Entraînement (flashcards + scenario player live here)
   await page.locator('button[data-testid="academy-tab-practice"]').click();
   await page.waitForTimeout(900);
   const practiceFr = await bodyText();
   check("D2 Practice FR (ledger + flashcards chrome)",
     /Registre d'entraînement/.test(practiceFr) &&
-    (/Révision quotidienne — fiches/.test(practiceFr) || /Lecteur de scénarios/.test(practiceFr)));
+    (/Révision quotidienne - fiches/.test(practiceFr) || /Lecteur de scénarios/.test(practiceFr)));
   await page.screenshot({ path: `${SHOTS}/academy-fr-practice.png`, fullPage: false });
 
-  // D3 — Progression
+  // D3 - Progression
   await page.locator('button[data-testid="academy-tab-progress"]').click();
   await page.waitForTimeout(900);
   const progressFr = await bodyText();
@@ -132,7 +132,7 @@ const SHOTS = "/home/z/my-project/scripts/shots/i18n-academy";
     /Progression globale/.test(progressFr) || /Chaque arc est un parcours/.test(progressFr));
   await page.screenshot({ path: `${SHOTS}/academy-fr-progress.png`, fullPage: false });
 
-  // D4 — Glossaire
+  // D4 - Glossaire
   await page.locator('button[data-testid="academy-tab-glossary"]').click();
   await page.waitForTimeout(900);
   const glossaryFr = await bodyText();
@@ -141,7 +141,7 @@ const SHOTS = "/home/z/my-project/scripts/shots/i18n-academy";
   check("D4b Glossary FR layered note", /définitions en couches/.test(glossaryFr));
   await page.screenshot({ path: `${SHOTS}/academy-fr-glossary.png`, fullPage: false });
 
-  // D5 — Favoris (empty state expected on a fresh account)
+  // D5 - Favoris (empty state expected on a fresh account)
   await page.locator('button[data-testid="academy-tab-bookmarks"]').click();
   await page.waitForTimeout(900);
   const bookmarksFr = await bodyText();
@@ -171,7 +171,7 @@ const SHOTS = "/home/z/my-project/scripts/shots/i18n-academy";
   check("G1 No unexpected 4xx / page errors", errors.length === 0, errors.slice(0, 3).join(" ; "));
 
   const fails = results.filter((r) => r.startsWith("FAIL")).length;
-  console.log(`\n${results.length - fails}/${results.length} PASS — ${SHOTS}`);
+  console.log(`\n${results.length - fails}/${results.length} PASS - ${SHOTS}`);
   await browser.close();
   process.exit(fails === 0 ? 0 : 1);
 })().catch((err) => {

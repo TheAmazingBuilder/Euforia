@@ -13,7 +13,7 @@ import { useDict } from "@/i18n/i18n-provider";
 import { FormError, FormSuccess } from "@/components/auth/auth-primitives";
 
 /**
- * Email verification experience (spec §17, §36) — one view for every
+ * Email verification experience (spec §17, §36) - one view for every
  * outcome: verifying, success, expired, invalid, already used / verified,
  * plus resend with rate-limit handling.
  */
@@ -46,7 +46,7 @@ export function VerifyEmailView() {
       ? { kind: "invalid" }
       : verifyOutcome ?? { kind: "verifying" };
 
-  // Strict Mode double-invokes effects in dev — the one-time token must be
+  // Strict Mode double-invokes effects in dev - the one-time token must be
   // submitted exactly once, so a ref guard dedupes the mutation.
   const verifyStarted = React.useRef(false);
   React.useEffect(() => {

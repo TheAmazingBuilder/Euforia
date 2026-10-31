@@ -1,4 +1,4 @@
-/* Diagnostic probe — dump per-tab visible strings of the Playbook module. */
+/* Diagnostic probe - dump per-tab visible strings of the Playbook module. */
 const { chromium } = require("playwright");
 const BASE = "http://localhost:3000";
 const SHOTS = "/home/z/my-project/scripts/shots/i18n-playbook";

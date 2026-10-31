@@ -1,10 +1,10 @@
 /**
  * TradePlan lifecycle state machine (Phase 5 §7/§38/§41).
  *
- * Explicit transition table — the lifecycle is NOT inferred from status
+ * Explicit transition table - the lifecycle is NOT inferred from status
  * comparisons scattered across services. States reflect the product TODAY:
  *
- *   DRAFT ──→ PLANNED ──→ VALIDATED ──→ (EXECUTED, reserved — future link)
+ *   DRAFT ──→ PLANNED ──→ VALIDATED ──→ (EXECUTED, reserved - future link)
  *     │          │             │
  *     │          │             └──→ CANCELLED
  *     │          └──→ CANCELLED / ABANDONED
@@ -16,12 +16,12 @@
  *   - cancel   (PLANNED/VALIDATED → CANCELLED): deliberately called off.
  *   - abandon  (DRAFT/PLANNED → ABANDONED): the setup never materialized.
  *   - EXECUTED is reserved vocabulary (mirrors TradeStatus.PLANNED precedent):
- *     no phase-5 path produces it — a future phase will link a canonical
+ *     no phase-5 path produces it - a future phase will link a canonical
  *     Trade to the plan (§62) and own that transition.
  *   - EXPIRED / PARTIALLY_EXECUTED are deferred (no scheduler / no execution
  *     linkage in the product yet, §63).
  *
- * Mutation policy (§38): only DRAFT and PLANNED are editable — VALIDATED
+ * Mutation policy (§38): only DRAFT and PLANNED are editable - VALIDATED
  * (and beyond) preserves the original planning snapshot.
  *
  * This file is DOMAIN: pure functions, no framework imports.
@@ -47,12 +47,12 @@ export function isTerminal(status: TradePlanStatus): boolean {
   return (TRANSITIONS[status]?.length ?? 0) === 0;
 }
 
-/** §38 — mutation policy: only these statuses accept configuration edits. */
+/** §38 - mutation policy: only these statuses accept configuration edits. */
 export function isEditable(status: TradePlanStatus): boolean {
   return status === "DRAFT" || status === "PLANNED";
 }
 
-/** §39 — recalculation policy: same mutability window as edits. */
+/** §39 - recalculation policy: same mutability window as edits. */
 export function isRecalculable(status: TradePlanStatus): boolean {
   return status === "DRAFT" || status === "PLANNED";
 }

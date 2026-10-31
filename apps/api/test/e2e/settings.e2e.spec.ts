@@ -1,14 +1,14 @@
 /**
- * e2e — Settings bounded context (Phase 15): the 9-domain user preferences
+ * e2e - Settings bounded context (Phase 15): the 9-domain user preferences
  * document, tested against the real AppModule + real PostgreSQL.
  *
  * Coverage map (Phase 15 §38):
  *   - authentication (§31) and the per-user singleton routes (§10/§12);
- *   - full-document read + shared-contract re-parse (§34 — frontend parity);
- *   - PATCH /me/preferences/:domain — whole-domain semantics, unknown-field
+ *   - full-document read + shared-contract re-parse (§34 - frontend parity);
+ *   - PATCH /me/preferences/:domain - whole-domain semantics, unknown-field
  *     stripping, validation failures (§13/§14/§31/§32);
  *   - default trading account REFERENCE ownership (§21);
- *   - reset semantics — one domain, defaults only, no domain data harmed
+ *   - reset semantics - one domain, defaults only, no domain data harmed
  *     (§37/§39);
  *   - security: privileged-field injection, envelope planting, structural
  *     IDOR (§11);
@@ -129,7 +129,7 @@ describe("preferences document read (Phase 15 §12/§30)", () => {
     const res = await getPrefs(ctx.authHeader);
     expect(res.statusCode).toBe(200);
 
-    // §34 — the wire contract IS the shared schema (frontend parity).
+    // §34 - the wire contract IS the shared schema (frontend parity).
     const doc = userPreferencesSchema.parse(res.json()) as UserPreferences;
     expect(doc.userId).toBe(ctx.userId);
     const domains: Array<keyof UserPreferences> = [
@@ -170,7 +170,7 @@ describe("preferences domain update (Phase 15 §12/§13/§39)", () => {
     const after = userPreferencesSchema.parse(res.json()) as UserPreferences;
     expect(after.trading.displayCurrency).toBe("EUR");
     expect(after.trading.defaultTimeframe).toBe("H1");
-    // §39 — one update never mutates unrelated settings.
+    // §39 - one update never mutates unrelated settings.
     expect(after.risk).toEqual(before.risk);
     expect(after.journal).toEqual(before.journal);
     expect(after.notifications).toEqual(before.notifications);
@@ -195,7 +195,7 @@ describe("preferences domain update (Phase 15 §12/§13/§39)", () => {
     expect(b.appearance.theme).toBe("LIGHT");
   });
 
-  it("strips unknown fields (safely ignored, §31/§32 — never mapped into privileged state)", async () => {
+  it("strips unknown fields (safely ignored, §31/§32 - never mapped into privileged state)", async () => {
     const ctx = await authenticatedUser(app, mail);
     const doc = userPreferencesSchema.parse((await getPrefs(ctx.authHeader)).json()) as UserPreferences;
 
@@ -233,7 +233,7 @@ describe("preferences domain update (Phase 15 §12/§13/§39)", () => {
     });
     expectValidationError(badCrossField.statusCode, badCrossField.json());
 
-    const nonObject = await patchDomain(ctx.authHeader, "appearance", "hello"); // JSON scalar — valid JSON, not an object
+    const nonObject = await patchDomain(ctx.authHeader, "appearance", "hello"); // JSON scalar - valid JSON, not an object
     expectValidationError(nonObject.statusCode, nonObject.json());
 
     const unknownDomain = await patchDomain(ctx.authHeader, "notadomain", { foo: 1 });
@@ -255,7 +255,7 @@ describe("default trading account reference (Phase 15 §21)", () => {
     expect(after.trading.defaultAccountId).toBe(accountId);
   });
 
-  it("rejects unknown and foreign accounts with 404 (IDOR convention) — never mutates the account", async () => {
+  it("rejects unknown and foreign accounts with 404 (IDOR convention) - never mutates the account", async () => {
     const a = await authenticatedUser(app, mail);
     const b = await authenticatedUser(app, mail);
     const bAccountId = await connectAccount(b.authHeader);
@@ -349,11 +349,11 @@ describe("settings mass-assignment protection (Phase 15 §31/§32)", () => {
     const doc = userPreferencesSchema.parse((await getPrefs(a.authHeader)).json()) as UserPreferences;
 
     const res = await patchDomain(a.authHeader, "trading", {
-      userId: b.userId, // envelope planting — must stay server-managed
+      userId: b.userId, // envelope planting - must stay server-managed
       updatedAt: "1999-01-01T00:00:00.000Z",
       role: "ADMIN",
       permissions: ["*"],
-      baseCurrency: "JPY", // identity-owned — NOT a trading preference
+      baseCurrency: "JPY", // identity-owned - NOT a trading preference
       ...doc.trading,
     });
     expect(res.statusCode).toBe(200);
@@ -363,12 +363,12 @@ describe("settings mass-assignment protection (Phase 15 §31/§32)", () => {
     expect(after).not.toHaveProperty("role");
     expect(after).not.toHaveProperty("permissions");
     const parsed = userPreferencesSchema.parse(after) as UserPreferences;
-    // The planted key is not part of the trading-domain type — the strip is
+    // The planted key is not part of the trading-domain type - the strip is
     // proven by its ABSENCE on the parsed (Zod-stripped) document.
     expect((parsed.trading as Record<string, unknown>).baseCurrency).toBeUndefined(); // stripped, not mapped
   });
 
-  it("exposes no :userId-shaped route — a user cannot address another user's doc", async () => {
+  it("exposes no :userId-shaped route - a user cannot address another user's doc", async () => {
     const a = await authenticatedUser(app, mail);
     const foreignGet = await app.inject({
       method: "GET",
@@ -424,7 +424,7 @@ describe("dashboard widget order (Phase 15 §19)", () => {
     const parsed = userPreferencesSchema.parse(ok.json()) as UserPreferences;
     expect(parsed.dashboard.widgetOrder).toEqual(reversed);
 
-    // The canon grew with Phase 02 (11) and Phase 05 (15 widget types) —
+    // The canon grew with Phase 02 (11) and Phase 05 (15 widget types) -
     // an oversized order must exceed max(DASHBOARD_WIDGET_KEYS.length) to be
     // rejected, so the generator repeats the 7 canonical keys enough times.
     const oversized = await patchDomain(ctx.authHeader, "dashboard", {
@@ -469,7 +469,7 @@ describe("dashboard saved views & active filters (Phase 03 §10/§12)", () => {
   it("keeps layouts intact when a filter-only PATCH carries them (wholesale domain)", async () => {
     const ctx = await authenticatedUser(app, mail);
     const doc = userPreferencesSchema.parse((await getPrefs(ctx.authHeader)).json()) as UserPreferences;
-    // A filter save built from the CURRENT domain (client convention) — the
+    // A filter save built from the CURRENT domain (client convention) - the
     // layout collection must survive unchanged.
     const patched = await patchDomain(ctx.authHeader, "dashboard", {
       ...doc.dashboard,
@@ -506,7 +506,7 @@ describe("dashboard saved views & active filters (Phase 03 §10/§12)", () => {
     expect(reread.dashboard.activeFilters).toBeUndefined();
   });
 
-  it("isolates views per user — another account never sees them", async () => {
+  it("isolates views per user - another account never sees them", async () => {
     const ctxA = await authenticatedUser(app, mail);
     const docA = userPreferencesSchema.parse((await getPrefs(ctxA.authHeader)).json()) as UserPreferences;
     await patchDomain(ctxA.authHeader, "dashboard", {
@@ -592,7 +592,7 @@ describe("dashboard workspaces (Phase 06 §4/§6/§10)", () => {
     expect(reread.dashboard.defaultLayoutId).toBeUndefined();
   });
 
-  it("isolates workspace data per user — another account never sees templates or the default flag", async () => {
+  it("isolates workspace data per user - another account never sees templates or the default flag", async () => {
     const ctxA = await authenticatedUser(app, mail);
     const docA = userPreferencesSchema.parse((await getPrefs(ctxA.authHeader)).json()) as UserPreferences;
     await patchDomain(ctxA.authHeader, "dashboard", {

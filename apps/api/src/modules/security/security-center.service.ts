@@ -2,7 +2,7 @@
  * Security Center application service (Phase 16 bounded context).
  *
  * OWNERSHIP (Phase 16 §3/§48): this service owns security POSTURE and
- * VISIBILITY — the overview aggregate (protection checklist, deterministic
+ * VISIBILITY - the overview aggregate (protection checklist, deterministic
  * score), the paginated activity reads, and the orchestration of sensitive
  * account-protection flows. It deliberately does NOT re-implement any
  * identity capability:
@@ -13,10 +13,10 @@
  *   - event/log persistence         → SecurityEventRepository (Security)
  *
  * /security/overview: server-computed aggregate of REAL state (protection
- * checks state hard facts with their methodology — no invented score).
+ * checks state hard facts with their methodology - no invented score).
  * Password change: reauth + revoke-other-sessions (§23) + event.
  * Session revocation: ownership-checked (IDOR-safe), scopes one/others/all.
- * API keys: prefix + fingerprint + hash — the secret is shown exactly once.
+ * API keys: prefix + fingerprint + hash - the secret is shown exactly once.
  */
 import { Injectable } from "@nestjs/common";
 import { createHash, randomBytes } from "node:crypto";
@@ -72,8 +72,10 @@ export class SecurityCenterService {
         id: "two-factor",
         label: "Two-factor authentication",
         detail: twoFactor.enabled
-          ? "Authenticator app is protecting sign-ins."
-          : "Add an authenticator app to protect your sign-ins.",
+          ? twoFactor.method === "EMAIL"
+            ? "Email one-time codes are protecting sign-ins."
+            : "Authenticator app is protecting sign-ins."
+          : "Add an authenticator app or enable email codes to protect your sign-ins.",
         pass: twoFactor.enabled,
         methodology: "TFA state is enabled (server-side mfaEnabledAt).",
       },
@@ -97,7 +99,7 @@ export class SecurityCenterService {
         detail:
           passwordAgeDays < PASSWORD_MAX_AGE_DAYS
             ? `Changed ${passwordAgeDays} day(s) ago.`
-            : `Changed ${passwordAgeDays} day(s) ago — consider rotating it.`,
+            : `Changed ${passwordAgeDays} day(s) ago - consider rotating it.`,
         pass: passwordAgeDays < PASSWORD_MAX_AGE_DAYS,
         methodology: `Password younger than ${PASSWORD_MAX_AGE_DAYS} days.`,
       },
@@ -106,7 +108,7 @@ export class SecurityCenterService {
         label: "API key hygiene",
         detail: apiKeys.some((k) => !k.revokedAt)
           ? "Review keys you no longer use and revoke them."
-          : "No active API keys — nothing to review.",
+          : "No active API keys - nothing to review.",
         pass: !apiKeys.some((k) => !k.revokedAt && k.lastUsedAt === null && daysSince(k.createdAt) > 30),
         methodology: "No active key unused for more than 30 days.",
       },
@@ -154,7 +156,7 @@ export class SecurityCenterService {
         revoked: key.revokedAt !== null,
       })),
       // Integrations are a separate bounded context (backend Phase 14 was
-      // never executed — no provider registry exists yet). Security exposes
+      // never executed - no provider registry exists yet). Security exposes
       // an honestly EMPTY projection rather than inventing one; when the
       // Integrations context lands it will emit INTEGRATION_* events through
       // the shared event log and this projection reads from its public
@@ -171,6 +173,7 @@ export class SecurityCenterService {
       },
       rateLimits: [
         { scope: "Sign-in", limit: 5, windowLabel: "15 min", detail: "Per email address, sliding window." },
+        { scope: "Email MFA codes", limit: 3, windowLabel: "15 min", detail: "Code delivery requests per email address." },
         { scope: "Re-authentication", limit: 5, windowLabel: "15 min", detail: "Failed attempts only." },
         { scope: "Password reset", limit: 3, windowLabel: "15 min", detail: "Reset emails per address." },
         { scope: "API endpoints", limit: 120, windowLabel: "min / key", detail: "Default global API rate limit." },
@@ -179,7 +182,7 @@ export class SecurityCenterService {
     };
   }
 
-  // ── GET /security/events — paginated audit trail (Phase 16 §28/§29) ────────
+  // ── GET /security/events - paginated audit trail (Phase 16 §28/§29) ────────
 
   async listEventsPage(userId: string, query: SecurityEventPageQuery) {
     const cursor = this.decodeCursor(query.cursor);
@@ -197,7 +200,7 @@ export class SecurityCenterService {
     };
   }
 
-  // ── GET /security/logins — paginated login history (Phase 16 §28/§29) ──────
+  // ── GET /security/logins - paginated login history (Phase 16 §28/§29) ──────
 
   async listLoginsPage(userId: string, query: LoginRecordPageQuery) {
     const cursor = this.decodeCursor(query.cursor);
@@ -214,7 +217,7 @@ export class SecurityCenterService {
     };
   }
 
-  /** Malformed cursors are a client error — 400, never a 500 (§27). */
+  /** Malformed cursors are a client error - 400, never a 500 (§27). */
   private decodeCursor(raw: string | undefined) {
     if (raw === undefined) return null;
     const cursor = decodeActivityCursor(raw);
@@ -286,7 +289,7 @@ export class SecurityCenterService {
         throw new ConflictError("A session id is required for scope \"one\".", "MISSING_SESSION");
       }
       const target = sessions.find((session) => session.id === input.sessionId);
-      // Ownership check — another user's session id is simply not found (404).
+      // Ownership check - another user's session id is simply not found (404).
       if (!target) {
         throw new NotFoundError("That session does not exist.", "SESSION_NOT_FOUND");
       }
@@ -315,7 +318,7 @@ export class SecurityCenterService {
         context:
           input.scope === "others"
             ? `All other sessions revoked (${targets.length}).`
-            : `All sessions revoked (${targets.length}) — including the current one.`,
+            : `All sessions revoked (${targets.length}) - including the current one.`,
       });
     }
     return {

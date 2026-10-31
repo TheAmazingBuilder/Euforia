@@ -1,5 +1,5 @@
 /**
- * Verify — Academy Batch B (practice zone):
+ * Verify - Academy Batch B (practice zone):
  *   Ledger      : practice stats band renders.
  *   Flashcards  : card → flip → grade → advance (session loop works).
  *   New drills  : S/R options answerable with reveal; zone bands drawn +
@@ -25,7 +25,7 @@ const NOISE = [/socket\.io/i, /candles/i, /market-service/i, /favicon/i, /net::E
   page.on("pageerror", (err) => errors.push(String(err)));
 
   const results = [];
-  const check = (name, ok, extra = "") => results.push(`${ok ? "PASS" : "FAIL"} — ${name}${extra ? ` (${extra})` : ""}`);
+  const check = (name, ok, extra = "") => results.push(`${ok ? "PASS" : "FAIL"} - ${name}${extra ? ` (${extra})` : ""}`);
 
   await page.goto(`${BASE}/`, { waitUntil: "networkidle", timeout: 60_000 });
   await page.waitForTimeout(1500);

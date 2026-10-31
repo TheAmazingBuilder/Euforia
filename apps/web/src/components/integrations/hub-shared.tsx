@@ -74,7 +74,7 @@ export function KindChip({ kind }: { kind: IntegrationKind }) {
   );
 }
 
-/** Compact sync summary — the §13 bookkeeping, one readable line. */
+/** Compact sync summary - the §13 bookkeeping, one readable line. */
 export function SyncLine({
   sync,
   latencyMs,

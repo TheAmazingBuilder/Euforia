@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Round 4 — final compile fixes."""
+"""Round 4 - final compile fixes."""
 from pathlib import Path
 
 WEB = Path("/home/z/my-project/apps/web/src")
@@ -87,7 +87,7 @@ if "MAX_DRAWDOWN_PCT" not in src:
 p = WEB / "lib/utils/chart-theme.ts"
 src = p.read_text()
 alias = '''
-/** Alias kept for earlier call sites — same hook, same tokens. */
+/** Alias kept for earlier call sites - same hook, same tokens. */
 export const useChartTheme = useChartTokens;
 '''
 while src.count(alias) > 1:
@@ -156,7 +156,7 @@ p = WEB / "lib/api/queries/journal.ts"
 src = p.read_text()
 if "useUpsertJournal" not in src:
     src += '''
-/** PUT /journal/day/:date — create-or-update the daily journal entry. */
+/** PUT /journal/day/:date - create-or-update the daily journal entry. */
 export function useUpsertJournal(date: string) {
   const queryClient = useQueryClient();
   return useMutation({
@@ -230,6 +230,6 @@ if "required?: boolean" not in src:
         p.write_text(src)
         print("OK  password-input props (interface)")
     else:
-        print("!! password-input shape differs — patch manually")
+        print("!! password-input shape differs - patch manually")
 
 print("ROUND 4 PART A COMPLETE")

@@ -59,15 +59,15 @@ import {
 } from "./external-activity-tables";
 
 /**
- * Account detail (Phase 02 Step Five) — Dialog on desktop, Sheet on mobile
+ * Account detail (Phase 02 Step Five) - Dialog on desktop, Sheet on mobile
  * (established useIsDesktop convention). Organized as Overview (snapshot +
  * connection + latest run) and three SEPARATE read-only activity tabs:
- * positions ≠ orders ≠ deals (spec §7.4 — different record kinds stay
+ * positions ≠ orders ≠ deals (spec §7.4 - different record kinds stay
  * distinct, and none of them is a journal trade).
  *
  * Actions exposed are exactly what the backend supports: rename, test (4
  * named checks), reconnect (with fresh credentials), sync, disconnect
- * (requireTyped confirmation). Nothing else — no close, no modify, no
+ * (requireTyped confirmation). Nothing else - no close, no modify, no
  * cancel: read-only by construction.
  */
 
@@ -79,7 +79,7 @@ function mapRunStatusToBadge(status: string): "COMPLETED" | "PARTIAL" | "FAILED"
 }
 
 /**
- * Phase 05 — per-resource freshness line (§11.1): explicit, timestamp-derived
+ * Phase 05 - per-resource freshness line (§11.1): explicit, timestamp-derived
  * state shown where the resource is consumed. Never "real-time": freshness
  * is the last SUCCESSFUL refresh of that resource, per the server rules.
  */
@@ -100,7 +100,7 @@ function ResourceFreshnessLine({
   return (
     <p className="mb-2 flex items-center gap-2 text-xs text-muted-foreground" data-testid={`resource-freshness-${resource}`}>
       <span>
-        {D.freshnessAsOf} {at ?? "—"} · <span className="font-medium">{label}</span>
+        {D.freshnessAsOf} {at ?? "-"} · <span className="font-medium">{label}</span>
       </span>
     </p>
   );
@@ -193,7 +193,7 @@ function ReconnectDialog({
   const reconnect = useReconnectTradingAccount();
   const [secret, setSecret] = React.useState("");
 
-  // Reset-on-close flows through the open handler — no effect, no cascades.
+  // Reset-on-close flows through the open handler - no effect, no cascades.
   const handleOpenChange = (next: boolean) => {
     if (!next) setSecret("");
     onOpenChange(next);
@@ -253,7 +253,7 @@ function ReconnectDialog({
 }
 
 /**
- * Phase 08 — the MT5 bridge card. Rendered ONLY when connection.method is
+ * Phase 08 - the MT5 bridge card. Rendered ONLY when connection.method is
  * PLATFORM_BRIDGE. The status line is honest about the two bridge states:
  * CONNECTING = no terminal push received yet (amber/info treatment, tokens
  * only); CONNECTED = the terminal is pushing. The three actions are exactly
@@ -268,7 +268,7 @@ function BridgeSection({
   rotating,
 }: {
   account: TradingAccountDetails;
-  /** Static EA asset path from the pairing sheet — null while it loads. */
+  /** Static EA asset path from the pairing sheet - null while it loads. */
   downloadHref: string | null;
   onOpenPairing: () => void;
   onRotate: () => void;
@@ -276,7 +276,17 @@ function BridgeSection({
 }) {
   const dict = useDict();
   const B = dict.accounts.bridge;
-  const connecting = account.connection?.status === "CONNECTING";
+  const status = account.connection?.status ?? "DISCONNECTED";
+  const connecting = status === "CONNECTING";
+  const connected = status === "CONNECTED";
+  const disconnected = status === "DISCONNECTED";
+  const statusMessage = connecting
+    ? B.statusConnecting
+    : connected
+      ? B.statusConnected
+      : disconnected
+        ? B.statusDisconnected
+        : B.statusError;
   return (
     <div className="rounded-lg border border-border p-3" data-testid="account-bridge-section">
       <p className="flex items-center justify-between gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
@@ -290,24 +300,30 @@ function BridgeSection({
         className={
           connecting
             ? "mt-2 flex items-start gap-2 rounded-md border border-warning/40 bg-warning/10 p-2.5 text-xs leading-relaxed text-warning"
-            : "mt-2 flex items-start gap-2 rounded-md border border-accent/30 bg-accent/10 p-2.5 text-xs leading-relaxed text-accent"
+            : connected
+              ? "mt-2 flex items-start gap-2 rounded-md border border-accent/30 bg-accent/10 p-2.5 text-xs leading-relaxed text-accent"
+              : "mt-2 flex items-start gap-2 rounded-md border border-border bg-muted/20 p-2.5 text-xs leading-relaxed text-muted-foreground"
         }
         data-testid="account-bridge-status-note"
-        data-bridge-status={account.connection?.status ?? "DISCONNECTED"}
+        data-bridge-status={status}
       >
         {connecting ? (
           <Loader2 className="mt-0.5 size-3.5 shrink-0 animate-spin" aria-hidden />
-        ) : (
+        ) : connected ? (
           <CheckCircle2 className="mt-0.5 size-3.5 shrink-0" aria-hidden />
+        ) : (
+          <TriangleAlert className="mt-0.5 size-3.5 shrink-0" aria-hidden />
         )}
-        {connecting ? B.statusConnecting : B.statusConnected}
+        {statusMessage}
       </p>
       <div className="mt-2.5 flex flex-wrap items-center gap-2">
-        <Button variant="outline" size="xs" onClick={onOpenPairing} data-testid="account-bridge-pairing">
-          {B.pairingButton}
-        </Button>
+        {!disconnected ? (
+          <Button variant="outline" size="xs" onClick={onOpenPairing} data-testid="account-bridge-pairing">
+            {B.pairingButton}
+          </Button>
+        ) : null}
         <Button variant="outline" size="xs" onClick={onRotate} disabled={rotating} data-testid="account-bridge-rotate">
-          {rotating ? B.rotatePending : B.rotateButton}
+          {rotating ? B.rotatePending : disconnected ? B.pairAgainButton : B.rotateButton}
         </Button>
         {downloadHref ? (
           <Button variant="outline" size="xs" asChild>
@@ -347,7 +363,7 @@ export function AccountDetailDrawer({
   const [disconnectOpen, setDisconnectOpen] = React.useState(false);
   const [reconnectOpen, setReconnectOpen] = React.useState(false);
 
-  // Phase 08 — MT5 bridge surface. The pairing sheet has two entry paths:
+  // Phase 08 - MT5 bridge surface. The pairing sheet has two entry paths:
   // the owner-only GET ("Pairing sheet" button) and the rotate response
   // (the ONE-SHOT delivery of the fresh secret). The GET query doubles as
   // the download href source for the section button.
@@ -397,13 +413,13 @@ export function AccountDetailDrawer({
       onSuccess: (response) => {
         if (response.run.status === "COMPLETED") {
           toast.success(
-            `${D.syncNow} — ${response.run.dealsUpserted + response.run.ordersUpserted + response.run.positionsUpserted} records`,
+            `${D.syncNow} - ${response.run.dealsUpserted + response.run.ordersUpserted + response.run.positionsUpserted} records`,
           );
         } else if (response.run.status === "PARTIAL") {
-          // Phase 03: a partial run is an honest outcome, not an error toast —
+          // Phase 03: a partial run is an honest outcome, not an error toast -
           // the run view carries the failing segment's code.
           toast.warning(
-            `${D.syncPartial} — ${response.run.dealsUpserted + response.run.ordersUpserted + response.run.positionsUpserted} records (${response.run.errorCode ?? "partial"})`,
+            `${D.syncPartial} - ${response.run.dealsUpserted + response.run.ordersUpserted + response.run.positionsUpserted} records (${response.run.errorCode ?? "partial"})`,
           );
         } else {
           toast.error(dict.accounts.status.syncError);
@@ -431,7 +447,7 @@ export function AccountDetailDrawer({
     if (!account) return;
     rotate.mutate(account.id, {
       onSuccess: (response) => {
-        // The fresh secret arrives ONLY here — open the sheet on top of it
+        // The fresh secret arrives ONLY here - open the sheet on top of it
         // and say plainly that the old terminal configuration is dead.
         setRotatedPairing(response.account.pairing ?? null);
         setBridgePairingOpen(true);
@@ -531,7 +547,7 @@ export function AccountDetailDrawer({
               </dl>
               <p className="mt-2 text-xs text-muted-foreground">
                 {account.snapshot
-                  ? `Snapshot taken ${account.snapshot.syncedAt.slice(0, 16).replace("T", " ")} UTC — values are the last synced state, not live.`
+                  ? `Snapshot taken ${account.snapshot.syncedAt.slice(0, 16).replace("T", " ")} UTC - values are the last synced state, not live.`
                   : D.positionsNeverSynced}
               </p>
             </div>
@@ -565,7 +581,7 @@ export function AccountDetailDrawer({
                 <DetailRow label={D.startingBalance}>
                   <span className="font-mono tabular-nums">{account.startingBalance}</span>
                 </DetailRow>
-                <DetailRow label={D.method}>{account.connection?.method ?? "—"}</DetailRow>
+                <DetailRow label={D.method}>{account.connection?.method ?? "-"}</DetailRow>
                 <DetailRow label="Credential">
                   {account.connection?.credentialsHint ? (
                     <span className="inline-flex items-center gap-1.5 font-mono text-xs">
@@ -573,7 +589,7 @@ export function AccountDetailDrawer({
                       {account.connection.credentialsHint}
                     </span>
                   ) : (
-                    "—"
+                    "-"
                   )}
                 </DetailRow>
                 <DetailRow label={D.permissions}>
@@ -587,7 +603,7 @@ export function AccountDetailDrawer({
               </dl>
             </div>
 
-            {/* Phase 08 — MT5 bridge card: push-based status + the three
+            {/* Phase 08 - MT5 bridge card: push-based status + the three
                 bridge actions. Only for PLATFORM_BRIDGE connections. */}
             {isBridgeAccount ? (
               <BridgeSection
@@ -607,22 +623,22 @@ export function AccountDetailDrawer({
                 <DetailRow label={D.lastSyncAt}>
                   {account.synchronization.lastSyncAt
                     ? account.synchronization.lastSyncAt.slice(0, 16).replace("T", " ") + " UTC"
-                    : "—"}
+                    : "-"}
                 </DetailRow>
                 <DetailRow label={D.lastRun}>
                   {account.synchronization.lastRun
                     ? `${account.synchronization.lastRun.status} · ${account.synchronization.lastRun.trigger}`
-                    : "—"}
+                    : "-"}
                 </DetailRow>
                 <DetailRow label={D.runDuration}>
                   {account.synchronization.lastRun?.durationMs != null
                     ? `${account.synchronization.lastRun.durationMs} ms`
-                    : "—"}
+                    : "-"}
                 </DetailRow>
                 <DetailRow label={D.runCounts}>
                   {account.synchronization.lastRun
                     ? `P ${account.synchronization.lastRun.positionsUpserted} · O ${account.synchronization.lastRun.ordersUpserted} · D ${account.synchronization.lastRun.dealsUpserted}`
-                    : "—"}
+                    : "-"}
                 </DetailRow>
                 {account.synchronization.lastRun?.errorCode ? (
                   <DetailRow label={D.runError}>
@@ -637,7 +653,7 @@ export function AccountDetailDrawer({
               </dl>
             </div>
 
-            {/* Phase 05 — synchronization history: manual AND scheduled runs,
+            {/* Phase 05 - synchronization history: manual AND scheduled runs,
                 newest first. The honest audit trail of what the backend did. */}
             <div className="rounded-lg border border-border p-3" data-testid="account-sync-history">
               <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{D.historySection}</p>
@@ -731,7 +747,7 @@ export function AccountDetailDrawer({
           {D.reconnect}
         </Button>
       ) : null}
-      <Button variant="outline" size="sm" onClick={() => setRenameOpen(true)} data-testid="account-detail-rename">
+      <Button variant="edit" size="sm" onClick={() => setRenameOpen(true)} data-testid="account-detail-rename">
         <Pencil className="size-3.5" aria-hidden />
         {D.rename}
       </Button>
@@ -865,7 +881,7 @@ function RenameDialogShell({
   title: string;
   label: string;
   hint: string;
-  /** Draft seed — the component is remounted (key) when the name changes. */
+  /** Draft seed - the component is remounted (key) when the name changes. */
   initialName: string;
   pending: boolean;
   onSubmit: (name: string) => void;

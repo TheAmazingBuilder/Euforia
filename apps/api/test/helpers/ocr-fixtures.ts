@@ -1,10 +1,10 @@
 /**
- * OCR test fixtures — handcrafted VALID PNGs without any image library.
+ * OCR test fixtures - handcrafted VALID PNGs without any image library.
  *
  * A minimal PNG is: signature + IHDR (13-byte payload) + IDAT (zlib-deflated
  * scanlines) + IEND, each chunk CRC32-protected. The scanline data is RGB,
  * filter type 0. A `nonce` byte lets tests steer the FNV-1a bucket of the
- * resulting checksum — the deterministic mock engine picks its scenario from
+ * resulting checksum - the deterministic mock engine picks its scenario from
  * that bucket (Phase 3 §55 house pattern: controlled failures without
  * randomness).
  */
@@ -41,7 +41,7 @@ function chunk(type: string, data: Buffer): Buffer {
   return Buffer.concat([length, typeBuffer, data, crc]);
 }
 
-/** A structurally valid PNG — no decoder guarantees, header+IDAT are real. */
+/** A structurally valid PNG - no decoder guarantees, header+IDAT are real. */
 export function makeOcrFixturePng(options: { nonce?: number; width?: number; height?: number } = {}): Buffer {
   const width = options.width ?? 320;
   const height = options.height ?? 160;
@@ -80,7 +80,7 @@ export function pngDataUrl(bytes: Buffer): string {
   return `data:image/png;base64,${bytes.toString("base64")}`;
 }
 
-/** SHA-256 of the fixture — mirrors what the API stores as the asset identity. */
+/** SHA-256 of the fixture - mirrors what the API stores as the asset identity. */
 export function fixtureChecksum(bytes: Buffer): string {
   return createHash("sha256").update(bytes).digest("hex");
 }
@@ -89,7 +89,7 @@ export function fixtureChecksum(bytes: Buffer): string {
  * Scenario buckets of the deterministic mock engine (§57):
  *   % 50 === 0 → UNPROCESSABLE; % 50 === 1 → malformed payload; else OK.
  * Tests that need the happy path use this to pick a nonce outside the
- * failure buckets — deterministic, zero flake.
+ * failure buckets - deterministic, zero flake.
  */
 export function bucketOf(bytes: Buffer): number {
   return fnv1a32(`${fixtureChecksum(bytes)}|TRADE_SUMMARY`) % 50;
@@ -107,7 +107,7 @@ export function makeHappyPathPng(): Buffer {
 /**
  * Profile-aware bucket (Account & Chart V1.1): the mock seed is
  * fnv1a32(checksum|profile), so the SAME image lands in DIFFERENT buckets
- * per profile — happy-path fixtures must be steered per profile.
+ * per profile - happy-path fixtures must be steered per profile.
  */
 export function bucketOfProfile(bytes: Buffer, profile: string): number {
   return fnv1a32(`${fixtureChecksum(bytes)}|${profile}`) % 50;

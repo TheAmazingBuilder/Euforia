@@ -8,11 +8,11 @@ import { useInViewOnce, usePrefersReducedMotion } from "@/components/academy/aca
 import { useI18n } from "@/i18n/i18n-provider";
 
 /**
- * Academy visual registry — data-driven SVG diagrams for lesson blocks.
+ * Academy visual registry - data-driven SVG diagrams for lesson blocks.
  * All color comes from design tokens via CSS variables (style props, so the
  * values resolve); no hardcoded hex per the design hard rule. The registries
  * below are the client-side twin of the block `variant` strings authored
- * server-side — a future CMS would serve the geometry with the blocks.
+ * server-side - a future CMS would serve the geometry with the blocks.
  */
 
 const PROFIT = "var(--profit)";
@@ -34,7 +34,7 @@ type CandleRenderProps = {
   labels?: string[];
   className?: string;
   /**
-   * Candle inks — CSS color values. Defaults resolve through the
+   * Candle inks - CSS color values. Defaults resolve through the
    * --candle-bull/--candle-bear palette variables (see globals.css
    * [data-candle-ink]) falling back to the classic profit/loss pair, so a
    * wrapper can re-ink the whole series for color-independence drills.
@@ -67,7 +67,7 @@ export function CandleSeries({ candles, width = 300, height = 180, labels, class
       className={className}
       style={{ width: "100%", height: "auto", maxWidth: width }}
     >
-      {/* baseline grid — hairlines only, per the design language */}
+      {/* baseline grid - hairlines only, per the design language */}
       {[0.25, 0.5, 0.75].map((t) => (
         <line
           key={t}
@@ -117,7 +117,7 @@ export function CandleSeries({ candles, width = 300, height = 180, labels, class
   );
 }
 
-/** Single candle with OHLC callout — the anatomy diagram. */
+/** Single candle with OHLC callout - the anatomy diagram. */
 function AnatomyCandle({ bearish }: { bearish: boolean }) {
   const { dict } = useI18n();
   // Fixed geometry: one candle + four labels (abstract units).
@@ -247,7 +247,7 @@ const S: Record<string, StructureSpec> = {
   },
   "liquidity-sweep": {
     points: [[6, 40], [24, 62], [40, 46], [56, 62], [72, 62.5], [78, 30], [94, 16]],
-    lines: [{ y: 62, label: "equal lows — resting stops", tone: "loss" }],
+    lines: [{ y: 62, label: "equal lows - resting stops", tone: "loss" }],
     labels: [{ x: 74, y: 44, text: "sweep", tone: "warning" }],
   },
   hhhl: {
@@ -443,7 +443,7 @@ function DrawdownFigure() {
 }
 
 function RiskRewardFigure() {
-  // Entry line, stop below, target above — asymmetric bars.
+  // Entry line, stop below, target above - asymmetric bars.
   const { dict } = useI18n();
   return (
     <svg viewBox="0 0 300 150" role="img" aria-label={dict.academy.visuals.riskRewardAria} style={{ width: "100%", height: "auto", maxWidth: 380 }}>
@@ -479,10 +479,10 @@ export function RiskFigure({ variant, caption }: { variant: string; caption?: st
 
 /**
  * Figure frame with a scroll-reveal: the chart wipes in left-to-right and
- * rises slightly the first time it enters the viewport — the "chart drawing
+ * rises slightly the first time it enters the viewport - the "chart drawing
  * itself" moment, in the ledger language. Honors prefers-reduced-motion.
  *
- * NOTE: the observer sits on the <figure> wrapper, NOT on the animated div —
+ * NOTE: the observer sits on the <figure> wrapper, NOT on the animated div -
  * the div's own clip-path would zero its intersection box and deadlock the
  * reveal (IntersectionObserver honors the target's clip).
  */

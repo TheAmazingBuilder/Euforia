@@ -1,5 +1,5 @@
 /**
- * Eco-Calendar bounded context — global macro releases + the per-user
+ * Eco-Calendar bounded context - global macro releases + the per-user
  * trading-calendar overlay (blocks / news import / range view).
  */
 import { Module } from "@nestjs/common";

@@ -29,13 +29,13 @@ import {
 import type { OnboardingStepId } from "./steps";
 
 /**
- * Onboarding controller — the SINGLE integration point between the first-run
+ * Onboarding controller - the SINGLE integration point between the first-run
  * experience and the app (spec §7). Mounts inside the authenticated shell
  * (AuthGate children), so it only ever runs once identity is resolved.
  *
  * Persistence rules:
  *  - authoritative state = the backend preferences document (PATCH
- *    /me/preferences/onboarding) — localStorage is never consulted;
+ *    /me/preferences/onboarding) - localStorage is never consulted;
  *  - progress writes happen ONLY on meaningful step changes;
  *  - completion is persisted FIRST and confirmed by the server BEFORE the
  *    UI reports success (a failed PATCH never fakes completion);
@@ -85,7 +85,7 @@ export function useOnboardingController() {
 
   const nowIso = () => new Date().toISOString();
 
-  /** Start (or re-enter) the flow — enters IN_PROGRESS at the first step. */
+  /** Start (or re-enter) the flow - enters IN_PROGRESS at the first step. */
   const start = React.useCallback(async (): Promise<boolean> => {
     try {
       await updateOnboarding.mutateAsync(onboardingStartInput(onboarding, nowIso()));
@@ -116,7 +116,7 @@ export function useOnboardingController() {
     [updateOnboarding, onboarding],
   );
 
-  /** Skip the introduction — NEVER fabricates completion (see state.ts). */
+  /** Skip the introduction - NEVER fabricates completion (see state.ts). */
   const skip = React.useCallback(async (): Promise<boolean> => {
     try {
       await updateOnboarding.mutateAsync(onboardingSkipInput(onboarding, nowIso()));
@@ -128,7 +128,7 @@ export function useOnboardingController() {
 
   /**
    * Persist completion and WAIT for the server confirmation. The caller
-   * must treat `false` as "not completed" — the overlay keeps its error
+   * must treat `false` as "not completed" - the overlay keeps its error
    * state and offers retry; the client cache has been rolled back by the
    * mutation, so no false success can leak into the UI.
    */
@@ -142,7 +142,7 @@ export function useOnboardingController() {
   }, [updateOnboarding, onboarding]);
 
   /**
-   * Preferences step — writes ONLY what actually changed, through the
+   * Preferences step - writes ONLY what actually changed, through the
    * EXISTING endpoints: timezone via PATCH /me (single source of truth),
    * display currency + preferred session via the whole-domain trading PATCH.
    * Nothing changed → no request at all.
@@ -181,7 +181,7 @@ export function useOnboardingController() {
     [doc, queryClient, trading, updateProfile, updateTrading],
   );
 
-  /** Personalization step — whole-domain appearance PATCH (layout only). */
+  /** Personalization step - whole-domain appearance PATCH (layout only). */
   const saveLayout = React.useCallback(
     async (layout: DashboardLayout): Promise<boolean> => {
       try {
@@ -200,7 +200,7 @@ export function useOnboardingController() {
   }, [preferencesQuery]);
 
   return {
-    /** loading | not_required | eligible | error — the overlay renders on eligible only. */
+    /** loading | not_required | eligible | error - the overlay renders on eligible only. */
     status: eligibility,
     /** Where an interrupted flow resumes (null when not eligible). */
     resumeStep,

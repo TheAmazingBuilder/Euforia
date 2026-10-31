@@ -28,23 +28,23 @@ import { useOryonAlerts, type AlertCreatePrefill } from "@/components/oryon/oryo
 /**
  * Oryon price-alert creation dialog (Phase 5 spec §6.1).
  *
- * One entry point (the toolbar button — redundant chart interactions are
+ * One entry point (the toolbar button - redundant chart interactions are
  * deliberately avoided), prefilled with the ACTIVE chart instrument and its
  * current quote price. Compact, keyboard-accessible (Radix focus trap,
  * Escape dismisses), inline validation:
- *   - the target price must be a finite positive number — anything else is
+ *   - the target price must be a finite positive number - anything else is
  *     rejected with an inline message, the dialog stays open;
  *   - the optional label is capped at 64 chars (shared contract);
  *   - no notification-method selector: the only implemented channel is the
- *     in-app toast, and the scope note says exactly that (§6.1 — never imply
+ *     in-app toast, and the scope note says exactly that (§6.1 - never imply
  *     a delivery method that does not exist).
  *
  * State lifecycle: the FORM MOUNTS FRESH on every open (keyed content) and
- * seeds its fields from the prefill — no effect-driven resets, no stale
+ * seeds its fields from the prefill - no effect-driven resets, no stale
  * state across opens (the react-hooks v6 discipline).
  *
  * Read-only discipline: creating an alert writes a browser-local record and
- * draws a line — it NEVER touches orders, positions or any broker surface.
+ * draws a line - it NEVER touches orders, positions or any broker surface.
  */
 export function OryonAlertDialog() {
   const { createOpen, prefill, closeCreate } = useOryonAlerts();
@@ -54,7 +54,7 @@ export function OryonAlertDialog() {
       <DialogContent
         data-testid="oryon-alert-dialog"
         className="max-w-sm gap-4"
-        // Plain Radix portal — chart pointer events never reach it.
+        // Plain Radix portal - chart pointer events never reach it.
       >
         {createOpen && prefill !== null ? (
           <OryonAlertForm key={`${prefill.symbol}:${createOpen}`} prefill={prefill} />
@@ -64,7 +64,7 @@ export function OryonAlertDialog() {
   );
 }
 
-/** Mounted fresh per open — state seeded from the prefill, never reset. */
+/** Mounted fresh per open - state seeded from the prefill, never reset. */
 function OryonAlertForm({ prefill }: { prefill: AlertCreatePrefill }) {
   const dict = useDict();
   const S = dict.oryon.alerts;
@@ -96,7 +96,7 @@ function OryonAlertForm({ prefill }: { prefill: AlertCreatePrefill }) {
       label: trimmedLabel.length > 0 ? trimmedLabel : null,
     });
     if (created === null) {
-      // Record cap reached / store refused — inline message, dialog stays.
+      // Record cap reached / store refused - inline message, dialog stays.
       setError(S.errorTarget);
       return;
     }

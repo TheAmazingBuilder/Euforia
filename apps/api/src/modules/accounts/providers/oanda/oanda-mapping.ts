@@ -1,5 +1,5 @@
 /**
- * OANDA v20 REST payload mapping — ALL provider-specific code lives here
+ * OANDA v20 REST payload mapping - ALL provider-specific code lives here
  * (doc A §4.1: provider-specific types, symbol maps, pagination, rate-limit
  * behavior and error translation stay inside the adapter boundary; nothing
  * here crosses normalization.ts upward).
@@ -15,7 +15,7 @@
  *   - provider decimal STRINGS survive verbatim (v20 wire format); a number
  *     shaped value is converted through its exact string form
  *   - nanosecond provider timestamps are truncated to milliseconds UTC ISO
- *     (the shared wire format) — source precision note in the phase report
+ *     (the shared wire format) - source precision note in the phase report
  *   - no symbol is mapped across different quote assets (BTC_USD stays
  *     "BTC_USD"; the catalog's BTCUSDT is a DIFFERENT instrument)
  */
@@ -33,7 +33,7 @@ import { ProviderError } from "../../provider.types";
 // ── Money / timestamp primitives (adapter-internal) ──────────────────────────
 
 /** OANDA v20 carries decimals as strings; some payloads may degrade to
- * numbers — accept both, convert numbers through their exact string form. */
+ * numbers - accept both, convert numbers through their exact string form. */
 const moneySchema = z
   .union([z.string(), z.number()])
   .transform((value) => (typeof value === "number" ? String(value) : value.trim()));
@@ -82,7 +82,7 @@ export function snapshotFromSummary(
   };
 }
 
-/** Leverage derived from the provider-reported marginRate (1/marginRate) —
+/** Leverage derived from the provider-reported marginRate (1/marginRate) -
  * a deterministic derivation of a reported fact, not an invention. */
 export function leverageFromMarginRate(marginRate: string): string | null {
   const rate = Number(marginRate);
@@ -100,7 +100,7 @@ export function accountInfoFromSummary(
     externalAccountId,
     currency: summary.account.currency,
     leverage: leverageFromMarginRate(summary.account.marginRate),
-    server: null, // OANDA has no MT5-style server label — honest null
+    server: null, // OANDA has no MT5-style server label - honest null
   };
 }
 
@@ -109,7 +109,7 @@ export function accountInfoFromSummary(
 /**
  * Positions source = open TRADES, not the netted /positions aggregate:
  * a v20 trade has a stable tradeID and openTime (the position aggregate has
- * NEITHER — §7.4 identity fallback applied with the provider's documented
+ * NEITHER - §7.4 identity fallback applied with the provider's documented
  * per-trade identity instead). Multiple concurrent trades per symbol remain
  * separate rows (doc B §7.1).
  * stopLoss/takeProfit/currentPrice: the trades payload exposes ORDER IDs, not
@@ -160,7 +160,7 @@ export function positionsFromTrades(
 // ── /pendingOrders → orders ──────────────────────────────────────────────────
 
 /** Price-less orders (guaranteed-stop variants: distance, no price) are
- * EXCLUDED and declared as an orders-capability limitation — they are
+ * EXCLUDED and declared as an orders-capability limitation - they are
  * provider-valid but not representable without inventing a price (§6). */
 const oandaPendingOrderSchema = z.object({
   id: z.string().min(1),
@@ -199,13 +199,13 @@ export function ordersFromPending(
       externalOrderId: order.id,
       symbol: mapOandaSymbol(order.instrument),
       // Broker verb composed from two provider-verbatim facts (direction +
-      // order type) — never collapsed into a canonical status (doc B §7.2).
+      // order type) - never collapsed into a canonical status (doc B §7.2).
       type: `${direction}_${order.type}`,
       volume: String(Math.abs(units)),
       price: order.price,
       stopLoss: order.stopLossOnFill?.price ?? null,
       takeProfit: order.takeProfitOnFill?.price ?? null,
-      status: "PENDING", // the endpoint IS the pending set — provider fact
+      status: "PENDING", // the endpoint IS the pending set - provider fact
       createdAt: order.createTime,
       updatedAt: null,
     });
@@ -218,7 +218,7 @@ export function ordersFromPending(
 /**
  * Deals = ORDER_FILL (trading activity) + TRANSFER_FUNDS (balance operations,
  * symbol null). Every other transaction class (ORDER_CANCEL, MARGIN_CALL_*,
- * CLIENT_STATE_*, …) is bookkeeping, not a deal — excluded by filter, not
+ * CLIENT_STATE_*, …) is bookkeeping, not a deal - excluded by filter, not
  * silently swallowed: the exclusion set is documented here and in the report.
  */
 const oandaTransactionSchema = z.object({
@@ -247,8 +247,8 @@ export type OandaTransactionRow = z.output<typeof oandaTransactionSchema>;
 /**
  * The TIME-BASED ListTransactions response (developer.oanda.com
  * /rest-live-v20/transaction-ep/, verified 2026-10-13) does NOT carry the
- * rows inline: it carries `pages` — "The list of URLs that represent idrange
- * queries providing the data for each page in the query results" — plus the
+ * rows inline: it carries `pages` - "The list of URLs that represent idrange
+ * queries providing the data for each page in the query results" - plus the
  * count and the account's lastTransactionID. The rows themselves come from
  * each idrange URL (same shape as oandaTransactionsResponseSchema) or from
  * the documented /transactions/sinceid cursor endpoint (same row shape).
@@ -270,7 +270,7 @@ export function maxTransactionId(ids: readonly string[]): string | null {
   for (const id of ids) {
     const value = Number(id);
     if (!Number.isSafeInteger(value) || value < 0) {
-      // A non-numeric id breaks the documented cursor semantics — refuse to
+      // A non-numeric id breaks the documented cursor semantics - refuse to
       // guess: the caller then does NOT advance the checkpoint (§8.4).
       return null;
     }
@@ -327,7 +327,7 @@ export function dealsFromTransactions(
       const amount = Number(tx.amount);
       deals.push({
         externalDealId: tx.id,
-        symbol: null, // balance operation (deposit/withdrawal) — no instrument
+        symbol: null, // balance operation (deposit/withdrawal) - no instrument
         side: amount >= 0 ? "BUY" : "SELL",
         volume: "0.00", // same convention as the mock's balance ops
         price: null,
@@ -343,11 +343,11 @@ export function dealsFromTransactions(
   return deals;
 }
 
-// ── Symbol mapping (doc A §4.5 — map where identical, verbatim otherwise) ────
+// ── Symbol mapping (doc A §4.5 - map where identical, verbatim otherwise) ────
 
 /**
  * The application's instrument vocabulary (Instrument catalog, migration
- * 20261004120000). Only IDENTICAL instruments are mapped — BTC_USD must NOT
+ * 20261004120000). Only IDENTICAL instruments are mapped - BTC_USD must NOT
  * become the catalog's BTCUSDT (different quote asset → wrong-symbol join).
  * Unmapped OANDA symbols pass through verbatim ("EUR_GBP" stays "EUR_GBP").
  */

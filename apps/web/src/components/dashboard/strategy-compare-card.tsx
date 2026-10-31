@@ -21,10 +21,10 @@ import {
 } from "@/lib/dashboard-customization/widget-configs";
 
 /**
- * Strategy comparison widget (Phase 02 §12.1) — side-by-side playbook
+ * Strategy comparison widget (Phase 02 §12.1) - side-by-side playbook
  * strategies on the server-computed per-strategy rows of the analytics
  * suite. The user picks the populations; the widget never ranks or
- * re-derives — factual rows with their sample sizes (statistical honesty:
+ * re-derives - factual rows with their sample sizes (statistical honesty:
  * every rate ships with its n).
  */
 
@@ -72,7 +72,7 @@ export function StrategyCompareWidget({
         <div className="min-w-0 space-y-1">
           <CardTitle className="font-heading text-base font-semibold">Strategy comparison</CardTitle>
           <CardDescription className="text-xs">
-            Playbook populations under the active filters — factual rows, no ranking.
+            Playbook populations under the active filters - factual rows, no ranking.
           </CardDescription>
         </div>
       </CardHeader>
@@ -93,7 +93,7 @@ export function StrategyCompareWidget({
           </div>
         ) : rows.length === 0 ? (
           <p className="py-6 text-center text-sm text-muted-foreground" data-testid="strategy-compare-empty">
-            No strategy selected yet — open the widget settings to pick populations.
+            No strategy selected yet - open the widget settings to pick populations.
           </p>
         ) : (
           <div className="overflow-x-auto" data-testid="strategy-compare-table">
@@ -141,11 +141,11 @@ export function StrategyCompareWidget({
   );
 }
 
-/** Cell formatting — shared formatters over server fields, "—" when absent. */
+/** Cell formatting - shared formatters over server fields, "-" when absent. */
 function formatStrategyCell(metricId: string, row: Parameters<typeof strategyMetricValue>[0], currency: Currency | undefined): string {
   const metric = getMetricDefinition(metricId);
   const value = strategyMetricValue(row, metricId);
-  if (!metric || value === null) return "—";
+  if (!metric || value === null) return "-";
   switch (metric.unit) {
     case "MONEY":
       return currency ? formatMoney(value, currency) : formatNumber(value, 2);

@@ -23,9 +23,9 @@ type TourModule = {
 };
 
 /**
- * Step 2 — Discover the workspace. ONLY modules that actually exist in the
+ * Step 2 - Discover the workspace. ONLY modules that actually exist in the
  * repository (sidebar navigation is the source of truth). Icon tiles instead
- * of fabricated screenshots — nothing here pretends to be the user's data.
+ * of fabricated screenshots - nothing here pretends to be the user's data.
  */
 export function TourStep({ dict, onAdvance, onBack }: OnboardingStepProps) {
   const modules: TourModule[] = [

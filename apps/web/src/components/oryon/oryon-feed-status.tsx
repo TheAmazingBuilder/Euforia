@@ -7,18 +7,18 @@ import { useDict } from "@/i18n/i18n-provider";
 import { cn } from "@/lib/utils";
 
 /**
- * Oryon feed status — a LEAF component on purpose: it subscribes to the
+ * Oryon feed status - a LEAF component on purpose: it subscribes to the
  * quote store and runs the 1-second staleness ticker, so the workspace never
  * re-renders for feed state. The phase machine is the market layer's own
  * (connecting / live / reconnecting / offline); a live feed older than
- * STALE_MS renders STALE honestly — a frozen feed must never read "live".
+ * STALE_MS renders STALE honestly - a frozen feed must never read "live".
  */
 export function OryonFeedStatus() {
   const dict = useDict();
   const S = dict.oryon.feed;
   const { phase, lastTickAt } = useFeedStatus();
 
-  // 1 Hz local ticker — recomputes the staleness verdict without touching
+  // 1 Hz local ticker - recomputes the staleness verdict without touching
   // the quote store (which would multiply emissions across consumers).
   const [now, setNow] = React.useState(() => Date.now());
   React.useEffect(() => {

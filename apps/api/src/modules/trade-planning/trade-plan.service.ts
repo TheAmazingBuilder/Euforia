@@ -1,9 +1,9 @@
 /**
- * Trade Planning application service (Phase 5) — trade plan use cases.
+ * Trade Planning application service (Phase 5) - trade plan use cases.
  *
  * Ownership is ALWAYS derived from the authenticated principal (§28/§44):
  * the userId comes from the JWT guard, never from the client, and every
- * plan/account lookup is ownership-scoped (foreign ids are honest 404s —
+ * plan/account lookup is ownership-scoped (foreign ids are honest 404s -
  * the established IDOR convention).
  *
  * Plan ≠ Trade (§6): nothing here touches the canonical Trade model, places
@@ -13,7 +13,7 @@
  *
  * Idempotency (§40): create dedupes on (userId, clientRequestId); commit /
  * validate / cancel / abandon are status-guarded no-ops when retried after
- * success. Concurrency (§41): every transition is a conditional write — a
+ * success. Concurrency (§41): every transition is a conditional write - a
  * stale read surfaces as 409, never as a blind success.
  */
 import { Inject, Injectable } from "@nestjs/common";
@@ -85,7 +85,7 @@ function riskColumns(computation: RiskComputation, balance: Decimal | null): Tra
   };
 }
 
-/** Structural gate (§11/§12) — map blocking engine issues to HTTP errors. */
+/** Structural gate (§11/§12) - map blocking engine issues to HTTP errors. */
 function rejectStructural(issues: readonly TradePlanValidationIssue[], sizeMode: PlanSizeMode): void {
   const blocking = issues.find(
     (candidate) =>
@@ -168,7 +168,7 @@ export class TradePlanningService {
     userId: string,
     input: CreateTradePlanInput,
   ): Promise<{ tradePlan: TradePlanDetail }> {
-    // §40 — a retried create returns the plan the first request already made.
+    // §40 - a retried create returns the plan the first request already made.
     if (input.clientRequestId !== undefined) {
       const existing = await this.repository.findByClientRequest(userId, input.clientRequestId);
       if (existing !== null) {
@@ -230,7 +230,7 @@ export class TradePlanningService {
       );
       return { tradePlan: toTradePlanDetail(row) };
     } catch (error) {
-      // Concurrent retry lost the (userId, clientRequestId) race — the winner
+      // Concurrent retry lost the (userId, clientRequestId) race - the winner
       // is the response (§40).
       if (
         input.clientRequestId !== undefined &&
@@ -244,7 +244,7 @@ export class TradePlanningService {
     }
   }
 
-  // ── Update (§38 — DRAFT/PLANNED only) ──────────────────────────────────────
+  // ── Update (§38 - DRAFT/PLANNED only) ──────────────────────────────────────
 
   async update(
     userId: string,
@@ -350,7 +350,7 @@ export class TradePlanningService {
    * Pre-trade validation battery (§21). PLANNED → VALIDATED on a clean pass;
    * a failing battery keeps the plan PLANNED with the findings persisted.
    * Re-validating a VALIDATED plan is an idempotent echo of the recorded
-   * result (§40) — it never rewrites the planning snapshot (§38).
+   * result (§40) - it never rewrites the planning snapshot (§38).
    */
   async validate(userId: string, planId: string): Promise<ValidateTradePlanResponse> {
     const plan = await this.mustGetPlan(userId, planId);
@@ -494,7 +494,7 @@ export class TradePlanningService {
   /**
    * Re-run the risk engine over the UNCHANGED configuration against fresh
    * environment inputs (balance, specs, fx) and persist the derived columns.
-   * Allowed in DRAFT/PLANNED only — validated plans keep their snapshot.
+   * Allowed in DRAFT/PLANNED only - validated plans keep their snapshot.
    */
   async recalculate(userId: string, planId: string): Promise<{ tradePlan: TradePlanDetail }> {
     const plan = await this.mustGetPlan(userId, planId);
@@ -562,7 +562,7 @@ export class TradePlanningService {
     return account;
   }
 
-  /** Transition lost a race — either the winner already did it (echo) or 409. */
+  /** Transition lost a race - either the winner already did it (echo) or 409. */
   private async concurrentOrCurrent(userId: string, planId: string): Promise<never> {
     const current = await this.repository.findPlanForUser(planId, userId);
     if (
@@ -572,7 +572,7 @@ export class TradePlanningService {
         current.status === "CANCELLED" ||
         current.status === "ABANDONED")
     ) {
-      // Another request completed the same transition — treat as won (§40).
+      // Another request completed the same transition - treat as won (§40).
       // The caller re-reads; throw a conflict only for a DIFFERENT outcome.
       throw new ConflictError(
         "The plan was transitioned concurrently.",

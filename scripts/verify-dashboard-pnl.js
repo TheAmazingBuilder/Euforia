@@ -1,5 +1,5 @@
 /**
- * Verify — Dashboard P&L charts + Open positions KPI + topbar user menu.
+ * Verify - Dashboard P&L charts + Open positions KPI + topbar user menu.
  * Probes: cumulative P&L card (canvas + end label data + accent area),
  * daily P&L card (canvas with BOTH profit- and loss-colored bars),
  * open positions KPI (count 2, BUY/SELL split, Σ risk, rows with symbol +
@@ -25,7 +25,7 @@ const SHOTS = "scripts/shots/dashboard-pnl";
 
   const results = [];
   const check = (name, ok, extra = "") =>
-    results.push(`${ok ? "PASS" : "FAIL"} — ${name}${extra ? ` (${extra})` : ""}`);
+    results.push(`${ok ? "PASS" : "FAIL"} - ${name}${extra ? ` (${extra})` : ""}`);
 
   // ── Sign in (demo account) ────────────────────────────────────────────────
   await page.goto(`${BASE}/login`, { waitUntil: "networkidle" });
@@ -45,7 +45,7 @@ const SHOTS = "scripts/shots/dashboard-pnl";
   await page.locator('[data-testid="performance-strip"]').waitFor({ timeout: 20000 });
   await page.waitForTimeout(1200);
 
-  // ── 1. API contract — cumulativePnl rides the overview payload ───────────
+  // ── 1. API contract - cumulativePnl rides the overview payload ───────────
   const api = await page.evaluate(async () => {
     const token = JSON.parse(window.localStorage.getItem("cosmoz:session") ?? "null")?.token;
     const res = await fetch("/api/stats/overview", {
@@ -71,7 +71,7 @@ const SHOTS = "scripts/shots/dashboard-pnl";
     `${lastCum} vs ${api.netPnl}`,
   );
 
-  // ── 2. Cumulative P&L card — canvas + accent area ─────────────────────────
+  // ── 2. Cumulative P&L card - canvas + accent area ─────────────────────────
   const cumCard = page.locator('[data-testid="cumulative-pnl-card"]');
   await cumCard.waitFor({ timeout: 10000 });
   check("Cumulative P&L card renders", await cumCard.isVisible());
@@ -86,7 +86,7 @@ const SHOTS = "scripts/shots/dashboard-pnl";
     cumCanvasInfo ? `${cumCanvasInfo.w}×${cumCanvasInfo.h}` : "no canvas",
   );
 
-  // ── 3. Daily P&L card — canvas with BOTH sign colors ──────────────────────
+  // ── 3. Daily P&L card - canvas with BOTH sign colors ──────────────────────
   const dailyCard = page.locator('[data-testid="daily-pnl-card"]');
   await dailyCard.waitFor({ timeout: 10000 });
   check("Daily P&L card renders", await dailyCard.isVisible());
@@ -173,7 +173,7 @@ const SHOTS = "scripts/shots/dashboard-pnl";
 
   await page.screenshot({ path: `${SHOTS}/dark-blue-full.png`, fullPage: true });
 
-  // ── 5. User menu — trigger, identity block, destinations ──────────────────
+  // ── 5. User menu - trigger, identity block, destinations ──────────────────
   const trigger = page.locator('[data-testid="user-menu-trigger"]');
   await trigger.waitFor({ timeout: 10000 });
   const triggerText = (await trigger.textContent()) ?? "";
@@ -205,7 +205,7 @@ const SHOTS = "scripts/shots/dashboard-pnl";
   await page.goBack();
   await page.waitForFunction(() => window.location.pathname === "/", { timeout: 10000 });
 
-  // ── 6. Light theme — both canvases survive the token flip ────────────────
+  // ── 6. Light theme - both canvases survive the token flip ────────────────
   await page.locator('button[aria-label="Change theme"]').click();
   await page.getByRole("menuitem", { name: /Light/ }).click();
   await page.waitForTimeout(1400);
@@ -220,16 +220,16 @@ const SHOTS = "scripts/shots/dashboard-pnl";
   await page.getByRole("menuitem", { name: /Dark blue/ }).click(); // back to dark-blue
   await page.waitForTimeout(900);
 
-  // ── 7. Mobile 390px — no horizontal overflow ──────────────────────────────
+  // ── 7. Mobile 390px - no horizontal overflow ──────────────────────────────
   await page.setViewportSize({ width: 390, height: 844 });
   await page.waitForTimeout(1000);
   const overflow = await page.evaluate(
     () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
   );
-  check("390px — no horizontal overflow", overflow <= 0, `${overflow}px`);
+  check("390px - no horizontal overflow", overflow <= 0, `${overflow}px`);
   await page.screenshot({ path: `${SHOTS}/mobile-390.png`, fullPage: false });
 
-  // ── 8. Log out flow (destructive item) — LAST, it ends the session ────────
+  // ── 8. Log out flow (destructive item) - LAST, it ends the session ────────
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.waitForTimeout(600);
   await page.locator('[data-testid="user-menu-trigger"]').click();

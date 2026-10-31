@@ -1,11 +1,11 @@
 /**
- * Playbook bounded context (B10) — the Professional Playbook: strategy
+ * Playbook bounded context (B10) - the Professional Playbook: strategy
  * CRUD with server-side versioning (§17), setups, checklist templates,
  * operating rules, template library, duplicate-as-draft and the module
  * aggregates (overview / stats / insights).
  *
  * Dependency graph (acyclic):
- *   PlaybookModule → PlaybookRepository (own Prisma boundary — STRATEGY |
+ *   PlaybookModule → PlaybookRepository (own Prisma boundary - STRATEGY |
  *                    SETUP | CHECKLIST | RULE | VERSION rows)
  *                  → TradesModule (journal facts for aggregates; FK-RESTRICT
  *                    delete semantics)

@@ -86,6 +86,12 @@ model User {
   mfaEnabledAt        DateTime?
   mfaDisabledAt       DateTime?
   mfaLastVerifiedAt   DateTime?
+  /// Preferred second factor when MFA is enabled; legacy enabled TOTP accounts are backfilled by migration.
+  mfaMethod           String?
+  /// Hashed, short-lived email MFA enrollment challenge; never stores the plain code.
+  mfaPendingEmailCodeHash String?
+  mfaPendingEmailExpiresAt DateTime?
+  mfaPendingEmailAttempts Int @default(0)
 
   // Profile (shared profileSchema — one source of truth for timezone).
   timezone     String  @default("UTC")
@@ -131,6 +137,12 @@ model User {
   playbookRows      PlaybookRow[]
   nofyRows          NofyRow[]
   academyRows       AcademyRow[]
+  taskyBoard        TaskyBoard?
+  personalEventsBoard PersonalEventsBoard?
+  taskyAttachments  TaskyAttachment[]
+  taskySavedViews   TaskySavedView[]
+  taskyAutomations  TaskyAutomationRule[]
+  taskyAutomationRuns TaskyAutomationRun[]
   integrationRows   IntegrationRow[]
   tagRows           TagRow[]
   // ── Reconciliation generation (Phase 4/5/6/7 normalized models) ──
@@ -166,6 +178,8 @@ model Session {
   previousTokenHash String?
   /// Rotation generation — presenting a lower generation is REUSE.
   generation        Int       @default(1)
+  /// Whether the user explicitly selected "remember me" at sign-in.
+  remember          Boolean   @default(false)
   device            String    @default("Unknown device")
   browser           String    @default("Unknown")
   os                String    @default("Unknown")
@@ -221,9 +235,17 @@ model AuthChallenge {
   id        String    @id @default(uuid()) @db.Uuid
   userId    String    @db.Uuid
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  /// EMAIL_VERIFICATION | PASSWORD_RESET — cross-purpose use is impossible.
+  /// EMAIL_VERIFICATION | PASSWORD_RESET | MFA_LOGIN — purpose-scoped challenges.
   purpose   String
+  /// Address that a verification challenge is allowed to verify (prevents stale email-change links).
+  targetEmail String?
   tokenHash String    @unique
+  /// Used only for email MFA login; always a hash, never the six-digit code.
+  codeHash  String?
+  /// AUTHENTICATOR_APP or EMAIL for MFA_LOGIN challenges.
+  method    String?
+  remember  Boolean   @default(false)
+  attempts  Int       @default(0)
   expiresAt DateTime
   usedAt    DateTime?
   createdAt DateTime  @default(now())
@@ -307,6 +329,9 @@ model TradingAccount {
   externalAccountId String
   /// Provider registry key (e.g. "MOCK" — real adapters register their own).
   providerId        String
+  /// Canonical broker identity used to scope duplicates for shared connectors.
+  /// "unknown" preserves the generic MT5 bridge path until the terminal reports its broker.
+  brokerId          String  @default("unknown")
   /// Phase 07 — connect-time broker identification snapshot
   /// (shared brokerIdentificationSchema): which broker this is, the evidence
   /// signals, and the confidence level. Null for pre-Phase-07 rows. The
@@ -335,7 +360,7 @@ model TradingAccount {
   /// Phase-4 execution legs booked on this account.
   tradeExecutions TradeExecution[]
 
-  @@unique([userId, providerId, externalAccountId])
+  @@unique([userId, providerId, externalAccountId, brokerId])
   @@index([userId])
 }
 
@@ -348,6 +373,9 @@ model TradingConnection {
   account         TradingAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
   /// Provider registry key (denormalized from the account for direct lookups).
   providerId      String
+  /// User-selected expected broker for shared connectors (e.g. mt5-bridge).
+  /// Verified against terminal/provider-reported identity before accepting data.
+  expectedBrokerId String?
   /// API_KEY in V1 (shared tradingConnectionMethodSchema).
   method          String
   /// DISCONNECTED | CONNECTING | CONNECTED | ERROR (§15 — orthogonal to sync status).
@@ -1259,6 +1287,98 @@ model AcademyRow {
   updatedAt DateTime @updatedAt
 
   @@index([userId, kind])
+}
+
+/// Tasky Kanban — one persisted personal board per Euforia user.
+model TaskyBoard {
+  userId    String   @id @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Validated TaskyBoardState JSON; ownership comes from the authenticated user, never from payload data.
+  data      Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PersonalEventsBoard {
+  userId    String   @id @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Validated personal calendars and events; ownership is always the authenticated user.
+  data      Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/// Tasky saved filter/sort presets, independent from board content.
+model TaskySavedView {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String   @db.VarChar(40)
+  /// Validated TaskySavedViewFilters JSON; no client-supplied owner identity.
+  filters   Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, name])
+  @@index([userId, updatedAt(sort: Desc)])
+}
+
+/// User-defined Tasky rules. Conditions live in a validated JSON contract so
+/// the rule catalog can grow without changing task board payloads.
+model TaskyAutomationRule {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String   @db.VarChar(80)
+  /// CARD_MOVED | DUE_SOON | OVERDUE
+  trigger   String   @db.VarChar(40)
+  enabled   Boolean  @default(true)
+  config    Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  runs TaskyAutomationRun[]
+
+  @@index([userId, enabled, trigger])
+}
+
+/// Append-only execution history. A nullable unique dedupe key makes reminder
+/// checks idempotent while retaining failures for inspection and retry.
+model TaskyAutomationRun {
+  id             String   @id @default(uuid()) @db.Uuid
+  userId         String   @db.Uuid
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  automationId   String?  @db.Uuid
+  automation     TaskyAutomationRule? @relation(fields: [automationId], references: [id], onDelete: SetNull)
+  automationName String   @db.VarChar(80)
+  trigger        String   @db.VarChar(40)
+  cardId         String?
+  cardTitle      String?  @db.VarChar(140)
+  /// RUNNING | SUCCEEDED | FAILED
+  status         String   @db.VarChar(16)
+  message        String   @db.VarChar(240)
+  error          String?  @db.VarChar(500)
+  dedupeKey      String?  @unique
+  createdAt      DateTime @default(now())
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([userId, status])
+}
+
+/// Tasky attachment metadata; bytes live outside PostgreSQL behind a storage adapter.
+model TaskyAttachment {
+  id             String   @id @default(uuid()) @db.Uuid
+  userId         String   @db.Uuid
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cardId         String
+  originalName   String
+  mimeType       String
+  sizeBytes      Int
+  checksumSha256 String   @db.Char(64)
+  storageKey     String   @unique
+  createdAt      DateTime @default(now())
+
+  @@index([userId, cardId, createdAt(sort: Desc)])
 }
 
 /// Journal context — user-owned tag catalog (data-model.md "Domaine 4": free,

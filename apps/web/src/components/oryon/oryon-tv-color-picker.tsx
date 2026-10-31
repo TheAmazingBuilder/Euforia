@@ -18,14 +18,14 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { cn } from "@/lib/utils";
 
 /**
- * TradingView-style color picker — the reference screenshot reproduced:
+ * TradingView-style color picker - the reference screenshot reproduced:
  * a 10×7 swatch grid (grayscale row + vivid base row + four ramp rows),
  * a custom (recent) swatches strip with a "+" free-color entry, and an
  * opacity slider that composes #RRGGBBAA. The chart engine consumes any
  * CSS color string, so alpha survives the whole pipeline; persistence
  * validates the extended hex form (see chart-prefs).
  *
- * `null` = "follow the theme" — the parent renders its own clear affordance;
+ * `null` = "follow the theme" - the parent renders its own clear affordance;
  * the slider stays disabled until a concrete color is picked (an opacity
  * over "no color" would be a lie).
  */
@@ -38,7 +38,7 @@ export function OryonTvColorPicker({
   testid,
   label,
 }: {
-  /** Current override (#RRGGBB[AA]) — null follows the theme. */
+  /** Current override (#RRGGBB[AA]) - null follows the theme. */
   value: string | null;
   onChange: (color: string) => void;
   testid: string;
@@ -51,7 +51,7 @@ export function OryonTvColorPicker({
   const [customs, setCustoms] = React.useState<string[]>([]);
 
   // The custom strip reads localStorage when the popover opens (client-only
-  // by construction — the settings dialog mounts on user interaction).
+  // by construction - the settings dialog mounts on user interaction).
   const onOpenChange = (next: boolean): void => {
     if (next) setCustoms(loadCustomColors());
     setOpen(next);

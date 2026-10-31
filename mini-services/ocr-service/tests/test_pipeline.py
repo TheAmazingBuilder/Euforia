@@ -1,5 +1,5 @@
 """OCR pipeline unit tests (Phase 19 §52): normalization, classification,
-extraction on synthetic MT5 lines. Deterministic — fixed Tesseract version.
+extraction on synthetic MT5 lines. Deterministic - fixed Tesseract version.
 """
 
 from __future__ import annotations
@@ -72,7 +72,7 @@ def test_direction():
 
 
 def test_direction_long_short_synonyms():
-    """V2 §11 — LONG/SHORT are first-class direction vocabulary."""
+    """V2 §11 - LONG/SHORT are first-class direction vocabulary."""
     assert normalize_direction("long") == "BUY"
     assert normalize_direction("Long") == "BUY"
     assert normalize_direction("short") == "SELL"
@@ -124,7 +124,7 @@ def test_classify_unknown_is_explicit():
     assert result.platform == "UNKNOWN"
 
 
-# ── Platform breadth (V2 §18 — every supported platform detects) ───────
+# ── Platform breadth (V2 §18 - every supported platform detects) ───────
 
 @pytest.mark.parametrize(
     ("text", "platform"),
@@ -212,7 +212,7 @@ def test_extract_fields_exit_price_absent_when_no_evidence():
 
 
 def test_extract_fields_exit_price_with_explicit_label():
-    """V2 §11 — an explicit "Exit price" label yields exitPrice, and the
+    """V2 §11 - an explicit "Exit price" label yields exitPrice, and the
     bare word "close" in a history row still extracts nothing (it is an
     order type there, never a price label)."""
     image, _, _ = render_mt5_with_exit_price()

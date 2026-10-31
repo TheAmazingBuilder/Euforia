@@ -1,5 +1,5 @@
 /**
- * e2e — Ghost Trades (B6): the Registre des Regrets over the REAL AppModule
+ * e2e - Ghost Trades (B6): the Registre des Regrets over the REAL AppModule
  * + real database. Covers the capture → settle lifecycle, the regret feed
  * ordering, shared-contract validation, ownership (IDOR → 404) and honest
  * instrument validation. Mirrors `mocks/handlers/ghosts.ts` behavior.

@@ -41,7 +41,7 @@ interface TradeEditDialogProps {
 }
 
 /**
- * Edit dialog — corrects the journal record. Fields differ by status: OPEN
+ * Edit dialog - corrects the journal record. Fields differ by status: OPEN
  * trades edit the plan, CLOSED trades additionally edit the recorded exit
  * (results recompute server-side on save).
  */
@@ -67,7 +67,7 @@ export function TradeEditDialog({ trade, open, onOpenChange }: TradeEditDialogPr
   const [exitAtLocal, setExitAtLocal] = React.useState("");
   const [exitReason, setExitReason] = React.useState<ExitReason>("MANUAL");
 
-  // Re-hydrate the form whenever a different trade is opened — the
+  // Re-hydrate the form whenever a different trade is opened - the
   // render-time adjustment pattern (no setState inside effects).
   const [hydratedFor, setHydratedFor] = React.useState<string | null>(null);
   const hydratedKey = open && trade ? trade.id : null;
@@ -206,7 +206,7 @@ export function TradeEditDialog({ trade, open, onOpenChange }: TradeEditDialogPr
                 id="edit-stop"
                 value={initialStop}
                 onChange={(event) => setInitialStop(event.target.value)}
-                placeholder="—"
+                placeholder="-"
                 inputMode="decimal"
                 className={inputClasses}
               />
@@ -217,7 +217,7 @@ export function TradeEditDialog({ trade, open, onOpenChange }: TradeEditDialogPr
                 id="edit-tp"
                 value={initialTP}
                 onChange={(event) => setInitialTP(event.target.value)}
-                placeholder="—"
+                placeholder="-"
                 inputMode="decimal"
                 className={inputClasses}
               />

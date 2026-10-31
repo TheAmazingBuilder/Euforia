@@ -1,5 +1,5 @@
 /**
- * Euforia rebrand smoke — verifies the logo implementation end-to-end:
+ * Euforia rebrand smoke - verifies the logo implementation end-to-end:
  *   1. favicon + manifest + brand assets served
  *   2. login page renders the Euforia lockup (no Cosmoz text)
  *   3. after demo login, the sidebar carries the Euforia brand link
@@ -14,8 +14,8 @@ const fs = require("fs");
   const errors = [];
   page.on("pageerror", (e) => errors.push("PAGEERROR " + String(e).slice(0, 140)));
   let results = { pass: 0, fail: 0 };
-  const ok = (name, extra) => { results.pass++; console.log(`  ✓ ${name}${extra ? " — " + extra : ""}`); };
-  const bad = (name, extra) => { results.fail++; console.log(`  ✗ ${name}${extra ? " — " + extra : ""}`); };
+  const ok = (name, extra) => { results.pass++; console.log(`  ✓ ${name}${extra ? " - " + extra : ""}`); };
+  const bad = (name, extra) => { results.fail++; console.log(`  ✗ ${name}${extra ? " - " + extra : ""}`); };
 
   // ── 1. Static brand assets ─────────────────────────────────────────────
   console.log("\n[1] Brand assets over HTTP");
@@ -38,7 +38,7 @@ const fs = require("fs");
   /euforia/i.test(body) ? ok("Euforia text present") : bad("no Euforia text");
   // The seeded demo identity keeps its @cosmoz.app email + cosmoz-demo-2026
   // password (connection data, not brand copy) and the demo panel displays
-  // both — strip them before the brand-word check.
+  // both - strip them before the brand-word check.
   const brandText = body
     .replace(/[\w.+-]+@cosmoz\.app/g, "")
     .replace(/cosmoz-demo-2026/g, "");
@@ -61,7 +61,7 @@ const fs = require("fs");
   await page.waitForTimeout(3000);
   if (!page.url().includes("/login")) {
     ok("login succeeded", page.url());
-    const brandLink = page.locator('a[aria-label="Euforia — Dashboard"]');
+    const brandLink = page.locator('a[aria-label="Euforia - Dashboard"]');
     (await brandLink.count()) > 0 ? ok("sidebar brand link aria-label Euforia") : bad("sidebar brand link");
     const brandText = await brandLink.first().innerText().catch(() => "");
     /Euforia/.test(brandText) ? ok(`sidebar wordmark "${brandText.trim()}"`) : bad("sidebar wordmark", brandText);

@@ -25,7 +25,7 @@ import {
 
 // ── Related entities ─────────────────────────────────────────────────────────
 
-/** TradeExit — partial exit row. A simple trade uses Trade.exitPrice directly. */
+/** TradeExit - partial exit row. A simple trade uses Trade.exitPrice directly. */
 export const tradeExitSchema = z.object({
   id: uuidSchema,
   tradeId: uuidSchema,
@@ -39,7 +39,7 @@ export const tradeExitSchema = z.object({
 export type TradeExit = z.infer<typeof tradeExitSchema>;
 
 /**
- * TradeEvent — lightweight event sourcing. The ONLY way to detect
+ * TradeEvent - lightweight event sourcing. The ONLY way to detect
  * "stop widened" (final state doesn't tell the story).
  * payload example: { "from": "1.0850", "to": "1.0800" }
  */
@@ -54,7 +54,7 @@ export const tradeEventSchema = z.object({
 
 export type TradeEvent = z.infer<typeof tradeEventSchema>;
 
-/** TradeScreenshot — chart evidence stored in object storage. */
+/** TradeScreenshot - chart evidence stored in object storage. */
 export const tradeScreenshotSchema = z.object({
   id: uuidSchema,
   tradeId: uuidSchema,
@@ -74,14 +74,14 @@ export type TradeScreenshot = z.infer<typeof tradeScreenshotSchema>;
  * Phase 4 (Trading Core §8/§30/§58): explicit provenance. MANUAL = user
  * capture; IMPORT = file/CSV batch; EXTERNAL_SYNC = reconstructed from
  * synchronized provider activity (broker-derived fields are authoritative
- * for those — journal metadata stays editable).
+ * for those - journal metadata stays editable).
  */
 export const tradeSourceSchema = z.enum(["MANUAL", "IMPORT", "EXTERNAL_SYNC"]);
 export type TradeSource = z.infer<typeof tradeSourceSchema>;
 
 /**
  * Stable trade error-code registry (Phase 4 §64). Values ride the existing
- * AppError envelope (`{ error, code, message, issues?, requestId? }`) — the
+ * AppError envelope (`{ error, code, message, issues?, requestId? }`) - the
  * HTTP category comes from the thrown error class, the code from this
  * registry. Ownership access is reported as TRADE_NOT_FOUND (404) per the
  * repository-wide "foreign = not found" IDOR convention.
@@ -105,9 +105,9 @@ export const TRADE_ERROR_CODES = {
 export type TradeErrorCode = (typeof TRADE_ERROR_CODES)[keyof typeof TRADE_ERROR_CODES];
 
 /**
- * Trade — the heart of the model. The PLAN (decided before) is kept separate
+ * Trade - the heart of the model. The PLAN (decided before) is kept separate
  * from REALITY (what happened) and RESULTS (computed server-side at close,
- * never trusted from the client — data-model.md §15).
+ * never trusted from the client - data-model.md §15).
  */
 export const tradeSchema = z.object({
   id: uuidSchema,
@@ -124,7 +124,7 @@ export const tradeSchema = z.object({
   status: tradeStatusSchema,
   direction: directionSchema,
   /**
-   * Provenance (Phase 4 §8) — optional for backward compatibility with the
+   * Provenance (Phase 4 §8) - optional for backward compatibility with the
    * pre-Phase-4 wire consumers; the backend always stores it (default MANUAL
    * for user captures, IMPORT for batches, EXTERNAL_SYNC for reconstructions).
    */
@@ -238,7 +238,7 @@ const captureBaseFields = {
   externalRef: z.string().min(1).optional(),
   /**
    * Provenance of the captured values (§82). MANUAL (default) = hand-entered
-   * capture; IMPORT = programmatic ingestion (OCR confirmation bridge) — the
+   * capture; IMPORT = programmatic ingestion (OCR confirmation bridge) - the
    * server recomputes P&L either way, this label only records WHERE the
    * declaration came from.
    */
@@ -246,12 +246,12 @@ const captureBaseFields = {
 };
 
 /**
- * CreateTradeInput — capture payload.
+ * CreateTradeInput - capture payload.
  * Discriminated on `variant`:
  * - "open": trade enters the journal as OPEN (no exit data allowed);
  * - "closed": trade is journaled already closed (requires exit triplet).
  *
- * P&L / R / MFE are NEVER accepted here — the server recomputes everything
+ * P&L / R / MFE are NEVER accepted here - the server recomputes everything
  * (data-model.md §15: never trust a client-sent pnl/rMultiple).
  */
 export const createTradeInputSchema = z
@@ -311,7 +311,7 @@ export const partialExitInputSchema = z.object({
 export type PartialExitInput = z.infer<typeof partialExitInputSchema>;
 
 /**
- * CloseTradeInput — close an OPEN trade.
+ * CloseTradeInput - close an OPEN trade.
  * - "single": one exit directly on the trade (simple path);
  * - "partial": multiple exit legs (TradeExit rows created server-side).
  * Optional MFE/MAE price observations; results are computed server-side.
@@ -357,7 +357,7 @@ export type CloseTradeInput = z.infer<typeof closeTradeInputSchema>;
 // ── TradeDecisionInput (Judgment Gate) ───────────────────────────────────────
 
 /**
- * TradeDecisionInput — submitted BEFORE the P&L is revealed (API-enforced).
+ * TradeDecisionInput - submitted BEFORE the P&L is revealed (API-enforced).
  * The answer unlocks the reveal screen.
  */
 export const tradeDecisionInputSchema = z.object({
@@ -394,7 +394,7 @@ export const triggeredAlertSummarySchema = z.object({
 export type TriggeredAlertSummary = z.infer<typeof triggeredAlertSummarySchema>;
 
 /**
- * RevealPayload — everything the reveal screen needs, in one response:
+ * RevealPayload - everything the reveal screen needs, in one response:
  * the verdict (pnlNet, rMultiple), the trade duration, the coaching message
  * key (client maps the key to localized copy), auto-detected mistakes,
  * triggered alerts and today's Discipline Saved so far.

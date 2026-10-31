@@ -1,5 +1,5 @@
 /**
- * Unit — DerivWsProviderAdapter against the local WS fixture server (Phase 07).
+ * Unit - DerivWsProviderAdapter against the local WS fixture server (Phase 07).
  *
  * Real WebSocket protocol exchange (ws client ⇄ ws fixture server), real zod
  * boundaries, real mapping layer. Covers: the read-only red line (whitelist
@@ -7,7 +7,7 @@
  * class), financial/timestamp normalization, capability honesty (orders),
  * profit-table pagination with checkpoint semantics, and error classification.
  *
- * HONESTY LABEL: fixture evidence — NEVER proof of live Deriv connectivity.
+ * HONESTY LABEL: fixture evidence - NEVER proof of live Deriv connectivity.
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { TradingProviderAdapter } from "../../src/modules/accounts/provider.types";
@@ -93,14 +93,14 @@ function expectProviderError(code: string, run: () => Promise<unknown>) {
     (error: unknown) => {
       expect(error).toBeInstanceOf(ProviderError);
       expect((error as ProviderError).code).toBe(code);
-      // Canned messages only — no provider internals cross the boundary.
+      // Canned messages only - no provider internals cross the boundary.
       expect((error as Error).message).not.toMatch(/fixture/i);
       return error as ProviderError;
     },
   );
 }
 
-describe("deriv-ws — read-only red line (§47)", () => {
+describe("deriv-ws - read-only red line (§47)", () => {
   it("exposes the 6 port methods and NO execution surface", () => {
     const methods = Object.getOwnPropertyNames(DerivWsProviderAdapter.prototype).filter(
       (m) => m !== "constructor" && !m.startsWith("resolve") && !m.startsWith("require") && !m.startsWith("assert") && !m.startsWith("map") && !m.startsWith("pull"),
@@ -120,7 +120,7 @@ describe("deriv-ws — read-only red line (§47)", () => {
     expect(methods.filter((m) => /^place|modify|cancel|close|buy|sell/i.test(m))).toHaveLength(0);
   });
 
-  it("whitelist contains ONLY documented read request names — no execution verbs", () => {
+  it("whitelist contains ONLY documented read request names - no execution verbs", () => {
     const forbidden = ["buy", "sell", "cancel", "proposal", "proposal_open_contract", "contract_update", "transfer_between_accounts", "topup_virtual", "paymentagent_transfer", "api_token", "new_account_real"];
     for (const verb of forbidden) {
       expect(DERIV_READ_REQUEST_NAMES.has(verb)).toBe(false);
@@ -137,7 +137,7 @@ describe("deriv-ws — read-only red line (§47)", () => {
   });
 });
 
-describe("deriv-ws — descriptor honesty", () => {
+describe("deriv-ws - descriptor honesty", () => {
   it("declares platform DERIV, DEMO/LIVE environments, and no READ_ORDERS permission", () => {
     const d = adapter.descriptor;
     expect(d.providerId).toBe("deriv-ws");
@@ -164,7 +164,7 @@ describe("deriv-ws — descriptor honesty", () => {
   });
 });
 
-describe("deriv-ws — credential handling", () => {
+describe("deriv-ws - credential handling", () => {
   it("testConnection accepts a valid token", async () => {
     await expect(adapter.testConnection({ method: "API_KEY", secret: TOKEN })).resolves.toBeUndefined();
   });
@@ -193,7 +193,7 @@ describe("deriv-ws — credential handling", () => {
   });
 });
 
-describe("deriv-ws — account binding and identity capture", () => {
+describe("deriv-ws - account binding and identity capture", () => {
   it("fetchAccountInfo returns the provider-reported identity (landing company) + account class", async () => {
     const info = await adapter.fetchAccountInfo(baseContext());
     expect(info.externalAccountId).toBe(LOGINID);
@@ -242,7 +242,7 @@ describe("deriv-ws — account binding and identity capture", () => {
   });
 });
 
-describe("deriv-ws — financial normalization", () => {
+describe("deriv-ws - financial normalization", () => {
   it("fetchSnapshot maps balance exactly and reports equity/margin as honest nulls", async () => {
     const snap = await adapter.fetchSnapshot(baseContext());
     expect(snap.balance).toBe("10500.55");
@@ -301,7 +301,7 @@ describe("deriv-ws — financial normalization", () => {
   });
 });
 
-describe("deriv-ws — capability honesty (orders)", () => {
+describe("deriv-ws - capability honesty (orders)", () => {
   it("fetchOrders throws UNSUPPORTED_CAPABILITY and never issues a provider call", async () => {
     const before = fixture.state.requests.length;
     await expectProviderError("UNSUPPORTED_CAPABILITY", () => adapter.fetchOrders(baseContext()));
@@ -318,7 +318,7 @@ describe("deriv-ws — capability honesty (orders)", () => {
   });
 });
 
-describe("deriv-ws — profit table pagination and checkpoint semantics", () => {
+describe("deriv-ws - profit table pagination and checkpoint semantics", () => {
   it("initial pull within one page: complete=true, observedThrough = newest sell_time", async () => {
     const result = await adapter.fetchDeals(baseContext());
     expect(result.deals).toHaveLength(2);
@@ -361,7 +361,7 @@ describe("deriv-ws — profit table pagination and checkpoint semantics", () => 
       const result = await adapter.fetchDeals(baseContext());
       expect(result.complete).toBe(false);
       expect(result.deals).toHaveLength(5000);
-      // Rows sorted DESC: the 10 allowed pages cover i=5499…500 — the oldest
+      // Rows sorted DESC: the 10 allowed pages cover i=5499…500 - the oldest
       // OBSERVED sell_time is i=500's (never a claim beyond observed rows).
       expect(result.observedThrough).toBe(String(1_700_000_000 + 500));
     } finally {

@@ -2,7 +2,7 @@
 /**
  * Daemonize a command the way pg_ctl does it (double-detach): the child is
  * spawned with detached: true (new process group + session), stdio ignored,
- * and unref()d so the parent Node process exits immediately — the child is
+ * and unref()d so the parent Node process exits immediately - the child is
  * re-parented to init and survives the agent tool-session teardown.
  *
  * Usage: node scripts/daemonize.mjs -- <command> [args...]

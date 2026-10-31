@@ -1,10 +1,10 @@
 /**
- * Accounts controller (Phase 3 §32) — thin HTTP boundary over the accounts
+ * Accounts controller (Phase 3 §32) - thin HTTP boundary over the accounts
  * application services. Validation → authentication (global guard) →
  * application use case → response. No provider logic, no database business
  * logic, no credential handling here.
  *
- * All routes require authentication (global JwtAuthGuard — no @Public here).
+ * All routes require authentication (global JwtAuthGuard - no @Public here).
  * Ownership is enforced inside the services: the userId always comes from
  * the auth principal, never from the client (§19).
  */
@@ -59,13 +59,13 @@ export class AccountsController {
 
   // ── Reads ────────────────────────────────────────────────────────────────
 
-  /** Journal identity list — the exact contract the existing frontend consumes. */
+  /** Journal identity list - the exact contract the existing frontend consumes. */
   @Get()
   async list(@CurrentUser() principal: AuthPrincipal) {
     return this.accounts.list(principal.userId);
   }
 
-  /** Provider registry listing (metadata only — future connect UI consumes this). */
+  /** Provider registry listing (metadata only - future connect UI consumes this). */
   @Get("providers")
   listProviders() {
     return this.accounts.listProviders();
@@ -138,7 +138,7 @@ export class AccountsController {
     return { account };
   }
 
-  /** Health-check the stored connection — 200 with honest per-check results. */
+  /** Health-check the stored connection - 200 with honest per-check results. */
   @Post(":accountId/connection/test")
   @HttpCode(HttpStatus.OK)
   async testConnection(
@@ -171,7 +171,7 @@ export class AccountsController {
     return { account };
   }
 
-  /** Disconnect — destroys credentials, preserves all history (§52). */
+  /** Disconnect - destroys credentials, preserves all history (§52). */
   @Delete(":accountId/connection")
   @HttpCode(HttpStatus.OK)
   async disconnect(

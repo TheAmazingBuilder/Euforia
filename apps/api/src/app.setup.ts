@@ -1,6 +1,6 @@
 /**
  * Application wiring shared by BOTH production bootstrap (main.ts) and the
- * e2e test harness — one single source of truth for how the HTTP server is
+ * e2e test harness - one single source of truth for how the HTTP server is
  * configured (Phase 1 mandate §34: no divergence between tested and shipped).
  */
 import { VersioningType } from "@nestjs/common";
@@ -39,7 +39,7 @@ export function createAdapter(config: AppConfig): FastifyAdapter {
  *
  * Error funneling note: unknown routes and transport-level errors (bad JSON,
  * oversized body) are routed by Nest's own fastify handlers through the
- * global exception filter chain — no custom fastify error handler here.
+ * global exception filter chain - no custom fastify error handler here.
  *
  * Conventions (Phase 0 §P.2 + Phase 1 §21):
  *   - Infrastructure endpoints (health) live at the root, unversioned.
@@ -66,8 +66,8 @@ export async function configureApp(app: NestFastifyApplication, config: AppConfi
   // ── API telemetry (Phase 17) ────────────────────────────────────────────
   // Bounded in-memory observation ring (500 calls): route template, status,
   // duration and the guard-stamped principal. Consumed by the Monitoring
-  // module; nothing is persisted (§40). Runs for EVERY response — 401/429
-  // and unmatched routes included — so error rates are honest.
+  // module; nothing is persisted (§40). Runs for EVERY response - 401/429
+  // and unmatched routes included - so error rates are honest.
   registerApiTelemetryHook(instance);
 
   // ── Security headers (helmet defaults) ────────────────────────────────────

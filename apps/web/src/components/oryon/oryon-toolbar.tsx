@@ -34,9 +34,9 @@ import type { OryonChartType } from "@/lib/charting/oryon-chart-engine";
 import { cn } from "@/lib/utils";
 
 /**
- * Oryon top toolbar — instrument selection (catalog + honest feed
+ * Oryon top toolbar - instrument selection (catalog + honest feed
  * coverage), the current instrument identity, the TIMEFRAME selector (the
- * shared interval contract — bar duration, restored to the top toolbar;
+ * shared interval contract - bar duration, restored to the top toolbar;
  * the bottom strip owns the historical RANGE, a different control), the
  * implemented chart types, indicator management, the live feed status,
  * return-to-latest, the lower-panel toggle, utility access, browser full
@@ -67,7 +67,7 @@ export function OryonToolbar({
   covered: boolean;
   feedKnown: boolean;
   feedSymbols: ReadonlySet<string>;
-  /** Bar duration of the ACTIVE panel — each candle's span. */
+  /** Bar duration of the ACTIVE panel - each candle's span. */
   interval: MarketInterval;
   onIntervalChange: (interval: MarketInterval) => void;
   chartType: OryonChartType;
@@ -94,7 +94,7 @@ export function OryonToolbar({
   }, []);
 
   const toggleFullscreen = React.useCallback(() => {
-    // Best effort — a blocked request must never break the workspace.
+    // Best effort - a blocked request must never break the workspace.
     if (document.fullscreenElement !== null) {
       void document.exitFullscreen().catch(() => {});
     } else {
@@ -120,7 +120,7 @@ export function OryonToolbar({
 
       <div aria-live="polite" data-testid="oryon-instrument-identity" className="ml-1 mr-1 hidden min-w-0 shrink-0 flex-col justify-center sm:flex">
         <span className="truncate font-heading text-xs font-semibold leading-tight text-foreground">
-          {instrument?.name ?? "—"}
+          {instrument?.name ?? "-"}
         </span>
         <span className="flex items-center gap-1.5 text-[10px] leading-tight text-muted-foreground">
           <span className="font-mono">{instrument?.quoteCurrency ?? ""}</span>
@@ -134,7 +134,7 @@ export function OryonToolbar({
 
       <div className="h-6 w-px shrink-0 bg-border" aria-hidden />
 
-      {/* Timeframe selector — BACK ON THE TOP TOOLBAR (TradingView
+      {/* Timeframe selector - BACK ON THE TOP TOOLBAR (TradingView
           parity): bar duration belongs up here, the bottom strip owns the
           historical RANGE. Canonical testids (oryon-tf-*) live here;
           per-panel strips remain in the panel headers for multi-chart
@@ -182,13 +182,13 @@ export function OryonToolbar({
 
       <div className="h-6 w-px shrink-0 bg-border" aria-hidden />
 
-      {/* Phase 7 — multi-chart arrangement + synchronization. */}
+      {/* Phase 7 - multi-chart arrangement + synchronization. */}
       <OryonGridMenu />
       <OryonSyncMenu />
 
       <div className="h-6 w-px shrink-0 bg-border" aria-hidden />
 
-      {/* Phase 6 — workspace configuration cluster: layouts + templates. */}
+      {/* Phase 6 - workspace configuration cluster: layouts + templates. */}
       <OryonLayoutsMenu />
       <OryonTemplatesMenu />
 
@@ -250,7 +250,7 @@ export function OryonToolbar({
   );
 }
 
-/** Segmented chart-type button (candles / line — the implemented set). */
+/** Segmented chart-type button (candles / line - the implemented set). */
 function OryonToolbarTypeButton({
   active,
   icon: Icon,

@@ -12,10 +12,10 @@ import {
 } from "@/lib/export/builders";
 
 /**
- * Phase 08 — CSV export builders. Contract under test:
+ * Phase 08 - CSV export builders. Contract under test:
  *   - stable documented columns; missing values = EMPTY cell;
  *   - multi-currency honesty: NO money values exported (columns dropped);
- *   - every cell passes the shared csvCell (RFC 4180 + formula guard) —
+ *   - every cell passes the shared csvCell (RFC 4180 + formula guard) -
  *     a leading "=" in user text can never execute as a spreadsheet formula;
  *   - scope echo (descriptor / resolved window / currency) present;
  *   - snapshot export is the frozen capture with full context.
@@ -75,7 +75,7 @@ function suite(overrides: Partial<AnalyticsSuiteResponse> = {}): AnalyticsSuiteR
   return { ...base, ...overrides } as AnalyticsSuiteResponse;
 }
 
-describe("suiteSummaryCsv — summary export", () => {
+describe("suiteSummaryCsv - summary export", () => {
   it("exports stable columns, scope echo and one row per metric", () => {
     const csv = suiteSummaryCsv(suite());
     const lines = csv.split(CSV_EOL);
@@ -100,7 +100,7 @@ describe("suiteSummaryCsv — summary export", () => {
   });
 });
 
-describe("suiteStrategiesCsv / suiteSymbolsCsv — breakdown exports", () => {
+describe("suiteStrategiesCsv / suiteSymbolsCsv - breakdown exports", () => {
   it("exports one row per strategy with money columns in single currency", () => {
     const withStrategy = suite();
     (withStrategy as { strategies: unknown[] }).strategies = [
@@ -176,7 +176,7 @@ describe("suiteStrategiesCsv / suiteSymbolsCsv — breakdown exports", () => {
   });
 });
 
-describe("suiteReportsCsv — rollup exports", () => {
+describe("suiteReportsCsv - rollup exports", () => {
   it("exports monthly rollup rows with bucket label", () => {
     const csv = suiteReportsCsv(suite(), "monthly");
     const lines = csv.split(CSV_EOL).filter((line) => line.length > 0);
@@ -185,7 +185,7 @@ describe("suiteReportsCsv — rollup exports", () => {
   });
 });
 
-describe("suiteSymbolsCsv — symbol breakdown export", () => {
+describe("suiteSymbolsCsv - symbol breakdown export", () => {
   it("exports one row per symbol with the scope echo", () => {
     const withSymbols = suite();
     (withSymbols as { symbols: unknown[] }).symbols = [
@@ -211,7 +211,7 @@ describe("suiteSymbolsCsv — symbol breakdown export", () => {
   });
 });
 
-describe("accountsCsv — account-level summary", () => {
+describe("accountsCsv - account-level summary", () => {
   it("exports one row per account with currency and default flag", () => {
     const csv = accountsCsv([
       {
@@ -229,7 +229,7 @@ describe("accountsCsv — account-level summary", () => {
   });
 });
 
-describe("snapshotCsv — frozen capture export", () => {
+describe("snapshotCsv - frozen capture export", () => {
   it("exports the capture context block + metric rows", () => {
     const snapshot = {
       id: "11111111-1111-4111-8111-111111111111",
@@ -260,7 +260,7 @@ describe("snapshotCsv — frozen capture export", () => {
     expect(lines[0]).toBe("captured_at,2026-10-19T10:00:00.000Z");
     expect(lines).toContain("period_from,0000-01-01");
     expect(lines).toContain("schema_version,1");
-    // Notes pass through csvCell — formula-neutralized (leading "=") + quoted.
+    // Notes pass through csvCell - formula-neutralized (leading "=") + quoted.
     expect(csv).toContain("'=danger in notes");
     expect(lines).toContain("net_pnl,200,money,USD");
   });

@@ -2,7 +2,7 @@ import { validateEnv, type Env } from "./env.schema";
 
 /**
  * Typed, immutable application configuration.
- * Built once from validated environment variables — the ONLY place that
+ * Built once from validated environment variables - the ONLY place that
  * reads `process.env` in the application (besides the env schema itself).
  */
 export interface AppConfig {
@@ -10,7 +10,7 @@ export interface AppConfig {
   isProduction: boolean;
   isDevelopment: boolean;
   port: number;
-  /** PostgreSQL connection string — never logged, never returned to clients. */
+  /** PostgreSQL connection string - never logged, never returned to clients. */
   databaseUrl: string;
   corsOrigins: readonly string[];
   logLevel: Env["LOG_LEVEL"];
@@ -19,9 +19,9 @@ export interface AppConfig {
   rateLimit: { windowSeconds: number; max: number };
   marketServiceUrl?: string;
   ocr: {
-    /** FastAPI sidecar base URL — absent means the sidecar is not registered. */
+    /** FastAPI sidecar base URL - absent means the sidecar is not registered. */
     serviceUrl?: string;
-    /** Shared secret for service-to-service auth (§27) — never logged. */
+    /** Shared secret for service-to-service auth (§27) - never logged. */
     serviceToken?: string;
     /** Whether the deterministic mock engine may be registered (§57). */
     mockEngineEnabled: boolean;
@@ -61,15 +61,15 @@ export interface AppConfig {
     derivAppId: string;
     /** Whether the MT5 terminal bridge adapter is registered (Phase 08). */
     mt5BridgeEnabled: boolean;
-    /** Phase 05 — background sync scheduler gate (never on by default, §57). */
+    /** Phase 05 - background sync scheduler gate (never on by default, §57). */
     syncSchedulerEnabled: boolean;
-    /** Phase 05 — base interval between scheduler sweeps (jittered per tick). */
+    /** Phase 05 - base interval between scheduler sweeps (jittered per tick). */
     syncIntervalMs: number;
-    /** Phase 05 — bounded concurrency across connections per sweep (§9.1). */
+    /** Phase 05 - bounded concurrency across connections per sweep (§9.1). */
     syncMaxConcurrency: number;
-    /** Phase 05 — RUNNING runs older than this are CANCELLED (§15 recovery). */
+    /** Phase 05 - RUNNING runs older than this are CANCELLED (§15 recovery). */
     syncStaleRunMs: number;
-    /** Phase 05 — bounded retries per segment for transient failures (§15). */
+    /** Phase 05 - bounded retries per segment for transient failures (§15). */
     syncSegmentRetries: number;
   };
   trades: {
@@ -78,10 +78,16 @@ export interface AppConfig {
     /** Max decoded binary size accepted for one trade screenshot. */
     screenshotMaxBytes: number;
   };
+  tasky: {
+    /** Local filesystem root for Tasky attachments; persist this volume in deployments. */
+    attachmentsRoot: string;
+    /** Maximum decoded bytes per attachment. */
+    attachmentMaxBytes: number;
+  };
   calendar: {
-    /** Past half of the canonical eco sync window (§23) — Analytics correlation depth. */
+    /** Past half of the canonical eco sync window (§23) - Analytics correlation depth. */
     windowPastDays: number;
-    /** Future half of the canonical eco sync window (§23) — planner/news-blocker horizon. */
+    /** Future half of the canonical eco sync window (§23) - planner/news-blocker horizon. */
     windowFutureDays: number;
   };
   integrations: {
@@ -102,6 +108,11 @@ export interface AppConfig {
     reauthMinutes: number;
     webAppUrl: string;
     emailFrom: string;
+    smtpHost: string;
+    smtpPort: number;
+    smtpSecure: boolean;
+    smtpUser?: string;
+    smtpAppPassword?: string;
     requireEmailVerification: boolean;
   };
 }
@@ -130,7 +141,7 @@ function build(env: Env): AppConfig {
       mockEngineEnabled:
         env.OCR_MOCK_ENGINE !== undefined
           ? env.OCR_MOCK_ENGINE === "enabled"
-          : env.NODE_ENV !== "production",
+          : env.NODE_ENV === "test",
       uploadMaxBytes: env.OCR_UPLOAD_MAX_BYTES,
       imageMaxPixels: env.OCR_IMAGE_MAX_PIXELS,
       engineTimeoutMs: env.OCR_ENGINE_TIMEOUT_MS,
@@ -146,12 +157,12 @@ function build(env: Env): AppConfig {
       mockProviderEnabled:
         env.ACCOUNTS_MOCK_PROVIDER !== undefined
           ? env.ACCOUNTS_MOCK_PROVIDER === "enabled"
-          : env.NODE_ENV !== "production",
+          : env.NODE_ENV === "test",
       oandaEnabled: env.ACCOUNTS_OANDA_PROVIDER === "enabled",
       oandaRestUrlOverride: env.ACCOUNTS_OANDA_REST_URL ?? null,
       derivEnabled: env.ACCOUNTS_DERIV_PROVIDER === "enabled",
       derivWsUrlOverride: env.ACCOUNTS_DERIV_WS_URL ?? null,
-      // Deriv's public example app id — development/verification only (see
+      // Deriv's public example app id - development/verification only (see
       // env.schema.ts); real deployments register their own application id.
       derivAppId: env.ACCOUNTS_DERIV_APP_ID ?? "1089",
       mt5BridgeEnabled: env.ACCOUNTS_MT5_BRIDGE_PROVIDER === "enabled",
@@ -164,6 +175,10 @@ function build(env: Env): AppConfig {
     trades: {
       screenshotsRoot: env.TRADES_SCREENSHOTS_ROOT,
       screenshotMaxBytes: env.TRADES_SCREENSHOT_MAX_BYTES,
+    },
+    tasky: {
+      attachmentsRoot: env.TASKY_ATTACHMENTS_STORAGE_ROOT,
+      attachmentMaxBytes: env.TASKY_ATTACHMENT_MAX_BYTES,
     },
     calendar: {
       windowPastDays: env.CALENDAR_WINDOW_PAST_DAYS,
@@ -185,7 +200,12 @@ function build(env: Env): AppConfig {
       mfaChallengeMinutes: env.AUTH_MFA_CHALLENGE_MINUTES,
       reauthMinutes: env.AUTH_REAUTH_MINUTES,
       webAppUrl: env.WEB_APP_URL,
-      emailFrom: env.EMAIL_FROM,
+      emailFrom: env.EMAIL_FROM ?? (env.SMTP_USER ? `Euforia <${env.SMTP_USER}>` : "Euforia <no-reply@euforia.app>"),
+      smtpHost: env.SMTP_HOST,
+      smtpPort: env.SMTP_PORT,
+      smtpSecure: env.SMTP_SECURE,
+      smtpUser: env.SMTP_USER,
+      smtpAppPassword: env.SMTP_APP_PASSWORD,
       requireEmailVerification: env.AUTH_REQUIRE_EMAIL_VERIFICATION,
     },
   };
@@ -203,7 +223,7 @@ export function loadAppConfig(source?: Record<string, string | undefined>): AppC
   return cached;
 }
 
-/** Test helper — clears the memoized config. Not used in production code. */
+/** Test helper - clears the memoized config. Not used in production code. */
 export function resetAppConfigCache(): void {
   cached = undefined;
 }

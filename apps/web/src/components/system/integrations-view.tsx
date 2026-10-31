@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/card";
 
 /**
- * /integrations — the broker & data-provider hub. Provider-agnostic by
+ * /integrations - the broker & data-provider hub. Provider-agnostic by
  * design: every adapter implements the same capabilities (market data,
  * read-only account monitoring, trade execution) and connects through the
  * credentials vault (Security). This build ships the Deriv connection the
@@ -42,7 +42,7 @@ type Provider = {
 const PROVIDERS: Provider[] = [
   {
     name: "Deriv",
-    tagline: "Deriv Live account — the session module's live feed",
+    tagline: "Deriv Live account - the session module's live feed",
     state: "Connected",
     capabilities: [
       { label: "Market data", icon: Radio, value: "WebSocket stream" },
@@ -52,7 +52,7 @@ const PROVIDERS: Provider[] = [
     note: "Scoped to monitoring: balances, open positions and ticks. No order can leave Euforia through this connection.",
   },
   {
-    name: "MT5 — Local Bridge",
+    name: "MT5 - Local Bridge",
     tagline: "MetaTrader 5 through a small local companion process",
     state: "Not configured",
     capabilities: [
@@ -101,7 +101,7 @@ export function IntegrationsView() {
         </h1>
         <p className="max-w-2xl text-sm text-muted-foreground">
           The hub where brokers and data providers plug in. One contract, many
-          adapters — connections are scoped, read-only, and their keys sleep in
+          adapters - connections are scoped, read-only, and their keys sleep in
           the Security vault.
         </p>
       </header>
@@ -160,7 +160,7 @@ export function IntegrationsView() {
             One contract, many adapters
           </CardTitle>
           <CardDescription>
-            Every provider implements the same three capabilities — market
+            Every provider implements the same three capabilities - market
             data, account monitoring, execution. Execution stays disabled in
             this phase: Euforia observes and journals, it never places orders.
           </CardDescription>

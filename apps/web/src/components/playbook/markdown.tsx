@@ -6,14 +6,14 @@ import { useI18n } from "@/i18n/i18n-provider";
 import { cn } from "@/lib/utils";
 
 /**
- * Minimal markdown renderer for playbook rule bodies — no dependency
+ * Minimal markdown renderer for playbook rule bodies - no dependency
  * (frozen stack). Supports the subset the form invites: "- " bullets,
  * "1." ordered items, **bold**, *italic* and plain paragraphs. Blank
  * lines separate blocks; everything is rendered as semantic lists.
  */
 
 function renderInline(text: string, keyPrefix: string): React.ReactNode[] {
-  // **bold** then *italic* — split on the bold markers first.
+  // **bold** then *italic* - split on the bold markers first.
   const nodes: React.ReactNode[] = [];
   const boldParts = text.split(/\*\*(.+?)\*\*/g);
   boldParts.forEach((part, boldIndex) => {

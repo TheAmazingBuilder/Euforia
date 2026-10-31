@@ -1,11 +1,11 @@
 /**
- * Logging module — provides the process-wide structured logger (pino) and
+ * Logging module - provides the process-wide structured logger (pino) and
  * the pino-http request-logging options (request correlation + redaction).
  *
  * The module is @Global so any future bounded context can inject the
  * {@link ROOT_LOGGER} without re-import plumbing. The pino-http plugin
  * itself is registered by `configureApp` (app.setup.ts) using the SAME
- * memoized logger instance — request logs and application logs share
+ * memoized logger instance - request logs and application logs share
  * format, level and redaction rules.
  */
 import { Global, Module } from "@nestjs/common";
@@ -26,7 +26,7 @@ export function buildPinoHttpOptions(logger: RootLogger): PinoHttpOptions {
     logger,
     genReqId: (req: IncomingMessage) =>
       resolveRequestId(req.headers[REQUEST_ID_HEADER]),
-    // Health probes would flood logs in production — skip auto-logging them.
+    // Health probes would flood logs in production - skip auto-logging them.
     // Failures on health paths still surface via the exception filter.
     autoLogging: {
       ignore: (req: IncomingMessage) =>

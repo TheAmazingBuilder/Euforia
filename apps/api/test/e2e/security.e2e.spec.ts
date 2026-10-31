@@ -1,10 +1,11 @@
 /**
- * e2e — Security center, MFA/TOTP, sessions, API keys, profile/preferences
+ * e2e - Security center, MFA/TOTP, sessions, API keys, profile/preferences
  * (Phase 2 §41–§44: authorization + IDOR + sensitive operations).
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { Secret, TOTP } from "otpauth";
 import type { NestFastifyApplication } from "@nestjs/platform-fastify";
+import { MailerService } from "../../src/modules/identity/mailer.service";
 import { buildTestApp } from "../helpers/build-app";
 import {
   authenticatedUser,
@@ -147,7 +148,7 @@ describe("password change (§23)", () => {
     expect(changed.statusCode).toBe(200);
     expect(changed.json().changedAt).toBeTruthy();
 
-    // Other session revoked — cannot refresh.
+    // Other session revoked - cannot refresh.
     const otherRefresh = await app.inject({
       method: "POST",
       url: "/api/v1/auth/refresh",
@@ -198,6 +199,126 @@ describe("password change (§23)", () => {
   });
 });
 
+describe("MFA / email OTP lifecycle", () => {
+  it("enables email MFA, sends a one-time code at login, and consumes the challenge", async () => {
+    const email = uniqueEmail("mfa-email");
+    const ctx = await authenticatedUser(app, mail, { email });
+    const reauth = await app.inject({
+      method: "POST",
+      url: "/api/v1/security/reauth",
+      headers: ctx.authHeader,
+      payload: { password: ctx.password },
+    });
+    expect(reauth.statusCode).toBe(200);
+
+    const enabled = await app.inject({
+      method: "POST",
+      url: "/api/v1/security/2fa/email/enable",
+      headers: ctx.authHeader,
+      payload: { reauthToken: reauth.json().token },
+    });
+    expect(enabled.statusCode).toBe(200);
+    expect(enabled.json()).toMatchObject({ pending: true });
+    expect(enabled.json().expiresAt).toBeTruthy();
+
+    // Email MFA stays disabled until the mailbox challenge is confirmed.
+    const enrollmentMessage = mail.messages.find((message) => message.kind === "MFA_EMAIL_CODE");
+    expect(enrollmentMessage?.code).toMatch(/^\d{6}$/);
+    const confirmed = await app.inject({
+      method: "POST",
+      url: "/api/v1/security/2fa/email/confirm",
+      headers: ctx.authHeader,
+      payload: { code: enrollmentMessage?.code },
+    });
+    expect(confirmed.statusCode).toBe(200);
+    expect(confirmed.json().state.enabled).toBe(true);
+    expect(confirmed.json().state.method).toBe("EMAIL");
+    expect(confirmed.json().recoveryCodes).toHaveLength(10);
+
+    mail.clear();
+    const login = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/login",
+      payload: { email, password: ctx.password, remember: false },
+    });
+    expect(login.statusCode).toBe(200);
+    const pending = login.json();
+    expect(pending.outcome).toBe("MFA_REQUIRED");
+    expect(pending.method).toBe("EMAIL");
+    const codeMessage = mail.messages.find((message) => message.kind === "MFA_EMAIL_CODE");
+    expect(codeMessage?.code).toMatch(/^\d{6}$/);
+
+    const challenge = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/mfa/challenge",
+      payload: { challengeToken: pending.challengeToken, code: codeMessage?.code },
+    });
+    expect(challenge.statusCode).toBe(200);
+    expect(challenge.json().outcome).toBe("AUTHENTICATED");
+    expect(challenge.json().session.current).toBe(true);
+
+    const replay = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/mfa/challenge",
+      payload: { challengeToken: pending.challengeToken, code: codeMessage?.code },
+    });
+    expect(replay.statusCode).toBe(401);
+    expect(replay.json().code).toBe("INVALID_CHALLENGE");
+  });
+  it("does not leave an unusable login challenge after email MFA delivery fails", async () => {
+    const email = uniqueEmail("mfa-smtp-failure");
+    const ctx = await authenticatedUser(app, mail, { email });
+    const reauth = await app.inject({
+      method: "POST",
+      url: "/api/v1/security/reauth",
+      headers: ctx.authHeader,
+      payload: { password: ctx.password },
+    });
+    const enabled = await app.inject({
+      method: "POST",
+      url: "/api/v1/security/2fa/email/enable",
+      headers: ctx.authHeader,
+      payload: { reauthToken: reauth.json().token },
+    });
+    expect(enabled.statusCode).toBe(200);
+    const enrollment = [...mail.messages].reverse().find((message) => message.kind === "MFA_EMAIL_CODE");
+    expect(enrollment?.code).toMatch(/^\d{6}$/);
+    const confirmed = await app.inject({
+      method: "POST",
+      url: "/api/v1/security/2fa/email/confirm",
+      headers: ctx.authHeader,
+      payload: { code: enrollment?.code },
+    });
+    expect(confirmed.statusCode).toBe(200);
+
+    const mailer = app.get(MailerService);
+    mailer.useTransport({ send: async () => { throw new Error("simulated SMTP outage"); } });
+    let failedStatus = 0;
+    try {
+      const failed = await app.inject({
+        method: "POST",
+        url: "/api/v1/auth/login",
+        payload: { email, password: ctx.password, remember: false },
+      });
+      failedStatus = failed.statusCode;
+      expect(failed.json().challengeToken).toBeUndefined();
+    } finally {
+      mailer.useTransport({ send: async (message) => { mail.messages.push(message); } });
+    }
+    expect(failedStatus).toBeGreaterThanOrEqual(500);
+
+    const retry = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/login",
+      payload: { email, password: ctx.password, remember: false },
+    });
+    expect(retry.statusCode).toBe(200);
+    expect(retry.json().outcome).toBe("MFA_REQUIRED");
+    expect(retry.json().challengeToken).toBeTruthy();
+    expect(mail.messages.some((message) => message.kind === "MFA_EMAIL_CODE")).toBe(true);
+  });
+});
+
 describe("MFA / TOTP lifecycle (§18–§21)", () => {
   let email = "";
   const password = PASSWORD;
@@ -237,15 +358,26 @@ describe("MFA / TOTP lifecycle (§18–§21)", () => {
     });
     expect([401, 422]).toContain(bad.statusCode);
 
-    const good = await app.inject({
-      method: "POST",
-      url: "/api/v1/security/2fa/confirm",
-      headers: ctx.authHeader,
-      payload: { code: totpCode(enrollment.secret, email) },
-    });
-    expect(good.statusCode).toBe(200);
-    expect(good.json().enabled).toBe(true);
-    expect(good.json().recoveryCodesRemaining).toBe(10);
+    const validCode = totpCode(enrollment.secret, email);
+    const confirmations = await Promise.all([
+      app.inject({
+        method: "POST",
+        url: "/api/v1/security/2fa/confirm",
+        headers: ctx.authHeader,
+        payload: { code: validCode },
+      }),
+      app.inject({
+        method: "POST",
+        url: "/api/v1/security/2fa/confirm",
+        headers: ctx.authHeader,
+        payload: { code: validCode },
+      }),
+    ]);
+    expect(confirmations.filter((response) => response.statusCode === 200)).toHaveLength(1);
+    expect(confirmations.filter((response) => response.statusCode === 409)).toHaveLength(1);
+    const good = confirmations.find((response) => response.statusCode === 200);
+    expect(good?.json().enabled).toBe(true);
+    expect(good?.json().recoveryCodesRemaining).toBe(10);
   });
 
   it("login now branches to MFA_REQUIRED; the challenge completes with TOTP", async () => {
@@ -316,24 +448,39 @@ describe("MFA / TOTP lifecycle (§18–§21)", () => {
     expect(limited.statusCode).toBe(429);
   });
 
-  it("recovery codes: one-time use, then exhausted", async () => {
-    const login = await app.inject({
-      method: "POST",
-      url: "/api/v1/auth/login",
-      payload: { email, password, remember: true },
-    });
-    const challengeToken = login.json().challengeToken as string;
+  it("recovery codes: concurrent use succeeds once, then the code is exhausted", async () => {
+    const [loginA, loginB] = await Promise.all([
+      app.inject({
+        method: "POST",
+        url: "/api/v1/auth/login",
+        payload: { email, password, remember: true },
+      }),
+      app.inject({
+        method: "POST",
+        url: "/api/v1/auth/login",
+        payload: { email, password, remember: true },
+      }),
+    ]);
     const code = enrollment.recoveryCodes[0];
 
-    const recover = await app.inject({
-      method: "POST",
-      url: "/api/v1/auth/mfa/recover",
-      payload: { challengeToken, recoveryCode: code },
-    });
-    expect(recover.statusCode).toBe(200);
-    expect(recover.json().outcome).toBe("AUTHENTICATED");
+    const concurrent = await Promise.all([
+      app.inject({
+        method: "POST",
+        url: "/api/v1/auth/mfa/recover",
+        payload: { challengeToken: loginA.json().challengeToken, recoveryCode: code },
+      }),
+      app.inject({
+        method: "POST",
+        url: "/api/v1/auth/mfa/recover",
+        payload: { challengeToken: loginB.json().challengeToken, recoveryCode: code },
+      }),
+    ]);
+    expect(concurrent.filter((response) => response.statusCode === 200)).toHaveLength(1);
+    expect(concurrent.filter((response) => response.statusCode === 401)).toHaveLength(1);
+    expect(concurrent.find((response) => response.statusCode === 200)?.json().outcome).toBe("AUTHENTICATED");
+    expect(concurrent.find((response) => response.statusCode === 401)?.json().code).toBe("INVALID_MFA_CODE");
 
-    // Same code can never be reused.
+    // Same code can never be reused, even with a fresh login challenge.
     const login2 = await app.inject({
       method: "POST",
       url: "/api/v1/auth/login",
@@ -347,7 +494,7 @@ describe("MFA / TOTP lifecycle (§18–§21)", () => {
     expect(reuse.statusCode).toBe(401);
     expect(reuse.json().code).toBe("INVALID_MFA_CODE");
 
-    // Unknown code — same envelope.
+    // Unknown code - same unauthorized status.
     const unknown = await app.inject({
       method: "POST",
       url: "/api/v1/auth/mfa/recover",
@@ -441,6 +588,92 @@ describe("MFA / TOTP lifecycle (§18–§21)", () => {
     });
     // The reauth token was consumed; even with a fresh one the state is off.
     expect(alreadyOff.statusCode).toBe(401);
+  });
+});
+
+describe("MFA / email-code lifecycle", () => {
+  it("requires mailbox confirmation before enabling email MFA and rejects challenge replay", async () => {
+    const email = uniqueEmail("mfa-email");
+    const ctx = await authenticatedUser(app, mail, { email });
+    const reauth = await app.inject({
+      method: "POST",
+      url: "/api/v1/security/reauth",
+      headers: ctx.authHeader,
+      payload: { password: ctx.password },
+    });
+
+    mail.clear();
+    const enrollment = await app.inject({
+      method: "POST",
+      url: "/api/v1/security/2fa/email/enable",
+      headers: ctx.authHeader,
+      payload: { reauthToken: reauth.json().token },
+    });
+    expect(enrollment.statusCode).toBe(200);
+    expect(enrollment.json().pending).toBe(true);
+    expect(enrollment.json().recoveryCodes).toBeUndefined();
+    const enrollmentMessage = [...mail.messages].reverse().find((item) => item.kind === "MFA_EMAIL_CODE");
+    expect(enrollmentMessage?.code).toMatch(/^\d{6}$/);
+    if (!enrollmentMessage?.code) throw new Error("email MFA enrollment code was not captured");
+
+    const wrongEnrollment = await app.inject({
+      method: "POST",
+      url: "/api/v1/security/2fa/email/confirm",
+      headers: ctx.authHeader,
+      payload: { code: enrollmentMessage.code === "999999" ? "999998" : "999999" },
+    });
+    expect([401, 422]).toContain(wrongEnrollment.statusCode);
+
+    const confirmed = await app.inject({
+      method: "POST",
+      url: "/api/v1/security/2fa/email/confirm",
+      headers: ctx.authHeader,
+      payload: { code: enrollmentMessage.code },
+    });
+    expect(confirmed.statusCode).toBe(200);
+    expect(confirmed.json().state).toMatchObject({ enabled: true, method: "EMAIL", recoveryCodesRemaining: 10 });
+    const recoveryCodes = confirmed.json().recoveryCodes as string[];
+    expect(recoveryCodes).toHaveLength(10);
+    expect(recoveryCodes.every((code) => /^[\dA-F]{4}-[\dA-F]{4}$/.test(code))).toBe(true);
+
+    mail.clear();
+    const login = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/login",
+      payload: { email, password: ctx.password, remember: true },
+    });
+    expect(login.statusCode).toBe(200);
+    expect(login.json()).toMatchObject({ outcome: "MFA_REQUIRED", method: "EMAIL" });
+    const message = [...mail.messages].reverse().find((item) => item.kind === "MFA_EMAIL_CODE");
+    expect(message?.code).toMatch(/^\d{6}$/);
+    if (!message?.code) throw new Error("email MFA code was not captured");
+
+    const emailCode = message.code;
+    const wrongCode = emailCode === "999999" ? "999998" : "999999";
+    const challengeToken = login.json().challengeToken as string;
+    const wrong = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/mfa/challenge",
+      payload: { challengeToken, code: wrongCode },
+    });
+    expect(wrong.statusCode).toBe(401);
+    expect(wrong.json().code).toBe("INVALID_MFA_CODE");
+
+    const verified = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/mfa/challenge",
+      payload: { challengeToken, code: emailCode },
+    });
+    expect(verified.statusCode).toBe(200);
+    expect(verified.json().outcome).toBe("AUTHENTICATED");
+
+    const replay = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/mfa/challenge",
+      payload: { challengeToken, code: emailCode },
+    });
+    expect(replay.statusCode).toBe(401);
+    expect(replay.json().code).toBe("INVALID_CHALLENGE");
   });
 });
 
@@ -681,7 +914,7 @@ describe("profile, preferences & account state", () => {
       headers: ctx.authHeader,
       payload: { confirmation: "yes" },
     });
-    // The shared schema enforces the literal confirmation — schema-level 400.
+    // The shared schema enforces the literal confirmation - schema-level 400.
     expect(wrongConfirm.statusCode).toBe(400);
     expect(wrongConfirm.json().error).toBe("ValidationError");
 
@@ -697,7 +930,7 @@ describe("profile, preferences & account state", () => {
       url: "/api/v1/auth/me",
       headers: ctx.authHeader,
     });
-    // Deactivation revokes sessions — the guard reports the dead session
+    // Deactivation revokes sessions - the guard reports the dead session
     // (401) rather than an account-status 403 (which applies to live
     // sessions, e.g. an admin suspension).
     expect(meAfter.statusCode).toBe(401);
@@ -724,7 +957,7 @@ describe("profile, preferences & account state", () => {
       url: "/api/v1/security/overview",
       headers: doomed.authHeader,
     });
-    // Sessions were revoked with the scheduling — dead session → 401.
+    // Sessions were revoked with the scheduling - dead session → 401.
     expect(doomedOverview.statusCode).toBe(401);
   });
 });

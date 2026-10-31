@@ -11,12 +11,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useRegisterMutation, useResendVerificationMutation } from "@/lib/api/queries/auth";
 import { apiErrorMessage, apiErrorCode } from "@/lib/api/client";
-import { API_MOCKED } from "@/lib/api/mode";
+import { setAccessToken } from "@/lib/auth/token-store";
+import { useAuth } from "@/components/auth/auth-provider";
 import { useDict } from "@/i18n/i18n-provider";
 import {
   AuthField,
   FormError,
-  FormInfo,
   FormSuccess,
   PasswordField,
   PasswordStrength,
@@ -24,13 +24,14 @@ import {
 } from "@/components/auth/auth-primitives";
 
 /**
- * Registration (spec §15, §16) — Zod-validated through the SHARED contract
+ * Registration (spec §15, §16) - Zod-validated through the SHARED contract
  * schema (client validation is UX; server validation stays authoritative).
  * Success lands on a deliberate verification-pending state (§17).
  */
 export function RegisterForm() {
   const auth = useDict().auth;
   const router = useRouter();
+  const { setAuthenticated } = useAuth();
   const register = useRegisterMutation();
   const resend = useResendVerificationMutation();
 
@@ -42,8 +43,6 @@ export function RegisterForm() {
   const [formError, setFormError] = React.useState<string | null>(null);
   const [pending, setPending] = React.useState<RegisterResponse | null>(null);
   const [resent, setResent] = React.useState(false);
-
-  const mocked = API_MOCKED;
 
   function submit(event: React.FormEvent) {
     event.preventDefault();
@@ -66,6 +65,15 @@ export function RegisterForm() {
 
     register.mutate(parsed.data, {
       onSuccess: (response) => {
+        if (response.status === "ACTIVE" && response.session) {
+          // Auto-login: the backend already issued a real session (HttpOnly
+          // refresh cookie set) - hold the access token in memory ONLY and
+          // land straight on the dashboard instead of bouncing to /login.
+          setAccessToken(response.session.accessToken, response.session.accessTokenExpiresAt);
+          setAuthenticated(response.session.user, response.session.session);
+          router.replace("/");
+          return;
+        }
         if (response.status === "ACTIVE") {
           router.push(`/login?registered=true&email=${encodeURIComponent(response.user.email)}`);
           return;
@@ -109,9 +117,6 @@ export function RegisterForm() {
   // ── Verification-pending state (§17, §48) ─────────────────────────────────
 
   if (pending) {
-    const verificationHref = pending.verificationToken
-      ? `/verify-email?token=${encodeURIComponent(pending.verificationToken)}`
-      : null;
     return (
       <div className="flex flex-col gap-6" data-testid="register-pending">
         <header className="flex flex-col gap-2">
@@ -127,26 +132,6 @@ export function RegisterForm() {
         </header>
 
         <FormSuccess body={pending.user.email} testId="register-pending-success" />
-
-        {mocked && verificationHref ? (
-          <div className="flex flex-col gap-2.5 rounded-lg border border-dashed border-border bg-muted/30 px-3.5 py-3">
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              {auth.register.pendingMockTitle}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              {auth.register.pendingMockBody}
-            </p>
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full"
-              onClick={() => router.push(verificationHref)}
-              data-testid="register-open-verification"
-            >
-              {auth.register.pendingMockOpen}
-            </Button>
-          </div>
-        ) : null}
 
         {resent ? (
           <FormSuccess body={auth.verifyEmail.resendDone} testId="register-resend-success" />
@@ -248,14 +233,6 @@ export function RegisterForm() {
           testId="register-submit"
         />
       </form>
-
-      {mocked ? (
-        <FormInfo
-          title={auth.login.demoHintTitle}
-          body={auth.login.demoHintNote}
-          testId="register-mock-note"
-        />
-      ) : null}
 
       <footer className="text-sm text-muted-foreground">
         {auth.register.haveAccount}{" "}

@@ -1,11 +1,11 @@
 /**
- * Backup service (B2) — full authored-data export/import (feature 12,
+ * Backup service (B2) - full authored-data export/import (feature 12,
  * Priorité 3). Export serves the WIRE shapes (trades via the journal
  * mapper, playbook strategies, tags); import validates the payload
  * against the shared backup schema, re-owns every imported row to the
  * requesting user, REPLACES the trades and MERGES strategies + tags by id
  * (mock parity). A restoration touches several bounded contexts, so the
- * service uses Prisma directly — the one sanctioned exception, documented
+ * service uses Prisma directly - the one sanctioned exception, documented
  * here (backup is an infrastructure operation over stored data).
  */
 import { Injectable } from "@nestjs/common";
@@ -25,7 +25,7 @@ export class BackupService {
     private readonly playbook: PlaybookRepository,
   ) {}
 
-  /** GET /export/backup — the full authored-data snapshot (wire shapes). */
+  /** GET /export/backup - the full authored-data snapshot (wire shapes). */
   async exportBackup(userId: string): Promise<BackupPayload> {
     const [tradeRows, tagRows, strategyRows] = await Promise.all([
       this.trades.listTrades(userId, {}),
@@ -62,7 +62,7 @@ export class BackupService {
   }
 
   /**
-   * POST /import/backup — replace trades, merge strategies + tags by id.
+   * POST /import/backup - replace trades, merge strategies + tags by id.
    * Every imported row is re-owned by the requesting user: a backup file
    * carries data, never identity.
    */
@@ -74,7 +74,7 @@ export class BackupService {
 
     // Trade rows carry an account FK: references that do not exist for the
     // IMPORTING user are re-pointed at their default account. Without one,
-    // the import is refused honestly — connect an account first.
+    // the import is refused honestly - connect an account first.
     const accounts = await this.prisma.tradingAccount.findMany({ where: { userId } });
     if (payload.trades.length > 0 && accounts.length === 0) {
       throw new ValidationError(
@@ -97,8 +97,8 @@ export class BackupService {
 
       for (const trade of payload.trades) {
         // Trade ids are a GLOBAL primary key (the mock scopes them per
-        // user): keep the payload id when it is free — a same-user restore
-        // keeps every id stable, because the old rows were just deleted —
+        // user): keep the payload id when it is free - a same-user restore
+        // keeps every id stable, because the old rows were just deleted -
         // and mint a fresh one when another user already owns it.
         const existing = await tx.trade.findUnique({ where: { id: trade.id } });
         const tradeId = existing === null ? trade.id : crypto.randomUUID();
@@ -169,7 +169,7 @@ export class BackupService {
 
     // ── Strategies + tags: MERGE by id (absent → insert, present → keep) ───
     // Cross-user imports mint fresh row ids, so id matching cannot dedupe
-    // a repeat import — the importeur's existing NAMES close that gap
+    // a repeat import - the importeur's existing NAMES close that gap
     // (the journal identity fields stay untouched).
     const existingStrategyNames = new Set(
       strategyRows.map((row) => String((row.data as { name?: string }).name ?? "").toLowerCase()),

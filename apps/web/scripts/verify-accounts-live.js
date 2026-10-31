@@ -1,15 +1,15 @@
 /**
- * verify-accounts-live.js — Phase 02 acceptance criterion 1, second half:
+ * verify-accounts-live.js - Phase 02 acceptance criterion 1, second half:
  * the SAME connect → sync → inspect lifecycle over the LIVE BRIDGE against
  * the real NestJS API (:4000) with the mock provider enabled (dev default).
  *
  * Requires a web server on PROBE_BASE started with NEXT_PUBLIC_API_LIVE=true
  * (API_BASE becomes same-origin /api/v1, rewritten to :4000). This is the
  * genuine backend path: JWT auth, ownership, zod re-validation, rate limits,
- * the AES-GCM credential vault — MSW is NOT running on this server.
+ * the AES-GCM credential vault - MSW is NOT running on this server.
  *
  * Honesty note (spec §15.3): the provider is still the backend's MOCK
- * adapter — the data is simulated. What this probe verifies is the WIRING
+ * adapter - the data is simulated. What this probe verifies is the WIRING
  * (contracts, envelopes, auth, lifecycle), never real provider connectivity.
  */
 
@@ -28,7 +28,7 @@ function check(label, ok, extra = "") {
   const tag = ok ? "✓" : "✗";
   if (ok) passed += 1;
   else failed += 1;
-  console.log(`  ${tag} ${label}${extra ? ` — ${extra}` : ""}`);
+  console.log(`  ${tag} ${label}${extra ? ` - ${extra}` : ""}`);
 }
 
 function note(label) {
@@ -76,7 +76,7 @@ const CONSOLE_NOISE = [
   check("live login succeeded (real JWT)", true);
   await clearDevOverlay(page);
 
-  // The trading accounts list comes from the real DB — may hold accounts
+  // The trading accounts list comes from the real DB - may hold accounts
   // from earlier runs. Clean slate: disconnect + note any pre-existing rows.
   await page.locator('a[href="/accounts"]').first().click();
   await page.waitForFunction(
@@ -89,7 +89,7 @@ const CONSOLE_NOISE = [
 
   const existingCards = await page.locator('[data-testid="account-card"]').count();
   if (existingCards > 0) {
-    note(`${existingCards} pre-existing account(s) on the real API — reusing state`);
+    note(`${existingCards} pre-existing account(s) on the real API - reusing state`);
   } else {
     check("empty state over live bridge", (await page.locator('[data-testid="accounts-empty"]').count()) > 0);
   }
@@ -124,7 +124,7 @@ const CONSOLE_NOISE = [
     ),
   );
   const liveBalance = (await page.locator('[data-testid="account-detail-balance"]').innerText()).trim();
-  check("balance rendered from the real DB snapshot", liveBalance !== "—", liveBalance);
+  check("balance rendered from the real DB snapshot", liveBalance !== "-", liveBalance);
 
   // Activity tabs through the real read routes.
   await page.locator('[role="tab"]:has-text("Deals")').first().click();

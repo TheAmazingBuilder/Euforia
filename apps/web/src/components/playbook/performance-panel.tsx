@@ -14,7 +14,7 @@ import { useI18n } from "@/i18n/i18n-provider";
 
 /**
  * Strategy Performance (§19): one row per strategy from the SAME filtered
- * analytics dataset the Analytics module uses — trades, win rate, profit
+ * analytics dataset the Analytics module uses - trades, win rate, profit
  * factor, expectancy, avg win/loss, max drawdown, duration, plan adherence.
  * NO overall "best strategy" score (§19): small samples are flagged instead.
  */
@@ -113,7 +113,7 @@ export function PerformancePanel() {
                   />
                   <NumCell value={formatR(row.avgWinR)} tone="profit" />
                   <NumCell
-                    value={row.avgLossR === null ? "—" : formatR(-Math.abs(Number(row.avgLossR)))}
+                    value={row.avgLossR === null ? "-" : formatR(-Math.abs(Number(row.avgLossR)))}
                     tone="loss"
                   />
                   <NumCell value={formatR(row.maxDrawdownR)} tone="loss" />
@@ -130,7 +130,7 @@ export function PerformancePanel() {
                       row.netPnl !== null && Number(row.netPnl) >= 0 ? "text-profit" : "text-loss"
                     }`}
                   >
-                    {row.netPnl === null ? "—" : formatSignedMoney(row.netPnl, currency)}
+                    {row.netPnl === null ? "-" : formatSignedMoney(row.netPnl, currency)}
                   </td>
                 </tr>
               );
@@ -167,7 +167,7 @@ function formatDuration(
   minutes: number | null | undefined,
   units: { min: string; hour: string; day: string },
 ): string {
-  if (minutes === null || minutes === undefined || !Number.isFinite(minutes)) return "—";
+  if (minutes === null || minutes === undefined || !Number.isFinite(minutes)) return "-";
   if (minutes < 60) return `${Math.round(minutes)}${units.min}`;
   const hours = minutes / 60;
   if (hours < 24) return `${hours.toFixed(1)}${units.hour}`;

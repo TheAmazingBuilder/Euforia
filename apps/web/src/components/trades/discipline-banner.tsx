@@ -8,10 +8,10 @@ import { cn } from "@/lib/utils";
 import { useI18n } from "@/i18n/i18n-provider";
 
 /**
- * Discipline banner (trade-entry-ux.md §4): thin live-updating strip —
+ * Discipline banner (trade-entry-ux.md §4): thin live-updating strip -
  * "Today: 2/3 trades · 0.8%/2% risk budget · 1 loss". Segments turn amber
  * as thresholds approach, red when a threshold is hit. A violated
- * LOCK-severity rule also turns the submit button amber (in the form) —
+ * LOCK-severity rule also turns the submit button amber (in the form) -
  * never a silent block.
  */
 
@@ -116,7 +116,7 @@ export function DisciplineBanner({ className }: { className?: string }) {
         </span>
         <Segment
           label={T.riskBudget}
-          value={`${riskSpent}/${riskLimitValue !== null ? `${riskLimitValue}%` : "—"}`}
+          value={`${riskSpent}/${riskLimitValue !== null ? `${riskLimitValue}%` : "-"}`}
           limit={null}
           ratio={riskRatio}
         />

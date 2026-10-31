@@ -27,12 +27,12 @@ import {
 import { recognitionFieldLabel, type RecognitionDict } from "@/i18n/dictionaries/en/recognition";
 
 /**
- * RecognizedField — one extracted value in the ruled review list
+ * RecognizedField - one extracted value in the ruled review list
  * (PROMPT 3 §20/§21).
  *
  * States (§19/§64): FOUND (editable value + confidence), MISSING ("not
- * detected" — still editable, the user can enter the value manually),
- * UNCERTAIN (AMBIGUOUS/LOW_CONFIDENCE — ochre "please verify" ink + the
+ * detected" - still editable, the user can enter the value manually),
+ * UNCERTAIN (AMBIGUOUS/LOW_CONFIDENCE - ochre "please verify" ink + the
  * engine's per-field warnings). Display is exact: financial values keep
  * their decimals (§47), extracted timestamps render in the user's locale
  * (§48). The raw value as read by the engine stays one hover away.
@@ -183,7 +183,7 @@ export function RecognizedField({
 }
 
 /**
- * Inline edit row (§21) — the right control per type: enum (direction) gets
+ * Inline edit row (§21) - the right control per type: enum (direction) gets
  * a select, everything else a validated input. Empty input = clear the
  * value (contract §21: null explicitly clears).
  */

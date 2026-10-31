@@ -1,15 +1,15 @@
 /**
- * Academy answer grading — the ONE evaluation function shared by course
+ * Academy answer grading - the ONE evaluation function shared by course
  * quizzes, inline lesson checkpoints and category exams (Phase 11 §32–§39,
  * §77).
  *
- * SECURITY INVARIANTS (§33/§34/§37 — mandatory, covered by e2e):
+ * SECURITY INVARIANTS (§33/§34/§37 - mandatory, covered by e2e):
  *   - Correct answers NEVER leave the server before a submission: the public
  *     question projection (`stripQuestion`) is the only learner-facing shape.
  *   - The backend is authoritative: client values are inputs to THIS grading,
  *     never verdicts (no clientScore/isCorrect/passed is ever trusted).
  *   - Grading only ever touches questions belonging to the resolved quiz /
- *     category pool — a questionId from another quiz cannot be graded.
+ *     category pool - a questionId from another quiz cannot be graded.
  *
  * Parity source: mocks/academy-engine.ts (NUMERIC relative tolerance with a
  * 1e-9 floor, TF boolean equality, MC/SCENARIO option-index equality).
@@ -24,7 +24,7 @@ import type {
 /** Default relative tolerance for NUMERIC questions (2%). */
 const DEFAULT_NUMERIC_TOLERANCE = 0.02;
 
-/** Learner-facing projection — correctness never included (§33/§34). */
+/** Learner-facing projection - correctness never included (§33/§34). */
 export function stripQuestion(question: AcademyQuizQuestion): AcademyQuizQuestionPublic {
   return {
     id: question.id,

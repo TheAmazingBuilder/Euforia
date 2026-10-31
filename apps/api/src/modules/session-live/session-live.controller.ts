@@ -1,5 +1,5 @@
 /**
- * Session Live controller (B9) — trading sessions, saved analyses and key
+ * Session Live controller (B9) - trading sessions, saved analyses and key
  * levels. Mirrors `mocks/handlers/sessionLive.ts` exactly (12 routes).
  * Global JwtAuthGuard, uuid-validated params. NO execution path exists.
  */

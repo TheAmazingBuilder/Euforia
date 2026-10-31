@@ -25,22 +25,26 @@ import { apiErrorMessage } from "@/lib/api/client";
 import { useI18n } from "@/i18n/i18n-provider";
 
 /**
- * Appearance — theme, density, dashboard arrangement and P&L display.
+ * Appearance - theme, density, dashboard arrangement and P&L display.
  * The theme choice writes to next-themes IMMEDIATELY (same store the
- * topbar toggle uses) and persists to the preferences document on save —
+ * topbar toggle uses) and persists to the preferences document on save -
  * runtime stays next-themes (zero-flash), the document mirrors it for
  * multi-device sync when the real API ships.
  */
 
 /** API SCREAMING_SNAKE ↔ next-themes kebab keys. */
 const THEME_TO_NEXT = {
-  DARK_BLUE: "dark-blue",
+  DARK_BLUE: "dark",
+  NAVY_BLUE: "dark",
+  EUFORIA: "euforia",
   DARK: "dark",
   LIGHT: "light",
   SYSTEM: "system",
 } as const;
 const NEXT_TO_THEME: Record<string, UserPreferences["appearance"]["theme"]> = {
-  "dark-blue": "DARK_BLUE",
+  "dark-blue": "DARK",
+  "navy-blue": "DARK",
+  euforia: "EUFORIA",
   dark: "DARK",
   light: "LIGHT",
   system: "SYSTEM",
@@ -67,12 +71,16 @@ export function AppearanceCard() {
   const onThemeChange = (value: string) => {
     const nextTheme = value as UserPreferences["appearance"]["theme"];
     patch({ theme: nextTheme });
-    // Instant visual feedback — the whole app follows immediately.
+    // Instant visual feedback - the whole app follows immediately.
     setTheme(THEME_TO_NEXT[nextTheme]);
   };
 
   const onSave = () => {
-    save.mutate(draft, {
+    const normalizedDraft =
+      draft.theme === "DARK_BLUE" || draft.theme === "NAVY_BLUE"
+        ? { ...draft, theme: "DARK" as const }
+        : draft;
+    save.mutate(normalizedDraft, {
       onSuccess: () => toast.success(L.toastSaved),
       onError: (error) => toast.error(apiErrorMessage(error, L.toastSaveFailed)),
     });
@@ -88,7 +96,7 @@ export function AppearanceCard() {
 
   // The radio group reads the LIVE next-themes value so the topbar toggle
   // and this card can never disagree.
-  const activeTheme = NEXT_TO_THEME[theme ?? "dark-blue"] ?? draft.theme;
+  const activeTheme = NEXT_TO_THEME[theme ?? "dark"] ?? draft.theme;
 
   return (
     <SettingsCategoryCard
@@ -106,15 +114,15 @@ export function AppearanceCard() {
           value={activeTheme}
           onChange={onThemeChange}
           options={[
-            { value: "DARK_BLUE", label: L.themeDarkBlue, hint: L.themeDarkBlueHint },
             { value: "DARK", label: L.themeDark, hint: L.themeDarkHint },
+            { value: "EUFORIA", label: "Euforia", hint: "Official Euforia purple-to-cyan brand palette" },
             { value: "LIGHT", label: L.themeLight, hint: L.themeLightHint },
             { value: "SYSTEM", label: L.themeSystem, hint: L.themeSystemHint },
           ]}
           testid="settings-appearance-theme"
           ariaLabel={L.themeLabel}
         />
-        {/* Live preview — a miniature trade card in the CURRENT theme. */}
+        {/* Live preview - a miniature trade card in the CURRENT theme. */}
         <div className="mt-3 max-w-72">
           <ThemePreviewMiniTradeCard />
         </div>

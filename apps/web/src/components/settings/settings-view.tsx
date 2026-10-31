@@ -13,7 +13,6 @@ import {
   Search,
   Settings as SettingsIcon,
   UserCog,
-  UserRound,
   type LucideIcon,
 } from "lucide-react";
 
@@ -23,7 +22,6 @@ import { cn } from "@/lib/utils";
 import { DEFAULT_USER_PREFERENCES, type PreferenceDomain } from "@cosmoz/shared";
 import { usePreferences } from "@/lib/api/queries";
 import { useI18n } from "@/i18n/i18n-provider";
-import { ProfileCard } from "@/components/settings/cards/profile-card";
 import { TradingCard } from "@/components/settings/cards/trading-card";
 import { RiskCard } from "@/components/settings/cards/risk-card";
 import { JournalCard } from "@/components/settings/cards/journal-card";
@@ -35,11 +33,9 @@ import { LocalizationCard } from "@/components/settings/cards/localization-card"
 import { AccountCard } from "@/components/settings/cards/account-card";
 
 /**
- * Settings module shell — a two-pane preference center: category rail
- * (desktop) / chip scroller (mobile) on the left, ONE category at a time
- * on the right. Includes fuzzy search across categories and deep links
- * via location.hash (#trading, #notifications…) so support answers can
- * link straight to a setting.
+ * Settings module shell - a horizontal category bar above the active
+ * settings panel. Categories remain deep-linkable and searchable, while
+ * account identity/profile editing stays outside this preference center.
  */
 
 interface CategoryMeta {
@@ -52,14 +48,6 @@ interface CategoryMeta {
 }
 
 const CATEGORIES: CategoryMeta[] = [
-  {
-    id: "profile",
-    label: "Profile",
-    description: "Avatar, name, handle, bio, timezone",
-    icon: UserRound,
-    keywords: ["avatar", "name", "username", "email", "bio", "timezone", "identity"],
-    Component: ProfileCard,
-  },
   {
     id: "trading",
     label: "Trading",
@@ -175,7 +163,7 @@ function readInitialCategory(): string {
     : CATEGORIES[0]!.id;
 }
 
-/** Key-order-stable stringify — safe deep comparison for the modified badge. */
+/** Key-order-stable stringify - safe deep comparison for the modified badge. */
 function stableStringify(value: unknown): string {
   if (value === null || typeof value !== "object") return JSON.stringify(value) ?? "null";
   if (Array.isArray(value)) return `[${value.map(stableStringify).join(",")}]`;
@@ -184,7 +172,7 @@ function stableStringify(value: unknown): string {
 }
 
 /**
- * Modified badges (module upgrade) — a domain lights up when its CURRENT
+ * Modified badges (module upgrade) - a domain lights up when its CURRENT
  * value differs from the shared safe defaults (server document vs the
  * shared DEFAULT_USER_PREFERENCES, deep-compared key-order-stable).
  */
@@ -213,13 +201,13 @@ export function SettingsView() {
   const [query, setQuery] = React.useState("");
   const modifiedDomains = useModifiedDomains();
   const { dict } = useI18n();
-  /** Localized category meta — EN CATEGORIES stay the structural source. */
+  /** Localized category meta - EN CATEGORIES stay the structural source. */
   const categoryMeta = (category: (typeof CATEGORIES)[number]) => ({
     label: dict.settings.categories[category.id]?.label ?? category.label,
     description: dict.settings.categories[category.id]?.description ?? category.description,
   });
 
-  // Deep links stay live — back/forward and manual hash edits work.
+  // Deep links stay live - back/forward and manual hash edits work.
   React.useEffect(() => {
     const onHashChange = () => setActive(readInitialCategory());
     window.addEventListener("hashchange", onHashChange);
@@ -254,7 +242,7 @@ export function SettingsView() {
     CATEGORIES.find((category) => category.id === effectiveActive) ?? null;
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
       <header className="space-y-1">
         <h1 className="flex items-center gap-2 font-heading text-2xl font-extrabold tracking-tight sm:text-3xl">
           <SettingsIcon className="size-6 text-accent" aria-hidden="true" />
@@ -265,7 +253,7 @@ export function SettingsView() {
         </p>
       </header>
 
-      {/* Search — filters categories by label, description and keywords.
+      {/* Search - filters categories by label, description and keywords.
           ⌘K opens the GLOBAL palette, which now carries a Settings group. */}
       <div className="relative">
         <Search
@@ -290,10 +278,9 @@ export function SettingsView() {
         </kbd>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[220px_minmax(0,1fr)]">
-        {/* Category rail — sticky on desktop, chip scroller on mobile. */}
-        <nav aria-label={dict.settings.view.categoriesNavAria} className="lg:sticky lg:top-20 lg:self-start">
-          <div className="flex gap-2 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible lg:pb-0">
+      <div className="space-y-5">
+        <nav aria-label={dict.settings.view.categoriesNavAria} data-testid="settings-category-nav">
+          <div className="flex min-w-0 gap-1 overflow-x-auto border-b border-border pb-px">
             {visibleCategories.map((category) => {
               const Icon = category.icon;
               const isActive = category.id === effectiveActive;
@@ -302,46 +289,43 @@ export function SettingsView() {
                   key={category.id}
                   type="button"
                   onClick={() => selectCategory(category.id)}
-                  aria-current={isActive ? "true" : undefined}
-                  data-testid={`settings-nav-${category.id}`}
+                  aria-current={isActive ? "page" : undefined}
+                  data-testid={"settings-nav-" + category.id}
                   className={cn(
-                    "flex shrink-0 items-center gap-2.5 rounded-lg border px-3 py-2 text-left text-sm transition-colors lg:w-full",
+                    "inline-flex min-h-10 shrink-0 items-center gap-2 rounded-t-md border-b-2 px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring",
                     isActive
-                      ? "border-accent/60 bg-accent/10 text-accent"
-                      : "border-transparent text-muted-foreground hover:bg-muted hover:text-foreground",
+                      ? "border-foreground bg-foreground text-background"
+                      : "border-transparent text-muted-foreground hover:bg-muted/60 hover:text-foreground",
                   )}
                 >
                   <Icon className="size-4 shrink-0" aria-hidden="true" />
-                  <span className="whitespace-nowrap font-medium lg:whitespace-normal">
-                    {categoryMeta(category).label}
-                  </span>
+                  <span className="whitespace-nowrap">{categoryMeta(category).label}</span>
                   {modifiedDomains.has(category.id) && (
                     <span
-                      className="ml-auto shrink-0 rounded-full bg-accent/15 px-1.5 py-0.5 font-mono text-[9px] font-semibold uppercase tracking-wide text-accent"
+                      className="ml-0.5 size-1.5 shrink-0 rounded-full bg-accent"
                       title="This section differs from the default values"
-                      data-testid={`settings-modified-${category.id}`}
-                    >
-                      mod.
-                    </span>
+                      aria-label="Modified from defaults"
+                      data-testid={"settings-modified-" + category.id}
+                    />
                   )}
                 </button>
               );
             })}
-            {visibleCategories.length === 0 ? (
-              <p className="px-3 py-2 text-sm text-muted-foreground" role="status">
-                No settings match “{query}”.
-              </p>
-            ) : null}
           </div>
         </nav>
 
-        {/* Content pane — the active category only. */}
+        {visibleCategories.length === 0 ? (
+          <p className="rounded-md border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground" role="status">
+            No settings match “{query}”.
+          </p>
+        ) : null}
+
         <div className="min-w-0" data-testid="settings-content">
           {activeCategory ? (
             <activeCategory.Component />
           ) : (
-            <div className="rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
-              Pick a category on the left to get started.
+            <div className="rounded-lg border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
+              Choose a category above to get started.
             </div>
           )}
         </div>
@@ -356,14 +340,12 @@ export function SettingsViewSkeleton() {
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6" aria-busy="true">
       <Skeleton className="h-9 w-48" />
       <Skeleton className="h-9 w-full" />
-      <div className="grid gap-6 lg:grid-cols-[220px_minmax(0,1fr)]">
-        <div className="grid gap-2">
-          {CATEGORIES.slice(0, 6).map((category) => (
-            <Skeleton key={category.id} className="h-9 w-full" />
-          ))}
-        </div>
-        <Skeleton className="h-96 rounded-xl" />
+      <div className="flex gap-2 overflow-hidden border-b border-border pb-2">
+        {CATEGORIES.map((category) => (
+          <Skeleton key={category.id} className="h-9 w-24 shrink-0 rounded-md" />
+        ))}
       </div>
+      <Skeleton className="h-96 rounded-lg" />
     </div>
   );
 }

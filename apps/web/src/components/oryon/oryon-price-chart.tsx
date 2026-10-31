@@ -42,23 +42,23 @@ import { formatCandleTime, formatLegendVolume } from "@/lib/oryon/crosshair/form
 import { cn } from "@/lib/utils";
 
 /**
- * Oryon price chart — the ONLY component that owns the chart engine.
+ * Oryon price chart - the ONLY component that owns the chart engine.
  *
- * Lifecycle: the engine is created in a mount effect (client-only — never
+ * Lifecycle: the engine is created in a mount effect (client-only - never
  * during SSR), survives prop updates, and is destroyed with the unmount
  * effect. Theme changes re-apply resolved tokens; type/magnet changes are
  * engine option updates, not recreations.
  *
  * Phase 7 panel ownership: the indicator store arrives as a PROP (per panel
  * id); the drawing store is resolved HERE from the per-symbol registry for
- * the symbol ACTUALLY displayed (dataSymbol) — during a placeholder window
+ * the symbol ACTUALLY displayed (dataSymbol) - during a placeholder window
  * the drawings on screen always belong to the data on screen, never to the
  * incoming selection. `interactive` marks the workspace's active chart:
  * drawings start only here.
  *
  * Tick discipline: <OryonTickBridge> subscribes to the quote store so ticks
  * re-render ONLY the bridge (which renders null) and update the engine
- * imperatively — the workspace tree never re-renders per tick.
+ * imperatively - the workspace tree never re-renders per tick.
  */
 export function OryonPriceChart({
   panelId,
@@ -79,33 +79,33 @@ export function OryonPriceChart({
   onEngineReady,
   onEngineGone,
 }: {
-  /** STABLE panel identity — chart prefs are keyed per panel (Settings). */
+  /** STABLE panel identity - chart prefs are keyed per panel (Settings). */
   panelId: string;
-  /** Symbol of the data ACTUALLY displayed — the legend labels this. */
+  /** Symbol of the data ACTUALLY displayed - the legend labels this. */
   dataSymbol: string;
-  /** Selected symbol for live ticks — null while placeholder data shows. */
+  /** Selected symbol for live ticks - null while placeholder data shows. */
   liveSymbol: string | null;
   interval: MarketInterval;
   chartType: OryonChartType;
   magnet: boolean;
   candles: Candle[];
   digits: number;
-  /** Price increment of one pip (measure readout) — instrument contract. */
+  /** Price increment of one pip (measure readout) - instrument contract. */
   pipSize: string;
   source: "real" | "sim";
-  /** Symbol+interval key — data windows for a NEW key fit content; refetches keep the viewport. */
+  /** Symbol+interval key - data windows for a NEW key fit content; refetches keep the viewport. */
   fitKey: string;
-  /** THIS panel's indicator stack (per panel id — Phase 7). */
+  /** THIS panel's indicator stack (per panel id - Phase 7). */
   indicatorStore: OryonIndicatorStore;
-  /** THIS panel's temporal-context prefs (per panel id — Phase 8). */
+  /** THIS panel's temporal-context prefs (per panel id - Phase 8). */
   context: OryonPanelContext;
-  /** THIS panel's analysis prefs (per panel id — Phase 9). */
+  /** THIS panel's analysis prefs (per panel id - Phase 9). */
   analysis: OryonPanelAnalysis;
   /** True while this panel is the workspace's active chart. */
   interactive: boolean;
   /** Exposes the engine to the panel wrapper (sync registration, toolbar). */
   onEngineReady?: (engine: OryonChartEngine) => void;
-  /** Called when the engine is destroyed (chart unmounted — error/empty
+  /** Called when the engine is destroyed (chart unmounted - error/empty
    *  state, panel removal). Registration must follow the SAME lifecycle. */
   onEngineGone?: () => void;
 }) {
@@ -120,15 +120,15 @@ export function OryonPriceChart({
     host: HTMLDivElement;
   } | null>(null);
   const { resolvedTheme } = useTheme();
-  // THIS panel's indicator instances (rare commits) — the engine diffs
+  // THIS panel's indicator instances (rare commits) - the engine diffs
   // them imperatively.
   const indicatorSnapshot = useIndicatorSnapshot(indicatorStore);
-  // THIS panel's drawing store — keyed by the symbol ACTUALLY displayed,
+  // THIS panel's drawing store - keyed by the symbol ACTUALLY displayed,
   // so annotations never leak across instruments during data switches.
   const { registry: drawingRegistry } = useOryonDrawings();
   const drawingStore = drawingRegistry.storeFor(dataSymbol);
 
-  // THIS panel's chart prefs (context-menu Settings) — browser-local,
+  // THIS panel's chart prefs (context-menu Settings) - browser-local,
   // keyed by the stable panel id; the engine applies them imperatively.
   // NO panelId-change sync: the grid keys panels by their stable id, so a
   // changed identity REMOUNTS this component (the initializer re-runs).
@@ -138,7 +138,7 @@ export function OryonPriceChart({
   React.useEffect(() => {
     engineRef.current?.applyAppearance(chartPrefs.appearance);
     savePanelChartPrefs(panelId, chartPrefs);
-    // The cleanup flushes the OUTGOING snapshot — every committed value is
+    // The cleanup flushes the OUTGOING snapshot - every committed value is
     // eventually written synchronously (no lost tail write on unmount).
     return () => flushPanelChartPrefs(panelId, chartPrefs);
   }, [chartPrefs, panelId]);
@@ -168,7 +168,7 @@ export function OryonPriceChart({
     const fit = fitKey !== fitKeyRef.current;
     fitKeyRef.current = fitKey;
     engine.setCandles(candles, digits, intervalToMs(interval), fit);
-    // Seed the legend with the newest bar — OHLC must be populated without
+    // Seed the legend with the newest bar - OHLC must be populated without
     // requiring a hover first (crosshair moves then override it).
     setHoverBar(engine.lastBar);
   }, [candles, digits, interval, fitKey]);
@@ -185,13 +185,13 @@ export function OryonPriceChart({
     engineRef.current?.applyTheme();
   }, [resolvedTheme]);
 
-  // Structural indicator sync — runs AFTER the candles effect on mount
+  // Structural indicator sync - runs AFTER the candles effect on mount
   // (declaration order), so the first sync already sees the loaded window.
   React.useEffect(() => {
     engineRef.current?.setIndicators(indicatorSnapshot.indicators);
   }, [indicatorSnapshot]);
 
-  // Dev-probe handle — structural assertions without scraping the canvas.
+  // Dev-probe handle - structural assertions without scraping the canvas.
   React.useEffect(() => {
     if (chartInstance === null || process.env.NODE_ENV === "production") return;
     const readChartStats = (): { series: number; panes: number } | null =>
@@ -299,11 +299,11 @@ function OryonTickBridge({
 /**
  * Imperative positions → overlay bridge (Phase 4). Renders null; the
  * positions context re-renders this leaf only (≈ broadcast cadence), then
- * the engine diffs the overlay specs onto price lines — no chart
+ * the engine diffs the overlay specs onto price lines - no chart
  * reinitialization, no duplicated lines, no workspace re-render.
  *
  * Instrument filtering (spec §8.5): ONLY positions whose symbol matches the
- * DISPLAYED data exactly are projected — the bridge follows `dataSymbol`,
+ * DISPLAYED data exactly are projected - the bridge follows `dataSymbol`,
  * so during a placeholder-data window the overlays belong to the data
  * actually on screen, never to the incoming selection.
  */
@@ -333,11 +333,11 @@ function OryonPositionsOverlayBridge({
 /**
  * Imperative alerts → overlay bridge (Phase 5). Renders null; the alert
  * store re-renders this leaf only on RARE commits (create/remove/status),
- * then the engine diffs the overlay specs onto price lines — no chart
+ * then the engine diffs the overlay specs onto price lines - no chart
  * reinitialization, no duplicated lines, no workspace re-render.
  *
  * Instrument filtering (spec §7): ONLY active alerts whose symbol matches
- * the DISPLAYED data exactly are projected — the bridge follows `dataSymbol`,
+ * the DISPLAYED data exactly are projected - the bridge follows `dataSymbol`,
  * so switching instruments cleans up ineligible overlays automatically and
  * a triggered/disabled alert leaves the chart until re-armed.
  */
@@ -366,7 +366,7 @@ function OryonAlertsOverlayBridge({
 
 /** Top-left overlay: identity, honest source badge, OHLC of the inspected bar.
  *  OHLC values take the BAR's direction color (bullish → profit, bearish →
- *  loss) — the readout reads like the candles it describes. The status-line
+ *  loss) - the readout reads like the candles it describes. The status-line
  *  switches (chart settings) hide the time / OHLC / volume spans. */
 function OryonChartLegend({
   symbol,
@@ -388,7 +388,7 @@ function OryonChartLegend({
   const dict = useDict();
   const S = dict.oryon;
   const sim = source === "sim";
-  // Volume is shown ONLY for a valid positive value — the locally-merged
+  // Volume is shown ONLY for a valid positive value - the locally-merged
   // forming candle reports 0 until the server refetch (never faked).
   const volumeText = formatLegendVolume(bar?.v);
 
@@ -441,7 +441,7 @@ function OryonChartLegend({
   );
 }
 
-/** The inspected bar's direction class — close ≥ open is bullish (the same
+/** The inspected bar's direction class - close ≥ open is bullish (the same
  *  convention the candles themselves paint by). */
 function barDirectionClass(bar: OryonCrosshairBar): string {
   return bar.c >= bar.o ? "text-profit" : "text-loss";

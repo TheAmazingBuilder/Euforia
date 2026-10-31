@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# verify-accounts-run.sh — ensure the dev server on :3000 (restart with
+# verify-accounts-run.sh - ensure the dev server on :3000 (restart with
 # next dev if dead), then run the Accounts probe in the SAME shell session
 # so the server survives for the whole run (devrun.sh pattern, corepack).
 set -u

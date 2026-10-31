@@ -1,26 +1,26 @@
 /**
- * verify-oryon-phase6.js — Oryon Phase 6 (workspace layouts + chart templates).
+ * verify-oryon-phase6.js - Oryon Phase 6 (workspace layouts + chart templates).
  * Contract under test:
  *  - LAYOUTS: save-as (active pointer + persistence), dirty tracking
- *    (honest dot — only when a SAVED custom layout diverges), save changes,
+ *    (honest dot - only when a SAVED custom layout diverges), save changes,
  *    switch (restores the SAVED arrangement: instrument, timeframe, chart
  *    type, panels), rename, duplicate ("(copy)", independent), delete with
  *    confirmation, restore-default (records kept), name validation
  *    (case-insensitive duplicates rejected inline), unsaved-changes guard
  *    (discard + save-and-switch paths).
  *  - TEMPLATES: save current chart (chart type + timeframe + indicator
- *    stack), apply (replaces the stack through ONE store commit — no
+ *    stack), apply (replaces the stack through ONE store commit - no
  *    duplicate instances, idempotent re-apply), apply confirmation when a
  *    live stack would be replaced, partial-apply reporting is unit-tested
- *    (bun) — here: lifecycle + honest UI, manage (rename/delete).
+ *    (bun) - here: lifecycle + honest UI, manage (rename/delete).
  *  - PERSISTENCE: layouts + templates survive a page reload; the active
  *    layout re-applies on boot; drawings/alerts envelopes are untouched by
  *    layout/template operations (structural isolation, spec §11).
  *  - REGRESSIONS: chart engine stats stable, indicator chips/panes intact,
  *    positions panel works, 0 console errors · desktop 1440 + mobile 390.
  *
- * Run: node scripts/verify-oryon-phase6.js   (DEV server on :3001 — the
- * structural debug handles are dev-only by design, phases 1-5 convention —
+ * Run: node scripts/verify-oryon-phase6.js   (DEV server on :3001 - the
+ * structural debug handles are dev-only by design, phases 1-5 convention -
  * market service on :3003, mocked auth, BASE_URL overridable)
  */
 const path = require("path");
@@ -28,7 +28,7 @@ const { chromium } = require("playwright");
 const fs = require("fs");
 
 const LOG = path.resolve(__dirname, "oryon-phase6-probe.log");
-fs.writeFileSync(LOG, `=== oryon phase6 probe — ${new Date().toISOString()} ===\n`);
+fs.writeFileSync(LOG, `=== oryon phase6 probe - ${new Date().toISOString()} ===\n`);
 
 const BASE = process.env.BASE_URL || "http://localhost:3001";
 const OUT = path.resolve(__dirname, "shots");
@@ -221,7 +221,7 @@ async function indicatorsFile(page) {
   await page.waitForSelector('[data-testid="oryon-chart-canvas"] canvas', { timeout: 20_000 });
   await page.waitForTimeout(3_000);
 
-  console.log("— A. Layouts : état initial");
+  console.log("- A. Layouts : état initial");
   ok("A1 déclencheur layouts présent", (await page.locator('[data-testid="oryon-layouts"]').count()) === 1);
   ok("A2 nom actif = Default layout", (await activeLayoutName(page)) === "Default layout");
   ok("A3 pas de pastille dirty", (await page.locator('[data-testid="oryon-layout-dirty"]').count()) === 0);
@@ -236,7 +236,7 @@ async function indicatorsFile(page) {
   );
   await closeLayoutMenu(page);
 
-  console.log("— B. Layouts : création, dirty, save");
+  console.log("- B. Layouts : création, dirty, save");
   // Arrange a distinctive arrangement: EURUSD, 15m, line, lower panel, alerts rail.
   await page.evaluate(() => {
     const trigger = document.querySelector('[data-testid="oryon-instrument-trigger"]');
@@ -274,7 +274,7 @@ async function indicatorsFile(page) {
   ok("B3 enveloppe persistée (1 layout + pointeur)", file !== null && file.layouts.length === 1 && file.activeLayoutId === file.layouts[0].id);
   ok("B4 arrangement capturé (15m/line/lower/utility)", (() => {
     const l = file.layouts[0];
-    // Phase 7: v2 envelope — chart settings live in panels[0] (main panel).
+    // Phase 7: v2 envelope - chart settings live in panels[0] (main panel).
     return l.panels[0].interval === "15m" && l.panels[0].chartType === "line" && l.lowerPanel === true && l.utilityRail.open === true && l.utilityRail.panel === "alerts";
   })());
 
@@ -288,7 +288,7 @@ async function indicatorsFile(page) {
   file = await layoutsFile(page);
   ok("B7 interval sauvegardé = 1H", file.layouts[0].panels[0].interval === "1H");
 
-  console.log("— C. Layouts : switch aller-retour (configuration sauvegardée)");
+  console.log("- C. Layouts : switch aller-retour (configuration sauvegardée)");
   await selectSavedLayout(page, "Default layout");
   ok("C1 retour défaut → nom", (await activeLayoutName(page)) === "Default layout");
   ok("C2 interval réinitialisé à 5m", (await page.locator('[data-testid="oryon-tf-5m"][aria-pressed="true"]').count()) === 1);
@@ -298,7 +298,7 @@ async function indicatorsFile(page) {
   ok("C5 panneau bas restauré", await page.locator('[data-testid="oryon-lower-panel"]').isVisible());
   ok("C6 rail utilité restauré (docked)", (await page.locator('[data-testid="oryon-utility-rail"]').count()) === 1);
 
-  console.log("— D. Layouts : rename / duplicate / validation de nom");
+  console.log("- D. Layouts : rename / duplicate / validation de nom");
   await openLayoutMenu(page);
   await (await layoutMenuItem(page, "oryon-layout-rename")).click();
   await page.waitForSelector('[data-testid="oryon-layout-name-dialog"]', { timeout: 5_000 });
@@ -329,7 +329,7 @@ async function indicatorsFile(page) {
   await page.waitForTimeout(300);
   await closeLayoutMenu(page);
 
-  console.log("— E. Layouts : garde « changements non sauvés »");
+  console.log("- E. Layouts : garde « changements non sauvés »");
   await page.click('[data-testid="oryon-tf-5m"]');
   await page.waitForTimeout(500);
   ok("E1 dirty affichée", (await page.locator('[data-testid="oryon-layout-dirty"]').count()) === 1);
@@ -358,7 +358,7 @@ async function indicatorsFile(page) {
   ok("E8 l'original a bien été sauvé (candles)", file.layouts.find((l) => l.name === "Phase6 Renamed").panels[0].chartType === "candles");
   ok("E9 dirty résorbée", (await page.locator('[data-testid="oryon-layout-dirty"]').count()) === 0);
 
-  console.log("— F. Layouts : delete confirmé + restore default");
+  console.log("- F. Layouts : delete confirmé + restore default");
   await selectSavedLayout(page, "Phase6 Renamed");
   await openLayoutMenu(page);
   await (await layoutMenuItem(page, "oryon-layout-delete")).click();
@@ -379,7 +379,7 @@ async function indicatorsFile(page) {
   ok("F5 restore GARDE les layouts sauvegardés", file.layouts.length === 1);
   await page.screenshot({ path: path.join(OUT, "oryon-phase6-layouts.png") });
 
-  console.log("— G. Templates : capture + application");
+  console.log("- G. Templates : capture + application");
   const isolationBefore = await isolationSnapshot(page);
   const chipsBeforeTpl = await chipCount(page);
   await page.click('[data-testid="oryon-type-line"]');
@@ -448,7 +448,7 @@ async function indicatorsFile(page) {
     statsAfterApply !== null && statsAtCapture !== null && statsAfterApply.panes === statsAtCapture.panes,
   );
 
-  console.log("— H. Templates : gestion (rename/delete) + isolation");
+  console.log("- H. Templates : gestion (rename/delete) + isolation");
   await openTemplateMenu(page);
   await page.click('[data-testid="oryon-template-manage"]');
   await page.waitForSelector('[data-testid="oryon-template-manage-dialog"]', { timeout: 5_000 });
@@ -474,7 +474,7 @@ async function indicatorsFile(page) {
     JSON.stringify(isolationBefore) === JSON.stringify(isolationAfter),
   );
 
-  console.log("— I. Persistance au rechargement");
+  console.log("- I. Persistance au rechargement");
   await page.click('[data-testid="oryon-tf-15m"]');
   await page.waitForTimeout(600);
   await openLayoutMenu(page);
@@ -509,7 +509,7 @@ async function indicatorsFile(page) {
   await page.waitForTimeout(300);
   await page.screenshot({ path: path.join(OUT, "oryon-phase6-templates.png") });
 
-  console.log("— J. Régressions");
+  console.log("- J. Régressions");
   const stats = await chartStats(page);
   ok("J1 moteur vivant (série principale)", stats !== null && stats.series >= 1);
   ok("J2 panes indicateurs présents", stats !== null && stats.panes >= 1);
@@ -527,8 +527,8 @@ async function indicatorsFile(page) {
     fs.appendFileSync(LOG, `console errors: ${JSON.stringify(errors.slice(0, 10), null, 2)}\n`);
   }
 
-  // ── K. Mobile 390 — le menu reste utilisable ──────────────────────────────
-  console.log("— K. Mobile 390");
+  // ── K. Mobile 390 - le menu reste utilisable ──────────────────────────────
+  console.log("- K. Mobile 390");
   const mobile = await browser.newPage({ viewport: { width: 390, height: 844 } });
   const mobileErrors = [];
   mobile.on("pageerror", (e) => mobileErrors.push(String(e)));
@@ -540,7 +540,7 @@ async function indicatorsFile(page) {
   });
   await signIn(mobile);
   await clearDevOverlay(mobile);
-  // Mobile: the sidebar nav is collapsed — navigate directly.
+  // Mobile: the sidebar nav is collapsed - navigate directly.
   await mobile.goto(`${BASE}/oryon`, { waitUntil: "load", timeout: 60_000 });
   await mobile.waitForSelector('[data-testid="oryon-workspace"]', { timeout: 30_000 });
   await mobile.waitForTimeout(2_500);

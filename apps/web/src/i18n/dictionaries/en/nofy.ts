@@ -1,6 +1,6 @@
 /**
- * EN dictionary — NOFY namespace (canonical; FR mirrors it).
- * Grouped by component concern. Values are STATIC strings — components
+ * EN dictionary - NOFY namespace (canonical; FR mirrors it).
+ * Grouped by component concern. Values are STATIC strings - components
  * compose dynamic parts themselves (the dict.* pattern, no {var} templates).
  * Populated by the Nofy i18n migration.
  */
@@ -35,7 +35,7 @@ export const nofyDict = {
     createdFromLesson: "Created from the Academy lesson",
   },
 
-  /** Relative-time vocabulary — composed in nofy-shared (no {var} templates). */
+  /** Relative-time vocabulary - composed in nofy-shared (no {var} templates). */
   time: {
     justNow: "just now",
     agoPrefix: "",
@@ -60,8 +60,8 @@ export const nofyDict = {
       trash: "Trash",
     },
     tagline:
-      "Learn → think → write → document → research → connect → apply. Your personal trading knowledge workspace: notes, ideas, research and documentation — connected to your trades, strategies and lessons.",
-    focusHint: "Focus mode — navigation is hidden while you write. Use the minimize button to come back.",
+      "Learn → think → write → document → research → connect → apply. Your personal trading knowledge workspace: notes, ideas, research and documentation - connected to your trades, strategies and lessons.",
+    focusHint: "Focus mode - navigation is hidden while you write. Use the minimize button to come back.",
     lastEdited: "last edited",
     favoritesEmptyTitle: "No favorite notes yet.",
   },
@@ -103,11 +103,11 @@ export const nofyDict = {
 
   /** Folders panel (FoldersPanel). */
   folders: {
-    inputPlaceholder: "New folder name — e.g. Strategies, Psychology, Research…",
+    inputPlaceholder: "New folder name - e.g. Strategies, Psychology, Research…",
     inputLabel: "New folder name",
     create: "Create folder",
     emptyTitle: "No folders yet",
-    emptyBody: "Folders organize your notes — Strategies, Market Analysis, Psychology, Research, Trade Ideas… you own the taxonomy.",
+    emptyBody: "Folders organize your notes - Strategies, Market Analysis, Psychology, Research, Trade Ideas… you own the taxonomy.",
     optionsFor: "Options for",
     rename: "Rename",
     deleteFolder: "Delete folder",
@@ -117,7 +117,7 @@ export const nofyDict = {
     folderName: "Folder name",
     deleteTitlePrefix: "Delete",
     deleteBodyPrefix: "The folder is removed; its",
-    deleteBodySuffix: "move to “No folder” — nothing is lost.",
+    deleteBodySuffix: "move to “No folder” - nothing is lost.",
   },
 
   /** Templates panel (TemplatesPanel). */
@@ -125,7 +125,7 @@ export const nofyDict = {
     title: "Templates",
     hint: "Reusable structures for ideas, analyses, reviews and learning notes. Create your own from any note: Note actions → Save as template.",
     emptyTitle: "No templates yet",
-    emptyBody: "Save any note as a template to reuse its structure — trading ideas, market analyses, reviews and more.",
+    emptyBody: "Save any note as a template to reuse its structure - trading ideas, market analyses, reviews and more.",
     builtin: "Built-in",
     custom: "Custom",
     blocksOne: "block",
@@ -141,7 +141,7 @@ export const nofyDict = {
     hint: "Deleted notes stay here until permanently removed. Restore them any time.",
     empty: "Empty trash",
     emptyTitle: "Trash is empty",
-    emptyBody: "Deleted notes land here first — nothing is lost until you empty the trash.",
+    emptyBody: "Deleted notes land here first - nothing is lost until you empty the trash.",
     deleteForever: "Delete forever",
     purgeSinglePrefix: "Delete",
     purgeSingleSuffix: "forever?",
@@ -165,7 +165,7 @@ export const nofyDict = {
     gridView: "Grid view",
     newNote: "New note",
     emptySearchTitle: "No notes match this search",
-    emptySearchBody: "Try another keyword — search covers titles, content, tags and folders.",
+    emptySearchBody: "Try another keyword - search covers titles, content, tags and folders.",
     openToDos: "Open to-dos",
     refs: "Entity references",
     emptyNote: "Empty note",
@@ -205,11 +205,11 @@ export const nofyDict = {
     suggestions: "Suggestions",
     noOtherTags: "No other tags yet.",
     addBlockLabel: "Add a block",
-    addBlockHint: "Click to add a block — press / for commands",
+    addBlockHint: "Click to add a block - press / for commands",
     slashMenuLabel: "Block commands",
   },
 
-  /** Slash-command menu — group names + per-command descriptions. */
+  /** Slash-command menu - group names + per-command descriptions. */
   slash: {
     groups: {
       Basic: "Basic",
@@ -327,14 +327,14 @@ export const nofyDict = {
   /** Editor dialogs (nofy-editor-dialogs.tsx). */
   dialogs: {
     refPickerTitle: "Reference an entity",
-    refPickerBody: "Link a real trade, strategy, setup, lesson, event, symbol or note — the card stays fresh.",
+    refPickerBody: "Link a real trade, strategy, setup, lesson, event, symbol or note - the card stays fresh.",
     all: "All",
     searchPlaceholder: "Search entities…",
     searchLabel: "Search entities",
     noMatch: "No entity matches this search.",
     versionsTitle: "Version history",
     versionsBody: "Snapshots are taken while you write (roughly every few minutes). Restoring keeps a snapshot of the current state.",
-    versionsEmpty: "No versions yet — keep editing and snapshots will appear here.",
+    versionsEmpty: "No versions yet - keep editing and snapshots will appear here.",
     changeIconAria: "Change note icon",
     changeIconTitle: "Change icon",
     removeIcon: "Remove icon",
@@ -343,9 +343,9 @@ export const nofyDict = {
   /** Print / Export PDF sheet (nofy-print.tsx). */
   print: {
     title: "Export PDF",
-    body: "A clean print rendering of this note — print it or save it as PDF from the browser dialog.",
+    body: "A clean print rendering of this note - print it or save it as PDF from the browser dialog.",
     button: "Print / Save as PDF",
-    sheetLabel: "Euforia — Nofy note",
+    sheetLabel: "Euforia - Nofy note",
     updated: "Updated",
     empty: "This note is empty.",
   },
@@ -354,7 +354,7 @@ export const nofyDict = {
   linked: {
     title: "Nofy notes",
     takeNotes: "Take notes",
-    emptyPrefix: "No notes linked yet — notes you take here live in Nofy and stay connected to this",
+    emptyPrefix: "No notes linked yet - notes you take here live in Nofy and stay connected to this",
     emptySuffix: ".",
     moreInNofy: "more in Nofy",
   },

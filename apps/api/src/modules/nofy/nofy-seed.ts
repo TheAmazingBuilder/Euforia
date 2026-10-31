@@ -1,12 +1,12 @@
 /**
- * Nofy seed content (B11) — the professional demo workspace: 7 folders,
+ * Nofy seed content (B11) - the professional demo workspace: 7 folders,
  * 10 tags, 5 built-in templates and 9 notes (one of them trashed so the
  * Trash page demonstrates restore/purge honestly).
  *
  * Seeded lazily per user on first nofy read, exactly like the mock engine.
  * Reference blocks point at REAL app entities (the winning/losing trade,
  * first strategy/setup, a high-impact release, the XAUUSD instrument);
- * when such an entity does not exist yet the ref is simply omitted — the
+ * when such an entity does not exist yet the ref is simply omitted - the
  * mock has the same graceful fallback.
  */
 import type {
@@ -77,8 +77,8 @@ export function builtInTemplates(): NofyTemplate[] {
       blk("bullet", "Level one"),
       blk("bullet", "Level two"),
       blk("h2", "Scenarios"),
-      blk("callout", "Bullish case — what confirms it.", { tone: "tip" }),
-      blk("callout", "Bearish case — what confirms it.", { tone: "warn" }),
+      blk("callout", "Bullish case - what confirms it.", { tone: "tip" }),
+      blk("callout", "Bearish case - what confirms it.", { tone: "warn" }),
       blk("h2", "Invalidation"),
       blk("paragraph", "The read is wrong if…"),
     ]),
@@ -130,7 +130,7 @@ export function builtInTemplates(): NofyTemplate[] {
   ];
 }
 
-// ── Seed context — real entities the demo refs may point at ─────────────────
+// ── Seed context - real entities the demo refs may point at ─────────────────
 
 export interface NofySeedContext {
   losingTradeId?: string;
@@ -190,7 +190,7 @@ export function buildSeed(context: NofySeedContext): NofySeed {
   const notes: NofyNote[] = [
     note({
       id: crypto.randomUUID(),
-      title: "XAUUSD London Breakout — observations",
+      title: "XAUUSD London Breakout - observations",
       icon: "📈",
       folderId: folder("Market Analysis"),
       tagIds: [tag("XAUUSD"), tag("LondonSession"), tag("Breakout")],
@@ -199,7 +199,7 @@ export function buildSeed(context: NofySeedContext): NofySeed {
       lessonRef: null,
       blocks: [
         blk("h2", "Session behaviour"),
-        blk("paragraph", "Gold tends to sweep the Asian range in the first 15 minutes of London, then rotate. The sweep is tradeable only when the reclaim holds on the 5m close — otherwise it is continuation, not reversal."),
+        blk("paragraph", "Gold tends to sweep the Asian range in the first 15 minutes of London, then rotate. The sweep is tradeable only when the reclaim holds on the 5m close - otherwise it is continuation, not reversal."),
         blk("paragraph", "Three weeks of journaling the same window: **11 qualified sweeps, 7 reclaimed**. The edge is the reclaim, never the sweep itself."),
         blk("h2", "Qualification checklist"),
         blk("todo", "Asian range defined (≥ 6 candles, clean highs/lows)", { checked: true }),
@@ -212,10 +212,10 @@ export function buildSeed(context: NofySeedContext): NofySeed {
             ["Condition", "Observation", "Result"],
             ["London open + clean range", "Liquidity sweep then reclaim", "Valid"],
             ["NY open, no range", "No confirmation, mid-range chop", "Invalid"],
-            ["CPI day", "Sweep ignored — spreads widened", "Skipped"],
+            ["CPI day", "Sweep ignored - spreads widened", "Skipped"],
           ],
         }),
-        blk("callout", "The sweep is bait. The reclaim is the setup — wait for it, every time.", { tone: "warn" }),
+        blk("callout", "The sweep is bait. The reclaim is the setup - wait for it, every time.", { tone: "warn" }),
       ],
       createdAt: daysAgoIso(16, 2),
       updatedAt: daysAgoIso(1, 3),
@@ -241,7 +241,7 @@ export function buildSeed(context: NofySeedContext): NofySeed {
         refBlock(context.strategyId ? { kind: "STRATEGY", id: context.strategyId } : undefined),
         blk("h2", "Action items"),
         blk("todo", "Write the confirmation rule at the top of the pre-session checklist", { checked: true }),
-        blk("todo", "Journal every entry where confirmation was missing — 10 sessions", { checked: false }),
+        blk("todo", "Journal every entry where confirmation was missing - 10 sessions", { checked: false }),
       ],
       createdAt: daysAgoIso(9, 5),
       updatedAt: daysAgoIso(2, 1),
@@ -259,13 +259,13 @@ export function buildSeed(context: NofySeedContext): NofySeed {
       lessonRef: null,
       blocks: [
         blk("h2", "Working definition"),
-        blk("paragraph", "A liquidity sweep is a push through a visible swing high/low that does not hold — engineered to fill larger orders. It fails as a breakout within one to three candles."),
+        blk("paragraph", "A liquidity sweep is a push through a visible swing high/low that does not hold - engineered to fill larger orders. It fails as a breakout within one to three candles."),
         blk("h2", "What makes it exploitable"),
         blk("numbered", "A clean prior level everyone can see"),
         blk("numbered", "Momentum into the level, not a slow drift"),
-        blk("numbered", "Fast rejection — the reclaim candle is the tell"),
+        blk("numbered", "Fast rejection - the reclaim candle is the tell"),
         blk("h2", "What it is NOT"),
-        blk("bullet", "A guaranteed reversal — sweeps fail constantly in trend"),
+        blk("bullet", "A guaranteed reversal - sweeps fail constantly in trend"),
         blk("bullet", "A reason to skip the confirmation candle"),
         blk("callout", "Counter-trend by nature. Grade it against the higher-timeframe structure before anything else.", { tone: "info" }),
       ],
@@ -284,10 +284,10 @@ export function buildSeed(context: NofySeedContext): NofySeed {
       templateId: null,
       lessonRef: null,
       blocks: [
-        blk("paragraph", "Studying how gold reacts to US CPI releases — the goal is not to trade the release, it is to understand the post-release range so the second move can be traded safely."),
+        blk("paragraph", "Studying how gold reacts to US CPI releases - the goal is not to trade the release, it is to understand the post-release range so the second move can be traded safely."),
         refBlock(context.highImpactEventId ? { kind: "EVENT", id: context.highImpactEventId } : undefined),
         blk("h2", "Observations"),
-        blk("bullet", "First move is noise — spreads widen, both sides get wicked"),
+        blk("bullet", "First move is noise - spreads widen, both sides get wicked"),
         blk("bullet", "The tradeable move is usually the second impulse, 5–15 minutes after the release"),
         blk("bullet", "Initial spike range becomes the day's high or low surprisingly often"),
         blk("callout", "No entries inside the first five minutes. Ever.", { tone: "risk" }),
@@ -339,7 +339,7 @@ export function buildSeed(context: NofySeedContext): NofySeed {
         blk("todo", "Daily loss limit re-read out loud", { checked: true }),
         blk("todo", "Economic calendar scanned for the session window", { checked: true }),
         blk("todo", "Higher-timeframe bias written in one sentence", { checked: false }),
-        blk("todo", "Maximum 2 trades planned — count them", { checked: false }),
+        blk("todo", "Maximum 2 trades planned - count them", { checked: false }),
         blk("callout", "If the checklist cannot be completed, the session does not start.", { tone: "warn" }),
       ],
       createdAt: daysAgoIso(18, 1),
@@ -349,7 +349,7 @@ export function buildSeed(context: NofySeedContext): NofySeed {
     }),
     note({
       id: crypto.randomUUID(),
-      title: "Position sizing — my notes",
+      title: "Position sizing - my notes",
       icon: "📚",
       folderId: folder("Learning"),
       tagIds: [tag("RiskManagement"), tag("Forex")],
@@ -357,11 +357,11 @@ export function buildSeed(context: NofySeedContext): NofySeed {
       templateId: null,
       lessonRef: null,
       blocks: [
-        blk("paragraph", "Personal consolidation of the Academy lesson on position sizing — written in my own words so it sticks."),
+        blk("paragraph", "Personal consolidation of the Academy lesson on position sizing - written in my own words so it sticks."),
         blk("h2", "The core arithmetic"),
-        blk("paragraph", "Risk amount = balance × risk %. Position size = risk amount ÷ (stop distance × value per unit). The stop distance is GIVEN by the structure — sizing adapts to it, never the other way around."),
+        blk("paragraph", "Risk amount = balance × risk %. Position size = risk amount ÷ (stop distance × value per unit). The stop distance is GIVEN by the structure - sizing adapts to it, never the other way around."),
         blk("h2", "What I keep getting wrong"),
-        blk("bullet", "Widening the stop to keep the size — that is risk denial, not sizing"),
+        blk("bullet", "Widening the stop to keep the size - that is risk denial, not sizing"),
         blk("bullet", "Forgetting the spread on wide instruments like gold"),
         blk("h2", "Application"),
         blk("todo", "Compute size by hand on the next 5 trades before checking the sizer", { checked: false }),
@@ -373,7 +373,7 @@ export function buildSeed(context: NofySeedContext): NofySeed {
     }),
     note({
       id: crypto.randomUUID(),
-      title: "Weekly review — what the data says",
+      title: "Weekly review - what the data says",
       icon: "🧾",
       folderId: folder("Strategies"),
       tagIds: [tag("XAUUSD"), tag("Breakout")],
@@ -396,14 +396,14 @@ export function buildSeed(context: NofySeedContext): NofySeed {
     // One trashed note so the Trash page demonstrates restore/purge honestly.
     note({
       id: crypto.randomUUID(),
-      title: "Random itch — scalp the open",
+      title: "Random itch - scalp the open",
       icon: "🗑️",
       folderId: null,
       tagIds: [],
       favorite: false,
       templateId: null,
       lessonRef: null,
-      blocks: [blk("paragraph", "Impulse idea written mid-session, deleted on review — kept in trash as a reminder.")],
+      blocks: [blk("paragraph", "Impulse idea written mid-session, deleted on review - kept in trash as a reminder.")],
       createdAt: daysAgoIso(3, 2),
       updatedAt: daysAgoIso(3, 1),
       lastViewedAt: null,

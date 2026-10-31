@@ -1,4 +1,4 @@
-/* Visual QA probe — captures the extended analytics sections (drawer open, patterns grid, execution, consistency). */
+/* Visual QA probe - captures the extended analytics sections (drawer open, patterns grid, execution, consistency). */
 /* eslint-disable @typescript-eslint/no-require-imports */
 const { chromium } = require("playwright");
 
@@ -19,7 +19,7 @@ const SHOTS = "/home/z/my-project/scripts/shots/analytics-extended";
   await page.locator('nav[aria-label="Main navigation"] a[href="/analytics"]').click();
   await page.locator('[data-testid="analytics-tab-overview"]').waitFor({ state: "visible", timeout: 60_000 });
 
-  // Behavior tab — full page (score + patterns + compliance + timeline).
+  // Behavior tab - full page (score + patterns + compliance + timeline).
   await page.locator('[role="tab"]', { hasText: /^Behavior$/i }).click();
   await page.locator('[data-testid="analytics-tab-behavior"]').waitFor({ state: "visible", timeout: 30_000 });
   await page.waitForTimeout(700);

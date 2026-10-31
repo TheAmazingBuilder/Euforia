@@ -5,7 +5,7 @@ import { apiRequest } from "@/lib/api/client";
 import { apiPaths } from "@/lib/api/endpoints";
 import { queryKeys } from "@/lib/api/keys";
 
-/** GET /me — the signed-in trader's identity. */
+/** GET /me - the signed-in trader's identity. */
 export function useProfile() {
   return useQuery({
     queryKey: queryKeys.profile,
@@ -13,7 +13,7 @@ export function useProfile() {
   });
 }
 
-/** PATCH /me — direct profile editing (name, email, timezone). */
+/** PATCH /me - direct profile editing (name, email, timezone). */
 export function useUpdateProfile() {
   const queryClient = useQueryClient();
   return useMutation({

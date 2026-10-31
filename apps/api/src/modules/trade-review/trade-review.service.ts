@@ -1,14 +1,14 @@
 /**
- * Trade Review application service (Phase 6) — use-case orchestration over
+ * Trade Review application service (Phase 6) - use-case orchestration over
  * the review aggregate and read models.
  *
  * Every operation enforces the ownership chain (§8/§36): authenticated
  * principal → trade ownership (via Trading Core's public repository) →
  * review ownership (userId in every query). The userId ALWAYS comes from the
- * JWT guard — never from the client (§24).
+ * JWT guard - never from the client (§24).
  *
  * Boundaries (§47/§49/§50/§51/§78):
- *   - Trading Core stays the source of truth for execution/financial data —
+ *   - Trading Core stays the source of truth for execution/financial data -
  *     this service READS trades and NEVER writes them (immutability §11/§31).
  *   - The Trade Planning context is read via its public repository; the plan
  *     is never modified (§25).
@@ -68,7 +68,7 @@ import {
 /** Page ceiling for the unpaginated lessons library (product contract). */
 const LESSONS_FETCH_CAP = 2000;
 
-/** Workspace list default page size (§72 — paginated, contract-compatible). */
+/** Workspace list default page size (§72 - paginated, contract-compatible). */
 const DEFAULT_PAGE_SIZE = 200;
 
 const round1 = (value: number): number => Math.round(value * 10) / 10;
@@ -77,7 +77,7 @@ const isoDateTimeWire = (date: Date): string => date.toISOString().replace(/\.\d
 
 /**
  * Product merge rule (§71): omitted optional fields keep their stored value
- * on edits; explicit null ALSO keeps (mock parity — the product never clears
+ * on edits; explicit null ALSO keeps (mock parity - the product never clears
  * through the save path). `fresh` marks a reactivation: a fresh completion
  * resets anything the payload does not provide to null, never to the
  * archived row's stale values.
@@ -116,7 +116,7 @@ export class TradeReviewService {
   /**
    * Create-or-update the trade's review (the product's upsert flow). The URL
    * tradeId is authoritative (frontend contract); a body tradeId, when sent,
-   * is ignored — never trusted (§24).
+   * is ignored - never trusted (§24).
    */
   async upsertReview(userId: string, tradeId: string, input: UpsertReviewInput): Promise<ReviewRow> {
     const trade = await this.tradingRepository.findTradeForUser(tradeId, userId);
@@ -161,7 +161,7 @@ export class TradeReviewService {
         );
         return this.requireJoinRow(await this.reviews.findReviewedJoinByTradeId(tradeId, userId));
       } catch (error) {
-        // Concurrent create raced us (unique tradeId) — fall through to the
+        // Concurrent create raced us (unique tradeId) - fall through to the
         // update path so the request still lands as a proper upsert (§44).
         if (!(error instanceof Prisma.PrismaClientKnownRequestError) || error.code !== "P2002") {
           throw error;
@@ -221,7 +221,7 @@ export class TradeReviewService {
   async patchReview(userId: string, tradeId: string, input: PatchReviewInput): Promise<ReviewRow> {
     const current = await this.reviews.findActiveReviewByTradeId(tradeId, userId);
     if (current === null) {
-      // Covers both "no review" and "archived" — an honest 404 (§32: no
+      // Covers both "no review" and "archived" - an honest 404 (§32: no
       // silent resurrection of archived reviews through the edit path).
       throw new NotFoundError(
         "Review does not exist.",
@@ -229,7 +229,7 @@ export class TradeReviewService {
       );
     }
 
-    // Linking a plan on PATCH re-validates against the trade's symbol — the
+    // Linking a plan on PATCH re-validates against the trade's symbol - the
     // trade must still exist and belong to the caller.
     let linkage: PlanLinkage = { kind: "keep" };
     if (input.originTradePlanId !== undefined) {
@@ -333,7 +333,7 @@ export class TradeReviewService {
 
   /**
    * REVIEWED ⊕ PENDING rows, newest trading day first, reviewed rows first
-   * on ties (product ordering). Pagination merges the top-N of both sides —
+   * on ties (product ordering). Pagination merges the top-N of both sides -
    * no full-history scan beyond the requested window (§72).
    */
   async listReviews(userId: string, query: ReviewsQuery): Promise<ReviewsResponse> {
@@ -418,7 +418,7 @@ export class TradeReviewService {
     for (const note of pendingNotes) {
       if (note.notes === null || note.notes.trim() === "") continue;
       entries.push({
-        // The trade id is already a uuid — the contract's id field is a
+        // The trade id is already a uuid - the contract's id field is a
         // uuidSchema, so the note entry reuses it (unique within the library:
         // a trade contributes at most one TRADE_NOTE entry).
         id: note.id,
@@ -440,7 +440,7 @@ export class TradeReviewService {
 
   /**
    * The workspace aggregate. Review-side stats are computed over the review
-   * context's own records + closed-trade counts (§47 boundary respected —
+   * context's own records + closed-trade counts (§47 boundary respected -
    * cross-trade PERFORMANCE analytics stay in the future Analytics phase,
    * and the goals engine is an honest zero until its own phase).
    */
@@ -462,7 +462,7 @@ export class TradeReviewService {
 
     const distribution = { A: 0, B: 0, C: 0, D: 0, F: 0 };
     for (const summary of summaries) {
-      // Partial reviews carry no grade — they stay out of the distribution.
+      // Partial reviews carry no grade - they stay out of the distribution.
       if (summary.executionGrade !== null && summary.executionGrade in distribution) {
         distribution[summary.executionGrade as keyof typeof distribution] += 1;
       }
@@ -478,7 +478,7 @@ export class TradeReviewService {
     );
     const streak = computeReviewStreak({ todayKey, reviewDayKeys });
 
-    // Ungraded (partial) reviews have nothing to plot — skipped honestly.
+    // Ungraded (partial) reviews have nothing to plot - skipped honestly.
     const gradePoints: GradeDayPoint[] = summaries.flatMap((summary) =>
       summary.executionGrade === null
         ? []
@@ -512,7 +512,7 @@ export class TradeReviewService {
         offPlaybookCount,
       },
       // Goals engine: deferred to its own phase (cross-trade aggregation is
-      // the Analytics boundary, §47). Honest zeros — no fabricated progress.
+      // the Analytics boundary, §47). Honest zeros - no fabricated progress.
       goalsSummary: {
         total: 0,
         achieved: 0,
@@ -535,7 +535,7 @@ export class TradeReviewService {
   /**
    * Resolve the client's plan-linkage intent (§25): keep / detach / link.
    * Linking validates plan OWNERSHIP (IDOR → 404) and symbol consistency
-   * (a plan written for another instrument can never be the origin — 422),
+   * (a plan written for another instrument can never be the origin - 422),
    * then FREEZES the snapshot at save time (§26).
    */
   private async resolvePlanLinkage(

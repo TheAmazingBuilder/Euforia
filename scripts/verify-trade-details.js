@@ -1,5 +1,5 @@
 /**
- * Verify — Trade details full-width dialog + Coach tab removal.
+ * Verify - Trade details full-width dialog + Coach tab removal.
  * Probes (user request): the trade details modal takes the full width on
  * desktop (plan/reality on one row, notes | evidence side by side), the
  * mobile sheet stays full-width, delete/close dialogs still work, and the
@@ -21,12 +21,12 @@ const BASE = "http://localhost:3000";
 
   const results = [];
   const check = (name, ok, extra = "") =>
-    results.push(`${ok ? "PASS" : "FAIL"} — ${name}${extra ? ` (${extra})` : ""}`);
+    results.push(`${ok ? "PASS" : "FAIL"} - ${name}${extra ? ` (${extra})` : ""}`);
 
-  // socket.io never goes idle — domcontentloaded + fixed waits (house rule).
+  // socket.io never goes idle - domcontentloaded + fixed waits (house rule).
   await page.goto(`${BASE}/trades`, { waitUntil: "domcontentloaded" });
   await page.waitForTimeout(1500);
-  // Fresh Playwright profiles carry no session — log in when redirected.
+  // Fresh Playwright profiles carry no session - log in when redirected.
   const sidebar = page.locator('nav[aria-label="Main navigation"]');
   if ((await sidebar.count()) === 0 || !(await sidebar.isVisible().catch(() => false))) {
     await page.locator("#login-email").waitFor({ state: "visible", timeout: 20000 });
@@ -88,7 +88,7 @@ const BASE = "http://localhost:3000";
   await page.keyboard.press("Escape");
   await page.waitForTimeout(400);
 
-  // Close the details (Escape) — no dead overlay.
+  // Close the details (Escape) - no dead overlay.
   await page.keyboard.press("Escape");
   await page.waitForTimeout(500);
   check("Details dialog closes", !(await dialog.isVisible().catch(() => false)));
@@ -106,7 +106,7 @@ const BASE = "http://localhost:3000";
     await mobile.locator("#login-email").fill("trader@cosmoz.app");
     await mobile.locator("#login-password").fill("cosmoz-demo-2026");
     await mobile.locator('[data-testid="login-submit"]').click();
-    // Mobile uses the bottom nav — the desktop rail stays hidden. Wait for
+    // Mobile uses the bottom nav - the desktop rail stays hidden. Wait for
     // the ledger instead.
     await mobile.waitForSelector('[data-testid="trades-table"]', { timeout: 20000 });
     await mobile.goto(`${BASE}/trades`, { waitUntil: "domcontentloaded" });

@@ -4,7 +4,7 @@ import { currencySchema, directionSchema } from "../enums";
 import { decimalStringSchema, isoDateTimeSchema } from "./primitives";
 
 /**
- * Broker monitoring contract — READ-ONLY by design. Session Live V1 never
+ * Broker monitoring contract - READ-ONLY by design. Session Live V1 never
  * sends anything to a broker: there is intentionally NO schema for order
  * submission here. Phase 2 (execution) must add its own guarded contracts
  * instead of widening these.
@@ -22,7 +22,7 @@ export type BrokerConnectionState = z.infer<typeof brokerConnectionStateSchema>;
 
 /**
  * A real position as reported by the broker. The broker (MT5/…) is the ONLY
- * source of truth for positions — never a chart, never a journal entry.
+ * source of truth for positions - never a chart, never a journal entry.
  */
 export const brokerPositionSchema = z.object({
   id: z.string(),
@@ -40,7 +40,7 @@ export const brokerPositionSchema = z.object({
 });
 export type BrokerPosition = z.infer<typeof brokerPositionSchema>;
 
-/** Pending order — displayed read-only; no cancel/modify/execute path exists. */
+/** Pending order - displayed read-only; no cancel/modify/execute path exists. */
 export const brokerOrderSchema = z.object({
   id: z.string(),
   symbol: z.string(),
@@ -54,7 +54,7 @@ export const brokerOrderSchema = z.object({
 });
 export type BrokerOrder = z.infer<typeof brokerOrderSchema>;
 
-/** Account snapshot — every metric nullable: unavailable ≠ invented. */
+/** Account snapshot - every metric nullable: unavailable ≠ invented. */
 export const brokerAccountSnapshotSchema = z.object({
   broker: z.string(),
   accountNumber: z.string(),
@@ -69,7 +69,7 @@ export const brokerAccountSnapshotSchema = z.object({
 export type BrokerAccountSnapshot = z.infer<typeof brokerAccountSnapshotSchema>;
 
 /**
- * GET /broker/session — everything the Session Live needs about the real
+ * GET /broker/session - everything the Session Live needs about the real
  * trading account, in one read-only call (account + positions + orders).
  * `state` drives the UI: NOT_CONFIGURED/ERROR render honest empty states,
  * never placeholder numbers.
@@ -87,14 +87,14 @@ export const brokerSessionResponseSchema = z.object({
 });
 export type BrokerSessionResponse = z.infer<typeof brokerSessionResponseSchema>;
 
-/** Origin of a private-positions stream snapshot — honest labeling, always. */
+/** Origin of a private-positions stream snapshot - honest labeling, always. */
 export const positionsStreamSourceSchema = z.enum(["sim"]);
 export type PositionsStreamSource = z.infer<typeof positionsStreamSourceSchema>;
 
 /**
- * WS event "positions" — the PRIVATE stream pushed ONLY into the
+ * WS event "positions" - the PRIVATE stream pushed ONLY into the
  * authenticated owner's `user:<id>` room (server-side scoping: never
- * addressed by client-named channels, never broadcast). SNAPSHOT semantics —
+ * addressed by client-named channels, never broadcast). SNAPSHOT semantics -
  * the full positions array on every emit, so applying it is idempotent
  * (reconnect/replay cannot duplicate positions). Reuses brokerPositionSchema:
  * the broker stays the only source of truth for position shape.

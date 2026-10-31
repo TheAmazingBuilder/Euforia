@@ -12,9 +12,9 @@ import { isoDateTimeSchema, uuidSchema } from "./primitives";
  *   creation (§8, §16).
  * - Sensitive actions require a short-lived re-authentication token obtained
  *   with the account password; failed attempts are rate-limited (§13, §14).
- * - The security event log is APPEND-ONLY — no endpoint can edit or delete
+ * - The security event log is APPEND-ONLY - no endpoint can edit or delete
  *   an event (§18).
- * - The protection checklist states hard facts with a defined methodology —
+ * - The protection checklist states hard facts with a defined methodology -
  *   no invented composite score (§4).
  * - Data minimization: IPs and locations are masked before they reach the
  *   client (§11, §19).
@@ -23,11 +23,10 @@ import { isoDateTimeSchema, uuidSchema } from "./primitives";
 // ── Event types (§10) ────────────────────────────────────────────────────────
 
 /**
- * THE event catalog — one coherent security-event architecture (Phase 16 §38):
- * the backend emits exactly these values, the frontend labels exactly these.
- * The four TRADING_ACCOUNT_* values record connection-lifecycle facts emitted
- * by the Accounts context (Phase 3) through the same append-only log — sync
- * success stays in the sync-run records (signal density).
+ * THE event catalog - one coherent security-event architecture:
+ * trading-account, OCR, screenshot-recognition, and MT5 bridge lifecycle
+ * events are all declared here so API filters, backend writers, and UI labels
+ * share one canonical catalog. Sync success remains in sync-run records.
  */
 export const securityEventTypeSchema = z.enum([
   "LOGIN_SUCCESS",
@@ -53,7 +52,7 @@ export const securityEventTypeSchema = z.enum([
   "TRADING_ACCOUNT_CONNECTION_FAILED",
   "TRADING_ACCOUNT_DISCONNECTED",
   "TRADING_ACCOUNT_SYNC_FAILED",
-  // Phase 19 — OCR / screenshot recognition lifecycle facts emitted by the
+  // Phase 19 - OCR / screenshot recognition lifecycle facts emitted by the
   // OCR context through the same append-only log (Phase 19 §48). Only events
   // that actually fit the audit model exist: no PROCESSING_STARTED (the
   // request-scoped pipeline would double-log every upload).
@@ -61,16 +60,25 @@ export const securityEventTypeSchema = z.enum([
   "OCR_PROCESSING_FAILED",
   "OCR_RESULT_CONFIRMED",
   "OCR_RESULT_DELETED",
-  // Phase 21 — the sanctioned confirmation→Trade bridge (§77/§83). The import
+  // Phase 21 - the sanctioned confirmation→Trade bridge (§77/§83). The import
   // runs through Trading Core's canonical creation path; the skip event keeps
   // honest evidence when the confirmed values could not resolve into a trade.
   "OCR_TRADE_IMPORTED",
   "OCR_TRADE_IMPORT_SKIPPED",
-  // V2 §32 — explicit reprocess (a fresh recognition from the same asset).
+  // V2 §32 - explicit reprocess (a fresh recognition from the same asset).
   "OCR_REPROCESSED",
-  // V2 §28 — screenshot collection lifecycle facts.
+  // V2 §28 - screenshot collection lifecycle facts.
   "OCR_COLLECTION_CREATED",
   "OCR_COLLECTION_DELETED",
+  // Recognition V1 lifecycle facts recorded by the OCR context.
+  "OCR_JOB_CREATED",
+  "OCR_JOB_CANCELLED",
+  "OCR_RETENTION_SWEEP",
+  "OCR_GROUP_CREATED",
+  "TRADE_DRAFT_SAVED",
+  "TRADE_IMPORTED",
+  // MT5 terminal bridge credential lifecycle.
+  "TRADING_ACCOUNT_BRIDGE_ROTATED",
 ]);
 export type SecurityEventType = z.infer<typeof securityEventTypeSchema>;
 
@@ -78,15 +86,15 @@ export const securityEventSchema = z.object({
   id: uuidSchema,
   at: isoDateTimeSchema,
   type: securityEventTypeSchema,
-  /** Who performed it — the user, a session, or "system". */
+  /** Who performed it - the user, a session, or "system". */
   actor: z.string().min(1),
-  /** Sanitized human context — never contains secret material (§16). */
+  /** Sanitized human context - never contains secret material (§16). */
   context: z.string().min(1),
   outcome: z.enum(["SUCCESS", "FAILURE"]),
 });
 export type SecurityEvent = z.infer<typeof securityEventSchema>;
 
-// ── Rate-limit policy (§14 — declared, adaptive at the API layer) ────────────
+// ── Rate-limit policy (§14 - declared, adaptive at the API layer) ────────────
 
 export const rateLimitRuleSchema = z.object({
   scope: z.string().min(1),
@@ -103,7 +111,7 @@ export const securitySessionSchema = z.object({
   device: z.string().min(1),
   browser: z.string().min(1),
   os: z.string().min(1),
-  /** Masked IP — full addresses never leave the server (§11). */
+  /** Masked IP - full addresses never leave the server (§11). */
   ipMasked: z.string().min(1),
   /** Approximate location only, where legally/technically appropriate. */
   location: z.string().min(1),
@@ -117,11 +125,12 @@ export type SecuritySession = z.infer<typeof securitySessionSchema>;
 
 export const twoFactorStateSchema = z.object({
   enabled: z.boolean(),
-  /** True between enable() and confirm() — codes not active yet. */
+  /** True between enable() and confirm() - codes not active yet. */
   pending: z.boolean(),
-  method: z.enum(["AUTHENTICATOR_APP"]).nullable(),
+  method: z.enum(["AUTHENTICATOR_APP", "EMAIL"]).nullable(),
+  pendingMethod: z.enum(["AUTHENTICATOR_APP", "EMAIL"]).nullable().optional(),
   enabledAt: isoDateTimeSchema.nullable(),
-  /** When 2FA was last turned OFF — fuels the >7-day inbox reminder. */
+  /** When 2FA was last turned OFF - fuels the >7-day inbox reminder. */
   disabledAt: isoDateTimeSchema.nullable(),
   lastVerifiedAt: isoDateTimeSchema.nullable(),
   recoveryCodesRemaining: z.number().int().nonnegative(),
@@ -130,9 +139,9 @@ export type TwoFactorState = z.infer<typeof twoFactorStateSchema>;
 
 /**
  * One-time enrollment payload (§6). Returned exactly once by the enable
- * action — recovery codes are never displayed again afterwards.
+ * action - recovery codes are never displayed again afterwards.
  * `demoCode` is the MOCKED authenticator stand-in (no real authenticator
- * exists in the mock environment) — the real backend NEVER returns it
+ * exists in the mock environment) - the real backend NEVER returns it
  * (it would expose the current TOTP), hence optional.
  */
 export const twoFactorEnrollmentSchema = z.object({
@@ -155,7 +164,7 @@ export type ApiKeyScope = z.infer<typeof apiKeyScopeSchema>;
 export const apiKeyViewSchema = z.object({
   id: uuidSchema,
   name: z.string().min(1),
-  /** Prefix only — the secret is discarded after the one-time reveal. */
+  /** Prefix only - the secret is discarded after the one-time reveal. */
   prefix: z.string().min(1),
   /** Short SHA-256 fingerprint so users can recognize the key later. */
   fingerprint: z.string().min(1),
@@ -168,7 +177,7 @@ export const apiKeyViewSchema = z.object({
 export type ApiKeyView = z.infer<typeof apiKeyViewSchema>;
 
 /**
- * Creation response — the ONLY response that ever carries the plaintext
+ * Creation response - the ONLY response that ever carries the plaintext
  * secret (§8: "Never store or display plaintext API secrets after creation").
  */
 export const apiKeyCreatedSchema = z.object({
@@ -177,18 +186,18 @@ export const apiKeyCreatedSchema = z.object({
 });
 export type ApiKeyCreated = z.infer<typeof apiKeyCreatedSchema>;
 
-// ── Connected accounts (§9 — Security's view over Integrations) ──────────────
+// ── Connected accounts (§9 - Security's view over Integrations) ──────────────
 
 export const connectedAccountSchema = z.object({
   providerId: z.string().min(1),
   providerName: z.string().min(1),
   kind: integrationKindSchema,
   status: integrationStatusSchema,
-  /** Masked account identifier — never a password, key or token. */
+  /** Masked account identifier - never a password, key or token. */
   identifier: z.string().min(1),
   permissions: z.array(integrationPermissionSchema),
   lastSyncAt: isoDateTimeSchema.nullable(),
-  /** What Security stores for this provider — masked vault hint or "none". */
+  /** What Security stores for this provider - masked vault hint or "none". */
   credentialHint: z.string().min(1),
 });
 export type ConnectedAccount = z.infer<typeof connectedAccountSchema>;
@@ -204,19 +213,19 @@ export const loginRecordSchema = z.object({
   os: z.string().min(1),
   ipMasked: z.string().min(1),
   location: z.string().min(1),
-  /** Failure reason only — sanitized, no secret material. */
+  /** Failure reason only - sanitized, no secret material. */
   reason: z.string().nullable(),
 });
 export type LoginRecord = z.infer<typeof loginRecordSchema>;
 
-// ── Protection checklist (§4 — defined methodology, no fake score) ───────────
+// ── Protection checklist (§4 - defined methodology, no fake score) ───────────
 
 export const protectionCheckSchema = z.object({
   id: z.string().min(1),
   label: z.string().min(1),
   detail: z.string().min(1),
   pass: z.boolean(),
-  /** How this check is evaluated — the declared methodology. */
+  /** How this check is evaluated - the declared methodology. */
   methodology: z.string().min(1),
 });
 export type ProtectionCheck = z.infer<typeof protectionCheckSchema>;
@@ -236,7 +245,7 @@ export const securityRetentionSchema = z.object({
 });
 
 export const securityScoreSchema = z.object({
-  /** 0–100 — share of protection checks passing (real state, server-computed). */
+  /** 0–100 - share of protection checks passing (real state, server-computed). */
   score: z.number().min(0).max(100),
   passed: z.number().int().nonnegative(),
   total: z.number().int().nonnegative(),
@@ -253,7 +262,7 @@ export const securityOverviewResponseSchema = z.object({
   events: z.array(securityEventSchema),
   logins: z.array(loginRecordSchema),
   protection: z.array(protectionCheckSchema),
-  /** Checklist score derived from the SAME checks — real state, not vibes. */
+  /** Checklist score derived from the SAME checks - real state, not vibes. */
   securityScore: securityScoreSchema,
   rateLimits: z.array(rateLimitRuleSchema),
   retention: securityRetentionSchema,
@@ -328,7 +337,7 @@ export type RecoveryRegenerateResponse = z.infer<
 // ── Paginated audit trail (Phase 16 §28/§29) ─────────────────────────────────
 
 /**
- * Stable keyset pagination — the security event log grows indefinitely and
+ * Stable keyset pagination - the security event log grows indefinitely and
  * is NEVER returned unbounded. `cursor` is opaque to clients (base64url of
  * "<at ISO>|<id>"); the server orders by (at DESC, id DESC) and pages on
  * that compound key, so inserts never shift a page. Canonical shape here;
@@ -348,7 +357,7 @@ export type SecurityEventPageQuery = z.infer<typeof securityEventPageQuerySchema
 
 export const securityEventPageSchema = z.object({
   items: z.array(securityEventSchema),
-  /** Null on the last page — the walk is complete. */
+  /** Null on the last page - the walk is complete. */
   nextCursor: pageCursorSchema.nullable(),
 });
 export type SecurityEventPage = z.infer<typeof securityEventPageSchema>;

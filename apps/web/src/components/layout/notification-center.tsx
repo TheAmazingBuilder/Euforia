@@ -32,7 +32,7 @@ import { alertEventObservation } from "@/lib/notifications/alert-rule-summary";
 import { cn } from "@/lib/utils";
 
 /**
- * Notification center — the topbar bell opens a popover inbox fed by the
+ * Notification center - the topbar bell opens a popover inbox fed by the
  * discipline engine (GET /alerts). Module upgrades: alerts GROUP BY TYPE
  * with counters (noise control), an ARCHIVE tab (read + dismissed history,
  * beyond the 20 active rows) and goal alerts DEEP-LINK to the Goals tab
@@ -76,7 +76,7 @@ const SEVERITY_DOT: Record<Alert["severity"], string> = {
   LOCK: "bg-loss",
 };
 
-/** Compact relative time — "now", "12m", "3h", "5d" (mono, tabular). */
+/** Compact relative time - "now", "12m", "3h", "5d" (mono, tabular). */
 function relativeTime(iso: string, now: number): string {
   const diffMs = now - new Date(iso).getTime();
   const minutes = Math.floor(diffMs / 60_000);
@@ -88,7 +88,7 @@ function relativeTime(iso: string, now: number): string {
 }
 
 /** Machine-readable goal link from a GOAL_STATUS / METRIC_THRESHOLD payload
- * (defensive) — goal alerts deep-link to the Goals tab (spec §8). */
+ * (defensive) - goal alerts deep-link to the Goals tab (spec §8). */
 function goalIdOf(alert: Alert): string | null {
   if (alert.type !== "GOAL_STATUS" && alert.type !== "METRIC_THRESHOLD") return null;
   if (alert.payload === null || typeof alert.payload !== "object") return null;
@@ -232,7 +232,7 @@ export function NotificationCenter() {
   const [collapsed, setCollapsed] = React.useState<Set<Alert["type"]>>(new Set());
   const [rulesOpen, setRulesOpen] = React.useState(false);
 
-  // Goal-status toasts — GOAL_STATUS alerts arriving MID-SESSION surface as a
+  // Goal-status toasts - GOAL_STATUS alerts arriving MID-SESSION surface as a
   // toast (warning for slipping, success for back-on-track / achieved). The
   // first snapshot only ARMS the baseline: landing on an already-slipping
   // goal never floods the screen, the state is already in the inbox
@@ -255,7 +255,7 @@ export function NotificationCenter() {
     }
   }, [data]);
 
-  // Ticking clock for relative times — re-render once a minute while open.
+  // Ticking clock for relative times - re-render once a minute while open.
   const [now, setNow] = React.useState(() => Date.now());
   React.useEffect(() => {
     if (!open) return;
@@ -278,7 +278,7 @@ export function NotificationCenter() {
   const unread = live.filter((alert) => alert.readAt === null);
   const unreadCount = data?.unreadCount ?? 0;
 
-  // Grouped view — live alerts bucketed by type, newest first, with counts.
+  // Grouped view - live alerts bucketed by type, newest first, with counts.
   const grouped = React.useMemo(() => {
     const buckets = new Map<Alert["type"], Alert[]>();
     for (const alert of live) {
@@ -304,6 +304,13 @@ export function NotificationCenter() {
 
   /** Deep-link: goal alerts open the Goals tab filtered on the goal. */
   const openAlert = (alert: Alert) => {
+    const payload = alert.payload;
+    if (payload !== null && typeof payload === "object" && !Array.isArray(payload) &&
+      "source" in payload && payload.source === "tasky") {
+      setOpen(false);
+      router.push("/tasky");
+      return;
+    }
     const goalId = goalIdOf(alert);
     if (goalId !== null) {
       setOpen(false);
@@ -376,7 +383,7 @@ export function NotificationCenter() {
           </Button>
         </div>
 
-        {/* Mode tabs — active feed / grouped by type / archived history */}
+        {/* Mode tabs - active feed / grouped by type / archived history */}
         <div className="flex items-center gap-1 border-b border-border px-3 py-1.5" role="tablist" aria-label="Inbox views">
           {(
             [
@@ -404,7 +411,7 @@ export function NotificationCenter() {
           ))}
         </div>
 
-        {/* Active feed — chronological, capped at 20 rows */}
+        {/* Active feed - chronological, capped at 20 rows */}
         {mode === "active" ? (
           live.length === 0 ? (
             <EmptyInbox />
@@ -419,7 +426,7 @@ export function NotificationCenter() {
           )
         ) : null}
 
-        {/* Grouped by type — collapsible buckets with counters */}
+        {/* Grouped by type - collapsible buckets with counters */}
         {mode === "grouped" ? (
           live.length === 0 ? (
             <EmptyInbox />
@@ -471,7 +478,7 @@ export function NotificationCenter() {
           )
         ) : null}
 
-        {/* Archive — read + dismissed, beyond the 20 active rows */}
+        {/* Archive - read + dismissed, beyond the 20 active rows */}
         {mode === "history" ? (
           archived.length === 0 ? (
             <div className="flex flex-col items-center gap-2 px-6 py-10 text-center">
@@ -493,7 +500,7 @@ export function NotificationCenter() {
         ) : null}
       </PopoverContent>
 
-      {/* Alert-rules manager — opened from the inbox header (spec §5). */}
+      {/* Alert-rules manager - opened from the inbox header (spec §5). */}
       <AlertRulesManager open={rulesOpen} onOpenChange={setRulesOpen} />
     </Popover>
   );

@@ -1,4 +1,4 @@
-"""E2E ritual — v3 features wave (reports filters+exports, risk ops, trade review, wide trade detail).
+"""E2E ritual - v3 features wave (reports filters+exports, risk ops, trade review, wide trade detail).
 
 Captures:
 - Desktop 1440x900, light + dark, for /reports /risk /journal /trades
@@ -93,7 +93,7 @@ def step_ok(label: str, detail: str = "") -> None:
 with sync_playwright() as p:
     browser = p.chromium.launch()
 
-    # ---------- Desktop 1440 — light ----------
+    # ---------- Desktop 1440 - light ----------
     ctx = browser.new_context(viewport={"width": 1440, "height": 900}, accept_downloads=True)
     page = ctx.new_page()
     page.on("console", track_console)
@@ -124,7 +124,7 @@ with sync_playwright() as p:
             step_ok("report-filter", f"instrument={picked} -> filtered rollup visible")
             shot(page, "desktop-light-reports-filtered")
         else:
-            results["steps"].append(f"WARN report-filter — picked={picked} rollup_visible={page.get_by_test_id('report-filtered-rollup').is_visible()}")
+            results["steps"].append(f"WARN report-filter - picked={picked} rollup_visible={page.get_by_test_id('report-filtered-rollup').is_visible()}")
         unblock(page)
         page.get_by_test_id("report-filters-reset").click()
         page.wait_for_timeout(300)
@@ -181,7 +181,7 @@ with sync_playwright() as p:
         results["steps"].append(f"FAIL trade-detail-dialog: {exc}")
         print(f"  FAIL trade-detail-dialog: {exc}")
 
-    # ---------- Desktop 1440 — dark ----------
+    # ---------- Desktop 1440 - dark ----------
     set_theme(page, "dark-blue")
     nav(page, "/reports")
     page.wait_for_timeout(500)

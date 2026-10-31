@@ -2,9 +2,11 @@
  * Per-worker test-safety guard (Phase 1 mandate §25 + §33).
  *
  * FAILS the run unless the process environment targets the dedicated
- * `cosmoz_test` database with NODE_ENV=test. This is the last line of
+ * test database with NODE_ENV=test. This is the last line of
  * defense against ever touching a production database from tests.
  */
+import { TEST_DB_NAME } from "./global-setup";
+
 const url = process.env.DATABASE_URL;
 
 if (!url) {
@@ -24,10 +26,10 @@ if (parsed.protocol !== "postgresql:" && parsed.protocol !== "postgres:") {
   throw new Error(`[test-safety] DATABASE_URL must be PostgreSQL (got ${parsed.protocol}).`);
 }
 
-if (parsed.pathname !== "/cosmoz_test") {
+if (parsed.pathname !== `/${TEST_DB_NAME}`) {
   throw new Error(
     `[test-safety] Refusing to run tests against database "${parsed.pathname}". ` +
-      `Tests require the dedicated "cosmoz_test" database.`,
+      `Tests require the dedicated "${TEST_DB_NAME}" test database.`,
   );
 }
 

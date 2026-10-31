@@ -1,8 +1,8 @@
 /**
- * Trading Core data access (infrastructure) — Phase 4.
+ * Trading Core data access (infrastructure) - Phase 4.
  *
  * The ONLY place in the trades context that touches Prisma. All methods
- * return narrow row projections — no Prisma type crosses into services or
+ * return narrow row projections - no Prisma type crosses into services or
  * controllers. Ownership is part of every lookup: foreign ids are simply
  * not found (IDOR → 404, repository-wide convention). Transactions protect
  * meaningful invariants only (§54): trade+legs writes and bulk sets.
@@ -137,7 +137,7 @@ export interface TradeListFilters {
   accountId?: string;
 }
 
-/** TagRow projection — the row id IS the tag id (data holds the rest). */
+/** TagRow projection - the row id IS the tag id (data holds the rest). */
 export interface TagRowData {
   name: string;
   category: string;
@@ -151,7 +151,7 @@ export interface TagRow {
   data: TagRowData;
 }
 
-/** TradeSubRow (MISTAKE | TAG) projection — data holds the sub-resource. */
+/** TradeSubRow (MISTAKE | TAG) projection - data holds the sub-resource. */
 export interface TradeSubRow {
   id: string;
   userId: string;
@@ -186,7 +186,7 @@ export class TradesRepository {
 
   // ── Trade lookups ────────────────────────────────────────────────────────────
 
-  /** Ownership is part of the lookup — foreign trades are simply not found. */
+  /** Ownership is part of the lookup - foreign trades are simply not found. */
   async findTradeForUser(tradeId: string, userId: string): Promise<TradeRow | null> {
     const row = await this.prisma.trade.findFirst({
       where: { id: tradeId, userId, deletedAt: null },
@@ -205,7 +205,7 @@ export class TradesRepository {
     return (row as TradeRow) ?? null;
   }
 
-  /** Import idempotency anchor (§27) — non-deleted rows only. */
+  /** Import idempotency anchor (§27) - non-deleted rows only. */
   async findLiveTradeByExternalRef(
     accountId: string,
     externalRef: string,
@@ -217,7 +217,7 @@ export class TradesRepository {
   }
 
   /**
-   * Owner-scoped external-ref lookup — the OCR bridge resolves an already-
+   * Owner-scoped external-ref lookup - the OCR bridge resolves an already-
    * imported recognition WITHOUT knowing the account up front (the account
    * is chosen at import time, possibly the persisted default). Same
    * non-deleted semantics as findLiveTradeByExternalRef (§27).
@@ -234,11 +234,11 @@ export class TradesRepository {
   }
 
   /**
-   * Content-based trade duplicate candidates (V2 spec §4 — "different
+   * Content-based trade duplicate candidates (V2 spec §4 - "different
    * screenshots representing the same trade"). Same owner only (§ IDOR),
    * same instrument + direction as PREREQUISITES; the entry-price /
    * entry-time refinements happen in pure logic (tradeDuplicateEvidence).
-   * Returns the most recent candidates (bounded — advisory input only).
+   * Returns the most recent candidates (bounded - advisory input only).
    */
   async findTradeDuplicateCandidates(input: {
     userId: string;
@@ -283,7 +283,7 @@ export class TradesRepository {
     };
     const rows = await this.prisma.trade.findMany({
       where,
-      // Closed trades sort by their exit, open ones by their entry (§36 —
+      // Closed trades sort by their exit, open ones by their entry (§36 -
       // server-side temporal sorting; deterministic tie-break on id).
       orderBy: [
         { exitAt: { sort: "desc", nulls: "last" } },
@@ -305,7 +305,7 @@ export class TradesRepository {
       userId: string;
       accountId: string;
       instrumentId: string;
-      /** Denormalized journal columns (model Trade.symbol/currency) — backfilled
+      /** Denormalized journal columns (model Trade.symbol/currency) - backfilled
        *  from their sources of truth (instrument catalog / account currency). */
       symbol: string;
       currency: string;
@@ -405,7 +405,7 @@ export class TradesRepository {
     return row as TradeRow;
   }
 
-  /** Soft delete (§57) — synchronized history is never hard-deleted. */
+  /** Soft delete (§57) - synchronized history is never hard-deleted. */
   async softDeleteTrade(tradeId: string): Promise<void> {
     const now = new Date();
     await this.prisma.trade.update({
@@ -423,7 +423,7 @@ export class TradesRepository {
     return result.count;
   }
 
-  /** Bulk decision grade — CLOSED trades only, honest per-row behavior. */
+  /** Bulk decision grade - CLOSED trades only, honest per-row behavior. */
   async bulkGrade(
     userId: string,
     tradeIds: string[],
@@ -581,7 +581,7 @@ export class TradesRepository {
     await this.prisma.savedTradeView.delete({ where: { id: viewId } });
   }
 
-  // ── Tag catalog (B3 — Domaine 4, per-user) ─────────────────────────────────
+  // ── Tag catalog (B3 - Domaine 4, per-user) ─────────────────────────────────
 
   async listTagRows(userId: string): Promise<TagRow[]> {
     const rows = await this.prisma.tagRow.findMany({
@@ -607,7 +607,7 @@ export class TradesRepository {
     return row as unknown as TagRow;
   }
 
-  // ── Trade sub-rows (B3 — mistake detections + trade↔tag joins) ────────────
+  // ── Trade sub-rows (B3 - mistake detections + trade↔tag joins) ────────────
 
   async listSubRows(userId: string, tradeId: string, kind: string): Promise<TradeSubRow[]> {
     const rows = await this.prisma.tradeSubRow.findMany({

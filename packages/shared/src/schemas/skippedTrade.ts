@@ -3,7 +3,7 @@ import { directionSchema, outcomeSchema, skipReasonSchema } from "../enums";
 import { decimalStringSchema, isoDateTimeSchema, uuidSchema } from "./primitives";
 
 /**
- * SkippedTrade — data-model.md "Domaine 5" (Ghost Trades / Registre des Regrets).
+ * SkippedTrade - data-model.md "Domaine 5" (Ghost Trades / Registre des Regrets).
  * Powers Discipline Saved (Σ|R| of would-have-lost) and Hesitation Cost
  * (Σ R of would-have-won). `strategyId: null` = skipped out-of-playbook setup.
  */

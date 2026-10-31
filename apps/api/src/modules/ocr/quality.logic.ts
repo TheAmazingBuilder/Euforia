@@ -1,8 +1,8 @@
 /**
- * V3 per-recognition quality score (spec §28) — PURE functions, no I/O,
+ * V3 per-recognition quality score (spec §28) - PURE functions, no I/O,
  * no Nest (house standard: unit-testable in plain node).
  *
- * Every component is computed from ACTUAL evidence of the wire result —
+ * Every component is computed from ACTUAL evidence of the wire result -
  * never an arbitrary constant, never a random percentage (spec §27/§77):
  *
  *   textRecognition      mean OCR confidence of the detected primary fields
@@ -11,7 +11,7 @@
  *                        (identity fields found, values unambiguous)
  *   crossFieldValidation share of the SAME coherence rules the draft layer
  *                        enforces (validateDraftCoherence) that pass
- *   consistency          multi-screenshot agreement — null for single-image
+ *   consistency          multi-screenshot agreement - null for single-image
  *                        jobs (never invented), supplied by the fusion for
  *                        groups
  *
@@ -43,7 +43,7 @@ export interface QualityInput {
   trades: RecognizedTrade[];
   /** Overall wire confidence 0..100 or null (no detected fields at all). */
   overallConfidence: number | null;
-  /** Group consistency 0..100 — pass ONLY from the fusion (N→1). */
+  /** Group consistency 0..100 - pass ONLY from the fusion (N→1). */
   consistency?: number | null;
 }
 
@@ -60,12 +60,12 @@ export interface QualityScore {
 
 /**
  * Compute the deterministic quality score for one recognition. The lead
- * trade (index 1) is the scored surface — exactly what the review screen
+ * trade (index 1) is the scored surface - exactly what the review screen
  * shows first; multi-trade jobs keep per-trade confidence in their fields.
  */
 export function computeQuality(input: QualityInput): QualityScore {
   const lead = input.trades[0];
-  const fields = lead?.fields ?? {};
+  const fields: RecognizedTrade["fields"] = lead?.fields ?? {};
 
   // ── textRecognition: mean confidence across detected fields ──────────────
   const confidences = Object.values(fields)
@@ -100,7 +100,7 @@ export function computeQuality(input: QualityInput): QualityScore {
   // ── crossFieldValidation: the draft coherence rules on the machine read ──
   // The SAME rules the confirmation layer enforces (single source of truth);
   // every applicable rule that passes earns its share. With no parseable
-  // prices at all there is nothing to validate — the component is honest 0.
+  // prices at all there is nothing to validate - the component is honest 0.
   const draft = draftFromRecognizedFields(fields);
   const issues = validateDraftCoherence({
     direction: (draft.direction === "SELL" ? "SELL" : "BUY") as "BUY" | "SELL",

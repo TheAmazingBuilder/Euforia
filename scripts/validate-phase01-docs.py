@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Phase 01 documentation validation — validate JSONC examples in doc B.
+"""Phase 01 documentation validation - validate JSONC examples in doc B.
 This is documentation validation only (mandate §21: do not claim runtime tests
 verified the architecture when no code was changed)."""
 import json, re, sys
@@ -11,7 +11,7 @@ text = open(DOC).read()
 blocks = re.findall(r"```jsonc?\n(.*?)```", text, re.DOTALL)
 ok, fail = 0, 0
 for i, b in enumerate(blocks):
-    # strip // comments (jsonc) — line comments only
+    # strip // comments (jsonc) - line comments only
     cleaned = re.sub(r"^\s*//.*$", "", b, flags=re.MULTILINE).strip()
     # concatenated objects `}\n{` -> make it a JSON array
     arrayed = "[\n" + re.sub(r"\}\s*\n\s*\{", "},\n{", cleaned) + "\n]"

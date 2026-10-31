@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { KeyRound, ShieldCheck } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 
 import type { AuthSuccess } from "@cosmoz/shared";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -14,7 +14,6 @@ import {
   useMfaRecoveryMutation,
 } from "@/lib/api/queries/auth";
 import { apiErrorMessage, apiErrorCode } from "@/lib/api/client";
-import { API_MOCKED } from "@/lib/api/mode";
 import { setAccessToken } from "@/lib/auth/token-store";
 import { useAuth } from "@/components/auth/auth-provider";
 import { useDict } from "@/i18n/i18n-provider";
@@ -29,7 +28,7 @@ import {
 
 /**
  * Only same-origin, relative destinations survive returnTo validation
- * (spec §35 — open-redirect prevention).
+ * (spec §35 - open-redirect prevention).
  */
 function safeReturnTo(raw: string | null): string {
   if (!raw) return "/";
@@ -69,17 +68,13 @@ export function LoginForm() {
   const [formError, setFormError] = React.useState<{ body: string; hint?: string } | null>(null);
 
   const [challengeToken, setChallengeToken] = React.useState<string | null>(null);
-  const [demoCode, setDemoCode] = React.useState<string | null>(null);
+  const [mfaMethod, setMfaMethod] = React.useState<"AUTHENTICATOR_APP" | "EMAIL">("AUTHENTICATOR_APP");
   const [mfaCode, setMfaCode] = React.useState("");
   const [recoveryMode, setRecoveryMode] = React.useState(false);
 
   const login = useLoginMutation();
   const mfaChallenge = useMfaChallengeMutation();
   const mfaRecovery = useMfaRecoveryMutation();
-
-  // Canonical mode check (mode.ts) — the zero-env canonical preview is
-  // mocked, so the demo affordances must be visible there too.
-  const mocked = API_MOCKED;
 
   function mapError(error: unknown): { body: string; hint?: string } {
     const code = apiErrorCode(error);
@@ -117,16 +112,16 @@ export function LoginForm() {
     }
   }
 
-  function switchToMfa(params: { challengeToken: string; demoCode?: string }) {
+  function switchToMfa(params: { challengeToken: string; method: "AUTHENTICATOR_APP" | "EMAIL" }) {
     setChallengeToken(params.challengeToken);
-    setDemoCode(params.demoCode ?? null);
+    setMfaMethod(params.method);
     setMfaCode("");
     setFormError(null);
     setStep("mfa");
   }
 
   function onAuthenticated(success: AuthSuccess) {
-    // Hold the short-lived access token in memory ONLY (spec §9, §11) —
+    // Hold the short-lived access token in memory ONLY (spec §9, §11) -
     // the refresh credential lives in the HttpOnly cookie the backend set.
     setAccessToken(success.accessToken, success.accessTokenExpiresAt);
     setAuthenticated(success.user, success.session);
@@ -143,7 +138,7 @@ export function LoginForm() {
           if (data.outcome === "MFA_REQUIRED") {
             switchToMfa({
               challengeToken: data.challengeToken,
-              demoCode: data.demoCode,
+              method: data.method,
             });
             return;
           }
@@ -183,15 +178,6 @@ export function LoginForm() {
         setFormError(mapped);
       },
     });
-  }
-
-  async function fillDemo() {
-    // Dynamic import — engines stay out of the initial bundle (mock-provider
-    // code-splits them); the constant is a seeded demo value, not a secret.
-    const { DEMO_PASSWORD } = await import("@/mocks/security-engine");
-    setEmail("trader@cosmoz.app");
-    setPassword(DEMO_PASSWORD);
-    setRemember(true);
   }
 
   const pending = login.isPending || mfaChallenge.isPending || mfaRecovery.isPending;
@@ -283,17 +269,19 @@ export function LoginForm() {
               <p className="text-xs text-muted-foreground">
                 {recoveryMode
                   ? "Enter one of your unused recovery codes (e.g. 1A2B-3C4D)."
-                  : auth.login.mfaSubtitle}
+                  : mfaMethod === "EMAIL"
+                    ? "We sent a 6-digit sign-in code to your verified email address."
+                    : auth.login.mfaSubtitle}
               </p>
             </div>
           </div>
 
           <AuthField
             id="login-mfa-code"
-            label={recoveryMode ? auth.login.mfaRecoveryLabel : auth.login.mfaCode}
+            label={recoveryMode ? auth.login.mfaRecoveryLabel : mfaMethod === "EMAIL" ? "Email sign-in code" : auth.login.mfaCode}
           >
             <Input
-              key={recoveryMode ? "recovery" : "totp"}
+              key={recoveryMode ? "recovery" : mfaMethod === "EMAIL" ? "email-code" : "totp"}
               inputMode={recoveryMode ? "text" : "numeric"}
               autoComplete={recoveryMode ? "off" : "one-time-code"}
               placeholder={recoveryMode ? "1A2B-3C4D" : "123456"}
@@ -306,21 +294,6 @@ export function LoginForm() {
               maxLength={recoveryMode ? 9 : 6}
             />
           </AuthField>
-
-          {demoCode && !recoveryMode && mocked ? (
-            <div
-              className="flex items-center justify-between gap-2 rounded-lg border border-dashed border-border px-3.5 py-2.5 text-xs text-muted-foreground"
-              data-testid="login-mfa-demo-hint"
-            >
-              <span className="flex items-center gap-1.5">
-                <KeyRound className="size-3.5" aria-hidden="true" />
-                {auth.login.mfaDemoHint}
-              </span>
-              <span className="font-mono text-sm font-semibold text-foreground">
-                {demoCode}
-              </span>
-            </div>
-          ) : null}
 
           <SubmitButton
             pending={mfaChallenge.isPending || mfaRecovery.isPending}
@@ -356,42 +329,7 @@ export function LoginForm() {
             </Link>
           </p>
         ) : null}
-        <Link
-          href="/"
-          className="text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
-        >
-          &larr; Back to overview
-        </Link>
       </footer>
-
-      {/* Mocked-environment affordance — seeded demo credentials (§49: no fake
-          data presented as real; this panel is explicit about being a demo). */}
-      {mocked && step === "credentials" ? (
-        <div
-          className="flex flex-col gap-2 rounded-lg border border-dashed border-border bg-muted/30 px-3.5 py-3"
-          data-testid="login-demo-hint"
-        >
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              {auth.login.demoHintTitle}
-            </span>
-            <button
-              type="button"
-              onClick={fillDemo}
-              className="min-h-8 rounded-md border border-border px-2.5 text-xs font-medium transition-colors hover:bg-muted"
-            >
-              {auth.login.demoHintFill}
-            </button>
-          </div>
-          <div className="flex flex-col gap-0.5 font-mono text-xs text-muted-foreground">
-            <span data-testid="login-demo-email">trader@cosmoz.app</span>
-            <span data-testid="login-demo-password">cosmoz-demo-2026</span>
-          </div>
-          <p className="text-[11px] text-muted-foreground/80">
-            {auth.login.demoHintNote}
-          </p>
-        </div>
-      ) : null}
     </div>
   );
 }

@@ -1,5 +1,5 @@
 /**
- * Verify Feature 11 — AI conversational coach.
+ * Verify Feature 11 - AI conversational coach.
  * Probes: nav entry, grounded header, suggestion → real LLM reply, typed
  * question, multi-turn context, persistence after reload, clear, mobile
  * layout, console health.
@@ -23,7 +23,7 @@ const BASE = "http://localhost:3000";
 
   const results = [];
   const check = (name, ok, extra = "") =>
-    results.push(`${ok ? "PASS" : "FAIL"} — ${name}${extra ? ` (${extra})` : ""}`);
+    results.push(`${ok ? "PASS" : "FAIL"} - ${name}${extra ? ` (${extra})` : ""}`);
 
   // 1. Sidebar nav entry
   const navCoach = page.locator('aside a[href="/coach"]');
@@ -51,7 +51,7 @@ const BASE = "http://localhost:3000";
       .first()
       .waitFor({ state: "detached", timeout: 90000 });
   } catch {
-    /* no retry button — fine */
+    /* no retry button - fine */
   }
   await page.waitForFunction(
     () => {
@@ -106,7 +106,7 @@ const BASE = "http://localhost:3000";
     .catch(() => false);
   check("Clear restores empty state", emptyIntro);
 
-  // 7. API direct probe — invalid payload rejected, valid answered
+  // 7. API direct probe - invalid payload rejected, valid answered
   const bad = await page.evaluate(async () => {
     const res = await fetch("/api/coach/chat", {
       method: "POST",
@@ -117,7 +117,7 @@ const BASE = "http://localhost:3000";
   });
   check("Invalid payload rejected (400)", bad === 400, `status=${bad}`);
 
-  // 8. Mobile 390px layout — no horizontal overflow, composer reachable
+  // 8. Mobile 390px layout - no horizontal overflow, composer reachable
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(BASE + "/coach", { waitUntil: "networkidle" });
   await page.waitForTimeout(1200);
@@ -129,7 +129,7 @@ const BASE = "http://localhost:3000";
   await page.screenshot({ path: "scripts/shots/coach-mobile.png", fullPage: false });
 
   console.log("\n=== FEATURE 11 RESULTS ===");
-  // The invalid-payload probe (step 7) intentionally triggers a 400 — the
+  // The invalid-payload probe (step 7) intentionally triggers a 400 - the
   // browser logs it as a console error. Filter that expected noise out.
   const realErrors = errors.filter((e) => !/status of 400/.test(e));
   results.forEach((r) => console.log(r));

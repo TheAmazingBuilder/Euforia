@@ -1,10 +1,10 @@
 /**
- * Verification — Trade Reviews tab (/trades/reviews).
+ * Verification - Trade Reviews tab (/trades/reviews).
  * Checks: module tabs, summary band (server aggregate), buckets, grade flow
  * (Gate → Reveal), Reflect direct entry, nav highlighting, mobile, light
  * theme, console cleanliness.
  *
- * NOTE ENV: the MSW store RESEEDS on every full page load — navigate
+ * NOTE ENV: the MSW store RESEEDS on every full page load - navigate
  * client-side after the initial goto (established pattern).
  * Usage: node scripts/verify-trade-reviews.js
  */
@@ -110,7 +110,7 @@ async function settle(page, ms = 1200) {
     await page.waitForSelector('[data-testid="reveal"]', { timeout: 10_000 });
     check("Grade locks and the Reveal unlocks", true);
     await page.getByRole("button", { name: "Finish" }).click();
-    // Reflect stage appears — leave it (Esc) so the flow closes.
+    // Reflect stage appears - leave it (Esc) so the flow closes.
     await page.waitForSelector('[data-testid="reflect"]', { timeout: 10_000 });
     await page.keyboard.press("Escape");
     await settle(page, 1500);
@@ -135,7 +135,7 @@ async function settle(page, ms = 1200) {
     await page.keyboard.press("Escape");
     await settle(page, 400);
   } else {
-    console.log("  INFO  no incomplete bucket cards — reflect entry not exercised");
+    console.log("  INFO  no incomplete bucket cards - reflect entry not exercised");
   }
 
   // ── Reviewed bucket + empty state safety ─────────────────────────────────

@@ -1,5 +1,5 @@
 /**
- * Monitoring application service (Phase 17) — thin operational
+ * Monitoring application service (Phase 17) - thin operational
  * observability over the existing architecture.
  *
  * OWNERSHIP: Monitoring OWNS the aggregation below. It does NOT own the
@@ -16,7 +16,7 @@
  * (process-wide, cap 500). A restart honestly resets transient windows;
  * persisted thresholds survive (that is what the user explicitly configured).
  *
- * All data is scoped to the authenticated caller (§34) — monitoring never
+ * All data is scoped to the authenticated caller (§34) - monitoring never
  * exposes another user's operational data.
  */
 import { Injectable } from "@nestjs/common";
@@ -82,9 +82,9 @@ interface AlertEpisode {
 
 @Injectable()
 export class MonitoringService {
-  /** Per-user transient alert episodes (§39 dedupe) — session-scoped. */
+  /** Per-user transient alert episodes (§39 dedupe) - session-scoped. */
   private readonly alertEpisodes = new Map<string, Map<AlertRuleId, AlertEpisode>>();
-  /** Per-user append-only system-event ring (§15) — session-scoped, bounded. */
+  /** Per-user append-only system-event ring (§15) - session-scoped, bounded. */
   private readonly eventRings = new Map<string, SystemEvent[]>();
   /** Derived-event dedupe (one entry per failed sync run, per user). */
   private readonly seenDerivedKeys = new Map<string, Set<string>>();
@@ -115,7 +115,7 @@ export class MonitoringService {
       Promise.resolve(this.mailer.deliveryTelemetry()),
     ]);
 
-    // ── Brokers (§26 — canonical Accounts state, mapped) ──────────────────────
+    // ── Brokers (§26 - canonical Accounts state, mapped) ──────────────────────
     const runsByAccount = new Map<string, typeof syncRuns>();
     for (const run of syncRuns) {
       const list = runsByAccount.get(run.accountId);
@@ -129,13 +129,13 @@ export class MonitoringService {
       this.toBrokerConnection(account, connections[index] ?? null, runsByAccount.get(account.id) ?? []),
     );
 
-    // ── Jobs (§21/§22 — observed work, no fabricated runs) ────────────────────
+    // ── Jobs (§21/§22 - observed work, no fabricated runs) ────────────────────
     const jobs = this.jobStatuses(syncRuns, mailTelemetry);
 
-    // ── Notifications (§25 — mailer is the only real channel) ─────────────────
+    // ── Notifications (§25 - mailer is the only real channel) ─────────────────
     const notifications = this.notificationChannels(mailTelemetry);
 
-    // ── Alerts (§37–§39 — real signals only, per-user episodes) ───────────────
+    // ── Alerts (§37–§39 - real signals only, per-user episodes) ───────────────
     const failedRuns = syncRuns.filter((run) => run.status === "FAILED");
     const degradedBrokers = brokers
       .filter((broker) => broker.status === "DEGRADED" || broker.status === "AUTH_FAILED")
@@ -152,21 +152,21 @@ export class MonitoringService {
     );
     const alerts = this.reconcileAlerts(userId, conditions, now);
 
-    // ── System events (§15 — monitoring-owned ring + derived sync failures) ───
+    // ── System events (§15 - monitoring-owned ring + derived sync failures) ───
     for (const run of failedRuns) {
       this.pushDerivedEvent(userId, `sync:${run.id}`, {
         at: iso(run.startedAt),
         source: "accounts",
         type: "SYNC_FAILURE",
         level: "WARNING",
-        message: `Provider sync failed — ${run.errorCode ?? "unspecified error"}.`,
+        message: `Provider sync failed - ${run.errorCode ?? "unspecified error"}.`,
         correlationKey: `sync:${run.id}`,
       });
     }
     const events = this.eventList(userId, EVENTS_RETURNED);
     const incidents: Incident[] = groupIncidents(this.eventRing(userId));
 
-    // ── Database panel (§11 — operational facts only) ─────────────────────────
+    // ── Database panel (§11 - operational facts only) ─────────────────────────
     const database = {
       kind: "PostgreSQL",
       status: (databaseUp ? "OPERATIONAL" : "DOWN") as MonitoringStatus,
@@ -186,7 +186,7 @@ export class MonitoringService {
       ],
     };
 
-    // ── Status board (§4 — every row carries evidence) ────────────────────────
+    // ── Status board (§4 - every row carries evidence) ────────────────────────
     const components = this.statusBoard(api, database.status, brokers, jobs, notifications.channels);
     const counts = {
       operational: components.filter((c) => c.status === "OPERATIONAL").length,
@@ -216,7 +216,7 @@ export class MonitoringService {
       notifications,
       brokers,
       // Integrations is a separate bounded context (backend not implemented
-      // yet) — honestly empty, never fabricated (§23/§57).
+      // yet) - honestly empty, never fabricated (§23/§57).
       integrations: [],
       events,
       integrationEvents: [],
@@ -249,13 +249,13 @@ export class MonitoringService {
     return { thresholds: merged };
   }
 
-  // ── POST /monitoring/jobs/:jobId/run (§22/§50 — observational) ─────────────
+  // ── POST /monitoring/jobs/:jobId/run (§22/§50 - observational) ─────────────
 
   requestJobRun(jobId: string): { accepted: boolean; run: null; message: string } {
     // Monitoring NEVER fabricates a run and NEVER triggers domain work:
     // every job in this build is app-driven from its owning module (§50).
     const message = KNOWN_JOBS.has(jobId)
-      ? `"${jobId}" is app-driven — trigger it from its owning module. Monitoring stays observational.`
+      ? `"${jobId}" is app-driven - trigger it from its owning module. Monitoring stays observational.`
       : "Unknown job.";
     return { accepted: false, run: null, message };
   }
@@ -263,10 +263,10 @@ export class MonitoringService {
   // ── Internals ───────────────────────────────────────────────────────────────
 
   /**
-   * Row counts for the caller's own observable entities (§10/§34) — composed
+   * Row counts for the caller's own observable entities (§10/§34) - composed
    * from the OWNING contexts' narrow contracts (Phase 20 §39): Identity counts
    * its sessions/api keys, Security counts its ledger + login history, Accounts
-   * counts its trading tables. Monitoring owns ONLY the presentation labels —
+   * counts its trading tables. Monitoring owns ONLY the presentation labels -
    * the frontend renders them verbatim, so this list grows with the data model
    * honestly, one owning context at a time.
    */
@@ -289,7 +289,7 @@ export class MonitoringService {
         { label: "Sync runs", count: accounts.syncRuns },
       ];
     } catch {
-      // A failing count must not fail the whole overview — DOWN shows in the
+      // A failing count must not fail the whole overview - DOWN shows in the
       // database status itself (ping drives that, not this).
       return [];
     }
@@ -323,7 +323,7 @@ export class MonitoringService {
     connection: Awaited<ReturnType<AccountsRepository["findConnectionByAccountId"]>>,
     runs: Array<{ id: string; status: string; startedAt: Date; durationMs: number | null; errorCode: string | null }>,
   ): BrokerConnection {
-    // Sync runs are COMPLETED (never "SUCCESS" — that was the Phase 00 defect:
+    // Sync runs are COMPLETED (never "SUCCESS" - that was the Phase 00 defect:
     // a filter on a status the repository never writes, permanently zeroing
     // latency/reporting). PARTIAL is not a success (§8.2): only fully
     // completed runs report adapter latency and coverage.
@@ -450,7 +450,7 @@ export class MonitoringService {
           failed: 0,
           queued: 0,
           retrying: 0,
-          evidence: "in-app delivery is a frontend capability in this build — no server-side Nofy context yet",
+          evidence: "in-app delivery is a frontend capability in this build - no server-side Nofy context yet",
         },
         {
           channel: "EMAIL",
@@ -653,7 +653,7 @@ export class MonitoringService {
         evidence:
           stuckJobs > 0
             ? `${stuckJobs} synchronization run(s) stuck RUNNING > 60 s`
-            : "no background queue in this build — work runs request-scoped",
+            : "no background queue in this build - work runs request-scoped",
         source: "engine",
         tab: "jobs",
       },
@@ -686,7 +686,7 @@ export class MonitoringService {
       return { status: "DEGRADED", evidence: `degraded: ${degraded.map((c) => c.id).join(", ")}` };
     }
     if (components.every((component) => component.status === "UNKNOWN")) {
-      return { status: "UNKNOWN", evidence: "insufficient observations yet — interact with the platform to collect some" };
+      return { status: "UNKNOWN", evidence: "insufficient observations yet - interact with the platform to collect some" };
     }
     return { status: "OPERATIONAL", evidence: "all observed components operational" };
   }
@@ -734,7 +734,7 @@ export class MonitoringService {
             { label: "Miss rate", value: "not observable" },
             { label: "Latency", value: "not observable" },
           ],
-          evidence: "no cache layer exists in this build — none was created for monitoring (§29)",
+          evidence: "no cache layer exists in this build - none was created for monitoring (§29)",
         },
         {
           id: "storage",
@@ -758,7 +758,7 @@ export class MonitoringService {
             { label: "Idle", value: "not observable" },
             { label: "Restarts", value: "0" },
           ],
-          evidence: "no background worker fleet — work runs inside the request lifecycle",
+          evidence: "no background worker fleet - work runs inside the request lifecycle",
         },
         {
           id: "scheduler",
@@ -785,7 +785,7 @@ export class MonitoringService {
           evidence:
             jobs.some((job) => job.stuck)
               ? "a synchronization run exceeded the 60 s RUNNING window"
-              : "no background queue in this build — sync runs are request-scoped",
+              : "no background queue in this build - sync runs are request-scoped",
         },
         {
           id: "websocket",
@@ -797,7 +797,7 @@ export class MonitoringService {
             { label: "Messages", value: "0" },
             { label: "Reconnects", value: "0" },
           ],
-          evidence: "no server-side WebSocket gateway in this build — realtime is client-observed",
+          evidence: "no server-side WebSocket gateway in this build - realtime is client-observed",
         },
       ],
       sessionUptimeMs: Math.max(0, Date.now() - apiTelemetry.bootAt.getTime()),

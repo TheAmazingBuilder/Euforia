@@ -1,7 +1,7 @@
-"""OCR V2 sidecar tests — preprocessing, pHash, multi-trade, crop, PDF.
+"""OCR V2 sidecar tests - preprocessing, pHash, multi-trade, crop, PDF.
 
 Extends the V1 suite (kept untouched and green): every V1 behavior test in
-test_api.py / test_pipeline.py must keep passing — the V2 additions are
+test_api.py / test_pipeline.py must keep passing - the V2 additions are
 strictly additive and coordinate-correct.
 """
 
@@ -60,7 +60,7 @@ def test_hamming_distance():
 
 def test_dhash_survives_png_reencode():
     """A re-encoded (same pixels) screenshot must hash identically or
-    within a tiny distance — the whole point of the duplicate warning."""
+    within a tiny distance - the whole point of the duplicate warning."""
     png, _w, _h = render_mt5_screenshot()
     with Image.open(io.BytesIO(png)) as img:
         rebuffer = io.BytesIO()
@@ -78,7 +78,7 @@ def test_enhance_reports_engine_and_upscale():
     with Image.open(io.BytesIO(png)) as img:
         gray = img.convert("L")
     enhanced, meta = enhance(gray)
-    # Truthful engine label — this module is numpy+Pillow; OpenCV was never a
+    # Truthful engine label - this module is numpy+Pillow; OpenCV was never a
     # declared dependency (requirements.txt) and never existed in history.
     assert meta.engine == "numpy+pillow"
     assert enhanced.width >= meta.upscaleScale  # always ≥ original scale 1
@@ -150,7 +150,7 @@ def test_render_pages_rejects_huge_page_count():
 
 
 def _render_history_panel() -> tuple[bytes, int, int]:
-    """Two trade rows — the multi-trade fixture (light theme)."""
+    """Two trade rows - the multi-trade fixture (light theme)."""
     width, height = 1150, 460
     img = Image.new("RGB", (width, height), (248, 249, 251))
     draw = ImageDraw.Draw(img)
@@ -209,7 +209,7 @@ def test_recognize_multi_trade_endpoint():
     assert second["direction"]["normalizedValue"] == "SELL"
     assert second["symbol"]["normalizedValue"] == "EURUSD"
     assert second["volume"]["normalizedValue"] == "0.25"
-    # flat fields stay populated (back-compat with the V1 contract) —
+    # flat fields stay populated (back-compat with the V1 contract) -
     # they mirror the primary trade.
     flat = {f["field"] for f in body["fields"]}
     assert "symbol" in flat and "direction" in flat

@@ -40,7 +40,7 @@ import {
 import { useI18n } from "@/i18n/i18n-provider";
 
 /**
- * Lesson reader — breadcrumb, the course's concept vignette (the chart the
+ * Lesson reader - breadcrumb, the course's concept vignette (the chart the
  * lesson teaches, in the track hue), objectives, the block document (text,
  * callouts, tables, SVG visuals), takeaways, completion, bookmarking and
  * prev/next. The last lesson of a course also exposes its quiz inline.
@@ -69,12 +69,12 @@ export function LessonReader({
       router.push(`/nofy?tab=notes&note=${note.id}`);
     },
   });
-  // Derived from the server state — no local mirror to keep in sync.
+  // Derived from the server state - no local mirror to keep in sync.
   const { data: bookmarksData } = useAcademyBookmarks();
   const categoryName = useAcademyCatalog().data?.categories.find((cat) => cat.id === lesson?.categoryId)?.name;
   const bookmarked = bookmarksData?.bookmarks.some((mark) => mark.kind === "LESSON" && mark.refId === lessonId) ?? false;
 
-  // Table of contents — derived from the block document (visual captions,
+  // Table of contents - derived from the block document (visual captions,
   // formulas, examples, tables, takeaways); text/list blocks stay unnamed.
   // Hooks stay above the early returns (rules-of-hooks).
   const tocEntries = React.useMemo(() => {
@@ -163,10 +163,10 @@ export function LessonReader({
         </span>
       </div>
 
-      {/* Reading progress — thin ink bar that rides just under the topbar */}
+      {/* Reading progress - thin ink bar that rides just under the topbar */}
       <ReadingProgress hue={hue} />
 
-      {/* Title band — opens with the course concept vignette: side card on
+      {/* Title band - opens with the course concept vignette: side card on
           desktop, full-width banner on mobile (the chart this lesson teaches). */}
       <header className="overflow-hidden rounded-lg border bg-surface" data-testid="academy-lesson-header">
         <span className="relative block md:hidden">
@@ -204,7 +204,7 @@ export function LessonReader({
               ) : null}
             </p>
           </div>
-          {/* Concept vignette at its natural ratio — nothing cropped (desktop) */}
+          {/* Concept vignette at its natural ratio - nothing cropped (desktop) */}
           <span className="hidden shrink-0 md:block">
             <CourseArt
               courseId={lesson.courseId}
@@ -219,7 +219,7 @@ export function LessonReader({
               onClick={() =>
                 lesson &&
                 createNofyNote.mutate({
-                  title: `${lesson.title} — my notes`,
+                  title: `${lesson.title} - my notes`,
                   lessonRef: {
                     courseId: lesson.courseId,
                     courseTitle: lesson.courseTitle,
@@ -316,10 +316,10 @@ export function LessonReader({
           </Button>
         </div>
 
-        {/* Personal notes — autosaved, lesson-scoped (keyed per lesson) */}
+        {/* Personal notes - autosaved, lesson-scoped (keyed per lesson) */}
         <NotesPanel key={lesson.id} lessonId={lesson.id} note={lesson.note} />
 
-        {/* Course quiz — offered inline at the end of the course */}
+        {/* Course quiz - offered inline at the end of the course */}
         {isLastLesson && lesson.quizId ? (
           <InlineQuizTeaser quizId={lesson.quizId} onBack={onBack} />
         ) : null}
@@ -649,7 +649,7 @@ export function CourseQuiz({ quizId, onDone }: { quizId: string; onDone?: () => 
   const { dict } = useI18n();
   const V = dict.academy.lesson;
   const S = dict.academy.shared;
-  // Answers start empty as soon as the quiz loads — no effect needed.
+  // Answers start empty as soon as the quiz loads - no effect needed.
   const [answers, setAnswers] = React.useState<Record<string, number | boolean | null>>({});
   const [result, setResult] = React.useState<AcademyQuizResultResponse | null>(null);
 

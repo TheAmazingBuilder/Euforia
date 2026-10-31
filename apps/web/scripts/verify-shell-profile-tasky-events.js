@@ -1,5 +1,5 @@
 /**
- * Verify — header sidebar toggle (PanelLeft), Profile rebuild (4 tabs),
+ * Verify - header sidebar toggle (PanelLeft), Profile rebuild (4 tabs),
  * Tasky horizontal board (add column + bottom scrollbar), Events calendar
  * categories (My calendar / Favorite / Other + sort + star).
  *
@@ -22,7 +22,7 @@ const NOISE = [
 
 const results = [];
 const check = (name, ok, extra = "") => {
-  results.push(`${ok ? "PASS" : "FAIL"} — ${name}${extra ? ` (${extra})` : ""}`);
+  results.push(`${ok ? "PASS" : "FAIL"} - ${name}${extra ? ` (${extra})` : ""}`);
   console.log(results[results.length - 1]);
 };
 
@@ -215,18 +215,18 @@ const check = (name, ok, extra = "") => {
 
   // Drag still works horizontally: drag a card onto the new column.
   // The rail is wider than the viewport, so scroll mid-drag (the drag engine
-  // re-reads column rects on every move — same as a real user flicking the
+  // re-reads column rects on every move - same as a real user flicking the
   // rail while holding a card).
   {
     await board.evaluate((el) => el.scrollTo({ left: 0 }));
     await page.waitForTimeout(200);
     const card = page.locator('[data-testid="tasky-card-tsk-3"]');
-    // NOTE: locate the target by its title — the empty-column delete button
+    // NOTE: locate the target by its title - the empty-column delete button
     // unmounts the moment the card lands, so it cannot anchor the assertion.
     const target = page
       .locator('[data-testid="tasky-board"] > div > section')
       .filter({ has: page.locator("h2", { hasText: "Blocked" }) });
-    // NOTE: card testids must exclude the nested "-delete" buttons —
+    // NOTE: card testids must exclude the nested "-delete" buttons -
     // [data-testid^="tasky-card-"] otherwise matches 2 nodes per card.
     const CARDS_IN = '[data-testid^="tasky-card-"]:not([data-testid$="-delete"])';
     const backlogCountBefore = await page.locator(`[data-testid="tasky-column-backlog"] ${CARDS_IN}`).count();
@@ -319,7 +319,7 @@ const check = (name, ok, extra = "") => {
   await mpage.locator("#login-email").fill("trader@cosmoz.app");
   await mpage.locator("#login-password").fill("cosmoz-demo-2026");
   await mpage.locator('[data-testid="login-submit"]').click();
-  // Mobile has no persistent sidebar nav — wait for the auth redirect instead.
+  // Mobile has no persistent sidebar nav - wait for the auth redirect instead.
   await mpage.waitForFunction(() => !window.location.pathname.startsWith("/login"), null, { timeout: 20_000 });
 
   await mpage.goto(`${BASE}/profile`, { waitUntil: "networkidle" });

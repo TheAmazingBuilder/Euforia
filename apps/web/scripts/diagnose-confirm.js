@@ -68,7 +68,7 @@ for (let i = 0; i < files.length; i += 1) {
     try {
       engine.getResult(jobId, now + PIPELINE);
     } catch {
-      // FAILED scenario throws NOT_AVAILABLE — expected in the rotation.
+      // FAILED scenario throws NOT_AVAILABLE - expected in the rotation.
     }
   }
 }

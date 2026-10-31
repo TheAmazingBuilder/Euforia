@@ -1,6 +1,6 @@
 /**
- * Verify — Dashboard Customization Phase 01.
- * Probes (ONE SPA session — the mock store reseeds on full reload):
+ * Verify - Dashboard Customization Phase 01.
+ * Probes (ONE SPA session - the mock store reseeds on full reload):
  *   [A] View mode: Layouts + Edit layout actions, 7-widget grid
  *   [B] Widget library: categories render, Added badges (default = all 7)
  *   [C] Remove → re-add via library (singleton guard) → hide/show keeps config
@@ -37,7 +37,7 @@ const CANONICAL = ["PNL_BAND", "EQUITY_ROW", "GOALS_PACE", "WEEK_COMPARE", "HEAT
 
   const results = [];
   const check = (name, ok, extra = "") =>
-    results.push(`${ok ? "PASS" : "FAIL"} — ${name}${extra ? ` (${extra})` : ""}`);
+    results.push(`${ok ? "PASS" : "FAIL"} - ${name}${extra ? ` (${extra})` : ""}`);
 
   const widgetOrder = async () =>
     page.$$eval('[data-page="dashboard"] section[data-widget]', (nodes) =>
@@ -82,7 +82,7 @@ const CANONICAL = ["PNL_BAND", "EQUITY_ROW", "GOALS_PACE", "WEEK_COMPARE", "HEAT
   check("[A] 7 widgets, canonical order", orderA.join() === CANONICAL.join(), orderA.join(","));
   await page.screenshot({ path: "scripts/shots/customize-view.png", fullPage: false });
 
-  // ── [B] Widget library — add ALERTS ────────────────────────────────────────
+  // ── [B] Widget library - add ALERTS ────────────────────────────────────────
   await enterEdit();
   await page.locator('[data-testid="dashboard-toolbar-add"]').click();
   await page.locator('[data-testid="dashboard-widget-library"]').waitFor({ timeout: 10000 });
@@ -133,7 +133,7 @@ const CANONICAL = ["PNL_BAND", "EQUITY_ROW", "GOALS_PACE", "WEEK_COMPARE", "HEAT
   await page.locator('[data-testid="dashboard-widget-remove-alerts"]').click();
   await page.waitForTimeout(300);
   order = await widgetOrder();
-  check("[C] Remove again — draft back to 6 visible widgets", !order.includes("ALERTS") && order.length === 6, order.join(","));
+  check("[C] Remove again - draft back to 6 visible widgets", !order.includes("ALERTS") && order.length === 6, order.join(","));
 
   // ── [D] Resize (step buttons + handles) ───────────────────────────────────
   const pnlSection = page.locator('section[data-widget="PNL_BAND"]');
@@ -207,7 +207,7 @@ const CANONICAL = ["PNL_BAND", "EQUITY_ROW", "GOALS_PACE", "WEEK_COMPARE", "HEAT
   check("[F] Cancel restores the saved layout", order[0] === "WEEK_COMPARE", order.join(","));
   check("[F] Edit mode exited", (await page.locator('[data-testid="dashboard-edit-toolbar"]').count()) === 0);
 
-  // ── [G] Layouts manager — templates + CRUD ────────────────────────────────
+  // ── [G] Layouts manager - templates + CRUD ────────────────────────────────
   await page.locator('[data-testid="dashboard-layouts"]').click();
   await page.locator('[data-testid="dashboard-layouts-dialog"]').waitFor({ timeout: 10000 });
   await page.waitForTimeout(400);
@@ -242,7 +242,7 @@ const CANONICAL = ["PNL_BAND", "EQUITY_ROW", "GOALS_PACE", "WEEK_COMPARE", "HEAT
   const defaultRow = page.locator('[data-testid^="dashboard-layout-row-"]').filter({ hasText: /^Default/ }).first();
   await defaultRow.locator('[data-testid^="dashboard-layout-activate-"]').click();
   await page.waitForTimeout(1000);
-  // layout_default's content is the order saved in [E] — switching must
+  // layout_default's content is the order saved in [E] - switching must
   // render exactly that (Default ≠ canonical here).
   check(
     "[G] Switch back to Default renders its saved arrangement",
@@ -305,7 +305,7 @@ const CANONICAL = ["PNL_BAND", "EQUITY_ROW", "GOALS_PACE", "WEEK_COMPARE", "HEAT
   await mobile.waitForTimeout(1500);
   await mobile.locator('[data-testid="dashboard-widget-goals_pace"]').waitFor({ timeout: 20000 });
   // Transient boot toast (session-expiry warning, pre-existing app-wide)
-  // mounts the fixed sonner list 16px past the viewport — wait for it to
+  // mounts the fixed sonner list 16px past the viewport - wait for it to
   // dismiss so the measurement captures the DASHBOARD layout itself.
   await mobile
     .waitForFunction(() => document.querySelectorAll("[data-sonner-toast]").length === 0, null, { timeout: 15000 })

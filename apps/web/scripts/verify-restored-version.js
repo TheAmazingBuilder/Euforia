@@ -1,5 +1,5 @@
 /**
- * T56 verify — the restored "right version":
+ * T56 verify - the restored "right version":
  *   1. No language selector in the topbar (English-only app)
  *   2. New Profile page (hero, achievements, username/bio fields)
  *   3. Academy → Events module renders upcoming sessions

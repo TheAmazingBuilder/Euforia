@@ -1,5 +1,5 @@
 """OCR sidecar API tests (Phase 19 §52/§53): auth, contract, failure paths,
-resource guards — via the FastAPI TestClient (no network)."""
+resource guards - via the FastAPI TestClient (no network)."""
 
 from __future__ import annotations
 
@@ -29,7 +29,7 @@ def _headers(token: str = TOKEN) -> dict:
     return {"x-internal-token": token}
 
 
-# ── V2 §20 — declared checksum is verified, not assumed ─────────────────
+# ── V2 §20 - declared checksum is verified, not assumed ─────────────────
 
 def test_checksum_mismatch_is_validation_failure():
     image, width, height = render_mt5_screenshot()
@@ -39,7 +39,7 @@ def test_checksum_mismatch_is_validation_failure():
     assert response.status_code == 200
     body = response.json()
     assert body["processingStatus"] == "UNPROCESSABLE"
-    # A transport corruption is a VALIDATION failure — not a bad image.
+    # A transport corruption is a VALIDATION failure - not a bad image.
     assert body["failure"]["category"] == "VALIDATION_FAILED"
 
 
@@ -108,7 +108,7 @@ def test_recognize_mt5_screenshot():
     assert body["contractVersion"] == "1"
     assert body["processingStatus"] == "COMPLETED"
     assert body["failure"] is None
-    # V2 §18/§19 — platform + fine-grained type (the fixture is a history
+    # V2 §18/§19 - platform + fine-grained type (the fixture is a history
     # panel; the legacy MT5_TRADE value stays reserved for old rows).
     assert body["classification"]["platform"] == "MT5"
     assert body["classification"]["type"] == "TRADE_HISTORY"
@@ -122,7 +122,7 @@ def test_recognize_mt5_screenshot():
     assert fields["takeProfit"]["normalizedValue"] == "2365.6"
     assert fields["profit"]["normalizedValue"] == "123.75"
     assert fields["openTime"]["normalizedValue"] == "2026-01-05T09:30:00"
-    # LAYOUT_MATCH (engine-quality phase) may join — additive notes only.
+    # LAYOUT_MATCH (engine-quality phase) may join - additive notes only.
     assert "TIMEZONE_UNKNOWN" in fields["openTime"]["notes"]
 
     # Confidence model (§17): numeric 0..1 everywhere.
@@ -182,7 +182,7 @@ def test_corrupted_image_is_unprocessable():
     image, width, height = render_mt5_screenshot()
     corrupted = bytearray(image)
     # Corrupt INSIDE the IDAT payload (≈1/3 into the file), not the IEND
-    # trailer — this breaks the zlib stream / chunk CRC that verify() checks.
+    # trailer - this breaks the zlib stream / chunk CRC that verify() checks.
     offset = len(corrupted) // 3
     for i in range(8):
         corrupted[offset + i] = (corrupted[offset + i] + 37) % 256
@@ -194,7 +194,7 @@ def test_corrupted_image_is_unprocessable():
 
 
 def test_id_echo_prevents_stale_answers():
-    """The sidecar echoes the requestId — the Nest side rejects mismatches."""
+    """The sidecar echoes the requestId - the Nest side rejects mismatches."""
     image, width, height = render_mt5_screenshot()
     body = client.post(
         "/v1/recognitions", json=to_request(image, width, height, "req-echo"), headers=_headers()

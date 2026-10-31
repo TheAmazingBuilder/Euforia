@@ -27,17 +27,17 @@ import { cn } from "@/lib/utils";
 
 /**
  * The Analytics global filter system (MASTER PROMPT §5). One filter set
- * drives EVERY tab through ONE server endpoint — a chart can never silently
+ * drives EVERY tab through ONE server endpoint - a chart can never silently
  * use a different dataset. The resolved dataset is echoed back by the server
  * ("WHAT DATASET AM I LOOKING AT?") and rendered verbatim below the controls.
  *
  * Presets live in the UNIFIED preset library (GET /trade-views, scope
- * ANALYTICS) — the same store the Trades ledger saves its views in, so a
+ * ANALYTICS) - the same store the Trades ledger saves its views in, so a
  * named preset is managed in one place across modules.
  */
 
 /**
- * Period machine ids — labels resolve through dict.analytics.filters.periods
+ * Period machine ids - labels resolve through dict.analytics.filters.periods
  * (i18n pattern: machine values stay module-scope, display resolves at render).
  */
 export const PERIOD_OPTIONS: readonly Filters["period"][] = [
@@ -64,7 +64,7 @@ export interface Catalogs {
 }
 
 const ASSET_CLASSES = ["FOREX", "METAL", "CRYPTO", "SYNTHETIC", "INDEX", "ENERGY"] as const;
-/** Machine session ids — labels resolve through dict.analytics.filters.sessions. */
+/** Machine session ids - labels resolve through dict.analytics.filters.sessions. */
 const SESSIONS = ["ASIA", "LONDON", "NEW_YORK"] as const;
 const EMOTIONS = [
   "CALM", "CONFIDENT", "ANXIOUS", "FOMO", "TIRED",
@@ -95,7 +95,7 @@ export function FilterBar({ filters, catalogs, meta, isLoading, onChange, onRese
   const F = dict.analytics.filters;
   const S = dict.analytics.shared;
 
-  // Unified preset library (server-persisted) — this module manages the
+  // Unified preset library (server-persisted) - this module manages the
   // ANALYTICS scope; the Trades ledger manages the TRADES scope of the
   // SAME store, so a preset is saved once and managed in one place.
   const { data: viewsData } = useTradeViews();
@@ -232,7 +232,7 @@ export function FilterBar({ filters, catalogs, meta, isLoading, onChange, onRese
               )}
             </div>
 
-            {/* Unified library manager — rename lives server-side; delete here. */}
+            {/* Unified library manager - rename lives server-side; delete here. */}
             {presets.length > 0 && (
               <div className="relative flex items-center">
                 <Button
@@ -423,7 +423,7 @@ export function FilterBar({ filters, catalogs, meta, isLoading, onChange, onRese
           </div>
         </div>
 
-        {/* Secondary row — revealed on demand to keep the bar restrained (§32). */}
+        {/* Secondary row - revealed on demand to keep the bar restrained (§32). */}
         <div className={cn("grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-6", !showAdvanced && "hidden")}>
           <div className="space-y-1">
             <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">{F.assetClass}</Label>
@@ -538,7 +538,7 @@ export function FilterBar({ filters, catalogs, meta, isLoading, onChange, onRese
           {isLoading && <span className="text-[11px] text-muted-foreground" role="status">{F.computing}</span>}
         </div>
 
-        {/* WHAT DATASET AM I LOOKING AT? — server-echoed truth (§5). */}
+        {/* WHAT DATASET AM I LOOKING AT? - server-echoed truth (§5). */}
         {meta !== undefined && (
           <div
             className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md border border-border bg-surface-raised px-3 py-2 text-[11px] text-muted-foreground"
@@ -561,7 +561,7 @@ export function FilterBar({ filters, catalogs, meta, isLoading, onChange, onRese
                 ⚠ {warning}
               </span>
             ))}
-            {/* Server-detected anomalies — measured facts, rendered verbatim. */}
+            {/* Server-detected anomalies - measured facts, rendered verbatim. */}
             {meta.anomalies.length > 0 && (
               <div className="flex w-full flex-col gap-1 pt-0.5" data-testid="analytics-anomalies">
                 {meta.anomalies.map((anomaly) => (

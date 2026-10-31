@@ -1,10 +1,10 @@
 /**
- * verify-oryon-phase5.js — Oryon Phase 5 (measurement, crosshair, alerts).
+ * verify-oryon-phase5.js - Oryon Phase 5 (measurement, crosshair, alerts).
  * Contract under test:
  *  - MEASURE: two-click creation persists a measure object (localStorage,
  *    per-symbol envelope); Escape cancels a draft (nothing persisted);
  *    Ctrl+Z removes the committed object; the readout is canvas-painted
- *    (financial math verified in bun tests — here: lifecycle + no crash).
+ *    (financial math verified in bun tests - here: lifecycle + no crash).
  *  - CROSSHAIR: hovering a bar shows the UTC timestamp in the legend;
  *    OHLC stays populated; volume appears ONLY for real positive data
  *    (BTCUSDT = REAL Binance feed carries volume; EURUSD SIM may not);
@@ -20,8 +20,8 @@
  *  - REGRESSIONS: positions panel + overlays, indicator chips/panes,
  *    drawings, 0 console errors · desktop 1440 · shots.
  *
- * Run: node scripts/verify-oryon-phase5.js   (DEV server on :3001 — the
- * structural debug handles are dev-only by design, phases 1-4 convention —
+ * Run: node scripts/verify-oryon-phase5.js   (DEV server on :3001 - the
+ * structural debug handles are dev-only by design, phases 1-4 convention -
  * market service on :3003, mocked auth, BASE_URL overridable)
  */
 const path = require("path");
@@ -30,7 +30,7 @@ const { armTool, isToolArmed } = require("./oryon-probe-helpers.js");
 const fs = require("fs");
 
 const LOG = path.resolve(__dirname, "oryon-phase5-probe.log");
-fs.writeFileSync(LOG, `=== oryon phase5 probe — ${new Date().toISOString()} ===\n`);
+fs.writeFileSync(LOG, `=== oryon phase5 probe - ${new Date().toISOString()} ===\n`);
 
 const BASE = process.env.BASE_URL || "http://localhost:3001";
 const OUT = path.resolve(__dirname, "shots");
@@ -188,12 +188,12 @@ async function openAlertsTab(page) {
   await page.waitForTimeout(3_000);
 
   const symbol = await chartSymbol(page);
-  ok(`P5 — workspace chargé sur ${symbol}`, symbol.length > 0);
+  ok(`P5 - workspace chargé sur ${symbol}`, symbol.length > 0);
 
-  // ── 2. MEASURE — creation persists, Escape cancels, undo removes ──────────
+  // ── 2. MEASURE - creation persists, Escape cancels, undo removes ──────────
   const canvas = page.locator('[data-testid="oryon-chart-canvas"] canvas').first();
   const box = await canvas.boundingBox();
-  ok("P5 — canvas mesurable", box !== null && box.width > 400 && box.height > 300);
+  ok("P5 - canvas mesurable", box !== null && box.width > 400 && box.height > 300);
   if (box !== null) {
     const cx = box.x + box.width / 2;
     const cy = box.y + box.height / 2;
@@ -203,22 +203,22 @@ async function openAlertsTab(page) {
     await page.mouse.click(cx, cy);
     await page.keyboard.press("Escape");
     await page.waitForTimeout(500);
-    ok("P5 — Escape annule un draft de mesure (rien de persisté)", (await measureCount(page, symbol)) === 0);
+    ok("P5 - Escape annule un draft de mesure (rien de persisté)", (await measureCount(page, symbol)) === 0);
 
     // Two-click creation → persisted measure object.
     await armTool(page, "measure");
     await page.mouse.click(cx - 120, cy + 40);
     await page.mouse.click(cx + 120, cy - 40);
     await page.waitForTimeout(500);
-    ok("P5 — mesure deux clics persistée (enveloppe par symbole)", (await measureCount(page, symbol)) === 1);
+    ok("P5 - mesure deux clics persistée (enveloppe par symbole)", (await measureCount(page, symbol)) === 1);
     const measure = (await drawingKey(page, symbol)).find((d) => d.type === "measure");
     ok(
-      "P5 — mesure ancrée temps+prix (domaine chart, pas pixels)",
+      "P5 - mesure ancrée temps+prix (domaine chart, pas pixels)",
       measure !== null && Number.isFinite(measure.a?.t) && Number.isFinite(measure.a?.p) && Number.isFinite(measure.b?.t) && Number.isFinite(measure.b?.p),
     );
     // Tool disarmed after creation (TV behavior).
     ok(
-      "P5 — outil désarmé après création",
+      "P5 - outil désarmé après création",
       !(await isToolArmed(page, "measure")),
     );
     await page.screenshot({ path: `${OUT}/oryon-phase5-measure.png` });
@@ -226,53 +226,53 @@ async function openAlertsTab(page) {
     // Ctrl+Z removes it (undo), redo restores.
     await page.keyboard.press("Control+z");
     await page.waitForTimeout(600);
-    ok("P5 — Ctrl+Z retire la mesure", (await measureCount(page, symbol)) === 0);
+    ok("P5 - Ctrl+Z retire la mesure", (await measureCount(page, symbol)) === 0);
     await page.keyboard.press("Control+Shift+z");
     await page.waitForTimeout(600);
-    ok("P5 — Ctrl+Shift+Z la restaure", (await measureCount(page, symbol)) === 1);
+    ok("P5 - Ctrl+Shift+Z la restaure", (await measureCount(page, symbol)) === 1);
   }
 
-  // ── 3. CROSSHAIR — time + OHLC + volume (REAL feed) + chips ───────────────
+  // ── 3. CROSSHAIR - time + OHLC + volume (REAL feed) + chips ───────────────
   if (box !== null) {
     const cx = box.x + box.width / 2;
     const cy = box.y + box.height / 2;
     await page.mouse.move(cx, cy);
     await page.waitForTimeout(400);
-    ok("P5 — horodatage UTC affiché au survol", (await page.locator('[data-testid="oryon-legend-time"]').count()) === 1);
+    ok("P5 - horodatage UTC affiché au survol", (await page.locator('[data-testid="oryon-legend-time"]').count()) === 1);
     const ohlc = await page.locator('[data-testid="oryon-legend-ohlc"]').innerText();
-    ok("P5 — OHLC toujours peuplé au survol", /[0-9]/.test(ohlc));
+    ok("P5 - OHLC toujours peuplé au survol", /[0-9]/.test(ohlc));
     const chipText = await page.locator('[data-testid="oryon-indicator-chip"]').first().innerText();
-    ok("P5 — chip indicateur avec valeur numérique au survol", /[0-9]/.test(chipText));
+    ok("P5 - chip indicateur avec valeur numérique au survol", /[0-9]/.test(chipText));
     await page.mouse.move(box.x + 5, box.y + 5); // leave
     await page.waitForTimeout(300);
   }
   await page.screenshot({ path: `${OUT}/oryon-phase5-crosshair.png` });
 
-  // REAL instrument (BTCUSDT via Binance) carries volume — the legend shows it.
+  // REAL instrument (BTCUSDT via Binance) carries volume - the legend shows it.
   await selectInstrument(page, "BTCUSDT");
   const canvas2 = page.locator('[data-testid="oryon-chart-canvas"] canvas').first();
   const box2 = await canvas2.boundingBox();
   if (box2 !== null) {
     await page.mouse.move(box2.x + box2.width / 2, box2.y + box2.height / 2);
     await page.waitForTimeout(500);
-    ok("P5 — BTCUSDT (REAL) : volume affiché au survol", (await page.locator('[data-testid="oryon-legend-volume"]').count()) === 1);
+    ok("P5 - BTCUSDT (REAL) : volume affiché au survol", (await page.locator('[data-testid="oryon-legend-volume"]').count()) === 1);
   }
   await page.mouse.move(5, 5);
   await page.waitForTimeout(300);
 
-  // ── 4. ALERTS — création, validation, overlay, cycle de vie ───────────────
+  // ── 4. ALERTS - création, validation, overlay, cycle de vie ───────────────
   await openAlertsTab(page);
-  ok("P5 — onglet alerts ouvert (rail utilité existant)", (await page.locator('[data-testid="oryon-alerts-panel"]').count()) === 1);
-  ok("P5 — état vide honnête", (await page.locator('[data-testid="oryon-alerts-empty"]').count()) === 1);
+  ok("P5 - onglet alerts ouvert (rail utilité existant)", (await page.locator('[data-testid="oryon-alerts-panel"]').count()) === 1);
+  ok("P5 - état vide honnête", (await page.locator('[data-testid="oryon-alerts-empty"]').count()) === 1);
   const feedPhase = await page.locator('[data-testid="oryon-alerts-feed-status"]').getAttribute("data-phase");
-  ok(`P5 — statut d'évaluation "${feedPhase}" = live (honnête)`, feedPhase === "live");
+  ok(`P5 - statut d'évaluation "${feedPhase}" = live (honnête)`, feedPhase === "live");
 
   const symbol5 = await chartSymbol(page); // BTCUSDT here
   await page.click('[data-testid="oryon-alert-create"]');
   await page.waitForSelector('[data-testid="oryon-alert-dialog"]', { timeout: 5_000 });
-  ok("P5 — dialogue d'alerte ouvert depuis la toolbar", (await page.locator('[data-testid="oryon-alert-dialog"]').count()) === 1);
+  ok("P5 - dialogue d'alerte ouvert depuis la toolbar", (await page.locator('[data-testid="oryon-alert-dialog"]').count()) === 1);
   ok(
-    `P5 — instrument prérempli = instrument actif (${symbol5})`,
+    `P5 - instrument prérempli = instrument actif (${symbol5})`,
     (await page.locator('[data-testid="oryon-alert-dialog-symbol"]').innerText()).trim().toUpperCase() === symbol5,
   );
 
@@ -280,8 +280,8 @@ async function openAlertsTab(page) {
   await page.fill('[data-testid="oryon-alert-target"]', "");
   await page.click('[data-testid="oryon-alert-submit"]');
   await page.waitForTimeout(300);
-  ok("P5 — cible vide rejetée avec message inline", (await page.locator('[data-testid="oryon-alert-target-error"]').count()) === 1);
-  ok("P5 — dialogue toujours ouvert après rejet", (await page.locator('[data-testid="oryon-alert-dialog"]').count()) === 1);
+  ok("P5 - cible vide rejetée avec message inline", (await page.locator('[data-testid="oryon-alert-target-error"]').count()) === 1);
+  ok("P5 - dialogue toujours ouvert après rejet", (await page.locator('[data-testid="oryon-alert-dialog"]').count()) === 1);
 
   // Valid creation: target 5% ABOVE the current price (never reachable in the
   // SIM window → deterministic), condition crosses-above.
@@ -290,12 +290,12 @@ async function openAlertsTab(page) {
   await page.fill('[data-testid="oryon-alert-target"]', target);
   await page.click('[data-testid="oryon-alert-submit"]');
   await page.waitForTimeout(700);
-  ok("P5 — création valide → dialogue fermé", (await page.locator('[data-testid="oryon-alert-dialog"]').count()) === 0);
-  ok("P5 — ligne active dans le panneau", (await alertRows(page)) === 1);
+  ok("P5 - création valide → dialogue fermé", (await page.locator('[data-testid="oryon-alert-dialog"]').count()) === 0);
+  ok("P5 - ligne active dans le panneau", (await alertRows(page)) === 1);
   const rowStatus = await page.locator('[data-testid="oryon-alert-row"]').getAttribute("data-status");
-  ok("P5 — statut initial = active", rowStatus === "active");
+  ok("P5 - statut initial = active", rowStatus === "active");
   let stats = await chartStats(page);
-  ok(`P5 — overlay alerte = 1 ligne de prix (got ${stats?.alertLines})`, stats?.alertLines === 1);
+  ok(`P5 - overlay alerte = 1 ligne de prix (got ${stats?.alertLines})`, stats?.alertLines === 1);
   await page.screenshot({ path: `${OUT}/oryon-phase5-alert-overlay.png` });
 
   // Persistence: browser-local envelope written.
@@ -309,11 +309,11 @@ async function openAlertsTab(page) {
       return null;
     }
   });
-  ok("P5 — alerte persistée navigateur-local (enveloppe v1)", persisted === 1);
+  ok("P5 - alerte persistée navigateur-local (enveloppe v1)", persisted === 1);
 
   // Deterministic trigger via the dev-only handle: prime below → cross above.
   const triggerable = await page.evaluate(() => typeof window.__ORYON_ALERTS_DEBUG__?.inject === "function");
-  ok("P5 — handle dev d'injection disponible (dev only)", triggerable);
+  ok("P5 - handle dev d'injection disponible (dev only)", triggerable);
   if (triggerable) {
     const targetNum = Number(target);
     await page.evaluate(({ below, above }) => {
@@ -322,31 +322,31 @@ async function openAlertsTab(page) {
     }, { below: targetNum * 0.98, above: targetNum * 1.01 });
     await page.waitForTimeout(800);
     const triggeredStatus = await page.locator('[data-testid="oryon-alert-row"]').getAttribute("data-status");
-    ok("P5 — franchissement confirmé → statut triggered", triggeredStatus === "triggered");
+    ok("P5 - franchissement confirmé → statut triggered", triggeredStatus === "triggered");
     stats = await chartStats(page);
-    ok(`P5 — alerte triggered → ligne retirée du graphique (got ${stats?.alertLines})`, stats?.alertLines === 0);
+    ok(`P5 - alerte triggered → ligne retirée du graphique (got ${stats?.alertLines})`, stats?.alertLines === 0);
     const toastCount = await page.locator("[data-sonner-toast]").count();
-    ok(`P5 — notification in-app (toast) émise (${toastCount})`, toastCount > 0);
+    ok(`P5 - notification in-app (toast) émise (${toastCount})`, toastCount > 0);
     await page.screenshot({ path: `${OUT}/oryon-phase5-triggered.png` });
 
     // Re-arm → active again → line restored.
     await page.click('[data-testid="oryon-alert-rearm"]');
     await page.waitForTimeout(600);
-    ok("P5 — re-arm → statut active", (await page.locator('[data-testid="oryon-alert-row"]').getAttribute("data-status")) === "active");
+    ok("P5 - re-arm → statut active", (await page.locator('[data-testid="oryon-alert-row"]').getAttribute("data-status")) === "active");
     stats = await chartStats(page);
-    ok(`P5 — re-arm → overlay restauré (got ${stats?.alertLines})`, stats?.alertLines === 1);
+    ok(`P5 - re-arm → overlay restauré (got ${stats?.alertLines})`, stats?.alertLines === 1);
   }
 
   // Disable → line removed; enable → restored (update-in-place, no dup).
   await page.click('[data-testid="oryon-alert-toggle"]');
   await page.waitForTimeout(500);
-  ok("P5 — désactivation → statut disabled", (await page.locator('[data-testid="oryon-alert-row"]').getAttribute("data-status")) === "disabled");
+  ok("P5 - désactivation → statut disabled", (await page.locator('[data-testid="oryon-alert-row"]').getAttribute("data-status")) === "disabled");
   stats = await chartStats(page);
-  ok(`P5 — désactivée → ligne retirée (got ${stats?.alertLines})`, stats?.alertLines === 0);
+  ok(`P5 - désactivée → ligne retirée (got ${stats?.alertLines})`, stats?.alertLines === 0);
   await page.click('[data-testid="oryon-alert-toggle"]');
   await page.waitForTimeout(500);
   stats = await chartStats(page);
-  ok(`P5 — réactivée → exactement 1 ligne, pas de doublon (got ${stats?.alertLines})`, stats?.alertLines === 1);
+  ok(`P5 - réactivée → exactement 1 ligne, pas de doublon (got ${stats?.alertLines})`, stats?.alertLines === 1);
 
   // ── 5. Matching exact + round-trip d'instrument ───────────────────────────
   // The alert lives on the CURRENT instrument; switch away → 0 lines, back → 1.
@@ -354,7 +354,7 @@ async function openAlertsTab(page) {
   await selectInstrument(page, "EURUSD");
   stats = await chartStats(page);
   ok(
-    `P5 — EURUSD : 0 ligne d'alerte (${alertSymbol} ≠ EURUSD, matching exact) (got ${stats?.alertLines})`,
+    `P5 - EURUSD : 0 ligne d'alerte (${alertSymbol} ≠ EURUSD, matching exact) (got ${stats?.alertLines})`,
     stats?.alertLines === 0,
   );
   // Create a SECOND alert on EURUSD while it is displayed.
@@ -365,48 +365,48 @@ async function openAlertsTab(page) {
   await page.click('[data-testid="oryon-alert-submit"]');
   await page.waitForTimeout(700);
   stats = await chartStats(page);
-  ok("P5 — alerte EURUSD créée → 1 ligne sur EURUSD", stats?.alertLines === 1);
-  ok("P5 — panneau : 2 alertes au total", (await alertRows(page)) === 2);
+  ok("P5 - alerte EURUSD créée → 1 ligne sur EURUSD", stats?.alertLines === 1);
+  ok("P5 - panneau : 2 alertes au total", (await alertRows(page)) === 2);
 
   await selectInstrument(page, alertSymbol);
   stats = await chartStats(page);
-  ok(`P5 — retour ${alertSymbol} : seule l'alerte ${alertSymbol} dessine (got ${stats?.alertLines})`, stats?.alertLines === 1);
+  ok(`P5 - retour ${alertSymbol} : seule l'alerte ${alertSymbol} dessine (got ${stats?.alertLines})`, stats?.alertLines === 1);
   await selectInstrument(page, "EURUSD");
   stats = await chartStats(page);
-  ok(`P5 — retour EURUSD : seule l'alerte EURUSD dessine (got ${stats?.alertLines})`, stats?.alertLines === 1);
+  ok(`P5 - retour EURUSD : seule l'alerte EURUSD dessine (got ${stats?.alertLines})`, stats?.alertLines === 1);
 
   // Delete the EURUSD alert → row gone + line gone (no orphans).
   await page.locator('[data-testid="oryon-alert-row"][data-status="active"] [data-testid="oryon-alert-delete"]').first().click();
   await page.waitForTimeout(600);
   stats = await chartStats(page);
   const remaining = await alertRows(page);
-  ok(`P5 — suppression → ligne retirée, ${remaining} ligne(s) restante(s) dans le panneau`, stats?.alertLines === 0 && remaining === 1);
+  ok(`P5 - suppression → ligne retirée, ${remaining} ligne(s) restante(s) dans le panneau`, stats?.alertLines === 0 && remaining === 1);
 
-  // ── 6. REGRESSIONS — positions, indicateurs, dessins ──────────────────────
+  // ── 6. REGRESSIONS - positions, indicateurs, dessins ──────────────────────
   await page.click('[data-testid="oryon-lower-toggle"]');
   await page.waitForSelector('[data-testid="oryon-lower-panel"]', { timeout: 5_000 });
   await page.waitForSelector('[data-testid="oryon-position-row"]', { timeout: 15_000 });
   const rowCount = await page.locator('[data-testid="oryon-position-row"]').count();
-  ok(`P5 — panneau positions intact (${rowCount} lignes)`, rowCount >= 1);
+  ok(`P5 - panneau positions intact (${rowCount} lignes)`, rowCount >= 1);
   // Structural: every book row matching the displayed symbol draws entry+SL+TP.
   const cells = await page.locator('[data-testid="oryon-position-row"] td:first-child').allInnerTexts();
   const rowSymbols = cells.map((text) => text.split("\n")[0].trim().toUpperCase());
   const expectedPositionLines = rowSymbols.filter((s) => s === "EURUSD").length * 3;
   stats = await chartStats(page);
   ok(
-    `P5 — overlays positions intacts (attendu ${expectedPositionLines}, got ${stats?.priceLines})`,
+    `P5 - overlays positions intacts (attendu ${expectedPositionLines}, got ${stats?.priceLines})`,
     stats?.priceLines === expectedPositionLines,
   );
   const chipCount = await page.locator('[data-testid="oryon-indicator-chip"]').count();
-  ok(`P5 — chips indicateurs intactes (got ${chipCount})`, chipCount === 2);
+  ok(`P5 - chips indicateurs intactes (got ${chipCount})`, chipCount === 2);
   stats = await chartStats(page);
-  ok(`P5 — panes natifs intacts (got ${stats?.panes})`, stats?.panes === 3);
+  ok(`P5 - panes natifs intacts (got ${stats?.panes})`, stats?.panes === 3);
   // Drawings survived everything (the measure created in section 2).
-  ok("P5 — dessins intacts (mesure toujours là)", (await measureCount(page, "EURUSD")) === 1);
+  ok("P5 - dessins intacts (mesure toujours là)", (await measureCount(page, "EURUSD")) === 1);
   await page.click('[data-testid="oryon-lower-close"]');
 
   // ── console errors ────────────────────────────────────────────────────────
-  ok("P5 — zéro erreur de console", errors.length === 0);
+  ok("P5 - zéro erreur de console", errors.length === 0);
   if (errors.length > 0) {
     fs.appendFileSync(LOG, `CONSOLE ERRORS:\n${errors.join("\n")}\n`);
     console.log("Console errors:", errors.slice(0, 5));

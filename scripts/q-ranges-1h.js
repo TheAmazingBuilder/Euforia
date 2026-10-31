@@ -19,7 +19,7 @@ const DAY = 86400;
   await ensureLogin(page);
   await page.goto(BASE + '/oryon', { waitUntil: 'domcontentloaded', timeout: 30000 });
   await page.waitForTimeout(12000);
-  // switch to 1h — wider loaded span so 5D/1M are meaningful
+  // switch to 1h - wider loaded span so 5D/1M are meaningful
   await page.click('[data-testid="oryon-tf-1H"]');
   await page.waitForTimeout(6000);
   const read = () => page.evaluate(() => {
@@ -38,7 +38,7 @@ const DAY = 86400;
     const span = r.to - r.from;
     const clamped = span >= fullSpan * 0.98; // wider than loaded → honest clamp
     const ok = clamped || (span > min * DAY && span < max * DAY);
-    console.log(`${ok ? "PASS" : "FAIL"} ${id} span=${(span / DAY).toFixed(2)}d${clamped ? " (clamped to loaded span — honest)" : ""}`);
+    console.log(`${ok ? "PASS" : "FAIL"} ${id} span=${(span / DAY).toFixed(2)}d${clamped ? " (clamped to loaded span - honest)" : ""}`);
     ok ? pass++ : fail++;
   }
   console.log(`=== 1h ranges: ${pass}/${pass + fail} ===`);

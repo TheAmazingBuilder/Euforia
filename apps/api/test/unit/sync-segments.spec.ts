@@ -1,9 +1,9 @@
 /**
- * Unit — segment-based sync orchestration (Phase 03, doc B §8.2).
+ * Unit - segment-based sync orchestration (Phase 03, doc B §8.2).
  *
  * Proves the PARTIAL / capability-skip / FAILED decision table with REAL
  * adapters (mock + capability-poor fixture) against a recording repository
- * fake. Fixture evidence — proves the ORCHESTRATION, never connectivity.
+ * fake. Fixture evidence - proves the ORCHESTRATION, never connectivity.
  */
 import { describe, expect, it } from "vitest";
 import { Prisma } from "@prisma/client";
@@ -45,7 +45,7 @@ function recordingRepository() {
     setConnectionError: [],
     securityEvents: [],
   };
-  // The run row is MUTATED by the persist/finalize/fail calls — mirroring the
+  // The run row is MUTATED by the persist/finalize/fail calls - mirroring the
   // real repository so `latestSyncRun` reflects the finalized state.
   const runRow: SyncRunRow = {
     id: "run-1",
@@ -176,7 +176,7 @@ function buildService(adapter: TradingProviderAdapter, repository: unknown): {
 
 // ── COMPLETED ────────────────────────────────────────────────────────────────
 
-describe("segment orchestration — full success (COMPLETED)", () => {
+describe("segment orchestration - full success (COMPLETED)", () => {
   it("persists all four segments independently and finalizes COMPLETED with no error code", async () => {
     const { repository, calls } = recordingRepository();
     const { service } = buildService(new MockTradingProviderAdapter(), repository);
@@ -200,7 +200,7 @@ describe("segment orchestration — full success (COMPLETED)", () => {
 
 // ── PARTIAL ──────────────────────────────────────────────────────────────────
 
-describe("segment orchestration — PARTIAL (doc B §8.2)", () => {
+describe("segment orchestration - PARTIAL (doc B §8.2)", () => {
   function oneSegmentFailingAdapter(
     failing: "fetchSnapshot" | "fetchPositions" | "fetchOrders" | "fetchDeals",
     error: ProviderError,
@@ -259,7 +259,7 @@ describe("segment orchestration — PARTIAL (doc B §8.2)", () => {
     });
     expect(response.run.status).toBe("PARTIAL");
     expect(response.run.errorCode).toBe("PROVIDER_UNAVAILABLE");
-    // The deals segment RAN and FAILED — it did not persist; positions/orders did.
+    // The deals segment RAN and FAILED - it did not persist; positions/orders did.
     expect(calls.persistDealsSegment).toHaveLength(0);
     expect(calls.persistPositionsSegment).toHaveLength(1);
     expect(calls.persistOrdersSegment).toHaveLength(1);
@@ -302,7 +302,7 @@ describe("segment orchestration — PARTIAL (doc B §8.2)", () => {
 
 // ── FAILED (all supported segments failed) ───────────────────────────────────
 
-describe("segment orchestration — FAILED (historical path)", () => {
+describe("segment orchestration - FAILED (historical path)", () => {
   it("every supported segment failing → failSyncRun + connection ERROR + security event + rethrow", async () => {
     const { repository, calls } = recordingRepository();
     const base = new MockTradingProviderAdapter();
@@ -334,7 +334,7 @@ describe("segment orchestration — FAILED (historical path)", () => {
 
 // ── Capability gating (skip = capability FACT, doc B §8.2) ───────────────────
 
-describe("segment orchestration — capability gating", () => {
+describe("segment orchestration - capability gating", () => {
   it("UNSUPPORTED and UNKNOWN segments are SKIPPED (never called, never failed)", async () => {
     const { repository, calls } = recordingRepository();
     const poor = new CapabilityPoorTestProviderAdapter();
@@ -351,7 +351,7 @@ describe("segment orchestration — capability gating", () => {
     // snapshot + positions (SUPPORTED): ran and persisted.
     expect(calls.persistSnapshotSegment).toHaveLength(1);
     expect(calls.persistPositionsSegment).toHaveLength(1);
-    // Run COMPLETED — capability facts never mark a run failed (§8.2).
+    // Run COMPLETED - capability facts never mark a run failed (§8.2).
     expect(response.run.status).toBe("COMPLETED");
     expect(response.run.errorCode).toBeNull();
     expect(calls.failSyncRun).toHaveLength(0);
@@ -378,7 +378,7 @@ describe("segment orchestration — capability gating", () => {
 
   it("the OANDA adapter's V2 descriptor gates ALL four segments as SUPPORTED (no accidental skips)", async () => {
     const { repository, calls } = recordingRepository();
-    // Dead local endpoint — deterministic connection-refused failures, and
+    // Dead local endpoint - deterministic connection-refused failures, and
     // PROOF that no external call ever leaves the unit test.
     const oanda = new OandaRestProviderAdapter({ restUrlOverride: "http://127.0.0.1:1" });
     const { service } = buildService(oanda, repository);

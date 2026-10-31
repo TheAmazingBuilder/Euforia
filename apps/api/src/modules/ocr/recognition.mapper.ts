@@ -1,5 +1,5 @@
 /**
- * Recognition wire mapper — PURE functions, no I/O, no Nest (unit-testable
+ * Recognition wire mapper - PURE functions, no I/O, no Nest (unit-testable
  * in plain node, house standard).
  *
  * Maps the internal recognition aggregate (Phase-19 rows + engine payload)
@@ -9,7 +9,7 @@
  *   - persisted row states → frontend job statuses (§33 "adapt to the
  *     frontend"): QUEUED→PENDING, REVIEW_REQUIRED/CONFIRMED→COMPLETED;
  *   - the engine's 10 field keys → the frontend's 16 (profit→profitLoss;
- *     fields with no engine signal in V1 stay NOT_FOUND — never invented);
+ *     fields with no engine signal in V1 stay NOT_FOUND - never invented);
  *   - pixel source regions → normalized 0..1 coordinates (frontend §25);
  *   - 0..1 engine confidences → 0..100 (the frontend bands ≥85/≥65/<65);
  *   - free-string engine warnings → typed frontend warning codes (§26);
@@ -62,7 +62,7 @@ export function mapWireStage(rowStatus: string): RecognitionStage {
     case "REVIEW_REQUIRED":
     case "CONFIRMED":
       return "COMPLETED";
-    // PROCESSING / FAILED / CANCELLED report the last real stage — the OCR
+    // PROCESSING / FAILED / CANCELLED report the last real stage - the OCR
     // pass is where request-scoped work happens or stops.
     default:
       return "OCR";
@@ -70,7 +70,7 @@ export function mapWireStage(rowStatus: string): RecognitionStage {
 }
 
 /**
- * Failure category → frontend job error code (§91 mapping — stable codes,
+ * Failure category → frontend job error code (§91 mapping - stable codes,
  * user-facing copy lives on the client). The category itself is preserved
  * server-side for diagnostics.
  */
@@ -103,7 +103,7 @@ const ENGINE_FIELD_TO_WIRE: Record<string, RecognitionFieldKey> = {
   closeTime: "closeTime",
 };
 
-/** Fields the V1 engine does not extract yet — rendered NOT_FOUND, honestly. */
+/** Fields the V1 engine does not extract yet - rendered NOT_FOUND, honestly. */
 const WIRE_ONLY_KEYS: readonly RecognitionFieldKey[] = [
   "platform",
   "currency",
@@ -126,7 +126,7 @@ const PRIMARY_KEYS: readonly RecognitionFieldKey[] = [
 
 function stateOf(status: string, band: string, hasValue: boolean): RecognitionFieldState {
   if (!hasValue) {
-    // Nothing parseable was read from the image — an AMBIGUOUS read (raw text
+    // Nothing parseable was read from the image - an AMBIGUOUS read (raw text
     // present but uninterpretable) still counts as an uncertain signal.
     return "NOT_FOUND";
   }
@@ -142,7 +142,7 @@ function normalizedRegion(
 ): { x: number; y: number; width: number; height: number } | undefined {
   if (region === null || width <= 0 || height <= 0) return undefined;
   // Defensive clamp: a misbehaving engine box must never break the wire
-  // contract (0..1) — the value degrades, the payload stays valid.
+  // contract (0..1) - the value degrades, the payload stays valid.
   const clamp = (v: number) => Math.min(1, Math.max(0, round6(v)));
   return {
     x: clamp(region.x / width),
@@ -182,7 +182,7 @@ export function buildTradeFields(
     }
     const band = engineField.confidenceBand;
     // A normalized value is PRESERVED even when INVALID (kept for review,
-    // §19) — the value renders flagged UNCERTAIN, never hidden.
+    // §19) - the value renders flagged UNCERTAIN, never hidden.
     const hasValue = engineField.normalizedValue !== null;
     const value = hasValue ? (engineField.normalizedValue as string) : null;
     put(wireKey, {
@@ -197,7 +197,7 @@ export function buildTradeFields(
     put(key, { key, value: null, state: "NOT_FOUND", confidence: null });
   }
 
-  // Draft overlay — the user's reviewed declaration wins where it differs.
+  // Draft overlay - the user's reviewed declaration wins where it differs.
   if (draft !== null) {
     for (const [rawKey, rawValue] of Object.entries(draft)) {
       const key = rawKey as RecognitionFieldKey;
@@ -234,21 +234,21 @@ export function mapEngineWarnings(
     if (raw === "TIMEZONE_UNKNOWN") {
       push({
         code: "SCREENSHOT_INCOMPLETE",
-        message: "The screenshot does not state a timezone — verify the times before importing.",
+        message: "The screenshot does not state a timezone - verify the times before importing.",
       });
       continue;
     }
     if (raw === "DIRECTIONAL_INCONSISTENCY") {
       push({
         code: "LOW_CONFIDENCE_FIELD",
-        message: "Some price relationships look inconsistent for the detected direction — review them below.",
+        message: "Some price relationships look inconsistent for the detected direction - review them below.",
       });
       continue;
     }
     if (raw === "AMBIGUOUS_THOUSANDS_SEPARATOR") {
       push({
         code: "LOW_CONFIDENCE_FIELD",
-        message: "A number on this screenshot is ambiguous — confirm the intended value.",
+        message: "A number on this screenshot is ambiguous - confirm the intended value.",
       });
       continue;
     }
@@ -256,7 +256,7 @@ export function mapEngineWarnings(
     push({ code: "SCREENSHOT_INCOMPLETE", message: raw.slice(0, 200) });
   }
 
-  // Derived, evidence-based warnings (§57/§60) — missing primary fields and
+  // Derived, evidence-based warnings (§57/§60) - missing primary fields and
   // low-confidence values are surfaced even when the engine stayed silent.
   for (const key of PRIMARY_KEYS) {
     const field = fields[key];
@@ -264,13 +264,13 @@ export function mapEngineWarnings(
     if (field.state === "NOT_FOUND") {
       push({
         code: "FIELD_NOT_DETECTED",
-        message: "This field was not detected on the screenshot — add it before importing.",
+        message: "This field was not detected on the screenshot - add it before importing.",
         field: key,
       });
     } else if (field.state === "UNCERTAIN" || (field.confidence !== null && field.confidence < 65)) {
       push({
         code: "LOW_CONFIDENCE_FIELD",
-        message: "This value was recognized with low confidence — double-check it.",
+        message: "This value was recognized with low confidence - double-check it.",
         field: key,
       });
     }
@@ -300,7 +300,7 @@ export function classificationToDetectedPlatform(
     case "TRADINGVIEW_CHART":
       return "TRADINGVIEW";
     default:
-      // Never fabricate a platform (§44) — UNKNOWN degrades to OTHER.
+      // Never fabricate a platform (§44) - UNKNOWN degrades to OTHER.
       return "OTHER";
   }
 }
@@ -313,7 +313,7 @@ export function toRecognitionResult(row: OcrRecognitionRow): RecognitionResult |
   const detectedPlatform = classificationToDetectedPlatform(classification);
   const engineFields = (row.result?.fields ?? []) as OcrExtractedField[];
 
-  // V2 — grouped trades payload. Absent (older pipeline answers) → exactly
+  // V2 - grouped trades payload. Absent (older pipeline answers) → exactly
   // one trade from the flat fields, byte-identical to V1 behavior.
   const payloadTrades = row.result.trades ?? null;
   let trades: RecognizedTrade[];
@@ -343,7 +343,7 @@ export function toRecognitionResult(row: OcrRecognitionRow): RecognitionResult |
   const primaryFields = trades[0]?.fields ?? buildTradeFields(engineFields, row.asset.width ?? 0, row.asset.height ?? 0, null);
   const warnings = mapEngineWarnings(row.result.warnings ?? [], primaryFields);
 
-  // V3 — recognition versioning (spec §44): how this result was produced,
+  // V3 - recognition versioning (spec §44): how this result was produced,
   // echoed from the persisted engine metadata when available.
   const engineMeta = row.result.engine;
   const versions: RecognitionResult["versions"] =
@@ -428,7 +428,7 @@ export function toRecognitionJobDto(row: OcrRecognitionRow): RecognitionJob {
 }
 
 /**
- * V3 — count the user-corrected fields of a row (spec §62 `corrected`
+ * V3 - count the user-corrected fields of a row (spec §62 `corrected`
  * facet): a draft value that DIFFERS from the machine value is a
  * correction. Reads the stored drafts against the engine payload; pure.
  */
@@ -529,13 +529,13 @@ export function toHistoryItem(row: OcrRecognitionRow): RecognitionHistoryItem {
         ? Math.max(0, row.processingFinishedAt.getTime() - row.processingStartedAt.getTime())
         : null,
     importedTradeId: row.importedTradeId,
-    // V3 history filter facets (spec §62) — honest only when computable.
+    // V3 history filter facets (spec §62) - honest only when computable.
     ...(row.result !== null && row.status !== "QUEUED" && row.status !== "PROCESSING"
       ? { correctedCount: countCorrectedFields(row) }
       : {}),
     ...(row.asset.duplicateWarned ? { duplicateWarned: true } : {}),
     ...(quality !== null ? { qualityOverall: quality.overall } : {}),
-    // V3 — underlying asset id (collections add-flow, spec §41).
+    // V3 - underlying asset id (collections add-flow, spec §41).
     screenshotId: row.assetId,
   };
 }

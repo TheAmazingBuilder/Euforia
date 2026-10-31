@@ -1,5 +1,5 @@
 /**
- * Analytics suite engine (Phase 8) — the PURE aggregation of the Analytics
+ * Analytics suite engine (Phase 8) - the PURE aggregation of the Analytics
  * module's single dataset definition (one filtered closed-trade set → every
  * tab of the module renders the SAME data; the client only formats).
  *
@@ -47,7 +47,7 @@ import {
   stdOf,
 } from "./analytics-math";
 
-/** Fixed Monte Carlo seed — deterministic, documented (§52). */
+/** Fixed Monte Carlo seed - deterministic, documented (§52). */
 const MONTE_CARLO_SEED = 20260930;
 const ROLLING_WINDOW = 10;
 const MAX_DRAWDOWN_PERIODS = 6;
@@ -72,9 +72,9 @@ export interface SuiteEnvironment {
   accounts: AnalyticsAccountRow[];
   strategyNames: Record<string, string>;
   todayKey: string;
-  /** Global OPEN count (all user accounts) — open positions never leak into stats (§45). */
+  /** Global OPEN count (all user accounts) - open positions never leak into stats (§45). */
   openTradeCount: number;
-  /** Canonical economic events (Phase 13 §21) — defaults to empty (no
+  /** Canonical economic events (Phase 13 §21) - defaults to empty (no
    * calendar coverage: every trade honestly falls into "NONE"-excluded
    * buckets). */
   calendarEvents?: readonly SuiteCalendarEvent[];
@@ -141,7 +141,7 @@ export function computeAnalyticsSuite(
     closed = closed.filter((t) => hourSet.has(new Date(t.entryAtIso).getUTCHours()));
   }
   // NOTE: emotion/exitReason/tagId filters follow the shared contract. The
-  // journal does not yet own emotion/tag data (honest seams) — an unknown
+  // journal does not yet own emotion/tag data (honest seams) - an unknown
   // filter narrows the dataset the same way any unmatchable value would.
   if (filters.emotion) closed = closed.filter(() => false);
   if (filters.tagId) closed = closed.filter(() => false);
@@ -240,7 +240,7 @@ export function computeAnalyticsSuite(
   const recoveryFactor = netPnl !== null && maxDrawdownR < 0 ? netPnl / Math.abs(maxDrawdownR) : null;
 
   // Sharpe / Sortino on DAILY R sums (calendar days from first to last trade,
-  // zero-filled on no-trade days), annualized √252, risk-free 0 — the
+  // zero-filled on no-trade days), annualized √252, risk-free 0 - the
   // methodology travels with the payload (§8).
   let sharpe: number | null = null;
   let sortino: number | null = null;
@@ -306,7 +306,7 @@ export function computeAnalyticsSuite(
     sharpeNote:
       "Sharpe = mean daily ΣR ÷ stdev(daily ΣR) × √252, risk-free = 0. Daily series spans the full filter window (0R on no-trade days); null below 10 days.",
     sortinoNote:
-      "Sortino uses the same daily ΣR series with downside deviation (√mean(min(0,d)²)), annualized √252 — penalizes only negative volatility.",
+      "Sortino uses the same daily ΣR series with downside deviation (√mean(min(0,d)²)), annualized √252 - penalizes only negative volatility.",
   };
 
   // ── Cumulative R + rolling (window 10) (§7/§9) ──────────────────────────
@@ -457,7 +457,7 @@ export function computeAnalyticsSuite(
         r: dec(trade.rMultiple),
       });
     }
-    if (inDrawdown) flush(null, null, null); // still under water — honest nulls
+    if (inDrawdown) flush(null, null, null); // still under water - honest nulls
     drawdowns.sort((a, b) => Number(a.drawdownR) - Number(b.drawdownR));
   }
 
@@ -507,7 +507,7 @@ export function computeAnalyticsSuite(
     },
   ];
 
-  // ── Strategy rows (§12) — factual comparisons, no ranking verdict ─────
+  // ── Strategy rows (§12) - factual comparisons, no ranking verdict ─────
   const strategyIds = [...new Set(closed.map((t) => t.strategyId))];
   const strategies: AnalyticsSuiteResponse["strategies"] = strategyIds.map((id) => {
     const group = closed.filter((t) => t.strategyId === id);
@@ -598,7 +598,7 @@ export function computeAnalyticsSuite(
     };
   });
 
-  // ── Time analytics (§14) — tradingDate weekday + entryAt UTC hours ─────
+  // ── Time analytics (§14) - tradingDate weekday + entryAt UTC hours ─────
   const weekdayOf = (trade: AnalyticsTradeRow): number =>
     new Date(`${trade.tradingDate}T00:00:00Z`).getUTCDay();
   const hourBucketOf = (trade: AnalyticsTradeRow): number => {
@@ -637,7 +637,7 @@ export function computeAnalyticsSuite(
   // ── Psychology (§19) ───────────────────────────────────────────────────
   // The journal does not yet own pre/post-trade emotion or confidence data
   // (honest seam): emotion buckets stay empty and confidence bands report
-  // zero trades — the UI renders them with their n, never a fabricated rate.
+  // zero trades - the UI renders them with their n, never a fabricated rate.
   const emotionsBefore: AnalyticsBucket[] = [];
   const emotionsAfter: AnalyticsBucket[] = [];
   const confidenceBands: AnalyticsSuiteResponse["psychology"]["confidenceBands"] = (["1–2", "3", "4–5"] as const).map(
@@ -671,7 +671,7 @@ export function computeAnalyticsSuite(
     unknown: closed.filter((t) => t.followedPlan === null).length,
   };
   // Intratrade excursions (MFE/MAE) need high/low capture the journal does
-  // not own yet (§34 honesty): unavailable — never fabricated.
+  // not own yet (§34 honesty): unavailable - never fabricated.
   const excursionAvailable = false;
   const mfeHistogram: AnalyticsSuiteResponse["quality"]["mfeHistogram"] = [0, 0.5, 1, 1.5, 2, 3, 5].map(
     (edge, index, list) => {
@@ -694,10 +694,10 @@ export function computeAnalyticsSuite(
     },
   );
 
-  // ── Mistakes ledger (§20) — discipline domain not yet owned backend ────
+  // ── Mistakes ledger (§20) - discipline domain not yet owned backend ────
   const mistakes: AnalyticsSuiteResponse["mistakes"] = { entries: [], violatingTrades: 0, totalR: dec(0) };
 
-  // ── Economic-event context (§21) — canonical Calendar join (Phase 13) ──
+  // ── Economic-event context (§21) - canonical Calendar join (Phase 13) ──
   // Mock-parity correlation: impact ≠ LOW AND event currency === the
   // trade instrument's quote currency. Phase windows in minutes around
   // the release: DURING |Δ| ≤ 60, BEFORE −240 ≤ Δ < −60, AFTER
@@ -784,12 +784,12 @@ export function computeAnalyticsSuite(
       currentWin = 0;
       longestLoss = Math.max(longestLoss, currentLoss);
     }
-    // breakeven trades are transparent — they neither break nor extend a run.
+    // breakeven trades are transparent - they neither break nor extend a run.
   }
   if (currentWin > 0) winStreaks.push(currentWin);
   if (currentLoss > 0) lossStreaks.push(currentLoss);
 
-  // ── Monte Carlo (§25) — seeded bootstrap of the filtered R list ────────
+  // ── Monte Carlo (§25) - seeded bootstrap of the filtered R list ────────
   const rng = mulberry32(MONTE_CARLO_SEED);
   const simulationCount = Math.max(100, Math.min(2000, sims));
   const finals: number[] = [];
@@ -838,7 +838,7 @@ export function computeAnalyticsSuite(
   // ── Server-detected anomalies (measured facts, never verdicts §49) ─────
   const anomalies: AnalyticsSuiteResponse["meta"]["anomalies"] = [];
   if (closed.length >= MIN_ANOMALY_SAMPLE) {
-    // TAIL_LOSS — the worst 5 % of losing trades vs the total loss mass (R).
+    // TAIL_LOSS - the worst 5 % of losing trades vs the total loss mass (R).
     const lossR = closed.map((t) => t.rMultiple).filter((r) => r < 0).sort((a, b) => a - b);
     const totalLossAbs = lossR.reduce((sum, r) => sum + Math.abs(r), 0);
     if (lossR.length >= 5 && totalLossAbs > 0) {
@@ -855,7 +855,7 @@ export function computeAnalyticsSuite(
       }
     }
 
-    // OVERTRADING — unusually busy days whose average daily R underperforms.
+    // OVERTRADING - unusually busy days whose average daily R underperforms.
     const dayCounts = [...dailyGroups.values()].map((group) => group.length).sort((a, b) => a - b);
     if (dayCounts.length >= 8) {
       const medianCount = dayCounts[Math.floor(dayCounts.length / 2)]!;
@@ -876,7 +876,7 @@ export function computeAnalyticsSuite(
       }
     }
 
-    // LOSS_STREAK — longest consecutive losing run in chronological order.
+    // LOSS_STREAK - longest consecutive losing run in chronological order.
     let streak = 0;
     let worstStreak = 0;
     for (const trade of closed) {
@@ -897,11 +897,11 @@ export function computeAnalyticsSuite(
     }
   }
 
-  // ── Phase 05 — performance insights, pattern analysis & trading behavior ──
+  // ── Phase 05 - performance insights, pattern analysis & trading behavior ──
   // ONE deterministic engine lives in @cosmoz/shared (the MSW mirror calls
   // the same functions, so mock parity cannot drift). The suite's already-
   // filtered, chronologically-sorted `closed` rows are mapped onto the
-  // engine input — no second read, no N+1 (spec §11).
+  // engine input - no second read, no N+1 (spec §11).
   const insightsRows: InsightsEngineRow[] = closed.map((trade) => ({
     id: trade.id,
     instrumentSymbol: trade.instrumentSymbol,
@@ -931,7 +931,7 @@ export function computeAnalyticsSuite(
       singleCurrency,
     },
     // Account currencies are validated against the shared Currency enum at
-    // creation — the DB string is cast, never re-validated here.
+    // creation - the DB string is cast, never re-validated here.
     currency: mainAccountCurrency(environment.accounts) as Currency,
     summary,
     equity,
@@ -1040,7 +1040,7 @@ export function computeAnalyticsSuite(
 
 /**
  * The suite's display currency: the DEFAULT account's currency (isDefault,
- * else the first account — the dashboard's "main account" convention).
+ * else the first account - the dashboard's "main account" convention).
  */
 function mainAccountCurrency(accounts: AnalyticsAccountRow[]): string {
   const main = accounts.find((a) => a.isDefault) ?? accounts[0];

@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 import { cn } from "@/lib/utils";
 
-/** Canonical period filter values — persisted in the URL (?range=7|30|90). */
+/** Canonical period filter values - persisted in the URL (?range=7|30|90). */
 export type RangeDays = 7 | 30 | 90;
 
 const RANGE_VALUES: RangeDays[] = [7, 30, 90];
@@ -24,7 +24,7 @@ function parseRange(raw: string | null): RangeDays {
 /**
  * Shared period filter state via the URL. Both P&L cards mount their own
  * chip group; they stay in sync because the single source of truth is the
- * `range` query param (router.replace — no history spam).
+ * `range` query param (router.replace - no history spam).
  */
 export function useRangeParam(): [RangeDays, (range: RangeDays) => void] {
   const searchParams = useSearchParams();

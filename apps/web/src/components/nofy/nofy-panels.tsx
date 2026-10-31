@@ -53,7 +53,7 @@ import {
 import { blockTypeLabel } from "./nofy-blocks";
 
 /**
- * Nofy panels — Overview (the knowledge dashboard, spec §4), Folders
+ * Nofy panels - Overview (the knowledge dashboard, spec §4), Folders
  * (spec §6), Templates (spec §23) and Trash (spec §44). Each stays clean
  * and purposeful: knowledge management first, not vanity analytics.
  */
@@ -531,7 +531,7 @@ export function TemplatesPanel({
                     ) : block.type === "todo" ? (
                       `☐ ${block.text}`
                     ) : block.type === "divider" ? (
-                      "—"
+                      "-"
                     ) : block.type === "table" ? (
                       TP.tablePreview
                     ) : block.text === "" ? (
@@ -656,7 +656,7 @@ export function TrashPanel({
                 if (purging) {
                   purge.mutate(purging.id, { onSuccess: () => setPurging(null) });
                 } else if (emptying && notes) {
-                  // Sequential purges — the last one closes the dialog.
+                  // Sequential purges - the last one closes the dialog.
                   notes.forEach((note, index) => {
                     purge.mutate(note.id, {
                       onSuccess: () => {

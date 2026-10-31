@@ -2,16 +2,16 @@ import { describe, expect, it } from "vitest";
 import { queryKeys, tradeMutationInvalidations } from "@/lib/api/keys";
 
 /**
- * Phase 09 — data-freshness contract. Every root that derives from trade
+ * Phase 09 - data-freshness contract. Every root that derives from trade
  * data MUST be invalidated by a single-trade mutation (create / edit /
  * close / decision / delete). The analytics-suite root was the audit's #1
  * finding: bulk-tag and CSV-import invalidated it, the single-trade path
- * did not — comparison widgets kept pre-mutation aggregates forever.
+ * did not - comparison widgets kept pre-mutation aggregates forever.
  *
  * This spec pins the bundle: adding a derived dataset later WITHOUT adding
  * its root here now fails this test instead of shipping stale aggregates.
  */
-describe("tradeMutationInvalidations — freshness contract", () => {
+describe("tradeMutationInvalidations - freshness contract", () => {
   it("invalidates every trade-derived root", () => {
     expect(tradeMutationInvalidations).toContain(queryKeys.tradesRoot);
     expect(tradeMutationInvalidations).toContain(queryKeys.rulesStatusRoot);

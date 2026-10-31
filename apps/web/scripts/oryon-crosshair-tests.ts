@@ -1,13 +1,13 @@
 /**
- * Oryon crosshair enhancement — unit tests (bun).
+ * Oryon crosshair enhancement - unit tests (bun).
  *
  * Phase 5 spec §13 "crosshair tests" (pure layer):
- *   - legend time formatting (UTC — aligned with the chart time axis;
+ *   - legend time formatting (UTC - aligned with the chart time axis;
  *     intraday vs "1D"; invalid timestamps omitted)
- *   - legend volume gating (valid positive values ONLY — missing/non-finite/
+ *   - legend volume gating (valid positive values ONLY - missing/non-finite/
  *     zero [forming candle] are omitted, never faked)
  *   - indicator values AT a bar time (exact-time lookup; warm-up and unknown
- *     times yield NO value — never an interpolation)
+ *     times yield NO value - never an interpolation)
  *   - listener-free by construction: the lookups are pure reads over the
  *     calculation data (the real subscriptions live in the engine, covered
  *     by the E2E probe).
@@ -47,7 +47,7 @@ function eq(name: string, actual: unknown, expected: unknown): void {
 
 // ── 1. Legend time (UTC, aligné sur l'axe du chart) ─────────────────────────
 
-console.log("— heure de légende (UTC)");
+console.log("- heure de légende (UTC)");
 // 2026-10-11 14:35 UTC.
 const tsMs = Date.UTC(2026, 9, 11, 14, 35);
 eq("intraday → « Oct 11, 14:35 » (UTC)", formatCandleTime(tsMs, "5m"), "Oct 11, 14:35");
@@ -57,7 +57,7 @@ ok("timestamp Infinity → null", formatCandleTime(Infinity, "1D") === null);
 
 // ── 2. Volume de légende (valeurs valides uniquement) ───────────────────────
 
-console.log("— volume de légende");
+console.log("- volume de légende");
 eq("volume réel compacté", formatLegendVolume(1234), "1.2K");
 eq("volume unitaire", formatLegendVolume(7), "7");
 eq("gros volume", formatLegendVolume(2_500_000), "2.5M");
@@ -68,7 +68,7 @@ ok("volume négatif → omis", formatLegendVolume(-3) === null);
 
 // ── 3. Lookup d'indicateur à une heure de barre ─────────────────────────────
 
-console.log("— valeurs d'indicateur à l'heure survolée");
+console.log("- valeurs d'indicateur à l'heure survolée");
 
 const candle = (t: number, c: number, v = 10): Candle => ({ t, o: c, h: c + 1, l: c - 1, c, v });
 // 6 bougies 5m régulières, closes connus → SMA(3) défini à partir de l'index 2.
@@ -87,7 +87,7 @@ ok("heure inconnue (avant la 1re barre) → -1", indicatorIndexOfTime(sma, sma.t
 const atMid = indicatorValuesAtTime(sma, midTime);
 eq("SMA(3) à la barre 3 = 12", atMid?.line, 12);
 
-// Warm-up : les deux premières barres n'ont PAS de valeur (null) — la
+// Warm-up : les deux premières barres n'ont PAS de valeur (null) - la
 // légende ne doit rien afficher, jamais une interpolation.
 ok("warm-up barre 0 → null (pas de fabrication)", indicatorValuesAtTime(sma, sma.times[0]!) === null);
 ok("warm-up barre 1 → null", indicatorValuesAtTime(sma, sma.times[1]!) === null);

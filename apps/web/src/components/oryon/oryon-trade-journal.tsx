@@ -33,7 +33,7 @@ import { oryonAnalyses } from "@/lib/oryon/journal/analyses";
 import { cn } from "@/lib/utils";
 
 /**
- * Oryon ↔ Trade Journal dialogs (Phase 10 — Trade Journal bridge).
+ * Oryon ↔ Trade Journal dialogs (Phase 10 - Trade Journal bridge).
  *
  * TWO flows, both sharing ONE trade selector:
  *  - Save Analysis    → a browser-local analysis record (title, notes,
@@ -45,10 +45,10 @@ import { cn } from "@/lib/utils";
  *    saved as a linked analysis.
  *
  * Association discipline (Phase 10 spec §4.2/§4.3/§5.3):
- *  - the trade is selected from the journal's OWN list (GET /trades) — the
+ *  - the trade is selected from the journal's OWN list (GET /trades) - the
  *    journal record stays canonical, nothing is copied;
  *  - a chart/trade instrument MISMATCH is surfaced explicitly and requires
- *    an affirmative confirmation — never a silent cross-instrument link
+ *    an affirmative confirmation - never a silent cross-instrument link
  *    (the confirmation state lives in the CALLER: it gates the submit);
  *  - success toasts fire only AFTER the persistence layer confirmed.
  *
@@ -59,7 +59,7 @@ import { cn } from "@/lib/utils";
 
 const TRADE_ROW_CAP = 50;
 
-/** One selectable journal trade row — the identifying details the backend
+/** One selectable journal trade row - the identifying details the backend
  *  actually provides (symbol, direction, date, status, net P&L when closed). */
 function TradeRow({
   trade,
@@ -105,7 +105,7 @@ function TradeRow({
           !closed ? "text-muted-foreground" : Number(trade.pnlNet) >= 0 ? "text-profit" : "text-loss",
         )}
       >
-        {closed ? formatSignedMoney(trade.pnlNet, "USD", { digits: 2 }) : "—"}
+        {closed ? formatSignedMoney(trade.pnlNet, "USD", { digits: 2 }) : "-"}
       </span>
     </button>
   );
@@ -114,7 +114,7 @@ function TradeRow({
 /**
  * The shared trade picker: search + status filter + capped list + the
  * explicit mismatch confirmation. The mismatch CONFIRMATION state lives in
- * the caller (it gates the submit) — this component only renders it.
+ * the caller (it gates the submit) - this component only renders it.
  */
 function TradeSelector({
   chartSymbol,
@@ -249,7 +249,7 @@ function TradeSelector({
   );
 }
 
-/** Whether the currently selected trade may be linked — a mismatch needs
+/** Whether the currently selected trade may be linked - a mismatch needs
  *  the explicit confirmation (enforced HERE, not just in the UI). */
 function tradeLinkAllowed(
   chartSymbol: string,
@@ -282,7 +282,7 @@ export function OryonSaveAnalysisDialog({
   analysis: OryonPanelAnalysis;
   /** The panel's CURRENT annotations for the displayed symbol. */
   drawings: readonly OryonDrawing[];
-  /** Open time of the last candle (unix sec) — the chart reference time. */
+  /** Open time of the last candle (unix sec) - the chart reference time. */
   referenceTimeSec: number | null;
 }) {
   const dict = useDict();
@@ -298,7 +298,7 @@ export function OryonSaveAnalysisDialog({
 
   const defaultTitle = React.useMemo(() => {
     const date = new Date().toISOString().slice(0, 10);
-    return `${symbol} ${interval} — ${date}`;
+    return `${symbol} ${interval} - ${date}`;
   }, [symbol, interval]);
 
   const [title, setTitle] = React.useState(defaultTitle);
@@ -435,7 +435,7 @@ export function OryonSnapshotDialog({
   symbol: string;
   interval: MarketInterval;
   chartType: "candles" | "line";
-  /** The panel's analysis config — stored with the optional linked analysis. */
+  /** The panel's analysis config - stored with the optional linked analysis. */
   analysis: OryonPanelAnalysis;
   /** The panel's CURRENT annotations for the displayed symbol. */
   drawings: readonly OryonDrawing[];
@@ -453,7 +453,7 @@ export function OryonSnapshotDialog({
   );
 
   /** The capture happens ONCE per mount (the parent mounts this dialog per
-   *  open) — in an EFFECT: engine refs are never read during render, and
+   *  open) - in an EFFECT: engine refs are never read during render, and
    *  the preview is exactly what gets attached, never re-grabbed. */
   const [dataUrl, setDataUrl] = React.useState<string | null>(null);
   const [trade, setTrade] = React.useState<Trade | null>(null);
@@ -465,7 +465,7 @@ export function OryonSnapshotDialog({
     setTrade(null);
     setMismatchConfirmed(false);
     setAlsoAnalysis(true);
-    // Mount-only: the dialog instance exists for ONE open — the capture
+    // Mount-only: the dialog instance exists for ONE open - the capture
     // must not re-run while the user edits the form.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -488,7 +488,7 @@ export function OryonSnapshotDialog({
       { tradeId: trade.id, input: { kind: "CHART", dataUrl, caption } },
       {
         onSuccess: (screenshot) => {
-          // The image is CONFIRMED stored (journal response) — only now may
+          // The image is CONFIRMED stored (journal response) - only now may
           // a linked analysis reference it. The analysis also embeds the
           // chart reference time (lastCandleTime), distinct from capture.
           if (alsoAnalysis) {
@@ -496,7 +496,7 @@ export function OryonSnapshotDialog({
               symbol,
               interval,
               chartType,
-              title: `${symbol} ${interval} — ${new Date(capturedAt).toISOString().slice(0, 10)}`,
+              title: `${symbol} ${interval} - ${new Date(capturedAt).toISOString().slice(0, 10)}`,
               notes: null,
               tradeId: trade.id,
               snapshot: { tradeId: trade.id, screenshotId: screenshot.id, capturedAt },

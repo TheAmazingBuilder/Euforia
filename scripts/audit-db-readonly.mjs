@@ -1,5 +1,5 @@
 // READ-ONLY diagnostic for the Accounts/Trading-Connectivity audit (Phase 00).
-// Uses PrismaClient.$queryRawUnsafe exclusively — SELECT / information_schema
+// Uses PrismaClient.$queryRawUnsafe exclusively - SELECT / information_schema
 // only. No writes, no migrations. Prints table names + row counts and column
 // types; never touches env values.
 import { createRequire } from "node:module";

@@ -1,7 +1,7 @@
 import type { OryonIndicatorInstance } from "@cosmoz/shared";
 
 /**
- * Indicator value formatting for legend readouts — deterministic (no
+ * Indicator value formatting for legend readouts - deterministic (no
  * locale-dependent grouping), compact for volume magnitudes.
  */
 
@@ -9,14 +9,14 @@ export function formatIndicatorValue(
   value: number,
   instance: OryonIndicatorInstance,
 ): string {
-  if (!Number.isFinite(value)) return "—";
+  if (!Number.isFinite(value)) return "-";
   switch (instance.type) {
     case "rsi":
       return trim(value.toFixed(2));
     case "volume":
       return compact(value);
     default:
-      // Price-domain outputs — 2 decimals on large scales, more on small ones.
+      // Price-domain outputs - 2 decimals on large scales, more on small ones.
       const abs = Math.abs(value);
       const decimals = abs >= 1000 ? 2 : abs >= 1 ? 4 : 6;
       return trim(value.toFixed(decimals));

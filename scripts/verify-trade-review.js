@@ -1,9 +1,9 @@
 /**
- * Verify — Trade Review module (fusion with Goal).
- * Probes (in ONE SPA session — the mock store reseeds on full reload):
+ * Verify - Trade Review module (fusion with Goal).
+ * Probes (in ONE SPA session - the mock store reseeds on full reload):
  *  1. Header + 4 tabs (Overview/Goals/Reviews/Lessons), ?tab= persistence
  *  2. Overview: 4 KPI tiles, grade bar segments, pending CTA, recent lessons
- *  3. Goals: colorful cards, computed progress (actual ≠ target, detail "vs"),
+ *  3. Goals: restrained monochrome cards, computed progress (actual ≠ target, detail "vs"),
  *     create → edit → delete round-trip with toasts
  *  4. Reviews: pending queue matches header count, dialog workflow (grade +
  *     playbook match + checklist + lesson) moves a row to Reviewed, undo works
@@ -28,7 +28,7 @@ const BASE = "http://localhost:3000";
 
   const results = [];
   const check = (name, ok, extra = "") =>
-    results.push(`${ok ? "PASS" : "FAIL"} — ${name}${extra ? ` (${extra})` : ""}`);
+    results.push(`${ok ? "PASS" : "FAIL"} - ${name}${extra ? ` (${extra})` : ""}`);
 
   // ── 1. Header + tabs ───────────────────────────────────────────────────────
   await page.goto(`${BASE}/journal`, { waitUntil: "networkidle", timeout: 60000 });
@@ -69,14 +69,14 @@ const BASE = "http://localhost:3000";
   const statusBadges = await page.locator('[data-testid="goal-status"]').count();
   check("Status badges on cards", statusBadges === goalCount, `${statusBadges}/${goalCount}`);
   const gradientSpines = await page.locator('[data-testid="goal-card"] span.bg-gradient-to-r').count();
-  check("Colorful gradient spines on cards", gradientSpines === goalCount, `${gradientSpines}/${goalCount}`);
+  check("Goal cards avoid decorative color gradients", gradientSpines === 0, `${gradientSpines} gradient spines`);
   await page.screenshot({ path: "scripts/shots/review-goals.png" });
 
   // Create a goal
   const beforeCreate = await goalCards.count();
   await page.locator('[data-testid="goal-create"]').click();
   await page.locator('[data-testid="goal-form-dialog"]').waitFor({ state: "visible" });
-  await page.locator('[data-testid="goal-title-input"]').fill("Verify goal — avg R above 0.2");
+  await page.locator('[data-testid="goal-title-input"]').fill("Verify goal - avg R above 0.2");
   // metric select (radix): click trigger then item
   await page.locator('[data-testid="goal-metric-select"]').click();
   await page.getByRole("option", { name: "Average R" }).click();
@@ -128,7 +128,7 @@ const BASE = "http://localhost:3000";
     // toggle the first checklist item (works with 0+ items, exercised here)
     await page.locator('[data-testid="review-checklist"] button').first().click();
   }
-  await page.locator('[data-testid="review-lessons-input"]').fill("Verified entry discipline — the retest close was the trigger and I waited for it.");
+  await page.locator('[data-testid="review-lessons-input"]').fill("Verified entry discipline - the retest close was the trigger and I waited for it.");
   await page.locator('[data-testid="review-improvement-input"]').fill("Next time: re-read the checklist before every entry.");
   await page.screenshot({ path: "scripts/shots/review-dialog.png" });
   await page.locator('[data-testid="review-save"]').click();
@@ -137,7 +137,7 @@ const BASE = "http://localhost:3000";
   check("Review saved moves row to Reviewed", reviewedAfter === reviewedCount + 1, `${reviewedCount}→${reviewedAfter}`);
   check("Pending row count decremented", (await page.locator('[data-testid="review-row"][data-review-status="PENDING"]').count()) === pendingRowsBefore - 1);
 
-  // Undo it — trade returns to the queue
+  // Undo it - trade returns to the queue
   const reviewedRows = page.locator('[data-testid="review-row"][data-review-status="REVIEWED"]');
   await reviewedRows.first().locator('button[aria-label="Undo review"]').click();
   await page.waitForTimeout(1000);
@@ -202,7 +202,7 @@ const BASE = "http://localhost:3000";
   );
   check("Zero console errors (known market-service noise excluded)", errors.length - noise.length === 0, errors.slice(0, 3).join(" | "));
 
-  console.log("\n═══ TRADE REVIEW MODULE — RESULTS ═══");
+  console.log("\n═══ TRADE REVIEW MODULE - RESULTS ═══");
   results.forEach((r) => console.log(r));
   const failed = results.filter((r) => r.startsWith("FAIL")).length;
   console.log(`\n${results.length - failed}/${results.length} PASS`);

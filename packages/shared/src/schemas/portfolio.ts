@@ -11,7 +11,7 @@ import { decimalStringSchema, isoDateTimeSchema, uuidSchema } from "./primitives
 import { accountSchema, propFirmConfigSchema } from "./account";
 
 /**
- * Multi-portfolio domain — data-model.md "Domaine 2 — Comptes, Marchés & Imports".
+ * Multi-portfolio domain - data-model.md "Domaine 2 - Comptes, Marchés & Imports".
  * A BrokerConnection links a journal account to a broker feed (API or bridge);
  * every pull (manual sync or auto-import) records an ImportBatch. Trades born
  * from a sync carry the batch id + a per-account unique externalRef, so
@@ -34,9 +34,9 @@ export const brokerConnectionSchema = z.object({
   userId: uuidSchema,
   /** Journal account the feed feeds into. */
   accountId: uuidSchema,
-  /** MANUAL is the "no broker" value — never a connection provider. */
+  /** MANUAL is the "no broker" value - never a connection provider. */
   provider: brokerSchema,
-  /** Human label, e.g. "Deriv API — live". */
+  /** Human label, e.g. "Deriv API - live". */
   label: z.string().min(1),
   status: connectionStatusSchema,
   /** When true the desk pulls new trades on load when the last sync is stale. */
@@ -141,7 +141,7 @@ export const updateAccountInputSchema = z.object({
 });
 export type UpdateAccountInput = z.infer<typeof updateAccountInputSchema>;
 
-/** DELETE /accounts/:id — guarded by the server (default flag, open trades). */
+/** DELETE /accounts/:id - guarded by the server (default flag, open trades). */
 export const deleteAccountResponseSchema = z.object({
   id: uuidSchema,
   deleted: z.literal(true),

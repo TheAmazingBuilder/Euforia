@@ -18,7 +18,7 @@ import {
 } from "@/components/auth/auth-primitives";
 
 /**
- * Password reset (spec §19) — token states (valid / expired / invalid /
+ * Password reset (spec §19) - token states (valid / expired / invalid /
  * already used) each get a deliberate screen; success explains the session
  * policy set by the backend response (reset signs existing sessions out).
  */

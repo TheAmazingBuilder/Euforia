@@ -25,13 +25,13 @@ import { usePlaybookOverview, useStrategies, useStrategiesStats } from "@/lib/ap
 
 /**
  * Professional Playbook module shell (MASTER PROMPT §4): seven tabs over the
- * operational trading-system repository — Overview, My Strategies, Setups,
+ * operational trading-system repository - Overview, My Strategies, Setups,
  * Rules, Checklists, Performance, Templates. The tab persists as ?tab=
  * (module convention); shared data (strategies + per-strategy stats + the
  * overview aggregate) is fetched ONCE here and passed down.
  */
 
-/** Tab machine ids — labels resolve through dict.playbook.view.tabs. */
+/** Tab machine ids - labels resolve through dict.playbook.view.tabs. */
 const TAB_IDS = [
   "overview",
   "strategies",

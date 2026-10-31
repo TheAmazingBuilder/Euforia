@@ -6,9 +6,10 @@
     "dev": "turbo dev",
     "build": "turbo build",
     "lint": "turbo lint",
+    "typecheck": "turbo run typecheck",
     "test": "turbo test",
     "api:dev": "pnpm --filter @cosmoz/api dev",
-    "api:db:up": "pnpm --filter @cosmoz/api db:up"
+    "web:dev": "pnpm --filter web dev"
   },
   "devDependencies": {
     "turbo": "^2"

@@ -42,7 +42,6 @@ import {
   statusVariant,
   useNowClock,
 } from "./monitoring-primitives";
-import { DemoDataChip } from "@/components/demo-data-chip";
 
 /**
  * Monitoring panels, part 1 (MASTER PROMPT §4–§8): Overview, System Health,
@@ -115,11 +114,11 @@ export function OverviewPanel({
 
   return (
     <div className="space-y-4">
-      {/* Status board — every row carries its evidence (§4) */}
+      {/* Status board - every row carries its evidence (§4) */}
       <PanelCard
         icon={Gauge}
         title="Status board"
-        description="Every status is backed by the observation shown beneath it — nothing is claimed without evidence."
+        description="Every status is backed by the observation shown beneath it - nothing is claimed without evidence."
         testId="monitoring-status-board"
       >
         <div className="grid gap-2">
@@ -247,7 +246,7 @@ export function SystemHealthPanel({ data }: { data: Overview }) {
           Session uptime {uptime}
         </Badge>
         <span className="text-xs text-muted-foreground">
-          Counters cover this browser session (the demo store reseeds on reload — stated, not hidden).
+          Counters cover this browser session (the demo store reseeds on reload - stated, not hidden).
         </span>
       </div>
       <div className="grid gap-4 md:grid-cols-2" data-testid="monitoring-health-rows">
@@ -272,7 +271,7 @@ export function SystemHealthPanel({ data }: { data: Overview }) {
   );
 }
 
-// ── Market Data (§6, §17) — client-observed feed ─────────────────────────────
+// ── Market Data (§6, §17) - client-observed feed ─────────────────────────────
 
 export function MarketDataPanel({
   feed,
@@ -284,7 +283,7 @@ export function MarketDataPanel({
     providers: { id: string; source: string; status: Record<string, unknown> }[];
   } | null;
 }) {
-  // Granular per-symbol degradation (module upgrade) — name the affected
+  // Granular per-symbol degradation (module upgrade) - name the affected
   // symbols explicitly instead of a single feed-level verdict.
   const degraded = feed.symbols.filter((symbol) => symbol.freshness === "STALE" || symbol.freshness === "DELAYED");
   const staleSymbols = feed.symbols.filter((symbol) => symbol.freshness === "STALE");
@@ -295,7 +294,7 @@ export function MarketDataPanel({
       <PanelCard
         icon={RadioTower}
         title="Quote feed"
-        description="Observed live in your browser — the same stream Session Live consumes."
+        description="Observed live in your browser - the same stream Session Live consumes."
       >
         <div className="flex flex-wrap items-center gap-2">
           <Badge variant={feed.phase === "live" ? "default" : feed.phase === "offline" ? "destructive" : "secondary"}>
@@ -322,7 +321,7 @@ export function MarketDataPanel({
             </p>
             {degraded.length > 0 ? (
               <p className="mt-0.5 leading-relaxed">
-                Degraded: {degraded.map((symbol) => `${symbol.symbol} (${symbol.freshness.toLowerCase()}, last tick ${ageLabel(symbol.ageMs)} ago)`).join(" · ")}. All other symbols unaffected — per-symbol degradation, not a feed outage.
+                Degraded: {degraded.map((symbol) => `${symbol.symbol} (${symbol.freshness.toLowerCase()}, last tick ${ageLabel(symbol.ageMs)} ago)`).join(" · ")}. All other symbols unaffected - per-symbol degradation, not a feed outage.
               </p>
             ) : (
               <p className="mt-0.5">Every subscribed symbol is inside the LIVE window.</p>
@@ -330,7 +329,7 @@ export function MarketDataPanel({
           </div>
         )}
         <EvidenceNote>
-          Freshness classes are computed per tick from the thresholds configured for this data source (§17) — stale data is never presented as live.
+          Freshness classes are computed per tick from the thresholds configured for this data source (§17) - stale data is never presented as live.
         </EvidenceNote>
       </PanelCard>
 
@@ -338,11 +337,11 @@ export function MarketDataPanel({
       <PanelCard
         icon={ServerCog}
         title="Market service providers"
-        description="Reported by the market service's /health probe — not synthesized."
+        description="Reported by the market service's /health probe - not synthesized."
       >
         {providerHealth === null ? (
           <p className="text-sm text-muted-foreground" data-testid="market-health-unreachable">
-            Market service unreachable from this browser — no provider status is claimed.
+            Market service unreachable from this browser - no provider status is claimed.
           </p>
         ) : (
           <div className="grid gap-2">
@@ -373,7 +372,7 @@ export function MarketDataPanel({
       >
         {feed.symbols.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            No tick observed yet in this session — the feed may still be connecting.
+            No tick observed yet in this session - the feed may still be connecting.
           </p>
         ) : (
           <div className="grid gap-1.5">
@@ -389,7 +388,7 @@ export function MarketDataPanel({
                 </span>
                 <span className="flex items-center gap-3">
                   <span className="font-mono text-xs tabular-nums text-muted-foreground">
-                    {symbol.price === null ? "—" : symbol.price.toLocaleString("en-US", { maximumFractionDigits: 6 })}
+                    {symbol.price === null ? "-" : symbol.price.toLocaleString("en-US", { maximumFractionDigits: 6 })}
                   </span>
                   <span className="font-mono text-[11px] tabular-nums text-muted-foreground" data-testid="market-symbol-age">
                     Last update: {ageLabel(symbol.ageMs)}
@@ -405,7 +404,7 @@ export function MarketDataPanel({
   );
 }
 
-// ── WebSockets (§8) — client-observed counters ───────────────────────────────
+// ── WebSockets (§8) - client-observed counters ───────────────────────────────
 
 export function WebsocketsPanel({
   ws,
@@ -419,7 +418,7 @@ export function WebsocketsPanel({
       <PanelCard
         icon={Wifi}
         title="Quote stream connection"
-        description="socket.io with a 2 s polling fallback — the browser reports what it actually experiences."
+        description="socket.io with a 2 s polling fallback - the browser reports what it actually experiences."
       >
         <div className="flex flex-wrap items-center gap-2">
           <Badge variant={ws.connected === true ? "default" : ws.connected === false ? "secondary" : "outline"}>
@@ -436,13 +435,13 @@ export function WebsocketsPanel({
           <MetricLine label="Last message" value={ageLabel(ws.lastMessageAgeMs)} />
           <MetricLine
             label="Poll RTT (fallback)"
-            value={ws.lastPollRttMs === null ? "—" : `${ws.lastPollRttMs} ms`}
+            value={ws.lastPollRttMs === null ? "-" : `${ws.lastPollRttMs} ms`}
           />
           <MetricLine label="Subscribed symbols" value={String(ws.subscriptions)} />
           <MetricLine label="Staleness threshold" value={`${(thresholds.delayedMaxMs / 1_000).toFixed(0)} s`} />
         </div>
         <EvidenceNote>
-          Counters come from the connection handlers in this browser session — reconnects and drops increment only when they actually happen (§8, §21).
+          Counters come from the connection handlers in this browser session - reconnects and drops increment only when they actually happen (§8, §21).
         </EvidenceNote>
       </PanelCard>
     </div>
@@ -464,9 +463,8 @@ export function BrokersPanel({ brokers }: { brokers: BrokerConnection[] }) {
   return (
     <div className="space-y-4" data-testid="monitoring-brokers">
       {/* Chain-B hygiene (Phase 02): broker telemetry derives from the
-         simulated Integration Hub engine in mock mode — marked, never
+         simulated Integration Hub engine in mock mode - marked, never
          indistinguishable from real provider telemetry. */}
-      {brokers.length > 0 ? <DemoDataChip testId="monitoring-brokers-demo-chip" /> : null}
       {brokers.length === 0 ? (
         <PanelCard icon={Database} title="Broker connections" description="No trading account is connected through the Integration Hub.">
           <Button asChild variant="outline" size="sm" className="gap-1">
@@ -488,7 +486,7 @@ export function BrokersPanel({ brokers }: { brokers: BrokerConnection[] }) {
           >
             <div className="grid gap-1.5 sm:grid-cols-2">
               <MetricLine label="Last sync" value={ageLabel(ageFromIso(broker.lastSyncAt, nowMs))} />
-              <MetricLine label="Latency" value={broker.latencyMs === null ? "—" : `${broker.latencyMs} ms`} />
+              <MetricLine label="Latency" value={broker.latencyMs === null ? "-" : `${broker.latencyMs} ms`} />
               <MetricLine label="Authentication" value={broker.authState} />
               <MetricLine label="Sync errors (ledger)" value={String(broker.syncErrors)} />
               <MetricLine label="Positions sync" value={broker.positionsSync} muted />
@@ -496,7 +494,7 @@ export function BrokersPanel({ brokers }: { brokers: BrokerConnection[] }) {
               <MetricLine label="Execution sync" value={broker.executionSync} muted />
             </div>
             <EvidenceNote>
-              Sync surfaces are stated only when the adapter reports them — statuses derive from the Integration Hub engine live state (§7).
+              Sync surfaces are stated only when the adapter reports them - statuses derive from the Integration Hub engine live state (§7).
             </EvidenceNote>
           </PanelCard>
         ))

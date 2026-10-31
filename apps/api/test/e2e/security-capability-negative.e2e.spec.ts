@@ -1,5 +1,5 @@
 /**
- * e2e — Negative capability & IDOR hardening for the Security context
+ * e2e - Negative capability & IDOR hardening for the Security context
  * (Phase 16 §43/§44).
  *
  * Explicitly verifies what the Security API can NEVER do: leak credential
@@ -93,7 +93,7 @@ describe("security cannot escalate identity state (§44)", () => {
     const res = await injectJson(a.authHeader, "POST", "/api/v1/security/sessions/revoke", {
       sessionId: null,
       scope: "others",
-      // Mass-assignment attempts — Zod schemas strip unknown keys.
+      // Mass-assignment attempts - Zod schemas strip unknown keys.
       role: "ADMIN",
       permissions: ["*"],
       passwordHash: "$argon2id$attacker",
@@ -131,11 +131,11 @@ describe("security does not own trading accounts or integrations (§23/§24)", (
     }
   });
 
-  it("keeps connectedAccounts a projection slot — never raw credentials", async () => {
+  it("keeps connectedAccounts a projection slot - never raw credentials", async () => {
     const a = await authenticatedUser(app, mail);
     const overview = await injectJson(a.authHeader, "GET", "/api/v1/security/overview");
     expect(Array.isArray(overview.body.connectedAccounts)).toBe(true);
-    // A projection of connection metadata, not a vault — the schema forbids
+    // A projection of connection metadata, not a vault - the schema forbids
     // secrets here and the Integrations context does not exist server-side yet.
     for (const account of overview.body.connectedAccounts) {
       expect(Object.keys(account)).not.toContain("credentials");

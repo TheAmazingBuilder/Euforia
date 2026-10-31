@@ -1,5 +1,5 @@
 /**
- * Replay module probe (REPLAY MASTER PROMPT verification) — the first-class
+ * Replay module probe (REPLAY MASTER PROMPT verification) - the first-class
  * historical replay workspace, end to end against the mock backend:
  *
  *   1. TRADING sidebar entry renders (/replay) with hero + metrics + list
@@ -7,7 +7,7 @@
  *   3. New Replay form creates a session → workspace opens
  *   4. Transport works: play/pause, step, scrub, speed set
  *   5. SIMULATED activity: decision markers, note, trade open (manual entry
- *      — the market service may be offline, the feed error state must stay
+ *      - the market service may be offline, the feed error state must stay
  *      honest and must not block simulation)
  *   6. Complete → result panel with SIMULATED label
  *   7. Session Live untouched (page still renders)
@@ -30,7 +30,7 @@ const NOISE = /\/api\/auth\/(me|refresh)\b|socket\.io|candles|prices|favicon|XTr
 
   const results = [];
   const check = (name, ok, detail = "") => {
-    results.push(`${ok ? "PASS" : "FAIL"} ${name}${detail ? " — " + detail : ""}`);
+    results.push(`${ok ? "PASS" : "FAIL"} ${name}${detail ? " - " + detail : ""}`);
   };
 
   await page.goto("http://localhost:3000/", { waitUntil: "networkidle", timeout: 60_000 });
@@ -63,7 +63,7 @@ const NOISE = /\/api\/auth\/(me|refresh)\b|socket\.io|candles|prices|favicon|XTr
   check("workspace opens after create", true);
   check("workspace SIMULATED badge", (await page.locator('[data-testid="replay-simulated-badge"]').count()) > 0);
 
-  // 4) Transport — play/pause, step, speed, scrub
+  // 4) Transport - play/pause, step, speed, scrub
   const clockBefore = await page.locator('[data-testid="replay-clock"]').textContent();
   await page.locator('[data-testid="replay-play"]').click();
   await page.waitForTimeout(1600);
@@ -75,11 +75,11 @@ const NOISE = /\/api\/auth\/(me|refresh)\b|socket\.io|candles|prices|favicon|XTr
   const speedPressed = await page.locator('[data-testid="replay-speed-10"]').getAttribute("aria-pressed");
   check("speed selection", speedPressed === "true");
 
-  // 5) SIMULATED activity — decision, note, trade (manual entry; feed may be down)
+  // 5) SIMULATED activity - decision, note, trade (manual entry; feed may be down)
   await page.locator('[data-testid="replay-decision-WAIT"]').click();
   await page.waitForTimeout(900);
   await page.locator('[data-testid="replay-add-note"]').click();
-  await page.locator('[data-testid="replay-note-body"]').fill("Probe note — price stalling under the high.");
+  await page.locator('[data-testid="replay-note-body"]').fill("Probe note - price stalling under the high.");
   await page.locator('[data-testid="replay-note-submit"]').click();
   await page.waitForTimeout(900);
   await page.locator('[data-testid="replay-tab-notes"]').click();

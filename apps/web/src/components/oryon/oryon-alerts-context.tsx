@@ -12,7 +12,7 @@ import { flushAlerts, loadAlerts, saveAlerts } from "@/lib/oryon/alerts/persiste
 import { OryonAlertStore, type AlertCreateInput } from "@/lib/oryon/alerts/store";
 
 /**
- * Oryon alerts context (Phase 5) — the integration boundary between the
+ * Oryon alerts context (Phase 5) - the integration boundary between the
  * browser-local alert domain and the workspace UI.
  *
  * Responsibility split (spec §5):
@@ -21,7 +21,7 @@ import { OryonAlertStore, type AlertCreateInput } from "@/lib/oryon/alerts/store
  *   - persistence       → lib/oryon/alerts/persistence.ts (browser-local)
  *   - feed consumption  → the OryonAlertsFeedBridge leaf below: ONE
  *                         subscription to the app-wide quote store (the same
- *                         socket/polling feed the chart uses — never a
+ *                         socket/polling feed the chart uses - never a
  *                         connection per alert), pushing observations into
  *                         the engine imperatively;
  *   - presentation      → the create dialog + the utility-rail panel;
@@ -29,16 +29,16 @@ import { OryonAlertStore, type AlertCreateInput } from "@/lib/oryon/alerts/store
  *
  * Honesty contract: triggers fire ONLY while this provider is mounted (the
  * workspace is open) and the feed is live. Persistence is browser-local.
- * The only notification channel is the in-app toast + panel state — the
+ * The only notification channel is the in-app toast + panel state - the
  * context never claims server-side evaluation or background delivery.
  *
  * Re-render discipline: the provider re-renders only on rare commits; the
  * feed bridge (renders null) is the only component re-rendering per quote
- * broadcast, and it talks to the engine imperatively — the workspace tree
+ * broadcast, and it talks to the engine imperatively - the workspace tree
  * never re-renders per tick because of alerts.
  */
 
-/** Prefill for the create dialog — the active chart instrument + its quote. */
+/** Prefill for the create dialog - the active chart instrument + its quote. */
 export interface AlertCreatePrefill {
   symbol: string;
   /** Current quote price (dialog default); null when no quote yet. */
@@ -74,7 +74,7 @@ export function OryonAlertsProvider({ children }: { children: React.ReactNode })
   const [store] = React.useState(() => new OryonAlertStore());
   const [engine] = React.useState(() => new OryonAlertEngine());
 
-  // CONFIRMED-trigger wiring — an external-system subscription (effect, not
+  // CONFIRMED-trigger wiring - an external-system subscription (effect, not
   // a constructor closure): the store records the trigger; the toast is the
   // only notification channel (in-app, while the page is open).
   React.useEffect(() => {
@@ -85,9 +85,9 @@ export function OryonAlertsProvider({ children }: { children: React.ReactNode })
         event.alert.condition === "crosses_above" ? S.triggerAbove : S.triggerBelow;
       const label =
         event.alert.label !== null && event.alert.label.trim().length > 0
-          ? `${event.alert.label.trim()} — `
+          ? `${event.alert.label.trim()} - `
           : "";
-      toast(`${S.triggerToastTitle} — ${event.alert.symbol}`, {
+      toast(`${S.triggerToastTitle} - ${event.alert.symbol}`, {
         description: `${label}${crossed} ${event.price}`,
       });
     });
@@ -109,7 +109,7 @@ export function OryonAlertsProvider({ children }: { children: React.ReactNode })
     };
   }, [store]);
 
-  // Engine keeps mirroring the evaluated set (active alerts only — the
+  // Engine keeps mirroring the evaluated set (active alerts only - the
   // engine filters; this just hands it the current records).
   React.useEffect(() => {
     const sync = () => engine.setAlerts(store.getSnapshot().alerts);
@@ -134,7 +134,7 @@ export function OryonAlertsProvider({ children }: { children: React.ReactNode })
   const toggleAlert = React.useCallback((id: string) => store.toggleEnabled(id), [store]);
   const rearmAlert = React.useCallback(
     (id: string) => {
-      engine.rearm(id); // re-prime the runtime FIRST — no stale anchor.
+      engine.rearm(id); // re-prime the runtime FIRST - no stale anchor.
       store.rearm(id);
     },
     [engine, store],
@@ -173,10 +173,10 @@ export function useOryonAlerts(): OryonAlertsContextValue {
 }
 
 /**
- * Feed bridge — renders null. Subscribes to the app-wide quote snapshot and
+ * Feed bridge - renders null. Subscribes to the app-wide quote snapshot and
  * pushes observations into the engine at the broadcast cadence; gates the
  * engine on the feed phase (nothing is evaluated while not live, and leaving
- * the live phase re-primes every alert — reconnects never claim a gap).
+ * the live phase re-primes every alert - reconnects never claim a gap).
  */
 function OryonAlertsFeedBridge({ engine }: { engine: OryonAlertEngine }) {
   const { quotes } = useLiveQuotes();
@@ -195,7 +195,7 @@ function OryonAlertsFeedBridge({ engine }: { engine: OryonAlertEngine }) {
   }, [engine, quotes]);
 
   // Dev-probe handle (dev builds only, mirror of __ORYON_CHART_DEBUG__):
-  // deterministic synthetic observations for E2E assertions — never shipped
+  // deterministic synthetic observations for E2E assertions - never shipped
   // to production, never read by the app itself.
   React.useEffect(() => {
     if (process.env.NODE_ENV === "production") return;

@@ -29,7 +29,7 @@ import { cn } from "@/lib/utils";
 
 /**
  * Strategy detail dialog (Phase 8): the playbook rules RENDERED, the live
- * stats row and the "Trade this setup" primary action — which opens the
+ * stats row and the "Trade this setup" primary action - which opens the
  * capture modal pre-filled with this strategy (the instrument stays with
  * the user).
  */
@@ -60,7 +60,7 @@ export function StrategyDetailDialog({ strategy, stat, onOpenChange, onEdit }: S
   const router = useRouter();
   const [versionsOpen, setVersionsOpen] = React.useState(false);
 
-  // Nofy integration — the strategy side of the knowledge loop: take notes
+  // Nofy integration - the strategy side of the knowledge loop: take notes
   // that stay linked to this strategy, and see every note that already is.
   const createNofyNote = useCreateNofyNote({
     onCreated: (note) => {
@@ -90,7 +90,7 @@ export function StrategyDetailDialog({ strategy, stat, onOpenChange, onEdit }: S
   const tradeThisSetup = () => {
     onOpenChange(false);
     openTradeModal({
-      // The instrument stays the user's choice — only the playbook context
+      // The instrument stays the user's choice - only the playbook context
       // is pre-filled (Phase 8 brief).
       instrumentId: null,
       direction: "BUY",
@@ -191,7 +191,7 @@ export function StrategyDetailDialog({ strategy, stat, onOpenChange, onEdit }: S
               <History className="size-3.5" aria-hidden="true" />
               {V.versionsBtn}
             </Button>
-            <Button variant="outline" onClick={() => onEdit(strategy)}>
+            <Button variant="edit" onClick={() => onEdit(strategy)}>
               <Pencil className="size-4" aria-hidden="true" />
               {V.editBtn}
             </Button>

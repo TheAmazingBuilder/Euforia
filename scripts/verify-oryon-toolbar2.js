@@ -1,10 +1,10 @@
 /**
- * verify-oryon-toolbar2.js — Oryon Drawing toolbar v2 (TradingView parity).
+ * verify-oryon-toolbar2.js - Oryon Drawing toolbar v2 (TradingView parity).
  *
  * Contract under test (browser-observed, dev :3001):
  *  - RAIL: six catalog groups render with split controls (icon + caret);
  *    the top toolbar carries NO timeframe strip anymore (moved to the
- *    bottom bar — no duplicate control).
+ *    bottom bar - no duplicate control).
  *  - FLYOUTS: the trend menu lists trend/ray/extended/hline/vline/crossline;
  *    a star toggle persists into the validated ui-prefs envelope.
  *  - TOOLS: arming + two-click drawing creates an object (trash + list
@@ -26,7 +26,7 @@ const { chromium } = require("playwright");
 const fs = require("fs");
 
 const LOG = path.resolve(__dirname, "oryon-toolbar2-probe.log");
-fs.writeFileSync(LOG, `=== oryon toolbar2 probe — ${new Date().toISOString()} ===\n`);
+fs.writeFileSync(LOG, `=== oryon toolbar2 probe - ${new Date().toISOString()} ===\n`);
 
 const BASE = process.env.BASE_URL || "http://localhost:3001";
 
@@ -128,7 +128,7 @@ const panelLoc = (app) => app.locator('[data-testid="oryon-panel"]').first();
 /**
  * Main-pane coordinates: the chart's interaction domain is the TOP pane
  * ONLY (indicator panes below are honestly excluded by the drawing
- * controller) — anchors are placed in the upper band of the panel, safe
+ * controller) - anchors are placed in the upper band of the panel, safe
  * for 1..4 indicator panes.
  */
 async function chartAnchors(app) {
@@ -148,7 +148,7 @@ async function chartAnchors(app) {
 async function objectCount(app) {
   return app.evaluate(() => {
     // The trash button's disabled state mirrors the object count exactly
-    // (disabled ⇔ no objects) — read the DOM, not internals.
+    // (disabled ⇔ no objects) - read the DOM, not internals.
     const el = document.querySelector('[data-testid="oryon-drawings-clear"]');
     if (el === null) return null;
     return el.hasAttribute("disabled") || el.getAttribute("aria-disabled") === "true" ? 0 : 1;
@@ -279,7 +279,7 @@ async function withFlyout(app, group, act) {
     await page.waitForTimeout(500);
     ok("trendline drawn (objects present)", await hasObjects(page));
 
-    // The tool DISARMS after completion (TV behavior) — group not active.
+    // The tool DISARMS after completion (TV behavior) - group not active.
     const trendActive = await page.locator('[data-testid="oryon-tool-trend"][data-active="true"]').count();
     ok("trend tool disarms after completion", trendActive === 0);
 
@@ -301,11 +301,11 @@ async function withFlyout(app, group, act) {
     ok("cursors flyout lists dot + eraser", (await page.locator('[data-testid="oryon-tool-item-cursor-dot"]').count()) === 1 && (await page.locator('[data-testid="oryon-tool-item-eraser"]').count()) === 1);
     await page.click('[data-testid="oryon-tool-item-eraser"]');
     await page.waitForTimeout(300);
-    // Click ON the trendline (midpoint) — the rect sits off to the side.
+    // Click ON the trendline (midpoint) - the rect sits off to the side.
     await page.mouse.click(pts.mid.x, pts.mid.y);
     await page.waitForTimeout(600);
 
-    // One object removed — verify by count through the object list.
+    // One object removed - verify by count through the object list.
     await page.click('[data-testid="oryon-drawing-list-toggle"]');
     await page.waitForTimeout(400);
     const listText = await page.locator('[data-testid="oryon-drawing-list"]').innerText().catch(() => "");
@@ -322,7 +322,7 @@ async function withFlyout(app, group, act) {
 
     // ── 9. Favorites bar: defaults, drag, visibility toggle ────────────────
     // Reset the ui-prefs envelope → documented defaults (6 favorites,
-    // visible, position 96/120) — a clean baseline for the drag assertions.
+    // visible, position 96/120) - a clean baseline for the drag assertions.
     await page.evaluate(() => localStorage.removeItem("euforia.oryon.ui.v1"));
     await page.reload({ waitUntil: "load" });
     await page.evaluate(() => document.querySelectorAll("nextjs-portal").forEach((n) => n.remove()));
@@ -380,7 +380,7 @@ async function withFlyout(app, group, act) {
       }
     });
 
-    // ── 12. Mobile 390 — honest degradation ────────────────────────────────
+    // ── 12. Mobile 390 - honest degradation ────────────────────────────────
     await page.setViewportSize({ width: 390, height: 844 });
     await page.waitForTimeout(900);
     ok("mobile: workspace alive", await page.locator('[data-testid="oryon-workspace"]').isVisible());

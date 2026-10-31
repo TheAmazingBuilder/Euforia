@@ -4,7 +4,7 @@ import { getThemeToken } from "./theme";
  * Chart-facing view of the active theme (design-tokens.md §8). Canvas engines
  * (ECharts) cannot resolve CSS variables, so options call this at option-build
  * time and components rebuild their options when useTheme().resolvedTheme
- * changes. NEVER hardcode a hex in chart code — read tokens here.
+ * changes. NEVER hardcode a hex in chart code - read tokens here.
  */
 export interface ChartTheme {
   background: string;
@@ -21,7 +21,7 @@ export interface ChartTheme {
   monoFont: string;
   headingFont: string;
   /**
-   * Categorical palette for indicator series (design-tokens.md — chart code
+   * Categorical palette for indicator series (design-tokens.md - chart code
    * never hardcodes hex; indicators cycle through these resolved tokens).
    */
   indicatorPalette: readonly string[];

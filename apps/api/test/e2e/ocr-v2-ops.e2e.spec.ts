@@ -1,6 +1,6 @@
 /**
- * e2e — OCR V2 ops (V2 spec §28/§30/§32/§39/§62): reprocess (fresh
- * recognition from the same asset — original never mutated), screenshot
+ * e2e - OCR V2 ops (V2 spec §28/§30/§32/§39/§62): reprocess (fresh
+ * recognition from the same asset - original never mutated), screenshot
  * collections (owner-scoped organization layer), analytics extensions
  * (correction rate + platform/type distributions) and history filters.
  */
@@ -51,9 +51,9 @@ async function upload(a: UserCtx, nonce: number) {
   return ocrRecognitionResponseSchema.parse(res.json()).recognition;
 }
 
-// ── V2 §32/§39 — reprocess ───────────────────────────────────────────────────
+// ── V2 §32/§39 - reprocess ───────────────────────────────────────────────────
 
-describe("reprocess — a fresh recognition from the same asset", () => {
+describe("reprocess - a fresh recognition from the same asset", () => {
   it("creates a NEW recognition linked by reprocessedFrom, original untouched", async () => {
     const a = await user();
     const original = await upload(a, 210);
@@ -67,7 +67,7 @@ describe("reprocess — a fresh recognition from the same asset", () => {
     expect(res.statusCode).toBe(201);
     const reprocessed = ocrRecognitionResponseSchema.parse(res.json()).recognition;
 
-    // A genuinely NEW row — the original is never mutated (§33).
+    // A genuinely NEW row - the original is never mutated (§33).
     expect(reprocessed.id).not.toBe(original.id);
     expect(reprocessed.asset.id).toBe(original.asset.id);
     expect(reprocessed.reprocessedFrom).toBe(original.id);
@@ -84,7 +84,7 @@ describe("reprocess — a fresh recognition from the same asset", () => {
     expect(originalAgain.reprocessedFrom).toBeNull();
 
     // A SECOND reprocess is a fresh, legitimate run of the current pipeline
-    // (reprocess idempotency rides the rate limit, not the payload — the
+    // (reprocess idempotency rides the rate limit, not the payload - the
     // user may re-run as often as the limit allows, §32/§39).
     const second = await app.inject({
       method: "POST",
@@ -119,9 +119,9 @@ describe("reprocess — a fresh recognition from the same asset", () => {
   });
 });
 
-// ── V2 §28 — screenshot collections ──────────────────────────────────────────
+// ── V2 §28 - screenshot collections ──────────────────────────────────────────
 
-describe("screenshot collections — named organization over recognitions", () => {
+describe("screenshot collections - named organization over recognitions", () => {
   it("creates, fills, trims and deletes a collection (recognitions survive)", async () => {
     const a = await user();
     const r1 = await upload(a, 220);
@@ -177,7 +177,7 @@ describe("screenshot collections — named organization over recognitions", () =
     const trimmed = ocrCollectionSchema.parse(removed.json().collection);
     expect(trimmed.items).toHaveLength(1);
 
-    // Delete the collection — the recognitions are untouched (§28).
+    // Delete the collection - the recognitions are untouched (§28).
     const deleted = await app.inject({
       method: "DELETE",
       url: `/api/v1/ocr/collections/${collection.id}`,
@@ -221,7 +221,7 @@ describe("screenshot collections — named organization over recognitions", () =
   });
 });
 
-// ── V2 §30/§62 — analytics extensions + history filters ──────────────────────
+// ── V2 §30/§62 - analytics extensions + history filters ──────────────────────
 
 describe("analytics extensions and history filters", () => {
   it("reports platform/type distributions, correction rate, and filters by platform", async () => {

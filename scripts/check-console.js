@@ -1,5 +1,5 @@
 /**
- * Console health-check — visits every main route, collects console errors
+ * Console health-check - visits every main route, collects console errors
  * and page errors, reports per route. Exit 1 when any error is found.
  */
 const { chromium } = require("playwright");

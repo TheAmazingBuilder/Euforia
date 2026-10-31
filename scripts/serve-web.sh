@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# serve-web.sh — start the production web server on :3000 and wait until it
+# serve-web.sh - start the production web server on :3000 and wait until it
 # answers. The process dies with the tool call in this environment; each
 # verification call must invoke this first. Usage: bash serve-web.sh
 set -u

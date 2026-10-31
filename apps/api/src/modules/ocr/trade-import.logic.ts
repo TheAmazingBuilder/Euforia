@@ -1,5 +1,5 @@
 /**
- * OCR → Trade import mapping (Phase 21) — the PURE half of the confirmation
+ * OCR → Trade import mapping (Phase 21) - the PURE half of the confirmation
  * bridge (§72/§76/§77). No I/O, no clock, no Prisma: the same confirmed
  * fields always produce the same trade input (§94 determinism).
  *
@@ -8,10 +8,10 @@
  *     complete canonical trade and WHAT the Trading Core input looks like;
  *   - the bridge service (ocr-trade-import.service.ts) resolves the account
  *     and the instrument, calls TradesService.createTrade (the canonical
- *     application service — §77: no OCR-side Trade persistence) and links
+ *     application service - §77: no OCR-side Trade persistence) and links
  *     the result;
  *   - Trading Core owns the trade row, the sizing math and the P&L
- *     recomputation (never trust a client/OCR-sent pnl — house standard §15).
+ *     recomputation (never trust a client/OCR-sent pnl - house standard §15).
  *
  * Import floor (documented §19/§52/§55 semantics):
  *   - Review-layer statuses (AMBIGUOUS/LOW_CONFIDENCE/INVALID) are signals
@@ -19,7 +19,7 @@
  *     confirmed declaration is authoritative (§21).
  *   - The hard floor for importing a decimal is positivity + finiteness: a
  *     non-positive price/volume cannot be a trade fact. Core fields that
- *     fail the floor make the import INCOMPLETE (skipped — never fabricated,
+ *     fail the floor make the import INCOMPLETE (skipped - never fabricated,
  *     §44/§54); optional fields that fail it are simply left out.
  */
 import { Prisma } from "@prisma/client";
@@ -32,21 +32,21 @@ import type { CreateTradeInput, OcrExtractedField, OcrFieldKey } from "../../sha
 export const TRADE_IMPORT_SKIPPED_INCOMPLETE = "TRADE_IMPORT_SKIPPED_INCOMPLETE";
 /** No persisted trading account for the owner (importTrades house convention). */
 export const TRADE_IMPORT_SKIPPED_NO_ACCOUNT = "TRADE_IMPORT_SKIPPED_NO_ACCOUNT";
-/** Symbol not in the instrument catalog — user correction required (§50). */
+/** Symbol not in the instrument catalog - user correction required (§50). */
 export const TRADE_IMPORT_SKIPPED_UNKNOWN_SYMBOL = "TRADE_IMPORT_SKIPPED_UNKNOWN_SYMBOL";
 /** Trading Core refused the import (duplicate/ownership/domain rule). */
 export const TRADE_IMPORT_SKIPPED_REJECTED = "TRADE_IMPORT_SKIPPED_REJECTED";
-/** Non-trade profile (ACCOUNT_POSITION / CHART_ANALYSIS) — there is no trade
+/** Non-trade profile (ACCOUNT_POSITION / CHART_ANALYSIS) - there is no trade
  * to import; the confirmation stores the reviewed snapshot/reading instead.
  * An explicit token, never a misleading INCOMPLETE (Account & Chart V1.1). */
 export const TRADE_IMPORT_SKIPPED_PROFILE = "TRADE_IMPORT_SKIPPED_PROFILE";
-/** Unexpected bridge failure — never propagated to the confirmation (§126). */
+/** Unexpected bridge failure - never propagated to the confirmation (§126). */
 export const TRADE_IMPORT_FAILED = "TRADE_IMPORT_FAILED";
 
 /** Core fields that MUST resolve for a canonical trade to exist (§76). */
 const CORE_KEYS: readonly OcrFieldKey[] = ["symbol", "direction", "entryPrice", "volume"];
 
-/** A positive finite decimal — the hard import floor for money/size facts. */
+/** A positive finite decimal - the hard import floor for money/size facts. */
 function positiveDecimalOrNull(raw: string | null): Prisma.Decimal | null {
   if (raw === null || raw.trim().length === 0) return null;
   try {
@@ -76,7 +76,7 @@ export type TradeImportEligibility =
 /**
  * Resolve the confirmed (merged) fields into the trade fact set. Eligibility
  * requires symbol + direction + entryPrice + volume to be complete and
- * positive (§76 "validate fields") — everything else is best-effort from the
+ * positive (§76 "validate fields") - everything else is best-effort from the
  * same confirmed declaration.
  */
 export function resolveTradeImportValues(fields: OcrExtractedField[]): TradeImportEligibility {
@@ -96,7 +96,7 @@ export function resolveTradeImportValues(fields: OcrExtractedField[]): TradeImpo
     return { eligible: false, reason: TRADE_IMPORT_SKIPPED_INCOMPLETE };
   }
 
-  // Timestamps: preserved only when present — never invented (§54). Wall
+  // Timestamps: preserved only when present - never invented (§54). Wall
   // clock stays wall clock here; timezone attribution is Trading Core's
   // capture concern (documented Phase 21 limitation).
   const openTime = textOf("openTime");
@@ -121,15 +121,15 @@ export function resolveTradeImportValues(fields: OcrExtractedField[]): TradeImpo
 
 /**
  * Build the Trading Core capture input from the confirmed fact set (§77:
- * the canonical creation path — createTrade — does the account check, the
+ * the canonical creation path - createTrade - does the account check, the
  * sizing, the P&L computation and the external-ref dedup).
  *
  * Variant rule (no fabrication, §54):
- *   - CLOSED only when BOTH the exit price and the close time are present —
+ *   - CLOSED only when BOTH the exit price and the close time are present -
  *     the capture contract requires the exit triplet and OCR cannot invent
  *     an exit reason (MANUAL, same as the CSV import);
  *   - otherwise OPEN (an exit price without a close time is not enough to
- *     close a trade honestly — it stays on the recognition).
+ *     close a trade honestly - it stays on the recognition).
  */
 export function buildOcrTradeInput(input: {
   values: TradeImportValues;

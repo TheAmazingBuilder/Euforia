@@ -1,12 +1,12 @@
 /**
- * Academy category certifications — exam papers over a category's question
+ * Academy category certifications - exam papers over a category's question
  * pool, server-side grading and the BRONZE/SILVER/GOLD tier ladder
- * (Phase 11 §32/§36/§39: same security invariants as quizzes — public papers
+ * (Phase 11 §32/§36/§39: same security invariants as quizzes - public papers
  * never carry answers, the backend is authoritative, cross-pool questionIds
  * are not graded).
  *
  * Parity source: mocks/academy-engine.ts (EXAM_SIZE/tierOf/examPaper/
- * submitExam/certifications) — verbatim semantics.
+ * submitExam/certifications) - verbatim semantics.
  */
 import type {
   AcademyCertificationsResponse,
@@ -21,7 +21,7 @@ import { shuffleWith } from "./drills";
 
 export const EXAM_SIZE = 20;
 
-/** Paper over the category pool — public questions only (answers stripped). */
+/** Paper over the category pool - public questions only (answers stripped). */
 export function examPaper(categoryId: string, rng: Rng): AcademyExamPaper | null {
   if (!categoryById(categoryId)) return null;
   const pool = examPool(categoryId);
@@ -49,7 +49,7 @@ export interface ExamGrading {
 
 /**
  * Grade an exam submission. Only questions BELONGING to the category's pool
- * and present in the submission are graded (defensive — Phase 11 §37: a
+ * and present in the submission are graded (defensive - Phase 11 §37: a
  * questionId from another quiz/category can never earn credit).
  */
 export function gradeExam(

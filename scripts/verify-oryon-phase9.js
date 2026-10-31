@@ -1,5 +1,5 @@
 /**
- * verify-oryon-phase9.js — Oryon Phase 9 (market structure & key levels).
+ * verify-oryon-phase9.js - Oryon Phase 9 (market structure & key levels).
  *
  * Contract under test:
  *  - STRUCTURE (§4/§6): per-panel enable + visibility toggles, confirmed
@@ -16,7 +16,7 @@
  *  - REGRESSIONS: Phase 8 context menu + session bands still work; P4
  *    positions panel opens; 0 console errors; desktop 1440 + mobile 390.
  *
- * Run: node scripts/verify-oryon-phase9.js  (DEV server on :3001 — debug
+ * Run: node scripts/verify-oryon-phase9.js  (DEV server on :3001 - debug
  * handles are dev-only by design; market service on :3003, mocked auth,
  * BASE_URL overridable)
  */
@@ -25,7 +25,7 @@ const { chromium } = require("playwright");
 const fs = require("fs");
 
 const LOG = path.resolve(__dirname, "oryon-phase9-probe.log");
-fs.writeFileSync(LOG, `=== oryon phase9 probe — ${new Date().toISOString()} ===\n`);
+fs.writeFileSync(LOG, `=== oryon phase9 probe - ${new Date().toISOString()} ===\n`);
 
 const BASE = process.env.BASE_URL || "http://localhost:3001";
 
@@ -273,7 +273,7 @@ async function switchDefaultLayout(app) {
   await page.waitForTimeout(2_000);
 
   // ── A. État initial ─────────────────────────────────────────────────────
-  console.log("— A. État initial : analyse neutre par défaut");
+  console.log("- A. État initial : analyse neutre par défaut");
   const boot = await waitForPanels(page, 1);
   ok("workspace démarré avec un panneau", Array.isArray(boot) && boot.length === 1);
   ok(
@@ -285,7 +285,7 @@ async function switchDefaultLayout(app) {
   ok("défaut : OR OFF (menu)", (await analysisChecked(page, 0, "or")) === false);
 
   // ── B. Structure sur EURUSD 15m ─────────────────────────────────────────
-  console.log("— B. Structure de marché (pivots confirmés)");
+  console.log("- B. Structure de marché (pivots confirmés)");
   await setPanelSymbol(page, 0, "EURUSD");
   await setPanelInterval(page, 0, "15m");
   await toggleAnalysis(page, 0, "structure");
@@ -297,8 +297,8 @@ async function switchDefaultLayout(app) {
   const baseline = await panels(page);
   ok("baseline series/panes stables", baseline[0].series >= 1 && baseline[0].panes >= 1);
 
-  // ── C. Toggles de visibilité — sans recréation ──────────────────────────
-  console.log("— C. Toggles (hauteurs/bas, provisional, labels)");
+  // ── C. Toggles de visibilité - sans recréation ──────────────────────────
+  console.log("- C. Toggles (hauteurs/bas, provisional, labels)");
   await toggleAnalysis(page, 0, "highs");
   const highsOff = await waitForPanelState(page, 0, (p) => p.structureMarkers < baseline[0].structureMarkers);
   ok(
@@ -325,10 +325,10 @@ async function switchDefaultLayout(app) {
   );
   await toggleAnalysis(page, 0, "provisional");
 
-  // ── D. BOS/CHoCH — modes close/wick ─────────────────────────────────────
-  console.log("— D. BOS/CHoCH (close puis wick)");
+  // ── D. BOS/CHoCH - modes close/wick ─────────────────────────────────────
+  console.log("- D. BOS/CHoCH (close puis wick)");
   // REFINEMENT (structure-lines): breaks render as pivot→break LINES with
-  // boxed labels (structureLines counter) — the bare break circle markers
+  // boxed labels (structureLines counter) - the bare break circle markers
   // are suppressed while lines are ON (the line owns the annotation).
   await toggleAnalysis(page, 0, "breaks");
   const breaksClose = await waitForPanelState(page, 0, (p) => (p.structureLines ?? 0) >= 1);
@@ -351,7 +351,7 @@ async function switchDefaultLayout(app) {
   );
 
   // ── E. Key levels (série 1D partagée) ───────────────────────────────────
-  console.log("— E. Key levels (PDH/L + PWH/L)");
+  console.log("- E. Key levels (PDH/L + PWH/L)");
   await toggleAnalysis(page, 0, "pdhl");
   const pdOn = await waitForPanelState(page, 0, (p) => p.keyLevelLines >= 2);
   ok(`PDH/L ON → 2 lignes (got ${pdOn?.keyLevelLines})`, (pdOn?.keyLevelLines ?? 0) >= 2);
@@ -363,15 +363,15 @@ async function switchDefaultLayout(app) {
   ok(`PDO/C ON → 6 lignes cumulées (got ${pdocOn?.keyLevelLines})`, (pdocOn?.keyLevelLines ?? 0) >= 6);
   await toggleAnalysis(page, 0, "pdoc");
 
-  // ── F. Opening range — gates honnêtes ───────────────────────────────────
-  console.log("— F. Opening range (session NY, gates)");
+  // ── F. Opening range - gates honnêtes ───────────────────────────────────
+  console.log("- F. Opening range (session NY, gates)");
   await toggleAnalysis(page, 0, "or");
   const orOn = await waitForPanelState(page, 0, (p) => p.orBoxes >= 1, 10_000);
   ok(
     `OR ON (EURUSD 15m, session-scoped) → boîte rendue (got ${orOn?.orBoxes})`,
     (orOn?.orBoxes ?? 0) >= 1,
   );
-  ok("OR : window bornée — 1 seule boîte (dernière session)", (orOn?.orBoxes ?? 0) === 1);
+  ok("OR : window bornée - 1 seule boîte (dernière session)", (orOn?.orBoxes ?? 0) === 1);
 
   // 1D → intraday gate : pas d'OR (le panneau porte déjà la porte Phase 8).
   await setPanelInterval(page, 0, "1D");
@@ -384,7 +384,7 @@ async function switchDefaultLayout(app) {
 
   // Crypto → sessions non applicables → pas d'OR (honnête).
   // NOTE (environment): this check depends on the market service's BTCUSDT
-  // 1D series — Binance currently answers 418 (sandbox IP rate-limited),
+  // 1D series - Binance currently answers 418 (sandbox IP rate-limited),
   // so the daily series cannot load and key levels honestly stay empty.
   // The assertion stays; it passes again when the provider unblocks.
   await setPanelSymbol(page, 0, "BTCUSDT");
@@ -395,16 +395,16 @@ async function switchDefaultLayout(app) {
   await waitForPanels(page, 1);
 
   // ── G. Multi-chart : indépendance par panneau ───────────────────────────
-  console.log("— G. Multi-chart (indépendance par panneau)");
+  console.log("- G. Multi-chart (indépendance par panneau)");
   await setGrid(page, "twoHorizontal");
   const twoPanels = await waitForPanels(page, 2);
   ok("grille 2 panneaux montée", Array.isArray(twoPanels) && twoPanels.length === 2);
-  // A NEW panel takes the documented DEFAULTS (analysis all OFF) —
+  // A NEW panel takes the documented DEFAULTS (analysis all OFF) -
   // isolation rules (§9.3: never reuse another panel's calculated data).
   // Assert the isolation in both directions.
   const afterGrid = await panels(page);
   ok(
-    "panneau 1 (nouveau) : défauts neutres — 0 marqueur structure",
+    "panneau 1 (nouveau) : défauts neutres - 0 marqueur structure",
     (afterGrid[1]?.structureMarkers ?? -1) === 0,
   );
   ok(
@@ -427,7 +427,7 @@ async function switchDefaultLayout(app) {
   await waitForPanelState(page, 1, (p) => p.structureMarkers === 0);
 
   // ── H. Persistance v4 ───────────────────────────────────────────────────
-  console.log("— H. Persistance (enveloppe v4, save → défaut → restore)");
+  console.log("- H. Persistance (enveloppe v4, save → défaut → restore)");
   // Panel 0 garde: structure ON + PDH/L + PWH/L + OR. Save.
   await saveLayoutAs(page, "Analyse9");
   const saved = await layoutsFile(page);
@@ -453,7 +453,7 @@ async function switchDefaultLayout(app) {
   );
 
   // ── I. Régressions Phase 8 + coque ──────────────────────────────────────
-  console.log("— I. Régressions (contexte P8, positions P4)");
+  console.log("- I. Régressions (contexte P8, positions P4)");
   // Session shading still works (Phase 8 context menu untouched).
   await page.click('[data-testid="oryon-panel-0-context-menu"]');
   await page.waitForTimeout(250);
@@ -474,7 +474,7 @@ async function switchDefaultLayout(app) {
   await page.waitForTimeout(300);
 
   // ── J. Mobile 390 : menu analysis accessible ────────────────────────────
-  console.log("— J. Mobile 390");
+  console.log("- J. Mobile 390");
   await page.setViewportSize({ width: 390, height: 844 });
   await page.waitForTimeout(1_200);
   await clearDevOverlay(page);
@@ -489,7 +489,7 @@ async function switchDefaultLayout(app) {
   await page.keyboard.press("Escape");
 
   // ── Console errors ──────────────────────────────────────────────────────
-  console.log(`— Console: ${errors.length} erreur(s)`);
+  console.log(`- Console: ${errors.length} erreur(s)`);
   for (const error of errors.slice(0, 10)) {
     console.log(`  console: ${error.slice(0, 220)}`);
     fs.appendFileSync(LOG, `  console: ${error}\n`);

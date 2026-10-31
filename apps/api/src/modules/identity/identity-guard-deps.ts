@@ -14,7 +14,7 @@ export interface IdentityGuardDeps {
   resolvePrincipal(
     userId: string,
     sessionId: string,
-  ): Promise<{ userStatus: string } | null>;
+  ): Promise<{ userStatus: string; userRole: string } | null>;
 }
 
 export const IDENTITY_GUARD_DEPS = Symbol("IDENTITY_GUARD_DEPS");

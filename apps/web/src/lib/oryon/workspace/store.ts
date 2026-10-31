@@ -53,25 +53,25 @@ import {
  * panel list).
  *
  * Sync propagation (spec §8): instrument and timeframe linking are STATE
- * rules enforced here — a change on one panel patches every panel when the
+ * rules enforced here - a change on one panel patches every panel when the
  * feature is enabled. Time-scale and crosshair linking are CHART-ENGINE
  * concerns and live in the sync coordinator, not in this store.
  *
  * Unsaved-changes model (spec §10): the live session is compared
  * field-by-field against the ACTIVE layout's saved arrangement. The dirty
  * flag participates in the snapshot, so the UI can surface an honest
- * indicator — and only an honest one: with the default layout active there
+ * indicator - and only an honest one: with the default layout active there
  * is no saved record to diverge from, and the flag is structurally false.
  *
  * Persistence model: layout/template mutations schedule debounced writes;
  * session-only changes (moving a timeframe, toggling a panel) NEVER touch
- * storage — saving is always an explicit user action. Switching layouts
- * applies the target's SAVED configuration (unsaved changes are discarded —
+ * storage - saving is always an explicit user action. Switching layouts
+ * applies the target's SAVED configuration (unsaved changes are discarded -
  * the UI prompts first; a reload re-applies the saved layout, both
  * behaviors documented in the interface).
  *
  * Restoration discipline (spec §14): applying a layout/template is a
- * controlled configuration update — it patches session fields and indicator
+ * controlled configuration update - it patches session fields and indicator
  * stacks through the existing update paths. It never re-initializes a
  * chart, never duplicates subscriptions (stable panel ids + the indicator
  * series manager diffs by id), and never touches drawings, alerts or
@@ -89,7 +89,7 @@ export interface WorkspaceConfigSnapshot {
   dirty: boolean;
   /** True after hydrate() replayed the persisted state (client only). */
   hydrated: boolean;
-  /** Bumped on every commit — cheap reactivity for subscribers. */
+  /** Bumped on every commit - cheap reactivity for subscribers. */
   version: number;
 }
 
@@ -120,7 +120,7 @@ export class OryonWorkspaceConfigStore {
   private listeners = new Set<() => void>();
 
   /**
-   * Panel-indicator capture hook — wired by the provider so a layout save
+   * Panel-indicator capture hook - wired by the provider so a layout save
    * can record each panel's CURRENT analysis stack. Default: not managed
    * (null), which keeps the store testable without a registry.
    */
@@ -140,11 +140,11 @@ export class OryonWorkspaceConfigStore {
     return () => this.listeners.delete(listener);
   };
 
-  // ── Hydration (client mount only — SSR keeps the defaults) ────────────────
+  // ── Hydration (client mount only - SSR keeps the defaults) ────────────────
 
   /**
    * Replays the persisted state. When a saved layout was active, its saved
-   * configuration becomes the live session — the workspace returns to the
+   * configuration becomes the live session - the workspace returns to the
    * arrangement the user last committed (spec §1 product vision). Corrupt
    * or dangling data degrades to the default layout, never a crash.
    */
@@ -175,7 +175,7 @@ export class OryonWorkspaceConfigStore {
 
   // ── Live session mutations (never persist by themselves) ──────────────────
 
-  /** Activates a chart panel (click / focus — spec §7). */
+  /** Activates a chart panel (click / focus - spec §7). */
   setActivePanel(panelId: string): void {
     if (this.state.session.activePanelId === panelId) return;
     this.patchSession({ activePanelId: panelId });
@@ -183,7 +183,7 @@ export class OryonWorkspaceConfigStore {
 
   /**
    * Changes ONE panel's instrument. With instrument linking enabled the
-   * change propagates to every panel (one implicit group — spec §8.3); a
+   * change propagates to every panel (one implicit group - spec §8.3); a
    * null symbol (default selection) never propagates.
    */
   setPanelSymbol(panelId: string, symbol: string | null): void {
@@ -204,7 +204,7 @@ export class OryonWorkspaceConfigStore {
   /**
    * Changes ONE panel's timeframe. With timeframe linking enabled the
    * change propagates to every panel (spec §8.4). A target that cannot
-   * serve the interval surfaces its own per-panel error state — the
+   * serve the interval surfaces its own per-panel error state - the
    * requested timeframe is never silently substituted.
    */
   setPanelInterval(panelId: string, interval: MarketInterval): void {
@@ -223,7 +223,7 @@ export class OryonWorkspaceConfigStore {
     });
   }
 
-  /** Changes ONE panel's chart type — never propagated (per-panel setting). */
+  /** Changes ONE panel's chart type - never propagated (per-panel setting). */
   setPanelChartType(panelId: string, chartType: OryonLayoutChartType): void {
     this.patchSession({
       panels: this.state.session.panels.map((p) =>
@@ -233,7 +233,7 @@ export class OryonWorkspaceConfigStore {
   }
 
   /**
-   * Replaces ONE panel's temporal-context preferences (Phase 8 §12) —
+   * Replaces ONE panel's temporal-context preferences (Phase 8 §12) -
    * a per-panel display setting, never propagated to linked charts
    * (spec §11: per-chart visibility preferences remain independent).
    * Null-safe on an unknown panel id (stale menu after a removal). */
@@ -246,7 +246,7 @@ export class OryonWorkspaceConfigStore {
   }
 
   /**
-   * Replaces ONE panel's analysis preferences (Phase 9 §9) — a per-panel
+   * Replaces ONE panel's analysis preferences (Phase 9 §9) - a per-panel
    * setting, never propagated to linked charts (§9.3 multi-chart
    * isolation). Null-safe on an unknown panel id (stale menu after a
    * removal). The configuration arrives pre-validated (shared schema
@@ -269,7 +269,7 @@ export class OryonWorkspaceConfigStore {
   }
 
   /**
-   * Toggles synchronization features INDEPENDENTLY (spec §8) — enabling
+   * Toggles synchronization features INDEPENDENTLY (spec §8) - enabling
    * one never enables another.
    */
   setSync(partial: Partial<OryonSyncSettings>): void {
@@ -299,7 +299,7 @@ export class OryonWorkspaceConfigStore {
    * Switches the grid arrangement. Panel identities are reused (charts are
    * NOT recreated on grid transitions); missing panels are added with
    * deterministic defaults, `single` keeps only the active panel. The
-   * invariants live in panelsForGrid — this mutation stays declarative.
+   * invariants live in panelsForGrid - this mutation stays declarative.
    */
   setGrid(grid: OryonGrid): void {
     const { session } = this.state;
@@ -309,7 +309,7 @@ export class OryonWorkspaceConfigStore {
   }
 
   /**
-   * Duplicates a panel — an INDEPENDENT copy of its configuration (fresh
+   * Duplicates a panel - an INDEPENDENT copy of its configuration (fresh
    * stable id, same instrument/timeframe/chart type). The copy becomes
    * active. Capacity: the workspace holds at most four panels (the quad
    * grid); a single grid grows to side-by-side to make room.
@@ -342,7 +342,7 @@ export class OryonWorkspaceConfigStore {
    * (the workspace always shows one chart). Removing the active panel
    * activates the first survivor; a one-panel workspace collapses to the
    * `single` grid. Removing a chart NEVER touches alerts, drawings or
-   * positions (independent domains — spec §11).
+   * positions (independent domains - spec §11).
    */
   removePanel(panelId: string): WorkspaceOpResult {
     const { session } = this.state;
@@ -360,7 +360,7 @@ export class OryonWorkspaceConfigStore {
   /**
    * Template-chart application (called by the provider's applyTemplate):
    * the chart type always applies to the TARGET panel; the timeframe only
-   * when the template defines one. Flows through the same patch path —
+   * when the template defines one. Flows through the same patch path -
    * the active layout's dirty flag reflects the change honestly.
    */
   applyTemplateChart(
@@ -385,7 +385,7 @@ export class OryonWorkspaceConfigStore {
     const session = { ...this.state.session, ...partial };
     const dirty = this.computeDirty(session);
     // No-change guard compares the NEW session against the CURRENT in-memory
-    // one — INCLUDING the active pointer (an activation must still reach the
+    // one - INCLUDING the active pointer (an activation must still reach the
     // UI even though it never flips the dirty flag). Dirty-vs-saved equality
     // deliberately excludes the active pointer (view preference, §7).
     if (
@@ -409,7 +409,7 @@ export class OryonWorkspaceConfigStore {
 
   /**
    * Saves the CURRENT session into the active SAVED layout. Only a custom
-   * active layout can be saved over — with the default active, the UI
+   * active layout can be saved over - with the default active, the UI
    * offers "save as new" instead (the default is immutable by design).
    * Per-panel indicator stacks are captured through the provider-wired
    * hook at save time.
@@ -427,7 +427,7 @@ export class OryonWorkspaceConfigStore {
       this.captureAllPanelIndicators(),
       now(),
     );
-    // Preserve the original creation timestamp — an update, not a re-create.
+    // Preserve the original creation timestamp - an update, not a re-create.
     updated.createdAt = current.createdAt;
 
     const layouts = this.state.layouts.map((l, i) => (i === index ? updated : l));
@@ -477,7 +477,7 @@ export class OryonWorkspaceConfigStore {
 
   /**
    * Duplicates a SAVED record (an independent copy of the saved
-   * configuration — never an alias, spec §7). The copy is NOT activated:
+   * configuration - never an alias, spec §7). The copy is NOT activated:
    * duplicating answers "branch this setup", switching stays explicit.
    */
   duplicateLayout(id: string): WorkspaceOpResult {
@@ -514,7 +514,7 @@ export class OryonWorkspaceConfigStore {
 
   /**
    * Switches to a saved layout by applying its SAVED configuration. The
-   * unsaved-changes prompt is the UI's responsibility — by the time this
+   * unsaved-changes prompt is the UI's responsibility - by the time this
    * runs, the user has confirmed the discard (or saved) decision. The
    * PROVIDER applies the record's per-panel indicator stacks afterwards
    * (the store owns the session, the registry owns the stacks).
@@ -539,7 +539,7 @@ export class OryonWorkspaceConfigStore {
 
   /**
    * Restores the deterministic default arrangement. Saved layouts and
-   * templates are KEPT (spec §7) — only the active pointer resets; the
+   * templates are KEPT (spec §7) - only the active pointer resets; the
    * default itself is a code constant and always recoverable.
    */
   restoreDefaultLayout(): void {
@@ -617,7 +617,7 @@ export class OryonWorkspaceConfigStore {
     layouts: OryonWorkspaceLayoutV4[],
     activeLayoutId: string | null,
   ): void {
-    // Dirty is recomputed against the NEW list — a save/update that lands
+    // Dirty is recomputed against the NEW list - a save/update that lands
     // the session back in sync clears the flag honestly.
     const dirty =
       activeLayoutId !== null

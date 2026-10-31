@@ -2,11 +2,11 @@ import { z } from "zod";
 import { isoDateTimeSchema, decimalStringSchema } from "./primitives";
 
 /**
- * Social Trading domain — "the trading floor".
+ * Social Trading domain - "the trading floor".
  * Three blocks: the shareable performance card (Partage performances),
  * the period leaderboards (Classements) and the community feed
  * (Communauté). The "me" row of every leaderboard is computed from the
- * REAL journal (closed trades, daily stats) — peers are deterministic
+ * REAL journal (closed trades, daily stats) - peers are deterministic
  * mock members so ranks stay stable across reloads while still moving
  * with the user's actual results.
  */
@@ -23,7 +23,7 @@ export const socialTraderSchema = z.object({
   id: z.string().min(1),
   handle: z.string().min(1),
   displayName: z.string().min(1),
-  /** Token-driven avatar tint (0-360) — no image uploads in the MVP. */
+  /** Token-driven avatar tint (0-360) - no image uploads in the MVP. */
   avatarHue: z.number().int().min(0).max(360),
   assetFocus: z.string().min(1),
   followers: z.number().int().min(0),
@@ -40,9 +40,9 @@ export const socialLeaderboardRowSchema = z.object({
   isMe: z.boolean(),
   /** Whether I follow this member (drives the Follow/Following pill). */
   isFollowing: z.boolean(),
-  /** Net P&L over the window, % of starting capital — decimal string. */
+  /** Net P&L over the window, % of starting capital - decimal string. */
   netPnlPct: decimalStringSchema,
-  /** Win rate over the window, 0-100 — decimal string. */
+  /** Win rate over the window, 0-100 - decimal string. */
   winRate: decimalStringSchema,
   avgR: decimalStringSchema.nullable(),
   disciplineScore: decimalStringSchema.nullable(),
@@ -72,7 +72,7 @@ export const socialPostSchema = z.object({
 });
 export type SocialPost = z.infer<typeof socialPostSchema>;
 
-/** The shareable performance card — every number server-computed. */
+/** The shareable performance card - every number server-computed. */
 export const socialMeSchema = z.object({
   handle: z.string().min(1),
   displayName: z.string().min(1),
@@ -87,7 +87,7 @@ export const socialMeSchema = z.object({
     disciplineScore: decimalStringSchema.nullable(),
     totalTrades: z.number().int().min(0),
     bestStreak: z.number().int().min(0),
-    /** Sampled equity points (numbers on purpose — sparkline only). */
+    /** Sampled equity points (numbers on purpose - sparkline only). */
     equitySpark: z.array(z.number()),
     currency: z.string().min(1),
   }),

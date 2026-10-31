@@ -1,6 +1,6 @@
 /**
  * Render an Euforia brand SVG at its native viewBox size on a transparent
- * background — alignment frame for the depth-extraction pipeline.
+ * background - alignment frame for the depth-extraction pipeline.
  * Usage: node render-mark-frame.js <svgFile> <outPng> <width> <height>
  */
 const { chromium } = require("playwright");

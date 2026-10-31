@@ -1,4 +1,4 @@
-/* Diagnostic probe — Academy overview band + courses/glossary inputs. */
+/* Diagnostic probe - Academy overview band + courses/glossary inputs. */
 const { chromium } = require("playwright");
 const BASE = "http://localhost:3000";
 const SHOTS = "/home/z/my-project/scripts/shots/i18n-academy";

@@ -1,4 +1,4 @@
-// Diagnose "This page couldn't load" on /oryon — capture console + page errors
+// Diagnose "This page couldn't load" on /oryon - capture console + page errors
 const { chromium } = require('playwright');
 
 const BASE = process.env.BASE_URL || 'http://localhost:3000';

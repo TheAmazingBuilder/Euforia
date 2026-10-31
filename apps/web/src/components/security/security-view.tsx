@@ -29,12 +29,16 @@ import { useAuth } from "@/components/auth/auth-provider";
 import {
   useChangePassword,
   useConfirmTwoFactor,
+  useConfirmEmailTwoFactor,
   useCreateApiKey,
   useDisableTwoFactor,
   useEnableTwoFactor,
+  useEnableEmailTwoFactor,
   useRegenerateRecoveryCodes,
   useRevokeApiKey,
   useRevokeSessions,
+  useSecurityEventPages,
+  useSecurityLoginPages,
   useSecurityOverview,
 } from "@/lib/api/queries";
 import {
@@ -51,10 +55,13 @@ import {
   OverviewPanel,
   SessionsPanel,
   TwoFactorPanel,
+  type EventHistoryFilters,
+  type HistoryPagination,
+  type LoginHistoryFilters,
 } from "./security-panels";
 
 /**
- * /security — the professional Security & Account Protection center
+ * /security - the professional Security & Account Protection center
  * (MASTER PROMPT §3 structure): Overview · Authentication · Sessions ·
  * Two-Factor · API Keys · Connected Accounts · Security Events ·
  * Login History · Active Devices. The active tab persists in the URL (?tab=).
@@ -79,18 +86,91 @@ const TABS = [
 
 type TabId = (typeof TABS)[number]["id"];
 
+function utcDateBoundary(value: string, endOfDay: boolean): string | undefined {
+  if (value === "") return undefined;
+  return endOfDay
+    ? `${value}T23:59:59.999Z`
+    : `${value}T00:00:00.000Z`;
+}
+
+const EMPTY_EVENT_HISTORY_FILTERS: EventHistoryFilters = {
+  type: "ALL",
+  outcome: "ALL",
+  from: "",
+  to: "",
+};
+
+const EMPTY_LOGIN_HISTORY_FILTERS: LoginHistoryFilters = {
+  outcome: "ALL",
+  from: "",
+  to: "",
+};
+
 interface ReauthRequest {
   actionLabel: string;
   run: (token: string) => void;
 }
 
 export function SecurityCenterView() {
-  const { data: overview, isLoading } = useSecurityOverview();
+  const overviewQuery = useSecurityOverview();
+  const { data: overview, isLoading } = overviewQuery;
   const searchParams = useSearchParams();
   const router = useRouter();
 
   const rawTab = searchParams.get("tab") ?? "overview";
   const activeTab: TabId = (TABS.some((tab) => tab.id === rawTab) ? rawTab : "overview") as TabId;
+
+  const [eventFilters, setEventFilters] = React.useState<EventHistoryFilters>(
+    EMPTY_EVENT_HISTORY_FILTERS,
+  );
+  const [loginFilters, setLoginFilters] = React.useState<LoginHistoryFilters>(
+    EMPTY_LOGIN_HISTORY_FILTERS,
+  );
+
+  const eventHistoryQuery = useSecurityEventPages(
+    {
+      type: eventFilters.type === "ALL" ? undefined : eventFilters.type,
+      outcome: eventFilters.outcome === "ALL" ? undefined : eventFilters.outcome,
+      from: utcDateBoundary(eventFilters.from, false),
+      to: utcDateBoundary(eventFilters.to, true),
+    },
+    activeTab === "events",
+  );
+  const loginHistoryQuery = useSecurityLoginPages(
+    {
+      success:
+        loginFilters.outcome === "ALL"
+          ? undefined
+          : loginFilters.outcome === "SUCCESS",
+      from: utcDateBoundary(loginFilters.from, false),
+      to: utcDateBoundary(loginFilters.to, true),
+    },
+    activeTab === "login-history",
+  );
+
+  const eventHistory = eventHistoryQuery.data?.pages.flatMap((page) => page.items) ?? [];
+  const loginHistory = loginHistoryQuery.data?.pages.flatMap((page) => page.items) ?? [];
+
+  const eventPagination: HistoryPagination = {
+    isLoading: eventHistoryQuery.isLoading,
+    isError: eventHistoryQuery.isError,
+    errorMessage: eventHistoryQuery.error
+      ? apiErrorMessage(eventHistoryQuery.error, "Could not load security events.")
+      : null,
+    hasNextPage: eventHistoryQuery.hasNextPage ?? false,
+    isFetchingNextPage: eventHistoryQuery.isFetchingNextPage,
+    onLoadMore: () => { void eventHistoryQuery.fetchNextPage(); },
+  };
+  const loginPagination: HistoryPagination = {
+    isLoading: loginHistoryQuery.isLoading,
+    isError: loginHistoryQuery.isError,
+    errorMessage: loginHistoryQuery.error
+      ? apiErrorMessage(loginHistoryQuery.error, "Could not load login history.")
+      : null,
+    hasNextPage: loginHistoryQuery.hasNextPage ?? false,
+    isFetchingNextPage: loginHistoryQuery.isFetchingNextPage,
+    onLoadMore: () => { void loginHistoryQuery.fetchNextPage(); },
+  };
 
   const setTab = React.useCallback(
     (next: string) => {
@@ -111,7 +191,9 @@ export function SecurityCenterView() {
   const { logout } = useAuth();
   const changePassword = useChangePassword();
   const enableTwoFactor = useEnableTwoFactor();
+  const enableEmailTwoFactor = useEnableEmailTwoFactor();
   const confirmTwoFactor = useConfirmTwoFactor();
+  const confirmEmailTwoFactor = useConfirmEmailTwoFactor();
   const disableTwoFactor = useDisableTwoFactor();
   const regenerateCodes = useRegenerateRecoveryCodes();
   const createApiKey = useCreateApiKey();
@@ -121,7 +203,9 @@ export function SecurityCenterView() {
   const busy =
     changePassword.isPending ||
     enableTwoFactor.isPending ||
+    enableEmailTwoFactor.isPending ||
     confirmTwoFactor.isPending ||
+    confirmEmailTwoFactor.isPending ||
     disableTwoFactor.isPending ||
     regenerateCodes.isPending ||
     createApiKey.isPending ||
@@ -132,6 +216,8 @@ export function SecurityCenterView() {
   const [enrollment, setEnrollment] = React.useState<TwoFactorEnrollment | null>(null);
   const [enrollSaved, setEnrollSaved] = React.useState(false);
   const [enrollCode, setEnrollCode] = React.useState("");
+  const [emailEnrollmentPending, setEmailEnrollmentPending] = React.useState(false);
+  const [emailEnrollCode, setEmailEnrollCode] = React.useState("");
 
   // ── One-time secret (API key) / regenerated codes ──────────────────────────
   const [secretOnce, setSecretOnce] = React.useState<{ title: string; secret: string } | null>(null);
@@ -145,7 +231,7 @@ export function SecurityCenterView() {
         { reauthToken: token, newPassword },
         {
           onSuccess: () => {
-            toast.success("Password updated after re-authentication — journal data untouched");
+            toast.success("Password updated after re-authentication - journal data untouched");
             onDone();
           },
           onError: (error) => toast.error(apiErrorMessage(error, "Could not update the password")),
@@ -167,13 +253,38 @@ export function SecurityCenterView() {
     );
   };
 
+  const onEnableEmailTwoFactor = () => {
+    requestReauth("Enabling email-code two-factor authentication", (token) =>
+      enableEmailTwoFactor.mutate(token, {
+        onSuccess: () => {
+          setEmailEnrollCode("");
+          setEmailEnrollmentPending(true);
+          toast.success("Verification code sent to your email");
+        },
+        onError: (error) => toast.error(apiErrorMessage(error, "Could not enable email-code 2FA")),
+      }),
+    );
+  };
+
+  const onConfirmEmailEnrollment = () => {
+    confirmEmailTwoFactor.mutate(emailEnrollCode.trim(), {
+      onSuccess: (result) => {
+        setEmailEnrollmentPending(false);
+        setEmailEnrollCode("");
+        setCodesOnce(result.recoveryCodes);
+        toast.success("Email-code two-factor authentication is on");
+      },
+      onError: (error) => toast.error(apiErrorMessage(error, "Could not confirm email-code 2FA")),
+    });
+  };
+
   const onConfirmEnrollment = () => {
     if (enrollment === null) return;
     confirmTwoFactor.mutate(
       { code: enrollCode },
       {
         onSuccess: () => {
-          toast.success("Two-factor authentication is on — recovery codes stay hidden");
+          toast.success("Two-factor authentication is on - recovery codes stay hidden");
           setEnrollment(null);
         },
         onError: (error) => toast.error(apiErrorMessage(error, "Challenge failed")),
@@ -184,7 +295,7 @@ export function SecurityCenterView() {
   const onDisableTwoFactor = () => {
     requestReauth("Disabling two-factor authentication", (token) =>
       disableTwoFactor.mutate(token, {
-        onSuccess: () => toast.success("Two-factor disabled — recovery codes destroyed"),
+        onSuccess: () => toast.success("Two-factor disabled - recovery codes destroyed"),
         onError: (error) => toast.error(apiErrorMessage(error, "Could not disable 2FA")),
       }),
     );
@@ -222,7 +333,7 @@ export function SecurityCenterView() {
       revokeApiKey.mutate(
         { keyId: key.id, reauthToken: token },
         {
-          onSuccess: () => toast.success(`API key “${key.name}” revoked — clients lose access now`),
+          onSuccess: () => toast.success(`API key “${key.name}” revoked - clients lose access now`),
           onError: (error) => toast.error(apiErrorMessage(error, "Could not revoke the key")),
         },
       ),
@@ -234,24 +345,55 @@ export function SecurityCenterView() {
       onSuccess: (result) => {
         if (result.currentSessionAffected) {
           toast.success(
-            `${result.revokedCount} session(s) revoked — signing you out`,
+            `${result.revokedCount} session(s) revoked - signing you out`,
           );
           // Real application auth (spec §21): revoking the current session
-          // ends it — the auth provider performs the full teardown.
+          // ends it - the auth provider performs the full teardown.
           void logout({ reason: "revoked" });
         } else {
-          toast.success(`${result.revokedCount} session(s) revoked — device(s) signed out`);
+          toast.success(`${result.revokedCount} session(s) revoked - device(s) signed out`);
         }
       },
       onError: (error) => toast.error(apiErrorMessage(error, "Could not revoke sessions")),
     });
   };
 
-  if (isLoading || overview === undefined) {
+  if (isLoading) {
     return (
-      <div className="mx-auto w-full max-w-5xl space-y-4">
+      <div className="mx-auto w-full max-w-5xl space-y-4" aria-busy="true">
         <div className="h-8 w-48 animate-pulse rounded bg-muted" />
         <div className="h-40 animate-pulse rounded-xl bg-muted" />
+      </div>
+    );
+  }
+
+  if (overviewQuery.isError || overview === undefined) {
+    return (
+      <div className="mx-auto w-full max-w-5xl">
+        <div
+          className="flex flex-col items-start gap-3 rounded-lg border border-border bg-surface p-5"
+          role="alert"
+          data-testid="security-load-error"
+        >
+          <div className="flex items-center gap-2 font-medium">
+            <TriangleAlert className="size-4 text-warning" aria-hidden="true" />
+            Security information could not be loaded
+          </div>
+          <p className="text-sm text-muted-foreground">
+            {overviewQuery.error instanceof Error
+              ? overviewQuery.error.message
+              : "The security service did not return an overview. Check that the API is running and try again."}
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => void overviewQuery.refetch()}
+            disabled={overviewQuery.isFetching}
+            data-testid="security-retry"
+          >
+            {overviewQuery.isFetching ? "Retrying…" : "Try again"}
+          </Button>
+        </div>
       </div>
     );
   }
@@ -263,7 +405,7 @@ export function SecurityCenterView() {
           Security
         </h1>
         <p className="max-w-2xl text-sm text-muted-foreground">
-          Your account protection center — authentication, sessions, two-factor,
+          Your account protection center - authentication, sessions, two-factor,
           API keys, connected accounts and the append-only audit trail. Sensitive
           actions always ask you to confirm it&apos;s you.
         </p>
@@ -313,6 +455,11 @@ export function SecurityCenterView() {
         <TwoFactorPanel
           overview={overview}
           onEnable={onEnableTwoFactor}
+          onEnableEmail={onEnableEmailTwoFactor}
+          emailEnrollmentPending={emailEnrollmentPending}
+          emailEnrollCode={emailEnrollCode}
+          onEmailEnrollCodeChange={setEmailEnrollCode}
+          onConfirmEmailEnrollment={onConfirmEmailEnrollment}
           onDisable={() => setDisableConfirmOpen(true)}
           onRegenerate={onRegenerateCodes}
           pending={busy}
@@ -327,8 +474,26 @@ export function SecurityCenterView() {
         />
       )}
       {activeTab === "connected-accounts" && <ConnectedAccountsPanel overview={overview} />}
-      {activeTab === "events" && <EventsPanel overview={overview} />}
-      {activeTab === "login-history" && <LoginHistoryPanel overview={overview} />}
+      {activeTab === "events" && (
+        <EventsPanel
+          overview={overview}
+          events={eventHistory}
+          filters={eventFilters}
+          onFiltersChange={setEventFilters}
+          onResetFilters={() => setEventFilters(EMPTY_EVENT_HISTORY_FILTERS)}
+          pagination={eventPagination}
+        />
+      )}
+      {activeTab === "login-history" && (
+        <LoginHistoryPanel
+          overview={overview}
+          logins={loginHistory}
+          filters={loginFilters}
+          onFiltersChange={setLoginFilters}
+          onResetFilters={() => setLoginFilters(EMPTY_LOGIN_HISTORY_FILTERS)}
+          pagination={loginPagination}
+        />
+      )}
       {activeTab === "devices" && (
         <DevicesPanel overview={overview} onRevoke={onRevokeSessions} pending={busy} />
       )}
@@ -346,7 +511,7 @@ export function SecurityCenterView() {
         testid="reauth-dialog"
       />
 
-      {/* ── 2FA enrollment — secret + demo code + recovery codes, shown once ── */}
+      {/* ── 2FA enrollment - secret + demo code + recovery codes, shown once ── */}
       <Dialog
         open={enrollment !== null}
         onOpenChange={(open) => !open && setEnrollment(null)}
@@ -356,7 +521,7 @@ export function SecurityCenterView() {
             <DialogTitle className="font-heading">Set up your authenticator</DialogTitle>
             <DialogDescription>
               Add the secret to your authenticator app, verify the challenge and
-              keep the recovery codes — they are displayed only once.
+              keep the recovery codes - they are displayed only once.
             </DialogDescription>
           </DialogHeader>
           {enrollment !== null && (
@@ -367,7 +532,7 @@ export function SecurityCenterView() {
                   {enrollment.secret}
                 </div>
                 <p className="rounded-md border border-border bg-background/60 px-2.5 py-1.5 text-xs text-muted-foreground">
-                  Demo environment — no real authenticator exists. The code your
+                  Demo environment - no real authenticator exists. The code your
                   app would generate is{" "}
                   <span className="font-mono font-medium text-foreground">
                     {enrollment.demoCode}
@@ -377,7 +542,7 @@ export function SecurityCenterView() {
               </div>
 
               <div className="grid gap-1.5">
-                <Label>Recovery codes — {enrollment.recoveryCodes.length} single-use codes</Label>
+                <Label>Recovery codes - {enrollment.recoveryCodes.length} single-use codes</Label>
                 <div className="grid grid-cols-2 gap-1.5" data-testid="tfa-recovery-codes">
                   {enrollment.recoveryCodes.map((code) => (
                     <span
@@ -451,7 +616,7 @@ export function SecurityCenterView() {
         open={secretOnce !== null}
         onOpenChange={(open) => !open && setSecretOnce(null)}
         title={secretOnce?.title ?? ""}
-        description="Copy and store it now — this is the only time the full secret is shown."
+        description="Copy and store it now - this is the only time the full secret is shown."
         secret={secretOnce?.secret}
         testid="secret-once"
       />
@@ -461,7 +626,7 @@ export function SecurityCenterView() {
         open={codesOnce !== null}
         onOpenChange={(open) => !open && setCodesOnce(null)}
         title="New recovery codes"
-        description="The previous set is now invalid. Store these ten single-use codes now — they will never be shown again."
+        description="The previous set is now invalid. Store these ten single-use codes now - they will never be shown again."
         recoveryCodes={codesOnce ?? undefined}
         testid="codes-once"
       />
@@ -469,7 +634,7 @@ export function SecurityCenterView() {
       <p className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-muted-foreground">
         <TriangleAlert className="size-3.5 shrink-0" aria-hidden="true" />
         <span>
-          Security events and login history are append-only — they cannot be
+          Security events and login history are append-only - they cannot be
           edited or deleted from the app.
         </span>
         <Badge variant="outline">READ-ONLY VAULT</Badge>

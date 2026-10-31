@@ -1,10 +1,10 @@
 /**
- * Session Live bounded context (B9) — trading-session lifecycle, saved
+ * Session Live bounded context (B9) - trading-session lifecycle, saved
  * analyses and key levels. READ-ONLY relative to any broker: NO
  * order/execution path exists anywhere in this module (§2/§50).
  *
  * Dependency graph (acyclic):
- *   SessionLiveModule → SessionLiveRepository (own Prisma boundary —
+ *   SessionLiveModule → SessionLiveRepository (own Prisma boundary -
  *                       SESSION | ANALYSIS | LEVEL rows)
  *                     → TradesModule (journal facts for the end summary)
  *                     → DisciplineModule (violation rows in window)

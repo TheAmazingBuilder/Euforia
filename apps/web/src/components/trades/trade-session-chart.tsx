@@ -15,7 +15,7 @@ import { formatNumber } from "@cosmoz/shared";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/i18n/i18n-provider";
 
-/** Time axis label — local clock, same convention as the rest of the app. */
+/** Time axis label - local clock, same convention as the rest of the app. */
 const axisTime = new Intl.DateTimeFormat("en-US", {
   hour: "2-digit",
   minute: "2-digit",
@@ -33,7 +33,7 @@ interface TradeSessionChartProps {
 }
 
 /**
- * Per-trade projection chart — the journal's entry/exit/SL/TP levels drawn
+ * Per-trade projection chart - the journal's entry/exit/SL/TP levels drawn
  * OVER the session price path around the trade window. One request builds
  * everything: the server returns the series WITH the recorded levels and the
  * entry/exit bucket indices, so the client only renders.

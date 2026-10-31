@@ -29,7 +29,7 @@ import { GOAL_DOTS, GOAL_GRADIENTS, METRIC_META, PERIOD_LABELS } from "@/compone
 
 /**
  * Create / edit a goal. The trader picks WHAT (metric), HOW MUCH (target)
- * and OVER WHAT (period) — the direction, the unit and every progress number
+ * and OVER WHAT (period) - the direction, the unit and every progress number
  * are derived server-side from real trading behavior, never self-entered.
  */
 
@@ -37,7 +37,7 @@ const METRICS = Object.keys(METRIC_META) as GoalMetric[];
 const PERIODS = Object.keys(PERIOD_LABELS) as GoalPeriod[];
 const COLORS = Object.keys(GOAL_GRADIENTS) as GoalColor[];
 
-/** Suggested target per metric — a starting point, editable. */
+/** Suggested target per metric - a starting point, editable. */
 const DEFAULT_TARGETS: Record<GoalMetric, number> = {
   WIN_RATE: 50,
   R_EARNED: 10,
@@ -76,7 +76,7 @@ export function GoalFormDialog({ open, onOpenChange, editTarget }: GoalFormDialo
   const [period, setPeriod] = React.useState<GoalPeriod>("MONTH");
   const [color, setColor] = React.useState<GoalColor>("VIOLET");
 
-  // Re-hydrate whenever the dialog opens (or the edit target swaps — the
+  // Re-hydrate whenever the dialog opens (or the edit target swaps - the
   // caller also remounts by key). Guarded render-time adjustment per the
   // React docs "You might not need an effect" pattern.
   const [wasOpen, setWasOpen] = React.useState(open);
@@ -119,7 +119,7 @@ export function GoalFormDialog({ open, onOpenChange, editTarget }: GoalFormDialo
             toast.success("Goal updated", { description: title.trim() });
             onOpenChange(false);
           },
-          onError: (error) => toast.error("Could not update the goal", { description: apiErrorMessage(error, "Unexpected error — try again.") }),
+          onError: (error) => toast.error("Could not update the goal", { description: apiErrorMessage(error, "Unexpected error - try again.") }),
         },
       );
     } else {
@@ -128,11 +128,11 @@ export function GoalFormDialog({ open, onOpenChange, editTarget }: GoalFormDialo
         {
           onSuccess: (created) => {
             toast.success("Goal created", {
-              description: `${created.goal.title} — progress is tracked against real trades from now on.`,
+              description: `${created.goal.title} - progress is tracked against real trades from now on.`,
             });
             onOpenChange(false);
           },
-          onError: (error) => toast.error("Could not create the goal", { description: apiErrorMessage(error, "Unexpected error — try again.") }),
+          onError: (error) => toast.error("Could not create the goal", { description: apiErrorMessage(error, "Unexpected error - try again.") }),
         },
       );
     }
@@ -146,7 +146,7 @@ export function GoalFormDialog({ open, onOpenChange, editTarget }: GoalFormDialo
         <DialogHeader>
           <DialogTitle>{editTarget ? "Edit goal" : "New goal"}</DialogTitle>
           <DialogDescription>
-            Pick what to hold yourself to — Euforia compares it with your real trading behavior over the period.
+            Pick what to hold yourself to - Euforia compares it with your real trading behavior over the period.
           </DialogDescription>
         </DialogHeader>
 
@@ -217,7 +217,7 @@ export function GoalFormDialog({ open, onOpenChange, editTarget }: GoalFormDialo
             </div>
 
             <div>
-              <Label>Color</Label>
+              <Label>Display tone</Label>
               <div className="mt-2 flex gap-1.5" data-testid="goal-color-picker">
                 {COLORS.map((key) => (
                   <button
@@ -227,7 +227,7 @@ export function GoalFormDialog({ open, onOpenChange, editTarget }: GoalFormDialo
                     aria-pressed={color === key}
                     onClick={() => setColor(key)}
                     className={cn(
-                      "size-6 rounded-full bg-gradient-to-br transition-transform hover:scale-110",
+                      "size-6 rounded-full transition-transform hover:scale-110",
                       GOAL_GRADIENTS[key],
                       color !== key && "opacity-35",
                       color === key && "ring-2 ring-ring ring-offset-2 ring-offset-background",

@@ -33,10 +33,10 @@ import {
 import { INTEGRATION_ROW_KINDS, IntegrationsRepository } from "./integrations.repository";
 
 /**
- * Integration Hub service — the platform layer over REAL persistence
+ * Integration Hub service - the platform layer over REAL persistence
  * (MASTER PROMPT §3–§31). Ported 1:1 from `mocks/integration-engine.ts`:
  * same demo beats, same honest nulls, same §14 idempotency and §28
- * retention — but every mutation survives a restart (IntegrationRow rows).
+ * retention - but every mutation survives a restart (IntegrationRow rows).
  *
  * Secrets never appear on the wire: messages pass through `sanitizeSecrets`
  * before leaving the service, and the public provider view strips the
@@ -77,7 +77,7 @@ interface ProviderRuntimeState {
   } | null;
   connectedAt: string | null;
   secret: string | null;
-  /** Persisted scenario flag — cTrader's first pairing ships an expired key. */
+  /** Persisted scenario flag - cTrader's first pairing ships an expired key. */
   scenario: "expired-credentials" | null;
   pairedOnce: boolean;
   syncCounter: number;
@@ -126,7 +126,7 @@ function baseSync() {
 }
 
 @Injectable()
-export class IntegrationsService {  /** Transient rate-limit windows — session-scoped by design (the mock's
+export class IntegrationsService {  /** Transient rate-limit windows - session-scoped by design (the mock's
    * quota bookkeeping never outlived the process either). */
   private rateWindows = new Map<string, { count: number; windowStartMs: number }>();
 
@@ -138,15 +138,21 @@ export class IntegrationsService {  /** Transient rate-limit windows — session
   // ── Lazy per-user seed (first overview read materializes the demo state) ──
 
   private async seedIfEmpty(userId: string): Promise<void> {
-    if (await this.repository.hasAnyRow(userId, INTEGRATION_ROW_KINDS.PROVIDER)) return;
     const nowMs = this.now();
 
+    // Seed every missing provider independently. If an earlier startup was
+    // interrupted after writing only part of the catalog, existing rows must
+    // not prevent the remaining providers from being materialized.
     for (const entry of PROVIDER_CATALOG) {
+      const existing = await this.repository.findRow(userId, INTEGRATION_ROW_KINDS.PROVIDER, entry.id);
+      if (existing !== null) continue;
       const state = this.freshState(entry, nowMs);
       await this.repository.upsertRow(userId, INTEGRATION_ROW_KINDS.PROVIDER, entry.id, state as unknown as Prisma.InputJsonValue);
     }
 
-    await this.repository.upsertRow(userId, INTEGRATION_ROW_KINDS.WEBHOOK, DEMO_WEBHOOK.id, {
+    const webhookExists = await this.repository.findRow(userId, INTEGRATION_ROW_KINDS.WEBHOOK, DEMO_WEBHOOK.id);
+    if (webhookExists === null) {
+      await this.repository.upsertRow(userId, INTEGRATION_ROW_KINDS.WEBHOOK, DEMO_WEBHOOK.id, {
       providerId: DEMO_WEBHOOK.providerId,
       path: DEMO_WEBHOOK.path,
       status: DEMO_WEBHOOK.status,
@@ -154,30 +160,37 @@ export class IntegrationsService {  /** Transient rate-limit windows — session
       deliveries: [],
       lastAcceptedEventId: null,
       secret: DEMO_WEBHOOK.secret,
-    } as unknown as Prisma.InputJsonValue);
-
-    for (const [index, entry] of SEED_EVENT_LOG.entries()) {
-      await this.repository.appendRow(userId, INTEGRATION_ROW_KINDS.EVENT, `seed-${index}`, {
-        occurredAt: new Date(nowMs - (SEED_EVENT_LOG.length - index) * 7 * 60_000).toISOString(),
-        providerId: entry.providerId,
-        providerName: entry.providerName,
-        type: entry.type,
-        message: entry.message,
-      });
+      } as unknown as Prisma.InputJsonValue);
     }
 
-    // §9 — the economic layer consumes a RAW provider payload and normalizes
+    if (!(await this.repository.hasAnyRow(userId, INTEGRATION_ROW_KINDS.EVENT))) {
+      for (const [index, entry] of SEED_EVENT_LOG.entries()) {
+        await this.repository.appendRow(userId, INTEGRATION_ROW_KINDS.EVENT, `seed-${index}`, {
+          occurredAt: new Date(nowMs - (SEED_EVENT_LOG.length - index) * 7 * 60_000).toISOString(),
+          providerId: entry.providerId,
+          providerName: entry.providerName,
+          type: entry.type,
+          message: entry.message,
+        });
+      }
+    }
+
+    // §9 - the economic layer consumes a RAW provider payload and normalizes
     // it; the deterministic calendar generator stands in for that payload.
-    const raw = generateEcoEvents(new Date(nowMs));
-    for (const event of raw) {
-      const providerKey = idempotencyKey("macro-sample", `MACRO-${event.id.slice(0, 8)}`);
-      await this.repository.upsertRow(userId, INTEGRATION_ROW_KINDS.SEEN, providerKey, { seeded: true });
-      const eco = this.normalizeEco(event.id, event.title, event.currency, event.impact, event.scheduledAt, event.previous, event.forecast, event.actual, providerKey);
-      await this.repository.upsertRow(userId, INTEGRATION_ROW_KINDS.ECO, providerKey, eco as unknown as Prisma.InputJsonValue);
+    if (!(await this.repository.hasAnyRow(userId, INTEGRATION_ROW_KINDS.ECO))) {
+      const raw = generateEcoEvents(new Date(nowMs));
+      for (const event of raw) {
+        const providerKey = idempotencyKey("macro-sample", `MACRO-${event.id.slice(0, 8)}`);
+        await this.repository.upsertRow(userId, INTEGRATION_ROW_KINDS.SEEN, providerKey, { seeded: true });
+        const eco = this.normalizeEco(event.id, event.title, event.currency, event.impact, event.scheduledAt, event.previous, event.forecast, event.actual, providerKey);
+        await this.repository.upsertRow(userId, INTEGRATION_ROW_KINDS.ECO, providerKey, eco as unknown as Prisma.InputJsonValue);
+      }
     }
 
-    for (const news of newsSamplesAt(nowMs)) {
-      await this.repository.upsertRow(userId, INTEGRATION_ROW_KINDS.NEWS, news.providerKey, news as unknown as Prisma.InputJsonValue);
+    if (!(await this.repository.hasAnyRow(userId, INTEGRATION_ROW_KINDS.NEWS))) {
+      for (const news of newsSamplesAt(nowMs)) {
+        await this.repository.upsertRow(userId, INTEGRATION_ROW_KINDS.NEWS, news.providerKey, news as unknown as Prisma.InputJsonValue);
+      }
     }
   }
 
@@ -383,7 +396,7 @@ export class IntegrationsService {  /** Transient rate-limit windows — session
     const state = states.get(providerId);
     if (state === undefined) return fail(404, "UNKNOWN_PROVIDER", "Unknown provider");
 
-    // §29 gate — an unverified provider cannot be connected at all.
+    // §29 gate - an unverified provider cannot be connected at all.
     if (!entry.licensing.verified) {
       return fail(422, "LICENSE_UNVERIFIED", `${entry.name} cannot be connected: licensing review has not passed (§29)`);
     }
@@ -419,8 +432,8 @@ export class IntegrationsService {  /** Transient rate-limit windows — session
       entry,
       state.status === "AUTH_REQUIRED" ? "TEST_FAILED" : "CONNECTED",
       state.status === "AUTH_REQUIRED"
-        ? "Paired, but the stored credential is expired — reauthorization required"
-        : `Connected via ${input.vaultRef} — read-only scope`,
+        ? "Paired, but the stored credential is expired - reauthorization required"
+        : `Connected via ${input.vaultRef} - read-only scope`,
       state.secret,
     );
     return ok(this.publicView(entry, state));
@@ -435,7 +448,7 @@ export class IntegrationsService {  /** Transient rate-limit windows — session
     if (state.status === "DISCONNECTED") {
       return fail(409, "NOT_CONNECTED", `${entry.name} is already disconnected`);
     }
-    // §26 — disconnecting must not silently delete historical data.
+    // §26 - disconnecting must not silently delete historical data.
     state.status = "DISCONNECTED";
     state.authState = "MISSING";
     state.credentials = null;
@@ -448,13 +461,13 @@ export class IntegrationsService {  /** Transient rate-limit windows — session
       userId,
       entry,
       "DISCONNECTED",
-      "Disconnected — synced history retained, credentials revoked from the vault",
+      "Disconnected - synced history retained, credentials revoked from the vault",
       null,
     );
     return ok({ providerId, status: state.status, historyPreserved: true });
   }
 
-  /** §27 — safe connection test. Never creates trades or orders. */
+  /** §27 - safe connection test. Never creates trades or orders. */
   async test(userId: string, providerId: string): Promise<Result<IntegrationTestResponse>> {
     const entry = PROVIDER_CATALOG.find((candidate) => candidate.id === providerId);
     if (entry === undefined) return fail(404, "UNKNOWN_PROVIDER", "Unknown provider");
@@ -470,8 +483,8 @@ export class IntegrationsService {  /** Transient rate-limit windows — session
         detail: authOk
           ? "Vault credential accepted"
           : state.credentials === null
-            ? "No credential stored — connect the provider first"
-            : "Stored credential is expired — rotate the key and reconnect",
+            ? "No credential stored - connect the provider first"
+            : "Stored credential is expired - rotate the key and reconnect",
       },
       {
         name: "permissions",
@@ -479,7 +492,7 @@ export class IntegrationsService {  /** Transient rate-limit windows — session
         detail:
           entry.capabilities.length > 0
             ? `Scoped: ${entry.capabilities.join(", ")}`
-            : "No data permissions — visualization only",
+            : "No data permissions - visualization only",
       },
       {
         name: "connectivity",
@@ -487,14 +500,14 @@ export class IntegrationsService {  /** Transient rate-limit windows — session
         detail:
           state.latencyMs === null
             ? "Endpoint unreachable until credentials are valid"
-            : `Reachable — ${state.latencyMs} ms round trip`,
+            : `Reachable - ${state.latencyMs} ms round trip`,
       },
       {
         name: "providerResponse",
         ok: authOk,
         detail: authOk
           ? "Schema-valid response against the provider contract"
-          : "Rejected — the provider answered with an auth error",
+          : "Rejected - the provider answered with an auth error",
       },
     ];
 
@@ -504,7 +517,7 @@ export class IntegrationsService {  /** Transient rate-limit windows — session
       if (state.status === "AUTH_REQUIRED" || state.status === "ERROR") {
         state.status = "CONNECTED";
         state.authState = "OK";
-        await this.logEvent(userId, entry, "RECOVERED", "Connection test passed — provider recovered", state.secret);
+        await this.logEvent(userId, entry, "RECOVERED", "Connection test passed - provider recovered", state.secret);
       } else {
         await this.logEvent(userId, entry, "TEST_OK", "Connection test passed (auth, permissions, connectivity)", state.secret);
       }
@@ -515,7 +528,7 @@ export class IntegrationsService {  /** Transient rate-limit windows — session
         retryable: true,
         actionHint: "Rotate the key in the Security vault, then reconnect",
       });
-      await this.logEvent(userId, entry, "TEST_FAILED", "Connection test failed — credentials expired", state.secret);
+      await this.logEvent(userId, entry, "TEST_FAILED", "Connection test failed - credentials expired", state.secret);
     }
     await this.persistProvider(userId, providerId, state);
     return ok({ ok: allOk, checks });
@@ -558,9 +571,9 @@ export class IntegrationsService {  /** Transient rate-limit windows — session
       state.status = "DEGRADED";
       await this.logError(userId, entry, "PARTIAL_SYNC", "Incremental sync completed with 1 failed record", {
         retryable: true,
-        actionHint: "Retry the sync — the cursor resumes where it stopped",
+        actionHint: "Retry the sync - the cursor resumes where it stopped",
       });
-      await this.logEvent(userId, entry, "DEGRADED", "Partial sync — 1 record failed, cursor retained", state.secret);
+      await this.logEvent(userId, entry, "DEGRADED", "Partial sync - 1 record failed, cursor retained", state.secret);
     } else {
       state.sync.lastSuccessAt = nowIso();
       state.sync.retryCount = 0;
@@ -570,13 +583,13 @@ export class IntegrationsService {  /** Transient rate-limit windows — session
       state.authState = "OK";
       if (wasDegraded) {
         await this.clearErrors(userId, providerId);
-        await this.logEvent(userId, entry, "RECOVERED", "Sync healthy again — provider fully operational", state.secret);
+        await this.logEvent(userId, entry, "RECOVERED", "Sync healthy again - provider fully operational", state.secret);
       } else {
         await this.logEvent(
           userId,
           entry,
           "SYNCED",
-          `Incremental sync ok — ${processed} record(s) in ${durationMs} ms (cursor ${state.cursor ?? "n/a"})`,
+          `Incremental sync ok - ${processed} record(s) in ${durationMs} ms (cursor ${state.cursor ?? "n/a"})`,
           state.secret,
         );
       }
@@ -591,13 +604,13 @@ export class IntegrationsService {  /** Transient rate-limit windows — session
     entry: ProviderCatalogEntry,
     state: ProviderRuntimeState,
   ): Fail | null {
-    // Status is the source of truth — several connected data feeds (market
+    // Status is the source of truth - several connected data feeds (market
     // data, economic sample, charting) operate without stored credentials.
     if (state.status === "DISCONNECTED") {
-      return fail(409, "NOT_CONNECTED", `${entry.name} is not connected — connect it first`);
+      return fail(409, "NOT_CONNECTED", `${entry.name} is not connected - connect it first`);
     }
     if (state.status === "AUTH_REQUIRED") {
-      return fail(409, "AUTH_REQUIRED", `${entry.name} needs reauthorization — rotate the key and reconnect`);
+      return fail(409, "AUTH_REQUIRED", `${entry.name} needs reauthorization - rotate the key and reconnect`);
     }
     return null;
   }
@@ -623,9 +636,9 @@ export class IntegrationsService {  /** Transient rate-limit windows — session
         `Provider rate limit reached (${entry.rateLimit.limitPerWindow} requests / ${Math.round(entry.rateLimit.windowMs / 1000)} s demo window)`,
         { retryable: true, actionHint: "Wait for the quota window to reset, then retry manually", retryAfterMs },
       );
-      await this.logEvent(userId, entry, "SYNC_FAILED", "Rate limited — quota window exhausted", state.secret);
+      await this.logEvent(userId, entry, "SYNC_FAILED", "Rate limited - quota window exhausted", state.secret);
       this.rateWindows.set(windowKey, limits);
-      return fail(429, "RATE_LIMITED", `Rate limit reached for ${entry.name} — retry after the quota window`, retryAfterMs);
+      return fail(429, "RATE_LIMITED", `Rate limit reached for ${entry.name} - retry after the quota window`, retryAfterMs);
     }
     limits.count += 1;
     this.rateWindows.set(windowKey, limits);
@@ -705,7 +718,7 @@ export class IntegrationsService {  /** Transient rate-limit windows — session
       }
       case "BROKER":
       case "EXCHANGE": {
-        // Account snapshot refresh — nulls stay nulls until the adapter sends
+        // Account snapshot refresh - nulls stay nulls until the adapter sends
         // real numbers (honesty rule: never invent balance/equity).
         return 1;
       }
@@ -715,7 +728,7 @@ export class IntegrationsService {  /** Transient rate-limit windows — session
     }
   }
 
-  /** §28 retention pruning — news outlives its window, logs are trimmed. */
+  /** §28 retention pruning - news outlives its window, logs are trimmed. */
   private async pruneRetention(userId: string, nowMs: number): Promise<void> {
     const newsCutoff = new Date(nowMs - INTEGRATION_RETENTION.newsDays * 86_400_000);
     const newsRows = await this.repository.listRows(userId, INTEGRATION_ROW_KINDS.NEWS);
@@ -776,48 +789,48 @@ export class IntegrationsService {  /** Transient rate-limit windows — session
     const signature = this.hmac(hook.secret, rawBody);
     const providedSignature = input.mode === "bad-signature" ? `0${signature.slice(1)}` : signature;
 
-    // Pipeline step 1 — timestamp freshness (replay protection).
+    // Pipeline step 1 - timestamp freshness (replay protection).
     if (!isWebhookTimestampFresh(timestamp, nowMs)) {
       await recordDelivery(input.eventType, false, false, false, "Rejected: timestamp outside the replay window");
       return ok({
         accepted: false,
         duplicate: false,
         signatureValid: true,
-        message: "Rejected — timestamp outside the replay window",
+        message: "Rejected - timestamp outside the replay window",
       });
     }
-    // Pipeline step 2 — signature verification.
+    // Pipeline step 2 - signature verification.
     if (providedSignature !== signature) {
       await recordDelivery(input.eventType, false, false, false, "Rejected: invalid signature");
       const entry = PROVIDER_CATALOG.find((candidate) => candidate.id === DEMO_WEBHOOK.providerId);
       if (entry !== undefined) {
-        await this.logEvent(userId, entry, "WEBHOOK_REJECTED", "Webhook rejected — invalid signature", null);
+        await this.logEvent(userId, entry, "WEBHOOK_REJECTED", "Webhook rejected - invalid signature", null);
       }
       return ok({
         accepted: false,
         duplicate: false,
         signatureValid: false,
-        message: "Rejected — invalid signature",
+        message: "Rejected - invalid signature",
       });
     }
-    // Pipeline step 3 — idempotency (§14).
+    // Pipeline step 3 - idempotency (§14).
     const key = idempotencyKey(DEMO_WEBHOOK.providerId, eventId);
     const seen = await this.repository.findRow(userId, INTEGRATION_ROW_KINDS.SEEN, key);
     if (seen !== null && !replay) {
       await recordDelivery(input.eventType, true, false, false, "Accepted but already processed");
-      return ok({ accepted: false, duplicate: false, signatureValid: true, message: "Duplicate event — ignored" });
+      return ok({ accepted: false, duplicate: false, signatureValid: true, message: "Duplicate event - ignored" });
     }
     if (replay) {
       await recordDelivery(input.eventType, true, true, true, "Duplicate delivery ignored (idempotent)");
       const entry = PROVIDER_CATALOG.find((candidate) => candidate.id === DEMO_WEBHOOK.providerId);
       if (entry !== undefined) {
-        await this.logEvent(userId, entry, "WEBHOOK_DUPLICATE", "Replayed delivery ignored — idempotency held", null);
+        await this.logEvent(userId, entry, "WEBHOOK_DUPLICATE", "Replayed delivery ignored - idempotency held", null);
       }
       return ok({
         accepted: false,
         duplicate: true,
         signatureValid: true,
-        message: "Duplicate — the event was already processed",
+        message: "Duplicate - the event was already processed",
       });
     }
 
@@ -834,15 +847,15 @@ export class IntegrationsService {  /** Transient rate-limit windows — session
       target.status = "UPDATED";
       await this.repository.upsertRow(userId, INTEGRATION_ROW_KINDS.ECO, providerKey, target as unknown as Prisma.InputJsonValue);
     }
-    await recordDelivery(input.eventType, true, true, false, "Signature verified — event applied");
+    await recordDelivery(input.eventType, true, true, false, "Signature verified - event applied");
     const macroEntry = PROVIDER_CATALOG.find((candidate) => candidate.id === DEMO_WEBHOOK.providerId);
     if (macroEntry !== undefined) {
-      await this.logEvent(userId, macroEntry, "WEBHOOK_RECEIVED", `Webhook accepted — ${input.eventType} applied in real time`, null);
+      await this.logEvent(userId, macroEntry, "WEBHOOK_RECEIVED", `Webhook accepted - ${input.eventType} applied in real time`, null);
     }
-    return ok({ accepted: true, duplicate: false, signatureValid: true, message: "Accepted — event applied" });
+    return ok({ accepted: true, duplicate: false, signatureValid: true, message: "Accepted - event applied" });
   }
 
-  /** HMAC-SHA256 hex signature (node:crypto — the mock used webcrypto). */
+  /** HMAC-SHA256 hex signature (node:crypto - the mock used webcrypto). */
   private hmac(secret: string, message: string): string {
     return createHmac("sha256", secret).update(message).digest("hex");
   }

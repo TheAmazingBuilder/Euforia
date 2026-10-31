@@ -12,22 +12,22 @@
  *   Access tokens arrive as `czat1.<base64url payload>.<signature>` where
  *   the payload carries ONLY { uid, iat, exp, v } and the signature is the
  *   issuer's checksum over "<secret>:<body>". This mirrors exactly how a
- *   real deployment verifies a signed JWT at a resource server — no call
+ *   real deployment verifies a signed JWT at a resource server - no call
  *   back to the issuer, no shared session store. In production the mock
  *   checksum becomes a real JWT signature check (JWKS from the NestJS auth
  *   module); the gate's structure, error codes and call sites stay put.
  *
  * Error codes (stable wire contract for the client):
- *   AUTH_REQUIRED  — no token presented
- *   TOKEN_INVALID  — malformed / signature mismatch / unknown version
- *   TOKEN_EXPIRED  — well-formed but past exp
+ *   AUTH_REQUIRED  - no token presented
+ *   TOKEN_INVALID  - malformed / signature mismatch / unknown version
+ *   TOKEN_EXPIRED  - well-formed but past exp
  *
  * Read-only discipline (mission §3/§61): this service consumes broker /
- * provider READ streams only — the gate authenticates observers, it can
+ * provider READ streams only - the gate authenticates observers, it can
  * never grant execution capability because none exists here.
  */
 
-/** Must match MOCK_ACCESS_SECRET in the auth engine (sandbox seam — see header).
+/** Must match MOCK_ACCESS_SECRET in the auth engine (sandbox seam - see header).
  *  Exported so the boot guard (index.ts) can refuse production starts while
  *  this mock verifier is in place (finalization §113). */
 export const MOCK_ACCESS_SECRET = "cosmoz-mock-access-secret-v1";

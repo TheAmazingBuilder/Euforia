@@ -27,7 +27,7 @@ import { useI18n } from "@/i18n/i18n-provider";
 import { cn } from "@/lib/utils";
 
 /**
- * Tasky — the Academy study task manager. A prioritized backlog with due
+ * Tasky - the Academy study task manager. A prioritized backlog with due
  * dates, one-tap completion, XP and a completion streak; tasks can deep
  * link back into courses, drills or the review journal.
  */
@@ -142,7 +142,7 @@ function TaskRow({ task, now }: { task: AcademyTask; now: Date }) {
 
 type Filter = "ALL" | "OPEN" | "DONE";
 
-/** One snapshot per panel mount — keeps "due today" stable while reading. */
+/** One snapshot per panel mount - keeps "due today" stable while reading. */
 const NOW = new Date();
 
 export function AcademyTaskyPanel() {

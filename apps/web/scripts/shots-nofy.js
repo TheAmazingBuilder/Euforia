@@ -22,7 +22,7 @@ const BASE = "http://localhost:3000";
   await page.waitForTimeout(2000);
   await page.screenshot({ path: "/home/z/my-project/scripts/shots/nofy-editor.png", fullPage: true });
 
-  // Slash menu open (fresh empty block — "/" opens the menu at block start)
+  // Slash menu open (fresh empty block - "/" opens the menu at block start)
   await page.locator('[data-testid="nofy-blocks"] > button[aria-label="Add a block"]').click();
   await page.waitForTimeout(400);
   const fresh = page.locator('[data-testid="nofy-block"] textarea').last();

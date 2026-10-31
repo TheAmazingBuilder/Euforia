@@ -52,7 +52,7 @@ import { BridgePairingPanel } from "./bridge-pairing-panel";
  * Capability-driven and honest:
  *  - the connectable list comes from the REAL provider registry (the mock is
  *    stamped "Simulated provider");
- *  - the RECOGNIZED list comes from the universal broker catalog — every
+ *  - the RECOGNIZED list comes from the universal broker catalog - every
  *    known broker/platform stays visible with its truthful connector status,
  *    never a fake setup path;
  *  - while the user types the account number, the identity step calls the
@@ -61,14 +61,14 @@ import { BridgePairingPanel } from "./bridge-pairing-panel";
  * No simulated success screen exists: on the backend's 201 the dialog closes
  * and the new account appears in the list. The initial sync runs server-side.
  * EXCEPTION (Phase 08): PLATFORM_BRIDGE providers (mt5-bridge) carry NO
- * client credential — the identity step hides the secret field behind an
+ * client credential - the identity step hides the secret field behind an
  * honest explainer ("Euforia generates the bridge secret"), the submit body
  * omits `credentials`, and a 201 whose account carries a `pairing` sheet
  * keeps the dialog open on the BridgePairingPanel (ingest URL / key /
  * secret / EA download). Done closes and hands the account to the parent.
  *
  * Layout (overflow fix): the wizard is a PINNED-HEADER / SCROLLABLE-BODY /
- * PINNED-FOOTER shell — `grid-rows-[auto_minmax(0,1fr)_auto]` under a hard
+ * PINNED-FOOTER shell - `grid-rows-[auto_minmax(0,1fr)_auto]` under a hard
  * `max-h-[85dvh]`, so the dialog can never grow past the viewport (the 17+
  * broker catalog on step 1 used to push it off-screen). Only the step body
  * scrolls; the title, the step rail and the actions always stay visible.
@@ -81,7 +81,7 @@ type WizardStep = "provider" | "environment" | "identity";
 
 const STEP_ORDER: WizardStep[] = ["provider", "environment", "identity"];
 
-/** Environment presentation — icon + honest one-liner per capability value.
+/** Environment presentation - icon + honest one-liner per capability value.
  * Keys mirror `supportedEnvironments` (DEMO | LIVE | PROP_FIRM). */
 const ENVIRONMENT_META: Record<string, { icon: LucideIcon; noteKey: "environmentDemo" | "environmentLive" | "environmentPropFirm" }> = {
   DEMO: { icon: FlaskConical, noteKey: "environmentDemo" },
@@ -107,9 +107,9 @@ export function ConnectAccountDialog({
 }: {
   open: boolean;
   onOpenChange: (next: boolean) => void;
-  /** Registry descriptors — the parent owns the providers query. */
+  /** Registry descriptors - the parent owns the providers query. */
   providers: TradingProviderDescriptor[];
-  /** Universal broker catalog (Phase 07) — the parent owns the catalog query. */
+  /** Universal broker catalog (Phase 07) - the parent owns the catalog query. */
   brokers: BrokerCatalogEntry[];
   onConnected: (accountId: string) => void;
 }) {
@@ -121,17 +121,18 @@ export function ConnectAccountDialog({
 
   const [step, setStep] = React.useState<WizardStep>("provider");
   const [provider, setProvider] = React.useState<TradingProviderDescriptor | null>(null);
+  const [selectedBroker, setSelectedBroker] = React.useState<BrokerCatalogEntry | null>(null);
   const [environment, setEnvironment] = React.useState<string | null>(null);
   const [externalAccountId, setExternalAccountId] = React.useState("");
   const [displayName, setDisplayName] = React.useState("");
   const [secret, setSecret] = React.useState("");
-  /** Phase 08 — the connect-time MT5 pairing sheet. When the 201 response
+  /** Phase 08 - the connect-time MT5 pairing sheet. When the 201 response
    * carries account.pairing (PLATFORM_BRIDGE providers), the wizard stays
-   * open on a dedicated pairing view instead of closing — the secret is
+   * open on a dedicated pairing view instead of closing - the secret is
    * handed over right where the user is. onConnected fires on Done so the
    * detail drawer never covers the sheet. */
   const [completed, setCompleted] = React.useState<{ accountId: string; pairing: BridgePairing } | null>(null);
-  /** Identification result tagged with the hint pair it belongs to — derived
+  /** Identification result tagged with the hint pair it belongs to - derived
    * visibility (no sync setState in the effect): the UI shows a result only
    * while it matches the CURRENT provider + account number. */
   const [identification, setIdentification] = React.useState<{
@@ -145,6 +146,7 @@ export function ConnectAccountDialog({
   const reset = React.useCallback(() => {
     setStep("provider");
     setProvider(null);
+    setSelectedBroker(null);
     setEnvironment(null);
     setExternalAccountId("");
     setDisplayName("");
@@ -153,12 +155,15 @@ export function ConnectAccountDialog({
     setCompleted(null);
   }, []);
 
-  // Phase 07 — live broker identification while the account number is typed.
+  // Phase 07 - live broker identification while the account number is typed.
   // Debounced 600 ms; the hint payload contains NO secret (rule-based probe,
-  // 30/15-min server rate limit — far above this cadence). Stale results are
+  // 30/15-min server rate limit - far above this cadence). Stale results are
   // filtered by the derived key comparison above, not by sync setState.
   React.useEffect(() => {
-    if (step !== "identity" || !provider) {
+    // A broker explicitly selected from the catalog is verified against the
+    // first authenticated terminal report; a generic account-id probe cannot
+    // identify the broker and would only consume the identification rate limit.
+    if (step !== "identity" || !provider || selectedBroker) {
       return;
     }
     const id = externalAccountId.trim();
@@ -177,14 +182,14 @@ export function ConnectAccountDialog({
     }, 600);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, provider?.providerId, externalAccountId]);
+  }, [step, provider?.providerId, externalAccountId, selectedBroker?.brokerId]);
 
   const handleOpenChange = (next: boolean) => {
     if (!next) reset();
     onOpenChange(next);
   };
 
-  /** Phase 08 — bridge providers carry NO client credential: the submit body
+  /** Phase 08 - bridge providers carry NO client credential: the submit body
    * omits `credentials` entirely and the backend generates the bridge secret. */
   const isBridgeProvider = provider?.supportedConnectionMethods.includes("PLATFORM_BRIDGE") ?? false;
 
@@ -199,6 +204,7 @@ export function ConnectAccountDialog({
     connect.mutate(
       {
         providerId: provider.providerId,
+        ...(isBridgeProvider && selectedBroker ? { brokerId: selectedBroker.brokerId } : {}),
         environment: environment as "DEMO" | "LIVE" | "PROP_FIRM",
         externalAccountId: externalAccountId.trim(),
         ...(displayName.trim() ? { displayName: displayName.trim() } : {}),
@@ -208,7 +214,7 @@ export function ConnectAccountDialog({
         onSuccess: (response) => {
           const pairing = response.account.pairing ?? null;
           if (pairing) {
-            // Bridge flow — render the pairing sheet instead of closing.
+            // Bridge flow - render the pairing sheet instead of closing.
             toast.success(C.bridge.successTitle, { description: C.bridge.successBody });
             setCompleted({ accountId: response.account.id, pairing });
             return;
@@ -230,7 +236,9 @@ export function ConnectAccountDialog({
                     ? C.errors.invalidCredentials
                     : code === "RATE_LIMITED"
                       ? C.errors.rateLimited
-                      : C.errors.generic;
+                      : code === "BRIDGE_BROKER_MISMATCH"
+                        ? C.errors.brokerMismatch
+                        : C.errors.generic;
           toast.error(message);
         },
       },
@@ -251,7 +259,7 @@ export function ConnectAccountDialog({
     setStep(STEP_ORDER[STEP_ORDER.indexOf(step) + 1]!);
   };
 
-  /** Pinned step rail — compact chips joined by hairline segments; a filled
+  /** Pinned step rail - compact chips joined by hairline segments; a filled
    * segment marks the path already walked (token colors only). */
   const stepRail = (
     <ol
@@ -296,7 +304,7 @@ export function ConnectAccountDialog({
   const stepBody =
     step === "provider" ? C.providerBody : step === "environment" ? C.environmentBody : C.identityTitle;
 
-  /** The scrollable step content — the ONLY region that scrolls. */
+  /** The scrollable step content - the ONLY region that scrolls. */
   const stepContent = (
     <>
       {step === "provider" ? (
@@ -307,7 +315,10 @@ export function ConnectAccountDialog({
               type="button"
               role="radio"
               aria-checked={provider?.providerId === candidate.providerId}
-              onClick={() => setProvider(candidate)}
+              onClick={() => {
+                setSelectedBroker(null);
+                setProvider(candidate);
+              }}
               className={cn(
                 "flex items-center gap-3 rounded-lg border p-3 text-left transition-colors",
                 provider?.providerId === candidate.providerId
@@ -352,14 +363,12 @@ export function ConnectAccountDialog({
               </span>
             </button>
           ))}
-          {/* Phase 07 — the universal broker catalog: every known broker
-              stays visible with its honest connector status. Entries whose
-              connector IS available already render as radio cards above.
-              The recognized list is scroll-compact so the connectable
-              cards stay in view — 17+ catalog entries would otherwise
-              bury them. */}
-          {brokers.filter((entry) => entry.connectorStatus !== "CONNECTOR_AVAILABLE").length >
-          0 ? (
+          {/* Universal broker catalog: show every known broker, including
+              brands supported by a shared connector (for example, MT5 Bridge).
+              The connector is selected above; this list communicates which
+              broker identities are recognized and whether a usable path exists.
+              Keep the list scroll-compact so it does not bury connectable paths. */}
+          {brokers.length > 0 ? (
             <div className="rounded-lg border border-border/60 bg-muted/20">
               <p className="px-3 pt-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
                 {C.providerRecognizedSection}
@@ -369,31 +378,82 @@ export function ConnectAccountDialog({
                 data-testid="connect-recognized-brokers"
               >
                 <div className="grid gap-1.5">
-                  {brokers
-                    .filter((entry) => entry.connectorStatus !== "CONNECTOR_AVAILABLE")
-                    .map((entry) => (
-                      <div
-                        key={entry.brokerId}
-                        className="flex items-start gap-2.5 rounded-md border border-dashed border-border bg-surface p-2.5 opacity-80"
-                        data-testid={`connect-provider-recognized-${entry.brokerId}`}
-                        aria-label={`${entry.displayName} — ${C.providerRecognized}`}
-                      >
-                        <Lock className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" aria-hidden />
+                  {brokers.map((entry) => {
+                    const bridgeProvider =
+                      entry.providerId === "mt5-bridge"
+                        ? providers.find((candidate) => candidate.providerId === entry.providerId)
+                        : undefined;
+                    const canChoose =
+                      entry.connectorStatus === "CONNECTOR_AVAILABLE" &&
+                      entry.providerId === "mt5-bridge" &&
+                      ["icmarkets", "axi", "puprime"].includes(entry.brokerId) &&
+                      bridgeProvider !== undefined;
+                    // Providers with their own API adapter are already listed
+                    // above; omit those duplicates from this brand catalogue.
+                    if (
+                      entry.connectorStatus === "CONNECTOR_AVAILABLE" &&
+                      entry.providerId !== "mt5-bridge"
+                    ) {
+                      return null;
+                    }
+                    const rowContent = (
+                      <>
+                        {canChoose ? (
+                          <ShieldCheck className="mt-0.5 size-3.5 shrink-0 text-accent" aria-hidden />
+                        ) : (
+                          <Lock className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" aria-hidden />
+                        )}
                         <div className="min-w-0 flex-1">
                           <div className="flex flex-wrap items-center gap-2">
-                            <span className="text-sm font-medium text-muted-foreground">
+                            <span className={cn(
+                              "text-sm font-medium",
+                              canChoose ? "text-foreground" : "text-muted-foreground",
+                            )}>
                               {entry.displayName}
                             </span>
                             <span className="rounded-sm bg-muted px-1 py-0.5 font-mono text-[9px] uppercase leading-none tracking-wide text-muted-foreground">
-                              {C.providerRecognized}
+                              {canChoose ? C.connectViaMt5 : C.providerRecognized}
                             </span>
                           </div>
                           <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
                             {entry.notes}
                           </p>
                         </div>
+                      </>
+                    );
+                    return canChoose ? (
+                      <button
+                        key={entry.brokerId}
+                        type="button"
+                        onClick={() => {
+                          if (!bridgeProvider) return;
+                          setProvider(bridgeProvider);
+                          setSelectedBroker(entry);
+                          setEnvironment(null);
+                          setStep("environment");
+                        }}
+                        className={cn(
+                          "flex items-start gap-2.5 rounded-md border p-2.5 text-left transition-colors hover:border-accent/40 hover:bg-muted/30",
+                          selectedBroker?.brokerId === entry.brokerId
+                            ? "border-accent bg-accent/5 ring-1 ring-accent/30"
+                            : "border-border bg-surface",
+                        )}
+                        data-testid={`connect-broker-choice-${entry.brokerId}`}
+                        aria-label={`${entry.displayName} - ${C.connectViaMt5}`}
+                      >
+                        {rowContent}
+                      </button>
+                    ) : (
+                      <div
+                        key={entry.brokerId}
+                        className="flex items-start gap-2.5 rounded-md border border-dashed border-border bg-surface p-2.5 opacity-80"
+                        data-testid={`connect-provider-recognized-${entry.brokerId}`}
+                        aria-label={`${entry.displayName} - ${C.providerRecognized}`}
+                      >
+                        {rowContent}
                       </div>
-                    ))}
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -448,9 +508,21 @@ export function ConnectAccountDialog({
             );
           })}
           <p className="text-xs leading-relaxed text-muted-foreground">
-            {provider.providerName} serves {provider.supportedEnvironments.join(" and ")} accounts — other
+            {provider.providerName} serves {provider.supportedEnvironments.join(" and ")} accounts - other
             environments are refused by the provider.
           </p>
+          {selectedBroker ? (
+            <div
+              className="grid gap-1 rounded-lg border border-accent/30 bg-accent/5 p-3"
+              data-testid="connect-selected-broker"
+            >
+              <p className="text-sm font-medium text-foreground">
+                {selectedBroker.displayName} · MT5
+              </p>
+              <p className="text-xs leading-relaxed text-muted-foreground">{selectedBroker.notes}</p>
+              <p className="text-xs leading-relaxed text-muted-foreground">{C.selectedBrokerHint}</p>
+            </div>
+          ) : null}
         </div>
       ) : null}
 
@@ -467,7 +539,7 @@ export function ConnectAccountDialog({
               data-testid="connect-external-id"
             />
             <p className="text-xs text-muted-foreground">{C.externalIdHint}</p>
-            {shownIdentification ? (
+            {shownIdentification && !selectedBroker ? (
               <p
                 className="flex items-start gap-1.5 rounded-md border border-border bg-muted/40 px-2 py-1.5 text-xs text-muted-foreground"
                 data-testid="connect-broker-identification"
@@ -487,14 +559,14 @@ export function ConnectAccountDialog({
               id="connect-display-name"
               value={displayName}
               onChange={(event) => setDisplayName(event.target.value)}
-              placeholder={`${provider.providerName} ${environment ?? ""}`}
+              placeholder={`${selectedBroker?.displayName ?? provider.providerName} ${environment ?? ""}`}
               autoComplete="off"
               data-testid="connect-display-name"
             />
             <p className="text-xs text-muted-foreground">{C.displayNameHint}</p>
           </div>
           {isBridgeProvider ? (
-            // Phase 08 — PLATFORM_BRIDGE: no credential input exists. The
+            // Phase 08 - PLATFORM_BRIDGE: no credential input exists. The
             // honest explainer replaces the API-key/secret field.
             <div className="grid gap-2" data-testid="connect-bridge-explainer">
               <p className="flex items-start gap-2 rounded-md border border-accent/30 bg-accent/10 p-3 text-xs leading-relaxed text-accent">
@@ -505,6 +577,11 @@ export function ConnectAccountDialog({
                 <Lock className="mt-0.5 size-3 shrink-0" aria-hidden />
                 {C.bridge.identityNote}
               </p>
+              {selectedBroker ? (
+                <p className="text-xs leading-relaxed text-muted-foreground" data-testid="connect-selected-broker-identity-hint">
+                  {selectedBroker.displayName}: {C.selectedBrokerHint}
+                </p>
+              ) : null}
             </div>
           ) : (
             <div className="grid gap-1.5">
@@ -533,7 +610,7 @@ export function ConnectAccountDialog({
     </>
   );
 
-  /** Phase 08 — leave the pairing view: close (resets) THEN hand the fresh
+  /** Phase 08 - leave the pairing view: close (resets) THEN hand the fresh
    * account to the parent, so the detail drawer never covers the sheet. */
   const finishPairing = () => {
     const accountId = completed?.accountId ?? null;

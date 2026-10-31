@@ -30,15 +30,15 @@ import {
 } from "@/lib/api/queries";
 
 /**
- * Nofy shell — the personal knowledge workspace lives on ONE route with
+ * Nofy shell - the personal knowledge workspace lives on ONE route with
  * internal navigation (?tab=, module convention): Overview, My Notes,
  * Folders, Favorites, Templates and Trash. Opening a note (?note=) swaps
  * the whole content area for the block editor; Focus Mode hides the
  * chrome entirely (spec §40/§41). Nofy is a first-class module under the
- * ACADEMY section — never a sub-tab of Academy (spec §1/§78).
+ * ACADEMY section - never a sub-tab of Academy (spec §1/§78).
  */
 
-/** Tab ids + icons only — labels resolve through dict.nofy.view.tabs. */
+/** Tab ids + icons only - labels resolve through dict.nofy.view.tabs. */
 const TABS = [
   { id: "overview", icon: LayoutDashboard },
   { id: "notes", icon: FileText },
@@ -132,7 +132,7 @@ export function NofyView() {
     [setParams],
   );
 
-  // ── Editor mode — the writing surface takes over the content area ──────────
+  // ── Editor mode - the writing surface takes over the content area ──────────
   if (openNoteId !== null && openNoteId !== "") {
     return (
       <div className="mx-auto w-full max-w-4xl" data-testid="nofy-view">

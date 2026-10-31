@@ -1,5 +1,5 @@
 /**
- * Full visual audit capture — reusable before/after design comparisons.
+ * Full visual audit capture - reusable before/after design comparisons.
  * Usage: node scripts/capture-shots.js <label> [routesCSV]
  * Output: scripts/shots/<label>/{desktop,mobile,themes}/*.png
  */

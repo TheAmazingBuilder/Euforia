@@ -1,15 +1,39 @@
 import { describe, expect, it } from "vitest";
 import { EnvValidationError, validateEnv } from "../../src/config/env.schema";
+import { loadAppConfig, resetAppConfigCache } from "../../src/config/app-config";
 
 const BASE_ENV = {
   NODE_ENV: "test",
-  DATABASE_URL: "postgresql://cosmoz@127.0.0.1:5433/cosmoz_test",
+  DATABASE_URL: "postgresql://postgres@127.0.0.1:5432/cosmoz_test",
   AUTH_JWT_SECRET: "test-only-jwt-secret-0123456789abcdef0123456789",
   AUTH_MFA_ENCRYPTION_KEY: "h0mEbiEr05Qkg5f8Duz4PrOups2o69gGx+LIEdXAuvU=",
   ACCOUNTS_CREDENTIALS_ENCRYPTION_KEY: "Mck3U8lb0RHzT7eDlBd7hgmE5FpYm0ZOSJB3ZfA4GFo=",
-  // Integration Hub (B14) — webhook-secret vault key (base64, 32 bytes).
+  // Integration Hub (B14) - webhook-secret vault key (base64, 32 bytes).
   INTEGRATIONS_WEBHOOK_ENCRYPTION_KEY: "u4xveSMFK0EL4Wp6XsBmPWcimrrG7Tg9KxLFRnGzc1M=",
 } as const;
+
+describe("mock provider defaults", () => {
+  it("keeps synthetic account and OCR providers disabled in development by default", () => {
+    resetAppConfigCache();
+    const config = loadAppConfig({ ...BASE_ENV, NODE_ENV: "development" });
+    expect(config.accounts.mockProviderEnabled).toBe(false);
+    expect(config.ocr.mockEngineEnabled).toBe(false);
+    resetAppConfigCache();
+  });
+
+  it("allows explicit mock-provider opt-in for development tests", () => {
+    resetAppConfigCache();
+    const config = loadAppConfig({
+      ...BASE_ENV,
+      NODE_ENV: "development",
+      ACCOUNTS_MOCK_PROVIDER: "enabled",
+      OCR_MOCK_ENGINE: "enabled",
+    });
+    expect(config.accounts.mockProviderEnabled).toBe(true);
+    expect(config.ocr.mockEngineEnabled).toBe(true);
+    resetAppConfigCache();
+  });
+});
 
 describe("validateEnv", () => {
   it("applies safe development defaults", () => {
@@ -28,6 +52,7 @@ describe("validateEnv", () => {
     const env = validateEnv({
       ...BASE_ENV,
       NODE_ENV: "production",
+      WEB_APP_URL: "https://app.euforia.app",
       PORT: "8080",
       CORS_ORIGINS: "https://app.cosmoz.app , https://admin.cosmoz.app/",
       LOG_LEVEL: "warn",
@@ -36,6 +61,8 @@ describe("validateEnv", () => {
       RATE_LIMIT_WINDOW_SECONDS: "30",
       RATE_LIMIT_MAX: "1000",
       MARKET_SERVICE_URL: "https://market.cosmoz.internal",
+      SMTP_USER: "mailer@example.com",
+      SMTP_APP_PASSWORD: "test-only-app-password",
     });
     expect(env.PORT).toBe(8080);
     expect(env.CORS_ORIGINS).toEqual(["https://app.cosmoz.app", "https://admin.cosmoz.app"]);
@@ -72,7 +99,7 @@ describe("validateEnv", () => {
   });
 
   it("rejects a body limit below the largest image upload cap (§85 coherence)", () => {
-    // Default caps: OCR 6 MB / trades screenshots 6 MB — a 2 MB body limit
+    // Default caps: OCR 6 MB / trades screenshots 6 MB - a 2 MB body limit
     // cannot carry the base64 data URL of a max-size upload, so boot must
     // fail loudly instead of 413-ing at runtime.
     try {
@@ -83,6 +110,30 @@ describe("validateEnv", () => {
       const issues = (error as EnvValidationError).issues;
       expect(issues.some((issue) => issue.path === "BODY_LIMIT_BYTES")).toBe(true);
     }
+  });
+
+  it("requires SMTP credentials together and in production", () => {
+    expect(() => validateEnv({ ...BASE_ENV, SMTP_USER: "mailer@example.com" })).toThrow(/SMTP_APP_PASSWORD/);
+    expect(() => validateEnv({ ...BASE_ENV, NODE_ENV: "production" })).toThrow(/SMTP_USER/);
+  });
+
+  it("rejects insecure HTTP authentication links in production", () => {
+    expect(() => validateEnv({
+      ...BASE_ENV,
+      NODE_ENV: "production",
+      WEB_APP_URL: "http://app.euforia.app",
+      SMTP_USER: "mailer@example.com",
+      SMTP_APP_PASSWORD: "test-only-app-password",
+    })).toThrow(/WEB_APP_URL must use HTTPS in production/);
+  });
+
+  it("normalizes spaces from a Google App Password", () => {
+    const env = validateEnv({
+      ...BASE_ENV,
+      SMTP_USER: "mailer@example.com",
+      SMTP_APP_PASSWORD: "abcd efgh ijkl mnop",
+    });
+    expect(env.SMTP_APP_PASSWORD).toBe("abcdefghijklmnop");
   });
 
   it("rejects invalid values for numeric and enum settings", () => {

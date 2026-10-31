@@ -1,5 +1,5 @@
 /**
- * Profile probe — the identity hub, faithful to the product reference.
+ * Profile probe - the identity hub, faithful to the product reference.
  * Covers: identity header (avatar + camera, name + Pro Member badge, job
  * title, email/location/joined meta, Edit Profile), 4-tab bar, Personal
  * form (prefilled fields + PATCH save flow + header sync), Account tab
@@ -20,7 +20,7 @@ function check(label, ok, extra = "") {
   const tag = ok ? "✓" : "✗";
   if (ok) passed += 1;
   else failed += 1;
-  console.log(`  ${tag} ${label}${extra ? ` — ${extra}` : ""}`);
+  console.log(`  ${tag} ${label}${extra ? ` - ${extra}` : ""}`);
 }
 
 async function login(page) {

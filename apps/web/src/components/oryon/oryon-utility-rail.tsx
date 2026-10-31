@@ -4,6 +4,7 @@ import * as React from "react";
 
 import { Bell, BellRing, CalendarDays, List, X } from "lucide-react";
 
+import Link from "next/link";
 import type { EcoEvent, Instrument } from "@cosmoz/shared";
 
 import { useEcoEvents } from "@/lib/api/queries";
@@ -40,9 +41,9 @@ import { useOryonDrawings } from "@/components/oryon/oryon-drawings-context";
 import type { OryonUtilityPanel } from "@/components/oryon/oryon-view";
 
 /**
- * Oryon right utility rail — notifications + price alerts + eco calendar +
+ * Oryon right utility rail - notifications + price alerts + eco calendar +
  * the drawing OBJECTS dock (Toolbar v4: the drawing manager moved from the
- * in-chart overlay to this right-side rail — same component, one surface).
+ * in-chart overlay to this right-side rail - same component, one surface).
  *
  * lg+: docked aside, one panel visible at a time (tabs), closes without
  * eating chart space. Below lg: the SAME content opens in a Sheet overlay.
@@ -50,7 +51,7 @@ import type { OryonUtilityPanel } from "@/components/oryon/oryon-view";
  * Honesty contract (Phase 1 spec §6D): the notifications panel states that
  * notifications are not wired into the charting workspace yet, the calendar
  * reuses the app's REAL eco-event surface read-only, and the alerts panel
- * (Phase 5) states its browser-local scope in plain copy — nothing is
+ * (Phase 5) states its browser-local scope in plain copy - nothing is
  * fabricated here.
  */
 export function OryonUtilityRail({
@@ -65,7 +66,7 @@ export function OryonUtilityRail({
   panel: OryonUtilityPanel;
   onPanelChange: (panel: OryonUtilityPanel) => void;
   onClose: () => void;
-  /** The ACTIVE chart's instrument — the context panel follows it (§7). */
+  /** The ACTIVE chart's instrument - the context panel follows it (§7). */
   activeInstrument?: Instrument | null;
   /** Renders as a Sheet overlay instead of the docked aside (<lg). */
   overlay?: boolean;
@@ -218,7 +219,7 @@ function OryonUtilityContent({
   );
 }
 
-/** Honest deferred surface — no fabricated notification feed. */
+/** Honest deferred surface - no fabricated notification feed. */
 function OryonNotificationsPanel() {
   const dict = useDict();
   const S = dict.oryon.utility;
@@ -227,14 +228,14 @@ function OryonNotificationsPanel() {
     <div className="flex min-h-0 flex-1 flex-col gap-3 p-4" data-testid="oryon-panel-notifications">
       <p className="text-sm text-muted-foreground">{S.notificationsBody}</p>
       <Button asChild variant="outline" size="sm" className="w-fit">
-        <a href="/nofy">{S.notificationsLink}</a>
+        <Link href="/nofy">{S.notificationsLink}</Link>
       </Button>
     </div>
   );
 }
 
 /**
- * Objects dock (Toolbar v4) — the drawing manager the rail's list toggle
+ * Objects dock (Toolbar v4) - the drawing manager the rail's list toggle
  * opens. ONE instance on the right rail (moved, not duplicated): it binds
  * the ACTIVE chart's per-symbol drawing store through the drawings
  * context, so selection/locking/style edits target exactly the chart the
@@ -260,21 +261,21 @@ function OryonObjectsPanel() {
 }
 
 /**
- * Market-context panel (Phase 8 spec §7) — extends the rail's existing
+ * Market-context panel (Phase 8 spec §7) - extends the rail's existing
  * calendar tab in place (reuse, not a second module): a compact SESSION
  * status section for the ACTIVE chart's asset class, plus the economic
  * event list over the REAL shared eco-event surface with the filters the
- * verified data model can actually apply (importance — the shared enum —
- * currency — the ISO code on every record — and upcoming/all scope).
+ * verified data model can actually apply (importance - the shared enum -
+ * currency - the ISO code on every record - and upcoming/all scope).
  *
  * Timezone (§9.1): every time renders in the PROFILE timezone (single
- * source of truth, reused) — a display change never moves an event or a
+ * source of truth, reused) - a display change never moves an event or a
  * session interval.
  *
  * Honesty: sessions are an INDICATIVE reference (no verified holiday
- * calendar exists — stated in plain copy); events come from the
+ * calendar exists - stated in plain copy); events come from the
  * deterministic sample provider (stated in plain copy); missing
- * actual/forecast/previous render as "—", never fabricated zeros (§6.1).
+ * actual/forecast/previous render as "-", never fabricated zeros (§6.1).
  */
 function OryonMarketContextPanel({ instrument }: { instrument: Instrument | null }) {
   const dict = useDict();
@@ -283,7 +284,7 @@ function OryonMarketContextPanel({ instrument }: { instrument: Instrument | null
   const displayTz = useDisplayTimezone();
   const eco = useEcoEvents();
 
-  // Event filters — session-local browsing state (documented: these are
+  // Event filters - session-local browsing state (documented: these are
   // reading controls of the calendar surface, not persisted chart config).
   const [scope, setScope] = React.useState<"upcoming" | "all">("upcoming");
   const [importance, setImportance] = React.useState<"ALL" | "MEDIUM" | "HIGH">("ALL");
@@ -315,9 +316,9 @@ function OryonMarketContextPanel({ instrument }: { instrument: Instrument | null
       .slice(0, 40);
   }, [events, scope, importance, currency, nowMs]);
 
-  // Sessions of the ACTIVE chart's asset class (§4.1 scope) — re-computed
+  // Sessions of the ACTIVE chart's asset class (§4.1 scope) - re-computed
   // on the 15 s cadence; the engine caches per session-day internally.
-  // Before the first tick (nowMs null — SSR/hydration-safe) the rows render
+  // Before the first tick (nowMs null - SSR/hydration-safe) the rows render
   // with an "unavailable" status: never a Date.now() read during render.
   const sessionDefs = React.useMemo(
     () => (instrument !== null ? sessionsForAssetClass(instrument.assetClass) : []),
@@ -372,7 +373,7 @@ function OryonMarketContextPanel({ instrument }: { instrument: Instrument | null
                             ? S.sessionClosesAt.replace("{t}", formatTimeInZone(status.transitionMs, def.ianaZone))
                             : S.sessionOpensAt.replace("{t}", formatTimeInZone(status.transitionMs, def.ianaZone))
                         }`
-                      : "—"}
+                      : "-"}
                   </span>
                 </span>
                 <span
@@ -519,7 +520,7 @@ function OryonMarketContextPanel({ instrument }: { instrument: Instrument | null
                     ).map(([label, value]) => (
                       <div key={label} className="rounded-sm bg-surface-raised px-1.5 py-0.5">
                         <dt className="text-[9px] uppercase tracking-wide text-muted-foreground">{label}</dt>
-                        <dd className="tabular-nums text-foreground">{value ?? "—"}</dd>
+                        <dd className="tabular-nums text-foreground">{value ?? "-"}</dd>
                       </div>
                     ))}
                   </dl>
@@ -537,7 +538,7 @@ function OryonMarketContextPanel({ instrument }: { instrument: Instrument | null
         {(eco.data?.source ?? "sample") === "sample" ? S.eventsSourceNote : S.eventsSourceLive}
       </p>
       <Button asChild variant="ghost" size="sm" className="mt-1 w-fit">
-        <a href="/events">{utility.calendarLink}</a>
+        <Link href="/events">{utility.calendarLink}</Link>
       </Button>
     </div>
   );

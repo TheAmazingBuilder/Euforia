@@ -1,11 +1,11 @@
 /**
- * verify-bridge-ui.js — Phase 08 MT5 terminal bridge (frontend wiring).
+ * verify-bridge-ui.js - Phase 08 MT5 terminal bridge (frontend wiring).
  *
  * Task 1-webui-bridge probe plan (desktop 1440×900, MSW prod build):
  *   A. Providers list: the connect dialog registry contains "MT5 Terminal
  *      Bridge" (mt5-bridge), honestly NOT stamped "Simulated provider".
  *   B. Bridge connect flow: for a PLATFORM_BRIDGE provider the identity step
- *      shows NO secret input — the honest explainer instead — and the submit
+ *      shows NO secret input - the honest explainer instead - and the submit
  *      body carries NO credentials (the mock engine refuses credentials for
  *      bridge providers, so a 201 proves the omission).
  *   C. Pairing panel (connect-time follow-up state): absolute ingest URL,
@@ -20,7 +20,7 @@
  * Run: bash scripts/verify-bridge-ui-run.sh
  * (or: node apps/web/scripts/verify-bridge-ui.js with :3000 listening)
  *
- * Probe conventions (verify-connect-redesign lessons): no networkidle —
+ * Probe conventions (verify-connect-redesign lessons): no networkidle -
  * domcontentloaded + waits; nextjs-portal removed so it cannot swallow
  * clicks; demo login via the shared helper.
  */
@@ -42,7 +42,7 @@ function check(label, ok, extra = "") {
   const tag = ok ? "✓" : "✗";
   if (ok) passed += 1;
   else failed += 1;
-  console.log(`  ${tag} ${label}${extra ? ` — ${extra}` : ""}`);
+  console.log(`  ${tag} ${label}${extra ? ` - ${extra}` : ""}`);
 }
 
 async function clearDevOverlay(page) {
@@ -88,7 +88,7 @@ const BRIDGE_EXTERNAL_ID = "5021347";
   await clearDevOverlay(page);
 
   // ── A. Providers list contains the MT5 Terminal Bridge ───────────────────
-  console.log("\n[A] Providers registry — MT5 Terminal Bridge");
+  console.log("\n[A] Providers registry - MT5 Terminal Bridge");
   await page.locator('a[href="/accounts"]').first().click();
   await page.waitForFunction(
     () => document.querySelector("h1")?.textContent?.trim() === "Accounts",
@@ -121,8 +121,8 @@ const BRIDGE_EXTERNAL_ID = "5021347";
   );
   await page.screenshot({ path: `${SHOT_DIR}/01-provider-list.png` });
 
-  // ── B. Bridge connect flow — NO secret input ─────────────────────────────
-  console.log("\n[B] Bridge connect flow — no credentials");
+  // ── B. Bridge connect flow - NO secret input ─────────────────────────────
+  console.log("\n[B] Bridge connect flow - no credentials");
   await bridgeRow.click();
   await page.locator('[data-testid="connect-next"]').click();
   await page.waitForTimeout(500);
@@ -149,7 +149,7 @@ const BRIDGE_EXTERNAL_ID = "5021347";
   await page.screenshot({ path: `${SHOT_DIR}/02-bridge-identity-step.png` });
   await submitBtn.click();
 
-  // ── C. Pairing panel — the connect-time follow-up state ──────────────────
+  // ── C. Pairing panel - the connect-time follow-up state ──────────────────
   console.log("\n[C] Pairing panel after connect (201)");
   const panel = page.locator('[data-testid="connect-bridge-pairing"]');
   await panel.waitFor({ state: "visible", timeout: 15_000 });
@@ -182,8 +182,8 @@ const BRIDGE_EXTERNAL_ID = "5021347";
   const stepCount = await page.locator('[data-testid="connect-bridge-pairing-setup"] ol li').count();
   check("compact 4-step setup list", stepCount === 4, `steps=${stepCount}`);
 
-  // ── D. Detail drawer — MT5 bridge section ────────────────────────────────
-  console.log("\n[D] Detail drawer — Pont MT5 / MT5 bridge section");
+  // ── D. Detail drawer - MT5 bridge section ────────────────────────────────
+  console.log("\n[D] Detail drawer - Pont MT5 / MT5 bridge section");
   await page.locator('[data-testid="connect-bridge-done"]').click();
   await page.waitForTimeout(1_200);
   await clearDevOverlay(page);
@@ -207,7 +207,7 @@ const BRIDGE_EXTERNAL_ID = "5021347";
   check("Reconnect hidden for bridge accounts (no credentials to refresh)", (await page.locator('[data-testid="account-detail-reconnect"]').count()) === 0);
   await page.screenshot({ path: `${SHOT_DIR}/04-detail-bridge-section.png` });
 
-  // Pairing sheet dialog — the GET serves the SAME secret as connect did.
+  // Pairing sheet dialog - the GET serves the SAME secret as connect did.
   await page.locator('[data-testid="account-bridge-pairing"]').click();
   const dialog = page.locator('[data-testid="bridge-pairing-dialog"]');
   await dialog.waitFor({ state: "visible", timeout: 10_000 });
@@ -225,7 +225,7 @@ const BRIDGE_EXTERNAL_ID = "5021347";
   await page.locator('[data-testid="bridge-pairing-close"]').click();
   await page.waitForTimeout(500);
 
-  // Rotate — NEW secret + invalidation warning.
+  // Rotate - NEW secret + invalidation warning.
   await page.locator('[data-testid="account-bridge-rotate"]').click();
   await dialog.waitFor({ state: "visible", timeout: 10_000 });
   const rotateWarning = page.locator('[data-testid="bridge-rotate-warning"]');

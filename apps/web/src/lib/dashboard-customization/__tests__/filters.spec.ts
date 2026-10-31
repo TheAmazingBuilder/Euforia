@@ -68,7 +68,7 @@ describe("normalizeDashboardFilters", () => {
 
 describe("period options", () => {
   it("only offers presets that exist in the suite contract", () => {
-    // Every offered preset must be a real analyticsPeriodSchema value —
+    // Every offered preset must be a real analyticsPeriodSchema value -
     // inventing LAST_7 would silently 422 on the server.
     const known = [
       "TODAY", "YESTERDAY", "THIS_WEEK", "LAST_WEEK", "THIS_MONTH",

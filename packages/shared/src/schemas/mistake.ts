@@ -3,7 +3,7 @@ import { detectorSchema, mistakeCategorySchema } from "../enums";
 import { isoDateTimeSchema, jsonValueSchema, uuidSchema } from "./primitives";
 
 /**
- * Mistake — data-model.md "Domaine 4" (Tier 1 error taxonomy).
+ * Mistake - data-model.md "Domaine 4" (Tier 1 error taxonomy).
  * System catalog (seeded, `userId: null`, `isSystem: true`) + user-defined
  * custom mistakes (`isSystem: false`).
  */
@@ -26,7 +26,7 @@ export const mistakeSchema = z.object({
 export type Mistake = z.infer<typeof mistakeSchema>;
 
 /**
- * TradeMistake — a mistake attached to a trade. Auto-detections
+ * TradeMistake - a mistake attached to a trade. Auto-detections
  * (`detectedBy: "AUTO"`) await user confirmation/contestation
  * via `userConfirmed` (null = pending review).
  */

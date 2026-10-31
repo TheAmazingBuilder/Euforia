@@ -3,7 +3,7 @@
  */
 
 /**
- * Playbook color palette — the preset swatches offered in the strategy
+ * Playbook color palette - the preset swatches offered in the strategy
  * form. These ARE data, not theme chrome: the chosen value is stored on
  * Strategy.color ("UI color hint (CSS color string owned by the client)",
  * data-model.md "Domaine 4") and rendered as an inline, data-driven style
@@ -27,7 +27,7 @@ export function toMonthKey(dateKey: string): string {
 }
 
 /**
- * Analytics time buckets — UTC-based, session-aligned. The heatmap columns
+ * Analytics time buckets - UTC-based, session-aligned. The heatmap columns
  * and the "By Time" hour chart share these boundaries so both views tell
  * the same story. `to` is exclusive; the last bucket absorbs 20:00–24:00.
  */
@@ -53,7 +53,7 @@ export const ANALYTIC_SESSIONS: readonly { key: string; label: string; hours: re
   { key: "NEW_YORK", label: "New York", hours: [13, 14, 15, 16, 17, 18, 19] },
 ];
 
-/** Weekday order for analytics rows — Monday first (ISO convention). */
+/** Weekday order for analytics rows - Monday first (ISO convention). */
 export const ANALYTICS_WEEKDAYS: readonly { index: number; label: string }[] = [
   { index: 1, label: "Mon" },
   { index: 2, label: "Tue" },
@@ -65,7 +65,7 @@ export const ANALYTICS_WEEKDAYS: readonly { index: number; label: string }[] = [
 ];
 
 /**
- * Emotion display labels (product copy, English) — shared so the mock
+ * Emotion display labels (product copy, English) - shared so the mock
  * backend and every screen render the same words.
  */
 export const EMOTION_LABELS: Readonly<Record<string, string>> = {

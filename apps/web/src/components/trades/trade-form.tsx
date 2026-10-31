@@ -73,10 +73,10 @@ import { openGate } from "@/lib/hooks/use-judgment-flow";
 import { useI18n } from "@/i18n/i18n-provider";
 
 /**
- * ACT 1 — Capture (trade-entry-ux.md §4). One adaptive form, numbers first:
+ * ACT 1 - Capture (trade-entry-ux.md §4). One adaptive form, numbers first:
  * instrument → direction → prices/times → plan → sizer → strategy → emotion.
  * Draft autosave on every change (§11); amber non-blocking validations.
- * A closed submit hands over to ACT 2 — the Judgment Gate opens immediately
+ * A closed submit hands over to ACT 2 - the Judgment Gate opens immediately
  * (the create response carries { id, awaitingDecision: true }, never P&L).
  */
 
@@ -84,13 +84,13 @@ const DRAFT_DEBOUNCE_MS = 400;
 
 const EXIT_REASONS: readonly ExitReason[] = ["TP", "SL", "MANUAL", "TRAILING", "PARTIAL", "MARGIN"];
 
-/** Rotating entry-reason placeholder (hourly slot — pure pick, no state). */
+/** Rotating entry-reason placeholder (hourly slot - pure pick, no state). */
 function rotatePlaceholder(placeholders: readonly string[]): string {
   const slot = Math.floor(Date.now() / 3_600_000);
   return placeholders[slot % placeholders.length] ?? placeholders[0]!;
 }
 
-/** User typing may include commas ("1,5") — normalize to the wire format. */
+/** User typing may include commas ("1,5") - normalize to the wire format. */
 function normalizeDecimalInput(raw: string): string {
   return raw.replace(",", ".").replace(/\s/g, "");
 }
@@ -171,14 +171,14 @@ export function TradeForm({ seed }: TradeFormProps) {
 
   // ── Form state ──────────────────────────────────────────────────────────
   // Hydration (client-only mount): seed (fast loop) > draft > fresh, decided
-  // once in the lazy initializer — no setState-in-effect cascades.
+  // once in the lazy initializer - no setState-in-effect cascades.
   const [hydration] = React.useState(() => {
     if (seed !== null) {
       return { values: valuesFromSeed(seed), fromDraft: false, seeded: true };
     }
     const draft = loadTradeDraft();
     if (draft !== null) {
-      // `confidence` was added after the first draft version — old drafts
+      // `confidence` was added after the first draft version - old drafts
       // restore without it.
       return {
         values: { ...freshValues(), ...draft.values, confidence: draft.values.confidence ?? null },
@@ -203,16 +203,16 @@ export function TradeForm({ seed }: TradeFormProps) {
     setValues((previous) => ({ ...previous, ...changes }));
   }, []);
 
-  // ── Direction preselect (until touched) — derived ──────────────────────
+  // ── Direction preselect (until touched) - derived ──────────────────────
   // Preference default (Settings → Trading) leads, then the last trade, then
-  // BUY. A stated default is an explicit user act — it outranks continuity.
+  // BUY. A stated default is an explicit user act - it outranks continuity.
   const lastTrade = tradesData?.trades[0] ?? null;
   const defaultDirection = prefsData?.trading.defaultDirection ?? null;
   const direction: Direction = directionTouched
     ? values.direction
     : (defaultDirection ?? lastTrade?.direction ?? values.direction);
 
-  // ── Instrument preselect (§16 Settings → Trades) — fresh opens only ────
+  // ── Instrument preselect (§16 Settings → Trades) - fresh opens only ────
   // One-shot render-time adjustment (no setState-in-effect): seeds the saved
   // default symbol, else the first instrument of the default market. Never
   // overrides a seed, a restored draft, or a user choice.
@@ -242,7 +242,7 @@ export function TradeForm({ seed }: TradeFormProps) {
   );
 
   // ── Draft autosave (§11): every user change, debounced; badge on save ──
-  // The EFFECTIVE direction is persisted — the last-trade preselect is
+  // The EFFECTIVE direction is persisted - the last-trade preselect is
   // derived until the user touches the control, but must survive reloads.
   React.useEffect(() => {
     if (!dirtyRef.current) return;
@@ -297,7 +297,7 @@ export function TradeForm({ seed }: TradeFormProps) {
         })
       : null;
 
-  // ── Amber validations (§11) — non-blocking, auto-dismiss on fix ─────────
+  // ── Amber validations (§11) - non-blocking, auto-dismiss on fix ─────────
   const warnings = React.useMemo<Warning[]>(() => {
     const list: Warning[] = [];
     if (closed && stop !== "" && exit !== "") {
@@ -345,7 +345,7 @@ export function TradeForm({ seed }: TradeFormProps) {
     riskRuleSeverity === "LOCK" && warnings.some((warning) => warning.id === "risk-over-limit");
 
   // ── Guardrail (preference): soft-lock after N violations today ──────────
-  // A deliberate two-step acknowledgment — the trader CAN capture anyway,
+  // A deliberate two-step acknowledgment - the trader CAN capture anyway,
   // but never by accident. The lock re-arms whenever the form remounts.
   const guardrailLimit = prefsData?.trading.softLockAfterViolations ?? null;
   const violationsToday = rulesStatus.data?.violationsToday ?? 0;
@@ -353,7 +353,7 @@ export function TradeForm({ seed }: TradeFormProps) {
   const [guardrailAcked, setGuardrailAcked] = React.useState(false);
   const guardrailLocked = guardrailActive && !guardrailAcked;
 
-  // ── Submit gating (minimal required set — everything else optional) ─────
+  // ── Submit gating (minimal required set - everything else optional) ─────
   const entryAtISO = localInputToISO(values.entryAtLocal);
   const exitAtISO = localInputToISO(values.exitAtLocal);
   const missing: string[] = [];
@@ -375,7 +375,7 @@ export function TradeForm({ seed }: TradeFormProps) {
   const canSubmit =
     missing.length === 0 && !createTrade.isPending && !guardrailLocked;
 
-  // ── Payload (§13: the client NEVER sends P&L — server computes) ─────────
+  // ── Payload (§13: the client NEVER sends P&L - server computes) ─────────
   const buildPayload = (): CreateTradeInput | null => {
     if (accountId === null || instrument === null) return null;
     const entryTimestamp = entryAtISO;
@@ -419,7 +419,7 @@ export function TradeForm({ seed }: TradeFormProps) {
   // ── Submit flows ────────────────────────────────────────────────────────
   /**
    * Evidence ride-along (Livrable 4): picked screenshots are uploaded AFTER
-   * the trade exists — sequentially, each failure toasted, NEVER blocking
+   * the trade exists - sequentially, each failure toasted, NEVER blocking
    * the hand-off (the modal/gate continue regardless of upload outcomes).
    * Runs post-unmount-safe: react-query mutations outlive the component.
    */
@@ -445,7 +445,7 @@ export function TradeForm({ seed }: TradeFormProps) {
     createTrade.mutate(payload, {
       onSuccess: (response) => {
         clearTradeDraft();
-        // Picker cleared immediately — the modal is going away either way.
+        // Picker cleared immediately - the modal is going away either way.
         for (const shot of pickedShots) URL.revokeObjectURL(shot.url);
         setScreenshots([]);
         const tradeId = response.id;
@@ -495,7 +495,7 @@ export function TradeForm({ seed }: TradeFormProps) {
   const inputClasses =
     "h-10 w-full rounded-md border border-border bg-background px-3 font-mono text-sm tabular-nums outline-none transition-colors placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring";
 
-  // Rotating entry-reason placeholders — labels resolve through the active dictionary.
+  // Rotating entry-reason placeholders - labels resolve through the active dictionary.
   const reasonPlaceholders = [T.reasonPh1, T.reasonPh2, T.reasonPh3, T.reasonPh4];
 
   return (
@@ -526,7 +526,7 @@ export function TradeForm({ seed }: TradeFormProps) {
         </div>
       </div>
 
-      {/* Prices & times — numbers first */}
+      {/* Prices & times - numbers first */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <div className="space-y-1.5">
           <Label htmlFor="trade-entry-price">{T.entryPrice}</Label>
@@ -537,7 +537,7 @@ export function TradeForm({ seed }: TradeFormProps) {
             autoComplete="off"
             value={values.entryPrice}
             onChange={(event) => patch({ entryPrice: event.target.value })}
-            placeholder={instrument !== null ? instrument.digits > 2 ? "1.08420" : "9820.00" : "—"}
+            placeholder={instrument !== null ? instrument.digits > 2 ? "1.08420" : "9820.00" : "-"}
             className={inputClasses}
             autoFocus
           />
@@ -606,7 +606,7 @@ export function TradeForm({ seed }: TradeFormProps) {
         </div>
       ) : null}
 
-      {/* The Plan — collapsible, numbers-first block (mockup: THE PLAN & RISK LIMITS) */}
+      {/* The Plan - collapsible, numbers-first block (mockup: THE PLAN & RISK LIMITS) */}
       <section className="rounded-lg border border-border bg-surface">
         <button
           type="button"
@@ -689,7 +689,7 @@ export function TradeForm({ seed }: TradeFormProps) {
         ) : null}
       </section>
 
-      {/* Position sizer — the signature detail */}
+      {/* Position sizer - the signature detail */}
       <PositionSizer
         mode={values.sizeMode}
         onModeChange={(mode) => patch({ sizeMode: mode })}
@@ -706,7 +706,7 @@ export function TradeForm({ seed }: TradeFormProps) {
         id="trade-sizer"
       />
 
-      {/* Strategy — recommended, one tap */}
+      {/* Strategy - recommended, one tap */}
       <div className="space-y-1.5">
         <div className="flex items-baseline justify-between">
           <Label>{T.strategy}</Label>
@@ -721,7 +721,7 @@ export function TradeForm({ seed }: TradeFormProps) {
         />
       </div>
 
-      {/* Emotion before — optional, single tap */}
+      {/* Emotion before - optional, single tap */}
       <div className="space-y-1.5">
         <div className="flex items-baseline justify-between">
           <Label>{T.emotionBefore}</Label>
@@ -730,7 +730,7 @@ export function TradeForm({ seed }: TradeFormProps) {
         <EmotionPicker value={values.emotionBefore} onChange={(emotionBefore) => patch({ emotionBefore })} />
       </div>
 
-      {/* Confidence — optional 1–5 pre-trade conviction (psychology column) */}
+      {/* Confidence - optional 1–5 pre-trade conviction (psychology column) */}
       <div className="space-y-1.5">
         <div className="flex items-baseline justify-between">
           <Label>{T.confidence}</Label>
@@ -742,7 +742,7 @@ export function TradeForm({ seed }: TradeFormProps) {
         />
       </div>
 
-      {/* Live calculation bar — mono, updated live */}
+      {/* Live calculation bar - mono, updated live */}
       <LiveCalcBar
         rr={rr}
         riskAmount={sizer.riskAmount}
@@ -751,7 +751,7 @@ export function TradeForm({ seed }: TradeFormProps) {
         currency={currency}
       />
 
-      {/* Add details — collapsible, never imposed */}
+      {/* Add details - collapsible, never imposed */}
       <section className="rounded-lg border border-border bg-surface">
         <button
           type="button"
@@ -817,7 +817,7 @@ export function TradeForm({ seed }: TradeFormProps) {
         ) : null}
       </section>
 
-      {/* Guardrail banner — soft-lock after N violations today (preference) */}
+      {/* Guardrail banner - soft-lock after N violations today (preference) */}
       {guardrailActive ? (
         <div
           className="flex flex-wrap items-center gap-2 rounded-md border border-loss/40 bg-loss/10 px-3 py-2 text-xs text-loss"
@@ -846,7 +846,7 @@ export function TradeForm({ seed }: TradeFormProps) {
         </div>
       ) : null}
 
-      {/* Amber warnings — non-blocking, auto-dismiss on fix */}
+      {/* Amber warnings - non-blocking, auto-dismiss on fix */}
       {warnings.length > 0 ? (
         <ul className="space-y-1" aria-label={T.warningsAria}>
           {warnings.map((warning) => (
@@ -862,7 +862,7 @@ export function TradeForm({ seed }: TradeFormProps) {
         </ul>
       ) : null}
 
-      {/* Submit bar — the two-state capture toggle */}
+      {/* Submit bar - the two-state capture toggle */}
       <div className="flex flex-col gap-2 border-t border-border pt-4 sm:flex-row sm:items-center">
         <Button
           type="submit"

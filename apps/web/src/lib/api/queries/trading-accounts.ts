@@ -27,13 +27,13 @@ import { queryKeys } from "@/lib/api/keys";
  *
  * Read-only by construction: every operation here maps 1:1 onto the Nest
  * trading-accounts surface (apps/api trading-accounts.controller.ts) and the
- * @cosmoz/shared trading-account.ts contracts — no other fetch layer, no
+ * @cosmoz/shared trading-account.ts contracts - no other fetch layer, no
  * client-side state machine. The connection/sync axes are server-owned: the
  * UI renders what the backend reports and never derives a CONNECTED state
  * from the mere existence of an account row.
  *
  * Invalidation: every mutation settles on the `trading-accounts` root key,
- * which prefix-matches the list, the detail, positions, orders and deals —
+ * which prefix-matches the list, the detail, positions, orders and deals -
  * one coarse invalidation, no unrelated module is touched. broker/session is
  * invalidated too: it aggregates the same connection state (NOT_CONFIGURED
  * flips once an account exists).
@@ -50,7 +50,7 @@ function invalidateTradingAccounts(
 
 // ── Queries ──────────────────────────────────────────────────────────────────
 
-/** GET /trading-accounts — every owned account with connection + snapshot. */
+/** GET /trading-accounts - every owned account with connection + snapshot. */
 export function useTradingAccounts() {
   return useQuery({
     queryKey: queryKeys.tradingAccounts,
@@ -59,18 +59,18 @@ export function useTradingAccounts() {
   });
 }
 
-/** GET /trading-accounts/providers — registry descriptors (metadata only). */
+/** GET /trading-accounts/providers - registry descriptors (metadata only). */
 export function useTradingAccountProviders() {
   return useQuery({
     queryKey: queryKeys.tradingAccountProviders,
     queryFn: () => apiRequest<TradingProviderListResponse>(apiPaths.tradingAccountProviders),
-    // The registry is code-defined — it only changes with a deploy.
+    // The registry is code-defined - it only changes with a deploy.
     staleTime: 5 * 60 * 1000,
   });
 }
 
 /**
- * GET /trading-accounts/brokers — the universal broker catalog (Phase 07):
+ * GET /trading-accounts/brokers - the universal broker catalog (Phase 07):
  * every known broker/platform with its HONEST connector status. Powers the
  * "any broker" picker: connectable entries come from the provider registry,
  * recognized-but-unimplemented entries render a truthful locked state.
@@ -79,13 +79,13 @@ export function useTradingBrokerCatalog() {
   return useQuery({
     queryKey: queryKeys.tradingAccountBrokers,
     queryFn: () => apiRequest<BrokerCatalogResponse>(apiPaths.tradingAccountBrokers),
-    // The catalog is code-defined — it only changes with a deploy.
+    // The catalog is code-defined - it only changes with a deploy.
     staleTime: 5 * 60 * 1000,
   });
 }
 
 /**
- * POST /trading-accounts/brokers/identify — rule-based broker identification
+ * POST /trading-accounts/brokers/identify - rule-based broker identification
  * (Phase 07). No secrets are sent: only id/endpoint hints. Debounced callers
  * stay far below the 30/15-min rate limit.
  */
@@ -99,7 +99,7 @@ export function useIdentifyBroker() {
   });
 }
 
-/** GET /trading-accounts/:id — full details (snapshot + synchronization embedded). */
+/** GET /trading-accounts/:id - full details (snapshot + synchronization embedded). */
 export function useTradingAccountDetails(accountId: string | null) {
   return useQuery({
     queryKey: queryKeys.tradingAccount(accountId ?? "none"),
@@ -109,7 +109,7 @@ export function useTradingAccountDetails(accountId: string | null) {
   });
 }
 
-/** GET /trading-accounts/:id/positions — provider-reported open positions. */
+/** GET /trading-accounts/:id/positions - provider-reported open positions. */
 export function useTradingAccountPositions(accountId: string | null) {
   return useQuery({
     queryKey: queryKeys.tradingAccountPositions(accountId ?? "none"),
@@ -119,7 +119,7 @@ export function useTradingAccountPositions(accountId: string | null) {
   });
 }
 
-/** GET /trading-accounts/:id/orders — provider-reported orders. */
+/** GET /trading-accounts/:id/orders - provider-reported orders. */
 export function useTradingAccountOrders(accountId: string | null) {
   return useQuery({
     queryKey: queryKeys.tradingAccountOrders(accountId ?? "none"),
@@ -129,7 +129,7 @@ export function useTradingAccountOrders(accountId: string | null) {
   });
 }
 
-/** GET /trading-accounts/:id/deals — provider-reported fills/executions. */
+/** GET /trading-accounts/:id/deals - provider-reported fills/executions. */
 export function useTradingAccountDeals(accountId: string | null) {
   return useQuery({
     queryKey: queryKeys.tradingAccountDeals(accountId ?? "none"),
@@ -140,9 +140,9 @@ export function useTradingAccountDeals(accountId: string | null) {
 }
 
 /**
- * GET /trading-accounts/:id/sync-runs — bounded synchronization history
+ * GET /trading-accounts/:id/sync-runs - bounded synchronization history
  * (Phase 05): newest first, keyset-paginated. Manual AND scheduled runs
- * appear here — the honest audit trail of what the backend actually did.
+ * appear here - the honest audit trail of what the backend actually did.
  */
 export function useTradingAccountSyncRuns(accountId: string | null, limit = 10) {
   return useQuery({
@@ -159,7 +159,7 @@ export function useTradingAccountSyncRuns(accountId: string | null, limit = 10) 
 
 // ── Mutations (every action the backend genuinely supports) ─────────────────
 
-/** POST /trading-accounts/connect — register + connect + initial sync (201). */
+/** POST /trading-accounts/connect - register + connect + initial sync (201). */
 export function useConnectTradingAccount() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -174,7 +174,7 @@ export function useConnectTradingAccount() {
   });
 }
 
-/** PATCH /trading-accounts/:id — rename the display label (label only). */
+/** PATCH /trading-accounts/:id - rename the display label (label only). */
 export function useRenameTradingAccount() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -189,7 +189,7 @@ export function useRenameTradingAccount() {
   });
 }
 
-/** POST /trading-accounts/:id/test — the 4 named connection checks. */
+/** POST /trading-accounts/:id/test - the 4 named connection checks. */
 export function useTestTradingConnection(accountId: string) {
   const queryClient = useQueryClient();
   return useMutation({
@@ -203,7 +203,7 @@ export function useTestTradingConnection(accountId: string) {
   });
 }
 
-/** POST /trading-accounts/:id/reconnect — fresh credentials; 409 when live. */
+/** POST /trading-accounts/:id/reconnect - fresh credentials; 409 when live. */
 export function useReconnectTradingAccount() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -218,7 +218,7 @@ export function useReconnectTradingAccount() {
   });
 }
 
-/** DELETE /trading-accounts/:id — disconnect; credentials wiped, history kept. */
+/** DELETE /trading-accounts/:id - disconnect; credentials wiped, history kept. */
 export function useDisconnectTradingAccount() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -232,7 +232,7 @@ export function useDisconnectTradingAccount() {
   });
 }
 
-/** POST /trading-accounts/:id/sync — manual synchronization run. */
+/** POST /trading-accounts/:id/sync - manual synchronization run. */
 export function useSyncTradingAccount() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -247,10 +247,10 @@ export function useSyncTradingAccount() {
 }
 
 /**
- * GET /trading-accounts/:id/bridge/pairing — the MT5 terminal pairing sheet
+ * GET /trading-accounts/:id/bridge/pairing - the MT5 terminal pairing sheet
  * (Phase 08, owner-only). The ONLY surface where the bridge secret is
  * re-readable: details views never carry it (leak-checked server-side).
- * Non-bridge accounts answer 422 — the caller must gate on
+ * Non-bridge accounts answer 422 - the caller must gate on
  * connection.method === "PLATFORM_BRIDGE".
  */
 export function useBridgePairing(accountId: string | null) {
@@ -265,7 +265,7 @@ export function useBridgePairing(accountId: string | null) {
 }
 
 /**
- * POST /trading-accounts/:id/bridge/rotate — mint a fresh bridge secret and
+ * POST /trading-accounts/:id/bridge/rotate - mint a fresh bridge secret and
  * invalidate the previous terminal configuration (Phase 08). The response is
  * the full details view PLUS the new pairing sheet (the one-shot delivery of
  * the new secret, same contract as connect).
@@ -284,7 +284,7 @@ export function useRotateBridgeSecret() {
   });
 }
 
-// ── Presentation mapping (pure — unit-testable without a renderer) ──────────
+// ── Presentation mapping (pure - unit-testable without a renderer) ──────────
 
 /**
  * The environment stamp shown on every account surface. PROP_FIRM renders as
@@ -305,7 +305,7 @@ export function connectionIsHealthy(status: string): boolean {
 
 /**
  * Freshness presentation for the sync axis. LIVE here means "the last
- * successful sync completed within the backend freshness TTL" — never
+ * successful sync completed within the backend freshness TTL" - never
  * "real-time": polling providers do not stream. The label pair keeps color
  * non-authoritative (spec: never color alone).
  */

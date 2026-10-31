@@ -1,7 +1,7 @@
 import type { IntegrationStatus } from "../schemas/integration";
 
 /**
- * Integration Hub pure helpers — used by the mock engine AND the UI.
+ * Integration Hub pure helpers - used by the mock engine AND the UI.
  * No I/O, no framework, no clock reads (callers pass `now`).
  */
 
@@ -24,7 +24,7 @@ export function backoffDelayMs(
 /** Maximum automatic retries before dead-lettering (manual retry takes over). */
 export const MAX_AUTO_RETRIES = 5;
 
-// ── Staleness (§23 — Monitoring detects stale integrations) ─────────────────
+// ── Staleness (§23 - Monitoring detects stale integrations) ─────────────────
 
 /** Default freshness TTL for a provider sync (15 minutes). */
 export const SYNC_FRESH_TTL_MS = 15 * 60 * 1000;

@@ -24,25 +24,25 @@ import { computeOpeningRange } from "@/lib/oryon/levels/opening-range";
 import { sessionDefinitionById } from "@/lib/oryon/sessions/definitions";
 
 /**
- * Oryon analysis bridges (Phase 9 spec §6) — the ONLY components connecting
+ * Oryon analysis bridges (Phase 9 spec §6) - the ONLY components connecting
  * the workspace to the structure/levels engines.
  *
  * Render discipline (mirrors the Phase 8 context bridges): the component
  * renders null and pushes PURE SPECS into the engine imperatively on rare
  * commits (candles window, per-panel analysis config, instrument class,
- * calendar refetch) — no chart reinitialization, no per-render recomputation
+ * calendar refetch) - no chart reinitialization, no per-render recomputation
  * beyond the memoized engines, no workspace re-render (§10/§14).
  *
  * Data reuse (§9.3/§10): the daily reference series is the app's SHARED
- * useCandles(symbol, "1D") TanStack query — one cache entry per symbol for
+ * useCandles(symbol, "1D") TanStack query - one cache entry per symbol for
  * the whole workspace (panels showing the same instrument share it, and a
  * panel charted on 1D reuses its own history query verbatim). Structure
- * calculations run on the panel's OWN loaded candles — never another
+ * calculations run on the panel's OWN loaded candles - never another
  * panel's data (§9.3 isolation is structural).
  *
  * Honesty: markers anchor to the pivot/break candle's real open time; key
  * levels are REAL aggregated values from the datafeed's daily series (UTC
- * day buckets — the documented convention); a missing day/week is skipped,
+ * day buckets - the documented convention); a missing day/week is skipped,
  * never zero-filled; an unavailable range/level renders nothing (§11).
  */
 
@@ -65,22 +65,22 @@ export function OryonAnalysisOverlaysBridge({
 }: {
   engineRef: React.RefObject<OryonChartEngine | null>;
   mounted: boolean;
-  /** Symbol of the data ACTUALLY displayed — analysis follows the data. */
+  /** Symbol of the data ACTUALLY displayed - analysis follows the data. */
   dataSymbol: string;
   interval: MarketInterval;
   candles: Candle[];
   analysis: OryonPanelAnalysis;
-  /** Instrument pip size (decimal string contract) — distance filter. */
+  /** Instrument pip size (decimal string contract) - distance filter. */
   pipSize: string;
 }) {
   // The displayed instrument's class decides the opening-range gate (the
-  // shared catalog query — one cache entry for the whole workspace).
+  // shared catalog query - one cache entry for the whole workspace).
   const instruments = useInstruments();
   const assetClass: AssetClass | null =
     instruments.data?.instruments.find((instrument) => instrument.symbol === dataSymbol)
       ?.assetClass ?? null;
 
-  // Parsed pip size — a malformed contract value degrades the distance
+  // Parsed pip size - a malformed contract value degrades the distance
   // filter to a no-op (never to a wrong rejection).
   const pipSizeNum = React.useMemo(() => {
     const parsed = Number(pipSize);
@@ -132,14 +132,14 @@ export function OryonAnalysisOverlaysBridge({
         mode: s.breakMode,
       });
       // With structure LINES on, the line + boxed label own the break
-      // annotation end-to-end (which swing, when, what type) — the bare
+      // annotation end-to-end (which swing, when, what type) - the bare
       // circle markers would only duplicate it on every break candle.
       if (!s.showBreakLines) {
         for (const brk of breaks) {
           specs.push({
             id: `break-${brk.id}`,
             timeSec: brk.timeSec,
-            // Bullish breaks mark under the candle, bearish above — the
+            // Bullish breaks mark under the candle, bearish above - the
             // direction is encoded by position AND shape, never color alone.
             position: brk.direction === "bullish" ? "belowBar" : "aboveBar",
             shape: "circle",
@@ -160,7 +160,7 @@ export function OryonAnalysisOverlaysBridge({
     engine.setStructureMarkers(structureSpecs);
   }, [mounted, structureSpecs, engineRef]);
 
-  // ── structure break LINES (refinement) — pivot→break segments ─────────
+  // ── structure break LINES (refinement) - pivot→break segments ─────────
   const structureLineSpecs = React.useMemo((): OryonStructureLineSpec[] => {
     const s = analysis.structure;
     if (!s.enabled || !s.breaksEnabled || !s.showBreakLines || candles.length === 0) return [];
@@ -192,7 +192,7 @@ export function OryonAnalysisOverlaysBridge({
         level: brk.level,
         type: brk.type,
         direction: brk.direction,
-        // Direction colors for BOS (the TV convention — bullish break
+        // Direction colors for BOS (the TV convention - bullish break
         // green, bearish red); CHoCH keeps its dedicated warning token.
         colorToken:
           brk.type === "CHoCH"

@@ -11,7 +11,7 @@
 export const authCopy = {
   brandTagline: "Professional Trading Journal",
   brandPitch:
-    "The trading journal that coaches you — journal every trade, guard your discipline, and let the coach keep you honest.",
+    "The trading journal that coaches you - journal every trade, guard your discipline, and let the coach keep you honest.",
 
   pillars: [
     { title: "Journal", detail: "Every trade, graded and reviewed." },
@@ -21,7 +21,7 @@ export const authCopy = {
 
   login: {
     title: "Sign in to Euforia",
-    subtitle: "Welcome back, trader — your journal and your coach are waiting.",
+    subtitle: "Welcome back, trader - your journal and your coach are waiting.",
     email: "Email",
     password: "Password",
     remember: "Remember this device",
@@ -42,7 +42,7 @@ export const authCopy = {
     demoHintTitle: "Demo account",
     demoHintFill: "Fill",
     demoHintNote:
-      "Mocked environment — the demo journal is shared by all demo sign-ins.",
+      "Mocked environment - the demo journal is shared by all demo sign-ins.",
   },
 
   register: {
@@ -60,7 +60,7 @@ export const authCopy = {
     mismatch: "Passwords do not match.",
     pendingTitle: "Check your inbox",
     pendingBody:
-      "Your account has been created. We sent a verification link to your email address — the link expires in 24 hours.",
+      "Your account has been created. We sent a verification link to your email address - the link expires in 24 hours.",
     pendingMockTitle: "Mocked delivery",
     pendingMockBody:
       "No mail service exists in this demo environment, so the one-time verification link is provided below (in production this arrives by email).",
@@ -76,7 +76,7 @@ export const authCopy = {
     successCta: "Continue to sign in",
     alreadyTitle: "Already verified",
     alreadyBody:
-      "This email address was already verified — you can sign in right away.",
+      "This email address was already verified - you can sign in right away.",
     expiredTitle: "Link expired",
     expiredBody:
       "This verification link has expired. Request a fresh email below.",
@@ -111,14 +111,14 @@ export const authCopy = {
 
   reset: {
     title: "Choose a new password",
-    subtitle: "Pick a strong, unique password — at least 10 characters.",
+    subtitle: "Pick a strong, unique password - at least 10 characters.",
     password: "New password",
     confirmPassword: "Confirm new password",
     submit: "Reset password",
     submitting: "Resetting password…",
     successTitle: "Password reset",
     successBody:
-      "Your password has been changed. Sign in with your new password — existing sessions have been signed out.",
+      "Your password has been changed. Sign in with your new password - existing sessions have been signed out.",
     successCta: "Continue to sign in",
     invalidTitle: "Link not valid",
     invalidBody: "This reset link is not valid. Request a fresh one below.",
@@ -135,7 +135,7 @@ export const authCopy = {
     splashLabel: "Preparing your workspace…",
     verificationTitle: "Verify your email to continue",
     verificationBody:
-      "We sent a verification link to your email address. Confirm your address to unlock the journal — then reload this page or sign in again.",
+      "We sent a verification link to your email address. Confirm your address to unlock the journal - then reload this page or sign in again.",
     verificationMockOpen: "Open verification link (mock)",
     blockedTitle: "Account unavailable",
     blockedBody:
@@ -147,15 +147,15 @@ export const authCopy = {
     invalidCredentials: "Incorrect email or password.",
     rateLimited: "Too many attempts. Please wait before trying again.",
     network:
-      "Network error — check your connection and try again.",
+      "Network error - check your connection and try again.",
     server: "Something went wrong on our side. Please try again.",
     suspended: "This account is suspended. Contact support for help.",
     deactivated: "This account is deactivated.",
     emailNotVerified:
       "Verify your email address before signing in. Check your inbox for the confirmation link.",
-    invalidMfa: "That code does not match — check your authenticator and try again.",
+    invalidMfa: "That code does not match - check your authenticator and try again.",
     challengeExpired:
-      "This verification challenge expired — start again with your password.",
+      "This verification challenge expired - start again with your password.",
     recoveryInvalid: "That recovery code was not recognized.",
   },
 
@@ -174,7 +174,7 @@ export const authCopy = {
     },
     verified: {
       title: "Email verified",
-      body: "Your email address is confirmed — sign in to continue.",
+      body: "Your email address is confirmed - sign in to continue.",
     },
   } as Record<string, { title: string; body: string } | undefined>,
 } as const;

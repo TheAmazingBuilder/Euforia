@@ -1,7 +1,7 @@
 /**
- * Verify — Settings module (MASTER PROMPT).
- * Probes: category rail + deep links, search, per-card save, reset with
- * confirm, risk validation (max ≥ default), Rules Engine apply, notification
+ * Verify - Settings module (MASTER PROMPT).
+ * Probes: horizontal category navigation + deep links, search, per-card save,
+ * reset with confirm, risk validation (max ≥ default), Rules Engine apply, notification
  * matrix toggles, appearance theme/density (incl. System §9), localization preview
  * + number format §12, academy learning notifications §10, timezone via /me,
  */
@@ -21,20 +21,29 @@ const BASE = "http://localhost:3000";
 
   const results = [];
   const check = (name, ok, extra = "") =>
-    results.push(`${ok ? "PASS" : "FAIL"} — ${name}${extra ? ` (${extra})` : ""}`);
+    results.push(`${ok ? "PASS" : "FAIL"} - ${name}${extra ? ` (${extra})` : ""}`);
 
   await page.goto(`${BASE}/settings`, { waitUntil: "networkidle" });
   await page.waitForTimeout(1200);
 
-  // ── 1. Shell: header, nav rail, default category (Profile) ──────────────
+  // ── 1. Shell: header, horizontal nav, default category (Trading) ────────
   check("Settings header visible", await page.locator('h1:has-text("Settings")').isVisible());
+  check("Horizontal category bar visible", await page.locator('[data-testid="settings-category-nav"]').isVisible());
   const navCount = await page.locator('[data-testid^="settings-nav-"]').count();
-  check("10 categories in rail", navCount === 10, `count=${navCount}`);
+  check("9 preference categories", navCount === 9, `count=${navCount}`);
   check(
-    "Profile card shown by default",
-    await page.locator('[data-testid="settings-profile"]').isVisible(),
+    "Trading is the default category",
+    await page.locator('[data-testid="settings-trading"]').isVisible(),
   );
-  await page.screenshot({ path: "scripts/shots/settings-profile.png" });
+  check(
+    "Profile is not part of Settings",
+    (await page.locator('[data-testid="settings-nav-profile"]').count()) === 0 &&
+      (await page.locator('[data-testid="settings-profile"]').count()) === 0,
+  );
+  const navBox = await page.locator('[data-testid="settings-category-nav"]').boundingBox();
+  const contentBox = await page.locator('[data-testid="settings-content"]').boundingBox();
+  check("Navigation sits above the settings content", navBox !== null && contentBox !== null && navBox.y < contentBox.y);
+  await page.screenshot({ path: "scripts/shots/settings-trading.png" });
 
   // ── 2. Deep link via hash ────────────────────────────────────────────────
   await page.goto(`${BASE}/settings#risk`, { waitUntil: "networkidle" });
@@ -136,7 +145,7 @@ const BASE = "http://localhost:3000";
   await page.locator('[data-testid="settings-appearance-theme-DARK_BLUE"]').click();
   await page.waitForTimeout(400);
 
-  // §9 — System theme: follows the OS (resolves to a concrete data-theme).
+  // §9 - System theme: follows the OS (resolves to a concrete data-theme).
   const themeOptions = await page.locator('[data-testid^="settings-appearance-theme-"]').count();
   check("Theme control offers Light/Dark/Dark blue/System", themeOptions === 4, `options=${themeOptions}`);
   await page.locator('[data-testid="settings-appearance-theme-SYSTEM"]').click();
@@ -159,17 +168,14 @@ const BASE = "http://localhost:3000";
   );
   await page.locator('[data-testid="settings-localization-timezone"]').selectOption("Europe/Paris");
   await page.waitForTimeout(900);
-  // Profile card must reflect the same timezone (single source of truth).
-  await page.locator('[data-testid="settings-nav-profile"]').click();
-  await page.waitForTimeout(600);
-  const profileTz = await page.locator('[data-testid="settings-profile-timezone"]').inputValue();
-  check("Timezone synced to Profile via /me", profileTz === "Europe/Paris", `tz=${profileTz}`);
-  await page.locator('[data-testid="settings-nav-localization"]').click();
-  await page.waitForTimeout(400);
+  check(
+    "Profile editor stays outside Settings",
+    (await page.locator('[data-testid="settings-nav-profile"]').count()) === 0,
+  );
   await page.locator('[data-testid="settings-localization-timezone"]').selectOption("America/Toronto");
   await page.waitForTimeout(700);
 
-  // §12 — Number format: grouping styles render through the live preview.
+  // §12 - Number format: grouping styles render through the live preview.
   const preview = page.locator("[data-testid=\"settings-localization-preview\"]");
   await page.locator('[data-testid="settings-localization-number"]').selectOption("NONE");
   await page.waitForTimeout(300);
@@ -182,7 +188,7 @@ const BASE = "http://localhost:3000";
   await page.locator('[data-testid="settings-localization-number"]').selectOption("LOCALE");
   await page.waitForTimeout(300);
 
-  // §10 — Academy: learning notifications toggle persists.
+  // §10 - Academy: learning notifications toggle persists.
   await page.locator('[data-testid="settings-nav-academy"]').click();
   await page.waitForTimeout(600);
   const newContent = page.locator("[data-testid=\"settings-academy-new-content-switch\"]");

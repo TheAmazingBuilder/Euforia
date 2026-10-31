@@ -1,5 +1,5 @@
 /**
- * Probe — GSAP first-run onboarding (premium onboarding experience).
+ * Probe - GSAP first-run onboarding (premium onboarding experience).
  *
  * Runs against the local dev server on :3000 (mock mode = documented dev
  * default). Playwright drives the REAL UI: registration → verification →
@@ -13,7 +13,7 @@
  *      closes, and does NOT re-open during the same session.
  *   C  Pause (close X) mid-flow → IN_PROGRESS + resume pointer persisted;
  *      reopening the app in a NEW page (fresh mock store) shows the overlay
- *      again (mock-mode reseed — real persistence is proven by the API e2e
+ *      again (mock-mode reseed - real persistence is proven by the API e2e
  *      against real PostgreSQL, see the report).
  *   D  Keyboard: focus lands on the step heading; Tab keeps focus inside
  *      the dialog; Enter activates the primary action.
@@ -32,7 +32,7 @@ const results = [];
 
 function record(scenario, ok, detail = "") {
   results.push({ scenario, ok, detail });
-  console.log(`${ok ? "PASS" : "FAIL"}  ${scenario}${detail ? ` — ${detail}` : ""}`);
+  console.log(`${ok ? "PASS" : "FAIL"}  ${scenario}${detail ? ` - ${detail}` : ""}`);
 }
 
 function uniqueEmail(tag) {
@@ -81,14 +81,14 @@ async function stepLabel(page) {
 
 async function fetchPrefs(page) {
   return page.evaluate(async () => {
-    // The dev sandbox rewrites the API under /api (mock mode) — same-origin.
+    // The dev sandbox rewrites the API under /api (mock mode) - same-origin.
     const res = await fetch("/api/me/preferences", { credentials: "include" });
     if (!res.ok) throw new Error(`preferences fetch failed: ${res.status}`);
     return res.json();
   });
 }
 
-/** Radix Select helper — open the trigger, click the option by text. */
+/** Radix Select helper - open the trigger, click the option by text. */
 async function chooseSelect(page, triggerTestId, optionText) {
   await page.click(`[data-testid="${triggerTestId}"]`);
   await page.waitForSelector("[role='option']", { timeout: 10000 });
@@ -99,7 +99,7 @@ async function chooseSelect(page, triggerTestId, optionText) {
   const browser = await chromium.launch();
 
   try {
-    // ── Scenario A — full completion flow ─────────────────────────────────
+    // ── Scenario A - full completion flow ─────────────────────────────────
     {
       const { context, page } = await newPage(browser, { viewport: { width: 1440, height: 900 } });
       const email = uniqueEmail("full");
@@ -172,7 +172,7 @@ async function chooseSelect(page, triggerTestId, optionText) {
       );
 
       // In-session suppression via CLIENT-SIDE navigation (the mock store
-      // is in-memory: a FULL page reload reseeds it — that persistence is
+      // is in-memory: a FULL page reload reseeds it - that persistence is
       // proven against real PostgreSQL by the API e2e suite instead).
       await page.click('aside a[href="/trades"]');
       await page.waitForTimeout(1500);
@@ -187,7 +187,7 @@ async function chooseSelect(page, triggerTestId, optionText) {
       await context.close();
     }
 
-    // ── Scenario B — skip policy ──────────────────────────────────────────
+    // ── Scenario B - skip policy ──────────────────────────────────────────
     {
       const { context, page } = await newPage(browser, { viewport: { width: 1440, height: 900 } });
       const email = uniqueEmail("skip");
@@ -208,7 +208,7 @@ async function chooseSelect(page, triggerTestId, optionText) {
       );
 
       // Same session: no re-display (skip suppresses the automatic show).
-      // SPA navigation — a full reload would reseed the in-memory mock store.
+      // SPA navigation - a full reload would reseed the in-memory mock store.
       await page.click('aside a[href="/analytics"]');
       await page.waitForTimeout(1500);
       const suppressed = (await page.$('[data-testid="onb-overlay"]')) === null;
@@ -216,7 +216,7 @@ async function chooseSelect(page, triggerTestId, optionText) {
       await context.close();
     }
 
-    // ── Scenario C — pause mid-flow (resume pointer) ──────────────────────
+    // ── Scenario C - pause mid-flow (resume pointer) ──────────────────────
     {
       const { context, page } = await newPage(browser, { viewport: { width: 1440, height: 900 } });
       const email = uniqueEmail("pause");
@@ -239,7 +239,7 @@ async function chooseSelect(page, triggerTestId, optionText) {
         JSON.stringify({ status: prefs.onboarding?.status, at: prefs.onboarding?.currentStep }),
       );
 
-      // A fresh page = fresh mock store (reseeded) — the overlay shows again
+      // A fresh page = fresh mock store (reseeded) - the overlay shows again
       // in mock mode; real resume-after-reload is proven by the API e2e.
       await page.goto(`${BASE}/`);
       await page.waitForTimeout(2000);
@@ -251,7 +251,7 @@ async function chooseSelect(page, triggerTestId, optionText) {
       await context.close();
     }
 
-    // ── Scenario D — keyboard navigation ──────────────────────────────────
+    // ── Scenario D - keyboard navigation ──────────────────────────────────
     {
       const { context, page } = await newPage(browser, { viewport: { width: 1440, height: 900 } });
       const email = uniqueEmail("kbd");
@@ -271,7 +271,7 @@ async function chooseSelect(page, triggerTestId, optionText) {
       record("D2 Tab keeps focus inside the dialog", insideDialog === true);
 
       // Enter on the focused heading region → activate Get started via keyboard.
-      await page.keyboard.press("Tab"); // reach the close button or CTA — order agnostic
+      await page.keyboard.press("Tab"); // reach the close button or CTA - order agnostic
       await page.click('[data-testid="onb-get-started"]'); // mouse-equivalent for flow continuity
       await page.waitForFunction(
         () => document.querySelector('[data-testid="onb-progress"]')?.textContent?.includes("2 of 6"),
@@ -284,7 +284,7 @@ async function chooseSelect(page, triggerTestId, optionText) {
       await context.close();
     }
 
-    // ── Scenario E — mobile 390×844 ───────────────────────────────────────
+    // ── Scenario E - mobile 390×844 ───────────────────────────────────────
     {
       const { context, page } = await newPage(browser, { viewport: { width: 390, height: 844 } });
       const email = uniqueEmail("mobile");
@@ -308,7 +308,7 @@ async function chooseSelect(page, triggerTestId, optionText) {
       await context.close();
     }
 
-    // ── Scenario F — reduced motion ───────────────────────────────────────
+    // ── Scenario F - reduced motion ───────────────────────────────────────
     {
       const { context, page } = await newPage(browser, {
         viewport: { width: 1440, height: 900 },

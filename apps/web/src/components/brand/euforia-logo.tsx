@@ -3,19 +3,19 @@
 import { cn } from "@/lib/utils";
 
 /**
- * EuforiaLogo — the official brand mark, vectorized verbatim from the
+ * EuforiaLogo - the official brand mark, vectorized verbatim from the
  * founder's reference artwork (three-ribbon "E", violet→cyan gradient).
  *
- * The geometry lives in the /brand SVGs (public/brand/euforia-*.svg) —
+ * The geometry lives in the /brand SVGs (public/brand/euforia-*.svg) -
  * traced from the reference image, NOT re-drawn: the mark must stay
  * pixel-identical to it. Never re-proportion, never add candlesticks,
  * dollar symbols or other gradients (forbidden treatments §9).
  *
  * Variants:
- *  - "mark" — the squircle app icon: deep-navy tile + gradient ribbons
+ *  - "mark" - the squircle app icon: deep-navy tile + gradient ribbons
  *    (euforia-icon.svg). Use in compact navigation, loading states,
  *    avatars/watermarks.
- *  - "full" — mark + "Euforia" wordmark (+ optional tagline). Minimum
+ *  - "full" - mark + "Euforia" wordmark (+ optional tagline). Minimum
  *    120px wide per the guide; never use the tagline below that.
  *
  * Tones (surface the logo sits on):
@@ -24,7 +24,7 @@ import { cn } from "@/lib/utils";
  *  - "white" → monochrome white ribbons, no tile
  *  - "black" → monochrome navy-black ribbons, no tile
  *  - "auto"  → navy tile + gradient mark (theme-invariant, like the
- *    favicon), wordmark inherits the app's foreground token — use for
+ *    favicon), wordmark inherits the app's foreground token - use for
  *    in-app lockups that must follow the active theme.
  *
  * Theme-invariant on purpose (like the favicon): the mark keeps its own
@@ -47,7 +47,7 @@ const WORDMARK_CLASS: Record<EuforiaLogoSize, string> = {
   lg: "text-2xl",
 };
 
-/** Mark artwork per tone — traced reference geometry, served from /brand. */
+/** Mark artwork per tone - traced reference geometry, served from /brand. */
 const MARK_SRC: Record<EuforiaLogoTone, string> = {
   dark: "/brand/euforia-icon.svg",
   light: "/brand/euforia-icon.svg",
@@ -55,6 +55,19 @@ const MARK_SRC: Record<EuforiaLogoTone, string> = {
   white: "/brand/euforia-mark-white.svg",
   black: "/brand/euforia-mark-black.svg",
 };
+
+/**
+ * The mark is now the bare gradient ribbons (no navy tile), aspect 750:918.
+ * In the full lockup it gets a touch more presence than the old squircle;
+ * the gap to the wordmark follows a fixed ratio (see LOCKUP_MARK_GAP_RATIO).
+ */
+const LOCKUP_MARK_PX: Record<EuforiaLogoSize, number> = {
+  sm: 26,
+  md: 34,
+  lg: 52,
+};
+
+const LOCKUP_MARK_GAP_RATIO = 0.34;
 
 const WORDMARK_FILL: Record<EuforiaLogoTone, string | undefined> = {
   dark: "#F8FAFC", // euforia-logo-dark.svg
@@ -104,9 +117,28 @@ export function EuforiaLogo({
     return mark;
   }
 
+  // Full lockup: the mark is now the bare gradient ribbons (no tile). Its
+  // height drives the wordmark cap-height alignment; spacing follows a
+  // fixed ratio (gap = 34% of mark height) for a professional optical balance.
+  const lockupPx = LOCKUP_MARK_PX[size];
+  const lockupW = Math.round(lockupPx * MARK_ASPECT);
+
   return (
-    <span className={cn("inline-flex items-center gap-2.5", className)}>
-      {mark}
+    <span className={cn("inline-flex items-center", className)}>
+      <img
+        src={MARK_SRC[tone]}
+        alt=""
+        aria-hidden="true"
+        draggable={false}
+        width={lockupW}
+        height={lockupPx}
+        style={{
+          width: lockupPx,
+          height: lockupPx,
+          marginRight: `${Math.round(lockupPx * 0.34)}px`,
+        }}
+        className="shrink-0 select-none"
+      />
       <span className="flex flex-col leading-none">
         <span
           className={cn(

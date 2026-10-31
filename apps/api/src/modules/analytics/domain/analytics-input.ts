@@ -1,5 +1,5 @@
 /**
- * Analytics engine input shapes (Phase 8) — normalized, pre-resolved rows.
+ * Analytics engine input shapes (Phase 8) - normalized, pre-resolved rows.
  *
  * The application service owns resolution (catalog symbols → instrument
  * ids, review→plan strategy attribution, canonical planned RR) and hands
@@ -22,17 +22,17 @@ export interface AnalyticsInstrumentRow {
   symbol: string;
   assetClass: string;
   /** Quote currency of the CATALOG instrument (Phase 13 §21 join), null
-   * when the symbol is uncataloged — uncataloged trades never correlate
+   * when the symbol is uncataloged - uncataloged trades never correlate
    * with economic events (honest, mock parity: unknown instrument → no
    * phase classification). */
   quoteCurrency: string | null;
 }
 
 /**
- * One closed trade as the engine sees it — canonical Trading Core values
+ * One closed trade as the engine sees it - canonical Trading Core values
  * only (Phase 8 §2: Analytics consumes domain truth, it never re-derives
  * P&L/R). Behavioral/journal fields the backend does not own are honestly
- * absent (emotionBefore/confidence/mfe/mae/tags — §8: no speculative data).
+ * absent (emotionBefore/confidence/mfe/mae/tags - §8: no speculative data).
  */
 export interface AnalyticsTradeRow {
   id: string;
@@ -46,7 +46,7 @@ export interface AnalyticsTradeRow {
   /** Catalog asset class, else "?". */
   assetClass: string;
   /** Quote currency of the resolved instrument (Phase 13 §21 join), null
-   * when uncataloged — uncataloged trades never correlate with economic
+   * when uncataloged - uncataloged trades never correlate with economic
    * events (honest, mock parity: unknown instrument → unclassified). */
   quoteCurrency: string | null;
   direction: string;
@@ -58,9 +58,9 @@ export interface AnalyticsTradeRow {
   exitAtMs: number | null;
   /** User trading-day key the journal already persisted (tz-resolved). */
   tradingDate: string;
-  /** Pre-parsed pnlNet — missing = 0 (canonical R/P&L rule). */
+  /** Pre-parsed pnlNet - missing = 0 (canonical R/P&L rule). */
   pnlNet: number;
-  /** Pre-parsed rMultiple — missing = 0. */
+  /** Pre-parsed rMultiple - missing = 0. */
   rMultiple: number;
   /** riskAmount strictly > 0 (parsed), else null. */
   riskMoney: number | null;
@@ -69,7 +69,7 @@ export interface AnalyticsTradeRow {
   rMultipleRaw: string | null;
   /**
    * Canonical planned RR: review.planSnapshot.rrRatio ?? origin plan
-   * rrRatio — never recomputed here (§29: no second RR engine).
+   * rrRatio - never recomputed here (§29: no second RR engine).
    */
   plannedRR: number | null;
   /** Review verdict when a COMPLETED review exists, else null. */

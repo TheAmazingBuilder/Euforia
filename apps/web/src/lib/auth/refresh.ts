@@ -13,13 +13,13 @@ import {
  * Single-flight refresh (spec §13, §66).
  *
  * When several requests fail simultaneously with 401, exactly ONE refresh
- * request is issued — every failed caller awaits the same in-flight promise
+ * request is issued - every failed caller awaits the same in-flight promise
  * and then retries its original request once. This prevents refresh-token
  * race conditions and duplicate refresh storms.
  *
  * Failure semantics (spec §9, §37): a definitive refresh failure clears the
- * access token and — ONLY when a session was actually active (a token
- * record existed) — emits SESSION_EXPIRED so the AuthProvider can explain
+ * access token and - ONLY when a session was actually active (a token
+ * record existed) - emits SESSION_EXPIRED so the AuthProvider can explain
  * what happened. A boot-time restore without any prior session fails
  * silently: "no session" is a normal state, not an expiration.
  */
@@ -38,17 +38,20 @@ export function refreshAccessToken(): Promise<boolean> {
 }
 
 async function doRefresh(): Promise<boolean> {
-  // Decide BEFORE any state mutation — this is the "was a session active?"
+  // Decide BEFORE any state mutation - this is the "was a session active?"
   // signal that separates real expiry from a quiet boot restore.
   const hadSession = hasTokenRecord();
   try {
-    // Raw fetch, deliberately NOT the authenticated client — no Authorization
+    // Raw fetch, deliberately NOT the authenticated client - no Authorization
     // header, no interceptor. Cookies ride along (same-origin credentials).
     // NO Content-Type header: the request carries NO body, and a JSON
     // content-type with an empty body is a hard 400 on the real API
     // (Fastify JSON parser) even though the MSW mock tolerated it.
     const response = await fetch(buildApiUrl(apiPaths.authRefresh), {
       method: "POST",
+      // Required when NEXT_PUBLIC_API_URL points directly to localhost:4000:
+      // the browser must send the HttpOnly refresh cookie across ports.
+      credentials: "include",
     });
     if (!response.ok) {
       clearAccessToken();

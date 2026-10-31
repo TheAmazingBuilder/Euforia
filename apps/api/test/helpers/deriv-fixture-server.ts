@@ -2,17 +2,17 @@
  * Local Deriv WS v3 fixture server (Phase 07 test harness).
  *
  * Answers REALISTIC Deriv v3 payload shapes over a REAL WebSocket protocol
- * exchange (ws package, both sides) — the ONLY difference from production
+ * exchange (ws package, both sides) - the ONLY difference from production
  * being the transport endpoint. Used by the adapter unit spec and the e2e
  * spec (env-injected via ACCOUNTS_DERIV_WS_URL before buildTestApp).
  *
  * HONESTY LABEL: fixture evidence. This proves the ADAPTER + ORCHESTRATION +
  * PERSISTENCE pipeline; it is NEVER evidence of real Deriv connectivity
- * (that requires a user-created Deriv API token — the Phase 07 U4 runbook).
+ * (that requires a user-created Deriv API token - the Phase 07 U4 runbook).
  *
  * The fixture also acts as a PROTOCOL SPY: it records every request name it
  * receives, and flags any name outside the documented read set as a RED-LINE
- * VIOLATION — tests assert zero violations.
+ * VIOLATION - tests assert zero violations.
  */
 import { createServer } from "node:http";
 import { AddressInfo } from "node:net";
@@ -31,7 +31,7 @@ const FIXTURE_READ_NAMES = new Set([
 ]);
 
 export interface DerivFixtureState {
-  /** Valid API token — anything else answers InvalidToken. */
+  /** Valid API token - anything else answers InvalidToken. */
   validToken: string;
   loginid: string;
   currency: string;
@@ -126,12 +126,12 @@ export function startDerivFixture(state: DerivFixtureState): Promise<DerivFixtur
         return;
       }
       // Deriv wire format: call parameters are SIBLINGS of the call key
-      // (e.g. { profit_table: 1, limit: 500, offset: 0 }) — record the full
+      // (e.g. { profit_table: 1, limit: 500, offset: 0 }) - record the full
       // message as the payload.
       const payload = message;
       state.requests.push({ name, payload });
       if (!FIXTURE_READ_NAMES.has(name)) {
-        state.violations.push(name); // RED LINE tripwire — tests assert empty
+        state.violations.push(name); // RED LINE tripwire - tests assert empty
       }
 
       // ── authorize ────────────────────────────────────────────────────────

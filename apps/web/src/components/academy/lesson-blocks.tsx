@@ -10,12 +10,12 @@ import { useI18n } from "@/i18n/i18n-provider";
 import { VisualBlock } from "./visuals";
 
 /**
- * Lesson block renderer — turns the API's AcademyBlock[] into the lesson
+ * Lesson block renderer - turns the API's AcademyBlock[] into the lesson
  * document. Typography follows the design language: hairline rules between
  * sections, mono annotations, one semantic ink per callout tone.
  */
 
-// Tone → icon/ink only — the fallback labels resolve through
+// Tone → icon/ink only - the fallback labels resolve through
 // dict.academy.blocks.callout (block.title overrides them).
 const CALLOUT_TONES = {
   info: { icon: Info, className: "text-accent" },

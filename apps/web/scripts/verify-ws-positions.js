@@ -1,18 +1,18 @@
 /**
- * Verify — PRIVATE positions stream on the `user:<id>` channel (WS-POS).
+ * Verify - PRIVATE positions stream on the `user:<id>` channel (WS-POS).
  *
  *   A. Service-level (direct :3003, token codec mirror):
  *      A1 valid token → "positions" events with source "sim" + full snapshot
- *      A2 per-user scoping — two users connected simultaneously receive
+ *      A2 per-user scoping - two users connected simultaneously receive
  *         DIFFERENT books (each id embeds its owner's uid prefix)
- *      A3 snapshot idempotency — the id set is stable across events
+ *      A3 snapshot idempotency - the id set is stable across events
  *         (no duplication on reconnect/replay)
- *      A4 live mark-to-market — unrealizedPnl changes between events
+ *      A4 live mark-to-market - unrealizedPnl changes between events
  *   B. Browser (SPA-only navigation): Session Live renders the private
  *      stream card LIVE with items, P&L updates in place, card is read-only
  *      (no <button> anywhere in it).
  *   C. Mid-stream refresh → re-handshake → stream returns to LIVE.
- *   D. Logout teardown — no market-service traffic after sign-out (§76).
+ *   D. Logout teardown - no market-service traffic after sign-out (§76).
  *   E. Console/network cleanliness.
  */
 /* eslint-disable @typescript-eslint/no-require-imports -- Node verification script */
@@ -60,7 +60,7 @@ function collectPositions(auth, ms) {
 (async () => {
   const results = [];
   const check = (name, ok, extra = "") => {
-    results.push(`${ok ? "PASS" : "FAIL"} — ${name}${extra ? ` (${extra})` : ""}`);
+    results.push(`${ok ? "PASS" : "FAIL"} - ${name}${extra ? ` (${extra})` : ""}`);
     console.log(results[results.length - 1]);
   };
 
@@ -79,7 +79,7 @@ function collectPositions(auth, ms) {
       && typeof p.volume === "string" && typeof p.entryPrice === "string" && "unrealizedPnl" in p),
     `${eventsA.length} events`);
 
-  // A2 — run both users simultaneously; each book belongs to its owner only.
+  // A2 - run both users simultaneously; each book belongs to its owner only.
   const [bookA, bookB] = await Promise.all([
     collectPositions({ token: tokenA }, 2500),
     collectPositions({ token: tokenB }, 2500),
@@ -89,18 +89,18 @@ function collectPositions(auth, ms) {
   const onlyOwned = (events, uid) => events.every((event) =>
     event.positions.every((p) => p.id.startsWith(`sim-${uid.slice(0, 8)}-`)));
   const disjoint = [...idsA].every((id) => !idsB.has(id));
-  check("A2 Per-user scoping — A and B receive DIFFERENT private books",
+  check("A2 Per-user scoping - A and B receive DIFFERENT private books",
     disjoint && onlyOwned(bookA, DEMO_UID) && onlyOwned(bookB, USER_B_UID),
     `A:${idsA.size} positions / B:${idsB.size} positions`);
 
   const idSetsStable = eventsA.every((event) =>
     event.positions.length === first.positions.length
     && event.positions.every((p) => idsA.has(p.id)));
-  check("A3 Snapshot semantics — id set stable across events (no duplication)",
+  check("A3 Snapshot semantics - id set stable across events (no duplication)",
     idSetsStable, `${first.positions.length} ids × ${eventsA.length} events`);
 
   const pnlValues = new Set(eventsA.flatMap((event) => event.positions.map((p) => p.unrealizedPnl)));
-  check("A4 Live mark-to-market — P&L moves between snapshots", pnlValues.size > 1,
+  check("A4 Live mark-to-market - P&L moves between snapshots", pnlValues.size > 1,
     `${pnlValues.size} distinct P&L values`);
 
   // ══ B. Browser flow (SPA) ═════════════════════════════════════════════════
@@ -130,7 +130,7 @@ function collectPositions(auth, ms) {
   await page.locator('nav[aria-label="Main navigation"]').waitFor({ state: "visible", timeout: 20_000 });
   bootPhase = false;
 
-  // SPA navigation — sidebar click (MSW state lives in the tab).
+  // SPA navigation - sidebar click (MSW state lives in the tab).
   await page.locator('nav[aria-label="Main navigation"] a[href="/session"]').click();
   await page.locator('[data-testid="session-live-header"]').waitFor({ state: "visible", timeout: 20_000 });
 
@@ -154,7 +154,7 @@ function collectPositions(auth, ms) {
   check("B3 P&L updates in place (mark-to-market stream)", pnl1 !== null && pnl1 !== pnl2, `${pnl1} → ${pnl2}`);
 
   const buttonCount = await streamCard.locator("button").count();
-  check("B4 READ-ONLY — no button inside the stream card", buttonCount === 0, `${buttonCount} buttons`);
+  check("B4 READ-ONLY - no button inside the stream card", buttonCount === 0, `${buttonCount} buttons`);
   await page.screenshot({ path: `${SHOTS}/private-positions-live.png` });
 
   // ══ C. Mid-stream refresh → re-handshake → stream resumes ════════════════

@@ -5,12 +5,9 @@ import {
   ArrowRight,
   BookOpenCheck,
   CheckCircle2,
-  ClipboardList,
-  Flame,
   Gauge,
   GraduationCap,
   ListChecks,
-  Target,
 } from "lucide-react";
 import type { TradeReviewOverviewResponse } from "@cosmoz/shared";
 
@@ -22,10 +19,10 @@ import { GradeBadge, GRADE_BAR, GRADE_STYLES } from "@/components/trade-review/t
 import { Snowflake } from "lucide-react";
 
 /**
- * Trade Review overview — the module's cockpit. Review rate, streak, lessons
+ * Trade Review overview - the module's cockpit. Review rate, streak, lessons
  * and goal health up top; the grade distribution as a full-width segmented
  * bar; the weekly execution trend; the pending queue CTA and the freshest
- * lessons. Everything from GET /reviews/overview — the client renders, never
+ * lessons. Everything from GET /reviews/overview - the client renders, never
  * recomputes.
  */
 
@@ -37,33 +34,22 @@ interface OverviewPanelProps {
 }
 
 function KpiTile({
-  icon: Icon,
   label,
   value,
   sub,
-  gradient,
   testid,
 }: {
-  icon: typeof Flame;
   label: string;
   value: string;
   sub: string;
-  gradient: string;
   testid: string;
 }) {
   return (
-    <Card className="relative overflow-hidden py-4" data-testid={testid}>
-      <CardContent className="flex items-center gap-3 px-4">
-        <span className={cn("flex size-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br text-white shadow-md", gradient)}>
-          <Icon className="size-5" aria-hidden="true" />
-        </span>
-        <div className="min-w-0">
-          <p className="truncate text-xs text-muted-foreground">{label}</p>
-          <p className="font-mono text-xl font-bold tabular-nums leading-tight">{value}</p>
-          <p className="truncate text-[11px] text-muted-foreground">{sub}</p>
-        </div>
-      </CardContent>
-    </Card>
+    <div className="stat-cell min-w-0 space-y-1.5 px-4 py-3" data-testid={testid}>
+      <p className="ledger-label truncate">{label}</p>
+      <p className="font-mono text-xl font-semibold tabular-nums leading-tight">{value}</p>
+      <p className="truncate text-[11px] text-muted-foreground">{sub}</p>
+    </div>
   );
 }
 
@@ -76,17 +62,14 @@ export function OverviewPanel({ overview, onGoTo }: OverviewPanelProps) {
   return (
     <div className="space-y-4" data-testid="review-overview">
       {/* ── Hero KPIs ── */}
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="stat-strip grid grid-cols-2 xl:grid-cols-4">
         <KpiTile
-          icon={ClipboardList}
           label="Review rate"
           value={`${stats.reviewRatePct}%`}
           sub={`${stats.reviewedTrades} of ${stats.closedTrades} closed trades`}
-          gradient="from-violet-500 to-purple-600"
           testid="kpi-review-rate"
         />
         <KpiTile
-          icon={Flame}
           label="Review streak"
           value={stats.reviewStreakDays > 0 ? `${stats.reviewStreakDays}d` : "0d"}
           sub={
@@ -96,34 +79,29 @@ export function OverviewPanel({ overview, onGoTo }: OverviewPanelProps) {
                 ? "Grace day available this week"
                 : "Review one trade today"
           }
-          gradient="from-amber-500 to-orange-500"
           testid="kpi-streak"
         />
         <KpiTile
-          icon={GraduationCap}
           label="Lessons captured"
           value={String(stats.lessonsCaptured)}
           sub={stats.offPlaybookCount > 0 ? `${stats.offPlaybookCount} off-playbook trades` : "All inside the playbook"}
-          gradient="from-emerald-500 to-teal-600"
           testid="kpi-lessons"
         />
         <KpiTile
-          icon={Target}
           label="Goals on pace"
           value={`${goalsSummary.onTrack + goalsSummary.achieved}/${goalsSummary.total}`}
           sub={`${goalsSummary.atRisk} at risk · ${goalsSummary.behind} behind`}
-          gradient="from-cyan-500 to-sky-600"
           testid="kpi-goals"
         />
       </div>
 
       {streak.frozenDays > 0 ? (
         <p
-          className="flex items-center gap-1.5 rounded-lg border border-cyan-500/20 bg-cyan-500/5 px-3 py-2 text-[11px] text-cyan-500 dark:text-cyan-400"
+          className="flex items-center gap-1.5 rounded-md border border-border bg-muted/20 px-3 py-2 text-[11px] text-muted-foreground"
           data-testid="streak-freeze-note"
         >
           <Snowflake className="size-3 shrink-0" aria-hidden="true" />
-          Honest streak: {streak.currentDays} reviewed + {streak.frozenDays} frozen (one grace day per week) — best pure run {streak.longestStreak}d.
+          Honest streak: {streak.currentDays} reviewed + {streak.frozenDays} frozen (one grace day per week) - best pure run {streak.longestStreak}d.
         </p>
       ) : null}
 
@@ -132,13 +110,13 @@ export function OverviewPanel({ overview, onGoTo }: OverviewPanelProps) {
         <Card data-testid="grade-distribution-card">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-base">
-              <Gauge className="size-4 text-violet-400" aria-hidden="true" />
+              <Gauge className="size-4 text-muted-foreground" aria-hidden="true" />
               Execution grades
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             {gradeTotal === 0 ? (
-              <p className="py-4 text-center text-sm text-muted-foreground">No reviews yet — grade your first trade.</p>
+              <p className="py-4 text-center text-sm text-muted-foreground">No reviews yet - grade your first trade.</p>
             ) : (
               <>
                 <div className="flex h-3.5 w-full overflow-hidden rounded-full" data-testid="grade-bar">
@@ -177,7 +155,7 @@ export function OverviewPanel({ overview, onGoTo }: OverviewPanelProps) {
                   ).map(({ label, value }) => (
                     <div key={label}>
                       <p className="text-xs text-muted-foreground">Avg {label}</p>
-                      <p className="font-mono text-sm font-bold">{value === null ? "—" : `${value}/5`}</p>
+                      <p className="font-mono text-sm font-bold">{value === null ? "-" : `${value}/5`}</p>
                     </div>
                   ))}
                 </div>
@@ -190,7 +168,7 @@ export function OverviewPanel({ overview, onGoTo }: OverviewPanelProps) {
         <Card data-testid="weekly-trend-card">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-base">
-              <BookOpenCheck className="size-4 text-cyan-400" aria-hidden="true" />
+              <BookOpenCheck className="size-4 text-muted-foreground" aria-hidden="true" />
               Weekly execution trend
             </CardTitle>
           </CardHeader>
@@ -204,8 +182,7 @@ export function OverviewPanel({ overview, onGoTo }: OverviewPanelProps) {
                     <span className="font-mono text-[10px] font-semibold text-muted-foreground">{week.avgPoints.toFixed(1)}</span>
                     <div
                       className={cn(
-                        "w-full rounded-t-md bg-gradient-to-t transition-all",
-                        week.avgPoints >= 4 ? "from-emerald-600/60 to-emerald-400" : week.avgPoints >= 3 ? "from-amber-600/60 to-amber-400" : "from-rose-600/60 to-rose-400",
+                        "w-full rounded-t-md bg-foreground/70 transition-all",
                       )}
                       style={{ height: `${(week.avgPoints / 5) * 100}%` }}
                       title={`${week.weekStart}: ${week.reviews} reviews`}
@@ -218,7 +195,7 @@ export function OverviewPanel({ overview, onGoTo }: OverviewPanelProps) {
               </div>
             )}
             <p className="mt-3 border-t pt-3 text-xs text-muted-foreground">
-              Average execution grade per week (A=5 … F=1) · plan followed {stats.followedPlanPct === null ? "—" : `${stats.followedPlanPct}%`} of the time.
+              Average execution grade per week (A=5 … F=1) · plan followed {stats.followedPlanPct === null ? "-" : `${stats.followedPlanPct}%`} of the time.
             </p>
           </CardContent>
         </Card>
@@ -230,10 +207,10 @@ export function OverviewPanel({ overview, onGoTo }: OverviewPanelProps) {
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center justify-between text-base">
               <span className="flex items-center gap-2">
-                <ListChecks className="size-4 text-amber-500" aria-hidden="true" />
+                <ListChecks className="size-4 text-muted-foreground" aria-hidden="true" />
                 Waiting for review
               </span>
-              <Badge variant="outline" className="border-amber-500/30 bg-amber-500/15 font-mono text-amber-500" data-testid="overview-pending-count">
+              <Badge variant="outline" className="border-border bg-muted/20 font-mono text-foreground" data-testid="overview-pending-count">
                 {stats.pendingReviews}
               </Badge>
             </CardTitle>
@@ -241,8 +218,8 @@ export function OverviewPanel({ overview, onGoTo }: OverviewPanelProps) {
           <CardContent className="space-y-2">
             {pendingQueuePreview.length === 0 ? (
               <p className="flex items-center justify-center gap-2 py-4 text-sm text-muted-foreground">
-                <CheckCircle2 className="size-4 text-emerald-500" aria-hidden="true" />
-                Queue clear — every closed trade has its verdict.
+                <CheckCircle2 className="size-4 text-muted-foreground" aria-hidden="true" />
+                Queue clear - every closed trade has its verdict.
               </p>
             ) : (
               <>
@@ -257,7 +234,7 @@ export function OverviewPanel({ overview, onGoTo }: OverviewPanelProps) {
                         (row.rMultiple ?? 0) >= 0 ? "text-profit" : "text-loss",
                       )}
                     >
-                      {row.rMultiple === null ? "—" : `${row.rMultiple > 0 ? "+" : ""}${row.rMultiple.toFixed(2)}R`}
+                      {row.rMultiple === null ? "-" : `${row.rMultiple > 0 ? "+" : ""}${row.rMultiple.toFixed(2)}R`}
                     </span>
                   </div>
                 ))}
@@ -275,7 +252,7 @@ export function OverviewPanel({ overview, onGoTo }: OverviewPanelProps) {
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center justify-between text-base">
               <span className="flex items-center gap-2">
-                <GraduationCap className="size-4 text-emerald-500" aria-hidden="true" />
+                <GraduationCap className="size-4 text-muted-foreground" aria-hidden="true" />
                 Freshest lessons
               </span>
               <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs" onClick={() => onGoTo("lessons")}>

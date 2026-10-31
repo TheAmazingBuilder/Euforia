@@ -21,7 +21,7 @@ const OUT = path.resolve(__dirname, "shots");
   await page.waitForTimeout(1200);
 
   // 1) Sidebar brand shows the equity-curve tile (svg present in brand link)
-  const brandSvg = await page.locator('a[aria-label="Cosmoz — Dashboard"] svg').count();
+  const brandSvg = await page.locator('a[aria-label="Cosmoz - Dashboard"] svg').count();
   console.log("brand svg count:", brandSvg);
 
   // 2) Discreet logout link below Collapse

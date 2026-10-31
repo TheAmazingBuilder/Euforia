@@ -1,13 +1,14 @@
 /**
  * Per-vector authentication rate limiting (Phase 2 mandate §36).
  *
- * Sliding-window counters keyed by `scope:email` — matching the mock
+ * Sliding-window counters keyed by `scope:email` - matching the mock
  * engine's vectors exactly (the frontend declares these limits in the
  * Security center and its error copy expects 429 + Retry-After):
  *
  *   login     5 / 15 min      mfa       5 / 15 min
- *   register  5 / 15 min      resend    3 / 15 min
- *   forgot    3 / 15 min      reauth    5 / 15 min (failures only)
+ *   register  5 / 15 min      resend       3 / 15 min
+ *   forgot    3 / 15 min      email_change 3 / 15 min
+ *   reauth    5 / 15 min (failures only)
  *
  * In-memory storage is correct for the single-instance monolith; a shared
  * store is required only if the API ever scales horizontally.
@@ -101,8 +102,11 @@ export class AuthRateLimiterService {
 export const AUTH_RATE_LIMITS: Record<string, number> = {
   login: 5,
   mfa: 5,
+  mfa_email_send: 3,
+  mfa_email_enroll: 3,
   register: 5,
   resend: 3,
   forgot: 3,
+  email_change: 3,
   reauth: 5,
 };

@@ -1,4 +1,4 @@
-/** Diagnose Phase 9 tab failures — dumps tabpanel text + console errors. */
+/** Diagnose Phase 9 tab failures - dumps tabpanel text + console errors. */
 const { chromium } = require("playwright");
 (async () => {
   const browser = await chromium.launch();

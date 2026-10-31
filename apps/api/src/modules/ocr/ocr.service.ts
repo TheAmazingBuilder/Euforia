@@ -1,9 +1,9 @@
 /**
- * OCR application service (Phase 19) — the orchestration brain.
+ * OCR application service (Phase 19) - the orchestration brain.
  *
  * Pipeline (§10): upload → validation → storage → job rows → engine call →
  * strict contract validation → domain validation → persistence → review →
- * confirmation. Request-scoped (no external queue in this build — same
+ * confirmation. Request-scoped (no external queue in this build - same
  * pattern as the Accounts sync runs): a recognition completes, fails or is
  * reviewable by the time the HTTP answer is written.
  *
@@ -11,7 +11,7 @@
  *   - the engine result is UNTRUSTED: zod-parsed (§54) then re-validated by
  *     the domain (§19) before it is ever persisted;
  *   - idempotency (§32): one recognition per (user, image, profile,
- *     pipeline) — replays return the original row, never a second job;
+ *     pipeline) - replays return the original row, never a second job;
  *   - bounded retries (§34): only TRANSIENT engine failures retry, non-
  *     transient failures fail fast with a stable category;
  *   - human-in-the-loop (§21): nothing outside CONFIRMATION ever writes
@@ -80,7 +80,7 @@ import { TRADE_IMPORT_SKIPPED_PROFILE } from "./trade-import.logic";
 import { AccountsRepository } from "../accounts/accounts.repository";
 import { SecurityEventService } from "../security/security-event.service";
 
-/** Pipeline version recorded on every row (§33 — results stay interpretable). */
+/** Pipeline version recorded on every row (§33 - results stay interpretable). */
 export const OCR_PIPELINE_VERSION = "2026.10.04";
 
 export const OCR_ERROR_CODES = {
@@ -98,7 +98,7 @@ export const OCR_ERROR_CODES = {
   RECROP_UNPROCESSABLE: "OCR_RECROP_UNPROCESSABLE",
   RECROP_UNSUPPORTED: "OCR_RECROP_UNSUPPORTED",
   ACCOUNT_NOT_FOUND: "OCR_ACCOUNT_NOT_FOUND",
-  // V2 §58 — a flagged recognition needs an explicit user acknowledgment.
+  // V2 §58 - a flagged recognition needs an explicit user acknowledgment.
   DUPLICATE_SCREENSHOT_UNACKNOWLEDGED: "OCR_DUPLICATE_UNACKNOWLEDGED",
   DUPLICATE_TRADE_UNACKNOWLEDGED: "OCR_TRADE_DUPLICATE_UNACKNOWLEDGED",
   ASSET_PURGED: "OCR_ASSET_PURGED",
@@ -114,7 +114,7 @@ interface AssetMeta {
   userId: string;
   mime: string;
   sizeBytes: number;
-  /** V2 — null for PDF statements. */
+  /** V2 - null for PDF statements. */
   width: number | null;
   height: number | null;
   checksumSha256: string;
@@ -163,13 +163,13 @@ export class OcrService {
       );
     }
 
-    // Stage 1 — input validation (§7/§8/§38). Throws ValidationError 400.
+    // Stage 1 - input validation (§7/§8/§38). Throws ValidationError 400.
     const image = this.imageValidation.validateDataUrl(input.imageDataUrl, {
       maxBytes: this.config.ocr.uploadMaxBytes,
       maxPixels: this.config.ocr.imageMaxPixels,
     });
 
-    // Stage 2 — idempotency (§32): replays return the existing recognition.
+    // Stage 2 - idempotency (§32): replays return the existing recognition.
     // The profile is PART of the key: the same screenshot analyzed in trade
     // mode and in account mode are different recognitions by design.
     const idempotencyKey = deriveIdempotencyKey(
@@ -184,7 +184,7 @@ export class OcrService {
     }
     this.limiter.hit("upload", input.userId);
 
-    // Stage 3 — storage (§6): the binary goes behind the storage port with a
+    // Stage 3 - storage (§6): the binary goes behind the storage port with a
     // key derived from validated inputs only. The same image (same checksum)
     // shares one stored asset across recognitions (§32).
     const assetRow = await this.ensureAsset(input.userId, image);
@@ -201,7 +201,7 @@ export class OcrService {
       })
       .catch(async (error) => {
         // Lost the (userId, idempotencyKey) race against a concurrent tab
-        // (§51) — re-read the winning row; replay policy returns it as-is.
+        // (§51) - re-read the winning row; replay policy returns it as-is.
         if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
           const winner = await this.repository.findRecognitionByIdempotencyKey(input.userId, idempotencyKey);
           if (winner) return winner;
@@ -209,7 +209,7 @@ export class OcrService {
         throw error;
       });
 
-    // Audit (§48) — upload facts only, never the image itself (§36).
+    // Audit (§48) - upload facts only, never the image itself (§36).
     await this.securityEvents.record({
       userId: input.userId,
       type: "OCR_UPLOAD",
@@ -218,17 +218,17 @@ export class OcrService {
       outcome: "SUCCESS",
     });
 
-    // Stages 4–11 — processing, request-scoped (§24 lifecycle).
+    // Stages 4–11 - processing, request-scoped (§24 lifecycle).
     return this.processRow(input.userId, row, assetRow);
   }
 
   /**
-   * V2 §32/§39 — explicit REPROCESS: run the CURRENT pipeline over an
-   * existing asset again. The original recognition is NEVER mutated (§33 —
+   * V2 §32/§39 - explicit REPROCESS: run the CURRENT pipeline over an
+   * existing asset again. The original recognition is NEVER mutated (§33 -
    * confirmed rows are immutable); a reprocess creates a FRESH, fully
    * independent recognition (own corrections, own confirmation, own trade)
    * that carries `reprocessedFrom` for provenance. Each call is a fresh run
-   * (bounded by the upload rate limit) — reprocess idempotency rides the
+   * (bounded by the upload rate limit) - reprocess idempotency rides the
    * revision counter so concurrent calls can never collide on the
    * idempotency key, while the user keeps a honest re-run affordance.
    */
@@ -242,7 +242,7 @@ export class OcrService {
       );
     }
 
-    // Reprocessing costs an upload slot — it runs the same pipeline (§32).
+    // Reprocessing costs an upload slot - it runs the same pipeline (§32).
     const check = this.limiter.check("upload", input.userId);
     if (!check.allowed) {
       throw new RateLimitError(
@@ -342,7 +342,7 @@ export class OcrService {
       })
       .catch(async (error) => {
         // Lost the (userId, checksum) race (§51): the winning asset row is
-        // the shared one — this file copy becomes an orphan (§31) and is
+        // the shared one - this file copy becomes an orphan (§31) and is
         // removed best-effort.
         if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
           const winner = await this.repository.findAssetByChecksum(userId, image.checksumSha256);
@@ -396,7 +396,7 @@ export class OcrService {
       const bytes = await this.storage.get(asset.storageKey);
       if (bytes === null) {
         // Storage/metadata divergence is an infrastructure fault, not user
-        // error — surfaced as an explicit FAILED state (§35), never a fake
+        // error - surfaced as an explicit FAILED state (§35), never a fake
         // reviewable result.
         return this.failRow(userId, row, "EXTRACTION_FAILED", "stored screenshot is unreadable", attemptsUsed.count);
       }
@@ -422,9 +422,9 @@ export class OcrService {
         return this.failRow(userId, row, category, response.failure?.message ?? "the sidecar could not process this screenshot", attemptsUsed.count);
       }
 
-      // Stage 9–10 — map + domain-validate the engine output (§19/§17).
+      // Stage 9–10 - map + domain-validate the engine output (§19/§17).
       let fields = applyDomainValidation(response.fields.map(mapEngineField));
-      // Multi-trade candidates get the SAME domain treatment (§2.2) —
+      // Multi-trade candidates get the SAME domain treatment (§2.2) -
       // grouped evidence is untrusted machine output until confirmed.
       const candidates = response.tradeCandidates.map((candidate) => ({
         fields: applyDomainValidation(candidate.fields.map(mapEngineField)),
@@ -435,7 +435,7 @@ export class OcrService {
       if (response.perceptualHash) {
         await this.repository.setAssetPhash(asset.id, response.perceptualHash);
       }
-      // PDF statements report the RENDERED first-page dimensions (§4.3) —
+      // PDF statements report the RENDERED first-page dimensions (§4.3) -
       // the asset row was created with placeholders.
       if (response.processingMetadata.documentWidth && response.processingMetadata.documentHeight) {
         await this.repository.updateAssetDimensions(
@@ -445,7 +445,7 @@ export class OcrService {
         );
       }
       // Duplicate detection (engine quality §2.1): compare the fresh
-      // fingerprint against the user's recent pool. Advisory — the pipeline
+      // fingerprint against the user's recent pool. Advisory - the pipeline
       // result stands; the review UI surfaces the earlier import.
       let duplicateOf: OcrResultPayload["duplicateOf"] = null;
       if (response.perceptualHash) {
@@ -484,10 +484,10 @@ export class OcrService {
           return suggestion ? { ...field, suggestion } : field;
         });
       }
-      // Trade duplicate detection (V2 §4) — content match against the
+      // Trade duplicate detection (V2 §4) - content match against the
       // user's existing Trades. Advisory: stored on the result, surfaced at
       // review, and an explicit acknowledgment is required to confirm.
-      // Account snapshots are NOT trade-shaped — the query is skipped
+      // Account snapshots are NOT trade-shaped - the query is skipped
       // entirely; chart symbols still resolve the catalog (no direction,
       // no duplicate) for the UNKNOWN_SYMBOL issue.
       const duplicateDetection = row.extractionProfile === "ACCOUNT_POSITION"
@@ -503,7 +503,7 @@ export class OcrService {
               matchedOn: [...duplicateDetection.duplicate.matchedOn],
               detectedAt: new Date().toISOString(),
             };
-      // Catalog resolution is a processing-time fact (V2 §16) — persisted
+      // Catalog resolution is a processing-time fact (V2 §16) - persisted
       // so the derived UNKNOWN_SYMBOL issue never needs a DB roundtrip.
       const symbolInCatalog: boolean | null = fields.some(
         (f) => f.field === "symbol" && f.normalizedValue !== null,
@@ -536,7 +536,7 @@ export class OcrService {
       };
       const updated = await this.repository.persistResult(row.id, result);
       if (!updated) {
-        // The row moved concurrently (deleted mid-processing, §51) — the
+        // The row moved concurrently (deleted mid-processing, §51) - the
         // current state wins, whatever it is.
         const current = await this.repository.findForUser(row.id, userId);
         if (!current) throw new NotFoundError("Recognition not found.");
@@ -549,7 +549,7 @@ export class OcrService {
         return this.failRow(userId, row, error.category, error.message, attemptsUsed.count);
       }
       if (error instanceof EngineMalformedResponseError) {
-        // Contract violation — deterministic, retry cannot help (§34/§54).
+        // Contract violation - deterministic, retry cannot help (§34/§54).
         return this.failRow(userId, row, "EXTRACTION_FAILED", "the engine returned an invalid result payload", attemptsUsed.count);
       }
       if (error instanceof EngineTransientError) {
@@ -564,7 +564,7 @@ export class OcrService {
           attemptsUsed.count,
         );
       }
-      // Unknown failures never leak internals (§36) — a stable category plus
+      // Unknown failures never leak internals (§36) - a stable category plus
       // a sanitized message, diagnostics in the logs.
       return this.failRow(userId, row, "ENGINE_ERROR", "the recognition pipeline failed unexpectedly", attemptsUsed.count);
     }
@@ -653,7 +653,7 @@ export class OcrService {
     corrections: OcrCorrectionRecord;
     batches?: { corrections: OcrCorrectionRecord; include: boolean }[];
     accountId?: string | null;
-    /** V2 §58 — explicit acknowledgments of the advisory duplicate flags. */
+    /** V2 §58 - explicit acknowledgments of the advisory duplicate flags. */
     acknowledgeDuplicateScreenshot?: boolean;
     acknowledgeDuplicateTrade?: boolean;
   }): Promise<OcrRecognitionDto> {
@@ -682,7 +682,7 @@ export class OcrService {
     const machineFieldsPre = (row.result?.fields ?? []) as OcrExtractedField[];
     const candidateDrafts = (row.result?.candidates ?? null) as { fields: OcrExtractedField[] }[] | null;
 
-    // V2 §58 — duplicate warnings are ADVISORY at review time but BLOCKING
+    // V2 §58 - duplicate warnings are ADVISORY at review time but BLOCKING
     // at confirmation: the user must have seen the flag and acknowledged it
     // explicitly. Never a silent double import, never a silent discard.
     if (row.result?.duplicateOf && input.acknowledgeDuplicateScreenshot !== true) {
@@ -701,13 +701,13 @@ export class OcrService {
     // Canonicalize BEFORE the replay comparison: the stored record holds the
     // VALIDATED DECLARATION ("2345,60" → "2345.60", §21), so a retry of the
     // SAME logical payload must replay idempotently even when it arrives in
-    // raw user form (two tabs, network retry — §51). Invalid corrections are
-    // a 422 here regardless of the row state — the payload is what is broken.
+    // raw user form (two tabs, network retry - §51). Invalid corrections are
+    // a 422 here regardless of the row state - the payload is what is broken.
     const machineFields = machineFieldsPre;
     const canonicalCorrections = canonicalizeCorrections(input.corrections);
 
     // Grouped confirmation (engine quality §2.2): every batch is
-    // canonicalized against ITS candidate's machine fields — the same
+    // canonicalized against ITS candidate's machine fields - the same
     // domain rules, per draft. When batches are absent the single-trade
     // path is used verbatim (backward compatible).
     let batchPlan: { index: number; corrections: Record<string, string | null>; include: boolean }[] | null = null;
@@ -734,7 +734,7 @@ export class OcrService {
 
     if (row.status === "CONFIRMED") {
       // Idempotent replay of the SAME payload (two tabs, §51) is a no-op
-      // success; a DIFFERENT payload after confirmation is a conflict —
+      // success; a DIFFERENT payload after confirmation is a conflict -
       // confirmed values are never silently rewritten (§21).
       const samePayload = batchPlan !== null
         ? sameBatches((row.result?.batches ?? null) as OcrResultPayload["batches"] ?? null, batchPlan)
@@ -751,7 +751,7 @@ export class OcrService {
       );
     }
 
-    // User corrections become authoritative — validated with the SAME domain
+    // User corrections become authoritative - validated with the SAME domain
     // rules as machine values (§21). The record stores the user's VALIDATED
     // DECLARATION (separators canonicalized to plain-dot form, declared
     // precision preserved: "2345,60" → "2345.60"), so a confirmation replay
@@ -810,7 +810,7 @@ export class OcrService {
       mergedResult,
     });
     if (!updated) {
-      // Concurrent confirmation raced us (§51) — replay the same policy.
+      // Concurrent confirmation raced us (§51) - replay the same policy.
       const winner = await this.repository.findForUser(input.id, input.userId);
       const winnerSame = winner?.status === "CONFIRMED" && (
         batchPlan !== null
@@ -823,7 +823,7 @@ export class OcrService {
       throw new ConflictError("This recognition is already confirmed.", OCR_ERROR_CODES.ALREADY_CONFIRMED);
     }
 
-    // Account attachment (engine quality §3.1) — after the confirmation
+    // Account attachment (engine quality §3.1) - after the confirmation
     // commit, before the bridge so the import sees the final target.
     if (input.accountId !== undefined) {
       await this.repository.attachAccount(input.id, input.accountId);
@@ -839,7 +839,7 @@ export class OcrService {
     if (memoryEntries.length > 0) {
       await this.repository
         .upsertCorrectionPatterns(input.userId, memoryEntries)
-        .catch(() => undefined); // advisory memory — never blocks confirmation
+        .catch(() => undefined); // advisory memory - never blocks confirmation
     }
 
     await this.securityEvents.record({
@@ -852,16 +852,16 @@ export class OcrService {
       outcome: "SUCCESS",
     });
 
-    // Phase 21 — the sanctioned confirmation → Trading Core bridge (§77).
+    // Phase 21 - the sanctioned confirmation → Trading Core bridge (§77).
     // Runs AFTER the confirmation commit: the user's declaration is already
     // authoritative, so an import problem can NEVER fail the confirmation
-    // (§126 failure isolation) — it becomes a stable warning on the
+    // (§126 failure isolation) - it becomes a stable warning on the
     // recognition plus an audit fact. Trades are created through
     // TradesService.createTrade (canonical application service); ids are
     // linked here afterwards (one-way provenance, §77).
     //
     // Account & Chart profiles (V1.1): the confirmed values are NOT trade
-    // facts — an account snapshot / chart reading is stored as-is and the
+    // facts - an account snapshot / chart reading is stored as-is and the
     // bridge is skipped with an EXPLICIT token (never a misleading
     // INCOMPLETE skip that would imply a broken trade).
     const confirmedProfile = row.extractionProfile as OcrExtractionProfile;
@@ -905,7 +905,7 @@ export class OcrService {
 
   /**
    * Targeted re-OCR over a user-framed region of the stored screenshot.
-   * EPHEMERAL guidance for the review UI — nothing is persisted, the
+   * EPHEMERAL guidance for the review UI - nothing is persisted, the
    * stored machine result stays untouched (§21: corrections remain the
    * only authoritative write path).
    */
@@ -992,7 +992,7 @@ export class OcrService {
     const deleted = await this.repository.deleteForUser(id, userId);
     if (!deleted) throw new NotFoundError("Recognition not found.");
     if (deleted.storageKey !== null) {
-      // AFTER commit (§50): binary removal is best-effort (§31) — a failure
+      // AFTER commit (§50): binary removal is best-effort (§31) - a failure
       // leaves an orphan file, never an orphaned metadata row.
       await this.storage.delete(deleted.storageKey);
     }
@@ -1074,8 +1074,8 @@ export function toRecognitionDto(row: OcrRecognitionRow): OcrRecognition {
   const duplicateOf = (row.result?.duplicateOf ?? null) as OcrRecognition["duplicateOf"];
   const possibleTradeDuplicate = (row.result?.possibleTradeDuplicate ??
     null) as OcrRecognition["possibleTradeDuplicate"];
-  // V2 §16/§15/§23 — issues, quality and timeline are DERIVED from the
-  // stored evidence at read time (pure functions — confirmed rows never
+  // V2 §16/§15/§23 - issues, quality and timeline are DERIVED from the
+  // stored evidence at read time (pure functions - confirmed rows never
   // mutate, §33, and improved logic explains old rows retroactively). The
   // profile scopes the required-field floor (Account & Chart V1.1).
   const extractionProfile = row.extractionProfile as OcrExtractionProfile;
@@ -1113,13 +1113,13 @@ export function toRecognitionDto(row: OcrRecognitionRow): OcrRecognition {
           }
         : null,
     corrections: row.corrections ?? null,
-    /** Canonical Trade from the Phase 21 bridge — null when unlinked. */
+    /** Canonical Trade from the Phase 21 bridge - null when unlinked. */
     tradeId: row.tradeId,
     /** Every Trade imported from this recognition (grouped confirmation). */
     tradeIds: row.tradeIds,
-    /** Multi-trade drafts — null for the mono-trade path. */
+    /** Multi-trade drafts - null for the mono-trade path. */
     candidates: (row.result?.candidates ?? null) as OcrRecognition["candidates"],
-    /** Advisory duplicate flag (engine quality §2.1) — stored in the result. */
+    /** Advisory duplicate flag (engine quality §2.1) - stored in the result. */
     duplicateOf,
     accountId: row.accountId,
     suggestedTags: row.result?.suggestedTags ?? [],
@@ -1195,7 +1195,7 @@ export function canonicalizeCorrections(corrections: OcrCorrectionRecord): Recor
   return canonical;
 }
 
-/** Domain validation of user corrections — mapped to a 422 business error. */
+/** Domain validation of user corrections - mapped to a 422 business error. */
 export function applyCorrectionsSafe(
   machineFields: OcrExtractedField[],
   corrections: OcrCorrectionRecord,

@@ -1,6 +1,6 @@
 /**
  * Metric alert rules controller (Dashboard Customization Phase 07).
- * All routes authenticated (global JwtAuthGuard — no @Public), userId from
+ * All routes authenticated (global JwtAuthGuard - no @Public), userId from
  * the auth principal (never the client), ZodValidationPipe on every body,
  * uuid-validated params, shared-contract parse on read responses.
  */
@@ -32,7 +32,7 @@ import { MetricAlertsService } from "./metric-alerts.service";
 export class MetricAlertsController {
   constructor(private readonly metricAlerts: MetricAlertsService) {}
 
-  /** GET /alert-rules — the user's configured rules. */
+  /** GET /alert-rules - the user's configured rules. */
   @Get()
   async list(@CurrentUser() principal: AuthPrincipal) {
     const response = await this.metricAlerts.listRules(principal.userId);
@@ -40,7 +40,7 @@ export class MetricAlertsController {
   }
 
   /**
-   * POST /alert-rules/evaluate — explicit manual evaluation pass for the
+   * POST /alert-rules/evaluate - explicit manual evaluation pass for the
    * authenticated user (diagnostics + deterministic tests + UI "Run now").
    * DECLARED BEFORE :ruleId routes so Nest does not bind "evaluate" as an
    * id (same guard as the accounts module's action routes).
@@ -52,7 +52,7 @@ export class MetricAlertsController {
     return evaluateMetricAlertsResponseSchema.parse(response);
   }
 
-  /** POST /alert-rules — create a rule (409 on an exact duplicate). */
+  /** POST /alert-rules - create a rule (409 on an exact duplicate). */
   @Post()
   @HttpCode(HttpStatus.CREATED)
   async create(
@@ -63,7 +63,7 @@ export class MetricAlertsController {
     return this.metricAlerts.createRule(principal.userId, payload);
   }
 
-  /** GET /alert-rules/:ruleId/events — recent inbox events for one rule. */
+  /** GET /alert-rules/:ruleId/events - recent inbox events for one rule. */
   @Get(":ruleId/events")
   async events(
     @CurrentUser() principal: AuthPrincipal,
@@ -74,7 +74,7 @@ export class MetricAlertsController {
     return metricAlertRuleEventsResponseSchema.parse(response);
   }
 
-  /** PATCH /alert-rules/:ruleId — rename / retune / enable / disable. */
+  /** PATCH /alert-rules/:ruleId - rename / retune / enable / disable. */
   @Patch(":ruleId")
   async update(
     @CurrentUser() principal: AuthPrincipal,
@@ -86,7 +86,7 @@ export class MetricAlertsController {
     return this.metricAlerts.updateRule(principal.userId, id, payload);
   }
 
-  /** DELETE /alert-rules/:ruleId — events keep their frozen payload. */
+  /** DELETE /alert-rules/:ruleId - events keep their frozen payload. */
   @Delete(":ruleId")
   async remove(
     @CurrentUser() principal: AuthPrincipal,

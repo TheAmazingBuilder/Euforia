@@ -3,19 +3,19 @@ import { PrismaService } from "../../infrastructure/prisma/prisma.service";
 import type { Prisma } from "@prisma/client";
 
 /**
- * Integration Hub persistence — one bounded table (IntegrationRow) with a
+ * Integration Hub persistence - one bounded table (IntegrationRow) with a
  * kind discriminator, following the module-upgrade storage pattern:
  * identity in columns (userId, kind, refId), the business aggregate in
  * `data Json`.
  *
  * Row kinds:
- *   PROVIDER — refId = providerId, data = per-user connection/sync state
- *   WEBHOOK  — refId = endpoint id, data = deliveries + lastAcceptedEventId
- *   EVENT    — row id = audit event id (bounded ring, pruned by cap + TTL)
- *   ERROR    — row id = error ledger id (bounded ring)
- *   ECO      — refId = providerKey, data = normalized economic event
- *   NEWS     — refId = providerKey, data = sample headline
- *   SEEN     — refId = idempotency key (§14 dedupe, cross webhook+eco)
+ *   PROVIDER - refId = providerId, data = per-user connection/sync state
+ *   WEBHOOK  - refId = endpoint id, data = deliveries + lastAcceptedEventId
+ *   EVENT    - row id = audit event id (bounded ring, pruned by cap + TTL)
+ *   ERROR    - row id = error ledger id (bounded ring)
+ *   ECO      - refId = providerKey, data = normalized economic event
+ *   NEWS     - refId = providerKey, data = sample headline
+ *   SEEN     - refId = idempotency key (§14 dedupe, cross webhook+eco)
  */
 
 export const INTEGRATION_ROW_KINDS = {
@@ -76,7 +76,7 @@ export class IntegrationsRepository {
     });
   }
 
-  /** Append-only row — the DB-generated uuid IS the entity id (events/errors). */
+  /** Append-only row - the DB-generated uuid IS the entity id (events/errors). */
   async appendRow(userId: string, kind: string, refId: string, data: Prisma.InputJsonValue): Promise<string> {
     const row = await this.prisma.integrationRow.create({
       data: { userId, kind, refId, data },

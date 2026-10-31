@@ -1,5 +1,5 @@
 /**
- * e2e — Trade Planning, Risk Management & Checklist (Phase 5).
+ * e2e - Trade Planning, Risk Management & Checklist (Phase 5).
  *
  * Over the REAL AppModule + real database: plan creation (draft/commit),
  * authoritative risk computation, pre-trade validation battery (checklist
@@ -9,7 +9,7 @@
  * forged ownership, foreign accounts, invalid states and leakage scans.
  *
  * Plan ≠ Trade: these tests also assert that NO trade ever appears from plan
- * operations (§6/§30 — planning never executes).
+ * operations (§6/§30 - planning never executes).
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { NestFastifyApplication } from "@nestjs/platform-fastify";
@@ -36,9 +36,9 @@ afterAll(async () => {
 // ── helpers ──────────────────────────────────────────────────────────────────
 
 /**
- * FNV-1a 32-bit — byte-for-byte mirror of the mock provider's hashSeed so the
+ * FNV-1a 32-bit - byte-for-byte mirror of the mock provider's hashSeed so the
  * test can pick an externalAccountId that deterministically lands on USD
- * (CURRENCIES[h % 3]) with a SINGLE connect — the accounts rate limiter only
+ * (CURRENCIES[h % 3]) with a SINGLE connect - the accounts rate limiter only
  * allows 5 connects per user per 15 minutes, so brute-force retries are not
  * an option.
  */
@@ -111,7 +111,7 @@ async function createReadyPlan(
 
 // ── Authentication boundary ──────────────────────────────────────────────────
 
-describe("trade plans — authentication boundary", () => {
+describe("trade plans - authentication boundary", () => {
   it("401 on every trade-plan route without a token", async () => {
     for (const [method, url] of [
       ["GET", "/api/v1/trade-plans"],
@@ -132,7 +132,7 @@ describe("trade plans — authentication boundary", () => {
 
 // ── Creation & authoritative risk ────────────────────────────────────────────
 
-describe("trade plans — creation (§37)", () => {
+describe("trade plans - creation (§37)", () => {
   it("creates a DRAFT plan with server-computed risk distinct from the sizing input", async () => {
     const user = await authenticatedUser(app, mail);
     const account = await connectUsdMockAccount(user.authHeader);
@@ -146,7 +146,7 @@ describe("trade plans — creation (§37)", () => {
     expect(plan.currency).toBe(account.currency);
     expect(plan.entryType).toBe("MARKET");
     expect(plan.symbol).toBe("EURUSD");
-    // Input echo, untouched (§39 — user input ≠ derived).
+    // Input echo, untouched (§39 - user input ≠ derived).
     expect(plan.size).toEqual({ mode: "risk_amount", riskAmount: "100" });
     // risk_amount 100 over a 500-per-lot stop → exactly 0.2 lots.
     expect(plan.risk.positionSize).toBe("0.2");
@@ -269,7 +269,7 @@ describe("trade plans — creation (§37)", () => {
 
 // ── Lifecycle ────────────────────────────────────────────────────────────────
 
-describe("trade plans — lifecycle (§7/§38)", () => {
+describe("trade plans - lifecycle (§7/§38)", () => {
   it("commit: DRAFT → PLANNED, idempotent on retry (§40)", async () => {
     const user = await authenticatedUser(app, mail);
     const account = await connectUsdMockAccount(user.authHeader);
@@ -328,7 +328,7 @@ describe("trade plans — lifecycle (§7/§38)", () => {
     // The checklist snapshot is frozen with the plan (§25).
     expect(parsed.checklist?.items).toHaveLength(2);
     expect(parsed.lastValidation?.passed).toBe(true);
-    // Idempotent echo — revalidation of a VALIDATED plan never rewrites it (§38/§40).
+    // Idempotent echo - revalidation of a VALIDATED plan never rewrites it (§38/§40).
     const echo = await app.inject({
       method: "POST",
       url: `/api/v1/trade-plans/${plan.id}/validate`,
@@ -477,7 +477,7 @@ describe("trade plans — lifecycle (§7/§38)", () => {
 
 // ── Editing & recalculation ──────────────────────────────────────────────────
 
-describe("trade plans — editing and recalculation (§38/§39)", () => {
+describe("trade plans - editing and recalculation (§38/§39)", () => {
   it("edits recompute risk server-side; client numbers are never stored", async () => {
     const user = await authenticatedUser(app, mail);
     const account = await connectUsdMockAccount(user.authHeader);
@@ -549,7 +549,7 @@ describe("trade plans — editing and recalculation (§38/§39)", () => {
 
 // ── Listing ──────────────────────────────────────────────────────────────────
 
-describe("trade plans — listing, filters, pagination (§55)", () => {
+describe("trade plans - listing, filters, pagination (§55)", () => {
   it("filters by status/symbol/direction and paginates with the standard envelope", async () => {
     const user = await authenticatedUser(app, mail);
     const account = await connectUsdMockAccount(user.authHeader);
@@ -599,7 +599,7 @@ describe("trade plans — listing, filters, pagination (§55)", () => {
 
 // ── Security battery (§44/§50) ───────────────────────────────────────────────
 
-describe("trade plans — security battery", () => {
+describe("trade plans - security battery", () => {
   it("IDOR: user B cannot read, update, validate or cancel user A's plan (honest 404s)", async () => {
     const alice = await authenticatedUser(app, mail);
     const bob = await authenticatedUser(app, mail);
@@ -652,7 +652,7 @@ describe("trade plans — security battery", () => {
     expect(res.json().code).toBe("ACCOUNT_NOT_FOUND");
   });
 
-  it("client-supplied userId is ignored — ownership always comes from the principal (§28)", async () => {
+  it("client-supplied userId is ignored - ownership always comes from the principal (§28)", async () => {
     const alice = await authenticatedUser(app, mail);
     const bob = await authenticatedUser(app, mail);
     const account = await connectUsdMockAccount(alice.authHeader);
@@ -704,7 +704,7 @@ describe("trade plans — security battery", () => {
   it("planning never produces journal trades (§6/§30)", async () => {
     const user = await authenticatedUser(app, mail);
     const account = await connectUsdMockAccount(user.authHeader);
-    // The mock PROVIDER auto-syncs journal trades at connect time — the
+    // The mock PROVIDER auto-syncs journal trades at connect time - the
     // invariant under test is that PLANNING adds none of its own.
     const before = await app.inject({ method: "GET", url: "/api/v1/trades", headers: user.authHeader });
     const plan = await createReadyPlan(user.authHeader, account.id);

@@ -1,6 +1,6 @@
 /**
- * Unit — multi-screenshot fusion (V2 spec §14/§18): pure evidence
- * combination. Deterministic (V2 §77), no I/O — the DB-backed orchestration
+ * Unit - multi-screenshot fusion (V2 spec §14/§18): pure evidence
+ * combination. Deterministic (V2 §77), no I/O - the DB-backed orchestration
  * is covered by ocr-sets.e2e.spec.ts.
  */
 import { describe, expect, it } from "vitest";
@@ -42,7 +42,7 @@ function member(id: string, fields: OcrExtractedField[], createdAt = "2026-10-07
   return { recognitionId: id, fields, createdAt };
 }
 
-describe("fuseMemberFields — agreement (V2 §18)", () => {
+describe("fuseMemberFields - agreement (V2 §18)", () => {
   it("boosts confidence when members agree, capped at 0.99", () => {
     const fusion = fuseMemberFields([
       member("11111111-1111-4111-8111-111111111111", [field("symbol", "XAUUSD", 0.9)]),
@@ -54,10 +54,10 @@ describe("fuseMemberFields — agreement (V2 §18)", () => {
     expect(fusion.fields[0]!.confidence).toBeLessThanOrEqual(0.99);
     expect(fusion.fields[0]!.warnings).toContain("MULTI_SOURCE_AGREEMENT");
     expect(fusion.conflicts).toEqual([]);
-    expect(fusion.coherent).toBe(false); // no direction evidence — not coherent alone
+    expect(fusion.coherent).toBe(false); // no direction evidence - not coherent alone
   });
 
-  it("keeps single-source evidence honestly — NO boost", () => {
+  it("keeps single-source evidence honestly - NO boost", () => {
     const fusion = fuseMemberFields([
       member("11111111-1111-4111-8111-111111111111", [field("profit", "123.75")]),
       member("22222222-2222-4222-8222-222222222222", [field("symbol", "XAUUSD")]),
@@ -68,8 +68,8 @@ describe("fuseMemberFields — agreement (V2 §18)", () => {
   });
 });
 
-describe("fuseMemberFields — conflicts (V2 §18)", () => {
-  it("records BOTH values with provenance — never silently discards", () => {
+describe("fuseMemberFields - conflicts (V2 §18)", () => {
+  it("records BOTH values with provenance - never silently discards", () => {
     const fusion = fuseMemberFields([
       member("11111111-1111-4111-8111-111111111111", [field("entryPrice", "2645.20")]),
       member("22222222-2222-4222-8222-222222222222", [field("entryPrice", "2645.30")]),

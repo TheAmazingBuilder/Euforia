@@ -1,11 +1,11 @@
 /**
- * FastAPI OCR engine adapter (Phase 19 §4/§26/§27) — the HTTP client toward
+ * FastAPI OCR engine adapter (Phase 19 §4/§26/§27) - the HTTP client toward
  * the Python sidecar (mini-services/ocr-service).
  *
  * Security (§27): service-to-service shared secret (x-internal-token), no
  * user-controlled free text beyond the fixed extraction profile, internal
  * credentials never leave the server (the browser has no path to the
- * sidecar — §4 "no direct browser → FastAPI bypass").
+ * sidecar - §4 "no direct browser → FastAPI bypass").
  *
  * Failure semantics (§34): network errors, 5xx and timeouts are TRANSIENT
  * (bounded retry at the service layer); 4xx unprocessable answers and
@@ -29,7 +29,7 @@ import {
 
 @Injectable()
 export class FastApiOcrEngine implements OcrEngine {
-  /** Static identity — live versions come from each response's metadata. */
+  /** Static identity - live versions come from each response's metadata. */
   readonly info = {
     name: "fastapi-tesseract",
     engineVersion: "unknown",
@@ -39,7 +39,7 @@ export class FastApiOcrEngine implements OcrEngine {
 
   constructor(private readonly config: AppConfig) {}
 
-  /** Document (PDF statement) capability — the sidecar serves /v1/recognitions/document. */
+  /** Document (PDF statement) capability - the sidecar serves /v1/recognitions/document. */
   readonly supportsDocuments = true;
 
   async recognize(request: EngineRecognizeRequest): Promise<EngineResponse> {
@@ -61,7 +61,7 @@ export class FastApiOcrEngine implements OcrEngine {
   }
 
   /** Shared HTTP discipline (§34): mapped status errors, strict parse,
-   * request-id/contract echo check — identical for both routes. */
+   * request-id/contract echo check - identical for both routes. */
   private async post<Req extends { requestId: string; contractVersion: string }, Parsed extends { requestId: string; contractVersion: string }>(
     path: string,
     request: Req,
@@ -69,7 +69,7 @@ export class FastApiOcrEngine implements OcrEngine {
   ): Promise<Parsed> {
     const { serviceUrl, serviceToken } = this.config.ocr;
     if (!serviceUrl || !serviceToken) {
-      // The factory never registers this adapter without both values — this
+      // The factory never registers this adapter without both values - this
       // is a hard programming error, surfaced as infrastructure failure.
       throw new EngineTransientError("OCR sidecar is not configured");
     }
@@ -87,7 +87,7 @@ export class FastApiOcrEngine implements OcrEngine {
         signal: AbortSignal.timeout(this.config.ocr.engineTimeoutMs),
       });
     } catch (error) {
-      // AbortSignal timeout surfaces as TimeoutError/AbortError — transient (§34).
+      // AbortSignal timeout surfaces as TimeoutError/AbortError - transient (§34).
       throw new EngineTransientError(
         `OCR sidecar unreachable: ${error instanceof Error ? error.name : "unknown error"}`,
       );

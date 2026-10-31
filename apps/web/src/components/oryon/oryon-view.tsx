@@ -49,16 +49,16 @@ import {
 } from "@/lib/oryon/temporal/history-ranges";
 
 /**
- * The panels the right utility rail can show — the SHARED layout enum
+ * The panels the right utility rail can show - the SHARED layout enum
  * (persisted contract; single source of truth). "objects" docks the
  * drawing manager on the right rail (Toolbar v4).
  */
 export type OryonUtilityPanel = OryonLayoutPanel;
 
 /**
- * Oryon — the full-screen charting workspace (Phase 1 → Phase 7).
+ * Oryon - the full-screen charting workspace (Phase 1 → Phase 7).
  *
- * Provider nesting: indicator state wraps the WHOLE workspace — since
+ * Provider nesting: indicator state wraps the WHOLE workspace - since
  * Phase 7 it is a REGISTRY (one store per chart panel; the toolbar dialog
  * and template flows resolve the ACTIVE panel's store); position state
  * wraps it too (ONE subscription to the private stream feeds the lower
@@ -113,7 +113,7 @@ function OryonWorkspace() {
     [healthQuery.data],
   );
 
-  /** The ACTIVE chart panel — every chart-specific toolbar action targets it. */
+  /** The ACTIVE chart panel - every chart-specific toolbar action targets it. */
   const activePanel = React.useMemo(
     () =>
       session.panels.find((p) => p.id === session.activePanelId) ??
@@ -123,7 +123,7 @@ function OryonWorkspace() {
   );
 
   /**
-   * Active panel's instrument — DERIVED, no effect: the panel's symbol wins
+   * Active panel's instrument - DERIVED, no effect: the panel's symbol wins
    * (resolved through the catalog), then the first active catalog
    * instrument the market feed actually covers (health.symbols is the
    * provider's own list), then the first active one. No hardcoded symbol,
@@ -139,7 +139,7 @@ function OryonWorkspace() {
    * Partial layout restore (spec §5): a layout's panels may reference
    * instruments the current catalog does not carry. Once the catalog is
    * loaded, unresolved panel symbols reset to the default selection and the
-   * limitation is REPORTED once (aggregated) — the rest of the layout stays
+   * limitation is REPORTED once (aggregated) - the rest of the layout stays
    * applied and the dirty flag reflects the difference honestly.
    */
   const lastResetSignatureRef = React.useRef<string>("");
@@ -165,22 +165,22 @@ function OryonWorkspace() {
 
   const covered = instrument !== null && feedSymbols.has(instrument.symbol);
 
-  /** The symbols the workspace panels display — the eco-approach bridge
+  /** The symbols the workspace panels display - the eco-approach bridge
    *  resolves each through the catalog itself (one shared pure rule). */
   const panelSymbols = React.useMemo(
     () => session.panels.map((panel) => panel.symbol) as readonly (string | null)[],
     [session.panels],
   );
 
-  /** Chart-area box — the floating favorites bar's coordinate reference. */
+  /** Chart-area box - the floating favorites bar's coordinate reference. */
   const chartAreaRef = React.useRef<HTMLDivElement | null>(null);
-  /** Stage box — toolbar → viewport bottom; the favorites bar's VERTICAL
+  /** Stage box - toolbar → viewport bottom; the favorites bar's VERTICAL
    *  travel bounds (it may extend down over the footer strip, v4). */
   const stageRef = React.useRef<HTMLDivElement | null>(null);
 
   // ── Sync coordinator (engine-level: time scale + crosshair) ───────────────
-  // Created lazily on FIRST USE — an effect or a child's engine-ready
-  // callback, never during render (react-hooks/refs discipline) — and
+  // Created lazily on FIRST USE - an effect or a child's engine-ready
+  // callback, never during render (react-hooks/refs discipline) - and
   // disposed on unmount. Registration always flows through the accessor,
   // so a re-created engine re-registers against a live coordinator.
   const syncRef = React.useRef<OryonSyncCoordinator | null>(null);
@@ -190,7 +190,7 @@ function OryonWorkspace() {
   }, []);
 
   React.useEffect(() => {
-    // Settings changes are rare commits — pushed imperatively, never via
+    // Settings changes are rare commits - pushed imperatively, never via
     // re-render (the engines read nothing from React).
     getSync().setFeatures(session.sync);
   }, [getSync, session.sync]);
@@ -208,7 +208,7 @@ function OryonWorkspace() {
   const handleEngineReady = React.useCallback(
     (panelId: string, engine: OryonChartEngine) => {
       enginesRef.current.set(panelId, engine);
-      // The engine implements the coordinator's adapter surface directly —
+      // The engine implements the coordinator's adapter surface directly -
       // clearCrosshairPosition is adapted to the adapter's clearCrosshair.
       getSync().register(panelId, {
         getVisibleRange: () => engine.getVisibleRange(),
@@ -231,14 +231,14 @@ function OryonWorkspace() {
   );
 
   /** "Return to latest" lives in the toolbar; the engine is the ACTIVE
-   *  panel's — read at click time, never stale. */
+   *  panel's - read at click time, never stale. */
   const onGoLatest = React.useCallback(() => {
     const panelId = activePanel?.id;
     if (panelId === undefined) return;
     enginesRef.current.get(panelId)?.goToLatest();
   }, [activePanel]);
 
-  // ── Historical range (Toolbar v4) — the footer strip targets the ACTIVE
+  // ── Historical range (Toolbar v4) - the footer strip targets the ACTIVE
   // panel's engine too, read at click time; the span math is clamped to
   // the bars the chart ACTUALLY holds (no fabricated history). A preset
   // wider than the loaded span degrades honestly to the full span.
@@ -259,7 +259,7 @@ function OryonWorkspace() {
     [activePanel],
   );
 
-  /** Calendar jump — the visible range STARTS at the picked day (ends at
+  /** Calendar jump - the visible range STARTS at the picked day (ends at
    *  the latest bar); a custom range clears the preset highlight. */
   const onGoDate = React.useCallback(
     (dateMs: number) => {
@@ -276,7 +276,7 @@ function OryonWorkspace() {
     [activePanel],
   );
 
-  // Dev-probe handle (multi-chart, dev builds only — mirrors the single-
+  // Dev-probe handle (multi-chart, dev builds only - mirrors the single-
   // chart __ORYON_CHART_DEBUG__ convention): per-panel identity, sync
   // state and engine observables WITHOUT scraping canvases. Never shipped
   // to production, never read by the app itself.
@@ -326,7 +326,7 @@ function OryonWorkspace() {
   }, [store]);
 
   /**
-   * Alert creation entry point — STABLE per instrument (never per tick):
+   * Alert creation entry point - STABLE per instrument (never per tick):
    * the current quote is read imperatively at click time (getLiveQuote),
    * so the toolbar does not re-render on the price stream. Alerts always
    * bind to the ACTIVE panel's instrument.
@@ -377,8 +377,8 @@ function OryonWorkspace() {
         }}
       />
 
-      {/* Stage — everything below the top toolbar. The LEFT rail spans
-          the FULL stage height (independent of the footer strip — v4);
+      {/* Stage - everything below the top toolbar. The LEFT rail spans
+          the FULL stage height (independent of the footer strip - v4);
           the footer (historical range + clock) sits at the bottom of the
           CENTER column; the favorites bar's vertical travel covers the
           whole stage. */}
@@ -388,9 +388,9 @@ function OryonWorkspace() {
           onOpenObjects={() => store.openUtility("objects")}
         />
 
-        {/* Center column — the chart grid + the footer strip below it. */}
+        {/* Center column - the chart grid + the footer strip below it. */}
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-          {/* Chart-area wrapper — the floating favorites bar's coordinate
+          {/* Chart-area wrapper - the floating favorites bar's coordinate
               parent (its persisted coordinates stay relative to this box;
               the clamp bounds extend to the stage via boundsRef). */}
           <div ref={chartAreaRef} className="relative flex min-h-0 min-w-0 flex-1">
@@ -415,8 +415,8 @@ function OryonWorkspace() {
             <OryonFavoritesBar containerRef={chartAreaRef} boundsRef={stageRef} />
           </div>
 
-          {/* Bottom bar — the ACTIVE panel's HISTORICAL RANGE strip
-              (1D…All + calendar — how much history is visible, never the
+          {/* Bottom bar - the ACTIVE panel's HISTORICAL RANGE strip
+              (1D…All + calendar - how much history is visible, never the
               bar timeframe) + clock + display timezone (md+; below md the
               panel headers own the timeframes). */}
           <OryonBottomBar
@@ -426,7 +426,7 @@ function OryonWorkspace() {
           />
         </div>
 
-        {/* Docked utility rail — lg+ only, FULL stage height (v4: it now
+        {/* Docked utility rail - lg+ only, FULL stage height (v4: it now
             also hosts the drawing OBJECTS dock). */}
         {isDesktop ? (
           <OryonUtilityRail
@@ -445,7 +445,7 @@ function OryonWorkspace() {
         activeSymbol={instrument?.symbol ?? null}
       />
 
-      {/* Overlay utilities below lg — same content, Sheet semantics. */}
+      {/* Overlay utilities below lg - same content, Sheet semantics. */}
       <OryonUtilityRail
         overlay
         open={!isDesktop && session.utilityOpen}
@@ -456,7 +456,7 @@ function OryonWorkspace() {
       />
 
       {/* Eco-approach notifications (HIGH-impact events on the instruments
-          the workspace panels display) — a null-rendering leaf in the
+          the workspace panels display) - a null-rendering leaf in the
           alerts engine's pattern; the toast is the only channel. */}
       <OryonEcoApproachBridge
         instruments={instruments}
@@ -464,7 +464,7 @@ function OryonWorkspace() {
         panelSymbols={panelSymbols}
       />
 
-      {/* Analysis deep-link restore (/oryon?analysis=<id> — Phase 10):
+      {/* Analysis deep-link restore (/oryon?analysis=<id> - Phase 10):
           applies the saved analysis to the ACTIVE panel + reconstructed-
           view banner. Null unless a link was consumed. */}
       <OryonAnalysisRestoreBridge instruments={instruments} />

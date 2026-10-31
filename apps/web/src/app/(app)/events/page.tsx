@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 };
 
 /**
- * /events — Events (Academy section, independent module). The trading
+ * /events - Events (Academy section, independent module). The trading
  * calendar: inner left panel (account, mini month, calendar groups acting
  * as filters), month grid with colored pills, sort menu, new-event and
  * new-calendar dialogs, and touch-first drag of events between days.
@@ -22,7 +22,7 @@ export default function EventsPage() {
       <header className="mb-4 sm:mb-5">
         <h1 className="font-heading text-2xl font-extrabold tracking-tight sm:text-3xl">{nav.label}</h1>
         <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-          Sessions, economic events and personal deadlines — across the calendars you define.
+          Sessions, economic events and personal deadlines - across the calendars you define.
         </p>
       </header>
       <EventsView />

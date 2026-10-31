@@ -1,5 +1,5 @@
 /**
- * e2e — Backup (B2) over the REAL AppModule + real database: the full
+ * e2e - Backup (B2) over the REAL AppModule + real database: the full
  * authored-data export snapshot (journal trades + playbook strategies +
  * tags in wire shapes), the validated import (replace trades, merge
  * strategies + tags by id), re-ownership to the importing user, and the
@@ -73,7 +73,7 @@ describe("backup (B2)", () => {
   it("same-user restore replaces trades and preserves ids; cross-user merge re-owns", async () => {
     const userA = await authenticatedUser(app, mail);
     await connectAccount(userA);
-    // The connect triggers the initial provider sync (demo history) — wait
+    // The connect triggers the initial provider sync (demo history) - wait
     // for the journal trades to land so the backup sees a stable dataset.
     let tradeCount = 0;
     for (let i = 0; i < 50; i += 1) {
@@ -129,14 +129,14 @@ describe("backup (B2)", () => {
     );
     expect(aReExport.trades.map((t) => t.id)).toEqual(originalIds);
 
-    // CROSS-USER: user B imports A's snapshot — rows are re-owned and the
+    // CROSS-USER: user B imports A's snapshot - rows are re-owned and the
     // merge reports only what was actually added.
     const userB = await authenticatedUser(app, mail);
     await connectAccount(userB);
     const beforeB = (
       await app.inject({ method: "GET", url: "/api/v1/trades", headers: auth(userB) })
     ).json() as { trades: Array<{ id: string }> };
-    void beforeB; // the mock provider's initial sync may still be landing —
+    void beforeB; // the mock provider's initial sync may still be landing -
     // trade counts cross-user are not deterministic; the merge of
     // strategies/tags and the re-ownership are what this flow asserts.
     const importResponse = await app.inject({

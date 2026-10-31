@@ -1,5 +1,5 @@
 /**
- * Verify — Plan-vs-Actual in Trade Review (planner ↔ trade-review integration).
+ * Verify - Plan-vs-Actual in Trade Review (planner ↔ trade-review integration).
  *
  * IMPORTANT: navigation uses sidebar clicks ONLY (SPA). Exactly ONE reload
  * is performed (persistence sanity of the executed-trade link).
@@ -53,7 +53,7 @@ const SHOTS = "/home/z/my-project/scripts/shots/plan-vs-actual";
 
   const results = [];
   const check = (name, ok, extra = "") => {
-    results.push(`${ok ? "PASS" : "FAIL"} — ${name}${extra ? ` (${extra})` : ""}`);
+    results.push(`${ok ? "PASS" : "FAIL"} - ${name}${extra ? ` (${extra})` : ""}`);
     console.log(results[results.length - 1]);
   };
   const shot = async (name) => {
@@ -175,7 +175,7 @@ const SHOTS = "/home/z/my-project/scripts/shots/plan-vs-actual";
   check("D4 Plan is now EXECUTED", /executed/i.test(newStatus), newStatus);
 
   // ══ E. In-session: the linked trade's review shows the comparison ══════
-  // (SPA navigation only — the invalidation in useUpdateTradePlan refreshes
+  // (SPA navigation only - the invalidation in useUpdateTradePlan refreshes
   // the Trade Review read models; no reload, the store is browser-memory).
   await sidebarClick("/journal");
   await page.locator('[data-testid="trade-review-view"]').waitFor({ state: "visible", timeout: 30_000 });
@@ -187,7 +187,7 @@ const SHOTS = "/home/z/my-project/scripts/shots/plan-vs-actual";
   const badgedTotal = await badgedRows.count();
   check("E1 Badged rows present after the live link", badgedTotal >= 1, String(badgedTotal));
 
-  // The READY plan (planned entry 2390) was linked — find the badged row whose
+  // The READY plan (planned entry 2390) was linked - find the badged row whose
   // comparison shows that planned entry (the seeded EURUSD link shows 1.0860;
   // when both links share one trade, the READY plan wins the reverse lookup).
   let linkedEntryShown = false;
@@ -228,9 +228,9 @@ const SHOTS = "/home/z/my-project/scripts/shots/plan-vs-actual";
   await page.keyboard.press("Escape");
   await page.waitForTimeout(300);
 
-  // ══ G. The ONE reload — deterministic seeds re-materialize the link ════
+  // ══ G. The ONE reload - deterministic seeds re-materialize the link ════
   // (the mock store lives in browser memory: user mutations are session-
-  // scoped by design; SEEDED links re-materialize identically — the badge
+  // scoped by design; SEEDED links re-materialize identically - the badge
   // and comparison must therefore still render after the refresh).
   await page.goto(`${BASE}/journal?tab=reviews`, { waitUntil: "domcontentloaded", timeout: 60_000 });
   await page.locator('[data-testid="reviews-panel"]').waitFor({ state: "visible", timeout: 30_000 });
@@ -247,7 +247,7 @@ const SHOTS = "/home/z/my-project/scripts/shots/plan-vs-actual";
   check("G2 Seeded comparison intact (planned entry 1.0860)", /1[\s\u202f,]?0?860/.test(seededEntry), seededEntry);
   await page.keyboard.press("Escape");
   await page.waitForTimeout(300);
-  // ══ H. Mobile 390px — dialog without horizontal overflow ═══════════════
+  // ══ H. Mobile 390px - dialog without horizontal overflow ═══════════════
   await page.setViewportSize({ width: 390, height: 844 });
   await page.waitForTimeout(500);
   const mobileRow = page

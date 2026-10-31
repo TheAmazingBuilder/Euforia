@@ -1,20 +1,19 @@
 /**
  * Transactional email infrastructure (Phase 2 mandate §46).
  *
- * A MINIMAL port: exactly three message kinds (verification, password reset,
- * email change). The transport is infrastructure behind this service —
- * the sandbox/dev transport renders the email to the structured log
- * (including the action link) so flows are testable end-to-end without a
- * provider; a provider adapter (SMTP/Resend/SES — Phase 0 open question #1)
- * plugs in by implementing MailTransport. No marketing email system.
+ * The mail port supports verification, password reset, email change, and
+ * email-based sign-in MFA. Nodemailer delivers through configured SMTP;
+ * local development keeps a console transport when credentials are absent.
+ * This service handles transactional messages only - no marketing email.
  */
 import { Inject, Injectable, Optional } from "@nestjs/common";
 import { randomUUID } from "node:crypto";
+import nodemailer from "nodemailer";
 import { APP_CONFIG } from "../../config/app-config";
 import type { AppConfig } from "../../config/app-config";
 import { ROOT_LOGGER, type RootLogger } from "../../infrastructure/logging/logger.factory";
 
-export type MailKind = "EMAIL_VERIFICATION" | "PASSWORD_RESET" | "EMAIL_CHANGE";
+export type MailKind = "EMAIL_VERIFICATION" | "PASSWORD_RESET" | "EMAIL_CHANGE" | "MFA_EMAIL_CODE";
 
 export interface MailMessage {
   kind: MailKind;
@@ -23,13 +22,61 @@ export interface MailMessage {
   actionLabel: string;
   actionUrl: string;
   expiresIn: string;
+  /** Present only for email-based sign-in MFA; never persisted or logged in production. */
+  code?: string;
 }
 
 export interface MailTransport {
   send(message: MailMessage): Promise<void>;
 }
 
-/** Operational delivery record (Phase 17 telemetry) — NO recipient, NO URL:
+/** Real SMTP adapter. The adapter never logs message bodies or action links. */
+export class NodemailerMailTransport implements MailTransport {
+  private readonly transporter: ReturnType<typeof nodemailer.createTransport>;
+
+  constructor(
+    private readonly from: string,
+    options: { host: string; port: number; secure: boolean; user: string; appPassword: string },
+  ) {
+    this.transporter = nodemailer.createTransport({
+      host: options.host,
+      port: options.port,
+      secure: options.secure,
+      auth: { user: options.user, pass: options.appPassword },
+      connectionTimeout: 10_000,
+      greetingTimeout: 10_000,
+      socketTimeout: 20_000,
+      requireTLS: !options.secure,
+      tls: { minVersion: "TLSv1.2" },
+    });
+  }
+
+  async send(message: MailMessage): Promise<void> {
+    const safeLabel = escapeHtml(message.actionLabel);
+    const safeUrl = escapeHtml(message.actionUrl);
+    const safeExpiry = escapeHtml(message.expiresIn);
+    const text = message.code
+      ? [message.subject, "", `Your sign-in code is: ${message.code}`, "", `This code expires in ${message.expiresIn}.`, "If you did not request this sign-in, secure your account."].join("\n")
+      : [message.subject, "", message.actionLabel, message.actionUrl, "", `This link expires in ${message.expiresIn}.`, "If you did not request this message, you can safely ignore it."].join("\n");
+    const html = message.code
+      ? `<!doctype html><html lang="en"><body style="font-family:Arial,sans-serif;line-height:1.5;color:#172033"><h1 style="font-size:20px">Your Euforia sign-in code</h1><p style="font-size:30px;font-weight:700;letter-spacing:6px">${escapeHtml(message.code)}</p><p>This code expires in ${safeExpiry}.</p><p>If you did not request this sign-in, secure your account.</p></body></html>`
+      : `<!doctype html><html lang="en"><body style="font-family:Arial,sans-serif;line-height:1.5;color:#172033"><h1 style="font-size:20px">${safeLabel}</h1><p>Use the secure link below to continue.</p><p><a href="${safeUrl}" style="display:inline-block;padding:12px 18px;border-radius:8px;background:#273a70;color:#fff;text-decoration:none">${safeLabel}</a></p><p>This link expires in ${safeExpiry}.</p><p>If you did not request this message, you can safely ignore it.</p></body></html>`;
+    await this.transporter.sendMail({ from: this.from, to: message.to, subject: message.subject, text, html });
+  }
+}
+
+function escapeHtml(value: string): string {
+  const entities: Record<string, string> = {
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;",
+  };
+  return value.replace(/[&<>"']/g, (character) => entities[character] ?? character);
+}
+
+/** Operational delivery record (Phase 17 telemetry) - NO recipient, NO URL:
  * only the message kind and the outcome, data-minimal by design (§18). */
 export interface MailDeliveryRecord {
   id: string;
@@ -41,17 +88,16 @@ export interface MailDeliveryRecord {
 export interface MailDeliveryTelemetry {
   sent: number;
   failed: number;
-  /** Latest deliveries first — bounded ring (50). */
+  /** Latest deliveries first - bounded ring (50). */
   recent: MailDeliveryRecord[];
 }
 
-/** Dev/sandbox transport: structured log output — honest and inspectable.
+/** Dev/sandbox transport: structured log output - honest and inspectable.
  *
  * SECURITY (finalization §46/§51): the action link embeds a one-time token.
- * In development the link is logged verbatim so flows are testable without
- * a mail provider; in PRODUCTION the link is ALWAYS redacted — a real
- * transport (SMTP/Resend/SES) must be plugged via `useTransport`, and a
- * token must never land in persistent logs.
+ * In development the link/code is logged for local testing only. Production
+ * configuration requires SMTP credentials, so this transport must never be
+ * selected there; sensitive message values are redacted as defense in depth.
  */
 export class ConsoleMailTransport implements MailTransport {
   private readonly redactActionUrl: boolean;
@@ -67,8 +113,9 @@ export class ConsoleMailTransport implements MailTransport {
           kind: message.kind,
           to: message.to,
           subject: message.subject,
-          actionUrl: this.redactActionUrl ? "[REDACTED — configure a real mail transport for production]" : message.actionUrl,
+          actionUrl: this.redactActionUrl ? "[REDACTED - configure a real mail transport for production]" : message.actionUrl,
           expiresIn: message.expiresIn,
+          code: message.code ? (this.redactActionUrl ? "[REDACTED]" : message.code) : undefined,
         },
       },
       `[mailer] ${message.subject} → ${message.to}`,
@@ -79,7 +126,7 @@ export class ConsoleMailTransport implements MailTransport {
 @Injectable()
 export class MailerService {
   private transport: MailTransport;
-  /** Phase 17 — bounded operational telemetry (never user content). */
+  /** Phase 17 - bounded operational telemetry (never user content). */
   private readonly deliveries: MailDeliveryRecord[] = [];
   private sentCount = 0;
   private failedCount = 0;
@@ -88,14 +135,28 @@ export class MailerService {
     @Inject(APP_CONFIG) private readonly config: AppConfig,
     @Optional() @Inject(ROOT_LOGGER) private readonly logger?: RootLogger,
   ) {
-    // Never log one-time email tokens in production (§46 — tokens are
+    // Never log one-time email tokens in production (§46 - tokens are
     // redacted); the dev transport keeps the link for local testability.
-    this.transport = new ConsoleMailTransport(this.logger ?? this.fallbackLogger(), {
-      redactActionUrl: this.config.isProduction,
-    });
+    const smtp = this.config.auth;
+    if (this.config.isProduction && (!smtp.smtpUser || !smtp.smtpAppPassword)) {
+      // Fail closed: production must never silently fall back to a console
+      // transport, even if environment validation is bypassed by a test or
+      // an alternate bootstrap path.
+      throw new Error("Production email delivery requires SMTP_USER and SMTP_APP_PASSWORD.");
+    }
+
+    this.transport = smtp.smtpUser && smtp.smtpAppPassword
+      ? new NodemailerMailTransport(smtp.emailFrom, {
+          host: smtp.smtpHost,
+          port: smtp.smtpPort,
+          secure: smtp.smtpSecure,
+          user: smtp.smtpUser,
+          appPassword: smtp.smtpAppPassword,
+        })
+      : new ConsoleMailTransport(this.logger ?? this.fallbackLogger());
   }
 
-  /** Swap the transport (production adapter plugs in here). */
+  /** Swap the transport for isolated tests or an alternative provider. */
   useTransport(transport: MailTransport): void {
     this.transport = transport;
   }
@@ -147,6 +208,18 @@ export class MailerService {
     });
   }
 
+  async sendEmailMfaCode(to: string, code: string, expiresIn: string): Promise<void> {
+    await this.deliver({
+      kind: "MFA_EMAIL_CODE",
+      to,
+      subject: "Your Euforia sign-in code",
+      actionLabel: "Your sign-in code",
+      actionUrl: "",
+      code,
+      expiresIn,
+    });
+  }
+
   async sendEmailChangeVerification(to: string, token: string, expiresIn: string): Promise<void> {
     await this.deliver({
       kind: "EMAIL_CHANGE",
@@ -159,7 +232,7 @@ export class MailerService {
   }
 
   private fallbackLogger(): RootLogger {
-    // Logger may be absent in exotic boot orders — never lose the mail.
+    // Logger may be absent in exotic boot orders - never lose the mail.
     const sink = (obj: object, msg: string) => console.info(msg, JSON.stringify(obj));
     return { info: sink, error: sink, warn: sink, debug: sink } as unknown as RootLogger;
   }

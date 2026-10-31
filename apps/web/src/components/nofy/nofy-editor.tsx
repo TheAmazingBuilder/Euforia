@@ -68,7 +68,7 @@ import { NotePrintDialog } from "./nofy-print";
 import { LessonOriginChip, NOFY_REF_META, TagChip, nofyRelativeTime } from "./nofy-shared";
 
 /**
- * Nofy block editor — the writing surface (spec §9–§21). Blocks are the
+ * Nofy block editor - the writing surface (spec §9–§21). Blocks are the
  * source of truth locally; a debounced autosave PATCH persists everything
  * (title, metadata, blocks) with a visible status. Slash commands, markdown
  * shortcuts, drag-and-drop reorder, trading-entity references, version
@@ -125,7 +125,7 @@ function blocksToMarkdown(
       case "numbered": lines.push(`1. ${block.text}`); break;
       case "todo": lines.push(`- [${block.checked ? "x" : " "}] ${block.text}`); break;
       case "quote": lines.push(`> ${block.text}`, ""); break;
-      case "callout": lines.push(`> **${(block.tone ?? "info").toUpperCase()}** — ${block.text}`, ""); break;
+      case "callout": lines.push(`> **${(block.tone ?? "info").toUpperCase()}** - ${block.text}`, ""); break;
       case "code": lines.push("```", block.text, "```", ""); break;
       case "divider": lines.push("---", ""); break;
       case "image": {
@@ -148,7 +148,7 @@ function blocksToMarkdown(
         if (block.ref) {
           const kindLabel = copy.refLabel(block.ref.kind);
           const label = block.ref.label ?? kindLabel;
-          lines.push(`> **${kindLabel}** — ${label}${block.ref.href ? ` (${block.ref.href})` : ""}`, "");
+          lines.push(`> **${kindLabel}** - ${label}${block.ref.href ? ` (${block.ref.href})` : ""}`, "");
         }
         break;
       }
@@ -176,9 +176,9 @@ type SlashItem = {
 };
 
 /**
- * Slash registry — machine ids (cmd/group/type/refKind) stay constant;
+ * Slash registry - machine ids (cmd/group/type/refKind) stay constant;
  * labels, descriptions and the seeded table headers resolve through the
- * dict at render time (i18n pattern — same as the trades EMOTION_OPTIONS).
+ * dict at render time (i18n pattern - same as the trades EMOTION_OPTIONS).
  */
 function slashItemsFor(N: Dictionary["nofy"]): SlashItem[] {
   const B = N.blockTypes;
@@ -240,7 +240,7 @@ export function NofyEditor({
   const [draft, setDraft] = React.useState<DraftState | null>(null);
   const [saveStatus, setSaveStatus] = React.useState<SaveStatus>("saved");
   const [savedAt, setSavedAt] = React.useState<string | null>(null);
-  /** Focus requests ride a ref + tick — the effect only reads the ref. */
+  /** Focus requests ride a ref + tick - the effect only reads the ref. */
   const pendingFocusRef = React.useRef<{ id: string; caret: "start" | "end" } | null>(null);
   const [focusTick, setFocusTick] = React.useState(0);
   const [dragState, setDragState] = React.useState<{ dragId: string | null; overId: string | null; position: "above" | "below" | null }>({ dragId: null, overId: null, position: null });
@@ -251,7 +251,7 @@ export function NofyEditor({
   const [tagsOpen, setTagsOpen] = React.useState(false);
   const [tagDraft, setTagDraft] = React.useState("");
 
-  // ── Adoption — server snapshot → local draft (never clobbers pending edits) ─
+  // ── Adoption - server snapshot → local draft (never clobbers pending edits) ─
   React.useEffect(() => {
     const data = noteQuery.data;
     if (!data) return;
@@ -530,7 +530,7 @@ export function NofyEditor({
   // The menu stays anchored to its source block: ANY scroll (the page shell,
   // an ancestor, the editor itself) re-derives top/left from the block row's
   // live viewport rect instead of closing the menu. Scrolls that originate
-  // INSIDE the menu (its own scrollable list) are ignored — closing on them
+  // INSIDE the menu (its own scrollable list) are ignored - closing on them
   // made the list unscrollable. A capture-phase document listener catches
   // ancestor scrollers (native scroll doesn't bubble to the editor).
   const repositionSlashMenu = React.useCallback(() => {

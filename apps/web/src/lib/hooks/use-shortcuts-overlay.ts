@@ -3,11 +3,11 @@
 import { useSyncExternalStore } from "react";
 
 /**
- * Global shortcuts-overlay state ("?" hotkey) — tiny external store so the
+ * Global shortcuts-overlay state ("?" hotkey) - tiny external store so the
  * TradeModalHost hotkey and the command palette action share one instance.
  */
 
-/** Frozen closed snapshot — stable server reference, no hydration loops. */
+/** Frozen closed snapshot - stable server reference, no hydration loops. */
 const CLOSED_SNAPSHOT: ShortcutsOverlayState = Object.freeze({ open: false });
 
 export interface ShortcutsOverlayState {
@@ -51,7 +51,7 @@ export function useShortcutsOverlayState(): ShortcutsOverlayState {
   return useSyncExternalStore(
     subscribe,
     () => state,
-    // Server + hydration snapshot: closed (stable reference — see above).
+    // Server + hydration snapshot: closed (stable reference - see above).
     () => CLOSED_SNAPSHOT,
   );
 }

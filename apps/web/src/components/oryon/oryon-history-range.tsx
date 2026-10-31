@@ -16,18 +16,18 @@ import {
 } from "@/lib/oryon/temporal/history-ranges";
 
 /**
- * Oryon history range strip (TradingView parity) — `1D · 5D · 1M · 3M ·
+ * Oryon history range strip (TradingView parity) - `1D · 5D · 1M · 3M ·
  * 6M · YTD · 1Y · 5Y · All` plus the calendar "go to date" popover.
  *
  * CONTRACT (the user's explicit split): this strip sets the VISIBLE
  * HISTORICAL span of the chart; it never touches the bar timeframe (the
  * interval selector lives on the top toolbar). The resolution happens at
  * the workspace level (onSelectRange / onSelectDate read the ACTIVE
- * panel's engine at click time) — this component is a pure control strip.
+ * panel's engine at click time) - this component is a pure control strip.
  *
  * Calendar: a dependency-free month grid (no new packages). Picking a day
  * starts the visible range at that day's UTC midnight and ends at the
- * latest bar — clamped by the workspace to the bars the chart actually
+ * latest bar - clamped by the workspace to the bars the chart actually
  * holds (a date before the loaded history lands on its first bar, stated
  * in the popover footer).
  */
@@ -39,7 +39,7 @@ export function OryonHistoryRange({
   onSelect,
   onSelectDate,
 }: {
-  /** The last applied preset (calendar jumps clear it — custom range). */
+  /** The last applied preset (calendar jumps clear it - custom range). */
   active: OryonHistoryRangeId | null;
   onSelect: (id: OryonHistoryRangeId) => void;
   onSelectDate: (dateMs: number) => void;
@@ -82,14 +82,14 @@ export function OryonHistoryRange({
   );
 }
 
-/** Dependency-free month grid — picks the day the visible range starts at. */
+/** Dependency-free month grid - picks the day the visible range starts at. */
 function OryonRangeCalendar({ onSelectDate }: { onSelectDate: (dateMs: number) => void }) {
   const dict = useDict();
   const S = dict.oryon.toolbar;
 
   const [open, setOpen] = React.useState(false);
   // The grid's month (UTC month START, as epoch ms) is session state of
-  // the popover — re-seeded on open.
+  // the popover - re-seeded on open.
   const [month, setMonth] = React.useState(() => startOfUtcMonth(Date.now()).getTime());
 
   const monthLabel = React.useMemo(
@@ -101,9 +101,9 @@ function OryonRangeCalendar({ onSelectDate }: { onSelectDate: (dateMs: number) =
   );
 
   // UTC day cells: the chart's candle opens are UTC epochs, the jump math
-  // is UTC (history-ranges.ts) — the grid must speak the same calendar.
+  // is UTC (history-ranges.ts) - the grid must speak the same calendar.
   const days = React.useMemo(() => buildUtcMonthGrid(month), [month]);
-  // Today's highlight on the 60 s cadence (the sanctioned now hook — no
+  // Today's highlight on the 60 s cadence (the sanctioned now hook - no
   // impure Date.now() during render; before the first tick no day is
   // highlighted, which is the honest SSR state).
   const nowMs = useNowMs(60_000);
@@ -250,7 +250,7 @@ function utcDayKey(ms: number): string {
 
 /**
  * 42 cells (6 weeks, Monday-first) covering `month`'s UTC days; leading
- * and trailing nulls pad the grid. Pure UTC — no display-zone drift.
+ * and trailing nulls pad the grid. Pure UTC - no display-zone drift.
  */
 function buildUtcMonthGrid(monthMs: number): (Date | null)[] {
   const first = new Date(monthMs);

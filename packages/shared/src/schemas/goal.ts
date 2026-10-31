@@ -2,11 +2,11 @@ import { z } from "zod";
 import { decimalStringSchema, positiveDecimalStringSchema } from "./primitives";
 
 /**
- * Goals — data-model.md "goal periods are calendar months (YYYY-MM)".
+ * Goals - data-model.md "goal periods are calendar months (YYYY-MM)".
  *
  * The Goals screen pairs two things:
- *  1. GOAL SETTINGS — the trader's monthly targets (authored data, editable).
- *  2. GOAL PROGRESS — how the CURRENT behavior compares with those targets,
+ *  1. GOAL SETTINGS - the trader's monthly targets (authored data, editable).
+ *  2. GOAL PROGRESS - how the CURRENT behavior compares with those targets,
  *     computed SERVER-SIDE from DailyStat rows (never user-entered).
  *
  * Money targets travel as decimal strings; ratios expressed in percent units
@@ -26,7 +26,7 @@ export const goalSettingsSchema = z.object({
   greenDaysTarget: z.number().int().min(0).max(31),
   /** Average discipline score target, in percent units (0–100). */
   disciplineTargetPct: z.number().min(0).max(100),
-  /** Behavior ceiling — max trades allowed in ONE day (lower is better). */
+  /** Behavior ceiling - max trades allowed in ONE day (lower is better). */
   maxTradesPerDay: z.number().int().min(1).max(50),
   /** Last time the targets were edited (UTC ISO-8601). */
   updatedAt: z.string().min(1),
@@ -69,7 +69,7 @@ export const goalProgressRowSchema = z.object({
   /** 0–1+ for higher-is-better goals; usage ratio for lower-is-better ones. */
   pct: z.number(),
   status: goalProgressStatusSchema,
-  /** false = behavior ceiling (max trades per day) — under is better. */
+  /** false = behavior ceiling (max trades per day) - under is better. */
   higherIsBetter: z.boolean(),
   /** Optional human note computed server-side (e.g. projection at pace). */
   note: z.string().nullable(),
@@ -81,7 +81,7 @@ export type GoalProgressRow = z.infer<typeof goalProgressRowSchema>;
  * DailyStat rows of the requested calendar month (UTC trading dates).
  */
 export const goalProgressResponseSchema = z.object({
-  /** `YYYY-MM` — the evaluated month. */
+  /** `YYYY-MM` - the evaluated month. */
   month: z.string().regex(/^\d{4}-\d{2}$/),
   /** e.g. "September 2026". */
   label: z.string().min(1),
@@ -89,10 +89,10 @@ export const goalProgressResponseSchema = z.object({
   /** Where we are in the month (1-based), to pace the progress fairly. */
   dayOfMonth: z.number().int().min(1),
   daysInMonth: z.number().int().min(28).max(31),
-  /** dayOfMonth / daysInMonth (0–1) — the fair "on track" line. */
+  /** dayOfMonth / daysInMonth (0–1) - the fair "on track" line. */
   pacePct: decimalStringSchema,
   rows: z.array(goalProgressRowSchema),
-  /** Months with DailyStat data, descending — for the period selector. */
+  /** Months with DailyStat data, descending - for the period selector. */
   availableMonths: z.array(z.string().regex(/^\d{4}-\d{2}$/)),
 });
 export type GoalProgressResponse = z.infer<typeof goalProgressResponseSchema>;

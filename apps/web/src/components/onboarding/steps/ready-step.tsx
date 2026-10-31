@@ -8,9 +8,9 @@ import { Button } from "@/components/ui/button";
 import type { OnboardingStepProps } from "./step-types";
 
 /**
- * Step 6 — Ready. The completion state is NOT assumed: "Open my dashboard"
+ * Step 6 - Ready. The completion state is NOT assumed: "Open my dashboard"
  * persists COMPLETED first and only navigates after the backend CONFIRMS.
- * A failed save shows an honest error and offers retry — the user is never
+ * A failed save shows an honest error and offers retry - the user is never
  * falsely marked as done (spec §9). No fabricated trades, balances or
  * automatic accounts are created here.
  */

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useProfile } from "@/lib/api/queries";
 import { cn } from "@/lib/utils";
 
-/** Deterministic gradient pair from the name — avatars stay distinct without uploads. */
+/** Deterministic gradient pair from the name - avatars stay distinct without uploads. */
 function gradientFor(seed: string): string {
   let hash = 0;
   for (const ch of seed) hash = (hash * 31 + ch.charCodeAt(0)) % 360;
@@ -19,7 +19,7 @@ function initialsOf(name: string): string {
 }
 
 /**
- * User avatar — the one-tap route to /profile (direct editing). Shows the
+ * User avatar - the one-tap route to /profile (direct editing). Shows the
  * uploaded image when the profile has one (Settings → Profile), otherwise
  * the deterministic gradient disc + initials.
  */
@@ -32,7 +32,7 @@ export function UserAvatar({ className }: { className?: string }) {
     <Link
       href="/profile"
       data-testid="user-avatar"
-      aria-label={`Profile — ${name}`}
+      aria-label={`Profile - ${name}`}
       title="Your profile"
       className={cn(
         "grid size-8 shrink-0 place-items-center overflow-hidden rounded-full font-heading text-[11px] font-bold text-white shadow-sm ring-1 ring-border transition-transform hover:scale-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",

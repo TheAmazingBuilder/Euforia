@@ -3,7 +3,7 @@ import { emotionSchema } from "../enums";
 import { dateKeySchema, isoDateTimeSchema, uuidSchema } from "./primitives";
 
 /**
- * JournalEntry — one written record in the trader's log: the note, the
+ * JournalEntry - one written record in the trader's log: the note, the
  * lesson, the honest observation. Distinct from trades (executions) and
  * DailyJournal (per-day physiology): this is the searchable written log.
  */
@@ -18,7 +18,7 @@ export const journalEntrySchema = z.object({
   tags: z.array(z.string().min(1).max(24)).max(6),
   /** Optional pre-trade emotion context. */
   mood: emotionSchema.nullable(),
-  /** Optional link to an execution (Phase 2 — trade-threaded entries). */
+  /** Optional link to an execution (Phase 2 - trade-threaded entries). */
   relatedTradeId: uuidSchema.nullable(),
   createdAt: isoDateTimeSchema,
   updatedAt: isoDateTimeSchema,
@@ -70,6 +70,6 @@ export interface JournalQuery {
   linked?: string;
   /** Exact mood match (case-insensitive), e.g. "CALM". */
   mood?: string;
-  /** Sort order — default "newest". */
+  /** Sort order - default "newest". */
   sort?: JournalSort;
 }

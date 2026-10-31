@@ -1,5 +1,5 @@
 /**
- * Verify — PREMIUM LanguageSelector (redesigned) + server preference sync.
+ * Verify - PREMIUM LanguageSelector (redesigned) + server preference sync.
  *
  * Covers:
  *   A. Premium panel structure: listbox semantics, 2 rich options (native
@@ -7,7 +7,7 @@
  *   B. Header switch EN → FR: instant (no reload), sidebar + <html lang>
  *      + trigger code flip; "just saved" check lands on the trigger.
  *   C. SERVER WRITE-THROUGH: the switch PATCHes /me/preferences/localization
- *      — observable in-SPA on Settings → Localization (select = fr).
+ *      - observable in-SPA on Settings → Localization (select = fr).
  *   D. MULTI-DEVICE RECONCILIATION (LocaleServerSync): mirror wiped (new
  *      device simulation) → boot EN default → account preference (fr)
  *      applied once the preferences document arrives.
@@ -15,7 +15,7 @@
  *   F. Restore EN via the header (write-through again) + Settings shows en.
  *   G. Dark-mode panel rendering + console/network cleanliness.
  *
- * SPA-only after the initial entry (sidebar clicks; reloads allowed — the
+ * SPA-only after the initial entry (sidebar clicks; reloads allowed - the
  * mock jar persists server-side state across reloads, unlike the tab).
  */
 /* eslint-disable @typescript-eslint/no-require-imports -- Node verification script */
@@ -44,7 +44,7 @@ const SHOTS = "/home/z/my-project/scripts/shots/i18n-selector-premium";
 
   const results = [];
   const check = (name, ok, extra = "") => {
-    results.push(`${ok ? "PASS" : "FAIL"} — ${name}${extra ? ` (${extra})` : ""}`);
+    results.push(`${ok ? "PASS" : "FAIL"} - ${name}${extra ? ` (${extra})` : ""}`);
     console.log(results[results.length - 1]);
   };
   const htmlLang = () => page.evaluate(() => document.documentElement.lang);
@@ -123,7 +123,7 @@ const SHOTS = "/home/z/my-project/scripts/shots/i18n-selector-premium";
   await page.keyboard.press("Escape");
   await panel.waitFor({ state: "hidden", timeout: 5_000 });
 
-  // ══ D. SERVER WRITE-THROUGH — Settings → Localization shows fr ═══════════
+  // ══ D. SERVER WRITE-THROUGH - Settings → Localization shows fr ═══════════
   await page.locator('nav[aria-label="Main navigation"] a[href="/settings"]').click();
   await page.waitForURL(/\/settings/, { timeout: 20_000 });
   await page.locator('[data-testid="settings-nav-localization"]').click();
@@ -140,7 +140,7 @@ const SHOTS = "/home/z/my-project/scripts/shots/i18n-selector-premium";
   // NOTE: the mocked API is served by a SERVICE WORKER, so Playwright route
   // gating cannot hold the preferences response back. Instead, an init
   // script records the <html lang> TIMELINE from the earliest possible
-  // moment — proving the boot started EN before the reconcile flipped it.
+  // moment - proving the boot started EN before the reconcile flipped it.
   await page.addInitScript(() => {
     window.__langTimeline = [];
     const record = () => {

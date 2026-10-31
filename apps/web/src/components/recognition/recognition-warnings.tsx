@@ -5,10 +5,10 @@ import { TriangleAlert } from "lucide-react";
 import type { RecognitionDict } from "@/i18n/dictionaries/en/recognition";
 
 /**
- * RecognitionWarnings — the review-recommended panel (PROMPT 3 §26).
+ * RecognitionWarnings - the review-recommended panel (PROMPT 3 §26).
  * Warnings arrive from the engine (strings over the wire) and are shown
  * verbatim in warning-ochre ink, below the recognition-level header.
- * Never a modal — inline, ruled, dismissible only by fixing the data.
+ * Never a modal - inline, ruled, dismissible only by fixing the data.
  */
 export function RecognitionWarnings({
   warnings,

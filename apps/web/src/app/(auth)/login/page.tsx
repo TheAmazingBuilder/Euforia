@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 /**
  * `<Suspense>` boundary (finalization §62/§78): LoginForm reads
  * `useSearchParams()` (returnTo / reason chips), which triggers a Next.js
- * CSR bailout during prerendering when no boundary wraps it — this broke
+ * CSR bailout during prerendering when no boundary wraps it - this broke
  * `next build` (documented in the CI web job and the Phase 1 report).
  * The fallback only renders for the static shell; the form hydrates in.
  */

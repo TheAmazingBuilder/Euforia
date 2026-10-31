@@ -1,5 +1,5 @@
 /**
- * Cosmoz market service — Market Data Hub for the Session Live (V1).
+ * Cosmoz market service - Market Data Hub for the Session Live (V1).
  *
  * Provider architecture (mission §34): sources implement the single
  * MarketDataProvider contract and stay responsible for their transport.
@@ -33,7 +33,7 @@ const BROADCAST_MS = 750;
 // into auth.ts (structure, error codes and call sites stay put).
 if (process.env.NODE_ENV === "production" && MOCK_ACCESS_SECRET === "cosmoz-mock-access-secret-v1") {
   console.error(
-    "market-service: refusing to start — NODE_ENV=production with the mock access secret. " +
+    "market-service: refusing to start - NODE_ENV=production with the mock access secret. " +
       "Replace the mock token verifier in auth.ts (JWT/JWKS) before serving production traffic.",
   );
   process.exit(1);
@@ -43,7 +43,7 @@ if (process.env.NODE_ENV === "production" && MOCK_ACCESS_SECRET === "cosmoz-mock
 const providers: MarketDataProvider[] = [new BinanceProvider(), new SimulatedProvider()];
 
 interface Quote extends Tick {}
-/** Latest quote per internal symbol — the REST/WS snapshot. */
+/** Latest quote per internal symbol - the REST/WS snapshot. */
 const quotes = new Map<string, Quote>();
 /** Symbols whose quote changed since the last broadcast (dirty flush). */
 const dirty = new Set<string>();
@@ -65,7 +65,7 @@ function json(res: import("node:http").ServerResponse, code: number, body: unkno
 
 /**
  * REST auth guard (mission §61/§63): market reads are authenticated. /health
- * stays public — it is infrastructure telemetry, not trading data.
+ * stays public - it is infrastructure telemetry, not trading data.
  */
 function restAuth(req: import("node:http").IncomingMessage, res: import("node:http").ServerResponse): string | null {
   const verdict = verifyAccessToken(bearerFromHeader(req.headers.authorization));
@@ -112,7 +112,7 @@ const httpServer = createServer(async (req, res) => {
       const candles = await provider.candles(symbol, interval, limit, from, to);
       json(res, 200, { symbol, interval, source: provider.source, candles });
     } catch (error) {
-      // Structured, secret-free error (mission §27) — the client renders
+      // Structured, secret-free error (mission §27) - the client renders
       // "market data unavailable" and retries.
       console.error("market-service: candles fetch failed:", error instanceof Error ? error.message : error);
       json(res, 502, { error: "market data provider unavailable" });
@@ -142,7 +142,7 @@ const io = new Server(httpServer, {
  * Handshake-time authentication. The client presents the Cosmoz access token
  * in `auth.token`; the connection is rejected with a structured auth error
  * otherwise. The verified subject is bound to the socket and joined to its
- * `user:<id>` room — the server-side scoping point for any future PRIVATE
+ * `user:<id>` room - the server-side scoping point for any future PRIVATE
  * stream (positions/orders/events are emitted only into the owner's room,
  * never addressed by client-named channels). Re-verification happens on
  * every explicit `subscribe` so long-lived sockets cannot outlive a
@@ -164,10 +164,10 @@ io.on("connection", (socket) => {
   connectedUsers.set(userId, (connectedUsers.get(userId) ?? 0) + 1);
 
   // Fresh snapshot on connect; the shared broadcast keeps everyone live.
-  // Market prices are shared global data — the per-user room exists for
+  // Market prices are shared global data - the per-user room exists for
   // private streams, not to shard the price feed.
   socket.emit("prices", [...quotes.values()]);
-  // Private snapshot immediately (and on every reconnect — the socket.io
+  // Private snapshot immediately (and on every reconnect - the socket.io
   // connect event IS the resync: Reconnect → Authenticate → snapshot).
   const book = ensureUserPositions(userId);
   if (book) {
@@ -196,10 +196,10 @@ io.on("connection", (socket) => {
 // The `user:<id>` room bound at handshake is the scoping point for PRIVATE
 // streams. This service has no real broker bridge yet: the book is a
 // SIMULATED, per-user, deterministic broker book (labeled source: "sim" on
-// the wire — the UI repeats the label), marked-to-market against the live
+// the wire - the UI repeats the label), marked-to-market against the live
 // quotes. Snapshot semantics: the FULL positions array every emit, so a
 // reconnect/replay can never duplicate a position. Authorization is purely
-// server-side: io.to(`user:${id}`) — user A structurally never receives
+// server-side: io.to(`user:${id}`) - user A structurally never receives
 // user B's events, and nothing here accepts execution input (read-only).
 
 /** Refcount of live sockets per verified user (multi-tab safe). */
@@ -218,7 +218,7 @@ interface PrivatePosition {
   openedAt: string;
 }
 
-/** FNV-1a 32-bit — deterministic per-user seed. */
+/** FNV-1a 32-bit - deterministic per-user seed. */
 function hashSeed(input: string): number {
   let h = 0x811c9dc5;
   for (let i = 0; i < input.length; i += 1) {
@@ -251,7 +251,7 @@ const userPositions = new Map<string, PrivatePosition[]>();
 function ensureUserPositions(userId: string): PrivatePosition[] | null {
   const existing = userPositions.get(userId);
   if (existing) return existing;
-  // Seeding needs live quotes to anchor entries — wait for the first ticks.
+  // Seeding needs live quotes to anchor entries - wait for the first ticks.
   const available = STREAM_INSTRUMENTS.filter((instrument) => quotes.has(instrument.symbol));
   if (available.length === 0) return null;
 
@@ -328,4 +328,4 @@ setInterval(() => {
 
 httpServer.listen(PORT);
 
-console.log("market-service listening on :" + PORT + " — REST /prices /candles, WS path /socket.io/");
+console.log("market-service listening on :" + PORT + " - REST /prices /candles, WS path /socket.io/");

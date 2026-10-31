@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# COSMOZ — Phase 21 runtime verification (§136/§137/§138).
+# COSMOZ - Phase 21 runtime verification (§136/§137/§138).
 #
 # Boots the REAL FastAPI sidecar (:3004) + the REAL NestJS API (:4000) on the
 # dev database and drives the CONFIRMATION → TRADING CORE bridge end to end:
@@ -10,7 +10,7 @@
 # idempotent replay never duplicates → deleting the recognition keeps the
 # trade (one-way provenance, §77).
 #
-# Artifacts: /tmp/cosmoz-ocr-verify/ (logs, tokens, payloads) — wiped on exit.
+# Artifacts: /tmp/cosmoz-ocr-verify/ (logs, tokens, payloads) - wiped on exit.
 set -euo pipefail
 
 ROOT=/home/z/my-project
@@ -86,7 +86,7 @@ LOGIN=$(curl -sf -X POST "http://127.0.0.1:$API_PORT/api/v1/auth/login" \
 ACCESS=$(echo "$LOGIN" | python3 -c "import json,sys; print(json.load(sys.stdin)['accessToken'])")
 echo " ✓ authenticated ($EMAIL)"
 
-echo "── 4. Connect a MOCK trading account (persisted default — §81 convention)"
+echo "── 4. Connect a MOCK trading account (persisted default - §81 convention)"
 CONNECT=$(curl -s -X POST "http://127.0.0.1:$API_PORT/api/v1/accounts" \
   -H "authorization: Bearer $ACCESS" -H 'content-type: application/json' \
   -d "{\"providerId\":\"MOCK\",\"environment\":\"DEMO\",\"externalAccountId\":\"77bridge01\",\"credentials\":{\"method\":\"API_KEY\",\"secret\":\"mock-api-key-runtime-bridge\"}}")
@@ -155,11 +155,11 @@ assert t["initialStop"] == fields.get("stopLoss"), (t["initialStop"], fields.get
 assert t["initialTP"] == fields.get("takeProfit"), (t["initialTP"], fields.get("takeProfit"))
 assert f"recognition {rec['id']}" in (t["notes"] or ""), "provenance must ride the notes (§82)"
 # Variant rule (§54): CLOSED only when BOTH exit price and close time were
-# confirmed — a missing exit price stays an OPEN trade, never invented.
+# confirmed - a missing exit price stays an OPEN trade, never invented.
 closed = fields.get("exitPrice") is not None and fields.get("closeTime") is not None
 if closed:
     assert t["status"] == "CLOSED" and t["exitReason"] == "MANUAL", (t["status"], t["exitReason"])
-    # P&L is Trading Core's own computation — never the OCR profit (§55/§15).
+    # P&L is Trading Core's own computation - never the OCR profit (§55/§15).
     assert t["pnlGross"] is not None and t["pnlNet"] is not None, "P&L must be recomputed server-side"
 else:
     assert t["status"] == "OPEN", t["status"]

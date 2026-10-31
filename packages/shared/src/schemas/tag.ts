@@ -3,7 +3,7 @@ import { tagCategorySchema } from "../enums";
 import { uuidSchema } from "./primitives";
 
 /**
- * Tag — data-model.md "Domaine 4". Free, hierarchical, user-owned
+ * Tag - data-model.md "Domaine 4". Free, hierarchical, user-owned
  * (contrary to Mistake/Emotion which are seeded catalogs).
  * Unique per (userId, name, category).
  */
@@ -13,7 +13,7 @@ export const tagSchema = z.object({
   name: z.string().min(1),
   category: tagCategorySchema,
   color: z.string().nullable(),
-  /** Parent tag id — hierarchy. */
+  /** Parent tag id - hierarchy. */
   parentId: uuidSchema.nullable(),
 });
 

@@ -1,5 +1,5 @@
 /**
- * e2e — Nofy (B11) over the REAL AppModule + real database: the knowledge
+ * e2e - Nofy (B11) over the REAL AppModule + real database: the knowledge
  * workspace's lazy per-user seed, note CRUD with soft-delete lifecycle,
  * block-level autosave with version snapshots, folders/tags/templates and
  * the entity picker. Read models are validated against the SHARED Zod
@@ -253,7 +253,7 @@ describe("nofy workspace (B11)", () => {
     });
     expect(dup.statusCode).toBe(409);
 
-    // Park a note in the folder, then delete the folder — the note falls
+    // Park a note in the folder, then delete the folder - the note falls
     // back to "No folder" instead of dangling.
     const note = nofyNoteResponseSchema.parse(
       (

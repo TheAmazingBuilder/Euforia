@@ -1,5 +1,5 @@
 /**
- * Verify — Risk/Reward module (TOOLS section).
+ * Verify - Risk/Reward module (TOOLS section).
  * Probes: nav registration, page render, live summary math (2% × $1,000 × 1:3
  * over 100 trades), matrix structure (5 rows × 10 columns), spec §13.1 cell
  * vectors (E': -$400 @20% R3, G: +$1,200 @40% R3, F: $0 break-even @50% R1),
@@ -22,7 +22,7 @@ const BASE = "http://localhost:3000";
 
   const results = [];
   const check = (name, ok, extra = "") =>
-    results.push(`${ok ? "PASS" : "FAIL"} — ${name}${extra ? ` (${extra})` : ""}`);
+    results.push(`${ok ? "PASS" : "FAIL"} - ${name}${extra ? ` (${extra})` : ""}`);
 
   // ── Auth (same demo account as every verify probe) ───────────────────────
   await page.goto(`${BASE}/tools/risk-reward`, { waitUntil: "domcontentloaded" });
@@ -85,7 +85,7 @@ const BASE = "http://localhost:3000";
   );
   await page.screenshot({ path: "scripts/shots/risk-reward-tooltip.png" });
 
-  // ── 6. Live recompute: risk 2% → 5% (spec §9 — no Calculate button) ─────
+  // ── 6. Live recompute: risk 2% → 5% (spec §9 - no Calculate button) ─────
   await page.locator('[data-testid="rr-risk-percent"]').fill("5");
   await page.waitForTimeout(400);
   const summaryText2 = await summary.innerText();
@@ -146,7 +146,7 @@ const BASE = "http://localhost:3000";
 
   // ── Console/page errors ──────────────────────────────────────────────────
   // The two pre-auth 401 refresh attempts also fire on every existing page
-  // (verified identical on /settings) — platform bootstrap noise, not module.
+  // (verified identical on /settings) - platform bootstrap noise, not module.
   const meaningful = errors.filter((e) => !e.includes("401"));
   check("No console/page errors", meaningful.length === 0, meaningful.slice(0, 3).join(" | "));
 

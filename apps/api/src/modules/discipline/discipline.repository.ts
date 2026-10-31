@@ -1,5 +1,5 @@
 /**
- * Discipline data access (B4) — the ONLY place the discipline context
+ * Discipline data access (B4) - the ONLY place the discipline context
  * touches Prisma (§46 house pattern). Rows land in the shared
  * disciplineRow table with a context `kind` (RULE | VIOLATION | ALERT);
  * the business aggregate lives in `data` (shared-contract JSON).
@@ -82,7 +82,7 @@ export class DisciplineRepository {
   }
 
   /**
-   * Insert with a caller-supplied deterministic id — the idempotency
+   * Insert with a caller-supplied deterministic id - the idempotency
    * mechanism for producer domains that derive event ids (uuid-v5) from
    * stable trigger keys: a replayed publish hits the primary key and is a
    * no-op at the caller's discretion (P2002).

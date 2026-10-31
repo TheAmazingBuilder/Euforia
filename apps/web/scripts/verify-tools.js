@@ -1,5 +1,5 @@
 /**
- * TOOLS section probe — Lot Size + Compounding calculators.
+ * TOOLS section probe - Lot Size + Compounding calculators.
  * Definition-of-done walkthrough: login → sidebar TOOLS section → /tools
  * redirect → lot-size flow (defaults, calculate, spec vector 0.10 lots,
  * breakdown, validation paths, direction rules, RR) → compounding flow
@@ -18,11 +18,11 @@ const pageErrors = [];
 
 function ok(label, extra = "") {
   passed += 1;
-  console.log(`  ✓ ${label}${extra ? ` — ${extra}` : ""}`);
+  console.log(`  ✓ ${label}${extra ? ` - ${extra}` : ""}`);
 }
 function bad(label, extra = "") {
   failedCount += 1;
-  console.log(`  ✗ ${label}${extra ? ` — ${extra}` : ""}`);
+  console.log(`  ✗ ${label}${extra ? ` - ${extra}` : ""}`);
 }
 async function check(label, condition, extra = "") {
   condition ? ok(label, extra) : bad(label, extra);
@@ -77,8 +77,8 @@ async function ensureLoggedIn(page, context) {
     await page.waitForTimeout(1500);
     await check("redirected to /tools/lot-size", page.url().includes("/tools/lot-size"), page.url());
 
-    // ── 3. Lot — standard header + defaults ──────────────────────────
-    console.log("\n[3] Lot — header + defaults");
+    // ── 3. Lot - standard header + defaults ──────────────────────────
+    console.log("\n[3] Lot - header + defaults");
     await page.goto(`${BASE}/tools/lot-size`, { waitUntil: "domcontentloaded", timeout: 60000 });
     await page.waitForTimeout(1500);
     await check(
@@ -98,8 +98,8 @@ async function ensureLoggedIn(page, context) {
         (await page.locator('[data-testid="lotsize-status"]').count()) === 0,
     );
 
-    // ── 4. Lot Size — spec vector: 10,000 / 1% / XAUUSD 2650→2640 → 0.10 ───
-    console.log("\n[4] Lot Size — spec vector");
+    // ── 4. Lot Size - spec vector: 10,000 / 1% / XAUUSD 2650→2640 → 0.10 ───
+    console.log("\n[4] Lot Size - spec vector");
     await page.fill('[data-testid="lotsize-entry"]', "2650");
     await page.fill('[data-testid="lotsize-stop"]', "2640");
     await page.fill('[data-testid="lotsize-tp"]', "2673.50");
@@ -112,7 +112,7 @@ async function ensureLoggedIn(page, context) {
     await check("RR 1 : 2.35 displayed (spec §14)", resultText.includes("2.35"), "");
     await page.screenshot({ path: "scripts/shots/tools-lotsize-desktop.png", fullPage: true });
 
-    // Breakdown ledger content (ledger-label renders UPPERCASE — match loosely)
+    // Breakdown ledger content (ledger-label renders UPPERCASE - match loosely)
     const breakdownVisible = await page
       .getByText(/calculation breakdown/i)
       .first()
@@ -123,8 +123,8 @@ async function ensureLoggedIn(page, context) {
     // Copy payload exists
     await check("copy result button", await page.locator('[data-testid="lotsize-copy"]').isVisible().catch(() => false));
 
-    // ── 5. Lot Size — validation paths ─────────────────────────────────────
-    console.log("\n[5] Lot Size — validation");
+    // ── 5. Lot Size - validation paths ─────────────────────────────────────
+    console.log("\n[5] Lot Size - validation");
     await page.fill('[data-testid="lotsize-stop"]', "2650");
     await page.waitForTimeout(400);
     let bodyText = await page.locator("body").innerText();
@@ -147,8 +147,8 @@ async function ensureLoggedIn(page, context) {
     await page.waitForTimeout(300);
     await check("advanced fields shown", await page.locator('[data-testid="lotsize-pipsize"]').isVisible().catch(() => false));
 
-    // ── 6. Compounding — spec vector: 1000 / 20 × 5% → $2,653.30 ───────────
-    console.log("\n[6] Compounding — spec vector");
+    // ── 6. Compounding - spec vector: 1000 / 20 × 5% → $2,653.30 ───────────
+    console.log("\n[6] Compounding - spec vector");
     await page.goto(`${BASE}/tools/compounding`, { waitUntil: "domcontentloaded", timeout: 60000 });
     await page.waitForTimeout(1800);
     const summaryText = await page.locator('[data-testid="comp-summary"]').innerText();
@@ -164,8 +164,8 @@ async function ensureLoggedIn(page, context) {
     await check("copy summary button", await page.locator('[data-testid="comp-copy"]').isVisible().catch(() => false));
     await page.screenshot({ path: "scripts/shots/tools-compounding-desktop.png", fullPage: true });
 
-    // ── 7. Compounding — live recompute + negative rate ────────────────────
-    console.log("\n[7] Compounding — live recompute");
+    // ── 7. Compounding - live recompute + negative rate ────────────────────
+    console.log("\n[7] Compounding - live recompute");
     await page.fill('[data-testid="comp-gain"]', "10");
     await page.waitForTimeout(800);
     const liveText = await page.locator('[data-testid="comp-summary"]').innerText();

@@ -1,4 +1,4 @@
-"""Chart screenshot extraction (Account & Chart V1.1 — CHART_ANALYSIS).
+"""Chart screenshot extraction (Account & Chart V1.1 - CHART_ANALYSIS).
 
 CHART_ANALYSIS reads the chart LEGEND + visible indicator readings:
   - TradingView-style top-left legend: "XAUUSD · 15 · O2345.6 H2350.1
@@ -11,7 +11,7 @@ CHART_ANALYSIS reads the chart LEGEND + visible indicator readings:
 
 Deterministic + labeled-only: a value is accepted when a KNOWN label (or
 the O/H/L/C legend shape inside a line that carries a plausible symbol)
-precedes it — never from position alone (§20). chartPrice is derived from
+precedes it - never from position alone (§20). chartPrice is derived from
 the legend CLOSE with an explicit PRICE_FROM_CLOSE note: the close of the
 current bar IS the last traded price; anything else would be invented.
 """
@@ -53,7 +53,7 @@ _TIMEFRAME_TOKEN = re.compile(r"^[A-Za-z]?\d{1,5}[MHDmhd]?$|^[MHDmhd]$|^(daily|w
 def _normalize_timeframe(raw: str) -> Optional[str]:
     token = raw.strip(",.:")
     # Disambiguate the month trap: "1M" with a lowercase m is minutes in TV
-    # dialect; uppercase bare "M" after a number stays ambiguous — only a
+    # dialect; uppercase bare "M" after a number stays ambiguous - only a
     # BARE "M"/"MN" means month (MT5's MN1). Bare lowercase "m" alone is
     # never accepted (too ambiguous).
     if token.upper() in _TIMEFRAME_MAP:
@@ -67,7 +67,7 @@ def _normalize_timeframe(raw: str) -> Optional[str]:
 
 # ── Legend shapes ─────────────────────────────────────────────────────────────
 
-# "O2345.60" — a single letter glued to a decimal (TradingView legend).
+# "O2345.60" - a single letter glued to a decimal (TradingView legend).
 _OHLC_GLUED = re.compile(r"^([OHLCohlc])[:=]?(-?\d[\d.,]*)$")
 # A bare single letter as its own word ("O 2345.60", MT5 style "O: 2345.60").
 _OHLC_BARE = re.compile(r"^([OHLCohlc])[:=]?$")
@@ -77,7 +77,7 @@ _OHLC_KEY = {"O": "chartOpen", "H": "chartHigh", "L": "chartLow", "C": "chartClo
 # Explicit current-price labels (priority over the derived close).
 _PRICE_LABEL = re.compile(r"^(bid|ask|last)[:=]?$", re.IGNORECASE)
 
-# Indicator labels — the label word may carry the opening paren ("RSI (14)").
+# Indicator labels - the label word may carry the opening paren ("RSI (14)").
 _INDICATOR_RULES: Tuple[Tuple[re.Pattern, str], ...] = tuple(
     (re.compile(pattern, re.IGNORECASE), key)
     for pattern, key in (
@@ -124,7 +124,7 @@ def extract_chart_fields(lines: List[OcrLine]) -> List[EngineField]:
         symbol_word = symbol_found[1] if symbol_found is not None else None
         symbol_index = symbol_found[0] if symbol_found is not None else -1
 
-        # ── OHLC legend — only inside a line that carries a symbol ──────────
+        # ── OHLC legend - only inside a line that carries a symbol ──────────
         if symbol_word is not None:
             _upsert(
                 fields,
@@ -168,7 +168,7 @@ def extract_chart_fields(lines: List[OcrLine]) -> List[EngineField]:
                                 notes=normalized.notes,
                             ))
 
-        # ── Timeframe — a mapped token adjacent to the symbol ───────────────
+        # ── Timeframe - a mapped token adjacent to the symbol ───────────────
         if symbol_word is not None:
             for offset in (-1, 1, 2):
                 index = symbol_index + offset
@@ -185,7 +185,7 @@ def extract_chart_fields(lines: List[OcrLine]) -> List[EngineField]:
                         ))
                         break
 
-        # ── Current price — explicit bid/ask/last labels ────────────────────
+        # ── Current price - explicit bid/ask/last labels ────────────────────
         for index, word in enumerate(line.words):
             if not _PRICE_LABEL.match(word.text.strip(",.;:")):
                 continue
@@ -205,14 +205,14 @@ def extract_chart_fields(lines: List[OcrLine]) -> List[EngineField]:
                     ))
                     break
 
-        # ── Indicator readings — label word, then value after the params ────
+        # ── Indicator readings - label word, then value after the params ────
         for index, word in enumerate(line.words):
             stripped = word.text.strip(",.;:")
             rule = next(((pattern, key) for pattern, key in _INDICATOR_RULES if pattern.match(stripped)), None)
             if rule is None:
                 continue
             _, key = rule
-            # Skip the parameter group "(14)" / "(12, 26, close, 9)" — the
+            # Skip the parameter group "(14)" / "(12, 26, close, 9)" - the
             # value comes AFTER the closing paren, never inside it.
             cursor = index + 1
             if cursor < len(line.words) and "(" in line.words[cursor].text:
@@ -235,7 +235,7 @@ def extract_chart_fields(lines: List[OcrLine]) -> List[EngineField]:
                     ))
                     break
 
-        # ── Chart time — date + clock word pairs (wall clock, §16) ─────────
+        # ── Chart time - date + clock word pairs (wall clock, §16) ─────────
         for index, word in enumerate(line.words):
             combined: Optional[str] = None
             if DATE_ONLY_TOKEN.match(word.text):
@@ -257,7 +257,7 @@ def extract_chart_fields(lines: List[OcrLine]) -> List[EngineField]:
             ))
             break
 
-    # chartPrice derived from the legend close (explicit provenance note) —
+    # chartPrice derived from the legend close (explicit provenance note) -
     # only when no explicit bid/ask/last label produced one.
     if "chartPrice" not in fields and fields.get("chartClose", None) is not None:
         close = fields["chartClose"]

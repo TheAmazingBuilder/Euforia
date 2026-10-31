@@ -23,7 +23,7 @@ patch("lib/utils/chart-theme.ts",
   return React.useMemo(() => getChartTheme(), [resolvedTheme]);
 }
 
-/** Alias kept for earlier call sites — same hook, same tokens. */
+/** Alias kept for earlier call sites - same hook, same tokens. */
 export const useChartTheme = useChartTokens;""")
 
 # ── keys.ts: riskOverview + coachWeeklyReview keys ──
@@ -69,7 +69,7 @@ if "useCoachWeeklyReview" not in src:
     assert old in src
     src = src.replace(old, new)
     src += '''
-/** GET /coach/weekly-review — the Monday-morning process review (coach page). */
+/** GET /coach/weekly-review - the Monday-morning process review (coach page). */
 export function useCoachWeeklyReview() {
   return useQuery({
     queryKey: queryKeys.coachWeeklyReview,
@@ -88,7 +88,7 @@ patch("lib/api/queries/index.ts",
 # ── coach/weekly-report.tsx: switch to the review hook + type alias ──
 patch("components/coach/weekly-report.tsx",
 'import { useWeeklyReport } from "@/lib/api/queries";\nimport type { WeeklyReport } from "@cosmoz/shared";',
-'import { useCoachWeeklyReview } from "@/lib/api/queries";\nimport type { CoachWeeklyReviewResponse } from "@cosmoz/shared";\n\n/** Local alias — this component was written against the review shape. */\ntype WeeklyReport = CoachWeeklyReviewResponse;')
+'import { useCoachWeeklyReview } from "@/lib/api/queries";\nimport type { CoachWeeklyReviewResponse } from "@cosmoz/shared";\n\n/** Local alias - this component was written against the review shape. */\ntype WeeklyReport = CoachWeeklyReviewResponse;')
 patch("components/coach/weekly-report.tsx",
 "  const reportQuery = useWeeklyReport();",
 "  const reportQuery = useCoachWeeklyReview();")

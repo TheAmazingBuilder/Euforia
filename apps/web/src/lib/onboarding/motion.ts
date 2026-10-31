@@ -9,18 +9,18 @@ import { useGSAP } from "@gsap/react";
  *
  * Principles (spec §5):
  *  - motion is an ENHANCEMENT: every animated element starts at its final
- *    CSS state and is animated FROM it (gsap.from) — if GSAP fails to
+ *    CSS state and is animated FROM it (gsap.from) - if GSAP fails to
  *    initialize or `prefers-reduced-motion` is set, the flow simply renders
  *    static and fully functional; no state depends on animation completing;
  *  - timelines are scoped (useGSAP context) and reverted on unmount or on
- *    dependency change — no leaked tweens across steps, StrictMode-safe;
- *  - durations stay short (≤ 0.55s) and easings restrained (power/back) —
+ *    dependency change - no leaked tweens across steps, StrictMode-safe;
+ *  - durations stay short (≤ 0.55s) and easings restrained (power/back) -
  *    premium, not theatrical.
  *
  * Element contract (data attributes consumed here):
- *  - data-onb="brand"    — the brand lockup entrance (scale + fade);
- *  - data-onb="reveal"   — staggered content entrance (y + fade);
- *  - data-onb="success"  — the completion check reveal (back.out).
+ *  - data-onb="brand"    - the brand lockup entrance (scale + fade);
+ *  - data-onb="reveal"   - staggered content entrance (y + fade);
+ *  - data-onb="success"  - the completion check reveal (back.out).
  */
 
 gsap.registerPlugin(useGSAP);
@@ -44,9 +44,9 @@ export function usePrefersReducedMotion(): boolean {
 }
 
 /**
- * Step entrance — brand + staggered reveal of the CURRENT step's content.
+ * Step entrance - brand + staggered reveal of the CURRENT step's content.
  * Runs once per step change (the overlay keys the step container, so the
- * scoped context re-runs cleanly). Reduced motion: skipped entirely — the
+ * scoped context re-runs cleanly). Reduced motion: skipped entirely - the
  * content is already in its final state.
  */
 export function useOnbStepEntrance(
@@ -79,7 +79,7 @@ export function useOnbStepEntrance(
   );
 }
 
-/** The completion check — subtle scale-in (restrained, no confetti). */
+/** The completion check - subtle scale-in (restrained, no confetti). */
 export function useOnbSuccessReveal(
   scope: React.RefObject<HTMLElement | null>,
   active: boolean,
@@ -96,14 +96,14 @@ export function useOnbSuccessReveal(
           ease: "back.out(1.6)",
         });
       } catch {
-        // Ignore — the check is already visible statically.
+        // Ignore - the check is already visible statically.
       }
     },
     { scope, dependencies: [active, reduce] },
   );
 }
 
-/** Progress bar tween — width follows the step progress. */
+/** Progress bar tween - width follows the step progress. */
 export function animateOnbProgress(
   bar: HTMLElement | null,
   progress: number,
@@ -125,7 +125,7 @@ export function animateOnbProgress(
 }
 
 /**
- * Step exit — quick fade of the outgoing content, then commit. Safety:
+ * Step exit - quick fade of the outgoing content, then commit. Safety:
  * a one-shot latch + timeout fallback guarantee onDone fires EXACTLY once
  * even if the tween is interrupted (an interrupted animation can never
  * leave the flow stuck).
@@ -162,7 +162,7 @@ export function runOnbStepExit(
       stagger: 0.02,
       onComplete: () => doneOnce(),
     });
-    // Hard fallback — never depend on animation completion for navigation.
+    // Hard fallback - never depend on animation completion for navigation.
     window.setTimeout(() => doneOnce(), 450);
   } catch {
     doneOnce();

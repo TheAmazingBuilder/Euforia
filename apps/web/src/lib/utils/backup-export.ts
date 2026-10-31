@@ -5,7 +5,7 @@ import { apiRequest } from "@/lib/api/client";
 import { apiPaths } from "@/lib/api/endpoints";
 
 /**
- * Shared backup export — fetch the authored-data snapshot and download it
+ * Shared backup export - fetch the authored-data snapshot and download it
  * as a plain JSON file. Used by the Privacy tab (BackupCard) and the
  * Account tab ("Export your data"). Validation happens twice: client-side
  * (zod, instant feedback) and server-side (same schema).
@@ -29,14 +29,14 @@ export async function downloadBackupExport(): Promise<BackupPayload> {
 }
 
 /**
- * Copy for the toast-wrapped variant — passed by the caller (settings cards)
+ * Copy for the toast-wrapped variant - passed by the caller (settings cards)
  * from the active dictionary: this helper is a pure function, not a hook
  * (dict.* contract rule 8).
  */
 export type BackupExportCopy = {
   /** Toast title, e.g. "Backup exported". */
   title: string;
-  /** Count words composed as `${n} ${word}, …` — e.g. "trades" / "trades". */
+  /** Count words composed as `${n} ${word}, …` - e.g. "trades" / "trades". */
   tradesWord: string;
   strategiesWord: string;
   tagsWord: string;

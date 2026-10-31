@@ -1,5 +1,5 @@
 /**
- * Oryon Phase 9 key-level tests — previous-day / previous-week reference
+ * Oryon Phase 9 key-level tests - previous-day / previous-week reference
  * levels and the session opening range.
  *
  * Run: bun run scripts/oryon-levels-tests.ts
@@ -8,7 +8,7 @@
  *   - day boundaries are the datafeed's UTC-midnight buckets (the browser
  *     timezone is never consulted; the current partial day is excluded);
  *   - weeks are ISO weeks (Monday 00:00 UTC), current week excluded;
- *   - a missing period is skipped — never zero-filled;
+ *   - a missing period is skipped - never zero-filled;
  *   - duplicate timestamps: first wins; invalid candles are dropped;
  *   - the opening range REUSES the Phase 8 session engine (IANA/DST), stays
  *     inside its window, and distinguishes complete vs developing honestly.
@@ -55,7 +55,7 @@ function dailySeries(count: number): Candle[] {
 
 // ── 1. Previous-day levels ───────────────────────────────────────────────────
 
-console.log("— previous day (bornes UTC)");
+console.log("- previous day (bornes UTC)");
 
 // Series ends 2026-09-03 → previous day = 2026-09-02 (h 111, l 91).
 const pd = computePreviousDayLevels(dailySeries(3));
@@ -100,14 +100,14 @@ eq("prix zéro légitime ≠ valeur manquante", computePreviousDayLevels([dayCan
 // Duplicate timestamps: first wins.
 const dupSeries: Candle[] = [
   dayCandle(0, 100, 110, 90, 105),
-  { ...dayCandle(0, 999, 999, 0, 999) }, // duplicate t — dropped
+  { ...dayCandle(0, 999, 999, 0, 999) }, // duplicate t - dropped
   dayCandle(1, 100, 111, 91, 106),
 ];
 eq("doublon : la première bougie gagne", computePreviousDayLevels(dupSeries)?.high, 110);
 
 // ── 2. Previous-week levels ──────────────────────────────────────────────────
 
-console.log("— previous week (semaines ISO lundi UTC)");
+console.log("- previous week (semaines ISO lundi UTC)");
 
 // 2026-09-01 is a Tuesday. Week of Aug 31 (Mon) → Sep 6 (Sun).
 // Series: Tue Sep 1, Wed Sep 2, ... Tue Sep 8 (next week) → previous week = Sep 1..6.
@@ -126,7 +126,7 @@ eq("semaine courante partielle → aucune semaine précédente dispo", midWeekPw
 
 // Aggregation across MULTIPLE candles per week (intraday granularity).
 // Aug 26/27 belong to the Aug 24 ISO week; the Sep 1 candle opens the
-// CURRENT week — previous week = Aug 24..30.
+// CURRENT week - previous week = Aug 24..30.
 const weekIntraday: Candle[] = [
   { t: Date.UTC(2026, 7, 26, 10, 0), o: 100, h: 115, l: 98, c: 110, v: 1 }, // Wed Aug 26
   { t: Date.UTC(2026, 7, 26, 14, 0), o: 110, h: 112, l: 88, c: 105, v: 1 },
@@ -138,7 +138,7 @@ eq("bornes hebdo : lundi 00:00 UTC", weekIntradayPw?.periodStartMs, Date.UTC(202
 
 // ── 3. Opening range (sessions Phase 8 réutilisées) ──────────────────────────
 
-console.log("— opening range (session NY, durée 60)");
+console.log("- opening range (session NY, durée 60)");
 
 const ny = sessionDefinitionById("newyork")!;
 ok("définition NY disponible (moteur sessions Phase 8)", ny !== null);
@@ -164,7 +164,7 @@ eq("OR été : high = max des 4 bougies de la fenêtre", summerOr?.high, 100 + 2
 eq("OR été : low = min des 4 bougies de la fenêtre", summerOr?.low, 100 + 2 - 0.5);
 eq("OR été : 4 bougies dans la fenêtre", summerOr?.candleCount, 4);
 
-// 2026-12-15 is EST: NY 08:00 local = 13:00 UTC — the window SHIFTS (DST).
+// 2026-12-15 is EST: NY 08:00 local = 13:00 UTC - the window SHIFTS (DST).
 const decDay = Date.UTC(2026, 11, 15);
 const winterCandles = intraday15(decDay, 11, 16);
 const winterOr = computeOpeningRange({ candles: winterCandles, intervalMs: 900_000, session: ny, durationMinutes: 60 });
@@ -190,7 +190,7 @@ eq("aucune bougie dans la fenêtre → null", computeOpeningRange({ candles: noW
 
 // The range never extends beyond its window: an interval END bound (17:00)
 // shorter than the duration clips the range to the session end.
-const shortSession = sessionDefinitionById("tokyo")!; // 09:00-18:00 Asia/Tokyo — 9h > any duration here
+const shortSession = sessionDefinitionById("tokyo")!; // 09:00-18:00 Asia/Tokyo - 9h > any duration here
 const tokyoDay = Date.UTC(2026, 6, 15);
 const tokyoCandles = intraday15(tokyoDay, 0, 6);
 const tokyoOr = computeOpeningRange({ candles: tokyoCandles, intervalMs: 900_000, session: shortSession, durationMinutes: 120 });
@@ -211,7 +211,7 @@ eq("aucune bougie → null", computeOpeningRange({ candles: [], intervalMs: 900_
 eq("intervalMs invalide → null", computeOpeningRange({ candles: summerCandles, intervalMs: 0, session: ny, durationMinutes: 60 }), null);
 eq("durée invalide → null", computeOpeningRange({ candles: summerCandles, intervalMs: 900_000, session: ny, durationMinutes: -5 }), null);
 
-// Symbol isolation is structural: the engine sees ONE candle array — the
+// Symbol isolation is structural: the engine sees ONE candle array - the
 // caller's query key guarantees per-symbol data (§9.3). Verified here by
 // computing two different series and asserting no cross-contamination.
 const otherSymbolOr = computeOpeningRange({

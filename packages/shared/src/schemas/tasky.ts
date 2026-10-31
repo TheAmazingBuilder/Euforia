@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 /**
- * Tasky contracts — the independent kanban module (Academy section).
+ * Tasky contracts - the independent kanban module (Academy section).
  * A five-column sprint board: BACKLOG → TODO → IN_PROGRESS → IN_REVIEW →
  * DONE. Cards carry a category tag, a priority pill, an assignee avatar and
  * an optional due date; the mock engine keeps per-session in-memory state so
@@ -20,7 +20,7 @@ export type TaskyColumn = z.infer<typeof taskyColumnSchema>;
 export const taskyPrioritySchema = z.enum(["URGENT", "HIGH", "MEDIUM", "LOW"]);
 export type TaskyPriority = z.infer<typeof taskyPrioritySchema>;
 
-/** Column chrome — the client maps `accent` to a semantic CSS token. */
+/** Column chrome - the client maps `accent` to a semantic CSS token. */
 export type TaskyColumnMeta = {
   id: TaskyColumn;
   label: string;
@@ -30,12 +30,12 @@ export type TaskyColumnMeta = {
 export type TaskyTask = {
   id: string;
   title: string;
-  /** Neutral bordered chip — work type (Feature/Bug/Risk/...). */
+  /** Neutral bordered chip - work type (Feature/Bug/Risk/...). */
   tag: string;
   priority: TaskyPriority;
-  /** Avatar initials (2–3 chars) — null renders a placeholder dot. */
+  /** Avatar initials (2–3 chars) - null renders a placeholder dot. */
   assignee: string | null;
-  /** ISO date (yyyy-mm-dd) — null means "no due date". */
+  /** ISO date (yyyy-mm-dd) - null means "no due date". */
   dueAt: string | null;
   column: TaskyColumn;
   /** Stable position inside the column (0 = top). */
@@ -88,3 +88,349 @@ export const taskyDeleteInputSchema = z.object({
   taskId: z.string().min(1),
 });
 export type TaskyDeleteInput = z.infer<typeof taskyDeleteInputSchema>;
+
+
+// ── Tasky Kanban board snapshot (independent from Academy study tasks) ────────
+// This schema follows the current flexible board UI: users may add columns and
+// cards, and their relative order is preserved in the serialized board state.
+export const taskyKanbanPrioritySchema = z.enum(["Low", "Medium", "High", "Urgent"]);
+export type TaskyKanbanPriority = z.infer<typeof taskyKanbanPrioritySchema>;
+
+export const taskyKanbanChecklistItemSchema = z.object({
+  id: z.string().trim().min(1).max(100),
+  text: z.string().trim().min(1).max(180),
+  completed: z.boolean(),
+});
+export type TaskyKanbanChecklistItem = z.infer<typeof taskyKanbanChecklistItemSchema>;
+
+export const taskyKanbanCommentSchema = z.object({
+  id: z.string().trim().min(1).max(100),
+  author: z.string().trim().min(1).max(80),
+  body: z.string().trim().min(1).max(2000),
+  createdAt: z.string().datetime(),
+});
+export type TaskyKanbanComment = z.infer<typeof taskyKanbanCommentSchema>;
+
+export const taskyKanbanActivityTypeSchema = z.enum([
+  "created",
+  "updated",
+  "moved",
+  "checklist",
+  "comment",
+  "link",
+  "attachment",
+]);
+export type TaskyKanbanActivityType = z.infer<typeof taskyKanbanActivityTypeSchema>;
+
+export const taskyKanbanActivitySchema = z.object({
+  id: z.string().trim().min(1).max(100),
+  type: taskyKanbanActivityTypeSchema,
+  message: z.string().trim().min(1).max(180),
+  createdAt: z.string().datetime(),
+});
+export type TaskyKanbanActivity = z.infer<typeof taskyKanbanActivitySchema>;
+
+export const taskyKanbanLinkSchema = z.object({
+  id: z.string().trim().min(1).max(100),
+  title: z.string().trim().min(1).max(120),
+  url: z.string().url().max(2048).refine(
+    (value) => value.startsWith("https://") || value.startsWith("http://"),
+    "Links must use HTTP or HTTPS.",
+  ),
+  createdAt: z.string().datetime(),
+});
+export type TaskyKanbanLink = z.infer<typeof taskyKanbanLinkSchema>;
+
+// File bytes are managed by the API; the board contract contains only attachment metadata.
+export const taskyKanbanAttachmentMimeSchema = z.enum([
+  "image/png", "image/jpeg", "image/webp", "application/pdf",
+  "text/plain", "text/csv", "text/markdown",
+]);
+export type TaskyKanbanAttachmentMime = z.infer<typeof taskyKanbanAttachmentMimeSchema>;
+
+export const taskyKanbanAttachmentSchema = z.object({
+  id: z.string().uuid(),
+  cardId: z.string().trim().min(1).max(100),
+  originalName: z.string().trim().min(1).max(160),
+  mimeType: taskyKanbanAttachmentMimeSchema,
+  sizeBytes: z.number().int().min(1).max(5_242_880),
+  createdAt: z.string().datetime(),
+});
+export type TaskyKanbanAttachment = z.infer<typeof taskyKanbanAttachmentSchema>;
+
+export const taskyKanbanAttachmentUploadSchema = z.object({
+  fileName: z.string().trim().min(1).max(240),
+  mimeType: taskyKanbanAttachmentMimeSchema,
+  contentBase64: z.string().min(4).max(7_000_000)
+    .regex(/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/),
+});
+export type TaskyKanbanAttachmentUploadInput = z.infer<typeof taskyKanbanAttachmentUploadSchema>;
+
+export const taskyKanbanAttachmentDownloadSchema = z.object({
+  fileName: z.string().trim().min(1).max(160),
+  mimeType: taskyKanbanAttachmentMimeSchema,
+  contentBase64: z.string().min(4).max(7_000_000),
+});
+export type TaskyKanbanAttachmentDownload = z.infer<typeof taskyKanbanAttachmentDownloadSchema>;
+
+export const taskyKanbanCardSchema = z.object({
+  id: z.string().trim().min(1).max(100),
+  title: z.string().trim().min(1).max(140),
+  tag: z.string().trim().min(1).max(40),
+  priority: taskyKanbanPrioritySchema,
+  assignee: z.string().trim().min(1).max(12),
+  due: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  /** Planned start date for timeline visualization; optional for legacy cards. */
+  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  /** Created timestamp for creation-order sorting; optional for legacy cards. */
+  createdAt: z.string().datetime().optional(),
+  /** Archived cards remain recoverable in the same persisted board payload. */
+  archivedAt: z.string().datetime().optional(),
+  description: z.string().max(4000).optional(),
+  checklist: z.array(taskyKanbanChecklistItemSchema).max(100).optional(),
+  comments: z.array(taskyKanbanCommentSchema).max(100).optional(),
+  activity: z.array(taskyKanbanActivitySchema).max(100).optional(),
+  links: z.array(taskyKanbanLinkSchema).max(30).optional(),
+});
+export type TaskyKanbanCard = z.infer<typeof taskyKanbanCardSchema>;
+
+export const taskyKanbanColumnSchema = z.object({
+  id: z.string().trim().min(1).max(100),
+  title: z.string().trim().min(1).max(40),
+  dot: z.string().trim().min(1).max(64),
+  cards: z.array(taskyKanbanCardSchema).max(500),
+});
+export type TaskyKanbanColumn = z.infer<typeof taskyKanbanColumnSchema>;
+
+export const taskyKanbanBoardStateSchema = z
+  .object({
+    columns: z.array(taskyKanbanColumnSchema).min(1).max(40),
+  })
+  .superRefine((board, ctx) => {
+    const cardCount = board.columns.reduce((sum, column) => sum + column.cards.length, 0);
+    if (cardCount > 2000) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["columns"],
+        message: "A Tasky board may contain at most 2,000 cards.",
+      });
+    }
+
+    const ids = new Set<string>();
+    board.columns.forEach((column, columnIndex) => {
+      if (ids.has(column.id)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["columns", columnIndex, "id"],
+          message: "Column IDs must be unique.",
+        });
+      }
+      ids.add(column.id);
+      column.cards.forEach((card, cardIndex) => {
+        if (ids.has(card.id)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["columns", columnIndex, "cards", cardIndex, "id"],
+            message: "Board and card IDs must be unique.",
+          });
+        }
+        ids.add(card.id);
+        const nestedIds: Array<{ id: string; path: (string | number)[] }> = [
+          ...(card.checklist ?? []).map((item, itemIndex) => ({
+            id: item.id,
+            path: ["columns", columnIndex, "cards", cardIndex, "checklist", itemIndex, "id"] as (string | number)[],
+          })),
+          ...(card.comments ?? []).map((item, itemIndex) => ({
+            id: item.id,
+            path: ["columns", columnIndex, "cards", cardIndex, "comments", itemIndex, "id"] as (string | number)[],
+          })),
+          ...(card.activity ?? []).map((item, itemIndex) => ({
+            id: item.id,
+            path: ["columns", columnIndex, "cards", cardIndex, "activity", itemIndex, "id"] as (string | number)[],
+          })),
+          ...(card.links ?? []).map((item, itemIndex) => ({
+            id: item.id,
+            path: ["columns", columnIndex, "cards", cardIndex, "links", itemIndex, "id"] as (string | number)[],
+          })),
+        ];
+        for (const nested of nestedIds) {
+          if (ids.has(nested.id)) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: nested.path,
+              message: "All board item IDs must be unique.",
+            });
+          }
+          ids.add(nested.id);
+        };
+      });
+    });
+  });
+export type TaskyKanbanBoardState = z.infer<typeof taskyKanbanBoardStateSchema>;
+
+export const taskyKanbanBoardEnvelopeSchema = z.object({
+  board: taskyKanbanBoardStateSchema.nullable(),
+});
+export type TaskyKanbanBoardEnvelope = z.infer<typeof taskyKanbanBoardEnvelopeSchema>;
+
+export const taskyKanbanBoardSaveResponseSchema = z.object({
+  board: taskyKanbanBoardStateSchema,
+  updatedAt: z.string().datetime(),
+});
+export type TaskyKanbanBoardSaveResponse = z.infer<typeof taskyKanbanBoardSaveResponseSchema>;
+
+
+// ── Tasky saved views (search, filters and presentation order) ──────────────
+export const taskySavedViewDueFilterSchema = z.enum(["all", "overdue", "upcoming", "no-date"]);
+export const taskySavedViewPriorityFilterSchema = z.enum(["all", "Low", "Medium", "High", "Urgent"]);
+export const taskySavedViewSortSchema = z.enum(["manual", "title", "due", "priority", "created"]);
+
+export const taskySavedViewFiltersSchema = z.object({
+  query: z.string().trim().max(180).default(""),
+  priority: taskySavedViewPriorityFilterSchema.default("all"),
+  due: taskySavedViewDueFilterSchema.default("all"),
+  category: z.string().trim().max(40).default("all"),
+  assignee: z.string().trim().max(12).default("all"),
+  status: z.string().trim().max(100).default("all"),
+  sort: taskySavedViewSortSchema.default("manual"),
+});
+export type TaskySavedViewFilters = z.infer<typeof taskySavedViewFiltersSchema>;
+
+export const taskySavedViewCreateSchema = z.object({
+  name: z.string().trim().min(1).max(40),
+  filters: taskySavedViewFiltersSchema,
+});
+export type TaskySavedViewCreateInput = z.infer<typeof taskySavedViewCreateSchema>;
+
+export const taskySavedViewSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string().trim().min(1).max(40),
+  filters: taskySavedViewFiltersSchema,
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
+});
+export type TaskySavedView = z.infer<typeof taskySavedViewSchema>;
+
+export const taskySavedViewsEnvelopeSchema = z.object({
+  views: z.array(taskySavedViewSchema).max(20),
+});
+export type TaskySavedViewsEnvelope = z.infer<typeof taskySavedViewsEnvelopeSchema>;
+
+export const taskySavedViewCreateResponseSchema = z.object({
+  view: taskySavedViewSchema,
+});
+export type TaskySavedViewCreateResponse = z.infer<typeof taskySavedViewCreateResponseSchema>;
+
+
+// ── Tasky automations, reminders and execution history ─────────────────────
+
+export const taskyAutomationTriggerSchema = z.enum(["CARD_MOVED", "DUE_SOON", "OVERDUE"]);
+export type TaskyAutomationTrigger = z.infer<typeof taskyAutomationTriggerSchema>;
+
+export const taskyAutomationActionSchema = z.enum(["NOTIFY", "SET_PRIORITY"]);
+export type TaskyAutomationAction = z.infer<typeof taskyAutomationActionSchema>;
+
+export const taskyAutomationConfigSchema = z.object({
+  /** Required for CARD_MOVED rules: destination column ID that activates the rule. */
+  destinationColumnId: z.string().trim().min(1).max(100).optional(),
+  /** Calendar days before due date; required for DUE_SOON rules. */
+  daysBeforeDue: z.number().int().min(1).max(7).optional(),
+  /** Optional copy appended to the notification; never interpreted as a command. */
+  notificationMessage: z.string().trim().max(180).optional(),
+  /** CARD_MOVED action. NOTIFY is the default when omitted by older clients. */
+  action: taskyAutomationActionSchema.optional(),
+  /** Required when action is SET_PRIORITY. */
+  targetPriority: taskyKanbanPrioritySchema.optional(),
+});
+export type TaskyAutomationConfig = z.infer<typeof taskyAutomationConfigSchema>;
+
+const taskyAutomationRuleFields = {
+  name: z.string().trim().min(1).max(80),
+  trigger: taskyAutomationTriggerSchema,
+  enabled: z.boolean().default(true),
+  config: taskyAutomationConfigSchema,
+};
+
+function validateTaskyAutomationRule(
+  rule: { trigger: TaskyAutomationTrigger; config: TaskyAutomationConfig },
+  ctx: z.RefinementCtx,
+): void {
+  if (rule.trigger === "CARD_MOVED" && !rule.config.destinationColumnId) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["config", "destinationColumnId"],
+      message: "Choose the destination column that activates this rule.",
+    });
+  }
+  if (rule.trigger === "DUE_SOON" && rule.config.daysBeforeDue === undefined) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["config", "daysBeforeDue"],
+      message: "Choose how many days before the due date to remind you.",
+    });
+  }
+  if (rule.trigger === "CARD_MOVED" && rule.config.action === "SET_PRIORITY" && rule.config.targetPriority === undefined) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["config", "targetPriority"],
+      message: "Choose the priority to set when the card enters the destination list.",
+    });
+  }
+  if (rule.trigger !== "CARD_MOVED" && rule.config.action === "SET_PRIORITY") {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["config", "action"],
+      message: "Changing card priority is only available when a card moves to a list.",
+    });
+  }
+}
+
+export const taskyAutomationRuleCreateSchema = z.object(taskyAutomationRuleFields)
+  .superRefine(validateTaskyAutomationRule);
+export type TaskyAutomationRuleCreateInput = z.infer<typeof taskyAutomationRuleCreateSchema>;
+
+export const taskyAutomationRuleUpdateSchema = z.object({
+  name: taskyAutomationRuleFields.name.optional(),
+  trigger: taskyAutomationTriggerSchema.optional(),
+  enabled: z.boolean().optional(),
+  config: taskyAutomationConfigSchema.optional(),
+});
+export type TaskyAutomationRuleUpdateInput = z.infer<typeof taskyAutomationRuleUpdateSchema>;
+
+export const taskyAutomationRuleSchema = z.object({
+  id: z.string().uuid(),
+  name: taskyAutomationRuleFields.name,
+  trigger: taskyAutomationTriggerSchema,
+  enabled: z.boolean(),
+  config: taskyAutomationConfigSchema,
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
+});
+export type TaskyAutomationRule = z.infer<typeof taskyAutomationRuleSchema>;
+
+export const taskyAutomationRunStatusSchema = z.enum(["RUNNING", "SUCCEEDED", "FAILED"]);
+export type TaskyAutomationRunStatus = z.infer<typeof taskyAutomationRunStatusSchema>;
+
+export const taskyAutomationRunSchema = z.object({
+  id: z.string().uuid(),
+  automationId: z.string().uuid().nullable(),
+  automationName: z.string().min(1).max(80),
+  trigger: z.string().min(1).max(40),
+  cardId: z.string().max(100).nullable(),
+  cardTitle: z.string().max(140).nullable(),
+  status: taskyAutomationRunStatusSchema,
+  message: z.string().min(1).max(240),
+  error: z.string().max(500).nullable(),
+  createdAt: z.string().datetime(),
+});
+export type TaskyAutomationRun = z.infer<typeof taskyAutomationRunSchema>;
+
+export const taskyAutomationRulesEnvelopeSchema = z.object({
+  rules: z.array(taskyAutomationRuleSchema),
+});
+export type TaskyAutomationRulesEnvelope = z.infer<typeof taskyAutomationRulesEnvelopeSchema>;
+
+export const taskyAutomationRunsEnvelopeSchema = z.object({
+  runs: z.array(taskyAutomationRunSchema),
+});
+export type TaskyAutomationRunsEnvelope = z.infer<typeof taskyAutomationRunsEnvelopeSchema>;

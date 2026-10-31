@@ -3,16 +3,16 @@ import { alertSchema } from "./alert";
 import { dateKeySchema, isoDateTimeSchema, uuidSchema } from "./primitives";
 
 /**
- * Metric alert rules (Dashboard Customization Phase 07) — user-defined
+ * Metric alert rules (Dashboard Customization Phase 07) - user-defined
  * threshold monitoring over metrics Euforia can calculate RELIABLY.
  *
- * Domain separation (spec §3 — never merged into one fuzzy object):
- *   A. Alert Rule      — this contract; a persisted user-defined condition.
- *   B. Alert Event     — a recorded trigger, stored as a shared `alert`
- *                        (type METRIC_THRESHOLD) in the EXISTING inbox —
+ * Domain separation (spec §3 - never merged into one fuzzy object):
+ *   A. Alert Rule      - this contract; a persisted user-defined condition.
+ *   B. Alert Event     - a recorded trigger, stored as a shared `alert`
+ *                        (type METRIC_THRESHOLD) in the EXISTING inbox -
  *                        no second notification system (spec §2).
- *   C. Delivery state  — the alert's `readAt` / `dismissedAt` fields.
- *   D. Observation     — the trusted metric value + evaluation context,
+ *   C. Delivery state  - the alert's `readAt` / `dismissedAt` fields.
+ *   D. Observation     - the trusted metric value + evaluation context,
  *                        computed by the API from the authoritative
  *                        analytics-suite engine / goal service. Never sent
  *                        by the client.
@@ -24,20 +24,20 @@ import { dateKeySchema, isoDateTimeSchema, uuidSchema } from "./primitives";
  *     true).
  *   - Optional cooldownMinutes suppresses retrigger EVENTS within the
  *     window (flapping control). After the cooldown a still-true condition
- *     does NOT re-fire — a new false→true transition is required.
+ *     does NOT re-fire - a new false→true transition is required.
  *   - Missing data (empty sample, multi-currency money figures) and failed
  *     calculations NEVER trigger and never flip the stored transition
  *     state.
  *
  * Supported metrics are ONLY fields of the analytics-suite summary (the
  * same numbers the Analytics page renders) plus the goal service's
- * progress rows — the alert engine computes nothing financial itself.
+ * progress rows - the alert engine computes nothing financial itself.
  */
 
 // ── Periods ──────────────────────────────────────────────────────────────────
 // Server-resolved presets only (resolvePeriodRange in the analytics engine).
 // CUSTOM is deliberately absent: a standing rule with fixed calendar dates
-// silently expires — rolling windows are the honest product here.
+// silently expires - rolling windows are the honest product here.
 
 export const metricAlertPeriodSchema = z.enum([
   "TODAY",
@@ -73,7 +73,7 @@ export const METRIC_ALERT_CONDITION_LABELS: Record<MetricAlertCondition, string>
 
 // ── Metric registry (the supported-metric whitelist) ────────────────────────
 // Units make cross-metric comparisons safe at the type level (spec §4: a
-// percentage must never be compared to a currency amount — thresholds are
+// percentage must never be compared to a currency amount - thresholds are
 // validated against the metric's unit semantics below).
 
 export const metricAlertUnitSchema = z.enum(["MONEY", "PERCENT", "RATIO", "COUNT", "R"]);
@@ -111,7 +111,7 @@ export const METRIC_ALERT_REGISTRY: Record<MetricAlertMetric, MetricAlertMetricM
     label: "Net realized P&L",
     unit: "MONEY",
     higherIsBetter: true,
-    source: "summary.netPnl — null (no trigger) on multi-currency scopes or empty samples",
+    source: "summary.netPnl - null (no trigger) on multi-currency scopes or empty samples",
     conditions: ["GREATER_THAN", "GREATER_THAN_OR_EQUAL", "LESS_THAN", "LESS_THAN_OR_EQUAL"],
     thresholdMin: null,
     thresholdMax: null,
@@ -121,7 +121,7 @@ export const METRIC_ALERT_REGISTRY: Record<MetricAlertMetric, MetricAlertMetricM
     label: "Win rate",
     unit: "PERCENT",
     higherIsBetter: true,
-    source: "summary.winRate (0..1 ratio) × 100 — null on empty samples",
+    source: "summary.winRate (0..1 ratio) × 100 - null on empty samples",
     conditions: ["GREATER_THAN", "GREATER_THAN_OR_EQUAL", "LESS_THAN", "LESS_THAN_OR_EQUAL"],
     thresholdMin: 0,
     thresholdMax: 100,
@@ -131,7 +131,7 @@ export const METRIC_ALERT_REGISTRY: Record<MetricAlertMetric, MetricAlertMetricM
     label: "Profit factor",
     unit: "RATIO",
     higherIsBetter: true,
-    source: "summary.profitFactor — null (no trigger) while the sample has zero losses",
+    source: "summary.profitFactor - null (no trigger) while the sample has zero losses",
     conditions: ["GREATER_THAN", "GREATER_THAN_OR_EQUAL", "LESS_THAN", "LESS_THAN_OR_EQUAL"],
     thresholdMin: 0,
     thresholdMax: null,
@@ -141,7 +141,7 @@ export const METRIC_ALERT_REGISTRY: Record<MetricAlertMetric, MetricAlertMetricM
     label: "Completed trades",
     unit: "COUNT",
     higherIsBetter: null,
-    source: "summary.trades — 0 is a valid observation (quiet-period monitoring)",
+    source: "summary.trades - 0 is a valid observation (quiet-period monitoring)",
     conditions: [
       "GREATER_THAN",
       "GREATER_THAN_OR_EQUAL",
@@ -157,7 +157,7 @@ export const METRIC_ALERT_REGISTRY: Record<MetricAlertMetric, MetricAlertMetricM
     label: "Equity drawdown",
     unit: "PERCENT",
     higherIsBetter: false,
-    source: "−summary.maxDrawdownPct as a ≥0 magnitude — null on multi-currency scopes or empty samples",
+    source: "−summary.maxDrawdownPct as a ≥0 magnitude - null on multi-currency scopes or empty samples",
     conditions: ["GREATER_THAN", "GREATER_THAN_OR_EQUAL", "LESS_THAN", "LESS_THAN_OR_EQUAL"],
     thresholdMin: 0,
     thresholdMax: 100,
@@ -167,7 +167,7 @@ export const METRIC_ALERT_REGISTRY: Record<MetricAlertMetric, MetricAlertMetricM
     label: "Average R per trade",
     unit: "R",
     higherIsBetter: true,
-    source: "summary.avgR — null on empty samples",
+    source: "summary.avgR - null on empty samples",
     conditions: ["GREATER_THAN", "GREATER_THAN_OR_EQUAL", "LESS_THAN", "LESS_THAN_OR_EQUAL"],
     thresholdMin: null,
     thresholdMax: null,
@@ -175,7 +175,7 @@ export const METRIC_ALERT_REGISTRY: Record<MetricAlertMetric, MetricAlertMetricM
   },
 };
 
-// ── Goal rules (spec §10 — reuse the Phase 04 goal engine, never a second) ──
+// ── Goal rules (spec §10 - reuse the Phase 04 goal engine, never a second) ──
 
 export const metricAlertGoalConditionSchema = z.enum(["ACHIEVED", "PROGRESS_BELOW"]);
 export type MetricAlertGoalCondition = z.infer<typeof metricAlertGoalConditionSchema>;
@@ -185,7 +185,7 @@ export type MetricAlertGoalCondition = z.infer<typeof metricAlertGoalConditionSc
 export const metricAlertKindSchema = z.enum(["THRESHOLD", "GOAL"]);
 export type MetricAlertKind = z.infer<typeof metricAlertKindSchema>;
 
-/** Server-managed evaluation state — never accepted from clients. */
+/** Server-managed evaluation state - never accepted from clients. */
 export const metricAlertRuleStateSchema = z.object({
   /** null = never observed. Drives the false→true transition. */
   lastConditionMet: z.boolean().nullable(),
@@ -199,10 +199,10 @@ export const metricAlertRuleStateSchema = z.object({
 export type MetricAlertRuleState = z.infer<typeof metricAlertRuleStateSchema>;
 
 const scopeFields = {
-  /** Optional account scope — must reference the owner's account. */
+  /** Optional account scope - must reference the owner's account. */
   accountId: uuidSchema.nullable().optional(),
   /**
-   * Optional strategy scope — a strategy UUID of the owner, or "none" for
+   * Optional strategy scope - a strategy UUID of the owner, or "none" for
    * out-of-playbook trades, or null/absent for any strategy.
    */
   strategyId: z.union([uuidSchema, z.literal("none")]).nullable().optional(),
@@ -309,7 +309,7 @@ export const updateMetricAlertRuleInputSchema = z.object({
   name: z.string().min(1).max(80).optional(),
   enabled: z.boolean().optional(),
   cooldownMinutes: z.number().int().min(0).max(10_080).optional(),
-  // THRESHOLD-only fields (ignored for GOAL rules — server enforces kind).
+  // THRESHOLD-only fields (ignored for GOAL rules - server enforces kind).
   metric: metricAlertMetricSchema.optional(),
   condition: metricAlertConditionSchema.optional(),
   threshold: z
@@ -354,7 +354,7 @@ export type MetricAlertRuleEventsResponse = z.infer<typeof metricAlertRuleEvents
 
 /**
  * The METRIC_THRESHOLD alert payload (API-owned, documented shape). Frozen
- * trigger context — survives rule deletion (violation-style freeze, §57).
+ * trigger context - survives rule deletion (violation-style freeze, §57).
  */
 export const metricAlertEventPayloadSchema = z.object({
   ruleId: uuidSchema,
@@ -381,7 +381,7 @@ export const metricAlertEventPayloadSchema = z.object({
 });
 export type MetricAlertEventPayload = z.infer<typeof metricAlertEventPayloadSchema>;
 
-// ── Presentation helpers (shared by API copy + web UI — one formatter) ──────
+// ── Presentation helpers (shared by API copy + web UI - one formatter) ──────
 
 export const METRIC_ALERT_PERIOD_LABELS: Record<MetricAlertPeriod, string> = {
   TODAY: "today",

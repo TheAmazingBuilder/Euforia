@@ -1,10 +1,10 @@
 /**
- * Canonical API endpoint paths — imported by the hooks AND the MSW handlers,
+ * Canonical API endpoint paths - imported by the hooks AND the MSW handlers,
  * so the mocked backend can never drift from the client's URL building.
  * Paths are relative to the API base (lib/api/urls.ts).
  */
 export const apiPaths = {
-  // Application authentication (spec §79 — consumed by AuthProvider; the
+  // Application authentication (spec §79 - consumed by AuthProvider; the
   // mock engine implements the future NestJS contract exactly)
   authRegister: "/auth/register",
   authLogin: "/auth/login",
@@ -49,7 +49,7 @@ export const apiPaths = {
   tradesBulk: "/trades/bulk",
   tradesImport: "/trades/import",
   tradeSessionSeries: (tradeId: string) => `/trades/${tradeId}/session-series`,
-  // Trade Plans (Phase 11 — documented reasoning, never execution). The plan
+  // Trade Plans (Phase 11 - documented reasoning, never execution). The plan
   // lifecycle actions mirror the Nest contract exactly: state-machine
   // transitions live server-side, the client only requests them.
   plans: "/plans",
@@ -62,7 +62,7 @@ export const apiPaths = {
   sessionTimeline: "/session/timeline",
   sessionNotes: "/session/notes",
   sessionNote: (noteId: string) => `/session/notes/${noteId}`,
-  // OCR & screenshot recognition (review UI at /recognition — mirrors the
+  // OCR & screenshot recognition (review UI at /recognition - mirrors the
   // NestJS Phase 19 contract exactly: upload, list, review, confirm, delete)
   ocrRecognitions: "/ocr/recognitions",
   ocrRecognition: (recognitionId: string) => `/ocr/recognitions/${recognitionId}`,
@@ -95,6 +95,7 @@ export const apiPaths = {
   snapshots: "/snapshots",
   snapshot: (snapshotId: string) => `/snapshots/${snapshotId}`,
   ecoEvents: "/eco-events",
+  personalEventsBoard: "/events",
   calendarView: "/calendar-view",
   calendarBlocks: "/calendar-blocks",
   calendarBlock: (date: string) => `/calendar-blocks/${date}`,
@@ -112,14 +113,14 @@ export const apiPaths = {
   disciplineEmotionMatrix: "/discipline/emotion-matrix",
   mistakesLedger: "/mistakes/ledger",
   brokerSession: "/broker/session",
-  // Accounts & Trading Connectivity (Phase 02) — the rich /trading-accounts
+  // Accounts & Trading Connectivity (Phase 02) - the rich /trading-accounts
   // surface (list-with-details + PATCH rename) the Accounts UI consumes.
   // GET /accounts above stays the journal identity list (AccountSwitcher).
   // Mirrors apps/api trading-accounts.controller.ts route-for-route; the
   // contracts are @cosmoz/shared trading-account.ts, verbatim.
   tradingAccounts: "/trading-accounts",
   tradingAccountProviders: "/trading-accounts/providers",
-  // Phase 07 — the universal broker catalog + identification probe.
+  // Phase 07 - the universal broker catalog + identification probe.
   tradingAccountBrokers: "/trading-accounts/brokers",
   tradingAccountBrokerIdentify: "/trading-accounts/brokers/identify",
   tradingAccountConnect: "/trading-accounts/connect",
@@ -131,7 +132,7 @@ export const apiPaths = {
   tradingAccountSync: (accountId: string) => `/trading-accounts/${accountId}/sync`,
   tradingAccountSyncRuns: (accountId: string) => `/trading-accounts/${accountId}/sync-runs`,
   tradingAccountReconnect: (accountId: string) => `/trading-accounts/${accountId}/reconnect`,
-  // Phase 08 — MT5 terminal bridge: the pairing sheet is owner-only (422 for
+  // Phase 08 - MT5 terminal bridge: the pairing sheet is owner-only (422 for
   // non-bridge accounts); rotate mints a fresh secret and invalidates the
   // previous terminal configuration.
   tradingAccountBridgePairing: (accountId: string) =>
@@ -146,9 +147,13 @@ export const apiPaths = {
   integrationWebhookSimulate: (endpointId: string) =>
     `/integrations/webhooks/${endpointId}/simulate`,
   securityOverview: "/security/overview",
+  securityEvents: "/security/events",
+  securityLogins: "/security/logins",
   securityReauth: "/security/reauth",
   securityPassword: "/security/password",
   securityTwoFactorEnable: "/security/2fa/enable",
+  securityTwoFactorEmailEnable: "/security/2fa/email/enable",
+  securityTwoFactorEmailConfirm: "/security/2fa/email/confirm",
   securityTwoFactorConfirm: "/security/2fa/confirm",
   securityTwoFactorDisable: "/security/2fa/disable",
   securityTwoFactorRecovery: "/security/2fa/recovery/regenerate",
@@ -208,6 +213,20 @@ export const apiPaths = {
   academySuggestions: "/academy/suggestions",
   academyEvents: "/academy/events",
   academyEventRegister: "/academy/events/register",
+  // Tasky Kanban board — distinct from Academy study tasks.
+  taskyBoard: "/tasky/board",
+  taskyAutomations: "/tasky/automations",
+  taskyAutomation: (ruleId: string) => `/tasky/automations/${encodeURIComponent(ruleId)}`,
+  taskyAutomationRuns: "/tasky/automation-runs",
+  taskyDueDateCheck: "/tasky/automation-runs/check-due",
+  taskyCardRemind: (cardId: string) => `/tasky/cards/${encodeURIComponent(cardId)}/remind`,
+  taskySavedViews: "/tasky/views",
+  taskySavedView: (viewId: string) => `/tasky/views/${encodeURIComponent(viewId)}`,
+  taskyCardAttachments: (cardId: string) => `/tasky/cards/${encodeURIComponent(cardId)}/attachments`,
+  taskyCardAttachmentDownload: (cardId: string, attachmentId: string) =>
+    `/tasky/cards/${encodeURIComponent(cardId)}/attachments/${encodeURIComponent(attachmentId)}/download`,
+  taskyCardAttachment: (cardId: string, attachmentId: string) =>
+    `/tasky/cards/${encodeURIComponent(cardId)}/attachments/${encodeURIComponent(attachmentId)}`,
   academyTasks: "/academy/tasks",
   academyTaskToggle: "/academy/tasks/toggle",
   academyTaskDelete: "/academy/tasks/delete",

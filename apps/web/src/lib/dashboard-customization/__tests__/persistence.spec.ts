@@ -56,7 +56,7 @@ describe("persistence adapter", () => {
     });
     const payload = preferencesFromSnapshot(snapshot);
     // widgetOrder is derived from the ACTIVE layout's VISIBLE types in
-    // order — exactly what the user sees, nothing invented (Phase 02:
+    // order - exactly what the user sees, nothing invented (Phase 02:
     // opt-in widgets never leak into the stored order).
     expect(payload.widgetOrder).toEqual(["PNL_BAND"]);
     expect(payload.activeLayoutId).toBe("a");
@@ -68,7 +68,7 @@ describe("persistence adapter", () => {
   });
 });
 
-describe("persistence adapter — Phase 03 filter domain", () => {
+describe("persistence adapter - Phase 03 filter domain", () => {
   const ACCOUNT = "0b8f6e1e-7d2a-4c1b-9a2a-00000000000c";
 
   it("reads saved views with per-item salvage (one bad view never wins)", () => {
@@ -105,7 +105,7 @@ describe("persistence adapter — Phase 03 filter domain", () => {
     const merged = dashboardDomainWithFilters(base, { period: "THIS_MONTH" }, [
       { id: "v1", name: "V", schemaVersion: 1, filters: { period: "THIS_MONTH" } },
     ]);
-    // The layout payload survives the merge — a filter-only save must never
+    // The layout payload survives the merge - a filter-only save must never
     // wipe the layout collection (the domain PATCH replaces everything).
     expect(merged.layouts).toHaveLength(1);
     expect(merged.widgetOrder).toEqual(["PNL_BAND"]);

@@ -20,7 +20,7 @@ import { cn } from "@/lib/utils";
 
 /**
  * Playbook Overview (§5): counts, recency, performance + adherence summary
- * and the quick actions. Everything comes from GET /playbook/overview — the
+ * and the quick actions. Everything comes from GET /playbook/overview - the
  * client renders, never recomputes.
  */
 
@@ -57,7 +57,7 @@ export function OverviewPanel({
   const { counts, compliance, performanceSummary, recentlyUpdated, recentlyUsed, health } = overview;
   const strategiesWithFlags = health.filter((entry) => entry.flags.length > 0);
   // Flags that describe completeness debt (draft/archived status is a choice,
-  // not debt — surface it separately and quieter).
+  // not debt - surface it separately and quieter).
   const attention = strategiesWithFlags.filter((entry) =>
     entry.flags.some((flag) => flag !== "DRAFT" && flag !== "ARCHIVED"),
   );
@@ -100,7 +100,7 @@ export function OverviewPanel({
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        {/* ── Live compliance — % of recent trades matched to the playbook ──── */}
+        {/* ── Live compliance - % of recent trades matched to the playbook ──── */}
         <Card className="bg-surface" data-testid="compliance-card">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center justify-between font-heading text-base font-semibold">
@@ -127,7 +127,7 @@ export function OverviewPanel({
                     )}
                     data-testid="compliance-score"
                   >
-                    {compliance.scorePct === null ? "—" : `${compliance.scorePct.toFixed(0)}%`}
+                    {compliance.scorePct === null ? "-" : `${compliance.scorePct.toFixed(0)}%`}
                   </span>
                   <span className="pb-1 text-xs text-muted-foreground">
                     {compliance.matched} {V.matchedOf} {compliance.reviewed} {V.reviewedTail}
@@ -195,15 +195,15 @@ export function OverviewPanel({
                   <SummaryLine label={V.statClosedTrades} value={String(performanceSummary.trades)} />
                   <SummaryLine
                     label={V.statWinRate}
-                    value={performanceSummary.winRate === null ? "—" : `${performanceSummary.winRate.toFixed(1)}%`}
+                    value={performanceSummary.winRate === null ? "-" : `${performanceSummary.winRate.toFixed(1)}%`}
                   />
                   <SummaryLine
                     label={V.statExpectancy}
-                    value={performanceSummary.expectancyR === null ? "—" : Number(performanceSummary.expectancyR).toFixed(2)}
+                    value={performanceSummary.expectancyR === null ? "-" : Number(performanceSummary.expectancyR).toFixed(2)}
                   />
                   <SummaryLine
                     label={V.statPlanFollowed}
-                    value={performanceSummary.followedPlanPct === null ? "—" : `${performanceSummary.followedPlanPct.toFixed(0)}%`}
+                    value={performanceSummary.followedPlanPct === null ? "-" : `${performanceSummary.followedPlanPct.toFixed(0)}%`}
                   />
                 </dl>
               </>
@@ -336,7 +336,7 @@ function SummaryLine({ label, value }: { label: string; value: string }) {
 }
 
 function shortDate(iso: string | null): string {
-  if (iso === null) return "—";
+  if (iso === null) return "-";
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return iso;
   return new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" }).format(date);

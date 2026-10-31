@@ -1,10 +1,10 @@
 /**
- * Unit — OandaRestProviderAdapter (Phase 03).
+ * Unit - OandaRestProviderAdapter (Phase 03).
  *
  * The adapter's HTTP transport is stubbed at the global-fetch boundary: every
  * fixture below uses REALISTIC OANDA v20 payload shapes (decimal STRINGS,
  * nanosecond RFC3339 timestamps, signed units) as documented at
- * developer.oanda.com/rest-live-v20. Fixture evidence is labeled as such —
+ * developer.oanda.com/rest-live-v20. Fixture evidence is labeled as such -
  * it proves the ADAPTER logic, never real connectivity (doc E §1: mock/
  * fixture evidence is never presented as provider verification).
  */
@@ -64,7 +64,7 @@ afterEach(() => {
 
 // ── Descriptor honesty ───────────────────────────────────────────────────────
 
-describe("OandaRestProviderAdapter — descriptor", () => {
+describe("OandaRestProviderAdapter - descriptor", () => {
   it("declares a V2 capability set that parses against the shared descriptor schema", () => {
     const adapter = new OandaRestProviderAdapter();
     const parsed = tradingProviderDescriptorSchema.safeParse(adapter.descriptor);
@@ -75,7 +75,7 @@ describe("OandaRestProviderAdapter — descriptor", () => {
     expect(adapter.descriptor.supportedPermissions.every((p) => p.startsWith("READ_"))).toBe(true);
   });
 
-  it("declares UNKNOWN where evidence is missing and UNSUPPORTED streaming — never silent booleans", () => {
+  it("declares UNKNOWN where evidence is missing and UNSUPPORTED streaming - never silent booleans", () => {
     const adapter = new OandaRestProviderAdapter();
     expect(capabilitySupportLevel(adapter.descriptor.capabilities, "accountDiscovery")).toBe("UNKNOWN");
     expect(capabilitySupportLevel(adapter.descriptor.capabilities, "historyDepth")).toBe("UNKNOWN");
@@ -111,7 +111,7 @@ describe("OandaRestProviderAdapter — descriptor", () => {
 
 // ── Environment routing + auth header ────────────────────────────────────────
 
-describe("OandaRestProviderAdapter — environment routing", () => {
+describe("OandaRestProviderAdapter - environment routing", () => {
   it("DEMO routes to the practice host, LIVE to the trade host", async () => {
     const fetchMock = stubFetch(() => ({
       body: { account: summaryAccount() },
@@ -177,7 +177,7 @@ function summaryAccount(overrides: Record<string, string> = {}) {
   };
 }
 
-describe("OandaRestProviderAdapter — fetchAccountInfo / fetchSnapshot", () => {
+describe("OandaRestProviderAdapter - fetchAccountInfo / fetchSnapshot", () => {
   it("maps summary decimal strings verbatim; marginLevel stays null (not reported)", async () => {
     stubFetch(() => ({ body: { account: summaryAccount() } }));
     const adapter = new OandaRestProviderAdapter();
@@ -220,7 +220,7 @@ describe("OandaRestProviderAdapter — fetchAccountInfo / fetchSnapshot", () => 
 
 // ── Positions (open trades) ──────────────────────────────────────────────────
 
-describe("OandaRestProviderAdapter — fetchPositions (open trades)", () => {
+describe("OandaRestProviderAdapter - fetchPositions (open trades)", () => {
   it("maps open trades with stable tradeID, side from signed units, nanosecond time truncated to ms", async () => {
     stubFetch(() => ({
       body: {
@@ -286,7 +286,7 @@ describe("OandaRestProviderAdapter — fetchPositions (open trades)", () => {
 
 // ── Orders (pending) ─────────────────────────────────────────────────────────
 
-describe("OandaRestProviderAdapter — fetchOrders (pending)", () => {
+describe("OandaRestProviderAdapter - fetchOrders (pending)", () => {
   it("composes the broker verb from direction+type (never collapsed) and carries on-fill SL/TP", async () => {
     stubFetch(() => ({
       body: {
@@ -365,10 +365,10 @@ describe("OandaRestProviderAdapter — fetchOrders (pending)", () => {
 
 // ── Deals (transactions) ─────────────────────────────────────────────────────
 
-describe("OandaRestProviderAdapter — fetchDeals (transactions)", () => {
+describe("OandaRestProviderAdapter - fetchDeals (transactions)", () => {
   it("maps ORDER_FILL with the provider-side trade link and TRANSFER_FUNDS as balance op; excludes bookkeeping (documented pages → idrange flow)", async () => {
     // Phase 05: the time-based ListTransactions returns PAGE URLS (never
-    // rows — verified developer.oanda.com 2026-10-13); the adapter follows
+    // rows - verified developer.oanda.com 2026-10-13); the adapter follows
     // the idrange pages, which carry the transactions inline.
     stubFetch((url) => {
       if (url.includes("/transactions?pageSize=")) {
@@ -446,7 +446,7 @@ describe("OandaRestProviderAdapter — fetchDeals (transactions)", () => {
     const result = await adapter.fetchDeals(ctx());
     expect(result.complete).toBe(true);
     // The bookkeeping row (2360) counts for the checkpoint even though it is
-    // filtered from the deals — observedThrough = max OBSERVED transaction id.
+    // filtered from the deals - observedThrough = max OBSERVED transaction id.
     expect(result.observedThrough).toBe("2360");
     const deals = result.deals;
     expect(deals).toHaveLength(3); // margin-call bookkeeping excluded
@@ -504,7 +504,7 @@ describe("OandaRestProviderAdapter — fetchDeals (transactions)", () => {
 
 // ── Error translation (doc B §4.3 normative table) ───────────────────────────
 
-describe("OandaRestProviderAdapter — error translation", () => {
+describe("OandaRestProviderAdapter - error translation", () => {
   const cases: Array<{
     name: string;
     status: number;
@@ -574,13 +574,13 @@ describe("OandaRestProviderAdapter — error translation", () => {
     expect(String(fetchMock.mock.calls[0]?.[0])).toContain("/v3/accounts");
     await expect(
       adapter.testConnection({ method: "API_KEY", secret: "bad" }),
-    ).resolves.toBeUndefined(); // stub returns 200 regardless — 401 mapping covered above
+    ).resolves.toBeUndefined(); // stub returns 200 regardless - 401 mapping covered above
   });
 });
 
 // ── Adapter-level capability enforcement ─────────────────────────────────────
 
-describe("OandaRestProviderAdapter — capability enforcement", () => {
+describe("OandaRestProviderAdapter - capability enforcement", () => {
   it("every port method is gated by its declared capability (SUPPORTED required)", async () => {
     // Swap the descriptor to a capability-poor declaration and ensure the
     // adapter refuses to run the operation instead of silently returning [].
@@ -602,13 +602,13 @@ describe("OandaRestProviderAdapter — capability enforcement", () => {
 
 // ── Pure mapping helpers ─────────────────────────────────────────────────────
 
-describe("oanda-mapping — pure helpers", () => {
+describe("oanda-mapping - pure helpers", () => {
   it("maps only IDENTICAL instruments; everything else passes through verbatim", () => {
     expect(mapOandaSymbol("EUR_USD")).toBe("EURUSD");
     expect(mapOandaSymbol("GBP_USD")).toBe("GBPUSD");
     expect(mapOandaSymbol("USD_JPY")).toBe("USDJPY");
     expect(mapOandaSymbol("XAU_USD")).toBe("XAUUSD");
-    // BTC_USD ≠ BTCUSDT (different quote asset — a wrong-symbol join)
+    // BTC_USD ≠ BTCUSDT (different quote asset - a wrong-symbol join)
     expect(mapOandaSymbol("BTC_USD")).toBe("BTC_USD");
     expect(mapOandaSymbol("EUR_GBP")).toBe("EUR_GBP");
     expect(mapOandaSymbol("NAS_100")).toBe("NAS_100");
@@ -657,9 +657,9 @@ describe("oanda-mapping — pure helpers", () => {
   });
 });
 
-// ── Error mapping (normalizeProviderError — Phase 03 additions) ──────────────
+// ── Error mapping (normalizeProviderError - Phase 03 additions) ──────────────
 
-describe("normalizeProviderError — UNSUPPORTED_CAPABILITY + Retry-After", () => {
+describe("normalizeProviderError - UNSUPPORTED_CAPABILITY + Retry-After", () => {
   it("UNSUPPORTED_CAPABILITY maps to a 422-class BusinessRuleError with the stable code", () => {
     const appError = normalizeProviderError(
       new ProviderError("UNSUPPORTED_CAPABILITY", "This provider does not declare support for the requested operation."),
@@ -684,11 +684,11 @@ describe("normalizeProviderError — UNSUPPORTED_CAPABILITY + Retry-After", () =
   });
 });
 
-// ── Transport cancellation backstop (Phase 04 — spec §6.1) ───────────────────
+// ── Transport cancellation backstop (Phase 04 - spec §6.1) ───────────────────
 
-describe("OandaRestProviderAdapter — transport cancellation backstop", () => {
+describe("OandaRestProviderAdapter - transport cancellation backstop", () => {
   /**
-   * A fetch that NEVER settles on its own but honors the abort signal —
+   * A fetch that NEVER settles on its own but honors the abort signal -
    * the shape of a hung socket. The adapter must pass an abort signal when
    * constructed with requestTimeoutMs, the abort must actually fire, and the
    * surfaced error must be the honest CONNECTION_TIMEOUT class.
@@ -701,7 +701,7 @@ describe("OandaRestProviderAdapter — transport cancellation backstop", () => {
           const signal = init.signal as AbortSignal | undefined;
           observed.push({ aborted: () => signal?.aborted ?? false });
           if (!signal) {
-            return; // never settles — the pre-Phase-04 leak shape
+            return; // never settles - the pre-Phase-04 leak shape
           }
           signal.addEventListener("abort", () => {
             // AbortSignal.timeout aborts with a TimeoutError DOMException.
@@ -733,7 +733,7 @@ describe("OandaRestProviderAdapter — transport cancellation backstop", () => {
     const adapter = new OandaRestProviderAdapter();
     const pending = adapter.fetchSnapshot(ctx());
     pending.catch(() => undefined); // a hung transport must never become an unhandled rejection
-    // No signal reaches the transport — the adapter does not time it itself.
+    // No signal reaches the transport - the adapter does not time it itself.
     expect(fetchMock.mock.calls[0]?.[1]?.signal).toBeUndefined();
     // The orchestrator watchdog remains the bounding mechanism (§16):
     await expect(withProviderTimeout(pending, 20)).rejects.toMatchObject({
@@ -742,9 +742,9 @@ describe("OandaRestProviderAdapter — transport cancellation backstop", () => {
   });
 });
 
-// ── Phase 05 — pagination, completeness, and the documented checkpoint ──────
+// ── Phase 05 - pagination, completeness, and the documented checkpoint ──────
 
-describe("OandaRestProviderAdapter — pagination (Phase 05)", () => {
+describe("OandaRestProviderAdapter - pagination (Phase 05)", () => {
   const HOST = "https://api-fxpractice.oanda.com";
   const trade = (id: string) => ({
     id,
@@ -774,7 +774,7 @@ describe("OandaRestProviderAdapter — pagination (Phase 05)", () => {
   });
 
   it("a page budget boundary is an honest complete=false (never a silent truncation)", async () => {
-    // Every page advertises a next link — the adapter stops at its cap and
+    // Every page advertises a next link - the adapter stops at its cap and
     // reports incomplete; the orchestrator then SKIPS closure (§13.2).
     stubFetch(() => ({
       headers: { link: `<${HOST}/v3/accounts/${ACCOUNT_ID}/trades?state=OPEN&count=500&next=1>; rel="next"` },
@@ -806,7 +806,7 @@ describe("OandaRestProviderAdapter — pagination (Phase 05)", () => {
   });
 });
 
-describe("OandaRestProviderAdapter — incremental deals checkpoint (Phase 05)", () => {
+describe("OandaRestProviderAdapter - incremental deals checkpoint (Phase 05)", () => {
   const fill = (id: string) => ({
     type: "ORDER_FILL",
     id,
@@ -832,8 +832,8 @@ describe("OandaRestProviderAdapter — incremental deals checkpoint (Phase 05)",
     const result = await adapter.fetchDeals(ctx({ dealsCursor: "2340" }));
     expect(String(fetchMock.mock.calls[0]?.[0])).toContain("/transactions/sinceid?id=2340");
     expect(result.complete).toBe(true);
-    // observedThrough counts ALL observed rows — including the excluded
-    // bookkeeping class — so an all-bookkeeping page can never stall the cursor.
+    // observedThrough counts ALL observed rows - including the excluded
+    // bookkeeping class - so an all-bookkeeping page can never stall the cursor.
     expect(result.observedThrough).toBe("2401");
     expect(result.deals).toHaveLength(1);
   });
@@ -845,7 +845,7 @@ describe("OandaRestProviderAdapter — incremental deals checkpoint (Phase 05)",
     expect(result).toEqual({ deals: [], observedThrough: null, complete: true });
   });
 
-  it("a corrupted checkpoint is an honest INVALID_PROVIDER_RESPONSE — no fetch, no guess", async () => {
+  it("a corrupted checkpoint is an honest INVALID_PROVIDER_RESPONSE - no fetch, no guess", async () => {
     const fetchMock = stubFetch(() => ({ body: { transactions: [], lastTransactionID: "1" } }));
     const adapter = new OandaRestProviderAdapter();
     await expect(adapter.fetchDeals(ctx({ dealsCursor: "12; DROP TABLE" }))).rejects.toMatchObject({

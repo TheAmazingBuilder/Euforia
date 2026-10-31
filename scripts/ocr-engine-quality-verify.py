@@ -1,4 +1,4 @@
-"""Runtime verification — engine-quality phase on the REAL Tesseract stack.
+"""Runtime verification - engine-quality phase on the REAL Tesseract stack.
 
 Renders two MT5 panels (mono summary + multi-trade history), drives the
 sidecar's /v1/recognitions + /v1/recrops, and asserts the engine-quality
@@ -41,13 +41,13 @@ failed = 0
 def ok(label: str, extra: str = "") -> None:
     global passed
     passed += 1
-    print(f"  \u2713 {label}{' — ' + extra if extra else ''}")
+    print(f"  \u2713 {label}{' - ' + extra if extra else ''}")
 
 
 def bad(label: str, extra: str = "") -> None:
     global failed
     failed += 1
-    print(f"  \u2717 {label}{' — ' + extra if extra else ''}")
+    print(f"  \u2717 {label}{' - ' + extra if extra else ''}")
 
 
 def check(label: str, condition: bool, extra: str = "") -> None:
@@ -105,7 +105,7 @@ def payload(image: bytes, request_id: str, crop: dict | None = None) -> dict:
             "sizeBytes": len(image),
             "width": width,
             "height": height,
-            "checksumSha256": hashlib.sha256(image).hexdigest(),  # V2 §20 — verified
+            "checksumSha256": hashlib.sha256(image).hexdigest(),  # V2 §20 - verified
         },
         "extractionProfile": "TRADE_SUMMARY",
         "deadlineMs": 60_000,

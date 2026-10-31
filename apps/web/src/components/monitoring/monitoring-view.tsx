@@ -14,6 +14,7 @@ import type {
 import { COSMOZ_VERSION, classifyFreshness } from "@cosmoz/shared";
 
 import { cn } from "@/lib/utils";
+import { usePermissions } from "@/components/auth/auth-provider";
 import { ApiError, apiErrorMessage } from "@/lib/api/client";
 import { Button } from "@/components/ui/button";
 import {
@@ -43,16 +44,16 @@ import {
 import { NowClockContext, StatusBadge } from "./monitoring-primitives";
 
 /**
- * /monitoring — the professional observability center (MASTER PROMPT §3):
+ * /monitoring - the professional observability center (MASTER PROMPT §3):
  * Overview · System Health · Market Data · Broker Connections · WebSockets ·
  * API · Database · Queues & Jobs · Notifications · Integrations ·
  * Audit / System Events. The active tab persists in the URL (?tab=).
  *
  * Two telemetry planes merge here:
  * - the ENGINE plane (mocks): API traffic observed by the fetch wrapper,
- *   job ledger, alert store, Integration Hub state — one aggregate query;
+ *   job ledger, alert store, Integration Hub state - one aggregate query;
  * - the CLIENT plane (this browser): the live quote feed and its socket
- *   connection, which only the browser can observe — computed below from
+ *   connection, which only the browser can observe - computed below from
  *   lib/realtime/market.ts and merged into the Overview status board.
  * Nothing displays a status that no plane actually observed (§4, §21).
  */
@@ -81,7 +82,8 @@ function freshnessToStatus(freshness: ReturnType<typeof classifyFreshness>, phas
 }
 
 export function MonitoringView() {
-  const { data, isLoading, isError, error } = useMonitoringOverview();
+  const { hasRole } = usePermissions();
+  const { data, isLoading, isError, error } = useMonitoringOverview({ enabled: hasRole("ADMIN") });
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -157,7 +159,7 @@ export function MonitoringView() {
     if (marketFeed.symbols.length === 0) {
       return {
         status: marketFeed.phase === "offline" ? "DOWN" : "UNKNOWN",
-        evidence: `Feed phase "${marketFeed.phase}" via ${marketFeed.transport} — no tick observed yet in this session.`,
+        evidence: `Feed phase "${marketFeed.phase}" via ${marketFeed.transport} - no tick observed yet in this session.`,
       };
     }
     const status = freshnessToStatus(worstFreshness as never, marketFeed.phase);
@@ -167,7 +169,7 @@ export function MonitoringView() {
     }, {});
     return {
       status,
-      evidence: `${marketFeed.symbols.length} symbol(s) via ${marketFeed.transport} — ${Object.entries(counts)
+      evidence: `${marketFeed.symbols.length} symbol(s) via ${marketFeed.transport} - ${Object.entries(counts)
         .map(([key, count]) => `${count} ${key}`)
         .join(", ")}.`,
     };
@@ -177,15 +179,15 @@ export function MonitoringView() {
     if (wsStatus.connected === true) {
       return {
         status: "OPERATIONAL",
-        evidence: `Stream ${wsStatus.phase} over ${wsStatus.transport} — last message ${wsStatus.lastMessageAgeMs === null ? "—" : `${Math.round(wsStatus.lastMessageAgeMs / 1_000)} s ago`}, ${wsStatus.reconnectAttempts} reconnect attempt(s).`,
+        evidence: `Stream ${wsStatus.phase} over ${wsStatus.transport} - last message ${wsStatus.lastMessageAgeMs === null ? "-" : `${Math.round(wsStatus.lastMessageAgeMs / 1_000)} s ago`}, ${wsStatus.reconnectAttempts} reconnect attempt(s).`,
       };
     }
     if (wsStatus.droppedConnections > 0 || wsStatus.reconnectAttempts > 0) {
-      return { status: "DEGRADED", evidence: `Stream ${wsStatus.phase} — ${wsStatus.reconnectAttempts} reconnect attempt(s) after ${wsStatus.droppedConnections} drop(s), polling fallback active.` };
+      return { status: "DEGRADED", evidence: `Stream ${wsStatus.phase} - ${wsStatus.reconnectAttempts} reconnect attempt(s) after ${wsStatus.droppedConnections} drop(s), polling fallback active.` };
     }
     return {
       status: wsStatus.phase === "offline" ? "DOWN" : "UNKNOWN",
-      evidence: `Stream phase "${wsStatus.phase}" via ${wsStatus.transport} — no connection observed yet.`,
+      evidence: `Stream phase "${wsStatus.phase}" via ${wsStatus.transport} - no connection observed yet.`,
     };
   }, [wsStatus]);
 
@@ -200,18 +202,18 @@ export function MonitoringView() {
       { rules: [{ id: rule.id, enabled }] },
       {
         onSuccess: () =>
-          toast.success(`${rule.id} ${enabled ? "enabled" : "disabled"} — evaluated on every overview read`),
+          toast.success(`${rule.id} ${enabled ? "enabled" : "disabled"} - evaluated on every overview read`),
         onError: (mutationError) => toast.error(apiErrorMessage(mutationError, "Could not update the rule")),
       },
     );
   };
 
-  // Custom numeric knob (p95 ms, error-rate %, backlog…) — applied in one PATCH.
+  // Custom numeric knob (p95 ms, error-rate %, backlog…) - applied in one PATCH.
   const onThresholdChange = (rule: AlertRule, value: number) => {
     updateThresholds.mutate(
       { rules: [{ id: rule.id, thresholdValue: value }] },
       {
-        onSuccess: () => toast.success(`${rule.id} threshold set to ${value} — live from the next read`),
+        onSuccess: () => toast.success(`${rule.id} threshold set to ${value} - live from the next read`),
         onError: (mutationError) => toast.error(apiErrorMessage(mutationError, "Could not update the threshold")),
       },
     );
@@ -225,7 +227,7 @@ export function MonitoringView() {
         else toast.info(result.message);
       },
       onError: (mutationError) => {
-        // The real API answers 409 {accepted:false, message} on purpose —
+        // The real API answers 409 {accepted:false, message} on purpose -
         // manual runs are observational-only (Phase 17). A refusal is an
         // expected outcome, not an error: surface the server's message.
         if (mutationError instanceof ApiError && mutationError.status === 409) {
@@ -233,7 +235,7 @@ export function MonitoringView() {
           const message =
             body !== null && typeof body === "object" && typeof body.message === "string" && body.message !== ""
               ? body.message
-              : "This job cannot be run manually — it is evaluated automatically.";
+              : "This job cannot be run manually - it is evaluated automatically.";
           toast.info(message);
         } else {
           toast.error(apiErrorMessage(mutationError, "Could not run the job"));
@@ -255,6 +257,10 @@ export function MonitoringView() {
           }).format(nowMs),
     [nowMs],
   );
+
+  if (!hasRole("ADMIN")) {
+    return <div className="mx-auto w-full max-w-5xl rounded-xl border border-border bg-surface p-6"><h1 className="font-heading text-xl font-bold">Restricted area</h1><p className="mt-2 text-sm text-muted-foreground">This operational page is available to administrators only.</p></div>;
+  }
 
   if (isLoading || data === undefined) {
     if (isError) {
@@ -282,7 +288,7 @@ export function MonitoringView() {
           Monitoring
         </h1>
         <p className="max-w-2xl text-sm text-muted-foreground">
-          The observability center for the platform and its trading infrastructure —
+          The observability center for the platform and its trading infrastructure -
           statuses here are computed from observed telemetry, never declared.
         </p>
       </header>
@@ -374,4 +380,4 @@ export function MonitoringView() {
   );
 }
 
-/** Tiny local block — avoids importing Card for one error surface. */
+/** Tiny local block - avoids importing Card for one error surface. */

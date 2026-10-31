@@ -1,9 +1,9 @@
 /**
- * Trade Plan controller (Phase 11) — /plans.
+ * Trade Plan controller (Phase 11) - /plans.
  *
  * House conventions: global JwtAuthGuard, ZodValidationPipe on bodies/queries,
  * ownership from the authenticated principal only, thin adapter (no lifecycle
- * logic here — the service owns the transition table).
+ * logic here - the service owns the transition table).
  */
 import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, Query } from "@nestjs/common";
 import {

@@ -69,7 +69,7 @@ function transform(path) {
 
 for (const file of files) transform(file);
 
-// ── regret-registry.tsx — targeted block replacement ──────────────────────────
+// ── regret-registry.tsx - targeted block replacement ──────────────────────────
 let src = fs.readFileSync(REGRET, "utf8");
 src = src.replace(/import \{ useTheme \} from "next-themes";\n/, "");
 src = src.replace(
@@ -83,7 +83,7 @@ src = src.replace(
   "REPLACED_BLOCK_PLACEHOLDER",
 );
 // (comment lines already removed in the generic pass would break this exact
-// match — handle both orders)
+// match - handle both orders)
 if (src.includes("REPLACED_BLOCK_PLACEHOLDER")) {
   src = src.replace(
     "REPLACED_BLOCK_PLACEHOLDER",

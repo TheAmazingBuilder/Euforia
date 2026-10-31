@@ -2,7 +2,7 @@ import type { MarketInterval } from "@cosmoz/shared";
 import { marketIntervalSchema } from "@cosmoz/shared";
 
 /**
- * Oryon timeframe model — single source of truth is the SHARED contract
+ * Oryon timeframe model - single source of truth is the SHARED contract
  * (packages/shared marketIntervalSchema). Oryon never invents an interval:
  * the timeframe selector renders exactly the enum the market service
  * validates, so a selectable timeframe is always a servable timeframe.

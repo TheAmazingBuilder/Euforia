@@ -1,4 +1,4 @@
-/* Quick /journal smoke probe — DOM assertions + console health. */
+/* Quick /journal smoke probe - DOM assertions + console health. */
 const { chromium } = require("playwright");
 
 (async () => {
@@ -47,7 +47,7 @@ const { chromium } = require("playwright");
   await page.waitForTimeout(400);
   const lessonBox = page.locator("#journal-lessons");
   if (await lessonBox.count()) {
-    await lessonBox.fill("Probe lesson — phase 10 smoke test.");
+    await lessonBox.fill("Probe lesson - phase 10 smoke test.");
     await page.getByRole("button", { name: /save entry/i }).click();
     await page.waitForTimeout(1600);
     const toast = await page.evaluate(() => document.body.innerText);

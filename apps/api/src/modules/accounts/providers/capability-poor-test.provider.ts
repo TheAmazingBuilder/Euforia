@@ -1,11 +1,11 @@
 /**
- * CapabilityPoorTestProviderAdapter (Phase 03 — doc E Phase 03 scope).
+ * CapabilityPoorTestProviderAdapter (Phase 03 - doc E Phase 03 scope).
  *
  * A deliberately capability-POOR fixture adapter whose sole purpose is to
  * exercise the capability model WITHOUT a real provider:
  *
  *   - `orders` is declared UNSUPPORTED → fetchOrders() throws
- *     UNSUPPORTED_CAPABILITY (adapter-level enforcement — proven by unit
+ *     UNSUPPORTED_CAPABILITY (adapter-level enforcement - proven by unit
  *     tests + the wire mapping 422 proof).
  *   - `deals` is declared UNKNOWN → the sync orchestration must SKIP the
  *     deals segment as a capability FACT (doc B §8.2), never mark the run
@@ -14,7 +14,7 @@
  *   - remaining read segments are SUPPORTED with deterministic FNV-1a
  *     fixtures (same determinism discipline as the mock adapter).
  *
- * §57 policy: this is TEST infrastructure — it is NEVER registered by the
+ * §57 policy: this is TEST infrastructure - it is NEVER registered by the
  * production module factory; tests construct their own registry instances.
  * isMock: true everywhere it renders.
  */
@@ -55,15 +55,15 @@ export class CapabilityPoorTestProviderAdapter implements TradingProviderAdapter
       accountDiscovery: { support: "UNSUPPORTED" },
       accountMetadata: { support: "SUPPORTED", retrieval: "POLL" },
       balanceEquity: { support: "SUPPORTED", retrieval: "POLL" },
-      marginInfo: { support: "UNKNOWN", limitation: "Test fixture — margin declared unknown on purpose." },
+      marginInfo: { support: "UNKNOWN", limitation: "Test fixture - margin declared unknown on purpose." },
       openPositions: { support: "SUPPORTED", retrieval: "POLL" },
       orders: {
         support: "UNSUPPORTED",
-        limitation: "Test fixture — orders declared unsupported on purpose (gating proof).",
+        limitation: "Test fixture - orders declared unsupported on purpose (gating proof).",
       },
       deals: {
         support: "UNKNOWN",
-        limitation: "Test fixture — deals declared UNKNOWN on purpose (UNKNOWN-blocks proof).",
+        limitation: "Test fixture - deals declared UNKNOWN on purpose (UNKNOWN-blocks proof).",
       },
       historyDepth: { support: "UNSUPPORTED" },
       streamingAccountUpdates: { support: "UNSUPPORTED" },
@@ -99,7 +99,7 @@ export class CapabilityPoorTestProviderAdapter implements TradingProviderAdapter
       equity: String(10_000 + (h % 5_000) + 12),
       margin: "0.00",
       freeMargin: String(10_000 + (h % 5_000) + 12),
-      marginLevel: null, // marginInfo is UNKNOWN — honest null
+      marginLevel: null, // marginInfo is UNKNOWN - honest null
     };
   }
 
@@ -128,13 +128,13 @@ export class CapabilityPoorTestProviderAdapter implements TradingProviderAdapter
     };
   }
 
-  /** UNSUPPORTED enforcement — the operation exists, the capability does not. */
+  /** UNSUPPORTED enforcement - the operation exists, the capability does not. */
   async fetchOrders(_context: ProviderRequestContext): Promise<NormalizedOrder[]> {
     void _context;
     throw new ProviderError("UNSUPPORTED_CAPABILITY", UNSUPPORTED_MESSAGE);
   }
 
-  /** UNKNOWN blocks with an honest error — never silent emptiness (doc A §4.4). */
+  /** UNKNOWN blocks with an honest error - never silent emptiness (doc A §4.4). */
   async fetchDeals(_context: ProviderRequestContext): Promise<DealsSyncResult> {
     void _context;
     throw new ProviderError(

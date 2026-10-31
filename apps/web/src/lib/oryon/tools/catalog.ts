@@ -2,10 +2,10 @@ import type { OryonDrawingTool } from "@/lib/oryon/drawings/interaction";
 import type { oryonDict } from "@/i18n/dictionaries/en/oryon";
 
 /**
- * Oryon tool catalog — the SINGLE source for the drawing toolbar v2
+ * Oryon tool catalog - the SINGLE source for the drawing toolbar v2
  * (TradingView-parity rail): group structure, per-tool metadata, flyout
  * membership and keyboard shortcuts. The rail, the favorites bar and the
- * ui-prefs whitelist all read from HERE — a tool cannot appear in one
+ * ui-prefs whitelist all read from HERE - a tool cannot appear in one
  * surface and be rejected by another (the whitelist drift that plagues
  * hand-maintained lists is structurally impossible).
  *
@@ -13,7 +13,7 @@ import type { oryonDict } from "@/i18n/dictionaries/en/oryon";
  * the catalog deliberately contains no decorative placeholder rows.
  */
 
-/** i18n keys are TYPE-checked against the English rail dictionary — a
+/** i18n keys are TYPE-checked against the English rail dictionary - a
  *  catalog row referencing a missing key is a compile error, not a
  *  blank menu label at runtime. */
 type RailDict = typeof oryonDict.rail;
@@ -23,9 +23,9 @@ export interface OryonToolDef {
   /** i18n key inside dict.oryon.rail (label + interaction hint). */
   labelKey: keyof RailDict;
   /** Keyboard shortcut shown in the flyout (i18n label key) AND wired
-   *  globally — `shortcut` carries the REAL combo the matcher tests. */
+   *  globally - `shortcut` carries the REAL combo the matcher tests. */
   shortcutKey?: keyof RailDict;
-  /** Actual keyboard combo ("Alt+T") — the matcher's source of truth. */
+  /** Actual keyboard combo ("Alt+T") - the matcher's source of truth. */
   shortcut?: string;
 }
 
@@ -108,12 +108,12 @@ export const ORYON_TOOL_GROUPS: readonly OryonToolGroup[] = [
   },
 ];
 
-/** Every catalogued tool id — the favorites persistence whitelist. */
+/** Every catalogued tool id - the favorites persistence whitelist. */
 export const ORYON_TOOL_IDS: readonly OryonDrawingTool[] = [
   ...new Set(ORYON_TOOL_GROUPS.flatMap((group) => group.tools.map((t) => t.tool))),
 ];
 
-/** A catalogued tool id — every interaction tool (cursors included) is
+/** A catalogued tool id - every interaction tool (cursors included) is
  *  starable, mirroring TradingView where the cursor flyout carries stars. */
 export type OryonCatalogToolId = OryonDrawingTool;
 
@@ -129,7 +129,7 @@ export function toolGroupOf(tool: OryonDrawingTool): OryonToolGroup | null {
   return null;
 }
 
-/** Catalog-driven shortcut table — REAL combos (rail wires listeners once). */
+/** Catalog-driven shortcut table - REAL combos (rail wires listeners once). */
 export const ORYON_TOOL_SHORTCUTS: readonly {
   shortcut: string;
   tool: OryonDrawingTool;

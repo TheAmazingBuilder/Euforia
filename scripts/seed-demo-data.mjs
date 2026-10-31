@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * seed-demo-data.mjs — Livrable 2: demo seed + REAL CSV import loop test.
+ * seed-demo-data.mjs - Livrable 2: demo seed + REAL CSV import loop test.
  *
- * 1. (idempotent) instruments seed — delegates to seed-instruments.mjs.
+ * 1. (idempotent) instruments seed - delegates to seed-instruments.mjs.
  * 2. (idempotent) demo user trader@cosmoz.app via the REAL auth flow
  *    (register → dev-mailer token → verify → login).
  * 3. Generates a realistic IC Markets MT5 statement (CSV in MT5 export
@@ -28,10 +28,10 @@ let failed = 0;
 function check(name, ok, detail = "") {
   if (ok) {
     passed += 1;
-    console.log(`  ✓ ${name}${detail ? ` — ${detail}` : ""}`);
+    console.log(`  ✓ ${name}${detail ? ` - ${detail}` : ""}`);
   } else {
     failed += 1;
-    console.error(`  ✗ ${name}${detail ? ` — ${detail}` : ""}`);
+    console.error(`  ✗ ${name}${detail ? ` - ${detail}` : ""}`);
   }
 }
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -137,7 +137,7 @@ function mapMt5Rows(csv) {
 }
 
 async function main() {
-  console.log("— Livrable 2: seed démo + import CSV réel (boucle complète) —");
+  console.log("- Livrable 2: seed démo + import CSV réel (boucle complète) -");
 
   // 1. instruments (sub-seed, idempotent)
   const { execFileSync } = await import("node:child_process");
@@ -173,7 +173,7 @@ async function main() {
   check("login demo user", login.status === 200 && Boolean(accessToken));
   const auth = { authorization: `Bearer ${accessToken}`, "content-type": "application/json" };
 
-  // journal account for the demo book: the MOCK provider (dev-enabled) —
+  // journal account for the demo book: the MOCK provider (dev-enabled) -
   // gives the demo a default account + live-ish positions/snapshots, and the
   // CSV import lands on the persisted default account (backend convention).
   const accountsRes = await fetch(`${BASE}/accounts`, { headers: auth });

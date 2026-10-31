@@ -1,22 +1,22 @@
 import type { OryonSessionDefinition } from "./definitions";
 
 /**
- * Oryon session-interval engine (Phase 8 spec §4.2) — PURE, framework-free.
+ * Oryon session-interval engine (Phase 8 spec §4.2) - PURE, framework-free.
  *
  * Every interval is computed by interpreting the session's LOCAL wall time
  * in the session's own IANA timezone, then converting to the chart's UTC
- * time basis (epoch ms — the repo's canonical candle domain). DST is
+ * time basis (epoch ms - the repo's canonical candle domain). DST is
  * handled by construction: the zone offset is resolved AT the instant
- * being converted (Intl-based, no fixed offsets, no timezone library —
+ * being converted (Intl-based, no fixed offsets, no timezone library -
  * spec §9 mandates reusing platform Intl like the rest of the repo).
  *
  * Honesty (spec §4.2): no holiday calendar exists in this repo, so
  * weekends are excluded via the definition's local days and NOTHING ELSE
- * is claimed — a public holiday renders as a regular session day and the
+ * is claimed - a public holiday renders as a regular session day and the
  * UI labels every session "indicative" (§4.2 "communicate that the session
  * is an indicative reference").
  *
- * Interval semantics: [startMs, endMs) — start inclusive, end exclusive.
+ * Interval semantics: [startMs, endMs) - start inclusive, end exclusive.
  * A definition whose end ≤ start (cross-midnight, spec §4.2) rolls its end
  * to the NEXT local day. Results are clipped to the requested UTC window.
  */
@@ -30,7 +30,7 @@ export interface OryonSessionInterval {
   readonly endMs: number;
 }
 
-/** Session lifecycle status at an instant (spec §4.3) — INDICATIVE only. */
+/** Session lifecycle status at an instant (spec §4.3) - INDICATIVE only. */
 export interface OryonSessionStatus {
   readonly sessionId: OryonSessionDefinition["id"];
   /** True while now ∈ [start, end) of a resolved interval. */
@@ -43,7 +43,7 @@ const DAY_MS = 86_400_000;
 /** Guard for the next-transition lookahead (10 days spans every weekend). */
 const LOOKAHEAD_DAYS = 10;
 
-// ── Intl plumbing (formatters cached per zone — creation is expensive) ──────
+// ── Intl plumbing (formatters cached per zone - creation is expensive) ──────
 
 const offsetFormatters = new Map<string, Intl.DateTimeFormat>();
 const dayFormatters = new Map<string, Intl.DateTimeFormat>();
@@ -62,7 +62,7 @@ function cachedFormatter(
 }
 
 /**
- * Zone offset (ms EAST of UTC) in effect at `instantMs` — resolved by Intl
+ * Zone offset (ms EAST of UTC) in effect at `instantMs` - resolved by Intl
  * ("longOffset" → "GMT-04:00"). Accepts legacy "±HHMM" spellings too.
  * Returns NaN for an unknown zone (callers treat that as "unavailable").
  */
@@ -75,7 +75,7 @@ export function zoneOffsetMs(instantMs: number, ianaZone: string): number {
           timeZoneName: "longOffset",
         });
       } catch {
-        // Ancient engines without longOffset — shortOffset is the fallback
+        // Ancient engines without longOffset - shortOffset is the fallback
         // vocabulary ("GMT-4"), still an offset, still zone-derived.
         return new Intl.DateTimeFormat("en-US", {
           timeZone: ianaZone,
@@ -111,14 +111,14 @@ export function localDateKeyInZone(instantMs: number, ianaZone: string): string 
         day: "2-digit",
       }),
     );
-    // en-CA formats as "YYYY-MM-DD" — the repo's date-key convention.
+    // en-CA formats as "YYYY-MM-DD" - the repo's date-key convention.
     return fmt.format(new Date(instantMs));
   } catch {
     return null;
   }
 }
 
-/** Weekday (0=Sun..6=Sat) of a local date key — anchored at noon UTC so
+/** Weekday (0=Sun..6=Sat) of a local date key - anchored at noon UTC so
  *  no offset can shift the key to another day (repo convention). */
 export function weekdayOfDateKey(key: string): number {
   const date = new Date(`${key}T12:00:00Z`);
@@ -132,7 +132,7 @@ function shiftDateKey(key: string, days: number): string {
   return anchor.toISOString().slice(0, 10);
 }
 
-/** Parse "HH:mm" → {hh, mm} — null when malformed (missing metadata §4.2). */
+/** Parse "HH:mm" → {hh, mm} - null when malformed (missing metadata §4.2). */
 function parseHHmm(value: string): { hh: number; mm: number } | null {
   const m = /^(\d{1,2}):(\d{2})$/.exec(value.trim());
   if (m === null) return null;
@@ -168,7 +168,7 @@ export function zonedWallTimeToUtcMs(
  * All resolved intervals of ONE definition overlapping [fromMs, toMs).
  * Candidate local days are enumerated as UTC days padded by one day on
  * each side (zone offsets stay within ±1 day of UTC for every IANA zone).
- * Per-day results are cached — repeated visible-range updates and the
+ * Per-day results are cached - repeated visible-range updates and the
  * 1 Hz status read share one computation per session-day.
  */
 const dayIntervalCache = new Map<string, OryonSessionInterval | null>();
@@ -181,7 +181,7 @@ function intervalForLocalDay(
   // The cache key carries the FULL effective definition (id + zone + times
   // + days): a definition is a code constant whose identity is its id, but
   // keying on the id ALONE would let a changed schedule read a stale
-  // interval — cheap insurance, no correctness assumptions.
+  // interval - cheap insurance, no correctness assumptions.
   const cacheKey = `${def.id}|${def.ianaZone}|${def.startHHmm}|${def.endHHmm}|${def.daysLocal.join(",")}|${dateKey}`;
   if (dayIntervalCache.has(cacheKey)) return dayIntervalCache.get(cacheKey) ?? null;
 
@@ -219,7 +219,7 @@ export function sessionIntervalsForUtcRange(
   const firstDay = Math.floor(fromMs / DAY_MS) - 1;
   const lastDay = Math.floor(toMs / DAY_MS) + 1;
   for (let day = firstDay; day <= lastDay; day += 1) {
-    const probeMs = day * DAY_MS + 12 * 3_600_000; // noon UTC — safe probe
+    const probeMs = day * DAY_MS + 12 * 3_600_000; // noon UTC - safe probe
     const dateKey = localDateKeyInZone(probeMs, def.ianaZone);
     if (dateKey === null) return []; // unknown zone → honest unavailable
     const interval = intervalForLocalDay(def, dateKey);
@@ -236,7 +236,7 @@ export function sessionIntervalsForUtcRange(
  * INDICATIVE lifecycle status at `nowMs` (spec §4.3): open when an
  * interval contains the instant; otherwise closed, with the next expected
  * opening within the lookahead. Null when the definition/zone is unusable
- * — callers show an "unavailable" state, never a guessed status.
+ * - callers show an "unavailable" state, never a guessed status.
  */
 export function sessionStatusAt(
   def: OryonSessionDefinition,
@@ -262,13 +262,13 @@ export interface OryonSessionBand {
   readonly sessionId: string;
   readonly startSec: number;
   readonly endSec: number;
-  /** Theme token KEY — resolved to a color at render time. */
+  /** Theme token KEY - resolved to a color at render time. */
   readonly colorToken: string;
   readonly label: string;
 }
 
 /**
- * Bands for a SET of definitions over the chart's UTC window (spec §5) —
+ * Bands for a SET of definitions over the chart's UTC window (spec §5) -
  * the chart overlay input. Intervals stay per-session (overlapping
  * sessions compose visually through alpha compositing, the restrained
  * style §5 requires); sorted by start for a stable draw order.

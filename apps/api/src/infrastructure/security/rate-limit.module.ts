@@ -9,7 +9,7 @@
  *   future policy          →  how it will be attached
  *   ─────────────────────────────────────────────────────────────────
  *   public endpoints       →  route decorator @Throttle({ public: … })
- *   authentication vectors →  @Throttle({ auth: … }) (Identity phase —
+ *   authentication vectors →  @Throttle({ auth: … }) (Identity phase -
  *                             e.g. login 10/15min, MFA 5/15min per mock spec)
  *   sensitive operations   →  @Throttle({ sensitive: … })
  *   provider sync          →  dedicated named entry + queue, not brute IP

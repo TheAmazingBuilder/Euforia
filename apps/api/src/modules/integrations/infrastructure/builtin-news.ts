@@ -1,14 +1,14 @@
 /**
- * Builtin sample-news adapter (Phase 14 §10) — DETERMINISTIC, provider-shaped
+ * Builtin sample-news adapter (Phase 14 §10) - DETERMINISTIC, provider-shaped
  * news for the unlicensed `news-wire` registration. No persistence: the same
  * six development samples are derived on read (stable ids via uuidV5 over the
  * provider key), clearly marked `sample: true` and never redistributed as
- * real content (§10/§29 — the registration stays unconnectable until a
+ * real content (§10/§29 - the registration stays unconnectable until a
  * licensed provider passes review).
  *
  * Why no table: the audited product renders exactly these samples; the mock
  * prunes them after the 2-day retention window, but a persistence layer for
- * throwaway sample rows would be speculative (§38 — no generic tables for
+ * throwaway sample rows would be speculative (§38 - no generic tables for
  * future possibilities). Divergence is documented in the Phase 14 report.
  */
 
@@ -103,7 +103,7 @@ const SAMPLES: readonly SampleNewsSeed[] = [
 const HOUR_MS = 3_600_000;
 
 /**
- * Derive the sample news feed at `now` — sorted newest-first (overview
+ * Derive the sample news feed at `now` - sorted newest-first (overview
  * parity), ids stable per provider key across calls.
  */
 export function listSampleNews(providerId: string, now: Date): NewsItem[] {

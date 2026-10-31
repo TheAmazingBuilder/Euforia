@@ -16,16 +16,35 @@ every future bounded context must follow.
 # 1. Install (workspace root)
 corepack pnpm install
 
-# 2. Start the local development database (embedded PostgreSQL 17 — no Docker
-#    needed; portable binaries, trust auth on 127.0.0.1 ONLY)
-pnpm api:db:up
+# 2. Make sure YOUR OWN local PostgreSQL server is running (default port 5432)
+#    and create the dev database:  createdb cosmoz   (or via pgAdmin)
 
 # 3. Configure
-cp apps/api/.env.example apps/api/.env     # defaults match db:up
+cp apps/api/.env.example apps/api/.env
+# Edit apps/api/.env: DATABASE_URL, AUTH_JWT_SECRET,
+# AUTH_MFA_ENCRYPTION_KEY, ACCOUNTS_CREDENTIALS_ENCRYPTION_KEY,
+# INTEGRATIONS_WEBHOOK_ENCRYPTION_KEY must all be valid.
+# Generate keys with:
+# node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"
+# node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
 
-# 4. Run
-pnpm api:dev          # watch mode (tsc-watch → node)
+# 4. Start the API in its own terminal (port 4000)
+pnpm api:dev
+
+# 5. In a SECOND terminal, start only the web frontend (port 3000)
+pnpm web:dev
 ```
+
+Do not assume the API started just because Next.js is running. Wait for the
+`cosmoz-api listening` log and verify `http://localhost:4000/health/ready`.
+If the API exits during startup, fix the first `[config]` validation error
+or database connection error shown in that terminal before testing auth.
+
+For local-only signup/login without an email provider, set
+`AUTH_REQUIRE_EMAIL_VERIFICATION=false` in `apps/api/.env`. This still uses
+the real API and PostgreSQL; it disables only the email-verification gate.
+When enabled, registration returns an active session and auto-signs the user
+in. Do not disable email verification in production.
 
 The API listens on **http://localhost:4000**:
 
@@ -35,7 +54,7 @@ The API listens on **http://localhost:4000**:
 | `GET /health/live` | Liveness probe |
 | `GET /health/ready` | Readiness probe (pings the database) |
 | `POST /api/v1/auth/*` | register · login · refresh · logout · me · email verify/resend · password forgot/reset · MFA challenge/recover |
-| `GET·POST /api/v1/security/*` | overview · reauth · password change · 2FA enable/confirm/disable · recovery codes · sessions revoke · API keys |
+| `GET·POST /api/v1/security/*` | overview · reauth · password change · 2FA enable/confirm/disable · email-code MFA enable/confirm · recovery codes · sessions revoke · API keys |
 | `GET·PATCH /api/v1/me` | profile + preferences doc (9 domains) · deactivate · delete |
 | `POST /api/v1/calculators/lot-size` | authoritative position sizing — exact-decimal, broker-aware specs per request; informational only, never an order instruction |
 | `POST /api/v1/calculators/compounding` | period-by-period growth projection (full precision, ≤ 1 000 periods); informational only |
@@ -45,13 +64,15 @@ The API listens on **http://localhost:4000**:
 
 | Script | What it does |
 |---|---|
-| `pnpm dev` | Watch build + auto-restart (`tsc-watch`) |
+| `pnpm api:dev` | Start only the NestJS API on port 4000 (watch mode) |
+| `pnpm web:dev` | Start only the Next.js frontend on port 3000 |
+| `pnpm dev` | Start all workspace dev services through Turbo |
 | `pnpm build` | Compile to `dist/` (tsc) |
 | `pnpm start` | Run compiled output |
 | `pnpm typecheck` | `tsc --noEmit` (src + test) |
 | `pnpm lint` | ESLint (flat config) |
-| `pnpm test` | vitest — unit + e2e (boots the embedded test DB automatically) |
-| `pnpm db:up` / `db:status` / `db:down` | Embedded dev PostgreSQL lifecycle |
+| `pnpm test` | vitest — **unit specs only** (no database required) |
+| `pnpm test:e2e` | vitest e2e harness — needs a local PostgreSQL; creates/migrates the dedicated test DB (`cosmoz_test` by default, override with `DATABASE_URL_TEST`) |
 | `pnpm prisma:generate` | Regenerate the Prisma client after schema edits |
 | `pnpm db:migrate -- --name X` | Create + apply a migration (dev) |
 | `pnpm db:deploy` | Apply committed migrations (CI/prod) |
@@ -74,10 +95,15 @@ never secret values.**
 | `RATE_LIMIT_WINDOW_SECONDS` | `60` | Global default window |
 | `RATE_LIMIT_MAX` | `120` | Global default max requests |
 | `MARKET_SERVICE_URL` | — (optional) | Market sidecar; not wired in Foundation |
+| `ACCOUNTS_MT5_BRIDGE_PROVIDER` | `disabled` | Set to `enabled` to register the read-only MT5 terminal bridge for supported IC Markets, Axi and PU Prime MT5 accounts. Not a direct broker API; MT4/cTrader are not supported. The terminal must be able to reach the API ingest endpoint. |
 
-Authentication placeholders (`AUTH_JWT_SECRET`, …) are **deliberately not
-validated yet** — the Identity phase owns their contract. Do not put real
-secrets into `.env.example`; `.env*` files are gitignored.
+Authentication and encryption keys are validated at startup. The API will
+exit rather than listen if any required key is empty/invalid or PostgreSQL
+cannot be reached. Generate local-only secrets; never commit `.env` values.
+Transactional email uses Nodemailer over SMTP when `SMTP_USER` and
+`SMTP_APP_PASSWORD` are configured. In local development only, the console
+transport remains available when credentials are absent; production startup
+requires SMTP credentials and never logs one-time codes or action links.
 
 ## Database
 
@@ -86,19 +112,28 @@ secrets into `.env.example`; `.env*` files are gitignored.
   future phase adds its own models + migration following `data-model.md`.
 - Migrations are versioned, reviewable files in `prisma/migrations/` (created
   by `db:migrate`, applied by `db:deploy`). Never reset a non-test database.
-- Dev/test databases run from **portable binaries** (`scripts/dev-db.mjs`,
-  data dir `apps/api/.localpg/`, gitignored) because the dev sandbox has no
-  Docker: `cosmoz` (dev) and `cosmoz_test` (tests) on port `5433`, trust auth,
-  localhost only. Real deployments use `docker-compose.yml` / managed PG.
+- The embedded dev PostgreSQL (`scripts/dev-db.mjs`, port `5433`) has been
+  REMOVED from the project. Local development points at a developer-provided
+  PostgreSQL server (default port `5432`) via `DATABASE_URL`; tests use the
+  dedicated `cosmoz_test` database (`DATABASE_URL_TEST`). Containers remain
+  available through `docker-compose.yml` / managed PG.
 
 ### Test database safety (binding)
 
-Tests refuse to run against anything but `cosmoz_test`:
+E2E tests refuse to run against anything but the dedicated test database:
 
-1. `test/global-setup.ts` starts the cluster, creates `cosmoz_test`, applies
-   migrations and exports `DATABASE_URL` for every worker.
-2. `test/setup.ts` re-asserts `NODE_ENV=test` and `DATABASE_URL → /cosmoz_test`
+1. `test/global-setup.ts` creates the test DB (best-effort) on YOUR local
+   PostgreSQL server, applies migrations and exports `DATABASE_URL` for every
+   worker. The target is `DATABASE_URL_TEST` (default
+   `postgresql://postgres@127.0.0.1:5432/cosmoz_test`). Put your real
+   credentials there, e.g.
+   `DATABASE_URL_TEST="postgresql://postgres:secret@127.0.0.1:5432/euforia_test"`.
+2. `test/setup.ts` re-asserts `NODE_ENV=test` and `DATABASE_URL → /<TEST_DB_NAME>`
    inside each worker (fail-fast, defense in depth).
+
+Unit specs (`test/unit/**`) never touch a database and run with plain
+`pnpm test` anywhere. The e2e harness is opt-in (`pnpm test:e2e`) so a missing
+or unauthenticated local PG can never block the default test command.
 
 ## Error contract (API envelope)
 
@@ -207,8 +242,24 @@ Key mechanics (all negative-tested):
   user), `@Public()` opt-out, `@CurrentUser` principal; ownership checks
   demonstrated on sessions/keys (foreign ids → 404, never leaky).
 
-Transactional email uses a log-rendering dev transport (see `mailer.service.ts`);
-a real provider plugs into `MailTransport` (Phase 0 open question #1).
+Transactional email uses Nodemailer over SMTP when `SMTP_USER` and
+`SMTP_APP_PASSWORD` are configured; development falls back to a console transport
+when credentials are absent. For Gmail, enable Google 2-Step Verification, create
+an App Password, and set the following in `apps/api/.env`:
+
+```dotenv
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=your-account@gmail.com
+SMTP_APP_PASSWORD=your-16-character-app-password
+EMAIL_FROM=Euforia <your-account@gmail.com>
+```
+
+Use the same address in `SMTP_USER` and `EMAIL_FROM`, or a Gmail-approved
+send-as alias. Never commit real credentials. Production startup fails if SMTP
+credentials are missing. Email-based MFA sends a six-digit code with the same
+short expiry as the login challenge; TOTP remains available as the alternative.
 
 ## Accounts / Trading Connectivity (Phase 3)
 
@@ -239,6 +290,13 @@ Key mechanics:
   instance to the registry factory in `accounts.module.ts`, done. Registry,
   capabilities, descriptors and UI metadata follow automatically; nothing
   outside the accounts module changes.
+- **MT5 terminal bridge (Phase 08):** the connector is registered only when
+  `ACCOUNTS_MT5_BRIDGE_PROVIDER=enabled`. IC Markets, Axi and PU Prime are broker
+  identities served through this shared MT5 path, not separate direct-API
+  integrations. Euforia validates the selected broker against the terminal's
+  reported broker/server, login and DEMO/LIVE class before accepting the first
+  account-info push. The connector remains read-only; it cannot place or modify
+  orders.
 - **Mock provider (§55/§57)**: `MOCK` simulates an MT5-style broker with
   deterministic data (pure function of the external account id) and
   controlled failures via secret prefixes (`fail-invalid`, `fail-timeout`,

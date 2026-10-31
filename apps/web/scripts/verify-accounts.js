@@ -1,17 +1,17 @@
 /**
- * verify-accounts.js — Accounts & Trading Connectivity probe (Phase 02).
+ * verify-accounts.js - Accounts & Trading Connectivity probe (Phase 02).
  *
  * Exercises the full connect → inspect → lifecycle flow over MSW on the dev
  * server (:3000): provider discovery (mock provider honestly stamped),
  * connect wizard, initial sync data, detail drawer (overview + activity
- * tabs), rename, disconnect (requireTyped), reconnect — plus the honest
+ * tabs), rename, disconnect (requireTyped), reconnect - plus the honest
  * error state and the demo markers on the risk-relevant fixture surfaces.
  *
  * Run: scripts/verify-accounts-run.sh   (or: node apps/web/scripts/verify-accounts.js
  * with a dev server already listening on :3000)
  *
  * Probe conventions (see verify-phase11.js lessons): no networkidle (socket.io
- * keeps sockets open) — domcontentloaded + waits; nextjs-portal removed so it
+ * keeps sockets open) - domcontentloaded + waits; nextjs-portal removed so it
  * cannot swallow clicks; demo login via the shared helper.
  */
 
@@ -31,7 +31,7 @@ function check(label, ok, extra = "") {
   const tag = ok ? "✓" : "✗";
   if (ok) passed += 1;
   else failed += 1;
-  console.log(`  ${tag} ${label}${extra ? ` — ${extra}` : ""}`);
+  console.log(`  ${tag} ${label}${extra ? ` - ${extra}` : ""}`);
 }
 
 function note(label) {
@@ -95,9 +95,9 @@ const CONSOLE_NOISE = [
     check("empty state lists connectable provider", (await page.locator('[data-testid="accounts-empty-providers"]').innerText()).includes("Euforia Mock Broker"));
     await page.locator('[data-testid="accounts-empty-add"]').click();
   } else {
-    // A previous probe run may have persisted an account in this store —
+    // A previous probe run may have persisted an account in this store -
     // use the header button instead.
-    note("accounts already exist in this session — skipping empty-state assertions");
+    note("accounts already exist in this session - skipping empty-state assertions");
     await page.locator('[data-testid="accounts-add-button"]').click();
   }
   await page.waitForSelector('[data-testid="connect-account-dialog"]', { timeout: 10_000 });
@@ -114,7 +114,7 @@ const CONSOLE_NOISE = [
   await mockRow.click();
   await page.locator('[data-testid="connect-next"]').click();
 
-  // ── 4. Environment step (DEMO/LIVE only — capability-driven) ──────────────
+  // ── 4. Environment step (DEMO/LIVE only - capability-driven) ──────────────
   await page.locator('[data-testid="connect-environment-DEMO"]').click();
   await page.locator('[data-testid="connect-next"]').click();
 
@@ -139,7 +139,7 @@ const CONSOLE_NOISE = [
 
   // Snapshot data present (initial sync ran server-side in the mock engine).
   const balance = (await page.locator('[data-testid="account-detail-balance"]').innerText()).trim();
-  check("balance rendered (not —)", balance !== "—", balance);
+  check("balance rendered (not -)", balance !== "-", balance);
   const syncBadge = (await page.locator('[data-testid="account-detail-sync-status"]').getAttribute("data-status"));
   check("sync axis fresh after initial sync", syncBadge === "LIVE" || syncBadge === "SYNCING", syncBadge);
 
@@ -210,11 +210,11 @@ const CONSOLE_NOISE = [
     await page.waitForTimeout(1_500);
     check("sync button flow completes without error", pageErrors.length === 0);
   } else {
-    note("sync button disabled at probe time — connection state changed mid-run");
+    note("sync button disabled at probe time - connection state changed mid-run");
   }
 
   // ── 12. Demo markers on fixture-driven surfaces ───────────────────────────
-  // Switcher chip: inside the dropdown — open it first.
+  // Switcher chip: inside the dropdown - open it first.
   await page.locator('button[aria-label="Switch account"]').click();
   await page.waitForTimeout(600);
   check(
@@ -254,7 +254,7 @@ const CONSOLE_NOISE = [
   ) {
     check("monitoring brokers panel carries demo marker (chain B)", true);
   } else {
-    note("monitoring brokers telemetry not present (empty hub) — marker assertion skipped");
+    note("monitoring brokers telemetry not present (empty hub) - marker assertion skipped");
   }
 
   // ── Console discipline ────────────────────────────────────────────────────

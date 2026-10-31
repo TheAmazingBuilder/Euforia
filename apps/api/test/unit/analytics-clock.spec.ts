@@ -1,5 +1,5 @@
 /**
- * Unit — Analytics clock (Phase 8 §7 TIME RANGE MODEL): the 13 period
+ * Unit - Analytics clock (Phase 8 §7 TIME RANGE MODEL): the 13 period
  * presets resolved SERVER-SIDE on the user's trading-day clock, plus the
  * date-key helpers the engines rely on.
  */

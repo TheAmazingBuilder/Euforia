@@ -81,7 +81,7 @@ function Readout({
           (!tone || tone === "muted") && "text-foreground",
         )}
       >
-        {value ?? "—"}
+        {value ?? "-"}
       </p>
     </div>
   );
@@ -96,12 +96,12 @@ interface TradeDetailDrawerProps {
 }
 
 /**
- * Trade detail surface — the record's full page: plan vs reality, editable
+ * Trade detail surface - the record's full page: plan vs reality, editable
  * notes, tag chips, screenshot gallery with upload, and the module actions
  * (edit / close / delete).
  *
  * Width contract: on desktop the details open as a FULL-WIDTH centered
- * dialog — the numbers get room, the plan/reality grid becomes a single
+ * dialog - the numbers get room, the plan/reality grid becomes a single
  * row and notes/screenshots sit side by side. Below the `lg` breakpoint the
  * same content opens as a full-width right sheet (mobile keeps one column).
  */
@@ -238,33 +238,33 @@ export function TradeDetailDrawer({
     );
   };
 
-  // ── Shared content — identical sections in both surfaces ─────────────────
+  // ── Shared content - identical sections in both surfaces ─────────────────
 
   const verdictSection = (
     <section className="grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-8">
       <Readout
         label={T.netPnl}
-        value={trade.pnlNet === null ? "—" : formatSignedMoney(trade.pnlNet, currency, { digits: 2 })}
+        value={trade.pnlNet === null ? "-" : formatSignedMoney(trade.pnlNet, currency, { digits: 2 })}
         tone={trade.pnlNet === null ? "muted" : Number(trade.pnlNet) >= 0 ? "profit" : "loss"}
       />
       <Readout
         label={T.rMultiple}
-        value={trade.rMultiple === null ? "—" : formatR(trade.rMultiple)}
+        value={trade.rMultiple === null ? "-" : formatR(trade.rMultiple)}
         tone={trade.rMultiple === null ? "muted" : Number(trade.rMultiple) >= 0 ? "profit" : "loss"}
       />
       <Readout label={T.entry} value={formatNumber(trade.entryPrice, priceDigits)} />
-      <Readout label={T.exit} value={trade.exitPrice === null ? "—" : formatNumber(trade.exitPrice, priceDigits)} />
+      <Readout label={T.exit} value={trade.exitPrice === null ? "-" : formatNumber(trade.exitPrice, priceDigits)} />
       <Readout
         label={T.initialStop}
-        value={trade.initialStop === null ? "—" : formatNumber(trade.initialStop, priceDigits)}
+        value={trade.initialStop === null ? "-" : formatNumber(trade.initialStop, priceDigits)}
       />
       <Readout
         label={T.takeProfit}
-        value={trade.initialTP === null ? "—" : formatNumber(trade.initialTP, priceDigits)}
+        value={trade.initialTP === null ? "-" : formatNumber(trade.initialTP, priceDigits)}
       />
       <Readout
         label={T.risked}
-        value={trade.riskAmount === null ? "—" : formatNumber(trade.riskAmount, 2)}
+        value={trade.riskAmount === null ? "-" : formatNumber(trade.riskAmount, 2)}
       />
       <Readout label={T.fees} value={formatNumber(trade.fees, 2)} />
     </section>
@@ -284,7 +284,7 @@ export function TradeDetailDrawer({
     </section>
   );
 
-  // Psychology — honest read-out of the trade's own columns (emotions,
+  // Psychology - honest read-out of the trade's own columns (emotions,
   // confidence, plan adherence). Hidden entirely when nothing was logged.
   const hasPsychology =
     trade.emotionBefore !== null ||
@@ -501,7 +501,7 @@ export function TradeDetailDrawer({
   const actionFooter = (
     <div className="flex items-center gap-2 border-t border-border bg-surface p-3">
       <Button
-        variant="outline"
+        variant="edit"
         size="sm"
         className="gap-1.5"
         onClick={() => onEdit(trade)}
@@ -694,7 +694,7 @@ export function TradeDetailDrawer({
     );
   }
 
-  // Desktop (≥ lg): FULL-WIDTH centered dialog — plan/reality on one row,
+  // Desktop (≥ lg): FULL-WIDTH centered dialog - plan/reality on one row,
   // notes and evidence side by side. Built-in close button, no custom X.
   return (
     <>

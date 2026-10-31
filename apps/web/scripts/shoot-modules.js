@@ -19,7 +19,7 @@ const { ensureLogin } = require("./helpers/login");
   // Mobile
   const mobile = await browser.newPage({ viewport: { width: 390, height: 844 } });
   await mobile.goto("http://localhost:3000/login", { waitUntil: "networkidle" });
-  // ensureLogin waits for the DESKTOP sidebar — hidden below lg — so log in manually.
+  // ensureLogin waits for the DESKTOP sidebar - hidden below lg - so log in manually.
   await mobile.locator("#login-email").fill("trader@cosmoz.app");
   await mobile.locator("#login-password").fill("cosmoz-demo-2026");
   await mobile.locator('[data-testid="login-submit"]').click();

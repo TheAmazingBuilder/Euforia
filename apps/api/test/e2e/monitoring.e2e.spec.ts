@@ -1,7 +1,7 @@
 /**
- * e2e — Monitoring API (Phase 17 §48/§49/§50): access control, contract
+ * e2e - Monitoring API (Phase 17 §48/§49/§50): access control, contract
  * shape, per-user isolation, threshold persistence, observational-only
- * mutation surface, and secret/stack-trace non-exposure — against the real
+ * mutation surface, and secret/stack-trace non-exposure - against the real
  * AppModule, real PostgreSQL and the real telemetry hook.
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -9,6 +9,7 @@ import type { z } from "zod";
 import type { NestFastifyApplication } from "@nestjs/platform-fastify";
 import { monitoringOverviewResponseSchema } from "../../src/shared/contracts";
 import { buildTestApp } from "../helpers/build-app";
+import { PrismaService } from "../../src/infrastructure/prisma/prisma.service";
 import { authenticatedUser, captureMail, type MailCapture } from "../helpers/identity";
 
 type MonitoringBody = z.infer<typeof monitoringOverviewResponseSchema>;
@@ -25,6 +26,12 @@ afterAll(async () => {
   await app?.close();
 });
 
+async function administrator() {
+  const user = await authenticatedUser(app, mail);
+  await app.get(PrismaService).user.update({ where: { id: user.userId }, data: { role: "ADMIN" } });
+  return user;
+}
+
 // Wire material that must NEVER appear in monitoring responses (§17/§44).
 const SECRET_PATTERN =
   /credentialsEnc|credentialsHint|"secret"|cz_live_|argon2|passwordHash|refreshTokenHash|postgres:\/\/|DATABASE_URL|JWT_SECRET|at .+node_modules/;
@@ -35,7 +42,7 @@ async function get(auth: Record<string, string>, url: string): Promise<{ status:
 }
 
 describe("monitoring access control (§33/§49)", () => {
-  it("rejects anonymous access on every monitoring route", async () => {
+  it("rejects anonymous and authenticated non-admin access on every monitoring route", async () => {
     const overview = await app.inject({ method: "GET", url: "/api/v1/monitoring/overview" });
     const thresholds = await app.inject({
       method: "PATCH",
@@ -46,13 +53,24 @@ describe("monitoring access control (§33/§49)", () => {
     expect(overview.statusCode).toBe(401);
     expect(thresholds.statusCode).toBe(401);
     expect(jobRun.statusCode).toBe(401);
+
+    const trader = await authenticatedUser(app, mail);
+    for (const [method, url] of [
+      ["GET", "/api/v1/monitoring/overview"],
+      ["PATCH", "/api/v1/monitoring/thresholds"],
+      ["POST", "/api/v1/monitoring/jobs/trading-sync/run"],
+    ] as const) {
+      const denied = await app.inject({ method, url, headers: trader.authHeader, payload: {} });
+      expect(denied.statusCode, `${method} ${url}`).toBe(403);
+      expect(denied.json().code).toBe("ADMIN_REQUIRED");
+    }
   });
 });
 
 describe("GET /monitoring/overview (§48)", () => {
   it("returns the full aggregate conforming to the shared contract", async () => {
-    const user = await authenticatedUser(app, mail);
-    // The telemetry hook records a request AFTER its response — the first
+    const user = await administrator();
+    // The telemetry hook records a request AFTER its response - the first
     // authenticated call becomes visible to the SECOND overview read.
     await app.inject({ method: "GET", url: "/api/v1/auth/me", headers: user.authHeader });
     await get(user.authHeader, "/api/v1/monitoring/overview");
@@ -129,7 +147,7 @@ describe("GET /monitoring/overview (§48)", () => {
 
 describe("PATCH /monitoring/thresholds", () => {
   it("persists the user's knobs across reads (the mock's gap, fixed)", async () => {
-    const user = await authenticatedUser(app, mail);
+    const user = await administrator();
     const patched = await app.inject({
       method: "PATCH",
       url: "/api/v1/monitoring/thresholds",
@@ -159,7 +177,7 @@ describe("PATCH /monitoring/thresholds", () => {
   });
 
   it("validates input (unknown rule id, out-of-range freshness → 400)", async () => {
-    const user = await authenticatedUser(app, mail);
+    const user = await administrator();
     const badRule = await app.inject({
       method: "PATCH",
       url: "/api/v1/monitoring/thresholds",
@@ -176,9 +194,9 @@ describe("PATCH /monitoring/thresholds", () => {
     expect(badFreshness.statusCode).toBe(400);
   });
 
-  it("keeps thresholds per-user — User B never sees User A's tuning (§34)", async () => {
-    const a = await authenticatedUser(app, mail);
-    const b = await authenticatedUser(app, mail);
+  it("keeps thresholds per-user - User B never sees User A's tuning (§34)", async () => {
+    const a = await administrator();
+    const b = await administrator();
     await app.inject({
       method: "PATCH",
       url: "/api/v1/monitoring/thresholds",
@@ -187,15 +205,15 @@ describe("PATCH /monitoring/thresholds", () => {
     });
     const bView = await get(b.authHeader, "/api/v1/monitoring/overview");
     const degraded = bView.body.thresholds.rules.find((rule) => rule.id === "API_DEGRADED");
-    expect(degraded?.thresholdValue).toBe(10); // default — A's knob is A's own
+    expect(degraded?.thresholdValue).toBe(10); // default - A's knob is A's own
     const aView = await get(a.authHeader, "/api/v1/monitoring/overview");
     expect(aView.body.thresholds.rules.find((rule: { id: string }) => rule.id === "API_DEGRADED")?.thresholdValue).toBe(42);
   });
 });
 
-describe("POST /monitoring/jobs/:jobId/run — observational only (§50)", () => {
+describe("POST /monitoring/jobs/:jobId/run - observational only (§50)", () => {
   it("never fabricates a run: known and unknown jobs are refused with 409", async () => {
-    const user = await authenticatedUser(app, mail);
+    const user = await administrator();
     const known = await app.inject({
       method: "POST",
       url: "/api/v1/monitoring/jobs/trading-sync/run",
@@ -219,8 +237,8 @@ describe("POST /monitoring/jobs/:jobId/run — observational only (§50)", () =>
 
 describe("per-user isolation (§34/§49)", () => {
   it("never exposes another user's operational data", async () => {
-    const a = await authenticatedUser(app, mail);
-    const b = await authenticatedUser(app, mail);
+    const a = await administrator();
+    const b = await administrator();
 
     const aView = await get(a.authHeader, "/api/v1/monitoring/overview");
     const raw = JSON.stringify(aView.body);
@@ -234,9 +252,9 @@ describe("per-user isolation (§34/§49)", () => {
   });
 });
 
-describe("negative capability — Monitoring cannot act (§50)", () => {
+describe("negative capability - Monitoring cannot act (§50)", () => {
   it("has no mutation surface beyond its own thresholds", async () => {
-    const user = await authenticatedUser(app, mail);
+    const user = await administrator();
     for (const [method, url] of [
       ["POST", "/api/v1/monitoring/overview"],
       ["DELETE", "/api/v1/monitoring/overview"],

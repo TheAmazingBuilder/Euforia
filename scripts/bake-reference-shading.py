@@ -3,16 +3,16 @@
 
 The user's verdict on the flat-gradient mark: perfect shape, but the fold
 shading ("les ombres, les contours") is what makes the real difference.
-The reference is a 3D-shaded render — pure-vector approximations of its
+The reference is a 3D-shaded render - pure-vector approximations of its
 2D shading either smear (threshold overlays + blur) or posterize into
 flat bands (vtracer color mode). Neither is "à l'identique".
 
-Solution — hybrid vector/raster:
+Solution - hybrid vector/raster:
   - keep the traced vector silhouette (crisp edges at any scale) and the
     sampled linear gradient as the base/fallback layer
   - embed the reference's own pixels (aligned to the 750x918 canvas,
     500x612 lossless PNG ≈ 2x native detail) as an <image> clipped to
-    the silhouette — photometrically exact shading: creases, sheen, all.
+    the silhouette - photometrically exact shading: creases, sheen, all.
 
 Mono marks (white/black) stay pure flat vector for single-color use.
 Data URI is mandatory: <img>-loaded SVGs cannot fetch external resources.
@@ -31,7 +31,7 @@ BRAND = Path("/home/z/my-project/apps/web/public/brand")
 WEB = Path("/home/z/my-project/apps/web")
 
 W, H = 750, 918          # SVG canvas (3x the tight 250x306 reference bbox)
-RASTER_W, RASTER_H = 500, 612   # 2x native detail — plenty for 560px watermark
+RASTER_W, RASTER_H = 500, 612   # 2x native detail - plenty for 560px watermark
 
 
 def build_payload() -> bytes:

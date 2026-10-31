@@ -3,12 +3,12 @@ import { z } from "zod";
 import { isCatalogToolId, type OryonCatalogToolId } from "@/lib/oryon/tools/catalog";
 
 /**
- * Oryon workspace UI preferences — browser-local persistence for the
+ * Oryon workspace UI preferences - browser-local persistence for the
  * Drawing toolbar v2 chrome: the FAVORITES list (starred tools) and the
  * FLOATING favorites-bar state (visibility + position over the chart).
  *
  * Scope decision (same reasoning as workspace/layouts persistence): these
- * are browser-local workspace preferences, not server contract — they ride
+ * are browser-local workspace preferences, not server contract - they ride
  * localStorage under the SAME versioned/validated conventions as every
  * other Oryon record, and the adapters below are the only files that know
  * the storage key.
@@ -30,19 +30,19 @@ const SAVE_DEBOUNCE_MS = 300;
 
 export const oryonUiPrefsSchema = z.object({
   version: z.literal(1),
-  /** Whitelist-validated per entry at LOAD time (isCatalogToolId) — the
+  /** Whitelist-validated per entry at LOAD time (isCatalogToolId) - the
    *  schema stays a plain string list so an older build's stale ids are
    *  salvaged out instead of nuking the whole envelope. */
   favorites: z.array(z.string().min(1).max(40)).max(24),
   favoritesBar: z.object({
     visible: z.boolean(),
-    /** CSS px within the chart area — clamped at render time. */
+    /** CSS px within the chart area - clamped at render time. */
     x: z.number().finite(),
     y: z.number().finite(),
   }),
 });
 
-/** Runtime prefs — favorites are ALWAYS catalog-validated by the loader. */
+/** Runtime prefs - favorites are ALWAYS catalog-validated by the loader. */
 export interface OryonUiPrefs {
   favorites: readonly OryonCatalogToolId[];
   favoritesBar: {
@@ -52,16 +52,16 @@ export interface OryonUiPrefs {
   };
 }
 
-/** Documented defaults — a curated starter set (mirrors the TradingView
+/** Documented defaults - a curated starter set (mirrors the TradingView
  *  floating bar: trend, hline, fib, position, measure) and the bar VISIBLE:
  *  the user asked for it, and an empty hidden bar would look broken.
- *  Position (96, 128) — chart-AREA coordinates (panel headers INCLUDED in
- *  this container): the top-left column is BUSY by default — panel header
+ *  Position (96, 128) - chart-AREA coordinates (panel headers INCLUDED in
+ *  this container): the top-left column is BUSY by default - panel header
  *  (~0..48) then the indicator legend (~52..116) then the event-marker
- *  band (click line ≈120) — so the bar docks at y=128, BELOW all three.
+ *  band (click line ≈120) - so the bar docks at y=128, BELOW all three.
  *  The earlier defaults (120, then 64) floated INSIDE those interactive
  *  zones and swallowed chart clicks there (P8 marker popover + P3 legend
- *  chip regressions). Users drag the bar anywhere — the clamp keeps it
+ *  chip regressions). Users drag the bar anywhere - the clamp keeps it
  *  inside the chart area. */
 export const ORYON_UI_PREFS_DEFAULT: OryonUiPrefs = {
   favorites: ["trend", "hline", "fib", "longpos", "shortpos", "measure"],
@@ -102,17 +102,17 @@ export function loadUiPrefs(): OryonUiPrefs {
   try {
     parsed = JSON.parse(raw);
   } catch {
-    console.warn("[oryon] ui prefs: corrupt JSON dropped — defaults in use.");
+    console.warn("[oryon] ui prefs: corrupt JSON dropped - defaults in use.");
     return { ...ORYON_UI_PREFS_DEFAULT };
   }
 
   const envelope = rawEnvelopeSchema.safeParse(parsed);
   if (!envelope.success || envelope.data.version !== 1) {
-    console.warn("[oryon] ui prefs: invalid payload dropped — defaults in use.");
+    console.warn("[oryon] ui prefs: invalid payload dropped - defaults in use.");
     return { ...ORYON_UI_PREFS_DEFAULT };
   }
 
-  // Favorites salvage — per-entry, order kept, duplicates removed.
+  // Favorites salvage - per-entry, order kept, duplicates removed.
   const favorites: OryonCatalogToolId[] = [];
   if (Array.isArray(envelope.data.favorites)) {
     for (const entry of envelope.data.favorites) {
@@ -122,7 +122,7 @@ export function loadUiPrefs(): OryonUiPrefs {
     }
   }
 
-  // Bar position — finite numbers only; visibility boolean only.
+  // Bar position - finite numbers only; visibility boolean only.
   const rawBar = envelope.data.favoritesBar;
   const bar =
     rawBar !== null && typeof rawBar === "object"
@@ -146,12 +146,12 @@ function writePrefs(prefs: OryonUiPrefs): void {
       favoritesBar: { ...prefs.favoritesBar },
     });
     if (!check.success) {
-      console.warn("[oryon] ui prefs save skipped — payload invalid.");
+      console.warn("[oryon] ui prefs save skipped - payload invalid.");
       return;
     }
     window.localStorage.setItem(UI_PREFS_KEY, JSON.stringify(check.data));
   } catch {
-    // Quota exceeded / storage evicted — the session keeps working in memory.
+    // Quota exceeded / storage evicted - the session keeps working in memory.
   }
 }
 

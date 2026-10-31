@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# restore-canonical-server.sh — mirror of .zscripts/dev.sh launch lines
+# restore-canonical-server.sh - mirror of .zscripts/dev.sh launch lines
 # (market-service :3003 + web :3000 production start), used after a
 # verification batch killed the tiers. Same health checks, no rebuild.
 set -u

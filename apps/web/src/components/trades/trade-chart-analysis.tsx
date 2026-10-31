@@ -13,19 +13,19 @@ import { oryonAnalyses } from "@/lib/oryon/journal/analyses";
 import { cn } from "@/lib/utils";
 
 /**
- * Trade-detail "Chart analyses" section (Phase 10 — Trade Journal bridge).
+ * Trade-detail "Chart analyses" section (Phase 10 - Trade Journal bridge).
  *
  * Lists the Oryon chart analyses LINKED to this trade (the analysis record
- * carries the trade's canonical id — the journal trade itself is never
+ * carries the trade's canonical id - the journal trade itself is never
  * copied or mutated). Per record: open the reconstructed view in Oryon
  * (deep link `/oryon?analysis=<id>`), unlink the association, or delete
- * the analysis (journal screenshot attachments are NOT touched — they are
+ * the analysis (journal screenshot attachments are NOT touched - they are
  * the journal's own records).
  *
  * Honesty: analyses live in the browser that created them (the documented
  * Oryon persistence scope); the note says so in plain copy. Snapshot
  * images attached to the trade appear in the journal's OWN screenshots
- * gallery — this section never duplicates that storage.
+ * gallery - this section never duplicates that storage.
  */
 export function TradeChartAnalysisSection({ trade, open }: { trade: Trade; open: boolean }) {
   const { dict } = useI18n();
@@ -34,7 +34,7 @@ export function TradeChartAnalysisSection({ trade, open }: { trade: Trade; open:
   const snapshot = React.useSyncExternalStore(oryonAnalyses.subscribe, oryonAnalyses.getSnapshot);
   const [confirmDeleteId, setConfirmDeleteId] = React.useState<string | null>(null);
 
-  // The store lazily loads from localStorage on first read — only read it
+  // The store lazily loads from localStorage on first read - only read it
   // while the drawer is actually open (no boot cost for every page).
   const analyses = open ? snapshot.analyses.filter((a) => a.tradeId === trade.id) : [];
 

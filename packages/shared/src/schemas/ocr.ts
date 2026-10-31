@@ -7,13 +7,13 @@ import { pageCursorSchema } from "./security";
  *
  * Architectural invariants (Phase 19 §4/§21/§22/§28/§42):
  * - OCR output is an UNTRUSTED machine-generated interpretation until the
- *   user explicitly confirms it — every uncertain value carries a confidence
+ *   user explicitly confirms it - every uncertain value carries a confidence
  *   representation and an explicit validation status (§17/§20).
  * - Recognition NEVER creates a canonical Trade directly; Trading Core owns
  *   the Trade. Confirmed values live on the recognition as user corrections.
  * - Raw → normalized separation is preserved end to end (§13): ambiguous
  *   input stays ambiguous (no silent transformation, §14).
- * - Financial values travel as decimal strings — never `number` (§14).
+ * - Financial values travel as decimal strings - never `number` (§14).
  * - Timestamps extracted from screenshots carry an explicit timezone status;
  *   the engine NEVER silently assumes a timezone (§16).
  */
@@ -28,7 +28,7 @@ import { pageCursorSchema } from "./security";
  *
  * Processing is request-scoped (no external queue in this build), so QUEUED
  * and PROCESSING are transitional states persisted for observability and
- * concurrency guards. CANCELLED does not exist yet — there is no cancel
+ * concurrency guards. CANCELLED does not exist yet - there is no cancel
  * endpoint in V1 (§24: "use only states required by the actual product").
  */
 export const ocrRecognitionStatusSchema = z.enum([
@@ -43,7 +43,7 @@ export type OcrRecognitionStatus = z.infer<typeof ocrRecognitionStatusSchema>;
 // ── Extraction profile + field keys (§12: only what the product needs) ──────
 
 /**
- * Extraction profiles (Recognition V1.1 — Account & Chart expansion).
+ * Extraction profiles (Recognition V1.1 - Account & Chart expansion).
  *
  * TRADE_SUMMARY is the V1 target: MT5-style trade summary lines consumed by
  * the trade journal. ACCOUNT_POSITION reads account-level snapshots (login,
@@ -69,7 +69,7 @@ export const ocrFieldKeySchema = z.enum([
   "profit",
   "openTime",
   "closeTime",
-  // ACCOUNT_POSITION vocabulary — the account snapshot header.
+  // ACCOUNT_POSITION vocabulary - the account snapshot header.
   "accountLogin",
   "accountServer",
   "accountCurrency",
@@ -79,7 +79,7 @@ export const ocrFieldKeySchema = z.enum([
   "accountMargin",
   "accountFreeMargin",
   "accountMarginLevel",
-  // CHART_ANALYSIS vocabulary — quote panel + visible indicator readings.
+  // CHART_ANALYSIS vocabulary - quote panel + visible indicator readings.
   "chartTimeframe",
   "chartTime",
   "chartOpen",
@@ -124,7 +124,7 @@ export const OCR_DECIMAL_FIELD_KEYS = [
   "chartMa",
 ] as const satisfies readonly (typeof ocrFieldKeySchema.options)[number][];
 
-/** ACCOUNT_POSITION vocabulary — the snapshot header (positions are candidates). */
+/** ACCOUNT_POSITION vocabulary - the snapshot header (positions are candidates). */
 export const OCR_ACCOUNT_FIELD_KEYS = [
   "accountLogin",
   "accountServer",
@@ -137,7 +137,7 @@ export const OCR_ACCOUNT_FIELD_KEYS = [
   "accountMarginLevel",
 ] as const satisfies readonly (typeof ocrFieldKeySchema.options)[number][];
 
-/** CHART_ANALYSIS vocabulary — quote panel + visible indicator readings. */
+/** CHART_ANALYSIS vocabulary - quote panel + visible indicator readings. */
 export const OCR_CHART_FIELD_KEYS = [
   "chartTimeframe",
   "chartTime",
@@ -174,7 +174,7 @@ export const OCR_PROFILE_REQUIRED_FIELD_KEYS: Record<OcrExtractionProfile, reado
 export const ocrConfidenceBandSchema = z.enum(["HIGH", "MEDIUM", "LOW", "UNKNOWN"]);
 export type OcrConfidenceBand = z.infer<typeof ocrConfidenceBandSchema>;
 
-/** Explicit uncertainty representation (§20) — missing values are preserved. */
+/** Explicit uncertainty representation (§20) - missing values are preserved. */
 export const ocrValidationStatusSchema = z.enum([
   "VALID",
   "MISSING",
@@ -199,7 +199,7 @@ export type OcrSourceRegion = z.infer<typeof ocrSourceRegionSchema>;
 /**
  * A per-field correction suggestion derived from the user's own history:
  * this exact raw reading was corrected to `value` `occurrences` times in
- * previous confirmations. A hint for the review UI — never applied
+ * previous confirmations. A hint for the review UI - never applied
  * automatically (§21: nothing becomes authoritative without the user).
  */
 export const ocrFieldSuggestionSchema = z.object({
@@ -212,18 +212,18 @@ export type OcrFieldSuggestion = z.infer<typeof ocrFieldSuggestionSchema>;
 
 export const ocrExtractedFieldSchema = z.object({
   field: ocrFieldKeySchema,
-  /** Text as read by the engine — preserved for debugging and review (§13). */
+  /** Text as read by the engine - preserved for debugging and review (§13). */
   rawValue: z.string().max(512).nullable(),
-  /** Normalized domain value — decimal-string / enum / ISO timestamp / symbol. */
+  /** Normalized domain value - decimal-string / enum / ISO timestamp / symbol. */
   normalizedValue: z.string().max(256).nullable(),
-  /** Numeric confidence 0..1 — a heuristic signal, never certainty (§17). */
+  /** Numeric confidence 0..1 - a heuristic signal, never certainty (§17). */
   confidence: z.number().min(0).max(1),
   confidenceBand: ocrConfidenceBandSchema,
   validationStatus: ocrValidationStatusSchema,
   /** Where the value came from, in original-image pixel coordinates (§18). */
   sourceRegion: ocrSourceRegionSchema.nullable(),
   warnings: z.array(z.string().max(256)).max(8),
-  /** History-derived hint (corrections memory) — advisory only. */
+  /** History-derived hint (corrections memory) - advisory only. */
   suggestion: ocrFieldSuggestionSchema.optional(),
 });
 export type OcrExtractedField = z.infer<typeof ocrExtractedFieldSchema>;
@@ -235,7 +235,7 @@ export type OcrExtractedField = z.infer<typeof ocrExtractedFieldSchema>;
  * stays minimal: only platforms the product actually targets (§9).
  */
 /**
- * Screenshot taxonomy (V2 spec §19) — additive extension. The legacy
+ * Screenshot taxonomy (V2 spec §19) - additive extension. The legacy
  * MT5_TRADE / TRADINGVIEW_CHART values stay valid forever (persisted
  * results and mocks keep parsing); the sidecar V2 pipeline (v3.0.0)
  * emits the finer TRADE_HISTORY / OPEN_POSITION / ... vocabulary.
@@ -276,18 +276,18 @@ export const ocrClassificationSchema = z.object({
   type: ocrScreenshotTypeSchema,
   confidence: z.number().min(0).max(1),
   alternatives: z.array(ocrClassificationCandidateSchema).max(4),
-  /** V2 §18 — detected platform (default keeps old persisted rows valid). */
+  /** V2 §18 - detected platform (default keeps old persisted rows valid). */
   platform: ocrPlatformSchema.default("UNKNOWN"),
 });
 export type OcrClassification = z.infer<typeof ocrClassificationSchema>;
 
-// ── Asset metadata (§6 — metadata + storage reference, never the binary) ────
+// ── Asset metadata (§6 - metadata + storage reference, never the binary) ────
 
 export const ocrAssetSchema = z.object({
   id: uuidSchema,
   mime: z.enum(["image/png", "image/jpeg", "image/webp", "application/pdf"]),
   sizeBytes: z.number().int().positive(),
-  /** V2 — null for PDF statements (the pages carry the rendering). */
+  /** V2 - null for PDF statements (the pages carry the rendering). */
   width: z.number().int().positive().nullable(),
   height: z.number().int().positive().nullable(),
   checksumSha256: z.string().regex(/^[a-f0-9]{64}$/),
@@ -332,11 +332,11 @@ export type OcrFailure = z.infer<typeof ocrFailureSchema>;
 // ── Recognition aggregate ────────────────────────────────────────────────────
 
 /**
- * User corrections — the authoritative confirmed values (§21). Values are
+ * User corrections - the authoritative confirmed values (§21). Values are
  * raw user input (strings); the API re-normalizes and re-validates them with
  * the same domain rules as machine values before persisting.
  */
-export const ocrCorrectionRecordSchema = z.record(
+export const ocrCorrectionRecordSchema = z.partialRecord(
   ocrFieldKeySchema,
   z.string().max(128).nullable(),
 );
@@ -346,7 +346,7 @@ export type OcrCorrectionRecord = z.infer<typeof ocrCorrectionRecordSchema>;
 
 /**
  * One trade draft grouped from an account-history screenshot. Grouping is
- * EVIDENCE — the user confirms each draft independently (human-in-the-loop,
+ * EVIDENCE - the user confirms each draft independently (human-in-the-loop,
  * §21); nothing is created before that.
  */
 export const ocrTradeCandidateSchema = z.object({
@@ -361,11 +361,11 @@ export const ocrConfirmBatchSchema = z.object({
 });
 export type OcrConfirmBatch = z.infer<typeof ocrConfirmBatchSchema>;
 
-// ── V2 §16 — structured recognition issues ─────────────────────────────────
+// ── V2 §16 - structured recognition issues ─────────────────────────────────
 
 /**
  * Stable issue codes (V2 spec §16). Every issue is derived from the stored
- * recognition evidence — never a free-text judgment call. `field` scopes the
+ * recognition evidence - never a free-text judgment call. `field` scopes the
  * issue to one extracted field when the code is field-level; `detail` is a
  * STABLE token (e.g. a trade id or matched-on evidence), not prose.
  */
@@ -393,16 +393,16 @@ export const ocrIssueSchema = z.object({
 });
 export type OcrIssue = z.infer<typeof ocrIssueSchema>;
 
-// ── V2 §15 — deterministic recognition quality score ───────────────────
+// ── V2 §15 - deterministic recognition quality score ───────────────────
 
 /**
  * Composite quality score with EXPLAINABLE components (V2 spec §15):
- *   fieldConfidence — mean confidence over readable fields (text evidence);
- *   completeness    — share of the import-critical fields present;
- *   validation      — cross-field/domain validation penalty (INVALID fields);
- *   consistency     — evidence agreement (duplicates/unknown classification
+ *   fieldConfidence - mean confidence over readable fields (text evidence);
+ *   completeness    - share of the import-critical fields present;
+ *   validation      - cross-field/domain validation penalty (INVALID fields);
+ *   consistency     - evidence agreement (duplicates/unknown classification
  *                     penalize; fusion agreement feeds this for sets).
- * The score is a deterministic function of the stored fields — the same
+ * The score is a deterministic function of the stored fields - the same
  * recognition always produces the same score (V2 §77).
  */
 export const ocrQualityScoreSchema = z.object({
@@ -416,14 +416,14 @@ export const ocrQualityScoreSchema = z.object({
 });
 export type OcrQualityScore = z.infer<typeof ocrQualityScoreSchema>;
 
-// ── V2 §23 — trade timeline ─────────────────────────────────────────────
+// ── V2 §23 - trade timeline ─────────────────────────────────────────────
 
 /**
  * Deterministic chronology derived from the recognized timestamps plus the
  * recognition lifecycle. OPEN_TIME/CLOSE_TIME carry the timezone-unknown
- * wall-clock canonical form (§16 — never converted, never invented);
+ * wall-clock canonical form (§16 - never converted, never invented);
  * UPLOADED/CONFIRMED carry real ISO instants. Entries with no recognized
- * timestamp are omitted — never guessed.
+ * timestamp are omitted - never guessed.
  */
 export const ocrTimelineEntrySchema = z.object({
   kind: z.enum(["OPEN_TIME", "CLOSE_TIME", "UPLOADED", "CONFIRMED"]),
@@ -434,7 +434,7 @@ export const ocrTimelineEntrySchema = z.object({
 });
 export type OcrTimelineEntry = z.infer<typeof ocrTimelineEntrySchema>;
 
-// ── V2 §4 — trade duplicate detection (different screenshot, same trade) ──
+// ── V2 §4 - trade duplicate detection (different screenshot, same trade) ──
 
 /** Evidence tokens explaining WHY a trade looks like a duplicate. */
 export const ocrTradeDuplicateEvidenceSchema = z.enum([
@@ -463,11 +463,11 @@ export const ocrRecognitionSchema = z.object({
   engine: ocrEngineInfoSchema.nullable(),
   durationMs: z.number().int().nonnegative().nullable(),
   failure: ocrFailureSchema.nullable(),
-  /** Authoritative user corrections — set at confirmation (§21). */
+  /** Authoritative user corrections - set at confirmation (§21). */
   corrections: ocrCorrectionRecordSchema.nullable(),
   /**
    * Canonical Trade created from the confirmed values through Trading Core
-   * (Phase 21 bridge — the ONLY sanctioned OCR→Trade path, §77). Null while
+   * (Phase 21 bridge - the ONLY sanctioned OCR→Trade path, §77). Null while
    * the recognition is unconfirmed and when the confirmed values could not
    * resolve into a complete trade (stable skip warning explains why).
    * One-way provenance: deleting the recognition never deletes the Trade.
@@ -476,11 +476,11 @@ export const ocrRecognitionSchema = z.object({
   tradeId: uuidSchema.nullable(),
   /** Every Trade imported from this recognition (grouped confirmation N>1). */
   tradeIds: z.array(uuidSchema).max(20).default([]),
-  /** Multi-trade drafts (account-history screenshots) — null when mono. */
+  /** Multi-trade drafts (account-history screenshots) - null when mono. */
   candidates: z.array(ocrTradeCandidateSchema).max(20).nullable(),
   /**
    * Perceptual duplicate flag (engine quality §2.1): this screenshot is a
-   * near-match of an EARLIER recognition by the same user. Advisory — the
+   * near-match of an EARLIER recognition by the same user. Advisory - the
    * pipeline still runs; the review UI surfaces the warning.
    */
   duplicateOf: z
@@ -490,28 +490,28 @@ export const ocrRecognitionSchema = z.object({
       tradeId: uuidSchema.nullable(),
     })
     .nullable(),
-  /** ACCOUNTS module attachment (engine quality §3.1) — null until chosen. */
+  /** ACCOUNTS module attachment (engine quality §3.1) - null until chosen. */
   accountId: uuidSchema.nullable(),
-  /** Playbook tag suggestions (engine quality §3.3) — set at confirmation. */
+  /** Playbook tag suggestions (engine quality §3.3) - set at confirmation. */
   suggestedTags: z.array(z.string().max(64)).max(8).default([]),
   /**
-   * V2 §16 — structured issues derived from the stored evidence at read
+   * V2 §16 - structured issues derived from the stored evidence at read
    * time (the derivation is a pure function; confirmed rows never mutate).
    */
   issues: z.array(ocrIssueSchema).max(32).default([]),
-  /** V2 §15 — deterministic quality score (null when nothing is readable). */
+  /** V2 §15 - deterministic quality score (null when nothing is readable). */
   qualityScore: ocrQualityScoreSchema.nullable(),
-  /** V2 §23 — derived chronology (only entries with real evidence). */
+  /** V2 §23 - derived chronology (only entries with real evidence). */
   timeline: z.array(ocrTimelineEntrySchema).max(16).default([]),
   /**
-   * V2 §4 — content-based trade duplicate flag (different screenshot, same
+   * V2 §4 - content-based trade duplicate flag (different screenshot, same
    * trade). Advisory at review time; confirmation REQUIRES an explicit
-   * acknowledgment to proceed (V2 §58 — the user decides, never a silent
+   * acknowledgment to proceed (V2 §58 - the user decides, never a silent
    * discard, and never a silent double import).
    */
   possibleTradeDuplicate: ocrPossibleTradeDuplicateSchema.nullable(),
   /**
-   * V2 §32 — set when this recognition was produced by an explicit
+   * V2 §32 - set when this recognition was produced by an explicit
    * reprocess of an earlier one. The original row is NEVER mutated
    * (§33); a reprocess is a fresh, independently confirmable recognition.
    */
@@ -526,7 +526,7 @@ export type OcrRecognition = z.infer<typeof ocrRecognitionSchema>;
 
 /**
  * Upload input. The wire format mirrors the existing frontend screenshot
- * contract (`addScreenshotInputSchema`: data URL ≤ 8 400 000 chars) — image
+ * contract (`addScreenshotInputSchema`: data URL ≤ 8 400 000 chars) - image
  * formats plus the multi-page PDF statements (engine quality §4.3). The
  * binary size after base64 decoding is bounded server-side
  * (OCR_UPLOAD_MAX_BYTES).
@@ -543,7 +543,7 @@ export const ocrCreateInputSchema = z.object({
       { message: "expected a base64 data URL for an image or a PDF" },
     ),
   requestedProfile: ocrExtractionProfileSchema.default("TRADE_SUMMARY"),
-  /** ACCOUNTS attachment chosen at upload (engine quality §3.1) — optional. */
+  /** ACCOUNTS attachment chosen at upload (engine quality §3.1) - optional. */
   accountId: uuidSchema.nullable().optional(),
 });
 export type OcrCreateInput = z.infer<typeof ocrCreateInputSchema>;
@@ -558,9 +558,9 @@ export const ocrRecognitionPageQuerySchema = z.object({
   limit: z.number().int().min(1).max(50).default(20),
   cursor: pageCursorSchema.optional(),
   status: ocrRecognitionStatusSchema.optional(),
-  /** V2 §62 — detected-platform filter (jsonb path filter server-side). */
+  /** V2 §62 - detected-platform filter (jsonb path filter server-side). */
   platform: ocrPlatformSchema.optional(),
-  /** V2 §62 — recognized screenshot-type filter (jsonb path filter). */
+  /** V2 §62 - recognized screenshot-type filter (jsonb path filter). */
   screenshotType: ocrScreenshotTypeSchema.optional(),
 });
 export type OcrRecognitionPageQuery = z.infer<typeof ocrRecognitionPageQuerySchema>;
@@ -577,7 +577,7 @@ export type OcrRecognitionPage = z.infer<typeof ocrRecognitionPageSchema>;
  * `null` explicitly clears a value (e.g. an ambiguous timestamp).
  *
  * Grouped confirmation (engine quality §2.2): `batches` carries one entry
- * per multi-trade draft — each with its own corrections and an include
+ * per multi-trade draft - each with its own corrections and an include
  * flag. When batches are present, `corrections` is ignored (kept required
  * for single-trade backward compatibility and idempotent replay).
  * `accountId` attaches the ACCOUNTS module target at confirmation time.
@@ -588,10 +588,10 @@ export const ocrConfirmInputSchema = z
     batches: z.array(ocrConfirmBatchSchema).min(1).max(20).optional(),
     accountId: uuidSchema.nullable().optional(),
     /**
-     * V2 §58 — explicit acknowledgment of advisory duplicate warnings.
+     * V2 §58 - explicit acknowledgment of advisory duplicate warnings.
      * A flagged recognition cannot be confirmed without the matching
      * acknowledgment (409 otherwise): the user saw the warning and chose
-     * to proceed — never a silent double import.
+     * to proceed - never a silent double import.
      */
     acknowledgeDuplicateScreenshot: z.boolean().default(false),
     acknowledgeDuplicateTrade: z.boolean().default(false),
@@ -604,7 +604,7 @@ export type OcrConfirmInput = z.infer<typeof ocrConfirmInputSchema>;
 /**
  * Re-OCR by crop (engine quality §2.4): re-run the engine over a framed
  * region of the stored screenshot. The result is EPHEMERAL guidance for
- * the review — it never rewrites the stored machine result.
+ * the review - it never rewrites the stored machine result.
  */
 export const ocrRecropInputSchema = z.object({
   region: ocrSourceRegionSchema,
@@ -643,7 +643,7 @@ export const ocrAnalyticsResponseSchema = z.object({
     confirmed: z.number().int().nonnegative(),
     importedTrades: z.number().int().nonnegative(),
   }),
-  /** Correction counts per field — where the engine struggles for YOU. */
+  /** Correction counts per field - where the engine struggles for YOU. */
   correctionsByField: z
     .array(
       z.object({
@@ -656,14 +656,14 @@ export const ocrAnalyticsResponseSchema = z.object({
   avgConfidence: z.number().min(0).max(1).nullable(),
   duplicatesBlocked: z.number().int().nonnegative(),
   avgDurationMs: z.number().int().nonnegative().nullable(),
-  /** V2 §30 — share of confirmed recognitions that carried corrections. */
+  /** V2 §30 - share of confirmed recognitions that carried corrections. */
   correctionRate: z.number().min(0).max(1).nullable(),
-  /** V2 §30 — recognized platform distribution over the window (detected
-   * platforms only — legacy rows without the field are not fabricated). */
+  /** V2 §30 - recognized platform distribution over the window (detected
+   * platforms only - legacy rows without the field are not fabricated). */
   platformDistribution: z
     .array(z.object({ platform: ocrPlatformSchema, count: z.number().int().nonnegative() }))
     .max(8),
-  /** V2 §30 — recognized screenshot-type distribution over the window. */
+  /** V2 §30 - recognized screenshot-type distribution over the window. */
   typeDistribution: z
     .array(z.object({ type: ocrScreenshotTypeSchema, count: z.number().int().nonnegative() }))
     .max(10),
@@ -683,20 +683,20 @@ export const ocrStorageResponseSchema = z.object({
 });
 export type OcrStorageResponse = z.infer<typeof ocrStorageResponseSchema>;
 
-// ── V2 §1/§2/§14/§15/§18 — multi-screenshot recognition sets ────────────────
+// ── V2 §1/§2/§14/§15/§18 - multi-screenshot recognition sets ────────────────
 
 /** A member's recognized fields as stored on its own recognition row. */
 export const ocrSetMemberSchema = z.object({
   order: z.number().int().min(0).max(15),
   recognitionId: uuidSchema,
-  /** Fully-derived member DTO — the individual result is NEVER destroyed. */
+  /** Fully-derived member DTO - the individual result is NEVER destroyed. */
   recognition: ocrRecognitionSchema,
 });
 export type OcrSetMember = z.infer<typeof ocrSetMemberSchema>;
 
 /**
  * One conflicting field across members (V2 §18): both readings are kept
- * with their provenance — the user decides, nothing is auto-merged away.
+ * with their provenance - the user decides, nothing is auto-merged away.
  */
 export const ocrFieldConflictSchema = z.object({
   field: ocrFieldKeySchema,
@@ -712,16 +712,16 @@ export const ocrFieldConflictSchema = z.object({
 });
 export type OcrFieldConflict = z.infer<typeof ocrFieldConflictSchema>;
 
-/** The fused draft — one TradeDraft out of N member recognitions (V2 §18). */
+/** The fused draft - one TradeDraft out of N member recognitions (V2 §18). */
 export const ocrFusedDraftSchema = z.object({
   fields: z.array(ocrExtractedFieldSchema).max(64),
-  /** Fields whose members disagreed — kept for the review UI. */
+  /** Fields whose members disagreed - kept for the review UI. */
   conflicts: z.array(ocrFieldConflictSchema).max(16),
-  /** V2 §16 — issues derived from the fused evidence. */
+  /** V2 §16 - issues derived from the fused evidence. */
   issues: z.array(ocrIssueSchema).max(32),
-  /** V2 §15 — quality over the fused fields (agreement lifts consistency). */
+  /** V2 §15 - quality over the fused fields (agreement lifts consistency). */
   qualityScore: ocrQualityScoreSchema.nullable(),
-  /** V2 §23 — chronology across members (entry/position/exit shots). */
+  /** V2 §23 - chronology across members (entry/position/exit shots). */
   timeline: z.array(ocrTimelineEntrySchema).max(16),
   /** True when the members AGREE on symbol + direction (correlation check,
    * V2 §14: insufficient evidence stays a "possible group" for the user). */
@@ -736,7 +736,7 @@ export type OcrSetStatus = z.infer<typeof ocrSetStatusSchema>;
 export const ocrSetSchema = z.object({
   id: uuidSchema,
   status: ocrSetStatusSchema,
-  /** Reading order chosen at upload — index 0 first. */
+  /** Reading order chosen at upload - index 0 first. */
   members: z.array(ocrSetMemberSchema).min(1).max(6),
   fused: ocrFusedDraftSchema.nullable(),
   corrections: ocrCorrectionRecordSchema.nullable(),
@@ -767,7 +767,7 @@ export const ocrSetCreateInputSchema = z.object({
     )
     .min(2)
     .max(6),
-  // Sets FUSE trade drafts — the fusion grammar is trade-shaped, so the
+  // Sets FUSE trade drafts - the fusion grammar is trade-shaped, so the
   // set path stays TRADE_SUMMARY-only (account/chart workflows use the
   // single-image route; honest restriction, not a hidden failure).
   requestedProfile: z.literal("TRADE_SUMMARY").default("TRADE_SUMMARY"),
@@ -810,7 +810,7 @@ export type OcrSetConfirmInput = z.infer<typeof ocrSetConfirmInputSchema>;
 export const ocrSetDeleteResponseSchema = z.object({ deleted: z.literal(true), id: uuidSchema });
 export type OcrSetDeleteResponse = z.infer<typeof ocrSetDeleteResponseSchema>;
 
-// ── V2 §28 — screenshot collections ─────────────────────────────────────────
+// ── V2 §28 - screenshot collections ─────────────────────────────────────────
 
 export const ocrCollectionItemSchema = z.object({
   recognitionId: uuidSchema,
@@ -858,17 +858,17 @@ export const ocrCollectionRemoveItemParamsSchema = z.object({
 });
 export type OcrCollectionRemoveItemParams = z.infer<typeof ocrCollectionRemoveItemParamsSchema>;
 
-// ── V2 §32/§39 — reprocessing (a fresh recognition from the same asset) ─────
+// ── V2 §32/§39 - reprocessing (a fresh recognition from the same asset) ─────
 
 export const ocrReprocessResponseSchema = z.object({ recognition: ocrRecognitionSchema });
 export type OcrReprocessResponse = z.infer<typeof ocrReprocessResponseSchema>;
 
-// ── Recognition V2/V3 — the /recognition wire family ─────────────────────────
+// ── Recognition V2/V3 - the /recognition wire family ─────────────────────────
 // Frontend-derived API surface for the recognition backend (jobs, drafts,
 // groups, collections, corrections). Distinct from the legacy /ocr family
 // above: jobs are first-class, drafts are user-editable, groups fuse several
 // screenshots into one trade, collections organise assets. Wire conventions
-// are the house ones — UTC ISO-8601 Z, decimal strings, zod-validated
+// are the house ones - UTC ISO-8601 Z, decimal strings, zod-validated
 // everywhere, 16 normalized field keys (engine's 10 + 6 wire-only).
 
 /** The 16 wire field keys (engine keys + account/chart keys, profit→profitLoss). */
@@ -892,11 +892,11 @@ export const recognitionFieldKeySchema = z.enum([
 ]);
 export type RecognitionFieldKey = z.infer<typeof recognitionFieldKeySchema>;
 
-/** Per-field read state (never invented — the engine signals each state). */
+/** Per-field read state (never invented - the engine signals each state). */
 export const recognitionFieldStateSchema = z.enum(["FOUND", "UNCERTAIN", "NOT_FOUND"]);
 export type RecognitionFieldState = z.infer<typeof recognitionFieldStateSchema>;
 
-/** Normalized 0..1 source region (frontend §25 — resolution independent). */
+/** Normalized 0..1 source region (frontend §25 - resolution independent). */
 const recognitionRegionSchema = z.object({
   x: z.number().min(0).max(1),
   y: z.number().min(0).max(1),
@@ -919,7 +919,7 @@ export type RecognizedField = z.infer<typeof recognizedFieldSchema>;
 export const recognizedTradeSchema = z.object({
   /** 1-based position within the screenshot. */
   index: z.number().int().positive(),
-  fields: z.record(recognitionFieldKeySchema, recognizedFieldSchema),
+  fields: z.partialRecord(recognitionFieldKeySchema, recognizedFieldSchema),
   pageIndex: z.number().int().nonnegative().optional(),
 });
 export type RecognizedTrade = z.infer<typeof recognizedTradeSchema>;
@@ -1003,7 +1003,7 @@ export const recognitionResultSchema = z.object({
 });
 export type RecognitionResult = z.infer<typeof recognitionResultSchema>;
 
-/** GET /recognition/jobs/:id — the job aggregate. */
+/** GET /recognition/jobs/:id - the job aggregate. */
 export const recognitionJobSchema = z.object({
   id: uuidSchema,
   ownerId: uuidSchema,
@@ -1026,7 +1026,7 @@ export const recognitionJobSchema = z.object({
 });
 export type RecognitionJob = z.infer<typeof recognitionJobSchema>;
 
-/** History row (keyset-paginated list) — the list projection of a job. */
+/** History row (keyset-paginated list) - the list projection of a job. */
 export const recognitionHistoryItemSchema = z.object({
   id: uuidSchema,
   status: recognitionJobStatusSchema,
@@ -1048,7 +1048,7 @@ export const recognitionHistoryItemSchema = z.object({
   completedAt: isoDateTimeSchema.nullable(),
   processingMs: z.number().int().nonnegative().nullable(),
   importedTradeId: uuidSchema.nullable(),
-  /** V3 facets (§62/§41) — present only when meaningful. */
+  /** V3 facets (§62/§41) - present only when meaningful. */
   correctedCount: z.number().int().nonnegative().optional(),
   duplicateWarned: z.literal(true).optional(),
   qualityOverall: z.number().min(0).max(100).optional(),
@@ -1056,7 +1056,7 @@ export const recognitionHistoryItemSchema = z.object({
 });
 export type RecognitionHistoryItem = z.infer<typeof recognitionHistoryItemSchema>;
 
-/** GET /recognition/jobs list query — server-side history filters. */
+/** GET /recognition/jobs list query - server-side history filters. */
 export const recognitionJobListQuerySchema = z.object({
   status: recognitionJobStatusSchema.optional(),
   platform: z.string().max(32).optional(),
@@ -1099,11 +1099,11 @@ export const tradeDraftSchema = tradeDraftRecordSchema.extend({
 });
 export type TradeDraft = z.infer<typeof tradeDraftSchema>;
 
-/** PUT /recognition/jobs/:id/draft — the user's corrected draft (≡ record). */
+/** PUT /recognition/jobs/:id/draft - the user's corrected draft (≡ record). */
 export const tradeDraftUpdateInputSchema = tradeDraftRecordSchema;
 export type TradeDraftUpdateInput = z.infer<typeof tradeDraftUpdateInputSchema>;
 
-/** POST /recognition/uploads — data-URL upload (image or PDF). */
+/** POST /recognition/uploads - data-URL upload (image or PDF). */
 export const recognitionUploadInputSchema = z.object({
   fileDataUrl: z
     .string()
@@ -1119,7 +1119,7 @@ export const recognitionUploadInputSchema = z.object({
 });
 export type RecognitionUploadInput = z.infer<typeof recognitionUploadInputSchema>;
 
-/** POST /recognition/jobs — start recognition on a previously uploaded asset. */
+/** POST /recognition/jobs - start recognition on a previously uploaded asset. */
 export const createRecognitionJobInputSchema = z.object({
   screenshotId: uuidSchema,
   platform: z.enum(["AUTO", "METATRADER_5", "TRADINGVIEW", "OTHER"]).default("AUTO"),
@@ -1127,21 +1127,21 @@ export const createRecognitionJobInputSchema = z.object({
 });
 export type CreateRecognitionJobInput = z.infer<typeof createRecognitionJobInputSchema>;
 
-/** POST /recognition/jobs/:id/confirm — THE trade bridge (explicit human action). */
+/** POST /recognition/jobs/:id/confirm - THE trade bridge (explicit human action). */
 export const recognitionConfirmInputSchema = z.object({
   tradeIndexes: z.array(z.number().int().positive().max(20)).max(20).optional(),
   accountId: uuidSchema.optional(),
 });
 export type RecognitionConfirmInput = z.infer<typeof recognitionConfirmInputSchema>;
 
-/** POST /recognition/jobs/:id/recrop — re-read a zoomed region of the asset. */
+/** POST /recognition/jobs/:id/recrop - re-read a zoomed region of the asset. */
 export const recognitionRecropInputSchema = z.object({
   region: recognitionRegionSchema,
   tradeIndex: z.number().int().positive().max(20).optional(),
 });
 export type RecognitionRecropInput = z.infer<typeof recognitionRecropInputSchema>;
 
-// ── Groups (V3 — fuse several screenshots into one trade) ────────────────────
+// ── Groups (V3 - fuse several screenshots into one trade) ────────────────────
 
 /** Machine-readable correlation evidence between two members. */
 export const correlationEvidenceSchema = z.object({
@@ -1218,19 +1218,19 @@ export const recognitionGroupSummarySchema = z.object({
 });
 export type RecognitionGroupSummary = z.infer<typeof recognitionGroupSummarySchema>;
 
-/** POST /recognition/groups — correlate 2..8 jobs into one trade. */
+/** POST /recognition/groups - correlate 2..8 jobs into one trade. */
 export const recognitionGroupCreateInputSchema = z.object({
   jobIds: z.array(uuidSchema).min(2).max(8),
 });
 export type RecognitionGroupCreateInput = z.infer<typeof recognitionGroupCreateInputSchema>;
 
-/** POST /recognition/groups/:id/confirm — confirm the fused draft. */
+/** POST /recognition/groups/:id/confirm - confirm the fused draft. */
 export const recognitionGroupConfirmInputSchema = z.object({
   accountId: uuidSchema.optional(),
 });
 export type RecognitionGroupConfirmInput = z.infer<typeof recognitionGroupConfirmInputSchema>;
 
-// ── Collections (V3 — asset-based organization) ──────────────────────────────
+// ── Collections (V3 - asset-based organization) ──────────────────────────────
 
 export const recognitionCollectionSchema = z.object({
   id: uuidSchema,
@@ -1258,7 +1258,7 @@ export const recognitionCollectionAssetInputSchema = z.object({
 });
 export type RecognitionCollectionAssetInput = z.infer<typeof recognitionCollectionAssetInputSchema>;
 
-// ── Draft coherence (pure domain rule — shared by jobs, groups, quality) ─────
+// ── Draft coherence (pure domain rule - shared by jobs, groups, quality) ─────
 
 export interface DraftCoherenceInput {
   direction?: string | null;
@@ -1281,7 +1281,7 @@ export interface DraftCoherenceIssue {
  *   2. take-profit must sit on the winning side of entry;
  *   3. closeTime must not precede openTime.
  * Each rule fires only when its operands are present and parseable as
- * decimals; direction defaults to BUY when absent. Exactly these three —
+ * decimals; direction defaults to BUY when absent. Exactly these three -
  * callers derive `applicableRules` from the same operand presence, so any
  * additional issue here would poison the cross-field quality component.
  */

@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 };
 
 /**
- * /tasky — Tasky (Academy section, independent module). The trading kanban:
+ * /tasky - Tasky (Academy section, independent module). The trading kanban:
  * columns flow horizontally (left → right) inside a scrollable board, cards
  * move with the cursor or a finger, and the board persists locally. The
  * header states the board's role in one short line, per product spec.

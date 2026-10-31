@@ -1,7 +1,7 @@
 """OCR sidecar configuration (Phase 19 §26/§27/§38).
 
 Environment-driven, fail-fast: the service refuses to start without the
-service-to-service token (§27 — no public unauthenticated OCR endpoints).
+service-to-service token (§27 - no public unauthenticated OCR endpoints).
 """
 
 from __future__ import annotations
@@ -15,7 +15,7 @@ CONTRACT_VERSION = "1"
 
 @dataclass(frozen=True)
 class Settings:
-    """Immutable runtime settings — read once at startup."""
+    """Immutable runtime settings - read once at startup."""
 
     service_token: str
     max_bytes: int
@@ -28,7 +28,7 @@ class Settings:
         token = os.environ.get("OCR_SERVICE_TOKEN", "").strip()
         if len(token) < 32:
             raise RuntimeError(
-                "OCR_SERVICE_TOKEN must be set (>= 32 chars) — the sidecar "
+                "OCR_SERVICE_TOKEN must be set (>= 32 chars) - the sidecar "
                 "refuses unauthenticated operation (Phase 19 §27)"
             )
 

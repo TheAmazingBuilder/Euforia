@@ -22,7 +22,6 @@ import { apiErrorMessage } from "@/lib/api/client";
 import { useDeleteGoal, useGoals } from "@/lib/api/queries";
 import { cn } from "@/lib/utils";
 import {
-  GOAL_GRADIENTS,
   GoalStatusBadge,
   METRIC_META,
   PERIOD_LABELS,
@@ -31,7 +30,7 @@ import {
 import { GoalFormDialog } from "@/components/trade-review/goal-form-dialog";
 
 /**
- * Goals tab — the "targets vs real behavior" workspace. Every card renders
+ * Goals tab - the "targets vs real behavior" workspace. Every card renders
  * the trader's target next to the ACTUAL value computed server-side from
  * closed trades and daily stats over the resolved calendar period; progress
  * bars are paced against elapsed days so "behind" is honest, not vibes.
@@ -73,7 +72,7 @@ export function GoalsPanel() {
     if (!window.confirm(`Delete "${row.goal.title}"? Progress history leaves with it.`)) return;
     deleteGoal.mutate(row.goal.id, {
       onSuccess: () => toast.success("Goal deleted", { description: row.goal.title }),
-      onError: (error) => toast.error("Could not delete the goal", { description: apiErrorMessage(error, "Unexpected error — try again.") }),
+      onError: (error) => toast.error("Could not delete the goal", { description: apiErrorMessage(error, "Unexpected error - try again.") }),
     });
   };
 
@@ -83,7 +82,7 @@ export function GoalsPanel() {
         <div>
           <h2 className="font-heading text-lg font-semibold">Goals vs. real behavior</h2>
           <p className="text-sm text-muted-foreground">
-            Targets are yours; the actual numbers are computed from your closed trades and daily stats — you cannot
+            Targets are yours; the actual numbers are computed from your closed trades and daily stats - you cannot
             cheat the progress bar.
           </p>
           <p
@@ -91,7 +90,7 @@ export function GoalsPanel() {
             data-testid="goals-alerts-hint"
           >
             <BellRing className="size-3 text-accent" aria-hidden="true" />
-            A goal that slips to “At risk” raises an alert in your notification inbox — tune it in Settings →
+            A goal that slips to “At risk” raises an alert in your notification inbox - tune it in Settings →
             Notifications → Goals.
           </p>
         </div>
@@ -114,7 +113,7 @@ export function GoalsPanel() {
             <div>
               <p className="font-medium">No goals yet</p>
               <p className="mx-auto max-w-sm text-sm text-muted-foreground">
-                Set your first target — win rate, R earned, discipline, trade limits — and track it against what you
+                Set your first target - win rate, R earned, discipline, trade limits - and track it against what you
                 actually do.
               </p>
             </div>
@@ -144,11 +143,6 @@ export function GoalsPanel() {
                 data-status={progress.status}
               >
                 {goal.id === highlightedGoalId && <div ref={highlightRef} aria-hidden="true" />}
-                {/* The colorful signature — a gradient spine per goal color */}
-                <span
-                  className={cn("absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r", GOAL_GRADIENTS[goal.color])}
-                  aria-hidden="true"
-                />
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-semibold leading-snug">{goal.title}</CardTitle>
                   <CardDescription className="flex items-center gap-2 text-xs">
@@ -168,7 +162,7 @@ export function GoalsPanel() {
                 <CardContent className="space-y-3">
                   <div className="flex items-baseline justify-between gap-2">
                     <p className="font-mono text-2xl font-bold tabular-nums" data-testid="goal-actual">
-                      {progress.actual === null ? "—" : formatGoalUnit(progress.actual, progress.unit)}
+                      {progress.actual === null ? "-" : formatGoalUnit(progress.actual, progress.unit)}
                     </p>
                     <p className="font-mono text-xs text-muted-foreground">
                       target {formatGoalUnit(goal.target, progress.unit)}
@@ -187,10 +181,10 @@ export function GoalsPanel() {
                       data-progress={progress.progressPct ?? 0}
                     >
                       <div
-                        className={cn("h-full rounded-full bg-gradient-to-r transition-all duration-500", GOAL_GRADIENTS[goal.color])}
+                        className="h-full rounded-full bg-foreground/70 transition-all duration-500"
                         style={{ width: `${progress.progressPct ?? 0}%` }}
                       />
-                      {/* The "now" marker — where the period should be by time alone */}
+                      {/* The "now" marker - where the period should be by time alone */}
                       <span
                         className="absolute top-0 h-full w-0.5 bg-foreground/50"
                         style={{ left: `${periodPct}%` }}
@@ -214,7 +208,7 @@ export function GoalsPanel() {
                     day {progress.daysElapsed}/{progress.daysTotal} · n={progress.sampleSize}
                   </span>
                   <span className="flex gap-1">
-                    <Button variant="ghost" size="icon" className="size-7" onClick={() => openEdit({ goal, progress })} aria-label="Edit goal">
+                    <Button variant="edit" size="icon" className="size-7" onClick={() => openEdit({ goal, progress })} aria-label="Edit goal">
                       <Pencil className="size-3.5" aria-hidden="true" />
                     </Button>
                     <Button

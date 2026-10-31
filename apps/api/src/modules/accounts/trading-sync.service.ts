@@ -1,17 +1,17 @@
 /**
  * Synchronization orchestration (Phase 3 §16–§18, §37–§38, §46, §50;
- * Phase 03 — segment-based execution with PARTIAL semantics, doc B §8.2).
+ * Phase 03 - segment-based execution with PARTIAL semantics, doc B §8.2).
  *
  *   connection (validated credentials)
  *        ↓ provider adapter (read-only, timeout-guarded, capability-gated)
  *        ↓ normalization boundary (schema-validated)
  *        ↓ per-SEGMENT transactions: snapshot / positions / orders / deals
- *          (each segment persists independently — a failing segment never
+ *          (each segment persists independently - a failing segment never
  *           rolls back persisted siblings; run keeps per-segment timestamps)
  *        ↓ observable run record (COMPLETED | PARTIAL | FAILED, counts,
  *          duration, FIRST failing segment's error code)
  *
- * Concurrency (§38): at most ONE RUNNING run per account — enforced inside a
+ * Concurrency (§38): at most ONE RUNNING run per account - enforced inside a
  * transaction and backed by a partial unique index; a second trigger gets
  * 409 SYNC_ALREADY_RUNNING. No distributed locking for a modular monolith.
  */
@@ -61,7 +61,7 @@ export function normalizeProviderError(error: unknown): AppError {
         return new BusinessRuleError(error.message, TRADING_ERROR_CODES.INVALID_CREDENTIALS);
       case "UNSUPPORTED_CAPABILITY":
         // Phase 03 (doc B §10): the operation is outside the provider's
-        // declared capabilities — client-pickable → 422.
+        // declared capabilities - client-pickable → 422.
         return new BusinessRuleError(error.message, TRADING_ERROR_CODES.UNSUPPORTED_CAPABILITY);
       case "RATE_LIMITED":
         return new RateLimitError(
@@ -83,7 +83,7 @@ export function normalizeProviderError(error: unknown): AppError {
       TRADING_ERROR_CODES.SYNC_ALREADY_RUNNING,
     );
   }
-  // Unknown failure — honest 502 without internals.
+  // Unknown failure - honest 502 without internals.
   return new ExternalProviderError(
     "The trading provider could not be synchronized.",
     TRADING_ERROR_CODES.SYNC_FAILED,
@@ -141,7 +141,7 @@ export class TradingSyncService {
   /**
    * Initial synchronization right after connect/reconnect (§17). Runs inside
    * the connect request (the mock is fast); the caller catches failures so
-   * the account registration itself still succeeds — the error surfaces in
+   * the account registration itself still succeeds - the error surfaces in
    * the details view and a fresh sync can be triggered.
    */
   async runInitialSync(input: {
@@ -163,11 +163,11 @@ export class TradingSyncService {
   }
 
   /**
-   * Scheduled synchronization (Phase 05 §9) — the scheduler's per-connection
+   * Scheduled synchronization (Phase 05 §9) - the scheduler's per-connection
    * entry point. Same orchestration, SCHEDULED trigger: the run record keeps
    * the trigger provenance (§10) and the frontend can distinguish automatic
    * refreshes from user actions. Concurrency (one RUNNING run per account)
-   * is enforced by startRun exactly as for MANUAL — the scheduler treats a
+   * is enforced by startRun exactly as for MANUAL - the scheduler treats a
    * 409 as "already running" and skips. Failures propagate: the scheduler
    * isolates them per connection (§9.1: one user's failing connection never
    * blocks another).
@@ -187,7 +187,7 @@ export class TradingSyncService {
     });
   }
 
-  /** Rate limiting for the MANUAL vector (§37) — service-owned, keyed by user. */
+  /** Rate limiting for the MANUAL vector (§37) - service-owned, keyed by user. */
   checkSyncRateLimit(limiter: { check(scope: string, key: string): { allowed: boolean; retryAfterSeconds: number } }, userId: string): void {
     const check = limiter.check("sync", userId);
     if (!check.allowed) {
@@ -221,14 +221,14 @@ export class TradingSyncService {
   }
 
   /**
-   * Segment-based orchestration (Phase 03 — doc B §8.2).
+   * Segment-based orchestration (Phase 03 - doc B §8.2).
    *
    * The four port reads are SEGMENTS, each gated by the adapter's declared
    * capability and persisted independently:
    *
    *   for each segment (snapshot → positions → orders → deals):
    *     - capability gate BEFORE the call: a segment whose capability is not
-   *       SUPPORTED is a capability FACT — skipped, never a failure (§8.2).
+   *       SUPPORTED is a capability FACT - skipped, never a failure (§8.2).
    *     - call (timeout-guarded) → normalize (zod boundary) → persist segment.
    *     - a failing segment records its code and lets the others continue.
    *   afterwards:
@@ -237,7 +237,7 @@ export class TradingSyncService {
    *     - every supported segment failed       → FAILED (historical path:
    *       failSyncRun + auth-class connection ERROR + security event + throw)
    *
-   * lastSyncAt advances only when the SNAPSHOT segment persisted (doc B §9 —
+   * lastSyncAt advances only when the SNAPSHOT segment persisted (doc B §9 -
    * the freshness axis is snapshot-anchored); the run keeps per-segment
    * observation timestamps so a 0-count segment is distinguishable from a
    * failed one.
@@ -258,15 +258,16 @@ export class TradingSyncService {
       credentials,
       externalAccountId: input.account.externalAccountId,
       environment: input.account.type as ProviderRequestContext["environment"],
-      // Phase 05 — the incremental deals checkpoint (opaque to the domain;
+      // Phase 05 - the incremental deals checkpoint (opaque to the domain;
       // the adapter maps it onto the provider's documented cursor).
       dealsCursor: input.connection.dealsCheckpoint ?? null,
-      // Phase 08 — bridge connections route their pull-adapter to the
+      // Phase 08 - bridge connections route their pull-adapter to the
       // server-persisted ingest cache through this key (null otherwise).
       bridgeKeyId: input.connection.bridgeKeyId ?? null,
+      lastSyncAt: input.connection.lastSyncAt ?? null,
     };
     const timeoutMs = this.config.accounts.providerTimeoutMs;
-    // Phase 05 — bounded transient retries (spec §15). Sleep is real here;
+    // Phase 05 - bounded transient retries (spec §15). Sleep is real here;
     // tests inject their own timing. The config value is defensively
     // coalesced: an env-sourced config always carries it (schema default),
     // and an unbounded retry loop must be structurally impossible.
@@ -296,7 +297,7 @@ export class TradingSyncService {
 
     for (const { segment, capabilityKey } of plan) {
       // Capability gate BEFORE the call (doc A §4.4): not-SUPPORTED = the
-      // segment cannot run — a capability fact, not a run failure (§8.2).
+      // segment cannot run - a capability fact, not a run failure (§8.2).
       if (capabilitySupportLevel(adapter.descriptor.capabilities, capabilityKey) !== "SUPPORTED") {
         outcomes.set(segment, { ok: false, skipped: true, errorCode: null });
         this.logger?.info(
@@ -346,7 +347,7 @@ export class TradingSyncService {
               positions: safe.map((p) => ({ ...p, openedAt: new Date(p.openedAt) })),
               syncedAt: new Date(),
               // Reconciliation (§13.2): closure ONLY on the adapter's
-              // completeness fact — a capped/failed page never closes.
+              // completeness fact - a capped/failed page never closes.
               completeExternalIds: result.complete
                 ? safe.map((p) => p.externalPositionId)
                 : null,
@@ -378,7 +379,7 @@ export class TradingSyncService {
               accountId: input.account.id,
               deals: safe.map((d) => ({ ...d, executedAt: new Date(d.executedAt) })),
               syncedAt: new Date(),
-              // §8.4 — the checkpoint advances ONLY through the persistence
+              // §8.4 - the checkpoint advances ONLY through the persistence
               // transaction and ONLY over observed+persisted rows; null/
               // undefined leaves the existing checkpoint untouched.
               checkpoint: result.observedThrough,
@@ -389,7 +390,7 @@ export class TradingSyncService {
         outcomes.set(segment, { ok: true, skipped: false, errorCode: null });
       } catch (error) {
         // Adapter-level enforcement backstop: an UNSUPPORTED_CAPABILITY thrown
-        // by the adapter itself is STILL a capability fact (§8.2) — skip.
+        // by the adapter itself is STILL a capability fact (§8.2) - skip.
         if (error instanceof ProviderError && error.code === "UNSUPPORTED_CAPABILITY") {
           outcomes.set(segment, { ok: false, skipped: true, errorCode: null });
           this.logger?.info(
@@ -431,7 +432,7 @@ export class TradingSyncService {
     const failed = failedInPlanOrder;
 
     if (failed.length === 0) {
-      // Full success — or the all-skipped edge (nothing supported, nothing
+      // Full success - or the all-skipped edge (nothing supported, nothing
       // failed): COMPLETED with the segments that actually ran.
       await this.repository.finalizeSyncRun({
         runId: input.runId,
@@ -455,13 +456,13 @@ export class TradingSyncService {
 
     const firstFailure = failed[0];
     if (firstFailure === undefined) {
-      // Unreachable (failed.length === 0 returned above) — kept as an honest
+      // Unreachable (failed.length === 0 returned above) - kept as an honest
       // guard instead of a non-null assertion.
       return;
     }
 
     if (succeeded.length === 0) {
-      // Every supported segment failed — the historical FAILED path (§16).
+      // Every supported segment failed - the historical FAILED path (§16).
       await this.repository.failSyncRun(input.runId, firstFailure.code);
       if (authClassFailure) {
         const message = firstFailure.error instanceof ProviderError
@@ -491,7 +492,7 @@ export class TradingSyncService {
       throw normalizeProviderError(firstFailure.error);
     }
 
-    // PARTIAL (doc B §8.2): ≥1 succeeded AND ≥1 failed. Throws nothing — the
+    // PARTIAL (doc B §8.2): ≥1 succeeded AND ≥1 failed. Throws nothing - the
     // honest representation IS the run row (status PARTIAL + first error).
     await this.repository.finalizeSyncRun({
       runId: input.runId,

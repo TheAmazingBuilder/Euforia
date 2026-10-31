@@ -1,5 +1,5 @@
 /**
- * Unit — Settings pure logic (Phase 15 §38): defaults, one-domain merge,
+ * Unit - Settings pure logic (Phase 15 §38): defaults, one-domain merge,
  * one-domain reset, timezone write-through source.
  *
  * Invariants under test (§39):
@@ -32,7 +32,7 @@ describe("freshPreferencesDoc", () => {
     expect(doc.privacy.profileVisibility).toBe("PRIVATE");
   });
 
-  it("deep-clones the defaults — mutating the doc never leaks into DEFAULT_USER_PREFERENCES", () => {
+  it("deep-clones the defaults - mutating the doc never leaks into DEFAULT_USER_PREFERENCES", () => {
     const doc = freshPreferencesDoc("user-1", NOW);
     doc.trading.displayCurrency = "EUR";
     doc.journal.requiredFields.push("TAGS");
@@ -48,7 +48,7 @@ describe("mergeDomainIntoDoc", () => {
     const next = mergeDomainIntoDoc(doc, "appearance", { theme: "LIGHT", density: "COMPACT", defaultDashboardLayout: "RISK_FIRST", pnlDisplay: "R_MULTIPLE" }, later);
     expect(next.appearance.theme).toBe("LIGHT");
     expect(next.updatedAt).toBe(later.toISOString());
-    // §39 — sibling domains carried over verbatim.
+    // §39 - sibling domains carried over verbatim.
     expect(next.trading).toEqual(doc.trading);
     expect(next.risk).toEqual(doc.risk);
     expect(next.journal).toEqual(doc.journal);

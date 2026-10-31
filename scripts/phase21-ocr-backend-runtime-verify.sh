@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# COSMOZ — OCR BACKEND V1 runtime verification (master prompt §134–§138).
+# COSMOZ - OCR BACKEND V1 runtime verification (master prompt §134–§138).
 #
 # Boots the REAL FastAPI sidecar (:3004, Tesseract) + the REAL NestJS API
 # (:4000) on the dev database, then drives the COMPLETE frontend-derived
@@ -10,7 +10,7 @@
 #   externalRef OCR:<jobId>) → idempotent replay → screenshot bytes →
 #   delete → trade-boundary probes.
 #
-# Artifacts: /tmp/cosmoz-ocr-verify/ (logs, tokens, payloads) — wiped on exit.
+# Artifacts: /tmp/cosmoz-ocr-verify/ (logs, tokens, payloads) - wiped on exit.
 set -euo pipefail
 
 ROOT=/home/z/my-project
@@ -147,7 +147,7 @@ for key in ["symbol","direction","volume","entryPrice","exitPrice","stopLoss","t
     region = f"{f['sourceRegion']['x']:.2f},{f['sourceRegion']['y']:.2f}" if f.get("sourceRegion") else "-"
     print(f"  {key:>11} = {str(f['value']):>20}  state={f['state']:>8}  conf={f['confidence']}  region=({region})")
 # The REAL Tesseract pipeline must read the rendered MT5 ticket. Prices
-# travel in the CANONICAL normalized form (toFixed — trailing zeros drop).
+# travel in the CANONICAL normalized form (toFixed - trailing zeros drop).
 assert fields["symbol"] == "XAUUSD", fields["symbol"]
 assert fields["direction"] == "BUY", fields["direction"]
 assert fields["entryPrice"] == "2345.6", fields["entryPrice"]
@@ -155,7 +155,7 @@ assert fields["stopLoss"] == "2335.6", fields["stopLoss"]
 assert fields["takeProfit"] == "2365.6", fields["takeProfit"]
 assert fields["profitLoss"] == "123.75", fields["profitLoss"]
 # §20 conservative extraction (sidecar pytest-documented): the close line's
-# price is NOT claimed as the exit price — the HUMAN completes it in review.
+# price is NOT claimed as the exit price - the HUMAN completes it in review.
 assert fields["exitPrice"] is None, fields["exitPrice"]
 assert res["overallConfidence"] is not None
 print("  detectedPlatform:", res["detectedPlatform"], "overall:", res["overallConfidence"], "warnings:", len(res["warnings"]))
@@ -175,7 +175,7 @@ NO_DRAFT=$(curl -s -o /dev/null -w "%{http_code}" -X POST "http://127.0.0.1:$API
 TR_COUNT=$(curl -s "http://127.0.0.1:$API_PORT/api/v1/trades" -H "authorization: Bearer $ACCESS" | python3 -c "import json,sys; print(len(json.load(sys.stdin).get('trades',[])))" || echo "?")
 echo " ✓ confirm without draft → 409; journal trades: ${TR_COUNT}"
 
-echo "── 9. Save the validated trade draft — with the HUMAN exit-price correction (§74)"
+echo "── 9. Save the validated trade draft - with the HUMAN exit-price correction (§74)"
 python3 - << 'EOF'
 import json
 fields = json.load(open("/tmp/cosmoz-ocr-verify/fields.json"))
@@ -185,7 +185,7 @@ draft = {
     "platform": "METATRADER_5",
     "entryPrice": fields["entryPrice"],
     # The close price is visible on the screenshot; conservative V1 OCR did
-    # not claim it — the REVIEWING USER types it (§74 correction path).
+    # not claim it - the REVIEWING USER types it (§74 correction path).
     "exitPrice": "2353.85",
     "volume": fields["volume"],
     "stopLoss": fields["stopLoss"],

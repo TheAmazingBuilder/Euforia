@@ -4,10 +4,11 @@
  * Flow semantics match the frontend contract EXACTLY (mock engine is the
  * porting spec; the shared schemas are the law). Where the mock leaks
  * mock-only affordances (verificationToken / resetToken / demoCode), the
- * real backend NEVER returns them — production delivery is EMAIL.
+ * real backend NEVER returns them - production delivery is EMAIL.
  */
 import { Inject, Injectable, Optional } from "@nestjs/common";
 import type { FastifyReply, FastifyRequest } from "fastify";
+import { createHmac, randomInt, timingSafeEqual } from "node:crypto";
 import { REFRESH_COOKIE_NAME, TokenService } from "./token.service";
 import { IdentityRepository, type UserRow } from "./identity.repository";
 import { PasswordHasherService } from "./password-hasher.service";
@@ -21,6 +22,10 @@ import {
   UNKNOWN_LOCATION,
 } from "./client-metadata";
 import { toAuthSession, toAuthUser } from "./mappers";
+import type { AuthSuccess } from "../../shared/contracts";
+// Local status union mirroring the shared accountStatusSchema (the API has no
+// @cosmoz/shared dependency; register() narrows the row's `string` status).
+type AccountStatus = "PENDING_VERIFICATION" | "ACTIVE" | "SUSPENDED" | "DEACTIVATED";
 import {
   ConflictError,
   ForbiddenError,
@@ -32,19 +37,17 @@ import { APP_CONFIG } from "../../config/app-config";
 import type { AppConfig } from "../../config/app-config";
 import { ROOT_LOGGER, type RootLogger } from "../../infrastructure/logging/logger.factory";
 
-// ── In-memory MFA login challenges (5-min TTL, single-use — mock parity) ─────
+// ── MFA login challenges are persisted in AuthChallenge for multi-instance safety. ──
 
-interface MfaChallenge {
-  userId: string;
-  expiresAt: number;
-}
+/** Login-shaped credentials returned by register() on auto-login accounts. */
+type RegisterSession = AuthSuccess & { session: ReturnType<typeof toAuthSession> };
 
 export interface RequestLike {
   ip?: string;
   headers: Record<string, string | string[] | undefined>;
 }
 
-/** Extract the request fingerprint (masked, minimal — §11/§17). */
+/** Extract the request fingerprint (masked, minimal - §11/§17). */
 export function fingerprintOf(request: RequestLike): RequestFingerprint {
   const uaHeader = request.headers["user-agent"];
   const userAgent = Array.isArray(uaHeader) ? (uaHeader[0] ?? undefined) : uaHeader;
@@ -59,8 +62,6 @@ export function fingerprintOf(request: RequestLike): RequestFingerprint {
 
 @Injectable()
 export class AuthService {
-  private readonly challenges = new Map<string, MfaChallenge>();
-
   constructor(
     private readonly repository: IdentityRepository,
     private readonly hasher: PasswordHasherService,
@@ -77,12 +78,21 @@ export class AuthService {
 
   async register(
     input: { name: string; email: string; password: string },
+    reply: FastifyReply,
   ): Promise<{
     user: ReturnType<typeof toAuthUser>;
-    status: string;
-    verificationSentAt: string;
+    status: UserRow["status"];
+    verificationSentAt?: string;
     delivery: "EMAIL";
-    verificationExpiresAt: string;
+    verificationExpiresAt: string | null;
+    /**
+     * Auto-login affordance: when registration lands on an ACTIVE account
+     * (email verification disabled), the response carries the same
+     * credentials a successful login would, so the client goes straight to
+     * the dashboard instead of bouncing back to /login. Pending accounts
+     * omit it. The refresh cookie is set on `reply` when present.
+     */
+    session?: RegisterSession;
   }> {
     const check = this.limiter.check("register", input.email);
     if (!check.allowed) {
@@ -90,38 +100,120 @@ export class AuthService {
     }
     this.limiter.hit("register", input.email);
 
-    if (await this.repository.isEmailTaken(input.email)) {
-      // Registration is inherently non-enumerable-safe? No: uniqueness is a
-      // product requirement the frontend surfaces with a dedicated state —
-      // the mock returns 409 EMAIL_ALREADY_USED (documented contract).
-      throw new ConflictError(
+    // Client metadata (masked IP, device/browser/os) - computed once, reused
+    // by the audit trail and the auto-login session below.
+    const meta = fingerprintOf({
+      ip: reply.request.ip,
+      headers: reply.request.headers,
+    });
+
+    // P2002 guard: the explicit email check above races against concurrent
+    // registrations and misses case-variant duplicates (the unique index is
+    // byte-wise, the lookup is lower-cased). A violated uniqueness constraint
+    // must surface as 409 EMAIL_ALREADY_USED - never an unhandled 500.
+    const duplicateEmail = (): ConflictError =>
+      new ConflictError(
         "An account already exists for this email address.",
         "EMAIL_ALREADY_USED",
       );
+    const isUniqueViolation = (error: unknown): boolean =>
+      typeof error === "object" && error !== null && (error as { code?: string }).code === "P2002";
+
+    if (await this.repository.isEmailTaken(input.email)) {
+      // Registration is inherently non-enumerable-safe? No: uniqueness is a
+      // product requirement the frontend surfaces with a dedicated state -
+      // the mock returns 409 EMAIL_ALREADY_USED (documented contract).
+      throw duplicateEmail();
     }
 
     const requireEmail = this.config.auth.requireEmailVerification;
 
     const passwordHash = await this.hasher.hash(input.password);
-    const user = await this.repository.createUser({
-      email: input.email,
-      name: input.name,
-      passwordHash,
-      preferences: null, // created lazily on first preferences read
-      status: requireEmail ? "PENDING_VERIFICATION" : "ACTIVE",
-      emailVerifiedAt: requireEmail ? null : new Date(),
-    });
+    let user;
+    try {
+      user = await this.repository.createUser({
+        email: input.email,
+        name: input.name,
+        passwordHash,
+        preferences: null, // created lazily on first preferences read
+        status: requireEmail ? "PENDING_VERIFICATION" : "ACTIVE",
+        emailVerifiedAt: requireEmail ? null : new Date(),
+      });
+    } catch (error) {
+      if (isUniqueViolation(error)) throw duplicateEmail();
+      throw error;
+    }
 
-    const expiresAt = requireEmail
-      ? await this.issueVerificationChallenge(user, user.email)
-      : new Date(Date.now() + 86_400_000).toISOString();
+    let expiresAt: string | null;
+    if (requireEmail) {
+      try {
+        expiresAt = await this.issueVerificationChallenge(user, user.email);
+      } catch (error) {
+        // The account was created successfully. Keep the user on the pending
+        // verification screen so they can request another email immediately.
+        this.logger?.warn(
+          { userId: user.id, errorType: error instanceof Error ? error.name : "UnknownError" },
+          "registration verification email delivery failed",
+        );
+        expiresAt = null;
+      }
+    } else {
+      expiresAt = new Date(Date.now() + 86_400_000).toISOString();
+    }
+
+    // Auto-login when the account lands ACTIVE (verification disabled):
+    // issue the same credentials a successful login would so the client
+    // goes straight to the dashboard instead of bouncing back to /login.
+    let session: RegisterSession | undefined;
+    if (!requireEmail && user.status === "ACTIVE") {
+      try {
+        const refresh = this.tokens.issueRefreshToken(1);
+        const created = await this.repository.createSession({
+          userId: user.id,
+          refreshTokenHash: refresh.hash,
+          remember: false,
+          device: meta.device,
+          browser: meta.browser,
+          os: meta.os,
+          ipMasked: meta.ipMasked,
+          location: meta.location,
+          userAgent: meta.userAgent,
+          expiresAt: new Date(Date.now() + this.config.auth.refreshSessionHours * 3_600_000),
+        });
+        const access = await this.tokens.signAccessToken(user.id, created.id);
+        this.setRefreshCookie(reply, refresh.value, { remember: false });
+        session = {
+          user: toAuthUser(user),
+          accessToken: access.token,
+          accessTokenExpiresAt: access.expiresAt.toISOString(),
+          session: toAuthSession(created, created.id),
+        };
+      } catch (error) {
+        // The account EXISTS at this point - failing the whole registration
+        // with a 500 would strand the user (email taken, no session, no
+        // verification mail). Degrade honestly: complete the signup without
+        // the auto-login session and sign the user in through /login.
+        this.logger?.warn(
+          { err: error instanceof Error ? error.message : String(error), userId: user.id },
+          "register auto-login session creation failed - continuing without session",
+        );
+      }
+      // Audit writes are best-effort here: a security-log failure must not
+      // turn a successful registration into a 500 (append-only log, §30).
+      await this.recordLoginBestEffort(
+        user.id,
+        "Signed in on registration.",
+        meta,
+      );
+    }
 
     return {
       user: toAuthUser(user),
-      status: user.status,
-      verificationSentAt: new Date().toISOString(),
+      status: user.status as AccountStatus,
+      ...(expiresAt ? { verificationSentAt: new Date().toISOString() } : {}),
       delivery: "EMAIL",
       verificationExpiresAt: expiresAt,
+      ...(session ? { session } : {}),
     };
   }
 
@@ -131,62 +223,101 @@ export class AuthService {
     const challenge = await this.repository.findChallengeByTokenHash(
       IdentityRepository.hashToken(token),
     );
-    if (!challenge) {
+    if (!challenge || challenge.purpose !== "EMAIL_VERIFICATION") {
       throw new ValidationError("This verification link is not valid.", undefined, "INVALID_TOKEN");
     }
     if (challenge.usedAt) {
       throw new ValidationError(
-        "This verification link has already been used — try signing in.",
+        "This verification link has already been used - try signing in.",
         undefined,
         "TOKEN_ALREADY_USED",
       );
     }
     if (challenge.expiresAt.getTime() <= Date.now()) {
       throw new ValidationError(
-        "This verification link has expired — request a new email.",
+        "This verification link has expired - request a new email.",
         undefined,
         "EXPIRED_TOKEN",
       );
     }
 
     const user = await this.repository.findUserById(challenge.userId);
-    if (!user) {
+    if (
+      !user ||
+      user.status !== "PENDING_VERIFICATION" ||
+      !challenge.targetEmail ||
+      challenge.targetEmail.toLowerCase() !== user.email.toLowerCase()
+    ) {
       throw new ValidationError("This verification link is not valid.", undefined, "INVALID_TOKEN");
     }
 
-    await this.repository.consumeChallenge(challenge.id);
     const verifiedAt = new Date();
-    const updated = await this.repository.updateUser(user.id, {
-      status: "ACTIVE",
-      emailVerifiedAt: verifiedAt,
-    });
-    await this.events.record({
+    const updated = await this.repository.completeEmailVerification({
+      challengeId: challenge.id,
       userId: user.id,
-      type: "EMAIL_VERIFIED",
-      actor: user.email,
-      context: "Email address verified.",
+      targetEmail: challenge.targetEmail,
+      verifiedAt,
     });
+    if (!updated) {
+      if (challenge.expiresAt.getTime() <= Date.now()) {
+        throw new ValidationError(
+          "This link has expired - request a new email.",
+          undefined,
+          "EXPIRED_TOKEN",
+        );
+      }
+      throw new ValidationError(
+        "This link has already been used - request a new email.",
+        undefined,
+        "TOKEN_ALREADY_USED",
+      );
+    }
+    try {
+      await this.events.record({
+        userId: user.id,
+        type: "EMAIL_VERIFIED",
+        actor: user.email,
+        context: "Email address verified.",
+      });
+    } catch (error) {
+      this.logger?.warn(
+        { userId: user.id, errorType: error instanceof Error ? error.name : "UnknownError" },
+        "email verification audit event could not be recorded",
+      );
+    }
     return { user: toAuthUser(updated), verifiedAt: verifiedAt.toISOString() };
   }
 
   async resendVerification(
     email: string,
   ): Promise<{ sent: true; delivery: "EMAIL"; verificationExpiresAt: string | null }> {
-    // Anti-enumeration (§10): the response is identical whether or not the
-    // account exists / is already verified — only delivery actually happens.
-    const user = await this.repository.findUserByEmail(email);
-    if (!user || user.status !== "PENDING_VERIFICATION") {
-      return { sent: true, delivery: "EMAIL", verificationExpiresAt: null };
-    }
-
+    // Apply the same rate-limit vector before account lookup so 429 behavior
+    // cannot distinguish pending, verified, deactivated, or unknown addresses.
     const check = this.limiter.check("resend", email);
     if (!check.allowed) {
       throw new RateLimitError("Too many attempts. Please wait before trying again.", "RATE_LIMITED", check.retryAfterSeconds);
     }
     this.limiter.hit("resend", email);
 
-    const expiresAt = await this.issueVerificationChallenge(user, user.email);
-    return { sent: true, delivery: "EMAIL", verificationExpiresAt: expiresAt };
+    const user = await this.repository.findUserByEmail(email);
+    if (!user || user.status !== "PENDING_VERIFICATION") {
+      return { sent: true, delivery: "EMAIL", verificationExpiresAt: null };
+    }
+
+    try {
+      await this.issueVerificationChallenge(user, user.email);
+      // Keep the response identical for pending, verified, and unknown addresses.
+      return { sent: true, delivery: "EMAIL", verificationExpiresAt: null };
+    } catch (error) {
+      // Preserve anti-enumeration: unknown accounts and delivery failures have
+      // the same response shape. A later resend can retry without changing
+      // the pending account's status or burning a previously delivered link.
+      this.logger?.warn(
+        { userId: user.id, errorType: error instanceof Error ? error.name : "UnknownError" },
+        "verification email could not be delivered",
+      );
+      return { sent: true, delivery: "EMAIL", verificationExpiresAt: null };
+    }
   }
 
   // ── Login (§11) + MFA branch (§19) ──────────────────────────────────────────
@@ -196,7 +327,7 @@ export class AuthService {
     request: RequestLike,
     reply: FastifyReply,
   ): Promise<
-    | { outcome: "MFA_REQUIRED"; mfaRequired: true; challengeToken: string; challengeExpiresAt: string; method: "AUTHENTICATOR_APP" }
+    | { outcome: "MFA_REQUIRED"; mfaRequired: true; challengeToken: string; challengeExpiresAt: string; method: "AUTHENTICATOR_APP" | "EMAIL" }
     | { outcome: "AUTHENTICATED"; user: ReturnType<typeof toAuthUser>; accessToken: string; accessTokenExpiresAt: string; session: ReturnType<typeof toAuthSession> }
   > {
     const fingerprint = fingerprintOf(request);
@@ -220,7 +351,7 @@ export class AuthService {
       throw new UnauthorizedError("Incorrect email or password.", "INVALID_CREDENTIALS");
     }
 
-    // Account status gates (§7) — order matters (suspended before deactivated
+    // Account status gates (§7) - order matters (suspended before deactivated
     // before pending verification, matching the mock's precedence).
     if (user.status === "SUSPENDED") {
       throw new ForbiddenError("This account is suspended. Contact support for help.", "ACCOUNT_SUSPENDED");
@@ -243,12 +374,12 @@ export class AuthService {
     }
 
     // MFA required → issue a single-use challenge (§19).
-    if (user.mfaSecretEnc && user.mfaEnabledAt) {
+    if (user.mfaEnabledAt) {
       const mfaCheck = this.limiter.check("mfa", user.email);
       if (!mfaCheck.allowed) {
         throw new RateLimitError("Too many attempts. Please wait before trying again.", "RATE_LIMITED", mfaCheck.retryAfterSeconds);
       }
-      return this.issueMfaChallenge(user);
+      return this.issueMfaChallenge(user, input.remember);
     }
 
     return this.completeLogin(user, input.remember, reply, fingerprint, "Signed in with email and password.");
@@ -259,7 +390,7 @@ export class AuthService {
     request: RequestLike,
     reply: FastifyReply,
   ): Promise<{ outcome: "AUTHENTICATED"; user: ReturnType<typeof toAuthUser>; accessToken: string; accessTokenExpiresAt: string; session: ReturnType<typeof toAuthSession> }> {
-    const { user, consume } = await this.peekMfaChallenge(input.challengeToken);
+    const { user, challenge } = await this.peekMfaChallenge(input.challengeToken);
     const fingerprint = fingerprintOf(request);
 
     const mfaCheck = this.limiter.check("mfa", user.email);
@@ -267,28 +398,51 @@ export class AuthService {
       throw new RateLimitError("Too many attempts. Please wait before trying again.", "RATE_LIMITED", mfaCheck.retryAfterSeconds);
     }
 
-    const secret = this.totp.decryptSecret(user.mfaSecretEnc ?? "");
-    if (!secret || !this.totp.verify(secret, user.email, input.code)) {
+    const submittedCodeHash = this.hashMfaEmailCode(input.code);
+    const valid = challenge.method === "EMAIL"
+      ? Boolean(
+          challenge.codeHash &&
+          timingSafeEqual(Buffer.from(challenge.codeHash, "hex"), Buffer.from(submittedCodeHash, "hex")),
+        )
+      : (() => {
+          const secret = this.totp.decryptSecret(user.mfaSecretEnc ?? "");
+          return Boolean(secret && this.totp.verify(secret, user.email, input.code));
+        })();
+    if (!valid) {
+      const attempts = await this.repository.recordMfaLoginFailure(challenge.id);
+      if (attempts === null) {
+        throw new UnauthorizedError(
+          "This challenge expired - start again with your password.",
+          "INVALID_CHALLENGE",
+        );
+      }
       this.limiter.hit("mfa", user.email);
-      // Phase 20 §39: the LoginRecord is Security-owned — the failure pair
-      // (security event + login history row) is recorded through the shared
-      // SecurityEventService port, never through raw identity Prisma access.
-      await this.events.recordLogin(
-        {
-          userId: user.id,
-          type: "TFA_CHALLENGE_FAILED",
-          context: "Invalid TOTP code during sign-in.",
-          outcome: "FAILURE",
-          reason: "Invalid MFA code",
-        },
-        fingerprint,
-      );
-      throw new UnauthorizedError("That code didn't match. Check your authenticator app.", "INVALID_MFA_CODE");
+      try {
+        await this.events.recordLogin(
+          {
+            userId: user.id,
+            type: "TFA_CHALLENGE_FAILED",
+            context: challenge.method === "EMAIL" ? "Invalid email code during sign-in." : "Invalid TOTP code during sign-in.",
+            outcome: "FAILURE",
+            reason: "Invalid MFA code",
+          },
+          fingerprint,
+        );
+      } catch (error) {
+        this.logger?.warn(
+          { userId: user.id, errorType: error instanceof Error ? error.name : "UnknownError" },
+          "failed MFA attempt could not be recorded",
+        );
+      }
+      throw new UnauthorizedError("That code didn't match. Check your email or authenticator app.", "INVALID_MFA_CODE");
     }
 
-    consume();
+    const consumed = await this.repository.consumeMfaLoginChallenge(challenge.id);
+    if (!consumed) {
+      throw new UnauthorizedError("This challenge has already been used or expired.", "INVALID_CHALLENGE");
+    }
     const updated = await this.repository.updateUser(user.id, { mfaLastVerifiedAt: new Date() });
-    return this.completeLogin(updated, true, reply, fingerprint, "Signed in with two-factor authentication.");
+    return this.completeLogin(updated, challenge.remember, reply, fingerprint, "Signed in with two-factor authentication.");
   }
 
   async mfaRecover(
@@ -296,7 +450,7 @@ export class AuthService {
     request: RequestLike,
     reply: FastifyReply,
   ): Promise<{ outcome: "AUTHENTICATED"; user: ReturnType<typeof toAuthUser>; accessToken: string; accessTokenExpiresAt: string; session: ReturnType<typeof toAuthSession> }> {
-    const { user, consume } = await this.peekMfaChallenge(input.challengeToken);
+    const { user, challenge } = await this.peekMfaChallenge(input.challengeToken);
     const fingerprint = fingerprintOf(request);
 
     const mfaCheck = this.limiter.check("mfa", user.email);
@@ -310,23 +464,43 @@ export class AuthService {
       this.totp.hashRecoveryCode(normalized),
     );
     if (!match) {
+      const attempts = await this.repository.recordMfaLoginFailure(challenge.id);
+      if (attempts === null) {
+        throw new UnauthorizedError(
+          "This challenge expired - start again with your password.",
+          "INVALID_CHALLENGE",
+        );
+      }
       this.limiter.hit("mfa", user.email);
-      await this.events.record({
-        userId: user.id,
-        type: "TFA_CHALLENGE_FAILED",
-        actor: fingerprint.device,
-        context: "Invalid recovery code during sign-in.",
-        outcome: "FAILURE",
-      });
+      try {
+        await this.events.record({
+          userId: user.id,
+          type: "TFA_CHALLENGE_FAILED",
+          actor: fingerprint.device,
+          context: "Invalid recovery code during sign-in.",
+          outcome: "FAILURE",
+        });
+      } catch (error) {
+        this.logger?.warn(
+          { userId: user.id, errorType: error instanceof Error ? error.name : "UnknownError" },
+          "failed recovery-code attempt could not be recorded",
+        );
+      }
       throw new UnauthorizedError("That recovery code was not recognized.", "INVALID_MFA_CODE");
     }
 
-    await this.repository.consumeRecoveryCode(match.id);
-    consume();
+    const consumed = await this.repository.consumeMfaLoginChallenge(challenge.id);
+    if (!consumed) {
+      throw new UnauthorizedError("This challenge has already been used or expired.", "INVALID_CHALLENGE");
+    }
+    const recoveryCodeConsumed = await this.repository.consumeRecoveryCode(match.id);
+    if (!recoveryCodeConsumed) {
+      throw new UnauthorizedError("That recovery code was already used. Try another recovery code.", "INVALID_MFA_CODE");
+    }
     const updated = await this.repository.updateUser(user.id, { mfaLastVerifiedAt: new Date() });
     return this.completeLogin(
       updated,
-      true,
+      challenge.remember,
       reply,
       fingerprint,
       "Signed in with a recovery code.",
@@ -343,13 +517,13 @@ export class AuthService {
     const raw = cookies?.[REFRESH_COOKIE_NAME];
     const presented = this.tokens.parseRefreshToken(raw);
     if (!presented) {
-      throw new UnauthorizedError("No active session — sign in again.", "INVALID_TOKEN");
+      throw new UnauthorizedError("No active session - sign in again.", "INVALID_TOKEN");
     }
 
     const session = await this.repository.findSessionByTokenHash(presented.hash);
 
     // REUSE DETECTION (§13): a token that is neither current NOR the one
-    // rotated away in this session's last rotation is unknown — and a token
+    // rotated away in this session's last rotation is unknown - and a token
     // equal to the last-rotated hash, or a stale generation, is a REUSE
     // signal: revoke every session of the user, never silently accept.
     const isReuse =
@@ -365,16 +539,16 @@ export class AuthService {
           userId: previous.userId,
           type: "SESSION_REVOKED",
           actor: previous.device,
-          context: "Refresh-token reuse detected — all sessions revoked.",
+          context: "Refresh-token reuse detected - all sessions revoked.",
           outcome: "FAILURE",
         });
-        this.logger?.warn({ userId: previous.userId }, "refresh-token reuse detected — all sessions revoked");
-        throw new UnauthorizedError("This session was revoked — sign in again.", "INVALID_TOKEN");
+        this.logger?.warn({ userId: previous.userId }, "refresh-token reuse detected - all sessions revoked");
+        throw new UnauthorizedError("This session was revoked - sign in again.", "INVALID_TOKEN");
       }
     }
 
     if (!session) {
-      throw new UnauthorizedError("This session is no longer valid — sign in again.", "INVALID_TOKEN");
+      throw new UnauthorizedError("This session is no longer valid - sign in again.", "INVALID_TOKEN");
     }
 
     if (isReuse) {
@@ -383,35 +557,45 @@ export class AuthService {
         userId: session.userId,
         type: "SESSION_REVOKED",
         actor: session.device,
-        context: "Refresh-token reuse detected — all sessions revoked.",
+        context: "Refresh-token reuse detected - all sessions revoked.",
         outcome: "FAILURE",
       });
-      this.logger?.warn({ userId: session.userId }, "refresh-token reuse detected — all sessions revoked");
-      throw new UnauthorizedError("This session was revoked — sign in again.", "INVALID_TOKEN");
+      this.logger?.warn({ userId: session.userId }, "refresh-token reuse detected - all sessions revoked");
+      throw new UnauthorizedError("This session was revoked - sign in again.", "INVALID_TOKEN");
     }
 
     if (session.revokedAt) {
-      throw new UnauthorizedError("This session was revoked — sign in again.", "INVALID_TOKEN");
+      throw new UnauthorizedError("This session was revoked - sign in again.", "INVALID_TOKEN");
     }
     if (session.expiresAt.getTime() <= Date.now()) {
-      throw new UnauthorizedError("This session is no longer valid — sign in again.", "INVALID_TOKEN");
+      throw new UnauthorizedError("This session is no longer valid - sign in again.", "INVALID_TOKEN");
     }
 
     const user = await this.repository.findUserById(session.userId);
     if (!user || user.status !== "ACTIVE") {
-      throw new UnauthorizedError("This session is no longer valid — sign in again.", "INVALID_TOKEN");
+      throw new UnauthorizedError("This session is no longer valid - sign in again.", "INVALID_TOKEN");
     }
 
-    // Rotation: same row, new generation + new hash, remember-length TTL.
-    const expiresAt = new Date(Date.now() + this.config.auth.refreshRememberDays * 86_400_000);
+    // Preserve the original session policy; refresh must never upgrade a
+    // short session to a remembered session.
+    const ttlMs = session.remember
+      ? this.config.auth.refreshRememberDays * 86_400_000
+      : this.config.auth.refreshSessionHours * 3_600_000;
+    const expiresAt = new Date(Date.now() + ttlMs);
     const rotated = this.tokens.issueRefreshToken(session.generation + 1);
-    const updatedSession = await this.repository.rotateSession(session.id, {
-      refreshTokenHash: rotated.hash,
-      expiresAt,
-    });
+    const updatedSession = await this.repository.rotateSession(
+      session.id,
+      { refreshTokenHash: presented.hash, generation: presented.generation },
+      { refreshTokenHash: rotated.hash, expiresAt },
+    );
+    if (!updatedSession) {
+      // Another request already rotated this token. Never overwrite the
+      // winning request's token hash or issue a second valid refresh token.
+      throw new UnauthorizedError("This session changed - sign in again if needed.", "INVALID_TOKEN");
+    }
 
     const access = await this.tokens.signAccessToken(user.id, session.id);
-    this.setRefreshCookie(reply, rotated.value, { remember: true });
+    this.setRefreshCookie(reply, rotated.value, { remember: session.remember });
     return {
       user: toAuthUser(user),
       accessToken: access.token,
@@ -431,7 +615,7 @@ export class AuthService {
           userId: session.userId,
           type: "LOGOUT",
           actor: session.device,
-          context: "Signed out — refresh token revoked.",
+          context: "Signed out - refresh token revoked.",
         });
       }
     }
@@ -461,35 +645,78 @@ export class AuthService {
     email: string,
     request: RequestLike,
   ): Promise<{ sent: true; delivery: "EMAIL"; resetExpiresAt: string | null }> {
-    const user = await this.repository.findUserByEmail(email);
-    if (!user || user.status === "DEACTIVATED") {
-      // Anti-enumeration (§22): identical response when the account is unknown.
-      return { sent: true, delivery: "EMAIL", resetExpiresAt: null };
-    }
-
+    // Rate-limit before account lookup so repeated requests have the same
+    // response policy for existing, deactivated, and unknown addresses.
     const check = this.limiter.check("forgot", email);
     if (!check.allowed) {
       throw new RateLimitError("Too many attempts. Please wait before trying again.", "RATE_LIMITED", check.retryAfterSeconds);
     }
     this.limiter.hit("forgot", email);
 
+    const user = await this.repository.findUserByEmail(email);
+    if (!user || user.status === "DEACTIVATED") {
+      return { sent: true, delivery: "EMAIL", resetExpiresAt: null };
+    }
+
     const ttlMs = this.config.auth.passwordResetMinutes * 60 * 1000;
     const expiresAt = new Date(Date.now() + ttlMs);
     const token = IdentityRepository.randomToken(24);
-    await this.repository.createChallenge({
-      userId: user.id,
-      purpose: "PASSWORD_RESET",
-      tokenHash: IdentityRepository.hashToken(token),
-      expiresAt,
-    });
-    await this.mailer.sendPasswordReset(user.email, token, `${this.config.auth.passwordResetMinutes} minutes`);
-    await this.events.record({
-      userId: user.id,
-      type: "PASSWORD_RESET_REQUESTED",
-      actor: fingerprintOf(request).device,
-      context: "Password reset requested — email sent.",
-    });
-    return { sent: true, delivery: "EMAIL", resetExpiresAt: expiresAt.toISOString() };
+    const tokenHash = IdentityRepository.hashToken(token);
+    try {
+      await this.repository.createChallenge({
+        userId: user.id,
+        purpose: "PASSWORD_RESET",
+        tokenHash,
+        expiresAt,
+      });
+      await this.mailer.sendPasswordReset(user.email, token, `${this.config.auth.passwordResetMinutes} minutes`);
+    } catch (error) {
+      // Keep the endpoint anti-enumeration-safe even if challenge persistence or
+      // SMTP fails. Remove only this candidate; a previously delivered link
+      // remains usable.
+      try {
+        await this.repository.deleteChallengeByTokenHash(tokenHash);
+      } catch (cleanupError) {
+        this.logger?.warn(
+          { userId: user.id, errorType: cleanupError instanceof Error ? cleanupError.name : "UnknownError" },
+          "could not remove undelivered password reset challenge",
+        );
+      }
+      this.logger?.warn(
+        { userId: user.id, errorType: error instanceof Error ? error.name : "UnknownError" },
+        "password reset challenge creation or delivery failed",
+      );
+      return { sent: true, delivery: "EMAIL", resetExpiresAt: null };
+    }
+    // Retiring older links is cleanup, not a prerequisite for using the
+    // delivered token. Do not report delivery failure after SMTP succeeded.
+    try {
+      await this.repository.finalizeDeliveredChallenge({
+        userId: user.id,
+        purpose: "PASSWORD_RESET",
+        tokenHash,
+      });
+    } catch (error) {
+      this.logger?.warn(
+        { userId: user.id, errorType: error instanceof Error ? error.name : "UnknownError" },
+        "could not retire previous password reset challenges",
+      );
+    }
+    try {
+      await this.events.record({
+        userId: user.id,
+        type: "PASSWORD_RESET_REQUESTED",
+        actor: fingerprintOf(request).device,
+        context: "Password reset requested - email sent.",
+      });
+    } catch (error) {
+      this.logger?.warn(
+        { userId: user.id, errorType: error instanceof Error ? error.name : "UnknownError" },
+        "password reset audit event could not be recorded",
+      );
+    }
+    // Do not expose whether an account exists through a populated expiry timestamp.
+    return { sent: true, delivery: "EMAIL", resetExpiresAt: null };
   }
 
   async resetPassword(
@@ -498,39 +725,60 @@ export class AuthService {
     const challenge = await this.repository.findChallengeByTokenHash(
       IdentityRepository.hashToken(input.token),
     );
-    if (!challenge) {
+    if (!challenge || challenge.purpose !== "PASSWORD_RESET") {
       throw new ValidationError("This reset link is not valid.", undefined, "INVALID_TOKEN");
     }
     if (challenge.usedAt) {
       throw new ValidationError(
-        "This reset link has already been used — request a new email.",
+        "This reset link has already been used - request a new email.",
         undefined,
         "TOKEN_ALREADY_USED",
       );
     }
     if (challenge.expiresAt.getTime() <= Date.now()) {
       throw new ValidationError(
-        "This reset link has expired — request a new email.",
+        "This reset link has expired - request a new email.",
         undefined,
         "EXPIRED_TOKEN",
       );
     }
 
     const passwordHash = await this.hasher.hash(input.password);
-    await this.repository.consumeChallenge(challenge.id);
-    await this.repository.updateUser(challenge.userId, {
-      passwordHash,
-      passwordLastChangedAt: new Date(),
-    });
-    // Defense in depth (§22): a reset invalidates the user's refresh chain.
-    await this.repository.revokeAllSessionsForUser(challenge.userId);
-    await this.events.record({
+    const resetAt = new Date();
+    const completed = await this.repository.completePasswordReset({
+      challengeId: challenge.id,
       userId: challenge.userId,
-      type: "PASSWORD_CHANGED",
-      actor: "system",
-      context: "Password changed via reset link. Sessions were signed out.",
+      passwordHash,
+      changedAt: resetAt,
     });
-    return { resetAt: new Date().toISOString() };
+    if (!completed) {
+      if (challenge.expiresAt.getTime() <= Date.now()) {
+        throw new ValidationError(
+          "This link has expired - request a new email.",
+          undefined,
+          "EXPIRED_TOKEN",
+        );
+      }
+      throw new ValidationError(
+        "This link has already been used - request a new email.",
+        undefined,
+        "TOKEN_ALREADY_USED",
+      );
+    }
+    try {
+      await this.events.record({
+        userId: challenge.userId,
+        type: "PASSWORD_CHANGED",
+        actor: "system",
+        context: "Password changed via reset link. Sessions were signed out.",
+      });
+    } catch (error) {
+      this.logger?.warn(
+        { userId: challenge.userId, errorType: error instanceof Error ? error.name : "UnknownError" },
+        "password reset audit event could not be recorded",
+      );
+    }
+    return { resetAt: resetAt.toISOString() };
   }
 
   // ── Internals ───────────────────────────────────────────────────────────────
@@ -542,67 +790,162 @@ export class AuthService {
     const ttlMs = this.config.auth.emailVerificationHours * 3_600_000;
     const expiresAt = new Date(Date.now() + ttlMs);
     const token = IdentityRepository.randomToken(24);
+    const tokenHash = IdentityRepository.hashToken(token);
     await this.repository.createChallenge({
       userId: user.id,
       purpose: "EMAIL_VERIFICATION",
-      tokenHash: IdentityRepository.hashToken(token),
+      tokenHash,
       expiresAt,
+      targetEmail: toEmail.toLowerCase(),
     });
-    await this.mailer.sendEmailVerification(toEmail, token, `${this.config.auth.emailVerificationHours} hours`);
+    try {
+      await this.mailer.sendEmailVerification(toEmail, token, `${this.config.auth.emailVerificationHours} hours`);
+    } catch (error) {
+      // Registration remains pending and resend remains available. Do not
+      // leave a token that was never delivered or invalidate an older link.
+      try {
+        await this.repository.deleteChallengeByTokenHash(tokenHash);
+      } catch (cleanupError) {
+        this.logger?.warn(
+          { userId: user.id, errorType: cleanupError instanceof Error ? cleanupError.name : "UnknownError" },
+          "could not remove undelivered email verification challenge",
+        );
+      }
+      throw error;
+    }
+    // Retiring older links is best-effort after SMTP succeeds; the delivered
+    // token must remain usable even if this cleanup query fails.
+    try {
+      await this.repository.finalizeDeliveredChallenge({
+        userId: user.id,
+        purpose: "EMAIL_VERIFICATION",
+        tokenHash,
+      });
+    } catch (error) {
+      this.logger?.warn(
+        { userId: user.id, errorType: error instanceof Error ? error.name : "UnknownError" },
+        "could not retire previous email verification challenges",
+      );
+    }
     return expiresAt.toISOString();
   }
 
-  private issueMfaChallenge(user: { id: string; email: string }): {
+  /** HMAC the six-digit code so a database-only leak cannot brute-force its hash. */
+  private hashMfaEmailCode(code: string): string {
+    return createHmac("sha256", this.config.auth.mfaEncryptionKey).update(code).digest("hex");
+  }
+
+  private async issueMfaChallenge(user: Pick<UserRow, "id" | "email" | "mfaMethod">, remember: boolean): Promise<{
     outcome: "MFA_REQUIRED";
     mfaRequired: true;
     challengeToken: string;
     challengeExpiresAt: string;
-    method: "AUTHENTICATOR_APP";
-  } {
-    this.sweepChallenges();
+    method: "AUTHENTICATOR_APP" | "EMAIL";
+  }> {
     const token = IdentityRepository.randomToken(24);
     const ttlMs = this.config.auth.mfaChallengeMinutes * 60 * 1000;
-    this.challenges.set(token, { userId: user.id, expiresAt: Date.now() + ttlMs });
+    const expiresAt = new Date(Date.now() + ttlMs);
+    const method = user.mfaMethod === "EMAIL" ? "EMAIL" : "AUTHENTICATOR_APP";
+    let codeHash: string | undefined;
+    let emailCode: string | undefined;
+
+    if (method === "EMAIL") {
+      const sendCheck = this.limiter.check("mfa_email_send", user.email);
+      if (!sendCheck.allowed) {
+        throw new RateLimitError("Too many sign-in codes requested. Please wait before trying again.", "RATE_LIMITED", sendCheck.retryAfterSeconds);
+      }
+      this.limiter.hit("mfa_email_send", user.email);
+      emailCode = randomInt(0, 1_000_000).toString().padStart(6, "0");
+      codeHash = this.hashMfaEmailCode(emailCode);
+    }
+
+    const tokenHash = IdentityRepository.hashToken(token);
+    await this.repository.createMfaLoginChallenge({
+      userId: user.id,
+      tokenHash,
+      codeHash: codeHash ?? null,
+      method,
+      remember,
+      expiresAt,
+    });
+
+    if (method === "EMAIL" && emailCode) {
+      try {
+        await this.mailer.sendEmailMfaCode(
+          user.email,
+          emailCode,
+          `${this.config.auth.mfaChallengeMinutes} minutes`,
+        );
+      } catch (error) {
+        try {
+          await this.repository.deleteMfaLoginChallengeByTokenHash(tokenHash);
+        } catch (cleanupError) {
+          this.logger?.warn(
+            { userId: user.id, errorType: cleanupError instanceof Error ? cleanupError.name : "UnknownError" },
+            "could not remove undelivered MFA login challenge",
+          );
+        }
+        throw error;
+      }
+    }
+
+    // The new challenge is now usable (and, for email MFA, delivered). Cleanup
+    // of older challenges is best-effort and must not strand this login.
+    try {
+      await this.repository.finalizeMfaLoginChallenge({ userId: user.id, tokenHash });
+    } catch (error) {
+      this.logger?.warn(
+        { userId: user.id, errorType: error instanceof Error ? error.name : "UnknownError" },
+        "could not retire previous MFA login challenges",
+      );
+    }
     return {
       outcome: "MFA_REQUIRED",
       mfaRequired: true,
       challengeToken: token,
-      challengeExpiresAt: new Date(Date.now() + ttlMs).toISOString(),
-      method: "AUTHENTICATOR_APP",
+      challengeExpiresAt: expiresAt.toISOString(),
+      method,
     };
   }
 
-  /**
-   * Validate a challenge WITHOUT consuming it — a wrong TOTP/recovery code
-   * keeps the challenge alive (rate limiter bounds guessing); success or
-   * expiry consumes it. Mirrors the mock's semantics.
-   */
   private async peekMfaChallenge(challengeToken: string) {
-    this.sweepChallenges();
-    const challenge = this.challenges.get(challengeToken);
-    if (!challenge || challenge.expiresAt <= Date.now()) {
-      this.challenges.delete(challengeToken);
+    const challenge = await this.repository.findMfaLoginChallengeByTokenHash(
+      IdentityRepository.hashToken(challengeToken),
+    );
+    if (
+      !challenge ||
+      challenge.usedAt ||
+      challenge.expiresAt.getTime() <= Date.now() ||
+      challenge.attempts >= 5
+    ) {
       throw new UnauthorizedError(
-        "This challenge expired — start again with your password.",
+        "This challenge expired - start again with your password.",
         "INVALID_CHALLENGE",
       );
     }
     const user = await this.repository.findUserById(challenge.userId);
-    if (!user || user.status !== "ACTIVE") {
-      this.challenges.delete(challengeToken);
+    if (challenge.method !== "EMAIL" && challenge.method !== "AUTHENTICATOR_APP") {
       throw new UnauthorizedError(
-        "This challenge expired — start again with your password.",
+        "This challenge expired - start again with your password.",
         "INVALID_CHALLENGE",
       );
     }
-    return { user, consume: () => this.challenges.delete(challengeToken) };
-  }
-
-  private sweepChallenges(): void {
-    const now = Date.now();
-    for (const [token, challenge] of this.challenges) {
-      if (challenge.expiresAt <= now) this.challenges.delete(token);
+    const method = challenge.method;
+    if (
+      !user ||
+      user.status !== "ACTIVE" ||
+      !user.mfaEnabledAt ||
+      (user.mfaMethod === "EMAIL" ? "EMAIL" : "AUTHENTICATOR_APP") !== method
+    ) {
+      throw new UnauthorizedError(
+        "This challenge expired - start again with your password.",
+        "INVALID_CHALLENGE",
+      );
     }
+    return {
+      user,
+      challenge: { ...challenge, method },
+    };
   }
 
   private async completeLogin(
@@ -621,6 +964,7 @@ export class AuthService {
     const session = await this.repository.createSession({
       userId: user.id,
       refreshTokenHash: refresh.hash,
+      remember,
       device: fingerprint.device,
       browser: fingerprint.browser,
       os: fingerprint.os,
@@ -633,11 +977,9 @@ export class AuthService {
     const access = await this.tokens.signAccessToken(user.id, session.id);
     this.setRefreshCookie(reply, refresh.value, { remember });
     this.limiter.clear("login", user.email);
+    this.limiter.clear("mfa", user.email);
 
-    await this.events.recordLogin(
-      { userId: user.id, type: "LOGIN_SUCCESS", context, outcome: "SUCCESS" },
-      fingerprint,
-    );
+    await this.recordLoginBestEffort(user.id, context, fingerprint);
 
     return {
       outcome: "AUTHENTICATED" as const,
@@ -651,20 +993,51 @@ export class AuthService {
   private async recordFailedLogin(email: string, fingerprint: RequestFingerprint, reason: string): Promise<void> {
     const user = await this.repository.findUserByEmail(email);
     if (!user) return;
-    await this.events.recordLogin(
-      {
-        userId: user.id,
-        type: "LOGIN_FAILED",
-        context: `Sign-in failed — ${reason.toLowerCase()}.`,
-        outcome: "FAILURE",
-        reason,
-      },
-      fingerprint,
-    );
+    try {
+      await this.events.recordLogin(
+        {
+          userId: user.id,
+          type: "LOGIN_FAILED",
+          context: `Sign-in failed - ${reason.toLowerCase()}.`,
+          outcome: "FAILURE",
+          reason,
+        },
+        fingerprint,
+      );
+    } catch (error) {
+      this.logger?.warn(
+        { userId: user.id, errorType: error instanceof Error ? error.name : "UnknownError" },
+        "failed login attempt could not be recorded",
+      );
+    }
   }
 
-  // ── Cookie jar (HttpOnly — production contract; the mock documented this
+  // ── Cookie jar (HttpOnly - production contract; the mock documented this
   //    as its seam) ─────────────────────────────────────────────────────────────
+
+  /**
+   * Best-effort LOGIN_SUCCESS audit write for the registration auto-login.
+   * The append-only security log must never turn a successful signup into a
+   * 500: any write failure (missing tables, constraint violations, outages)
+   * is logged and swallowed. Sanitized context only - no secrets (§30).
+   */
+  private async recordLoginBestEffort(
+    userId: string,
+    context: string,
+    fingerprint: RequestFingerprint,
+  ): Promise<void> {
+    try {
+      await this.events.recordLogin(
+        { userId, type: "LOGIN_SUCCESS", context, outcome: "SUCCESS" },
+        fingerprint,
+      );
+    } catch (error) {
+      this.logger?.warn(
+        { errorType: error instanceof Error ? error.name : "UnknownError", userId },
+        "security-event login recording failed (ignored - authentication continues)",
+      );
+    }
+  }
 
   private setRefreshCookie(
     reply: FastifyReply,

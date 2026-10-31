@@ -1,6 +1,6 @@
 /**
- * Verify — Session Live upgrades (module-by-module round).
- * Probes (ONE SPA session — the mock store reseeds on full reload):
+ * Verify - Session Live upgrades (module-by-module round).
+ * Probes (ONE SPA session - the mock store reseeds on full reload):
  *  1. Station loads: toolbar, chart (Key Levels widget REMOVED from the chart)
  *  2. Session logbook: log a note (POST /session/notes), timestamped row,
  *     note SURVIVES SPA navigation (server persistence), delete removes it
@@ -35,7 +35,7 @@ const BASE = "http://localhost:3000";
 
   const results = [];
   const check = (name, ok, extra = "") =>
-    results.push(`${ok ? "PASS" : "FAIL"} — ${name}${extra ? ` (${extra})` : ""}`);
+    results.push(`${ok ? "PASS" : "FAIL"} - ${name}${extra ? ` (${extra})` : ""}`);
   const toastFor = (text) => page.locator("[data-sonner-toast]", { hasText: text });
 
   const run = async () => {
@@ -50,7 +50,7 @@ const BASE = "http://localhost:3000";
 
     // ── 2. Session logbook ──────────────────────────────────────────────────
     check("Logbook renders", await page.locator('[data-testid="session-logbook"]').isVisible());
-    const noteText = "Verify note — watching the retest into 4,180";
+    const noteText = "Verify note - watching the retest into 4,180";
     await page.locator('[data-testid="session-logbook-input"]').fill(noteText);
     await page.locator('[data-testid="session-logbook-submit"]').click();
     await page.waitForTimeout(1200);
@@ -58,7 +58,7 @@ const BASE = "http://localhost:3000";
     check("Note lands with a timestamp", await noteRow.first().isVisible());
     check("POST /session/notes fired", notesPOST >= 1, `${notesPOST} post(s)`);
 
-    // Persistence: SPA away and back — the refetch must return the saved note.
+    // Persistence: SPA away and back - the refetch must return the saved note.
     await page.locator('aside nav a[href="/trades"]').click();
     await page.waitForTimeout(1100);
     await page.locator('aside nav a[href="/session"]').click();
@@ -164,7 +164,7 @@ const BASE = "http://localhost:3000";
     console.log("\n═══ PARTIAL RESULTS ═══");
   }
 
-  console.log("\n═══ SESSION LIVE UPGRADES — RESULTS ═══");
+  console.log("\n═══ SESSION LIVE UPGRADES - RESULTS ═══");
   results.forEach((r) => console.log(r));
   const failed = results.filter((r) => r.startsWith("FAIL")).length;
   console.log(`\n${results.length - failed}/${results.length} PASS`);

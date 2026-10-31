@@ -8,8 +8,8 @@ import { Button } from "@/components/ui/button";
 import type { OnboardingStepProps } from "./step-types";
 
 /**
- * Step 1 — Welcome. Brand reveal + concise promise + the two exits
- * (Get started / Skip introduction). The entrance is animated but SHORT —
+ * Step 1 - Welcome. Brand reveal + concise promise + the two exits
+ * (Get started / Skip introduction). The entrance is animated but SHORT -
  * interaction is available immediately (buttons never wait for the tween).
  */
 export function WelcomeStep({ controller, dict, onAdvance }: OnboardingStepProps) {
@@ -39,7 +39,7 @@ export function WelcomeStep({ controller, dict, onAdvance }: OnboardingStepProps
       setError(dict.welcome.errors.skip);
       return;
     }
-    // Status flips to SKIPPED — the overlay closes itself via eligibility.
+    // Status flips to SKIPPED - the overlay closes itself via eligibility.
   }
 
   return (

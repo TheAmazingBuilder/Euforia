@@ -1,5 +1,5 @@
 /**
- * Verify — Academy Batch D (discovery):
+ * Verify - Academy Batch D (discovery):
  *   Paths   : 4 learning path cards with progress; expand shows ordered
  *             courses; opening a course from the path works.
  *   Filters : 12 category hue chips narrow the catalog; duration filter;
@@ -25,7 +25,7 @@ const NOISE = [/socket\.io/i, /candles/i, /market-service/i, /favicon/i, /net::E
   page.on("pageerror", (err) => errors.push(String(err)));
 
   const results = [];
-  const check = (name, ok, extra = "") => results.push(`${ok ? "PASS" : "FAIL"} — ${name}${extra ? ` (${extra})` : ""}`);
+  const check = (name, ok, extra = "") => results.push(`${ok ? "PASS" : "FAIL"} - ${name}${extra ? ` (${extra})` : ""}`);
 
   await page.goto(`${BASE}/`, { waitUntil: "networkidle", timeout: 60_000 });
   await page.waitForTimeout(1500);

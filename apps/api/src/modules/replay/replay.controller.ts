@@ -1,10 +1,10 @@
 /**
- * Replay controller — the first-class historical replay module. Mirrors
+ * Replay controller - the first-class historical replay module. Mirrors
  * `mocks/handlers/replay.ts` exactly. Global JwtAuthGuard, uuid-validated
  * params, Zod-validated bodies.
  *
  * SIMULATION ONLY (REPLAY MASTER PROMPT §37): there is deliberately NO
- * route here (and none in the whole module) that could reach a broker —
+ * route here (and none in the whole module) that could reach a broker -
  * every endpoint documents the user's own replay records.
  */
 import {

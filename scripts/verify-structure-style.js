@@ -1,5 +1,5 @@
-// Structure refinement verification — BOS/CHoCH break lines + pivot style.
-// Runs against the DEV server (:3001) — uses the dev-only panels debug
+// Structure refinement verification - BOS/CHoCH break lines + pivot style.
+// Runs against the DEV server (:3001) - uses the dev-only panels debug
 // handle for structural counters (structureLines) + DOM testids for the
 // menu flow. Never scrapes canvases.
 //  (1) breaks ON + lines ON (default)  → structureLines >= 1
@@ -14,7 +14,7 @@ const BASE = process.env.BASE_URL || "http://localhost:3001";
 const results = [];
 function check(id, label, ok, detail = "") {
   results.push({ id, ok });
-  console.log(`${ok ? "PASS" : "FAIL"}  ${id}  ${label}${detail ? "  — " + detail : ""}`);
+  console.log(`${ok ? "PASS" : "FAIL"}  ${id}  ${label}${detail ? "  - " + detail : ""}`);
 }
 const NOISE = [/401/, /auth\/me/, /auth\/refresh/, /WebSocket/, /Download the React DevTools/, /React does not recognize/];
 
@@ -130,7 +130,7 @@ async function layoutsFile(app) {
     check("S3", "break-lines ON again → lines re-render", (linesBack?.structureLines ?? 0) >= 1,
       `structureLines=${linesBack?.structureLines}`);
 
-    // (4) pivot style — circles radio checks, marker count stable
+    // (4) pivot style - circles radio checks, marker count stable
     await withAnalysisMenu(page, async () => {
       await page.click('[data-testid="oryon-panel-0-analysis-pstyle-circles"]');
     });

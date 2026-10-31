@@ -8,15 +8,15 @@
  * (§24) and foreign ids are simply not found (IDOR → 404).
  *
  * The decision gate (trade-entry-ux.md §12–§13) is a HARD product contract:
- * closing a trade responds WITHOUT any P&L field — results are computed and
+ * closing a trade responds WITHOUT any P&L field - results are computed and
  * STORED at close time (§15/§46, server-side only) but only the decision
  * endpoint reveals them, and a grade can never be re-submitted.
  *
- * Out of scope by mandate (§59/§60/§68): no analytics, no coaching logic —
+ * Out of scope by mandate (§59/§60/§68): no analytics, no coaching logic -
  * the reveal payload carries deterministic neutral aggregates (no ghost
  * stats) until those domains exist. B3 mistake detection and B6 fills the
  * mistake rows at the gate; discipline RULE evaluation is triggered via the
- * `trade.closed` domain event (Discipline subscribes — no module cycle).
+ * `trade.closed` domain event (Discipline subscribes - no module cycle).
  */
 import { Inject, Injectable } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
@@ -133,7 +133,7 @@ export class TradesService {
     return trade;
   }
 
-  /** Contract size of an instrument — the sizing/valuation unit (Domaine 2). */
+  /** Contract size of an instrument - the sizing/valuation unit (Domaine 2). */
   private async loadContractSize(instrumentId: string): Promise<string> {
     const instrument = await this.repository.findInstrument(instrumentId);
     if (instrument === null) {
@@ -188,7 +188,7 @@ export class TradesService {
     }
 
     // §26/§28: reconcile the journal with the latest synchronized external
-    // activity before serving the list (lazy full re-reconciliation —
+    // activity before serving the list (lazy full re-reconciliation -
     // idempotent by external position; no writes when nothing changed).
     await this.reconstruction.reconstructAccounts({
       userId,
@@ -337,17 +337,17 @@ export class TradesService {
       return toTradeView(row);
     }
     // Domain fact (B4): a capture journaled already-closed is a closed fact
-    // the same way a manual close is — Discipline must evaluate its rules
+    // the same way a manual close is - Discipline must evaluate its rules
     // against it too (§46: every closed-trade write path publishes).
     this.events.publish("trade.closed", { userId, tradeId: row.id, accountId: account.id });
     // HARD CONTRACT: closing responds WITHOUT any P&L field (§12/§13).
     return { id: row.id, awaitingDecision: true };
   }
 
-  // ── OCR confirmation bridge (Phase 21 §77 — the ONLY sanctioned path) ───────
+  // ── OCR confirmation bridge (Phase 21 §77 - the ONLY sanctioned path) ───────
 
   /**
-   * Deterministic dedup handle for one recognition draft — mirrors the OCR
+   * Deterministic dedup handle for one recognition draft - mirrors the OCR
    * context's convention: `ocr:<recognitionId>` for the single path and
    * `ocr:<recognitionId>:<tradeIndex>` per grouped draft (§79 reuse of the
    * external-ref mechanism).
@@ -357,7 +357,7 @@ export class TradesService {
   }
 
   /**
-   * Resolve the canonical Trade already created from one recognition draft —
+   * Resolve the canonical Trade already created from one recognition draft -
    * the batch-retry idempotency anchor: a trade created before a partial
    * failure is SKIPPED (its id is resolved, never imported twice, §79).
    */
@@ -380,7 +380,7 @@ export class TradesService {
    * Create the canonical Trade from a USER-CONFIRMED recognition draft
    * (§77): the values were validated by the OCR review flow; THIS service
    * still owns the account check, the sizing math, the P&L recomputation
-   * and the external-ref dedup — there is no OCR-specific trade write path.
+   * and the external-ref dedup - there is no OCR-specific trade write path.
    * Create-or-link semantics: a lost race against a concurrent confirm links
    * the winning trade instead of conflicting (§51 house policy).
    */
@@ -402,10 +402,10 @@ export class TradesService {
       profitLoss?: string | null;
     },
   ): Promise<{ tradeId: string }> {
-    void input.profitLoss; // recomputed server-side (§15) — the draft's own P&L is advisory only
+    void input.profitLoss; // recomputed server-side (§15) - the draft's own P&L is advisory only
 
     // Human-in-the-loop gate: a trade without a side cannot exist (§6).
-    // Positive check — a bare `!==` pair cannot narrow the wide `string`.
+    // Positive check - a bare `!==` pair cannot narrow the wide `string`.
     const direction: "BUY" | "SELL" | null =
       input.direction === "BUY" || input.direction === "SELL" ? input.direction : null;
     if (direction === null) {
@@ -415,7 +415,7 @@ export class TradesService {
       );
     }
 
-    // Symbol resolves against the instrument catalog ONLY (§50 — no alias
+    // Symbol resolves against the instrument catalog ONLY (§50 - no alias
     // tables; an unknown symbol is an honest refusal, never an invention).
     const instrument = await this.repository.findInstrumentBySymbol(input.symbol);
     if (instrument === null || !instrument.isActive) {
@@ -425,9 +425,9 @@ export class TradesService {
       );
     }
 
-    // Account — the explicit choice first, else the owner's persisted
+    // Account - the explicit choice first, else the owner's persisted
     // default (engine quality §3.1 semantics, same as the OCR import flow).
-    // findDefaultAccountIdForUser answers null when no account exists —
+    // findDefaultAccountIdForUser answers null when no account exists -
     // normalized to undefined so the single guard below covers both shapes.
     let accountId = input.accountId;
     if (accountId === undefined) {
@@ -449,7 +449,7 @@ export class TradesService {
     const closed = input.exitPrice !== null && input.exitPrice !== undefined && input.exitPrice !== "" &&
       input.exitAt !== null && input.exitAt !== undefined && input.exitAt !== "";
     // Quantity floor: the capture surface's quantity mode needs a positive
-    // decimal — a draft without a readable volume imports one unit (the
+    // decimal - a draft without a readable volume imports one unit (the
     // review UI flags volume as a primary field before confirm).
     const volume =
       input.volume !== null && input.volume !== undefined && input.volume.trim() !== ""
@@ -489,7 +489,7 @@ export class TradesService {
       );
       return { tradeId: created.id };
     } catch (error) {
-      // A concurrent confirmation could have won the creation race — link
+      // A concurrent confirmation could have won the creation race - link
       // instead of conflicting (§51 house policy).
       if (error instanceof ConflictError) {
         const winner =
@@ -526,7 +526,7 @@ export class TradesService {
     } else {
       // Partial-exit legs stay preserved (§18); the journal header carries
       // the aggregated exit (weighted price, last leg timestamp, total qty).
-      // §16 — the aggregation is DECIMAL through the one canonical
+      // §16 - the aggregation is DECIMAL through the one canonical
       // weightedAveragePrice; float accumulation here would silently round
       // FX prices (e.g. 1.08505 → "1.09") and corrupt the stored results.
       const aggregated = weightedAveragePrice(
@@ -548,7 +548,7 @@ export class TradesService {
           note: leg.note ?? null,
         });
       }
-      // Schema guarantees ≥ 1 leg with a positive quantity — the zero-total
+      // Schema guarantees ≥ 1 leg with a positive quantity - the zero-total
       // branch is unreachable defense (keeps the header coherent regardless).
       exitPrice = totalQuantity.isZero()
         ? trade.entryPrice.toFixed()
@@ -599,7 +599,7 @@ export class TradesService {
       await this.repository.replaceExits(trade.id, exits);
     }
     // Domain fact (B4): Discipline subscribes to evaluate its rules against
-    // the freshly closed trade — without a Trades→Discipline module cycle.
+    // the freshly closed trade - without a Trades→Discipline module cycle.
     this.events.publish("trade.closed", { userId, tradeId: trade.id, accountId: trade.accountId });
     return { id: trade.id, awaitingDecision: true };
   }
@@ -636,7 +636,7 @@ export class TradesService {
       decisionAt: new Date(),
     });
 
-    // B3 — mistake detection runs HERE, at the decision gate: this is the
+    // B3 - mistake detection runs HERE, at the decision gate: this is the
     // reveal moment, so auto-detections surface exactly when the user can
     // confirm/contest them (the mock seeds equivalent rows at fixture time).
     // Detection is idempotent per trade: rows exist only after the first
@@ -709,9 +709,9 @@ export class TradesService {
 
     const mfePrice = input.mfePrice ?? trade.mfePrice?.toFixed() ?? null;
     const maePrice = input.maePrice ?? trade.maePrice?.toFixed() ?? null;
-    // MFE/MAE are user-observed PRICES — their R conversions (and any other
+    // MFE/MAE are user-observed PRICES - their R conversions (and any other
     // result) are recomputed server-side (§13/§46). tagIds replace the full
-    // join set (B3 — mock parity: no per-id existence validation).
+    // join set (B3 - mock parity: no per-id existence validation).
     if (input.tagIds !== undefined) {
       await this.repository.replaceTagJoins(userId, trade.id, input.tagIds);
     }
@@ -762,7 +762,7 @@ export class TradesService {
       throw new ConflictError("Only open trades can be re-planned", TRADING_ERROR.INVALID_TRADE_STATE);
     }
     if (trade.source === "EXTERNAL_SYNC") {
-      // §30: broker-derived fields are authoritative — a synchronized plan
+      // §30: broker-derived fields are authoritative - a synchronized plan
       // is reconciled from the provider, never edited from the journal.
       throw new BusinessRuleError(
         "Broker-derived plan fields cannot be modified",
@@ -849,7 +849,7 @@ export class TradesService {
 
     const touchesExit = input.exitPrice !== undefined || input.exitAt !== undefined || input.exitReason !== undefined;
     if (touchesExit && trade.status !== "CLOSED") {
-      throw new ConflictError("Trade is not closed — close it first", TRADING_ERROR.INVALID_TRADE_STATE);
+      throw new ConflictError("Trade is not closed - close it first", TRADING_ERROR.INVALID_TRADE_STATE);
     }
 
     const entryPrice = input.entryPrice ?? trade.entryPrice.toFixed();
@@ -932,7 +932,7 @@ export class TradesService {
     input: BulkTradesInput,
   ): Promise<{ op: string; affected: number; skipped: number }> {
     if (input.op === "TAG") {
-      // The Tags domain (trade↔tag joins) is a later phase — an honest 422
+      // The Tags domain (trade↔tag joins) is a later phase - an honest 422
       // instead of a silent no-op (§31 scope note in the phase report).
       throw new BusinessRuleError(
         "Tag operations require the Tags domain (future phase)",
@@ -946,7 +946,7 @@ export class TradesService {
       return { op: input.op, affected, skipped: ids.length - affected };
     }
     const affected = await this.repository.bulkGrade(userId, ids, input.grade);
-    // OPEN trades exist but are skipped by the gate — reported honestly.
+    // OPEN trades exist but are skipped by the gate - reported honestly.
     return { op: input.op, affected, skipped: ids.length - affected };
   }
 
@@ -957,9 +957,9 @@ export class TradesService {
     input: ImportTradesInput,
   ): Promise<{ imported: number; skippedDuplicates: number; unknownSymbols: string[]; tradeIds: string[] }> {
     const user = await this.loadUser(userId);
-    // The import contract has no account field — trades land on the
+    // The import contract has no account field - trades land on the
     // PERSISTED default account (backend convention), never a client hint.
-    // §24/ADR-0003 — the default account is resolved through the owner's
+    // §24/ADR-0003 - the default account is resolved through the owner's
     // narrow read contract, never by touching prisma.tradingAccount here.
     const defaultAccountId = await this.accounts.findDefaultAccountIdForUser(userId);
     if (defaultAccountId === null) {
@@ -1057,7 +1057,7 @@ export class TradesService {
         exits: [],
       });
       tradeIds.push(created.id);
-      // Domain fact (B4): imported rows are journal facts — closed ones feed
+      // Domain fact (B4): imported rows are journal facts - closed ones feed
       // the Discipline rules exactly like a manual close (§46: every
       // closed-trade write path publishes; idempotent re-imports skip
       // duplicates so no event is re-fired for the same trade).
@@ -1194,9 +1194,9 @@ export class TradesService {
     return toTradeView(fresh);
   }
 
-  // ── B3 — tags, mistakes, session series ─────────────────────────────────────
+  // ── B3 - tags, mistakes, session series ─────────────────────────────────────
 
-  /** GET /tags — lazily seeds the starter set on the user's first read. */
+  /** GET /tags - lazily seeds the starter set on the user's first read. */
   async listTags(userId: string): Promise<{ tags: Tag[] }> {
     let rows = await this.repository.listTagRows(userId);
     if (rows.length === 0) {
@@ -1214,7 +1214,7 @@ export class TradesService {
     };
   }
 
-  /** POST /tags — inline tag creation (Act 3 reflect, capture details). */
+  /** POST /tags - inline tag creation (Act 3 reflect, capture details). */
   async createTag(userId: string, input: z.infer<typeof createTagInputSchema>): Promise<Tag> {
     const name = input.name.trim();
     if (name === "") {
@@ -1238,7 +1238,7 @@ export class TradesService {
     return this.toTagView(row);
   }
 
-  /** PATCH /trades/:id/mistakes/:mistakeId — confirm/contest a detection. */
+  /** PATCH /trades/:id/mistakes/:mistakeId - confirm/contest a detection. */
   async resolveMistake(
     userId: string,
     tradeId: string,
@@ -1256,7 +1256,7 @@ export class TradesService {
     return { ...summary, id: row.id, note: data.note as string | null };
   }
 
-  /** GET /trades/:id/session-series — deterministic projection (see session-series.ts). */
+  /** GET /trades/:id/session-series - deterministic projection (see session-series.ts). */
   async getTradeSessionSeries(
     userId: string,
     tradeId: string,
@@ -1285,10 +1285,10 @@ export class TradesService {
   /**
    * Auto-detection at the decision gate (B3). Mirrors the mock's seeded
    * rules that are computable from journal data alone:
-   *   - no_stop_loss   — the trade carries no planned stop;
-   *   - revenge_trade  — a closed LOSS exited within 15 min before entry.
+   *   - no_stop_loss   - the trade carries no planned stop;
+   *   - revenge_trade  - a closed LOSS exited within 15 min before entry.
    * The remaining catalog entries (moved_stop, oversized, out_of_hours,
-   * cut_winner_early) need plan/context data the journal does not record —
+   * cut_winner_early) need plan/context data the journal does not record -
    * they stay USER-detectable via the discipline module (B4), never faked.
    */
   private async detectMistakes(trade: {
@@ -1359,7 +1359,7 @@ export class TradesService {
   /**
    * Ownership-scoped canonical trade row for cross-context links (Oryon
    * analyses, trade plans). Returns the raw repository row (denormalized
-   * symbol included) or null — a foreign id is an honest null, never a leak.
+   * symbol included) or null - a foreign id is an honest null, never a leak.
    */
   async getTradeRowForUser(tradeId: string, userId: string) {
     return this.repository.findTradeForUser(tradeId, userId);

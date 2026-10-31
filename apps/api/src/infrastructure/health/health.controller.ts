@@ -1,14 +1,14 @@
 /**
  * Health & system module (infrastructure-oriented, Phase 1 mandate §17/§22).
  *
- * Endpoints (deliberately OUTSIDE /api/v1 versioning — infrastructure):
+ * Endpoints (deliberately OUTSIDE /api/v1 versioning - infrastructure):
  *   GET /health        → app-level status (cheap, no DB): monitoring/UI target.
  *   GET /health/live   → liveness: process is up and able to respond.
  *   GET /health/ready  → readiness: app + required dependencies (database).
  *
  * Payloads never expose secrets, connection strings, or infrastructure
  * internals (§17). A failing database makes /health/ready return 503 with a
- * plain `down` status — raw errors are logged server-side only.
+ * plain `down` status - raw errors are logged server-side only.
  *
  * This module must NOT become a general-purpose utility module: no business
  * logic, no domain concepts.
@@ -33,7 +33,7 @@ export class HealthController {
     @Optional() @Inject(ROOT_LOGGER) private readonly logger?: RootLogger,
   ) {}
 
-  /** App-level status — no dependency checks. */
+  /** App-level status - no dependency checks. */
   @Get()
   health() {
     return {
@@ -45,13 +45,13 @@ export class HealthController {
     };
   }
 
-  /** Liveness — if this fails, the process is beyond recovery. */
+  /** Liveness - if this fails, the process is beyond recovery. */
   @Get("live")
   live() {
     return { status: "ok" };
   }
 
-  /** Readiness — includes required infrastructure (database). */
+  /** Readiness - includes required infrastructure (database). */
   @Get("ready")
   async ready() {
     const databaseUp = await this.prisma.ping();

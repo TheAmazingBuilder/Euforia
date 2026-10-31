@@ -11,7 +11,7 @@ import { useI18n } from "@/i18n/i18n-provider";
 
 /**
  * The capture surface: a wide modal on desktop (spec §10), a full-height
- * bottom sheet on mobile. Same TradeForm inside — one mental model (§2).
+ * bottom sheet on mobile. Same TradeForm inside - one mental model (§2).
  * The form unmounts whenever the modal closes, so every open re-hydrates
  * from the fast-loop seed or the saved draft.
  */

@@ -1,7 +1,7 @@
 /**
- * Unit — Analytics math (Phase 8): the numeric canon of the analytics
+ * Unit - Analytics math (Phase 8): the numeric canon of the analytics
  * engine. These formulas are the system's shared definition (frontend
- * contract semantics) — changing one of them changes every chart.
+ * contract semantics) - changing one of them changes every chart.
  */
 import { describe, expect, it } from "vitest";
 import {
@@ -41,7 +41,7 @@ describe("mean", () => {
   });
 });
 
-describe("percentileOf — linear interpolation between order statistics", () => {
+describe("percentileOf - linear interpolation between order statistics", () => {
   it("is null on empty input", () => {
     expect(percentileOf([], 50)).toBeNull();
   });
@@ -64,7 +64,7 @@ describe("percentileOf — linear interpolation between order statistics", () =>
   });
 });
 
-describe("stdOf — SAMPLE deviation (n−1)", () => {
+describe("stdOf - SAMPLE deviation (n−1)", () => {
   it("is null below 2 values", () => {
     expect(stdOf([4])).toBeNull();
   });
@@ -78,7 +78,7 @@ describe("stdOf — SAMPLE deviation (n−1)", () => {
   });
 });
 
-describe("moments — skewness / excess kurtosis", () => {
+describe("moments - skewness / excess kurtosis", () => {
   it("is null below 3 values or zero variance", () => {
     expect(moments([1, 2]).skew).toBeNull();
     expect(moments([2, 2, 2]).kurt).toBeNull();
@@ -95,7 +95,7 @@ describe("moments — skewness / excess kurtosis", () => {
   });
 });
 
-describe("niceStep — human histogram steps", () => {
+describe("niceStep - human histogram steps", () => {
   it("snaps to 1/2/2.5/5/10 × 10^k", () => {
     expect(niceStep(0.02)).toBe(0.02);
     expect(niceStep(0.13)).toBe(0.2);
@@ -108,7 +108,7 @@ describe("niceStep — human histogram steps", () => {
   });
 });
 
-describe("mulberry32 — deterministic PRNG", () => {
+describe("mulberry32 - deterministic PRNG", () => {
   it("produces identical sequences for identical seeds (§52 reproducibility)", () => {
     const a = mulberry32(20260930);
     const b = mulberry32(20260930);
@@ -127,7 +127,7 @@ describe("mulberry32 — deterministic PRNG", () => {
   });
 });
 
-describe("uuidV5 — deterministic group identity for uncataloged symbols", () => {
+describe("uuidV5 - deterministic group identity for uncataloged symbols", () => {
   it("is stable for the same (name, namespace) pair", () => {
     expect(uuidV5("BOOM500", "6f0a1a86-9d92-4a2c-8f57-52f4d1f9a1c7")).toBe(
       uuidV5("BOOM500", "6f0a1a86-9d92-4a2c-8f57-52f4d1f9a1c7"),

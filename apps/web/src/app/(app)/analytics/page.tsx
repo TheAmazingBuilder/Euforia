@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 };
 
 /**
- * Analytics — the central analytical intelligence layer of the journal
+ * Analytics - the central analytical intelligence layer of the journal
  * (MASTER PROMPT). One globally-filtered server dataset rendered across 13
  * tabs: the client formats, it never re-derives aggregates.
  */

@@ -1,11 +1,13 @@
 /**
- * e2e — Identity & Authentication (Phase 2 §41–§44 negative testing).
+ * e2e - Identity & Authentication (Phase 2 §41–§44 negative testing).
  * Register → verify → login → refresh (rotation + reuse) → logout,
  * password reset, status gates, anti-enumeration, rate limits.
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { NestFastifyApplication } from "@nestjs/platform-fastify";
 import { buildTestApp } from "../helpers/build-app";
+import { MailerService } from "../../src/modules/identity/mailer.service";
+import { IdentityRepository } from "../../src/modules/identity/identity.repository";
 import {
   authenticatedUser,
   captureMail,
@@ -29,7 +31,7 @@ afterAll(async () => {
 });
 
 describe("registration & email verification", () => {
-  it("registers a user — PENDING_VERIFICATION, no token leaked, delivery EMAIL", async () => {
+  it("registers a user - PENDING_VERIFICATION, no token leaked, delivery EMAIL", async () => {
     mail.clear();
     const email = uniqueEmail();
     const res = await app.inject({
@@ -48,6 +50,208 @@ describe("registration & email verification", () => {
     expect(body.user.email).toBe(email);
     expect(body.user.roles).toEqual(["TRADER"]);
     expect(JSON.stringify(body)).not.toContain("passwordHash");
+  });
+
+  it("cleans up an undelivered verification token and allows resend after SMTP recovers", async () => {
+    const mailer = app.get(MailerService);
+    const email = uniqueEmail("smtp-retry");
+    mailer.useTransport({
+      send: async () => {
+        throw new Error("simulated SMTP outage");
+      },
+    });
+
+    const failedRegistration = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/register",
+      payload: { name: "Retry User", email, password: PASSWORD },
+    });
+    expect(failedRegistration.statusCode).toBe(201);
+    expect(failedRegistration.json().status).toBe("PENDING_VERIFICATION");
+    expect(failedRegistration.json().verificationExpiresAt).toBeNull();
+    expect(failedRegistration.json().verificationToken).toBeUndefined();
+
+    // The pending account remains recoverable; a retry delivers a fresh link.
+    mailer.useTransport({ send: async (message) => { mail.messages.push(message); } });
+    const resend = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/email/resend",
+      payload: { email },
+    });
+    expect(resend.statusCode).toBe(202);
+    expect(mail.messages.some((message) => message.kind === "EMAIL_VERIFICATION" && message.to === email)).toBe(true);
+    expect(resend.json().verificationExpiresAt).toBeNull();
+  });
+
+  it("keeps verification resend anti-enumeration-safe when SMTP is unavailable", async () => {
+    const email = uniqueEmail("smtp-resend");
+    const registered = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/register",
+      payload: { name: "Resend User", email, password: PASSWORD },
+    });
+    expect(registered.statusCode).toBe(201);
+    const previouslyDeliveredToken = mail.lastVerificationToken();
+
+    const mailer = app.get(MailerService);
+    mailer.useTransport({ send: async () => { throw new Error("simulated SMTP outage"); } });
+    const failedDelivery = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/email/resend",
+      payload: { email },
+    });
+    mailer.useTransport({ send: async (message) => { mail.messages.push(message); } });
+
+    expect(failedDelivery.statusCode).toBe(202);
+    expect(failedDelivery.json().sent).toBe(true);
+    expect(failedDelivery.json().verificationExpiresAt).toBeNull();
+
+    // A failed resend must not invalidate the verification link already sent.
+    const verified = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/email/verify",
+      payload: { token: previouslyDeliveredToken },
+    });
+    expect(verified.statusCode).toBe(200);
+  });
+
+  it("does not reactivate a suspended account with an old verification link", async () => {
+    const email = uniqueEmail("suspended-verification");
+    const registered = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/register",
+      payload: { name: "Pending User", email, password: PASSWORD },
+    });
+    expect(registered.statusCode).toBe(201);
+    const token = mail.lastVerificationToken();
+    const user = await app.get(IdentityRepository).findUserByEmail(email);
+    expect(user).toBeTruthy();
+    await app.get(IdentityRepository).updateUser(user!.id, { status: "SUSPENDED" });
+
+    const verified = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/email/verify",
+      payload: { token },
+    });
+    expect(verified.statusCode).toBe(400);
+    expect(verified.json().code).toBe("INVALID_TOKEN");
+    expect((await app.get(IdentityRepository).findUserByEmail(email))?.status).toBe("SUSPENDED");
+  });
+
+  it("applies the same resend rate-limit response to known and unknown addresses", async () => {
+    const email = uniqueEmail("resend-rate-limit");
+    const registered = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/register",
+      payload: { name: "Pending User", email, password: PASSWORD },
+    });
+    expect(registered.statusCode).toBe(201);
+    const unknownEmail = uniqueEmail("unknown-resend-rate-limit");
+
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      const known = await app.inject({
+        method: "POST",
+        url: "/api/v1/auth/email/resend",
+        payload: { email },
+      });
+      const unknown = await app.inject({
+        method: "POST",
+        url: "/api/v1/auth/email/resend",
+        payload: { email: unknownEmail },
+      });
+      expect(known.statusCode).toBe(202);
+      expect(unknown.statusCode).toBe(202);
+    }
+
+    const [knownLimited, unknownLimited] = await Promise.all([
+      app.inject({ method: "POST", url: "/api/v1/auth/email/resend", payload: { email } }),
+      app.inject({ method: "POST", url: "/api/v1/auth/email/resend", payload: { email: unknownEmail } }),
+    ]);
+    expect(knownLimited.statusCode).toBe(429);
+    expect(unknownLimited.statusCode).toBe(429);
+    expect(knownLimited.json().code).toBe(unknownLimited.json().code);
+  });
+
+  it("prevents stale links from verifying a changed email and recovers after SMTP failure", async () => {
+    const ctx = await authenticatedUser(app, mail);
+    const oldToken = IdentityRepository.randomToken(24);
+    await app.get(IdentityRepository).createChallenge({
+      userId: ctx.userId,
+      purpose: "EMAIL_VERIFICATION",
+      tokenHash: IdentityRepository.hashToken(oldToken),
+      targetEmail: ctx.email,
+      expiresAt: new Date(Date.now() + 60_000),
+    });
+
+    const newEmail = uniqueEmail("email-change-smtp");
+    const mailer = app.get(MailerService);
+    mailer.useTransport({ send: async () => { throw new Error("simulated SMTP outage"); } });
+    const change = await app.inject({
+      method: "PATCH",
+      url: "/api/v1/me",
+      headers: ctx.authHeader,
+      payload: { email: newEmail },
+    });
+    mailer.useTransport({ send: async (message) => { mail.messages.push(message); } });
+    expect(change.statusCode).toBeGreaterThanOrEqual(500);
+
+    const oldLink = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/email/verify",
+      payload: { token: oldToken },
+    });
+    expect(oldLink.statusCode).toBe(400);
+    expect(oldLink.json().code).toBe("INVALID_TOKEN");
+    const pendingUser = await app.get(IdentityRepository).findUserByEmail(newEmail);
+    expect(pendingUser?.status).toBe("PENDING_VERIFICATION");
+
+    // Simulate a concurrent stale challenge that survived cleanup: the token
+    // must still be rejected because it was issued for the previous address.
+    const staleConcurrentToken = IdentityRepository.randomToken(24);
+    await app.get(IdentityRepository).createChallenge({
+      userId: ctx.userId,
+      purpose: "EMAIL_VERIFICATION",
+      tokenHash: IdentityRepository.hashToken(staleConcurrentToken),
+      targetEmail: ctx.email,
+      expiresAt: new Date(Date.now() + 60_000),
+    });
+    const staleConcurrentLink = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/email/verify",
+      payload: { token: staleConcurrentToken },
+    });
+    expect(staleConcurrentLink.statusCode).toBe(400);
+    expect(staleConcurrentLink.json().code).toBe("INVALID_TOKEN");
+
+    const resend = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/email/resend",
+      payload: { email: newEmail },
+    });
+    expect(resend.statusCode).toBe(202);
+    const newToken = mail.lastVerificationToken();
+    const staleSameAddressToken = IdentityRepository.randomToken(24);
+    await app.get(IdentityRepository).createChallenge({
+      userId: ctx.userId,
+      purpose: "EMAIL_VERIFICATION",
+      tokenHash: IdentityRepository.hashToken(staleSameAddressToken),
+      targetEmail: newEmail,
+      expiresAt: new Date(Date.now() + 60_000),
+    });
+    const verified = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/email/verify",
+      payload: { token: newToken },
+    });
+    expect(verified.statusCode).toBe(200);
+    expect(verified.json().user.email).toBe(newEmail);
+    const staleSameAddress = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/email/verify",
+      payload: { token: staleSameAddressToken },
+    });
+    expect(staleSameAddress.statusCode).toBe(400);
+    expect(staleSameAddress.json().code).toBe("INVALID_TOKEN");
   });
 
   it("rejects weak passwords at the contract level", async () => {
@@ -101,6 +305,16 @@ describe("registration & email verification", () => {
       payload: { name: "Once", email, password: PASSWORD },
     });
     const token = mail.lastVerificationToken();
+
+    // A valid token for one purpose must never be accepted by another flow.
+    const wrongPurpose = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/password/reset",
+      payload: { token, password: PASSWORD },
+    });
+    expect(wrongPurpose.statusCode).toBe(400);
+    expect(wrongPurpose.json().code).toBe("INVALID_TOKEN");
+
     const first = await app.inject({
       method: "POST",
       url: "/api/v1/auth/email/verify",
@@ -141,7 +355,9 @@ describe("registration & email verification", () => {
     });
     expect(pending.statusCode).toBe(202);
     expect(pending.json().verificationToken).toBeUndefined();
-    expect(pending.json().verificationExpiresAt).not.toBeNull();
+    expect(pending.json().verificationExpiresAt).toBeNull();
+    expect(mail.messages.some((message) => message.kind === "EMAIL_VERIFICATION" && message.to === pendingEmail)).toBe(true);
+    const deliveredCount = mail.messages.length;
 
     const unknown = await app.inject({
       method: "POST",
@@ -150,6 +366,18 @@ describe("registration & email verification", () => {
     });
     expect(unknown.statusCode).toBe(202);
     expect(unknown.json().verificationExpiresAt).toBeNull();
+    expect(mail.messages).toHaveLength(deliveredCount);
+
+    const verifiedUser = await authenticatedUser(app, mail);
+    mail.clear();
+    const alreadyVerified = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/email/resend",
+      payload: { email: verifiedUser.email },
+    });
+    expect(alreadyVerified.statusCode).toBe(202);
+    expect(alreadyVerified.json().verificationExpiresAt).toBeNull();
+    expect(mail.messages.length).toBe(0);
   });
 });
 
@@ -203,6 +431,247 @@ describe("login & anti-enumeration", () => {
   });
 });
 
+describe("email-based two-factor authentication", () => {
+  it("allows email MFA enrollment to retry after SMTP failure", async () => {
+    mail.clear();
+    const ctx = await authenticatedUser(app, mail);
+    const mailer = app.get(MailerService);
+    const firstReauth = await app.inject({
+      method: "POST",
+      url: "/api/v1/security/reauth",
+      headers: ctx.authHeader,
+      payload: { password: ctx.password },
+    });
+    mailer.useTransport({ send: async () => { throw new Error("simulated SMTP outage"); } });
+    const failed = await app.inject({
+      method: "POST",
+      url: "/api/v1/security/2fa/email/enable",
+      headers: ctx.authHeader,
+      payload: { reauthToken: firstReauth.json().token },
+    });
+    mailer.useTransport({ send: async (message) => { mail.messages.push(message); } });
+    expect(failed.statusCode).toBeGreaterThanOrEqual(500);
+
+    const secondReauth = await app.inject({
+      method: "POST",
+      url: "/api/v1/security/reauth",
+      headers: ctx.authHeader,
+      payload: { password: ctx.password },
+    });
+    const enabled = await app.inject({
+      method: "POST",
+      url: "/api/v1/security/2fa/email/enable",
+      headers: ctx.authHeader,
+      payload: { reauthToken: secondReauth.json().token },
+    });
+    expect(enabled.statusCode).toBe(200);
+    const code = [...mail.messages].reverse().find((item) => item.kind === "MFA_EMAIL_CODE")?.code;
+    expect(code).toMatch(/^\d{6}$/);
+    const confirmed = await app.inject({
+      method: "POST",
+      url: "/api/v1/security/2fa/email/confirm",
+      headers: ctx.authHeader,
+      payload: { code },
+    });
+    expect(confirmed.statusCode).toBe(200);
+    expect(confirmed.json().state).toMatchObject({ enabled: true, method: "EMAIL" });
+  });
+
+  it("enables email MFA, sends a short-lived code at login, and consumes the challenge once", async () => {
+    mail.clear();
+    const ctx = await authenticatedUser(app, mail);
+    const reauth = await app.inject({
+      method: "POST",
+      url: "/api/v1/security/reauth",
+      headers: ctx.authHeader,
+      payload: { password: ctx.password },
+    });
+    expect(reauth.statusCode).toBe(200);
+    const reauthToken = reauth.json().token as string;
+    expect(reauthToken).toBeTruthy();
+
+    const enabled = await app.inject({
+      method: "POST",
+      url: "/api/v1/security/2fa/email/enable",
+      headers: ctx.authHeader,
+      payload: { reauthToken },
+    });
+    expect(enabled.statusCode).toBe(200);
+    expect(enabled.json()).toMatchObject({ pending: true });
+    expect(enabled.json().expiresAt).toBeTruthy();
+
+    // Enrollment is pending until the user proves access to the mailbox.
+    const enrollmentMessage = [...mail.messages].reverse().find((item) => item.kind === "MFA_EMAIL_CODE");
+    expect(enrollmentMessage?.to).toBe(ctx.email);
+    expect(enrollmentMessage?.code).toMatch(/^\\d{6}$/);
+    const confirmations = await Promise.all([
+      app.inject({
+        method: "POST",
+        url: "/api/v1/security/2fa/email/confirm",
+        headers: ctx.authHeader,
+        payload: { code: enrollmentMessage?.code },
+      }),
+      app.inject({
+        method: "POST",
+        url: "/api/v1/security/2fa/email/confirm",
+        headers: ctx.authHeader,
+        payload: { code: enrollmentMessage?.code },
+      }),
+    ]);
+    expect(confirmations.filter((response) => response.statusCode === 200)).toHaveLength(1);
+    expect(confirmations.filter((response) => response.statusCode === 409)).toHaveLength(1);
+    const confirmed = confirmations.find((response) => response.statusCode === 200);
+    expect(confirmed?.json().state).toMatchObject({
+      enabled: true,
+      method: "EMAIL",
+      recoveryCodesRemaining: 10,
+    });
+    expect(confirmed?.json().recoveryCodes).toHaveLength(10);
+
+    mail.clear();
+    const login = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/login",
+      payload: { email: ctx.email, password: ctx.password, remember: false },
+    });
+    expect(login.statusCode).toBe(200);
+    const challenge = login.json();
+    expect(challenge).toMatchObject({ outcome: "MFA_REQUIRED", method: "EMAIL" });
+    expect(challenge.challengeToken).toBeTruthy();
+
+    const message = [...mail.messages].reverse().find((item) => item.kind === "MFA_EMAIL_CODE");
+    expect(message?.to).toBe(ctx.email);
+    expect(message?.code).toMatch(/^\d{6}$/);
+
+    // Two concurrent completions for one persistent challenge must yield
+    // exactly one authenticated session.
+    const concurrent = await Promise.all([
+      app.inject({
+        method: "POST",
+        url: "/api/v1/auth/mfa/challenge",
+        payload: { challengeToken: challenge.challengeToken, code: message?.code },
+      }),
+      app.inject({
+        method: "POST",
+        url: "/api/v1/auth/mfa/challenge",
+        payload: { challengeToken: challenge.challengeToken, code: message?.code },
+      }),
+    ]);
+    expect(concurrent.filter((response) => response.statusCode === 200)).toHaveLength(1);
+    expect(concurrent.filter((response) => response.statusCode === 401)).toHaveLength(1);
+    expect(concurrent.find((response) => response.statusCode === 200)?.json().outcome).toBe("AUTHENTICATED");
+    expect(concurrent.find((response) => response.statusCode === 401)?.json().code).toBe("INVALID_CHALLENGE");
+
+    const replay = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/mfa/challenge",
+      payload: { challengeToken: challenge.challengeToken, code: message?.code },
+    });
+    expect(replay.statusCode).toBe(401);
+    expect(replay.json().code).toBe("INVALID_CHALLENGE");
+  });
+
+  it("preserves the last usable MFA challenge when a replacement email cannot be delivered", async () => {
+    mail.clear();
+    const ctx = await authenticatedUser(app, mail);
+    const reauth = await app.inject({
+      method: "POST",
+      url: "/api/v1/security/reauth",
+      headers: ctx.authHeader,
+      payload: { password: ctx.password },
+    });
+    const enabled = await app.inject({
+      method: "POST",
+      url: "/api/v1/security/2fa/email/enable",
+      headers: ctx.authHeader,
+      payload: { reauthToken: reauth.json().token },
+    });
+    expect(enabled.statusCode).toBe(200);
+    const enrollmentCode = [...mail.messages].reverse().find((item) => item.kind === "MFA_EMAIL_CODE")?.code;
+    const confirmed = await app.inject({
+      method: "POST",
+      url: "/api/v1/security/2fa/email/confirm",
+      headers: ctx.authHeader,
+      payload: { code: enrollmentCode },
+    });
+    expect(confirmed.statusCode).toBe(200);
+
+    mail.clear();
+    const firstLogin = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/login",
+      payload: { email: ctx.email, password: ctx.password, remember: false },
+    });
+    expect(firstLogin.statusCode).toBe(200);
+    const firstChallenge = firstLogin.json();
+    const firstCode = [...mail.messages].reverse().find((item) => item.kind === "MFA_EMAIL_CODE")?.code;
+    expect(firstCode).toMatch(/^\d{6}$/);
+
+    const mailer = app.get(MailerService);
+    mailer.useTransport({ send: async () => { throw new Error("simulated SMTP outage"); } });
+    const failedReplacement = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/login",
+      payload: { email: ctx.email, password: ctx.password, remember: false },
+    });
+    mailer.useTransport({ send: async (message) => { mail.messages.push(message); } });
+    expect(failedReplacement.statusCode).toBeGreaterThanOrEqual(500);
+
+    const complete = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/mfa/challenge",
+      payload: { challengeToken: firstChallenge.challengeToken, code: firstCode },
+    });
+    expect(complete.statusCode).toBe(200);
+    expect(complete.json().outcome).toBe("AUTHENTICATED");
+  });
+
+  it("does not complete email MFA with an incorrect code", async () => {
+    mail.clear();
+    const ctx = await authenticatedUser(app, mail);
+    const reauth = await app.inject({
+      method: "POST",
+      url: "/api/v1/security/reauth",
+      headers: ctx.authHeader,
+      payload: { password: ctx.password },
+    });
+    const enabled = await app.inject({
+      method: "POST",
+      url: "/api/v1/security/2fa/email/enable",
+      headers: ctx.authHeader,
+      payload: { reauthToken: reauth.json().token },
+    });
+    expect(enabled.statusCode).toBe(200);
+
+    mail.clear();
+    const login = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/login",
+      payload: { email: ctx.email, password: ctx.password, remember: false },
+    });
+    const challenge = login.json();
+    const issuedCode = [...mail.messages].reverse().find((item) => item.kind === "MFA_EMAIL_CODE")?.code;
+    const wrongCode = issuedCode === "000000" ? "000001" : "000000";
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      const invalid = await app.inject({
+        method: "POST",
+        url: "/api/v1/auth/mfa/challenge",
+        payload: { challengeToken: challenge.challengeToken, code: wrongCode },
+      });
+      expect(invalid.statusCode).toBe(401);
+      expect(invalid.json().code).toBe("INVALID_MFA_CODE");
+    }
+
+    const lockedChallenge = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/mfa/challenge",
+      payload: { challengeToken: challenge.challengeToken, code: issuedCode },
+    });
+    expect(lockedChallenge.statusCode).toBe(401);
+    expect(lockedChallenge.json().code).toBe("INVALID_CHALLENGE");
+  });
+});
+
 describe("me / refresh rotation / reuse detection / logout", () => {
   it("/auth/me requires a bearer token and returns user+session", async () => {
     const ctx = await authenticatedUser(app, mail);
@@ -218,6 +687,48 @@ describe("me / refresh rotation / reuse detection / logout", () => {
     expect(me.statusCode).toBe(200);
     expect(me.json().user.id).toBe(ctx.userId);
     expect(me.json().session.current).toBe(true);
+  });
+
+  it("refresh preserves the original remember-me policy", async () => {
+    const short = await authenticatedUser(app, mail, { remember: false });
+    const shortRefresh = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/refresh",
+      headers: cookieHeader(short.refreshCookie),
+    });
+    expect(shortRefresh.statusCode).toBe(200);
+    expect(String(shortRefresh.headers["set-cookie"])).not.toContain("Max-Age=");
+    const shortSession = (await app.get(IdentityRepository).listSessions(short.userId))[0];
+    expect(shortSession?.remember).toBe(false);
+
+    const remembered = await authenticatedUser(app, mail, { remember: true });
+    const rememberedRefresh = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/refresh",
+      headers: cookieHeader(remembered.refreshCookie),
+    });
+    expect(rememberedRefresh.statusCode).toBe(200);
+    expect(String(rememberedRefresh.headers["set-cookie"])).toContain("Max-Age=");
+    const rememberedSession = (await app.get(IdentityRepository).listSessions(remembered.userId))[0];
+    expect(rememberedSession?.remember).toBe(true);
+  });
+
+  it("concurrent refresh requests cannot both rotate the same token", async () => {
+    const ctx = await authenticatedUser(app, mail);
+    const responses = await Promise.all([
+      app.inject({
+        method: "POST",
+        url: "/api/v1/auth/refresh",
+        headers: cookieHeader(ctx.refreshCookie),
+      }),
+      app.inject({
+        method: "POST",
+        url: "/api/v1/auth/refresh",
+        headers: cookieHeader(ctx.refreshCookie),
+      }),
+    ]);
+    expect(responses.filter((response) => response.statusCode === 200)).toHaveLength(1);
+    expect(responses.filter((response) => response.statusCode === 401)).toHaveLength(1);
   });
 
   it("refresh rotates the cookie; reusing the OLD token revokes ALL sessions", async () => {
@@ -241,7 +752,7 @@ describe("me / refresh rotation / reuse detection / logout", () => {
     expect(reuse.statusCode).toBe(401);
     expect(reuse.json().code).toBe("INVALID_TOKEN");
 
-    // The post-rotation token is dead too — the family was revoked.
+    // The post-rotation token is dead too - the family was revoked.
     const afterReuse = await app.inject({
       method: "POST",
       url: "/api/v1/auth/refresh",
@@ -306,6 +817,7 @@ describe("password reset (§22)", () => {
     expect(known.statusCode).toBe(202);
     expect(known.json().sent).toBe(true);
     expect(known.json().resetToken).toBeUndefined();
+    expect(known.json().resetExpiresAt).toBeNull();
     expect(mail.messages.some((m) => m.kind === "PASSWORD_RESET")).toBe(true);
 
     mail.clear();
@@ -319,6 +831,112 @@ describe("password reset (§22)", () => {
     expect(mail.messages.length).toBe(0);
   });
 
+  it("applies the same password-reset rate-limit response to known and unknown addresses", async () => {
+    const ctx = await authenticatedUser(app, mail);
+    const unknownEmail = uniqueEmail("unknown-reset-rate-limit");
+
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      const known = await app.inject({
+        method: "POST",
+        url: "/api/v1/auth/password/forgot",
+        payload: { email: ctx.email },
+      });
+      const unknown = await app.inject({
+        method: "POST",
+        url: "/api/v1/auth/password/forgot",
+        payload: { email: unknownEmail },
+      });
+      expect(known.statusCode).toBe(202);
+      expect(unknown.statusCode).toBe(202);
+    }
+
+    const [knownLimited, unknownLimited] = await Promise.all([
+      app.inject({ method: "POST", url: "/api/v1/auth/password/forgot", payload: { email: ctx.email } }),
+      app.inject({ method: "POST", url: "/api/v1/auth/password/forgot", payload: { email: unknownEmail } }),
+    ]);
+    expect(knownLimited.statusCode).toBe(429);
+    expect(unknownLimited.statusCode).toBe(429);
+    expect(knownLimited.json().code).toBe(unknownLimited.json().code);
+  });
+
+  it("SMTP failure does not invalidate the last delivered reset link or reveal account existence", async () => {
+    const ctx = await authenticatedUser(app, mail);
+    const mailer = app.get(MailerService);
+    mail.clear();
+
+    const first = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/password/forgot",
+      payload: { email: ctx.email },
+    });
+    expect(first.statusCode).toBe(202);
+    const deliveredToken = mail.lastResetToken();
+
+    mailer.useTransport({
+      send: async () => {
+        throw new Error("simulated SMTP outage");
+      },
+    });
+    const failedDelivery = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/password/forgot",
+      payload: { email: ctx.email },
+    });
+
+    // Restore capture delivery even if the assertions below fail.
+    mailer.useTransport({ send: async (message) => { mail.messages.push(message); } });
+    expect(failedDelivery.statusCode).toBe(202);
+    expect(failedDelivery.json().sent).toBe(true);
+    expect(failedDelivery.json().resetExpiresAt).toBeNull();
+
+    // Prove the earlier delivered token still works.
+    const reset = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/password/reset",
+      payload: { token: deliveredToken, password: "recovered-password-45" },
+    });
+    expect(reset.statusCode).toBe(200);
+  });
+
+  it("restores the original verified email if email-change delivery fails", async () => {
+    const ctx = await authenticatedUser(app, mail);
+    const originalEmail = ctx.email;
+    const newEmail = uniqueEmail("email-change-smtp-failure");
+    const mailer = app.get(MailerService);
+    mailer.useTransport({
+      send: async () => {
+        throw new Error("simulated SMTP outage during email change");
+      },
+    });
+
+    let statusCode = 0;
+    try {
+      const response = await app.inject({
+        method: "PATCH",
+        url: "/api/v1/me",
+        headers: ctx.authHeader,
+        payload: { email: newEmail },
+      });
+      statusCode = response.statusCode;
+    } finally {
+      mailer.useTransport({ send: async (message) => { mail.messages.push(message); } });
+    }
+
+    expect(statusCode).toBeGreaterThanOrEqual(500);
+    const restored = await app.get(IdentityRepository).findUserById(ctx.userId);
+    expect(restored?.email).toBe(originalEmail);
+    expect(restored?.status).toBe("ACTIVE");
+    expect(restored?.emailVerifiedAt).not.toBeNull();
+
+    const login = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/login",
+      payload: { email: originalEmail, password: PASSWORD, remember: false },
+    });
+    expect(login.statusCode).toBe(200);
+    expect(login.json().outcome).toBe("AUTHENTICATED");
+  });
+
   it("reset changes the password, revokes sessions, and allows re-login", async () => {
     const ctx = await authenticatedUser(app, mail);
     mail.clear();
@@ -328,13 +946,59 @@ describe("password reset (§22)", () => {
       payload: { email: ctx.email },
     });
     const newPassword = "brand-new-password-42";
-    const reset = await app.inject({
+    const resetToken = mail.lastResetToken();
+
+    const wrongPurpose = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/email/verify",
+      payload: { token: resetToken },
+    });
+    expect(wrongPurpose.statusCode).toBe(400);
+    expect(wrongPurpose.json().code).toBe("INVALID_TOKEN");
+
+    // Simulate an older outstanding link left behind by a failed cleanup.
+    const staleResetToken = IdentityRepository.randomToken(24);
+    await app.get(IdentityRepository).createChallenge({
+      userId: ctx.userId,
+      purpose: "PASSWORD_RESET",
+      tokenHash: IdentityRepository.hashToken(staleResetToken),
+      expiresAt: new Date(Date.now() + 60_000),
+    });
+
+    // Two requests racing with the same token must not both succeed.
+    const concurrent = await Promise.all([
+      app.inject({
+        method: "POST",
+        url: "/api/v1/auth/password/reset",
+        payload: { token: resetToken, password: newPassword },
+      }),
+      app.inject({
+        method: "POST",
+        url: "/api/v1/auth/password/reset",
+        payload: { token: resetToken, password: "another-password-43" },
+      }),
+    ]);
+    expect(concurrent.filter((response) => response.statusCode === 200)).toHaveLength(1);
+    expect(concurrent.filter((response) => response.statusCode === 400)).toHaveLength(1);
+    expect(concurrent.find((response) => response.statusCode === 200)?.json().resetAt).toBeTruthy();
+    expect(concurrent.find((response) => response.statusCode === 400)?.json().code).toBe("TOKEN_ALREADY_USED");
+
+    // Reset links remain single-use after the concurrent requests complete.
+    const replay = await app.inject({
       method: "POST",
       url: "/api/v1/auth/password/reset",
-      payload: { token: mail.lastResetToken(), password: newPassword },
+      payload: { token: resetToken, password: "third-password-44" },
     });
-    expect(reset.statusCode).toBe(200);
-    expect(reset.json().resetAt).toBeTruthy();
+    expect(replay.statusCode).toBe(400);
+    expect(replay.json().code).toBe("TOKEN_ALREADY_USED");
+
+    const staleReset = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/password/reset",
+      payload: { token: staleResetToken, password: "fourth-password-45" },
+    });
+    expect(staleReset.statusCode).toBe(400);
+    expect(staleReset.json().code).toBe("INVALID_TOKEN");
 
     // Old refresh chain revoked (defense in depth).
     const oldRefresh = await app.inject({

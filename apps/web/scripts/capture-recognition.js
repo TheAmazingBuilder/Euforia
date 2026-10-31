@@ -1,5 +1,5 @@
 /**
- * BEFORE/AFTER capture — the visual baseline for the premium redesign.
+ * BEFORE/AFTER capture - the visual baseline for the premium redesign.
  * Logs in, walks the main recognition surfaces and saves full-page shots
  * to scripts/shots/redesign-{before,after}-*.png depending on PREFIX.
  *
@@ -53,7 +53,7 @@ async function makeScreenshotPng(page, width = 1280, height = 720, withText = tr
   await page.click('button[type="submit"]');
   await page.waitForTimeout(3000);
 
-  // Overview (empty state — fresh session has items; capture as-is)
+  // Overview (empty state - fresh session has items; capture as-is)
   await page.goto(`${BASE}/recognition`, { waitUntil: "domcontentloaded", timeout: 60000 });
   await page.waitForSelector('[data-testid="recognition-overview"]', { timeout: 30000 });
   await page.waitForTimeout(800);
@@ -78,7 +78,7 @@ async function makeScreenshotPng(page, width = 1280, height = 720, withText = tr
   await page.waitForTimeout(600);
   await page.screenshot({ path: `scripts/shots/${PREFIX}-result-trade.png`, fullPage: true });
 
-  // Account profile result — go back to overview, upload, pick profile.
+  // Account profile result - go back to overview, upload, pick profile.
   await page.goto(`${BASE}/recognition`, { waitUntil: "domcontentloaded", timeout: 60000 });
   await page.waitForSelector('[data-testid="recognition-overview"]', { timeout: 30000 });
   await page.waitForTimeout(600);
@@ -105,7 +105,7 @@ async function makeScreenshotPng(page, width = 1280, height = 720, withText = tr
   await page.screenshot({ path: `scripts/shots/${PREFIX}-result-chart.png`, fullPage: true });
 
   await browser.close();
-  console.log(`CAPTURED: ${PREFIX} — overview, history, configure, result-trade, result-account, result-chart`);
+  console.log(`CAPTURED: ${PREFIX} - overview, history, configure, result-trade, result-account, result-chart`);
 })().catch((error) => {
   console.error(`CAPTURE FAILED: ${error.message}`);
   process.exit(1);
