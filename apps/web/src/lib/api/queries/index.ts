@@ -139,6 +139,10 @@ export {
   useRevokeApiKey,
   useRevokeSessions,
   useSecurityOverview,
+  useSecurityEventPages,
+  useSecurityLoginPages,
+  type SecurityEventHistoryFilters,
+  type SecurityLoginHistoryFilters,
 } from "./security";
 export {
   useMonitoringOverview,
