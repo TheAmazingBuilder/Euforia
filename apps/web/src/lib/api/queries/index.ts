@@ -87,6 +87,7 @@ export {
   useDeleteSessionNote,
 } from "./session";
 export { useAnalyticsSuite, useStatsOverview } from "./stats";
+export { usePersonalEventsBoard, useSavePersonalEventsBoard } from "./personal-events";
 export {
   useCalendarBlocks,
   useCalendarView,
