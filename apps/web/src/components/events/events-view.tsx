@@ -1,3 +1,324 @@
+"use client";
+
+import * as React from "react";
+import { toast } from "sonner";
+import {
+  AlertTriangle,
+  ArrowUpDown,
+  CalendarPlus,
+  LoaderCircle,
+  Check,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsUpDown,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Pencil,
+  Plus,
+  RefreshCw,
+  Star,
+  Trash2,
+} from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { cn } from "@/lib/utils";
+import { usePersonalEventsBoard, useProfile, useSavePersonalEventsBoard } from "@/lib/api/queries";
+import {
+  COLOR_KEYS,
+  EVENT_COLORS,
+  GROUP_LABELS,
+  GROUP_ORDER,
+  SORT_LABELS,
+  dateOf,
+  dayNum,
+  isoOf,
+  isToday,
+  monthLabel,
+  monthMatrix,
+  newId,
+  sortEvents,
+  type CalEvent,
+  type CalendarGroup,
+  type EventColor,
+  type EventsCalendar,
+  type SortMode,
+} from "@/components/events/events-model";
+
+/**
+ * Events - the trading calendar (Academy section, independent module).
+ * Faithful to the product reference: inner left panel (account card, mini
+ * month, calendar groups used as filters) + month grid with colored pills.
+ * Extras without changing the design: sort menu, new-event and new-calendar
+ * dialogs, event details card (star / rename / delete), and drag of events
+ * between days with the cursor OR a finger (Pointer Events, touch-first).
+ * The personal board loads and persists through the authenticated API.
+ */
+
+type EventDragState = {
+  eventId: string;
+  x: number;
+  y: number;
+  grabX: number;
+  grabY: number;
+  overIso: string | null;
+};
+
+type DetailsState = { eventId: string; x: number; y: number; renaming: boolean };
+
+const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+export function EventsView() {
+  const profile = useProfile();
+  const boardQuery = usePersonalEventsBoard();
+  const { mutateAsync: saveBoardAsync } = useSavePersonalEventsBoard();
+  const saveQueueRef = React.useRef<Promise<unknown>>(Promise.resolve());
+  const [calendars, setCalendars] = React.useState<EventsCalendar[]>([]);
+  const [events, setEvents] = React.useState<CalEvent[]>([]);
+  const [hydrated, setHydrated] = React.useState(false);
+
+  const now = new Date();
+  const [viewYear, setViewYear] = React.useState(now.getFullYear());
+  const [viewMonth, setViewMonth] = React.useState(now.getMonth());
+  const [selectedIso, setSelectedIso] = React.useState(isoOf(now));
+  const [sortMode, setSortMode] = React.useState<SortMode>("time");
+  const [panelOpen, setPanelOpen] = React.useState(true);
+  const [collapsed, setCollapsed] = React.useState<Record<CalendarGroup, boolean>>({
+    mine: false,
+    favorites: true,
+    other: false,
+  });
+
+  const [newEventOpen, setNewEventOpen] = React.useState(false);
+  const [evTitle, setEvTitle] = React.useState("");
+  const [evCalendar, setEvCalendar] = React.useState<string>("");
+  const [evDate, setEvDate] = React.useState(isoOf(now));
+  const [evAllDay, setEvAllDay] = React.useState(false);
+  const [evTime, setEvTime] = React.useState("09:00");
+
+  const [newCalOpen, setNewCalOpen] = React.useState(false);
+  const [calName, setCalName] = React.useState("");
+  const [calColor, setCalColor] = React.useState<EventColor>("blue");
+  const [calGroup, setCalGroup] = React.useState<CalendarGroup>("mine");
+
+  const [details, setDetails] = React.useState<DetailsState | null>(null);
+  const [renameValue, setRenameValue] = React.useState("");
+  const [drag, setDrag] = React.useState<EventDragState | null>(null);
+
+  const cellRefs = React.useRef<Map<string, HTMLElement>>(new Map());
+  const dragRef = React.useRef<EventDragState | null>(null);
+
+  // Hydrate exclusively from the authenticated account. Legacy demo data is deliberately discarded.
+  React.useEffect(() => {
+    if (!boardQuery.isSuccess || hydrated) return;
+    /* eslint-disable react-hooks/set-state-in-effect -- hydrate once after the account-owned API query resolves */
+    const state = boardQuery.data.state ?? { calendars: [], events: [] };
+    setCalendars(state.calendars);
+    setEvents(state.events);
+    setHydrated(true);
+    window.localStorage.removeItem("cosmoz.events.state.v1");
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, [boardQuery.data, boardQuery.isSuccess, hydrated]);
+
+  // Queue full-board writes to prevent a slower older PUT from overwriting a newer edit.
+  React.useEffect(() => {
+    if (!hydrated) return;
+    const snapshot = { calendars, events };
+    saveQueueRef.current = saveQueueRef.current
+      .catch(() => undefined)
+      .then(() => saveBoardAsync(snapshot))
+      .catch(() => undefined);
+  }, [calendars, events, hydrated, saveBoardAsync]);
+
+  const calendarById = React.useMemo(
+    () => new Map(calendars.map((calendar) => [calendar.id, calendar])),
+    [calendars],
+  );
+  const calendarName = React.useCallback(
+    (id: string) => calendarById.get(id)?.name ?? "Calendar",
+    [calendarById],
+  );
+
+  const setDragState = React.useCallback((next: EventDragState | null) => {
+    dragRef.current = next;
+    setDrag(next);
+  }, []);
+
+  /* ── Drag & click on pills: one pointer path for cursor AND finger ── */
+  const onPillPointerDown = React.useCallback(
+    (event: React.PointerEvent<HTMLButtonElement>, eventId: string) => {
+      if (event.pointerType === "mouse" && event.button !== 0) return;
+      const startX = event.clientX;
+      const startY = event.clientY;
+      const pillRect = event.currentTarget.getBoundingClientRect();
+      let activated = false;
+
+      const onMove = (moveEvent: PointerEvent) => {
+        if (!activated) {
+          const dist = Math.hypot(moveEvent.clientX - startX, moveEvent.clientY - startY);
+          if (dist < 6) return;
+          activated = true;
+          setDragState({
+            eventId,
+            x: moveEvent.clientX,
+            y: moveEvent.clientY,
+            grabX: startX - pillRect.left,
+            grabY: startY - pillRect.top,
+            overIso: null,
+          });
+        }
+        const current = dragRef.current;
+        if (!current) return;
+        let overIso: string | null = null;
+        for (const [iso, el] of cellRefs.current) {
+          const rect = el.getBoundingClientRect();
+          if (moveEvent.clientX >= rect.left && moveEvent.clientX <= rect.right && moveEvent.clientY >= rect.top && moveEvent.clientY <= rect.bottom) {
+            overIso = iso;
+            break;
+          }
+        }
+        setDragState({ ...current, x: moveEvent.clientX, y: moveEvent.clientY, overIso });
+      };
+
+      const onUp = (upEvent: PointerEvent) => {
+        window.removeEventListener("pointermove", onMove);
+        window.removeEventListener("pointerup", onUp);
+        window.removeEventListener("pointercancel", onCancel);
+        if (activated) {
+          const current = dragRef.current;
+          if (current?.overIso) {
+            setEvents((prev) =>
+              prev.map((item) => (item.id === eventId ? { ...item, date: current.overIso as string } : item)),
+            );
+          }
+          setDragState(null);
+        } else {
+          // No movement - open the details card where the finger/cursor is.
+          setRenameValue("");
+          setDetails({ eventId, x: upEvent.clientX, y: upEvent.clientY, renaming: false });
+        }
+      };
+      const onCancel = () => {
+        window.removeEventListener("pointermove", onMove);
+        window.removeEventListener("pointerup", onUp);
+        window.removeEventListener("pointercancel", onCancel);
+        setDragState(null);
+      };
+
+      window.addEventListener("pointermove", onMove, { passive: true });
+      window.addEventListener("pointerup", onUp);
+      window.addEventListener("pointercancel", onCancel);
+    },
+    [setDragState],
+  );
+
+  /* ── Mutations ── */
+  const toggleVisible = (calendarId: string) => {
+    setCalendars((prev) =>
+      prev.map((calendar) => (calendar.id === calendarId ? { ...calendar, visible: !calendar.visible } : calendar)),
+    );
+  };
+
+  const createEvent = () => {
+    const trimmed = evTitle.trim();
+    if (trimmed === "" || evCalendar === "") return;
+    setEvents((prev) => [
+      ...prev,
+      {
+        id: newId("event"),
+        title: trimmed,
+        calendarId: evCalendar,
+        date: evDate,
+        allDay: evAllDay,
+        time: evAllDay ? undefined : evTime,
+      },
+    ]);
+    setNewEventOpen(false);
+    setEvTitle("");
+    // View follows the created event if it lands outside the visible month.
+    const target = dateOf(evDate);
+    setViewYear(target.getFullYear());
+    setViewMonth(target.getMonth());
+    setSelectedIso(evDate);
+    toast.success("Event created", { description: trimmed });
+  };
+
+  const createCalendar = () => {
+    const trimmed = calName.trim();
+    if (trimmed === "") return;
+    setCalendars((prev) => [
+      ...prev,
+      { id: newId("cal"), name: trimmed, color: calColor, group: calGroup, visible: true },
+    ]);
+    setNewCalOpen(false);
+    setCalName("");
+    toast.success("Calendar created", { description: trimmed });
+  };
+
+  const deleteEvent = (eventId: string) => {
+    const removed = events.find((item) => item.id === eventId);
+    setEvents((prev) => prev.filter((item) => item.id !== eventId));
+    setDetails(null);
+    if (removed) toast.success("Event deleted", { description: removed.title });
+  };
+
+  const toggleFavorite = (eventId: string) => {
+    const event = events.find((item) => item.id === eventId);
+    setEvents((prev) => prev.map((item) => (item.id === eventId ? { ...item, favorite: !item.favorite } : item)));
+    if (event) toast.success(event.favorite ? "Event removed from favorites" : "Event added to favorites");
+  };
+
+  const renameEvent = (eventId: string) => {
+    const trimmed = renameValue.trim();
+    if (trimmed === "") return;
+    setEvents((prev) => prev.map((item) => (item.id === eventId ? { ...item, title: trimmed } : item)));
+    setDetails(null);
+    toast.success("Event updated", { description: trimmed });
+  };
+
+  /* ── Derived ── */
+  const cells = React.useMemo(() => monthMatrix(viewYear, viewMonth), [viewYear, viewMonth]);
+  const visibleEvents = React.useMemo(
+    () => events.filter((item) => calendarById.get(item.calendarId)?.visible !== false),
+    [events, calendarById],
+  );
+  const eventsByDate = React.useMemo(() => {
+    const map = new Map<string, CalEvent[]>();
+    for (const item of visibleEvents) {
+      const bucket = map.get(item.date) ?? [];
+      bucket.push(item);
+      map.set(item.date, bucket);
+    }
+    return map;
+  }, [visibleEvents]);
+
+  const detailsEvent = details ? events.find((item) => item.id === details.eventId) : undefined;
+  const dragEvent = drag ? events.find((item) => item.id === drag.eventId) : undefined;
+  const dragColors = dragEvent ? EVENT_COLORS[calendarById.get(dragEvent.calendarId)?.color ?? "blue"] : null;
+
   if (boardQuery.isError) {
     return (
       <div className="flex min-h-[360px] flex-col items-center justify-center gap-3 rounded-xl border border-border bg-surface/30 p-6 text-center" data-testid="events-error">
@@ -26,7 +347,6 @@
       </div>
     );
   }
-
 
   const displayName = profile.data?.name?.trim() || "Trader";
   const initials = displayName
