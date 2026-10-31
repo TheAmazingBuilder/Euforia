@@ -20,6 +20,7 @@ import type {
   ConnectedAccount,
   LoginRecord,
   SecurityEvent,
+  SecurityEventType,
   SecurityOverviewResponse,
   SecuritySession,
   SessionRevokeInput,
@@ -52,6 +53,7 @@ import {
   StatusBadge,
 } from "@/components/integrations/hub-shared";
 import { cn } from "@/lib/utils";
+import { EVENT_TYPE_META } from "@/lib/security/event-label";
 import { EventBadge, EventOutcomeIcon, utc } from "./security-primitives";
 
 /**
@@ -62,6 +64,28 @@ import { EventBadge, EventOutcomeIcon, utc } from "./security-primitives";
  */
 
 type Overview = SecurityOverviewResponse;
+
+export type EventHistoryFilters = {
+  type: SecurityEventType | "ALL";
+  outcome: "ALL" | "SUCCESS" | "FAILURE";
+  from: string;
+  to: string;
+};
+
+export type LoginHistoryFilters = {
+  outcome: "ALL" | "SUCCESS" | "FAILURE";
+  from: string;
+  to: string;
+};
+
+export type HistoryPagination = {
+  isLoading: boolean;
+  isError: boolean;
+  errorMessage: string | null;
+  hasNextPage: boolean;
+  isFetchingNextPage: boolean;
+  onLoadMore: () => void;
+};
 
 export const API_SCOPE_META: Record<ApiKeyView["scopes"][number], { label: string; detail: string }> = {
   "read:trades": { label: "read:trades", detail: "Read trade history and journal entries" },
@@ -966,7 +990,25 @@ function EventRow({ event, compact, detailed = false }: { event: SecurityEvent; 
   );
 }
 
-export function EventsPanel({ overview }: { overview: Overview }) {
+export function EventsPanel({
+  overview,
+  events,
+  filters,
+  onFiltersChange,
+  onResetFilters,
+  pagination,
+}: {
+  overview: Overview;
+  events: SecurityEvent[];
+  filters: EventHistoryFilters;
+  onFiltersChange: (filters: EventHistoryFilters) => void;
+  onResetFilters: () => void;
+  pagination: HistoryPagination;
+}) {
+  const eventTypes = Object.entries(EVENT_TYPE_META) as Array<
+    [SecurityEventType, { readonly label: string }]
+  >;
+
   return (
     <Card className="border-border bg-surface">
       <CardHeader>
@@ -984,10 +1026,108 @@ export function EventsPanel({ overview }: { overview: Overview }) {
           .
         </CardDescription>
       </CardHeader>
-      <CardContent className="grid max-h-[32rem] gap-1.5 overflow-y-auto">
-        {overview.events.map((event) => (
-          <EventRow key={event.id} event={event} detailed />
-        ))}
+      <CardContent className="grid gap-3">
+        <div className="grid gap-3 rounded-lg border border-border bg-background/50 p-3 sm:grid-cols-2 lg:grid-cols-4">
+          <label className="grid gap-1 text-xs font-medium text-muted-foreground">
+            <span>Event type</span>
+            <select
+              value={filters.type}
+              onChange={(event) =>
+                onFiltersChange({
+                  ...filters,
+                  type: event.target.value as EventHistoryFilters["type"],
+                })
+              }
+              className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground"
+              aria-label="Filter events by type"
+            >
+              <option value="ALL">All event types</option>
+              {eventTypes.map(([type, meta]) => (
+                <option key={type} value={type}>
+                  {meta.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="grid gap-1 text-xs font-medium text-muted-foreground">
+            <span>Outcome</span>
+            <select
+              value={filters.outcome}
+              onChange={(event) =>
+                onFiltersChange({
+                  ...filters,
+                  outcome: event.target.value as EventHistoryFilters["outcome"],
+                })
+              }
+              className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground"
+              aria-label="Filter events by outcome"
+            >
+              <option value="ALL">All outcomes</option>
+              <option value="SUCCESS">Success</option>
+              <option value="FAILURE">Failure</option>
+            </select>
+          </label>
+          <label className="grid gap-1 text-xs font-medium text-muted-foreground" htmlFor="security-events-from">
+            <span>From (UTC)</span>
+            <Input
+              id="security-events-from"
+              type="date"
+              value={filters.from}
+              onChange={(event) => onFiltersChange({ ...filters, from: event.target.value })}
+            />
+          </label>
+          <label className="grid gap-1 text-xs font-medium text-muted-foreground" htmlFor="security-events-to">
+            <span>To (UTC)</span>
+            <Input
+              id="security-events-to"
+              type="date"
+              value={filters.to}
+              onChange={(event) => onFiltersChange({ ...filters, to: event.target.value })}
+            />
+          </label>
+          <div className="flex items-end justify-end sm:col-span-2 lg:col-span-4">
+            <Button type="button" size="sm" variant="ghost" onClick={onResetFilters}>
+              Clear filters
+            </Button>
+          </div>
+        </div>
+
+        {pagination.isError && (
+          <p role="alert" className="text-sm text-destructive">
+            {pagination.errorMessage ?? "Could not load security events."}
+          </p>
+        )}
+        {pagination.isLoading && events.length === 0 && (
+          <p className="py-4 text-center text-sm text-muted-foreground" aria-busy="true">
+            Loading security events…
+          </p>
+        )}
+        <div className="grid max-h-[32rem] gap-1.5 overflow-y-auto">
+          {events.map((event) => (
+            <EventRow key={event.id} event={event} detailed />
+          ))}
+          {events.length === 0 && !pagination.isLoading && (
+            <p className="rounded-lg border border-dashed border-border px-3 py-6 text-center text-sm text-muted-foreground">
+              No security events match these filters.
+            </p>
+          )}
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-xs text-muted-foreground">
+            {events.length} event{events.length === 1 ? "" : "s"} loaded
+          </p>
+          {pagination.hasNextPage && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={pagination.onLoadMore}
+              disabled={pagination.isFetchingNextPage}
+            >
+              {pagination.isFetchingNextPage ? "Loading…" : "Load older events"}
+            </Button>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
@@ -1030,7 +1170,21 @@ function LoginRow({ login, compact }: { login: LoginRecord; compact?: boolean })
   );
 }
 
-export function LoginHistoryPanel({ overview }: { overview: Overview }) {
+export function LoginHistoryPanel({
+  overview,
+  logins,
+  filters,
+  onFiltersChange,
+  onResetFilters,
+  pagination,
+}: {
+  overview: Overview;
+  logins: LoginRecord[];
+  filters: LoginHistoryFilters;
+  onFiltersChange: (filters: LoginHistoryFilters) => void;
+  onResetFilters: () => void;
+  pagination: HistoryPagination;
+}) {
   return (
     <Card className="border-border bg-surface">
       <CardHeader>
@@ -1047,10 +1201,87 @@ export function LoginHistoryPanel({ overview }: { overview: Overview }) {
           .
         </CardDescription>
       </CardHeader>
-      <CardContent className="grid max-h-[32rem] gap-1.5 overflow-y-auto">
-        {overview.logins.map((login) => (
-          <LoginRow key={login.id} login={login} />
-        ))}
+      <CardContent className="grid gap-3">
+        <div className="grid gap-3 rounded-lg border border-border bg-background/50 p-3 sm:grid-cols-2 lg:grid-cols-3">
+          <label className="grid gap-1 text-xs font-medium text-muted-foreground">
+            <span>Sign-in result</span>
+            <select
+              value={filters.outcome}
+              onChange={(event) =>
+                onFiltersChange({
+                  ...filters,
+                  outcome: event.target.value as LoginHistoryFilters["outcome"],
+                })
+              }
+              className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground"
+              aria-label="Filter sign-ins by result"
+            >
+              <option value="ALL">All sign-ins</option>
+              <option value="SUCCESS">Successful</option>
+              <option value="FAILURE">Failed</option>
+            </select>
+          </label>
+          <label className="grid gap-1 text-xs font-medium text-muted-foreground" htmlFor="security-logins-from">
+            <span>From (UTC)</span>
+            <Input
+              id="security-logins-from"
+              type="date"
+              value={filters.from}
+              onChange={(event) => onFiltersChange({ ...filters, from: event.target.value })}
+            />
+          </label>
+          <label className="grid gap-1 text-xs font-medium text-muted-foreground" htmlFor="security-logins-to">
+            <span>To (UTC)</span>
+            <Input
+              id="security-logins-to"
+              type="date"
+              value={filters.to}
+              onChange={(event) => onFiltersChange({ ...filters, to: event.target.value })}
+            />
+          </label>
+          <div className="flex items-end justify-end sm:col-span-2 lg:col-span-3">
+            <Button type="button" size="sm" variant="ghost" onClick={onResetFilters}>
+              Clear filters
+            </Button>
+          </div>
+        </div>
+
+        {pagination.isError && (
+          <p role="alert" className="text-sm text-destructive">
+            {pagination.errorMessage ?? "Could not load login history."}
+          </p>
+        )}
+        {pagination.isLoading && logins.length === 0 && (
+          <p className="py-4 text-center text-sm text-muted-foreground" aria-busy="true">
+            Loading login history…
+          </p>
+        )}
+        <div className="grid max-h-[32rem] gap-1.5 overflow-y-auto">
+          {logins.map((login) => (
+            <LoginRow key={login.id} login={login} />
+          ))}
+          {logins.length === 0 && !pagination.isLoading && (
+            <p className="rounded-lg border border-dashed border-border px-3 py-6 text-center text-sm text-muted-foreground">
+              No sign-in attempts match these filters.
+            </p>
+          )}
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-xs text-muted-foreground">
+            {logins.length} sign-in attempt{logins.length === 1 ? "" : "s"} loaded
+          </p>
+          {pagination.hasNextPage && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={pagination.onLoadMore}
+              disabled={pagination.isFetchingNextPage}
+            >
+              {pagination.isFetchingNextPage ? "Loading…" : "Load older sign-ins"}
+            </Button>
+          )}
+        </div>
       </CardContent>
     </Card>
   );

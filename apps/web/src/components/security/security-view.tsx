@@ -37,6 +37,8 @@ import {
   useRegenerateRecoveryCodes,
   useRevokeApiKey,
   useRevokeSessions,
+  useSecurityEventPages,
+  useSecurityLoginPages,
   useSecurityOverview,
 } from "@/lib/api/queries";
 import {
@@ -53,6 +55,9 @@ import {
   OverviewPanel,
   SessionsPanel,
   TwoFactorPanel,
+  type EventHistoryFilters,
+  type HistoryPagination,
+  type LoginHistoryFilters,
 } from "./security-panels";
 
 /**
@@ -81,6 +86,26 @@ const TABS = [
 
 type TabId = (typeof TABS)[number]["id"];
 
+function utcDateBoundary(value: string, endOfDay: boolean): string | undefined {
+  if (value === "") return undefined;
+  return endOfDay
+    ? `${value}T23:59:59.999Z`
+    : `${value}T00:00:00.000Z`;
+}
+
+const EMPTY_EVENT_HISTORY_FILTERS: EventHistoryFilters = {
+  type: "ALL",
+  outcome: "ALL",
+  from: "",
+  to: "",
+};
+
+const EMPTY_LOGIN_HISTORY_FILTERS: LoginHistoryFilters = {
+  outcome: "ALL",
+  from: "",
+  to: "",
+};
+
 interface ReauthRequest {
   actionLabel: string;
   run: (token: string) => void;
@@ -94,6 +119,58 @@ export function SecurityCenterView() {
 
   const rawTab = searchParams.get("tab") ?? "overview";
   const activeTab: TabId = (TABS.some((tab) => tab.id === rawTab) ? rawTab : "overview") as TabId;
+
+  const [eventFilters, setEventFilters] = React.useState<EventHistoryFilters>(
+    EMPTY_EVENT_HISTORY_FILTERS,
+  );
+  const [loginFilters, setLoginFilters] = React.useState<LoginHistoryFilters>(
+    EMPTY_LOGIN_HISTORY_FILTERS,
+  );
+
+  const eventHistoryQuery = useSecurityEventPages(
+    {
+      type: eventFilters.type === "ALL" ? undefined : eventFilters.type,
+      outcome: eventFilters.outcome === "ALL" ? undefined : eventFilters.outcome,
+      from: utcDateBoundary(eventFilters.from, false),
+      to: utcDateBoundary(eventFilters.to, true),
+    },
+    activeTab === "events",
+  );
+  const loginHistoryQuery = useSecurityLoginPages(
+    {
+      success:
+        loginFilters.outcome === "ALL"
+          ? undefined
+          : loginFilters.outcome === "SUCCESS",
+      from: utcDateBoundary(loginFilters.from, false),
+      to: utcDateBoundary(loginFilters.to, true),
+    },
+    activeTab === "login-history",
+  );
+
+  const eventHistory = eventHistoryQuery.data?.pages.flatMap((page) => page.items) ?? [];
+  const loginHistory = loginHistoryQuery.data?.pages.flatMap((page) => page.items) ?? [];
+
+  const eventPagination: HistoryPagination = {
+    isLoading: eventHistoryQuery.isLoading,
+    isError: eventHistoryQuery.isError,
+    errorMessage: eventHistoryQuery.error
+      ? apiErrorMessage(eventHistoryQuery.error, "Could not load security events.")
+      : null,
+    hasNextPage: eventHistoryQuery.hasNextPage ?? false,
+    isFetchingNextPage: eventHistoryQuery.isFetchingNextPage,
+    onLoadMore: () => { void eventHistoryQuery.fetchNextPage(); },
+  };
+  const loginPagination: HistoryPagination = {
+    isLoading: loginHistoryQuery.isLoading,
+    isError: loginHistoryQuery.isError,
+    errorMessage: loginHistoryQuery.error
+      ? apiErrorMessage(loginHistoryQuery.error, "Could not load login history.")
+      : null,
+    hasNextPage: loginHistoryQuery.hasNextPage ?? false,
+    isFetchingNextPage: loginHistoryQuery.isFetchingNextPage,
+    onLoadMore: () => { void loginHistoryQuery.fetchNextPage(); },
+  };
 
   const setTab = React.useCallback(
     (next: string) => {
@@ -397,8 +474,26 @@ export function SecurityCenterView() {
         />
       )}
       {activeTab === "connected-accounts" && <ConnectedAccountsPanel overview={overview} />}
-      {activeTab === "events" && <EventsPanel overview={overview} />}
-      {activeTab === "login-history" && <LoginHistoryPanel overview={overview} />}
+      {activeTab === "events" && (
+        <EventsPanel
+          overview={overview}
+          events={eventHistory}
+          filters={eventFilters}
+          onFiltersChange={setEventFilters}
+          onResetFilters={() => setEventFilters(EMPTY_EVENT_HISTORY_FILTERS)}
+          pagination={eventPagination}
+        />
+      )}
+      {activeTab === "login-history" && (
+        <LoginHistoryPanel
+          overview={overview}
+          logins={loginHistory}
+          filters={loginFilters}
+          onFiltersChange={setLoginFilters}
+          onResetFilters={() => setLoginFilters(EMPTY_LOGIN_HISTORY_FILTERS)}
+          pagination={loginPagination}
+        />
+      )}
       {activeTab === "devices" && (
         <DevicesPanel overview={overview} onRevoke={onRevokeSessions} pending={busy} />
       )}
