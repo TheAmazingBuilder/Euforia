@@ -1,5 +1,7 @@
-type EventLabelMetadata = Readonly<
-  Record<string, { readonly label: string } | undefined>
+import type { SecurityEventType } from "@cosmoz/shared";
+
+type EventLabelMetadata = Partial<
+  Record<SecurityEventType, { readonly label: string }>
 >;
 
 /**
@@ -16,8 +18,10 @@ export function getSecurityEventLabel(
       ? type.trim()
       : "UNKNOWN_EVENT";
 
+  const registeredLabel = metadata[eventType as SecurityEventType]?.label;
+
   return (
-    metadata[eventType]?.label ??
+    registeredLabel ??
     eventType
       .toLowerCase()
       .replace(/[_-]+/g, " ")
