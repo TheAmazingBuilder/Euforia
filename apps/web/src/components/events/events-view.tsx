@@ -1,9 +1,12 @@
 "use client";
 
 import * as React from "react";
+import { toast } from "sonner";
 import {
+  AlertTriangle,
   ArrowUpDown,
   CalendarPlus,
+  LoaderCircle,
   Check,
   ChevronDown,
   ChevronLeft,
@@ -13,6 +16,7 @@ import {
   PanelLeftOpen,
   Pencil,
   Plus,
+  RefreshCw,
   Star,
   Trash2,
 } from "lucide-react";
@@ -42,7 +46,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { useProfile } from "@/lib/api/queries";
+import { usePersonalEventsBoard, useProfile, useSavePersonalEventsBoard } from "@/lib/api/queries";
 import {
   COLOR_KEYS,
   EVENT_COLORS,
@@ -53,11 +57,9 @@ import {
   dayNum,
   isoOf,
   isToday,
-  loadEventsState,
   monthLabel,
   monthMatrix,
   newId,
-  saveEventsState,
   sortEvents,
   type CalEvent,
   type CalendarGroup,
@@ -73,7 +75,7 @@ import {
  * Extras without changing the design: sort menu, new-event and new-calendar
  * dialogs, event details card (star / rename / delete), and drag of events
  * between days with the cursor OR a finger (Pointer Events, touch-first).
- * State persists 100% locally.
+ * The personal board is loaded and saved through the authenticated API.
  */
 
 type EventDragState = {
@@ -91,6 +93,9 @@ const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export function EventsView() {
   const profile = useProfile();
+  const boardQuery = usePersonalEventsBoard();
+  const saveBoard = useSavePersonalEventsBoard();
+  const saveQueueRef = React.useRef<Promise<unknown>>(Promise.resolve());
   const [calendars, setCalendars] = React.useState<EventsCalendar[]>([]);
   const [events, setEvents] = React.useState<CalEvent[]>([]);
   const [hydrated, setHydrated] = React.useState(false);
@@ -126,19 +131,27 @@ export function EventsView() {
   const cellRefs = React.useRef<Map<string, HTMLElement>>(new Map());
   const dragRef = React.useRef<EventDragState | null>(null);
 
-  // Hydrate from local storage after mount, then persist on every change.
+  // Hydrate only from this account's API response. Legacy browser demo data is never imported.
   React.useEffect(() => {
-    /* eslint-disable react-hooks/set-state-in-effect -- one-shot hydration-safe local load: the server renders the seed, the client swaps in the persisted calendar right after mount */
-    const state = loadEventsState();
+    if (!boardQuery.isSuccess || hydrated) return;
+    /* eslint-disable react-hooks/set-state-in-effect -- one-time server hydration after the authenticated board query resolves */
+    const state = boardQuery.data.state ?? { calendars: [], events: [] };
     setCalendars(state.calendars);
     setEvents(state.events);
     setHydrated(true);
+    window.localStorage.removeItem("cosmoz.events.state.v1");
     /* eslint-enable react-hooks/set-state-in-effect */
-  }, []);
+  }, [boardQuery.data, boardQuery.isSuccess, hydrated]);
+
+  // Serialize full-board writes: a slower previous request must never overwrite a newer change.
   React.useEffect(() => {
     if (!hydrated) return;
-    saveEventsState({ calendars, events });
-  }, [calendars, events, hydrated]);
+    const snapshot = { calendars, events };
+    saveQueueRef.current = saveQueueRef.current
+      .catch(() => undefined)
+      .then(() => saveBoard.mutateAsync(snapshot))
+      .catch(() => undefined);
+  }, [calendars, events, hydrated, saveBoard]);
 
   const calendarById = React.useMemo(
     () => new Map(calendars.map((calendar) => [calendar.id, calendar])),
@@ -250,6 +263,7 @@ export function EventsView() {
     setViewYear(target.getFullYear());
     setViewMonth(target.getMonth());
     setSelectedIso(evDate);
+    toast.success("Event created", { description: trimmed });
   };
 
   const createCalendar = () => {
@@ -261,15 +275,20 @@ export function EventsView() {
     ]);
     setNewCalOpen(false);
     setCalName("");
+    toast.success("Calendar created", { description: trimmed });
   };
 
   const deleteEvent = (eventId: string) => {
+    const removed = events.find((item) => item.id === eventId);
     setEvents((prev) => prev.filter((item) => item.id !== eventId));
     setDetails(null);
+    if (removed) toast.success("Event deleted", { description: removed.title });
   };
 
   const toggleFavorite = (eventId: string) => {
+    const event = events.find((item) => item.id === eventId);
     setEvents((prev) => prev.map((item) => (item.id === eventId ? { ...item, favorite: !item.favorite } : item)));
+    if (event) toast.success(event.favorite ? "Event removed from favorites" : "Event added to favorites");
   };
 
   const renameEvent = (eventId: string) => {
@@ -277,6 +296,7 @@ export function EventsView() {
     if (trimmed === "") return;
     setEvents((prev) => prev.map((item) => (item.id === eventId ? { ...item, title: trimmed } : item)));
     setDetails(null);
+    toast.success("Event updated", { description: trimmed });
   };
 
   /* ── Derived ── */
@@ -299,13 +319,42 @@ export function EventsView() {
   const dragEvent = drag ? events.find((item) => item.id === drag.eventId) : undefined;
   const dragColors = dragEvent ? EVENT_COLORS[calendarById.get(dragEvent.calendarId)?.color ?? "blue"] : null;
 
+  if (boardQuery.isPending || !hydrated) {
+    return (
+      <div className="grid min-h-[360px] place-items-center rounded-xl border border-border bg-surface/30" data-testid="events-loading">
+        <div className="flex items-center gap-3 text-sm text-muted-foreground">
+          <LoaderCircle className="size-4 animate-spin" aria-hidden="true" />
+          Loading your calendar…
+        </div>
+      </div>
+    );
+  }
+
+  if (boardQuery.isError) {
+    return (
+      <div className="flex min-h-[360px] flex-col items-center justify-center gap-3 rounded-xl border border-border bg-surface/30 p-6 text-center" data-testid="events-error">
+        <span className="grid size-11 place-items-center rounded-xl bg-loss/10 text-loss">
+          <AlertTriangle className="size-5" aria-hidden="true" />
+        </span>
+        <div className="max-w-sm space-y-1">
+          <h2 className="text-sm font-semibold">Your calendar could not be loaded</h2>
+          <p className="text-xs leading-relaxed text-muted-foreground">Euforia could not reach your saved events. No sample data has been loaded or written over your calendar.</p>
+        </div>
+        <Button size="sm" variant="outline" onClick={() => void boardQuery.refetch()} disabled={boardQuery.isFetching}>
+          <RefreshCw className={cn("size-3.5", boardQuery.isFetching && "animate-spin")} aria-hidden="true" />
+          Try again
+        </Button>
+      </div>
+    );
+  }
+
   const displayName = profile.data?.name?.trim() || "Trader";
   const initials = displayName
     .split(/\s+/)
     .map((part) => part[0]?.toUpperCase() ?? "")
     .slice(0, 2)
     .join("");
-  const displayEmail = profile.data?.email ?? "trader@cosmoz.app";
+  const displayEmail = profile.data?.email ?? "Personal calendar";
 
   const renderGroup = (group: CalendarGroup) => {
     const groupCalendars = calendars.filter((calendar) => calendar.group === group);
@@ -527,6 +576,7 @@ export function EventsView() {
                 setNewEventOpen(true);
               }}
               data-testid="events-new"
+              disabled={calendars.length === 0}
               className="hidden h-8 gap-1.5 px-2.5 text-xs sm:flex"
             >
               <CalendarPlus className="size-3.5" aria-hidden="true" />
@@ -607,6 +657,22 @@ export function EventsView() {
             </div>
           </div>
         </div>
+
+        {calendars.length === 0 ? (
+          <section className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border bg-surface/30 px-6 py-8 text-center" data-testid="events-empty-state">
+            <span className="grid size-11 place-items-center rounded-xl border border-border bg-background text-muted-foreground">
+              <CalendarPlus className="size-5" aria-hidden="true" />
+            </span>
+            <div className="max-w-sm space-y-1">
+              <h3 className="text-sm font-semibold">Your calendar starts here</h3>
+              <p className="text-xs leading-relaxed text-muted-foreground">Create a calendar for trading sessions, personal reminders and important dates. Only events you add will appear here.</p>
+            </div>
+            <Button size="sm" onClick={() => setNewCalOpen(true)} data-testid="events-empty-create-calendar">
+              <Plus className="size-3.5" aria-hidden="true" />
+              Create calendar
+            </Button>
+          </section>
+        ) : null}
 
         {/* Month grid */}
         <div className="overflow-hidden rounded-xl border border-border" data-testid="events-grid">
