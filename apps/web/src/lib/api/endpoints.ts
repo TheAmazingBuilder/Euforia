@@ -95,6 +95,7 @@ export const apiPaths = {
   snapshots: "/snapshots",
   snapshot: (snapshotId: string) => `/snapshots/${snapshotId}`,
   ecoEvents: "/eco-events",
+  personalEventsBoard: "/events",
   calendarView: "/calendar-view",
   calendarBlocks: "/calendar-blocks",
   calendarBlock: (date: string) => `/calendar-blocks/${date}`,
