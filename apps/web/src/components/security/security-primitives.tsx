@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { apiErrorMessage } from "@/lib/api/client";
 import { useReauth } from "@/lib/api/queries";
+import { getSecurityEventLabel } from "@/lib/security/event-label";
 
 /**
  * Shared primitives for the Security center: the re-authentication gate for
@@ -323,19 +324,7 @@ export function EventOutcomeIcon({ outcome }: { outcome: "SUCCESS" | "FAILURE" }
 }
 
 export function EventBadge({ type }: { type: SecurityEventType }) {
-  // Keep the audit trail renderable if an older API, persisted event, or
-  // partially migrated dataset contains a missing or not-yet-catalogued type.
-  const eventType =
-    typeof type === "string" && type.trim().length > 0
-      ? type.trim()
-      : "UNKNOWN_EVENT";
-  const meta = EVENT_TYPE_META[eventType as SecurityEventType];
-  const label =
-    meta?.label ??
-    eventType
-      .toLowerCase()
-      .replace(/[_-]+/g, " ")
-      .replace(/\b\w/g, (character) => character.toUpperCase());
+  const label = getSecurityEventLabel(type, EVENT_TYPE_META);
 
   return (
     <Badge variant="outline" className="font-mono text-[10px]">
