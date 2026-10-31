@@ -635,7 +635,7 @@ function TradesModule() {
           </Button>
           <Button
             size="sm"
-            className="gap-1.5 bg-accent text-accent-foreground hover:bg-accent-hover"
+            className="gap-1.5 bg-action-success text-action-success-foreground hover:bg-action-success-hover"
             onClick={() => openTradeModal()}
             data-testid="trades-new"
           >
