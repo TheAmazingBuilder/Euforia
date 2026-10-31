@@ -18,7 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { apiErrorMessage } from "@/lib/api/client";
 import { useReauth } from "@/lib/api/queries";
-import { getSecurityEventLabel } from "@/lib/security/event-label";
+import { EVENT_TYPE_META, getSecurityEventLabel } from "@/lib/security/event-label";
 
 /**
  * Shared primitives for the Security center: the re-authentication gate for
@@ -28,45 +28,6 @@ import { getSecurityEventLabel } from "@/lib/security/event-label";
 
 export const utc = (iso: string | null): string =>
   iso === null ? "never" : `${iso.slice(0, 10)} ${iso.slice(11, 19)} UTC`;
-
-export const EVENT_TYPE_META: Record<SecurityEventType, { label: string }> = {
-  LOGIN_SUCCESS: { label: "Sign-in" },
-  LOGIN_FAILED: { label: "Failed sign-in" },
-  LOGOUT: { label: "Sign-out" },
-  PASSWORD_CHANGED: { label: "Password changed" },
-  PASSWORD_RESET_REQUESTED: { label: "Password reset" },
-  EMAIL_VERIFIED: { label: "Email verified" },
-  TFA_ENABLED: { label: "2FA enabled" },
-  TFA_DISABLED: { label: "2FA disabled" },
-  TFA_CHALLENGE_FAILED: { label: "2FA challenge failed" },
-  RECOVERY_CODES_REGENERATED: { label: "Recovery codes" },
-  API_KEY_CREATED: { label: "API key created" },
-  API_KEY_REVOKED: { label: "API key revoked" },
-  INTEGRATION_CONNECTED: { label: "Integration connected" },
-  INTEGRATION_DISCONNECTED: { label: "Integration disconnected" },
-  SESSION_REVOKED: { label: "Session revoked" },
-  SENSITIVE_SETTINGS_CHANGED: { label: "Sensitive setting" },
-  REAUTH_OK: { label: "Re-auth OK" },
-  REAUTH_FAILED: { label: "Re-auth failed" },
-  ACCOUNT_DELETION_REQUESTED: { label: "Deletion request" },
-  // Trading-connectivity lifecycle facts emitted by the Accounts context
-  // through the same append-only log (backend Phase 3; catalog reconciled
-  // in Phase 16) - rendered like any other event in the audit trail.
-  TRADING_ACCOUNT_CONNECTED: { label: "Trading account connected" },
-  TRADING_ACCOUNT_CONNECTION_FAILED: { label: "Connection failed" },
-  TRADING_ACCOUNT_DISCONNECTED: { label: "Trading account disconnected" },
-  TRADING_ACCOUNT_SYNC_FAILED: { label: "Sync failed" },
-  OCR_UPLOAD: { label: "Screenshot uploaded" },
-  OCR_PROCESSING_FAILED: { label: "Screenshot processing failed" },
-  OCR_RESULT_CONFIRMED: { label: "Recognition confirmed" },
-  OCR_RESULT_DELETED: { label: "Recognition deleted" },
-  // Phase 21 - the confirmation→journal bridge audit facts.
-  OCR_TRADE_IMPORTED: { label: "Trade imported from screenshot" },
-  OCR_TRADE_IMPORT_SKIPPED: { label: "Screenshot import skipped" },
-  OCR_REPROCESSED: { label: "Screenshot reprocessed" },
-  OCR_COLLECTION_CREATED: { label: "Screenshot collection created" },
-  OCR_COLLECTION_DELETED: { label: "Screenshot collection deleted" },
-};
 
 // ── Re-authentication gate (§13) ─────────────────────────────────────────────
 
