@@ -23,11 +23,10 @@ import { isoDateTimeSchema, uuidSchema } from "./primitives";
 // ── Event types (§10) ────────────────────────────────────────────────────────
 
 /**
- * THE event catalog - one coherent security-event architecture (Phase 16 §38):
- * the backend emits exactly these values, the frontend labels exactly these.
- * The four TRADING_ACCOUNT_* values record connection-lifecycle facts emitted
- * by the Accounts context (Phase 3) through the same append-only log - sync
- * success stays in the sync-run records (signal density).
+ * THE event catalog - one coherent security-event architecture:
+ * trading-account, OCR, screenshot-recognition, and MT5 bridge lifecycle
+ * events are all declared here so API filters, backend writers, and UI labels
+ * share one canonical catalog. Sync success remains in sync-run records.
  */
 export const securityEventTypeSchema = z.enum([
   "LOGIN_SUCCESS",
@@ -71,6 +70,15 @@ export const securityEventTypeSchema = z.enum([
   // V2 §28 - screenshot collection lifecycle facts.
   "OCR_COLLECTION_CREATED",
   "OCR_COLLECTION_DELETED",
+  // Recognition V1 lifecycle facts recorded by the OCR context.
+  "OCR_JOB_CREATED",
+  "OCR_JOB_CANCELLED",
+  "OCR_RETENTION_SWEEP",
+  "OCR_GROUP_CREATED",
+  "TRADE_DRAFT_SAVED",
+  "TRADE_IMPORTED",
+  // MT5 terminal bridge credential lifecycle.
+  "TRADING_ACCOUNT_BRIDGE_ROTATED",
 ]);
 export type SecurityEventType = z.infer<typeof securityEventTypeSchema>;
 

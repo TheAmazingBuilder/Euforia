@@ -128,6 +128,24 @@ describe("security activity pagination (Phase 16)", () => {
     expect(failures.status).toBe(200);
     for (const item of failures.body.items) expect(item.outcome).toBe("FAILURE");
 
+    // OCR and MT5 bridge lifecycle types use the same validated filter
+    // contract as the persisted audit-event writers.
+    for (const type of [
+      "OCR_JOB_CREATED",
+      "OCR_JOB_CANCELLED",
+      "OCR_RETENTION_SWEEP",
+      "OCR_GROUP_CREATED",
+      "TRADE_DRAFT_SAVED",
+      "TRADE_IMPORTED",
+      "TRADING_ACCOUNT_BRIDGE_ROTATED",
+    ]) {
+      const accepted = await getJson(
+        a.authHeader,
+        `/api/v1/security/events?type=${encodeURIComponent(type)}`,
+      );
+      expect(accepted.status, type).toBe(200);
+    }
+
     const future = await getJson(
       a.authHeader,
       `/api/v1/security/events?from=${encodeURIComponent(new Date(Date.now() + 3_600_000).toISOString())}`,
