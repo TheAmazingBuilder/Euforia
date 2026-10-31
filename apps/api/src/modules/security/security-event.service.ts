@@ -13,39 +13,11 @@
  * passwords, tokens, MFA secrets or recovery codes (§30).
  * Login history rows share the same metadata discipline (§31).
  */
-import { Injectable } from "@nestjs/common";
-import type { SecurityEventType as SharedSecurityEventType } from "../../shared/contracts";
+import { Inject, Injectable } from "@nestjs/common";
+import type { SecurityEventType } from "../../shared/contracts";
+import { ROOT_LOGGER, type RootLogger } from "../../infrastructure/logging/logger.factory";
 import { SecurityEventRepository, type LoginRecordRow, type SecurityEventRow } from "./security-event.repository";
 import { isoDateTime } from "../identity/mappers";
-
-/**
- * Recognition V1 backend additions to the shared audit catalog (§83): the
- * recognition surface emits lifecycle facts (job created/cancelled, draft
- * saved, journal import, retention sweep, fusion groups) that postdate the
- * shared enum. Declared HERE - the shared contract stays frozen - in the
- * SAME naming style, so every writer keeps going through THIS port and the
- * append-only model is unchanged.
- */
-export type OcrSecurityEventType =
-  | "OCR_JOB_CREATED"
-  | "OCR_JOB_CANCELLED"
-  | "OCR_RETENTION_SWEEP"
-  | "OCR_GROUP_CREATED"
-  | "TRADE_DRAFT_SAVED"
-  | "TRADE_IMPORTED";
-
-/**
- * Accounts bridge additions (Phase 08 - MT5 terminal bridge): the rotation
- * of a bridge secret is a security-relevant credential lifecycle fact. The
- * activation path reuses TRADING_ACCOUNT_CONNECTED (pairing IS a connection
- * fact); only the rotation needs its own type.
- */
-export type BridgeSecurityEventType = "TRADING_ACCOUNT_BRIDGE_ROTATED";
-
-export type SecurityEventType =
-  | SharedSecurityEventType
-  | OcrSecurityEventType
-  | BridgeSecurityEventType;
 
 export interface RequestFingerprint {
   device: string;
@@ -58,7 +30,10 @@ export interface RequestFingerprint {
 
 @Injectable()
 export class SecurityEventService {
-  constructor(private readonly repository: SecurityEventRepository) {}
+  constructor(
+    private readonly repository: SecurityEventRepository,
+    @Inject(ROOT_LOGGER) private readonly logger: RootLogger,
+  ) {}
 
   async record(input: {
     userId: string | null;
@@ -78,8 +53,16 @@ export class SecurityEventService {
         outcome: input.outcome ?? "SUCCESS",
       });
     } catch (error) {
-      const message = error instanceof Error ? error.message : "unknown";
-      throw new Error(`security-event write failed: ${message}`);
+      // Audit logging must not invalidate a completed business operation.
+      // Exclude raw database/error messages to avoid leaking internal details.
+      this.logger.warn(
+        {
+          userId: input.userId,
+          eventType: input.type,
+          errorType: error instanceof Error ? error.name : "UnknownError",
+        },
+        "Security event write failed; continuing without blocking the operation.",
+      );
     }
   }
 

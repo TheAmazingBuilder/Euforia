@@ -12,12 +12,13 @@
  *                            orchestrate via identity capabilities)
  */
 import { Module } from "@nestjs/common";
+import { LoggingModule } from "../../infrastructure/logging/logging.module";
 import { PrismaModule } from "../../infrastructure/prisma/prisma.module";
 import { SecurityEventRepository } from "./security-event.repository";
 import { SecurityEventService } from "./security-event.service";
 
 @Module({
-  imports: [PrismaModule],
+  imports: [LoggingModule, PrismaModule],
   providers: [SecurityEventRepository, SecurityEventService],
   exports: [SecurityEventRepository, SecurityEventService],
 })
