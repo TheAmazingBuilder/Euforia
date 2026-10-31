@@ -21,6 +21,6 @@ export function getSecurityEventLabel(
     eventType
       .toLowerCase()
       .replace(/[_-]+/g, " ")
-      .replace(/\\b\\w/g, (character) => character.toUpperCase())
+      .replace(/\b\w/g, (character) => character.toUpperCase())
   );
 }
