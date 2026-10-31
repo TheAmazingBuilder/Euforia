@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { toast } from "sonner";
 import {
   AlertTriangle,
   Archive,
@@ -16,8 +17,7 @@ import {
   ExternalLink,
   FileText,
   History,
-  Keyboard,
-  Link2,
+keyboard icon import  Link2,
   ListChecks,
   LoaderCircle,
   MessageSquare,
@@ -57,6 +57,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -265,8 +266,7 @@ export function TaskyView() {
   const [assigneeFilter, setAssigneeFilter] = React.useState("all");
   const [statusFilter, setStatusFilter] = React.useState("all");
   const [viewMode, setViewMode] = React.useState<"board" | "calendar" | "table" | "timeline" | "dashboard" | "completed" | "upcoming" | "archived" | "automations">("board");
-  const [shortcutsDialogOpen, setShortcutsDialogOpen] = React.useState(false);
-  const [calendarMonth, setCalendarMonth] = React.useState(() => {
+shortcut state  const [calendarMonth, setCalendarMonth] = React.useState(() => {
     const now = new Date();
     return { year: now.getFullYear(), monthIndex: now.getMonth() };
   });
@@ -278,6 +278,8 @@ export function TaskyView() {
   const [addingIn, setAddingIn] = React.useState<string | null>(null);
   const [addTitle, setAddTitle] = React.useState("");
   const [addingList, setAddingList] = React.useState(false);
+  const [pendingDeleteColumn, setPendingDeleteColumn] = React.useState<TaskyColumn | null>(null);
+  const [lastListDeleteOpen, setLastListDeleteOpen] = React.useState(false);
   const [listTitle, setListTitle] = React.useState("");
   const [editingListId, setEditingListId] = React.useState<string | null>(null);
   const [listEditTitle, setListEditTitle] = React.useState("");
@@ -376,6 +378,7 @@ export function TaskyView() {
     document.body.appendChild(anchor);
     anchor.click();
     anchor.remove();
+    toast.success(`Tasky ${format.toUpperCase()} export ready`, { description: `${columns.reduce((count, column) => count + column.cards.length, 0)} cards included.` });
     window.setTimeout(() => URL.revokeObjectURL(url), 0);
   }, [columns]);
 
@@ -580,12 +583,15 @@ export function TaskyView() {
 
   const removeColumn = (column: TaskyColumn) => {
     if (columns.length <= 1) {
-      window.alert("Tasky must keep at least one list.");
+      setLastListDeleteOpen(true);
       return;
     }
-    if (column.cards.length > 0 && !window.confirm(
-      `Delete "${column.title}" and its ${column.cards.length} card(s)? This cannot be undone.`,
-    )) return;
+    setPendingDeleteColumn(column);
+  };
+
+  const confirmRemoveColumn = () => {
+    const column = pendingDeleteColumn;
+    if (!column) return;
     setColumns((prev) => prev.filter((item) => item.id !== column.id));
     if (editingListId === column.id) setEditingListId(null);
     if (addingIn === column.id) setAddingIn(null);
@@ -593,6 +599,12 @@ export function TaskyView() {
       setEditingCardId(null);
       setCardDraft(null);
     }
+    setPendingDeleteColumn(null);
+    toast.success(`“${column.title}” list deleted`, {
+      description: column.cards.length > 0
+        ? `${column.cards.length} card(s) were removed with this list.`
+        : "The empty list was removed.",
+    });
   };
 
   const beginEditCard = (card: TaskyCard) => {
@@ -949,55 +961,6 @@ export function TaskyView() {
   const visibleCardCount = visibleRows.length;
   const dragCard = drag ? columns.flatMap((column) => column.cards).find((card) => card.id === drag.cardId) : undefined;
 
-  React.useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.altKey || event.ctrlKey || event.metaKey || event.defaultPrevented) return;
-      const target = event.target instanceof HTMLElement ? event.target : null;
-      if (target && (target.isContentEditable || target.closest("input, textarea, select, [contenteditable='true']"))) return;
-      if (shortcutsDialogOpen || savedViewDialogOpen || detailsCardId || editingCardId || addingIn || addingList) return;
-      const key = event.key;
-      if (key === "?" ) {
-        event.preventDefault();
-        setShortcutsDialogOpen(true);
-        return;
-      }
-      if (key === "/") {
-        event.preventDefault();
-        document.getElementById("tasky-search")?.focus();
-        return;
-      }
-      const focusedElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-      const cardElement = focusedElement?.closest<HTMLElement>("[data-tasky-card]");
-      const cardId = cardElement?.dataset.cardId ?? cardElement?.getAttribute("data-testid")?.replace("tasky-card-", "") ?? null;
-      const columnId = cardElement?.dataset.column ?? null;
-      const focusedColumn = columns.find((column) => column.id === columnId);
-      const focusedCard = cardId ? columns.flatMap((column) => column.cards).find((card) => card.id === cardId) : undefined;
-
-      if (key.toLocaleLowerCase() === "n") {
-        event.preventDefault();
-        const targetColumn = focusedColumn ?? columns.find((column) => !isTaskyCompletedColumn(column)) ?? columns[0];
-        if (targetColumn && viewMode !== "archived") {
-          setViewMode("board");
-          setAddingIn(targetColumn.id);
-          setAddTitle("");
-        }
-        return;
-      }
-      if (!focusedCard || !focusedColumn) return;
-      if (key.toLocaleLowerCase() === "e" && !focusedCard.archivedAt) {
-        event.preventDefault();
-        beginEditCard(focusedCard);
-      } else if (key.toLocaleLowerCase() === "a" && !focusedCard.archivedAt) {
-        event.preventDefault();
-        archiveCard(focusedColumn.id, focusedCard.id);
-      } else if (key.toLocaleLowerCase() === "r" && focusedCard.archivedAt && viewMode === "archived") {
-        event.preventDefault();
-        restoreCard(focusedColumn.id, focusedCard.id);
-      }
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [shortcutsDialogOpen, savedViewDialogOpen, detailsCardId, editingCardId, addingIn, addingList, columns, viewMode, beginEditCard, archiveCard, restoreCard]);
 
   if (boardQuery.isError) {
     return (
@@ -1200,7 +1163,7 @@ export function TaskyView() {
             {label}
           </Button>
         ))}
-        <div className="ml-auto flex flex-wrap items-center gap-2" data-testid="tasky-export-controls">
+        <div className="ml-auto flex shrink-0 flex-wrap items-center gap-2 border-l border-border/70 pl-3" data-testid="tasky-export-controls">
           <Button type="button" size="sm" variant="outline" onClick={() => exportTaskyBoard("json")}
             data-testid="tasky-export-json" aria-label="Export complete Tasky board as JSON">
             <Download className="size-3.5" aria-hidden="true" />
@@ -1212,37 +1175,8 @@ export function TaskyView() {
             Export CSV
           </Button>
         </div>
-        <Button type="button" size="sm" variant="ghost" onClick={() => setShortcutsDialogOpen(true)}
-          data-testid="tasky-shortcuts-open" aria-label="Show keyboard shortcuts">
-          <Keyboard className="size-4" aria-hidden="true" />
-          Shortcuts
-        </Button>
       </nav>
       {viewMode === "automations" ? <TaskyAutomationsPanel columns={columns} /> : null}
-      <Dialog open={shortcutsDialogOpen} onOpenChange={setShortcutsDialogOpen}>
-        <DialogContent className="sm:max-w-md" data-testid="tasky-shortcuts-dialog">
-          <DialogHeader>
-            <DialogTitle>Tasky keyboard shortcuts</DialogTitle>
-            <DialogDescription>Shortcuts work outside text fields and editable controls.</DialogDescription>
-          </DialogHeader>
-          <dl className="flex flex-col gap-3 text-sm">
-            {[
-              ["/", "Focus search"],
-              ["N", "Create a card in the focused card’s list, or the first list"],
-              ["E", "Edit the focused card"],
-              ["A", "Archive the focused card"],
-              ["R", "Restore the focused card in Archived view"],
-              ["?", "Open this shortcut reference"],
-              ["Esc", "Close the current dialog"],
-            ].map(([key, description]) => (
-              <div key={key} className="flex items-center justify-between gap-4 border-b border-border/60 pb-2 last:border-b-0">
-                <dt className="rounded-md border border-border bg-muted px-2 py-1 font-mono text-xs">{key}</dt>
-                <dd className="text-right text-muted-foreground">{description}</dd>
-              </div>
-            ))}
-          </dl>
-        </DialogContent>
-      </Dialog>
       <Dialog open={savedViewDialogOpen} onOpenChange={setSavedViewDialogOpen}>
         <DialogContent className="sm:max-w-md" data-testid="tasky-saved-view-dialog">
           <DialogHeader>
@@ -1364,7 +1298,7 @@ export function TaskyView() {
               </thead>
               <tbody>
                 {(viewMode === "completed" ? completedRows : viewMode === "upcoming" ? upcomingRows : viewMode === "archived" ? archivedRows : tableRows).map((row) => (
-                  <tr key={row.card.id} className="border-t border-border/70 hover:bg-muted/20" data-testid={`tasky-table-row-${row.card.id}`} data-tasky-card data-card-id={row.card.id} data-column={row.column.id} tabIndex={0} aria-keyshortcuts={viewMode === "archived" ? "R" : "E A"}>
+                  <tr key={row.card.id} className="border-t border-border/70 hover:bg-muted/20" data-testid={`tasky-table-row-${row.card.id}`} data-tasky-card data-card-id={row.card.id} data-column={row.column.id} tabIndex={0}>
                     <td className="max-w-[260px] px-3 py-2">
                       <button type="button" className="block max-w-full truncate text-left font-medium hover:text-accent" onClick={() => setDetailsCardId(row.card.id)}>{row.card.title}</button>
                     </td>
@@ -1610,7 +1544,6 @@ export function TaskyView() {
                       data-column={column.id}
                       data-card-id={card.id}
                       tabIndex={0}
-                      aria-keyshortcuts="E A"
                       className={cn(
                         "group relative shrink-0 rounded-lg border border-border bg-surface p-3 shadow-sm transition-colors hover:border-accent/40",
                         isDragged && "opacity-30",
@@ -2306,6 +2239,59 @@ export function TaskyView() {
             </div>
           </DialogContent>
         ) : null}
+      </Dialog>
+      <Dialog
+        open={pendingDeleteColumn !== null || lastListDeleteOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setPendingDeleteColumn(null);
+            setLastListDeleteOpen(false);
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-md" data-testid="tasky-list-delete-dialog">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <span className="grid size-8 place-items-center rounded-lg bg-loss/10 text-loss">
+                <AlertTriangle className="size-4" aria-hidden="true" />
+              </span>
+              {lastListDeleteOpen
+                ? "Keep at least one list"
+                : `Delete “${pendingDeleteColumn?.title ?? "this list"}”?`}
+            </DialogTitle>
+            <DialogDescription>
+              {lastListDeleteOpen
+                ? "Tasky needs at least one list to keep your board usable. Create another list before removing this one."
+                : pendingDeleteColumn && pendingDeleteColumn.cards.length > 0
+                  ? `This permanently removes the list and its ${pendingDeleteColumn.cards.length} card(s). This action cannot be undone.`
+                  : "This permanently removes the empty list. This action cannot be undone."}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setPendingDeleteColumn(null);
+                setLastListDeleteOpen(false);
+              }}
+              data-testid="tasky-list-delete-cancel"
+            >
+              {lastListDeleteOpen ? "Close" : "Cancel"}
+            </Button>
+            {pendingDeleteColumn ? (
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={confirmRemoveColumn}
+                data-testid="tasky-list-delete-confirm"
+              >
+                <Trash2 className="size-4" aria-hidden="true" />
+                Delete list
+              </Button>
+            ) : null}
+          </DialogFooter>
+        </DialogContent>
       </Dialog>
     </div>
   );
