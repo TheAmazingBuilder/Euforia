@@ -1,43 +1,20 @@
 /**
- * Events - data model for the trading calendar module (Academy section).
- * Calendars are grouped (My Calendars / Favorites / Other) and double as
- * the filter axis; events are pills on the month grid and can be dragged
- * between days with the cursor or a finger. The whole state persists 100%
- * locally - same local-by-design contract as Tasky.
+ * Events - presentation helpers for the user-owned personal calendar.
+ * Persisted types and validation are shared with the NestJS API.
  */
+import type {
+  PersonalCalendar,
+  PersonalCalendarEvent,
+  PersonalCalendarGroup,
+  PersonalEventColor,
+  PersonalEventsState,
+} from "@cosmoz/shared";
 
-export type EventColor =
-  | "blue"
-  | "cyan"
-  | "green"
-  | "purple"
-  | "teal"
-  | "orange"
-  | "red"
-  | "pink"
-  | "yellow";
-
-export type CalendarGroup = "mine" | "favorites" | "other";
-
-export type EventsCalendar = {
-  id: string;
-  name: string;
-  color: EventColor;
-  group: CalendarGroup;
-  visible: boolean;
-};
-
-export type CalEvent = {
-  id: string;
-  title: string;
-  calendarId: string;
-  /** ISO date - the day cell the event sits on. */
-  date: string;
-  allDay: boolean;
-  /** "HH:MM" - omitted for all-day events. */
-  time?: string;
-  favorite?: boolean;
-};
+export type EventColor = PersonalEventColor;
+export type CalendarGroup = PersonalCalendarGroup;
+export type EventsCalendar = PersonalCalendar;
+export type CalEvent = PersonalCalendarEvent;
+export type EventsState = PersonalEventsState;
 
 /** Tailwind classes per color - dot (sidebar), pill (grid), checked box. */
 export const EVENT_COLORS: Record<EventColor, { dot: string; pill: string; check: string }> = {
@@ -61,82 +38,6 @@ export const GROUP_LABELS: Record<CalendarGroup, string> = {
 };
 
 export const GROUP_ORDER: CalendarGroup[] = ["mine", "favorites", "other"];
-
-function seedCalendars(): EventsCalendar[] {
-  return [
-    { id: "personal", name: "Personal", color: "blue", group: "mine", visible: true },
-    { id: "work", name: "Work", color: "cyan", group: "mine", visible: true },
-    { id: "family", name: "Family", color: "purple", group: "mine", visible: false },
-    { id: "health", name: "Health", color: "green", group: "favorites", visible: true },
-    { id: "finance", name: "Finance", color: "yellow", group: "favorites", visible: true },
-    { id: "travel", name: "Travel", color: "teal", group: "other", visible: true },
-    { id: "reminders", name: "Reminders", color: "orange", group: "other", visible: true },
-    { id: "deadlines", name: "Deadlines", color: "red", group: "other", visible: false },
-  ];
-}
-
-/** October 2026 seed - mirrors the product reference day for day. */
-function seedEvents(): CalEvent[] {
-  return [
-    { id: "e1", title: "Team Standup", calendarId: "work", date: "2026-10-01", allDay: false, time: "09:00" },
-    { id: "e2", title: "Gym Session", calendarId: "health", date: "2026-10-02", allDay: false, time: "07:00" },
-    { id: "e3", title: "Sprint Planning", calendarId: "work", date: "2026-10-03", allDay: false, time: "10:00" },
-    { id: "e4", title: "Pay Rent", calendarId: "finance", date: "2026-10-04", allDay: true },
-    { id: "e5", title: "Flight to Berlin", calendarId: "travel", date: "2026-10-05", allDay: false, time: "14:20" },
-    { id: "e6", title: "City Marathon", calendarId: "reminders", date: "2026-10-06", allDay: true },
-    { id: "e7", title: "Design Review", calendarId: "work", date: "2026-10-08", allDay: false, time: "13:00" },
-    { id: "e8", title: "Dentist", calendarId: "health", date: "2026-10-08", allDay: false, time: "16:30" },
-    { id: "e9", title: "Mom's Birthday", calendarId: "family", date: "2026-10-10", allDay: true, favorite: true },
-    { id: "e10", title: "1:1 with Sam", calendarId: "work", date: "2026-10-11", allDay: false, time: "11:00" },
-    { id: "e11", title: "Water Plants", calendarId: "reminders", date: "2026-10-13", allDay: true },
-    { id: "e12", title: "Book Club", calendarId: "family", date: "2026-10-14", allDay: false, time: "18:00" },
-    { id: "e13", title: "Release v2.4", calendarId: "work", date: "2026-10-15", allDay: true },
-    { id: "e14", title: "Hotel Check-in", calendarId: "travel", date: "2026-10-16", allDay: false, time: "15:00" },
-    { id: "e15", title: "Retrospective", calendarId: "work", date: "2026-10-18", allDay: false, time: "15:00" },
-    { id: "e16", title: "Haircut", calendarId: "reminders", date: "2026-10-20", allDay: false, time: "12:00" },
-    { id: "e17", title: "Jon's Birthday", calendarId: "family", date: "2026-10-21", allDay: true, favorite: true },
-    { id: "e18", title: "Client Demo", calendarId: "work", date: "2026-10-22", allDay: false, time: "10:30" },
-    { id: "e19", title: "Send Invoices", calendarId: "deadlines", date: "2026-10-22", allDay: true },
-    { id: "e20", title: "Summer Festival", calendarId: "family", date: "2026-10-24", allDay: true },
-    { id: "e21", title: "Renew Passport", calendarId: "deadlines", date: "2026-10-25", allDay: true },
-    { id: "e22", title: "Yoga Class", calendarId: "health", date: "2026-10-27", allDay: false, time: "09:00" },
-    { id: "e23", title: "Roadmap Sync", calendarId: "work", date: "2026-10-29", allDay: false, time: "09:30" },
-    { id: "e24", title: "Road Trip", calendarId: "travel", date: "2026-10-31", allDay: true },
-  ];
-}
-
-export type EventsState = {
-  calendars: EventsCalendar[];
-  events: CalEvent[];
-};
-
-const STORAGE_KEY = "cosmoz.events.state.v1";
-
-export function loadEventsState(): EventsState {
-  if (typeof window === "undefined") {
-    return { calendars: seedCalendars(), events: seedEvents() };
-  }
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { calendars: seedCalendars(), events: seedEvents() };
-    const parsed = JSON.parse(raw) as Partial<EventsState>;
-    if (Array.isArray(parsed.calendars) && Array.isArray(parsed.events)) {
-      return { calendars: parsed.calendars as EventsCalendar[], events: parsed.events as CalEvent[] };
-    }
-  } catch {
-    // Corrupted snapshot - fall through to the seed.
-  }
-  return { calendars: seedCalendars(), events: seedEvents() };
-}
-
-export function saveEventsState(state: EventsState): void {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  } catch {
-    // Storage unavailable - the calendar still works for the session.
-  }
-}
 
 /* ── Date helpers ──────────────────────────────────────────────────────── */
 
