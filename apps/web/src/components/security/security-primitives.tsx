@@ -335,7 +335,7 @@ export function EventBadge({ type }: { type: SecurityEventType }) {
     eventType
       .toLowerCase()
       .replace(/[_-]+/g, " ")
-      .replace(/\\b\\w/g, (character) => character.toUpperCase());
+      .replace(/\b\w/g, (character) => character.toUpperCase());
 
   return (
     <Badge variant="outline" className="font-mono text-[10px]">
