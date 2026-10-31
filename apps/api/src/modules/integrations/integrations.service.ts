@@ -182,7 +182,7 @@ export class IntegrationsService {  /** Transient rate-limit windows - session-s
       for (const event of raw) {
         const providerKey = idempotencyKey("macro-sample", `MACRO-${event.id.slice(0, 8)}`);
         await this.repository.upsertRow(userId, INTEGRATION_ROW_KINDS.SEEN, providerKey, { seeded: true });
-        const eco = this.normalizeEco(event.id, event.title, event.currency, event.impact, event.scheduledAt, event.previous, event.forecast, providerKey);
+        const eco = this.normalizeEco(event.id, event.title, event.currency, event.impact, event.scheduledAt, event.previous, event.forecast, event.actual, providerKey);
         await this.repository.upsertRow(userId, INTEGRATION_ROW_KINDS.ECO, providerKey, eco as unknown as Prisma.InputJsonValue);
       }
     }
