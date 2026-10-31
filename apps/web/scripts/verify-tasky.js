@@ -180,45 +180,11 @@ async function touchDrag(page, gripTestid, targetColumnId) {
     await page.click('[data-testid="tasky-view-mode-board"]');
     check("kanban remains the default and is selectable", await page.locator('[data-testid="tasky-board"]').isVisible().catch(() => false));
 
-    console.log("\n[2d] Keyboard shortcuts + archive lifecycle");
-    await page.locator("body").click({ position: { x: 12, y: 12 } });
-    await page.keyboard.press("/");
-    check("slash focuses search", await page.locator('[data-testid="tasky-search"]').evaluate((el) => el === document.activeElement));
-    await page.keyboard.press("Escape");
-    await page.locator("body").click({ position: { x: 12, y: 12 } });
+    console.log("\n[2d] Removed shortcuts surface");
+    check("Shortcuts button is no longer rendered", (await page.locator('[data-testid="tasky-shortcuts-open"]').count()) === 0);
+    check("shortcut reference dialog is no longer rendered", (await page.locator('[data-testid="tasky-shortcuts-dialog"]').count()) === 0);
     await page.keyboard.press("?");
-    check("question mark opens shortcut reference", await page.locator('[data-testid="tasky-shortcuts-dialog"]').isVisible().catch(() => false));
-    await page.keyboard.press("Escape");
-    await page.locator('[data-testid="tasky-card-c1"]').focus();
-    await page.keyboard.press("e");
-    check("E edits the focused card", await page.locator('[data-testid="tasky-edit-form-c1"]').isVisible().catch(() => false));
-    await page.click('[data-testid="tasky-edit-save-c1"]');
-    await page.waitForTimeout(300);
-    await page.locator('[data-testid="tasky-card-c1"]').focus();
-    await page.keyboard.press("a");
-    await page.waitForTimeout(400);
-    check("A archives the focused card", await page.locator('[data-testid="tasky-card-c1"]').count() === 0);
-    await page.click('[data-testid="tasky-view-mode-archived"]');
-    const archivedC1 = page.locator('[data-testid="tasky-table-row-c1"]');
-    check("archived view exposes the archived card", await archivedC1.isVisible().catch(() => false));
-    await archivedC1.focus();
-    await page.keyboard.press("r");
-    await page.waitForTimeout(400);
-    check("R restores the focused archived card", await page.locator('[data-testid="tasky-table-row-c1"]').count() === 0);
-    await page.click('[data-testid="tasky-view-mode-board"]');
-    check("restored card returns to the Kanban board", await page.locator('[data-testid="tasky-card-c1"]').isVisible().catch(() => false));
-    await page.locator('[data-testid="tasky-card-c1"]').focus();
-    await page.keyboard.press("n");
-    check("N opens a new-card form for the focused list", await page.locator('[data-testid="tasky-add-form-backlog"]').isVisible().catch(() => false));
-    await page.fill('[data-testid="tasky-add-input-backlog"]', "Shortcut probe");
-    await page.click('[data-testid="tasky-add-confirm-backlog"]');
-    await page.waitForTimeout(400);
-    const shortcutCard = page.locator("article", { hasText: "Shortcut probe" }).first();
-    const shortcutCardTestId = await shortcutCard.getAttribute("data-testid");
-    const shortcutCardId = shortcutCardTestId?.replace("tasky-card-", "");
-    check("N shortcut creates a persisted card", await shortcutCard.isVisible().catch(() => false));
-    await page.click(\`[data-testid="tasky-delete-\${shortcutCardId}"]\`);
-    await page.waitForTimeout(350);
+    check("question mark does not open a shortcut dialog", (await page.locator('[data-testid="tasky-shortcuts-dialog"]').count()) === 0);
 
     console.log("\n[3] Add + delete card");
     const todoCountBeforeProbe = Number(await page.locator('[data-testid="tasky-count-todo"]').innerText());
@@ -426,7 +392,13 @@ async function touchDrag(page, gripTestid, targetColumnId) {
     await page.click(`[data-testid="tasky-list-right-${probeListId}"]`);
     await page.click(`[data-testid="tasky-list-menu-${probeListId}"]`);
     await page.click(`[data-testid="tasky-list-delete-${probeListId}"]`);
-    check("empty list can be deleted", await page.locator('[data-tasky-column="Probe renamed list"]').count() === 0);
+    check("list deletion opens the branded confirmation dialog", await page.locator('[data-testid="tasky-list-delete-dialog"]').isVisible().catch(() => false));
+    await page.click('[data-testid="tasky-list-delete-cancel"]');
+    check("cancel keeps the list", await page.locator('[data-tasky-column="Probe renamed list"]').isVisible().catch(() => false));
+    await page.click(`[data-testid="tasky-list-menu-${probeListId}"]`);
+    await page.click(`[data-testid="tasky-list-delete-${probeListId}"]`);
+    await page.click('[data-testid="tasky-list-delete-confirm"]');
+    check("confirmed deletion removes the list", await page.locator('[data-tasky-column="Probe renamed list"]').count() === 0);
 
     console.log("\n[7] Persistence across reload");
     await page.reload({ waitUntil: "domcontentloaded" });
@@ -435,6 +407,8 @@ async function touchDrag(page, gripTestid, targetColumnId) {
     check("Watchlist probe persisted", await page.locator(`[data-testid="tasky-column-${watchColumnId}"]`).isVisible().catch(() => false));
     await page.click(`[data-testid="tasky-list-menu-${watchColumnId}"]`);
     await page.click(`[data-testid="tasky-list-delete-${watchColumnId}"]`);
+    check("persisted list opens confirmation dialog", await page.locator('[data-testid="tasky-list-delete-dialog"]').isVisible().catch(() => false));
+    await page.click('[data-testid="tasky-list-delete-confirm"]');
     check("test list cleaned up after persistence check", await page.locator(`[data-testid="tasky-column-${watchColumnId}"]`).count() === 0);
 
     console.log("\n[8] Mobile 390px");
