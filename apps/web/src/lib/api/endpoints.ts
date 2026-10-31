@@ -147,6 +147,8 @@ export const apiPaths = {
   integrationWebhookSimulate: (endpointId: string) =>
     `/integrations/webhooks/${endpointId}/simulate`,
   securityOverview: "/security/overview",
+  securityEvents: "/security/events",
+  securityLogins: "/security/logins",
   securityReauth: "/security/reauth",
   securityPassword: "/security/password",
   securityTwoFactorEnable: "/security/2fa/enable",

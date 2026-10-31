@@ -71,6 +71,17 @@ export const queryKeys = {
     ["trading-accounts", accountId, "bridge-pairing"] as const,
   integrations: ["integrations"] as const,
   security: ["security"] as const,
+  securityEvents: (filters: {
+    type?: string;
+    outcome?: "SUCCESS" | "FAILURE";
+    from?: string;
+    to?: string;
+  }) => ["security", "events", filters] as const,
+  securityLogins: (filters: {
+    success?: boolean;
+    from?: string;
+    to?: string;
+  }) => ["security", "logins", filters] as const,
   monitoring: ["monitoring"] as const,
   // Import & Recognition (/recognition - PROMPT 3)
   ocrRecognitions: (status?: string) => ["ocr-recognitions", status ?? "all"] as const,
