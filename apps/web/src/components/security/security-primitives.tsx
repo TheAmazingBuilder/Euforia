@@ -323,10 +323,23 @@ export function EventOutcomeIcon({ outcome }: { outcome: "SUCCESS" | "FAILURE" }
 }
 
 export function EventBadge({ type }: { type: SecurityEventType }) {
-  const meta = EVENT_TYPE_META[type];
+  // Keep the audit trail renderable if an older API, persisted event, or
+  // partially migrated dataset contains a missing or not-yet-catalogued type.
+  const eventType =
+    typeof type === "string" && type.trim().length > 0
+      ? type.trim()
+      : "UNKNOWN_EVENT";
+  const meta = EVENT_TYPE_META[eventType as SecurityEventType];
+  const label =
+    meta?.label ??
+    eventType
+      .toLowerCase()
+      .replace(/[_-]+/g, " ")
+      .replace(/\\b\\w/g, (character) => character.toUpperCase());
+
   return (
     <Badge variant="outline" className="font-mono text-[10px]">
-      {meta.label}
+      {label}
     </Badge>
   );
 }
