@@ -17,7 +17,7 @@ import {
   ExternalLink,
   FileText,
   History,
-keyboard icon import  Link2,
+  Link2,
   ListChecks,
   LoaderCircle,
   MessageSquare,
@@ -266,7 +266,7 @@ export function TaskyView() {
   const [assigneeFilter, setAssigneeFilter] = React.useState("all");
   const [statusFilter, setStatusFilter] = React.useState("all");
   const [viewMode, setViewMode] = React.useState<"board" | "calendar" | "table" | "timeline" | "dashboard" | "completed" | "upcoming" | "archived" | "automations">("board");
-shortcut state  const [calendarMonth, setCalendarMonth] = React.useState(() => {
+  const [calendarMonth, setCalendarMonth] = React.useState(() => {
     const now = new Date();
     return { year: now.getFullYear(), monthIndex: now.getMonth() };
   });
@@ -378,7 +378,9 @@ shortcut state  const [calendarMonth, setCalendarMonth] = React.useState(() => {
     document.body.appendChild(anchor);
     anchor.click();
     anchor.remove();
-    toast.success(`Tasky ${format.toUpperCase()} export ready`, { description: `${columns.reduce((count, column) => count + column.cards.length, 0)} cards included.` });
+    toast.success(`Tasky ${format.toUpperCase()} export ready`, {
+      description: `${columns.reduce((count, column) => count + column.cards.length, 0)} cards included.`,
+    });
     window.setTimeout(() => URL.revokeObjectURL(url), 0);
   }, [columns]);
 
