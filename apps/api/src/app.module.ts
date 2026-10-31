@@ -32,6 +32,7 @@ import { PlaybookModule } from "./modules/playbook/playbook.module";
 import { NofyModule } from "./modules/nofy/nofy.module";
 import { AcademyModule } from "./modules/academy/academy.module";
 import { TaskyModule } from "./modules/tasky/tasky.module";
+import { PersonalEventsModule } from "./modules/personal-events/personal-events.module";
 import { StatsModule } from "./modules/stats/stats.module";
 import { BackupModule } from "./modules/backup/backup.module";
 import { DomainEventsModule } from "./infrastructure/events/domain-events.module";
@@ -131,6 +132,8 @@ const globalExceptionFilterProvider: Provider = {
     AcademyModule,
     // Tasky Kanban (separate from Academy study tasks): user-owned board persisted in PostgreSQL.
     TaskyModule,
+    // Personal Events - private calendars, distinct from economic market events.
+    PersonalEventsModule,
     // Stats (B1) - the analytics lens over the journal: overview,
     // analytics aggregates and the filtered analytics-suite dataset with
     // Monte Carlo. READ-ONLY - owns NO tables (§3).
