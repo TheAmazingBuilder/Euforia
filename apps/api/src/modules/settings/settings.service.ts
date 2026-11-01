@@ -29,7 +29,6 @@ import {
   academyPreferencesSchema,
   privacyPreferencesSchema,
   localizationPreferencesSchema,
-  onboardingPreferencesSchema,
   SETTINGS_ERROR_CODES,
   type PreferenceDomain,
   type UserPreferences,
@@ -59,7 +58,6 @@ const PREFERENCE_DOMAIN_SCHEMAS: Record<PreferenceDomain, z.ZodTypeAny> = {
   academy: academyPreferencesSchema,
   privacy: privacyPreferencesSchema,
   localization: localizationPreferencesSchema,
-  onboarding: onboardingPreferencesSchema,
 };
 
 @Injectable()

@@ -142,6 +142,25 @@ describe("preferences document read (Phase 15 §12/§30)", () => {
     expect(doc.trading.displayCurrency).toBe(DEFAULT_USER_PREFERENCES.trading.displayCurrency);
     expect(doc.risk.defaultRiskPerTradePct).toBe(DEFAULT_USER_PREFERENCES.risk.defaultRiskPerTradePct);
     expect(doc.privacy.profileVisibility).toBe(DEFAULT_USER_PREFERENCES.privacy.profileVisibility);
+    expect(res.json()).not.toHaveProperty("onboarding");
+  });
+
+  it("ignores legacy onboarding metadata and no longer exposes onboarding preference routes", async () => {
+    const ctx = await authenticatedUser(app, mail);
+    const current = (await getPrefs(ctx.authHeader)).json();
+
+    // Existing JSON preference documents may still contain the retired key.
+    // The shared contract strips it and all future writes persist only active domains.
+    const parsedLegacy = userPreferencesSchema.parse({
+      ...current,
+      onboarding: { status: "COMPLETED", version: 1, stepsDone: ["welcome"] },
+    });
+    expect(parsedLegacy).not.toHaveProperty("onboarding");
+
+    const oldUpdate = await patchDomain(ctx.authHeader, "onboarding", {});
+    const oldReset = await resetDomain(ctx.authHeader, "onboarding");
+    expect(oldUpdate.statusCode).toBe(400);
+    expect(oldReset.statusCode).toBe(400);
   });
 
   it("provisions the doc with the mirrored profile timezone (single source of truth, §15)", async () => {

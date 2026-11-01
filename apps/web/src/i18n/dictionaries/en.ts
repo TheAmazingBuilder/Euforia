@@ -9,7 +9,6 @@ import { recognitionDict } from "@/i18n/dictionaries/en/recognition";
 import { toolsDict } from "@/i18n/dictionaries/en/tools";
 import { oryonDict } from "@/i18n/dictionaries/en/oryon";
 import { accountsDict } from "@/i18n/dictionaries/en/accounts";
-import { onboardingDict } from "@/i18n/dictionaries/en/onboarding";
 
 /**
  * EN dictionary - the CANONICAL language pack and the type source for every
@@ -28,7 +27,6 @@ import { onboardingDict } from "@/i18n/dictionaries/en/onboarding";
  *   nofy     - Nofy module (dictionaries/en/nofy.ts)
  *   oryon    - Oryon charting workspace (dictionaries/en/oryon.ts)
  *   accounts - Accounts & Trading Connectivity (dictionaries/en/accounts.ts)
- *   onboarding - first-run experience (dictionaries/en/onboarding.ts)
  */
 const en = {
   common: {
@@ -576,7 +574,6 @@ const en = {
 
   accounts: accountsDict,
 
-  onboarding: onboardingDict,
 } as const;
 
 /**
