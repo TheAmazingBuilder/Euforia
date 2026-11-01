@@ -350,7 +350,7 @@ export function ProfileView() {
   return (
     <div className="mx-auto w-full max-w-5xl space-y-5 sm:space-y-6" data-testid="profile-view">
       <header className="space-y-1">
-        <h1 className="font-heading text-2xl font-extrabold tracking-tight sm:text-3xl">Profile</h1>
+        <h1 className="page-title">Profile</h1>
         <p className="text-sm text-muted-foreground">
           Your identity, account, security and notification preferences - one place.
         </p>

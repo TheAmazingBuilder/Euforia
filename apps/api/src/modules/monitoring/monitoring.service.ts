@@ -215,11 +215,6 @@ export class MonitoringService {
       jobs,
       notifications,
       brokers,
-      // Integrations is a separate bounded context (backend not implemented
-      // yet) - honestly empty, never fabricated (§23/§57).
-      integrations: [],
-      events,
-      integrationEvents: [],
       alerts,
       incidents,
       thresholds,
@@ -656,14 +651,6 @@ export class MonitoringService {
             : "no background queue in this build - work runs request-scoped",
         source: "engine",
         tab: "jobs",
-      },
-      {
-        id: "integrations",
-        label: "Integrations",
-        status: "UNKNOWN",
-        evidence: "Integrations context not implemented server-side yet",
-        source: "engine",
-        tab: "integrations",
       },
       {
         id: "notifications",

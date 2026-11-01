@@ -41,7 +41,6 @@ import { SecurityModule } from "./modules/security/security.module";
 import { MonitoringModule } from "./modules/monitoring/monitoring.module";
 import { CalculatorsModule } from "./modules/calculators/calculators.module";
 import { OcrModule } from "./modules/ocr/ocr.module";
-import { IntegrationsModule } from "./modules/integrations/integrations.module";
 import { TradingModule } from "./modules/trading/trading.module";
 import { TradePlanningModule } from "./modules/trade-planning/trade-planning.module";
 import { TradeReviewModule } from "./modules/trade-review/trade-review.module";
@@ -160,13 +159,6 @@ const globalExceptionFilterProvider: Provider = {
     // into the shared SecurityEvent ledger (§48); engine resolved by factory
     // (sidecar → mock → explicit unavailable, §57).
     OcrModule,
-    // Integration Hub (B14) - the platform layer: provider registry with
-    // connection lifecycle (connect/disconnect/test/sync §25–§27), §14
-    // idempotent inbound webhook pipeline with HMAC verification, error
-    // ledger + audit event log, §28 retention. Owns integrationRow
-    // (PROVIDER|WEBHOOK|EVENT|ERROR|ECO|NEWS|SEEN). The registry is static
-    // catalog content; rows hold per-user runtime state only.
-    IntegrationsModule,
     // ── Phase 4/5/6/7/8 reconciliation (see worklog.md) ────────────────────
     // Trading Core internals (provider-only - route owner stays the wired
     // legacy TradesModule), then the planning → review → replay → analytics

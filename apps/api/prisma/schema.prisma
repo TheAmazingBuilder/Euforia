@@ -143,7 +143,6 @@ model User {
   taskySavedViews   TaskySavedView[]
   taskyAutomations  TaskyAutomationRule[]
   taskyAutomationRuns TaskyAutomationRun[]
-  integrationRows   IntegrationRow[]
   tagRows           TagRow[]
   // ── Reconciliation generation (Phase 4/5/6/7 normalized models) ──
   tradePlans        TradePlan[]
@@ -152,10 +151,6 @@ model User {
   calendarBlocks    CalendarBlock[]
   dailyStats        DailyStat[]
   userSettings      UserSettings?
-  integrationConnections  IntegrationConnection[]
-  integrationEvents       IntegrationEvent[]
-  integrationErrors       IntegrationError[]
-  integrationWebhookEndpoints IntegrationWebhookEndpoint[]
   strategies        Strategy[]
   oryonAnalyses     OryonAnalysis[]
   analysisPlans     AnalysisPlan[]
@@ -1396,30 +1391,10 @@ model TagRow {
   @@index([userId])
 }
 
-/// Integration Hub context — per-user provider connections, webhook endpoints,
-/// audit event log, error ledger, normalized eco events and sample news.
-/// The provider REGISTRY (12 catalog entries with capabilities/licensing) is
-/// static module content; these rows hold only per-user runtime state.
-model IntegrationRow {
-  id        String   @id @default(uuid()) @db.Uuid
-  userId    String   @db.Uuid
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  /// PROVIDER | WEBHOOK | EVENT | ERROR | ECO | NEWS | SEEN
-  kind      String
-  /// providerId ("deriv") / webhook id ("wh-macro") / providerKey for ECO+SEEN.
-  refId     String
-  data      Json
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([userId, kind])
-  @@unique([userId, kind, refId])
-}
-
 // ════════════════════════════════════════════════════════════════════════════
 // RECONCILIATION (Phase 11 pre-work) — the migration chain created these
 // tables/enums (trading_core, trade_planning, trade_review, playbook,
-// session_live, calendar_economic_events, integrations_platform,
+// session_live, calendar_economic_events,
 // settings_preferences, replay_module, full_coverage_domains) but the Prisma
 // model layer never caught up. Models below mirror the committed migration
 // DDL verbatim. The two generations of a domain coexist ON PURPOSE (row-store
@@ -1498,53 +1473,6 @@ enum EcoEventStatus {
 enum CalendarBlockKind {
   OFF
   NEWS
-}
-
-/// 20261003213149_integrations_platform
-enum IntegrationStatus {
-  CONNECTED
-  SYNCING
-  DEGRADED
-  DISCONNECTED
-  AUTH_REQUIRED
-  ERROR
-}
-
-enum IntegrationAuthState {
-  OK
-  MISSING
-  EXPIRED
-}
-
-enum IntegrationErrorCode {
-  AUTH_FAILED
-  RATE_LIMITED
-  PROVIDER_OUTAGE
-  MALFORMED_RESPONSE
-  TIMEOUT
-  PARTIAL_SYNC
-  CREDENTIALS_EXPIRED
-  DUPLICATE_EVENT
-}
-
-enum IntegrationEventType {
-  CONNECTED
-  DISCONNECTED
-  TEST_OK
-  TEST_FAILED
-  SYNCED
-  SYNC_FAILED
-  DEGRADED
-  RECOVERED
-  CREDENTIAL_ROTATED
-  WEBHOOK_RECEIVED
-  WEBHOOK_REJECTED
-  WEBHOOK_DUPLICATE
-}
-
-enum WebhookEndpointStatus {
-  ACTIVE
-  PAUSED
 }
 
 /// Phase-4 denormalized journal columns + execution legs — the trading module
@@ -1791,107 +1719,6 @@ model UserSettings {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-}
-
-/// 20261003213149_integrations_platform — normalized integration hub.
-model IntegrationConnection {
-  id                      String             @id @default(uuid()) @db.Uuid
-  userId                  String             @db.Uuid
-  user                    User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  providerId              String
-  status                  IntegrationStatus  @default(DISCONNECTED)
-  authState               IntegrationAuthState @default(MISSING)
-  credentialsVaultRef     String?
-  credentialsHint         String?
-  credentialsLastRotatedAt DateTime?
-  connectedAt             DateTime?
-  lastCheckedAt           DateTime?
-  syncLastAttemptedAt     DateTime?
-  syncLastSuccessAt       DateTime?
-  syncLastDurationMs      Int?
-  syncRecordsProcessed    Int                @default(0)
-  syncRecordsFailed       Int                @default(0)
-  syncRetryCount          Int                @default(0)
-  syncRunCount            Int                @default(0)
-  syncCursor              String?
-  syncNextRetryAt         DateTime?
-  pairedOnce              Boolean            @default(false)
-  scenario                String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // NOTE: no Prisma relations between the Integration* tables — every
-  // repository query is (userId, providerId)-scoped directly, matching the
-  // platform migration's plain FK-by-column design.
-
-  @@unique([userId, providerId])
-  @@index([userId, status])
-}
-
-model IntegrationEvent {
-  id           String              @id @default(uuid()) @db.Uuid
-  userId       String              @db.Uuid
-  user         User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  providerId   String
-  providerName String
-  type         IntegrationEventType
-  message      String
-  occurredAt   DateTime            @default(now())
-
-  @@index([userId, occurredAt(sort: Desc)])
-}
-
-model IntegrationError {
-  id           String               @id @default(uuid()) @db.Uuid
-  userId       String               @db.Uuid
-  user         User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
-  providerId   String
-  code         IntegrationErrorCode
-  message      String
-  retryable    Boolean
-  actionHint   String
-  retryAfterMs Int?
-  occurredAt   DateTime             @default(now())
-  clearedAt    DateTime?
-
-  @@index([userId, occurredAt(sort: Desc)])
-  @@index([userId, providerId, clearedAt])
-}
-
-model IntegrationWebhookEndpoint {
-  id                 String                @id @default(uuid()) @db.Uuid
-  userId             String                @db.Uuid
-  user               User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  providerId         String
-  path               String
-  status             WebhookEndpointStatus @default(ACTIVE)
-  secretEnc          String
-  secretHint         String
-  lastAcceptedEventId String?
-  createdAt          DateTime              @default(now())
-  updatedAt          DateTime              @updatedAt
-
-  deliveries IntegrationWebhookDelivery[]
-
-  @@unique([path])
-  @@unique([userId, providerId])
-}
-
-model IntegrationWebhookDelivery {
-  id             String   @id @default(uuid()) @db.Uuid
-  endpointId     String   @db.Uuid
-  endpoint       IntegrationWebhookEndpoint @relation(fields: [endpointId], references: [id], onDelete: Cascade)
-  eventId        String
-  eventType      String
-  signatureValid Boolean
-  accepted       Boolean
-  duplicate      Boolean
-  message        String
-  receivedAt     DateTime @default(now())
-
-  @@unique([endpointId, eventId])
-  @@index([endpointId, receivedAt(sort: Desc)])
 }
 
 /// 20261003160138_playbook — the normalized playbook generation (Phase 7

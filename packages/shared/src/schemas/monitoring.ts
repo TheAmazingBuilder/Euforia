@@ -1,9 +1,5 @@
 import { z } from "zod";
 
-import {
-  integrationEventSchema,
-  integrationStatusSchema,
-} from "./integration";
 import { isoDateTimeSchema, uuidSchema } from "./primitives";
 
 /**
@@ -371,22 +367,6 @@ export const brokerConnectionSchema = z.object({
 });
 export type BrokerConnection = z.infer<typeof brokerConnectionSchema>;
 
-// ── Integration health (§13) ─────────────────────────────────────────────────
-
-export const integrationHealthSchema = z.object({
-  providerId: z.string().min(1),
-  name: z.string().min(1),
-  kind: z.string().min(1),
-  status: integrationStatusSchema,
-  lastSuccessfulSyncAt: isoDateTimeSchema.nullable(),
-  lastFailedSyncAt: isoDateTimeSchema.nullable(),
-  latencyMs: z.number().int().nonnegative().nullable(),
-  errorCount: z.number().int().nonnegative(),
-  providerStatus: z.string().min(1),
-  credentialStatus: z.string().min(1),
-});
-export type IntegrationHealth = z.infer<typeof integrationHealthSchema>;
-
 // ── Overview aggregate (§4) + responses ──────────────────────────────────────
 
 export const monitoringOverviewSchema = z.object({
@@ -424,9 +404,7 @@ export const monitoringOverviewResponseSchema = z.object({
     recent: z.array(notificationDeliverySchema),
   }),
   brokers: z.array(brokerConnectionSchema),
-  integrations: z.array(integrationHealthSchema),
   events: z.array(systemEventSchema),
-  integrationEvents: z.array(integrationEventSchema),
   alerts: z.array(raisedAlertSchema),
   incidents: z.array(incidentSchema),
   thresholds: monitoringThresholdsSchema,

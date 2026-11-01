@@ -37,7 +37,6 @@ import {
   ApiPanel,
   DatabasePanel,
   EventsPanel,
-  IntegrationsHealthPanel,
   JobsPanel,
   NotificationsPanel,
 } from "./monitoring-panels-data";
@@ -46,12 +45,12 @@ import { NowClockContext, StatusBadge } from "./monitoring-primitives";
 /**
  * /monitoring - the professional observability center (MASTER PROMPT §3):
  * Overview · System Health · Market Data · Broker Connections · WebSockets ·
- * API · Database · Queues & Jobs · Notifications · Integrations ·
+ * API · Database · Queues & Jobs · Notifications ·
  * Audit / System Events. The active tab persists in the URL (?tab=).
  *
  * Two telemetry planes merge here:
  * - the ENGINE plane (mocks): API traffic observed by the fetch wrapper,
- *   job ledger, alert store, Integration Hub state - one aggregate query;
+ *   job ledger and alert store - one aggregate query;
  * - the CLIENT plane (this browser): the live quote feed and its socket
  *   connection, which only the browser can observe - computed below from
  *   lib/realtime/market.ts and merged into the Overview status board.
@@ -68,7 +67,6 @@ const TABS = [
   { id: "database", label: "Database" },
   { id: "jobs", label: "Queues & Jobs" },
   { id: "notifications", label: "Notifications" },
-  { id: "integrations", label: "Integrations" },
   { id: "events", label: "Audit / Events" },
 ] as const;
 
@@ -259,7 +257,7 @@ export function MonitoringView() {
   );
 
   if (!hasRole("ADMIN")) {
-    return <div className="mx-auto w-full max-w-5xl rounded-xl border border-border bg-surface p-6"><h1 className="font-heading text-xl font-bold">Restricted area</h1><p className="mt-2 text-sm text-muted-foreground">This operational page is available to administrators only.</p></div>;
+    return <div className="mx-auto w-full max-w-5xl rounded-xl border border-border bg-surface p-6"><h2 className="section-title">Restricted area</h2><p className="mt-2 text-sm text-muted-foreground">This operational page is available to administrators only.</p></div>;
   }
 
   if (isLoading || data === undefined) {
@@ -284,7 +282,7 @@ export function MonitoringView() {
     <NowClockContext.Provider value={nowMs}>
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
       <header className="space-y-2">
-        <h1 className="font-heading text-2xl font-extrabold tracking-tight sm:text-3xl">
+        <h1 className="page-title">
           Monitoring
         </h1>
         <p className="max-w-2xl text-sm text-muted-foreground">
@@ -364,7 +362,6 @@ export function MonitoringView() {
         <JobsPanel jobs={data.jobs} onRun={onRunJob} runningJobId={runningJobId} />
       )}
       {activeTab === "notifications" && <NotificationsPanel notifications={data.notifications} />}
-      {activeTab === "integrations" && <IntegrationsHealthPanel integrations={data.integrations} />}
       {activeTab === "events" && (
         <EventsPanel
           data={data}

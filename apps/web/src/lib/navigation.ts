@@ -4,7 +4,6 @@ import {
   CalendarRange,
   ChartColumn,
   ChartCandlestick,
-  Cable,
   FileScan,
   GraduationCap,
   HeartPulse,
@@ -18,7 +17,7 @@ import {
   Scale,
   Settings,
   ShieldCheck,
-  SquareKanban,
+  Columns3,
   Target,
   TrendingUp,
   type LucideIcon,
@@ -128,7 +127,7 @@ export const SIDEBAR_ITEMS: NavItem[] = [
   {
     href: "/tasky",
     label: "Tasky",
-    icon: SquareKanban,
+    icon: Columns3,
     description:
       "Your trading kanban: plan the work around your edge - studies, routines, reviews - and drag each card from backlog to done.",
   },
@@ -161,13 +160,6 @@ export const SIDEBAR_ITEMS: NavItem[] = [
       "System health at a glance: market feed, API status and offline readiness.",
   },
   {
-    href: "/integrations",
-    label: "Integrations",
-    icon: Cable,
-    description:
-      "Connect your brokers and data providers - Deriv, MT5, cTrader, Binance.",
-  },
-  {
     href: "/security",
     label: "Security",
     icon: LockKeyhole,
@@ -194,7 +186,7 @@ export const SIDEBAR_REST_ITEMS = SIDEBAR_ITEMS.slice(1);
 
 /**
  * Sidebar SECTIONS - the navigation is grouped, with the SYSTEM section
- * regrouping the platform surfaces (Monitoring, Settings, Integrations,
+ * regrouping the platform surfaces (Monitoring, Settings,
  * Security) apart from the trading/journal surfaces.
  */
 export type NavSection = {
@@ -226,7 +218,7 @@ export const NAV_SECTIONS: NavSection[] = [
   },
   {
     title: "Workspace",
-    hrefs: ["/settings", "/integrations", "/security"],
+    hrefs: ["/settings", "/security"],
   },
   {
     title: "System",

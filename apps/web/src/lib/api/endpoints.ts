@@ -139,13 +139,6 @@ export const apiPaths = {
     `/trading-accounts/${accountId}/bridge/pairing`,
   tradingAccountBridgeRotate: (accountId: string) =>
     `/trading-accounts/${accountId}/bridge/rotate`,
-  integrationsOverview: "/integrations/overview",
-  integrationConnect: (providerId: string) => `/integrations/providers/${providerId}/connect`,
-  integrationDisconnect: (providerId: string) => `/integrations/providers/${providerId}/disconnect`,
-  integrationTest: (providerId: string) => `/integrations/providers/${providerId}/test`,
-  integrationSync: (providerId: string) => `/integrations/providers/${providerId}/sync`,
-  integrationWebhookSimulate: (endpointId: string) =>
-    `/integrations/webhooks/${endpointId}/simulate`,
   securityOverview: "/security/overview",
   securityEvents: "/security/events",
   securityLogins: "/security/logins",

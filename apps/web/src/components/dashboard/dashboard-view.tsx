@@ -350,7 +350,7 @@ export function DashboardView({ description }: DashboardViewProps) {
         <div className="space-y-1">
           <h1
             data-testid="dashboard-welcome"
-            className="font-heading text-2xl font-extrabold tracking-tight sm:text-3xl"
+            className="page-title"
           >
             {greeting}
           </h1>

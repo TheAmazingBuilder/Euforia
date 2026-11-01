@@ -119,14 +119,6 @@ export {
 } from "./preferences";
 export { useBrokerSession } from "./broker";
 export {
-  useConnectIntegration,
-  useDisconnectIntegration,
-  useIntegrationsOverview,
-  useSimulateWebhook,
-  useSyncIntegration,
-  useTestIntegration,
-} from "./integrations";
-export {
   useChangePassword,
   useConfirmTwoFactor,
   useConfirmEmailTwoFactor,

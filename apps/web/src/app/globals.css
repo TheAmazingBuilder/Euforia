@@ -225,6 +225,10 @@
 }
 
 @layer base {
+  /* One heading face across every semantic level; body copy remains Inter. */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-schibsted), var(--font-inter), ui-sans-serif, sans-serif;
+  }
   * {
     border-color: var(--border);
   }
@@ -264,6 +268,30 @@
   ::-webkit-scrollbar-track {
     background: transparent;
   }
+}
+
+@layer components {
+  /* Shared page-title scale: 24px on mobile, 30px from the sm breakpoint. */
+  .page-title {
+    font-family: var(--font-schibsted), var(--font-inter), ui-sans-serif, sans-serif;
+    font-size: 1.5rem;
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -0.025em;
+  }
+
+  /* Section headings use a stable 18px hierarchy below the page title. */
+  .section-title {
+    font-family: var(--font-schibsted), var(--font-inter), ui-sans-serif, sans-serif;
+    font-size: 1.125rem;
+    font-weight: 600;
+    line-height: 1.35;
+    letter-spacing: -0.015em;
+  }
+}
+
+@media (min-width: 640px) {
+  .page-title { font-size: 1.875rem; }
 }
 
 /* ---- Theme swatch dots (ThemeToggle) ---- */

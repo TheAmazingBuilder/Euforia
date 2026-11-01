@@ -1,16 +1,13 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
 import {
   Activity,
-  ArrowUpRight,
   BellRing,
   Database,
   Download,
   FileClock,
   ListChecks,
-  PlugZap,
   ScrollText,
   Settings2,
   Siren as SirenIcon,
@@ -39,7 +36,7 @@ import { PanelCard } from "./monitoring-panels";
 
 /**
  * Monitoring panels, part 2 (MASTER PROMPT §9–§16): API, Database,
- * Queues & Jobs, Notifications, Integration Health, Audit / System Events
+ * Queues & Jobs, Notifications and Audit / System Events
  * (with incidents and the configurable alert rules §14).
  */
 
@@ -332,78 +329,6 @@ export function NotificationsPanel({ notifications }: { notifications: Overview[
   );
 }
 
-// ── Integration health (§13) ─────────────────────────────────────────────────
-
-export function IntegrationsHealthPanel({ integrations }: { integrations: Overview["integrations"] }) {
-  const nowMs = useNowClock();
-  return (
-    <div className="space-y-4" data-testid="monitoring-integrations-health">
-      <PanelCard
-        icon={PlugZap}
-        title="Provider health"
-        description="Live from the Integration Hub engine - Monitoring never keeps its own copy."
-        action={
-          <Button asChild variant="ghost" size="sm" className="gap-1 text-xs text-muted-foreground">
-            <Link href="/integrations">
-              Manage
-              <ArrowUpRight className="size-3" aria-hidden="true" />
-            </Link>
-          </Button>
-        }
-      >
-        {integrations.map((integration) => (
-          <div key={integration.providerId} className="rounded-lg border border-border/60 p-3">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="flex items-center gap-2 text-sm font-medium">
-                {integration.name}
-                <Badge variant="outline" className="text-[10px]">{integration.kind.toLowerCase()}</Badge>
-              </span>
-              <span className="flex items-center gap-2">
-                <Badge
-                  variant={
-                    integration.status === "CONNECTED"
-                      ? "default"
-                      : integration.status === "DISCONNECTED"
-                        ? "outline"
-                        : "secondary"
-                  }
-                >
-                  {integration.status === "AUTH_REQUIRED" ? "auth required" : integration.status.toLowerCase()}
-                </Badge>
-              </span>
-            </div>
-            <div className="mt-2 grid gap-1.5 sm:grid-cols-2">
-              <MetricLine
-                label="Last successful sync"
-                value={
-                  integration.lastSuccessfulSyncAt === null
-                    ? "never"
-                    : ageLabel(ageFromIso(integration.lastSuccessfulSyncAt, nowMs))
-                }
-              />
-              <MetricLine
-                label="Last failed attempt"
-                value={
-                  integration.lastFailedSyncAt === null
-                    ? "-"
-                    : ageLabel(ageFromIso(integration.lastFailedSyncAt, nowMs))
-                }
-              />
-              <MetricLine label="Latency" value={integration.latencyMs === null ? "-" : `${integration.latencyMs} ms`} />
-              <MetricLine label="Errors (ledger)" value={String(integration.errorCount)} />
-              <MetricLine label="Provider status" value={integration.providerStatus} muted />
-              <MetricLine label="Credential status" value={integration.credentialStatus} muted />
-            </div>
-          </div>
-        ))}
-        <EvidenceNote>
-          Credential status comes from expiry facts only - secret material never leaves the vault (§13, §19).
-        </EvidenceNote>
-      </PanelCard>
-    </div>
-  );
-}
-
 // ── Audit / System events (§15) + incidents (§16) + alert rules (§14) ───────
 
 export function EventsPanel({
@@ -433,9 +358,6 @@ export function EventsPanel({
       "at,log,source,type,level,message",
       ...data.events.map((event) =>
         [event.at, "system", event.source, event.type, event.level, event.message].map((cell) => escape(String(cell))).join(","),
-      ),
-      ...data.integrationEvents.map((event) =>
-        [event.occurredAt, "integration", event.providerName, event.type, "INFO", event.message].map((cell) => escape(String(cell))).join(","),
       ),
     ];
     const blob = new Blob([rows.join("\n")], { type: "text/csv;charset=utf-8" });
@@ -630,29 +552,6 @@ export function EventsPanel({
         )}
       </PanelCard>
 
-      {/* Integration events - the other real log (§13/§15) */}
-      <PanelCard
-        icon={FileClock}
-        title="Integration events"
-        description="The Integration Hub's own audit trail, mirrored here for the full system picture."
-      >
-        {data.integrationEvents.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No integration event recorded.</p>
-        ) : (
-          <div className="grid gap-1">
-            {data.integrationEvents.map((event) => (
-              <div key={event.id} className="flex flex-wrap items-baseline justify-between gap-2 border-b border-border/40 pb-1 text-xs last:border-0">
-                <span>
-                  <span className="font-mono text-[11px] text-muted-foreground">{event.occurredAt.slice(11, 19)} UTC</span>{" "}
-                  <span className="font-mono text-[11px] font-medium">{event.type}</span>{" "}
-                  <span className="text-muted-foreground">{event.message}</span>
-                </span>
-                <span className="font-mono text-[10px] text-muted-foreground/70">{event.providerName}</span>
-              </div>
-            ))}
-          </div>
-        )}
-      </PanelCard>
     </div>
   );
 }

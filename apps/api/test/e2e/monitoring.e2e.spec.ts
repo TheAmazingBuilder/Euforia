@@ -78,12 +78,12 @@ describe("GET /monitoring/overview (§48)", () => {
     expect(status).toBe(200);
 
     // Status board: the 8 fixed components, each WITH evidence.
-    expect(body.overview.components).toHaveLength(8);
+    expect(body.overview.components).toHaveLength(7);
     for (const component of body.overview.components) {
       expect(component.evidence.length).toBeGreaterThan(0);
       expect(["engine", "client-observed"]).toContain(component.source);
     }
-    expect(body.overview.counts.operational + body.overview.counts.degraded + body.overview.counts.down + body.overview.counts.unknown).toBe(8);
+    expect(body.overview.counts.operational + body.overview.counts.degraded + body.overview.counts.down + body.overview.counts.unknown).toBe(7);
     // market-data / websocket are honest client-observed rows.
     const market = body.overview.components.find((c) => c.id === "market-data");
     expect(market?.source).toBe("client-observed");
@@ -126,10 +126,6 @@ describe("GET /monitoring/overview (§48)", () => {
     expect(channels.PUSH?.status).toBe("UNKNOWN");
     expect(body.notifications.recent.length).toBeGreaterThanOrEqual(1);
     expect(JSON.stringify(body.notifications.recent)).not.toContain(user.email);
-
-    // Integrations: honestly empty (backend context not implemented).
-    expect(body.integrations).toEqual([]);
-    expect(body.integrationEvents).toEqual([]);
 
     // Thresholds: the 8 contract rules with defaults.
     expect(body.thresholds.rules).toHaveLength(8);

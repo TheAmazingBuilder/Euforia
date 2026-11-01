@@ -163,7 +163,7 @@ const en = {
       planBadge: "FREE plan",
       connectedTitle: "Connected trading accounts",
       defaultBadge: "default",
-      connectedNote: "Broker connections and credentials are managed in Integrations - never stored in preferences.",
+      connectedNote: "Trading accounts and broker connections are managed in Accounts; credentials are managed in Security, never stored in preferences.",
       baseCurrency: "Base currency",
       dataTitle: "Your data",
       dataDescription: "Full JSON snapshot - trades, strategies, tags. Also in Privacy.",

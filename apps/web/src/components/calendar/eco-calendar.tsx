@@ -234,9 +234,9 @@ export function EcoCalendarView() {
     <div className="space-y-5" data-testid="eco-calendar">
       {/* Header */}
       <div>
-        <h1 className="font-heading text-2xl font-extrabold tracking-tight text-foreground">
+        <h2 className="section-title">
           Economic calendar
-        </h1>
+        </h2>
         <p className="mt-1 text-sm text-muted-foreground">
           Macro releases that move your instruments - plan the volatility, don&apos;t react to it.
         </p>

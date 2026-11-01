@@ -244,7 +244,7 @@ export function SettingsView() {
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
       <header className="space-y-1">
-        <h1 className="flex items-center gap-2 font-heading text-2xl font-extrabold tracking-tight sm:text-3xl">
+        <h1 className="flex items-center gap-2 page-title">
           <SettingsIcon className="size-6 text-accent" aria-hidden="true" />
           {dict.settings.view.title}
         </h1>

@@ -34,7 +34,6 @@ export * from "./schemas/api";
 export * from "./schemas/market";
 export * from "./schemas/broker";
 export * from "./schemas/settings";
-export * from "./schemas/integration";
 export * from "./schemas/security";
 export * from "./schemas/auth";
 export * from "./schemas/monitoring";
@@ -71,7 +70,6 @@ export * from "./utils/risk-reward";
 export * from "./utils/format";
 export * from "./utils/dates";
 export * from "./utils/rules";
-export * from "./utils/integrations";
 export * from "./utils/csv";
 
 // Academy content - the single source of truth for the pedagogical corpus
