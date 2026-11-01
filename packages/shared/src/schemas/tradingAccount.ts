@@ -11,7 +11,7 @@ import {
   isoDateTimeSchema,
   uuidSchema,
 } from "./primitives";
-import { integrationPermissionSchema } from "./integration";
+import { providerPermissionSchema } from "./provider-access";
 import { brokerOrderSchema, brokerPositionSchema } from "./broker";
 import { propFirmConfigSchema } from "./account";
 
@@ -19,9 +19,8 @@ import { propFirmConfigSchema } from "./account";
  * Accounts module contracts - the ACCOUNT-CENTRIC view of trading
  * connectivity (prompt §27: connection status ≠ synchronization status).
  *
- * Boundary: the Integration Hub (/integrations) owns PROVIDER connections
- * (credentials vault, test/sync lifecycle per provider). Accounts owns the
- * per-TRADING-ACCOUNT state: which journal account is connected to what,
+ * Boundary: Accounts owns provider connection and synchronization for each
+ * TRADING ACCOUNT: which journal account is connected to which broker/provider,
  * with which environment, permissions, snapshot and synchronized data.
  *
  * READ-ONLY invariant: no schema here models order submission, modification
@@ -115,7 +114,7 @@ export const accountProviderSchema = z.object({
   environments: z.array(accountEnvironmentSchema),
   methods: z.array(accountConnectionMethodSchema),
   /** Permissions a successful connection grants - READ_* only. */
-  capabilities: z.array(integrationPermissionSchema),
+  capabilities: z.array(providerPermissionSchema),
   tagline: z.string().nullable(),
 });
 export type AccountProvider = z.infer<typeof accountProviderSchema>;
@@ -165,13 +164,13 @@ export const tradingAccountSyncSchema = z.object({
 export type TradingAccountSync = z.infer<typeof tradingAccountSyncSchema>;
 
 /**
- * Permission scope of a connection - REUSES the Integration Hub permission
+ * Permission scope of a connection - uses the shared provider permission
  * vocabulary so the whole app speaks one permission language. V1 invariant:
  * read-only always; execution is structurally impossible (`readOnly: true`
  * literal - widening requires a dedicated guarded contract, cf. broker.ts).
  */
 export const tradingAccountPermissionsSchema = z.object({
-  granted: z.array(integrationPermissionSchema),
+  granted: z.array(providerPermissionSchema),
   readOnly: z.literal(true),
 });
 export type TradingAccountPermissions = z.infer<

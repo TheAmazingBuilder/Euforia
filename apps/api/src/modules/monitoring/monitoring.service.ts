@@ -215,6 +215,7 @@ export class MonitoringService {
       jobs,
       notifications,
       brokers,
+      events,
       alerts,
       incidents,
       thresholds,
