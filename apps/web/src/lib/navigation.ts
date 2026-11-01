@@ -164,7 +164,7 @@ export const SIDEBAR_ITEMS: NavItem[] = [
     label: "Security",
     icon: LockKeyhole,
     description:
-      "Protection center: 2FA, sessions, API keys, connected accounts and the audit trail.",
+      "Protection center: two-factor authentication, sessions, API keys and the audit trail.",
   },
   {
     href: "/settings",
