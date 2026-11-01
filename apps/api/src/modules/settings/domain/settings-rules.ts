@@ -27,7 +27,6 @@ import {
   academyPreferencesSchema,
   privacyPreferencesSchema,
   localizationPreferencesSchema,
-  onboardingPreferencesSchema,
   userPreferencesSchema,
   type PreferenceDomain,
   type UserPreferences,
@@ -48,7 +47,6 @@ export const PREFERENCE_DOMAIN_SCHEMAS: Record<PreferenceDomain, z.ZodTypeAny> =
   academy: academyPreferencesSchema,
   privacy: privacyPreferencesSchema,
   localization: localizationPreferencesSchema,
-  onboarding: onboardingPreferencesSchema,
 };
 
 /**
