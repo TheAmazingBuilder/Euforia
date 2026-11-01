@@ -34,7 +34,6 @@ export * from "./schemas/api";
 export * from "./schemas/market";
 export * from "./schemas/broker";
 export * from "./schemas/settings";
-export * from "./schemas/provider-access";
 export * from "./schemas/security";
 export * from "./schemas/auth";
 export * from "./schemas/monitoring";
