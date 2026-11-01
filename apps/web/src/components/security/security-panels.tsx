@@ -47,11 +47,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { ConfirmDialog } from "@/components/settings/settings-primitives";
-import {
-  KindChip,
-  PERMISSION_LABELS,
-  StatusBadge,
-} from "@/components/integrations/hub-shared";
 import { cn } from "@/lib/utils";
 import { EVENT_TYPE_META } from "@/lib/security/event-label";
 import { EventBadge, EventOutcomeIcon, utc } from "./security-primitives";
@@ -63,7 +58,51 @@ import { EventBadge, EventOutcomeIcon, utc } from "./security-primitives";
  * Presentation only - every mutation and re-auth flow lives in the parent.
  */
 
+
 type Overview = SecurityOverviewResponse;
+
+const ACCOUNT_KIND_LABELS: Record<ConnectedAccount["kind"], string> = {
+  BROKER: "Broker",
+  EXCHANGE: "Exchange",
+  MARKET_DATA: "Market data",
+  ECONOMIC: "Economic data",
+  NEWS: "News",
+  CHARTING: "Charting",
+  NOTIFICATION: "Notifications",
+  EXTERNAL: "External",
+};
+
+const ACCOUNT_STATUS_META: Record<
+  ConnectedAccount["status"],
+  { label: string; variant: "default" | "secondary" | "destructive" | "outline" }
+> = {
+  CONNECTED: { label: "Connected", variant: "default" },
+  SYNCING: { label: "Syncing", variant: "secondary" },
+  DEGRADED: { label: "Degraded", variant: "secondary" },
+  DISCONNECTED: { label: "Disconnected", variant: "outline" },
+  AUTH_REQUIRED: { label: "Authentication required", variant: "destructive" },
+  ERROR: { label: "Error", variant: "destructive" },
+};
+
+const ACCOUNT_PERMISSION_LABELS: Record<ConnectedAccount["permissions"][number], string> = {
+  READ_ACCOUNT: "Read account",
+  READ_POSITIONS: "Read positions",
+  READ_ORDERS: "Read orders",
+  READ_EXECUTIONS: "Read executions",
+  READ_MARKET_DATA: "Read market data",
+  READ_ECONOMIC_DATA: "Read economic data",
+  READ_NEWS: "Read news",
+  WEBHOOK_INBOUND: "Inbound webhooks",
+};
+
+function ConnectedAccountKindBadge({ kind }: { kind: ConnectedAccount["kind"] }) {
+  return <Badge variant="outline">{ACCOUNT_KIND_LABELS[kind]}</Badge>;
+}
+
+function ConnectedAccountStatusBadge({ status }: { status: ConnectedAccount["status"] }) {
+  const meta = ACCOUNT_STATUS_META[status];
+  return <Badge variant={meta.variant}>{meta.label}</Badge>;
+}
 
 export type EventHistoryFilters = {
   type: SecurityEventType | "ALL";
@@ -906,7 +945,7 @@ function ConnectedAccountRow({ account }: { account: ConnectedAccount }) {
       <div className="min-w-0">
         <p className="flex items-center gap-2 text-sm font-medium">
           {account.providerName}
-          <KindChip kind={account.kind} />
+          <ConnectedAccountKindBadge kind={account.kind} />
         </p>
         <p className="font-mono text-xs tabular-nums text-muted-foreground">
           {account.identifier} · credential {account.credentialHint}
@@ -917,13 +956,13 @@ function ConnectedAccountRow({ account }: { account: ConnectedAccount }) {
               key={permission}
               className="rounded-full border border-border px-2 py-0.5 text-[10px] text-muted-foreground"
             >
-              {PERMISSION_LABELS[permission] ?? permission}
+              {ACCOUNT_PERMISSION_LABELS[permission]}
             </span>
           ))}
         </p>
       </div>
       <div className="text-right">
-        <StatusBadge status={account.status} />
+        <ConnectedAccountStatusBadge status={account.status} />
         <p className="mt-1 font-mono text-[11px] tabular-nums text-muted-foreground">
           last sync {account.lastSyncAt === null ? "never" : utc(account.lastSyncAt)}
         </p>
