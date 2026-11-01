@@ -7,7 +7,6 @@ import {
   Fingerprint,
   KeyRound,
   Laptop,
-  Link2,
   LockKeyhole,
   MonitorSmartphone,
   ScrollText,
@@ -17,7 +16,6 @@ import {
 } from "lucide-react";
 import type {
   ApiKeyView,
-  ConnectedAccount,
   LoginRecord,
   SecurityEvent,
   SecurityEventType,
@@ -54,55 +52,12 @@ import { EventBadge, EventOutcomeIcon, utc } from "./security-primitives";
 /**
  * Tab panels of the Security center (MASTER PROMPT §3):
  * Overview · Authentication · Sessions · Two-Factor · API Keys ·
- * Connected Accounts · Security Events · Login History · Active Devices.
+ * Security Events · Login History · Active Devices.
  * Presentation only - every mutation and re-auth flow lives in the parent.
  */
 
 
 type Overview = SecurityOverviewResponse;
-
-const ACCOUNT_KIND_LABELS: Record<ConnectedAccount["kind"], string> = {
-  BROKER: "Broker",
-  EXCHANGE: "Exchange",
-  MARKET_DATA: "Market data",
-  ECONOMIC: "Economic data",
-  NEWS: "News",
-  CHARTING: "Charting",
-  NOTIFICATION: "Notifications",
-  EXTERNAL: "External",
-};
-
-const ACCOUNT_STATUS_META: Record<
-  ConnectedAccount["status"],
-  { label: string; variant: "default" | "secondary" | "destructive" | "outline" }
-> = {
-  CONNECTED: { label: "Connected", variant: "default" },
-  SYNCING: { label: "Syncing", variant: "secondary" },
-  DEGRADED: { label: "Degraded", variant: "secondary" },
-  DISCONNECTED: { label: "Disconnected", variant: "outline" },
-  AUTH_REQUIRED: { label: "Authentication required", variant: "destructive" },
-  ERROR: { label: "Error", variant: "destructive" },
-};
-
-const ACCOUNT_PERMISSION_LABELS: Record<ConnectedAccount["permissions"][number], string> = {
-  READ_ACCOUNT: "Read account",
-  READ_POSITIONS: "Read positions",
-  READ_ORDERS: "Read orders",
-  READ_EXECUTIONS: "Read executions",
-  READ_MARKET_DATA: "Read market data",
-  READ_ECONOMIC_DATA: "Read economic data",
-  READ_NEWS: "Read news",
-  WEBHOOK_INBOUND: "Inbound webhooks",
-};
-
-function ConnectedAccountKindBadge({ kind }: { kind: ConnectedAccount["kind"] }) {
-  return <Badge variant="outline">{ACCOUNT_KIND_LABELS[kind]}</Badge>;
-}
-
-function ConnectedAccountStatusBadge({ status }: { status: ConnectedAccount["status"] }) {
-  const meta = ACCOUNT_STATUS_META[status];
-  return <Badge variant={meta.variant}>{meta.label}</Badge>;
-}
 
 export type EventHistoryFilters = {
   type: SecurityEventType | "ALL";
@@ -161,14 +116,6 @@ export function OverviewPanel({
       label: "Active API keys",
       value: String(activeKeys.length),
       tab: "api-keys",
-    },
-    {
-      id: "connected",
-      label: "Connected accounts",
-      value: String(
-        overview.connectedAccounts.filter((account) => account.status === "CONNECTED").length,
-      ),
-      tab: "connected-accounts",
     },
   ];
 
@@ -250,7 +197,7 @@ export function OverviewPanel({
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
         {stats.map((stat) => (
           <button
             key={stat.id}
@@ -908,66 +855,6 @@ export function ApiKeysPanel({
         testid="api-key-revoke-confirm"
       />
     </Card>
-  );
-}
-
-// ── §9 Connected accounts ────────────────────────────────────────────────────
-
-export function ConnectedAccountsPanel({ overview }: { overview: Overview }) {
-  return (
-    <Card className="border-border bg-surface">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 font-heading text-base font-semibold">
-          <Link2 className="size-4 text-accent" aria-hidden="true" />
-          Connected accounts
-        </CardTitle>
-        <CardDescription>
-          Security&apos;s view over Integrations - derived live from the hub.
-          Passwords, private keys and secret tokens are never shown here: only
-          masked hints from the vault.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="grid gap-2">
-        {overview.connectedAccounts.map((account) => (
-          <ConnectedAccountRow key={account.providerId} account={account} />
-        ))}
-      </CardContent>
-    </Card>
-  );
-}
-
-function ConnectedAccountRow({ account }: { account: ConnectedAccount }) {
-  return (
-    <div
-      className="flex flex-wrap items-center justify-between gap-4 rounded-lg border border-border bg-background/60 px-3 py-2.5"
-      data-testid={`connected-${account.providerId}`}
-    >
-      <div className="min-w-0">
-        <p className="flex items-center gap-2 text-sm font-medium">
-          {account.providerName}
-          <ConnectedAccountKindBadge kind={account.kind} />
-        </p>
-        <p className="font-mono text-xs tabular-nums text-muted-foreground">
-          {account.identifier} · credential {account.credentialHint}
-        </p>
-        <p className="mt-1 flex flex-wrap gap-1.5">
-          {account.permissions.map((permission) => (
-            <span
-              key={permission}
-              className="rounded-full border border-border px-2 py-0.5 text-[10px] text-muted-foreground"
-            >
-              {ACCOUNT_PERMISSION_LABELS[permission]}
-            </span>
-          ))}
-        </p>
-      </div>
-      <div className="text-right">
-        <ConnectedAccountStatusBadge status={account.status} />
-        <p className="mt-1 font-mono text-[11px] tabular-nums text-muted-foreground">
-          last sync {account.lastSyncAt === null ? "never" : utc(account.lastSyncAt)}
-        </p>
-      </div>
-    </div>
   );
 }
 

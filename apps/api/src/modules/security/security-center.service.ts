@@ -155,13 +155,6 @@ export class SecurityCenterService {
         expiresAt: key.expiresAt ? iso(key.expiresAt) : null,
         revoked: key.revokedAt !== null,
       })),
-      // Integrations are a separate bounded context (backend Phase 14 was
-      // never executed - no provider registry exists yet). Security exposes
-      // an honestly EMPTY projection rather than inventing one; when the
-      // Integrations context lands it will emit INTEGRATION_* events through
-      // the shared event log and this projection reads from its public
-      // contract. Security NEVER owns provider credentials (§23/§24).
-      connectedAccounts: [],
       events: events.map(toSecurityEvent),
       logins: logins.map(toLoginRecord),
       protection,

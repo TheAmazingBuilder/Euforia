@@ -11,7 +11,6 @@ import {
   isoDateTimeSchema,
   uuidSchema,
 } from "./primitives";
-import { providerPermissionSchema } from "./provider-access";
 import { brokerOrderSchema, brokerPositionSchema } from "./broker";
 import { propFirmConfigSchema } from "./account";
 
@@ -100,6 +99,19 @@ export const accountConnectionMethodSchema = z.object({
 });
 export type AccountConnectionMethod = z.infer<typeof accountConnectionMethodSchema>;
 
+/** Read permissions exposed by a trading-account provider; no order-write scopes exist. */
+export const accountProviderPermissionSchema = z.enum([
+  "READ_ACCOUNT",
+  "READ_POSITIONS",
+  "READ_ORDERS",
+  "READ_EXECUTIONS",
+  "READ_MARKET_DATA",
+  "READ_ECONOMIC_DATA",
+  "READ_NEWS",
+  "WEBHOOK_INBOUND",
+]);
+export type AccountProviderPermission = z.infer<typeof accountProviderPermissionSchema>;
+
 /**
  * Trading provider - provider-agnostic catalog entry (prompt §10). The UI
  * renders from this metadata; no `if (provider === …)` branches in screens.
@@ -114,7 +126,7 @@ export const accountProviderSchema = z.object({
   environments: z.array(accountEnvironmentSchema),
   methods: z.array(accountConnectionMethodSchema),
   /** Permissions a successful connection grants - READ_* only. */
-  capabilities: z.array(providerPermissionSchema),
+  capabilities: z.array(accountProviderPermissionSchema),
   tagline: z.string().nullable(),
 });
 export type AccountProvider = z.infer<typeof accountProviderSchema>;
@@ -164,13 +176,13 @@ export const tradingAccountSyncSchema = z.object({
 export type TradingAccountSync = z.infer<typeof tradingAccountSyncSchema>;
 
 /**
- * Permission scope of a connection - uses the shared provider permission
+ * Permission scope of a connection - uses the account-provider permission
  * vocabulary so the whole app speaks one permission language. V1 invariant:
  * read-only always; execution is structurally impossible (`readOnly: true`
  * literal - widening requires a dedicated guarded contract, cf. broker.ts).
  */
 export const tradingAccountPermissionsSchema = z.object({
-  granted: z.array(providerPermissionSchema),
+  granted: z.array(accountProviderPermissionSchema),
   readOnly: z.literal(true),
 });
 export type TradingAccountPermissions = z.infer<

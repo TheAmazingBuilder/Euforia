@@ -48,7 +48,6 @@ import {
 import {
   ApiKeysPanel,
   AuthenticationPanel,
-  ConnectedAccountsPanel,
   DevicesPanel,
   EventsPanel,
   LoginHistoryPanel,
@@ -63,7 +62,7 @@ import {
 /**
  * /security - the professional Security & Account Protection center
  * (MASTER PROMPT §3 structure): Overview · Authentication · Sessions ·
- * Two-Factor · API Keys · Connected Accounts · Security Events ·
+ * Two-Factor · API Keys · Security Events ·
  * Login History · Active Devices. The active tab persists in the URL (?tab=).
  *
  * Every sensitive action (§13) flows through the ReAuthDialog: a short-lived
@@ -78,7 +77,6 @@ const TABS = [
   { id: "sessions", label: "Sessions" },
   { id: "two-factor", label: "Two-Factor" },
   { id: "api-keys", label: "API Keys" },
-  { id: "connected-accounts", label: "Connected Accounts" },
   { id: "events", label: "Security Events" },
   { id: "login-history", label: "Login History" },
   { id: "devices", label: "Active Devices" },
@@ -406,7 +404,7 @@ export function SecurityCenterView() {
         </h1>
         <p className="max-w-2xl text-sm text-muted-foreground">
           Your account protection center - authentication, sessions, two-factor,
-          API keys, connected accounts and the append-only audit trail. Sensitive
+          API keys and the append-only audit trail. Sensitive
           actions always ask you to confirm it&apos;s you.
         </p>
       </header>
@@ -473,7 +471,6 @@ export function SecurityCenterView() {
           pending={busy}
         />
       )}
-      {activeTab === "connected-accounts" && <ConnectedAccountsPanel overview={overview} />}
       {activeTab === "events" && (
         <EventsPanel
           overview={overview}

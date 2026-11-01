@@ -1,6 +1,5 @@
 import { z } from "zod";
 
-import { providerConnectionKindSchema, providerConnectionStatusSchema, providerPermissionSchema } from "./provider-access";
 import { isoDateTimeSchema, uuidSchema } from "./primitives";
 
 /**
@@ -186,22 +185,6 @@ export const apiKeyCreatedSchema = z.object({
 });
 export type ApiKeyCreated = z.infer<typeof apiKeyCreatedSchema>;
 
-// ── Connected accounts (§9 - Security's view over account connections) ──────────────
-
-export const connectedAccountSchema = z.object({
-  providerId: z.string().min(1),
-  providerName: z.string().min(1),
-  kind: providerConnectionKindSchema,
-  status: providerConnectionStatusSchema,
-  /** Masked account identifier - never a password, key or token. */
-  identifier: z.string().min(1),
-  permissions: z.array(providerPermissionSchema),
-  lastSyncAt: isoDateTimeSchema.nullable(),
-  /** What Security stores for this provider - masked vault hint or "none". */
-  credentialHint: z.string().min(1),
-});
-export type ConnectedAccount = z.infer<typeof connectedAccountSchema>;
-
 // ── Login history (§11) ──────────────────────────────────────────────────────
 
 export const loginRecordSchema = z.object({
@@ -258,7 +241,6 @@ export const securityOverviewResponseSchema = z.object({
   twoFactor: twoFactorStateSchema,
   sessions: z.array(securitySessionSchema),
   apiKeys: z.array(apiKeyViewSchema),
-  connectedAccounts: z.array(connectedAccountSchema),
   events: z.array(securityEventSchema),
   logins: z.array(loginRecordSchema),
   protection: z.array(protectionCheckSchema),

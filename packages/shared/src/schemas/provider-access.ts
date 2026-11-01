@@ -7,28 +7,6 @@ import { z } from "zod";
  * persistence or HTTP surface. Accounts owns trading-provider connections;
  * Security consumes only a masked view of those connections.
  */
-export const providerConnectionStatusSchema = z.enum([
-  "CONNECTED",
-  "SYNCING",
-  "DEGRADED",
-  "DISCONNECTED",
-  "AUTH_REQUIRED",
-  "ERROR",
-]);
-export type ProviderConnectionStatus = z.infer<typeof providerConnectionStatusSchema>;
-
-export const providerConnectionKindSchema = z.enum([
-  "BROKER",
-  "EXCHANGE",
-  "MARKET_DATA",
-  "ECONOMIC",
-  "NEWS",
-  "CHARTING",
-  "NOTIFICATION",
-  "EXTERNAL",
-]);
-export type ProviderConnectionKind = z.infer<typeof providerConnectionKindSchema>;
-
 export const providerPermissionSchema = z.enum([
   "READ_ACCOUNT",
   "READ_POSITIONS",
