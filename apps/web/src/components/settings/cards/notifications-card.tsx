@@ -6,7 +6,6 @@ import { BellRing, BellOff, Target } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { NotificationChannels, NotificationPreferences } from "@cosmoz/shared";
 
-import { Input } from "@/components/ui/input";
 import { TimePicker } from "@/components/shared/date-time-picker";
 import { Switch } from "@/components/ui/switch";
 import {
