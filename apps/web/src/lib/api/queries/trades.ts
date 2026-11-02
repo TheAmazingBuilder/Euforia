@@ -176,11 +176,11 @@ export function useDeleteTrade() {
 }
 
 /** GET /trades/:id/screenshots - gallery for the detail drawer. */
-export function useScreenshots(tradeId: string | null) {
+export function useScreenshots(tradeId: string | null, enabled = true) {
   return useQuery({
     queryKey: queryKeys.screenshots(tradeId ?? "none"),
     queryFn: () => apiRequest<TradeScreenshotsResponse>(apiPaths.tradeScreenshots(tradeId!)),
-    enabled: tradeId !== null,
+    enabled: tradeId !== null && enabled,
     staleTime: 60_000,
   });
 }

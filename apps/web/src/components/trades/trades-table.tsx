@@ -208,7 +208,30 @@ function TradeCard({
   onEdit: () => void;
   onDelete: () => void;
 }) {
-  const { data: screenshotData, isLoading: screenshotsLoading } = useScreenshots(trade.id);
+  const previewRef = React.useRef<HTMLButtonElement>(null);
+  const [screenshotsRequested, setScreenshotsRequested] = React.useState(false);
+  React.useEffect(() => {
+    const target = previewRef.current;
+    if (!target || typeof IntersectionObserver === "undefined") {
+      setScreenshotsRequested(true);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setScreenshotsRequested(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "180px" },
+    );
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, []);
+  const { data: screenshotData, isLoading: screenshotsLoading } = useScreenshots(
+    trade.id,
+    screenshotsRequested,
+  );
   const screenshots = screenshotData?.screenshots ?? [];
   const screenshot =
     screenshots.find((item) => item.kind === "CHART" && item.storageKey.startsWith("data:image/")) ??
@@ -234,6 +257,7 @@ function TradeCard({
     >
       <div className="relative">
         <button
+          ref={previewRef}
           type="button"
           onClick={onOpen}
           className="block aspect-[16/9] w-full overflow-hidden bg-background text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
@@ -251,7 +275,7 @@ function TradeCard({
           ) : (
             <span className="flex h-full flex-col items-center justify-center gap-2 text-[11px]">
               <ImageIcon className="size-4 opacity-50" aria-hidden="true" />
-              {screenshotsLoading ? "Loading screenshot…" : "No screenshot"}
+              {!screenshotsRequested || screenshotsLoading ? "Loading screenshot…" : "No screenshot"}
             </span>
           )}
         </button>
