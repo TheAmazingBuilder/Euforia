@@ -106,3 +106,35 @@ jobs:
       - name: Pytest (sidecar pipeline, V1+V2 contract)
         working-directory: mini-services/ocr-service
         run: python3 -m pytest tests/ -q
+
+  market-service:
+    name: market-service (Bun tests · TypeScript)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install workspace dependencies
+        run: corepack pnpm install --frozen-lockfile
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3.14"
+
+      - name: Install market-service dependencies
+        working-directory: mini-services/market-service
+        run: bun install --frozen-lockfile
+
+      - name: Market provider tests
+        working-directory: mini-services/market-service
+        run: bun test
+
+      - name: Market service typecheck
+        run: corepack pnpm --filter web exec tsc --noEmit --project ../../mini-services/market-service/tsconfig.json

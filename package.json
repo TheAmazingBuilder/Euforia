@@ -9,7 +9,9 @@
     "typecheck": "turbo run typecheck",
     "test": "turbo test",
     "api:dev": "pnpm --filter @cosmoz/api dev",
-    "web:dev": "pnpm --filter web dev"
+    "web:dev": "pnpm --filter web dev",
+    "market:dev": "cd mini-services/market-service && bun run dev",
+    "market:test": "cd mini-services/market-service && bun test"
   },
   "devDependencies": {
     "turbo": "^2"
