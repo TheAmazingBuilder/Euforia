@@ -104,11 +104,20 @@ const httpServer = createServer(async (request, response) => {
     return;
   }
   if (url.pathname === "/health") {
+    const now = Date.now();
+    const staleAfterMs = 15_000;
+    const freshQuotes = [...quotes.values()].filter((quote) => now - quote.ts <= staleAfterMs && now >= quote.ts - 60_000);
+    const staleSymbols = [...quotes.values()]
+      .filter((quote) => !freshQuotes.some((fresh) => fresh.symbol === quote.symbol))
+      .map((quote) => quote.symbol)
+      .sort();
     sendJson(response, 200, {
       ok: true,
       dataPolicy: "REAL_ONLY",
-      realFeedReady: quotes.size > 0,
+      realFeedReady: freshQuotes.length > 0,
       quoteCount: quotes.size,
+      freshQuoteCount: freshQuotes.length,
+      staleSymbols,
       symbols: [...quotes.keys()].sort(),
       lastTickAt: lastTickAt || null,
       providers: providers.map((provider) => ({ id: provider.id, source: provider.source, status: provider.status() })),

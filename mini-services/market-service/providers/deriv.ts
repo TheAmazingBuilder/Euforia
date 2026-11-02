@@ -110,6 +110,9 @@ export class DerivProvider implements MarketDataProvider {
       ws.onclose = () => {
         if (this.ws === ws) this.ws = null;
         this.connected = false;
+        this.markets.clear();
+        this.marketsByRemote.clear();
+        this.prevClose.clear();
         this.rejectPending(new Error("Deriv public WebSocket disconnected"));
         this.scheduleReconnect();
       };
@@ -232,7 +235,7 @@ export class DerivProvider implements MarketDataProvider {
       const response = await this.request(ws, {
         ticks_history: market.remoteSymbol,
         start: target - 90,
-        end: target + 90,
+        end: String(target + 90),
         count: 1_000,
         style: "ticks",
       });
@@ -254,7 +257,11 @@ export class DerivProvider implements MarketDataProvider {
     const market = this.marketsByRemote.get(remote);
     if (!market) return;
     const normalized = normalizeDerivTick(message, market, this.prevClose.get(market.symbol) ?? null);
-    if (normalized) this.publish(normalized);
+    if (!normalized) return;
+    for (const [reqId, requestedSymbol] of this.subscriptionRequests) {
+      if (requestedSymbol === market.symbol) this.subscriptionRequests.delete(reqId);
+    }
+    this.publish(normalized);
   }
 
   private publish(tick: Tick): void {
@@ -275,7 +282,7 @@ export class DerivProvider implements MarketDataProvider {
     const start = from !== undefined
       ? Math.max(0, Math.floor(from / 1_000))
       : Math.max(0, Math.floor(Date.now() / 1_000) - granularity * boundedLimit);
-    const end: number | string = to !== undefined ? Math.max(0, Math.floor(to / 1_000)) : "latest";
+    const end = to !== undefined ? String(Math.max(0, Math.floor(to / 1_000))) : "latest";
     const response = await this.request(ws, {
       ticks_history: market.remoteSymbol,
       start,
