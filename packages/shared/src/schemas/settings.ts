@@ -1010,7 +1010,7 @@ export const DEFAULT_USER_PREFERENCES: UserPreferencesDefaults = {
     },
   },
   appearance: {
-    theme: "DARK",
+    theme: "DARK_BLUE",
     density: "COMFORTABLE",
     defaultDashboardLayout: "COACH_FIRST",
     pnlDisplay: "CURRENCY",
