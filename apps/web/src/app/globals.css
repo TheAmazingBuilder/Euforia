@@ -27,14 +27,15 @@
 
 /* ---- Theme: dark / Euforia brand (DEFAULT) ---- */
 :root {
-  --background: #0E1116;
-  --surface: #141920;
-  --surface-raised: #1A2029;
-  --border: #262E3A;
-  --text-primary: #E9ECEF;
-  --text-muted: #99A2AD;
+  --background: #000000;
+  --surface: #141414;
+  --surface-raised: #1D1D1D;
+  --border: #2B2B2B;
+  --text-primary: #F5F5F5;
+  --text-muted: #A3A3A3;
   --accent: #8B5CF6;
   --accent-hover: #A78BFA;
+  --accent-foreground: #FFFFFF;
   --action-success: #10B981;
   --action-success-hover: #059669;
   --action-success-foreground: #FFFFFF;
@@ -72,12 +73,12 @@
 
 /* ---- Theme: dark / "Carbone" ---- */
 [data-theme="dark"] {
-  --background: #0B0B0D;
-  --surface: #131316;
-  --surface-raised: #191A1E;
-  --border: #28292E;
-  --text-primary: #EDEDEF;
-  --text-muted: #9BA0A8;
+  --background: #000000;
+  --surface: #141414;
+  --surface-raised: #1D1D1D;
+  --border: #2B2B2B;
+  --text-primary: #F5F5F5;
+  --text-muted: #A3A3A3;
   --accent: #8B5CF6;
   --accent-hover: #A78BFA;
   --action-success: #10B981;
@@ -97,14 +98,15 @@
 
 /* ---- Theme: light / "Papier" ---- */
 [data-theme="light"] {
-  --background: #F5F4F0;
-  --surface: #FDFCF9;
-  --surface-raised: #EEEDE7;
-  --border: #D9D6CD;
-  --text-primary: #1B1C1E;
-  --text-muted: #5F646C;
+  --background: #FFFFFF;
+  --surface: #F2F2F2;
+  --surface-raised: #EAEAEA;
+  --border: #D8D8D8;
+  --text-primary: #111111;
+  --text-muted: #666666;
   --accent: #6D28D9;
   --accent-hover: #5B21B6;
+  --accent-foreground: #FFFFFF;
   --action-success: #047857;
   --action-success-hover: #065F46;
   --action-success-foreground: #FFFFFF;
@@ -159,6 +161,94 @@
   --brand-gradient: linear-gradient(93deg, #7B22F4 0%, #6318E8 28%, #4299FD 62%, #28D6F6 100%);
 }
 
+
+/* Appearance palettes - one functional color contract across every module. */
+[data-theme="dark"][data-color-palette="mono"], :root[data-color-palette="mono"] {
+  --accent: #F5F5F5; --accent-hover: #DCDCDC; --accent-foreground: #111111;
+  --profit: #F5F5F5; --loss: #9A9A9A; --warning: #E6E6E6;
+  --direction-buy: var(--profit); --direction-sell: var(--loss);
+}
+[data-theme="light"][data-color-palette="mono"] {
+  --accent: #171717; --accent-hover: #333333; --accent-foreground: #FFFFFF;
+  --profit: #171717; --loss: #696969; --warning: #414141;
+  --direction-buy: var(--profit); --direction-sell: var(--loss);
+}
+[data-theme="dark"][data-color-palette="whisper"], :root[data-color-palette="whisper"] {
+  --accent: #D9D1FF; --accent-hover: #C1B4FF; --accent-foreground: #171329;
+  --profit: #B8D4C6; --loss: #E0B4AE; --warning: #E6D3A3;
+  --direction-buy: var(--profit); --direction-sell: var(--loss);
+}
+[data-theme="light"][data-color-palette="whisper"] {
+  --accent: #65558F; --accent-hover: #514276; --accent-foreground: #FFFFFF;
+  --profit: #557C68; --loss: #AD6760; --warning: #927A3B;
+  --direction-buy: var(--profit); --direction-sell: var(--loss);
+}
+[data-theme="dark"][data-color-palette="classic"], :root[data-color-palette="classic"] {
+  --accent: #8B5CF6; --accent-hover: #A78BFA; --accent-foreground: #FFFFFF;
+  --profit: #4ADE80; --loss: #F87171; --warning: #FACC15;
+  --direction-buy: var(--profit); --direction-sell: var(--loss);
+}
+[data-theme="light"][data-color-palette="classic"] {
+  --accent: #6D28D9; --accent-hover: #5B21B6; --accent-foreground: #FFFFFF;
+  --profit: #15803D; --loss: #B91C1C; --warning: #A16207;
+  --direction-buy: var(--profit); --direction-sell: var(--loss);
+}
+[data-theme="dark"][data-color-palette="ocean"], :root[data-color-palette="ocean"] {
+  --accent: #5CC8FF; --accent-hover: #8AD8FF; --accent-foreground: #082033;
+  --profit: #7CC4FF; --loss: #FF9F5A; --warning: #FFE066;
+  --direction-buy: var(--profit); --direction-sell: var(--loss);
+}
+[data-theme="light"][data-color-palette="ocean"] {
+  --accent: #0369A1; --accent-hover: #075985; --accent-foreground: #FFFFFF;
+  --profit: #0369A1; --loss: #C2410C; --warning: #A16207;
+  --direction-buy: var(--profit); --direction-sell: var(--loss);
+}
+[data-theme="dark"][data-color-palette="violet"], :root[data-color-palette="violet"] {
+  --accent: #6A58EC; --accent-hover: #887AFF; --accent-foreground: #FFFFFF;
+  --profit: #5FD4F5; --loss: #FF8A65; --warning: #F5C451;
+  --direction-buy: var(--profit); --direction-sell: var(--loss);
+}
+[data-theme="light"][data-color-palette="violet"] {
+  --accent: #5B21B6; --accent-hover: #4C1D95; --accent-foreground: #FFFFFF;
+  --profit: #0E7490; --loss: #C2410C; --warning: #A16207;
+  --direction-buy: var(--profit); --direction-sell: var(--loss);
+}
+[data-theme="dark"][data-color-palette="lilac"], :root[data-color-palette="lilac"] {
+  --accent: #B4A7FF; --accent-hover: #C8C0FF; --accent-foreground: #20163F;
+  --profit: #8FD3FF; --loss: #F5A38A; --warning: #E8C46A;
+  --direction-buy: var(--profit); --direction-sell: var(--loss);
+}
+[data-theme="light"][data-color-palette="lilac"] {
+  --accent: #6D28D9; --accent-hover: #5B21B6; --accent-foreground: #FFFFFF;
+  --profit: #0369A1; --loss: #C15C38; --warning: #927A3B;
+  --direction-buy: var(--profit); --direction-sell: var(--loss);
+}
+
+/* Appearance previews use the same visual language without hard-coded component colors. */
+[data-base-preview="graphite"] { --preview-bg:#000000; --preview-card:#141414; --preview-line:#303030; --preview-ink:#F5F5F5; }
+[data-base-preview="chalk"] { --preview-bg:#FFFFFF; --preview-card:#F2F2F2; --preview-line:#D8D8D8; --preview-ink:#111111; }
+.base-preview { display:flex; height:3.4rem; align-items:center; gap:.35rem; overflow:hidden; border:1px solid var(--preview-line); border-radius:.55rem; background:var(--preview-bg); padding:.35rem; }
+.base-preview-rail { width:1.1rem; height:100%; border-radius:.25rem; background:var(--preview-card); border-right:1px solid var(--preview-line); }
+.base-preview-top { display:flex; width:100%; gap:.25rem; padding:.25rem; border-bottom:1px solid var(--preview-line); }
+.base-preview-top i,.base-preview-dock i { display:block; height:.25rem; width:1rem; border-radius:99px; background:var(--preview-ink); opacity:.65; }
+.base-preview-content { display:flex; flex:1; flex-direction:column; gap:.3rem; }
+.base-preview-content i,.base-preview-card i { display:block; height:.25rem; border-radius:99px; background:var(--preview-ink); opacity:.55; }
+.base-preview-card { display:flex; min-width:0; flex:1; height:2.5rem; flex-direction:column; justify-content:center; gap:.35rem; border:1px solid var(--preview-line); border-radius:.3rem; background:var(--preview-card); padding:.35rem; }
+.base-preview-dock { display:flex; height:1rem; align-items:center; justify-content:space-around; border-top:1px solid var(--preview-line); background:var(--preview-card); }
+.base-preview-dock b { display:block; height:.65rem; width:.65rem; border-radius:50%; background:var(--preview-ink); }
+.palette-preview { display:flex; gap:.45rem; }
+.palette-swatch { display:block; height:.7rem; flex:1; border-radius:99px; }
+[data-palette-preview="mono"] { --preview-button:#F5F5F5; --preview-gain:#F5F5F5; --preview-loss:#9A9A9A; --preview-warning:#E6E6E6; }
+[data-palette-preview="whisper"] { --preview-button:#D9D1FF; --preview-gain:#B8D4C6; --preview-loss:#E0B4AE; --preview-warning:#E6D3A3; }
+[data-palette-preview="classic"] { --preview-button:#8B5CF6; --preview-gain:#4ADE80; --preview-loss:#F87171; --preview-warning:#FACC15; }
+[data-palette-preview="ocean"] { --preview-button:#5CC8FF; --preview-gain:#7CC4FF; --preview-loss:#FF9F5A; --preview-warning:#FFE066; }
+[data-palette-preview="violet"] { --preview-button:#6A58EC; --preview-gain:#5FD4F5; --preview-loss:#FF8A65; --preview-warning:#F5C451; }
+[data-palette-preview="lilac"] { --preview-button:#B4A7FF; --preview-gain:#8FD3FF; --preview-loss:#F5A38A; --preview-warning:#E8C46A; }
+.palette-button { background:var(--preview-button); }
+.palette-gain { background:var(--preview-gain); }
+.palette-loss { background:var(--preview-loss); }
+.palette-warning { background:var(--preview-warning); }
+
 /* ---- Tailwind v4 token mapping ---- */
 @theme inline {
   --color-background: var(--background);
@@ -199,7 +289,7 @@
   --color-ring: var(--ring);
 
   /* authorized additions: foreground pairs required by shadcn/ui components */
-  --color-primary-foreground: #FFFFFF;
+  --color-primary-foreground: var(--accent-foreground);
   --color-destructive-foreground: var(--destructive-foreground);
 
   /* shadcn/ui compatibility aliases */
@@ -209,7 +299,7 @@
   --color-popover-foreground: var(--text-primary);
   --color-secondary: var(--surface-raised);
   --color-secondary-foreground: var(--text-primary);
-  --color-accent-foreground: var(--text-primary);
+  --color-accent-foreground: var(--accent-foreground);
   --color-input: var(--border);
 
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;

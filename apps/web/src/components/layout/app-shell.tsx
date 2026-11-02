@@ -2,6 +2,8 @@
 
 import * as React from "react";
 import { usePathname } from "next/navigation";
+import { usePreferences } from "@/lib/api/queries";
+import { cn } from "@/lib/utils";
 
 import {
   Sheet,
@@ -13,6 +15,7 @@ import {
 import { SidebarBrand, SidebarNav } from "@/components/layout/sidebar";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { Topbar } from "@/components/layout/topbar";
+import { DesktopBottomDock, DesktopTopNavigation } from "@/components/layout/desktop-navigation";
 import { CommandPalette } from "@/components/layout/command-palette";
 import { TradeModalHost } from "@/components/trades/trade-modal-host";
 import { JudgmentFlowModal } from "@/components/trades/judgment-flow-modal";
@@ -43,46 +46,57 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   );
   const [sheetOpen, setSheetOpen] = React.useState(false);
   const pathname = usePathname();
+  const { data: preferences } = usePreferences();
+  const desktopNavigation = preferences?.appearance.desktopNavigation ?? "SIDEBAR";
+  const isSidebarLayout = desktopNavigation === "SIDEBAR";
+  const colorPalette = (preferences?.appearance.colorPalette ?? "CLASSIC").toLowerCase();
 
   React.useEffect(() => {
-    if (pathname === "/oryon") {
-      collapseSidebarForRoute();
-    } else {
-      restoreSidebarAfterRoute();
-    }
-  }, [pathname]);
+    if (!isSidebarLayout) return;
+    if (pathname === "/oryon") collapseSidebarForRoute();
+    else restoreSidebarAfterRoute();
+  }, [pathname, isSidebarLayout]);
+
+  React.useEffect(() => {
+    document.documentElement.dataset.colorPalette = colorPalette;
+  }, [colorPalette]);
 
   const closeSheet = React.useCallback(() => setSheetOpen(false), []);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Desktop sidebar - the collapse affordance lives in the Topbar. */}
-      <aside
-        className={`fixed inset-y-0 left-0 z-40 hidden flex-col border-r border-border bg-surface transition-[width] duration-200 ease-in-out lg:flex ${
-          collapsed ? "w-[72px]" : "w-[240px]"
-        }`}
-      >
-        <SidebarBrand collapsed={collapsed} />
-
-        <div className="flex-1 overflow-y-auto">
-          <SidebarNav collapsed={collapsed} />
-        </div>
-      </aside>
+      {isSidebarLayout ? (
+        <aside
+          className={`fixed inset-y-0 left-0 z-40 hidden flex-col border-r border-border bg-surface transition-[width] duration-200 ease-in-out lg:flex ${
+            collapsed ? "w-[72px]" : "w-[240px]"
+          }`}
+        >
+          <SidebarBrand collapsed={collapsed} />
+          <div className="flex-1 overflow-y-auto"><SidebarNav collapsed={collapsed} /></div>
+        </aside>
+      ) : null}
 
       {/* Main column */}
       <div
-        className={`flex min-h-screen flex-col transition-[padding] duration-200 ease-in-out ${
-          collapsed ? "lg:pl-[72px]" : "lg:pl-[240px]"
-        }`}
+        className={cn(
+          "flex min-h-screen flex-col transition-[padding] duration-200 ease-in-out",
+          isSidebarLayout && (collapsed ? "lg:pl-[72px]" : "lg:pl-[240px]"),
+        )}
       >
-        <Topbar onMenuClick={() => setSheetOpen(true)} />
-        <main className="flex-1 px-4 py-6 pb-[calc(5.5rem+env(safe-area-inset-bottom))] sm:px-6 lg:px-8 lg:pb-8">
+        <Topbar onMenuClick={() => setSheetOpen(true)} showSidebarToggle={isSidebarLayout} />
+        {desktopNavigation === "TOP_BAR" ? <DesktopTopNavigation /> : null}
+        <main className={cn(
+          "flex-1 px-4 py-6 pb-[calc(5.5rem+env(safe-area-inset-bottom))] sm:px-6 lg:px-8",
+          desktopNavigation === "BOTTOM_DOCK" ? "lg:pb-28" : "lg:pb-8",
+        )}>
           {children}
         </main>
       </div>
 
-      {/* Mobile bottom navigation + FAB */}
+      {/* Mobile navigation is always the bottom bar, regardless of desktop preference. */}
       <BottomNav />
+      {desktopNavigation === "BOTTOM_DOCK" ? <DesktopBottomDock /> : null}
 
       {/* Command palette - ⌘K / Ctrl+K, topbar search button */}
       <CommandPalette />

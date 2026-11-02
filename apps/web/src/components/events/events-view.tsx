@@ -38,6 +38,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { DatePicker, TimePicker } from "@/components/shared/date-time-picker";
 import {
   Select,
   SelectContent,
@@ -911,10 +912,10 @@ export function EventsView() {
               </div>
               <div className="flex flex-col gap-1.5">
                 <span className="text-xs font-medium text-muted-foreground">Date</span>
-                <Input
-                  type="date"
+                <DatePicker
                   value={evDate}
-                  onChange={(event) => setEvDate(event.target.value)}
+                  onChange={setEvDate}
+                  ariaLabel="Event date"
                   data-testid="events-new-date"
                 />
               </div>
@@ -930,13 +931,12 @@ export function EventsView() {
                 All day
               </label>
               {!evAllDay ? (
-                <Input
-                  type="time"
+                <TimePicker
                   value={evTime}
-                  onChange={(event) => setEvTime(event.target.value)}
+                  onChange={setEvTime}
                   data-testid="events-new-time"
-                  aria-label="Time"
-                  className="h-9 w-28"
+                  ariaLabel="Time"
+                  className="w-36"
                 />
               ) : null}
             </div>

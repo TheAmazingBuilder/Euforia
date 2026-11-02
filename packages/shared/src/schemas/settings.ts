@@ -295,11 +295,28 @@ export type DashboardLayout = z.infer<typeof dashboardLayoutSchema>;
 export const pnlDisplaySchema = z.enum(["CURRENCY", "R_MULTIPLE", "PERCENT"]);
 export type PnlDisplay = z.infer<typeof pnlDisplaySchema>;
 
+export const desktopNavigationSchema = z.enum(["SIDEBAR", "TOP_BAR", "BOTTOM_DOCK"]);
+export type DesktopNavigation = z.infer<typeof desktopNavigationSchema>;
+
+export const appearanceColorPaletteSchema = z.enum([
+  "MONO",
+  "WHISPER",
+  "CLASSIC",
+  "OCEAN",
+  "VIOLET",
+  "LILAC",
+]);
+export type AppearanceColorPalette = z.infer<typeof appearanceColorPaletteSchema>;
+
 export const appearancePreferencesSchema = z.object({
   theme: appearanceThemeSchema,
   density: densitySchema,
   defaultDashboardLayout: dashboardLayoutSchema,
   pnlDisplay: pnlDisplaySchema,
+  /** Desktop-only navigation layout. Phones always use the bottom navigation bar. */
+  desktopNavigation: desktopNavigationSchema.default("SIDEBAR"),
+  /** Functional color set for primary actions, gains, losses and warnings. */
+  colorPalette: appearanceColorPaletteSchema.default("CLASSIC"),
 });
 
 export type AppearancePreferences = z.infer<typeof appearancePreferencesSchema>;
@@ -993,10 +1010,12 @@ export const DEFAULT_USER_PREFERENCES: UserPreferencesDefaults = {
     },
   },
   appearance: {
-    theme: "DARK_BLUE",
+    theme: "DARK",
     density: "COMFORTABLE",
     defaultDashboardLayout: "COACH_FIRST",
     pnlDisplay: "CURRENCY",
+    desktopNavigation: "SIDEBAR",
+    colorPalette: "CLASSIC",
   },
   dashboard: {
     widgetOrder: [...DEFAULT_LAYOUT_WIDGET_KEYS],

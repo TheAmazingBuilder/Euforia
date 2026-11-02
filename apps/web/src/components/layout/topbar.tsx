@@ -20,6 +20,7 @@ import { useI18n } from "@/i18n/i18n-provider";
 
 type TopbarProps = {
   onMenuClick: () => void;
+  showSidebarToggle?: boolean;
 };
 
 /**
@@ -27,7 +28,7 @@ type TopbarProps = {
  * queue, account switcher, alerts bell, one-click theme toggle, avatar.
  * Sticky with an elevation shadow once the page scrolls.
  */
-export function Topbar({ onMenuClick }: TopbarProps) {
+export function Topbar({ onMenuClick, showSidebarToggle = true }: TopbarProps) {
   const pathname = usePathname();
   const { dict } = useI18n();
   // Sidebar collapse state - same external store as the AppShell rail. The
@@ -92,18 +93,22 @@ export function Topbar({ onMenuClick }: TopbarProps) {
       {/* Desktop sidebar toggle - the collapse icon lives in the header
           (reference: panel glyph before the breadcrumb, separated by a
           hairline). Visible affordance only on lg+, where the rail exists. */}
-      <Button
-        variant="ghost"
-        size="icon"
-        className="hidden lg:inline-flex"
-        onClick={toggleSidebarCollapsed}
-        aria-expanded={!collapsed}
-        aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-        data-testid="sidebar-toggle"
-      >
-        <PanelLeft className="size-[18px]" aria-hidden="true" />
-      </Button>
-      <span aria-hidden="true" className="hidden h-5 w-px bg-border lg:block" />
+      {showSidebarToggle ? (
+        <>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="hidden lg:inline-flex"
+            onClick={toggleSidebarCollapsed}
+            aria-expanded={!collapsed}
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            data-testid="sidebar-toggle"
+          >
+            <PanelLeft className="size-[18px]" aria-hidden="true" />
+          </Button>
+          <span aria-hidden="true" className="hidden h-5 w-px bg-border lg:block" />
+        </>
+      ) : null}
 
       {/* Breadcrumb - app root first, then the active page */}
       <nav aria-label="Breadcrumb" data-testid="breadcrumb" className="min-w-0">

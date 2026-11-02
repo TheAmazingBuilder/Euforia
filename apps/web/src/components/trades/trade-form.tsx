@@ -60,6 +60,7 @@ import {
 import { uploadDraftsSequentially } from "@/lib/utils/screenshot-upload";
 import { isoToLocalInput, localInputToISO, nowLocalInput } from "@/lib/utils/datetime";
 import { sizeUnitLabel } from "@/lib/utils/instrument";
+import { DateTimePicker } from "@/components/shared/date-time-picker";
 import { cn } from "@/lib/utils";
 import {
   clearTradeDraft,
@@ -543,13 +544,12 @@ export function TradeForm({ seed }: TradeFormProps) {
           />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="trade-entry-at">{T.entryTime}</Label>
-          <input
-            id="trade-entry-at"
-            type="datetime-local"
+          <Label>{T.entryTime}</Label>
+          <DateTimePicker
             value={values.entryAtLocal}
-            onChange={(event) => patch({ entryAtLocal: event.target.value })}
-            className={cn(inputClasses, "px-2")}
+            onChange={(entryAtLocal) => patch({ entryAtLocal })}
+            ariaLabel={T.entryTime}
+            data-testid="trade-entry-at"
           />
         </div>
         {closed ? (
@@ -568,13 +568,12 @@ export function TradeForm({ seed }: TradeFormProps) {
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="trade-exit-at">{T.exitTime}</Label>
-              <input
-                id="trade-exit-at"
-                type="datetime-local"
+              <Label>{T.exitTime}</Label>
+              <DateTimePicker
                 value={values.exitAtLocal}
-                onChange={(event) => patch({ exitAtLocal: event.target.value })}
-                className={cn(inputClasses, "px-2")}
+                onChange={(exitAtLocal) => patch({ exitAtLocal })}
+                ariaLabel={T.exitTime}
+                data-testid="trade-exit-at"
               />
             </div>
           </>
