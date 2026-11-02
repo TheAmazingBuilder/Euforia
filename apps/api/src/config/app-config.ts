@@ -17,6 +17,7 @@ export interface AppConfig {
   bodyLimitBytes: number;
   trustProxy: boolean;
   rateLimit: { windowSeconds: number; max: number };
+  redis: { url?: string };
   marketServiceUrl?: string;
   ocr: {
     /** FastAPI sidecar base URL - absent means the sidecar is not registered. */
@@ -133,6 +134,9 @@ function build(env: Env): AppConfig {
     rateLimit: {
       windowSeconds: env.RATE_LIMIT_WINDOW_SECONDS,
       max: env.RATE_LIMIT_MAX,
+    },
+    redis: {
+      url: env.REDIS_URL,
     },
     marketServiceUrl: env.MARKET_SERVICE_URL,
     ocr: {

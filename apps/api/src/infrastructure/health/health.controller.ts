@@ -19,6 +19,7 @@ import { Public } from "../../shared/auth/public.decorator";
 import { APP_CONFIG, type AppConfig } from "../../config/app-config";
 import { COSMOZ_VERSION } from "../../shared/contracts";
 import { PrismaService } from "../prisma/prisma.service";
+import { RedisService } from "../redis/redis.service";
 import { ROOT_LOGGER, type RootLogger } from "../logging/logger.factory";
 
 const BOOTED_AT = Date.now();
@@ -29,6 +30,7 @@ const BOOTED_AT = Date.now();
 export class HealthController {
   constructor(
     private readonly prisma: PrismaService,
+    private readonly redis: RedisService,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
     @Optional() @Inject(ROOT_LOGGER) private readonly logger?: RootLogger,
   ) {}
@@ -62,7 +64,8 @@ export class HealthController {
     }
     return {
       status: "ok",
-      checks: { database: "up" },
+      // Redis is optional: report its state without making the API unready.
+      checks: { database: "up", redis: this.redis.status },
     };
   }
 }

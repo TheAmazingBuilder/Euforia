@@ -46,6 +46,7 @@ describe("validateEnv", () => {
     expect(env.TRUST_PROXY).toBe(false);
     expect(env.RATE_LIMIT_WINDOW_SECONDS).toBe(60);
     expect(env.RATE_LIMIT_MAX).toBe(120);
+    expect(env.REDIS_URL).toBeUndefined();
   });
 
   it("accepts a full explicit configuration", () => {
@@ -61,6 +62,7 @@ describe("validateEnv", () => {
       RATE_LIMIT_WINDOW_SECONDS: "30",
       RATE_LIMIT_MAX: "1000",
       MARKET_SERVICE_URL: "https://market.cosmoz.internal",
+      REDIS_URL: "rediss://cache.example.com:6380",
       SMTP_USER: "mailer@example.com",
       SMTP_APP_PASSWORD: "test-only-app-password",
     });
@@ -68,6 +70,7 @@ describe("validateEnv", () => {
     expect(env.CORS_ORIGINS).toEqual(["https://app.cosmoz.app", "https://admin.cosmoz.app"]);
     expect(env.TRUST_PROXY).toBe(true);
     expect(env.MARKET_SERVICE_URL).toBe("https://market.cosmoz.internal");
+    expect(env.REDIS_URL).toBe("rediss://cache.example.com:6380");
   });
 
   it("fails in a controlled way when DATABASE_URL is missing", () => {
@@ -141,6 +144,7 @@ describe("validateEnv", () => {
     expect(() => validateEnv({ ...BASE_ENV, LOG_LEVEL: "verbose" })).toThrow();
     expect(() => validateEnv({ ...BASE_ENV, RATE_LIMIT_MAX: "0" })).toThrow();
     expect(() => validateEnv({ ...BASE_ENV, MARKET_SERVICE_URL: "not a url" })).toThrow();
+    expect(() => validateEnv({ ...BASE_ENV, REDIS_URL: "http://localhost:6379" })).toThrow(/REDIS_URL must use/);
   });
 
   it("SECURITY: error messages contain key paths, never secret VALUES", () => {

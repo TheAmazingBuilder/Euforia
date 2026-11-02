@@ -19,6 +19,11 @@ corepack pnpm install
 # 2. Make sure YOUR OWN local PostgreSQL server is running (default port 5432)
 #    and create the dev database:  createdb cosmoz   (or via pgAdmin)
 
+# 2a. Optional Redis cache (Docker, loopback-only port 6379):
+docker compose up -d redis
+# To enable it, set REDIS_URL=redis://127.0.0.1:6379 in apps/api/.env.
+# Redis is optional: if unavailable, the API bypasses cache and still runs.
+
 # 3. Configure
 cp apps/api/.env.example apps/api/.env
 # Edit apps/api/.env: DATABASE_URL, AUTH_JWT_SECRET,
@@ -40,6 +45,8 @@ Do not assume the API started just because Next.js is running. Wait for the
 If the API exits during startup, fix the first `[config]` validation error
 or database connection error shown in that terminal before testing auth.
 
+When `REDIS_URL` is configured, the API connects to Redis in the background. Redis is intentionally not a startup dependency: cache reads become misses and cache writes are skipped while it is unavailable. `GET /health/ready` reports `checks.redis` as `up`, `connecting`, `down`, or `disabled`; PostgreSQL remains the only required readiness dependency.
+
 For local-only signup/login without an email provider, set
 `AUTH_REQUIRE_EMAIL_VERIFICATION=false` in `apps/api/.env`. This still uses
 the real API and PostgreSQL; it disables only the email-verification gate.
@@ -52,7 +59,7 @@ The API listens on **http://localhost:4000**:
 |---|---|
 | `GET /health` | App status (no DB) — monitoring/UI target |
 | `GET /health/live` | Liveness probe |
-| `GET /health/ready` | Readiness probe (pings the database) |
+| `GET /health/ready` | Readiness probe (PostgreSQL required; Redis cache state is reported but optional) |
 | `POST /api/v1/auth/*` | register · login · refresh · logout · me · email verify/resend · password forgot/reset · MFA challenge/recover |
 | `GET·POST /api/v1/security/*` | overview · reauth · password change · 2FA enable/confirm/disable · email-code MFA enable/confirm · recovery codes · sessions revoke · API keys |
 | `GET·PATCH /api/v1/me` | profile + preferences doc (9 domains) · deactivate · delete |
@@ -88,6 +95,7 @@ never secret values.**
 | `NODE_ENV` | `development` | `test` \| `development` \| `production` |
 | `PORT` | `4000` | |
 | `DATABASE_URL` | — (required) | `postgresql://…` |
+| `REDIS_URL` | — (optional) | `redis://` or `rediss://`; cache is bypassed when not configured or unavailable |
 | `CORS_ORIGINS` | `http://localhost:3000` | Comma-separated allowlist; `*` rejected |
 | `LOG_LEVEL` | `info` | `debug` \| `info` \| `warn` \| `error` |
 | `BODY_LIMIT_BYTES` | `1048576` | JSON body cap (1 MiB) |

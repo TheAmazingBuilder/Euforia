@@ -85,6 +85,19 @@ export const envSchema = z.object({
   RATE_LIMIT_WINDOW_SECONDS: z.coerce.number().int().min(1).max(3_600).default(60),
   RATE_LIMIT_MAX: z.coerce.number().int().min(1).max(100_000).default(120),
 
+  // ── Optional infrastructure services ──────────────────────────────────────
+  /** Optional Redis cache URL. Unset disables cache without blocking the API. */
+  REDIS_URL: z
+    .string()
+    .trim()
+    .url("REDIS_URL must be a valid redis:// or rediss:// URL")
+    .refine(
+      (url) => url.startsWith("redis://") || url.startsWith("rediss://"),
+      "REDIS_URL must use the redis:// or rediss:// protocol",
+    )
+    .optional()
+    .or(z.literal("").transform(() => undefined)),
+
   // ── External services (optional - Foundation wires nothing) ────────────────
   MARKET_SERVICE_URL: z
     .string()

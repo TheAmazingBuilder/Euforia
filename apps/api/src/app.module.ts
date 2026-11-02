@@ -14,6 +14,7 @@ import { APP_FILTER } from "@nestjs/core";
 import { ConfigModule } from "./config/config.module";
 import { LoggingModule } from "./infrastructure/logging/logging.module";
 import { PrismaModule } from "./infrastructure/prisma/prisma.module";
+import { RedisModule } from "./infrastructure/redis/redis.module";
 import { RateLimitModule } from "./infrastructure/security/rate-limit.module";
 import { HealthModule } from "./infrastructure/health/health.module";
 import { AllExceptionsFilter } from "./shared/http/all-exceptions.filter";
@@ -63,6 +64,7 @@ const globalExceptionFilterProvider: Provider = {
     ConfigModule,
     LoggingModule,
     PrismaModule,
+    RedisModule,
     RateLimitModule,
     // Domain events - the in-process fact bus (`trade.closed`, …) that lets
     // contexts react to other contexts' facts without module cycles.

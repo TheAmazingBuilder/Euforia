@@ -21,6 +21,7 @@
     "test:e2e": "node test/run-e2e.mjs"
   },
   "dependencies": {
+    "@redis/client": "^6.3.1",
     "@fastify/cookie": "^11.1.2",
     "@fastify/helmet": "^13.0.1",
     "@nestjs/common": "^11.1.6",
