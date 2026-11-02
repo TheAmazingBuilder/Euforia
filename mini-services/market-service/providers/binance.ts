@@ -10,8 +10,9 @@
  * of showing frozen prices as if they were live.
  *
  * The provider maps INTERNAL symbols → Binance symbols (mission §14: never
- * assume the same ticker everywhere). Only catalog CRYPTO symbols are
- * handled today; forex/synthetics stay on the labeled simulated provider.
+ * assume the same ticker everywhere). Only explicitly mapped crypto spot
+ * pairs are handled here; forex, metals and synthetic symbols remain on the
+ * separate simulated provider.
  */
 import type { Candle, Interval, MarketDataProvider, Tick } from "./types";
 import { INTERVAL_MS } from "./types";
