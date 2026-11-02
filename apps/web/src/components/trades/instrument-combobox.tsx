@@ -50,6 +50,7 @@ function instrumentMark(instrument: Instrument): string {
 }
 
 function loadRecents(): string[] {
+  if (typeof window === "undefined") return [];
   try {
     const raw = window.localStorage.getItem(RECENTS_KEY);
     const parsed: unknown = raw === null ? [] : JSON.parse(raw);

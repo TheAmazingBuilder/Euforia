@@ -245,11 +245,6 @@ function TradeCard({
   const dateLabel = Number.isNaN(date.getTime())
     ? trade.tradingDate
     : new Intl.DateTimeFormat(undefined, { month: "short", day: "2-digit", year: "numeric" }).format(date);
-  const entryAt = new Date(trade.entryAt);
-  const timeLabel = Number.isNaN(entryAt.getTime())
-    ? null
-    : new Intl.DateTimeFormat(undefined, { hour: "2-digit", minute: "2-digit" }).format(entryAt);
-
   return (
     <article
       className={cn(
@@ -336,9 +331,7 @@ function TradeCard({
                 {trade.direction === "SELL" ? "Sell" : "Buy"}
               </span>
             </p>
-            <p className="mt-1 truncate text-[11px] text-muted-foreground">
-              {dateLabel}{timeLabel ? " · " + timeLabel : ""}
-            </p>
+            <p className="mt-1 truncate text-[11px] text-muted-foreground">{dateLabel}</p>
           </div>
           <p
             className={cn(

@@ -53,8 +53,9 @@ export function DatePicker({
   });
 
   React.useEffect(() => {
-    if (selectedDate) {
-      setVisibleMonth(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1));
+    const nextSelectedDate = parseDateKey(value);
+    if (nextSelectedDate) {
+      setVisibleMonth(new Date(nextSelectedDate.getFullYear(), nextSelectedDate.getMonth(), 1));
     }
   }, [value]);
 

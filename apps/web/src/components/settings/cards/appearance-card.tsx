@@ -86,7 +86,11 @@ export function AppearanceCard() {
   };
 
   const onSave = () => {
-    save.mutate(draft, {
+    const normalizedDraft = {
+      ...draft,
+      theme: draft.theme === "LIGHT" ? "LIGHT" as const : "DARK" as const,
+    };
+    save.mutate(normalizedDraft, {
       onSuccess: () => toast.success(L.toastSaved),
       onError: (error) => toast.error(apiErrorMessage(error, L.toastSaveFailed)),
     });
@@ -115,19 +119,19 @@ export function AppearanceCard() {
       >
         <div className="grid gap-2 sm:grid-cols-3" role="radiogroup" aria-label="Desktop page navigation">
           <ChoiceTile selected={draft.desktopNavigation === "SIDEBAR"} title="Sidebar" description="Every page on the left, grouped." onSelect={() => patch({ desktopNavigation: "SIDEBAR" })}>
-            <div data-base-preview="graphite" className="base-preview mt-3">
+            <span data-base-preview="graphite" className="base-preview mt-3">
               <span className="base-preview-rail" /><span className="base-preview-content"><i /><i /><i /></span>
-            </div>
+            </span>
           </ChoiceTile>
           <ChoiceTile selected={draft.desktopNavigation === "TOP_BAR"} title="Top bar" description="Main pages across the top, the rest under More." onSelect={() => patch({ desktopNavigation: "TOP_BAR" })}>
-            <div data-base-preview="graphite" className="base-preview mt-3 flex-col">
+            <span data-base-preview="graphite" className="base-preview mt-3 flex-col">
               <span className="base-preview-top"><i /><i /><i /><i /></span><span className="base-preview-content"><i /><i /></span>
-            </div>
+            </span>
           </ChoiceTile>
           <ChoiceTile selected={draft.desktopNavigation === "BOTTOM_DOCK"} title="Bottom dock" description="A dock at the bottom with New Trade in the middle." onSelect={() => patch({ desktopNavigation: "BOTTOM_DOCK" })}>
-            <div data-base-preview="graphite" className="base-preview mt-3 flex-col justify-between">
+            <span data-base-preview="graphite" className="base-preview mt-3 flex-col justify-between">
               <span className="base-preview-content"><i /><i /></span><span className="base-preview-dock"><i /><i /><b /><i /><i /></span>
-            </div>
+            </span>
           </ChoiceTile>
         </div>
       </SettingsRow>
@@ -136,10 +140,10 @@ export function AppearanceCard() {
         <SettingsRow label="Base theme" hint="Background, cards, lines and text. Graphite and Chalk are the two Euforia base themes." stacked>
           <div className="grid gap-2 sm:grid-cols-2" role="radiogroup" aria-label="Base theme">
             <ChoiceTile selected={selectedBaseTheme === "DARK"} title="Graphite" description="Pure black background with quiet charcoal surfaces." onSelect={() => onBaseThemeChange("DARK")}>
-              <div data-base-preview="graphite" className="base-preview mt-3"><span className="base-preview-card"><i /><i /></span><span className="base-preview-card"><i /><i /></span></div>
+              <span data-base-preview="graphite" className="base-preview mt-3"><span className="base-preview-card"><i /><i /></span><span className="base-preview-card"><i /><i /></span></span>
             </ChoiceTile>
             <ChoiceTile selected={selectedBaseTheme === "LIGHT"} title="Chalk" description="White background with soft grey cards and dark ink." onSelect={() => onBaseThemeChange("LIGHT")}>
-              <div data-base-preview="chalk" className="base-preview mt-3"><span className="base-preview-card"><i /><i /></span><span className="base-preview-card"><i /><i /></span></div>
+              <span data-base-preview="chalk" className="base-preview mt-3"><span className="base-preview-card"><i /><i /></span><span className="base-preview-card"><i /><i /></span></span>
             </ChoiceTile>
           </div>
           <div className="mt-3 max-w-80"><ThemePreviewMiniTradeCard /></div>
