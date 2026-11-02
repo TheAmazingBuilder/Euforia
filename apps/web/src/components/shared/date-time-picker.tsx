@@ -12,6 +12,7 @@ type DatePickerProps = {
   onChange: (value: string) => void;
   placeholder?: string;
   ariaLabel?: string;
+  id?: string;
   disabled?: boolean;
   className?: string;
   "data-testid"?: string;
@@ -41,6 +42,7 @@ export function DatePicker({
   onChange,
   placeholder = "dd/mm/yyyy",
   ariaLabel = "Choose date",
+  id,
   disabled = false,
   className,
   "data-testid": testId,
@@ -79,6 +81,7 @@ export function DatePicker({
           variant="outline"
           disabled={disabled}
           aria-label={ariaLabel}
+          id={id}
           data-testid={testId}
           className={cn("h-10 w-full justify-between gap-2 border-border bg-background px-3 font-normal", className)}
         >
@@ -157,6 +160,7 @@ type TimePickerProps = {
   value: string;
   onChange: (value: string) => void;
   ariaLabel?: string;
+  id?: string;
   disabled?: boolean;
   className?: string;
   "data-testid"?: string;
@@ -166,6 +170,7 @@ export function TimePicker({
   value,
   onChange,
   ariaLabel = "Choose time",
+  id,
   disabled = false,
   className,
   "data-testid": testId,
@@ -178,6 +183,7 @@ export function TimePicker({
         value={value}
         onChange={(event) => onChange(event.target.value)}
         aria-label={ariaLabel}
+        id={id}
         disabled={disabled}
         data-testid={testId}
         className="h-10 w-full rounded-md border border-border bg-background pl-9 pr-3 text-sm text-foreground outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"

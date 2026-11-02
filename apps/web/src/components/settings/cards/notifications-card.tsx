@@ -7,6 +7,7 @@ import type { LucideIcon } from "lucide-react";
 import type { NotificationChannels, NotificationPreferences } from "@cosmoz/shared";
 
 import { Input } from "@/components/ui/input";
+import { TimePicker } from "@/components/shared/date-time-picker";
 import { Switch } from "@/components/ui/switch";
 import {
   ConfirmDialog,
@@ -280,17 +281,17 @@ export function NotificationsCard() {
               <label className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground" htmlFor="quiet-hours-from">
                 {N.quietHoursFrom}
               </label>
-              <Input
+              <TimePicker
                 id="quiet-hours-from"
-                type="time"
                 value={draft.quietHours.from}
                 disabled={!draft.quietHours.enabled}
-                onChange={(event) =>
+                ariaLabel={N.quietHoursFrom}
+                onChange={(from) =>
                   setDraft((previous) =>
-                    previous ? { ...previous, quietHours: { ...previous.quietHours, from: event.target.value } } : previous,
+                    previous ? { ...previous, quietHours: { ...previous.quietHours, from } } : previous,
                   )
                 }
-                className="h-8 w-full font-mono text-xs"
+                className="w-full"
                 data-testid="settings-notifications-quiet-hours-from"
               />
             </div>
@@ -298,17 +299,17 @@ export function NotificationsCard() {
               <label className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground" htmlFor="quiet-hours-to">
                 {N.quietHoursTo}
               </label>
-              <Input
+              <TimePicker
                 id="quiet-hours-to"
-                type="time"
                 value={draft.quietHours.to}
                 disabled={!draft.quietHours.enabled}
-                onChange={(event) =>
+                ariaLabel={N.quietHoursTo}
+                onChange={(to) =>
                   setDraft((previous) =>
-                    previous ? { ...previous, quietHours: { ...previous.quietHours, to: event.target.value } } : previous,
+                    previous ? { ...previous, quietHours: { ...previous.quietHours, to } } : previous,
                   )
                 }
-                className="h-8 w-full font-mono text-xs"
+                className="w-full"
                 data-testid="settings-notifications-quiet-hours-to"
               />
             </div>

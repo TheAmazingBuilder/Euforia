@@ -62,6 +62,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/shared/date-time-picker";
 import { Textarea } from "@/components/ui/textarea";
 import { useCreateTaskySavedView, useDeleteTaskyAttachment, useDeleteTaskySavedView, useDownloadTaskyAttachment, useRemindTaskyCard, useSaveTaskyBoard, useTaskyBoard, useTaskyCardAttachments, useTaskySavedViews, useUploadTaskyAttachment } from "@/lib/api/queries";
 import { TaskyAutomationsPanel } from "./tasky-automations-panel";
@@ -1587,11 +1588,10 @@ export function TaskyView() {
                               <option value="High">High</option>
                               <option value="Urgent">Urgent</option>
                             </select>
-                            <Input
-                              type="date"
+                            <DatePicker
                               value={cardDraft.startDate ?? ""}
-                              onChange={(event) => updateCardDraft("startDate", event.target.value || undefined)}
-                              aria-label="Planned start date"
+                              onChange={(value) => updateCardDraft("startDate", value || undefined)}
+                              ariaLabel="Planned start date"
                               data-testid={`tasky-edit-start-date-${card.id}`}
                               className="h-8 bg-background text-xs"
                             />
@@ -1603,11 +1603,10 @@ export function TaskyView() {
                               data-testid={`tasky-edit-assignee-${card.id}`}
                               className="h-8 bg-background text-xs"
                             />
-                            <Input
-                              type="date"
+                            <DatePicker
                               value={cardDraft.due ?? ""}
-                              onChange={(event) => updateCardDraft("due", event.target.value || undefined)}
-                              aria-label="Card due date"
+                              onChange={(value) => updateCardDraft("due", value || undefined)}
+                              ariaLabel="Card due date"
                               data-testid={`tasky-edit-due-${card.id}`}
                               className="h-8 min-w-0 bg-background px-2 text-xs"
                             />

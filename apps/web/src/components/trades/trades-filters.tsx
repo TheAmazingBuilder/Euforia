@@ -6,6 +6,7 @@ import { Filter, RotateCcw, Search } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/shared/date-time-picker";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -290,26 +291,26 @@ export function TradesFilters({
           <Label htmlFor="trades-filter-from" className="text-[11px] text-muted-foreground">
             {T.from}
           </Label>
-          <Input
+          <DatePicker
             id="trades-filter-from"
-            type="date"
             value={state.from}
-            onChange={(event) => patch({ from: event.target.value })}
+            onChange={(from) => patch({ from })}
+            ariaLabel={T.from}
             data-testid="trades-filter-from"
-            className="h-8 w-32 text-sm"
+            className="h-8 w-32 px-2 text-xs"
           />
         </div>
         <div className="space-y-1">
           <Label htmlFor="trades-filter-to" className="text-[11px] text-muted-foreground">
             {T.to}
           </Label>
-          <Input
+          <DatePicker
             id="trades-filter-to"
-            type="date"
             value={state.to}
-            onChange={(event) => patch({ to: event.target.value })}
+            onChange={(to) => patch({ to })}
+            ariaLabel={T.to}
             data-testid="trades-filter-to"
-            className="h-8 w-32 text-sm"
+            className="h-8 w-32 px-2 text-xs"
           />
         </div>
 
