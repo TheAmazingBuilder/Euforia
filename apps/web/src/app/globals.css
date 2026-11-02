@@ -570,7 +570,25 @@
 .reveal-stagger > *:nth-child(8) { animation-delay: 280ms; }
 .reveal-stagger > *:nth-child(n + 9) { animation-delay: 320ms; }
 
+@keyframes market-ticker-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.market-ticker-track {
+  display: flex;
+  width: max-content;
+  animation: market-ticker-marquee 42s linear infinite;
+}
+.market-ticker-track:hover,
+.market-ticker-track:focus-within {
+  animation-play-state: paused;
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .market-ticker-track {
+    animation: none;
+    transform: none;
+  }
   .animate-reveal-star,
   .animate-reveal-fade-up,
   .reveal-stagger > * {

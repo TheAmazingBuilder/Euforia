@@ -41,6 +41,7 @@ import { activeViewOf, isDivergedFromView } from "@/lib/dashboard-customization/
 import { WIDGET_REGISTRY } from "@/lib/dashboard-customization/registry";
 import type { DashboardWidgetConfig } from "@cosmoz/shared";
 import { openTradeModal } from "@/lib/hooks/use-trade-modal";
+import { MarketTicker } from "@/components/market/market-ticker";
 
 /** Fresh-account window: an account created less than 48 hours ago is
  * greeted as a first arrival ("Welcome") instead of a returning trader
@@ -381,6 +382,8 @@ export function DashboardView({ description }: DashboardViewProps) {
           </div>
         )}
       </header>
+
+      <MarketTicker />
 
       {editing && (
         <>

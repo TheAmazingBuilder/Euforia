@@ -181,6 +181,7 @@ export function useScreenshots(tradeId: string | null) {
     queryKey: queryKeys.screenshots(tradeId ?? "none"),
     queryFn: () => apiRequest<TradeScreenshotsResponse>(apiPaths.tradeScreenshots(tradeId!)),
     enabled: tradeId !== null,
+    staleTime: 60_000,
   });
 }
 

@@ -17,6 +17,9 @@ import {
   Download,
   Loader2,
   MoreHorizontal,
+  ImageIcon,
+  LayoutGrid,
+  List,
   Pencil,
   Plus,
   Tag,
@@ -61,12 +64,14 @@ import {
   useStrategies,
   useTags,
   useTrades,
+  useScreenshots,
   useTradeViews,
 } from "@/lib/api/queries";
 import { apiErrorMessage } from "@/lib/api/client";
 import { openTradeModal } from "@/lib/hooks/use-trade-modal";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/i18n/i18n-provider";
+import { useAccounts } from "@/lib/api/queries/catalogs";
 
 // Ledger grade marks: bordered ink text, no tinted fills.
 const GRADE_COLORS: Record<string, string> = {
@@ -177,6 +182,186 @@ function TradesSkeleton() {
   );
 }
 
+type TradesDisplayMode = "list" | "cards";
+
+const TRADES_DISPLAY_MODE_KEY = "euforia.trades.display-mode.v1";
+
+/** One journal entry rendered as a screenshot-first card (MRT-inspired). */
+function TradeCard({
+  trade,
+  symbol,
+  accountName,
+  tags,
+  selected,
+  onToggleSelected,
+  onOpen,
+  onEdit,
+  onDelete,
+}: {
+  trade: Trade;
+  symbol: string;
+  accountName: string;
+  tags: string[];
+  selected: boolean;
+  onToggleSelected: () => void;
+  onOpen: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  const { data: screenshotData, isLoading: screenshotsLoading } = useScreenshots(trade.id);
+  const screenshot = screenshotData?.screenshots.find((item) =>
+    item.storageKey.startsWith("data:image/"),
+  );
+  const pnl = trade.pnlNet === null ? null : Number(trade.pnlNet);
+  const isProfit = pnl !== null && pnl > 0;
+  const isLoss = pnl !== null && pnl < 0;
+  const outcomeLabel =
+    trade.status === "OPEN" ? "OPEN" : isProfit ? "WIN" : isLoss ? "LOSS" : "FLAT";
+  const date = new Date(`${trade.tradingDate}T12:00:00`);
+  const dateLabel = Number.isNaN(date.getTime())
+    ? trade.tradingDate
+    : new Intl.DateTimeFormat(undefined, { month: "short", day: "2-digit", year: "numeric" }).format(date);
+
+  return (
+    <article
+      className={cn(
+        "group relative overflow-hidden rounded-xl border bg-surface transition-colors",
+        selected ? "border-accent/70 ring-1 ring-accent/30" : "border-border hover:border-foreground/25",
+      )}
+      data-testid="trades-card"
+      data-trade-id={trade.id}
+    >
+      <div className="relative">
+        <button
+          type="button"
+          onClick={onOpen}
+          className="block aspect-[16/9] w-full overflow-hidden bg-background text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+          aria-label={`Open ${symbol} trade details`}
+        >
+          {screenshot ? (
+            // The API resolves stored evidence to a data URL; no remote image URL is trusted here.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={screenshot.storageKey}
+              alt={screenshot.caption ?? `${symbol} trade chart`}
+              loading="lazy"
+              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+            />
+          ) : (
+            <span className="flex h-full flex-col items-center justify-center gap-2 text-[11px]">
+              <ImageIcon className="size-4 opacity-50" aria-hidden="true" />
+              {screenshotsLoading ? "Loading screenshot…" : "No screenshot"}
+            </span>
+          )}
+        </button>
+
+        <div
+          className="absolute top-2 left-2 rounded-md border border-border/70 bg-background/90 p-1 shadow-sm"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <Checkbox
+            checked={selected}
+            onCheckedChange={onToggleSelected}
+            aria-label={`Select ${symbol} trade from ${dateLabel}`}
+          />
+        </div>
+
+        <div className="absolute top-2 right-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="icon"
+                className="size-7 border-border/70 bg-background/90 shadow-sm"
+                aria-label={`Actions for ${symbol} trade`}
+              >
+                <MoreHorizontal className="size-4" aria-hidden="true" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={onOpen}>Details</DropdownMenuItem>
+              <DropdownMenuItem onClick={onEdit}>
+                <Pencil className="size-3.5" aria-hidden="true" />
+                Edit
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className="text-loss focus:text-loss" onClick={onDelete}>
+                <Trash2 className="size-3.5" aria-hidden="true" />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        onClick={onOpen}
+        className="block w-full space-y-2.5 p-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+      >
+        <div className="flex min-w-0 items-start justify-between gap-2">
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold text-foreground">
+              {symbol} <span className="text-muted-foreground">·</span>{" "}
+              <span className={trade.direction === "SELL" ? "text-loss" : "text-profit"}>
+                {trade.direction === "SELL" ? "Sell" : "Buy"}
+              </span>
+            </p>
+            <p className="mt-1 truncate text-[11px] text-muted-foreground">{dateLabel}</p>
+          </div>
+          <p
+            className={cn(
+              "shrink-0 font-mono text-sm font-semibold tabular-nums",
+              pnl === null ? "text-muted-foreground" : isProfit ? "text-profit" : isLoss ? "text-loss" : "text-foreground",
+            )}
+          >
+            {pnl === null ? "—" : formatSignedMoney(trade.pnlNet!, "USD", { digits: 2 })}
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span
+            className={cn(
+              "rounded-md border px-2 py-0.5 text-[10px] font-semibold tracking-wide",
+              isProfit ? "border-profit/30 bg-profit/10 text-profit" :
+                isLoss ? "border-loss/30 bg-loss/10 text-loss" :
+                  "border-border bg-background text-muted-foreground",
+            )}
+          >
+            {outcomeLabel}
+          </span>
+          {trade.decisionGrade ? (
+            <span className={cn("rounded-md border px-2 py-0.5 text-[10px] font-semibold", GRADE_COLORS[trade.decisionGrade] ?? "border-border text-muted-foreground")}>
+              {trade.decisionGrade}
+            </span>
+          ) : null}
+          {trade.rMultiple !== null ? (
+            <span className="rounded-md border border-border px-2 py-0.5 font-mono text-[10px] tabular-nums text-muted-foreground">
+              {formatR(trade.rMultiple)}
+            </span>
+          ) : null}
+        </div>
+
+        <div className="flex min-h-5 items-end justify-between gap-2 border-t border-border/70 pt-2">
+          <div className="flex min-w-0 flex-wrap gap-1">
+            {tags.slice(0, 2).map((tag) => (
+              <span key={tag} className="max-w-24 truncate rounded-full border border-border px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                {tag}
+              </span>
+            ))}
+            {tags.length > 2 ? (
+              <span className="font-mono text-[10px] text-muted-foreground">+{tags.length - 2}</span>
+            ) : null}
+          </div>
+          <span className="max-w-28 truncate text-[10px] text-muted-foreground" title={accountName}>
+            {accountName}
+          </span>
+        </div>
+      </button>
+    </article>
+  );
+}
+
 function TradesModule() {
   const { dict } = useI18n();
   const T = dict.trades;
@@ -193,6 +378,28 @@ function TradesModule() {
   const strategies = React.useMemo(() => strategiesData?.strategies ?? [], [strategiesData]);
   const tags = React.useMemo(() => tagsData?.tags ?? [], [tagsData]);
   const currency: Currency = "USD";
+  const { data: accountsData } = useAccounts();
+  const accounts = React.useMemo(() => accountsData?.accounts ?? [], [accountsData]);
+
+  const [displayMode, setDisplayMode] = React.useState<TradesDisplayMode>("cards");
+  const [displayPreferenceReady, setDisplayPreferenceReady] = React.useState(false);
+  React.useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem(TRADES_DISPLAY_MODE_KEY);
+      if (stored === "list" || stored === "cards") setDisplayMode(stored);
+    } catch {
+      // Private browsing or storage restrictions must not disable the journal.
+    }
+    setDisplayPreferenceReady(true);
+  }, []);
+  React.useEffect(() => {
+    if (!displayPreferenceReady) return;
+    try {
+      window.localStorage.setItem(TRADES_DISPLAY_MODE_KEY, displayMode);
+    } catch {
+      // The current view remains usable even when persistence is unavailable.
+    }
+  }, [displayMode, displayPreferenceReady]);
 
   const ledgerColumns = React.useMemo<LedgerColumn[]>(
     () => LEDGER_COLUMN_DEFS.map((column) => ({ ...column, label: T.table.columns[column.key] })),
@@ -207,6 +414,10 @@ function TradesModule() {
     const map = new Map(strategies.map((strategy) => [strategy.id, strategy.name]));
     return (id: string | null) => (id === null ? null : map.get(id) ?? null);
   }, [strategies]);
+  const accountNameOf = React.useMemo(() => {
+    const map = new Map(accounts.map((account) => [account.id, account.name]));
+    return (id: string) => map.get(id) ?? "Account";
+  }, [accounts]);
   const tagNameOf = React.useMemo(() => {
     const map = new Map(tags.map((tag) => [tag.id, tag.name]));
     return (id: string) => map.get(id) ?? null;
@@ -612,6 +823,36 @@ function TradesModule() {
               </DropdownMenuSub>
             </DropdownMenuContent>
           </DropdownMenu>
+          <div
+            className="flex items-center gap-0.5 rounded-lg border border-border bg-background p-0.5"
+            role="group"
+            aria-label="Trade display mode"
+          >
+            <Button
+              type="button"
+              variant={displayMode === "list" ? "secondary" : "ghost"}
+              size="icon"
+              className="size-7"
+              aria-label="List view"
+              aria-pressed={displayMode === "list"}
+              data-testid="trades-view-list"
+              onClick={() => setDisplayMode("list")}
+            >
+              <List className="size-4" aria-hidden="true" />
+            </Button>
+            <Button
+              type="button"
+              variant={displayMode === "cards" ? "secondary" : "ghost"}
+              size="icon"
+              className="size-7"
+              aria-label="Card view"
+              aria-pressed={displayMode === "cards"}
+              data-testid="trades-view-cards"
+              onClick={() => setDisplayMode("cards")}
+            >
+              <LayoutGrid className="size-4" aria-hidden="true" />
+            </Button>
+          </div>
           <Button
             variant="outline"
             size="sm"
@@ -751,6 +992,62 @@ function TradesModule() {
         </div>
       ) : null}
 
+      {displayMode === "cards" ? (
+        <div
+          className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4"
+          data-testid="trades-cards"
+        >
+          {isLoading ? (
+            Array.from({ length: 8 }, (_, index) => (
+              <div key={index} className="overflow-hidden rounded-xl border border-border bg-surface">
+                <Skeleton className="aspect-[16/9] w-full rounded-none" />
+                <div className="space-y-3 p-3">
+                  <Skeleton className="h-4 w-2/3" />
+                  <Skeleton className="h-3 w-1/2" />
+                  <Skeleton className="h-6 w-24" />
+                  <Skeleton className="h-3 w-full" />
+                </div>
+              </div>
+            ))
+          ) : pageRows.length === 0 ? (
+            <div className="col-span-full rounded-xl border border-dashed border-border bg-surface px-4 py-10 text-center text-sm text-muted-foreground" data-testid="trades-empty">
+              {trades.length === 0 ? (
+                <>
+                  {T.table.emptyHint}{" "}
+                  <kbd className="rounded-sm bg-muted px-1 font-mono text-[10px]">N</kbd>{" "}
+                  {T.table.emptyOrUse}{" "}
+                  <button
+                    type="button"
+                    className="text-accent underline-offset-4 hover:underline"
+                    onClick={() => openTradeModal()}
+                  >
+                    {T.shared.newTrade}
+                  </button>
+                  .
+                </>
+              ) : (
+                T.table.emptyFiltered
+              )}
+            </div>
+          ) : (
+            pageRows.map((trade) => (
+              <TradeCard
+                key={trade.id}
+                trade={trade}
+                symbol={symbolOf(trade.instrumentId)}
+                accountName={accountNameOf(trade.accountId)}
+                tags={(trade.tagIds ?? []).map(tagNameOf).filter((name): name is string => name !== null)}
+                selected={selectedIds.has(trade.id)}
+                onToggleSelected={() => toggleOne(trade.id)}
+                onOpen={() => setDetailId(trade.id)}
+                onEdit={() => setEditTrade(trade)}
+                onDelete={() => deleteTrade.mutate(trade.id)}
+              />
+            ))
+          )}
+        </div>
+      ) : (
+        <>
       {/* The ledger */}
       <div
         className="overflow-x-auto rounded-lg border border-border bg-surface"
@@ -968,6 +1265,8 @@ function TradesModule() {
           </tbody>
         </table>
       </div>
+        </>
+      )}
 
       {/* Pagination footer */}
       <div
