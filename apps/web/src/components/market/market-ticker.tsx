@@ -33,10 +33,10 @@ function MarketQuoteItem({ quote, nowMs }: { quote: LiveQuote; nowMs: number }) 
     >
       <div className="min-w-0">
         <p className="text-xs font-semibold tracking-wide text-foreground">{displaySymbol(quote.symbol)}</p>
-        <p className="mt-0.5 text-[10px] text-muted-foreground">CRYPTO · 24H</p>
+        <p className="mt-0.5 text-[10px] text-muted-foreground">CRYPTO SPOT · 24H</p>
       </div>
       <div className="ml-auto min-w-0 text-right">
-        <p className="font-mono text-sm font-semibold tabular-nums text-foreground">${formatPrice(quote.price)}</p>
+        <p className="font-mono text-sm font-semibold tabular-nums text-foreground">${formatPrice(quote.price)} USDT</p>
         <p
           className={cn(
             "mt-0.5 font-mono text-[10px] tabular-nums",

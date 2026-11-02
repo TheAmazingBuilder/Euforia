@@ -209,9 +209,10 @@ function TradeCard({
   onDelete: () => void;
 }) {
   const { data: screenshotData, isLoading: screenshotsLoading } = useScreenshots(trade.id);
-  const screenshot = screenshotData?.screenshots.find((item) =>
-    item.storageKey.startsWith("data:image/"),
-  );
+  const screenshots = screenshotData?.screenshots ?? [];
+  const screenshot =
+    screenshots.find((item) => item.kind === "CHART" && item.storageKey.startsWith("data:image/")) ??
+    screenshots.find((item) => item.storageKey.startsWith("data:image/"));
   const pnl = trade.pnlNet === null ? null : Number(trade.pnlNet);
   const isProfit = pnl !== null && pnl > 0;
   const isLoss = pnl !== null && pnl < 0;
@@ -994,7 +995,7 @@ function TradesModule() {
 
       {displayMode === "cards" ? (
         <div
-          className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4"
+          className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
           data-testid="trades-cards"
         >
           {isLoading ? (
