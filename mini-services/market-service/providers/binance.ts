@@ -19,9 +19,15 @@ import { INTERVAL_MS } from "./types";
 const REST_BASE = "https://data-api.binance.vision/api/v3";
 const WS_BASE = "wss://data-stream.binance.vision/stream?streams=";
 
-/** Internal symbol → Binance symbol. Extend deliberately (per listing). */
+/** Internal symbol → Binance Spot symbol. Each pair is a real public-market feed. */
 const SYMBOL_MAP = new Map<string, string>([
   ["BTCUSDT", "BTCUSDT"],
+  ["ETHUSDT", "ETHUSDT"],
+  ["BNBUSDT", "BNBUSDT"],
+  ["SOLUSDT", "SOLUSDT"],
+  ["XRPUSDT", "XRPUSDT"],
+  ["DOGEUSDT", "DOGEUSDT"],
+  ["ADAUSDT", "ADAUSDT"],
 ]);
 
 /** Internal interval → Binance kline interval. */
@@ -166,26 +172,35 @@ export class BinanceProvider implements MarketDataProvider {
 
   private async pollOnce(): Promise<void> {
     if (this.wsUp || !this.emit) return;
-    for (const [internal, remote] of SYMBOL_MAP) {
-      try {
-        const response = await fetch(`${REST_BASE}/ticker/24hr?symbol=${remote}`, {
-          signal: AbortSignal.timeout(4_000),
-        });
-        if (!response.ok) throw new Error(String(response.status));
-        const body = (await response.json()) as { lastPrice: string; openPrice: string };
-        this.restFailures = 0;
-        this.emit({
-          symbol: internal,
-          price: Number(body.lastPrice),
-          prevClose: Number(body.openPrice),
-          ts: Date.now(),
-          source: "real",
-        });
-      } catch {
-        this.restFailures += 1;
-        // Silence on purpose: no tick → clients show STALE (never fake liveness).
-      }
-    }
+    // The REST fallback runs requests concurrently so a seven-symbol watchlist
+    // does not take 7 × the per-request timeout to refresh.
+    await Promise.all(
+      [...SYMBOL_MAP].map(async ([internal, remote]) => {
+        try {
+          const response = await fetch(`${REST_BASE}/ticker/24hr?symbol=${remote}`, {
+            signal: AbortSignal.timeout(4_000),
+          });
+          if (!response.ok) throw new Error(String(response.status));
+          const body = (await response.json()) as { lastPrice: string; openPrice: string };
+          const price = Number(body.lastPrice);
+          const prevClose = Number(body.openPrice);
+          if (!Number.isFinite(price) || price <= 0 || !Number.isFinite(prevClose) || prevClose <= 0) {
+            throw new Error("invalid Binance ticker observation");
+          }
+          this.restFailures = 0;
+          this.emit?.({
+            symbol: internal,
+            price,
+            prevClose,
+            ts: Date.now(),
+            source: "real",
+          });
+        } catch {
+          this.restFailures += 1;
+          // Silence on purpose: no tick → clients show STALE (never fake liveness).
+        }
+      }),
+    );
   }
 
   // ── Candles ──────────────────────────────────────────────────────────────
