@@ -35,20 +35,26 @@ type ChoiceTileProps = {
 
 function ChoiceTile({ selected, title, description, onSelect, children }: ChoiceTileProps) {
   return (
-    <button
-      type="button"
+    <div
       role="radio"
       aria-checked={selected}
+      tabIndex={selected ? 0 : -1}
       onClick={onSelect}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onSelect();
+        }
+      }}
       className={cn(
-        "min-w-0 rounded-xl border p-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        "min-w-0 cursor-pointer rounded-xl border p-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
         selected ? "border-accent bg-accent/5 ring-1 ring-accent/25" : "border-border bg-surface hover:border-foreground/30",
       )}
     >
       <span className="block text-sm font-semibold text-foreground">{title}</span>
       <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">{description}</span>
       {children}
-    </button>
+    </div>
   );
 }
 
