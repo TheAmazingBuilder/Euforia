@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * seed-instruments.mjs - idempotent re-application of the canonical
- * Instrument catalog seed (7 rows with FIXED UUIDs from migration
+ * Instrument catalog seed (10 rows with FIXED UUIDs from migration
  * 20261004120000_trade_journal_core).
  *
  * WHY THIS EXISTS: the sandbox-recovery path (`db push` + `migrate resolve
