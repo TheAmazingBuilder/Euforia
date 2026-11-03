@@ -118,9 +118,23 @@ export function OryonChartPanel({
     );
   }
 
-  const candles = history.data?.candles ?? [];
+  // Oryon is a real-market workspace: a response without an explicit
+  // REAL provenance is never rendered as a chart. This is intentionally
+  // fail-closed; the market service contract requires source="real".
+  const source = history.data?.source;
+  if (source !== "real") {
+    return (
+      <CenterState
+        testid="oryon-state-non-real-source"
+        icon={<TriangleAlert className="size-5 text-warning" aria-hidden />}
+        message={S.historyError}
+      />
+    );
+  }
+
+  const candles = history.data.candles;
   /** The symbol the DISPLAYED data actually belongs to (honest legend). */
-  const dataSymbol = history.data?.symbol ?? symbol;
+  const dataSymbol = history.data.symbol;
 
   // Service answered with no history for this instrument + timeframe.
   if (candles.length === 0) {
@@ -128,8 +142,6 @@ export function OryonChartPanel({
       <CenterState testid="oryon-state-empty" message={S.emptyHistory} />
     );
   }
-
-  const source = history.data?.source ?? "sim";
 
   return (
     <div className="relative h-full w-full">
