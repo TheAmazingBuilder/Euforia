@@ -123,12 +123,12 @@ export class ConsoleMailTransport implements MailTransport {
   }
 }
 
-@Injectable()
 type MailerTestGlobal = typeof globalThis & {
   __EUFORIA_TEST_MAIL_TRANSPORT__?: MailTransport | null;
 };
 const mailerTestGlobal = globalThis as MailerTestGlobal;
 
+@Injectable()
 export class MailerService {
   private transport: MailTransport;
 
