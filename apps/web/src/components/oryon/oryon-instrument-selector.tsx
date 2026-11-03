@@ -4,7 +4,7 @@ import * as React from "react";
 
 import { ChevronDown, Search } from "lucide-react";
 
-import type { Instrument } from "@cosmoz/shared";
+import type { AssetClass, Instrument } from "@cosmoz/shared";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { useDict } from "@/i18n/i18n-provider";
+import { assetClassBadge, formatInstrumentSymbol } from "@/lib/utils/instrument";
 
 /**
  * Oryon instrument selector. The catalog comes from useInstruments() (the
@@ -52,6 +53,25 @@ export function OryonInstrumentSelector({
     );
   }, [instruments, query]);
 
+  const groups = React.useMemo(() => {
+    const order: readonly AssetClass[] = ["FOREX", "CRYPTO", "METAL", "INDEX", "ENERGY", "SYNTHETIC"];
+    const labels: Record<AssetClass, string> = {
+      FOREX: "Forex",
+      CRYPTO: "Crypto",
+      METAL: "Metals",
+      INDEX: "Indices",
+      ENERGY: "Energy",
+      SYNTHETIC: "Synthetic indices",
+    };
+    return order
+      .map((assetClass) => ({
+        assetClass,
+        label: labels[assetClass],
+        items: filtered.filter((item) => item.assetClass === assetClass),
+      }))
+      .filter((group) => group.items.length > 0);
+  }, [filtered]);
+
   const close = React.useCallback(() => setOpen(false), []);
 
   return (
@@ -66,7 +86,7 @@ export function OryonInstrumentSelector({
           aria-expanded={open}
           className="h-8 gap-1.5 px-2.5 font-mono text-xs font-semibold"
         >
-          {selected !== null ? selected.symbol : "-"}
+          {selected !== null ? formatInstrumentSymbol(selected.symbol, selected.assetClass) : "-"}
           <ChevronDown className="size-3.5 text-muted-foreground" aria-hidden />
         </Button>
       </PopoverTrigger>
@@ -97,43 +117,54 @@ export function OryonInstrumentSelector({
               {S.noMatch}
             </p>
           ) : (
-            filtered.map((item) => {
-              const isSelected = selected !== null && item.id === selected.id;
-              const hasFeed = !feedKnown || feedSymbols.has(item.symbol);
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  role="option"
-                  aria-selected={isSelected}
-                  disabled={!hasFeed}
-                  data-testid={`${idPrefix}-instrument-option-${item.symbol}`}
-                  onClick={() => {
-                    onSelect(item.id);
-                    close();
-                  }}
-                  className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left hover:bg-surface-raised focus-visible:outline-2 focus-visible:outline-ring disabled:cursor-not-allowed disabled:opacity-45"
-                >
-                  <span className="min-w-0 flex-1">
-                    <span className="block font-mono text-xs font-semibold text-foreground">
-                      {item.symbol}
-                    </span>
-                    <span className="block truncate text-xs text-muted-foreground">
-                      {item.name}
-                    </span>
-                  </span>
-                  <span
-                    className={
-                      hasFeed
-                        ? "shrink-0 rounded-sm bg-surface-raised px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground"
-                        : "shrink-0 rounded-sm bg-warning/15 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-warning"
-                    }
-                  >
-                    {hasFeed ? item.assetClass : S.noFeed}
-                  </span>
-                </button>
-              );
-            })
+            <div className="space-y-3">
+              {groups.map((group) => (
+                <section key={group.assetClass} aria-label={group.label}>
+                  <p className="px-2 pb-1 pt-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                    {group.label}
+                  </p>
+                  <div className="space-y-0.5">
+                    {group.items.map((item) => {
+                      const isSelected = selected !== null && item.id === selected.id;
+                      const hasFeed = !feedKnown || feedSymbols.has(item.symbol);
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          role="option"
+                          aria-selected={isSelected}
+                          disabled={!hasFeed}
+                          data-testid={`${idPrefix}-instrument-option-${item.symbol}`}
+                          onClick={() => {
+                            onSelect(item.id);
+                            close();
+                          }}
+                          className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left hover:bg-surface-raised focus-visible:outline-2 focus-visible:outline-ring disabled:cursor-not-allowed disabled:opacity-45"
+                        >
+                          <span className="min-w-0 flex-1">
+                            <span className="block font-mono text-xs font-semibold text-foreground">
+                              {formatInstrumentSymbol(item.symbol, item.assetClass)}
+                            </span>
+                            <span className="block truncate text-xs text-muted-foreground">
+                              {item.name}
+                            </span>
+                          </span>
+                          <span
+                            className={
+                              hasFeed
+                                ? "shrink-0 rounded-sm bg-surface-raised px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground"
+                                : "shrink-0 rounded-sm bg-warning/15 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-warning"
+                            }
+                          >
+                            {hasFeed ? assetClassBadge(item.assetClass) : S.noFeed}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </section>
+              ))}
+            </div>
           )}
         </div>
       </PopoverContent>

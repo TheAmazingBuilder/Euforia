@@ -21,6 +21,7 @@ import {
   summarizePnl,
 } from "@/lib/oryon/positions/view";
 import { cn } from "@/lib/utils";
+import { formatInstrumentSymbol } from "@/lib/utils/instrument";
 
 /**
  * Oryon lower panel - the Open Positions monitor (Phase 4, PRD FR-15).
@@ -304,7 +305,7 @@ function PositionRow({
     >
       <td className="px-3 py-1.5">
         <span className="inline-flex items-center gap-1.5">
-          <span className="font-mono font-semibold text-foreground">{position.symbol}</span>
+          <span className="font-mono font-semibold text-foreground">{formatInstrumentSymbol(position.symbol)}</span>
           {onChart ? (
             <span
               data-testid="oryon-position-on-chart"

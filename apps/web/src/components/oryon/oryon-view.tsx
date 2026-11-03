@@ -351,7 +351,7 @@ function OryonWorkspace() {
         instruments={instruments}
         instrument={instrument}
         covered={covered}
-        feedKnown={feedSymbols.size > 0}
+        feedKnown={healthQuery.isSuccess}
         feedSymbols={feedSymbols}
         interval={activePanel?.interval ?? "5m"}
         onIntervalChange={(next: MarketInterval) => {
@@ -405,7 +405,7 @@ function OryonWorkspace() {
                   magnet={session.magnet}
                   instruments={instruments}
                   feedSymbols={feedSymbols}
-                  feedKnown={feedSymbols.size > 0}
+                  feedKnown={healthQuery.isSuccess}
                   onEngineReady={handleEngineReady}
                   onEngineGone={handleEngineGone}
                 />

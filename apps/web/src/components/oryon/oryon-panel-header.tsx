@@ -35,6 +35,7 @@ import { OryonInstrumentSelector } from "@/components/oryon/oryon-instrument-sel
 import { OryonTimeframeSelector } from "@/components/oryon/oryon-timeframe-selector";
 import type { OryonChartType } from "@/lib/charting/oryon-chart-engine";
 import { cn } from "@/lib/utils";
+import { formatInstrumentSymbol } from "@/lib/utils/instrument";
 
 /**
  * Oryon panel header - the compact per-chart control strip (Phase 7 §6):
@@ -137,7 +138,7 @@ export function OryonPanelHeader({
           active ? "text-foreground" : "text-muted-foreground",
         )}
       >
-        {instrument?.symbol ?? "-"}
+        {instrument ? formatInstrumentSymbol(instrument.symbol, instrument.assetClass) : "-"}
       </span>
       <span
         data-testid={`${prefix}-identity-interval`}

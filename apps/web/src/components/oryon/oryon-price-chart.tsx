@@ -40,6 +40,7 @@ import { buildPositionLineSpecs } from "@/lib/oryon/positions/overlay";
 import { buildAlertLineSpecs } from "@/lib/oryon/alerts/overlay";
 import { formatCandleTime, formatLegendVolume } from "@/lib/oryon/crosshair/format";
 import { cn } from "@/lib/utils";
+import { formatInstrumentSymbol } from "@/lib/utils/instrument";
 
 /**
  * Oryon price chart - the ONLY component that owns the chart engine.
@@ -395,7 +396,7 @@ function OryonChartLegend({
   return (
     <div className="pointer-events-none absolute left-2 top-2 z-10 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-md border border-border bg-background/85 px-2 py-1 backdrop-blur">
       <span data-testid="oryon-legend-symbol" className="font-mono text-xs font-semibold text-foreground">
-        {symbol}
+        {formatInstrumentSymbol(symbol)}
       </span>
       <span data-testid="oryon-legend-interval" className="font-mono text-[11px] text-muted-foreground">
         {interval}
