@@ -61,6 +61,12 @@ jobs:
       - name: Build
         run: corepack pnpm --filter @cosmoz/api build
 
+      - name: Build production API image
+        run: docker build -f apps/api/Dockerfile -t euforia-api:ci .
+
+      - name: Verify production API image uses non-root runtime
+        run: test "$(docker image inspect euforia-api:ci --format '{{.Config.User}}')" = "node"
+
       - name: Unit tests
         working-directory: apps/api
         env:
