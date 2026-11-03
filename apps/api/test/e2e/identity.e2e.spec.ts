@@ -6,7 +6,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { NestFastifyApplication } from "@nestjs/platform-fastify";
 import { buildTestApp } from "../helpers/build-app";
-import { MailerService } from "../../src/modules/identity/mailer.service";
+import { identityMailer } from "../helpers/identity";
 import { IdentityRepository } from "../../src/modules/identity/identity.repository";
 import {
   authenticatedUser,
@@ -53,7 +53,7 @@ describe("registration & email verification", () => {
   });
 
   it("cleans up an undelivered verification token and allows resend after SMTP recovers", async () => {
-    const mailer = app.get(MailerService);
+    const mailer = identityMailer(app);
     const email = uniqueEmail("smtp-retry");
     mailer.useTransport({
       send: async () => {
@@ -93,7 +93,7 @@ describe("registration & email verification", () => {
     expect(registered.statusCode).toBe(201);
     const previouslyDeliveredToken = mail.lastVerificationToken();
 
-    const mailer = app.get(MailerService);
+    const mailer = identityMailer(app);
     mailer.useTransport({ send: async () => { throw new Error("simulated SMTP outage"); } });
     const failedDelivery = await app.inject({
       method: "POST",
@@ -184,7 +184,7 @@ describe("registration & email verification", () => {
     });
 
     const newEmail = uniqueEmail("email-change-smtp");
-    const mailer = app.get(MailerService);
+    const mailer = identityMailer(app);
     mailer.useTransport({ send: async () => { throw new Error("simulated SMTP outage"); } });
     const change = await app.inject({
       method: "PATCH",
@@ -202,11 +202,14 @@ describe("registration & email verification", () => {
     });
     expect(oldLink.statusCode).toBe(400);
     expect(oldLink.json().code).toBe("INVALID_TOKEN");
-    const pendingUser = await app.get(IdentityRepository).findUserByEmail(newEmail);
-    expect(pendingUser?.status).toBe("PENDING_VERIFICATION");
+    // SMTP failure restores the previously verified identity rather than
+    // leaving an account pending with an address that never received a link.
+    const restoredUser = await app.get(IdentityRepository).findUserByEmail(ctx.email);
+    expect(restoredUser?.status).toBe("ACTIVE");
+    expect(restoredUser?.emailVerifiedAt).not.toBeNull();
+    expect(await app.get(IdentityRepository).findUserByEmail(newEmail)).toBeNull();
 
-    // Simulate a concurrent stale challenge that survived cleanup: the token
-    // must still be rejected because it was issued for the previous address.
+    // The old link was invalidated when the email-change transaction began.
     const staleConcurrentToken = IdentityRepository.randomToken(24);
     await app.get(IdentityRepository).createChallenge({
       userId: ctx.userId,
@@ -223,13 +226,17 @@ describe("registration & email verification", () => {
     expect(staleConcurrentLink.statusCode).toBe(400);
     expect(staleConcurrentLink.json().code).toBe("INVALID_TOKEN");
 
-    const resend = await app.inject({
-      method: "POST",
-      url: "/api/v1/auth/email/resend",
+    // A retry after SMTP recovers starts a new email-change transaction.
+    const retry = await app.inject({
+      method: "PATCH",
+      url: "/api/v1/me",
+      headers: ctx.authHeader,
       payload: { email: newEmail },
     });
-    expect(resend.statusCode).toBe(202);
+    expect(retry.statusCode).toBe(200);
+    expect(retry.json().emailChangePending).toBe(true);
     const newToken = mail.lastVerificationToken();
+
     const staleSameAddressToken = IdentityRepository.randomToken(24);
     await app.get(IdentityRepository).createChallenge({
       userId: ctx.userId,
@@ -435,7 +442,7 @@ describe("email-based two-factor authentication", () => {
   it("allows email MFA enrollment to retry after SMTP failure", async () => {
     mail.clear();
     const ctx = await authenticatedUser(app, mail);
-    const mailer = app.get(MailerService);
+    const mailer = identityMailer(app);
     const firstReauth = await app.inject({
       method: "POST",
       url: "/api/v1/security/reauth",
@@ -607,7 +614,7 @@ describe("email-based two-factor authentication", () => {
     const firstCode = [...mail.messages].reverse().find((item) => item.kind === "MFA_EMAIL_CODE")?.code;
     expect(firstCode).toMatch(/^\d{6}$/);
 
-    const mailer = app.get(MailerService);
+    const mailer = identityMailer(app);
     mailer.useTransport({ send: async () => { throw new Error("simulated SMTP outage"); } });
     const failedReplacement = await app.inject({
       method: "POST",
@@ -870,7 +877,7 @@ describe("password reset (§22)", () => {
 
   it("SMTP failure does not invalidate the last delivered reset link or reveal account existence", async () => {
     const ctx = await authenticatedUser(app, mail);
-    const mailer = app.get(MailerService);
+    const mailer = identityMailer(app);
     mail.clear();
 
     const first = await app.inject({
@@ -911,7 +918,7 @@ describe("password reset (§22)", () => {
     const ctx = await authenticatedUser(app, mail);
     const originalEmail = ctx.email;
     const newEmail = uniqueEmail("email-change-smtp-failure");
-    const mailer = app.get(MailerService);
+    const mailer = identityMailer(app);
     mailer.useTransport({
       send: async () => {
         throw new Error("simulated SMTP outage during email change");

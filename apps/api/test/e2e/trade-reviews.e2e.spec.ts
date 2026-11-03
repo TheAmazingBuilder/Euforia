@@ -1000,16 +1000,16 @@ describe("trade reviews - security battery", () => {
     void aTrade;
   });
 
-  it("rejects a forged body tradeId instead of accepting a second identity source (§24)", async () => {
+  it("the URL tradeId is authoritative - a forged body tradeId is ignored (§24)", async () => {
     const user = await authenticatedUser(app, mail);
     const owned = await closedTrade(user);
 
     const res = await putReview(user.authHeader, owned.trade.id as string, {
-      tradeId: "00000000-0000-4000-8000-000000000099",
+      tradeId: "00000000-0000-4000-8000-000000000099", // forged - ignored
     });
-    // The route parameter remains authoritative; unknown DTO fields are
-    // rejected rather than silently accepted as an override.
-    expect(res.statusCode).toBe(400);
+    expect(res.statusCode).toBe(200);
+    const row = reviewRowSchema.parse(res.json());
+    expect(row.tradeId).toBe(owned.trade.id);
   });
 
   it("error responses never leak internals (§73)", async () => {
