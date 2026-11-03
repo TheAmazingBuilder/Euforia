@@ -50,6 +50,7 @@ import { apiErrorMessage } from "@/lib/api/client";
 import { isoToLocalInput, localInputToISO } from "@/lib/utils/datetime";
 import { useIsDesktop } from "@/lib/hooks/use-media-query";
 import { cn } from "@/lib/utils";
+import { formatInstrumentSymbol } from "@/lib/utils/instrument";
 import { useI18n } from "@/i18n/i18n-provider";
 
 const EXIT_REASONS = ["TP", "SL", "MANUAL", "TRAILING", "PARTIAL", "MARGIN"] as const;
@@ -547,7 +548,7 @@ export function TradeDetailDrawer({
           <DialogHeader>
             <DialogTitle className="font-heading">{T.deleteTitle}</DialogTitle>
             <DialogDescription>
-              {instrument?.symbol} {trade.direction} ·{" "}
+              {instrument ? formatInstrumentSymbol(instrument.symbol, instrument.assetClass) : ""} {trade.direction} ·{" "}
               {isoToLocalInput(trade.entryAt).slice(0, 10)} {T.deleteBody}
             </DialogDescription>
           </DialogHeader>
@@ -653,7 +654,7 @@ export function TradeDetailDrawer({
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <SheetTitle className="flex items-center gap-2 font-heading text-lg font-semibold">
-                    {instrument?.symbol ?? T.fallbackTitle}
+                    {instrument ? formatInstrumentSymbol(instrument.symbol, instrument.assetClass) : T.fallbackTitle}
                     <span
                       className={cn(
                         "rounded-full border px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wide",
@@ -705,7 +706,7 @@ export function TradeDetailDrawer({
         >
           <DialogHeader className="gap-1 border-b border-border p-4 pr-14 pb-3">
             <DialogTitle className="flex items-center gap-2 font-heading text-lg font-semibold">
-              {instrument?.symbol ?? T.fallbackTitle}
+              {instrument ? formatInstrumentSymbol(instrument.symbol, instrument.assetClass) : T.fallbackTitle}
               <span
                 className={cn(
                   "rounded-full border px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wide",

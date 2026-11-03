@@ -59,7 +59,7 @@ import {
 } from "@/lib/api/queries";
 import { uploadDraftsSequentially } from "@/lib/utils/screenshot-upload";
 import { isoToLocalInput, localInputToISO, nowLocalInput } from "@/lib/utils/datetime";
-import { sizeUnitLabel } from "@/lib/utils/instrument";
+import { formatInstrumentSymbol, sizeUnitLabel } from "@/lib/utils/instrument";
 import { DateTimePicker } from "@/components/shared/date-time-picker";
 import { cn } from "@/lib/utils";
 import {
@@ -457,7 +457,7 @@ export function TradeForm({ seed }: TradeFormProps) {
           openGate(tradeId);
         } else {
           toast.success(T.savedOpenTitle, {
-            description: `${instrument?.symbol ?? ""} ${direction} @ ${entry}`,
+            description: `${instrument ? formatInstrumentSymbol(instrument.symbol, instrument.assetClass) : ""} ${direction} @ ${entry}`,
           });
           closeTradeModal();
         }

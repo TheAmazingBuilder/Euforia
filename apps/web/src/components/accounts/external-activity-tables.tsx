@@ -6,6 +6,7 @@ import type { BrokerOrder, BrokerPosition, TradingDeal, TradingAccountDetails } 
 import { formatMoney, formatSignedMoney } from "@cosmoz/shared";
 
 import { cn } from "@/lib/utils";
+import { formatInstrumentSymbol } from "@/lib/utils/instrument";
 import { useDict } from "@/i18n/i18n-provider";
 
 /**
@@ -82,7 +83,7 @@ export function ExternalPositionsTable({
     >
       {positions.map((position) => (
         <tr key={position.id} className="border-b border-border/60 last:border-0" data-testid="external-position-row">
-          <td className="px-3 py-2 font-medium first:pl-0">{position.symbol}</td>
+          <td className="px-3 py-2 font-medium first:pl-0">{formatInstrumentSymbol(position.symbol)}</td>
           <td className={cn("px-3 py-2 font-mono text-xs", DIRECTION_CLASSES(position.direction))}>
             {position.direction}
           </td>
@@ -125,7 +126,7 @@ export function ExternalOrdersTable({ orders }: { orders: BrokerOrder[] }) {
     <TableShell testId="external-orders-table" headers={["Symbol", "Type", "Volume", "Price", "SL", "TP", "Created"]}>
       {orders.map((order) => (
         <tr key={order.id} className="border-b border-border/60 last:border-0" data-testid="external-order-row">
-          <td className="px-3 py-2 font-medium first:pl-0">{order.symbol}</td>
+          <td className="px-3 py-2 font-medium first:pl-0">{formatInstrumentSymbol(order.symbol)}</td>
           <td className="px-3 py-2 font-mono text-xs">{order.type}</td>
           <td className="px-3 py-2 text-right font-mono tabular-nums">{order.volume}</td>
           <td className="px-3 py-2 text-right font-mono tabular-nums">{order.price}</td>
@@ -161,7 +162,7 @@ export function ExternalDealsTable({
         <tr key={deal.id} className="border-b border-border/60 last:border-0" data-testid="external-deal-row">
           <td className="px-3 py-2 font-mono text-xs text-muted-foreground first:pl-0">{deal.externalDealId}</td>
           <td className="px-3 py-2 font-medium">
-            {deal.symbol ?? <span className="text-xs text-muted-foreground">balance op.</span>}
+            {deal.symbol !== null ? formatInstrumentSymbol(deal.symbol) : <span className="text-xs text-muted-foreground">balance op.</span>}
           </td>
           <td className={cn("px-3 py-2 font-mono text-xs", DIRECTION_CLASSES(deal.side))}>{deal.side}</td>
           <td className="px-3 py-2 text-right font-mono tabular-nums">{deal.volume}</td>

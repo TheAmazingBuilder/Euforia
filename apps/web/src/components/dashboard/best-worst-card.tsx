@@ -8,6 +8,7 @@ import { formatR, formatSignedMoney } from "@cosmoz/shared";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAccounts, useInstruments, useStrategies, useTrades } from "@/lib/api/queries";
 import { cn } from "@/lib/utils";
+import { formatInstrumentSymbol } from "@/lib/utils/instrument";
 
 /** Compact duration from two ISO stamps ("2h 15m", "3d 4h", "18m"). */
 function formatDuration(fromIso: string, toIso: string): string {
@@ -146,8 +147,11 @@ export function BestWorstCard() {
     return loser;
   }, [monthTrades]);
 
-  const symbolOf = (trade: Trade | null): string =>
-    trade ? instruments.find((item) => item.id === trade.instrumentId)?.symbol ?? "-" : "-";
+  const symbolOf = (trade: Trade | null): string => {
+    if (trade === null) return "-";
+    const instrument = instruments.find((item) => item.id === trade.instrumentId);
+    return instrument ? formatInstrumentSymbol(instrument.symbol, instrument.assetClass) : "-";
+  };
   const strategyNameOf = (trade: Trade | null): string | null =>
     trade?.strategyId
       ? strategies.find((strategy) => strategy.id === trade.strategyId)?.name ?? null

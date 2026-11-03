@@ -19,6 +19,7 @@ import {
   unrealizedPnl,
 } from "@/lib/realtime/market";
 import { cn } from "@/lib/utils";
+import { formatInstrumentSymbol } from "@/lib/utils/instrument";
 
 interface PositionRowProps {
   trade: Trade;
@@ -65,7 +66,7 @@ function PositionRow({ trade, instrument, currency, lastPrice, live }: PositionR
       </span>
 
       <span className="w-24 shrink-0 font-heading text-sm font-semibold text-foreground">
-        {instrument?.symbol ?? "-"}
+        {instrument ? formatInstrumentSymbol(instrument.symbol, instrument.assetClass) : "-"}
       </span>
 
       <span className="hidden flex-col text-[11px] text-muted-foreground sm:flex">

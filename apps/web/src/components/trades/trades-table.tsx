@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import type { Currency, Grade, SavedTradeView, SavedTradeViewFilters, Trade, TradeColumnKey } from "@cosmoz/shared";
 import { csvCell, formatR, formatSignedMoney } from "@cosmoz/shared";
+import { formatInstrumentSymbol } from "@/lib/utils/instrument";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -326,7 +327,7 @@ function TradeCard({
         <div className="flex min-w-0 items-start justify-between gap-2">
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold text-foreground">
-              {symbol} <span className="text-muted-foreground">·</span>{" "}
+              {formatInstrumentSymbol(symbol)} <span className="text-muted-foreground">·</span>{" "}
               <span className={trade.direction === "SELL" ? "text-loss" : "text-profit"}>
                 {trade.direction === "SELL" ? "Sell" : "Buy"}
               </span>
@@ -731,7 +732,7 @@ function TradesModule() {
     for (const trade of sorted) {
       lines.push([
         CSVCell(trade.tradingDate),
-        CSVCell(symbolOf(trade.instrumentId)),
+        CSVCell(formatInstrumentSymbol(symbolOf(trade.instrumentId))),
         CSVCell(trade.direction),
         CSVCell(trade.quantity),
         CSVCell(trade.entryPrice),
@@ -1058,7 +1059,7 @@ function TradesModule() {
               <TradeCard
                 key={trade.id}
                 trade={trade}
-                symbol={symbolOf(trade.instrumentId)}
+                symbol={formatInstrumentSymbol(symbolOf(trade.instrumentId))}
                 accountName={accountNameOf(trade.accountId)}
                 tags={(trade.tagIds ?? []).map(tagNameOf).filter((name): name is string => name !== null)}
                 selected={selectedIds.has(trade.id)}
@@ -1156,7 +1157,7 @@ function TradesModule() {
                   .filter((name): name is string => name !== null);
                 const cells: Record<TradeColumnKey, React.ReactNode> = {
                   date: trade.tradingDate,
-                  instrument: symbolOf(trade.instrumentId),
+                  instrument: formatInstrumentSymbol(symbolOf(trade.instrumentId)),
                   side: (
                     <span
                       className={cn(
@@ -1257,7 +1258,7 @@ function TradesModule() {
                             variant="ghost"
                             size="icon"
                             className="size-7"
-                            aria-label={`${T.table.rowActions.actionsFor} ${symbolOf(trade.instrumentId)} ${trade.tradingDate}`}
+                            aria-label={`${T.table.rowActions.actionsFor} ${formatInstrumentSymbol(symbolOf(trade.instrumentId))} ${trade.tradingDate}`}
                           >
                             <MoreHorizontal className="size-4" aria-hidden="true" />
                           </Button>

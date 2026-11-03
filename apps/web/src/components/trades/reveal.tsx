@@ -17,7 +17,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useInstruments, useStrategies, useTrades } from "@/lib/api/queries";
 import { cn } from "@/lib/utils";
-import { sizeUnitLabel } from "@/lib/utils/instrument";
+import { formatInstrumentSymbol, sizeUnitLabel } from "@/lib/utils/instrument";
 import { closeJudgmentFlow, revealFinished } from "@/lib/hooks/use-judgment-flow";
 import { openTradeModal, type TradeContextSeed } from "@/lib/hooks/use-trade-modal";
 import { setRevealAnimation, useRevealAnimation } from "@/lib/utils/preferences";
@@ -135,7 +135,7 @@ export function Reveal({ reveal, currency, decision }: RevealProps) {
       <div className="flex flex-col items-center gap-3">
         <RevealStar animated={animationEnabled} ariaLabel={T.reveal.constellationAria} />
         <div className="flex flex-wrap items-center justify-center gap-1.5 font-mono text-xs text-muted-foreground">
-          <span className="font-semibold text-foreground">{instrument?.symbol ?? "-"}</span>
+          <span className="font-semibold text-foreground">{instrument ? formatInstrumentSymbol(instrument.symbol, instrument.assetClass) : "-"}</span>
           <span className="rounded-sm border border-border px-1.5 py-0.5 font-semibold text-foreground">
             {trade?.direction ?? "-"}
           </span>
