@@ -1,165 +1,87 @@
-COSMOZ — Project Rules (read before any task)
-Overview
-Cosmoz is a trading journal web app that acts as a personal coach: it detectsbehavioral mistakes, enforces discipline, and turns trade data into decisions.Audience: serious retail traders (forex, crypto, synthetic indices likeDeriv Boom/Crash/Volatility).
+# Euforia — Engineering Rules
 
-Stack (FROZEN — do not add libraries without explicit user approval)
-Monorepo: pnpm workspaces + Turborepo
-apps/web: Next.js 15 (App Router) + TypeScript STRICT + Tailwind CSS v4 + shadcn/ui
-packages/shared: Zod schemas, types, enums, pure calculation utils (no React)
-Data fetching: TanStack Query v5 + custom typed API client in src/lib/api
-Mocks: MSW v2 (enabled when NEXT_PUBLIC_API_MOCKED=true). The NestJS APIwill replace mocks later — component code must never know about MSW.
-Charts: ECharts (analytics) + TradingView Lightweight Charts free version (price charts)
-Fonts: next/font/google — Schibsted Grotesk (headings; page titles render ExtraBold 800 per brand reference), Inter (UI), JetBrainsMono (ALL numbers)
-Golden Rules — violating any of these fails the task
-NO hardcoded colors anywhere. Only semantic tokens (bg-surface,text-muted, text-profit...). They map to CSS variables for the 3 themes.Profit green / loss red are for P&L semantics ONLY, never for UI accents.
-NO floating-point math on money or prices in components. Amounts travelas strings, parsing/formatting goes through packages/shared formatters(Intl.NumberFormat). Client-side math only for live form estimates,using shared decimal helpers.
-Components NEVER call fetch/axios directly. Only hooks from src/lib/api.Endpoints and payload types come from packages/shared.
-Server Components by default. "use client" only for interactivity.
-All user-facing numbers use the font-mono class (JetBrains Mono,tabular numbers).
-Theme system: [data-theme] attribute on , default "dark-blue".Themes: dark-blue | dark | light. Charts read colors viagetThemeToken() helper (getComputedStyle), never hardcoded hex.
-Timestamps are UTC internally; display converts using user timezonefrom the session. Trading date comes from the API, never compute it client-side.
-Accessibility: keyboard navigable, focus visible, labels on inputs.
-File Conventions
-Components: components/{domain}/ComponentName.tsx (PascalCase)
-Hooks: lib/hooks/use-*.ts
-API hooks: lib/api/queries/{domain}.ts
-MSW handlers: mocks/handlers/{domain}.ts, fixtures in mocks/fixtures/
-Specs live in docs/ — READ the relevant spec before implementing a screen.
-Definition of Done (per task)
-pnpm build passes with zero TS errors
-Lint clean, no any, no unused vars
-Dark-blue, dark and light themes all render correctly (toggle test)
-Responsive: desktop + mobile 390px
-No TODO left behind
+These rules describe the current repository. Older Cosmoz/Phase-0 briefs are retained in `docs/legacy/` for historical context only and must not override this file.
 
+## Product and architecture
 
-📦 LIVRABLE 2 — Architecture du repo
+Euforia is a trading journal, review, analytics and market-charting product. It is **not** an order-execution terminal. Broker/account integrations are read-only; users place orders in their broker platform.
 
-cosmoz/
-├── AGENTS.md
-├── docs/
-│   ├── mockups/                  # ← exportez-y vos écrans Stitch validés (PNG)
-│   ├── specs/
-│   │   ├── trade-entry-ux.md     # ← collez-y la spec UX de la saisie (msg précédent)
-│   │   ├── data-model.md         # ← le schéma Prisma-design
-│   │   └── design-tokens.md
-│   └── tasks/                    # les briefs par tâche (voir Livrable 5)
-├── apps/
-│   └── web/
-│       └── src/
-│           ├── app/
-│           │   ├── (auth)/{login,register}/page.tsx
-│           │   ├── (app)/                       # layout shell (sidebar+topbar)
-│           │   │   ├── page.tsx                 # Dashboard
-│           │   │   ├── session/page.tsx         # Session Live
-│           │   │   ├── playbook/page.tsx
-│           │   │   ├── analytics/page.tsx
-│           │   │   ├── calendar/page.tsx
-│           │   │   ├── journal/page.tsx
-│           │   │   ├── discipline/page.tsx
-│           │   │   └── goals/page.tsx
-│           │   ├── layout.tsx
-│           │   └── globals.css                  # ← les 3 thèmes (Livrable 3)
-│           ├── components/
-│           │   ├── ui/                          # shadcn
-│           │   ├── layout/{sidebar,topbar,theme-toggle,account-switcher}.tsx
-│           │   ├── trades/                      # TradeForm, JudgmentGate, Reveal...
-│           │   ├── charts/                      # EquityCurve (constellation), Heatmap...
-│           │   └── shared/                      # MoneyText, KpiCard, PnlBadge...
-│           ├── lib/
-│           │   ├── api/{client,queries/}
-│           │   ├── hotkeys/
-│           │   └── utils/
-│           └── mocks/
-│               ├── browser.ts, handlers/, fixtures/
-└── packages/
-    └── shared/src/
-        ├── schemas/{trade,strategy,account,...}.ts   # Zod
-        ├── enums.ts, constants.ts
-        └── utils/{money,risk,format}.ts              # helpers purs
+Monorepo: pnpm workspaces + Turborepo.
 
+- `apps/web`: Next.js 16 App Router, React 19, TypeScript strict, Tailwind CSS v4, shadcn/Radix, TanStack Query.
+- `apps/api`: NestJS 11 + Fastify, Prisma 6, PostgreSQL. Modular monolith, domain modules composed by `src/app.module.ts`.
+- `packages/shared`: Zod contracts, types, enums and pure domain utilities shared by web and API.
+- `mini-services/market-service`: Bun service exposing real public read-only quotes/candles from its configured providers.
+- `mini-services/ocr-service`: FastAPI OCR sidecar. OCR must not use fabricated recognition output in real environments.
+- Redis is optional infrastructure/cache; PostgreSQL remains the source of truth.
 
-📦 LIVRABLE 3 — Le système de thèmes (le code exact)
-C'est le livrable le plus critique : il conditionne votre switcher. Trois fichiers :
+The frontend API mode is permanently real (`API_MOCKED = false`). Do not reintroduce MSW or pretend that a demo fixture is live data. The Next.js rewrite proxies `/api/v1` to `API_PROXY_TARGET` (default `http://localhost:4000`).
 
-globals.css — les 3 thèmes + mapping Tailwind v4 + shadcn :
+## Branch and repository safety
 
-@import "tailwindcss";
+- Do all implementation and cleanup work on `euforia-collab`.
+- Never commit, merge, rebase onto, or push to `main` unless the owner explicitly requests it.
+- Never force-push. Use fast-forward updates and inspect a changed branch head before retrying.
+- Preserve user data, database rows, migrations and historical QA evidence.
+- Never delete a file just because it has no obvious import. Check route/module registration, scripts, dynamic imports, configuration, migrations, CI and docs first.
+- Keep commits scoped and explain any intentional compatibility layer.
 
-@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *,
-  [data-theme="dark-blue"], [data-theme="dark-blue"] *));
+## Data integrity and market-data honesty
 
-:root, [data-theme="dark-blue"] {
-  --background: #0B1220;  --surface: #121B2E;  --surface-raised: #1A2640;
-  --border: #243352;      --text-primary: #E6EBF5;  --text-muted: #8794AD;
-  --accent: #6E7BFF;      --accent-hover: #8590FF;
-  --profit: #34D399;      --loss: #F87171;   --warning: #FBBF24;
-  --ring: #6E7BFF;
-}
-[data-theme="dark"] {
-  --background: #09090B;  --surface: #131316;  --surface-raised: #1B1B20;
-  --border: #27272E;      --text-primary: #FAFAFA;  --text-muted: #A1A1AA;
-  --accent: #6E7BFF;      --accent-hover: #8590FF;
-  --profit: #34D399;      --loss: #F87171;   --warning: #FBBF24;
-  --ring: #6E7BFF;
-}
-[data-theme="light"] {
-  --background: #F6F8FC;  --surface: #FFFFFF;  --surface-raised: #F0F3F9;
-  --border: #E2E7F0;      --text-primary: #101828;  --text-muted: #5A6474;
-  --accent: #5A4FD8;      --accent-hover: #4C42BF;
-  --profit: #0C9B6C;      --loss: #DC2F44;   --warning: #B45309;
-  --ring: #5A4FD8;
-}
+- No mock/fake prices or candles in real application paths.
+- Preserve canonical raw instrument symbols for database/API/provider matching. Apply display formatting only at the UI edge.
+- Distinguish catalog presence from live-feed coverage. An instrument without a compatible provider must be marked unavailable, not given synthetic quotes.
+- Synthetic indices are a distinct asset class and must not be described as exchange-listed futures or cash indices.
+- Keep currency, contract size, digits, tick/pip size and volume rules tied to verified instrument/provider metadata.
+- Never claim Oryon private positions are broker-live unless the event source explicitly proves that provenance.
 
-@theme inline {
-  --color-background: var(--background);
-  --color-surface: var(--surface);
-  --color-surface-raised: var(--surface-raised);
-  --color-border: var(--border);
-  --color-foreground: var(--text-primary);
-  --color-muted: var(--text-muted);
-  --color-accent: var(--accent);
-  --color-profit: var(--profit);
-  --color-loss: var(--loss);
-  --color-warning: var(--warning);
-  --color-primary: var(--accent);
-  --color-destructive: var(--loss);
-  --color-ring: var(--ring);
-  --font-heading: "Schibsted Grotesk", sans-serif;
-  --font-sans: "Inter", sans-serif;
-  --font-mono: "JetBrains Mono", monospace;
-}
+## Backend and security
 
+- Validate request/response contracts with `packages/shared`; keep controllers thin and ownership checks server-side.
+- Use Prisma migrations for schema changes. Prefer additive migrations. Never edit already-applied migrations to change deployed behavior.
+- Do not log credentials, tokens, OTPs, refresh cookies, raw account secrets, or encryption keys.
+- Keep password reset, email verification, MFA challenge consumption, IDOR protection and rate-limits fail-closed.
+- Never weaken production security checks simply to make a test pass. Fix the test setup or the underlying defect.
+- Environment examples contain placeholders only. Real secrets belong in ignored local environment files or the deployment secret store, never in Git.
+- If a secret has ever been committed, removing it from the current tree does not purge history; rotate it and coordinate any history rewrite separately.
 
-(Note le @custom-variant dark : il fait fonctionner les classes dark: de shadcn/ui sur vos DEUX thèmes sombres — sans lui, tous les composants shadcn cassent au switch. C'est le piège n°1 de ce setup.)
+## Current theme and UI rules
 
-app/layout.tsx — Provider + fonts :
+The visible theme switch offers:
+- `dark` — default graphite theme.
+- `midnight` — dark navy/ink theme (`#0d1117`, accent `#2975ed`).
+- `light` — paper theme.
 
-import { Schibsted_Grotesk, Inter, JetBrains_Mono } from "next/font/google";
-import { ThemeProvider } from "@/components/layout/theme-provider";
+The `euforia` brand theme remains available for compatibility. Use semantic CSS tokens; avoid adding hard-coded colors in TSX. Keep BUY/SELL, profit/loss, validation and destructive colors semantically distinct. Maintain keyboard access, labels, focus states and responsive behavior.
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <html lang="fr" suppressHydrationWarning>
-      <body className={`${inter.variable} ${grotesk.variable} ${mono.variable} font-sans antialiased`}>
-        <ThemeProvider
-          attribute="data-theme"
-          defaultTheme="dark-blue"
-          themes={["dark-blue", "dark", "light"]}
-          enableSystem={false}
-          disableTransitionOnChange
-        >
-          {children}
-        </ThemeProvider>
-      </body>
-    </html>
-  );
-}
+## Commands and verification
 
-Le toggle : dropdown 3 options avec petites pastilles de couleur, persisté par next-themes (localStorage). Zéro flash au chargement.
+From the repository root:
 
-📦 LIVRABLE 4 — Stratégie de mocks (MSW)
-Le principe à faire respecter par l'agent : les composants parlent à des hooks TanStack Query, les hooks parlent au client API, le client API est intercepté par MSW en dev. Quand le NestJS arrivera : on change une variable d'env, rien d'autre.
+```powershell
+pnpm install
+pnpm typecheck
+pnpm lint
+pnpm test
+pnpm build
+pnpm api:dev
+pnpm web:dev
+pnpm market:dev
+```
 
-mocks/fixtures/ : un générateur de 50 trades crédibles (seedé — pas aléatoire à chaque reload, sinon les dashboards « clignotent » et l'agent croit à des bugs) : dates cohérentes sur 3 mois, mélange de setups, 15% hors playbook, violations de règles, ghost trades réglés/non réglés, trades non gradés pour la file « À grader », tous les statuts représentés
-mocks/handlers/ : un fichier par domaine, implémentant la matrice écran → endpoints qu'on a définie — y compris le comportement signature : POST /trades renvoie { id, awaitingDecision: true } sans P&L, et seul POST /trades/:id/decision renvoie la révélation. Les mocks doivent respecter le contrat, sinon l'agent codera un raccourci qui trahit la mécanique.
+API E2E requires an isolated PostgreSQL test database:
+
+```powershell
+$env:DATABASE_URL_TEST = "postgresql://postgres:postgres@127.0.0.1:5432/euforia_test"
+pnpm --filter @cosmoz/api test:e2e
+```
+
+Other relevant commands:
+- API: `pnpm --filter @cosmoz/api lint`, `typecheck`, `build`, `test`, `test:e2e`, `db:migrate`.
+- Web: `pnpm --filter web lint`, `typecheck`, `test`, `build`.
+- Market service: `pnpm market:test`.
+- OCR: `mini-services/ocr-service` requirements/tests (see its README).
+
+CI currently gates four execution blocks: API (unit + E2E), Web (lint/typecheck/unit/build/secrets guard), market-service (Bun tests/typecheck), and OCR (pytest). A green CI is necessary but not sufficient for local operational readiness: real local environment variables, PostgreSQL, provider credentials and manual browser/provider checks still matter.
+
+When adding or changing a module, update its module-by-module test/CI coverage and the current audit/runbook. Do not label a module “operational” until the relevant tests and required external dependencies have been verified.

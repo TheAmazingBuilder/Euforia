@@ -29,3 +29,6 @@ package-lock.json
 # Embedded dev PostgreSQL data dir (removed from the project - kept ignored
 # so any leftover local cluster never gets committed)
 apps/api/.localpg/
+
+# Local platform PID artifacts
+.zscripts/*.pid

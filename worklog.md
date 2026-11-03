@@ -1,4 +1,7 @@
-# Worklog — Projet Cosmoz
+# Worklog — Projet Euforia (historique append-only)
+
+> ⚠️ Entrées historiques : certaines sections décrivent l'ancien nom Cosmoz, d'anciennes branches, MSW ou des architectures abandonnées. Elles sont conservées comme provenance et ne remplacent pas les règles et l'état actuels de `AGENTS.md`.
+
 
 > Journal partagé multi-agents. Append-only. Ce fichier protège l'état du projet contre les restores de sandbox.
 > RÈGLE VERROUILLÉE : commit après CHAQUE livrable terminé — jamais laisser du travail non committé entre deux sessions.
